@@ -11,7 +11,7 @@ from __future__ import division
 
 import numpy as np
 from ..color import Color
-from .polygon import PolygonVisual, MeshVisual, LineVisual
+from .polygon import PolygonVisual
 
 
 class EllipseVisual(PolygonVisual):
@@ -39,6 +39,7 @@ class EllipseVisual(PolygonVisual):
                  radius=(0.1, 0.1), start_angle=0., span_angle=360.,
                  num_segments=100, **kwds):
         super(EllipseVisual, self).__init__()
+        self.mesh.mode = 'triangle_fan'
         self._vertices = None
         self._pos = pos
         self._color = Color(color)
@@ -117,15 +118,18 @@ class EllipseVisual(PolygonVisual):
         self._update()
 
     def _update(self):
-        if self._pos is not None:
-            self._generate_vertices(pos=self._pos, radius=self._radius,
-                                    start_angle=self._start_angle,
-                                    span_angle=self._span_angle,
-                                    num_segments=self._num_segments)
-            self.mesh = MeshVisual(vertices=self._vertices,
-                                   color=self._color.rgba,
-                                   mode='triangle_fan')
-            if not self._border_color.is_blank():
-                self.border = LineVisual(pos=self._vertices[1:],
-                                         color=self._border_color.rgba)
-        #self.update()
+        if self._pos is None:
+            return
+        
+        self._generate_vertices(pos=self._pos, radius=self._radius,
+                                start_angle=self._start_angle,
+                                span_angle=self._span_angle,
+                                num_segments=self._num_segments)
+        if not self._color.is_blank():
+            self.mesh.set_data(vertices=self._vertices,
+                               color=self._color.rgba)
+        if not self._border_color.is_blank():
+            self.border.set_data(pos=self._vertices[1:],
+                                 color=self._border_color.rgba)
+        
+        self.update()

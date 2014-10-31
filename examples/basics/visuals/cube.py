@@ -19,18 +19,21 @@ class Canvas(app.Canvas):
         self.theta = 0
         self.phi = 0
 
-        app.Canvas.__init__(self, 'Cube', keys='interactive',
+        app.Canvas.__init__(self, 'Cube', keys='interactive', show=True,
                             size=(400, 400))
+        
+        # Create a TransformSystem that will tell the visual how to draw
         self.cube_transform = transforms.AffineTransform()
+        self.tr_sys = transforms.TransformSystem(self)
+        self.tr_sys.visual_to_document = self.cube_transform
+        
         self._timer = app.Timer('auto', connect=self.on_timer, start=True)
 
     def on_draw(self, event):
         gloo.set_viewport(0, 0, *self.size)
         gloo.clear('white')
-        # Create a TransformSystem that will tell the visual how to draw
-        tr_sys = transforms.TransformSystem(self)
-        tr_sys.visual_to_document = self.cube_transform
-        self.cube.draw(tr_sys)
+        self.tr_sys.auto_configure()
+        self.cube.draw(self.tr_sys)
 
     def on_timer(self, event):
         self.theta += .5

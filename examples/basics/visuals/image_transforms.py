@@ -58,14 +58,16 @@ class Canvas(vispy.app.Canvas):
         self.size = (800, 800)
         self.show()
 
+        for img in self.images:
+            img.tr_sys = TransformSystem(self)
+            img.tr_sys.visual_to_document = img.transform
+
     def on_draw(self, ev):
         gloo.clear(color='black', depth=True)
         gloo.set_viewport(0, 0, *self.size)
         # Create a TransformSystem that will tell the visual how to draw
-        tr_sys = TransformSystem(self)
         for img in self.images:
-            tr_sys.visual_to_document = img.transform
-            img.draw(tr_sys)
+            img.draw(img.tr_sys)
 
 
 # A simple custom Transform

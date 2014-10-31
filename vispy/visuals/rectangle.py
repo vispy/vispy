@@ -11,7 +11,7 @@ from __future__ import division
 
 import numpy as np
 from ..color import Color
-from .polygon import PolygonVisual, MeshVisual, LineVisual
+from .polygon import PolygonVisual
 
 
 class RectangleVisual(PolygonVisual):
@@ -36,6 +36,7 @@ class RectangleVisual(PolygonVisual):
     def __init__(self, pos=None, color='black', border_color=None,
                  height=1.0, width=1.0, radius=[0., 0., 0., 0.], **kwds):
         super(RectangleVisual, self).__init__()
+        self.mesh.mode = 'triangle_fan'
         self._vertices = None
         self._pos = pos
         self._color = Color(color)
@@ -160,13 +161,16 @@ class RectangleVisual(PolygonVisual):
         self._update()
 
     def _update(self):
-        if self._pos is not None:
-            self._generate_vertices(pos=self._pos, radius=self._radius,
-                                    height=self._height, width=self._width)
-            self.mesh = MeshVisual(vertices=self._vertices, 
-                                   color=self._color.rgba,
-                                   mode='triangle_fan')
-            if not self._border_color.is_blank():
-                self.border = LineVisual(pos=self._vertices[1:, ..., :2],
-                                         color=self._border_color.rgba)
-        #self.update()
+        if self._pos is None:
+            return
+        self._generate_vertices(pos=self._pos, radius=self._radius,
+                                height=self._height, width=self._width)
+        
+        if not self._color.is_blank():
+            self.mesh.set_data(vertices=self._vertices, 
+                               color=self._color.rgba)
+        if not self._border_color.is_blank():
+            self.border.set_data(pos=self._vertices[1:, ..., :2],
+                                 color=self._border_color.rgba)
+
+        self.update()

@@ -117,6 +117,9 @@ class Canvas(app.Canvas):
         self.transform = ChainTransform([self.panzoom,
                                          STTransform(scale=w2, translate=w2),
                                          LogTransform(base=(0, 2, 0))])
+
+        self.tr_sys = TransformSystem(self)
+        self.tr_sys.visual_to_document = self.transform
     
     def on_initialize(self, event):
         gloo.set_state(blend=True,
@@ -141,9 +144,7 @@ class Canvas(app.Canvas):
 
     def on_draw(self, event):
         gloo.clear()
-        tr_sys = TransformSystem(self)
-        tr_sys.visual_to_document = self.transform
-        self.points.draw(tr_sys)
+        self.points.draw(self.tr_sys)
 
 if __name__ == '__main__':
     c = Canvas()

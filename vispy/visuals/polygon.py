@@ -36,8 +36,8 @@ class PolygonVisual(Visual):
                  border_color=None, **kwds):
         super(PolygonVisual, self).__init__(**kwds)
 
-        self.mesh = None
-        self.border = None
+        self.mesh = MeshVisual()
+        self.border = LineVisual()
         self._pos = pos
         self._color = Color(color)
         self._border_color = Color(border_color)
@@ -80,20 +80,22 @@ class PolygonVisual(Visual):
 
     def _update(self):
         self.data = PolygonData(vertices=np.array(self._pos, dtype=np.float32))
-        if self._pos is not None:
+        if self._pos is None:
+            return
+        if not self._color.is_blank():
             pts, tris = self.data.triangulate()
-            self.mesh = MeshVisual(vertices=pts, faces=tris.astype(np.uint32),
-                                   color=self._color.rgba)
-            if not self._border_color.is_blank():
-                # Close border if it is not already.
-                border_pos = self._pos
-                if np.any(border_pos[0] != border_pos[1]):
-                    border_pos = np.concatenate([border_pos, border_pos[:1]], 
-                                                axis=0)
-                self.border = LineVisual(pos=border_pos,
-                                         color=self._border_color.rgba, 
-                                         connect='strip')
-        #self.update()
+            self.mesh.set_data(vertices=pts, faces=tris.astype(np.uint32),
+                               color=self._color.rgba)
+        if not self._border_color.is_blank():
+            # Close border if it is not already.
+            border_pos = self._pos
+            if np.any(border_pos[0] != border_pos[1]):
+                border_pos = np.concatenate([border_pos, border_pos[:1]], 
+                                            axis=0)
+            self.border.set_data(pos=border_pos,
+                                 color=self._border_color.rgba, 
+                                 connect='strip')
+        self.update()
 
     def set_gl_options(self, *args, **kwds):
         self.mesh.set_gl_options(*args, **kwds)
@@ -102,10 +104,12 @@ class PolygonVisual(Visual):
         self.mesh.update_gl_options(*args, **kwds)
 
     def draw(self, transforms):
-        if self.mesh is not None:
+        if self._pos is None:
+            return
+        if not self._color.is_blank():
             gloo.set_state(polygon_offset_fill=True, 
                            cull_face='front_and_back')
             gloo.set_polygon_offset(1, 1)
             self.mesh.draw(transforms)
-        if self.border is not None:
+        if not self._border_color.is_blank():
             self.border.draw(transforms)

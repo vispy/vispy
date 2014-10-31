@@ -23,14 +23,15 @@ class Canvas(vispy.app.Canvas):
         vispy.app.Canvas.__init__(self, keys='interactive')
         self.size = (800, 800)
         self.show()
+        
+        # Create a TransformSystem that will tell the visual how to draw
+        self.tr_sys = TransformSystem(self)
+        self.tr_sys.visual_to_document = self.image_transform
 
     def on_draw(self, ev):
         gloo.clear(color='black', depth=True)
         gloo.set_viewport(0, 0, *self.size)
-        # Create a TransformSystem that will tell the visual how to draw
-        tr_sys = TransformSystem(self)
-        tr_sys.visual_to_document = self.image_transform
-        self.image.draw(tr_sys)
+        self.image.draw(self.tr_sys)
 
 
 if __name__ == '__main__':

@@ -5,6 +5,7 @@
 from __future__ import division
 
 from .linear import NullTransform, STTransform
+from ._util import TransformCache
 
 
 class TransformSystem(object):
@@ -131,7 +132,7 @@ class TransformSystem(object):
 
     def __init__(self, canvas, dpi=None):
         self._canvas = canvas
-        
+        self._cache = TransformCache()
         if dpi is None:
             dpi = canvas.dpi
         self._dpi = dpi
@@ -139,21 +140,32 @@ class TransformSystem(object):
         # Null by default; visuals draw directly to the document coordinate
         # system.
         self._visual_to_document = NullTransform()
+        self._document_to_framebuffer = STTransform()
+        self._framebuffer_to_render = STTransform()
         
+        self.auto_configure()
+
+    def auto_configure(self):
+        """Automatically configure the TransformSystem:
+        
+        * document_to_framebuffer maps from the Canvas logical pixel 
+          coordinate system to the framebuffer coordinate system, assuming
+          physical pixels of the same size. The y-axis is inverted in this
+          transform.
+        * framebuffer_to_render maps from the framebuffer coordinate system to
+          normalized device coordinates (-1 to 1).
+        """
         # By default, this should invert the y axis -- no difference between 
         # the scale of logical and physical pixels.
+        canvas = self._canvas
         map_from = [(0, 0), canvas.size]
         map_to = [(0, canvas.size[1]), (canvas.size[0], 0)]
-        tr = STTransform.from_mapping(map_from, map_to)
-        self._document_to_framebuffer = tr
+        self._document_to_framebuffer.set_mapping(map_from, map_to)
         
         # Automatically configure buffer coordinate system to match the canvas 
         map_from = [(0, 0), canvas.size]
         map_to = [(-1, -1), (1, 1)]
-        tr = STTransform.from_mapping(map_from, map_to)
-        self._framebuffer_to_render = tr
-        
-        self._full_transform = None
+        self._framebuffer_to_render.set_mapping(map_from, map_to)
 
     @property
     def canvas(self):
@@ -184,7 +196,6 @@ class TransformSystem(object):
     def visual_to_document(self, tr):
         if self._visual_to_document is not tr:
             self._visual_to_document = tr
-            self._full_transform = None
         
     @property
     def document_to_framebuffer(self):
@@ -197,7 +208,6 @@ class TransformSystem(object):
     def document_to_framebuffer(self, tr):
         if self._document_to_framebuffer is not tr:
             self._document_to_framebuffer = tr
-            self._full_transform = None
         
     @property
     def framebuffer_to_render(self):
@@ -210,7 +220,6 @@ class TransformSystem(object):
     def framebuffer_to_render(self, tr):
         if self._framebuffer_to_render is not tr:
             self._framebuffer_to_render = tr
-            self._full_transform = None
 
     def get_full_transform(self):
         """ Convenience method that returns the composition of all three
@@ -221,8 +230,6 @@ class TransformSystem(object):
         This is used for visuals that do not require physical measurements
         or antialiasing.
         """  # noqa
-        if self._full_transform is None:
-            self._full_transform = (self.framebuffer_to_render * 
-                                    self.document_to_framebuffer *
-                                    self.visual_to_document)
-        return self._full_transform
+        return self._cache.get([self.framebuffer_to_render, 
+                                self.document_to_framebuffer,
+                                self.visual_to_document])
