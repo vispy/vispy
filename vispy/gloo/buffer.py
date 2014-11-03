@@ -153,9 +153,7 @@ class DataBuffer(Buffer):
         self._dtype = None
         self._stride = 0
         self._itemsize = 0
-        Buffer.__init__(self)
-        if data is not None:
-            self.set_data(data)
+        Buffer.__init__(self, data)
     
     def _prepare_data(self, data):
         # Needs to be overrriden
