@@ -7,6 +7,8 @@ Note that functions that take a matrix as input generally operate on that
 matrix in place.
 """
 
+from __future__ import division
+
 # Note: we use functions (e.g. sin) from math module because they're faster
 
 import math
@@ -260,10 +262,10 @@ def frustum(left, right, bottom, top, znear, zfar):
 
     M = np.zeros((4, 4), dtype=np.float32)
     M[0, 0] = +2.0 * znear / (right - left)
-    M[2, 0] = (right + left) / (right - left)
+    M[2, 0] = (right + left) / float(right - left)
     M[1, 1] = +2.0 * znear / (top - bottom)
-    M[3, 1] = (top + bottom) / (top - bottom)
-    M[2, 2] = -(zfar + znear) / (zfar - znear)
+    M[3, 1] = (top + bottom) / float(top - bottom)
+    M[2, 2] = -(zfar + znear) / float(zfar - znear)
     M[3, 2] = -2.0 * znear * zfar / (zfar - znear)
     M[2, 3] = -1.0
     return M
