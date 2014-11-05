@@ -85,13 +85,15 @@ if __name__ == '__main__':
     
     # This time we add a ViewBox to let the user zoom/pan
     view = canvas.central_widget.add_view()
-    view.set_camera('turntable', mode='perspective', up='z', distance=1,
+    view.set_camera('turntable', mode='perspective', up='z', distance=1.5,
                     azimuth=30., elevation=30.)
     
     mesh = MyMesh(parent=view.scene)
     mesh.transform = visuals.transforms.AffineTransform()
     #mesh.transform.translate([-25, -25, -25])
     mesh.transform.rotate(90, (1, 0, 0))
+    
+    axis = scene.visuals.XYZAxis(parent=view.scene)
     
     # ..and optionally start the event loop
     import sys

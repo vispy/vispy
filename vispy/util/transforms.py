@@ -274,12 +274,12 @@ def frustum(left, right, bottom, top, znear, zfar):
     assert(znear != zfar)
 
     M = np.zeros((4, 4), dtype=np.float32)
-    M[0, 0] = +2.0 * znear / (right - left)
+    M[0, 0] = +2.0 * znear / float(right - left)
     M[2, 0] = (right + left) / float(right - left)
-    M[1, 1] = +2.0 * znear / (top - bottom)
-    M[3, 1] = (top + bottom) / float(top - bottom)
+    M[1, 1] = +2.0 * znear / float(top - bottom)
+    M[2, 1] = (top + bottom) / float(top - bottom)
     M[2, 2] = -(zfar + znear) / float(zfar - znear)
-    M[3, 2] = -2.0 * znear * zfar / (zfar - znear)
+    M[3, 2] = -2.0 * znear * zfar / float(zfar - znear)
     M[2, 3] = -1.0
     return M
 
