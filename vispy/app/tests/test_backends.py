@@ -51,12 +51,13 @@ def _test_module_properties(_module=None):
         '_vispy_get_native_canvas',
         '_vispy_get_native_timer',
         '_vispy_get_native_app',
+        '_vispy_reuse',
         '_vispy_mouse_move',
         '_vispy_mouse_press',
         '_vispy_mouse_release',
         '_vispy_get_geometry',
         '_process_backend_kwargs')  # defined in base class
-    
+
     class KlassRef(vispy.app.base.BaseCanvasBackend):
         def __init__(self, *args, **kwargs):
             pass  # Do not call the base class, since it will check for Canvas
@@ -135,7 +136,7 @@ def test_template():
     for method in (a._vispy_process_events, a._vispy_run, a._vispy_quit,
                    a._vispy_get_native_app):
         assert_raises(NotImplementedError, method)
-    
+
     class TemplateCanvasBackend(_template.CanvasBackend):
         def __init__(self, *args, **kwargs):
             pass  # Do not call the base class, since it will check for Canvas
