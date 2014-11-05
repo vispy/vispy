@@ -185,11 +185,12 @@ class CanvasBackend(BaseCanvasBackend):
             self._reinit_widget()
 
     def _vispy_update(self):
-        if self._vispy_canvas is None:
-            return
-        self._context.set_current()
         ioloop = tornado.ioloop.IOLoop.current()
-        ioloop.add_callback(self._vispy_canvas.events.draw)
+        ioloop.add_callback(self._draw_event)
+
+    def _draw_event(self):
+        self._context.set_current()
+        self._vispy_canvas.events.draw()
 
     def _vispy_close(self):
         raise NotImplementedError()
