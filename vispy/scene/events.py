@@ -17,7 +17,11 @@ class SceneEvent(Event, TransformSystem):
 
     def __init__(self, type, canvas, transform_cache=None):
         Event.__init__(self, type=type)
-        TransformSystem.__init__(self, canvas)
+        
+        # Note that we are completely replacing the TransformSystem.__init__
+        # implementation.
+        self._canvas = canvas
+        self._dpi = canvas.dpi
 
         # Init stacks
         self._stack = []  # list of entities

@@ -86,8 +86,7 @@ def arg_to_vec4(func, self, arg, *args, **kwds):
 
 
 class TransformCache(object):
-    """ Utility class for managing a cache of transforms that map along an
-    Node path.
+    """ Utility class for managing a cache of ChainTransforms.
 
     This is an LRU cache; items are removed if they are not accessed after
     *max_age* calls to roll().

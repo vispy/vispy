@@ -148,36 +148,17 @@ class DataBuffer(Buffer):
         Byte offset of this buffer relative to base buffer
     """
 
-    def __init__(self, data=None, dtype=None, size=0):
+    def __init__(self, data=None):
         self._size = 0  # number of elements in buffer, set in resize_bytes()
-        
-        # Convert data to array+dtype if needed
-        if data is not None:
-            nbytes = None
-            data_type = data.__class__.__name__
-            if dtype is not None:
-                data = np.array(data, dtype=dtype, copy=False)
-            else:
-                data = np.array(data, copy=False)
-            # Check whether the given data turned up a sensible array
-            if not data.strides:
-                raise ValueError("Cannot turn %r ob into a buffer" % data_type)
-
-        # Create buffer from dtype and size
-        elif dtype is not None:
-            self._dtype = np.dtype(dtype)
-            self._stride = self._dtype.itemsize
-            self._itemsize = self._dtype.itemsize
-            nbytes = size * self._itemsize
-
-        # We need a minimum amount of information
-        else:
-            raise ValueError("data/dtype/base cannot be all set to None")
-        
-        Buffer.__init__(self, data=data, nbytes=nbytes)
+        self._dtype = None
+        self._stride = 0
+        self._itemsize = 0
+        Buffer.__init__(self, data)
     
     def _prepare_data(self, data):
         # Needs to be overrriden
+        if not isinstance(data, np.ndarray):
+            raise TypeError("DataBuffer data must be numpy array.")
         return data
 
     def set_subdata(self, data, offset=0, copy=False, **kwds):
@@ -200,8 +181,6 @@ class DataBuffer(Buffer):
             data is actually uploaded to GPU memory.
             Asking explicitly for a copy will prevent this behavior.
         """
-        if not isinstance(data, np.ndarray):
-            raise ValueError('Data must be a ndarray')
         data = self._prepare_data(data, **kwds)
         
         self._dtype = data.dtype
@@ -426,41 +405,14 @@ class VertexBuffer(DataBuffer):
     
     _GLIR_TYPE = 'VertexBuffer'
 
-    def __init__(self, data=None, dtype=None, size=0):
-
-        if isinstance(data, (list, tuple)):
-            data = np.array(data, np.float32)
-
-        # Make data structured. This makes things more consistent; our data
-        # is always consistent (AK: at least, that is why I *think* this is)
-        if dtype is not None:
-            dtype = np.dtype(dtype)
-            if dtype.isbuiltin:
-                dtype = np.dtype([('f0', dtype, 1)])
-
-        DataBuffer.__init__(self, data=data, dtype=dtype, size=size)
-
-        # Check base type and count for each dtype fields (if buffer is a base)
-        for name in self.dtype.names:
-            btype = self.dtype[name].base
-            if len(self.dtype[name].shape):
-                count = 1
-                s = self.dtype[name].shape
-                for i in range(len(s)):
-                    count *= s[i]
-                #count = reduce(mul, self.dtype[name].shape)
-            else:
-                count = 1
-            if btype not in [np.int8,  np.uint8,  np.float16,
-                             np.int16, np.uint16, np.float32]:
-                msg = ("Data basetype %r not allowed for Buffer/%s"
-                       % (btype, name))
-                raise TypeError(msg)
-
     def _prepare_data(self, data, convert=False):
         # Build a structured view of the data if:
         #  -> it is not already a structured array
         #  -> shape if 1-D or last dimension is 1,2,3 or 4
+        if isinstance(data, list):
+            data = np.array(data, dtype=np.float32)
+        if not isinstance(data, np.ndarray):
+            raise ValueError('Data must be a ndarray (got %s)' % type(data))
         if data.dtype.isbuiltin:
             if convert is True and data.dtype is not np.float32:
                 data = data.astype(np.float32)
@@ -504,25 +456,20 @@ class IndexBuffer(DataBuffer):
     """
     
     _GLIR_TYPE = 'IndexBuffer'
-    
-    def __init__(self, data=None, dtype=None, size=0):
-
-        if dtype and not np.dtype(dtype).isbuiltin:
-            raise TypeError("IndexBuffer dtype cannot be structured")
-
-        if isinstance(data, np.ndarray):
-            pass
-        elif dtype is None:
-            dtype = np.uint32  # Default value if data not given
-        elif dtype not in [np.uint8, np.uint16, np.uint32]:
-            raise TypeError("Data type not allowed for IndexBuffer")
-
-        DataBuffer.__init__(self, data=data, dtype=dtype, size=size)
 
     def _prepare_data(self, data, convert=False):
+        if isinstance(data, list):
+            data = np.array(data, dtype=np.uint32)
+        if not isinstance(data, np.ndarray):
+            raise ValueError('Data must be a ndarray (got %s)' % type(data))
         if not data.dtype.isbuiltin:
             raise TypeError("Element buffer dtype cannot be structured")
         else:
-            if convert and data.dtype is not np.uint32:
-                data = data.astype(np.uint32)
+            if convert:
+                if data.dtype is not np.uint32:
+                    data = data.astype(np.uint32)
+            else:
+                if data.dtype not in [np.uint32, np.uint16, np.uint8]:
+                    raise TypeError("Invalid dtype for IndexBuffer: %r" %
+                                    data.dtype)
         return data

@@ -24,7 +24,7 @@ from ..color import Color
 vertex_template = """
 
 void main() {
-   gl_Position = $transform($position);
+   gl_Position = $transform($to_vec4($position));
 }
 """
 
@@ -98,7 +98,7 @@ class MeshVisual(Visual):
         self._normal_var = Varying('v_normal', dtype='vec3')
 
         # Function for computing phong shading
-        self._phong = None
+        self._phong = Function(phong_template)
 
         # Init
         self.shading = shading
@@ -119,6 +119,28 @@ class MeshVisual(Visual):
         if color is not None:
             self._color = Color(color).rgba
         self.mesh_data_changed()
+
+    @property
+    def mode(self):
+        """The triangle mode used to draw this mesh.
+        
+        Options are:
+        
+        * 'triangles': Draw one triangle for every three vertices (eg, [1,2,3],
+          [4,5,6], [7,8,9)
+        * 'triangle_strip': Draw one strip for every vertex excluding the first
+          two (eg, [1,2,3], [2,3,4], [3,4,5])
+        * 'triangle_fan': Draw each triangle from the first vertex and the last
+          two vertices (eg, [1,2,3], [1,3,4], [1,4,5])
+        """
+        return self._mode
+    
+    @mode.setter
+    def mode(self, m):
+        modes = ['triangles', 'triangle_strip', 'triangle_fan']
+        if m not in modes:
+            raise ValueError("Mesh mode must be one of %s" % ', '.join(modes))
+        self._mode = m
 
     @property
     def mesh_data(self):
@@ -165,11 +187,13 @@ class MeshVisual(Visual):
             else:
                 self._colors.set_data(np.zeros((0, 4), dtype=np.float32))
 
+        self._program.vert['position'] = self._vertices
+        
         # Position input handling
         if v.shape[-1] == 2:
-            self._program.vert['position'] = vec2to4(self._vertices)
+            self._program.vert['to_vec4'] = vec2to4
         elif v.shape[-1] == 3:
-            self._program.vert['position'] = vec3to4(self._vertices)
+            self._program.vert['to_vec4'] = vec3to4
         else:
             raise TypeError("Vertex data must have shape (...,2) or (...,3).")
 
@@ -180,10 +204,7 @@ class MeshVisual(Visual):
         # Shading
         if self.shading is None:
             self._program.frag['color'] = self._color_var
-            self._phong = None
         else:
-            self._phong = Function(phong_template)
-
             # Normal data comes via vertex shader
             if self._normals.size > 0:
                 normals = self._normals
@@ -221,9 +242,8 @@ class MeshVisual(Visual):
 
         full_tr = transforms.get_full_transform()
         self._program.vert['transform'] = full_tr
-        if self._phong is not None:
-            doc_tr = transforms.visual_to_document
-            self._phong['transform'] = doc_tr
+        doc_tr = transforms.visual_to_document
+        self._phong['transform'] = doc_tr
 
         # Draw
         if self._indexed:

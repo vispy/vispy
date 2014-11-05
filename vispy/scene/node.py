@@ -5,7 +5,8 @@
 from __future__ import division
 
 from ..util.event import Event
-from ..visuals.transforms import NullTransform, BaseTransform, create_transform
+from ..visuals.transforms import (NullTransform, BaseTransform, 
+                                  ChainTransform, create_transform)
 from ..visuals import Visual
 
 
@@ -264,30 +265,61 @@ class Node(Visual):
                 return p
         return None
         
-    def node_transform(self, node):
-        """
-        Return the transform that maps from the coordinate system of
-        *node* to the local coordinate system of *self*.
+    def node_path(self, node):
+        """Return two lists describing the path from this node to another. 
+        
+        The first list starts with this node and ends with the common parent
+        between the endpoint nodes. The second list contains the remainder of
+        the path from the common parent to the specified ending node.
+        
+        For example, consider the following scenegraph::
+        
+            A --- B --- C --- D
+                   \
+                    --- E --- F
+        
+        Calling `D.node_path(F)` will return::
+        
+            ([D, C, B], [E, F])
         
         Note that there must be a _single_ path in the scenegraph that connects
         the two entities; otherwise an exception will be raised.        
         """
-        cp = self.common_parent(node)
-        # First map from node to common parent
-        tr = NullTransform()
+        p1 = self._parent_chain()
+        p2 = node._parent_chain()
+        cp = None
+        for p in p1:
+            if p in p2:
+                cp = p
+                break
+        if cp is None:
+            raise RuntimeError("No single-path common parent between nodes %s "
+                               "and %s." % (self, node))
         
-        while node is not cp:
-            if node.transform is not None:
-                tr = node.transform * tr
-            
-            node = node.parent
+        p1 = p1[:p1.index(cp)+1]
+        p2 = p2[:p2.index(cp)][::-1]
+        return p1, p2
         
-        if node is self:
-            return tr
+    def node_path_transforms(self, node):
+        """Return the list of transforms along the path to another node.
         
-        # Now map from common parent to self
-        tr2 = cp.node_transform(self)
-        return tr2.inverse * tr
+        The transforms are listed in reverse order, such that the last 
+        transform should be applied first when mapping from this node to 
+        the other.
+        """
+        a, b = self.node_path(node)
+        return ([n.transform.inverse for n in b] + 
+                [n.transform for n in a[:-1]])[::-1]
+        
+    def node_transform(self, node):
+        """
+        Return the transform that maps from the coordinate system of
+        *self* to the local coordinate system of *node*.
+        
+        Note that there must be a _single_ path in the scenegraph that connects
+        the two entities; otherwise an exception will be raised.        
+        """
+        return ChainTransform(self.node_path_transforms(node))
         
     def __repr__(self):
         name = "" if self.name is None else " name="+self.name

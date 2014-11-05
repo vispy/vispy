@@ -124,7 +124,7 @@ class ProgramTest(unittest.TestCase):
         assert len(program.variables) == 2
         
         from vispy.gloo import VertexBuffer
-        vbo = VertexBuffer(dtype=np.float32)
+        vbo = VertexBuffer()
         
         # Set existing uniforms
         program['A'] = vbo
@@ -212,7 +212,7 @@ class ProgramTest(unittest.TestCase):
             assert len(glir_cmd[-1]) == 2
             
             # Draw elements
-            indices = gloo.IndexBuffer()
+            indices = gloo.IndexBuffer(np.zeros(10, dtype=np.uint8))
             program.draw('triangles', indices)
             glir_cmd = program._context.glir.clear()[-1]
             assert glir_cmd[0] == 'DRAW'

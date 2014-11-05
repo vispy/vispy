@@ -10,7 +10,7 @@ RegularPolygonVisual visual based on EllipseVisual
 from __future__ import division
 
 from ..color import Color
-from .ellipse import EllipseVisual, MeshVisual, LineVisual
+from .ellipse import EllipseVisual
 
 
 class RegularPolygonVisual(EllipseVisual):
@@ -35,6 +35,7 @@ class RegularPolygonVisual(EllipseVisual):
     def __init__(self, pos=None, color='black', border_color=None,
                  radius=0.1, sides=4, **kwds):
         super(EllipseVisual, self).__init__()
+        self.mesh.mode = 'triangle_fan'
         self._pos = pos
         self._color = Color(color)
         self._border_color = Color(border_color)
@@ -57,14 +58,18 @@ class RegularPolygonVisual(EllipseVisual):
         self._update()
 
     def _update(self):
-        if self._pos is not None:
-            self._generate_vertices(pos=self._pos, radius=self._radius,
-                                    start_angle=0.,
-                                    span_angle=360.,
-                                    num_segments=self._sides)
-            self.mesh = MeshVisual(vertices=self._vertices, 
-                                   color=self._color.rgba,
-                                   mode='triangle_fan')
-            if not self._border_color.is_blank():
-                self.border = LineVisual(pos=self._vertices[1:],
-                                         color=self._border_color.rgba)
+        if self._pos is None:
+            return
+        self._generate_vertices(pos=self._pos, radius=self._radius,
+                                start_angle=0.,
+                                span_angle=360.,
+                                num_segments=self._sides)
+        
+        if not self._color.is_blank():
+            self.mesh.set_data(vertices=self._vertices, 
+                               color=self._color.rgba)
+        if not self._border_color.is_blank():
+            self.border.set_data(pos=self._vertices[1:],
+                                 color=self._border_color.rgba)
+
+        self.update()

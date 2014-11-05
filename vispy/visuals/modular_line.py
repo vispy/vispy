@@ -5,9 +5,9 @@ class ModularLine(ModularVisual):
     """
     Displays multiple line segments.
     """
-    def __init__(self, parent=None, pos=None, color=None, z=0.0,
+    def __init__(self, pos=None, color=None, z=0.0,
                  mode='line_strip', **kwds):
-        super(ModularLine, self).__init__(parent=parent, **kwds)
+        super(ModularLine, self).__init__(**kwds)
 
         glopts = kwds.pop('gl_options', 'translucent')
         self.set_gl_options(glopts)

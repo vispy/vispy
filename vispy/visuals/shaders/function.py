@@ -394,9 +394,14 @@ class Function(ShaderObject):
                     # Setting value on existing Variable failed for some
                     # reason; will need to create a new Variable instead. 
                     pass
-        
-        #print("SET: %s[%s] = %s => %s" % 
-        #     (self, key, storage.get(key, None), val))
+            
+            # Could not set variable.value directly; instead we will need
+            # to create a new ShaderObject
+            val = ShaderObject.create(val, ref=key)
+            if variable is val:
+                # This can happen if ShaderObject.create returns the same 
+                # object (such as when setting a Transform).
+                return
         
         # Remove old references, if any
         oldval = storage.pop(key, None)
@@ -407,7 +412,6 @@ class Function(ShaderObject):
 
         # Add new references
         if val is not None:
-            val = ShaderObject.create(val, ref=key)
             if isinstance(key, Varying):
                 # tell this varying to inherit properties from 
                 # its source attribute / expression.
@@ -426,6 +430,12 @@ class Function(ShaderObject):
                     self.template_vars.add(var.lstrip('$'))
         
         self.changed(code_changed=True, value_changed=True)
+        if logger.level >= 10:
+            import traceback
+            last = traceback.format_list(traceback.extract_stack()[-2:-1])
+            logger.debug("Assignment would trigger shader recompile:\n"
+                         "Original:\n%r\nReplacement:\n%r\nSource:\n%s", 
+                         oldval, val, ''.join(last))
     
     def __getitem__(self, key):
         """ Return a reference to a program variable from this function.

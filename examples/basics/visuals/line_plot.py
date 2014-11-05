@@ -25,12 +25,12 @@ class Canvas(app.Canvas):
                                            face_color=(0.2, 0.2, 1))
         app.Canvas.__init__(self, keys='interactive',
                             size=(800, 800), show=True)
+        self.tr_sys = visuals.transforms.TransformSystem(self)
 
     def on_draw(self, event):
         gloo.clear('black')
         gloo.set_viewport(0, 0, *self.size)
-        tr_sys = visuals.transforms.TransformSystem(self)
-        self.line.draw(tr_sys)
+        self.line.draw(self.tr_sys)
 
 
 if __name__ == '__main__':

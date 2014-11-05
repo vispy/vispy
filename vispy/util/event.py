@@ -434,13 +434,6 @@ class EventEmitter(object):
         try:
             cb(event)
         except Exception:
-            # get traceback and store (so we can do postmortem
-            # debugging)
-            #import pdb
-            #import PyQt4
-            #PyQt4.QtCore.pyqtRemoveInputHook()
-            #pdb.post_mortem()
-            #PyQt4.QtCore.pyqtRestoreInputHook()
             _handle_exception(self.ignore_callback_errors,
                               self.print_callback_errors,
                               self, cb_event=(cb, event))
