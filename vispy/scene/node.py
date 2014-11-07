@@ -10,6 +10,7 @@ from ..visuals.transforms import (NullTransform, BaseTransform,
 from ..visuals import Visual
 
 
+# todo: I though the visuals were mixed, but the base Node was *not* a visual?
 class Node(Visual):
     """ Base class representing an object in a scene.
 
@@ -39,7 +40,8 @@ class Node(Visual):
         
         # Add some events to the emitter groups:
         events = ['parents_change', 'children_change', 'transform_change',
-                  'mouse_press', 'mouse_move', 'mouse_release', 'mouse_wheel']
+                  'mouse_press', 'mouse_move', 'mouse_release', 'mouse_wheel', 
+                  'key_press', 'key_release']
         self.events.add(**dict([(ev, Event) for ev in events]))
         
         self.name = name

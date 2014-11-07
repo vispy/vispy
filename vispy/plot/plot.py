@@ -41,6 +41,7 @@ def image(*args, **kwds):
     return canvas
 
 
+# todo: deal with new camera model once we've got it figured out
 def mesh(vertices=None, faces=None, vertex_colors=None, face_colors=None,
          color=(0.5, 0.5, 1.), fname=None, meshdata=None, shading='smooth',
          center=(0., 0., 0.), distance=1., azimuth=0., elevation=0.):
@@ -93,8 +94,7 @@ def mesh(vertices=None, faces=None, vertex_colors=None, face_colors=None,
         meshdata = MeshData(vertices, faces)
     canvas = SceneCanvas(keys='interactive')
     canvas.view = canvas.central_widget.add_view()
-    canvas.view.set_camera('turntable', mode='perspective',
-                           center=center, distance=distance, azimuth=azimuth,
+    canvas.view.set_camera('turntable', fov=60, azimuth=azimuth,
                            elevation=elevation)
     canvas.mesh = visuals.Mesh(meshdata=meshdata,
                                vertex_colors=vertex_colors,

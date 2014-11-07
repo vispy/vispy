@@ -43,7 +43,7 @@ class SceneEvent(Event, TransformSystem):
         drawing / mouse systems to handle them automatically) may append nodes
         to this list to prevent systems from handling them.
         """
-        return self._handled_children[-1]
+        return self._handled_children
 
     @property
     def canvas(self):
@@ -173,7 +173,7 @@ class SceneEvent(Event, TransformSystem):
         """ The node at the top of the node stack.
         """
         return self._stack[-1]
-
+    
     @property
     def visual_to_canvas(self):
         """ Transform mapping from visual local coordinate frame to canvas
@@ -189,7 +189,7 @@ class SceneEvent(Event, TransformSystem):
         """
         return self.node_transform(map_to=self.document_cs, 
                                    map_from=self._stack[-1])
-        
+    
     @visual_to_document.setter
     def visual_to_document(self, tr):
         raise RuntimeError("Cannot set transforms on SceneEvent.")
@@ -270,8 +270,8 @@ class SceneEvent(Event, TransformSystem):
             rev_path = []
         else:
             # If we have still not reached the end, try traversing from the
-            # opposite end
-            rev_path = self._node_path(map_to, map_from)
+            # opposite end. Note the reversed order of start and end
+            rev_path = self._node_path(start=map_to, end=map_from)
             if rev_path[-1] is map_from:
                 fwd_path = []
                 rev_path = rev_path[:-1]

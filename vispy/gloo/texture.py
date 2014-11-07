@@ -147,16 +147,17 @@ class BaseTexture(GLObject):
     def wrapping(self, value):
         # Convert
         if isinstance(value, int) or isinstance(value, string_types):
-            value = (value,) * 2
+            value = (value,) * self._ndim
         elif isinstance(value, (tuple, list)):
-            if len(value) != 2:
-                raise ValueError('Texture wrapping needs 1 or 2 values')
+            if len(value) != self._ndim:
+                raise ValueError('Texture wrapping needs 1 or %i values' %
+                                 self._ndim)
         else:
             raise ValueError('Invalid value for wrapping: %r' % value)
         # Check and set
         valid = 'repeat', 'clamp_to_edge', 'mirrored_repeat'
-        value = (check_enum(value[0], 'tex wrapping', valid), 
-                 check_enum(value[1], 'tex wrapping', valid))
+        value = tuple([check_enum(value[i], 'tex wrapping', valid)
+                       for i in range(self._ndim)])
         self._wrapping = value
         self._glir.command('WRAPPING', self._id, value)
     

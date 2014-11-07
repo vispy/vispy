@@ -85,12 +85,14 @@ class GlirQueue(object):
     
     def set_verbose(self, verbose):
         """ Set verbose or not. If True, the GLIR commands are printed
-        right before they get parsed.
+        right before they get parsed. If a string is given, use it as
+        a filter.
         """
         self._verbose = verbose
     
-    def show(self):
-        """ Print the list of commands currently in the queue.
+    def show(self, filter=None):
+        """ Print the list of commands currently in the queue. If filter is
+        given, print only commands that match the filter.
         """
         # Show commands in associated queues
         for q in self._associations:
@@ -99,6 +101,8 @@ class GlirQueue(object):
         for command in self._commands:
             if command[0] is None:  # or command[1] in self._invalid_objects:
                 continue  # Skip nill commands 
+            if filter and command[0] != filter:
+                continue
             t = []
             for e in command:
                 if isinstance(e, np.ndarray):
@@ -166,7 +170,8 @@ class GlirQueue(object):
 #         if self._parser is None:
 #             raise RuntimeError('Cannot flush queue if parser is None')
         if self._verbose:
-            self.show()
+            show = self._verbose if isinstance(self._verbose, str) else None
+            self.show(show)
         parser.parse(self._filter(self.clear(), parser))
     
     def _filter(self, commands, parser):

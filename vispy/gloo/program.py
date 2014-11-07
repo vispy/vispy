@@ -257,6 +257,11 @@ class Program(GLObject):
         data as a VertexBuffer object or a numpy array which is used
         to update the existing VertexBuffer. A new VertexBuffer is
         created if necessary.
+        
+        By passing None as data, the uniform or attribute can be
+        "unregistered". This can be useful to get rid of variables that
+        are no longer present or active in the new source code that is
+        about to be set.
         """
         
         # Deal with local buffer storage (see count argument in __init__)
@@ -264,6 +269,12 @@ class Program(GLObject):
             if name in self._buffer.dtype.names:
                 self._buffer[name] = data
                 return
+        
+        # Delete?
+        if data is None:
+            self._user_variables.pop(name, None)
+            self._pending_variables.pop(name, None)
+            return
         
         if name in self._code_variables:
             kind, type, name = self._code_variables[name]

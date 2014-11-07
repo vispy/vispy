@@ -65,7 +65,7 @@ class ViewBox(Widget):
         if camera is None:
             camera = 'panzoom'
         if isinstance(camera, string_types):
-            self.camera = make_camera(camera)
+            self.camera = make_camera(camera, parent=self.scene)
         elif isinstance(camera, BaseCamera):
             self.camera = camera
         else:
@@ -79,17 +79,40 @@ class ViewBox(Widget):
     
     @camera.setter
     def camera(self, cam):
+        # Convenience: if an orphan, make it a child of our scene
+        if not isinstance(cam, BaseCamera):
+            raise ValueError('Not a camera object.')
+        if cam.parent is None:
+            cam.parent = self.scene
+        else:
+            pass  # todo: test we are an ancestor of the camera
         if self._camera is not None:
-            self._camera.viewbox = None
+            self._camera.disconnect()
         self._camera = cam
-        cam.viewbox = self
-        
+        self._camera.connect()
+        cam.view_changed()
+    
+    # todo: we could also merge this with the camera property: .camera = 'fly'
     def set_camera(self, cam_type, *args, **kwds):
-        """ Create a new Camera and attach it to this ViewBox. 
+        """ Select camera and attach it to this ViewBox
+         
+        If a camera of the given type already exists in the scene, that
+        camera is used. Otherwise it is create.
         
         See :func:`make_camera` for arguments.
         """
-        self.camera = make_camera(cam_type, *args, **kwds)
+        # First try to select an existing camera
+        for child in self.scene.children:
+            if isinstance(child, BaseCamera):
+                this_cam_type = child.__class__.__name__.lower()[:-6]
+                if this_cam_type == cam_type:
+                    self.camera = child
+                    break
+        else:
+            # Ok, create it then
+            kwds['parent'] = self.scene
+            self.camera = make_camera(cam_type, *args, **kwds)
+        
         return self.camera
 
     @property

@@ -47,11 +47,16 @@ class ModularProgram(Program):
         self.changed()
     
     def draw(self, *args, **kwargs):
+        self.build_if_needed()
+        Program.draw(self, *args, **kwargs)
+    
+    def build_if_needed(self):
+        """ Reset shader source if necesssary.
+        """
         if self._need_build:
             self._build()
             self._need_build = False
         self.update_variables()
-        Program.draw(self, *args, **kwargs)
     
     def _build(self):
         logger.debug("Rebuild ModularProgram: %s", self)

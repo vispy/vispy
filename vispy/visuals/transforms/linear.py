@@ -425,13 +425,21 @@ class PerspectiveTransform(AffineTransform):
     glsl_map = """
         vec4 perspective_transform_map(vec4 pos) {
             vec4 p = $matrix * pos;
-            p = p / p.w;
-            //p.z = 0;
-            p.w = 1;
+            p = p / max(p.w, 0.0000001);
+            p.w = 1.0;
             return p;
         }
     """
-
+    
+    glsl_imap = """
+        vec4 perspective_transform_imap(vec4 pos) {
+            vec4 p = $inv_matrix * pos;
+            p /= min(p.w, -0.0000001);;
+            p.w = 1.0;
+            return p;
+        }
+    """
+    
     ## Note 2: Are perspective matrices invertible??
     #glsl_imap = """
     #    vec4 perspective_transform_imap(vec4 pos) {

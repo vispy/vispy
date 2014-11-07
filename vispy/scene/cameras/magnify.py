@@ -34,7 +34,13 @@ class MagnifyCamera(PanZoomCamera):
         # ratio of inner to outer lens radius
         self.radius_ratio = radius_ratio
         
-        # Create the mag transform
+        # Extract kwargs for panzoom
+        camkwargs = {}
+        for key in ('parent', 'name'):
+            if key in kwds:
+                camkwargs[key] = kwds.pop(key)
+        
+        # Create the mag transform - kwrds go here
         self.mag = self.transform_class(**kwds)
         
         # for handling smooth transitions
@@ -43,7 +49,7 @@ class MagnifyCamera(PanZoomCamera):
         self.mouse_pos = None
         self.timer = Timer(interval=0.016, connect=self.on_timer)
         
-        super(MagnifyCamera, self).__init__()
+        super(MagnifyCamera, self).__init__(**camkwargs)
 
         # This tells the camera to insert the magnification transform at the
         # beginning of the transform it applies to the scene. This is the 

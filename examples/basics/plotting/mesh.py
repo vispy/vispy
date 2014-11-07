@@ -15,7 +15,7 @@ import vispy.plot as vp
 
 fname = load_data_file('orig/triceratops.obj.gz')
 
-canvas = vp.mesh(fname=fname, azimuth=-0, elevation=90, distance=2)
+canvas = vp.mesh(fname=fname, azimuth=-0, elevation=90)
 
 vertex_colors = np.random.rand(canvas.mesh.mesh_data.n_vertices, 3) ** 2
 canvas.mesh.mesh_data.set_vertex_colors(vertex_colors)
