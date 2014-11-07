@@ -34,7 +34,9 @@ coordinate systems:
     
 The user specifies the position and size of the rectangle in Visual 
 coordinates, and in [tutorial 1] we used the vertex shader to convert directly
-from Visual coordinates to render coordinates.
+from Visual coordinates to render coordinates. In this tutorial we will
+convert first to document coordinates, then make the adjustment for the border
+width, then convert the remainder of the way to render coordinates.
 
 Let's say, for example that the user specifies the box width to be 20, and the 
 border width to be 5. To draw the border correctly, we cannot simply 

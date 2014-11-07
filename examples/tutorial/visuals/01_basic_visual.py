@@ -62,6 +62,10 @@ class MyRectVisual(visuals.Visual):
         width of rectangle
     h : float
         height of rectangle
+        
+    All parameters are specified in the local (arbitrary) coordinate system of
+    the visual. How this coordinate system translates to the canvas will 
+    depend on the transformation functions used during drawing.
     """
     
     # There are no constraints on the signature of the __init__ method; use
