@@ -493,8 +493,6 @@ class PerspectiveTransform(BaseTransform):
         fn['p_factor'] = self._persp_factor  # float
         return fn
 
-
-
     #def set_frustum(self, l, r, b, t, n, f):
         #self.matrix = transforms.frustum(l, r, b, t, n, f)
 
