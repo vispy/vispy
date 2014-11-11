@@ -74,23 +74,23 @@ class Canvas(object):
     parent : widget-object
         The parent widget if this makes sense for the used backend.
     dpi : float | None
-        Resolution in dots-per-inch to use for the canvas. If dpi is None, 
+        Resolution in dots-per-inch to use for the canvas. If dpi is None,
         then the value will be determined by querying the global config first,
         and then the operating system.
     """
-    
+
     def __init__(self, title='Vispy canvas', size=(800, 600), position=None,
                  show=False, autoswap=True, app=None, create_native=True,
                  vsync=False, resizable=True, decorate=True, fullscreen=False,
                  context=None, keys=None, parent=None, dpi=None):
-        
+
         size = [int(s) for s in size]
         if len(size) != 2:
             raise ValueError('size must be a 2-element list')
         title = str(title)
         if not isinstance(fullscreen, (bool, int)):
             raise TypeError('fullscreen must be bool or int')
-        
+
         # Initialize some values
         self._autoswap = autoswap
         self._title = title
@@ -100,7 +100,7 @@ class Canvas(object):
         self._fps_callback = None
         self._backend = None
         self._closed = False
-        
+
         if dpi is None:
             dpi = config['dpi']
         if dpi is None:
@@ -130,17 +130,17 @@ class Canvas(object):
                                  event_class=DrawEvent)
         self.events.add(paint=emitter)
         self.events.draw.connect(self.events.paint)
-        
+
         # Get app instance
         if app is None:
-            self._app = use_app()
+            self._app = use_app(call_reuse=False)
         elif isinstance(app, Application):
             self._app = app
         elif isinstance(app, string_types):
             self._app = Application(app)
         else:
             raise ValueError('Invalid value for app %r' % app)
-        
+
         # Ensure context is a GLContext object
         context = context or {}
         if isinstance(context, dict):
@@ -150,16 +150,16 @@ class Canvas(object):
             raise TypeError('context must be a dict or GLContext from '
                             'a Canvas with the same backend, not %s'
                             % type(context))
-        
+
         # Deal with special keys
         self._set_keys(keys)
-        
+
         # store arguments that get set on Canvas init
         kwargs = dict(title=title, size=size, position=position, show=show,
                       vsync=vsync, resizable=resizable, decorate=decorate,
                       fullscreen=fullscreen, context=context, parent=parent)
         self._backend_kwargs = kwargs
-        
+
         # Create widget now (always do this *last*, after all err checks)
         if create_native:
             self.create_native()
@@ -177,9 +177,9 @@ class Canvas(object):
         assert self._app.native
         # Instantiate the backend with the right class
         self._app.backend_module.CanvasBackend(self, **self._backend_kwargs)
-        # self._backend = set by BaseCanvasBackend 
+        # self._backend = set by BaseCanvasBackend
         self._backend_kwargs = None  # Clean up
-        
+
         # Connect to draw event (append to the end)
         # Process GLIR commands at each paint event
         self.events.draw.connect(self.context.glir.flush, position='last')
@@ -241,13 +241,13 @@ class Canvas(object):
         """ The native widget object on which this Canvas is based.
         """
         return self._backend._vispy_get_native_canvas()
-    
+
     @property
     def dpi(self):
-        """ The physical resolution of the canvas in dots per inch. 
+        """ The physical resolution of the canvas in dots per inch.
         """
         return self._dpi
-    
+
     @dpi.setter
     def dpi(self, dpi):
         self._dpi = float(dpi)
@@ -334,9 +334,9 @@ class Canvas(object):
 
     def update(self, event=None):
         """ Inform the backend that the Canvas needs to be redrawn
-        
+
         This method accepts an optional ``event`` argument so it can be used
-        as an event handler (the argument is ignored). 
+        as an event handler (the argument is ignored).
         """
         if self._backend is not None:
             return self._backend._vispy_update()
@@ -372,7 +372,7 @@ class Canvas(object):
         """Measure the current FPS
 
         Sets the update window, connects the draw event to update_fps
-        and sets the callback function. 
+        and sets the callback function.
 
         Parameters
         ----------

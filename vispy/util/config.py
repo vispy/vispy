@@ -29,25 +29,25 @@ def _init():
     """ Create global Config object, parse command flags
     """
     global config, _data_path, _allowed_config_keys
-    
+
     _data_path = _get_vispy_app_dir()
     if _data_path is not None:
         _data_path = op.join(_data_path, 'data')
 
     # All allowed config keys and the types they may have
     _allowed_config_keys = {
-        'data_path': string_types, 
+        'data_path': string_types,
         'default_backend': string_types,
         'gl_backend': string_types,
-        'gl_debug': (bool,), 
+        'gl_debug': (bool,),
         'logging_level': string_types,
-        'qt_lib': string_types, 
+        'qt_lib': string_types,
         'dpi': (int, type(None)),
     }
 
     # Default values for all config options
     default_config_options = {
-        'data_path': _data_path, 
+        'data_path': _data_path,
         'default_backend': '',
         'gl_backend': 'desktop',
         'gl_debug': False,
@@ -77,26 +77,26 @@ VisPy command line arguments:
   --vispy-backend=(qt|pyqt|pyside|glut|glfw|pyglet)
     Selects the backend system for VisPy to use. This will override the default
     backend selection in your configuration file.
-    
+
   --vispy-log=(debug|info|warning|error|critical)[,search string]
     Sets the verbosity of logging output. The default is 'warning'. If a search
     string is given, messages will only be displayed if they match the string,
-    or if their call location (module.class:method(line) or 
-    module:function(line)) matches the string.    
-    
+    or if their call location (module.class:method(line) or
+    module:function(line)) matches the string.
+
   --vispy-dpi=resolution
-    Force the screen resolution to a certain value (in pixels per inch). By 
+    Force the screen resolution to a certain value (in pixels per inch). By
     default, the OS is queried to determine the screen DPI.
-    
+
   --vispy-fps
     Print the framerate (in Frames Per Second) in the console.
-    
+
   --vispy-gl-debug
     Enables error checking for all OpenGL calls.
 
   --vispy-profile
     Enable profiling and print the results when the program exits.
-    
+
   --vispy-help
     Display this help message.
 
@@ -365,7 +365,7 @@ def sys_info(fname=None, overwrite=False):
         from ..testing import has_backend
         # get default app
         with use_log_level('warning'):
-            app = use_app()  # suppress messages
+            app = use_app(call_reuse=False)  # suppress messages
         out += 'Platform: %s\n' % platform.platform()
         out += 'Python:   %s\n' % str(sys.version).replace('\n', ' ')
         out += 'Backend:  %s\n' % app.backend_name

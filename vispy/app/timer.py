@@ -31,7 +31,7 @@ class Timer(object):
         The application to attach the timer to.
     """
 
-    def __init__(self, interval='auto', connect=None, iterations=-1, 
+    def __init__(self, interval='auto', connect=None, iterations=-1,
                  start=False, app=None):
         self.events = EmitterGroup(source=self,
                                    start=Event,
@@ -42,20 +42,20 @@ class Timer(object):
 
         # Get app instance
         if app is None:
-            self._app = use_app()
+            self._app = use_app(call_reuse=False)
         elif isinstance(app, Application):
             self._app = app
         elif isinstance(app, string_types):
             self._app = Application(app)
         else:
             raise ValueError('Invalid value for app %r' % app)
-        
+
         # Ensure app has backend app object
         self._app.native
-        
+
         # Instantiate the backed with the right class
         self._backend = self._app.backend_module.TimerBackend(self)
-        
+
         if interval == 'auto':
             interval = 1.0 / 60
         self._interval = float(interval)

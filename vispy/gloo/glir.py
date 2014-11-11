@@ -47,7 +47,16 @@ class GlirQueue(object):
         self._invalid_objects = set()
         self._verbose = False
         # todo: allow different kind of parsers, like a parser that sends to JS
-    
+
+    @property
+    def parser(self):
+        """The GLIR parser associated to that queue."""
+        return self._parser
+
+    @parser.setter
+    def parser(self, parser):
+        self._parser = parser
+
     def is_remote(self):
         """ Get whether the GLIR commands are processed in this process
         or remotely. In the latter case, gloo.gl cannot be used directly.
@@ -143,14 +152,16 @@ class GlirQueue(object):
                         has_prec_int = has_prec_int or 'int' in line
                     lines.append(line.rstrip())
                 # Write
-                if True:
-                    lines.insert(has_version, '#line 0')
+                # BUG: fails on WebGL (Chrome)
+                # if True:
+                #     lines.insert(has_version, '#line 0')
                 if not has_prec_float:
                     lines.insert(has_version, 'precision highp float;')
                 if not has_prec_int:
                     lines.insert(has_version, 'precision highp int;')
-                if not has_version:
-                    lines.insert(has_version, '#version 100')
+                # BUG: fails on WebGL (Chrome)
+                # if not has_version:
+                #     lines.insert(has_version, '#version 100')
                 out.append('\n'.join(lines))
         
         elif convert == 'desktop':
