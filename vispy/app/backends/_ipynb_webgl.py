@@ -63,7 +63,7 @@ try:
 except Exception as exp:
     # raise ImportError("The WebGL backend requires IPython >= 2.0")
     available, testable, why_not, which = False, False, str(exp), None
-else
+else:
     available, testable, why_not, which = True, False, None, None
 
 
