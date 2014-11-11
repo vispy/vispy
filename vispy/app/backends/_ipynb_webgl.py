@@ -155,25 +155,30 @@ class CanvasBackend(BaseCanvasBackend):
         pass
 
     def _vispy_set_current(self):
-        pass
+        raise NotImplementedError()
 
     def _vispy_swap_buffers(self):
-        pass
+        raise NotImplementedError()
 
     def _vispy_set_title(self, title):
-        pass
+        raise NotImplementedError()
 
     def _vispy_get_fullscreen(self):
-        # Not implemented yet.
-        pass
+        raise NotImplementedError()
 
     def _vispy_set_fullscreen(self, fullscreen):
-        # Not implemented yet.
-        pass
+        raise NotImplementedError()
+
+
+    def _vispy_get_size(self):
+        return (self._widget.width, self._widget.height)
 
     def _vispy_set_size(self, w, h):
         self._widget.width = w
         self._widget.height = h
+
+    def _vispy_get_position(self):
+        raise NotImplementedError()
 
     def _vispy_set_position(self, x, y):
         logger.warning('IPython notebook canvas cannot be repositioned.')
@@ -195,12 +200,6 @@ class CanvasBackend(BaseCanvasBackend):
 
     def _vispy_close(self):
         raise NotImplementedError()
-
-    def _vispy_get_position(self):
-        return 0, 0
-
-    def _vispy_get_size(self):
-        return (self._widget.width, self._widget.height)
 
     def _vispy_mouse_release(self, **kwds):
         # HACK: override this method from the base canvas in order to
