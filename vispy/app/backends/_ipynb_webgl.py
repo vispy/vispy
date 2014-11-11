@@ -133,7 +133,7 @@ class CanvasBackend(BaseCanvasBackend):
         if not context.istaken:
             context.take('webgl', self)
             # TODO: do something with context.config
-        elif context.istaken == 'qt':
+        elif context.istaken == 'webgl':
             raise RuntimeError("WebGL doesn't yet support context sharing.")
 
         self._create_widget(size=size)
