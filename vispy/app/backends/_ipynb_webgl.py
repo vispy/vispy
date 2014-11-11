@@ -14,7 +14,6 @@ import base64
 import numpy as np
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
                     BaseTimerBackend)
-from .. import Application, Canvas
 from ...util import logger, keys
 from ...ext import six
 from vispy.gloo.glir import BaseGlirParser
@@ -40,8 +39,8 @@ capability = dict(  # things that can be set by the backend
 )
 
 
-def _set_config(c):
-    _app.backend_module._set_config(c)
+# def _set_config(c):
+#     _app.backend_module._set_config(c)
 
 
 # Init dummy objects needed to import this module withour errors.
@@ -55,10 +54,9 @@ try:
     import IPython
     if IPython.version_info < (2,):
         raise RuntimeError('ipynb_webgl backend need IPython version >= 2.0')
-    from IPython.html import widgets
     from IPython.html.widgets import DOMWidget
-    from IPython.utils.traitlets import Unicode, Int, Float, Bool
-    from IPython.display import display, Javascript, display_javascript, HTML
+    from IPython.utils.traitlets import Unicode, Int
+    from IPython.display import display, Javascript
     from IPython.html.nbextensions import install_nbextension
 except Exception as exp:
     # raise ImportError("The WebGL backend requires IPython >= 2.0")
@@ -168,7 +166,6 @@ class CanvasBackend(BaseCanvasBackend):
 
     def _vispy_set_fullscreen(self, fullscreen):
         raise NotImplementedError()
-
 
     def _vispy_get_size(self):
         return (self._widget.width, self._widget.height)
