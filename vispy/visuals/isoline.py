@@ -51,9 +51,8 @@ def iso_mesh_line(vertices, tris, vertex_data, level):
     lines = None
     connects = None
     vertex_level = None
-    if (isinstance(vertices, np.ndarray) and isinstance(tris, np.ndarray)
-       and isinstance(vertex_data, np.ndarray)
-       and isinstance(level, np.ndarray)):
+    if all([isinstance(x, np.ndarray) for x in (vertices, tris,
+            vertex_data, level)]):
         if vertices.shape[1] <= 3:
             verts = vertices
         elif vertices.shape[1] == 4:
