@@ -60,10 +60,11 @@ try:
     from IPython.utils.traitlets import Unicode, Int, Float, Bool
     from IPython.display import display, Javascript, display_javascript, HTML
     from IPython.html.nbextensions import install_nbextension
-    available, testable, why_not, which = True, False, None, None
 except Exception as exp:
-    raise ImportError("The WebGL backend requires IPython >= 2.0")
+    # raise ImportError("The WebGL backend requires IPython >= 2.0")
     available, testable, why_not, which = False, False, str(exp), None
+else
+    available, testable, why_not, which = True, False, None, None
 
 
 # ------------------------------------------------------------- application ---
