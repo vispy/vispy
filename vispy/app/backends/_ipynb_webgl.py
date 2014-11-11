@@ -152,11 +152,12 @@ class CanvasBackend(BaseCanvasBackend):
     def _vispy_warmup(self):
         pass
 
-    def _vispy_set_current(self):
-        raise NotImplementedError()
+    # Uncommenting these makes the backend crash.
+    # def _vispy_set_current(self):
+    #     raise NotImplementedError()
 
     def _vispy_swap_buffers(self):
-        raise NotImplementedError()
+        pass
 
     def _vispy_set_title(self, title):
         raise NotImplementedError()
