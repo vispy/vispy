@@ -36,12 +36,10 @@ def iso_mesh_line(vertices, tris, vertex_data, level):
         Vertex coordinates.
     tris : ndarray, shape (Nf, 3)
         Indices of triangular element into the vertex array.
-    vertex_data : ndarray, shape (Nv)
+    vertex_data : ndarray, shape (Nv,)
         data at vertex.
-    level : ndarray, shape (Nl)
+    level : ndarray, shape (Nl,)
         Levels at which to generate an isocurve
-    tol : float
-        tolerance for merge vertex
 
     Return
     ------
@@ -109,9 +107,9 @@ class IsolineVisual(LineVisual):
         Vertex coordinates.
     tris : ndarray, shape (Nf, 3) | None
         Indices into the vertex array.
-    data : ndarray, shape (Nv) | None
+    data : ndarray, shape (Nv,) | None
         scalar at vertices
-    level: ndarrat, shape (Nlev) | None
+    level: ndarray, shape (Nlev,) | None
         The levels at which the isocurve is constructed from *data*.
     color : Color, tuple, colormap name or array
         The color to use when drawing the line. If an array is given, it
@@ -133,7 +131,7 @@ class IsolineVisual(LineVisual):
         self.set_data(vertices=vertices, tris=tris, data=data)
 
     @property
-    def get_level(self):
+    def level(self):
         """ The threshold at which the isocurves are constructed from the data.
         """
         return self._level
@@ -144,7 +142,7 @@ class IsolineVisual(LineVisual):
         self.update()
 
     @property
-    def get_data(self):
+    def data(self):
         """The mesh data"""
         return self._vertices, self._tris, self._data
 
@@ -162,7 +160,7 @@ class IsolineVisual(LineVisual):
         self.update()
 
     @property
-    def get_color(self):
+    def color(self):
         return self._color_lev
 
     def set_color(self, color):
