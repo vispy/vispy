@@ -8,13 +8,9 @@ Vispy backend for the IPython notebook (WebGL approach).
 
 from __future__ import division
 
-import re
-import base64
-
-import numpy as np
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
                     BaseTimerBackend)
-from ...util import logger, keys
+from ...util import logger, keys, serialization
 from ...ext import six
 from vispy.gloo.glir import BaseGlirParser
 
@@ -37,10 +33,6 @@ capability = dict(  # things that can be set by the backend
     scroll=True,
     parent=False,
 )
-
-
-# def _set_config(c):
-#     _app.backend_module._set_config(c)
 
 
 # Init dummy objects needed to import this module withour errors.
@@ -291,37 +283,6 @@ class TimerBackend(BaseTimerBackend):
 
 
 # ---------------------------------------------------------- IPython Widget ---
-def _serializable(c, serialize_array=True):
-    if isinstance(c, list):
-        return [_serializable(command, serialize_array=serialize_array)
-                for command in c]
-    if isinstance(c, tuple):
-        if c and c[0] == 'UNIFORM':
-            serialize_array = False
-        return list(_serializable(command, serialize_array=serialize_array)
-                    for command in c)
-    elif isinstance(c, np.ndarray):
-        if serialize_array:
-            # TODO: binary websocket (once the IPython PR has been merged)
-            return {
-                'storage_type': 'base64',
-                'buffer': base64.b64encode(c).decode('ascii'),
-            }
-        else:
-            return _serializable(c.ravel().tolist(), False)
-    elif isinstance(c, six.string_types):
-        # replace glSomething by something (needed for WebGL commands)
-        if c.startswith('gl'):
-            return re.sub(r'^gl([A-Z])', lambda m: m.group(1).lower(), c)
-        else:
-            return c
-    else:
-        try:
-            return np.asscalar(c)
-        except Exception:
-            return c
-
-
 class VispyWidget(DOMWidget):
     _view_name = Unicode("VispyView", sync=True)
 
@@ -343,8 +304,5 @@ class VispyWidget(DOMWidget):
                 self.gen_event(ev)
 
     def send_glir_commands(self, commands):
-        msg = {
-            'msg_type': 'glir_commands',
-            'contents': _serializable(commands)
-        }
+        msg = serialization.create_glir_message(commands)
         self.send(msg)
