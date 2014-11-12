@@ -73,9 +73,7 @@ def _serialize_command(command_modified):
 def _serialize_buffer(buffer, array_serialization=None):
     """Serialize a NumPy array."""
     if array_serialization == 'binary':
-        return {'storage_type': 'binary',
-                'buffer': buffer.ravel().tobytes()
-                }
+        return buffer.ravel().tobytes()
     elif array_serialization == 'base64':
         return {'storage_type': 'base64',
                 'buffer': base64.b64encode(buffer).decode('ascii')

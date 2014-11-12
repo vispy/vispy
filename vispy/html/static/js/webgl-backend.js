@@ -82,20 +82,35 @@ require(["widgets/js/widget", "widgets/js/manager"],
                 };
             },
 
-            on_msg: function(msg) {
+            on_msg: function(msg, callbacks, metadata, buffers) {
                 // Receive and execute the GLIR commands.
                 if (msg.msg_type == 'glir_commands') {
                     var commands = msg.commands;
-                    var buffers = msg.buffers;
+                    // Get the buffers messages.
+                    if (msg.array_serialization == 'base64') {
+                        var buffers_msg = msg.buffers;
+                    }
+                    else if (msg.array_serialization == 'binary') {
+                        // Need to put the raw binary buffers in JavaScript
+                        // objects for the inline commands.
+                        var buffers_msg = [];
+                        for (var i = 0; i < buffers.length; i++) {
+                            buffers_msg[i] = {
+                                'storage_type': 'binary',
+                                'buffer': buffers[i]
+                            };
+                        }
+                    }
+
                     // Make the GLIR commands ready for the JavaScript parser
                     // by inlining the buffers.
                     var commands_inlined = _inline_glir_commands(
-                        commands, buffers);
+                        commands, buffers_msg);
                     for (var i = 0; i < commands_inlined.length; i++) {
                         var command = commands[i];
                         // Replace
-                        // console.debug(command);
-                        this.c.command(command);
+                        console.debug(command);
+                        //this.c.command(command);
                     }
                 }
             },
