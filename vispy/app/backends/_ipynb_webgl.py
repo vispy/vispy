@@ -305,7 +305,9 @@ class VispyWidget(DOMWidget):
 
     def send_glir_commands(self, commands):
         # TODO: check whether binary websocket is available (ipython >= 3)
-        array_serialization = 'binary'
+        # Until IPython 3.0 is released, use base64.
+        array_serialization = 'base64'
+        # array_serialization = 'binary'
         if array_serialization == 'base64':
             msg = serialization.create_glir_message(commands, 'base64')
             msg['array_serialization'] = 'base64'

@@ -56,6 +56,9 @@ require(["widgets/js/widget", "widgets/js/manager"],
                 this.model.on('change:width', this.size_changed, this);
                 this.model.on('change:height', this.size_changed, this);
 
+                // WARNING: necessary on IPython >= 3.0dev.
+                this.model.comm.on_msg($.proxy(this.on_msg, this));
+
                 window.VISPY_DEBUG = false;
 
                 // Start the event loop.
@@ -82,7 +85,9 @@ require(["widgets/js/widget", "widgets/js/manager"],
                 };
             },
 
-            on_msg: function(msg, callbacks, metadata, buffers) {
+            on_msg: function(comm_msg) {
+                var buffers = comm_msg.buffers;
+                var msg = comm_msg.content.data.content;
                 // Receive and execute the GLIR commands.
                 if (msg.msg_type == 'glir_commands') {
                     var commands = msg.commands;
@@ -109,8 +114,8 @@ require(["widgets/js/widget", "widgets/js/manager"],
                     for (var i = 0; i < commands_inlined.length; i++) {
                         var command = commands[i];
                         // Replace
-                        console.debug(command);
-                        //this.c.command(command);
+                        // console.debug(command);
+                        this.c.command(command);
                     }
                 }
             },
