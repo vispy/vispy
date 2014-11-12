@@ -116,34 +116,3 @@ def create_glir_message(commands, array_serialization=None):
         'buffers': buffers_serialized,
     }
     return msg
-
-
-# def _serializable(c, serialize_array=True):
-#     if isinstance(c, list):
-#         return [_serializable(command, serialize_array=serialize_array)
-#                 for command in c]
-#     if isinstance(c, tuple):
-#         if c and c[0] == 'UNIFORM':
-#             serialize_array = False
-#         return list(_serializable(command, serialize_array=serialize_array)
-#                     for command in c)
-#     elif isinstance(c, np.ndarray):
-#         if serialize_array:
-#             # TODO: binary websocket (once the IPython PR has been merged)
-#             return {
-#                 'storage_type': 'base64',
-#                 'buffer': base64.b64encode(c).decode('ascii'),
-#             }
-#         else:
-#             return _serializable(c.ravel().tolist(), False)
-#     elif isinstance(c, string_types):
-#         # replace glSomething by something (needed for WebGL commands)
-#         if c.startswith('gl'):
-#             return re.sub(r'^gl([A-Z])', lambda m: m.group(1).lower(), c)
-#         else:
-#             return c
-#     else:
-#         try:
-#             return np.asscalar(c)
-#         except Exception:
-#             return c

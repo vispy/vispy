@@ -11,6 +11,19 @@ window.setTimeout(function() {
     require(["vispy"], _vispy_loaded, _vispy_loaded);
 }, 100);
 
+function _inline_glir_commands(commands, buffers) {
+    // Put back the buffers within the GLIR commands before passing them
+    // to the GLIR JavaScript interpretor.
+    for (var i = 0; i < commands.length; i++) {
+        var command = commands[i];
+        if (command[0] == 'DATA') {
+            var buffer_index = command[3]['buffer_index'];
+            command[3] = buffers[buffer_index];
+        }
+    }
+    return commands;
+}
+
 // VispyWidget code
 require(["widgets/js/widget", "widgets/js/manager"],
     function(widget, manager){
@@ -72,9 +85,15 @@ require(["widgets/js/widget", "widgets/js/manager"],
             on_msg: function(msg) {
                 // Receive and execute the GLIR commands.
                 if (msg.msg_type == 'glir_commands') {
-                    var commands = msg.contents;
-                    for (var i = 0; i < commands.length; i++) {
+                    var commands = msg.commands;
+                    var buffers = msg.buffers;
+                    // Make the GLIR commands ready for the JavaScript parser
+                    // by inlining the buffers.
+                    var commands_inlined = _inline_glir_commands(
+                        commands, buffers);
+                    for (var i = 0; i < commands_inlined.length; i++) {
                         var command = commands[i];
+                        // Replace
                         // console.debug(command);
                         this.c.command(command);
                     }

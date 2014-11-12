@@ -89,6 +89,7 @@ def _nose(mode, extra_arg_string):
     if mode == 'nobackend':
         msg = 'Running tests with no backend'
         extra_arg_string = '-a !vispy_app_test ' + extra_arg_string
+        extra_arg_string = '-e experimental -e wiki ' + extra_arg_string
         coverage = True
     elif mode == 'singlefile':
         fname = extra_arg_string.split(' ')[0]
