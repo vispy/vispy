@@ -25,7 +25,7 @@ def _extract_buffers(commands):
     # Extract the arrays.
     buffers = [data_command[3] for data_command in data_commands]
     # Modify the commands by replacing the array buffers with pointers.
-    commands_modified = commands.copy()
+    commands_modified = list(commands)
     buffer_index = 0
     for i, command in enumerate(commands_modified):
         if command[0] == 'DATA':
@@ -73,7 +73,9 @@ def _serialize_command(command_modified):
 def _serialize_buffer(buffer, array_serialization=None):
     """Serialize a NumPy array."""
     if array_serialization == 'binary':
-        return buffer.ravel().tobytes()
+        # WARNING: in NumPy 1.9, tostring() has been renamed to tobytes()
+        # but tostring() is still here for now for backward compatibility.
+        return buffer.ravel().tostring()
     elif array_serialization == 'base64':
         return {'storage_type': 'base64',
                 'buffer': base64.b64encode(buffer).decode('ascii')
