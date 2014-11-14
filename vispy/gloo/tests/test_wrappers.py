@@ -17,7 +17,7 @@ from vispy.gloo import read_pixels
 def test_wrappers_basic_glir():
     """ Test that basic gloo wrapper functions emit right GLIR command """
     
-    glir = gloo.get_current_glir_queue()
+    glir = gloo.context.get_current_glir_queue()
     glir.clear()
     
     funcs = [('viewport', 0, 0, 10, 10),
@@ -65,7 +65,7 @@ def test_wrappers_basic_glir():
 def test_wrappers_glir():
     """ Test that special wrapper functions do what they must do """
 
-    glir = gloo.get_current_glir_queue()
+    glir = gloo.context.get_current_glir_queue()
     glir.clear()
     
     # Test clear() function

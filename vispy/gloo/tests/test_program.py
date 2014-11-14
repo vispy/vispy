@@ -8,7 +8,7 @@ import unittest
 import numpy as np
 
 from vispy import gloo
-from vispy.gloo import get_current_glir_queue
+from vispy.gloo.context import get_current_glir_queue
 from vispy.gloo.program import Program
 from vispy.testing import run_tests_if_main
 

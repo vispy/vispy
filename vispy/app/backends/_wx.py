@@ -282,7 +282,7 @@ class CanvasBackend(Frame, BaseCanvasBackend):
     def _vispy_set_current(self):
         if self._canvas is None:
             return
-        self._vispy_context.set_current(False)  # Mark as current
+        self._vispy_canvas.set_current()  # Mark as current
         self._canvas.SetCurrent(self._gl_context)
     
     def _vispy_warmup(self):

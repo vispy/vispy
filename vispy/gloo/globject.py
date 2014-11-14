@@ -9,7 +9,11 @@ from .context import get_current_glir_queue
 
 
 class GLObject(object):
-    """ Generic GL object that may live both on CPU and GPU 
+    """ Generic GL object that represents an object on the GPU.
+    
+    When a GLObject is instantiated, it is associated with the currently
+    active Canvas, or with the next Canvas to be created if there is
+    no current Canvas
     """
     
     # Type of GLIR object, reset in subclasses

@@ -7,6 +7,7 @@ import unittest
 import numpy as np
 
 from vispy.gloo import Texture2D, Texture3D, TextureAtlas
+from vispy.gloo.context import get_current_glir_queue
 from vispy.testing import requires_pyopengl, run_tests_if_main
 
 # here we test some things that will be true of all Texture types:
@@ -15,7 +16,6 @@ Texture = Texture2D
 
 def teardown_module():
     # Clear the BS commands that we produced here
-    from vispy.gloo.context import get_current_glir_queue
     get_current_glir_queue().clear()
 
 

@@ -5,7 +5,7 @@ import gc
 from nose.tools import assert_raises, assert_equal, assert_not_equal
 from vispy.testing import assert_in, run_tests_if_main
 
-from vispy.gloo import (GLContext, get_default_config, get_current_context)
+from vispy.gloo import (GLContext, get_default_config)
 
 
 class DummyCanvas(object):
@@ -85,41 +85,6 @@ def test_context_taking():
     # Still cannot take it, but backend is invalid
     assert_raises(RuntimeError, c.take, 'test', cb)
     assert_raises(RuntimeError, get_canvas, c)
-
-
-def test_context_activating():
-    """ Test GLContext activation and obtaining current context
-    """
-    
-    # Reset
-    GLContext._current_context = None
-    
-    c1 = GLContext()
-    c2 = GLContext()
-    
-    assert get_current_context() is None
-    
-    # Need backend to make current
-    assert_raises(RuntimeError, c1.set_current)
-    
-    # Unless we do this
-    c1.set_current(False)
-    assert get_current_context() is c1
-    assert c1.iscurrent
-    
-    # Switch
-    c2.set_current(False)
-    assert get_current_context() is c2
-    assert c2.iscurrent
-    
-    # Now try with backend
-    cb1 = DummyCanvasBackend()
-    c1.take('test', cb1)
-    assert cb1.set_current is False
-    assert get_current_context() is c2
-    c1.set_current()
-    assert get_current_context() is c1
-    assert cb1.set_current is True
 
 
 run_tests_if_main()

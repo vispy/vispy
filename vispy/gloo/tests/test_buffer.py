@@ -9,11 +9,11 @@ import numpy as np
 from vispy.testing import run_tests_if_main
 from vispy.gloo.buffer import (Buffer, DataBuffer, DataBufferView, 
                                VertexBuffer, IndexBuffer)
+from vispy.gloo.context import get_current_glir_queue
 
 
 def teardown_module():
     # Clear the BS commands that we produced here
-    from vispy.gloo.context import get_current_glir_queue
     glir = get_current_glir_queue()
     glir.clear()
 

@@ -46,7 +46,6 @@ from __future__ import division
 
 from . import gl  # noqa
 from .context import (GLContext, get_default_config,  # noqa
-                      get_current_context, get_current_glir_queue,  # noqa
                       get_current_canvas)  # noqa
 from .globject import GLObject  # noqa
 from .buffer import VertexBuffer, IndexBuffer  # noqa

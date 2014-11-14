@@ -11,12 +11,12 @@ from vispy.app import Canvas
 from vispy.gloo import (Texture2D, Texture3D, Program, FrameBuffer, 
                         RenderBuffer, set_viewport, clear)
 from vispy.gloo.util import draw_texture, _screenshot
+from vispy.gloo.context import get_current_glir_queue
 from vispy.testing import requires_application, has_pyopengl, run_tests_if_main
 
 
 def teardown_module():
     # Clear the BS commands that we produced here
-    from vispy.gloo.context import get_current_glir_queue
     get_current_glir_queue().clear()
 
 

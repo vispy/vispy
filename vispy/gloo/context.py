@@ -42,24 +42,14 @@ def get_default_config():
     return deepcopy(_default_dict)
 
 
-def get_current_context():
-    """ Get the currently active GLContext object
-    
-    Returns
-    -------
-    context : GLContext or None
-        The context object that is now active, or None if there is no
-        active context.
-    """
-    return GLContext._current_context
-
-
 def get_current_glir_queue():
     """ Get the current GLIR queue
     
     This will be the glir queue on the current canvas, unless there
     is no canvas available. In this case a new GLIR queue is provided
     which is associated with the first canvas that gets created.
+    
+    Used by the gloo objects to acquire their glir queue.
     """
     canvas = get_current_canvas()
     if canvas is not None:
@@ -73,6 +63,11 @@ def get_current_canvas():
     
     Returns None if there is no canvas available. A canvas is made
     active on initialization and before the draw event is emitted.
+    
+    When a gloo object is created, it is associated with the currently
+    active Canvas, or with the next Canvas to be created if there is
+    no current Canvas. Use Canvas.set_current() to manually activate a
+    canvas.
     """
     cc = [c() for c in canvasses if c() is not None]
     if cc:
@@ -84,7 +79,8 @@ def get_current_canvas():
 def set_current_canvas(canvas):
     """ Make a canvas active. Used primarily by the canvas itself.
     """
-    print('setting current!! before draw??', canvas)
+    # Notify glir 
+    canvas.glir.command('CURRENT', 0)
     # Try to be quick
     if canvasses and canvasses[-1]() is canvas:
         return
@@ -120,8 +116,6 @@ class GLContext(object):
     """An object encapsulating data necessary for a shared OpenGL context.
     The intended use is to subclass this and implement _vispy_activate().
     """
-    
-    _current_context = None  # The currently active context (always taken)
     
     def __init__(self, config=None):
         self._backend_canvas = lambda x=None: None
@@ -173,27 +167,7 @@ class GLContext(object):
         """ A dictionary describing the configuration of this GL context.
         """
         return self._config
-    
-    def set_current(self, apply_backend=True):
-        """ Make this the current context. If apply_backend is True
-        (default) the canvas_backend is set to be current.
-        """
-        if apply_backend:
-            self.backend_canvas._vispy_set_current()
-        # Set context current
-        GLContext._current_context = self
-        # Make canvas current
-        if self._backend_canvas() is not None:
-            canvas = self.backend_canvas._vispy_canvas
-            set_current_canvas(canvas)
-            canvas.glir.command('CURRENT', 0)
-    
-    @property
-    def iscurrent(self):
-        """ Whether this is currentlty the active context.
-        """
-        return GLContext._current_context is self
-    
+   
     def __repr__(self):
         backend = self.istaken or 'no'
         return "<GLContext of %s backend at 0x%x>" % (backend, id(self))
