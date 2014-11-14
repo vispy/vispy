@@ -8,15 +8,15 @@ import unittest
 import numpy as np
 
 from vispy import gloo
-from vispy.gloo import get_a_context
+from vispy.gloo import get_current_glir_queue
 from vispy.gloo.program import Program
 from vispy.testing import run_tests_if_main
 
 
 def teardown_module():
     # Clear the BS commands that we produced here
-    c = get_a_context()
-    c.glir.clear()
+    glir = get_current_glir_queue()
+    glir.clear()
 
 
 class ProgramTest(unittest.TestCase):
@@ -201,20 +201,20 @@ class ProgramTest(unittest.TestCase):
         program['A'] = np.zeros((10,), np.float32)
         
         # We need to disable flushing to run this test
-        flush = program._context.glir.flush
-        program._context.glir.flush = lambda x=None: None
+        flush = program._glir.flush
+        program._glir.flush = lambda x=None: None
         
         try:
             # Draw arrays
             program.draw('triangles')
-            glir_cmd = program._context.glir.clear()[-1]
+            glir_cmd = program._glir.clear()[-1]
             assert glir_cmd[0] == 'DRAW'
             assert len(glir_cmd[-1]) == 2
             
             # Draw elements
             indices = gloo.IndexBuffer(np.zeros(10, dtype=np.uint8))
             program.draw('triangles', indices)
-            glir_cmd = program._context.glir.clear()[-1]
+            glir_cmd = program._glir.clear()[-1]
             assert glir_cmd[0] == 'DRAW'
             assert len(glir_cmd[-1]) == 3
             
@@ -232,6 +232,6 @@ class ProgramTest(unittest.TestCase):
             self.assertRaises(RuntimeError, program.draw, 'triangles')
         
         finally:
-            program._context.glir.flush = flush
+            program._glir.flush = flush
 
 run_tests_if_main()

@@ -14,7 +14,8 @@ from ..util.dpi import get_dpi
 from ..util import config
 from ..ext.six import string_types
 from . import Application, use_app
-from ..gloo.context import GLContext, get_new_context
+from ..gloo.context import (GLContext, take_pending_glir_queue, 
+                            set_current_canvas, forget_canvas)
 
 # todo: add functions for asking about current mouse/keyboard state
 # todo: add hover enter/exit events
@@ -140,17 +141,21 @@ class Canvas(object):
             self._app = Application(app)
         else:
             raise ValueError('Invalid value for app %r' % app)
-
+        
+        # Get the glir queue and then register this canvas as active
+        self._glir = take_pending_glir_queue()
+        set_current_canvas(self)
+        
         # Ensure context is a GLContext object
         context = context or {}
         if isinstance(context, dict):
-            gl_config, context = context, get_new_context()
+            gl_config, context = context, GLContext()
             context.set_config(gl_config)  # GLContext checks the dict keys
         elif not isinstance(context, GLContext):
             raise TypeError('context must be a dict or GLContext from '
                             'a Canvas with the same backend, not %s'
                             % type(context))
-
+        
         # Deal with special keys
         self._set_keys(keys)
 
@@ -182,7 +187,7 @@ class Canvas(object):
 
         # Connect to draw event (append to the end)
         # Process GLIR commands at each paint event
-        self.events.draw.connect(self.context.glir.flush, position='last')
+        self.events.draw.connect(self.glir.flush, position='last')
         if self._autoswap:
             self.events.draw.connect((self, 'swap_buffers'),
                                      ref=True, position='last')
@@ -229,7 +234,13 @@ class Canvas(object):
         """ The OpenGL context of the native widget
         """
         return self._backend._vispy_context
-
+    
+    @property
+    def glir(self):
+        """ The GLIR queue for this canvas: the list of GLIR commands.
+        """
+        return self._glir
+    
     @property
     def app(self):
         """ The vispy Application instance on which this Canvas is based.
@@ -322,7 +333,12 @@ class Canvas(object):
         """ The fps of canvas/window, measured as the rate that events.draw
         is emitted. """
         return self._fps
-
+    
+    def set_current(self, event=None):
+        """ Make this the active canvas.
+        """
+        set_current_canvas(self)
+    
     def swap_buffers(self, event=None):
         """ Swap GL buffers such that the offscreen buffer becomes visible.
         """
@@ -355,6 +371,7 @@ class Canvas(object):
             self._closed = True
             self.events.close()
             self._backend._vispy_close()
+        forget_canvas(self)
 
     def _update_fps(self, event):
         """ Updates the fps after every window and resets the basetime

@@ -18,12 +18,12 @@ def test_renderbuffer():
     assert R.format is None
     
     # Set both shape and format
-    gloo.get_a_context().glir.clear()
+    gloo.get_current_glir_queue().clear()
     R = RenderBuffer((10, 20), 'color')
     assert R.shape == (10, 20)
     assert R.format is 'color'
     #
-    glir_cmds = R._context.glir.clear()
+    glir_cmds = R._glir.clear()
     assert len(glir_cmds) == 2
     assert glir_cmds[0][0] == 'CREATE'
     assert glir_cmds[1][0] == 'SIZE'
@@ -66,26 +66,26 @@ def test_renderbuffer():
 def test_framebuffer():
     
     # Test init with no args
-    gloo.get_a_context().glir.clear()
+    gloo.get_current_glir_queue().clear()
     F = FrameBuffer()
-    glir_cmds = F._context.glir.clear()
+    glir_cmds = F._glir.clear()
     assert len(glir_cmds) == 1
     glir_cmds[0][0] == 'CREATE'
     
     # Activate / deactivate
     F.activate()
-    glir_cmd = F._context.glir.clear()[-1]
+    glir_cmd = F._glir.clear()[-1]
     assert glir_cmd[0] == 'FRAMEBUFFER'
     assert glir_cmd[2] is True
     #
     F.deactivate()
-    glir_cmd = F._context.glir.clear()[-1]
+    glir_cmd = F._glir.clear()[-1]
     assert glir_cmd[0] == 'FRAMEBUFFER'
     assert glir_cmd[2] is False
     #
     with F:
         pass
-    glir_cmds = F._context.glir.clear()
+    glir_cmds = F._glir.clear()
     assert len(glir_cmds) == 2
     assert glir_cmds[0][0] == 'FRAMEBUFFER'
     assert glir_cmds[1][0] == 'FRAMEBUFFER'

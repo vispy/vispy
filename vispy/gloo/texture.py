@@ -139,7 +139,7 @@ class BaseTexture(GLObject):
         value = (check_enum(value[0], 'tex wrapping', valid), 
                  check_enum(value[1], 'tex wrapping', valid))
         self._wrapping = value
-        self._context.glir.command('WRAPPING', self._id, value)
+        self._glir.command('WRAPPING', self._id, value)
     
     @property
     def interpolation(self):
@@ -162,7 +162,7 @@ class BaseTexture(GLObject):
         value = (check_enum(value[0], 'tex interpolation', valid), 
                  check_enum(value[1], 'tex interpolation', valid))
         self._interpolation = value
-        self._context.glir.command('INTERPOLATION', self._id, *value)
+        self._glir.command('INTERPOLATION', self._id, *value)
     
     def resize(self, shape, format=None):
         """ Set the texture size and format
@@ -202,8 +202,7 @@ class BaseTexture(GLObject):
         # Store and send GLIR command
         self._shape = shape
         self._format = format
-        self._context.glir.command('SIZE', self._id, 
-                                   self._shape, self._format)
+        self._glir.command('SIZE', self._id, self._shape, self._format)
 
     def set_data(self, data, offset=None, copy=False):
         """ Set texture data
@@ -245,7 +244,7 @@ class BaseTexture(GLObject):
                 raise ValueError("Data is too large")
         
         # Send GLIR command
-        self._context.glir.command('DATA', self._id, offset, data)
+        self._glir.command('DATA', self._id, offset, data)
     
     def __setitem__(self, key, data):
         """ x.__getitem__(y) <==> x[y] """

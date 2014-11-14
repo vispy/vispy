@@ -17,8 +17,8 @@ from vispy.gloo import read_pixels
 def test_wrappers_basic_glir():
     """ Test that basic gloo wrapper functions emit right GLIR command """
     
-    c = gloo.get_a_context()
-    c.glir.clear()
+    glir = gloo.get_current_glir_queue()
+    glir.clear()
     
     funcs = [('viewport', 0, 0, 10, 10),
              ('depth_range', 0, 1),
@@ -49,7 +49,7 @@ def test_wrappers_basic_glir():
         f = getattr(gloo, 'set_' + name)
         f(*args)
     
-    cmds = c.glir.clear()
+    cmds = glir.clear()
     assert len(cmds) == len(funcs)
     for i, func in enumerate(funcs):
         cmd = cmds[i]
@@ -65,25 +65,25 @@ def test_wrappers_basic_glir():
 def test_wrappers_glir():
     """ Test that special wrapper functions do what they must do """
 
-    c = gloo.get_a_context()
-    c.glir.clear()
+    glir = gloo.get_current_glir_queue()
+    glir.clear()
     
     # Test clear() function
     gloo.clear()
-    cmds = c.glir.clear()
+    cmds = glir.clear()
     assert len(cmds) == 1
     assert cmds[0][0] == 'FUNC'
     assert cmds[0][1] == 'glClear'
     #
     gloo.clear(True, False, False)
-    cmds = c.glir.clear()
+    cmds = glir.clear()
     assert len(cmds) == 1
     assert cmds[0][0] == 'FUNC'
     assert cmds[0][1] == 'glClear'
     assert cmds[0][2] == gl.GL_COLOR_BUFFER_BIT
     #
     gloo.clear('red')
-    cmds = c.glir.clear()
+    cmds = glir.clear()
     assert len(cmds) == 2
     assert cmds[0][0] == 'FUNC'
     assert cmds[0][1] == 'glClearColor'
@@ -91,7 +91,7 @@ def test_wrappers_glir():
     assert cmds[1][1] == 'glClear'
     #
     gloo.clear('red', 4, 3)
-    cmds = c.glir.clear()
+    cmds = glir.clear()
     assert len(cmds) == 4
     assert cmds[0][1] == 'glClearColor'
     assert cmds[1][1] == 'glClearDepth'
@@ -100,13 +100,13 @@ def test_wrappers_glir():
     
     # Test set_state() function
     gloo.set_state(foo=True, bar=False)
-    cmds = set(c.glir.clear())
+    cmds = set(glir.clear())
     assert len(cmds) == 2
     assert ('FUNC', 'glEnable', 'foo') in cmds
     assert ('FUNC', 'glDisable', 'bar') in cmds
     #
     gloo.set_state(viewport=(0, 0, 10, 10), clear_color='red')
-    cmds = sorted(c.glir.clear())
+    cmds = sorted(glir.clear())
     assert len(cmds) == 2
     assert cmds[0][1] == 'glClearColor'
     assert cmds[1][1] == 'glViewport'
@@ -114,7 +114,7 @@ def test_wrappers_glir():
     presets = gloo.get_state_presets()
     a_preset = list(presets.keys())[0]
     gloo.set_state(a_preset)
-    cmds = sorted(c.glir.clear())
+    cmds = sorted(glir.clear())
     assert len(cmds) == len(presets[a_preset])
 
 

@@ -13,9 +13,9 @@ from vispy.gloo.buffer import (Buffer, DataBuffer, DataBufferView,
 
 def teardown_module():
     # Clear the BS commands that we produced here
-    from vispy.gloo.context import get_a_context
-    c = get_a_context()
-    c.glir.clear()
+    from vispy.gloo.context import get_current_glir_queue
+    glir = get_current_glir_queue()
+    glir.clear()
 
 
 # -----------------------------------------------------------------------------
@@ -29,20 +29,20 @@ class BufferTest(unittest.TestCase):
         # No data
         B = Buffer()
         assert B.nbytes == 0
-        glir_cmd = B._context.glir.clear()[-1]
+        glir_cmd = B._glir.clear()[-1]
         assert glir_cmd[0] == 'CREATE'
         
         # With data
         data = np.zeros(100)
         B = Buffer(data=data)
         assert B.nbytes == data.nbytes
-        glir_cmd = B._context.glir.clear()[-1]
+        glir_cmd = B._glir.clear()[-1]
         assert glir_cmd[0] == 'DATA'
         
         # With nbytes
         B = Buffer(nbytes=100)
         assert B.nbytes == 100
-        glir_cmd = B._context.glir.clear()[-1]
+        glir_cmd = B._glir.clear()[-1]
         assert glir_cmd[0] == 'SIZE'
         
         # Wrong data
@@ -54,23 +54,23 @@ class BufferTest(unittest.TestCase):
     def test_set_whole_data(self):
         data = np.zeros(100)
         B = Buffer(data=data)
-        B._context.glir.clear()
+        B._glir.clear()
         B.set_data(data=data)
-        glir_cmds = B._context.glir.clear()
+        glir_cmds = B._glir.clear()
         assert len(glir_cmds) == 2
         assert glir_cmds[0][0] == 'SIZE'
         assert glir_cmds[1][0] == 'DATA'
     
         # And sub data
         B.set_subdata(data[:50], 20)
-        glir_cmds = B._context.glir.clear()
+        glir_cmds = B._glir.clear()
         assert len(glir_cmds) == 1
         assert glir_cmds[0][0] == 'DATA'
         assert glir_cmds[0][2] == 20  # offset
         
         # And sub data
         B.set_subdata(data)
-        glir_cmds = B._context.glir.clear()
+        glir_cmds = B._glir.clear()
         assert glir_cmds[-1][0] == 'DATA'
         
         # Wrong ways to set subdata
@@ -83,7 +83,7 @@ class BufferTest(unittest.TestCase):
         data = np.zeros(100)
         B = Buffer(data=data)
         B.set_data(data=data[:50], copy=False)
-        glir_cmd = B._context.glir.clear()[-1]
+        glir_cmd = B._glir.clear()[-1]
         assert glir_cmd[-1].base is data
 
     # Check setting oversized data
@@ -278,7 +278,7 @@ class DataBufferTest(unittest.TestCase):
         data = np.zeros(10, dtype=dtype)
         B = DataBuffer(data)
         B.set_data(data)
-        last_cmd = B._context.glir.clear()[-1]
+        last_cmd = B._glir.clear()[-1]
         assert last_cmd[0] == 'DATA'
         
         # Extra kwargs are caught
@@ -292,7 +292,7 @@ class DataBufferTest(unittest.TestCase):
         
         B = DataBuffer(data)
         B.set_subdata(subdata, offset=10)
-        last_cmd = B._context.glir.clear()[-1]
+        last_cmd = B._glir.clear()[-1]
         offset = last_cmd[2]
         assert offset == 10*4
     
@@ -357,9 +357,9 @@ class DataBufferTest(unittest.TestCase):
         data1 = np.zeros(10, dtype=dtype)
         data2 = np.ones(10, dtype=dtype)
         B = DataBuffer(data1)
-        B._context.glir.clear()
+        B._glir.clear()
         B[:5] = data2[:5]
-        glir_cmds = B._context.glir.clear()
+        glir_cmds = B._glir.clear()
         assert len(glir_cmds) == 1
         set_data = glir_cmds[0][-1]
         assert np.allclose(set_data['position'], data2['position'][:5])
@@ -412,7 +412,7 @@ class DataBufferTest(unittest.TestCase):
         B = DataBuffer(data=data)
         data = np.zeros(5)
         B[Ellipsis] = data
-        glir_cmd = B._context.glir.clear()[-1]
+        glir_cmd = B._glir.clear()[-1]
         assert glir_cmd[-1].shape == (10,)
 
 

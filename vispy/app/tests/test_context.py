@@ -53,12 +53,12 @@ def test_context_sharing():
         frag = "uniform vec4 pos;\nvoid main (void) {gl_FragColor = pos;}"
         program = Program(vert, frag)
         program['pos'] = [1, 2, 3, 4]
-        program._context.glir.flush()
+        program._glir.flush()
 
         def check():
             # Do something to program and see if it worked
             program['pos'] = [1, 2, 3, 4]  # Do command
-            program._context.glir.flush()  # Execute that command
+            program._glir.flush()  # Execute that command
             check_error()
         
         # Check while c1 is active

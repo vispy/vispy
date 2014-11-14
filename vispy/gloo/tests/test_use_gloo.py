@@ -16,9 +16,8 @@ from vispy.testing import requires_application, has_pyopengl, run_tests_if_main
 
 def teardown_module():
     # Clear the BS commands that we produced here
-    from vispy.gloo.context import get_a_context
-    c = get_a_context()
-    c.glir.clear()
+    from vispy.gloo.context import get_current_glir_queue
+    get_current_glir_queue().clear()
 
 
 @requires_application()
@@ -39,7 +38,7 @@ def test_use_framebuffer():
         fbo_tex = Texture2D(use_shape, format='rgb')
         rbo = RenderBuffer(shape, 'color')
         fbo = FrameBuffer(color=fbo_tex)
-        c.context.glir.set_verbose(True)
+        c._glir.set_verbose(True)
         assert_equal(c.size, shape[::-1])
         set_viewport((0, 0) + c.size)
         with fbo:

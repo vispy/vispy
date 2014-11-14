@@ -15,9 +15,8 @@ Texture = Texture2D
 
 def teardown_module():
     # Clear the BS commands that we produced here
-    from vispy.gloo.context import get_a_context
-    c = get_a_context()
-    c.glir.clear()
+    from vispy.gloo.context import get_current_glir_queue
+    get_current_glir_queue().clear()
 
 
 # ----------------------------------------------------------------- Texture ---
@@ -51,7 +50,7 @@ class TextureTest(unittest.TestCase):
         data = np.zeros((10, 10), dtype=np.uint8)
         T = Texture(data=data)
         T[...] = np.ones((10, 10, 1))
-        glir_cmd = T._context.glir.clear()[-1]
+        glir_cmd = T._glir.clear()[-1]
         assert glir_cmd[0] == 'DATA'
         assert np.allclose(glir_cmd[3], np.ones((10, 10, 1)))
 
@@ -70,7 +69,7 @@ class TextureTest(unittest.TestCase):
         data = np.zeros((10, 10), dtype=np.uint8)
         T = Texture(data=data)
         T[0, 0, 0] = 1
-        glir_cmd = T._context.glir.clear()[-1]
+        glir_cmd = T._glir.clear()[-1]
         assert glir_cmd[0] == 'DATA'
         assert np.allclose(glir_cmd[3], np.array([1]))
         
@@ -84,7 +83,7 @@ class TextureTest(unittest.TestCase):
         data = np.zeros((10, 10), dtype=np.uint8)
         T = Texture(data=data)
         T[5:, 5:] = 1
-        glir_cmd = T._context.glir.clear()[-1]
+        glir_cmd = T._glir.clear()[-1]
         assert glir_cmd[0] == 'DATA'
         assert np.allclose(glir_cmd[3], np.ones((5, 5)))
 
@@ -170,7 +169,7 @@ class Texture2DTest(unittest.TestCase):
         T = Texture2D(data=data)
         T.resize((5, 5))
         assert T.shape == (5, 5, 1)
-        glir_cmd = T._context.glir.clear()[-1]
+        glir_cmd = T._glir.clear()[-1]
         assert glir_cmd[0] == 'SIZE'
         
         # Wong arg
@@ -203,7 +202,7 @@ class Texture2DTest(unittest.TestCase):
         T = Texture2D(data=data)
         T.set_data(np.ones((20, 20), np.uint8))
         assert T.shape == (20, 20, 1)
-        glir_cmds = T._context.glir.clear()
+        glir_cmds = T._glir.clear()
         assert glir_cmds[-2][0] == 'SIZE'
         assert glir_cmds[-1][0] == 'DATA'
     
@@ -214,7 +213,7 @@ class Texture2DTest(unittest.TestCase):
         T = Texture2D(data=data)
         T.set_data(np.ones((5, 5), np.uint8))
         assert T.shape == (5, 5, 1)
-        glir_cmds = T._context.glir.clear()
+        glir_cmds = T._glir.clear()
         assert glir_cmds[-2][0] == 'SIZE'
         assert glir_cmds[-1][0] == 'DATA'
 
@@ -346,7 +345,7 @@ class Texture3DTest(unittest.TestCase):
         T = Texture3D(data=data)
         T.resize((5, 5, 5))
         assert T.shape == (5, 5, 5, 1)
-        glir_cmd = T._context.glir.clear()[-1]
+        glir_cmd = T._glir.clear()[-1]
         assert glir_cmd[0] == 'SIZE'
         assert glir_cmd[2] == (5, 5, 5, 1)
     
@@ -410,7 +409,7 @@ class Texture3DTest(unittest.TestCase):
         T = Texture3D(data=data)
         T.set_data(np.ones((10, 10, 10), np.uint8))
         assert T.shape == (10, 10, 10, 1)
-        glir_cmd = T._context.glir.clear()[-1]
+        glir_cmd = T._glir.clear()[-1]
         assert glir_cmd[0] == 'DATA'
 
     # Test set data with different shape

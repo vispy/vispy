@@ -5,7 +5,7 @@
 # -----------------------------------------------------------------------------
 
 
-from .context import get_a_context
+from .context import get_current_glir_queue
 
 
 class GLObject(object):
@@ -26,11 +26,11 @@ class GLObject(object):
         self._id = GLObject._idcount
         
         # Store context that this object is associated to
-        self._context = get_a_context()
+        self._glir = get_current_glir_queue()
         #print(self._GLIR_TYPE, 'takes', self._context)
         
         # Give glir command to create GL representation of this object
-        self._context.glir.command('CREATE', self._id, self._GLIR_TYPE)
+        self._glir.command('CREATE', self._id, self._GLIR_TYPE)
     
     def __del__(self):
         # You never know when this is goint to happen. The window might
@@ -46,7 +46,7 @@ class GLObject(object):
 
     def delete(self):
         """ Delete the object from GPU memory """
-        self._context.glir.command('DELETE', self._id)
+        self._glir.command('DELETE', self._id)
     
     @property
     def id(self):

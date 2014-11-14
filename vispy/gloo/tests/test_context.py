@@ -5,46 +5,28 @@ import gc
 from nose.tools import assert_raises, assert_equal, assert_not_equal
 from vispy.testing import assert_in, run_tests_if_main
 
-from vispy import gloo
-from vispy.gloo import (GLContext, get_default_config,
-                        get_current_context, get_a_context)
+from vispy.gloo import (GLContext, get_default_config, get_current_context)
+
+
+class DummyCanvas(object):
+    
+    @property
+    def glir(self):
+        return self
+    
+    def command(self, *args):
+        pass
 
 
 class DummyCanvasBackend(object):
     
     def __init__(self):
         self.set_current = False
-    
+        self._vispy_canvas = DummyCanvas()
+        
     def _vispy_set_current(self):
         self.set_current = True
 
-
-def test_context_getting():
-    """ Test getting a context object """
-    
-    # Reset
-    GLContext._current_context = None
-    GLContext._default_context = None 
-    
-    c1 = get_a_context()
-    c2 = get_a_context()
-    assert c1 is c2
-    
-    c3 = gloo.context.get_new_context()
-    c3.take('test', DummyCanvasBackend())
-    c4 = gloo.context.get_new_context()
-    c4.take('test', DummyCanvasBackend())
-    assert c3 is c1
-    assert c4 is not c3
-    
-    c5 = get_a_context()
-    c6 = get_a_context()
-    assert c5 is c6
-    assert c5 is c4
-    
-    c3.set_current(False)
-    assert get_a_context() is c3
-    
     
 def test_context_config():
     """ Test GLContext handling of config dict
