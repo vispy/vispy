@@ -317,11 +317,6 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
         g = self.geometry()
         return g.width(), g.height()
 
-    def closeEvent(self, ev):
-        if self._vispy_canvas is None:
-            return
-        self._vispy_canvas.close()
-
     def sizeHint(self):
         return self.size()
 
