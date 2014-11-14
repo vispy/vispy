@@ -142,10 +142,6 @@ class Canvas(object):
         else:
             raise ValueError('Invalid value for app %r' % app)
         
-        # Get the glir queue and then register this canvas as active
-        self._glir = take_pending_glir_queue()
-        set_current_canvas(self)
-        
         # Ensure context is a GLContext object
         context = context or {}
         if isinstance(context, dict):
@@ -155,6 +151,16 @@ class Canvas(object):
             raise TypeError('context must be a dict or GLContext from '
                             'a Canvas with the same backend, not %s'
                             % type(context))
+        
+        # Get the glir queue and then register this canvas as active
+        self._glir = take_pending_glir_queue()
+        set_current_canvas(self)
+        
+        # Glir queues are per-canvas, Glir parsers per-context
+        if hasattr(context, '_glir_parser'):
+            self._glir.parser = context._glir_parser
+        else:
+            context._glir_parser = self._glir.parser
         
         # Deal with special keys
         self._set_keys(keys)
