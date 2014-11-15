@@ -89,6 +89,7 @@ def _nose(mode, extra_arg_string):
     if mode == 'nobackend':
         msg = 'Running tests with no backend'
         extra_arg_string = '-a !vispy_app_test ' + extra_arg_string
+        extra_arg_string = '-e experimental -e wiki ' + extra_arg_string
         coverage = True
     elif mode == 'singlefile':
         fname = extra_arg_string.split(' ')[0]
@@ -142,7 +143,8 @@ def _flake():
     sys.argv.append('--ignore=E226,E241,E265,W291,W293')
     sys.argv.append('--exclude=six.py,py24_ordereddict.py,glfw.py,'
                     '_proxy.py,_es2.py,_desktop.py,_pyopengl.py,'
-                    '_constants.py,png.py,decorator.py')
+                    '_constants.py,png.py,decorator.py,'
+                    'experimental,wiki,_old')
     try:
         from flake8.main import main
     except ImportError:
