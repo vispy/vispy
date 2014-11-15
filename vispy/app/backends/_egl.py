@@ -178,7 +178,7 @@ class CanvasBackend(BaseCanvasBackend):
         if self._surface is None:
             return
         # Make this the current context
-        self._vispy_context.set_current(False)  # Mark as current
+        self._vispy_canvas.set_current()  # Mark canvs as current
         egl.eglMakeCurrent(_EGL_DISPLAY, self._surface, self._surface,
                            self._native_context)
 

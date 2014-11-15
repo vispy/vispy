@@ -86,8 +86,7 @@ class RenderBuffer(GLObject):
         self._shape = tuple(shape[:2])
         self._format = format
         if self._format is not None:
-            self._context.glir.command('SIZE', self._id, 
-                                       self._shape, self._format)
+            self._glir.command('SIZE', self._id, self._shape, self._format)
 
 
 # ------------------------------------------------------- FrameBuffer class ---
@@ -123,13 +122,13 @@ class FrameBuffer(GLObject):
     def activate(self):
         """ Activate/use this frame buffer.
         """
-        self._context.glir.command('FRAMEBUFFER', self._id, True)
+        self._glir.command('FRAMEBUFFER', self._id, True)
     
     def deactivate(self):
         """ Stop using this frame buffer, the previous framebuffer will be
         made active.
         """
-        self._context.glir.command('FRAMEBUFFER', self._id, False)
+        self._glir.command('FRAMEBUFFER', self._id, False)
     
     def __enter__(self):
         self.activate()
@@ -151,10 +150,10 @@ class FrameBuffer(GLObject):
         # Attach
         if buffer is None:
             setattr(self, '_%s_buffer' % format, None)
-            self._context.glir.command('ATTACH', self._id, format, 0)
+            self._glir.command('ATTACH', self._id, format, 0)
         elif isinstance(buffer, (Texture2D, RenderBuffer)):
             setattr(self, '_%s_buffer' % format, buffer)
-            self._context.glir.command('ATTACH', self._id, format, buffer.id)
+            self._glir.command('ATTACH', self._id, format, buffer.id)
         else:
             raise TypeError("Buffer must be a RenderBuffer, Texture2D or None."
                             " (got %s)" % type(buffer))

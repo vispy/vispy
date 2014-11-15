@@ -83,8 +83,8 @@ class Buffer(GLObject):
         # If the whole buffer is to be written, we clear any pending data
         # (because they will be overwritten anyway)
         if nbytes == self._nbytes and offset == 0:
-            self._context.glir.command('SIZE', self._id, nbytes)
-        self._context.glir.command('DATA', self._id, offset, data)
+            self._glir.command('SIZE', self._id, nbytes)
+        self._glir.command('DATA', self._id, offset, data)
     
     def set_data(self, data, copy=False):
         """ Set data in the buffer (deferred operation).
@@ -108,10 +108,10 @@ class Buffer(GLObject):
             self.resize_bytes(nbytes)
         else:
             # Use SIZE to discard any previous data setting
-            self._context.glir.command('SIZE', self._id, nbytes)
+            self._glir.command('SIZE', self._id, nbytes)
         
         if nbytes:  # Only set data if there *is* data
-            self._context.glir.command('DATA', self._id, 0, data)
+            self._glir.command('DATA', self._id, 0, data)
     
     def resize_bytes(self, size):
         """ Resize this buffer (deferred operation). 
@@ -122,7 +122,7 @@ class Buffer(GLObject):
             New buffer size in bytes.
         """
         self._nbytes = size
-        self._context.glir.command('SIZE', self._id, size)
+        self._glir.command('SIZE', self._id, size)
         # Invalidate any view on this buffer
         for view in self._views:
             view._valid = False

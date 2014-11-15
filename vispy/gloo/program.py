@@ -143,7 +143,7 @@ class Program(GLObject):
             raise ValueError('Vertex and fragment code must both be non-empty')
         # Store source code, send it to glir, parse the code for variables
         self._shaders = vert, frag
-        self._context.glir.command('SHADERS', self._id, vert, frag)
+        self._glir.command('SHADERS', self._id, vert, frag)
         # All current variables become pending variables again
         for key, val in self._user_variables.items():
             self._pending_variables[key] = val
@@ -284,8 +284,7 @@ class Program(GLObject):
                         assert False  # This should not happen
                     # Store and send GLIR command
                     self._user_variables[name] = data
-                    self._context.glir.command('TEXTURE', self._id,
-                                               name, data.id)
+                    self._glir.command('TEXTURE', self._id, name, data.id)
                 else:
                     # Normal uniform; convert to np array and check size
                     dtype, numel = self._gtypes[type]
@@ -295,8 +294,7 @@ class Program(GLObject):
                                          'not %i.' % (name, numel, data.size))
                     # Store and send GLIR command
                     self._user_variables[name] = data
-                    self._context.glir.command('UNIFORM', self._id, 
-                                               name, type, data)
+                    self._glir.command('UNIFORM', self._id, name, type, data)
             
             elif kind == 'attribute':
                 # Is this a constant value per vertex
@@ -320,8 +318,8 @@ class Program(GLObject):
                     # Store and send GLIR command
                     self._user_variables[name] = data
                     value = (data.id, data.stride, data.offset)
-                    self._context.glir.command('ATTRIBUTE', self._id, 
-                                               name, type, value)
+                    self._glir.command('ATTRIBUTE', self._id,
+                                       name, type, value)
                 else:
                     # Single-value attribute; convert to array and check size
                     dtype, numel = self._gtypes[type]
@@ -334,8 +332,8 @@ class Program(GLObject):
                     # Store and send GLIR command
                     self._user_variables[name] = data
                     value = tuple([0] + [i for i in data])
-                    self._context.glir.command('ATTRIBUTE', self._id, 
-                                               name, type, value)
+                    self._glir.command('ATTRIBUTE', self._id, 
+                                       name, type, value)
             else:
                 raise KeyError('Cannot set data for a %s.' % kind)
         else:
@@ -402,14 +400,14 @@ class Program(GLObject):
                        np.dtype(np.uint16): 'UNSIGNED_SHORT',
                        np.dtype(np.uint32): 'UNSIGNED_INT'}
             selection = indices.id, gltypes[indices.dtype], indices.size
-            self._context.glir.command('DRAW', self._id, mode, selection)
+            self._glir.command('DRAW', self._id, mode, selection)
         elif indices is None:
             selection = 0, attributes[0].size
             logger.debug("Program drawing %r with %r" % (mode, selection))
-            self._context.glir.command('DRAW', self._id, mode, selection)
+            self._glir.command('DRAW', self._id, mode, selection)
         else:
             raise TypeError("Invalid index: %r (must be IndexBuffer)" %
                             indices)
         
         # Process GLIR commands
-        self._context.glir.flush()
+        self._glir.flush()

@@ -260,7 +260,7 @@ class CanvasBackend(BaseCanvasBackend):
         if self._id is None:
             return
         # Make this the current context
-        self._vispy_context.set_current(False)  # Mark as current
+        self._vispy_canvas.set_current()  # Mark as current
         sdl2.SDL_GL_MakeCurrent(self._id.window, self._native_context)
 
     def _vispy_swap_buffers(self):

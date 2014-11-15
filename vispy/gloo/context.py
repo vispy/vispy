@@ -27,6 +27,10 @@ _default_dict = dict(red_size=8, green_size=8, blue_size=8, alpha_size=8,
                      stereo=False, samples=0)
 
 
+canvasses = []
+pending_glir_queue = GlirQueue()
+
+
 def get_default_config():
     """Get the default OpenGL context configuration
 
@@ -38,59 +42,74 @@ def get_default_config():
     return deepcopy(_default_dict)
 
 
-def get_current_context():
-    """ Get the currently active GLContext object
+def get_current_glir_queue():
+    """ Get the current GLIR queue
     
-    Returns
-    -------
-    context : GLContext or None
-        The context object that is now active, or None if there is no
-        active context.
+    This will be the glir queue on the current canvas, unless there
+    is no canvas available. In this case a new GLIR queue is provided
+    which is associated with the first canvas that gets created.
+    
+    Used by the gloo objects to acquire their glir queue.
     """
-    return GLContext._current_context
+    canvas = get_current_canvas()
+    if canvas is not None:
+        return canvas.glir
+    else:
+        return pending_glir_queue
 
 
-def get_a_context():
-    """ Get a GLContext object
+def get_current_canvas():
+    """ Get the currently active canvas
     
-    This function is recommended to be used by context "consumers" (code
-    that needs a context), and is used as such by `vispy.gloo`.
+    Returns None if there is no canvas available. A canvas is made
+    active on initialization and before the draw event is emitted.
     
-    Returns
-    -------
-    context : GLContext
-        The currently active context, or a "pending" context object if
-        there is currently no active context. This pending context will be
-        the first context to be taken by a context "provider".
+    When a gloo object is created, it is associated with the currently
+    active Canvas, or with the next Canvas to be created if there is
+    no current Canvas. Use Canvas.set_current() to manually activate a
+    canvas.
     """
-    # Ensure that there is a default context
-    if GLContext._default_context is None:
-        GLContext._default_context = GLContext()
-    # Return a context
-    return GLContext._current_context or GLContext._default_context
+    cc = [c() for c in canvasses if c() is not None]
+    if cc:
+        return cc[-1]
+    else:
+        return None
 
 
-def get_new_context():
-    """ Get a new GLContext object that is not yet taken
-    
-    This function is recommended to be used by context "providers" (code
-    that takes the context and provides a native GL context), and is used
-    as such by `vispy.app`.
-    
-    Returns
-    -------
-    context : GLContext
-        A context object that is guaranteed to have not been taken.
-        This may be a "pending" context that is already passed to 
-        context "consumers".
+def set_current_canvas(canvas):
+    """ Make a canvas active. Used primarily by the canvas itself.
     """
-    # Ensure that there is default context and that it is not taken
-    if GLContext._default_context is None:
-        GLContext._default_context = GLContext()
-    elif GLContext._default_context.istaken:
-        GLContext._default_context = GLContext()
-    # Return context
-    return GLContext._default_context
+    # Notify glir 
+    canvas.glir.command('CURRENT', 0)
+    # Try to be quick
+    if canvasses and canvasses[-1]() is canvas:
+        return
+    # Make this the current
+    cc = [c() for c in canvasses if c() is not None]
+    while canvas in cc:
+        cc.remove(canvas)
+    cc.append(canvas)
+    canvasses[:] = [weakref.ref(c) for c in cc]
+
+
+def forget_canvas(canvas):
+    """ Forget about the given canvas. Used by the canvas when closed.
+    """
+    cc = [c() for c in canvasses if c() is not None]
+    while canvas in cc:
+        cc.remove(canvas)
+    canvasses[:] = [weakref.ref(c) for c in cc]
+
+
+def take_pending_glir_queue():
+    """ Get the current pending glir queue object and replace it
+    with a new glir queue. Used by the Canvas class to get a glir queue
+    to which some gloo objects may already have been associated.
+    """
+    global pending_glir_queue
+    q = pending_glir_queue
+    pending_glir_queue = GlirQueue()
+    return q
 
 
 class GLContext(object):
@@ -98,14 +117,10 @@ class GLContext(object):
     The intended use is to subclass this and implement _vispy_activate().
     """
     
-    _current_context = None  # The currently active context (always taken)
-    _default_context = None  # The context that is likely to become active soon
-    
     def __init__(self, config=None):
         self._backend_canvas = lambda x=None: None
         self._name = None
         self.set_config(config)
-        self._glir = GlirQueue()
     
     def set_config(self, config):
         """ Set the config of this context. Setting the config after
@@ -119,19 +134,6 @@ class GLContext(object):
                 raise KeyError('Key %r is not a valid GL config key.' % key)
             if not isinstance(val, type(_default_dict[key])):
                 raise TypeError('Context value of %r has invalid type.' % key)
-    
-    @property
-    def glir(self):
-        """ The glir queue object
-        
-        The glir queue can be used to give GLIR commands, which will be parsed
-        at the right moment (by the app canvas).
-        """
-        # There are three moments where the queue is flushed:
-        # - On canvas.events.paint
-        # - On gloo.flush() and gloo.finish()
-        # - On gloo.Program.draw()
-        return self._glir
     
     def take(self, name, backend_canvas):
         """ Claim ownership for this context. This can only be done if it is
@@ -165,22 +167,7 @@ class GLContext(object):
         """ A dictionary describing the configuration of this GL context.
         """
         return self._config
-    
-    def set_current(self, apply_backend=True):
-        """ Make this the current context. If apply_backend is True
-        (default) the canvas_backend is set to be current.
-        """
-        if apply_backend:
-            self.backend_canvas._vispy_set_current()
-        GLContext._current_context = self
-        self._glir.command('CURRENT', 0)
-    
-    @property
-    def iscurrent(self):
-        """ Whether this is currentlty the active context.
-        """
-        return GLContext._current_context is self
-    
+   
     def __repr__(self):
         backend = self.istaken or 'no'
         return "<GLContext of %s backend at 0x%x>" % (backend, id(self))
