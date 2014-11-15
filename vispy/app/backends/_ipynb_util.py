@@ -2,14 +2,14 @@
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-"""Serialization tools used by the IPython notebook backends."""
+"""Tools used by the IPython notebook backends."""
 
 import re
 import base64
 
 import numpy as np
 
-from ..ext.six import string_types, iteritems
+from ...ext.six import string_types, iteritems
 
 
 # -----------------------------------------------------------------------------

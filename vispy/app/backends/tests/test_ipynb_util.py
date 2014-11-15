@@ -4,7 +4,9 @@
 import numpy as np
 from nose.tools import assert_equal
 
-from vispy.util import serialization
+from vispy.app.backends._ipynb_util import (_extract_buffers,
+                                            _serialize_command,
+                                            create_glir_message)
 from vispy.testing import run_tests_if_main
 
 
@@ -14,13 +16,13 @@ def test_extract_buffers():
 
     # No DATA command.
     commands = [('CREATE', 4, 'VertexBuffer')]
-    commands_modified, buffers = serialization._extract_buffers(commands)
+    commands_modified, buffers = _extract_buffers(commands)
     assert_equal(commands_modified, commands)
     assert_equal(buffers, [])
 
     # A single DATA command.
     commands = [('DATA', 4, 0, arr)]
-    commands_modified, buffers = serialization._extract_buffers(commands)
+    commands_modified, buffers = _extract_buffers(commands)
     assert_equal(commands_modified, [('DATA', 4, 0, {'buffer_index': 0})])
     assert_equal(buffers, [arr])
 
@@ -33,19 +35,19 @@ def test_extract_buffers():
         ('DATA', 0, 10, {'buffer_index': 0}),
         ('UNIFORM', 4, 'u_scale', 'vec3', (1, 2, 3)),
         ('DATA', 2, 20, {'buffer_index': 1})]
-    commands_modified, buffers = serialization._extract_buffers(commands)
+    commands_modified, buffers = _extract_buffers(commands)
     assert_equal(commands_modified, commands_modified_expected)
     assert_equal(buffers, [arr, arr2])
 
 
 def test_serialize_command():
     command = ('CREATE', 4, 'VertexBuffer')
-    command_serialized = serialization._serialize_command(command)
+    command_serialized = _serialize_command(command)
     assert_equal(command_serialized, list(command))
 
     command = ('UNIFORM', 4, 'u_scale', 'vec3', (1, 2, 3))
     commands_serialized_expected = ['UNIFORM', 4, 'u_scale', 'vec3', [1, 2, 3]]
-    command_serialized = serialization._serialize_command(command)
+    command_serialized = _serialize_command(command)
     assert_equal(command_serialized, commands_serialized_expected)
 
 
@@ -58,7 +60,7 @@ def test_create_glir_message_binary():
                 ('DATA', 3, 0, arr),
                 ('UNIFORM', 4, 'u_pan', 'vec2', np.array([1, 2, 3])),
                 ('DATA', 5, 20, arr2)]
-    msg = serialization.create_glir_message(commands)
+    msg = create_glir_message(commands)
     assert_equal(msg['msg_type'], 'glir_commands')
 
     commands_serialized = msg['commands']
@@ -86,8 +88,7 @@ def test_create_glir_message_base64():
                 ('DATA', 3, 0, arr),
                 ('UNIFORM', 4, 'u_pan', 'vec2', np.array([1, 2, 3])),
                 ('DATA', 5, 20, arr2)]
-    msg = serialization.create_glir_message(commands,
-                                            array_serialization='base64')
+    msg = create_glir_message(commands, array_serialization='base64')
     assert_equal(msg['msg_type'], 'glir_commands')
 
     commands_serialized = msg['commands']

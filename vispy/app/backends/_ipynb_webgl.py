@@ -10,7 +10,8 @@ from __future__ import division
 
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
                     BaseTimerBackend)
-from ...util import logger, keys, serialization
+from ._ipynb_util import create_glir_message
+from ...util import logger, keys
 from ...ext import six
 from vispy.gloo.glir import BaseGlirParser
 
@@ -309,11 +310,11 @@ class VispyWidget(DOMWidget):
         array_serialization = 'base64'
         # array_serialization = 'binary'
         if array_serialization == 'base64':
-            msg = serialization.create_glir_message(commands, 'base64')
+            msg = create_glir_message(commands, 'base64')
             msg['array_serialization'] = 'base64'
             self.send(msg)
         elif array_serialization == 'binary':
-            msg = serialization.create_glir_message(commands, 'binary')
+            msg = create_glir_message(commands, 'binary')
             msg['array_serialization'] = 'binary'
             # Remove the buffers from the JSON message: they will be sent
             # independently via binary WebSocket.
