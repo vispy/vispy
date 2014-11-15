@@ -213,6 +213,7 @@ class CanvasBackend(BaseCanvasBackend):
         'shift': keys.SHIFT,
         'alt': keys.ALT,
     }
+
     def _gen_event(self, ev):
         if self._vispy_canvas is None:
             return
