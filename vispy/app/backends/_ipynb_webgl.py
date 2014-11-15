@@ -132,10 +132,10 @@ class CanvasBackend(BaseCanvasBackend):
 
     def _create_widget(self, size=None):
         self._widget = VispyWidget(self._gen_event, size=size)
-        self._context.glir.parser = WebGLGlirParser(self._widget)
+        self._vispy_canvas._glir.parser = WebGLGlirParser(self._widget)
 
     def _reinit_widget(self):
-        self._context.set_current()
+        self._vispy_canvas.set_current()
 
         self._vispy_canvas.events.initialize()
         self._vispy_canvas.events.resize(size=(self._widget.width,
@@ -186,7 +186,7 @@ class CanvasBackend(BaseCanvasBackend):
         ioloop.add_callback(self._draw_event)
 
     def _draw_event(self):
-        self._context.set_current()
+        self._vispy_canvas.set_current()
         self._vispy_canvas.events.draw()
 
     def _vispy_close(self):
