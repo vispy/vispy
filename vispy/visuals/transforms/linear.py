@@ -7,6 +7,7 @@ from __future__ import division
 import numpy as np
 
 from ...util import transforms
+from ..shaders import Variable
 from ...geometry import Rect
 from ._util import arg_to_vec4, as_vec4
 from .base_transform import BaseTransform
@@ -109,18 +110,18 @@ class STTransform(BaseTransform):
     def translate(self, t):
         t = as_vec4(t, default=(0, 0, 0, 0))
         self._set_st(translate=t)
-        
+
     def _set_st(self, scale=None, translate=None):
         update = False
-        
+
         if scale is not None and not np.all(scale == self._scale):
             self._scale[:] = scale
             update = True
-            
+
         if translate is not None and not np.all(translate == self._translate):
             self._translate[:] = translate
             update = True
-        
+
         if update:
             self.shader_map()  # update shader variables
             self.shader_imap()
@@ -128,7 +129,7 @@ class STTransform(BaseTransform):
 
     def move(self, move):
         """Change the translation of this transform by the amount given.
-        
+
         Parameters:
         -----------
         move : array-like
@@ -140,7 +141,7 @@ class STTransform(BaseTransform):
     def zoom(self, zoom, center=(0, 0, 0), mapped=True):
         """Update the transform such that its scale factor is changed, but
         the specified center point is left unchanged.
-        
+
         Parameters
         ----------
         zoom : array-like
@@ -149,8 +150,8 @@ class STTransform(BaseTransform):
         center : array-like
             The center point around which the scaling will take place.
         mapped : bool
-            Whether *center* is expressed in mapped coordinates (True) or 
-            unmapped coordinates (False). 
+            Whether *center* is expressed in mapped coordinates (True) or
+            unmapped coordinates (False).
         """
         zoom = as_vec4(zoom, default=(1, 1, 1, 1))
         center = as_vec4(center, default=(0, 0, 0, 0))
@@ -166,7 +167,7 @@ class STTransform(BaseTransform):
         m.scale(self.scale)
         m.translate(self.translate)
         return m
-    
+
     def _update(self):
         # force update of uniforms on shader functions
         self.shader_map()
@@ -175,45 +176,45 @@ class STTransform(BaseTransform):
 
     @classmethod
     def from_mapping(cls, x0, x1):
-        """ Create an STTransform from the given mapping. 
+        """ Create an STTransform from the given mapping.
         See ``set_mapping()`` for details.
         """
         t = cls()
         t.set_mapping(x0, x1)
         return t
-    
+
     def set_mapping(self, x0, x1):
-        """ Configure this transform such that it maps points x0 => x1, 
+        """ Configure this transform such that it maps points x0 => x1,
         where each argument must be an array of shape (2, 2) or (2, 3).
-        
+
         For example, if we wish to map the corners of a rectangle::
-        
+
             p1 = [[0, 0], [200, 300]]
-            
+
         onto a unit cube::
-        
+
             p2 = [[-1, -1], [1, 1]]
-            
+
         then we can generate the transform as follows::
-        
+
             tr = STTransform()
             tr.set_mapping(p1, p2)
-            
+
             # test:
             assert tr.map(p1)[:,:2] == p2
-        
+
         """
         # if args are Rect, convert to array first
         if isinstance(x0, Rect):
             x0 = x0._transform_in()[:3]
         if isinstance(x1, Rect):
             x1 = x1._transform_in()[:3]
-        
+
         x0 = np.array(x0)
         x1 = np.array(x1)
         denom = (x0[1] - x0[0])
         mask = denom == 0
-        denom[mask] = 1.0 
+        denom[mask] = 1.0
         s = (x1[1] - x1[0]) / denom
         s[mask] = 1.0
         s[x0[1] == x0[0]] = 1.0
@@ -349,7 +350,7 @@ class AffineTransform(BaseTransform):
     def rotate(self, angle, axis):
         """
         Rotate the matrix by some angle about a given axis.
-        
+
         The rotation is applied *after* the transformations already present
         in the matrix.
 
@@ -366,7 +367,7 @@ class AffineTransform(BaseTransform):
 
     def set_mapping(self, points1, points2):
         """ Set to a 3D transformation matrix that maps points1 onto points2.
-        
+
         Arguments are specified as arrays of four 3D coordinates, shape (4, 3).
         """
         # note: need to transpose because util.functions uses opposite
@@ -380,8 +381,8 @@ class AffineTransform(BaseTransform):
         self.matrix = np.eye(4)
 
     def __mul__(self, tr):
-        if (isinstance(tr, AffineTransform) and not 
-                any(tr.matrix[:3, 3] != 0)):   
+        if (isinstance(tr, AffineTransform) and not
+                any(tr.matrix[:3, 3] != 0)):
             # don't multiply if the perspective column is used
             return AffineTransform(matrix=np.dot(tr.matrix, self.matrix))
         else:
@@ -414,10 +415,10 @@ class AffineTransform(BaseTransform):
 class PerspectiveTransform(AffineTransform):
     """
     Matrix transform that also implements perspective division.
-    
+
     """
     # Note: Although OpenGL operates in homogeneouus coordinates, it may be
-    # necessary to manually implement perspective division.. 
+    # necessary to manually implement perspective division..
     # Perhaps we can find a way to avoid this.
     glsl_map = """
         vec4 perspective_transform_map(vec4 pos) {
@@ -459,3 +460,71 @@ class PerspectiveTransform(AffineTransform):
         # Override multiplication -- this does not combine well with affine
         # matrices.
         return tr.__rmul__(self)
+
+
+class PanZoomTransform(BaseTransform):
+    glsl_map = """
+        vec2 pz_transform_map(vec2 pos) {
+            return $zoom * (pos + $pan);
+        }
+    """
+
+    glsl_imap = """
+        vec2 pz_transform_imap(vec2 pos) {
+            return (pos / $zoom - $pan);
+        }
+    """
+
+    Linear = True
+    Orthogonal = True
+    NonScaling = False
+    Isometric = False
+
+    def __init__(self):
+        super(PanZoomTransform, self).__init__()
+        self._pan = None
+        self._zoom = None
+
+    @property
+    def pan(self):
+        if isinstance(self._pan, Variable):
+            return np.array(self._pan.value, dtype=np.float32)
+        else:
+            raise NotImplementedError()
+
+    @pan.setter
+    def pan(self, value):
+        if isinstance(value, Variable):
+            self._pan = value
+            self._shader_map['pan'] = self._pan
+        elif isinstance(self._pan, Variable):
+            self._pan.value = value
+        else:
+            raise NotImplementedError()
+
+    @property
+    def zoom(self):
+        if isinstance(self._zoom, Variable):
+            return np.array(self._zoom.value, dtype=np.float32)
+        else:
+            raise NotImplementedError()
+
+    @zoom.setter
+    def zoom(self, value):
+        if isinstance(value, Variable):
+            self._zoom = value
+            self._shader_map['zoom'] = self._zoom
+        elif isinstance(self._zoom, Variable):
+            self._zoom.value = value
+        else:
+            raise NotImplementedError()
+
+    def map(self, coords):
+        if not isinstance(coords, np.ndarray):
+            coords = np.array(coords)
+        return self.zoom[None, :] * (coords + self.pan[None, :])
+
+    def imap(self, coords):
+        if not isinstance(coords, np.ndarray):
+            coords = np.array(coords)
+        return (coords / self.zoom[None, :]) - self.pan[None, :]
