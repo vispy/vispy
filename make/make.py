@@ -153,7 +153,11 @@ class Maker:
         # Go
         if 'html' == arg:
             sphinx_clean(build_dir)
-            sphinx_build(WEBSITE_DIR, build_dir)
+            try:
+                sphinx_build(WEBSITE_DIR, build_dir)
+            except SystemExit as err:
+                if err.code:
+                    raise
             sphinx_copy_pages(html_dir, PAGES_DIR, PAGES_REPO)
         elif 'show' == arg:
             sphinx_show(PAGES_DIR)
