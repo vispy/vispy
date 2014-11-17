@@ -156,10 +156,14 @@ class CanvasBackend(BaseCanvasBackend):
         raise NotImplementedError()
 
     def _vispy_get_fullscreen(self):
-        raise NotImplementedError()
+        # We don't want error messages to show up when the user presses
+        # F11 to fullscreen the browser.
+        pass
 
     def _vispy_set_fullscreen(self, fullscreen):
-        raise NotImplementedError()
+        # We don't want error messages to show up when the user presses
+        # F11 to fullscreen the browser.
+        pass
 
     def _vispy_get_size(self):
         return (self._widget.width, self._widget.height)
