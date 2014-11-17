@@ -132,10 +132,10 @@ class CanvasBackend(BaseCanvasBackend):
 
     def _create_widget(self, size=None):
         self._widget = VispyWidget(self._gen_event, size=size)
-        self._context.glir.parser = WebGLGlirParser(self._widget)
+        self._vispy_canvas._glir.parser = WebGLGlirParser(self._widget)
 
     def _reinit_widget(self):
-        self._context.set_current()
+        self._vispy_canvas.set_current()
 
         self._vispy_canvas.events.initialize()
         self._vispy_canvas.events.resize(size=(self._widget.width,
@@ -186,7 +186,7 @@ class CanvasBackend(BaseCanvasBackend):
         ioloop.add_callback(self._draw_event)
 
     def _draw_event(self):
-        self._context.set_current()
+        self._vispy_canvas.set_current()
         self._vispy_canvas.events.draw()
 
     def _vispy_close(self):
@@ -208,6 +208,12 @@ class CanvasBackend(BaseCanvasBackend):
         return ev
 
     # Generate vispy events according to upcoming JS events
+    _modifiers_map = {
+        'ctrl': keys.CONTROL,
+        'shift': keys.SHIFT,
+        'alt': keys.ALT,
+    }
+
     def _gen_event(self, ev):
         if self._vispy_canvas is None:
             return
@@ -225,42 +231,48 @@ class CanvasBackend(BaseCanvasBackend):
                 key_text = ' '
             else:
                 key_text = six.text_type(key_code)
+        # Process modifiers.
+        modifiers = ev.get('modifiers', None)
+        if modifiers:
+            modifiers = tuple([self._modifiers_map[modifier]
+                               for modifier in modifiers
+                               if modifier in self._modifiers_map])
         if event_type == "mouse_move":
             self._vispy_mouse_move(native=ev,
                                    button=ev["button"],
                                    pos=ev["pos"],
-                                   modifiers=ev["modifiers"],
+                                   modifiers=modifiers,
                                    )
         elif event_type == "mouse_press":
             self._vispy_mouse_press(native=ev,
                                     pos=ev["pos"],
                                     button=ev["button"],
-                                    modifiers=ev["modifiers"],
+                                    modifiers=modifiers,
                                     )
         elif event_type == "mouse_release":
             self._vispy_mouse_release(native=ev,
                                       pos=ev["pos"],
                                       button=ev["button"],
-                                      modifiers=ev["modifiers"],
+                                      modifiers=modifiers,
                                       )
         elif event_type == "mouse_wheel":
             self._vispy_canvas.events.mouse_wheel(native=ev,
                                                   delta=ev["delta"],
                                                   pos=ev["pos"],
                                                   button=ev["button"],
-                                                  modifiers=ev["modifiers"],
+                                                  modifiers=modifiers,
                                                   )
         elif event_type == "key_press":
             self._vispy_canvas.events.key_press(native=ev,
                                                 key=key,
                                                 text=key_text,
-                                                modifiers=ev["modifiers"],
+                                                modifiers=modifiers,
                                                 )
         elif event_type == "key_release":
             self._vispy_canvas.events.key_release(native=ev,
                                                   key=key,
                                                   text=key_text,
-                                                  modifiers=ev["modifiers"],
+                                                  modifiers=modifiers,
                                                   )
         elif event_type == "resize":
             self._vispy_canvas.events.resize(native=ev,
