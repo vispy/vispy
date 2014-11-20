@@ -33,13 +33,14 @@ class PolygonVisual(Visual):
         Border color of the polygon
     """
     def __init__(self, pos=None, color='black',
-                 border_color=None, **kwds):
+                 border_color=None, border_width=1, **kwds):
         super(PolygonVisual, self).__init__(**kwds)
 
         self.mesh = MeshVisual()
         self.border = LineVisual()
         self._pos = pos
         self._color = Color(color)
+        self._border_width = border_width
         self._border_color = Color(border_color)
         self._update()
         #glopts = kwds.pop('gl_options', 'translucent')
@@ -94,6 +95,7 @@ class PolygonVisual(Visual):
                                             axis=0)
             self.border.set_data(pos=border_pos,
                                  color=self._border_color.rgba, 
+                                 width=self._border_width,
                                  connect='strip')
         self.update()
 
