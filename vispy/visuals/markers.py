@@ -286,10 +286,10 @@ class MarkersVisual(Visual):
             The symbol size in px.
         edge_width : float
             The width of the symbol outline in px.
-        edge_color : Color
-            The color used to draw the symbol outline.
-        face_color : Color
-            The color used to draw the symbol interior.
+        edge_color : Color or array
+            The color used to draw each symbol outline.
+        face_color : Color or array
+            The color used to draw each symbol interior.
 
         Notes
         -----
@@ -300,8 +300,12 @@ class MarkersVisual(Visual):
                 pos.ndim == 2 and pos.shape[1] in (2, 3))
         assert edge_width > 0
         self.set_style(style)
-        edge_color = Color(edge_color).rgba
-        face_color = Color(face_color).rgba
+        
+        if not isinstance(edge_color, np.ndarray):
+            edge_color = Color(edge_color).rgba
+        if not isinstance(face_color, np.ndarray):
+            face_color = Color(face_color).rgba
+        
         n = len(pos)
         data = np.zeros(n, dtype=[('a_position', np.float32, 3),
                                   ('a_fg_color', np.float32, 4),
