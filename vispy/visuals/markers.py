@@ -286,9 +286,9 @@ class MarkersVisual(Visual):
             The symbol size in px.
         edge_width : float
             The width of the symbol outline in px.
-        edge_color : Color or array
+        edge_color : Color | ColorArray
             The color used to draw each symbol outline.
-        face_color : Color or array
+        face_color : Color | ColorArray
             The color used to draw each symbol interior.
 
         Notes
