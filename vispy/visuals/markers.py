@@ -9,7 +9,7 @@ Marker Visual and shader definitions.
 
 import numpy as np
 
-from ..color import Color
+from ..color import Color, ColorArray
 from ..gloo import set_state, VertexBuffer, _check_valid
 from .shaders import ModularProgram, Function, Variable
 from .visual import Visual
@@ -286,10 +286,10 @@ class MarkersVisual(Visual):
             The symbol size in px.
         edge_width : float
             The width of the symbol outline in px.
-        edge_color : Color
-            The color used to draw the symbol outline.
-        face_color : Color
-            The color used to draw the symbol interior.
+        edge_color : Color | ColorArray
+            The color used to draw each symbol outline.
+        face_color : Color | ColorArray
+            The color used to draw each symbol interior.
 
         Notes
         -----
@@ -300,8 +300,15 @@ class MarkersVisual(Visual):
                 pos.ndim == 2 and pos.shape[1] in (2, 3))
         assert edge_width > 0
         self.set_style(style)
-        edge_color = Color(edge_color).rgba
-        face_color = Color(face_color).rgba
+        
+        edge_color = ColorArray(edge_color).rgba
+        if len(edge_color) == 1:
+            edge_color = edge_color[0]
+
+        face_color = ColorArray(face_color).rgba
+        if len(face_color) == 1:
+            face_color = face_color[0]
+
         n = len(pos)
         data = np.zeros(n, dtype=[('a_position', np.float32, 3),
                                   ('a_fg_color', np.float32, 4),
