@@ -301,15 +301,13 @@ class MarkersVisual(Visual):
         assert edge_width > 0
         self.set_style(style)
         
-        if isinstance(edge_color, np.ndarray):
-            edge_color = ColorArray(edge_color).rgba
-        else:
-            edge_color = Color(edge_color).rgba
+        edge_color = ColorArray(edge_color).rgba
+        if len(edge_color) == 1:
+            edge_color = edge_color[0]
 
-        if isinstance(face_color, np.ndarray):
-            face_color = ColorArray(face_color).rgba
-        else:
-            face_color = Color(face_color).rgba
+        face_color = ColorArray(face_color).rgba
+        if len(face_color) == 1:
+            face_color = face_color[0]
 
         n = len(pos)
         data = np.zeros(n, dtype=[('a_position', np.float32, 3),
