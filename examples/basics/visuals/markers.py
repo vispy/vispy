@@ -23,7 +23,7 @@ for i in range(500):
     r = 10.1 - i * 0.02
     radius -= 0.45
     pos[i] = x, y
-    colors[i] = (i/500,1.0-i/500,0,1)
+    colors[i] = (i/500, 1.0-i/500, 0, 1)
 
 
 class Canvas(app.Canvas):
