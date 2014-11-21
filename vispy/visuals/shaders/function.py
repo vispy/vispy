@@ -18,6 +18,7 @@ trigger a recompile.
 """
 
 import re
+import logging
 import numpy as np
 
 from ...util.event import EventEmitter, Event
@@ -430,7 +431,7 @@ class Function(ShaderObject):
                     self.template_vars.add(var.lstrip('$'))
         
         self.changed(code_changed=True, value_changed=True)
-        if logger.level >= 10:
+        if logger.level == logging.DEBUG:
             import traceback
             last = traceback.format_list(traceback.extract_stack()[-2:-1])
             logger.debug("Assignment would trigger shader recompile:\n"
