@@ -9,7 +9,7 @@ Marker Visual and shader definitions.
 
 import numpy as np
 
-from ..color import Color
+from ..color import Color, ColorArray
 from ..gloo import set_state, VertexBuffer, _check_valid
 from .shaders import ModularProgram, Function, Variable
 from .visual import Visual
@@ -301,11 +301,16 @@ class MarkersVisual(Visual):
         assert edge_width > 0
         self.set_style(style)
         
-        if not isinstance(edge_color, np.ndarray):
+        if isinstance(edge_color, np.ndarray):
+            edge_color = ColorArray(edge_color).rgba
+        else:
             edge_color = Color(edge_color).rgba
-        if not isinstance(face_color, np.ndarray):
+
+        if isinstance(face_color, np.ndarray):
+            face_color = ColorArray(face_color).rgba
+        else:
             face_color = Color(face_color).rgba
-        
+
         n = len(pos)
         data = np.zeros(n, dtype=[('a_position', np.float32, 3),
                                   ('a_fg_color', np.float32, 4),
