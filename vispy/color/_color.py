@@ -911,7 +911,10 @@ def get_colormap(name):
 
 
 def get_colormap_py(name):
-    return eval('cmap_'+name)
+    if name in colormaps:
+        return eval('cmap_'+name)
+    else:
+        raise KeyError('%s not a valid colorma name' % name)
 
 colormaps = ['autumn', 'blues', 'cool', 'fire', 'grays', 'greens', 'hot',
              'ice', 'fire', 'reds', 'spring', 'summer', 'winter']
