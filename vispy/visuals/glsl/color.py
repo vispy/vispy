@@ -30,7 +30,7 @@ $colormap : 2D texture sampler
 
 
 """
-COLORMAP_DISCRETE = """
+COLORMAP_TEXTURE = """
 vec3 get_color(int index) {
     float x = (float(index) + .5) / float($ncolors);
     return texture2D($colormap, vec2(x, .5)).rgb;
