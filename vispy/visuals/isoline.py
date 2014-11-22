@@ -35,17 +35,20 @@ def iso_mesh_line(vertices, tris, vertex_data, level):
     vertices : ndarray, shape (Nv, 3)
         Vertex coordinates.
     tris : ndarray, shape (Nf, 3)
-        Indices of triangular element into the vertex array.
+        Indices of triangular element into the vertices array.
     vertex_data : ndarray, shape (Nv,)
         data at vertex.
     level : ndarray, shape (Nl,)
         Levels at which to generate an isocurve
 
-    Return
-    ------
-    a np array of vertices (Nvout, 3)
-    a np array for line connect (Ne, 2)
-    and a np array for vertices line index (Nvout)
+    Returns
+    -------
+    lines : ndarray, shape (Nvout, 3)
+        Vertex coordinates for lines points
+    connects : ndarray, shape (Ne, 2)
+        Indices of line element into the vertex array.
+    vertex_level: ndarray, shape (Nvout,)
+        level for vertex in lines
     """
 
     lines = None
@@ -97,8 +100,7 @@ def iso_mesh_line(vertices, tris, vertex_data, level):
 
 
 class IsolineVisual(LineVisual):
-    """Displays the isocurves of a tri mesh with data at vertices at different
-    levels.
+    """Isocurves of a tri mesh with data at vertices at different levels.
 
     Parameters
     ----------
@@ -113,8 +115,6 @@ class IsolineVisual(LineVisual):
     color : Color, tuple, colormap name or array
         The color to use when drawing the line. If an array is given, it
         must be of shape (Nlev, 4) and provide one rgba color by level.
-    Notes
-    -----
     """
     def __init__(self, vertices=None, tris=None, data=None,
                  level=None, color_lev=None, **kwds):

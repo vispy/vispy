@@ -609,89 +609,155 @@ class Color(ColorArray):
         return ('<%s: %s>' % (self._name(), nice_str))
 
 
-def mix(a, b, t):
+def _mix(a, b, t):
+    """ Mix b (with proportion t) with a """
     return (1.0 - t)*a + t*b
 
 
-def smoothstep(edge0, edge1, x):
+def _smoothstep(edge0, edge1, x):
+    """ performs smooth Hermite interpolation
+        between 0 and 1 when edge0 < x < edge1.  """
     # Scale, bias and saturate x to 0..1 range
     x = np.clip((x - edge0)/(edge1 - edge0), 0.0, 1.0)
     # Evaluate polynomial
     return x*x*(3 - 2*x)
 
-autumn = """
+
+def cmap_autumn(t):
+    """
+    An autumn colormap
+
+    Parameters
+    ----------
+    t : float between 0 and 1
+
+    Notes
+    -----
+    GLSL equivalent code:
+
     vec4 autumn(float t) {
         return vec4(mix(vec3(1.0,0.0,0.0),vec3(1.0,1.0,0.0),t),1.0);
     }
-"""
 
-
-def cmap_autumn(t):
+    """
     a = np.array([1.0, 0.0, 0.0, 1.0], np.float32)
     b = np.array([1.0, 1.0, 0.0, 1.0], np.float32)
-    return mix(a, b, t)
-
-blues = """
-    vec4 blues(float t) {
-        return vec4(mix(vec3(1.0,1.0,1.0),vec3(0.0,0.0,1.0),t),1.0);
-    }
-"""
+    return _mix(a, b, t)
 
 
 def cmap_blues(t):
+    """
+    An blues colormap
+
+    Parameters
+    ----------
+    t : float between 0 and 1
+
+    Notes
+    -----
+    GLSL equivalent code:
+
+    vec4 blues(float t) {
+        return vec4(mix(vec3(1.0,1.0,1.0),vec3(0.0,0.0,1.0),t),1.0);
+    }
+
+    """
     a = np.array([1.0, 1.0, 1.0, 1.0], np.float32)
     b = np.array([0.0, 0.0, 1.0, 1.0], np.float32)
-    return mix(a, b, t)
-
-cool = """
-    vec4 cool(float t) {
-        return vec4(mix(vec3(0.0,1.0,1.0),vec3(1.0,0.0,1.0),t),1.0);
-    }
-"""
+    return _mix(a, b, t)
 
 
 def cmap_cool(t):
+    """
+    An cool colormap
+
+    Parameters
+    ----------
+    t : float between 0 and 1
+
+    Notes
+    -----
+    GLSL equivalent code:
+
+    vec4 cool(float t) {
+        return vec4(mix(vec3(0.0,1.0,1.0),vec3(1.0,0.0,1.0),t),1.0);
+    }
+
+    """
     a = np.array([0.0, 1.0, 1.0, 1.0], np.float32)
     b = np.array([1.0, 0.0, 1.0, 1.0], np.float32)
-    return mix(a, b, t)
+    return _mix(a, b, t)
 
-fire = """
+
+def cmap_fire(t):
+    """
+    An fire colormap
+
+    Parameters
+    ----------
+    t : float between 0 and 1
+
+    Notes
+    -----
+    GLSL equivalent code:
+
     vec4 fire(float t) {
         return vec4(mix(mix(vec3(1.0,1.0,1.0),vec3(1.0,1.0,0.0),t),
             mix(vec3(1.0,1.0,0.0),vec3(1.0,0.0,0.0),t*t),t),1.0);
     }
-"""
 
+    """
 
-def cmap_fire(t):
     a = np.array([1.0, 1.0, 1.0, 1.0], np.float32)
     b = np.array([1.0, 1.0, 0.0, 1.0], np.float32)
-    c = mix(a, b, t)
+    c = _mix(a, b, t)
     d = np.array([1.0, 0.0, 0.0, 1.0], np.float32)
-    e = mix(b, d, t**2)
-    return mix(c, e, t)
-
-grays = """
-    vec4 grays(float t) {
-        return vec4(t,t,t,1.0);
-    }
-"""
+    e = _mix(b, d, t**2)
+    return _mix(c, e, t)
 
 
 def cmap_grays(t):
-    return np.array([t, t, t, 1.0], np.float32)
+    """
+    An grays colormap
 
-greens = """
-    vec4 greens(float t) {
-        return vec4(mix(vec3(1.0,1.0,1.0),vec3(0.0,1.0,0.0),t),1.0);
+    Parameters
+    ----------
+    t : float between 0 and 1
+
+    Notes
+    -----
+    GLSL equivalent code:
+
+    vec4 grays(float t) {
+        return vec4(t,t,t,1.0);
     }
-"""
+
+    """
+
+    return np.array([t, t, t, 1.0], np.float32)
 
 
 def cmap_greens(t):
+    """
+    An greens colormap
+
+    Parameters
+    ----------
+    t : float between 0 and 1
+
+    Notes
+    -----
+    GLSL equivalent code:
+
+    vec4 greens(float t) {
+        return vec4(mix(vec3(1.0,1.0,1.0),vec3(0.0,1.0,0.0),t),1.0);
+    }
+
+    """
+
     a = np.array([1.0, 1.0, 1.0, 1.0], np.float32)
     b = np.array([0.0, 1.0, 0.0, 1.0], np.float32)
-    return mix(a, b, t)
+    return _mix(a, b, t)
 
 hot = """
     vec4 hot(float t) {
@@ -702,9 +768,27 @@ hot = """
 
 
 def cmap_hot(t):
-    c1 = smoothstep(0.00, 0.33, t)
-    c2 = smoothstep(0.33, 0.66, t)
-    c3 = smoothstep(0.66, 1.00, t)
+    """
+    An hot colormap
+
+    Parameters
+    ----------
+    t : float between 0 and 1
+
+    Notes
+    -----
+    GLSL equivalent code:
+
+    vec4 hot(float t) {
+        return vec4(smoothstep(0.00,0.33,t),smoothstep(0.33,0.66,t),
+            smoothstep(0.66,1.00,t),1.0);
+            }
+
+    """
+
+    c1 = _smoothstep(0.00, 0.33, t)
+    c2 = _smoothstep(0.33, 0.66, t)
+    c3 = _smoothstep(0.66, 1.00, t)
     return np.array([c1, c2, c3, 1.0], np.float32)
 
 ice = """
@@ -715,59 +799,122 @@ ice = """
 
 
 def cmap_ice(t):
-    return np.array([t, t, 1.0, 1.0])
+    """
+    An ice colormap
 
-reds = """
-    vec4 reds(float t) {
-        return vec4(mix(vec3(1.0,1.0,1.0),vec3(1.0,0.0,0.0),t),1.0);
+    Parameters
+    ----------
+    t : float between 0 and 1
+
+    Notes
+    -----
+    GLSL equivalent code:
+
+    vec4 ice(float t) {
+        return vec4(t,t,1.0,1.0);
     }
-"""
+
+    """
+
+    return np.array([t, t, 1.0, 1.0])
 
 
 def cmap_reds(t):
+    """
+    An reds colormap
+
+    Parameters
+    ----------
+    t : float between 0 and 1
+
+    Notes
+    -----
+    GLSL equivalent code:
+
+    vec4 reds(float t) {
+        return vec4(mix(vec3(1.0,1.0,1.0),vec3(1.0,0.0,0.0),t),1.0);
+    }
+
+    """
     a = np.array([1.0, 1.0, 1.0, 1.0], np.float32)
     b = np.array([1.0, 0.0, 0.0, 1.0], np.float32)
-    return mix(a, b, t)
-
-spring = """
-    vec4 spring(float t) {
-        return vec4(mix(vec3(1.0,0.0,1.0),vec3(1.0,1.0,0.0),t),1.0);
-    }
-"""
+    return _mix(a, b, t)
 
 
 def cmap_spring(t):
+    """
+    An spring colormap
+
+    Parameters
+    ----------
+    t : float between 0 and 1
+
+    Notes
+    -----
+    GLSL equivalent code:
+
+    vec4 spring(float t) {
+        return vec4(mix(vec3(1.0,0.0,1.0),vec3(1.0,1.0,0.0),t),1.0);
+    }
+
+    """
+
     a = np.array([1.0, 0.0, 1.0, 1.0], np.float32)
     b = np.array([1.0, 1.0, 0.0, 1.0], np.float32)
-    return mix(a, b, t)
-
-summer = """
-    vec4 summer(float t) {
-        return vec4(mix(vec3(0.0,0.5,0.4),vec3(1.0,1.0,0.4),t),1.0);
-    }
-"""
+    return _mix(a, b, t)
 
 
 def cmap_summer(t):
+    """
+    An summer colormap
+
+    Parameters
+    ----------
+    t : float between 0 and 1
+
+    Notes
+    -----
+    GLSL equivalent code:
+
+    vec4 summer(float t) {
+        return vec4(mix(vec3(0.0,0.5,0.4),vec3(1.0,1.0,0.4),t),1.0);
+    }
+
+    """
+
     a = np.array([0.0, 0.5, 0.4, 1.0], np.float32)
     b = np.array([1.0, 1.0, 0.4, 1.0], np.float32)
-    return mix(a, b, t)
-
-winter = """
-    vec4 winter(float t) {
-        return vec4(mix(vec3(0.0,0.0,1.0),vec3(0.0,1.0,0.5),sqrt(t)),1.0);
-    }
-"""
+    return _mix(a, b, t)
 
 
 def cmap_winter(t):
+    """
+    An winter colormap
+
+    Parameters
+    ----------
+    t : float between 0 and 1
+
+    Notes
+    -----
+    GLSL equivalent code:
+
+    vec4 winter(float t) {
+        return vec4(mix(vec3(0.0,0.0,1.0),vec3(0.0,1.0,0.5),sqrt(t)),1.0);
+    }
+
+    """
+
     a = np.array([0.0, 0.0, 1.0, 1.0], np.float32)
     b = np.array([0.0, 1.0, 0.5, 1.0], np.float32)
-    return mix(a, b, np.sqrt(t))
+    return _mix(a, b, np.sqrt(t))
 
 
 def get_colormap(name):
-    return globals()[name]
+    docstring = eval('cmap_'+name).__doc__
+    begin = docstring.find("vec4 %s" % name)
+    end = docstring.find("}")
+    return docstring[begin:end+1]
 
 
 def get_colormap_py(name):
