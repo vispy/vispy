@@ -10,24 +10,26 @@
 The `get_color()` function returns a RGB color from an index integer
 referring to the colormap.
 
+
 Inputs
 ------
-index : int
-    The color index.
 
-Outputs
--------
-color : vec3
-    The color.
+index (int): The color index.
+
 
 Template variables
 ------------------
-$ncolors : int
-    The number of colors in the colormap.
 
-$colormap : 2D texture sampler
-    The sampler for the 2D 1*ncolors colormap texture.
+$ncolors (int): The number of colors in the colormap.
 
+$colormap (2D texture sampler): The sampler for the 2D 1*ncolors colormap
+    texture.
+
+
+Outputs
+-------
+
+color (vec3): The color.
 
 """
 COLORMAP_TEXTURE = """
