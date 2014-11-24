@@ -50,6 +50,9 @@ plt.draw()
 # 2. Any plotting commands executed after this will not take effect.
 # We are working to remove this limitation.
 
-block = False if sys.flags.interactive == 0 else True
 if __name__ == '__main__':
-    plt.show(block)
+    # If in interactive mode (eg, "python -i"), do not block, because python
+    # will keep running.
+    # Otherwise, eg if called as "python mpl_plot.py", block so that the window
+    # is visible to the user before python quits.
+    plt.show(sys.flags.interactive == 0)
