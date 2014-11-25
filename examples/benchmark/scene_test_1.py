@@ -328,6 +328,13 @@ if __name__ == '__main__':
     svisual = Signals(data)
     view = scanvas.central_widget.add_view()
     view.add(svisual)
+
+    
+    def tb(ev):
+        import traceback
+        print ''.join(traceback.format_list(traceback.extract_stack()[:]))
+        
+    scanvas.render_cs.events.update.connect(tb)
     
     
     import sys

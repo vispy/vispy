@@ -66,11 +66,14 @@ class STTransform(BaseTransform):
     def __init__(self, scale=None, translate=None):
         super(STTransform, self).__init__()
 
+        self._update_map = True
+        self._update_imap = True
         self._scale = np.ones(4, dtype=np.float32)
         self._translate = np.zeros(4, dtype=np.float32)
 
-        self.scale = (1.0, 1.0, 1.0) if scale is None else scale
-        self.translate = (0.0, 0.0, 0.0) if translate is None else translate
+        s = (1.0, 1.0, 1.0, 1.0) if scale is None else as_vec4(scale)
+        t = (0.0, 0.0, 0.0, 0.0) if translate is None else as_vec4(translate)
+        self._set_st(s, t)
 
     @arg_to_vec4
     def map(self, coords):
@@ -83,13 +86,17 @@ class STTransform(BaseTransform):
         return (coords - self.translate[:n]) / self.scale[:n]
 
     def shader_map(self):
-        self._shader_map['scale'] = self.scale
-        self._shader_map['translate'] = self.translate
+        if self._update_map:
+            self._shader_map['scale'] = self.scale
+            self._shader_map['translate'] = self.translate
+            self._update_map = False
         return self._shader_map
 
     def shader_imap(self):
-        self._shader_imap['scale'] = self.scale
-        self._shader_imap['translate'] = self.translate
+        if self._update_imap:
+            self._shader_imap['scale'] = self.scale
+            self._shader_imap['translate'] = self.translate
+            self._update_imap = False
         return self._shader_imap
 
     @property
@@ -122,9 +129,9 @@ class STTransform(BaseTransform):
             update = True
         
         if update:
-            self.shader_map()  # update shader variables
-            self.shader_imap()
-            self._update()
+            self._update_map = True
+            self._update_imap = True
+            self.update()   # inform listeners there hass been a change
 
     def move(self, move):
         """Change the translation of this transform by the amount given.
@@ -167,12 +174,6 @@ class STTransform(BaseTransform):
         m.translate(self.translate)
         return m
     
-    def _update(self):
-        # force update of uniforms on shader functions
-        self.shader_map()
-        self.shader_imap()
-        self.update()
-
     @classmethod
     def from_mapping(cls, x0, x1):
         """ Create an STTransform from the given mapping. 
