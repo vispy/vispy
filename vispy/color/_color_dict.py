@@ -24,8 +24,8 @@ def get_color_names():
 # github.com/bahamas10/css-color-names/blob/master/css-color-names.json
 
 _color_dict = {
-    "w": '#FFFFFF',
     "k": '#000000',
+    "w": '#FFFFFF',
     "r": '#FF0000',
     "g": '#00FF00',
     "b": '#0000FF',
