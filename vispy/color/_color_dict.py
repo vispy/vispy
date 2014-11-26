@@ -9,11 +9,22 @@ def get_color_names():
     Returns
     -------
     names : list
-        List of color names known by vispy.
+        List of color names known by Vispy.
     """
     names = list(_color_dict.keys())
     names.sort()
     return names
+
+
+def get_color_dict():
+    """Get the known colors
+
+    Returns
+    -------
+    color_dict : dict
+        Dict of colors known by Vispy {name: #rgb}.
+    """
+    return _color_dict
 
 
 # This is used by color functions to translate user strings to colors

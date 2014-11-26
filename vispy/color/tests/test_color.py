@@ -6,7 +6,9 @@ import numpy as np
 from nose.tools import assert_equal, assert_raises, assert_true
 from numpy.testing import assert_array_equal, assert_allclose
 
-from vispy.color import Color, ColorArray, LinearGradient, get_color_names
+from vispy.color import (Color, ColorArray, LinearGradient, get_color_names,
+                         get_color_dict)
+from vispy.ext import six
 from vispy.util import use_log_level
 from vispy.testing import run_tests_if_main
 
@@ -125,12 +127,15 @@ def test_color_interpretation():
     assert_true(np.all(c.rgb <= 1))
     c = ColorArray([-1., 0., 0.], clip=True)  # val < 0
     assert_true(np.all(c.rgb >= 0))
-    
+
     # make sure our color dict works
     for key in get_color_names():
         assert_true(ColorArray(key))
     assert_raises(ValueError, ColorArray, 'foo')  # unknown color error
 
+    _color_dict = get_color_dict()
+    assert isinstance(_color_dict, dict)
+    assert set(six.iterkeys(_color_dict)) == set(get_color_names())
 
 # Taken from known values
 hsv_dict = dict(red=(0, 1, 1),

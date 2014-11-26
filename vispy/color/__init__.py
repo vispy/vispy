@@ -9,6 +9,6 @@ This module provides support for manipulating colors.
 
 __all__ = ['Color', 'ColorArray', 'LinearGradient', 'get_color_names']
 
-from ._color_dict import get_color_names  # noqa
+from ._color_dict import get_color_names, get_color_dict  # noqa
 from ._color import (Color, ColorArray, LinearGradient,  # noqa
                      get_colormap, colormaps)  # noqa
