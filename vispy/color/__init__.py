@@ -7,7 +7,8 @@ Convience interfaces to manipulate colors.
 This module provides support for manipulating colors.
 """
 
-__all__ = ['Color', 'ColorArray', 'LinearGradient', 'get_color_names']
+__all__ = ['Color', 'ColorArray', 'LinearGradient', 'get_color_names',
+           'get_color_dict']
 
 from ._color_dict import get_color_names, get_color_dict  # noqa
 from ._color import (Color, ColorArray, LinearGradient,  # noqa
