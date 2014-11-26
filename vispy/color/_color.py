@@ -636,9 +636,12 @@ def mix(a, b, x):
 def smoothstep(a, b, x):
     """Perform smooth Hermite interpolation between 0 and 1 when
     edge0 < x < edge1."""
-    # Scale, bias and saturate x to 0..1 range
-    x = np.clip((x - a)/(b - a), 0.0, 1.0)
-    # Evaluate polynomial
+    # Scale, bias and saturate x to 0..1 range.
+    d = b - a
+    # Prevent division by zero error.
+    d[d == 0.] = 1.
+    x = np.clip((x - a)/d, 0.0, 1.0)
+    # Evaluate polynomial.
     return x*x*(3 - 2*x)
 
 
@@ -652,7 +655,7 @@ def _process_glsl_template(template, colors):
     return template
 
 
-class Colormap(ColorArray):
+class Colormap(object):
     """Class representing a colormap. Can be used to generate colors from
     scalar values, either on the CPU with NumPy, or on the GPU with texture
     lookup or by generating mathematically the colors in GLSL."""
@@ -750,6 +753,20 @@ class Colormap(ColorArray):
         raise RuntimeError("It is not possible to set items to "
                            "Colormap instances.")
 
+    def _repr_html_(self):
+        n = 500
+        html = ("""
+        <table style="height: 50px; border: 0; margin: 0; padding: 0;">
+        """ +
+            '\n'.join([(('<td style="background-color: %s; border: 0; '
+                         'width: 1px; margin: 0; padding: 0;"></td>') %
+                        _rgb_to_hex(color)[0])
+                       for color in self[np.linspace(0., 1., n)].rgb]) +
+        """
+        </table>
+        """)
+        return html
+
 
 class Fire(Colormap):
     colors = [(1.0, 1.0, 1.0, 1.0),
@@ -778,7 +795,7 @@ class Grays(Colormap):
     """
 
     def map(self, t):
-        return np.array([t, t, t, 1.0], np.float32)
+        return np.hstack([t, t, t, np.ones(t.shape)]).astype(np.float32)
 
 
 class Ice(Colormap):
@@ -789,7 +806,8 @@ class Ice(Colormap):
     """
 
     def map(self, t):
-        return np.array([t, t, 1.0, 1.0], np.float32)
+        return np.hstack([t, t, np.ones(t.shape),
+                          np.ones(t.shape)]).astype(np.float32)
 
 
 class Hot(Colormap):
