@@ -200,11 +200,13 @@ def test_linear_gradient():
     """Test basic support for linear gradients"""
     colors = ['r', 'g', 'b']
     xs = [0, 1, 2]
-    grad = LinearGradient(ColorArray(colors), xs)
-    colors.extend([[0.5, 0.5, 0], [0, 0, 1], [1, 0, 0]])
-    xs.extend([0.5, 10, -10])
-    for x, c in zip(xs, colors):
-        assert_array_equal(grad[x], ColorArray(c).rgba[0])
+    # Test both explicit and implicit x argument.
+    for grad in (LinearGradient(ColorArray(colors)),
+                 LinearGradient(ColorArray(colors), xs)):
+        colors.extend([[0.5, 0.5, 0], [0, 0, 1], [1, 0, 0]])
+        xs.extend([0.5, 10, -10])
+        for x, c in zip(xs, colors):
+            assert_array_equal(grad[x], ColorArray(c).rgba[0])
 
 
 run_tests_if_main()

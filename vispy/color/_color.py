@@ -511,10 +511,13 @@ class LinearGradient(ColorArray):
         The control points to use as colors.
     x : array
         Array of the same length as ``colors`` that give the x-values
-        to use along the axis of the array.
+        to use along the axis of the array. By default, it is ``np.arange(n)``
+        where ``n = len(colors)``.
     """
-    def __init__(self, colors, x):
+    def __init__(self, colors, x=None):
         ColorArray.__init__(self, colors)
+        if x is None:
+            x = np.arange(len(colors))
         self.gradient_x = x
 
     @property
