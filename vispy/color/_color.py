@@ -756,15 +756,15 @@ class Colormap(object):
     def _repr_html_(self):
         n = 500
         html = ("""
-        <table style="height: 50px; border: 0; margin: 0; padding: 0;">
-        """ +
-            '\n'.join([(('<td style="background-color: %s; border: 0; '
-                         'width: 1px; margin: 0; padding: 0;"></td>') %
-                        _rgb_to_hex(color)[0])
-                       for color in self[np.linspace(0., 1., n)].rgb]) +
-        """
-        </table>
-        """)
+                <table style="height: 50px; border: 0; margin: 0; padding: 0;">
+                """ +
+                '\n'.join([(('<td style="background-color: %s; border: 0; '
+                             'width: 1px; margin: 0; padding: 0;"></td>') %
+                            _rgb_to_hex(color)[0])
+                           for color in self[np.linspace(0., 1., n)].rgb]) +
+                """
+                </table>
+                """)
         return html
 
 
@@ -795,19 +795,25 @@ class Grays(Colormap):
     """
 
     def map(self, t):
-        return np.hstack([t, t, t, np.ones(t.shape)]).astype(np.float32)
+        if isinstance(t, np.ndarray):
+            return np.hstack([t, t, t, np.ones(t.shape)]).astype(np.float32)
+        else:
+            return np.array([t, t, t, 1.0], dtype=np.float32)
 
 
 class Ice(Colormap):
     glsl_map = """
     vec4 ice(float t) {
-        return vec4(t,t,1.0,1.0);
+        return vec4(t, t, 1.0, 1.0);
     }
     """
 
     def map(self, t):
-        return np.hstack([t, t, np.ones(t.shape),
-                          np.ones(t.shape)]).astype(np.float32)
+        if isinstance(t, np.ndarray):
+            return np.hstack([t, t, np.ones(t.shape),
+                              np.ones(t.shape)]).astype(np.float32)
+        else:
+            return np.array([t, t, 1.0, 1.0], dtype=np.float32)
 
 
 class Hot(Colormap):
