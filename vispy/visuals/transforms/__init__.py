@@ -7,11 +7,11 @@ use with visuals and scenes.
 """
 
 __all__ = ['NullTransform', 'STTransform', 'AffineTransform',
-           'PerspectiveTransform', 'LogTransform', 'PolarTransform',
-           'ChainTransform', 'TransformSystem']
+           'PerspectiveTransform', 'PanZoomTransform', 'LogTransform',
+           'PolarTransform', 'ChainTransform', 'TransformSystem']
 
 from .base_transform import BaseTransform  # noqa
-from .linear import (NullTransform, STTransform,  # noqa
+from .linear import (NullTransform, STTransform, PanZoomTransform,  # noqa
                      AffineTransform,  PerspectiveTransform)  # noqa
 from .nonlinear import LogTransform, PolarTransform  # noqa
 from .chain import ChainTransform  # noqa
