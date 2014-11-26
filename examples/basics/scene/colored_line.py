@@ -12,11 +12,11 @@ import numpy as np
 import sys
 
 from vispy import app, scene
-from vispy.color import colormaps
+from vispy.color import get_colormaps
 from vispy.visuals.transforms import STTransform
 from vispy.ext.six import next
 
-colormaps = itertools.cycle(colormaps)
+colormaps = itertools.cycle(get_colormaps())
 
 # vertex positions of data to draw
 N = 200
@@ -42,8 +42,8 @@ def on_timer(event):
     color = next(colormaps)
     line.set_data(pos=pos, color=color)
     text.text = color
-    
-timer = app.Timer(2.0, connect=on_timer, start=True)
+
+timer = app.Timer(.5, connect=on_timer, start=True)
 
 
 if __name__ == '__main__':

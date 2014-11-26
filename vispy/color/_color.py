@@ -668,16 +668,20 @@ class Colormap(ColorArray):
 
     def __init__(self, colors=None, interpolation=None,
                  glsl_map=None):
-        """Create a colormap. Two colors can be provided
+        """Create a colormap.
 
         Parameters
         ----------
-        color : list of ndarray
+        colors : list of ndarray
             The control colors used by the colormap (shape = (4,)).
         interpolation : function or string
             A function that takes (a, b, t) as input and returns a vector
-            of same size as a and b (arrays with 4 elements). If a string,
-            one of 'mix' or 'smoothstep'.
+            of same size as a and b (arrays with 4 elements).
+            t is expected to be a column vector.
+            If a string, one of 'mix' or 'smoothstep'.
+        glsl_map : string
+            The GLSL function for the colormap. Use $color_0 to refer
+            to the first color in `colors`, and so on. These are vec4 vectors.
 
         """
         # Ensure the colors are either scalars or vectors.
@@ -699,12 +703,15 @@ class Colormap(ColorArray):
         # is a string.
         if self.glsl_map is None:
             assert isinstance(self.interpolation, string_types)
-            glsl = """
+            self.glsl_map = """
                 vec4 %s(float t) {
                     return %s($color_0, $color_1, t);
                 }""" % (self.__class__.__name__.lower(),  # colormap name
                         self.interpolation)  # interpolation function name
-            self.glsl_map = _process_glsl_template(glsl, self.colors)
+
+        # Replace the template variables in the GLSL function.
+        if self.colors is not None:
+            self.glsl_map = _process_glsl_template(self.glsl_map, self.colors)
 
         # If interpolation is a string, it's a function name that should
         # be available in the global namespace.
@@ -722,14 +729,12 @@ class Colormap(ColorArray):
         Parameters
         ----------
         item : ndarray
-            A 1D array of values in [0,1].
+            An array of values in [0,1]. Expected to be a column vector.
 
         Returns
         -------
         rgba : ndarray
-            A (N, 4) array with rgba values, where N is `len(item)`.
-
-        Child classes can override this."""
+            A (N, 4) array with rgba values, where N is `len(item)`."""
         return self.interpolation(self.colors[0], self.colors[1], item)
 
     def __getitem__(self, item):
@@ -754,7 +759,7 @@ class Fire(Colormap):
     glsl_map = """
     vec4 fire(float t) {
         return mix(mix($color_0, $color_1, t),
-                   mix($color_1, $color_3, t*t), t);
+                   mix($color_1, $color_2, t*t), t);
     }
     """
 
@@ -793,7 +798,8 @@ class Hot(Colormap):
 
     glsl_map = """
     vec4 hot(float t) {
-        return smoothstep($color_0, $color_1, t);
+        return vec4(smoothstep($color_0.rgb, $color_1.rgb, vec3(t, t, t)),
+                    1.0);
     }
     """
 
