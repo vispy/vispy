@@ -7,7 +7,7 @@ from nose.tools import assert_equal, assert_raises, assert_true
 from numpy.testing import assert_array_equal, assert_allclose
 
 from vispy.color import (Color, ColorArray, LinearGradient, get_color_names,
-                         get_color_dict, Autumn)
+                         get_color_dict, get_colormap, get_colormaps)
 from vispy.ext import six
 from vispy.util import use_log_level
 from vispy.testing import run_tests_if_main
@@ -210,12 +210,21 @@ def test_linear_gradient():
 
 
 def test_color_map():
-    autumn = Autumn()
+    autumn = get_colormap('autumn')
     assert autumn.glsl_map is not ""
     assert len(autumn[0.]) == 1
     assert len(autumn[0.5]) == 1
     assert len(autumn[1.]) == 1
     assert len(autumn[[0., 0.5, 1.]]) == 3
     assert len(autumn[np.array([0., 0.5, 1.])]) == 3
+
+    fire = get_colormap('fire')
+    assert_array_equal(fire[0].rgba, np.ones((1, 4)))
+    assert_array_equal(fire[1].rgba, np.array([[1, 0, 0, 1]]))
+
+    grays = get_colormap('grays')
+    assert_array_equal(grays[.5].rgb, np.ones((1, 3)) * .5)
+
+    assert 'hot' in get_colormaps()
 
 run_tests_if_main()

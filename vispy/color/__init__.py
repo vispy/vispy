@@ -8,10 +8,9 @@ This module provides support for manipulating colors.
 """
 
 __all__ = ['Color', 'ColorArray', 'LinearGradient', 'Colormap',
-           'Autumn',
+           'get_colormap', 'get_colormaps',
            'get_color_names', 'get_color_dict']
 
 from ._color_dict import get_color_names, get_color_dict  # noqa
 from ._color import (Color, ColorArray, LinearGradient, Colormap,  # noqa
-                     Autumn,  # noqa
-                     get_colormap, colormaps)  # noqa
+                     get_colormap, get_colormaps)  # noqa

@@ -7,7 +7,7 @@ from __future__ import division  # just to be safe...
 import numpy as np
 from copy import deepcopy
 
-from ..ext.six import string_types
+from ..ext.six import string_types, iterkeys
 from ..util import logger
 from ._color_dict import _color_dict
 
@@ -615,21 +615,109 @@ class Color(ColorArray):
 ###############################################################################
 # Color maps
 
+
+def _vector_or_scalar(x, type='row'):
+    """Convert an object to either a scalar or a row or column vector."""
+    if isinstance(x, (list, tuple)):
+        x = np.array(x)
+    if isinstance(x, np.ndarray):
+        assert x.ndim == 1
+        if type == 'column':
+            x = x[:, None]
+    return x
+
+
+def mix(a, b, x):
+    """Mix b (with proportion x) with a."""
+    x = np.clip(x, 0.0, 1.0)
+    return (1.0 - x)*a + x*b
+
+
+def smoothstep(a, b, x):
+    """Perform smooth Hermite interpolation between 0 and 1 when
+    edge0 < x < edge1."""
+    # Scale, bias and saturate x to 0..1 range
+    x = np.clip((x - a)/(b - a), 0.0, 1.0)
+    # Evaluate polynomial
+    return x*x*(3 - 2*x)
+
+
+def _process_glsl_template(template, colors):
+    """Replace $color_i by color #i in the GLSL template."""
+    for i in range(len(colors)):
+        color = colors[i]
+        assert len(color) == 4
+        vec4_color = 'vec4(%.3f, %.3f, %.3f, %.3f)' % tuple(color)
+        template = template.replace('$color_%d' % i, vec4_color)
+    return template
+
+
 class Colormap(ColorArray):
     """Class representing a colormap. Can be used to generate colors from
     scalar values, either on the CPU with NumPy, or on the GPU with texture
     lookup or by generating mathematically the colors in GLSL."""
 
-    """GLSL string with a function implementing the color map.
+    """Control colors used by the colormap."""
+    colors = None
 
-    Child classes need to implement this."""
+    """Interpolation function."""
+    interpolation = None
+
+    """GLSL string with a function implementing the color map."""
     glsl_map = None
 
-    def __init__(self):
-        pass
+    def __init__(self, colors=None, interpolation=None,
+                 glsl_map=None):
+        """Create a colormap. Two colors can be provided
+
+        Parameters
+        ----------
+        color : list of ndarray
+            The control colors used by the colormap (shape = (4,)).
+        interpolation : function or string
+            A function that takes (a, b, t) as input and returns a vector
+            of same size as a and b (arrays with 4 elements). If a string,
+            one of 'mix' or 'smoothstep'.
+
+        """
+        # Ensure the colors are either scalars or vectors.
+        if colors is not None:
+            self.colors = colors
+        if self.colors is not None:
+            self.colors = [_vector_or_scalar(color) for color in self.colors]
+
+        self.interpolation = (self.interpolation
+                              if interpolation is None else interpolation)
+
+        # Default interpolation function is mix.
+        if self.interpolation is None:
+            self.interpolation = 'mix'
+
+        self.glsl_map = self.glsl_map if glsl_map is None else glsl_map
+
+        # Generate a default GLSL map, assuming the interpolation function
+        # is a string.
+        if self.glsl_map is None:
+            assert isinstance(self.interpolation, string_types)
+            glsl = """
+                vec4 %s(float t) {
+                    return %s($color_0, $color_1, t);
+                }""" % (self.__class__.__name__.lower(),  # colormap name
+                        self.interpolation)  # interpolation function name
+            self.glsl_map = _process_glsl_template(glsl, self.colors)
+
+        # If interpolation is a string, it's a function name that should
+        # be available in the global namespace.
+        if isinstance(self.interpolation, string_types):
+            self.interpolation = globals()[self.interpolation]
 
     def map(self, item):
-        """Return a rgba array for the requested items.
+        """Return a rgba array for the requested items. By default,
+        apply the interpolation function on (colors[0], colors[1], item).
+
+        This function can be overriden by child classes.
+
+        This function doesn't need to implement argument checking on `item`.
 
         Parameters
         ----------
@@ -641,19 +729,15 @@ class Colormap(ColorArray):
         rgba : ndarray
             A (N, 4) array with rgba values, where N is `len(item)`.
 
-        Child classes need to implement this."""
-        raise NotImplementedError()
+        Child classes can override this."""
+        return self.interpolation(self.colors[0], self.colors[1], item)
 
     def __getitem__(self, item):
         if isinstance(item, tuple):
             raise ValueError('ColorArray indexing is only allowed along '
                              'the first dimension.')
-        if not isinstance(item, np.ndarray):
-            item = np.array(item, dtype=np.float32)
-            item = np.atleast_1d(item)
-            # Make sure the items are in the [0,1] interval.
-            item = np.clip(item, 0.0, 1.0)
-            assert item.ndim == 1
+        # Ensure item is either a scalar or a column vector.
+        item = _vector_or_scalar(item, type='column')
         colors = self.map(item)
         return ColorArray(colors)
 
@@ -662,110 +746,96 @@ class Colormap(ColorArray):
                            "Colormap instances.")
 
 
-def _mix(a, b, t):
-    """ Mix b (with proportion t) with a """
-    if isinstance(t, np.ndarray):
-        assert t.ndim == 1
-        # Transform t to a column vector.
-        t = t[:, None]
-    return (1.0 - t)*a + t*b
+class Fire(Colormap):
+    colors = [(1.0, 1.0, 1.0, 1.0),
+              (1.0, 1.0, 0.0, 1.0),
+              (1.0, 0.0, 0.0, 1.0)]
 
-
-def _smoothstep(edge0, edge1, x):
-    """ performs smooth Hermite interpolation
-        between 0 and 1 when edge0 < x < edge1.  """
-    # Scale, bias and saturate x to 0..1 range
-    x = np.clip((x - edge0)/(edge1 - edge0), 0.0, 1.0)
-    # Evaluate polynomial
-    return x*x*(3 - 2*x)
-
-
-class Autumn(Colormap):
     glsl_map = """
-    vec4 autumn(float t) {
-        return vec4(mix(vec3(1.0,0.0,0.0),vec3(1.0,1.0,0.0),t),1.0);
+    vec4 fire(float t) {
+        return mix(mix($color_0, $color_1, t),
+                   mix($color_1, $color_3, t*t), t);
     }
     """
 
-    def __init__(self):
-        self._a = np.array([1.0, 0.0, 0.0, 1.0], np.float32)
-        self._b = np.array([1.0, 1.0, 0.0, 1.0], np.float32)
+    def map(self, t):
+        a, b, d = self.colors
+        c = mix(a, b, t)
+        e = mix(b, d, t**2)
+        return mix(c, e, t)
 
-    def map(self, item):
-        return _mix(self._a, self._b, item)
 
-
-blues = """
-    vec4 blues(float t) {
-        return vec4(mix(vec3(1.0,1.0,1.0),vec3(0.0,0.0,1.0),t),1.0);
-    }
-"""
-
-cool = """
-    vec4 cool(float t) {
-        return vec4(mix(vec3(0.0,1.0,1.0),vec3(1.0,0.0,1.0),t),1.0);
-    }
-"""
-
-fire = """
-    vec4 fire(float t) {
-        return vec4(mix(mix(vec3(1.0,1.0,1.0),vec3(1.0,1.0,0.0),t),
-            mix(vec3(1.0,1.0,0.0),vec3(1.0,0.0,0.0),t*t),t),1.0);
-    }
-"""
-
-grays = """
+class Grays(Colormap):
+    glsl_map = """
     vec4 grays(float t) {
-        return vec4(t,t,t,1.0);
+        return vec4(t, t, t, 1.0);
     }
-"""
+    """
 
-greens = """
-    vec4 greens(float t) {
-        return vec4(mix(vec3(1.0,1.0,1.0),vec3(0.0,1.0,0.0),t),1.0);
-    }
-"""
+    def map(self, t):
+        return np.array([t, t, t, 1.0], np.float32)
 
-hot = """
-    vec4 hot(float t) {
-        return vec4(smoothstep(0.00,0.33,t),smoothstep(0.33,0.66,t),
-            smoothstep(0.66,1.00,t),1.0);
-}
-"""
 
-ice = """
+class Ice(Colormap):
+    glsl_map = """
     vec4 ice(float t) {
         return vec4(t,t,1.0,1.0);
     }
-"""
+    """
 
-reds = """
-    vec4 reds(float t) {
-        return vec4(mix(vec3(1.0,1.0,1.0),vec3(1.0,0.0,0.0),t),1.0);
+    def map(self, t):
+        return np.array([t, t, 1.0, 1.0], np.float32)
+
+
+class Hot(Colormap):
+    colors = [(0., .33, .66, 1.0),
+              (.33, .66, 1., 1.0)]
+
+    glsl_map = """
+    vec4 hot(float t) {
+        return smoothstep($color_0, $color_1, t);
     }
-"""
+    """
 
-spring = """
-    vec4 spring(float t) {
-        return vec4(mix(vec3(1.0,0.0,1.0),vec3(1.0,1.0,0.0),t),1.0);
-    }
-"""
+    def map(self, t):
+        return smoothstep(self.colors[0], self.colors[1], t)
 
-summer = """
-    vec4 summer(float t) {
-        return vec4(mix(vec3(0.0,0.5,0.4),vec3(1.0,1.0,0.4),t),1.0);
-    }
-"""
 
-winter = """
+class Winter(Colormap):
+    colors = [(0.0, 0.0, 1.0, 1.0),
+              (0.0, 1.0, 0.5, 1.0)]
+
+    glsl_map = """
     vec4 winter(float t) {
-        return vec4(mix(vec3(0.0,0.0,1.0),vec3(0.0,1.0,0.5),sqrt(t)),1.0);
+        return mix($color_0, $color_1, sqrt(t));
     }
-"""
+    """
+
+    def map(self, t):
+        return mix(self.colors[0], self.colors[1], np.sqrt(t))
+
+
+_colormaps = dict(
+    autumn=Colormap([(1., 0., 0., 1.), (1., 1., 0., 1.)]),
+    blues=Colormap([(1., 1., 1., 1.), (0., 0., 1., 1.)]),
+    cool=Colormap([(0., 1., 1., 1.), (1., 0., 1., 1.)]),
+    greens=Colormap([(1., 1., 1., 1.), (0., 1., 0., 1.)]),
+    reds=Colormap([(1., 1., 1., 1.), (1., 0., 0., 1.)]),
+    spring=Colormap([(1., 0., 1., 1.), (1., 1., 0., 1.)]),
+    summer=Colormap([(0., .5, .4, 1.), (1., 1., .4, 1.)]),
+    fire=Fire(),
+    grays=Grays(),
+    hot=Hot(),
+    ice=Ice(),
+    winter=Winter(),
+)
 
 
 def get_colormap(name):
-    return globals()[name]
+    """Return a Colormap instance given its name."""
+    return _colormaps[name]
 
-colormaps = ['autumn', 'blues', 'cool', 'fire', 'grays', 'greens', 'hot',
-             'ice', 'fire', 'reds', 'spring', 'summer', 'winter']
+
+def get_colormaps():
+    """Return the list of colormap names."""
+    return list(sorted(iterkeys(_colormaps)))
