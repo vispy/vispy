@@ -247,7 +247,7 @@ def _lab_to_rgb(labs):
 
 
 ###############################################################################
-# Now for the user-level classes
+# Color Array
 
 class ColorArray(object):
     """An array of colors
@@ -612,11 +612,88 @@ class Color(ColorArray):
         return ('<%s: %s>' % (self._name(), nice_str))
 
 
-autumn = """
+###############################################################################
+# Color maps
+
+class Colormap(ColorArray):
+    """Class representing a colormap. Can be used to generate colors from
+    scalar values, either on the CPU with NumPy, or on the GPU with texture
+    lookup or by generating mathematically the colors in GLSL."""
+
+    """GLSL string with a function implementing the color map.
+
+    Child classes need to implement this."""
+    glsl_map = None
+
+    def __init__(self):
+        pass
+
+    def map(self, item):
+        """Return a rgba array for the requested items.
+
+        Parameters
+        ----------
+        item : ndarray
+            A 1D array of values in [0,1].
+
+        Returns
+        -------
+        rgba : ndarray
+            A (N, 4) array with rgba values, where N is `len(item)`.
+
+        Child classes need to implement this."""
+        raise NotImplementedError()
+
+    def __getitem__(self, item):
+        if isinstance(item, tuple):
+            raise ValueError('ColorArray indexing is only allowed along '
+                             'the first dimension.')
+        if not isinstance(item, np.ndarray):
+            item = np.array(item, dtype=np.float32)
+            item = np.atleast_1d(item)
+            # Make sure the items are in the [0,1] interval.
+            item = np.clip(item, 0.0, 1.0)
+            assert item.ndim == 1
+        colors = self.map(item)
+        return ColorArray(colors)
+
+    def __setitem__(self, item, value):
+        raise RuntimeError("It is not possible to set items to "
+                           "Colormap instances.")
+
+
+def _mix(a, b, t):
+    """ Mix b (with proportion t) with a """
+    if isinstance(t, np.ndarray):
+        assert t.ndim == 1
+        # Transform t to a column vector.
+        t = t[:, None]
+    return (1.0 - t)*a + t*b
+
+
+def _smoothstep(edge0, edge1, x):
+    """ performs smooth Hermite interpolation
+        between 0 and 1 when edge0 < x < edge1.  """
+    # Scale, bias and saturate x to 0..1 range
+    x = np.clip((x - edge0)/(edge1 - edge0), 0.0, 1.0)
+    # Evaluate polynomial
+    return x*x*(3 - 2*x)
+
+
+class Autumn(Colormap):
+    glsl_map = """
     vec4 autumn(float t) {
         return vec4(mix(vec3(1.0,0.0,0.0),vec3(1.0,1.0,0.0),t),1.0);
     }
-"""
+    """
+
+    def __init__(self):
+        self._a = np.array([1.0, 0.0, 0.0, 1.0], np.float32)
+        self._b = np.array([1.0, 1.0, 0.0, 1.0], np.float32)
+
+    def map(self, item):
+        return _mix(self._a, self._b, item)
+
 
 blues = """
     vec4 blues(float t) {
