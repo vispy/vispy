@@ -350,6 +350,12 @@ class ColorArray(object):
             value = value.rgba
         self._rgba[item] = value
 
+    def extend(self, colors):
+        """Extend a ColorArray with new colors."""
+        colors = ColorArray(colors)
+        self._rgba = np.vstack((self._rgba, colors._rgba))
+        return self
+
     # RGB(A)
     @property
     def rgba(self):
@@ -645,6 +651,7 @@ def smoothstep(colors, x, controls=None):
 
 
 def step(colors, x, controls=None):
+    x = x.ravel()
     """Step interpolation from a set of colors. x belongs in [0, 1]."""
     assert (controls[0], controls[-1]) == (0., 1.)
     ncolors = len(controls)
@@ -657,8 +664,6 @@ def step(colors, x, controls=None):
 def _glsl_mix(controls=None):
     """Generate a GLSL template function from a given interpolation patterns
     and control points."""
-    if controls is None:
-        controls = [0., 1.]
     assert (controls[0], controls[-1]) == (0., 1.)
     ncolors = len(controls)
     assert ncolors >= 2
@@ -679,11 +684,9 @@ def _glsl_mix(controls=None):
 
 
 def _glsl_step(controls=None):
-    if controls is None:
-        controls = [0., .5, 1.]
     assert (controls[0], controls[-1]) == (0., 1.)
-    ncolors = len(controls)
-    assert ncolors >= 3
+    ncolors = len(controls) - 1
+    assert ncolors >= 2
     s = ""
     for i in range(ncolors-1):
         if i == 0:
@@ -796,10 +799,9 @@ class Colormap(object):
         return html
 
 
-def _default_controls(colors):
+def _default_controls(ncolors):
     """Generate linearly spaced control points from a set of colors."""
-    n = len(colors)
-    return np.linspace(0., 1., n)
+    return np.linspace(0., 1., ncolors)
 
 
 class LinearGradient(Colormap):
@@ -808,7 +810,7 @@ class LinearGradient(Colormap):
     def __init__(self, colors, controls=None):
         # Default controls.
         if controls is None:
-            controls = _default_controls(colors)
+            controls = _default_controls(len(colors))
         self.controls = controls
         # Generate the GLSL map.
         self.glsl_map = _glsl_mix(controls)
@@ -824,10 +826,11 @@ class DiscreteColormap(Colormap):
     def __init__(self, colors, controls=None):
         # Default controls.
         if controls is None:
-            controls = _default_controls(colors)
+            controls = _default_controls(len(colors) + 1)
+        assert len(colors) == len(controls) - 1
         self.controls = controls
         # Generate the GLSL map.
-        self.glsl_map = _glsl_step(controls)
+        self.glsl_map = _glsl_step(self.controls)
         super(DiscreteColormap, self).__init__(colors)
 
     def map(self, x):

@@ -198,10 +198,8 @@ def test_color_conversion():
 
 def test_colormap_interpolation():
     import vispy.color._color as c
-    c._glsl_step(None)
     assert_raises(AssertionError, c._glsl_step, [0., 1.],)
 
-    c._glsl_mix()
     c._glsl_mix(controls=[0., 1.])
     c._glsl_mix(controls=[0., .25, 1.])
 
@@ -261,7 +259,26 @@ def test_colormap_gradient():
 
 
 def test_colormap_discrete():
-    pass
+    cm = DiscreteColormap(['r', 'g'])
+    assert_allclose(cm[-1].rgba, [[1, 0, 0, 1]])
+    assert_allclose(cm[0.].rgba, [[1, 0, 0, 1]])
+    assert_allclose(cm[0.49].rgba, [[1, 0, 0, 1]])
+    assert_allclose(cm[0.51].rgba, [[0, 1, 0, 1]])
+    assert_allclose(cm[1.].rgba, [[0, 1, 0, 1]])
+
+    cm = LinearGradient(['r', 'g', 'b'])
+    assert_allclose(cm[-1].rgba, [[1, 0, 0, 1]])
+    assert_allclose(cm[0.].rgba, [[1, 0, 0, 1]])
+    assert_allclose(cm[.5].rgba, [[0, 1, 0, 1]])
+    assert_allclose(cm[1].rgba, [[0, 0, 1, 1]])
+    assert_allclose(cm[2].rgba, [[0, 0, 1, 1]])
+
+    cm = LinearGradient(['r', 'g', 'b'], [0., 0.1, 1.0])
+    assert_allclose(cm[-1].rgba, [[1, 0, 0, 1]])
+    assert_allclose(cm[0.].rgba, [[1, 0, 0, 1]])
+    assert_allclose(cm[.1].rgba, [[0, 1, 0, 1]])
+    assert_allclose(cm[1].rgba, [[0, 0, 1, 1]], 1e-6, 1e-6)
+    assert_allclose(cm[2].rgba, [[0, 0, 1, 1]], 1e-6, 1e-6)
 
 
 def test_colormap():
