@@ -197,7 +197,7 @@ def test_color_conversion():
 
 
 def test_colormap_interpolation():
-    import vispy.color._color as c
+    import vispy.color.colormap as c
     assert_raises(AssertionError, c._glsl_step, [0., 1.],)
 
     c._glsl_mix(controls=[0., 1.])

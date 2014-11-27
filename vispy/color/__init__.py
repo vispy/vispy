@@ -12,6 +12,6 @@ __all__ = ['Color', 'ColorArray', 'LinearGradient', 'Colormap',
            'get_color_names', 'get_color_dict']
 
 from ._color_dict import get_color_names, get_color_dict  # noqa
-from ._color import (Color, ColorArray, LinearGradient,  # noqa
-                     Colormap, DiscreteColormap,  # noqa
-                     get_colormap, get_colormaps)  # noqa
+from .color_array import Color, ColorArray
+from .colormap import (LinearGradient, Colormap, DiscreteColormap,  # noqa
+                       get_colormap, get_colormaps)  # noqa
