@@ -6,9 +6,8 @@ import numpy as np
 from nose.tools import assert_equal, assert_raises, assert_true
 from numpy.testing import assert_array_equal, assert_allclose
 
-from vispy.color import (Color, ColorArray, LinearGradient, get_color_names,
+from vispy.color import (Color, ColorArray, get_color_names,
                          get_color_dict, get_colormap, get_colormaps)
-from vispy.ext import six
 from vispy.util import use_log_level
 from vispy.testing import run_tests_if_main
 
@@ -196,29 +195,16 @@ def test_color_conversion():
         assert_allclose(c.rgb, rgb, atol=1e-4, rtol=1e-4)
 
 
-def test_linear_gradient():
-    """Test basic support for linear gradients"""
-    colors = ['r', 'g', 'b']
-    xs = [0, 1, 2]
-    # Test both explicit and implicit x argument.
-    for grad in (LinearGradient(ColorArray(colors)),
-                 LinearGradient(ColorArray(colors), xs)):
-        colors.extend([[0.5, 0.5, 0], [0, 0, 1], [1, 0, 0]])
-        xs.extend([0.5, 10, -10])
-        for x, c in zip(xs, colors):
-            assert_array_equal(grad[x], ColorArray(c).rgba[0])
-
-
-def test_colormap_util():
+def test_colormap_interpolation():
     import vispy.color._color as c
     c._glsl_step(None)
     assert_raises(AssertionError, c._glsl_step, [0., 1.],)
 
-    c._glsl_interpolation()
-    c._glsl_interpolation(controls=[0., 1.])
-    c._glsl_interpolation(controls=[0., .25, 1.])
+    c._glsl_mix()
+    c._glsl_mix(controls=[0., 1.])
+    c._glsl_mix(controls=[0., .25, 1.])
 
-    for fun in (c._glsl_step, c._glsl_interpolation):
+    for fun in (c._glsl_step, c._glsl_mix):
         assert_raises(AssertionError, fun, controls=[0.1, 1.],)
         assert_raises(AssertionError, fun, controls=[0., .9],)
         assert_raises(AssertionError, fun, controls=[0.1, .9],)
@@ -231,7 +217,7 @@ def test_colormap_util():
     colors_00 = np.vstack((color_0, color_0))
     colors_01 = np.vstack((color_0, color_1))
     colors_11 = np.vstack((color_1, color_1))
-    colors_012 = np.vstack((color_0, color_1, color_2))
+    # colors_012 = np.vstack((color_0, color_1, color_2))
     colors_021 = np.vstack((color_0, color_2, color_1))
 
     controls_2 = np.array([0., 1.])
@@ -244,13 +230,14 @@ def test_colormap_util():
     smoothed_3 = c.smoothstep(colors_021, x, controls_3)
 
     for y in mixed_2, mixed_3, smoothed_2, smoothed_3:
-        assert_allclose(y[:2,:], colors_00)
-        assert_allclose(y[-2:,:], colors_11)
+        assert_allclose(y[:2, :], colors_00)
+        assert_allclose(y[-2:, :], colors_11)
 
-    assert_allclose(mixed_2[:,-1], np.zeros(len(y)))
-    assert_allclose(smoothed_2[:,-1], np.zeros(len(y)))
+    assert_allclose(mixed_2[:, -1], np.zeros(len(y)))
+    assert_allclose(smoothed_2[:, -1], np.zeros(len(y)))
 
-def t0est_colormap():
+
+def test_colormap():
     autumn = get_colormap('autumn')
     assert autumn.glsl_map is not ""
     assert len(autumn[0.]) == 1
