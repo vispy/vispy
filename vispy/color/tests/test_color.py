@@ -224,16 +224,13 @@ def test_colormap_interpolation():
     x = np.array([-1., 0., 0.1, 0.4, 0.5, 0.6, 1., 2.])[:, None]
 
     mixed_2 = c.mix(colors_01, x, controls_2)
-    smoothed_2 = c.smoothstep(colors_01, x, controls_3)
     mixed_3 = c.mix(colors_021, x, controls_3)
-    smoothed_3 = c.smoothstep(colors_021, x, controls_3)
 
-    for y in mixed_2, mixed_3, smoothed_2, smoothed_3:
+    for y in mixed_2, mixed_3:
         assert_allclose(y[:2, :], colors_00)
         assert_allclose(y[-2:, :], colors_11)
 
     assert_allclose(mixed_2[:, -1], np.zeros(len(y)))
-    assert_allclose(smoothed_2[:, -1], np.zeros(len(y)))
 
 
 def test_colormap_gradient():
@@ -305,6 +302,11 @@ def test_colormap():
     assert_array_equal(grays[.5].rgb, np.ones((1, 3)) * .5)
 
     assert 'hot' in get_colormaps()
+
+    hot = get_colormap('hot')
+    assert_allclose(hot[0].rgba, [[0, 0, 0, 1]], 1e-6, 1e-6)
+    assert_allclose(hot[0.5].rgba, [[1, .52272022, 0, 1]], 1e-6, 1e-6)
+    assert_allclose(hot[1.].rgba, [[1, 1, 1, 1]], 1e-6, 1e-6)
 
 
 run_tests_if_main()

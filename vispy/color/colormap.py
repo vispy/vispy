@@ -50,11 +50,6 @@ def _mix_simple(a, b, x):
     return (1.0 - x)*a + x*b
 
 
-def _smoothstep_simple(a, b, x):
-    y = x * x * (3. - 2. * x)
-    return _mix_simple(a, b, y)
-
-
 def _interpolate_multi(colors, x, controls):
     x = x.ravel()
     n = len(colors)
@@ -78,9 +73,13 @@ def mix(colors, x, controls=None):
     return _mix_simple(a, b, x_rel)
 
 
-def smoothstep(colors, x, controls=None):
-    a, b, x_rel = _interpolate_multi(colors, x, controls)
-    return _smoothstep_simple(a, b, x_rel)
+def smoothstep(edge0, edge1, x):
+    """ performs smooth Hermite interpolation
+        between 0 and 1 when edge0 < x < edge1.  """
+    # Scale, bias and saturate x to 0..1 range
+    x = np.clip((x - edge0)/(edge1 - edge0), 0.0, 1.0)
+    # Evaluate polynomial
+    return x*x*(3 - 2*x)
 
 
 def step(colors, x, controls=None):
@@ -215,18 +214,28 @@ class Colormap(object):
                            "Colormap instances.")
 
     def _repr_html_(self):
-        n = 500
+        n = 100
         html = ("""
-                <table style="width: 500px;
-                              height: 50px;
-                              border: 0;
-                              margin: 0;
-                              padding: 0;">
+                <style>
+                    table.vispy_colormap {
+                        height: 30px;
+                        border: 0;
+                        margin: 0;
+                        padding: 0;
+                    }
+
+                    table.vispy_colormap td {
+                        width: 3px;
+                        border: 0;
+                        margin: 0;
+                        padding: 0;
+                    }
+                </style>
+                <table class="vispy_colormap">
                 """ +
-                '\n'.join([(('<td style="background-color: %s; border: 0; '
-                             'width: 1px; margin: 0; padding: 0;"></td>') %
-                            _rgb_to_hex(color)[0])
-                           for color in self[np.linspace(0., 1., n)].rgb]) +
+                '\n'.join([(("""<td style="background-color: %s;"
+                                 title="%s"></td>""") % (color, color))
+                           for color in self[np.linspace(0., 1., n)].hex]) +
                 """
                 </table>
                 """)
@@ -332,11 +341,9 @@ class Hot(Colormap):
     """
 
     def map(self, t):
-        n = len(self.colors)
-        return np.hstack((_smoothstep_simple(self.colors.rgba[0, :3],
-                                             self.colors.rgba[1, :3],
-                                             t),
-                         np.ones((n, 1))))
+        rgba = self.colors.rgba
+        smoothed = smoothstep(rgba[0, :3], rgba[1, :3], t)
+        return np.hstack((smoothed, np.ones((len(t), 1))))
 
 
 class Winter(Colormap):
