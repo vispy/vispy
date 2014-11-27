@@ -252,6 +252,13 @@ def test_colormap_gradient():
     assert_allclose(cm[1].rgba, [[0, 0, 1, 1]])
     assert_allclose(cm[2].rgba, [[0, 0, 1, 1]])
 
+    cm = LinearGradient(['r', 'g', 'b'], [0., 0.1, 1.0])
+    assert_allclose(cm[-1].rgba, [[1, 0, 0, 1]])
+    assert_allclose(cm[0.].rgba, [[1, 0, 0, 1]])
+    assert_allclose(cm[.1].rgba, [[0, 1, 0, 1]])
+    assert_allclose(cm[1].rgba, [[0, 0, 1, 1]])
+    assert_allclose(cm[2].rgba, [[0, 0, 1, 1]])
+
 
 def test_colormap_discrete():
     pass
