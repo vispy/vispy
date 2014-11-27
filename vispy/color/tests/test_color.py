@@ -227,4 +227,8 @@ def test_color_map():
 
     assert 'hot' in get_colormaps()
 
+    from vispy.color._color import _glsl_nearest
+    colors = [[0.5, 0.5, 0], [0, 0, 1], [1, 0, 0]]
+    print(_glsl_nearest(colors))
+
 run_tests_if_main()

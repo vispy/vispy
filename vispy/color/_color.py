@@ -645,6 +645,33 @@ def smoothstep(a, b, x):
     return x*x*(3 - 2*x)
 
 
+def nearest(colors, x):
+    """Nearest interpolation from a set of colors. x belongs in [0, 1]."""
+    n = len(colors)
+    x_nearest = np.floor(np.min(x, 1-1e-9) * n).astype(np.int32)
+    return colors[x_nearest, ...]
+
+
+def _glsl_interpolation(interpolation):
+    return """vec4 colormap(float t) {
+                return %s($color_0, $color_1, t);
+    }""" % (interpolation)
+
+
+def _glsl_nearest(colors):
+    n = len(colors)
+    s = ""
+    for i in range(n):
+        if i == 0:
+            ifs = 'if (t < %.6f)' % ((i+1)/float(n))
+        elif i == (n-1):
+            ifs = 'else'
+        else:
+            ifs = 'else if (t < %.6f)' % ((i+1)/float(n))
+        s += """%s {\n    return $color_%d;\n} """ % (ifs, i)
+    return """vec4 colormap(float t) {\n%s\n}""" % s
+
+
 def _process_glsl_template(template, colors):
     """Replace $color_i by color #i in the GLSL template."""
     for i in range(len(colors)):
@@ -706,11 +733,7 @@ class Colormap(object):
         # is a string.
         if self.glsl_map is None:
             assert isinstance(self.interpolation, string_types)
-            self.glsl_map = """
-                vec4 %s(float t) {
-                    return %s($color_0, $color_1, t);
-                }""" % (self.__class__.__name__.lower(),  # colormap name
-                        self.interpolation)  # interpolation function name
+            self.glsl_map = _glsl_interpolation(self.interpolation)
 
         # Replace the template variables in the GLSL function.
         if self.colors is not None:
