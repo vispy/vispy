@@ -7,7 +7,7 @@ from nose.tools import assert_equal, assert_raises, assert_true
 from numpy.testing import assert_array_equal, assert_allclose
 
 from vispy.color import (Color, ColorArray, get_color_names,
-                         Colormap, DiscreteColormap, LinearGradient,
+                         DiscreteColormap, LinearGradient,
                          get_color_dict, get_colormap, get_colormaps)
 from vispy.util import use_log_level
 from vispy.testing import run_tests_if_main
@@ -266,17 +266,24 @@ def test_colormap_discrete():
     assert_allclose(cm[0.51].rgba, [[0, 1, 0, 1]])
     assert_allclose(cm[1.].rgba, [[0, 1, 0, 1]])
 
-    cm = LinearGradient(['r', 'g', 'b'])
+    cm = DiscreteColormap(['r', 'g', 'b'])
     assert_allclose(cm[-1].rgba, [[1, 0, 0, 1]])
     assert_allclose(cm[0.].rgba, [[1, 0, 0, 1]])
-    assert_allclose(cm[.5].rgba, [[0, 1, 0, 1]])
+    assert_allclose(cm[.32].rgba, [[1, 0, 0, 1]])
+    assert_allclose(cm[.34].rgba, [[0, 1, 0, 1]])
+    assert_allclose(cm[.66].rgba, [[0, 1, 0, 1]])
+    assert_allclose(cm[.67].rgba, [[0, 0, 1, 1]])
+    assert_allclose(cm[.99].rgba, [[0, 0, 1, 1]])
     assert_allclose(cm[1].rgba, [[0, 0, 1, 1]])
-    assert_allclose(cm[2].rgba, [[0, 0, 1, 1]])
+    assert_allclose(cm[1.1].rgba, [[0, 0, 1, 1]])
 
-    cm = LinearGradient(['r', 'g', 'b'], [0., 0.1, 1.0])
+    cm = DiscreteColormap(['r', 'g', 'b'], [0., 0.1, 0.8, 1.0])
     assert_allclose(cm[-1].rgba, [[1, 0, 0, 1]])
     assert_allclose(cm[0.].rgba, [[1, 0, 0, 1]])
-    assert_allclose(cm[.1].rgba, [[0, 1, 0, 1]])
+    assert_allclose(cm[.099].rgba, [[1, 0, 0, 1]])
+    assert_allclose(cm[.101].rgba, [[0, 1, 0, 1]])
+    assert_allclose(cm[.799].rgba, [[0, 1, 0, 1]])
+    assert_allclose(cm[.801].rgba, [[0, 0, 1, 1]])
     assert_allclose(cm[1].rgba, [[0, 0, 1, 1]], 1e-6, 1e-6)
     assert_allclose(cm[2].rgba, [[0, 0, 1, 1]], 1e-6, 1e-6)
 

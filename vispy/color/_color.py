@@ -606,10 +606,9 @@ def _vector(x, type='row'):
     return x
 
 
-def _find_controls(x, controls=None):
-    n = len(controls)
-    x_controls = np.clip(np.searchsorted(controls, x) - 1, 0, n-1)
-    return x_controls
+def _find_controls(x, controls=None, clip=None):
+    x_controls = np.clip(np.searchsorted(controls, x) - 1, 0, clip)
+    return x_controls.astype(np.int32)
 
 
 # Interpolation functions in NumPy.
@@ -628,13 +627,15 @@ def _interpolate_multi(colors, x, controls):
     x = x.ravel()
     n = len(colors)
     # For each element in x, the control index of its bin's left boundary.
-    x_step = np.clip(_find_controls(x, controls), 0, n-2)
+    x_step = _find_controls(x, controls, n-2)
     # The length of each bin.
-    controls_length = np.diff(controls)
+    controls_length = np.diff(controls).astype(np.float32)
     # Prevent division by zero error.
     controls_length[controls_length == 0.] = 1.
     # Like x, but relative to each bin.
-    x_rel = np.clip(((x - controls[x_step]) / controls_length[x_step]), 0, 1)
+    _to_clip = x - controls[x_step]
+    _to_clip /= controls_length[x_step]
+    x_rel = np.clip(_to_clip, 0., 1.)
     return (colors[x_step],
             colors[x_step + 1],
             x_rel[:, None])
@@ -654,9 +655,10 @@ def step(colors, x, controls=None):
     x = x.ravel()
     """Step interpolation from a set of colors. x belongs in [0, 1]."""
     assert (controls[0], controls[-1]) == (0., 1.)
-    ncolors = len(controls)
-    assert ncolors >= 3
-    x_step = _find_controls(x, controls)
+    ncolors = len(colors)
+    assert ncolors == len(controls) - 1
+    assert ncolors >= 2
+    x_step = _find_controls(x, controls, ncolors-1)
     return colors[x_step, ...]
 
 
@@ -811,7 +813,8 @@ class LinearGradient(Colormap):
         # Default controls.
         if controls is None:
             controls = _default_controls(len(colors))
-        self.controls = controls
+        assert len(controls) == len(colors)
+        self.controls = np.array(controls, dtype=np.float32)
         # Generate the GLSL map.
         self.glsl_map = _glsl_mix(controls)
         super(LinearGradient, self).__init__(colors)
@@ -827,8 +830,8 @@ class DiscreteColormap(Colormap):
         # Default controls.
         if controls is None:
             controls = _default_controls(len(colors) + 1)
-        assert len(colors) == len(controls) - 1
-        self.controls = controls
+        assert len(controls) == len(colors) + 1
+        self.controls = np.array(controls, dtype=np.float32)
         # Generate the GLSL map.
         self.glsl_map = _glsl_step(self.controls)
         super(DiscreteColormap, self).__init__(colors)
