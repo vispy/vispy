@@ -135,7 +135,7 @@ def test_color_interpretation():
 
     _color_dict = get_color_dict()
     assert isinstance(_color_dict, dict)
-    assert set(six.iterkeys(_color_dict)) == set(get_color_names())
+    assert set(_color_dict.keys()) == set(get_color_names())
 
 # Taken from known values
 hsv_dict = dict(red=(0, 1, 1),
@@ -209,7 +209,48 @@ def test_linear_gradient():
             assert_array_equal(grad[x], ColorArray(c).rgba[0])
 
 
-def test_color_map():
+def test_colormap_util():
+    import vispy.color._color as c
+    c._glsl_step(None)
+    assert_raises(AssertionError, c._glsl_step, [0., 1.],)
+
+    c._glsl_interpolation()
+    c._glsl_interpolation(controls=[0., 1.])
+    c._glsl_interpolation(controls=[0., .25, 1.])
+
+    for fun in (c._glsl_step, c._glsl_interpolation):
+        assert_raises(AssertionError, fun, controls=[0.1, 1.],)
+        assert_raises(AssertionError, fun, controls=[0., .9],)
+        assert_raises(AssertionError, fun, controls=[0.1, .9],)
+
+    # Interpolation tests.
+    color_0 = np.array([1., 0., 0.])
+    color_1 = np.array([0., 1., 0.])
+    color_2 = np.array([0., 0., 1.])
+
+    colors_00 = np.vstack((color_0, color_0))
+    colors_01 = np.vstack((color_0, color_1))
+    colors_11 = np.vstack((color_1, color_1))
+    colors_012 = np.vstack((color_0, color_1, color_2))
+    colors_021 = np.vstack((color_0, color_2, color_1))
+
+    controls_2 = np.array([0., 1.])
+    controls_3 = np.array([0., .25, 1.])
+    x = np.array([-1., 0., 0.1, 0.4, 0.5, 0.6, 1., 2.])[:, None]
+
+    mixed_2 = c.mix(colors_01, x, controls_2)
+    smoothed_2 = c.smoothstep(colors_01, x, controls_3)
+    mixed_3 = c.mix(colors_021, x, controls_3)
+    smoothed_3 = c.smoothstep(colors_021, x, controls_3)
+
+    for y in mixed_2, mixed_3, smoothed_2, smoothed_3:
+        assert_allclose(y[:2,:], colors_00)
+        assert_allclose(y[-2:,:], colors_11)
+
+    assert_allclose(mixed_2[:,-1], np.zeros(len(y)))
+    assert_allclose(smoothed_2[:,-1], np.zeros(len(y)))
+
+def t0est_colormap():
     autumn = get_colormap('autumn')
     assert autumn.glsl_map is not ""
     assert len(autumn[0.]) == 1
@@ -227,8 +268,5 @@ def test_color_map():
 
     assert 'hot' in get_colormaps()
 
-    from vispy.color._color import _glsl_nearest
-    colors = [[0.5, 0.5, 0], [0, 0, 1], [1, 0, 0]]
-    print(_glsl_nearest(colors))
 
 run_tests_if_main()

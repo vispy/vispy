@@ -627,47 +627,94 @@ def _vector_or_scalar(x, type='row'):
     return x
 
 
-def mix(a, b, x):
+def _find_controls(x, controls=None):
+    n = len(controls)
+    x_controls = np.clip(np.searchsorted(controls, x) - 1, 0, n-1)
+    return x_controls
+
+
+def _mix_simple(a, b, x):
     """Mix b (with proportion x) with a."""
     x = np.clip(x, 0.0, 1.0)
     return (1.0 - x)*a + x*b
 
 
-def smoothstep(a, b, x):
-    """Perform smooth Hermite interpolation between 0 and 1 when
-    edge0 < x < edge1."""
-    # Scale, bias and saturate x to 0..1 range.
-    d = b - a
+def _interpolate_multi(colors, x, controls):
+    x = x.ravel()
+    n = len(colors)
+    # For each element in x, the control index of its bin's left boundary.
+    x_step = np.clip(_find_controls(x, controls), 0, n-2)
+    # The length of each bin.
+    controls_length = np.diff(controls)
     # Prevent division by zero error.
-    d[d == 0.] = 1.
-    x = np.clip((x - a)/d, 0.0, 1.0)
-    # Evaluate polynomial.
-    return x*x*(3 - 2*x)
+    controls_length[controls_length == 0.] = 1.
+    # Like x, but relative to each bin.
+    x_rel = np.clip(((x - controls[x_step]) / controls_length[x_step]), 0, 1)
+    return (colors[x_step],
+            colors[x_step + 1],
+            x_rel[:, None])
 
 
-def nearest(colors, x):
-    """Nearest interpolation from a set of colors. x belongs in [0, 1]."""
-    n = len(colors)
-    x_nearest = np.floor(np.min(x, 1-1e-9) * n).astype(np.int32)
-    return colors[x_nearest, ...]
+def mix(colors, x, controls=None):
+    a, b, x_rel = _interpolate_multi(colors, x, controls)
+    return _mix_simple(a, b, x_rel)
 
 
-def _glsl_interpolation(interpolation):
-    return """vec4 colormap(float t) {
-                return %s($color_0, $color_1, t);
-    }""" % (interpolation)
+def smoothstep(colors, x, controls=None):
+    a, b, x_rel = _interpolate_multi(colors, x, controls)
+    x_rel_smoothed = x_rel * x_rel * (3. - 2. * x_rel)
+    return _mix_simple(a, b, x_rel_smoothed)
 
 
-def _glsl_nearest(colors):
-    n = len(colors)
+def step(colors, x, controls=None):
+    """Step interpolation from a set of colors. x belongs in [0, 1]."""
+    assert (controls[0], controls[-1]) == (0., 1.)
+    ncolors = len(controls)
+    assert ncolors >= 3
+    x_step = _find_controls(x, controls)
+    return colors[x_step, ...]
+
+
+def _glsl_interpolation(interpolation=None, controls=None):
+    """Generate a GLSL template function from a given interpolation patterns
+    and control points."""
+    if interpolation is None:
+        interpolation = 'mix'
+    if controls is None:
+        controls = [0., 1.]
+    assert (controls[0], controls[-1]) == (0., 1.)
+    ncolors = len(controls)
+    assert ncolors >= 2
+    if ncolors == 2:
+        s = "    return %s($color_0, $color_1);\n" % interpolation
+    else:
+        s = ""
+        for i in range(ncolors-1):
+            if i == 0:
+                ifs = 'if (t < %.6f)' % (controls[i+1])
+            elif i == (ncolors-2):
+                ifs = 'else'
+            else:
+                ifs = 'else if (t < %.6f)' % (controls[i+1])
+            s += "%s {\n    return %s($color_%d, $color_%d);\n} " % \
+                    (ifs, interpolation, i, i+1)
+    return "vec4 colormap(float t) {\n%s\n}" % s
+
+
+def _glsl_step(controls=None):
+    if controls is None:
+        controls = [0., .5, 1.]
+    assert (controls[0], controls[-1]) == (0., 1.)
+    ncolors = len(controls)
+    assert ncolors >= 3
     s = ""
-    for i in range(n):
+    for i in range(ncolors-1):
         if i == 0:
-            ifs = 'if (t < %.6f)' % ((i+1)/float(n))
-        elif i == (n-1):
+            ifs = 'if (t < %.6f)' % (controls[i+1])
+        elif i == (ncolors-2):
             ifs = 'else'
         else:
-            ifs = 'else if (t < %.6f)' % ((i+1)/float(n))
+            ifs = 'else if (t < %.6f)' % (controls[i+1])
         s += """%s {\n    return $color_%d;\n} """ % (ifs, i)
     return """vec4 colormap(float t) {\n%s\n}""" % s
 
@@ -685,7 +732,27 @@ def _process_glsl_template(template, colors):
 class Colormap(object):
     """Class representing a colormap. Can be used to generate colors from
     scalar values, either on the CPU with NumPy, or on the GPU with texture
-    lookup or by generating mathematically the colors in GLSL."""
+    lookup or by generating mathematically the colors in GLSL.
+
+    Usage
+    -----
+
+        cmap = Colormap(colors, interpolation, glsl_map)
+
+    Parameters
+    ----------
+    colors : list of ndarray
+        The control colors used by the colormap (shape = (4,)).
+    interpolation : function or string
+        A function that takes (a, b, t) as input and returns a vector
+        of same size as a and b (arrays with 4 elements).
+        t is expected to be a column vector.
+        If a string, one of 'mix' or 'smoothstep'.
+    glsl_map : string
+        The GLSL function for the colormap. Use $color_0 to refer
+        to the first color in `colors`, and so on. These are vec4 vectors.
+
+    """
 
     """Control colors used by the colormap."""
     colors = None
@@ -698,22 +765,6 @@ class Colormap(object):
 
     def __init__(self, colors=None, interpolation=None,
                  glsl_map=None):
-        """Create a colormap.
-
-        Parameters
-        ----------
-        colors : list of ndarray
-            The control colors used by the colormap (shape = (4,)).
-        interpolation : function or string
-            A function that takes (a, b, t) as input and returns a vector
-            of same size as a and b (arrays with 4 elements).
-            t is expected to be a column vector.
-            If a string, one of 'mix' or 'smoothstep'.
-        glsl_map : string
-            The GLSL function for the colormap. Use $color_0 to refer
-            to the first color in `colors`, and so on. These are vec4 vectors.
-
-        """
         # Ensure the colors are either scalars or vectors.
         if colors is not None:
             self.colors = colors
@@ -760,7 +811,8 @@ class Colormap(object):
         Returns
         -------
         rgba : ndarray
-            A (N, 4) array with rgba values, where N is `len(item)`."""
+            A (N, 4) array with rgba values, where N is `len(item)`.
+        """
         return self.interpolation(self.colors[0], self.colors[1], item)
 
     def __getitem__(self, item):
@@ -779,7 +831,7 @@ class Colormap(object):
     def _repr_html_(self):
         n = 500
         html = ("""
-                <table style="height: 50px; border: 0; margin: 0; padding: 0;">
+                <table style=" width: 500px; height: 50px; border: 0; margin: 0; padding: 0;">
                 """ +
                 '\n'.join([(('<td style="background-color: %s; border: 0; '
                              'width: 1px; margin: 0; padding: 0;"></td>') %
@@ -851,7 +903,9 @@ class Hot(Colormap):
     """
 
     def map(self, t):
-        return smoothstep(self.colors[0], self.colors[1], t)
+        n = len(self.colors)
+        return np.hstack((smoothstep(self.colors[0,:3], self.colors[1,:3], t),
+                         np.ones((n, 1))))
 
 
 class Winter(Colormap):
