@@ -732,18 +732,15 @@ class Colormap(object):
     glsl_map = None
 
     def __init__(self, colors=None):
+        # Ensure the colors are arrays.
         if colors is not None:
             self.colors = colors
-        if self.colors is None:
-            self.colors = []
-        # Ensure the colors are arrays.
-        if isinstance(self.colors, ColorArray):
-            self.colors = self.colors.rgba
-        else:
-            self.colors = np.array(self.colors, dtype=np.float32)
+        if not isinstance(self.colors, ColorArray):
+            self.colors = ColorArray(self.colors)
         # Process the GLSL map function by replacing $color_i by the
-        if self.colors.size > 0:
-            self.glsl_map = _process_glsl_template(self.glsl_map, self.colors)
+        if len(self.colors) > 0:
+            self.glsl_map = _process_glsl_template(self.glsl_map,
+                                                   self.colors.rgba)
 
     def map(self, item):
         """Return a rgba array for the requested items.
@@ -818,7 +815,7 @@ class LinearGradient(Colormap):
         super(LinearGradient, self).__init__(colors)
 
     def map(self, x):
-        return mix(self.colors, x, self.controls)
+        return mix(self.colors.rgba, x, self.controls)
 
 
 class DiscreteColormap(Colormap):
@@ -834,7 +831,7 @@ class DiscreteColormap(Colormap):
         super(DiscreteColormap, self).__init__(colors)
 
     def map(self, x):
-        return step(self.colors, x, self.controls)
+        return step(self.colors.rgba, x, self.controls)
 
 
 class Fire(Colormap):
@@ -850,7 +847,7 @@ class Fire(Colormap):
     """
 
     def map(self, t):
-        a, b, d = self.colors
+        a, b, d = self.colors.rgba
         c = _mix_simple(a, b, t)
         e = _mix_simple(b, d, t**2)
         return _mix_simple(c, e, t)
@@ -898,8 +895,8 @@ class Hot(Colormap):
 
     def map(self, t):
         n = len(self.colors)
-        return np.hstack((_smoothstep_simple(self.colors[0, :3],
-                                             self.colors[1, :3],
+        return np.hstack((_smoothstep_simple(self.colors.rgba[0, :3],
+                                             self.colors.rgba[1, :3],
                                              t),
                          np.ones((n, 1))))
 
@@ -915,7 +912,9 @@ class Winter(Colormap):
     """
 
     def map(self, t):
-        return _mix_simple(self.colors[0], self.colors[1], np.sqrt(t))
+        return _mix_simple(self.colors.rgba[0],
+                           self.colors.rgba[1],
+                           np.sqrt(t))
 
 
 _colormaps = dict(

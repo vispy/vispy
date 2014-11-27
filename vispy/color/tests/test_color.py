@@ -7,6 +7,7 @@ from nose.tools import assert_equal, assert_raises, assert_true
 from numpy.testing import assert_array_equal, assert_allclose
 
 from vispy.color import (Color, ColorArray, get_color_names,
+                         Colormap, DiscreteColormap, LinearGradient,
                          get_color_dict, get_colormap, get_colormaps)
 from vispy.util import use_log_level
 from vispy.testing import run_tests_if_main
@@ -235,6 +236,25 @@ def test_colormap_interpolation():
 
     assert_allclose(mixed_2[:, -1], np.zeros(len(y)))
     assert_allclose(smoothed_2[:, -1], np.zeros(len(y)))
+
+
+def test_colormap_gradient():
+    cm = LinearGradient(['r', 'g'])
+    assert_allclose(cm[-1].rgba, [[1, 0, 0, 1]])
+    assert_allclose(cm[0.].rgba, [[1, 0, 0, 1]])
+    assert_allclose(cm[0.5].rgba, [[.5, .5, 0, 1]])
+    assert_allclose(cm[1.].rgba, [[0, 1, 0, 1]])
+
+    cm = LinearGradient(['r', 'g', 'b'])
+    assert_allclose(cm[-1].rgba, [[1, 0, 0, 1]])
+    assert_allclose(cm[0.].rgba, [[1, 0, 0, 1]])
+    assert_allclose(cm[.5].rgba, [[0, 1, 0, 1]])
+    assert_allclose(cm[1].rgba, [[0, 0, 1, 1]])
+    assert_allclose(cm[2].rgba, [[0, 0, 1, 1]])
+
+
+def test_colormap_discrete():
+    pass
 
 
 def test_colormap():
