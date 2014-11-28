@@ -197,6 +197,7 @@ def test_color_conversion():
 
 
 def test_colormap_interpolation():
+    """Test interpolation routines for colormaps."""
     import vispy.color.colormap as c
     assert_raises(AssertionError, c._glsl_step, [0., 1.],)
 
@@ -234,6 +235,7 @@ def test_colormap_interpolation():
 
 
 def test_colormap_gradient():
+    """Test gradient colormaps."""
     cm = LinearColormap(['r', 'g'])
     assert_allclose(cm[-1].rgba, [[1, 0, 0, 1]])
     assert_allclose(cm[0.].rgba, [[1, 0, 0, 1]])
@@ -256,6 +258,7 @@ def test_colormap_gradient():
 
 
 def test_colormap_discrete():
+    """Test discrete colormaps."""
     cm = DiscreteColormap(['r', 'g'])
     assert_allclose(cm[-1].rgba, [[1, 0, 0, 1]])
     assert_allclose(cm[0.].rgba, [[1, 0, 0, 1]])
@@ -286,6 +289,7 @@ def test_colormap_discrete():
 
 
 def test_colormap():
+    """Test named colormaps."""
     autumn = get_colormap('autumn')
     assert autumn.glsl_map is not ""
     assert len(autumn[0.]) == 1
@@ -300,8 +304,6 @@ def test_colormap():
 
     grays = get_colormap('grays')
     assert_array_equal(grays[.5].rgb, np.ones((1, 3)) * .5)
-
-    assert 'hot' in get_colormaps()
 
     hot = get_colormap('hot')
     assert_allclose(hot[0].rgba, [[0, 0, 0, 1]], 1e-6, 1e-6)
