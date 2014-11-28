@@ -24,7 +24,7 @@ def get_color_dict():
     color_dict : dict
         Dict of colors known by Vispy {name: #rgb}.
     """
-    return _color_dict
+    return _color_dict.copy()
 
 
 # This is used by color functions to translate user strings to colors
