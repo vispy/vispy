@@ -9,6 +9,7 @@ from numpy.testing import assert_array_equal, assert_allclose
 from vispy.color import (Color, ColorArray, get_color_names,
                          DiscreteColormap, LinearColormap,
                          get_color_dict, get_colormap, get_colormaps)
+from vispy.visuals.shaders import Function
 from vispy.util import use_log_level
 from vispy.testing import run_tests_if_main
 
@@ -310,5 +311,12 @@ def test_colormap():
     assert_allclose(hot[0.5].rgba, [[1, .52272022, 0, 1]], 1e-6, 1e-6)
     assert_allclose(hot[1.].rgba, [[1, 1, 1, 1]], 1e-6, 1e-6)
 
+    # Test the GLSL and Python mapping.
+    for name in get_colormaps():
+        colormap = get_colormap(name)
+        Function(colormap.glsl_map)
+        colors = colormap[np.linspace(-2., 2., 50)]
+        assert colors.rgba.min() >= 0
+        assert colors.rgba.max() <= 1
 
 run_tests_if_main()

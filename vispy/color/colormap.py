@@ -205,6 +205,8 @@ class BaseColormap(object):
                              'the first dimension.')
         # Ensure item is either a scalar or a column vector.
         item = _vector(item, type='column')
+        # Clip the values in [0, 1].
+        item = np.clip(item, 0., 1.)
         colors = self.map(item)
         return ColorArray(colors)
 
