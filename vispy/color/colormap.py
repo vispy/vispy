@@ -143,7 +143,7 @@ def _process_glsl_template(template, colors):
     return template
 
 
-class Colormap(object):
+class BaseColormap(object):
     """Class representing a colormap:
 
         t \in [0, 1] --> rgba_color
@@ -211,7 +211,7 @@ class Colormap(object):
 
     def __setitem__(self, item, value):
         raise RuntimeError("It is not possible to set items to "
-                           "Colormap instances.")
+                           "BaseColormap instances.")
 
     def _repr_html_(self):
         n = 100
@@ -247,7 +247,7 @@ def _default_controls(ncolors):
     return np.linspace(0., 1., ncolors)
 
 
-class LinearColormap(Colormap):
+class LinearColormap(BaseColormap):
     """A linear gradient with an arbitrary number of colors and control
     points in [0,1]."""
     def __init__(self, colors, controls=None):
@@ -264,7 +264,7 @@ class LinearColormap(Colormap):
         return mix(self.colors.rgba, x, self.controls)
 
 
-class DiscreteColormap(Colormap):
+class DiscreteColormap(BaseColormap):
     """A discrete colormap with an arbitrary number of colors and control
     points in [0,1]."""
     def __init__(self, colors, controls=None):
@@ -281,7 +281,7 @@ class DiscreteColormap(Colormap):
         return step(self.colors.rgba, x, self.controls)
 
 
-class Fire(Colormap):
+class Fire(BaseColormap):
     colors = [(1.0, 1.0, 1.0, 1.0),
               (1.0, 1.0, 0.0, 1.0),
               (1.0, 0.0, 0.0, 1.0)]
@@ -300,7 +300,7 @@ class Fire(Colormap):
         return _mix_simple(c, e, t)
 
 
-class Grays(Colormap):
+class Grays(BaseColormap):
     glsl_map = """
     vec4 grays(float t) {
         return vec4(t, t, t, 1.0);
@@ -314,7 +314,7 @@ class Grays(Colormap):
             return np.array([t, t, t, 1.0], dtype=np.float32)
 
 
-class Ice(Colormap):
+class Ice(BaseColormap):
     glsl_map = """
     vec4 ice(float t) {
         return vec4(t, t, 1.0, 1.0);
@@ -329,7 +329,7 @@ class Ice(Colormap):
             return np.array([t, t, 1.0, 1.0], dtype=np.float32)
 
 
-class Hot(Colormap):
+class Hot(BaseColormap):
     colors = [(0., .33, .66, 1.0),
               (.33, .66, 1., 1.0)]
 
@@ -346,7 +346,7 @@ class Hot(Colormap):
         return np.hstack((smoothed, np.ones((len(t), 1))))
 
 
-class Winter(Colormap):
+class Winter(BaseColormap):
     colors = [(0.0, 0.0, 1.0, 1.0),
               (0.0, 1.0, 0.5, 1.0)]
 
@@ -379,7 +379,7 @@ _colormaps = dict(
 
 
 def get_colormap(name):
-    """Return a Colormap instance given its name."""
+    """Return a BaseColormap instance given its name."""
     return _colormaps[name]
 
 
