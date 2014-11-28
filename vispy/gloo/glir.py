@@ -10,6 +10,7 @@ Implementation to execute GL Intermediate Representation (GLIR)
 
 import sys
 import re
+import weakref
 
 import numpy as np
 
@@ -30,58 +31,44 @@ def as_enum(enum):
 
 
 class GlirQueue(object):
-    """ Representation of a queue of GLIR commands. One instance of
-    this class is attached to each context object, and gloo will post
-    commands to this queue.
+    """ Representation of a queue of GLIR commands
     
-    Upon drawing (i.e. `Program.draw()`) The commands in the queue are
-    pushed to an interpreter. This can be Python, JS, whatever. For
-    now, each queue has a GlirParser object that does the interpretation
-    in Python directly. This should later be replaced by some sort of
-    plugin mechanism.
+    One instance of this class is attached to each context object, and
+    to each gloo object.
+    
+    Upon drawing (i.e. `Program.draw()`) and framebuffer switching, the
+    commands in the queue are pushed to a parser, which is stored at
+    context.shared. The parser can interpret the commands in Python,
+    send them to a browser, etc.
     """
     
     def __init__(self):
-        self._commands = []
-        self._parser = GlirParser()
-        self._invalid_objects = set()
+        self._commands = []  # local commands
         self._verbose = False
-        # todo: allow different kind of parsers, like a parser that sends to JS
-
-    @property
-    def parser(self):
-        """The GLIR parser associated to that queue."""
-        return self._parser
-
-    @parser.setter
-    def parser(self, parser):
-        self._parser = parser
-
-    def is_remote(self):
-        """ Get whether the GLIR commands are processed in this process
-        or remotely. In the latter case, gloo.gl cannot be used directly.
-        """
-        return self._parser.is_remote()
-    
-    def set_verbose(self, vebose):
-        """ Set verbose or not. If True, the GLIR commands are printed
-        right before they get parsed.
-        """
-        self._verbose = True
+        self._associations = set()
+        self._count_for_cleanup = 0  # to determine when to shoot zombies
     
     def command(self, *args):
         """ Send a command. See the command spec at:
         https://github.com/vispy/vispy/wiki/Spec.-Gloo-IR
         """
         self._commands.append(args)
-        if args[0] == 'CREATE' and args[-1] is None:
-            self._invalid_objects.add(args[1])
+    
+    def set_verbose(self, verbose):
+        """ Set verbose or not. If True, the GLIR commands are printed
+        right before they get parsed.
+        """
+        self._verbose = verbose
     
     def show(self):
         """ Print the list of commands currently in the queue.
         """
+        # Show commands in associated queues
+        for q in self._associations:
+            q.show()
+        
         for command in self._commands:
-            if command[0] is None or command[1] in self._invalid_objects:
+            if command[0] is None:  # or command[1] in self._invalid_objects:
                 continue  # Skip nill commands 
             t = []
             for e in command:
@@ -97,19 +84,63 @@ class GlirQueue(object):
             print(tuple(t))
     
     def clear(self):
-        """ Pop the whole queue and return it as a list.
+        """ Pop the whole queue (and associated queues) and return a
+        list of commands.
         """
-        self._commands, ret = [], self._commands
-        return ret
+        # Clean unusused associations?
+        self._count_for_cleanup += 1
+        if self._count_for_cleanup > 50:
+            self._count_for_cleanup = 0
+            self._clear_inactive_associations()
+        
+        # Get all commands
+        commands = []
+        for q in self._associations:
+            commands.extend(q.clear())
+        commands.extend(self._commands)
+        self._commands[:] = []
+        return commands
     
-    def flush(self, event=False):
+    def associate(self, queue):
+        """ Associate the given queue. When the current queue gets
+        cleared, it first clears all the associated queues and prepends
+        these commands to the total list. One should call associate()
+        on the queue that relies on the other 
+        (e.g. ``program.glir.associate(texture.glir``).
+        """
+        assert isinstance(queue, GlirQueue)
+        self._associations.add(queue)
+    
+    def _clear_inactive_associations(self):
+        """ Gid rid of glir queues that are no longer used.
+        """
+        L = [weakref.ref(q) for q in self._associations]
+        self._associations.clear()
+        #gc.collect(1)  # Do not do gc.collect(), it is slow!
+        self._associations.update([q() for q in L])
+        self._associations.discard(None)
+    
+    # todo: remove?
+#     @property
+#     def parser(self):
+#         """The GLIR parser associated to that queue."""
+#         return self._parser
+# 
+#     @parser.setter
+#     def parser(self, parser):
+#         assert isinstance(parser, BaseGlirParser) or parser is None
+#         self._parser = parser
+    
+    def flush(self, parser):
         """ Flush all current commands to the GLIR interpreter.
         """
+#         if self._parser is None:
+#             raise RuntimeError('Cannot flush queue if parser is None')
         if self._verbose:
             self.show()
-        self._parser.parse(self._filter(self.clear()))
+        parser.parse(self._filter(self.clear(), parser))
     
-    def _filter(self, commands):
+    def _filter(self, commands, parser):
         """ Filter DATA/SIZE commands that are overridden by a 
         SIZE command.
         """
@@ -117,7 +148,7 @@ class GlirQueue(object):
         commands2 = []
         for command in reversed(commands):
             if command[0] == 'SHADERS':
-                convert = self._parser.convert_shaders()
+                convert = parser.convert_shaders()
                 if convert:
                     shaders = self._convert_shaders(convert, command[2:])
                     command = command[:2] + shaders
@@ -222,6 +253,7 @@ class GlirParser(BaseGlirParser):
     def __init__(self):
         self._objects = {}
         self._invalid_objects = set()
+        
         self._classmap = {'Program': GlirProgram,
                           'VertexBuffer': GlirVertexBuffer,
                           'IndexBuffer': GlirIndexBuffer,
@@ -230,6 +262,7 @@ class GlirParser(BaseGlirParser):
                           'RenderBuffer': GlirRenderBuffer,
                           'FrameBuffer': GlirFrameBuffer,
                           }
+        
         # We keep a dict that the GLIR objects use for storing
         # per-context information. This dict is cleared each time
         # that the context is made current. This seems necessary for
@@ -281,8 +314,8 @@ class GlirParser(BaseGlirParser):
                 ob = self._objects.get(id, None)
                 if ob is None:
                     if id not in self._invalid_objects:
-                        logger.warning('Cannot %s object %i because it does '
-                                       'not exist' % (cmd, id))
+                        raise RuntimeError('Cannot %s object %i because it '
+                                           'does not exist' % (cmd, id))
                     continue
                 # Triage over command. Order of commands is set so most
                 # common ones occur first.
@@ -1004,7 +1037,10 @@ class GlirFrameBuffer(GlirObject):
                                          gl.GL_RENDERBUFFER, 0)
         else:
             buffer = self._parser.get_object(buffer_id)
-            if isinstance(buffer, GlirRenderBuffer):
+            if buffer is None:
+                raise ValueError("Unknown buffer with id %i for attachement" % 
+                                 buffer_id)
+            elif isinstance(buffer, GlirRenderBuffer):
                 buffer.activate()
                 gl.glFramebufferRenderbuffer(gl.GL_FRAMEBUFFER, attachment,
                                              gl.GL_RENDERBUFFER, buffer.handle)

@@ -14,8 +14,8 @@ from ..util.dpi import get_dpi
 from ..util import config
 from ..ext.six import string_types
 from . import Application, use_app
-from ..gloo.context import (GLContext, take_pending_glir_queue, 
-                            set_current_canvas, forget_canvas)
+from ..gloo.context import (GLContext, set_current_canvas, forget_canvas)
+
 
 # todo: add functions for asking about current mouse/keyboard state
 # todo: add hover enter/exit events
@@ -59,13 +59,13 @@ class Canvas(object):
     fullscreen : bool | int
         If False, windowed mode is used (default). If True, the default
         monitor is used. If int, the given monitor number is used.
-    context : dict | instance GLContext | None
-        OpenGL configuration to use when creating the context for the canvas,
-        or a context to share. If None, ``vispy.gloo.get_default_config`` will
-        be used to set the OpenGL context parameters. Alternatively, the
-        ``canvas.context`` property from an existing canvas (using the
-        same backend) will return a ``GLContext`` that can be used,
-        thereby sharing the existing context.
+    context : dict | GLContext | None
+        OpenGL configuration to use when creating the context for the
+        canvas, or a context to share objects with. If None,
+        ``vispy.gloo.get_default_config`` will be used to set the OpenGL
+        context parameters. Alternatively, the ``canvas.context``
+        property from an existing canvas (using the same backend) can
+        be used, thereby sharing objects between contexts.
     keys : str | dict | None
         Default key mapping to use. If 'interactive', escape and F11 will
         close the canvas and toggle full-screen mode, respectively.
@@ -142,25 +142,19 @@ class Canvas(object):
         else:
             raise ValueError('Invalid value for app %r' % app)
         
-        # Ensure context is a GLContext object
+        # Create new context
         context = context or {}
         if isinstance(context, dict):
-            gl_config, context = context, GLContext()
-            context.set_config(gl_config)  # GLContext checks the dict keys
-        elif not isinstance(context, GLContext):
+            self._context = GLContext(context)
+        elif isinstance(context, GLContext):
+            self._context = GLContext(context.config, context.shared)
+        else:
             raise TypeError('context must be a dict or GLContext from '
                             'a Canvas with the same backend, not %s'
                             % type(context))
         
-        # Get the glir queue and then register this canvas as active
-        self._glir = take_pending_glir_queue()
+        # Now we're ready to become current
         set_current_canvas(self)
-        
-        # Glir queues are per-canvas, Glir parsers per-context
-        if hasattr(context, '_glir_parser'):
-            self._glir.parser = context._glir_parser
-        else:
-            context._glir_parser = self._glir.parser
         
         # Deal with special keys
         self._set_keys(keys)
@@ -168,7 +162,8 @@ class Canvas(object):
         # store arguments that get set on Canvas init
         kwargs = dict(title=title, size=size, position=position, show=show,
                       vsync=vsync, resizable=resizable, decorate=decorate,
-                      fullscreen=fullscreen, context=context, parent=parent)
+                      fullscreen=fullscreen, context=self._context, 
+                      parent=parent)
         self._backend_kwargs = kwargs
 
         # Create widget now (always do this *last*, after all err checks)
@@ -193,7 +188,7 @@ class Canvas(object):
 
         # Connect to draw event (append to the end)
         # Process GLIR commands at each paint event
-        self.events.draw.connect(self.glir.flush, position='last')
+        self.events.draw.connect(self.context.flush_commands, position='last')
         if self._autoswap:
             self.events.draw.connect((self, 'swap_buffers'),
                                      ref=True, position='last')
@@ -238,14 +233,11 @@ class Canvas(object):
     @property
     def context(self):
         """ The OpenGL context of the native widget
+        
+        It gives access to OpenGL functions to call on this canvas object,
+        and to the shared context namespace.
         """
-        return self._backend._vispy_context
-    
-    @property
-    def glir(self):
-        """ The GLIR queue for this canvas: the list of GLIR commands.
-        """
-        return self._glir
+        return self._context
     
     @property
     def app(self):
@@ -432,9 +424,8 @@ class Canvas(object):
     def __exit__(self, type, value, traceback):
         # ensure all GL calls are complete
         if not self._closed:
-            from .. import gloo
             self._backend._vispy_set_current()
-            gloo.finish()
+            self.context.finish()
             self.close()
         sleep(0.1)  # ensure window is really closed/destroyed
 

@@ -50,16 +50,16 @@ def test_context_properties():
 def test_context_sharing():
     """Test context sharing"""
     with Canvas() as c1:
-        vert = "uniform vec4 pos;\nvoid main (void) {gl_Position = pos;}"
-        frag = "uniform vec4 pos;\nvoid main (void) {gl_FragColor = pos;}"
+        vert = "attribute vec4 pos;\nvoid main (void) {gl_Position = pos;}"
+        frag = "void main (void) {gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);}"
         program = Program(vert, frag)
-        program['pos'] = [1, 2, 3, 4]
-        program._glir.flush()
+        program['pos'] = [(1, 2, 3, 1), (4, 5, 6, 1)]
+        program.draw('points')
 
         def check():
             # Do something to program and see if it worked
-            program['pos'] = [1, 2, 3, 4]  # Do command
-            program._glir.flush()  # Execute that command
+            program['pos'] = [(1, 2, 3, 1), (4, 5, 6, 1)]  # Do command
+            program.draw('points')
             check_error()
         
         # Check while c1 is active
@@ -69,7 +69,7 @@ def test_context_sharing():
         with Canvas() as c2:
             # pyglet always shares
             if 'pyglet' not in c2.app.backend_name.lower():
-                assert_raises(RuntimeError, check)
+                assert_raises(Exception, check)
         
         # Tests unable to create canvas on glut
         if c1.app.backend_name.lower() in ('glut',):
@@ -78,8 +78,7 @@ def test_context_sharing():
         
         # Check while c2 is active (with *same* context)
         with Canvas(context=c1.context) as c2:
-            assert c1.context is c2.context  # Same context object
+            assert c1.context.shared is c2.context.shared  # same object
             check()
-
 
 run_tests_if_main()

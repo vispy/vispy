@@ -121,18 +121,21 @@ class CanvasBackend(BaseCanvasBackend):
             = self._process_backend_kwargs(kwargs)
         self._context = context
 
+        # TODO: do something with context.config
         # Take the context.
-        if not context.istaken:
-            context.take('webgl', self)
-            # TODO: do something with context.config
-        elif context.istaken == 'webgl':
+        context.shared.add_ref('webgl', self)
+        if context.shared.ref is self:
+            pass  # ok
+        else:
             raise RuntimeError("WebGL doesn't yet support context sharing.")
-
+        
         self._create_widget(size=size)
 
     def _create_widget(self, size=None):
         self._widget = VispyWidget(self._gen_event, size=size)
-        self._vispy_canvas._glir.parser = WebGLGlirParser(self._widget)
+        # Set glir parser on context and context.shared
+        context = self._vispy_canvas.context
+        context.shared.parser = WebGLGlirParser(self._widget)
 
     def _reinit_widget(self):
         self._vispy_canvas.set_current()

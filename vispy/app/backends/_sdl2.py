@@ -201,18 +201,17 @@ class CanvasBackend(BaseCanvasBackend):
             = self._process_backend_kwargs(kwargs)
         self._initialized = False
         
+        # Deak with config
+        _set_config(context.config)
         # Deal with context
-        if not context.istaken:
-            context.take('sdl2', self)
-            _set_config(context.config)
+        context.shared.add_ref('sdl2', self)
+        if context.shared.ref is self:
             share = None
-        elif context.istaken == 'sdl2':
-            other = context.backend_canvas
+        else:
+            other = context.shared.ref
             share = other._id.window, other._native_context
             sdl2.SDL_GL_MakeCurrent(*share)
             sdl2.SDL_GL_SetAttribute(sdl2.SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1)
-        else:
-            raise RuntimeError('Different backends cannot share a context.')
         
         sdl2.SDL_GL_SetSwapInterval(1 if vsync else 0)
         flags = sdl2.SDL_WINDOW_OPENGL

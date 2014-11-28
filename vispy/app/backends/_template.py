@@ -156,14 +156,14 @@ class CanvasBackend(BaseCanvasBackend):
         title, size, position, show, vsync, resize, dec, fs, parent, context, \
             = self._process_backend_kwargs(kwargs)
         
+        # Deal with config
+        # ... use context.config
         # Deal with context
-        if not context.istaken:
-            context.take('backend-name', self)
+        context.shared.add_ref('backend-name', self)
+        if context.shared.ref is self:
             self._native_context = None  # ...
-        elif context.istaken == 'backend-name':
-            self._native_context = context.backend_canvas._native_context
         else:
-            raise RuntimeError('Different backends cannot share a context.')
+            self._native_context = context.shared.ref._native_context
         
         # NativeWidgetClass.__init__(self, foo, bar)
     

@@ -75,8 +75,8 @@ class Canvas(app.Canvas):
 
     # ---------------------------------
     def on_initialize(self, event):
-        gloo.set_clear_color('white')
-        gloo.set_state('translucent')
+        self.context.set_clear_color('white')
+        self.context.set_state('translucent')
 
     # ---------------------------------
     def on_key_press(self, event):
@@ -99,7 +99,7 @@ class Canvas(app.Canvas):
     # ---------------------------------
     def on_resize(self, event):
         width, height = event.size
-        gloo.set_viewport(0, 0, width, height)
+        self.context.set_viewport(0, 0, width, height)
         self.projection = perspective(45.0, width / float(height), 1.0, 1000.0)
         self.program['u_projection'] = self.projection
 
@@ -114,7 +114,7 @@ class Canvas(app.Canvas):
 
     # ---------------------------------
     def on_draw(self, event):
-        gloo.clear()
+        self.context.clear()
         self.program.draw('line_strip')
 
 

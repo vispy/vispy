@@ -176,14 +176,11 @@ class CanvasBackend(_Window, BaseCanvasBackend):
         title, size, position, show, vsync, resize, dec, fs, parent, context, \
             = self._process_backend_kwargs(kwargs)
         
+        # Deal with config
+        config = _set_config(context.config)  # Also used further below
         # Deal with context
-        if not context.istaken:
-            context.take('pyglet', self)
-            config = _set_config(context.config)  # Also used further below
-        elif context.istaken == 'pyglet':
-            config = None  # contexts are shared by default in Pyglet
-        else:
-            raise RuntimeError('Different backends cannot share a context.')
+        context.shared.add_ref('pyglet', self)
+        # contexts are shared by default in Pyglet
         
         style = (pyglet.window.Window.WINDOW_STYLE_DEFAULT if dec else
                  pyglet.window.Window.WINDOW_STYLE_BORDERLESS)

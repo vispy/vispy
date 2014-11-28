@@ -129,17 +129,15 @@ class CanvasBackend(BaseCanvasBackend):
         self._initialized = False
         
         # Deal with context
-        if not context.istaken:
-            context.take('egl', self)
+        context.shared.add_ref('egl', self)
+        if context.shared.ref is self:
             self._native_config = egl.eglChooseConfig(_EGL_DISPLAY)[0]
             self._native_context = egl.eglCreateContext(_EGL_DISPLAY, 
                                                         self._native_config, 
                                                         None)
-        elif context.istaken == 'egl':
-            self._native_config = context.backend_canvas._native_config
-            self._native_context = context.backend_canvas._native_context
         else:
-            raise RuntimeError('Different backends cannot share a context.')
+            self._native_config = context.shared.ref._native_config
+            self._native_context = context.shared.ref._native_context
         
         self._surface = None
         self._vispy_set_size(*size)

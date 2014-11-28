@@ -60,30 +60,31 @@ def test_context_taking():
     """ Test GLContext ownership and taking
     """
     def get_canvas(c):
-        return c.backend_canvas
+        return c.shared.ref
     
     cb = DummyCanvasBackend()
     c = GLContext()
     
     # Context is not taken and cannot get backend_canvas
-    assert not c.istaken
+    assert c.shared.name is None
     assert_raises(RuntimeError, get_canvas, c)
-    assert_in('no backend', repr(c))
+    assert_in('None backend', repr(c.shared))
     
     # Take it
-    c.take('test-foo', cb)
-    assert c.backend_canvas is cb
-    assert_in('test-foo backend', repr(c))
+    c.shared.add_ref('test-foo', cb)
+    assert c.shared.ref is cb
+    assert_in('test-foo backend', repr(c.shared))
     
-    # Now we cannot take it again
-    assert_raises(RuntimeError, c.take, 'test', cb)
+    # Now we can take it again
+    c.shared.add_ref('test-foo', cb)
+    assert len(c.shared._refs) == 2
+    #assert_raises(RuntimeError, c.take, 'test', cb)
     
     # Canvas backend can delete (we use a weak ref)
     cb = DummyCanvasBackend()  # overwrite old object
     gc.collect()
     
-    # Still cannot take it, but backend is invalid
-    assert_raises(RuntimeError, c.take, 'test', cb)
+    # No more refs
     assert_raises(RuntimeError, get_canvas, c)
 
 
