@@ -7,7 +7,6 @@ from __future__ import division  # just to be safe...
 import numpy as np
 
 from .color_array import ColorArray
-from .color_space import _rgb_to_hex
 
 
 ###############################################################################
