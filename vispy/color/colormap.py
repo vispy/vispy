@@ -247,7 +247,7 @@ def _default_controls(ncolors):
     return np.linspace(0., 1., ncolors)
 
 
-class LinearGradient(Colormap):
+class LinearColormap(Colormap):
     """A linear gradient with an arbitrary number of colors and control
     points in [0,1]."""
     def __init__(self, colors, controls=None):
@@ -258,7 +258,7 @@ class LinearGradient(Colormap):
         self.controls = np.array(controls, dtype=np.float32)
         # Generate the GLSL map.
         self.glsl_map = _glsl_mix(controls)
-        super(LinearGradient, self).__init__(colors)
+        super(LinearColormap, self).__init__(colors)
 
     def map(self, x):
         return mix(self.colors.rgba, x, self.controls)
@@ -363,13 +363,13 @@ class Winter(Colormap):
 
 
 _colormaps = dict(
-    autumn=LinearGradient([(1., 0., 0., 1.), (1., 1., 0., 1.)]),
-    blues=LinearGradient([(1., 1., 1., 1.), (0., 0., 1., 1.)]),
-    cool=LinearGradient([(0., 1., 1., 1.), (1., 0., 1., 1.)]),
-    greens=LinearGradient([(1., 1., 1., 1.), (0., 1., 0., 1.)]),
-    reds=LinearGradient([(1., 1., 1., 1.), (1., 0., 0., 1.)]),
-    spring=LinearGradient([(1., 0., 1., 1.), (1., 1., 0., 1.)]),
-    summer=LinearGradient([(0., .5, .4, 1.), (1., 1., .4, 1.)]),
+    autumn=LinearColormap([(1., 0., 0., 1.), (1., 1., 0., 1.)]),
+    blues=LinearColormap([(1., 1., 1., 1.), (0., 0., 1., 1.)]),
+    cool=LinearColormap([(0., 1., 1., 1.), (1., 0., 1., 1.)]),
+    greens=LinearColormap([(1., 1., 1., 1.), (0., 1., 0., 1.)]),
+    reds=LinearColormap([(1., 1., 1., 1.), (1., 0., 0., 1.)]),
+    spring=LinearColormap([(1., 0., 1., 1.), (1., 1., 0., 1.)]),
+    summer=LinearColormap([(0., .5, .4, 1.), (1., 1., .4, 1.)]),
     fire=Fire(),
     grays=Grays(),
     hot=Hot(),
