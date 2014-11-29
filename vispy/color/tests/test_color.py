@@ -319,4 +319,20 @@ def test_colormap():
         assert colors.rgba.min() >= 0
         assert colors.rgba.max() <= 1
 
+
+def test_normalize():
+    """Test the _normalize() function."""
+    from vispy.color.colormap import _normalize
+    for x in (-1, 0., .5, 1., 10., 20):
+        assert _normalize(x) == .5
+    assert_allclose(_normalize((-1., 0., 1.)), (0., .5, 1.))
+    assert_allclose(_normalize((-1., 0., 1.), 0., 1.),
+                    (0., 0., 1.))
+    assert_allclose(_normalize((-1., 0., 1.), 0., 1., clip=False),
+                    (-1., 0., 1.))
+
+    y = _normalize(np.random.randn(100, 5), -10., 10.)
+    assert_allclose([y.min(), y.max()], [0.2975, 1-0.2975], 1e-1, 1e-1)
+
+
 run_tests_if_main()
