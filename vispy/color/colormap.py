@@ -287,7 +287,7 @@ class LinearColormap(BaseColormap):
 
 class DiscreteColormap(BaseColormap):
     """A discrete colormap with an arbitrary number of colors and control
-    points in [0,1]."""
+    points in [0,1]. The colors are not interpolated between control points."""
     def __init__(self, colors, controls=None):
         # Default controls.
         if controls is None:
