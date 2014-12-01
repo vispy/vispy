@@ -36,7 +36,7 @@ class Canvas(app.Canvas):
         self.tr_sys = TransformSystem(self)
         self.tr_sys.visual_to_document = STTransform()
         self.markers = visuals.MarkersVisual()
-        self.markers.set_data(pos, face_color=colors)
+        self.markers.set_data(pos, face_color=colors, edge_width=2.)
         self.markers.set_style(visuals.marker_types[self.index])
 
     def on_draw(self, event):

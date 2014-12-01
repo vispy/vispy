@@ -37,9 +37,12 @@ void main (void) {
     v_fg_color  = a_fg_color;
     v_bg_color  = a_bg_color;
     gl_Position = $transform(vec4(a_position,1.0));
-    gl_PointSize = $v_size + 2*(v_edgewidth + 1.5*v_antialias);
+    gl_PointSize = $v_size + 6*(v_edgewidth + 1.5*v_antialias);
 }
 """
+
+
+
 
 
 frag = """
@@ -76,6 +79,87 @@ void main()
     }
 }
 """
+frag = """
+varying vec4 v_fg_color;
+varying vec4 v_bg_color;
+varying float v_edgewidth;
+varying float v_antialias;
+
+void main()
+{
+    float size = $v_size + 6*(v_edgewidth + 1.5*v_antialias); //factor 6 for acute edge angles that need room as for star marker
+
+    // The marker function needs to be linked with this shader
+    float r = $marker(gl_PointCoord, size);
+
+    //it takes into account an antialising layer of size v_antialias inside the edge
+    //r:
+    //[0, 2*a] antialising face-edge (original [-e/2-a, -e/2+a])
+    //[2*a, e-a] core edge (center e/2+a/2, diameter e-3a = 2t) (original [-e/2+a, e/2-a])
+    //[e-a, e+a] antialising edge-background (original [e/2-a, e/2+a])
+    float t = 0.5*v_edgewidth - 1.5*v_antialias;
+    float c = v_edgewidth/2.0+v_antialias/2.0;
+    float d = abs(r - c) - t;
+
+    if (r > v_edgewidth + v_antialias)
+    {
+        //out of the marker (beyond the outer edge of the edge including transition zone due to antialiasing)
+        discard;
+    }
+    else if (d < 0.) //(r > 2.*v_antialias && r < v_edgewidth - v_antialias)
+    {
+        //inside the width of the edge (core, out of the transition zone for antialiasing)
+        gl_FragColor = v_fg_color;
+    }
+    else
+    {
+        if (v_edgewidth < 0.1)
+        {//edge thiner than 1/10th pixel: skip edge
+            if (r > 0.)
+            {
+                float alpha = r/v_antialias;
+                //gaussian edge stepness with typical size being equal to v_antialias/sqrt(2)
+                alpha = exp(-alpha*alpha);
+                gl_FragColor = vec4(v_bg_color.rgb, alpha*v_bg_color.a);
+            }
+            else
+            {
+                gl_FragColor = v_bg_color;
+            }
+        }
+        else
+        {
+            float alpha = d/v_antialias;
+            alpha = exp(-alpha*alpha);
+            if (r >= max(v_edgewidth - v_antialias, c))
+            {
+                //outer part of the edge: fade out into the background...
+                gl_FragColor = vec4(v_fg_color.rgb, alpha*v_fg_color.a);
+            }
+            else if (r >= 0.)
+            {
+                if (v_edgewidth > v_antialias)
+                {//inner part of the edge, mix with face color (v_bg_color)
+                    gl_FragColor = mix(v_bg_color, v_fg_color, alpha);
+                }
+                else
+                {//edge is too thin with respect to antialiasing zone, mix also with background fade out
+                    vec4 aa_edge_color = mix(v_bg_color, v_fg_color, alpha);
+                    float beta = r / v_antialias;
+                    beta = exp(-beta*beta);
+                    gl_FragColor = vec4(aa_edge_color.rgb, beta*aa_edge_color.a);
+                }
+            }
+            else
+            {
+                gl_FragColor = v_bg_color;
+            }
+        }
+    }
+}
+"""
+
+
 
 
 disc = """
@@ -89,14 +173,16 @@ float disc(vec2 pointcoord, float size)
 
 
 arrow = """
-float arrow(vec2 pointcoord, float size)
+const float sqrt2 = sqrt(2.);
+float rect(vec2 pointcoord, float size)
 {
-    float r1 = abs(pointcoord.x -.50)*size +
-               abs(pointcoord.y -.5)*size - $v_size/2;
-    float r2 = abs(pointcoord.x -.25)*size +
-               abs(pointcoord.y -.5)*size - $v_size/2;
+    float half_size = $v_size/2.;
+    float ady = abs(pointcoord.y -.5)*size;
+    float dx = (pointcoord.x -.5)*size;
+    float r1 = abs(dx) + ady - half_size;
+    float r2 = dx + 0.25*$v_size + ady - half_size;
     float r = max(r1,-r2);
-    return r;
+    return r/sqrt2;//account for slanted edge and correct for width
 }
 """
 
@@ -111,24 +197,24 @@ float ring(vec2 pointcoord, float size)
 }
 """
 
-
 clobber = """
+const float sqrt3 = sqrt(3.);
 float clobber(vec2 pointcoord, float size)
 {
     const float PI = 3.14159265358979323846264;
     const float t1 = -PI/2;
-    const vec2  c1 = 0.2*vec2(cos(t1),sin(t1));
+    float circle_radius = 0.28 * $v_size;
+    float center_shift = 0.44/sqrt3 * $v_size;
+    //total size (horizontally largest) = 2*circle_radius + sqrt3*center_shirt = $v_size
+    vec2  c1 = vec2(cos(t1),sin(t1))*center_shift;
     const float t2 = t1+2*PI/3;
-    const vec2  c2 = 0.2*vec2(cos(t2),sin(t2));
+    vec2  c2 = vec2(cos(t2),sin(t2))*center_shift;
     const float t3 = t2+2*PI/3;
-    const vec2  c3 = 0.2*vec2(cos(t3),sin(t3));
-
-    float r1 = length((pointcoord.xy- vec2(0.5,0.5) - c1)*size);
-    r1 -= $v_size/3;
-    float r2 = length((pointcoord.xy- vec2(0.5,0.5) - c2)*size);
-    r2 -= $v_size/3;
-    float r3 = length((pointcoord.xy- vec2(0.5,0.5) - c3)*size);
-    r3 -= $v_size/3;
+    vec2  c3 = vec2(cos(t3),sin(t3))*center_shift;
+    vec2 xy = (pointcoord.xy- vec2(0.5,0.5))*size + vec2(0., -0.25*center_shift); //shift to center marker vertically
+    float r1 = length(xy - c1) - circle_radius;
+    float r2 = length(xy - c2) - circle_radius;
+    float r3 = length(xy - c3) - circle_radius;
     float r = min(min(r1,r2),r3);
     return r;
 }
@@ -144,21 +230,20 @@ float square(vec2 pointcoord, float size)
 }
 """
 
-
 x_ = """
 float x_(vec2 pointcoord, float size)
 {
     vec2 rotcoord = vec2((pointcoord.x + pointcoord.y - 1.) / sqrt(2.),
                          (pointcoord.y - pointcoord.x) / sqrt(2.));
-    float r1 = max(abs(rotcoord.x - 0.25)*size,
-                   abs(rotcoord.x + 0.25)*size);
-    float r2 = max(abs(rotcoord.y - 0.25)*size,
-                   abs(rotcoord.y + 0.25)*size);
-    float r3 = max(abs(rotcoord.x)*size,
-                   abs(rotcoord.y)*size);
-    float r = max(min(r1,r2),r3);
-    r -= $v_size/2;
-    return r;
+    //vbar
+    float r1 = abs(rotcoord.x)*size - $v_size/6;
+    float r2 = abs(rotcoord.y)*size - $v_size/2;
+    float vbar = max(r1,r2);
+    //hbar
+    float r3 = abs(rotcoord.y)*size - $v_size/6;
+    float r4 = abs(rotcoord.x)*size - $v_size/2;
+    float hbar = max(r3,r4);
+    return min(vbar, hbar);
 }
 """
 
@@ -168,7 +253,7 @@ float diamond(vec2 pointcoord, float size)
 {
     float r = abs(pointcoord.x -.5)*size + abs(pointcoord.y -.5)*size;
     r -= $v_size/2;
-    return r;
+    return r / sqrt(2);//account for slanted edge and correct for width
 }
 """
 
@@ -176,67 +261,151 @@ float diamond(vec2 pointcoord, float size)
 vbar = """
 float vbar(vec2 pointcoord, float size)
 {
-    float r1 = max(abs(pointcoord.x - 0.75)*size,
-                   abs(pointcoord.x - 0.25)*size);
-    float r3 = max(abs(pointcoord.x - 0.50)*size,
-                   abs(pointcoord.y - 0.50)*size);
+    float r1 = abs(pointcoord.x - 0.5)*size - $v_size/6;
+    float r3 = abs(pointcoord.y - 0.5)*size - $v_size/2;
     float r = max(r1,r3);
-    r -= $v_size/2;
     return r;
 }
 """
-
 
 hbar = """
-float hbar(vec2 pointcoord, float size)
+float rect(vec2 pointcoord, float size)
 {
-    float r2 = max(abs(pointcoord.y - 0.75)*size,
-                   abs(pointcoord.y - 0.25)*size);
-    float r3 = max(abs(pointcoord.x - 0.50)*size,
-                   abs(pointcoord.y - 0.50)*size);
+    float r2 = abs(pointcoord.y - 0.5)*size - $v_size/6;
+    float r3 = abs(pointcoord.x - 0.5)*size - $v_size/2;
     float r = max(r2,r3);
-    r -= $v_size/2;
     return r;
 }
 """
-
 
 cross = """
 float cross(vec2 pointcoord, float size)
 {
-    float r1 = max(abs(pointcoord.x - 0.75)*size,
-                   abs(pointcoord.x - 0.25)*size);
-    float r2 = max(abs(pointcoord.y - 0.75)*size,
-                   abs(pointcoord.y - 0.25)*size);
-    float r3 = max(abs(pointcoord.x - 0.50)*size,
-                   abs(pointcoord.y - 0.50)*size);
-    float r = max(min(r1,r2),r3);
-    r -= $v_size/2;
-    return r;
+    //vbar
+    float r1 = abs(pointcoord.x - 0.5)*size - $v_size/6;
+    float r2 = abs(pointcoord.y - 0.5)*size - $v_size/2;
+    float vbar = max(r1,r2);
+    //hbar
+    float r3 = abs(pointcoord.y - 0.5)*size - $v_size/6;
+    float r4 = abs(pointcoord.x - 0.5)*size - $v_size/2;
+    float hbar = max(r3,r4);
+    return min(vbar, hbar);
 }
 """
+
 
 tailed_arrow = """
-float tailed_arrow(vec2 pointcoord, float size)
+const float sqrt2 = sqrt(2.);
+float rect(vec2 pointcoord, float size)
 {
-    //arrow_right
-    float r1 = abs(pointcoord.x -.50)*size +
-               abs(pointcoord.y -.5)*size - $v_size/2;
-    float r2 = abs(pointcoord.x -.25)*size +
-               abs(pointcoord.y -.5)*size - $v_size/2;
+    float half_size = $v_size/2.;
+    float ady = abs(pointcoord.y -.5)*size;
+    float dx = (pointcoord.x -.5)*size;
+    float r1 = abs(dx) + ady - half_size;
+    float r2 = dx + 0.25*$v_size + ady - half_size;
     float arrow = max(r1,-r2);
-
     //hbar
-    float r3 = (abs(pointcoord.y-.5)*2+.3)*$v_size-$v_size/2;
-    float r4 = (pointcoord.x -.775)*size;
-    float r6 = abs(pointcoord.x -.5)*size-$v_size/2;
-    float limit = (pointcoord.x -.5)*size +
-                  abs(pointcoord.y -.5)*size - $v_size/2;
-    float hbar = max(limit,max(max(r3,r4),r6));
-
-    return min(arrow,hbar);
+    float upper_bottom_edges = ady - $v_size/8./sqrt2;
+    float left_edge = -dx - half_size;
+    float right_edge = dx + ady - half_size;
+    float hbar = max(upper_bottom_edges, left_edge);
+    float scale = 1.; //rescaling for slanted edge
+    if (right_edge >= hbar)
+    {
+        hbar = right_edge;
+        scale = sqrt2;
+    }
+    if (arrow <= hbar)
+    {
+        return arrow / sqrt2;//account for slanted edge and correct for width
+    }
+    else
+    {
+        return hbar / scale;
+    }
 }
 """
+
+
+triangle_up = """
+float rect(vec2 pointcoord, float size)
+{
+    float height = $v_size*sqrt(3.)/2.;
+    float bottom = ((pointcoord.y - 0.5)*size - height/2.);
+    float rotated_y = sqrt(3.)/2. * (pointcoord.x - 0.5) * size - 0.5 * ((pointcoord.y - 0.5)*size - height/6.) + height/6.;
+    float right_edge = (rotated_y - height/2.);
+    float cc_rotated_y = -sqrt(3.)/2. * (pointcoord.x - 0.5)*size - 0.5 * ((pointcoord.y - 0.5)*size - height/6.) + height/6.;
+    float left_edge = (cc_rotated_y - height/2.);
+    float slanted_edges = max(right_edge, left_edge);
+    return max(slanted_edges, bottom);
+}
+"""
+
+triangle_down = """
+float rect(vec2 pointcoord, float size)
+{
+    float height = -$v_size*sqrt(3.)/2.;
+    float bottom = -((pointcoord.y - 0.5)*size - height/2.);
+    float rotated_y = sqrt(3.)/2. * (pointcoord.x - 0.5) * size - 0.5 * ((pointcoord.y - 0.5)*size - height/6.) + height/6.;
+    float right_edge = -(rotated_y - height/2.);
+    float cc_rotated_y = -sqrt(3.)/2. * (pointcoord.x - 0.5)*size - 0.5 * ((pointcoord.y - 0.5)*size - height/6.) + height/6.;
+    float left_edge = -(cc_rotated_y - height/2.);
+    float slanted_edges = max(right_edge, left_edge);
+    return max(slanted_edges, bottom);
+}
+"""
+
+
+star = """
+float rect(vec2 pointcoord, float size)
+{
+    float star = -10000.; 
+    const float PI2_5 = 3.141592653589*2./5.;
+    const float PI2_20 = 3.141592653589/10.;  //PI*2/20
+    //downwards shift to that the marker center is halfway vertically between the top of the upward spike (y = -v_size/2)
+    //and the bottom of one of two downward spikes (y = +v_size/2*cos(2*pi/10) approx +v_size/2*0.8)
+    //center is at -v_size/2*0.1
+    float shift_y = -0.05*$v_size;
+    //first spike upwards,
+    //rotate spike by 72 deg four times to complete the star
+    for (int i = 0; i <= 4; i++)
+    {
+        //if not the first spike, rotate it upwards
+        float x = (pointcoord.x - 0.5)*size;
+        float y = (pointcoord.y - 0.5)*size;
+        float spike_rot_angle = i*PI2_5;
+        float cosangle = cos(spike_rot_angle);
+        float sinangle = sin(spike_rot_angle);
+        float spike_x = x;
+        float spike_y = y + shift_y;
+        if (i > 0)
+        {
+            spike_x = cosangle * x - sinangle * (y + shift_y);
+            spike_y = sinangle * x + cosangle * (y + shift_y);
+        }
+        //in the frame where the spike is upwards:
+        //rotate 18 deg the zone x < 0 around the top of the star (point whose coordinates are -s/2, 0 where s is the size of the marker)
+        //compute y coordonates as well because we do a second rotation to put the spike at its final position
+        float rot_center_y = -$v_size/2;
+        float rot18x = cos(PI2_20) * spike_x - sin(PI2_20) * (spike_y - rot_center_y);
+        //rotate -18 deg the zone x > 0 arount the top of the star
+        float rot_18x = cos(PI2_20) * spike_x + sin(PI2_20) * (spike_y - rot_center_y);
+        float bottom = spike_y - $v_size/10.;
+        float spike = max(bottom, max(rot18x, -rot_18x)); //max(left edge, right edge)
+        if (i == 0)
+        {//first spike, skip the rotation
+            star = spike;
+        }
+        else //i > 0
+        {
+            star = min(star, spike);
+        }
+    }
+    return star;
+}
+"""
+
+
 
 _marker_dict = {
     'disc': disc,
@@ -250,6 +419,9 @@ _marker_dict = {
     'cross': cross,
     'tailed_arrow': tailed_arrow,
     'x': x_,
+    'triangle_up': triangle_up,
+    'triangle_down': triangle_down,
+    'star': star,
     # aliases
     'o': disc,
     '+': cross,
@@ -258,6 +430,9 @@ _marker_dict = {
     '|': vbar,
     '->': tailed_arrow,
     '>': arrow,
+    '^': triangle_up,
+    '~^': triangle_down,
+    '*' : star
 }
 marker_types = tuple(sorted(list(_marker_dict.keys())))
 
@@ -282,7 +457,7 @@ class MarkersVisual(Visual):
             The array of locations to display each symbol.
         style : str
             The style of symbol to draw (see Notes).
-        size : float
+        size : float or array
             The symbol size in px.
         edge_width : float
             The width of the symbol outline in px.
@@ -294,7 +469,7 @@ class MarkersVisual(Visual):
         Notes
         -----
         Allowed style strings are: disc, arrow, ring, clobber, square, diamond,
-        vbar, hbar, cross, tailed_arrow, and x.
+        vbar, hbar, cross, tailed_arrow, x, triangle_up, triangle_down, and star.
         """
         assert (isinstance(pos, np.ndarray) and
                 pos.ndim == 2 and pos.shape[1] in (2, 3))
@@ -338,3 +513,474 @@ class MarkersVisual(Visual):
         self._program['u_antialias'] = 1
         self._program.bind(self._vbo)
         self._program.draw('points')
+
+
+
+class RescalingRelativeEdgeMarkersVisual(MarkersVisual):
+    """ Visual displaying marker symbols and rescale them when the transform scale changes (often due to a zoom)
+    """
+
+    def set_data(self, pos=None, style='o', size=10., edge_rel_width=0.1,
+                 edge_color='black', face_color='white'):
+        """ Set the data used to display this visual.
+
+        Parameters
+        ----------
+        pos : array
+            The array of locations to display each symbol.
+        style : str
+            The style of symbol to draw (see Notes).
+        size : float
+            The symbol size in px.
+        edge_rel_width : float
+            The width of the symbol outline expressed as a fraction of the size.
+        edge_color : Color | ColorArray
+            The color used to draw the symbol outline.
+        face_color : Color | ColorArray
+            The color used to draw the symbol interior.
+
+        Notes
+        -----
+        Allowed style strings are: disc, arrow, ring, clobber, square, diamond,
+        vbar, hbar, cross, tailed_arrow, x, triangle_up, triangle_down, and star.
+        """
+        assert (isinstance(pos, np.ndarray) and
+                pos.ndim == 2 and pos.shape[1] in (2, 3))
+        assert edge_rel_width >= 0.
+        self.set_style(style)
+        edge_color = ColorArray(edge_color).rgba
+        face_color = ColorArray(face_color).rgba
+        n = len(pos)
+        size = np.ones((2,), dtype=np.float32) * size
+        data = np.zeros(n, dtype=[('a_position', np.float32, 3),
+                                  ('a_fg_color', np.float32, 4),
+                                  ('a_bg_color', np.float32, 4),
+                                  ('a_size', np.float32, 2),
+                                  ('a_edgewidth', np.float32, 1)])
+        data['a_fg_color'] = edge_color
+        data['a_bg_color'] = face_color
+        data['a_edgewidth'] = edge_rel_width * min(size)
+        data['a_position'][:, :pos.shape[1]] = pos
+        data['a_size'] = size
+        self.antialias = 1.
+        self._data = data
+        self._vbo = VertexBuffer(data)
+
+
+    def draw(self, transforms):
+        set_state(depth_test=False, blend=True,
+                  blend_func=('src_alpha', 'one_minus_src_alpha'))
+        xform = transforms.get_full_transform()
+        self._program.vert['transform'] = xform
+        #TO DO: find a way to avoid copying data and rebinding them to the vbo
+        update_data = self._data.copy()
+        #0.5 factor due to the difference between the viewbox spanning [-1, 1] in the framebuffer coordinates intervals
+        #and the viewbox spanning [0, 1] intervals in the Visual coordinates
+        #TO DO: find a way to get the scale directly
+        scale = 0.5*transforms.visual_to_document.simplified().scale[:2] * transforms.document_to_framebuffer.simplified().scale[:2] * transforms.framebuffer_to_render.simplified().scale[:2] 
+        update_data['a_size'] *= scale
+        update_data['a_edgewidth'] *= min(scale)
+        #this code assumes that all edgewidths and all sizes are equals across markers
+        #TO DO: adapt to the case where sizes are not all equal (and offer the corresponding parameterisation in set_data)
+        edgewidth = update_data['a_edgewidth'][0]
+        size = update_data['a_size'][0, :].min() #take the smallest of x and y sizes
+        antialias = self.antialias
+        #remove edge if it is too small or if the marker is too small for antialiasing to be done (see frag GLSL code)
+        size_threshold = 4.*antialias
+        if edgewidth < 0.5 or size < size_threshold:
+            update_data['a_edgewidth'] = 0.
+        #more transparent edge for a smooth transition
+        elif edgewidth < 2. or size < 4. + 4.*antialias:
+            #alpha channel
+            update_data['a_fg_color'][:, 3] *= min((edgewidth - 0.5)/1.5, (size - size_threshold) / 4.)
+        self._vbo.set_data(update_data)
+        self._program.prepare()
+        self._program['u_antialias'] = antialias
+        self._program.bind(self._vbo)
+        self._program.draw('points')
+
+
+
+
+
+
+vertxy = """
+uniform mat4 u_projection;
+uniform float u_antialias;
+
+attribute vec3  a_position;
+attribute vec4  a_fg_color;
+attribute vec4  a_bg_color;
+attribute float a_edgewidth;
+attribute vec2 a_size;
+
+varying vec4 v_fg_color;
+varying vec4 v_bg_color;
+varying float v_edgewidth;
+varying float v_antialias;
+
+void main (void) {
+    $v_size = a_size;
+    v_edgewidth = a_edgewidth;
+    v_antialias = u_antialias;
+    v_fg_color  = a_fg_color;
+    v_bg_color  = a_bg_color;
+    gl_Position = $transform(vec4(a_position, 1.0));
+    gl_PointSize = max($v_size.x, $v_size.y) + 6*(v_edgewidth + 1.5*v_antialias);
+}
+"""
+
+
+
+fragxy = """
+varying vec4 v_fg_color;
+varying vec4 v_bg_color;
+varying float v_edgewidth;
+varying float v_antialias;
+
+void main()
+{
+    float size = max($v_size.x, $v_size.y) + 6*(v_edgewidth + 1.5*v_antialias); //factor 6 for acute edge angles that need room as for star marker
+
+    // The marker function needs to be linked with this shader
+    float r = $marker(gl_PointCoord, size);
+
+    //depth inside the edge (out of antialiasing transitions)
+    //it takes into account an antialising layer of size v_antialias inside the edge
+    //r:
+    //[0, 2*a] antialising face-edge (original [-e/2-a, -e/2+a])
+    //[2*a, e-a] core edge (center e/2+a/2, diameter e-3a = 2t) (original [-e/2+a, e/2-a])
+    //[e-a, e+a] antialising edge-background (original [e/2-a, e/2+a])
+    float t = 0.5*v_edgewidth - 1.5*v_antialias;
+    float c = v_edgewidth/2.0+v_antialias/2.0;
+    float d = abs(r - c) - t;
+
+    if (r > v_edgewidth + v_antialias)
+    {
+        //out of the marker (beyond the outer edge of the edge including transition zone due to antialiasing)
+        discard;
+    }
+    else if (d < 0.) //(r > 2.*v_antialias && r < v_edgewidth - v_antialias)
+    {
+        //inside the width of the edge (core, out of the transition zone for antialiasing)
+        gl_FragColor = v_fg_color;
+    }
+    else
+    {
+        if (v_edgewidth < 0.1)
+        {//edge thiner than 1/10th pixel: skip edge
+            if (r > 0.)
+            {
+                float alpha = r/v_antialias;
+                //gaussian edge stepness with typical size being equal to v_antialias/sqrt(2)
+                alpha = exp(-alpha*alpha);
+                gl_FragColor = vec4(v_bg_color.rgb, alpha*v_bg_color.a);
+            }
+            else
+            {
+                gl_FragColor = v_bg_color;
+            }
+        }
+        else
+        {
+            float alpha = d/v_antialias;
+            alpha = exp(-alpha*alpha);
+            if (r >= max(v_edgewidth - v_antialias, c))
+            {
+                //outer part of the edge: fade out into the background...
+                gl_FragColor = vec4(v_fg_color.rgb, alpha*v_fg_color.a);
+            }
+            else if (r >= 0.)
+            {
+                if (v_edgewidth > v_antialias)
+                {//inner part of the edge, mix with face color (v_bg_color)
+                    gl_FragColor = mix(v_bg_color, v_fg_color, alpha);
+                }
+                else
+                {//edge is too thin with respect to antialiasing zone, mix also with background fade out
+                    vec4 aa_edge_color = mix(v_bg_color, v_fg_color, alpha);
+                    float beta = r / v_antialias;
+                    beta = exp(-beta*beta);
+                    gl_FragColor = vec4(aa_edge_color.rgb, beta*aa_edge_color.a);
+                }
+            }
+            else
+            {
+                gl_FragColor = v_bg_color;
+            }
+        }
+    }
+}
+"""
+
+
+rectxy = """
+float rect(vec2 pointcoord, float size)
+{
+    float x_boundaries = abs(pointcoord.x - 0.5)*size - $v_size.x/2.;
+    float y_boundaries = abs(pointcoord.y - 0.5)*size - $v_size.y/2.;
+    return max(x_boundaries, y_boundaries);
+}
+"""
+
+ellipsexy = """
+float rect(vec2 pointcoord, float size)
+{
+    float x = (pointcoord.x - 0.5)*size;
+    float y = (pointcoord.y - 0.5)*size;
+    //normalise radial distance (for edge and antialising to remain isotropic)
+    //Scaling factor is the norm of the gradient of the function defining the surface taken at a well chosen point on the edge of the ellipse
+    //f(x, y) = (sqrt(x^2/a^2 + y^2/b^2) = 0.5 in this case where a = v_size.x and b = v_size.y)
+    //The well chosen point on the edge of the ellipse should be the point whose normal points towards the current point.
+    //Below we choose a different point whose computation is simple enough to fit here.
+    float f = length(vec2(x / $v_size.x, y / $v_size.y));
+    //We set the default value of the norm so that
+    //- near the axes (x=0 or y=0 +/- 1 pixel), the norm is correct (the computation below is unstable near the axes)
+    //- if the ellipse is a circle, the norm is correct
+    //- if we are deep in the interior of the ellipse the norm is set to an arbitrary value (but is not used)
+    float norm = abs(x) < 1. ? 1./$v_size.y : 1./$v_size.x;
+    if (f > 1e-3 && abs($v_size.x - $v_size.y) > 1e-3 && abs(x) > 1. && abs(y) > 1.)
+    {
+        //Find the point x0, y0 on the ellipse which has the same hyperbola coordinate in the elliptic coordinate system linked to the ellipse
+        //(finding the right 'well chosen' point is too complicated)
+        //Visually it's nice, even at high eccentricities, where the approximation is visible but not ugly.
+        float a = $v_size.x/2.;
+        float b = $v_size.y/2.;
+        float C = max(a, b);
+        float c = min(a, b);
+        float focal_length = sqrt(C*C - c*c);
+        float fl2 = focal_length*focal_length;
+        float x2 = x*x;
+        float y2 = y*y;
+        float tmp = fl2 + x2 + y2;
+        float x0 = 0;
+        float y0 = 0;
+        if ($v_size.x > $v_size.y)
+        {
+            float cos2v = 0.5 * (tmp - sqrt(tmp*tmp - 4.*fl2*x2)) / fl2;
+            cos2v = fract(cos2v);
+            x0 = a * sqrt(cos2v); //v_size.x = focal_length * cosh m where m is the ellipse coordinate
+            y0 = b * sqrt(1-cos2v); //v_size.y = focal_length * sinh m
+        }
+        else //$v_size.x < $v_size.y
+        {//exchange x and y axis for elliptic coordinate
+            float cos2v = 0.5 * (tmp - sqrt(tmp*tmp - 4.*fl2*y2)) / fl2;
+            cos2v = fract(cos2v);
+            x0 = a * sqrt(1-cos2v); //v_size.x = focal_length * sinh m where m is the ellipse coordinate
+            y0 = b * sqrt(cos2v); //v_size.y = focal_length * cosh m
+        }
+        vec2 normal = vec2(2.*x0/v_size.x/v_size.x, 2.*y0/v_size.y/v_size.y);
+        norm = length(normal);
+    }
+    return (f - 0.5) / norm;
+}
+"""
+
+discxy = """
+float rect(vec2 pointcoord, float size)
+{
+    return length((pointcoord.xy - vec2(0.5,0.5))*size) - max($v_size.x, $v_size.y)/2;
+}
+"""
+
+mindiscxy = """
+float rect(vec2 pointcoord, float size)
+{
+    return length((pointcoord.xy - vec2(0.5,0.5))*size) - min($v_size.x, $v_size.y)/2;
+}
+"""
+
+squarexy = """
+float rect(vec2 pointcoord, float size)
+{
+    return max(abs(pointcoord.x - 0.5), abs(pointcoord.y - 0.5))*size - max($v_size.x, $v_size.y)/2;
+}
+"""
+
+minsquarexy = """
+float rect(vec2 pointcoord, float size)
+{
+    return max(abs(pointcoord.x - 0.5), abs(pointcoord.y - 0.5))*size - min($v_size.x, $v_size.y)/2;
+}
+"""
+
+vbarxy = """
+float vbar(vec2 pointcoord, float size)
+{
+    float r1 = abs(pointcoord.x - 0.5)*size - $v_size.x/6;
+    float r3 = abs(pointcoord.y - 0.5)*size - $v_size.y/2;
+    float r = max(r1,r3);
+    return r;
+}
+"""
+
+hbarxy = """
+float rect(vec2 pointcoord, float size)
+{
+    float r2 = abs(pointcoord.y - 0.5)*size - $v_size.y/6;
+    float r3 = abs(pointcoord.x - 0.5)*size - $v_size.x/2;
+    float r = max(r2,r3);
+    return r;
+}
+"""
+
+crossxy = """
+float cross(vec2 pointcoord, float size)
+{
+    //vbar
+    float r1 = abs(pointcoord.x - 0.5)*size - $v_size.x/6;
+    float r2 = abs(pointcoord.y - 0.5)*size - $v_size.y/2;
+    float vbar = max(r1,r2);
+    //hbar
+    float r3 = abs(pointcoord.y - 0.5)*size - $v_size.y/6;
+    float r4 = abs(pointcoord.x - 0.5)*size - $v_size.x/2;
+    float hbar = max(r3,r4);
+    return min(vbar, hbar);
+}
+"""
+
+xxy_ = """
+float x_(vec2 pointcoord, float size)
+{
+    vec2 rotcoord = vec2((pointcoord.x + pointcoord.y - 1.) / sqrt(2.),
+                         (pointcoord.y - pointcoord.x) / sqrt(2.));
+    //vbar
+    float r1 = abs(rotcoord.x)*size - $v_size.x/6;
+    float r2 = abs(rotcoord.y)*size - $v_size.y/2;
+    float vbar = max(r1,r2);
+    //hbar
+    float r3 = abs(rotcoord.y)*size - $v_size.y/6;
+    float r4 = abs(rotcoord.x)*size - $v_size.x/2;
+    float hbar = max(r3,r4);
+    return min(vbar, hbar);
+}
+"""
+
+
+_markerxy_dict = {
+    'disc': discxy,
+    'mindisc': mindiscxy,
+    'square': squarexy,
+    'minsquare': minsquarexy,
+    'vbar': vbarxy,
+    'hbar': hbarxy,
+    'cross': crossxy,
+    'x': xxy_,
+    'ellipse': ellipsexy,
+    'rect': rectxy,
+    #aliases
+    'o': discxy,
+    'md': mindiscxy,
+    '+': crossxy,
+    's': squarexy,
+    'ms': minsquarexy,
+    '-': hbarxy,
+    '|': vbarxy,
+    'e': ellipsexy,
+    'r': rectxy,
+}
+
+markerxy_types = tuple(sorted(list(_markerxy_dict.keys())))
+
+_square_makers = set([
+    "disc",
+    "mindisc",
+    "square",
+    "minsquare",
+    "d", "md", "s", "ms"
+])
+
+
+class RescalingXYRelativeEdgeMarkersVisual(Visual):
+    """ Visual displaying marker symbols and rescale them when transform scale change (taking into account possible different rescaling in x and y directions)
+    """
+    def __init__(self):
+        self._program = ModularProgram(vertxy, fragxy)
+        self._v_size_var = Variable('varying vec2 v_size')
+        self._program.vert['v_size'] = self._v_size_var
+        self._program.frag['v_size'] = self._v_size_var
+        Visual.__init__(self)
+
+    def set_data(self, pos=None, style='o', size=10., edge_rel_width=0.1,
+                 edge_color='black', face_color='white'):
+        """ Set the data used to display this visual.
+
+        Parameters
+        ----------
+        pos : array
+            The array of locations to display each symbol.
+        style : str
+            The style of symbol to draw (see Notes).
+        size : float
+            The symbol size in px.
+        edge_rel_width : float
+            The width of the symbol outline expressed as a fraction of the size.
+        edge_color : Color | ColorArray
+            The color used to draw the symbol outline.
+        face_color : Color | ColorArray
+            The color used to draw the symbol interior.
+
+        Notes
+        -----
+        Allowed style strings are: disc, mindisc, square, minsquare, ellipse, rect.
+        """
+        assert (isinstance(pos, np.ndarray) and
+                pos.ndim == 2 and pos.shape[1] in (2, 3))
+        assert edge_rel_width >= 0.
+        self.set_style(style)
+        edge_color = ColorArray(edge_color).rgba
+        face_color = ColorArray(face_color).rgba
+        n = len(pos)
+        size = np.ones((2,), dtype=np.float32) * size
+        data = np.zeros(n, dtype=[('a_position', np.float32, 3),
+                                  ('a_fg_color', np.float32, 4),
+                                  ('a_bg_color', np.float32, 4),
+                                  ('a_size', np.float32, 2),
+                                  ('a_edgewidth', np.float32, 1)])
+        data['a_fg_color'] = edge_color
+        data['a_bg_color'] = face_color
+        data['a_edgewidth'] = edge_rel_width * min(size)
+        data['a_position'][:, :pos.shape[1]] = pos
+        data['a_size'] = size
+        self.antialias = 1.
+        self._data = data
+        self._vbo = VertexBuffer(data)
+
+    def set_style(self, style='o'):
+        _check_valid('style', style, markerxy_types)
+        self._marker_fun = Function(_markerxy_dict[style])
+        self._marker_fun['v_size'] = self._v_size_var
+        self._program.frag['marker'] = self._marker_fun
+
+    def draw(self, transforms):
+        set_state(depth_test=False, blend=True,
+                  blend_func=('src_alpha', 'one_minus_src_alpha'))
+        xform = transforms.get_full_transform()
+        self._program.vert['transform'] = xform
+        #TO DO: find a way to avoid copying data and rebinding them to the vbo
+        update_data = self._data.copy()
+        #0.5 factor due to the difference between the viewbox spanning [-1, 1] in the framebuffer coordinates intervals
+        #and the viewbox spanning [0, 1] intervals in the Visual coordinates
+        #TO DO: find a way to get the scale directly
+        scale = 0.5*transforms.visual_to_document.simplified().scale[:2] * transforms.document_to_framebuffer.simplified().scale[:2] * transforms.framebuffer_to_render.simplified().scale[:2] 
+        update_data['a_size'] *= scale
+        update_data['a_edgewidth'] *= min(scale)
+        #this code assumes that all edgewidths and all sizes are equals across markers
+        #TO DO: adapt to the case where sizes are not all equal (and offer the corresponding parameterisation in set_data)
+        edgewidth = update_data['a_edgewidth'][0]
+        size = update_data['a_size'][0, :].min() #take the smallest of x and y sizes
+        antialias = self.antialias
+        #remove edge if it is too small or if the marker is too small for antialiasing to be done (see frag GLSL code)
+        size_threshold = 4.*antialias
+        if edgewidth < 0.5 or size < size_threshold:
+            update_data['a_edgewidth'] = 0.
+        #more transparent edge for a smooth transition
+        elif edgewidth < 2. or size < 4. + 4.*antialias:
+            #alpha channel
+            update_data['a_fg_color'][:, 3] *= min((edgewidth - 0.5)/1.5, (size - size_threshold) / 4.)
+        self._vbo.set_data(update_data)
+        self._program.prepare()
+        self._program['u_antialias'] = antialias
+        self._program.bind(self._vbo)
+        self._program.draw('points')
+
