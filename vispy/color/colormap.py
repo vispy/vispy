@@ -268,41 +268,89 @@ def _default_controls(ncolors):
     return np.linspace(0., 1., ncolors)
 
 
-class LinearColormap(BaseColormap):
-    """A linear gradient with an arbitrary number of colors and control
-    points in [0,1]."""
-    def __init__(self, colors, controls=None):
+# List the parameters of every supported interpolation mode.
+_interpolation_info = {
+    'linear': {
+        'ncontrols': lambda ncolors: ncolors,  # take ncolors as argument
+        'glsl_map': _glsl_mix,  # take 'controls' as argument
+        'map': mix,
+    },
+    'discrete': {
+        'ncontrols': lambda ncolors: (ncolors+1),
+        'glsl_map': _glsl_step,
+        'map': step,
+    }
+}
+
+
+class Colormap(BaseColormap):
+    """A colormap defining several control colors and an interpolation scheme.
+
+    Parameters
+    ----------
+    colors : list of colors | ColorArray
+        The list of control colors. If not a ``ColorArray``, a new
+        ``ColorArray`` instance is created from this list. See the
+        documentation of ``ColorArray``.
+    controls : list | ndarray
+        The list of control points for the given colors. It should be
+        an increasing list of floating-point number between 0.0 and 1.0.
+        The first control point must be 0.0. The last control point must be
+        1.0. The number of control points depends on the interpolation scheme.
+    interpolation : str
+        The interpolation mode of the colormap. Default: 'linear'. Can also
+        be 'discrete'.
+        If 'linear', ncontrols = ncolors (one color per control point).
+        If 'discrete', ncontrols = ncolors+1 (one color per bin).
+
+    Examples
+    --------
+    Here is a basic example:
+
+        >>> from vispy.color import Colormap
+        >>> cm = Colormap(['r', 'g', 'b'])
+        >>> cm[0.], cm[0.5], cm[np.linspace(0., 1., 100)]
+
+    """
+    def __init__(self, colors, controls=None, interpolation='linear'):
+        self.interpolation = interpolation
+        ncontrols = self._ncontrols(len(colors))
         # Default controls.
         if controls is None:
-            controls = _default_controls(len(colors))
-        assert len(controls) == len(colors)
-        self.controls = np.array(controls, dtype=np.float32)
-        # Generate the GLSL map.
-        self.glsl_map = _glsl_mix(controls)
-        super(LinearColormap, self).__init__(colors)
+            controls = _default_controls(ncontrols)
+        assert len(controls) == ncontrols
+        self._controls = np.array(controls, dtype=np.float32)
+        self.glsl_map = self._glsl_map_generator(self._controls)
+        super(Colormap, self).__init__(colors)
+
+    @property
+    def interpolation(self):
+        """The interpolation mode of the colormap"""
+        return self._interpolation
+
+    @interpolation.setter
+    def interpolation(self, val):
+        if val not in _interpolation_info:
+            raise ValueError('The interpolation mode can only be one of: '
+                             ', '.join(sorted(_interpolation_info.keys())))
+        # Get the information of the interpolation mode.
+        info = _interpolation_info[val]
+        # Get the function that generates the GLSL map, as a function of the
+        # controls array.
+        self._glsl_map_generator = info['glsl_map']
+        # Number of controls as a function of the number of colors.
+        self._ncontrols = info['ncontrols']
+        # Python map function.
+        self._map_function = info['map']
+        self._interpolation = val
 
     def map(self, x):
-        return mix(self.colors.rgba, x, self.controls)
+        """The Python mapping function from the [0,1] interval to a
+        list of rgba colors."""
+        return self._map_function(self.colors.rgba, x, self._controls)
 
 
-class DiscreteColormap(BaseColormap):
-    """A discrete colormap with an arbitrary number of colors and control
-    points in [0,1]. The colors are not interpolated between control points."""
-    def __init__(self, colors, controls=None):
-        # Default controls.
-        if controls is None:
-            controls = _default_controls(len(colors) + 1)
-        assert len(controls) == len(colors) + 1
-        self.controls = np.array(controls, dtype=np.float32)
-        # Generate the GLSL map.
-        self.glsl_map = _glsl_step(self.controls)
-        super(DiscreteColormap, self).__init__(colors)
-
-    def map(self, x):
-        return step(self.colors.rgba, x, self.controls)
-
-
-class Fire(BaseColormap):
+class _Fire(BaseColormap):
     colors = [(1.0, 1.0, 1.0, 1.0),
               (1.0, 1.0, 0.0, 1.0),
               (1.0, 0.0, 0.0, 1.0)]
@@ -321,7 +369,7 @@ class Fire(BaseColormap):
         return _mix_simple(c, e, t)
 
 
-class Grays(BaseColormap):
+class _Grays(BaseColormap):
     glsl_map = """
     vec4 grays(float t) {
         return vec4(t, t, t, 1.0);
@@ -335,7 +383,7 @@ class Grays(BaseColormap):
             return np.array([t, t, t, 1.0], dtype=np.float32)
 
 
-class Ice(BaseColormap):
+class _Ice(BaseColormap):
     glsl_map = """
     vec4 ice(float t) {
         return vec4(t, t, 1.0, 1.0);
@@ -350,7 +398,7 @@ class Ice(BaseColormap):
             return np.array([t, t, 1.0, 1.0], dtype=np.float32)
 
 
-class Hot(BaseColormap):
+class _Hot(BaseColormap):
     colors = [(0., .33, .66, 1.0),
               (.33, .66, 1., 1.0)]
 
@@ -367,7 +415,7 @@ class Hot(BaseColormap):
         return np.hstack((smoothed, np.ones((len(t), 1))))
 
 
-class Winter(BaseColormap):
+class _Winter(BaseColormap):
     colors = [(0.0, 0.0, 1.0, 1.0),
               (0.0, 1.0, 0.5, 1.0)]
 
@@ -384,18 +432,18 @@ class Winter(BaseColormap):
 
 
 _colormaps = dict(
-    autumn=LinearColormap([(1., 0., 0., 1.), (1., 1., 0., 1.)]),
-    blues=LinearColormap([(1., 1., 1., 1.), (0., 0., 1., 1.)]),
-    cool=LinearColormap([(0., 1., 1., 1.), (1., 0., 1., 1.)]),
-    greens=LinearColormap([(1., 1., 1., 1.), (0., 1., 0., 1.)]),
-    reds=LinearColormap([(1., 1., 1., 1.), (1., 0., 0., 1.)]),
-    spring=LinearColormap([(1., 0., 1., 1.), (1., 1., 0., 1.)]),
-    summer=LinearColormap([(0., .5, .4, 1.), (1., 1., .4, 1.)]),
-    fire=Fire(),
-    grays=Grays(),
-    hot=Hot(),
-    ice=Ice(),
-    winter=Winter(),
+    autumn=Colormap([(1., 0., 0., 1.), (1., 1., 0., 1.)]),
+    blues=Colormap([(1., 1., 1., 1.), (0., 0., 1., 1.)]),
+    cool=Colormap([(0., 1., 1., 1.), (1., 0., 1., 1.)]),
+    greens=Colormap([(1., 1., 1., 1.), (0., 1., 0., 1.)]),
+    reds=Colormap([(1., 1., 1., 1.), (1., 0., 0., 1.)]),
+    spring=Colormap([(1., 0., 1., 1.), (1., 1., 0., 1.)]),
+    summer=Colormap([(0., .5, .4, 1.), (1., 1., .4, 1.)]),
+    fire=_Fire(),
+    grays=_Grays(),
+    hot=_Hot(),
+    ice=_Ice(),
+    winter=_Winter(),
 )
 
 
