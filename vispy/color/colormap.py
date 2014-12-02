@@ -292,7 +292,7 @@ class Colormap(BaseColormap):
         The list of control colors. If not a ``ColorArray``, a new
         ``ColorArray`` instance is created from this list. See the
         documentation of ``ColorArray``.
-    controls : list | ndarray
+    controls : array-like
         The list of control points for the given colors. It should be
         an increasing list of floating-point number between 0.0 and 1.0.
         The first control point must be 0.0. The last control point must be
