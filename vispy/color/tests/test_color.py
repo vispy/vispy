@@ -260,14 +260,14 @@ def test_colormap_gradient():
 
 def test_colormap_discrete():
     """Test discrete colormaps."""
-    cm = Colormap(['r', 'g'], interpolation='discrete')
+    cm = Colormap(['r', 'g'], interpolation='zero')
     assert_allclose(cm[-1].rgba, [[1, 0, 0, 1]])
     assert_allclose(cm[0.].rgba, [[1, 0, 0, 1]])
     assert_allclose(cm[0.49].rgba, [[1, 0, 0, 1]])
     assert_allclose(cm[0.51].rgba, [[0, 1, 0, 1]])
     assert_allclose(cm[1.].rgba, [[0, 1, 0, 1]])
 
-    cm = Colormap(['r', 'g', 'b'], interpolation='discrete')
+    cm = Colormap(['r', 'g', 'b'], interpolation='zero')
     assert_allclose(cm[-1].rgba, [[1, 0, 0, 1]])
     assert_allclose(cm[0.].rgba, [[1, 0, 0, 1]])
     assert_allclose(cm[.32].rgba, [[1, 0, 0, 1]])
@@ -279,7 +279,7 @@ def test_colormap_discrete():
     assert_allclose(cm[1.1].rgba, [[0, 0, 1, 1]])
 
     cm = Colormap(['r', 'g', 'b'], [0., 0.1, 0.8, 1.0],
-                  interpolation='discrete')
+                  interpolation='zero')
     assert_allclose(cm[-1].rgba, [[1, 0, 0, 1]])
     assert_allclose(cm[0.].rgba, [[1, 0, 0, 1]])
     assert_allclose(cm[.099].rgba, [[1, 0, 0, 1]])

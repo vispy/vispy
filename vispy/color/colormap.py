@@ -275,7 +275,7 @@ _interpolation_info = {
         'glsl_map': _glsl_mix,  # take 'controls' as argument
         'map': mix,
     },
-    'discrete': {
+    'zero': {
         'ncontrols': lambda ncolors: (ncolors+1),
         'glsl_map': _glsl_step,
         'map': step,
@@ -299,9 +299,9 @@ class Colormap(BaseColormap):
         1.0. The number of control points depends on the interpolation scheme.
     interpolation : str
         The interpolation mode of the colormap. Default: 'linear'. Can also
-        be 'discrete'.
+        be 'zero'.
         If 'linear', ncontrols = ncolors (one color per control point).
-        If 'discrete', ncontrols = ncolors+1 (one color per bin).
+        If 'zero', ncontrols = ncolors+1 (one color per bin).
 
     Examples
     --------
