@@ -217,6 +217,12 @@ class BaseColormap(object):
             An array with rgba values, with one color per item. The shape
             should be ``item.shape + (4,)``.
 
+
+        Note
+        ----
+        Users are expected to use a colormap with ``__getitem__()`` rather
+        than ``map()`` (which implements a lower-level API).
+
         """
         raise NotImplementedError()
 
