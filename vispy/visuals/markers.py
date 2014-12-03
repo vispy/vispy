@@ -179,7 +179,7 @@ float clobber(vec2 pointcoord, float size)
     const float t3 = t2+2*PI/3;
     vec2  c3 = vec2(cos(t3),sin(t3))*center_shift;
     //xy is shift to center marker vertically
-    vec2 xy = (pointcoord.xy-vec2(0.5,0.5))*size + vec2(0., -0.25*center_shift);
+    vec2 xy = (pointcoord.xy-vec2(0.5,0.5))*size + vec2(0.,-0.25*center_shift);
     float r1 = length(xy - c1) - circle_radius;
     float r2 = length(xy - c2) - circle_radius;
     float r3 = length(xy - c3) - circle_radius;
@@ -485,7 +485,7 @@ _marker_dict = {
     '>': arrow,
     '^': triangle_up,
     '~^': triangle_down,
-    '*' : star
+    '*': star
 }
 marker_types = tuple(sorted(list(_marker_dict.keys())))
 
@@ -557,7 +557,10 @@ class MarkersVisual(Visual):
                                   ('a_edgewidth', np.float32, 1)])
         data['a_fg_color'] = edge_color
         data['a_bg_color'] = face_color
-        data['a_edgewidth'] = edge_width if edge_width >= 1 else size*edge_width
+        if edge_width >= 1:
+            data['a_edgewidth'] = edge_width
+        else:
+            data['a_edgewidth'] = size*edge_width
         data['a_position'][:, :pos.shape[1]] = pos
         data['a_size'] = size
         self._data = data
@@ -583,9 +586,11 @@ class MarkersVisual(Visual):
             # and the viewbox spanning [0, 1] intervals
             # in the Visual coordinates
             # TO DO: find a way to get the scale directly
-            scale = 0.5*transforms.visual_to_document.simplified().scale[:2]\
-                    * transforms.document_to_framebuffer.simplified().scale[:2]\
-                    * transforms.framebuffer_to_render.simplified().scale[:2] 
+            scale = (
+                0.5*transforms.visual_to_document.simplified().scale[:2]
+                * transforms.document_to_framebuffer.simplified().scale[:2]
+                * transforms.framebuffer_to_render.simplified().scale[:2]
+            )
             update_data['a_size'] *= min(scale)
             update_data['a_edgewidth'] *= min(scale)
             if self.edge_fade_out:
@@ -597,7 +602,7 @@ class MarkersVisual(Visual):
                 # for antialiasing to be done (see frag GLSL code)
                 edgewidth[(edgewidth < 0.5) | (size < size_threshold)] = 0.
                 # more transparent edge for a smooth transition
-                update_data['a_fg_color'][(edgewidth < 2.) | \
+                update_data['a_fg_color'][(edgewidth < 2.) |
                                           (size < 4. + 4.*antialias), 3] *= \
                     min((edgewidth - 0.5)/1.5, (size - size_threshold) / 4.)
             self._vbo.set_data(update_data)
@@ -605,4 +610,3 @@ class MarkersVisual(Visual):
         self._program['u_antialias'] = 1
         self._program.bind(self._vbo)
         self._program.draw('points')
-

@@ -31,8 +31,12 @@ nice_blue = (0.12572087695201239, 0.47323337360924367, 0.707327968232772, 1.)
 class Canvas(scene.SceneCanvas):
 
     def __init__(self):
-        scene.SceneCanvas.__init__(self, keys='interactive', size=(512, 512),
-           title="Marker demo [press space to change marker]", bgcolor='white')
+        scene.SceneCanvas.__init__(
+            self,
+            keys='interactive', size=(512, 512),
+            title="Marker demo [press space to change marker]",
+            bgcolor='white'
+        )
         self.index = 0
         self.markers = visuals.Markers()
         self.markers.set_data(pos, face_color=nice_blue,
