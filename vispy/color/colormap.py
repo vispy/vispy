@@ -454,4 +454,4 @@ def get_colormap(name):
 
 def get_colormaps():
     """Return the list of colormap names."""
-    return list(sorted(_colormaps.keys()))
+    return _colormaps.copy()
