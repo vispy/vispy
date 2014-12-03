@@ -1,3 +1,8 @@
+"""
+Compare an optimal pan/zoom implementation to the same functionality
+provided by scenegraph.
+"""
+
 import numpy as np
 import math
 
@@ -329,14 +334,6 @@ if __name__ == '__main__':
     view = scanvas.central_widget.add_view()
     view.add(svisual)
 
-    
-    def tb(ev):
-        import traceback
-        print ''.join(traceback.format_list(traceback.extract_stack()[:]))
-        
-    scanvas.render_cs.events.update.connect(tb)
-    
-    
     import sys
     if sys.flags.interactive != 1:
         app.run()
