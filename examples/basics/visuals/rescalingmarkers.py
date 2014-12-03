@@ -27,6 +27,7 @@ for i in range(500):
 
 nice_blue = (0.12572087695201239, 0.47323337360924367, 0.707327968232772, 1.)
 
+
 class Canvas(scene.SceneCanvas):
 
     def __init__(self):
@@ -41,14 +42,13 @@ class Canvas(scene.SceneCanvas):
                                  pos=(80, 15), font_size=14, 
                                  color='black', parent=self.scene)
 
-
-
     def on_key_press(self, event):
         if event.text == ' ':
             self.index = (self.index + 1) % (len(impl_visuals.marker_types))
             self.markers.set_style(impl_visuals.marker_types[self.index])
             self.text.text = impl_visuals.marker_types[self.index]
             self.update()
+
 
 if __name__ == '__main__':
     canvas = Canvas()
