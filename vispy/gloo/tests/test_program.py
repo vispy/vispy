@@ -9,7 +9,7 @@ import numpy as np
 
 from vispy import gloo
 from vispy.gloo.program import Program
-from vispy.testing import run_tests_if_main
+from vispy.testing import run_tests_if_main, assert_in
 from vispy.gloo.context import set_current_canvas, forget_canvas
 
 
@@ -77,9 +77,10 @@ class ProgramTest(unittest.TestCase):
         program = Program(vert, frag)
         try:
             program._glir.flush()
-            raise Exception("Compile program should have failed.")
         except Exception as err:
-            assert 'error on this line' in err.message
+            assert_in('error on this line', err.message)
+        else:
+            raise Exception("Compile program should have failed.")
 
     def test_uniform(self):
         
