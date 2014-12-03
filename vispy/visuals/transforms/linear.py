@@ -71,8 +71,11 @@ class STTransform(BaseTransform):
         self._scale = np.ones(4, dtype=np.float32)
         self._translate = np.zeros(4, dtype=np.float32)
 
-        s = (1.0, 1.0, 1.0, 1.0) if scale is None else as_vec4(scale)
-        t = (0.0, 0.0, 0.0, 0.0) if translate is None else as_vec4(translate)
+        
+        s = ((1.0, 1.0, 1.0, 1.0) if scale is None else 
+             as_vec4(scale, default=(1, 1, 1, 1)))
+        t = ((0.0, 0.0, 0.0, 0.0) if translate is None else 
+             as_vec4(translate, default=(0, 0, 0, 0)))
         self._set_st(s, t)
 
     @arg_to_vec4
