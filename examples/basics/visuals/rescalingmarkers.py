@@ -27,16 +27,18 @@ for i in range(500):
 
 nice_blue = (0.12572087695201239, 0.47323337360924367, 0.707327968232772, 1.)
 
-class MyCanvas(scene.SceneCanvas):
+class Canvas(scene.SceneCanvas):
 
     def __init__(self):
         scene.SceneCanvas.__init__(self, keys='interactive', size=(512, 512),
-                                         title="Marker demo [press space to change marker]", bgcolor='white')
+           title="Marker demo [press space to change marker]", bgcolor='white')
         self.index = 0
-        self.markers = visuals.RescalingRelativeEdgeMarkers()
-        self.markers.set_data(pos, face_color=nice_blue)
+        self.markers = visuals.Markers()
+        self.markers.set_data(pos, face_color=nice_blue,
+                              scaling=True, edge_fade_out=True)
         self.markers.set_style(impl_visuals.marker_types[self.index])
-        self.text = visuals.Text(impl_visuals.marker_types[self.index], pos=(80, 15), font_size=14, 
+        self.text = visuals.Text(impl_visuals.marker_types[self.index],
+                                 pos=(80, 15), font_size=14, 
                                  color='black', parent=self.scene)
 
 
@@ -49,7 +51,7 @@ class MyCanvas(scene.SceneCanvas):
             self.update()
 
 if __name__ == '__main__':
-    canvas = MyCanvas()
+    canvas = Canvas()
     grid = canvas.central_widget.add_grid()
     vb1 = grid.add_view(row=0, col=0)
     vb1.add(canvas.markers)    
