@@ -384,6 +384,7 @@ float rect(vec2 pointcoord, float size)
 }
 """
 
+# the following two markers needs x and y sizes
 rect = """
 float rect(vec2 pointcoord, float size)
 {
@@ -587,21 +588,17 @@ class MarkersVisual(Visual):
             update_data['a_size'] *= min(scale)
             update_data['a_edgewidth'] *= min(scale)
             if self.edge_fade_out:
-                # this code assumes that all edgewidths and all sizes
-                # are equals across markers
-                edgewidth = update_data['a_edgewidth'][0]
-                size = update_data['a_size'][0, :] 
+                edgewidth = update_data['a_edgewidth']
+                size = update_data['a_size']
                 antialias = self.antialias
+                size_threshold = 4.*antialias
                 # remove edge if it is too small or if the marker is too small
                 # for antialiasing to be done (see frag GLSL code)
-                size_threshold = 4.*antialias
-                if edgewidth < 0.5 or size < size_threshold:
-                    update_data['a_edgewidth'] = 0.
+                edgewidth[(edgewidth < 0.5) | (size < size_threshold)] = 0.
                 # more transparent edge for a smooth transition
-                elif edgewidth < 2. or size < 4. + 4.*antialias:
-                    # alpha channel
-                    update_data['a_fg_color'][:, 3] *= min((edgewidth-0.5)/1.5,
-                                                 (size - size_threshold) / 4.)
+                update_data['a_fg_color'][(edgewidth < 2.) | \
+                                          (size < 4. + 4.*antialias), 3] *= \
+                    min((edgewidth - 0.5)/1.5, (size - size_threshold) / 4.)
             self._vbo.set_data(update_data)
         self._program.prepare()
         self._program['u_antialias'] = 1
