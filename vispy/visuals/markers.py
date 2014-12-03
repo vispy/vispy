@@ -15,7 +15,8 @@ from .shaders import ModularProgram, Function, Variable
 from .visual import Visual
 
 
-vert = """
+def vertex_shader(scalar_v_size):
+    vert = """
 uniform mat4 u_projection;
 uniform float u_antialias;
 
@@ -37,11 +38,15 @@ void main (void) {
     v_fg_color  = a_fg_color;
     v_bg_color  = a_bg_color;
     gl_Position = $transform(vec4(a_position,1.0));
-    gl_PointSize = {scalar_v_size} + 6*(v_edgewidth + 1.5*v_antialias);
+    gl_PointSize = """ + scalar_v_size + \
+        """ + 6*(v_edgewidth + 1.5*v_antialias);
 }
 """
+    return vert
 
-frag = """
+
+def fragment_shader(scalar_v_size):
+    frag = """
 varying vec4 v_fg_color;
 varying vec4 v_bg_color;
 varying float v_edgewidth;
@@ -49,7 +54,7 @@ varying float v_antialias;
 
 void main()
 {
-    float size = {scalar_v_size} + 6*(v_edgewidth + 1.5*v_antialias);
+    float size = """ + scalar_v_size + """ + 6*(v_edgewidth + 1.5*v_antialias);
     // factor 6 for acute edge angles that need room as for star marker
 
     // The marker function needs to be linked with this shader
@@ -127,6 +132,7 @@ void main()
     }
 }
 """
+    return frag
 
 
 disc = """
@@ -370,7 +376,7 @@ float rect(vec2 pointcoord, float size)
                             + sin(PI2_20) * (spike_y - rot_center_y);
         float bottom = spike_y - $v_size/10.;
         //                     max(left edge, right edge)
-        float spike = max(bottom, max(rot18x, -rot_18x))
+        float spike = max(bottom, max(rot18x, -rot_18x));
         if (i == 0)
         {// first spike, skip the rotation
             star = spike;
@@ -494,8 +500,10 @@ class MarkersVisual(Visual):
     """ Visual displaying marker symbols.
     """
     def __init__(self):
-        d = dict(scalar_v_size="$v_size")
-        self._program = ModularProgram(vert.format(d), frag.format(d))
+        self._program = ModularProgram(
+            vertex_shader(scalar_v_size="$v_size"),
+            fragment_shader(scalar_v_size="$v_size")
+        )
         self._v_size_var = Variable('varying float v_size')
         self._program.vert['v_size'] = self._v_size_var
         self._program.frag['v_size'] = self._v_size_var
@@ -563,6 +571,7 @@ class MarkersVisual(Visual):
             data['a_edgewidth'] = size*edge_width
         data['a_position'][:, :pos.shape[1]] = pos
         data['a_size'] = size
+        self.antialias = 1.
         self._data = data
         self._vbo = VertexBuffer(data)
         self.update()
@@ -602,11 +611,12 @@ class MarkersVisual(Visual):
                 # for antialiasing to be done (see frag GLSL code)
                 edgewidth[(edgewidth < 0.5) | (size < size_threshold)] = 0.
                 # more transparent edge for a smooth transition
-                update_data['a_fg_color'][(edgewidth < 2.) |
-                                          (size < 4. + 4.*antialias), 3] *= \
-                    min((edgewidth - 0.5)/1.5, (size - size_threshold) / 4.)
+                mask = (edgewidth < 2.) | (size < 4. + 4.*antialias)
+                update_data['a_fg_color'][mask, 3] *= \
+                    np.minimum((edgewidth[mask] - 0.5)/1.5,
+                               (size[mask] - size_threshold) / 4.)
             self._vbo.set_data(update_data)
         self._program.prepare()
-        self._program['u_antialias'] = 1
+        self._program['u_antialias'] = self.antialias
         self._program.bind(self._vbo)
         self._program.draw('points')
