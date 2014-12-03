@@ -216,7 +216,8 @@ if hasattr({0}, 'canvas'):
 elif hasattr({0}, 'Canvas'):
     canvas = {0}.Canvas()
 else:
-    raise RuntimeError('Bad example formatting: fix or add to exclude list')
+    raise RuntimeError('Bad example formatting: fix or add `# vispy: testskip`'
+                       ' to the top of the file.')
 
 with canvas as c:
     for _ in range(5):

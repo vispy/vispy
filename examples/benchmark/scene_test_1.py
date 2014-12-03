@@ -2,7 +2,7 @@
 Compare an optimal pan/zoom implementation to the same functionality
 provided by scenegraph.
 """
-
+# vispy: testskip
 import numpy as np
 import math
 

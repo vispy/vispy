@@ -64,6 +64,22 @@ class ProgramTest(unittest.TestCase):
         program.set_shaders('C', 'D')
         assert program.shaders[0] == "C"
         assert program.shaders[1] == "D"
+        
+    def test_error(self):
+        vert = '''
+        void main() {
+            vec2 xy;
+            error on this line
+            vec2 ab;
+        }
+        '''
+        frag = 'void main() { glFragColor = vec4(1, 1, 1, 1); }'
+        program = Program(vert, frag)
+        try:
+            program._glir.flush()
+            raise Exception("Compile program should have failed.")
+        except Exception as err:
+            assert 'error on this line' in err.message
 
     def test_uniform(self):
         
