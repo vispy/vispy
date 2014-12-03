@@ -19,7 +19,7 @@ __all__ = ['Visual', 'CubeVisual', 'EllipseVisual', 'GridLinesVisual',
 
 from .visual import Visual  # noqa
 from .line import LineVisual  # noqa
-from .markers import MarkersVisual, RescalingRelativeEdgeMarkersVisual, marker_types, RescalingXYRelativeEdgeMarkersVisual, markerxy_types  # noqa
+from .markers import MarkersVisual, marker_types  # noqa
 from .mesh import MeshVisual  # noqa
 from .image import ImageVisual  # noqa
 from .polygon import PolygonVisual  # noqa
