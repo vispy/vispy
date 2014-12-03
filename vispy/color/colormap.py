@@ -209,12 +209,13 @@ class BaseColormap(object):
         Parameters
         ----------
         item : ndarray
-            An array of values in [0,1]. Expected to be a column vector.
+            An array of values in [0,1].
 
         Returns
         -------
         rgba : ndarray
-            A (N, 4) array with rgba values, where N is `len(item)`.
+            An array with rgba values, with one color per item. The shape
+            should be ``item.shape + (4,)``.
 
         """
         raise NotImplementedError()
