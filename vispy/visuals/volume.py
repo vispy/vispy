@@ -143,20 +143,20 @@ void main() {
     //return;
     
     // prepare for raycasting
-    vec3 loc; // current position
-    vec4 color; // current color
+    //vec3 loc; // current position
+    //vec4 color; // current color
     
     $before_loop
     
     // This outer loop seems necessary on some systems for large
     // datasets. Ugly, but it works ...
-    int i = nsteps;
-    while (i > 0) {
-        for (i=i; i>0; i--)
+    int iter = nsteps;
+    while (iter > 0) {
+        for (iter=iter; iter>0; iter--)
         {
             // Calculate location and sample color
-            loc = edgeloc + float(i) * ray;
-            color = texture3D(u_volumetex, loc);
+            vec3 loc = edgeloc + float(iter) * ray;
+            vec4 color = texture3D(u_volumetex, loc);
             float val = color.g;
             
             $in_loop
@@ -311,47 +311,48 @@ SNIPPETS_MIP = dict(
     before_loop="""
         float maxval = -99999.0; // The maximum encountered value
         float maxi = 0.0;  // Where the maximum value was encountered
-        vec4 maxcolor; // The color found at the maximum value 
         """,
     in_loop="""
         float r = float(val > maxval);
         maxval = (1.0 - r) * maxval + r * val;
-        maxi = (1.0 - r) * maxi + r * float(i);
-        maxcolor = (1.0 - r) * maxcolor + r * color;
+        maxi = (1.0 - r) * maxi + r * float(iter);
         """,
     after_loop="""
-        gl_FragColor = vec4(maxval, maxval, maxval, 1.0);
+        vec4 color = vec4(0.0);
+        for (int i=0; i<5; i++) {
+            float newi = maxi + 0.4 - 0.2 * float(i);
+            color = max(color, texture3D(u_volumetex, edgeloc + newi * ray));
+        }
+        gl_FragColor = color;
         """,
 )
 
 SNIPPETS_ISO = dict(
     before_loop="""
-        int iso_samples = 0;
         vec4 color3 = vec4(0.0);  // final color
         vec3 step = 1.5 / u_shape;  // step to sample derivative
     """,
     in_loop="""
-        if (val > u_threshold || iso_samples > 0) {
-            vec4 color2 = calculateColor(color, loc, step);
-            float a = color2.a * max(0.0, 1.0-color3.a);
-            color3.rgb += color2.rgb * a;
-            color3.a += a; // color3.a counts total color contribution.
+        float xxx = 0.5;
+        if (val > u_threshold) {
             
-            iso_samples += 1;
-            if (iso_samples >= 1) {
-                i = 0;
-                break;
+            // Take the last stride in smaller steps
+            for (int i=0; i<6; i++) {
+                float newi = float(iter) + 1.0 - 0.2 * float(i);
+                loc = edgeloc + newi * ray;
+                color = texture3D(u_volumetex, loc);
+                val = color.g;
+                
+                if (val > u_threshold) {
+                    gl_FragColor = calculateColor(color, loc, step);
+                    return;
+                }
             }
         }
         """,
     after_loop="""
-        // Drop fragment if we did triger the threshold
-        if (iso_samples == 0)
-            discard; 
-        // Calculate color
-        color3.rgb /= color3.a;
-        color3.a = min(1.0, color3.a);
-        gl_FragColor = color3;
+        // If we get here, the ray did not meet the threshold
+        discard;
         """,
 )
 
@@ -683,7 +684,7 @@ class VolumeVisual(Visual):
         
         # Set attributes that are specific to certain styles
         self._program.build_if_needed()
-        if self._style == 'iso':
+        if True:#self._style == 'iso':
             self._program['u_threshold'] = self._threshold
         
         # Draw!
