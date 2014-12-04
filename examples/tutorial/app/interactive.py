@@ -32,8 +32,8 @@ class Canvas(app.Canvas):
 
 # You should run this demo as main with ipython -i <file>
 if __name__ == '__main__':
-    from vispy.ext import inputhook
-    inputhook.enable()
+    from vispy.app import set_interactive
+    set_interactive()
 
 
 # All variables listed in this scope are accessible via the console.

@@ -22,7 +22,7 @@ import subprocess
 import inspect
 
 
-def use(app=None, gl=None):
+def use(app=None, gl=None, interactive=False):
     """ Set the usage options for vispy
 
     Specify what app backend and GL backend to use. Also see
@@ -55,6 +55,11 @@ def use(app=None, gl=None):
             * If 'debug' is included in this argument, vispy will check for
               errors after each gl command.
 
+    interactive : bool
+        Specify whether to integrate with the input hook that's used from
+        console terminals.  Then typing ``python -i main.py`` results in
+        an interactive shell that also regularly calls the VisPy event loop.
+
     Notes
     -----
     If the app option is given, ``vispy.app.use_app()`` is called. If
@@ -86,6 +91,9 @@ def use(app=None, gl=None):
     if app:
         import vispy.app
         vispy.app.use_app(app)
+    if interactive:
+        from vispy.app.inputhook import set_interactive
+        set_interactive(True)
 
 
 def run_subprocess(command, return_code=False, **kwargs):
