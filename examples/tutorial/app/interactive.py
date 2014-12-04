@@ -30,12 +30,10 @@ class Canvas(app.Canvas):
         self.update()
 
 
-# You should only run this demo as main with ipython -i <file>
-assert __name__ == '__main__'
-
-
-from vispy.ext import inputhook
-inputhook.enable()
+# You should run this demo as main with ipython -i <file>
+if __name__ == '__main__':
+    from vispy.ext import inputhook
+    inputhook.enable()
 
 
 # All variables listed in this scope are accessible via the console.
