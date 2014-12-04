@@ -186,11 +186,8 @@ class Maker:
         try:
             args = arg.split(' ')
             test(args[0], ' '.join(args[1:]))
-        except Exception as err:
-            print(err)
-            if not isinstance(err, RuntimeError):
-                type_, value, tb = sys.exc_info()
-                traceback.print_exception(type, value, tb)
+        except Exception:
+            traceback.print_exception(*sys.exc_info())
             raise SystemExit(1)
 
     def images(self, arg):
