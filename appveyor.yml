@@ -22,7 +22,7 @@ install:
   - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
 
   # Install the dependencies of the project.
-  - "conda install --yes --quiet numpy setuptools flake8 pyqt"
+  - "conda install --yes --quiet numpy setuptools flake8 pyqt nose"
   - "pip install -q http://pyglet.googlecode.com/archive/tip.zip"
   - "python setup.py develop"
 
