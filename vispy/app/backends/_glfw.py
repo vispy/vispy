@@ -200,7 +200,7 @@ class ApplicationBackend(BaseApplicationBackend):
         global _GLFW_INITIALIZED
         if not _GLFW_INITIALIZED:
             cwd = os.getcwd()
-            try:                
+            try:
                 if not glfw.glfwInit():  # only ever call once
                     raise OSError('Could not init glfw')
             finally:
