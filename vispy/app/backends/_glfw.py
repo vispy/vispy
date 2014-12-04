@@ -21,6 +21,7 @@ from __future__ import division
 import atexit
 from time import sleep
 import gc
+import os
 
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
                     BaseTimerBackend)
@@ -198,8 +199,12 @@ class ApplicationBackend(BaseApplicationBackend):
     def _vispy_get_native_app(self):
         global _GLFW_INITIALIZED
         if not _GLFW_INITIALIZED:
-            if not glfw.glfwInit():  # only ever call once
-                raise OSError('Could not init glfw')
+            cwd = os.getcwd()
+            try:
+                if not glfw.glfwInit():  # only ever call once
+                    raise OSError('Could not init glfw')
+            finally:
+                os.chdir(cwd)
             atexit.register(glfw.glfwTerminate)
             _GLFW_INITIALIZED = True
         return glfw
