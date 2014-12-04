@@ -321,6 +321,7 @@ class MarkersVisual(Visual):
         data['a_position'][:, :pos.shape[1]] = pos
         data['a_size'] = size
         self._vbo = VertexBuffer(data)
+        self.update()
 
     def set_style(self, style='o'):
         _check_valid('style', style, marker_types)

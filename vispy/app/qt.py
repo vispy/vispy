@@ -57,6 +57,12 @@ class QtCanvas(QtGui.QWidget):
         else:
             raise AttributeError(attr)
 
+    def update(self):
+        """Call update() on both this widget and the internal canvas.
+        """
+        QtGui.QWidget.update(self)
+        self._canvas.update()
+
 
 class QtSceneCanvas(QtCanvas):
     """ Convenience class embedding a vispy SceneCanvas inside a QWidget.
