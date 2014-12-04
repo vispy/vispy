@@ -89,12 +89,12 @@ class LineVisual(Visual):
     def __init__(self, pos=None, color=(0.5, 0.5, 0.5, 1), width=1,
                  connect='strip', mode='gl', antialias=False):
         Visual.__init__(self)
-        
-        self._changed = {'pos': False, 'color': False, 'width': False, 
+
+        self._changed = {'pos': False, 'color': False, 'width': False,
                          'connect': False}
         # don't call subclass set_data; these often have different
         # signatures.
-        LineVisual.set_data(self, pos=pos, color=color, width=width, 
+        LineVisual.set_data(self, pos=pos, color=color, width=width,
                             connect=connect)
         self._mode = 'none'
         self.antialias = antialias
@@ -120,7 +120,7 @@ class LineVisual(Visual):
             raise ValueError('mode argument must be "agg" or "gl".')
         if mode == self._mode:
             return
-        
+
         self._mode = mode
         if mode == 'gl':
             self._line_visual = _GLLineVisual(self)
@@ -129,7 +129,7 @@ class LineVisual(Visual):
 
         for k in self._changed:
             self._changed[k] = True
-        
+
     def set_data(self, pos=None, color=None, width=None, connect=None):
         """ Set the data used to draw this visual.
 
@@ -156,19 +156,19 @@ class LineVisual(Visual):
         if pos is not None:
             self._pos = pos
             self._changed['pos'] = True
-        
+
         if color is not None:
             self._color = color
             self._changed['color'] = True
-            
+
         if width is not None:
             self._width = width
             self._changed['width'] = True
-            
+
         if connect is not None:
             self._connect = connect
             self._changed['connect'] = True
-            
+
         self.update()
 
     def _interpret_connect(self):
@@ -183,7 +183,7 @@ class LineVisual(Visual):
                 return self._connect.astype(np.uint32)
             else:
                 raise TypeError("Got invalid connect array of shape %r and "
-                                "dtype %r" % (self._connect.shape, 
+                                "dtype %r" % (self._connect.shape,
                                               self._connect.dtype))
         else:
             return self._connect
@@ -191,7 +191,8 @@ class LineVisual(Visual):
     def _interpret_color(self):
         if isinstance(self._color, string_types):
             try:
-                color = Function(get_colormap(self._color))
+                colormap = get_colormap(self._color)
+                color = Function(colormap.glsl_map)
             except KeyError:
                 color = Color(self._color).rgba
         elif isinstance(self._color, Function):
@@ -201,7 +202,7 @@ class LineVisual(Visual):
             if len(color) == 1:
                 color = color[0]
         return color
-            
+
     def bounds(self, mode, axis):
         data = self._pos
         if data is None:
@@ -242,7 +243,7 @@ class _GLLineVisual(Visual):
         self._color_vbo = gloo.VertexBuffer()
         self._connect_ibo = gloo.IndexBuffer()
         self._connect = None
-        
+
         # Set up the GL program
         self._program = ModularProgram(self.VERTEX_SHADER,
                                        self.FRAGMENT_SHADER)
@@ -261,7 +262,7 @@ class _GLLineVisual(Visual):
                 self._program.vert['to_vec4'] = vec3to4
             else:
                 raise TypeError("Got bad position array shape: %r" % pos.shape)
-            
+
         if self._parent._changed['color']:
             color = self._parent._interpret_color()
             if isinstance(color, Function):
@@ -277,16 +278,16 @@ class _GLLineVisual(Visual):
 
         xform = transforms.get_full_transform()
         self._program.vert['transform'] = xform
-        
+
         gloo.set_state('translucent')
-        
+
         # Do we want to use OpenGL, and can we?
         GL = None
         try:
             import OpenGL.GL as GL
         except ImportError:
             pass
-        
+
         # Turn on line smooth and/or line width
         if GL:
             if self._parent._antialias:
@@ -299,7 +300,7 @@ class _GLLineVisual(Visual):
             self._connect = self._parent._interpret_connect()
             if isinstance(self._connect, np.ndarray):
                 self._connect_ibo.set_data(self._connect)
-        
+
         # Draw
         if self._connect == 'strip':
             self._program.draw('line_strip')
@@ -309,7 +310,7 @@ class _GLLineVisual(Visual):
             self._program.draw('lines', self._connect_ibo)
         else:
             raise ValueError("Invalid line connect mode: %r" % self._connect)
-    
+
 
 class _AggLineVisual(Visual):
     _agg_vtype = np.dtype([('a_position', 'f4', 2),
@@ -319,12 +320,12 @@ class _AggLineVisual(Visual):
                            ('a_texcoord', 'f4', 2),
                            ('alength', 'f4', 1),
                            ('color', 'f4', 4)])
-    
+
     def __init__(self, parent):
         self._parent = parent
         self._vbo = gloo.VertexBuffer()
         self._ibo = gloo.IndexBuffer()
-        
+
         self._pos = None
         self._color = None
         self._program = ModularProgram(vertex.VERTEX_SHADER,
@@ -348,7 +349,7 @@ class _AggLineVisual(Visual):
             self._pos = np.ascontiguousarray(
                 self._parent._pos.astype(np.float32))
             bake = True
-            
+
         if self._parent._changed['color']:
             self._color = self._parent._interpret_color()
             bake = True
@@ -357,7 +358,7 @@ class _AggLineVisual(Visual):
             if self._parent._connect not in [None, 'strip']:
                 raise NotImplementedError("Only 'strip' connection mode "
                                           "allowed for agg-mode lines.")
-        
+
         if bake:
             V, I = self._agg_bake(self._pos, self._color)
             self._vbo.set_data(V)
@@ -367,12 +368,12 @@ class _AggLineVisual(Visual):
         data_doc = transforms.visual_to_document
         doc_px = transforms.document_to_framebuffer
         px_ndc = transforms.framebuffer_to_render
-        
+
         vert = self._program.vert
         vert['doc_px_transform'] = doc_px
         vert['px_ndc_transform'] = px_ndc
         vert['transform'] = data_doc
-        
+
         #self._program.prepare()
         self._program.bind(self._vbo)
         uniforms = dict(closed=False, miter_limit=4.0, dash_phase=0.0,
@@ -446,7 +447,7 @@ class _AggLineVisual(Visual):
         V['a_texcoord'][1::2, 1] = +1
         idx = np.repeat(idx, 2)
 
-        I = np.resize(np.array([0, 1, 2, 1, 2, 3], dtype=np.uint32), 
+        I = np.resize(np.array([0, 1, 2, 1, 2, 3], dtype=np.uint32),
                       (n-1)*(2*3))
         I += np.repeat(4*np.arange(n-1, dtype=np.uint32), 6)
 

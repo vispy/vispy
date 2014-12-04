@@ -6,7 +6,10 @@ import numpy as np
 from nose.tools import assert_equal, assert_raises, assert_true
 from numpy.testing import assert_array_equal, assert_allclose
 
-from vispy.color import Color, ColorArray, LinearGradient, get_color_names
+from vispy.color import (Color, ColorArray, get_color_names,
+                         Colormap,
+                         get_color_dict, get_colormap, get_colormaps)
+from vispy.visuals.shaders import Function
 from vispy.util import use_log_level
 from vispy.testing import run_tests_if_main
 
@@ -125,12 +128,15 @@ def test_color_interpretation():
     assert_true(np.all(c.rgb <= 1))
     c = ColorArray([-1., 0., 0.], clip=True)  # val < 0
     assert_true(np.all(c.rgb >= 0))
-    
+
     # make sure our color dict works
     for key in get_color_names():
         assert_true(ColorArray(key))
     assert_raises(ValueError, ColorArray, 'foo')  # unknown color error
 
+    _color_dict = get_color_dict()
+    assert isinstance(_color_dict, dict)
+    assert set(_color_dict.keys()) == set(get_color_names())
 
 # Taken from known values
 hsv_dict = dict(red=(0, 1, 1),
@@ -191,15 +197,143 @@ def test_color_conversion():
         assert_allclose(c.rgb, rgb, atol=1e-4, rtol=1e-4)
 
 
-def test_linear_gradient():
-    """Test basic support for linear gradients"""
-    colors = ['r', 'g', 'b']
-    xs = [0, 1, 2]
-    grad = LinearGradient(ColorArray(colors), xs)
-    colors.extend([[0.5, 0.5, 0], [0, 0, 1], [1, 0, 0]])
-    xs.extend([0.5, 10, -10])
-    for x, c in zip(xs, colors):
-        assert_array_equal(grad[x], ColorArray(c).rgba[0])
+def test_colormap_interpolation():
+    """Test interpolation routines for colormaps."""
+    import vispy.color.colormap as c
+    assert_raises(AssertionError, c._glsl_step, [0., 1.],)
+
+    c._glsl_mix(controls=[0., 1.])
+    c._glsl_mix(controls=[0., .25, 1.])
+
+    for fun in (c._glsl_step, c._glsl_mix):
+        assert_raises(AssertionError, fun, controls=[0.1, 1.],)
+        assert_raises(AssertionError, fun, controls=[0., .9],)
+        assert_raises(AssertionError, fun, controls=[0.1, .9],)
+
+    # Interpolation tests.
+    color_0 = np.array([1., 0., 0.])
+    color_1 = np.array([0., 1., 0.])
+    color_2 = np.array([0., 0., 1.])
+
+    colors_00 = np.vstack((color_0, color_0))
+    colors_01 = np.vstack((color_0, color_1))
+    colors_11 = np.vstack((color_1, color_1))
+    # colors_012 = np.vstack((color_0, color_1, color_2))
+    colors_021 = np.vstack((color_0, color_2, color_1))
+
+    controls_2 = np.array([0., 1.])
+    controls_3 = np.array([0., .25, 1.])
+    x = np.array([-1., 0., 0.1, 0.4, 0.5, 0.6, 1., 2.])[:, None]
+
+    mixed_2 = c.mix(colors_01, x, controls_2)
+    mixed_3 = c.mix(colors_021, x, controls_3)
+
+    for y in mixed_2, mixed_3:
+        assert_allclose(y[:2, :], colors_00)
+        assert_allclose(y[-2:, :], colors_11)
+
+    assert_allclose(mixed_2[:, -1], np.zeros(len(y)))
+
+
+def test_colormap_gradient():
+    """Test gradient colormaps."""
+    cm = Colormap(['r', 'g'])
+    assert_allclose(cm[-1].rgba, [[1, 0, 0, 1]])
+    assert_allclose(cm[0.].rgba, [[1, 0, 0, 1]])
+    assert_allclose(cm[0.5].rgba, [[.5, .5, 0, 1]])
+    assert_allclose(cm[1.].rgba, [[0, 1, 0, 1]])
+
+    cm = Colormap(['r', 'g', 'b'])
+    assert_allclose(cm[-1].rgba, [[1, 0, 0, 1]])
+    assert_allclose(cm[0.].rgba, [[1, 0, 0, 1]])
+    assert_allclose(cm[.5].rgba, [[0, 1, 0, 1]])
+    assert_allclose(cm[1].rgba, [[0, 0, 1, 1]])
+    assert_allclose(cm[2].rgba, [[0, 0, 1, 1]])
+
+    cm = Colormap(['r', 'g', 'b'], [0., 0.1, 1.0])
+    assert_allclose(cm[-1].rgba, [[1, 0, 0, 1]])
+    assert_allclose(cm[0.].rgba, [[1, 0, 0, 1]])
+    assert_allclose(cm[.1].rgba, [[0, 1, 0, 1]])
+    assert_allclose(cm[1].rgba, [[0, 0, 1, 1]], 1e-6, 1e-6)
+    assert_allclose(cm[2].rgba, [[0, 0, 1, 1]], 1e-6, 1e-6)
+
+
+def test_colormap_discrete():
+    """Test discrete colormaps."""
+    cm = Colormap(['r', 'g'], interpolation='zero')
+    assert_allclose(cm[-1].rgba, [[1, 0, 0, 1]])
+    assert_allclose(cm[0.].rgba, [[1, 0, 0, 1]])
+    assert_allclose(cm[0.49].rgba, [[1, 0, 0, 1]])
+    assert_allclose(cm[0.51].rgba, [[0, 1, 0, 1]])
+    assert_allclose(cm[1.].rgba, [[0, 1, 0, 1]])
+
+    cm = Colormap(['r', 'g', 'b'], interpolation='zero')
+    assert_allclose(cm[-1].rgba, [[1, 0, 0, 1]])
+    assert_allclose(cm[0.].rgba, [[1, 0, 0, 1]])
+    assert_allclose(cm[.32].rgba, [[1, 0, 0, 1]])
+    assert_allclose(cm[.34].rgba, [[0, 1, 0, 1]])
+    assert_allclose(cm[.66].rgba, [[0, 1, 0, 1]])
+    assert_allclose(cm[.67].rgba, [[0, 0, 1, 1]])
+    assert_allclose(cm[.99].rgba, [[0, 0, 1, 1]])
+    assert_allclose(cm[1].rgba, [[0, 0, 1, 1]])
+    assert_allclose(cm[1.1].rgba, [[0, 0, 1, 1]])
+
+    cm = Colormap(['r', 'g', 'b'], [0., 0.1, 0.8, 1.0],
+                  interpolation='zero')
+    assert_allclose(cm[-1].rgba, [[1, 0, 0, 1]])
+    assert_allclose(cm[0.].rgba, [[1, 0, 0, 1]])
+    assert_allclose(cm[.099].rgba, [[1, 0, 0, 1]])
+    assert_allclose(cm[.101].rgba, [[0, 1, 0, 1]])
+    assert_allclose(cm[.799].rgba, [[0, 1, 0, 1]])
+    assert_allclose(cm[.801].rgba, [[0, 0, 1, 1]])
+    assert_allclose(cm[1].rgba, [[0, 0, 1, 1]], 1e-6, 1e-6)
+    assert_allclose(cm[2].rgba, [[0, 0, 1, 1]], 1e-6, 1e-6)
+
+
+def test_colormap():
+    """Test named colormaps."""
+    autumn = get_colormap('autumn')
+    assert autumn.glsl_map is not ""
+    assert len(autumn[0.]) == 1
+    assert len(autumn[0.5]) == 1
+    assert len(autumn[1.]) == 1
+    assert len(autumn[[0., 0.5, 1.]]) == 3
+    assert len(autumn[np.array([0., 0.5, 1.])]) == 3
+
+    fire = get_colormap('fire')
+    assert_array_equal(fire[0].rgba, np.ones((1, 4)))
+    assert_array_equal(fire[1].rgba, np.array([[1, 0, 0, 1]]))
+
+    grays = get_colormap('grays')
+    assert_array_equal(grays[.5].rgb, np.ones((1, 3)) * .5)
+
+    hot = get_colormap('hot')
+    assert_allclose(hot[0].rgba, [[0, 0, 0, 1]], 1e-6, 1e-6)
+    assert_allclose(hot[0.5].rgba, [[1, .52272022, 0, 1]], 1e-6, 1e-6)
+    assert_allclose(hot[1.].rgba, [[1, 1, 1, 1]], 1e-6, 1e-6)
+
+    # Test the GLSL and Python mapping.
+    for name in get_colormaps():
+        colormap = get_colormap(name)
+        Function(colormap.glsl_map)
+        colors = colormap[np.linspace(-2., 2., 50)]
+        assert colors.rgba.min() >= 0
+        assert colors.rgba.max() <= 1
+
+
+def test_normalize():
+    """Test the _normalize() function."""
+    from vispy.color.colormap import _normalize
+    for x in (-1, 0., .5, 1., 10., 20):
+        assert _normalize(x) == .5
+    assert_allclose(_normalize((-1., 0., 1.)), (0., .5, 1.))
+    assert_allclose(_normalize((-1., 0., 1.), 0., 1.),
+                    (0., 0., 1.))
+    assert_allclose(_normalize((-1., 0., 1.), 0., 1., clip=False),
+                    (-1., 0., 1.))
+
+    y = _normalize(np.random.randn(100, 5), -10., 10.)
+    assert_allclose([y.min(), y.max()], [0.2975, 1-0.2975], 1e-1, 1e-1)
 
 
 run_tests_if_main()
