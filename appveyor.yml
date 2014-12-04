@@ -4,18 +4,6 @@
 environment:
 
   matrix:
-    - PYTHON: "C:\\Python27-conda32"
-      PYTHON_VERSION: "2.7"
-      PYTHON_ARCH: "32"
-
-    - PYTHON: "C:\\Python27-conda64"
-      PYTHON_VERSION: "2.7"
-      PYTHON_ARCH: "64"
-
-    - PYTHON: "C:\\Python34-conda32"
-      PYTHON_VERSION: "3.4"
-      PYTHON_ARCH: "32"
-
     - PYTHON: "C:\\Python34-conda64"
       PYTHON_VERSION: "3.4"
       PYTHON_ARCH: "64"
@@ -36,6 +24,7 @@ install:
   # Install the dependencies of the project.
   - "conda install --yes --quiet numpy setuptools flake8 pyqt"
   - "pip install -q http://pyglet.googlecode.com/archive/tip.zip"
+  - "python setup.py develop"
 
 build: false  # Not a C# project, build stuff at the test step instead.
 
