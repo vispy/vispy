@@ -199,8 +199,8 @@ class ApplicationBackend(BaseApplicationBackend):
     def _vispy_get_native_app(self):
         global _GLFW_INITIALIZED
         if not _GLFW_INITIALIZED:
-            try:
-                cwd = os.getcwd()
+            cwd = os.getcwd()
+            try:                
                 if not glfw.glfwInit():  # only ever call once
                     raise OSError('Could not init glfw')
             finally:
