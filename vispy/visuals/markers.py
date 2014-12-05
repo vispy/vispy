@@ -231,7 +231,7 @@ float diamond(vec2 pointcoord, float size)
 {
     float r = abs(pointcoord.x -.5)*size + abs(pointcoord.y -.5)*size;
     r -= $v_size/2;
-    return r / sqrt(2);//account for slanted edge and correct for width
+    return r / sqrt(2.);//account for slanted edge and correct for width
 }
 """
 
