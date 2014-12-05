@@ -13,7 +13,7 @@ from vispy.scene import visuals
 import vispy.visuals as impl_visuals
 from vispy import app
 
-n = 540
+n = 500
 pos = np.zeros((n, 2))
 colors = np.ones((n, 4), dtype=np.float32)
 radius, theta, dtheta = 1.0, 0.0, 5.5 / 180.0 * np.pi
@@ -23,9 +23,9 @@ for i in range(500):
     y = radius * np.sin(theta)
     r = 10.1 - i * 0.02
     radius -= 0.45
-    pos[i] = x/512.+.5, y/512.+.5
+    pos[i] = x/512.+.5, 1.-(y/512.+.5)
 
-nice_blue = (0.12572087695201239, 0.47323337360924367, 0.707327968232772, 1.)
+green = (0., 1.0, 0., 1.)
 
 
 class Canvas(scene.SceneCanvas):
@@ -39,8 +39,8 @@ class Canvas(scene.SceneCanvas):
         )
         self.index = 0
         self.markers = visuals.Markers()
-        self.markers.set_data(pos, face_color=nice_blue,
-                              scaling=True, edge_fade_out=True)
+        self.markers.set_data(pos, face_color=green,
+                              scaling=True, edge_fade_out=False)
         self.markers.set_style(impl_visuals.marker_types[self.index])
         self.text = visuals.Text(impl_visuals.marker_types[self.index],
                                  pos=(80, 15), font_size=14, 
