@@ -40,7 +40,7 @@ class Canvas(scene.SceneCanvas):
         self.index = 0
         self.markers = visuals.Markers()
         self.markers.set_data(pos, face_color=green,
-                              scaling=True, edge_fade_out=False)
+                              scaling=True, small_edge_fade_out=False)
         self.markers.set_style(impl_visuals.marker_types[self.index])
         self.text = visuals.Text(impl_visuals.marker_types[self.index],
                                  pos=(80, 15), font_size=14, 
