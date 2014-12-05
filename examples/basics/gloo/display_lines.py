@@ -4,6 +4,11 @@
 """ Show a bunch of lines.
 This example demonstrates how multiple line-pieces can be drawn
 using one call, by discarting some fragments.
+
+Note that this example uses canvas.context.X() to call gloo functions.
+These functions are also available as vispy.gloo.X(), but apply
+explicitly to the canvas. We still need to decide which we think is the
+preferred API.
 """
 
 import numpy as np

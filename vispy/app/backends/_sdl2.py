@@ -201,7 +201,7 @@ class CanvasBackend(BaseCanvasBackend):
             = self._process_backend_kwargs(kwargs)
         self._initialized = False
         
-        # Deak with config
+        # Deal with config
         _set_config(context.config)
         # Deal with context
         context.shared.add_ref('sdl2', self)

@@ -309,7 +309,7 @@ class DataBufferView(DataBuffer):
     Notes
     -----
     
-    It is gnerally not necessary to instantiate this class manually; use 
+    It is generally not necessary to instantiate this class manually; use 
     ``base_buffer[key]`` instead.
     """
     

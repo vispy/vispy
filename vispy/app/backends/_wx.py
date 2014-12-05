@@ -205,14 +205,13 @@ class CanvasBackend(Frame, BaseCanvasBackend):
         title, size, position, show, vsync, resize, dec, fs, parent, context, \
             = self._process_backend_kwargs(kwargs)
         
-        # Deal with config
+        # Set config
         self._gl_attribs = _set_config(context.config)
         # Deal with context 
         context.shared.add_ref('wx', self)
         if context.shared.ref is self:
             self._gl_context = None  # set for real once we know self._canvas
         else:
-            #self._gl_attribs = context.shared.ref._gl_attribs
             self._gl_context = context.shared.ref._gl_context
         
         style = (wx.MINIMIZE_BOX | wx.MAXIMIZE_BOX | wx.CLOSE_BOX |

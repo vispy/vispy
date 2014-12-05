@@ -131,11 +131,13 @@ class CanvasBackend(BaseCanvasBackend):
         # Deal with context
         context.shared.add_ref('egl', self)
         if context.shared.ref is self:
+            # Store context information
             self._native_config = egl.eglChooseConfig(_EGL_DISPLAY)[0]
             self._native_context = egl.eglCreateContext(_EGL_DISPLAY, 
                                                         self._native_config, 
                                                         None)
         else:
+            # Reuse information from other context
             self._native_config = context.shared.ref._native_config
             self._native_context = context.shared.ref._native_context
         
