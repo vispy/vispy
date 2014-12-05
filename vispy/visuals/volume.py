@@ -393,9 +393,6 @@ class VolumeVisual(Visual):
         # seems to work with the demos I tried ...
         self._cameraclip = 10.0
         
-        # Cache for vertex data
-        self._vertex_cache_id = ()
-        
         # Storage of information of volume
         self._vol_shape = ()
         self._clim = None
@@ -408,6 +405,7 @@ class VolumeVisual(Visual):
         #
         self._program['u_volumetex'] = self._tex
         self._program.frag['calculate_steps'] = Function(calc_steps)
+        self._index_buffer = None
         
         # Set data
         self.set_data(vol, clim)
@@ -443,6 +441,10 @@ class VolumeVisual(Visual):
         self._tex.set_data(vol)  # will be efficient if vol is same shape
         self._program['u_shape'] = vol.shape[2], vol.shape[1], vol.shape[0]
         self._vol_shape = vol.shape[:3]
+        
+        # Create vertices?
+        if self._index_buffer is None:
+            self._create_vertex_data()
     
     @property
     def clim(self):
@@ -507,7 +509,7 @@ class VolumeVisual(Visual):
             raise ValueError('relative_step_size cannot be smaller than 0.1')
         self._relative_step_size = value
     
-    def _create_vertex_data(self, partition_count):
+    def _create_vertex_data(self):
         """ Create and set positions and texture coords from the given shape
         
         We have six faces with 1 quad (2 triangles) each, resulting in
@@ -515,13 +517,6 @@ class VolumeVisual(Visual):
         projection (or other nonlinear transformations) we need a denser
         grid in order to avoid wobly effects.
         """
-        
-        # Get cache id. If a match, we don't have to do anything
-        vertex_cache_id = self._vol_shape + (partition_count, )
-        if vertex_cache_id == self._vertex_cache_id:
-            return
-        else:
-            self._vertex_cache_id = vertex_cache_id
         
         shape = self._vol_shape
         
@@ -546,39 +541,41 @@ class VolumeVisual(Visual):
         ver_coord0.append((x0, y0, z0))  # 0
         tex_coord0.append((t1, t0, t0))
         ver_coord0.append((x1, y0, z0))  # 1
-        tex_coord0.append((t1, t1, t0))
-        ver_coord0.append((x1, y1, z0))  # 2
         tex_coord0.append((t0, t1, t0))
-        ver_coord0.append((x0, y1, z0))  # 3
+        ver_coord0.append((x0, y1, z0))  # 2
+        tex_coord0.append((t1, t1, t0))
+        ver_coord0.append((x1, y1, z0))  # 3
         # top
         tex_coord0.append((t0, t0, t1))
         ver_coord0.append((x0, y0, z1))  # 4    
-        tex_coord0.append((t0, t1, t1))
-        ver_coord0.append((x0, y1, z1))  # 5
-        tex_coord0.append((t1, t1, t1))
-        ver_coord0.append((x1, y1, z1))  # 6
         tex_coord0.append((t1, t0, t1))
-        ver_coord0.append((x1, y0, z1))  # 7
+        ver_coord0.append((x1, y0, z1))  # 5
+        tex_coord0.append((t0, t1, t1))
+        ver_coord0.append((x0, y1, z1))  # 6
+        tex_coord0.append((t1, t1, t1))
+        ver_coord0.append((x1, y1, z1))  # 7
         
         # Unwrap the vertices. 4 vertices per side = 24 vertices
-        # Warning: dont mess up the list with indices; theyre carefully
+        # Warning: dont mess up the list with indices; they're carefully
         # chosen to yield  front facing faces.
         tex_coord, ver_coord = [], []
-        for i in [0, 1, 2, 3, 
-                  4, 5, 6, 7, 
-                  3, 2, 6, 5, 
-                  0, 4, 7, 1, 
-                  0, 3, 5, 4, 
-                  1, 7, 6, 2]:
+        for i in [  
+                    2, 0, 6, 4,  # +x
+                    1, 3, 5, 7,  # -x
+                    0, 1, 4, 5,  # +y
+                    3, 2, 7, 6,  # -y
+                    2, 3, 0, 1,  # +z
+                    4, 5, 6, 7,  # -z
+                    ]:
             tex_coord.append(tex_coord0[i])
             ver_coord.append(ver_coord0[i])
         
-        # Partition quads in smaller quads
-        for iter in range(partition_count):
-            tex_coord, ver_coord = self._partition_quads(tex_coord, ver_coord)
-        
-        # Convert from quads to triangles
-        tex_coord, ver_coord = self._quads_to_triangles(tex_coord, ver_coord)
+        # Get indices and vertices for triangles. Each face is
+        # represented with div vertices per dimension. The indices
+        # represent the triangles.
+        div = max(shape) // 10  # about 10x10 voxels inside each quad
+        indices, tex_coord, ver_coord = self._calc_coords(tex_coord, ver_coord,
+                                                          div)
         
         # Turn into structured array
         N = len(tex_coord)
@@ -586,72 +583,67 @@ class VolumeVisual(Visual):
         data['a_position'] = np.array(ver_coord)
         data['a_texcoord'] = np.array(tex_coord)
         
-        print('vertex data shape', data.shape)
+        # Get some stats
+        self._kb_for_texture = np.prod(self._vol_shape) / 1024
+        self._kb_for_vertices = (indices.nbytes + data.nbytes) / 1024
         
         # Apply
-        if self._vbo is None or self._vbo.size != data.size:
-            if self._vbo is not None:
-                self._vbo.delete()
-            self._vbo = gloo.VertexBuffer(data)
-            self._program.bind(self._vbo)
-        else:
-            # set_data() would be nice, but because our data is structured,
-            # when the vbo needs resizing, the views are invalidated
-            self._vbo.set_data(data)
+        self._vbo = gloo.VertexBuffer(data)
+        self._program.bind(self._vbo)
+        self._index_buffer = gloo.IndexBuffer(indices)
     
-    def _partition_quads(self, tex_coord1, ver_coord1):
-        """ Partition each quad in 4 smaller quads. 
+    def _calc_coords(self, tex_coord1, ver_coord1, div):
+        """ Calculate vertices, texcoords and indices.
+        The given coords should represent 24 vertices (4 for each face).
+        The result will have div vertices in each dimension.
         """
-        tex_coord1 = np.array(tex_coord1)
-        ver_coord1 = np.array(ver_coord1)
-        #
-        tex_coord2, ver_coord2 = [], []
-        for iQuad in range(int(len(tex_coord1) / 4)):
-            io = iQuad * 4
-            for i1 in range(4):
-                for i2 in range(4):
-                    i3 = (i1 + i2) % 4
-                    tex_coord2.append(0.5 * (tex_coord1[io+i1] + 
-                                             tex_coord1[io+i3]))
-                    ver_coord2.append(0.5 * (ver_coord1[io+i1] + 
-                                             ver_coord1[io+i3]))
-        return tex_coord2, ver_coord2
-    
-    def _quads_to_triangles(self, tex_coord1, ver_coord1):
-        """ Convert quads to triangles.
-        """
-        #   0 - 1
-        #   |   |
-        #   3 - 2
-        tex_coord2, ver_coord2 = [], []
-        for i0 in range(0, len(tex_coord1), 4):
-            for i in (0, 1, 2):
-                tex_coord2.append(tex_coord1[i0 + i])
-                ver_coord2.append(ver_coord1[i0 + i])
-            for i in (0, 2, 3):
-                tex_coord2.append(tex_coord1[i0 + i])
-                ver_coord2.append(ver_coord1[i0 + i])
-        return tex_coord2, ver_coord2
-    
-    def _quad_partition_count(self, camera):
-        """ Select the density of the vertices for the cube to render.
-        Higher field of view yields higher partition-count.
-        """
-        if hasattr(camera, 'fov'):
-            fov = camera.fov
-        else:
-            return 0
+        # This function is deliberately agnostic about the volume class;
+        # this code coulde be usefull elsewhere.
         
-        if fov <= 10:
-            return 0
-        elif fov <= 20:
-            return 1
-        elif fov <= 40:
-            return 2
-        elif fov <= 80:
-            return 3
-        else:
-            return 4
+        tex_coord1 = np.array(tex_coord1, 'float32')
+        ver_coord1 = np.array(ver_coord1, 'float32')
+        
+        # Number of vertices and indices per face
+        nvertices = div * div
+        nindices = (div-1) * (div-1) * 6
+        
+        # Init output arrays
+        tex_coord2 = np.zeros((nvertices * 6, 3), 'float32')
+        ver_coord2 = np.zeros((nvertices * 6, 3), 'float32')
+        indices = np.zeros((nindices * 6, ), 'uint32')
+        
+        for face in range(6):
+            
+            # Get quad that represents this face
+            tex_quad = tex_coord1[face*4:(face+1)*4]
+            ver_quad = ver_coord1[face*4:(face+1)*4]
+            
+            # Create index arrays for vertices and texcoords
+            i1, i2 = np.meshgrid(np.linspace(0, 1, div), 
+                                    np.linspace(0, 1, div))
+            i1.shape = div*div, 1
+            i2.shape = div*div, 1
+            # Sample new grid locations
+            new_tex = ((tex_quad[0] * (1-i1) + tex_quad[1] * i1) * (1-i2) + 
+                        (tex_quad[2] * (1-i1) + tex_quad[3] * i1) * i2)
+            new_ver = ((ver_quad[0] * (1-i1) + ver_quad[1] * i1) * (1-i2) + 
+                        (ver_quad[2] * (1-i1) + ver_quad[3] * i1) * i2)
+            # Store in new array
+            tex_coord2[face*nvertices:(face+1)*nvertices, :] = new_tex
+            ver_coord2[face*nvertices:(face+1)*nvertices, :] = new_ver
+            
+            # Create index arrays for indices
+            i1, i2 = np.meshgrid(np.arange(div-1), np.arange(div-1))
+            i1.shape = -1, 1
+            i2.shape = -1, 1
+            # Sample indices
+            smallquad = np.array([0, div, 1, 1, div, div+1], 'uint64')
+            smallquad += face * nvertices  # bias
+            new_indices = smallquad + (i1*div + i2)
+            # Store in index array
+            indices[face*nindices:(face+1)*nindices] = new_indices.ravel()
+        
+        return indices, tex_coord2, ver_coord2
     
     def bounds(self, mode, axis):
         # Not sure if this is right. Do I need to take the transform if this
@@ -668,14 +660,6 @@ class VolumeVisual(Visual):
         self._program['u_cameraclip'] = self._cameraclip
         self._program['u_relative_step_size'] = self._relative_step_size
         
-        # Try getting partition count
-        pc = 0
-        if hasattr(transforms, 'viewbox') and transforms.viewbox:
-            pc = self._quad_partition_count(transforms.viewbox.camera)
-        
-        # Ensure we have vertices
-        self._create_vertex_data(pc)
-        
         # Get and set transforms
         view_tr_f = transforms.visual_to_document
         view_tr_i = view_tr_f.inverse
@@ -684,8 +668,9 @@ class VolumeVisual(Visual):
         
         # Set attributes that are specific to certain styles
         self._program.build_if_needed()
-        if True:#self._style == 'iso':
+        if self._style == 'iso':
             self._program['u_threshold'] = self._threshold
         
         # Draw!
-        self._program.draw('triangles')
+        self._program.draw('triangles', self._index_buffer)
+
