@@ -38,8 +38,17 @@ void main (void) {
     v_fg_color  = a_fg_color;
     v_bg_color  = a_bg_color;
     gl_Position = $transform(vec4(a_position,1.0));
+    float edgewidth;
+    if (v_edgewidth < 1.)
+    {
+        edgewidth = 1.;
+    }
+    else
+    {
+        edgewidth = v_edgewidth;
+    }
     gl_PointSize = """ + scalar_v_size + \
-        """ + 6*(v_edgewidth + 1.5*v_antialias);
+        """ + 4*(edgewidth + 1.5*v_antialias);
 }
 """
     return vert
@@ -54,7 +63,19 @@ varying float v_antialias;
 
 void main()
 {
-    float size = """ + scalar_v_size + """ + 6*(v_edgewidth + 1.5*v_antialias);
+    float edgewidth;
+    float edgealphafactor;
+    if (v_edgewidth < 1.)
+    {
+        edgealphafactor = v_edgewidth;
+        edgewidth = 1.;
+    }
+    else
+    {
+        edgealphafactor = 1.;
+        edgewidth = v_edgewidth;
+    }
+    float size = """ + scalar_v_size + """ + 4*(edgewidth + 1.5*v_antialias);
     // factor 6 for acute edge angles that need room as for star marker
 
     // The marker function needs to be linked with this shader
@@ -63,33 +84,33 @@ void main()
     // it takes into account an antialising layer
     // of size v_antialias inside the edge
     // r:
-    // [0, 2*a] antialising face-edge
-    // [2*a, e-a] core edge (center e/2+a/2, diameter e-3a = 2t)
-    // [e-a, e+a] antialising edge-background (original [e/2-a, e/2+a])
-    float t = 0.5*v_edgewidth - 1.5*v_antialias;
-    float c = v_edgewidth/2.0+v_antialias/2.0;
-    float d = abs(r - c) - t;
+    // [-e/2-a, -e/2+a] antialising face-edge
+    // [-e/2+a, e/2-a] core edge (center 0, diameter e-2a = 2t)
+    // [e/2-a, e/2+a] antialising edge-background
+    float t = 0.5*v_edgewidth - v_antialias;
+    float d = abs(r) - t;
+    
+    vec4 edgecolor = vec4(v_fg_color.rgb, edgealphafactor*v_fg_color.a);
 
-    if (r > v_edgewidth + v_antialias)
+    if (r > 0.5*v_edgewidth + v_antialias)
     {
-        // out of the marker
-        // (beyond the outer edge of the edge
+        // out of the marker (beyond the outer edge of the edge
         // including transition zone due to antialiasing)
         discard;
     }
-    else if (d < 0.) // (r > 2.*v_antialias && r < v_edgewidth - v_antialias)
+    else if (d < 0.0)
     {
         // inside the width of the edge
         // (core, out of the transition zone for antialiasing)
-        gl_FragColor = v_fg_color;
+        gl_FragColor = edgecolor;
     }
     else
     {
-        if (v_edgewidth < 0.1)
-        {// edge thiner than 1/10th pixel: skip edge
-            if (r > 0.)
+        if (v_edgewidth == 0.)
+        {// no edge
+            if (r > -v_antialias)
             {
-                float alpha = r/v_antialias;
+                float alpha = 1.0 + r/v_antialias;
                 alpha = exp(-alpha*alpha);
                 gl_FragColor = vec4(v_bg_color.rgb, alpha*v_bg_color.a);
             }
@@ -102,31 +123,14 @@ void main()
         {
             float alpha = d/v_antialias;
             alpha = exp(-alpha*alpha);
-            if (r >= max(v_edgewidth - v_antialias, c))
+            if (r > 0)
             {
                 // outer part of the edge: fade out into the background...
-                gl_FragColor = vec4(v_fg_color.rgb, alpha*v_fg_color.a);
-            }
-            else if (r >= 0.)
-            {
-                if (v_edgewidth > v_antialias)
-                { // inner part of the edge, mix with face color (v_bg_color)
-                    gl_FragColor = mix(v_bg_color, v_fg_color, alpha);
-                }
-                else
-                {
-                    // edge is too thin with respect to antialiasing zone,
-                    // mix also with background fade out
-                    vec4 aa_edge_color = mix(v_bg_color, v_fg_color, alpha);
-                    float beta = r / v_antialias;
-                    beta = exp(-beta*beta);
-                    gl_FragColor = vec4(aa_edge_color.rgb,
-                                        beta*aa_edge_color.a);
-                }
+                gl_FragColor = vec4(edgecolor.rgb, alpha*edgecolor.a);
             }
             else
             {
-                gl_FragColor = v_bg_color;
+                gl_FragColor = mix(v_bg_color, edgecolor, alpha);
             }
         }
     }
@@ -176,8 +180,8 @@ float clobber(vec2 pointcoord, float size)
 {
     const float PI = 3.14159265358979323846264;
     const float t1 = -PI/2;
-    float circle_radius = 0.28 * $v_size;
-    float center_shift = 0.44/sqrt3 * $v_size;
+    float circle_radius = 0.32 * $v_size;
+    float center_shift = 0.36/sqrt3 * $v_size;
     //total size (horizontal) = 2*circle_radius + sqrt3*center_shirt = $v_size
     vec2  c1 = vec2(cos(t1),sin(t1))*center_shift;
     const float t2 = t1+2*PI/3;
@@ -511,7 +515,7 @@ class MarkersVisual(Visual):
 
     def set_data(self, pos=None, style='o', size=10., edge_width=1.,
                  edge_color='black', face_color='white', scaling=False,
-                 edge_fade_out=False):
+                 small_edge_fade_out=False):
         """ Set the data used to display this visual.
 
         Parameters
@@ -531,10 +535,12 @@ class MarkersVisual(Visual):
             The color used to draw each symbol interior.
         scaling : bool
             If set to True, marker scales when rezooming
-            (needs a viewbox to work)
-        edge_fade_out : bool
+            (needs a viewbox to work).
+        small_edge_fade_out : bool
             If set to True, edge marker fades out and disappears when
-            it becomes too small
+            it becomes small (which removes the blending between face
+            and edge at small sizes): provides another rendering of
+            very small markers.
 
         Notes
         -----
@@ -547,7 +553,7 @@ class MarkersVisual(Visual):
         assert edge_width >= 0.
         self.set_style(style)
         self.scaling = scaling
-        self.edge_fade_out = edge_fade_out
+        self.small_edge_fade_out = small_edge_fade_out
         
         edge_color = ColorArray(edge_color).rgba
         if len(edge_color) == 1:
@@ -601,7 +607,7 @@ class MarkersVisual(Visual):
             )
             update_data['a_size'] *= min(scale)
             update_data['a_edgewidth'] *= min(scale)
-            if self.edge_fade_out:
+            if self.small_edge_fade_out:
                 edgewidth = update_data['a_edgewidth']
                 size = update_data['a_size']
                 antialias = self.antialias
@@ -614,6 +620,7 @@ class MarkersVisual(Visual):
                 update_data['a_fg_color'][mask, 3] *= \
                     np.minimum((edgewidth[mask] - 0.5)/1.5,
                                (size[mask] - size_threshold) / 4.)
+
             self._vbo.set_data(update_data)
         self._program.prepare()
         self._program['u_antialias'] = self.antialias

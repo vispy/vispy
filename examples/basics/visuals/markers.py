@@ -12,7 +12,7 @@ import numpy as np
 from vispy import app, gloo, visuals
 from vispy.visuals.transforms import STTransform, TransformSystem
 
-n = 540
+n = 500
 pos = np.zeros((n, 2))
 colors = np.ones((n, 4), dtype=np.float32)
 radius, theta, dtheta = 1.0, 0.0, 5.5 / 180.0 * np.pi
@@ -36,7 +36,7 @@ class Canvas(app.Canvas):
         self.tr_sys = TransformSystem(self)
         self.tr_sys.visual_to_document = STTransform()
         self.markers = visuals.MarkersVisual()
-        self.markers.set_data(pos, face_color=colors, edge_width=2.)
+        self.markers.set_data(pos, face_color=colors)
         self.markers.set_style(visuals.marker_types[self.index])
 
     def on_draw(self, event):
