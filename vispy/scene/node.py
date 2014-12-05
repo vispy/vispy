@@ -61,6 +61,19 @@ class Node(Visual):
         # todo: default transform should be trans-scale-rot transform
         self._transform = NullTransform()
     
+    # todo: move visible to BaseVisualNode class when we make Node not a Visual
+    @property
+    def visible(self):
+        """ Whether this node should be drawn or not. Only applicable to
+        nodes that can be drawn.
+        """
+        return self._visible
+    
+    @visible.setter
+    def visible(self, val):
+        self._visible = bool(val)
+        self.update()
+    
     @property
     def name(self):
         return self._name
@@ -266,7 +279,50 @@ class Node(Visual):
             if p in p2:
                 return p
         return None
+    
+    def node_path_to_child(self, node):
+        """ Return a list describing the path from this node to a child node
         
+        This method assumes that the given node is a child node. Multiple
+        parenting is allowed.
+        """
+        
+        if node is self:
+            return []
+        
+        # Go up from the child node as far as we can
+        path1 = [node]
+        child = node
+        while len(child.parents) == 1:
+            child = child.parent
+            path1.append(child)
+            # Early exit
+            if child is self:
+                return list(reversed(path1))
+        
+        # Verify that we're not cut off
+        if len(path1[-1].parents) == 0:
+            raise RuntimeError('%r is not a child of %r' % (node, self))
+        
+        def _is_child(path, parent, child):
+            path.append(parent)
+            if child in parent.children:
+                return path
+            else:
+                for c in parent.children:
+                    possible_path = _is_child(path[:], c, child)
+                    if possible_path:
+                        return possible_path
+            return None
+        
+        # Search from the parent towards the child
+        path2 = _is_child([], self, path1[-1])
+        if not path2:
+            raise RuntimeError('%r is not a child of %r' % (node, self))
+        
+        # Return
+        return path2 + list(reversed(path1))
+    
     def node_path(self, node):
         """Return two lists describing the path from this node to another. 
         

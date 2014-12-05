@@ -35,8 +35,7 @@ vb3 = grid.add_view(row=1, col=1)
 # Top viewbox: Show a plot line containing fine structure with a 1D 
 # magnigication transform.
 #
-vb1.camera = Magnify1DCamera(mag=4, size_factor=0.6, radius_ratio=0.6)
-vb1.camera.rect = 0, 30, 100000, 100
+
 
 pos = np.empty((100000, 2))
 pos[:, 0] = np.arange(100000)
@@ -50,23 +49,24 @@ line.transform = STTransform(translate=(0, 0, -0.1))
 
 grid1 = visuals.GridLines(parent=vb1.scene)
 
+vb1.camera = Magnify1DCamera(mag=4, size_factor=0.6, radius_ratio=0.6)
+vb1.camera.rect = 0, 30, 100000, 100
 
 #
 # Bottom-left viewbox: Image with circular magnification lens.
 #
 size = (100, 100)
-vb2.camera = MagnifyCamera(mag=3, size_factor=0.3, radius_ratio=0.6)
-vb2.camera.rect = (-10, -10, size[0]+20, size[1]+20) 
 
 img_data = np.random.normal(size=size+(3,), loc=58, scale=20).astype(np.ubyte)
 image = visuals.Image(img_data, method='impostor', parent=vb2.scene)
 
+vb2.camera = MagnifyCamera(mag=3, size_factor=0.3, radius_ratio=0.6)
+vb2.camera.rect = (-10, -10, size[0]+20, size[1]+20) 
 
 #
 # Bottom-right viewbox: Scatter plot with many clusters of varying scale.
 #
-vb3.camera = MagnifyCamera(mag=3, size_factor=0.3, radius_ratio=0.9)
-vb3.camera.rect = (-5, -5, 10, 10)
+
 
 centers = np.random.normal(size=(50, 2))
 pos = np.random.normal(size=(100000, 2), scale=0.2)
@@ -82,7 +82,8 @@ scatter.set_data(pos, edge_color=None, face_color=(1, 1, 1, 0.3), size=5)
 vb3.add(scatter)
 
 grid2 = visuals.GridLines(parent=vb3.scene)
-
+vb3.camera = MagnifyCamera(mag=3, size_factor=0.3, radius_ratio=0.9)
+vb3.camera.rect = (-5, -5, 10, 10)
 
 # Add helpful text
 text1 = visuals.Text("mouse wheel = magnify", pos=(100, 15), font_size=14, 

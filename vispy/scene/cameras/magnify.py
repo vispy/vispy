@@ -104,15 +104,18 @@ class MagnifyCamera(PanZoomCamera):
         self._update_transform()
 
     def view_resize_event(self, event):
-        # when the view resizes, we change the lens radii to match.
-        vbs = self.viewbox.size
-        r = min(vbs) * self.size_factor
-        self.mag.radii = r * self.radius_ratio, r
-        self._update_transform()
+        self.view_changed()
 
     def view_changed(self):
         # make sure radii are updated when a view is attached.
-        self.view_resize_event(None)
+        # when the view resizes, we change the lens radii to match.
+        viewbox = self._ref_viewbox()
+        if viewbox is not None:
+            vbs = viewbox.size
+            r = min(vbs) * self.size_factor
+            self.mag.radii = r * self.radius_ratio, r
+        
+        PanZoomCamera.view_changed(self)
 
 
 class Magnify1DCamera(MagnifyCamera):

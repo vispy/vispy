@@ -3,12 +3,13 @@
 import numpy as np
 from vispy.scene.visuals import Volume
 
-from vispy.testing import run_tests_if_main
+from vispy.testing import run_tests_if_main, requires_pyopengl
 from vispy.testing import TestingCanvas, requires_application
 #from vispy.gloo.util import _screenshot
 from nose.tools import assert_raises
 
 
+@requires_pyopengl()
 def test_volume():
     
     vol = np.zeros((20, 20, 20), 'float32')
@@ -38,6 +39,7 @@ def test_volume():
     assert_raises(ValueError, V.__class__.relative_step_size.fset, V, 0)
 
 
+@requires_pyopengl()
 @requires_application()
 def test_volume_draw():
     with TestingCanvas(bgcolor='w', size=(92, 92)) as c:

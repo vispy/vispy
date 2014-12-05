@@ -1,16 +1,37 @@
+# -*- coding: utf-8 -*-
+# -----------------------------------------------------------------------------
+# Copyright (c) 2014, Vispy Development Team. All Rights Reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+# -----------------------------------------------------------------------------
+# vispy: gallery 2
+
 """
 Example volume rendering
+
+Controls:
+
+* 1 - toggle camera between first person (fly) and regular 3D (turntable)
+* 2 - toggle between mip and iso render styles
+* 3 - toggle between stent-CT / brain-MRI image
+* 0 - reset cameras
+
+With fly camera:
+
+* WASD or arrow keys - move around
+* SPACE - break
+* FC - move up-down
+* IJKL or mouse - look around
 """
 
 import numpy as np
 
-from vispy import scene, io
+from vispy import app, scene, io
 
 # Read volume
-vol = np.load(io.load_data_file('brain/mri.npz'))['data']
-vol = np.flipud(np.rollaxis(vol, 1))
-#import imageio
-#vol = imageio.volread('stent.npz')
+vol1 = np.load(io.load_data_file('volume/stent.npz'))['arr_0']
+vol2 = np.load(io.load_data_file('brain/mri.npz'))['data']
+vol2 = np.flipud(np.rollaxis(vol2, 1))
+
 
 # Prepare canvas
 canvas = scene.SceneCanvas(keys='interactive')
@@ -21,30 +42,41 @@ canvas.measure_fps()
 # Set up a viewbox to display the image with interactive pan/zoom
 view = canvas.central_widget.add_view()
 
-# Create the volume visual
-volume = scene.visuals.Volume(vol, parent=view.scene, threshold=0.5)
-#volume._program._context.glir.set_verbose('SHADERS')
+# Create the volume visuals, only one is visible
+volume1 = scene.visuals.Volume(vol1, parent=view.scene, threshold=0.5)
+volume1.transform = scene.STTransform(translate=(64, 64, 0))
+volume2 = scene.visuals.Volume(vol2, parent=view.scene, threshold=0.5)
+volume2.visible = False
 
 # Create two cameras (1 for firstperson, 3 for 3d person)
 cam1 = scene.cameras.FlyCamera(parent=view.scene)
 cam3 = scene.cameras.TurntableCamera(parent=view.scene)
-for cam in (cam1, cam3):
-    cam.set_range((0, 250), (0, 250), (0, 250))
 view.camera = cam3  # Select turntable at first
 
 
 # Implement key presses
 @canvas.events.key_press.connect
-def select_camera(event):
+def on_key_press(event):
     if event.text == '1':
-        view.set_camera('fly')
+        cam_toggle = {cam1: cam3, cam3: cam1}
+        view.camera = cam_toggle.get(view.camera, 'fly')
+    elif event.text == '2':
+        style_toggle = {'mip': 'iso', 'iso': 'mip'}
+        volume1.style = style_toggle.get(volume1.style, 'mip')
+        volume2.style = volume1.style
     elif event.text == '3':
-        view.set_camera('turntable')
-    elif event.text == 'm':
-        volume.style = 'mip'
-    elif event.text == 'i':
-        volume.style = 'iso'
+        volume1.visible = not volume1.visible
+        volume2.visible = not volume1.visible
+    elif event.text == '0':
+        cam1.reset()
+        cam3.reset()
     elif event.text == '[':
-        volume.threshold -= 0.1
+        volume1.threshold -= 0.1
+        volume2.threshold = volume1.threshold
     elif event.text == ']':
-        volume.threshold += 0.1
+        volume1.threshold += 0.1
+        volume2.threshold = volume1.threshold
+
+if __name__ == '__main__':
+    print(__doc__)
+    app.run()

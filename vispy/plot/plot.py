@@ -2,10 +2,11 @@
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
+import numpy as np
+
 from ..geometry import MeshData
 from ..io import read_mesh
-from ..scene import SceneCanvas, visuals
-import numpy as np
+from ..scene import SceneCanvas, visuals, cameras
 
 plots = []
 
@@ -19,7 +20,10 @@ def plot(*args, **kwds):
     canvas.view = canvas.central_widget.add_view()
     canvas.line = visuals.LinePlot(*args, **kwds)
     canvas.view.add(canvas.line)
-    canvas.view.camera.auto_zoom(canvas.line)
+    if False:  # todo: of data-is-3D
+        canvas.view.camera = 'turntable'
+    else:    
+        canvas.view.camera = 'panzoom'
     canvas.show()
     plots.append(canvas)
     return canvas
@@ -36,7 +40,7 @@ def image(*args, **kwds):
     canvas.view.add(canvas.image)
     canvas.show()
     canvas.view.camera.invert_y = False
-    canvas.view.camera.auto_zoom(canvas.image)
+    canvas.view.camera = 'panzoom'
     plots.append(canvas)
     return canvas
 
@@ -94,14 +98,13 @@ def mesh(vertices=None, faces=None, vertex_colors=None, face_colors=None,
         meshdata = MeshData(vertices, faces)
     canvas = SceneCanvas(keys='interactive')
     canvas.view = canvas.central_widget.add_view()
-    canvas.view.set_camera('turntable', fov=60, azimuth=azimuth,
-                           elevation=elevation)
     canvas.mesh = visuals.Mesh(meshdata=meshdata,
                                vertex_colors=vertex_colors,
                                face_colors=face_colors,
                                color=color, shading='smooth')
     canvas.view.add(canvas.mesh)
-    # canvas.view.camera.auto_zoom(image)  # XXX Don't have this for Turntable
+    canvas.view.camera = cameras.TurntableCamera(fov=60, azimuth=azimuth,
+                                                 elevation=elevation)
     plots.append(canvas)
     return canvas
 
@@ -154,7 +157,7 @@ def scatter(*args, **kwds):
     kwds['pos'] = _pos
     canvas.scatter.set_data(**kwds)
     canvas.view.add(canvas.scatter)
-    canvas.view.camera.auto_zoom(canvas.scatter)
+    canvas.view.camera = 'panzoom'
     canvas.show()
     plots.append(canvas)
     return canvas

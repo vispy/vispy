@@ -25,16 +25,14 @@ canvas = scene.SceneCanvas(size=(800, 600), show=True, keys='interactive')
 vb1 = scene.widgets.ViewBox(name='vb1', border_color='yellow',
                             parent=canvas.scene)
 vb1.clip_method = 'fbo'
-vb1.camera.rect = (-1.2, -2, 2.4, 4)
+vb1.camera = 'panzoom'
 
 # Second ViewBox uses a 3D orthographic camera
 vb2 = scene.widgets.ViewBox(name='vb2', border_color='blue',
                             parent=canvas.scene)
 vb2.parent = canvas.scene
 vb2.clip_method = 'viewport'
-vb2.set_camera('turntable', elevation=30, azimuth=30, up='y')
-#vb2.set_camera('turntable', mode='perspective',
-#               distance=10, elevation=0, azimuth=0)
+vb2.camera = scene.TurntableCamera(elevation=30, azimuth=30, up='y')
 
 
 # Move these when the canvas changes size

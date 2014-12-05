@@ -41,7 +41,6 @@ from .shaders import Function, ModularProgram
 
 import numpy as np
 
-# todo: tweak iso rendering to reduce stripy artifacts
 # todo: implement more render styles (port from visvis)
 # todo: colormapping
 # todo: allow anisotropic data
@@ -386,6 +385,7 @@ class VolumeVisual(Visual):
     
     def __init__(self, vol, clim=None, style='mip', threshold=None, 
                  relative_step_size=0.8):
+        Visual.__init__(self)
         
         # Variable to determine clipping plane when inside the volume.
         # This value represents the z-value in view coordinates, but
@@ -395,6 +395,7 @@ class VolumeVisual(Visual):
         
         # Storage of information of volume
         self._vol_shape = ()
+        self._vertex_cache_id = ()
         self._clim = None
         
         # Create gloo objects
@@ -480,6 +481,7 @@ class VolumeVisual(Visual):
         snippet_dict = {'mip': SNIPPETS_MIP, 'iso': SNIPPETS_ISO}[style]
         for key, snippet in snippet_dict.items():
             self._program.frag[key] = snippet
+        self.update()
     
     @property
     def threshold(self):
@@ -490,6 +492,7 @@ class VolumeVisual(Visual):
     @threshold.setter
     def threshold(self, value):
         self._threshold = float(value)
+        self.update()
     
     @property
     def relative_step_size(self):
@@ -519,6 +522,17 @@ class VolumeVisual(Visual):
         """
         
         shape = self._vol_shape
+        
+        # Determine partitioning. Each face is represented with div
+        # vertices per dimension. The indices represent the triangles.
+        div = max(shape) // 10
+        div = max(2, div)
+        
+        # Do we already have this or not?
+        vertex_cache_id = self._vol_shape + (div, )
+        if vertex_cache_id == self._vertex_cache_id:
+            return
+        self._vertex_cache_id = vertex_cache_id
         
         # Get corner coordinates. The -0.5 offset is to center
         # pixels/voxels. This works correctly for anisotropic data.
@@ -559,21 +573,17 @@ class VolumeVisual(Visual):
         # Warning: dont mess up the list with indices; they're carefully
         # chosen to yield  front facing faces.
         tex_coord, ver_coord = [], []
-        for i in [  
-                    2, 0, 6, 4,  # +x
-                    1, 3, 5, 7,  # -x
-                    0, 1, 4, 5,  # +y
-                    3, 2, 7, 6,  # -y
-                    2, 3, 0, 1,  # +z
-                    4, 5, 6, 7,  # -z
-                    ]:
+        for i in [2, 0, 6, 4,  # +x
+                  1, 3, 5, 7,  # -x
+                  0, 1, 4, 5,  # +y
+                  3, 2, 7, 6,  # -y
+                  2, 3, 0, 1,  # +z
+                  4, 5, 6, 7,  # -z
+                  ]:
             tex_coord.append(tex_coord0[i])
             ver_coord.append(ver_coord0[i])
         
-        # Get indices and vertices for triangles. Each face is
-        # represented with div vertices per dimension. The indices
-        # represent the triangles.
-        div = max(shape) // 10  # about 10x10 voxels inside each quad
+        # Get indices and vertices for triangles. 
         indices, tex_coord, ver_coord = self._calc_coords(tex_coord, ver_coord,
                                                           div)
         
@@ -588,6 +598,9 @@ class VolumeVisual(Visual):
         self._kb_for_vertices = (indices.nbytes + data.nbytes) / 1024
         
         # Apply
+        if self._vbo is not None:
+            self._vbo.delete()
+            self._index_buffer.delete()
         self._vbo = gloo.VertexBuffer(data)
         self._program.bind(self._vbo)
         self._index_buffer = gloo.IndexBuffer(indices)
@@ -620,14 +633,14 @@ class VolumeVisual(Visual):
             
             # Create index arrays for vertices and texcoords
             i1, i2 = np.meshgrid(np.linspace(0, 1, div), 
-                                    np.linspace(0, 1, div))
+                                 np.linspace(0, 1, div))
             i1.shape = div*div, 1
             i2.shape = div*div, 1
             # Sample new grid locations
             new_tex = ((tex_quad[0] * (1-i1) + tex_quad[1] * i1) * (1-i2) + 
-                        (tex_quad[2] * (1-i1) + tex_quad[3] * i1) * i2)
+                       (tex_quad[2] * (1-i1) + tex_quad[3] * i1) * i2)
             new_ver = ((ver_quad[0] * (1-i1) + ver_quad[1] * i1) * (1-i2) + 
-                        (ver_quad[2] * (1-i1) + ver_quad[3] * i1) * i2)
+                       (ver_quad[2] * (1-i1) + ver_quad[3] * i1) * i2)
             # Store in new array
             tex_coord2[face*nvertices:(face+1)*nvertices, :] = new_tex
             ver_coord2[face*nvertices:(face+1)*nvertices, :] = new_ver
@@ -673,4 +686,3 @@ class VolumeVisual(Visual):
         
         # Draw!
         self._program.draw('triangles', self._index_buffer)
-
