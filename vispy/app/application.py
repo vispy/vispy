@@ -95,8 +95,9 @@ class Application(object):
             immediately and rely on the interpreter's input loop to be run
             after script execution.
         """
-        if allow_interactive and hasattr(sys.stdin, 'isatty') \
-                             and sys.stdin.isatty():
+        if (allow_interactive
+                and hasattr(sys.stdin, 'isatty')
+                and sys.stdin.isatty()):
             inputhook.set_interactive(enabled=True, app=self)
         else:
             return self._backend._vispy_run()
