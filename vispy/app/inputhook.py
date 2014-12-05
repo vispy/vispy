@@ -2,9 +2,10 @@
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 """
-Support for iPython 3.x to allow VisPy's event loop to be run alongside
-an interactive or notebook, without using threads.  This code relies on
-inputhooks built-in to the Python interpreter.
+Support for interactive mode to allow VisPy's event loop to be run alongside
+an console or notebook, without using threads.  This code relies on
+inputhooks built-in to the Python interpreter, and supports IPython too. The
+underlying inputhook implementation is from IPython 3.x.
 """
 
 import time
