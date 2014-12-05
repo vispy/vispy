@@ -15,8 +15,7 @@ from .shaders import ModularProgram, Function, Variable
 from .visual import Visual
 
 
-def vertex_shader(scalar_v_size):
-    vert = """
+vert = """
 uniform mat4 u_projection;
 uniform float u_antialias;
 
@@ -47,15 +46,12 @@ void main (void) {
     {
         edgewidth = v_edgewidth;
     }
-    gl_PointSize = """ + scalar_v_size + \
-        """ + 4*(edgewidth + 1.5*v_antialias);
+    gl_PointSize = $scalarsize($v_size) + 4*(edgewidth + 1.5*v_antialias);
 }
 """
-    return vert
 
 
-def fragment_shader(scalar_v_size):
-    frag = """
+frag = """
 varying vec4 v_fg_color;
 varying vec4 v_bg_color;
 varying float v_edgewidth;
@@ -75,7 +71,7 @@ void main()
         edgealphafactor = 1.;
         edgewidth = v_edgewidth;
     }
-    float size = """ + scalar_v_size + """ + 4*(edgewidth + 1.5*v_antialias);
+    float size = $scalarsize($v_size) + 4*(edgewidth + 1.5*v_antialias);
     // factor 6 for acute edge angles that need room as for star marker
 
     // The marker function needs to be linked with this shader
@@ -136,8 +132,20 @@ void main()
     }
 }
 """
-    return frag
 
+size1d = """
+float size1d(float size)
+{
+    return size;
+}
+"""
+
+size2d = """
+float size2d(vec2 size)
+{
+    return max(size.x, size.y);
+}
+"""
 
 disc = """
 float disc(vec2 pointcoord, float size)
@@ -504,13 +512,12 @@ class MarkersVisual(Visual):
     """ Visual displaying marker symbols.
     """
     def __init__(self):
-        self._program = ModularProgram(
-            vertex_shader(scalar_v_size="$v_size"),
-            fragment_shader(scalar_v_size="$v_size")
-        )
+        self._program = ModularProgram(vert, frag)
         self._v_size_var = Variable('varying float v_size')
         self._program.vert['v_size'] = self._v_size_var
         self._program.frag['v_size'] = self._v_size_var
+        self._program.vert['scalarsize'] = Function(size1d)
+        self._program.frag['scalarsize'] = Function(size1d)
         Visual.__init__(self)
 
     def set_data(self, pos=None, style='o', size=10., edge_width=1.,
