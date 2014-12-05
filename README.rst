@@ -3,7 +3,7 @@ Vispy: interactive scientific visualization in Python
 
 Main website: http://vispy.org
 
-|Build Status| |Coverage Status| |Zenodo Link|
+|Build Status| |Appveyor Status| |Coverage Status| |Zenodo Link|
 
 ----
 
@@ -134,6 +134,8 @@ External links
 
 .. |Build Status| image:: https://travis-ci.org/vispy/vispy.png?branch=master
    :target: https://travis-ci.org/vispy/vispy
+.. |Appveyor Status| image:: https://ci.appveyor.com/api/projects/status/dsxgkrbfj29xf9ef/branch/master
+   :target: https://ci.appveyor.com/project/Eric89GXL/vispy/branch/master
 .. |Coverage Status| image:: https://coveralls.io/repos/vispy/vispy/badge.png?branch=master
    :target: https://coveralls.io/r/vispy/vispy?branch=master
 .. |Zenodo Link| image:: https://zenodo.org/badge/5822/vispy/vispy.png
