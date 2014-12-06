@@ -5,19 +5,24 @@
 """ GL ES 2.0 API implemented via desktop GL (i.e subset of normal OpenGL).
 """
 
+import os
 import sys
 import ctypes.util
 
 from . import _copy_gl_functions
 from ._constants import *  # noqa
 
-## Ctypes stuff
+# Ctypes stuff
 
 
 # Load the OpenGL library. We more or less follow the same approach
 # as PyOpenGL does internally
 
-if sys.platform.startswith('win'):
+_have_get_proc_address = False
+_lib = os.getenv('VISPY_GL_LIB', '')
+if _lib != '':
+    _lib = ctypes.cdll.LoadLibrary(_lib)
+elif sys.platform.startswith('win'):
     # Windows
     _lib = ctypes.windll.opengl32
     try:
@@ -27,11 +32,9 @@ if sys.platform.startswith('win'):
         wglGetProcAddress.argtypes = [ctypes.c_char_p]
         _have_get_proc_address = True
     except AttributeError:
-        _have_get_proc_address = False
+        pass
 else:
     # Unix-ish
-    _have_get_proc_address = False
-    # Get filename
     if sys.platform.startswith('darwin'):
         _fname = ctypes.util.find_library('OpenGL')
     else:
@@ -71,7 +74,7 @@ def _get_gl_func(name, restype, argtypes):
         raise RuntimeError('Function %s not present in context.' % name)
 
 
-## Inject
+# Inject
 
 from . import _desktop
 _copy_gl_functions(_desktop, globals())

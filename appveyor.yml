@@ -1,5 +1,6 @@
 # CI on Windows via appveyor
 # This file was based on Olivier Grisel's python-appveyor-demo
+# Must use 32-bit python to use MESA
 
 environment:
 
@@ -20,6 +21,7 @@ install:
   # Check that we have the expected version and architecture for Python
   - "python --version"
   - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
+  - "SET VISPY_GL_LIB=%CD%\\opengl32.dll"
 
   # Install the dependencies of the project.
   - "conda install --yes --quiet numpy setuptools flake8 pyqt nose"
@@ -30,4 +32,4 @@ build: false  # Not a C# project, build stuff at the test step instead.
 
 test_script:
   # Run the project tests
-  - "python make test nobackend"
+  - "python make test full"
