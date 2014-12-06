@@ -572,13 +572,13 @@ def glfwGetMonitorPhysicalSize(monitor):
 
 def glfwGetVideoMode(monitor):
     _glfw.glfwGetVideoMode.restype = POINTER(GLFWvidmode)
-    c_modes = _glfw.glfwGetVideoModes(monitor)
-    return (c_modes.width,
-            c_modes.height,
-            c_modes.redBits,
-            c_modes.blueBits,
-            c_modes.greenBits,
-            c_modes.refreshRate )
+    c_mode = _glfw.glfwGetVideoMode(monitor).contents
+    return (c_mode.width,
+            c_mode.height,
+            c_mode.redBits,
+            c_mode.blueBits,
+            c_mode.greenBits,
+            c_mode.refreshRate )
 
 
 def GetGammaRamp(monitor):
