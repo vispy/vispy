@@ -73,7 +73,7 @@ version = glfwGetVersion()
 
 if version[0] != 3:
     version = '.'.join([str(v) for v in version])
-    raise OSError('Need GLFW v3, found %s' % version)
+    raise OSError('Need GLFW library version 3, found version %s' % version)
 
 
 # --- Version -----------------------------------------------------------------
@@ -462,6 +462,7 @@ glfwExtensionSupported         = _glfw.glfwExtensionSupported
 glfwGetProcAddress             = _glfw.glfwGetProcAddress
 
 
+
 # --- Pythonizer --------------------------------------------------------------
 
 # This keeps track of current windows
@@ -471,7 +472,7 @@ __destroyed__ = []
 # This is to prevent garbage collection on callbacks
 __c_callbacks__ = {}
 __py_callbacks__ = {}
-
+__c_error_callback__ = None
 
 def glfwCreateWindow(width=640, height=480, title="GLFW Window",
                      monitor=None, share=None):
@@ -504,12 +505,12 @@ def glfwCreateWindow(width=640, height=480, title="GLFW Window",
 def glfwDestroyWindow(window):
     index = __windows__.index(window)
     if not __destroyed__[index]:
-        __destroyed__[index] = True
         # We do not delete window from the list (or it would impact numbering)
         __windows__[index] = None
         _glfw.glfwDestroyWindow(window)
         del __c_callbacks__[index]
         del __py_callbacks__[index]
+    __destroyed__[index] = True
 
 
 def glfwGetWindowPos(window):
@@ -639,3 +640,10 @@ exec(__callback__('Char'))
 exec(__callback__('MouseButton'))
 exec(__callback__('CursorPos'))
 exec(__callback__('Scroll'))
+
+
+# Error callback does not take window parameter
+def glfwSetErrorCallback(callback = None):
+    global __c_error_callback__
+    __c_error_callback__ = errorfun(callback)
+    _glfw.glfwSetErrorCallback(__c_error_callback__)
