@@ -284,8 +284,9 @@ class SDFRenderer(object):
             comp_texs.append(tex)
         self.fbo_to[0].color_buffer = comp_texs[0]
         self.fbo_to[1].color_buffer = comp_texs[1]
-        for program in self.programs[1:]:  # program_seed does not need this
+        for program in self.programs:
             program['u_texh'], program['u_texw'] = sdf_size
+            program['u_step'] = 1.0
 
         # Do the rendering
         last_rend = 0
