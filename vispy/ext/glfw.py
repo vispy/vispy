@@ -477,7 +477,8 @@ __c_error_callback__ = None
 def glfwCreateWindow(width=640, height=480, title="GLFW Window",
                      monitor=None, share=None):
     _glfw.glfwCreateWindow.restype = POINTER(GLFWwindow)
-    window = _glfw.glfwCreateWindow(width,height,title,monitor,share)
+    window = _glfw.glfwCreateWindow(int(width), int(height),
+                                    title.encode('utf-8'), monitor, share)
     __windows__.append(window)
     __destroyed__.append(False)
     index = __windows__.index(window)
