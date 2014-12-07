@@ -8,7 +8,7 @@ inputhooks built-in to the Python interpreter, and supports IPython too. The
 underlying inputhook implementation is from IPython 3.x.
 """
 
-from ..ext.inputhook import inputhook_manager, InputHookBase, stdin_ready
+from ..ext.ipy_inputhook import inputhook_manager, InputHookBase, stdin_ready
 
 from time import sleep
 from ..util.ptime import time

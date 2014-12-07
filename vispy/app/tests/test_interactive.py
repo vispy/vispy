@@ -2,7 +2,7 @@ from nose.tools import assert_equal, assert_true, assert_false, assert_raises
 from vispy.testing import assert_in, run_tests_if_main
 
 from vispy.app import set_interactive
-from vispy.ext.inputhook import inputhook_manager
+from vispy.ext.ipy_inputhook import inputhook_manager
 
 
 # Expect the inputhook_manager to set boolean `_in_event_loop`
