@@ -4,6 +4,13 @@ Inputhook management for GUI event loop integration.
 """
 
 #-----------------------------------------------------------------------------
+# Source:
+#   https://github.com/ipython/ipython/commits/master/IPython/lib/inputhook.py
+# Revision:
+#   29a0deb452d4fa7f59edb7e059c1a46ceb5a124d
+# Modifications:
+#   Removed dependencies and other backends for VisPy.
+#-----------------------------------------------------------------------------
 #  Copyright (C) 2008-2011  The IPython Development Team
 #
 #  Distributed under the terms of the BSD License.  The full license is in

@@ -8,11 +8,10 @@ inputhooks built-in to the Python interpreter, and supports IPython too. The
 underlying inputhook implementation is from IPython 3.x.
 """
 
-import time
-from timeit import default_timer as clock
 from ..ext.inputhook import inputhook_manager, InputHookBase, stdin_ready
 
-import vispy.app
+from time import sleep
+from ..util.ptime import time
 
 
 def set_interactive(enabled=True, app=None):
@@ -46,23 +45,24 @@ class VisPyInputHook(InputHookBase):
         IPython.
         """
 
-        self.app = app or vispy.app.use_app()
+        from .. import app as _app
+        self.app = app or _app.use_app()
         self.manager.set_inputhook(self._vispy_inputhook)
         return app
 
     def _vispy_inputhook(self):
         try:
-            t = clock()
+            t = time()
             while not stdin_ready():
                 self.app.process_events()
 
-                used_time = clock() - t
+                used_time = time() - t
                 if used_time > 10.0:
-                    time.sleep(1.0)
+                    sleep(1.0)
                 elif used_time > 0.1:
-                    time.sleep(0.05)
+                    sleep(0.05)
                 else:
-                    time.sleep(0.001)
+                    sleep(0.001)
         except KeyboardInterrupt:
             pass
         return 0
