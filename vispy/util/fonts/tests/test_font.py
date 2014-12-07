@@ -30,7 +30,7 @@ def test_font_glyph():
         font_dict = dict(face=face, size=12, bold=False, italic=False)
         glyphs_dict = dict()
         chars = 'foobar^C&#'
-        if face != 'OpenSans' and os.getenv('APPVEYOR', '') == 'true':
+        if face != 'OpenSans' and os.getenv('APPVEYOR', '').lower() == 'true':
             continue  # strange system font failure
         for char in chars:
             # Warning that Arial might not exist

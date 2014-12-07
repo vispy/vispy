@@ -28,7 +28,8 @@ def test_context_properties():
     for context in contexts:
         n_items = len(context)
         with Canvas(context=context):
-            if 'true' in (os.getenv('TRAVIS', ''), os.getenv('APPVEYOR', '')):
+            if 'true' in (os.getenv('TRAVIS', ''),
+                          os.getenv('APPVEYOR', '').lower()):
                 # Travis and Appveyor cannot handle obtaining these values
                 props = context
             else:

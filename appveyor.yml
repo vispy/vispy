@@ -22,7 +22,6 @@ install:
   - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
   # Use MESA and skip an incompatible test
   - "SET VISPY_GL_LIB=%CD%\\opengl32.dll"
-  - "SET APPVEYOR=true"
 
   # Install the dependencies of the project.
   - "conda install --yes --quiet numpy scipy matplotlib setuptools flake8 pyqt nose coverage"
