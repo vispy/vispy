@@ -28,8 +28,9 @@ def test_context_properties():
     for context in contexts:
         n_items = len(context)
         with Canvas(context=context):
-            if os.getenv('TRAVIS', 'false') == 'true':
-                # Travis cannot handle obtaining these values
+            if os.getenv('TRAVIS', 'false') == 'true' or \
+                    os.getenv('APPVEYOR', 'false') == 'true':
+                # Travis and Appveyor cannot handle obtaining these values
                 props = context
             else:
                 props = get_gl_configuration()
