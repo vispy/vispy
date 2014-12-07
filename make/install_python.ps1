@@ -3,7 +3,7 @@
 # License: CC0 1.0 Universal: http://creativecommons.org/publicdomain/zero/1.0/
 
 $MINICONDA_URL = "http://repo.continuum.io/miniconda/"
-$MESA_GL_URL = "http://faculty.washington.edu/larsoner/opengl32_mingw_x86_64.dll"
+$MESA_GL_URL = "https://github.com/vispy/demo-data/raw/master/mesa/opengl32_mingw_x86_64.dll"
 
 # Mesa x86_64 found linked from:
 #     http://qt-project.org/wiki/Cross-compiling-Mesa-for-Windows
