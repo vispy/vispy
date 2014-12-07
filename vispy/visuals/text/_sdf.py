@@ -14,6 +14,18 @@ from ...gloo import (Program, FrameBuffer, VertexBuffer, Texture2D,
 
 this_dir = op.dirname(__file__)
 
+vert_seed = """
+attribute vec2 a_position;
+attribute vec2 a_texcoord;
+varying vec2 v_uv;
+
+void main( void )
+{
+  v_uv = a_texcoord.xy;
+  gl_Position = vec4(a_position.xy, 0., 1.);
+}
+"""
+
 vert = """
 uniform float u_texw;
 uniform float u_texh;
@@ -219,7 +231,7 @@ void main( void )
 
 class SDFRenderer(object):
     def __init__(self):
-        self.program_seed = Program(vert, frag_seed)
+        self.program_seed = Program(vert_seed, frag_seed)
         self.program_flood = Program(vert, frag_flood)
         self.program_insert = Program(vert, frag_insert)
         self.programs = [self.program_seed, self.program_flood,
@@ -284,9 +296,8 @@ class SDFRenderer(object):
             comp_texs.append(tex)
         self.fbo_to[0].color_buffer = comp_texs[0]
         self.fbo_to[1].color_buffer = comp_texs[1]
-        for program in self.programs:
+        for program in self.programs[1:]:  # program_seed does not need this
             program['u_texh'], program['u_texw'] = sdf_size
-            program['u_step'] = 1.0
 
         # Do the rendering
         last_rend = 0
