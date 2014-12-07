@@ -278,10 +278,13 @@ def _examples():
         stdout, stderr, retcode = run_subprocess(cmd, return_code=True,
                                                  cwd=cwd, env=os.environ)
         if retcode or len(stderr.strip()) > 0:
-            ext = '\n' + _line_sep + '\n'
-            fails.append('%sExample %s failed (%s):%s%s%s'
-                         % (ext, root_name, retcode, ext, stderr, ext))
-            print(fails[-1])
+            if "ImportError: No module named" in stderr:
+                print('S', end='')
+            else:
+                ext = '\n' + _line_sep + '\n'
+                fails.append('%sExample %s failed (%s):%s%s%s'
+                             % (ext, root_name, retcode, ext, stderr, ext))
+                print(fails[-1])
         else:
             print('.', end='')
         sys.stdout.flush()

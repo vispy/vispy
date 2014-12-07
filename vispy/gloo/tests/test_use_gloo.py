@@ -8,7 +8,7 @@ from numpy.testing import assert_allclose
 from nose.tools import assert_raises, assert_equal
 
 from vispy.app import Canvas
-from vispy.gloo import (Texture2D, Texture3D, Program, FrameBuffer, 
+from vispy.gloo import (Texture2D, Texture3D, Program, FrameBuffer,
                         RenderBuffer, set_viewport, clear)
 from vispy.gloo.util import draw_texture, _screenshot
 from vispy.gloo.context import get_current_glir_queue
@@ -68,9 +68,6 @@ def test_use_texture3D():
     vals = [0, 200, 100, 0, 255, 0, 100]
     d, h, w = len(vals), 3, 5
     data = np.zeros((d, h, w), np.float32)
-    if not has_pyopengl():
-        assert_raises(ImportError, Texture3D, data)
-        return
 
     VERT_SHADER = """
     attribute vec2 a_pos;
@@ -97,7 +94,11 @@ def test_use_texture3D():
     # populate the depth "slices" with different gray colors in the bottom left
     for ii, val in enumerate(vals):
         data[ii, :2, :3] = val / 255.
-    with Canvas(size=(100, 100)):
+    with Canvas(size=(100, 100)) as c:
+        if not has_pyopengl():
+            Texture3D(data)
+            assert_raises(ImportError, c.glir.flush)
+            return
         program = Program(VERT_SHADER, FRAG_SHADER)
         program['a_pos'] = [[-1., -1.], [1., -1.], [-1., 1.], [1., 1.]]
         tex = Texture3D(data, interpolation='nearest')
