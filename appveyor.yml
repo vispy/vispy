@@ -25,7 +25,7 @@ install:
   - "SET APPVEYOR=true"
 
   # Install the dependencies of the project.
-  - "conda install --yes --quiet numpy scipy matplotlib setuptools flake8 pyqt nose"
+  - "conda install --yes --quiet numpy scipy matplotlib setuptools flake8 pyqt nose coverage"
   - "python setup.py develop"
 
 build: false  # Not a C# project, build stuff at the test step instead.
