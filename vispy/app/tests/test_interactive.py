@@ -1,4 +1,4 @@
-from nose.tools import assert_equal, assert_true, assert_false, assert_raises
+from nose.tools import assert_equal, assert_true, assert_false
 from vispy.testing import assert_in, run_tests_if_main
 
 from vispy.app import set_interactive
