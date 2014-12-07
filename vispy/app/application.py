@@ -11,13 +11,13 @@ from __future__ import division
 
 import os
 import sys
-import six
 
 from . import backends, inputhook
 from .backends import CORE_BACKENDS, BACKEND_NAMES, BACKENDMAP, TRIED_BACKENDS
 from .. import config
 from .base import BaseApplicationBackend as ApplicationBackend  # noqa
 from ..util import logger
+from ..ext import six
 
 
 class Application(object):
