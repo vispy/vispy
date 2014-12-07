@@ -249,9 +249,9 @@ class CanvasBackend(BaseCanvasBackend):
                                      % len(monitor))
                 monitor = monitor[fs]
             use_size = glfw.glfwGetVideoMode(monitor)[:2]
-            if use_size != size:
-                logger.warning('Requested size %s, will be ignored to '
-                               'use fullscreen mode %s' % (size, use_size))
+            if use_size != tuple(size):
+                logger.debug('Requested size %s, will be ignored to '
+                             'use fullscreen mode %s' % (size, use_size))
             size = use_size
         else:
             self._fullscreen = False
