@@ -502,7 +502,7 @@ _marker_dict = {
     '->': tailed_arrow,
     '>': arrow,
     '^': triangle_up,
-    '~^': triangle_down,
+    'v': triangle_down,
     '*': star
 }
 marker_types = tuple(sorted(list(_marker_dict.keys())))
