@@ -278,6 +278,7 @@ def _examples():
         stdout, stderr, retcode = run_subprocess(cmd, return_code=True,
                                                  cwd=cwd, env=os.environ)
         if retcode or len(stderr.strip()) > 0:
+            # Skipping due to missing dependency is okay
             if "ImportError: No module named" in stderr:
                 print('S', end='')
             else:
