@@ -37,15 +37,7 @@ void main (void) {
     v_fg_color  = a_fg_color;
     v_bg_color  = a_bg_color;
     gl_Position = $transform(vec4(a_position,1.0));
-    float edgewidth;
-    if (v_edgewidth < 1.)
-    {
-        edgewidth = 1.;
-    }
-    else
-    {
-        edgewidth = v_edgewidth;
-    }
+    float edgewidth = max(v_edgewidth, 1.0);
     gl_PointSize = $scalarsize($v_size) + 4*(edgewidth + 1.5*v_antialias);
 }
 """
@@ -59,18 +51,9 @@ varying float v_antialias;
 
 void main()
 {
-    float edgewidth;
-    float edgealphafactor;
-    if (v_edgewidth < 1.)
-    {
-        edgealphafactor = v_edgewidth;
-        edgewidth = 1.;
-    }
-    else
-    {
-        edgealphafactor = 1.;
-        edgewidth = v_edgewidth;
-    }
+    float edgewidth = max(v_edgewidth, 1.0);
+    float edgealphafactor = min(v_edgewidth, 1.0);
+
     float size = $scalarsize($v_size) + 4*(edgewidth + 1.5*v_antialias);
     // factor 6 for acute edge angles that need room as for star marker
 
