@@ -116,7 +116,7 @@ function InstallMinicondaPip ($python_home) {
 
 
 function main () {
-    DownloadMesaOpenGL $env:$PYTHON_ARCH
+    DownloadMesaOpenGL $env:PYTHON_ARCH
     InstallMiniconda $env:PYTHON_VERSION $env:PYTHON_ARCH $env:PYTHON
     InstallMinicondaPip $env:PYTHON
 }
