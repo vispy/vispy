@@ -73,7 +73,7 @@ version = glfwGetVersion()
 
 if version[0] != 3:
     version = '.'.join([str(v) for v in version])
-    raise OSError('Need GLFW v3, found %s' % version)
+    raise OSError('Need GLFW library version 3, found version %s' % version)
 
 
 # --- Version -----------------------------------------------------------------
@@ -462,6 +462,7 @@ glfwExtensionSupported         = _glfw.glfwExtensionSupported
 glfwGetProcAddress             = _glfw.glfwGetProcAddress
 
 
+
 # --- Pythonizer --------------------------------------------------------------
 
 # This keeps track of current windows
@@ -471,14 +472,13 @@ __destroyed__ = []
 # This is to prevent garbage collection on callbacks
 __c_callbacks__ = {}
 __py_callbacks__ = {}
-
+__c_error_callback__ = None
 
 def glfwCreateWindow(width=640, height=480, title="GLFW Window",
                      monitor=None, share=None):
     _glfw.glfwCreateWindow.restype = POINTER(GLFWwindow)
     window = _glfw.glfwCreateWindow(int(width), int(height),
-                                    title.encode('ASCII'), monitor, share)
-    assert window not in __windows__
+                                    title.encode('utf-8'), monitor, share)
     __windows__.append(window)
     __destroyed__.append(False)
     index = __windows__.index(window)
@@ -504,12 +504,12 @@ def glfwCreateWindow(width=640, height=480, title="GLFW Window",
 def glfwDestroyWindow(window):
     index = __windows__.index(window)
     if not __destroyed__[index]:
-        __destroyed__[index] = True
         # We do not delete window from the list (or it would impact numbering)
         __windows__[index] = None
         _glfw.glfwDestroyWindow(window)
         del __c_callbacks__[index]
         del __py_callbacks__[index]
+    __destroyed__[index] = True
 
 
 def glfwGetWindowPos(window):
@@ -572,13 +572,13 @@ def glfwGetMonitorPhysicalSize(monitor):
 
 def glfwGetVideoMode(monitor):
     _glfw.glfwGetVideoMode.restype = POINTER(GLFWvidmode)
-    c_modes = _glfw.glfwGetVideoModes(monitor)
-    return (c_modes.width,
-            c_modes.height,
-            c_modes.redBits,
-            c_modes.blueBits,
-            c_modes.greenBits,
-            c_modes.refreshRate )
+    c_mode = _glfw.glfwGetVideoMode(monitor).contents
+    return (c_mode.width,
+            c_mode.height,
+            c_mode.redBits,
+            c_mode.blueBits,
+            c_mode.greenBits,
+            c_mode.refreshRate )
 
 
 def GetGammaRamp(monitor):
@@ -625,7 +625,6 @@ def %(callback)s(window, callback = None):
     return old_callback""" % {'callback': callback, 'fun': fun}
     return code
 
-exec(__callback__('Error'))
 exec(__callback__('Monitor'))
 exec(__callback__('WindowPos'))
 exec(__callback__('WindowSize'))
@@ -639,3 +638,10 @@ exec(__callback__('Char'))
 exec(__callback__('MouseButton'))
 exec(__callback__('CursorPos'))
 exec(__callback__('Scroll'))
+
+
+# Error callback does not take window parameter
+def glfwSetErrorCallback(callback = None):
+    global __c_error_callback__
+    __c_error_callback__ = errorfun(callback)
+    _glfw.glfwSetErrorCallback(__c_error_callback__)
