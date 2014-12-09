@@ -5,6 +5,7 @@ language: python
 # it for 2.7, but the Ubuntu system has installable 2.7 Qt4-GL, which
 # allows for more complete testing.
 
+# Size testing can be skipped by adding "[size skip]" within a commit message.
 
 virtualenv:
     system_site_packages: true
@@ -55,14 +56,15 @@ before_install:
         cd ~;
         mkdir target-size-clone && cd target-size-clone;
         git init &> ${REDIRECT_TO} && git remote add -t ${TRAVIS_BRANCH} origin git://github.com/${TRAVIS_REPO_SLUG}.git &>${REDIRECT_TO};
-        git fetch origin ${GIT_TARGET_EXTRA} &> ${REDIRECT_TO} && git checkout -qf FETCH_HEAD &> ${REDIRECT_TO} && cd ..;
-        TARGET_SIZE=`du -s target-size-clone | sed -e "s/\t.*//"`;
-        mkdir source-size-clone && cd source-size-clone;
-        git init &> ${REDIRECT_TO} && git remote add -t ${TRAVIS_BRANCH} origin git://github.com/${TRAVIS_REPO_SLUG}.git &> ${REDIRECT_TO};
-        git fetch origin ${GIT_SOURCE_EXTRA} &> ${REDIRECT_TO} && git checkout -qf FETCH_HEAD &> ${REDIRECT_TO} && cd ..;
-        SOURCE_SIZE=`du -s source-size-clone | sed -e "s/\t.*//"`;
-        if [ "${SOURCE_SIZE}" != "${TARGET_SIZE}" ]; then
-          SIZE_DIFF=`expr ${SOURCE_SIZE} - ${TARGET_SIZE}`;
+        git fetch origin ${GIT_TARGET_EXTRA} &> ${REDIRECT_TO} && git checkout -qf FETCH_HEAD &> ${REDIRECT_TO};
+        git tag travis-merge-target &> ${REDIRECT_TO};
+        git gc --aggressive &> ${REDIRECT_TO};
+        TARGET_SIZE=`du -s . | sed -e "s/\t.*//"`;
+        git pull origin ${GIT_SOURCE_EXTRA} &> ${REDIRECT_TO};
+        git gc --aggressive &> ${REDIRECT_TO};
+        MERGE_SIZE=`du -s . | sed -e "s/\t.*//"`;
+        if [ "${MERGE_SIZE}" != "${TARGET_SIZE}" ]; then
+          SIZE_DIFF=`expr \( ${MERGE_SIZE} - ${TARGET_SIZE} \)`;
         else
           SIZE_DIFF=0;
         fi;
@@ -182,7 +184,11 @@ script:
     # Each line must be run in a separate line to ensure exit code accuracy
     - if [ "${TEST}" == "extra" ]; then
         echo "Size difference ${SIZE_DIFF} kB";
-        test ${SIZE_DIFF} -lt 100;
+        if git log --format=%B -n 2 | grep -q "\[size skip\]"; then
+          echo "Skipping size test";
+        else
+          test ${SIZE_DIFF} -lt 100;
+        fi;
       fi;
 
 
