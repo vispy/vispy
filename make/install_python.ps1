@@ -15,7 +15,7 @@ function DownloadMesaOpenGL ($architecture) {
     $basedir = $pwd.Path + "\"
     $filepath = $basedir + "opengl32.dll"
     # Download and retry up to 3 times in case of network transient errors.
-    $url = $MESA_GL_URL + "opengl32_mingw_" + $architecture + ".dll"
+    $url = $MESA_GL_URL + "opengl32_mingw_64.dll"
     Write-Host "Downloading" $url
     $retry_attempts = 2
     for($i=0; $i -lt $retry_attempts; $i++){
