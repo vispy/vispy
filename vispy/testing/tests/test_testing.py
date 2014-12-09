@@ -3,9 +3,8 @@
 # Copyright (c) 2014, Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
-from nose.tools import assert_raises
 from vispy.testing import (assert_in, assert_not_in, assert_is,
-                           run_tests_if_main)
+                           run_tests_if_main, assert_raises)
 
 
 def test_testing():

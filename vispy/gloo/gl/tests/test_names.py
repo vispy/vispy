@@ -2,7 +2,6 @@
 backends, and no more than that.
 """
 
-from nose.tools import assert_equal
 from vispy.testing import requires_pyopengl
 
 from vispy.gloo import gl
@@ -23,14 +22,14 @@ class _DummyObject:
 
 def _test_function_names(mod):
     fnames = set([name for name in dir(mod) if name.startswith('gl')])
-    assert_equal(function_names.difference(fnames), set())
-    assert_equal(fnames.difference(function_names), set())
+    assert function_names.difference(fnames) == set()
+    assert fnames.difference(function_names) == set()
 
 
 def _test_constant_names(mod):
     cnames = set([name for name in dir(mod) if name.startswith('GL')])
-    assert_equal(constant_names.difference(cnames), set())
-    assert_equal(cnames.difference(constant_names), set())
+    assert constant_names.difference(cnames) == set()
+    assert cnames.difference(constant_names) == set()
 
 
 def test_destop():

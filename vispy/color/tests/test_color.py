@@ -3,7 +3,6 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 import numpy as np
-from nose.tools import assert_equal, assert_raises, assert_true
 from numpy.testing import assert_array_equal, assert_allclose
 
 from vispy.color import (Color, ColorArray, get_color_names,
@@ -11,7 +10,8 @@ from vispy.color import (Color, ColorArray, get_color_names,
                          get_color_dict, get_colormap, get_colormaps)
 from vispy.visuals.shaders import Function
 from vispy.util import use_log_level
-from vispy.testing import run_tests_if_main
+from vispy.testing import (run_tests_if_main, assert_equal, assert_raises,
+                           assert_true)
 
 
 def test_color():

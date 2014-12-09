@@ -12,18 +12,16 @@ and each quadrant is drawn a different color (black, red, green,
 blue). The drawing is done for 50% using attribute data, and 50%
 using a texture. The end result should be fully saturated colors.
 
-Remember: the bottom left is (-1, -1) and the first quadrant. 
-
+Remember: the bottom left is (-1, -1) and the first quadrant.
 """
 import sys
 
 import numpy as np
 
-from nose.tools import assert_equal, assert_true
 from vispy.app import Canvas
-from numpy.testing import assert_almost_equal  # noqa
 from vispy.testing import (requires_application, requires_pyopengl, SkipTest,
-                           glut_skip, run_tests_if_main)
+                           glut_skip, run_tests_if_main, assert_equal,
+                           assert_true)
 
 from vispy.gloo import gl
 

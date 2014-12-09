@@ -30,12 +30,10 @@ in: inplace # just a shortcut
 inplace:
 	python setup.py build_ext -i
 
-nosetests: nose # alias
-
 # Test conditions, don't "clean-so" or builds won't work!
 
-nose: clean-test
-	python make test nose
+pytest: clean-test
+	python make test pytest
 
 examples: clean-test
 	python make test examples

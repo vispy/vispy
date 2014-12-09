@@ -5,10 +5,9 @@
 including configuration options.
 """
 
-from nose.tools import assert_raises, assert_equal, assert_not_equal
-
 import vispy.app
-from vispy.testing import requires_application, run_tests_if_main
+from vispy.testing import (requires_application, run_tests_if_main,
+                           assert_raises, assert_equal, assert_not_equal)
 
 
 @requires_application('pyside')

@@ -5,13 +5,14 @@
 # -----------------------------------------------------------------------------
 import numpy as np
 from numpy.testing import assert_allclose
-from nose.tools import assert_raises, assert_equal
 
 from vispy.app import Canvas
 from vispy.gloo import (Texture2D, Texture3D, Program, FrameBuffer,
                         RenderBuffer, set_viewport, clear)
 from vispy.gloo.util import draw_texture, _screenshot
-from vispy.testing import requires_application, has_pyopengl, run_tests_if_main
+from vispy.testing import (requires_application, has_pyopengl,
+                           run_tests_if_main,
+                           assert_raises, assert_equal)
 
 
 @requires_application()

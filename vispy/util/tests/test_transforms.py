@@ -2,13 +2,12 @@
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 import numpy as np
-from nose.tools import assert_equal
 from numpy.testing import assert_allclose
 
 from vispy.util.transforms import (translate, scale, xrotate, yrotate,
                                    zrotate, rotate, ortho, frustum,
                                    perspective)
-from vispy.testing import run_tests_if_main
+from vispy.testing import run_tests_if_main, assert_equal
 
 
 def test_transforms():

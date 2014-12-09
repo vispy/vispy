@@ -9,9 +9,8 @@ in any more vispy submodules than strictly necessary.
 import sys
 import os
 
-from nose.tools import assert_equal
 from vispy.testing import (assert_in, assert_not_in, requires_pyopengl,
-                           run_tests_if_main)
+                           run_tests_if_main, assert_equal)
 from vispy.util import run_subprocess
 import vispy
 

@@ -2,8 +2,8 @@
 
 import gc
 
-from nose.tools import assert_raises, assert_equal, assert_not_equal
-from vispy.testing import assert_in, run_tests_if_main
+from vispy.testing import (assert_in, run_tests_if_main, assert_raises,
+                           assert_equal, assert_not_equal)
 
 from vispy.gloo import (GLContext, get_default_config)
 

@@ -5,12 +5,12 @@
 # -----------------------------------------------------------------------------
 import numpy as np
 from numpy.testing import assert_array_equal, assert_allclose
-from nose.tools import assert_true, assert_equal, assert_raises
 
 from vispy import gloo
 from vispy.gloo import gl
 from vispy.app import Canvas
-from vispy.testing import requires_application, run_tests_if_main
+from vispy.testing import (requires_application, run_tests_if_main,
+                           assert_true, assert_equal, assert_raises)
 from vispy.gloo import read_pixels
 from vispy.gloo.glir import GlirQueue
 from vispy.gloo import wrappers

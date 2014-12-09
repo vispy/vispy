@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
-from nose.tools import assert_raises, assert_equal
 import unittest
 import copy
 import functools
 
 from vispy.util.event import Event, EventEmitter
-from vispy.testing import run_tests_if_main
+from vispy.testing import run_tests_if_main, assert_raises, assert_equal
 
 
 class BasicEvent(Event):

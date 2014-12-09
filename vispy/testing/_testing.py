@@ -11,14 +11,6 @@ import sys
 import os
 import inspect
 import base64
-try:
-    from nose.tools import nottest, assert_equal, assert_true
-except ImportError:
-    assert_equal = assert_true = None
-
-    class nottest(object):
-        def __init__(self, *args):
-            pass  # Avoid "object() takes no parameters"
 
 from distutils.version import LooseVersion
 
@@ -28,7 +20,7 @@ from ..ext.six import string_types
 from ..util import use_log_level, run_subprocess, get_testing_file
 
 ###############################################################################
-# Adapted from Python's unittest2 (which is wrapped by nose)
+# Adapted from Python's unittest2
 # http://docs.python.org/2/license.html
 
 try:
@@ -72,8 +64,15 @@ def _format_msg(msg, std_msg):
     return msg
 
 
+def nottest(func):
+    """Decorator to mark a function or method as *not* a test
+    """
+    func.__test__ = False
+    return func
+
+
 def assert_in(member, container, msg=None):
-    """Backport for old nose.tools"""
+    """Backport"""
     if member in container:
         return
     std_msg = '%s not found in %s' % (_safe_rep(member), _safe_rep(container))
@@ -81,8 +80,26 @@ def assert_in(member, container, msg=None):
     raise AssertionError(msg)
 
 
+def assert_true(x, msg=None):
+    """Backport"""
+    if x:
+        return
+    std_msg = '%s is not True' % (_safe_rep(x),)
+    msg = _format_msg(msg, std_msg)
+    raise AssertionError(msg)
+
+
+def assert_equal(x, y, msg=None):
+    """Backport"""
+    if x == y:
+        return
+    std_msg = '%s not equal to %s' % (_safe_rep(x), _safe_rep(y))
+    msg = _format_msg(msg, std_msg)
+    raise AssertionError(msg)
+
+
 def assert_not_in(member, container, msg=None):
-    """Backport for old nose.tools"""
+    """Backport"""
     if member not in container:
         return
     std_msg = '%s found in %s' % (_safe_rep(member), _safe_rep(container))
@@ -91,7 +108,7 @@ def assert_not_in(member, container, msg=None):
 
 
 def assert_is(expr1, expr2, msg=None):
-    """Backport for old nose.tools"""
+    """Backport"""
     if expr1 is not expr2:
         std_msg = '%s is not %s' % (_safe_rep(expr1), _safe_rep(expr2))
         raise AssertionError(_format_msg(msg, std_msg))
@@ -165,21 +182,24 @@ def has_application(backend=None, has=(), capable=()):
     return good, msg
 
 
+def composed(*decs):
+    def deco(f):
+        for dec in reversed(decs):
+            f = dec(f)
+        return f
+    return deco
+
+
 def requires_application(backend=None, has=(), capable=()):
     """Return a decorator for tests that require an application"""
     good, msg = has_application(backend, has, capable)
-
-    def skip_decorator(f):
-        import nose
-        f.vispy_app_test = True  # set attribute for easy run or not
-
-        def skipper(*args, **kwargs):
-            if not good:
-                raise SkipTest("Skipping test: %s: %s" % (f.__name__, msg))
-            else:
-                return f(*args, **kwargs)
-        return nose.tools.make_decorator(f)(skipper)
-    return skip_decorator
+    dec_backend = np.testing.dec.skipif(not good, "Skipping test: %s" % msg)
+    try:
+        import pytest
+    except Exception:
+        return dec_backend
+    dec_app = pytest.mark.vispy_app_test
+    return composed(dec_app, dec_backend)
 
 
 def glut_skip():
@@ -354,30 +374,23 @@ def save_testing_image(image, location):
 
 
 @nottest
-def run_tests_if_main(nose=False):
+def run_tests_if_main():
     """Run tests in a given file if it is run as a script"""
     local_vars = inspect.currentframe().f_back.f_locals
     if not local_vars.get('__name__', '') == '__main__':
         return
     # we are in a "__main__"
     fname = local_vars['__file__']
-    if nose:
-        # Run using nose. More similar to normal test
-        if not os.path.isfile(fname):
-            raise IOError('Could not find file "%s"' % fname)
-        from ._runners import _nose
-        _nose('singlefile', fname + ' --verbosity=2')
-    else:
-        # Run ourselves. post-mortem debugging!
-        try:
-            import faulthandler
-            faulthandler.enable()
-        except Exception:
-            pass
-        import __main__
-        print('==== Running tests in script\n==== %s' % fname)
-        run_tests_in_object(__main__)
-        print('==== Tests pass')
+    # Run ourselves. post-mortem debugging!
+    try:
+        import faulthandler
+        faulthandler.enable()
+    except Exception:
+        pass
+    import __main__
+    print('==== Running tests in script\n==== %s' % fname)
+    run_tests_in_object(__main__)
+    print('==== Tests pass')
 
 
 def run_tests_in_object(ob):
