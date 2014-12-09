@@ -279,7 +279,7 @@ def _examples():
                                                  cwd=cwd, env=os.environ)
         if retcode or len(stderr.strip()) > 0:
             # Skipping due to missing dependency is okay
-            if "ImportError: No module named" in stderr:
+            if "ImportError: " in stderr:
                 print('S', end='')
             else:
                 ext = '\n' + _line_sep + '\n'
