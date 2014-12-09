@@ -8,6 +8,10 @@ environment:
       PYTHON_VERSION: "3.4"
       PYTHON_ARCH: "64"
 
+    - PYTHON: "C:\\Python27-conda32"
+      PYTHON_VERSION: "2.7"
+      PYTHON_ARCH: "32"
+
 install:
   # Install miniconda Python
   - "powershell ./make/install_python.ps1"

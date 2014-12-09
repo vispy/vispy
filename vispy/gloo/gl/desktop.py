@@ -21,7 +21,10 @@ from ._constants import *  # noqa
 _have_get_proc_address = False
 _lib = os.getenv('VISPY_GL_LIB', '')
 if _lib != '':
-    _lib = ctypes.cdll.LoadLibrary(_lib)
+    if sys.platform.startswith('win'):
+        _lib = ctypes.windll.LoadLibrary(_lib)
+    else:
+        _lib = ctypes.cdll.LoadLibrary(_lib)
 elif sys.platform.startswith('win'):
     # Windows
     _lib = ctypes.windll.opengl32
