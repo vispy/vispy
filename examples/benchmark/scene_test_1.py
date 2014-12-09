@@ -11,11 +11,10 @@ provided by scenegraph.
 import numpy as np
 import math
 
-from vispy import gloo, app, keys, scene
+from vispy import gloo, app, scene
 from vispy.visuals import Visual
 from vispy.visuals.shaders import ModularProgram, Function, Variable
 from vispy.visuals.transforms import TransformSystem, BaseTransform
-from vispy.visuals.shaders import Variable
 
 
 class PanZoomTransform(BaseTransform):
@@ -181,8 +180,6 @@ class PanZoomCanvas(app.Canvas):
             visual.draw(self._tr)
 
 
-
-
 X_TRANSFORM = """
 float get_x(float x_index) {
     // 'x_index' is between 0 and nsamples.
@@ -206,6 +203,7 @@ vec3 get_color(float index) {
     return texture2D($colormap, vec2(x, .5)).rgb;
 }
 """
+
 
 class SignalsVisual(Visual):
     VERTEX_SHADER = """
@@ -241,7 +239,8 @@ class SignalsVisual(Visual):
     def __init__(self, data):
         super(SignalsVisual, self).__init__()
 
-        self._program = ModularProgram(self.VERTEX_SHADER, self.FRAGMENT_SHADER)
+        self._program = ModularProgram(self.VERTEX_SHADER,
+                                       self.FRAGMENT_SHADER)
 
         nsignals, nsamples = data.shape
         # nsamples, nsignals = data.shape
@@ -249,8 +248,8 @@ class SignalsVisual(Visual):
         self._data = data
 
         a_index = np.c_[np.repeat(np.arange(nsignals), nsamples),
-                    np.tile(np.arange(nsamples), nsignals)] \
-                    .astype(np.float32)
+                        np.tile(np.arange(nsamples), nsignals)
+                        ].astype(np.float32)
 
         # Doesn't seem to work nor to be very efficient.
         # indices = nsignals * np.arange(nsamples)
@@ -273,8 +272,8 @@ class SignalsVisual(Visual):
         self._y_transform = y_transform
 
         colormap = Function(DISCRETE_CMAP)
-        cmap = np.random.uniform(size=(1, nsignals, 3), low=.5, high=.9) \
-               .astype(np.float32)
+        cmap = np.random.uniform(size=(1, nsignals, 3), 
+                                 low=.5, high=.9).astype(np.float32)
         tex = gloo.Texture2D((cmap * 255).astype(np.uint8))
         colormap['colormap'] = Variable('uniform sampler2D u_colormap', tex)
         colormap['ncolors'] = nsignals
@@ -321,20 +320,22 @@ class Signals(SignalsVisual, scene.visuals.Node):
         v_index = a_index;
     }
     """
+    
     def draw(self, transform_system):
-        self._program.vert['transform'] = transform_system.get_full_transform()#.simplified()
+        self._program.vert['transform'] = transform_system.get_full_transform()
         self._program.draw('line_strip')
     
 
-
 if __name__ == '__main__':
-    data = np.random.normal(size=(128,1000)).astype(np.float32)
+    data = np.random.normal(size=(128, 1000)).astype(np.float32)
     
-    pzcanvas = PanZoomCanvas(position=(400,300), size=(800,600), title="PanZoomCanvas")
+    pzcanvas = PanZoomCanvas(position=(400, 300), size=(800, 600), 
+                             title="PanZoomCanvas")
     visual = SignalsVisual(data)
     pzcanvas.add_visual('signal', visual)
     
-    scanvas = scene.SceneCanvas(show=True, keys='interactive', title="SceneCanvas")
+    scanvas = scene.SceneCanvas(show=True, keys='interactive', 
+                                title="SceneCanvas")
     svisual = Signals(data)
     view = scanvas.central_widget.add_view()
     view.add(svisual)
@@ -342,4 +343,3 @@ if __name__ == '__main__':
     import sys
     if sys.flags.interactive != 1:
         app.run()
-    
