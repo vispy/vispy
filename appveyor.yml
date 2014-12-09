@@ -10,7 +10,7 @@ environment:
 
     - PYTHON: "C:\\Python27-conda32"
       PYTHON_VERSION: "2.7"
-      PYTHON_ARCH: "32"
+      PYTHON_ARCH: "64"
 
 install:
   # Install miniconda Python
