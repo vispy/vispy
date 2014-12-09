@@ -3,7 +3,37 @@
 # License: CC0 1.0 Universal: http://creativecommons.org/publicdomain/zero/1.0/
 
 $MINICONDA_URL = "http://repo.continuum.io/miniconda/"
-$BASE_URL = "https://www.python.org/ftp/python/"
+$MESA_GL_URL = "https://github.com/vispy/demo-data/raw/master/mesa/"
+
+# Mesa DLLs found linked from:
+#     http://qt-project.org/wiki/Cross-compiling-Mesa-for-Windows
+# to:
+#     http://sourceforge.net/projects/msys2/files/REPOS/MINGW/x86_64/mingw-w64-x86_64-mesa-10.2.4-1-any.pkg.tar.xz/download
+
+function DownloadMesaOpenGL ($architecture) {
+    $webclient = New-Object System.Net.WebClient
+    $basedir = $pwd.Path + "\"
+    $filepath = $basedir + "opengl32.dll"
+    # Download and retry up to 3 times in case of network transient errors.
+    $url = $MESA_GL_URL + "opengl32_mingw_" + $architecture + ".dll"
+    Write-Host "Downloading" $url
+    $retry_attempts = 2
+    for($i=0; $i -lt $retry_attempts; $i++){
+        try {
+            $webclient.DownloadFile($url, $filepath)
+            break
+        }
+        Catch [Exception]{
+            Start-Sleep 1
+        }
+    }
+    if (Test-Path $filepath) {
+        Write-Host "File saved at" $filepath
+    } else {
+        # Retry once to get the error message if any at the last try
+        $webclient.DownloadFile($url, $filepath)
+    }
+}
 
 
 function DownloadMiniconda ($python_version, $platform_suffix) {
@@ -33,14 +63,14 @@ function DownloadMiniconda ($python_version, $platform_suffix) {
         Catch [Exception]{
             Start-Sleep 1
         }
-   }
-   if (Test-Path $filepath) {
-       Write-Host "File saved at" $filepath
-   } else {
-       # Retry once to get the error message if any at the last try
-       $webclient.DownloadFile($url, $filepath)
-   }
-   return $filepath
+    }
+    if (Test-Path $filepath) {
+        Write-Host "File saved at" $filepath
+    } else {
+        # Retry once to get the error message if any at the last try
+        $webclient.DownloadFile($url, $filepath)
+    }
+    return $filepath
 }
 
 
@@ -86,6 +116,7 @@ function InstallMinicondaPip ($python_home) {
 
 
 function main () {
+    DownloadMesaOpenGL $env:PYTHON_ARCH
     InstallMiniconda $env:PYTHON_VERSION $env:PYTHON_ARCH $env:PYTHON
     InstallMinicondaPip $env:PYTHON
 }
