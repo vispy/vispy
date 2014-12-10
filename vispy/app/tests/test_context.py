@@ -16,7 +16,7 @@ def test_context_properties():
         return  # cannot set more than once on Pyglet
     # stereo, double buffer won't work on every sys
     configs = [dict(samples=4), dict(stencil_size=8),
-                dict(samples=4, stencil_size=8)]
+               dict(samples=4, stencil_size=8)]
     if a.backend_name.lower() != 'glfw':  # glfw *always* double-buffers
         configs.append(dict(double_buffer=False, samples=4))
         configs.append(dict(double_buffer=False))

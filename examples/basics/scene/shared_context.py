@@ -21,9 +21,9 @@ view1.set_camera('turntable', mode='perspective', up='z', distance=2,
                  azimuth=30., elevation=30.)
 
 canvas2 = scene.SceneCanvas(keys='interactive', show=True, 
-                            context=canvas1.context)
+                            shared=canvas1.context)
 view2 = canvas2.central_widget.add_view()
-view2.set_camera('panzoom')
+view2.set_camera('panzoom')  # todo: fix this after #612
 
 # Simple surface plot example
 # x, y values are not specified, so assumed to be 0:50

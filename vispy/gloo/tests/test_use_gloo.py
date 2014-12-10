@@ -91,7 +91,7 @@ def test_use_texture3D():
     with Canvas(size=(100, 100)) as c:
         if not has_pyopengl():
             Texture3D(data)
-            assert_raises(ImportError, c.glir.flush)
+            assert_raises(ImportError, c.context.flush_commands)
             return
         program = Program(VERT_SHADER, FRAG_SHADER)
         program['a_pos'] = [[-1., -1.], [1., -1.], [-1., 1.], [1., 1.]]

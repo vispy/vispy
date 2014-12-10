@@ -11,7 +11,7 @@ from time import sleep
 from ..util.event import EmitterGroup, Event, WarningEmitter
 from ..util.ptime import time
 from ..util.dpi import get_dpi
-from ..util import config
+from ..util import config as util_config
 from ..ext.six import string_types
 from . import Application, use_app
 from ..gloo.context import (GLContext, set_current_canvas, forget_canvas)
@@ -102,8 +102,8 @@ class Canvas(object):
         self._backend = None
         self._closed = False
         
-        if dpi is None and isinstance(config, dict):
-            dpi = config.get('dpi', None)
+        if dpi is None:
+            dpi = util_config['dpi']
         if dpi is None:
             dpi = get_dpi()
         self.dpi = dpi
