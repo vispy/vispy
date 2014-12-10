@@ -28,7 +28,7 @@ install:
   - "SET VISPY_GL_LIB=%CD%\\opengl32.dll"
 
   # Install the dependencies of the project.
-  - "conda install --yes --quiet numpy scipy matplotlib setuptools flake8 pyqt pytest coverage"
+  - "conda install --yes --quiet numpy scipy matplotlib setuptools flake8 pyqt nose pytest coverage"
   - "pip install -q pytest-cov"
   - "python setup.py develop"
 

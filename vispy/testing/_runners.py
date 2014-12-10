@@ -72,7 +72,6 @@ def _pytest(mode, extra_arg_string):
                              '--no-cov-on-fail')
     # make a call to "python" so that it inherits whatever the system
     # thinks is "python" (e.g., virtualenvs)
-    print(_pytest_script % extra_arg_string)
     cmd = [sys.executable, '-c', _pytest_script % extra_arg_string]
     env = deepcopy(os.environ)
 

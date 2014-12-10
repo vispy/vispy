@@ -76,7 +76,7 @@ install:
     - if [ "${PYTHON}" != "2.7" ]; then
         conda create -n testenv --yes --quiet pip python=$PYTHON > ${REDIRECT_TO};
         source activate testenv > ${REDIRECT_TO};
-        conda install --yes --quiet numpy pytest > ${REDIRECT_TO};
+        conda install --yes --quiet numpy nose pytest > ${REDIRECT_TO};
       else
         travis_retry sudo apt-get -qq -y install python-numpy python-setuptools > ${REDIRECT_TO};
         pip install -q pytest > ${REDIRECT_TO};
