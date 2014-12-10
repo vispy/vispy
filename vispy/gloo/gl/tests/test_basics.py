@@ -263,8 +263,9 @@ def _test_fbo():
     assert_equal(width, w)
     
     # Touch copy tex functions
+    gl.glBindTexture(gl.GL_TEXTURE_2D, htex)
+    gl.glCopyTexSubImage2D(gl.GL_TEXTURE_2D, 0, 5, 5, 5, 5, 20, 20)
     gl.glCopyTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_RGB, 0, 0, 30, 30,  0)
-    gl.glCopyTexSubImage2D(gl.GL_TEXTURE_2D, 0,  20, 20,  0, 0, 10, 10)
     
     gl.check_error()
     

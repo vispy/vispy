@@ -11,13 +11,7 @@ from vispy.app import Canvas
 from vispy.gloo import (Texture2D, Texture3D, Program, FrameBuffer,
                         RenderBuffer, set_viewport, clear)
 from vispy.gloo.util import draw_texture, _screenshot
-from vispy.gloo.context import get_current_glir_queue
 from vispy.testing import requires_application, has_pyopengl, run_tests_if_main
-
-
-def teardown_module():
-    # Clear the BS commands that we produced here
-    get_current_glir_queue().clear()
 
 
 @requires_application()
@@ -38,7 +32,7 @@ def test_use_framebuffer():
         fbo_tex = Texture2D(use_shape, format='rgb')
         rbo = RenderBuffer(shape, 'color')
         fbo = FrameBuffer(color=fbo_tex)
-        c._glir.set_verbose(True)
+        c.context.glir.set_verbose(True)
         assert_equal(c.size, shape[::-1])
         set_viewport((0, 0) + c.size)
         with fbo:
@@ -96,8 +90,8 @@ def test_use_texture3D():
         data[ii, :2, :3] = val / 255.
     with Canvas(size=(100, 100)) as c:
         if not has_pyopengl():
-            Texture3D(data)
-            assert_raises(ImportError, c.glir.flush)
+            t = Texture3D(data)
+            assert_raises(ImportError, t.glir.flush, c.context.shared.parser)
             return
         program = Program(VERT_SHADER, FRAG_SHADER)
         program['a_pos'] = [[-1., -1.], [1., -1.], [-1., 1.], [1., 1.]]

@@ -435,15 +435,13 @@ class CanvasBackendEgl(QtBaseCanvasBackend, QWidget):
             atexit.register(egl.eglTerminate, _EGL_DISPLAY)
         
         # Deal with context
-        if not context.istaken:
-            context.take('qt-egl', self)
+        context.shared.add_ref('qt-egl', self)
+        if context.shared.ref is self:
             self._native_config = c = egl.eglChooseConfig(_EGL_DISPLAY)[0]
             self._native_context = egl.eglCreateContext(_EGL_DISPLAY, c, None)
-        elif context.istaken == 'qt-egl':
-            self._native_config = context.backend_canvas._native_config
-            self._native_context = context.backend_canvas._native_context
         else:
-            raise RuntimeError('Different backends cannot share a context.')
+            self._native_config = context.shared.ref._native_config
+            self._native_context = context.shared.ref._native_context
         
         # Init widget
         f = QtCore.Qt.Widget if dec else QtCore.Qt.FramelessWindowHint
@@ -553,22 +551,20 @@ class CanvasBackendDesktop(QtBaseCanvasBackend, QGLWidget):
     
     def _init_specific(self, vsync, dec, fs, parent, context, kwargs):
         
+        # Deal with config
+        glformat = _set_config(context.config)
+        glformat.setSwapInterval(1 if vsync else 0)
         # Deal with context
-        if not context.istaken:
-            widget = kwargs.pop('shareWidget', None) or self
-            context.take('qt', widget)
-            glformat = _set_config(context.config)
-            glformat.setSwapInterval(1 if vsync else 0)
+        widget = kwargs.pop('shareWidget', None) or self
+        context.shared.add_ref('qt', widget)
+        if context.shared.ref is widget:
             if widget is self:
                 widget = None  # QGLWidget does not accept self ;)
-        elif context.istaken == 'qt':
-            widget = context.backend_canvas
-            glformat = QGLFormat.defaultFormat()
+        else:
+            widget = context.shared.ref
             if 'shareWidget' in kwargs:
                 raise RuntimeError('Cannot use vispy to share context and '
                                    'use built-in shareWidget.')
-        else:
-            raise RuntimeError('Different backends cannot share a context.')
         
         # first arg can be glformat, or a gl context
         f = QtCore.Qt.Widget if dec else QtCore.Qt.FramelessWindowHint

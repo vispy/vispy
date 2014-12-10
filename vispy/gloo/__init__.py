@@ -45,6 +45,7 @@ Example::
 from __future__ import division
 
 from . import gl  # noqa
+from .wrappers import *  # noqa
 from .context import (GLContext, get_default_config,  # noqa
                       get_current_canvas)  # noqa
 from .globject import GLObject  # noqa
@@ -52,5 +53,4 @@ from .buffer import VertexBuffer, IndexBuffer  # noqa
 from .texture import Texture2D, TextureAtlas, Texture3D  # noqa
 from .program import Program  # noqa
 from .framebuffer import FrameBuffer, RenderBuffer  # noqa
-from .wrappers import *  # noqa
 from . import util  # noqa

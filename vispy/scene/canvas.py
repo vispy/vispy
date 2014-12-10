@@ -58,12 +58,12 @@ class SceneCanvas(app.Canvas):
         If False, windowed mode is used (default). If True, the default
         monitor is used. If int, the given monitor number is used.
     context : dict | instance SharedContext | None
-        OpenGL configuration to use when creating the context for the canvas,
-        or a context to share. If None, ``vispy.app.get_default_config`` will
-        be used to set the OpenGL context parameters. Alternatively, the
-        ``canvas.context`` property from an existing canvas (using the
-        same backend) will return a ``SharedContext`` that can be used,
-        thereby sharing the existing context.
+        OpenGL configuration to use when creating the context for the
+        canvas, or a context to share objects with. If None,
+        ``vispy.gloo.get_default_config`` will be used to set the OpenGL
+        context parameters. Alternatively, the ``canvas.context``
+        property from an existing canvas (using the same backend) can
+        be used, thereby sharing objects between contexts.
     keys : str | dict | None
         Default key mapping to use. If 'interactive', escape and F11 will
         close the canvas and toggle full-screen mode, respectively.

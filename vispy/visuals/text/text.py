@@ -445,7 +445,7 @@ class TextVisual(Visual):
         if self._vertices is None:
             # we delay creating vertices because it requires a context,
             # which may or may not exist when the object is initialized
-            self._program._glir.flush()  # flush GLIR commands
+            transforms.canvas.context.flush_commands()  # flush GLIR commands
             self._vertices = _text_to_vbo(self._text, self._font,
                                           self._anchors[0], self._anchors[1],
                                           self._font._lowres_size)

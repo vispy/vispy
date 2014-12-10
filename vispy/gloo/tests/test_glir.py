@@ -7,6 +7,7 @@ from vispy.testing import run_tests_if_main
 
 def test__queue():
     q = glir.GlirQueue()
+    parser = glir.GlirParser()
     
     # Test adding commands and clear
     N = 5
@@ -19,13 +20,13 @@ def test__queue():
     # Test filter 1
     cmds1 = [('DATA', 1), ('SIZE', 1), ('FOO', 1), ('SIZE', 1), ('FOO', 1), 
              ('DATA', 1), ('DATA', 1)]
-    cmds2 = [c[0] for c in q._filter(cmds1)]
+    cmds2 = [c[0] for c in q._filter(cmds1, parser)]
     assert cmds2 == ['FOO', 'SIZE', 'FOO', 'DATA', 'DATA']
     
     # Test filter 2
     cmds1 = [('DATA', 1), ('SIZE', 1), ('FOO', 1), ('SIZE', 2), ('SIZE', 2), 
              ('DATA', 2), ('SIZE', 1), ('FOO', 1), ('DATA', 1), ('DATA', 1)]
-    cmds2 = q._filter(cmds1)
+    cmds2 = q._filter(cmds1, parser)
     assert cmds2 == [('FOO', 1), ('SIZE', 2), ('DATA', 2), ('SIZE', 1), 
                      ('FOO', 1), ('DATA', 1), ('DATA', 1)]
 

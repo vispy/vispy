@@ -4,6 +4,11 @@
 """ Show a bunch of lines.
 This example demonstrates how multiple line-pieces can be drawn
 using one call, by discarting some fragments.
+
+Note that this example uses canvas.context.X() to call gloo functions.
+These functions are also available as vispy.gloo.X(), but apply
+explicitly to the canvas. We still need to decide which we think is the
+preferred API.
 """
 
 import numpy as np
@@ -75,8 +80,8 @@ class Canvas(app.Canvas):
 
     # ---------------------------------
     def on_initialize(self, event):
-        gloo.set_clear_color('white')
-        gloo.set_state('translucent')
+        self.context.set_clear_color('white')
+        self.context.set_state('translucent')
 
     # ---------------------------------
     def on_key_press(self, event):
@@ -99,7 +104,7 @@ class Canvas(app.Canvas):
     # ---------------------------------
     def on_resize(self, event):
         width, height = event.size
-        gloo.set_viewport(0, 0, width, height)
+        self.context.set_viewport(0, 0, width, height)
         self.projection = perspective(45.0, width / float(height), 1.0, 1000.0)
         self.program['u_projection'] = self.projection
 
@@ -114,7 +119,7 @@ class Canvas(app.Canvas):
 
     # ---------------------------------
     def on_draw(self, event):
-        gloo.clear()
+        self.context.clear()
         self.program.draw('line_strip')
 
 
