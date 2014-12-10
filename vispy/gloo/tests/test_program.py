@@ -9,7 +9,7 @@ import numpy as np
 
 from vispy import gloo, app
 from vispy.gloo.program import Program
-from vispy.testing import run_tests_if_main, assert_in
+from vispy.testing import run_tests_if_main, assert_in, requires_application
 from vispy.gloo.context import set_current_canvas, forget_canvas
 
 
@@ -65,6 +65,7 @@ class ProgramTest(unittest.TestCase):
         assert program.shaders[0] == "C"
         assert program.shaders[1] == "D"
         
+    @requires_application()
     def test_error(self):
         vert = '''
         void main() {
