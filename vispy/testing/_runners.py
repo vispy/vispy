@@ -39,7 +39,7 @@ try:
 except Exception:
     pass
 
-pytest.main(%r)
+raise SystemExit(pytest.main(%r))
 """
 
 
@@ -67,10 +67,12 @@ def _pytest(mode, extra_arg_string):
         msg = 'Running tests with %s backend' % mode
         extra_arg_string = '-m vispy_app_test ' + extra_arg_string
         coverage = True
-    coverage = False
-    extra_arg_string += ' --cov vispy' if coverage else ''
+    if coverage:
+        extra_arg_string += (' --cov vispy --cov-report=term-missing '
+                             '--no-cov-on-fail')
     # make a call to "python" so that it inherits whatever the system
     # thinks is "python" (e.g., virtualenvs)
+    print(_pytest_script % extra_arg_string)
     cmd = [sys.executable, '-c', _pytest_script % extra_arg_string]
     env = deepcopy(os.environ)
 
@@ -272,10 +274,10 @@ def test(label='full', extra_arg_string=''):
     if op.isfile('.coverage'):
         os.remove('.coverage')
     known_types = ['full', 'py.test', 'lineendings', 'extra', 'flake', 'nose',
-                   'nobackend', 'examples'] + backend_names
-    if label not in known_types:
-        raise ValueError('label must be one of %s, or a backend name %s'
-                         % (known_types, backend_names))
+                   'nobackend', 'examples']
+    if label not in known_types + backend_names:
+        raise ValueError('label must be one of %s, or a backend name %s, '
+                         'not \'%s\'' % (known_types, backend_names, label))
     label = 'py.test' if label == 'nose' else label
     work_dir = _get_root_dir()[0]
     orig_dir = os.getcwd()

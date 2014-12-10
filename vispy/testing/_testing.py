@@ -71,13 +71,22 @@ def nottest(func):
     return func
 
 
+def assert_raises(exp, func, *args, **kwargs):
+    """Backport"""
+    try:
+        func(*args, **kwargs)
+    except exp:
+        return
+    std_msg = '%s not raised' % (_safe_rep(exp))
+    raise AssertionError(_format_msg(None, std_msg))
+
+
 def assert_in(member, container, msg=None):
     """Backport"""
     if member in container:
         return
     std_msg = '%s not found in %s' % (_safe_rep(member), _safe_rep(container))
-    msg = _format_msg(msg, std_msg)
-    raise AssertionError(msg)
+    raise AssertionError(_format_msg(msg, std_msg))
 
 
 def assert_true(x, msg=None):
@@ -85,8 +94,7 @@ def assert_true(x, msg=None):
     if x:
         return
     std_msg = '%s is not True' % (_safe_rep(x),)
-    msg = _format_msg(msg, std_msg)
-    raise AssertionError(msg)
+    raise AssertionError(_format_msg(msg, std_msg))
 
 
 def assert_equal(x, y, msg=None):
@@ -94,8 +102,15 @@ def assert_equal(x, y, msg=None):
     if x == y:
         return
     std_msg = '%s not equal to %s' % (_safe_rep(x), _safe_rep(y))
-    msg = _format_msg(msg, std_msg)
-    raise AssertionError(msg)
+    raise AssertionError(_format_msg(msg, std_msg))
+
+
+def assert_not_equal(x, y, msg=None):
+    """Backport"""
+    if x != y:
+        return
+    std_msg = '%s equal to %s' % (_safe_rep(x), _safe_rep(y))
+    raise AssertionError(_format_msg(msg, std_msg))
 
 
 def assert_not_in(member, container, msg=None):
@@ -103,8 +118,7 @@ def assert_not_in(member, container, msg=None):
     if member not in container:
         return
     std_msg = '%s found in %s' % (_safe_rep(member), _safe_rep(container))
-    msg = _format_msg(msg, std_msg)
-    raise AssertionError(msg)
+    raise AssertionError(_format_msg(msg, std_msg))
 
 
 def assert_is(expr1, expr2, msg=None):
