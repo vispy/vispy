@@ -79,9 +79,9 @@ install:
         conda install --yes --quiet numpy pytest > ${REDIRECT_TO};
       else
         travis_retry sudo apt-get -qq -y install python-numpy python-setuptools > ${REDIRECT_TO};
-        pip install pytest > ${REDIRECT_TO};
+        pip install -q pytest > ${REDIRECT_TO};
       fi;
-    - pip install -q coveralls
+    - pip install -q coveralls pytest-cov
     # Dont install flake8 on 2.6 to make sure tests still run without it
     - if [ "${PYTHON}" != "2.6" ]; then
         pip install -q flake8;
