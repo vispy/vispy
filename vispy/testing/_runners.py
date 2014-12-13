@@ -44,12 +44,12 @@ raise SystemExit(pytest.main(%r))
 
 
 def _pytest(mode, extra_arg_string):
-    """Run py.test using a particular mode"""
+    """Run pytest using a particular mode"""
     cwd = os.getcwd()
     try:
         import pytest  # noqa, analysis:ignore
     except ImportError:
-        print('Skipping py.test, py.test not installed')
+        print('Skipping pytest, pytest not installed')
         raise SkipTest()
 
     if mode == 'nobackend':
@@ -87,7 +87,7 @@ def _pytest(mode, extra_arg_string):
     return_code = run_subprocess(cmd, return_code=True, cwd=cwd, env=env,
                                  stdout=None, stderr=None)[2]
     if return_code:
-        raise RuntimeError('py.test failure (%s)' % return_code)
+        raise RuntimeError('pytest failure (%s)' % return_code)
 
 
 def _flake():
@@ -263,26 +263,26 @@ def test(label='full', extra_arg_string=''):
     Parameters
     ----------
     label : str
-        Can be one of 'full', 'py.test', 'nobackend', 'extra', 'lineendings',
+        Can be one of 'full', 'pytest', 'nobackend', 'extra', 'lineendings',
         'flake', or any backend name (e.g., 'qt').
     extra_arg_string : str
-        Extra arguments to sent to ``py.test``, e.g. ``'-x --verbosity=2'``.
+        Extra arguments to sent to ``pytest``, e.g. ``'-x --verbosity=2'``.
     """
     from vispy.app.backends import BACKEND_NAMES as backend_names
     label = label.lower()
     if op.isfile('.coverage'):
         os.remove('.coverage')
-    known_types = ['full', 'py.test', 'lineendings', 'extra', 'flake', 'nose',
+    known_types = ['full', 'pytest', 'lineendings', 'extra', 'flake', 'nose',
                    'nobackend', 'examples']
     if label not in known_types + backend_names:
         raise ValueError('label must be one of %s, or a backend name %s, '
                          'not \'%s\'' % (known_types, backend_names, label))
-    label = 'py.test' if label == 'nose' else label
+    label = 'pytest' if label == 'nose' else label
     work_dir = _get_root_dir()[0]
     orig_dir = os.getcwd()
     # figure out what we actually need to run
     runs = []
-    if label in ('full', 'py.test'):
+    if label in ('full', 'pytest'):
         for backend in backend_names:
             runs.append([partial(_pytest, backend, extra_arg_string),
                          backend])
@@ -290,7 +290,7 @@ def test(label='full', extra_arg_string=''):
         runs.append([partial(_pytest, label, extra_arg_string), label])
     if label in ('full', 'examples'):
         runs.append([_examples, 'examples'])
-    if label in ('full', 'py.test', 'nobackend'):
+    if label in ('full', 'pytest', 'nobackend'):
         runs.append([partial(_pytest, 'nobackend', extra_arg_string),
                      'nobackend'])
     if label in ('full', 'extra', 'lineendings'):
