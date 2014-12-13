@@ -80,7 +80,7 @@ class ProgramTest(unittest.TestCase):
             try:
                 program._glir.flush()
             except Exception as err:
-                assert_in('error on this line', err.message)
+                assert_in('error on this line', str(err))
             else:
                 raise Exception("Compile program should have failed.")
 
