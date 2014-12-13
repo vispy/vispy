@@ -210,7 +210,7 @@ class GlirQueue(object):
                     lines.append(line.rstrip())
                 # Write
                 if not has_version:
-                    lines.insert(0, '#version 120\n')
+                    lines.insert(0, '#version 120\n#line 2\n')
                 out.append('\n'.join(lines))
         
         else:
