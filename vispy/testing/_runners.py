@@ -69,7 +69,7 @@ def _pytest(mode, extra_arg_string):
         coverage = True
     if coverage:
         extra_arg_string += (' --cov vispy --cov-report=term-missing '
-                             '--no-cov-on-fail')
+                             '--no-cov-on-fail ')
     # make a call to "python" so that it inherits whatever the system
     # thinks is "python" (e.g., virtualenvs)
     cmd = [sys.executable, '-c', _pytest_script % extra_arg_string]
@@ -88,6 +88,11 @@ def _pytest(mode, extra_arg_string):
                                  stdout=None, stderr=None)[2]
     if return_code:
         raise RuntimeError('pytest failure (%s)' % return_code)
+    else:
+        out_name = '.coverage.%s' % mode
+        if op.isfile(out_name):
+            os.remove(out_name)
+        os.rename('.coverage', out_name)
 
 
 def _flake():
@@ -270,8 +275,6 @@ def test(label='full', extra_arg_string=''):
     """
     from vispy.app.backends import BACKEND_NAMES as backend_names
     label = label.lower()
-    if op.isfile('.coverage'):
-        os.remove('.coverage')
     known_types = ['full', 'pytest', 'lineendings', 'extra', 'flake', 'nose',
                    'nobackend', 'examples']
     if label not in known_types + backend_names:

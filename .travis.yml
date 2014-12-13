@@ -192,5 +192,6 @@ script:
 after_success:
     # Need to run from source dir to execute appropriate "git" commands
     - if [ "${TEST}" == "standard" ]; then
+        coverage combine;
         coveralls;
       fi;

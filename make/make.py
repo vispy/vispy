@@ -79,6 +79,7 @@ class Maker:
         from coverage import coverage
         cov = coverage(auto_data=False, branch=True, data_suffix=None,
                        source=['vispy'])  # should match testing/_coverage.py
+        cov.combine()
         cov.load()
         cov.html_report()
         print('Done, launching browser.')
