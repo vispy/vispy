@@ -72,24 +72,21 @@ before_install:
 
 
 install:
-    # Install numpy, nose, flake
+    # Install numpy, flake
     - if [ "${PYTHON}" != "2.7" ]; then
         conda create -n testenv --yes --quiet pip python=$PYTHON > ${REDIRECT_TO};
         source activate testenv > ${REDIRECT_TO};
-        conda install --yes --quiet numpy nose > ${REDIRECT_TO};
+        conda install --yes --quiet numpy nose pytest > ${REDIRECT_TO};
       else
-        travis_retry sudo apt-get -qq -y install python-numpy python-nose python-setuptools > ${REDIRECT_TO};
+        travis_retry sudo apt-get -qq -y install python-numpy python-setuptools > ${REDIRECT_TO};
+        pip install -q pytest > ${REDIRECT_TO};
       fi;
-    - pip install -q coveralls nose-timer
+    - pip install -q coveralls pytest-cov
     # Dont install flake8 on 2.6 to make sure tests still run without it
     - if [ "${PYTHON}" != "2.6" ]; then
         pip install -q flake8;
       else
         pip install -q unittest2;
-      fi
-    # helpful for debugging faults
-    - if [ "${PYTHON}" != 3.4 ]; then
-        pip install -q nose-faulthandler;
       fi
 
     # Install PyOpenGL
@@ -173,7 +170,7 @@ before_script:
 script:
     - cd ${SRC_DIR}
     - if [ "${TEST}" == "standard" ]; then
-        make nose;
+        make unit;
       fi;
     - if [ "${TEST}" == "examples" ] || [ "${DEPS}" == "minimal" ]; then
         make examples;
@@ -195,5 +192,6 @@ script:
 after_success:
     # Need to run from source dir to execute appropriate "git" commands
     - if [ "${TEST}" == "standard" ]; then
+        coverage combine;
         coveralls;
       fi;

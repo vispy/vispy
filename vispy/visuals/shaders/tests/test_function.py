@@ -7,9 +7,8 @@ from vispy.visuals.shaders.function import (Function, Variable, Varying,
 # Users normally don't need these, but I want to test them
 from vispy.visuals.shaders.function import FunctionCall, TextExpression
 
-from nose.tools import assert_raises, assert_equal, assert_not_equal  # noqa
 from vispy.testing import (assert_in, assert_not_in, assert_is,
-                           run_tests_if_main)
+                           run_tests_if_main, assert_raises, assert_equal)
 
 
 ## Define some snippets
