@@ -75,10 +75,10 @@ class ProgramTest(unittest.TestCase):
         }
         '''
         frag = 'void main() { glFragColor = vec4(1, 1, 1, 1); }'
-        with app.Canvas():
+        with app.Canvas() as c:
             program = Program(vert, frag)
             try:
-                program._glir.flush()
+                program._glir.flush(c.context.shared.parser)
             except Exception as err:
                 assert_in('error on this line', str(err))
             else:
