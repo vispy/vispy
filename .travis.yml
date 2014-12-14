@@ -170,7 +170,7 @@ before_script:
 script:
     - cd ${SRC_DIR}
     - if [ "${TEST}" == "standard" ]; then
-        make pytest;
+        make unit;
       fi;
     - if [ "${TEST}" == "examples" ] || [ "${DEPS}" == "minimal" ]; then
         make examples;

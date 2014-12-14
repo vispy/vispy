@@ -173,7 +173,7 @@ class Maker:
     def test(self, arg):
         """ Run tests:
                 * full - run all tests
-                * pytest - run tests (also for each backend)
+                * unit - run tests (also for each backend)
                 * any backend name (e.g. pyside, pyqt4, glut, sdl2, etc.) -
                   run tests for the given backend
                 * nobackend - run tests that do not require a backend

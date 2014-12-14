@@ -32,8 +32,8 @@ inplace:
 
 # Test conditions, don't "clean-so" or builds won't work!
 
-pytest: clean-test
-	python make test pytest
+unit: clean-test
+	python make test unit
 
 examples: clean-test
 	python make test examples
