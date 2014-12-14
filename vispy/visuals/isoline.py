@@ -7,22 +7,9 @@ from __future__ import division
 import numpy as np
 
 from .line import LineVisual
-from ..color import ColorArray, get_colormap_py
+from ..color import ColorArray
 from ..ext.six import string_types
-
-
-def normalize(mag, cmin, cmax):
-    """ mag is a scalar or an array with Nmag element Return an array (Nmag)
-    element of floats between 0 and 1 """
-    mag = np.array(mag)
-    try:
-        shape = mag.shape[0]
-    except:
-        shape = 1
-    if cmin != cmax:
-        return (mag-cmin)/float(cmax-cmin)
-    else:
-        return np.zeros(shape) + 0.5
+from ..color.colormap import _normalize, get_colormap
 
 
 def iso_mesh_line(vertices, tris, vertex_data, level):
@@ -95,6 +82,7 @@ def iso_mesh_line(vertices, tris, vertex_data, level):
                     connects = np.arange(0, nbr*2).reshape((nbr, 2)) + \
                         len(lines)
                     vertex_level = np.zeros(len(point)) + lev
+                vertex_level=vertex_level.reshape((vertex_level.size, 1))
 
     return lines, connects, vertex_level
 
@@ -170,9 +158,9 @@ class IsolineVisual(LineVisual):
 
     def _level_to_colors(self):
         if isinstance(self._color_lev, string_types):
-            f_color_levs = get_colormap_py(self._color_lev)
-            lev = normalize(self._vl, self._vl.min(), self._vl.max())
-            colors = np.array([f_color_levs(x) for x in lev])
+            f_color_levs = get_colormap(self._color_lev)
+            lev = _normalize(self._vl, self._vl.min(), self._vl.max())
+            colors = f_color_levs.map(lev)
         else:
             colors = ColorArray(self._color_lev).rgba
             if len(colors) == 1:
