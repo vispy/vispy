@@ -82,7 +82,7 @@ def iso_mesh_line(vertices, tris, vertex_data, level):
                     connects = np.arange(0, nbr*2).reshape((nbr, 2)) + \
                         len(lines)
                     vertex_level = np.zeros(len(point)) + lev
-                vertex_level=vertex_level.reshape((vertex_level.size, 1))
+                vertex_level = vertex_level.reshape((vertex_level.size, 1))
 
     return lines, connects, vertex_level
 
