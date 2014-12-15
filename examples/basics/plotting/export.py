@@ -22,5 +22,10 @@ image = canvas.render(size=(canvas.size[0]*scale, canvas.size[1]*scale))
 image = image[::scale, ::scale]
 canvas2 = vp.image(image)
 
+# By default, the view adds some padding when setting its range.
+# We'll remove that padding so the image looks exactly like the original
+# canvas:
+canvas2.view.camera.reset(margin=0)
+
 if __name__ == '__main__' and sys.flags.interactive == 0:
     canvas.app.run()

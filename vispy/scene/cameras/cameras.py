@@ -17,18 +17,7 @@ from ...visuals.transforms import (STTransform, PerspectiveTransform,
                                    NullTransform, AffineTransform,
                                    TransformCache)
 
-# Camea vs scene:
 # todo: enable setting data aspect ratio on viewbox/scene and deal with it here
-# todo: allow easy setting of limits based on contents of a scene
-# todo: allow cameras to be transfered from one scene to another
-# todo: allow multiple cameras on one scene
-# todo: allow one camera to associate with multiple scenes
-# todo: when done, make vispy.plot use cameras's in the right way
-
-# Unify cameras:
-# todo: make PanZoom camera make use of scale_factor
-# todo: bind scroll wheel to scale_factor in base class
-# todo: make all camera's use "center"
 
 
 def make_camera(cam_type, *args, **kwds):
@@ -197,8 +186,12 @@ class BaseCamera(Node):
     
     @center.setter
     def center(self, val):
-        assert len(val) == 3
-        self._center_loc = float(val[0]), float(val[1]), float(val[2])
+        if len(val) == 2:
+            self._center_loc = float(val[0]), float(val[1]), float(val[2])
+        elif len(val) == 3:
+            self._center_loc = float(val[0]), float(val[1]), 0.0)
+        else:
+            raise ValueError('Center must be a 2 or 3 element tuple')
         self.view_changed()
     
     def reset(self, xlim=None, ylim=None, zlim=None, margin=0.05):
@@ -326,6 +319,21 @@ class PanZoomCamera(BaseCamera):
         self._invert = [False, True]
         self._aspect_ratio = 1.0, 1.0
         self.transform = STTransform()
+    
+    def zoom(self, scale_factor, center):
+        """ Focus the view at the given center with the given scale factor
+        
+        Parameters
+        ----------
+        scale_factor : float
+            The scale factor. Larger values XXXX
+        center : tuple of 2 or 3 elements
+            The center of the view
+        """
+        # todo: docs
+        
+        self.scale_factor = scale_factor
+        self.center = center
     
     def pan(self, pan):
         """ Pan the view.
@@ -837,7 +845,6 @@ class FlyCamera(PerspectiveCamera):
         IKJL
       * The camera auto-rotates to make the bottom point down, manual
         rolling can be performed using Q and E.
-      * Using the RMB, one can zoom in, like looking through binoculars.
     """
     
     def __init__(self, **kwargs):

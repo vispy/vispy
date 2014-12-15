@@ -23,19 +23,13 @@ vb3 = scene.widgets.ViewBox(border_color='white', parent=canvas.scene)
 vb4 = scene.widgets.ViewBox(border_color='white', parent=canvas.scene)
 scenes = vb1.scene, vb2.scene, vb3.scene, vb4.scene
 
-
-# Move these when the canvas changes size
-@canvas.events.resize.connect
-def resize(event=None):
-    d = 5
-    vb1.pos = d, d
-    vb2.pos = canvas.size[0]/2 + d, d
-    vb3.pos = d, canvas.size[1]/2. + d
-    vb4.pos = canvas.size[0]/2 + d, canvas.size[1]/2. + d
-    for vb in (vb1, vb2, vb3, vb4):
-        vb.size = canvas.size[0]/2. - 2*d, canvas.size[1]/2. - 2*d
-
-resize()
+# Put viewboxes in a grid
+grid = canvas.central_widget.add_grid()
+grid.padding = 6
+grid.add_widget(vb1, 0, 0)
+grid.add_widget(vb2, 0, 1)
+grid.add_widget(vb3, 1, 0)
+grid.add_widget(vb4, 1, 1)
 
 # Create some visuals to show
 im1 = io.load_crate().astype('float32') / 255

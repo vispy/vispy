@@ -18,7 +18,7 @@ Controls:
 With fly camera:
 
 * WASD or arrow keys - move around
-* SPACE - break
+* SPACE - brake
 * FC - move up-down
 * IJKL or mouse - look around
 """

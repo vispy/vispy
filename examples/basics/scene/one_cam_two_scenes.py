@@ -17,20 +17,14 @@ canvas = scene.SceneCanvas(keys='interactive')
 canvas.size = 800, 600
 canvas.show()
 
-
 # Create two ViewBoxes, place side-by-side
 vb1 = scene.widgets.ViewBox(border_color='yellow', parent=canvas.scene)
 vb2 = scene.widgets.ViewBox(border_color='blue', parent=canvas.scene)
-
-
-# Move these when the canvas changes size
-@canvas.events.resize.connect
-def resize(event=None):
-    vb1.pos = 20, 20
-    vb1.size = canvas.size[0]/2. - 40, canvas.size[1] - 40
-    vb2.pos = canvas.size[0]/2. + 20, 20
-    vb2.size = canvas.size[0]/2. - 40, canvas.size[1] - 40
-resize()
+#
+grid = canvas.central_widget.add_grid()
+grid.padding = 6
+grid.add_widget(vb1, 0, 0)
+grid.add_widget(vb2, 0, 1)
 
 # Create the image
 im1 = io.load_crate().astype('float32') / 255
