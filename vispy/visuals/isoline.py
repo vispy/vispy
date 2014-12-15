@@ -12,10 +12,8 @@ from ..ext.six import string_types
 from ..color.colormap import _normalize, get_colormap
 
 
-def iso_mesh_line(vertices, tris, vertex_data, level):
-    """
-    Generate isocurve from vertex data in a surface mesh with triangular
-    element using marching squares algorithm.
+def iso_mesh_line(vertices, tris, vertex_data, levels):
+    """Generate an isocurve from vertex data in a surface mesh.
 
     Parameters
     ----------
@@ -25,7 +23,7 @@ def iso_mesh_line(vertices, tris, vertex_data, level):
         Indices of triangular element into the vertices array.
     vertex_data : ndarray, shape (Nv,)
         data at vertex.
-    level : ndarray, shape (Nl,)
+    levels : ndarray, shape (Nl,)
         Levels at which to generate an isocurve
 
     Returns
@@ -36,13 +34,17 @@ def iso_mesh_line(vertices, tris, vertex_data, level):
         Indices of line element into the vertex array.
     vertex_level: ndarray, shape (Nvout,)
         level for vertex in lines
+ 
+    Notes
+    -----
+    Uses a marching squares algorithm to generate the isolines.
     """
 
     lines = None
     connects = None
     vertex_level = None
     if all([isinstance(x, np.ndarray) for x in (vertices, tris,
-            vertex_data, level)]):
+            vertex_data, levels)]):
         if vertices.shape[1] <= 3:
             verts = vertices
         elif vertices.shape[1] == 4:
@@ -56,7 +58,7 @@ def iso_mesh_line(vertices, tris, vertex_data, level):
                                np.roll(tris, -1, axis=1).reshape((-1)))).T
             edge_datas = vertex_data[edges]
             edge_coors = verts[edges].reshape(tris.shape[0]*3, 2, 3)
-            for lev in level:
+            for lev in levels:
                 # index for select edges with vertices have only False - True
                 # or True - False at extremity
                 index = (edge_datas >= lev)
@@ -82,7 +84,7 @@ def iso_mesh_line(vertices, tris, vertex_data, level):
                     connects = np.arange(0, nbr*2).reshape((nbr, 2)) + \
                         len(lines)
                     vertex_level = np.zeros(len(point)) + lev
-                vertex_level=vertex_level.reshape((vertex_level.size, 1))
+                vertex_level = vertex_level.reshape((vertex_level.size, 1))
 
     return lines, connects, vertex_level
 
@@ -98,18 +100,18 @@ class IsolineVisual(LineVisual):
         Indices into the vertex array.
     data : ndarray, shape (Nv,) | None
         scalar at vertices
-    level: ndarray, shape (Nlev,) | None
-        The levels at which the isocurve is constructed from *data*.
+    levels : ndarray, shape (Nlev,) | None
+        The levels at which the isocurve is constructed from "data".
     color : Color, tuple, colormap name or array
         The color to use when drawing the line. If an array is given, it
         must be of shape (Nlev, 4) and provide one rgba color by level.
     """
     def __init__(self, vertices=None, tris=None, data=None,
-                 level=None, color_lev=None, **kwds):
+                 levels=None, color_lev=None, **kwds):
         self._data = None
         self._vertices = None
         self._tris = None
-        self._level = level
+        self._levels = levels
         self._color_lev = color_lev
         self._update_color_lev = True
         self._recompute = True
@@ -118,13 +120,13 @@ class IsolineVisual(LineVisual):
         self.set_data(vertices=vertices, tris=tris, data=data)
 
     @property
-    def level(self):
+    def levels(self):
         """ The threshold at which the isocurves are constructed from the data.
         """
-        return self._level
+        return self._levels
 
-    def set_level(self, level):
-        self._level = level
+    def set_levels(self, levels):
+        self._levels = levels
         self._recompute = True
         self.update()
 
@@ -156,7 +158,7 @@ class IsolineVisual(LineVisual):
             self._update_color_lev = True
             self.update()
 
-    def _level_to_colors(self):
+    def _levels_to_colors(self):
         if isinstance(self._color_lev, string_types):
             f_color_levs = get_colormap(self._color_lev)
             lev = _normalize(self._vl, self._vl.min(), self._vl.max())
@@ -168,20 +170,20 @@ class IsolineVisual(LineVisual):
         return colors
 
     def draw(self, transforms):
-        if (self._data is None or self._level is None or self._tris is None or
+        if (self._data is None or self._levels is None or self._tris is None or
            self._vertices is None or self._color_lev is None):
             return
 
         if self._recompute:
             self._v, self._c, self._vl = iso_mesh_line(self._vertices,
                                                        self._tris, self._data,
-                                                       self._level)
-            self._cl = self._level_to_colors()
+                                                       self._levels)
+            self._cl = self._levels_to_colors()
             self._recompute = False
             self._update_color_lev = False
 
         if self._update_color_lev:
-            self._cl = self._level_to_colors()
+            self._cl = self._levels_to_colors()
             self._update_color_lev = False
 
         LineVisual.set_data(self, pos=self._v, connect=self._c, color=self._cl)

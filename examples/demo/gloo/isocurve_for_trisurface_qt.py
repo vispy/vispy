@@ -15,7 +15,7 @@ import numpy as np
 from vispy import scene
 
 from vispy.geometry.generation import create_sphere
-from vispy.color._color import colormaps
+from vispy.color.colormap import get_colormaps
 
 try:
     from sip import setapi
@@ -44,7 +44,7 @@ class ObjectWidget(QtGui.QWidget):
         self.nbr_steps.valueChanged.connect(self.update_param)
 
         l_cmap = QtGui.QLabel("Cmap ")
-        self.cmap = colormaps
+        self.cmap = list(get_colormaps().keys())
         self.combo = QtGui.QComboBox(self)
         self.combo.addItems(self.cmap)
         self.combo.currentIndexChanged.connect(self.update_param)
@@ -110,7 +110,7 @@ class Canvas(scene.SceneCanvas):
 
         self.iso = scene.visuals.Isoline(vertices=vertices, tris=tris,
                                          data=vertices[:, 2],
-                                         level=cl, color_lev='autumn',
+                                         levels=cl, color_lev='autumn',
                                          parent=self.view.scene)
 
         # Add a 3D axis to keep us oriented
@@ -119,7 +119,7 @@ class Canvas(scene.SceneCanvas):
     def set_data(self, n_levels, cmap):
         self.iso.set_color(cmap)
         cl = np.linspace(-self.radius, self.radius, n_levels + 2)[1:-1]
-        self.iso.set_level(cl)
+        self.iso.set_levels(cl)
 
 
 # -----------------------------------------------------------------------------
