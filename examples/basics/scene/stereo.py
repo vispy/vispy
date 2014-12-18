@@ -47,8 +47,7 @@ cam1 = scene.cameras.TurntableCamera(parent=scenes, fov=60,
                                      aspect_ratio=(3, 2, 1), aspect_fixed=True)
 cam2 = scene.cameras.PerspectiveCamera(parent=cam1, fov=60)
 #
-cam1.transform.translate((-10, 0, 0))
-cam2.transform.translate((20, 0, 0))
+cam2.transform.translate((+10, 0, 0))
 
 vb1.camera = cam1
 vb2.camera = cam2

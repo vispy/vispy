@@ -106,7 +106,7 @@ class BaseCamera(Node):
     
     """
     
-    def __init__(self, scale_factor=None, center=None, 
+    def __init__(self, interactive=True, scale_factor=None, center=None, 
                  aspect_ratio=None, aspect_fixed=False,
                  **kwargs):
         super(BaseCamera, self).__init__(**kwargs)
@@ -121,34 +121,41 @@ class BaseCamera(Node):
         self._projection = PerspectiveTransform()
         self._transform_cache = TransformCache()
         
-        # Limits set in reset (interesting region of the scene)
-        self._xlim = None  # None means not initialized
-        self._ylim = None
-        self._zlim = None
-        
-        # More view parameters
-        self._interactive = True
-        self._scale_factor = 1.0
-        self._aspect_ratio = 1.0, 1.0, 1.0
-        self._aspect_ratio_n = self._aspect_ratio  # normalized version
-        self._aspect_fixed = False
-        self._center_loc = None
-        
         # To adjust daspect when resizing
         self._window_size_factor = 0
         
         # For internal use, to store event related information
         self._event_value = None
         
-        # Init
+        # Reset management
+        self._resetting = False  # Avoid lots of updates during a reset
+        
+        # Limits set in reset (interesting region of the scene)
+        self._xlim = None  # None is flag that no reset has been performed
+        self._ylim = None
+        self._zlim = None
+        
+        # View parameters
+        self._scale_factor = 1.0
+        self._aspect_ratio = 1.0, 1.0, 1.0
+        self._aspect_ratio_n = 1.0, 1.0, 1.0  # normalized version
+        self._center_loc = 0.0, 0.0, 0.0
+        
+        # Indirect view parameters (not set during reset)
+        self._interactive = bool(interactive)
+        self._aspect_fixed = bool(aspect_fixed)
+        
+        # Keep track of parameters given at initialization, so that we
+        # can set then after reset
+        self._given_params = {}
+        
+        # Init things that may be set depening on bounds
         if scale_factor is not None:
-            self.scale_factor = scale_factor
+            self._given_params['scale_factor'] = scale_factor
         if center is not None:
-            self.center = center
+            self._given_params['center'] = center
         if aspect_ratio is not None:
-            self.aspect_ratio = aspect_ratio
-        if aspect_fixed is not None:
-            self.aspect_fixed = aspect_fixed
+            self._given_params['aspect_ratio'] = aspect_ratio
     
     def _add_viewbox(self, viewbox):
         """ Friend method of viewbox to register itself.
@@ -284,6 +291,7 @@ class BaseCamera(Node):
         viewbox = self._ref_viewbox()
         if viewbox is None:
             return
+        self._resetting = True
         # Size factor
         self._window_size_factor = viewbox.size[1] / viewbox.size[0]
         # Get bounds
@@ -302,9 +310,17 @@ class BaseCamera(Node):
         self._xlim, self._ylim, self._zlim = bounds_margins
         # Store center location
         self._center_loc = [(b[0] + r / 2) for b, r in zip(bounds, ranges)]
+        # Set given params (since _reset() might derive other values from them)
+        for name, value in self._given_params.items():
+            setattr(self, name, value)
         # Let specific camera handle it
         self._reset()
-        #self._update_transform()  -> should be done in overladed method
+        # Overwrite given params
+        for name, value in self._given_params.items():
+            setattr(self, name, value)
+        # Finish reset
+        self._resetting = False
+        self.view_changed()
     
     def _reset(self):
         pass 
@@ -312,10 +328,10 @@ class BaseCamera(Node):
     def view_changed(self):
         """ Called when this camera is connected to a new view.
         """
+        if self._resetting:
+            return
         # Reset if necessary (and if we can)
-        if self._xlim is None:
-            if self._ref_viewbox() is None:
-                return
+        if (self._xlim is None) and (self._ref_viewbox() is not None):
             self.reset()
         # Update if there is a viewbox
         if self._viewboxes:
@@ -471,12 +487,12 @@ class PanZoomCamera(BaseCamera):
     
         # Set scale factor (and maybe aspect ratio)
         if not self._aspect_fixed:
-            ars = np.sign(self._aspect_ratio_n)
+            ars = np.sign(self._aspect_ratio)
             self.aspect_ratio = ars[0], ars[1] * rx / ry, ars[2]
             self._scale_factor = rx
         else:
             self._scale_factor = max(rx, ry * abs(self._aspect_ratio_n[1]))
-            
+        
         self.view_changed()
     
     def view_resize_event(self, event):
@@ -611,7 +627,10 @@ class PerspectiveCamera(BaseCamera):
         super(PerspectiveCamera, self).__init__(**kwargs)
         # Camera transform
         self.transform = AffineTransform()
-        self.fov = fov
+        
+        # Init fov - does not depend on bounds
+        self._fov = None
+        self._given_params['fov'] = fov
     
     @property
     def fov(self):
@@ -633,6 +652,9 @@ class PerspectiveCamera(BaseCamera):
         """ The distance of the near clipping plane from the camera's position.
         """
         return self._near_clip_distance
+    
+    def _reset(self):
+        pass
     
     def view_resize_event(self, event):
         self.view_changed()
@@ -715,9 +737,10 @@ class TurntableCamera(PerspectiveCamera):
         self.up = up
         self._event_value = None
         # Init for real
-       
-        self.elevation = elevation
-        self.azimuth = azimuth
+        
+        # Init view parameters to set upon reset
+        self._given_params['elevation'] = elevation
+        self._given_params['azimuth'] = azimuth
     
     @property
     def elevation(self):
@@ -769,11 +792,6 @@ class TurntableCamera(PerspectiveCamera):
         
         # Get reference viewbox
         viewbox = self._ref_viewbox()
-        
-        # Set angles
-        self._elevation = 10.0
-        self._azimuth = 20.0
-        self._fov = 0.0
         
         # Get window size (and store factor now to sync with resizing)
         w, h = viewbox.size
@@ -885,9 +903,9 @@ class TurntableCamera(PerspectiveCamera):
                 if not self._aspect_fixed:
                     self.scale_factor = self._event_value[0] * zoomx
                     prev_ar = self._event_value[1]
-                    self.aspect_ratio = (1.0, 
+                    self.aspect_ratio = (prev_ar[0] * zoomy/zoomx, 
                                          prev_ar[1] * zoomy/zoomx, 
-                                         prev_ar[2] * zoomx/zoomy, )
+                                         prev_ar[2])
                 else:
                     self.scale_factor = self._event_value[0] * zoomy
                 self.view_changed()
@@ -1003,9 +1021,6 @@ class FlyCamera(PerspectiveCamera):
     
     def __init__(self, fov=60, **kwargs):
         
-        # Position of the camera
-        self._view_loc = 0, 0, 0
-        
         # Motion speed vector
         self._speed = np.zeros((6,), 'float64')
         
@@ -1093,21 +1108,6 @@ class FlyCamera(PerspectiveCamera):
         # Stop moving
         self._speed *= 0.0
         
-        # Determine initial view direction based on flip axis
-        yaw = 45 * np.sign(self._aspect_ratio_n[0])
-        pitch = -90 - 20 * np.sign(self._aspect_ratio_n[2])
-        if self._aspect_ratio_n[1] < 0:
-            yaw += 90 * np.sign(self._aspect_ratio_n[0])
-        
-        # Set orientation
-        q1 = Quaternion.create_from_axis_angle(pitch*math.pi/180, 1, 0, 0)
-        q2 = Quaternion.create_from_axis_angle(0*math.pi/180, 0, 1, 0)
-        q3 = Quaternion.create_from_axis_angle(yaw*math.pi/180, 0, 0, 1)
-        #
-        self._rotation1 = (q1 * q2 * q3).normalize()
-        self._rotation2 = Quaternion()
-        self._fov = 60.0
-        
         # Get window size (and store factor now to sync with resizing)
         w, h = viewbox.size
         w, h = float(w), float(h)
@@ -1143,9 +1143,22 @@ class FlyCamera(PerspectiveCamera):
         self._scale_factor = max(rx, ry, rz) / 3.0 
         
         # Set initial position to a corner of the scene
-        #self._view_loc = x1, y1, z1
         margin = np.mean([rx, ry, rz]) * 0.1
-        self._view_loc = x1 - margin, y1 - margin, z1 + margin
+        self._center_loc = x1 - margin, y1 - margin, z1 + margin
+        
+        # Determine initial view direction based on flip axis
+        yaw = 45 * np.sign(self._aspect_ratio_n[0])
+        pitch = -90 - 20 * np.sign(self._aspect_ratio_n[2])
+        if self._aspect_ratio_n[1] < 0:
+            yaw += 90 * np.sign(self._aspect_ratio_n[0])
+        
+        # Set orientation
+        q1 = Quaternion.create_from_axis_angle(pitch*math.pi/180, 1, 0, 0)
+        q2 = Quaternion.create_from_axis_angle(0*math.pi/180, 0, 1, 0)
+        q3 = Quaternion.create_from_axis_angle(yaw*math.pi/180, 0, 0, 1)
+        #
+        self._rotation1 = (q1 * q2 * q3).normalize()
+        self._rotation2 = Quaternion()
         
         # Update
         self.view_changed()
@@ -1215,10 +1228,11 @@ class FlyCamera(PerspectiveCamera):
             direction = vf, vr, vu
             
             # Set position
-            self._view_loc = np.array(self._view_loc, dtype='float32')
-            self._view_loc += (self._speed[0] * direction[0] + 
-                               self._speed[1] * direction[1] +
-                               self._speed[2] * direction[2])
+            center_loc = np.array(self._center_loc, dtype='float32')
+            center_loc += (self._speed[0] * direction[0] + 
+                           self._speed[1] * direction[1] +
+                           self._speed[2] * direction[2])
+            self._center_loc = tuple(center_loc)
         
         # --- Determine new orientation from rotation speed
         
@@ -1385,7 +1399,7 @@ class FlyCamera(PerspectiveCamera):
         #
         tr.rotate(-angle, axis_angle[1:])
         tr.scale([1.0/a for a in self._aspect_ratio_n])
-        tr.translate(self._view_loc)
+        tr.translate(self._center_loc)
 
 
 #class ArcballCamera(PerspectiveCamera):

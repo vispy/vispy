@@ -19,8 +19,8 @@ canvas = scene.SceneCanvas(keys='interactive')
 view = canvas.central_widget.add_view()
 view.camera = scene.TurntableCamera(fov=60, up='z', azimuth=30., elevation=30.)
 
-## Simple surface plot example
-## x, y values are not specified, so assumed to be 0:50
+# Simple surface plot example
+# x, y values are not specified, so assumed to be 0:50
 z = gaussian_filter(np.random.normal(size=(50, 50)), (1, 1)) * 10
 p1 = scene.visuals.SurfacePlot(z=z, color=(0.5, 0.5, 1, 1), shading='smooth')
 p1.transform = scene.transforms.AffineTransform()
