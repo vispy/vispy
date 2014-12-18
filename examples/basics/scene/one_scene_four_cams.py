@@ -33,17 +33,18 @@ grid.add_widget(vb4, 1, 1)
 
 # Create some visuals to show
 im1 = io.load_crate().astype('float32') / 255
-image1 = scene.visuals.Image(im1, parent=scenes)
+image1 = scene.visuals.Image(im1, grid=(20, 20), parent=scenes)
 
 #vol1 = np.load(io.load_data_file('volume/stent.npz'))['arr_0']
 #volume1 = scene.visuals.Volume(vol1, parent=scenes)
 #volume1.transform = scene.STTransform(translate=(0, 0, 10))
 
 # Assign cameras
-vb1.camera = 'base'
-vb2.camera = 'panzoom'
-vb3.camera = 'turntable'
-vb4.camera = 'fly'
+vb1.camera = scene.BaseCamera()
+vb2.camera = scene.PanZoomCamera(aspect_fixed=True)
+vb3.camera = scene.TurntableCamera(aspect_fixed=True)
+vb4.camera = scene.FlyCamera(aspect_fixed=True)
+
 
 # If True, show a cuboid at each camera
 if False:

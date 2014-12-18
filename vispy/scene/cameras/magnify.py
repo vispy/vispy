@@ -36,7 +36,8 @@ class MagnifyCamera(PanZoomCamera):
         
         # Extract kwargs for panzoom
         camkwargs = {}
-        for key in ('parent', 'name'):
+        for key in ('parent', 'name', 'scale_factor', 'center', 
+                    'aspect_ratio', 'aspect_fixed'):
             if key in kwds:
                 camkwargs[key] = kwds.pop(key)
         
@@ -60,7 +61,14 @@ class MagnifyCamera(PanZoomCamera):
         #    the scale factors implemented there should not change the shape
         #    of the lens.
         self.pre_transform = self.mag
+    
+    def _add_viewbox(self, viewbox):
+        PanZoomCamera._add_viewbox(self, viewbox)
         
+    def _remove_viewbox(self, viewbox):
+        PanZoomCamera._remove_viewbox(self, viewbox)
+        self.timer.stop()
+    
     def view_mouse_event(self, event):
         # When the attached ViewBox reseives a mouse event, it is sent to the
         # camera here.
@@ -104,6 +112,7 @@ class MagnifyCamera(PanZoomCamera):
         self._update_transform()
 
     def view_resize_event(self, event):
+        PanZoomCamera.view_resize_event(self, event)
         self.view_changed()
 
     def view_changed(self):

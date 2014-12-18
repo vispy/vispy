@@ -458,7 +458,7 @@ class PerspectiveTransform(AffineTransform):
     def map(self, coords):
         # looks backwards, but both matrices are transposed.
         v = np.dot(coords, self.matrix)
-        v /= v[:, 3]
+        v /= v[:, 3].reshape(-1, 1)
         v[:, 2] = 0
         return v
 

@@ -43,8 +43,6 @@ def test_volume():
 @requires_application()
 def test_volume_draw():
     with TestingCanvas(bgcolor='w', size=(92, 92)) as c:
-        c.glir.clear()  # Just to be safe
-        
         # Create
         vol = np.zeros((20, 20, 20), 'float32')
         vol[8:16, 8:16, :] = 1.0

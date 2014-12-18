@@ -112,8 +112,8 @@ vec4 calculateColor(vec4, vec3, vec3);
 void main() {
     
     // Discart front facing
-    if (!gl_FrontFacing)
-        discard;
+    //if (!gl_FrontFacing)
+    //    discard;
     
     // Uncomment this to show a grid of the backfaces
     //vec3 pcd = v_texcoord * u_shape;
@@ -133,8 +133,8 @@ void main() {
     
     // Instead of discarting based on gl_FrontFacing, we can also discard
     // on number of steps.
-    //if (nsteps < 4)
-    //    discard;
+    if (nsteps < 4)
+        discard;
     
     // For testing: show the number of steps. This helps to establish
     // whether the rays are correctly oriented
@@ -664,7 +664,7 @@ class VolumeVisual(Visual):
         # Also, this method has no docstring, and I don't want to repeat
         # the docstring here. Maybe Visual implements _bounds that subclasses
         # can implement?
-        return 0, self._vol_shape[axis]
+        return 0, self._vol_shape[2-axis]
     
     def draw(self, transforms):
         

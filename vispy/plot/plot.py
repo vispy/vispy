@@ -36,12 +36,15 @@ def image(*args, **kwds):
     """
     canvas = SceneCanvas(keys='interactive')
     canvas.view = canvas.central_widget.add_view()
-    canvas.image = visuals.Image(*args, **kwds)
+    canvas.image = visuals.Image(parent=canvas.view.scene, *args, **kwds)
     canvas.view.add(canvas.image)
     canvas.show()
-    canvas.view.camera.invert_y = False
-    canvas.view.camera = 'panzoom'
+    canvas.view.camera = cameras.PanZoomCamera(aspect_fixed=True,
+                                               aspect_ratio=(1, -1, 1),
+                                               )
     plots.append(canvas)
+    # todo: (AK) I think this should return an image
+    # Also, wtf: this creates an image in a viewbox in a widget in a canvas.
     return canvas
 
 
@@ -103,8 +106,10 @@ def mesh(vertices=None, faces=None, vertex_colors=None, face_colors=None,
                                face_colors=face_colors,
                                color=color, shading='smooth')
     canvas.view.add(canvas.mesh)
-    canvas.view.camera = cameras.TurntableCamera(fov=60, azimuth=azimuth,
-                                                 elevation=elevation)
+    canvas.view.camera = cameras.TurntableCamera(fov=60, 
+                                                 azimuth=azimuth,
+                                                 elevation=elevation,
+                                                 aspect_fixed=True)
     plots.append(canvas)
     return canvas
 

@@ -32,7 +32,6 @@ vol1 = np.load(io.load_data_file('volume/stent.npz'))['arr_0']
 vol2 = np.load(io.load_data_file('brain/mri.npz'))['data']
 vol2 = np.flipud(np.rollaxis(vol2, 1))
 
-
 # Prepare canvas
 canvas = scene.SceneCanvas(keys='interactive')
 canvas.size = 800, 600
@@ -49,8 +48,8 @@ volume2 = scene.visuals.Volume(vol2, parent=view.scene, threshold=0.5)
 volume2.visible = False
 
 # Create two cameras (1 for firstperson, 3 for 3d person)
-cam1 = scene.cameras.FlyCamera(parent=view.scene)
-cam3 = scene.cameras.TurntableCamera(parent=view.scene)
+cam1 = scene.cameras.FlyCamera(aspect_fixed=True, parent=view.scene)
+cam3 = scene.cameras.TurntableCamera(aspect_fixed=True, parent=view.scene)
 view.camera = cam3  # Select turntable at first
 
 
