@@ -62,7 +62,9 @@ require(["widgets/js/widget", "widgets/js/manager"],
                 window.VISPY_DEBUG = false;
 
                 // Start the event loop.
-                this.c.event_tick = function() {
+                this.c.on_event_tick(function() {
+                    // This callback function will be called at each JS tick,
+                    // before the GLIR commands are flushed.
 
                     // Retrieve and flush the event queue.
                     var events = that.c.event_queue.get();
@@ -79,10 +81,7 @@ require(["widgets/js/widget", "widgets/js/manager"],
                         // Send the message with the events to Python.
                         that.send(msg);
                     }
-
-                    // Execute the pending GLIR commands.
-                    that.c.execute_pending_commands();
-                };
+                });
             },
 
             on_msg: function(comm_msg) {
