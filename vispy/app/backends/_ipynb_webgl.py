@@ -128,7 +128,7 @@ class CanvasBackend(BaseCanvasBackend):
             pass  # ok
         else:
             raise RuntimeError("WebGL doesn't yet support context sharing.")
-        
+
         self._create_widget(size=size)
 
     def _create_widget(self, size=None):
@@ -284,6 +284,8 @@ class CanvasBackend(BaseCanvasBackend):
         elif event_type == "resize":
             self._vispy_canvas.events.resize(native=ev,
                                              size=ev["size"])
+        elif event_type == "paint":
+            self._vispy_canvas.events.draw()
 
 
 # ------------------------------------------------------------------- Timer ---
