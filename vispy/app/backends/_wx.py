@@ -366,6 +366,8 @@ class CanvasBackend(glcanvas.GLCanvas, BaseCanvasBackend):
         return x, y
 
     def on_close(self, evt):
+        if not self: # wx control evaluates to false if C++ part deleted
+            return
         if self._vispy_canvas is None:
             return
         self._vispy_canvas.close()
