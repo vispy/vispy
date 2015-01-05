@@ -195,7 +195,7 @@ class DummySize(object):
         pass
 
 
-class CanvasBackend(Frame, BaseCanvasBackend):
+class CanvasBackend(glcanvas.GLCanvas, BaseCanvasBackend):
 
     """ wxPython backend for Canvas abstract class."""
 
@@ -214,29 +214,35 @@ class CanvasBackend(Frame, BaseCanvasBackend):
         else:
             self._gl_context = context.shared.ref._gl_context
         
-        style = (wx.MINIMIZE_BOX | wx.MAXIMIZE_BOX | wx.CLOSE_BOX |
-                 wx.SYSTEM_MENU | wx.CAPTION | wx.CLIP_CHILDREN)
-        style |= wx.NO_BORDER if not dec else wx.RESIZE_BORDER
-        self._init = False
-        Frame.__init__(self, parent, wx.ID_ANY, title, position, size, style)
-        if not resize:
-            self.SetSizeHints(size[0], size[1], size[0], size[1])
-        if fs is not False:
-            if fs is not True:
-                logger.warning('Cannot specify monitor number for wx '
-                               'fullscreen, using default')
-            self._fullscreen = True
+        if parent is None:
+            style = (wx.MINIMIZE_BOX | wx.MAXIMIZE_BOX | wx.CLOSE_BOX |
+                     wx.SYSTEM_MENU | wx.CAPTION | wx.CLIP_CHILDREN)
+            style |= wx.NO_BORDER if not dec else wx.RESIZE_BORDER
+            self._frame = Frame(None, wx.ID_ANY, title, position, size, style)
+            if not resize:
+                self._frame.SetSizeHints(size[0], size[1], size[0], size[1])
+            if fs is not False:
+                if fs is not True:
+                    logger.warning('Cannot specify monitor number for wx '
+                                   'fullscreen, using default')
+                self._fullscreen = True
+            else:
+                self._fullscreen = False
+            _wx_app.SetTopWindow(self._frame)
+            parent = self._frame
+            self._frame.Raise()
         else:
+            self._frame = None
             self._fullscreen = False
-        _wx_app.SetTopWindow(self)
-        
-        self._canvas = glcanvas.GLCanvas(self, wx.ID_ANY, wx.DefaultPosition,
-                                         wx.DefaultSize, 0, 'GLCanvas',
-                                         self._gl_attribs)
+        self._init = False
+        glcanvas.GLCanvas.__init__(self, parent, wx.ID_ANY, pos=position,
+                                   size=size, style=0, name='GLCanvas',
+                                   attribList=self._gl_attribs)
+            
+        self._canvas = self
         if self._gl_context is None:
             self._gl_context = glcanvas.GLContext(self._canvas)
         
-        self._canvas.Raise()
         self._canvas.SetFocus()
         self._vispy_set_title(title)
         self._size = None
@@ -299,7 +305,8 @@ class CanvasBackend(Frame, BaseCanvasBackend):
 
     def _vispy_set_title(self, title):
         # Set the window title. Has no effect for widgets
-        self.SetLabel(title)
+        if self._frame is not None:
+            self._frame.SetLabel(title)
 
     def _vispy_set_size(self, w, h):
         # Set size of the widget or window
@@ -309,20 +316,23 @@ class CanvasBackend(Frame, BaseCanvasBackend):
 
     def _vispy_set_position(self, x, y):
         # Set positionof the widget or window. May have no effect for widgets
-        self.SetPosition((x, y))
+        if self._frame is not None:
+            self._frame.SetPosition((x, y))
 
     def _vispy_get_fullscreen(self):
         return self._fullscreen
 
     def _vispy_set_fullscreen(self, fullscreen):
-        self._fullscreen = bool(fullscreen)
-        self._vispy_set_visible(True)
+        if self._frame is not None:
+            self._fullscreen = bool(fullscreen)
+            self._vispy_set_visible(True)
 
     def _vispy_set_visible(self, visible):
         # Show or hide the window or widget
         self.Show(visible)
         if visible:
-            self.ShowFullScreen(self._fullscreen)
+            if self._frame is not None:
+                self._frame.ShowFullScreen(self._fullscreen)
 
     def _vispy_update(self):
         # Invoke a redraw
@@ -354,6 +364,7 @@ class CanvasBackend(Frame, BaseCanvasBackend):
         return x, y
 
     def on_close(self, evt):
+        print "Closing!!!", evt.control
         if self._vispy_canvas is None:
             return
         self._vispy_canvas.close()

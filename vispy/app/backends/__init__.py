@@ -30,7 +30,6 @@ PSEUDO_BACKENDS = [
     # ('ipynb_vnc', '_ipynb_vnc', None),
     # ('ipynb_static', '_ipynb_static', None),
     ('ipynb_webgl', '_ipynb_webgl', None),
-    ('wx_panel', '_wx_panel', 'wx'),
     ('_test', '_test', 'vispy.app.backends._test'),  # add one that will fail
 ]
 

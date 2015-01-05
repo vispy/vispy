@@ -43,7 +43,7 @@ class TestFrame(wx.Frame):
         MenuBar.Append(file_menu, "&File")
         self.SetMenuBar(MenuBar)
 
-        self.canvas = Canvas(app="wx_panel", parent=self)
+        self.canvas = Canvas(app="wx", parent=self)
         self.canvas.native.Show()
 
     def on_quit(self,event):
