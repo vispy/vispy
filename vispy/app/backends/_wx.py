@@ -231,6 +231,7 @@ class CanvasBackend(glcanvas.GLCanvas, BaseCanvasBackend):
             _wx_app.SetTopWindow(self._frame)
             parent = self._frame
             self._frame.Raise()
+            self._frame.Bind(wx.EVT_CLOSE, self.on_close)
         else:
             self._frame = None
             self._fullscreen = False
@@ -246,12 +247,11 @@ class CanvasBackend(glcanvas.GLCanvas, BaseCanvasBackend):
         self._canvas.SetFocus()
         self._vispy_set_title(title)
         self._size = None
-        self.Bind(wx.EVT_SIZE, self.on_resize)
+        self._canvas.Bind(wx.EVT_SIZE, self.on_resize)
         self._canvas.Bind(wx.EVT_PAINT, self.on_paint)
         self._canvas.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
         self._canvas.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self._canvas.Bind(wx.EVT_MOUSE_EVENTS, self.on_mouse_event)
-        self.Bind(wx.EVT_CLOSE, self.on_close)
         self._size_init = size
         self._vispy_set_visible(show)
 
@@ -343,12 +343,14 @@ class CanvasBackend(glcanvas.GLCanvas, BaseCanvasBackend):
             return
         # Force the window or widget to shut down
         canvas = self._canvas
+        frame = self._frame
         self._canvas = None
         self._gl_context = None  # let RC destroy this in case it's shared
         canvas.Close()
         canvas.Destroy()
-        self.Close()
-        self.Destroy()
+        if frame:
+            frame.Close()
+            frame.Destroy()
         gc.collect()  # ensure context gets destroyed if it should be
 
     def _vispy_get_size(self):
@@ -364,7 +366,6 @@ class CanvasBackend(glcanvas.GLCanvas, BaseCanvasBackend):
         return x, y
 
     def on_close(self, evt):
-        print "Closing!!!", evt.control
         if self._vispy_canvas is None:
             return
         self._vispy_canvas.close()
