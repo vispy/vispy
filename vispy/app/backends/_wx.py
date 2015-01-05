@@ -27,7 +27,8 @@ try:
     # avoid silly locale warning on OSX
     with warnings.catch_warnings(record=True):
         import wx
-        from wx import Frame, glcanvas
+        from wx import glcanvas
+        from wx.glcanvas import GLCanvas
 
     # Map native keys to vispy keys
     KEYMAP = {
@@ -74,7 +75,6 @@ except Exception as exp:
 
     class GLCanvas(object):
         pass
-    Frame = GLCanvas
 else:
     if USE_EGL:
         available, testable, why_not = False, False, 'EGL not supported'
@@ -195,7 +195,7 @@ class DummySize(object):
         pass
 
 
-class CanvasBackend(glcanvas.GLCanvas, BaseCanvasBackend):
+class CanvasBackend(GLCanvas, BaseCanvasBackend):
 
     """ wxPython backend for Canvas abstract class."""
 
@@ -218,7 +218,7 @@ class CanvasBackend(glcanvas.GLCanvas, BaseCanvasBackend):
             style = (wx.MINIMIZE_BOX | wx.MAXIMIZE_BOX | wx.CLOSE_BOX |
                      wx.SYSTEM_MENU | wx.CAPTION | wx.CLIP_CHILDREN)
             style |= wx.NO_BORDER if not dec else wx.RESIZE_BORDER
-            self._frame = Frame(None, wx.ID_ANY, title, position, size, style)
+            self._frame = wx.Frame(None, wx.ID_ANY, title, position, size, style)
             if not resize:
                 self._frame.SetSizeHints(size[0], size[1], size[0], size[1])
             if fs is not False:
@@ -236,9 +236,9 @@ class CanvasBackend(glcanvas.GLCanvas, BaseCanvasBackend):
             self._frame = None
             self._fullscreen = False
         self._init = False
-        glcanvas.GLCanvas.__init__(self, parent, wx.ID_ANY, pos=position,
-                                   size=size, style=0, name='GLCanvas',
-                                   attribList=self._gl_attribs)
+        GLCanvas.__init__(self, parent, wx.ID_ANY, pos=position,
+                          size=size, style=0, name='GLCanvas',
+                          attribList=self._gl_attribs)
             
         self._canvas = self
         if self._gl_context is None:
