@@ -10,6 +10,6 @@ doc/_build
 build
 dist
 MANIFEST
-.coverage
+.coverage*
 htmlcov
 vispy.egg-info

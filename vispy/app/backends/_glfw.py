@@ -155,6 +155,14 @@ def _set_config(c):
 
 # ------------------------------------------------------------- application ---
 
+
+_glfw_errors = []
+
+
+def _error_callback(num, descr):
+    _glfw_errors.append('Error %s: %s' % (num, descr))
+
+
 class ApplicationBackend(BaseApplicationBackend):
 
     def __init__(self):
@@ -200,11 +208,13 @@ class ApplicationBackend(BaseApplicationBackend):
         global _GLFW_INITIALIZED
         if not _GLFW_INITIALIZED:
             cwd = os.getcwd()
+            glfw.glfwSetErrorCallback(_error_callback)
             try:
                 if not glfw.glfwInit():  # only ever call once
-                    raise OSError('Could not init glfw')
+                    raise OSError('Could not init glfw:\n%r' % _glfw_errors)
             finally:
                 os.chdir(cwd)
+            glfw.glfwSetErrorCallback(0)
             atexit.register(glfw.glfwTerminate)
             _GLFW_INITIALIZED = True
         return glfw
