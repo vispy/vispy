@@ -6,7 +6,7 @@
 This is a very minimal example that opens a window and makes the background
 color to change from black to white to black ...
 
-The wx_panel backed is used to embed the canvas in a simple wx Frame with
+The wx backend is used to embed the canvas in a simple wx Frame with
 a menubar.
 """
 
@@ -34,9 +34,8 @@ class Canvas(app.Canvas):
 class TestFrame(wx.Frame):
     def __init__(self):
         wx.Frame.__init__(self, None, -1, "Vispy Test",
-                         wx.DefaultPosition, size=(500,500))
+                          wx.DefaultPosition, size=(500, 500))
 
-        ## Set up the MenuBar
         MenuBar = wx.MenuBar()
         file_menu = wx.Menu()
         file_menu.Append(wx.ID_EXIT, "&Quit")
@@ -47,7 +46,7 @@ class TestFrame(wx.Frame):
         self.canvas = Canvas(app="wx", parent=self)
         self.canvas.native.Show()
 
-    def on_quit(self,event):
+    def on_quit(self, event):
         self.Close(True)
 
 if __name__ == '__main__':

@@ -207,7 +207,7 @@ class CanvasBackend(GLCanvas, BaseCanvasBackend):
         
         # Set config
         self._gl_attribs = _set_config(context.config)
-        # Deal with context 
+        # Deal with context
         context.shared.add_ref('wx', self)
         if context.shared.ref is self:
             self._gl_context = None  # set for real once we init the GLCanvas
@@ -218,7 +218,8 @@ class CanvasBackend(GLCanvas, BaseCanvasBackend):
             style = (wx.MINIMIZE_BOX | wx.MAXIMIZE_BOX | wx.CLOSE_BOX |
                      wx.SYSTEM_MENU | wx.CAPTION | wx.CLIP_CHILDREN)
             style |= wx.NO_BORDER if not dec else wx.RESIZE_BORDER
-            self._frame = wx.Frame(None, wx.ID_ANY, title, position, size, style)
+            self._frame = wx.Frame(None, wx.ID_ANY, title, position,
+                                   size, style)
             if not resize:
                 self._frame.SetSizeHints(size[0], size[1], size[0], size[1])
             if fs is not False:
@@ -360,7 +361,7 @@ class CanvasBackend(GLCanvas, BaseCanvasBackend):
         return x, y
 
     def on_close(self, evt):
-        if not self: # wx control evaluates to false if C++ part deleted
+        if not self:  # wx control evaluates to false if C++ part deleted
             return
         if self._vispy_canvas is None:
             return
