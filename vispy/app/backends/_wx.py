@@ -210,7 +210,7 @@ class CanvasBackend(GLCanvas, BaseCanvasBackend):
         # Deal with context 
         context.shared.add_ref('wx', self)
         if context.shared.ref is self:
-            self._gl_context = None  # set for real once we know self._canvas
+            self._gl_context = None  # set for real once we init the GLCanvas
         else:
             self._gl_context = context.shared.ref._gl_context
         
@@ -240,18 +240,17 @@ class CanvasBackend(GLCanvas, BaseCanvasBackend):
                           size=size, style=0, name='GLCanvas',
                           attribList=self._gl_attribs)
             
-        self._canvas = self
         if self._gl_context is None:
-            self._gl_context = glcanvas.GLContext(self._canvas)
+            self._gl_context = glcanvas.GLContext(self)
         
-        self._canvas.SetFocus()
+        self.SetFocus()
         self._vispy_set_title(title)
         self._size = None
-        self._canvas.Bind(wx.EVT_SIZE, self.on_resize)
-        self._canvas.Bind(wx.EVT_PAINT, self.on_paint)
-        self._canvas.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
-        self._canvas.Bind(wx.EVT_KEY_UP, self.on_key_up)
-        self._canvas.Bind(wx.EVT_MOUSE_EVENTS, self.on_mouse_event)
+        self.Bind(wx.EVT_SIZE, self.on_resize)
+        self.Bind(wx.EVT_PAINT, self.on_paint)
+        self.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
+        self.Bind(wx.EVT_KEY_UP, self.on_key_up)
+        self.Bind(wx.EVT_MOUSE_EVENTS, self.on_mouse_event)
         self._size_init = size
         self._vispy_set_visible(show)
 
@@ -265,7 +264,7 @@ class CanvasBackend(GLCanvas, BaseCanvasBackend):
         event.Skip()
 
     def on_paint(self, event):
-        if self._vispy_canvas is None or self._canvas is None:
+        if self._vispy_canvas is None:
             return
         dc = wx.PaintDC(self)  # needed for wx
         if not self._init:
@@ -284,10 +283,8 @@ class CanvasBackend(GLCanvas, BaseCanvasBackend):
         self.on_resize(DummySize(self._size_init))
 
     def _vispy_set_current(self):
-        if self._canvas is None:
-            return
         self._vispy_canvas.set_current()  # Mark as current
-        self._canvas.SetCurrent(self._gl_context)
+        self.SetCurrent(self._gl_context)
     
     def _vispy_warmup(self):
         etime = time() + 0.3
@@ -298,10 +295,8 @@ class CanvasBackend(GLCanvas, BaseCanvasBackend):
 
     def _vispy_swap_buffers(self):
         # Swap front and back buffer
-        if self._canvas is None:
-            return
         self._vispy_set_current()
-        self._canvas.SwapBuffers()
+        self.SwapBuffers()
 
     def _vispy_set_title(self, title):
         # Set the window title. Has no effect for widgets
@@ -339,12 +334,11 @@ class CanvasBackend(GLCanvas, BaseCanvasBackend):
         self.Refresh()
 
     def _vispy_close(self):
-        if self._vispy_canvas is None or self._canvas is None:
+        if self._vispy_canvas is None:
             return
         # Force the window or widget to shut down
-        canvas = self._canvas
+        canvas = self
         frame = self._frame
-        self._canvas = None
         self._gl_context = None  # let RC destroy this in case it's shared
         canvas.Close()
         canvas.Destroy()
@@ -354,13 +348,13 @@ class CanvasBackend(GLCanvas, BaseCanvasBackend):
         gc.collect()  # ensure context gets destroyed if it should be
 
     def _vispy_get_size(self):
-        if self._canvas is None or self._vispy_canvas is None:
+        if self._vispy_canvas is None:
             return
         w, h = self.GetClientSize()
         return w, h
 
     def _vispy_get_position(self):
-        if self._vispy_canvas is None or self._canvas is None:
+        if self._vispy_canvas is None:
             return
         x, y = self.GetPosition()
         return x, y
@@ -373,7 +367,7 @@ class CanvasBackend(GLCanvas, BaseCanvasBackend):
         self._vispy_canvas.close()
 
     def on_mouse_event(self, evt):
-        if self._vispy_canvas is None or self._canvas is None:
+        if self._vispy_canvas is None:
             return
         pos = (evt.GetX(), evt.GetY())
         mods = _get_mods(evt)
@@ -406,14 +400,14 @@ class CanvasBackend(GLCanvas, BaseCanvasBackend):
         evt.Skip()
 
     def on_key_down(self, evt):
-        if self._vispy_canvas is None or self._canvas is None:
+        if self._vispy_canvas is None:
             return
         key, text = _process_key(evt)
         self._vispy_canvas.events.key_press(key=key, text=text,
                                             modifiers=_get_mods(evt))
 
     def on_key_up(self, evt):
-        if self._vispy_canvas is None or self._canvas is None:
+        if self._vispy_canvas is None:
             return
         key, text = _process_key(evt)
         self._vispy_canvas.events.key_release(key=key, text=text,
