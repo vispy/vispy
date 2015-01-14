@@ -41,7 +41,7 @@ _internalformats = [
     gl.Enum('GL_RGBA16F', 34842),
     gl.Enum('GL_RGBA32F', 34836)
 ]
-_internalformats = dict([ (enum.name, enum) for enum in _internalformats ])
+_internalformats = dict([(enum.name, enum) for enum in _internalformats])
 
 
 def as_enum(enum):

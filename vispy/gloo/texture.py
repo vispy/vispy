@@ -11,7 +11,6 @@ from ..ext.six import string_types
 from .util import check_enum
 
 
-
 # ----------------------------------------------------------- Texture class ---
 class BaseTexture(GLObject):
     """
@@ -41,7 +40,7 @@ class BaseTexture(GLObject):
 
     _formats = {
         1: 'luminance',  # or alpha, or r
-        2: 'luminance_alpha', # or rg
+        2: 'luminance_alpha',  # or rg
         3: 'rgb',
         4: 'rgba'
     }
@@ -63,8 +62,8 @@ class BaseTexture(GLObject):
 
     _inv_internalformats = dict([ 
         (base + suffix, channels) 
-        for base, channels in [ ('r', 1), ('rg', 2), ('rgb', 3), ('rgba', 4) ]
-        for suffix in [ '8', '16', '16f', '32f' ]
+        for base, channels in [('r', 1), ('rg', 2), ('rgb', 3), ('rgba', 4)]
+        for suffix in ['8', '16', '16f', '32f']
     ] + [
         ('luminance', 1),
         ('alpha', 1),
@@ -74,7 +73,8 @@ class BaseTexture(GLObject):
     ])
 
     def __init__(self, data=None, format=None, resizeable=True,
-                 interpolation=None, wrapping=None, shape=None, internalformat=None):
+                 interpolation=None, wrapping=None, shape=None, 
+                 internalformat=None):
         GLObject.__init__(self)
         
         # Init shape and format
@@ -219,7 +219,8 @@ class BaseTexture(GLObject):
         if format is None:
             format = self._formats[shape[-1]]
             # Keep current format if channels match
-            if self._format and self._inv_formats[self._format] == self._inv_formats[format]:
+            if self._format and \
+               self._inv_formats[self._format] == self._inv_formats[format]:
                 format = self._format
         else:
             format = check_enum(format)
@@ -227,7 +228,9 @@ class BaseTexture(GLObject):
         if internalformat is None:
             internalformat = self._internalformats[shape[-1]]
             # Keep current internalformat if channelsl match
-            if self._internalformat and self._inv_internalformats[self._internalformat] == self._inv_internalformats[internalformat]:
+            if self._internalformat and \
+               self._inv_internalformats[self._internalformat] \
+               == self._inv_internalformats[internalformat]:
                 internalformat = self._internalformat
         else:
             internalformat = check_enum(internalformat)
@@ -239,7 +242,10 @@ class BaseTexture(GLObject):
             raise ValueError('Format does not match with given shape.')
         
         if internalformat not in self._inv_internalformats:
-            raise ValueError('Invalid texture internalformat: %r.' % internalformat)
+            raise ValueError(
+                'Invalid texture internalformat: %r.' 
+                % internalformat
+            )
         elif shape[-1] != self._inv_internalformats[internalformat]:
             raise ValueError('Internalformat does not match with given shape.')
 
@@ -247,7 +253,8 @@ class BaseTexture(GLObject):
         self._shape = shape
         self._format = format
         self._internalformat = internalformat
-        self._glir.command('SIZE', self._id, self._shape, (self._format, self._internalformat))
+        self._glir.command('SIZE', self._id, self._shape, 
+                           (self._format, self._internalformat))
 
     def set_data(self, data, offset=None, copy=False):
         """ Set texture data
