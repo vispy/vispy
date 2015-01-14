@@ -45,8 +45,9 @@ Unicode = Int = Float = Bool = lambda *args, **kwargs: None
 try:
     import tornado
     import IPython
-    if IPython.version_info < (2,):
-        raise RuntimeError('ipynb_webgl backend need IPython version >= 2.0')
+    IPYTHON_MAJOR_VERSION = IPython.version_info[0]
+    if IPYTHON_MAJOR_VERSION < 2:
+        raise RuntimeError('ipynb_webgl backend requires IPython >= 2.0')
     from IPython.html.widgets import DOMWidget
     from IPython.utils.traitlets import Unicode, Int
     from IPython.display import display, Javascript
@@ -62,9 +63,15 @@ else:
 def _prepare_js():
     pkgdir = op.dirname(__file__)
     jsdir = op.join(pkgdir, '../../html/static/js/')
+    # Make sure the JS files are installed to user directory (new argument
+    # in IPython 3.0).
+    if IPYTHON_MAJOR_VERSION >= 3:
+        kwargs = {'user': True}
+    else:
+        kwargs = {}
     install_nbextension([op.join(jsdir, 'vispy.min.js'),
-                         op.join(jsdir, 'jquery.mousewheel.min.js')])
-
+                         op.join(jsdir, 'jquery.mousewheel.min.js')],
+                        **kwargs)
     backend_path = op.join(jsdir, 'webgl-backend.js')
     with open(backend_path, 'r') as f:
         script = f.read()
