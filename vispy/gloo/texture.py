@@ -11,7 +11,6 @@ from ..ext.six import string_types
 from .util import check_enum
 
 
-_internalformat_suffixes = [ '', '8', '16', '16f', '32f' ]
 
 # ----------------------------------------------------------- Texture class ---
 class BaseTexture(GLObject):
@@ -50,16 +49,14 @@ class BaseTexture(GLObject):
     _inv_formats = {
         'luminance': 1,
         'alpha': 1,
-        'r': 1,
         'luminance_alpha': 2,
-        'rg': 2,
         'rgb': 3,
         'rgba': 4
     }
 
     _internalformats = {
-        1: 'r',
-        2: 'rg',
+        1: 'luminance',
+        2: 'luminance_alpha',
         3: 'rgb',
         4: 'rgba'
     }
@@ -67,7 +64,13 @@ class BaseTexture(GLObject):
     _inv_internalformats = dict([ 
         (base + suffix, channels) 
         for base, channels in [ ('r', 1), ('rg', 2), ('rgb', 3), ('rgba', 4) ]
-        for suffix in _internalformat_suffixes
+        for suffix in [ '8', '16', '16f', '32f' ]
+    ] + [
+        ('luminance', 1),
+        ('alpha', 1),
+        ('luminance_alpha', 2),
+        ('rgb', 3),
+        ('rgba', 4)
     ])
 
     def __init__(self, data=None, format=None, resizeable=True,
@@ -196,13 +199,14 @@ class BaseTexture(GLObject):
             is chosen automatically based on the number of channels.
             When the data has one channel, 'luminance' is assumed.  
         internalformat : str | enum
-            The internal (storage) format of the texture: 'r', 'r8',
-            'r16', 'r16f', 'r32f'; 'rg', 'rg8', 'rg16', 'rg16f',
-            'rg32f'; 'rgb', 'rgb8', 'rgb16', 'rgb16f', 'rgb32f';
-            'rgba', 'rgba8', 'rgba16', 'rgba16f', 'rgba32f'.  If not
-            given, the internalformat is chosen automatically based on
-            the number of channels.  This is a hint which may be
-            ignored by the OpenGL implementation.
+
+            The internal (storage) format of the texture: 'luminance',
+            'alpha', 'r8', 'r16', 'r16f', 'r32f'; 'luminance_alpha',
+            'rg8', 'rg16', 'rg16f', 'rg32f'; 'rgb', 'rgb8', 'rgb16',
+            'rgb16f', 'rgb32f'; 'rgba', 'rgba8', 'rgba16', 'rgba16f',
+            'rgba32f'.  If not given, the internalformat is chosen
+            automatically based on the number of channels.  This is a
+            hint which may be ignored by the OpenGL implementation.
 
         """
         shape = self._normalize_shape(shape)
@@ -234,7 +238,7 @@ class BaseTexture(GLObject):
         elif shape[-1] != self._inv_formats[format]:
             raise ValueError('Format does not match with given shape.')
         
-        if internalformat not in [ base + suffix for base in self._inv_internalformats for suffix in _internalformat_suffixes ]:
+        if internalformat not in self._inv_internalformats:
             raise ValueError('Invalid texture internalformat: %r.' % internalformat)
         elif shape[-1] != self._inv_internalformats[internalformat]:
             raise ValueError('Internalformat does not match with given shape.')
