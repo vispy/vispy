@@ -71,7 +71,7 @@ def _prepare_js():
         kwargs = {}
     install_nbextension([op.join(jsdir, 'vispy.min.js'),
                          op.join(jsdir, 'jquery.mousewheel.min.js')],
-                         **kwargs)
+                        **kwargs)
     backend_path = op.join(jsdir, 'webgl-backend.js')
     with open(backend_path, 'r') as f:
         script = f.read()
