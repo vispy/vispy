@@ -904,12 +904,8 @@ class GlirTexture(GlirObject):
 class GlirTexture2D(GlirTexture):
     _target = gl.GL_TEXTURE_2D
     
-    def set_size(self, shape, format):
+    def set_size(self, shape, format, internalformat):
         # Shape is height, width
-        if type(format) is tuple:
-            format, internalformat = format
-        else:
-            format, internalformat = format, None
         format = as_enum(format)
         internalformat = as_enum(internalformat)
         if (shape, format, internalformat) != self._shape_formats:
@@ -975,11 +971,7 @@ def glTexSubImage3D(target, level, xoffset, yoffset, zoffset,
 class GlirTexture3D(GlirTexture):
     _target = GL_TEXTURE_3D
         
-    def set_size(self, shape, format):
-        if type(format) is tuple:
-            format, internalformat = format
-        else:
-            format, internalformat = format, None
+    def set_size(self, shape, format, internalformat):
         format = as_enum(format)
         internalformat = as_enum(internalformat)
         # Shape is depth, height, width

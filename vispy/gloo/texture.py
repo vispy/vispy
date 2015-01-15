@@ -253,8 +253,8 @@ class BaseTexture(GLObject):
         self._shape = shape
         self._format = format
         self._internalformat = internalformat
-        self._glir.command('SIZE', self._id, self._shape, 
-                           (self._format, self._internalformat))
+        self._glir.command('SIZE', self._id, self._shape, self._format, 
+                           self._internalformat)
 
     def set_data(self, data, offset=None, copy=False):
         """ Set texture data
