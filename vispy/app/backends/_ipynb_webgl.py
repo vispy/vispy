@@ -323,6 +323,7 @@ def _stop_timers(canvas):
             attr_obj.stop()
             print("Stop timer", attr)
 
+
 class VispyWidget(DOMWidget):
     _view_name = Unicode("VispyView", sync=True)
 
