@@ -1,15 +1,5 @@
 // Load Vispy.js in the notebook.
 IPython.load_extensions("vispy.min");
-IPython.load_extensions("jquery.mousewheel.min");
-
-// HACK: this is UGLY but I didn't find a better way to do it
-var _vispy_loaded = function(vispy) {
-    window.vispy = vispy;
-    vispy.start_event_loop();
-};
-window.setTimeout(function() {
-    require(["vispy"], _vispy_loaded, _vispy_loaded);
-}, 100);
 
 function _inline_glir_commands(commands, buffers) {
     // Put back the buffers within the GLIR commands before passing them
@@ -59,8 +49,6 @@ require(["widgets/js/widget", "widgets/js/manager"],
                 // WARNING: necessary on IPython >= 3.0dev.
                 this.model.comm.on_msg($.proxy(this.on_msg, this));
 
-                window.VISPY_DEBUG = false;
-
                 // Start the event loop.
                 this.c.on_event_tick(function() {
                     // This callback function will be called at each JS tick,
@@ -82,6 +70,9 @@ require(["widgets/js/widget", "widgets/js/manager"],
                         that.send(msg);
                     }
                 });
+
+                vispy.start_event_loop();
+
             },
 
             on_msg: function(comm_msg) {

@@ -60,7 +60,7 @@ else:
 
 
 # ------------------------------------------------------------- application ---
-def _prepare_js():
+def _prepare_js(force=False):
     pkgdir = op.dirname(__file__)
     jsdir = op.join(pkgdir, '../../html/static/js/')
     # Make sure the JS files are installed to user directory (new argument
@@ -69,8 +69,7 @@ def _prepare_js():
         kwargs = {'user': True}
     else:
         kwargs = {}
-    install_nbextension([op.join(jsdir, 'vispy.min.js'),
-                         op.join(jsdir, 'jquery.mousewheel.min.js')],
+    install_nbextension(op.join(jsdir, 'vispy.min.js'), overwrite=force,
                         **kwargs)
     backend_path = op.join(jsdir, 'webgl-backend.js')
     with open(backend_path, 'r') as f:
