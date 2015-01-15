@@ -126,9 +126,7 @@ class Canvas(app.Canvas):
     def __init__(self):
         app.Canvas.__init__(self, title='Grayscott Reaction-Diffusion',
                             size=(512, 512), keys='interactive')
-        self._timer = app.Timer('auto', connect=self.update, start=True)
-    
-    def on_initialize(self, event):
+
         self.scale = 4
         self.comp_size = (256, 256)
         comp_w, comp_h = self.comp_size
@@ -183,6 +181,8 @@ class Canvas(app.Canvas):
         self.fbo = FrameBuffer(self.compute["texture"],
                                RenderBuffer(self.comp_size))
         set_state(depth_test=False, clear_color='black')
+
+        self._timer = app.Timer('auto', connect=self.update, start=True)
 
     def on_draw(self, event):
         with self.fbo:

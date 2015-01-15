@@ -44,7 +44,6 @@ class Canvas(app.Canvas):
         self._program['u_color'] = 0.2, 1.0, 0.4, 1
         self._program['a_position'] = gloo.VertexBuffer(vPosition)
 
-    def on_initialize(self, event):
         gloo.set_clear_color('white')
 
     def on_resize(self, event):

@@ -50,10 +50,10 @@ void main (void) {
     v_antialias = 1.0;
     v_fg_color  = vec4(0.0,0.0,0.0,0.5);
     v_bg_color  = vec4(a_color,    1.0);
-    
+
     vec2 position = vec2(dot(a_position, u_vec1),
                          dot(a_position, u_vec2));
-    
+
     vec2 position_tr = u_scale * (position + u_pan);
     gl_Position = vec4(position_tr, 0.0, 1.0);
     gl_PointSize = 2.0*(v_radius + v_linewidth + 1.5*v_antialias);
@@ -97,13 +97,13 @@ class Canvas(app.Canvas):
         self.program['a_position'] = gloo.VertexBuffer(v_position)
         self.program['a_color'] = gloo.VertexBuffer(v_color)
         self.program['a_size'] = gloo.VertexBuffer(v_size)
-        
+
         self.program['u_pan'] = (0., 0.)
         self.program['u_scale'] = (1., 1.)
-        
+
         self.program['u_vec1'] = (1., 0., 0., 0.)
         self.program['u_vec2'] = (0., 1., 0., 0.)
-            
+
         # Circulant matrix.
         circ = np.diagflat(np.ones(ndim-1), 1)
         circ[-1, 0] = -1 if ndim % 2 == 0 else 1
@@ -112,7 +112,9 @@ class Canvas(app.Canvas):
         # to compute the matrix exponential expm(t*log(circ)).
         self.mat = np.eye(ndim)
         self.dt = .001
-        self._timer = app.Timer('auto', connect=self.on_timer)
+        gloo.set_state(clear_color=(1, 1, 1, 1), blend=True,
+                       blend_func=('src_alpha', 'one_minus_src_alpha'))
+        self._timer = app.Timer('auto', connect=self.on_timer, start=True)
 
     def on_timer(self, event):
         # We advance the numerical solver from as many dt there have been
@@ -123,11 +125,6 @@ class Canvas(app.Canvas):
         self.program['u_vec1'] = self.mat[:, 0].squeeze()
         self.program['u_vec2'] = self.mat[:, 1].squeeze()
         self.update()
-        
-    def on_initialize(self, event):
-        gloo.set_state(clear_color=(1, 1, 1, 1), blend=True, 
-                       blend_func=('src_alpha', 'one_minus_src_alpha'))
-        self._timer.start()
 
     def on_resize(self, event):
         self.width, self.height = event.size

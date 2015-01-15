@@ -231,7 +231,6 @@ class Canvas(app.Canvas):
         self._timer.start()
 
     # ---------------------------------
-    def on_initialize(self, event):
         gloo.set_clear_color((1, 1, 1, 1))
         gloo.set_state('opaque')
         gloo.set_polygon_offset(1, 1)

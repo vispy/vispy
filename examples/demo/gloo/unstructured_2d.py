@@ -106,7 +106,6 @@ class Canvas(app.Canvas):
         self.vbo = gloo.VertexBuffer(data)
         self.index = gloo.IndexBuffer(edges)
 
-    def on_initialize(self, event):
         gloo.set_state(blend=True, clear_color='white',
                        blend_func=('src_alpha', 'one_minus_src_alpha'))
 

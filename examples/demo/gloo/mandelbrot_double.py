@@ -201,7 +201,6 @@ class Canvas(app.Canvas):
         self.min_scale = 1e-12
         self.max_scale = 4
 
-    def on_initialize(self, event):
         gloo.set_clear_color(color='black')
 
     def on_draw(self, event):
@@ -275,7 +274,7 @@ class Canvas(app.Canvas):
         while zooming. mouse_coords should come from MouseEvent.pos.
 
         """
-        if mouse_coords:  # Record the position of the mouse
+        if mouse_coords is not None:  # Record the position of the mouse
             x, y = float(mouse_coords[0]), float(mouse_coords[1])
             x0, y0 = self.pixel_to_coords(x, y)
 
@@ -283,7 +282,7 @@ class Canvas(app.Canvas):
         self.scale = max(min(self.scale, self.max_scale), self.min_scale)
         self.program["scale"] = set_emulated_double(self.scale)
 
-        if mouse_coords:  # Translate so the mouse point is stationary
+        if mouse_coords is not None:  # Translate so the mouse point is stationary
             x1, y1 = self.pixel_to_coords(x, y)
             self.translate_center(x1 - x0, y1 - y0)
 

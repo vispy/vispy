@@ -46,9 +46,7 @@ class Canvas(app.Canvas):
     def __init__(self):
         app.Canvas.__init__(self, size=(512, 512), title='Colored cube',
                             keys='interactive')
-        self.timer = app.Timer('auto', self.on_timer)
 
-    def on_initialize(self, event):
         # Build cube data
         V, I, _ = create_cube()
         vertices = VertexBuffer(V)
@@ -66,7 +64,8 @@ class Canvas(app.Canvas):
         self.program['view'] = view
         self.phi, self.theta = 0, 0
         gloo.set_state(clear_color=(0.30, 0.30, 0.35, 1.00), depth_test=True)
-        self.timer.start()
+
+        self.timer = app.Timer('auto', self.on_timer, start=True)
 
     def on_draw(self, event):
         gloo.clear(color=True, depth=True)
