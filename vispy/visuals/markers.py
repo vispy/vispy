@@ -68,7 +68,7 @@ void main()
     // [e/2-a, e/2+a] antialising edge-background
     float t = 0.5*v_edgewidth - v_antialias;
     float d = abs(r) - t;
-    
+
     vec4 edgecolor = vec4(v_fg_color.rgb, edgealphafactor*v_fg_color.a);
 
     if (r > 0.5*v_edgewidth + v_antialias)
@@ -332,7 +332,7 @@ float rect(vec2 pointcoord, float size)
 star = """
 float rect(vec2 pointcoord, float size)
 {
-    float star = -10000.; 
+    float star = -10000.;
     const float PI2_5 = 3.141592653589*2./5.;
     const float PI2_20 = 3.141592653589/10.;  //PI*2/20
     // downwards shift to that the marker center is halfway vertically
@@ -364,7 +364,7 @@ float rect(vec2 pointcoord, float size)
         // compute y coordonates as well because
         // we do a second rotation to put the spike at its final position
         float rot_center_y = -$v_size/2;
-        float rot18x = cos(PI2_20) * spike_x 
+        float rot18x = cos(PI2_20) * spike_x
                             - sin(PI2_20) * (spike_y - rot_center_y);
         //rotate -18 deg the zone x > 0 arount the top of the star
         float rot_18x = cos(PI2_20) * spike_x
@@ -401,7 +401,7 @@ float rect(vec2 pointcoord, float size)
     float x = (pointcoord.x - 0.5)*size;
     float y = (pointcoord.y - 0.5)*size;
     // normalise radial distance (for edge and antialising to remain isotropic)
-    // Scaling factor is the norm of the gradient of the function defining 
+    // Scaling factor is the norm of the gradient of the function defining
     // the surface taken at a well chosen point on the edge of the ellipse
     // f(x, y) = (sqrt(x^2/a^2 + y^2/b^2) = 0.5 in this case
     // where a = v_size.x and b = v_size.y)
@@ -504,8 +504,8 @@ class MarkersVisual(Visual):
         Visual.__init__(self)
 
     def set_data(self, pos=None, style='o', size=10., edge_width=1.,
-                 edge_color='black', face_color='white', scaling=False,
-                 small_edge_fade_out=False):
+                 edge_width_rel=None, edge_color='black', face_color='white',
+                 scaling=False):
         """ Set the data used to display this visual.
 
         Parameters
@@ -516,21 +516,17 @@ class MarkersVisual(Visual):
             The style of symbol to draw (see Notes).
         size : float or array
             The symbol size in px.
-        edge_width : float
-            The width of the symbol outline in px if larger than 1,
-            the width as a fraction of marker size if strictly smaller than 1
+        edge_width : float | None
+            The width of the symbol outline in pixels.
+        edge_width_rel : float | None
+            The width as a fraction of marker size. Exactly one of
+            `edge_width` and `edge_width_rel` must be supplied.
         edge_color : Color | ColorArray
             The color used to draw each symbol outline.
         face_color : Color | ColorArray
             The color used to draw each symbol interior.
         scaling : bool
-            If set to True, marker scales when rezooming
-            (needs a viewbox to work).
-        small_edge_fade_out : bool
-            If set to True, edge marker fades out and disappears when
-            it becomes small (which removes the blending between face
-            and edge at small sizes): provides another rendering of
-            very small markers.
+            If set to True, marker scales when rezooming.
 
         Notes
         -----
@@ -540,11 +536,18 @@ class MarkersVisual(Visual):
         """
         assert (isinstance(pos, np.ndarray) and
                 pos.ndim == 2 and pos.shape[1] in (2, 3))
-        assert edge_width >= 0.
+        if (edge_width is not None) + (edge_width_rel is not None) != 1:
+            raise ValueError('exactly one of edge_width and edge_width_rel '
+                             'must be non-None')
+        if edge_width is not None:
+            if edge_width < 0:
+                raise ValueError('edge_width cannot be negative')
+        else:
+            if edge_width_rel < 0:
+                raise ValueError('edge_width_rel cannot be negative')
         self.set_style(style)
         self.scaling = scaling
-        self.small_edge_fade_out = small_edge_fade_out
-        
+
         edge_color = ColorArray(edge_color).rgba
         if len(edge_color) == 1:
             edge_color = edge_color[0]
@@ -561,10 +564,10 @@ class MarkersVisual(Visual):
                                   ('a_edgewidth', np.float32, 1)])
         data['a_fg_color'] = edge_color
         data['a_bg_color'] = face_color
-        if edge_width >= 1:
+        if edge_width is not None:
             data['a_edgewidth'] = edge_width
         else:
-            data['a_edgewidth'] = size*edge_width
+            data['a_edgewidth'] = size*edge_width_rel
         data['a_position'][:, :pos.shape[1]] = pos
         data['a_size'] = size
         self.antialias = 1.
@@ -598,20 +601,6 @@ class MarkersVisual(Visual):
             )
             update_data['a_size'] *= min(scale)
             update_data['a_edgewidth'] *= min(scale)
-            if self.small_edge_fade_out:
-                edgewidth = update_data['a_edgewidth']
-                size = update_data['a_size']
-                antialias = self.antialias
-                size_threshold = 4.*antialias
-                # remove edge if it is too small or if the marker is too small
-                # for antialiasing to be done (see frag GLSL code)
-                edgewidth[(edgewidth < 0.5) | (size < size_threshold)] = 0.
-                # more transparent edge for a smooth transition
-                mask = (edgewidth < 2.) | (size < 4. + 4.*antialias)
-                update_data['a_fg_color'][mask, 3] *= \
-                    np.minimum((edgewidth[mask] - 0.5)/1.5,
-                               (size[mask] - size_threshold) / 4.)
-
             self._vbo.set_data(update_data)
         self._program.prepare()
         self._program['u_antialias'] = self.antialias
