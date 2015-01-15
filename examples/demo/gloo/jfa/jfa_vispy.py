@@ -17,7 +17,7 @@ from os import path as op
 import sys
 
 from vispy import app
-from vispy.gloo import (Program, FrameBuffer, VertexBuffer, Texture2D, 
+from vispy.gloo import (Program, FrameBuffer, VertexBuffer, Texture2D,
                         set_viewport)
 from vispy.io import load_data_file, imread
 
@@ -28,27 +28,6 @@ class Canvas(app.Canvas):
     def __init__(self):
         self.use_shaders = True
         app.Canvas.__init__(self, size=(512, 512), keys='interactive')
-        self._timer = app.Timer('auto', self.update, start=True)
-
-    def _setup_textures(self, fname):
-        data = imread(load_data_file('jfa/' + fname))[::-1].copy()
-        if data.ndim == 3:
-            data = data[:, :, 0]  # Travis gets 2, I get three?
-        self.texture_size = data.shape[:2]
-        self.orig_tex = Texture2D(data, format='luminance', wrapping='repeat',
-                                  interpolation='nearest')
-        self.comp_texs = []
-        data = np.zeros(self.texture_size + (4,), np.float32)
-        for _ in range(2):
-            tex = Texture2D(data, format='rgba', wrapping='clamp_to_edge',
-                            interpolation='nearest')
-            self.comp_texs.append(tex)
-        self.fbo_to[0].color_buffer = self.comp_texs[0]
-        self.fbo_to[1].color_buffer = self.comp_texs[1]
-        for program in self.programs[1:2]:
-            program['texw'], program['texh'] = self.texture_size
-
-    def on_initialize(self, event):
         # Note: read as bytes, then decode; py2.6 compat
         with open(op.join(this_dir, 'vertex_vispy.glsl'), 'rb') as fid:
             vert = fid.read().decode('ASCII')
@@ -72,6 +51,25 @@ class Canvas(app.Canvas):
         vertices = VertexBuffer(vertices)
         for program in self.programs:
             program.bind(vertices)
+        self._timer = app.Timer('auto', self.update, start=True)
+
+    def _setup_textures(self, fname):
+        data = imread(load_data_file('jfa/' + fname))[::-1].copy()
+        if data.ndim == 3:
+            data = data[:, :, 0]  # Travis gets 2, I get three?
+        self.texture_size = data.shape[:2]
+        self.orig_tex = Texture2D(data, format='luminance', wrapping='repeat',
+                                  interpolation='nearest')
+        self.comp_texs = []
+        data = np.zeros(self.texture_size + (4,), np.float32)
+        for _ in range(2):
+            tex = Texture2D(data, format='rgba', wrapping='clamp_to_edge',
+                            interpolation='nearest')
+            self.comp_texs.append(tex)
+        self.fbo_to[0].color_buffer = self.comp_texs[0]
+        self.fbo_to[1].color_buffer = self.comp_texs[1]
+        for program in self.programs[1:2]:
+            program['texw'], program['texh'] = self.texture_size
 
     def on_draw(self, event):
         if self.use_shaders:

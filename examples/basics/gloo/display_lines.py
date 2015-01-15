@@ -76,12 +76,10 @@ class Canvas(app.Canvas):
         self.theta = 0
         self.phi = 0
 
-        self.timer = app.Timer('auto', connect=self.on_timer)
-
-    # ---------------------------------
-    def on_initialize(self, event):
         self.context.set_clear_color('white')
         self.context.set_state('translucent')
+
+        self.timer = app.Timer('auto', connect=self.on_timer)
 
     # ---------------------------------
     def on_key_press(self, event):

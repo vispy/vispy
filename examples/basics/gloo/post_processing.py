@@ -86,7 +86,6 @@ class Canvas(app.Canvas):
         app.Canvas.__init__(self, title='Framebuffer post-processing',
                             keys='interactive', size=(512, 512))
 
-    def on_initialize(self, event):
         # Build cube data
         # --------------------------------------
         vertices, indices, _ = create_cube()
@@ -108,7 +107,7 @@ class Canvas(app.Canvas):
         self.cube["texture"].interpolation = 'linear'
         self.cube['model'] = model
         self.cube['view'] = view
-        
+
         color = Texture2D((512, 512, 3), interpolation='linear')
         self.framebuffer = FrameBuffer(color, RenderBuffer((512, 512)))
 
@@ -136,7 +135,7 @@ class Canvas(app.Canvas):
 
     def on_resize(self, event):
         self._set_projection(event.size)
-    
+
     def _set_projection(self, size):
         width, height = size
         set_viewport(0, 0, width, height)

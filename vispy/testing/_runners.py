@@ -68,8 +68,7 @@ def _unit(mode, extra_arg_string):
         extra_arg_string = '-m vispy_app_test ' + extra_arg_string
         coverage = True
     if coverage:
-        extra_arg_string += (' --cov vispy --cov-report=term-missing '
-                             '--no-cov-on-fail ')
+        extra_arg_string += ' --cov vispy --no-cov-on-fail '
     # make a call to "python" so that it inherits whatever the system
     # thinks is "python" (e.g., virtualenvs)
     cmd = [sys.executable, '-c', _unit_script % extra_arg_string]

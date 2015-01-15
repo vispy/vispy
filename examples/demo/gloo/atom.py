@@ -123,12 +123,11 @@ class Canvas(app.Canvas):
         self.clock = 0
         self.stop_rotation = False
 
-        self._timer = app.Timer('auto', connect=self.on_timer, start=True)
-
-    def on_initialize(self, event):
         gloo.set_state('translucent', depth_test=False)
         self.program['u_clock'] = 0.0
-    
+
+        self._timer = app.Timer('auto', connect=self.on_timer, start=True)
+
     def on_key_press(self, event):
         if event.text == ' ':
             self.stop_rotation = not self.stop_rotation

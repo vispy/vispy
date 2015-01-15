@@ -71,7 +71,6 @@ class Canvas(app.Canvas):
     def __init__(self):
         app.Canvas.__init__(self, keys='interactive')
 
-    def on_initialize(self, event):
         self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
         # Set uniform and attribute
         self.program['a_color'] = gloo.VertexBuffer(v_color)
@@ -79,7 +78,7 @@ class Canvas(app.Canvas):
         self.program['a_size'] = gloo.VertexBuffer(v_size)
         gloo.set_state(clear_color='white', blend=True,
                        blend_func=('src_alpha', 'one_minus_src_alpha'))
-    
+
     def on_resize(self, event):
         gloo.set_viewport(0, 0, *event.size)
 

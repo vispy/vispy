@@ -48,7 +48,6 @@ class Canvas(app.Canvas):
                             keys='interactive')
         self.timer = app.Timer('auto', self.on_timer)
 
-    def on_initialize(self, event):
         # Build cube data
         V, I, O = create_cube()
         vertices = VertexBuffer(V)

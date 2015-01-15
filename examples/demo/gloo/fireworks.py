@@ -87,7 +87,7 @@ class Canvas(app.Canvas):
     def __init__(self):
         app.Canvas.__init__(self, keys='interactive')
         self.size = 800, 600
-        
+
         # Create program
         self._program = gloo.Program(VERT_SHADER, FRAG_SHADER)
         self._program.bind(gloo.VertexBuffer(data))
@@ -95,13 +95,12 @@ class Canvas(app.Canvas):
 
         # Create first explosion
         self._new_explosion()
-        
-        self._timer = app.Timer('auto', connect=self.update, start=True)
-    
-    def on_initialize(self, event):
+
         # Enable blending
         gloo.set_state(blend=True, clear_color='black',
                        blend_func=('src_alpha', 'one'))
+
+        self._timer = app.Timer('auto', connect=self.update, start=True)
 
     def on_resize(self, event):
         width, height = event.size
@@ -121,7 +120,7 @@ class Canvas(app.Canvas):
             self._new_explosion()
 
     def _new_explosion(self):
-    
+
         # New centerpos
         centerpos = np.random.uniform(-0.5, 0.5, (3,))
         self._program['u_centerPosition'] = centerpos

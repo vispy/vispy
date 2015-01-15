@@ -119,14 +119,12 @@ class Canvas(app.Canvas):
         self.theta = 0
         self.phi = 0
 
-        self._timer = app.Timer('auto', connect=self.on_timer, start=True)
-    
-    # ---------------------------------
-    def on_initialize(self, event):
+
         gloo.set_clear_color('white')
         gloo.set_state('opaque')
         gloo.set_polygon_offset(1, 1)
-        # gl.glEnable( gl.GL_LINE_SMOOTH )
+
+        self._timer = app.Timer('auto', connect=self.on_timer, start=True)
 
     # ---------------------------------
     def on_timer(self, event):
@@ -150,7 +148,7 @@ class Canvas(app.Canvas):
         gloo.clear()
 
         # Filled cube
-        
+
         gloo.set_state(blend=False, depth_test=True, polygon_offset_fill=True)
         self.program['u_color'] = 1, 1, 1, 1
         self.program.draw('triangles', self.filled_buf)

@@ -85,7 +85,6 @@ class Canvas(app.Canvas):
         self.index = 0
         self.program = self.programs[self.index]
 
-    def on_initialize(self, event):
         gloo.set_state(depth_test=False, blend=True, clear_color='white',
                        blend_func=('src_alpha', 'one_minus_src_alpha'))
 
