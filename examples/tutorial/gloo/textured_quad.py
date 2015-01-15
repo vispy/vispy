@@ -40,7 +40,6 @@ class Canvas(app.Canvas):
         app.Canvas.__init__(self, size=(512, 512), title='Textured quad',
                             keys='interactive')
 
-    def on_initialize(self, event):
         # Build program & data
         self.program = Program(vertex, fragment, count=4)
         self.program['position'] = [(-1, -1), (-1, +1),

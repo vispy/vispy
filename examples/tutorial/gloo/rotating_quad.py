@@ -39,7 +39,6 @@ class Canvas(app.Canvas):
                             keys='interactive')
         self.timer = app.Timer('auto', self.on_timer)
 
-    def on_initialize(self, event):
         # Build program & data
         self.program = Program(vertex, fragment, count=4)
         self.program['color'] = [(1, 0, 0, 1), (0, 1, 0, 1),
