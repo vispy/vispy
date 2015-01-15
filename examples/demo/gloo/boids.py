@@ -90,12 +90,11 @@ class Canvas(app.Canvas):
         self.program['color'] = self.vbo_color
         self.program['size'] = self.vbo_size
         self.program['position'] = self.vbo_position
-        
-        self._timer = app.Timer('auto', connect=self.update, start=True)
-    
-    def on_initialize(self, event):
+
         gloo.set_state(clear_color=(0, 0, 0, 1), blend=True,
                        blend_func=('src_alpha', 'one'))
+
+        self._timer = app.Timer('auto', connect=self.update, start=True)
 
     def on_resize(self, event):
         width, height = event.size

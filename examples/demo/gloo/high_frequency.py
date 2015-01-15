@@ -79,12 +79,12 @@ class Canvas(app.Canvas):
         self.program["u_global_time"] = 0
         self.program['a_position'] = [(-1, -1), (-1, +1),
                                       (+1, -1), (+1, +1)]
-        self._timer = app.Timer('auto', connect=self.on_timer_event,
-                                start=True)
 
-    def on_initialize(self, event):
         gloo.set_state(blend=True,
                        blend_func=('src_alpha', 'one_minus_src_alpha'))
+
+        self._timer = app.Timer('auto', connect=self.on_timer_event,
+                                start=True)
 
     def on_resize(self, event):
         self.program["u_resolution"] = event.size

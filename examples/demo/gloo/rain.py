@@ -90,7 +90,6 @@ class Canvas(app.Canvas):
         app.Canvas.__init__(self, title='Rain [Move mouse]',
                             size=(512, 512), keys='interactive')
 
-    def on_initialize(self, event):
         # Build data
         # --------------------------------------
         n = 500

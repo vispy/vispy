@@ -100,10 +100,9 @@ class Canvas(app.Canvas):
         self.min_scale = 0.00005
         self.max_scale = 4
 
-        self._timer = app.Timer('auto', connect=self.update, start=True)
-
-    def on_initialize(self, event):
         gloo.set_clear_color(color='black')
+
+        self._timer = app.Timer('auto', connect=self.update, start=True)
 
     def on_draw(self, event):
         self.program.draw()

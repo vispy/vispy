@@ -75,13 +75,12 @@ class Canvas(app.Canvas):
 
         # Handle transformations
         self.init_transforms()
-        
-        self._timer = app.Timer('auto', connect=self.update_transforms)
-        self._timer.start()
-    
-    def on_initialize(self, event):
+
         gloo.set_clear_color((1, 1, 1, 1))
         gloo.set_state(depth_test=True)
+
+        self._timer = app.Timer('auto', connect=self.update_transforms)
+        self._timer.start()
 
     def on_resize(self, event):
         width, height = event.size
@@ -147,7 +146,7 @@ class MainWindow(QtGui.QWidget):
 
         # Create a canvas
         self.canvas = Canvas(parent=self)
-        
+
         # Layout
         hlayout = QtGui.QHBoxLayout(self)
         self.setLayout(hlayout)
@@ -168,7 +167,7 @@ class MainWindow(QtGui.QWidget):
         self.canvas.program.set_shaders(vert_code, frag_code)
         # Note how we do not need to reset our variables, they are
         # re-set automatically (by gloo)
-        
+
 
 if __name__ == '__main__':
     app.create()

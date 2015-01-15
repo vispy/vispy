@@ -31,7 +31,7 @@ attribute float a_offset;
 varying float v_pointsize;
 
 void main (void) {
-   
+
     vec3 pos = a_position;
     pos.z = pos.z - a_offset - u_time_offset;
     vec4 v_eye_position = u_view * u_model * vec4(pos, 1.0);
@@ -60,7 +60,7 @@ void main()
 }
 """
 
-N = 100000  # Number of stars 
+N = 100000  # Number of stars
 SIZE = 100
 SPEED = 4.0  # time in seconds to go through one block
 NBLOCKS = 10
@@ -71,30 +71,29 @@ class Canvas(app.Canvas):
     def __init__(self):
         app.Canvas.__init__(self, title='Spacy', keys='interactive')
         self.size = 800, 600
-        
+
         self.program = gloo.Program(vertex, fragment)
         self.view = np.eye(4, dtype=np.float32)
         self.model = np.eye(4, dtype=np.float32)
         self.projection = np.eye(4, dtype=np.float32)
-        
+
         self.timer = app.Timer('auto', connect=self.update, start=True)
-        
+
         # Set uniforms (some are set later)
         self.program['u_model'] = self.model
         self.program['u_view'] = self.view
-        
+
         # Set attributes
         self.program['a_position'] = np.zeros((N, 3), np.float32)
         self.program['a_offset'] = np.zeros((N, 1), np.float32)
-        
+
         # Init
         self._timeout = 0
         self._active_block = 0
         for i in range(NBLOCKS):
             self._generate_stars()
         self._timeout = time.time() + SPEED
-    
-    def on_initialize(self, event):
+
         gloo.set_state(clear_color='black', depth_test=False,
                        blend=True, blend_equation='func_add',
                        blend_func=('src_alpha', 'one_minus_src_alpha'))
@@ -118,37 +117,37 @@ class Canvas(app.Canvas):
         # the time offset goes from 0 to size
         factor = (self._timeout - time.time()) / SPEED
         self.program['u_time_offset'] = -(1-factor) * SIZE
-        
+
         # Draw
         gloo.clear()
         self.program.draw('points')
-        
+
         # Build new starts if the first block is fully behind us
         if factor < 0:
             self._generate_stars()
-    
+
     def on_close(self, event):
         self.timer.stop()
-    
+
     def _generate_stars(self):
-        
+
         # Get number of stars in each block
         blocksize = N // NBLOCKS
-        
+
         # Update active block
         self._active_block += 1
         if self._active_block >= NBLOCKS:
             self._active_block = 0
-        
+
         # Create new position data for the active block
-        pos = np.zeros((blocksize, 3), 'float32') 
+        pos = np.zeros((blocksize, 3), 'float32')
         pos[:, :2] = np.random.normal(0.0, SIZE/2, (blocksize, 2))  # x-y
         pos[:, 2] = np.random.uniform(0, SIZE, (blocksize,))  # z
         start_index = self._active_block * blocksize
-        self.program['a_position'].set_subdata(pos, offset=start_index) 
-        
+        self.program['a_position'].set_subdata(pos, offset=start_index)
+
         #print(start_index)
-        
+
         # Set offsets - active block gets offset 0
         for i in range(NBLOCKS):
             val = i - self._active_block
@@ -156,8 +155,8 @@ class Canvas(app.Canvas):
                 val += NBLOCKS
             values = np.ones((blocksize, 1), 'float32') * val * SIZE
             start_index = i*blocksize
-            self.program['a_offset'].set_subdata(values, offset=start_index) 
-        
+            self.program['a_offset'].set_subdata(values, offset=start_index)
+
         # Reset timer
         self._timeout += SPEED
 

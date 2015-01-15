@@ -143,12 +143,11 @@ class Canvas(app.Canvas):
         self.program['u_model'] = self.model
         self.program['u_view'] = self.view
 
-        self.timer = app.Timer('auto', connect=self.on_timer)
-
-    def on_initialize(self, event):
         gloo.set_state(depth_test=False, blend=True,
                        blend_func=('src_alpha', 'one'), clear_color='black')
+
         # Start the timer upon initialization.
+        self.timer = app.Timer('auto', connect=self.on_timer)
         self.timer.start()
 
     def on_key_press(self, event):

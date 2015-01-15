@@ -82,7 +82,7 @@ void main()
     vec3 surfaceToCamera = vec3(0.0, 0.0, 1.0) - position;
     vec3 K = normalize(normalize(surfaceToLight) + normalize(surfaceToCamera));
     float specular = clamp(pow(abs(dot(normal, K)), 40.), 0.0, 1.0);
-    
+
     gl_FragColor = v_color * brightness * vec4(u_light_intensity, 1);
 }
 """
@@ -94,39 +94,38 @@ class Canvas(app.Canvas):
         self.size = 800, 600
 
         self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
-        
+
         self.theta, self.phi = -80, 180
         self.translate = 3
 
         self.faces = gloo.IndexBuffer(faces)
         self.program.bind(gloo.VertexBuffer(data))
-        
+
         self.program['u_color'] = 1, 1, 1, 1
         self.program['u_light_position'] = (1., 1., 1.)
         self.program['u_light_intensity'] = (1., 1., 1.)
-        
+
+        gloo.set_state(blend=False, depth_test=True, polygon_offset_fill=True)
+
         self._t0 = default_timer()
         self._timer = app.Timer('auto', connect=self.on_timer, start=True)
-        
+
         self.update_matrices()
 
     def update_matrices(self):
         self.view = np.eye(4, dtype=np.float32)
         self.model = np.eye(4, dtype=np.float32)
         self.projection = np.eye(4, dtype=np.float32)
-        
+
         rotate(self.model, self.theta, 1, 0, 0)
         rotate(self.model, self.phi, 0, 1, 0)
-        
+
         translate(self.view, 0, 0, -self.translate)
-        
+
         self.program['u_model'] = self.model
         self.program['u_view'] = self.view
-        self.program['u_normal'] = np.array(np.matrix(np.dot(self.view, 
+        self.program['u_normal'] = np.array(np.matrix(np.dot(self.view,
                                                              self.model)).I.T)
-        
-    def on_initialize(self, event):
-        gloo.set_state(blend=False, depth_test=True, polygon_offset_fill=True)
 
     def on_timer(self, event):
         elapsed = default_timer() - self._t0
