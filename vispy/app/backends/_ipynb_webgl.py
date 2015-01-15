@@ -321,7 +321,6 @@ def _stop_timers(canvas):
             attr_obj = None
         if isinstance(attr_obj, Timer):
             attr_obj.stop()
-            print("Stop timer", attr)
 
 
 class VispyWidget(DOMWidget):

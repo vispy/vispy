@@ -78,6 +78,7 @@ require(["widgets/js/widget", "widgets/js/manager"],
             on_msg: function(comm_msg) {
                 var buffers = comm_msg.buffers;
                 var msg = comm_msg.content.data.content;
+                if (msg == undefined) return;
                 // Receive and execute the GLIR commands.
                 if (msg.msg_type == 'glir_commands') {
                     var commands = msg.commands;
