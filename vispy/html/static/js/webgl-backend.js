@@ -115,6 +115,10 @@ require(["widgets/js/widget", "widgets/js/manager"],
                 var size = [this.model.get('width'), this.model.get('height')];
                 this.$canvas.css('width', size[0] + 'px');
                 this.$canvas.css('height', size[1] + 'px');
+            },
+
+            remove: function() {
+                vispy.unregister(this.c);
             }
         });
 
