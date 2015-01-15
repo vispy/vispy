@@ -77,11 +77,10 @@ class Canvas(app.Canvas):
         self.program['u_view'] = self.view
         self.projection = ortho(0, W, 0, H, -1, 1)
         self.program['u_projection'] = self.projection
-        
-        self._timer = app.Timer('auto', connect=self.update, start=True)
 
-    def on_initialize(self, event):
         gloo.set_clear_color('white')
+
+        self._timer = app.Timer('auto', connect=self.update, start=True)
 
     def on_resize(self, event):
         width, height = event.size
