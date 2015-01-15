@@ -119,6 +119,11 @@ require(["widgets/js/widget", "widgets/js/manager"],
 
             remove: function() {
                 vispy.unregister(this.c);
+                // Inform Python that the widget has been removed.
+                this.send({
+                    msg_type: 'status',
+                    contents: 'removed'
+                });
             }
         });
 
