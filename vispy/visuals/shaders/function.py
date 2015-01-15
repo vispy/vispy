@@ -431,7 +431,7 @@ class Function(ShaderObject):
                     self.template_vars.add(var.lstrip('$'))
         
         self.changed(code_changed=True, value_changed=True)
-        if logger.level == logging.DEBUG:
+        if logger.level <= logging.DEBUG:
             import traceback
             last = traceback.format_list(traceback.extract_stack()[-2:-1])
             logger.debug("Assignment would trigger shader recompile:\n"
