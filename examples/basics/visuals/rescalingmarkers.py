@@ -39,11 +39,10 @@ class Canvas(scene.SceneCanvas):
         )
         self.index = 0
         self.markers = visuals.Markers()
-        self.markers.set_data(pos, face_color=green,
-                              scaling=True, small_edge_fade_out=False)
+        self.markers.set_data(pos, face_color=green, scaling=True)
         self.markers.set_style(impl_visuals.marker_types[self.index])
         self.text = visuals.Text(impl_visuals.marker_types[self.index],
-                                 pos=(80, 15), font_size=14, 
+                                 pos=(80, 15), font_size=14,
                                  color='black', parent=self.scene)
 
     def on_key_press(self, event):
@@ -58,6 +57,6 @@ if __name__ == '__main__':
     canvas = Canvas()
     grid = canvas.central_widget.add_grid()
     vb1 = grid.add_view(row=0, col=0)
-    vb1.add(canvas.markers)    
+    vb1.add(canvas.markers)
     canvas.show()
     app.run()
