@@ -7,9 +7,9 @@ import unittest
 
 import numpy as np
 
-from vispy import gloo
+from vispy import gloo, app
 from vispy.gloo.program import Program
-from vispy.testing import run_tests_if_main
+from vispy.testing import run_tests_if_main, assert_in, requires_application
 from vispy.gloo.context import set_current_canvas, forget_canvas
 
 
@@ -64,6 +64,25 @@ class ProgramTest(unittest.TestCase):
         program.set_shaders('C', 'D')
         assert program.shaders[0] == "C"
         assert program.shaders[1] == "D"
+        
+    @requires_application()
+    def test_error(self):
+        vert = '''
+        void main() {
+            vec2 xy;
+            error on this line
+            vec2 ab;
+        }
+        '''
+        frag = 'void main() { glFragColor = vec4(1, 1, 1, 1); }'
+        with app.Canvas() as c:
+            program = Program(vert, frag)
+            try:
+                program._glir.flush(c.context.shared.parser)
+            except Exception as err:
+                assert_in('error on this line', str(err))
+            else:
+                raise Exception("Compile program should have failed.")
 
     def test_uniform(self):
         

@@ -119,7 +119,6 @@ class Canvas(app.Canvas):
         self.theta = 0
         self.phi = 0
 
-
         gloo.set_clear_color('white')
         gloo.set_state('opaque')
         gloo.set_polygon_offset(1, 1)

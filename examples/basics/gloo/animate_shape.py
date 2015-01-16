@@ -84,7 +84,6 @@ class Canvas(app.Canvas):
 
         self._timer = app.Timer('auto', connect=self.update, start=True)
 
-
     def on_resize(self, event):
         width, height = event.size
         gloo.set_viewport(0, 0, width, height)

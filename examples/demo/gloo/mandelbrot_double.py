@@ -282,7 +282,7 @@ class Canvas(app.Canvas):
         self.scale = max(min(self.scale, self.max_scale), self.min_scale)
         self.program["scale"] = set_emulated_double(self.scale)
 
-        if mouse_coords is not None:  # Translate so the mouse point is stationary
+        if mouse_coords is not None:  # Translate so mouse point is stationary
             x1, y1 = self.pixel_to_coords(x, y)
             self.translate_center(x1 - x0, y1 - y0)
 

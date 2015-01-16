@@ -171,6 +171,22 @@ class LineVisual(Visual):
 
         self.update()
 
+    @property
+    def color(self):
+        return self._color
+
+    @property
+    def width(self):
+        return self._width
+
+    @property
+    def connect(self):
+        return self._connect
+
+    @property
+    def pos(self):
+        return self._pos
+
     def _interpret_connect(self):
         if isinstance(self._connect, np.ndarray):
             # Convert a boolean connection array to a vertex index array
@@ -249,6 +265,10 @@ class _GLLineVisual(Visual):
                                        self.FRAGMENT_SHADER)
 
     def draw(self, transforms):
+        # first see whether we can bail out early
+        if self._parent._width <= 0:
+            return
+        
         if self._parent._changed['pos']:
             if self._parent._pos is None:
                 return
@@ -265,6 +285,9 @@ class _GLLineVisual(Visual):
 
         if self._parent._changed['color']:
             color = self._parent._interpret_color()
+            # If color is not visible, just quit now
+            if isinstance(color, Color) and color.is_blank:
+                return
             if isinstance(color, Function):
                 # TODO: Change to the parametric coordinate once that is done
                 self._program.vert['color'] = color(

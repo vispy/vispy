@@ -39,14 +39,13 @@ class Widget(Node):
     
     """
 
-    def __init__(self, pos=(0, 0), size=(10, 10), border_color='black',
+    def __init__(self, pos=(0, 0), size=(10, 10), border_color=(0, 0, 0, 0),
                  clip=False, padding=0, margin=0, **kwargs):
         Node.__init__(self, **kwargs)
         
-        # todo: rename to bordercolor? -> borderwidth
-        self._border_color = tuple(Color(border_color).rgba)
         # for drawing border
-        self._visual = LineVisual(color=self._border_color, mode='gl')
+        self._visual = LineVisual(mode='gl')
+        self.border_color = border_color
         # whether this widget should clip its children
         self._clip = clip
         # reserved space inside border
@@ -111,11 +110,11 @@ class Widget(Node):
     def border_color(self):
         """ The color of the border.
         """
-        return self._border_color
+        return self._visual.color
 
     @border_color.setter
     def border_color(self, b):
-        self._border_color = b
+        b = Color(b)
         self._visual.set_data(color=b)
         self.update()
 
@@ -150,7 +149,7 @@ class Widget(Node):
 
     def _update_line(self):
         """ Update border line to match new shape """
-        if self.border_color is None:
+        if self.border_color.is_blank:
             return
         m = self.margin
         r = self.size[0] - m
@@ -165,8 +164,9 @@ class Widget(Node):
         self._visual.set_data(pos=pos)
 
     def draw(self, event):
-        if self.border_color is not None:
-            self._visual.draw(event)
+        if self.border_color.is_blank:
+            return
+        self._visual.draw(event)
 
     def on_resize(self, ev):
         self._update_child_widgets()
