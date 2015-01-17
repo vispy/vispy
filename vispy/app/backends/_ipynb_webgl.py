@@ -14,6 +14,7 @@ from ._ipynb_util import create_glir_message
 from ...util import logger, keys
 from ...ext import six
 from vispy.gloo.glir import BaseGlirParser
+from vispy.app import Timer
 
 # Import for displaying Javascript on notebook
 import os.path as op
@@ -60,7 +61,7 @@ else:
 
 
 # ------------------------------------------------------------- application ---
-def _prepare_js():
+def _prepare_js(force=False):
     pkgdir = op.dirname(__file__)
     jsdir = op.join(pkgdir, '../../html/static/js/')
     # Make sure the JS files are installed to user directory (new argument
@@ -69,8 +70,7 @@ def _prepare_js():
         kwargs = {'user': True}
     else:
         kwargs = {}
-    install_nbextension([op.join(jsdir, 'vispy.min.js'),
-                         op.join(jsdir, 'jquery.mousewheel.min.js')],
+    install_nbextension(op.join(jsdir, 'vispy.min.js'), overwrite=force,
                         **kwargs)
     backend_path = op.join(jsdir, 'webgl-backend.js')
     with open(backend_path, 'r') as f:
@@ -139,7 +139,7 @@ class CanvasBackend(BaseCanvasBackend):
         self._create_widget(size=size)
 
     def _create_widget(self, size=None):
-        self._widget = VispyWidget(self._gen_event, size=size)
+        self._widget = VispyWidget(self, size=size)
         # Set glir parser on context and context.shared
         context = self._vispy_canvas.context
         context.shared.parser = WebGLGlirParser(self._widget)
@@ -312,18 +312,32 @@ class TimerBackend(BaseTimerBackend):
 
 
 # ---------------------------------------------------------- IPython Widget ---
+def _stop_timers(canvas):
+    """Stop all timers in a canvas."""
+    for attr in dir(canvas):
+        try:
+            attr_obj = getattr(canvas, attr)
+        except NotImplementedError:
+            # This try/except is needed because canvas.position raises
+            # an error (it is not implemented in this backend).
+            attr_obj = None
+        if isinstance(attr_obj, Timer):
+            attr_obj.stop()
+
+
 class VispyWidget(DOMWidget):
     _view_name = Unicode("VispyView", sync=True)
 
     width = Int(sync=True)
     height = Int(sync=True)
 
-    def __init__(self, gen_event, **kwargs):
+    def __init__(self, canvas_backend, **kwargs):
         super(VispyWidget, self).__init__(**kwargs)
         w, h = kwargs.get('size', (500, 200))
         self.width = w
         self.height = h
-        self.gen_event = gen_event
+        self.canvas_backend = canvas_backend
+        self.gen_event = canvas_backend._gen_event
         self.on_msg(self.events_received)
 
     def events_received(self, _, msg):
@@ -331,6 +345,10 @@ class VispyWidget(DOMWidget):
             events = msg['contents']
             for ev in events:
                 self.gen_event(ev)
+        elif msg['msg_type'] == 'status':
+            if msg['contents'] == 'removed':
+                # Stop all timers associated to the widget.
+                _stop_timers(self.canvas_backend._vispy_canvas)
 
     def send_glir_commands(self, commands):
         # TODO: check whether binary websocket is available (ipython >= 3)
