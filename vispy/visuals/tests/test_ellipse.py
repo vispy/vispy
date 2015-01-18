@@ -33,7 +33,7 @@ def test_circle_draw():
         ellipse = visuals.Ellipse(pos=(75, 35, 0), radius=20,
                                   border_color=(0, 1, 1, 1))
         c.draw_visual(ellipse)
-        assert_image_equal("screenshot", 'visuals/circle3.png')
+        assert_image_equal("screenshot", 'visuals/circle3.png', 0.9)
 
 
 @requires_application()
