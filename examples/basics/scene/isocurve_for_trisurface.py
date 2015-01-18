@@ -5,7 +5,7 @@
 # -----------------------------------------------------------------------------
 
 """
-This example demonstrates isocurve for triangular mesh with vertice data.
+This example demonstrates isocurve for triangular mesh with vertex data.
 """
 
 import numpy as np
