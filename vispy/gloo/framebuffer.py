@@ -7,6 +7,7 @@
 from .globject import GLObject
 from .texture import Texture2D
 from .wrappers import _check_valid, read_pixels
+from .context import get_current_canvas
 from ..ext.six import string_types
 
 # ------------------------------------------------------ RenderBuffer class ---
@@ -122,7 +123,12 @@ class FrameBuffer(GLObject):
     def activate(self):
         """ Activate/use this frame buffer.
         """
+        # Send command
         self._glir.command('FRAMEBUFFER', self._id, True)
+        # Associate canvas now
+        canvas = get_current_canvas()
+        if canvas is not None:
+            canvas.context.glir.associate(self.glir)
     
     def deactivate(self):
         """ Stop using this frame buffer, the previous framebuffer will be
@@ -152,6 +158,7 @@ class FrameBuffer(GLObject):
             setattr(self, '_%s_buffer' % format, None)
             self._glir.command('ATTACH', self._id, format, 0)
         elif isinstance(buffer, (Texture2D, RenderBuffer)):
+            self.glir.associate(buffer.glir)
             setattr(self, '_%s_buffer' % format, buffer)
             self._glir.command('ATTACH', self._id, format, buffer.id)
         else:

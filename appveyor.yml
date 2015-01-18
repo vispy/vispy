@@ -20,10 +20,13 @@ install:
   # Check that we have the expected version and architecture for Python
   - "python --version"
   - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
+  # Skip using MESA for now since AppVeyor is unreliable with it
+  # "SET VISPY_GL_LIB=%CD%\\opengl32.dll"
 
   # Install the dependencies of the project.
-  - "conda install --yes --quiet numpy setuptools flake8 pyqt nose"
-  - "pip install -q http://pyglet.googlecode.com/archive/tip.zip"
+  # "conda install --yes --quiet numpy scipy matplotlib setuptools flake8 pyqt nose pytest coverage"
+  - "conda install --yes --quiet numpy scipy matplotlib setuptools nose pytest coverage"
+  - "pip install -q pytest-cov"
   - "python setup.py develop"
 
 build: false  # Not a C# project, build stuff at the test step instead.

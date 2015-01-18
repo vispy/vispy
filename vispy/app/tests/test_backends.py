@@ -10,11 +10,10 @@ implementation is corect.
 
 from inspect import getargspec
 
-from nose.tools import assert_raises
-
 import vispy
 from vispy import keys
-from vispy.testing import requires_application, assert_in, run_tests_if_main
+from vispy.testing import (requires_application, assert_in, run_tests_if_main,
+                           assert_raises)
 from vispy.app import use_app, Application
 from vispy.app.backends import _template
 

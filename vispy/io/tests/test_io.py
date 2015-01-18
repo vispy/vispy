@@ -3,13 +3,12 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 import numpy as np
 from os import path as op
-from nose.tools import assert_equal, assert_raises
 from numpy.testing import assert_allclose, assert_array_equal
 
 from vispy.io import write_mesh, read_mesh, load_data_file
 from vispy.geometry import _fast_cross_3d
 from vispy.util import _TempDir
-from vispy.testing import run_tests_if_main
+from vispy.testing import run_tests_if_main, assert_equal, assert_raises
 
 temp_dir = _TempDir()
 

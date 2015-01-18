@@ -167,7 +167,6 @@ class Canvas(app.Canvas):
         self.program_e = gloo.Program(vs, fs)
         self.program_e.bind(self.vbo)
 
-    def on_initialize(self, event):
         set_state(clear_color='white', depth_test=False, blend=True,
                   blend_func=('src_alpha', 'one_minus_src_alpha'))
 

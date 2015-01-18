@@ -7,16 +7,27 @@ import unittest
 
 import numpy as np
 
-from vispy import gloo
-from vispy.gloo.context import get_current_glir_queue
+from vispy import gloo, app
 from vispy.gloo.program import Program
-from vispy.testing import run_tests_if_main
+from vispy.testing import run_tests_if_main, assert_in, requires_application
+from vispy.gloo.context import set_current_canvas, forget_canvas
 
 
-def teardown_module():
-    # Clear the BS commands that we produced here
-    glir = get_current_glir_queue()
-    glir.clear()
+class DummyParser(gloo.glir.BaseGlirParser):
+    
+    def convert_shaders(self):
+        return 'desktop'
+    
+    def parse(self, commands):
+        pass
+
+
+class DummyCanvas:
+    
+    def __init__(self):
+        self.context = gloo.context.GLContext()
+        self.context.shared.parser = DummyParser()
+        self.context.glir.flush = lambda *args: None  # No flush
 
 
 class ProgramTest(unittest.TestCase):
@@ -53,6 +64,25 @@ class ProgramTest(unittest.TestCase):
         program.set_shaders('C', 'D')
         assert program.shaders[0] == "C"
         assert program.shaders[1] == "D"
+        
+    @requires_application()
+    def test_error(self):
+        vert = '''
+        void main() {
+            vec2 xy;
+            error on this line
+            vec2 ab;
+        }
+        '''
+        frag = 'void main() { glFragColor = vec4(1, 1, 1, 1); }'
+        with app.Canvas() as c:
+            program = Program(vert, frag)
+            try:
+                program._glir.flush(c.context.shared.parser)
+            except Exception as err:
+                assert_in('error on this line', str(err))
+            else:
+                raise Exception("Compile program should have failed.")
 
     def test_uniform(self):
         
@@ -200,21 +230,20 @@ class ProgramTest(unittest.TestCase):
         program = Program("attribute float A;", "uniform float foo")
         program['A'] = np.zeros((10,), np.float32)
         
-        # We need to disable flushing to run this test
-        flush = program._glir.flush
-        program._glir.flush = lambda x=None: None
-        
+        dummy_canvas = DummyCanvas()
+        glir = dummy_canvas.context.glir
+        set_current_canvas(dummy_canvas)
         try:
             # Draw arrays
             program.draw('triangles')
-            glir_cmd = program._glir.clear()[-1]
+            glir_cmd = glir.clear()[-1]
             assert glir_cmd[0] == 'DRAW'
             assert len(glir_cmd[-1]) == 2
             
             # Draw elements
             indices = gloo.IndexBuffer(np.zeros(10, dtype=np.uint8))
             program.draw('triangles', indices)
-            glir_cmd = program._glir.clear()[-1]
+            glir_cmd = glir.clear()[-1]
             assert glir_cmd[0] == 'DRAW'
             assert len(glir_cmd[-1]) == 3
             
@@ -232,6 +261,6 @@ class ProgramTest(unittest.TestCase):
             self.assertRaises(RuntimeError, program.draw, 'triangles')
         
         finally:
-            program._glir.flush = flush
+            forget_canvas(dummy_canvas)
 
 run_tests_if_main()

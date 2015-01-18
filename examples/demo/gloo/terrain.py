@@ -131,7 +131,6 @@ class Canvas(app.Canvas):
 
         self.program['a_position'] = gloo.VertexBuffer(triangles)
 
-    def on_initialize(self, event):
         gloo.set_state(clear_color='black', depth_test=True)
 
     def on_key_press(self, event):

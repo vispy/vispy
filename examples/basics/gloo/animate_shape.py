@@ -79,11 +79,10 @@ class Canvas(app.Canvas):
         self._program.bind(self._vbo)  # This does:
         #self._program['a_position'] = self._vbo['a_position']
         #self._program['a_texcoords'] = self._vbo['a_texcoords']
-        
-        self._timer = app.Timer('auto', connect=self.update, start=True)
-    
-    def on_initialize(self, event):
+
         gloo.set_clear_color('white')
+
+        self._timer = app.Timer('auto', connect=self.update, start=True)
 
     def on_resize(self, event):
         width, height = event.size

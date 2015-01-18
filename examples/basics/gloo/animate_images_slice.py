@@ -77,7 +77,7 @@ class Canvas(app.Canvas):
         self.size = W * 5, H * 5
 
         self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
-        self.texture = gloo.Texture3D(I, interpolation='nearest', 
+        self.texture = gloo.Texture3D(I, interpolation='nearest',
                                       wrapping='clamp_to_edge')
         self.program['u_texture'] = self.texture
         self.program['i'] = 0.0
@@ -94,10 +94,9 @@ class Canvas(app.Canvas):
 
         self.i = 0
 
-        self._timer = app.Timer('auto', connect=self.on_timer, start=True)
-
-    def on_initialize(self, event):
         gloo.set_clear_color('white')
+
+        self._timer = app.Timer('auto', connect=self.on_timer, start=True)
 
     def on_resize(self, event):
         width, height = event.size

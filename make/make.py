@@ -79,6 +79,7 @@ class Maker:
         from coverage import coverage
         cov = coverage(auto_data=False, branch=True, data_suffix=None,
                        source=['vispy'])  # should match testing/_coverage.py
+        cov.combine()
         cov.load()
         cov.html_report()
         print('Done, launching browser.')
@@ -172,7 +173,7 @@ class Maker:
     def test(self, arg):
         """ Run tests:
                 * full - run all tests
-                * nose - run nose tests (also for each backend)
+                * unit - run tests (also for each backend)
                 * any backend name (e.g. pyside, pyqt4, glut, sdl2, etc.) -
                   run tests for the given backend
                 * nobackend - run tests that do not require a backend

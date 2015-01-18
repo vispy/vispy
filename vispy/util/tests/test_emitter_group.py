@@ -3,11 +3,10 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 import unittest
 import copy
-from nose.tools import assert_true, assert_raises
 
 from vispy.util.event import Event, EventEmitter, EmitterGroup
 from vispy.util import use_log_level
-from vispy.testing import run_tests_if_main
+from vispy.testing import run_tests_if_main, assert_true, assert_raises
 
 
 class BasicEvent(Event):

@@ -7,12 +7,11 @@ The only exception is glCompressedTexImage2D and glCompressedTexSubImage2D.
 
 import sys
 
-from nose.tools import assert_equal, assert_true  # noqa
-
 from vispy.app import Canvas
 from numpy.testing import assert_almost_equal
 from vispy.testing import (requires_application, requires_pyopengl, SkipTest,
-                           glut_skip, run_tests_if_main)
+                           glut_skip, run_tests_if_main, assert_equal,
+                           assert_true)
 from vispy.ext.six import string_types
 from vispy.util import use_log_level
 from vispy.gloo import gl
@@ -263,8 +262,9 @@ def _test_fbo():
     assert_equal(width, w)
     
     # Touch copy tex functions
+    gl.glBindTexture(gl.GL_TEXTURE_2D, htex)
+    gl.glCopyTexSubImage2D(gl.GL_TEXTURE_2D, 0, 5, 5, 5, 5, 20, 20)
     gl.glCopyTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_RGB, 0, 0, 30, 30,  0)
-    gl.glCopyTexSubImage2D(gl.GL_TEXTURE_2D, 0,  20, 20,  0, 0, 10, 10)
     
     gl.check_error()
     

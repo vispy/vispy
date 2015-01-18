@@ -6,13 +6,10 @@
 
 from vispy.testing import run_tests_if_main
 from vispy.gloo.globject import GLObject
-from vispy.gloo.context import get_current_glir_queue
 
 
 def test_globject():
     """ Test gl object uinique id and GLIR CREATE command """
-    glir = get_current_glir_queue()
-    glir.clear()
     
     objects = [GLObject() for i in range(10)]
     ids = [ob.id for ob in objects]
@@ -21,7 +18,9 @@ def test_globject():
     assert len(set(ids)) == len(objects)
     
     # Verify that glir commands have been created
-    commands = glir.clear()
+    commands = []
+    for ob in objects:
+        commands.extend(ob._glir.clear())
     assert len(commands) == len(objects)
     for cmd in commands:
         assert cmd[0] == 'CREATE'
@@ -29,7 +28,7 @@ def test_globject():
     # Delete
     ob = objects[-1]
     ob.delete()
-    cmd = glir.clear()[-1]
+    cmd = ob._glir.clear()[-1]
     assert cmd[0] == 'DELETE'
 
 

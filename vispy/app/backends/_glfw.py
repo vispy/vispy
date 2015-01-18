@@ -155,6 +155,14 @@ def _set_config(c):
 
 # ------------------------------------------------------------- application ---
 
+
+_glfw_errors = []
+
+
+def _error_callback(num, descr):
+    _glfw_errors.append('Error %s: %s' % (num, descr))
+
+
 class ApplicationBackend(BaseApplicationBackend):
 
     def __init__(self):
@@ -200,11 +208,13 @@ class ApplicationBackend(BaseApplicationBackend):
         global _GLFW_INITIALIZED
         if not _GLFW_INITIALIZED:
             cwd = os.getcwd()
+            glfw.glfwSetErrorCallback(_error_callback)
             try:
                 if not glfw.glfwInit():  # only ever call once
-                    raise OSError('Could not init glfw')
+                    raise OSError('Could not init glfw:\n%r' % _glfw_errors)
             finally:
                 os.chdir(cwd)
+            glfw.glfwSetErrorCallback(0)
             atexit.register(glfw.glfwTerminate)
             _GLFW_INITIALIZED = True
         return glfw
@@ -223,15 +233,14 @@ class CanvasBackend(BaseCanvasBackend):
             = self._process_backend_kwargs(kwargs)
         self._initialized = False
         
+        # Deal with config
+        _set_config(context.config)
         # Deal with context
-        if not context.istaken:
-            context.take('glfw', self)
-            _set_config(context.config)
+        context.shared.add_ref('glfw', self)
+        if context.shared.ref is self:
             share = None
-        elif context.istaken == 'glfw':
-            share = context.backend_canvas._id
         else:
-            raise RuntimeError('Different backends cannot share a context.')
+            share = context.shared.ref._id
         
         glfw.glfwWindowHint(glfw.GLFW_REFRESH_RATE, 0)  # highest possible
         glfw.glfwSwapInterval(1 if vsync else 0)
@@ -249,9 +258,9 @@ class CanvasBackend(BaseCanvasBackend):
                                      % len(monitor))
                 monitor = monitor[fs]
             use_size = glfw.glfwGetVideoMode(monitor)[:2]
-            if use_size != size:
-                logger.warning('Requested size %s, will be ignored to '
-                               'use fullscreen mode %s' % (size, use_size))
+            if use_size != tuple(size):
+                logger.debug('Requested size %s, will be ignored to '
+                             'use fullscreen mode %s' % (size, use_size))
             size = use_size
         else:
             self._fullscreen = False

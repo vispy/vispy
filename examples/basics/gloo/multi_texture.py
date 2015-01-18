@@ -64,13 +64,12 @@ class Canvas(app.Canvas):
 
     def __init__(self):
         app.Canvas.__init__(self, size=(500, 500), keys='interactive')
-        
+
         self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
         self.program['u_tex1'] = gloo.Texture2D(im1, interpolation='linear')
         self.program['u_tex2'] = gloo.Texture2D(im2, interpolation='linear')
         self.program.bind(gloo.VertexBuffer(data))
 
-    def on_initialize(self, event):
         gloo.set_clear_color('white')
 
     def on_resize(self, event):

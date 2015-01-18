@@ -10,7 +10,7 @@ from vispy import app
 from vispy import gloo
 from vispy.visuals.shaders import ModularProgram
 from vispy.visuals import Visual
-from vispy.visuals.transforms import (STTransform, LogTransform, 
+from vispy.visuals.transforms import (STTransform, LogTransform,
                                       TransformSystem, ChainTransform)
 
 
@@ -18,7 +18,7 @@ class MarkerVisual(Visual):
     # My full vertex shader, with just a `transform` hook.
     VERTEX_SHADER = """
         #version 120
-        
+
         attribute vec2 a_position;
         attribute vec3 a_color;
         attribute float a_size;
@@ -35,9 +35,9 @@ class MarkerVisual(Visual):
             v_antialias = 1.0;
             v_fg_color  = vec4(0.0,0.0,0.0,0.5);
             v_bg_color  = vec4(a_color,    1.0);
-            
+
             gl_Position = $transform(vec4(a_position,0,1));
-            
+
             gl_PointSize = 2.0*(v_radius + v_linewidth + 1.5*v_antialias);
         }
     """
@@ -68,29 +68,29 @@ class MarkerVisual(Visual):
             }
         }
     """
-    
+
     def __init__(self, pos=None, color=None, size=None):
-        self._program = ModularProgram(self.VERTEX_SHADER, 
+        self._program = ModularProgram(self.VERTEX_SHADER,
                                        self.FRAGMENT_SHADER)
         self.set_data(pos=pos, color=color, size=size)
-        
+
     def set_options(self):
         """Special function that is used to set the options. Automatically
         called at initialization."""
-        gloo.set_state(clear_color=(1, 1, 1, 1), blend=True, 
+        gloo.set_state(clear_color=(1, 1, 1, 1), blend=True,
                        blend_func=('src_alpha', 'one_minus_src_alpha'))
 
     def set_data(self, pos=None, color=None, size=None):
         """I'm not required to use this function. We could also have a system
         of trait attributes, such that a user doing
-        `visual.position = myndarray` results in an automatic update of the 
+        `visual.position = myndarray` results in an automatic update of the
         buffer. Here I just set the buffers manually."""
         self._pos = pos
         self._color = color
         self._size = size
-        
+
     def draw(self, transforms):
-        # attributes / uniforms are not available until program is built        
+        # attributes / uniforms are not available until program is built
         tr = transforms.get_full_transform()
         self._program.vert['transform'] = tr.shader_map()
         self._program.prepare()  # Force ModularProgram to set shaders
@@ -98,7 +98,7 @@ class MarkerVisual(Visual):
         self._program['a_color'] = gloo.VertexBuffer(self._color)
         self._program['a_size'] = gloo.VertexBuffer(self._size)
         self._program.draw('points')
-    
+
 
 class Canvas(app.Canvas):
 
@@ -111,7 +111,7 @@ class Canvas(app.Canvas):
         size = np.random.uniform(2, 12, (n, 1)).astype(np.float32)
 
         self.points = MarkerVisual(pos=pos, color=color, size=size)
-        
+
         self.panzoom = STTransform(scale=(1, 0.2), translate=(0, 500))
         w2 = (self.size[0]/2, self.size[1]/2)
         self.transform = ChainTransform([self.panzoom,
@@ -120,24 +120,23 @@ class Canvas(app.Canvas):
 
         self.tr_sys = TransformSystem(self)
         self.tr_sys.visual_to_document = self.transform
-    
-    def on_initialize(self, event):
+
         gloo.set_state(blend=True,
                        blend_func=('src_alpha', 'one_minus_src_alpha'))
-    
+
     def on_mouse_move(self, event):
         if event.is_dragging:
             dxy = event.pos - event.last_event.pos
             button = event.press_event.button
-            
+
             if button == 1:
                 self.panzoom.move(dxy)
             elif button == 2:
                 center = event.press_event.pos
                 self.panzoom.zoom(np.exp(dxy * (0.01, -0.01)), center)
-                
+
             self.update()
-        
+
     def on_resize(self, event):
         self.width, self.height = event.size
         gloo.set_viewport(0, 0, self.width, self.height)

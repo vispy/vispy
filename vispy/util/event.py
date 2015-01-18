@@ -398,6 +398,8 @@ class EventEmitter(object):
         (notably, via Event.handled) but also requires that callbacks
         be careful not to inadvertently modify the Event.
         """
+        # This is a VERY highly used method; must be fast!
+        blocked = self._blocked
         if self._emitting:
             raise RuntimeError('EventEmitter loop detected!')
 
@@ -409,12 +411,18 @@ class EventEmitter(object):
         event._push_source(self.source)
         self._emitting = True
         try:
-            if self.blocked():
+            if blocked.get(None, 0) > 0:  # this is the same as self.blocked()
                 return event
 
             for cb in self._callbacks:
-                if self.blocked(cb):
+                if blocked.get(cb, 0) > 0:
                     continue
+                
+                if isinstance(cb, tuple):
+                    cb = getattr(cb[0], cb[1], None)
+                    if cb is None:
+                        continue
+                
                 self._invoke_callback(cb, event)
                 if event.blocked:
                     break
@@ -426,10 +434,10 @@ class EventEmitter(object):
         return event
 
     def _invoke_callback(self, cb, event):
-        if isinstance(cb, tuple):
-            cb = getattr(cb[0], cb[1], None)
-            if cb is None:
-                return
+        if not hasattr(EventEmitter, 'prof'):
+            EventEmitter.prof = {}
+        k = (cb, event.type)
+        EventEmitter.prof[k] = 1 + EventEmitter.prof.get(k, 0)
 
         try:
             cb(event)

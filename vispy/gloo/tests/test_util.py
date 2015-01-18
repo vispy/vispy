@@ -2,8 +2,7 @@
 
 from vispy.gloo import util
 
-from vispy.testing import run_tests_if_main
-from nose.tools import assert_raises
+from vispy.testing import run_tests_if_main, assert_raises
 
 
 def test_check_enum():

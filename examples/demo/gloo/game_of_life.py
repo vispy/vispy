@@ -14,7 +14,7 @@ Conway game of life.
 """
 
 import numpy as np
-from vispy.gloo import (Program, FrameBuffer, RenderBuffer, 
+from vispy.gloo import (Program, FrameBuffer, RenderBuffer,
                         clear, set_viewport, set_state)
 from vispy import app
 
@@ -111,9 +111,7 @@ class Canvas(app.Canvas):
     def __init__(self):
         app.Canvas.__init__(self, title="Conway game of life",
                             size=(512, 512), keys='interactive')
-        self._timer = app.Timer('auto', connect=self.update, start=True)
-    
-    def on_initialize(self, event):
+
         # Build programs
         # --------------
         self.comp_size = (512, 512)
@@ -158,6 +156,8 @@ class Canvas(app.Canvas):
         self.fbo = FrameBuffer(self.compute["texture"],
                                RenderBuffer(self.comp_size))
         set_state(depth_test=False, clear_color='black')
+
+        self._timer = app.Timer('auto', connect=self.update, start=True)
 
     def on_draw(self, event):
         with self.fbo:

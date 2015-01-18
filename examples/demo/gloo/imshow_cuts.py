@@ -111,6 +111,8 @@ void main()
 
 class Canvas(app.Canvas):
     def __init__(self):
+        app.Canvas.__init__(self, show=True, size=(512, 512),
+                            keys='interactive')
 
         self.image = Program(image_vertex, image_fragment, 4)
         self.image['position'] = (-1, -1), (-1, +1), (+1, -1), (+1, +1)
@@ -131,10 +133,7 @@ class Canvas(app.Canvas):
         color[9:9+512, 3] = 0.5
         color[523:523+512, 3] = 0.5
         self.lines["color"] = color
-        app.Canvas.__init__(self, show=True, size=(512, 512),
-                            keys='interactive')
 
-    def on_initialize(self, event):
         set_state(clear_color='white', blend=True,
                   blend_func=('src_alpha', 'one_minus_src_alpha'))
 

@@ -5,6 +5,7 @@ language: python
 # it for 2.7, but the Ubuntu system has installable 2.7 Qt4-GL, which
 # allows for more complete testing.
 
+# Size testing can be skipped by adding "[size skip]" within a commit message.
 
 virtualenv:
     system_site_packages: true
@@ -34,7 +35,7 @@ before_install:
         travis_retry sudo apt-get -qq -y install cmake;
       fi;
     - if [ "${PYTHON}" != "2.7" ]; then
-        wget -q http://repo.continuum.io/miniconda/Miniconda-3.6.0-Linux-x86_64.sh -O miniconda.sh;
+        wget -q http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
         chmod +x miniconda.sh;
         ./miniconda.sh -b -p ~/anaconda &> ${REDIRECT_TO};
         export PATH=~/anaconda/bin:$PATH;
@@ -55,14 +56,15 @@ before_install:
         cd ~;
         mkdir target-size-clone && cd target-size-clone;
         git init &> ${REDIRECT_TO} && git remote add -t ${TRAVIS_BRANCH} origin git://github.com/${TRAVIS_REPO_SLUG}.git &>${REDIRECT_TO};
-        git fetch origin ${GIT_TARGET_EXTRA} &> ${REDIRECT_TO} && git checkout -qf FETCH_HEAD &> ${REDIRECT_TO} && cd ..;
-        TARGET_SIZE=`du -s target-size-clone | sed -e "s/\t.*//"`;
-        mkdir source-size-clone && cd source-size-clone;
-        git init &> ${REDIRECT_TO} && git remote add -t ${TRAVIS_BRANCH} origin git://github.com/${TRAVIS_REPO_SLUG}.git &> ${REDIRECT_TO};
-        git fetch origin ${GIT_SOURCE_EXTRA} &> ${REDIRECT_TO} && git checkout -qf FETCH_HEAD &> ${REDIRECT_TO} && cd ..;
-        SOURCE_SIZE=`du -s source-size-clone | sed -e "s/\t.*//"`;
-        if [ "${SOURCE_SIZE}" != "${TARGET_SIZE}" ]; then
-          SIZE_DIFF=`expr ${SOURCE_SIZE} - ${TARGET_SIZE}`;
+        git fetch origin ${GIT_TARGET_EXTRA} &> ${REDIRECT_TO} && git checkout -qf FETCH_HEAD &> ${REDIRECT_TO};
+        git tag travis-merge-target &> ${REDIRECT_TO};
+        git gc --aggressive &> ${REDIRECT_TO};
+        TARGET_SIZE=`du -s . | sed -e "s/\t.*//"`;
+        git pull origin ${GIT_SOURCE_EXTRA} &> ${REDIRECT_TO};
+        git gc --aggressive &> ${REDIRECT_TO};
+        MERGE_SIZE=`du -s . | sed -e "s/\t.*//"`;
+        if [ "${MERGE_SIZE}" != "${TARGET_SIZE}" ]; then
+          SIZE_DIFF=`expr \( ${MERGE_SIZE} - ${TARGET_SIZE} \)`;
         else
           SIZE_DIFF=0;
         fi;
@@ -70,24 +72,21 @@ before_install:
 
 
 install:
-    # Install numpy, nose, flake
+    # Install numpy, flake
     - if [ "${PYTHON}" != "2.7" ]; then
         conda create -n testenv --yes --quiet pip python=$PYTHON > ${REDIRECT_TO};
         source activate testenv > ${REDIRECT_TO};
-        conda install --yes --quiet numpy nose > ${REDIRECT_TO};
+        conda install --yes --quiet numpy nose pytest > ${REDIRECT_TO};
       else
-        travis_retry sudo apt-get -qq -y install python-numpy python-nose python-setuptools > ${REDIRECT_TO};
+        travis_retry sudo apt-get -qq -y install python-numpy python-setuptools > ${REDIRECT_TO};
+        pip install -q pytest > ${REDIRECT_TO};
       fi;
-    - pip install -q coveralls nose-timer
+    - pip install -q coveralls pytest-cov
     # Dont install flake8 on 2.6 to make sure tests still run without it
     - if [ "${PYTHON}" != "2.6" ]; then
         pip install -q flake8;
       else
         pip install -q unittest2;
-      fi
-    # helpful for debugging faults
-    - if [ "${PYTHON}" != 3.4 ]; then
-        pip install -q nose-faulthandler;
       fi
 
     # Install PyOpenGL
@@ -171,7 +170,7 @@ before_script:
 script:
     - cd ${SRC_DIR}
     - if [ "${TEST}" == "standard" ]; then
-        make nose;
+        make unit;
       fi;
     - if [ "${TEST}" == "examples" ] || [ "${DEPS}" == "minimal" ]; then
         make examples;
@@ -182,12 +181,17 @@ script:
     # Each line must be run in a separate line to ensure exit code accuracy
     - if [ "${TEST}" == "extra" ]; then
         echo "Size difference ${SIZE_DIFF} kB";
-        test ${SIZE_DIFF} -lt 100;
+        if git log --format=%B -n 2 | grep -q "\[size skip\]"; then
+          echo "Skipping size test";
+        else
+          test ${SIZE_DIFF} -lt 100;
+        fi;
       fi;
 
 
 after_success:
     # Need to run from source dir to execute appropriate "git" commands
     - if [ "${TEST}" == "standard" ]; then
+        coverage combine;
         coveralls;
       fi;

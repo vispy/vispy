@@ -1,15 +1,5 @@
 // Load Vispy.js in the notebook.
 IPython.load_extensions("vispy.min");
-IPython.load_extensions("jquery.mousewheel.min");
-
-// HACK: this is UGLY but I didn't find a better way to do it
-var _vispy_loaded = function(vispy) {
-    window.vispy = vispy;
-    vispy.start_event_loop();
-};
-window.setTimeout(function() {
-    require(["vispy"], _vispy_loaded, _vispy_loaded);
-}, 100);
 
 function _inline_glir_commands(commands, buffers) {
     // Put back the buffers within the GLIR commands before passing them
@@ -59,10 +49,10 @@ require(["widgets/js/widget", "widgets/js/manager"],
                 // WARNING: necessary on IPython >= 3.0dev.
                 this.model.comm.on_msg($.proxy(this.on_msg, this));
 
-                window.VISPY_DEBUG = false;
-
                 // Start the event loop.
-                this.c.event_tick = function() {
+                this.c.on_event_tick(function() {
+                    // This callback function will be called at each JS tick,
+                    // before the GLIR commands are flushed.
 
                     // Retrieve and flush the event queue.
                     var events = that.c.event_queue.get();
@@ -79,15 +69,16 @@ require(["widgets/js/widget", "widgets/js/manager"],
                         // Send the message with the events to Python.
                         that.send(msg);
                     }
+                });
 
-                    // Execute the pending GLIR commands.
-                    that.c.execute_pending_commands();
-                };
+                vispy.start_event_loop();
+
             },
 
             on_msg: function(comm_msg) {
                 var buffers = comm_msg.buffers;
                 var msg = comm_msg.content.data.content;
+                if (msg == undefined) return;
                 // Receive and execute the GLIR commands.
                 if (msg.msg_type == 'glir_commands') {
                     var commands = msg.commands;
@@ -125,6 +116,15 @@ require(["widgets/js/widget", "widgets/js/manager"],
                 var size = [this.model.get('width'), this.model.get('height')];
                 this.$canvas.css('width', size[0] + 'px');
                 this.$canvas.css('height', size[1] + 'px');
+            },
+
+            remove: function() {
+                vispy.unregister(this.c);
+                // Inform Python that the widget has been removed.
+                this.send({
+                    msg_type: 'status',
+                    contents: 'removed'
+                });
             }
         });
 

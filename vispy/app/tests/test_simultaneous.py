@@ -2,7 +2,6 @@
 
 import numpy as np
 from numpy.testing import assert_allclose
-from nose.tools import assert_true
 from time import sleep
 
 from vispy.app import use_app, Canvas, Timer
@@ -70,8 +69,8 @@ def test_multiple_canvases():
             while (ct[0] < n_check or ct[1] < n_check) and time() < timeout:
                 app.process_events()
             print((ct, n_check))
-            assert_true(n_check <= ct[0] <= n_check + 1)
-            assert_true(n_check <= ct[1] <= n_check + 1)
+            assert n_check <= ct[0] <= n_check + 1
+            assert n_check <= ct[1] <= n_check + 1
 
             # check timer
             global timer_ran
@@ -85,7 +84,7 @@ def test_multiple_canvases():
             app.process_events()
             sleep(0.2)
             app.process_events()
-            assert_true(timer_ran)
+            assert timer_ran
 
     if app.backend_name.lower() == 'wx':
         raise SkipTest('wx fails test #2')  # XXX TODO Fix this

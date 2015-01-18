@@ -95,6 +95,8 @@ void main()
 
 class Canvas(app.Canvas):
     def __init__(self):
+        app.Canvas.__init__(self, show=True, size=(512, 512),
+                            keys='interactive')
         self.image = Program(img_vertex, img_fragment, 4)
         self.image['position'] = (-1, -1), (-1, +1), (+1, -1), (+1, +1)
         self.image['texcoord'] = (0, 0), (0, +1), (+1, 0), (+1, +1)
@@ -108,10 +110,7 @@ class Canvas(app.Canvas):
 
         self.image['image'] = I.astype('float32')
         self.image['image'].interpolation = 'linear'
-        app.Canvas.__init__(self, show=True, size=(512, 512),
-                            keys='interactive')
 
-    def on_initialize(self, event):
         set_clear_color('black')
 
     def on_resize(self, event):

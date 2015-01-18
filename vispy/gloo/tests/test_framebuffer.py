@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 
-from vispy.testing import run_tests_if_main
+from vispy.testing import run_tests_if_main, assert_raises
 
 from vispy import gloo
 from vispy.gloo import FrameBuffer, RenderBuffer
-from nose.tools import assert_raises
 
 
 def test_renderbuffer():
@@ -18,7 +17,6 @@ def test_renderbuffer():
     assert R.format is None
     
     # Set both shape and format
-    gloo.context.get_current_glir_queue().clear()
     R = RenderBuffer((10, 20), 'color')
     assert R.shape == (10, 20)
     assert R.format is 'color'
@@ -66,7 +64,6 @@ def test_renderbuffer():
 def test_framebuffer():
     
     # Test init with no args
-    gloo.context.get_current_glir_queue().clear()
     F = FrameBuffer()
     glir_cmds = F._glir.clear()
     assert len(glir_cmds) == 1

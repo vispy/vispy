@@ -114,6 +114,7 @@ class Canvas(app.Canvas):
         self.theta = 0
         self.phi = 0
 
+        gloo.set_state(depth_test=True, clear_color='black')
         self._timer = app.Timer('auto', connect=self.on_timer, start=True)
 
     def load_molecule(self, fname):
@@ -146,9 +147,6 @@ class Canvas(app.Canvas):
         self.program['u_view'] = self.view
         self.program['u_light_position'] = 0., 0., 2.
         self.program['u_light_spec_position'] = -5., 5., -5.
-
-    def on_initialize(self, event):
-        gloo.set_state(depth_test=True, clear_color='black')
 
     def on_key_press(self, event):
         if event.text == ' ':

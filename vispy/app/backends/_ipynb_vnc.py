@@ -158,15 +158,6 @@ class CanvasBackend(BaseCanvasBackend):
         # Create IPython Widget
         self._widget = Widget(self._gen_event, size=canvas.size)
 
-    @property
-    def _vispy_context(self):
-        """Context to return for sharing"""
-        return self._backend2._vispy_context
-    
-    @_vispy_context.setter
-    def _vispy_context(self, context):
-        self._backend2._vispy_context = context
-    
     def _vispy_warmup(self):
         return self._backend2._vispy_warmup()
 
