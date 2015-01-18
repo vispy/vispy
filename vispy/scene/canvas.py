@@ -72,6 +72,10 @@ class SceneCanvas(app.Canvas):
         be callable.
     parent : widget-object
         The parent widget if this makes sense for the used backend.
+    dpi : float | None
+        Resolution in dots-per-inch to use for the canvas. If dpi is None,
+        then the value will be determined by querying the global config first,
+        and then the operating system.
     bgcolor : Color
         The background color to use.
 

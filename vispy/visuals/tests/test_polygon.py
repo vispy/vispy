@@ -44,14 +44,6 @@ def test_square_draw():
         c.draw_visual(polygon)
         assert_image_equal("screenshot", 'visuals/square3.png')
 
-        gloo.clear()
-        polygon = visuals.Polygon(pos=pos, border_color=(1, 0, 1, 1),
-                                  border_width=2)
-        polygon.transform = transforms.STTransform(scale=(50, 50),
-                                                   translate=(50, 50))
-        c.draw_visual(polygon)
-        assert_image_equal("screenshot", 'visuals/square4.png')
-
 
 @requires_application()
 @requires_scipy()
@@ -78,9 +70,9 @@ def test_rectangle_draw():
 
         gloo.clear()
         polygon = visuals.Polygon(pos=pos, border_color=(1, 0, 0, 1),
-                                  border_width=2)
+                                  border_width=1)
         polygon.transform = transforms.STTransform(scale=(200.0, 25),
-                                                   translate=(50, 50))
+                                                   translate=(50, 49))
         c.draw_visual(polygon)
         assert_image_equal("screenshot", 'visuals/rectangle3.png')
 
