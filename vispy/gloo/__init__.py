@@ -13,7 +13,7 @@ This set of classes provides a friendly (Pythonic) interface
 to OpenGL, and is designed to provide OpenGL's full functionality.
 
 All classes inherit from GLObject, which provide a basic interface,
-enabling activatinge and deleting the object. Central to each
+enabling, activating and deleting the object. Central to each
 visualization is the Program. Other objects, such as Texture2D and
 VertexBuffer should be set as uniforms and attributes of the Program
 object.
