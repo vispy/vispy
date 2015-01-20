@@ -203,7 +203,6 @@ class BaseTexture(GLObject):
             is chosen automatically based on the number of channels.
             When the data has one channel, 'luminance' is assumed.  
         internalformat : str | enum
-
             The internal (storage) format of the texture: 'luminance',
             'alpha', 'r8', 'r16', 'r16f', 'r32f'; 'luminance_alpha',
             'rg8', 'rg16', 'rg16f', 'rg32f'; 'rgb', 'rgb8', 'rgb16',
