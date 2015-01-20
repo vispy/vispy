@@ -263,8 +263,6 @@ def _fetch_file(url, file_name, print_destination=True):
     print_destination: bool, optional
         If true, destination of where file was saved will be printed after
         download finishes.
-    resume: bool, optional
-        If true, try to resume partially downloaded files.
     """
     # Adapted from NISL:
     # https://github.com/nisl/tutorial/blob/master/nisl/datasets.py
