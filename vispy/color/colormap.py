@@ -338,7 +338,7 @@ class Colormap(BaseColormap):
     @interpolation.setter
     def interpolation(self, val):
         if val not in _interpolation_info:
-            raise ValueError('The interpolation mode can only be one of: '
+            raise ValueError('The interpolation mode can only be one of: ' +
                              ', '.join(sorted(_interpolation_info.keys())))
         # Get the information of the interpolation mode.
         info = _interpolation_info[val]
