@@ -39,7 +39,7 @@ class BaseTexture(GLObject):
     _ndim = 2
 
     _formats = {
-        1: 'luminance',  # or alpha, or r
+        1: 'luminance',  # or alpha, or red
         2: 'luminance_alpha',  # or rg
         3: 'rgb',
         4: 'rgba'
@@ -48,7 +48,9 @@ class BaseTexture(GLObject):
     _inv_formats = {
         'luminance': 1,
         'alpha': 1,
+        'red': 1,
         'luminance_alpha': 2,
+        'rg': 2,
         'rgb': 3,
         'rgba': 4
     }
@@ -67,7 +69,9 @@ class BaseTexture(GLObject):
     ] + [
         ('luminance', 1),
         ('alpha', 1),
+        ('red', 1),
         ('luminance_alpha', 2),
+        ('rg', 2),
         ('rgb', 3),
         ('rgba', 4)
     ])

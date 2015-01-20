@@ -20,6 +20,7 @@ from ..util import logger
 
 # TODO: expose these via an extension space in .gl?
 _internalformats = [
+    gl.Enum('GL_RED', 6403),
     gl.Enum('GL_R', 8194), 
     gl.Enum('GL_R8', 33321), 
     gl.Enum('GL_R16', 33322), 
