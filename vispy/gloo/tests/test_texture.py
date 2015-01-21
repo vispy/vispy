@@ -467,7 +467,7 @@ def _test_texture_formats(Texture, baseshape, formats):
 
     # invalid channel count and format combinations
     for channels in range(1,5):
-        for format in [f for n, f in formats + [5, 'junk'] if n != channels]:
+        for format in [f for n, f in formats + [(5, 'junk')] if n != channels]:
             shape = baseshape + (channels,)
             assert_raises(ValueError, Texture, shape=shape, format=format)
             data = np.zeros(shape, dtype=np.uint8)
@@ -491,12 +491,12 @@ def _test_texture_basic_formats(Texture, baseshape):
 
 # ------------------------------------------------------- Texture2D formats ---
 def test_texture_2D_formats():
-    _test_texture_formats(Texture2D, (10, 10))
+    _test_texture_basic_formats(Texture2D, (10, 10))
 
 
 # ------------------------------------------------------- Texture3D formats ---
 def test_texture_3D_formats():
-    _test_texture_formats(Texture3D, (10, 10, 10))
+    _test_texture_basic_formats(Texture3D, (10, 10, 10))
 
 
 # -------------------------------------------------- Texture OpenGL formats ---
@@ -539,7 +539,7 @@ def _test_texture_internalformats(Texture, baseshape):
         
     for channels in range(1,5):
         for fmt, ifmts in [(f, iL) for n, f, iL in formats if n == channels]:
-            shape = baseshape + (channels)
+            shape = baseshape + (channels,)
             data = np.zeros(shape, dtype=np.uint8)
             for ifmt in ifmts:
                 T = Texture(shape=shape, format=fmt, internalformat=ifmt)
@@ -551,12 +551,12 @@ def _test_texture_internalformats(Texture, baseshape):
 
     for channels in range(1,5):
         for fmt, ifmts in [(f, iL) for n, f, iL in formats if n != channels]:
-            shape = baseshape + (channels)
+            shape = baseshape + (channels,)
             data = np.zeros(shape, dtype=np.uint8)
             for ifmt in ifmts:
-                assert_raises(ValueError, Texture, shape=shape, fmt=fmt,
+                assert_raises(ValueError, Texture, shape=shape, format=fmt,
                               internalformat=ifmt)
-                assert_raises(ValueError, Texture, data=data, fmt=fmt,
+                assert_raises(ValueError, Texture, data=data, format=fmt,
                               internalformat=ifmt)
 
 
