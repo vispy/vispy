@@ -55,13 +55,6 @@ class BaseTexture(GLObject):
         'rgba': 4
     }
 
-    _internalformats = {
-        1: 'luminance',
-        2: 'luminance_alpha',
-        3: 'rgb',
-        4: 'rgba'
-    }
-
     _inv_internalformats = dict([ 
         (base + suffix, channels) 
         for base, channels in [('r', 1), ('rg', 2), ('rgb', 3), ('rgba', 4)]
@@ -228,14 +221,7 @@ class BaseTexture(GLObject):
         else:
             format = check_enum(format)
 
-        if internalformat is None:
-            internalformat = self._internalformats[shape[-1]]
-            # Keep current internalformat if channelsl match
-            if self._internalformat and \
-               self._inv_internalformats[self._internalformat] \
-               == self._inv_internalformats[internalformat]:
-                internalformat = self._internalformat
-        else:
+        if internalformat is not None:
             internalformat = check_enum(internalformat)
 
         # Check
@@ -244,7 +230,9 @@ class BaseTexture(GLObject):
         elif shape[-1] != self._inv_formats[format]:
             raise ValueError('Format does not match with given shape.')
         
-        if internalformat not in self._inv_internalformats:
+        if internalformat is None:
+            pass
+        elif internalformat not in self._inv_internalformats:
             raise ValueError(
                 'Invalid texture internalformat: %r.' 
                 % internalformat

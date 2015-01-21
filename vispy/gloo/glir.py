@@ -908,7 +908,10 @@ class GlirTexture2D(GlirTexture):
     def set_size(self, shape, format, internalformat):
         # Shape is height, width
         format = as_enum(format)
-        internalformat = as_enum(internalformat)
+        if internalformat is not None:
+            internalformat = as_enum(internalformat)
+        else:
+            internalformat = format
         if (shape, format, internalformat) != self._shape_formats:
             self._shape_formats = shape, format, internalformat
             self.activate()
@@ -974,7 +977,10 @@ class GlirTexture3D(GlirTexture):
         
     def set_size(self, shape, format, internalformat):
         format = as_enum(format)
-        internalformat = as_enum(internalformat)
+        if internalformat is not None:
+            internalformat = as_enum(internalformat)
+        else:
+            internalformat = format
         # Shape is depth, height, width
         if (shape, format, internalformat) != self._shape_formats:
             self.activate()
