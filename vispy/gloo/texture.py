@@ -91,10 +91,10 @@ class BaseTexture(GLObject):
             if shape is not None:
                 raise ValueError('Texture needs data or shape, not both.')
             data = np.array(data, copy=False)
-            self.resize(data.shape, format)  # So we can test the combination
+            self.resize(data.shape, format, internalformat)  # So we can test the combination
             self.set_data(data)
         elif shape is not None:
-            self.resize(shape, format)
+            self.resize(shape, format, internalformat)
         else:
             raise ValueError("Either data or shape must be given")
         
