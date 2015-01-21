@@ -450,4 +450,126 @@ class TextureAtlasTest(unittest.TestCase):
         assert reg is None
     
     
+# --------------------------------------------------------- Texture formats ---
+def _test_texture_formats(Texture, baseshape, formats):
+
+    # valid channel count and format combinations
+    for channels in range(1,5):
+        for format in [f for n, f in formats if n == channels]:
+            shape = baseshape + (channels,)
+            T = Texture(shape=shape, format=format)
+            assert 'Texture' in repr(T)
+            assert T._shape == shape
+            data = np.zeros(shape, dtype=np.uint8)
+            T = Texture(data=data, format=format)
+            assert 'Texture' in repr(T)
+            assert T._shape == shape
+
+    # invalid channel count and format combinations
+    for channels in range(1,5):
+        for format in [f for n, f in formats + [5, 'junk'] if n != channels]:
+            shape = baseshape + (channels,)
+            assert_raises(ValueError, Texture, shape=shape, format=format)
+            data = np.zeros(shape, dtype=np.uint8)
+            assert_raises(ValueError, Texture, data=data, format=format)
+
+
+# --------------------------------------------------------- Texture formats ---
+def _test_texture_basic_formats(Texture, baseshape):
+    _test_texture_formats(
+        Texture, 
+        baseshape, 
+        [
+            (1, 'alpha'),
+            (1, 'luminance'),
+            (2, 'luminance_alpha'),
+            (3, 'rgb'),
+            (4, 'rgba')
+        ]
+    )
+
+
+# ------------------------------------------------------- Texture2D formats ---
+def test_texture_2D_formats():
+    _test_texture_formats(Texture2D, (10, 10))
+
+
+# ------------------------------------------------------- Texture3D formats ---
+def test_texture_3D_formats():
+    _test_texture_formats(Texture3D, (10, 10, 10))
+
+
+# -------------------------------------------------- Texture OpenGL formats ---
+def _test_texture_opengl_formats(Texture, baseshape):
+    _test_texture_formats(
+        Texture,
+        baseshape,
+        [
+            (1, 'red'),
+            (2, 'rg'),
+            (3, 'rgb'),
+            (4, 'rgba')
+        ]
+    )
+
+
+# ------------------------------------------------ Texture2D OpenGL formats ---
+@requires_pyopengl()
+def test_texture_2D_opengl_formats():
+    _test_texture_opengl_formats(Texture2D, (10, 10))
+
+
+# ------------------------------------------------ Texture3D OpenGL formats ---
+@requires_pyopengl()
+def test_texture_3D_opengl_formats():
+    _test_texture_opengl_formats(Texture3D, (10, 10, 10))
+
+
+# ------------------------------------------ Texture OpenGL internalformats ---
+def _test_texture_internalformats(Texture, baseshape):
+    # Test format for concrete Texture class and baseshape + (numchannels,)
+    # Test internalformats valid with desktop OpenGL
+
+    formats = [
+        (1, 'red', ['red', 'r8', 'r16', 'r16f', 'r32f']),
+        (2, 'rg', ['rg', 'rg8', 'rg16', 'rg16f', 'rg32f']),
+        (3, 'rgb', ['rgb', 'rgb8', 'rgb16', 'rgb16f', 'rgb32f']),
+        (4, 'rgba', ['rgba', 'rgba8', 'rgba16', 'rgba16f', 'rgba32f'])
+    ]
+        
+    for channels in range(1,5):
+        for fmt, ifmts in [f, iL for n, f, iL in formats if n == channels]:
+            shape = baseshape + (channels)
+            data = np.zeros(shape, dtype=np.uint8)
+            for ifmt in ifmts:
+                T = Texture(shape=shape, format=fmt, internalformat=ifmt)
+                assert 'Texture' in repr(T)
+                assert T._shape == shape
+                T = Texture(data=data, format=fmt, internalformat=ifmt)
+                assert 'Texture' in repr(T)
+                assert T._shape == shape
+
+    for channels in range(1,5):
+        for fmt, ifmts in [f, iL for n, f, iL in formats if n != channels]:
+            shape = baseshape + (channels)
+            data = np.zeros(shape, dtype=np.uint8)
+            for ifmt in ifmts:
+                assert_raises(ValueError, Texture, shape=shape, fmt=fmt,
+                              internalformat=ifmt)
+                assert_raises(ValueError, Texture, data=data, fmt=fmt,
+                              internalformat=ifmt)
+
+
+# ---------------------------------------- Texture2D OpenGL internalformats ---
+@requires_pyopengl()
+def test_texture_2D_internalformats():
+    _test_texture_internalformats(Texture2D, (10, 10))
+
+
+# ---------------------------------------- Texture3D OpenGL internalformats ---
+@requires_pyopengl()
+def test_texture_3D_internalformats():
+    _test_texture_internalformats(Texture3D, (10, 10, 10))
+
+
 run_tests_if_main()
