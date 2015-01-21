@@ -538,7 +538,7 @@ def _test_texture_internalformats(Texture, baseshape):
     ]
         
     for channels in range(1,5):
-        for fmt, ifmts in [f, iL for n, f, iL in formats if n == channels]:
+        for fmt, ifmts in [(f, iL) for n, f, iL in formats if n == channels]:
             shape = baseshape + (channels)
             data = np.zeros(shape, dtype=np.uint8)
             for ifmt in ifmts:
@@ -550,7 +550,7 @@ def _test_texture_internalformats(Texture, baseshape):
                 assert T._shape == shape
 
     for channels in range(1,5):
-        for fmt, ifmts in [f, iL for n, f, iL in formats if n != channels]:
+        for fmt, ifmts in [(f, iL) for n, f, iL in formats if n != channels]:
             shape = baseshape + (channels)
             data = np.zeros(shape, dtype=np.uint8)
             for ifmt in ifmts:
