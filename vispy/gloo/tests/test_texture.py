@@ -454,7 +454,7 @@ class TextureAtlasTest(unittest.TestCase):
 def _test_texture_formats(Texture, baseshape, formats):
 
     # valid channel count and format combinations
-    for channels in range(1,5):
+    for channels in range(1, 5):
         for format in [f for n, f in formats if n == channels]:
             shape = baseshape + (channels,)
             T = Texture(shape=shape, format=format)
@@ -466,7 +466,7 @@ def _test_texture_formats(Texture, baseshape, formats):
             assert T._shape == shape
 
     # invalid channel count and format combinations
-    for channels in range(1,5):
+    for channels in range(1, 5):
         for format in [f for n, f in formats + [(5, 'junk')] if n != channels]:
             shape = baseshape + (channels,)
             assert_raises(ValueError, Texture, shape=shape, format=format)
@@ -537,7 +537,7 @@ def _test_texture_internalformats(Texture, baseshape):
         (4, 'rgba', ['rgba', 'rgba8', 'rgba16', 'rgba16f', 'rgba32f'])
     ]
         
-    for channels in range(1,5):
+    for channels in range(1, 5):
         for fmt, ifmts in [(f, iL) for n, f, iL in formats if n == channels]:
             shape = baseshape + (channels,)
             data = np.zeros(shape, dtype=np.uint8)
@@ -549,7 +549,7 @@ def _test_texture_internalformats(Texture, baseshape):
                 assert 'Texture' in repr(T)
                 assert T._shape == shape
 
-    for channels in range(1,5):
+    for channels in range(1, 5):
         for fmt, ifmts in [(f, iL) for n, f, iL in formats if n != channels]:
             shape = baseshape + (channels,)
             data = np.zeros(shape, dtype=np.uint8)
