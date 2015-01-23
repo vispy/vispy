@@ -21,10 +21,10 @@ W, H = 1024, 1024
 data = np.zeros((H, W, 3), np.float32)
 
 for i in range(W):
-    data[:,i,:] = i**2
+    data[:, i, :] = i**2
 
 for i in range(H):
-    data[i,:,:] *= i**2
+    data[i, :, :] *= i**2
 
 data *= 1./data.max()
 
@@ -32,8 +32,8 @@ data *= 1./data.max()
 quad = np.zeros(4, dtype=[
     ('a_position', np.float32, 2),
     ('a_texcoord', np.float32, 2)
-]
-            )
+])
+
 quad['a_position'] = np.array([[-1, -1], [+1, -1], [-1, +1], [+1, +1]])
 quad['a_texcoord'] = np.array([[0, 0], [1, 0], [0, 1], [1, 1]])
 
@@ -57,7 +57,8 @@ void main()
 {
    float ndiff;
    // an adjacent texel is 1/W further over in normalized texture coordinates
-   vec2 v_texcoord2 = vec2(clamp(v_texcoord.x + 1.0/%(W)d, 0.0, 1.0), v_texcoord.y);
+   vec2 v_texcoord2 = vec2(clamp(v_texcoord.x + 1.0/%(W)d, 0.0, 1.0), 
+                           v_texcoord.y);
    vec4 texel1 = texture2D(u_texture, v_texcoord);
    vec4 texel2 = texture2D(u_texture, v_texcoord2);
 
@@ -74,6 +75,7 @@ void main()
       1);
 }
 """ % dict(W=W)
+
 
 class Canvas(app.Canvas):
 
@@ -102,7 +104,7 @@ class Canvas(app.Canvas):
 
     def toggle_internalformat(self):
         self._internalformat = (
-            (self._internalformat + 1) \
+            (self._internalformat + 1)
             % len(self._internalformats)
         )
         internalformat = self._internalformats[self._internalformat]
