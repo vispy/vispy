@@ -67,8 +67,8 @@ def on_key_press(event):
         volume1.visible = not volume1.visible
         volume2.visible = not volume1.visible
     elif event.text == '0':
-        cam1.reset()
-        cam3.reset()
+        cam1.set_range()
+        cam3.set_range()
     elif event.text == '[':
         volume1.threshold -= 0.1
         volume2.threshold = volume1.threshold

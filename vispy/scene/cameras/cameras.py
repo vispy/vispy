@@ -106,13 +106,21 @@ class BaseCamera(Node):
     
     """
     
+    # These define the state of the camera
+    _state_props = ('scale_factor', 'aspect_ratio', 'aspect_fixed', 
+                    'center', 'fov')
+    
     def __init__(self, interactive=True, scale_factor=None, center=None, 
                  aspect_ratio=None, aspect_fixed=False,
                  **kwargs):
         super(BaseCamera, self).__init__(**kwargs)
         
-        # The viewboxes for which this camera is active
-        self._viewboxes = []
+        # The viewbox for which this camera is active
+        self._viewbox = None
+        
+        # Linked cameras
+        self._linked_cameras = []
+        self._linked_cameras_no_update = False  # internal flag
         
         # Variables related to transforms 
         self.transform = NullTransform()
@@ -136,6 +144,7 @@ class BaseCamera(Node):
         self._zlim = None
         
         # View parameters
+        self._fov = 0.0
         self._scale_factor = 1.0
         self._aspect_ratio = 1.0, 1.0, 1.0
         self._aspect_ratio_n = 1.0, 1.0, 1.0  # normalized version
@@ -157,10 +166,10 @@ class BaseCamera(Node):
         if aspect_ratio is not None:
             self._given_params['aspect_ratio'] = aspect_ratio
     
-    def _add_viewbox(self, viewbox):
+    def _viewbox_set(self, viewbox):
         """ Friend method of viewbox to register itself.
         """
-        self._viewboxes.append(viewbox)
+        self._viewbox = viewbox
         # Connect
         viewbox.events.mouse_press.connect(self.view_mouse_event)
         viewbox.events.mouse_release.connect(self.view_mouse_event)
@@ -169,35 +178,16 @@ class BaseCamera(Node):
         viewbox.events.resize.connect(self.view_resize_event)
         # todo: also add key events! (and also on viewbox (they're missing)
     
-    def _remove_viewbox(self, viewbox):
+    def _viewbox_unset(self, viewbox):
         """ Friend method of viewbox to unregister itself.
         """
-        self._viewboxes.remove(viewbox)
+        self._viewbox = None
         # Disconnect
         viewbox.events.mouse_press.disconnect(self.view_mouse_event)
         viewbox.events.mouse_release.disconnect(self.view_mouse_event)
         viewbox.events.mouse_move.disconnect(self.view_mouse_event)
         viewbox.events.mouse_wheel.disconnect(self.view_mouse_event)
         viewbox.events.resize.disconnect(self.view_resize_event)
-    
-    def _ref_viewbox(self):
-        """ The reference viewbox. This is either the first active
-        viewbox, or the viewbox of the scene that we're in. Can be None
-        if camera is not in a scene. Intended to be allow reset() to
-        operate even if the camera is not active.
-        """
-        if self._viewboxes:
-            # Prefer active viewbox
-            return self._viewboxes[0]
-        else:
-            # Search viewbox upstream
-            parent = self
-            while parent.parents:
-                parent = parent.parents[0]
-                if hasattr(parent, 'scene'):
-                    return parent
-            else:
-                return None
     
     @property
     def interactive(self):
@@ -280,24 +270,39 @@ class BaseCamera(Node):
             raise ValueError('Center must be a 2 or 3 element tuple')
         self.view_changed()
     
-    def reset(self, xlim=None, ylim=None, zlim=None, margin=0.05):
-        """ Reset the view of this camera
+    @property
+    def fov(self):
+        """ Field-of-view angle of the camera. If 0, the camera is in
+        orthographic mode.
+        """
+        return self._fov
+    
+    @fov.setter
+    def fov(self, fov):
+        fov = float(fov)
+        if fov < 0 or fov >= 180:
+            raise ValueError("fov must be between 0 and 180.")
+        self._fov = fov
+        self.view_changed()
+    
+    def set_range(self, xrange=None, yrange=None, zrange=None, margin=0.05):
+        """ Set the range of the view region for the camera
         
-        The view is reset to the given limits or to the scene boundaries
-        if limits are not specified. The limits should be 2-element
+        The view is reset to the given range or to the scene boundaries
+        if ranges are not specified. The ranges should be 2-element
         tuples specifying the min and max for each dimension.
         """
-        # Get reference viewbox
-        viewbox = self._ref_viewbox()
-        if viewbox is None:
+        # Do we have a viewbox?
+        if self._viewbox is None:
             return
         self._resetting = True
         # Size factor
-        self._window_size_factor = viewbox.size[1] / viewbox.size[0]
+        size = self._viewbox.size
+        self._window_size_factor = size[1] / size[0]
         # Get bounds
         bounds = []
-        bounds_scene = viewbox.get_scene_bounds()
-        for i, lim in enumerate((xlim, ylim, zlim)):
+        bounds_scene = self._viewbox.get_scene_bounds()
+        for i, lim in enumerate((xrange, yrange, zrange)):
             if lim is None:
                 bounds.append(bounds_scene[i])
             else:
@@ -310,11 +315,11 @@ class BaseCamera(Node):
         self._xlim, self._ylim, self._zlim = bounds_margins
         # Store center location
         self._center_loc = [(b[0] + r / 2) for b, r in zip(bounds, ranges)]
-        # Set given params (since _reset() might derive other values from them)
+        # Set given params (since _set_range() might derive other values)
         for name, value in self._given_params.items():
             setattr(self, name, value)
         # Let specific camera handle it
-        self._reset()
+        self._set_range()
         # Overwrite given params
         for name, value in self._given_params.items():
             setattr(self, name, value)
@@ -322,8 +327,49 @@ class BaseCamera(Node):
         self._resetting = False
         self.view_changed()
     
-    def _reset(self):
+    def _set_range(self):
         pass 
+    
+    def get_state(self):
+        """ Get the current view state of the camera
+        
+        Returns a dict of key-value pairs. The exact keys depend on the
+        camera. Can be passed to set_state() (of this or another camera
+        of the same type) to reproduce the state.
+        """
+        D = {}
+        for key in self._state_props:
+            D[key] = getattr(self, key)
+        return D
+    
+    def set_state(self, state=None, **kwargs):
+        """ Set the view state of the camera
+        
+        Should be a dict (or kwargs) as returned by get_state. It can
+        be an incomlete dict, in which case only the specified
+        properties are set.
+        """
+        D = state or {}
+        D.update(kwargs)
+        for key, val in D.items():
+            if key not in self._state_props:
+                raise KeyError('Not a valid camera state property %r' % key)
+            setattr(self, key, val)
+    
+    def link(self, camera):
+        """ Link this camera with another camera of the same type
+        
+        Linked camera's keep each-others' state in sync.
+        """
+        cam1, cam2 = self, camera
+        # Remove if already linked
+        while cam1 in cam2._linked_cameras:
+            cam2._linked_cameras.remove(cam1)
+        while cam2 in cam1._linked_cameras:
+            cam1._linked_cameras.remove(cam2)
+        # Link both ways
+        cam1._linked_cameras.append(cam2)
+        cam2._linked_cameras.append(cam1)
     
     def view_changed(self):
         """ Called when this camera is connected to a new view.
@@ -331,10 +377,10 @@ class BaseCamera(Node):
         if self._resetting:
             return
         # Reset if necessary (and if we can)
-        if (self._xlim is None) and (self._ref_viewbox() is not None):
-            self.reset()
+        if (self._xlim is None) and (self._viewbox is not None):
+            self.set_range()
         # Update if there is a viewbox
-        if self._viewboxes:
+        if self._viewbox:
             self._update_transform()
     
     @property
@@ -382,10 +428,20 @@ class BaseCamera(Node):
         else:
             self._transform_cache.roll()
             self._scene_transform = self._transform_cache.get([pre_tr, tr])
-            
-        for viewbox in self._viewboxes:
-            viewbox.scene.transform = self._scene_transform
-            viewbox.update()
+        
+        # Update scene    
+        self._viewbox.scene.transform = self._scene_transform
+        self._viewbox.update()
+        
+        # Apply same state to linked cameras, but prevent that camera
+        # to return the favor
+        if not self._linked_cameras_no_update:
+            for cam in self._linked_cameras:
+                cam._linked_cameras_no_update = True
+                try:
+                    cam.set_state(self.get_state())
+                finally:
+                    cam._linked_cameras_no_update = False
 
     
 class PanZoomCamera(BaseCamera):
@@ -466,17 +522,16 @@ class PanZoomCamera(BaseCamera):
         else:
             rect = Rect(args)
         self._rect = rect
-        self.reset((rect.left, rect.right), (rect.bottom, rect.top), (-1, 1),
-                   margin=0)
+        self.set_range((rect.left, rect.right), (rect.bottom, rect.top), 
+                       (-1, 1), margin=0)
     
-    def _reset(self):
+    def _set_range(self):
         
         rx = self._xlim[1] - self._xlim[0]
         ry = self._ylim[1] - self._ylim[0]
         
         # Get window size (and store factor now to sync with resizing)
-        viewbox = self._ref_viewbox()
-        w, h = viewbox.size
+        w, h = self._viewbox.size
         w, h = float(w), float(h)
         
         # Correct ranges for window size.
@@ -500,7 +555,7 @@ class PanZoomCamera(BaseCamera):
         the new window size.
         """
         # Get new size factor
-        w, h = self._viewboxes[0].size
+        w, h = self._viewbox.size
         size_factor1 = h / w
         # Get old size factor
         size_factor2 = self._window_size_factor
@@ -577,11 +632,10 @@ class PanZoomCamera(BaseCamera):
                     self.scale_factor = self._event_value[0] * zoomy
     
     def _update_transform(self):
-        viewbox = self._viewboxes[0]
         
         # Viewbox transform
         unit = [[-1, 1], [1, -1]]
-        vrect = [[0, 0], viewbox.size]
+        vrect = [[0, 0], self._viewbox.size]
         self._viewbox_tr.set_mapping(unit, vrect)
         
         # Our transform
@@ -593,7 +647,7 @@ class PanZoomCamera(BaseCamera):
         
         # Projection
         fx = fy = self.scale_factor
-        w, h = viewbox.size
+        w, h = self._viewbox.size
         if w / h > 1:
             fx *= w/h
         else:
@@ -604,7 +658,7 @@ class PanZoomCamera(BaseCamera):
         
         # Create full transform
         transforms = [n.transform for n in
-                      viewbox.scene.node_path_to_child(self)[1:]]
+                      self._viewbox.scene.node_path_to_child(self)[1:]]
         camera_tr = self._transform_cache.get(transforms).inverse
         full_tr = self._transform_cache.get([self._viewbox_tr,
                                              self._projection,
@@ -633,43 +687,27 @@ class PerspectiveCamera(BaseCamera):
         self._given_params['fov'] = fov
     
     @property
-    def fov(self):
-        """ Field-of-view angle of the camera. If 0, the camera is in
-        orthographic mode.
-        """
-        return self._fov
-    
-    @fov.setter
-    def fov(self, fov):
-        fov = float(fov)
-        if fov < 0 or fov >= 180:
-            raise ValueError("fov must be between 0 and 180.")
-        self._fov = fov
-        self.view_changed()
-    
-    @property
     def near_clip_distance(self):
         """ The distance of the near clipping plane from the camera's position.
         """
         return self._near_clip_distance
     
-    def _reset(self):
+    def _set_range(self):
         pass
     
     def view_resize_event(self, event):
         self.view_changed()
     
     def _update_transform(self, event=None):
-        # Get reference viewbox
-        if not self._viewboxes:
+        # Do we have a viewbox
+        if self._viewbox is None:
             return
-        viewbox = self._viewboxes[0]
         
         # Calculate viewing range for x and y
         fx = fy = self._scale_factor
         
         # Correct for window size 
-        w, h = viewbox.size   
+        w, h = self._viewbox.size   
         if w / h > 1:
             fx *= w / h
         else:
@@ -679,10 +717,10 @@ class PerspectiveCamera(BaseCamera):
         
         # assemble complete transform mapping to viewbox bounds
         unit = [[-1, 1], [1, -1]]
-        vrect = [[0, 0], viewbox.size]
+        vrect = [[0, 0], self._viewbox.size]
         self._viewbox_tr.set_mapping(unit, vrect)
         transforms = [n.transform for n in
-                      viewbox.scene.node_path_to_child(self)[1:]]
+                      self._viewbox.scene.node_path_to_child(self)[1:]]
         camera_tr = self._transform_cache.get(transforms).inverse
         full_tr = self._transform_cache.get([self._viewbox_tr,
                                              self._projection,
@@ -727,6 +765,9 @@ class TurntableCamera(PerspectiveCamera):
     * SHIFT + RMB: change FOV
     
     """
+    
+    _state_props = BaseCamera._state_props + ('elevation', 'azimuth')
+    
     def __init__(self, fov=0.0, elevation=0.0, azimuth=0.0, up='z', **kwds):
         super(TurntableCamera, self).__init__(fov=fov, **kwds)
         # Init variables
@@ -786,15 +827,12 @@ class TurntableCamera(PerspectiveCamera):
         self.elevation = np.clip(self.elevation + elev, -90, 90)
         self.view_changed()
     
-    def _reset(self):
+    def _set_range(self):
         """ Reset the camera view using the known limits.
         """
         
-        # Get reference viewbox
-        viewbox = self._ref_viewbox()
-        
         # Get window size (and store factor now to sync with resizing)
-        w, h = viewbox.size
+        w, h = self._viewbox.size
         w, h = float(w), float(h)
         
         # Get range and translation for x and y   
@@ -834,7 +872,7 @@ class TurntableCamera(PerspectiveCamera):
         the new window size.
         """
         # Get new size factor
-        w, h = self._viewboxes[0].size
+        w, h = self._viewbox.size
         size_factor1 = h / w
         # Get old size factor
         size_factor2 = self._window_size_factor
@@ -912,7 +950,7 @@ class TurntableCamera(PerspectiveCamera):
             
             elif 1 in event.buttons and keys.SHIFT in modifiers:
                 # Translate
-                w = self._viewboxes[0].size[0]
+                w = self._viewbox.size[0]
                 if self._event_value is None:
                     self._event_value = self.center
                 dist = (p1 - p2) / w * self._scale_factor
@@ -1019,6 +1057,9 @@ class FlyCamera(PerspectiveCamera):
     
     """
     
+    # Linking this camera likely not to work very well
+    _state_props = ('_rotation1', '_rotation2') + BaseCamera._state_props
+
     def __init__(self, fov=60, **kwargs):
         
         # Motion speed vector
@@ -1099,17 +1140,15 @@ class FlyCamera(PerspectiveCamera):
         rotation = self._rotation2 * self._rotation1
         return rotation.normalize()
     
-    def _reset(self):
+    def _set_range(self):
         """ Reset the view.
         """
-        
-        viewbox = self._ref_viewbox()
         
         # Stop moving
         self._speed *= 0.0
         
         # Get window size (and store factor now to sync with resizing)
-        w, h = viewbox.size
+        w, h = self._viewbox.size
         w, h = float(w), float(h)
         
         # Get range and translation for x and y   
@@ -1306,8 +1345,6 @@ class FlyCamera(PerspectiveCamera):
     
     def view_mouse_event(self, event):
         
-        viewbox = self._viewboxes[0]  # event.viewbox  
-        
         # A bit awkward way to connect to our canvas; we need event
         # object to get a reference to the canvas
         if not self._key_events_bound:
@@ -1350,7 +1387,7 @@ class FlyCamera(PerspectiveCamera):
             modifiers = event.mouse_event.modifiers
             pos1 = event.mouse_event.press_event.pos
             pos2 = event.mouse_event.pos
-            w, h = viewbox.size
+            w, h = self._viewbox.size
             
             if 1 in event.buttons and not modifiers:
                 # rotate

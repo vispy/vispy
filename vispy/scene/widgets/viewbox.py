@@ -109,10 +109,10 @@ class ViewBox(Widget):
                 cam.add_parent(self.scene)
             # Disconnect / connect
             if self._camera is not None:
-                self._camera._remove_viewbox(self)
+                self._camera._viewbox_unset(self)
             self._camera = cam
             if self._camera is not None:
-                self._camera._add_viewbox(self)
+                self._camera._viewbox_set(self)
             # Update view
             cam.view_changed()
         

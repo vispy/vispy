@@ -46,7 +46,7 @@ axis = scene.visuals.XYZAxis(parent=view.scene)
 view.camera = scene.TurntableCamera()  # or 'turntable'
 
 # Manual bounds; Mesh visual does not provide bounds yet
-view.camera.reset((-10, 10), (-10, 10), (-10, 10))
+view.camera.set_range((-10, 10), (-10, 10), (-10, 10))
 
 if __name__ == '__main__':
     canvas.show()

@@ -38,8 +38,11 @@ im2 = 0.5 + (np.abs(im2[0:-2, 1:-1] - im2[1:-1, 1:-1]) +
 image1 = scene.visuals.Image(im1, parent=vb1.scene)
 image2 = scene.visuals.Image(im2, parent=vb2.scene)
 
-# Set 2D camera
-vb2.camera = vb1.camera = scene.PanZoomCamera()
+# Set 2D camera (PanZoomCamera, TurnTableCamera)
+vb1.camera, vb2.camera = scene.PanZoomCamera(), scene.PanZoomCamera()
+vb1.camera.link(vb2.camera)
+
+#vb2.camera = vb1.camera = scene.PanZoomCamera()
 
 # Set the view bounds to show the entire image with some padding
 #view.camera.rect = (-10, -10, image.size[0]+20, image.size[1]+20)

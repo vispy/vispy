@@ -39,7 +39,7 @@ view.camera = cam3  # Select turntable at first
 for cam in (cam1, cam2, cam3):
     cam.aspect_ratio = 3, 2, 1
     cam.aspect_fixed = True
-    cam.reset()
+    cam.set_range()
 
 
 # Implement key presses
@@ -61,9 +61,9 @@ def on_key_press(event):
             ar = cam.aspect_ratio
             cam.aspect_ratio = -ar[0], ar[1], -ar[2]
     elif event.text == '0':
-        cam1.reset()
-        cam2.reset()
-        cam3.reset()
+        cam1.set_range()
+        cam2.set_range()
+        cam3.set_range()
 
 if __name__ == '__main__':
     print(__doc__)
