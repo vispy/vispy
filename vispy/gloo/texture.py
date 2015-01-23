@@ -223,7 +223,6 @@ class BaseTexture(GLObject):
             format = check_enum(format)
 
         if internalformat is None:
-            internalformat = None
             # Keep current internalformat if channels match
             if self._internalformat and \
                self._inv_internalformats[self._internalformat] == shape[-1]:
