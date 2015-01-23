@@ -44,6 +44,7 @@ vec3 get_color(int index) {
 # Color space transformations
 # -----------------------------------------------------------------------------
 
+# From http://lolengine.net/blog/2013/07/27/rgb-to-hsv-in-glsl
 HSV_TO_RGB = """
 vec3 hsv_to_rgb(vec3 c)
 {
