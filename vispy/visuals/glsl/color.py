@@ -45,6 +45,7 @@ vec3 get_color(int index) {
 # -----------------------------------------------------------------------------
 
 # From http://lolengine.net/blog/2013/07/27/rgb-to-hsv-in-glsl
+# TODO: unit tests
 HSV_TO_RGB = """
 vec3 hsv_to_rgb(vec3 c)
 {
