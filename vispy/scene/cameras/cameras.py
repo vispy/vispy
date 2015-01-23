@@ -556,6 +556,7 @@ class PanZoomCamera(BaseCamera):
         """
         # Get new size factor
         w, h = self._viewbox.size
+        
         size_factor1 = h / w
         # Get old size factor
         size_factor2 = self._window_size_factor

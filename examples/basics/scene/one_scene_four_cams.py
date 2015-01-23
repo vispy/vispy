@@ -10,6 +10,10 @@ Demonstrating a single scene that is shown in four different viewboxes,
 each with a different camera.
 """
 
+# todo: the panzoom camera sometimes work, sometimes not. Not sure why.
+# we should probably make iterating over children deterministic, so that
+# an error like this becomes easier to reproduce ...
+
 from vispy import app, scene, io
 
 canvas = scene.SceneCanvas(keys='interactive')
