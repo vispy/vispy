@@ -108,7 +108,7 @@ class Canvas(app.Canvas):
             % len(self._internalformats)
         )
         internalformat = self._internalformats[self._internalformat]
-        print ("Requesting texture internalformat %s" % internalformat)
+        print("Requesting texture internalformat %s" % internalformat)
         self.texture.resize(
             data.shape,
             format='rgb',
