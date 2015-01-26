@@ -311,7 +311,7 @@ def _save_failed_test(data, expect, filename):
         print(response)
 
 
-def assert_image_equal(image, reference, limit=40):
+def assert_image_equal(image, reference, limit=0.95):
     """Downloads reference image and compares with image
 
     Parameters
@@ -323,8 +323,6 @@ def assert_image_equal(image, reference, limit=40):
     limit : int
         Number of pixels that can differ in the image.
     """
-    raise SkipTest("Image comparison disabled until polygon visual "
-                   "output is finalized.")
     from ..gloo.util import _screenshot
     from ..io import read_png
 
@@ -332,36 +330,35 @@ def assert_image_equal(image, reference, limit=40):
         image = _screenshot(alpha=False)
     ref = read_png(get_testing_file(reference))[:, :, :3]
 
+    image = image[:ref.shape[0], :ref.shape[1], :]  # can be off in Windows
     assert_equal(image.shape, ref.shape)
 
     # check for minimum number of changed pixels, allowing for overall 1-pixel
     # shift in any direcion
-    slices = [slice(0, -1), slice(0, None), slice(1, None)]
-    min_diff = np.inf
-    for i in range(3):
-        for j in range(3):
-            a = image[slices[i], slices[j]]
-            b = ref[slices[2-i], slices[2-j]]
-            diff = np.any(a != b, axis=2).sum()
-            if diff < min_diff:
-                min_diff = diff
-    try:
-        assert_true(min_diff <= limit,
-                    'min_diff (%s) > %s' % (min_diff, limit))
-    except AssertionError:
+    slice_as = [slice(0, -1), slice(0, None), slice(1, None)]
+    slice_bs = slice_as[::-1]
+    max_corr = -1
+    for ii in range(len(slice_as)):
+        for jj in range(len(slice_as)):
+            a = image[slice_as[ii], slice_as[jj]]
+            b = ref[slice_bs[ii], slice_bs[jj]]
+            corr = np.corrcoef(a.ravel(), b.ravel())[0, 1]
+            if corr > max_corr:
+                max_corr = corr
+    if max_corr < limit:
         _save_failed_test(image, ref, reference)
-        raise
+        raise AssertionError('max_corr %s < %s' % (max_corr, limit))
 
 
 @nottest
-def TestingCanvas(bgcolor='black', size=(100, 100)):
+def TestingCanvas(bgcolor='black', size=(100, 100), dpi=None):
     """Class wrapper to avoid importing scene until necessary"""
     from ..scene import SceneCanvas
     from .. import gloo
 
     class TestingCanvas(SceneCanvas):
         def __init__(self, bgcolor, size):
-            SceneCanvas.__init__(self, size=size, bgcolor=bgcolor)
+            SceneCanvas.__init__(self, size=size, bgcolor=bgcolor, dpi=dpi)
 
         def __enter__(self):
             SceneCanvas.__enter__(self)
