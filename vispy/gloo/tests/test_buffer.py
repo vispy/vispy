@@ -442,7 +442,7 @@ class VertexBufferTest(unittest.TestCase):
             names = V.dtype.names
             assert V.dtype[names[0]].base == dtype
             assert V.dtype[names[0]].shape == (3,)
-        
+
         # Tuple/list is also allowed
         V = VertexBuffer([1, 2, 3])
         assert V.size == 3
@@ -465,7 +465,7 @@ class VertexBufferTest(unittest.TestCase):
         B.set_data(data, convert=True)
         assert B.dtype[0].base == np.float32
         assert B.dtype[0].itemsize == 8
-        B = VertexBuffer(data[::2])
+        B = VertexBuffer(data[::2].copy())
         
         # This is converted to 1D
         B = VertexBuffer([[1, 2, 3, 4, 5], [1, 2, 3, 4, 5]])
@@ -474,7 +474,7 @@ class VertexBufferTest(unittest.TestCase):
         # Not allowed
         self.assertRaises(TypeError, VertexBuffer, dtype=np.float64)
         #self.assertRaises(TypeError, VertexBuffer, [[1,2,3,4,5],[1,2,3,4,5]])
-        
+
     # VertexBuffer not allowed base types
     # -----------------------------------
     def test_init_not_allowed_dtype(self):

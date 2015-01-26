@@ -33,7 +33,7 @@ def test_circle_draw():
         ellipse = visuals.Ellipse(pos=(75, 35, 0), radius=20,
                                   border_color=(0, 1, 1, 1))
         c.draw_visual(ellipse)
-        assert_image_equal("screenshot", 'visuals/circle3.png')
+        assert_image_equal("screenshot", 'visuals/circle3.png', 0.9)
 
 
 @requires_application()
@@ -77,7 +77,7 @@ def test_arc_draw1():
 
         gloo.clear()
         ellipse = visuals.Ellipse(pos=(50., 50.), radius=(20, 15),
-                                  start_angle=90., span_angle=120.,
+                                  start_angle=150., span_angle=120.,
                                   border_color=(1, 0, 0, 1))
         c.draw_visual(ellipse)
         assert_image_equal("screenshot", 'visuals/arc2.png')
