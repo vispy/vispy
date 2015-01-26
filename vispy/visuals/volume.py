@@ -108,6 +108,7 @@ const float u_shininess = 40.0;
 //varying vec3 V; // view direction
 
 vec4 calculateColor(vec4, vec3, vec3);
+float rand(vec2 co);
 
 void main() {
     
@@ -130,6 +131,11 @@ void main() {
     /// Get begin location and number of steps to cast ray
     vec3 edgeloc = v_texcoord;
     int nsteps = $calculate_steps(edgeloc, ray, v_clipplane);
+    
+    // Offset the ray with a random amount to make for a smoother
+    // appearance when rotating the camera. noise is [0..1].
+    float noise = rand((ray.xy * 10.0 + edgeloc.xy) * 100.0);
+    edgeloc += ray * (0.5 - noise);
     
     // Instead of discarting based on gl_FrontFacing, we can also discard
     // on number of steps.
@@ -176,6 +182,13 @@ void main() {
     */
 }
 
+
+float rand(vec2 co)
+{
+    // Create a pseudo-random number between 0 and 1.
+    // http://stackoverflow.com/questions/4200224
+    return fract(sin(dot(co.xy ,vec2(12.9898, 78.233))) * 43758.5453);
+}
 
 float colorToVal(vec4 color1)
 {
