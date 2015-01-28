@@ -47,11 +47,9 @@ class Node(Visual):
         self.name = name
 
         # Entities are organized in a parent-children hierarchy
-        # todo: I think we want this to be a list. The order *may* be important
-        # for some drawing systems. Using a set may lead to inconsistency
-        self._children = set()
+        self._children = []
         # TODO: use weakrefs for parents.
-        self._parents = set()
+        self._parents = []
         if parent is not None:
             self.parents = parent
             
@@ -84,8 +82,8 @@ class Node(Visual):
 
     @property
     def children(self):
-        """ The list of children of this node. The children are in
-        arbitrary order.
+        """ A copy of the list of children of this node. Do not add
+        items to this list, but use ``x.parent = y`` instead.
         """
         return list(self._children)
 
@@ -97,7 +95,7 @@ class Node(Visual):
         if not self._parents:
             return None
         elif len(self._parents) == 1:
-            return tuple(self._parents)[0]
+            return self._parents[0]
         else:
             raise RuntimeError('Ambiguous parent: there are multiple parents.')
 
@@ -127,24 +125,24 @@ class Node(Visual):
                 raise ValueError('A parent of an node must be an node too,'
                                  ' not %s.' % p.__class__.__name__)
 
-        # convert to set
+        # Apply
         prev = self._parents.copy()
-        parents = set(parents)
-
         with self.events.parents_change.blocker():
-            # Remove from parents
-            for parent in prev - parents:
-                self.remove_parent(parent)
-            # Add new
-            for parent in parents - prev:
-                self.add_parent(parent)
-
+            # Remove parents
+            for parent in prev:
+                if parent not in parents:
+                    self.remove_parent(parent)
+            # Add new parents
+            for parent in parents:
+                if parent not in prev:
+                    self.add_parent(parent)
+        
         self.events.parents_change(new=parents, old=prev)
 
     def add_parent(self, parent):
         if parent in self._parents:
             return
-        self._parents.add(parent)
+        self._parents.append(parent)
         parent._add_child(self)
         self.events.parents_change(added=parent)
         self.update()
@@ -157,7 +155,7 @@ class Node(Visual):
         self.events.parents_change(removed=parent)
 
     def _add_child(self, ent):
-        self._children.add(ent)
+        self._children.append(ent)
         self.events.children_change(added=ent)
         ent.events.update.connect(self.events.update)
 
