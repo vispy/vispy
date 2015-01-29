@@ -44,7 +44,6 @@ GUI_QT4 = 'qt4'
 GUI_GTK = 'gtk'
 GUI_TK = 'tk'
 GUI_OSX = 'osx'
-GUI_GLUT = 'glut'
 GUI_PYGLET = 'pyglet'
 GUI_GTK3 = 'gtk3'
 GUI_NONE = 'none' # i.e. disable

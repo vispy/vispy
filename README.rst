@@ -63,7 +63,7 @@ Installation
 ------------
 
 Vispy runs on Python 2.6+ and Python 3.3+ and depends on NumPy. You also
-need a backend (PyQt4/PySide, glfw, GLUT, pyglet, or SDL).
+need a backend (PyQt4/PySide, glfw, pyglet, SDL, or wx).
 
 As Vispy is under heavy development at this time, we highly recommend
 you to use the development version on Github (master branch). You need
@@ -77,7 +77,7 @@ Structure of Vispy
 Currently, the main subpackages are:
 
 -  **app**: integrates an event system and offers a unified interface on
-   top of many window backends (Qt4, wx, glfw, GLUT, IPython notebook
+   top of many window backends (Qt4, wx, glfw, IPython notebook
    with/without WebGL, and others). Relatively stable API.
 -  **gloo**: a Pythonic, object-oriented interface to OpenGL. Relatively
    stable API.

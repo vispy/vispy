@@ -2,6 +2,8 @@
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
+from ..ext.bunch import SimpleBunch
+
 
 class BaseApplicationBackend(object):
     """BaseApplicationBackend()
@@ -69,7 +71,6 @@ class BaseCanvasBackend(object):
         Also checks whether the values of the backend arguments do not
         violate the backend capabilities.
         """
-        
         # Verify given argument with capability of the backend
         app = self._vispy_canvas.app
         capability = app.backend_module.capability
@@ -85,9 +86,13 @@ class BaseCanvasBackend(object):
                                    % (key, app.backend_name))
 
         # Return items in sequence
+        out = SimpleBunch()
         keys = ['title', 'size', 'position', 'show', 'vsync', 'resizable',
-                'decorate', 'fullscreen', 'parent', 'context']
-        return [kwargs[k] for k in keys]
+                'decorate', 'fullscreen', 'parent', 'context', 'always_on_top',
+                ]
+        for key in keys:
+            out[key] = kwargs[key]
+        return out
 
     def _vispy_set_current(self):
         # Make this the current context

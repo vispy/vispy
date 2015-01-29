@@ -82,7 +82,6 @@ def test_import_vispy_app2():
     assert_not_in('PySide', allmodnames)
     assert_not_in('PyQt4', allmodnames)
     assert_not_in('pyglet', allmodnames)
-    assert_not_in('OpenGL.GLUT', allmodnames)
 
 
 def test_import_vispy_gloo():

@@ -5,8 +5,8 @@
 This is a very minimal example that opens a window and makes the background
 color to change from black to white to black ...
 
-The backend (one of 'qt', 'glut', 'pyglet') is chosen automatically depending
-on what is available on your machine.
+The backend is chosen automatically depending on what is available on
+your machine.
 """
 
 import math
@@ -30,6 +30,6 @@ class Canvas(app.Canvas):
         self.update()
 
 if __name__ == '__main__':
-    canvas = Canvas(keys='interactive')
+    canvas = Canvas(keys='interactive', always_on_top=True)
     canvas.show()
     app.run()

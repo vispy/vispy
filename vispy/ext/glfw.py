@@ -276,6 +276,8 @@ GLFW_ICONIFIED              = 0x00020002
 GLFW_RESIZABLE              = 0x00020003
 GLFW_VISIBLE                = 0x00020004
 GLFW_DECORATED              = 0x00020005
+GLFW_AUTO_ICONIFY           = 0x00020006
+GLFW_FLOATING               = 0x00020007
 
 # ---
 GLFW_RED_BITS               = 0x00021001

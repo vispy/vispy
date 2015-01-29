@@ -19,8 +19,7 @@ def test_sys_info():
     assert_raises(IOError, sys_info, fname)  # no overwrite
     with open(fname, 'r') as fid:
         out = ''.join(fid.readlines())
-    # Note: 'GL version' only for non-GLUT
-    keys = ['Python', 'Backend', 'pyglet', 'Platform:']
+    keys = ['GL version', 'Python', 'Backend', 'pyglet', 'Platform:']
     for key in keys:
         assert_in(key, out)
     print(out)

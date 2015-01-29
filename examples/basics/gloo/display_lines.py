@@ -16,8 +16,6 @@ from vispy import gloo
 from vispy import app
 from vispy.util.transforms import perspective, translate, rotate
 
-# app.use_app('glut')
-
 # Create vetices
 n = 100
 a_position = np.random.uniform(-1, 1, (n, 3)).astype(np.float32)

@@ -167,6 +167,7 @@ capability = dict(  # things that can be set by the backend
     multi_window=True,
     scroll=True,
     parent=True,
+    always_on_top=True,
 )
 
 
@@ -202,7 +203,7 @@ class ApplicationBackend(BaseApplicationBackend):
     def _vispy_get_backend_name(self):
         name = QtCore.__name__.split('.')[0]
         return name + ' (qt)'
-    
+
     def _vispy_process_events(self):
         app = self._vispy_get_native_app()
         app.flush()
@@ -240,38 +241,37 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
     def __init__(self, *args, **kwargs):
         BaseCanvasBackend.__init__(self, *args)
         # Maybe to ensure that exactly all arguments are passed?
-        title, size, position, show, vsync, resize, dec, fs, parent, context, \
-            = self._process_backend_kwargs(kwargs)
+        p = self._process_backend_kwargs(kwargs)
         self._initialized = False
-    
+
         # Init in desktop GL or EGL way
-        self._init_specific(vsync, dec, fs, parent, context, kwargs)
+        self._init_specific(p, kwargs)
         assert self._initialized
-        
+
         self.setMouseTracking(True)
-        self._vispy_set_title(title)
-        self._vispy_set_size(*size)
-        if fs is not False:
-            if fs is not True:
+        self._vispy_set_title(p.title)
+        self._vispy_set_size(*p.size)
+        if p.fullscreen is not False:
+            if p.fullscreen is not True:
                 logger.warning('Cannot specify monitor number for Qt '
                                'fullscreen, using default')
             self._fullscreen = True
         else:
             self._fullscreen = False
-        if not resize:
+        if not p.resizable:
             self.setFixedSize(self.size())
-        if position is not None:
-            self._vispy_set_position(*position)
-        if show:
+        if p.position is not None:
+            self._vispy_set_position(*p.position)
+        if p.show:
             self._vispy_set_visible(True)
-    
+
     def _vispy_warmup(self):
         etime = time() + 0.25
         while time() < etime:
             sleep(0.01)
             self._vispy_set_current()
             self._vispy_canvas.app.process_events()
-    
+
     def _vispy_set_title(self, title):
         # Set the window title. Has no effect for widgets
         if self._vispy_canvas is None:
@@ -412,9 +412,9 @@ egl = None
 
 
 class CanvasBackendEgl(QtBaseCanvasBackend, QWidget):
-    
-    def _init_specific(self, vsync, dec, fs, parent, context, kwargs):
-        
+
+    def _init_specific(self, p, kwargs):
+
         # Initialize egl. Note that we only import egl if needed.
         global _EGL_DISPLAY
         global egl
@@ -428,19 +428,25 @@ class CanvasBackendEgl(QtBaseCanvasBackend, QWidget):
             _EGL_DISPLAY = egl.eglGetDisplay()
             CanvasBackendEgl._EGL_VERSION = egl.eglInitialize(_EGL_DISPLAY)
             atexit.register(egl.eglTerminate, _EGL_DISPLAY)
-        
+
         # Deal with context
-        context.shared.add_ref('qt-egl', self)
-        if context.shared.ref is self:
+        p.context.shared.add_ref('qt-egl', self)
+        if p.context.shared.ref is self:
             self._native_config = c = egl.eglChooseConfig(_EGL_DISPLAY)[0]
             self._native_context = egl.eglCreateContext(_EGL_DISPLAY, c, None)
         else:
-            self._native_config = context.shared.ref._native_config
-            self._native_context = context.shared.ref._native_context
-        
+            self._native_config = p.context.shared.ref._native_config
+            self._native_context = p.context.shared.ref._native_context
+
         # Init widget
-        f = QtCore.Qt.Widget if dec else QtCore.Qt.FramelessWindowHint
-        QWidget.__init__(self, parent, f)
+        if p.always_on_top or not p.decorate:
+            hint = 0
+            hint |= 0 if p.decorate else QtCore.Qt.FramelessWindowHint
+            hint |= QtCore.Qt.WindowStaysOnTopHint if p.always_on_top else 0
+        else:
+            hint = QtCore.Qt.Widget  # can also be a window type
+        QWidget.__init__(self, p.parent, hint)
+
         if 0:  # IS_LINUX or IS_RPI:
             self.setAutoFillBackground(False)
             self.setAttribute(QtCore.Qt.WA_NoSystemBackground, True)
@@ -448,26 +454,26 @@ class CanvasBackendEgl(QtBaseCanvasBackend, QWidget):
         elif IS_WIN:
             self.setAttribute(QtCore.Qt.WA_PaintOnScreen, True)
             self.setAutoFillBackground(False)
-        
+
         # Init surface
         w = self.get_window_id()
         self._surface = egl.eglCreateWindowSurface(_EGL_DISPLAY, c, w)
         self.initializeGL()
         self._initialized = True
-    
+
     def get_window_id(self):
         """ Get the window id of a PySide Widget. Might also work for PyQt4.
         """
         # Get Qt win id
         winid = self.winId()
-        
+
         # On Linux this is it
         if IS_RPI:
             nw = (ctypes.c_int * 3)(winid, self.width(), self.height())
             return ctypes.pointer(nw)
         elif IS_LINUX:
             return int(winid)  # Is int on PySide, but sip.voidptr on PyQt
-        
+
         # Get window id from stupid capsule thingy
         # http://translate.google.com/translate?hl=en&sl=zh-CN&u=http://www.cnb
         #logs.com/Shiren-Y/archive/2011/04/06/2007288.html&prev=/search%3Fq%3Dp
@@ -477,7 +483,7 @@ class CanvasBackendEgl(QtBaseCanvasBackend, QWidget):
         ctypes.pythonapi.PyCapsule_GetName.restype = ctypes.c_char_p
         ctypes.pythonapi.PyCapsule_GetName.argtypes = [ctypes.py_object]
         ctypes.pythonapi.PyCapsule_GetPointer.restype = ctypes.c_void_p
-        ctypes.pythonapi.PyCapsule_GetPointer.argtypes = [ctypes.py_object, 
+        ctypes.pythonapi.PyCapsule_GetPointer.argtypes = [ctypes.py_object,
                                                           ctypes.c_char_p]
         # Extract handle from capsule thingy
         name = ctypes.pythonapi.PyCapsule_GetName(winid)
@@ -491,14 +497,14 @@ class CanvasBackendEgl(QtBaseCanvasBackend, QWidget):
             self._surface = None
         # Force the window or widget to shut down
         self.close()
-    
+
     def _vispy_set_current(self):
-        egl.eglMakeCurrent(_EGL_DISPLAY, self._surface, 
+        egl.eglMakeCurrent(_EGL_DISPLAY, self._surface,
                            self._surface, self._native_context)
-    
+
     def _vispy_swap_buffers(self):
         egl.eglSwapBuffers(_EGL_DISPLAY, self._surface)
-    
+
     def initializeGL(self):
         self._vispy_set_current()
         self._vispy_canvas.events.initialize()
@@ -509,9 +515,9 @@ class CanvasBackendEgl(QtBaseCanvasBackend, QWidget):
 
     def paintEvent(self, event):
         self._vispy_canvas.events.draw(region=None)
-        
+
         if IS_LINUX or IS_RPI:
-            # Arg, cannot get GL to draw to the widget, so we take a 
+            # Arg, cannot get GL to draw to the widget, so we take a
             # screenshot and draw that for now ...
             # Further, QImage keeps a ref to the data that we pass, so
             # we need to use a static buffer to prevent memory leakage
@@ -533,7 +539,7 @@ class CanvasBackendEgl(QtBaseCanvasBackend, QWidget):
             rect = QtCore.QRect(0, 0, self.width(), self.height())
             painter.drawImage(rect, img)
             painter.end()
-    
+
     def paintEngine(self):
         if IS_LINUX and not IS_RPI:
             # For now we are drawing a screenshot
@@ -543,45 +549,50 @@ class CanvasBackendEgl(QtBaseCanvasBackend, QWidget):
 
 
 class CanvasBackendDesktop(QtBaseCanvasBackend, QGLWidget):
-    
-    def _init_specific(self, vsync, dec, fs, parent, context, kwargs):
-        
+
+    def _init_specific(self, p, kwargs):
+
         # Deal with config
-        glformat = _set_config(context.config)
-        glformat.setSwapInterval(1 if vsync else 0)
+        glformat = _set_config(p.context.config)
+        glformat.setSwapInterval(1 if p.vsync else 0)
         # Deal with context
         widget = kwargs.pop('shareWidget', None) or self
-        context.shared.add_ref('qt', widget)
-        if context.shared.ref is widget:
+        p.context.shared.add_ref('qt', widget)
+        if p.context.shared.ref is widget:
             if widget is self:
                 widget = None  # QGLWidget does not accept self ;)
         else:
-            widget = context.shared.ref
+            widget = p.context.shared.ref
             if 'shareWidget' in kwargs:
                 raise RuntimeError('Cannot use vispy to share context and '
                                    'use built-in shareWidget.')
-        
+
         # first arg can be glformat, or a gl context
-        f = QtCore.Qt.Widget if dec else QtCore.Qt.FramelessWindowHint
-        QGLWidget.__init__(self, glformat, parent, widget, f)
+        if p.always_on_top or not p.decorate:
+            hint = 0
+            hint |= 0 if p.decorate else QtCore.Qt.FramelessWindowHint
+            hint |= QtCore.Qt.WindowStaysOnTopHint if p.always_on_top else 0
+        else:
+            hint = QtCore.Qt.Widget  # can also be a window type
+        QGLWidget.__init__(self, glformat, p.parent, widget, hint)
         self._initialized = True
         if not self.isValid():
             raise RuntimeError('context could not be created')
         self.setAutoBufferSwap(False)  # to make consistent with other backends
-    
+
     def _vispy_close(self):
         # Force the window or widget to shut down
         self.close()
         self.doneCurrent()
         self.context().reset()
-    
+
     def _vispy_set_current(self):
         if self._vispy_canvas is None:
             return  # todo: can we get rid of this now?
         if self.isValid():
             self._vispy_canvas.set_current()  # Mark as current
             self.makeCurrent()
-    
+
     def _vispy_swap_buffers(self):
         # Swap front and back buffer
         if self._vispy_canvas is None:
