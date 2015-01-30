@@ -1,5 +1,13 @@
 #!/usr/bin/env python
 
+# -----------------------------------------------------------------------------
+# Copyright 2015 University of Southern California.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+# -----------------------------------------------------------------------------
+# Author: Karl Czajkowski <karlcz@isi.edu>
+# Date:   2015-01-22
+# -----------------------------------------------------------------------------
+
 """Example using texture internalformat for higher precision.
 
 Generates a gradient texture with high dynamic range and renders it
