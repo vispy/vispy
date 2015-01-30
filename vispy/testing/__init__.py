@@ -3,7 +3,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from ._testing import (SkipTest, requires_application, requires_img_lib,  # noqa
-                      has_backend, glut_skip, requires_pyopengl,  # noqa
+                      has_backend, requires_pyopengl,  # noqa
                       requires_scipy, has_matplotlib,  # noqa
                       save_testing_image, TestingCanvas, has_pyopengl,  # noqa
                       run_tests_if_main, assert_image_equal,

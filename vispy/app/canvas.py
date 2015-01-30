@@ -78,12 +78,15 @@ class Canvas(object):
         Resolution in dots-per-inch to use for the canvas. If dpi is None,
         then the value will be determined by querying the global config first,
         and then the operating system.
+    always_on_top : bool
+        If True, try to create the window in always-on-top mode.
     """
 
     def __init__(self, title='Vispy canvas', size=(800, 600), position=None,
                  show=False, autoswap=True, app=None, create_native=True,
                  vsync=False, resizable=True, decorate=True, fullscreen=False,
-                 config=None, shared=None, keys=None, parent=None, dpi=None):
+                 config=None, shared=None, keys=None, parent=None, dpi=None,
+                 always_on_top=False):
 
         size = [int(s) for s in size]
         if len(size) != 2:
@@ -101,7 +104,7 @@ class Canvas(object):
         self._fps_callback = None
         self._backend = None
         self._closed = False
-        
+
         if dpi is None:
             dpi = util_config['dpi']
         if dpi is None:
@@ -141,7 +144,7 @@ class Canvas(object):
             self._app = Application(app)
         else:
             raise ValueError('Invalid value for app %r' % app)
-        
+
         # Check shared and context
         if shared is None:
             pass
@@ -154,21 +157,21 @@ class Canvas(object):
         config = config or {}
         if not isinstance(config, dict):
             raise TypeError('config must be a dict, not %s' % type(config))
-        
+
         # Create new context
         self._context = GLContext(config, shared)
-        
+
         # Now we're ready to become current
         set_current_canvas(self)
-        
+
         # Deal with special keys
         self._set_keys(keys)
 
         # store arguments that get set on Canvas init
         kwargs = dict(title=title, size=size, position=position, show=show,
                       vsync=vsync, resizable=resizable, decorate=decorate,
-                      fullscreen=fullscreen, context=self._context, 
-                      parent=parent)
+                      fullscreen=fullscreen, context=self._context,
+                      parent=parent, always_on_top=always_on_top)
         self._backend_kwargs = kwargs
 
         # Create widget now (always do this *last*, after all err checks)

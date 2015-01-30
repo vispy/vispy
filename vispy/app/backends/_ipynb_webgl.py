@@ -34,6 +34,7 @@ capability = dict(  # things that can be set by the backend
     multi_window=False,
     scroll=True,
     parent=False,
+    always_on_top=False,
 )
 
 
@@ -123,20 +124,18 @@ class CanvasBackend(BaseCanvasBackend):
     # args are for BaseCanvasBackend, kwargs are for us.
     def __init__(self, *args, **kwargs):
         BaseCanvasBackend.__init__(self, *args)
-        # Maybe to ensure that exactly all arguments are passed?
-        title, size, position, show, vsync, resize, dec, fs, parent, context, \
-            = self._process_backend_kwargs(kwargs)
-        self._context = context
+        p = self._process_backend_kwargs(kwargs)
+        self._context = p.context
 
         # TODO: do something with context.config
         # Take the context.
-        context.shared.add_ref('webgl', self)
-        if context.shared.ref is self:
+        p.context.shared.add_ref('webgl', self)
+        if p.context.shared.ref is self:
             pass  # ok
         else:
             raise RuntimeError("WebGL doesn't yet support context sharing.")
 
-        self._create_widget(size=size)
+        self._create_widget(size=p.size)
 
     def _create_widget(self, size=None):
         self._widget = VispyWidget(self, size=size)

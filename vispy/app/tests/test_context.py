@@ -61,21 +61,16 @@ def test_context_sharing():
             program['pos'] = [(1, 2, 3, 1), (4, 5, 6, 1)]  # Do command
             program.draw('points')
             check_error()
-        
+
         # Check while c1 is active
         check()
-        
+
         # Check while c2 is active (with different context)
         with Canvas() as c2:
             # pyglet always shares
             if 'pyglet' not in c2.app.backend_name.lower():
                 assert_raises(Exception, check)
-        
-        # Tests unable to create canvas on glut
-        if c1.app.backend_name.lower() in ('glut',):
-            assert_raises(RuntimeError, Canvas, shared=c1)
-            return
-        
+
         # Check while c2 is active (with *same* context)
         with Canvas(shared=c1.context) as c2:
             assert c1.context.shared is c2.context.shared  # same object

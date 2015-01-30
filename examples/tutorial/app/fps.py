@@ -5,8 +5,8 @@
 This is a very minimal example that opens a window and makes the background
 color to change from black to white to black ...
 
-The backend (one of 'qt', 'glut', 'pyglet') is chosen automatically depending
-on what is available on your machine.
+The backend is chosen automatically depending on what is available on
+your machine.
 """
 
 import math

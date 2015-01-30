@@ -97,16 +97,6 @@ def _test_callbacks(canvas):
         backend._on_event(event)
         event.type = 769  # SDL_KEYUP
         backend._on_event(event)
-    elif 'glut' in backend_name.lower():
-        backend.on_mouse_action(0, 0, 0, 0)
-        backend.on_mouse_action(0, 1, 0, 0)
-        backend.on_mouse_action(3, 0, 0, 0)
-        backend.on_draw()
-        backend.on_mouse_motion(1, 1)
-        # Skip keypress tests b/c of glutGetModifiers warning
-        #for key in (100, 'a'):
-        #    backend.on_key_press(key, 0, 0)
-        #    backend.on_key_release(key, 0, 0)
     elif 'wx' in backend_name.lower():
         # Constructing fake wx events is too hard
         pass
@@ -117,9 +107,6 @@ def _test_callbacks(canvas):
 @requires_application()
 def test_run():
     """Test app running"""
-    a = use_app()
-    if a.backend_name.lower() == 'glut':
-        raise SkipTest('cannot test running glut')  # knownfail
     for _ in range(2):
         with Canvas(size=(100, 100), show=True, title='run') as c:
             @c.events.draw.connect
@@ -162,7 +149,7 @@ def test_application():
     app = use_app()
     print(app)  # __repr__ without app
     app.create()
-    wrong = 'glut' if app.backend_name.lower() != 'glut' else 'pyglet'
+    wrong = 'glfw' if app.backend_name.lower() != 'glfw' else 'pyqt4'
     assert_raises(RuntimeError, use_app, wrong)
     app.process_events()
     print(app)  # test __repr__
@@ -230,8 +217,7 @@ def test_application():
         ss = _screenshot()
         assert_array_equal(ss.shape, size + (4,))
         assert_equal(len(canvas._backend._vispy_get_geometry()), 4)
-        if (app.backend_name.lower() != 'glut' and  # XXX knownfail for Almar
-                sys.platform != 'win32'):  # XXX knownfail for windows
+        if sys.platform != 'win32':  # XXX knownfail for windows
             assert_array_equal(canvas.size, size)
         assert_equal(len(canvas.position), 2)  # XXX knawnfail, doesn't "take"
 

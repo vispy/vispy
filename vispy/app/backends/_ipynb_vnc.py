@@ -44,6 +44,7 @@ capability = dict(  # things that can be set by the backend
     multi_window=True,
     scroll=True,
     parent=False,
+    always_on_top=False,
 )
 
 
@@ -79,13 +80,8 @@ else:
     except Exception as exp:
         available, testable, why_not, which = False, False, str(exp), None
     else:
-        # Check if not GLUT, because that is going to be too unstable
-        if 'glut' in _app.backend_module.__name__:
-            _msg = 'ipynb_vnc backend refuses to work with GLUT'
-            available, testable, why_not, which = False, False, _msg, None
-        else:
-            available, testable, why_not = True, False, None
-            which = _app.backend_module.which
+        available, testable, why_not = True, False, None
+        which = _app.backend_module.which
         print('              NOTE: this backend requires the Chromium browser')
     # Use that backend's shared context
     KEYMAP = _app.backend_module.KEYMAP

@@ -44,8 +44,6 @@ def test_multiple_canvases():
     """Testing multiple canvases"""
     n_check = 3
     app = use_app()
-    if app.backend_name.lower() == 'glut':
-        raise SkipTest('glut cannot use multiple canvases')
     with Canvas(app=app, size=_win_size, title='same_0') as c0:
         with Canvas(app=app, size=_win_size, title='same_1') as c1:
             ct = [0, 0]

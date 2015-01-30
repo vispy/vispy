@@ -78,6 +78,7 @@ capability = dict(
     multi_window=False,   # can use multiple windows at once
     scroll=False,         # scroll-wheel events are supported
     parent=False,         # can pass native widget backend parent
+    always_on_top=False,  # can be made always-on-top
 )
 
 
@@ -153,20 +154,19 @@ class CanvasBackend(BaseCanvasBackend):
         BaseCanvasBackend.__init__(self, *args)
         # We use _process_backend_kwargs() to "serialize" the kwargs
         # and to check whether they match this backend's capability
-        title, size, position, show, vsync, resize, dec, fs, parent, context, \
-            = self._process_backend_kwargs(kwargs)
-        
+        p = self._process_backend_kwargs(kwargs)
+
         # Deal with config
         # ... use context.config
         # Deal with context
-        context.shared.add_ref('backend-name', self)
-        if context.shared.ref is self:
+        p.context.shared.add_ref('backend-name', self)
+        if p.context.shared.ref is self:
             self._native_context = None  # ...
         else:
-            self._native_context = context.shared.ref._native_context
-        
+            self._native_context = p.context.shared.ref._native_context
+
         # NativeWidgetClass.__init__(self, foo, bar)
-    
+
     def _vispy_set_current(self):
         # Make this the current context
         raise NotImplementedError()

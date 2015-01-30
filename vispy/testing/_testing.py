@@ -216,16 +216,6 @@ def requires_application(backend=None, has=(), capable=()):
     return composed(dec_app, dec_backend)
 
 
-def glut_skip():
-    """Helper to skip a test if GLUT is the current backend"""
-    # this is basically a knownfail tool for glut
-    from ..app import use_app
-    app = use_app()
-    if app.backend_name.lower() == 'glut':
-        raise SkipTest('GLUT unstable')
-    return  # otherwise it's fine
-
-
 def requires_img_lib():
     """Decorator for tests that require an image library"""
     from ..io import _check_img_lib

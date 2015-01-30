@@ -86,8 +86,5 @@ wx: clean-test
 egl: clean-test
 	python make test egl
 
-glut: clean-test
-	python make test glut
-
 ipynb_vnc: clean-test
 	python make test ipynb_vnc
