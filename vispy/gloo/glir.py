@@ -18,6 +18,32 @@ from . import gl
 from ..ext.six import string_types
 from ..util import logger
 
+# TODO: expose these via an extension space in .gl?
+_internalformats = [
+    gl.Enum('GL_RED', 6403),
+    gl.Enum('GL_R', 8194), 
+    gl.Enum('GL_R8', 33321), 
+    gl.Enum('GL_R16', 33322), 
+    gl.Enum('GL_R16F', 33325), 
+    gl.Enum('GL_R32F', 33326),
+    gl.Enum('GL_RG', 33319), 
+    gl.Enum('GL_RG8', 333323),
+    gl.Enum('GL_RG16', 333324),
+    gl.Enum('GL_RG16F', 333327),
+    gl.Enum('GL_RG32F', 33328),
+    gl.Enum('GL_RGB', 6407),
+    gl.Enum('GL_RGB8', 32849),
+    gl.Enum('GL_RGB16', 32852),
+    gl.Enum('GL_RGB16F', 34843),
+    gl.Enum('GL_RGB32F', 34837),
+    gl.Enum('GL_RGBA', 6408),
+    gl.Enum('GL_RGBA8', 32856),
+    gl.Enum('GL_RGBA16', 32859),
+    gl.Enum('GL_RGBA16F', 34842),
+    gl.Enum('GL_RGBA32F', 34836)
+]
+_internalformats = dict([(enum.name, enum) for enum in _internalformats])
+
 
 def as_enum(enum):
     """ Turn a possibly string enum into an integer enum.
@@ -26,7 +52,10 @@ def as_enum(enum):
         try:
             enum = getattr(gl, 'GL_' + enum.upper())
         except AttributeError:
-            raise ValueError('Could not find int value for enum %r' % enum)
+            try:
+                enum = _internalformats['GL_' + enum.upper()]
+            except KeyError:
+                raise ValueError('Could not find int value for enum %r' % enum)
     return enum
 
 
@@ -826,7 +855,7 @@ class GlirTexture(GlirObject):
     
     def create(self):
         self._handle = gl.glCreateTexture()
-        self._shape_format = 0  # To make setting size cheap
+        self._shape_formats = 0  # To make setting size cheap
     
     def delete(self):
         gl.glDeleteTexture(self._handle)
@@ -876,18 +905,20 @@ class GlirTexture(GlirObject):
 class GlirTexture2D(GlirTexture):
     _target = gl.GL_TEXTURE_2D
     
-    def set_size(self, shape, format):
+    def set_size(self, shape, format, internalformat):
         # Shape is height, width
         format = as_enum(format)
-        if (shape, format) != self._shape_format:
-            self._shape_format = shape, format
+        internalformat = format if internalformat is None \
+            else as_enum(internalformat)
+        if (shape, format, internalformat) != self._shape_formats:
+            self._shape_formats = shape, format, internalformat
             self.activate()
-            gl.glTexImage2D(self._target, 0, format, format,
+            gl.glTexImage2D(self._target, 0, internalformat, format,
                             gl.GL_UNSIGNED_BYTE, shape[:2])
     
     def set_data(self, offset, data):
         self.activate()
-        shape, format = self._shape_format
+        shape, format, internalformat = self._shape_formats
         y, x = offset
         # Get gtype
         gtype = self._types.get(np.dtype(data.dtype), None)
@@ -942,18 +973,22 @@ def glTexSubImage3D(target, level, xoffset, yoffset, zoffset,
 class GlirTexture3D(GlirTexture):
     _target = GL_TEXTURE_3D
         
-    def set_size(self, shape, format):
+    def set_size(self, shape, format, internalformat):
         format = as_enum(format)
+        if internalformat is not None:
+            internalformat = as_enum(internalformat)
+        else:
+            internalformat = format
         # Shape is depth, height, width
-        if (shape, format) != self._shape_format:
+        if (shape, format, internalformat) != self._shape_formats:
             self.activate()
-            self._shape_format = shape, format
-            glTexImage3D(self._target, 0, format, format,
+            self._shape_formats = shape, format, internalformat
+            glTexImage3D(self._target, 0, internalformat, format,
                          gl.GL_BYTE, shape[:3])
     
     def set_data(self, offset, data):
         self.activate()
-        shape, format = self._shape_format
+        shape, format, internalformat = self._shape_formats
         z, y, x = offset
         # Get gtype
         gtype = self._types.get(np.dtype(data.dtype), None)

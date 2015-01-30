@@ -39,8 +39,8 @@ class BaseTexture(GLObject):
     _ndim = 2
 
     _formats = {
-        1: 'luminance',  # or alpha,
-        2: 'luminance_alpha',
+        1: 'luminance',  # or alpha, or red
+        2: 'luminance_alpha',  # or rg
         3: 'rgb',
         4: 'rgba'
     }
@@ -48,19 +48,37 @@ class BaseTexture(GLObject):
     _inv_formats = {
         'luminance': 1,
         'alpha': 1,
+        'red': 1,
         'luminance_alpha': 2,
+        'rg': 2,
         'rgb': 3,
-        'rgba': 4,
+        'rgba': 4
     }
 
+    _inv_internalformats = dict([ 
+        (base + suffix, channels) 
+        for base, channels in [('r', 1), ('rg', 2), ('rgb', 3), ('rgba', 4)]
+        for suffix in ['8', '16', '16f', '32f']
+    ] + [
+        ('luminance', 1),
+        ('alpha', 1),
+        ('red', 1),
+        ('luminance_alpha', 2),
+        ('rg', 2),
+        ('rgb', 3),
+        ('rgba', 4)
+    ])
+
     def __init__(self, data=None, format=None, resizeable=True,
-                 interpolation=None, wrapping=None, shape=None):
+                 interpolation=None, wrapping=None, shape=None, 
+                 internalformat=None):
         GLObject.__init__(self)
         
         # Init shape and format
         self._resizeable = True  # at least while we're in init
         self._shape = tuple([0 for i in range(self._ndim+1)])
         self._format = format
+        self._internalformat = internalformat
         
         # Set texture parameters (before setting data)
         self.interpolation = interpolation or 'nearest'
@@ -73,10 +91,11 @@ class BaseTexture(GLObject):
             if shape is not None:
                 raise ValueError('Texture needs data or shape, not both.')
             data = np.array(data, copy=False)
-            self.resize(data.shape, format)  # So we can test the combination
+            # So we can test the combination
+            self.resize(data.shape, format, internalformat)
             self.set_data(data)
         elif shape is not None:
-            self.resize(shape, format)
+            self.resize(shape, format, internalformat)
         else:
             raise ValueError("Either data or shape must be given")
         
@@ -164,8 +183,8 @@ class BaseTexture(GLObject):
         self._interpolation = value
         self._glir.command('INTERPOLATION', self._id, *value)
     
-    def resize(self, shape, format=None):
-        """ Set the texture size and format
+    def resize(self, shape, format=None, internalformat=None):
+        """Set the texture size and format
         
         Parameters
         ----------
@@ -176,7 +195,16 @@ class BaseTexture(GLObject):
             The format of the texture: 'luminance', 'alpha',
             'luminance_alpha', 'rgb', or 'rgba'. If not given the format
             is chosen automatically based on the number of channels.
-            When the data has one channel, 'luminance' is assumed.
+            When the data has one channel, 'luminance' is assumed.  
+        internalformat : str | enum | None
+            The internal (storage) format of the texture: 'luminance',
+            'alpha', 'r8', 'r16', 'r16f', 'r32f'; 'luminance_alpha',
+            'rg8', 'rg16', 'rg16f', 'rg32f'; 'rgb', 'rgb8', 'rgb16',
+            'rgb16f', 'rgb32f'; 'rgba', 'rgba8', 'rgba16', 'rgba16f',
+            'rgba32f'.  If None, the internalformat is chosen
+            automatically based on the number of channels.  This is a
+            hint which may be ignored by the OpenGL implementation.
+
         """
         shape = self._normalize_shape(shape)
         
@@ -185,24 +213,46 @@ class BaseTexture(GLObject):
             raise RuntimeError("Texture is not resizeable")
         
         # Determine format
-        ambiguous = 'alpha', 'luminance'
         if format is None:
             format = self._formats[shape[-1]]
-            # Keep current format if format is ambiguous
-            if format in ambiguous and self._format in ambiguous:
+            # Keep current format if channels match
+            if self._format and \
+               self._inv_formats[self._format] == self._inv_formats[format]:
                 format = self._format
         else:
             format = check_enum(format)
+
+        if internalformat is None:
+            # Keep current internalformat if channels match
+            if self._internalformat and \
+               self._inv_internalformats[self._internalformat] == shape[-1]:
+                internalformat = self._internalformat
+        else:
+
+            internalformat = check_enum(internalformat)
+
         # Check
         if format not in self._inv_formats:
             raise ValueError('Invalid texture format: %r.' % format)
         elif shape[-1] != self._inv_formats[format]:
             raise ValueError('Format does not match with given shape.')
         
+        if internalformat is None:
+            pass
+        elif internalformat not in self._inv_internalformats:
+            raise ValueError(
+                'Invalid texture internalformat: %r.' 
+                % internalformat
+            )
+        elif shape[-1] != self._inv_internalformats[internalformat]:
+            raise ValueError('Internalformat does not match with given shape.')
+
         # Store and send GLIR command
         self._shape = shape
         self._format = format
-        self._glir.command('SIZE', self._id, self._shape, self._format)
+        self._internalformat = internalformat
+        self._glir.command('SIZE', self._id, self._shape, self._format, 
+                           self._internalformat)
 
     def set_data(self, data, offset=None, copy=False):
         """ Set texture data
