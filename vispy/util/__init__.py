@@ -13,3 +13,4 @@ from .fetching import get_testing_file, load_data_file  # noqa
 from . import fonts       # noqa
 from . import transforms  # noqa
 from .wrappers import use, run_subprocess  # noqa
+from .bunch import SimpleBunch  # noqa
