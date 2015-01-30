@@ -10,8 +10,7 @@ import sys
 from vispy.app import Canvas
 from numpy.testing import assert_almost_equal
 from vispy.testing import (requires_application, requires_pyopengl, SkipTest,
-                           glut_skip, run_tests_if_main, assert_equal,
-                           assert_true)
+                           run_tests_if_main, assert_equal, assert_true)
 from vispy.ext.six import string_types
 from vispy.util import use_log_level
 from vispy.gloo import gl
@@ -24,7 +23,6 @@ def teardown_module():
 @requires_application()
 def test_basics_desktop():
     """ Test desktop GL backend for basic functionality. """
-    glut_skip()
     _test_basics('desktop')
 
 
@@ -32,7 +30,6 @@ def test_basics_desktop():
 def test_functionality_proxy():
     """ Test GL proxy class for basic functionality. """
     # By using debug mode, we are using the proxy class
-    glut_skip()
     _test_basics('desktop debug')
 
 
@@ -40,7 +37,6 @@ def test_functionality_proxy():
 @requires_pyopengl()
 def test_basics_pypengl():
     """ Test pyopengl GL backend for basic functionality. """
-    glut_skip()
     _test_basics('pyopengl')
 
 
@@ -51,8 +47,6 @@ def test_functionality_es2():
         raise SkipTest('Skip es2 functionality test for now.')
     if sys.platform.startswith('win'):
         raise SkipTest('Can only test es2 functionality on Windows.')
-
-    glut_skip()
     _test_basics('es2')
 
 
@@ -90,7 +84,7 @@ def _test_setting_parameters():
     val = 0.2, 0.3
     gl.glDepthRange(*val)
     assert_almost_equal(gl.glGetParameter(gl.GL_DEPTH_RANGE), val)
-    
+
     gl.check_error()
 
 
@@ -109,7 +103,7 @@ def _test_enabling_disabling():
     gl.glDisable(gl.GL_BLEND)
     assert_equal(gl.glIsEnabled(gl.GL_BLEND), False)
     assert_equal(gl.glGetParameter(gl.GL_BLEND), 0)
-    
+
     gl.check_error()
 
 

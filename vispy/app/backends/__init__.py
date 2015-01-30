@@ -21,7 +21,6 @@ CORE_BACKENDS = [
     ('SDL2', '_sdl2', 'sdl2'),
     ('wx', '_wx', 'wx'),
     ('EGL', '_egl', 'vispy.ext.egl'),
-    ('Glut', '_glut', 'OpenGL.GLUT'),
 ]
 
 # Whereas core backends really represents libraries that can create a

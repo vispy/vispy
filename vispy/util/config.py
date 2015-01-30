@@ -74,7 +74,7 @@ def _init():
 VISPY_HELP = """
 VisPy command line arguments:
 
-  --vispy-backend=(qt|pyqt|pyside|glut|glfw|pyglet)
+  --vispy-backend=(qt|pyqt4|pyt5|pyside|glfw|pyglet|sdl2|wx)
     Selects the backend system for VisPy to use. This will override the default
     backend selection in your configuration file.
 
@@ -377,17 +377,13 @@ def sys_info(fname=None, overwrite=False):
             out += '{0:<9} {1}\n'.format(backend + ':', which)
         out += '\n'
         # We need an OpenGL context to get GL info
-        if 'glut' in app.backend_name.lower():
-            # glut causes problems
-            out += 'OpenGL information omitted for glut backend\n'
-        else:
-            canvas = Canvas('Test', (10, 10), show=False, app=app)
-            canvas._backend._vispy_set_current()
-            out += 'GL version:  %r\n' % (gl.glGetParameter(gl.GL_VERSION),)
-            x_ = gl.GL_MAX_TEXTURE_SIZE
-            out += 'MAX_TEXTURE_SIZE: %r\n' % (gl.glGetParameter(x_),)
-            out += 'Extensions: %r\n' % (gl.glGetParameter(gl.GL_EXTENSIONS),)
-            canvas.close()
+        canvas = Canvas('Test', (10, 10), show=False, app=app)
+        canvas._backend._vispy_set_current()
+        out += 'GL version:  %r\n' % (gl.glGetParameter(gl.GL_VERSION),)
+        x_ = gl.GL_MAX_TEXTURE_SIZE
+        out += 'MAX_TEXTURE_SIZE: %r\n' % (gl.glGetParameter(x_),)
+        out += 'Extensions: %r\n' % (gl.glGetParameter(gl.GL_EXTENSIONS),)
+        canvas.close()
     except Exception:  # don't stop printing info
         out += '\nInfo-gathering error:\n%s' % traceback.format_exc()
         pass

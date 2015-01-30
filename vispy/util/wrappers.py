@@ -39,8 +39,6 @@ def use(app=None, gl=None):
             * 'Glfw': use Glfw backend (successor of Glut). Widely available
               on Linux.
             * 'SDL2': use SDL v2 backend.
-            * 'Glut': use Glut backend. Widely available but limited.
-              Not recommended.
         Additional backends:
             * 'ipynb_vnc': render in the IPython notebook via a VNC approach
               (experimental)

@@ -34,7 +34,7 @@ def test_use():
         assert_not_equal(vispy.app._default_app.default_app, None)
         
         # Again, but now wrong app
-        wrong_name = 'glut' if app_name.lower() != 'glut' else 'pyglet'
+        wrong_name = 'glfw' if app_name.lower() != 'glfw' else 'pyqt4'
         assert_raises(RuntimeError, vispy.use, wrong_name)
         
         # And both

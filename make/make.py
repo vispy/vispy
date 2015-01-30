@@ -174,7 +174,7 @@ class Maker:
         """ Run tests:
                 * full - run all tests
                 * unit - run tests (also for each backend)
-                * any backend name (e.g. pyside, pyqt4, glut, sdl2, etc.) -
+                * any backend name (e.g. pyside, pyqt4, etc.) -
                   run tests for the given backend
                 * nobackend - run tests that do not require a backend
                 * extra - run extra tests (line endings and style)

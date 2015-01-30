@@ -110,6 +110,7 @@ capability = dict(  # things that can be set by the backend
     multi_window=True,
     scroll=True,
     parent=False,
+    always_on_top=False,
 )
 
 
@@ -197,40 +198,41 @@ class CanvasBackend(BaseCanvasBackend):
     # args are for BaseCanvasBackend, kwargs are for us.
     def __init__(self, *args, **kwargs):
         BaseCanvasBackend.__init__(self, *args)
-        title, size, position, show, vsync, resize, dec, fs, parent, context, \
-            = self._process_backend_kwargs(kwargs)
+        p = self._process_backend_kwargs(kwargs)
         self._initialized = False
-        
+
         # Deal with config
-        _set_config(context.config)
+        _set_config(p.context.config)
         # Deal with context
-        context.shared.add_ref('sdl2', self)
-        if context.shared.ref is self:
+        p.context.shared.add_ref('sdl2', self)
+        if p.context.shared.ref is self:
             share = None
         else:
-            other = context.shared.ref
+            other = p.context.shared.ref
             share = other._id.window, other._native_context
             sdl2.SDL_GL_MakeCurrent(*share)
             sdl2.SDL_GL_SetAttribute(sdl2.SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1)
-        
-        sdl2.SDL_GL_SetSwapInterval(1 if vsync else 0)
+
+        sdl2.SDL_GL_SetSwapInterval(1 if p.vsync else 0)
         flags = sdl2.SDL_WINDOW_OPENGL
         flags |= sdl2.SDL_WINDOW_SHOWN  # start out shown
         flags |= sdl2.SDL_WINDOW_ALLOW_HIGHDPI
-        flags |= sdl2.SDL_WINDOW_RESIZABLE if resize else 0
-        flags |= sdl2.SDL_WINDOW_BORDERLESS if not dec else 0
-        if fs is not False:
+        flags |= sdl2.SDL_WINDOW_RESIZABLE if p.resizable else 0
+        flags |= sdl2.SDL_WINDOW_BORDERLESS if not p.decorate else 0
+        if p.fullscreen is not False:
             self._fullscreen = True
-            if fs is not True:
+            if p.fullscreen is not True:
                 logger.warning('Cannot specify monitor number for SDL2 '
                                'fullscreen, using default')
             flags |= sdl2.SDL_WINDOW_FULLSCREEN_DESKTOP
         else:
             self._fullscreen = False
         self._mods = list()
-        if position is None:
+        if p.position is None:
             position = [sdl2.SDL_WINDOWPOS_UNDEFINED] * 2
-        self._id = sdl2.ext.Window(title, size, position, flags)
+        else:
+            position = None
+        self._id = sdl2.ext.Window(p.title, p.size, position, flags)
         if not self._id.window:
             raise RuntimeError('Could not create window')
         if share is None:
@@ -239,15 +241,15 @@ class CanvasBackend(BaseCanvasBackend):
             self._native_context = sdl2.SDL_GL_CreateContext(share[0])
         self._sdl_id = sdl2.SDL_GetWindowID(self._id.window)
         _VP_SDL2_ALL_WINDOWS[self._sdl_id] = self
-        
+
         # Init
         self._initialized = True
         self._needs_draw = False
         self._vispy_set_current()
         self._vispy_canvas.events.initialize()
-        if not show:
+        if not p.show:
             self._vispy_set_visible(False)
-    
+
     def _vispy_warmup(self):
         etime = time() + 0.1
         while time() < etime:

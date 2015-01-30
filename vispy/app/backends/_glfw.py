@@ -124,6 +124,7 @@ capability = dict(  # things that can be set by the backend
     multi_window=True,
     scroll=True,
     parent=False,
+    always_on_top=True,
 )
 
 
@@ -143,9 +144,9 @@ def _set_config(c):
 
     glfw.glfwWindowHint(glfw.GLFW_DEPTH_BITS, c['depth_size'])
     glfw.glfwWindowHint(glfw.GLFW_STENCIL_BITS, c['stencil_size'])
-    #glfw.glfwWindowHint(glfw.GLFW_CONTEXT_VERSION_MAJOR, c['major_version'])
-    #glfw.glfwWindowHint(glfw.GLFW_CONTEXT_VERSION_MINOR, c['minor_version'])
-    #glfw.glfwWindowHint(glfw.GLFW_SRGB_CAPABLE, c['srgb'])
+    # glfw.glfwWindowHint(glfw.GLFW_CONTEXT_VERSION_MAJOR, c['major_version'])
+    # glfw.glfwWindowHint(glfw.GLFW_CONTEXT_VERSION_MINOR, c['minor_version'])
+    # glfw.glfwWindowHint(glfw.GLFW_SRGB_CAPABLE, c['srgb'])
     glfw.glfwWindowHint(glfw.GLFW_SAMPLES, c['samples'])
     glfw.glfwWindowHint(glfw.GLFW_STEREO, c['stereo'])
     if not c['double_buffer']:
@@ -229,49 +230,50 @@ class CanvasBackend(BaseCanvasBackend):
     # args are for BaseCanvasBackend, kwargs are for us.
     def __init__(self, *args, **kwargs):
         BaseCanvasBackend.__init__(self, *args)
-        title, size, position, show, vsync, resize, dec, fs, parent, context, \
-            = self._process_backend_kwargs(kwargs)
+        p = self._process_backend_kwargs(kwargs)
         self._initialized = False
-        
+
         # Deal with config
-        _set_config(context.config)
+        _set_config(p.context.config)
         # Deal with context
-        context.shared.add_ref('glfw', self)
-        if context.shared.ref is self:
+        p.context.shared.add_ref('glfw', self)
+        if p.context.shared.ref is self:
             share = None
         else:
-            share = context.shared.ref._id
-        
+            share = p.context.shared.ref._id
+
         glfw.glfwWindowHint(glfw.GLFW_REFRESH_RATE, 0)  # highest possible
-        glfw.glfwSwapInterval(1 if vsync else 0)
-        glfw.glfwWindowHint(glfw.GLFW_RESIZABLE, int(resize))
-        glfw.glfwWindowHint(glfw.GLFW_DECORATED, int(dec))
+        glfw.glfwSwapInterval(1 if p.vsync else 0)
+        glfw.glfwWindowHint(glfw.GLFW_RESIZABLE, int(p.resizable))
+        glfw.glfwWindowHint(glfw.GLFW_DECORATED, int(p.decorate))
         glfw.glfwWindowHint(glfw.GLFW_VISIBLE, 0)  # start out hidden
-        if fs is not False:
+        glfw.glfwWindowHint(glfw.GLFW_FLOATING, int(p.always_on_top))
+        if p.fullscreen is not False:
             self._fullscreen = True
-            if fs is True:
+            if p.fullscreen is True:
                 monitor = glfw.glfwGetPrimaryMonitor()
             else:
                 monitor = glfw.glfwGetMonitors()
-                if fs >= len(monitor):
+                if p.fullscreen >= len(monitor):
                     raise ValueError('fullscreen must be <= %s'
                                      % len(monitor))
-                monitor = monitor[fs]
+                monitor = monitor[p.fullscreen]
             use_size = glfw.glfwGetVideoMode(monitor)[:2]
-            if use_size != tuple(size):
+            if use_size != tuple(p.size):
                 logger.debug('Requested size %s, will be ignored to '
-                             'use fullscreen mode %s' % (size, use_size))
+                             'use fullscreen mode %s' % (p.size, use_size))
             size = use_size
         else:
             self._fullscreen = False
             monitor = None
+            size = p.size
 
         self._id = glfw.glfwCreateWindow(width=size[0], height=size[1],
-                                         title=title, monitor=monitor,
+                                         title=p.title, monitor=monitor,
                                          share=share)
         if not self._id:
             raise RuntimeError('Could not create window')
-        
+
         _VP_GLFW_ALL_WINDOWS.append(self)
         self._mod = list()
 
@@ -286,16 +288,16 @@ class CanvasBackend(BaseCanvasBackend):
         self._vispy_canvas_ = None
         self._needs_draw = False
         self._vispy_set_current()
-        if position is not None:
-            self._vispy_set_position(*position)
-        if show:
+        if p.position is not None:
+            self._vispy_set_position(*p.position)
+        if p.show:
             glfw.glfwShowWindow(self._id)
-        
+
         # Init
         self._initialized = True
         self._vispy_set_current()
         self._vispy_canvas.events.initialize()
-    
+
     def _vispy_warmup(self):
         etime = time() + 0.25
         while time() < etime:

@@ -20,8 +20,7 @@ import numpy as np
 
 from vispy.app import Canvas
 from vispy.testing import (requires_application, requires_pyopengl, SkipTest,
-                           glut_skip, run_tests_if_main, assert_equal,
-                           assert_true)
+                           run_tests_if_main, assert_equal, assert_true)
 
 from vispy.gloo import gl
 
@@ -37,7 +36,6 @@ def teardown_module():
 @requires_application()
 def test_functionality_desktop():
     """ Test desktop GL backend for full functionality. """
-    glut_skip()
     _test_functonality('desktop')
 
 
@@ -45,7 +43,6 @@ def test_functionality_desktop():
 def test_functionality_proxy():
     """ Test GL proxy class for full functionality. """
     # By using debug mode, we are using the proxy class
-    glut_skip()
     _test_functonality('desktop debug')
 
 
@@ -53,7 +50,6 @@ def test_functionality_proxy():
 @requires_pyopengl()
 def test_functionality_pyopengl():
     """ Test pyopengl GL backend for full functionality. """
-    glut_skip()
     _test_functonality('pyopengl')
 
 
@@ -64,7 +60,6 @@ def test_functionality_es2():
         raise SkipTest('Skip es2 functionality test for now.')
     if not sys.platform.startswith('win'):
         raise SkipTest('Can only test es2 functionality on Windows.')
-    glut_skip()
     _test_functonality('es2')
 
 

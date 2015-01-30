@@ -98,6 +98,7 @@ capability = dict(  # things that can be set by the backend
     multi_window=True,
     scroll=True,
     parent=True,
+    always_on_top=True,
 )
 
 
@@ -202,28 +203,29 @@ class CanvasBackend(GLCanvas, BaseCanvasBackend):
     # args are for BaseCanvasBackend, kwargs are for us.
     def __init__(self, *args, **kwargs):
         BaseCanvasBackend.__init__(self, *args)
-        title, size, position, show, vsync, resize, dec, fs, parent, context, \
-            = self._process_backend_kwargs(kwargs)
-        
+        p = self._process_backend_kwargs(kwargs)
+
         # Set config
-        self._gl_attribs = _set_config(context.config)
+        self._gl_attribs = _set_config(p.context.config)
         # Deal with context
-        context.shared.add_ref('wx', self)
-        if context.shared.ref is self:
+        p.context.shared.add_ref('wx', self)
+        if p.context.shared.ref is self:
             self._gl_context = None  # set for real once we init the GLCanvas
         else:
-            self._gl_context = context.shared.ref._gl_context
-        
-        if parent is None:
+            self._gl_context = p.context.shared.ref._gl_context
+
+        if p.parent is None:
             style = (wx.MINIMIZE_BOX | wx.MAXIMIZE_BOX | wx.CLOSE_BOX |
                      wx.SYSTEM_MENU | wx.CAPTION | wx.CLIP_CHILDREN)
-            style |= wx.NO_BORDER if not dec else wx.RESIZE_BORDER
-            self._frame = wx.Frame(None, wx.ID_ANY, title, position,
-                                   size, style)
-            if not resize:
-                self._frame.SetSizeHints(size[0], size[1], size[0], size[1])
-            if fs is not False:
-                if fs is not True:
+            style |= wx.NO_BORDER if not p.decorate else wx.RESIZE_BORDER
+            style |= wx.STAY_ON_TOP if p.always_on_top else 0
+            self._frame = wx.Frame(None, wx.ID_ANY, p.title, p.position,
+                                   p.size, style)
+            if not p.resizable:
+                self._frame.SetSizeHints(p.size[0], p.size[1],
+                                         p.size[0], p.size[1])
+            if p.fullscreen is not False:
+                if p.fullscreen is not True:
                     logger.warning('Cannot specify monitor number for wx '
                                    'fullscreen, using default')
                 self._fullscreen = True
@@ -234,26 +236,27 @@ class CanvasBackend(GLCanvas, BaseCanvasBackend):
             self._frame.Raise()
             self._frame.Bind(wx.EVT_CLOSE, self.on_close)
         else:
+            parent = p.parent
             self._frame = None
             self._fullscreen = False
         self._init = False
-        GLCanvas.__init__(self, parent, wx.ID_ANY, pos=position,
-                          size=size, style=0, name='GLCanvas',
+        GLCanvas.__init__(self, parent, wx.ID_ANY, pos=p.position,
+                          size=p.size, style=0, name='GLCanvas',
                           attribList=self._gl_attribs)
-            
+
         if self._gl_context is None:
             self._gl_context = glcanvas.GLContext(self)
-        
+
         self.SetFocus()
-        self._vispy_set_title(title)
+        self._vispy_set_title(p.title)
         self._size = None
         self.Bind(wx.EVT_SIZE, self.on_resize)
         self.Bind(wx.EVT_PAINT, self.on_paint)
         self.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
         self.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.Bind(wx.EVT_MOUSE_EVENTS, self.on_mouse_event)
-        self._size_init = size
-        self._vispy_set_visible(show)
+        self._size_init = p.size
+        self._vispy_set_visible(p.show)
 
     def on_resize(self, event):
         if self._vispy_canvas is None or not self._init:
@@ -286,7 +289,7 @@ class CanvasBackend(GLCanvas, BaseCanvasBackend):
     def _vispy_set_current(self):
         self._vispy_canvas.set_current()  # Mark as current
         self.SetCurrent(self._gl_context)
-    
+
     def _vispy_warmup(self):
         etime = time() + 0.3
         while time() < etime:
