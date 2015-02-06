@@ -6,7 +6,8 @@
 # vispy: gallery 2
 
 """
-Demonstrating two scenes that share a camera.
+Demonstrating two scenes that share the same camera view by linking the
+cameras.
 """
 
 import numpy as np

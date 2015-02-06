@@ -655,7 +655,10 @@ class PanZoomCamera(BaseCamera):
             fy *= h/w
         #
         d = get_depth_value()
-        self._projection.set_ortho(-0.5*fx, 0.5*fx, -0.5*fy, 0.5*fy, 0, d)
+        # If we use ortho, the inverse mapping is ill defined, causing
+        # e.g. the GridLines visual to fail. STTransform works better.
+        #self._projection.set_ortho(-0.5*fx, 0.5*fx, -0.5*fy, 0.5*fy, 0, d)
+        self._projection = STTransform(scale=(2/fx, 2/fy, 1/d))
         
         # Create full transform
         transforms = [n.transform for n in

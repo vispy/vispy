@@ -36,8 +36,13 @@ grid.add_widget(vb3, 1, 0)
 grid.add_widget(vb4, 1, 1)
 
 # Create some visuals to show
+# AK: Ideally, we could just create one visual that is present in all
+# scenes, but that results in flicker for the PanZoomCamera, I suspect
+# due to errors in transform caching.
 im1 = io.load_crate().astype('float32') / 255
-image1 = scene.visuals.Image(im1, grid=(20, 20), parent=scenes)
+#image1 = scene.visuals.Image(im1, grid=(20, 20), parent=scenes)
+for par in scenes:
+    image = scene.visuals.Image(im1, grid=(20, 20), parent=par)
 
 #vol1 = np.load(io.load_data_file('volume/stent.npz'))['arr_0']
 #volume1 = scene.visuals.Volume(vol1, parent=scenes)
