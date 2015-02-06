@@ -149,7 +149,7 @@ class Widget(Node):
 
     def _update_line(self):
         """ Update border line to match new shape """
-        if self.border_color.is_blank:
+        if self.border_color.is_blank():
             return
         m = self.margin
         r = self.size[0] - m
@@ -164,7 +164,7 @@ class Widget(Node):
         self._visual.set_data(pos=pos)
 
     def draw(self, event):
-        if self.border_color.is_blank:
+        if self.border_color.is_blank():
             return
         self._visual.draw(event)
 

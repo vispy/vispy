@@ -286,7 +286,7 @@ class _GLLineVisual(Visual):
         if self._parent._changed['color']:
             color = self._parent._interpret_color()
             # If color is not visible, just quit now
-            if isinstance(color, Color) and color.is_blank:
+            if isinstance(color, Color) and color.is_blank():
                 return
             if isinstance(color, Function):
                 # TODO: Change to the parametric coordinate once that is done
