@@ -126,7 +126,7 @@ class Node(Visual):
                                  ' not %s.' % p.__class__.__name__)
 
         # Apply
-        prev = self._parents.copy()
+        prev = list(self._parents)  # No list.copy() on Py2.x
         with self.events.parents_change.blocker():
             # Remove parents
             for parent in prev:
