@@ -92,6 +92,12 @@ class LineVisual(Visual):
 
         self._changed = {'pos': False, 'color': False, 'width': False,
                          'connect': False}
+        
+        self._pos = None
+        self._color = None
+        self._width = None
+        self._connect = None
+        
         # don't call subclass set_data; these often have different
         # signatures.
         LineVisual.set_data(self, pos=pos, color=color, width=width,
@@ -323,6 +329,8 @@ class _GLLineVisual(Visual):
             self._connect = self._parent._interpret_connect()
             if isinstance(self._connect, np.ndarray):
                 self._connect_ibo.set_data(self._connect)
+        if self._connect is None:
+            return
 
         # Draw
         if self._connect == 'strip':
