@@ -401,7 +401,10 @@ class Color(ColorArray):
     def lab(self):
         return super(Color, self).lab[0]
 
+    @property
     def is_blank(self):
+        """Boolean indicating whether the color is invisible.
+        """
         return self.rgba[3] == 0
 
     def __repr__(self):

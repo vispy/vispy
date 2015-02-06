@@ -125,10 +125,10 @@ class EllipseVisual(PolygonVisual):
                                 start_angle=self._start_angle,
                                 span_angle=self._span_angle,
                                 num_segments=self._num_segments)
-        if not self._color.is_blank():
+        if not self._color.is_blank:
             self.mesh.set_data(vertices=self._vertices,
                                color=self._color.rgba)
-        if not self._border_color.is_blank():
+        if not self._border_color.is_blank:
             self.border.set_data(pos=self._vertices[1:],
                                  color=self._border_color.rgba)
         

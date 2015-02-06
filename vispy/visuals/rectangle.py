@@ -166,10 +166,10 @@ class RectangleVisual(PolygonVisual):
         self._generate_vertices(pos=self._pos, radius=self._radius,
                                 height=self._height, width=self._width)
         
-        if not self._color.is_blank():
+        if not self._color.is_blank:
             self.mesh.set_data(vertices=self._vertices, 
                                color=self._color.rgba)
-        if not self._border_color.is_blank():
+        if not self._border_color.is_blank:
             self.border.set_data(pos=self._vertices[1:, ..., :2],
                                  color=self._border_color.rgba)
 
