@@ -6,9 +6,6 @@ Provides classes representing different transform types suitable for
 use with visuals and scenes.
 """
 
-__all__ = ['NullTransform', 'STTransform', 'AffineTransform',
-           'PerspectiveTransform', 'LogTransform', 'PolarTransform',
-           'ChainTransform', 'TransformSystem']
 
 from .base_transform import BaseTransform  # noqa
 from .linear import (NullTransform, STTransform,  # noqa
@@ -17,6 +14,10 @@ from .nonlinear import LogTransform, PolarTransform  # noqa
 from .chain import ChainTransform  # noqa
 from ._util import arg_to_array, arg_to_vec4, as_vec4, TransformCache  # noqa
 from .transform_system import TransformSystem
+
+__all__ = ['NullTransform', 'STTransform', 'AffineTransform',
+           'PerspectiveTransform', 'LogTransform', 'PolarTransform',
+           'ChainTransform', 'TransformSystem']
 
 transform_types = {}
 for o in list(globals().values()):

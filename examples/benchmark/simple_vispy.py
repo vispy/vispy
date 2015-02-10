@@ -11,7 +11,7 @@ from vispy.gloo import clear
 
 # app.use_app('pyqt4')  # or pyside, glut, pyglet, sdl2, etc.
 
-canvas = app.Canvas(size=(512, 512), title = "Do nothing benchmark (vispy)",
+canvas = app.Canvas(size=(512, 512), title="Do nothing benchmark (vispy)",
                     keys='interactive')
 
 

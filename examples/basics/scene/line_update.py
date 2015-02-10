@@ -7,6 +7,7 @@
 Demonstration of animated Line visual.
 """
 
+import sys
 import numpy as np
 from vispy import app, scene
 
@@ -36,6 +37,5 @@ timer = app.Timer()
 timer.connect(update)
 timer.start(0)
 
-import sys
 if __name__ == '__main__' and sys.flags.interactive == 0:
     app.run()

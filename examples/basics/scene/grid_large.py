@@ -8,6 +8,7 @@
 Test automatic layout of multiple viewboxes using Grid.
 """
 
+import sys
 from vispy import scene
 from vispy import app
 import numpy as np
@@ -35,6 +36,5 @@ for i in range(10):
         vb.add(line)
 
 
-import sys
 if __name__ == '__main__' and sys.flags.interactive == 0:
     app.run()

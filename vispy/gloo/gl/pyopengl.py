@@ -88,7 +88,7 @@ def _inject():
         NS[ourname] = func
 
 
-from . import _pyopengl
+from . import _pyopengl  # noqa
 
 # Inject remaining functions from OpenGL.GL
 # copies name to _pyopengl namespace
