@@ -43,11 +43,12 @@ surface.transform = scene.transforms.STTransform(translate=(-25, -25, -50))
 axis = scene.visuals.XYZAxis(parent=view.scene)
 
 # Use a 3D camera
-view.camera = scene.TurntableCamera(elevation=30, azimuth=30, 
-                                    aspect_fixed=True)
-
 # Manual bounds; Mesh visual does not provide bounds yet
-view.camera.set_range((-10, 10), (-10, 10), (-10, 10))
+# Note how you can set bounds before assigning the camera to the viewbox
+cam = scene.TurntableCamera(elevation=30, azimuth=30, fixed_ratio=True)
+cam.set_range((-10, 10), (-10, 10), (-10, 10))
+view.camera = cam
+
 
 if __name__ == '__main__':
     canvas.show()

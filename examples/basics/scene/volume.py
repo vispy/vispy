@@ -48,8 +48,8 @@ volume2 = scene.visuals.Volume(vol2, parent=view.scene, threshold=0.5)
 volume2.visible = False
 
 # Create two cameras (1 for firstperson, 3 for 3d person)
-cam1 = scene.cameras.FlyCamera(aspect_fixed=True, parent=view.scene)
-cam3 = scene.cameras.TurntableCamera(aspect_fixed=True, parent=view.scene)
+cam1 = scene.cameras.FlyCamera(fixed_ratio=True, parent=view.scene)
+cam3 = scene.cameras.TurntableCamera(fixed_ratio=True, parent=view.scene)
 view.camera = cam3  # Select turntable at first
 
 

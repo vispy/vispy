@@ -17,7 +17,7 @@ from vispy.util.filter import gaussian_filter
 
 canvas1 = scene.SceneCanvas(keys='interactive', show=True)
 view1 = canvas1.central_widget.add_view()
-view1.camera = scene.TurntableCamera(fov=60, aspect_fixed=True)
+view1.camera = scene.TurntableCamera(fov=60, fixed_ratio=True)
 
 canvas2 = scene.SceneCanvas(keys='interactive', show=True, 
                             shared=canvas1.context)

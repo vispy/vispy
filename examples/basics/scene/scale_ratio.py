@@ -6,7 +6,7 @@
 # vispy: gallery 2
 
 """
-Example demonstrating the use pf aspect ratio, and also the flipping
+Example demonstrating the use of aspect ratio, and also the flipping
 of axis using negative aspect ratios.
 """
 
@@ -37,8 +37,8 @@ cam3 = scene.cameras.TurntableCamera(parent=view.scene)
 view.camera = cam3  # Select turntable at first
 
 for cam in (cam1, cam2, cam3):
-    cam.aspect_ratio = 3, 2, 1
-    cam.aspect_fixed = True
+    cam.scale_ratio = 3, 2, 1
+    cam.fixed_ratio = True
     cam.set_range()
 
 
@@ -50,16 +50,16 @@ def on_key_press(event):
         view.camera = cam_toggle.get(view.camera, 'fly')
     elif event.text == '1':
         for cam in (cam1, cam2, cam3):
-            ar = cam.aspect_ratio
-            cam.aspect_ratio = -ar[0], ar[1], ar[2]
+            sr = cam.scale_ratio
+            cam.scale_ratio = -sr[0], sr[1], sr[2]
     elif event.text == '2':
         for cam in (cam1, cam2, cam3):
-            ar = cam.aspect_ratio
-            cam.aspect_ratio = ar[0], -ar[1], ar[2]
+            sr = cam.scale_ratio
+            cam.scale_ratio = sr[0], -sr[1], sr[2]
     elif event.text == '3':
         for cam in (cam1, cam2, cam3):
-            ar = cam.aspect_ratio
-            cam.aspect_ratio = -ar[0], ar[1], -ar[2]
+            sr = cam.scale_ratio
+            cam.scale_ratio = -sr[0], sr[1], -sr[2]
     elif event.text == '0':
         cam1.set_range()
         cam2.set_range()

@@ -44,7 +44,7 @@ volume1 = scene.visuals.Volume(vol1, parent=scenes, threshold=0.5)
 # is a child of the first, and thus "inherits" the transform of the
 # first camera, which includes the aspect ratio.
 cam1 = scene.cameras.TurntableCamera(parent=scenes, fov=60,
-                                     aspect_ratio=(3, 2, 1), aspect_fixed=True)
+                                     scale_ratio=(3, 2, 1), fixed_ratio=True)
 cam2 = scene.cameras.PerspectiveCamera(parent=cam1, fov=60)
 #
 cam2.transform.translate((+10, 0, 0))

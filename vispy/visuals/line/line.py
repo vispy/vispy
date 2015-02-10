@@ -161,8 +161,7 @@ class LineVisual(Visual):
             * bool numpy arrays specify which _adjacent_ pairs to connect.
         """
         if pos is not None:
-            self._bounds = [(pos[:, d].min(), pos[:, d].max())
-                            for d in range(pos.shape[1])]
+            self._bounds = None
             self._pos = pos
             self._changed['pos'] = True
 
@@ -229,8 +228,14 @@ class LineVisual(Visual):
         return color
 
     def bounds(self, mode, axis):
+        # Can and should we calculate bounds?
+        if (self._bounds is None) and self._pos is not None:
+            pos = self._pos
+            self._bounds = [(pos[:, d].min(), pos[:, d].max())
+                            for d in range(pos.shape[1])]
+        # Return what we can
         if self._bounds is None:
-            return
+            return 
         else:
             if axis < len(self._bounds):
                 return self._bounds[axis]
