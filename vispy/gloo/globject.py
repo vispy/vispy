@@ -6,9 +6,7 @@
 
 """
 Base gloo object
-"""
 
-"""
 On queues
 ---------
 

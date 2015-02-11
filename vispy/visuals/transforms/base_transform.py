@@ -2,11 +2,6 @@
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-from __future__ import division
-
-from ..shaders import Function
-from ...util.event import EventEmitter
-
 """
 API Issues to work out:
 
@@ -20,6 +15,11 @@ API Issues to work out:
     works by mapping a selection of points across a grid within the original
     rect.
 """
+
+from __future__ import division
+
+from ..shaders import Function
+from ...util.event import EventEmitter
 
 
 class BaseTransform(object):
@@ -193,4 +193,4 @@ class InverseTransform(BaseTransform):
         
 
 # import here to avoid import cycle; needed for BaseTransform.__mul__.
-from .chain import ChainTransform
+from .chain import ChainTransform  # noqa

@@ -7,6 +7,7 @@
 """
 Simple use of SceneCanvas to display an Image.
 """
+import sys
 from vispy import scene
 from vispy import app
 import numpy as np
@@ -26,6 +27,5 @@ image = scene.visuals.Image(img_data, parent=view.scene)
 # Set the view bounds to show the entire image with some padding
 view.camera.rect = (-10, -10, image.size[0]+20, image.size[1]+20)
 
-import sys
 if __name__ == '__main__' and sys.flags.interactive == 0:
     app.run()

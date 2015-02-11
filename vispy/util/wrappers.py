@@ -3,9 +3,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 """
 Some wrappers to avoid circular imports, or make certain calls easier.
-"""
 
-"""
 The idea of a 'global' vispy.use function is that although vispy.app
 and vispy.gloo.gl can be used independently, they are not complely
 independent for some configureation. E.g. when using real ES 2.0,

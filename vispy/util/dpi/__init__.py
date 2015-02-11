@@ -7,9 +7,9 @@
 The dpi module enables querying the OS for the screen DPI.
 """
 
-__all__ = ['get_dpi']
-
 import sys
+
+__all__ = ['get_dpi']
 
 if sys.platform.startswith('linux'):
     from ._linux import get_dpi

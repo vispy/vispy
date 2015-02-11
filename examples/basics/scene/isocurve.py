@@ -7,6 +7,7 @@
 """
 Simple use of SceneCanvas to display an Isocurve visual.
 """
+import sys
 from vispy import app, scene, visuals
 from vispy.util.filter import gaussian_filter
 import numpy as np
@@ -40,6 +41,5 @@ curve3 = scene.visuals.Isocurve(noise, level=40, color=(1, 0, 0, 1),
 view.camera.rect = (-10, -10, image.size[0]+20, image.size[1]+20)
 
 
-import sys
 if __name__ == '__main__' and sys.flags.interactive == 0:
     app.run()

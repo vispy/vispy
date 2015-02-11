@@ -79,5 +79,5 @@ def _get_gl_func(name, restype, argtypes):
 
 # Inject
 
-from . import _desktop
+from . import _desktop  # noqa
 _copy_gl_functions(_desktop, globals())

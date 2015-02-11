@@ -327,7 +327,7 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
             native=ev,
             pos=(ev.pos().x(), ev.pos().y()),
             button=BUTTONMAP.get(ev.button(), 0),
-            modifiers = self._modifiers(ev),
+            modifiers=self._modifiers(ev),
         )
 
     def mouseReleaseEvent(self, ev):
@@ -337,7 +337,7 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
             native=ev,
             pos=(ev.pos().x(), ev.pos().y()),
             button=BUTTONMAP[ev.button()],
-            modifiers = self._modifiers(ev),
+            modifiers=self._modifiers(ev),
         )
 
     def mouseMoveEvent(self, ev):

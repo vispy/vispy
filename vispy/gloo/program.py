@@ -301,7 +301,10 @@ class Program(GLObject):
             elif kind == 'attribute':
                 # Is this a constant value per vertex
                 is_constant = False
-                isscalar = lambda x: isinstance(x, (float, int))
+
+                def isscalar(x):
+                    return isinstance(x, (float, int))
+
                 if isscalar(data):
                     is_constant = True
                 elif isinstance(data, tuple):

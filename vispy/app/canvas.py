@@ -412,7 +412,10 @@ class Canvas(object):
         if callback:
             if isinstance(callback, string_types):
                 callback_str = callback  # because callback gets overwritten
-                callback = lambda x: print(callback_str % x)
+
+                def callback(x):
+                    print(callback_str % x)
+
             self._fps_window = window
             self.events.draw.connect(self._update_fps)
             self._fps_callback = callback

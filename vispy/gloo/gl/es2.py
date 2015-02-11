@@ -58,5 +58,5 @@ else:
 
 ## Inject
 
-from . import _es2
+from . import _es2  # noqa
 _copy_gl_functions(_es2, globals())
