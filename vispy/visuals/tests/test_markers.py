@@ -16,7 +16,7 @@ def test_markers():
         marker.set_data(np.array([[50, 50]], np.float32))
         c.draw_visual(marker)
         marker = _screenshot(alpha=False)
-        assert marker.any()
+        assert 10 < (marker == 255).sum() < 100
 
 
 run_tests_if_main()
