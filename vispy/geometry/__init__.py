@@ -17,4 +17,4 @@ from .rect import Rect  # noqa
 from .triangulation import Triangulation  # noqa
 from .calculations import _calculate_normals, _fast_cross_3d  # noqa
 from .generation import create_cube, create_cylinder, create_sphere, \
-           create_arrow # noqa
+           create_arrow  # noqa
