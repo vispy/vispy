@@ -185,7 +185,7 @@ def create_cylinder(rows, cols, radius=[1.0, 1.0], length=1.0, offset=False):
     # just reshape: no redundant vertices...
     verts = verts.reshape((rows+1)*cols, 3)
     # compute faces
-    faces = np.empty((rows*cols*2, 3), dtype=np.uint)
+    faces = np.empty((rows*cols*2, 3), dtype=np.uint32)
     rowtemplate1 = (((np.arange(cols).reshape(cols, 1) +
                       np.array([[0, 1, 0]])) % cols)
                     + np.array([[0, 0, cols]]))
@@ -229,7 +229,7 @@ def create_cone(cols, radius=3.0, length=10.0):
     verts[-1, 2] = length
     verts = verts.reshape((cols+1), 3)  # just reshape: no redundant vertices
     # compute faces
-    faces = np.empty((cols, 3), dtype=np.uint)
+    faces = np.empty((cols, 3), dtype=np.uint32)
     template = np.array([[0, 1]])
     for pos in range(cols):
         faces[pos, :-1] = template + pos
