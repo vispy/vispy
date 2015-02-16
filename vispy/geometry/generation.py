@@ -200,7 +200,7 @@ def create_cylinder(rows, cols, radius=[1.0, 1.0], length=1.0, offset=False):
     return MeshData(vertices=verts, faces=faces)
 
 
-def create_cone(cols, radius=3.0, length=10.0):
+def create_cone(cols, radius=1.0, length=1.0):
     """Create a cone
 
     Parameters
