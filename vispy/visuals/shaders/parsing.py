@@ -15,8 +15,8 @@ re_qualifier = r'(const|uniform|attribute|varying)'
 
 # template variables like
 #     $func_name
-re_template_var = (r"(?:(?:\$" + re_identifier + ")|(?:\$\{"
-                   + re_identifier + "\}))")
+re_template_var = (r"(?:(?:\$" + re_identifier + ")|(?:\$\{" +
+                   re_identifier + "\}))")
 
 # function names may be either identifier or template var
 re_func_name = r"(" + re_identifier + "|" + re_template_var + ")"

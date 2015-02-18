@@ -125,11 +125,11 @@ def create_sphere(rows, cols, radius=1.0, offset=True):
     # compute faces
     faces = np.empty((rows*cols*2, 3), dtype=np.uint32)
     rowtemplate1 = (((np.arange(cols).reshape(cols, 1) +
-                      np.array([[1, 0, 0]])) % cols)
-                    + np.array([[0, 0, cols]]))
+                      np.array([[1, 0, 0]])) % cols) +
+                    np.array([[0, 0, cols]]))
     rowtemplate2 = (((np.arange(cols).reshape(cols, 1) +
-                      np.array([[1, 0, 1]])) % cols)
-                    + np.array([[0, cols, cols]]))
+                      np.array([[1, 0, 1]])) % cols) +
+                    np.array([[0, cols, cols]]))
     for row in range(rows):
         start = row * cols * 2
         faces[start:start+cols] = rowtemplate1 + row * cols
@@ -187,11 +187,11 @@ def create_cylinder(rows, cols, radius=[1.0, 1.0], length=1.0, offset=False):
     # compute faces
     faces = np.empty((rows*cols*2, 3), dtype=np.uint32)
     rowtemplate1 = (((np.arange(cols).reshape(cols, 1) +
-                      np.array([[0, 1, 0]])) % cols)
-                    + np.array([[0, 0, cols]]))
+                      np.array([[0, 1, 0]])) % cols) +
+                    np.array([[0, 0, cols]]))
     rowtemplate2 = (((np.arange(cols).reshape(cols, 1) +
-                      np.array([[0, 1, 1]])) % cols)
-                    + np.array([[cols, 0, cols]]))
+                      np.array([[0, 1, 1]])) % cols) +
+                    np.array([[cols, 0, cols]]))
     for row in range(rows):
         start = row * cols * 2
         faces[start:start+cols] = rowtemplate1 + row * cols

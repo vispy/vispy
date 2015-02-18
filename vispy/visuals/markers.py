@@ -595,9 +595,9 @@ class MarkersVisual(Visual):
             # in the Visual coordinates
             # TO DO: find a way to get the scale directly
             scale = (
-                0.5*transforms.visual_to_document.simplified().scale[:2]
-                * transforms.document_to_framebuffer.simplified().scale[:2]
-                * transforms.framebuffer_to_render.simplified().scale[:2]
+                0.5*transforms.visual_to_document.simplified().scale[:2] *
+                transforms.document_to_framebuffer.simplified().scale[:2] *
+                transforms.framebuffer_to_render.simplified().scale[:2]
             )
             update_data['a_size'] *= min(scale)
             update_data['a_edgewidth'] *= min(scale)
