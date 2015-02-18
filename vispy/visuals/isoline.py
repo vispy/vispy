@@ -52,8 +52,8 @@ def iso_mesh_line(vertices, tris, vertex_data, levels):
         verts = vertices[:, :-1]
     else:
         verts = None
-    if (verts is not None and tris.shape[1] == 3
-       and vertex_data.shape[0] == verts.shape[0]):
+    if (verts is not None and tris.shape[1] == 3 and
+            vertex_data.shape[0] == verts.shape[0]):
         edges = np.vstack((tris.reshape((-1)),
                            np.roll(tris, -1, axis=1).reshape((-1)))).T
         edge_datas = vertex_data[edges]

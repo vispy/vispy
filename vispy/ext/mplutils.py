@@ -155,8 +155,8 @@ def get_marker_style(line):
     style['marker'] = line.get_marker()
     markerstyle = MarkerStyle(line.get_marker())
     markersize = line.get_markersize()
-    markertransform = (markerstyle.get_transform()
-                       + Affine2D().scale(markersize, -markersize))
+    markertransform = (markerstyle.get_transform() +
+                       Affine2D().scale(markersize, -markersize))
     style['markerpath'] = SVG_path(markerstyle.get_path(),
                                    markertransform)
     style['markersize'] = markersize
