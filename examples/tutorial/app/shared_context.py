@@ -40,7 +40,7 @@ class Window(QtGui.QWidget):
         box.addWidget(self.canvas_0.native)
 
         # pass the context from the first canvas to the second
-        self.canvas_1 = SceneCanvas(bgcolor='w', context=self.canvas_0.context)
+        self.canvas_1 = SceneCanvas(bgcolor='w', shared=self.canvas_0.context)
         self.vb_1 = ViewBox(parent=self.canvas_1.scene, bgcolor='b')
         self.vb_1.camera.rect = -1, -1, 2, 2
         self.canvas_1.events.resize.connect(partial(on_resize,
