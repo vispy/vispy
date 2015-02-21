@@ -269,7 +269,7 @@ class EventEmitter(object):
 
         Parameters
         ----------
-        callback : function | tuple
+        callback : function | weakref to function | tuple
             *callback* may be either a callable object or a tuple
             (object, attr_name) where object.attr_name will point to a
             callable object.
@@ -320,10 +320,15 @@ class EventEmitter(object):
             if ref:
                 if isinstance(callback, tuple):
                     ref = callback[1]
-                elif hasattr(callback, '__name__'):  # function
-                    ref = callback.__name__
-                else:  # Method, or other
-                    ref = callback.__class__.__name__
+                else:
+                    if isinstance(callback, weakref.ref):
+                        namer = callback()
+                    else:
+                        namer = callback
+                    if hasattr(callback, '__name__'):  # function
+                        ref = namer.__name__
+                    else:  # Method, or other
+                        ref = namer.__class__.__name__
             else:
                 ref = None
         elif not isinstance(ref, string_types):
@@ -419,6 +424,10 @@ class EventEmitter(object):
                 return event
 
             for cb in self._callbacks:
+                if isinstance(cb, weakref.ref):
+                    cb = cb()
+                    if cb is None:
+                        continue
                 if blocked.get(cb, 0) > 0:
                     continue
                 

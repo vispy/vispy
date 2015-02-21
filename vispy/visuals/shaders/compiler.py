@@ -5,6 +5,7 @@
 from __future__ import division
 
 import re
+import weakref
 
 from ... import gloo
 
@@ -36,7 +37,7 @@ class Compiler(object):
     def __init__(self, **shaders):
         # cache of compilation results for each function and variable
         self._object_names = {}  # {object: name}
-        self.shaders = shaders
+        self.shaders = weakref.WeakValueDictionary(**shaders)
 
     def __getitem__(self, item):
         """
