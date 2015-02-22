@@ -32,8 +32,6 @@ class TubeVisual(MeshVisual):
         if vertex_colors is None:
             vertex_colors = np.array([color for _ in range(len(points))])
 
-        vertices, filled_indices, outline_indices = create_cube()
-
         tangents, normals, binormals = frenet_frames(points, closed)
         print('tangents are', tangents)
         print('normals are', normals)
@@ -76,7 +74,7 @@ class TubeVisual(MeshVisual):
                 uva = np.array([i / segments, j / circle_points])
                 uvb = np.array([(i+1) / segments, j / circle_points])
                 uvc = np.array([(i+1) / segments, (j+1) / circle_points])
-                uvb = np.array([i / segments, (j+1) / circle_points])
+                uvd = np.array([i / segments, (j+1) / circle_points])
 
                 faces.append([a, b, d])
                 tex_coords.append([uva, uvb, uvd])
@@ -84,9 +82,14 @@ class TubeVisual(MeshVisual):
                 faces.append([b, c, d])
                 tex_coords.append([uvb, uvc, uvd])
 
-        faces = n.array(faces)
-        tex_coords = n.array(tex_coords)
+        faces = np.array(faces)
+        tex_coords = np.array(tex_coords)
         print('faces are', faces)
+
+        vertices = grid.reshape(grid.shape[0]*grid.shape[1], 3)
+        print('vertices are', vertices)
+
+        MeshVisual.__init__(self, vertices)
                 
 
     def draw(self, transforms):
