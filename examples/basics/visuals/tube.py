@@ -42,23 +42,27 @@ if __name__ == '__main__':
     points4 = points1.copy()
     points4[:, 0] += 41.
 
-    colours = np.linspace(0, 1, len(points1))
-    colours = np.array([hsv_to_rgb(c, 1, 1) for c in colours])
+    colors = np.linspace(0, 1, len(points1))
+    colors = np.array([hsv_to_rgb(c, 1, 1) for c in colors])
 
-    l1 = scene.visuals.Tube(points1, colors=colours,
+    vertex_colors = np.random.random(8 * len(points1))
+    vertex_colors = np.array([hsv_to_rgb(c, 1, 1) for c in vertex_colors])
+
+    l1 = scene.visuals.Tube(points1, 
                             shading='flat',
+                            vertex_colors=vertex_colors,
                             tube_points=8)
 
-    l2 = scene.visuals.Tube(points2, colors=colours,
+    l2 = scene.visuals.Tube(points2, colors=colors,
                             shading='smooth',
                             tube_points=8)
 
-    l3 = scene.visuals.Tube(points3, colors=colours,
+    l3 = scene.visuals.Tube(points3, colors=colors,
                             shading='smooth',
                             tube_points=8,
                             closed=True)
 
-    l4 = scene.visuals.Tube(points4, colors=colours,
+    l4 = scene.visuals.Tube(points4, colors=colors,
                             shading='flat',
                             tube_points=8,
                             mode='lines')
