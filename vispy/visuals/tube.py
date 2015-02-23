@@ -1,10 +1,10 @@
 from __future__ import division
 
-# from ..geometry import create_tube  # to move to
 from ..geometry import create_cube
 from ..gloo import set_state
 from .mesh import MeshVisual
 import numpy as np
+from numpy.linalg import norm
 
 
 class TubeVisual(MeshVisual):
@@ -108,8 +108,8 @@ def frenet_frames(points, closed):
         normals[i] = normals[i-1]
 
         vec = np.cross(tangents[i-1], tangents[i])
-        if mag(vec) > epsilon:
-            vec /= mag(vec)
+        if norm(vec) > epsilon:
+            vec /= norm(vec)
 
             theta = np.arccos(np.clip(tangents[i-1].dot(tangents[i]), -1, 1))
             normals[i] = rotation_about_axis(vec, theta).dot(normals[i])
@@ -129,11 +129,6 @@ def frenet_frames(points, closed):
 
     return tangents, normals, binormals
                 
-
-
-def mag(v):
-    return np.sqrt(v.dot(v))
-
 
 def rotation_about_axis(axis, angle):
     c = np.cos(angle)
