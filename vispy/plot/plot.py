@@ -143,10 +143,10 @@ def scatter(*args, **kwds):
             _pos = args[0]
         else:
             _pos[:, 0] = np.arange(len(args[0]))
-            _pos[:, 1] = np.array(args[0])
+            _pos[:, 1] = np.asarray(args[0])
     elif len(args) == 2:
-        _pos[:, 0] = np.array(args[0])
-        _pos[:, 1] = np.array(args[1])
+        _pos[:, 0] = np.asarray(args[0])
+        _pos[:, 1] = np.asarray(args[1])
     else:
         raise TypeError('Arguments should be passed as ' +
                         '(Y,), (X, Y) or (np.array((X, Y)))')
