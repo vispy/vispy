@@ -11,8 +11,8 @@ plots = []
 
 
 def plot(*args, **kwds):
-    """ Create a new canvas and plot the given data. 
-    
+    """ Create a new canvas and plot the given data.
+
     For arguments, see scene.visuals.LinePlot.
     """
     canvas = SceneCanvas(keys='interactive')
@@ -27,7 +27,7 @@ def plot(*args, **kwds):
 
 def image(*args, **kwds):
     """ Create a new canvas and display the given image data.
-    
+
     For arguments, see scene.visuals.Image.
     """
     canvas = SceneCanvas(keys='interactive')
@@ -104,6 +104,7 @@ def mesh(vertices=None, faces=None, vertex_colors=None, face_colors=None,
     # canvas.view.camera.auto_zoom(image)  # XXX Don't have this for Turntable
     plots.append(canvas)
     return canvas
+
 
 def scatter(*args, **kwds):
     ''' Create a new canvas and make a scatter plots.
