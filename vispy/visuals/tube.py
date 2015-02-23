@@ -141,10 +141,6 @@ def frenet_frames(points, closed):
             theta = np.arccos(np.clip(tangents[i-1].dot(tangents[i]), -1, 1))
             normals[i] = rotation_about_axis(vec, theta).dot(normals[i])
 
-        # binormals[i] = np.cross(tangents[i], normals[i])
-
-    binormals = np.cross(tangents, normals)
-
     if closed:
         theta = np.arccos(np.clip(normals[0].dot(normals[-1]), -1, 1))
         theta /= len(points) - 1
@@ -155,7 +151,8 @@ def frenet_frames(points, closed):
         for i in range(1, len(points)):
             normals[i] = rotation_about_axis(
                 tangents[i], theta*i).dot(normals[i])
-            binormals[i] = np.cross(tangents[i], normals[i])
+
+    binormals = np.cross(tangents, normals)
 
     return tangents, normals, binormals
                 
