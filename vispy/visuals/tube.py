@@ -8,21 +8,49 @@ from numpy.linalg import norm
 
 
 class TubeVisual(MeshVisual):
-    """Visual that displays a tube by extruding a circle
-    along a piecewise-linear path.
+    """Displays a tube by extruding a circle along a piecewise-linear
+    path.
+
+    The tube mesh is corrected following its Frenet curvature and
+    torsion such that it varies smoothly along the curve, including if
+    the tube is closed.
 
     Parameters
     ----------
-    
+    points : ndarray
+        An array of (x, y, z) points describing the path along which the
+        tube will be extruded.
+    radius : float
+        The radius of the tube. Defaults to 1.0.
+    tube_points : int
+        The number of points in the approximate circle of the tube's
+        cross section. Defaults to 8.
+    colors : ndarray
+        An array of colors at each point of the points array; every
+        vertex of the tube mesh around this point will take the given
+        color. Must be the same length as the points array, or None
+        to color only by the `color` argument. Defaults to None.
+    shading : str
+        Same as for the `MeshVisual` class. Defaults to 'smooth'.
+    vertex_colors: ndarray or None
+        Same as for the `MeshVisual` class.
+    face_colors: ndarray or None
+        Same as for the `MeshVisual` class.
+    color : Color
+        The `Color` to use when drawing the tube. Defaults to (1, 0, 1, 1).
+    mode : str
+        Same as for the `MeshVisual` class. Defaults to 'triangles'.
     """
     def __init__(self, points, radius=1.0, tube_points=8,
                  colors=None,
                  closed=False,
-                 shading='flat',
+                 shading='smooth',
                  vertex_colors=None,
                  face_colors=None,
-                 color=(0.5, 0.5, 1, 1),
+                 color=(1, 0, 1, 1),
                  mode='triangles'):
+
+        points = np.ndarray(points)
 
         tangents, normals, binormals = frenet_frames(points, closed)
 
