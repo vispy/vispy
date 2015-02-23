@@ -30,14 +30,14 @@ if __name__ == '__main__':
 
     points1 = torus_knot(5, 3)[:-1] * 5.
     points1[:, 0] -= 20.
-    points1[:, 2] -= 20.
+    points1[:, 2] -= 15.
 
     points2 = points1.copy()
-    points2[:, 2] += 41.
+    points2[:, 2] += 30.
 
     points3 = points1.copy()
     points3[:, 0] += 41.
-    points3[:, 2] += 41
+    points3[:, 2] += 30
 
     points4 = points1.copy()
     points4[:, 0] += 41.
