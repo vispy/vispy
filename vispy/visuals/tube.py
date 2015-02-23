@@ -15,72 +15,56 @@ class TubeVisual(MeshVisual):
     ----------
     
     """
-    def __init__(self, points, radius=1.0, circle_points=6,
+    def __init__(self, points, radius=1.0, tube_points=8,
+                 colors=None,
                  closed=False,
+                 shading='flat',
                  vertex_colors=None, face_colors=None,
-                 color=(1, 1, 0, 1)):
-
-        vtype = [('position', np.float32, 3),
-                 ('texcoord', np.float32, 2),
-                 ('normal', np.float32, 3),
-                 ('color', np.float32, 4)]
-
-        positions = np.zeros((len(points), 3))
-        vertices = np.zeros(len(points), vtype)
-
-        # broken
-        if vertex_colors is None:
-            vertex_colors = np.array([color for _ in range(len(points))])
+                 color=(0, 1, 0, 1),
+                 mode='triangles'):
 
         tangents, normals, binormals = frenet_frames(points, closed)
-        print('tangents are', tangents)
-        print('normals are', normals)
-        print('binormals are', binormals)
 
         segments = len(points) - 1
 
-        # get the positions of each vertex
-        grid = np.zeros((len(points), circle_points, 3))
+       # get the positions of each vertex
+        grid = np.zeros((len(points), tube_points, 3))
         for i in range(len(points)):
             pos = points[i]
             tangent = tangents[i]
             normal = normals[i]
             binormal = binormals[i]
 
-            for j in range(circle_points):
-                v = float(j) / circle_points * 2 * np.pi
+            for j in range(tube_points):
+                v = j / tube_points * 2 * np.pi
                 cx = -1. * radius * np.cos(v)
                 cy = radius * np.sin(v)
 
-                pos2 = pos.copy()
-                pos2[0] += cx * normal[0] + cy*binormal[0]
-                pos2[1] += cx * normal[1] + cy*binormal[1]
-                pos2[2] += cx * normal[2] + cy*binormal[2]
-                grid[i, j] = pos2
+                grid[i, j] =pos + cx*normal + cy*binormal
 
         # construct the mesh
         faces = []
         tex_coords = []
         indices = []
         for i in range(segments):
-            for j in range(circle_points):
+            for j in range(tube_points):
                 ip = (i+1) % segments if closed else i+1
-                jp = (j+1) % circle_points
+                jp = (j+1) % tube_points
 
                 a = grid[i, j]
                 b = grid[ip, j]
                 c = grid[ip, jp]
                 d = grid[i, jp]
 
-                index_a = i*circle_points + j
-                index_b = ip*circle_points + j
-                index_c = ip*circle_points + jp
-                index_d = i*circle_points + jp
+                index_a = i*tube_points + j
+                index_b = ip*tube_points + j
+                index_c = ip*tube_points + jp
+                index_d = i*tube_points + jp
 
-                uva = np.array([i / segments, j / circle_points])
-                uvb = np.array([(i+1) / segments, j / circle_points])
-                uvc = np.array([(i+1) / segments, (j+1) / circle_points])
-                uvd = np.array([i / segments, (j+1) / circle_points])
+                uva = np.array([i / segments, j / tube_points])
+                uvb = np.array([(i+1) / segments, j / tube_points])
+                uvc = np.array([(i+1) / segments, (j+1) / tube_points])
+                uvd = np.array([i / segments, (j+1) / tube_points])
 
                 faces.append([a, b, d])
                 tex_coords.append([uva, uvb, uvd])
@@ -97,9 +81,25 @@ class TubeVisual(MeshVisual):
         vertices = grid.reshape(grid.shape[0]*grid.shape[1], 3)
         print('vertices are', vertices)
 
+        if vertex_colors is None:
+            vertex_colors = np.zeros(vertices.shape, dtype=np.float32)
+            if colors is None:
+                vertex_colors[:, 0] = color[0]
+                vertex_colors[:, 1] = color[1]
+                vertex_colors[:, 2] = color[2]
+            else:
+                vertex_colors[:, 0] = np.repeat(colors[:, 0], tube_points)
+                vertex_colors[:, 1] = np.repeat(colors[:, 1], tube_points)
+                vertex_colors[:, 2] = np.repeat(colors[:, 2], tube_points)
+
         indices = np.array(indices, dtype=np.uint32)
 
-        MeshVisual.__init__(self, vertices, indices)
+        print('color is', color)
+        MeshVisual.__init__(self, vertices, indices,
+                            vertex_colors=vertex_colors,
+                            shading=shading,
+                            color='r',
+                            mode=mode)
                 
 
     def draw(self, transforms):
