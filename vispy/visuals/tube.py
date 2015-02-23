@@ -1,7 +1,5 @@
 from __future__ import division
 
-from ..geometry import create_cube
-from ..gloo import set_state
 from .mesh import MeshVisual
 import numpy as np
 from numpy.linalg import norm
