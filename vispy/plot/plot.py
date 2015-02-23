@@ -5,6 +5,7 @@
 from ..geometry import MeshData
 from ..io import read_mesh
 from ..scene import SceneCanvas, visuals
+import numpy as np
 
 plots = []
 
@@ -101,5 +102,58 @@ def mesh(vertices=None, faces=None, vertex_colors=None, face_colors=None,
                                color=color, shading='smooth')
     canvas.view.add(canvas.mesh)
     # canvas.view.camera.auto_zoom(image)  # XXX Don't have this for Turntable
+    plots.append(canvas)
+    return canvas
+
+def scatter(*args, **kwds):
+    ''' Create a new canvas and make a scatter plots.
+
+    Parameters
+    ----------
+    args : array | two arrays
+        Arguments can be passed as (Y,), (X, Y) or (np.array((X, Y))).
+    style : str
+        The style of symbol to draw (see Notes).
+    size : float or array
+        The symbol size in px.
+    edge_width : float | None
+        The width of the symbol outline in pixels.
+    edge_width_rel : float | None
+        The width as a fraction of marker size. Exactly one of
+        `edge_width` and `edge_width_rel` must be supplied.
+    edge_color : Color | ColorArray
+        The color used to draw each symbol outline.
+    face_color : Color | ColorArray
+        The color used to draw each symbol interior.
+    scaling : bool
+        If set to True, marker scales when rezooming.
+
+    Notes
+    -----
+    Allowed style strings are: disc, arrow, ring, clobber, square, diamond,
+    vbar, hbar, cross, tailed_arrow, x, triangle_up, triangle_down,
+    and star.
+    '''
+    canvas = SceneCanvas(keys='interactive')
+    canvas.view = canvas.central_widget.add_view()
+    _pos = np.zeros((len(args[0]), 2))
+    if len(args) == 1:
+        if isinstance(args[0], np.ndarray):
+            _pos = args[0]
+        else:
+            _pos[:, 0] = [np.float32(i) for i in range(len(args[0]))]
+            _pos[:, 1] = map(np.float32, args[0])
+    elif len(args) == 2:
+        _pos[:, 0] = map(np.float32, args[0])
+        _pos[:, 1] = map(np.float32, args[1])
+    else:
+        raise TypeError('Arguments should be passed as ' +
+                        '(Y,), (X, Y) or (np.array((X, Y)))')
+    canvas.scatter = visuals.Markers()
+    kwds['pos'] = _pos
+    canvas.scatter.set_data(**kwds)
+    canvas.view.add(canvas.scatter)
+    canvas.view.camera.auto_zoom(canvas.scatter)
+    canvas.show()
     plots.append(canvas)
     return canvas
