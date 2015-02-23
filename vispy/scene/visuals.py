@@ -130,9 +130,7 @@ def generate_docstring(subclass, clsname):
 
 __all__ = []
 
-print('dir is', dir(visuals))
 for obj_name in dir(visuals):
-    print('obj name', obj_name)
     obj = getattr(visuals, obj_name)
     if (isinstance(obj, type) and 
        issubclass(obj, visuals.Visual) and 
