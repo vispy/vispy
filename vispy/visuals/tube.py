@@ -111,16 +111,13 @@ def frenet_frames(points, closed):
     the tube.'''
     tangents = np.zeros((len(points), 3))
     normals = np.zeros((len(points), 3))
-    binormals = np.zeros((len(points), 3))
 
-    num_points = len(points)
     epsilon = 0.0001
 
     # Compute tangent vectors for each segment
     tangents = np.roll(points, -1, axis=0) - np.roll(points, 1, axis=0)
     mags = np.sqrt(np.sum(tangents * tangents, axis=1))
-    for i, m in enumerate(mags):
-        tangents[i] /= m
+    tangents /= mags[:, np.newaxis]
 
     # Get initial normal and binormal
     t = np.abs(tangents[0])
@@ -130,15 +127,12 @@ def frenet_frames(points, closed):
     normal[smallest] = 1.
 
     vec = np.cross(tangents[0], normal)
-    print('mag vec is', np.sqrt(np.sum(vec)))
 
     normals[0] = np.cross(tangents[0], vec)
-    binormals[0] = np.cross(tangents[0], normals[0])
 
     # Compute normal and binormal vectors along the path
     for i in range(1, len(points)):
         normals[i] = normals[i-1]
-        binormals[i] = binormals[i-1]
 
         vec = np.cross(tangents[i-1], tangents[i])
         if mag(vec) > epsilon:
@@ -147,7 +141,9 @@ def frenet_frames(points, closed):
             theta = np.arccos(np.clip(tangents[i-1].dot(tangents[i]), -1, 1))
             normals[i] = rotation_about_axis(vec, theta).dot(normals[i])
 
-        binormals[i] = np.cross(tangents[i], normals[i])
+        # binormals[i] = np.cross(tangents[i], normals[i])
+
+    binormals = np.cross(tangents, normals)
 
     if closed:
         theta = np.arccos(np.clip(normals[0].dot(normals[-1]), -1, 1))
