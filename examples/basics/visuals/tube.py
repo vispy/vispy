@@ -48,13 +48,18 @@ if __name__ == '__main__':
     vertex_colors = np.random.random(8 * len(points1))
     vertex_colors = np.array([hsv_to_rgb(c, 1, 1) for c in vertex_colors])
 
+    face_colors = np.random.random(1568)
+    face_colors = np.array([hsv_to_rgb(c, 1, 1) for c in face_colors])
+
     l1 = scene.visuals.Tube(points1, 
                             shading='flat',
                             vertex_colors=vertex_colors,
                             tube_points=8)
 
-    l2 = scene.visuals.Tube(points2, colors=colors,
+    l2 = scene.visuals.Tube(points2,
+                            colors=colors,
                             shading='smooth',
+                            face_colors=face_colors,
                             tube_points=8)
 
     l3 = scene.visuals.Tube(points3, colors=colors,
