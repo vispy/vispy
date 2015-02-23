@@ -27,23 +27,21 @@ class TubeVisual(MeshVisual):
 
         segments = len(points) - 1
 
-       # get the positions of each vertex
+        # get the positions of each vertex
         grid = np.zeros((len(points), tube_points, 3))
         for i in range(len(points)):
             pos = points[i]
-            tangent = tangents[i]
             normal = normals[i]
             binormal = binormals[i]
 
-            for j in range(tube_points):
-                v = j / tube_points * 2 * np.pi
-                cx = -1. * radius * np.cos(v)
-                cy = radius * np.sin(v)
-
-                grid[i, j] =pos + cx*normal + cy*binormal
+            # Add a vertex for each point on the circle
+            v = np.arange(tube_points, dtype=np.float) / tube_points * 2 * np.pi
+            cx = -1. * radius * np.cos(v)
+            cy = radius * np.sin(v)
+            grid[i] = (pos + cx[:, np.newaxis]*normal +
+                       cy[:, np.newaxis]*binormal)
 
         # construct the mesh
-        faces = []
         tex_coords = []
         indices = []
         for i in range(segments):
@@ -66,17 +64,13 @@ class TubeVisual(MeshVisual):
                 uvc = np.array([(i+1) / segments, (j+1) / tube_points])
                 uvd = np.array([i / segments, (j+1) / tube_points])
 
-                faces.append([a, b, d])
                 tex_coords.append([uva, uvb, uvd])
                 indices.append([index_a, index_b, index_d])
 
-                faces.append([b, c, d])
                 tex_coords.append([uvb, uvc, uvd])
                 indices.append([index_b, index_c, index_d])
 
-        faces = np.array(faces)
         tex_coords = np.array(tex_coords)
-        print('faces are', faces)
 
         vertices = grid.reshape(grid.shape[0]*grid.shape[1], 3)
         print('vertices are', vertices)
