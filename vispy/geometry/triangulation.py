@@ -81,7 +81,7 @@ class Triangulation(object):
         p2 = (xmax + xa, ymin - ya)
 
         # prepend artificial points to point list
-        newpts = np.empty((self.pts.shape[0]+2, 2), dtype=np.float32)
+        newpts = np.empty((self.pts.shape[0]+2, 2), dtype=float)
         newpts[0] = p1
         newpts[1] = p2
         newpts[2:] = self.pts
