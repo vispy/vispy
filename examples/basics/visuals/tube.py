@@ -58,7 +58,7 @@ if __name__ == '__main__':
                             tube_points=8)
 
     l3 = scene.visuals.Tube(points3, colors=colors,
-                            shading='smooth',
+                            shading='flat',
                             tube_points=8,
                             closed=True)
 
