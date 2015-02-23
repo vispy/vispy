@@ -61,6 +61,7 @@ class TubeVisual(MeshVisual):
         # construct the mesh
         faces = []
         tex_coords = []
+        indices = []
         for i in range(segments):
             for j in range(circle_points):
                 ip = (i+1) % segments if closed else i+1
@@ -71,6 +72,11 @@ class TubeVisual(MeshVisual):
                 c = grid[ip, jp]
                 d = grid[i, jp]
 
+                index_a = i*circle_points + j
+                index_b = ip*circle_points + j
+                index_c = ip*circle_points + jp
+                index_d = i*circle_points + jp
+
                 uva = np.array([i / segments, j / circle_points])
                 uvb = np.array([(i+1) / segments, j / circle_points])
                 uvc = np.array([(i+1) / segments, (j+1) / circle_points])
@@ -78,9 +84,11 @@ class TubeVisual(MeshVisual):
 
                 faces.append([a, b, d])
                 tex_coords.append([uva, uvb, uvd])
+                indices.append([index_a, index_b, index_d])
 
                 faces.append([b, c, d])
                 tex_coords.append([uvb, uvc, uvd])
+                indices.append([index_b, index_c, index_d])
 
         faces = np.array(faces)
         tex_coords = np.array(tex_coords)
@@ -89,7 +97,9 @@ class TubeVisual(MeshVisual):
         vertices = grid.reshape(grid.shape[0]*grid.shape[1], 3)
         print('vertices are', vertices)
 
-        MeshVisual.__init__(self, vertices)
+        indices = np.array(indices, dtype=np.uint32)
+
+        MeshVisual.__init__(self, vertices, indices)
                 
 
     def draw(self, transforms):
