@@ -19,8 +19,9 @@ class TubeVisual(MeshVisual):
                  colors=None,
                  closed=False,
                  shading='flat',
-                 vertex_colors=None, face_colors=None,
-                 color=(0, 1, 0, 1),
+                 vertex_colors=None,
+                 face_colors=None,
+                 color=(0.5, 0.5, 1, 1),
                  mode='triangles'):
 
         tangents, normals, binormals = frenet_frames(points, closed)
@@ -42,57 +43,35 @@ class TubeVisual(MeshVisual):
                        cy[:, np.newaxis]*binormal)
 
         # construct the mesh
-        tex_coords = []
         indices = []
         for i in range(segments):
             for j in range(tube_points):
                 ip = (i+1) % segments if closed else i+1
                 jp = (j+1) % tube_points
 
-                a = grid[i, j]
-                b = grid[ip, j]
-                c = grid[ip, jp]
-                d = grid[i, jp]
-
                 index_a = i*tube_points + j
                 index_b = ip*tube_points + j
                 index_c = ip*tube_points + jp
                 index_d = i*tube_points + jp
 
-                uva = np.array([i / segments, j / tube_points])
-                uvb = np.array([(i+1) / segments, j / tube_points])
-                uvc = np.array([(i+1) / segments, (j+1) / tube_points])
-                uvd = np.array([i / segments, (j+1) / tube_points])
-
-                tex_coords.append([uva, uvb, uvd])
                 indices.append([index_a, index_b, index_d])
-
-                tex_coords.append([uvb, uvc, uvd])
                 indices.append([index_b, index_c, index_d])
 
-        tex_coords = np.array(tex_coords)
-
         vertices = grid.reshape(grid.shape[0]*grid.shape[1], 3)
-        print('vertices are', vertices)
 
-        if vertex_colors is None:
+        if colors is not None and vertex_colors is None:
             vertex_colors = np.zeros(vertices.shape, dtype=np.float32)
-            if colors is None:
-                vertex_colors[:, 0] = color[0]
-                vertex_colors[:, 1] = color[1]
-                vertex_colors[:, 2] = color[2]
-            else:
-                vertex_colors[:, 0] = np.repeat(colors[:, 0], tube_points)
-                vertex_colors[:, 1] = np.repeat(colors[:, 1], tube_points)
-                vertex_colors[:, 2] = np.repeat(colors[:, 2], tube_points)
+            vertex_colors[:, 0] = np.repeat(colors[:, 0], tube_points)
+            vertex_colors[:, 1] = np.repeat(colors[:, 1], tube_points)
+            vertex_colors[:, 2] = np.repeat(colors[:, 2], tube_points)
 
         indices = np.array(indices, dtype=np.uint32)
 
-        print('color is', color)
         MeshVisual.__init__(self, vertices, indices,
                             vertex_colors=vertex_colors,
+                            face_colors=face_colors,
+                            color=color,
                             shading=shading,
-                            color='r',
                             mode=mode)
                 
 
