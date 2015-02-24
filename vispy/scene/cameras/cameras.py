@@ -17,8 +17,13 @@ from ...visuals.transforms import (STTransform, PerspectiveTransform,
                                    NullTransform, AffineTransform,
                                    TransformCache)
 
-sind = lambda q: math.sin(q*math.pi/180)
-cosd = lambda q: math.cos(q*math.pi/180)
+
+def sind(q): 
+    return math.sin(q*math.pi/180)
+
+
+def cosd(q):
+    return math.cos(q*math.pi/180)
 
 # todo: maybe aspect ratio should be properties of viewbox?
 # todo: allow panzoom camera to operate in other planes than Z
@@ -1340,7 +1345,8 @@ class FlyCamera(PerspectiveCamera):
         
         # Calculate auto-roll
         if self.auto_roll:
-            angle = lambda p1, p2: np.arccos(p1.dot(p2))
+            def angle(p1, p2):
+                return np.arccos(p1.dot(p2))
             #au = angle(pu, (0, 0, 1))
             ar = angle(pr, (0, 0, 1))
             al = angle(pl, (0, 0, 1))
