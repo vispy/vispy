@@ -139,17 +139,17 @@ def scatter(*args, **kwds):
     canvas.view = canvas.central_widget.add_view()
     _pos = np.zeros((len(args[0]), 2))
     if len(args) == 1:
-        if isinstance(args[0], np.ndarray):
-            _pos = args[0]
-        else:
+        pos = np.asarray(args[0])
+        if pos.ndim == 1:
             _pos[:, 0] = np.arange(len(args[0]))
-            _pos[:, 1] = np.asarray(args[0])
+            _pos[:, 1] = pos
+        else:
+            _pos = pos
     elif len(args) == 2:
         _pos[:, 0] = np.asarray(args[0])
         _pos[:, 1] = np.asarray(args[1])
     else:
-        raise TypeError('Arguments should be passed as ' +
-                        '(Y,), (X, Y) or (np.array((X, Y)))')
+        raise ValueError('Invalid shape for position data')
     canvas.scatter = visuals.Markers()
     kwds['pos'] = _pos
     canvas.scatter.set_data(**kwds)
