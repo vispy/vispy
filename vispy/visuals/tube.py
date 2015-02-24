@@ -6,8 +6,7 @@ from numpy.linalg import norm
 
 
 class TubeVisual(MeshVisual):
-    """Displays a tube by extruding a circle along a piecewise-linear
-    path.
+    """Displays a tube by around a piecewise-linear path.
 
     The tube mesh is corrected following its Frenet curvature and
     torsion such that it varies smoothly along the curve, including if
@@ -38,6 +37,7 @@ class TubeVisual(MeshVisual):
         The `Color` to use when drawing the tube. Defaults to (1, 0, 1, 1).
     mode : str
         Same as for the `MeshVisual` class. Defaults to 'triangles'.
+
     """
     def __init__(self, points, radius=1.0, tube_points=8,
                  colors=None,
