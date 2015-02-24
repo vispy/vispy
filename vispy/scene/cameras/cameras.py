@@ -494,18 +494,23 @@ class PanZoomCamera(BaseCamera):
         #self._scale_ratio = self._scale_ratio_n = 1.0, -1.0, 0.0
         self.transform = STTransform()
     
-    def zoom(self, scale_factor, center):
-        """ Focus the view at the given center with the given scale factor
+    def zoom(self, factor, center=None):
+        """ Zoom in (or out) at the given center
         
         Parameters
         ----------
-        scale_factor : float
-            The scale factor. Set to smaller values to zoom in.
+        factor : float
+            A positive factor zooms in, a negative factor zooms out. The
+            magnification is 2**factor, e.g. zoom(1) will make the scene
+            appear twice as large. Zooming twice with factor x is the same
+            as zooming once with 2*x.
         center : tuple of 2 or 3 elements
-            The center of the view
+            The center of the view. If not given or None, use the
+            current center.
         """
-        self.scale_factor = scale_factor
-        self.center = center
+        self.scale_factor *= 2 ** float(-factor)
+        if center is not None:
+            self.center = center
     
     def pan(self, pan):
         """ Pan the view.
