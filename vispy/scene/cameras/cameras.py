@@ -778,6 +778,10 @@ class TurntableCamera(PerspectiveCamera):
         Elevation in degrees.
     azimuth : float
         Azimuth in degrees.
+    distance : float | None
+        The distance of the camera from the rotation point (only makes sense
+        if fov > 0). If None (default) the distance is determined from the
+        scale_factor and fov.
     See BaseCamera for more.
     
     Interaction
@@ -791,13 +795,15 @@ class TurntableCamera(PerspectiveCamera):
     
     _state_props = BaseCamera._state_props + ('elevation', 'azimuth')
     
-    def __init__(self, fov=0.0, elevation=0.0, azimuth=0.0, up='z', **kwds):
+    def __init__(self, fov=0.0, elevation=0.0, azimuth=0.0, up='z', 
+                 distance=None, **kwds):
         super(TurntableCamera, self).__init__(fov=fov, **kwds)
         # Init variables
         self._elevation = 0.0
         self._azimuth = 0.0
         self._roll = 0.0  # not implemented yet
-        self._distance = 0.0
+        self._distance = None  # None means auto-distance
+        self._actual_distance = 0.0
         self.up = up
         self._event_value = None
         # Init for real
@@ -805,6 +811,7 @@ class TurntableCamera(PerspectiveCamera):
         # Init view parameters to set upon reset
         self._given_params['elevation'] = elevation
         self._given_params['azimuth'] = azimuth
+        self._given_params['distance'] = distance
     
     @property
     def elevation(self):
@@ -834,6 +841,21 @@ class TurntableCamera(PerspectiveCamera):
         while azim > 180:
             azim -= 360
         self._azimuth = azim
+        self.view_changed()
+    
+    @property
+    def distance(self):
+        """ The user-set distance. If None (default), the distance is
+        internally calculated from the scale factor and fov. 
+        """
+        return self._distance
+    
+    @distance.setter
+    def distance(self, distance):
+        if distance is None:
+            self._distance = None
+        else:
+            self._distance = float(distance)
         self.view_changed()
     
     def orbit(self, azim, elev):
@@ -959,7 +981,8 @@ class TurntableCamera(PerspectiveCamera):
             elif 2 in event.buttons and not modifiers:
                 # Zoom
                 if self._event_value is None:
-                    self._event_value = self._scale_factor, self._scale_ratio
+                    self._event_value = (self._scale_factor, self._scale_ratio,
+                                         self._distance)
                 zoomx, zoomy = _zoomfactor(-d[0]), _zoomfactor(d[1])
                 if not self._fixed_ratio:
                     self.scale_factor = self._event_value[0] * zoomx
@@ -969,6 +992,9 @@ class TurntableCamera(PerspectiveCamera):
                                         prev_ar[2])
                 else:
                     self.scale_factor = self._event_value[0] * zoomy
+                # Modify distance if its given
+                if self._distance is not None:
+                    self._distance = self._event_value[2] * zoomy
                 self.view_changed()
             
             elif 1 in event.buttons and keys.SHIFT in modifiers:
@@ -1013,12 +1039,12 @@ class TurntableCamera(PerspectiveCamera):
             tr = self.transform
             tr.reset()
             if self.up == 'y':
-                tr.translate((0.0, 0.0, -self._distance))
+                tr.translate((0.0, 0.0, -self._actual_distance))
                 tr.rotate(self.elevation, (-1, 0, 0))
                 tr.rotate(self.azimuth, (0, 1, 0))
             elif self.up == 'z':
                 tr.rotate(90, (1, 0, 0))
-                tr.translate((0.0, -self._distance, 0.0))
+                tr.translate((0.0, -self._actual_distance, 0.0))
                 tr.rotate(self.elevation, (-1, 0, 0))
                 tr.rotate(self.azimuth, (0, 0, 1))
             else:
@@ -1031,14 +1057,15 @@ class TurntableCamera(PerspectiveCamera):
         d = get_depth_value()
         if self._fov == 0:
             self._projection.set_ortho(-0.5*fx, 0.5*fx, -0.5*fy, 0.5*fy, -d, d)
-            self._distance = 0.0
+            self._actual_distance = self._distance or 0.0
         else:
             # Figure distance to center in order to have correct FoV and fy.
+            # Use that auto-distance, or the given distance (if not None).
             fov = max(0.01, self._fov)
             dist = fy / (2 * math.tan(math.radians(fov)/2))
+            self._actual_distance = dist = self._distance or dist
             val = math.sqrt(d*10)
             self._projection.set_perspective(fov, fx/fy, dist/val, dist*val)
-            self._distance = dist
         # Update camera pos, which will use our calculated _distance to offset
         # the camera
         self._update_camera_pos()
