@@ -50,7 +50,7 @@ class TubeVisual(MeshVisual):
 
         points = np.array(points)
 
-        tangents, normals, binormals = frenet_frames(points, closed)
+        tangents, normals, binormals = _frenet_frames(points, closed)
 
         segments = len(points) - 1
 
@@ -105,7 +105,7 @@ class TubeVisual(MeshVisual):
         MeshVisual.draw(self, transforms)
 
 
-def frenet_frames(points, closed):
+def _frenet_frames(points, closed):
     '''Calculates and returns the tangents, normals and binormals for
     the tube.'''
     tangents = np.zeros((len(points), 3))
