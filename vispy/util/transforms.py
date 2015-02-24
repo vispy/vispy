@@ -13,6 +13,7 @@ from __future__ import division
 
 import math
 import numpy as np
+from numpy.linalg import norm
 
 
 def translate(M, x, y=None, z=None):
@@ -187,12 +188,32 @@ def rotate(M, angle, x, y, z, point=None):
     y /= n
     z /= n
     cx, cy, cz = (1 - c) * x, (1 - c) * y, (1 - c) * z
-    R = np.array([[cx * x + c, cy * x - z * s, cz * x + y * s, 0],
-                  [cx * y + z * s, cy * y + c, cz * y - x * s, 0],
-                  [cx * z - y * s, cy * z + x * s, cz * z + c, 0],
-                  [0, 0, 0, 1]], dtype=M.dtype).T
-    M[...] = np.dot(M, R)
+    R = np.zeros((4, 4), dtype=M.dtype)
+    R[:3, :3] = rotation_matrix((x, y, z), angle)
+    R[3, 3] = 1
+    M[...] = np.dot(M, R.T)
     return M
+
+def rotation_matrix(axis, angle):
+    '''The 3x3 rotation matrix for rotation about a vector.
+
+    Parameters
+    ----------
+    axis : ndarray
+        The x, y, z coordinates of the axis direction vector.
+    angle : float
+        The angle of rotation, in radians.
+    '''
+    x, y, z = axis / norm(axis)
+    c, s = math.cos(angle), math.sin(angle)
+    cx, cy, cz = (1 - c) * x, (1 - c) * y, (1 - c) * z
+    R = np.array([[cx * x + c, cy * x - z * s, cz * x + y * s],
+                  [cx * y + z * s, cy * y + c, cz * y - x * s],
+                  [cx * z - y * s, cy * z + x * s, cz * z + c]])
+    return R
+
+
+    
 
 
 def ortho(left, right, bottom, top, znear, zfar):
