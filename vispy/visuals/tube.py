@@ -3,6 +3,7 @@ from __future__ import division
 from .mesh import MeshVisual
 import numpy as np
 from numpy.linalg import norm
+from ..util.transforms import rotation_matrix
 
 
 class TubeVisual(MeshVisual):
@@ -138,7 +139,7 @@ def _frenet_frames(points, closed):
             vec /= norm(vec)
 
             theta = np.arccos(np.clip(tangents[i-1].dot(tangents[i]), -1, 1))
-            normals[i] = rotation_about_axis(vec, theta).dot(normals[i])
+            normals[i] = rotation_matrix(vec, theta).dot(normals[i])
 
     if closed:
         theta = np.arccos(np.clip(normals[0].dot(normals[-1]), -1, 1))
@@ -148,24 +149,8 @@ def _frenet_frames(points, closed):
             theta *= -1.
             
         for i in range(1, len(points)):
-            normals[i] = rotation_about_axis(
-                tangents[i], theta*i).dot(normals[i])
+            normals[i] = rotation_matrix(tangents[i], theta*i).dot(normals[i])
 
     binormals = np.cross(tangents, normals)
 
     return tangents, normals, binormals
-                
-
-def rotation_about_axis(axis, angle):
-    c = np.cos(angle)
-    s = np.sin(angle)
-    t = 1. - c
-    x, y, z = axis
-    tx = t*x
-    ty = t*y
-    tz = t*z
-
-    return np.array([[tx*x + c, tx*y - s*z, tx*z + s*y],
-                     [tx*y + s*z, ty*y + c, ty*z - s*x],
-                     [tx*z - s*y, ty*z + s*x, tz*z + c]])
-            
