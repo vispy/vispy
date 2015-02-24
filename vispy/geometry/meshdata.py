@@ -393,7 +393,7 @@ class MeshData(object):
         # I think generally this should be discouraged..
         faces = self._vertices_indexed_by_faces
         verts = {}  # used to remember the index of each vertex position
-        self._faces = np.empty(faces.shape[:2], dtype=np.uint)
+        self._faces = np.empty(faces.shape[:2], dtype=np.uint32)
         self._vertices = []
         self._vertex_faces = []
         self._face_normals = None
@@ -432,7 +432,7 @@ class MeshData(object):
             if self._faces is not None:
                 # generate self._edges from self._faces
                 nf = len(self._faces)
-                edges = np.empty(nf*3, dtype=[('i', np.uint, 2)])
+                edges = np.empty(nf*3, dtype=[('i', np.uint32, 2)])
                 edges['i'][0:nf] = self._faces[:, :2]
                 edges['i'][nf:2*nf] = self._faces[:, 1:3]
                 edges['i'][-nf:, 0] = self._faces[:, 2]
@@ -448,7 +448,7 @@ class MeshData(object):
         elif indexed == 'faces':
             if self._vertices_indexed_by_faces is not None:
                 verts = self._vertices_indexed_by_faces
-                edges = np.empty((verts.shape[0], 3, 2), dtype=np.uint)
+                edges = np.empty((verts.shape[0], 3, 2), dtype=np.uint32)
                 nf = verts.shape[0]
                 edges[:, 0, 0] = np.arange(nf) * 3
                 edges[:, 0, 1] = edges[:, 0, 0] + 1

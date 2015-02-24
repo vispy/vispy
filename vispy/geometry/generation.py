@@ -200,7 +200,7 @@ def create_cylinder(rows, cols, radius=[1.0, 1.0], length=1.0, offset=False):
     return MeshData(vertices=verts, faces=faces)
 
 
-def create_cone(cols, radius=3.0, length=10.0):
+def create_cone(cols, radius=1.0, length=1.0):
     """Create a cone
 
     Parameters
@@ -217,7 +217,7 @@ def create_cone(cols, radius=3.0, length=10.0):
     cone : MeshData
         Vertices and faces computed for a cone surface.
     """
-    verts = np.empty((cols+1, 3), dtype=float)
+    verts = np.empty((cols+1, 3), dtype=np.float32)
     # compute vertexes
     th = np.linspace(2 * np.pi, 0, cols+1).reshape(1, cols+1)
     verts[:-1, 2] = 0.0
