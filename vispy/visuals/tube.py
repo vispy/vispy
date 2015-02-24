@@ -22,16 +22,16 @@ class TubeVisual(MeshVisual):
     tube_points : int
         The number of points in the approximate circle of the tube's
         cross section. Defaults to 8.
-    colors : ndarray
+    colors : ndarray | None
         An array of colors at each point of the points array; every
         vertex of the tube mesh around this point will take the given
         color. Must be the same length as the points array, or None
         to color only by the `color` argument. Defaults to None.
-    shading : str
+    shading : str | None
         Same as for the `MeshVisual` class. Defaults to 'smooth'.
-    vertex_colors: ndarray or None
+    vertex_colors: ndarray | None
         Same as for the `MeshVisual` class.
-    face_colors: ndarray or None
+    face_colors: ndarray | None
         Same as for the `MeshVisual` class.
     color : Color
         The `Color` to use when drawing the tube. Defaults to (1, 0, 1, 1).
