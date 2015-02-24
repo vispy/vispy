@@ -107,7 +107,7 @@ def mesh(vertices=None, faces=None, vertex_colors=None, face_colors=None,
 
 
 def scatter(*args, **kwds):
-    ''' Create a new canvas and make a scatter plots.
+    ''' Create a new canvas and make a scatter plot.
 
     Parameters
     ----------
