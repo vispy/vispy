@@ -194,6 +194,7 @@ def rotate(M, angle, x, y, z, point=None):
     M[...] = np.dot(M, R.T)
     return M
 
+
 def rotation_matrix(axis, angle):
     '''The 3x3 rotation matrix for rotation about a vector.
 
@@ -211,9 +212,6 @@ def rotation_matrix(axis, angle):
                   [cx * y + z * s, cy * y + c, cz * y - x * s],
                   [cx * z - y * s, cy * z + x * s, cz * z + c]])
     return R
-
-
-    
 
 
 def ortho(left, right, bottom, top, znear, zfar):
@@ -319,19 +317,19 @@ def perspective(fovy, aspect, znear, zfar):
 
 def affine_map(points1, points2):
     """ Find a 3D transformation matrix that maps points1 onto points2.
-    
+
     Arguments are specified as arrays of four 3D coordinates, shape (4, 3).
     """
     A = np.ones((4, 4))
     A[:, :3] = points1
     B = np.ones((4, 4))
     B[:, :3] = points2
-    
+
     # solve 3 sets of linear equations to determine
     # transformation matrix elements
     matrix = np.eye(4)
     for i in range(3):
         # solve Ax = B; x is one row of the desired transformation matrix
-        matrix[i] = np.linalg.solve(A, B[:, i]) 
-    
+        matrix[i] = np.linalg.solve(A, B[:, i])
+
     return matrix
