@@ -5,14 +5,12 @@ from fractions import gcd
 
 
 class TorusKnot(object):
-    """Representation of a torus knot.
+    """Representation of a torus knot or link.
 
     A torus knot is one that can be drawn on the surface of a
     torus. It is parameterised by two integers p and q as below; in
     fact this returns a single knot (a single curve) only if p and q
-    are coprime, otherwise it describes multiple linked curves.  The
-    methods of this class return the full link even if there is only
-    one component (i.e. p and q *are* coprime).
+    are coprime, otherwise it describes multiple linked curves.
 
     Parameters
     ----------
@@ -79,8 +77,10 @@ class TorusKnot(object):
 
     @property
     def components(self):
-
-        '''A list of the vertices in each line of the torus knot or link.'''
+        '''A list of the vertices in each line of the torus knot or link.
+        Even if p and q are coprime, this is a list with just one
+        entry.
+        '''
         return self._components
 
     @property
