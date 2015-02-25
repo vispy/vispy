@@ -4,6 +4,7 @@ Demonstration of Tube
 
 import sys
 from vispy import scene
+from vispy.geometry.torusknot import TorusKnot
 
 from colorsys import hsv_to_rgb
 import numpy as np
@@ -27,7 +28,7 @@ def torus_knot(p=3, q=4, num=100):
 canvas = scene.SceneCanvas(keys='interactive')
 canvas.view = canvas.central_widget.add_view()
 
-points1 = torus_knot(5, 3)[:-1] * 5.
+points1 = TorusKnot(5, 3).first_component[:-1]
 points1[:, 0] -= 20.
 points1[:, 2] -= 15.
 
