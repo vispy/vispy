@@ -9,22 +9,6 @@ from vispy.geometry.torusknot import TorusKnot
 from colorsys import hsv_to_rgb
 import numpy as np
 
-
-def torus_knot(p=3, q=4, num=100):
-    '''
-    Returns points in the p, q torus knot.
-
-    Note that not all combinations of p and q give knots;
-    some curves may pass through themselves.
-    '''
-    data = np.zeros((num, 3), dtype=np.float64)
-    ts = np.linspace(0, 2*np.pi, num)
-    rs = np.cos(q*ts) + 2
-    data[:, 0] = rs*np.cos(p*ts)
-    data[:, 1] = rs*np.sin(p*ts)
-    data[:, 2] = -1*np.sin(q*ts)
-    return data
-
 canvas = scene.SceneCanvas(keys='interactive')
 canvas.view = canvas.central_widget.add_view()
 
