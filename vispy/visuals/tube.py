@@ -88,10 +88,7 @@ class TubeVisual(MeshVisual):
         vertices = grid.reshape(grid.shape[0]*grid.shape[1], 3)
 
         if colors is not None and vertex_colors is None:
-            vertex_colors = np.zeros(vertices.shape, dtype=np.float32)
-            vertex_colors[:, 0] = np.repeat(colors[:, 0], tube_points)
-            vertex_colors[:, 1] = np.repeat(colors[:, 1], tube_points)
-            vertex_colors[:, 2] = np.repeat(colors[:, 2], tube_points)
+            vertex_colors = np.repeat(colors, tube_points, axis=0)
 
         indices = np.array(indices, dtype=np.uint32)
 
