@@ -63,7 +63,8 @@ class TubeVisual(MeshVisual):
             binormal = binormals[i]
 
             # Add a vertex for each point on the circle
-            v = np.arange(tube_points, dtype=np.float) / tube_points * 2 * np.pi
+            v = np.arange(tube_points,
+                          dtype=np.float) / tube_points * 2 * np.pi
             cx = -1. * radius * np.cos(v)
             cy = radius * np.sin(v)
             grid[i] = (pos + cx[:, np.newaxis]*normal +
@@ -100,7 +101,6 @@ class TubeVisual(MeshVisual):
                             color=color,
                             shading=shading,
                             mode=mode)
-                
 
     def draw(self, transforms):
         MeshVisual.draw(self, transforms)
@@ -147,7 +147,7 @@ def _frenet_frames(points, closed):
 
         if tangents[0].dot(np.cross(normals[0], normals[-1])) > 0:
             theta *= -1.
-            
+
         for i in range(1, len(points)):
             normals[i] = rotation_matrix(tangents[i], theta*i).dot(normals[i])
 

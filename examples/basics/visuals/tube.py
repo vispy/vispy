@@ -3,11 +3,11 @@ Demonstration of Tube
 """
 
 import sys
-from vispy import app, scene
-from vispy.scene.visuals import Tube
+from vispy import scene
 
 from colorsys import hsv_to_rgb
 import numpy as np
+
 
 def torus_knot(p=3, q=4, num=100):
     '''
@@ -47,7 +47,7 @@ colors = np.array([hsv_to_rgb(c, 1, 1) for c in colors])
 vertex_colors = np.random.random(8 * len(points1))
 vertex_colors = np.array([hsv_to_rgb(c, 1, 1) for c in vertex_colors])
 
-l1 = scene.visuals.Tube(points1, 
+l1 = scene.visuals.Tube(points1,
                         shading='flat',
                         vertex_colors=vertex_colors,
                         tube_points=8)
@@ -79,4 +79,3 @@ canvas.show()
 if __name__ == '__main__':
     if sys.flags.interactive != 1:
         canvas.app.run()
-

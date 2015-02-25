@@ -182,12 +182,6 @@ def rotate(M, angle, x, y, z, point=None):
         in-place.
     """
     angle = math.pi * angle / 180
-    c, s = math.cos(angle), math.sin(angle)
-    n = math.sqrt(x * x + y * y + z * z)
-    x /= n
-    y /= n
-    z /= n
-    cx, cy, cz = (1 - c) * x, (1 - c) * y, (1 - c) * z
     R = np.zeros((4, 4), dtype=M.dtype)
     R[:3, :3] = rotation_matrix((x, y, z), angle)
     R[3, 3] = 1
