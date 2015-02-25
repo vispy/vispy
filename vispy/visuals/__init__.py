@@ -35,5 +35,4 @@ from .xyz_axis import XYZAxisVisual  # noqa
 from .line_plot import LinePlotVisual  # noqa
 from .cube import CubeVisual  # noqa
 from .isoline import IsolineVisual  # noqa
-
-from .tube import TubeVisual
+from .tube import TubeVisual  # noqa
