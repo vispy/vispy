@@ -606,3 +606,12 @@ class MarkersVisual(Visual):
         self._program['u_antialias'] = self.antialias
         self._program.bind(self._vbo)
         self._program.draw('points')
+
+    def bounds(self, mode, axis):
+        pos = self._data['a_position']
+        if pos is None:
+            return None
+        if pos.shape[1] > axis:
+            return (pos[:, axis].min(), pos[:, axis].max())
+        else:
+            return (0, 0)
