@@ -4,10 +4,11 @@ from .mesh import MeshVisual
 import numpy as np
 from numpy.linalg import norm
 from ..util.transforms import rotation_matrix
+from ..color import ColorArray
 
 
 class TubeVisual(MeshVisual):
-    """Displays a tube by around a piecewise-linear path.
+    """Displays a tube around a piecewise-linear path.
 
     The tube mesh is corrected following its Frenet curvature and
     torsion such that it varies smoothly along the curve, including if
@@ -21,8 +22,8 @@ class TubeVisual(MeshVisual):
     radius : float
         The radius of the tube. Defaults to 1.0.
     tube_points : int
-        The number of points in the approximate circle of the tube's
-        cross section. Defaults to 8.
+        The number of points in the circle-approximating polygon of the
+        tube's cross section. Defaults to 8.
     colors : ndarray | None
         An array of colors at each point of the points array; every
         vertex of the tube mesh around this point will take the given
