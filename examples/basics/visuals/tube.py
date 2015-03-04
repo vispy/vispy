@@ -34,20 +34,24 @@ vertex_colors = np.array([hsv_to_rgb(c, 1, 1) for c in vertex_colors])
 
 l1 = scene.visuals.Tube(points1,
                         shading='flat',
+                        color=colors,  # this is overridden by passing
+                                       # the vertex_colors argument
                         vertex_colors=vertex_colors,
                         tube_points=8)
 
 l2 = scene.visuals.Tube(points2,
-                        colors=colors,
+                        color=['red', 'green', 'blue'],
                         shading='smooth',
                         tube_points=8)
 
-l3 = scene.visuals.Tube(points3, colors=colors,
+l3 = scene.visuals.Tube(points3,
+                        color=colors,
                         shading='flat',
                         tube_points=8,
                         closed=True)
 
-l4 = scene.visuals.Tube(points4, colors=colors,
+l4 = scene.visuals.Tube(points4,
+                        color=colors,
                         shading='flat',
                         tube_points=8,
                         mode='lines')
