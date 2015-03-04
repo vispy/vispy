@@ -21,33 +21,31 @@ class TubeVisual(MeshVisual):
         tube will be extruded.
     radius : float
         The radius of the tube. Defaults to 1.0.
+    color : Color | ColorArray
+        The color(s) to use when drawing the tube. This will be cycled
+        for each vertex the points array, e.g. if 'red' is passed then
+        the entire tube will be red, or if ['green', 'blue'] is passed
+        then the points will alternate between these colours. Defaults
+        to 'purple'.
     tube_points : int
         The number of points in the circle-approximating polygon of the
         tube's cross section. Defaults to 8.
-    colors : ndarray | None
-        An array of colors at each point of the points array; every
-        vertex of the tube mesh around this point will take the given
-        color. Must be the same length as the points array, or None
-        to color only by the `color` argument. Defaults to None.
     shading : str | None
         Same as for the `MeshVisual` class. Defaults to 'smooth'.
     vertex_colors: ndarray | None
         Same as for the `MeshVisual` class.
     face_colors: ndarray | None
         Same as for the `MeshVisual` class.
-    color : Color
-        The `Color` to use when drawing the tube. Defaults to (1, 0, 1, 1).
     mode : str
         Same as for the `MeshVisual` class. Defaults to 'triangles'.
 
     """
     def __init__(self, points, radius=1.0, tube_points=8,
-                 colors=None,
                  closed=False,
                  shading='smooth',
                  vertex_colors=None,
                  face_colors=None,
-                 color=(1, 0, 1, 1),
+                 color='purple',
                  mode='triangles'):
 
         points = np.array(points)
@@ -88,15 +86,19 @@ class TubeVisual(MeshVisual):
 
         vertices = grid.reshape(grid.shape[0]*grid.shape[1], 3)
 
-        if colors is not None and vertex_colors is None:
-            vertex_colors = np.repeat(colors, tube_points, axis=0)
+        color = ColorArray(color)
+        if vertex_colors is None:
+            point_colors = np.resize(color.rgba,
+                                     (len(points), 4))
+            vertex_colors = np.repeat(point_colors, tube_points, axis=0)
+                                      
 
         indices = np.array(indices, dtype=np.uint32)
 
         MeshVisual.__init__(self, vertices, indices,
                             vertex_colors=vertex_colors,
                             face_colors=face_colors,
-                            color=color,
+                            # color=color,
                             shading=shading,
                             mode=mode)
 
