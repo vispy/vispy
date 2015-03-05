@@ -21,7 +21,18 @@ define(function(require) {
     var widget = require("widgets/js/widget");
 
     var VispyView = widget.DOMWidgetView.extend({
-        render: function(){
+
+        initialize: function (parameters) {
+            VispyView.__super__.initialize.apply(this, [parameters]);
+
+            this.model.on('msg:custom', this.on_msg, this);
+
+            // Track canvas size changes.
+            this.model.on('change:width', this.size_changed, this);
+            this.model.on('change:height', this.size_changed, this);
+        },
+
+        render: function() {
             var that = this;
 
             var canvas = $('<canvas></canvas>');
@@ -44,13 +55,6 @@ define(function(require) {
             this.size_changed();
             this.c.resize();
             this.c.resizable();
-
-            // Track canvas size changes.
-            this.model.on('change:width', this.size_changed, this);
-            this.model.on('change:height', this.size_changed, this);
-
-            // WARNING: necessary on IPython >= 3.0dev.
-            this.model.comm.on_msg($.proxy(this.on_msg, this));
 
             // Start the event loop.
             this.c.on_event_tick(function() {
