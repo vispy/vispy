@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2014, Vispy Development Team.
+# Copyright (c) 2014, 2015, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """
@@ -16,9 +16,7 @@ from ...ext import six
 from vispy.gloo.glir import BaseGlirParser
 from vispy.app import Timer
 
-# Import for displaying Javascript on notebook
 import os.path as op
-
 # -------------------------------------------------------------------- init ---
 
 capability = dict(  # things that can be set by the backend
@@ -52,8 +50,8 @@ try:
         raise RuntimeError('ipynb_webgl backend requires IPython >= 2.0')
     from IPython.html.widgets import DOMWidget
     from IPython.utils.traitlets import Unicode, Int
-    from IPython.display import display, Javascript
     from IPython.html.nbextensions import install_nbextension
+    from IPython.display import display
 except Exception as exp:
     # raise ImportError("The WebGL backend requires IPython >= 2.0")
     available, testable, why_not, which = False, False, str(exp), None
@@ -71,12 +69,8 @@ def _prepare_js(force=False):
         kwargs = {'user': True}
     else:
         kwargs = {}
-    install_nbextension(op.join(jsdir, 'vispy.min.js'), overwrite=force,
+    install_nbextension(jsdir, overwrite=force, destination='vispy', symlink=True,
                         **kwargs)
-    backend_path = op.join(jsdir, 'webgl-backend.js')
-    with open(backend_path, 'r') as f:
-        script = f.read()
-    display(Javascript(script))
 
 
 class ApplicationBackend(BaseApplicationBackend):
@@ -326,6 +320,7 @@ def _stop_timers(canvas):
 
 class VispyWidget(DOMWidget):
     _view_name = Unicode("VispyView", sync=True)
+    _view_module = Unicode('/nbextensions/vispy/webgl-backend.js', sync=True)
 
     width = Int(sync=True)
     height = Int(sync=True)
