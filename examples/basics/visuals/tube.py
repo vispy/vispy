@@ -34,7 +34,7 @@ vertex_colors = np.array([hsv_to_rgb(c, 1, 1) for c in vertex_colors])
 
 l1 = scene.visuals.Tube(points1,
                         shading='flat',
-                        color=colors,  # this is overridden by passing
+                        color=colors,  # this is overridden by
                                        # the vertex_colors argument
                         vertex_colors=vertex_colors,
                         tube_points=8)
