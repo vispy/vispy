@@ -99,7 +99,6 @@ class TubeVisual(MeshVisual):
         MeshVisual.__init__(self, vertices, indices,
                             vertex_colors=vertex_colors,
                             face_colors=face_colors,
-                            # color=color,
                             shading=shading,
                             mode=mode)
 
