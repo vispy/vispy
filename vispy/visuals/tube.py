@@ -22,11 +22,12 @@ class TubeVisual(MeshVisual):
     radius : float
         The radius of the tube. Defaults to 1.0.
     color : Color | ColorArray
-        The color(s) to use when drawing the tube. This will be cycled
-        for each vertex the points array, e.g. if 'red' is passed then
-        the entire tube will be red, or if ['green', 'blue'] is passed
-        then the points will alternate between these colours. Defaults
-        to 'purple'.
+        The color(s) to use when drawing the tube. The same color is
+        applied to each vertex of the mesh surrounding each point of
+        the line. If the input is a ColorArray, the argument will be
+        cycled; for instance if 'red' is passed then the entire tube
+        will be red, or if ['green', 'blue'] is passed then the points
+        will alternate between these colours. Defaults to 'purple'.
     tube_points : int
         The number of points in the circle-approximating polygon of the
         tube's cross section. Defaults to 8.
