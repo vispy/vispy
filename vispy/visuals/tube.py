@@ -92,7 +92,6 @@ class TubeVisual(MeshVisual):
             point_colors = np.resize(color.rgba,
                                      (len(points), 4))
             vertex_colors = np.repeat(point_colors, tube_points, axis=0)
-                                      
 
         indices = np.array(indices, dtype=np.uint32)
 
