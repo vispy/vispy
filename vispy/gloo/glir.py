@@ -433,6 +433,7 @@ class GlirProgram(GlirObject):
         'mat2': 'glUniformMatrix2fv',
         'mat3': 'glUniformMatrix3fv',
         'mat4': 'glUniformMatrix4fv',
+        'sampler1D': 'glUniform1i',
         'sampler2D': 'glUniform1i',
         'sampler3D': 'glUniform1i',
     }
@@ -744,6 +745,8 @@ class GlirProgram(GlirObject):
         gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
         if USE_TEX_3D:
             gl.glBindTexture(GL_TEXTURE_3D, 0)
+            gl.glBindTexture(GL_TEXTURE_1D, 0)
+
         #Deactivate program - should not be necessary. In single-program
         #apps it would not even make sense.
         #self.deactivate()
@@ -895,15 +898,25 @@ class GlirTexture(GlirObject):
             gl.glTexParameterf(self._target, GL_TEXTURE_WRAP_R, wrapping[0])
         gl.glTexParameterf(self._target, gl.GL_TEXTURE_WRAP_S, wrapping[-2])
         gl.glTexParameterf(self._target, gl.GL_TEXTURE_WRAP_T, wrapping[-1])
-    
+
     def set_interpolation(self, min, mag):
         self.activate()
         min, mag = as_enum(min), as_enum(mag)
         gl.glTexParameterf(self._target, gl.GL_TEXTURE_MIN_FILTER, min)
         gl.glTexParameterf(self._target, gl.GL_TEXTURE_MAG_FILTER, mag)
 
+# these should be auto generated in _constants.py. But that doesn't seem 
+# to be happening. TODO - figure out why the C parser in (createglapi.py)
+# is not extracting these constanst out.
+# found the constant value at:
+# http://docs.factorcode.org/content/word-GL_TEXTURE_1D,opengl.gl.html
+# http://docs.factorcode.org/content/word-GL_SAMPLER_1D%2Copengl.gl.html
+GL_SAMPLER_1D = gl.Enum('GL_SAMPLER_1D', 35677)
+GL_TEXTURE_1D = gl.Enum('GL_TEXTURE_1D', 3552)
+
+
 class GlirTexture1D(GlirTexture):
-    _target = gl.GL_TEXTURE_1D
+    _target = GL_TEXTURE_1D
     
     def set_size(self, shape, format, internalformat):
         format = as_enum(format)
@@ -915,13 +928,13 @@ class GlirTexture1D(GlirTexture):
         if (shape, format, internalformat) != self._shape_formats:
             self.activate()
             self._shape_formats = shape, format, internalformat
-            glTexImage3D(self._target, 0, internalformat, format,
+            glTexImage1D(self._target, 0, internalformat, format,
                          gl.GL_BYTE, shape[:1])
     
     def set_data(self, offset, data):
         self.activate()
         shape, format, internalformat = self._shape_formats
-        x = offset
+        x = offset[0]
         # Get gtype
         gtype = self._types.get(np.dtype(data.dtype), None)
         if gtype is None:
@@ -931,7 +944,7 @@ class GlirTexture1D(GlirTexture):
         if alignment != 4:
             gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, alignment)
         # Upload
-        gl.glTexSubImage1D(self._target, 0, x, format, gtype, data)
+        glTexSubImage1D(self._target, 0, x, format, gtype, data)
         # Set alignment back
         if alignment != 4:
             gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 4)
@@ -950,10 +963,29 @@ class GlirTexture2D(GlirTexture):
             self.activate()
             gl.glTexImage2D(self._target, 0, internalformat, format,
                             gl.GL_UNSIGNED_BYTE, shape[:2])
+    
+    def set_data(self, offset, data):
+        self.activate()
+        shape, format, internalformat = self._shape_formats
+        y, x = offset
+        # Get gtype
+        gtype = self._types.get(np.dtype(data.dtype), None)
+        if gtype is None:
+            raise ValueError("Type %r not allowed for texture" % data.dtype)
+        # Set alignment (width is nbytes_per_pixel * npixels_per_line)
+        alignment = self._get_alignment(data.shape[-2]*data.shape[-1])
+        if alignment != 4:
+            gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, alignment)
+        # Upload
+        gl.glTexSubImage2D(self._target, 0, x, y, format, gtype, data)
+        # Set alignment back
+        if alignment != 4:
+            gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 4)
 
 
 GL_SAMPLER_3D = gl.Enum('GL_SAMPLER_3D', 35679)
 GL_TEXTURE_3D = gl.Enum('GL_TEXTURE_3D', 32879)
+
 USE_TEX_3D = False
 
 
@@ -978,6 +1010,32 @@ def glTexImage3D(target, level, internalformat, format, type, pixels):
                      width, height, depth, border, format, type, None)
 
 
+def glTexImage1D(target, level, internalformat, format, type, pixels):
+    # Import from PyOpenGL
+    _gl = _check_pyopengl_3D()
+    border = 0
+    assert isinstance(pixels, (tuple, list))  # the only way we use this now
+    # pixels will be a tuple of the form (width, )
+    # we only need the first argument
+    width = pixels[0]
+
+    _gl.glTexImage1D(target, level, internalformat,
+                     width, border, format, type, None)
+
+
+def glTexSubImage1D(target, level, xoffset,
+                    format, type, pixels):
+    # Import from PyOpenGL
+    _gl = _check_pyopengl_3D()
+    width = pixels.shape[:1]
+
+    # width will be a tuple of the form (w, )
+    # we need to take the first element (integer)
+    _gl.glTexSubImage1D(target, level, xoffset,
+                        width[0], format, type, pixels)
+
+
+
 def glTexSubImage3D(target, level, xoffset, yoffset, zoffset,
                     format, type, pixels):
     # Import from PyOpenGL
@@ -985,7 +1043,6 @@ def glTexSubImage3D(target, level, xoffset, yoffset, zoffset,
     depth, height, width = pixels.shape[:3]
     _gl.glTexSubImage3D(target, level, xoffset, yoffset, zoffset,
                         width, height, depth, format, type, pixels)
-
 
 class GlirTexture3D(GlirTexture):
     _target = GL_TEXTURE_3D

@@ -382,7 +382,7 @@ class Texture1D(BaseTexture):
     @property
     def width(self):
         """ Texture width """
-        return self._shape[1]
+        return self._shape[0]
 
     @property
     def glsl_type(self):
