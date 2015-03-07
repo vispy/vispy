@@ -286,6 +286,7 @@ class GlirParser(BaseGlirParser):
         self._classmap = {'Program': GlirProgram,
                           'VertexBuffer': GlirVertexBuffer,
                           'IndexBuffer': GlirIndexBuffer,
+                          'Texture1D': GlirTexture1D,
                           'Texture2D': GlirTexture2D,
                           'Texture3D': GlirTexture3D,
                           'RenderBuffer': GlirRenderBuffer,
@@ -359,16 +360,16 @@ class GlirParser(BaseGlirParser):
                 elif cmd == 'DATA':  # VertexBuffer, IndexBuffer, Texture
                     ob.set_data(*args)
                 elif cmd == 'SIZE':  # VertexBuffer, IndexBuffer, 
-                    ob.set_size(*args)  # Texture2D, Texture3D, RenderBuffer
+                    ob.set_size(*args)  # Texture1D, Texture2D, Texture3D, RenderBuffer
                 elif cmd == 'ATTACH':  # FrameBuffer
                     ob.attach(*args)
                 elif cmd == 'FRAMEBUFFER':  # FrameBuffer
                     ob.set_framebuffer(*args)
                 elif cmd == 'SHADERS':  # Program
                     ob.set_shaders(*args)
-                elif cmd == 'WRAPPING':  # Texture2D, Texture3D
+                elif cmd == 'WRAPPING':  # Texture1D, Texture2D, Texture3D
                     ob.set_wrapping(*args)
-                elif cmd == 'INTERPOLATION':  # Texture2D, Texture3D
+                elif cmd == 'INTERPOLATION':  # Texture1D, Texture2D, Texture3D
                     ob.set_interpolation(*args)
                 else:
                     logger.warning('Invalid GLIR command %r' % cmd)
@@ -901,6 +902,40 @@ class GlirTexture(GlirObject):
         gl.glTexParameterf(self._target, gl.GL_TEXTURE_MIN_FILTER, min)
         gl.glTexParameterf(self._target, gl.GL_TEXTURE_MAG_FILTER, mag)
 
+class GlirTexture1D(GlirTexture):
+    _target = gl.GL_TEXTURE_1D
+    
+    def set_size(self, shape, format, internalformat):
+        format = as_enum(format)
+        if internalformat is not None:
+            internalformat = as_enum(internalformat)
+        else:
+            internalformat = format
+        # Shape is width
+        if (shape, format, internalformat) != self._shape_formats:
+            self.activate()
+            self._shape_formats = shape, format, internalformat
+            glTexImage3D(self._target, 0, internalformat, format,
+                         gl.GL_BYTE, shape[:1])
+    
+    def set_data(self, offset, data):
+        self.activate()
+        shape, format, internalformat = self._shape_formats
+        x = offset
+        # Get gtype
+        gtype = self._types.get(np.dtype(data.dtype), None)
+        if gtype is None:
+            raise ValueError("Type %r not allowed for texture" % data.dtype)
+        # Set alignment (width is nbytes_per_pixel * npixels_per_line)
+        alignment = self._get_alignment(data.shape[-1])
+        if alignment != 4:
+            gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, alignment)
+        # Upload
+        gl.glTexSubImage1D(self._target, 0, x, format, gtype, data)
+        # Set alignment back
+        if alignment != 4:
+            gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 4)
+
 
 class GlirTexture2D(GlirTexture):
     _target = gl.GL_TEXTURE_2D
@@ -915,24 +950,6 @@ class GlirTexture2D(GlirTexture):
             self.activate()
             gl.glTexImage2D(self._target, 0, internalformat, format,
                             gl.GL_UNSIGNED_BYTE, shape[:2])
-    
-    def set_data(self, offset, data):
-        self.activate()
-        shape, format, internalformat = self._shape_formats
-        y, x = offset
-        # Get gtype
-        gtype = self._types.get(np.dtype(data.dtype), None)
-        if gtype is None:
-            raise ValueError("Type %r not allowed for texture" % data.dtype)
-        # Set alignment (width is nbytes_per_pixel * npixels_per_line)
-        alignment = self._get_alignment(data.shape[-2]*data.shape[-1])
-        if alignment != 4:
-            gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, alignment)
-        # Upload
-        gl.glTexSubImage2D(self._target, 0, x, y, format, gtype, data)
-        # Set alignment back
-        if alignment != 4:
-            gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 4)
 
 
 GL_SAMPLER_3D = gl.Enum('GL_SAMPLER_3D', 35679)

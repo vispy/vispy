@@ -32,7 +32,7 @@ import numpy as np
 
 from .globject import GLObject
 from .buffer import VertexBuffer, IndexBuffer, DataBuffer
-from .texture import BaseTexture, Texture2D, Texture3D
+from .texture import BaseTexture, Texture2D, Texture3D, Texture1D
 from ..util import logger
 from .util import check_enum 
 from ..ext.six import string_types
@@ -85,7 +85,7 @@ class Program(GLObject):
         'mat2':         (np.float32, 4),
         'mat3':         (np.float32, 9),
         'mat4':         (np.float32, 16),
-        # 'sampler1D':  (np.uint32, 1),
+        'sampler1D':    (np.uint32, 1),
         'sampler2D':    (np.uint32, 1),
         'sampler3D':    (np.uint32, 1),
     }
@@ -277,6 +277,8 @@ class Program(GLObject):
                     elif tex and hasattr(tex, 'set_data'):
                         tex.set_data(data)
                         return
+                    elif type == 'sampler1D':
+                        data = Texture1D(data)
                     elif type == 'sampler2D':
                         data = Texture2D(data)
                     elif type == 'sampler3D':
