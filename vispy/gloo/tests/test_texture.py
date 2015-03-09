@@ -6,7 +6,7 @@
 import unittest
 import numpy as np
 
-from vispy.gloo import Texture2D, Texture3D, TextureAtlas
+from vispy.gloo import Texture1D, Texture2D, Texture3D, TextureAtlas
 from vispy.testing import requires_pyopengl, run_tests_if_main, assert_raises
 
 # here we test some things that will be true of all Texture types:
@@ -305,6 +305,135 @@ class Texture2DTest(unittest.TestCase):
         self.assertRaises(ValueError, T.set_data, np.zeros([10, 10, 10, 1]))
 
 
+# --------------------------------------------------------------- Texture1D ---
+@requires_pyopengl()
+def test_texture_1D():
+    # Note: put many tests related to (re)sizing here, because Texture
+    # is not really aware of shape.
+
+    # Shape extension
+    # ---------------------------------
+    data = np.zeros((10, ), dtype=np.uint8)
+    T = Texture1D(data=data)
+    assert T._shape == (10, 1)
+    assert 'Texture1D' in repr(T)
+    assert T.glsl_type == ('uniform', 'sampler1D')
+
+    # Width
+    # ---------------------------------
+    data = np.zeros((10, ), dtype=np.uint8)
+    T = Texture1D(data=data)
+    assert T.width == 10
+
+    # Resize
+    # ---------------------------------
+    data = np.zeros((10, ), dtype=np.uint8)
+    T = Texture1D(data=data)
+    T.resize((5, ))
+    assert T.shape == (5, 1)
+    glir_cmd = T._glir.clear()[-1]
+    assert glir_cmd[0] == 'SIZE'
+    assert glir_cmd[2] == (5, 1)
+
+    # Resize with bad shape
+    # ---------------------------------
+    data = np.zeros((10, ), dtype=np.uint8)
+    T = Texture1D(data=data)
+    # with self.assertRaises(ValueError):
+    #    T.resize((5, 5, 5, 5))
+    assert_raises(ValueError, T.resize, (5, 5, 5, 5))
+
+    # Resize not resizeable
+    # ---------------------------------
+    data = np.zeros((10, ), dtype=np.uint8)
+    T = Texture1D(data=data, resizeable=False)
+    # with self.assertRaises(RuntimeError):
+    #    T.resize((5, 5, 5))
+    assert_raises(RuntimeError, T.resize, (5, ))
+
+    # Set oversized data (-> resize)
+    # ---------------------------------
+    data = np.zeros((10, ), dtype=np.uint8)
+    T = Texture1D(data=data)
+    T.set_data(np.ones((20, ), np.uint8))
+    assert T.shape == (20, 1)
+
+    # Set undersized data
+    # ---------------------------------
+    data = np.zeros((10, ), dtype=np.uint8)
+    T = Texture1D(data=data)
+    T.set_data(np.ones((5, ), np.uint8))
+    assert T.shape == (5, 1)
+
+    # Set misplaced data
+    # ---------------------------------
+    data = np.zeros((10, ), dtype=np.uint8)
+    T = Texture1D(data=data)
+    # with self.assertRaises(ValueError):
+    #    T.set_data(np.ones((5, 5, 5)), offset=(8, 8, 8))
+    assert_raises(ValueError, T.set_data,
+                  np.ones((5, )), offset=(8, ))
+
+    # Set misshaped data
+    # ---------------------------------
+    data = np.zeros((10, ), dtype=np.uint8)
+    T = Texture1D(data=data)
+    # with self.assertRaises(ValueError):
+    #    T.set_data(np.ones((10, 10, 10)))
+    assert_raises(ValueError, T.set_data, np.ones((10, 10)))
+
+    # Set whole data (clear pending data)
+    # ---------------------------------
+    data = np.zeros((10, ), dtype=np.uint8)
+    T = Texture1D(data=data)
+    T.set_data(np.ones((10, ), np.uint8))
+    assert T.shape == (10, 1)
+    glir_cmd = T._glir.clear()[-1]
+    assert glir_cmd[0] == 'DATA'
+
+    # Test set data with different shape
+    # ---------------------------------
+    shape1 = (10, )
+    shape3 = (10, 3)
+
+    # Init data (explicit shape)
+    data = np.zeros((10, 1), dtype=np.uint8)
+    T = Texture1D(data=data)
+    assert T.shape == (10, 1)
+    assert T._format == 'luminance'
+
+    # Set data to rgb
+    T.set_data(np.zeros(shape3, np.uint8))
+    assert T.shape == (10, 3)
+    assert T._format == 'rgb'
+
+    # Set data to grayscale
+    T.set_data(np.zeros(shape1, np.uint8))
+    assert T.shape == (10, 1)
+    assert T._format == 'luminance'
+
+    # Set size to rgb
+    T.resize(shape3)
+    assert T.shape == (10, 3)
+    assert T._format == 'rgb'
+
+    # Set size to grayscale
+    T.resize(shape1)
+    assert T.shape == (10, 1)
+    assert T._format == 'luminance'
+
+    # Test set data with different shape and type
+    # -------------------------------------------
+    data = np.zeros((10, ), dtype=np.uint8)
+    T = Texture1D(data=data)
+
+    data = np.zeros((10, ), dtype=np.float32)
+    T.set_data(data)
+
+    data = np.zeros((12, ), dtype=np.int32)
+    T.set_data(data)
+
+
 # --------------------------------------------------------------- Texture3D ---
 @requires_pyopengl()
 def test_texture_3D():
@@ -489,6 +618,11 @@ def _test_texture_basic_formats(Texture, baseshape):
     )
 
 
+# ------------------------------------------------------- Texture1D formats ---
+def test_texture_1D_formats():
+    _test_texture_basic_formats(Texture1D, (10, ))
+
+
 # ------------------------------------------------------- Texture2D formats ---
 def test_texture_2D_formats():
     _test_texture_basic_formats(Texture2D, (10, 10))
@@ -511,6 +645,12 @@ def _test_texture_opengl_formats(Texture, baseshape):
             (4, 'rgba')
         ]
     )
+
+
+# ------------------------------------------------ Texture1D OpenGL formats ---
+@requires_pyopengl()
+def test_texture_1D_opengl_formats():
+    _test_texture_opengl_formats(Texture1D, (10, ))
 
 
 # ------------------------------------------------ Texture2D OpenGL formats ---
