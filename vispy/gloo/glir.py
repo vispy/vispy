@@ -359,8 +359,8 @@ class GlirParser(BaseGlirParser):
                     ob.set_attribute(*args)
                 elif cmd == 'DATA':  # VertexBuffer, IndexBuffer, Texture
                     ob.set_data(*args)
-                elif cmd == 'SIZE':  # VertexBuffer, IndexBuffer, 
-                    ob.set_size(*args)  # Texture1D, Texture2D, Texture3D, RenderBuffer
+                elif cmd == 'SIZE':  # VertexBuffer, IndexBuffer,
+                    ob.set_size(*args)  # Texture[1D, 2D, 3D], RenderBuffer
                 elif cmd == 'ATTACH':  # FrameBuffer
                     ob.attach(*args)
                 elif cmd == 'FRAMEBUFFER':  # FrameBuffer
@@ -1035,7 +1035,6 @@ def glTexSubImage1D(target, level, xoffset,
                         width[0], format, type, pixels)
 
 
-
 def glTexSubImage3D(target, level, xoffset, yoffset, zoffset,
                     format, type, pixels):
     # Import from PyOpenGL
@@ -1044,9 +1043,10 @@ def glTexSubImage3D(target, level, xoffset, yoffset, zoffset,
     _gl.glTexSubImage3D(target, level, xoffset, yoffset, zoffset,
                         width, height, depth, format, type, pixels)
 
+
 class GlirTexture3D(GlirTexture):
     _target = GL_TEXTURE_3D
-        
+
     def set_size(self, shape, format, internalformat):
         format = as_enum(format)
         if internalformat is not None:
