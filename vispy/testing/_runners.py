@@ -190,14 +190,15 @@ with canvas as c:
 """
 
 
-def _examples(individial_file_paths):
+def _examples(fnames_str):
     """Run examples and make sure they work.
 
     Parameters
     ----------
 
-    individial_file_paths: str
-        can be "" or a space separated list of paths to examples to test
+    fnames_str : str
+        Can be a space-separated list of paths to test, or an empty string to
+        auto-detect and run all examples.
     """
     root_dir, dev = _get_root_dir()
     reason = None
@@ -213,13 +214,12 @@ def _examples(individial_file_paths):
         print(msg)
         raise SkipTest(msg)
 
-    fnames = []
-
-    # if we're given individual file paths, then just use the given fnames
+    # if we're given individual file paths as a string in fnames_str,
+    # then just use them as the fnames
     # otherwise, use the full example paths that have been
     # passed to us
-    if individial_file_paths:
-        fnames = individial_file_paths.split(' ')
+    if fnames_str:
+        fnames = fnames_str.split(' ')
 
     else:
         fnames = [op.join(d[0], fname)
@@ -310,6 +310,8 @@ def test(label='full', extra_arg_string=''):
     elif label in backend_names:
         runs.append([partial(_unit, label, extra_arg_string), label])
     if label in ('full', 'examples'):
+        runs.append([_examples, 'examples'])
+    if label == "examples":
         runs.append([partial(_examples, extra_arg_string),
                     'examples'])
     if label in ('full', 'unit', 'nobackend'):
