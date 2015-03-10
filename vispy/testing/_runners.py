@@ -195,7 +195,6 @@ def _examples(fnames_str):
 
     Parameters
     ----------
-
     fnames_str : str
         Can be a space-separated list of paths to test, or an empty string to
         auto-detect and run all examples.
