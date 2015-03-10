@@ -36,8 +36,8 @@ def image(*args, **kwds):
     """
     canvas = SceneCanvas(keys='interactive')
     canvas.view = canvas.central_widget.add_view()
-    canvas.image = visuals.Image(parent=canvas.view.scene, *args, **kwds)
-    canvas.view.add(canvas.image)
+    canvas.image = visuals.Image(*args, **kwds)
+    canvas.view.add(canvas.image)  # This sets the parent of the image
     canvas.show()
     canvas.view.camera = cameras.PanZoomCamera(fixed_ratio=True,
                                                scale_ratio=(1, -1, 1),

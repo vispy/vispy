@@ -805,7 +805,7 @@ class TurntableCamera(PerspectiveCamera):
     
     _state_props = BaseCamera._state_props + ('elevation', 'azimuth')
     
-    def __init__(self, fov=0.0, elevation=0.0, azimuth=0.0, up='z', 
+    def __init__(self, fov=0.0, elevation=30.0, azimuth=30.0, up='z', 
                  distance=None, **kwds):
         super(TurntableCamera, self).__init__(fov=fov, **kwds)
         # Init variables
