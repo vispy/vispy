@@ -308,11 +308,15 @@ def test(label='full', extra_arg_string=''):
                          backend])
     elif label in backend_names:
         runs.append([partial(_unit, label, extra_arg_string), label])
-    if label in ('full', 'examples'):
-        runs.append([partial(_examples, ""), 'examples'])
+
     if label == "examples":
+        # take the extra arguments so that specific examples can be run
         runs.append([partial(_examples, extra_arg_string),
                     'examples'])
+    elif label == 'full':
+        # run all the examples
+        runs.append([partial(_examples, ""), 'examples'])
+
     if label in ('full', 'unit', 'nobackend'):
         runs.append([partial(_unit, 'nobackend', extra_arg_string),
                      'nobackend'])
