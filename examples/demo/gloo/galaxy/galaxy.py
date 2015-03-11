@@ -209,7 +209,10 @@ class Canvas(app.Canvas):
         gloo.clear(color=True, depth=True)
         self.program.draw('points')
 
-if __name__ == '__main__' and sys.flags.interactive == 0:
+
+if __name__ == '__main__':
     c = Canvas()
     c.show()
-    app.run()
+
+    if sys.flags.interactive == 0:
+        app.run()
