@@ -309,7 +309,7 @@ def test(label='full', extra_arg_string=''):
     elif label in backend_names:
         runs.append([partial(_unit, label, extra_arg_string), label])
     if label in ('full', 'examples'):
-        runs.append([_examples, 'examples'])
+        runs.append([partial(_examples, ""), 'examples'])
     if label == "examples":
         runs.append([partial(_examples, extra_arg_string),
                     'examples'])
