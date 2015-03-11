@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import numpy as np
+import sys
 
 from vispy.util.transforms import perspective
 from vispy.util import transforms
@@ -102,9 +103,7 @@ for i in range(n):
 # load the PNG that we use to blend the star with
 # to provide a circular look to each star.
 def load_galaxy_star_image():
-    from vispy.io import load_data_file
-
-    fname = load_data_file('galaxy/star-particle.png')
+    fname = io.load_data_file('galaxy/star-particle.png')
     raw_image = io.read_png(fname)
 
     return raw_image
