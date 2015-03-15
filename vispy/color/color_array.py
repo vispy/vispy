@@ -128,8 +128,8 @@ class ColorArray(object):
     Under the hood, this class stores data in RGBA format suitable for use
     on the GPU.
     """
-    def __init__(self, color=None, color_space='rgb',
-                 alpha=None, clip=False):
+    def __init__(self, color=None, alpha=None,
+                 clip=False, color_space='rgb'):
 
         # if color is RGB, then set the default color to black
         if color_space == 'rgb':
