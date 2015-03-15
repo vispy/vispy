@@ -94,7 +94,7 @@ class ColorArray(object):
     color_space : "rgb" | "hsv"
        if rgb, color tuples are interpreted as (r, g, b) components.
        if hsv, color tuples are interpreted as (h, s, v) components.
-       if neither are specified, it is assumed to "rgb" by default
+       if neither are specified, it is assumed to be "rgb" by default
     alpha : float | None
         If no alpha is not supplied in ``color`` entry and ``alpha`` is None,
         then this will default to 1.0 (opaque). If float, it will override
@@ -112,6 +112,9 @@ class ColorArray(object):
         >>> b = ColorArray('#0000ff')  # hex color
         >>> w = ColorArray()  # defaults to black
         >>> w.rgb = r.rgb + g.rgb + b.rgb
+        >>>hsv_color = ColorArray(color_space="hsv", color=(0, 0, 0.5))
+        >>>hsv_color
+        <ColorArray: 1 color ((0.5, 0.5, 0.5, 1.0))>
         >>> w == ColorArray('white')
         True
         >>> w.alpha = 0
@@ -143,7 +146,7 @@ class ColorArray(object):
             raise ValueError('color_space should be either "rgb" or'
                              '"hsv", it is ' + color_space)
 
-        """Parse input type, and set attribute"""
+        # Parse input type, and set attribute"""
         rgba = _user_to_rgba(color, clip=clip)
 
         if alpha is not None:
