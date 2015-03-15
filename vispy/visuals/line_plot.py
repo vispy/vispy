@@ -67,6 +67,15 @@ class LinePlotVisual(Visual):
         elif len(args) == 2:
             pos = np.concatenate([args[0][:, np.newaxis],
                                   args[1][:, np.newaxis]], axis=1)
+        # if args are empty, don't modify position
+        elif len(args) == 0:
+            pos = self._line.pos
+
+            # if both args and keywords are zero, then there is no
+            # point in calling this function.
+            if len(kwds) == 0:
+                raise TypeError("neither line points nor line properties"
+                                "are provided")
         else:
             raise TypeError("Too many positional arguments given (max is 2).")
 
