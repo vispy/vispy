@@ -91,10 +91,9 @@ class ColorArray(object):
         If array-like, it must be an Nx3 or Nx4 array-like object.
         Can also be a list of colors, such as
         ``['red', '#00ff00', ColorArray('blue')]``.
-    color_space : "rgb" | "hsv"
-       if rgb, color tuples are interpreted as (r, g, b) components.
-       if hsv, color tuples are interpreted as (h, s, v) components.
-       if neither are specified, it is assumed to be "rgb" by default
+    color_space : 'rgb' | 'hsv'
+       'rgb' (default) : color tuples are interpreted as (r, g, b) components.
+       'hsv' : color tuples are interpreted as (h, s, v) components.
     alpha : float | None
         If no alpha is not supplied in ``color`` entry and ``alpha`` is None,
         then this will default to 1.0 (opaque). If float, it will override
