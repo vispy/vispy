@@ -51,6 +51,16 @@ def test_color_array():
     assert_array_equal(x.rgba, .5 * np.ones((3, 4)))
     assert_raises(ValueError, x.__setitem__, (0, 1), 0)
 
+    # test hsv color space colors
+    x = ColorArray(color_space="hsv", color=[(0, 0, 1),
+                   (0, 0, 0.5), (0, 0, 0)])
+    assert_array_equal(x.rgba[0], [1, 1, 1, 1])
+    assert_array_equal(x.rgba[1], [0.5, 0.5, 0.5, 1])
+    assert_array_equal(x.rgba[2], [0, 0, 0, 1])
+
+    x = ColorArray(color_space="hsv")
+    assert_array_equal(x.rgba[0], [0, 0, 0, 1])
+
 
 def test_color_interpretation():
     """Test basic color interpretation API"""
