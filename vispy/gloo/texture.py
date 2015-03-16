@@ -356,6 +356,42 @@ class BaseTexture(GLObject):
             self.__class__.__name__, self._shape, self._format, id(self))
 
 
+# --------------------------------------------------------- Texture1D class ---
+class Texture1D(BaseTexture):
+    """ one dimensional texture
+
+    Parameters
+    ----------
+
+    data : ndarray
+        Texture data shaped as W, or a tuple with the shape for
+        the texture (W).
+    shape : tuple of integers
+        Texture shape (optional), with shape W.
+    format : str | ENUM
+        The format of the texture: 'luminance', 'alpha', 'luminance_alpha',
+        'rgb', or 'rgba'. If not given the format is chosen automatically
+        based on the number of channels. When the data has one channel,
+        'luminance' is assumed.
+    """
+    _ndim = 1
+    _GLIR_TYPE = 'Texture1D'
+
+    def __init__(self, data=None, format=None, **kwargs):
+        BaseTexture.__init__(self, data, format, **kwargs)
+
+    @property
+    def width(self):
+        """ Texture width """
+        return self._shape[0]
+
+    @property
+    def glsl_type(self):
+        """ GLSL declaration strings required for a variable to hold this data.
+        """
+        return 'uniform', 'sampler1D'
+
+
 # --------------------------------------------------------- Texture2D class ---
 class Texture2D(BaseTexture):
     """ Two dimensional texture

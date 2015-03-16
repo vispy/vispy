@@ -13,7 +13,7 @@ def clean():
     pass
 
 EXCLUDE = ['ColorBuffer', 'DepthBuffer', 'StencilBuffer']
-CLASSES = ['Program', 'VertexBuffer', 'IndexBuffer', 'Texture2D', 'Texture3D',
+CLASSES = ['Program', 'VertexBuffer', 'IndexBuffer', 'Texture1D', 'Texture2D', 'Texture3D',
            'RenderBuffer', 'FrameBuffer']
 
 

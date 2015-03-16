@@ -13,6 +13,7 @@ from __future__ import division
 
 import math
 import numpy as np
+from numpy.linalg import norm
 
 
 def translate(M, x, y=None, z=None):
@@ -181,18 +182,30 @@ def rotate(M, angle, x, y, z, point=None):
         in-place.
     """
     angle = math.pi * angle / 180
-    c, s = math.cos(angle), math.sin(angle)
-    n = math.sqrt(x * x + y * y + z * z)
-    x /= n
-    y /= n
-    z /= n
-    cx, cy, cz = (1 - c) * x, (1 - c) * y, (1 - c) * z
-    R = np.array([[cx * x + c, cy * x - z * s, cz * x + y * s, 0],
-                  [cx * y + z * s, cy * y + c, cz * y - x * s, 0],
-                  [cx * z - y * s, cy * z + x * s, cz * z + c, 0],
-                  [0, 0, 0, 1]], dtype=M.dtype).T
-    M[...] = np.dot(M, R)
+    R = np.zeros((4, 4), dtype=M.dtype)
+    R[:3, :3] = rotation_matrix((x, y, z), angle)
+    R[3, 3] = 1
+    M[...] = np.dot(M, R.T)
     return M
+
+
+def rotation_matrix(axis, angle):
+    '''The 3x3 rotation matrix for rotation about a vector.
+
+    Parameters
+    ----------
+    axis : ndarray
+        The x, y, z coordinates of the axis direction vector.
+    angle : float
+        The angle of rotation, in radians.
+    '''
+    x, y, z = axis / norm(axis)
+    c, s = math.cos(angle), math.sin(angle)
+    cx, cy, cz = (1 - c) * x, (1 - c) * y, (1 - c) * z
+    R = np.array([[cx * x + c, cy * x - z * s, cz * x + y * s],
+                  [cx * y + z * s, cy * y + c, cz * y - x * s],
+                  [cx * z - y * s, cy * z + x * s, cz * z + c]])
+    return R
 
 
 def ortho(left, right, bottom, top, znear, zfar):
@@ -298,19 +311,19 @@ def perspective(fovy, aspect, znear, zfar):
 
 def affine_map(points1, points2):
     """ Find a 3D transformation matrix that maps points1 onto points2.
-    
+
     Arguments are specified as arrays of four 3D coordinates, shape (4, 3).
     """
     A = np.ones((4, 4))
     A[:, :3] = points1
     B = np.ones((4, 4))
     B[:, :3] = points2
-    
+
     # solve 3 sets of linear equations to determine
     # transformation matrix elements
     matrix = np.eye(4)
     for i in range(3):
         # solve Ax = B; x is one row of the desired transformation matrix
-        matrix[i] = np.linalg.solve(A, B[:, i]) 
-    
+        matrix[i] = np.linalg.solve(A, B[:, i])
+
     return matrix

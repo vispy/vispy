@@ -73,7 +73,7 @@ void main() {
 
     // Compute the x coordinate from the time index.
     float x = -1 + 2*a_index.z / (u_n-1);
-    vec2 position = vec2(x, a_position);
+    vec2 position = vec2(x - (1 - 1 / u_scale.x), a_position);
 
     // Find the affine transformation for the subplots.
     vec2 a = vec2(1./ncols, 1./nrows)*.9;

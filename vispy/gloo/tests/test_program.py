@@ -116,9 +116,13 @@ class ProgramTest(unittest.TestCase):
         assert 'C' in program._pending_variables
         
         # Set samplers
-        program.set_shaders("uniform sampler2D T2; uniform sampler3D T3;", "f")
+        program.set_shaders("""uniform sampler1D T1;
+                            uniform sampler2D T2;
+                            uniform sampler3D T3;""", "f")
+        program['T1'] = np.zeros((10, ), np.float32)
         program['T2'] = np.zeros((10, 10), np.float32)
         program['T3'] = np.zeros((10, 10, 10), np.float32)
+        assert isinstance(program['T1'], gloo.Texture1D)
         assert isinstance(program['T2'], gloo.Texture2D)
         assert isinstance(program['T3'], gloo.Texture3D)
         

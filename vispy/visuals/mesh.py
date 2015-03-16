@@ -90,7 +90,7 @@ class MeshVisual(Visual):
         # Uniform color
         self._color = Color(color).rgba
 
-        # primtive mode
+        # primitive mode
         self._mode = mode
 
         # varyings
