@@ -32,7 +32,8 @@ def image(*args, **kwds):
     """
     canvas = SceneCanvas(keys='interactive')
     canvas.view = canvas.central_widget.add_view()
-    canvas.image = visuals.Image(*args, **kwds)
+    _args = (args[0].astype(np.ubyte),) + args[1:]
+    canvas.image = visuals.Image(*_args, **kwds)
     canvas.view.add(canvas.image)
     canvas.show()
     canvas.view.camera.invert_y = False
