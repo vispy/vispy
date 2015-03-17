@@ -47,6 +47,8 @@ class ImageVisual(ModularMesh):
 
         self._texture = None
         self._interpolation = 'nearest'
+        if data.dtype == np.float64:
+            data = data.astype(np.float32)
         self.set_data(data)
         self.set_gl_options(cull_face=('front_and_back',))
 
