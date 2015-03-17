@@ -28,8 +28,8 @@ class ImageVisual(ModularMesh):
 
             * 'subdivide': ImageVisual is represented as a grid of triangles
               with texture coordinates linearly mapped.
-            * 'impostor': ImageVisual is represented as a quad covering the 
-              entire view, with texture coordinates determined by the 
+            * 'impostor': ImageVisual is represented as a quad covering the
+              entire view, with texture coordinates determined by the
               transform. This produces the best transformation results, but may
               be slow.
 
