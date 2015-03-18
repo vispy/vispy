@@ -314,7 +314,7 @@ class PanZoomCamera(BaseCamera):
                 p1c = event.map_to_canvas(p1)[:2]
                 p2c = event.map_to_canvas(p2)[:2]
                 
-                scale = 1.03 ** ((p1c-p2c) * np.array([1, -1]))
+                scale = 1.0075 ** ((p1c-p2c) * np.array([1, -1]))
                 center = self._scene_transform.imap(event.press_event.pos[:2])
                 
                 self.zoom(scale, center)
