@@ -51,11 +51,6 @@ define(function(require) {
                 that.touch();
             });
 
-            // Make sure the size is correctly set up upon first display.
-            this.size_changed();
-            this.c.resize();
-            this.c.resizable();
-
             // Start the event loop.
             this.c.on_event_tick(function() {
                 // This callback function will be called at each JS tick,
@@ -79,12 +74,18 @@ define(function(require) {
             });
 
             vispy.start_event_loop();
+            var msg = { msg_type: 'init' };
+            this.send(msg);
+                        // Make sure the size is correctly set up upon first display.
+            this.size_changed();
+            this.c.resize();
+            this.c.resizable();
 
         },
 
         on_msg: function(comm_msg) {
             var buffers = comm_msg.buffers;
-            var msg = comm_msg.content.data.content;
+            var msg = comm_msg; //.content.data.content;
             if (msg == undefined) return;
             // Receive and execute the GLIR commands.
             if (msg.msg_type == 'glir_commands') {

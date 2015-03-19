@@ -10,7 +10,6 @@ from __future__ import division
 
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
                     BaseTimerBackend)
-from ._ipynb_util import create_glir_message
 from ...util import logger, keys
 from ...ext import six
 from vispy.gloo.glir import BaseGlirParser
@@ -118,6 +117,8 @@ class CanvasBackend(BaseCanvasBackend):
     # args are for BaseCanvasBackend, kwargs are for us.
     def __init__(self, *args, **kwargs):
         BaseCanvasBackend.__init__(self, *args)
+        self._widget = None
+
         p = self._process_backend_kwargs(kwargs)
         self._context = p.context
 
@@ -131,11 +132,15 @@ class CanvasBackend(BaseCanvasBackend):
 
         self._create_widget(size=p.size)
 
+    def set_widget(self, widget):
+        self._widget = widget;
+        self._vispy_canvas.context.shared.parser._widget = widget;
+
     def _create_widget(self, size=None):
-        self._widget = VispyWidget(self, size=size)
+        #self._widget = VispyWidget(self, size=size)
         # Set glir parser on context and context.shared
         context = self._vispy_canvas.context
-        context.shared.parser = WebGLGlirParser(self._widget)
+        context.shared.parser = WebGLGlirParser(None) #TODO: FIX THE NONE!
 
     def _reinit_widget(self):
         self._vispy_canvas.set_current()
@@ -184,9 +189,10 @@ class CanvasBackend(BaseCanvasBackend):
     def _vispy_set_visible(self, visible):
         if not visible:
             logger.warning('IPython notebook canvas cannot be hidden.')
-        else:
-            display(self._widget)
-            self._reinit_widget()
+            return
+        if self._widget is None:
+            raise RuntimeError("Create a VispyWidget to display the canvas")
+        self._reinit_widget()
 
     def _vispy_update(self):
         ioloop = tornado.ioloop.IOLoop.current()
@@ -302,62 +308,3 @@ class TimerBackend(BaseTimerBackend):
 
     def _vispy_stop(self):
         self._timer.stop()
-
-
-# ---------------------------------------------------------- IPython Widget ---
-def _stop_timers(canvas):
-    """Stop all timers in a canvas."""
-    for attr in dir(canvas):
-        try:
-            attr_obj = getattr(canvas, attr)
-        except NotImplementedError:
-            # This try/except is needed because canvas.position raises
-            # an error (it is not implemented in this backend).
-            attr_obj = None
-        if isinstance(attr_obj, Timer):
-            attr_obj.stop()
-
-
-class VispyWidget(DOMWidget):
-    _view_name = Unicode("VispyView", sync=True)
-    _view_module = Unicode('/nbextensions/vispy/webgl-backend.js', sync=True)
-
-    width = Int(sync=True)
-    height = Int(sync=True)
-
-    def __init__(self, canvas_backend, **kwargs):
-        super(VispyWidget, self).__init__(**kwargs)
-        w, h = kwargs.get('size', (500, 200))
-        self.width = w
-        self.height = h
-        self.canvas_backend = canvas_backend
-        self.gen_event = canvas_backend._gen_event
-        self.on_msg(self.events_received)
-
-    def events_received(self, _, msg):
-        if msg['msg_type'] == 'events':
-            events = msg['contents']
-            for ev in events:
-                self.gen_event(ev)
-        elif msg['msg_type'] == 'status':
-            if msg['contents'] == 'removed':
-                # Stop all timers associated to the widget.
-                _stop_timers(self.canvas_backend._vispy_canvas)
-
-    def send_glir_commands(self, commands):
-        # TODO: check whether binary websocket is available (ipython >= 3)
-        # Until IPython 3.0 is released, use base64.
-        array_serialization = 'base64'
-        # array_serialization = 'binary'
-        if array_serialization == 'base64':
-            msg = create_glir_message(commands, 'base64')
-            msg['array_serialization'] = 'base64'
-            self.send(msg)
-        elif array_serialization == 'binary':
-            msg = create_glir_message(commands, 'binary')
-            msg['array_serialization'] = 'binary'
-            # Remove the buffers from the JSON message: they will be sent
-            # independently via binary WebSocket.
-            buffers = msg.pop('buffers')
-            self.comm.send({"method": "custom", "content": msg},
-                           buffers=buffers)
