@@ -14,6 +14,7 @@ from ...util import logger, keys
 from ...ext import six
 from vispy.gloo.glir import BaseGlirParser
 from vispy.app import Timer
+from vispy.app.backends.ipython import VispyWidget
 
 import os.path as op
 # -------------------------------------------------------------------- init ---
@@ -200,8 +201,9 @@ class CanvasBackend(BaseCanvasBackend):
             logger.warning('IPython notebook canvas cannot be hidden.')
             return
         if self._widget is None:
-            raise RuntimeError("Create a VispyWidget to display the canvas")
-        self._reinit_widget()
+            self._widget = VispyWidget()
+            self._widget.set_canvas(self._vispy_canvas)
+        display(self._widget)
 
     def _vispy_update(self):
         ioloop = tornado.ioloop.IOLoop.current()

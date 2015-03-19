@@ -49,7 +49,7 @@ class VispyWidget(DOMWidget):
 
     def events_received(self, _, msg):
         if msg['msg_type'] == 'init':
-            self.canvas_backend._vispy_set_visible(True)
+            self.canvas_backend._reinit_widget()
         elif msg['msg_type'] == 'events':
             events = msg['contents']
             for ev in events:
