@@ -136,8 +136,8 @@ class CanvasBackend(BaseCanvasBackend):
         self._init_glir()
 
     def set_widget(self, widget):
-        self._widget = widget;
-        self._vispy_canvas.context.shared.parser._widget = widget;
+        self._widget = widget
+        self._vispy_canvas.context.shared.parser._widget = widget
 
     def _init_glir(self):
         #self._widget = VispyWidget(self, size=size)
