@@ -34,20 +34,17 @@ class VispyWidget(DOMWidget):
 
     def __init__(self, **kwargs):
         super(VispyWidget, self).__init__(**kwargs)
-        w, h = kwargs.get('size', (500, 200))
-        self.height = h
-        self.width = w
         self.on_msg(self.events_received)
         self.canvas = None
         self.canvas_backend = None
         self.gen_event = None
 
     def set_canvas(self, canvas):
+        self.width, self.height = canvas._backend._default_size
         self.canvas = canvas
         self.canvas_backend = self.canvas._backend
         self.canvas_backend.set_widget(self)
         self.gen_event = self.canvas_backend._gen_event
-
         #setup the backend widget then.
 
     def events_received(self, _, msg):

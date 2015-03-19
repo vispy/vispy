@@ -76,11 +76,10 @@ define(function(require) {
             vispy.start_event_loop();
             var msg = { msg_type: 'init' };
             this.send(msg);
-                        // Make sure the size is correctly set up upon first display.
+            // Make sure the size is correctly set up upon first display.
             this.size_changed();
             this.c.resize();
             this.c.resizable();
-
         },
 
         on_msg: function(comm_msg) {

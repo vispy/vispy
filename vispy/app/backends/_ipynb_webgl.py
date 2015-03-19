@@ -130,13 +130,16 @@ class CanvasBackend(BaseCanvasBackend):
         else:
             raise RuntimeError("WebGL doesn't yet support context sharing.")
 
-        self._create_widget(size=p.size)
+        #store a default size before the widget is available.
+        #then we set the default size on the widget and only use the widget size
+        self._default_size = p.size
+        self._init_glir()
 
     def set_widget(self, widget):
         self._widget = widget;
         self._vispy_canvas.context.shared.parser._widget = widget;
 
-    def _create_widget(self, size=None):
+    def _init_glir(self):
         #self._widget = VispyWidget(self, size=size)
         # Set glir parser on context and context.shared
         context = self._vispy_canvas.context
@@ -174,11 +177,17 @@ class CanvasBackend(BaseCanvasBackend):
         pass
 
     def _vispy_get_size(self):
-        return (self._widget.width, self._widget.height)
+        if self._widget:
+            return (self._widget.width, self._widget.height)
+        else:
+            return self._default_size
 
     def _vispy_set_size(self, w, h):
-        self._widget.width = w
-        self._widget.height = h
+        if self._widget:
+            self._widget.width = w
+            self._widget.height = h
+        else:
+            self._default_size = (w,h)
 
     def _vispy_get_position(self):
         raise NotImplementedError()
