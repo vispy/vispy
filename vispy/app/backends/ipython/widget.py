@@ -2,8 +2,14 @@
 # Copyright (c) 2014, 2015, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-from IPython.html.widgets import DOMWidget
-from IPython.utils.traitlets import Unicode, Int, Bool
+try:
+    from IPython.html.widgets import DOMWidget
+    from IPython.utils.traitlets import Unicode, Int, Bool
+except Exception as exp:
+    # raise ImportError("The WebGL backend requires IPython >= 2.0")
+    available, testable, why_not, which = False, False, str(exp), None
+else:
+    available, testable, why_not, which = True, False, None, None
 from vispy.app.backends._ipynb_util import create_glir_message
 from vispy.app import Timer
 
