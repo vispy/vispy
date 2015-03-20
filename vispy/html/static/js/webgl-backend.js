@@ -17,7 +17,7 @@ define(function(require) {
         return commands;
     }
 
-    require("/nbextensions/vispy/vispy.min.js"); //vispy is defined as a global!
+    var vispy = require("/nbextensions/vispy/vispy.min.js");
     var widget = require("widgets/js/widget");
 
     var VispyView = widget.DOMWidgetView.extend({
