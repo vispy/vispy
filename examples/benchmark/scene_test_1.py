@@ -15,6 +15,7 @@ from vispy import gloo, app, scene
 from vispy.visuals import Visual
 from vispy.visuals.shaders import ModularProgram, Function, Variable
 from vispy.visuals.transforms import TransformSystem, BaseTransform
+from vispy.util.profiler import Profiler
 
 
 class PanZoomTransform(BaseTransform):
@@ -143,6 +144,7 @@ class PanZoomCanvas(app.Canvas):
             self.update()
 
     def on_mouse_wheel(self, event):
+        prof = Profiler()
         if not event.modifiers:
             dx = np.sign(event.delta[1])*.05
             x0, y0 = self._normalize(event.pos)
@@ -176,9 +178,11 @@ class PanZoomCanvas(app.Canvas):
         return self._visuals
 
     def on_draw(self, event):
+        prof = Profiler()
         gloo.clear()
         for visual in self.visuals:
             visual.draw(self._tr)
+            prof('draw visual')
 
 
 X_TRANSFORM = """

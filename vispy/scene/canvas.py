@@ -12,6 +12,7 @@ from .node import Node
 from ..visuals.transforms import STTransform, TransformCache
 from ..color import Color
 from ..util import logger
+from ..util.profiler import Profiler
 from .subscene import SubScene
 from .events import SceneDrawEvent, SceneMouseEvent
 from .widgets import Widget
@@ -206,6 +207,7 @@ class SceneCanvas(app.Canvas):
             Optionally specifies the viewport to use. If None, the entire
             physical size is used.
         """
+        prof = Profiler()
         nfb = len(self._fb_stack)
         nvp = len(self._vp_stack)
         
@@ -216,11 +218,15 @@ class SceneCanvas(app.Canvas):
         tr_cache = self._transform_caches.setdefault(visual, TransformCache())
         # and mark the entire cache as aged
         tr_cache.roll()
+        prof('roll transform cache')
         
         scene_event = SceneDrawEvent(canvas=self, event=event, 
                                      transform_cache=tr_cache)
+        prof('create SceneDrawEvent')
+        
         vp = (0, 0) + self.physical_size if viewport is None else viewport
         scene_event.push_viewport(vp)
+        prof('push_viewport')
         try:
             # Force update of transforms on base entities
             # TODO: this should happen as a reaction to resize, push_viewport,
@@ -233,7 +239,9 @@ class SceneCanvas(app.Canvas):
             scene_event.push_node(self.framebuffer_cs)
             scene_event.push_node(self.canvas_cs)
             scene_event.push_node(visual)
+            prof('initialize event scenegraph')
             visual.draw(scene_event)
+            prof('draw scene')
         finally:
             scene_event.pop_viewport()
 
@@ -243,6 +251,7 @@ class SceneCanvas(app.Canvas):
             logger.warning("Framebuffer stack not fully cleared after draw.")
 
     def _process_mouse_event(self, event):
+        prof = Profiler()
         tr_cache = self._transform_caches.setdefault(self.scene, 
                                                      TransformCache())
         scene_event = SceneMouseEvent(canvas=self, event=event,
@@ -251,7 +260,10 @@ class SceneCanvas(app.Canvas):
         scene_event.push_node(self.framebuffer_cs)
         scene_event.push_node(self.canvas_cs)
         scene_event.push_node(self._scene)
+        prof('prepare mouse event')
+        
         self._scene._process_mouse_event(scene_event)
+        prof('process')
         
         # If something in the scene handled the scene_event, then we mark
         # the original event accordingly.
