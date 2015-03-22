@@ -38,10 +38,10 @@ for l in range(5):
 
         harmonic_values *= 0.5*scale
         harmonic_values += 0.5
-        colors = cm[harmonic_values.reshape(linear_shape)].rgb.reshape(
-            (shape[0], shape[1], 3))
+        colors = cm[harmonic_values.reshape(linear_shape)].rgba.reshape(
+            (shape[0], shape[1], 4))
 
-        mesh = scene.visuals.GridMesh(xs, ys, zs, color=colors)
+        mesh = scene.visuals.GridMesh(xs, ys, zs, colors=colors)
 
         canvas.view.add(mesh)
 
