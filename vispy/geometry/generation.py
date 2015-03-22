@@ -629,9 +629,6 @@ def create_implicit_mesh(xs, ys, zs):
     vertices[:, 1] = ys.reshape(length)
     vertices[:, 2] = zs.reshape(length)
 
-
-    # indices = np.resize(
-    #     [0, 1, 1 + shape[0], 0, 0 + shape[0], 1 + shape[0]],
     basic_indices = np.array([0, 1, 1 + shape[1], 0,
                              0 + shape[1], 1 + shape[1]])
 
