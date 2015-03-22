@@ -1,7 +1,6 @@
 
 from .mesh import MeshVisual
-from ..geometry.implicitmesh import create_implicit_mesh
-from ..geometry.generation import create_cube
+from ..geometry import create_implicit_mesh
 
 import numpy as np
 
