@@ -57,6 +57,8 @@ def create_implicit_mesh(xs, ys, zs):
             indices[index*6:index*6 + 6] = basic_indices + val
             index += 1
 
+    indices = indices.reshape((len(indices) // 3, 3))
+    
     return vertices, indices
                 
     
