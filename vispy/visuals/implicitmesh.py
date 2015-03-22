@@ -22,6 +22,21 @@ class ImplicitMeshVisual(MeshVisual):
     zs : ndarray
         A 2d array of z coordinates for the vertices of the mesh. Must
         have the same dimensions as xs and ys.
+    color : Color | ColorArray | ndarray
+        The color(s) of the points of the mesh. If a Color or ColorArray
+        is passed, the vertex_colors are constructed by cycling their
+        contents. If an ndarray of ndim 3 is passed, it is assumed that
+        this has the same shape as the xs, ys and zs arrays and gives
+        one colour per vertex.
+    shading : str | None
+        Same as for the `MeshVisual` class. Defaults to 'smooth'.
+    vertex_colors: ndarray | None
+        Same as for the `MeshVisual` class. Defaults to None. Overrides
+        the color argument if set.
+    face_colors: ndarray | None
+        Same as for the `MeshVisual` class. Defaults to None.
+    mode : str
+        Same as for the `MeshVisual` class. Defaults to 'triangles'.
     """
 
     def __init__(self, xs, ys, zs, color=None,
@@ -34,17 +49,16 @@ class ImplicitMeshVisual(MeshVisual):
 
         shape = xs.shape
         if isinstance(color, np.ndarray) and color.ndim == 3:
-            color = color.reshape((shape[0] * shape[1], 3))
-        color = ColorArray(color)
+            color = color.reshape((shape[0] * shape[1], color.shape[2]))
+        color = ColorArray(color).rgba
         if vertex_colors is None:
-            vertex_colors = color.rgba
+            vertex_colors = np.resize(color, (shape[0] * shape[1], 4))
 
         MeshVisual.__init__(self, vertices, indices,
                             vertex_colors=vertex_colors,
+                            face_colors=face_colors,
                             color='purple',
                             shading=shading,
-                            mode=mode,
-                            )
-
+                            mode=mode)
     def draw(self, transforms):
         MeshVisual.draw(self, transforms)
