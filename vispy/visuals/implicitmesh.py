@@ -5,6 +5,7 @@ from ..color import ColorArray
 
 import numpy as np
 
+
 class ImplicitMeshVisual(MeshVisual):
     """Displays a mesh implicitly constructed around x,y,z coordinates.
 
@@ -44,7 +45,7 @@ class ImplicitMeshVisual(MeshVisual):
                  vertex_colors=None,
                  face_colors=None,
                  mode='triangles'):
-        
+
         vertices, indices = create_implicit_mesh(xs, ys, zs)
 
         shape = xs.shape
@@ -60,5 +61,6 @@ class ImplicitMeshVisual(MeshVisual):
                             color='purple',
                             shading=shading,
                             mode=mode)
+
     def draw(self, transforms):
         MeshVisual.draw(self, transforms)
