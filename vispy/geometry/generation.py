@@ -594,7 +594,7 @@ def create_arrow(rows, cols, radius=0.1, length=1.0,
     return MeshData(vertices=verts, faces=faces)
 
 
-def create_implicit_mesh(xs, ys, zs):
+def create_grid_mesh(xs, ys, zs):
     '''Generate vertices and indices for an implicitly connected mesh.
 
     The intention is that this makes it simple to generate a mesh

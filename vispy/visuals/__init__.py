@@ -17,8 +17,8 @@ from .cube import CubeVisual  # noqa
 from .ellipse import EllipseVisual  # noqa
 from .gridlines import GridLinesVisual  # noqa
 from .image import ImageVisual  # noqa
+from .gridmesh import GridMeshVisual  # noqa
 from .histogram import HistogramVisual  # noqa
-from .implicitmesh import ImplicitMeshVisual  # noqa
 from .isocurve import IsocurveVisual  # noqa
 from .isoline import IsolineVisual  # noqa
 from .isosurface import IsosurfaceVisual  # noqa

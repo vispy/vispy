@@ -1,13 +1,13 @@
 
 from .mesh import MeshVisual
-from ..geometry import create_implicit_mesh
+from ..geometry import create_grid_mesh
 from ..color import ColorArray
 
 import numpy as np
 
 
-class ImplicitMeshVisual(MeshVisual):
-    """Displays a mesh implicitly constructed around x,y,z coordinates.
+class GridMeshVisual(MeshVisual):
+    """Displays a mesh in a Cartesian grid about x,y,z coordinates.
 
     This makes it simple to generate a mesh from e.g. the output
     of numpy.meshgrid.
@@ -36,17 +36,14 @@ class ImplicitMeshVisual(MeshVisual):
         the color argument if set.
     face_colors: ndarray | None
         Same as for the `MeshVisual` class. Defaults to None.
-    mode : str
-        Same as for the `MeshVisual` class. Defaults to 'triangles'.
     """
 
     def __init__(self, xs, ys, zs, color=None,
                  shading='smooth',
                  vertex_colors=None,
-                 face_colors=None,
-                 mode='triangles'):
+                 face_colors=None):
 
-        vertices, indices = create_implicit_mesh(xs, ys, zs)
+        vertices, indices = create_grid_mesh(xs, ys, zs)
 
         shape = xs.shape
         if isinstance(color, np.ndarray) and color.ndim == 3:
@@ -59,8 +56,7 @@ class ImplicitMeshVisual(MeshVisual):
                             vertex_colors=vertex_colors,
                             face_colors=face_colors,
                             color='purple',
-                            shading=shading,
-                            mode=mode)
+                            shading=shading)
 
     def draw(self, transforms):
         MeshVisual.draw(self, transforms)

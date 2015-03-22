@@ -1,5 +1,5 @@
 """
-Demonstration of an implicitly connected mesh.
+Demonstration of a mesh constructed in a grid about x,y,z coordinates.
 """
 
 import sys
@@ -41,7 +41,7 @@ for l in range(5):
         colors = cm[harmonic_values.reshape(linear_shape)].rgb.reshape(
             (shape[0], shape[1], 3))
 
-        mesh = scene.visuals.ImplicitMesh(xs, ys, zs, color=colors)
+        mesh = scene.visuals.GridMesh(xs, ys, zs, color=colors)
 
         canvas.view.add(mesh)
 
