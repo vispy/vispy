@@ -14,20 +14,17 @@ class ImplicitMeshVisual(MeshVisual):
         
         vertices, indices = create_implicit_mesh(xs, ys, zs)
 
-        # shape = xs.shape
-        # if color.shape[:2] == shape:
-        #     color = colors.reshape((shape[0] * shape[1], 3))
-        # print 'vertices', vertices
-        # print 'indices', indices
-
-        vertex_colors = np.random.random((xs.shape[0] * xs.shape[1], 3))
+        shape = xs.shape
+        if isinstance(color, np.ndarray):
+            vertex_colors = color.reshape((shape[0] * shape[1], 3))
+        else:
+            vertex_colors = None
+                
 
         MeshVisual.__init__(self, vertices, indices,
-                            color='purple',
                             vertex_colors=vertex_colors,
-                            # shading='smooth',
-                            # shading='flat',
-                            # mode='lines',
+                            color='purple',
+                            shading='smooth',
                             mode='triangles',
                             )
 
