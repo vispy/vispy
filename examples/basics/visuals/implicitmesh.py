@@ -1,5 +1,5 @@
 """
-Demonstration of Tube
+Demonstration of an implicitly connected mesh.
 """
 
 import sys
