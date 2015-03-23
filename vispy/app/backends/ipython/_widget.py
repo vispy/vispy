@@ -3,9 +3,8 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 try:
-    #from IPython.html.widgets import DOMWidget
-    #from IPython.utils.traitlets import Unicode, Int, Bool
-    raise RuntimeError("erer")
+    from IPython.html.widgets import DOMWidget
+    from IPython.utils.traitlets import Unicode, Int, Bool
 except Exception as exp:
     # Init dummy objects needed to import this module withour errors.
     # These are all overwritten with imports from IPython (on success)
@@ -18,6 +17,7 @@ else:
     available, testable, why_not, which = True, False, None, None
 from vispy.app.backends._ipynb_util import create_glir_message
 from vispy.app import Timer
+
 
 # ---------------------------------------------------------- IPython Widget ---
 def _stop_timers(canvas):
@@ -32,6 +32,7 @@ def _stop_timers(canvas):
         if isinstance(attr_obj, Timer):
             attr_obj.stop()
 
+
 class VispyWidget(DOMWidget):
     _view_name = Unicode("VispyView", sync=True)
     _view_module = Unicode('/nbextensions/vispy/webgl-backend.js', sync=True)
@@ -42,7 +43,6 @@ class VispyWidget(DOMWidget):
     width = Int(sync=True)
     height = Int(sync=True)
     resizable = Bool(value=True, sync=True)
-
 
     def __init__(self, **kwargs):
         super(VispyWidget, self).__init__(**kwargs)

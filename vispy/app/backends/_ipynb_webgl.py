@@ -13,7 +13,6 @@ from ..base import (BaseApplicationBackend, BaseCanvasBackend,
 from ...util import logger, keys
 from ...ext import six
 from vispy.gloo.glir import BaseGlirParser
-from vispy.app import Timer
 from vispy.app.backends.ipython import VispyWidget
 
 import os.path as op
@@ -42,8 +41,6 @@ try:
     IPYTHON_MAJOR_VERSION = IPython.version_info[0]
     if IPYTHON_MAJOR_VERSION < 2:
         raise RuntimeError('ipynb_webgl backend requires IPython >= 2.0')
-    from IPython.html.widgets import DOMWidget
-    from IPython.utils.traitlets import Unicode, Int
     from IPython.html.nbextensions import install_nbextension
     from IPython.display import display
 except Exception as exp:
@@ -63,8 +60,8 @@ def _prepare_js(force=False):
         kwargs = {'user': True}
     else:
         kwargs = {}
-    install_nbextension(jsdir, overwrite=force, destination='vispy', symlink=True,
-                        **kwargs)
+    install_nbextension(jsdir, overwrite=force, destination='vispy',
+                        symlink=True, **kwargs)
 
 
 class ApplicationBackend(BaseApplicationBackend):
@@ -95,7 +92,10 @@ class ApplicationBackend(BaseApplicationBackend):
 
 # ------------------------------------------------------------------ canvas ---
 class WebGLGlirParser(BaseGlirParser):
-    def __init__(self, widget):
+    def __init__(self, widget=None):
+        self._widget = widget
+
+    def set_widget(self, widget):
         self._widget = widget
 
     def is_remote(self):
@@ -126,19 +126,18 @@ class CanvasBackend(BaseCanvasBackend):
             raise RuntimeError("WebGL doesn't yet support context sharing.")
 
         #store a default size before the widget is available.
-        #then we set the default size on the widget and only use the widget size
+        #then we set the default size on the widget and only use the
+        #widget size
         self._default_size = p.size
         self._init_glir()
 
     def set_widget(self, widget):
         self._widget = widget
-        self._vispy_canvas.context.shared.parser._widget = widget
+        self._vispy_canvas.context.shared.parser.set_widget(widget)
 
     def _init_glir(self):
-        #self._widget = VispyWidget(self, size=size)
-        # Set glir parser on context and context.shared
         context = self._vispy_canvas.context
-        context.shared.parser = WebGLGlirParser(None) #TODO: FIX THE NONE!
+        context.shared.parser = WebGLGlirParser()
 
     def _reinit_widget(self):
         self._vispy_canvas.set_current()
@@ -182,7 +181,7 @@ class CanvasBackend(BaseCanvasBackend):
             self._widget.width = w
             self._widget.height = h
         else:
-            self._default_size = (w,h)
+            self._default_size = (w, h)
 
     def _vispy_get_position(self):
         raise NotImplementedError()

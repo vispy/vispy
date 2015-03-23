@@ -2,4 +2,6 @@
 # Copyright (c) 2014, 2015, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-from .widget import VispyWidget
+from ._widget import VispyWidget  # NOQA
+
+__all__ = ("VispyWidget")
