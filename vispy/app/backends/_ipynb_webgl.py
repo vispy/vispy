@@ -35,12 +35,6 @@ capability = dict(  # things that can be set by the backend
     always_on_top=False,
 )
 
-
-# Init dummy objects needed to import this module withour errors.
-# These are all overwritten with imports from IPython (on success)
-DOMWidget = object
-Unicode = Int = Float = Bool = lambda *args, **kwargs: None
-
 # Try importing IPython
 try:
     import tornado

@@ -3,9 +3,15 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 try:
-    from IPython.html.widgets import DOMWidget
-    from IPython.utils.traitlets import Unicode, Int, Bool
+    #from IPython.html.widgets import DOMWidget
+    #from IPython.utils.traitlets import Unicode, Int, Bool
+    raise RuntimeError("erer")
 except Exception as exp:
+    # Init dummy objects needed to import this module withour errors.
+    # These are all overwritten with imports from IPython (on success)
+    DOMWidget = object
+    Unicode = Int = Float = Bool = lambda *args, **kwargs: None
+
     # raise ImportError("The WebGL backend requires IPython >= 2.0")
     available, testable, why_not, which = False, False, str(exp), None
 else:
