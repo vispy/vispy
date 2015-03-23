@@ -12,7 +12,7 @@ from __future__ import division
 import numpy as np
 import math
 
-from vispy import gloo, app, scene
+from vispy import gloo, app, scene, visuals
 from vispy.visuals import Visual
 from vispy.visuals.shaders import ModularProgram, Function, Variable
 from vispy.visuals.transforms import TransformSystem, BaseTransform
@@ -44,24 +44,6 @@ class GridCanvas(app.Canvas):
                 
             else:
                 cell.set_transform(cell.offset, cell.scale * 1.05 ** dx)
-            #x0, y0 = self._normalize(event.press_event.pos)
-            #x1, y1 = self._normalize(event.last_event.pos)
-            #x, y = self._normalize(event.pos)
-            #dx, dy = x - x1, -(y - y1)
-            #button = event.press_event.button
-
-            #pan_x, pan_y = self._pz.pan
-            #zoom_x, zoom_y = self._pz.zoom
-
-            #if button == 1:
-                #self._pz.pan = (pan_x + dx/zoom_x,
-                                #pan_y + dy/zoom_y)
-            #elif button == 2:
-                #zoom_x_new, zoom_y_new = (zoom_x * math.exp(2.5 * dx),
-                                          #zoom_y * math.exp(2.5 * dy))
-                #self._pz.zoom = (zoom_x_new, zoom_y_new)
-                #self._pz.pan = (pan_x - x0 * (1./zoom_x - 1./zoom_x_new),
-                                #pan_y + y0 * (1./zoom_y - 1./zoom_y_new))
             self.update()
 
     def on_draw(self, event):
@@ -110,6 +92,53 @@ class Line(object):
         self.program.draw('line_strip')
 
 
+
+class VisualCanvas(app.Canvas):
+    def __init__(self, vis, **kwargs):
+        super(VisualCanvas, self).__init__(keys='interactive',
+                                            show=True, **kwargs)
+        m, n = (10, 10)
+        self.grid_size = (m, n)
+        self.visuals = vis
+        for row in vis:
+            for v in row:
+                v.tr_sys = visuals.transforms.TransformSystem(self)
+                v.tr_sys.visual_to_document = v.transform
+
+    def on_initialize(self, event):
+        gloo.set_state(clear_color='black', blend=True,
+                       blend_func=('src_alpha', 'one_minus_src_alpha'))
+
+    def on_mouse_move(self, event):
+        if event.is_dragging and not event.modifiers:
+            dx = (event.pos - event.last_event.pos)
+            x, y = event.press_event.pos / self.size
+            m, n = self.grid_size
+            i, j = int(x*m), n - 1 - int(y*n)
+            v = self.visuals[i][j]
+            tr = v.transform
+            if event.press_event.button == 1:
+                offset = np.array(tr.translate)[:2] + dx
+                tr.translate = offset
+                
+            else:
+                tr.scale = tr.scale[:2] * 1.05 ** (dx * (1, -1))
+            self.update()
+
+    def on_draw(self, event):
+        prof = Profiler()
+        gloo.clear()
+        M, N = self.grid_size
+        w, h = self.size
+        for i in range(M):
+            for j in range(N):
+                gloo.set_viewport(w*i/M, h*j/N, w/M, h/N)
+                v = self.visuals[i][j]
+                v.draw(v.tr_sys)
+
+
+
+
 if __name__ == '__main__':
     M, N = (10, 10)
     
@@ -130,24 +159,38 @@ if __name__ == '__main__':
                          title="GridCanvas")
     
     
+    # Visual version
+    vlines = []
+    for i in range(M):
+        row = []
+        vlines.append(row)
+        for j in range(N):
+            v = visuals.LineVisual(pos=data, color=(1, 1, 1, 0.5), mode='gl')
+            v.transform = visuals.transforms.STTransform(translate=(0, 200), scale=(7, 50))
+            row.append(v)
+    
+    vcanvas = VisualCanvas(vlines, position=(400, 300), size=(800, 600), 
+                         title="VisualCanvas")
+    
+    
     # Scenegraph version
-    scanvas = scene.SceneCanvas(show=True, keys='interactive', 
-                                title="SceneCanvas")
+    #scanvas = scene.SceneCanvas(show=True, keys='interactive', 
+                                #title="SceneCanvas")
     
     
-    scanvas.size = 800, 600
-    scanvas.show()
-    grid = scanvas.central_widget.add_grid()
+    #scanvas.size = 800, 600
+    #scanvas.show()
+    #grid = scanvas.central_widget.add_grid()
 
-    lines = []
-    for i in range(10):
-        lines.append([])
-        for j in range(10):
-            vb = grid.add_view(row=i, col=j)
-            vb.camera.rect = (0, -5), (100, 10)
-            vb.border = (1, 1, 1, 0.4)
-            line = scene.visuals.Line(pos=data, color=(1, 1, 1, 0.5), mode='gl')
-            vb.add(line)
+    #lines = []
+    #for i in range(10):
+        #lines.append([])
+        #for j in range(10):
+            #vb = grid.add_view(row=i, col=j)
+            #vb.camera.rect = (0, -5), (100, 10)
+            #vb.border = (1, 1, 1, 0.4)
+            #line = scene.visuals.Line(pos=data, color=(1, 1, 1, 0.5), mode='gl')
+            #vb.add(line)
     
     
     import sys
