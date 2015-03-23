@@ -14,6 +14,7 @@ from ...color import Color, ColorArray, get_colormap
 from ...ext.six import string_types
 from ..shaders import ModularProgram, Function
 from ..visual import Visual
+from ...util.profiler import Profiler
 
 from .dash_atlas import DashAtlas
 from . import vertex
@@ -296,6 +297,7 @@ class _GLLineVisual(Visual):
         self.set_gl_state('translucent')
 
     def draw(self, transforms):
+        prof = Profiler()
         Visual.draw(self, transforms)
         
         # first see whether we can bail out early
@@ -361,6 +363,8 @@ class _GLLineVisual(Visual):
                 self._connect_ibo.set_data(self._connect)
         if self._connect is None:
             return
+        
+        prof('prepare')
 
         # Draw
         if self._connect == 'strip':
@@ -371,6 +375,8 @@ class _GLLineVisual(Visual):
             self._program.draw('lines', self._connect_ibo)
         else:
             raise ValueError("Invalid line connect mode: %r" % self._connect)
+        
+        prof('draw')
 
 
 class _AggLineVisual(Visual):

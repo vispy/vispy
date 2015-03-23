@@ -86,7 +86,7 @@ class Profiler(object):
         obj._new_msg("> Entering " + obj._name)
         return obj
 
-    def __call__(self, msg=None):
+    def __call__(self, msg=None, *args):
         """Register or print a new message with timing information.
         """
         if self.disable:
@@ -95,8 +95,8 @@ class Profiler(object):
             msg = str(self._mark_count)
         self._mark_count += 1
         new_time = ptime.time()
-        self._new_msg("  %s: %0.4f ms", 
-                     msg, (new_time - self._last_time) * 1000)
+        elapsed = (new_time - self._last_time) * 1000
+        self._new_msg("  " + msg + ": %0.4f ms", *(args + (elapsed,)))
         self._last_time = new_time
         
     def mark(self, msg=None):
