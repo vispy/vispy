@@ -60,7 +60,7 @@ class Collection(BaseCollection):
                 ('int32', 3)   : "ivec3",
                 ('int32', 4)   : "ivec4" }
 
-    def __init__(self, dtype, itype, mode, vertex, fragment, geometry=None, **kwargs):
+    def __init__(self, dtype, itype, mode, vertex, fragment, **kwargs):
         """
         """
 
@@ -118,7 +118,7 @@ class Collection(BaseCollection):
         self._vertex = vertex
         self._fragment = fragment
 
-        program = Program(vertex, fragment, geometry)
+        program = Program(vertex, fragment)
         self._programs.append(program)
 
         # Initialize uniforms

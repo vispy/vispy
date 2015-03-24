@@ -8,6 +8,7 @@
 
 """
 import numpy as np
+from functools import reduce
 from operator import mul
 
 
@@ -29,7 +30,7 @@ def dtype_reduce(dtype, level=0, depth=0):
 
     # No fields
     if fields is None:
-        if dtype.shape:
+        if len(dtype.shape):
             count = reduce(mul, dtype.shape)
         else:
             count = 1
@@ -164,4 +165,4 @@ if __name__ == '__main__':
                ('normal',  [('x', 'f4'), ('y', 'f4'), ('z', 'f4')]),
                ('color',   [('r', 'f4'), ('g', 'f4'), ('b', 'f4'), ('a', 'f4')])]
 
-    print fetchcode(utype)
+    print(fetchcode(utype))
