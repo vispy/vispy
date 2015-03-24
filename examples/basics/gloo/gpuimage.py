@@ -21,7 +21,8 @@ void main()
 """
 
 fragment = """
-const float M_PI = 3.14159265358979323846;
+#include "math/constants.glsl"
+//const float M_PI = 3.14159265358979323846;
 uniform float u_time;
 varying vec2 v_position;
 
@@ -91,7 +92,7 @@ class Canvas(app.Canvas):
         self.program = gloo.Program(vertex, fragment)
         self.program['a_position'] = [(-1., -1.), (-1., +1.),
                                       (+1., -1.), (+1., +1.)]
-        
+
         self.program['u_time'] = 0.0
         self.timer = app.Timer('auto', connect=self.on_timer, start=True)
 
