@@ -93,17 +93,10 @@ class BaseCamera(Node):
     
     Parameters
     ----------
-    scale_factor : scalar
-        A measure for the scale/range of the scene that the camera
-        should show. The exact meaning differs per camera type.
     center : tuple of scalars
         The center position. The exact meaning differs per camera type.
-    scale_ratio : tuple of scalars
-        The aspect ratio (i.e. scaling) of each dimension.
-    fixed_ratio : bool
-        Whether the aspect ratio is fixed. Default False. If False, the
-        camera will adjust the aspect ratio depending on e.g. screen
-        dimensions.
+    flip : tuple of bools
+        For each dimension, specify whether it is flipped.
     parent : Node
         The parent of the camera.
     name : str
@@ -115,9 +108,7 @@ class BaseCamera(Node):
     _state_props = ('scale_factor', 'scale_ratio', 'fixed_ratio', 
                     'center', 'fov')
     
-    def __init__(self, interactive=True, scale_factor=None, center=None, 
-                 scale_ratio=None, fixed_ratio=False,
-                 **kwargs):
+    def __init__(self, interactive=True, center=None, flip=None, **kwargs):
         super(BaseCamera, self).__init__(**kwargs)
         
         # The viewbox for which this camera is active
@@ -148,28 +139,24 @@ class BaseCamera(Node):
         self._ylim = None
         self._zlim = None
         
+        # todo: apply flip, but prevent view_changed()
+        self.flip = flip if (flip is not None) else (False, False, False)
         # View parameters
         self._fov = 0.0
-        self._scale_factor = 1.0
-        self._scale_ratio = 1.0, 1.0, 1.0
-        self._scale_ratio_n = 1.0, 1.0, 1.0  # normalized version
         self._center_loc = 0.0, 0.0, 0.0
         
         # Indirect view parameters (not set during reset)
         self._interactive = bool(interactive)
-        self._fixed_ratio = bool(fixed_ratio)
         
         # Keep track of parameters given at initialization, so that we
         # can set then after reset
         self._given_params = {}
         
         # Init things that may be set depening on bounds
-        if scale_factor is not None:
-            self._given_params['scale_factor'] = scale_factor
+        # if scale_factor is not None:
+        #     self._given_params['scale_factor'] = scale_factor
         if center is not None:
             self._given_params['center'] = center
-        if scale_ratio is not None:
-            self._given_params['scale_ratio'] = scale_ratio
     
     def _viewbox_set(self, viewbox):
         """ Friend method of viewbox to register itself.
@@ -206,57 +193,6 @@ class BaseCamera(Node):
         self._interactive = bool(value)
     
     @property
-    def scale_factor(self):
-        """ The measure for the scale or range that the camera should cover
-        
-        For the PanZoomCamera and TurnTableCamera this translates to
-        zooming: set to smaller values to zoom in.
-        """ 
-        return self._scale_factor
-    
-    @scale_factor.setter
-    def scale_factor(self, value):
-        self._scale_factor = abs(float(value))
-        self.view_changed()
-    
-    @property
-    def scale_ratio(self):
-        """ The ratio between scales for each dimension
-        
-        E.g. (0.5, 1.0, 1.0) would make the x-dimension half as small.
-        Negative values can be used to flip dimensions, e.g. (1, -1)
-        is typically suited for visualizing images.
-        """
-        return self._scale_ratio
-    
-    @scale_ratio.setter
-    def scale_ratio(self, value):
-        # Check and prepare
-        if len(value) == 2:
-            value = float(value[0]), float(value[1]), 1.0
-        elif len(value) == 3:
-            value = float(value[0]), float(value[1]), float(value[2])
-        else:
-            raise ValueError('Aspect ratio must be a 2 or 3 element tuple')
-        # Normalize
-        self._scale_ratio = value
-        self._scale_ratio_n = tuple([v / abs(value[0]) for v in value])
-        self.view_changed()
-    
-    @property
-    def fixed_ratio(self):
-        """ Whether the scale ratio is fixed
-        
-        If not fixed, the camera is allowed to modify the aspect ratio
-        during resetting, window resizing, and interaction.
-        """
-        return self._fixed_ratio
-    
-    @fixed_ratio.setter
-    def fixed_ratio(self, value):
-        self._fixed_ratio = bool(value)
-    
-    @property
     def center(self):
         """ The center location for this camera
         
@@ -273,6 +209,23 @@ class BaseCamera(Node):
             self._center_loc = float(val[0]), float(val[1]), float(val[2])
         else:
             raise ValueError('Center must be a 2 or 3 element tuple')
+        self._flip_factors = tuple([x*2-1 for x in self._flip])
+        self.view_changed()
+    
+    @property
+    def flip(self):
+        return self._flip
+    
+    @flip.setter
+    def flip(self, value):
+        if not isinstance(value, (list, tuple)):
+            raise ValueError('Flip must be a tuple or list.')
+        if len(value) == 2:
+            self._flip = bool(value[0]), bool(value[1]), False
+        elif len(value) == 2:
+            self._flip = bool(value[0]), bool(value[1]), bool(value[2])
+        else:
+            raise ValueError('Flip must have 2 or 3 elements.')
         self.view_changed()
     
     @property
@@ -419,16 +372,6 @@ class BaseCamera(Node):
         self._pre_transform = tr
         self.view_changed()
     
-    def view_mouse_event(self, event):
-        """ The ViewBox received a mouse event; update transform 
-        accordingly.
-        Default implementation adjusts scale factor when scolling.
-        """
-        if event.type == 'mouse_wheel':
-            s = 1.1 ** - event.delta[1]
-            self._scale_factor *= s
-            self.view_changed()
-    
     def view_resize_event(self, event):
         """
         The ViewBox was resized; update the transform accordingly.
@@ -480,6 +423,8 @@ class PanZoomCamera(BaseCamera):
     
     Parameters
     ----------
+    scale_ratio : float
+        The aspect ratio (i.e. scaling) between x and y dimension.
     See BaseCamera.
     
     Interaction
@@ -707,10 +652,14 @@ class PerspectiveCamera(BaseCamera):
     ----------
     fov : float
         Field of view. Default 60.0.
+    scale_factor : scalar
+        A measure for the scale/range of the scene that the camera
+        should show. The exact meaning differs per camera type.
     See BaseCamera for more.
     
     """
-    def __init__(self, fov=60.0, **kwargs):
+    
+    def __init__(self, fov=60.0, scale_factor=None, **kwargs):
         super(PerspectiveCamera, self).__init__(**kwargs)
         # Camera transform
         self.transform = AffineTransform()
@@ -718,6 +667,31 @@ class PerspectiveCamera(BaseCamera):
         # Init fov - does not depend on bounds
         self._fov = None
         self._given_params['fov'] = fov
+        self._scale_factor = None
+    
+    def view_mouse_event(self, event):
+        """ The ViewBox received a mouse event; update transform 
+        accordingly.
+        Default implementation adjusts scale factor when scolling.
+        """
+        if event.type == 'mouse_wheel':
+            s = 1.1 ** - event.delta[1]
+            self._scale_factor *= s
+            self.view_changed()
+    
+    @property
+    def scale_factor(self):
+        """ The measure for the scale or range that the camera should cover
+        
+        For the PanZoomCamera and TurnTableCamera this translates to
+        zooming: set to smaller values to zoom in.
+        """ 
+        return self._scale_factor
+    
+    @scale_factor.setter
+    def scale_factor(self, value):
+        self._scale_factor = abs(float(value))
+        self.view_changed()
     
     @property
     def near_clip_distance(self):
@@ -904,14 +878,6 @@ class TurntableCamera(PerspectiveCamera):
         else:
             rz /= h / w
         
-        # If auto-scale is on, change aspect ratio, x is the reference
-        if not self._fixed_ratio:
-            self.scale_ratio = 1.0, rx/ry, rx/rz
-        
-        # Correct for aspect ratio
-        nar = self._scale_ratio_n
-        rx, ry, rz = abs(rx * nar[0]), abs(ry * nar[1]), abs(rz * nar[2])
-        
         # Convert to screen coordinates. In screen x, only x and y have effect.
         # In screen y, all three dimensions have effect. The idea of the lines
         # below is to calculate the range on screen when that will fit the 
@@ -935,28 +901,26 @@ class TurntableCamera(PerspectiveCamera):
         self._window_size_factor = size_factor1
         
         # Make it quick if daspect is not in auto-mode
-        if self._fixed_ratio:
-            self.view_changed()
-            return
-        
-        # Get daspect factor
-        daspect_factor = size_factor1
-        if size_factor2:
-            daspect_factor /= size_factor2
-        
-        # Get zoom factor
-        zoomFactor = 1.0
-        if size_factor1 < 1:
-            zoomFactor /= size_factor1
-        if size_factor2 and size_factor2 < 1:
-            zoomFactor *= size_factor2
-        
-        # Change daspect and zoom
-        ar = self._scale_ratio_n
-        self.scale_ratio = ar[0], ar[1], ar[2] * daspect_factor
-        self._scale_factor /= zoomFactor
-        
         self.view_changed()
+        # 
+        # # Get daspect factor
+        # daspect_factor = size_factor1
+        # if size_factor2:
+        #     daspect_factor /= size_factor2
+        # 
+        # # Get zoom factor
+        # zoomFactor = 1.0
+        # if size_factor1 < 1:
+        #     zoomFactor /= size_factor1
+        # if size_factor2 and size_factor2 < 1:
+        #     zoomFactor *= size_factor2
+        # 
+        # # Change daspect and zoom
+        # ar = self._scale_ratio_n
+        # self.scale_ratio = ar[0], ar[1], ar[2] * daspect_factor
+        # self._scale_factor /= zoomFactor
+        # 
+        # self.view_changed()
     
     def view_mouse_event(self, event):
         """
@@ -991,20 +955,12 @@ class TurntableCamera(PerspectiveCamera):
             elif 2 in event.buttons and not modifiers:
                 # Zoom
                 if self._event_value is None:
-                    self._event_value = (self._scale_factor, self._scale_ratio,
-                                         self._distance)
+                    self._event_value = (self._scale_factor, self._distance)
                 zoomx, zoomy = _zoomfactor(-d[0]), _zoomfactor(d[1])
-                if not self._fixed_ratio:
-                    self.scale_factor = self._event_value[0] * zoomx
-                    prev_ar = self._event_value[1]
-                    self.scale_ratio = (prev_ar[0] * zoomy/zoomx, 
-                                        prev_ar[1] * zoomy/zoomx, 
-                                        prev_ar[2])
-                else:
-                    self.scale_factor = self._event_value[0] * zoomy
+                self.scale_factor = self._event_value[0] * zoomy
                 # Modify distance if its given
                 if self._distance is not None:
-                    self._distance = self._event_value[2] * zoomy
+                    self._distance = self._event_value[1] * zoomy
                 self.view_changed()
             
             elif 1 in event.buttons and keys.SHIFT in modifiers:
@@ -1014,17 +970,16 @@ class TurntableCamera(PerspectiveCamera):
                     self._event_value = self.center
                 dist = (p1 - p2) / w * self._scale_factor
                 dist[1] *= -1
-                ar = self._scale_ratio_n
                 #
                 sro, saz, sel = list(map(sind, (self._roll, self._azimuth, 
                                                 self._elevation)))
                 cro, caz, cel = list(map(cosd, (self._roll, self._azimuth, 
                                                 self._elevation)))
                 dx = (+ dist[0] * (cro * caz + sro * sel * saz)
-                      + dist[1] * (sro * caz - cro * sel * saz)) / ar[0]
+                      + dist[1] * (sro * caz - cro * sel * saz))
                 dy = (+ dist[0] * (cro * saz - sro * sel * caz) 
-                      + dist[1] * (sro * saz + cro * sel * caz)) / ar[1]
-                dz = (- dist[0] * sro * cel + dist[1] * cro * cel) / ar[2]
+                      + dist[1] * (sro * saz + cro * sel * caz))
+                dz = (- dist[0] * sro * cel + dist[1] * cro * cel)
                 #
                 c = self._event_value
                 self.center = c[0] + dx, c[1] + dy, c[2] + dz
@@ -1060,7 +1015,7 @@ class TurntableCamera(PerspectiveCamera):
             else:
                 raise ValueError('TurntableCamera.up must be "y" or "z".')
             
-            tr.scale([1.0/a for a in self._scale_ratio_n])
+            tr.scale([1.0/a for a in self._flip_factors])
             tr.translate(np.array(self.center))
     
     def _update_projection_transform(self, fx, fy):
@@ -1225,14 +1180,6 @@ class FlyCamera(PerspectiveCamera):
         else:
             rz /= h / w
         
-        # If auto-scale is on, change aspect ratio, x is the reference
-        if not self._fixed_ratio:
-            self.scale_ratio = 1.0, rx/ry, rx/rz
-        
-        # Correct for aspect ratio
-        nar = self._scale_ratio_n
-        rx, ry, rz = abs(rx * nar[0]), abs(ry * nar[1]), abs(rz * nar[2])
-        
         # Do not convert to screen coordinates. This camera does not need
         # to fit everything on screen, but we need to estimate the scale
         # of the data in the scene.
@@ -1246,10 +1193,10 @@ class FlyCamera(PerspectiveCamera):
         self._center_loc = x1 - margin, y1 - margin, z1 + margin
         
         # Determine initial view direction based on flip axis
-        yaw = 45 * np.sign(self._scale_ratio_n[0])
-        pitch = -90 - 20 * np.sign(self._scale_ratio_n[2])
-        if self._scale_ratio_n[1] < 0:
-            yaw += 90 * np.sign(self._scale_ratio_n[0])
+        yaw = 45 * self._flip_factors[0]
+        pitch = -90 - 20 * self._flip_factors[2]
+        if self._flip_factors[1] < 0:
+            yaw += 90 * np.sign(self._flip_factors[0])
         
         # Set orientation
         q1 = Quaternion.create_from_axis_angle(pitch*math.pi/180, 1, 0, 0)
@@ -1319,7 +1266,7 @@ class FlyCamera(PerspectiveCamera):
         if self._speed[:3].any():
         
             # Create speed vectors, use scale_factor as a reference
-            dv = np.array([1.0/d for d in self._scale_ratio_n])
+            dv = np.array([1.0/d for d in self._flip_factors])
             #
             vf = pf * dv * rel_speed * self._scale_factor
             vr = pr * dv * rel_speed * self._scale_factor
@@ -1496,7 +1443,7 @@ class FlyCamera(PerspectiveCamera):
         tr.reset()
         #
         tr.rotate(-angle, axis_angle[1:])
-        tr.scale([1.0/a for a in self._scale_ratio_n])
+        tr.scale([1.0/a for a in self._flip_factors])
         tr.translate(self._center_loc)
 
 
