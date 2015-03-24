@@ -37,7 +37,6 @@ class MyRectVisual(visuals.Visual):
     
     def __init__(self):
         visuals.Visual.__init__(self)
-        w, h = 1, 1
         self.vbo = gloo.VertexBuffer(np.array([
             [-1, -1], [1, -1], [1, 1],
             [-1, -1], [1, 1], [-1, 1]

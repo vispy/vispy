@@ -32,8 +32,8 @@ vb2 = scene.widgets.ViewBox(name='vb2', border_color='blue',
                             parent=canvas.scene)
 vb2.parent = canvas.scene
 vb2.clip_method = 'viewport'
-vb2.set_camera('turntable', mode='perspective', elevation=30, azimuth=30, up='y',
-               distance=10, fov=60)
+vb2.set_camera('turntable', mode='perspective', elevation=30, azimuth=30, 
+               up='y', distance=10, fov=60)
 #vb2.set_camera('turntable', mode='perspective',
 #               distance=10, elevation=0, azimuth=0)
 
