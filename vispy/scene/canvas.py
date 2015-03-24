@@ -92,12 +92,6 @@ class SceneCanvas(app.Canvas):
         # A default widget that follows the shape of the canvas
         self._central_widget = None
 
-        app.Canvas.__init__(self, *args, **kwargs)
-        self.events.mouse_press.connect(self._process_mouse_event)
-        self.events.mouse_move.connect(self._process_mouse_event)
-        self.events.mouse_release.connect(self._process_mouse_event)
-        self.events.mouse_wheel.connect(self._process_mouse_event)
-
         # Collection of transform caches; one for each root visual used in 
         # self.draw_visual(...)
         self._transform_caches = weakref.WeakKeyDictionary()
@@ -114,6 +108,12 @@ class SceneCanvas(app.Canvas):
         self.canvas_cs.document = self.canvas_cs
         
         self.scene = SubScene(parent=self.canvas_cs)
+
+        app.Canvas.__init__(self, *args, **kwargs)
+        self.events.mouse_press.connect(self._process_mouse_event)
+        self.events.mouse_move.connect(self._process_mouse_event)
+        self.events.mouse_release.connect(self._process_mouse_event)
+        self.events.mouse_wheel.connect(self._process_mouse_event)
         
     @property
     def scene(self):
