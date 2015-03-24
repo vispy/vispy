@@ -138,7 +138,7 @@ class BaseCanvasBackend(object):
         # Should return physical widget size (actual number of screen pixels).
         # This may differ from _vispy_get_size on backends that expose HiDPI
         # screens. If not overriden, return the logical sizeself.
-        return _vispy_get_size()
+        return self._vispy_get_size()
 
     def _vispy_get_position(self):
         # Should return widget position
