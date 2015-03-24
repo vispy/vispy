@@ -3,7 +3,6 @@ import re
 
 
 def get(filename):
-
     for path in ["..", "."]:
         filepath = os.path.join(path, filename)
         if os.path.exists(filepath):
@@ -21,6 +20,8 @@ code = """
 re_include = re.compile('\#include\s*"(?P<filename>[a-zA-Z0-9\-\.\/]+)"')
 
 includes = []
+
+
 def replace(match):
     filename = match.group("filename")
     if filename not in includes:
