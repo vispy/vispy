@@ -14,7 +14,7 @@ vec4 viewport_to_NDC(vec2 position, vec2 viewport)
     return vec4(2.0*(position/viewport) - 1.0, 0.0, 1.0);
 }
 
-vec4 viewport_to_NDC(vec2 position, vec2 viewport, float z)
+vec4 viewport_to_NDC(vec3 position, vec2 viewport)
 {
-    return vec4(2.0*(position/viewport) - 1.0, z, 1.0);
+    return vec4(2.0*(position.xy/viewport) - 1.0, position.z, 1.0);
 }
