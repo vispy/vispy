@@ -34,7 +34,7 @@ class ModularProgram(Program):
         self._variable_state = {}
         
         self._need_build = True
-        
+
     def prepare(self):
         """ Prepare the Program so we can set attributes and uniforms.
         """

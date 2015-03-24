@@ -269,10 +269,10 @@ class EventEmitter(object):
 
         Parameters
         ----------
-        callback : function | weakref to function | tuple
+        callback : function | tuple
             *callback* may be either a callable object or a tuple
             (object, attr_name) where object.attr_name will point to a
-            callable object.
+            callable object (note: here object can be a weak ref as well).
         ref : bool | str
             Reference used to identify the callback in ``before``/``after``.
             If True, the callback ref will automatically determined (see
@@ -320,11 +320,10 @@ class EventEmitter(object):
             if ref:
                 if isinstance(callback, tuple):
                     ref = callback[1]
-                else:
-                    if hasattr(callback, '__name__'):  # function
-                        ref = callback.__name__
-                    else:  # Method, or other
-                        ref = callback.__class__.__name__
+                elif hasattr(callback, '__name__'):  # function
+                    ref = callback.__name__
+                else:  # Method, or other
+                    ref = callback.__class__.__name__
             else:
                 ref = None
         elif not isinstance(ref, string_types):
