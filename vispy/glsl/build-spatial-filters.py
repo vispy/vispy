@@ -450,9 +450,9 @@ class Spline36(SpatialFilter):
         if x < 1.0:
             return ((13.0/11.0 * x - 453.0/209.0) * x - 3.0/209.0) * x + 1.0
         elif x < 2.0:
-            return ((-6.0/11.0 * (x-1) + 270.0/209.0) * (x-1) - 156.0/ 209.0) * (x-1)  # noqa
+            return ((-6.0/11.0 * (x-1) + 270.0/209.0) * (x-1) - 156.0 / 209.0) * (x-1)  # noqa
         else:
-           return ((1.0/11.0 * (x-2) - 45.0/209.0) * (x-2) +  26.0/209.0) * (x-2)  # noqa
+            return ((1.0 / 11.0 * (x-2) - 45.0/209.0) * (x - 2) + 26.0/209.0) * (x-2)  # noqa
 
 
 class Gaussian(SpatialFilter):
@@ -526,7 +526,7 @@ class Bessel(SpatialFilter):
                 return 0
             return 1
 
-        b1 = 0 # b1 is the value from the previous iteration
+        b1 = 0  # b1 is the value from the previous iteration
         # Set up a starting order for recurrence
         m1 = int(math.fabs(x)) + 6
         if math.fabs(x) > 5:
@@ -546,7 +546,7 @@ class Bessel(SpatialFilter):
                 m8 = -1
 
             imax = m2 - 2
-            for i in range(1,imax+1):
+            for i in range(1, imax+1):
                 c6 = 2 * (m2 - i) * c2 / x - c3
                 c3 = c2
                 c2 = c6
@@ -566,7 +566,6 @@ class Bessel(SpatialFilter):
             b1 = b
             m2 += 3
 
-
     def weight(self, x):
         if x == 0.0:
             return math.pi/4.0
@@ -584,7 +583,7 @@ class Sinc(SpatialFilter):
     '''
 
     def __init__(self, size=256, radius=4.0):
-        SpatialFilter.__init__(self, radius=max(radius,2.0))
+        SpatialFilter.__init__(self, radius=max(radius, 2.0))
 
     def weight(self, x):
         if x == 0.0:
@@ -603,7 +602,7 @@ class Lanczos(SpatialFilter):
     '''
 
     def __init__(self, size=256, radius=4.0):
-        SpatialFilter.__init__(self, radius=max(radius,2.0))
+        SpatialFilter.__init__(self, radius=max(radius, 2.0))
 
     def weight(self, x):
         if x == 0.0:
@@ -621,7 +620,7 @@ class Blackman(SpatialFilter):
     '''
 
     def __init__(self, size=256, radius=4.0):
-        SpatialFilter.__init__(self, radius=max(radius,2.0))
+        SpatialFilter.__init__(self, radius=max(radius, 2.0))
 
     def weight(self, x):
         if x == 0.0:
@@ -630,7 +629,7 @@ class Blackman(SpatialFilter):
             return 0.0
         x *= math.pi
         xr = x / self.radius
-        return (math.sin(x) / x) * (0.42 + 0.5*math.cos(xr) + 0.08*math.cos(2*xr))
+        return (math.sin(x) / x) * (0.42 + 0.5*math.cos(xr) + 0.08*math.cos(2*xr))  # noqa
 
 
 # Generate kernels texture (16 x 1024)
@@ -640,8 +639,8 @@ filters = [Bilinear(), Hanning(),  Hamming(),  Hermite(),
            Bessel(),   Sinc(),     Lanczos(),  Blackman()]
 
 n = 1024
-K = np.zeros((16,n))
-for i,f in enumerate(filters):
+K = np.zeros((16, n))
+for i, f in enumerate(filters):
     K[i] = f.kernel(n)
 
 bias = K.min()
@@ -672,5 +671,5 @@ print(F.filter_code())
 print("""vec4 Nearest(sampler2D texture, vec2 shape, vec2 uv)""")
 print("""{ return texture2D(texture,uv); }\n""")
 
-for i,f in enumerate(filters):
+for i, f in enumerate(filters):
     print(f.call_code((i+0.5)/16.0))
