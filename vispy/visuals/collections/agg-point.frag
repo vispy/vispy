@@ -2,32 +2,22 @@
 // Copyright (c) 2014, Nicolas P. Rougier. All Rights Reserved.
 // Distributed under the (new) BSD License.
 // ----------------------------------------------------------------------------
-// Hooks:
-//  <transform> : vec4 function(position)
-//
-// ----------------------------------------------------------------------------
-#version 120
-
-// Externs
-// ------------------------------------
-// extern vec3 position;
-// extern float size;
-// extern vec4 color;
+#include "markers/disc.glsl"
+#include "antialias/filled.glsl"
 
 // Varyings
 // ------------------------------------
 varying float v_size;
 varying vec4  v_color;
 
-// Main (hooked)
+// Main
 // ------------------------------------
 void main()
 {
-    fetch_uniforms();
+    <viewport.clipping>;
 
-    v_size = size;
-    v_color = color;
-
-    gl_Position = vec4(position,1.0);
-    gl_PointSize = size;
+    vec2 P = gl_PointCoord.xy - vec2(0.5,0.5);
+    float point_size = v_size  + 2 * (1.0 + 1.5*1.0);
+    float distance = marker_disc(P*point_size, v_size);
+    gl_FragColor = filled(distance, 1.0, 1.0, v_color);
 }

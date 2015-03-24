@@ -15,6 +15,6 @@ def PointCollection(mode="raw", *args, **kwargs):
       - "agg"  (speed: fast,    size: small,   output: beautiful)
     """
 
-    #if mode == "raw":
-    return RawPointCollection(*args, **kwargs)
-    #return AggPointCollection(*args, **kwargs)
+    if mode == "raw":
+        return RawPointCollection(*args, **kwargs)
+    return AggPointCollection(*args, **kwargs)

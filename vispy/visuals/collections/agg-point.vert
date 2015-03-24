@@ -34,6 +34,8 @@ void main (void)
     v_size = size;
     v_color = color;
 
-    gl_Position = vec4(position,1.0);
+    gl_Position = <transform(position)>;
     gl_PointSize = size + 2.0 * (1.0 + 1.5*1.0);
+
+    <viewport.transform>;
 }
