@@ -208,7 +208,7 @@ class ModularVisual(Visual):
             else:
                 raise Exception("Can't handle color data: %r" % color)
 
-    def set_gl_options(self, default=-1, **kwds):
+    def set_gl_options(self, default=-1, **kwargs):
         """
         Set all GL options for this Visual. Most common arguments are 
         'translucent', 'opaque', and 'additive'.
@@ -218,15 +218,15 @@ class ModularVisual(Visual):
         """
         if default is not -1:
             self._gl_options[0] = default
-        self._gl_options[1] = kwds
+        self._gl_options[1] = kwargs
 
-    def update_gl_options(self, default=-1, **kwds):
+    def update_gl_options(self, default=-1, **kwargs):
         """
         Update GL options rather than replacing all. See set_gl_options().
         """
         if default is not -1:
             self._gl_options[0] = default
-        self._gl_options.update(kwds)
+        self._gl_options.update(kwargs)
 
     def gl_options(self):
         """

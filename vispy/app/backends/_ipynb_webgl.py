@@ -205,11 +205,11 @@ class CanvasBackend(BaseCanvasBackend):
     def _vispy_close(self):
         raise NotImplementedError()
 
-    def _vispy_mouse_release(self, **kwds):
+    def _vispy_mouse_release(self, **kwargs):
         # HACK: override this method from the base canvas in order to
         # avoid breaking other backends.
-        kwds.update(self._vispy_mouse_data)
-        ev = self._vispy_canvas.events.mouse_release(**kwds)
+        kwargs.update(self._vispy_mouse_data)
+        ev = self._vispy_canvas.events.mouse_release(**kwargs)
         if ev is None:
             return
         self._vispy_mouse_data['press_event'] = None

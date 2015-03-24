@@ -188,7 +188,7 @@ class Widget(Node):
         self._update_child_widgets()
         return widget
 
-    def add_grid(self, *args, **kwds):
+    def add_grid(self, *args, **kwargs):
         """
         Create a new Grid and add it as a child widget.
 
@@ -196,9 +196,9 @@ class Widget(Node):
         """
         from .grid import Grid
         grid = Grid()
-        return self.add_widget(grid, *args, **kwds)
+        return self.add_widget(grid, *args, **kwargs)
 
-    def add_view(self, *args, **kwds):
+    def add_view(self, *args, **kwargs):
         """
         Create a new ViewBox and add it as a child widget.
 
@@ -206,7 +206,7 @@ class Widget(Node):
         """
         from .viewbox import ViewBox
         view = ViewBox()
-        return self.add_widget(view, *args, **kwds)
+        return self.add_widget(view, *args, **kwargs)
 
     def remove_widget(self, widget):
         self._widgets.remove(widget)

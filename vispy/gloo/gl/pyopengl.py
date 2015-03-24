@@ -40,7 +40,7 @@ _patch()
 ## Inject
 
 def _make_unavailable_func(funcname):
-    def cb(*args, **kwds):
+    def cb(*args, **kwargs):
         raise RuntimeError('OpenGL API call "%s" is not available.' % funcname)
     return cb
 

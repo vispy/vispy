@@ -41,11 +41,11 @@ class ViewBox(Widget):
     
     All extra keyword arguments are passed to :func:`Widget.__init__`.
     """
-    def __init__(self, camera=None, scene=None, bgcolor='black', **kwds):
+    def __init__(self, camera=None, scene=None, bgcolor='black', **kwargs):
         
         self._camera = None
         self._bgcolor = Color(bgcolor).rgba
-        Widget.__init__(self, **kwds)
+        Widget.__init__(self, **kwargs)
 
         # Init preferred method to provided a pixel grid
         self._clip_method = 'viewport'
@@ -84,12 +84,12 @@ class ViewBox(Widget):
         self._camera = cam
         cam.viewbox = self
         
-    def set_camera(self, cam_type, *args, **kwds):
+    def set_camera(self, cam_type, *args, **kwargs):
         """ Create a new Camera and attach it to this ViewBox. 
         
         See :func:`make_camera` for arguments.
         """
-        self.camera = make_camera(cam_type, *args, **kwds)
+        self.camera = make_camera(cam_type, *args, **kwargs)
         return self.camera
 
     @property

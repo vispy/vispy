@@ -326,20 +326,20 @@ class SceneEvent(Event, TransformSystem):
 
 
 class SceneDrawEvent(SceneEvent):
-    def __init__(self, event, canvas, **kwds):
+    def __init__(self, event, canvas, **kwargs):
         self.draw_event = event
         super(SceneDrawEvent, self).__init__(type='draw', canvas=canvas,
-                                             **kwds)
+                                             **kwargs)
 
 
 class SceneMouseEvent(SceneEvent):
     """ Represents a mouse event that occurred on a SceneCanvas. This event is
     delivered to all entities whose mouse interaction area is under the event. 
     """
-    def __init__(self, event, canvas, **kwds):
+    def __init__(self, event, canvas, **kwargs):
         self.mouse_event = event
         super(SceneMouseEvent, self).__init__(type=event.type, canvas=canvas,
-                                              **kwds)
+                                              **kwargs)
 
     @property
     def pos(self):

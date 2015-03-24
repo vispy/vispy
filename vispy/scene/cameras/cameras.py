@@ -13,7 +13,7 @@ from ...visuals.transforms import (STTransform, PerspectiveTransform,
                                    TransformCache)
 
 
-def make_camera(cam_type, *args, **kwds):
+def make_camera(cam_type, *args, **kwargs):
     """ Factory function for creating new cameras. 
     
     Parameters
@@ -34,7 +34,7 @@ def make_camera(cam_type, *args, **kwds):
     }
     
     try: 
-        return cam_types[cam_type](*args, **kwds)
+        return cam_types[cam_type](*args, **kwargs)
     except KeyError:
         raise KeyError('Unknown camera type "%s". Options are: %s' % 
                        (cam_type, cam_types.keys()))
@@ -484,8 +484,8 @@ class TurntableCamera(PerspectiveCamera):
         Name used to identify the camera in the scene.
     """
     def __init__(self, elevation=0., azimuth=0.,
-                 distance=1., center=(0, 0, 0), up='z', **kwds):
-        super(TurntableCamera, self).__init__(**kwds)
+                 distance=1., center=(0, 0, 0), up='z', **kwargs):
+        super(TurntableCamera, self).__init__(**kwargs)
         self.elevation = elevation
         self.azimuth = azimuth
         self.distance = distance

@@ -11,7 +11,7 @@ class Rect(object):
         Can be in the form `Rect(x, y, w, h)`, `Rect(pos, size)`, or
         `Rect(Rect)`.
     """
-    def __init__(self, *args, **kwds):
+    def __init__(self, *args, **kwargs):
         self._pos = (0, 0)
         self._size = (0, 0)
 
@@ -28,8 +28,8 @@ class Rect(object):
             raise TypeError("Rect must be instantiated with 0, 1, 2, or 4 "
                             "non-keyword arguments.")
 
-        self._pos = kwds.get('pos', self._pos)
-        self._size = kwds.get('size', self._size)
+        self._pos = kwargs.get('pos', self._pos)
+        self._size = kwargs.get('size', self._size)
 
         if len(self._pos) != 2 or len(self._size) != 2:
             raise ValueError("Rect pos and size arguments must have 2 "

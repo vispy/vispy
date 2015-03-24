@@ -10,14 +10,14 @@ import numpy as np
 plots = []
 
 
-def plot(*args, **kwds):
+def plot(*args, **kwargs):
     """ Create a new canvas and plot the given data.
 
     For arguments, see scene.visuals.LinePlot.
     """
     canvas = SceneCanvas(keys='interactive')
     canvas.view = canvas.central_widget.add_view()
-    canvas.line = visuals.LinePlot(*args, **kwds)
+    canvas.line = visuals.LinePlot(*args, **kwargs)
     canvas.view.add(canvas.line)
     canvas.view.camera.auto_zoom(canvas.line)
     canvas.show()
@@ -25,14 +25,14 @@ def plot(*args, **kwds):
     return canvas
 
 
-def image(*args, **kwds):
+def image(*args, **kwargs):
     """ Create a new canvas and display the given image data.
 
     For arguments, see scene.visuals.Image.
     """
     canvas = SceneCanvas(keys='interactive')
     canvas.view = canvas.central_widget.add_view()
-    canvas.image = visuals.Image(*args, **kwds)
+    canvas.image = visuals.Image(*args, **kwargs)
     canvas.view.add(canvas.image)
     canvas.show()
     canvas.view.camera.invert_y = False
@@ -106,7 +106,7 @@ def mesh(vertices=None, faces=None, vertex_colors=None, face_colors=None,
     return canvas
 
 
-def scatter(*args, **kwds):
+def scatter(*args, **kwargs):
     ''' Create a new canvas and make a scatter plot.
 
     Parameters
@@ -151,8 +151,8 @@ def scatter(*args, **kwds):
     else:
         raise ValueError('Invalid shape for position data')
     canvas.scatter = visuals.Markers()
-    kwds['pos'] = _pos
-    canvas.scatter.set_data(**kwds)
+    kwargs['pos'] = _pos
+    canvas.scatter.set_data(**kwargs)
     canvas.view.add(canvas.scatter)
     canvas.view.camera.auto_zoom(canvas.scatter)
     canvas.show()

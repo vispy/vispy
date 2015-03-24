@@ -36,7 +36,7 @@ class SurfacePlotVisual(MeshVisual):
     For faster performance, initialize with compute_normals=False and use
     per-vertex colors or a material that does not require normals.
     """
-    def __init__(self, x=None, y=None, z=None, colors=None, **kwds):
+    def __init__(self, x=None, y=None, z=None, colors=None, **kwargs):
         # The x, y, z, and colors arguments are passed to set_data().
         # All other keyword arguments are passed to MeshVisual.__init__().
         self._x = None
@@ -45,7 +45,7 @@ class SurfacePlotVisual(MeshVisual):
         self.__color = None
         self.__vertices = None
         self.__meshdata = MeshData()
-        MeshVisual.__init__(self, **kwds)
+        MeshVisual.__init__(self, **kwargs)
         self.set_data(x, y, z, colors)
 
     def set_data(self, x=None, y=None, z=None, colors=None):

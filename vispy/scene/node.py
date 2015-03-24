@@ -34,8 +34,8 @@ class Node(Visual):
         The name used to identify the node.
     """
 
-    def __init__(self, parent=None, name=None, **kwds):
-        Visual.__init__(self, **kwds)
+    def __init__(self, parent=None, name=None, **kwargs):
+        Visual.__init__(self, **kwargs)
         
         # Add some events to the emitter groups:
         events = ['parents_change', 'children_change', 'transform_change',
@@ -194,11 +194,11 @@ class Node(Visual):
         self._transform.changed.connect(self._transform_changed)
         self._transform_changed(None)
 
-    def set_transform(self, type, *args, **kwds):
+    def set_transform(self, type, *args, **kwargs):
         """ Create a new transform of *type* and assign it to this node.
         All extra arguments are used in the construction of the transform.
         """
-        self.transform = create_transform(type, *args, **kwds)
+        self.transform = create_transform(type, *args, **kwargs)
 
     def _transform_changed(self, event):
         self.events.transform_change()
