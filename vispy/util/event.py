@@ -141,6 +141,10 @@ class Event(object):
         finally:
             _event_repr_depth -= 1
 
+    def __str__(self):
+        """Shorter string representation"""
+        return self.__class__.__name__
+
 _event_repr_depth = 0
 
 

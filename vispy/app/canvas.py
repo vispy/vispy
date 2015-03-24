@@ -424,7 +424,7 @@ class Canvas(object):
 
     # ---------------------------------------------------------------- misc ---
     def __repr__(self):
-        return ('<Vispy canvas (%s backend) at %s>'
+        return ('<Canvas (%s) at %s>'
                 % (self.app.backend_name, hex(id(self))))
 
     def __enter__(self):

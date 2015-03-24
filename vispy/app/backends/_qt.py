@@ -202,7 +202,7 @@ class ApplicationBackend(BaseApplicationBackend):
 
     def _vispy_get_backend_name(self):
         name = QtCore.__name__.split('.')[0]
-        return name + ' (qt)'
+        return name
 
     def _vispy_process_events(self):
         app = self._vispy_get_native_app()

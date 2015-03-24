@@ -317,14 +317,13 @@ def _handle_exception(ignore_callback_errors, print_callback_errors, obj,
         if this_print == 'full':
             logger.log_exception()
             if exp_type == 'callback':
-                logger.warning("Error invoking callback %s for "
-                               "event: %s" % (cb, event))
+                logger.error("Invoking %s for %s" % (cb, event))
             else:  # == 'node':
-                logger.warning("Error drawing node %s" % node)
+                logger.error("Drawing node %s" % node)
         elif this_print is not None:
             if exp_type == 'callback':
-                logger.warning("Error invoking callback %s repeat %s"
-                               % (cb, this_print))
+                logger.error("Invoking %s repeat %s"
+                             % (cb, this_print))
             else:  # == 'node':
-                logger.warning("Error drawing node %s repeat %s"
-                               % (node, this_print))
+                logger.error("Drawing node %s repeat %s"
+                             % (node, this_print))
