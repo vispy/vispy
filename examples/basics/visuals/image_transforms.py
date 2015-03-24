@@ -56,11 +56,12 @@ class Canvas(vispy.app.Canvas):
 
         vispy.app.Canvas.__init__(self, keys='interactive')
         self.size = (800, 800)
-        self.show()
 
         for img in self.images:
             img.tr_sys = TransformSystem(self)
             img.tr_sys.visual_to_document = img.transform
+
+        self.show(True)
 
     def on_draw(self, ev):
         gloo.clear(color='black', depth=True)

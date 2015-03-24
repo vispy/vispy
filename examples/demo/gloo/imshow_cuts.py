@@ -111,7 +111,7 @@ void main()
 
 class Canvas(app.Canvas):
     def __init__(self):
-        app.Canvas.__init__(self, show=True, size=(512, 512),
+        app.Canvas.__init__(self, size=(512, 512),
                             keys='interactive')
 
         self.image = Program(image_vertex, image_fragment, 4)
@@ -136,6 +136,8 @@ class Canvas(app.Canvas):
 
         set_state(clear_color='white', blend=True,
                   blend_func=('src_alpha', 'one_minus_src_alpha'))
+
+        self.show(True)
 
     def on_resize(self, event):
         set_viewport(0, 0, *event.size)
