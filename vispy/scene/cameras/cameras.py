@@ -25,8 +25,10 @@ def sind(q):
 def cosd(q):
     return math.cos(q*math.pi/180)
 
-# todo: maybe aspect ratio should be properties of viewbox?
 # todo: allow panzoom camera to operate in other planes than Z
+
+# todo: what does set_range() do, what does reset() do?
+# todo: zoom factors OK? Zooming with scroll OK?
 
 
 def make_camera(cam_type, *args, **kwds):
@@ -55,33 +57,6 @@ def make_camera(cam_type, *args, **kwds):
                        (cam_type, cam_types.keys()))
 
 
-def get_depth_value():
-    """ Get the depth value to use in orthographic and perspective projection
-    
-    For 24 bits and more, we're fine with 100.000, but for 16 bits we
-    need 3000 or so. The criterion is that at the center, we should be
-    able to distinguish between 0.1, 0.0 and -0.1 etc. 
-    """
-    if True:  # bit+depth >= 24
-        return 100000.0
-    else:
-        return 3000.0
-
-
-def depth_to_z(depth):
-    """ Get the z-coord, given the depth value. 
-    """
-    val = get_depth_value()
-    return val - depth * 2 * val
-
-
-# todo: make this an attribute of BaseCamera (also dept_to_z and get_depth_alue)
-def _zoomfactor(d):
-    """ Define here to force same zoom feeling on cameras.
-    """
-    return 1.0 / math.exp(-0.005*d)
-
-
 class BaseCamera(Node):
     """ Base camera class.
     
@@ -94,8 +69,8 @@ class BaseCamera(Node):
     
     Parameters
     ----------
-    center : tuple of scalars
-        The center position. The exact meaning differs per camera type.
+    interactive : bool
+        Whether the camera processes mouse and keyboard events.
     flip : tuple of bools
         For each dimension, specify whether it is flipped.
     parent : Node
@@ -108,7 +83,9 @@ class BaseCamera(Node):
     # These define the state of the camera
     _state_props = ()
     
-    def __init__(self, interactive=True, center=None, flip=None, **kwargs):
+    ZOOM_FACTOR = 0.005
+    
+    def __init__(self, interactive=True, flip=None, **kwargs):
         super(BaseCamera, self).__init__(**kwargs)
         
         # The viewbox for which this camera is active
@@ -125,24 +102,27 @@ class BaseCamera(Node):
         self._projection = PerspectiveTransform()
         self._transform_cache = TransformCache()
         
-        # To adjust daspect when resizing
-        self._window_size_factor = 0
-        
         # For internal use, to store event related information
         self._event_value = None
         
         # Reset management
-        self._resetting = False  # Avoid lots of updates during a reset
+        self._resetting = False  # Avoid lots of updates during set_range
+        
+        # Variable to hold set_range() args when there is no viewbox yet
+        self._set_range_args = None 
         
         # Limits set in reset (interesting region of the scene)
         self._xlim = None  # None is flag that no reset has been performed
         self._ylim = None
         self._zlim = None
         
+        # We initialize these parameters here, because we want these props
+        # available in all cameras. Note that PanZoom does not use _center
+        self._fov = 0.0
+        self._center = 0.0, 0.0, 0.0
+        
         # View parameters
         self.flip = flip if (flip is not None) else (False, False, False)
-        self._fov = 0.0
-        self._center_loc = 0.0, 0.0, 0.0
         
         # Indirect view parameters (not set during reset)
         self._interactive = bool(interactive)
@@ -150,23 +130,35 @@ class BaseCamera(Node):
         # Keep track of parameters given at initialization, so that we
         # can set then after reset
         self._given_params = {}
+    
+    def _get_depth_value(self):
+        """ Get the depth value to use in orthographic and perspective projection
         
-        # Init things that may be set depening on bounds
-        # if scale_factor is not None:
-        #     self._given_params['scale_factor'] = scale_factor
-        if center is not None:
-            self._given_params['center'] = center
+        For 24 bits and more, we're fine with 100.000, but for 16 bits we
+        need 3000 or so. The criterion is that at the center, we should be
+        able to distinguish between 0.1, 0.0 and -0.1 etc. 
+        """
+        if True:  # bit+depth >= 24
+            return 100000.0
+        else:
+            return 3000.0
+    
+    def _depth_to_z(self, depth):
+        """ Get the z-coord, given the depth value. 
+        """
+        val = self._get_depth_value()
+        return val - depth * 2 * val
     
     def _viewbox_set(self, viewbox):
         """ Friend method of viewbox to register itself.
         """
         self._viewbox = viewbox
         # Connect
-        viewbox.events.mouse_press.connect(self.view_mouse_event)
-        viewbox.events.mouse_release.connect(self.view_mouse_event)
-        viewbox.events.mouse_move.connect(self.view_mouse_event)
-        viewbox.events.mouse_wheel.connect(self.view_mouse_event)
-        viewbox.events.resize.connect(self.view_resize_event)
+        viewbox.events.mouse_press.connect(self.viewbox_mouse_event)
+        viewbox.events.mouse_release.connect(self.viewbox_mouse_event)
+        viewbox.events.mouse_move.connect(self.viewbox_mouse_event)
+        viewbox.events.mouse_wheel.connect(self.viewbox_mouse_event)
+        viewbox.events.resize.connect(self.viewbox_resize_event)
         # todo: also add key events! (and also on viewbox (they're missing)
     
     def _viewbox_unset(self, viewbox):
@@ -174,11 +166,11 @@ class BaseCamera(Node):
         """
         self._viewbox = None
         # Disconnect
-        viewbox.events.mouse_press.disconnect(self.view_mouse_event)
-        viewbox.events.mouse_release.disconnect(self.view_mouse_event)
-        viewbox.events.mouse_move.disconnect(self.view_mouse_event)
-        viewbox.events.mouse_wheel.disconnect(self.view_mouse_event)
-        viewbox.events.resize.disconnect(self.view_resize_event)
+        viewbox.events.mouse_press.disconnect(self.viewbox_mouse_event)
+        viewbox.events.mouse_release.disconnect(self.viewbox_mouse_event)
+        viewbox.events.mouse_move.disconnect(self.viewbox_mouse_event)
+        viewbox.events.mouse_wheel.disconnect(self.viewbox_mouse_event)
+        viewbox.events.resize.disconnect(self.viewbox_resize_event)
     
     @property
     def viewbox(self):
@@ -204,14 +196,14 @@ class BaseCamera(Node):
         The exact meaning of this value differs per type of camera, but
         generally means the point of interest or the rotation point.
         """
-        return self._center_loc or (0, 0, 0)
+        return self._center or (0, 0, 0)
     
     @center.setter
     def center(self, val):
         if len(val) == 2:
-            self._center_loc = float(val[0]), float(val[1]), 0.0
+            self._center = float(val[0]), float(val[1]), 0.0
         elif len(val) == 3:
-            self._center_loc = float(val[0]), float(val[1]), float(val[2])
+            self._center = float(val[0]), float(val[1]), float(val[2])
         else:
             raise ValueError('Center must be a 2 or 3 element tuple')
         self.view_changed()
@@ -256,6 +248,9 @@ class BaseCamera(Node):
         tuples specifying the min and max for each dimension.
         """
         
+        # Flag to indicate that this is an initializing (not user-invoked)
+        init = self._xlim is None
+        
         # Collect given bounds
         bounds = [None, None, None]
         if x is not None:
@@ -266,15 +261,11 @@ class BaseCamera(Node):
             bounds[2] = float(z[0]), float(z[1])
         # If there is no viewbox, store given bounds in lim variables, and stop
         if self._viewbox is None:
-            self._xlim, self._ylim, self._zlim = bounds
+            self._set_range_args = bounds[0], bounds[1], bounds[2], margin
             return
         
         # There is a viewbox, we're going to set the range for real
         self._resetting = True
-        
-        # Set size factor
-        size = self._viewbox.size
-        self._window_size_factor = size[1] / size[0]
         
         # Get bounds from viewbox if not given
         if all([(b is None) for b in bounds]):
@@ -290,7 +281,7 @@ class BaseCamera(Node):
         bounds_margins = [(b[0]-m, b[1]+m) for b, m in zip(bounds, margins)]
         self._xlim, self._ylim, self._zlim = bounds_margins
         # Store center location
-        self._center_loc = [(b[0] + r / 2) for b, r in zip(bounds, ranges)]
+        self._center = [(b[0] + r / 2) for b, r in zip(bounds, ranges)]
        
         # Set params given during initialization.
         # _given_params is a populated in __init__. Calling set_range()
@@ -299,7 +290,7 @@ class BaseCamera(Node):
         for name, value in self._given_params.items():
             setattr(self, name, value)
         # Let specific camera handle it
-        self._set_range()
+        self._set_range(init)
         # Overwrite given params. Some may have been overridde in _set_range()
         for name, value in self._given_params.items():
             setattr(self, name, value)
@@ -308,8 +299,13 @@ class BaseCamera(Node):
         self._resetting = False
         self.view_changed()
     
-    def _set_range(self):
+    def _set_range(self, init):
         pass 
+    
+    def reset(self):
+        # todo: should set_range reset azimuth etc.?
+        self.set_range()
+        self._reset()
     
     def get_state(self):
         """ Get the current view state of the camera
@@ -357,12 +353,13 @@ class BaseCamera(Node):
         when its associated with a viewbox.
         """
         if self._resetting:
-            return
-        # Reset if necessary (and if we can)
-        if (not self._window_size_factor) and (self._viewbox is not None):
-            self.set_range(self._xlim, self._ylim, self._zlim)
-        # Update if there is a viewbox
+            return  # don't update anything while resetting (are in set_range)
         if self._viewbox:
+            # Reset if necessary 
+            if self._xlim is None:
+                args = self._set_range_args or ()
+                self.set_range(*args)
+            # Do the actual update
             self._update_transform()
     
     @property
@@ -377,10 +374,10 @@ class BaseCamera(Node):
         self._pre_transform = tr
         self.view_changed()
     
-    def view_mouse_event(self, event):
+    def viewbox_mouse_event(self, event):
         pass
     
-    def view_resize_event(self, event):
+    def viewbox_resize_event(self, event):
         """
         The ViewBox was resized; update the transform accordingly.
         """
@@ -431,6 +428,9 @@ class PanZoomCamera(BaseCamera):
     
     Parameters
     ----------
+    rect : Rect
+        A Rect object or 4-element tuple that specifies the rectangular
+        area to show.
     scale_ratio : float
         The aspect ratio (i.e. scaling) between x and y dimension.
     See BaseCamera.
@@ -444,12 +444,18 @@ class PanZoomCamera(BaseCamera):
     
     _state_props = ('scale_ratio', 'rect')
     
-    def __init__(self, scale_ratio=None, **kwargs):
+    def __init__(self, rect=None, scale_ratio=None, **kwargs):
         super(PanZoomCamera, self).__init__(**kwargs)
-
-        self._rect = Rect((0, 0), (1, 1))
+        
         self.transform = STTransform()
-        self.scale_ratio = scale_ratio
+        
+        self._scale_ratio = None
+        self._rect = None
+        
+        if rect is not None:
+            self.rect = rect
+        if scale_ratio is not None:
+            self.scale_ratio = scale_ratio
     
     @property
     def scale_ratio(self):
@@ -548,7 +554,7 @@ class PanZoomCamera(BaseCamera):
     @property
     def center(self):
         rect = self._rect
-        return 0.5 * (rect.left + rect.right), 0.5 * (rect.top + rect.bottom), 0
+        return 0.5 * (rect.left+rect.right), 0.5 * (rect.top+rect.bottom), 0
     
     @center.setter
     def center(self, center):
@@ -561,55 +567,26 @@ class PanZoomCamera(BaseCamera):
         # Apply new ranges
         rect.left = center[0] - x2
         rect.right = center[0] + x2
-        rect.bottom = center[1] - x2
-        rect.top = center[1] + x2
+        rect.bottom = center[1] - y2
+        rect.top = center[1] + y2
         #
         self.rect = rect
     
-    def _set_range(self):
+    def _set_range(self, init):
+        if init and self._rect is not None:
+            return
         # Convert limits to rect
         w = abs(self._xlim[1] - self._xlim[0])
         h = abs(self._ylim[1] - self._ylim[0])
         self.rect = self._xlim[0], self._ylim[0], w, h
     
-    def view_resize_event(self, event):
+    def viewbox_resize_event(self, event):
         """ Modify the data aspect and scale factor, to adjust to
         the new window size.
         """
-        # # Get new size factor
-        # w, h = self._viewbox.size
-        # 
-        # size_factor1 = h / w
-        # # Get old size factor
-        # size_factor2 = self._window_size_factor
-        # # Update
-        # self._window_size_factor = size_factor1
-        # 
-        # # Make it quick if daspect is not in auto-mode
-        # if self._fixed_ratio:
-        #     self.view_changed()
-        #     return
-        # 
-        # # Get daspect factor
-        # daspect_factor = size_factor1
-        # if size_factor2:
-        #     daspect_factor /= size_factor2
-        # 
-        # # Get zoom factor
-        # zoomFactor = 1.0
-        # if size_factor1 < 1:
-        #     zoomFactor /= size_factor1
-        # if size_factor2 and size_factor2 < 1:
-        #     zoomFactor *= size_factor2
-        # 
-        # # Change daspect and zoom
-        # ar = self._scale_ratio_n
-        # self.scale_ratio = ar[0], ar[1] * daspect_factor
-        # self._scale_factor /= zoomFactor
-        # 
         self.view_changed()
     
-    def view_mouse_event(self, event):
+    def viewbox_mouse_event(self, event):
         """
         The SubScene received a mouse event; update transform 
         accordingly.
@@ -618,13 +595,12 @@ class PanZoomCamera(BaseCamera):
             return
         
         # Scrolling
-        BaseCamera.view_mouse_event(self, event)
-        # todo: scrolling should zoom
+        BaseCamera.viewbox_mouse_event(self, event)
         
         if event.type == 'mouse_wheel':
             p = event.mouse_event.pos
             ps = self._scene_transform.imap(p)
-            self.zoom(event.delta[1] * 0.5, ps)
+            self.zoom(event.delta[1] * self.ZOOM_FACTOR*30, ps)
         
         elif event.type == 'mouse_move':
             if event.press_event is None:
@@ -633,7 +609,6 @@ class PanZoomCamera(BaseCamera):
             modifiers = event.mouse_event.modifiers
             p1 = event.mouse_event.press_event.pos
             p2 = event.mouse_event.pos
-            d = p2 - p1
             
             if 1 in event.buttons and not modifiers:
                 # Translate
@@ -647,10 +622,10 @@ class PanZoomCamera(BaseCamera):
                 # Zoom
                 p1c = np.array(event.last_event.pos)[:2]
                 p2c = np.array(event.pos)[:2]
-                scale = (p1c-p2c) * np.array([1, -1]) * 0.01
+                scale = (p1c-p2c) * np.array([1, -1]) * -self.ZOOM_FACTOR
                 center = self._scene_transform.imap(event.press_event.pos[:2])
                 
-                self.zoom(tuple(-scale), center) 
+                self.zoom(tuple(scale), center) 
     
     def _update_transform(self):
         
@@ -682,7 +657,7 @@ class PanZoomCamera(BaseCamera):
         # Apply mapping between viewbox and cam view
         self.transform.set_mapping(self._real_rect, vbr)
         # Scale z, so that the clipping planes are between -alot and +alot
-        self.transform.zoom((1, 1, 1/get_depth_value()))
+        self.transform.zoom((1, 1, 1/self._get_depth_value()))
         # Set on viewbox
         self._set_scene_transform(self.transform)
 
@@ -704,7 +679,7 @@ class PerspectiveCamera(BaseCamera):
     
     _state_props = ('scale_factor', 'center', 'fov')
     
-    def __init__(self, fov=60.0, scale_factor=None, **kwargs):
+    def __init__(self, fov=60.0, scale_factor=None, center=None, **kwargs):
         super(PerspectiveCamera, self).__init__(**kwargs)
         # Camera transform
         self.transform = AffineTransform()
@@ -713,8 +688,9 @@ class PerspectiveCamera(BaseCamera):
         self._fov = None
         self._given_params['fov'] = fov
         self._scale_factor = None
+        # todo: center
     
-    def view_mouse_event(self, event):
+    def viewbox_mouse_event(self, event):
         """ The ViewBox received a mouse event; update transform 
         accordingly.
         Default implementation adjusts scale factor when scolling.
@@ -744,10 +720,10 @@ class PerspectiveCamera(BaseCamera):
         """
         return self._near_clip_distance
     
-    def _set_range(self):
+    def _set_range(self, init):
         pass
     
-    def view_resize_event(self, event):
+    def viewbox_resize_event(self, event):
         self.view_changed()
     
     def _update_transform(self, event=None):
@@ -781,7 +757,7 @@ class PerspectiveCamera(BaseCamera):
         self._set_scene_transform(full_tr)
 
     def _update_projection_transform(self, fx, fy):
-        d = get_depth_value()
+        d = self._get_depth_value()
         if self._fov == 0:
             self._projection.set_ortho(-0.5*fx, 0.5*fx, -0.5*fy, 0.5*fy, 0, d)
         else:
@@ -842,6 +818,12 @@ class TurntableCamera(PerspectiveCamera):
         self._given_params['azimuth'] = azimuth
         self._given_params['distance'] = distance
     
+    def _reset(self):
+        # todo: ...
+        self.elevation = 30
+        self.azimuth = 30
+        self.up = 'z'
+    
     @property
     def elevation(self):
         """ The angle of the camera in degrees above the horizontal (x, z) 
@@ -901,7 +883,7 @@ class TurntableCamera(PerspectiveCamera):
         self.elevation = np.clip(self.elevation + elev, -90, 90)
         self.view_changed()
     
-    def _set_range(self):
+    def _set_range(self, init):
         """ Reset the camera view using the known limits.
         """
         
@@ -933,41 +915,7 @@ class TurntableCamera(PerspectiveCamera):
         self._scale_factor = max(rxs, rys) * 1.04  # 4% extra space
         self.view_changed()
     
-    def view_resize_event(self, event):
-        """ Modify the data aspect and scale factor, to adjust to
-        the new window size.
-        """
-        # Get new size factor
-        w, h = self._viewbox.size
-        size_factor1 = h / w
-        # Get old size factor
-        size_factor2 = self._window_size_factor
-        # Update
-        self._window_size_factor = size_factor1
-        
-        # Make it quick if daspect is not in auto-mode
-        self.view_changed()
-        # 
-        # # Get daspect factor
-        # daspect_factor = size_factor1
-        # if size_factor2:
-        #     daspect_factor /= size_factor2
-        # 
-        # # Get zoom factor
-        # zoomFactor = 1.0
-        # if size_factor1 < 1:
-        #     zoomFactor /= size_factor1
-        # if size_factor2 and size_factor2 < 1:
-        #     zoomFactor *= size_factor2
-        # 
-        # # Change daspect and zoom
-        # ar = self._scale_ratio_n
-        # self.scale_ratio = ar[0], ar[1], ar[2] * daspect_factor
-        # self._scale_factor /= zoomFactor
-        # 
-        # self.view_changed()
-    
-    def view_mouse_event(self, event):
+    def viewbox_mouse_event(self, event):
         """
         The viewbox received a mouse event; update transform 
         accordingly.
@@ -976,7 +924,7 @@ class TurntableCamera(PerspectiveCamera):
             return
         
         # Scrolling
-        BaseCamera.view_mouse_event(self, event)
+        BaseCamera.viewbox_mouse_event(self, event)
         
         if event.type == 'mouse_release':
             self._event_value = None  # Reset
@@ -1001,7 +949,7 @@ class TurntableCamera(PerspectiveCamera):
                 # Zoom
                 if self._event_value is None:
                     self._event_value = (self._scale_factor, self._distance)
-                zoomx, zoomy = _zoomfactor(-d[0]), _zoomfactor(d[1])
+                zoomy = 2 ** float(d[1] * self.ZOOM_FACTOR)
                 self.scale_factor = self._event_value[0] * zoomy
                 # Modify distance if its given
                 if self._distance is not None:
@@ -1064,7 +1012,7 @@ class TurntableCamera(PerspectiveCamera):
             tr.translate(np.array(self.center))
     
     def _update_projection_transform(self, fx, fy):
-        d = get_depth_value()
+        d = self._get_depth_value()
         if self._fov == 0:
             self._projection.set_ortho(-0.5*fx, 0.5*fx, -0.5*fy, 0.5*fy, -d, d)
             self._actual_distance = self._distance or 0.0
@@ -1200,7 +1148,7 @@ class FlyCamera(PerspectiveCamera):
         rotation = self._rotation2 * self._rotation1
         return rotation.normalize()
     
-    def _set_range(self):
+    def _set_range(self, init):
         """ Reset the view.
         """
         
@@ -1235,7 +1183,7 @@ class FlyCamera(PerspectiveCamera):
         
         # Set initial position to a corner of the scene
         margin = np.mean([rx, ry, rz]) * 0.1
-        self._center_loc = x1 - margin, y1 - margin, z1 + margin
+        self._center = x1 - margin, y1 - margin, z1 + margin
         
         # Determine initial view direction based on flip axis
         yaw = 45 * self._flip_factors[0]
@@ -1319,11 +1267,11 @@ class FlyCamera(PerspectiveCamera):
             direction = vf, vr, vu
             
             # Set position
-            center_loc = np.array(self._center_loc, dtype='float32')
+            center_loc = np.array(self._center, dtype='float32')
             center_loc += (self._speed[0] * direction[0] + 
                            self._speed[1] * direction[1] +
                            self._speed[2] * direction[2])
-            self._center_loc = tuple(center_loc)
+            self._center = tuple(center_loc)
         
         # --- Determine new orientation from rotation speed
         
@@ -1368,7 +1316,7 @@ class FlyCamera(PerspectiveCamera):
             self._update_from_mouse = False
             self.view_changed()
     
-    def view_key_event(self, event):
+    def viewbox_key_event(self, event):
         
         if event.handled or not self.interactive:
             return
@@ -1396,14 +1344,14 @@ class FlyCamera(PerspectiveCamera):
                 factor = 1.0
                 vec[dim-1] = val * factor
     
-    def view_mouse_event(self, event):
+    def viewbox_mouse_event(self, event):
         
         # A bit awkward way to connect to our canvas; we need event
         # object to get a reference to the canvas
         if not self._key_events_bound:
             self._key_events_bound = True
-            event.canvas.events.key_press.connect(self.view_key_event)
-            event.canvas.events.key_release.connect(self.view_key_event)
+            event.canvas.events.key_press.connect(self.viewbox_key_event)
+            event.canvas.events.key_release.connect(self.viewbox_key_event)
         
         if event.handled or not self.interactive:
             return
@@ -1489,7 +1437,7 @@ class FlyCamera(PerspectiveCamera):
         #
         tr.rotate(-angle, axis_angle[1:])
         tr.scale([1.0/a for a in self._flip_factors])
-        tr.translate(self._center_loc)
+        tr.translate(self._center)
 
 
 #class ArcballCamera(PerspectiveCamera):

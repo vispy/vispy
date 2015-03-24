@@ -69,7 +69,7 @@ class MagnifyCamera(PanZoomCamera):
         PanZoomCamera._viewbox_unset(self, viewbox)
         self.timer.stop()
     
-    def view_mouse_event(self, event):
+    def viewbox_mouse_event(self, event):
         # When the attached ViewBox reseives a mouse event, it is sent to the
         # camera here.
         
@@ -83,7 +83,7 @@ class MagnifyCamera(PanZoomCamera):
             self.mag_target = m
         else:
             # send everything _except_ wheel events to the superclass
-            super(MagnifyCamera, self).view_mouse_event(event)
+            super(MagnifyCamera, self).viewbox_mouse_event(event)
             
         # start the timer to smoothly modify the transform properties. 
         if not self.timer.running:
@@ -111,8 +111,8 @@ class MagnifyCamera(PanZoomCamera):
             
         self._update_transform()
 
-    def view_resize_event(self, event):
-        PanZoomCamera.view_resize_event(self, event)
+    def viewbox_resize_event(self, event):
+        PanZoomCamera.viewbox_resize_event(self, event)
         self.view_changed()
 
     def view_changed(self):
