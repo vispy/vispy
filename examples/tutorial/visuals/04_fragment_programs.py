@@ -13,14 +13,21 @@ coordinates" output of the vertex shader. In this tutorial, we will use inverse
 transformation functions in the fragment shader to map backward from the 
 current fragment location to the visual's local coordinate system. 
 """
-
+import numpy as np
 from vispy import app, gloo, visuals, scene
 
 
 vertex_shader = """
+void main() {
+   gl_Position = vec4($position, 0, 1);
+}
 """
 
 fragment_shader = """
+void main() {
+  vec4 pos = $fb_to_visual(gl_FragCoord);
+  gl_FragColor = vec4(sin(pos.x), sin(pos.y), 0, 1);
+}
 """
 
 
@@ -28,14 +35,23 @@ class MyRectVisual(visuals.Visual):
     """
     """
     
-    def __init__(self, x, y, w, h):
+    def __init__(self):
         visuals.Visual.__init__(self)
-        
+        w, h = 1, 1
+        self.vbo = gloo.VertexBuffer(np.array([
+            [-1, -1], [1, -1], [1, 1],
+            [-1, -1], [1, 1], [-1, 1]
+        ], dtype=np.float32))
         self.program = visuals.shaders.ModularProgram(vertex_shader, 
                                                       fragment_shader)
+        self.program.vert['position'] = self.vbo
         
     def draw(self, transforms):
         gloo.set_state(cull_face='front_and_back')
+        
+        tr = (transforms.visual_to_document * 
+              transforms.document_to_framebuffer).inverse
+        self.program.frag['fb_to_visual'] = tr
                 
         # Finally, draw the triangles.
         self.program.draw('triangle_fan')
@@ -52,6 +68,9 @@ if __name__ == '__main__':
     # This time we add a ViewBox to let the user zoom/pan
     view = canvas.central_widget.add_view()
     view.camera.rect = (0, 0, 800, 800)
+
+    vis = MyRect()
+    view.add(vis)
 
     # ..and optionally start the event loop
     import sys

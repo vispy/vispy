@@ -221,6 +221,8 @@ class DataBuffer(Buffer):
     def glsl_type(self):
         """ GLSL declaration strings required for a variable to hold this data.
         """
+        if self.dtype is None:
+            return None
         dtshape = self.dtype[0].shape
         n = dtshape[0] if dtshape else 1
         if n > 1:
