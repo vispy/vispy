@@ -321,14 +321,10 @@ class EventEmitter(object):
                 if isinstance(callback, tuple):
                     ref = callback[1]
                 else:
-                    if isinstance(callback, weakref.ref):
-                        namer = callback()
-                    else:
-                        namer = callback
                     if hasattr(callback, '__name__'):  # function
-                        ref = namer.__name__
+                        ref = callback.__name__
                     else:  # Method, or other
-                        ref = namer.__class__.__name__
+                        ref = callback.__class__.__name__
             else:
                 ref = None
         elif not isinstance(ref, string_types):
@@ -424,15 +420,12 @@ class EventEmitter(object):
                 return event
 
             for cb in self._callbacks:
-                if isinstance(cb, weakref.ref):
-                    cb = cb()
-                    if cb is None:
-                        continue
                 if blocked.get(cb, 0) > 0:
                     continue
                 
                 if isinstance(cb, tuple):
-                    cb = getattr(cb[0], cb[1], None)
+                    cb0 = cb[0]() if isinstance(cb[0], weakref.ref) else cb[0]
+                    cb = getattr(cb0, cb[1], None)
                     if cb is None:
                         continue
                 

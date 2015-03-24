@@ -27,14 +27,14 @@ class ModularProgram(Program):
         
         self.vert = MainFunction(vcode)
         self.frag = MainFunction(fcode)
-        self.vert.changed.connect(weakref.ref(self._source_changed))
-        self.frag.changed.connect(weakref.ref(self._source_changed))
+        self.vert.changed.connect((weakref.ref(self), '_source_changed'))
+        self.frag.changed.connect((weakref.ref(self), '_source_changed'))
         
         # Cache state of Variables so we know which ones require update
         self._variable_state = {}
         
         self._need_build = True
-
+        
     def prepare(self):
         """ Prepare the Program so we can set attributes and uniforms.
         """
