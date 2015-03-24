@@ -383,7 +383,7 @@ class BaseCollection(object):
         if self._indices_list is not None:
             I = self._indices_buffer
         if self._uniforms_list is not None:
-            U = self._uniforms_texture.ravel().view(self.utype)
+            U = self._uniforms_texture.data.ravel().view(self.utype)
 
         # Getting a whole field
         if isinstance(key, str):
@@ -422,13 +422,13 @@ class BaseCollection(object):
     def __setitem__(self, key, data):
         """ x.__setitem__(i, y) <==> x[i]=y """
 
-        if len(self._programs):
-            found = False
-            for program in self._programs:
-                if key in program.hooks:
-                    program[key] = data
-                    found = True
-            if found: return
+        #if len(self._programs):
+        # found = False
+        # for program in self._programs:
+        #     if key in program.hooks:
+        #         program[key] = data
+        #         found = True
+        # if found: return
 
 
         # WARNING
@@ -443,7 +443,7 @@ class BaseCollection(object):
         if self._indices_list is not None:
             I = self._indices_buffer
         if self._uniforms_list is not None:
-            U = self._uniforms_texture.ravel().view(self.utype)
+            U = self._uniforms_texture.data.ravel().view(self.utype)
 
         # Setting a whole field
         if isinstance(key, str):
@@ -489,27 +489,28 @@ class BaseCollection(object):
         """ Update vertex buffers & texture """
 
         if self._vertices_buffer is not None:
-            self._vertices_buffer._delete()
+            self._vertices_buffer.delete()
         self._vertices_buffer = VertexBuffer(self._vertices_list.data)
 
         if self.itype is not None:
             if self._indices_buffer is not None:
-                self._indices_buffer._delete()
+                self._indices_buffer.delete()
             self._indices_buffer = IndexBuffer(self._indices_list.data)
 
         if self.utype is not None:
             if self._uniforms_texture is not None:
-                self._uniforms_texture._delete()
+                self._uniforms_texture.delete()
 
             # We take the whole array (_data), not the data one
-            texture = Texture2D(_uniforms_list._data)
-            size = texture.shape[0]/self._uniforms_float_count
+            texture = self._uniforms_list._data.view(np.float32)
+            size = len(texture)/self._uniforms_float_count
             shape = self._compute_texture_shape(size)
 
             # shape[2] = float count is only used in vertex shader code
             texture = texture.reshape(shape[0],shape[1],4)
-            self._uniforms_texture = texture.view(Texture2D)
-            self._uniforms_texture.interpolation = nearest
+            self._uniforms_texture = Texture2D(texture)
+            self._uniforms_texture.data = texture
+            self._uniforms_texture.interpolation = 'nearest'
 
         if len(self._programs):
             for program in self._programs:

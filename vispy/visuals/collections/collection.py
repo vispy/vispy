@@ -171,26 +171,24 @@ class Collection(BaseCollection):
     def __getitem__(self, key):
 
         program = self._programs[0]
-        if key in program.hooks:
-            return program[key]
-
-        for (name,gtype) in program.all_uniforms:
-            if name == key:
-                return program[key]
-
+#        if key in program.hooks:
+#            return program[key]
+#        for (name,gtype) in program.all_uniforms:
+#            if name == key:
+#                return program[key]
         return BaseCollection.__getitem__(self, key)
 
 
     def __setitem__(self, key, value):
 
         found = False
-        for program in self._programs:
-            for (name,gtype) in program.all_uniforms:
-                if name == key:
-                    found = True
-                    program[key] = value
-        if not found:
-            BaseCollection.__setitem__(self, key, value)
+        # for program in self._programs:
+        #     for (name,gtype) in program.all_uniforms:
+        #         if name == key:
+        #             found = True
+        #             program[key] = value
+        # if not found:
+        BaseCollection.__setitem__(self, key, value)
 
 
     def draw(self, mode = None):
@@ -217,11 +215,10 @@ class CollectionView(object):
         fragment = collection._fragment
         program = gloo.Program(vertex, fragment)
 
-        if "transform" in program.hooks and transform is not None:
-            program["transform"] = transform
-
-        if "viewport" in program.hooks and viewport is not None:
-            program["viewport"] = viewport
+#        if "transform" in program.hooks and transform is not None:
+#            program["transform"] = transform
+#        if "viewport" in program.hooks and viewport is not None:
+#            program["viewport"] = viewport
 
         program.bind(collection._vertices_buffer)
         for name in collection._uniforms.keys():
