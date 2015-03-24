@@ -50,9 +50,9 @@ for par in scenes:
 
 # Assign cameras
 vb1.camera = scene.BaseCamera()
-vb2.camera = scene.PanZoomCamera(fixed_ratio=True)
-vb3.camera = scene.TurntableCamera(fixed_ratio=True)
-vb4.camera = scene.FlyCamera(fixed_ratio=True)
+vb2.camera = scene.PanZoomCamera()
+vb3.camera = scene.TurntableCamera()
+vb4.camera = scene.FlyCamera()
 
 
 # If True, show a cuboid at each camera

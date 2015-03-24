@@ -45,7 +45,7 @@ axis = scene.visuals.XYZAxis(parent=view.scene)
 # Use a 3D camera
 # Manual bounds; Mesh visual does not provide bounds yet
 # Note how you can set bounds before assigning the camera to the viewbox
-cam = scene.TurntableCamera(elevation=30, azimuth=30, fixed_ratio=True)
+cam = scene.TurntableCamera(elevation=30, azimuth=30)
 cam.set_range((-10, 10), (-10, 10), (-10, 10))
 view.camera = cam
 

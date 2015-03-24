@@ -41,9 +41,8 @@ image2 = scene.visuals.Image(im2, parent=vb2.scene)
 
 # Set 2D camera (PanZoomCamera, TurnTableCamera)
 vb1.camera, vb2.camera = scene.PanZoomCamera(), scene.PanZoomCamera()
+vb1.camera.scale_ratio = vb2.camera.scale_ratio = 1  # no auto-scale
 vb1.camera.link(vb2.camera)
-
-#vb2.camera = vb1.camera = scene.PanZoomCamera()
 
 # Set the view bounds to show the entire image with some padding
 #view.camera.rect = (-10, -10, image.size[0]+20, image.size[1]+20)

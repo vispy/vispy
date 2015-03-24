@@ -75,6 +75,7 @@ def depth_to_z(depth):
     return val - depth * 2 * val
 
 
+# todo: make this an attribute of BaseCamera (also dept_to_z and get_depth_alue)
 def _zoomfactor(d):
     """ Define here to force same zoom feeling on cameras.
     """
@@ -105,8 +106,7 @@ class BaseCamera(Node):
     """
     
     # These define the state of the camera
-    _state_props = ('scale_factor', 'scale_ratio', 'fixed_ratio', 
-                    'center', 'fov')
+    _state_props = ()
     
     def __init__(self, interactive=True, center=None, flip=None, **kwargs):
         super(BaseCamera, self).__init__(**kwargs)
@@ -139,9 +139,8 @@ class BaseCamera(Node):
         self._ylim = None
         self._zlim = None
         
-        # todo: apply flip, but prevent view_changed()
-        self.flip = flip if (flip is not None) else (False, False, False)
         # View parameters
+        self.flip = flip if (flip is not None) else (False, False, False)
         self._fov = 0.0
         self._center_loc = 0.0, 0.0, 0.0
         
@@ -182,6 +181,12 @@ class BaseCamera(Node):
         viewbox.events.resize.disconnect(self.view_resize_event)
     
     @property
+    def viewbox(self):
+        """ The viewbox that this camera applies to.
+        """
+        return self._viewbox
+    
+    @property
     def interactive(self):
         """ Boolean describing whether the camera should enable or disable
         user interaction.
@@ -209,7 +214,6 @@ class BaseCamera(Node):
             self._center_loc = float(val[0]), float(val[1]), float(val[2])
         else:
             raise ValueError('Center must be a 2 or 3 element tuple')
-        self._flip_factors = tuple([x*2-1 for x in self._flip])
         self.view_changed()
     
     @property
@@ -222,10 +226,11 @@ class BaseCamera(Node):
             raise ValueError('Flip must be a tuple or list.')
         if len(value) == 2:
             self._flip = bool(value[0]), bool(value[1]), False
-        elif len(value) == 2:
+        elif len(value) == 3:
             self._flip = bool(value[0]), bool(value[1]), bool(value[2])
         else:
             raise ValueError('Flip must have 2 or 3 elements.')
+        self._flip_factors = tuple([(1-x*2) for x in self._flip])
         self.view_changed()
     
     @property
@@ -372,6 +377,9 @@ class BaseCamera(Node):
         self._pre_transform = tr
         self.view_changed()
     
+    def view_mouse_event(self, event):
+        pass
+    
     def view_resize_event(self, event):
         """
         The ViewBox was resized; update the transform accordingly.
@@ -433,11 +441,32 @@ class PanZoomCamera(BaseCamera):
     * RMB or scroll: zooms the view
     
     """
-    def __init__(self, **kwargs):
+    
+    _state_props = ('scale_ratio', 'rect')
+    
+    def __init__(self, scale_ratio=None, **kwargs):
         super(PanZoomCamera, self).__init__(**kwargs)
-        # todo: Y axis is flipped by default?
-        #self._scale_ratio = self._scale_ratio_n = 1.0, -1.0, 0.0
+
+        self._rect = Rect((0, 0), (1, 1))
         self.transform = STTransform()
+        self.scale_ratio = scale_ratio
+    
+    @property
+    def scale_ratio(self):
+        """ The ratio between the x and y dimension. If None, the
+        dimensions are scaled automatically, dependening on the
+        available space. Otherwise the ration between the dimensions
+        is fixed.
+        """
+        return self._scale_ratio
+    
+    @scale_ratio.setter
+    def scale_ratio(self, value):
+        if value is None:
+            self._scale_ratio = None
+        else:
+            self._scale_ratio = float(value)
+        self.view_changed()
     
     def zoom(self, factor, center=None):
         """ Zoom in (or out) at the given center
@@ -453,11 +482,31 @@ class PanZoomCamera(BaseCamera):
             The center of the view. If not given or None, use the
             current center.
         """
-        self.scale_factor *= 2 ** float(-factor)
-        if center is not None:
-            self.center = center
+        # Get scale factor, take scale ratio into account
+        if not isinstance(factor, (tuple, list)):
+            factor = factor, factor
+        if self.scale_ratio is None:
+            factor = float(factor[0]), float(factor[1])
+        else:
+            factor = factor[1], factor[1]
+        # Init some variables
+        scale = 2 ** float(-factor[0]), 2 ** float(-factor[1])
+        center = center if (center is not None) else self.center
+        rect = self.rect
+        # Get space from given center to edges
+        left_space = abs(center[0] - rect.left)
+        right_space = abs(center[0] - rect.right)
+        bottom_space = abs(center[1] - rect.bottom)
+        top_space = abs(center[1] - rect.top)
+        # Scale these spaces
+        rect.left = center[0] - left_space * scale[0]
+        rect.right = center[0] + right_space * scale[0]
+        rect.bottom = center[1] - bottom_space * scale[1]
+        rect.top = center[1] + top_space * scale[1]
+        #
+        self.rect = rect
     
-    def pan(self, pan):
+    def pan(self, *pan):
         """ Pan the view.
         
         Parameters
@@ -466,6 +515,8 @@ class PanZoomCamera(BaseCamera):
             The distance to pan the view, in the coordinate system of the 
             scene.
         """
+        if len(pan) == 1:
+            pan = pan[0]
         self.rect = self.rect + pan
     
     @property
@@ -476,12 +527,7 @@ class PanZoomCamera(BaseCamera):
         By definition, the +y axis of this rect is opposite the +y axis of the
         ViewBox. 
         """
-        sf = self._scale_factor
-        naspect = self._scale_ratio_n
-        c = self.center
-        r = Rect(c[0] - naspect[0] * 0.5 * sf, c[1] - naspect[1] * 0.5 * sf,
-                 naspect[0] * sf, naspect[1] * sf)
-        return r
+        return self._rect
         
     @rect.setter
     def rect(self, args):
@@ -492,73 +538,75 @@ class PanZoomCamera(BaseCamera):
         ViewBox. 
         """
         if isinstance(args, tuple):
-            rect = Rect(*args)
+            self._rect = Rect(*args)
         else:
-            rect = Rect(args)
-        self._rect = rect
-        self.set_range((rect.left, rect.right), (rect.bottom, rect.top), 
-                       (-1, 1), margin=0)
+            self._rect = Rect(args)
+        # self.set_range((rect.left, rect.right), (rect.bottom, rect.top), 
+        #                (-1, 1), margin=0)
+        self.view_changed()
+    
+    @property
+    def center(self):
+        rect = self._rect
+        return 0.5 * (rect.left + rect.right), 0.5 * (rect.top + rect.bottom), 0
+    
+    @center.setter
+    def center(self, center):
+        if not (isinstance(center, (tuple, list)) and len(center) in (2, 3)):
+            raise ValueError('center must be a 2 or 3 element tuple')
+        rect = self.rect
+        # Get half-ranges
+        x2 = 0.5 * abs(rect.right - rect.left)
+        y2 = 0.5 * abs(rect.top - rect.bottom)
+        # Apply new ranges
+        rect.left = center[0] - x2
+        rect.right = center[0] + x2
+        rect.bottom = center[1] - x2
+        rect.top = center[1] + x2
+        #
+        self.rect = rect
     
     def _set_range(self):
-        
-        rx = self._xlim[1] - self._xlim[0]
-        ry = self._ylim[1] - self._ylim[0]
-        
-        # Get window size (and store factor now to sync with resizing)
-        w, h = self._viewbox.size
-        w, h = float(w), float(h)
-        
-        # Correct ranges for window size.
-        if w / h > 1:
-            rx /= w/h
-        else:
-            ry /= h/w
-    
-        # Set scale factor (and maybe aspect ratio)
-        if not self._fixed_ratio:
-            ars = np.sign(self._scale_ratio)
-            self.scale_ratio = ars[0], ars[1] * rx / ry, ars[2]
-            self._scale_factor = rx
-        else:
-            self._scale_factor = max(rx, ry * abs(self._scale_ratio_n[1]))
-        
-        self.view_changed()
+        # Convert limits to rect
+        w = abs(self._xlim[1] - self._xlim[0])
+        h = abs(self._ylim[1] - self._ylim[0])
+        self.rect = self._xlim[0], self._ylim[0], w, h
     
     def view_resize_event(self, event):
         """ Modify the data aspect and scale factor, to adjust to
         the new window size.
         """
-        # Get new size factor
-        w, h = self._viewbox.size
-        
-        size_factor1 = h / w
-        # Get old size factor
-        size_factor2 = self._window_size_factor
-        # Update
-        self._window_size_factor = size_factor1
-        
-        # Make it quick if daspect is not in auto-mode
-        if self._fixed_ratio:
-            self.view_changed()
-            return
-        
-        # Get daspect factor
-        daspect_factor = size_factor1
-        if size_factor2:
-            daspect_factor /= size_factor2
-        
-        # Get zoom factor
-        zoomFactor = 1.0
-        if size_factor1 < 1:
-            zoomFactor /= size_factor1
-        if size_factor2 and size_factor2 < 1:
-            zoomFactor *= size_factor2
-        
-        # Change daspect and zoom
-        ar = self._scale_ratio_n
-        self.scale_ratio = ar[0], ar[1] * daspect_factor
-        self._scale_factor /= zoomFactor
-        
+        # # Get new size factor
+        # w, h = self._viewbox.size
+        # 
+        # size_factor1 = h / w
+        # # Get old size factor
+        # size_factor2 = self._window_size_factor
+        # # Update
+        # self._window_size_factor = size_factor1
+        # 
+        # # Make it quick if daspect is not in auto-mode
+        # if self._fixed_ratio:
+        #     self.view_changed()
+        #     return
+        # 
+        # # Get daspect factor
+        # daspect_factor = size_factor1
+        # if size_factor2:
+        #     daspect_factor /= size_factor2
+        # 
+        # # Get zoom factor
+        # zoomFactor = 1.0
+        # if size_factor1 < 1:
+        #     zoomFactor /= size_factor1
+        # if size_factor2 and size_factor2 < 1:
+        #     zoomFactor *= size_factor2
+        # 
+        # # Change daspect and zoom
+        # ar = self._scale_ratio_n
+        # self.scale_ratio = ar[0], ar[1] * daspect_factor
+        # self._scale_factor /= zoomFactor
+        # 
         self.view_changed()
     
     def view_mouse_event(self, event):
@@ -571,9 +619,12 @@ class PanZoomCamera(BaseCamera):
         
         # Scrolling
         BaseCamera.view_mouse_event(self, event)
+        # todo: scrolling should zoom
         
-        if event.type == 'mouse_release':
-            self._event_value = None  # Reset
+        if event.type == 'mouse_wheel':
+            p = event.mouse_event.pos
+            ps = self._scene_transform.imap(p)
+            self.zoom(event.delta[1] * 0.5, ps)
         
         elif event.type == 'mouse_move':
             if event.press_event is None:
@@ -586,62 +637,54 @@ class PanZoomCamera(BaseCamera):
             
             if 1 in event.buttons and not modifiers:
                 # Translate
-                if self._event_value is None:
-                    self._event_value = self.center
+                p1 = np.array(event.last_event.pos)[:2]
+                p2 = np.array(event.pos)[:2]
                 p1s = self._scene_transform.imap(p1)
                 p2s = self._scene_transform.imap(p2)
-                self.center = (self._event_value[0] + (p1s[0] - p2s[0]),
-                               self._event_value[1] + (p1s[1] - p2s[1]),
-                               self._event_value[2])
+                self.pan(p1s-p2s)
             
             elif 2 in event.buttons and not modifiers:
                 # Zoom
-                if self._event_value is None:
-                    self._event_value = self._scale_factor, self._scale_ratio
-                zoomx, zoomy = _zoomfactor(-d[0]), _zoomfactor(d[1])
-                if not self._fixed_ratio: 
-                    self.scale_factor = self._event_value[0] * zoomx
-                    prev_ar = self._event_value[1]
-                    self.scale_ratio = 1, prev_ar[1]*zoomx/zoomy
-                else:
-                    self.scale_factor = self._event_value[0] * zoomy
+                p1c = np.array(event.last_event.pos)[:2]
+                p2c = np.array(event.pos)[:2]
+                scale = (p1c-p2c) * np.array([1, -1]) * 0.01
+                center = self._scene_transform.imap(event.press_event.pos[:2])
+                
+                self.zoom(tuple(-scale), center) 
     
     def _update_transform(self):
         
-        # Viewbox transform
-        unit = [[-1, 1], [1, -1]]
-        vrect = [[0, 0], self._viewbox.size]
-        self._viewbox_tr.set_mapping(unit, vrect)
+        rect = self.rect
+        self._real_rect = Rect(rect)
+        vbr = self._viewbox.rect.flipped(x=self.flip[0], y=self.flip[1])
         
-        # Our transform
-        #self.transform.reset()
-        self.transform.scale = 1, 1, 1
-        self.transform.translate = 0, 0, 0
-        self.transform.zoom([1.0/a for a in self._scale_ratio_n])
-        self.transform.move(self.center)
+        # apply scale ratio constraint
+        if self._scale_ratio is not None:
+            # Aspect ratio of the requested range
+            requested_aspect = (rect.width / rect.height 
+                                if rect.height != 0 else 1)
+            # Aspect ratio of the viewbox
+            view_aspect = vbr.width / vbr.height if vbr.height != 0 else 1
+            # View aspect ratio needed to obey the scale constraint
+            constrained_aspect = abs(view_aspect / self._scale_ratio)
+            
+            if requested_aspect > constrained_aspect:
+                # view range needs to be taller than requested
+                dy = 0.5 * (rect.width / constrained_aspect - rect.height)
+                self._real_rect.top += dy
+                self._real_rect.bottom -= dy
+            else:
+                # view range needs to be wider than requested
+                dx = 0.5 * (rect.height * constrained_aspect - rect.width)
+                self._real_rect.left -= dx
+                self._real_rect.right += dx
         
-        # Projection
-        fx = fy = self.scale_factor
-        w, h = self._viewbox.size
-        if w / h > 1:
-            fx *= w/h
-        else:
-            fy *= h/w
-        #
-        d = get_depth_value()
-        # If we use ortho, the inverse mapping is ill defined, causing
-        # e.g. the GridLines visual to fail. STTransform works better.
-        #self._projection.set_ortho(-0.5*fx, 0.5*fx, -0.5*fy, 0.5*fy, 0, d)
-        self._projection = STTransform(scale=(2/fx, 2/fy, 1/d))
-        
-        # Create full transform
-        transforms = [n.transform for n in
-                      self._viewbox.scene.node_path_to_child(self)[1:]]
-        camera_tr = self._transform_cache.get(transforms).inverse
-        full_tr = self._transform_cache.get([self._viewbox_tr,
-                                             self._projection,
-                                             camera_tr])
-        self._set_scene_transform(full_tr)
+        # Apply mapping between viewbox and cam view
+        self.transform.set_mapping(self._real_rect, vbr)
+        # Scale z, so that the clipping planes are between -alot and +alot
+        self.transform.zoom((1, 1, 1/get_depth_value()))
+        # Set on viewbox
+        self._set_scene_transform(self.transform)
 
 
 class PerspectiveCamera(BaseCamera):
@@ -658,6 +701,8 @@ class PerspectiveCamera(BaseCamera):
     See BaseCamera for more.
     
     """
+    
+    _state_props = ('scale_factor', 'center', 'fov')
     
     def __init__(self, fov=60.0, scale_factor=None, **kwargs):
         super(PerspectiveCamera, self).__init__(**kwargs)

@@ -17,7 +17,6 @@ from vispy import app, scene, io
 
 # Read volume
 vol1 = np.load(io.load_data_file('volume/stent.npz'))['arr_0']
-vol1 = vol1[:, ::2, ::3]
 
 # Prepare canvas
 canvas = scene.SceneCanvas(keys='interactive')
@@ -39,12 +38,9 @@ grid.add_widget(vb2, 0, 1)
 # Create the volume visuals, only one is visible
 volume1 = scene.visuals.Volume(vol1, parent=scenes, threshold=0.5)
 
-# Create cameras. 
-# The aspect ratio is defined on the first camera, The second camera
-# is a child of the first, and thus "inherits" the transform of the
-# first camera, which includes the aspect ratio.
-cam1 = scene.cameras.TurntableCamera(parent=scenes, fov=60,
-                                     scale_ratio=(3, 2, 1), fixed_ratio=True)
+# Create cameras. The second is a child of the first, thus inheriting
+# its transform.
+cam1 = scene.cameras.TurntableCamera(parent=scenes, fov=60)
 cam2 = scene.cameras.PerspectiveCamera(parent=cam1, fov=60)
 #
 cam2.transform.translate((+10, 0, 0))

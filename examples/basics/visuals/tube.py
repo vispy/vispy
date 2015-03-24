@@ -60,7 +60,7 @@ canvas.view.add(l1)
 canvas.view.add(l2)
 canvas.view.add(l3)
 canvas.view.add(l4)
-canvas.view.camera = scene.TurntableCamera(fixed_ratio=True)
+canvas.view.camera = scene.TurntableCamera()
 # tube does not expose its limits yet
 canvas.view.camera.set_range((-20, 20), (-20, 20), (-20, 20))
 canvas.show()

@@ -16,7 +16,6 @@ from vispy import app, scene, io
 
 # Read volume
 vol1 = np.load(io.load_data_file('volume/stent.npz'))['arr_0']
-vol1 = vol1[:, ::2, ::3]
 
 # Prepare canvas
 canvas = scene.SceneCanvas(keys='interactive')
@@ -36,11 +35,6 @@ cam2 = scene.cameras.FlyCamera(parent=view.scene)
 cam3 = scene.cameras.TurntableCamera(parent=view.scene)
 view.camera = cam3  # Select turntable at first
 
-for cam in (cam1, cam2, cam3):
-    cam.scale_ratio = 3, 2, 1
-    cam.fixed_ratio = True
-    cam.set_range()
-
 
 # Implement key presses
 @canvas.events.key_press.connect
@@ -50,16 +44,16 @@ def on_key_press(event):
         view.camera = cam_toggle.get(view.camera, 'fly')
     elif event.text == '1':
         for cam in (cam1, cam2, cam3):
-            sr = cam.scale_ratio
-            cam.scale_ratio = -sr[0], sr[1], sr[2]
+            flip = cam.flip
+            cam.flip = not flip[0], flip[1], flip[2]
     elif event.text == '2':
         for cam in (cam1, cam2, cam3):
-            sr = cam.scale_ratio
-            cam.scale_ratio = sr[0], -sr[1], sr[2]
+            flip = cam.flip
+            cam.flip = flip[0], not flip[1], flip[2]
     elif event.text == '3':
         for cam in (cam1, cam2, cam3):
-            sr = cam.scale_ratio
-            cam.scale_ratio = -sr[0], sr[1], -sr[2]
+            flip = cam.flip
+            cam.flip = flip[0], flip[1], not flip[2]
     elif event.text == '0':
         cam1.set_range()
         cam2.set_range()
