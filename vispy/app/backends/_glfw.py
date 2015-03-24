@@ -374,6 +374,12 @@ class CanvasBackend(BaseCanvasBackend):
         w, h = glfw.glfwGetWindowSize(self._id)
         return w, h
 
+    def _vispy_get_physical_size(self):
+        if self._id is None:
+            return
+        w, h = glfw.glfwGetFramebufferSize(self._id)
+        return w, h
+
     def _vispy_get_position(self):
         if self._id is None:
             return

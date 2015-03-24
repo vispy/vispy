@@ -304,6 +304,12 @@ class Canvas(object):
         return self._backend._vispy_set_size(size[0], size[1])
 
     @property
+    def physical_size(self):
+        """ The physical size of the canvas/window, which may differ from the
+        size property on backends that expose HiDPI """
+        return self._backend._vispy_get_physical_size()
+
+    @property
     def fullscreen(self):
         return self._backend._vispy_get_fullscreen()
 
