@@ -446,7 +446,6 @@ class PerspectiveTransform(BaseTransform):
         }
     """
 
-
     Linear = True
     Orthogonal = False
     NonScaling = False
@@ -495,17 +494,7 @@ class PerspectiveTransform(BaseTransform):
 
     #def set_frustum(self, l, r, b, t, n, f):
         #self.matrix = transforms.frustum(l, r, b, t, n, f)
-
-    @arg_to_vec4
-    def map(self, coords):
-        # looks backwards, but both matrices are transposed.
-        v = np.dot(coords, self._matrix)
-        return v
-
-    @arg_to_vec4
-    def imap(self, coords):
-       return np.dot(coords, self._inv_matrix)
-
+    
     #def __mul__(self, tr):
         ## Override multiplication -- this does not combine well with affine
         ## matrices.

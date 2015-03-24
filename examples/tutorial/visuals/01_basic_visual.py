@@ -1,3 +1,4 @@
+# vispy: testskip
 """
 Tutorial: Creating Visuals
 --------------------------
@@ -26,7 +27,6 @@ Visuals are defined by:
 from vispy import app, gloo, visuals, scene
 import numpy as np
 
-
 # Define a simple vertex shader. We use $template variables as placeholders for
 # code that will be inserted later on. In this example, $position will become
 # an attribute, and $transform will become a function. Important: using
@@ -46,6 +46,7 @@ void main() {
   gl_FragColor = $color;
 }
 """
+
 
 # Start the new Visual class. 
 # By convention, all Visual subclass names and in 'Visual'
@@ -77,7 +78,7 @@ class MyRectVisual(visuals.Visual):
         self.vbo = gloo.VertexBuffer(np.array([
             [x, y], [x+w, y], [x+w, y+h],
             [x, y], [x+w, y+h], [x, y+h]
-            ], dtype=np.float32))
+        ], dtype=np.float32))
         
         # We use a ModularProgram because it allows us to plug in arbitrary 
         # transformation functions. This is recommended but not strictly 

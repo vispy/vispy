@@ -1,3 +1,4 @@
+# vispy: testskip
 """
    Tutorial: Creating Visuals
      04. Fragment Programs
@@ -14,7 +15,6 @@ current fragment location to the visual's local coordinate system.
 """
 
 from vispy import app, gloo, visuals, scene
-import numpy as np
 
 
 vertex_shader = """
@@ -36,8 +36,7 @@ class MyRectVisual(visuals.Visual):
         
     def draw(self, transforms):
         gloo.set_state(cull_face='front_and_back')
-        
-        
+                
         # Finally, draw the triangles.
         self.program.draw('triangle_fan')
 

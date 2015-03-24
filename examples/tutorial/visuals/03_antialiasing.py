@@ -1,3 +1,4 @@
+# vispy: testskip
 """
    Tutorial: Creating Visuals
         03. Antialiasing
@@ -130,7 +131,7 @@ class MyRectVisual(visuals.Visual):
             [x, y+h],
             [x, y], 
             [x, y], 
-            ], dtype=np.float32))
+        ], dtype=np.float32))
         
         # Direction each vertex should move to correct for line width
         # (the length of this vector will be corrected in the shader)
@@ -145,7 +146,7 @@ class MyRectVisual(visuals.Visual):
             [1, -1],
             [0, 0],
             [1, 1],
-            ], dtype=np.float32))
+        ], dtype=np.float32))
         
         self.program = visuals.shaders.ModularProgram(vertex_shader, 
                                                       fragment_shader)

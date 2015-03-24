@@ -1,3 +1,4 @@
+# vispy: testskip
 """
    Tutorial: Creating Visuals
       05. Camera location
@@ -8,8 +9,7 @@ a Visual is being viewed.
 
 """
 
-from vispy import app, gloo, visuals, scene, io, geometry
-import numpy as np
+from vispy import app, gloo, visuals, scene, io
 
 
 vertex_shader = """
@@ -50,10 +50,6 @@ class MyMeshVisual(visuals.Visual):
         fname = io.load_data_file('orig/triceratops.obj.gz')
         vertices, faces, normals, tex = io.read_mesh(fname)
         
-        #x = np.fromfunction(lambda x,y,z: (x-25)**2 + (y-25)**2 + (z-25)**2, (50, 50, 50))
-        #verts, faces = geometry.isosurface.isosurface(x, 10)
-        #mesh = geometry.MeshData(verts, faces)
-        
         self._ibo = gloo.IndexBuffer(faces)
         
         self.program = visuals.shaders.ModularProgram(vertex_shader, 
@@ -67,7 +63,8 @@ class MyMeshVisual(visuals.Visual):
         gloo.set_state('additive', cull_face='front_and_back')
         
         self.program.vert['visual_to_doc'] = transforms.visual_to_document
-        self.program.vert['doc_to_visual'] = transforms.visual_to_document.inverse
+        imap = transforms.visual_to_document.inverse
+        self.program.vert['doc_to_visual'] = imap
         self.program.vert['doc_to_render'] = (
             transforms.framebuffer_to_render * 
             transforms.document_to_framebuffer)
