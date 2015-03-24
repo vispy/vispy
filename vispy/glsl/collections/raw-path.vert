@@ -2,10 +2,6 @@
 // Copyright (c) 2014, Nicolas P. Rougier. All Rights Reserved.
 // Distributed under the (new) BSD License.
 // ----------------------------------------------------------------------------
-// Hooks:
-//  <transform> : vec4 function(position)
-//
-// ----------------------------------------------------------------------------
 
 // Externs
 // ------------------------------------
@@ -23,7 +19,5 @@ void main (void)
 {
     fetch_uniforms();
     v_color = vec4(color.rgb, color.a*id);
-    gl_Position = <transform(position)>;
-
-    <viewport.transform>;
+    gl_Position = vec4(position,1.0);
 }

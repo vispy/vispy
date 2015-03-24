@@ -17,6 +17,7 @@
 // extern vec4  color;
 // extern float antialias;
 // extern float linewidth;
+// extern vec4 viewport;
 
 // Varyings
 // ------------------------------------
@@ -37,14 +38,14 @@ void main (void)
     v_color     = color;
 
     // transform prev/curr/next
-    vec4 prev_ = <transform(prev)>;
-    vec4 curr_ = <transform(curr)>;
-    vec4 next_ = <transform(next)>;
+    vec4 prev_ = vec4(prev,1.0);
+    vec4 curr_ = vec4(curr,1.0);
+    vec4 next_ = vec4(next,1.0);
 
     // prev/curr/next in viewport coordinates
-    vec2 _prev = NDC_to_viewport(prev_, <viewport.viewport_global>.zw);
-    vec2 _curr = NDC_to_viewport(curr_, <viewport.viewport_global>.zw);
-    vec2 _next = NDC_to_viewport(next_, <viewport.viewport_global>.zw);
+    vec2 _prev = NDC_to_viewport(prev_, viewport.zw);
+    vec2 _curr = NDC_to_viewport(curr_, viewport.zw);
+    vec2 _next = NDC_to_viewport(next_, viewport.zw);
 
     // Compute vertex final position (in viewport coordinates)
     float w = linewidth/2.0 + 1.5*antialias;
@@ -71,7 +72,6 @@ void main (void)
     if( abs(id) > 1.5 ) v_color.a = 0.0;
 
     v_distance = w*id;
-    gl_Position = viewport_to_NDC(P, <viewport.viewport_global>.zw, curr_.z / curr_.w);
+    gl_Position = viewport_to_NDC(vec3(P, curr_.z/curr_.w), viewport.zw);
 
-    <viewport.transform>;
 }

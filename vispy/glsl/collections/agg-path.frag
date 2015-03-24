@@ -52,6 +52,4 @@ void main()
         }
         gl_FragColor = stroke(distance, v_linewidth, v_antialias, v_color);
     }
-
-    <viewport.clipping>;
 }

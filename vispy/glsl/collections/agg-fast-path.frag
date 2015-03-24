@@ -15,8 +15,6 @@ varying float v_antialias;
 // ------------------------------------
 void main()
 {
-    <viewport.clipping>;
-
     if (v_color.a == 0)  { discard; }
     gl_FragColor = stroke(v_distance, v_linewidth, v_antialias, v_color);
 }
