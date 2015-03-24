@@ -216,7 +216,7 @@ class SceneCanvas(app.Canvas):
         
         scene_event = SceneDrawEvent(canvas=self, event=event, 
                                      transform_cache=tr_cache)
-        scene_event.push_viewport((0, 0) + self.size)
+        scene_event.push_viewport((0, 0) + self.physical_size)
         try:
             # Force update of transforms on base entities
             # TODO: this should happen as a reaction to resize, push_viewport,
