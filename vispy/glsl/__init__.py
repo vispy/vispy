@@ -13,14 +13,14 @@ def find(name):
         return name
 
     path = os.path.dirname(__file__) or '.'
-    filename = os.path.abspath(os.path.join(path,name))
+    filename = os.path.abspath(os.path.join(path, name))
     if os.path.exists(filename):
         return filename
 
     for d in os.listdir(path):
-        fullpath = os.path.abspath(os.path.join(path,d))
+        fullpath = os.path.abspath(os.path.join(path, d))
         if os.path.isdir(fullpath):
-            filename = os.path.abspath(os.path.join(fullpath,name))
+            filename = os.path.abspath(os.path.join(fullpath, name))
             if os.path.exists(filename):
                 return filename
     return None
@@ -30,6 +30,6 @@ def get(name):
     """Retrieve code from the given filename."""
 
     filename = find(name)
-    if filename == None:
+    if filename is None:
         return name
     return open(filename).read()
