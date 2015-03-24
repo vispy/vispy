@@ -86,29 +86,11 @@ void main(void)
 }
 """
 
-        Collection.__init__(self, dtype=dtype, itype=None, mode=gl.GL_POINTS,
+        Collection.__init__(self, dtype=dtype, itype=None, mode="points",
                             vertex=vertex, fragment=fragment, **kwargs)
 
         # Set hooks if necessary
         program = self._programs[0]
-
-        if "transform" in program.hooks:
-            if transform is not None:
-                # FIXME: this line break things because snippet code will be included
-                #        and it messes with new snippet code
-                program["transform"] = Position()
-                program["transform"] = transform
-            else:
-                program["transform"] = Position()
-
-        if "viewport" in program.hooks:
-            if viewport is not None:
-                # FIXME: this line break things because snippet code will be included
-                #        and it messes with new snippet code
-                program["viewport"] = Viewport()
-                program["viewport"] = viewport
-            else:
-                program["viewport"] = Viewport()
 
 
 

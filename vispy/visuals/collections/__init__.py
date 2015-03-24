@@ -1,1 +1,1 @@
-from point_collection import PointCollection
+from . point_collection import PointCollection
