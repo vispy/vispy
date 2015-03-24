@@ -353,8 +353,7 @@ class SceneCanvas(app.Canvas):
         """
         fbo, offset, csize = self._current_framebuffer()
         if fbo is None:
-            # todo: account for high-res displays here.
-            fbsize = csize
+            fbsize = self.physical_size
         else:
             fbsize = fbo.color_buffer.shape
             # image shape is (rows, cols), unlike canvas shape.
