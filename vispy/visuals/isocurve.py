@@ -23,13 +23,13 @@ class IsocurveVisual(LineVisual):
     Notes
     -----
     """
-    def __init__(self, data=None, level=None, **kwds):
+    def __init__(self, data=None, level=None, **kwargs):
         self._data = None
         self._level = level
         self._recompute = True
-        kwds['mode'] = 'gl'
-        kwds['antialias'] = False
-        LineVisual.__init__(self, **kwds)
+        kwargs['mode'] = 'gl'
+        kwargs['antialias'] = False
+        LineVisual.__init__(self, **kwargs)
         if data is not None:
             self.set_data(data)
 

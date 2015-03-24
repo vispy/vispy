@@ -107,7 +107,7 @@ class IsolineVisual(LineVisual):
         must be of shape (Nlev, 4) and provide one rgba color by level.
     """
     def __init__(self, vertices=None, tris=None, data=None,
-                 levels=None, color_lev=None, **kwds):
+                 levels=None, color_lev=None, **kwargs):
         self._data = None
         self._vertices = None
         self._tris = None
@@ -115,8 +115,8 @@ class IsolineVisual(LineVisual):
         self._color_lev = color_lev
         self._update_color_lev = True
         self._recompute = True
-        kwds['antialias'] = False
-        LineVisual.__init__(self, mode='gl', **kwds)
+        kwargs['antialias'] = False
+        LineVisual.__init__(self, mode='gl', **kwargs)
         self.set_data(vertices=vertices, tris=tris, data=data)
 
     @property

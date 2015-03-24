@@ -76,8 +76,8 @@ class GridLinesVisual(Visual):
     """ Displays regularly spaced grid lines in any coordinate system and at 
     any scale.
     """
-    def __init__(self, scale=(1, 1), **kwds):
-        super(Visual, self).__init__(**kwds)
+    def __init__(self, scale=(1, 1), **kwargs):
+        super(Visual, self).__init__(**kwargs)
         self._program = ModularProgram(VERT, FRAG)
         self._vbo = None
         self._scale = scale

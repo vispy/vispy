@@ -98,18 +98,18 @@ class DebugTriangulation(Triangulation):
         self.win.removeItem(shape)
         self.draw_state()
         
-    def add_tri(self, *args, **kwds):
-        Triangulation.add_tri(self, *args, **kwds)
+    def add_tri(self, *args, **kwargs):
+        Triangulation.add_tri(self, *args, **kwargs)
         self.draw_tri(list(self.tris.keys())[-1], 
-                      source=kwds.get('source', None))
+                      source=kwargs.get('source', None))
     
-    def remove_tri(self, *args, **kwds):
-        k = Triangulation.remove_tri(self, *args, **kwds)
+    def remove_tri(self, *args, **kwargs):
+        k = Triangulation.remove_tri(self, *args, **kwargs)
         self.undraw_tri(k)
 
-    def edge_event(self, *args, **kwds):
+    def edge_event(self, *args, **kwargs):
         self.draw_state()
-        Triangulation.edge_event(self, *args, **kwds)
+        Triangulation.edge_event(self, *args, **kwargs)
         self.draw_state()
 
 

@@ -251,7 +251,7 @@ class CanvasBackend(GLCanvas, BaseCanvasBackend):
         self._vispy_set_title(p.title)
         self._size = None
         self.Bind(wx.EVT_SIZE, self.on_resize)
-        self.Bind(wx.EVT_PAINT, self.on_paint)
+        self.Bind(wx.EVT_PAINT, self.on_draw)
         self.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
         self.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.Bind(wx.EVT_MOUSE_EVENTS, self.on_mouse_event)
@@ -267,7 +267,7 @@ class CanvasBackend(GLCanvas, BaseCanvasBackend):
         self.Refresh()
         event.Skip()
 
-    def on_paint(self, event):
+    def on_draw(self, event):
         if self._vispy_canvas is None:
             return
         dc = wx.PaintDC(self)  # needed for wx
