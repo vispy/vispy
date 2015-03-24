@@ -428,12 +428,12 @@ if __name__ == '__main__':
 
     for i in range(10):
         L.append(i)
-    print L
+    print(L)
     for i in range(10):
         del L[0]
 
     for i in range(10):
         L.insert(0,i)
-    print L
+    print(L)
     for i in range(10):
         del L[-1]
