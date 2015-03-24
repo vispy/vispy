@@ -279,7 +279,7 @@ class CanvasBackend(BaseCanvasBackend):
 
         # Register callbacks
         glfw.glfwSetWindowRefreshCallback(self._id, self._on_draw)
-        glfw.glfwSetFramebufferSizeCallback(self._id, self._on_resize)
+        glfw.glfwSetWindowSizeCallback(self._id, self._on_resize)
         glfw.glfwSetKeyCallback(self._id, self._on_key_press)
         glfw.glfwSetMouseButtonCallback(self._id, self._on_mouse_button)
         glfw.glfwSetScrollCallback(self._id, self._on_mouse_scroll)
@@ -371,7 +371,7 @@ class CanvasBackend(BaseCanvasBackend):
     def _vispy_get_size(self):
         if self._id is None:
             return
-        w, h = glfw.glfwGetFramebufferSize(self._id)
+        w, h = glfw.glfwGetWindowSize(self._id)
         return w, h
 
     def _vispy_get_position(self):
