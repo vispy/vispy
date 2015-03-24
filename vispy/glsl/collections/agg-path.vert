@@ -22,6 +22,8 @@
 // extern float antialias;
 // extern float linewidth;
 // extern float miter_limit;
+// extern vec4 viewport;
+// vec4 transform(vec3 position);
 
 
 // Varyings
@@ -52,16 +54,16 @@ void main (void)
     v_miter_limit = miter_limit;
 
     // transform prev/curr/next
-    vec4 p0_ = <transform(p0)>;
-    vec4 p1_ = <transform(p1)>;
-    vec4 p2_ = <transform(p2)>;
-    vec4 p3_ = <transform(p3)>;
+    vec4 p0_ = transform(p0);
+    vec4 p1_ = transform(p1);
+    vec4 p2_ = transform(p2);
+    vec4 p3_ = transform(p3);
 
     // prev/curr/next in viewport coordinates
-    vec2 _p0 = NDC_to_viewport(p0_, <viewport.viewport_global>.zw);
-    vec2 _p1 = NDC_to_viewport(p1_, <viewport.viewport_global>.zw);
-    vec2 _p2 = NDC_to_viewport(p2_, <viewport.viewport_global>.zw);
-    vec2 _p3 = NDC_to_viewport(p3_, <viewport.viewport_global>.zw);
+    vec2 _p0 = NDC_to_viewport(p0_, viewport.zw);
+    vec2 _p1 = NDC_to_viewport(p1_, viewport.zw);
+    vec2 _p2 = NDC_to_viewport(p2_, viewport.zw);
+    vec2 _p3 = NDC_to_viewport(p3_, viewport.zw);
 
     v_antialias = antialias;
     v_linewidth = linewidth;
@@ -160,6 +162,5 @@ void main (void)
         v_bevel_distance.y = uv.y*d1*point_to_line_distance(_p2+d1*n1*w, _p2+d1*n2*w, p);
     }
 
-    gl_Position = viewport_to_NDC(p,  <viewport.viewport_global>.zw, z);
-    <viewport.transform>;
+    gl_Position = viewport_to_NDC(vec3(p,z), viewport.zw);
 }

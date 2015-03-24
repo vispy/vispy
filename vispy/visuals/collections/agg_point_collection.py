@@ -8,7 +8,7 @@ Antigrain Geometry Point Collection
 
 This collection provides fast points. Output quality is perfect.
 """
-# from glumpy import library
+from vispy import glsl
 from . raw_point_collection import RawPointCollection
 
 
@@ -20,7 +20,7 @@ class AggPointCollection(RawPointCollection):
     """
 
     def __init__(self, user_dtype=None, transform=None,
-                 viewport=None, vertex=None, fragment=None, **kwargs):
+                 vertex=None, fragment=None, **kwargs):
         """
         Initialize the collection.
 
@@ -31,25 +31,24 @@ class AggPointCollection(RawPointCollection):
             The base dtype can be completed (appended) by the used_dtype. It
             only make sense if user also provide vertex and/or fragment shaders
 
-        transform: glumpy.Tranforms
-            The default vertex shader apply the supplied transform to the
-            vertices positions before computing the actual vertices positions
-            for path thickness.
-
         vertex: string
             Vertex shader code
 
         fragment: string
             Fragment  shader code
 
+        transform : string
+            GLSL Transform code defining the vec4 transform(vec3) function
+
         color : string
             'local', 'shared' or 'global'
         """
         if vertex is None:
-            vertex = library.get("collections/agg-point.vert")
+            vertex = glsl.get("collections/agg-point.vert")
+        if transform is None:
+            transform = "vec4 transform(vec3 position) {return vec4(position,1.0);}"
         if fragment is None:
-            fragment= library.get("collections/agg-point.frag")
+            fragment= glsl.get("collections/agg-point.frag")
 
-        RawPointCollection.__init__(self, user_dtype=user_dtype,
-                                    transform=transform, viewport=viewport,
+        RawPointCollection.__init__(self, user_dtype=user_dtype, transform=transform,
                                     vertex=vertex, fragment=fragment, **kwargs)

@@ -18,8 +18,6 @@ varying vec4  v_color;
 // ------------------------------------
 void main (void)
 {
-    <viewport.clipping>;
-
     if (v_texcoord.x < 0.0) {
         gl_FragColor = cap( CAP_ROUND,
                             v_texcoord.x, v_texcoord.y,

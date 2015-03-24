@@ -10,12 +10,14 @@
 
 // Externs
 // ------------------------------------
-// extern vec2  P0;
-// extern vec2  P1;
+// extern vec3  P0;
+// extern vec3  P1;
 // extern float index;
 // extern vec4  color;
 // extern float antialias;
 // extern float linewidth;
+// extern vec4  viewport;
+// vec4 transform(vec3 position);
 
 // Varyings
 // ------------------------------------
@@ -37,21 +39,12 @@ void main (void)
     v_antialias = antialias;
     v_color     = color;
 
-    vec4 P0_ = <transform(P0)>;
-    vec4 P1_ = <transform(P1)>;
-
-/*
-    float size = 0.25;
-    if(size > 0) {
-        P1_ = P0_ + size*normalize(P1_-P0_);
-    }
-*/
+    vec4 P0_ = transform(P0);
+    vec4 P1_ = transform(P1);
 
     // p0/p1 in viewport coordinates
-    vec2 p0 = NDC_to_viewport(P0_, <viewport.viewport_global>.zw);
-    vec2 p1 = NDC_to_viewport(P1_, <viewport.viewport_global>.zw);
-
-
+    vec2 p0 = NDC_to_viewport(P0_, viewport.zw);
+    vec2 p1 = NDC_to_viewport(P1_, viewport.zw);
 
     //
     vec2 position;
@@ -78,7 +71,5 @@ void main (void)
        z = P1.z;
     }
 
-    gl_Position = viewport_to_NDC(position, <viewport.viewport_global>.zw, z);
-
-    <viewport.transform>;
+    gl_Position = viewport_to_NDC(vec3(position,z), viewport.zw);
 }
