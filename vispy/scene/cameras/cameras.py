@@ -580,6 +580,38 @@ class TurntableCamera(PerspectiveCamera):
             d = p2c - p1c
             self.orbit(-d[0], d[1])
 
+        elif event.type == 'mouse_move' and 2 in event.buttons:
+            if self._mode != "ortho":
+                return
+
+            p1 = np.array(event.last_event.pos)[:2]
+            p2 = np.array(event.pos)[:2]
+            p1c = event.map_to_canvas(p1)[:2]
+            p2c = event.map_to_canvas(p2)[:2]
+            dx, dy = p2c - p1c
+            dy *= -1  # Makes y point up instead of down
+
+            # Vector `forward` goes from camera to center
+            azim = self.azimuth * np.pi / 180
+            elev = self.elevation * np.pi / 180
+            forward_x = -np.sin(azim) * np.cos(elev)
+            forward_y = np.cos(azim) * np.cos(elev)
+            forward_z = -np.sin(elev)
+            forward = np.array([forward_x, forward_y, forward_z])
+
+            # Vectors `up` and `right` point up and right from camera
+            right = np.cross(forward, [0, 0, 1])
+            right /= np.linalg.norm(right)
+            up = np.cross(right, forward)
+
+            # Scale direction by screen size and orthographic width
+            dx = dx / self.viewbox.size[0] * self.width
+            dy = dy / self.viewbox.size[0] * self.width
+            delta = right * dx + up * dy
+
+            self.center = tuple(np.array(self.center) + delta)
+            self._update_camera_pos()
+
     def _update_camera_pos(self):
         """ Set the camera position / orientation based on elevation,
         azimuth, distance, and center properties.
