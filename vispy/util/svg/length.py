@@ -5,7 +5,7 @@
 # -----------------------------------------------------------------------------
 import re
 import math
-from base import units
+from . base import units
 
 class Length(object):
     def __init__(self, content, mode='x', parent=None):

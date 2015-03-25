@@ -3,7 +3,7 @@
 # Copyright (c) 2014, Nicolas P. Rougier. All rights reserved.
 # Distributed under the terms of the new BSD License.
 # -----------------------------------------------------------------------------
-from length import XLength, YLength
+from . length import XLength, YLength
 
 
 class Viewport(object):

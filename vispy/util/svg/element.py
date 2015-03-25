@@ -4,7 +4,7 @@
 # Distributed under the terms of the new BSD License.
 # -----------------------------------------------------------------------------
 import copy
-from style import Style
+from . style import Style
 
 namespace = '{http://www.w3.org/2000/svg}'
 

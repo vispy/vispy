@@ -5,11 +5,11 @@
 # -----------------------------------------------------------------------------
 import copy
 from vispy.util import logger
-from path import Path
-from style import Style
-from base import namespace
-from element import Element
-from transformable import Transformable
+from . path import Path
+from . style import Style
+from . base import namespace
+from . element import Element
+from . transformable import Transformable
 
 
 class Group(Transformable):
