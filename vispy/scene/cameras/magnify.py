@@ -36,8 +36,7 @@ class MagnifyCamera(PanZoomCamera):
         
         # Extract kwargs for panzoom
         camkwargs = {}
-        for key in ('parent', 'name', 'scale_factor', 'center', 
-                    'scale_ratio', 'fixed_ratio'):
+        for key in ('parent', 'name', 'rect', 'aspect'):
             if key in kwds:
                 camkwargs[key] = kwds.pop(key)
         

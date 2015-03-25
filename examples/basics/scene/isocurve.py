@@ -38,7 +38,7 @@ curve3 = scene.visuals.Isocurve(noise, level=40, color=(1, 0, 0, 1),
                                 parent=view.scene)
 
 # Set 2D camera (the camera will scale to the contents in the scene)
-view.camera = scene.PanZoomCamera()  # or 'panzoom'
+view.camera = scene.PanZoomCamera(aspect=1)
 
 
 if __name__ == '__main__' and sys.flags.interactive == 0:
