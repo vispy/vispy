@@ -401,6 +401,16 @@ class CanvasBackend(GLCanvas, BaseCanvasBackend):
             else:
                 evt.Skip()
             self._vispy_mouse_release(pos=pos, button=button, modifiers=mods)
+        elif evt.ButtonDClick():
+            if evt.LeftDClick():
+                button = 0
+            elif evt.MiddleDClick():
+                button = 1
+            elif evt.RightDClick():
+                button = 2
+            else:
+                evt.Skip()            
+            self._vispy_mouse_press(pos=pos, button=button, modifiers=mods)
         evt.Skip()
 
     def on_key_down(self, evt):
