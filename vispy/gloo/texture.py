@@ -358,7 +358,7 @@ class BaseTexture(GLObject):
 
 # --------------------------------------------------------- Texture1D class ---
 class Texture1D(BaseTexture):
-    """ one dimensional texture
+    """ One dimensional texture
 
     Parameters
     ----------
@@ -390,6 +390,18 @@ class Texture1D(BaseTexture):
         """ GLSL declaration strings required for a variable to hold this data.
         """
         return 'uniform', 'sampler1D'
+
+    @property
+    def glsl_sampler_type(self):
+        """ GLSL type of the sampler.
+        """
+        return 'sampler1D'
+
+    @property
+    def glsl_sample(self):
+        """ GLSL function that samples the the texture.
+        """
+        return 'texture1D'
 
 
 # --------------------------------------------------------- Texture2D class ---
@@ -432,6 +444,18 @@ class Texture2D(BaseTexture):
         """
         return 'uniform', 'sampler2D'
 
+    @property
+    def glsl_sampler_type(self):
+        """ GLSL type of the sampler.
+        """
+        return 'sampler2D'
+
+    @property
+    def glsl_sample(self):
+        """ GLSL function that samples the the texture.
+        """
+        return 'texture2D'
+
 
 # --------------------------------------------------------- Texture3D class ---
 class Texture3D(BaseTexture):
@@ -448,11 +472,8 @@ class Texture3D(BaseTexture):
         based on the number of channels. When the data has one channel,
         'luminance' is assumed.
     """
-    sample = 'texture3D'
-
     _ndim = 3
     _GLIR_TYPE = 'Texture3D'
-    sampler = 'sampler3D'    
 
     def __init__(self, data=None, format=None, **kwargs):
         BaseTexture.__init__(self, data, format, **kwargs)
@@ -478,36 +499,61 @@ class Texture3D(BaseTexture):
         """
         return 'uniform', 'sampler3D'
 
+    @property
+    def glsl_sampler_type(self):
+        """ GLSL type of the sampler.
+        """
+        return 'sampler3D'
+
+    @property
+    def glsl_sample(self):
+        """ GLSL function that samples the the texture.
+        """
+        return 'texture3D'
+
 
 # ------------------------------------------------------ TextureEmulated3D class ---
 class TextureEmulated3D(Texture2D):
-    glsl_sample = """
+    """ Two dimensional texture that is emulating a three dimensional texture
+
+    Parameters
+    ----------
+    Same as Texture2D, but the data is first reshaped from a 3D array to a 2D array.
+    """
+    # Taken from https://www.khronos.org/webgl/wiki/WebGL_and_OpenGL_Differences
+    _glsl_sample = """
     vec4 sample(sampler2D tex, vec3 texCoord) {
-        float sliceSize = 1.0 / $size; // space of 1 slice
-        float slicePixelSize = sliceSize / $size; // space of 1 pixel
-        float sliceInnerSize = slicePixelSize * ($size - 1.0); // space of size pixels
-        float zSlice0 = min(floor(texCoord.z * $size), $size - 1.0);
-        float zSlice1 = min(zSlice0 + 1.0, $size - 1.0);
+        float sliceSize = 1.0 / $depth; // space of 1 slice
+        float slicePixelSize = sliceSize / $depth; // space of 1 pixel
+        float sliceInnerSize = slicePixelSize * ($depth - 1.0); // space of depth pixels
+        float zSlice0 = min(floor(texCoord.z * $depth), $depth - 1.0);
+        float zSlice1 = min(zSlice0 + 1.0, $depth - 1.0);
         float xOffset = slicePixelSize * 0.5 + texCoord.x * sliceInnerSize;
         float s0 = xOffset + (zSlice0 * sliceSize);
         float s1 = xOffset + (zSlice1 * sliceSize);
         vec4 slice0Color = texture2D(tex, vec2(s0, texCoord.y));
         vec4 slice1Color = texture2D(tex, vec2(s1, texCoord.y));
-        float zOffset = mod(texCoord.z * $size, 1.0);
+        float zOffset = mod(texCoord.z * $depth, 1.0);
         return mix(slice0Color, slice1Color, zOffset);
     }
     """
 
-    sampler = 'sampler2D'
-
     def __init__(self, data=None, format=None, **kwargs):
-        size = data.shape[0]
+        from ..visuals.shaders import Function
+
+        depth = data.shape[0]
         Texture2D.__init__(self, np.reshape(np.transpose(data, (1, 0, 2, 3)),
             (data.shape[1], data.shape[0] * data.shape[2], 3)), format, **kwargs)
 
-        from ..visuals.shaders import Function
-        self.sample = Function(self.glsl_sample)
-        self.sample['size'] = size
+        self._glsl_sample = Function(self.__class__._glsl_sample)
+        self._glsl_sample['depth'] = depth
+
+    @property
+    def glsl_sample(self):
+        """ GLSL function that samples the the texture.
+        """
+
+        return self._glsl_sample
 
 
 # ------------------------------------------------------ TextureAtlas class ---

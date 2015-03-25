@@ -14,7 +14,7 @@ import numpy as np
 from vispy.util.transforms import ortho
 from vispy import gloo
 from vispy import app
-from vispy.visuals.shaders import Function, ModularProgram
+from vispy.visuals.shaders import ModularProgram
 
 
 # Shape of image to be displayed
@@ -73,21 +73,19 @@ void main()
 
 class Canvas(app.Canvas):
 
-    def __init__(self):
+    def __init__(self, emulate3d = False):
         app.Canvas.__init__(self, keys='interactive')
         self.size = W * 5, H * 5
 
-        emulate3d = True
         if emulate3d:
-            self.texture = gloo.TextureEmulated3D(I, interpolation='nearest',
-                                                  wrapping='clamp_to_edge')
+            cls = gloo.TextureEmulated3D
         else:
-            self.texture = gloo.Texture3D(I, interpolation='nearest',
-                                          wrapping='clamp_to_edge')
+            cls = gloo.Texture3D
+        self.texture = cls(I, interpolation='nearest', wrapping='clamp_to_edge')
 
         self.program = ModularProgram(VERT_SHADER, FRAG_SHADER)
-        self.program.frag['sampler_type'] = self.texture.sampler
-        self.program.frag['sample'] = self.texture.sample
+        self.program.frag['sampler_type'] = self.texture.glsl_sampler_type
+        self.program.frag['sample'] = self.texture.glsl_sample
         self.program['u_texture'] = self.texture
         self.program['i'] = 0.0
         self.program.bind(gloo.VertexBuffer(data))
@@ -138,6 +136,6 @@ class Canvas(app.Canvas):
 
 
 if __name__ == '__main__':
-    c = Canvas()
+    c = Canvas(emulate3d = True)
     c.show()
     app.run()
