@@ -4,7 +4,7 @@
 # Distributed under the terms of the new BSD License.
 # -----------------------------------------------------------------------------
 import copy
-from glumpy.log import log
+from vispy.util import logger
 from path import Path
 from style import Style
 from base import namespace
@@ -27,7 +27,7 @@ class Group(Transformable):
             elif tag == "path":
                 item = Path(element, self)
             else:
-                log.warn("Unhandled SVG tag (%s)" % tag)
+                logger.warn("Unhandled SVG tag (%s)" % tag)
                 continue
             self._items.append(item)
 
