@@ -381,6 +381,8 @@ class EventEmitter(object):
             self._callbacks = []
             self._callback_refs = []
         else:
+            if isinstance(callback, tuple):
+                callback = (weakref.ref(callback[0]),) + callback[1:]
             if callback in self._callbacks:
                 idx = self._callbacks.index(callback)
                 self._callbacks.pop(idx)
