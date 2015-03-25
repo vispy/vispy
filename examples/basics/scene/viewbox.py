@@ -27,7 +27,7 @@ vb1 = scene.widgets.ViewBox(name='vb1', border_color='yellow',
 vb1.clip_method = 'fbo'
 vb1.camera = 'panzoom'
 
-# Second ViewBox uses a 3D orthographic camera
+# Second ViewBox uses a 3D perspective camera
 vb2 = scene.widgets.ViewBox(name='vb2', border_color='blue',
                             parent=canvas.scene)
 vb2.parent = canvas.scene

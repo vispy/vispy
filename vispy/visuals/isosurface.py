@@ -21,11 +21,11 @@ class IsosurfaceVisual(MeshVisual):
     Notes
     -----
     """
-    def __init__(self, data=None, level=None, **kwds):
+    def __init__(self, data=None, level=None, **kwargs):
         self._data = None
         self._level = level
         self._recompute = True
-        MeshVisual.__init__(self, **kwds)
+        MeshVisual.__init__(self, **kwargs)
         if data is not None:
             self.set_data(data)
 

@@ -33,22 +33,22 @@ class LinePlotVisual(Visual):
     --------
     LineVisual, MarkersVisual
     """
-    _line_kwds = ['width', 'connect', 'color']
-    _marker_kwds = ['edge_color', 'face_color', 'edge_width']
+    _line_kwargs = ['width', 'connect', 'color']
+    _marker_kwargs = ['edge_color', 'face_color', 'edge_width']
 
-    def __init__(self, *args, **kwds):
-        my_kwds = {}
-        for k in self._line_kwds + self._marker_kwds:
-            if k in kwds:
-                my_kwds[k] = kwds.pop(k)
+    def __init__(self, *args, **kwargs):
+        my_kwargs = {}
+        for k in self._line_kwargs + self._marker_kwargs:
+            if k in kwargs:
+                my_kwargs[k] = kwargs.pop(k)
 
-        Visual.__init__(self, **kwds)
+        Visual.__init__(self, **kwargs)
         self._line = LineVisual()
         self._markers = MarkersVisual()
 
-        self.set_data(*args, **my_kwds)
+        self.set_data(*args, **my_kwargs)
 
-    def set_data(self, *args, **kwds):
+    def set_data(self, *args, **kwargs):
         args = [np.array(x) for x in args]
 
         if len(args) == 1:
@@ -71,18 +71,18 @@ class LinePlotVisual(Visual):
             raise TypeError("Too many positional arguments given (max is 2).")
 
         # todo: have both sub-visuals share the same buffers.
-        line_kwds = {}
-        for k in self._line_kwds:
-            if k in kwds:
-                line_kwds[k] = kwds.pop(k)
-        self._line.set_data(pos=pos, **line_kwds)
-        marker_kwds = {}
-        for k in self._marker_kwds:
-            if k in kwds:
-                marker_kwds[k] = kwds.pop(k)
-        self._markers.set_data(pos=pos, **marker_kwds)
-        if len(kwds) > 0:
-            raise TypeError("Invalid keyword arguments: %s" % kwds.keys())
+        line_kwargs = {}
+        for k in self._line_kwargs:
+            if k in kwargs:
+                line_kwargs[k] = kwargs.pop(k)
+        self._line.set_data(pos=pos, **line_kwargs)
+        marker_kwargs = {}
+        for k in self._marker_kwargs:
+            if k in kwargs:
+                marker_kwargs[k] = kwargs.pop(k)
+        self._markers.set_data(pos=pos, **marker_kwargs)
+        if len(kwargs) > 0:
+            raise TypeError("Invalid keyword arguments: %s" % kwargs.keys())
 
     def bounds(self, mode, axis):
         return self._line.bounds(mode, axis)

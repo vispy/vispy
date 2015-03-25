@@ -27,7 +27,7 @@ class MagnifyCamera(PanZoomCamera):
     """
     transform_class = MagnifyTransform
     
-    def __init__(self, size_factor=0.25, radius_ratio=0.9, **kwds):
+    def __init__(self, size_factor=0.25, radius_ratio=0.9, **kwargs):
         # what fraction of the view width to use for radius
         self.size_factor = size_factor
         
@@ -37,11 +37,11 @@ class MagnifyCamera(PanZoomCamera):
         # Extract kwargs for panzoom
         camkwargs = {}
         for key in ('parent', 'name', 'rect', 'aspect'):
-            if key in kwds:
-                camkwargs[key] = kwds.pop(key)
+            if key in kwargs:
+                camkwargs[key] = kwargs.pop(key)
         
         # Create the mag transform - kwrds go here
-        self.mag = self.transform_class(**kwds)
+        self.mag = self.transform_class(**kwargs)
         
         # for handling smooth transitions
         self.mag_target = self.mag.mag

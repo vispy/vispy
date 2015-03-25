@@ -33,8 +33,8 @@ VARIABLE_TYPES = ('const', 'uniform', 'attribute', 'varying', 'inout')
 
 
 class ShaderChangeEvent(Event):
-    def __init__(self, code_changed=False, value_changed=False, **kwds):
-        Event.__init__(self, type='shader_change', **kwds)
+    def __init__(self, code_changed=False, value_changed=False, **kwargs):
+        Event.__init__(self, type='shader_change', **kwargs)
         self.code_changed = code_changed
         self.value_changed = value_changed
 
@@ -641,9 +641,9 @@ class MainFunction(Function):
     be defined in a single code string. The code must contain a main() function
     definition.
     """
-    def __init__(self, *args, **kwds):
+    def __init__(self, *args, **kwargs):
         self._chains = {}
-        Function.__init__(self, *args, **kwds)
+        Function.__init__(self, *args, **kwargs)
     
     @property
     def signature(self):

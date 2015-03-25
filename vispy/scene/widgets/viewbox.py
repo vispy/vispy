@@ -41,11 +41,11 @@ class ViewBox(Widget):
     
     All extra keyword arguments are passed to :func:`Widget.__init__`.
     """
-    def __init__(self, camera=None, scene=None, bgcolor='black', **kwds):
+    def __init__(self, camera=None, scene=None, bgcolor='black', **kwargs):
         
         self._camera = None
         self._bgcolor = Color(bgcolor).rgba
-        Widget.__init__(self, **kwds)
+        Widget.__init__(self, **kwargs)
 
         # Init preferred method to provided a pixel grid
         self._clip_method = 'viewport'

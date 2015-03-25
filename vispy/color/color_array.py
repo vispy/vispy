@@ -91,6 +91,9 @@ class ColorArray(object):
         If array-like, it must be an Nx3 or Nx4 array-like object.
         Can also be a list of colors, such as
         ``['red', '#00ff00', ColorArray('blue')]``.
+    color_space : 'rgb' | 'hsv'
+       'rgb' (default) : color tuples are interpreted as (r, g, b) components.
+       'hsv' : color tuples are interpreted as (h, s, v) components.
     alpha : float | None
         If no alpha is not supplied in ``color`` entry and ``alpha`` is None,
         then this will default to 1.0 (opaque). If float, it will override
@@ -108,6 +111,9 @@ class ColorArray(object):
         >>> b = ColorArray('#0000ff')  # hex color
         >>> w = ColorArray()  # defaults to black
         >>> w.rgb = r.rgb + g.rgb + b.rgb
+        >>>hsv_color = ColorArray(color_space="hsv", color=(0, 0, 0.5))
+        >>>hsv_color
+        <ColorArray: 1 color ((0.5, 0.5, 0.5, 1.0))>
         >>> w == ColorArray('white')
         True
         >>> w.alpha = 0
@@ -124,9 +130,24 @@ class ColorArray(object):
     Under the hood, this class stores data in RGBA format suitable for use
     on the GPU.
     """
-    def __init__(self, color='black', alpha=None, clip=False):
-        """Parse input type, and set attribute"""
+    def __init__(self, color=None, alpha=None,
+                 clip=False, color_space='rgb'):
+
+        # if color is RGB, then set the default color to black
+        if color_space == 'rgb':
+            # by default, if the color is None, we pick black
+            color = 'black' if color is None else color
+        elif color_space == 'hsv':
+            color = (0, 0, 0) if color is None else color
+            # if the color space is hsv, convert hsv to rgb
+            color = _hsv_to_rgb(color)
+        else:
+            raise ValueError('color_space should be either "rgb" or'
+                             '"hsv", it is ' + color_space)
+
+        # Parse input type, and set attribute"""
         rgba = _user_to_rgba(color, clip=clip)
+
         if alpha is not None:
             rgba[:, 3] = alpha
         self._rgba = None

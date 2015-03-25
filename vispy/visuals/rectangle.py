@@ -34,7 +34,7 @@ class RectangleVisual(PolygonVisual):
         Defaults to 0.
     """
     def __init__(self, pos=None, color='black', border_color=None,
-                 height=1.0, width=1.0, radius=[0., 0., 0., 0.], **kwds):
+                 height=1.0, width=1.0, radius=[0., 0., 0., 0.], **kwargs):
         super(RectangleVisual, self).__init__()
         self.mesh.mode = 'triangle_fan'
         self._vertices = None

@@ -34,7 +34,7 @@ connect[N/2, 1] = N/2  # put a break in the middle
 class Canvas(app.Canvas):
     def __init__(self):
         app.Canvas.__init__(self, keys='interactive',
-                            size=(800, 800), show=True)
+                            size=(800, 800))
         # Create several visuals demonstrating different features of Line
         self.lines = [
             # agg-mode lines:
@@ -82,6 +82,8 @@ class Canvas(app.Canvas):
         for visual in self.visuals:
             visual.tr_sys = visuals.transforms.TransformSystem(self)
             visual.tr_sys.visual_to_document = visual.transform
+
+        self.show(True)
 
     def on_draw(self, event):
         gloo.clear('black')

@@ -161,12 +161,12 @@ class DataBuffer(Buffer):
             raise TypeError("DataBuffer data must be numpy array.")
         return data
 
-    def set_subdata(self, data, offset=0, copy=False, **kwds):
-        data = self._prepare_data(data, **kwds)
+    def set_subdata(self, data, offset=0, copy=False, **kwargs):
+        data = self._prepare_data(data, **kwargs)
         offset = offset * self.itemsize
         Buffer.set_subdata(self, data=data, offset=offset, copy=copy)
     
-    def set_data(self, data, copy=False, **kwds):
+    def set_data(self, data, copy=False, **kwargs):
         """ Set data (deferred operation)
 
         Parameters
@@ -181,7 +181,7 @@ class DataBuffer(Buffer):
             data is actually uploaded to GPU memory.
             Asking explicitly for a copy will prevent this behavior.
         """
-        data = self._prepare_data(data, **kwds)
+        data = self._prepare_data(data, **kwargs)
         
         self._dtype = data.dtype
         self._stride = data.strides[-1]
@@ -221,6 +221,8 @@ class DataBuffer(Buffer):
     def glsl_type(self):
         """ GLSL declaration strings required for a variable to hold this data.
         """
+        if self.dtype is None:
+            return None
         dtshape = self.dtype[0].shape
         n = dtshape[0] if dtshape else 1
         if n > 1:
@@ -364,10 +366,10 @@ class DataBufferView(DataBuffer):
     def id(self):
         return self._base.id
     
-    def set_subdata(self, data, offset=0, copy=False, **kwds):
+    def set_subdata(self, data, offset=0, copy=False, **kwargs):
         raise RuntimeError("Cannot set data on buffer view.")
     
-    def set_data(self, data, copy=False, **kwds):
+    def set_data(self, data, copy=False, **kwargs):
         raise RuntimeError("Cannot set data on buffer view.")
     
     @property

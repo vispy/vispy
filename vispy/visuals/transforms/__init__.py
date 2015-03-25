@@ -29,5 +29,5 @@ for o in list(globals().values()):
         continue
 
 
-def create_transform(type, *args, **kwds):
-    return transform_types[type](*args, **kwds)
+def create_transform(type, *args, **kwargs):
+    return transform_types[type](*args, **kwargs)

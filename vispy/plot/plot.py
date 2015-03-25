@@ -11,14 +11,14 @@ from ..scene import SceneCanvas, visuals, cameras
 plots = []
 
 
-def plot(*args, **kwds):
+def plot(*args, **kwargs):
     """ Create a new canvas and plot the given data.
 
     For arguments, see scene.visuals.LinePlot.
     """
     canvas = SceneCanvas(keys='interactive')
     canvas.view = canvas.central_widget.add_view()
-    canvas.line = visuals.LinePlot(*args, **kwds)
+    canvas.line = visuals.LinePlot(*args, **kwargs)
     canvas.view.add(canvas.line)
     if False:  # todo: of data-is-3D
         canvas.view.camera = 'turntable'
@@ -29,19 +29,18 @@ def plot(*args, **kwds):
     return canvas
 
 
-def image(*args, **kwds):
+def image(*args, **kwargs):
     """ Create a new canvas and display the given image data.
 
     For arguments, see scene.visuals.Image.
     """
     canvas = SceneCanvas(keys='interactive')
     canvas.view = canvas.central_widget.add_view()
-    canvas.image = visuals.Image(*args, **kwds)
+    canvas.image = visuals.Image(*args, **kwargs)
     canvas.view.add(canvas.image)  # This sets the parent of the image
+
     canvas.show()
-    canvas.view.camera = cameras.PanZoomCamera(fixed_ratio=True,
-                                               scale_ratio=(1, -1, 1),
-                                               )
+    canvas.view.camera = cameras.PanZoomCamera(aspect=1)
     plots.append(canvas)
     # todo: (AK) I think this should return an image
     # Also, wtf: this creates an image in a viewbox in a widget in a canvas.
@@ -108,13 +107,12 @@ def mesh(vertices=None, faces=None, vertex_colors=None, face_colors=None,
     canvas.view.add(canvas.mesh)
     canvas.view.camera = cameras.TurntableCamera(fov=60, 
                                                  azimuth=azimuth,
-                                                 elevation=elevation,
-                                                 fixed_ratio=True)
+                                                 elevation=elevation)
     plots.append(canvas)
     return canvas
 
 
-def scatter(*args, **kwds):
+def scatter(*args, **kwargs):
     ''' Create a new canvas and make a scatter plot.
 
     Parameters
@@ -159,8 +157,8 @@ def scatter(*args, **kwds):
     else:
         raise ValueError('Invalid shape for position data')
     canvas.scatter = visuals.Markers()
-    kwds['pos'] = _pos
-    canvas.scatter.set_data(**kwds)
+    kwargs['pos'] = _pos
+    canvas.scatter.set_data(**kwargs)
     canvas.view.add(canvas.scatter)
     canvas.view.camera = 'panzoom'
     canvas.show()

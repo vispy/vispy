@@ -13,8 +13,8 @@ def arg_to_array(func):
     """
     Decorator to convert argument to array.
     """
-    def fn(self, arg, *args, **kwds):
-        return func(self, np.array(arg), *args, **kwds)
+    def fn(self, arg, *args, **kwargs):
+        return func(self, np.array(arg), *args, **kwargs)
     return fn
 
 
@@ -46,7 +46,7 @@ def as_vec4(obj, default=(0, 0, 0, 1)):
 
 
 @decorator
-def arg_to_vec4(func, self, arg, *args, **kwds):
+def arg_to_vec4(func, self, arg, *args, **kwargs):
     """
     Decorator for converting argument to vec4 format suitable for 4x4 matrix
     multiplication.
@@ -73,13 +73,13 @@ def arg_to_vec4(func, self, arg, *args, **kwds):
         flatten = arg.ndim == 1
         arg = as_vec4(arg)
 
-        ret = func(self, arg, *args, **kwds)
+        ret = func(self, arg, *args, **kwargs)
         if flatten and ret is not None:
             return ret.flatten()
         return ret
     elif hasattr(arg, '_transform_in'):
         arr = arg._transform_in()
-        ret = func(self, arr, *args, **kwds)
+        ret = func(self, arr, *args, **kwargs)
         return arg._transform_out(ret)
     else:
         raise TypeError("Cannot convert argument to 4D vector: %s" % arg)

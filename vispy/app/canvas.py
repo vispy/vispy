@@ -424,7 +424,7 @@ class Canvas(object):
 
     # ---------------------------------------------------------------- misc ---
     def __repr__(self):
-        return ('<Vispy canvas (%s backend) at %s>'
+        return ('<Canvas (%s) at %s>'
                 % (self.app.backend_name, hex(id(self))))
 
     def __enter__(self):
@@ -521,15 +521,15 @@ class MouseEvent(Event):
         allowing the entire drag to be reconstructed.
     native : object (optional)
        The native GUI event object
-    **kwds : keyword arguments
+    **kwargs : keyword arguments
         All extra keyword arguments become attributes of the event object.
 
     """
 
     def __init__(self, type, pos=None, button=None, buttons=None,
                  modifiers=None, delta=None, last_event=None, press_event=None,
-                 **kwds):
-        Event.__init__(self, type, **kwds)
+                 **kwargs):
+        Event.__init__(self, type, **kwargs)
         self._pos = np.array([0, 0]) if (pos is None) else np.array(pos)
         self._button = int(button) if (button is not None) else None
         self._buttons = [] if (buttons is None) else buttons
@@ -632,12 +632,12 @@ class KeyEvent(Event):
         time of the event (shift, control, alt, meta).
     native : object (optional)
        The native GUI event object
-    **kwds : keyword arguments
+    **kwargs : keyword arguments
         All extra keyword arguments become attributes of the event object.
     """
 
-    def __init__(self, type, key=None, text='', modifiers=None, **kwds):
-        Event.__init__(self, type, **kwds)
+    def __init__(self, type, key=None, text='', modifiers=None, **kwargs):
+        Event.__init__(self, type, **kwargs)
         self._key = key
         self._text = text
         self._modifiers = tuple(modifiers or ())
@@ -670,12 +670,12 @@ class ResizeEvent(Event):
         The new size of the Canvas.
     native : object (optional)
        The native GUI event object
-    **kwds : extra keyword arguments
+    **kwargs : extra keyword arguments
         All extra keyword arguments become attributes of the event object.
     """
 
-    def __init__(self, type, size=None, **kwds):
-        Event.__init__(self, type, **kwds)
+    def __init__(self, type, size=None, **kwargs):
+        Event.__init__(self, type, **kwargs)
         self._size = tuple(size)
 
     @property
@@ -702,12 +702,12 @@ class DrawEvent(Event):
         If None, the entire canvas must be redrawn.
     native : object (optional)
        The native GUI event object
-    **kwds : extra keyword arguments
+    **kwargs : extra keyword arguments
         All extra keyword arguments become attributes of the event object.
     """
 
-    def __init__(self, type, region=None, **kwds):
-        Event.__init__(self, type, **kwds)
+    def __init__(self, type, region=None, **kwargs):
+        Event.__init__(self, type, **kwargs)
         self._region = region
 
     @property

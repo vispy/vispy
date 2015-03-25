@@ -24,8 +24,10 @@ class Canvas(app.Canvas):
         self.line = visuals.LinePlotVisual(pos, color='w', edge_color='w',
                                            face_color=(0.2, 0.2, 1))
         app.Canvas.__init__(self, keys='interactive',
-                            size=(800, 800), show=True)
+                            size=(800, 800))
         self.tr_sys = visuals.transforms.TransformSystem(self)
+
+        self.show(True)
 
     def on_draw(self, event):
         gloo.clear('black')

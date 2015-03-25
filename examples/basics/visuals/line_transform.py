@@ -72,12 +72,13 @@ class Canvas(app.Canvas):
 
         app.Canvas.__init__(self, keys='interactive')
         self.size = (800, 800)
-        self.show()
         
         for line in self.lines:
             tr_sys = visuals.transforms.TransformSystem(self)
             tr_sys.visual_to_document = line.transform
             line.tr_sys = tr_sys
+
+        self.show(True)
 
     def on_draw(self, ev):
         gloo.clear('black', depth=True)

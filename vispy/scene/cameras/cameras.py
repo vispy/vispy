@@ -30,7 +30,7 @@ def cosd(q):
 # todo: Make 3D cameras use same internal state: less code, smooth transitions
 
 
-def make_camera(cam_type, *args, **kwds):
+def make_camera(cam_type, *args, **kwargs):
     """ Factory function for creating new cameras using a string name.
     
     Parameters
@@ -50,7 +50,7 @@ def make_camera(cam_type, *args, **kwds):
         cam_types[camType.__name__[:-6].lower()] = camType
     
     try: 
-        return cam_types[cam_type](*args, **kwds)
+        return cam_types[cam_type](*args, **kwargs)
     except KeyError:
         raise KeyError('Unknown camera type "%s". Options are: %s' % 
                        (cam_type, cam_types.keys()))
@@ -220,6 +220,7 @@ class BaseCamera(Node):
         if value not in ('+z', '-z', '+y', '-y', '+x', '-x'):
             raise ValueError('Invalid value for up.')
         self._up = value
+        self.view_changed()
     
     @property
     def center(self):
@@ -855,9 +856,12 @@ class TurntableCamera(PerspectiveCamera):
     fov : float
         Field of view. Zero (default) means orthographic projection.
     elevation : float
-        Elevation angle in degrees.
+        Elevation angle in degrees. Positive angles place the camera
+        above the cente point, negative angles place the camera below
+        the center point.
     azimuth : float
-        Azimuth angle in degrees.
+        Azimuth angle in degrees. Zero degrees places the camera on the
+        positive x-axis, pointing in the negative x direction.
     roll : float
         Roll angle in degrees
     distance : float | None
@@ -879,8 +883,8 @@ class TurntableCamera(PerspectiveCamera):
                                                      'azimuth', 'roll')
     
     def __init__(self, fov=0.0, elevation=30.0, azimuth=30.0, roll=0.0, 
-                 distance=None, **kwds):
-        super(TurntableCamera, self).__init__(fov=fov, **kwds)
+                 distance=None, **kwargs):
+        super(TurntableCamera, self).__init__(fov=fov, **kwargs)
         
         self._actual_distance = 0.0
         self._event_value = None
