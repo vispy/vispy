@@ -3,9 +3,9 @@
 # Copyright (c) 2014, Nicolas P. Rougier
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
-from color import Color
-from number import Number
-from length import Length
+from . color import Color
+from . number import Number
+from . length import Length
 
 _converters = {
     "fill":              Color,
