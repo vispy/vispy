@@ -7,7 +7,7 @@ from __future__ import division
 import re
 
 # regular expressions for parsing GLSL
-re_type = r'(?:void|int|float|vec2|vec3|vec4|mat2|mat3|mat4)'
+re_type = r'(?:void|int|float|vec2|vec3|vec4|mat2|mat3|mat4|sampler1D|sampler2D|sampler3D)'
 re_identifier = r'(?:[a-zA-Z_][\w_]*)'
 
 # variable qualifiers
