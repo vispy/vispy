@@ -3,9 +3,9 @@
 # Copyright (c) 2014, Nicolas P. Rougier. All rights reserved.
 # Distributed under the terms of the new BSD License.
 # -----------------------------------------------------------------------------
-from svg import SVG
-from path import Path
-from base import namespace
+from . svg import SVG
+from . path import Path
+from . base import namespace
 from xml.etree import ElementTree
 
 def Document(filename):
