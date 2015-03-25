@@ -63,9 +63,9 @@ class ViewBox(Widget):
         # Camera is a helper object that handles scene transformation
         # and user interaction.
         if camera is None:
-            camera = 'panzoom'
+            camera = 'base'
         if isinstance(camera, string_types):
-            self.camera = make_camera(camera)
+            self.camera = make_camera(camera, parent=self.scene)
         elif isinstance(camera, BaseCamera):
             self.camera = camera
         else:
@@ -73,25 +73,93 @@ class ViewBox(Widget):
 
     @property
     def camera(self):
-        """ The Camera in use by this ViewBox. 
+        """ Get/set the Camera in use by this ViewBox
+        
+        If a string is given (e.g. 'panzoom', 'turntable', 'fly'). A
+        corresponding camera is selected if it already exists in the
+        scene, otherwise a new camera is created.
+        
+        The camera object is made a child of the scene (if it is not
+        already in the scene).
+        
+        Multiple cameras can exist in one scene, although only one can
+        be active at a time. A single camera can be used by multiple
+        viewboxes at the same time.
         """
         return self._camera
     
     @camera.setter
     def camera(self, cam):
-        if self._camera is not None:
-            self._camera.viewbox = None
-        self._camera = cam
-        cam.viewbox = self
         
-    def set_camera(self, cam_type, *args, **kwargs):
-        """ Create a new Camera and attach it to this ViewBox. 
+        if isinstance(cam, string_types):
+            # Try to select an existing camera
+            for child in self.scene.children:
+                if isinstance(child, BaseCamera):
+                    this_cam_type = child.__class__.__name__.lower()[:-6]
+                    if this_cam_type == cam:
+                        self.camera = child
+                        return
+            else:
+                # No such camera yet, create it then
+                self.camera = make_camera(cam)
+            
+        elif isinstance(cam, BaseCamera):
+            # Ensure that the camera is in the scene
+            if not self.is_in_scene(cam):
+                cam.add_parent(self.scene)
+            # Disconnect / connect
+            if self._camera is not None:
+                self._camera._viewbox_unset(self)
+            self._camera = cam
+            if self._camera is not None:
+                self._camera._viewbox_set(self)
+            # Update view
+            cam.view_changed()
         
-        See :func:`make_camera` for arguments.
+        else:
+            raise ValueError('Not a camera object.')
+    
+    def is_in_scene(self, node):
+        """ Get whether the given node is inside the scene of this viewbox.
         """
-        self.camera = make_camera(cam_type, *args, **kwargs)
-        return self.camera
-
+        def _is_child(parent, child):
+            if child in parent.children:
+                return True
+            else:
+                for c in parent.children:
+                    if isinstance(c, ViewBox):
+                        continue
+                    elif _is_child(c, child):
+                        return True
+            return False
+        
+        return _is_child(self.scene, node)
+    
+    def get_scene_bounds(self):
+        """ Get the total bounds based on the visuals present in the scene.
+        Returns a list of 3 tuples.
+        """
+        # todo: handle sub-children
+        # todo: handle transformations
+        # Init
+        mode = 'data'  # or visual?
+        bounds = [(np.inf, -np.inf), (np.inf, -np.inf), (np.inf, -np.inf)]
+        # Get bounds of all children
+        for ob in self.scene.children:
+            if hasattr(ob, 'bounds'):
+                for axis in (0, 1, 2):
+                    b = ob.bounds(mode, axis)
+                    if b is not None:
+                        b = min(b), max(b)  # Ensure correct order
+                        bounds[axis] = (min(bounds[axis][0], b[0]), 
+                                        max(bounds[axis][1], b[1]))
+        # Set defaults
+        for axis in (0, 1, 2):
+            if np.inf in [np.abs(x) for x in bounds[axis]]:
+                bounds[axis] = -1, 1
+        
+        return bounds
+    
     @property
     def scene(self):
         """ The root node of the scene viewed by this ViewBox.

@@ -34,7 +34,13 @@ class MagnifyCamera(PanZoomCamera):
         # ratio of inner to outer lens radius
         self.radius_ratio = radius_ratio
         
-        # Create the mag transform
+        # Extract kwargs for panzoom
+        camkwargs = {}
+        for key in ('parent', 'name', 'rect', 'aspect'):
+            if key in kwargs:
+                camkwargs[key] = kwargs.pop(key)
+        
+        # Create the mag transform - kwrds go here
         self.mag = self.transform_class(**kwargs)
         
         # for handling smooth transitions
@@ -43,7 +49,7 @@ class MagnifyCamera(PanZoomCamera):
         self.mouse_pos = None
         self.timer = Timer(interval=0.016, connect=self.on_timer)
         
-        super(MagnifyCamera, self).__init__()
+        super(MagnifyCamera, self).__init__(**camkwargs)
 
         # This tells the camera to insert the magnification transform at the
         # beginning of the transform it applies to the scene. This is the 
@@ -54,8 +60,15 @@ class MagnifyCamera(PanZoomCamera):
         #    the scale factors implemented there should not change the shape
         #    of the lens.
         self.pre_transform = self.mag
+    
+    def _viewbox_set(self, viewbox):
+        PanZoomCamera._viewbox_set(self, viewbox)
         
-    def view_mouse_event(self, event):
+    def _viewbox_unset(self, viewbox):
+        PanZoomCamera._viewbox_unset(self, viewbox)
+        self.timer.stop()
+    
+    def viewbox_mouse_event(self, event):
         # When the attached ViewBox reseives a mouse event, it is sent to the
         # camera here.
         
@@ -69,7 +82,7 @@ class MagnifyCamera(PanZoomCamera):
             self.mag_target = m
         else:
             # send everything _except_ wheel events to the superclass
-            super(MagnifyCamera, self).view_mouse_event(event)
+            super(MagnifyCamera, self).viewbox_mouse_event(event)
             
         # start the timer to smoothly modify the transform properties. 
         if not self.timer.running:
@@ -97,16 +110,19 @@ class MagnifyCamera(PanZoomCamera):
             
         self._update_transform()
 
-    def view_resize_event(self, event):
-        # when the view resizes, we change the lens radii to match.
-        vbs = self.viewbox.size
-        r = min(vbs) * self.size_factor
-        self.mag.radii = r * self.radius_ratio, r
-        self._update_transform()
+    def viewbox_resize_event(self, event):
+        PanZoomCamera.viewbox_resize_event(self, event)
+        self.view_changed()
 
     def view_changed(self):
         # make sure radii are updated when a view is attached.
-        self.view_resize_event(None)
+        # when the view resizes, we change the lens radii to match.
+        if self._viewbox is not None:
+            vbs = self._viewbox.size
+            r = min(vbs) * self.size_factor
+            self.mag.radii = r * self.radius_ratio, r
+        
+        PanZoomCamera.view_changed(self)
 
 
 class Magnify1DCamera(MagnifyCamera):

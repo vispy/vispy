@@ -17,7 +17,7 @@ class DrawingSystem(object):
     """
     def process(self, event, node):
         # Draw this node if it is a visual
-        if isinstance(node, Visual):
+        if isinstance(node, Visual) and node.visible:
             try:
                 node.draw(event)
             except Exception:

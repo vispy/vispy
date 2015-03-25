@@ -97,6 +97,7 @@ class LineVisual(Visual):
         self._color = None
         self._width = None
         self._connect = None
+        self._bounds = None
         
         # don't call subclass set_data; these often have different
         # signatures.
@@ -160,6 +161,7 @@ class LineVisual(Visual):
             * bool numpy arrays specify which _adjacent_ pairs to connect.
         """
         if pos is not None:
+            self._bounds = None
             self._pos = pos
             self._changed['pos'] = True
 
@@ -226,14 +228,20 @@ class LineVisual(Visual):
         return color
 
     def bounds(self, mode, axis):
-        data = self._pos
-        if data is None:
-            return None
-        if data.shape[1] > axis:
-            return (data[:, axis].min(), data[:, axis].max())
+        # Can and should we calculate bounds?
+        if (self._bounds is None) and self._pos is not None:
+            pos = self._pos
+            self._bounds = [(pos[:, d].min(), pos[:, d].max())
+                            for d in range(pos.shape[1])]
+        # Return what we can
+        if self._bounds is None:
+            return 
         else:
-            return (0, 0)
-
+            if axis < len(self._bounds):
+                return self._bounds[axis]
+            else:
+                return (0, 0)
+    
     def draw(self, transforms):
         self._line_visual.draw(transforms)
         for k in self._changed:

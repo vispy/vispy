@@ -7,6 +7,7 @@ doc/_build
 /_website
 /_gh-pages
 /_images
+/_demo-data
 build
 dist
 MANIFEST

@@ -188,6 +188,22 @@ class InverseTransform(BaseTransform):
     def inverse(self):
         return self._transform
     
+    @property
+    def Linear(self):
+        return self._transform.Linear
+
+    @property
+    def Orthogonal(self):
+        return self._transform.Orthogonal
+
+    @property
+    def NonScaling(self):
+        return self._transform.NonScaling
+
+    @property
+    def Isometric(self):
+        return self._transform.Isometric
+    
     def __repr__(self):
         return ("<Inverse of %r>" % repr(self._transform))
         

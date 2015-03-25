@@ -77,13 +77,14 @@ class ImageVisual(ModularMesh):
 
     def _build_data(self, transforms):
         # Construct complete data array with position and optionally color
-        if transforms.get_full_transform().Linear:
+        if False:  # transforms.get_full_transform().Linear
+            # -> does not take cams into account
             method = 'subdivide'
             grid = (1, 1)
         else:
             method = self.method
             grid = self.grid
-
+        
         # TODO: subdivision and impostor modes should be handled by new
         # components?
         if method == 'subdivide':

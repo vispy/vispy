@@ -184,7 +184,7 @@ class SceneCanvas(app.Canvas):
             self.pop_fbo()
         
     def _draw_scene(self):
-        gloo.clear(color=self._bgcolor, depth=True)
+        self.context.clear(color=self._bgcolor, depth=True)
         # Draw the scene, but first disconnect its change signal--
         # any changes that take place during the paint should not trigger
         # a subsequent repaint.
@@ -293,8 +293,7 @@ class SceneCanvas(app.Canvas):
         return vp
     
     def _set_viewport(self, vp):
-        from .. import gloo
-        gloo.set_viewport(*vp)
+        self.context.set_viewport(*vp)
 
     def push_fbo(self, fbo, offset, csize):
         """ Push an FBO on the stack, together with the new viewport.

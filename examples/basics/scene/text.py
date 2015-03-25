@@ -17,7 +17,6 @@ from vispy.scene.visuals import Text
 # Create canvas with a viewbox at the lower half
 canvas = scene.SceneCanvas(keys='interactive')
 vb = scene.widgets.ViewBox(parent=canvas.scene, border_color='b')
-vb.camera.rect = 0, 0, 1, 1
 
 
 @canvas.events.resize.connect
@@ -40,6 +39,8 @@ linedata = np.empty((N, 2), np.float32)
 linedata[:, 0] = np.linspace(0, 1, N)
 linedata[:, 1] = np.random.uniform(0.5, 0.1, (N,))
 scene.visuals.Line(pos=linedata, color='#f006', mode='gl', parent=vb.scene)
+
+vb.camera = 'panzoom'
 
 if __name__ == '__main__':
     canvas.show()

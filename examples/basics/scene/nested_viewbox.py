@@ -82,6 +82,7 @@ vb1 = scene.widgets.ViewBox(parent=canvas.scene, name='vb1',
                             margin=2, border_color='red')
 vb1.pos = 0, 0
 vb1.size = w2, h
+vb1.camera = 'panzoom'
 vb1.camera.rect = (0, 0, 1, 1)
 vb1.camera.interactive = False
 
@@ -90,6 +91,7 @@ vb11 = scene.widgets.ViewBox(parent=vb1.scene, name='vb11',
                              margin=0.02, border_color='green')
 vb11.pos = 0, 0
 vb11.size = 1, 0.5
+vb11.camera = 'panzoom'
 vb11.camera.rect = (0, 0, 1, 1)
 line11 = scene.visuals.Line(pos=pos, color=color, mode='gl', parent=vb11.scene)
 
@@ -98,7 +100,7 @@ vb12 = scene.widgets.ViewBox(parent=vb1.scene, name='vb12',
                              margin=0.02, border_color='blue')
 vb12.pos = 0, 0.5
 vb12.size = 1, 0.5
-vb12.set_camera(None)  # use parent cs
+vb12.camera = 'base'  # use parent cs
 # vb12 does not apply any scaling, so we do that manually here to match vb11
 line12 = scene.visuals.Line(pos=pos * [[1.0, 0.5]], color=color, mode='gl', 
                             parent=vb12.scene)
@@ -113,7 +115,7 @@ vb2 = scene.widgets.ViewBox(parent=canvas.scene, name='vb2',
                             margin=2, border_color='yellow')
 vb2.pos = w2, 0
 vb2.size = w2, h
-vb2.set_camera(None)
+vb2.camera = 'base'
 vb2.camera.interactive = False
 
 # top-right (+y up)
@@ -121,6 +123,7 @@ vb21 = scene.widgets.ViewBox(parent=vb2.scene, name='vb21',
                              margin=10, border_color='purple')
 vb21.pos = 0, 0
 vb21.size = w2, h2
+vb21.camera = 'panzoom'
 vb21.camera.rect = (0, 0, 1, 1)
 line21 = scene.visuals.Line(pos=pos, color=color, mode='gl', parent=vb21.scene)
 
@@ -129,7 +132,7 @@ vb22 = scene.widgets.ViewBox(parent=vb2.scene, name='vb22',
                              margin=10, border_color='teal')
 vb22.pos = 0, h2
 vb22.size = w2, h2
-vb22.set_camera(None)  # use parent cs
+vb22.camera = 'base'  # use parent cs
 # vb22 does not apply any scaling, so we do that manually here to match vb21
 line22 = scene.visuals.Line(pos=pos * [[w2, h2]], color=color, mode='gl', 
                             parent=vb22.scene)

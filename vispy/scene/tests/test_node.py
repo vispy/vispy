@@ -1,4 +1,5 @@
 from vispy.scene.node import Node
+from vispy.testing import run_tests_if_main
 
 
 def test_graph():
@@ -29,3 +30,6 @@ def test_graph():
         raise Exception("Should have raised RuntimeError")
     except RuntimeError:
         pass
+
+
+run_tests_if_main()

@@ -145,7 +145,7 @@ class Widget(Node):
     @padding.setter
     def padding(self, p):
         self._padding = p
-        self._update_child_boxes()
+        self._update_child_widgets()
 
     def _update_line(self):
         """ Update border line to match new shape """

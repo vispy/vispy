@@ -99,8 +99,7 @@ class Canvas(scene.SceneCanvas):
         scene.SceneCanvas.__init__(self, keys='interactive')
         self.size = 800, 600
         self.view = self.central_widget.add_view()
-        self.view.set_camera('turntable', mode='perspective', up='z',
-                             distance=5)
+        self.view.camera = scene.TurntableCamera()
         self.radius = 2.0
         mesh = create_sphere(20, 20, radius=self.radius)
         vertices = mesh.get_vertices()
