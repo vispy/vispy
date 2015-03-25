@@ -38,11 +38,11 @@ which the number of steps is very small.
 from .. import gloo
 from . import Visual
 from .shaders import Function, ModularProgram
+from ..color import get_colormap
 
 import numpy as np
 
 # todo: implement more render styles (port from visvis)
-# todo: colormapping
 # todo: allow anisotropic data
 # todo: what to do about lighting? ambi/diffuse/spec/shinynes on each visual?
 
@@ -333,7 +333,7 @@ SNIPPETS_MIP = dict(
         vec4 color = vec4(0.0);
         for (int i=0; i<5; i++) {
             float newi = maxi + 0.4 - 0.2 * float(i);
-            color = max(color, texture3D(u_volumetex, edgeloc + newi * ray));
+            color = max(color, $cmap(texture3D(u_volumetex, edgeloc + newi * ray).r));
         }
         gl_FragColor = color;
         """,
@@ -352,10 +352,10 @@ SNIPPETS_ISO = dict(
             for (int i=0; i<6; i++) {
                 float newi = float(iter) + 1.0 - 0.2 * float(i);
                 loc = edgeloc + newi * ray;
-                color = texture3D(u_volumetex, loc);
-                val = color.g;
-                
+                val = texture3D(u_volumetex, loc).r;
+
                 if (val > u_threshold) {
+                    color = $cmap(val);
                     gl_FragColor = calculateColor(color, loc, step);
                     return;
                 }
@@ -397,7 +397,7 @@ class VolumeVisual(Visual):
                          ('a_texcoord', np.float32, 3), ]
     
     def __init__(self, vol, clim=None, style='mip', threshold=None, 
-                 relative_step_size=0.8):
+                 relative_step_size=0.8, cmap='grays'):
         Visual.__init__(self)
         
         # Variable to determine clipping plane when inside the volume.
@@ -409,14 +409,16 @@ class VolumeVisual(Visual):
         # Storage of information of volume
         self._vol_shape = ()
         self._vertex_cache_id = ()
-        self._clim = None
-        
+        self._clim = None      
+
+        # Set the colormap
+        self._cmap = get_colormap(cmap)
+
         # Create gloo objects
         self._program = ModularProgram(vertex_template, fragment_template)
         self._vbo = None
         self._tex = gloo.Texture3D((10, 10, 10), interpolation='linear', 
                                    wrapping='clamp_to_edge')
-        #
         self._program['u_volumetex'] = self._tex
         self._program.frag['calculate_steps'] = Function(calc_steps)
         self._index_buffer = None
@@ -468,6 +470,16 @@ class VolumeVisual(Visual):
         return self._clim
     
     @property
+    def cmap(self):
+        return self._cmap
+
+    @cmap.setter
+    def cmap(self, cmap):
+        self._cmap = get_colormap(cmap)
+        self._program.frag['cmap'] = Function(self._cmap.glsl_map)
+        self.update()
+
+    @property
     def style(self):
         """ The rende style to use:
         
@@ -494,6 +506,7 @@ class VolumeVisual(Visual):
         snippet_dict = {'mip': SNIPPETS_MIP, 'iso': SNIPPETS_ISO}[style]
         for key, snippet in snippet_dict.items():
             self._program.frag[key] = snippet
+        self._program.frag['cmap'] = Function(self._cmap.glsl_map)
         self.update()
     
     @property
