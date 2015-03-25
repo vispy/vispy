@@ -307,7 +307,7 @@ class Program(GLObject):
                     self._glir.command('TEXTURE', self._id, name, data.id)
                 else:
                     # Normal uniform; convert to np array and check size
-                    dtype, numel = self._gtypes[type]
+                    dtype, numel = self._gtypes[type_]
                     data = np.array(data, dtype=dtype).ravel()
                     if data.size != numel:
                         raise ValueError('Uniform %r needs %i elements, '
@@ -318,9 +318,8 @@ class Program(GLObject):
 
             elif kind == 'uniform_array':
                 # Normal uniform; convert to np array and check size
-                dtype, numel = self._gtypes[type]
+                dtype, numel = self._gtypes[type_]
                 data = np.atleast_2d(data).astype(dtype)
-                print(data)
                 need_shape = (size, numel)
                 if data.shape != need_shape:
                     raise ValueError('Uniform array %r needs shape %s not %s'
@@ -328,7 +327,7 @@ class Program(GLObject):
                 data = data.ravel()
                 # Store and send GLIR command
                 self._user_variables[name] = data
-                self._glir.command('UNIFORM', self._id, name, type, data)
+                self._glir.command('UNIFORM', self._id, name, type_, data)
             
             elif kind == 'attribute':
                 # Is this a constant value per vertex

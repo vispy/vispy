@@ -476,8 +476,8 @@ class GlirProgram(GlirObject):
         vert_handle = gl.glCreateShader(gl.GL_VERTEX_SHADER)
         frag_handle = gl.glCreateShader(gl.GL_FRAGMENT_SHADER)
         # For both vertex and fragment shader: set source, compile, check
-        for code, handle, type in [(vert, vert_handle, 'vertex'), 
-                                   (frag, frag_handle, 'fragment')]:
+        for code, handle, type_ in [(vert, vert_handle, 'vertex'), 
+                                    (frag, frag_handle, 'fragment')]:
             gl.glShaderSource(handle, code)
             gl.glCompileShader(handle)
             status = gl.glGetShaderParameter(handle, gl.GL_COMPILE_STATUS)
@@ -485,7 +485,7 @@ class GlirProgram(GlirObject):
                 errors = gl.glGetShaderInfoLog(handle)
                 errormsg = self._get_error(code, errors, 4)
                 raise RuntimeError("Shader compilation error in %s:\n%s" % 
-                                   (type + ' shader', errormsg))
+                                   (type_ + ' shader', errormsg))
         # Attach shaders
         gl.glAttachShader(self._handle, vert_handle)
         gl.glAttachShader(self._handle, frag_handle)
@@ -614,8 +614,8 @@ class GlirProgram(GlirObject):
                 unit = self._samplers[name][-1]  # Use existing unit            
             self._samplers[name] = tex._target, tex.handle, unit
             gl.glUniform1i(handle, unit)
-    
-    def set_uniform(self, name, type, value):
+
+    def set_uniform(self, name, type_, value):
         """ Set a uniform value. Value is assumed to have been checked.
         """
         if not self._linked:
@@ -629,8 +629,8 @@ class GlirProgram(GlirObject):
             handle = gl.glGetUniformLocation(self._handle, name)
             self._unset_variables.discard(name)  # Mark as set
             # if we set a uniform_array, mark all as set
-            if not type.startswith('mat'):
-                count = value.nbytes // (4 * self.ATYPEINFO[type][0])
+            if not type_.startswith('mat'):
+                count = value.nbytes // (4 * self.ATYPEINFO[type_][0])
             if count > 1:
                 for ii in range(count):
                     if '%s[%s]' % (name, ii) in self._unset_variables:
@@ -642,12 +642,12 @@ class GlirProgram(GlirObject):
                 logger.warning('Variable %s is not an active uniform' % name)
                 return
         # Look up function to call
-        funcname = self.UTYPEMAP[type]
+        funcname = self.UTYPEMAP[type_]
         func = getattr(gl, funcname)
         # Program needs to be active in order to set uniforms
         self.activate()
         # Triage depending on type 
-        if type.startswith('mat'):
+        if type_.startswith('mat'):
             # Value is matrix, these gl funcs have alternative signature
             transpose = False  # OpenGL ES 2.0 does not support transpose
             func(handle, 1, transpose, value)
@@ -655,7 +655,7 @@ class GlirProgram(GlirObject):
             # Regular uniform
             func(handle, count, value)
     
-    def set_attribute(self, name, type, value):
+    def set_attribute(self, name, type_, value):
         """ Set an attribute value. Value is assumed to have been checked.
         """
         if not self._linked:
@@ -679,14 +679,14 @@ class GlirProgram(GlirObject):
         # Triage depending on VBO or tuple data
         if value[0] == 0:
             # Look up function call
-            funcname = self.ATYPEMAP[type]
+            funcname = self.ATYPEMAP[type_]
             func = getattr(gl, funcname)
             # Set data
             self._attributes[name] = 0, handle, func, value[1:]
         else:
             # Get meta data
             vbo_id, stride, offset = value
-            size, gtype, dtype = self.ATYPEINFO[type]
+            size, gtype, dtype = self.ATYPEINFO[type_]
             # Get associated VBO
             vbo = self._parser.get_object(vbo_id)
             if vbo is None:
