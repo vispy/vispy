@@ -27,7 +27,7 @@ def cosd(q):
 
 # todo: allow panzoom camera to operate in other planes than Z (i.e. use up)
 
-# todo: zoom factors OK? Zooming with scroll OK?
+# todo: Make 3D cameras use same internal state: less code, smooth transitions
 
 
 def make_camera(cam_type, *args, **kwds):
