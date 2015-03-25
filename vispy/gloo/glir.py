@@ -628,10 +628,12 @@ class GlirProgram(GlirObject):
             handle = gl.glGetUniformLocation(self._handle, name)
             self._unset_variables.discard(name)  # Mark as set
             # if we set a uniform_array, mark all as set
-            count = value.nbytes // (4 * self.ATYPEINFO[type][0])
-            for ii in range(count):
-                if '%s[%s]' % (name, ii) in self._unset_variables:
-                    self._unset_variables.discard('%s[%s]' % (name, ii))
+            if not type.startswith('mat'):
+                count = value.nbytes // (4 * self.ATYPEINFO[type][0])
+            if count > 1:
+                for ii in range(count):
+                    if '%s[%s]' % (name, ii) in self._unset_variables:
+                        self._unset_variables.discard('%s[%s]' % (name, ii))
 
             self._handles[name] = handle  # Store in cache
             if handle < 0:
