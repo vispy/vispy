@@ -113,6 +113,7 @@ def test_use_texture3D():
             expected[:2, :3] = val
             assert_allclose(out, expected, atol=1./255.)
 
+
 @requires_application()
 def test_use_uniforms():
     """Test using uniform arrays"""

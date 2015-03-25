@@ -430,6 +430,7 @@ class GlirProgram(GlirObject):
         'vec2': (2, gl.GL_FLOAT, np.float32),
         'vec3': (3, gl.GL_FLOAT, np.float32),
         'vec4': (4, gl.GL_FLOAT, np.float32),
+        'int': (1, gl.GL_INT, np.int32),
     }
     
     def create(self):
