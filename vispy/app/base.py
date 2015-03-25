@@ -188,7 +188,7 @@ class BaseCanvasBackend(object):
         kwargs.update(self._vispy_mouse_data)
         ev = self._vispy_canvas.events.mouse_release(**kwargs)
         if (self._vispy_mouse_data['press_event'] 
-            and  self._vispy_mouse_data['press_event'].button == ev.button) :
+                and self._vispy_mouse_data['press_event'].button == ev.button):
             self._vispy_mouse_data['press_event'] = None
 
         if ev.button in self._vispy_mouse_data['buttons']: 
