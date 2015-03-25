@@ -228,28 +228,3 @@ class Transform:
             return ""
 
         return 'transform="%s" ' % repr(self)
-
-
-# -----------------------------------------------------------------------------
-if __name__ == '__main__':
-    transform = Transform("translate(50,90), rotate(-45), translate(130,160)")
-    print transform
-    print transform.matrix
-    print
-
-    transform = (Transform("translate(50,90)") +
-                 Transform("rotate(-45)") +
-                 Transform("translate(130,160)"))
-    print transform
-    print transform.matrix
-    print
-
-    transform = Transform("translate(50,90)")
-    transform += Transform("rotate(-45)")
-    transform += Transform("translate(130,160)")
-    print transform
-    print transform.matrix
-
-
-    transform = Transform("matrix(1.45784,0,0,1.37381,274.45,224.684)")
-    print transform.matrix

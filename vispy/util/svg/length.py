@@ -31,7 +31,7 @@ class Length(object):
         scale = 1
         if self._unit == '%':
             if not parent:
-                print "No parent for computing length using percent"
+                logger.warn("No parent for computing length using percent")
             elif hasattr(parent, 'viewport'):
                 w, h = parent.viewport
                 if mode == 'x':
@@ -41,7 +41,7 @@ class Length(object):
                 elif mode == 'xy':
                     scale = math.sqrt(w*w+h*h)/math.sqrt(2.0)
             else:
-                print "Parent doesn't have a viewport"
+                logger.warn("Parent doesn't have a viewport")
 
         self._computed_value = self._value * units[self._unit] * scale
 
