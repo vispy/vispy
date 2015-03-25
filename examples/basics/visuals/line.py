@@ -87,7 +87,7 @@ class Canvas(app.Canvas):
 
     def on_draw(self, event):
         gloo.clear('black')
-        gloo.set_viewport(0, 0, *self.size)
+        gloo.set_viewport(0, 0, *self.physical_size)
         for visual in self.visuals:
             visual.draw(visual.tr_sys)
 

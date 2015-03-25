@@ -120,7 +120,9 @@ class Canvas(app.Canvas):
         # --------------------------------------
         set_state(clear_color=(.3, .3, .35, 1), depth_test=True)
         self.timer = app.Timer('auto', connect=self.on_timer, start=True)
-        self._set_projection(self.size)
+        self._set_projection(self.physical_size)
+
+        self.show()
 
     def on_draw(self, event):
         with self.framebuffer:
@@ -128,13 +130,13 @@ class Canvas(app.Canvas):
             clear(color=True, depth=True)
             set_state(depth_test=True)
             self.cube.draw('triangles', self.indices)
-        set_viewport(0, 0, *self.size)
+        set_viewport(0, 0, *self.physical_size)
         clear(color=True)
         set_state(depth_test=False)
         self.quad.draw('triangle_strip')
 
     def on_resize(self, event):
-        self._set_projection(event.size)
+        self._set_projection(event.physical_size)
 
     def _set_projection(self, size):
         width, height = size
@@ -153,5 +155,4 @@ class Canvas(app.Canvas):
 
 if __name__ == '__main__':
     c = Canvas()
-    c.show()
     c.app.run()

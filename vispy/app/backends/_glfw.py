@@ -345,8 +345,8 @@ class CanvasBackend(BaseCanvasBackend):
             # this ensures that the show takes effect
             self._vispy_update()
         else:
-            glfw.glfwHideWindow(self._id)
 
+            glfw.glfwHideWindow(self._id)
     def _vispy_set_fullscreen(self, fullscreen):
         logger.warn('Cannot change fullscreen mode for GLFW backend')
 
@@ -394,7 +394,7 @@ class CanvasBackend(BaseCanvasBackend):
     def _on_resize(self, _id, w, h):
         if self._vispy_canvas is None:
             return
-        self._vispy_canvas.events.resize(size=(w, h))
+        self._vispy_canvas.events.resize(size=(w, h), physical_size=self._vispy_get_physical_size())
 
     def _on_close(self, _id):
         if self._vispy_canvas is None:

@@ -16,7 +16,9 @@ from vispy import gloo
 from vispy import app
 from vispy.util.transforms import perspective, translate, rotate
 
-# Create vetices
+W, H = 400, 400
+
+# Create vertices
 n = 100
 a_position = np.random.uniform(-1, 1, (n, 3)).astype(np.float32)
 a_id = np.random.randint(0, 30, (n, 1))
@@ -54,7 +56,7 @@ class Canvas(app.Canvas):
 
     # ---------------------------------
     def __init__(self):
-        app.Canvas.__init__(self, keys='interactive')
+        app.Canvas.__init__(self, keys='interactive', size=(W, H))
 
         self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
 
@@ -64,7 +66,10 @@ class Canvas(app.Canvas):
 
         self.view = np.eye(4, dtype=np.float32)
         self.model = np.eye(4, dtype=np.float32)
-        self.projection = np.eye(4, dtype=np.float32)
+
+        gloo.set_viewport(0, 0, self.physical_size[0], self.physical_size[1])
+        self.projection = perspective(45.0, self.size[0] / float(self.size[1]), 1.0, 1000.0)
+        self.program['u_projection'] = self.projection
 
         self.translate = 5
         translate(self.view, 0, 0, -self.translate)
@@ -78,6 +83,8 @@ class Canvas(app.Canvas):
         self.context.set_state('translucent')
 
         self.timer = app.Timer('auto', connect=self.on_timer)
+
+        self.show()
 
     # ---------------------------------
     def on_key_press(self, event):
@@ -99,9 +106,8 @@ class Canvas(app.Canvas):
 
     # ---------------------------------
     def on_resize(self, event):
-        width, height = event.size
-        self.context.set_viewport(0, 0, width, height)
-        self.projection = perspective(45.0, width / float(height), 1.0, 1000.0)
+        gloo.set_viewport(0, 0, event.physical_size[0], event.physical_size[1])
+        self.projection = perspective(45.0, event.size[0] / float(event.size[1]), 1.0, 1000.0)
         self.program['u_projection'] = self.projection
 
     # ---------------------------------
@@ -121,5 +127,4 @@ class Canvas(app.Canvas):
 
 if __name__ == '__main__':
     c = Canvas()
-    c.show()
     app.run()

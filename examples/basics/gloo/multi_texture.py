@@ -72,8 +72,10 @@ class Canvas(app.Canvas):
 
         gloo.set_clear_color('white')
 
+        self.show()
+
     def on_resize(self, event):
-        width, height = event.size
+        width, height = event.physical_size
         gloo.set_viewport(0, 0, width, height)
 
     def on_draw(self, event):
@@ -83,5 +85,4 @@ class Canvas(app.Canvas):
 
 if __name__ == '__main__':
     c = Canvas()
-    c.show()
     app.run()
