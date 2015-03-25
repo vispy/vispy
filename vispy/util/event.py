@@ -272,7 +272,8 @@ class EventEmitter(object):
         callback : function | tuple
             *callback* may be either a callable object or a tuple
             (object, attr_name) where object.attr_name will point to a
-            callable object (note: here object can be a weak ref as well).
+            callable object. Note that only a weak reference to ``object``
+            will be kept.
         ref : bool | str
             Reference used to identify the callback in ``before``/``after``.
             If True, the callback ref will automatically determined (see
@@ -315,6 +316,9 @@ class EventEmitter(object):
         callback_refs = self.callback_refs
         if callback in callbacks:
             return
+        # always use a weak ref
+        if isinstance(callback, tuple):
+            callback = (weakref.ref(callback[0]),) + callback[1:]
         # deal with the ref
         if isinstance(ref, bool):
             if ref:
@@ -423,8 +427,7 @@ class EventEmitter(object):
                     continue
                 
                 if isinstance(cb, tuple):
-                    cb0 = cb[0]() if isinstance(cb[0], weakref.ref) else cb[0]
-                    cb = getattr(cb0, cb[1], None)
+                    cb = getattr(cb[0](), cb[1], None)
                     if cb is None:
                         continue
                 

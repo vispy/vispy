@@ -4,8 +4,6 @@
 
 from __future__ import division
 
-import weakref
-
 from ...gloo import Program
 from ...util import logger
 from ...util.event import EventEmitter
@@ -27,8 +25,8 @@ class ModularProgram(Program):
         
         self.vert = MainFunction(vcode)
         self.frag = MainFunction(fcode)
-        self.vert.changed.connect((weakref.ref(self), '_source_changed'))
-        self.frag.changed.connect((weakref.ref(self), '_source_changed'))
+        self.vert.changed.connect((self, '_source_changed'))
+        self.frag.changed.connect((self, '_source_changed'))
         
         # Cache state of Variables so we know which ones require update
         self._variable_state = {}
@@ -56,7 +54,6 @@ class ModularProgram(Program):
     
     def _build(self):
         logger.debug("Rebuild ModularProgram: %s", self)
-        # No circular ref here b/c Complier uses weakref.WeakValueDictionary
         self.compiler = Compiler(vert=self.vert, frag=self.frag)
         code = self.compiler.compile()
         self.set_shaders(code['vert'], code['frag'])
