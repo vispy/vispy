@@ -152,7 +152,7 @@ def assert_cmd_raises(E, fun, *args, **kwargs):
 def test_wrappers():
     """Test gloo wrappers"""
     with Canvas():
-        gl.use_gl('desktop debug')
+        gl.use_gl('gl2 debug')
         gloo.clear('#112233')  # make it so that there's something non-zero
         # check presets
         assert_raises(ValueError, gloo.set_state, preset='foo')

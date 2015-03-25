@@ -42,14 +42,14 @@ def use(app=None, gl=None):
               (experimental)
     gl : str
         The gl backend to use (case insensitive). Options are:
-            * 'desktop': use Vispy's desktop OpenGL API.
-            * 'pyopengl': use PyOpenGL's desktop OpenGL API. Mostly for
+            * 'gl2': use Vispy's desktop OpenGL API.
+            * 'pyopengl2': use PyOpenGL's desktop OpenGL API. Mostly for
               testing.
-            * 'angle': (TO COME) use real OpenGL ES 2.0 on Windows via Angle.
+            * 'es2': (TO COME) use real OpenGL ES 2.0 on Windows via Angle.
               Availability of ES 2.0 is larger for Windows, since it relies
               on DirectX.
-            * If 'debug' is included in this argument, vispy will check for
-              errors after each gl command.
+            * 'gl+': use the full OpenGL functionality available on
+              your system (via PyOpenGL).
 
     Notes
     -----

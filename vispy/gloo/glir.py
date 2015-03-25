@@ -816,7 +816,7 @@ class GlirBuffer(GlirObject):
         
         # Determine whether to check errors to try handling the ATI bug
         check_ati_bug = ((not self._bufferSubDataOk) and
-                         (gl.current_backend is gl.desktop) and
+                         (gl.current_backend is gl.gl2) and
                          sys.platform.startswith('win'))
 
         # flush any pending errors

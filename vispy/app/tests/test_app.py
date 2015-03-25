@@ -17,7 +17,7 @@ from vispy.gloo.util import _screenshot
 from vispy.gloo import gl
 from vispy.ext.six.moves import StringIO
 
-gl.use_gl('desktop debug')
+gl.use_gl('gl2 debug')
 
 
 def on_nonexist(self, *args):

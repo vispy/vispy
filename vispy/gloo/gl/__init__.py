@@ -97,7 +97,7 @@ proxy = MainProxy()
 _debug_proxy = DebugProxy()
 
 
-def use_gl(target='desktop'):
+def use_gl(target='gl2'):
     """ Let Vispy use the target OpenGL ES 2.0 implementation
     
     Also see ``vispy.use()``.
@@ -108,17 +108,24 @@ def use_gl(target='desktop'):
         The target GL backend to use.
 
     Available backends:
-    * desktop - Use desktop (i.e. normal) OpenGL.
-    * pyopengl - Use pyopengl (for fallback and testing). 
+    * gl2 - Use ES 2.0 subset of desktop (i.e. normal) OpenGL
+    * gl+ - Use the desktop ES 2.0 subset plus all non-deprecated GL
+      functions on your system (requires PyOpenGL)
     * es2 - Use the ES2 library (Angle/DirectX on Windows)
+    * pyopengl2 - Use ES 2.0 subset of pyopengl (for fallback and testing)
     * dummy - Prevent usage of gloo.gl (for when rendering occurs elsewhere)
-
+    
+    You can use vispy's config option "gl_debug" to check for errors
+    on each API call. Or, one can specify it as the target, e.g. "gl2
+    debug". (Debug does not apply to 'gl+', since PyOpenGL has its own
+    debug mechanism)
     """
-    target = target or 'desktop'
-
+    target = target or 'gl2'
+    target = target.replace('+', 'plus')
+    
     # Get options
     target, _, options = target.partition(' ')
-    debug = config['gl_debug'] or ('debug' in options)
+    debug = config['gl_debug'] or 'debug' in options
     
     # Select modules to import names from
     try:
@@ -130,13 +137,30 @@ def use_gl(target='desktop'):
     # Apply
     global current_backend
     current_backend = mod
-    if debug:
+    _clear_namespace()
+    if 'plus' in target:
+        # Copy PyOpenGL funcs, extra funcs, constants, no debug
+        _copy_gl_functions(mod._pyopengl2, globals())
+        _copy_gl_functions(mod, globals(), True)
+    elif debug:
         _copy_gl_functions(_debug_proxy, globals())
     else:
         _copy_gl_functions(mod, globals())
 
 
-def _copy_gl_functions(source, dest):
+def _clear_namespace():
+    """ Clear names that are not part of the strict ES API
+    """
+    ok_names = set(default_backend.__dict__)
+    ok_names.update(['gl2', 'glplus'])  # don't remove the module
+    NS = globals()
+    for name in list(NS.keys()):
+        if name.lower().startswith('gl'):
+            if name not in ok_names:
+                del NS[name]
+
+
+def _copy_gl_functions(source, dest, constants=False):
     """ Inject all objects that start with 'gl' from the source
     into the dest. source and dest can be dicts, modules or BaseGLProxy's.
     """
@@ -150,10 +174,15 @@ def _copy_gl_functions(source, dest):
         source = source.__dict__
     if not isinstance(dest, dict):
         dest = dest.__dict__
-    # Make selection of names
+    # Copy names
     funcnames = [name for name in source.keys() if name.startswith('gl')]
     for name in funcnames:
         dest[name] = source[name]
+    # Copy constants
+    if constants:
+        constnames = [name for name in source.keys() if name.startswith('GL_')]
+        for name in constnames:
+            dest[name] = source[name]
 
 
 def check_error(when='periodic check'):
@@ -181,7 +210,7 @@ def check_error(when='periodic check'):
 
 
 # Load default gl backend
-from . import desktop as default_backend  # noqa
+from . import gl2 as default_backend  # noqa
 
 # Call use to start using our default backend
 use_gl()
