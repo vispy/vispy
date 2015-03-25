@@ -62,8 +62,7 @@ class RawPointCollection(Collection):
         if fragment is None:
             fragment= glsl.get("collections/raw-point.frag")
 
-        vertex =  transform + vertex
-
+        vertex = transform + vertex
         Collection.__init__(self, dtype=dtype, itype=None, mode="points",
                             vertex=vertex, fragment=fragment, **kwargs)
 

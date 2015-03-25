@@ -19,7 +19,8 @@ class AggPointCollection(RawPointCollection):
     This collection provides fast points. Output quality is perfect.
     """
 
-    def __init__(self, user_dtype=None, vertex=None, fragment=None, **kwargs):
+    def __init__(self, user_dtype=None, transform=None,
+                 vertex=None, fragment=None, **kwargs):
         """
         Initialize the collection.
 
@@ -36,13 +37,18 @@ class AggPointCollection(RawPointCollection):
         fragment: string
             Fragment  shader code
 
+        transform : string
+            GLSL Transform code defining the vec4 transform(vec3) function
+
         color : string
             'local', 'shared' or 'global'
         """
         if vertex is None:
             vertex = glsl.get("collections/agg-point.vert")
+        if transform is None:
+            transform = "vec4 transform(vec3 position) {return vec4(position,1.0);}"
         if fragment is None:
             fragment= glsl.get("collections/agg-point.frag")
 
-        RawPointCollection.__init__(self, user_dtype=user_dtype,
+        RawPointCollection.__init__(self, user_dtype=user_dtype, transform=transform,
                                     vertex=vertex, fragment=fragment, **kwargs)

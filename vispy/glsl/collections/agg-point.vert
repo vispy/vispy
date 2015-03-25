@@ -2,11 +2,6 @@
 // Copyright (c) 2014, Nicolas P. Rougier. All Rights Reserved.
 // Distributed under the (new) BSD License.
 // ----------------------------------------------------------------------------
-// Hooks:
-//  <transform> : vec4 function(position)
-//
-// ----------------------------------------------------------------------------
-#version 120
 
 // Externs
 // ------------------------------------
@@ -17,6 +12,7 @@
 // extern float orientation;
 // extern float antialias;
 // extern float linewidth;
+// extern vec4 transform(vec3);
 
 // Varyings
 // ------------------------------------
@@ -34,6 +30,6 @@ void main (void)
     v_size = size;
     v_color = color;
 
-    gl_Position = vec4(position,1.0);
+    gl_Position = transform(position);
     gl_PointSize = size + 2.0 * (1.0 + 1.5*1.0);
 }

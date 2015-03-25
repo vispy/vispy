@@ -18,6 +18,7 @@
 // extern float antialias;
 // extern float linewidth;
 // extern vec4 viewport;
+//        vec4 transform(vec3 position);
 
 // Varyings
 // ------------------------------------
@@ -38,9 +39,9 @@ void main (void)
     v_color     = color;
 
     // transform prev/curr/next
-    vec4 prev_ = vec4(prev,1.0);
-    vec4 curr_ = vec4(curr,1.0);
-    vec4 next_ = vec4(next,1.0);
+    vec4 prev_ = transform(prev);
+    vec4 curr_ = transform(curr);
+    vec4 next_ = transform(next);
 
     // prev/curr/next in viewport coordinates
     vec2 _prev = NDC_to_viewport(prev_, viewport.zw);
