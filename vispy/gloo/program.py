@@ -126,7 +126,7 @@ class Program(GLObject):
         self._buffer = None  # Set to None in draw()
         if self._count > 0:
             dtype = []
-            for kind, type_, name in self._code_variables.values():
+            for kind, type_, name, size in self._code_variables.values():
                 if kind == 'attribute':
                     dt, numel = self._gtypes[type_]
                     dtype.append((name, dt, numel))
@@ -171,11 +171,12 @@ class Program(GLObject):
         -------
         variables : list
             Each variable is represented as a tuple (kind, type, name),
-            where `kind` is 'attribute', 'uniform', 'varying' or 'const'.
+            where `kind` is 'attribute', 'uniform', 'uniform_array',
+            'varying' or 'const'.
         """
         # Note that internally the variables are stored as a dict
         # that maps names -> tuples, for easy looking up by name.
-        return list(self._code_variables.values())
+        return [x[:3] for x in self._code_variables.values()]
    
     def _parse_variables_from_code(self):
         """ Parse uniforms, attributes and varyings from the source code.
@@ -201,17 +202,17 @@ class Program(GLObject):
             regex = re.compile(var_regexp.replace('VARIABLE', kind),
                                flags=re.MULTILINE)
             for m in re.finditer(regex, code):
-                size = -1
                 gtype = m.group('type')
-                if m.group('size'):
-                    size = int(m.group('size'))
+                size = int(m.group('size')) if m.group('size') else -1
+                this_kind = kind
                 if size >= 1:
+                    # uniform arrays get added both as individuals and full
                     for i in range(size):
                         name = '%s[%d]' % (m.group('name'), i)
-                        self._code_variables[name] = kind, gtype, name 
-                else:
-                    name = m.group('name')
-                    self._code_variables[name] = kind, gtype, name
+                        self._code_variables[name] = kind, gtype, name, -1
+                    this_kind = 'uniform_array'
+                name = m.group('name')
+                self._code_variables[name] = this_kind, gtype, name, size
 
         # Now that our code variables are up-to date, we can process
         # the variables that were set but yet unknown.
@@ -280,7 +281,7 @@ class Program(GLObject):
             return
         
         if name in self._code_variables:
-            kind, type_, name = self._code_variables[name]
+            kind, type_, name, size = self._code_variables[name]
             
             if kind == 'uniform':
                 if type_.startswith('sampler'):
@@ -306,7 +307,7 @@ class Program(GLObject):
                     self._glir.command('TEXTURE', self._id, name, data.id)
                 else:
                     # Normal uniform; convert to np array and check size
-                    dtype, numel = self._gtypes[type_]
+                    dtype, numel = self._gtypes[type]
                     data = np.array(data, dtype=dtype).ravel()
                     if data.size != numel:
                         raise ValueError('Uniform %r needs %i elements, '
@@ -314,6 +315,21 @@ class Program(GLObject):
                     # Store and send GLIR command
                     self._user_variables[name] = data
                     self._glir.command('UNIFORM', self._id, name, type_, data)
+
+            elif kind == 'uniform_array':
+                # Normal uniform; convert to np array and check size
+                dtype, numel = self._gtypes[type]
+                data = np.atleast_2d(data).astype(dtype)
+                print(data)
+                need_shape = (size, numel)
+                if data.shape != need_shape:
+                    raise ValueError('Uniform array %r needs shape %s not %s'
+                                     % (name, need_shape, data.shape))
+                data = data.ravel()
+                # Store and send GLIR command
+                self._user_variables[name] = data
+                self._glir.command('UNIFORM', self._id, name, type, data)
+            
             elif kind == 'attribute':
                 # Is this a constant value per vertex
                 is_constant = False

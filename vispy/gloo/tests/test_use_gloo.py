@@ -113,5 +113,58 @@ def test_use_texture3D():
             expected[:2, :3] = val
             assert_allclose(out, expected, atol=1./255.)
 
+@requires_application()
+def test_use_uniforms():
+    """Test using uniform arrays"""
+    VERT_SHADER = """
+    attribute vec2 a_pos;
+    varying vec2 v_pos;
+
+    void main (void)
+    {
+        v_pos = a_pos;
+        gl_Position = vec4(a_pos, 0., 1.);
+    }
+    """
+
+    FRAG_SHADER = """
+    varying vec2 v_pos;
+    uniform vec3 u_color[2];
+
+    void main()
+    {
+        gl_FragColor = vec4((u_color[0] + u_color[1]) / 2., 1.);
+    }
+    """
+    shape = (300, 300)
+    with Canvas(size=shape) as c:
+        c.context.glir.set_verbose(True)
+        assert_equal(c.size, shape[::-1])
+        shape = (3, 3)
+        set_viewport((0, 0) + shape)
+        program = Program(VERT_SHADER, FRAG_SHADER)
+        program['a_pos'] = [[-1., -1.], [1., -1.], [-1., 1.], [1., 1.]]
+        program['u_color'] = np.ones((2, 3))
+        c.context.clear('k')
+        program.draw('triangle_strip')
+        out = _screenshot()
+        assert_allclose(out[:, :, 0] / 255., np.ones(shape))
+
+        # now set one element
+        program['u_color[1]'] = np.zeros(3, np.float32)
+        c.context.clear('k')
+        program.draw('triangle_strip')
+        out = _screenshot()
+        assert_allclose(out[:, :, 0] / 255., 127. / 255. * np.ones(shape))
+
+        # and the other
+        assert_raises(ValueError, program.__setitem__, 'u_color',
+                      np.zeros(3, np.float32))
+        program['u_color'] = np.zeros((2, 3), np.float32)
+        program['u_color[0]'] = np.ones(3, np.float32)
+        c.context.clear((0.33,) * 3)
+        program.draw('triangle_strip')
+        out = _screenshot()
+        assert_allclose(out[:, :, 0] / 255., 127. / 255. * np.ones(shape))
 
 run_tests_if_main()
