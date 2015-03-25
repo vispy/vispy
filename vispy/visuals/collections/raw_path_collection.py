@@ -12,7 +12,8 @@ class RawPathCollection(Collection):
     """
     """
 
-    def __init__(self, user_dtype=None, vertex = None, fragment = None, **kwargs):
+    def __init__(self, user_dtype=None, transform=None,
+                 vertex = None, fragment = None, **kwargs):
 
         """
         Initialize the collection.
@@ -23,6 +24,9 @@ class RawPathCollection(Collection):
         user_dtype: list
             The base dtype can be completed (appended) by the used_dtype. It
             only make sense if user also provide vertex and/or fragment shaders
+
+        transform : string
+            GLSL Transform code defining the vec4 transform(vec3) function
 
         vertex: string
             Vertex shader code
@@ -46,9 +50,12 @@ class RawPathCollection(Collection):
 
         if vertex is None:
             vertex = glsl.get('collections/raw-path.vert')
+        if transform is None:
+            transform = "vec4 transform(vec3 position) {return vec4(position,1.0);}"
         if fragment is None:
             fragment = glsl.get('collections/raw-path.frag')
 
+        vertex =  transform + vertex
         Collection.__init__(self, dtype=dtype, itype=None, mode='line_strip',
                             vertex=vertex, fragment=fragment, **kwargs)
 

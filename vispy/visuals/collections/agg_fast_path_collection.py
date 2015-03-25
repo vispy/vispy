@@ -28,7 +28,8 @@ class AggFastPathCollection(Collection):
     be made on miter joins which may result in some glitches on screen.
     """
 
-    def __init__(self, user_dtype=None, vertex=None, fragment=None, **kwargs):
+    def __init__(self, user_dtype=None, transform=None,
+                 vertex=None, fragment=None, **kwargs):
         """
         Initialize the collection.
 
@@ -38,6 +39,9 @@ class AggFastPathCollection(Collection):
         user_dtype: list
             The base dtype can be completed (appended) by the used_dtype. It
             only make sense if user also provide vertex and/or fragment shaders
+
+        transform : string
+            GLSL Transform code defining the vec4 transform(vec3) function
 
         vertex: string
             Vertex shader code
@@ -72,9 +76,12 @@ class AggFastPathCollection(Collection):
 
         if vertex is None:
             vertex = glsl.get('collections/agg-fast-path.vert')
+        if transform is None:
+            transform = "vec4 transform(vec3 position) {return vec4(position,1.0);}"
         if fragment is None:
             fragment = glsl.get('collections/agg-fast-path.frag')
 
+        vertex =  transform + vertex
         Collection.__init__(self, dtype=dtype, itype=None, mode="triangle_strip",
                             vertex=vertex, fragment=fragment, **kwargs)
 

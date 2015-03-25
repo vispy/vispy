@@ -26,7 +26,8 @@ class AggPathCollection(Collection):
     sparingly, mainly for thick paths where quality is critical.
     """
 
-    def __init__(self, user_dtype=None, vertex=None, fragment=None, **kwargs):
+    def __init__(self, user_dtype=None, transform=None,
+                 vertex=None, fragment=None, **kwargs):
         """
         Initialize the collection.
 
@@ -36,6 +37,9 @@ class AggPathCollection(Collection):
         user_dtype: list
             The base dtype can be completed (appended) by the used_dtype. It
             only make sense if user also provide vertex and/or fragment shaders
+
+        transform : string
+            GLSL Transform code defining the vec4 transform(vec3) function
 
         vertex: string
             Vertex shader code
@@ -82,9 +86,12 @@ class AggPathCollection(Collection):
 
         if vertex is None:
             vertex = glsl.get('collections/agg-path.vert')
+        if transform is None:
+            transform = "vec4 transform(vec3 position) {return vec4(position,1.0);}"
         if fragment is None:
             fragment = glsl.get('collections/agg-path.frag')
 
+        vertex =  transform + vertex
         Collection.__init__(self, dtype=dtype, itype=np.uint32, mode="triangles",
                             vertex=vertex, fragment=fragment, **kwargs)
 

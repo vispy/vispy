@@ -12,7 +12,8 @@ class RawTriangleCollection(Collection):
     """
     """
 
-    def __init__(self, user_dtype=None, vertex = None, fragment = None, **kwargs):
+    def __init__(self, user_dtype=None, tranform=None,
+                 vertex = None, fragment = None, **kwargs):
 
         base_dtype = [('position', (np.float32, 3), '!local', (0,0,0)),
                       ('color',    (np.float32, 4), 'local', (0,0,0,1)) ]
@@ -23,9 +24,12 @@ class RawTriangleCollection(Collection):
 
         if vertex is None:
             vertex = glsl.get('collections/raw-triangle.vert')
+        if transform is None:
+            transform = "vec4 transform(vec3 position) {return vec4(position,1.0);}"
         if fragment is None:
             fragment = glsl.get('collections/raw-triangle.frag')
 
+        vertex =  transform + vertex
         Collection.__init__(self, dtype=dtype, itype=np.uint32, mode="triangles",
                             vertex=vertex, fragment=fragment, **kwargs)
 

@@ -171,7 +171,7 @@ class Collection(BaseCollection):
     def __getitem__(self, key):
 
         program = self._programs[0]
-        for name in program._code_variables.keys():
+        for name, (storage,_,_) in program._code_variables.items():
             if name == key and storage == 'uniform':
                 return program[key]
         return BaseCollection.__getitem__(self, key)
