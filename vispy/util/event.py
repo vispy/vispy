@@ -442,11 +442,6 @@ class EventEmitter(object):
         return event
 
     def _invoke_callback(self, cb, event):
-        if not hasattr(EventEmitter, 'prof'):
-            EventEmitter.prof = {}
-        k = (cb, event.type)
-        EventEmitter.prof[k] = 1 + EventEmitter.prof.get(k, 0)
-
         try:
             cb(event)
         except Exception:
