@@ -4,10 +4,9 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 import numpy as np
-import triangle
 from vispy import glsl
 from . collection import Collection
-
+from vispy.geometry import Triangulation
 
 def triangulate(vertices):
     n = len(vertices)
@@ -16,10 +15,11 @@ def triangulate(vertices):
     vertices_2d = vertices[:,:2]
     segments = np.repeat(np.arange(n+1),2)[1:-1]
     segments[-2:] = n-1,0
-    T = triangle.triangulate({'vertices': vertices_2d,
-                              'segments': segments}, "p")
-    vertices_2d = T["vertices"]
-    triangles   = T["triangles"]
+    segments = segments.reshape(len(segments)/2,2)
+    T = Triangulation(vertices_2d, segments)
+    T.triangulate()
+    vertices_2d = T.pts
+    triangles = T.tris.ravel()
     vertices = np.empty((len(vertices_2d),3))
     vertices[:,:2] = vertices_2d
     vertices[:,2] = zmean
@@ -42,7 +42,7 @@ class RawPolygonCollection(Collection):
         if fragment is None:
             fragment = glsl.get('collections/raw-triangle.frag')
 
-        Collection.__init__(self, dtype=dtype, itype=np.uint32, mode=gl.GL_TRIANGLES,
+        Collection.__init__(self, dtype=dtype, itype=np.uint32, mode="triangles",
                             vertex=vertex, fragment=fragment, **kwargs)
 
 
