@@ -135,7 +135,6 @@ class DataBuffer(Buffer):
 
     Parameters
     ----------
-
     data : ndarray
         Buffer data
     dtype : dtype
@@ -153,10 +152,11 @@ class DataBuffer(Buffer):
         self._dtype = None
         self._stride = 0
         self._itemsize = 0
+        self._last_dim = None
         Buffer.__init__(self, data)
-    
+
     def _prepare_data(self, data):
-        # Needs to be overrriden
+        # Can be overrriden by subclasses
         if not isinstance(data, np.ndarray):
             raise TypeError("DataBuffer data must be numpy array.")
         return data
@@ -165,7 +165,7 @@ class DataBuffer(Buffer):
         data = self._prepare_data(data, **kwargs)
         offset = offset * self.itemsize
         Buffer.set_subdata(self, data=data, offset=offset, copy=copy)
-    
+
     def set_data(self, data, copy=False, **kwargs):
         """ Set data (deferred operation)
 
@@ -182,7 +182,6 @@ class DataBuffer(Buffer):
             Asking explicitly for a copy will prevent this behavior.
         """
         data = self._prepare_data(data, **kwargs)
-        
         self._dtype = data.dtype
         self._stride = data.strides[-1]
         self._itemsize = self._dtype.itemsize
@@ -295,6 +294,10 @@ class DataBuffer(Buffer):
         offset = start  # * self.itemsize
         self.set_subdata(data=data, offset=offset, copy=True)
 
+    def __repr__(self):
+        return ("<%s size=%s last_dim=%s>" % 
+                (self.__class__.__name__, self.size, self._last_dim))
+
 
 class DataBufferView(DataBuffer):
     """ View on a sub-region of a DataBuffer.
@@ -365,6 +368,10 @@ class DataBufferView(DataBuffer):
     @property
     def id(self):
         return self._base.id
+
+    @property
+    def _last_dim(self):
+        return self._base._last_dim
     
     def set_subdata(self, data, offset=0, copy=False, **kwargs):
         raise RuntimeError("Cannot set data on buffer view.")
@@ -425,18 +432,19 @@ class VertexBuffer(DataBuffer):
         if data.dtype.isbuiltin:
             if convert is True and data.dtype is not np.float32:
                 data = data.astype(np.float32)
-            c = data.shape[-1]
-            if data.ndim == 1 or (data.ndim == 2 and c == 1):
-                data.shape = (data.size,)  # necessary in case (N,1) array
-                data = data.view(dtype=[('f0', data.dtype.base, 1)])
-            elif c in [1, 2, 3, 4]:
+            c = data.shape[-1] if data.ndim > 1 else 1
+            if c in [2, 3, 4]:
                 if not data.flags['C_CONTIGUOUS']:
                     logger.warning('Copying discontiguous data for struct '
                                    'dtype:\n%s' % _last_stack_str())
                     data = data.copy()
-                data = data.view(dtype=[('f0', data.dtype.base, c)])
             else:
-                data = data.view(dtype=[('f0', data.dtype.base, 1)])
+                c = 1
+            if self._last_dim and c != self._last_dim:
+                raise ValueError('Last dimension should be %s not %s'
+                                 % (self._last_dim, c))
+            data = data.view(dtype=[('f0', data.dtype.base, c)])
+            self._last_dim = c
         return data
 
 
@@ -465,6 +473,10 @@ class IndexBuffer(DataBuffer):
     """
     
     _GLIR_TYPE = 'IndexBuffer'
+
+    def __init__(self, data=None):
+        DataBuffer.__init__(self, data)
+        self._last_dim = 1
 
     def _prepare_data(self, data, convert=False):
         if isinstance(data, list):

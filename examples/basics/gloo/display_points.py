@@ -15,7 +15,7 @@ v_color = np.random.uniform(0, 1, (n, 3)).astype(np.float32)
 v_size = np.random.uniform(2, 12, (n, 1)).astype(np.float32)
 
 VERT_SHADER = """
-attribute vec3  a_position;
+attribute vec2  a_position;
 attribute vec3  a_color;
 attribute float a_size;
 
@@ -32,7 +32,7 @@ void main (void) {
     v_fg_color  = vec4(0.0,0.0,0.0,0.5);
     v_bg_color  = vec4(a_color,    1.0);
 
-    gl_Position = vec4(a_position, 1.0);
+    gl_Position = vec4(a_position, 0.0, 1.0);
     gl_PointSize = 2.0*(v_radius + v_linewidth + 1.5*v_antialias);
 }
 """

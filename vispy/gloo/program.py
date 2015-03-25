@@ -98,7 +98,7 @@ class Program(GLObject):
         self._shaders = '', '' 
         
         # Init description of variables obtained from source code
-        self._code_variables = {}  # name -> (kind, type, name)
+        self._code_variables = {}  # name -> (kind, type_, name)
         # Init user-defined data for attributes and uniforms
         self._user_variables = {}  # name -> data / buffer / texture
         # Init pending user-defined data
@@ -118,14 +118,14 @@ class Program(GLObject):
         # This makes it easy to create a structured vertex buffer
         # without having to create a numpy array with structured dtype.
         # All assignments must be done before the GLIR commands are
-        # send away for parsing (in draw) though.
+        # sent away for parsing (in draw) though.
         self._count = count
         self._buffer = None  # Set to None in draw()
         if self._count > 0:
             dtype = []
-            for kind, type, name in self._code_variables.values():
+            for kind, type_, name in self._code_variables.values():
                 if kind == 'attribute':
-                    dt, numel = self._gtypes[type]
+                    dt, numel = self._gtypes[type_]
                     dtype.append((name, dt, numel))
             self._buffer = np.zeros(self._count, dtype=dtype)
             self.bind(VertexBuffer(self._buffer))
@@ -277,10 +277,10 @@ class Program(GLObject):
             return
         
         if name in self._code_variables:
-            kind, type, name = self._code_variables[name]
+            kind, type_, name = self._code_variables[name]
             
             if kind == 'uniform':
-                if type.startswith('sampler'):
+                if type_.startswith('sampler'):
                     # Texture data; overwrite or update
                     tex = self._user_variables.get(name, None)
                     if isinstance(data, BaseTexture):
@@ -288,29 +288,29 @@ class Program(GLObject):
                     elif tex and hasattr(tex, 'set_data'):
                         tex.set_data(data)
                         return
-                    elif type == 'sampler1D':
+                    elif type_ == 'sampler1D':
                         data = Texture1D(data)
-                    elif type == 'sampler2D':
+                    elif type_ == 'sampler2D':
                         data = Texture2D(data)
-                    elif type == 'sampler3D':
+                    elif type_ == 'sampler3D':
                         data = Texture3D(data)
                     else:
-                        assert False  # This should not happen
+                        # This should not happen
+                        raise RuntimeError('Unknown type %s' % type_)
                     # Store and send GLIR command
                     self._user_variables[name] = data
                     self.glir.associate(data.glir)
                     self._glir.command('TEXTURE', self._id, name, data.id)
                 else:
                     # Normal uniform; convert to np array and check size
-                    dtype, numel = self._gtypes[type]
+                    dtype, numel = self._gtypes[type_]
                     data = np.array(data, dtype=dtype).ravel()
                     if data.size != numel:
                         raise ValueError('Uniform %r needs %i elements, '
                                          'not %i.' % (name, numel, data.size))
                     # Store and send GLIR command
                     self._user_variables[name] = data
-                    self._glir.command('UNIFORM', self._id, name, type, data)
-            
+                    self._glir.command('UNIFORM', self._id, name, type_, data)
             elif kind == 'attribute':
                 # Is this a constant value per vertex
                 is_constant = False
@@ -320,7 +320,7 @@ class Program(GLObject):
 
                 if isscalar(data):
                     is_constant = True
-                elif isinstance(data, tuple):
+                elif isinstance(data, (tuple, list)):
                     is_constant = all([isscalar(e) for e in data])
                 
                 if not is_constant:
@@ -328,20 +328,25 @@ class Program(GLObject):
                     vbo = self._user_variables.get(name, None)
                     if isinstance(data, DataBuffer):
                         pass
-                    elif vbo and hasattr(vbo, 'set_data'):
+                    elif vbo is not None and hasattr(vbo, 'set_data'):
                         vbo.set_data(data)
                         return
                     else:
                         data = VertexBuffer(data)
                     # Store and send GLIR command
+                    if data.dtype is not None:
+                        numel = self._gtypes[type_][1]
+                        if data._last_dim and data._last_dim != numel:
+                            raise ValueError('data.shape[-1] must be %s not %s'
+                                             % (numel, data._last_dim))
                     self._user_variables[name] = data
                     value = (data.id, data.stride, data.offset)
                     self.glir.associate(data.glir)
                     self._glir.command('ATTRIBUTE', self._id,
-                                       name, type, value)
+                                       name, type_, value)
                 else:
                     # Single-value attribute; convert to array and check size
-                    dtype, numel = self._gtypes[type]
+                    dtype, numel = self._gtypes[type_]
                     data = np.array(data, dtype=dtype)
                     if data.ndim == 0:
                         data.shape = data.size
@@ -352,7 +357,7 @@ class Program(GLObject):
                     self._user_variables[name] = data
                     value = tuple([0] + [i for i in data])
                     self._glir.command('ATTRIBUTE', self._id, 
-                                       name, type, value)
+                                       name, type_, value)
             else:
                 raise KeyError('Cannot set data for a %s.' % kind)
         else:
@@ -386,7 +391,7 @@ class Program(GLObject):
         
         """
         
-        # Invalidate buffer (data has already been send)
+        # Invalidate buffer (data has already been sent)
         self._buffer = None
         
         # Check if mode is valid
