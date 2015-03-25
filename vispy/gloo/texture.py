@@ -448,9 +448,12 @@ class Texture3D(BaseTexture):
         based on the number of channels. When the data has one channel,
         'luminance' is assumed.
     """
+    sample = 'texture3D'
+
     _ndim = 3
     _GLIR_TYPE = 'Texture3D'
-    
+    sampler = 'sampler3D'    
+
     def __init__(self, data=None, format=None, **kwargs):
         BaseTexture.__init__(self, data, format, **kwargs)
 
@@ -474,6 +477,37 @@ class Texture3D(BaseTexture):
         """ GLSL declaration strings required for a variable to hold this data.
         """
         return 'uniform', 'sampler3D'
+
+
+# ------------------------------------------------------ TextureEmulated3D class ---
+class TextureEmulated3D(Texture2D):
+    glsl_sample = """
+    vec4 sample(sampler2D tex, vec3 texCoord) {
+        float sliceSize = 1.0 / $size; // space of 1 slice
+        float slicePixelSize = sliceSize / $size; // space of 1 pixel
+        float sliceInnerSize = slicePixelSize * ($size - 1.0); // space of size pixels
+        float zSlice0 = min(floor(texCoord.z * $size), $size - 1.0);
+        float zSlice1 = min(zSlice0 + 1.0, $size - 1.0);
+        float xOffset = slicePixelSize * 0.5 + texCoord.x * sliceInnerSize;
+        float s0 = xOffset + (zSlice0 * sliceSize);
+        float s1 = xOffset + (zSlice1 * sliceSize);
+        vec4 slice0Color = texture2D(tex, vec2(s0, texCoord.y));
+        vec4 slice1Color = texture2D(tex, vec2(s1, texCoord.y));
+        float zOffset = mod(texCoord.z * $size, 1.0);
+        return mix(slice0Color, slice1Color, zOffset);
+    }
+    """
+
+    sampler = 'sampler2D'
+
+    def __init__(self, data=None, format=None, **kwargs):
+        size = data.shape[0]
+        Texture2D.__init__(self, np.reshape(np.transpose(data, (1, 0, 2, 3)),
+            (data.shape[1], data.shape[0] * data.shape[2], 3)), format, **kwargs)
+
+        from ..visuals.shaders import Function
+        self.sample = Function(self.glsl_sample)
+        self.sample['size'] = size
 
 
 # ------------------------------------------------------ TextureAtlas class ---
