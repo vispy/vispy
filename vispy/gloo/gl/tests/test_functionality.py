@@ -36,21 +36,21 @@ def teardown_module():
 @requires_application()
 def test_functionality_desktop():
     """ Test desktop GL backend for full functionality. """
-    _test_functonality('desktop')
+    _test_functonality('gl2')
 
 
 @requires_application()
 def test_functionality_proxy():
     """ Test GL proxy class for full functionality. """
     # By using debug mode, we are using the proxy class
-    _test_functonality('desktop debug')
+    _test_functonality('gl2 debug')
 
 
 @requires_application()
 @requires_pyopengl()
 def test_functionality_pyopengl():
     """ Test pyopengl GL backend for full functionality. """
-    _test_functonality('pyopengl')
+    _test_functonality('pyopengl2')
 
 
 @requires_application()

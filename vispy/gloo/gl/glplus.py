@@ -10,7 +10,8 @@ functions are omitted, as well as any functions that are in our ES 2.0 API.
 """
 
 from OpenGL import GL as _GL
-from ..gl import _pyopengl
+from . import _pyopengl2
+from . import _constants
 
 
 def _inject():
@@ -24,9 +25,11 @@ def _inject():
     
     # Get names that we use in our API
     used_names = []
-    used_names.extend([names[0] for names in _pyopengl._functions_to_import])
-    used_names.extend([name for name in _pyopengl._used_functions])
-    
+    used_names.extend([names[0] for names in _pyopengl2._functions_to_import])
+    used_names.extend([name for name in _pyopengl2._used_functions])
+    NS['_used_names'] = used_names
+    #
+    used_constants = set(_constants.__dict__)
     # Count
     injected_constants = 0
     injected_functions = 0
@@ -34,11 +37,11 @@ def _inject():
     for name in dir(_GL):
         
         if name.startswith('GL_'):
-            # Constants; we copy all for now
             # todo: find list of deprecated constants
-            NS[name] = GLNS[name]
-            injected_constants += 1
-            
+            if name not in used_constants:
+                NS[name] = GLNS[name]
+                injected_constants += 1
+        
         elif name.startswith('gl'):
             # Functions
             if (name + ',') in _deprecated_functions:

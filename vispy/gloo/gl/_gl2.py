@@ -7,7 +7,7 @@ Subset of desktop GL API compatible with GL ES 2.0
 """
 
 import ctypes
-from .desktop import _lib, _get_gl_func
+from .gl2 import _lib, _get_gl_func
 
 
 # void = glActiveTexture(GLenum texture)
