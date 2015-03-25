@@ -86,8 +86,8 @@ class GridLinesVisual(Visual):
     def _buffer(self):
         if self._vbo is None:
             # quad covers entire view; frag. shader will deal with image shape
-            quad = np.array([[-1, -1, 0], [1, -1, 0], [1, 1, 0],
-                             [-1, -1, 0], [1, 1, 0], [-1, 1, 0]],
+            quad = np.array([[-1, -1], [1, -1], [1, 1],
+                             [-1, -1], [1, 1], [-1, 1]],
                             dtype=np.float32)
             self._vbo = gloo.VertexBuffer(quad)
         return self._vbo

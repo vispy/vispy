@@ -156,6 +156,8 @@ class MeshVisual(Visual):
         # Update vertex/index buffers
         if self.shading == 'smooth' and not md.has_face_indexed_data():
             v = md.get_vertices()
+            if v.shape[-1] == 2:
+                v = np.concatenate((v, np.zeros((v.shape[:-1] + (1,)))), -1)
             self._vertices.set_data(v, convert=True)
             self._normals.set_data(md.get_vertex_normals(), convert=True)
             self._faces.set_data(md.get_faces(), convert=True)
@@ -168,6 +170,8 @@ class MeshVisual(Visual):
                 self._colors.set_data(np.zeros((0, 4), dtype=np.float32))
         else:
             v = md.get_vertices(indexed='faces')
+            if v.shape[-1] == 2:
+                v = np.concatenate((v, np.zeros((v.shape[:-1] + (1,)))), -1)
             self._vertices.set_data(v, convert=True)
             if self.shading == 'smooth':
                 normals = md.get_vertex_normals(indexed='faces')
