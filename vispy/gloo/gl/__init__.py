@@ -97,7 +97,7 @@ proxy = MainProxy()
 _debug_proxy = DebugProxy()
 
 
-def use_gl(target='desktop'):
+def use_gl(target='gl2'):
     """ Let Vispy use the target OpenGL ES 2.0 implementation
     
     Also see ``vispy.use()``.
@@ -114,11 +114,11 @@ def use_gl(target='desktop'):
     * dummy - Prevent usage of gloo.gl (for when rendering occurs elsewhere)
 
     """
-    target = target or 'desktop'
-
+    target = target or 'gl2'
+    target = target.replace('+', 'plus')
+    
     # Get options
-    target, _, options = target.partition(' ')
-    debug = config['gl_debug'] or ('debug' in options)
+    debug = config['gl_debug']
     
     # Select modules to import names from
     try:
@@ -181,7 +181,7 @@ def check_error(when='periodic check'):
 
 
 # Load default gl backend
-from . import desktop as default_backend  # noqa
+from . import gl2 as default_backend  # noqa
 
 # Call use to start using our default backend
 use_gl()

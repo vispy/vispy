@@ -24,7 +24,7 @@ Some groups of functions (like glUniform and friends) are handled in
 *this* file.
 
 Even though the API is quite small, we want to generate several
-implementations, such as desktop, es2 (angle on Windows), a generic
+implementations, such as gl2 (desktop), es2 (angle on Windows), a generic
 proxy, a mock backend and possibly more. Therefore automation
 is crucial.
 
@@ -61,7 +61,7 @@ THIS CODE IS AUTO-GENERATED. DO NOT EDIT.
 
 ## Create parsers
 
-# Create a parser for desktop and web gl
+# Create a parser for gl2 and es2
 parser1 = headerparser.Parser(os.path.join(THISDIR, 'headers', 'gl2.h'))
 headerparser.CONSTANTS = {}
 parser2 = headerparser.Parser(os.path.join(THISDIR, 'headers', 'webgl.idl'))
@@ -501,18 +501,18 @@ class ProxyApiGenerator(ApiGenerator):
 
 
 
-class DesktopApiGenerator(ApiGenerator):
-    """ Generator for the desktop GL backend.
+class Gl2ApiGenerator(ApiGenerator):
+    """ Generator for the gl2 (desktop) backend.
     """
     
-    filename = os.path.join(GLDIR, '_desktop.py')
+    filename = os.path.join(GLDIR, '_gl2.py')
     write_c_sig = True
     define_argtypes_in_module = False
     
     DESCRIPTION = "Subset of desktop GL API compatible with GL ES 2.0"
     PREAMBLE = """
     import ctypes
-    from .desktop import _lib, _get_gl_func
+    from .gl2 import _lib, _get_gl_func
     """
     
     def _get_argtype_str(self, es2func):
@@ -606,7 +606,7 @@ class DesktopApiGenerator(ApiGenerator):
             # Annotation available
             functions_anno.add(des.name)
             callline = self._native_call_line(des.name, es2func, prefix=prefix)
-            lines.extend( des.ann.get_lines(callline, 'desktop') )
+            lines.extend( des.ann.get_lines(callline, 'gl') )
         
         elif es2func.group:
             # Group?
@@ -632,8 +632,8 @@ class DesktopApiGenerator(ApiGenerator):
             lines.append(callline)
         
         
-        if 'desktop' in self.__class__.__name__.lower():
-            # Post-fix special cases for desktop gl. See discussion in #201
+        if 'gl2' in self.__class__.__name__.lower():
+            # Post-fix special cases for gl2. See discussion in #201
             # glDepthRangef and glClearDepthf are not always available,
             # and sometimes they do not work if they are
             if es2func.oname in ('glDepthRangef', 'glClearDepthf'):
@@ -689,9 +689,9 @@ class DesktopApiGenerator(ApiGenerator):
             raise ValueError('unknown group func')
 
 
-class Es2ApiGenrator(DesktopApiGenerator):
+class Es2ApiGenrator(Gl2ApiGenerator):
     """ Generator for the es2 backend (i.e. Angle on Windows). Very
-    similar to the desktop API, but we do not need that deferred loading
+    similar to the gl2 API, but we do not need that deferred loading
     of GL functions here.
     """
     
@@ -714,11 +714,11 @@ class Es2ApiGenrator(DesktopApiGenerator):
 
 
 
-class PyOpenGLApiGenrator(ApiGenerator):
+class PyOpenGL2ApiGenrator(ApiGenerator):
     """ Generator for a fallback pyopengl backend.
     """
     
-    filename = os.path.join(GLDIR, '_pyopengl.py')
+    filename = os.path.join(GLDIR, '_pyopengl2.py')
     DESCRIPTION = 'Proxy API for GL ES 2.0 subset, via the PyOpenGL library.'
     PREAMBLE = """
     import ctypes
@@ -781,8 +781,8 @@ class PyOpenGLApiGenrator(ApiGenerator):
 ## Generate
 
 # Generate
-for Gen in [ProxyApiGenerator, DesktopApiGenerator, Es2ApiGenrator, 
-            PyOpenGLApiGenrator]:
+for Gen in [ProxyApiGenerator, Gl2ApiGenerator, Es2ApiGenrator, 
+            PyOpenGL2ApiGenrator]:
     gen = Gen()
     for des in functions:
         gen.add_function(des)
