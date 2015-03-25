@@ -40,6 +40,6 @@ def on_draw(e):
 def on_resize(e):
     width,height = e.size[0], e.size[1]
     gloo.set_viewport(0, 0, width, height)
-#    paths['viewport'] = 0, 0, width, height
+    paths['viewport'] = 0, 0, width, height
 
 app.run()
