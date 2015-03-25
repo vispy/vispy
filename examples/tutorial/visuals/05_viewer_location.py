@@ -23,10 +23,6 @@ void main() {
                           visual_pos;
     view_direction = vec4(normalize(view_direction.xyz), 0);
     
-    
-    float alpha = pow(1 - abs(dot(view_direction.xyz, $normal)), 2);
-    color = vec4(1, 1, 1, alpha);
-    
     color = vec4(view_direction.rgb, 1);
 }
 """
@@ -55,7 +51,7 @@ class MyMeshVisual(visuals.Visual):
         self.program = visuals.shaders.ModularProgram(vertex_shader, 
                                                       fragment_shader)
         self.program.vert['position'] = gloo.VertexBuffer(vertices)
-        self.program.vert['normal'] = gloo.VertexBuffer(normals)
+        #self.program.vert['normal'] = gloo.VertexBuffer(normals)
         
     def draw(self, transforms):
         # Note we use the "additive" GL blending settings so that we do not 

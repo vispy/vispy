@@ -49,7 +49,10 @@ void main() {
 
 
 # Start the new Visual class. 
-# By convention, all Visual subclass names and in 'Visual'
+# By convention, all Visual subclass names end in 'Visual'.
+# (Custom visuals may ignore this convention, but for visuals that are built 
+# in to vispy, this is required to ensure that the VisualNode subclasses are 
+# generated correctly.)
 class MyRectVisual(visuals.Visual):
     """Visual that draws a red rectangle.
     
