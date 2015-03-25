@@ -212,3 +212,21 @@ class GLShared(object):
             return ref
         else:
             raise RuntimeError('No reference for available for GLShared')
+
+
+class FakeCanvas(object):
+    """ Fake canvas to allow using gloo without vispy.app
+    
+    Instantiate this class to collect GLIR commands from gloo
+    interactions. Call flush() in your draw event handler to execute
+    the commands in the active contect.
+    """
+    
+    def __init__(self):
+        self.context = GLContext()
+        set_current_canvas(self)
+    
+    def flush(self):
+        """ Flush commands. Call this after setting to context to current.
+        """
+        self.context.flush_commands()
