@@ -148,14 +148,15 @@ def test_use_uniforms():
         c.context.clear('k')
         program.draw('triangle_strip')
         out = _screenshot()
-        assert_allclose(out[:, :, 0] / 255., np.ones(shape))
+        assert_allclose(out[:, :, 0] / 255., np.ones(shape), atol=1. / 255.)
 
         # now set one element
         program['u_color[1]'] = np.zeros(3, np.float32)
         c.context.clear('k')
         program.draw('triangle_strip')
         out = _screenshot()
-        assert_allclose(out[:, :, 0] / 255., 127. / 255. * np.ones(shape))
+        assert_allclose(out[:, :, 0] / 255., 127.5 / 255. * np.ones(shape),
+                        atol=1. / 255.)
 
         # and the other
         assert_raises(ValueError, program.__setitem__, 'u_color',
@@ -165,6 +166,7 @@ def test_use_uniforms():
         c.context.clear((0.33,) * 3)
         program.draw('triangle_strip')
         out = _screenshot()
-        assert_allclose(out[:, :, 0] / 255., 127. / 255. * np.ones(shape))
+        assert_allclose(out[:, :, 0] / 255., 127.5 / 255. * np.ones(shape),
+                        atol=1. / 255.)
 
 run_tests_if_main()
