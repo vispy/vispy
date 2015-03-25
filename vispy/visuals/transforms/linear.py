@@ -414,51 +414,88 @@ class AffineTransform(BaseTransform):
 #    # TODO
 
 
-class PerspectiveTransform(AffineTransform):
+class PerspectiveTransform(BaseTransform):
     """
     Matrix transform that also implements perspective division.
     
+    Notes
+    -----
+    
+    This transform is implemented as a combination orthographic projection 
+    followed by perspective division of the x,y coordinate. The traditional
+    approach using homogeneous coordinates is not used because it is not
+    invertible and is considerably more difficult to handle in a system
+    supporting multiple chained transforms.
     """
-    # Note: Although OpenGL operates in homogeneouus coordinates, it may be
-    # necessary to manually implement perspective division.. 
-    # Perhaps we can find a way to avoid this.
     glsl_map = """
         vec4 perspective_transform_map(vec4 pos) {
-            vec4 p = $matrix * pos;
-            p = p / p.w;
-            //p.z = 0;
-            p.w = 1;
-            return p;
+            pos = $matrix * pos;
+            // perspective division
+            float s = (((pos.z + 1.0) / 2.0) * ($p_factor - 1.0)) + 1.0; 
+            pos.xy /= s;
+            return pos;
         }
     """
 
-    ## Note 2: Are perspective matrices invertible??
-    #glsl_imap = """
-    #    vec4 perspective_transform_imap(vec4 pos) {
-    #        return $inv_matrix * pos;
-    #    }
-    #"""
+    glsl_imap = """
+        vec4 perspective_transform_imap(vec4 pos) {
+            // perspective division
+            float s = (((pos.z + 1.0) / 2.0) * ($p_factor - 1.0)) + 1.0; 
+            pos.xy *= s;
+            return $inv_matrix * pos;
+        }
+    """
 
-    # todo: merge with affinetransform?
+    Linear = True
+    Orthogonal = False
+    NonScaling = False
+    Isometric = False
+
+    def __init__(self, fov=60, aspect=1, near=1e-3, far=1e5):
+        super(PerspectiveTransform, self).__init__()
+        self.set_perspective(fov, aspect, near, far)
+    
     def set_perspective(self, fov, aspect, near, far):
-        self.matrix = transforms.perspective(fov, aspect, near, far)
-
-    def set_frustum(self, l, r, b, t, n, f):
-        self.matrix = transforms.frustum(l, r, b, t, n, f)
+        l = near * np.tan(fov * 0.5 * np.pi / 180.)
+        r = -l
+        t = l / aspect
+        b = -t
+        self._matrix = transforms.ortho(l, r, b, t, near, far)
+        # todo replace this with the analytical inverse of ortho.
+        self._inv_matrix = np.linalg.inv(self._matrix)
+        
+        # perspective division factor. 
+        self._persp_factor = far / near
+        
+        #self.matrix = transforms.perspective(fov, aspect, near, far)
+        self.shader_map()
+        self.shader_imap()
 
     @arg_to_vec4
     def map(self, coords):
         # looks backwards, but both matrices are transposed.
-        v = np.dot(coords, self.matrix)
-        v /= v[:, 3]
-        v[:, 2] = 0
-        return v
+        return np.dot(coords, self._matrix)
 
-    #@arg_to_vec4
-    #def imap(self, coords):
-    #    return np.dot(coords, self.inv_matrix)
+    @arg_to_vec4
+    def imap(self, coords):
+        return np.dot(coords, self.inv_matrix)
 
-    def __mul__(self, tr):
-        # Override multiplication -- this does not combine well with affine
-        # matrices.
-        return tr.__rmul__(self)
+    def shader_map(self):
+        fn = super(PerspectiveTransform, self).shader_map()
+        fn['matrix'] = self._matrix  # uniform mat4
+        fn['p_factor'] = self._persp_factor  # float
+        return fn
+
+    def shader_imap(self):
+        fn = super(PerspectiveTransform, self).shader_imap()
+        fn['inv_matrix'] = self._inv_matrix  # uniform mat4
+        fn['p_factor'] = self._persp_factor  # float
+        return fn
+
+    #def set_frustum(self, l, r, b, t, n, f):
+        #self.matrix = transforms.frustum(l, r, b, t, n, f)
+    
+    #def __mul__(self, tr):
+        ## Override multiplication -- this does not combine well with affine
+        ## matrices.
+        #return tr.__rmul__(self)
