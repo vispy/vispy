@@ -18,7 +18,7 @@ P1 = 2*(P1/(1200,600,1))-1
 
 segments.append(P0, P1, linewidth = np.linspace(1, 8, n))
 segments['antialias'] = 1
-segments['viewport'] = 0,0,1200,800
+segments['viewport'] = 0,0,1200,600
 
 
 @c.connect
