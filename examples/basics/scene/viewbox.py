@@ -27,13 +27,13 @@ vb1 = scene.widgets.ViewBox(name='vb1', border_color='yellow',
 vb1.clip_method = 'fbo'
 vb1.camera.rect = (-1.2, -2, 2.4, 4)
 
-# Second ViewBox uses a 3D orthographic camera
+# Second ViewBox uses a 3D perspective camera
 vb2 = scene.widgets.ViewBox(name='vb2', border_color='blue',
                             parent=canvas.scene)
 vb2.parent = canvas.scene
 vb2.clip_method = 'viewport'
-vb2.set_camera('turntable', mode='ortho', elevation=30, azimuth=30, up='y',
-               distance=10)
+vb2.set_camera('turntable', mode='perspective', elevation=30, azimuth=30, 
+               up='y', distance=10, fov=60)
 #vb2.set_camera('turntable', mode='perspective',
 #               distance=10, elevation=0, azimuth=0)
 

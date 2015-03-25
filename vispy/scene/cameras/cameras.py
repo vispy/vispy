@@ -471,9 +471,11 @@ class TurntableCamera(PerspectiveCamera):
     Parameters
     ----------
     elevation : float
-        Elevation in degrees.
+        Elevation in degrees. Positive angles place the camera above the center
+        point, negative angles place the camera below the center point.
     azimuth : float
-        Azimuth in degrees.
+        Azimuth in degrees. Zero degrees places the camera on the positive x 
+        axis, pointing in the negative x direction. 
     distance : float
         Distance away from the center.
     center : array-like
