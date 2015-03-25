@@ -902,7 +902,8 @@ class GlirTexture(GlirObject):
             GL_TEXTURE_WRAP_R = 32882
             gl.glTexParameterf(self._target, GL_TEXTURE_WRAP_R, wrapping[0])
         if len(wrapping) >= 2:
-            gl.glTexParameterf(self._target, gl.GL_TEXTURE_WRAP_S, wrapping[-2])
+            gl.glTexParameterf(self._target, 
+                               gl.GL_TEXTURE_WRAP_S, wrapping[-2])
         gl.glTexParameterf(self._target, gl.GL_TEXTURE_WRAP_T, wrapping[-1])
 
     def set_interpolation(self, min, mag):
