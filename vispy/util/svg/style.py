@@ -32,7 +32,7 @@ class Style(object):
 
         self._unset = False
         items = content.strip().split(";")
-	attributes = dict([item.strip().split(":") for item in items if item])
+        attributes = dict([item.strip().split(":") for item in items if item])
         for key,value in attributes.items():
             if key in _converters:
                 key_ = key.replace("-","_")
