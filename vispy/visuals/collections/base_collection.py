@@ -518,38 +518,3 @@ class BaseCollection(object):
                 if self._uniforms_list is not None:
                     program["uniforms"] = self._uniforms_texture
                     program["uniforms_shape"] = self._ushape
-
-
-
-# -----------------------------------------------------------------------------
-if __name__ == '__main__':
-    vtype = [('value', 'f4', 2)]
-    utype = [('value_1', 'f4', 3),
-             ('value_2', 'f4', 3)]
-    itype = np.uint32
-
-
-    C = BaseCollection(vtype, utype, itype)
-    V = np.zeros(3,dtype=vtype)
-    for i in range(50000): C.append(V, indices=[0,1,2])
-
-    C = BaseCollection(vtype, utype, itype)
-    V = np.zeros(3*50000,dtype=vtype)
-    C.append(V, itemsize=3, indices=[0,1,2])
-
-    C = BaseCollection(vtype, utype, itype)
-    V = np.zeros(3*50000,dtype=vtype)
-    C.append(V,itemsize=3*np.ones(50000,dtype=int))
-
-    # C = BaseCollection(vtype, utype, itype)
-    # V = np.zeros(3,dtype=vtype)
-    # for i in range(5):
-    #     C.append(V,indices=[0,1,2])
-    #     V["value"] += 1
-
-    # for i in range(5):
-    #     print C._vertices_list["value"]
-    #     print C._vertices_list["collection_index"]
-    #     print C._indices_list
-    #     del C[0]
-    #     print

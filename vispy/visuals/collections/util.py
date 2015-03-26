@@ -154,15 +154,3 @@ attribute float     collection_index;
 
     body += """}\n\n"""
     return header + body
-
-
-# -----------------------------------------------------------------------------
-if __name__ == '__main__':
-    utype = [('color',     'f4', 4),
-             ('translate', 'f4', 2),
-             ('scale',     'f4', 1)]
-    utype =  [ ('vertex',  [('x', 'f4'), ('y', 'f4'), ('z', 'f4')]),
-               ('normal',  [('x', 'f4'), ('y', 'f4'), ('z', 'f4')]),
-               ('color',   [('r', 'f4'), ('g', 'f4'), ('b', 'f4'), ('a', 'f4')])]
-
-    print(fetchcode(utype))
