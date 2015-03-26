@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
+# vispy: testskip
 
 import numpy as np
 from vispy import app, gloo
