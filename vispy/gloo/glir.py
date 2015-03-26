@@ -50,6 +50,7 @@ _internalformats = dict([(enum.name, enum) for enum in _internalformats])
 # gets deleted, A gets bound to B.
 JUST_DELETED = 'JUST_DELETED'
 
+
 def as_enum(enum):
     """ Turn a possibly string enum into an integer enum.
     """
