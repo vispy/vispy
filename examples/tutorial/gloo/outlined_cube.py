@@ -103,10 +103,10 @@ class Canvas(app.Canvas):
         self.program['u_projection'] = projection
 
     def on_timer(self, event):
-        self.theta += .02
-        self.phi += .02
-        model = rotate(self.phi, (0, 1, 0)) * rotate(self.theta, (0, 0, 1))
-        self.program['u_model'] = model
+        self.theta += .5
+        self.phi += .5
+        self.program['u_model'] = (rotate(self.theta, (0, 0, 1)) *
+                                   rotate(self.phi, (0, 1, 0)))
         self.update()
 
 if __name__ == '__main__':

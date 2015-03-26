@@ -130,7 +130,6 @@ class Canvas(app.Canvas):
         self.model = np.eye(4, dtype=np.float32)
         self.projection = np.eye(4, dtype=np.float32)
 
-
         self.program.bind(gloo.VertexBuffer(data))
         self.program['u_linewidth'] = u_linewidth
         self.program['u_antialias'] = u_antialias
@@ -158,9 +157,10 @@ class Canvas(app.Canvas):
 
     def on_timer(self, event):
         if not self.stop_rotation:
-            self.theta += .02
-            self.phi += .02
-            self.model = rotate(self.phi, (0, 1, 0)) * rotate(self.theta, (0, 0, 1))
+            self.theta += .5
+            self.phi += .5
+            self.model = (rotate(self.theta, (0, 0, 1)) *
+                          rotate(self.phi, (0, 1, 0)))
             self.program['u_model'] = self.model
         self.clock += np.pi / 1000
         self.program['u_clock'] = self.clock
@@ -172,8 +172,7 @@ class Canvas(app.Canvas):
     def on_mouse_wheel(self, event):
         self.translate += event.delta[1]
         self.translate = max(2, self.translate)
-        self.view = np.eye(4, dtype=np.float32)
-        translate(self.view, 0, 0, -self.translate)
+        self.view = translate((0, 0, -self.translate))
 
         self.program['u_view'] = self.view
         self.program['u_size'] = 5 / self.translate

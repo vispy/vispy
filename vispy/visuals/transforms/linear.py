@@ -221,9 +221,9 @@ class STTransform(BaseTransform):
         s[mask] = 1.0
         s[x0[1] == x0[0]] = 1.0
         t = x1[0] - s * x0[0]
-        
-        STTransform.scale.fset(self, s, update=False)
-        self.translate = t
+        s = as_vec4(s, default=(1, 1, 1, 1))
+        t = as_vec4(t, default=(0, 0, 0, 0))
+        self._set_st(scale=s, translate=t)
 
     def __mul__(self, tr):
         if isinstance(tr, STTransform):
@@ -339,18 +339,14 @@ class AffineTransform(BaseTransform):
             The x, y and z coordinates to scale around. If None,
             (0, 0, 0) will be used.
         """
-        scale = as_vec4(scale, default=(1, 1, 1, 1))
+        scale = transforms.scale(as_vec4(scale, default=(1, 1, 1, 1))[0])
         if center is not None:
             # TODO: check if the order is correct here!
             center = as_vec4(center)[0, :3]
-            self.matrix[...] = (
-                transforms.translate(-center) *
-                transforms.scale(scale[0, :3]) *
-                transforms.translate(center) *
-                self.matrix)
-            self.matrix = m
-        else:
-            self.matrix[...] = transforms.scale(scale[0, :3]) * self.matrix
+            scale = (transforms.translate(-center) *
+                     scale *
+                     transforms.translate(center))
+        self.matrix[...] = scale * self.matrix
 
     def rotate(self, angle, axis):
         """
@@ -366,14 +362,11 @@ class AffineTransform(BaseTransform):
         axis : array-like
             The x, y and z coordinates of the axis vector to rotate around.
         """
-        #tr = transforms.rotate(np.eye(4), angle, *axis)
-        #self.matrix = np.dot(tr, self.matrix)
-        #self.matrix = transforms.rotate(self.matrix, angle, *axis)
-        self.matrix[...] = transforms.rotated(angle, axis) * self.matrix
+        self.matrix[...] = transforms.rotate(angle, axis) * self.matrix
 
     def set_mapping(self, points1, points2):
         """ Set to a 3D transformation matrix that maps points1 onto points2.
-        
+
         Arguments are specified as arrays of four 3D coordinates, shape (4, 3).
         """
         # note: need to transpose because util.functions uses opposite
@@ -393,7 +386,6 @@ class AffineTransform(BaseTransform):
             return AffineTransform(matrix=np.dot(tr.matrix, self.matrix))
         else:
             return tr.__rmul__(self)
-            #return super(AffineTransform, self).__mul__(tr)
 
     def __repr__(self):
         s = "%s(matrix=[" % self.__class__.__name__

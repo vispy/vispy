@@ -13,22 +13,22 @@ from __future__ import division
 
 import math
 import numpy as np
-from numpy.linalg import norm
 
 
-def translate(offset, dtype = None):
+def translate(offset, dtype=None):
     """Translate by an offset (x, y, z) .
 
     Parameters
     ----------
-    offset : 3-item iterable (e.g. tuple, np array, list) describing
-        translation in x, y, z
+    offset : array-like, shape (3,)
+        Translation in x, y, z.
+    dtype : dtype | None
+        Output type (if None, don't cast).
 
- 
     Returns
     -------
     M : matrix
-        transformation matrix describing the translation
+        Transformation matrix describing the translation.
     """
     x, y, z = offset
     M = np.matrix([[1.0, 0.0, 0.0, x],
@@ -38,61 +38,45 @@ def translate(offset, dtype = None):
     return M
 
 
-def scale(s, dtype = None):
+def scale(s, dtype=None):
     """Non-uniform scaling along the x, y, and z axes
 
     Parameters
     ----------
-    s : 3-item iterable (e.g. tuple, np array, list) describing
-        scaling in x, y, z
+    s : array-like, shape (3,)
+        Scaling in x, y, z.
+    dtype : dtype | None
+        Output type (if None, don't cast).
 
- 
     Returns
     -------
     M : matrix
-        transformation matrix describing the scaling
+        Transformation matrix describing the scaling.
     """
-    x, y, z = s
-    return np.matrix(np.diag((x,y,z,1.0)), dtype)
-   
+    return np.matrix(np.diag(s + (1.,)), dtype)
 
 
-def rotate(radians, axis, dtype = None):
-    """
-    Returns a homogeneous transformation matrix that represents a rotation
-    around axis by angle (in radians) using Rodrigues' formula
-    http://en.wikipedia.org/wiki/Rodrigues%27_rotation_formula
+def rotate(angle, axis, dtype=None):
+    """The 3x3 rotation matrix for rotation about a vector.
 
     Parameters
     ----------
-
-    radians: angle, in radians, to rotate around the axis
-    
-    axis: list, tuple or np array (1D) representing the axis to rotate about
-        (does not need to be unit length)
+    angle : float
+        The angle of rotation, in degrees.
+    axis : ndarray
+        The x, y, z coordinates of the axis direction vector.
     """
+    angle = np.radians(angle)
+    x, y, z = axis / np.linalg.norm(axis)
+    c, s = math.cos(angle), math.sin(angle)
+    cx, cy, cz = (1 - c) * x, (1 - c) * y, (1 - c) * z
+    M = np.matrix([[cx * x + c, cy * x - z * s, cz * x + y * s, .0],
+                   [cx * y + z * s, cy * y + c, cz * y - x * s, 0.],
+                   [cx * z - y * s, cy * z + x * s, cz * z + c, 0.],
+                   [0., 0., 0., 1.]], dtype)
+    return M
 
-    z=np.matrix(axis, dtype = np.double).T
-    #Normalize z
-    z=z/math.sqrt(z.T*z)
-    ztilde=np.matrix([[0,-z[2],z[1]],[z[2],0,-z[0]],[-z[1],z[0],0]])
-    
-    # Compute 3x3 rotation matrix
-    R=np.eye(3) + math.sin(radians)*ztilde + ((1-math.cos(radians))* ((z*z.T)-np.eye(3)))
-    M = np.eye(4)
-    M[:3,:3] = R
-    
-    return np.matrix(M, dtype)
 
-# Actually, param 'degrees' should be called 'angle' since that is the 
-# quantity but it is called degrees since that makes it explicit that it is
-# in degrees
-def rotated(degrees, axis, dtype = None):
-    """
-    Convenience wrapper for @see rotate that accepts angle in degrees
-    """
-    return rotate(np.radians(degrees), axis, dtype)
-    
 def ortho(left, right, bottom, top, znear, zfar):
     """Create orthographic projection matrix
 

@@ -130,13 +130,12 @@ class Canvas(app.Canvas):
             data['a_size'][(i + 0) * p:(i + 1) * p] = S*ps
 
         self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
-        self.view = np.eye(4, dtype=np.float32)
         self.model = np.eye(4, dtype=np.float32)
         self.projection = np.eye(4, dtype=np.float32)
         self.theta, self.phi = 0, 0
 
         self.translate = 5
-        translate(self.view, 0, 0, -self.translate)
+        self.view = translate((0, 0, -self.translate))
 
         self.program.bind(gloo.VertexBuffer(data))
         self.program['u_colormap'] = gloo.Texture2D(cmap)
@@ -165,9 +164,8 @@ class Canvas(app.Canvas):
     def on_timer(self, event):
         self.theta += .11
         self.phi += .13
-        self.model = np.eye(4, dtype=np.float32)
-        rotate(self.model, self.theta, 0, 0, 1)
-        rotate(self.model, self.phi, 0, 1, 0)
+        self.model = (rotate(self.theta, (0, 0, 1)) *
+                      rotate(self.phi, (0, 1, 0)))
         self.program['u_model'] = self.model
         self.update()
 
@@ -177,8 +175,7 @@ class Canvas(app.Canvas):
     def on_mouse_wheel(self, event):
         self.translate += event.delta[1]
         self.translate = max(2, self.translate)
-        self.view = np.eye(4, dtype=np.float32)
-        translate(self.view, 0, 0, -self.translate)
+        self.view = translate((0, 0, -self.translate))
         self.program['u_view'] = self.view
         self.program['u_size'] = 5 / self.translate
         self.update()

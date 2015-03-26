@@ -151,8 +151,7 @@ class Canvas(app.Canvas):
         self.program['u_texture'] = self.texture
 
         # construct the model, view and projection matrices
-        self.view = np.eye(4, dtype=np.float32)
-        transforms.translate(self.view, 0, 0, -5)
+        self.view = transforms.translate((0, 0, -5))
         self.program['u_view'] = self.view
 
         self.model = np.eye(4, dtype=np.float32)

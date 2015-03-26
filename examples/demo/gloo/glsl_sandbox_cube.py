@@ -99,14 +99,14 @@ class Canvas(app.Canvas):
         self.model = np.eye(4, dtype=np.float32)
         self.projection = np.eye(4, dtype=np.float32)
 
-        
         self.program['u_model'] = self.model
         self.program['u_view'] = self.view
 
     def update_transforms(self, event):
-        self.theta += .02
-        self.phi += .02
-        self.model = rotate(self.phi, (0, 1, 0)) * rotate(self.theta, (0, 0, 1))
+        self.theta += .5
+        self.phi += .5
+        self.model = (rotate(self.theta, (0, 0, 1)) *
+                      rotate(self.phi, (0, 1, 0)))
         self.program['u_model'] = self.model
         self.update()
 

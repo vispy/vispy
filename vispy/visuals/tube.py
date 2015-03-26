@@ -3,7 +3,7 @@ from __future__ import division
 from .mesh import MeshVisual
 import numpy as np
 from numpy.linalg import norm
-from ..util.transforms import rotation_matrix
+from ..util.transforms import rotate
 from ..color import ColorArray
 
 
@@ -136,9 +136,8 @@ def _frenet_frames(points, closed):
         vec = np.cross(tangents[i-1], tangents[i])
         if norm(vec) > epsilon:
             vec /= norm(vec)
-
             theta = np.arccos(np.clip(tangents[i-1].dot(tangents[i]), -1, 1))
-            normals[i] = rotation_matrix(vec, theta).dot(normals[i])
+            normals[i] = rotate(np.degrees(theta), vec)[:3, :3].dot(normals[i])
 
     if closed:
         theta = np.arccos(np.clip(normals[0].dot(normals[-1]), -1, 1))
@@ -148,7 +147,8 @@ def _frenet_frames(points, closed):
             theta *= -1.
 
         for i in range(1, len(points)):
-            normals[i] = rotation_matrix(tangents[i], theta*i).dot(normals[i])
+            normals[i] = rotate(np.degrees(theta*i),
+                                tangents[i])[:3, :3].dot(normals[i])
 
     binormals = np.cross(tangents, normals)
 

@@ -116,14 +116,12 @@ class Canvas(app.Canvas):
 
     def update_matrices(self):
         self.view = translate((0, 0, -self.translate))
-        self.model = rotate(self.phi, (0 ,1, 0)) * rotate(self.theta, (1, 0, 0))
+        self.model = (rotate(self.theta, (-1, 0, 0)) *
+                      rotate(self.phi, (0, 1, 0)))
         self.projection = np.eye(4, dtype=np.float32)
-
-        
         self.program['u_model'] = self.model
         self.program['u_view'] = self.view
-        self.program['u_normal'] = np.array(np.matrix(np.dot(self.view,
-                                                             self.model)).I.T)
+        self.program['u_normal'] = (self.view * self.model).I.T
 
     def on_timer(self, event):
         elapsed = default_timer() - self._t0
