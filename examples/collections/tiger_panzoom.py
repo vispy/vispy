@@ -6,12 +6,14 @@
 # -----------------------------------------------------------------------------
 import numpy as np
 from vispy import app, gloo
+from vispy.util import load_data_file
 from vispy.util.svg import Document
 from vispy.visuals.collections import PathCollection, PolygonCollection
 from panzoom import PanZoom
 
 
-tiger = Document("./tiger.svg")
+path = load_data_file('tiger/tiger.svg')
+tiger = Document(path)
 
 width,height = int(tiger.viewport.width),int(tiger.viewport.height)
 canvas = app.Canvas(size=(width,height), show=True, keys='interactive')
