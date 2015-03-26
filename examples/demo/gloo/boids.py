@@ -78,6 +78,9 @@ class Canvas(app.Canvas):
         self._pos = 0.0, 0.0
         self._button = None
 
+        width, height = self.physical_size
+        gloo.set_viewport(0, 0, width, height)
+
         # Create program
         self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
 
@@ -96,8 +99,10 @@ class Canvas(app.Canvas):
 
         self._timer = app.Timer('auto', connect=self.update, start=True)
 
+        self.show()
+
     def on_resize(self, event):
-        width, height = event.size
+        width, height = event.physical_size
         gloo.set_viewport(0, 0, width, height)
 
     def on_mouse_press(self, event):
@@ -180,5 +185,4 @@ class Canvas(app.Canvas):
 
 if __name__ == '__main__':
     c = Canvas()
-    c.show()
     app.run()
