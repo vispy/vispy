@@ -12,7 +12,7 @@ class RawTriangleCollection(Collection):
     """
     """
 
-    def __init__(self, user_dtype=None, tranform=None,
+    def __init__(self, user_dtype=None, transform=None,
                  vertex = None, fragment = None, **kwargs):
 
         base_dtype = [('position', (np.float32, 3), '!local', (0,0,0)),
