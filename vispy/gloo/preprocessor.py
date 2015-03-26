@@ -28,14 +28,6 @@ def remove_comments(code):
     return regex.sub(do_replace, code)
 
 
-def remove_version(code):
-    """ Remove any version directive """
-
-    pattern = '\#\s*version[^\r\n]*\n'
-    regex = re.compile(pattern, re.MULTILINE | re.DOTALL)
-    return regex.sub('\n', code)
-
-
 def merge_includes(code):
     """Merge all includes recursively."""
 
@@ -74,6 +66,5 @@ def preprocess(code):
 
     if code:
         code = remove_comments(code)
-        code = remove_version(code)
         code = merge_includes(code)
     return code
