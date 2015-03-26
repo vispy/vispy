@@ -17,7 +17,6 @@ from vispy.gloo import gl
 from . collection import Collection
 
 
-
 class AggFastPathCollection(Collection):
     """
     Antigrain Geometry Fast Path Collection
