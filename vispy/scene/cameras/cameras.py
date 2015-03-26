@@ -539,10 +539,10 @@ class PanZoomCamera(BaseCamera):
         center = center if (center is not None) else self.center
         rect = self.rect
         # Get space from given center to edges
-        left_space = abs(center[0] - rect.left)
-        right_space = abs(center[0] - rect.right)
-        bottom_space = abs(center[1] - rect.bottom)
-        top_space = abs(center[1] - rect.top)
+        left_space = center[0] - rect.left
+        right_space = rect.right - center[0]
+        bottom_space = center[1] - rect.bottom
+        top_space = rect.top - center[1]
         # Scale these spaces
         rect.left = center[0] - left_space * scale[0]
         rect.right = center[0] + right_space * scale[0]
@@ -567,27 +567,20 @@ class PanZoomCamera(BaseCamera):
     @property
     def rect(self):
         """ The rectangular border of the ViewBox visible area, expressed in
-        the coordinate system of the scene.
+        the coordinate system of the scene. 
         
-        By definition, the +y axis of this rect is opposite the +y axis of the
-        ViewBox. 
+        Note that the rectangle can have negative width or height, in
+        which case the corresponding dimension is flipped (this flipping
+        is independent from the camera's ``flip`` property).
         """
         return self._rect
-        
+    
     @rect.setter
     def rect(self, args):
-        """
-        Set the bounding rect of the visible area in the subscene. 
-        
-        By definition, the +y axis of this rect is opposite the +y axis of the
-        ViewBox. 
-        """
         if isinstance(args, tuple):
             self._rect = Rect(*args)
         else:
             self._rect = Rect(args)
-        # self.set_range((rect.left, rect.right), (rect.bottom, rect.top), 
-        #                (-1, 1), margin=0)
         self.view_changed()
     
     @property
@@ -601,8 +594,8 @@ class PanZoomCamera(BaseCamera):
             raise ValueError('center must be a 2 or 3 element tuple')
         rect = self.rect or Rect(0, 0, 1, 1)
         # Get half-ranges
-        x2 = 0.5 * abs(rect.right - rect.left)
-        y2 = 0.5 * abs(rect.top - rect.bottom)
+        x2 = 0.5 * (rect.right - rect.left)
+        y2 = 0.5 * (rect.top - rect.bottom)
         # Apply new ranges
         rect.left = center[0] - x2
         rect.right = center[0] + x2
@@ -615,8 +608,8 @@ class PanZoomCamera(BaseCamera):
         if init and self._rect is not None:
             return
         # Convert limits to rect
-        w = abs(self._xlim[1] - self._xlim[0])
-        h = abs(self._ylim[1] - self._ylim[0])
+        w = self._xlim[1] - self._xlim[0]
+        h = self._ylim[1] - self._ylim[0]
         self.rect = self._xlim[0], self._ylim[0], w, h
     
     def viewbox_resize_event(self, event):
@@ -637,9 +630,8 @@ class PanZoomCamera(BaseCamera):
         BaseCamera.viewbox_mouse_event(self, event)
         
         if event.type == 'mouse_wheel':
-            p = event.mouse_event.pos
-            ps = self._scene_transform.imap(p)
-            self.zoom(event.delta[1] * self.ZOOM_FACTOR*30, ps)
+            center = self._scene_transform.imap(event.pos)
+            self.zoom(event.delta[1] * self.ZOOM_FACTOR*30, center)
         
         elif event.type == 'mouse_move':
             if event.press_event is None:
@@ -670,7 +662,7 @@ class PanZoomCamera(BaseCamera):
         
         rect = self.rect
         self._real_rect = Rect(rect)
-        vbr = self._viewbox.rect.flipped(x=self.flip[0], y=self.flip[1])
+        vbr = self._viewbox.rect.flipped(x=self.flip[0], y=(not self.flip[1]))
         
         # apply scale ratio constraint
         if self._aspect is not None:

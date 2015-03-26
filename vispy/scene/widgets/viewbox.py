@@ -135,7 +135,7 @@ class ViewBox(Widget):
         
         return _is_child(self.scene, node)
     
-    def get_scene_bounds(self):
+    def get_scene_bounds(self, dim=None):
         """ Get the total bounds based on the visuals present in the scene.
         Returns a list of 3 tuples.
         """
@@ -148,6 +148,8 @@ class ViewBox(Widget):
         for ob in self.scene.children:
             if hasattr(ob, 'bounds'):
                 for axis in (0, 1, 2):
+                    if (dim is not None) and dim != axis:
+                        continue
                     b = ob.bounds(mode, axis)
                     if b is not None:
                         b = min(b), max(b)  # Ensure correct order
@@ -157,8 +159,10 @@ class ViewBox(Widget):
         for axis in (0, 1, 2):
             if np.inf in [np.abs(x) for x in bounds[axis]]:
                 bounds[axis] = -1, 1
-        
-        return bounds
+        if dim:
+            return bounds[dim]
+        else:
+            return bounds
     
     @property
     def scene(self):

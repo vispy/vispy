@@ -14,6 +14,7 @@ Requires matplotlib.
 import numpy as np
 import sys
 
+# import matplotlib.pyplot as plt
 import vispy.mpl_plot as plt
 from vispy.io import read_png, load_data_file
 
