@@ -10,7 +10,6 @@ Implementation to execute GL Intermediate Representation (GLIR)
 
 import sys
 import re
-import weakref
 
 import numpy as np
 
@@ -75,7 +74,6 @@ class GlirQueue(object):
         self._commands = []  # local commands
         self._verbose = False
         self._associations = set()
-        self._count_for_cleanup = 0  # to determine when to shoot zombies
     
     def command(self, *args):
         """ Send a command. See the command spec at:
