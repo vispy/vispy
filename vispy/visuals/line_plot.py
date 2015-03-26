@@ -73,7 +73,7 @@ class LinePlotVisual(Visual):
 
             # if both args and keywords are zero, then there is no
             # point in calling this function.
-            if len(kwds) == 0:
+            if len(kwargs) == 0:
                 raise TypeError("neither line points nor line properties"
                                 "are provided")
         else:
