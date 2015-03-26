@@ -87,15 +87,19 @@ class PanZoomTransform(BaseTransform):
 
 class PanZoomCanvas(app.Canvas):
     def __init__(self, **kwargs):
-        super(PanZoomCanvas, self).__init__(keys='interactive',
-                                            show=True, **kwargs)
+        super(PanZoomCanvas, self).__init__(keys='interactive', **kwargs)
         self._visuals = []
 
         self._pz = PanZoomTransform()
         self._pz.pan = Variable('uniform vec2 u_pan', (0, 0))
         self._pz.zoom = Variable('uniform vec2 u_zoom', (1, 1))
 
+        self.width, self.height = self.size
+        gloo.set_viewport(0, 0, self.physical_size[0], self.physical_size[1])
+
         self._tr = TransformSystem(self)
+
+        self.show()
 
     def on_initialize(self, event):
         gloo.set_state(clear_color='black', blend=True,
@@ -103,7 +107,7 @@ class PanZoomCanvas(app.Canvas):
 
     def on_resize(self, event):
         self.width, self.height = event.size
-        gloo.set_viewport(0, 0, self.width, self.height)
+        gloo.set_viewport(0, 0, event.physical_size[0], event.physical_size[1])
 
     def _normalize(self, x_y):
         x, y = x_y
