@@ -32,4 +32,5 @@ def get(name):
     filename = find(name)
     if filename is None:
         return name
-    return open(filename).read()
+    with open(filename) as fid:
+        return fid.read()

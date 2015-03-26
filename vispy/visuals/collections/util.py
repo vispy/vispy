@@ -4,9 +4,7 @@
 # Copyright (c) 2013, Nicolas P. Rougier. All rights reserved.
 # Distributed under the terms of the new BSD License.
 # -----------------------------------------------------------------------------
-"""
 
-"""
 import numpy as np
 from functools import reduce
 from operator import mul
@@ -18,7 +16,8 @@ def dtype_reduce(dtype, level=0, depth=0):
 
     dtype =  [ ('vertex',  [('x', 'f4'), ('y', 'f4'), ('z', 'f4')]),
                ('normal',  [('x', 'f4'), ('y', 'f4'), ('z', 'f4')]),
-               ('color',   [('r', 'f4'), ('g', 'f4'), ('b', 'f4'), ('a', 'f4')])]
+               ('color',   [('r', 'f4'), ('g', 'f4'), ('b', 'f4'),
+                            ('a', 'f4')])]
 
     level 0: ['color,vertex,normal,', 10, 'float32']
     level 1: [['color', 4, 'float32']
@@ -34,33 +33,33 @@ def dtype_reduce(dtype, level=0, depth=0):
             count = reduce(mul, dtype.shape)
         else:
             count = 1
-        size = dtype.itemsize/count
+        # size = dtype.itemsize / count
         if dtype.subdtype:
-            name = str( dtype.subdtype[0] )
+            name = str(dtype.subdtype[0])
         else:
-            name = str( dtype )
+            name = str(dtype)
         return ['', count, name]
     else:
         items = []
         name = ''
         # Get reduced fields
-        for key,value in fields.items():
-            l =  dtype_reduce(value[0], level, depth+1)
+        for key, value in fields.items():
+            l = dtype_reduce(value[0], level, depth + 1)
             if type(l[0]) is str:
-                items.append( [key, l[1], l[2]] )
+                items.append([key, l[1], l[2]])
             else:
-                items.append( l )
-            name += key+','
+                items.append(l)
+            name += key + ','
 
         # Check if we can reduce item list
         ctype = None
         count = 0
-        for i,item in enumerate(items):
+        for i, item in enumerate(items):
             # One item is a list, we cannot reduce
             if type(item[0]) is not str:
                 return items
             else:
-                if i==0:
+                if i == 0:
                     ctype = item[2]
                     count += item[1]
                 else:
@@ -75,7 +74,8 @@ def dtype_reduce(dtype, level=0, depth=0):
 
 def fetchcode(utype, prefix=""):
     """
-    Generate the GLSL code needed to retrieve fake uniform values from a texture.
+    Generate the GLSL code needed to retrieve fake uniform values from a
+    texture.
 
     uniforms : sampler2D
         Texture to fetch uniforms from
@@ -100,11 +100,11 @@ attribute float     collection_index;
 """
 
     # Header generation (easy)
-    types = { 1 : 'float', 2 : 'vec2 ', 3 : 'vec3 ',
-              4 : 'vec4 ', 9 : 'mat3 ', 16 : 'mat4 '}
-    for name,count,_ in _utype:
+    types = {1: 'float', 2: 'vec2 ', 3: 'vec3 ',
+             4: 'vec4 ', 9: 'mat3 ', 16: 'mat4 '}
+    for name, count, _ in _utype:
         if name != '__unused__':
-            header += "varying %s %s%s;\n" % (types[count],prefix,name)
+            header += "varying %s %s%s;\n" % (types[count], prefix, name)
 
     # Body generation (not so easy)
     body = """\nvoid fetch_uniforms() {
@@ -122,47 +122,42 @@ attribute float     collection_index;
     int i = index_x;
     vec4 _uniform;\n"""
 
-
-    _utype = {name: count for name,count,_ in _utype}
+    _utype = {name: count for name, count, _ in _utype}
     store = 0
     # Be very careful with utype name order (_utype.keys is wrong)
     for name in utype.names:
         if name == '__unused__':
             continue
-        count, shift =_utype[name], 0
+        count, shift = _utype[name], 0
         size = count
         while count:
             if store == 0:
-                body += "\n    _uniform = texture2D(uniforms, vec2(float(i++)/size_x,ty));\n"
+                body += "\n    _uniform = texture2D(uniforms, vec2(float(i++)/size_x,ty));\n"  # noqa
                 store = 4
-            if   store == 4: a = "xyzw"
-            elif store == 3: a = "yzw"
-            elif store == 2: a = "zw"
-            elif store == 1: a = "w"
-            if shift == 0:   b = "xyzw"
-            elif shift == 1: b = "yzw"
-            elif shift == 2: b = "zw"
-            elif shift == 3: b = "w"
+            if store == 4:
+                a = "xyzw"
+            elif store == 3:
+                a = "yzw"
+            elif store == 2:
+                a = "zw"
+            elif store == 1:
+                a = "w"
+            if shift == 0:
+                b = "xyzw"
+            elif shift == 1:
+                b = "yzw"
+            elif shift == 2:
+                b = "zw"
+            elif shift == 3:
+                b = "w"
             i = min(min(len(b), count), len(a))
             if size > 1:
-                body += "    %s%s.%s = _uniform.%s;\n" % (prefix,name,b[:i],a[:i])
+                body += "    %s%s.%s = _uniform.%s;\n" % (prefix, name, b[:i], a[:i])  # noqa
             else:
-                body += "    %s%s = _uniform.%s;\n" % (prefix,name,a[:i])
+                body += "    %s%s = _uniform.%s;\n" % (prefix, name, a[:i])
             count -= i
             shift += i
             store -= i
 
     body += """}\n\n"""
     return header + body
-
-
-# -----------------------------------------------------------------------------
-if __name__ == '__main__':
-    utype = [('color',     'f4', 4),
-             ('translate', 'f4', 2),
-             ('scale',     'f4', 1)]
-    utype =  [ ('vertex',  [('x', 'f4'), ('y', 'f4'), ('z', 'f4')]),
-               ('normal',  [('x', 'f4'), ('y', 'f4'), ('z', 'f4')]),
-               ('color',   [('r', 'f4'), ('g', 'f4'), ('b', 'f4'), ('a', 'f4')])]
-
-    print(fetchcode(utype))

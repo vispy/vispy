@@ -3,10 +3,12 @@
 # Copyright (c) 2014, Nicolas P. Rougier. All rights reserved.
 # Distributed under the terms of the new BSD License.
 # -----------------------------------------------------------------------------
+
 from . length import XLength, YLength
 
 
 class Viewport(object):
+
     def __init__(self, content=None, parent=None):
 
         self._x = None
@@ -21,7 +23,6 @@ class Viewport(object):
             self._y = XLength(content.get('y'), parent)
             self._computed_y = float(self._y)
 
-
         self._width = None
         self._computed_width = 800
         if content.get('width'):
@@ -33,7 +34,6 @@ class Viewport(object):
         if content.get('height'):
             self._height = YLength(content.get('height'), parent)
             self._computed_height = float(self._height)
-
 
     @property
     def x(self):
@@ -52,7 +52,7 @@ class Viewport(object):
         return self._computed_height
 
     def __repr__(self):
-        s = repr( (self._x, self._y, self._width, self._height) )
+        s = repr((self._x, self._y, self._width, self._height))
         return s
 
     @property
@@ -62,8 +62,12 @@ class Viewport(object):
     @property
     def _xml(self, prefix=""):
         s = ""
-        if self._x:      s += 'x="%s" ' % repr(self._x)
-        if self._y:      s += 'y="%s" ' % repr(self._y)
-        if self._width:  s += 'width="%s" ' % repr(self._width)
-        if self._height: s += 'height="%s" ' % repr(self._height)
+        if self._x:
+            s += 'x="%s" ' % repr(self._x)
+        if self._y:
+            s += 'y="%s" ' % repr(self._y)
+        if self._width:
+            s += 'width="%s" ' % repr(self._width)
+        if self._height:
+            s += 'height="%s" ' % repr(self._height)
         return s

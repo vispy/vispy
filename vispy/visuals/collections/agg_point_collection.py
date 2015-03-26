@@ -13,6 +13,7 @@ from . raw_point_collection import RawPointCollection
 
 
 class AggPointCollection(RawPointCollection):
+
     """
     Antigrain Geometry Point Collection
 
@@ -46,9 +47,10 @@ class AggPointCollection(RawPointCollection):
         if vertex is None:
             vertex = glsl.get("collections/agg-point.vert")
         if transform is None:
-            transform = "vec4 transform(vec3 position) {return vec4(position,1.0);}"
+            transform = "vec4 transform(vec3 position) {return vec4(position,1.0);}"  # noqa
         if fragment is None:
-            fragment= glsl.get("collections/agg-point.frag")
+            fragment = glsl.get("collections/agg-point.frag")
 
-        RawPointCollection.__init__(self, user_dtype=user_dtype, transform=transform,
+        RawPointCollection.__init__(self, user_dtype=user_dtype,
+                                    transform=transform,
                                     vertex=vertex, fragment=fragment, **kwargs)

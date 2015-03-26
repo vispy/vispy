@@ -5,16 +5,16 @@
 # -----------------------------------------------------------------------------
 import numpy as np
 from vispy import glsl
-from  . collection import Collection
+from . collection import Collection
 
 
 class RawPathCollection(Collection):
+
     """
     """
 
     def __init__(self, user_dtype=None, transform=None,
-                 vertex = None, fragment = None, **kwargs):
-
+                 vertex=None, fragment=None, **kwargs):
         """
         Initialize the collection.
 
@@ -38,11 +38,12 @@ class RawPathCollection(Collection):
             'local', 'shared' or 'global'
         """
 
-        base_dtype = [('position', (np.float32, 3), '!local', (0,0,0)),
+        base_dtype = [('position', (np.float32, 3), '!local', (0, 0, 0)),
                       ('id',       (np.float32, 1), '!local', 0),
-                      ('color',    (np.float32, 4), 'local', (0,0,0,1)),
-                      ("linewidth",(np.float32, 1), 'global', 1),
-                      ("viewport", (np.float32, 4), 'global', (0,0,512,512)) ]
+                      ('color',    (np.float32, 4), 'local', (0, 0, 0, 1)),
+                      ("linewidth", (np.float32, 1), 'global', 1),
+                      ("viewport", (np.float32, 4), 'global', (0, 0, 512, 512))
+                      ]
 
         dtype = base_dtype
         if user_dtype:
@@ -51,14 +52,13 @@ class RawPathCollection(Collection):
         if vertex is None:
             vertex = glsl.get('collections/raw-path.vert')
         if transform is None:
-            transform = "vec4 transform(vec3 position) {return vec4(position,1.0);}"
+            transform = "vec4 transform(vec3 position) {return vec4(position,1.0);}"  # noqa
         if fragment is None:
             fragment = glsl.get('collections/raw-path.frag')
 
-        vertex =  transform + vertex
+        vertex = transform + vertex
         Collection.__init__(self, dtype=dtype, itype=None, mode='line_strip',
                             vertex=vertex, fragment=fragment, **kwargs)
-
 
     def append(self, P, closed=False, itemsize=None, **kwargs):
         """
@@ -83,29 +83,29 @@ class RawPathCollection(Collection):
            Path color
         """
 
-        itemsize  = itemsize or len(P)
-        itemcount = len(P)/itemsize
-        P = P.reshape(itemcount,itemsize,3)
+        itemsize = itemsize or len(P)
+        itemcount = len(P) / itemsize
+        P = P.reshape(itemcount, itemsize, 3)
         if closed:
-            V = np.empty((itemcount,itemsize+3), dtype=self.vtype)
+            V = np.empty((itemcount, itemsize + 3), dtype=self.vtype)
             # Apply default values on vertices
             for name in self.vtype.names:
                 if name not in ['collection_index', 'position']:
                     V[name][1:-2] = kwargs.get(name, self._defaults[name])
-            V["position"][:,1:-2] = P
-            V["position"][:,  -2] = V["position"][:,1]
+            V["position"][:, 1:-2] = P
+            V["position"][:,  -2] = V["position"][:, 1]
         else:
-            V = np.empty((itemcount,itemsize+2), dtype=self.vtype)
+            V = np.empty((itemcount, itemsize + 2), dtype=self.vtype)
             # Apply default values on vertices
             for name in self.vtype.names:
                 if name not in ['collection_index', 'position']:
                     V[name][1:-1] = kwargs.get(name, self._defaults[name])
-            V["position"][:,1:-1] = P
+            V["position"][:, 1:-1] = P
         V["id"] = 1
         V[:, 0] = V[:, 1]
-        V[:,-1] = V[:,-2]
+        V[:, -1] = V[:, -2]
         V["id"][:, 0] = 0
-        V["id"][:,-1] = 0
+        V["id"][:, -1] = 0
 
         # Uniforms
         if self.utype:
@@ -117,4 +117,4 @@ class RawPathCollection(Collection):
             U = None
 
         Collection.append(self, vertices=V, uniforms=U,
-                                itemsize=itemsize+2+closed)
+                          itemsize=itemsize + 2 + closed)

@@ -4,6 +4,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
+
 class Number(object):
 
     def __init__(self, content):
