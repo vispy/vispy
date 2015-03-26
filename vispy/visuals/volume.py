@@ -47,7 +47,7 @@ import numpy as np
 # todo: what to do about lighting? ambi/diffuse/spec/shinynes on each visual?
 
 # Vertex shader
-vertex_template = """
+VERT_SHADER = """
 attribute vec3 a_position;
 attribute vec3 a_texcoord;
 uniform vec3 u_shape;
@@ -86,9 +86,9 @@ void main() {
 """
 
 # Fragment shader
-fragment_template = """
+FRAG_SHADER = """
 // uniforms
-uniform sampler3D u_volumetex;
+uniform $sampler_type u_volumetex;
 uniform vec3 u_shape;
 uniform float u_threshold;
 uniform float u_relative_step_size;
@@ -110,7 +110,7 @@ const float u_shininess = 40.0;
 vec4 calculateColor(vec4, vec3, vec3);
 float rand(vec2 co);
 
-void main() {
+void main() {{
     
     // Discart front facing
     //if (!gl_FrontFacing)
@@ -151,24 +151,24 @@ void main() {
     //vec3 loc; // current position
     //vec4 color; // current color
     
-    $before_loop
+    {before_loop}
     
     // This outer loop seems necessary on some systems for large
     // datasets. Ugly, but it works ...
     int iter = nsteps;
-    while (iter > 0) {
+    while (iter > 0) {{
         for (iter=iter; iter>0; iter--)
-        {
+        {{
             // Calculate location and sample color
             vec3 loc = edgeloc + float(iter) * ray;
-            vec4 color = texture3D(u_volumetex, loc);
+            vec4 color = $sample(u_volumetex, loc);
             float val = color.g;
             
-            $in_loop
-        }
-    }
+            {in_loop}
+        }}
+    }}
     
-    $after_loop
+    {after_loop}
     
     /* Set depth value - from visvis TODO
     int iter_depth = int(maxi);
@@ -180,23 +180,23 @@ void main() {
     iproj.z /= iproj.w;
     gl_FragDepth = (iproj.z+1.0)/2.0;
     */
-}
+}}
 
 
 float rand(vec2 co)
-{
+{{
     // Create a pseudo-random number between 0 and 1.
     // http://stackoverflow.com/questions/4200224
     return fract(sin(dot(co.xy ,vec2(12.9898, 78.233))) * 43758.5453);
-}
+}}
 
 float colorToVal(vec4 color1)
-{
+{{
     return color1.g; // todo: why did I have this abstraction in visvis?
-}
+}}
 
 vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
-{   
+{{   
     // Calculate color by incorporating lighting
     vec4 color1;
     vec4 color2;
@@ -206,16 +206,16 @@ vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
     
     // calculate normal vector from gradient
     vec3 N; // normal
-    color1 = texture3D( u_volumetex, loc+vec3(-step[0],0.0,0.0) );
-    color2 = texture3D( u_volumetex, loc+vec3(step[0],0.0,0.0) );
+    color1 = $sample( u_volumetex, loc+vec3(-step[0],0.0,0.0) );
+    color2 = $sample( u_volumetex, loc+vec3(step[0],0.0,0.0) );
     N[0] = colorToVal(color1) - colorToVal(color2);
     betterColor = max(max(color1, color2),betterColor);
-    color1 = texture3D( u_volumetex, loc+vec3(0.0,-step[1],0.0) );
-    color2 = texture3D( u_volumetex, loc+vec3(0.0,step[1],0.0) );
+    color1 = $sample( u_volumetex, loc+vec3(0.0,-step[1],0.0) );
+    color2 = $sample( u_volumetex, loc+vec3(0.0,step[1],0.0) );
     N[1] = colorToVal(color1) - colorToVal(color2);
     betterColor = max(max(color1, color2),betterColor);
-    color1 = texture3D( u_volumetex, loc+vec3(0.0,0.0,-step[2]) );
-    color2 = texture3D( u_volumetex, loc+vec3(0.0,0.0,step[2]) );
+    color1 = $sample( u_volumetex, loc+vec3(0.0,0.0,-step[2]) );
+    color2 = $sample( u_volumetex, loc+vec3(0.0,0.0,step[2]) );
     N[2] = colorToVal(color1) - colorToVal(color2);
     betterColor = max(max(color1, color2),betterColor);
     float gm = length(N); // gradient magnitude
@@ -239,7 +239,7 @@ vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
     // todo: allow multiple light, define lights on viewvox or subscene
     int nlights = 1; 
     for (int i=0; i<nlights; i++)
-    { 
+    {{ 
         // Get light direction (make sure to prevent zero devision)
         vec3 L = normalize(v_ray);  //lightDirs[i]; 
         float lightEnabled = float( length(L) > 0.0 );
@@ -257,7 +257,7 @@ vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
         ambient_color +=  mask1 * u_ambient;  // * gl_LightSource[i].ambient;
         diffuse_color +=  mask1 * lambertTerm;
         specular_color += mask1 * specularTerm * u_specular;
-    }
+    }}
     
     // Calculate final color by componing different components
     final_color = color2 * ( ambient_color + diffuse_color) + specular_color;
@@ -265,7 +265,7 @@ vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
     
     // Done
     return final_color;
-}
+}}
 
 """
 
@@ -319,7 +319,7 @@ float d2P(vec3 p, vec3 d, vec4 P)
 """
 
 
-SNIPPETS_MIP = dict(
+MIP_SNIPPETS = dict(
     before_loop="""
         float maxval = -99999.0; // The maximum encountered value
         float maxi = 0.0;  // Where the maximum value was encountered
@@ -333,14 +333,16 @@ SNIPPETS_MIP = dict(
         vec4 color = vec4(0.0);
         for (int i=0; i<5; i++) {
             float newi = maxi + 0.4 - 0.2 * float(i);
-            color = max(color, $cmap(texture3D(u_volumetex,
+            color = max(color, $cmap($sample(u_volumetex,
                 edgeloc + newi * ray).r));
         }
         gl_FragColor = color;
         """,
 )
 
-SNIPPETS_ISO = dict(
+MIP_FRAG_SHADER = FRAG_SHADER.format(**MIP_SNIPPETS)
+
+ISO_SNIPPETS = dict(
     before_loop="""
         vec4 color3 = vec4(0.0);  // final color
         vec3 step = 1.5 / u_shape;  // step to sample derivative
@@ -353,7 +355,7 @@ SNIPPETS_ISO = dict(
             for (int i=0; i<6; i++) {
                 float newi = float(iter) + 1.0 - 0.2 * float(i);
                 loc = edgeloc + newi * ray;
-                val = texture3D(u_volumetex, loc).r;
+                val = $sample(u_volumetex, loc).r;
 
                 if (val > u_threshold) {
                     color = $cmap(val);
@@ -368,6 +370,10 @@ SNIPPETS_ISO = dict(
         discard;
         """,
 )
+
+ISO_FRAG_SHADER = FRAG_SHADER.format(**ISO_SNIPPETS)
+
+frag_dict = {'mip': MIP_FRAG_SHADER, 'iso': ISO_FRAG_SHADER}
 
 
 class VolumeVisual(Visual):
@@ -398,9 +404,14 @@ class VolumeVisual(Visual):
                          ('a_texcoord', np.float32, 3), ]
     
     def __init__(self, vol, clim=None, style='mip', threshold=None, 
-                 relative_step_size=0.8, cmap='grays'):
+                 relative_step_size=0.8, cmap='grays', emulated3d=False):
         Visual.__init__(self)
-        
+
+        if emulated3d:
+            tex_cls = gloo.TextureEmulated3D
+        else:
+            tex_cls = gloo.Texture3D
+
         # Variable to determine clipping plane when inside the volume.
         # This value represents the z-value in view coordinates, but
         # other than that I am not sure what the value should be. 10.0
@@ -416,12 +427,13 @@ class VolumeVisual(Visual):
         self._cmap = get_colormap(cmap)
 
         # Create gloo objects
-        self._program = ModularProgram(vertex_template, fragment_template)
         self._vbo = None
-        self._tex = gloo.Texture3D((10, 10, 10), interpolation='linear', 
-                                   wrapping='clamp_to_edge')
+        self._tex = tex_cls((10, 10, 10), interpolation='linear', 
+                            wrapping='clamp_to_edge')
+
+        # Create program
+        self._program = ModularProgram(VERT_SHADER)
         self._program['u_volumetex'] = self._tex
-        self._program.frag['calculate_steps'] = Function(calc_steps)
         self._index_buffer = None
         
         # Set data
@@ -503,10 +515,11 @@ class VolumeVisual(Visual):
         self._style = style
         # Get rid of specific variables - they may become invalid
         self._program['u_threshold'] = None
-        # Modify glsl
-        snippet_dict = {'mip': SNIPPETS_MIP, 'iso': SNIPPETS_ISO}[style]
-        for key, snippet in snippet_dict.items():
-            self._program.frag[key] = snippet
+
+        self._program.frag = frag_dict[style]
+        self._program.frag['calculate_steps'] = Function(calc_steps)
+        self._program.frag['sampler_type'] = self._tex.glsl_sampler_type
+        self._program.frag['sample'] = self._tex.glsl_sample
         self._program.frag['cmap'] = Function(self._cmap.glsl_map)
         self.update()
     

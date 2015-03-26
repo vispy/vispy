@@ -137,10 +137,5 @@ class Canvas(app.Canvas):
 
 
 if __name__ == '__main__':
-<<<<<<< HEAD
-    c = Canvas()
-=======
-    c = Canvas(emulate3d = False)
-    c.show()
->>>>>>> Added an 2D texture that emulates a 3D texture
+    c = Canvas(emulate3d = True)
     app.run()

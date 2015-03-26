@@ -92,10 +92,10 @@ class BaseTexture(GLObject):
                 raise ValueError('Texture needs data or shape, not both.')
             data = np.array(data, copy=False)
             # So we can test the combination
-            self.resize(data.shape, format, internalformat)
+            self._resize(data.shape, format, internalformat)
             self.set_data(data)
         elif shape is not None:
-            self.resize(shape, format, internalformat)
+            self._resize(shape, format, internalformat)
         else:
             raise ValueError("Either data or shape must be given")
         
@@ -127,6 +127,12 @@ class BaseTexture(GLObject):
 
     @property
     def shape(self):
+        """ Data shape (last dimension indicates number of color channels)
+        """
+        return self._shape
+
+    @property
+    def storage_shape(self):
         """ Texture shape (last dimension indicates number of color channels)
         """
         return self._shape
@@ -185,6 +191,9 @@ class BaseTexture(GLObject):
         self._glir.command('INTERPOLATION', self._id, *value)
     
     def resize(self, shape, format=None, internalformat=None):
+        return self._resize(shape, format, internalformat)
+
+    def _resize(self, shape, format=None, internalformat=None):
         """Set the texture size and format
         
         Parameters
@@ -281,9 +290,9 @@ class BaseTexture(GLObject):
         
         # Maybe resize to purge DATA commands?
         if offset is None:
-            self.resize(data.shape)
-        elif all([i == 0 for i in offset]) and data.shape == self.shape:
-            self.resize(data.shape)
+            self._resize(data.shape)
+        elif all([i == 0 for i in offset]) and data.shape == self._shape:
+            self._resize(data.shape)
         
         # Convert offset to something usable
         offset = offset or tuple([0 for i in range(self._ndim)])
@@ -291,7 +300,7 @@ class BaseTexture(GLObject):
         
         # Check if data fits
         for i in range(len(data.shape)-1):
-            if offset[i] + data.shape[i] > self.shape[i]:
+            if offset[i] + data.shape[i] > self._shape[i]:
                 raise ValueError("Data is too large")
         
         # Send GLIR command
@@ -305,7 +314,7 @@ class BaseTexture(GLObject):
             key = (key,)
 
         # Default is to access the whole texture
-        shape = self.shape
+        shape = self._shape
         slices = [slice(0, shape[i]) for i in range(len(shape))]
 
         # Check last key/Ellipsis to decide on the order
@@ -313,12 +322,12 @@ class BaseTexture(GLObject):
         dims = range(0, len(key))
         if key[0] == Ellipsis:
             keys = key[::-1]
-            dims = range(len(self.shape) - 1,
-                         len(self.shape) - 1 - len(keys), -1)
+            dims = range(len(self._shape) - 1,
+                         len(self._shape) - 1 - len(keys), -1)
 
         # Find exact range for each key
         for k, dim in zip(keys, dims):
-            size = self.shape[dim]
+            size = self._shape[dim]
             if isinstance(k, int):
                 if k < 0:
                     k += size
@@ -541,15 +550,52 @@ class TextureEmulated3D(Texture2D):
     """
 
     def __init__(self, data=None, format=None, **kwargs):
-        from ..visuals.shaders import Function
+        from ..visuals.shaders import Function 
 
-        depth = data.shape[0]
-        data = np.transpose(data, (1, 0, 2, 3)) # This shouldn't be necessary, but we need to rewrite _glsl_sample
-        data = np.reshape(data, (data.shape[0], data.shape[1] * data.shape[2], 3))
-        Texture2D.__init__(self, data, format, **kwargs)
-
+        Texture2D.__init__(self, self._normalize_emulated_shape(data), format, **kwargs)
+        self._emulated_shape = data.shape if isinstance(data, np.ndarray) else tuple(data)
         self._glsl_sample = Function(self.__class__._glsl_sample)
-        self._glsl_sample['depth'] = depth
+        self._glsl_sample['depth'] = self.depth
+
+    def _normalize_emulated_shape(self, data_or_shape):
+        if isinstance(data_or_shape, np.ndarray):
+            data_or_shape = np.transpose(data_or_shape, (1, 0, 2)) # This shouldn't be necessary, but we need to rewrite _glsl_sample
+            data_or_shape = np.reshape(data_or_shape, (data_or_shape.shape[0], data_or_shape.shape[1] * data_or_shape.shape[2]))
+        else:
+            data_or_shape = (data_or_shape[1], data_or_shape[0] * data_or_shape[2])
+
+        return data_or_shape
+
+    def set_data(self, data, offset=None, copy=False):
+        Texture2D.set_data(self, self._normalize_emulated_shape(data), offset, copy)
+        self._emulated_shape = data.shape
+        self._glsl_sample['depth'] = self.depth
+
+    def resize(self, shape, format=None, internalformat=None):
+        Texture2D.resize(self, self._normalize_emulated_shape(shape), format, internalformat)
+        self._emulated_shape = tuple(shape)
+        self._glsl_sample['depth'] = self.depth
+
+    @property
+    def shape(self):
+        """ Data shape (last dimension indicates number of color channels)
+        """
+        return self._emulated_shape
+
+    @property
+    def width(self):
+        """ Texture width """
+        return self._emulated_shape[2]
+
+    @property
+    def height(self):
+        """ Texture height """
+        return self._emulated_shape[1]
+
+    @property
+    def depth(self):
+        """ Texture depth """
+        return self._emulated_shape[0]
 
     @property
     def glsl_sample(self):
@@ -660,13 +706,13 @@ class TextureAtlas(Texture2D):
         node = self._atlas_nodes[index]
         x, y = node[0], node[1]
         width_left = width
-        if x+width > self.shape[1]:
+        if x+width > self._shape[1]:
             return -1
         i = index
         while width_left > 0:
             node = self._atlas_nodes[i]
             y = max(y, node[1])
-            if y+height > self.shape[0]:
+            if y+height > self._shape[0]:
                 return -1
             width_left -= node[2]
             i += 1
