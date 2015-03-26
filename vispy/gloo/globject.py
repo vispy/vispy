@@ -70,18 +70,18 @@ class GLObject(object):
     def __del__(self):
         # You never know when this is goint to happen. The window might
         # already be closed and no OpenGL context might be available.
-        # Worse, there might be multiple contexts and calling delete()
-        # at the wrong moment might remove other gl objects, leading to
-        # very strange and hard to debug behavior.
-        #
-        # So we don't do anything. If each GLObject was aware of the
-        # context in which it resides, we could do auto-cleanup though...
-        # todo: it's not very Pythonic to have to delete an object.
-        pass
+        # However, since we are using GLIR queue, this does not matter!
+        # If the command gets transported to the canvas, that is great,
+        # if not, this probably means that the canvas no longer exists.
+        self.delete()
+        self._glir._deletable = True  # used by master glir queue to clean up
 
     def delete(self):
         """ Delete the object from GPU memory """
-        self._glir.command('DELETE', self._id)
+        # It looks like executing the DELETE command multiple times
+        # does not raise an error, but that may just be on my machine.
+        if hasattr(self, '_glir'):  # e.g. DataBufferView does not have it
+            self._glir.command('DELETE', self._id)
     
     @property
     def id(self):

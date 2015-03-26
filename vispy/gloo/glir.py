@@ -120,16 +120,13 @@ class GlirQueue(object):
         """ Pop the whole queue (and associated queues) and return a
         list of commands.
         """
-        # Clean unusused associations?
-        self._count_for_cleanup += 1
-        if self._count_for_cleanup > 50:
-            self._count_for_cleanup = 0
-            self._clear_inactive_associations()
         
-        # Get all commands
+        # Get all commands, discard deletable queues (ques no longer in use)
         commands = []
-        for q in self._associations:
+        for q in list(self._associations):
             commands.extend(q.clear())
+            if hasattr(q, '_deletable'):  # this flag gets set by GLObject
+                self._associations.discard(q)
         commands.extend(self._commands)
         self._commands[:] = []
         return commands
@@ -143,26 +140,6 @@ class GlirQueue(object):
         """
         assert isinstance(queue, GlirQueue)
         self._associations.add(queue)
-    
-    def _clear_inactive_associations(self):
-        """ Gid rid of glir queues that are no longer used.
-        """
-        L = [weakref.ref(q) for q in self._associations]
-        self._associations.clear()
-        #gc.collect(1)  # Do not do gc.collect(), it is slow!
-        self._associations.update([q() for q in L])
-        self._associations.discard(None)
-    
-    # todo: remove?
-#     @property
-#     def parser(self):
-#         """The GLIR parser associated to that queue."""
-#         return self._parser
-# 
-#     @parser.setter
-#     def parser(self, parser):
-#         assert isinstance(parser, BaseGlirParser) or parser is None
-#         self._parser = parser
     
     def flush(self, parser):
         """ Flush all current commands to the GLIR interpreter.
@@ -340,7 +317,7 @@ class GlirParser(BaseGlirParser):
                 else:
                     self._invalid_objects.add(id_)
             elif cmd == 'DELETE':
-                # Deleteing an object
+                # Deleting an object
                 ob = self._objects.get(id_, None)
                 if ob is not None:
                     ob.delete()
