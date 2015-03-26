@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 # vispy: testskip
 
+import sys
 import numpy as np
 from vispy import app, gloo
 from vispy.visuals.collections import PointCollection
@@ -29,4 +30,5 @@ def on_resize(event):
     width, height = event.size
     gloo.set_viewport(0, 0, width, height)
 
-app.run()
+if __name__ == '__main__' and sys.flags.interactive == 0:
+    app.run()
