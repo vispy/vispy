@@ -11,15 +11,15 @@ by all vertices). It is based on the BaseCollection but offers a more intuitive
 interface.
 """
 
-import os
 import numpy as np
-from vispy.gloo import Program
+from ... import gloo
+from ...gloo import Program
 from . util import fetchcode
 from . base_collection import BaseCollection
 
 
-
 class Collection(BaseCollection):
+
     """
     A collection is a container for several items having the same data
     structure (dtype). Each data type can be declared as local (it is specific
@@ -51,14 +51,14 @@ class Collection(BaseCollection):
         where parameter name must be one of the dtype.
     """
 
-    _gtypes = { ('float32', 1) : "float",
-                ('float32', 2) : "vec2",
-                ('float32', 3) : "vec3",
-                ('float32', 4) : "vec4",
-                ('int32', 1)   : "int",
-                ('int32', 2)   : "ivec2",
-                ('int32', 3)   : "ivec3",
-                ('int32', 4)   : "ivec4" }
+    _gtypes = {('float32', 1): "float",
+               ('float32', 2): "vec2",
+               ('float32', 3): "vec3",
+               ('float32', 4): "vec4",
+               ('int32', 1): "int",
+               ('int32', 2): "ivec2",
+               ('int32', 3): "ivec3",
+               ('int32', 4): "ivec4"}
 
     def __init__(self, dtype, itype, mode, vertex, fragment, **kwargs):
         """
@@ -72,24 +72,25 @@ class Collection(BaseCollection):
         utype = []
 
         # Build vtype and utype according to parameters
-        declarations = {"uniforms"   : "",
-                        "attributes" : "",
-                        "varyings"   : ""}
+        declarations = {"uniforms": "",
+                        "attributes": "",
+                        "varyings": ""}
         defaults = {}
         for item in dtype:
-            name, (basetype,count), scope, default = item
+            name, (basetype, count), scope, default = item
             basetype = np.dtype(basetype).name
             if scope[0] == "!":
                 scope = scope[1:]
             else:
                 scope = kwargs.get(name, scope)
             defaults[name] = default
-            gtype = Collection._gtypes[(basetype,count)]
+            gtype = Collection._gtypes[(basetype, count)]
             if scope == "local":
-                vtype.append( (name, basetype, count) )
-                declarations["attributes"] += "attribute %s %s;\n" % (gtype, name)
+                vtype.append((name, basetype, count))
+                declarations[
+                    "attributes"] += "attribute %s %s;\n" % (gtype, name)
             elif scope == "shared":
-                utype.append( (name, basetype, count) )
+                utype.append((name, basetype, count))
                 declarations["varyings"] += "varying %s %s;\n" % (gtype, name)
             else:
                 declarations["uniforms"] += "uniform %s %s;\n" % (gtype, name)
@@ -125,8 +126,6 @@ class Collection(BaseCollection):
         for name in self._uniforms.keys():
             self._uniforms[name] = self._defaults.get(name)
             program[name] = self._uniforms[name]
-
-
 
     def view(self, transform, viewport=None):
         """ Return a view on the collection using provided transform """
@@ -166,30 +165,26 @@ class Collection(BaseCollection):
         # program.draw = draw
         # return program
 
-
-
     def __getitem__(self, key):
 
         program = self._programs[0]
-        for name, (storage,_,_) in program._code_variables.items():
+        for name, (storage, _, _) in program._code_variables.items():
             if name == key and storage == 'uniform':
                 return program[key]
         return BaseCollection.__getitem__(self, key)
-
 
     def __setitem__(self, key, value):
 
         found = False
         for program in self._programs:
-            for name, (storage,_,_) in program._code_variables.items():
+            for name, (storage, _, _) in program._code_variables.items():
                 if name == key and storage == 'uniform':
                     found = True
                     program[key] = value
         if not found:
             BaseCollection.__setitem__(self, key, value)
 
-
-    def draw(self, mode = None):
+    def draw(self, mode=None):
         """ Draw collection """
 
         if self._need_update:
@@ -202,7 +197,6 @@ class Collection(BaseCollection):
             program.draw(mode, self._indices_buffer)
         else:
             program.draw(mode)
-
 
 
 class CollectionView(object):
@@ -226,14 +220,11 @@ class CollectionView(object):
         self._program = program
         self._collection = collection
 
-
     def __getitem__(self, key):
         return self._program[key]
 
-
     def __setitem__(self, key, value):
         self._program[key] = value
-
 
     def draw(self):
 

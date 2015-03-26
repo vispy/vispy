@@ -16,8 +16,8 @@ from vispy.gloo import gl
 from . collection import Collection
 
 
-
 class AggPathCollection(Collection):
+
     """
     Antigrain Geometry Path Collection
 
@@ -66,19 +66,19 @@ class AggPathCollection(Collection):
             'local', 'shared' or 'global'
         """
 
-        base_dtype = [ ('p0',         (np.float32, 3), '!local', (0,0,0)),
-                       ('p1',         (np.float32, 3), '!local', (0,0,0)),
-                       ('p2',         (np.float32, 3), '!local', (0,0,0)),
-                       ('p3',         (np.float32, 3), '!local', (0,0,0)),
-                       ('uv',         (np.float32, 2), '!local', (0,0)),
+        base_dtype = [('p0',         (np.float32, 3), '!local', (0, 0, 0)),
+                      ('p1',         (np.float32, 3), '!local', (0, 0, 0)),
+                      ('p2',         (np.float32, 3), '!local', (0, 0, 0)),
+                      ('p3',         (np.float32, 3), '!local', (0, 0, 0)),
+                      ('uv',         (np.float32, 2), '!local', (0, 0)),
 
-                       ('caps',       (np.float32, 2), 'global', (0,0)),
-                       ('join',       (np.float32, 1), 'global', 0),
-                       ('color',      (np.float32, 4), 'global', (0,0,0,1)),
-                       ('miter_limit',(np.float32, 1), 'global', 4),
-                       ('linewidth',  (np.float32, 1), 'global', 1),
-                       ('antialias',  (np.float32, 1), 'global', 1),
-                       ('viewport',   (np.float32, 4), 'global', (0,0,512,512)) ]
+                      ('caps',       (np.float32, 2), 'global', (0, 0)),
+                      ('join',       (np.float32, 1), 'global', 0),
+                      ('color',      (np.float32, 4), 'global', (0, 0, 0, 1)),
+                      ('miter_limit', (np.float32, 1), 'global', 4),
+                      ('linewidth',  (np.float32, 1), 'global', 1),
+                      ('antialias',  (np.float32, 1), 'global', 1),
+                      ('viewport',   (np.float32, 4), 'global', (0, 0, 512, 512))]  # noqa
 
         dtype = base_dtype
         if user_dtype:
@@ -87,14 +87,14 @@ class AggPathCollection(Collection):
         if vertex is None:
             vertex = glsl.get('collections/agg-path.vert')
         if transform is None:
-            transform = "vec4 transform(vec3 position) {return vec4(position,1.0);}"
+            transform = "vec4 transform(vec3 position) {return vec4(position,1.0);}"  # noqa
         if fragment is None:
             fragment = glsl.get('collections/agg-path.frag')
 
-        vertex =  transform + vertex
-        Collection.__init__(self, dtype=dtype, itype=np.uint32, mode="triangles",
+        vertex = transform + vertex
+        Collection.__init__(self, dtype=dtype, itype=np.uint32,
+                            mode="triangles",
                             vertex=vertex, fragment=fragment, **kwargs)
-
 
     def append(self, P, closed=False, itemsize=None, **kwargs):
         """
@@ -134,15 +134,15 @@ class AggPathCollection(Collection):
            Path antialias area
         """
 
-        itemsize  = itemsize or len(P)
-        itemcount = len(P)/itemsize
+        itemsize = itemsize or len(P)
+        itemcount = len(P) / itemsize
 
         # Computes the adjacency information
-        n,p = len(P), P.shape[-1]
-        Z = np.tile(P,2).reshape(2*len(P),p)
+        n, p = len(P), P.shape[-1]
+        Z = np.tile(P, 2).reshape(2 * len(P), p)
         V = np.empty(n, dtype=self.vtype)
 
-        V['p0'][1:-1]= Z[0::2][:-2]
+        V['p0'][1:-1] = Z[0::2][:-2]
         V['p1'][:-1] = Z[1::2][:-1]
         V['p2'][:-1] = Z[1::2][+1:]
         V['p3'][:-2] = Z[0::2][+2:]
@@ -153,29 +153,31 @@ class AggPathCollection(Collection):
                 V[name] = kwargs.get(name, self._defaults[name])
 
         # Extract relevant segments only
-        V = (V.reshape(n/itemsize, itemsize)[:,:-1])
+        V = (V.reshape(n / itemsize, itemsize)[:, :-1])
         if closed:
-            V['p0'][:, 0] = V['p2'][:,-1]
-            V['p3'][:,-1] = V['p1'][:, 0]
+            V['p0'][:, 0] = V['p2'][:, -1]
+            V['p3'][:, -1] = V['p1'][:, 0]
         else:
             V['p0'][:, 0] = V['p1'][:, 0]
-            V['p3'][:,-1] = V['p2'][:,-1]
+            V['p3'][:, -1] = V['p2'][:, -1]
         V = V.ravel()
 
         # Quadruple each point (we're using 2 triangles / segment)
         # No shared vertices between segment because of joins
-        V = np.repeat(V,4,axis=0).reshape((len(V),4))
-        V['uv'] = (-1,-1), (-1,+1), (+1,-1), (+1,+1)
+        V = np.repeat(V, 4, axis=0).reshape((len(V), 4))
+        V['uv'] = (-1, -1), (-1, +1), (+1, -1), (+1, +1)
         V = V.ravel()
 
         n = itemsize
         if closed:
-            I = np.resize(np.array([0,1,2, 1,2,3], dtype=np.uint32),n*2*3)
-            I += np.repeat( 4*np.arange(n), 6)
-            I[-6:] = 4*n-6,4*n-5,0,4*n-5,0,1
+            I = np.resize(
+                np.array([0, 1, 2, 1, 2, 3], dtype=np.uint32), n * 2 * 3)
+            I += np.repeat(4 * np.arange(n), 6)
+            I[-6:] = 4 * n - 6, 4 * n - 5, 0, 4 * n - 5, 0, 1
         else:
-            I = np.resize(np.array([0,1,2, 1,2,3], dtype=np.uint32),(n-1)*2*3)
-            I += np.repeat( 4*np.arange(n-1), 6)
+            I = np.resize(
+                np.array([0, 1, 2, 1, 2, 3], dtype=np.uint32), (n - 1) * 2 * 3)
+            I += np.repeat(4 * np.arange(n - 1), 6)
         I = I.ravel()
 
         # Uniforms
@@ -188,10 +190,9 @@ class AggPathCollection(Collection):
             U = None
 
         Collection.append(self, vertices=V, uniforms=U,
-                          indices=I, itemsize=itemsize*4-4)
+                          indices=I, itemsize=itemsize * 4 - 4)
 
-
-    def draw(self, mode = "triangles"):
+    def draw(self, mode="triangles"):
         """ Draw collection """
 
         gl.glDepthMask(0)

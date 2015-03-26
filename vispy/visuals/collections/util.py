@@ -44,12 +44,12 @@ def dtype_reduce(dtype, level=0, depth=0):
         name = ''
         # Get reduced fields
         for key, value in fields.items():
-            l = dtype_reduce(value[0], level, depth+1)
+            l = dtype_reduce(value[0], level, depth + 1)
             if type(l[0]) is str:
                 items.append([key, l[1], l[2]])
             else:
                 items.append(l)
-            name += key+','
+            name += key + ','
 
         # Check if we can reduce item list
         ctype = None

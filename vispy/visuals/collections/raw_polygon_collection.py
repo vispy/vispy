@@ -8,31 +8,32 @@ from vispy import glsl
 from . collection import Collection
 from vispy.geometry import Triangulation
 
+
 def triangulate(vertices):
     n = len(vertices)
     vertices = np.array(vertices)
-    zmean = vertices[:,2].mean()
-    vertices_2d = vertices[:,:2]
-    segments = np.repeat(np.arange(n+1),2)[1:-1]
-    segments[-2:] = n-1,0
-    segments = segments.reshape(len(segments)/2,2)
+    zmean = vertices[:, 2].mean()
+    vertices_2d = vertices[:, :2]
+    segments = np.repeat(np.arange(n + 1), 2)[1:-1]
+    segments[-2:] = n - 1, 0
+    segments = segments.reshape(len(segments) / 2, 2)
     T = Triangulation(vertices_2d, segments)
     T.triangulate()
     vertices_2d = T.pts
     triangles = T.tris.ravel()
-    vertices = np.empty((len(vertices_2d),3))
-    vertices[:,:2] = vertices_2d
-    vertices[:,2] = zmean
+    vertices = np.empty((len(vertices_2d), 3))
+    vertices[:, :2] = vertices_2d
+    vertices[:, 2] = zmean
     return vertices, triangles
 
 
 class RawPolygonCollection(Collection):
 
     def __init__(self, user_dtype=None, transform=None,
-                 vertex = None, fragment = None, **kwargs):
+                 vertex=None, fragment=None, **kwargs):
 
-        base_dtype = [('position', (np.float32, 3), '!local', (0,0,0)),
-                      ('color',    (np.float32, 4), 'local',  (0,0,0,1)) ]
+        base_dtype = [('position', (np.float32, 3), '!local', (0, 0, 0)),
+                      ('color',    (np.float32, 4), 'local',  (0, 0, 0, 1))]
 
         dtype = base_dtype
         if user_dtype:
@@ -41,15 +42,14 @@ class RawPolygonCollection(Collection):
         if vertex is None:
             vertex = glsl.get('collections/raw-triangle.vert')
         if transform is None:
-            transform = "vec4 transform(vec3 position) {return vec4(position,1.0);}"
+            transform = "vec4 transform(vec3 position) {return vec4(position,1.0);}"  # noqa
         if fragment is None:
             fragment = glsl.get('collections/raw-triangle.frag')
 
-        vertex =  transform + vertex
-        Collection.__init__(self, dtype=dtype, itype=np.uint32, mode="triangles",
+        vertex = transform + vertex
+        Collection.__init__(self, dtype=dtype, itype=np.uint32,
+                            mode="triangles",
                             vertex=vertex, fragment=fragment, **kwargs)
-
-
 
     def append(self, points, **kwargs):
         """
@@ -69,10 +69,10 @@ class RawPolygonCollection(Collection):
         """
 
         vertices, indices = triangulate(points)
-        itemsize  = len(vertices)
+        itemsize = len(vertices)
         itemcount = 1
 
-        V = np.empty(itemcount*itemsize, dtype=self.vtype)
+        V = np.empty(itemcount * itemsize, dtype=self.vtype)
         for name in self.vtype.names:
             if name not in ['collection_index', 'position']:
                 V[name] = kwargs.get(name, self._defaults[name])
@@ -89,4 +89,4 @@ class RawPolygonCollection(Collection):
 
         I = np.array(indices).ravel()
         Collection.append(self, vertices=V, uniforms=U, indices=I,
-                                itemsize=itemsize)
+                          itemsize=itemsize)

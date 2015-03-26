@@ -16,6 +16,7 @@ from . collection import Collection
 
 
 class RawPointCollection(Collection):
+
     """
     Raw Point Collection
 
@@ -24,7 +25,7 @@ class RawPointCollection(Collection):
     """
 
     def __init__(self, user_dtype=None, transform=None,
-                       vertex=None, fragment=None, **kwargs):
+                 vertex=None, fragment=None, **kwargs):
         """
         Initialize the collection.
 
@@ -47,9 +48,9 @@ class RawPointCollection(Collection):
         color : string
             'local', 'shared' or 'global'
         """
-        base_dtype = [ ('position', (np.float32, 3), "!local", (0,0,0)),
-                       ('size',     (np.float32, 1), "global", 3.0),
-                       ('color',    (np.float32, 4), "global", (0,0,0,1) ) ]
+        base_dtype = [('position', (np.float32, 3), "!local", (0, 0, 0)),
+                      ('size',     (np.float32, 1), "global", 3.0),
+                      ('color',    (np.float32, 4), "global", (0, 0, 0, 1))]
 
         dtype = base_dtype
         if user_dtype:
@@ -58,18 +59,16 @@ class RawPointCollection(Collection):
         if vertex is None:
             vertex = glsl.get("collections/raw-point.vert")
         if transform is None:
-            transform = "vec4 transform(vec3 position) {return vec4(position,1.0);}"
+            transform = "vec4 transform(vec3 position) {return vec4(position,1.0);}"  # noqa
         if fragment is None:
-            fragment= glsl.get("collections/raw-point.frag")
+            fragment = glsl.get("collections/raw-point.frag")
 
         vertex = transform + vertex
         Collection.__init__(self, dtype=dtype, itype=None, mode="points",
                             vertex=vertex, fragment=fragment, **kwargs)
 
         # Set hooks if necessary
-        program = self._programs[0]
-
-
+        # program = self._programs[0]
 
     def append(self, P, itemsize=None, **kwargs):
         """
@@ -91,8 +90,8 @@ class RawPointCollection(Collection):
            Path color
         """
 
-        itemsize  = itemsize or 1
-        itemcount = len(P)/itemsize
+        itemsize = itemsize or 1
+        itemcount = len(P) / itemsize
 
         V = np.empty(len(P), dtype=self.vtype)
 

@@ -33,6 +33,7 @@ import numpy as np
 
 
 class ArrayList(object):
+
     """
     An ArrayList is a strongly typed list whose type can be anything that can
     be interpreted as a numpy data type.
@@ -131,14 +132,12 @@ class ArrayList(object):
         """ Describes the format of the elements in the buffer. """
         return self._data.dtype
 
-
     def reserve(self, capacity):
         """ Set current capacity of the underlying array"""
 
         if capacity >= self._data.size:
             capacity = int(2 ** np.ceil(np.log2(capacity)))
             self._data = np.resize(self._data, capacity)
-
 
     def __len__(self):
         """ x.__len__() <==> len(x) """
@@ -189,7 +188,7 @@ class ArrayList(object):
         if not self._writeable:
             raise AttributeError("List is not writeable")
 
-        if isinstance(key, (int,slice)):
+        if isinstance(key, (int, slice)):
             if isinstance(key, int):
                 if key < 0:
                     key += len(self)
@@ -213,17 +212,17 @@ class ArrayList(object):
                     dstop = self._items[istop - 1][1]
 
             if hasattr(data, "__len__"):
-                if len(data) == dstop-dstart: # or len(data) == 1:
+                if len(data) == dstop - dstart:  # or len(data) == 1:
                     self._data[dstart:dstop] = data
                 else:
                     self.__delitem__(key)
-                    self.insert(istart,data)
-            else: # we assume len(data) = 1
-                if dstop-dstart == 1:
+                    self.insert(istart, data)
+            else:  # we assume len(data) = 1
+                if dstop - dstart == 1:
                     self._data[dstart:dstop] = data
                 else:
                     self.__delitem__(key)
-                    self.insert(istart,data)
+                    self.insert(istart, data)
 
         elif key is Ellipsis:
             self.data[...] = data
@@ -283,7 +282,6 @@ class ArrayList(object):
         self._items[istart:istop + size + 1] -= size, size
         self._count -= istop - istart
 
-
     def insert(self, index, data, itemsize=None):
         """ Insert data before index
 
@@ -311,7 +309,7 @@ class ArrayList(object):
         if not self._sizeable:
             raise AttributeError("List is not sizeable")
 
-        if isinstance(data, (list, tuple)) and isinstance(data[0], (list, tuple)):
+        if isinstance(data, (list, tuple)) and isinstance(data[0], (list, tuple)):  # noqa
             itemsize = [len(l) for l in data]
             data = [item for sublist in data for item in sublist]
 
@@ -391,7 +389,6 @@ class ArrayList(object):
             istop = istart + _count
             self._items[istart:istop] = items
             self._count += _count
-
 
     def append(self, data, itemsize=None):
         """
