@@ -70,6 +70,10 @@ you to use the development version on Github (master branch). You need
 to clone the repository and install Vispy with
 ``python setup.py install``.
 
+If you need to install Python for the first time, consider using the
+`Anaconda <http://continuum.io/downloads>`_ Python distribution. It
+provides a convenient package management system.
+
 
 Structure of Vispy
 ------------------
