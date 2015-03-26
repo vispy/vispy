@@ -7,6 +7,7 @@
 import numpy as np
 from os import path as op
 from traceback import extract_stack, format_list
+import weakref
 
 from . globject import GLObject
 from ..util import logger
@@ -125,7 +126,8 @@ class Buffer(GLObject):
         self._glir.command('SIZE', self._id, size)
         # Invalidate any view on this buffer
         for view in self._views:
-            view._valid = False
+            if view() is not None:
+                view()._valid = False
         self._views = []
 
 
@@ -249,7 +251,7 @@ class DataBuffer(Buffer):
         """ Create a view on this buffer. """
 
         view = DataBufferView(self, key)
-        self._views.append(view)
+        self._views.append(weakref.ref(view))
         return view
 
     def __setitem__(self, key, data):

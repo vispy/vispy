@@ -272,7 +272,8 @@ class EventEmitter(object):
         callback : function | tuple
             *callback* may be either a callable object or a tuple
             (object, attr_name) where object.attr_name will point to a
-            callable object.
+            callable object. Note that only a weak reference to ``object``
+            will be kept.
         ref : bool | str
             Reference used to identify the callback in ``before``/``after``.
             If True, the callback ref will automatically determined (see
@@ -315,6 +316,9 @@ class EventEmitter(object):
         callback_refs = self.callback_refs
         if callback in callbacks:
             return
+        # always use a weak ref
+        if isinstance(callback, tuple):
+            callback = (weakref.ref(callback[0]),) + callback[1:]
         # deal with the ref
         if isinstance(ref, bool):
             if ref:
@@ -377,6 +381,8 @@ class EventEmitter(object):
             self._callbacks = []
             self._callback_refs = []
         else:
+            if isinstance(callback, tuple):
+                callback = (weakref.ref(callback[0]),) + callback[1:]
             if callback in self._callbacks:
                 idx = self._callbacks.index(callback)
                 self._callbacks.pop(idx)
@@ -423,7 +429,7 @@ class EventEmitter(object):
                     continue
                 
                 if isinstance(cb, tuple):
-                    cb = getattr(cb[0], cb[1], None)
+                    cb = getattr(cb[0](), cb[1], None)
                     if cb is None:
                         continue
                 
@@ -438,11 +444,6 @@ class EventEmitter(object):
         return event
 
     def _invoke_callback(self, cb, event):
-        if not hasattr(EventEmitter, 'prof'):
-            EventEmitter.prof = {}
-        k = (cb, event.type)
-        EventEmitter.prof[k] = 1 + EventEmitter.prof.get(k, 0)
-
         try:
             cb(event)
         except Exception:
