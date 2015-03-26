@@ -43,6 +43,12 @@ _internalformats = [
 ]
 _internalformats = dict([(enum.name, enum) for enum in _internalformats])
 
+# Value to mark a glir object that was just deleted. So we can safely
+# ignore it (and not raise an error that the object could not be found).
+# This can happen e.g. if A is created, A is bound to B and then A gets
+# deleted. The commands may get executed in order: A gets created, A
+# gets deleted, A gets bound to B.
+JUST_DELETED = 'JUST_DELETED'
 
 def as_enum(enum):
     """ Turn a possibly string enum into an integer enum.
@@ -292,6 +298,15 @@ class GlirParser(BaseGlirParser):
         """ Parse a list of commands.
         """
         
+        # Get rid of dummy objects that represented deleted objects in
+        # the last parsing round.
+        to_delete = []
+        for id_, val in self._objects.items():
+            if val == JUST_DELETED:
+                to_delete.append(id_)
+        for id_ in to_delete:
+            self._objects.pop(id_)
+        
         for command in commands:
             cmd, id_, args = command[0], command[1], command[2:]
             
@@ -315,13 +330,16 @@ class GlirParser(BaseGlirParser):
                 else:
                     self._invalid_objects.add(id_)
             elif cmd == 'DELETE':
-                # Deleting an object (note the pop instead of get)
-                ob = self._objects.pop(id_, None)
+                # Deleting an object
+                ob = self._objects.get(id_, None)
                 if ob is not None:
+                    self._objects[id_] = JUST_DELETED
                     ob.delete()
             else:
                 # Doing somthing to an object
                 ob = self._objects.get(id_, None)
+                if ob == JUST_DELETED:
+                    continue
                 if ob is None:
                     if id_ not in self._invalid_objects:
                         raise RuntimeError('Cannot %s object %i because it '
@@ -606,6 +624,8 @@ class GlirProgram(GlirObject):
         if True:
             # Sampler: the value is the id of the texture
             tex = self._parser.get_object(value)
+            if tex == JUST_DELETED:
+                return
             if tex is None:
                 raise RuntimeError('Could not find texture with id %i' % value)
             unit = len(self._samplers)
@@ -679,6 +699,8 @@ class GlirProgram(GlirObject):
             size, gtype, dtype = self.ATYPEINFO[type]
             # Get associated VBO
             vbo = self._parser.get_object(vbo_id)
+            if vbo == JUST_DELETED:
+                return
             if vbo is None:
                 raise RuntimeError('Could not find VBO with id %i' % vbo_id)
             # Set data
@@ -1131,6 +1153,8 @@ class GlirFrameBuffer(GlirObject):
                                          gl.GL_RENDERBUFFER, 0)
         else:
             buffer = self._parser.get_object(buffer_id)
+            if buffer == JUST_DELETED:
+                return
             if buffer is None:
                 raise ValueError("Unknown buffer with id %i for attachement" % 
                                  buffer_id)
