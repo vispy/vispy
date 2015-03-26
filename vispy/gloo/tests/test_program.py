@@ -88,8 +88,14 @@ class ProgramTest(unittest.TestCase):
         
         # Text array unoforms
         program = Program("uniform float A[10];", "foo")
-        assert ('uniform', 'float', 'A[0]') in program.variables
-        assert len(program.variables) == 10
+        assert ('uniform_array', 'float', 'A') in program.variables
+        assert len(program.variables) == 11  # array plus elements
+        self.assertRaises(ValueError, program.__setitem__, 'A',
+                          np.ones((9, 1)))
+        program['A'] = np.ones((10, 1))
+        program['A[0]'] = 0
+        assert 'A[0]' in program._user_variables
+        assert 'A[0]' not in program._pending_variables
         
         # Init program
         program = Program("uniform float A;", 
