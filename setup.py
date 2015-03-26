@@ -93,7 +93,20 @@ setup(
     package_data={
         'vispy': [op.join('io', '_data', '*'),
                   op.join('html', 'static', 'js', '*'),
-                  op.join('app', 'tests', 'qt-designer.ui')]},
+                  op.join('app', 'tests', 'qt-designer.ui')
+                  ],
+
+        'vispy.glsl': ['*.vert','*.frag', "*.glsl"],
+        'vispy.glsl.math': ['*.vert','*.frag', "*.glsl"],
+        'vispy.glsl.misc': ['*.vert','*.frag', "*.glsl"],
+        'vispy.glsl.arrows': ['*.vert','*.frag', "*.glsl"],
+        'vispy.glsl.markers': ['*.vert','*.frag', "*.glsl"],
+        'vispy.glsl.colormaps': ['*.vert','*.frag', "*.glsl"],
+        'vispy.glsl.antialias': ['*.vert','*.frag', "*.glsl"],
+        'vispy.glsl.transforms': ['*.vert','*.frag', "*.glsl"],
+        'vispy.glsl.collections': ['*.vert','*.frag', "*.glsl"],
+
+                  },
     zip_safe=False,
     classifiers=[
         'Development Status :: 3 - Alpha',
