@@ -112,7 +112,7 @@ class AggSegmentCollection(Collection):
         """
 
         itemsize  = itemsize or 1
-        itemcount = len(P0)/itemsize
+        itemcount = len(P0) // itemsize
 
         V = np.empty(itemcount, dtype=self.vtype)
 
