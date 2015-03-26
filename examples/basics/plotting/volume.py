@@ -1,0 +1,31 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) 2014, Vispy Development Team.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+
+import sys
+import numpy as np
+
+from vispy import io, plot as vp
+
+fig = vp.Fig(bgcolor='k', show=False, size=(800, 800))
+
+vol_data = np.load(io.load_data_file('brain/mri.npz'))['data']
+vol_data = np.flipud(np.rollaxis(vol_data, 1))
+
+vol_pw = fig[0, 0]
+vol_pw.volume(vol_data)
+vol_pw.camera.elevation = 30
+vol_pw.camera.azimuth = 30
+vol_pw.camera.scale_factor /= 1.5
+
+fig[1, 0].image(vol_data[:, :, vol_data.shape[2] // 2])
+fig[0, 1].image(vol_data[:, vol_data.shape[1] // 2, :])
+fig[1, 1].image(vol_data[vol_data.shape[0] // 2, :, :].T)
+
+for pw in fig.plot_widgets:
+    pw.bgcolor = 'w'
+
+if __name__ == '__main__':
+    fig.show()
+    if sys.flags.interactive == 0:
+        fig.app.run()

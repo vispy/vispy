@@ -19,6 +19,7 @@ class Grid(Widget):
         self._cells = {}
         self._grid_widgets = {}
         self.spacing = 6
+        self._n_added = 0
         Widget.__init__(self, **kwargs)
 
     def add_widget(self, widget=None, row=None, col=None, row_span=1, 
@@ -56,7 +57,9 @@ class Grid(Widget):
 
         _row = self._cells.setdefault(row, {})
         _row[col] = widget
-        self._grid_widgets[widget] = row, col, row_span, col_span
+        self._grid_widgets[self._n_added] = (row, col, row_span, col_span,
+                                             widget)
+        self._n_added += 1
         widget.parent = self
 
         self._next_cell = [row, col+col_span]
@@ -90,34 +93,46 @@ class Grid(Widget):
     def next_row(self):
         self._next_cell = [self._next_cell[0] + 1, 0]
 
+    @property
+    def grid_size(self):
+        rvals = [widget[0]+widget[2] for widget in self._grid_widgets.values()]
+        cvals = [widget[1]+widget[3] for widget in self._grid_widgets.values()]
+        return max(rvals + [0]), max(cvals + [0])
+
+    @property
+    def layout_array(self):
+        locs = -1 * np.ones(self.grid_size, int)
+        for key in self._grid_widgets.keys():
+            r, c, rs, cs = self._grid_widgets[key][:4]
+            locs[r:r + rs, c:c + cs] = key
+        return locs
+
+    def __repr__(self):
+        return (('<Grid at %s:\n' % hex(id(self))) +
+                str(self.layout_array + 1) + '>')
+
     def _update_child_widgets(self):
         # Resize all widgets in this grid to share space.
         # This logic will need a lot of work..
-
-        rvals = [widget[0]+widget[2] for widget in self._grid_widgets.values()]
-        cvals = [widget[1]+widget[3] for widget in self._grid_widgets.values()]
-        if len(rvals) == 0 or len(cvals) == 0:
+        n_rows, n_cols = self.grid_size
+        if n_rows == 0:
             return
-
-        nrows = max(rvals)
-        ncols = max(cvals)
-
         # determine starting/ending position of each row and column
         s2 = self.spacing / 2.
         rect = self.rect.padded(self.padding + self.margin - s2)
-        rows = np.linspace(rect.bottom, rect.top, nrows+1)
+        rows = np.linspace(rect.bottom, rect.top, n_rows+1)
         rowstart = rows[:-1] + s2
         rowend = rows[1:] - s2
-        cols = np.linspace(rect.left, rect.right, ncols+1)
+        cols = np.linspace(rect.left, rect.right, n_cols+1)
         colstart = cols[:-1] + s2
         colend = cols[1:] - s2
 
-        for ch in self._grid_widgets:
-            row, col, rspan, cspan = self._grid_widgets[ch]
+        for key in self._grid_widgets.keys():
+            row, col, rspan, cspan, ch = self._grid_widgets[key]
 
             # Translate the origin of the node to the corner of the area
-            #ch.transform.reset()
-            #ch.transform.translate((colstart[col], rowstart[row]))
+            # ch.transform.reset()
+            # ch.transform.translate((colstart[col], rowstart[row]))
             ch.pos = colstart[col], rowstart[row]
 
             # ..and set the size to match.

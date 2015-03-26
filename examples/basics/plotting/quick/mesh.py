@@ -4,16 +4,16 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 """
-Example of simple image plotting.
+Example of simple mesh plotting and manipulation.
 """
 
 import sys
 import numpy as np
 
-import vispy.plot as vp
+from vispy.io import load_data_file
+import vispy.plot.q as vpq
 
-canvas = vp.image(np.random.normal(128, 60, (20, 20)).astype(np.ubyte))
+canvas = vpq.mesh(fname=load_data_file('orig/triceratops.obj.gz'))
 
-# Start up the event loop if this is not an interactive prompt.
 if __name__ == '__main__' and sys.flags.interactive == 0:
     canvas.app.run()

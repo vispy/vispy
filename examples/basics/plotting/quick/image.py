@@ -4,14 +4,15 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 """
-Example of simple line plotting.
+Example of simple image plotting.
 """
 
 import sys
+import numpy as np
 
-import vispy.plot as vp
+import vispy.plot.q as vpq
 
-canvas = vp.plot([1, 6, 2, 4, 3, 8, 4, 6, 5, 2])
+canvas = vpq.image(np.random.normal(128, 60, (20, 20)).astype(np.ubyte))
 
 # Start up the event loop if this is not an interactive prompt.
 if __name__ == '__main__' and sys.flags.interactive == 0:

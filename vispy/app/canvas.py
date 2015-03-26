@@ -443,8 +443,9 @@ class Canvas(object):
 
     # ---------------------------------------------------------------- misc ---
     def __repr__(self):
-        return ('<Canvas (%s) at %s>'
-                % (self.app.backend_name, hex(id(self))))
+        return ('<%s (%s) at %s>'
+                % (self.__class__.__name__,
+                   self.app.backend_name, hex(id(self))))
 
     def __enter__(self):
         self.show()

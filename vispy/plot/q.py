@@ -8,7 +8,19 @@ from ..geometry import MeshData
 from ..io import read_mesh
 from ..scene import SceneCanvas, visuals, cameras
 
-plots = []
+__all__ = ['plot', 'image', 'mesh', 'scatter']
+
+
+_plots = []
+
+
+# XXX: auto-populate namespace using visuals
+_known_visuals = dict(
+    plot=visuals.LinePlot,
+    image=visuals.Image,
+    mesh=visuals.Mesh,
+    scatter=visuals.Markers,
+)
 
 
 def plot(*args, **kwargs):
@@ -25,7 +37,7 @@ def plot(*args, **kwargs):
     else:    
         canvas.view.camera = 'panzoom'
     canvas.show()
-    plots.append(canvas)
+    _plots.append(canvas)
     return canvas
 
 
@@ -37,17 +49,14 @@ def image(*args, **kwargs):
     canvas = SceneCanvas(keys='interactive')
     canvas.view = canvas.central_widget.add_view()
     canvas.image = visuals.Image(*args, **kwargs)
-    canvas.view.add(canvas.image)  # This sets the parent of the image
+    canvas.view.add(canvas.image)
 
     canvas.show()
     canvas.view.camera = cameras.PanZoomCamera(aspect=1)
-    plots.append(canvas)
-    # todo: (AK) I think this should return an image
-    # Also, wtf: this creates an image in a viewbox in a widget in a canvas.
+    _plots.append(canvas)
     return canvas
 
 
-# todo: deal with new camera model once we've got it figured out
 def mesh(vertices=None, faces=None, vertex_colors=None, face_colors=None,
          color=(0.5, 0.5, 1.), fname=None, meshdata=None, shading='smooth',
          center=(0., 0., 0.), distance=1., azimuth=0., elevation=0.):
@@ -105,10 +114,10 @@ def mesh(vertices=None, faces=None, vertex_colors=None, face_colors=None,
                                face_colors=face_colors,
                                color=color, shading='smooth')
     canvas.view.add(canvas.mesh)
-    canvas.view.camera = cameras.TurntableCamera(fov=60, 
-                                                 azimuth=azimuth,
-                                                 elevation=elevation)
-    plots.append(canvas)
+    canvas.view.camera = cameras.TurntableCamera(azimuth=azimuth,
+                                                 elevation=elevation)                
+    _plots.append(canvas)
+    canvas.show()
     return canvas
 
 
@@ -162,5 +171,5 @@ def scatter(*args, **kwargs):
     canvas.view.add(canvas.scatter)
     canvas.view.camera = 'panzoom'
     canvas.show()
-    plots.append(canvas)
+    _plots.append(canvas)
     return canvas
