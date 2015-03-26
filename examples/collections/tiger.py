@@ -9,6 +9,7 @@ from vispy import app, gloo
 from vispy.util import load_data_file
 from vispy.util.svg import Document
 from vispy.visuals.collections import PathCollection, PolygonCollection
+from panzoom import PanZoom
 
 
 path = load_data_file('tiger/tiger.svg')
@@ -19,9 +20,9 @@ canvas = app.Canvas(size=(width,height), show=True, keys='interactive')
 gloo.set_viewport(0, 0, width, height)
 gloo.set_state("translucent", depth_test=True)
 
-
-paths = PathCollection("agg+", linewidth='shared', color="shared")
-polys = PolygonCollection("agg")
+panzoom = PanZoom()
+paths = PathCollection("agg+", linewidth='shared', color="shared", transform=panzoom.glsl)
+polys = PolygonCollection("agg", transform=panzoom.glsl)
 
 z = 0
 for path in tiger.paths:
@@ -29,7 +30,6 @@ for path in tiger.paths:
 
         vertices = 2*(vertices /(width, height, 1)) - 1
         vertices[:,1] = -vertices[:,1]
-
         if len(vertices) < 3:
             continue
         if path.style.stroke is not None:
@@ -65,4 +65,6 @@ def on_resize(e):
     gloo.set_viewport(0, 0, width, height)
     paths['viewport'] = 0, 0, width, height
 
+panzoom.attach(canvas)
+panzoom.add([paths, polys])
 app.run()
