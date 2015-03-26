@@ -280,7 +280,7 @@ def _fetch_file(url, file_name, print_destination=True):
                 raise RuntimeError('Error while fetching file %s.\n'
                                    'Dataset fetching aborted (%s)' % (url, e))
     try:
-        file_size = int(u.headers['Content-Length'].strip())
+        file_size = int(data.headers['Content-Length'].strip())
         print('Downloading data from %s (%s)' % (url, sizeof_fmt(file_size)))
         local_file = open(temp_file_name, "wb")
         _chunk_read(data, local_file, initial_size=initial_size)
