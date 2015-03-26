@@ -442,6 +442,9 @@ class VertexBufferTest(unittest.TestCase):
             names = V.dtype.names
             assert V.dtype[names[0]].base == dtype
             assert V.dtype[names[0]].shape == (3,)
+        for dtype in (np.float64, np.int64):
+            self.assertRaises(TypeError, VertexBuffer,
+                              np.zeros((10, 3), dtype=dtype))
 
         # Tuple/list is also allowed
         V = VertexBuffer([1, 2, 3])
