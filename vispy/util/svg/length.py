@@ -5,9 +5,13 @@
 # -----------------------------------------------------------------------------
 import re
 import math
+
 from . base import units
+from .. import logger
+
 
 class Length(object):
+
     def __init__(self, content, mode='x', parent=None):
 
         if not content:
@@ -17,7 +21,7 @@ class Length(object):
             return
 
         re_number = r'[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?'
-        re_unit= r'em|ex|px|in|cm|mm|pt|pc|%'
+        re_unit = r'em|ex|px|in|cm|mm|pt|pc|%'
         re_length = r'(?P<value>%s)\s*(?P<unit>%s)*' % (re_number, re_unit)
         match = re.match(re_length, content)
 
@@ -39,12 +43,11 @@ class Length(object):
                 elif mode == 'y':
                     scale = h
                 elif mode == 'xy':
-                    scale = math.sqrt(w*w+h*h)/math.sqrt(2.0)
+                    scale = math.sqrt(w * w + h * h) / math.sqrt(2.0)
             else:
                 logger.warn("Parent doesn't have a viewport")
 
         self._computed_value = self._value * units[self._unit] * scale
-
 
     def __float__(self):
         return self._computed_value
@@ -52,7 +55,6 @@ class Length(object):
     @property
     def value(self):
         return self._computed_value
-
 
     def __repr__(self):
         if self._unit:
@@ -62,13 +64,18 @@ class Length(object):
 
 
 class XLength(Length):
+
     def __init__(self, content, parent=None):
         Length.__init__(self, content, 'x', parent)
 
+
 class YLength(Length):
+
     def __init__(self, content, parent=None):
         Length.__init__(self, content, 'y', parent)
 
+
 class XYLength(Length):
+
     def __init__(self, content, parent=None):
         Length.__init__(self, content, 'xy', parent)

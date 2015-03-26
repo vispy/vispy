@@ -3,9 +3,10 @@
 # Copyright (c) 2014, Nicolas P. Rougier. All rights reserved.
 # Distributed under the terms of the new BSD License.
 # -----------------------------------------------------------------------------
+
 from . group import Group
-from . base import namespace
 from . viewport import Viewport
+
 
 class SVG(Group):
 
@@ -13,11 +14,9 @@ class SVG(Group):
         Group.__init__(self, content, parent)
         self._viewport = Viewport(content)
 
-
     @property
     def viewport(self):
         return self._viewport
-
 
     def __repr__(self):
         s = ""
@@ -36,6 +35,6 @@ class SVG(Group):
         s += self._transform.xml
         s += "\n"
         for item in self._items:
-            s += item._xml(prefix=prefix+"    ") + "\n"
+            s += item._xml(prefix=prefix + "    ") + "\n"
         s += "</svg>\n"
         return s

@@ -8,8 +8,11 @@ from . style import Style
 
 namespace = '{http://www.w3.org/2000/svg}'
 
+
 class Element(object):
+
     """ Generic SVG element """
+
     def __init__(self, content=None, parent=None):
         self._parent = parent
         self._id = hex(id(self))
@@ -20,12 +23,11 @@ class Element(object):
             return
 
         self._id = content.get('id', self._id)
-        self._style.update(content.get("style",None))
+        self._style.update(content.get("style", None))
         self._computed_style = Style()
         if parent and parent.style:
             self._computed_style = copy.copy(parent.style)
-            self._computed_style.update(content.get("style",None))
-
+            self._computed_style.update(content.get("style", None))
 
     @property
     def root(self):
