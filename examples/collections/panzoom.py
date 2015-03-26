@@ -16,15 +16,19 @@ class PanZoomTransform(STTransform):
         
     def attach(self, canvas):
         """ Attach this tranform to a canvas """
-
         self._canvas = canvas
-
-        canvas.connect(self.on_resize)
-        canvas.connect(self.on_mouse_wheel)
-        canvas.connect(self.on_mouse_move)
+        canvas.events.resize.connect(self.on_resize)
+        canvas.events.mouse_wheel.connect(self.on_mouse_wheel)
+        canvas.events.mouse_move.connect(self.on_mouse_move)
         
-    #def on_resize(self, event):
-        #""" Resize event """
+    @property
+    def canvas_tr(self):
+        return STTransform.from_mapping(
+            [(0, 0), self._canvas.size],
+            [(-1, 1), (1, -1)])
+        
+    def on_resize(self, event):
+        """ Resize event """
 
         #self._width = float(event.size[0])
         #self._height = float(event.size[1])
@@ -37,30 +41,20 @@ class PanZoomTransform(STTransform):
         ## Update zoom level
         #self.zoom = self._zoom
 
-
-    def on_mouse_move(self, event):
-        """ Drag """
-
-        if not event.is_dragging:
-            return
-
-        x, y = event.pos
-        dx = +2*((x-event.last_event.pos[0]) / self._width)
-        dy = -2*((y-event.last_event.pos[1]) / self._height)
-
-        self.pan += dx,dy
-        self._canvas.update()
-
     def on_mouse_move(self, event):
         if event.is_dragging:
             dxy = event.pos - event.last_event.pos
             button = event.press_event.button
 
             if button == 1:
-                self.move(dxy)
+                dxy = self.canvas_tr.map(dxy)
+                o = self.canvas_tr.map([0, 0])
+                t = dxy - o
+                self.move(t)
             elif button == 2:
-                center = event.press_event.pos
+                center = self.canvas_tr.map(event.press_event.pos)
                 self.zoom(np.exp(dxy * (0.01, -0.01)), center)
+            self.shader_map()
 
     def on_mouse_wheel(self, event):
         self.zoom(np.exp(event.delta * (0.01, -0.01)), event.pos)

@@ -17,7 +17,7 @@ from ...gloo import Program
 from . util import fetchcode
 from . base_collection import BaseCollection
 from ..shaders import ModularProgram
-
+from ...util.event import EventEmitter
 
 class Collection(BaseCollection):
 
@@ -71,6 +71,8 @@ class Collection(BaseCollection):
         self._mode = mode
         vtype = []
         utype = []
+        
+        self.update = EventEmitter(source=self, type='collection_update')
 
         # Build vtype and utype according to parameters
         declarations = {"uniforms": "",
@@ -121,6 +123,7 @@ class Collection(BaseCollection):
         self._fragment = fragment
 
         program = ModularProgram(vertex, fragment)
+        program.changed.connect(self.update)
         self._programs.append(program)
 
         # Initialize uniforms

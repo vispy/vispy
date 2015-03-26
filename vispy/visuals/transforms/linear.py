@@ -212,10 +212,12 @@ class STTransform(BaseTransform):
             x0 = x0._transform_in()[:3]
         if isinstance(x1, Rect):
             x1 = x1._transform_in()[:3]
-
-        x0 = np.array(x0)
-        x1 = np.array(x1)
-        denom = (x0[1] - x0[0])
+        
+        x0 = np.asarray(x0)
+        x1 = np.asarray(x1)
+        if x0.ndim != 2 or x0.shape[0] != 2 or x1.ndim != 2 or x1.shape[0] != 2:
+            raise TypeError("set_mapping requires array inputs of shape (2, N).")
+        denom = x0[1] - x0[0]
         mask = denom == 0
         denom[mask] = 1.0
         s = (x1[1] - x1[0]) / denom
