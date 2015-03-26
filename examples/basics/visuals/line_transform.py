@@ -84,7 +84,6 @@ class Canvas(app.Canvas):
         for line in self.lines:
             line.draw(line.tr_sys)
 
-
 if __name__ == '__main__':
     win = Canvas()
     import sys

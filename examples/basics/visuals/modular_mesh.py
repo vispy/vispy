@@ -20,7 +20,7 @@ from vispy.visuals.transforms import (STTransform, AffineTransform,
 
 class Canvas(app.Canvas):
     def __init__(self):
-        app.Canvas.__init__(self, keys='interactive')
+        app.Canvas.__init__(self, keys='interactive', size=(800, 550))
         
         self.meshes = []
         self.rotation = AffineTransform()
@@ -101,7 +101,6 @@ class Canvas(app.Canvas):
             mesh.tr_sys = visuals.transforms.TransformSystem(self)
             mesh.tr_sys.visual_to_document = mesh.transform
 
-        self.size = (800, 800)
         self.show()
 
         self.timer = app.Timer(connect=self.rotate)

@@ -85,7 +85,6 @@ class Canvas(app.Canvas):
 
         self.show()
 
-
     def on_draw(self, ev):
         gloo.set_clear_color((0, 0, 0, 1))
         gloo.set_viewport(0, 0, *self.physical_size)

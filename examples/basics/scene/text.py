@@ -21,6 +21,7 @@ vb = scene.widgets.ViewBox(parent=canvas.scene, border_color='b')
 vb.pos = 1, canvas.size[1] // 2 - 1
 vb.size = canvas.size[0] - 2, canvas.size[1] // 2 - 2
 
+
 @canvas.events.resize.connect
 def resize(event=None):
     vb.pos = 1, canvas.size[1] // 2 - 1

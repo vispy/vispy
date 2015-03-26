@@ -18,7 +18,7 @@ class Canvas(app.Canvas):
 
     def on_draw(self, event):
         gloo.clear(color='white')
-        gloo.set_viewport(0, 0, *self.size)
+        gloo.set_viewport(0, 0, *self.physical_size)
         self.text.draw(self.tr_sys)
 
     def on_mouse_wheel(self, event):
