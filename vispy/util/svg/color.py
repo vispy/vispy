@@ -156,6 +156,16 @@ _keyword_colors = {
     "yellowgreen":          (154, 205,  50) }
 
 
+_NUMERALS = '0123456789abcdefABCDEF'
+
+
+_HEXDEC = {v: int(v, 16) for v in (x+y for x in _NUMERALS for y in _NUMERALS)}
+
+
+def _rgb(triplet):
+    return _HEXDEC[triplet[0:2]], _HEXDEC[triplet[2:4]], _HEXDEC[triplet[4:6]]
+
+
 class Color(object):
 
     def __init__(self, content):
@@ -166,7 +176,8 @@ class Color(object):
             if len(rgb) == 3:
                 r,g,b = tuple(ord((c+c).decode('hex')) for c in rgb)
             else:
-                r,g,b = tuple(ord(c) for c in rgb.decode('hex'))
+                # r,g,b = tuple(ord(c) for c in rgb.decode('hex'))
+                r,g,b = tuple(c for c in _rgb(rgb))
         elif color.startswith("rgb("):
             rgb = color[4:-1]
             r,g,b = [value.strip() for value in rgb.split(',')]
