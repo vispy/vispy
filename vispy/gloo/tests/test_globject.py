@@ -27,8 +27,9 @@ def test_globject():
     
     # Delete
     ob = objects[-1]
+    q = ob._glir  # get it now, because its gone after we delete it
     ob.delete()
-    cmd = ob._glir.clear()[-1]
+    cmd = q.clear()[-1]
     assert cmd[0] == 'DELETE'
 
 
