@@ -270,14 +270,19 @@ def _fetch_file(url, file_name, print_destination=True):
     temp_file_name = file_name + ".part"
     local_file = None
     initial_size = 0
+    # Checking file size and displaying it alongside the download url
+    n_try = 3
+    for ii in range(n_try):
+        try:
+            data = urllib.request.urlopen(url, timeout=5.)
+        except Exception as e:
+            if ii == n_try - 1:
+                raise RuntimeError('Error while fetching file %s.\n'
+                                   'Dataset fetching aborted (%s)' % (url, e))
     try:
-        # Checking file size and displaying it alongside the download url
-        u = urllib.request.urlopen(url, timeout=5.)
         file_size = int(u.headers['Content-Length'].strip())
         print('Downloading data from %s (%s)' % (url, sizeof_fmt(file_size)))
-        # Downloading data (can be extended to resume if need be)
         local_file = open(temp_file_name, "wb")
-        data = urllib.request.urlopen(url, timeout=5.)
         _chunk_read(data, local_file, initial_size=initial_size)
         # temp file must be closed prior to the move
         if not local_file.closed:

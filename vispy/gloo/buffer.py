@@ -430,12 +430,11 @@ class VertexBuffer(DataBuffer):
         if not isinstance(data, np.ndarray):
             raise ValueError('Data must be a ndarray (got %s)' % type(data))
         if data.dtype.isbuiltin:
+            if convert is True:
+                data = data.astype(np.float32)
             if data.dtype in (np.float64, np.int64):
-                if convert is True:
-                    data = data.astype(np.float32)
-                else:
-                    raise TypeError('data must be 32-bit not %s'
-                                    % data.dtype)
+                raise TypeError('data must be 32-bit not %s'
+                                % data.dtype)
             c = data.shape[-1] if data.ndim > 1 else 1
             if c in [2, 3, 4]:
                 if not data.flags['C_CONTIGUOUS']:
