@@ -52,7 +52,7 @@
 #
 # ----------------------------------------------------------------------------
 import math
-import numpy as np
+
 
 curve_distance_epsilon = 1e-30
 curve_collinearity_epsilon = 1e-30
@@ -261,7 +261,7 @@ def cubic_recursive(points, x1, y1, x2, y2, x3, y3, x4, y4, level=0):
     elif s == 3:
         # Regular case
         # ------------
-        if (d2 + d3) * (d2 + d3) <= m_distance_tolerance_square * (dx * dx + dy * dy):
+        if (d2 + d3) * (d2 + d3) <= m_distance_tolerance_square * (dx * dx + dy * dy):  # noqa
             # If the curvature doesn't exceed the distance_tolerance value
             # we tend to finish subdivisions.
 
