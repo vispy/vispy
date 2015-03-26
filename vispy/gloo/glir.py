@@ -315,8 +315,8 @@ class GlirParser(BaseGlirParser):
                 else:
                     self._invalid_objects.add(id_)
             elif cmd == 'DELETE':
-                # Deleting an object
-                ob = self._objects.get(id_, None)
+                # Deleting an object (note the pop instead of get)
+                ob = self._objects.pop(id_, None)
                 if ob is not None:
                     ob.delete()
             else:
