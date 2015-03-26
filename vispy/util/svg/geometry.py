@@ -397,7 +397,7 @@ def elliptical_arc(x0, y0, rx, ry, angle, large_arc_flag, sweep_flag, x2, y2):
         prx = rx * rx
         pry = ry * ry
         if radii_check > 10.0:
-            radii_ok = False
+            radii_ok = False  # noqa
 
     # Calculate (cx1, cy1)
     # ------------------------

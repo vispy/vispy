@@ -152,7 +152,7 @@ class Quadratic(Command):
         x1, y1, x2, y2 = self._args
         x0, y0 = current
         x1, y1 = x1 + ox, y1 + oy
-        x2, y2 = x + ox, y + oy
+        x2, y2 = x2 + ox, y2 + oy
         self.previous = x1, y1
         vertices = geometry.quadratic((x0, y0), (x1, y1), (x2, y2))
 
@@ -300,7 +300,6 @@ class Path(Transformable):
         self._vertices = []
         current = 0, 0
         previous = 0, 0
-        transform = self.transform
 
         for path in self._paths:
             vertices = []
@@ -317,8 +316,8 @@ class Path(Transformable):
             if isinstance(command, Close):
                 closed = True
                 if len(vertices) > 2:
-                    d = geometry.calc_sq_distance(vertices[-1][0], vertices[-1][1],
-                                                  vertices[0][0],  vertices[0][1])
+                    d = geometry.calc_sq_distance(vertices[-1][0], vertices[-1][1],  # noqa
+                                                  vertices[0][0],  vertices[0][1])  # noqa
                     if d < epsilon:
                         vertices = vertices[:-1]
 

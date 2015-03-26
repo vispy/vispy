@@ -4,6 +4,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
+
 class Rect(object):
 
     def __init__(self, x=0, y=0, width=1, height=1, rx=0, ry=0):

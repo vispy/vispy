@@ -4,7 +4,7 @@
 # Distributed under the terms of the new BSD License.
 # -----------------------------------------------------------------------------
 from . svg import SVG
-from . path import Path
+from . path import Path  # noqa
 from . base import namespace
 from xml.etree import ElementTree
 
