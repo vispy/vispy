@@ -13,6 +13,7 @@ Controls:
 * 1 - toggle camera between first person (fly) and regular 3D (turntable)
 * 2 - toggle between mip and iso render styles
 * 3 - toggle between stent-CT / brain-MRI image
+* 4 - toggle between colormaps
 * 0 - reset cameras
 
 With fly camera:
@@ -23,14 +24,20 @@ With fly camera:
 * IJKL or mouse - look around
 """
 
+from itertools import cycle
+
 import numpy as np
 
 from vispy import app, scene, io
+from vispy.color import get_colormaps
 
 # Read volume
 vol1 = np.load(io.load_data_file('volume/stent.npz'))['arr_0']
 vol2 = np.load(io.load_data_file('brain/mri.npz'))['data']
 vol2 = np.flipud(np.rollaxis(vol2, 1))
+
+# Setup colormaps
+cmaps = cycle(get_colormaps())
 
 # Prepare canvas
 canvas = scene.SceneCanvas(keys='interactive')
@@ -66,6 +73,10 @@ def on_key_press(event):
     elif event.text == '3':
         volume1.visible = not volume1.visible
         volume2.visible = not volume1.visible
+    elif event.text == '4':
+        cmap = next(cmaps)
+        volume1.cmap = cmap
+        volume2.cmap = cmap
     elif event.text == '0':
         cam1.set_range()
         cam3.set_range()
