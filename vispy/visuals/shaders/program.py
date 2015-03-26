@@ -7,7 +7,6 @@ from __future__ import division
 from ...gloo import Program
 from ...util import logger
 from ...util.event import EventEmitter
-from ...ext.six import string_types  # noqa
 from .function import MainFunction, Variable
 from .compiler import Compiler
 
@@ -26,8 +25,8 @@ class ModularProgram(Program):
         
         self.vert = MainFunction(vcode)
         self.frag = MainFunction(fcode)
-        self.vert.changed.connect(self._source_changed)
-        self.frag.changed.connect(self._source_changed)
+        self.vert.changed.connect((self, '_source_changed'))
+        self.frag.changed.connect((self, '_source_changed'))
         
         # Cache state of Variables so we know which ones require update
         self._variable_state = {}

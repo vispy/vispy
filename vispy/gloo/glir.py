@@ -318,7 +318,7 @@ class GlirParser(BaseGlirParser):
         """
         
         for command in commands:
-            cmd, id, args = command[0], command[1], command[2:]
+            cmd, id_, args = command[0], command[1], command[2:]
             
             if cmd == 'CURRENT':
                 # This context is made current
@@ -329,28 +329,28 @@ class GlirParser(BaseGlirParser):
                 # GL function call
                 args = [as_enum(a) for a in args]
                 try:
-                    getattr(gl, id)(*args)
+                    getattr(gl, id_)(*args)
                 except AttributeError:
-                    logger.warning('Invalid gl command: %r' % id)
+                    logger.warning('Invalid gl command: %r' % id_)
             elif cmd == 'CREATE':
                 # Creating an object
                 if args[0] is not None:
                     klass = self._classmap[args[0]]
-                    self._objects[id] = klass(self, id)
+                    self._objects[id_] = klass(self, id_)
                 else:
-                    self._invalid_objects.add(id)
+                    self._invalid_objects.add(id_)
             elif cmd == 'DELETE':
                 # Deleteing an object
-                ob = self._objects.get(id, None)
+                ob = self._objects.get(id_, None)
                 if ob is not None:
                     ob.delete()
             else:
                 # Doing somthing to an object
-                ob = self._objects.get(id, None)
+                ob = self._objects.get(id_, None)
                 if ob is None:
-                    if id not in self._invalid_objects:
+                    if id_ not in self._invalid_objects:
                         raise RuntimeError('Cannot %s object %i because it '
-                                           'does not exist' % (cmd, id))
+                                           'does not exist' % (cmd, id_))
                     continue
                 # Triage over command. Order of commands is set so most
                 # common ones occur first.
@@ -379,10 +379,10 @@ class GlirParser(BaseGlirParser):
                 else:
                     logger.warning('Invalid GLIR command %r' % cmd)
     
-    def get_object(self, id):
+    def get_object(self, id_):
         """ Get the object with the given id or None if it does not exist.
         """
-        return self._objects.get(id, None)
+        return self._objects.get(id_, None)
     
     def _gl_initialize(self):
         """ Deal with compatibility; desktop does not have sprites
@@ -402,9 +402,9 @@ class GlirParser(BaseGlirParser):
 
 
 class GlirObject(object):
-    def __init__(self, parser, id):
+    def __init__(self, parser, id_):
         self._parser = parser
-        self._id = id
+        self._id = id_
         self._handle = -1  # Must be set by subclass in create()
         self.create()
     
@@ -768,10 +768,10 @@ class GlirProgram(GlirObject):
         # Draw
         if len(selection) == 3:
             # Selection based on indices
-            id, gtype, count = selection
+            id_, gtype, count = selection
             if count:
                 self._pre_draw()
-                ibuf = self._parser.get_object(id)
+                ibuf = self._parser.get_object(id_)
                 ibuf.activate()
                 gl.glDrawElements(mode, count, as_enum(gtype), None)
                 ibuf.deactivate()
