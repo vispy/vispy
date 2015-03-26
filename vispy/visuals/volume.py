@@ -333,7 +333,8 @@ SNIPPETS_MIP = dict(
         vec4 color = vec4(0.0);
         for (int i=0; i<5; i++) {
             float newi = maxi + 0.4 - 0.2 * float(i);
-            color = max(color, $cmap(texture3D(u_volumetex, edgeloc + newi * ray).r));
+            color = max(color, $cmap(texture3D(u_volumetex,
+                edgeloc + newi * ray).r));
         }
         gl_FragColor = color;
         """,

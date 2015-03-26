@@ -59,6 +59,7 @@ cam1 = scene.cameras.FlyCamera(parent=view.scene)
 cam3 = scene.cameras.TurntableCamera(parent=view.scene)
 view.camera = cam3  # Select turntable at first
 
+
 # Implement key presses
 @canvas.events.key_press.connect
 def on_key_press(event):
