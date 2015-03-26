@@ -400,7 +400,7 @@ class Texture1D(BaseTexture):
 
     @property
     def glsl_sample(self):
-        """ GLSL function that samples the the texture.
+        """ GLSL function that samples the texture.
         """
         return 'texture1D'
 
@@ -453,7 +453,7 @@ class Texture2D(BaseTexture):
 
     @property
     def glsl_sample(self):
-        """ GLSL function that samples the the texture.
+        """ GLSL function that samples the texture.
         """
         return 'texture2D'
 
@@ -508,7 +508,7 @@ class Texture3D(BaseTexture):
 
     @property
     def glsl_sample(self):
-        """ GLSL function that samples the the texture.
+        """ GLSL function that samples the texture.
         """
         return 'texture3D'
 
@@ -553,7 +553,7 @@ class TextureEmulated3D(Texture2D):
 
     @property
     def glsl_sample(self):
-        """ GLSL function that samples the the texture.
+        """ GLSL function that samples the texture.
         """
 
         return self._glsl_sample
