@@ -13,6 +13,7 @@ used at small size only (2/3 pixels). You've been warned.
 import numpy as np
 from vispy import glsl
 from . collection import Collection
+from ..transforms import NullTransform
 
 
 class RawPointCollection(Collection):
@@ -59,16 +60,17 @@ class RawPointCollection(Collection):
         if vertex is None:
             vertex = glsl.get("collections/raw-point.vert")
         if transform is None:
-            transform = "vec4 transform(vec3 position) {return vec4(position,1.0);}"  # noqa
+            transform = NullTransform()
+        self.transform = transform        
         if fragment is None:
             fragment = glsl.get("collections/raw-point.frag")
 
-        vertex = transform + vertex
         Collection.__init__(self, dtype=dtype, itype=None, mode="points",
                             vertex=vertex, fragment=fragment, **kwargs)
 
         # Set hooks if necessary
-        # program = self._programs[0]
+        program = self._programs[0]
+        program.vert['transform'] = self.transform
 
     def append(self, P, itemsize=None, **kwargs):
         """

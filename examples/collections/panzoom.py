@@ -4,6 +4,73 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 import numpy as np
+from vispy.visuals.transforms import STTransform
+
+
+
+
+class PanZoomTransform(STTransform):
+    def __init__(self, canvas=None, **kwargs):
+        self.attach(canvas)
+        STTransform.__init__(self, **kwargs)
+        
+    def attach(self, canvas):
+        """ Attach this tranform to a canvas """
+
+        self._canvas = canvas
+
+        canvas.connect(self.on_resize)
+        canvas.connect(self.on_mouse_wheel)
+        canvas.connect(self.on_mouse_move)
+        
+    #def on_resize(self, event):
+        #""" Resize event """
+
+        #self._width = float(event.size[0])
+        #self._height = float(event.size[1])
+        #aspect = self._width/self._height
+        #if aspect > 1.0:
+            #self._canvas_aspect = np.array([1.0/aspect, 1.0])
+        #else:
+            #self._canvas_aspect = np.array([1.0, aspect/1.0])
+
+        ## Update zoom level
+        #self.zoom = self._zoom
+
+
+    def on_mouse_move(self, event):
+        """ Drag """
+
+        if not event.is_dragging:
+            return
+
+        x, y = event.pos
+        dx = +2*((x-event.last_event.pos[0]) / self._width)
+        dy = -2*((y-event.last_event.pos[1]) / self._height)
+
+        self.pan += dx,dy
+        self._canvas.update()
+
+    def on_mouse_move(self, event):
+        if event.is_dragging:
+            dxy = event.pos - event.last_event.pos
+            button = event.press_event.button
+
+            if button == 1:
+                self.move(dxy)
+            elif button == 2:
+                center = event.press_event.pos
+                self.zoom(np.exp(dxy * (0.01, -0.01)), center)
+
+    def on_mouse_wheel(self, event):
+        self.zoom(np.exp(event.delta * (0.01, -0.01)), event.pos)
+
+
+
+
+
+
+
 
 
 class PanZoom(object):

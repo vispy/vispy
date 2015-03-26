@@ -11,11 +11,9 @@ canvas = app.Canvas(size=(800, 600), show=True, keys='interactive')
 gloo.set_viewport(0, 0, canvas.size[0], canvas.size[1])
 gloo.set_state("translucent", depth_test=False)
 
-panzoom = PanZoom()
 points = PointCollection("agg", color="shared", transform=panzoom.glsl)
 points.append(np.random.normal(0.0, 0.5, (10000, 3)), itemsize=5000)
 points["color"] = (1, 0, 0, 1), (0, 0, 1, 1)
-
 
 @canvas.connect
 def on_draw(event):

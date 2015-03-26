@@ -16,6 +16,7 @@ from ... import gloo
 from ...gloo import Program
 from . util import fetchcode
 from . base_collection import BaseCollection
+from ..shaders import ModularProgram
 
 
 class Collection(BaseCollection):
@@ -119,7 +120,7 @@ class Collection(BaseCollection):
         self._vertex = vertex
         self._fragment = fragment
 
-        program = Program(vertex, fragment)
+        program = ModularProgram(vertex, fragment)
         self._programs.append(program)
 
         # Initialize uniforms
