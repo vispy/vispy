@@ -6,6 +6,7 @@ import numpy as np
 
 
 class PanZoom(object):
+
     """
     Pan & Zoom transform
 
@@ -80,7 +81,6 @@ class PanZoom(object):
         self._u_zoom = np.array([zoom, zoom])
         self._programs = []
 
-
     @property
     def is_attached(self):
         """ Whether transform is attached to a canvas """
@@ -124,7 +124,7 @@ class PanZoom(object):
     def zoom(self, value):
         """ Zoom level """
 
-        self._zoom = max(min(value,self._zmax),self._zmin)
+        self._zoom = max(min(value, self._zmax), self._zmin)
         if not self.is_attached:
             return
 
@@ -165,15 +165,14 @@ class PanZoom(object):
 
         self._width = float(event.size[0])
         self._height = float(event.size[1])
-        aspect = self._width/self._height
+        aspect = self._width / self._height
         if aspect > 1.0:
-            self._canvas_aspect = np.array([1.0/aspect, 1.0])
+            self._canvas_aspect = np.array([1.0 / aspect, 1.0])
         else:
-            self._canvas_aspect = np.array([1.0, aspect/1.0])
+            self._canvas_aspect = np.array([1.0, aspect / 1.0])
 
         # Update zoom level
         self.zoom = self._zoom
-
 
     def on_mouse_move(self, event):
         """ Drag """
@@ -182,12 +181,11 @@ class PanZoom(object):
             return
 
         x, y = event.pos
-        dx = +2*((x-event.last_event.pos[0]) / self._width)
-        dy = -2*((y-event.last_event.pos[1]) / self._height)
+        dx = +2 * ((x - event.last_event.pos[0]) / self._width)
+        dy = -2 * ((y - event.last_event.pos[1]) / self._height)
 
-        self.pan += dx,dy
+        self.pan += dx, dy
         self._canvas.update()
-
 
     def on_mouse_wheel(self, event):
         """ Zoom """
@@ -198,29 +196,27 @@ class PanZoom(object):
         dy /= 10.0
 
         # Normalize mouse coordinates and invert y axis
-        x = x/(self._width/2.) - 1.0
-        y = 1.0 - y/(self._height/2.0)
+        x = x / (self._width / 2.) - 1.0
+        y = 1.0 - y / (self._height / 2.0)
 
-        zoom = min(max(self._zoom*(1.0+dy), self._zmin), self._zmax)
+        zoom = min(max(self._zoom * (1.0 + dy), self._zmin), self._zmax)
         ratio = zoom / self.zoom
-        xpan = x - ratio*(x-self.pan[0])
-        ypan = y - ratio*(y-self.pan[1])
+        xpan = x - ratio * (x - self.pan[0])
+        ypan = y - ratio * (y - self.pan[1])
         self.zoom = zoom
         self.pan = xpan, ypan
         self._canvas.update()
 
-
     def add(self, programs):
         """ Attach programs to this tranform """
 
-        if not isinstance(programs,(list,tuple)):
+        if not isinstance(programs, (list, tuple)):
             programs = [programs]
 
         for program in programs:
             self._programs.append(program)
             program["u_zoom"] = self._u_zoom
             program["u_pan"] = self._u_pan
-
 
     def attach(self, canvas):
         """ Attach this tranform to a canvas """
@@ -229,11 +225,11 @@ class PanZoom(object):
         self._width = float(canvas.size[0])
         self._height = float(canvas.size[1])
 
-        aspect = self._width/self._height
+        aspect = self._width / self._height
         if aspect > 1.0:
-            self._canvas_aspect = np.array([1.0/aspect, 1.0])
+            self._canvas_aspect = np.array([1.0 / aspect, 1.0])
         else:
-            self._canvas_aspect = np.array([1.0, aspect/1.0])
+            self._canvas_aspect = np.array([1.0, aspect / 1.0])
 
         aspect = 1.0
         if self._aspect is not None:

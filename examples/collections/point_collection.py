@@ -11,17 +11,19 @@ gloo.set_state("translucent", depth_test=False)
 
 panzoom = PanZoom()
 points = PointCollection("agg", color="shared", transform=panzoom.glsl)
-points.append(np.random.normal(0.0,0.5,(10000,3)), itemsize=5000)
-points["color"] = (1,0,0,1), (0,0,1,1)
+points.append(np.random.normal(0.0, 0.5, (10000, 3)), itemsize=5000)
+points["color"] = (1, 0, 0, 1), (0, 0, 1, 1)
+
 
 @canvas.connect
 def on_draw(event):
     gloo.clear('white')
     points.draw()
 
+
 @canvas.connect
 def on_resize(event):
-    width,height = event.size
+    width, height = event.size
     gloo.set_viewport(0, 0, width, height)
 
 panzoom.attach(canvas)
