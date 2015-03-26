@@ -97,15 +97,16 @@ class Canvas(app.Canvas):
 
     def __init__(self):
         app.Canvas.__init__(self, title='Molecular viewer',
-                            keys='interactive')
-        self.size = 1200, 800
+                            keys='interactive', size=(1200, 800))
+        self.ps = self.pixel_scale
 
         self.program = gloo.Program(vertex, fragment)
         self.view = np.eye(4, dtype=np.float32)
         self.model = np.eye(4, dtype=np.float32)
-        self.projection = np.eye(4, dtype=np.float32)
         self.translate = 40
         translate(self.view, 0, 0, -self.translate)
+
+        self.apply_zoom()
 
         fname = load_data_file('molecular_viewer/micelle.npz')
         self.load_molecule(fname)
@@ -116,6 +117,8 @@ class Canvas(app.Canvas):
 
         gloo.set_state(depth_test=True, clear_color='black')
         self._timer = app.Timer('auto', connect=self.on_timer, start=True)
+
+        self.show()
 
     def load_molecule(self, fname):
         molecule = np.load(fname)['molecule']
@@ -139,7 +142,7 @@ class Canvas(app.Canvas):
 
         data['a_position'] = self.coords
         data['a_color'] = self.atomsColours
-        data['a_radius'] = self.atomsScales
+        data['a_radius'] = self.atomsScales*self.ps
 
         self.program.bind(gloo.VertexBuffer(data))
 
@@ -170,6 +173,9 @@ class Canvas(app.Canvas):
 
     def on_resize(self, event):
         width, height = event.size
+
+    def apply_zoom(self):
+        width, height = self.physical_size
         gloo.set_viewport(0, 0, width, height)
         self.projection = perspective(25.0, width / float(height), 2.0, 100.0)
         self.program['u_projection'] = self.projection
@@ -191,5 +197,4 @@ class Canvas(app.Canvas):
 
 if __name__ == '__main__':
     mvc = Canvas()
-    mvc.show()
     app.run()

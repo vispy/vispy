@@ -24,6 +24,7 @@ uniform mat4 u_model;
 uniform mat4 u_view;
 uniform mat4 u_projection;
 uniform float u_time_offset;
+uniform float u_pixel_scale;
 
 attribute vec3  a_position;
 attribute float a_offset;
@@ -42,7 +43,7 @@ void main (void) {
     float radius = 1;
     vec4 corner = vec4(radius, radius, v_eye_position.z, v_eye_position.w);
     vec4  proj_corner = u_projection * corner;
-    gl_PointSize = 100.0 * proj_corner.x / proj_corner.w;
+    gl_PointSize = 100.0 * u_pixel_scale * proj_corner.x / proj_corner.w;
     v_pointsize = gl_PointSize;
 }
 """
@@ -69,19 +70,21 @@ NBLOCKS = 10
 class Canvas(app.Canvas):
 
     def __init__(self):
-        app.Canvas.__init__(self, title='Spacy', keys='interactive')
-        self.size = 800, 600
+        app.Canvas.__init__(self, title='Spacy', keys='interactive',
+                            size=(800, 600))
 
         self.program = gloo.Program(vertex, fragment)
         self.view = np.eye(4, dtype=np.float32)
         self.model = np.eye(4, dtype=np.float32)
-        self.projection = np.eye(4, dtype=np.float32)
+
+        self.activate_zoom()
 
         self.timer = app.Timer('auto', connect=self.update, start=True)
 
         # Set uniforms (some are set later)
         self.program['u_model'] = self.model
         self.program['u_view'] = self.view
+        self.program['u_pixel_scale'] = self.pixel_scale
 
         # Set attributes
         self.program['a_position'] = np.zeros((N, 3), np.float32)
@@ -98,6 +101,8 @@ class Canvas(app.Canvas):
                        blend=True, blend_equation='func_add',
                        blend_func=('src_alpha', 'one_minus_src_alpha'))
 
+        self.show()
+
     def on_key_press(self, event):
         if event.text == ' ':
             if self.timer.running:
@@ -106,8 +111,11 @@ class Canvas(app.Canvas):
                 self.timer.start()
 
     def on_resize(self, event):
-        width, height = event.size
-        gloo.set_viewport(0, 0, width, height)
+        self.activate_zoom()
+
+    def activate_zoom(self):
+        width, height = self.size
+        gloo.set_viewport(0, 0, *self.physical_size)
         far = SIZE*(NBLOCKS-2)
         self.projection = perspective(25.0, width / float(height), 1.0, far)
         self.program['u_projection'] = self.projection
@@ -163,5 +171,4 @@ class Canvas(app.Canvas):
 
 if __name__ == '__main__':
     c = Canvas()
-    c.show()
     app.run()

@@ -124,31 +124,34 @@ void main(){
 }
 """
 
-n = 100
-ne = 100
-data = np.zeros(n, dtype=[('a_position', np.float32, 3),
-                          ('a_fg_color', np.float32, 4),
-                          ('a_bg_color', np.float32, 4),
-                          ('a_size', np.float32, 1),
-                          ('a_linewidth', np.float32, 1),
-                          ])
-edges = np.random.randint(size=(ne, 2), low=0, high=n).astype(np.uint32)
-data['a_position'] = np.hstack((.25 * np.random.randn(n, 2), np.zeros((n, 1))))
-data['a_fg_color'] = 0, 0, 0, 1
-color = np.random.uniform(0.5, 1., (n, 3))
-data['a_bg_color'] = np.hstack((color, np.ones((n, 1))))
-data['a_size'] = np.random.randint(size=n, low=10, high=30)
-data['a_linewidth'] = 2
-u_antialias = 1
-
 
 class Canvas(app.Canvas):
 
     def __init__(self, **kwargs):
         # Initialize the canvas for real
-        app.Canvas.__init__(self, keys='interactive', **kwargs)
-        self.size = 512, 512
+        app.Canvas.__init__(self, keys='interactive', size=(512, 512),
+                            **kwargs)
+        ps = self.pixel_scale
         self.position = 50, 50
+
+        n = 100
+        ne = 100
+        data = np.zeros(n, dtype=[('a_position', np.float32, 3),
+                                  ('a_fg_color', np.float32, 4),
+                                  ('a_bg_color', np.float32, 4),
+                                  ('a_size', np.float32, 1),
+                                  ('a_linewidth', np.float32, 1),
+                                  ])
+        edges = np.random.randint(size=(ne, 2), low=0,
+                                  high=n).astype(np.uint32)
+        data['a_position'] = np.hstack((.25 * np.random.randn(n, 2),
+                                       np.zeros((n, 1))))
+        data['a_fg_color'] = 0, 0, 0, 1
+        color = np.random.uniform(0.5, 1., (n, 3))
+        data['a_bg_color'] = np.hstack((color, np.ones((n, 1))))
+        data['a_size'] = np.random.randint(size=n, low=8*ps, high=20*ps)
+        data['a_linewidth'] = 1.*ps
+        u_antialias = 1
 
         self.vbo = gloo.VertexBuffer(data)
         self.index = gloo.IndexBuffer(edges)
@@ -164,15 +167,18 @@ class Canvas(app.Canvas):
         self.program['u_view'] = self.view
         self.program['u_projection'] = self.projection
 
+        set_viewport(0, 0, *self.physical_size)
+
         self.program_e = gloo.Program(vs, fs)
         self.program_e.bind(self.vbo)
 
         set_state(clear_color='white', depth_test=False, blend=True,
                   blend_func=('src_alpha', 'one_minus_src_alpha'))
 
+        self.show()
+
     def on_resize(self, event):
-        width, height = event.size
-        set_viewport(0, 0, width, height)
+        set_viewport(0, 0, *event.physical_size)
 
     def on_draw(self, event):
         clear(color=True, depth=True)
@@ -181,5 +187,4 @@ class Canvas(app.Canvas):
 
 if __name__ == '__main__':
     c = Canvas(title="Graph")
-    c.show()
     app.run()

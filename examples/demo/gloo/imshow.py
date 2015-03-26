@@ -113,11 +113,11 @@ class Canvas(app.Canvas):
 
         set_clear_color('black')
 
-        self.show(True)
+        self.show()
 
     def on_resize(self, event):
-        width, height = event.size
-        set_viewport(0, 0, *event.size)
+        width, height = event.physical_size
+        set_viewport(0, 0, *event.physical_size)
 
     def on_draw(self, event):
         clear(color=True, depth=True)

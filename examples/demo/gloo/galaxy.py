@@ -44,16 +44,6 @@ def make_arm(n, angle):
 p = 50000
 n = 3 * p
 
-data = np.zeros(n, [('a_position', np.float32, 3),
-                    ('a_size', np.float32, 1),
-                    ('a_dist', np.float32, 1)])
-for i in range(3):
-    P, S, D = make_arm(p, i * 2 * np.pi / 3)
-    data['a_dist'][(i + 0) * p:(i + 1) * p] = D
-    data['a_position'][(i + 0) * p:(i + 1) * p] = P
-    data['a_size'][(i + 0) * p:(i + 1) * p] = S
-
-
 # Very simple colormap
 cmap = np.array([[255, 124, 0], [255, 163, 76],
                  [255, 192, 130], [255, 214, 173],
@@ -124,9 +114,21 @@ void main()
 class Canvas(app.Canvas):
 
     def __init__(self):
-        app.Canvas.__init__(self, keys='interactive')
-        self.size = 800, 600
+        app.Canvas.__init__(self, keys='interactive', size=(800, 600))
+        ps = self.pixel_scale
+
         self.title = "A very fake galaxy [mouse scroll to zoom]"
+
+        data = np.zeros(n, [('a_position', np.float32, 3),
+                    ('a_size', np.float32, 1),
+                    ('a_dist', np.float32, 1)])
+        
+        for i in range(3):
+            P, S, D = make_arm(p, i * 2 * np.pi / 3)
+            data['a_dist'][(i + 0) * p:(i + 1) * p] = D
+            data['a_position'][(i + 0) * p:(i + 1) * p] = P
+            data['a_size'][(i + 0) * p:(i + 1) * p] = S*ps
+
 
         self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
         self.view = np.eye(4, dtype=np.float32)
@@ -143,12 +145,16 @@ class Canvas(app.Canvas):
         self.program['u_model'] = self.model
         self.program['u_view'] = self.view
 
+        self.apply_zoom()
+
         gloo.set_state(depth_test=False, blend=True,
                        blend_func=('src_alpha', 'one'), clear_color='black')
 
         # Start the timer upon initialization.
         self.timer = app.Timer('auto', connect=self.on_timer)
         self.timer.start()
+
+        self.show()
 
     def on_key_press(self, event):
         if event.text == ' ':
@@ -167,10 +173,7 @@ class Canvas(app.Canvas):
         self.update()
 
     def on_resize(self, event):
-        width, height = event.size
-        gloo.set_viewport(0, 0, width, height)
-        self.projection = perspective(45.0, width / float(height), 1.0, 1000.0)
-        self.program['u_projection'] = self.projection
+        self.apply_zoom()
 
     def on_mouse_wheel(self, event):
         self.translate += event.delta[1]
@@ -185,7 +188,12 @@ class Canvas(app.Canvas):
         gloo.clear()
         self.program.draw('points')
 
+    def apply_zoom(self):
+        gloo.set_viewport(0, 0, self.physical_size[0], self.physical_size[1])
+        self.projection = perspective(45.0, self.size[0] /
+                                      float(self.size[1]), 1.0, 1000.0)
+        self.program['u_projection'] = self.projection
+
 if __name__ == '__main__':
     c = Canvas()
-    c.show()
     app.run()

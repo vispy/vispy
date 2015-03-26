@@ -45,10 +45,11 @@ void main() {
 # Seed point shaders.
 VS_seeds = """
 attribute vec2 a_position;
+uniform float u_ps;
 
 void main() {
     gl_Position = vec4(2. * a_position - 1., 0., 1.);
-    gl_PointSize = 10.;
+    gl_PointSize = 10. * u_ps;
 }
 """
 
@@ -64,24 +65,31 @@ class Canvas(app.Canvas):
     def __init__(self):
         app.Canvas.__init__(self, size=(600, 600), title='Voronoi diagram',
                             keys='interactive')
-        
-        self.seeds = np.random.uniform(0, 1,
+
+        self.ps = self.pixel_scale
+
+        self.seeds = np.random.uniform(0, 1.0*self.ps,
                                        size=(32, 2)).astype(np.float32)
-        self.colors = np.random.uniform(0.3, 0.8, 
+        self.colors = np.random.uniform(0.3, 0.8,
                                         size=(32, 3)).astype(np.float32)
-        
+
         # Set Voronoi program.
         self.program_v = gloo.Program(VS_voronoi, FS_voronoi)
         self.program_v['a_position'] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
-        # HACK: work-around a bug related to uniform arrays until 
+        # HACK: work-around a bug related to uniform arrays until
         # issue #345 is solved.
         for i in range(32):
             self.program_v['u_seeds[%d]' % i] = self.seeds[i, :]
             self.program_v['u_colors[%d]' % i] = self.colors[i, :]
-            
+
         # Set seed points program.
         self.program_s = gloo.Program(VS_seeds, FS_seeds)
         self.program_s['a_position'] = self.seeds
+        self.program_s['u_ps'] = self.ps
+
+        self.activate_zoom()
+
+        self.show()
 
     def on_draw(self, event):
         gloo.clear()
@@ -89,14 +97,17 @@ class Canvas(app.Canvas):
         self.program_s.draw('points')
 
     def on_resize(self, event):
-        self.width, self.height = event.size
-        gloo.set_viewport(0, 0, self.width, self.height)
+        self.activate_zoom()
+
+    def activate_zoom(self):
+        self.width, self.height = self.size
+        gloo.set_viewport(0, 0, *self.physical_size)
         self.program_v['u_screen'] = (self.width, self.height)
-        
+
     def on_mouse_move(self, event):
         x, y = event.pos
         x, y = x/float(self.width), 1-y/float(self.height)
-        self.program_v['u_seeds[0]'] = x, y
+        self.program_v['u_seeds[0]'] = x*self.ps, y*self.ps
         # TODO: just update the first line in the VBO instead of uploading the
         # whole array of seed points.
         self.seeds[0, :] = x, y
@@ -105,5 +116,4 @@ class Canvas(app.Canvas):
 
 if __name__ == "__main__":
     c = Canvas()
-    c.show()
     app.run()
