@@ -11,12 +11,12 @@ canvas = app.Canvas(size=(800, 600), show=True, keys='interactive')
 gloo.set_viewport(0, 0, canvas.size[0], canvas.size[1])
 gloo.set_state("translucent", depth_test=False)
 
-panzoom = PanZoomTransform(c)
+panzoom = PanZoomTransform(canvas)
 
 points = PointCollection("raw", color="shared", transform=panzoom)
 points.append(np.random.normal(0.0, 0.5, (10000, 3)), itemsize=5000)
 points["color"] = (1, 0, 0, 1), (0, 0, 1, 1)
-points.update.connect(c.update)
+points.update.connect(canvas.update)
 
 @canvas.connect
 def on_draw(event):
@@ -29,6 +29,4 @@ def on_resize(event):
     width, height = event.size
     gloo.set_viewport(0, 0, width, height)
 
-panzoom.attach(canvas)
-panzoom.add([points])
 app.run()
