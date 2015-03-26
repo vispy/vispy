@@ -72,8 +72,8 @@ def test_import_vispy_app1():
     """ Importing vispy.app should not pull in other vispy submodules. """
     # Since the introduction of the GLContext to gloo, app depends on gloo
     modnames = loaded_vispy_modules('vispy.app', 2)
-    assert_equal(modnames, set(_min_modules + ['vispy.app', 
-                                               'vispy.gloo', 'vispy.color']))
+    assert_equal(modnames, set(_min_modules + ['vispy.app', 'vispy.gloo',
+                                               'vispy.glsl', 'vispy.color']))
 
 
 def test_import_vispy_app2():
@@ -87,7 +87,9 @@ def test_import_vispy_app2():
 def test_import_vispy_gloo():
     """ Importing vispy.gloo should not pull in other vispy submodules. """
     modnames = loaded_vispy_modules('vispy.gloo', 2)
-    assert_equal(modnames, set(_min_modules + ['vispy.gloo', 'vispy.color']))
+    assert_equal(modnames, set(_min_modules + ['vispy.gloo',
+                                               'vispy.glsl',
+                                               'vispy.color']))
 
 
 def test_import_vispy_no_pyopengl():
@@ -113,7 +115,8 @@ def test_import_vispy_pyopengl():
 def test_import_vispy_scene():
     """ Importing vispy.gloo.gl.desktop should not import PyOpenGL. """
     modnames = loaded_vispy_modules('vispy.scene', 2)
-    more_modules = ['vispy.app', 'vispy.gloo', 'vispy.scene', 'vispy.color', 
+    more_modules = ['vispy.app', 'vispy.gloo', 'vispy.glsl', 'vispy.scene', 
+                    'vispy.color', 
                     'vispy.io', 'vispy.geometry', 'vispy.visuals']
     assert_equal(modnames, set(_min_modules + more_modules))
 

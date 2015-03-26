@@ -5,8 +5,8 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 import re
-from vispy import glsl
-from vispy.util import logger
+from .. import glsl
+from ..util import logger
 
 
 def remove_comments(code):
