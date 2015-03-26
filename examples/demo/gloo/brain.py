@@ -105,6 +105,8 @@ class Canvas(app.Canvas):
         self.program['u_light_position'] = (1., 1., 1.)
         self.program['u_light_intensity'] = (1., 1., 1.)
 
+        self.apply_zoom()
+
         gloo.set_state(blend=False, depth_test=True, polygon_offset_fill=True)
 
         self._t0 = default_timer()
@@ -134,10 +136,7 @@ class Canvas(app.Canvas):
         self.update()
 
     def on_resize(self, event):
-        width, height = event.size
-        gloo.set_viewport(0, 0, width, height)
-        self.projection = perspective(45.0, width / float(height), 1.0, 20.0)
-        self.program['u_projection'] = self.projection
+        self.apply_zoom()
 
     def on_mouse_wheel(self, event):
         self.translate += -event.delta[1]/5.
@@ -148,6 +147,12 @@ class Canvas(app.Canvas):
     def on_draw(self, event):
         gloo.clear()
         self.program.draw('triangles', indices=self.faces)
+
+    def apply_zoom(self):
+        gloo.set_viewport(0, 0, self.physical_size[0], self.physical_size[1])
+        self.projection = perspective(45.0, self.size[0] /
+                                      float(self.size[1]), 1.0, 20.0)
+        self.program['u_projection'] = self.projection
 
 if __name__ == '__main__':
     c = Canvas()

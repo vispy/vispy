@@ -49,13 +49,19 @@ class Canvas(app.Canvas):
         self.program['position'] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
         self.program['texcoord'] = [(1, 1), (1, 0), (0, 1), (0, 0)]
         self.program['texture'] = np.zeros((480, 640, 3)).astype(np.uint8)
+
+        width, height = self.physical_size
+        gloo.set_viewport(0, 0, width, height)
+
         self.cap = cv2.VideoCapture(0)
         if not self.cap.isOpened():
             raise Exception("There's no available camera.")
         self._timer = app.Timer('auto', connect=self.on_timer, start=True)
 
+        self.show()
+
     def on_resize(self, event):
-        width, height = event.size
+        width, height = event.physical_size
         gloo.set_viewport(0, 0, width, height)
 
     def on_draw(self, event):
@@ -68,6 +74,5 @@ class Canvas(app.Canvas):
         self.update()
         
 c = Canvas()
-c.show()
 app.run()
 c.cap.release()
