@@ -1,16 +1,18 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
+
 import numpy as np
+
 
 class PanZoom(object):
     """
     Pan & Zoom transform
 
     The panzoom transform allow to translate and scale an object in the window
-    space coordinate (2D). This means that whatever point you grab on the screen,
-    it should remains under the mouse pointer. Zoom is realized using the mouse
-    scroll and is always centered on the mouse pointer.
+    space coordinate (2D). This means that whatever point you grab on the
+    screen, it should remains under the mouse pointer. Zoom is realized using
+    the mouse scroll and is always centered on the mouse pointer.
 
     The transform is connected to the following events:
 
@@ -36,7 +38,8 @@ class PanZoom(object):
     }
     """
 
-    def __init__(self, aspect=1.0, pan=(0.0,0.0), zoom = 1.0, zmin=0.01, zmax=100.0):
+    def __init__(self, aspect=1.0, pan=(0.0, 0.0), zoom=1.0,
+                 zmin=0.01, zmax=100.0):
         """
         Initialize the transform.
 
@@ -73,7 +76,7 @@ class PanZoom(object):
         self._height = 1
 
         # Programs using this transform
-        self._u_pan  = pan
+        self._u_pan = pan
         self._u_zoom = np.array([zoom, zoom])
         self._programs = []
 
