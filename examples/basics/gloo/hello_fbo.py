@@ -75,7 +75,7 @@ SIZE = 50
 class Canvas(app.Canvas):
 
     def __init__(self):
-        app.Canvas.__init__(self, keys='interactive', size=(560,420))
+        app.Canvas.__init__(self, keys='interactive', size=(560, 420))
 
         # Create texture to render to
         shape = self.physical_size[1], self.physical_size[0]

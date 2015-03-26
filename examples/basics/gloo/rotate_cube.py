@@ -99,7 +99,6 @@ class Canvas(app.Canvas):
     def __init__(self):
         app.Canvas.__init__(self, keys='interactive', size=(800, 600))
 
-
         self.vertices, self.filled, self.outline = cube()
         self.filled_buf = gloo.IndexBuffer(self.filled)
         self.outline_buf = gloo.IndexBuffer(self.outline)
@@ -111,7 +110,9 @@ class Canvas(app.Canvas):
         self.model = np.eye(4, dtype=np.float32)
         
         gloo.set_viewport(0, 0, self.physical_size[0], self.physical_size[1])
-        self.projection = perspective(45.0, self.size[0] / float(self.size[1]), 2.0, 10.0)
+        self.projection = perspective(45.0, self.size[0] /
+                                      float(self.size[1]), 2.0, 10.0)
+
         self.program['u_projection'] = self.projection
 
         translate(self.view, 0, 0, -5)
@@ -142,7 +143,8 @@ class Canvas(app.Canvas):
     # ---------------------------------
     def on_resize(self, event):
         gloo.set_viewport(0, 0, event.physical_size[0], event.physical_size[1])
-        self.projection = perspective(45.0, event.size[0] / float(event.size[1]), 2.0, 10.0)
+        self.projection = perspective(45.0, event.size[0] /
+                                      float(event.size[1]), 2.0, 10.0)
         self.program['u_projection'] = self.projection
 
     # ---------------------------------
