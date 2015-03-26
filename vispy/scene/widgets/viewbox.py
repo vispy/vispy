@@ -159,7 +159,8 @@ class ViewBox(Widget):
         for axis in (0, 1, 2):
             if np.inf in [np.abs(x) for x in bounds[axis]]:
                 bounds[axis] = -1, 1
-        if dim:
+        
+        if dim is not None:
             return bounds[dim]
         else:
             return bounds
