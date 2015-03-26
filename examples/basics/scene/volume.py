@@ -73,7 +73,7 @@ def on_key_press(event):
         volume1.visible = not volume1.visible
         volume2.visible = not volume1.visible
     elif event.text == '4':
-        cmap = cmaps.next()
+        cmap = next(cmaps)
         volume1.cmap = cmap
         volume2.cmap = cmap
     elif event.text == '0':
