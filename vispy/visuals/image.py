@@ -9,13 +9,36 @@ import numpy as np
 from .. import gloo
 from ..color import get_colormap
 from .transforms import STTransform, NullTransform
-from .modular_mesh import ModularMesh
-from .components import (TextureComponent, VertexTextureCoordinateComponent,
-                         TextureCoordinateComponent)
+from .visual import Visual
 from ..ext.six import string_types
 
 
-class ImageVisual(ModularMesh):
+vertex_shader = """
+attribute vec2 a_position;
+attribute vec2 a_texcoord;
+varying vec2 v_texcoord;
+
+void main() {
+    v_texcoord = a_texcoord;
+    gl_Position = $transform(vec4($position, 0, 1));
+}
+"""
+
+fragment_shader = """
+uniform sampler2D u_tex;
+varying vec2 v_texcoord;
+
+void main()
+{
+    if(u_tex.x < 0.0 || u_tex.x > 1.0 || u_tex.y < 0.0 || u_tex.y > 1.0) {
+        discard;
+    }
+    gl_FragColor = texture2D(u_tex, v_texcoord);
+}
+"""
+
+
+class ImageVisual(Visual):
     """Visual subclass displaying an image.
 
     Parameters
@@ -49,11 +72,11 @@ class ImageVisual(ModularMesh):
     The colormap functionality through ``cmap`` and ``clim`` are only used
     if the data are of shape (N, M).
     """
-    def __init__(self, data, method='subdivide', grid=(10, 10), 
+    def __init__(self, data, method='subdivide', grid=(10, 10),
                  cmap='grey', clim='auto', **kwargs):
         super(ImageVisual, self).__init__(**kwargs)
         self.clim = clim
-        self.colormap = cmap
+        self.cmap = cmap
 
         self._data = None
 
@@ -68,14 +91,9 @@ class ImageVisual(ModularMesh):
         self._method = method
         self._grid = grid
 
-    def set_data(self, image=None, **kwargs):
-        if image is not None:
-            image = np.array(image, copy=False)
-            if image.dtype == np.float64:
-                image = image.astype(np.float32)
-            self._data = image
-            self._texture = None
-        super(ImageVisual, self).set_data(**kwargs)
+    def set_data(self, image):
+        self._data = np.array(image, np.float32)
+        self._texture = None
 
     @property
     def clim(self):
@@ -93,12 +111,12 @@ class ImageVisual(ModularMesh):
         self._clim = clim
 
     @property
-    def colormap(self):
-        return self._colormap
+    def cmap(self):
+        return self._cmap
 
-    @colormap.setter
-    def colormap(self, cmap):
-        self._colormap = get_colormap(cmap)
+    @cmap.setter
+    def cmap(self, cmap):
+        self._cmap = get_colormap(cmap)
 
     @property
     def interpolation(self):
@@ -122,7 +140,7 @@ class ImageVisual(ModularMesh):
         else:
             method = self._method
             grid = self._grid
-        
+
         # TODO: subdivision and impostor modes should be handled by new
         # components?
         if method == 'subdivide':
@@ -146,15 +164,13 @@ class ImageVisual(ModularMesh):
             vertices = tex_coords.copy()
             vertices[..., 0] *= self._data.shape[1]
             vertices[..., 1] *= self._data.shape[0]
-            ModularMesh.set_data(self, pos=vertices)
-            coords = np.ascontiguousarray(tex_coords[:, :2])
-            tex_coord_comp = TextureCoordinateComponent(coords)
+            tex_coords = np.ascontiguousarray(tex_coords[:, :2])
+            raise NotImplementedError
         elif method == 'impostor':
             # quad covers entire view; frag. shader will deal with image shape
-            quad = np.array([[-1, -1, 0], [1, -1, 0], [1, 1, 0],
-                             [-1, -1, 0], [1, 1, 0], [-1, 1, 0]],
-                            dtype=np.float32)
-            ModularMesh.set_data(self, pos=quad)
+            vertices = np.array([[-1, -1, 0], [1, -1, 0], [1, 1, 0],
+                                 [-1, -1, 0], [1, 1, 0], [-1, 1, 0]],
+                                dtype=np.float32)
 
             self._tex_transform.scale = (1./self._data.shape[0],
                                          1./self._data.shape[1])
@@ -165,6 +181,7 @@ class ImageVisual(ModularMesh):
             self._program.vert['map_local_to_nd'] = tr
         else:
             raise ValueError("Unknown image draw method '%s'" % method)
+        self._program['a_vertices'] = vertices
 
         data = self._data
         if data.ndim == 2 or data.shape[3] == 1:
@@ -176,17 +193,12 @@ class ImageVisual(ModularMesh):
             data -= clim[0]
             if clim[1] - clim[0] > 0:
                 data /= clim[1] - clim[0]
+            else:
+                data[:] = 1 if data[0, 0] != 0 else 0
         # XXX do something with the shader here for the cmap, including
         # doing nothing for textures w/color data
         self._texture = gloo.Texture2D(data)
         self._texture.interpolation = self._interpolation
-
-        self.color_components = [TextureComponent(self._texture,
-                                                  tex_coord_comp)]
-
-    def _activate_transform(self, transforms=None):
-        # this is handled in _build_data instead.
-        pass
 
     def bounds(self, mode, axis):
         if axis > 1:

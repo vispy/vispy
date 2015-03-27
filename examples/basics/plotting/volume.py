@@ -21,6 +21,7 @@ vol_pw.camera.elevation = 30
 vol_pw.camera.azimuth = 30
 vol_pw.camera.scale_factor /= 1.5
 
+clim = [0, 255.]
 fig[1, 0].image(vol_data[:, :, vol_data.shape[2] // 2])
 fig[0, 1].image(vol_data[:, vol_data.shape[1] // 2, :])
 fig[1, 1].image(vol_data[vol_data.shape[0] // 2, :, :].T)
