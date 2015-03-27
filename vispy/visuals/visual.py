@@ -115,14 +115,14 @@ class Visual(object):
         assert name in ('pre', 'post')
         key = (shader, name)
         if key in self._hooks:
-            return self._hooks[name]
+            return self._hooks[key]
         
         hook = StatementList()
         if shader == 'vert':
             self._program.vert[name] = hook
         elif shader == 'frag':
             self._program.frag[name] = hook
-        
+        self._hooks[key] = hook
         return hook
         
     def attach(self, filter):
