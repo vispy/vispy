@@ -14,7 +14,7 @@ import numpy as np
 from vispy import app, gloo, visuals
 from vispy.visuals.transforms import (STTransform, LogTransform,
                                       AffineTransform, PolarTransform)
-
+from vispy.visuals.components.clipper import Clipper
 import vispy.util
 vispy.util.use_log_level('debug')
 
@@ -77,6 +77,11 @@ class Canvas(app.Canvas):
             tr_sys = visuals.transforms.TransformSystem(self)
             tr_sys.visual_to_document = line.transform
             line.tr_sys = tr_sys
+
+        
+        c = Clipper(self.lines[5])
+        c.bounds = (100, 300, 0, 800)
+        #c.set_transform(self.lines[5].tr_sys.document_to_framebuffer.inverse)
 
         self.show(True)
 

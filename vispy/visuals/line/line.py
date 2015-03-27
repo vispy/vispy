@@ -263,6 +263,7 @@ class _GLLineVisual(Visual):
         varying vec4 v_color;
         void main()
         {
+            $clip;
             gl_FragColor = v_color;
         }
     """
@@ -273,10 +274,22 @@ class _GLLineVisual(Visual):
         self._color_vbo = gloo.VertexBuffer()
         self._connect_ibo = gloo.IndexBuffer()
         self._connect = None
+        
+        self._clipper = None
 
         # Set up the GL program
         self._program = ModularProgram(self.VERTEX_SHADER,
                                        self.FRAGMENT_SHADER)
+        self._program.frag['clip'] = ''
+
+    @property
+    def clipper(self):
+        return self._clipper
+    
+    @clipper.setter
+    def clipper(self, c):
+        self._clipper = c
+        c.attach(self)
 
     def draw(self, transforms):
         # first see whether we can bail out early
