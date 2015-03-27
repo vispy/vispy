@@ -9,7 +9,7 @@ import numpy as np
 from ..ext.ordereddict import OrderedDict
 
 try:
-    # Try to use the C++ triangle library, faster than the 
+    # Try to use the C++ triangle library, faster than the
     # pure Python version.
     # The latest stable release only works with Python 2. The GitHub version
     # works on Python 3 though, but the release has yet to be done.
@@ -1009,7 +1009,7 @@ def triangulate(vertices):
     return vertices, triangles
 
 
-# Note: using custom #debug instead of logging because 
+# Note: using custom #debug instead of logging because
 # there are MANY messages and logger might be too expensive.
 # After this becomes stable, we might just remove them altogether.
 def debug(*args):
