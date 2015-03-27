@@ -1010,7 +1010,7 @@ class TurntableCamera(PerspectiveCamera):
                     self._event_value = self.center
                 dist = (p1 - p2) / w * self._scale_factor
                 dist[1] *= -1
-                #
+                # Black magic part 1: turn 2D into 3D translations
                 sro, saz, sel = list(map(sind, (self._roll, self._azimuth, 
                                                 self._elevation)))
                 cro, caz, cel = list(map(cosd, (self._roll, self._azimuth, 
@@ -1020,9 +1020,11 @@ class TurntableCamera(PerspectiveCamera):
                 dy = (+ dist[0] * (cro * saz - sro * sel * caz) 
                       + dist[1] * (sro * saz + cro * sel * caz))
                 dz = (- dist[0] * sro * cel + dist[1] * cro * cel)
-                #
+                # Black magic part 2: take up-vector and flipping into account
                 ff = self._flip_factors
-                dx, dy, dz = ff[0] * dx, ff[1] * dy, ff[2] * dz
+                up, forward, right = self._get_dim_vectors()
+                dx, dy, dz = right * dx + forward * dy + up * dz
+                dx, dy, dz = ff[0] * dx, ff[1] * dy, dz * ff[2]
                 c = self._event_value
                 self.center = c[0] + dx, c[1] + dy, c[2] + dz
             
@@ -1045,19 +1047,32 @@ class TurntableCamera(PerspectiveCamera):
         with ch_em.blocker(self._update_transform):
             tr = self.transform
             tr.reset()
-            if self.up[1] == 'y':
-                tr.translate((0.0, 0.0, -self._actual_distance))
-                tr.rotate(self.elevation, (-1, 0, 0))
-                tr.rotate(self.azimuth, (0, 1, 0))
-            elif self.up[1] == 'z':
-                tr.rotate(90, (1, 0, 0))
-                tr.translate((0.0, -self._actual_distance, 0.0))
-                tr.rotate(self.elevation, (-1, 0, 0))
-                tr.rotate(self.azimuth, (0, 0, 1))
-            # todo: support -z, -y, +x, -x
             
+            up, forward, right = self._get_dim_vectors()
+            
+            # Create mapping so correct dim is up
+            pp1 = np.array([(0, 0, 0), (0, 0, -1), (1, 0, 0), (0, 1, 0)])
+            pp2 = np.array([(0, 0, 0), forward, right, up])
+            tr.set_mapping(pp1, pp2)
+            
+            tr.translate(-self._actual_distance * np.array(forward))
+            tr.rotate(self.elevation, -right)
+            tr.rotate(self.azimuth, up)
             tr.scale([1.0/a for a in self._flip_factors])
             tr.translate(np.array(self.center))
+    
+    def _get_dim_vectors(self):
+        # Specify up and forward vector
+        M= {'+z': [(0, 0, +1), (0, 1, 0)],
+            '-z': [(0, 0, -1), (0, 1, 0)],
+            '+y': [(0, +1, 0), (1, 0, 0)],
+            '-y': [(0, -1, 0), (1, 0, 0)],
+            '+x': [(+1, 0, 0), (0, 0, 1)],
+            '-x': [(-1, 0, 0), (0, 0, 1)],
+            }
+        up, forward = M[self.up]
+        right = np.cross(forward, up)
+        return np.array(up), np.array(forward), right
     
     def _update_projection_transform(self, fx, fy):
         d = self._get_depth_value()
