@@ -32,8 +32,8 @@ from vispy import app, scene, io
 from vispy.color import get_colormaps
 
 # Read volume
-vol1 = np.load(io.load_data_file('volume/stent.npz'))['arr_0'][64:192, :, :]
-vol2 = np.load(io.load_data_file('brain/mri.npz'))['data'][64:192, 64:192, 64:192]
+vol1 = np.load(io.load_data_file('volume/stent.npz'))['arr_0']
+vol2 = np.load(io.load_data_file('brain/mri.npz'))['data']
 vol2 = np.flipud(np.rollaxis(vol2, 1))
 
 # Setup colormaps
