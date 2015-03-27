@@ -42,8 +42,7 @@ class AxisVisual(LineVisual):
 
     def _get_tick_direction(self):
         """Determines the tick direction if not specified."""
-        # For the moment, just assume that the ticks are either to the right
-        # or top:
+
         right = np.array([1, 0])
         up = np.array([0, -1])
 
@@ -54,9 +53,12 @@ class AxisVisual(LineVisual):
         rightness = np.linalg.norm(a*right)-np.linalg.norm(a*up)
 
         if np.sign(rightness) >= 0:
-            return np.array([0, 1]) # bottom-facing
+            a = np.dot(np.array([[0, -1], [1, 0]]), a) # right axis, down ticks
         else:
-            return np.array([-1, 0]) # top-facing
+            a = np.dot(np.array([[0, 1], [-1, 0]]), a) # up axis, left ticks
+
+        # now return a unit vector
+        return a / np.linalg.norm(a)
 
     def _get_tick_positions(self):
         # Generate 10 evenly-spaced ticks
