@@ -37,13 +37,13 @@ uniform vec3      iResolution;           // viewport resolution (in pixels)
 uniform float     iGlobalTime;           // shader playback time (in seconds)
 uniform vec4      iMouse;                // mouse pixel coords
 uniform vec4      iDate;                 // (year, month, day, time in seconds)
-uniform float     iSampleRate;           // sound sample rate (i.e., 44100)
+// uniform float     iSampleRate;           // sound sample rate (i.e., 44100)
 uniform sampler2D iChannel0;             // input channel. XX = 2D/Cube
 uniform sampler2D iChannel1;             // input channel. XX = 2D/Cube
 uniform sampler2D iChannel2;             // input channel. XX = 2D/Cube
 uniform sampler2D iChannel3;             // input channel. XX = 2D/Cube
-uniform vec3      iChannelResolution[4]; // channel resolution (in pixels)
-uniform float     iChannelTime[4];       // channel playback time (in seconds)
+// uniform vec3      iChannelResolution[4]; // channel resolution (in pixels)
+// uniform float     iChannelTime[4];       // channel playback time (in sec)
 
 %s
 """
@@ -79,10 +79,11 @@ class Canvas(app.Canvas):
 
         self.program["position"] = [(-1, -1), (-1, 1), (1, 1),
                                     (-1, -1), (1, 1), (1, -1)]
+        self.program['iMouse'] = 0, 0, 0, 0
 
-        self.program['iSampleRate'] = 44100.
-        for i in range(4):
-            self.program['iChannelTime[%d]' % i] = 0.
+        # self.program['iSampleRate'] = 44100.
+        # for i in range(4):
+        #     self.program['iChannelTime[%d]' % i] = 0.
 
         self.activate_zoom()
 
@@ -95,7 +96,7 @@ class Canvas(app.Canvas):
         tex.interpolation = 'linear'
         tex.wrapping = 'repeat'
         self.program['iChannel%d' % i] = tex
-        self.program['iChannelResolution[%d]' % i] = img.shape
+        # self.program['iChannelResolution[%d]' % i] = img.shape
 
     def on_draw(self, event):
         self.program.draw()
@@ -114,7 +115,7 @@ class Canvas(app.Canvas):
 
     def on_timer(self, event):
         self.program['iGlobalTime'] = event.elapsed
-        self.program['iDate'] = get_idate()  # used in some shadertoy examples
+        # self.program['iDate'] = get_idate()  # used in some shadertoy exs
         self.update()
 
     def on_resize(self, event):

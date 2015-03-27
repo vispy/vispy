@@ -16,9 +16,6 @@ class Canvas(app.Canvas):
         app.Canvas.__init__(self, *args, **kwargs)
         self.title = 'App demo'
 
-    def on_initialize(self, event):
-        print('initializing!')
-
     def on_close(self, event):
         print('closing!')
 
