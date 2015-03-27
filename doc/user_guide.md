@@ -95,6 +95,7 @@ def on_draw(event):
     gloo.clear('deepskyblue')
 
 canvas.show()
+app.run()  # Not necessary in interactive mode.
 ```
 
 
@@ -119,23 +120,31 @@ Here are the main events. Every function accepts an `event` object as argument. 
 Here is an example:
 
 ```python
+import numpy as np
 from vispy import app, gloo
 
-# Create a canvas with common key bindings for interactive use.
 canvas = app.Canvas(keys='interactive')
 
-# Use this decorator to register event handlers.
 @canvas.connect
-def on_draw(event):
-    # The window needs to be cleared at every draw.
-    gloo.clear('deepskyblue')
+def on_mouse_move(event):
+    x, y = event.pos  # Position of the cursor in window coordinates.
+    w, h = canvas.size  # Size of the window (in pixels).
+    # We update the background color when the mouse moves.
+    r, b = np.clip([x / float(w), y / float(h)], 0, 1)
+    gloo.clear((r, 0.0, b, 1.0))
+    canvas.update()
 
 canvas.show()
+app.run()
 ```
 
 ### Introduction to the rendering pipeline
 
-The rendering pipeline defines how data is processed on the GPU for rendering.
+Now that we can display windows, let's get started with OpenGL.
+
+> This paragraph comes mostly from the [IPython Cookbook](ipython-books.github.io/featured-06/).
+
+The **rendering pipeline** defines how data is processed on the GPU for rendering.
 
 There are four major elements in the rendering pipeline of a given OpenGL program:
 
@@ -165,11 +174,74 @@ Other primitive types include points and triangles, with several ways of generat
 In addition, an index buffer may be provided. An index buffer contains indices pointing to the vertex buffers. Using an index buffer would allow us to reuse any vertex multiple times during the primitive assembly stage. For example, when rendering a cube with a triangles primitive type (one triangle is generated for every triplet of points), we could use a vertex buffer with 8 data points and an index buffer with 36 indices (3 points per triangle, 2 triangles per face, 6 faces).
 
 
-
-
 ### First GLSL shaders
 
+Let's now write our first shaders. We will just display points in two dimensions. We will need the following components:
 
+* A `(n, 2)` NumPy array with the 2D positions of the `n` points.
+* A simple vertex shader performing no transformation at all on the point coordinates.
+* A simple fragment shader returning a constant pixel color.
+
+There is one attribute variable `a_position`. This `vec2` variable encodes the (x, y) coordinates of every point.
+
+```python
+from vispy import app, gloo
+import numpy as np
+
+vertex_shader = """
+attribute vec2 a_position;
+void main() {
+    // gl_Position is the special return value of the vertex shader.
+    // It is a vec4, so here we convert the vec2 position into 
+    // a vec4. We set the third component to 0 because we're in 2D, and the 
+    // fourth one to 1 (we don't need homogeneous coordinates here).
+    gl_Position = vec4(a_position, 0.0, 1.0);
+
+    // This is the size of the displayed points.
+    gl_PointSize = 1.0;
+}
+"""
+
+fragment_shader = """
+void main() {
+    // gl_FragColor is the special return value of the fragment shader.
+    // It is a vec4 with rgba components. Here we just return the color blue.
+    gl_FragColor = vec4(0.0, 0.0, 1.0, 1.0);
+}
+"""
+
+# We create an OpenGL program with the vertex and fragment shader.
+program = gloo.Program(vertex_shader, fragment_shader)
+
+# We generate the x, y coordinates of the points.
+position = .25 * np.random.randn(100000, 2)
+
+# We set the a_position attribute to the position NumPy array.
+# Every row in the array is one vertex. The vertex shader is called once per
+# vertex, so once per row.
+# WARNING: most GPUs only support float32 data (not float64).
+program['a_position'] = position.astype(np.float32)
+
+# We create a ccanvas.
+canvas = app.Canvas(keys='interactive')
+
+# We update the viewport when the window is resized.
+@canvas.connect
+def on_resize(event):
+    width, height = event.size
+    gloo.set_viewport(0, 0, width, height)
+
+@canvas.connect
+def on_draw(event):
+    # We clear the window.
+    gloo.clear('white')
+
+    # We render the program with the 'points' mode. Every vertex is
+    # rendered as a point.
+    program.draw('points')
+
+canvas.show()
+```
 
 
 ### GPU-based animations in GLSL
