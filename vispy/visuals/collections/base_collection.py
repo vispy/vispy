@@ -375,7 +375,7 @@ class BaseCollection(object):
                 # return U[key]
                 return U[key][:len(self._uniforms_list)]
             else:
-                raise IndexError("Unknonw field name ('%s')" % key)
+                raise IndexError("Unknown field name ('%s')" % key)
 
         # Getting individual item
         elif isinstance(key, int):
@@ -433,7 +433,7 @@ class BaseCollection(object):
                 # U[key] = data
                 U[key][:len(self._uniforms_list)] = data
             else:
-                raise IndexError("Unknonw field name ('%s')" % key)
+                raise IndexError("Unknown field name ('%s')" % key)
 
         # # Setting individual item
         # elif isinstance(key, int):

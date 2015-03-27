@@ -72,4 +72,7 @@ def on_resize(e):
 
 panzoom.attach(canvas)
 panzoom.add([paths, polys])
-app.run()
+
+if __name__ == '__main__':
+    canvas.show()
+    app.run()
