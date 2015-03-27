@@ -144,5 +144,6 @@ class Canvas(app.Canvas):
 
 
 if __name__ == '__main__':
-    c = Canvas(emulate3d = True)
+    # Use emulated3d to switch from an emulated 3D texture to an actual one
+    c = Canvas(emulate3d=True)
     app.run()

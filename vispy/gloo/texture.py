@@ -134,12 +134,6 @@ class BaseTexture(GLObject):
         return self._shape
 
     @property
-    def storage_shape(self):
-        """ Texture shape (last dimension indicates number of color channels)
-        """
-        return self._shape
-
-    @property
     def format(self):
         """ The texture format (color channels).
         """
@@ -193,9 +187,6 @@ class BaseTexture(GLObject):
         self._glir.command('INTERPOLATION', self._id, *value)
     
     def resize(self, shape, format=None, internalformat=None):
-        return self._resize(shape, format, internalformat)
-
-    def _resize(self, shape, format=None, internalformat=None):
         """Set the texture size and format
         
         Parameters
@@ -217,6 +208,11 @@ class BaseTexture(GLObject):
             automatically based on the number of channels.  This is a
             hint which may be ignored by the OpenGL implementation.
 
+        """
+        return self._resize(shape, format, internalformat)
+
+    def _resize(self, shape, format=None, internalformat=None):
+        """Internal method for resize.
         """
         shape = self._normalize_shape(shape)
         
@@ -267,9 +263,6 @@ class BaseTexture(GLObject):
                            self._internalformat)
 
     def set_data(self, data, offset=None, copy=False):
-        return self._set_data(data, offset, copy)
-
-    def _set_data(self, data, offset=None, copy=False):
         """ Set texture data
 
         Parameters
@@ -287,6 +280,12 @@ class BaseTexture(GLObject):
         -----
         This operation implicitely resizes the texture to the shape of
         the data if given offset is None.
+        """
+
+        return self._set_data(data, offset, copy)
+
+    def _set_data(self, data, offset=None, copy=False):
+        """Internal method for set_data.
         """
         
         # Copy if needed, check/normalize shape
