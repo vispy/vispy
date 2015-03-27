@@ -22,9 +22,9 @@ vol_pw.camera.azimuth = 30
 vol_pw.camera.scale_factor /= 1.5
 
 clim = [0, 255.]
-fig[1, 0].image(vol_data[:, :, vol_data.shape[2] // 2])
-fig[0, 1].image(vol_data[:, vol_data.shape[1] // 2, :])
-fig[1, 1].image(vol_data[vol_data.shape[0] // 2, :, :].T)
+fig[1, 0].image(vol_data[:, :, vol_data.shape[2] // 2], cmap='grays')
+fig[0, 1].image(vol_data[:, vol_data.shape[1] // 2, :], cmap='grays')
+fig[1, 1].image(vol_data[vol_data.shape[0] // 2, :, :].T, cmap='grays')
 
 if __name__ == '__main__':
     fig.show()

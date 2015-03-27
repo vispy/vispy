@@ -31,6 +31,8 @@ class Fig(SceneCanvas):
 
     def __getitem__(self, idxs):
         """Get an axis"""
+        if not isinstance(idxs, tuple):
+            idxs = (idxs,)
         if len(idxs) == 1:
             idxs = idxs + (slice(None),)
         elif len(idxs) != 2:
@@ -69,9 +71,9 @@ class Fig(SceneCanvas):
 class _PlotWidget(widgets.ViewBox):
     """Class giving access to plotting"""
 
-    def line(self, x, y):
+    def line(self, x, y, color='k'):
         data = np.array([x, y]).T  # XXX refactor with LinePlot as well
-        line = visuals.Line(data)
+        line = visuals.Line(data, color=color)
         self.add(line)
         self.camera = cameras.PanZoomCamera()
         return line
@@ -80,6 +82,7 @@ class _PlotWidget(widgets.ViewBox):
         image = visuals.Image(data, cmap=cmap, clim=clim)
         self.add(image)
         self.camera = cameras.PanZoomCamera(aspect=1)
+        self.camera.set_range()
         return image
 
     def volume(self, data, threshold=None, style='mip', cmap='grays'):
@@ -89,9 +92,10 @@ class _PlotWidget(widgets.ViewBox):
         self.camera = cameras.TurntableCamera(azimuth=0, elevation=0)
         return volume
 
-    def spectrogram(self, x, fs=1., n_fft=256, step=128):
+    def spectrogram(self, x, fs=1., n_fft=256, step=128, clim='auto',
+                    cmap='cubehelix'):
         data = 20 * np.log10(np.abs(stft(x, n_fft, step)))
-        image = visuals.Image(data)
+        image = visuals.Image(data, clim=clim, cmap=cmap)
         self.add(image)
         self.camera = cameras.PanZoomCamera()
         return image

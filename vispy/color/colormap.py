@@ -124,6 +124,7 @@ def _glsl_mix(controls=None):
         s = "    return mix($color_0, $color_1, t);\n"
     else:
         s = ""
+        last = 0.
         for i in range(ncolors-1):
             if i == 0:
                 ifs = 'if (t < %.6f)' % (controls[i+1])
@@ -131,8 +132,10 @@ def _glsl_mix(controls=None):
                 ifs = 'else'
             else:
                 ifs = 'else if (t < %.6f)' % (controls[i+1])
-            s += "%s {\n    return mix($color_%d, $color_%d, t);\n} " % \
-                 (ifs, i, i+1)
+            adj_t = '(t - %s) / %s' % (controls[i],
+                                       controls[i+1] - controls[i])
+            s += ("%s {\n    return mix($color_%d, $color_%d, %s);\n} " %
+                  (ifs, i, i+1, adj_t))
     return "vec4 colormap(float t) {\n%s\n}" % s
 
 
@@ -155,7 +158,7 @@ def _glsl_step(controls=None):
 # Mini GLSL template system for colors.
 def _process_glsl_template(template, colors):
     """Replace $color_i by color #i in the GLSL template."""
-    for i in range(len(colors)):
+    for i in range(len(colors) - 1, -1, -1):
         color = colors[i]
         assert len(color) == 4
         vec4_color = 'vec4(%.3f, %.3f, %.3f, %.3f)' % tuple(color)
@@ -359,7 +362,7 @@ class Colormap(BaseColormap):
 
 
 class CubeHelixColormap(Colormap):
-    def __init__(self, start=0.5, rot=1, gamma=1.0, reverse=True, nlev=256.,
+    def __init__(self, start=0.5, rot=1, gamma=1.0, reverse=True, nlev=32,
                  minSat=1.2, maxSat=1.2, minLight=0., maxLight=1., **kwargs):
         """Cube helix colormap
 
@@ -398,7 +401,7 @@ class CubeHelixColormap(Colormap):
             False
         nlev : scalar, optional
             Defines the number of discrete levels to render colors at.
-            Defaults to 256.
+            Defaults to 32.
         sat : scalar, optional
             The saturation intensity factor. Defaults to 1.2
             NOTE: this was formerly known as "hue" parameter
@@ -420,9 +423,9 @@ class CubeHelixColormap(Colormap):
             Sets the maximum lightness value. Defaults to 1.
         """
         super(CubeHelixColormap, self).__init__(
-            cubehelix(start=0.5, rot=1, gamma=1.0, reverse=True, nlev=256.,
-                      minSat=1.2, maxSat=1.2, minLight=0., maxLight=1.,
-                      **kwargs))
+            cubehelix(start=start, rot=rot, gamma=gamma, reverse=reverse,
+                      nlev=nlev, minSat=minSat, maxSat=maxSat,
+                      minLight=minLight, maxLight=maxLight, **kwargs))
 
 
 class _Fire(BaseColormap):

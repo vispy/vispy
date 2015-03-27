@@ -10,15 +10,16 @@ import numpy as np
 
 from vispy import plot as vp
 
-# XXX replace with an actual sound file
-fs = 44100
+# Plot a logarithmic chirp
+fs = 1000.
 N = 10000
 t = np.arange(N) / float(fs)
-f0, f1 = 10., 10000.
-data = np.sin(2 * np.pi * (f0 + (f1 - f0) * t / t[-1]) * t)
+f0, f1 = 1., 500.
+phase = (t[-1] / np.log(f1 / f0)) * f0 * (pow(f1 / f0, t / t[-1]) - 1.0)
+data = np.cos(2 * np.pi * phase)
 
 fig = vp.Fig(show=False, size=(800, 400))
-fig[0:2, 0].spectrogram(data)
+im = fig[0:2, 0].spectrogram(data, clim=(-100, -20))
 fig[2, 0].line(t, data)
 
 if __name__ == '__main__':
