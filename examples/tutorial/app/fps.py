@@ -20,6 +20,7 @@ class Canvas(app.Canvas):
         self._timer = app.Timer('auto', connect=self.on_timer, start=True)
         self.tick = 0
 
+        self.show()
     def on_draw(self, event):
         gloo.clear(color=True)
 
@@ -34,6 +35,5 @@ class Canvas(app.Canvas):
 
 if __name__ == '__main__':
     canvas = Canvas(keys='interactive')
-    canvas.show()
     canvas.measure_fps(1, canvas.show_fps)
     app.run()

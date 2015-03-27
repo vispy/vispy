@@ -112,36 +112,13 @@ def load_galaxy_star_image():
 class Canvas(app.Canvas):
 
     def __init__(self):
-        # setup initial width, height
-        self.width = 800
-        self.height = 600
-        app.Canvas.__init__(self, keys='interactive')
-        self.size = self.width, self.height
+        self.width, self.height  = 800, 600
+
+        app.Canvas.__init__(self, keys='interactive', size=(self.width,
+                            self.height))
 
         self._timer = app.Timer('auto', connect=self.update, start=True)
 
-    # create the numpy array corresponding to the shader data
-    def __create_galaxy_vertex_data(self):
-        data = np.zeros(len(galaxy),
-                        dtype=[('a_size', np.float32, 1),
-                               ('a_position', np.float32, 2),
-                               ('a_color_index', np.float32, 1),
-                               ('a_brightness', np.float32, 1),
-                               ('a_type', np.float32, 1)])
-
-        # see shader for parameter explanations
-        data['a_size'] = galaxy['size'] * max(self.width / 800.0,
-                                              self.height / 800.0)
-        data['a_position'] = galaxy['position'] / 13000.0
-
-        data['a_color_index'] = (galaxy['temperature'] - t0) / (t1 - t0)
-        data['a_brightness'] = galaxy['brightness']
-        data['a_type'] = galaxy['type']
-
-        return data
-
-    def on_initialize(self, event):
-        # create a new shader program
         self.program = gloo.Program(VERT_SHADER, FRAG_SHADER,
                                     count=len(galaxy))
 
@@ -176,6 +153,30 @@ class Canvas(app.Canvas):
         # setup blending
         self.__setup_blending_mode()
 
+        self.activate_zoom()
+
+        self.show()
+
+    # create the numpy array corresponding to the shader data
+    def __create_galaxy_vertex_data(self):
+        data = np.zeros(len(galaxy),
+                        dtype=[('a_size', np.float32, 1),
+                               ('a_position', np.float32, 2),
+                               ('a_color_index', np.float32, 1),
+                               ('a_brightness', np.float32, 1),
+                               ('a_type', np.float32, 1)])
+
+        # see shader for parameter explanations
+        data['a_size'] = galaxy['size'] * max(self.width / 800.0,
+                                              self.height / 800.0)
+        data['a_position'] = galaxy['position'] / 13000.0
+
+        data['a_color_index'] = (galaxy['temperature'] - t0) / (t1 - t0)
+        data['a_brightness'] = galaxy['brightness']
+        data['a_type'] = galaxy['type']
+
+        return data
+
     def __setup_blending_mode(self):
         # set the clear color to almost black
         gloo.gl.glClearColor(0.0, 0.0, 0.03, 1.0)
@@ -186,9 +187,12 @@ class Canvas(app.Canvas):
         gloo.gl.glBlendFunc(gloo.gl.GL_SRC_ALPHA, gloo.gl.GL_ONE)
 
     def on_resize(self, event):
-        self.width, self.height = event.size
+        self.activate_zoom()
+
+    def activate_zoom(self):
+        self.width, self.height = self.size
         # setup the new viewport
-        gloo.set_viewport(0, 0, self.width, self.height)
+        gloo.set_viewport(0, 0, *self.physical_size)
         # recompute the projection matrix
         self.projection = perspective(45.0, self.width / float(self.height),
                                       1.0, 1000.0)
@@ -212,7 +216,6 @@ class Canvas(app.Canvas):
 
 if __name__ == '__main__':
     c = Canvas()
-    c.show()
 
     if sys.flags.interactive == 0:
         app.run()

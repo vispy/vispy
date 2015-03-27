@@ -107,13 +107,17 @@ class Canvas(app.Canvas):
         self.program["u_normal"] = normal
         self.phi, self.theta = 0, 0
 
-        # OpenGL initalization
+        self.activate_zoom()
+
+        # OpenGL initialization
         # --------------------------------------
         gloo.set_state(clear_color=(0.30, 0.30, 0.35, 1.00), depth_test=True,
                        polygon_offset=(1, 1),
                        blend_func=('src_alpha', 'one_minus_src_alpha'),
                        line_width=0.75)
         self.timer.start()
+
+        self.show()
 
     def on_draw(self, event):
         gloo.clear(color=True, depth=True)
@@ -131,8 +135,11 @@ class Canvas(app.Canvas):
         gloo.set_state(depth_mask=True)
 
     def on_resize(self, event):
-        gloo.set_viewport(0, 0, *event.size)
-        projection = perspective(45.0, event.size[0] / float(event.size[1]),
+        self.activate_zoom()
+
+    def activate_zoom(self):
+        gloo.set_viewport(0, 0, *self.physical_size)
+        projection = perspective(45.0, self.size[0] / float(self.size[1]),
                                  2.0, 10.0)
         self.program['u_projection'] = projection
 
@@ -149,5 +156,4 @@ class Canvas(app.Canvas):
 
 if __name__ == '__main__':
     c = Canvas()
-    c.show()
     app.run()

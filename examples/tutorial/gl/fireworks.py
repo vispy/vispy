@@ -121,7 +121,7 @@ class Canvas(app.Canvas):
         gl.glDrawArrays(gl.GL_POINTS, 0, len(self.data))
 
     def on_resize(self, event):
-        gl.glViewport(0, 0, *event.size)
+        gl.glViewport(0, 0, *event.physical_size)
 
     def on_timer(self, event):
         self.elapsed_time += 1. / 60.

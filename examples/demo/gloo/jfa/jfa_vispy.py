@@ -53,6 +53,8 @@ class Canvas(app.Canvas):
             program.bind(vertices)
         self._timer = app.Timer('auto', self.update, start=True)
 
+        self.show()
+
     def _setup_textures(self, fname):
         data = imread(load_data_file('jfa/' + fname))[::-1].copy()
         if data.ndim == 3:
@@ -92,7 +94,7 @@ class Canvas(app.Canvas):
             self.programs[2]['texture'] = self.comp_texs[last_rend]
         else:
             self.programs[2]['texture'] = self.orig_tex
-        set_viewport(0, 0, *self.size)
+        set_viewport(0, 0, *self.physical_size)
         self.programs[2].draw('triangle_strip')
 
     def on_key_press(self, event):
@@ -110,7 +112,6 @@ def fun(x):
 
 if __name__ == '__main__':
     c = Canvas()
-    c.show()
     c.measure_fps(callback=fun)
     if sys.flags.interactive != 1:
         c.app.run()
