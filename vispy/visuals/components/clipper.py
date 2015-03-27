@@ -6,7 +6,8 @@ from ...geometry import Rect
 clip_frag = """
 void clip() {
     vec4 pos = $fb_to_clip(gl_FragCoord);
-    if( pos.x < $view.x || pos.x > $view.y || pos.y < $view.z || pos.y > $view.w ) {
+    if( pos.x < $view.x || pos.x > $view.y || 
+        pos.y < $view.z || pos.y > $view.w ) {
         discard;
     }
 }
@@ -45,6 +46,3 @@ class Clipper(object):
 
     def set_transform(self, tr):
         self.clip_shader['fb_to_clip'] = tr
-        
-
-

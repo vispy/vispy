@@ -142,4 +142,3 @@ class Visual(object):
         """
         self._filters.remove(filter)
         filter._detach(self)
-    

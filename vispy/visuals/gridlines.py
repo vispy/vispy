@@ -115,5 +115,3 @@ class GridLinesVisual(Visual):
         self._program['pos'] = self._buffer()
         self._program['scale'] = self._scale
         self._program.draw('triangles')
-
-    

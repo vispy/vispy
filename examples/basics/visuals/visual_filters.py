@@ -12,11 +12,9 @@ information, but different transformations.
 
 import numpy as np
 from vispy import app, gloo, visuals
-from vispy.visuals.transforms import (STTransform, LogTransform,
-                                      AffineTransform, PolarTransform)
+from vispy.visuals.transforms import STTransform
 from vispy.visuals.components import Clipper, Alpha, ColorFilter
 from vispy.visuals.shaders import Function
-import vispy.util
 
 # vertex positions of data to draw
 N = 400
@@ -72,8 +70,6 @@ class Canvas(app.Canvas):
         self.lines[5].attach(ColorFilter([1, 0, 0, 1]))
         self.lines[5].attach(Hatching())
         
-        
-
         app.Canvas.__init__(self, keys='interactive')
         self.size = (800, 800)
         
