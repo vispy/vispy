@@ -73,14 +73,21 @@ void main()
 
 class Canvas(app.Canvas):
 
+<<<<<<< HEAD
     def __init__(self):
         app.Canvas.__init__(self, keys='interactive', size=((W*5), (H*5)))
+=======
+    def __init__(self, emulate3d=True):
+        app.Canvas.__init__(self, keys='interactive')
+        self.size = W * 5, H * 5
+>>>>>>> Fixed Flake, plus a couple of other things
 
         if emulate3d:
-            cls = gloo.TextureEmulated3D
+            tex_cls = gloo.TextureEmulated3D
         else:
-            cls = gloo.Texture3D
-        self.texture = cls(I, interpolation='nearest', wrapping='clamp_to_edge')
+            tex_cls = gloo.Texture3D
+        self.texture = tex_cls(I, interpolation='nearest',
+                               wrapping='clamp_to_edge')
 
         self.program = ModularProgram(VERT_SHADER, FRAG_SHADER)
         self.program.frag['sampler_type'] = self.texture.glsl_sampler_type

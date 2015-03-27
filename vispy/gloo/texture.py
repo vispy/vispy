@@ -95,7 +95,7 @@ class BaseTexture(GLObject):
             data = np.array(data, copy=False)
             # So we can test the combination
             self._resize(data.shape, format, internalformat)
-            self.set_data(data)
+            self._set_data(data)
         elif shape is not None:
             self._resize(shape, format, internalformat)
         else:
@@ -267,6 +267,9 @@ class BaseTexture(GLObject):
                            self._internalformat)
 
     def set_data(self, data, offset=None, copy=False):
+        return self._set_data(data, offset, copy)
+
+    def _set_data(self, data, offset=None, copy=False):
         """ Set texture data
 
         Parameters
@@ -361,7 +364,7 @@ class BaseTexture(GLObject):
             data = np.resize(data, shape)
 
         # Set data (deferred)
-        self.set_data(data=data, offset=offset, copy=False)
+        self._set_data(data=data, offset=offset, copy=False)
     
     def __repr__(self):
         return "<%s shape=%r format=%r at 0x%x>" % (
@@ -524,13 +527,14 @@ class Texture3D(BaseTexture):
         return 'texture3D'
 
 
-# ------------------------------------------------------ TextureEmulated3D class ---
+# ------------------------------------------------- TextureEmulated3D class ---
 class TextureEmulated3D(Texture2D):
     """ Two dimensional texture that is emulating a three dimensional texture
 
     Parameters
     ----------
-    Same as Texture2D, but the data is first reshaped from a 3D array to a 2D array.
+    Same as Texture2D, but the data is first reshaped from a 3D array
+    to a 2D array.
     """
 
     _glsl_sample = """
@@ -545,14 +549,16 @@ class TextureEmulated3D(Texture2D):
         }
     """
 
-    _gl_max_texture_size = 2048 # This needs to be queried from OpenGL, but for now we just set it manually
+    _gl_max_texture_size = 1024  # For now, we just set this manually
 
     def __init__(self, data=None, format=None, **kwargs):
         from ..visuals.shaders import Function 
         self._glsl_sample = Function(self.__class__._glsl_sample)
 
         self._set_emulated_shape(data)
-        Texture2D.__init__(self, self._normalize_emulated_shape(data), format, **kwargs)
+        Texture2D.__init__(self, self._normalize_emulated_shape(data),
+                           format, **kwargs)
+        self._update_variables()
 
     def _set_emulated_shape(self, data_or_shape):
         if isinstance(data_or_shape, np.ndarray):
@@ -561,16 +567,16 @@ class TextureEmulated3D(Texture2D):
             assert isinstance(data_or_shape, tuple)
             self._emulated_shape = tuple(data_or_shape)
 
-        depth, width, height = self._emulated_shape[0], self._emulated_shape[1], self._emulated_shape[2]
-        self._r = int(math.floor(TextureEmulated3D._gl_max_texture_size // float(width)))
-        self._c = int(math.floor(depth / self._r))
+        depth, width = self._emulated_shape[0], self._emulated_shape[1]
+        self._r = TextureEmulated3D._gl_max_texture_size // width
+        self._c = depth // self._r
         if math.fmod(depth, self._r):
             self._c += 1
 
     def _normalize_emulated_shape(self, data_or_shape):
         if isinstance(data_or_shape, np.ndarray):
-            new_data = np.zeros(self._normalize_emulated_shape(data_or_shape.shape),
-                dtype = data_or_shape.dtype)
+            new_shape = self._normalize_emulated_shape(data_or_shape.shape)
+            new_data = np.empty(new_shape, dtype=data_or_shape.dtype)
             for j in range(self._c):
                 for i in range(self._r):
                     i0, i1 = i * self.width, (i+1) * self.width
@@ -578,12 +584,13 @@ class TextureEmulated3D(Texture2D):
                     k = j * self._r + i
                     if k >= self.depth:
                         break
-                    new_data[j0:j1,i0:i1] = data_or_shape[k]
+                    new_data[j0:j1, i0:i1] = data_or_shape[k]
 
             return new_data
 
         assert isinstance(data_or_shape, tuple)
-        return (self._c * self.height, self._r * self.width) + data_or_shape[3:]
+        return (self._c * self.height, self._r * self.width) + \
+            data_or_shape[3:]
 
     def _update_variables(self):
         self._glsl_sample['depth'] = self.depth
@@ -592,12 +599,14 @@ class TextureEmulated3D(Texture2D):
 
     def set_data(self, data, offset=None, copy=False):
         self._set_emulated_shape(data)
-        Texture2D.set_data(self, self._normalize_emulated_shape(data), offset, copy)
+        Texture2D.set_data(self, self._normalize_emulated_shape(data),
+                           offset, copy)
         self._update_variables()
 
     def resize(self, shape, format=None, internalformat=None):
-        self._set_emulated_shape(data)
-        Texture2D.resize(self, self._normalize_emulated_shape(shape), format, internalformat)
+        self._set_emulated_shape(shape)
+        Texture2D.resize(self, self._normalize_emulated_shape(shape),
+                         format, internalformat)
         self._update_variables()
 
     @property

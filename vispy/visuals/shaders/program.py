@@ -18,7 +18,7 @@ class ModularProgram(Program):
     Automatically rebuilds program when functions have changed and uploads 
     program variables.
     """
-    def __init__(self, vcode = None, fcode = None):
+    def __init__(self, vcode=None, fcode=None):
         Program.__init__(self)
         
         self.changed = EventEmitter(source=self, type='program_change')
@@ -46,7 +46,7 @@ class ModularProgram(Program):
         self._vert.changed.connect((self, '_source_changed'))
 
         self._need_build = True
-        self.changed(code_changed = True, value_changed = False)
+        self.changed(code_changed=True, value_changed=False)
 
     @property
     def frag(self):
@@ -65,7 +65,7 @@ class ModularProgram(Program):
         self._frag.changed.connect((self, '_source_changed'))
 
         self._need_build = True
-        self.changed(code_changed = True, value_changed = False)
+        self.changed(code_changed=True, value_changed=False)
 
     def prepare(self):
         """ Prepare the Program so we can set attributes and uniforms.

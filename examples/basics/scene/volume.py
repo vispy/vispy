@@ -52,9 +52,11 @@ view = canvas.central_widget.add_view()
 emulated3d = True
 
 # Create the volume visuals, only one is visible
-volume1 = scene.visuals.Volume(vol1, parent=view.scene, threshold=0.5, emulated3d = emulated3d)
+volume1 = scene.visuals.Volume(vol1, parent=view.scene, threshold=0.5,
+                               emulated3d=emulated3d)
 volume1.transform = scene.STTransform(translate=(64, 64, 0))
-volume2 = scene.visuals.Volume(vol2, parent=view.scene, threshold=0.5, emulated3d = emulated3d)
+volume2 = scene.visuals.Volume(vol2, parent=view.scene, threshold=0.5,
+                               emulated3d=emulated3d)
 volume2.visible = False
 
 # Create two cameras (1 for firstperson, 3 for 3d person)
