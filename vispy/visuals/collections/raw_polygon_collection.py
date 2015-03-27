@@ -47,7 +47,7 @@ class RawPolygonCollection(Collection):
             fragment = glsl.get('collections/raw-triangle.frag')
 
         vertex = transform + vertex
-        Collection.__init__(self, dtype=dtype, itype=np.uint32,
+        Collection.__init__(self, dtype=dtype, itype=np.uint32,  # 16 for WebGL
                             mode="triangles",
                             vertex=vertex, fragment=fragment, **kwargs)
 
