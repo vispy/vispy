@@ -108,7 +108,7 @@ class Canvas(app.Canvas):
 
         self.view = translate((0, 0, -5))
         self.model = np.eye(4, dtype=np.float32)
-        
+
         gloo.set_viewport(0, 0, self.physical_size[0], self.physical_size[1])
         self.projection = perspective(45.0, self.size[0] /
                                       float(self.size[1]), 2.0, 10.0)
@@ -133,8 +133,8 @@ class Canvas(app.Canvas):
     def on_timer(self, event):
         self.theta += .5
         self.phi += .5
-        self.model = (rotate(self.theta, (0, 1, 0)) *
-                      rotate(self.phi, (0, 0, 1)))
+        self.model = np.dot(rotate(self.theta, (0, 1, 0)),
+                            rotate(self.phi, (0, 0, 1)))
         self.program['u_model'] = self.model
         self.update()
 

@@ -13,12 +13,12 @@ from ...util.quaternion import Quaternion
 from ...util import keys
 from ..node import Node
 from ...geometry import Rect
-from ...visuals.transforms import (STTransform, PerspectiveTransform, 
+from ...visuals.transforms import (STTransform, PerspectiveTransform,
                                    NullTransform, AffineTransform,
                                    TransformCache)
 
 
-def sind(q): 
+def sind(q):
     return math.sin(q*math.pi/180)
 
 
@@ -32,7 +32,7 @@ def cosd(q):
 
 def make_camera(cam_type, *args, **kwargs):
     """ Factory function for creating new cameras using a string name.
-    
+
     Parameters
     ----------
     cam_type : str
@@ -45,27 +45,27 @@ def make_camera(cam_type, *args, **kwargs):
     Camera class.
     """
     cam_types = {None: BaseCamera}
-    for camType in (BaseCamera, PanZoomCamera, PerspectiveCamera, 
+    for camType in (BaseCamera, PanZoomCamera, PerspectiveCamera,
                     TurntableCamera, FlyCamera):
         cam_types[camType.__name__[:-6].lower()] = camType
-    
-    try: 
+
+    try:
         return cam_types[cam_type](*args, **kwargs)
     except KeyError:
-        raise KeyError('Unknown camera type "%s". Options are: %s' % 
+        raise KeyError('Unknown camera type "%s". Options are: %s' %
                        (cam_type, cam_types.keys()))
 
 
 class BaseCamera(Node):
     """ Base camera class.
-    
-    The Camera describes the perspective from which a ViewBox views its 
+
+    The Camera describes the perspective from which a ViewBox views its
     subscene, and the way that user interaction affects that perspective.
-    
+
     Most functionality is implemented in subclasses. This base class has
     no user interaction and causes the subscene to use the same coordinate
     system as the ViewBox.
-    
+
     Parameters
     ----------
     interactive : bool
@@ -79,75 +79,75 @@ class BaseCamera(Node):
         The parent of the camera.
     name : str
         Name used to identify the camera in the scene.
-    
+
     """
-    
+
     # These define the state of the camera
     _state_props = ()
-    
+
     ZOOM_FACTOR = 0.005
-    
+
     def __init__(self, interactive=True, flip=None, up='+z', **kwargs):
         super(BaseCamera, self).__init__(**kwargs)
-        
+
         # The viewbox for which this camera is active
         self._viewbox = None
-        
+
         # Linked cameras
         self._linked_cameras = []
         self._linked_cameras_no_update = False  # internal flag
-        
-        # Variables related to transforms 
+
+        # Variables related to transforms
         self.transform = NullTransform()
         self._pre_transform = None
         self._viewbox_tr = STTransform()  # correction for viewbox
         self._projection = PerspectiveTransform()
         self._transform_cache = TransformCache()
-        
+
         # For internal use, to store event related information
         self._event_value = None
-        
+
         # Flags
         self._resetting = False  # Avoid lots of updates during set_range
         self._key_events_bound = False  # Have we connected to key events
         self._set_range_args = None  # hold set_range() args
-        
+
         # Limits set in reset (interesting region of the scene)
         self._xlim = None  # None is flag that no reset has been performed
         self._ylim = None
         self._zlim = None
-        
+
         # Our default state to apply when resetting
         self._default_state = None
-        
+
         # We initialize these parameters here, because we want these props
         # available in all cameras. Note that PanZoom does not use _center
         self._fov = 0.0
         self._center = None
-        
+
         # Set parameters. These are all not part of the "camera state"
         self.interactive = bool(interactive)
         self.flip = flip if (flip is not None) else (False, False, False)
         self.up = up
-    
+
     def _get_depth_value(self):
         """ Get the depth value to use in orthographic and perspective projection
-        
+
         For 24 bits and more, we're fine with 100.000, but for 16 bits we
         need 3000 or so. The criterion is that at the center, we should be
-        able to distinguish between 0.1, 0.0 and -0.1 etc. 
+        able to distinguish between 0.1, 0.0 and -0.1 etc.
         """
         if True:  # bit+depth >= 24
             return 100000.0
         else:
             return 3000.0
-    
+
     def _depth_to_z(self, depth):
-        """ Get the z-coord, given the depth value. 
+        """ Get the z-coord, given the depth value.
         """
         val = self._get_depth_value()
         return val - depth * 2 * val
-    
+
     def _viewbox_set(self, viewbox):
         """ Friend method of viewbox to register itself.
         """
@@ -159,7 +159,7 @@ class BaseCamera(Node):
         viewbox.events.mouse_wheel.connect(self.viewbox_mouse_event)
         viewbox.events.resize.connect(self.viewbox_resize_event)
         # todo: also add key events! (and also on viewbox (they're missing)
-    
+
     def _viewbox_unset(self, viewbox):
         """ Friend method of viewbox to unregister itself.
         """
@@ -170,30 +170,30 @@ class BaseCamera(Node):
         viewbox.events.mouse_move.disconnect(self.viewbox_mouse_event)
         viewbox.events.mouse_wheel.disconnect(self.viewbox_mouse_event)
         viewbox.events.resize.disconnect(self.viewbox_resize_event)
-    
+
     @property
     def viewbox(self):
         """ The viewbox that this camera applies to.
         """
         return self._viewbox
-    
+
     ## Camera attributes
-    
+
     @property
     def interactive(self):
         """ Boolean describing whether the camera should enable or disable
         user interaction.
         """
         return self._interactive
-    
+
     @interactive.setter
     def interactive(self, value):
         self._interactive = bool(value)
-    
+
     @property
     def flip(self):
         return self._flip
-    
+
     @flip.setter
     def flip(self, value):
         if not isinstance(value, (list, tuple)):
@@ -206,13 +206,13 @@ class BaseCamera(Node):
             raise ValueError('Flip must have 2 or 3 elements.')
         self._flip_factors = tuple([(1-x*2) for x in self._flip])
         self.view_changed()
-    
+
     @property
     def up(self):
         """ The dimension that is considered up.
         """
         return self._up
-    
+
     @up.setter
     def up(self, value):
         value = value.lower()
@@ -221,16 +221,16 @@ class BaseCamera(Node):
             raise ValueError('Invalid value for up.')
         self._up = value
         self.view_changed()
-    
+
     @property
     def center(self):
         """ The center location for this camera
-        
+
         The exact meaning of this value differs per type of camera, but
         generally means the point of interest or the rotation point.
         """
         return self._center or (0, 0, 0)
-    
+
     @center.setter
     def center(self, val):
         if len(val) == 2:
@@ -240,14 +240,14 @@ class BaseCamera(Node):
         else:
             raise ValueError('Center must be a 2 or 3 element tuple')
         self.view_changed()
-    
+
     @property
     def fov(self):
         """ Field-of-view angle of the camera. If 0, the camera is in
         orthographic mode.
         """
         return self._fov
-    
+
     @fov.setter
     def fov(self, fov):
         fov = float(fov)
@@ -255,24 +255,24 @@ class BaseCamera(Node):
             raise ValueError("fov must be between 0 and 180.")
         self._fov = fov
         self.view_changed()
-    
+
     ## Camera methods
-    
+
     def set_range(self, x=None, y=None, z=None, margin=0.05):
         """ Set the range of the view region for the camera
-        
+
         The view is set to the given range or to the scene boundaries
         if ranges are not specified. The ranges should be 2-element
         tuples specifying the min and max for each dimension.
-        
+
         For the PanZoomCamera the view is fully defined by the range.
         For e.g. the TurntableCamera the elevation and azimuth are not
         set. One should use reset() for that.
         """
-        
+
         # Flag to indicate that this is an initializing (not user-invoked)
         init = self._xlim is None
-        
+
         # Collect given bounds
         bounds = [None, None, None]
         if x is not None:
@@ -285,10 +285,10 @@ class BaseCamera(Node):
         if self._viewbox is None:
             self._set_range_args = bounds[0], bounds[1], bounds[2], margin
             return
-        
+
         # There is a viewbox, we're going to set the range for real
         self._resetting = True
-        
+
         # Get bounds from viewbox if not given
         if all([(b is None) for b in bounds]):
             bounds = self._viewbox.get_scene_bounds()
@@ -305,31 +305,31 @@ class BaseCamera(Node):
         # Store center location
         if (not init) or (self._center is None):
             self._center = [(b[0] + r / 2) for b, r in zip(bounds, ranges)]
-        
+
         # Let specific camera handle it
         self._set_range(init)
-       
+
         # Finish
         self._resetting = False
         self.view_changed()
-    
+
     def _set_range(self, init):
-        pass 
-    
+        pass
+
     def reset(self):
         """ Reset the view to the default state.
         """
         self.set_state(self._default_state)
-    
+
     def set_default_state(self):
         """ Set the current state to be the default state to be applied
         when calling reset().
         """
         self._default_state = self.get_state()
-    
+
     def get_state(self):
         """ Get the current view state of the camera
-        
+
         Returns a dict of key-value pairs. The exact keys depend on the
         camera. Can be passed to set_state() (of this or another camera
         of the same type) to reproduce the state.
@@ -338,10 +338,10 @@ class BaseCamera(Node):
         for key in self._state_props:
             D[key] = getattr(self, key)
         return D
-    
+
     def set_state(self, state=None, **kwargs):
         """ Set the view state of the camera
-        
+
         Should be a dict (or kwargs) as returned by get_state. It can
         be an incomlete dict, in which case only the specified
         properties are set.
@@ -352,10 +352,10 @@ class BaseCamera(Node):
             if key not in self._state_props:
                 raise KeyError('Not a valid camera state property %r' % key)
             setattr(self, key, val)
-    
+
     def link(self, camera):
         """ Link this camera with another camera of the same type
-        
+
         Linked camera's keep each-others' state in sync.
         """
         cam1, cam2 = self, camera
@@ -367,9 +367,9 @@ class BaseCamera(Node):
         # Link both ways
         cam1._linked_cameras.append(cam2)
         cam2._linked_cameras.append(cam1)
-    
+
     ## Event-related methods
-    
+
     def view_changed(self):
         """ Called when this camera is changes its view. Also called
         when its associated with a viewbox.
@@ -377,7 +377,7 @@ class BaseCamera(Node):
         if self._resetting:
             return  # don't update anything while resetting (are in set_range)
         if self._viewbox:
-            # Set range if necessary 
+            # Set range if necessary
             if self._xlim is None:
                 args = self._set_range_args or ()
                 self.set_range(*args)
@@ -386,19 +386,19 @@ class BaseCamera(Node):
                 self.set_default_state()
             # Do the actual update
             self._update_transform()
-    
+
     @property
     def pre_transform(self):
         """ A transform to apply to the beginning of the scene transform, in
         addition to anything else provided by this Camera.
         """
         return self._pre_transform
-    
+
     @pre_transform.setter
     def pre_transform(self, tr):
         self._pre_transform = tr
         self.view_changed()
-    
+
     def viewbox_mouse_event(self, event):
         # todo: connect this method to viewbox.events.key_down
         # viewbox does not currently support key events
@@ -409,27 +409,27 @@ class BaseCamera(Node):
             self._key_events_bound = True
             event.canvas.events.key_press.connect(self.viewbox_key_event)
             event.canvas.events.key_release.connect(self.viewbox_key_event)
-    
+
     def viewbox_key_event(self, event):
         if event.key == keys.BACKSPACE:
             self.reset()
-    
+
     def viewbox_resize_event(self, event):
         """
         The ViewBox was resized; update the transform accordingly.
         """
         pass
-    
+
     def _update_transform(self):
         """ Subclasses should reimplement this method to update the scene
         transform by calling self._set_scene_transform.
         """
         self._set_scene_transform(self.transform)
-        
+
     def _set_scene_transform(self, tr):
         """ Called by subclasses to configure the viewbox scene transform.
         """
-        # todo: check whether transform has changed, connect to 
+        # todo: check whether transform has changed, connect to
         # transform.changed event
         pre_tr = self.pre_transform
         if pre_tr is None:
@@ -437,11 +437,11 @@ class BaseCamera(Node):
         else:
             self._transform_cache.roll()
             self._scene_transform = self._transform_cache.get([pre_tr, tr])
-        
-        # Update scene    
+
+        # Update scene
         self._viewbox.scene.transform = self._scene_transform
         self._viewbox.update()
-        
+
         # Apply same state to linked cameras, but prevent that camera
         # to return the favor
         if not self._linked_cameras_no_update:
@@ -452,17 +452,17 @@ class BaseCamera(Node):
                 finally:
                     cam._linked_cameras_no_update = False
 
-    
+
 class PanZoomCamera(BaseCamera):
     """ Camera implementing 2D pan/zoom mouse interaction.
-    
+
     For this camera, the ``scale_factor`` indicates the zoom level, and
     the ``center`` indicates the center position of the view.
-    
-    By default, this camera inverts the y axis of the scene. This usually 
-    results in the scene +y axis pointing upward because widgets (including 
+
+    By default, this camera inverts the y axis of the scene. This usually
+    results in the scene +y axis pointing upward because widgets (including
     ViewBox) have their +y axis pointing downward.
-    
+
     Parameters
     ----------
     rect : Rect
@@ -474,27 +474,27 @@ class PanZoomCamera(BaseCamera):
         should be 1. If None (default) the x and y dimensions are scaled
         independently.
     See BaseCamera for more.
-    
+
     Interaction
     -----------
     * LMB: pan the view
     * RMB or scroll: zooms the view
-    
+
     """
-    
+
     _state_props = BaseCamera._state_props + ('rect', )
-    
+
     def __init__(self, rect=None, aspect=None, **kwargs):
         super(PanZoomCamera, self).__init__(**kwargs)
-        
+
         self.transform = STTransform()
-        
+
         # Set camera attributes
         self.aspect = aspect
         self._rect = None
         if rect is not None:
             self.rect = rect
-    
+
     @property
     def aspect(self):
         """ The ratio between the x and y dimension. E.g. to show a
@@ -504,7 +504,7 @@ class PanZoomCamera(BaseCamera):
         is fixed.
         """
         return self._aspect
-    
+
     @aspect.setter
     def aspect(self, value):
         if value is None:
@@ -512,10 +512,10 @@ class PanZoomCamera(BaseCamera):
         else:
             self._aspect = float(value)
         self.view_changed()
-    
+
     def zoom(self, factor, center=None):
         """ Zoom in (or out) at the given center
-        
+
         Parameters
         ----------
         factor : float
@@ -551,31 +551,31 @@ class PanZoomCamera(BaseCamera):
         rect.top = center[1] + top_space * scale[1]
         #
         self.rect = rect
-    
+
     def pan(self, *pan):
         """ Pan the view.
-        
+
         Parameters
         ----------
         pan : length-2 sequence
-            The distance to pan the view, in the coordinate system of the 
+            The distance to pan the view, in the coordinate system of the
             scene.
         """
         if len(pan) == 1:
             pan = pan[0]
         self.rect = self.rect + pan
-    
+
     @property
     def rect(self):
         """ The rectangular border of the ViewBox visible area, expressed in
-        the coordinate system of the scene. 
-        
+        the coordinate system of the scene.
+
         Note that the rectangle can have negative width or height, in
         which case the corresponding dimension is flipped (this flipping
         is independent from the camera's ``flip`` property).
         """
         return self._rect
-    
+
     @rect.setter
     def rect(self, args):
         if isinstance(args, tuple):
@@ -583,12 +583,12 @@ class PanZoomCamera(BaseCamera):
         else:
             self._rect = Rect(args)
         self.view_changed()
-    
+
     @property
     def center(self):
         rect = self._rect
         return 0.5 * (rect.left+rect.right), 0.5 * (rect.top+rect.bottom), 0
-    
+
     @center.setter
     def center(self, center):
         if not (isinstance(center, (tuple, list)) and len(center) in (2, 3)):
@@ -604,7 +604,7 @@ class PanZoomCamera(BaseCamera):
         rect.top = center[1] + y2
         #
         self.rect = rect
-    
+
     def _set_range(self, init):
         if init and self._rect is not None:
             return
@@ -612,70 +612,69 @@ class PanZoomCamera(BaseCamera):
         w = self._xlim[1] - self._xlim[0]
         h = self._ylim[1] - self._ylim[0]
         self.rect = self._xlim[0], self._ylim[0], w, h
-    
+
     def viewbox_resize_event(self, event):
         """ Modify the data aspect and scale factor, to adjust to
         the new window size.
         """
         self.view_changed()
-    
+
     def viewbox_mouse_event(self, event):
         """
-        The SubScene received a mouse event; update transform 
+        The SubScene received a mouse event; update transform
         accordingly.
         """
         if event.handled or not self.interactive:
             return
-        
+
         # Scrolling
         BaseCamera.viewbox_mouse_event(self, event)
-        
+
         if event.type == 'mouse_wheel':
-            center = np.array(self._scene_transform.imap(event.pos))[0]
+            center = self._scene_transform.imap(event.pos)
             self.zoom(event.delta[1] * self.ZOOM_FACTOR*30, center)
-        
+
         elif event.type == 'mouse_move':
             if event.press_event is None:
                 return
-            
+
             modifiers = event.mouse_event.modifiers
             p1 = event.mouse_event.press_event.pos
             p2 = event.mouse_event.pos
-            
+
             if 1 in event.buttons and not modifiers:
                 # Translate
                 p1 = np.array(event.last_event.pos)[:2]
                 p2 = np.array(event.pos)[:2]
-                p1s = np.array(self._transform.imap(p1))[0]
-                p2s = np.array(self._transform.imap(p2))[0]
+                p1s = self._transform.imap(p1)
+                p2s = self._transform.imap(p2)
                 self.pan(p1s-p2s)
-            
+
             elif 2 in event.buttons and not modifiers:
                 # Zoom
                 p1c = np.array(event.last_event.pos)[:2]
                 p2c = np.array(event.pos)[:2]
                 scale = (p1c-p2c) * np.array([1, -1]) * -self.ZOOM_FACTOR
                 center = self._transform.imap(event.press_event.pos[:2])
-                center = np.array(center)[0]
-                self.zoom(tuple(scale), center) 
-    
+                self.zoom(tuple(scale), center)
+
     def _update_transform(self):
-        
+
         rect = self.rect
         self._real_rect = Rect(rect)
         vbr = self._viewbox.rect.flipped(x=self.flip[0], y=(not self.flip[1]))
         d = self._get_depth_value()
-        
+
         # apply scale ratio constraint
         if self._aspect is not None:
             # Aspect ratio of the requested range
-            requested_aspect = (rect.width / rect.height 
+            requested_aspect = (rect.width / rect.height
                                 if rect.height != 0 else 1)
             # Aspect ratio of the viewbox
             view_aspect = vbr.width / vbr.height if vbr.height != 0 else 1
             # View aspect ratio needed to obey the scale constraint
             constrained_aspect = abs(view_aspect / self._aspect)
-            
+
             if requested_aspect > constrained_aspect:
                 # view range needs to be taller than requested
                 dy = 0.5 * (rect.width / constrained_aspect - rect.height)
@@ -686,19 +685,19 @@ class PanZoomCamera(BaseCamera):
                 dx = 0.5 * (rect.height * constrained_aspect - rect.width)
                 self._real_rect.left -= dx
                 self._real_rect.right += dx
-        
+
         # Apply mapping between viewbox and cam view
         self.transform.set_mapping(self._real_rect, vbr)
         # Scale z, so that the clipping planes are between -alot and +alot
         self.transform.zoom((1, 1, 1/d))
-        
+
         # We've now set self.transform, which represents our 2D
         # transform When up is +z this is all. In other cases,
         # self.transform is now set up correctly to allow pan/zoom, but
         # for the scene we need a different (3D) mapping. When there
         # is a minus in up, we simply look at the scene from the other
         # side (as if z was flipped).
-        
+
         if self.up == '+z':
             # Keep it simple, but we need to pass AffineTransform,
             # because if we toggle to -z and then back to +z, things
@@ -724,15 +723,15 @@ class PanZoomCamera(BaseCamera):
             # Apply
             tr.set_mapping(np.array(pp2), np.array(pp1))
             thetransform = tr
-        
+
         # Set on viewbox
         self._set_scene_transform(thetransform)
-    
+
 
 class PerspectiveCamera(BaseCamera):
     """ Base class for 3D cameras supporting orthographic and
     perspective projections.
-    
+
     Parameters
     ----------
     fov : float
@@ -741,29 +740,29 @@ class PerspectiveCamera(BaseCamera):
         A measure for the scale/range of the scene that the camera
         should show. The exact meaning differs per camera type.
     See BaseCamera for more.
-    
+
     """
-    
+
     _state_props = ('scale_factor', 'center', 'fov')
-    
+
     def __init__(self, fov=60.0, scale_factor=None, center=None, **kwargs):
         super(PerspectiveCamera, self).__init__(**kwargs)
         # Camera transform
         self.transform = AffineTransform()
-        
+
         # Set camera attributes
         self.fov = fov
         self._scale_factor = None
         self._center = None
-        
+
         # Only set if they are given. They're set during _set_range if None
         if scale_factor is not None:
             self.scale_factor = scale_factor
         if center is not None:
             self.center = center
-    
+
     def viewbox_mouse_event(self, event):
-        """ The ViewBox received a mouse event; update transform 
+        """ The ViewBox received a mouse event; update transform
         accordingly.
         Default implementation adjusts scale factor when scolling.
         """
@@ -774,43 +773,43 @@ class PerspectiveCamera(BaseCamera):
             if self._distance is not None:
                 self._distance *= s
             self.view_changed()
-    
+
     @property
     def scale_factor(self):
         """ The measure for the scale or range that the camera should cover
-        
+
         For the PanZoomCamera and TurnTableCamera this translates to
         zooming: set to smaller values to zoom in.
-        """ 
+        """
         return self._scale_factor
-    
+
     @scale_factor.setter
     def scale_factor(self, value):
         self._scale_factor = abs(float(value))
         self.view_changed()
-    
+
     @property
     def near_clip_distance(self):
         """ The distance of the near clipping plane from the camera's position.
         """
         return self._near_clip_distance
-    
+
     def _set_range(self, init):
         """ Reset the camera view using the known limits.
         """
-        
+
         if init and (self._scale_factor is not None):
             return  # We don't have to set our scale factor
-        
+
         # Get window size (and store factor now to sync with resizing)
         w, h = self._viewbox.size
         w, h = float(w), float(h)
-        
-        # Get range and translation for x and y   
+
+        # Get range and translation for x and y
         x1, y1, z1 = self._xlim[0], self._ylim[0], self._zlim[0]
         x2, y2, z2 = self._xlim[1], self._ylim[1], self._zlim[1]
         rx, ry, rz = (x2 - x1), (y2 - y1), (z2 - z1)
-        
+
         # Correct ranges for window size. Note that the window width
         # influences the x and y data range, while the height influences
         # the z data range.
@@ -819,36 +818,36 @@ class PerspectiveCamera(BaseCamera):
             ry /= w / h
         else:
             rz /= h / w
-        
+
         # Convert to screen coordinates. In screen x, only x and y have effect.
         # In screen y, all three dimensions have effect. The idea of the lines
-        # below is to calculate the range on screen when that will fit the 
+        # below is to calculate the range on screen when that will fit the
         # data under any rotation.
         rxs = (rx**2 + ry**2)**0.5
         rys = (rx**2 + ry**2 + rz**2)**0.5
-        
+
         self.scale_factor = max(rxs, rys) * 1.04  # 4% extra space
-    
+
     def viewbox_resize_event(self, event):
         self.view_changed()
-    
+
     def _update_transform(self, event=None):
         # Do we have a viewbox
         if self._viewbox is None:
             return
-        
+
         # Calculate viewing range for x and y
         fx = fy = self._scale_factor
-        
-        # Correct for window size 
-        w, h = self._viewbox.size   
+
+        # Correct for window size
+        w, h = self._viewbox.size
         if w / h > 1:
             fx *= w / h
         else:
             fy *= h / w
-        
+
         self._update_projection_transform(fx, fy)
-        
+
         # assemble complete transform mapping to viewbox bounds
         unit = [[-1, 1], [1, -1]]
         vrect = [[0, 0], self._viewbox.size]
@@ -880,7 +879,7 @@ class TurntableCamera(PerspectiveCamera):
     For this camera, the ``scale_factor`` indicates the zoom level, and
     the ``center`` indicates the position to put at the center of the
     view.
-    
+
     Parameters
     ----------
     fov : float
@@ -899,35 +898,35 @@ class TurntableCamera(PerspectiveCamera):
         if fov > 0). If None (default) the distance is determined from the
         scale_factor and fov.
     See BaseCamera for more.
-    
+
     Interaction
     -----------
     * LMB: orbits the view around its center point.
     * RMB or scroll: change scale_factor (i.e. zoom level)
     * SHIFT + LMB: translate the center point
     * SHIFT + RMB: change FOV
-    
+
     """
-    
-    _state_props = PerspectiveCamera._state_props + ('elevation', 
+
+    _state_props = PerspectiveCamera._state_props + ('elevation',
                                                      'azimuth', 'roll')
-    
-    def __init__(self, fov=0.0, elevation=30.0, azimuth=30.0, roll=0.0, 
+
+    def __init__(self, fov=0.0, elevation=30.0, azimuth=30.0, roll=0.0,
                  distance=None, **kwargs):
         super(TurntableCamera, self).__init__(fov=fov, **kwargs)
-        
+
         self._actual_distance = 0.0
         self._event_value = None
-        
+
         # Set camera attributes
         self.azimuth = azimuth
         self.elevation = elevation
         self.roll = roll  # interaction not implemented yet
         self.distance = distance  # None means auto-distance
-    
+
     @property
     def elevation(self):
-        """ The angle of the camera in degrees above the horizontal (x, z) 
+        """ The angle of the camera in degrees above the horizontal (x, z)
         plane.
         """
         return self._elevation
@@ -937,7 +936,7 @@ class TurntableCamera(PerspectiveCamera):
         elev = float(elev)
         self._elevation = min(90, max(-90, elev))
         self.view_changed()
-    
+
     @property
     def azimuth(self):
         """ The angle of the camera in degrees around the y axis. An angle of
@@ -954,7 +953,7 @@ class TurntableCamera(PerspectiveCamera):
             azim -= 360
         self._azimuth = azim
         self.view_changed()
-    
+
     @property
     def roll(self):
         """ The angle of the camera in degrees around the z axis. An angle of
@@ -971,14 +970,14 @@ class TurntableCamera(PerspectiveCamera):
             roll -= 360
         self._roll = roll
         self.view_changed()
-    
+
     @property
     def distance(self):
         """ The user-set distance. If None (default), the distance is
-        internally calculated from the scale factor and fov. 
+        internally calculated from the scale factor and fov.
         """
         return self._distance
-    
+
     @distance.setter
     def distance(self, distance):
         if distance is None:
@@ -986,10 +985,10 @@ class TurntableCamera(PerspectiveCamera):
         else:
             self._distance = float(distance)
         self.view_changed()
-    
+
     def orbit(self, azim, elev):
         """ Orbits the camera around the center position.
-        
+
         Parameters
         ----------
         azim : float
@@ -1000,36 +999,36 @@ class TurntableCamera(PerspectiveCamera):
         self.azimuth += azim
         self.elevation = np.clip(self.elevation + elev, -90, 90)
         self.view_changed()
-    
+
     def viewbox_mouse_event(self, event):
         """
-        The viewbox received a mouse event; update transform 
+        The viewbox received a mouse event; update transform
         accordingly.
         """
         if event.handled or not self.interactive:
             return
-        
+
         PerspectiveCamera.viewbox_mouse_event(self, event)
-        
+
         if event.type == 'mouse_release':
             self._event_value = None  # Reset
-        
+
         elif event.type == 'mouse_move':
             if event.press_event is None:
                 return
-            
+
             modifiers = event.mouse_event.modifiers
             p1 = event.mouse_event.press_event.pos
             p2 = event.mouse_event.pos
             d = p2 - p1
-            
+
             if 1 in event.buttons and not modifiers:
                 # Rotate
                 if self._event_value is None:
                     self._event_value = self.azimuth, self.elevation
                 self.azimuth = self._event_value[0] - (p2 - p1)[0] * 0.5
                 self.elevation = self._event_value[1] + (p2 - p1)[1] * 0.5
-            
+
             elif 2 in event.buttons and not modifiers:
                 # Zoom
                 if self._event_value is None:
@@ -1040,7 +1039,7 @@ class TurntableCamera(PerspectiveCamera):
                 if self._distance is not None:
                     self._distance = self._event_value[1] * zoomy
                 self.view_changed()
-            
+
             elif 1 in event.buttons and keys.SHIFT in modifiers:
                 # Translate
                 w = self._viewbox.size[0]
@@ -1049,13 +1048,13 @@ class TurntableCamera(PerspectiveCamera):
                 dist = (p1 - p2) / w * self._scale_factor
                 dist[1] *= -1
                 # Black magic part 1: turn 2D into 3D translations
-                sro, saz, sel = list(map(sind, (self._roll, self._azimuth, 
+                sro, saz, sel = list(map(sind, (self._roll, self._azimuth,
                                                 self._elevation)))
-                cro, caz, cel = list(map(cosd, (self._roll, self._azimuth, 
+                cro, caz, cel = list(map(cosd, (self._roll, self._azimuth,
                                                 self._elevation)))
                 dx = (+ dist[0] * (cro * caz + sro * sel * saz)
                       + dist[1] * (sro * caz - cro * sel * saz))
-                dy = (+ dist[0] * (cro * saz - sro * sel * caz) 
+                dy = (+ dist[0] * (cro * saz - sro * sel * caz)
                       + dist[1] * (sro * saz + cro * sel * caz))
                 dz = (- dist[0] * sro * cel + dist[1] * cro * cel)
                 # Black magic part 2: take up-vector and flipping into account
@@ -1065,7 +1064,7 @@ class TurntableCamera(PerspectiveCamera):
                 dx, dy, dz = ff[0] * dx, ff[1] * dy, dz * ff[2]
                 c = self._event_value
                 self.center = c[0] + dx, c[1] + dy, c[2] + dz
-            
+
             elif 2 in event.buttons and keys.SHIFT in modifiers:
                 # Change fov
                 if self._event_value is None:
@@ -1073,32 +1072,32 @@ class TurntableCamera(PerspectiveCamera):
                 fov = self._event_value - d[1] / 5.0
                 self.fov = min(180.0, max(0.0, fov))
                 print('FOV: %1.2f' % self.fov)
-    
+
     def _update_camera_pos(self):
         """ Set the camera position / orientation based on elevation,
         azimuth, distance, and center properties.
         """
-        
+
         # transform will be updated several times; do not update camera
         # transform until we are done.
         ch_em = self.events.transform_change
         with ch_em.blocker(self._update_transform):
             tr = self.transform
             tr.reset()
-            
+
             up, forward, right = self._get_dim_vectors()
-            
+
             # Create mapping so correct dim is up
             pp1 = np.array([(0, 0, 0), (0, 0, -1), (1, 0, 0), (0, 1, 0)])
             pp2 = np.array([(0, 0, 0), forward, right, up])
             tr.set_mapping(pp1, pp2)
-            
+
             tr.translate(-self._actual_distance * np.array(forward))
             tr.rotate(self.elevation, -right)
             tr.rotate(self.azimuth, up)
             tr.scale([1.0/a for a in self._flip_factors])
             tr.translate(np.array(self.center))
-    
+
     def _get_dim_vectors(self):
         # Specify up and forward vector
         M = {'+z': [(0, 0, +1), (0, 1, 0)],
@@ -1111,7 +1110,7 @@ class TurntableCamera(PerspectiveCamera):
         up, forward = M[self.up]
         right = np.cross(forward, up)
         return np.array(up), np.array(forward), right
-    
+
     def _update_projection_transform(self, fx, fy):
         d = self._get_depth_value()
         if self._fov == 0:
@@ -1133,67 +1132,67 @@ class TurntableCamera(PerspectiveCamera):
 class FlyCamera(PerspectiveCamera):
     """ The fly camera provides a way to explore 3D data using an
     interaction style that resembles a flight simulator.
-    
+
     For this camera, the ``scale_factor`` indicates the speed of the
     camera in units per second, and the ``center`` indicates the
     position of the camera.
-    
+
     Parameters
     ----------
     fov : float
         Field of view. Default 60.0.
     See BaseCamera for more.
-    
+
     Interaction
     -----------
-    Notice: interacting with this camera might need a bit of practice. 
+    Notice: interacting with this camera might need a bit of practice.
     The reaction to key presses can be customized by modifying the
     keymap property.
-    
+
     Moving:
-    
+
       * arrow keys, or WASD to move forward, backward, left and right
       * F and C keys move up and down
       * Space bar to brake
-    
+
     Viewing:
-    
+
       * Use the mouse while holding down LMB to control the pitch and yaw.
       * Alternatively, the pitch and yaw can be changed using the keys
         IKJL
       * The camera auto-rotates to make the bottom point down, manual
         rolling can be performed using Q and E.
-    
+
     """
-    
+
     # Linking this camera likely not to work very well
     _state_props = PerspectiveCamera._state_props + ('rotation', )
 
     def __init__(self, fov=60, rotation=None, **kwargs):
-        
+
         # Motion speed vector
         self._speed = np.zeros((6,), 'float64')
-        
+
         # Acceleration and braking vectors, set from keyboard
         self._brake = np.zeros((6,), 'uint8')  # bool-ish
         self._acc = np.zeros((6,), 'float64')
-        
+
         # Init rotations
         self._auto_roll = True  # Whether to roll to make Z up
         self._rotation1 = Quaternion()  # The base rotation
         self._rotation2 = Quaternion()  # The delta yaw and pitch rotation
-        
+
         PerspectiveCamera.__init__(self, fov=fov, **kwargs)
-        
+
         # Set camera attributes
         self.rotation = rotation if (rotation is not None) else Quaternion()
-        
+
         # To store data at start of interaction
         self._event_value = None
-        
+
         # Whether the mouse-system wants a transform update
         self._update_from_mouse = False
-        
+
         # Mapping that defines keys to thrusters
         self._keymap = {
             keys.UP: (+1, 1), keys.DOWN: (-1, 1),
@@ -1210,10 +1209,10 @@ class FlyCamera(PerspectiveCamera):
             keys.SPACE: (0, 1, 2, 3),  # 0 means brake, apply to translation
             #keys.ALT: (+5, 1),  # Turbo
         }
-        
+
         # Timer. Each tick we calculate new speed and new position
         self._timer = Timer(0.01, start=False, connect=self.on_timer)
-    
+
     @property
     def rotation(self):
         """ Get the full rotation. This rotation is composed of the
@@ -1222,31 +1221,31 @@ class FlyCamera(PerspectiveCamera):
         """
         rotation = self._rotation2 * self._rotation1
         return rotation.normalize()
-    
+
     @rotation.setter
     def rotation(self, value):
         assert isinstance(value, Quaternion)
         self._rotation1 = value
-    
+
     @property
     def auto_roll(self):
         """ Whether to rotate the camera automaticall to try and attempt
         to keep Z up.
         """
         return self._auto_roll
-    
+
     @auto_roll.setter
     def auto_roll(self, value):
         self._auto_roll = bool(value)
-    
+
     @property
     def keymap(self):
         """ A dictionary that maps keys to thruster directions
-        
+
         The keys in this dictionary are vispy key descriptions (from
         vispy.keys) or characters that represent keys. These are matched
         to the "key" attribute of key-press and key-release events.
-        
+
         The values are tuples, in which the first element specifies the
         magnitude of the acceleration, using negative values for
         "backward" thrust. A value of zero means to brake. The remaining
@@ -1255,25 +1254,25 @@ class FlyCamera(PerspectiveCamera):
         up/down, and 4, 5, 6 for pitch, yaw, roll.
         """
         return self._keymap
-    
+
     def _set_range(self, init):
         """ Reset the view.
         """
-        
+
         #PerspectiveCamera._set_range(self, init)
-        
+
         # Stop moving
         self._speed *= 0.0
-        
+
         # Get window size (and store factor now to sync with resizing)
         w, h = self._viewbox.size
         w, h = float(w), float(h)
-        
-        # Get range and translation for x and y   
+
+        # Get range and translation for x and y
         x1, y1, z1 = self._xlim[0], self._ylim[0], self._zlim[0]
         x2, y2, z2 = self._xlim[1], self._ylim[1], self._zlim[1]
         rx, ry, rz = (x2 - x1), (y2 - y1), (z2 - z1)
-        
+
         # Correct ranges for window size. Note that the window width
         # influences the x and y data range, while the height influences
         # the z data range.
@@ -1282,25 +1281,25 @@ class FlyCamera(PerspectiveCamera):
             ry /= w / h
         else:
             rz /= h / w
-        
+
         # Do not convert to screen coordinates. This camera does not need
         # to fit everything on screen, but we need to estimate the scale
         # of the data in the scene.
-        
+
         # Set scale, depending on data range. Initial speed is such that
         # the scene can be traversed in about three seconds.
-        self._scale_factor = max(rx, ry, rz) / 3.0 
-        
+        self._scale_factor = max(rx, ry, rz) / 3.0
+
         # Set initial position to a corner of the scene
         margin = np.mean([rx, ry, rz]) * 0.1
         self._center = x1 - margin, y1 - margin, z1 + margin
-        
+
         # Determine initial view direction based on flip axis
         yaw = 45 * self._flip_factors[0]
         pitch = -90 - 20 * self._flip_factors[2]
         if self._flip_factors[1] < 0:
             yaw += 90 * np.sign(self._flip_factors[0])
-        
+
         # Set orientation
         q1 = Quaternion.create_from_axis_angle(pitch*math.pi/180, 1, 0, 0)
         q2 = Quaternion.create_from_axis_angle(0*math.pi/180, 0, 1, 0)
@@ -1308,53 +1307,53 @@ class FlyCamera(PerspectiveCamera):
         #
         self._rotation1 = (q1 * q2 * q3).normalize()
         self._rotation2 = Quaternion()
-        
+
         # Update
         self.view_changed()
-    
+
     def _get_directions(self):
-        
+
         # Get reference points in reference coordinates
         #p0 = Point(0,0,0)
         pf = (0, 0, -1)  # front
         pr = (1, 0, 0)  # right
         pl = (-1, 0, 0)  # left
         pu = (0, 1, 0)  # up
-        
+
         # Get total rotation
         rotation = self.rotation.inverse()
-        
+
         # Transform to real coordinates
         pf = rotation.rotate_point(pf)
         pr = rotation.rotate_point(pr)
         pl = rotation.rotate_point(pl)
         pu = rotation.rotate_point(pu)
-        
+
         def _normalize(p):
             L = sum(x**2 for x in p) ** 0.5
             return np.array(p, 'float64') / L
-        
+
         pf = _normalize(pf)
         pr = _normalize(pr)
         pl = _normalize(pl)
         pu = _normalize(pu)
-        
+
         return pf, pr, pl, pu
-    
+
     def on_timer(self, event):
-        
+
         # Set relative speed and acceleration
         rel_speed = event.dt
         rel_acc = 0.1
-        
+
         # Get what's forward
         pf, pr, pl, pu = self._get_directions()
-        
+
         # Increase speed through acceleration
         # Note that self._speed is relative. We can balance rel_acc and
         # rel_speed to get a nice smooth or direct control
         self._speed += self._acc * rel_acc
-        
+
         # Reduce speed. Simulate resistance. Using brakes slows down faster.
         # Note that the way that we reduce speed, allows for higher
         # speeds if keys ar bound to higher acc values (i.e. turbo)
@@ -1363,11 +1362,11 @@ class FlyCamera(PerspectiveCamera):
         self._speed -= self._speed * reduce
         if np.abs(self._speed).max() < 0.05:
             self._speed *= 0.0
-        
+
         # --- Determine new position from translation speed
-        
+
         if self._speed[:3].any():
-        
+
             # Create speed vectors, use scale_factor as a reference
             dv = np.array([1.0/d for d in self._flip_factors])
             #
@@ -1375,34 +1374,34 @@ class FlyCamera(PerspectiveCamera):
             vr = pr * dv * rel_speed * self._scale_factor
             vu = pu * dv * rel_speed * self._scale_factor
             direction = vf, vr, vu
-            
+
             # Set position
             center_loc = np.array(self._center, dtype='float32')
-            center_loc += (self._speed[0] * direction[0] + 
+            center_loc += (self._speed[0] * direction[0] +
                            self._speed[1] * direction[1] +
                            self._speed[2] * direction[2])
             self._center = tuple(center_loc)
-        
+
         # --- Determine new orientation from rotation speed
-        
+
         roll_angle = 0
-        
+
         # Calculate manual roll (from speed)
         if self._speed[3:].any():
             angleGain = np.array([1.0, 1.5, 1.0]) * 3 * math.pi / 180
             angles = self._speed[3:] * angleGain
-            
+
             q1 = Quaternion.create_from_axis_angle(angles[0], -1, 0, 0)
             q2 = Quaternion.create_from_axis_angle(angles[1], 0, 1, 0)
             q3 = Quaternion.create_from_axis_angle(angles[2], 0, 0, -1)
             q = q1 * q2 * q3
             self._rotation1 = (q * self._rotation1).normalize()
-        
+
         # Calculate auto-roll
         if self.auto_roll:
             up = {'x': (1, 0, 0), 'y': (0, 1, 0), 'z': (0, 0, 1)}[self.up[1]]
             up = np.array(up) * {'+': +1, '-': -1}[self.up[0]]
-            
+
             def angle(p1, p2):
                 return np.arccos(p1.dot(p2))
             #au = angle(pu, (0, 0, 1))
@@ -1420,26 +1419,26 @@ class FlyCamera(PerspectiveCamera):
                 roll_angle = np.sign(roll_angle) * np.abs(roll_angle)**0.5
                 # Get correction for this iteration and apply
                 angle_correction = 1.0 * roll_angle * math.pi / 180
-                q = Quaternion.create_from_axis_angle(angle_correction, 
+                q = Quaternion.create_from_axis_angle(angle_correction,
                                                       0, 0, 1)
-                self._rotation1 = (q * self._rotation1).normalize() 
-        
+                self._rotation1 = (q * self._rotation1).normalize()
+
         # Update
         if self._speed.any() or roll_angle or self._update_from_mouse:
             self._update_from_mouse = False
             self.view_changed()
-    
+
     def viewbox_key_event(self, event):
-        
+
         PerspectiveCamera.viewbox_key_event(self, event)
-        
+
         if event.handled or not self.interactive:
             return
-        
+
         # Ensure the timer runs
         if not self._timer.running:
             self._timer.start()
-        
+
         if event.key in self._keymap:
             val_dims = self._keymap[event.key]
             val = val_dims[0]
@@ -1449,20 +1448,20 @@ class FlyCamera(PerspectiveCamera):
                 val = 1
             else:
                 vec = self._acc
-            # Set 
+            # Set
             if event.type == 'key_release':
                 val = 0
             for dim in val_dims[1:]:
                 factor = 1.0
                 vec[dim-1] = val * factor
-    
+
     def viewbox_mouse_event(self, event):
-        
+
         PerspectiveCamera.viewbox_mouse_event(self, event)
-        
+
         if event.handled or not self.interactive:
             return
-        
+
         if event.type == 'mouse_wheel':
             if not event.mouse_event.modifiers:
                 # Move forward / backward
@@ -1473,7 +1472,7 @@ class FlyCamera(PerspectiveCamera):
                 self.scale_factor /= s  # divide instead of multiply
                 print('scale factor: %1.1f units/s' % self.scale_factor)
             return
-        
+
         if event.type == 'mouse_release':
             # Reset
             self._event_value = None
@@ -1483,23 +1482,23 @@ class FlyCamera(PerspectiveCamera):
         elif not self._timer.running:
             # Ensure the timer runs
             self._timer.start()
-        
+
         if event.type == 'mouse_move':
-            
+
             if event.press_event is None:
                 return
             if not event.buttons:
                 return
-            
-            # Prepare 
+
+            # Prepare
             modifiers = event.mouse_event.modifiers
             pos1 = event.mouse_event.press_event.pos
             pos2 = event.mouse_event.pos
             w, h = self._viewbox.size
-            
+
             if 1 in event.buttons and not modifiers:
                 # rotate
-         
+
                 # get normalized delta values
                 d_az = -float(pos2[0] - pos1[0]) / w
                 d_el = +float(pos2[1] - pos1[1]) / h
@@ -1509,10 +1508,10 @@ class FlyCamera(PerspectiveCamera):
                 # Create temporary quaternions
                 q_az = Quaternion.create_from_axis_angle(d_az, 0, 1, 0)
                 q_el = Quaternion.create_from_axis_angle(d_el, 1, 0, 0)
-                
+
                 # Apply to global quaternion
                 self._rotation2 = (q_el.normalize() * q_az).normalize()
-        
+
             elif 2 in event.buttons and keys.CONTROL in modifiers:
                 # zoom --> fov
                 if self._event_value is None:
@@ -1525,20 +1524,20 @@ class FlyCamera(PerspectiveCamera):
                 fov = self._event_value * math.exp(-0.01*d[1])
                 self._fov = min(90.0, max(10, fov))
                 print('FOV: %1.2f' % self.fov)
-        
+
         # Make transform be updated on the next timer tick.
         # By doing it at timer tick, we avoid shaky behavior
         self._update_from_mouse = True
-    
+
     def _update_projection_transform(self, fx, fy):
         PerspectiveCamera._update_projection_transform(self, fx, fy)
-        
+
         # Turn our internal quaternion representation into rotation
         # of our transform
-        
+
         axis_angle = self.rotation.get_axis_angle()
         angle = axis_angle[0] * 180 / math.pi
-        
+
         tr = self.transform
         tr.reset()
         #

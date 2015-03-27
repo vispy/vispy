@@ -105,8 +105,8 @@ class Canvas(app.Canvas):
     def update_transforms(self, event):
         self.theta += .5
         self.phi += .5
-        self.model = (rotate(self.theta, (0, 0, 1)) *
-                      rotate(self.phi, (0, 1, 0)))
+        self.model = np.dot(rotate(self.theta, (0, 0, 1)),
+                            rotate(self.phi, (0, 1, 0)))
         self.program['u_model'] = self.model
         self.update()
 

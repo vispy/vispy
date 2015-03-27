@@ -145,7 +145,8 @@ class Canvas(app.Canvas):
     def on_timer(self, event):
         self.theta += .5
         self.phi += .5
-        model = rotate(self.theta, (0, 0, 1)) * rotate(self.phi, (0, 1, 0))
+        model = np.dot(rotate(self.theta, (0, 0, 1)),
+                       rotate(self.phi, (0, 1, 0)))
         normal = (self.view * model).I.T
         self.program['u_model'] = model
         self.program['u_normal'] = normal

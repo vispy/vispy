@@ -238,7 +238,6 @@ class ViewBox(Widget):
 
         # Set resolution (note that resolution can be non-integer)
         self._resolution = res
-        
         # -- Get user clipping preference
 
         prefer = self.clip_method

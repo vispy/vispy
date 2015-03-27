@@ -17,15 +17,15 @@ def test_transforms():
     # again, to ensure the order of computation is all correct
     # i.e. if rotated would return the transposed matrix this would not work
     # out (the translation part would be incorrect)
-    new_xfm = (xfm * rotate(180, (1, 0, 0)) * rotate(-90, (0, 1, 0)) *
-               rotate(90, (0, 0, 1)) * rotate(90, (0, 1, 0)) *
-               rotate(90, (1, 0, 0)))
+    new_xfm = xfm.dot(rotate(180, (1, 0, 0)).dot(rotate(-90, (0, 1, 0))))
+    new_xfm = new_xfm.dot(rotate(90, (0, 0, 1)).dot(rotate(90, (0, 1, 0))))
+    new_xfm = new_xfm.dot(rotate(90, (1, 0, 0)))
     assert_allclose(xfm, new_xfm)
 
-    new_xfm = translate((1, -1, 1)) * translate((-1, 1, -1)) * xfm
+    new_xfm = translate((1, -1, 1)).dot(translate((-1, 1, -1))).dot(xfm)
     assert_allclose(xfm, new_xfm)
 
-    new_xfm = scale((1, 2, 3)) * scale((1, 1. / 2., 1. / 3.)) * xfm
+    new_xfm = scale((1, 2, 3)).dot(scale((1, 1. / 2., 1. / 3.))).dot(xfm)
     assert_allclose(xfm, new_xfm)
 
     # These could be more complex...

@@ -137,8 +137,8 @@ class Canvas(app.Canvas):
         if not self.stop_rotation:
             self.theta += .05
             self.phi += .05
-            self.model = (rotate(self.theta, (0, 0, 1)) *
-                          rotate(self.phi, (0, 1, 0)))
+            self.model = np.dot(rotate(self.theta, (0, 0, 1)),
+                                rotate(self.phi, (0, 1, 0)))
             self.program['u_model'] = self.model
         self.clock += np.pi / 100
         self.program['u_clock'] = self.clock

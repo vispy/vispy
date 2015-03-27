@@ -164,8 +164,8 @@ class Canvas(app.Canvas):
     def on_timer(self, event):
         self.theta += .11
         self.phi += .13
-        self.model = (rotate(self.theta, (0, 0, 1)) *
-                      rotate(self.phi, (0, 1, 0)))
+        self.model = np.dot(rotate(self.theta, (0, 0, 1)),
+                            rotate(self.phi, (0, 1, 0)))
         self.program['u_model'] = self.model
         self.update()
 
@@ -173,7 +173,7 @@ class Canvas(app.Canvas):
         self.apply_zoom()
 
     def on_mouse_wheel(self, event):
-        self.translate += event.delta[1]
+        self.translate -= event.delta[1]
         self.translate = max(2, self.translate)
         self.view = translate((0, 0, -self.translate))
         self.program['u_view'] = self.view

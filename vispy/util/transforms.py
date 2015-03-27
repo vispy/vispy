@@ -2,9 +2,6 @@
 # -*- coding: utf-8 -*-
 """
 Very simple transformation library that is needed for some examples.
-
-Note that functions that take a matrix as input generally operate on that
-matrix in place.
 """
 
 from __future__ import division
@@ -27,15 +24,15 @@ def translate(offset, dtype=None):
 
     Returns
     -------
-    M : matrix
+    M : ndarray
         Transformation matrix describing the translation.
     """
     assert len(offset) == 3
     x, y, z = offset
-    M = np.matrix([[1., 0., 0., 0.],
-                  [0., 1., 0., 0.],
-                  [0., 0., 1., 0.],
-                  [x, y, z, 1.0]], dtype)
+    M = np.array([[1., 0., 0., 0.],
+                 [0., 1., 0., 0.],
+                 [0., 0., 1., 0.],
+                 [x, y, z, 1.0]], dtype)
     return M
 
 
@@ -51,11 +48,11 @@ def scale(s, dtype=None):
 
     Returns
     -------
-    M : matrix
+    M : ndarray
         Transformation matrix describing the scaling.
     """
     assert len(s) == 3
-    return np.matrix(np.diag(np.concatenate([s, (1.,)])), dtype)
+    return np.array(np.diag(np.concatenate([s, (1.,)])), dtype)
 
 
 def rotate(angle, axis, dtype=None):
@@ -73,10 +70,10 @@ def rotate(angle, axis, dtype=None):
     x, y, z = axis / np.linalg.norm(axis)
     c, s = math.cos(angle), math.sin(angle)
     cx, cy, cz = (1 - c) * x, (1 - c) * y, (1 - c) * z
-    M = np.matrix([[cx * x + c, cy * x - z * s, cz * x + y * s, .0],
-                   [cx * y + z * s, cy * y + c, cz * y - x * s, 0.],
-                   [cx * z - y * s, cy * z + x * s, cz * z + c, 0.],
-                   [0., 0., 0., 1.]], dtype).T
+    M = np.array([[cx * x + c, cy * x - z * s, cz * x + y * s, .0],
+                  [cx * y + z * s, cy * y + c, cz * y - x * s, 0.],
+                  [cx * z - y * s, cy * z + x * s, cz * z + c, 0.],
+                  [0., 0., 0., 1.]], dtype).T
     return M
 
 
@@ -100,7 +97,7 @@ def ortho(left, right, bottom, top, znear, zfar):
 
     Returns
     -------
-    M : array
+    M : ndarray
         Orthographic projection matrix (4x4).
     """
     assert(right != left)
@@ -115,7 +112,7 @@ def ortho(left, right, bottom, top, znear, zfar):
     M[2, 2] = -2.0 / (zfar - znear)
     M[3, 2] = -(zfar + znear) / float(zfar - znear)
     M[3, 3] = 1.0
-    return np.matrix(M)
+    return M
 
 
 def frustum(left, right, bottom, top, znear, zfar):
@@ -138,7 +135,7 @@ def frustum(left, right, bottom, top, znear, zfar):
 
     Returns
     -------
-    M : array
+    M : ndarray
         View frustum matrix (4x4).
     """
     assert(right != left)
@@ -153,7 +150,7 @@ def frustum(left, right, bottom, top, znear, zfar):
     M[2, 2] = -(zfar + znear) / float(zfar - znear)
     M[3, 2] = -2.0 * znear * zfar / float(zfar - znear)
     M[2, 3] = -1.0
-    return np.matrix(M)
+    return M
 
 
 def perspective(fovy, aspect, znear, zfar):
@@ -172,7 +169,7 @@ def perspective(fovy, aspect, znear, zfar):
 
     Returns
     -------
-    M : array
+    M : ndarray
         Perspective projection matrix (4x4).
     """
     assert(znear != zfar)
@@ -198,4 +195,4 @@ def affine_map(points1, points2):
         # solve Ax = B; x is one row of the desired transformation matrix
         matrix[i] = np.linalg.solve(A, B[:, i])
 
-    return np.matrix(matrix)
+    return matrix
