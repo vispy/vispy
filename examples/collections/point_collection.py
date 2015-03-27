@@ -14,7 +14,7 @@ gloo.set_state("translucent", depth_test=False)
 
 panzoom = PanZoomTransform(canvas)
 
-points = PointCollection("raw", color="shared", transform=panzoom)
+points = PointCollection("agg", color="shared", transform=panzoom)
 points.append(np.random.normal(0.0, 0.5, (10000, 3)), itemsize=5000)
 points["color"] = (1, 0, 0, 1), (0, 0, 1, 1)
 points.update.connect(canvas.update)

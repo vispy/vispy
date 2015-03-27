@@ -38,16 +38,14 @@ class AggPointCollection(RawPointCollection):
         fragment: string
             Fragment  shader code
 
-        transform : string
-            GLSL Transform code defining the vec4 transform(vec3) function
+        transform : Transform instance
+            Used to define the GLSL transform(vec4) function
 
         color : string
             'local', 'shared' or 'global'
         """
         if vertex is None:
             vertex = glsl.get("collections/agg-point.vert")
-        if transform is None:
-            transform = "vec4 transform(vec3 position) {return vec4(position,1.0);}"  # noqa
         if fragment is None:
             fragment = glsl.get("collections/agg-point.frag")
 
