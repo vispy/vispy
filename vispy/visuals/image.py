@@ -7,10 +7,12 @@ from __future__ import division
 import numpy as np
 
 from .. import gloo
+from ..color import get_colormap
 from .transforms import STTransform, NullTransform
 from .modular_mesh import ModularMesh
 from .components import (TextureComponent, VertexTextureCoordinateComponent,
                          TextureCoordinateComponent)
+from ..ext.six import string_types
 
 
 class ImageVisual(ModularMesh):
@@ -18,8 +20,8 @@ class ImageVisual(ModularMesh):
 
     Parameters
     ----------
-    data : (height, width, 4) ubyte array
-        ImageVisual data.
+    data : ndarray
+        ImageVisual data. Can be shape (M, N), (M, N, 3), or (M, N, 4).
     method : str
         Selects method of rendering image in case of non-linear transforms.
         Each method produces similar results, but may trade efficiency
@@ -36,9 +38,22 @@ class ImageVisual(ModularMesh):
     grid: tuple (rows, cols)
         If method='subdivide', this tuple determines the number of rows and
         columns in the image grid.
+    cmap : str | ColorMap
+        Colormap to use for luminance images.
+    clim : str | tuple
+        Limits to use for the colormap. Can be 'auto' to auto-set bounds to
+        the min and max of the data.
+
+    Notes
+    -----
+    The colormap functionality through ``cmap`` and ``clim`` are only used
+    if the data are of shape (N, M).
     """
-    def __init__(self, data, method='subdivide', grid=(10, 10), **kwargs):
+    def __init__(self, data, method='subdivide', grid=(10, 10), 
+                 cmap='grey', clim='auto', **kwargs):
         super(ImageVisual, self).__init__(**kwargs)
+        self.clim = clim
+        self.colormap = cmap
 
         self._data = None
 
@@ -50,8 +65,8 @@ class ImageVisual(ModularMesh):
         self.set_data(data)
         self.set_gl_options(cull_face=('front_and_back',))
 
-        self.method = method
-        self.grid = grid
+        self._method = method
+        self._grid = grid
 
     def set_data(self, image=None, **kwargs):
         if image is not None:
@@ -61,6 +76,29 @@ class ImageVisual(ModularMesh):
             self._data = image
             self._texture = None
         super(ImageVisual, self).set_data(**kwargs)
+
+    @property
+    def clim(self):
+        return tuple(self._clim)
+
+    @clim.setter
+    def clim(self, clim):
+        if isinstance(clim, string_types):
+            if clim != 'auto':
+                raise ValueError('clim must be "auto" if a string')
+        else:
+            clim = np.array(clim, float)
+            if clim.shape != (2,):
+                raise ValueError('clim must have two elements')
+        self._clim = clim
+
+    @property
+    def colormap(self):
+        return self._colormap
+
+    @colormap.setter
+    def colormap(self, cmap):
+        self._colormap = get_colormap(cmap)
 
     @property
     def interpolation(self):
@@ -82,8 +120,8 @@ class ImageVisual(ModularMesh):
             method = 'subdivide'
             grid = (1, 1)
         else:
-            method = self.method
-            grid = self.grid
+            method = self._method
+            grid = self._grid
         
         # TODO: subdivision and impostor modes should be handled by new
         # components?
@@ -129,6 +167,17 @@ class ImageVisual(ModularMesh):
             raise ValueError("Unknown image draw method '%s'" % method)
 
         data = self._data
+        if data.ndim == 2 or data.shape[3] == 1:
+            # deal with clim on CPU b/c of texture depth limits :(
+            # can eventually do this by simulating 32-bit float... maybe
+            clim = self._clim
+            if isinstance(clim, string_types) and clim == 'auto':
+                clim = np.min(data), np.max(data)
+            data -= clim[0]
+            if clim[1] - clim[0] > 0:
+                data /= clim[1] - clim[0]
+        # XXX do something with the shader here for the cmap, including
+        # doing nothing for textures w/color data
         self._texture = gloo.Texture2D(data)
         self._texture.interpolation = self._interpolation
 
@@ -152,7 +201,7 @@ class ImageVisual(ModularMesh):
         if transforms.get_full_transform().Linear:
             method = 'subdivide'
         else:
-            method = self.method
+            method = self._method
 
         # always have to rebuild for impostor, only first for subdivide
         if self._texture is None:

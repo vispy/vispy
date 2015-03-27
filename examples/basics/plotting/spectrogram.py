@@ -13,8 +13,9 @@ from vispy import plot as vp
 # XXX replace with an actual sound file
 fs = 44100
 N = 10000
-data = 100 * np.random.RandomState(0).randn(N)
 t = np.arange(N) / float(fs)
+f0, f1 = 10., 10000.
+data = np.sin(2 * np.pi * (f0 + (f1 - f0) * t / t[-1]) * t)
 
 fig = vp.Fig(show=False, size=(800, 400))
 fig[0:2, 0].spectrogram(data)

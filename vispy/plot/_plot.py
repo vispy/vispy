@@ -76,8 +76,8 @@ class _PlotWidget(widgets.ViewBox):
         self.camera = cameras.PanZoomCamera()
         return line
         
-    def image(self, data):
-        image = visuals.Image(data)
+    def image(self, data, cmap='cubehelix', clim='auto'):
+        image = visuals.Image(data, cmap=cmap, clim=clim)
         self.add(image)
         self.camera = cameras.PanZoomCamera(aspect=1)
         return image
