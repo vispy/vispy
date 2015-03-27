@@ -36,6 +36,7 @@ pos[:, 1] = np.clip(np.random.normal(size=N, scale=100, loc=canvas_size[1] / 2.)
 
 
 class Canvas(app.Canvas):
+
     def __init__(self):
         app.Canvas.__init__(self, keys='interactive',
                             size=canvas_size)
@@ -44,7 +45,7 @@ class Canvas(app.Canvas):
                                            face_color=(0.2, 0.2, 1))
 
         self.axis_x = visuals.AxisVisual(extents=extents_x, domain=(0, 100))
-        # self.axis_y = visuals.AxisVisual(extents=extents_y, domain=(5, 7.5))
+        self.axis_y = visuals.AxisVisual(extents=extents_y, domain=(5, 7.5))
 
         self.tr_sys = visuals.transforms.TransformSystem(self)
 
@@ -55,7 +56,7 @@ class Canvas(app.Canvas):
         gloo.set_viewport(0, 0, *self.physical_size)
 
         self.axis_x.draw(self.tr_sys)
-        # self.axis_y.draw(self.tr_sys)
+        self.axis_y.draw(self.tr_sys)
 
         self.axis_x.draw_ticks(self.tr_sys)
 
