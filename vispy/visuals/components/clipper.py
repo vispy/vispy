@@ -36,7 +36,11 @@ class Clipper(object):
         
     def _attach(self, visual):
         self._visual = visual
-        hook = self._visual._get_hook('frag', 'pre')
+        try:
+            hook = self._visual._get_hook('frag', 'pre')
+        except KeyError:
+            raise NotImplementedError("Visual %s does not support clipping" %
+                                      visual)
         hook.add(self.clip_expr)
 
     def set_transform(self, tr):
