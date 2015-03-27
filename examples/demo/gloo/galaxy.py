@@ -120,15 +120,14 @@ class Canvas(app.Canvas):
         self.title = "A very fake galaxy [mouse scroll to zoom]"
 
         data = np.zeros(n, [('a_position', np.float32, 3),
-                    ('a_size', np.float32, 1),
-                    ('a_dist', np.float32, 1)])
-        
+                        ('a_size', np.float32, 1),
+                        ('a_dist', np.float32, 1)])
+
         for i in range(3):
             P, S, D = make_arm(p, i * 2 * np.pi / 3)
             data['a_dist'][(i + 0) * p:(i + 1) * p] = D
             data['a_position'][(i + 0) * p:(i + 1) * p] = P
             data['a_size'][(i + 0) * p:(i + 1) * p] = S*ps
-
 
         self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
         self.view = np.eye(4, dtype=np.float32)

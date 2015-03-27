@@ -62,7 +62,7 @@ faces_buffer = gloo.IndexBuffer(faces.astype(np.uint16))
 class Canvas(app.Canvas):
 
     def __init__(self, **kwargs):
-        app.Canvas.__init__(self, size=(400,400), **kwargs)
+        app.Canvas.__init__(self, size=(400, 400), **kwargs)
 
         self.program = gloo.Program(VERT_CODE, FRAG_CODE)
 

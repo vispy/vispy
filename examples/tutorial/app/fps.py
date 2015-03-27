@@ -19,8 +19,8 @@ class Canvas(app.Canvas):
         app.Canvas.__init__(self, *args, **kwargs)
         self._timer = app.Timer('auto', connect=self.on_timer, start=True)
         self.tick = 0
-
         self.show()
+
     def on_draw(self, event):
         gloo.clear(color=True)
 

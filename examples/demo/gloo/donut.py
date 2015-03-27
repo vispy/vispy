@@ -123,7 +123,6 @@ class Canvas(app.Canvas):
         data['a_size'] = 8.0*ps
         u_linewidth = 1.0*ps
         u_antialias = 1.0
-        u_size = 1
 
         self.program = gloo.Program(vert, frag)
         self.view = np.eye(4, dtype=np.float32)

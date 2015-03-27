@@ -230,7 +230,6 @@ class Canvas(app.Canvas):
         data['a_size'] = np.random.uniform(5*ps, 10*ps, n)
         u_linewidth = 1.0
         u_antialias = 1.0
-        u_size = 1
 
         self.program = gloo.Program(vert, frag)
         self.view = np.eye(4, dtype=np.float32)
@@ -294,7 +293,6 @@ class Canvas(app.Canvas):
         self.projection = perspective(45.0, self.size[0] /
                                       float(self.size[1]), 1.0, 1000.0)
         self.program['u_projection'] = self.projection
-
 
 
 if __name__ == '__main__':

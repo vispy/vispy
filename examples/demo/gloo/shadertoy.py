@@ -122,7 +122,8 @@ class Canvas(app.Canvas):
 
     def activate_zoom(self):
         gloo.set_viewport(0, 0, *self.physical_size)
-        self.program['iResolution'] = (self.physical_size[0], self.physical_size[1], 0.)
+        self.program['iResolution'] = (self.physical_size[0],
+                                       self.physical_size[1], 0.)
 
 # -------------------------------------------------------------------------
 # COPY-PASTE SHADERTOY CODE BELOW
