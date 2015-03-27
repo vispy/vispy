@@ -25,56 +25,47 @@ fragment = """
 uniform vec2 resolution;
 uniform vec2 center;
 uniform float scale;
-uniform int iter;
 
-// Jet color scheme
-vec4 color_scheme(float x) {
-    vec3 a, b;
-    float c;
-    if (x < 0.34) {
-        a = vec3(0, 0, 0.5);
-        b = vec3(0, 0.8, 0.95);
-        c = (x - 0.0) / (0.34 - 0.0);
-    } else if (x < 0.64) {
-        a = vec3(0, 0.8, 0.95);
-        b = vec3(0.85, 1, 0.04);
-        c = (x - 0.34) / (0.64 - 0.34);
-    } else if (x < 0.89) {
-        a = vec3(0.85, 1, 0.04);
-        b = vec3(0.96, 0.7, 0);
-        c = (x - 0.64) / (0.89 - 0.64);
-    } else {
-        a = vec3(0.96, 0.7, 0);
-        b = vec3(0.5, 0, 0);
-        c = (x - 0.89) / (1.0 - 0.89);
-    }
-    return vec4(mix(a, b, c), 1.0);
+vec3 hot(float t)
+{
+    return vec3(smoothstep(0.00,0.33,t),
+                smoothstep(0.33,0.66,t),
+                smoothstep(0.66,1.00,t));
 }
 
-void main() {
-    vec2 z, c;
+void main()
+{
+    
+    const int n = 300;
+    const float log_2 = 0.6931471805599453;
+
+    vec2 c;
 
     // Recover coordinates from pixel coordinates
     c.x = (gl_FragCoord.x / resolution.x - 0.5) * scale + center.x;
     c.y = (gl_FragCoord.y / resolution.y - 0.5) * scale + center.y;
 
-    // Main Mandelbrot computation
+    float x, y, d;
     int i;
-    z = c;
-    for(i = 0; i < iter; i++) {
-        float x = (z.x * z.x - z.y * z.y) + c.x;
-        float y = (z.y * z.x + z.x * z.y) + c.y;
-
-        if((x * x + y * y) > 4.0) break;
-        z.x = x;
-        z.y = y;
+    vec2 z = c;
+    for(i = 0; i < n; ++i)
+    {
+        x = (z.x*z.x - z.y*z.y) + c.x;
+        y = (z.y*z.x + z.x*z.y) + c.y;
+        d = x*x + y*y;
+        if (d > 4.0) break;
+        z = vec2(x,y);
     }
-
-    // Convert iterations to color
-    float color = 1.0 - float(i) / float(iter);
-    gl_FragColor = color_scheme(color);
-
+    if ( i < n ) {
+        float nu = log(log(sqrt(d))/log_2)/log_2;
+        float index = float(i) + 1.0 - nu;
+        float v = pow(index/float(n),0.5);
+        gl_FragColor = vec4(hot(v),1.0);
+    } else {
+        gl_FragColor = vec4(hot(0.0),1.0);
+    }
 }
+
 """
 
 
@@ -93,7 +84,6 @@ class Canvas(app.Canvas):
 
         self.scale = self.program["scale"] = 3
         self.center = self.program["center"] = [-0.5, 0]
-        self.iterations = self.program["iter"] = 300
         self.apply_zoom()
 
         self.bounds = [-2, 2]
