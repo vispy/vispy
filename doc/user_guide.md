@@ -145,7 +145,7 @@ app.run()
 
 Now that we can display windows, let's get started with OpenGL.
 
-> This paragraph comes mostly from the [IPython Cookbook](ipython-books.github.io/featured-06/).
+> This paragraph comes mostly from the [IPython Cookbook](https://ipython-books.github.io/featured-06/).
 
 The **rendering pipeline** defines how data is processed on the GPU for rendering.
 
@@ -170,9 +170,7 @@ In `vispy.gloo`, a Program is created with the vertex and fragment shaders. Then
 
 Similarly, we could declare and set uniforms and textures in our program.
 
-Finally, `program.draw()` renders the data using the specified primitive type. Here, the line_strip primitive type tells the GPU to run through all vertices (as returned by the vertex buffer) and to draw a line segment from one point to the next. If there are `n` points, there will be `n-1` line segments.
-
-Other primitive types include points and triangles, with several ways of generating lines or triangles from a list of vertices.
+Finally, `program.draw()` renders the data using the specified primitive type (point, line, or triangle).
 
 In addition, an index buffer may be provided. An index buffer contains indices pointing to the vertex buffers. Using an index buffer would allow us to reuse any vertex multiple times during the primitive assembly stage. For example, when rendering a cube with a triangles primitive type (one triangle is generated for every triplet of points), we could use a vertex buffer with 8 data points and an index buffer with 36 indices (3 points per triangle, 2 triangles per face, 6 faces).
 
