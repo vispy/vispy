@@ -76,6 +76,7 @@ try:
         glfw.GLFW_KEY_F11: keys.F11,
         glfw.GLFW_KEY_F12: keys.F12,
 
+        glfw.GLFW_KEY_SPACE: keys.SPACE,
         glfw.GLFW_KEY_ENTER: keys.ENTER,
         '\r': keys.ENTER,
         glfw.GLFW_KEY_TAB: keys.TAB,
@@ -451,10 +452,10 @@ class CanvasBackend(BaseCanvasBackend):
         fun(key=key, text=text, modifiers=self._mod)
 
     def _process_key(self, key):
-        if key in KEYMAP:
-            return KEYMAP[key], ''
-        elif 32 <= key <= 127:
+        if 32 <= key <= 127:
             return keys.Key(chr(key)), chr(key)
+        elif key in KEYMAP:
+            return KEYMAP[key], ''
         else:
             return None, ''
 

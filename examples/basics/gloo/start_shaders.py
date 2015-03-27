@@ -8,11 +8,11 @@ import numpy as np
 
 VERT_SHADER = """
 attribute vec2 a_position;
-uniform float a_size;
+uniform float u_size;
 
 void main() {
     gl_Position = vec4(a_position, 0.0, 1.0);
-    gl_PointSize = a_size;
+    gl_PointSize = u_size;
 }
 """
 
@@ -32,7 +32,7 @@ class Canvas(app.Canvas):
         self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
         data = np.random.uniform(-0.5, 0.5, size=(20, 2))
         self.program['a_position'] = data.astype(np.float32)
-        self.program['a_size'] = 20.*ps
+        self.program['u_size'] = 20.*ps
 
         self.show()
 
