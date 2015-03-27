@@ -404,7 +404,7 @@ class VolumeVisual(Visual):
                          ('a_texcoord', np.float32, 3), ]
     
     def __init__(self, vol, clim=None, style='mip', threshold=None, 
-                 relative_step_size=0.8, cmap='grays', emulated3d=True):
+                 relative_step_size=0.8, cmap='grays', emulated3d=False):
         Visual.__init__(self)
 
         if emulated3d:

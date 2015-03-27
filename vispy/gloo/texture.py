@@ -523,18 +523,6 @@ class Texture3D(BaseTexture):
         """
         return 'texture3D'
 
-def unblockshaped(arr, h, w):
-    """
-    Return an array of shape (h, w) where
-    h * w = arr.size
-
-    If arr is of shape (n, nrows, ncols), n sublocks of shape (nrows, ncols),
-    then the returned array preserves the "physical" layout of the sublocks.
-    """
-    n, nrows, ncols = arr.shape
-    return (arr.reshape(h//nrows, -1, nrows, ncols)
-               .swapaxes(1,2)
-               .reshape(h, w))
 
 # ------------------------------------------------------ TextureEmulated3D class ---
 class TextureEmulated3D(Texture2D):
