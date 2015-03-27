@@ -532,49 +532,88 @@ class TextureEmulated3D(Texture2D):
     """
 
     # Taken from https://www.khronos.org/webgl/wiki/WebGL_and_OpenGL_Differences
-    _glsl_sample = """
-    vec4 sample(sampler2D tex, vec3 texCoord) {
-        float sliceSize = 1.0 / $depth; // space of 1 slice
-        float slicePixelSize = sliceSize / $depth; // space of 1 pixel
-        float sliceInnerSize = slicePixelSize * ($depth - 1.0); // space of depth pixels
-        float zSlice0 = min(floor(texCoord.z * $depth), $depth - 1.0);
-        float zSlice1 = min(zSlice0 + 1.0, $depth - 1.0);
-        float xOffset = slicePixelSize * 0.5 + texCoord.x * sliceInnerSize;
-        float s0 = xOffset + (zSlice0 * sliceSize);
-        float s1 = xOffset + (zSlice1 * sliceSize);
-        vec4 slice0Color = texture2D(tex, vec2(s0, texCoord.y));
-        vec4 slice1Color = texture2D(tex, vec2(s1, texCoord.y));
-        float zOffset = mod(texCoord.z * $depth, 1.0);
+    _glsl_sample = """ 
+    vec4 sampleAs3DTexture(sampler2D tex, vec3 texCoord) {
+        vec3 t = texCoord.xyz;
+
+        float slice   = t.z * $size;
+        float sliceZ  = floor(slice);                         // slice we need
+        float zOffset = fract(slice);                         // dist between slices
+ 
+        vec2 sliceSize = vec2(1.0 / $slicePerRow,             // u space of 1 slice
+                        1.0 / $numRows);                 // v space of 1 slice
+ 
+        vec2 slice0Offset = sliceSize * vec2(mod(sliceZ, $slicePerRow), floor(sliceZ / $slicePerRow));
+        vec2 slice1Offset = sliceSize * vec2(mod(sliceZ + 1.0, $slicePerRow), floor((sliceZ + 1.0) / $slicePerRow));
+
+        vec2 slicePixelSize = sliceSize / $size;               // space of 1 pixel
+        vec2 sliceInnerSize = slicePixelSize * ($size - 1.0);  // space of size pixels
+ 
+        vec2 uv = slicePixelSize * 0.5 + t.xy * sliceInnerSize;
+        vec4 slice0Color = texture2D(tex, slice0Offset + uv);
+        vec4 slice1Color = texture2D(tex, slice1Offset + uv);
         return mix(slice0Color, slice1Color, zOffset);
+        return slice0Color;
     }
     """
+
 
     def __init__(self, data=None, format=None, **kwargs):
         from ..visuals.shaders import Function 
 
         Texture2D.__init__(self, self._normalize_emulated_shape(data), format, **kwargs)
         self._emulated_shape = data.shape if isinstance(data, np.ndarray) else tuple(data)
+#        self._glsl_offset = Function(self.__class__._glsl_offset)
+ #       self._glsl_offset['slicePerRow'] = self.slicePerRow(self.width)
+
         self._glsl_sample = Function(self.__class__._glsl_sample)
-        self._glsl_sample['depth'] = self.depth
+#        self._glsl_sample['computeSliceOffset'] = self._glsl_offset['slicePerRow']
+        self._glsl_sample['numRows'] = self.numRows(self.width, self.depth)
+        self._glsl_sample['slicePerRow'] = self.slicePerRow(self.width)
+        self._glsl_sample['size'] = self.depth
+
 
     def _normalize_emulated_shape(self, data_or_shape):
         if isinstance(data_or_shape, np.ndarray):
-            data_or_shape = np.transpose(data_or_shape, (1, 0, 2)) # This shouldn't be necessary, but we need to rewrite _glsl_sample
-            data_or_shape = np.reshape(data_or_shape, (data_or_shape.shape[0], data_or_shape.shape[1] * data_or_shape.shape[2]))
+            depth, height, width = data_or_shape.shape
+
+            new_data = np.empty((width * self.slicePerRow(width), height * self.numRows(width, depth)), dtype = data_or_shape.dtype)
+            for i in range(0, self.slicePerRow(width)):
+                for j in range(0, self.numRows(width, depth)):
+                    k = i + j * self.slicePerRow(width)
+                    if (k >= data_or_shape.shape[0]):
+                        break
+                    i0 = i * width
+                    i1 = (i + 1) * width
+                    j0 = j * height
+                    j1 = (j + 1) * height
+                    new_data[i0:i1, j0:j1] = data_or_shape[k]
+            data_or_shape = new_data
         else:
-            data_or_shape = (data_or_shape[1], data_or_shape[0] * data_or_shape[2])
+            depth, height, width = data_or_shape
+
+            data_or_shape = (width * self.slicePerRow(width), height * self.numRows(width, depth))
 
         return data_or_shape
 
     def set_data(self, data, offset=None, copy=False):
         Texture2D.set_data(self, self._normalize_emulated_shape(data), offset, copy)
         self._emulated_shape = data.shape
-        self._glsl_sample['depth'] = self.depth
+ #       self._glsl_offset['slicePerRow'] = self.slicePerRow(self.width)
+#        self._glsl_sample['computeSliceOffset'] = self._glsl_offset['slicePerRow']
+        self._glsl_sample['numRows'] = self.numRows(self.width, self.depth)
+        self._glsl_sample['slicePerRow'] = self.slicePerRow(self.width)
+        self._glsl_sample['size'] = self.depth
 
     def resize(self, shape, format=None, internalformat=None):
         Texture2D.resize(self, self._normalize_emulated_shape(shape), format, internalformat)
         self._emulated_shape = tuple(shape)
-        self._glsl_sample['depth'] = self.depth
+#        self._glsl_offset['slicePerRow'] = self.slicePerRow(self.width)
+ #       self._glsl_sample['computeSliceOffset'] = self._glsl_offset['slicePerRow']
+        self._glsl_sample['numRows'] = self.numRows(self.width, self.depth)
+        self._glsl_sample['slicePerRow'] = self.slicePerRow(self.width)
+        self._glsl_sample['size'] = self.depth
+
 
     @property
     def shape(self):
@@ -596,6 +635,14 @@ class TextureEmulated3D(Texture2D):
     def depth(self):
         """ Texture depth """
         return self._emulated_shape[0]
+
+    def slicePerRow(self, width):
+        max_texture_size = 128
+
+        return max_texture_size // width
+
+    def numRows(self, width, depth):
+        return depth // self.slicePerRow(width) + 1
 
     @property
     def glsl_sample(self):
