@@ -35,7 +35,7 @@ class Canvas(app.Canvas):
         self.lines[0].transform = STTransform(translate=(0, 50))
         
         self.lines[1].transform = STTransform(translate=(400, 50))
-        self.lines[1].attach(Clipper([500, 700, 725, 775]))
+        self.lines[1].attach(Clipper([500, 725, 200, 50]))
         
         self.lines[2].transform = STTransform(translate=(0, 150))
         self.lines[2].attach(Alpha(0.4))
@@ -62,7 +62,7 @@ class Canvas(app.Canvas):
                 """)
             
             def _attach(self, visual):
-                visual._get_hook('frag', 'post').append(self.shader())
+                visual._get_hook('frag', 'post').add(self.shader())
 
         self.lines[4].transform = STTransform(translate=(0, 250))
         self.lines[4].attach(Hatching())

@@ -117,11 +117,15 @@ class Visual(object):
         if key in self._hooks:
             return self._hooks[key]
         
+        prog = getattr(self, '_program', None)
+        if prog is None:
+            raise NotImplementedError("%s shader does not implement hook '%s'"
+                                      % key)
         hook = StatementList()
         if shader == 'vert':
-            self._program.vert[name] = hook
+            prog.vert[name] = hook
         elif shader == 'frag':
-            self._program.frag[name] = hook
+            prog.frag[name] = hook
         self._hooks[key] = hook
         return hook
         

@@ -24,7 +24,7 @@ canvas = scene.SceneCanvas(size=(800, 600), show=True, keys='interactive')
 # First ViewBox uses a 2D pan/zoom camera
 vb1 = scene.widgets.ViewBox(name='vb1', border_color='yellow',
                             parent=canvas.scene)
-vb1.clip_method = 'fbo'
+vb1.clip_method = 'fragment'
 vb1.camera = 'panzoom'
 
 # Second ViewBox uses a 3D perspective camera

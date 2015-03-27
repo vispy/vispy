@@ -1163,6 +1163,13 @@ class StatementList(ShaderObject):
         self.items.append(item)
         self._add_dep(item)
         self.changed(code_changed=True)
+
+    def add(self, item):
+        """Add item to the list unless it is already present in the list.
+        """
+        if item in self.items:
+            return
+        self.append(item)
         
     def remove(self, item):
         self.items.remove(item)

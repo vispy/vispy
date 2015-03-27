@@ -1,5 +1,7 @@
 from ..shaders import Function
 from ..transforms import NullTransform
+from ...geometry import Rect
+
 
 clip_frag = """
 void clip() {
@@ -12,9 +14,12 @@ void clip() {
 
 
 class Clipper(object):
-    def __init__(self, bounds=(0, 1, 0, 1), transform=None):
+    """Clips visual output to a rectangular region.
+    """
+    def __init__(self, bounds=(0, 0, 1, 1), transform=None):
         self.clip_shader = Function(clip_frag)
-        self.bounds = bounds  # (xmin, xmax, ymin, ymax)
+        self.clip_expr = self.clip_shader()
+        self.bounds = bounds  # (x, y, w, h)
         if transform is None:
             transform = NullTransform()
         self.set_transform(transform)
@@ -25,13 +30,14 @@ class Clipper(object):
     
     @bounds.setter
     def bounds(self, b):
-        self._bounds = tuple(b[:4])
-        self.clip_shader['view'] = self._bounds
+        self._bounds = Rect(b).normalized()
+        b = self._bounds
+        self.clip_shader['view'] = (b.left, b.right, b.bottom, b.top)
         
     def _attach(self, visual):
         self._visual = visual
         hook = self._visual._get_hook('frag', 'pre')
-        hook.append(self.clip_shader())
+        hook.add(self.clip_expr)
 
     def set_transform(self, tr):
         self.clip_shader['fb_to_clip'] = tr
