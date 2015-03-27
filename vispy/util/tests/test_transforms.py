@@ -17,9 +17,9 @@ def test_transforms():
     # again, to ensure the order of computation is all correct
     # i.e. if rotated would return the transposed matrix this would not work
     # out (the translation part would be incorrect)
-    new_xfm = (rotate(90, (1, 0, 0)) * rotate(90, (0, 1, 0)) *
-               rotate(90, (0, 0, 1)) * rotate(-90, (0, 1, 0)) *
-               rotate(180, (1, 0, 0))) * xfm
+    new_xfm = (xfm * rotate(180, (1, 0, 0)) * rotate(-90, (0, 1, 0)) *
+               rotate(90, (0, 0, 1)) * rotate(90, (0, 1, 0)) *
+               rotate(90, (1, 0, 0)))
     assert_allclose(xfm, new_xfm)
 
     new_xfm = translate((1, -1, 1)) * translate((-1, 1, -1)) * xfm

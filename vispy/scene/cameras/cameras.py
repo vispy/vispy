@@ -527,7 +527,7 @@ class PanZoomCamera(BaseCamera):
             The center of the view. If not given or None, use the
             current center.
         """
-        assert len(center) in (2, 3)
+        assert len(center) in (2, 3, 4)
         # Get scale factor, take scale ratio into account
         if not isinstance(factor, (tuple, list)):
             factor = factor, factor
@@ -631,7 +631,7 @@ class PanZoomCamera(BaseCamera):
         BaseCamera.viewbox_mouse_event(self, event)
         
         if event.type == 'mouse_wheel':
-            center = self._scene_transform.imap(event.pos)
+            center = np.array(self._scene_transform.imap(event.pos))[0]
             self.zoom(event.delta[1] * self.ZOOM_FACTOR*30, center)
         
         elif event.type == 'mouse_move':
@@ -646,8 +646,8 @@ class PanZoomCamera(BaseCamera):
                 # Translate
                 p1 = np.array(event.last_event.pos)[:2]
                 p2 = np.array(event.pos)[:2]
-                p1s = self._transform.imap(p1)
-                p2s = self._transform.imap(p2)
+                p1s = np.array(self._transform.imap(p1))[0]
+                p2s = np.array(self._transform.imap(p2))[0]
                 self.pan(p1s-p2s)
             
             elif 2 in event.buttons and not modifiers:
@@ -656,7 +656,7 @@ class PanZoomCamera(BaseCamera):
                 p2c = np.array(event.pos)[:2]
                 scale = (p1c-p2c) * np.array([1, -1]) * -self.ZOOM_FACTOR
                 center = self._transform.imap(event.press_event.pos[:2])
-                
+                center = np.array(center)[0]
                 self.zoom(tuple(scale), center) 
     
     def _update_transform(self):
