@@ -38,7 +38,7 @@ class Visual(object):
                                    bounds_change=Event,
                                    )
     
-        self._filters = []
+        self._filters = set()
         
         self._hooks = {}
         
@@ -135,7 +135,7 @@ class Visual(object):
         Each filter modifies the appearance or behavior of the visual.
         """
         filter._attach(self)
-        self._filters.append(filter)
+        self._filters.add(filter)
         
     def detach(self, filter):
         """Detach a filter.

@@ -58,6 +58,7 @@ varying vec3 v_ray;
 varying vec4 v_clipplane;
 
 void main() {
+    $pre
     v_texcoord = a_texcoord;
     gl_Position = $transform(vec4(a_position, 1.0));
     
@@ -82,6 +83,7 @@ void main() {
     cameraposinvol /= u_shape;  // express in texture coords
     v_clipplane.xyz = v_ray;
     v_clipplane.w = dot(v_clipplane.xyz, cameraposinvol);
+    $post
 }
 """
 
@@ -111,7 +113,7 @@ vec4 calculateColor(vec4, vec3, vec3);
 float rand(vec2 co);
 
 void main() {
-    
+    $pre
     // Discart front facing
     //if (!gl_FrontFacing)
     //    discard;
@@ -180,6 +182,7 @@ void main() {
     iproj.z /= iproj.w;
     gl_FragDepth = (iproj.z+1.0)/2.0;
     */
+    $post
 }
 
 
@@ -417,6 +420,10 @@ class VolumeVisual(Visual):
 
         # Create gloo objects
         self._program = ModularProgram(vertex_template, fragment_template)
+        self._program.vert['pre'] = ''
+        self._program.vert['post'] = ''
+        self._program.frag['pre'] = ''
+        self._program.frag['post'] = ''
         self._vbo = None
         self._tex = gloo.Texture3D((10, 10, 10), interpolation='linear', 
                                    wrapping='clamp_to_edge')
