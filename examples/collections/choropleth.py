@@ -3,6 +3,7 @@
 import json
 
 import numpy as np
+from mpl_toolkits.basemap import Basemap
 
 from vispy import app, gloo
 from vispy.util import load_data_file
@@ -25,6 +26,16 @@ def unique_rows(data):
     return data[np.sort(idx)]
 
 
+def proj(lonlat):
+    m = Basemap(llcrnrlon=-100., llcrnrlat=20., 
+                urcrnrlon=20., urcrnrlat=60.,
+                rsphere=(6378137.00, 6356752.3142),
+                resolution='l', projection='merc',
+                lat_0=40., lon_0=-20., lat_ts=20.)
+    x, y = m(lonlat[0], lonlat[1])
+    return np.c_[x, y, np.zeros(len(x))]
+
+
 def add(P, color):
     P = np.array(P)
     if len(P) < 2:
@@ -33,6 +44,7 @@ def add(P, color):
     p = np.zeros((len(P), 3))
     p[:, :2] = P
     p = unique_rows(p)
+    p = proj(p)
     if len(p) > 1:
         paths.append(p, closed=True)
     if len(p) > 2:
