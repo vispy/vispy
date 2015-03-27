@@ -1362,12 +1362,14 @@ class FlyCamera(PerspectiveCamera):
         
         # Calculate auto-roll
         if self.auto_roll:
+            up = {'x': (1, 0, 0), 'y': (0, 1, 0), 'z': (0, 0, 1)}[self.up[1]]
+            up = np.array(up) * {'+': +1, '-': -1}[self.up[0]]
             def angle(p1, p2):
                 return np.arccos(p1.dot(p2))
             #au = angle(pu, (0, 0, 1))
-            ar = angle(pr, (0, 0, 1))
-            al = angle(pl, (0, 0, 1))
-            af = angle(pf, (0, 0, 1))
+            ar = angle(pr, up)
+            al = angle(pl, up)
+            af = angle(pf, up)
             # Roll angle that's off from being leveled (in unit strength)
             roll_angle = math.sin(0.5*(al - ar))
             # Correct for pitch
