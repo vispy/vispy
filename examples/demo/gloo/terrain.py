@@ -11,8 +11,7 @@ and Scipy for Delaunay triangulation
 
 from vispy import gloo
 from vispy import app
-from vispy.util.transforms import perspective, translate, xrotate, yrotate
-from vispy.util.transforms import zrotate
+from vispy.util.transforms import perspective, translate, rotate
 import numpy as np
 from scipy.spatial import Delaunay
 
@@ -110,9 +109,8 @@ class Canvas(app.Canvas):
 
     def __init__(self):
         app.Canvas.__init__(self, keys='interactive')
-
         self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
-        #Sets the view to an appropriate position over the terrain
+        # Sets the view to an appropriate position over the terrain
         self.default_view = np.array([[0.8, 0.2, -0.48, 0],
                                      [-0.5, 0.3, -0.78, 0],
                                      [-0.01, 0.9, -0.3, 0],
@@ -183,12 +181,11 @@ class Canvas(app.Canvas):
         elif(event.text == ' '):
             self.view = self.default_view
 
-        translate(self.view, -self.translate[0], -self.translate[1],
-                  -self.translate[2])
-        xrotate(self.view, self.rotate[0])
-        yrotate(self.view, self.rotate[1])
-        zrotate(self.view, self.rotate[2])
-
+        self.view = self.view.dot(
+            translate(-np.array(self.translate)).dot(
+                rotate(self.rotate[0], (1, 0, 0)).dot(
+                    rotate(self.rotate[1], (0, 1, 0)).dot(
+                        rotate(self.rotate[2], (0, 0, 1))))))
         self.program['u_view'] = self.view
         self.update()
 

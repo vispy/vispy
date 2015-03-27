@@ -93,23 +93,20 @@ class Canvas(app.Canvas):
         self.program.draw('triangles', faces_buffer)
 
     def init_transforms(self):
-        self.view = np.eye(4, dtype=np.float32)
+        self.theta = 0
+        self.phi = 0
+        self.view = translate((0, 0, -5))
         self.model = np.eye(4, dtype=np.float32)
         self.projection = np.eye(4, dtype=np.float32)
 
-        self.theta = 0
-        self.phi = 0
-
-        translate(self.view, 0, 0, -5)
         self.program['u_model'] = self.model
         self.program['u_view'] = self.view
 
     def update_transforms(self, event):
         self.theta += .5
         self.phi += .5
-        self.model = np.eye(4, dtype=np.float32)
-        rotate(self.model, self.theta, 0, 0, 1)
-        rotate(self.model, self.phi, 0, 1, 0)
+        self.model = np.dot(rotate(self.theta, (0, 0, 1)),
+                            rotate(self.phi, (0, 1, 0)))
         self.program['u_model'] = self.model
         self.update()
 

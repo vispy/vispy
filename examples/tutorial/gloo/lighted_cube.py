@@ -91,9 +91,8 @@ class Canvas(app.Canvas):
 
         # Build view, model, projection & normal
         # --------------------------------------
-        self.view = np.eye(4, dtype=np.float32)
+        self.view = translate((0, 0, -5))
         model = np.eye(4, dtype=np.float32)
-        translate(self.view, 0, 0, -5)
         normal = np.array(np.matrix(np.dot(self.view, model)).I.T)
 
         # Build program
@@ -146,10 +145,9 @@ class Canvas(app.Canvas):
     def on_timer(self, event):
         self.theta += .5
         self.phi += .5
-        model = np.eye(4, dtype=np.float32)
-        rotate(model, self.theta, 0, 0, 1)
-        rotate(model, self.phi, 0, 1, 0)
-        normal = np.array(np.matrix(np.dot(self.view, model)).I.T)
+        model = np.dot(rotate(self.theta, (0, 0, 1)),
+                       rotate(self.phi, (0, 1, 0)))
+        normal = np.linalg.inv(np.dot(self.view, model)).T
         self.program['u_model'] = model
         self.program['u_normal'] = normal
         self.update()

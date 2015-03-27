@@ -124,12 +124,11 @@ class Canvas(app.Canvas):
         u_linewidth = 1.0*ps
         u_antialias = 1.0
 
+        self.translate = 5
         self.program = gloo.Program(vert, frag)
-        self.view = np.eye(4, dtype=np.float32)
+        self.view = translate((0, 0, -self.translate))
         self.model = np.eye(4, dtype=np.float32)
         self.projection = np.eye(4, dtype=np.float32)
-        self.translate = 5
-        translate(self.view, 0, 0, -self.translate)
 
         self.program.bind(gloo.VertexBuffer(data))
         self.program['u_linewidth'] = u_linewidth
@@ -160,9 +159,8 @@ class Canvas(app.Canvas):
         if not self.stop_rotation:
             self.theta += .5
             self.phi += .5
-            self.model = np.eye(4, dtype=np.float32)
-            rotate(self.model, self.theta, 0, 0, 1)
-            rotate(self.model, self.phi, 0, 1, 0)
+            self.model = np.dot(rotate(self.theta, (0, 0, 1)),
+                                rotate(self.phi, (0, 1, 0)))
             self.program['u_model'] = self.model
         self.clock += np.pi / 1000
         self.program['u_clock'] = self.clock
@@ -172,10 +170,9 @@ class Canvas(app.Canvas):
         self.apply_zoom()
 
     def on_mouse_wheel(self, event):
-        self.translate += event.delta[1]
+        self.translate -= event.delta[1]
         self.translate = max(2, self.translate)
-        self.view = np.eye(4, dtype=np.float32)
-        translate(self.view, 0, 0, -self.translate)
+        self.view = translate((0, 0, -self.translate))
 
         self.program['u_view'] = self.view
         self.program['u_size'] = 5 / self.translate

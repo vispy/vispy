@@ -105,12 +105,12 @@ class Canvas(app.Canvas):
         app.Canvas.__init__(self, keys='interactive', size=(800, 800))
         self.title = "Atom [zoom with mouse scroll"
 
-        self.program = gloo.Program(vert, frag)
-        self.view = np.eye(4, dtype=np.float32)
-        self.model = np.eye(4, dtype=np.float32)
-        self.apply_zoom()
         self.translate = 6.5
-        translate(self.view, 0, 0, -self.translate)
+        self.program = gloo.Program(vert, frag)
+        self.view = translate((0, 0, -self.translate))
+        self.model = np.eye(4, dtype=np.float32)
+        self.projection = np.eye(4, dtype=np.float32)
+        self.apply_zoom()
 
         self.program.bind(gloo.VertexBuffer(data))
         self.program['u_model'] = self.model
@@ -137,9 +137,8 @@ class Canvas(app.Canvas):
         if not self.stop_rotation:
             self.theta += .05
             self.phi += .05
-            self.model = np.eye(4, dtype=np.float32)
-            rotate(self.model, self.theta, 0, 0, 1)
-            rotate(self.model, self.phi, 0, 1, 0)
+            self.model = np.dot(rotate(self.theta, (0, 0, 1)),
+                                rotate(self.phi, (0, 1, 0)))
             self.program['u_model'] = self.model
         self.clock += np.pi / 100
         self.program['u_clock'] = self.clock
@@ -151,9 +150,7 @@ class Canvas(app.Canvas):
     def on_mouse_wheel(self, event):
         self.translate += event.delta[1]
         self.translate = max(2, self.translate)
-        self.view = np.eye(4, dtype=np.float32)
-        translate(self.view, 0, 0, -self.translate)
-
+        self.view = translate((0, 0, -self.translate))
         self.program['u_view'] = self.view
         self.program['u_size'] = 5 / self.translate
         self.update()

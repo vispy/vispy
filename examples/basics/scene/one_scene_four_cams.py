@@ -14,6 +14,8 @@ each with a different camera.
 # we should probably make iterating over children deterministic, so that
 # an error like this becomes easier to reproduce ...
 
+import sys
+
 from vispy import app, scene, io
 
 canvas = scene.SceneCanvas(keys='interactive')
@@ -64,4 +66,5 @@ if False:
         cube.add_parent(vb.camera)
 
 if __name__ == '__main__':
-    app.run()
+    if sys.flags.interactive != 1:
+        app.run()

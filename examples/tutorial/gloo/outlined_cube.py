@@ -61,9 +61,9 @@ class Canvas(app.Canvas):
 
         # Build view, model, projection & normal
         # --------------------------------------
-        view = np.eye(4, dtype=np.float32)
+        view = translate((0, 0, -5))
         model = np.eye(4, dtype=np.float32)
-        translate(view, 0, 0, -5)
+
         self.program['u_model'] = model
         self.program['u_view'] = view
         self.phi, self.theta = 0, 0
@@ -105,10 +105,8 @@ class Canvas(app.Canvas):
     def on_timer(self, event):
         self.theta += .5
         self.phi += .5
-        model = np.eye(4, dtype=np.float32)
-        rotate(model, self.theta, 0, 0, 1)
-        rotate(model, self.phi, 0, 1, 0)
-        self.program['u_model'] = model
+        self.program['u_model'] = np.dot(rotate(self.theta, (0, 0, 1)),
+                                         rotate(self.phi, (0, 1, 0)))
         self.update()
 
 if __name__ == '__main__':

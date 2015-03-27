@@ -100,11 +100,11 @@ class Canvas(app.Canvas):
                             keys='interactive', size=(1200, 800))
         self.ps = self.pixel_scale
 
-        self.program = gloo.Program(vertex, fragment)
-        self.view = np.eye(4, dtype=np.float32)
-        self.model = np.eye(4, dtype=np.float32)
         self.translate = 40
-        translate(self.view, 0, 0, -self.translate)
+        self.program = gloo.Program(vertex, fragment)
+        self.view = translate((0, 0, -self.translate))
+        self.model = np.eye(4, dtype=np.float32)
+        self.projection = np.eye(4, dtype=np.float32)
 
         self.apply_zoom()
 
@@ -163,11 +163,8 @@ class Canvas(app.Canvas):
     def on_timer(self, event):
         self.theta += .25
         self.phi += .25
-        self.model = np.eye(4, dtype=np.float32)
-
-        rotate(self.model, self.theta, 0, 0, 1)
-        rotate(self.model, self.phi, 0, 1, 0)
-
+        self.model = np.dot(rotate(self.theta, (0, 0, 1)),
+                            rotate(self.phi, (0, 1, 0)))
         self.program['u_model'] = self.model
         self.update()
 
@@ -183,9 +180,7 @@ class Canvas(app.Canvas):
     def on_mouse_wheel(self, event):
         self.translate -= event.delta[1]
         self.translate = max(-1, self.translate)
-        self.view = np.eye(4, dtype=np.float32)
-
-        translate(self.view, 0, 0, -self.translate)
+        self.view = translate((0, 0, -self.translate))
 
         self.program['u_view'] = self.view
         self.update()
