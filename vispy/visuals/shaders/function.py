@@ -1152,3 +1152,25 @@ class FunctionChain(Function):
     def __repr__(self):
         fn = ",\n                ".join(map(repr, self.functions))
         return "<FunctionChain [%s] at 0x%x>" % (fn, id(self))
+
+
+class StatementList(ShaderObject):
+    def __init__(self):
+        self.items = []
+        ShaderObject.__init__(self)
+        
+    def append(self, item):
+        self.items.append(item)
+        self._add_dep(item)
+        self.changed(code_changed=True)
+        
+    def remove(self, item):
+        self.items.remove(item)
+        self._remove_dep(item)
+        self.changed(code_changed=True)
+
+    def expression(self, obj_names):
+        code = ""
+        for item in self.items:
+            code += item.expression(obj_names) + ';\n'
+        return code

@@ -12,13 +12,12 @@ void clip() {
 
 
 class Clipper(object):
-    def __init__(self, visual, bounds=(0, 1, 0, 1), transform=None):
+    def __init__(self, bounds=(0, 1, 0, 1), transform=None):
         self.clip_shader = Function(clip_frag)
         self.bounds = bounds  # (xmin, xmax, ymin, ymax)
         if transform is None:
             transform = NullTransform()
         self.set_transform(transform)
-        self.attach(visual)
     
     @property
     def bounds(self):
@@ -29,9 +28,10 @@ class Clipper(object):
         self._bounds = tuple(b[:4])
         self.clip_shader['view'] = self._bounds
         
-    def attach(self, visual):
+    def _attach(self, visual):
         self._visual = visual
-        self._visual._line_visual._program.frag['clip'] = self.clip_shader()
+        hook = self._visual._get_hook('frag', 'pre')
+        hook.append(self.clip_shader())
 
     def set_transform(self, tr):
         self.clip_shader['fb_to_clip'] = tr

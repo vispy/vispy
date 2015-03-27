@@ -79,9 +79,7 @@ class Canvas(app.Canvas):
             line.tr_sys = tr_sys
 
         
-        c = Clipper(self.lines[5])
-        c.bounds = (100, 300, 0, 800)
-        #c.set_transform(self.lines[5].tr_sys.document_to_framebuffer.inverse)
+        self.lines[5].attach(Clipper(bounds=(100, 300, 0, 800)))
 
         self.show(True)
 

@@ -11,5 +11,5 @@ __all__ = ['ModularProgram', 'Function', 'MainFunction', 'Variable', 'Varying',
 
 from .program import ModularProgram  # noqa
 from .function import (Function, MainFunction, Variable, Varying,  # noqa
-                       FunctionChain)  # noqa
+                       FunctionChain, StatementList)  # noqa
 from .compiler import Compiler  # noqa

@@ -5,7 +5,7 @@
 from __future__ import division
 
 from ..util.event import EmitterGroup, Event
-
+from .shaders import StatementList
 """
 API Issues to work out:
 
@@ -38,6 +38,10 @@ class Visual(object):
                                    bounds_change=Event,
                                    )
     
+        self._filters = []
+        
+        self._hooks = {}
+        
     def _update(self):
         """
         This method is called internally whenever the Visual needs to be 
@@ -101,3 +105,37 @@ class Visual(object):
         Emit an event to inform listeners that this Visual needs to be redrawn.
         """
         self.events.update()
+
+    def _get_hook(self, shader, name):
+        """Return a FunctionChain that Filters may use to modify the program.
+        
+        *shader* should be "frag" or "vert"
+        *name* should be "pre" or "post"
+        """
+        assert name in ('pre', 'post')
+        key = (shader, name)
+        if key in self._hooks:
+            return self._hooks[name]
+        
+        hook = StatementList()
+        if shader == 'vert':
+            self._program.vert[name] = hook
+        elif shader == 'frag':
+            self._program.frag[name] = hook
+        
+        return hook
+        
+    def attach(self, filter):
+        """Attach a Filter to this visual. 
+        
+        Each filter modifies the appearance or behavior of the visual.
+        """
+        filter._attach(self)
+        self._filters.append(filter)
+        
+    def detach(self, filter):
+        """Detach a filter.
+        """
+        self._filters.remove(filter)
+        filter._detach(self)
+    

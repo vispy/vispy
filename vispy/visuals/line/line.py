@@ -108,6 +108,10 @@ class LineVisual(Visual):
         self.mode = mode
 
     @property
+    def _program(self):
+        return self._line_visual._program
+
+    @property
     def antialias(self):
         return self._antialias
 
@@ -263,8 +267,9 @@ class _GLLineVisual(Visual):
         varying vec4 v_color;
         void main()
         {
-            $clip;
+            $pre
             gl_FragColor = v_color;
+            $post
         }
     """
 
@@ -275,21 +280,11 @@ class _GLLineVisual(Visual):
         self._connect_ibo = gloo.IndexBuffer()
         self._connect = None
         
-        self._clipper = None
-
         # Set up the GL program
         self._program = ModularProgram(self.VERTEX_SHADER,
                                        self.FRAGMENT_SHADER)
-        self._program.frag['clip'] = ''
-
-    @property
-    def clipper(self):
-        return self._clipper
-    
-    @clipper.setter
-    def clipper(self, c):
-        self._clipper = c
-        c.attach(self)
+        self._program.frag['pre'] = ''
+        self._program.frag['post'] = ''
 
     def draw(self, transforms):
         # first see whether we can bail out early
