@@ -19,7 +19,7 @@ from vispy.visuals.shaders import Function
 import vispy.util
 
 # vertex positions of data to draw
-N = 200
+N = 400
 pos = np.zeros((N, 2), dtype=np.float32)
 pos[:, 0] = np.linspace(0, 350, N)
 pos[:, 1] = np.random.normal(size=N, scale=20, loc=0)
@@ -49,21 +49,20 @@ class Canvas(app.Canvas):
                 self.shader = Function("""
                     void screen_filter() {
                         float f = gl_FragCoord.x * 0.4 + gl_FragCoord.y;
-                        f = mod(f, 15);
+                        f = mod(f, 20);
                         
-                        if( f < 4.0 ) {
+                        if( f < 5.0 ) {
                             discard;
                         }
                         
-                        if( f < 5.0 ) {
-                            gl_FragColor.g = gl_FragColor.g + 0.2 * (f-2);
+                        if( f < 20.0 ) {
+                            gl_FragColor.g = gl_FragColor.g + 0.05 * (20-f);
                         }
                     }
                 """)
             
             def _attach(self, visual):
-                hook = visual._get_hook('frag', 'post')
-                hook.append(self.shader())
+                visual._get_hook('frag', 'post').append(self.shader())
 
         self.lines[4].transform = STTransform(translate=(0, 250))
         self.lines[4].attach(Hatching())
