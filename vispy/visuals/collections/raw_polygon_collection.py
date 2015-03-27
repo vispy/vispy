@@ -6,25 +6,7 @@
 import numpy as np
 from vispy import glsl
 from . collection import Collection
-from vispy.geometry import Triangulation
-
-
-def triangulate(vertices):
-    n = len(vertices)
-    vertices = np.array(vertices)
-    zmean = vertices[:, 2].mean()
-    vertices_2d = vertices[:, :2]
-    segments = np.repeat(np.arange(n + 1), 2)[1:-1]
-    segments[-2:] = n - 1, 0
-    segments = segments.reshape(len(segments) / 2, 2)
-    T = Triangulation(vertices_2d, segments)
-    T.triangulate()
-    vertices_2d = T.pts
-    triangles = T.tris.ravel()
-    vertices = np.empty((len(vertices_2d), 3))
-    vertices[:, :2] = vertices_2d
-    vertices[:, 2] = zmean
-    return vertices, triangles
+from vispy.geometry import triangulate
 
 
 class RawPolygonCollection(Collection):
