@@ -645,8 +645,8 @@ class PanZoomCamera(BaseCamera):
                 # Translate
                 p1 = np.array(event.last_event.pos)[:2]
                 p2 = np.array(event.pos)[:2]
-                p1s = self._scene_transform.imap(p1)
-                p2s = self._scene_transform.imap(p2)
+                p1s = self._transform.imap(p1)
+                p2s = self._transform.imap(p2)
                 self.pan(p1s-p2s)
             
             elif 2 in event.buttons and not modifiers:
@@ -654,7 +654,7 @@ class PanZoomCamera(BaseCamera):
                 p1c = np.array(event.last_event.pos)[:2]
                 p2c = np.array(event.pos)[:2]
                 scale = (p1c-p2c) * np.array([1, -1]) * -self.ZOOM_FACTOR
-                center = self._scene_transform.imap(event.press_event.pos[:2])
+                center = self._transform.imap(event.press_event.pos[:2])
                 
                 self.zoom(tuple(scale), center) 
     
@@ -663,6 +663,7 @@ class PanZoomCamera(BaseCamera):
         rect = self.rect
         self._real_rect = Rect(rect)
         vbr = self._viewbox.rect.flipped(x=self.flip[0], y=(not self.flip[1]))
+        d = self._get_depth_value()
         
         # apply scale ratio constraint
         if self._aspect is not None:
@@ -688,10 +689,44 @@ class PanZoomCamera(BaseCamera):
         # Apply mapping between viewbox and cam view
         self.transform.set_mapping(self._real_rect, vbr)
         # Scale z, so that the clipping planes are between -alot and +alot
-        self.transform.zoom((1, 1, 1/self._get_depth_value()))
+        self.transform.zoom((1, 1, 1/d))
+        
+        # We've now set self.transform, which represents our 2D
+        # transform When up is +z this is all. In other cases,
+        # self.transform is now set up correctly to allow pan/zoom, but
+        # for the scene we need a different (3D) mapping. When there
+        # is a minus in up, we simply look at the scene from the other
+        # side (as if z was flipped).
+        
+        if self.up == '+z':
+            # Keep it simple, but we need to pass AffineTransform,
+            # because if we toggle to -z and then back to +z, things
+            # work incorrectly (test with flipped_axis.py)
+            # todo: fix this so we can just set to a STTransform
+            thetransform = self.transform * AffineTransform()
+        else:
+            rr = self._real_rect
+            tr = AffineTransform()
+            d = d if (self.up[0] == '+') else -d
+            pp1 = [(vbr.left, vbr.bottom, 0), (vbr.left, vbr.top, 0),
+                   (vbr.right, vbr.bottom, 0), (vbr.left, vbr.bottom, 1)]
+            # Get Mapping
+            if self.up[1] == 'z':
+                pp2 = [(rr.left, rr.bottom, 0), (rr.left, rr.top, 0),
+                       (rr.right, rr.bottom, 0), (rr.left, rr.bottom, d)]
+            elif self.up[1] == 'y':
+                pp2 = [(rr.left, 0, rr.bottom), (rr.left, 0, rr.top),
+                       (rr.right, 0, rr.bottom), (rr.left, d, rr.bottom)]
+            elif self.up[1] == 'x':
+                pp2 = [(0, rr.left, rr.bottom), (0, rr.left, rr.top),
+                       (0, rr.right, rr.bottom), (d, rr.left, rr.bottom)]
+            # Apply
+            tr.set_mapping(np.array(pp2), np.array(pp1))
+            thetransform = tr
+        
         # Set on viewbox
-        self._set_scene_transform(self.transform)
-
+        self._set_scene_transform(thetransform)
+    
 
 class PerspectiveCamera(BaseCamera):
     """ Base class for 3D cameras supporting orthographic and
@@ -1010,7 +1045,7 @@ class TurntableCamera(PerspectiveCamera):
                     self._event_value = self.center
                 dist = (p1 - p2) / w * self._scale_factor
                 dist[1] *= -1
-                #
+                # Black magic part 1: turn 2D into 3D translations
                 sro, saz, sel = list(map(sind, (self._roll, self._azimuth, 
                                                 self._elevation)))
                 cro, caz, cel = list(map(cosd, (self._roll, self._azimuth, 
@@ -1020,9 +1055,11 @@ class TurntableCamera(PerspectiveCamera):
                 dy = (+ dist[0] * (cro * saz - sro * sel * caz) 
                       + dist[1] * (sro * saz + cro * sel * caz))
                 dz = (- dist[0] * sro * cel + dist[1] * cro * cel)
-                #
+                # Black magic part 2: take up-vector and flipping into account
                 ff = self._flip_factors
-                dx, dy, dz = ff[0] * dx, ff[1] * dy, ff[2] * dz
+                up, forward, right = self._get_dim_vectors()
+                dx, dy, dz = right * dx + forward * dy + up * dz
+                dx, dy, dz = ff[0] * dx, ff[1] * dy, dz * ff[2]
                 c = self._event_value
                 self.center = c[0] + dx, c[1] + dy, c[2] + dz
             
@@ -1045,19 +1082,32 @@ class TurntableCamera(PerspectiveCamera):
         with ch_em.blocker(self._update_transform):
             tr = self.transform
             tr.reset()
-            if self.up[1] == 'y':
-                tr.translate((0.0, 0.0, -self._actual_distance))
-                tr.rotate(self.elevation, (-1, 0, 0))
-                tr.rotate(self.azimuth, (0, 1, 0))
-            elif self.up[1] == 'z':
-                tr.rotate(90, (1, 0, 0))
-                tr.translate((0.0, -self._actual_distance, 0.0))
-                tr.rotate(self.elevation, (-1, 0, 0))
-                tr.rotate(self.azimuth, (0, 0, 1))
-            # todo: support -z, -y, +x, -x
             
+            up, forward, right = self._get_dim_vectors()
+            
+            # Create mapping so correct dim is up
+            pp1 = np.array([(0, 0, 0), (0, 0, -1), (1, 0, 0), (0, 1, 0)])
+            pp2 = np.array([(0, 0, 0), forward, right, up])
+            tr.set_mapping(pp1, pp2)
+            
+            tr.translate(-self._actual_distance * np.array(forward))
+            tr.rotate(self.elevation, -right)
+            tr.rotate(self.azimuth, up)
             tr.scale([1.0/a for a in self._flip_factors])
             tr.translate(np.array(self.center))
+    
+    def _get_dim_vectors(self):
+        # Specify up and forward vector
+        M = {'+z': [(0, 0, +1), (0, 1, 0)],
+             '-z': [(0, 0, -1), (0, 1, 0)],
+             '+y': [(0, +1, 0), (1, 0, 0)],
+             '-y': [(0, -1, 0), (1, 0, 0)],
+             '+x': [(+1, 0, 0), (0, 0, 1)],
+             '-x': [(-1, 0, 0), (0, 0, 1)],
+             }
+        up, forward = M[self.up]
+        right = np.cross(forward, up)
+        return np.array(up), np.array(forward), right
     
     def _update_projection_transform(self, fx, fy):
         d = self._get_depth_value()
@@ -1347,12 +1397,15 @@ class FlyCamera(PerspectiveCamera):
         
         # Calculate auto-roll
         if self.auto_roll:
+            up = {'x': (1, 0, 0), 'y': (0, 1, 0), 'z': (0, 0, 1)}[self.up[1]]
+            up = np.array(up) * {'+': +1, '-': -1}[self.up[0]]
+            
             def angle(p1, p2):
                 return np.arccos(p1.dot(p2))
             #au = angle(pu, (0, 0, 1))
-            ar = angle(pr, (0, 0, 1))
-            al = angle(pl, (0, 0, 1))
-            af = angle(pf, (0, 0, 1))
+            ar = angle(pr, up)
+            al = angle(pl, up)
+            af = angle(pf, up)
             # Roll angle that's off from being leveled (in unit strength)
             roll_angle = math.sin(0.5*(al - ar))
             # Correct for pitch
