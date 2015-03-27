@@ -176,7 +176,7 @@ class Canvas(app.Canvas):
         # setup the new viewport
         gloo.set_viewport(0, 0, *event.physical_size)
         # recompute the projection matrix
-        w, h= event.size
+        w, h = event.size
         self.projection = perspective(45.0, w / float(h),
                                       1.0, 1000.0)
         self.program['u_projection'] = self.projection
