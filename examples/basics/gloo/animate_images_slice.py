@@ -73,14 +73,8 @@ void main()
 
 class Canvas(app.Canvas):
 
-<<<<<<< HEAD
-    def __init__(self):
-        app.Canvas.__init__(self, keys='interactive', size=((W*5), (H*5)))
-=======
     def __init__(self, emulate3d=True):
-        app.Canvas.__init__(self, keys='interactive')
-        self.size = W * 5, H * 5
->>>>>>> Fixed Flake, plus a couple of other things
+        app.Canvas.__init__(self, keys='interactive', size=((W*5), (H*5)))
 
         if emulate3d:
             tex_cls = gloo.TextureEmulated3D
