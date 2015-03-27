@@ -527,6 +527,7 @@ class PanZoomCamera(BaseCamera):
             The center of the view. If not given or None, use the
             current center.
         """
+        assert len(center) in (2, 3)
         # Get scale factor, take scale ratio into account
         if not isinstance(factor, (tuple, list)):
             factor = factor, factor

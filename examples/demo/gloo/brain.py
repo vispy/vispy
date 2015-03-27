@@ -116,7 +116,7 @@ class Canvas(app.Canvas):
 
     def update_matrices(self):
         self.view = translate((0, 0, -self.translate))
-        self.model = (rotate(self.theta, (-1, 0, 0)) *
+        self.model = (rotate(self.theta, (1, 0, 0)) *
                       rotate(self.phi, (0, 1, 0)))
         self.projection = np.eye(4, dtype=np.float32)
         self.program['u_model'] = self.model

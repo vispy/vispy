@@ -30,11 +30,12 @@ def translate(offset, dtype=None):
     M : matrix
         Transformation matrix describing the translation.
     """
+    assert len(offset) == 3
     x, y, z = offset
-    M = np.matrix([[1.0, 0.0, 0.0, x],
-                  [0.0, 1.0, 0.0, y],
-                  [0.0, 0.0, 1.0, z],
-                  [0.0, 0.0, 0.0, 1.0]], dtype).T
+    M = np.matrix([[1., 0., 0., 0.],
+                  [0., 1., 0., 0.],
+                  [0., 0., 1., 0.],
+                  [x, y, z, 1.0]], dtype)
     return M
 
 
@@ -53,7 +54,8 @@ def scale(s, dtype=None):
     M : matrix
         Transformation matrix describing the scaling.
     """
-    return np.matrix(np.diag(s + (1.,)), dtype)
+    assert len(s) == 3
+    return np.matrix(np.diag(np.concatenate([s, (1.,)])), dtype)
 
 
 def rotate(angle, axis, dtype=None):
@@ -67,13 +69,14 @@ def rotate(angle, axis, dtype=None):
         The x, y, z coordinates of the axis direction vector.
     """
     angle = np.radians(angle)
+    assert len(axis) == 3
     x, y, z = axis / np.linalg.norm(axis)
     c, s = math.cos(angle), math.sin(angle)
     cx, cy, cz = (1 - c) * x, (1 - c) * y, (1 - c) * z
     M = np.matrix([[cx * x + c, cy * x - z * s, cz * x + y * s, .0],
                    [cx * y + z * s, cy * y + c, cz * y - x * s, 0.],
                    [cx * z - y * s, cy * z + x * s, cz * z + c, 0.],
-                   [0., 0., 0., 1.]], dtype)
+                   [0., 0., 0., 1.]], dtype).T
     return M
 
 
@@ -112,7 +115,7 @@ def ortho(left, right, bottom, top, znear, zfar):
     M[2, 2] = -2.0 / (zfar - znear)
     M[3, 2] = -(zfar + znear) / float(zfar - znear)
     M[3, 3] = 1.0
-    return M
+    return np.matrix(M)
 
 
 def frustum(left, right, bottom, top, znear, zfar):
@@ -150,7 +153,7 @@ def frustum(left, right, bottom, top, znear, zfar):
     M[2, 2] = -(zfar + znear) / float(zfar - znear)
     M[3, 2] = -2.0 * znear * zfar / float(zfar - znear)
     M[2, 3] = -1.0
-    return M
+    return np.matrix(M)
 
 
 def perspective(fovy, aspect, znear, zfar):
@@ -195,4 +198,4 @@ def affine_map(points1, points2):
         # solve Ax = B; x is one row of the desired transformation matrix
         matrix[i] = np.linalg.solve(A, B[:, i])
 
-    return matrix
+    return np.matrix(matrix)

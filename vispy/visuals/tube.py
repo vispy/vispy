@@ -137,7 +137,8 @@ def _frenet_frames(points, closed):
         if norm(vec) > epsilon:
             vec /= norm(vec)
             theta = np.arccos(np.clip(tangents[i-1].dot(tangents[i]), -1, 1))
-            normals[i] = rotate(np.degrees(theta), vec)[:3, :3].dot(normals[i])
+            normals[i] = rotate(-np.degrees(theta),
+                                vec)[:3, :3].dot(normals[i])
 
     if closed:
         theta = np.arccos(np.clip(normals[0].dot(normals[-1]), -1, 1))
@@ -147,7 +148,7 @@ def _frenet_frames(points, closed):
             theta *= -1.
 
         for i in range(1, len(points)):
-            normals[i] = rotate(np.degrees(theta*i),
+            normals[i] = rotate(-np.degrees(theta*i),
                                 tangents[i])[:3, :3].dot(normals[i])
 
     binormals = np.cross(tangents, normals)

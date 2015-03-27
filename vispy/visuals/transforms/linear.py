@@ -322,7 +322,7 @@ class AffineTransform(BaseTransform):
         The translation is applied *after* the transformations already present
         in the matrix.
         """
-        self.matrix[...] = transforms.translate(pos[0, :3]) * self.matrix
+        self.matrix = self.matrix * transforms.translate(pos[0, :3])
 
     def scale(self, scale, center=None):
         """
@@ -339,14 +339,12 @@ class AffineTransform(BaseTransform):
             The x, y and z coordinates to scale around. If None,
             (0, 0, 0) will be used.
         """
-        scale = transforms.scale(as_vec4(scale, default=(1, 1, 1, 1))[0])
+        scale = transforms.scale(as_vec4(scale, default=(1, 1, 1, 1))[0, :3])
         if center is not None:
-            # TODO: check if the order is correct here!
             center = as_vec4(center)[0, :3]
-            scale = (transforms.translate(-center) *
-                     scale *
+            scale = (transforms.translate(-center) * scale *
                      transforms.translate(center))
-        self.matrix[...] = scale * self.matrix
+        self.matrix = self.matrix * scale
 
     def rotate(self, angle, axis):
         """
@@ -362,7 +360,7 @@ class AffineTransform(BaseTransform):
         axis : array-like
             The x, y and z coordinates of the axis vector to rotate around.
         """
-        self.matrix[...] = transforms.rotate(angle, axis) * self.matrix
+        self.matrix = self.matrix * transforms.rotate(angle, axis)
 
     def set_mapping(self, points1, points2):
         """ Set to a 3D transformation matrix that maps points1 onto points2.

@@ -20,9 +20,11 @@ def arg_to_array(func):
 
 def as_vec4(obj, default=(0, 0, 0, 1)):
     """
-    Convert *obj* to 4-element vector (numpy array with shape[-1] == 4)
+    Convert `obj` to 4-element vector (numpy array with shape[-1] == 4)
 
-    If *obj* has < 4 elements, then new elements are added from *default*.
+    `obj` will have at least two dimensions.
+
+    If `obj` has < 4 elements, then new elements are added from `default`.
     For inputs intended as a position or translation, use default=(0,0,0,1).
     For inputs intended as scale factors, use default=(1,1,1,1).
     """

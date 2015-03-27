@@ -305,7 +305,7 @@ class MagnifyTransform(BaseTransform):
 
     @arg_to_vec4
     def map(self, x, _inverse=False):
-        c = as_vec4(self.center)
+        c = as_vec4(self.center)[0]
         m = self.mag
         r1, r2 = self.radii
         

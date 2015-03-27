@@ -14,7 +14,7 @@ def test_transforms():
     xfm = np.random.randn(4, 4).astype(np.float32)
 
     # Do a series of rotations that should end up into the same orientation
-    # again, to ensure the oreder of computation is all correct
+    # again, to ensure the order of computation is all correct
     # i.e. if rotated would return the transposed matrix this would not work
     # out (the translation part would be incorrect)
     new_xfm = (rotate(90, (1, 0, 0)) * rotate(90, (0, 1, 0)) *
