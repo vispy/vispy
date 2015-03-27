@@ -537,6 +537,7 @@ def unblockshaped(arr, h, w):
                .reshape(h, w))
 
 # ------------------------------------------------------ TextureEmulated3D class ---
+max_texture_size = 1024
 class TextureEmulated3D(Texture2D):
     """ Two dimensional texture that is emulating a three dimensional texture
 
@@ -545,97 +546,70 @@ class TextureEmulated3D(Texture2D):
     Same as Texture2D, but the data is first reshaped from a 3D array to a 2D array.
     """
 
-    _glsl_sample = """ 
-    vec4 sample(sampler2D tex, vec3 texCoord) {
-        float index = floor(texCoord.z * $slice_count);
-        float offset_x =    mod(index,  $slice_rows) * ($slice_size.x / $texture_size.x);
-        float offset_y = floor(index / $slice_rows) * ($slice_size.y / $texture_size.y);
+    _glsl_sample = """
+        vec4 sample(sampler2D tex, vec3 texcoord) {
+            float index = floor(texcoord.z * $depth);
 
-        // Find point in the 2D textrue
-        float u = offset_x + texCoord.x / $slice_rows;
-        float v = offset_y + texCoord.y / $slice_cols;
+            // Do a lookup in the 2D texture
+            float u = (mod(index, $r) + texcoord.x) / $r;
+            float v = (floor(index / $r) + texcoord.y) / $c;
 
-        return texture2D(tex, vec2(u,v));
-    }
+            return texture2D(tex, vec2(u,v));
+        }
     """
 
-
     def __init__(self, data=None, format=None, **kwargs):
-        from ..visuals.shaders import Function 
-
+        self._set_emulated_shape(data)
         Texture2D.__init__(self, self._normalize_emulated_shape(data), format, **kwargs)
-        self._emulated_shape = data.shape if isinstance(data, np.ndarray) else tuple(data)
-#        self._glsl_offset = Function(self.__class__._glsl_offset)
- #       self._glsl_offset['slicePerRow'] = self.slicePerRow(self.width)
 
+        from ..visuals.shaders import Function 
         self._glsl_sample = Function(self.__class__._glsl_sample)
-        self._glsl_sample['slice_rows'] = self.slice_rows
-        self._glsl_sample['slice_cols'] = self.slice_cols
-        self._glsl_sample['slice_count'] = self.depth
-        self._glsl_sample['slice_size'] = self.width, self.height
-        self._glsl_sample['texture_size'] = self.slice_rows * self.width, self.slice_cols * self.height
-
-    @property
-    def slice_rows(self):
-        max_texture_size = 1024
-
-        return int(math.floor(max_texture_size / float(self.width)))
-
-    @property
-    def slice_cols(self):
-        return int(math.floor(self.depth / self.slice_rows))
 
     def _normalize_emulated_shape(self, data_or_shape):
-        max_texture_size = 1024
-
         if isinstance(data_or_shape, np.ndarray):
-            depth, height, width = data_or_shape.shape
-
-            slice_shape = (width, height)
-            slice_count = depth
-            slice_rows  = int(math.floor(max_texture_size / float(width)))
-            slice_cols  = int(math.floor(slice_count / slice_rows))
-            if math.fmod(slice_count,slice_rows):
-                slice_cols += 1
-            W = slice_rows * width
-            H = slice_cols * height
-
-            data_2d = np.zeros((H,W), dtype = data_or_shape.dtype)
-            for j in range(slice_cols):
-                for i in range(slice_rows):
-                    i0,i1 = i*width,  (i+1)*width
-                    j0,j1 = j*height, (j+1)*height
-                    k = j * slice_rows + i
-                    if k >= slice_count:
+            data_2d = np.zeros(self._normalize_emulated_shape(data_or_shape.shape),
+                dtype = data_or_shape.dtype)
+            for j in range(self._c):
+                for i in range(self._r):
+                    i0, i1 = i * self.width, (i+1) * self.width
+                    j0, j1 = j * self.height, (j+1) * self.height
+                    k = j * self._r + i
+                    if k >= self.depth:
                         break
                     data_2d[j0:j1,i0:i1] = data_or_shape[k]
 
             data_or_shape = data_2d
-            print data_2d.shape
         else:
-            depth, height, width = data_or_shape
-
-            data_or_shape = (width * self.slicePerRow(width), height * self.numRows(width, depth))
+            data_or_shape = self._c * self.height, self._r * self.width
 
         return data_or_shape
 
+    def _set_emulated_shape(self, data_or_shape):
+        if isinstance(data_or_shape, np.ndarray):
+            self._emulated_shape = data_or_shape.shape
+        else:
+            self._emulated_shape = tuple(data_or_shape)
+
+        depth, width, height = self._emulated_shape[0], self._emulated_shape[1], self._emulated_shape[2]
+        self._r = int(math.floor(max_texture_size // float(width)))
+        self._c = int(math.floor(depth / self._r))
+        if math.fmod(depth, self._r):
+            self._c += 1
+
+    def _bind(self):
+        self._glsl_sample['depth'] = self.depth
+        self._glsl_sample['c'] = self._c
+        self._glsl_sample['r'] = self._r
+
     def set_data(self, data, offset=None, copy=False):
+        self._set_emulated_shape(data)
         Texture2D.set_data(self, self._normalize_emulated_shape(data), offset, copy)
-        self._emulated_shape = data.shape
-        self._glsl_sample['slice_rows'] = self.slice_rows
-        self._glsl_sample['slice_cols'] = self.slice_cols
-        self._glsl_sample['slice_count'] = self.depth
-        self._glsl_sample['slice_size'] = self.width, self.height
-        self._glsl_sample['texture_size'] = self.slice_rows * self.width, self.slice_cols * self.height
+        self._bind()
 
     def resize(self, shape, format=None, internalformat=None):
+        self._set_emulated_shape(data)
         Texture2D.resize(self, self._normalize_emulated_shape(shape), format, internalformat)
-        self._emulated_shape = tuple(shape)
-        self._glsl_sample['slice_rows'] = self.slice_rows
-        self._glsl_sample['slice_cols'] = self.slice_cols
-        self._glsl_sample['slice_count'] = self.depth
-        self._glsl_sample['slice_size'] = self.width, self.height
-        self._glsl_sample['texture_size'] = self.slice_rows * self.width, self.slice_cols * self.height
+        self._bind()
 
     @property
     def shape(self):
@@ -657,16 +631,6 @@ class TextureEmulated3D(Texture2D):
     def depth(self):
         """ Texture depth """
         return self._emulated_shape[0]
-
-    def slicePerRow(self, width):
-        max_texture_size = 128
-
-        return 128 * 128
-        return max_texture_size // width
-
-    def numRows(self, width, depth):
-        return 128
-        return depth // self.slicePerRow(width) + 1
 
     @property
     def glsl_sample(self):
