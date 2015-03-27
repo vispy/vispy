@@ -6,6 +6,14 @@ import numpy as np
 
 from ..scene import SceneCanvas, visuals, cameras, widgets
 
+# TODO list:
+# Populate more plotting types
+# Automate?
+# Spectrogram example
+# Camera resetting every time?
+# Refactor __getitem__ into grid?
+# Fix "quick" to auto-generate if possible
+
 
 class Fig(SceneCanvas):
     """Create a figure window"""
@@ -72,6 +80,6 @@ class _PlotWidget(widgets.ViewBox):
                                 cmap=cmap)
         self.add(volume)
         self.camera = cameras.TurntableCamera(azimuth=0,
-                                              elevation=0)                
+                                              elevation=0)
         self.camera.set_range(margin=0)
         return volume
