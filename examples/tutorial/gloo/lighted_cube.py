@@ -147,7 +147,7 @@ class Canvas(app.Canvas):
         self.phi += .5
         model = np.dot(rotate(self.theta, (0, 0, 1)),
                        rotate(self.phi, (0, 1, 0)))
-        normal = (self.view * model).I.T
+        normal = np.linalg.inv(np.dot(self.view, model)).T
         self.program['u_model'] = model
         self.program['u_normal'] = normal
         self.update()
