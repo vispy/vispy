@@ -155,17 +155,19 @@ void main() {{
     
     // This outer loop seems necessary on some systems for large
     // datasets. Ugly, but it works ...
-    int iter = nsteps;
-    while (iter > 0) {{
-        for (iter=iter; iter>0; iter--)
-        {{
-            // Calculate location and sample color
-            vec3 loc = edgeloc + float(iter) * ray;
-            vec4 color = $sample(u_volumetex, loc);
-            float val = color.g;
-            
-            {in_loop}
+//    int iter = nsteps;
+    for (int iter = 256; iter > 0; iter--)
+    {{
+        if (iter > nsteps) {{
+            continue;
         }}
+
+        // Calculate location and sample color
+        vec3 loc = edgeloc + float(iter) * ray;
+        vec4 color = $sample(u_volumetex, loc);
+        float val = color.g;
+            
+        {in_loop}
     }}
     
     {after_loop}
@@ -237,8 +239,7 @@ vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
     vec4 final_color;
     
     // todo: allow multiple light, define lights on viewvox or subscene
-    int nlights = 1; 
-    for (int i=0; i<nlights; i++)
+    for (int i=0; i<1; i++)
     {{ 
         // Get light direction (make sure to prevent zero devision)
         vec3 L = normalize(v_ray);  //lightDirs[i]; 
