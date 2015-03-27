@@ -770,6 +770,8 @@ class PerspectiveCamera(BaseCamera):
         if event.type == 'mouse_wheel':
             s = 1.1 ** - event.delta[1]
             self._scale_factor *= s
+            if self._distance is not None:
+                self._distance *= s
             self.view_changed()
     
     @property
