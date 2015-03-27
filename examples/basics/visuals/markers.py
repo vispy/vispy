@@ -39,6 +39,8 @@ class Canvas(app.Canvas):
         self.markers.set_data(pos, face_color=colors)
         self.markers.set_style(visuals.marker_types[self.index])
 
+        self.show()
+
     def on_draw(self, event):
         gloo.clear(color='white')
         self.markers.draw(self.tr_sys)
@@ -53,7 +55,7 @@ class Canvas(app.Canvas):
         self.apply_zoom()
 
     def apply_zoom(self):
-        gloo.set_viewport(0, 0, *self.size)
+        gloo.set_viewport(0, 0, *self.physical_size)
         self.tr_sys.visual_to_document.scale = (self.scale, self.scale)
         self.update()
 
@@ -65,5 +67,4 @@ class Canvas(app.Canvas):
 
 if __name__ == '__main__':
     canvas = Canvas()
-    canvas.show()
     app.run()

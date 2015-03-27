@@ -21,17 +21,19 @@ pos[:, 1] = np.random.normal(size=N, scale=100, loc=400)
 
 class Canvas(app.Canvas):
     def __init__(self):
-        self.line = visuals.LinePlotVisual(pos, color='w', edge_color='w',
-                                           face_color=(0.2, 0.2, 1))
         app.Canvas.__init__(self, keys='interactive',
                             size=(800, 800))
+
+        self.line = visuals.LinePlotVisual(pos, color='w', edge_color='w',
+                                           face_color=(0.2, 0.2, 1))
+
         self.tr_sys = visuals.transforms.TransformSystem(self)
 
-        self.show(True)
+        self.show()
 
     def on_draw(self, event):
         gloo.clear('black')
-        gloo.set_viewport(0, 0, *self.size)
+        gloo.set_viewport(0, 0, *self.physical_size)
         self.line.draw(self.tr_sys)
 
 

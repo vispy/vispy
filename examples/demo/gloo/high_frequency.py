@@ -80,15 +80,18 @@ class Canvas(app.Canvas):
         self.program['a_position'] = [(-1, -1), (-1, +1),
                                       (+1, -1), (+1, +1)]
 
+        self.apply_zoom()
+
         gloo.set_state(blend=True,
                        blend_func=('src_alpha', 'one_minus_src_alpha'))
 
         self._timer = app.Timer('auto', connect=self.on_timer_event,
                                 start=True)
 
+        self.show()
+
     def on_resize(self, event):
-        self.program["u_resolution"] = event.size
-        gloo.set_viewport(0, 0, *event.size)
+        self.apply_zoom()
 
     def on_draw(self, event):
         gloo.clear('white')
@@ -106,8 +109,11 @@ class Canvas(app.Canvas):
             else:
                 self._timer.start()
 
+    def apply_zoom(self):
+        self.program["u_resolution"] = self.physical_size
+        gloo.set_viewport(0, 0, *self.physical_size)
+
 
 if __name__ == '__main__':
     c = Canvas()
-    c.show()
     app.run()

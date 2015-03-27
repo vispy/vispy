@@ -17,29 +17,6 @@ from scipy.spatial import cKDTree
 from vispy import gloo
 from vispy import app
 
-# Create boids
-n = 1000
-particles = np.zeros(2 + n, [('position', 'f4', 3),
-                             ('position_1', 'f4', 3),
-                             ('position_2', 'f4', 3),
-                             ('velocity', 'f4', 3),
-                             ('color', 'f4', 4),
-                             ('size', 'f4', 1)])
-boids = particles[2:]
-target = particles[0]
-predator = particles[1]
-
-boids['position'] = np.random.uniform(-0.25, +0.25, (n, 3))
-boids['velocity'] = np.random.uniform(-0.00, +0.00, (n, 3))
-boids['size'] = 4
-boids['color'] = 1, 1, 1, 1
-
-target['size'] = 16
-target['color'][:] = 1, 1, 0, 1
-predator['size'] = 16
-predator['color'][:] = 1, 0, 0, 1
-target['position'][:] = 0.25, 0.0, 0
-
 VERT_SHADER = """
 #version 120
 attribute vec3 position;
@@ -73,18 +50,47 @@ class Canvas(app.Canvas):
     def __init__(self):
         app.Canvas.__init__(self, keys='interactive')
 
+        ps = self.pixel_scale
+
+        # Create boids
+        n = 1000
+        self.particles = np.zeros(2 + n, [('position', 'f4', 3),
+                                          ('position_1', 'f4', 3),
+                                          ('position_2', 'f4', 3),
+                                          ('velocity', 'f4', 3),
+                                          ('color', 'f4', 4),
+                                          ('size', 'f4', 1*ps)])
+        self.boids = self.particles[2:]
+        self.target = self.particles[0]
+        self.predator = self.particles[1]
+
+        self.boids['position'] = np.random.uniform(-0.25, +0.25, (n, 3))
+        self.boids['velocity'] = np.random.uniform(-0.00, +0.00, (n, 3))
+        self.boids['size'] = 4*ps
+        self.boids['color'] = 1, 1, 1, 1
+
+        self.target['size'] = 16*ps
+        self.target['color'][:] = 1, 1, 0, 1
+        self.predator['size'] = 16*ps
+        self.predator['color'][:] = 1, 0, 0, 1
+        self.target['position'][:] = 0.25, 0.0, 0
+
         # Time
         self._t = time.time()
         self._pos = 0.0, 0.0
         self._button = None
 
+        width, height = self.physical_size
+        gloo.set_viewport(0, 0, width, height)
+
         # Create program
         self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
 
         # Create vertex buffers
-        self.vbo_position = gloo.VertexBuffer(particles['position'].copy())
-        self.vbo_color = gloo.VertexBuffer(particles['color'].copy())
-        self.vbo_size = gloo.VertexBuffer(particles['size'].copy())
+        self.vbo_position = gloo.VertexBuffer(self.particles['position']
+                                              .copy())
+        self.vbo_color = gloo.VertexBuffer(self.particles['color'].copy())
+        self.vbo_size = gloo.VertexBuffer(self.particles['size'].copy())
 
         # Bind vertex buffers
         self.program['color'] = self.vbo_color
@@ -96,8 +102,10 @@ class Canvas(app.Canvas):
 
         self._timer = app.Timer('auto', connect=self.update, start=True)
 
+        self.show()
+
     def on_resize(self, event):
-        width, height = event.size
+        width, height = event.physical_size
         gloo.set_viewport(0, 0, width, height)
 
     def on_mouse_press(self, event):
@@ -117,9 +125,9 @@ class Canvas(app.Canvas):
         sy = - (2 * y / float(h) - 1.0)
 
         if self._button == 1:
-            target['position'][:] = sx, sy, 0
+            self.target['position'][:] = sx, sy, 0
         elif self._button == 2:
-            predator['position'][:] = sx, sy, 0
+            self.predator['position'][:] = sx, sy, 0
 
     def on_draw(self, event):
         gloo.clear()
@@ -132,16 +140,16 @@ class Canvas(app.Canvas):
         t = self._t
 
         t += 0.5 * dt
-        #target[...] = np.array([np.sin(t),np.sin(2*t),np.cos(3*t)])*.1
+        #self.target[...] = np.array([np.sin(t),np.sin(2*t),np.cos(3*t)])*.1
 
         t += 0.5 * dt
-        #predator[...] = np.array([np.sin(t),np.sin(2*t),np.cos(3*t)])*.2
+        #self.predator[...] = np.array([np.sin(t),np.sin(2*t),np.cos(3*t)])*.2
 
-        boids['position_2'] = boids['position_1']
-        boids['position_1'] = boids['position']
-        n = len(boids)
-        P = boids['position']
-        V = boids['velocity']
+        self.boids['position_2'] = self.boids['position_1']
+        self.boids['position_1'] = self.boids['position']
+        n = len(self.boids)
+        P = self.boids['position']
+        V = self.boids['velocity']
 
         # Cohesion: steer to move toward the average position of local
         # flockmates
@@ -157,10 +165,10 @@ class Canvas(app.Canvas):
         R = -((P[I] - Z) * M).sum(axis=1)
 
         # Target : Follow target
-        T = target['position'] - P
+        T = self.target['position'] - P
 
         # Predator : Move away from predator
-        dP = P - predator['position']
+        dP = P - self.predator['position']
         D = np.maximum(0, 0.3 -
                        np.sqrt(dP[:, 0] ** 2 +
                                dP[:, 1] ** 2 +
@@ -168,17 +176,17 @@ class Canvas(app.Canvas):
         D = np.repeat(D, 3, axis=0).reshape(n, 3)
         dP *= D
 
-        #boids['velocity'] += 0.0005*C + 0.01*A + 0.01*R + 0.0005*T + 0.0025*dP
-        boids['velocity'] += 0.0005 * C + 0.01 * \
+        #self.boids['velocity'] += 0.0005*C + 0.01*A + 0.01*R +
+        #                           0.0005*T + 0.0025*dP
+        self.boids['velocity'] += 0.0005 * C + 0.01 * \
             A + 0.01 * R + 0.0005 * T + 0.025 * dP
-        boids['position'] += boids['velocity']
+        self.boids['position'] += self.boids['velocity']
 
-        self.vbo_position.set_data(particles['position'].copy())
+        self.vbo_position.set_data(self.particles['position'].copy())
 
         return t
 
 
 if __name__ == '__main__':
     c = Canvas()
-    c.show()
     app.run()

@@ -131,7 +131,11 @@ class Canvas(app.Canvas):
 
         self.program['a_position'] = gloo.VertexBuffer(triangles)
 
+        self.activate_zoom()
+
         gloo.set_state(clear_color='black', depth_test=True)
+
+        self.show()
 
     def on_key_press(self, event):
         """Controls -
@@ -189,9 +193,12 @@ class Canvas(app.Canvas):
         self.update()
 
     def on_resize(self, event):
-        width, height = event.size
-        gloo.set_viewport(0, 0, width, height)
-        self.projection = perspective(60.0, width / float(height), 1.0, 100.0)
+        self.activate_zoom()
+
+    def activate_zoom(self):
+        gloo.set_viewport(0, 0, *self.physical_size)
+        self.projection = perspective(60.0, self.size[0] /
+                                      float(self.size[1]), 1.0, 100.0)
         self.program['u_projection'] = self.projection
 
     def on_draw(self, event):
@@ -205,5 +212,4 @@ generate_points(8)
 
 if __name__ == '__main__':
     c = Canvas()
-    c.show()
     app.run()

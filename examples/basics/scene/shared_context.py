@@ -38,7 +38,7 @@ view2.add(p1)
 # Add a 3D axis to keep us oriented
 axis = scene.visuals.XYZAxis(parent=view1.scene)
 
-canvas = canvas1  # allow running this example in out test suite
+canvas = canvas1  # allow running this example in our test suite
 
 if __name__ == '__main__':
     if sys.flags.interactive == 0:

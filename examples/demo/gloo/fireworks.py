@@ -85,8 +85,7 @@ void main()
 class Canvas(app.Canvas):
 
     def __init__(self):
-        app.Canvas.__init__(self, keys='interactive')
-        self.size = 800, 600
+        app.Canvas.__init__(self, keys='interactive', size=(800, 600))
 
         # Create program
         self._program = gloo.Program(VERT_SHADER, FRAG_SHADER)
@@ -100,10 +99,14 @@ class Canvas(app.Canvas):
         gloo.set_state(blend=True, clear_color='black',
                        blend_func=('src_alpha', 'one'))
 
+        gloo.set_viewport(0, 0, self.physical_size[0], self.physical_size[1])
+
         self._timer = app.Timer('auto', connect=self.update, start=True)
 
+        self.show()
+
     def on_resize(self, event):
-        width, height = event.size
+        width, height = event.physical_size
         gloo.set_viewport(0, 0, width, height)
 
     def on_draw(self, event):
@@ -142,5 +145,4 @@ class Canvas(app.Canvas):
 
 if __name__ == '__main__':
     c = Canvas()
-    c.show()
     app.run()

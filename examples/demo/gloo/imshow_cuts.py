@@ -125,6 +125,8 @@ class Canvas(app.Canvas):
         self.image['image'] = I.astype('float32')
         self.image['image'].interpolation = 'linear'
 
+        set_viewport(0, 0, *self.physical_size)
+
         self.lines = Program(lines_vertex, lines_fragment)
         self.lines["position"] = np.zeros((4+4+514+514, 2), np.float32)
         color = np.zeros((4+4+514+514, 4), np.float32)
@@ -137,10 +139,10 @@ class Canvas(app.Canvas):
         set_state(clear_color='white', blend=True,
                   blend_func=('src_alpha', 'one_minus_src_alpha'))
 
-        self.show(True)
+        self.show()
 
     def on_resize(self, event):
-        set_viewport(0, 0, *event.size)
+        set_viewport(0, 0, *event.physical_size)
 
     def on_draw(self, event):
         clear(color=True, depth=True)
@@ -150,6 +152,11 @@ class Canvas(app.Canvas):
     def on_mouse_move(self, event):
         x, y = event.pos
         w, h = self.size
+
+        # Make sure the mouse isn't outside of the viewport.
+        x = max(0, min(x, w - 1))
+        y = max(0, min(y, h - 1))
+
         yf = 1 - y/(h/2.)
         xf = x/(w/2.) - 1
         P = np.zeros((4+4+514+514, 2), np.float32)
@@ -163,7 +170,7 @@ class Canvas(app.Canvas):
         y_baseline[...] = (xf, -1), (xf, -1), (xf, 1), (xf, 1)
 
         x_profile[1:-1, 0] = np.linspace(-1, 1, 512)
-        x_profile[1:-1, 1] = yf+0.15*I[y]
+        x_profile[1:-1, 1] = yf+0.15*I[y, :]
         x_profile[0] = x_profile[1]
         x_profile[-1] = x_profile[-2]
 

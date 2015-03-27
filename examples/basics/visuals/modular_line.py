@@ -24,16 +24,16 @@ color[:, 1] = color[::-1, 0]
 
 class Canvas(app.Canvas):
     def __init__(self):
+        app.Canvas.__init__(self, keys='interactive', size=(800, 800))
+
         self.line = ModularLine(pos=pos, color=color)
-        app.Canvas.__init__(self, keys='interactive')
-        self.size = (800, 800)
         self.tr_sys = visuals.transforms.TransformSystem(self)
         self.show()
 
     def on_draw(self, ev):
         gloo.set_clear_color('black')
         gloo.clear(color=True, depth=True)
-        gloo.set_viewport(0, 0, *self.size)
+        gloo.set_viewport(0, 0, *self.physical_size)
         self.line.draw(self.tr_sys)
 
 

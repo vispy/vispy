@@ -102,14 +102,13 @@ void main()
 class Canvas(app.Canvas):
 
     def __init__(self):
-        app.Canvas.__init__(self, keys='interactive')
-        self.size = 800, 800
+        app.Canvas.__init__(self, keys='interactive', size=(800, 800))
         self.title = "Atom [zoom with mouse scroll"
 
         self.program = gloo.Program(vert, frag)
         self.view = np.eye(4, dtype=np.float32)
         self.model = np.eye(4, dtype=np.float32)
-        self.projection = np.eye(4, dtype=np.float32)
+        self.apply_zoom()
         self.translate = 6.5
         translate(self.view, 0, 0, -self.translate)
 
@@ -128,6 +127,8 @@ class Canvas(app.Canvas):
 
         self._timer = app.Timer('auto', connect=self.on_timer, start=True)
 
+        self.show()
+
     def on_key_press(self, event):
         if event.text == ' ':
             self.stop_rotation = not self.stop_rotation
@@ -145,10 +146,7 @@ class Canvas(app.Canvas):
         self.update()
 
     def on_resize(self, event):
-        width, height = event.size
-        gloo.set_viewport(0, 0, width, height)
-        self.projection = perspective(45.0, width / float(height), 1.0, 1000.0)
-        self.program['u_projection'] = self.projection
+        self.apply_zoom()
 
     def on_mouse_wheel(self, event):
         self.translate += event.delta[1]
@@ -164,8 +162,13 @@ class Canvas(app.Canvas):
         gloo.clear('black')
         self.program.draw('points')
 
+    def apply_zoom(self):
+        width, height = self.physical_size
+        gloo.set_viewport(0, 0, width, height)
+        self.projection = perspective(45.0, width / float(height), 1.0, 1000.0)
+        self.program['u_projection'] = self.projection
+
 
 if __name__ == '__main__':
     c = Canvas()
-    c.show()
     app.run()

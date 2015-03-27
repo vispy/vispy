@@ -47,15 +47,18 @@ class Canvas(app.Canvas):
         self.program['texcoord'] = [(0, 0), (1, 0), (0, 1), (1, 1)]
         self.program['texture'] = checkerboard()
 
+        gloo.set_viewport(0, 0, *self.physical_size)
+
+        self.show()
+
     def on_draw(self, event):
         gloo.set_clear_color('white')
         gloo.clear(color=True)
         self.program.draw('triangle_strip')
 
     def on_resize(self, event):
-        gloo.set_viewport(0, 0, *event.size)
+        gloo.set_viewport(0, 0, *event.physical_size)
 
 if __name__ == '__main__':
     c = Canvas()
-    c.show()
     app.run()

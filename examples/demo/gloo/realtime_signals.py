@@ -127,14 +127,17 @@ class Canvas(app.Canvas):
         self.program['u_size'] = (nrows, ncols)
         self.program['u_n'] = n
 
+        gloo.set_viewport(0, 0, *self.physical_size)
+
         self._timer = app.Timer('auto', connect=self.on_timer, start=True)
 
         gloo.set_state(clear_color='black', blend=True,
                        blend_func=('src_alpha', 'one_minus_src_alpha'))
 
+        self.show()
+
     def on_resize(self, event):
-        self.width, self.height = event.size
-        gloo.set_viewport(0, 0, self.width, self.height)
+        gloo.set_viewport(0, 0, *event.physical_size)
 
     def on_mouse_wheel(self, event):
         dx = np.sign(event.delta[1]) * .05
@@ -159,5 +162,4 @@ class Canvas(app.Canvas):
 
 if __name__ == '__main__':
     c = Canvas()
-    c.show()
     app.run()

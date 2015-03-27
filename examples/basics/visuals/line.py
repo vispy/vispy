@@ -44,18 +44,18 @@ class Canvas(app.Canvas):
             visuals.LineVisual(pos=pos, color=(0, 0.5, 0.3, 1), mode='agg'),
             # wide
             visuals.LineVisual(pos=pos, color=color, width=5, mode='agg'),
-            
+
             # GL-mode lines:
             visuals.LineVisual(pos=pos, color=color, mode='gl'),
             visuals.LineVisual(pos=pos, color=(0, 0.5, 0.3, 1), mode='gl'),
             visuals.LineVisual(pos=pos, color=color, width=5, mode='gl'),
             # GL-mode: "connect" not available in AGG mode yet
-            
+
             # only connect alternate vert pairs
-            visuals.LineVisual(pos=pos, color=(0, 0.5, 0.3, 1), 
+            visuals.LineVisual(pos=pos, color=(0, 0.5, 0.3, 1),
                                connect='segments', mode='gl'),
             # connect specific pairs
-            visuals.LineVisual(pos=pos, color=(0, 0.5, 0.3, 1), 
+            visuals.LineVisual(pos=pos, color=(0, 0.5, 0.3, 1),
                                connect=connect, mode='gl'),
         ]
         counts = [0, 0]
@@ -68,26 +68,26 @@ class Canvas(app.Canvas):
             line.transform = STTransform(translate=[x, y])
             # redraw the canvas if any visuals request an update
             line.events.update.connect(lambda evt: self.update())
-        
-        self.texts = [visuals.TextVisual('GL', bold=True, font_size=24, 
+
+        self.texts = [visuals.TextVisual('GL', bold=True, font_size=24,
                                          color='w', pos=(200, 40)),
                       visuals.TextVisual('Agg', bold=True, font_size=24,
                                          color='w', pos=(600, 40))]
         for text in self.texts:
             text.transform = NullTransform()
         self.visuals = self.lines + self.texts
-        
+
         # create a TransformSystem for each visual.
         # (these are stored as attributes of each visual for convenience)
         for visual in self.visuals:
             visual.tr_sys = visuals.transforms.TransformSystem(self)
             visual.tr_sys.visual_to_document = visual.transform
 
-        self.show(True)
+        self.show()
 
     def on_draw(self, event):
         gloo.clear('black')
-        gloo.set_viewport(0, 0, *self.size)
+        gloo.set_viewport(0, 0, *self.physical_size)
         for visual in self.visuals:
             visual.draw(visual.tr_sys)
 

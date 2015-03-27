@@ -73,19 +73,26 @@ class Canvas(app.Canvas):
         self.program['view'] = view
         self.program['texture'] = checkerboard()
 
+        self.activate_zoom()
+
         self.phi, self.theta = 0, 0
 
         # OpenGL initalization
         gloo.set_state(clear_color=(0.30, 0.30, 0.35, 1.00), depth_test=True)
         self.timer.start()
 
+        self.show()
+
     def on_draw(self, event):
         gloo.clear(color=True, depth=True)
         self.program.draw('triangles', self.indices)
 
     def on_resize(self, event):
-        gloo.set_viewport(0, 0, *event.size)
-        projection = perspective(45.0, event.size[0] / float(event.size[1]),
+        self.activate_zoom()
+
+    def activate_zoom(self):
+        gloo.set_viewport(0, 0, *self.physical_size)
+        projection = perspective(45.0, self.size[0] / float(self.size[1]),
                                  2.0, 10.0)
         self.program['projection'] = projection
 
@@ -100,5 +107,4 @@ class Canvas(app.Canvas):
 
 if __name__ == '__main__':
     c = Canvas()
-    c.show()
     app.run()

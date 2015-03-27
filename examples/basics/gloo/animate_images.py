@@ -60,8 +60,7 @@ void main()
 class Canvas(app.Canvas):
 
     def __init__(self):
-        app.Canvas.__init__(self, keys='interactive')
-        self.size = W * 5, H * 5
+        app.Canvas.__init__(self, keys='interactive', size=((W * 5), (H * 5)))
 
         self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
         self.texture = gloo.Texture2D(I, interpolation='linear')
@@ -82,8 +81,10 @@ class Canvas(app.Canvas):
 
         self._timer = app.Timer('auto', connect=self.update, start=True)
 
+        self.show()
+
     def on_resize(self, event):
-        width, height = event.size
+        width, height = event.physical_size
         gloo.set_viewport(0, 0, width, height)
         self.projection = ortho(0, width, 0, height, -100, 100)
         self.program['u_projection'] = self.projection
@@ -110,5 +111,4 @@ class Canvas(app.Canvas):
 
 if __name__ == '__main__':
     c = Canvas()
-    c.show()
     app.run()

@@ -94,7 +94,7 @@ class Canvas(app.Canvas):
         self.scale = self.program["scale"] = 3
         self.center = self.program["center"] = [-0.5, 0]
         self.iterations = self.program["iter"] = 300
-        self.program['resolution'] = self.size
+        self.apply_zoom()
 
         self.bounds = [-2, 2]
         self.min_scale = 0.00005
@@ -104,11 +104,16 @@ class Canvas(app.Canvas):
 
         self._timer = app.Timer('auto', connect=self.update, start=True)
 
+        self.show()
+
     def on_draw(self, event):
         self.program.draw()
 
     def on_resize(self, event):
-        width, height = event.size
+        self.apply_zoom()
+
+    def apply_zoom(self):
+        width, height = self.physical_size
         gloo.set_viewport(0, 0, width, height)
         self.program['resolution'] = [width, height]
 
@@ -154,7 +159,8 @@ class Canvas(app.Canvas):
         wheels :)
 
         """
-        if event.text == '+':
+
+        if event.text == '+' or event.text == '=':
             self.zoom(0.9)
         elif event.text == '-':
             self.zoom(1/0.9)
@@ -182,5 +188,4 @@ class Canvas(app.Canvas):
 
 if __name__ == '__main__':
     canvas = Canvas(size=(800, 800), keys='interactive')
-    canvas.show()
     app.run()

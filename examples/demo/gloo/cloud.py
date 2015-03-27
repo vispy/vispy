@@ -12,22 +12,6 @@ from vispy import gloo
 from vispy import app
 from vispy.util.transforms import perspective, translate, rotate
 
-
-# Create vertices
-n = 1000000
-data = np.zeros(n, [('a_position', np.float32, 3),
-                    ('a_bg_color', np.float32, 4),
-                    ('a_fg_color', np.float32, 4),
-                    ('a_size', np.float32, 1)])
-data['a_position'] = 0.45 * np.random.randn(n, 3)
-data['a_bg_color'] = np.random.uniform(0.85, 1.00, (n, 4))
-data['a_fg_color'] = 0, 0, 0, 1
-data['a_size'] = np.random.uniform(5, 10, n)
-u_linewidth = 1.0
-u_antialias = 1.0
-u_size = 1
-
-
 vert = """
 #version 120
 
@@ -231,15 +215,29 @@ void main()
 class Canvas(app.Canvas):
 
     def __init__(self):
-        app.Canvas.__init__(self, keys='interactive')
-        self.size = 800, 600
+        app.Canvas.__init__(self, keys='interactive', size=(800, 600))
+        ps = self.pixel_scale
+
+        # Create vertices
+        n = 1000000
+        data = np.zeros(n, [('a_position', np.float32, 3),
+                            ('a_bg_color', np.float32, 4),
+                            ('a_fg_color', np.float32, 4),
+                            ('a_size', np.float32, 1)])
+        data['a_position'] = 0.45 * np.random.randn(n, 3)
+        data['a_bg_color'] = np.random.uniform(0.85, 1.00, (n, 4))
+        data['a_fg_color'] = 0, 0, 0, 1
+        data['a_size'] = np.random.uniform(5*ps, 10*ps, n)
+        u_linewidth = 1.0
+        u_antialias = 1.0
 
         self.program = gloo.Program(vert, frag)
         self.view = np.eye(4, dtype=np.float32)
         self.model = np.eye(4, dtype=np.float32)
-        self.projection = np.eye(4, dtype=np.float32)
         self.translate = 5
         translate(self.view, 0, 0, -self.translate)
+
+        self.apply_zoom()
 
         self.program.bind(gloo.VertexBuffer(data))
         self.program['u_linewidth'] = u_linewidth
@@ -254,6 +252,8 @@ class Canvas(app.Canvas):
         gloo.set_state('translucent', clear_color='white')
 
         self.timer = app.Timer('auto', connect=self.on_timer, start=True)
+
+        self.show()
 
     def on_key_press(self, event):
         if event.text == ' ':
@@ -272,10 +272,7 @@ class Canvas(app.Canvas):
         self.update()
 
     def on_resize(self, event):
-        width, height = event.size
-        gloo.set_viewport(0, 0, width, height)
-        self.projection = perspective(45.0, width / float(height), 1.0, 1000.0)
-        self.program['u_projection'] = self.projection
+        self.apply_zoom()
 
     def on_mouse_wheel(self, event):
         self.translate += event.delta[1]
@@ -291,8 +288,13 @@ class Canvas(app.Canvas):
         gloo.clear()
         self.program.draw('points')
 
+    def apply_zoom(self):
+        gloo.set_viewport(0, 0, self.physical_size[0], self.physical_size[1])
+        self.projection = perspective(45.0, self.size[0] /
+                                      float(self.size[1]), 1.0, 1000.0)
+        self.program['u_projection'] = self.projection
+
 
 if __name__ == '__main__':
     c = Canvas()
-    c.show()
     app.run()

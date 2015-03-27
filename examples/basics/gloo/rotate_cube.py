@@ -10,7 +10,6 @@ import numpy as np
 from vispy import app, gloo
 from vispy.util.transforms import perspective, translate, rotate
 
-
 vert = """
 // Uniforms
 // ------------------------------------
@@ -98,8 +97,7 @@ def cube():
 class Canvas(app.Canvas):
 
     def __init__(self):
-        app.Canvas.__init__(self, keys='interactive')
-        self.size = 800, 600
+        app.Canvas.__init__(self, keys='interactive', size=(800, 600))
 
         self.vertices, self.filled, self.outline = cube()
         self.filled_buf = gloo.IndexBuffer(self.filled)
@@ -110,7 +108,12 @@ class Canvas(app.Canvas):
 
         self.view = np.eye(4, dtype=np.float32)
         self.model = np.eye(4, dtype=np.float32)
-        self.projection = np.eye(4, dtype=np.float32)
+        
+        gloo.set_viewport(0, 0, self.physical_size[0], self.physical_size[1])
+        self.projection = perspective(45.0, self.size[0] /
+                                      float(self.size[1]), 2.0, 10.0)
+
+        self.program['u_projection'] = self.projection
 
         translate(self.view, 0, 0, -5)
         self.program['u_model'] = self.model
@@ -125,6 +128,8 @@ class Canvas(app.Canvas):
 
         self._timer = app.Timer('auto', connect=self.on_timer, start=True)
 
+        self.show()
+
     # ---------------------------------
     def on_timer(self, event):
         self.theta += .5
@@ -137,9 +142,9 @@ class Canvas(app.Canvas):
 
     # ---------------------------------
     def on_resize(self, event):
-        width, height = event.size
-        gloo.set_viewport(0, 0, width, height)
-        self.projection = perspective(45.0, width / float(height), 2.0, 10.0)
+        gloo.set_viewport(0, 0, event.physical_size[0], event.physical_size[1])
+        self.projection = perspective(45.0, event.size[0] /
+                                      float(event.size[1]), 2.0, 10.0)
         self.program['u_projection'] = self.projection
 
     # ---------------------------------
@@ -163,5 +168,4 @@ class Canvas(app.Canvas):
 # -----------------------------------------------------------------------------
 if __name__ == '__main__':
     c = Canvas()
-    c.show()
     app.run()

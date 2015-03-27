@@ -59,7 +59,7 @@ def get_idate():
 
 def noise(resolution=64, nchannels=1):
     # Random texture.
-    return np.random.randint(low=0, high=256, 
+    return np.random.randint(low=0, high=256,
                              size=(resolution, resolution, nchannels)
                              ).astype(np.uint8)
 
@@ -83,7 +83,12 @@ class Canvas(app.Canvas):
         self.program['iSampleRate'] = 44100.
         for i in range(4):
             self.program['iChannelTime[%d]' % i] = 0.
+
+        self.activate_zoom()
+
         self._timer = app.Timer('auto', connect=self.on_timer, start=True)
+
+        self.show()
 
     def set_channel_input(self, img, i=0):
         tex = gloo.Texture2D(img)
@@ -91,7 +96,7 @@ class Canvas(app.Canvas):
         tex.wrapping = 'repeat'
         self.program['iChannel%d' % i] = tex
         self.program['iChannelResolution[%d]' % i] = img.shape
-        
+
     def on_draw(self, event):
         self.program.draw()
 
@@ -106,17 +111,20 @@ class Canvas(app.Canvas):
             px, py = event.press_event.pos
             imouse = (x, self.size[1] - y, px, self.size[1] - py)
             self.program['iMouse'] = imouse
-        
+
     def on_timer(self, event):
         self.program['iGlobalTime'] = event.elapsed
         self.program['iDate'] = get_idate()  # used in some shadertoy examples
         self.update()
-        
+
     def on_resize(self, event):
-        width, height = event.size
-        gloo.set_viewport(0, 0, width, height)
-        self.program['iResolution'] = (width, height, 0.)
-        
+        self.activate_zoom()
+
+    def activate_zoom(self):
+        gloo.set_viewport(0, 0, *self.physical_size)
+        self.program['iResolution'] = (self.physical_size[0],
+                                       self.physical_size[1], 0.)
+
 # -------------------------------------------------------------------------
 # COPY-PASTE SHADERTOY CODE BELOW
 # -------------------------------------------------------------------------
@@ -124,7 +132,7 @@ SHADERTOY = """
 // From: https://www.shadertoy.com/view/MdX3Rr
 
 // Created by inigo quilez - iq/2013
-// License Creative Commons Attribution-NonCommercial-ShareAlike 3.0 
+// License Creative Commons Attribution-NonCommercial-ShareAlike 3.0
 // Unported License.
 
 //stereo thanks to Croqueteer
@@ -142,7 +150,7 @@ vec3 noised( in vec2 x )
     float b = texture2D(iChannel0,(p+vec2(1.5,0.5))/256.0,-100.0).x;
     float c = texture2D(iChannel0,(p+vec2(0.5,1.5))/256.0,-100.0).x;
     float d = texture2D(iChannel0,(p+vec2(1.5,1.5))/256.0,-100.0).x;
-    
+
     return vec3(a+(b-a)*u.x+(c-a)*u.y+(a-b-c+d)*u.x*u.y,
                 6.0*f*(1.0-f)*(vec2(b-a,c-a)+(a-b-c+d)*u.yx));
 }
@@ -233,10 +241,10 @@ float interesct( in vec3 ro, in vec3 rd )
 float sinteresct(in vec3 ro, in vec3 rd )
 {
 #if 0
-    // no shadows	
+    // no shadows
     return 1.0;
 #endif
-    
+
 #if 0
     // fake shadows
     vec3 nor;
@@ -247,9 +255,9 @@ float sinteresct(in vec3 ro, in vec3 rd )
     nor = normalize(nor);
     return clamp( 4.0*dot(nor,rd), 0.0, 1.0 );
 #endif
-    
+
 #if 1
-    // real shadows	
+    // real shadows
     float res = 1.0;
     float t = 0.0;
     for( int j=0; j<48; j++ )
@@ -279,7 +287,7 @@ vec3 calcNormal( in vec3 pos, float t )
     nor.x = terrain2(pos.xz-eps.xy) - terrain2(pos.xz+eps.xy);
     nor.y = 2.0*e;
     nor.z = terrain2(pos.xz-eps.yx) - terrain2(pos.xz+eps.yx);
-#endif	
+#endif
     return normalize(nor);
 }
 
@@ -290,7 +298,7 @@ vec3 camPath( float time )
     return vec3( p.x, 0.0, p.y );
 }
 
-    
+
 float fbm( vec2 p )
 {
     float f = 0.0;
@@ -313,11 +321,11 @@ void main(void)
     #ifdef STEREO
     float isCyan = mod(gl_FragCoord.x + mod(gl_FragCoord.y,2.0),2.0);
     #endif
-    
+
     float time = iGlobalTime*0.15 + 0.3 + 4.0*iMouse.x/iResolution.x;
-    
+
     vec3 light1 = normalize( vec3(-0.8,0.4,-0.3) );
-    
+
 
 
     vec3 ro = camPath( time );
@@ -341,25 +349,25 @@ void main(void)
     float t = interesct( ro, rd );
     if( t<0.0 )
     {
-        // sky		
+        // sky
         col = vec3(0.3,.55,0.8)*(1.0-0.8*rd.y);
         col += 0.25*vec3(1.0,0.7,0.4)*pow( sundot,5.0 );
         col += 0.25*vec3(1.0,0.8,0.6)*pow( sundot,64.0 );
         col += 0.2*vec3(1.0,0.8,0.6)*pow( sundot,512.0 );
         vec2 sc = ro.xz + rd.xz*(1000.0-ro.y)/rd.y;
-        col = mix( col, vec3(1.0,0.95,1.0), 
+        col = mix( col, vec3(1.0,0.95,1.0),
             0.5*smoothstep(0.5,0.8,fbm(0.0005*sc)) );
     }
     else
     {
-        // mountains		
+        // mountains
         vec3 pos = ro + t*rd;
 
         vec3 nor = calcNormal( pos, t );
 
         float r = texture2D( iChannel0, 7.0*pos.xz/256.0 ).x;
 
-        col = (r*0.25+0.75)*0.9*mix( vec3(0.08,0.05,0.03), 
+        col = (r*0.25+0.75)*0.9*mix( vec3(0.08,0.05,0.03),
             vec3(0.10,0.09,0.08), texture2D(iChannel0,0.00007*vec2(
                 pos.x,pos.y*48.0)).x );
         col = mix( col, 0.20*vec3(0.45,.30,0.15)*(0.50+0.50*r),
@@ -372,44 +380,44 @@ void main(void)
         float e = smoothstep(1.0-0.5*h,1.0-0.1*h,nor.y);
         float o = 0.3 + 0.7*smoothstep(0.0,0.1,nor.x+h*h);
         float s = h*e*o;
-        col = mix( col, 0.29*vec3(0.62,0.65,0.7), smoothstep( 
+        col = mix( col, 0.29*vec3(0.62,0.65,0.7), smoothstep(
             0.1, 0.9, s ) );
-        
-         // lighting		
+
+         // lighting
         float amb = clamp(0.5+0.5*nor.y,0.0,1.0);
         float dif = clamp( dot( light1, nor ), 0.0, 1.0 );
-        float bac = clamp( 0.2 + 0.8*dot( normalize( 
+        float bac = clamp( 0.2 + 0.8*dot( normalize(
             vec3(-light1.x, 0.0, light1.z ) ), nor ), 0.0, 1.0 );
         float sh = 1.0; if( dif>=0.0001 ) sh = sinteresct(
             pos+light1*20.0,light1);
-        
+
         vec3 lin  = vec3(0.0);
-        lin += dif*vec3(7.00,5.00,3.00)*vec3( sh, sh*sh*0.5+0.5*sh, 
+        lin += dif*vec3(7.00,5.00,3.00)*vec3( sh, sh*sh*0.5+0.5*sh,
             sh*sh*0.8+0.2*sh );
         lin += amb*vec3(0.40,0.60,0.80)*1.5;
         lin += bac*vec3(0.40,0.50,0.60);
         col *= lin;
 
-        
+
         float fo = 1.0-exp(-0.0005*t);
-        vec3 fco = 0.55*vec3(0.55,0.65,0.75) + 0.1*vec3(1.0,0.8,0.5)*pow( 
+        vec3 fco = 0.55*vec3(0.55,0.65,0.75) + 0.1*vec3(1.0,0.8,0.5)*pow(
             sundot, 4.0 );
         col = mix( col, fco, fo );
 
-        col += 0.3*vec3(1.0,0.8,0.4)*pow( sundot, 
+        col += 0.3*vec3(1.0,0.8,0.4)*pow( sundot,
                     8.0 )*(1.0-exp(-0.002*t));
     }
 
     col = pow(col,vec3(0.4545));
 
-    // vignetting	
-    col *= 0.5 + 0.5*pow( (xy.x+1.0)*(xy.y+1.0)*(xy.x-1.0)*(xy.y-1.0), 
+    // vignetting
+    col *= 0.5 + 0.5*pow( (xy.x+1.0)*(xy.y+1.0)*(xy.x-1.0)*(xy.y-1.0),
                          0.1 );
-    
-    #ifdef STEREO	
-    col *= vec3( isCyan, 1.0-isCyan, 1.0-isCyan );	
+
+    #ifdef STEREO
+    col *= vec3( isCyan, 1.0-isCyan, 1.0-isCyan );
     #endif
-    
+
 //	col *= smoothstep( 0.0, 2.0, iGlobalTime );
 
     gl_FragColor=vec4(col,1.0);
@@ -420,9 +428,9 @@ void main(void)
 canvas = Canvas(SHADERTOY)
 # Input data.
 canvas.set_channel_input(noise(resolution=256, nchannels=1), i=0)
-    
+
 if __name__ == '__main__':
-    
+
     canvas.show()
     if sys.flags.interactive == 0:
         canvas.app.run()

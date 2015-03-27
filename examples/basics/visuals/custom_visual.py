@@ -104,11 +104,12 @@ class Canvas(app.Canvas):
 
     def __init__(self):
         app.Canvas.__init__(self, keys='interactive')
+        ps = self.pixel_scale
 
         n = 10000
         pos = 0.25 * np.random.randn(n, 2).astype(np.float32)
         color = np.random.uniform(0, 1, (n, 3)).astype(np.float32)
-        size = np.random.uniform(2, 12, (n, 1)).astype(np.float32)
+        size = np.random.uniform(2*ps, 12*ps, (n, 1)).astype(np.float32)
 
         self.points = MarkerVisual(pos=pos, color=color, size=size)
 

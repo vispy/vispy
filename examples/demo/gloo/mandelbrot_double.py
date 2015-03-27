@@ -194,20 +194,23 @@ class Canvas(app.Canvas):
         self.translate_center(0, 0)
         self.iterations = self.program["iter"] = 300
 
-        width, height = self.size
-        self.program['inv_resolution_x'] = set_emulated_double(1 / width)
-        self.program['inv_resolution_y'] = set_emulated_double(1 / height)
+        self.apply_zoom()
 
         self.min_scale = 1e-12
         self.max_scale = 4
 
         gloo.set_clear_color(color='black')
 
+        self.show()
+
     def on_draw(self, event):
         self.program.draw()
 
     def on_resize(self, event):
-        width, height = event.size
+        self.apply_zoom()
+
+    def apply_zoom(self):
+        width, height = self.physical_size
         gloo.set_viewport(0, 0, width, height)
         self.program['inv_resolution_x'] = set_emulated_double(1 / width)
         self.program['inv_resolution_y'] = set_emulated_double(1 / height)
@@ -261,7 +264,7 @@ class Canvas(app.Canvas):
         wheels :)
 
         """
-        if event.text == '+':
+        if event.text == '+' or event.text == '=':
             self.zoom(0.9)
         elif event.text == '-':
             self.zoom(1/0.9)
@@ -296,5 +299,4 @@ def set_emulated_double(number):
 
 if __name__ == '__main__':
     canvas = Canvas(size=(800, 800), keys='interactive')
-    canvas.show()
     app.run()
