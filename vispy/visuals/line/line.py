@@ -256,17 +256,17 @@ class _GLLineVisual(Visual):
     VERTEX_SHADER = """
         varying vec4 v_color;
 
-        void main(void)
-        {
+        void main(void) {
+            $pre
             gl_Position = $transform($to_vec4($position));
             v_color = $color;
+            $post
         }
     """
 
     FRAGMENT_SHADER = """
         varying vec4 v_color;
-        void main()
-        {
+        void main() {
             $pre
             gl_FragColor = v_color;
             $post
@@ -283,6 +283,8 @@ class _GLLineVisual(Visual):
         # Set up the GL program
         self._program = ModularProgram(self.VERTEX_SHADER,
                                        self.FRAGMENT_SHADER)
+        self._program.vert['pre'] = ''
+        self._program.vert['post'] = ''
         self._program.frag['pre'] = ''
         self._program.frag['post'] = ''
 
