@@ -17,7 +17,7 @@ class SceneEvent(Event, TransformSystem):
 
     def __init__(self, type, canvas, transform_cache=None):
         Event.__init__(self, type=type)
-        
+
         # Note that we are completely replacing the TransformSystem.__init__
         # implementation.
         self._canvas = canvas
@@ -29,16 +29,16 @@ class SceneEvent(Event, TransformSystem):
         self._viewbox_stack = []
         self._doc_stack = []
         self._handled_children = []
-        
+
         if transform_cache is None:
             transform_cache = TransformCache()
         self._transform_cache = transform_cache
 
     @property
     def handled_children(self):
-        """ List of children of the current node that have already been 
+        """ List of children of the current node that have already been
         handled.
-        
+
         Nodes that manually process their children (as opposed to allowing
         drawing / mouse systems to handle them automatically) may append nodes
         to this list to prevent systems from handling them.
@@ -72,7 +72,7 @@ class SceneEvent(Event, TransformSystem):
         self._stack.append(node)
         self._handled_children.append([])
         if id(node) in self._stack_ids:
-            raise RuntimeError("Scenegraph cycle detected; cannot push %r" % 
+            raise RuntimeError("Scenegraph cycle detected; cannot push %r" %
                                node)
         self._stack_ids.add(id(node))
         doc = node.document
@@ -141,9 +141,9 @@ class SceneEvent(Event, TransformSystem):
 
     @property
     def canvas_cs(self):
-        """ The node for the current canvas coordinate system. This cs 
-        represents the logical pixels of the canvas being drawn, with the 
-        origin in upper-left, and the canvas (width, height) in the bottom 
+        """ The node for the current canvas coordinate system. This cs
+        represents the logical pixels of the canvas being drawn, with the
+        origin in upper-left, and the canvas (width, height) in the bottom
         right. This coordinate system is most often used for handling mouse
         input.
         """
@@ -161,7 +161,7 @@ class SceneEvent(Event, TransformSystem):
     @property
     def render_cs(self):
         """ Return node for the normalized device coordinate system. This
-        coordinate system is the obligatory output of GLSL vertex shaders, 
+        coordinate system is the obligatory output of GLSL vertex shaders,
         with (-1, -1) in bottom-left, and (1, 1) in top-right. This coordinate
         system is frequently used for rendering visuals because all vertices
         must ultimately be mapped here.
@@ -173,45 +173,45 @@ class SceneEvent(Event, TransformSystem):
         """ The node at the top of the node stack.
         """
         return self._stack[-1]
-    
+
     @property
     def visual_to_canvas(self):
         """ Transform mapping from visual local coordinate frame to canvas
         coordinate frame.
         """
-        return self.node_transform(map_to=self.canvas_cs, 
+        return self.node_transform(map_to=self.canvas_cs,
                                    map_from=self._stack[-1])
-        
+
     @property
     def visual_to_document(self):
         """ Transform mapping from visual local coordinate frame to document
         coordinate frame.
         """
-        return self.node_transform(map_to=self.document_cs, 
+        return self.node_transform(map_to=self.document_cs,
                                    map_from=self._stack[-1])
-    
+
     @visual_to_document.setter
     def visual_to_document(self, tr):
         raise RuntimeError("Cannot set transforms on SceneEvent.")
-        
+
     @property
     def document_to_framebuffer(self):
         """ Transform mapping from document coordinate frame to the framebuffer
         (physical pixel) coordinate frame.
         """
-        return self.node_transform(map_to=self.framebuffer_cs, 
+        return self.node_transform(map_to=self.framebuffer_cs,
                                    map_from=self.document_cs)
-        
+
     @document_to_framebuffer.setter
     def document_to_framebuffer(self, tr):
         raise RuntimeError("Cannot set transforms on SceneEvent.")
-        
+
     @property
     def framebuffer_to_render(self):
         """ Transform mapping from pixel coordinate frame to rendering
         coordinate frame.
         """
-        return self.node_transform(map_to=self.render_cs, 
+        return self.node_transform(map_to=self.render_cs,
                                    map_from=self.framebuffer_cs)
 
     @framebuffer_to_render.setter
@@ -264,7 +264,7 @@ class SceneEvent(Event, TransformSystem):
         if map_from is None:
             map_from = self._stack[-1]
         fwd_path = self._node_path(map_from, map_to)
-        
+
         if fwd_path[-1] is map_to:
             fwd_path = fwd_path[:-1]
             rev_path = []
@@ -275,7 +275,7 @@ class SceneEvent(Event, TransformSystem):
             if rev_path[-1] is map_from:
                 fwd_path = []
                 rev_path = rev_path[:-1]
-                
+
             else:
                 # Find earliest intersection of fwd and rev paths
                 connected = False
@@ -287,10 +287,10 @@ class SceneEvent(Event, TransformSystem):
                 if not connected:
                     raise RuntimeError("Unable to find unique path from %r to "
                                        "%r" % (map_from, map_to))
-            
+
         # starting node must come _last_ in the transform chain
         fwd_path = fwd_path[::-1]
-        transforms = ([e.transform.inverse for e in rev_path] + 
+        transforms = ([e.transform.inverse for e in rev_path] +
                       [e.transform for e in fwd_path])
         return self._transform_cache.get(transforms)
 
@@ -334,7 +334,7 @@ class SceneDrawEvent(SceneEvent):
 
 class SceneMouseEvent(SceneEvent):
     """ Represents a mouse event that occurred on a SceneCanvas. This event is
-    delivered to all entities whose mouse interaction area is under the event. 
+    delivered to all entities whose mouse interaction area is under the event.
     """
     def __init__(self, event, canvas, **kwargs):
         self.mouse_event = event
@@ -343,7 +343,7 @@ class SceneMouseEvent(SceneEvent):
 
     @property
     def pos(self):
-        """ The position of this event in the local coordinate system of the 
+        """ The position of this event in the local coordinate system of the
         visual.
         """
         return self.map_from_canvas(self.mouse_event.pos)
@@ -361,7 +361,7 @@ class SceneMouseEvent(SceneEvent):
 
     @property
     def press_event(self):
-        """ The mouse press event that initiated a mouse drag, if any. 
+        """ The mouse press event that initiated a mouse drag, if any.
         """
         if self.mouse_event.press_event is None:
             return None
@@ -390,16 +390,16 @@ class SceneMouseEvent(SceneEvent):
     def copy(self):
         ev = self.__class__(self.mouse_event, self._canvas)
         ev._stack = self._stack[:]
-        #ev._ra_stack = self._ra_stack[:]
+        # ev._ra_stack = self._ra_stack[:]
         ev._viewbox_stack = self._viewbox_stack[:]
         return ev
 
     def map_to_canvas(self, obj):
-        tr = self.node_transform(map_from=self.node_cs, 
+        tr = self.node_transform(map_from=self.node_cs,
                                  map_to=self.canvas_cs)
         return tr.map(obj)
-    
+
     def map_from_canvas(self, obj):
-        tr = self.node_transform(map_from=self.canvas_cs, 
+        tr = self.node_transform(map_from=self.canvas_cs,
                                  map_to=self.node_cs)
         return tr.map(obj)

@@ -22,6 +22,7 @@ from ...gloo import gl
 from ...gloo.wrappers import _check_valid
 from ...ext.six import string_types
 from ...util.fonts import _load_glyph
+from ..transforms import STTransform
 from ..shaders import ModularProgram
 from ...color import Color
 from ..visual import Visual
@@ -229,18 +230,19 @@ class TextVisual(Visual):
 
     VERTEX_SHADER = """
         uniform vec2 u_pos;  // anchor position
-        uniform vec2 u_scale;  // to scale to pixel units
         uniform float u_rotation;  // rotation in rad
         attribute vec2 a_position; // in point units
         attribute vec2 a_texcoord;
-
         varying vec2 v_texcoord;
 
         void main(void) {
-            vec4 pos = $transform(vec4(u_pos, 0.0, 1.0));
-            mat2 rot = mat2(cos(u_rotation), -sin(u_rotation),
-                            sin(u_rotation), cos(u_rotation));
-            gl_Position = pos + vec4(rot * a_position * u_scale, 0., 0.);
+            // Eventually "rot" should be handled by SRTTransform or so...
+            mat4 rot = mat4(cos(u_rotation), -sin(u_rotation), 0, 0,
+                            sin(u_rotation), cos(u_rotation), 0, 0,
+                            0, 0, 1, 0, 0, 0, 0, 1);
+            vec4 pos = $transform(vec4(u_pos, 0.0, 1.0)) +
+                       $text_scale(rot * vec4(a_position, 0, 0));
+            gl_Position = pos;
             v_texcoord = a_texcoord;
         }
         """
@@ -453,27 +455,22 @@ class TextVisual(Visual):
                    np.arange(0, 4*len(self._text), 4,
                              dtype=np.uint32)[:, np.newaxis])
             self._ib = IndexBuffer(idx.ravel())
+            self._program.bind(self._vertices)
 
-        xform = transforms.get_full_transform()
-        
-        # Measure pixel scale
-        # (note this assumes a linear transform)
-        tr = transforms.framebuffer_to_render
-        px_scale = (tr.map((1, 1)) - tr.map((0, 0)))[:2]
-        
-        self._program.vert['transform'] = xform
-        self._program.prepare()  # Force ModularProgram to set shaders
         # todo: do some testing to verify that the scaling is correct
-        ps = (self._font_size / 72.) * transforms.dpi
-        self._program['u_npix'] = ps
-        self._program['u_font_atlas_shape'] = self._font._atlas.shape[:2]
+        n_pix = (self._font_size / 72.) * transforms.dpi  # logical pix
+        tr = (transforms.document_to_framebuffer *
+              transforms.framebuffer_to_render)
+        px_scale = (tr.map((1, 0)) - tr.map((0, 1)))[:2]
+        self._program.vert['transform'] = transforms.get_full_transform()
+        self._program.vert['text_scale'] = STTransform(scale=px_scale * n_pix)
+        self._program['u_npix'] = n_pix
         self._program['u_kernel'] = self._font._kernel
-        self._program['u_scale'] = ps * px_scale[0], ps * px_scale[1]
         self._program['u_rotation'] = self._rotation
         self._program['u_pos'] = self._pos
         self._program['u_color'] = self._color.rgba
         self._program['u_font_atlas'] = self._font._atlas
-        self._program.bind(self._vertices)
+        self._program['u_font_atlas_shape'] = self._font._atlas.shape[:2]
         set_state(blend=True, depth_test=False,
                   blend_func=('src_alpha', 'one_minus_src_alpha'))
         self._program.draw('triangles', self._ib)
