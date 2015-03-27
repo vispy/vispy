@@ -240,7 +240,7 @@ class Function(ShaderObject):
             if isinstance(variable, Variable):
                 try:
                     variable.value = val
-                    self.changed.emit(value_changed=True)
+                    self.changed(value_changed=True)
                     return
                 except Exception:
                     # Setting value on existing Variable failed for some
