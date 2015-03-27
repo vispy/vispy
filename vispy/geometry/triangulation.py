@@ -1,9 +1,23 @@
 # -*- coding: utf8 -*-
-from __future__ import division, print_function
 
-import numpy as np
-from ..ext.ordereddict import OrderedDict
+from __future__ import division, print_function
+import sys
+
 from itertools import permutations
+import numpy as np
+
+from ..ext.ordereddict import OrderedDict
+
+try:
+    # Try to use the C++ triangle library, faster than the 
+    # pure Python version.
+    # The latest stable release only works with Python 2. The GitHub version
+    # works on Python 3 though, but the release has yet to be done.
+    import triangle
+    assert sys.version_info.major == 2
+    _TRIANGLE_AVAILABLE = True
+except (ImportError, AssertionError):
+    _TRIANGLE_AVAILABLE = False
 
 
 class Triangulation(object):
@@ -956,6 +970,43 @@ class Triangulation(object):
                                (a, b, c))
 
         return k
+
+
+def _triangulate_python(vertices_2d, segments):
+    segments = segments.reshape(len(segments) / 2, 2)
+    T = Triangulation(vertices_2d, segments)
+    T.triangulate()
+    vertices_2d = T.pts
+    triangles = T.tris.ravel()
+    return vertices_2d, triangles
+
+
+def _triangulate_cpp(vertices_2d, segments):
+    T = triangle.triangulate({'vertices': vertices_2d,
+                              'segments': segments}, "p")
+    vertices_2d = T["vertices"]
+    triangles = T["triangles"]
+    return vertices_2d, triangles
+
+
+def triangulate(vertices):
+    """Triangulate a set of vertices. Returns a pair (vertices, triangles)."""
+    n = len(vertices)
+    vertices = np.asarray(vertices)
+    zmean = vertices[:, 2].mean()
+    vertices_2d = vertices[:, :2]
+    segments = np.repeat(np.arange(n + 1), 2)[1:-1]
+    segments[-2:] = n - 1, 0
+
+    if _TRIANGLE_AVAILABLE:
+        vertices_2d, triangles = _triangulate_cpp(vertices_2d, segments)
+    else:
+        vertices_2d, triangles = _triangulate_python(vertices_2d, segments)
+
+    vertices = np.empty((len(vertices_2d), 3))
+    vertices[:, :2] = vertices_2d
+    vertices[:, 2] = zmean
+    return vertices, triangles
 
 
 # Note: using custom #debug instead of logging because 
