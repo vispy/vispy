@@ -5,14 +5,14 @@
 import numpy as np
 
 from ..scene import SceneCanvas, visuals, cameras, widgets
+from ..util.fourier import stft
 
 # TODO list:
-# Populate more plotting types
-# Automate?
-# Spectrogram example
+# Populate more plotting types (line, scatter, image, surface, ...)
+# Add spectrogram calculation / visual
 # Camera resetting every time?
 # Refactor __getitem__ into grid?
-# Fix "quick" to auto-generate if possible
+# Fix spectrogram (bounds, etc.)
 
 
 class Fig(SceneCanvas):
@@ -68,18 +68,30 @@ class Fig(SceneCanvas):
 
 class _PlotWidget(widgets.ViewBox):
     """Class giving access to plotting"""
+
+    def line(self, x, y):
+        data = np.array([x, y]).T  # XXX refactor with LinePlot as well
+        line = visuals.Line(data)
+        self.add(line)
+        self.camera = cameras.PanZoomCamera()
+        return line
+        
     def image(self, data):
         image = visuals.Image(data)
         self.add(image)
         self.camera = cameras.PanZoomCamera(aspect=1)
-        self.camera.set_range()
         return image
 
     def volume(self, data, threshold=None, style='mip', cmap='grays'):
         volume = visuals.Volume(data, threshold=threshold, style=style,
                                 cmap=cmap)
         self.add(volume)
-        self.camera = cameras.TurntableCamera(azimuth=0,
-                                              elevation=0)
-        self.camera.set_range(margin=0)
+        self.camera = cameras.TurntableCamera(azimuth=0, elevation=0)
         return volume
+
+    def spectrogram(self, x, fs=1., n_fft=256, step=128):
+        data = 20 * np.log10(np.abs(stft(x, n_fft, step)))
+        image = visuals.Image(data)
+        self.add(image)
+        self.camera = cameras.PanZoomCamera()
+        return image

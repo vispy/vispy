@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
+"""
+Plot various views of a structural MRI.
+"""
 
 import sys
 import numpy as np
@@ -21,9 +24,6 @@ vol_pw.camera.scale_factor /= 1.5
 fig[1, 0].image(vol_data[:, :, vol_data.shape[2] // 2])
 fig[0, 1].image(vol_data[:, vol_data.shape[1] // 2, :])
 fig[1, 1].image(vol_data[vol_data.shape[0] // 2, :, :].T)
-
-for pw in fig.plot_widgets:
-    pw.bgcolor = 'w'
 
 if __name__ == '__main__':
     fig.show()

@@ -8,7 +8,6 @@ Example of simple mesh plotting and manipulation.
 """
 
 import sys
-import numpy as np
 
 from vispy.io import load_data_file
 import vispy.plot.q as vpq

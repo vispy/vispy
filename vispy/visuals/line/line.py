@@ -308,7 +308,8 @@ class _GLLineVisual(Visual):
             elif pos.shape[-1] == 3:
                 self._program.vert['to_vec4'] = vec3to4
             else:
-                raise TypeError("Got bad position array shape: %r" % pos.shape)
+                raise TypeError("Got bad position array shape: %r"
+                                % (pos.shape,))
 
         if self._parent._changed['color']:
             color = self._parent._interpret_color()
