@@ -113,10 +113,7 @@ class Canvas(app.Canvas):
 
     def __init__(self):
         # setup initial width, height
-        self.width = 800
-        self.height = 600
-        app.Canvas.__init__(self, keys='interactive')
-        self.size = self.width, self.height
+        app.Canvas.__init__(self, keys='interactive', size=(800, 600))
 
         # create a new shader program
         self.program = gloo.Program(VERT_SHADER, FRAG_SHADER,
@@ -136,8 +133,8 @@ class Canvas(app.Canvas):
 
         self.program['u_colormap'] = colors
 
-        self.projection = perspective(45.0, self.width / float(self.height),
-                                      1.0, 1000.0)
+        w, h = self.size
+        self.projection = perspective(45.0, w / float(h), 1.0, 1000.0)
         self.program['u_projection'] = self.projection
 
         # start the galaxy to some decent point in the future
@@ -165,8 +162,8 @@ class Canvas(app.Canvas):
                                ('a_type', np.float32, 1)])
 
         # see shader for parameter explanations
-        data['a_size'] = galaxy['size'] * max(self.width / 800.0,
-                                              self.height / 800.0)
+        pw, ph = self.physical_size
+        data['a_size'] = galaxy['size'] * max(pw / 800.0, ph / 800.0)
         data['a_position'] = galaxy['position'] / 13000.0
 
         data['a_color_index'] = (galaxy['temperature'] - t0) / (t1 - t0)
@@ -176,11 +173,11 @@ class Canvas(app.Canvas):
         return data
 
     def on_resize(self, event):
-        self.width, self.height = event.size
         # setup the new viewport
-        gloo.set_viewport(0, 0, self.width, self.height)
+        gloo.set_viewport(0, 0, *event.physical_size)
         # recompute the projection matrix
-        self.projection = perspective(45.0, self.width / float(self.height),
+        w, h= event.size
+        self.projection = perspective(45.0, w / float(h),
                                       1.0, 1000.0)
         self.program['u_projection'] = self.projection
 
