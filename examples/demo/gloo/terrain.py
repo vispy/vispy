@@ -181,10 +181,10 @@ class Canvas(app.Canvas):
         elif(event.text == ' '):
             self.view = self.default_view
 
-        self.view = (translate(-np.array(self.translate)) *
-                     rotate(self.rotate[0], (1, 0, 0)) *
-                     rotate(self.rotate[1], (0, 1, 0)) *
-                     rotate(self.rotate[2], (0, 0, 1))) * self.view
+        self.view = self.view * (translate(-np.array(self.translate)) *
+                                 rotate(self.rotate[0], (1, 0, 0)) *
+                                 rotate(self.rotate[1], (0, 1, 0)) *
+                                 rotate(self.rotate[2], (0, 0, 1)))
         self.program['u_view'] = self.view
         self.update()
 
