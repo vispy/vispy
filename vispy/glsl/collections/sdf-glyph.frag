@@ -40,7 +40,7 @@ void main(void)
 
     // Retrieve distance from texture
     float dist;
-    if(v_scale > 50) {
+    if(v_scale > 50.) {
         dist = Bicubic(atlas_data, atlas_shape, v_texcoord).r;
         // Debug
         // color = vec4(0,0,1,1);
@@ -57,7 +57,7 @@ void main(void)
     float alpha = contour( dist, width );
 
     // Supersampled version (when scale is small)
-    if (v_scale < 30)
+    if (v_scale < 30.)
     {
         // Debug
         // color = vec4(1,0,0,1);

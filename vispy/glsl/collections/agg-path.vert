@@ -111,14 +111,14 @@ void main (void)
 
     // Angle between prev and current segment (sign only)
     float d0 = +1.0;
-    if( (v0.x*v1.y - v0.y*v1.x) > 0 ) { d0 = -1.0;}
+    if( (v0.x*v1.y - v0.y*v1.x) > 0. ) { d0 = -1.0;}
 
     // Angle between current and next segment (sign only)
     float d1 = +1.0;
-    if( (v1.x*v2.y - v1.y*v2.x) > 0 ) { d1 = -1.0; }
+    if( (v1.x*v2.y - v1.y*v2.x) > 0. ) { d1 = -1.0; }
 
     // Adjust vertex position
-    if (uv.x == -1) {
+    if (uv.x == -1.) {
         z = p1_.z / p1_.w;
 
         // Cap at start

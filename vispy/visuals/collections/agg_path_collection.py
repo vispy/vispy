@@ -92,7 +92,7 @@ class AggPathCollection(Collection):
             fragment = glsl.get('collections/agg-path.frag')
 
         vertex = transform + vertex
-        Collection.__init__(self, dtype=dtype, itype=np.uint32,
+        Collection.__init__(self, dtype=dtype, itype=np.uint32,  # 16 for WebGL
                             mode="triangles",
                             vertex=vertex, fragment=fragment, **kwargs)
 
@@ -170,6 +170,7 @@ class AggPathCollection(Collection):
 
         n = itemsize
         if closed:
+            # uint16 for WebGL
             I = np.resize(
                 np.array([0, 1, 2, 1, 2, 3], dtype=np.uint32), n * 2 * 3)
             I += np.repeat(4 * np.arange(n), 6)
