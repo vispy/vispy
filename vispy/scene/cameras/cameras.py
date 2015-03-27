@@ -645,8 +645,8 @@ class PanZoomCamera(BaseCamera):
                 # Translate
                 p1 = np.array(event.last_event.pos)[:2]
                 p2 = np.array(event.pos)[:2]
-                p1s = self._scene_transform.imap(p1)
-                p2s = self._scene_transform.imap(p2)
+                p1s = self._transform.imap(p1)
+                p2s = self._transform.imap(p2)
                 self.pan(p1s-p2s)
             
             elif 2 in event.buttons and not modifiers:
@@ -654,7 +654,7 @@ class PanZoomCamera(BaseCamera):
                 p1c = np.array(event.last_event.pos)[:2]
                 p2c = np.array(event.pos)[:2]
                 scale = (p1c-p2c) * np.array([1, -1]) * -self.ZOOM_FACTOR
-                center = self._scene_transform.imap(event.press_event.pos[:2])
+                center = self._transform.imap(event.press_event.pos[:2])
                 
                 self.zoom(tuple(scale), center) 
     
@@ -663,6 +663,7 @@ class PanZoomCamera(BaseCamera):
         rect = self.rect
         self._real_rect = Rect(rect)
         vbr = self._viewbox.rect.flipped(x=self.flip[0], y=(not self.flip[1]))
+        d = self._get_depth_value()
         
         # apply scale ratio constraint
         if self._aspect is not None:
@@ -688,10 +689,42 @@ class PanZoomCamera(BaseCamera):
         # Apply mapping between viewbox and cam view
         self.transform.set_mapping(self._real_rect, vbr)
         # Scale z, so that the clipping planes are between -alot and +alot
-        self.transform.zoom((1, 1, 1/self._get_depth_value()))
+        self.transform.zoom((1, 1, 1/d))
+        
+        # We've now set self.transform, which represents our 2D
+        # transform When up is +z this is all. In other cases,
+        # self.transform is now set up correctly to allow pan/zoom, but
+        # for the scene we need a different (3D) mapping. When there
+        # is a minus in up, we simply look at the scene from the other
+        # side (as if z was flipped).
+        
+        if self.up == '+z':
+            # Keep it simple, but we give the scene an affinetransform
+            # to be consistent
+            thetransform = self.transform * AffineTransform()
+        else:
+            rr = self._real_rect
+            tr = AffineTransform()
+            d = d if (self.up[0] == '+') else -d
+            pp1 = [(vbr.left, vbr.bottom, 0), (vbr.left, vbr.top, 0),
+                   (vbr.right, vbr.bottom, 0), (vbr.left, vbr.bottom, 1)]
+            # Get Mapping
+            if self.up[1] == 'z':
+                pp2 = [(rr.left, rr.bottom, 0), (rr.left, rr.top, 0),
+                       (rr.right, rr.bottom, 0), (rr.left, rr.bottom, d)]
+            elif self.up[1] == 'y':
+                pp2 = [(rr.left, 0, rr.bottom), (rr.left, 0, rr.top),
+                       (rr.right, 0, rr.bottom), (rr.left, d, rr.bottom)]
+            elif self.up[1] == 'x':
+                pp2 = [(0, rr.left, rr.bottom), (0, rr.left, rr.top),
+                       (0, rr.right, rr.bottom), (d, rr.left, rr.bottom)]
+            # Apply
+            tr.set_mapping(np.array(pp2), np.array(pp1))
+            thetransform = tr
+        
         # Set on viewbox
-        self._set_scene_transform(self.transform)
-
+        self._set_scene_transform(thetransform)
+    
 
 class PerspectiveCamera(BaseCamera):
     """ Base class for 3D cameras supporting orthographic and

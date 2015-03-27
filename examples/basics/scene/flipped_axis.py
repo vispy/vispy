@@ -42,11 +42,11 @@ volume1.threshold = 0.1
 
 # Plot a line that shows where positive x is, with at the end a small
 # line pointing at positive y
-arr = np.array([(100, 0, 0), (0, 0, 0), (0, 10, 0)])
+arr = np.array([(100, -1, -1), (-1, -1, -1), (-1, 10, -1)])
 line1 = scene.visuals.Line(arr, color='red', parent=view.scene)
 
 # Create cameras
-cam1 = scene.cameras.PanZoomCamera(parent=view.scene)
+cam1 = scene.cameras.PanZoomCamera(parent=view.scene, aspect=1)
 cam2 = scene.cameras.FlyCamera(parent=view.scene)
 cam3 = scene.cameras.TurntableCamera(fov=60, parent=view.scene)
 view.camera = cam3  # Select turntable at first
