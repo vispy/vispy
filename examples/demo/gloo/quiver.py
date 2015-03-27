@@ -285,6 +285,7 @@ def on_mouse_move(event):
 program = gloo.Program(vertex, fragment, count=4)
 dx, dy = 1, 1
 program['position'] = (-dx, -dy), (-dx, +dy), (+dx, -dy), (+dx, +dy)
+program["iMouse"] = (0., 0.)
 
 if __name__ == '__main__':
     canvas.show()
