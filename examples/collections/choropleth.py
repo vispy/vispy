@@ -1,5 +1,7 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
+# vispy: testskip
+
 import json
 
 import numpy as np
