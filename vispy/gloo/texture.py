@@ -4,6 +4,8 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
+import math
+
 import numpy as np
 
 from .globject import GLObject
@@ -92,10 +94,10 @@ class BaseTexture(GLObject):
                 raise ValueError('Texture needs data or shape, not both.')
             data = np.array(data, copy=False)
             # So we can test the combination
-            self.resize(data.shape, format, internalformat)
-            self.set_data(data)
+            self._resize(data.shape, format, internalformat)
+            self._set_data(data)
         elif shape is not None:
-            self.resize(shape, format, internalformat)
+            self._resize(shape, format, internalformat)
         else:
             raise ValueError("Either data or shape must be given")
         
@@ -127,7 +129,7 @@ class BaseTexture(GLObject):
 
     @property
     def shape(self):
-        """ Texture shape (last dimension indicates number of color channels)
+        """ Data shape (last dimension indicates number of color channels)
         """
         return self._shape
 
@@ -207,6 +209,11 @@ class BaseTexture(GLObject):
             hint which may be ignored by the OpenGL implementation.
 
         """
+        return self._resize(shape, format, internalformat)
+
+    def _resize(self, shape, format=None, internalformat=None):
+        """Internal method for resize.
+        """
         shape = self._normalize_shape(shape)
         
         # Check
@@ -274,6 +281,12 @@ class BaseTexture(GLObject):
         This operation implicitely resizes the texture to the shape of
         the data if given offset is None.
         """
+
+        return self._set_data(data, offset, copy)
+
+    def _set_data(self, data, offset=None, copy=False):
+        """Internal method for set_data.
+        """
         
         # Copy if needed, check/normalize shape
         data = np.array(data, copy=copy)
@@ -281,9 +294,9 @@ class BaseTexture(GLObject):
         
         # Maybe resize to purge DATA commands?
         if offset is None:
-            self.resize(data.shape)
-        elif all([i == 0 for i in offset]) and data.shape == self.shape:
-            self.resize(data.shape)
+            self._resize(data.shape)
+        elif all([i == 0 for i in offset]) and data.shape == self._shape:
+            self._resize(data.shape)
         
         # Convert offset to something usable
         offset = offset or tuple([0 for i in range(self._ndim)])
@@ -291,7 +304,7 @@ class BaseTexture(GLObject):
         
         # Check if data fits
         for i in range(len(data.shape)-1):
-            if offset[i] + data.shape[i] > self.shape[i]:
+            if offset[i] + data.shape[i] > self._shape[i]:
                 raise ValueError("Data is too large")
         
         # Send GLIR command
@@ -305,7 +318,7 @@ class BaseTexture(GLObject):
             key = (key,)
 
         # Default is to access the whole texture
-        shape = self.shape
+        shape = self._shape
         slices = [slice(0, shape[i]) for i in range(len(shape))]
 
         # Check last key/Ellipsis to decide on the order
@@ -313,12 +326,12 @@ class BaseTexture(GLObject):
         dims = range(0, len(key))
         if key[0] == Ellipsis:
             keys = key[::-1]
-            dims = range(len(self.shape) - 1,
-                         len(self.shape) - 1 - len(keys), -1)
+            dims = range(len(self._shape) - 1,
+                         len(self._shape) - 1 - len(keys), -1)
 
         # Find exact range for each key
         for k, dim in zip(keys, dims):
-            size = self.shape[dim]
+            size = self._shape[dim]
             if isinstance(k, int):
                 if k < 0:
                     k += size
@@ -350,7 +363,7 @@ class BaseTexture(GLObject):
             data = np.resize(data, shape)
 
         # Set data (deferred)
-        self.set_data(data=data, offset=offset, copy=False)
+        self._set_data(data=data, offset=offset, copy=False)
     
     def __repr__(self):
         return "<%s shape=%r format=%r at 0x%x>" % (
@@ -359,7 +372,7 @@ class BaseTexture(GLObject):
 
 # --------------------------------------------------------- Texture1D class ---
 class Texture1D(BaseTexture):
-    """ one dimensional texture
+    """ One dimensional texture
 
     Parameters
     ----------
@@ -391,6 +404,18 @@ class Texture1D(BaseTexture):
         """ GLSL declaration strings required for a variable to hold this data.
         """
         return 'uniform', 'sampler1D'
+
+    @property
+    def glsl_sampler_type(self):
+        """ GLSL type of the sampler.
+        """
+        return 'sampler1D'
+
+    @property
+    def glsl_sample(self):
+        """ GLSL function that samples the texture.
+        """
+        return 'texture1D'
 
 
 # --------------------------------------------------------- Texture2D class ---
@@ -432,6 +457,18 @@ class Texture2D(BaseTexture):
         """ GLSL declaration strings required for a variable to hold this data.
         """
         return 'uniform', 'sampler2D'
+
+    @property
+    def glsl_sampler_type(self):
+        """ GLSL type of the sampler.
+        """
+        return 'sampler2D'
+
+    @property
+    def glsl_sample(self):
+        """ GLSL function that samples the texture.
+        """
+        return 'texture2D'
 
 
 # --------------------------------------------------------- Texture3D class ---
@@ -475,6 +512,129 @@ class Texture3D(BaseTexture):
         """ GLSL declaration strings required for a variable to hold this data.
         """
         return 'uniform', 'sampler3D'
+
+    @property
+    def glsl_sampler_type(self):
+        """ GLSL type of the sampler.
+        """
+        return 'sampler3D'
+
+    @property
+    def glsl_sample(self):
+        """ GLSL function that samples the texture.
+        """
+        return 'texture3D'
+
+
+# ------------------------------------------------- TextureEmulated3D class ---
+class TextureEmulated3D(Texture2D):
+    """ Two dimensional texture that is emulating a three dimensional texture
+
+    Parameters
+    ----------
+    Same as Texture2D, but the data is first reshaped from a 3D array
+    to a 2D array.
+    """
+
+    _glsl_sample = """
+        vec4 sample(sampler2D tex, vec3 texcoord) {
+            float index = floor(texcoord.z * $depth);
+
+            // Do a lookup in the 2D texture
+            float u = (mod(index, $r) + texcoord.x) / $r;
+            float v = (floor(index / $r) + texcoord.y) / $c;
+
+            return texture2D(tex, vec2(u,v));
+        }
+    """
+
+    _gl_max_texture_size = 1024  # For now, we just set this manually
+
+    def __init__(self, data=None, format=None, **kwargs):
+        from ..visuals.shaders import Function 
+        self._glsl_sample = Function(self.__class__._glsl_sample)
+
+        self._set_emulated_shape(data)
+        Texture2D.__init__(self, self._normalize_emulated_shape(data),
+                           format, **kwargs)
+        self._update_variables()
+
+    def _set_emulated_shape(self, data_or_shape):
+        if isinstance(data_or_shape, np.ndarray):
+            self._emulated_shape = data_or_shape.shape
+        else:
+            assert isinstance(data_or_shape, tuple)
+            self._emulated_shape = tuple(data_or_shape)
+
+        depth, width = self._emulated_shape[0], self._emulated_shape[1]
+        self._r = TextureEmulated3D._gl_max_texture_size // width
+        self._c = depth // self._r
+        if math.fmod(depth, self._r):
+            self._c += 1
+
+    def _normalize_emulated_shape(self, data_or_shape):
+        if isinstance(data_or_shape, np.ndarray):
+            new_shape = self._normalize_emulated_shape(data_or_shape.shape)
+            new_data = np.empty(new_shape, dtype=data_or_shape.dtype)
+            for j in range(self._c):
+                for i in range(self._r):
+                    i0, i1 = i * self.width, (i+1) * self.width
+                    j0, j1 = j * self.height, (j+1) * self.height
+                    k = j * self._r + i
+                    if k >= self.depth:
+                        break
+                    new_data[j0:j1, i0:i1] = data_or_shape[k]
+
+            return new_data
+
+        assert isinstance(data_or_shape, tuple)
+        return (self._c * self.height, self._r * self.width) + \
+            data_or_shape[3:]
+
+    def _update_variables(self):
+        self._glsl_sample['depth'] = self.depth
+        self._glsl_sample['c'] = self._c
+        self._glsl_sample['r'] = self._r
+
+    def set_data(self, data, offset=None, copy=False):
+        self._set_emulated_shape(data)
+        Texture2D.set_data(self, self._normalize_emulated_shape(data),
+                           offset, copy)
+        self._update_variables()
+
+    def resize(self, shape, format=None, internalformat=None):
+        self._set_emulated_shape(shape)
+        Texture2D.resize(self, self._normalize_emulated_shape(shape),
+                         format, internalformat)
+        self._update_variables()
+
+    @property
+    def shape(self):
+        """ Data shape (last dimension indicates number of color channels)
+        """
+        return self._emulated_shape
+
+    @property
+    def width(self):
+        """ Texture width """
+        return self._emulated_shape[2]
+
+    @property
+    def height(self):
+        """ Texture height """
+        return self._emulated_shape[1]
+
+    @property
+    def depth(self):
+        """ Texture depth """
+        return self._emulated_shape[0]
+
+    @property
+    def glsl_sample(self):
+        """ GLSL function that samples the texture.
+        """
+
+        return self._glsl_sample
 
 
 # ------------------------------------------------------ TextureAtlas class ---
@@ -578,13 +738,13 @@ class TextureAtlas(Texture2D):
         node = self._atlas_nodes[index]
         x, y = node[0], node[1]
         width_left = width
-        if x+width > self.shape[1]:
+        if x+width > self._shape[1]:
             return -1
         i = index
         while width_left > 0:
             node = self._atlas_nodes[i]
             y = max(y, node[1])
-            if y+height > self.shape[0]:
+            if y+height > self._shape[0]:
                 return -1
             width_left -= node[2]
             i += 1
