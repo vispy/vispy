@@ -1096,13 +1096,13 @@ class TurntableCamera(PerspectiveCamera):
     
     def _get_dim_vectors(self):
         # Specify up and forward vector
-        M= {'+z': [(0, 0, +1), (0, 1, 0)],
-            '-z': [(0, 0, -1), (0, 1, 0)],
-            '+y': [(0, +1, 0), (1, 0, 0)],
-            '-y': [(0, -1, 0), (1, 0, 0)],
-            '+x': [(+1, 0, 0), (0, 0, 1)],
-            '-x': [(-1, 0, 0), (0, 0, 1)],
-            }
+        M = {'+z': [(0, 0, +1), (0, 1, 0)],
+             '-z': [(0, 0, -1), (0, 1, 0)],
+             '+y': [(0, +1, 0), (1, 0, 0)],
+             '-y': [(0, -1, 0), (1, 0, 0)],
+             '+x': [(+1, 0, 0), (0, 0, 1)],
+             '-x': [(-1, 0, 0), (0, 0, 1)],
+             }
         up, forward = M[self.up]
         right = np.cross(forward, up)
         return np.array(up), np.array(forward), right
@@ -1397,6 +1397,7 @@ class FlyCamera(PerspectiveCamera):
         if self.auto_roll:
             up = {'x': (1, 0, 0), 'y': (0, 1, 0), 'z': (0, 0, 1)}[self.up[1]]
             up = np.array(up) * {'+': +1, '-': -1}[self.up[0]]
+            
             def angle(p1, p2):
                 return np.arccos(p1.dot(p2))
             #au = angle(pu, (0, 0, 1))

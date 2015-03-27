@@ -53,6 +53,7 @@ view.camera = cam3  # Select turntable at first
 
 ups = cycle(('+z', '-z', '+y', '-y', '+x', '-x'))
 
+
 # Implement key presses
 @canvas.events.key_press.connect
 def on_key_press(event):
