@@ -102,8 +102,7 @@ void main()
 class Canvas(app.Canvas):
 
     def __init__(self):
-        app.Canvas.__init__(self, keys='interactive')
-        self.size = 800, 800
+        app.Canvas.__init__(self, keys='interactive', size=(800, 800))
         self.title = "Atom [zoom with mouse scroll"
 
         self.translate = 6.5
@@ -127,6 +126,8 @@ class Canvas(app.Canvas):
         self.program['u_clock'] = 0.0
 
         self._timer = app.Timer('auto', connect=self.on_timer, start=True)
+
+        self.show()
 
     def on_key_press(self, event):
         if event.text == ' ':

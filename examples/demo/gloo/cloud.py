@@ -231,7 +231,7 @@ class Canvas(app.Canvas):
         u_linewidth = 1.0
         u_antialias = 1.0
 
-		self.translate = 5
+        self.translate = 5
         self.program = gloo.Program(vert, frag)
         self.view = translate((0, 0, -self.translate))
         self.model = np.eye(4, dtype=np.float32)
