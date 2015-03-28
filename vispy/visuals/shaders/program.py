@@ -7,7 +7,8 @@ from __future__ import division
 from ...gloo import Program
 from ...util import logger
 from ...util.event import EventEmitter
-from .function import MainFunction, Variable
+from .function import MainFunction
+from .variable import Variable
 from .compiler import Compiler
 
 

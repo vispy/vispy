@@ -2,11 +2,12 @@
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 import re
-from vispy.visuals.shaders.function import (Function, Variable, Varying,
-                                            MainFunction, FunctionChain)
+from vispy.visuals.shaders import (Function, MainFunction, Variable, Varying,
+                                   FunctionChain)
+
 
 # Users normally don't need these, but I want to test them
-from vispy.visuals.shaders.function import FunctionCall, TextExpression
+from vispy.visuals.shaders.expression import FunctionCall, TextExpression
 
 from vispy.testing import (assert_in, assert_not_in, assert_is,
                            run_tests_if_main, assert_raises, assert_equal)
@@ -423,6 +424,8 @@ def test_FunctionChain():
     assert_in(f3, ch.dependencies())
     assert_in(f4, ch.dependencies())
     assert_in(f5, ch.dependencies())
+
+
 
 
 def test_MainFunction():
