@@ -721,6 +721,8 @@ class FunctionChain(Function):
 
 
 class StatementList(ShaderObject):
+    """Represents a list of statements. 
+    """
     def __init__(self):
         self.items = []
         ShaderObject.__init__(self)
@@ -731,13 +733,18 @@ class StatementList(ShaderObject):
         self.changed(code_changed=True)
 
     def add(self, item):
-        """Add item to the list unless it is already present in the list.
+        """Add an item to the list unless it is already present.
+        
+        If the item is an expression, then a semicolon will be appended to it
+        in the final compiled code.
         """
         if item in self.items:
             return
         self.append(item)
         
     def remove(self, item):
+        """Remove an item from the list.
+        """
         self.items.remove(item)
         self._remove_dep(item)
         self.changed(code_changed=True)

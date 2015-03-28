@@ -3,7 +3,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 import re
 from vispy.visuals.shaders import (Function, MainFunction, Variable, Varying,
-                                   FunctionChain)
+                                   FunctionChain, StatementList)
 
 
 # Users normally don't need these, but I want to test them
@@ -426,6 +426,21 @@ def test_FunctionChain():
     assert_in(f5, ch.dependencies())
 
 
+def test_StatementList():
+    func = Function("void func() {}")
+    main = Function("void main() {}")
+    main['pre'] = StatementList()
+    expr = func()
+    main['pre'].append(expr)
+    assert main['pre'].items == [expr]
+    main['pre'].add(expr)
+    assert main['pre'].items == [expr]
+    
+    code = main.compile()
+    assert " func();" in code
+    
+    main['pre'].remove(expr)
+    assert main['pre'].items == []
 
 
 def test_MainFunction():
