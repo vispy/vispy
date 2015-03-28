@@ -2,8 +2,11 @@
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
+import random
+
 import numpy as np
 
+from vispy.util import transforms as util_transforms
 import vispy.visuals.transforms as tr
 from vispy.geometry import Rect
 from vispy.testing import run_tests_if_main
@@ -14,6 +17,43 @@ AT = tr.AffineTransform
 PT = tr.PolarTransform
 LT = tr.LogTransform
 CT = tr.ChainTransform
+
+
+def test_default_transorm():
+    # Test that DefaultTransform produces the same results as 
+    # plain transform composition.
+    arbitrary_transforms = [
+                            ('translate', (13.3, -14, 12)),
+                            ('translate', (0.14, 127, -8)),
+                            ('translate', (11, 0, 0)),
+                            ('translate', (-117, 9, 0.5)),
+                            ('scale', (11, 1, 1)),
+                            ('scale', (10.1, 3, 7)),
+                            ('scale', (11080, -10, 0.1)),
+                            ('scale', (1-7, 0.01, 1)),
+                            ('rotate', 130, (1, 0, 0)),
+                            ('rotate', -50, (1, 2, 3)),
+                            ('rotate', 140, (-1, 2, 3)),
+                            ('rotate', -9, (3, -2, 30)),
+                            ]
+    
+    # We are going to test 10 peudo-random transform chains
+    # Each consists of 5 randomly picked transforms
+    for iter in range(10):
+        chain = [random.choice(arbitrary_transforms) for i in range(5)]
+        t1 = tr.DefaultTransform()
+        t2 = np.eye(4)
+        # Apply all transforms in the chain
+        for arbitrary_transform in chain:
+            f1 = getattr(t1, arbitrary_transform[0])
+            f1(*arbitrary_transform[1:])
+            f2 = getattr(util_transforms, arbitrary_transform[0])
+            t2 = np.dot(t2, f2(*arbitrary_transform[1:]))
+        # Check
+        p1 = t1.map((1, 1, 1))
+        p2 = np.dot((1, 1, 1, 1), t2)
+        #print(np.isclose(p1, p2))
+        assert all(np.isclose(p1, p2))
 
 
 def assert_chain_types(chain, types):

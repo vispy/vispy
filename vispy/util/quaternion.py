@@ -25,6 +25,9 @@ class Quaternion(object):
         return "<Quaternion object %1.3g + %1.3gi + %1.3gj + %1.3gk>" % (
                self.w, self.x, self.y, self.z)
     
+    def __iter__(self):
+        return iter((self.w, self.x, self.y, self.z))
+    
     def copy(self):
         """ Create an exact copy of this quaternion. 
         """
@@ -166,43 +169,37 @@ class Quaternion(object):
         of the quaternion.
         """
         # Init matrix (remember, a matrix, not an array)
-        a = np.zeros((4, 4), dtype=np.float32)
-        w, x, y, z = self.w, self.x, self.y, self.z
-        # First row
-        a[0, 0] = - 2.0 * (y * y + z * z) + 1.0
-        a[1, 0] = + 2.0 * (x * y + z * w)
-        a[2, 0] = + 2.0 * (x * z - y * w)
-        a[3, 0] = 0.0
-        # Second row
-        a[0, 1] = + 2.0 * (x * y - z * w)
-        a[1, 1] = - 2.0 * (x * x + z * z) + 1.0
-        a[2, 1] = + 2.0 * (z * y + x * w)
-        a[3, 1] = 0.0
-        # Third row
-        a[0, 2] = + 2.0 * (x * z + y * w)
-        a[1, 2] = + 2.0 * (y * z - x * w)
-        a[2, 2] = - 2.0 * (x * x + y * y) + 1.0
-        a[3, 2] = 0.0
-        # Fourth row
-        a[0, 3] = 0.0
-        a[1, 3] = 0.0
-        a[2, 3] = 0.0
-        a[3, 3] = 1.0
-        return a
+        q = self.normalize()
+        w, x, y, z = q.w, q.x, q.y, q.z
+        
+        a = np.array([[w, z, -y, x], 
+                      [-z, w, x, y], 
+                      [y, -x, w, z], 
+                      [-x, -y, -z, w]], np.float64)
+        
+        b = np.array([[w, z, -y, -x], 
+                      [-z, w, x, -y], 
+                      [y, -x, w, -z], 
+                      [x, y, z, w]], np.float64)
+        
+        return np.dot(a, b)
     
     def get_axis_angle(self):
         """ Get the axis-angle representation of the quaternion. 
         (The angle is in radians)
         """
+        q = self.normalize()
+        
         # Init
-        angle = 2 * np.arccos(self.w)
-        scale = (self.x**2 + self.y**2 + self.z**2)**0.5    
+        angle = 2 * np.arccos(q.w)
+        scale = (q.x**2 + q.y**2 + q.z**2)**0.5    
+        #scale = (1 - q.w * q.w)**0.5
         
         # Calc axis
         if scale:
-            ax = self.x / scale
-            ay = self.y / scale
-            az = self.z / scale
+            ax = q.x / scale
+            ay = q.y / scale
+            az = q.z / scale
         else:
             # No rotation, so arbitrary axis
             ax, ay, az = 1, 0, 0
@@ -214,8 +211,10 @@ class Quaternion(object):
         """ Classmethod to create a quaternion from an axis-angle representation. 
         (angle should be in radians).
         """
+        norm = (ax**2 + ay**2 + az**2)**0.5
+        ax, ay, az = ax/norm, ay/norm, az/norm
         if degrees:
-            angle = np.radians(angle)
+            angle = np.radians(angle)  # convert to rad if angle is in deg
         while angle < 0:
             angle += np.pi*2
         angle2 = angle/2.0
