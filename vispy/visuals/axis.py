@@ -1,10 +1,11 @@
 
 import numpy as np
 
+from .visual import Visual
 from .line import LineVisual
 from .text import TextVisual
 
-class AxisVisual(LineVisual):
+class AxisVisual(Visual):
     """Axis visual
 
     Parameters
@@ -24,22 +25,26 @@ class AxisVisual(LineVisual):
             * "power"
     """
     def __init__(self, extents, tick_direction = None, domain=(0., 1.),
-                 scale_type="linear"):
-        color = (1, 1, 1, 1)
+                 scale_type="linear", axis_color=(1, 1, 1, 1),
+                 tick_color = (0.7, 0.7, 0.7, 1)):
+        self.axis_color = axis_color
+        self.tick_color = tick_color
 
         self.extents = extents
         self.vec = np.subtract(self.extents[1],self.extents[0])
 
         self.tick_direction = tick_direction or self._get_tick_direction()
 
-        LineVisual.__init__(self, pos=extents, color=color, mode='gl',
-                            width=3.0)
+    def draw(self, transforms):
+        line = LineVisual(pos=self.extents, color=self.axis_color,
+                          mode='gl', width=3.0)
 
-    def draw_ticks(self, transforms):
-        t = TicksVisual(pos=self._get_tick_positions())
-        t.draw(transforms)
+        ticks = LineVisual(pos=self._get_tick_positions(),
+                           color=self.tick_color, mode='gl',
+                           width=2.0, connect='segments')
 
-        tt = TickTextVisual()
+        ticks.draw(transforms)
+        line.draw(transforms)
 
     def _get_tick_direction(self):
         """Determines the tick direction if not specified."""
@@ -71,15 +76,3 @@ class AxisVisual(LineVisual):
         c[1::2] = tick_endpoints
 
         return c
-
-
-class TicksVisual(LineVisual):
-    def __init__(self, pos, domain=(0., 1.)):
-        color = (0.7, 0.7, 0.7, 1)
-
-        LineVisual.__init__(self, pos=pos, color=color, mode='gl',
-                            width=2.0, connect='segments')
-
-class TickTextVisual(TextVisual):
-    def __init__(self, **kwargs):
-        pass
