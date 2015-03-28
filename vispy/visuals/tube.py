@@ -119,6 +119,9 @@ def _frenet_frames(points, closed):
 
     # Compute tangent vectors for each segment
     tangents = np.roll(points, -1, axis=0) - np.roll(points, 1, axis=0)
+    if not closed:
+        tangents[0] = points[1] - points[0]
+        tangents[-1] = points[-1] = points[-2]
     mags = np.sqrt(np.sum(tangents * tangents, axis=1))
     tangents /= mags[:, np.newaxis]
 
