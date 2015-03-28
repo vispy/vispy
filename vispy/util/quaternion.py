@@ -207,7 +207,7 @@ class Quaternion(object):
         return angle, ax, ay, az
     
     @classmethod
-    def create_from_axis_angle(cls, angle, ax, ay, az, degrees=False):
+    def create_from_axis_angle(cls, angle, ax, ay, az, degrees=True):
         """ Classmethod to create a quaternion from an axis-angle representation. 
         (angle should be in radians).
         """

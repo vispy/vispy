@@ -6,6 +6,7 @@ import random
 
 import numpy as np
 
+from vispy.util.quaternion import Quaternion
 from vispy.util import transforms as util_transforms
 import vispy.visuals.transforms as tr
 from vispy.geometry import Rect
@@ -19,41 +20,180 @@ LT = tr.LogTransform
 CT = tr.ChainTransform
 
 
-def test_default_transorm():
-    # Test that DefaultTransform produces the same results as 
-    # plain transform composition.
-    arbitrary_transforms = [
-                            ('translate', (13.3, -14, 12)),
-                            ('translate', (0.14, 127, -8)),
-                            ('translate', (11, 0, 0)),
-                            ('translate', (-117, 9, 0.5)),
-                            ('scale', (11, 1, 1)),
-                            ('scale', (10.1, 3, 7)),
-                            ('scale', (11080, -10, 0.1)),
-                            ('scale', (1-7, 0.01, 1)),
-                            ('rotate', 130, (1, 0, 0)),
-                            ('rotate', -50, (1, 2, 3)),
-                            ('rotate', 140, (-1, 2, 3)),
-                            ('rotate', -9, (3, -2, 30)),
-                            ]
+class TestDefaultTransform:
+
+    some_translation = [
+                        ('translate', (13.3, -14, 12)),
+                        ('translate', (0.14, 127, -8)),
+                        ('translate', (11, 0, 0)),
+                        ('translate', (-117, 9, 0.5)),
+                        ]
+    some_scaling = [
+                    ('scale', (11, 1, 1)),
+                    ('scale', (10.1, 3, 7)),
+                    ('scale', (11080, -10, 0.1)),
+                    ('scale', (1-7, 0.01, 1)),
+                    ]
     
-    # We are going to test 10 peudo-random transform chains
-    # Each consists of 5 randomly picked transforms
-    for iter in range(10):
-        chain = [random.choice(arbitrary_transforms) for i in range(5)]
-        t1 = tr.DefaultTransform()
-        t2 = np.eye(4)
-        # Apply all transforms in the chain
-        for arbitrary_transform in chain:
-            f1 = getattr(t1, arbitrary_transform[0])
-            f1(*arbitrary_transform[1:])
-            f2 = getattr(util_transforms, arbitrary_transform[0])
-            t2 = np.dot(t2, f2(*arbitrary_transform[1:]))
-        # Check
-        p1 = t1.map((1, 1, 1))
-        p2 = np.dot((1, 1, 1, 1), t2)
-        #print(np.isclose(p1, p2))
-        assert all(np.isclose(p1, p2))
+    some_rotation = [
+                     ('rotate', 130, (1, 0, 0)),
+                     ('rotate', -50, (1, 2, 3)),
+                     ('rotate', 140, (-1, 2, 3)),
+                     ('rotate', -9, (3, -2, 30)),
+                     ]
+    
+    def test_init(self):
+        t1 = tr.DefaultTransform(scale=(1,2,3))
+        t2 = tr.DefaultTransform()
+        t2.scale((1,2,3))
+        assert np.all(t1.get_matrix() == t2.get_matrix())
+        
+        q = Quaternion.create_from_axis_angle(20, 1, 2, 3)
+        t1 = tr.DefaultTransform(rotate=q)
+        t2 = tr.DefaultTransform()
+        t2.rotate(20, (1,2,3))
+        assert np.all(t1.get_matrix() == t2.get_matrix())
+        
+        t1 = tr.DefaultTransform(translate=(1,2,3))
+        t2 = tr.DefaultTransform()
+        t2.translate((1,2,3))
+        assert np.all(t1.get_matrix() == t2.get_matrix())
+        
+        m = np.random.normal(0.0, 1.0, (4, 4))
+        t1 = tr.DefaultTransform(matrix=m)
+        t2 = tr.DefaultTransform()
+        t2.set_matrix(m)
+        assert np.all(t1.get_matrix() == t2.get_matrix())
+    
+    
+    def test_identity(self):
+        # Test that the transform is correctly identified as identity 
+        
+        t = tr.DefaultTransform()
+        assert t.IsIdentity
+        assert 'identity' in repr(t).lower()
+        
+        t.scale((1, 2, 4))
+        assert not t.IsIdentity
+        t.scale((1, 0.5, 0.25))
+        assert t.IsIdentity
+        
+        t.translate((1, 2, 4))
+        assert not t.IsIdentity
+        t.translate((-1, -2, -4))
+        assert t.IsIdentity
+        
+        t.rotate(20, (1, 2, 3))
+        assert not t.IsIdentity
+        t.rotate(-20, (1, 2, 3))
+        #assert t.IsIdentity  # roundof errors
+    
+        t = tr.DefaultTransform(scale=(1,0,0))
+        assert not t.IsIdentity
+        
+        # Setting a matrix marks it as not identity
+        t = tr.DefaultTransform(matrix=np.eye(4))  # maybe we can test for eye?
+        assert not t.IsIdentity
+    
+    def test_shear(self):
+        
+        # translate + scale is OK
+        some_transforms = self.some_translation + self.some_scaling
+        
+        for iter in range(10):
+            chain = [random.choice(some_transforms) for i in range(5)]
+            t1 = tr.DefaultTransform()
+            # Apply all transforms in the chain
+            for arbitrary_transform in chain:
+                f1 = getattr(t1, arbitrary_transform[0])
+                f1(*arbitrary_transform[1:])
+            # Check
+            assert t1.IsShearless
+        
+        # translate + rotate is OK
+        some_transforms = (self.some_rotation + self.some_translation)
+        
+        for iter in range(10):
+            chain = [random.choice(some_transforms) for i in range(5)]
+            t1 = tr.DefaultTransform()
+            # Apply all transforms in the chain
+            for arbitrary_transform in chain:
+                f1 = getattr(t1, arbitrary_transform[0])
+                f1(*arbitrary_transform[1:])
+            # Check
+            assert t1.IsShearless
+        
+        # scale + rotate is OK in that order
+        t = tr.DefaultTransform()
+        t.scale((1,2,3))
+        t.rotate(20, (1,2,3))
+        assert t.IsShearless
+        
+        # rotate + scale is not OK
+        t = tr.DefaultTransform()
+        t.rotate(20, (1,2,3))
+        t.scale((1,2,3))
+        assert not t.IsShearless
+    
+    # todo: test that linalg is not used when nonshearing
+    # todo: test inversion
+    
+    def test_corect_composition_within_transform(self):
+        # Test that DefaultTransform produces the same results as 
+        # plain transform composition.
+        
+        some_transforms = (self.some_scaling + self.some_rotation +
+                           self.some_translation)
+        
+        # We are going to test 10 peudo-random transform chains
+        # Each consists of 5 randomly picked transforms
+        for iter in range(10):
+            chain = [random.choice(some_transforms) for i in range(5)]
+            t1 = tr.DefaultTransform()
+            t2 = np.eye(4)
+            # Apply all transforms in the chain
+            for arbitrary_transform in chain:
+                f1 = getattr(t1, arbitrary_transform[0])
+                f1(*arbitrary_transform[1:])
+                f2 = getattr(util_transforms, arbitrary_transform[0])
+                t2 = np.dot(t2, f2(*arbitrary_transform[1:]))
+            # Check
+            p1 = t1.map((1, 1, 1))
+            p2 = np.dot((1, 1, 1, 1), t2)
+            #print(np.isclose(p1, p2))
+            assert all(np.isclose(p1, p2))
+    
+    def test_corect_composition_betweem_transforms(self):
+        # Test that composing two DefaultTransforms yields the same
+        # as having one DefaultTransform with the total chain of transforms
+        
+        some_transforms = (self.some_scaling + self.some_rotation +
+                           self.some_translation)
+                           
+        # We are going to test 10 peudo-random transform chains
+        # Each consists of 2*3 randomly picked transforms
+        for iter in range(10):
+            chain1 = [random.choice(some_transforms) for i in range(3)]
+            chain2 = [random.choice(some_transforms) for i in range(3)]
+            t0 = tr.DefaultTransform()
+            t1 = tr.DefaultTransform()
+            t2 = tr.DefaultTransform()
+            # Apply all transforms in the chain
+            for arbitrary_transform in chain1:
+                f0 = getattr(t0, arbitrary_transform[0])
+                f0(*arbitrary_transform[1:])
+                f1 = getattr(t1, arbitrary_transform[0])
+                f1(*arbitrary_transform[1:])
+            for arbitrary_transform in chain2:
+                f0 = getattr(t0, arbitrary_transform[0])
+                f0(*arbitrary_transform[1:])
+                f2 = getattr(t2, arbitrary_transform[0])
+                f2(*arbitrary_transform[1:])
+            # Check
+            p0 = t0.map((1, 1, 1))
+            p1 = (t1*t2).map((1, 1, 1))
+            #print(np.isclose(p1, p2))
+            assert all(np.isclose(p0, p1))
 
 
 def assert_chain_types(chain, types):

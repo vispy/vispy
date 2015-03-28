@@ -1301,9 +1301,9 @@ class FlyCamera(PerspectiveCamera):
             yaw += 90 * np.sign(self._flip_factors[0])
 
         # Set orientation
-        q1 = Quaternion.create_from_axis_angle(pitch*math.pi/180, 1, 0, 0)
-        q2 = Quaternion.create_from_axis_angle(0*math.pi/180, 0, 1, 0)
-        q3 = Quaternion.create_from_axis_angle(yaw*math.pi/180, 0, 0, 1)
+        q1 = Quaternion.create_from_axis_angle(pitch, 1, 0, 0)
+        q2 = Quaternion.create_from_axis_angle(0, 0, 1, 0)
+        q3 = Quaternion.create_from_axis_angle(yaw, 0, 0, 1)
         #
         self._rotation1 = (q1 * q2 * q3).normalize()
         self._rotation2 = Quaternion()
@@ -1388,7 +1388,7 @@ class FlyCamera(PerspectiveCamera):
 
         # Calculate manual roll (from speed)
         if self._speed[3:].any():
-            angleGain = np.array([1.0, 1.5, 1.0]) * 3 * math.pi / 180
+            angleGain = np.array([1.0, 1.5, 1.0]) * 3
             angles = self._speed[3:] * angleGain
 
             q1 = Quaternion.create_from_axis_angle(angles[0], -1, 0, 0)
@@ -1418,9 +1418,7 @@ class FlyCamera(PerspectiveCamera):
                 # Correct to soften the force at 90 degree angle
                 roll_angle = np.sign(roll_angle) * np.abs(roll_angle)**0.5
                 # Get correction for this iteration and apply
-                angle_correction = 1.0 * roll_angle * math.pi / 180
-                q = Quaternion.create_from_axis_angle(angle_correction,
-                                                      0, 0, 1)
+                q = Quaternion.create_from_axis_angle(roll_angle, 0, 0, 1)
                 self._rotation1 = (q * self._rotation1).normalize()
 
         # Update
@@ -1503,8 +1501,8 @@ class FlyCamera(PerspectiveCamera):
                 d_az = -float(pos2[0] - pos1[0]) / w
                 d_el = +float(pos2[1] - pos1[1]) / h
                 # Apply gain
-                d_az *= - 0.5 * math.pi  # * self._speed_rot
-                d_el *= + 0.5 * math.pi  # * self._speed_rot
+                d_az *= - 0.5 * 180  # * self._speed_rot
+                d_el *= + 0.5 * 180  # * self._speed_rot
                 # Create temporary quaternions
                 q_az = Quaternion.create_from_axis_angle(d_az, 0, 1, 0)
                 q_el = Quaternion.create_from_axis_angle(d_el, 1, 0, 0)
