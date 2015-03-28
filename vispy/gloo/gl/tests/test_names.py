@@ -8,6 +8,10 @@ from vispy.gloo import gl
 from vispy.testing import run_tests_if_main
 
 
+def teardown_module():
+    gl.use_gl()  # Reset to default
+
+
 class _DummyObject:
     """ To be able to import es2 even in Linux, so that we can test the
     names defined inside.
@@ -21,9 +25,10 @@ class _DummyObject:
 
 
 def _test_function_names(mod):
+    # The .difference(['gl2']) is to allow the gl2 module name
     fnames = set([name for name in dir(mod) if name.startswith('gl')])
     assert function_names.difference(fnames) == set()
-    assert fnames.difference(function_names) == set()
+    assert fnames.difference(function_names).difference(ok_names) == set()
 
 
 def _test_constant_names(mod):
@@ -34,9 +39,9 @@ def _test_constant_names(mod):
 
 def test_destop():
     """ Desktop backend should have all ES 2.0 names. No more, no less. """
-    from vispy.gloo.gl import desktop
-    _test_function_names(desktop)
-    _test_constant_names(desktop)
+    from vispy.gloo.gl import gl2
+    _test_function_names(gl2)
+    _test_constant_names(gl2)
 
 
 def test_es2():
@@ -57,9 +62,24 @@ def test_es2():
 @requires_pyopengl()
 def test_pyopengl():
     """ Pyopengl backend should have all ES 2.0 names. No more, no less. """
-    from vispy.gloo.gl import pyopengl
-    _test_function_names(pyopengl)
-    _test_constant_names(pyopengl)
+    from vispy.gloo.gl import pyopengl2
+    _test_function_names(pyopengl2)
+    _test_constant_names(pyopengl2)
+
+
+@requires_pyopengl()
+def test_glplus():
+    """ Run glplus, check that mo names, set back, check exact set of names.
+    """
+    gl.use_gl('gl+')
+    # Check that there are more names
+    fnames = set([name for name in dir(gl) if name.startswith('gl')])
+    assert len(fnames.difference(function_names).difference(['gl2'])) > 50
+    cnames = set([name for name in dir(gl) if name.startswith('GL')])
+    assert len(cnames.difference(constant_names)) > 50
+    gl.use_gl('gl2')
+    _test_function_names(gl)
+    _test_constant_names(gl)
 
 
 def test_proxy():
@@ -219,5 +239,6 @@ function_names = [n.strip() for n in function_names.split(' ')]
 function_names = set([n for n in function_names if n])
 constant_names = [n.strip() for n in constant_names.split(' ')]
 constant_names = set([n for n in constant_names if n])
+ok_names = set(['gl2', 'glplus'])  # module names
 
 run_tests_if_main()

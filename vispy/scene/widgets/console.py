@@ -71,8 +71,8 @@ __font_6x8__ = np.array([
 ], dtype=np.float32)
 
 VERTEX_SHADER = """
-uniform float u_scale;
-uniform vec2 u_px_scale;
+uniform vec2 u_logical_scale;
+uniform float u_physical_scale;
 uniform vec4 u_color;
 
 attribute vec2 a_position;
@@ -85,8 +85,8 @@ varying vec3 v_bytes_012, v_bytes_345;
 void main (void)
 {
     vec4 pos = $transform(vec4(0., 0., 0., 1.));
-    gl_Position = pos + vec4(a_position * u_px_scale * u_scale, 0., 0.);
-    gl_PointSize = 8.0 * u_scale;
+    gl_Position = pos + vec4(a_position * u_logical_scale, 0., 0.);
+    gl_PointSize = 8.0 * u_physical_scale;
     v_color = u_color;
     v_bytes_012 = a_bytes_012;
     v_bytes_345 = a_bytes_345;
@@ -209,7 +209,11 @@ class Console(Widget):
         if event is None:
             raise RuntimeError('Event cannot be None')
         xform = event.get_full_transform()
-        px_scale = event.framebuffer_cs.transform.scale[:2]
+        tr = (event.document_to_framebuffer *
+              event.framebuffer_to_render)
+        logical_scale = np.diff(tr.map(([0, 1], [1, 0])), axis=0)[0, :2]
+        tr = event.document_to_framebuffer
+        log_to_phy = np.mean(np.diff(tr.map(([0, 1], [1, 0])), axis=0)[0, :2])
         n_pix = (self.font_size / 72.) * 92.  # num of pixels tall
         # The -2 here is because the char_height has a gap built in
         font_scale = max(n_pix / float((self._char_height-2)), 1)
@@ -217,9 +221,9 @@ class Console(Widget):
         self._do_pending_writes()
         self._program.vert['transform'] = xform
         self._program.prepare()
-        self._program['u_px_scale'] = px_scale
+        self._program['u_logical_scale'] = font_scale * logical_scale
         self._program['u_color'] = self.text_color.rgba
-        self._program['u_scale'] = font_scale
+        self._program['u_physical_scale'] = font_scale * log_to_phy
         self._program['a_position'] = self._position
         self._program['a_bytes_012'] = VertexBuffer(self._bytes_012)
         self._program['a_bytes_345'] = VertexBuffer(self._bytes_345)

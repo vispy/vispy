@@ -44,11 +44,11 @@ class Event(object):
        String indicating the event type (e.g. mouse_press, key_release)
     native : object (optional)
        The native GUI event object
-    **kwds : keyword arguments
+    **kwargs : keyword arguments
         All extra keyword arguments become attributes of the event object.
     """
 
-    def __init__(self, type, native=None, **kwds):
+    def __init__(self, type, native=None, **kwargs):
         # stack of all sources this event has been emitted through
         self._sources = []
         self._handled = False
@@ -56,7 +56,7 @@ class Event(object):
         # Store args
         self._type = type
         self._native = native
-        for k, v in kwds.items():
+        for k, v in kwargs.items():
             setattr(self, k, v)
 
     @property
@@ -140,6 +140,10 @@ class Event(object):
             return "<%s %s>" % (self.__class__.__name__, " ".join(attrs))
         finally:
             _event_repr_depth -= 1
+
+    def __str__(self):
+        """Shorter string representation"""
+        return self.__class__.__name__
 
 _event_repr_depth = 0
 
@@ -268,7 +272,8 @@ class EventEmitter(object):
         callback : function | tuple
             *callback* may be either a callable object or a tuple
             (object, attr_name) where object.attr_name will point to a
-            callable object.
+            callable object. Note that only a weak reference to ``object``
+            will be kept.
         ref : bool | str
             Reference used to identify the callback in ``before``/``after``.
             If True, the callback ref will automatically determined (see
@@ -311,6 +316,9 @@ class EventEmitter(object):
         callback_refs = self.callback_refs
         if callback in callbacks:
             return
+        # always use a weak ref
+        if isinstance(callback, tuple):
+            callback = (weakref.ref(callback[0]),) + callback[1:]
         # deal with the ref
         if isinstance(ref, bool):
             if ref:
@@ -373,13 +381,15 @@ class EventEmitter(object):
             self._callbacks = []
             self._callback_refs = []
         else:
+            if isinstance(callback, tuple):
+                callback = (weakref.ref(callback[0]),) + callback[1:]
             if callback in self._callbacks:
                 idx = self._callbacks.index(callback)
                 self._callbacks.pop(idx)
                 self._callback_refs.pop(idx)
 
-    def __call__(self, *args, **kwds):
-        """ __call__(**kwds)
+    def __call__(self, *args, **kwargs):
+        """ __call__(**kwargs)
         Invoke all callbacks for this emitter.
 
         Emit a new event object, created with the given keyword
@@ -404,7 +414,7 @@ class EventEmitter(object):
             raise RuntimeError('EventEmitter loop detected!')
 
         # create / massage event as needed
-        event = self._prepare_event(*args, **kwds)
+        event = self._prepare_event(*args, **kwargs)
 
         # Add our source to the event; remove it after all callbacks have been
         # invoked.
@@ -419,7 +429,7 @@ class EventEmitter(object):
                     continue
                 
                 if isinstance(cb, tuple):
-                    cb = getattr(cb[0], cb[1], None)
+                    cb = getattr(cb[0](), cb[1], None)
                     if cb is None:
                         continue
                 
@@ -434,11 +444,6 @@ class EventEmitter(object):
         return event
 
     def _invoke_callback(self, cb, event):
-        if not hasattr(EventEmitter, 'prof'):
-            EventEmitter.prof = {}
-        k = (cb, event.type)
-        EventEmitter.prof[k] = 1 + EventEmitter.prof.get(k, 0)
-
         try:
             cb(event)
         except Exception:
@@ -446,17 +451,17 @@ class EventEmitter(object):
                               self.print_callback_errors,
                               self, cb_event=(cb, event))
 
-    def _prepare_event(self, *args, **kwds):
+    def _prepare_event(self, *args, **kwargs):
         # When emitting, this method is called to create or otherwise alter
         # an event before it is sent to callbacks. Subclasses may extend
         # this method to make custom modifications to the event.
-        if len(args) == 1 and not kwds and isinstance(args[0], Event):
+        if len(args) == 1 and not kwargs and isinstance(args[0], Event):
             event = args[0]
             # Ensure that the given event matches what we want to emit
             assert isinstance(event, self.event_class)
         elif not args:
             args = self.default_args.copy()
-            args.update(kwds)
+            args.update(kwargs)
             event = self.event_class(**args)
         else:
             raise ValueError("Event emitters can be called with an Event "
@@ -514,14 +519,14 @@ class WarningEmitter(EventEmitter):
     EventEmitter subclass used to allow deprecated events to be used with a
     warning message.
     """
-    def __init__(self, message, *args, **kwds):
+    def __init__(self, message, *args, **kwargs):
         self._message = message
         self._warned = False
-        EventEmitter.__init__(self, *args, **kwds)
+        EventEmitter.__init__(self, *args, **kwargs)
 
-    def connect(self, cb, *args, **kwds):
+    def connect(self, cb, *args, **kwargs):
         self._warn(cb)
-        return EventEmitter.connect(self, cb, *args, **kwds)
+        return EventEmitter.connect(self, cb, *args, **kwargs)
 
     def _invoke_callback(self, cb, event):
         self._warn(cb)
@@ -602,7 +607,7 @@ class EmitterGroup(EventEmitter):
         """
         self.add(**{name: emitter})
 
-    def add(self, auto_connect=None, **kwds):
+    def add(self, auto_connect=None, **kwargs):
         """ Add one or more EventEmitter instances to this emitter group.
         Each keyword argument may be specified as either an EventEmitter
         instance or an Event subclass, in which case an EventEmitter will be
@@ -622,7 +627,7 @@ class EmitterGroup(EventEmitter):
             auto_connect = self.auto_connect
 
         # check all names before adding anything
-        for name in kwds:
+        for name in kwargs:
             if name in self._emitters:
                 raise ValueError(
                     "EmitterGroup already has an emitter named '%s'" %
@@ -633,7 +638,7 @@ class EmitterGroup(EventEmitter):
                                  % name)
 
         # add each emitter specified in the keyword arguments
-        for name, emitter in kwds.items():
+        for name, emitter in kwargs.items():
             if emitter is None:
                 emitter = Event
 

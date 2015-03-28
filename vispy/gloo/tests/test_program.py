@@ -88,8 +88,14 @@ class ProgramTest(unittest.TestCase):
         
         # Text array unoforms
         program = Program("uniform float A[10];", "foo")
-        assert ('uniform', 'float', 'A[0]') in program.variables
-        assert len(program.variables) == 10
+        assert ('uniform_array', 'float', 'A') in program.variables
+        assert len(program.variables) == 11  # array plus elements
+        self.assertRaises(ValueError, program.__setitem__, 'A',
+                          np.ones((9, 1)))
+        program['A'] = np.ones((10, 1))
+        program['A[0]'] = 0
+        assert 'A[0]' in program._user_variables
+        assert 'A[0]' not in program._pending_variables
         
         # Init program
         program = Program("uniform float A;", 
@@ -109,7 +115,7 @@ class ProgramTest(unittest.TestCase):
         assert all(program['B'] == np.array((1.0, 2.0, 3.0, 4.0), np.float32))
         assert 'B' in program._user_variables
         
-        # Set non-exisint uniforms
+        # Set non-existent uniforms
         program['C'] = 1.0, 2.0
         assert program['C'] == (1.0, 2.0)
         assert 'C' not in program._user_variables
@@ -140,7 +146,7 @@ class ProgramTest(unittest.TestCase):
         assert all(program['C'] == np.array((1.0, 2.0), np.float32))
         assert 'C' in program._user_variables
         assert 'C' not in program._pending_variables
-        
+
         # Set wrong values
         self.assertRaises(ValueError, program.__setitem__, 'A', (1.0, 2.0))
         self.assertRaises(ValueError, program.__setitem__, 'B', (1.0, 2.0))
@@ -174,7 +180,8 @@ class ProgramTest(unittest.TestCase):
         program['B'] = np.zeros((10, 4), np.float32)
         assert isinstance(program._user_variables['B'], VertexBuffer)
         
-        # Set non-exisint uniforms
+        # Set non-existent uniforms
+        vbo = VertexBuffer()  # new one since old one is now wrong size
         program['C'] = vbo
         assert program['C'] == vbo
         assert 'C' not in program._user_variables
@@ -204,7 +211,16 @@ class ProgramTest(unittest.TestCase):
         self.assertRaises(ValueError, program.__setitem__, 'A', (1.0, 2.0))
         self.assertRaises(ValueError, program.__setitem__, 'C', 1.0)
         self.assertRaises(ValueError, program.bind, 'notavertexbuffer')
-    
+
+        program = Program("attribute vec2 C;", "foo")
+        # first code path: no exsting variable
+        self.assertRaises(ValueError, program.__setitem__, 'C',
+                          np.ones((2, 10), np.float32))
+        # second code path: variable exists (VertexBuffer.set_data)
+        program['C'] = np.ones((10, 2), np.float32)
+        self.assertRaises(ValueError, program.__setitem__, 'C',
+                          np.ones((2, 10), np.float32))
+
     def test_vbo(self):
         # Test with count
         program = Program('attribute float a; attribute vec2 b;', 'foo', 10)

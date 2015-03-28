@@ -30,15 +30,15 @@ class QtCanvas(QtGui.QWidget):
         to instantiate using any remaining keyword arguments.
     """
     
-    def __init__(self, parent=None, canvas=None, **kwds):
+    def __init__(self, parent=None, canvas=None, **kwargs):
         from .canvas import Canvas
         if canvas is None:
             canvas = Canvas
         if issubclass(canvas, Canvas):
-            canvas = canvas(**kwds)
-        elif len(**kwds) > 0:
+            canvas = canvas(**kwargs)
+        elif len(**kwargs) > 0:
             raise TypeError('Invalid keyword arguments: %s' % 
-                            list(kwds.keys()))
+                            list(kwargs.keys()))
         if not isinstance(canvas, Canvas):
             raise TypeError('canvas argument must be an instance or subclass '
                             'of Canvas.')
@@ -69,6 +69,6 @@ class QtSceneCanvas(QtCanvas):
     
     See QtCanvas.
     """
-    def __init__(self, parent=None, **kwds):
+    def __init__(self, parent=None, **kwargs):
         from ..scene.canvas import SceneCanvas
-        QtCanvas.__init__(self, parent, canvas=SceneCanvas, **kwds)
+        QtCanvas.__init__(self, parent, canvas=SceneCanvas, **kwargs)

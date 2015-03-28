@@ -104,18 +104,27 @@ class Canvas(app.Canvas):
         self.program['u_linewidth'] = 1.00
         self.program['u_model'] = np.eye(4, dtype=np.float32)
         self.program['u_view'] = np.eye(4, dtype=np.float32)
+
+        self.activate_zoom()
+
         gloo.set_clear_color('white')
         gloo.set_state(blend=True,
                        blend_func=('src_alpha', 'one_minus_src_alpha'))
         self.timer = app.Timer('auto', self.on_timer, start=True)
+
+        self.show()
 
     def on_draw(self, event):
         gloo.clear()
         self.program.draw('points')
 
     def on_resize(self, event):
-        gloo.set_viewport(0, 0, *event.size)
-        projection = ortho(0, event.size[0], 0, event.size[1], -1, +1)
+        self.activate_zoom()
+
+    def activate_zoom(self):
+        gloo.set_viewport(0, 0, *self.physical_size)
+        projection = ortho(0, self.size[0], 0,
+                           self.size[1], -1, +1)
         self.program['u_projection'] = projection
 
     def on_timer(self, event):
@@ -135,5 +144,4 @@ class Canvas(app.Canvas):
 
 if __name__ == '__main__':
     canvas = Canvas()
-    canvas.show()
     app.run()

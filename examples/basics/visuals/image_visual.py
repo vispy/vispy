@@ -18,19 +18,20 @@ image = np.random.normal(size=(100, 100, 3), loc=128,
 
 class Canvas(vispy.app.Canvas):
     def __init__(self):
+        vispy.app.Canvas.__init__(self, keys='interactive', size=(800, 800))
+
         self.image = visuals.ImageVisual(image, method='subdivide')
         self.image_transform = STTransform(scale=(7, 7), translate=(50, 50))
-        vispy.app.Canvas.__init__(self, keys='interactive')
-        self.size = (800, 800)
-        self.show()
-        
+
         # Create a TransformSystem that will tell the visual how to draw
         self.tr_sys = TransformSystem(self)
         self.tr_sys.visual_to_document = self.image_transform
 
+        self.show()
+
     def on_draw(self, ev):
         gloo.clear(color='black', depth=True)
-        gloo.set_viewport(0, 0, *self.size)
+        gloo.set_viewport(0, 0, *self.physical_size)
         self.image.draw(self.tr_sys)
 
 

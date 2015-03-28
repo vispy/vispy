@@ -16,8 +16,6 @@ from vispy import app, scene
 # Create a canvas with a 3D viewport
 canvas = scene.SceneCanvas(keys='interactive')
 view = canvas.central_widget.add_view()
-view.set_camera('turntable', mode='perspective', up='z', distance=50,
-                azimuth=30., elevation=30.)
 
 
 ## Define a scalar field from which we will generate an isosurface
@@ -43,6 +41,13 @@ surface.transform = scene.transforms.STTransform(translate=(-25, -25, -50))
 
 # Add a 3D axis to keep us oriented
 axis = scene.visuals.XYZAxis(parent=view.scene)
+
+# Use a 3D camera
+# Manual bounds; Mesh visual does not provide bounds yet
+# Note how you can set bounds before assigning the camera to the viewbox
+cam = scene.TurntableCamera(elevation=30, azimuth=30)
+cam.set_range((-10, 10), (-10, 10), (-10, 10))
+view.camera = cam
 
 
 if __name__ == '__main__':

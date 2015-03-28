@@ -19,16 +19,15 @@ pos[:, 1] = np.random.normal(size=N, scale=100, loc=400).astype(np.float32)
 
 class Canvas(app.Canvas):
     def __init__(self):
-        app.Canvas.__init__(self, keys='interactive')
+        app.Canvas.__init__(self, keys='interactive', size=(800, 800))
         self.points = ModularPoint(pos, color=(0, 1, 0, 1))
         self.tr_sys = visuals.transforms.TransformSystem(self)
-        self.size = (800, 800)
         self.show()
 
     def on_draw(self, ev):
         gloo.set_clear_color('black')
         gloo.clear(color=True, depth=True)
-        gloo.set_viewport(0, 0, *self.size)
+        gloo.set_viewport(0, 0, *self.physical_size)
         self.points.draw(self.tr_sys)
 
 

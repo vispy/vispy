@@ -32,10 +32,10 @@ def create_visual_node(subclass):
         doc = subclass.__doc__
     
     # New __init__ method
-    def __init__(self, *args, **kwds):
-        parent = kwds.pop('parent', None)
-        name = kwds.pop('name', None)
-        subclass.__init__(self, *args, **kwds)
+    def __init__(self, *args, **kwargs):
+        parent = kwargs.pop('parent', None)
+        name = kwargs.pop('name', None)
+        subclass.__init__(self, *args, **kwargs)
         Node.__init__(self, parent=parent, name=name)
     
     # Create new class

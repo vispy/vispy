@@ -157,7 +157,8 @@ class Timer(object):
             type='timer_timeout',
             iteration=self.iter_count,
             elapsed=elapsed,
-            dt=dt)
+            dt=dt,
+            count=self.iter_count)
         self.iter_count += 1
 
     def connect(self, callback):

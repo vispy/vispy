@@ -20,7 +20,6 @@ import sys
 canvas = scene.SceneCanvas(keys='interactive')
 canvas.show()
 view = canvas.central_widget.add_view()
-view.set_camera('turntable', mode='perspective', up='z', distance=5)
 
 cols = 10
 rows = 10
@@ -38,6 +37,8 @@ scene.visuals.Isoline(vertices=vertices, tris=tris, data=vertices[:, 2],
 # Add a 3D axis to keep us oriented
 scene.visuals.XYZAxis(parent=view.scene)
 
+view.camera = scene.TurntableCamera()
+view.camera.set_range((-1, 1), (-1, 1), (-1, 1))
 
 if __name__ == '__main__':
     canvas.show()

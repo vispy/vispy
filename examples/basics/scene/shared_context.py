@@ -17,13 +17,12 @@ from vispy.util.filter import gaussian_filter
 
 canvas1 = scene.SceneCanvas(keys='interactive', show=True)
 view1 = canvas1.central_widget.add_view()
-view1.set_camera('turntable', mode='perspective', up='z', distance=2,
-                 azimuth=30., elevation=30.)
+view1.camera = scene.TurntableCamera(fov=60)
 
 canvas2 = scene.SceneCanvas(keys='interactive', show=True, 
                             shared=canvas1.context)
 view2 = canvas2.central_widget.add_view()
-view2.set_camera('panzoom')  # todo: fix this after #612
+view2.camera = 'panzoom'
 
 # Simple surface plot example
 # x, y values are not specified, so assumed to be 0:50
@@ -39,7 +38,7 @@ view2.add(p1)
 # Add a 3D axis to keep us oriented
 axis = scene.visuals.XYZAxis(parent=view1.scene)
 
-canvas = canvas1  # allow running this example in out test suite
+canvas = canvas1  # allow running this example in our test suite
 
 if __name__ == '__main__':
     if sys.flags.interactive == 0:

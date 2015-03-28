@@ -16,6 +16,6 @@ class ModularMesh(ModularVisual):
         self.set_gl_options(gl_options)
         self.set_data(faces=faces, index=index, pos=pos, z=z, color=color)
 
-    def set_data(self, **kwds):
-        kwds['index'] = kwds.pop('faces', kwds.get('index', None))
-        super(ModularMesh, self).set_data(**kwds)
+    def set_data(self, **kwargs):
+        kwargs['index'] = kwargs.pop('faces', kwargs.get('index', None))
+        super(ModularMesh, self).set_data(**kwargs)

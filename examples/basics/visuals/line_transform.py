@@ -32,6 +32,7 @@ color[:, 1] = color[::-1, 0]
 
 class Canvas(app.Canvas):
     def __init__(self):
+        app.Canvas.__init__(self, keys='interactive', size=(800, 800))
 
         # Define several Line visuals that use the same position data
         # but have different colors and transformations
@@ -45,14 +46,14 @@ class Canvas(app.Canvas):
 
         self.lines[0].transform = center
 
-        self.lines[1].transform = (center * 
+        self.lines[1].transform = (center *
                                    STTransform(scale=(1, 0.1, 1)))
 
-        self.lines[2].transform = (center * 
+        self.lines[2].transform = (center *
                                    STTransform(translate=(200, 200, 0)) *
                                    STTransform(scale=(0.3, 0.5, 1)))
 
-        self.lines[3].transform = (center * 
+        self.lines[3].transform = (center *
                                    STTransform(translate=(-200, -200, 0),
                                                scale=(200, 1)) *
                                    LogTransform(base=(10, 0, 0)) *
@@ -70,21 +71,18 @@ class Canvas(app.Canvas):
                                    STTransform(scale=(0.01, 0.1),
                                                translate=(4, 20)))
 
-        app.Canvas.__init__(self, keys='interactive')
-        self.size = (800, 800)
-        self.show()
-        
         for line in self.lines:
             tr_sys = visuals.transforms.TransformSystem(self)
             tr_sys.visual_to_document = line.transform
             line.tr_sys = tr_sys
 
+        self.show()
+
     def on_draw(self, ev):
         gloo.clear('black', depth=True)
-        gloo.set_viewport(0, 0, *self.size)
+        gloo.set_viewport(0, 0, *self.physical_size)
         for line in self.lines:
             line.draw(line.tr_sys)
-
 
 if __name__ == '__main__':
     win = Canvas()

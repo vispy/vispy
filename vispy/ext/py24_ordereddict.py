@@ -30,7 +30,7 @@ class OrderedDict(dict):
     # The sentinel element never gets deleted (this simplifies the algorithm).
     # Each link is stored as a list of length three:  [PREV, NEXT, KEY].
 
-    def __init__(self, *args, **kwds):
+    def __init__(self, *args, **kwargs):
         '''Initialize an ordered dictionary.  Signature is the same as for
         regular dictionaries, but keyword arguments are not recommended
         because their insertion order is arbitrary.
@@ -44,7 +44,7 @@ class OrderedDict(dict):
             self.__root = root = []                     # sentinel node
             root[:] = [root, root, None]
             self.__map = {}
-        self.__update(*args, **kwds)
+        self.__update(*args, **kwargs)
 
     def __setitem__(self, key, value, dict_setitem=dict.__setitem__):
         'od.__setitem__(i, y) <==> od[i]=y'
@@ -146,7 +146,7 @@ class OrderedDict(dict):
         for k in self:
             yield (k, self[k])
 
-    def update(*args, **kwds):
+    def update(*args, **kwargs):
         '''od.update(E, **F) -> None.  Update od from dict/iterable E and F.
 
         If E is a dict instance, does:           for k in E: od[k] = E[k]
@@ -174,7 +174,7 @@ class OrderedDict(dict):
         else:
             for key, value in other:
                 self[key] = value
-        for key, value in kwds.items():
+        for key, value in kwargs.items():
             self[key] = value
 
     # let subclasses override update without breaking __init__

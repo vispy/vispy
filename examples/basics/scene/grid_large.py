@@ -26,6 +26,7 @@ for i in range(10):
     lines.append([])
     for j in range(10):
         vb = grid.add_view(row=i, col=j)
+        vb.camera = 'panzoom'
         vb.camera.rect = (0, -5), (100, 10)
         vb.border = (1, 1, 1, 0.4)
 

@@ -40,7 +40,7 @@ _patch()
 ## Inject
 
 def _make_unavailable_func(funcname):
-    def cb(*args, **kwds):
+    def cb(*args, **kwargs):
         raise RuntimeError('OpenGL API call "%s" is not available.' % funcname)
     return cb
 
@@ -82,17 +82,17 @@ def _get_function_from_pyopengl(funcname):
 def _inject():
     """ Copy functions from OpenGL.GL into _pyopengl namespace.
     """
-    NS = _pyopengl.__dict__
-    for glname, ourname in _pyopengl._functions_to_import:
+    NS = _pyopengl2.__dict__
+    for glname, ourname in _pyopengl2._functions_to_import:
         func = _get_function_from_pyopengl(glname)
         NS[ourname] = func
 
 
-from . import _pyopengl  # noqa
+from . import _pyopengl2  # noqa
 
 # Inject remaining functions from OpenGL.GL
-# copies name to _pyopengl namespace
+# copies name to _pyopengl2 namespace
 _inject()
 
-# Inject all function definitions in _pyopengl
-_copy_gl_functions(_pyopengl, globals())
+# Inject all function definitions in _pyopengl2
+_copy_gl_functions(_pyopengl2, globals())

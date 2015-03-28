@@ -95,7 +95,7 @@ void main()
 
 class Canvas(app.Canvas):
     def __init__(self):
-        app.Canvas.__init__(self, show=True, size=(512, 512),
+        app.Canvas.__init__(self, size=(512, 512),
                             keys='interactive')
         self.image = Program(img_vertex, img_fragment, 4)
         self.image['position'] = (-1, -1), (-1, +1), (+1, -1), (+1, +1)
@@ -113,9 +113,11 @@ class Canvas(app.Canvas):
 
         set_clear_color('black')
 
+        self.show()
+
     def on_resize(self, event):
-        width, height = event.size
-        set_viewport(0, 0, *event.size)
+        width, height = event.physical_size
+        set_viewport(0, 0, *event.physical_size)
 
     def on_draw(self, event):
         clear(color=True, depth=True)

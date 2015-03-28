@@ -17,11 +17,10 @@ from vispy.util.filter import gaussian_filter
 
 canvas = scene.SceneCanvas(keys='interactive')
 view = canvas.central_widget.add_view()
-view.set_camera('turntable', mode='perspective', up='z', distance=2,
-                azimuth=30., elevation=30.)
+view.camera = scene.TurntableCamera(up='z')
 
-## Simple surface plot example
-## x, y values are not specified, so assumed to be 0:50
+# Simple surface plot example
+# x, y values are not specified, so assumed to be 0:50
 z = gaussian_filter(np.random.normal(size=(50, 50)), (1, 1)) * 10
 p1 = scene.visuals.SurfacePlot(z=z, color=(0.5, 0.5, 1, 1), shading='smooth')
 p1.transform = scene.transforms.AffineTransform()

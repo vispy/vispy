@@ -21,7 +21,8 @@ void main()
 """
 
 fragment = """
-const float M_PI = 3.14159265358979323846;
+#include "math/constants.glsl"
+//const float M_PI = 3.14159265358979323846;
 uniform float u_time;
 varying vec2 v_position;
 
@@ -91,16 +92,18 @@ class Canvas(app.Canvas):
         self.program = gloo.Program(vertex, fragment)
         self.program['a_position'] = [(-1., -1.), (-1., +1.),
                                       (+1., -1.), (+1., +1.)]
-        
+
         self.program['u_time'] = 0.0
         self.timer = app.Timer('auto', connect=self.on_timer, start=True)
+
+        self.show()
 
     def on_timer(self, event):
         self.program['u_time'] = event.elapsed
         self.update()
 
     def on_resize(self, event):
-        width, height = event.size
+        width, height = event.physical_size
         gloo.set_viewport(0, 0, width, height)
 
     def on_draw(self, event):
@@ -108,5 +111,4 @@ class Canvas(app.Canvas):
 
 if __name__ == '__main__':
     canvas = Canvas()
-    canvas.show()
     app.run()

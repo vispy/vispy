@@ -17,7 +17,7 @@ import ctypes
 ## bind / gen / delete stuff
 
 def deleteBuffer(buffer):
-    # --- desktop angle
+    # --- gl es
     n = 1  
     buffers = (ctypes.c_uint*n)(buffer)  
     ()  
@@ -25,7 +25,7 @@ def deleteBuffer(buffer):
     GL.glDeleteBuffers(1, [buffer])
 
 def deleteFramebuffer(framebuffer):
-    # --- desktop angle
+    # --- gl es
     n = 1  
     framebuffers = (ctypes.c_uint*n)(framebuffer)  
     ()
@@ -33,7 +33,7 @@ def deleteFramebuffer(framebuffer):
     FBO.glDeleteFramebuffers(1, [framebuffer])
 
 def deleteRenderbuffer(renderbuffer):
-    # --- desktop angle
+    # --- gl es
     n = 1  
     renderbuffers = (ctypes.c_uint*n)(renderbuffer)  
     ()
@@ -41,7 +41,7 @@ def deleteRenderbuffer(renderbuffer):
     FBO.glDeleteRenderbuffers(1, [renderbuffer])
 
 def deleteTexture(texture):
-    # --- desktop angle
+    # --- gl es
     n = 1  
     textures = (ctypes.c_uint*n)(texture)  
     ()
@@ -50,7 +50,7 @@ def deleteTexture(texture):
 
 
 def createBuffer():
-    # --- desktop angle
+    # --- gl es
     n = 1
     buffers = (ctypes.c_uint*n)()
     ()  
@@ -61,7 +61,7 @@ def createBuffer():
     return 1
 
 def createFramebuffer():
-    # --- desktop angle
+    # --- gl es
     n = 1
     framebuffers = (ctypes.c_uint*n)()
     ()
@@ -72,7 +72,7 @@ def createFramebuffer():
     return 1
 
 def createRenderbuffer():
-    # --- desktop angle
+    # --- gl es
     n = 1
     renderbuffers = (ctypes.c_uint*n)()
     ()
@@ -83,7 +83,7 @@ def createRenderbuffer():
     return 1
 
 def createTexture():
-    # --- desktop angle
+    # --- gl es
     n = 1
     textures = (ctypes.c_uint*n)()
     ()
@@ -98,7 +98,7 @@ def createTexture():
 
 def texImage2D(target, level, internalformat, format, type, pixels):
     border = 0
-    # --- desktop angle
+    # --- gl es
     if isinstance(pixels, (tuple, list)):
         height, width = pixels
         pixels = ctypes.c_void_p(0)
@@ -121,7 +121,7 @@ def texImage2D(target, level, internalformat, format, type, pixels):
 
 
 def texSubImage2D(target, level, xoffset, yoffset, format, type, pixels):
-    # --- desktop angle
+    # --- gl es
     if not pixels.flags['C_CONTIGUOUS']:
         pixels = pixels.copy('C')
     pixels_ = pixels
@@ -134,13 +134,13 @@ def texSubImage2D(target, level, xoffset, yoffset, format, type, pixels):
 
 
 def readPixels(x, y, width, height, format, type):
-    # --- desktop angle mock
+    # --- gl es mock
     # GL_ALPHA, GL_RGB, GL_RGBA
     t = {6406:1, 6407:3, 6408:4}[format]
     # GL_UNSIGNED_BYTE, GL_FLOAT
     nb = {5121:1, 5126:4}[type]
     size = int(width*height*t*nb)
-    # --- desktop angle
+    # --- gl es
     pixels = ctypes.create_string_buffer(size)
     ()
     return pixels[:]
@@ -150,7 +150,7 @@ def readPixels(x, y, width, height, format, type):
 
 def compressedTexImage2D(target, level, internalformat, width, height, border=0, data=None):
     # border = 0  # set in args
-    # --- desktop angle
+    # --- gl es
     if not data.flags['C_CONTIGUOUS']:
         data = data.copy('C')
     data_ = data
@@ -163,7 +163,7 @@ def compressedTexImage2D(target, level, internalformat, width, height, border=0,
 
 
 def compressedTexSubImage2D(target, level, xoffset, yoffset, width, height, format, data):
-    # --- desktop angle
+    # --- gl es
     if not data.flags['C_CONTIGUOUS']:
         data = data.copy('C')
     data_ = data
@@ -181,7 +181,7 @@ def compressedTexSubImage2D(target, level, xoffset, yoffset, width, height, form
 def bufferData(target, data, usage):
     """ Data can be numpy array or the size of data to allocate.
     """
-    # --- desktop angle
+    # --- gl es
     if isinstance(data, int):
         size = data
         data = ctypes.c_voidp(0)
@@ -202,7 +202,7 @@ def bufferData(target, data, usage):
 
 
 def bufferSubData(target, offset, data):
-    # --- desktop angle
+    # --- gl es
     if not data.flags['C_CONTIGUOUS']:
         data = data.copy('C')
     data_ = data
@@ -215,7 +215,7 @@ def bufferSubData(target, offset, data):
 
 
 def drawElements(mode, count, type, offset):
-    # --- desktop angle
+    # --- gl es
     if offset is None:
         offset = ctypes.c_void_p(0)
     elif isinstance(offset, ctypes.c_void_p):
@@ -238,7 +238,7 @@ def drawElements(mode, count, type, offset):
 
 
 def vertexAttribPointer(indx, size, type, normalized, stride, offset):
-    # --- desktop angle
+    # --- gl es
     if offset is None:
         offset = ctypes.c_void_p(0)
     elif isinstance(offset, ctypes.c_void_p):
@@ -265,7 +265,7 @@ def vertexAttribPointer(indx, size, type, normalized, stride, offset):
 
 
 def bindAttribLocation(program, index, name):
-    # --- desktop angle
+    # --- gl es
     name = ctypes.c_char_p(name.encode('utf-8'))
     ()
     # --- pyopengl
@@ -282,7 +282,7 @@ def shaderSource(shader, source):
         strings = [s for s in source]
     else:
         strings = [source]
-    # --- desktop angle
+    # --- gl es
     count = len(strings)  
     string = (ctypes.c_char_p*count)(*[s.encode('utf-8') for s in strings])  
     length = (ctypes.c_int*count)(*[len(s) for s in strings])  
@@ -294,13 +294,13 @@ def shaderSource(shader, source):
 ## Getters
 
 def _getBooleanv(pname):
-    # --- desktop angle
+    # --- gl es
     params = (ctypes.c_bool*1)()
     ()
     return params[0]
 
 def _getIntegerv(pname):
-    # --- desktop angle
+    # --- gl es
     n = 16
     d = -2**31  # smallest 32bit integer
     params = (ctypes.c_int*n)(*[d for i in range(n)])
@@ -312,7 +312,7 @@ def _getIntegerv(pname):
         return tuple(params)
 
 def _getFloatv(pname):
-    # --- desktop angle
+    # --- gl es
     n = 16
     d = float('Inf')
     params = (ctypes.c_float*n)(*[d for i in range(n)])
@@ -324,7 +324,7 @@ def _getFloatv(pname):
         return tuple(params)
 
 # def _getString(pname):
-#     # --- desktop angle
+#     # --- gl es
 #     ()
 #     return res.value
 #     # --- mock
@@ -346,7 +346,7 @@ def getParameter(pname):
     else:
         return _glGetIntegerv(pname)
     name = pname
-    # --- desktop angle
+    # --- gl es
     ()
     return ctypes.string_at(res).decode('utf-8') if res else ''
     # --- pyopengl
@@ -355,7 +355,7 @@ def getParameter(pname):
 
 
 def getUniform(program, location):
-    # --- desktop angle
+    # --- gl es
     n = 16
     d = float('Inf')
     params = (ctypes.c_float*n)(*[d for i in range(n)])
@@ -378,7 +378,7 @@ def getUniform(program, location):
 
 
 def getVertexAttrib(index, pname):
-    # --- desktop angle
+    # --- gl es
     n = 4
     d = float('Inf')
     params = (ctypes.c_float*n)(*[d for i in range(n)])
@@ -405,7 +405,7 @@ def getVertexAttrib(index, pname):
 
 
 def getTexParameter(target, pname):
-    # --- desktop angle
+    # --- gl es
     d = float('Inf')
     params = (ctypes.c_float*1)(d)
     ()
@@ -413,13 +413,13 @@ def getTexParameter(target, pname):
 
 
 def getActiveAttrib(program, index):
-    # --- desktop angle pyopengl
+    # --- gl es pyopengl
     bufsize = 256
     length = (ctypes.c_int*1)()
     size = (ctypes.c_int*1)()
     type = (ctypes.c_uint*1)()
     name = ctypes.create_string_buffer(bufsize)
-    # --- desktop angle
+    # --- gl es
     ()
     name = name[:length[0]].decode('utf-8')
     return name, size[0], type[0]
@@ -433,7 +433,7 @@ def getActiveAttrib(program, index):
 
 
 def getVertexAttribOffset(index, pname):
-    # --- desktop angle
+    # --- gl es
     pointer = (ctypes.c_void_p*1)()
     ()
     return pointer[0] or 0
@@ -449,7 +449,7 @@ def getVertexAttribOffset(index, pname):
 
     
 def getActiveUniform(program, index):
-    # --- desktop angle
+    # --- gl es
     bufsize = 256
     length = (ctypes.c_int*1)()
     size = (ctypes.c_int*1)()
@@ -464,7 +464,7 @@ def getActiveUniform(program, index):
 
 
 def getAttachedShaders(program):
-    # --- desktop angle
+    # --- gl es
     maxcount = 256
     count = (ctypes.c_int*1)()
     shaders = (ctypes.c_uint*maxcount)()
@@ -473,7 +473,7 @@ def getAttachedShaders(program):
 
 
 def getAttribLocation(program, name):
-    # --- desktop angle
+    # --- gl es
     name = ctypes.c_char_p(name.encode('utf-8'))
     ()
     return res
@@ -483,7 +483,7 @@ def getAttribLocation(program, name):
     
 
 def getUniformLocation(program, name):
-    # --- desktop angle
+    # --- gl es
     name = ctypes.c_char_p(name.encode('utf-8'))
     ()
     return res
@@ -492,7 +492,7 @@ def getUniformLocation(program, name):
     ()
 
 def getProgramInfoLog(program):
-    # --- desktop angle
+    # --- gl es
     bufsize = 1024
     length = (ctypes.c_int*1)()
     infolog = ctypes.create_string_buffer(bufsize)
@@ -503,7 +503,7 @@ def getProgramInfoLog(program):
     return res.decode('utf-8')
 
 def getShaderInfoLog(shader):
-    # --- desktop angle
+    # --- gl es
     bufsize = 1024
     length = (ctypes.c_int*1)()
     infolog = ctypes.create_string_buffer(bufsize)
@@ -514,26 +514,26 @@ def getShaderInfoLog(shader):
     return res.decode('utf-8')
 
 def getProgramParameter(program, pname):
-    # --- desktop angle
+    # --- gl es
     params = (ctypes.c_int*1)()
     ()
     return params[0]
 
 def getShaderParameter(shader, pname):
-    # --- desktop angle
+    # --- gl es
     params = (ctypes.c_int*1)()
     ()
     return params[0]
 
 def getShaderPrecisionFormat(shadertype, precisiontype):
-    # --- desktop angle
+    # --- gl es
     range = (ctypes.c_int*1)()
     precision = (ctypes.c_int*1)()
     ()
     return range[0], precision[0]
 
 def getShaderSource(shader):
-    # --- desktop angle
+    # --- gl es
     bufsize = 1024*1024
     length = (ctypes.c_int*1)()
     source = (ctypes.c_char*bufsize)()
@@ -545,7 +545,7 @@ def getShaderSource(shader):
     
 
 def getBufferParameter(target, pname):
-    # --- desktop angle
+    # --- gl es
     d = -2**31  # smallest 32bit integer
     params = (ctypes.c_int*1)(d)
     ()
@@ -553,7 +553,7 @@ def getBufferParameter(target, pname):
 
 
 def getFramebufferAttachmentParameter(target, attachment, pname):
-    # --- desktop angle
+    # --- gl es
     d = -2**31  # smallest 32bit integer
     params = (ctypes.c_int*1)(d)
     ()
@@ -566,7 +566,7 @@ def getFramebufferAttachmentParameter(target, attachment, pname):
 
 
 def getRenderbufferParameter(target, pname):
-    # --- desktop angle
+    # --- gl es
     d = -2**31  # smallest 32bit integer
     params = (ctypes.c_int*1)(d)
     ()
@@ -596,11 +596,11 @@ class FunctionAnnotation:
         """ Get the lines for this function based on the given backend. 
         The given API call is inserted at the correct location.
         """
-        backend_selector = backend  # first lines are for all backends
+        backend_selector = (backend, )  # first lines are for all backends
         lines = []
         for line in self.lines:
             if line.lstrip().startswith('# ---'):
-                backend_selector = line
+                backend_selector = line.strip().split(' ')
                 continue
             if backend in backend_selector:
                 if line.strip() == '()':

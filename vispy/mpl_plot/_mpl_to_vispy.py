@@ -25,7 +25,7 @@ from ..io import read_png
 from ..scene.visuals import Line, Markers, Text, Image
 from ..scene.widgets import ViewBox
 from ..visuals.transforms import STTransform
-from ..scene import SceneCanvas
+from ..scene import SceneCanvas, PanZoomCamera
 from ..testing import has_matplotlib
 
 
@@ -66,8 +66,8 @@ class VispyRenderer(Renderer):
         vb = ViewBox(parent=self.canvas.scene, border_color='black',
                      bgcolor=props['axesbg'])
         vb.clip_method = 'fbo'  # necessary for bgcolor
-        vb.camera.rect = (xlim[0], ylim[0],
-                          xlim[1] - xlim[0], ylim[1] - ylim[0])
+        vb.camera = PanZoomCamera()
+        vb.camera.set_range(xlim, ylim)
         ax_dict = dict(ax=ax, bounds=bounds, vb=vb, lims=xlim+ylim)
         self._axs[ax] = ax_dict
         self._resize(*self.canvas.size)

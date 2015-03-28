@@ -23,6 +23,7 @@ class NullTransform(BaseTransform):
     NonScaling = True
     Isometric = True
 
+    @arg_to_vec4
     def map(self, obj):
         return obj
 
@@ -71,9 +72,9 @@ class STTransform(BaseTransform):
         self._scale = np.ones(4, dtype=np.float32)
         self._translate = np.zeros(4, dtype=np.float32)
 
-        s = ((1.0, 1.0, 1.0, 1.0) if scale is None else 
+        s = ((1.0, 1.0, 1.0, 1.0) if scale is None else
              as_vec4(scale, default=(1, 1, 1, 1)))
-        t = ((0.0, 0.0, 0.0, 0.0) if translate is None else 
+        t = ((0.0, 0.0, 0.0, 0.0) if translate is None else
              as_vec4(translate, default=(0, 0, 0, 0)))
         self._set_st(s, t)
 
@@ -118,18 +119,18 @@ class STTransform(BaseTransform):
     def translate(self, t):
         t = as_vec4(t, default=(0, 0, 0, 0))
         self._set_st(translate=t)
-        
+
     def _set_st(self, scale=None, translate=None):
         update = False
-        
+
         if scale is not None and not np.all(scale == self._scale):
             self._scale[:] = scale
             update = True
-            
+
         if translate is not None and not np.all(translate == self._translate):
             self._translate[:] = translate
             update = True
-        
+
         if update:
             self._update_map = True
             self._update_imap = True
@@ -137,7 +138,7 @@ class STTransform(BaseTransform):
 
     def move(self, move):
         """Change the translation of this transform by the amount given.
-        
+
         Parameters:
         -----------
         move : array-like
@@ -149,7 +150,7 @@ class STTransform(BaseTransform):
     def zoom(self, zoom, center=(0, 0, 0), mapped=True):
         """Update the transform such that its scale factor is changed, but
         the specified center point is left unchanged.
-        
+
         Parameters
         ----------
         zoom : array-like
@@ -158,8 +159,8 @@ class STTransform(BaseTransform):
         center : array-like
             The center point around which the scaling will take place.
         mapped : bool
-            Whether *center* is expressed in mapped coordinates (True) or 
-            unmapped coordinates (False). 
+            Whether *center* is expressed in mapped coordinates (True) or
+            unmapped coordinates (False).
         """
         zoom = as_vec4(zoom, default=(1, 1, 1, 1))
         center = as_vec4(center, default=(0, 0, 0, 0))
@@ -175,48 +176,48 @@ class STTransform(BaseTransform):
         m.scale(self.scale)
         m.translate(self.translate)
         return m
-    
+
     @classmethod
     def from_mapping(cls, x0, x1):
-        """ Create an STTransform from the given mapping. 
+        """ Create an STTransform from the given mapping.
         See ``set_mapping()`` for details.
         """
         t = cls()
         t.set_mapping(x0, x1)
         return t
-    
+
     def set_mapping(self, x0, x1):
-        """ Configure this transform such that it maps points x0 => x1, 
+        """ Configure this transform such that it maps points x0 => x1,
         where each argument must be an array of shape (2, 2) or (2, 3).
-        
+
         For example, if we wish to map the corners of a rectangle::
-        
+
             p1 = [[0, 0], [200, 300]]
-            
+
         onto a unit cube::
-        
+
             p2 = [[-1, -1], [1, 1]]
-            
+
         then we can generate the transform as follows::
-        
+
             tr = STTransform()
             tr.set_mapping(p1, p2)
-            
+
             # test:
             assert tr.map(p1)[:,:2] == p2
-        
+
         """
         # if args are Rect, convert to array first
         if isinstance(x0, Rect):
             x0 = x0._transform_in()[:3]
         if isinstance(x1, Rect):
             x1 = x1._transform_in()[:3]
-        
+
         x0 = np.array(x0)
         x1 = np.array(x1)
         denom = (x0[1] - x0[0])
         mask = denom == 0
-        denom[mask] = 1.0 
+        denom[mask] = 1.0
         s = (x1[1] - x1[0]) / denom
         s[mask] = 1.0
         s[x0[1] == x0[0]] = 1.0
@@ -322,7 +323,7 @@ class AffineTransform(BaseTransform):
         The translation is applied *after* the transformations already present
         in the matrix.
         """
-        self.matrix = transforms.translate(self.matrix, *pos[0, :3])
+        self.matrix = np.dot(self.matrix, transforms.translate(pos[0, :3]))
 
     def scale(self, scale, center=None):
         """
@@ -339,20 +340,17 @@ class AffineTransform(BaseTransform):
             The x, y and z coordinates to scale around. If None,
             (0, 0, 0) will be used.
         """
-        scale = as_vec4(scale, default=(1, 1, 1, 1))
+        scale = transforms.scale(as_vec4(scale, default=(1, 1, 1, 1))[0, :3])
         if center is not None:
             center = as_vec4(center)[0, :3]
-            m = transforms.translate(self.matrix, *(-center))
-            m = transforms.scale(m, *scale[0, :3])
-            m = transforms.translate(self.matrix, *center)
-            self.matrix = m
-        else:
-            self.matrix = transforms.scale(self.matrix, *scale[0, :3])
+            scale = np.dot(np.dot(transforms.translate(-center), scale),
+                           transforms.translate(center))
+        self.matrix = np.dot(self.matrix, scale)
 
     def rotate(self, angle, axis):
         """
         Rotate the matrix by some angle about a given axis.
-        
+
         The rotation is applied *after* the transformations already present
         in the matrix.
 
@@ -363,13 +361,11 @@ class AffineTransform(BaseTransform):
         axis : array-like
             The x, y and z coordinates of the axis vector to rotate around.
         """
-        #tr = transforms.rotate(np.eye(4), angle, *axis)
-        #self.matrix = np.dot(tr, self.matrix)
-        self.matrix = transforms.rotate(self.matrix, angle, *axis)
+        self.matrix = np.dot(self.matrix, transforms.rotate(angle, axis))
 
     def set_mapping(self, points1, points2):
         """ Set to a 3D transformation matrix that maps points1 onto points2.
-        
+
         Arguments are specified as arrays of four 3D coordinates, shape (4, 3).
         """
         # note: need to transpose because util.functions uses opposite
@@ -383,13 +379,12 @@ class AffineTransform(BaseTransform):
         self.matrix = np.eye(4)
 
     def __mul__(self, tr):
-        if (isinstance(tr, AffineTransform) and not 
-                any(tr.matrix[:3, 3] != 0)):   
+        if (isinstance(tr, AffineTransform) and not
+                any(tr.matrix[:3, 3] != 0)):
             # don't multiply if the perspective column is used
             return AffineTransform(matrix=np.dot(tr.matrix, self.matrix))
         else:
             return tr.__rmul__(self)
-            #return super(AffineTransform, self).__mul__(tr)
 
     def __repr__(self):
         s = "%s(matrix=[" % self.__class__.__name__
@@ -417,17 +412,25 @@ class AffineTransform(BaseTransform):
 class PerspectiveTransform(AffineTransform):
     """
     Matrix transform that also implements perspective division.
-    
+
     """
     # Note: Although OpenGL operates in homogeneouus coordinates, it may be
-    # necessary to manually implement perspective division.. 
+    # necessary to manually implement perspective division..
     # Perhaps we can find a way to avoid this.
     glsl_map = """
         vec4 perspective_transform_map(vec4 pos) {
             vec4 p = $matrix * pos;
-            p = p / p.w;
-            //p.z = 0;
-            p.w = 1;
+            p = p / max(p.w, 0.0000001);
+            p.w = 1.0;
+            return p;
+        }
+    """
+
+    glsl_imap = """
+        vec4 perspective_transform_imap(vec4 pos) {
+            vec4 p = $inv_matrix * pos;
+            p /= min(p.w, -0.0000001);;
+            p.w = 1.0;
             return p;
         }
     """
@@ -450,7 +453,7 @@ class PerspectiveTransform(AffineTransform):
     def map(self, coords):
         # looks backwards, but both matrices are transposed.
         v = np.dot(coords, self.matrix)
-        v /= v[:, 3]
+        v /= v[:, 3].reshape(-1, 1)
         v[:, 2] = 0
         return v
 

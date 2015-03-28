@@ -33,7 +33,7 @@ class RegularPolygonVisual(EllipseVisual):
         Border color of the polygon
     """
     def __init__(self, pos=None, color='black', border_color=None,
-                 radius=0.1, sides=4, **kwds):
+                 radius=0.1, sides=4, **kwargs):
         super(EllipseVisual, self).__init__()
         self.mesh.mode = 'triangle_fan'
         self._pos = pos

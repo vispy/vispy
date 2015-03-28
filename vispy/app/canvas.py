@@ -304,6 +304,25 @@ class Canvas(object):
         return self._backend._vispy_set_size(size[0], size[1])
 
     @property
+    def physical_size(self):
+        """ The physical size of the canvas/window, which may differ from the
+        size property on backends that expose HiDPI """
+        return self._backend._vispy_get_physical_size()
+
+    @property
+    def pixel_scale(self):
+        """ The ratio between the number of logical pixels, or 'points', and
+        the physical pixels on the device. In most cases this will be 1.0,
+        but on certain backends this will be greater than 1. This should be 
+        used as a scaling factor when writing your own visualisations
+        with Gloo (make a copy and multiply all your logical pixel values
+        by it) but you should rarely, if ever, need to use this in your own
+        Visuals or SceneGraph visualisations; instead you should apply the
+        canvas_fb_transform in the SceneGraph canvas. """
+
+        return self.physical_size[0]/self.size[0]
+
+    @property
     def fullscreen(self):
         return self._backend._vispy_get_fullscreen()
 
@@ -424,7 +443,7 @@ class Canvas(object):
 
     # ---------------------------------------------------------------- misc ---
     def __repr__(self):
-        return ('<Vispy canvas (%s backend) at %s>'
+        return ('<Canvas (%s) at %s>'
                 % (self.app.backend_name, hex(id(self))))
 
     def __enter__(self):
@@ -521,15 +540,15 @@ class MouseEvent(Event):
         allowing the entire drag to be reconstructed.
     native : object (optional)
        The native GUI event object
-    **kwds : keyword arguments
+    **kwargs : keyword arguments
         All extra keyword arguments become attributes of the event object.
 
     """
 
     def __init__(self, type, pos=None, button=None, buttons=None,
                  modifiers=None, delta=None, last_event=None, press_event=None,
-                 **kwds):
-        Event.__init__(self, type, **kwds)
+                 **kwargs):
+        Event.__init__(self, type, **kwargs)
         self._pos = np.array([0, 0]) if (pos is None) else np.array(pos)
         self._button = int(button) if (button is not None) else None
         self._buttons = [] if (buttons is None) else buttons
@@ -632,12 +651,12 @@ class KeyEvent(Event):
         time of the event (shift, control, alt, meta).
     native : object (optional)
        The native GUI event object
-    **kwds : keyword arguments
+    **kwargs : keyword arguments
         All extra keyword arguments become attributes of the event object.
     """
 
-    def __init__(self, type, key=None, text='', modifiers=None, **kwds):
-        Event.__init__(self, type, **kwds)
+    def __init__(self, type, key=None, text='', modifiers=None, **kwargs):
+        Event.__init__(self, type, **kwargs)
         self._key = key
         self._text = text
         self._modifiers = tuple(modifiers or ())
@@ -667,20 +686,30 @@ class ResizeEvent(Event):
     type : str
        String indicating the event type (e.g. mouse_press, key_release)
     size : (int, int)
-        The new size of the Canvas.
+        The new size of the Canvas, in points (logical pixels).
+    physical_size : (int, int)
+        The new physical size of the Canvas, in pixels.
     native : object (optional)
        The native GUI event object
-    **kwds : extra keyword arguments
+    **kwargs : extra keyword arguments
         All extra keyword arguments become attributes of the event object.
     """
 
-    def __init__(self, type, size=None, **kwds):
-        Event.__init__(self, type, **kwds)
+    def __init__(self, type, size=None, physical_size=None, **kwargs):
+        Event.__init__(self, type, **kwargs)
         self._size = tuple(size)
+        if physical_size is None:
+            self._physical_size = self._size
+        else:
+            self._physical_size = tuple(physical_size)
 
     @property
     def size(self):
         return self._size
+
+    @property
+    def physical_size(self):
+        return self._physical_size
 
 
 class DrawEvent(Event):
@@ -702,12 +731,12 @@ class DrawEvent(Event):
         If None, the entire canvas must be redrawn.
     native : object (optional)
        The native GUI event object
-    **kwds : extra keyword arguments
+    **kwargs : extra keyword arguments
         All extra keyword arguments become attributes of the event object.
     """
 
-    def __init__(self, type, region=None, **kwds):
-        Event.__init__(self, type, **kwds)
+    def __init__(self, type, region=None, **kwargs):
+        Event.__init__(self, type, **kwargs)
         self._region = region
 
     @property

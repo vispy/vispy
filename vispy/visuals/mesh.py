@@ -72,8 +72,8 @@ vec4 vec2to4(vec2 xyz) {
 class MeshVisual(Visual):
     def __init__(self, vertices=None, faces=None, vertex_colors=None,
                  face_colors=None, color=(0.5, 0.5, 1, 1), meshdata=None,
-                 shading=None, mode='triangles', **kwds):
-        Visual.__init__(self, **kwds)
+                 shading=None, mode='triangles', **kwargs):
+        Visual.__init__(self, **kwargs)
         # Create a program
         self._program = ModularProgram(vertex_template, fragment_template)
 
@@ -156,6 +156,8 @@ class MeshVisual(Visual):
         # Update vertex/index buffers
         if self.shading == 'smooth' and not md.has_face_indexed_data():
             v = md.get_vertices()
+            if v.shape[-1] == 2:
+                v = np.concatenate((v, np.zeros((v.shape[:-1] + (1,)))), -1)
             self._vertices.set_data(v, convert=True)
             self._normals.set_data(md.get_vertex_normals(), convert=True)
             self._faces.set_data(md.get_faces(), convert=True)
@@ -168,6 +170,8 @@ class MeshVisual(Visual):
                 self._colors.set_data(np.zeros((0, 4), dtype=np.float32))
         else:
             v = md.get_vertices(indexed='faces')
+            if v.shape[-1] == 2:
+                v = np.concatenate((v, np.zeros((v.shape[:-1] + (1,)))), -1)
             self._vertices.set_data(v, convert=True)
             if self.shading == 'smooth':
                 normals = md.get_vertex_normals(indexed='faces')

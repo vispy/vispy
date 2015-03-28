@@ -24,8 +24,8 @@ img_data = np.random.normal(size=(100, 100, 3), loc=128,
                             scale=50).astype(np.ubyte)
 image = scene.visuals.Image(img_data, parent=view.scene)
 
-# Set the view bounds to show the entire image with some padding
-view.camera.rect = (-10, -10, image.size[0]+20, image.size[1]+20)
+# Set 2D camera (the camera will scale to the contents in the scene)
+view.camera = scene.PanZoomCamera(aspect=1)
 
 if __name__ == '__main__' and sys.flags.interactive == 0:
     app.run()

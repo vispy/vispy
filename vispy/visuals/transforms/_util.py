@@ -13,25 +13,22 @@ def arg_to_array(func):
     """
     Decorator to convert argument to array.
     """
-    def fn(self, arg, *args, **kwds):
-        return func(self, np.array(arg), *args, **kwds)
+    def fn(self, arg, *args, **kwargs):
+        return func(self, np.array(arg), *args, **kwargs)
     return fn
 
 
 def as_vec4(obj, default=(0, 0, 0, 1)):
     """
-    Convert *obj* to 4-element vector (numpy array with shape[-1] == 4)
+    Convert `obj` to 4-element vector (numpy array with shape[-1] == 4)
 
-    If *obj* has < 4 elements, then new elements are added from *default*.
+    `obj` will have at least two dimensions.
+
+    If `obj` has < 4 elements, then new elements are added from `default`.
     For inputs intended as a position or translation, use default=(0,0,0,1).
     For inputs intended as scale factors, use default=(1,1,1,1).
     """
-    obj = np.array(obj)
-
-    # If this is a single vector, reshape to (1, 4)
-    if obj.ndim == 1:
-        obj = obj[np.newaxis, :]
-
+    obj = np.atleast_2d(obj)
     # For multiple vectors, reshape to (..., 4)
     if obj.shape[-1] < 4:
         new = np.empty(obj.shape[:-1] + (4,), dtype=obj.dtype)
@@ -41,12 +38,11 @@ def as_vec4(obj, default=(0, 0, 0, 1)):
     elif obj.shape[-1] > 4:
         raise TypeError("Array shape %s cannot be converted to vec4"
                         % obj.shape)
-
     return obj
 
 
 @decorator
-def arg_to_vec4(func, self, arg, *args, **kwds):
+def arg_to_vec4(func, self, arg, *args, **kwargs):
     """
     Decorator for converting argument to vec4 format suitable for 4x4 matrix
     multiplication.
@@ -73,13 +69,13 @@ def arg_to_vec4(func, self, arg, *args, **kwds):
         flatten = arg.ndim == 1
         arg = as_vec4(arg)
 
-        ret = func(self, arg, *args, **kwds)
+        ret = func(self, arg, *args, **kwargs)
         if flatten and ret is not None:
             return ret.flatten()
         return ret
     elif hasattr(arg, '_transform_in'):
         arr = arg._transform_in()
-        ret = func(self, arr, *args, **kwds)
+        ret = func(self, arr, *args, **kwargs)
         return arg._transform_out(ret)
     else:
         raise TypeError("Cannot convert argument to 4D vector: %s" % arg)

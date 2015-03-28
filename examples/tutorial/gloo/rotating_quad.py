@@ -46,8 +46,13 @@ class Canvas(app.Canvas):
         self.program['position'] = [(-1, -1), (-1, +1),
                                     (+1, -1), (+1, +1)]
         self.program['theta'] = 0.0
+
+        gloo.set_viewport(0, 0, *self.physical_size)
+
         self.clock = 0
         self.timer.start()
+
+        self.show()
 
     def on_draw(self, event):
         gloo.set_clear_color('white')
@@ -55,7 +60,7 @@ class Canvas(app.Canvas):
         self.program.draw('triangle_strip')
 
     def on_resize(self, event):
-        gloo.set_viewport(0, 0, *event.size)
+        gloo.set_viewport(0, 0, *event.physical_size)
 
     def on_timer(self, event):
         self.clock += 0.001 * 1000.0 / 60.
@@ -64,5 +69,4 @@ class Canvas(app.Canvas):
 
 if __name__ == '__main__':
     c = Canvas()
-    c.show()
     app.run()

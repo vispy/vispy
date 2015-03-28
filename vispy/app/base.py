@@ -134,6 +134,12 @@ class BaseCanvasBackend(object):
         # Should return widget size
         raise NotImplementedError()
 
+    def _vispy_get_physical_size(self):
+        # Should return physical widget size (actual number of screen pixels).
+        # This may differ from _vispy_get_size on backends that expose HiDPI
+        # screens. If not overriden, return the logical sizeself.
+        return self._vispy_get_size()
+
     def _vispy_get_position(self):
         # Should return widget position
         raise NotImplementedError()
@@ -153,10 +159,10 @@ class BaseCanvasBackend(object):
         # Most backends would not need to implement this
         return self
 
-    def _vispy_mouse_press(self, **kwds):
+    def _vispy_mouse_press(self, **kwargs):
         # default method for delivering mouse press events to the canvas
-        kwds.update(self._vispy_mouse_data)
-        ev = self._vispy_canvas.events.mouse_press(**kwds)
+        kwargs.update(self._vispy_mouse_data)
+        ev = self._vispy_canvas.events.mouse_press(**kwargs)
         if self._vispy_mouse_data['press_event'] is None:
             self._vispy_mouse_data['press_event'] = ev
 
@@ -164,9 +170,9 @@ class BaseCanvasBackend(object):
         self._vispy_mouse_data['last_event'] = ev
         return ev
 
-    def _vispy_mouse_move(self, **kwds):
+    def _vispy_mouse_move(self, **kwargs):
         # default method for delivering mouse move events to the canvas
-        kwds.update(self._vispy_mouse_data)
+        kwargs.update(self._vispy_mouse_data)
 
         # Break the chain of prior mouse events if no buttons are pressed
         # (this means that during a mouse drag, we have full access to every
@@ -176,20 +182,23 @@ class BaseCanvasBackend(object):
             if last_event is not None:
                 last_event._forget_last_event()
         else:
-            kwds['button'] = self._vispy_mouse_data['press_event'].button
+            kwargs['button'] = self._vispy_mouse_data['press_event'].button
 
-        ev = self._vispy_canvas.events.mouse_move(**kwds)
+        ev = self._vispy_canvas.events.mouse_move(**kwargs)
         self._vispy_mouse_data['last_event'] = ev
         return ev
 
-    def _vispy_mouse_release(self, **kwds):
+    def _vispy_mouse_release(self, **kwargs):
         # default method for delivering mouse release events to the canvas
-        kwds.update(self._vispy_mouse_data)
-        ev = self._vispy_canvas.events.mouse_release(**kwds)
-        if ev.button == self._vispy_mouse_data['press_event'].button:
+
+        kwargs.update(self._vispy_mouse_data)
+        ev = self._vispy_canvas.events.mouse_release(**kwargs)
+        if (self._vispy_mouse_data['press_event'] 
+                and self._vispy_mouse_data['press_event'].button == ev.button):
             self._vispy_mouse_data['press_event'] = None
 
-        self._vispy_mouse_data['buttons'].remove(ev.button)
+        if ev.button in self._vispy_mouse_data['buttons']: 
+            self._vispy_mouse_data['buttons'].remove(ev.button)
         self._vispy_mouse_data['last_event'] = ev
         return ev
 

@@ -279,7 +279,7 @@ class CanvasBackend(BaseCanvasBackend):
 
         # Register callbacks
         glfw.glfwSetWindowRefreshCallback(self._id, self._on_draw)
-        glfw.glfwSetFramebufferSizeCallback(self._id, self._on_resize)
+        glfw.glfwSetWindowSizeCallback(self._id, self._on_resize)
         glfw.glfwSetKeyCallback(self._id, self._on_key_press)
         glfw.glfwSetMouseButtonCallback(self._id, self._on_mouse_button)
         glfw.glfwSetScrollCallback(self._id, self._on_mouse_scroll)
@@ -371,6 +371,12 @@ class CanvasBackend(BaseCanvasBackend):
     def _vispy_get_size(self):
         if self._id is None:
             return
+        w, h = glfw.glfwGetWindowSize(self._id)
+        return w, h
+
+    def _vispy_get_physical_size(self):
+        if self._id is None:
+            return
         w, h = glfw.glfwGetFramebufferSize(self._id)
         return w, h
 
@@ -388,7 +394,8 @@ class CanvasBackend(BaseCanvasBackend):
     def _on_resize(self, _id, w, h):
         if self._vispy_canvas is None:
             return
-        self._vispy_canvas.events.resize(size=(w, h))
+        self._vispy_canvas.events.resize(size=(w, h), physical_size=
+                                         self._vispy_get_physical_size())
 
     def _on_close(self, _id):
         if self._vispy_canvas is None:
@@ -445,10 +452,10 @@ class CanvasBackend(BaseCanvasBackend):
         fun(key=key, text=text, modifiers=self._mod)
 
     def _process_key(self, key):
-        if key in KEYMAP:
-            return KEYMAP[key], ''
-        elif 32 <= key <= 127:
+        if 32 <= key <= 127:
             return keys.Key(chr(key)), chr(key)
+        elif key in KEYMAP:
+            return KEYMAP[key], ''
         else:
             return None, ''
 

@@ -7,6 +7,7 @@
 import numpy as np
 from os import path as op
 from traceback import extract_stack, format_list
+import weakref
 
 from . globject import GLObject
 from ..util import logger
@@ -39,7 +40,7 @@ class Buffer(GLObject):
     
     def __init__(self, data=None, nbytes=None):
         GLObject.__init__(self)
-        self._views = []  # Views on this buffer
+        self._views = []  # Views on this buffer (stored using weakrefs)
         self._valid = True  # To invalidate buffer views
         self._nbytes = 0  # Bytesize in bytes, set in resize_bytes()
         
@@ -125,7 +126,8 @@ class Buffer(GLObject):
         self._glir.command('SIZE', self._id, size)
         # Invalidate any view on this buffer
         for view in self._views:
-            view._valid = False
+            if view() is not None:
+                view()._valid = False
         self._views = []
 
 
@@ -135,7 +137,6 @@ class DataBuffer(Buffer):
 
     Parameters
     ----------
-
     data : ndarray
         Buffer data
     dtype : dtype
@@ -153,20 +154,21 @@ class DataBuffer(Buffer):
         self._dtype = None
         self._stride = 0
         self._itemsize = 0
+        self._last_dim = None
         Buffer.__init__(self, data)
-    
+
     def _prepare_data(self, data):
-        # Needs to be overrriden
+        # Can be overrriden by subclasses
         if not isinstance(data, np.ndarray):
             raise TypeError("DataBuffer data must be numpy array.")
         return data
 
-    def set_subdata(self, data, offset=0, copy=False, **kwds):
-        data = self._prepare_data(data, **kwds)
+    def set_subdata(self, data, offset=0, copy=False, **kwargs):
+        data = self._prepare_data(data, **kwargs)
         offset = offset * self.itemsize
         Buffer.set_subdata(self, data=data, offset=offset, copy=copy)
-    
-    def set_data(self, data, copy=False, **kwds):
+
+    def set_data(self, data, copy=False, **kwargs):
         """ Set data (deferred operation)
 
         Parameters
@@ -181,8 +183,7 @@ class DataBuffer(Buffer):
             data is actually uploaded to GPU memory.
             Asking explicitly for a copy will prevent this behavior.
         """
-        data = self._prepare_data(data, **kwds)
-        
+        data = self._prepare_data(data, **kwargs)
         self._dtype = data.dtype
         self._stride = data.strides[-1]
         self._itemsize = self._dtype.itemsize
@@ -221,6 +222,8 @@ class DataBuffer(Buffer):
     def glsl_type(self):
         """ GLSL declaration strings required for a variable to hold this data.
         """
+        if self.dtype is None:
+            return None
         dtshape = self.dtype[0].shape
         n = dtshape[0] if dtshape else 1
         if n > 1:
@@ -248,7 +251,7 @@ class DataBuffer(Buffer):
         """ Create a view on this buffer. """
 
         view = DataBufferView(self, key)
-        self._views.append(view)
+        self._views.append(weakref.ref(view))
         return view
 
     def __setitem__(self, key, data):
@@ -292,6 +295,10 @@ class DataBuffer(Buffer):
         # Set data
         offset = start  # * self.itemsize
         self.set_subdata(data=data, offset=offset, copy=True)
+
+    def __repr__(self):
+        return ("<%s size=%s last_dim=%s>" % 
+                (self.__class__.__name__, self.size, self._last_dim))
 
 
 class DataBufferView(DataBuffer):
@@ -363,11 +370,15 @@ class DataBufferView(DataBuffer):
     @property
     def id(self):
         return self._base.id
+
+    @property
+    def _last_dim(self):
+        return self._base._last_dim
     
-    def set_subdata(self, data, offset=0, copy=False, **kwds):
+    def set_subdata(self, data, offset=0, copy=False, **kwargs):
         raise RuntimeError("Cannot set data on buffer view.")
     
-    def set_data(self, data, copy=False, **kwds):
+    def set_data(self, data, copy=False, **kwargs):
         raise RuntimeError("Cannot set data on buffer view.")
     
     @property
@@ -421,20 +432,24 @@ class VertexBuffer(DataBuffer):
         if not isinstance(data, np.ndarray):
             raise ValueError('Data must be a ndarray (got %s)' % type(data))
         if data.dtype.isbuiltin:
-            if convert is True and data.dtype is not np.float32:
+            if convert is True:
                 data = data.astype(np.float32)
-            c = data.shape[-1]
-            if data.ndim == 1 or (data.ndim == 2 and c == 1):
-                data.shape = (data.size,)  # necessary in case (N,1) array
-                data = data.view(dtype=[('f0', data.dtype.base, 1)])
-            elif c in [1, 2, 3, 4]:
+            if data.dtype in (np.float64, np.int64):
+                raise TypeError('data must be 32-bit not %s'
+                                % data.dtype)
+            c = data.shape[-1] if data.ndim > 1 else 1
+            if c in [2, 3, 4]:
                 if not data.flags['C_CONTIGUOUS']:
                     logger.warning('Copying discontiguous data for struct '
                                    'dtype:\n%s' % _last_stack_str())
                     data = data.copy()
-                data = data.view(dtype=[('f0', data.dtype.base, c)])
             else:
-                data = data.view(dtype=[('f0', data.dtype.base, 1)])
+                c = 1
+            if self._last_dim and c != self._last_dim:
+                raise ValueError('Last dimension should be %s not %s'
+                                 % (self._last_dim, c))
+            data = data.view(dtype=[('f0', data.dtype.base, c)])
+            self._last_dim = c
         return data
 
 
@@ -463,6 +478,10 @@ class IndexBuffer(DataBuffer):
     """
     
     _GLIR_TYPE = 'IndexBuffer'
+
+    def __init__(self, data=None):
+        DataBuffer.__init__(self, data)
+        self._last_dim = 1
 
     def _prepare_data(self, data, convert=False):
         if isinstance(data, list):

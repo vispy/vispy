@@ -10,6 +10,7 @@ from ..visuals.transforms import (NullTransform, BaseTransform,
 from ..visuals import Visual
 
 
+# todo: I though the visuals were mixed, but the base Node was *not* a visual?
 class Node(Visual):
     """ Base class representing an object in a scene.
 
@@ -34,22 +35,21 @@ class Node(Visual):
         The name used to identify the node.
     """
 
-    def __init__(self, parent=None, name=None, **kwds):
-        Visual.__init__(self, **kwds)
+    def __init__(self, parent=None, name=None, **kwargs):
+        Visual.__init__(self, **kwargs)
         
         # Add some events to the emitter groups:
         events = ['parents_change', 'children_change', 'transform_change',
-                  'mouse_press', 'mouse_move', 'mouse_release', 'mouse_wheel']
+                  'mouse_press', 'mouse_move', 'mouse_release', 'mouse_wheel', 
+                  'key_press', 'key_release']
         self.events.add(**dict([(ev, Event) for ev in events]))
         
         self.name = name
 
         # Entities are organized in a parent-children hierarchy
-        # todo: I think we want this to be a list. The order *may* be important
-        # for some drawing systems. Using a set may lead to inconsistency
-        self._children = set()
+        self._children = []
         # TODO: use weakrefs for parents.
-        self._parents = set()
+        self._parents = []
         if parent is not None:
             self.parents = parent
             
@@ -58,6 +58,19 @@ class Node(Visual):
         # Components that all entities in vispy have
         # todo: default transform should be trans-scale-rot transform
         self._transform = NullTransform()
+    
+    # todo: move visible to BaseVisualNode class when we make Node not a Visual
+    @property
+    def visible(self):
+        """ Whether this node should be drawn or not. Only applicable to
+        nodes that can be drawn.
+        """
+        return self._visible
+    
+    @visible.setter
+    def visible(self, val):
+        self._visible = bool(val)
+        self.update()
     
     @property
     def name(self):
@@ -69,8 +82,8 @@ class Node(Visual):
 
     @property
     def children(self):
-        """ The list of children of this node. The children are in
-        arbitrary order.
+        """ A copy of the list of children of this node. Do not add
+        items to this list, but use ``x.parent = y`` instead.
         """
         return list(self._children)
 
@@ -82,7 +95,7 @@ class Node(Visual):
         if not self._parents:
             return None
         elif len(self._parents) == 1:
-            return tuple(self._parents)[0]
+            return self._parents[0]
         else:
             raise RuntimeError('Ambiguous parent: there are multiple parents.')
 
@@ -112,24 +125,24 @@ class Node(Visual):
                 raise ValueError('A parent of an node must be an node too,'
                                  ' not %s.' % p.__class__.__name__)
 
-        # convert to set
-        prev = self._parents.copy()
-        parents = set(parents)
-
+        # Apply
+        prev = list(self._parents)  # No list.copy() on Py2.x
         with self.events.parents_change.blocker():
-            # Remove from parents
-            for parent in prev - parents:
-                self.remove_parent(parent)
-            # Add new
-            for parent in parents - prev:
-                self.add_parent(parent)
-
+            # Remove parents
+            for parent in prev:
+                if parent not in parents:
+                    self.remove_parent(parent)
+            # Add new parents
+            for parent in parents:
+                if parent not in prev:
+                    self.add_parent(parent)
+        
         self.events.parents_change(new=parents, old=prev)
 
     def add_parent(self, parent):
         if parent in self._parents:
             return
-        self._parents.add(parent)
+        self._parents.append(parent)
         parent._add_child(self)
         self.events.parents_change(added=parent)
         self.update()
@@ -142,7 +155,7 @@ class Node(Visual):
         self.events.parents_change(removed=parent)
 
     def _add_child(self, ent):
-        self._children.add(ent)
+        self._children.append(ent)
         self.events.children_change(added=ent)
         ent.events.update.connect(self.events.update)
 
@@ -194,11 +207,11 @@ class Node(Visual):
         self._transform.changed.connect(self._transform_changed)
         self._transform_changed(None)
 
-    def set_transform(self, type, *args, **kwds):
+    def set_transform(self, type, *args, **kwargs):
         """ Create a new transform of *type* and assign it to this node.
         All extra arguments are used in the construction of the transform.
         """
-        self.transform = create_transform(type, *args, **kwds)
+        self.transform = create_transform(type, *args, **kwargs)
 
     def _transform_changed(self, event):
         self.events.transform_change()
@@ -264,7 +277,50 @@ class Node(Visual):
             if p in p2:
                 return p
         return None
+    
+    def node_path_to_child(self, node):
+        """ Return a list describing the path from this node to a child node
         
+        This method assumes that the given node is a child node. Multiple
+        parenting is allowed.
+        """
+        
+        if node is self:
+            return []
+        
+        # Go up from the child node as far as we can
+        path1 = [node]
+        child = node
+        while len(child.parents) == 1:
+            child = child.parent
+            path1.append(child)
+            # Early exit
+            if child is self:
+                return list(reversed(path1))
+        
+        # Verify that we're not cut off
+        if len(path1[-1].parents) == 0:
+            raise RuntimeError('%r is not a child of %r' % (node, self))
+        
+        def _is_child(path, parent, child):
+            path.append(parent)
+            if child in parent.children:
+                return path
+            else:
+                for c in parent.children:
+                    possible_path = _is_child(path[:], c, child)
+                    if possible_path:
+                        return possible_path
+            return None
+        
+        # Search from the parent towards the child
+        path2 = _is_child([], self, path1[-1])
+        if not path2:
+            raise RuntimeError('%r is not a child of %r' % (node, self))
+        
+        # Return
+        return path2 + list(reversed(path1))
+    
     def node_path(self, node):
         """Return two lists describing the path from this node to another. 
         

@@ -105,6 +105,8 @@ class Canvas(app.Canvas):
         self.program['u_light_position'] = (1., 1., 1.)
         self.program['u_light_intensity'] = (1., 1., 1.)
 
+        self.apply_zoom()
+
         gloo.set_state(blend=False, depth_test=True, polygon_offset_fill=True)
 
         self._t0 = default_timer()
@@ -113,19 +115,14 @@ class Canvas(app.Canvas):
         self.update_matrices()
 
     def update_matrices(self):
-        self.view = np.eye(4, dtype=np.float32)
-        self.model = np.eye(4, dtype=np.float32)
+        self.view = translate((0, 0, -self.translate))
+        self.model = np.dot(rotate(self.theta, (1, 0, 0)),
+                            rotate(self.phi, (0, 1, 0)))
         self.projection = np.eye(4, dtype=np.float32)
-
-        rotate(self.model, self.theta, 1, 0, 0)
-        rotate(self.model, self.phi, 0, 1, 0)
-
-        translate(self.view, 0, 0, -self.translate)
-
         self.program['u_model'] = self.model
         self.program['u_view'] = self.view
-        self.program['u_normal'] = np.array(np.matrix(np.dot(self.view,
-                                                             self.model)).I.T)
+        self.program['u_normal'] = np.linalg.inv(np.dot(self.view,
+                                                        self.model)).T
 
     def on_timer(self, event):
         elapsed = default_timer() - self._t0
@@ -134,10 +131,7 @@ class Canvas(app.Canvas):
         self.update()
 
     def on_resize(self, event):
-        width, height = event.size
-        gloo.set_viewport(0, 0, width, height)
-        self.projection = perspective(45.0, width / float(height), 1.0, 20.0)
-        self.program['u_projection'] = self.projection
+        self.apply_zoom()
 
     def on_mouse_wheel(self, event):
         self.translate += -event.delta[1]/5.
@@ -148,6 +142,12 @@ class Canvas(app.Canvas):
     def on_draw(self, event):
         gloo.clear()
         self.program.draw('triangles', indices=self.faces)
+
+    def apply_zoom(self):
+        gloo.set_viewport(0, 0, self.physical_size[0], self.physical_size[1])
+        self.projection = perspective(45.0, self.size[0] /
+                                      float(self.size[1]), 1.0, 20.0)
+        self.program['u_projection'] = self.projection
 
 if __name__ == '__main__':
     c = Canvas()

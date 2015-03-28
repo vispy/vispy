@@ -31,12 +31,13 @@ class Visual(object):
     """
 
     def __init__(self):
+        self._visible = True
         self.events = EmitterGroup(source=self,
                                    auto_connect=True,
                                    update=Event,
                                    bounds_change=Event,
                                    )
-
+    
     def _update(self):
         """
         This method is called internally whenever the Visual needs to be 
@@ -76,7 +77,8 @@ class Visual(object):
             Describes the type of boundary requested. Can be "visual", "data",
             or "mouse".
         axis : 0, 1, 2
-            The axis along which to measure the bounding values.
+            The axis along which to measure the bounding values, in
+            x-y-z order.
         
         Returns
         -------

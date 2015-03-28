@@ -7,7 +7,6 @@ from __future__ import division
 from ...gloo import Program
 from ...util import logger
 from ...util.event import EventEmitter
-from ...ext.six import string_types  # noqa
 from .function import MainFunction, Variable
 from .compiler import Compiler
 
@@ -19,20 +18,54 @@ class ModularProgram(Program):
     Automatically rebuilds program when functions have changed and uploads 
     program variables.
     """
-    def __init__(self, vcode, fcode):
+    def __init__(self, vcode=None, fcode=None):
         Program.__init__(self)
         
         self.changed = EventEmitter(source=self, type='program_change')
-        
-        self.vert = MainFunction(vcode)
-        self.frag = MainFunction(fcode)
-        self.vert.changed.connect(self._source_changed)
-        self.frag.changed.connect(self._source_changed)
-        
+
         # Cache state of Variables so we know which ones require update
         self._variable_state = {}
+
+        self.vert = vcode
+        self.frag = fcode       
         
+    @property
+    def vert(self):
+        return self._vert
+
+    @vert.setter
+    def vert(self, vcode):
+        if hasattr(self, '_vert') and self._vert is not None:
+            self._vert.changed.disconnect((self, '_source_changed'))
+
+        self._vert = vcode
+        if self._vert is None:
+            return
+
+        self._vert = MainFunction(vcode)
+        self._vert.changed.connect((self, '_source_changed'))
+
         self._need_build = True
+        self.changed(code_changed=True, value_changed=False)
+
+    @property
+    def frag(self):
+        return self._frag
+
+    @frag.setter
+    def frag(self, fcode):
+        if hasattr(self, '_frag') and self._frag is not None:
+            self._frag.changed.disconnect((self, '_source_changed'))
+
+        self._frag = fcode
+        if self._frag is None:
+            return
+
+        self._frag = MainFunction(fcode)
+        self._frag.changed.connect((self, '_source_changed'))
+
+        self._need_build = True
+        self.changed(code_changed=True, value_changed=False)
 
     def prepare(self):
         """ Prepare the Program so we can set attributes and uniforms.
@@ -47,11 +80,16 @@ class ModularProgram(Program):
         self.changed()
     
     def draw(self, *args, **kwargs):
+        self.build_if_needed()
+        Program.draw(self, *args, **kwargs)
+    
+    def build_if_needed(self):
+        """ Reset shader source if necesssary.
+        """
         if self._need_build:
             self._build()
             self._need_build = False
         self.update_variables()
-        Program.draw(self, *args, **kwargs)
     
     def _build(self):
         logger.debug("Rebuild ModularProgram: %s", self)

@@ -5,6 +5,7 @@ import gc
 from vispy.testing import (assert_in, run_tests_if_main, assert_raises,
                            assert_equal, assert_not_equal)
 
+from vispy import gloo
 from vispy.gloo import (GLContext, get_default_config)
 
 
@@ -27,7 +28,7 @@ class DummyCanvasBackend(object):
     def _vispy_set_current(self):
         self.set_current = True
 
-    
+
 def test_context_config():
     """ Test GLContext handling of config dict
     """
@@ -54,7 +55,7 @@ def test_context_config():
     # Passing crap should raise
     assert_raises(KeyError, GLContext, {'foo': 3})
     assert_raises(TypeError, GLContext, {'double_buffer': 'not_bool'})
-    
+
 
 def test_context_taking():
     """ Test GLContext ownership and taking
@@ -86,6 +87,33 @@ def test_context_taking():
     
     # No more refs
     assert_raises(RuntimeError, get_canvas, c)
+
+
+def test_gloo_without_app():
+    """ Test gloo without vispy.app (with FakeCanvas) """
+    
+    # Create dummy parser
+    class DummyParser(gloo.glir.BaseGlirParser):
+        def __init__(self):
+            self.commands = []
+        
+        def parse(self, commands):
+            self.commands.extend(commands)
+    
+    p = DummyParser()
+    
+    # Create fake canvas and attach our parser
+    c = gloo.context.FakeCanvas()
+    c.context.shared.parser = p
+    
+    # Do some commands
+    gloo.clear()
+    c.flush()
+    gloo.clear()
+    c.flush()
+    
+    assert len(p.commands) in (2, 3)  # there may be a CURRENT command
+    assert p.commands[-1][1] == 'glClear'
 
 
 run_tests_if_main()

@@ -37,7 +37,7 @@ class EllipseVisual(PolygonVisual):
     """
     def __init__(self, pos=None, color='black', border_color=None,
                  radius=(0.1, 0.1), start_angle=0., span_angle=360.,
-                 num_segments=100, **kwds):
+                 num_segments=100, **kwargs):
         super(EllipseVisual, self).__init__()
         self.mesh.mode = 'triangle_fan'
         self._vertices = None

@@ -26,7 +26,7 @@ def test_use():
         assert_equal(vispy.app._default_app.default_app, None)
         
         # With only gl args, should do nothing to app
-        vispy.use(gl='desktop')
+        vispy.use(gl='gl2')
         assert_equal(vispy.app._default_app.default_app, None)
         
         # Specify app (one we know works)
@@ -38,7 +38,7 @@ def test_use():
         assert_raises(RuntimeError, vispy.use, wrong_name)
         
         # And both
-        vispy.use(app_name, 'desktop')
+        vispy.use(app_name, 'gl2')
     
     finally:
         # Restore

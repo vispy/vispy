@@ -87,10 +87,11 @@ class SceneCanvas(app.Canvas):
         self._fb_stack = []  # for storing information about framebuffers used
         self._vp_stack = []  # for storing information about viewports used
         self._scene = None
-        self._bgcolor = Color(kwargs.pop('bgcolor', 'black')).rgba
         
         # A default widget that follows the shape of the canvas
         self._central_widget = None
+
+        self._bgcolor = Color(kwargs.pop('bgcolor', 'black')).rgba
 
         app.Canvas.__init__(self, *args, **kwargs)
         self.events.mouse_press.connect(self._process_mouse_event)
@@ -184,7 +185,7 @@ class SceneCanvas(app.Canvas):
             self.pop_fbo()
         
     def _draw_scene(self):
-        gloo.clear(color=self._bgcolor, depth=True)
+        self.context.clear(color=self._bgcolor, depth=True)
         # Draw the scene, but first disconnect its change signal--
         # any changes that take place during the paint should not trigger
         # a subsequent repaint.
@@ -215,7 +216,7 @@ class SceneCanvas(app.Canvas):
         
         scene_event = SceneDrawEvent(canvas=self, event=event, 
                                      transform_cache=tr_cache)
-        scene_event.push_viewport((0, 0) + self.size)
+        scene_event.push_viewport((0, 0) + self.physical_size)
         try:
             # Force update of transforms on base entities
             # TODO: this should happen as a reaction to resize, push_viewport,
@@ -293,8 +294,7 @@ class SceneCanvas(app.Canvas):
         return vp
     
     def _set_viewport(self, vp):
-        from .. import gloo
-        gloo.set_viewport(*vp)
+        self.context.set_viewport(*vp)
 
     def push_fbo(self, fbo, offset, csize):
         """ Push an FBO on the stack, together with the new viewport.
@@ -353,8 +353,7 @@ class SceneCanvas(app.Canvas):
         """
         fbo, offset, csize = self._current_framebuffer()
         if fbo is None:
-            # todo: account for high-res displays here.
-            fbsize = csize
+            fbsize = self.physical_size
         else:
             fbsize = fbo.color_buffer.shape
             # image shape is (rows, cols), unlike canvas shape.
@@ -391,3 +390,13 @@ class SceneCanvas(app.Canvas):
         Most visuals should use this transform when drawing.
         """
         return self.fb_ndc_transform * self.canvas_fb_transform
+
+    @property
+    def bgcolor(self):
+        return Color(self._bgcolor)
+
+    @bgcolor.setter
+    def bgcolor(self, color):
+        self._bgcolor = Color(color).rgba
+        if hasattr(self, '_backend'):
+            self.update()

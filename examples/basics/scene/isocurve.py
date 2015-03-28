@@ -37,8 +37,8 @@ curve2 = scene.visuals.Isocurve(noise, level=50, color=(1, 0.5, 0, 1),
 curve3 = scene.visuals.Isocurve(noise, level=40, color=(1, 0, 0, 1), 
                                 parent=view.scene)
 
-# Set the view bounds to show the entire image with some padding
-view.camera.rect = (-10, -10, image.size[0]+20, image.size[1]+20)
+# Set 2D camera (the camera will scale to the contents in the scene)
+view.camera = scene.PanZoomCamera(aspect=1)
 
 
 if __name__ == '__main__' and sys.flags.interactive == 0:

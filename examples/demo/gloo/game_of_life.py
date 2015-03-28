@@ -114,7 +114,7 @@ class Canvas(app.Canvas):
 
         # Build programs
         # --------------
-        self.comp_size = (512, 512)
+        self.comp_size = self.size
         size = self.comp_size + (4,)
         Z = np.zeros(size, dtype=np.float32)
         Z[...] = np.random.randint(0, 2, size)
@@ -159,24 +159,22 @@ class Canvas(app.Canvas):
 
         self._timer = app.Timer('auto', connect=self.update, start=True)
 
+        self.show()
+
     def on_draw(self, event):
         with self.fbo:
             set_viewport(0, 0, *self.comp_size)
             self.compute["texture"].interpolation = 'nearest'
             self.compute.draw('triangle_strip')
         clear()
-        set_viewport(0, 0, *self.size)
+        set_viewport(0, 0, *self.physical_size)
         self.render["texture"].interpolation = 'linear'
         self.render.draw('triangle_strip')
         self.pingpong = 1 - self.pingpong
         self.compute["pingpong"] = self.pingpong
         self.render["pingpong"] = self.pingpong
 
-    def on_reshape(self, event):
-        set_viewport(0, 0, *event.size)
-
 
 if __name__ == '__main__':
     canvas = Canvas()
-    canvas.show()
     app.run()

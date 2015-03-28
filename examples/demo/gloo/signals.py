@@ -76,12 +76,15 @@ class Canvas(app.Canvas):
         self.program['u_pan'] = (0., 0.)
         self.program['u_scale'] = (1., 1.)
 
+        gloo.set_viewport(0, 0, *self.physical_size)
+
         gloo.set_state(clear_color=(1, 1, 1, 1), blend=True,
                        blend_func=('src_alpha', 'one_minus_src_alpha'))
 
+        self.show()
+
     def on_resize(self, event):
-        self.width, self.height = event.size
-        gloo.set_viewport(0, 0, self.width, self.height)
+        gloo.set_viewport(0, 0, *event.physical_size)
 
     def on_draw(self, event):
         gloo.clear(color=(0.0, 0.0, 0.0, 1.0))
@@ -89,7 +92,7 @@ class Canvas(app.Canvas):
 
     def _normalize(self, x_y):
         x, y = x_y
-        w, h = float(self.width), float(self.height)
+        w, h = float(self.size[0]), float(self.size[1])
         return x/(w/2.)-1., y/(h/2.)-1.
 
     def on_mouse_move(self, event):
@@ -125,5 +128,4 @@ class Canvas(app.Canvas):
 
 if __name__ == '__main__':
     c = Canvas()
-    c.show()
     app.run()

@@ -49,7 +49,7 @@ def _init():
     default_config_options = {
         'data_path': _data_path,
         'default_backend': '',
-        'gl_backend': 'desktop',
+        'gl_backend': 'gl2',
         'gl_debug': False,
         'logging_level': 'info',
         'qt_lib': 'any',

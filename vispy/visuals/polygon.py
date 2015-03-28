@@ -33,8 +33,8 @@ class PolygonVisual(Visual):
         Border color of the polygon
     """
     def __init__(self, pos=None, color='black',
-                 border_color=None, border_width=1, **kwds):
-        super(PolygonVisual, self).__init__(**kwds)
+                 border_color=None, border_width=1, **kwargs):
+        super(PolygonVisual, self).__init__(**kwargs)
 
         self.mesh = MeshVisual()
         self.border = LineVisual()
@@ -43,7 +43,7 @@ class PolygonVisual(Visual):
         self._border_width = border_width
         self._border_color = Color(border_color)
         self._update()
-        #glopts = kwds.pop('gl_options', 'translucent')
+        #glopts = kwargs.pop('gl_options', 'translucent')
         #self.set_gl_options(glopts)
 
     @property
@@ -99,11 +99,11 @@ class PolygonVisual(Visual):
                                  connect='strip')
         self.update()
 
-    def set_gl_options(self, *args, **kwds):
-        self.mesh.set_gl_options(*args, **kwds)
+    def set_gl_options(self, *args, **kwargs):
+        self.mesh.set_gl_options(*args, **kwargs)
 
-    def update_gl_options(self, *args, **kwds):
-        self.mesh.update_gl_options(*args, **kwds)
+    def update_gl_options(self, *args, **kwargs):
+        self.mesh.update_gl_options(*args, **kwargs)
 
     def draw(self, transforms):
         if self._pos is None:

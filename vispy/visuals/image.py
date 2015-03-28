@@ -28,8 +28,8 @@ class ImageVisual(ModularMesh):
 
             * 'subdivide': ImageVisual is represented as a grid of triangles
               with texture coordinates linearly mapped.
-            * 'impostor': ImageVisual is represented as a quad covering the 
-              entire view, with texture coordinates determined by the 
+            * 'impostor': ImageVisual is represented as a quad covering the
+              entire view, with texture coordinates determined by the
               transform. This produces the best transformation results, but may
               be slow.
 
@@ -53,11 +53,14 @@ class ImageVisual(ModularMesh):
         self.method = method
         self.grid = grid
 
-    def set_data(self, image=None, **kwds):
+    def set_data(self, image=None, **kwargs):
         if image is not None:
+            image = np.array(image, copy=False)
+            if image.dtype == np.float64:
+                image = image.astype(np.float32)
             self._data = image
             self._texture = None
-        super(ImageVisual, self).set_data(**kwds)
+        super(ImageVisual, self).set_data(**kwargs)
 
     @property
     def interpolation(self):
@@ -74,13 +77,14 @@ class ImageVisual(ModularMesh):
 
     def _build_data(self, transforms):
         # Construct complete data array with position and optionally color
-        if transforms.get_full_transform().Linear:
+        if False:  # transforms.get_full_transform().Linear
+            # -> does not take cams into account
             method = 'subdivide'
             grid = (1, 1)
         else:
             method = self.method
             grid = self.grid
-
+        
         # TODO: subdivision and impostor modes should be handled by new
         # components?
         if method == 'subdivide':

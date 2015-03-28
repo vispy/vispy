@@ -76,8 +76,8 @@ class GridLinesVisual(Visual):
     """ Displays regularly spaced grid lines in any coordinate system and at 
     any scale.
     """
-    def __init__(self, scale=(1, 1), **kwds):
-        super(Visual, self).__init__(**kwds)
+    def __init__(self, scale=(1, 1), **kwargs):
+        super(Visual, self).__init__(**kwargs)
         self._program = ModularProgram(VERT, FRAG)
         self._vbo = None
         self._scale = scale
@@ -86,8 +86,8 @@ class GridLinesVisual(Visual):
     def _buffer(self):
         if self._vbo is None:
             # quad covers entire view; frag. shader will deal with image shape
-            quad = np.array([[-1, -1, 0], [1, -1, 0], [1, 1, 0],
-                             [-1, -1, 0], [1, 1, 0], [-1, 1, 0]],
+            quad = np.array([[-1, -1], [1, -1], [1, 1],
+                             [-1, -1], [1, 1], [-1, 1]],
                             dtype=np.float32)
             self._vbo = gloo.VertexBuffer(quad)
         return self._vbo
