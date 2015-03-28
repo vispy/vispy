@@ -43,17 +43,9 @@ class AxisVisual(LineVisual):
 
     def _get_tick_direction(self):
         """Determines the tick direction if not specified."""
-
         v = self.vec
 
-        right = np.array([1, 0])
-        up = np.array([0, -1])
-
-        # This will be negative if the axis is pointing upwards,
-        # and positive if right.
-        rightness = np.linalg.norm(v*right)-np.linalg.norm(v*up)
-
-        if np.sign(rightness) >= 0:
+        if abs(v[0]) >= abs(v[1]):
             v = np.dot(np.array([[0, -1], [1, 0]]), v) # right axis, down ticks
         else:
             v = np.dot(np.array([[0, 1], [-1, 0]]), v) # up axis, left ticks
