@@ -24,9 +24,6 @@ class TubeVisual(MeshVisual):
     closed : bool
         Whether the tube should be closed, joining the last point to the
         first. Defaults to False.
-    tube_points : int
-        The number of points in the circle-approximating polygon of the
-        tube's cross section. Defaults to 8.
     color : Color | ColorArray
         The color(s) to use when drawing the tube. The same color is
         applied to each vertex of the mesh surrounding each point of
@@ -34,6 +31,9 @@ class TubeVisual(MeshVisual):
         cycled; for instance if 'red' is passed then the entire tube
         will be red, or if ['green', 'blue'] is passed then the points
         will alternate between these colours. Defaults to 'purple'.
+    tube_points : int
+        The number of points in the circle-approximating polygon of the
+        tube's cross section. Defaults to 8.
     shading : str | None
         Same as for the `MeshVisual` class. Defaults to 'smooth'.
     vertex_colors: ndarray | None
@@ -46,8 +46,8 @@ class TubeVisual(MeshVisual):
     """
     def __init__(self, points, radius=1.0,
                  closed=False,
-                 tube_points=8,
                  color='purple',
+                 tube_points=8,
                  shading='smooth',
                  vertex_colors=None,
                  face_colors=None,
