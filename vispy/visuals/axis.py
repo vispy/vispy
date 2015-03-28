@@ -39,8 +39,11 @@ class AxisVisual(Visual):
         line = LineVisual(pos=self.extents, color=self.axis_color,
                           mode='gl', width=3.0)
 
-        ticks = LineVisual(pos=self._get_tick_positions(),
-                           color=self.tick_color, mode='gl',
+        tick_fractions, tick_labels = self._get_tick_frac_labels()
+
+        tick_pos = self._get_tick_positions(tick_fractions)
+
+        ticks = LineVisual(pos=tick_pos, color=self.tick_color, mode='gl',
                            width=2.0, connect='segments')
 
         ticks.draw(transforms)
@@ -58,21 +61,26 @@ class AxisVisual(Visual):
         # now return a unit vector
         return v / np.linalg.norm(v)
 
-    def _get_tick_positions(self):
-        tick_num = 10 # number of ticks
+    def _get_tick_positions(self, tick_fractions):
         tick_length = 10 # length in pixels
 
         tick_vector = self.tick_direction * tick_length
-
-        tick_fractions = np.linspace(0, 1, num=tick_num)
 
         tick_origins = np.tile(self.vec, (len(tick_fractions), 1))
         tick_origins = (self.extents[0].T + (tick_origins.T*tick_fractions).T)
 
         tick_endpoints = tick_vector + tick_origins
 
-        c = np.empty([tick_num * 2, 2])
+        c = np.empty([len(tick_fractions) * 2, 2])
         c[0::2] = tick_origins
         c[1::2] = tick_endpoints
 
         return c
+
+    def _get_tick_frac_labels(self):
+        tick_num = 10 # number of ticks
+
+        tick_fractions = np.linspace(0, 1, num=tick_num)
+        tick_labels = tick_fractions.astype("str")
+
+        return tick_fractions, tick_labels
