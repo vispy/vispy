@@ -96,14 +96,11 @@ class PanZoomCanvas(app.Canvas):
 
         self.width, self.height = self.size
         gloo.set_viewport(0, 0, self.physical_size[0], self.physical_size[1])
-
-        self._tr = TransformSystem(self)
-
-        self.show()
-
-    def on_initialize(self, event):
         gloo.set_state(clear_color='black', blend=True,
                        blend_func=('src_alpha', 'one_minus_src_alpha'))
+
+        self._tr = TransformSystem(self)
+        self.show()
 
     def on_resize(self, event):
         self.width, self.height = event.size
@@ -276,7 +273,7 @@ class SignalsVisual(Visual):
         self._y_transform = y_transform
 
         colormap = Function(DISCRETE_CMAP)
-        cmap = np.random.uniform(size=(1, nsignals, 3), 
+        cmap = np.random.uniform(size=(1, nsignals, 3),
                                  low=.5, high=.9).astype(np.float32)
         tex = gloo.Texture2D((cmap * 255).astype(np.uint8))
         colormap['colormap'] = Variable('uniform sampler2D u_colormap', tex)
@@ -324,21 +321,21 @@ class Signals(SignalsVisual, scene.visuals.Node):
         v_index = a_index;
     }
     """
-    
+
     def draw(self, transform_system):
         self._program.vert['transform'] = transform_system.get_full_transform()
         self._program.draw('line_strip')
-    
+
 
 if __name__ == '__main__':
     data = np.random.normal(size=(128, 1000)).astype(np.float32)
-    
-    pzcanvas = PanZoomCanvas(position=(400, 300), size=(800, 600), 
+
+    pzcanvas = PanZoomCanvas(position=(400, 300), size=(800, 600),
                              title="PanZoomCanvas")
     visual = SignalsVisual(data)
     pzcanvas.add_visual('signal', visual)
-    
-    scanvas = scene.SceneCanvas(show=True, keys='interactive', 
+
+    scanvas = scene.SceneCanvas(show=True, keys='interactive',
                                 title="SceneCanvas")
     svisual = Signals(data)
     view = scanvas.central_widget.add_view()

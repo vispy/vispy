@@ -13,6 +13,10 @@ are supported).
 
 """
 
+# NOTE: This example throws warnings about variables not being used;
+# this is normal because only some shadertoy examples make use of all
+# variables, and the GPU may compile some of them away.
+
 import sys
 from datetime import datetime, time
 import numpy as np
@@ -43,7 +47,7 @@ uniform sampler2D iChannel1;             // input channel. XX = 2D/Cube
 uniform sampler2D iChannel2;             // input channel. XX = 2D/Cube
 uniform sampler2D iChannel3;             // input channel. XX = 2D/Cube
 uniform vec3      iChannelResolution[4]; // channel resolution (in pixels)
-uniform float     iChannelTime[4];       // channel playback time (in seconds)
+uniform float     iChannelTime[4];       // channel playback time (in sec)
 
 %s
 """
@@ -79,6 +83,7 @@ class Canvas(app.Canvas):
 
         self.program["position"] = [(-1, -1), (-1, 1), (1, 1),
                                     (-1, -1), (1, 1), (1, -1)]
+        self.program['iMouse'] = 0, 0, 0, 0
 
         self.program['iSampleRate'] = 44100.
         for i in range(4):
@@ -114,7 +119,7 @@ class Canvas(app.Canvas):
 
     def on_timer(self, event):
         self.program['iGlobalTime'] = event.elapsed
-        self.program['iDate'] = get_idate()  # used in some shadertoy examples
+        self.program['iDate'] = get_idate()  # used in some shadertoy exs
         self.update()
 
     def on_resize(self, event):
