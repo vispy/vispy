@@ -59,6 +59,7 @@ class Canvas(app.Canvas):
         self.axis_y.draw(self.tr_sys)
 
         self.axis_x.draw_ticks(self.tr_sys)
+        self.axis_y.draw_ticks(self.tr_sys)
 
         self.line.draw(self.tr_sys)
 

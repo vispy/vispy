@@ -28,6 +28,7 @@ class AxisVisual(LineVisual):
         color = (1, 1, 1, 1)
 
         self.extents = extents
+        self.vec = np.subtract(self.extents[1],self.extents[0])
 
         self.tick_direction = tick_direction or self._get_tick_direction()
 
@@ -43,33 +44,41 @@ class AxisVisual(LineVisual):
     def _get_tick_direction(self):
         """Determines the tick direction if not specified."""
 
+        v = self.vec
+
         right = np.array([1, 0])
         up = np.array([0, -1])
 
-        a = np.subtract(self.extents[1],self.extents[0])
-
         # This will be negative if the axis is pointing upwards,
         # and positive if right.
-        rightness = np.linalg.norm(a*right)-np.linalg.norm(a*up)
+        rightness = np.linalg.norm(v*right)-np.linalg.norm(v*up)
 
         if np.sign(rightness) >= 0:
-            a = np.dot(np.array([[0, -1], [1, 0]]), a) # right axis, down ticks
+            v = np.dot(np.array([[0, -1], [1, 0]]), v) # right axis, down ticks
         else:
-            a = np.dot(np.array([[0, 1], [-1, 0]]), a) # up axis, left ticks
+            v = np.dot(np.array([[0, 1], [-1, 0]]), v) # up axis, left ticks
 
         # now return a unit vector
-        return a / np.linalg.norm(a)
+        return v / np.linalg.norm(v)
 
     def _get_tick_positions(self):
-        # Generate 10 evenly-spaced ticks
-        tick_spaces = np.linspace(self.extents[0][0],
-                                  self.extents[1][0], num=10)
+        tick_num = 10 # number of ticks
+        tick_length = 10 # length in pixels
 
-        x = np.repeat(tick_spaces, 2)
-        y = np.tile([self.extents[0][1],
-                    self.extents[0][1] + 10], len(tick_spaces))
+        tick_vector = self.tick_direction * tick_length
 
-        return np.c_[x,y]
+        tick_fractions = np.linspace(0, 1, num=tick_num)
+
+        tick_origins = np.tile(self.vec, (len(tick_fractions), 1))
+        tick_origins = (self.extents[0].T + (tick_origins.T*tick_fractions).T)
+
+        tick_endpoints = tick_vector + tick_origins
+
+        c = np.empty([tick_num * 2, 2])
+        c[0::2] = tick_origins
+        c[1::2] = tick_endpoints
+
+        return c
 
 
 class TicksVisual(LineVisual):
