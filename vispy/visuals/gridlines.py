@@ -15,10 +15,8 @@ VERT = """
 attribute vec2 pos;
 varying vec4 v_pos;
 void main() {
-    $pre
     v_pos = vec4(pos, 0, 1);
     gl_Position = v_pos;
-    $post
 }
 """
 
@@ -27,7 +25,6 @@ varying vec4 v_pos;
 uniform vec2 scale;
 
 void main() {
-    $pre
     vec4 px_pos = $map_nd_to_doc(v_pos);
 
     // Compute vectors representing width, height of pixel in local coords
@@ -71,7 +68,6 @@ void main() {
         discard;
     }
     gl_FragColor = vec4(1, 1, 1, alpha);
-    $post
 }
 """
 
@@ -83,10 +79,6 @@ class GridLinesVisual(Visual):
     def __init__(self, scale=(1, 1), **kwargs):
         super(Visual, self).__init__(**kwargs)
         self._program = ModularProgram(VERT, FRAG)
-        self._program.vert['pre'] = ''
-        self._program.vert['post'] = ''
-        self._program.frag['pre'] = ''
-        self._program.frag['post'] = ''
         self._vbo = None
         self._scale = scale
         self._tr_cache = TransformCache()

@@ -339,7 +339,7 @@ class Function(ShaderObject):
         self._replacements = OrderedDict()
         
         # Stuff to do at the end
-        self._post_hooks = OrderedDict()
+        self._assignments = OrderedDict()
         
         # Create static Variable instances for any global variables declared
         # in the code
@@ -359,7 +359,7 @@ class Function(ShaderObject):
                 if self.name != 'main':
                     raise Exception("Varying assignment only alowed in 'main' "
                                     "function.")
-                storage = self._post_hooks
+                storage = self._assignments
             else:
                 raise TypeError("Variable assignment only allowed for "
                                 "varyings, not %s (in %s)"
@@ -367,8 +367,8 @@ class Function(ShaderObject):
         elif isinstance(key, string_types):
             if any(map(key.startswith, 
                        ('gl_PointSize', 'gl_Position', 'gl_FragColor'))):
-                storage = self._post_hooks
-            elif key in self.template_vars:
+                storage = self._assignments
+            elif key in self.template_vars or key in ('pre', 'post'):
                 storage = self._expressions
             else:
                 raise KeyError('Invalid template variable %r' % key)
@@ -456,7 +456,7 @@ class Function(ShaderObject):
             pass
         
         try:
-            return self._post_hooks[key]
+            return self._assignments[key]
         except KeyError:
             pass
         
@@ -553,6 +553,9 @@ class Function(ShaderObject):
             var = var.lstrip('$')
             if var == self.name:
                 continue
+            if var in ('pre', 'post'):
+                raise ValueError('GLSL uses reserved template variable $%s' % 
+                                 var)
             template_vars.add(var)
         return template_vars
     
@@ -562,17 +565,18 @@ class Function(ShaderObject):
         code = self._code
         
         # Modify name
-        code = code.replace(" " + self.name + "(", " " + names[self] + "(")
+        fname = names[self]
+        code = code.replace(" " + self.name + "(", " " + fname + "(")
 
         # Apply string replacements first -- these may contain $placeholders
         for key, val in self._replacements.items():
             code = code.replace(key, val)
         
-        # Apply post-hooks
+        # Apply assignments to the end of the function
         
         # Collect post lines
         post_lines = []
-        for key, val in self._post_hooks.items():
+        for key, val in self._assignments.items():
             if isinstance(key, Variable):
                 key = names[key]
             if isinstance(val, ShaderObject):
@@ -580,12 +584,26 @@ class Function(ShaderObject):
             line = '    %s = %s;' % (key, val)
             post_lines.append(line)
             
+        # Add a default $post placeholder if needed
+        if 'post' in self._expressions:
+            post_lines.append('    $post')
+            
         # Apply placeholders for hooks
         post_text = '\n'.join(post_lines)
         if post_text:
             post_text = '\n' + post_text + '\n'
         code = code.rpartition('}')
         code = code[0] + post_text + code[1] + code[2]
+
+        # Add a default $pre placeholder if needed
+        if 'pre' in self._expressions:
+            m = re.search(fname + r'\s*\([^{]*\)\s*{', code)
+            if m is None:
+                print code
+                raise RuntimeError("Cound not find beginning of function '%s'" 
+                                   % fname) 
+            ind = m.span()[1]
+            code = code[:ind] + "\n    $pre\n" + code[ind:]
         
         # Apply template variables
         for key, val in self._expressions.items():

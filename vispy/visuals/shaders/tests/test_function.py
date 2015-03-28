@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
+import re
 from vispy.visuals.shaders.function import (Function, Variable, Varying,
                                             MainFunction, FunctionChain)
 
@@ -277,6 +278,13 @@ def test_function_basics():
     assert_in('\ntransform_scale(3);\n', text)
     assert_in('\ntransform_scale(XX);\n', text)
     assert_in('\ntransform_scale(YY);\n', text)
+    
+    # test pre/post assignments
+    fun = Function('void main() {some stuff;}')
+    fun['pre'] = '__pre__'
+    fun['post'] = '__post__'
+    text = fun.compile()
+    assert text == 'void main() {\n    __pre__\nsome stuff;\n    __post__\n}\n'
     
     # Test variable expressions
     fun = Function('void main(){$foo; $bar;}')
