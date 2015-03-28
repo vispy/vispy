@@ -36,27 +36,32 @@ class AxisVisual(Visual):
         self.tick_direction = tick_direction or self._get_tick_direction()
 
     def draw(self, transforms):
-        line = LineVisual(pos=self.extents, color=self.axis_color,
+        v_line = LineVisual(pos=self.extents, color=self.axis_color,
                           mode='gl', width=3.0)
 
         tick_fractions, tick_labels = self._get_tick_frac_labels()
 
-        tick_pos = self._get_tick_positions(tick_fractions)
+        tick_pos, tick_label_pos = self._get_tick_positions(tick_fractions)
 
-        ticks = LineVisual(pos=tick_pos, color=self.tick_color, mode='gl',
+        v_ticks = LineVisual(pos=tick_pos, color=self.tick_color, mode='gl',
                            width=2.0, connect='segments')
 
-        ticks.draw(transforms)
-        line.draw(transforms)
+        # TODO: make this a more efficient iterator
+        for x in range(0, len(tick_labels)):
+            TextVisual(str(tick_labels[x]), font_size=8, color='w',
+                       pos=tick_label_pos[x]).draw(transforms)
+
+        v_ticks.draw(transforms)
+        v_line.draw(transforms)
 
     def _get_tick_direction(self):
         """Determines the tick direction if not specified."""
         v = self.vec
 
-        if abs(v[0]) >= abs(v[1]):
-            v = np.dot(np.array([[0, -1], [1, 0]]), v) # right axis, down ticks
-        else:
-            v = np.dot(np.array([[0, 1], [-1, 0]]), v) # up axis, left ticks
+        if abs(v[0]) >= abs(v[1]): # rightward axis, rotate ticks clockwise
+            v = np.dot(np.array([[0, -1], [1, 0]]), v)
+        else: # upwards axis, rotate ticks counter-clockwise
+            v = np.dot(np.array([[0, 1], [-1, 0]]), v)
 
         # now return a unit vector
         return v / np.linalg.norm(v)
@@ -71,16 +76,18 @@ class AxisVisual(Visual):
 
         tick_endpoints = tick_vector + tick_origins
 
+        tick_label_pos = tick_origins + self.tick_direction*30
+
         c = np.empty([len(tick_fractions) * 2, 2])
         c[0::2] = tick_origins
         c[1::2] = tick_endpoints
 
-        return c
+        return c, tick_label_pos
 
     def _get_tick_frac_labels(self):
-        tick_num = 10 # number of ticks
+        tick_num = 11 # number of ticks
 
         tick_fractions = np.linspace(0, 1, num=tick_num)
-        tick_labels = tick_fractions.astype("str")
+        tick_labels = tick_fractions
 
         return tick_fractions, tick_labels
