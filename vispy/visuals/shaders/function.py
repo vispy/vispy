@@ -19,7 +19,6 @@ trigger a recompile.
 
 import re
 import logging
-import numpy as np
 
 from ...util.eq import eq
 from ...util import logger
