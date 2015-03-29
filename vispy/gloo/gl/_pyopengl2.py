@@ -129,7 +129,7 @@ def glGetRenderbufferParameter(target, pname):
 
 def glGetShaderInfoLog(shader):
     res = GL.glGetShaderInfoLog(shader)
-    return res.decode('utf-8')
+    return res.decode('utf-8') if isinstance(res, bytes) else res
 
 
 def glGetShaderSource(shader):
