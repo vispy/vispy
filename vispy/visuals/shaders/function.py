@@ -449,7 +449,6 @@ class Function(ShaderObject):
         if 'pre' in self._expressions:
             m = re.search(fname + r'\s*\([^{]*\)\s*{', code)
             if m is None:
-                print code
                 raise RuntimeError("Cound not find beginning of function '%s'" 
                                    % fname) 
             ind = m.span()[1]

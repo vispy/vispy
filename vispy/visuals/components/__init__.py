@@ -11,5 +11,5 @@ from .texture import (TextureComponent, VertexTextureCoordinateComponent,  # noq
 from .vertex import XYPosComponent, XYZPosComponent, HeightFieldComponent  # noqa
 
 
-from clipper import Clipper  # noqa
-from color2 import Alpha, ColorFilter  # noqa
+from .clipper import Clipper  # noqa
+from .color2 import Alpha, ColorFilter  # noqa
