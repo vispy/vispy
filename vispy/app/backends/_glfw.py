@@ -393,8 +393,8 @@ class CanvasBackend(BaseCanvasBackend):
     def _on_resize(self, _id, w, h):
         if self._vispy_canvas is None:
             return
-        self._vispy_canvas.events.resize(size=(w, h), physical_size=
-                                         self._vispy_get_physical_size())
+        self._vispy_canvas.events.resize(
+            size=(w, h), physical_size=self._vispy_get_physical_size())
 
     def _on_close(self, _id):
         if self._vispy_canvas is None:

@@ -80,7 +80,7 @@ def test_multiple_canvases():
             t = Timer(0.1, app=app, connect=on_timer, iterations=1,  # noqa
                       start=True)
             app.process_events()
-            sleep(0.2)
+            sleep(0.5)  # long for slow systems
             app.process_events()
             assert timer_ran
 
