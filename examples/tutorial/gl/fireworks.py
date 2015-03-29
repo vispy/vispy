@@ -24,6 +24,8 @@ from vispy.gloo import gl
 
 
 vertex_code = """
+#version 120
+
 uniform float time;
 uniform vec3 center;
 attribute float lifetime;
@@ -44,6 +46,8 @@ void main () {
 """
 
 fragment_code = """
+#version 120
+
 uniform vec4 color;
 varying float v_lifetime;
 void main()
