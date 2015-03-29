@@ -364,7 +364,6 @@ class CanvasBackend(BaseCanvasBackend):
             # glfw.glfwSetWindowShouldClose()  # Does not really cause a close
             self._vispy_set_visible(False)
             self._id, id_ = None, self._id
-            glfw.glfwPollEvents()
             glfw.glfwDestroyWindow(id_)
             gc.collect()  # help ensure context gets destroyed
 
