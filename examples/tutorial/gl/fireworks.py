@@ -60,7 +60,6 @@ class Canvas(app.Canvas):
     def __init__(self):
         app.Canvas.__init__(self, size=(800, 600), title='GL Fireworks',
                             keys='interactive')
-        self.timer = app.Timer('auto', self.on_timer)
 
     def on_initialize(self, event):
         # Build & activate program
@@ -113,8 +112,9 @@ class Canvas(app.Canvas):
         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE)
         gl.glEnable(34370)  # gl.GL_VERTEX_PROGRAM_POINT_SIZE
         gl.glEnable(34913)  # gl.GL_POINT_SPRITE
+        gl.glViewport(0, 0, *self.physical_size)
         self.new_explosion()
-        self.timer.start()
+        self.timer = app.Timer('auto', self.on_timer, start=True)
 
     def on_draw(self, event):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)

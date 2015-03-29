@@ -108,7 +108,7 @@ class Canvas(app.Canvas):
         gl.glDrawArrays(gl.GL_TRIANGLE_STRIP, 0, 4)
 
     def on_resize(self, event):
-        gl.glViewport(0, 0, *event.size)
+        gl.glViewport(0, 0, *event.physical_size)
 
 if __name__ == '__main__':
     c = Canvas()
