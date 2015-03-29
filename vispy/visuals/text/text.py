@@ -237,13 +237,11 @@ class TextVisual(Visual):
         varying vec2 v_texcoord;
 
         void main(void) {
-            $pre
             vec4 pos = $transform(vec4(u_pos, 0.0, 1.0));
             mat2 rot = mat2(cos(u_rotation), -sin(u_rotation),
                             sin(u_rotation), cos(u_rotation));
             gl_Position = pos + vec4(rot * a_position * u_scale, 0., 0.);
             v_texcoord = a_texcoord;
-            $post
         }
         """
 
@@ -326,7 +324,6 @@ class TextVisual(Visual):
         }
 
         void main(void) {
-            $pre
             vec4 color = u_color;
             vec2 uv = v_texcoord.xy;
             vec4 rgb;
@@ -360,7 +357,6 @@ class TextVisual(Visual):
             }
 
             gl_FragColor = vec4(color.rgb, color.a * alpha);
-            $post
         }
         """
 
@@ -380,10 +376,6 @@ class TextVisual(Visual):
         self._font = self._font_manager.get_font(face, bold, italic)
         self._program = ModularProgram(self.VERTEX_SHADER,
                                        self.FRAGMENT_SHADER)
-        self._program.vert['pre'] = ''
-        self._program.vert['post'] = ''
-        self._program.frag['pre'] = ''
-        self._program.frag['post'] = ''
         self._vertices = None
         self._anchors = (anchor_x, anchor_y)
         # Init text properties

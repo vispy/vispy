@@ -24,17 +24,13 @@ from ..color import Color
 vertex_template = """
 
 void main() {
-    $pre
     gl_Position = $transform($to_vec4($position));
-    $post
 }
 """
 
 fragment_template = """
 void main() {
-    $pre
     gl_FragColor = $color;
-    $post
 }
 """
 

@@ -45,6 +45,9 @@ class Function(ShaderObject):
     * float, int, tuple are automatically turned into a uniform Variable
     * a VertexBuffer is automatically turned into an attribute Variable
     
+    All functions have implicit "$pre" and "$post" placeholders that may be
+    used to insert code at the beginning and end of the function.
+    
     Examples
     --------
     This example shows the basic usage of the Function class::
