@@ -10,8 +10,6 @@ except Exception as exp:
     # These are all overwritten with imports from IPython (on success)
     DOMWidget = object
     Unicode = Int = Float = Bool = lambda *args, **kwargs: None
-
-    # raise ImportError("The WebGL backend requires IPython >= 2.0")
     available, testable, why_not, which = False, False, str(exp), None
 else:
     available, testable, why_not, which = True, False, None, None
