@@ -10,7 +10,10 @@ from ...ext.gdi32plus import (gdi32, user32, HORZSIZE, VERTSIZE,
 
 def get_dpi():
     """Get screen DPI from the OS"""
-    user32.SetProcessDPIAware()
+    try:
+        user32.SetProcessDPIAware()
+    except AttributeError:
+        pass  # not present on XP
     dc = user32.GetDC(0)
     h_size = gdi32.GetDeviceCaps(dc, HORZSIZE)
     v_size = gdi32.GetDeviceCaps(dc, VERTSIZE)
