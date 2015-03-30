@@ -23,7 +23,7 @@ def plot(*args, **kwargs):
     canvas.view.add(canvas.line)
     if False:  # todo: of data-is-3D
         canvas.view.camera = 'turntable'
-    else:    
+    else:
         canvas.view.camera = 'panzoom'
     canvas.show()
     plots.append(canvas)
@@ -106,7 +106,7 @@ def mesh(vertices=None, faces=None, vertex_colors=None, face_colors=None,
                                face_colors=face_colors,
                                color=color, shading='smooth')
     canvas.view.add(canvas.mesh)
-    canvas.view.camera = cameras.TurntableCamera(fov=60, 
+    canvas.view.camera = cameras.TurntableCamera(fov=60,
                                                  azimuth=azimuth,
                                                  elevation=elevation)
     plots.append(canvas)
@@ -161,7 +161,7 @@ def scatter(*args, **kwargs):
         kwargs['edge_color'] = kwargs['edge_color'].colors
     if 'face_color' in kwargs and isinstance(kwargs['face_color'], Colormap):
         kwargs['face_color'] = kwargs['face_color'].colors
-    if not 'face_color' in kwargs:
+    if 'face_color' not in kwargs:
         kwargs['face_color'] = 'black'
     canvas.scatter = visuals.Markers()
     kwargs['pos'] = _pos
