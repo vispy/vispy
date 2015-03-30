@@ -335,8 +335,7 @@ class _GLLineVisual(Visual):
             tr = transforms.document_to_framebuffer
             px_scale = np.mean((tr.map((1, 0)) - tr.map((0, 1)))[:2])
             width = px_scale * self._parent._width
-            
-            GL.glLineWidth(width)
+            GL.glLineWidth(max(width, 1.))
 
         if self._parent._changed['connect']:
             self._connect = self._parent._interpret_connect()
