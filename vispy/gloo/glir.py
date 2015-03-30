@@ -399,7 +399,7 @@ class GlirParser(BaseGlirParser):
 
 
 def glir_logger(parser_cls, name):
-    from json import dump
+    import json
     from ..util.logs import NumPyJSONEncoder
 
     class cls(parser_cls):
@@ -411,7 +411,7 @@ def glir_logger(parser_cls, name):
             self._file.close()
 
         def _parse(self, command):
-            dump(command, self._file, cls=NumPyJSONEncoder)
+            json.dump(command, self._file, cls=NumPyJSONEncoder)
             self._file.write('\n')
             parser_cls._parse(self, command)
 

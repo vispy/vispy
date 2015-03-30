@@ -333,8 +333,10 @@ def _handle_exception(ignore_callback_errors, print_callback_errors, obj,
 
 class NumPyJSONEncoder(json.JSONEncoder):
     def default(self, obj):
+        from ..app.backends._ipynb_util import _serialize_buffer
+
         if isinstance(obj, np.ndarray):
-            return obj.tolist()
+            return _serialize_buffer(obj, array_serialization='base64')
         elif isinstance(obj, np.generic):
             return obj.item()
 
