@@ -2,6 +2,7 @@
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
+import base64
 import logging
 import math
 import sys
@@ -331,10 +332,23 @@ def _handle_exception(ignore_callback_errors, print_callback_errors, obj,
                 logger.error("Drawing node %s repeat %s"
                              % (node, this_print))
 
+
+def _serialize_buffer(buffer, array_serialization=None):
+    """Serialize a NumPy array."""
+    if array_serialization == 'binary':
+        # WARNING: in NumPy 1.9, tostring() has been renamed to tobytes()
+        # but tostring() is still here for now for backward compatibility.
+        return buffer.ravel().tostring()
+    elif array_serialization == 'base64':
+        return {'storage_type': 'base64',
+                'buffer': base64.b64encode(buffer).decode('ascii')
+                }
+    raise ValueError("The array serialization method should be 'binary' or "
+                     "'base64'.")
+
+
 class NumPyJSONEncoder(json.JSONEncoder):
     def default(self, obj):
-        from ..app.backends._ipynb_util import _serialize_buffer
-
         if isinstance(obj, np.ndarray):
             return _serialize_buffer(obj, array_serialization='base64')
         elif isinstance(obj, np.generic):

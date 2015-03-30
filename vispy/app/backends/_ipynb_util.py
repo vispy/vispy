@@ -5,11 +5,11 @@
 """Tools used by the IPython notebook backends."""
 
 import re
-import base64
 
 import numpy as np
 
 from ...ext.six import string_types, iteritems
+from ...util.logs import _serialize_buffer
 
 
 # -----------------------------------------------------------------------------
@@ -68,20 +68,6 @@ def _serialize_command(command_modified):
     """Serialize a single GLIR (modified) command. The modification relates
     to the fact that buffers are replaced by pointers."""
     return _serialize_item(command_modified)
-
-
-def _serialize_buffer(buffer, array_serialization=None):
-    """Serialize a NumPy array."""
-    if array_serialization == 'binary':
-        # WARNING: in NumPy 1.9, tostring() has been renamed to tobytes()
-        # but tostring() is still here for now for backward compatibility.
-        return buffer.ravel().tostring()
-    elif array_serialization == 'base64':
-        return {'storage_type': 'base64',
-                'buffer': base64.b64encode(buffer).decode('ascii')
-                }
-    raise ValueError("The array serialization method should be 'binary' or "
-                     "'base64'.")
 
 
 def create_glir_message(commands, array_serialization=None):
