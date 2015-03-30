@@ -161,6 +161,8 @@ def scatter(*args, **kwargs):
         kwargs['edge_color'] = kwargs['edge_color'].colors
     if 'face_color' in kwargs and isinstance(kwargs['face_color'], Colormap):
         kwargs['face_color'] = kwargs['face_color'].colors
+    if not 'face_color' in kwargs:
+        kwargs['face_color'] = 'black'
     canvas.scatter = visuals.Markers()
     kwargs['pos'] = _pos
     canvas.scatter.set_data(**kwargs)
