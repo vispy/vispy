@@ -3,5 +3,3 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from ._widget import VispyWidget  # NOQA
-
-__all__ = ("VispyWidget")
