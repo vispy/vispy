@@ -369,7 +369,7 @@ def save_testing_image(image, location):
     if image == "screenshot":
         image = _screenshot(alpha=False)
     with open(location+'.png', 'wb') as fid:
-        f.write(make_png(image))
+        fid.write(make_png(image))
 
 
 @nottest
