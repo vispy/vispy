@@ -83,7 +83,7 @@ def _calculate_normals(rr, tris):
 
 
 def resize(image, shape, kind='linear'):
-    """Resize image using bilinear interpolation
+    """Resize an image
 
     Parameters
     ----------
