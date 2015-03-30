@@ -274,7 +274,7 @@ def _fetch_file(url, file_name, print_destination=True):
     n_try = 3
     for ii in range(n_try):
         try:
-            data = urllib.request.urlopen(url, timeout=5.)
+            data = urllib.request.urlopen(url, timeout=15.)
         except Exception as e:
             if ii == n_try - 1:
                 raise RuntimeError('Error while fetching file %s.\n'

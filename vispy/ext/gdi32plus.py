@@ -162,7 +162,10 @@ user32.GetDC.argtypes = [UINT32]  # HWND
 
 user32.ReleaseDC.argtypes = [c_void_p, HDC]
 
-user32.SetProcessDPIAware.argtypes = []
+try:
+    user32.SetProcessDPIAware.argtypes = []
+except AttributeError:
+    pass  # not present on XP
 
 
 # gdiplus
