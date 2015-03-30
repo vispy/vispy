@@ -19,7 +19,8 @@ an OpenGL context.
 from copy import deepcopy
 import weakref
 
-from .glir import GlirQueue, BaseGlirParser, GlirParser
+from .. import glir_file
+from .glir import GlirQueue, BaseGlirParser, GlirParser, glir_logger
 from .wrappers import BaseGlooFunctions
 
 _default_dict = dict(red_size=8, green_size=8, blue_size=8, alpha_size=8,
@@ -160,7 +161,8 @@ class GLShared(object):
     # left, things should Just Work. 
     
     def __init__(self):
-        self._parser = GlirParser()
+        parser_cls = GlirParser if False else glir_logger(GlirParser, glir_file)
+        self._parser = parser_cls()
         self._name = None
         self._refs = []
     

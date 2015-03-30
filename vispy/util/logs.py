@@ -8,7 +8,10 @@ import sys
 import inspect
 import re
 import traceback
+import json
 from functools import partial
+
+import numpy as np
 
 from ..ext.six import string_types
 
@@ -327,3 +330,12 @@ def _handle_exception(ignore_callback_errors, print_callback_errors, obj,
             else:  # == 'node':
                 logger.error("Drawing node %s repeat %s"
                              % (node, this_print))
+
+class NumPyJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        elif isinstance(obj, np.generic):
+            return obj.item()
+
+        return json.JSONEncoder.default(self, obj)

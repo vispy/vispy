@@ -27,6 +27,13 @@ version_info = 0, 4, 0, 'dev'  # major, minor, patch, extra
 # Nice string for the version (mimic how IPython composes its version str)
 __version__ = '-'.join(map(str, version_info)).replace('-', '.', 2).strip('-')
 
+from argparse import ArgumentParser
+
+parser = ArgumentParser()
+parser.add_argument('--vispy-glir-file', help='Export glir commands to specified file.')
+args = parser.parse_args()
+glir_file = args.vispy_glir_file
+
 from .util import config, set_log_level, keys, sys_info  # noqa
 from .util.wrappers import use  # noqa
 from .testing import test  # noqa
