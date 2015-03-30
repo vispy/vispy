@@ -117,7 +117,7 @@ def glGetFramebufferAttachmentParameter(target, attachment, pname):
 
 def glGetProgramInfoLog(program):
     res = GL.glGetProgramInfoLog(program)
-    return res.decode('utf-8')
+    return res if isinstance(res, str) else res.decode('utf-8')
 
 
 def glGetRenderbufferParameter(target, pname):
