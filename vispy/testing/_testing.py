@@ -353,6 +353,7 @@ def TestingCanvas(bgcolor='black', size=(100, 100), dpi=None):
         def __enter__(self):
             SceneCanvas.__enter__(self)
             gloo.clear(color=self._bgcolor)
+            gloo.set_viewport(0, 0, *self.physical_size)
             return self
 
         def draw_visual(self, visual):
