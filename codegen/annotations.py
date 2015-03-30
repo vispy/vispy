@@ -500,7 +500,7 @@ def getProgramInfoLog(program):
     return infolog[:length[0]].decode('utf-8')
     # --- pyopengl
     res = GL.glGetProgramInfoLog(program)
-    return res.decode('utf-8')
+    return res if isinstance(res, str) else res.decode('utf-8')
 
 def getShaderInfoLog(shader):
     # --- gl es
