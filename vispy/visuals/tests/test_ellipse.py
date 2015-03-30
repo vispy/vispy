@@ -33,7 +33,9 @@ def test_circle_draw():
         ellipse = visuals.Ellipse(pos=(75, 35, 0), radius=20,
                                   border_color=(0, 1, 1, 1))
         c.draw_visual(ellipse)
-        assert_image_equal("screenshot", 'visuals/circle3.png', 0.9)
+        # low corr here because borders have some variability
+        # esp. w/HiDPI
+        assert_image_equal("screenshot", 'visuals/circle3.png', 0.7)
 
 
 @requires_application()
@@ -62,7 +64,7 @@ def test_ellipse_draw():
         ellipse.transform = transforms.STTransform(scale=(2.0, 3.0),
                                                    translate=(50, 50))
         c.draw_visual(ellipse)
-        assert_image_equal("screenshot", 'visuals/ellipse3.png')
+        assert_image_equal("screenshot", 'visuals/ellipse3.png', 0.7)
 
 
 @requires_application()
@@ -80,7 +82,7 @@ def test_arc_draw1():
                                   start_angle=150., span_angle=120.,
                                   border_color=(1, 0, 0, 1))
         c.draw_visual(ellipse)
-        assert_image_equal("screenshot", 'visuals/arc2.png')
+        assert_image_equal("screenshot", 'visuals/arc2.png', 0.6)
 
 
 @requires_application()

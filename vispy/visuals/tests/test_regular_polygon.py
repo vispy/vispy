@@ -39,7 +39,7 @@ def test_regular_polygon_draw1():
         rpolygon.transform = transforms.STTransform(scale=(50, 50),
                                                     translate=(50, 50))
         c.draw_visual(rpolygon)
-        assert_image_equal("screenshot", 'visuals/regular_polygon3.png')
+        assert_image_equal("screenshot", 'visuals/regular_polygon3.png', 0.7)
 
 
 @requires_application()
@@ -68,7 +68,7 @@ def test_regular_polygon_draw2():
         rpolygon.transform = transforms.STTransform(scale=(75, 100),
                                                     translate=(50, 50))
         c.draw_visual(rpolygon)
-        assert_image_equal("screenshot", 'visuals/regular_polygon6.png')
+        assert_image_equal("screenshot", 'visuals/regular_polygon6.png', 0.6)
 
 
 @requires_application()

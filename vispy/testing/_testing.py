@@ -301,7 +301,7 @@ def _save_failed_test(data, expect, filename):
         print(response)
 
 
-def assert_image_equal(image, reference, limit=0.95):
+def assert_image_equal(image, reference, limit=0.9):
     """Downloads reference image and compares with image
 
     Parameters
@@ -309,19 +309,19 @@ def assert_image_equal(image, reference, limit=0.95):
     image: str, numpy.array
         'screenshot' or image data
     reference: str
-        'The filename on the remote ``test-data`` repository to download'
+        The filename on the remote ``test-data`` repository to download.
     limit : int
         Number of pixels that can differ in the image.
     """
     from ..gloo.util import _screenshot
     from ..io import read_png
+    from ..geometry import resize
 
     if image == "screenshot":
         image = _screenshot(alpha=False)
     ref = read_png(get_testing_file(reference))[:, :, :3]
-
-    image = image[:ref.shape[0], :ref.shape[1], :]  # can be off in Windows
-    assert_equal(image.shape, ref.shape)
+    # resize in case we're on a HiDPI display
+    image = resize(image, ref.shape[:2], 'nearest')
 
     # check for minimum number of changed pixels, allowing for overall 1-pixel
     # shift in any direcion
@@ -344,7 +344,6 @@ def assert_image_equal(image, reference, limit=0.95):
 def TestingCanvas(bgcolor='black', size=(100, 100), dpi=None):
     """Class wrapper to avoid importing scene until necessary"""
     from ..scene import SceneCanvas
-    from .. import gloo
 
     class TestingCanvas(SceneCanvas):
         def __init__(self, bgcolor, size):
@@ -352,8 +351,8 @@ def TestingCanvas(bgcolor='black', size=(100, 100), dpi=None):
 
         def __enter__(self):
             SceneCanvas.__enter__(self)
-            gloo.clear(color=self._bgcolor)
-            gloo.set_viewport(0, 0, *self.physical_size)
+            self.context.clear(color=self._bgcolor)
+            self.context.set_viewport(0, 0, *self.physical_size)
             return self
 
         def draw_visual(self, visual):
@@ -369,10 +368,8 @@ def save_testing_image(image, location):
     from ..util import make_png
     if image == "screenshot":
         image = _screenshot(alpha=False)
-    png = make_png(image)
-    f = open(location+'.png', 'wb')
-    f.write(png)
-    f.close()
+    with open(location+'.png', 'wb') as fid:
+        f.write(make_png(image))
 
 
 @nottest
