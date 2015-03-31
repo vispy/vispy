@@ -51,7 +51,7 @@ def test_queue():
 
 @requires_application()
 def test_log_parser():
-    glir_file = tempfile.TemporaryFile()
+    glir_file = tempfile.TemporaryFile(mode='r+')
 
     config.update(glir_file=glir_file)
     with Canvas() as c:
