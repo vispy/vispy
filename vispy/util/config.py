@@ -5,7 +5,6 @@
 """Vispy configuration functions
 """
 
-import io
 import os
 from os import path as op
 import json
@@ -19,7 +18,7 @@ from shutil import rmtree
 
 from .event import EmitterGroup, EventEmitter, Event
 from .logs import logger, set_log_level, use_log_level
-from ..ext.six import string_types
+from ..ext.six import string_types, file_types
 
 config = None
 _data_path = None
@@ -41,7 +40,7 @@ def _init():
         'default_backend': string_types,
         'gl_backend': string_types,
         'gl_debug': (bool,),
-        'glir_file': string_types+(io.TextIOWrapper if sys.version_info >= (3, 0) else file,),
+        'glir_file': string_types+file_types,
         'logging_level': string_types,
         'qt_lib': string_types,
         'dpi': (int, type(None)),

@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
 
 import json
-import os
 import tempfile
 
 from vispy import config
 from vispy.app import Canvas
-from vispy.gloo import Program, glir
+from vispy.gloo import glir
 from vispy.testing import requires_application, run_tests_if_main
 
 
