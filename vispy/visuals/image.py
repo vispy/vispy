@@ -9,7 +9,7 @@ import numpy as np
 from ..gloo import set_state, Texture2D
 from ..color import get_colormap
 from .shaders import ModularProgram, Function, FunctionChain
-from .transforms import STTransform
+from .transforms import STTransform, NullTransform
 from .visual import Visual
 from ..ext.six import string_types
 
@@ -21,7 +21,7 @@ varying vec2 v_texcoord;
 
 void main() {
     v_texcoord = a_texcoord;
-    gl_Position = $transform(vec4(a_position, 0, 1.));
+    gl_Position = $transform(vec4(a_position, 0., 1.));
 }
 """
 
@@ -31,11 +31,12 @@ varying vec2 v_texcoord;
 
 void main()
 {
-    if(v_texcoord.x < 0.0 || v_texcoord.x > 1.0 ||
-       v_texcoord.y < 0.0 || v_texcoord.y > 1.0) {
+    vec2 texcoord = $map_local_to_tex(vec4(v_texcoord, 0, 1)).xy;
+    if(texcoord.x < 0.0 || texcoord.x > 1.0 ||
+       texcoord.y < 0.0 || texcoord.y > 1.0) {
         discard;
     }
-    gl_FragColor = $color_transform(texture2D(u_texture, v_texcoord));
+    gl_FragColor = $color_transform(texture2D(u_texture, texcoord));
 }
 """
 
@@ -94,10 +95,13 @@ class ImageVisual(Visual):
 
         self._method = method
         self._grid = grid
-        self._need_data_update = True
+        self._need_vertex_update = True
 
     def set_data(self, image):
-        self._data = np.array(image, np.float32)
+        data = np.asarray(image)
+        if self._data is None or self._data.shape != data.shape:
+            self._need_vertex_update = True
+        self._data = data
         self._texture = None
 
     @property
@@ -115,7 +119,7 @@ class ImageVisual(Visual):
             if clim.shape != (2,):
                 raise ValueError('clim must have two elements')
         self._clim = clim
-        self._need_data_update = True
+        self._need_vertex_update = True
         self.update()
 
     @property
@@ -130,7 +134,7 @@ class ImageVisual(Visual):
     def size(self):
         return self._data.shape[:2]
 
-    def _build_data(self, transforms):
+    def _build_vertex_data(self, transforms):
         # Construct complete data array with position and optionally color
         if False:  # transforms.get_full_transform().Linear
             # -> does not take cams into account
@@ -142,6 +146,7 @@ class ImageVisual(Visual):
 
         # TODO: subdivision and impostor modes should be handled by new
         # components?
+        method = 'impostor'
         if method == 'subdivide':
             # quads cover area of image as closely as possible
             w = 1.0 / grid[1]
@@ -162,25 +167,30 @@ class ImageVisual(Visual):
             tex_coords = quads.reshape(grid[1]*grid[0]*6, 3)
             tex_coords = np.ascontiguousarray(tex_coords[:, :2])
             vertices = tex_coords * self._data.shape[:2]
+            self._program.frag['map_local_to_tex'] = NullTransform()
         elif method == 'impostor':
-            raise NotImplementedError
             # quad covers entire view; frag. shader will deal with image shape
-            vertices = np.array([[-1, -1, 0], [1, -1, 0], [1, 1, 0],
-                                 [-1, -1, 0], [1, 1, 0], [-1, 1, 0]],
+            vertices = np.array([[-1, -1], [1, -1], [1, 1],
+                                 [-1, -1], [1, 1], [-1, 1]],
                                 dtype=np.float32)
-
-            _tex_transform = STTransform(1./self._data.shape[0],
-                                         1./self._data.shape[1])
+            tex_coords = vertices
+            tex_transform = STTransform(scale=(1./self._data.shape[0],
+                                         1./self._data.shape[1]))
             ctr = transforms.get_full_transform().inverse
-            total_transform = _tex_transform * ctr  # noqa
+            total_transform = tex_transform * ctr
+            self._program.frag['map_local_to_tex'] = total_transform
             # tex_coord_com = VertexTextureCoordinateComponent(total_transform)
             # tr = NullTransform()
             # self._program.vert['map_local_to_nd'] = tr
+            self._program.vert['transform'] = NullTransform()
         else:
             raise ValueError("Unknown image draw method '%s'" % method)
+        
         self._program['a_position'] = vertices.astype(np.float32)
         self._program['a_texcoord'] = tex_coords.astype(np.float32)
+        return method
 
+    def _build_texture(self):
         data = self._data
         if data.ndim == 2 or data.shape[2] == 1:
             # deal with clim on CPU b/c of texture depth limits :(
@@ -199,9 +209,9 @@ class ImageVisual(Visual):
         else:
             fun = Function(_null_color_transform)
         self._program.frag['color_transform'] = fun
-        self._program['u_texture'] = Texture2D(
-            data, interpolation=self._interpolation)
-        self._need_data_update = False
+        self._texture = Texture2D(data, interpolation=self._interpolation)
+        self._program['u_texture'] = self._texture 
+        self._need_vertex_update = False
 
     def bounds(self, mode, axis):
         if axis > 1:
@@ -214,13 +224,16 @@ class ImageVisual(Visual):
             return
 
         set_state(cull_face='front_and_back')
-        if transforms.get_full_transform().Linear:
-            method = 'subdivide'
-        else:
-            method = self._method
+        method = self._method
 
         # always have to rebuild for impostor, only first for subdivide
-        if self._need_data_update:
-            self._build_data(transforms)
-        self._program.vert['transform'] = transforms.get_full_transform()
+        #if self._need_vertex_update:
+        method = self._build_vertex_data(transforms)
+            
+        if method == 'subdivide':
+            self._program.vert['transform'] = transforms.get_full_transform()
+            
+        if self._texture is None:
+            self._build_texture()
+            
         self._program.draw('triangles')
