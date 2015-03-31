@@ -15,6 +15,7 @@ from vispy import app, gloo, visuals
 from vispy.visuals.transforms import STTransform
 from vispy.visuals.components import Clipper, Alpha, ColorFilter
 from vispy.visuals.shaders import Function
+from vispy.geometry import Rect
 
 # vertex positions of data to draw
 N = 400
@@ -32,16 +33,20 @@ class Canvas(app.Canvas):
 
         self.lines[0].transform = STTransform(translate=(0, 50))
         
+        # Clipping filter (requires update when window is resized) 
         self.lines[1].transform = STTransform(translate=(400, 50))
-        self.lines[1].attach(Clipper([500, 725, 200, 50]))
+        self.clipper = Clipper([500, 725, 200, 50])
+        self.lines[1].attach(self.clipper)
         
+        # Opacity filter
         self.lines[2].transform = STTransform(translate=(0, 150))
         self.lines[2].attach(Alpha(0.4))
         
+        # Color filter (for anaglyph stereo)
         self.lines[3].transform = STTransform(translate=(400, 150))
         self.lines[3].attach(ColorFilter([1, 0, 0, 1]))
         
-        # a custom filter
+        # A custom filter
         class Hatching(object):
             def __init__(self):
                 self.shader = Function("""
@@ -65,7 +70,7 @@ class Canvas(app.Canvas):
         self.lines[4].transform = STTransform(translate=(0, 250))
         self.lines[4].attach(Hatching())
         
-        # mixing filters
+        # Mixing filters
         self.lines[5].transform = STTransform(translate=(400, 250))
         self.lines[5].attach(ColorFilter([1, 0, 0, 1]))
         self.lines[5].attach(Hatching())
@@ -85,6 +90,16 @@ class Canvas(app.Canvas):
         gloo.set_viewport(0, 0, *self.physical_size)
         for line in self.lines:
             line.draw(line.tr_sys)
+
+    def on_resize(self, event):
+        for line in self.lines:
+            # let the transform systems know that the window has resized
+            line.tr_sys.auto_configure()
+            
+        # Need to update clipping boundaries if the window resizes.
+        trs = self.lines[1].tr_sys
+        tr = trs.document_to_framebuffer * trs.visual_to_document
+        self.clipper.bounds = tr.map(Rect(50, -15, 250, 30))
 
 
 if __name__ == '__main__':
