@@ -71,7 +71,7 @@ def test__log_parser():
     assert lines[i] == json.dumps(['FUNC', 'glClearColor', 1.0, 1.0, 1.0, 1.0])
     i += 1
     assert lines[i] == json.dumps(['FUNC', 'glClear', 17664])
-    i +=1
+    i += 1
     assert lines[i] == json.dumps(['FUNC', 'glFinish'])
     i += 1
 

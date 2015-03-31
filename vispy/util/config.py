@@ -5,6 +5,7 @@
 """Vispy configuration functions
 """
 
+import io
 import os
 from os import path as op
 import json
@@ -40,7 +41,7 @@ def _init():
         'default_backend': string_types,
         'gl_backend': string_types,
         'gl_debug': (bool,),
-        'glir_file': string_types+(file,),
+        'glir_file': string_types+(io.TextIOWrapper,),
         'logging_level': string_types,
         'qt_lib': string_types,
         'dpi': (int, type(None)),
