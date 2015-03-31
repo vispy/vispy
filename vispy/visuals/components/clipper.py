@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) 2014, Vispy Development Team.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+
+import weakref
 from ..shaders import Function
 from ..transforms import NullTransform
 from ...geometry import Rect
@@ -36,9 +41,9 @@ class Clipper(object):
         self.clip_shader['view'] = (b.left, b.right, b.bottom, b.top)
         
     def _attach(self, visual):
-        self._visual = visual
+        self._visual = weakref.ref(visual)
         try:
-            hook = self._visual._get_hook('frag', 'pre')
+            hook = visual._get_hook('frag', 'pre')
         except KeyError:
             raise NotImplementedError("Visual %s does not support clipping" %
                                       visual)

@@ -193,7 +193,7 @@ class ViewBox(Widget):
           onto the parent pixel grid, if possible.
         * 'fbo' - use an FBO to draw the subscene to a texture, and
           then render the texture in the parent scene.
-        * 'fragment' - clipping in the fragment shader TODO
+        * 'fragment' - clipping in the fragment shader
         * 'stencil' - TODO
 
         Notes
@@ -226,9 +226,6 @@ class ViewBox(Widget):
         """ Draw the viewbox border/background, and prepare to draw the 
         subscene using the configured clipping method.
         """
-        # todo: we could consider including some padding
-        # so that we have room *inside* the viewbox to draw ticks and stuff
-        
         # -- Calculate resolution
         
         # Get current transform and calculate the 'scale' of the viewbox
@@ -302,7 +299,6 @@ class ViewBox(Widget):
                 event.pop_node()
         else:
             # Just draw
-            # todo: invoke fragment shader clipping
             event.push_node(self.scene)
             try:
                 self.scene.draw(event)

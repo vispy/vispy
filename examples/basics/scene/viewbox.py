@@ -21,29 +21,23 @@ from vispy import scene
 canvas = scene.SceneCanvas(size=(800, 600), show=True, keys='interactive')
 
 # Create two ViewBoxes, place side-by-side
-# First ViewBox uses a 2D pan/zoom camera
 vb1 = scene.widgets.ViewBox(name='vb1', border_color='yellow',
                             parent=canvas.scene)
+# Viewboxes can use one of 3 different clipping methods: 'fragment', 
+# 'viewport', or 'fbo'. The default is 'fragment', which does all clipping in
+# the fragment shader.
 vb1.clip_method = 'fragment'
+# First ViewBox uses a 2D pan/zoom camera
 vb1.camera = 'panzoom'
 
 # Second ViewBox uses a 3D perspective camera
 vb2 = scene.widgets.ViewBox(name='vb2', border_color='blue',
                             parent=canvas.scene)
 vb2.parent = canvas.scene
+# Second ViewBox uses glViewport to implement clipping and a 3D turntable
+# camera.
 vb2.clip_method = 'viewport'
 vb2.camera = scene.TurntableCamera(elevation=30, azimuth=30, up='+y')
-
-
-# Move these when the canvas changes size
-@canvas.events.resize.connect
-def resize(event=None):
-    vb1.pos = 20, 20
-    vb1.size = canvas.size[0]/2. - 40, canvas.size[1] - 40
-    vb2.pos = canvas.size[0]/2. + 20, 20
-    vb2.size = canvas.size[0]/2. - 40, canvas.size[1] - 40
-
-resize()
 
 
 #

@@ -82,7 +82,7 @@ class Canvas(app.Canvas):
 
     def on_draw(self, ev):
         gloo.clear('black', depth=True)
-        gloo.set_viewport(0, 0, *self.size)
+        gloo.set_viewport(0, 0, *self.physical_size)
         for line in self.lines:
             line.draw(line.tr_sys)
 

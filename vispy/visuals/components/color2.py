@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
+
+import weakref
+
 from ..shaders import Function
 
 # To replace color.py soon..
@@ -25,8 +28,8 @@ class Alpha(object):
         self.shader['alpha'] = a
         
     def _attach(self, visual):
-        self._visual = visual
-        hook = self._visual._get_hook('frag', 'post')
+        self._visual = weakref.ref(visual)
+        hook = visual._get_hook('frag', 'post')
         hook.add(self.shader())
 
 
