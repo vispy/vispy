@@ -19,8 +19,9 @@ an OpenGL context.
 from copy import deepcopy
 import weakref
 
-from .glir import GlirQueue, BaseGlirParser, GlirParser
+from .glir import GlirQueue, BaseGlirParser, GlirParser, glir_logger
 from .wrappers import BaseGlooFunctions
+from .. import config
 
 _default_dict = dict(red_size=8, green_size=8, blue_size=8, alpha_size=8,
                      depth_size=16, stencil_size=0, double_buffer=True,
@@ -160,7 +161,13 @@ class GLShared(object):
     # left, things should Just Work. 
     
     def __init__(self):
-        self._parser = GlirParser()
+        glir_file = config['glir_file']
+
+        parser_cls = GlirParser
+        if glir_file:
+            parser_cls = glir_logger(parser_cls, glir_file)
+
+        self._parser = parser_cls()
         self._name = None
         self._refs = []
     

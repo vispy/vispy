@@ -1,11 +1,15 @@
 # -*- coding: utf-8 -*-
 
+import json
+import tempfile
+
+from vispy import config
+from vispy.app import Canvas
 from vispy.gloo import glir
+from vispy.testing import requires_application, run_tests_if_main
 
-from vispy.testing import run_tests_if_main
 
-
-def test__queue():
+def test_queue():
     q = glir.GlirQueue()
     parser = glir.GlirParser()
     
@@ -43,6 +47,34 @@ def test__queue():
     # Convert for es2
     shader3 = q._convert_shaders('es2', ['', shader2])[1]
     assert 'precision highp float;' in shader3
+
+
+@requires_application()
+def test_log_parser():
+    glir_file = tempfile.TemporaryFile(mode='r+')
+
+    config.update(glir_file=glir_file)
+    with Canvas() as c:
+        c.context.set_clear_color('white')
+        c.context.clear()
+
+    glir_file.seek(0)
+    lines = glir_file.read().splitlines()
+    i = 0
+
+    assert lines[i] == json.dumps(['CURRENT', 0])
+    i += 1
+    # The 'CURRENT' command may have been called multiple times
+    while lines[i] == lines[i - 1]:
+        i += 1
+    assert lines[i] == json.dumps(['FUNC', 'glClearColor', 1.0, 1.0, 1.0, 1.0])
+    i += 1
+    assert lines[i] == json.dumps(['FUNC', 'glClear', 17664])
+    i += 1
+    assert lines[i] == json.dumps(['FUNC', 'glFinish'])
+    i += 1
+
+    config.update(glir_file='')
 
 
 # The rest is basically tested via our examples
