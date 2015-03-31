@@ -9,7 +9,7 @@ from vispy.gloo import glir
 from vispy.testing import requires_application, run_tests_if_main
 
 
-def test__queue():
+def test_queue():
     q = glir.GlirQueue()
     parser = glir.GlirParser()
     
@@ -50,7 +50,7 @@ def test__queue():
 
 
 @requires_application()
-def test__log_parser():
+def test_log_parser():
     glir_file = tempfile.TemporaryFile()
 
     config.update(glir_file=glir_file)

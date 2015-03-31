@@ -406,6 +406,7 @@ def glir_logger(parser_cls, file_or_filename):
         def __init__(self, *args, **kwargs):
             parser_cls.__init__(self, *args, **kwargs)
 
+            print(type(file_or_filename))
             if isinstance(file_or_filename, string_types):
                 self._file = open(file_or_filename, 'w')
                 self._close = True
