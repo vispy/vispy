@@ -40,7 +40,7 @@ def _init():
         'default_backend': string_types,
         'gl_backend': string_types,
         'gl_debug': (bool,),
-        'glir_file': string_types,
+        'glir_file': string_types+(file,),
         'logging_level': string_types,
         'qt_lib': string_types,
         'dpi': (int, type(None)),

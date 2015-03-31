@@ -398,17 +398,24 @@ class GlirParser(BaseGlirParser):
             gl.glEnable(GL_POINT_SPRITE)
 
 
-def glir_logger(parser_cls, name):
+def glir_logger(parser_cls, file_or_filename):
     import json
     from ..util.logs import NumPyJSONEncoder
 
     class cls(parser_cls):
         def __init__(self, *args, **kwargs):
             parser_cls.__init__(self, *args, **kwargs)
-            self._file = open(name, 'w')
+
+            if isinstance(file_or_filename, str):
+                self._file = open(file_or_filename, 'w')
+                self._close = True
+            else:
+                self._file = file_or_filename
+                self._close = False
 
         def __del__(self):
-            self._file.close()
+            if self._close:
+                self._file.close()
 
         def _parse(self, command):
             json.dump(command, self._file, cls=NumPyJSONEncoder)
