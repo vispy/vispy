@@ -114,8 +114,8 @@ def _parse_command_line_arguments():
     """
     global config
     # Get command line args for vispy
-    argnames = ['vispy-backend=', 'vispy-gl-debug', 'vispy-glir-file=', 'vispy-log=', 'vispy-help',
-                'vispy-profile', 'vispy-dpi=']
+    argnames = ['vispy-backend=', 'vispy-gl-debug', 'vispy-glir-file=',
+                'vispy-log=', 'vispy-help', 'vispy-profile', 'vispy-dpi=']
     try:
         opts, args = getopt.getopt(sys.argv[1:], '', argnames)
     except getopt.GetoptError:

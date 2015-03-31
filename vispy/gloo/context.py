@@ -162,7 +162,11 @@ class GLShared(object):
     
     def __init__(self):
         glir_file = config['glir_file']
-        parser_cls = glir_logger(GlirParser, glir_file) if glir_file else GlirParser
+
+        parser_cls = GlirParser
+        if glir_file:
+            parser_cls = glir_logger(parser_cls, glir_file)
+
         self._parser = parser_cls()
         self._name = None
         self._refs = []
