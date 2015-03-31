@@ -75,8 +75,7 @@ class Canvas(app.Canvas):
         self.lines[5].attach(ColorFilter([1, 0, 0, 1]))
         self.lines[5].attach(Hatching())
         
-        app.Canvas.__init__(self, keys='interactive')
-        self.size = (800, 800)
+        app.Canvas.__init__(self, keys='interactive', size=(800, 800))
         
         for line in self.lines:
             tr_sys = visuals.transforms.TransformSystem(self)
