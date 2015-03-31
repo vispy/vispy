@@ -6,9 +6,6 @@
 # -----------------------------------------------------------------------------
 """
 Demonstrate ViewBox using various clipping methods.
-
-Two boxes are manually positioned on the canvas; they are not updated
-when the canvas resizes.
 """
 import sys
 import numpy as np
@@ -57,8 +54,8 @@ pos[:20, 1] = -0.5  # So we can see which side is down
 # make a single plot line and display in both viewboxes
 line1 = scene.visuals.Line(pos=pos.copy(), color=color, mode='gl',
                            antialias=False, name='line1', parent=vb1.scene)
-line1.add_parent(vb1.scene)
-line1.add_parent(vb2.scene)
+line2 = scene.visuals.Line(pos=pos.copy(), color=color, mode='gl',
+                           antialias=False, name='line1', parent=vb2.scene)
 
 
 # And some squares:
@@ -72,16 +69,18 @@ z = np.array([[0, 0, 1]], dtype=np.float32)
 # First two boxes are added to both views
 box1 = scene.visuals.Line(pos=box, color=(0.7, 0, 0, 1), mode='gl',
                           name='unit box', parent=vb1.scene)
-box1.add_parent(vb2.scene)
+box2 = scene.visuals.Line(pos=box, color=(0.7, 0, 0, 1), mode='gl',
+                          name='unit box', parent=vb2.scene)
 
-box2 = scene.visuals.Line(pos=(box * 2 - 1),  color=(0, 0.7, 0, 1), mode='gl',
+box3 = scene.visuals.Line(pos=(box * 2 - 1),  color=(0, 0.7, 0, 1), mode='gl',
                           name='nd box', parent=vb1.scene)
-box2.add_parent(vb2.scene)
+box3 = scene.visuals.Line(pos=(box * 2 - 1),  color=(0, 0.7, 0, 1), mode='gl',
+                          name='nd box', parent=vb2.scene)
 
 # These boxes are only added to the 3D view.
-box3 = scene.visuals.Line(pos=box + z, color=(1, 0, 0, 1), mode='gl',
+box4 = scene.visuals.Line(pos=box + z, color=(1, 0, 0, 1), mode='gl',
                           name='unit box', parent=vb2.scene)
-box4 = scene.visuals.Line(pos=((box + z) * 2 - 1), color=(0, 1, 0, 1),
+box5 = scene.visuals.Line(pos=((box + z) * 2 - 1), color=(0, 1, 0, 1),
                           mode='gl', name='nd box', parent=vb2.scene)
 
 
