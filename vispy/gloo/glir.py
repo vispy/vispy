@@ -619,7 +619,7 @@ class GlirProgram(GlirObject):
             self._handles[name] = handle  # Store in cache
             if handle < 0:
                 self._known_invalid.add(name)
-                logger.warning('Variable %s is not an active uniform' % name)
+                logger.info('Variable %s is not an active uniform' % name)
                 return
         # Program needs to be active in order to set uniforms
         self.activate()
@@ -660,7 +660,7 @@ class GlirProgram(GlirObject):
             self._handles[name] = handle  # Store in cache
             if handle < 0:
                 self._known_invalid.add(name)
-                logger.warning('Variable %s is not an active uniform' % name)
+                logger.info('Variable %s is not an active uniform' % name)
                 return
         # Look up function to call
         funcname = self.UTYPEMAP[type_]
@@ -693,7 +693,7 @@ class GlirProgram(GlirObject):
                 self._known_invalid.add(name)
                 if value[0] != 0 and value[2] > 0:  # VBO with offset
                     return  # Probably an unused element in a structured VBO
-                logger.warning('Variable %s is not an active attribute' % name)
+                logger.info('Variable %s is not an active attribute' % name)
                 return
         # Program needs to be active in order to set uniforms
         self.activate()
@@ -743,8 +743,8 @@ class GlirProgram(GlirObject):
     def _validate(self):
         # Validate ourselves
         if self._unset_variables:
-            logger.warning('Program has unset variables: %r' % 
-                           self._unset_variables)
+            logger.info('Program has unset variables: %r' %
+                        self._unset_variables)
         # Validate via OpenGL
         gl.glValidateProgram(self._handle)
         if not gl.glGetProgramParameter(self._handle, 
