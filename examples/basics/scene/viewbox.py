@@ -19,10 +19,10 @@ from vispy import scene
 
 # Create canvas
 canvas = scene.SceneCanvas(size=(800, 600), show=True, keys='interactive')
+grid = canvas.central_widget.add_grid()
 
 # Create two ViewBoxes, place side-by-side
-vb1 = scene.widgets.ViewBox(name='vb1', border_color='yellow',
-                            parent=canvas.scene)
+vb1 = grid.add_view(name='vb1', border_color='yellow')
 # Viewboxes can use one of 3 different clipping methods: 'fragment', 
 # 'viewport', or 'fbo'. The default is 'fragment', which does all clipping in
 # the fragment shader.
@@ -31,8 +31,7 @@ vb1.clip_method = 'fragment'
 vb1.camera = 'panzoom'
 
 # Second ViewBox uses a 3D perspective camera
-vb2 = scene.widgets.ViewBox(name='vb2', border_color='blue',
-                            parent=canvas.scene)
+vb2 = grid.add_view(name='vb2', border_color='yellow')
 vb2.parent = canvas.scene
 # Second ViewBox uses glViewport to implement clipping and a 3D turntable
 # camera.

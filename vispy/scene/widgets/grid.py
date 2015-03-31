@@ -63,6 +63,30 @@ class Grid(Widget):
         self._update_child_widgets()
         return widget
 
+    def add_grid(self, row=None, col=None, row_span=1, col_span=1, 
+                 **kwargs):
+        """
+        Create a new Grid and add it as a child widget.
+
+        The arguments 'row', 'col', 'row_span', and 'col_span' are passed to 
+        `add_widget()`, whereas all other arguments are passed to `ViewBox()`.
+        """
+        from .grid import Grid
+        grid = Grid(**kwargs)
+        return self.add_widget(grid, row, col, row_span, col_span)
+
+    def add_view(self, row=None, col=None, row_span=1, col_span=1, 
+                 **kwargs):
+        """
+        Create a new ViewBox and add it as a child widget.
+
+        The arguments 'row', 'col', 'row_span', and 'col_span' are passed to 
+        `add_widget()`, whereas all other arguments are passed to `ViewBox()`.
+        """
+        from .viewbox import ViewBox
+        view = ViewBox(**kwargs)
+        return self.add_widget(view, row, col, row_span, col_span)
+
     def next_row(self):
         self._next_cell = [self._next_cell[0] + 1, 0]
 
