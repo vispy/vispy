@@ -10,6 +10,7 @@ Implementation to execute GL Intermediate Representation (GLIR)
 
 import sys
 import re
+import json
 
 import numpy as np
 
@@ -399,14 +400,12 @@ class GlirParser(BaseGlirParser):
 
 
 def glir_logger(parser_cls, file_or_filename):
-    import json
     from ..util.logs import NumPyJSONEncoder
 
     class cls(parser_cls):
         def __init__(self, *args, **kwargs):
             parser_cls.__init__(self, *args, **kwargs)
 
-            print(type(file_or_filename))
             if isinstance(file_or_filename, string_types):
                 self._file = open(file_or_filename, 'w')
                 self._close = True
