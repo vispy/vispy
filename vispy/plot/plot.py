@@ -17,8 +17,16 @@ def plot(*args, **kwargs):
 
     For arguments, see scene.visuals.LinePlot.
     """
-    canvas = SceneCanvas(keys='interactive')
+    canvas = SceneCanvas(keys='interactive', bgcolor='white')
     canvas.view = canvas.central_widget.add_view()
+    if 'edge_color' in kwargs and isinstance(kwargs['edge_color'], Colormap):
+        kwargs['edge_color'] = kwargs['edge_color'].colors
+    if 'face_color' in kwargs and isinstance(kwargs['face_color'], Colormap):
+        kwargs['face_color'] = kwargs['face_color'].colors
+    if 'color' in kwargs and isinstance(kwargs['color'], Colormap):
+        kwargs['color'] = kwargs['color'].colors
+    if 'face_color' not in kwargs:
+        kwargs['face_color'] = 'black'
     canvas.line = visuals.LinePlot(*args, **kwargs)
     canvas.view.add(canvas.line)
     if False:  # todo: of data-is-3D
