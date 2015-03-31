@@ -41,7 +41,7 @@ def _init():
         'default_backend': string_types,
         'gl_backend': string_types,
         'gl_debug': (bool,),
-        'glir_file': string_types+(io.TextIOWrapper,),
+        'glir_file': string_types+(io.TextIOWrapper if sys.version_info >= (3, 0) else file,),
         'logging_level': string_types,
         'qt_lib': string_types,
         'dpi': (int, type(None)),
