@@ -39,7 +39,7 @@ if PY3:
     class_types = type,
     text_type = str
     binary_type = bytes
-    file_types = (io.TextIOWrapper,)
+    file_types = (io.TextIOWrapper, io.BufferedRandom)
 
     MAXSIZE = sys.maxsize
 else:
@@ -48,7 +48,7 @@ else:
     class_types = (type, types.ClassType)
     text_type = unicode
     binary_type = str
-    file_types = (file, io.TextIOWrapper)
+    file_types = (file, io.TextIOWrapper, io.BufferedRandom)
 
     if sys.platform.startswith("java"):
         # Jython always uses 32 bits.
