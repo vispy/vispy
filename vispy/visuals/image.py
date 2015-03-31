@@ -227,8 +227,8 @@ class ImageVisual(Visual):
         method = self._method
 
         # always have to rebuild for impostor, only first for subdivide
-        #if self._need_vertex_update:
-        method = self._build_vertex_data(transforms)
+        if self._need_vertex_update:
+            method = self._build_vertex_data(transforms)
             
         if method == 'subdivide':
             self._program.vert['transform'] = transforms.get_full_transform()
