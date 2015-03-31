@@ -65,7 +65,7 @@ void main()
 {
    float ndiff;
    // an adjacent texel is 1/W further over in normalized texture coordinates
-   vec2 v_texcoord2 = vec2(clamp(v_texcoord.x + 1.0/%(W)d, 0.0, 1.0), 
+   vec2 v_texcoord2 = vec2(clamp(v_texcoord.x + 1.0/%(W)d, 0.0, 1.0),
                            v_texcoord.y);
    vec4 texel1 = texture2D(u_texture, v_texcoord);
    vec4 texel2 = texture2D(u_texture, v_texcoord2);
@@ -104,7 +104,12 @@ class Canvas(app.Canvas):
             shape=(H, W, 3),
             interpolation='nearest'
         )
+
+        gloo.set_viewport(0, 0, *self.physical_size)
+
         self.toggle_internalformat()
+
+        self.show()
 
     def on_key_press(self, event):
         if event.key == 'F':
@@ -127,8 +132,7 @@ class Canvas(app.Canvas):
         self.update()
 
     def on_resize(self, event):
-        w, h = event.size
-        gloo.set_viewport(0, 0, w, h)
+        gloo.set_viewport(0, 0, *event.physical_size)
 
     def on_draw(self, event):
         gloo.clear(color=True, depth=True)
@@ -136,5 +140,4 @@ class Canvas(app.Canvas):
 
 if __name__ == '__main__':
     c = Canvas()
-    c.show()
     app.run()

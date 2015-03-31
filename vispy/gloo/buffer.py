@@ -40,7 +40,7 @@ class Buffer(GLObject):
     
     def __init__(self, data=None, nbytes=None):
         GLObject.__init__(self)
-        self._views = []  # Views on this buffer
+        self._views = []  # Views on this buffer (stored using weakrefs)
         self._valid = True  # To invalidate buffer views
         self._nbytes = 0  # Bytesize in bytes, set in resize_bytes()
         

@@ -66,12 +66,13 @@ class Canvas(app.Canvas):
         self.program.bind(vertices)
 
         # Build view, model, projection & normal
-        view = np.eye(4, dtype=np.float32)
+        view = translate((0, 0, -5))
         model = np.eye(4, dtype=np.float32)
-        translate(view, 0, 0, -5)
         self.program['model'] = model
         self.program['view'] = view
         self.program['texture'] = checkerboard()
+
+        self.activate_zoom()
 
         self.phi, self.theta = 0, 0
 
@@ -79,26 +80,28 @@ class Canvas(app.Canvas):
         gloo.set_state(clear_color=(0.30, 0.30, 0.35, 1.00), depth_test=True)
         self.timer.start()
 
+        self.show()
+
     def on_draw(self, event):
         gloo.clear(color=True, depth=True)
         self.program.draw('triangles', self.indices)
 
     def on_resize(self, event):
-        gloo.set_viewport(0, 0, *event.size)
-        projection = perspective(45.0, event.size[0] / float(event.size[1]),
+        self.activate_zoom()
+
+    def activate_zoom(self):
+        gloo.set_viewport(0, 0, *self.physical_size)
+        projection = perspective(45.0, self.size[0] / float(self.size[1]),
                                  2.0, 10.0)
         self.program['projection'] = projection
 
     def on_timer(self, event):
         self.theta += .5
         self.phi += .5
-        model = np.eye(4, dtype=np.float32)
-        rotate(model, self.theta, 0, 0, 1)
-        rotate(model, self.phi, 0, 1, 0)
-        self.program['model'] = model
+        self.program['model'] = np.dot(rotate(self.theta, (0, 0, 1)),
+                                       rotate(self.phi, (0, 1, 0)))
         self.update()
 
 if __name__ == '__main__':
     c = Canvas()
-    c.show()
     app.run()

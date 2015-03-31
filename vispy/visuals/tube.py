@@ -3,7 +3,7 @@ from __future__ import division
 from .mesh import MeshVisual
 import numpy as np
 from numpy.linalg import norm
-from ..util.transforms import rotation_matrix
+from ..util.transforms import rotate
 from ..color import ColorArray
 
 
@@ -21,6 +21,9 @@ class TubeVisual(MeshVisual):
         tube will be extruded.
     radius : float
         The radius of the tube. Defaults to 1.0.
+    closed : bool
+        Whether the tube should be closed, joining the last point to the
+        first. Defaults to False.
     color : Color | ColorArray
         The color(s) to use when drawing the tube. The same color is
         applied to each vertex of the mesh surrounding each point of
@@ -41,12 +44,13 @@ class TubeVisual(MeshVisual):
         Same as for the `MeshVisual` class. Defaults to 'triangles'.
 
     """
-    def __init__(self, points, radius=1.0, tube_points=8,
+    def __init__(self, points, radius=1.0,
                  closed=False,
+                 color='purple',
+                 tube_points=8,
                  shading='smooth',
                  vertex_colors=None,
                  face_colors=None,
-                 color='purple',
                  mode='triangles'):
 
         points = np.array(points)
@@ -115,6 +119,9 @@ def _frenet_frames(points, closed):
 
     # Compute tangent vectors for each segment
     tangents = np.roll(points, -1, axis=0) - np.roll(points, 1, axis=0)
+    if not closed:
+        tangents[0] = points[1] - points[0]
+        tangents[-1] = points[-1] - points[-2]
     mags = np.sqrt(np.sum(tangents * tangents, axis=1))
     tangents /= mags[:, np.newaxis]
 
@@ -136,9 +143,9 @@ def _frenet_frames(points, closed):
         vec = np.cross(tangents[i-1], tangents[i])
         if norm(vec) > epsilon:
             vec /= norm(vec)
-
             theta = np.arccos(np.clip(tangents[i-1].dot(tangents[i]), -1, 1))
-            normals[i] = rotation_matrix(vec, theta).dot(normals[i])
+            normals[i] = rotate(-np.degrees(theta),
+                                vec)[:3, :3].dot(normals[i])
 
     if closed:
         theta = np.arccos(np.clip(normals[0].dot(normals[-1]), -1, 1))
@@ -148,7 +155,8 @@ def _frenet_frames(points, closed):
             theta *= -1.
 
         for i in range(1, len(points)):
-            normals[i] = rotation_matrix(tangents[i], theta*i).dot(normals[i])
+            normals[i] = rotate(-np.degrees(theta*i),
+                                tangents[i])[:3, :3].dot(normals[i])
 
     binormals = np.cross(tangents, normals)
 

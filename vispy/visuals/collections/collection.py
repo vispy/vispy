@@ -177,7 +177,7 @@ class Collection(BaseCollection):
 
         found = False
         for program in self._programs:
-            for name, (storage, _, _) in program._code_variables.items():
+            for name, (storage, _, _, _) in program._code_variables.items():
                 if name == key and storage == 'uniform':
                     found = True
                     program[key] = value

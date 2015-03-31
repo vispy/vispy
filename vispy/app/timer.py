@@ -104,7 +104,14 @@ class Timer(object):
         emitting that number of events. If unspecified, then
         the previous value of self.iterations will be used. If the value is
         negative, then the timer will continue running until stop() is called.
+
+        If the timer is already running when this function is called, nothing
+        happens (timer continues running as it did previously, without
+        changing the interval, number of iterations, or emitting a timer
+        start event).
         """
+        if self.running:
+            return  # don't do anything if already running
         self.iter_count = 0
         if interval is not None:
             self.interval = interval
@@ -157,7 +164,8 @@ class Timer(object):
             type='timer_timeout',
             iteration=self.iter_count,
             elapsed=elapsed,
-            dt=dt)
+            dt=dt,
+            count=self.iter_count)
         self.iter_count += 1
 
     def connect(self, callback):

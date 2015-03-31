@@ -55,6 +55,7 @@ def _test_module_properties(_module=None):
         '_vispy_mouse_press',
         '_vispy_mouse_release',
         '_vispy_get_geometry',
+        '_vispy_get_physical_size',
         '_process_backend_kwargs')  # defined in base class
 
     class KlassRef(vispy.app.base.BaseCanvasBackend):

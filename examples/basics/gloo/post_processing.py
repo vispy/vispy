@@ -94,12 +94,9 @@ class Canvas(app.Canvas):
 
         # Build program
         # --------------------------------------
-        view = np.eye(4, dtype=np.float32)
-        model = np.eye(4, dtype=np.float32)
-        translate(view, 0, 0, -7)
+        view = translate((0, 0, -7))
         self.phi, self.theta = 60, 20
-        rotate(model, self.theta, 0, 0, 1)
-        rotate(model, self.phi, 0, 1, 0)
+        model = rotate(self.theta, (0, 0, 1)).dot(rotate(self.phi, (0, 1, 0)))
 
         self.cube = Program(cube_vertex, cube_fragment)
         self.cube.bind(vertices)
@@ -120,7 +117,9 @@ class Canvas(app.Canvas):
         # --------------------------------------
         set_state(clear_color=(.3, .3, .35, 1), depth_test=True)
         self.timer = app.Timer('auto', connect=self.on_timer, start=True)
-        self._set_projection(self.size)
+        self._set_projection(self.physical_size)
+
+        self.show()
 
     def on_draw(self, event):
         with self.framebuffer:
@@ -128,13 +127,13 @@ class Canvas(app.Canvas):
             clear(color=True, depth=True)
             set_state(depth_test=True)
             self.cube.draw('triangles', self.indices)
-        set_viewport(0, 0, *self.size)
+        set_viewport(0, 0, *self.physical_size)
         clear(color=True)
         set_state(depth_test=False)
         self.quad.draw('triangle_strip')
 
     def on_resize(self, event):
-        self._set_projection(event.size)
+        self._set_projection(event.physical_size)
 
     def _set_projection(self, size):
         width, height = size
@@ -145,13 +144,10 @@ class Canvas(app.Canvas):
     def on_timer(self, event):
         self.theta += .5
         self.phi += .5
-        model = np.eye(4, dtype=np.float32)
-        rotate(model, self.theta, 0, 0, 1)
-        rotate(model, self.phi, 0, 1, 0)
+        model = rotate(self.theta, (0, 0, 1)).dot(rotate(self.phi, (0, 1, 0)))
         self.cube['model'] = model
         self.update()
 
 if __name__ == '__main__':
     c = Canvas()
-    c.show()
     c.app.run()

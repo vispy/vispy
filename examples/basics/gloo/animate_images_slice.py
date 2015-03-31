@@ -14,6 +14,7 @@ import numpy as np
 from vispy.util.transforms import ortho
 from vispy import gloo
 from vispy import app
+from vispy.visuals.shaders import ModularProgram
 
 
 # Shape of image to be displayed
@@ -57,13 +58,13 @@ void main (void)
 """
 
 FRAG_SHADER = """
-uniform sampler3D u_texture;
+uniform $sampler_type u_texture;
 uniform float i;
 varying vec2 v_texcoord;
 void main()
 {
     // step through gradient with i, note that slice (depth) comes last here!
-    gl_FragColor = texture3D(u_texture, vec3(v_texcoord, i));
+    gl_FragColor = $sample(u_texture, vec3(v_texcoord, i));
     gl_FragColor.a = 1.0;
 }
 
@@ -72,13 +73,19 @@ void main()
 
 class Canvas(app.Canvas):
 
-    def __init__(self):
-        app.Canvas.__init__(self, keys='interactive')
-        self.size = W * 5, H * 5
+    def __init__(self, emulate3d=True):
+        app.Canvas.__init__(self, keys='interactive', size=((W*5), (H*5)))
 
-        self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
-        self.texture = gloo.Texture3D(I, interpolation='nearest',
-                                      wrapping='clamp_to_edge')
+        if emulate3d:
+            tex_cls = gloo.TextureEmulated3D
+        else:
+            tex_cls = gloo.Texture3D
+        self.texture = tex_cls(I, interpolation='nearest',
+                               wrapping='clamp_to_edge')
+
+        self.program = ModularProgram(VERT_SHADER, FRAG_SHADER)
+        self.program.frag['sampler_type'] = self.texture.glsl_sampler_type
+        self.program.frag['sample'] = self.texture.glsl_sample
         self.program['u_texture'] = self.texture
         self.program['i'] = 0.0
         self.program.bind(gloo.VertexBuffer(data))
@@ -98,8 +105,10 @@ class Canvas(app.Canvas):
 
         self._timer = app.Timer('auto', connect=self.on_timer, start=True)
 
+        self.show()
+
     def on_resize(self, event):
-        width, height = event.size
+        width, height = event.physical_size
         gloo.set_viewport(0, 0, width, height)
         self.projection = ortho(0, width, 0, height, -100, 100)
         self.program['u_projection'] = self.projection
@@ -129,6 +138,6 @@ class Canvas(app.Canvas):
 
 
 if __name__ == '__main__':
-    c = Canvas()
-    c.show()
+    # Use emulated3d to switch from an emulated 3D texture to an actual one
+    c = Canvas(emulate3d=True)
     app.run()

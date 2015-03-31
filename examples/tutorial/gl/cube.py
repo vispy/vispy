@@ -124,7 +124,6 @@ class Canvas(app.Canvas):
         app.Canvas.__init__(self, size=(512, 512),
                             title='Rotating cube (GL version)',
                             keys='interactive')
-        self.timer = app.Timer('auto', self.on_timer)
 
     def on_initialize(self, event):
         # Build & activate cube program
@@ -201,8 +200,8 @@ class Canvas(app.Canvas):
         # OpenGL initalization
         gl.glClearColor(0.30, 0.30, 0.35, 1.00)
         gl.glEnable(gl.GL_DEPTH_TEST)
-
-        self.timer.start()
+        self._resize(*(self.size + self.physical_size))
+        self.timer = app.Timer('auto', self.on_timer, start=True)
 
     def on_draw(self, event):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
@@ -210,8 +209,10 @@ class Canvas(app.Canvas):
                           gl.GL_UNSIGNED_INT, None)
 
     def on_resize(self, event):
-        width, height = event.size
-        gl.glViewport(0, 0, width, height)
+        self._resize(*(event.size + event.physical_size))
+
+    def _resize(self, width, height, physical_width, physical_height):
+        gl.glViewport(0, 0, physical_width, physical_height)
         projection = perspective(35.0, width / float(height), 2.0, 10.0)
         loc = gl.glGetUniformLocation(self.cube, "u_projection")
         gl.glUniformMatrix4fv(loc, 1, False, projection)

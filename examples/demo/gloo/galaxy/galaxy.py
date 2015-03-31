@@ -113,34 +113,8 @@ class Canvas(app.Canvas):
 
     def __init__(self):
         # setup initial width, height
-        self.width = 800
-        self.height = 600
-        app.Canvas.__init__(self, keys='interactive')
-        self.size = self.width, self.height
+        app.Canvas.__init__(self, keys='interactive', size=(800, 600))
 
-        self._timer = app.Timer('auto', connect=self.update, start=True)
-
-    # create the numpy array corresponding to the shader data
-    def __create_galaxy_vertex_data(self):
-        data = np.zeros(len(galaxy),
-                        dtype=[('a_size', np.float32, 1),
-                               ('a_position', np.float32, 2),
-                               ('a_color_index', np.float32, 1),
-                               ('a_brightness', np.float32, 1),
-                               ('a_type', np.float32, 1)])
-
-        # see shader for parameter explanations
-        data['a_size'] = galaxy['size'] * max(self.width / 800.0,
-                                              self.height / 800.0)
-        data['a_position'] = galaxy['position'] / 13000.0
-
-        data['a_color_index'] = (galaxy['temperature'] - t0) / (t1 - t0)
-        data['a_brightness'] = galaxy['brightness']
-        data['a_type'] = galaxy['type']
-
-        return data
-
-    def on_initialize(self, event):
         # create a new shader program
         self.program = gloo.Program(VERT_SHADER, FRAG_SHADER,
                                     count=len(galaxy))
@@ -151,8 +125,7 @@ class Canvas(app.Canvas):
         self.program['u_texture'] = self.texture
 
         # construct the model, view and projection matrices
-        self.view = np.eye(4, dtype=np.float32)
-        transforms.translate(self.view, 0, 0, -5)
+        self.view = transforms.translate((0, 0, -5))
         self.program['u_view'] = self.view
 
         self.model = np.eye(4, dtype=np.float32)
@@ -160,8 +133,8 @@ class Canvas(app.Canvas):
 
         self.program['u_colormap'] = colors
 
-        self.projection = perspective(45.0, self.width / float(self.height),
-                                      1.0, 1000.0)
+        w, h = self.size
+        self.projection = perspective(45.0, w / float(h), 1.0, 1000.0)
         self.program['u_projection'] = self.projection
 
         # start the galaxy to some decent point in the future
@@ -174,23 +147,37 @@ class Canvas(app.Canvas):
         self.program.bind(self.data_vbo)
 
         # setup blending
-        self.__setup_blending_mode()
+        gloo.set_state(clear_color=(0.0, 0.0, 0.03, 1.0),
+                       depth_test=False, blend=True,
+                       blend_func=('src_alpha', 'one'))
 
-    def __setup_blending_mode(self):
-        # set the clear color to almost black
-        gloo.gl.glClearColor(0.0, 0.0, 0.03, 1.0)
-        gloo.gl.glDisable(gloo.gl.GL_DEPTH_TEST)
-        # use additive blend mode so that the
-        # particles overlap and intensify
-        gloo.gl.glEnable(gloo.gl.GL_BLEND)
-        gloo.gl.glBlendFunc(gloo.gl.GL_SRC_ALPHA, gloo.gl.GL_ONE)
+        self._timer = app.Timer('auto', connect=self.update, start=True)
+
+    def __create_galaxy_vertex_data(self):
+        data = np.zeros(len(galaxy),
+                        dtype=[('a_size', np.float32, 1),
+                               ('a_position', np.float32, 2),
+                               ('a_color_index', np.float32, 1),
+                               ('a_brightness', np.float32, 1),
+                               ('a_type', np.float32, 1)])
+
+        # see shader for parameter explanations
+        pw, ph = self.physical_size
+        data['a_size'] = galaxy['size'] * max(pw / 800.0, ph / 800.0)
+        data['a_position'] = galaxy['position'] / 13000.0
+
+        data['a_color_index'] = (galaxy['temperature'] - t0) / (t1 - t0)
+        data['a_brightness'] = galaxy['brightness']
+        data['a_type'] = galaxy['type']
+
+        return data
 
     def on_resize(self, event):
-        self.width, self.height = event.size
         # setup the new viewport
-        gloo.set_viewport(0, 0, self.width, self.height)
+        gloo.set_viewport(0, 0, *event.physical_size)
         # recompute the projection matrix
-        self.projection = perspective(45.0, self.width / float(self.height),
+        w, h = event.size
+        self.projection = perspective(45.0, w / float(h),
                                       1.0, 1000.0)
         self.program['u_projection'] = self.projection
 

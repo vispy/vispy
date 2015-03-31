@@ -13,20 +13,6 @@ from vispy.io import load_iris
 import numpy as np
 from scipy.linalg import logm
 
-# Load the Iris dataset and normalize.
-iris = load_iris()
-position = iris['data'].astype(np.float32)
-n, ndim = position.shape
-position -= position.mean()
-position /= np.abs(position).max()
-v_position = position*.75
-
-v_color = ColorArray(['orange', 'magenta', 'darkblue'])
-v_color = v_color.rgb[iris['group'], :].astype(np.float32)
-v_color *= np.random.uniform(.5, 1.5, (n, 3))
-v_color = np.clip(v_color, 0, 1)
-v_size = np.random.uniform(2, 12, (n, 1)).astype(np.float32)
-
 VERT_SHADER = """
 #version 120
 attribute vec4 a_position;
@@ -91,6 +77,21 @@ void main()
 class Canvas(app.Canvas):
     def __init__(self):
         app.Canvas.__init__(self, position=(50, 50), keys='interactive')
+        ps = self.pixel_scale
+
+        # Load the Iris dataset and normalize.
+        iris = load_iris()
+        position = iris['data'].astype(np.float32)
+        n, ndim = position.shape
+        position -= position.mean()
+        position /= np.abs(position).max()
+        v_position = position*.75
+
+        v_color = ColorArray(['orange', 'magenta', 'darkblue'])
+        v_color = v_color.rgb[iris['group'], :].astype(np.float32)
+        v_color *= np.random.uniform(.5, 1.5, (n, 3))
+        v_color = np.clip(v_color, 0, 1)
+        v_size = np.random.uniform(2*ps, 12*ps, (n, 1)).astype(np.float32)
 
         self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
 
@@ -114,7 +115,10 @@ class Canvas(app.Canvas):
         self.dt = .001
         gloo.set_state(clear_color=(1, 1, 1, 1), blend=True,
                        blend_func=('src_alpha', 'one_minus_src_alpha'))
+        gloo.set_viewport(0, 0, *self.physical_size)
+
         self._timer = app.Timer('auto', connect=self.on_timer, start=True)
+        self.show()
 
     def on_timer(self, event):
         # We advance the numerical solver from as many dt there have been
@@ -127,8 +131,7 @@ class Canvas(app.Canvas):
         self.update()
 
     def on_resize(self, event):
-        self.width, self.height = event.size
-        gloo.set_viewport(0, 0, self.width, self.height)
+        gloo.set_viewport(0, 0, *event.physical_size)
 
     def on_draw(self, event):
         gloo.clear()
@@ -136,5 +139,4 @@ class Canvas(app.Canvas):
 
 if __name__ == '__main__':
     c = Canvas()
-    c.show()
     app.run()

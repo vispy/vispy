@@ -216,7 +216,7 @@ class SceneCanvas(app.Canvas):
         
         scene_event = SceneDrawEvent(canvas=self, event=event, 
                                      transform_cache=tr_cache)
-        scene_event.push_viewport((0, 0) + self.size)
+        scene_event.push_viewport((0, 0) + self.physical_size)
         try:
             # Force update of transforms on base entities
             # TODO: this should happen as a reaction to resize, push_viewport,
@@ -353,8 +353,7 @@ class SceneCanvas(app.Canvas):
         """
         fbo, offset, csize = self._current_framebuffer()
         if fbo is None:
-            # todo: account for high-res displays here.
-            fbsize = csize
+            fbsize = self.physical_size
         else:
             fbsize = fbo.color_buffer.shape
             # image shape is (rows, cols), unlike canvas shape.

@@ -43,6 +43,13 @@ _internalformats = [
 ]
 _internalformats = dict([(enum.name, enum) for enum in _internalformats])
 
+# Value to mark a glir object that was just deleted. So we can safely
+# ignore it (and not raise an error that the object could not be found).
+# This can happen e.g. if A is created, A is bound to B and then A gets
+# deleted. The commands may get executed in order: A gets created, A
+# gets deleted, A gets bound to B.
+JUST_DELETED = 'JUST_DELETED'
+
 
 def as_enum(enum):
     """ Turn a possibly string enum into an integer enum.
@@ -292,6 +299,15 @@ class GlirParser(BaseGlirParser):
         """ Parse a list of commands.
         """
         
+        # Get rid of dummy objects that represented deleted objects in
+        # the last parsing round.
+        to_delete = []
+        for id_, val in self._objects.items():
+            if val == JUST_DELETED:
+                to_delete.append(id_)
+        for id_ in to_delete:
+            self._objects.pop(id_)
+        
         for command in commands:
             cmd, id_, args = command[0], command[1], command[2:]
             
@@ -318,10 +334,13 @@ class GlirParser(BaseGlirParser):
                 # Deleting an object
                 ob = self._objects.get(id_, None)
                 if ob is not None:
+                    self._objects[id_] = JUST_DELETED
                     ob.delete()
             else:
                 # Doing somthing to an object
                 ob = self._objects.get(id_, None)
+                if ob == JUST_DELETED:
+                    continue
                 if ob is None:
                     if id_ not in self._invalid_objects:
                         raise RuntimeError('Cannot %s object %i because it '
@@ -430,6 +449,7 @@ class GlirProgram(GlirObject):
         'vec2': (2, gl.GL_FLOAT, np.float32),
         'vec3': (3, gl.GL_FLOAT, np.float32),
         'vec4': (4, gl.GL_FLOAT, np.float32),
+        'int': (1, gl.GL_INT, np.int32),
     }
     
     def create(self):
@@ -475,8 +495,8 @@ class GlirProgram(GlirObject):
         vert_handle = gl.glCreateShader(gl.GL_VERTEX_SHADER)
         frag_handle = gl.glCreateShader(gl.GL_FRAGMENT_SHADER)
         # For both vertex and fragment shader: set source, compile, check
-        for code, handle, type in [(vert, vert_handle, 'vertex'), 
-                                   (frag, frag_handle, 'fragment')]:
+        for code, handle, type_ in [(vert, vert_handle, 'vertex'), 
+                                    (frag, frag_handle, 'fragment')]:
             gl.glShaderSource(handle, code)
             gl.glCompileShader(handle)
             status = gl.glGetShaderParameter(handle, gl.GL_COMPILE_STATUS)
@@ -484,7 +504,7 @@ class GlirProgram(GlirObject):
                 errors = gl.glGetShaderInfoLog(handle)
                 errormsg = self._get_error(code, errors, 4)
                 raise RuntimeError("Shader compilation error in %s:\n%s" % 
-                                   (type + ' shader', errormsg))
+                                   (type_ + ' shader', errormsg))
         # Attach shaders
         gl.glAttachShader(self._handle, vert_handle)
         gl.glAttachShader(self._handle, frag_handle)
@@ -599,13 +619,15 @@ class GlirProgram(GlirObject):
             self._handles[name] = handle  # Store in cache
             if handle < 0:
                 self._known_invalid.add(name)
-                logger.warning('Variable %s is not an active uniform' % name)
+                logger.info('Variable %s is not an active uniform' % name)
                 return
         # Program needs to be active in order to set uniforms
         self.activate()
         if True:
             # Sampler: the value is the id of the texture
             tex = self._parser.get_object(value)
+            if tex == JUST_DELETED:
+                return
             if tex is None:
                 raise RuntimeError('Could not find texture with id %i' % value)
             unit = len(self._samplers)
@@ -613,39 +635,48 @@ class GlirProgram(GlirObject):
                 unit = self._samplers[name][-1]  # Use existing unit            
             self._samplers[name] = tex._target, tex.handle, unit
             gl.glUniform1i(handle, unit)
-    
-    def set_uniform(self, name, type, value):
+
+    def set_uniform(self, name, type_, value):
         """ Set a uniform value. Value is assumed to have been checked.
         """
         if not self._linked:
             raise RuntimeError('Cannot set uniform when program has no code')
         # Get handle for the uniform, first try cache
         handle = self._handles.get(name, -1)
+        count = 1
         if handle < 0:
             if name in self._known_invalid:
                 return
             handle = gl.glGetUniformLocation(self._handle, name)
             self._unset_variables.discard(name)  # Mark as set
+            # if we set a uniform_array, mark all as set
+            if not type_.startswith('mat'):
+                count = value.nbytes // (4 * self.ATYPEINFO[type_][0])
+            if count > 1:
+                for ii in range(count):
+                    if '%s[%s]' % (name, ii) in self._unset_variables:
+                        self._unset_variables.discard('%s[%s]' % (name, ii))
+
             self._handles[name] = handle  # Store in cache
             if handle < 0:
                 self._known_invalid.add(name)
-                logger.warning('Variable %s is not an active uniform' % name)
+                logger.info('Variable %s is not an active uniform' % name)
                 return
         # Look up function to call
-        funcname = self.UTYPEMAP[type]
+        funcname = self.UTYPEMAP[type_]
         func = getattr(gl, funcname)
         # Program needs to be active in order to set uniforms
         self.activate()
         # Triage depending on type 
-        if type.startswith('mat'):
+        if type_.startswith('mat'):
             # Value is matrix, these gl funcs have alternative signature
             transpose = False  # OpenGL ES 2.0 does not support transpose
             func(handle, 1, transpose, value)
         else:
             # Regular uniform
-            func(handle, 1, value)
+            func(handle, count, value)
     
-    def set_attribute(self, name, type, value):
+    def set_attribute(self, name, type_, value):
         """ Set an attribute value. Value is assumed to have been checked.
         """
         if not self._linked:
@@ -662,23 +693,25 @@ class GlirProgram(GlirObject):
                 self._known_invalid.add(name)
                 if value[0] != 0 and value[2] > 0:  # VBO with offset
                     return  # Probably an unused element in a structured VBO
-                logger.warning('Variable %s is not an active attribute' % name)
+                logger.info('Variable %s is not an active attribute' % name)
                 return
         # Program needs to be active in order to set uniforms
         self.activate()
         # Triage depending on VBO or tuple data
         if value[0] == 0:
             # Look up function call
-            funcname = self.ATYPEMAP[type]
+            funcname = self.ATYPEMAP[type_]
             func = getattr(gl, funcname)
             # Set data
             self._attributes[name] = 0, handle, func, value[1:]
         else:
             # Get meta data
             vbo_id, stride, offset = value
-            size, gtype, dtype = self.ATYPEINFO[type]
+            size, gtype, dtype = self.ATYPEINFO[type_]
             # Get associated VBO
             vbo = self._parser.get_object(vbo_id)
+            if vbo == JUST_DELETED:
+                return
             if vbo is None:
                 raise RuntimeError('Could not find VBO with id %i' % vbo_id)
             # Set data
@@ -710,8 +743,8 @@ class GlirProgram(GlirObject):
     def _validate(self):
         # Validate ourselves
         if self._unset_variables:
-            logger.warning('Program has unset variables: %r' % 
-                           self._unset_variables)
+            logger.info('Program has unset variables: %r' %
+                        self._unset_variables)
         # Validate via OpenGL
         gl.glValidateProgram(self._handle)
         if not gl.glGetProgramParameter(self._handle, 
@@ -1131,6 +1164,8 @@ class GlirFrameBuffer(GlirObject):
                                          gl.GL_RENDERBUFFER, 0)
         else:
             buffer = self._parser.get_object(buffer_id)
+            if buffer == JUST_DELETED:
+                return
             if buffer is None:
                 raise ValueError("Unknown buffer with id %i for attachement" % 
                                  buffer_id)

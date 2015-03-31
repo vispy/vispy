@@ -8,12 +8,6 @@ from vispy import gloo
 from vispy import app
 import numpy as np
 
-# Create vetices
-n = 10000
-v_position = 0.25 * np.random.randn(n, 2).astype(np.float32)
-v_color = np.random.uniform(0, 1, (n, 3)).astype(np.float32)
-v_size = np.random.uniform(2, 12, (n, 1)).astype(np.float32)
-
 VERT_SHADER = """
 attribute vec2  a_position;
 attribute vec3  a_color;
@@ -70,6 +64,13 @@ class Canvas(app.Canvas):
 
     def __init__(self):
         app.Canvas.__init__(self, keys='interactive')
+        ps = self.pixel_scale
+
+        # Create vertices
+        n = 10000
+        v_position = 0.25 * np.random.randn(n, 2).astype(np.float32)
+        v_color = np.random.uniform(0, 1, (n, 3)).astype(np.float32)
+        v_size = np.random.uniform(2*ps, 12*ps, (n, 1)).astype(np.float32)
 
         self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
         # Set uniform and attribute
@@ -79,8 +80,10 @@ class Canvas(app.Canvas):
         gloo.set_state(clear_color='white', blend=True,
                        blend_func=('src_alpha', 'one_minus_src_alpha'))
 
+        self.show()
+
     def on_resize(self, event):
-        gloo.set_viewport(0, 0, *event.size)
+        gloo.set_viewport(0, 0, *event.physical_size)
 
     def on_draw(self, event):
         gloo.clear(color=True, depth=True)
@@ -89,5 +92,4 @@ class Canvas(app.Canvas):
 
 if __name__ == '__main__':
     c = Canvas()
-    c.show()
     app.run()
