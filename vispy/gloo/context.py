@@ -161,8 +161,6 @@ class GLShared(object):
     # left, things should Just Work. 
     
     def __init__(self):
-        print 'creating'
-
         glir_file = config['glir_file']
 
         parser_cls = GlirParser
