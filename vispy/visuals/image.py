@@ -31,7 +31,7 @@ varying vec2 v_texcoord;
 
 void main()
 {
-    vec2 texcoord = $map_local_to_tex(vec4(v_texcoord, 0, 1)).xy;
+    vec2 texcoord = $map_local_to_tex($map_uv_to_local(vec4(v_texcoord, 0, 1))).xy;
     if(texcoord.x < 0.0 || texcoord.x > 1.0 ||
        texcoord.y < 0.0 || texcoord.y > 1.0) {
         discard;
@@ -78,7 +78,7 @@ class ImageVisual(Visual):
     The colormap functionality through ``cmap`` and ``clim`` are only used
     if the data are of shape (N, M).
     """
-    def __init__(self, data, method='subdivide', grid=(10, 10),
+    def __init__(self, data, method='auto', grid=(10, 10),
                  cmap='cubehelix', clim='auto', **kwargs):
         super(ImageVisual, self).__init__(**kwargs)
         self._program = ModularProgram(VERT_SHADER, FRAG_SHADER)
@@ -87,13 +87,12 @@ class ImageVisual(Visual):
 
         self._data = None
 
-        # maps from quad coordinates to texture coordinates
-
         self._texture = None
         self._interpolation = 'nearest'
         self.set_data(data)
 
         self._method = method
+        self._method_used = None
         self._grid = grid
         self._need_vertex_update = True
 
@@ -135,18 +134,18 @@ class ImageVisual(Visual):
         return self._data.shape[:2]
 
     def _build_vertex_data(self, transforms):
-        # Construct complete data array with position and optionally color
-        if False:  # transforms.get_full_transform().Linear
-            # -> does not take cams into account
-            method = 'subdivide'
-            grid = (1, 1)
-        else:
-            method = self._method
-            grid = self._grid
+        method = self._method
+        grid = self._grid
+        if method == 'auto':
+            if transforms.get_full_transform().Linear:
+                method = 'subdivide'
+                grid = (1, 1)
+            else:
+                method ='impostor'
+        self._method_used = method
 
         # TODO: subdivision and impostor modes should be handled by new
         # components?
-        method = 'impostor'
         if method == 'subdivide':
             # quads cover area of image as closely as possible
             w = 1.0 / grid[1]
@@ -167,7 +166,11 @@ class ImageVisual(Visual):
             tex_coords = quads.reshape(grid[1]*grid[0]*6, 3)
             tex_coords = np.ascontiguousarray(tex_coords[:, :2])
             vertices = tex_coords * self._data.shape[:2]
+            
+            # vertex shader provides correct texture coordinates
+            self._program.frag['map_uv_to_local'] = NullTransform()
             self._program.frag['map_local_to_tex'] = NullTransform()
+        
         elif method == 'impostor':
             # quad covers entire view; frag. shader will deal with image shape
             vertices = np.array([[-1, -1], [1, -1], [1, 1],
@@ -176,28 +179,32 @@ class ImageVisual(Visual):
             tex_coords = vertices
             tex_transform = STTransform(scale=(1./self._data.shape[0],
                                          1./self._data.shape[1]))
-            ctr = transforms.get_full_transform().inverse
-            total_transform = tex_transform * ctr
-            self._program.frag['map_local_to_tex'] = total_transform
-            # tex_coord_com = VertexTextureCoordinateComponent(total_transform)
-            # tr = NullTransform()
-            # self._program.vert['map_local_to_nd'] = tr
+            
+            # vertex shader provides ND coordinates; 
+            # fragment shader maps to texture coordinates
             self._program.vert['transform'] = NullTransform()
+            #self._program.frag['map_local_to_tex'] = total_transform
+            self._program.frag['map_local_to_tex'] = tex_transform
+        
         else:
             raise ValueError("Unknown image draw method '%s'" % method)
         
         self._program['a_position'] = vertices.astype(np.float32)
         self._program['a_texcoord'] = tex_coords.astype(np.float32)
-        return method
+        self._need_vertex_update = False
 
     def _build_texture(self):
         data = self._data
+        if data.dtype == np.float64:
+            data = data.astype(np.float32)
+        
         if data.ndim == 2 or data.shape[2] == 1:
             # deal with clim on CPU b/c of texture depth limits :(
             # can eventually do this by simulating 32-bit float... maybe
             clim = self._clim
             if isinstance(clim, string_types) and clim == 'auto':
                 clim = np.min(data), np.max(data)
+            clim = np.asarray(clim, dtype=np.float32)
             data = data - clim[0]  # not inplace so we don't modify orig data
             if clim[1] - clim[0] > 0:
                 data /= clim[1] - clim[0]
@@ -211,7 +218,6 @@ class ImageVisual(Visual):
         self._program.frag['color_transform'] = fun
         self._texture = Texture2D(data, interpolation=self._interpolation)
         self._program['u_texture'] = self._texture 
-        self._need_vertex_update = False
 
     def bounds(self, mode, axis):
         if axis > 1:
@@ -224,16 +230,20 @@ class ImageVisual(Visual):
             return
 
         set_state(cull_face='front_and_back')
-        method = self._method
 
-        # always have to rebuild for impostor, only first for subdivide
-        if self._need_vertex_update:
-            method = self._build_vertex_data(transforms)
-            
-        if method == 'subdivide':
-            self._program.vert['transform'] = transforms.get_full_transform()
-            
+        # upload texture is needed
         if self._texture is None:
             self._build_texture()
+            
+        # rebuild vertex buffers if needed
+        if self._need_vertex_update:
+            self._build_vertex_data(transforms)
+            
+        # update transform
+        method = self._method_used
+        if method == 'subdivide':
+            self._program.vert['transform'] = transforms.get_full_transform()
+        else:
+            self._program.frag['map_uv_to_local'] = transforms.get_full_transform().inverse
             
         self._program.draw('triangles')
