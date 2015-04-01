@@ -919,7 +919,7 @@ class Base3DRotationCamera(PerspectiveCamera):
 
             if 1 in event.buttons and not modifiers:
                 # Rotate
-                self._update_rotation(p1, p2)
+                self._update_rotation(event)
 
             elif 2 in event.buttons and not modifiers:
                 # Zoom
@@ -966,9 +966,7 @@ class Base3DRotationCamera(PerspectiveCamera):
                 print('FOV: %1.2f' % self.fov)
 
     def _update_camera_pos(self):
-        """ Set the camera position / orientation based on elevation,
-        azimuth, distance, and center properties.
-        """
+        """ Set the camera position and orientation"""
 
         # transform will be updated several times; do not update camera
         # transform until we are done.
@@ -984,8 +982,8 @@ class Base3DRotationCamera(PerspectiveCamera):
             pp2 = np.array([(0, 0, 0), forward, right, up])
             tr.set_mapping(pp1, pp2)
 
-            tr.translate(-self._actual_distance * np.array(forward))
-            self._rotate_tr(tr)
+            tr.translate(-self._actual_distance * forward)
+            self._rotate_tr()
             tr.scale([1.0/a for a in self._flip_factors])
             tr.translate(np.array(self.center))
 
@@ -1019,11 +1017,11 @@ class Base3DRotationCamera(PerspectiveCamera):
         # the camera
         self._update_camera_pos()
 
-    def _update_rotation(self, p1, p2):
+    def _update_rotation(self, event):
         """Update rotation parmeters based on mouse movement"""
         raise NotImplementedError
 
-    def _rotate_tr(self, tr):
+    def _rotate_tr(self):
         """Rotate the transformation matrix based on camera parameters"""
         raise NotImplementedError
 
@@ -1137,18 +1135,20 @@ class TurntableCamera(Base3DRotationCamera):
         self.elevation = np.clip(self.elevation + elev, -90, 90)
         self.view_changed()
 
-    def _update_rotation(self, p1, p2):
+    def _update_rotation(self, event):
         """Update rotation parmeters based on mouse movement"""
+        p1 = event.mouse_event.press_event.pos
+        p2 = event.mouse_event.pos
         if self._event_value is None:
             self._event_value = self.azimuth, self.elevation
         self.azimuth = self._event_value[0] - (p2 - p1)[0] * 0.5
         self.elevation = self._event_value[1] + (p2 - p1)[1] * 0.5
 
-    def _rotate_tr(self, tr):
+    def _rotate_tr(self):
         """Rotate the transformation matrix based on camera parameters"""
         up, forward, right = self._get_dim_vectors()
-        tr.rotate(self.elevation, -right)
-        tr.rotate(self.azimuth, up)
+        self.transform.rotate(self.elevation, -right)
+        self.transform.rotate(self.azimuth, up)
 
 
 class ArcballCamera(Base3DRotationCamera):
@@ -1186,20 +1186,23 @@ class ArcballCamera(Base3DRotationCamera):
         self._quaternion = Quaternion()
         self.distance = distance  # None means auto-distance
 
-    def _update_rotation(self, p1, p2):
+    def _update_rotation(self, event):
         """Update rotation parmeters based on mouse movement"""
+        p2 = event.mouse_event.pos
         if self._event_value is None:
             self._event_value = p2
         wh = self._viewbox.size
-        self._quaternion = (self._quaternion *
+        self._quaternion = (Quaternion(*_arcball(p2, wh)) *
                             Quaternion(*_arcball(self._event_value, wh)) *
-                            Quaternion(*_arcball(p2, wh)))
+                            self._quaternion)
         self._event_value = p2
         self.view_changed()
 
-    def _rotate_tr(self, tr):
+    def _rotate_tr(self):
         """Rotate the transformation matrix based on camera parameters"""
-        tr.matrix = np.dot(self._quaternion.get_matrix().T, tr.matrix)
+        rot, x, y, z = self._quaternion.get_axis_angle()
+        self.transform.rotate(180 * rot / np.pi,
+                              np.dot(self._get_dim_vectors(), (y, z, x)))
 
 
 def _arcball(xy, wh):
@@ -1217,7 +1220,7 @@ def _arcball(xy, wh):
     x, y = xy
     w, h = wh
     r = (w + h) / 2.
-    x, y = (2. * x - w) / r, -(2. * y - h) / r
+    x, y = -(2. * x - w) / r, (2. * y - h) / r
     h = np.sqrt(x*x + y*y)
     return (0., x/h, y/h, 0.) if h > 1. else (0., x, y, np.sqrt(1. - h*h))
 

@@ -17,6 +17,7 @@ canvas = scene.SceneCanvas(keys='interactive', size=(800, 600), show=True)
 view = canvas.central_widget.add_view()
 cube = scene.visuals.Cube(edge_color='k', parent=view.scene)
 view.camera = 'arcball'
+view.camera.fov = 30.
 
 if __name__ == '__main__' and sys.flags.interactive == 0:
     canvas.app.run()

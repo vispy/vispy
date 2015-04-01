@@ -305,7 +305,8 @@ class MeshData(object):
             if colors.ndim != 2:
                 raise ValueError('colors must be 2D if indexed is None')
             if colors.shape[0] != self.n_vertices:
-                raise ValueError('incorrect number of colors')
+                raise ValueError('incorrect number of colors %s, expected %s'
+                                 % (colors.shape[0], self.n_vertices))
             self._vertex_colors = colors
             self._vertex_colors_indexed_by_faces = None
         elif indexed == 'faces':
@@ -352,7 +353,8 @@ class MeshData(object):
         """
         colors = _fix_colors(colors)
         if colors.shape[0] != self.n_faces:
-            raise ValueError('incorrect number of colors')
+            raise ValueError('incorrect number of colors %s, expected %s'
+                             % (colors.shape[0], self.n_faces))
         if indexed is None:
             if colors.ndim != 2:
                 raise ValueError('colors must be 2D if indexed is None')
