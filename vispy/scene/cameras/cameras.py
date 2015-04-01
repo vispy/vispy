@@ -1210,8 +1210,8 @@ class ArcballCamera(Base3DRotationCamera):
     def _rotate_tr(self):
         """Rotate the transformation matrix based on camera parameters"""
         rot, x, y, z = self._quaternion.get_axis_angle()
-        self.transform.rotate(180 * rot / np.pi,
-                              np.dot(self._get_dim_vectors(), (y, z, x)))
+        up, forward, right = self._get_dim_vectors()
+        self.transform.rotate(180 * rot / np.pi, (x, z, y))
 
     def _dist_to_trans(self, dist):
         """Convert mouse x, y movement into x, y, z translations"""
@@ -1220,6 +1220,10 @@ class ArcballCamera(Base3DRotationCamera):
         tr.rotate(180 * rot / np.pi, (x, y, z))
         dx, dz, dy = np.dot(tr.matrix[:3, :3], (dist[0], dist[1], 0.))
         return dx, dy, dz
+
+    def _get_dim_vectors(self):
+        # Override vectors, camera has no sense of "up"
+        return np.eye(3)[::-1]
 
 
 def _arcball(xy, wh):
