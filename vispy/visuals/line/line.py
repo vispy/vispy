@@ -331,7 +331,11 @@ class _GLLineVisual(Visual):
                 GL.glEnable(GL.GL_LINE_SMOOTH)
             else:
                 GL.glDisable(GL.GL_LINE_SMOOTH)
-            GL.glLineWidth(self._parent._width)
+            # this is a bit of a hack to deal with HiDPI
+            tr = transforms.document_to_framebuffer
+            px_scale = np.mean((tr.map((1, 0)) - tr.map((0, 1)))[:2])
+            width = px_scale * self._parent._width
+            GL.glLineWidth(max(width, 1.))
 
         if self._parent._changed['connect']:
             self._connect = self._parent._interpret_connect()

@@ -39,7 +39,7 @@ def test_rectangle_draw():
                                         width=80., radius=10.,
                                         border_color='white')
         c.draw_visual(rectpolygon)
-        assert_image_equal("screenshot", 'visuals/rectpolygon4.png', limit=0.7)
+        assert_image_equal("screenshot", 'visuals/rectpolygon4.png', limit=0.5)
 
         gloo.clear()
         rectpolygon = visuals.Rectangle(pos=(50, 50, 0), height=60.,
@@ -76,7 +76,7 @@ def test_rectpolygon_draw():
         rectpolygon.transform = transforms.STTransform(scale=(1.5, 0.5),
                                                        translate=(50, 50))
         c.draw_visual(rectpolygon)
-        assert_image_equal("screenshot", 'visuals/rectpolygon8.png', limit=0.7)
+        assert_image_equal("screenshot", 'visuals/rectpolygon8.png', limit=0.5)
 
         gloo.clear()
         rectpolygon = visuals.Rectangle(pos=(0., 0.), height=60.,

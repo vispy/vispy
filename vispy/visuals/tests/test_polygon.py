@@ -42,7 +42,7 @@ def test_square_draw():
         polygon.transform = transforms.STTransform(scale=(50, 50),
                                                    translate=(50, 50))
         c.draw_visual(polygon)
-        assert_image_equal("screenshot", 'visuals/square3.png')
+        assert_image_equal("screenshot", 'visuals/square3.png', 0.45)
 
 
 @requires_application()
@@ -74,7 +74,7 @@ def test_rectangle_draw():
         polygon.transform = transforms.STTransform(scale=(200.0, 25),
                                                    translate=(50, 49))
         c.draw_visual(polygon)
-        assert_image_equal("screenshot", 'visuals/rectangle3.png')
+        assert_image_equal("screenshot", 'visuals/rectangle3.png', 0.7)
 
 
 @requires_application()
@@ -104,7 +104,7 @@ def test_reactive_draw():
         gloo.clear()
         polygon.border_color = 'yellow'
         c.draw_visual(polygon)
-        assert_image_equal("screenshot", 'visuals/reactive_polygon3.png')
+        assert_image_equal("screenshot", 'visuals/reactive_polygon3.png', 0.8)
 
 
 run_tests_if_main()
