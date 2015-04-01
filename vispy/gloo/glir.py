@@ -408,19 +408,22 @@ def glir_logger(parser_cls, file_or_filename):
 
             if isinstance(file_or_filename, string_types):
                 self._file = open(file_or_filename, 'w')
-                self._close = True
             else:
                 self._file = file_or_filename
-                self._close = False
 
-        def __del__(self):
-            if self._close:
-                self._file.close()
+            self._file.write('[]')
+            self._empty = True
 
         def _parse(self, command):
-            json.dump(command, self._file, cls=NumPyJSONEncoder)
-            self._file.write('\n')
             parser_cls._parse(self, command)
+
+            self._file.seek(self._file.tell() - 1)
+            if self._empty:
+                self._empty = False
+            else:
+                self._file.write(',\n')
+            json.dump(command, self._file, cls=NumPyJSONEncoder)
+            self._file.write(']')
 
     return cls
 
