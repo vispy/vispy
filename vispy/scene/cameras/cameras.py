@@ -46,7 +46,7 @@ def make_camera(cam_type, *args, **kwargs):
     """
     cam_types = {None: BaseCamera}
     for camType in (BaseCamera, PanZoomCamera, PerspectiveCamera,
-                    TurntableCamera, FlyCamera):
+                    TurntableCamera, FlyCamera, ArcballCamera):
         cam_types[camType.__name__[:-6].lower()] = camType
 
     try:
@@ -872,104 +872,13 @@ class PerspectiveCamera(BaseCamera):
             self._projection.set_perspective(fov, fx/fy, dist/val, dist*val)
 
 
-class TurntableCamera(PerspectiveCamera):
-    """ 3D camera class that orbits around a center point while
-    maintaining a view on a center point.
+class Base3DRotationCamera(PerspectiveCamera):
+    """Base class for TurntableCamera and ArcballCamera"""
 
-    For this camera, the ``scale_factor`` indicates the zoom level, and
-    the ``center`` indicates the position to put at the center of the
-    view.
-
-    Parameters
-    ----------
-    fov : float
-        Field of view. Zero (default) means orthographic projection.
-    elevation : float
-        Elevation angle in degrees. Positive angles place the camera
-        above the cente point, negative angles place the camera below
-        the center point.
-    azimuth : float
-        Azimuth angle in degrees. Zero degrees places the camera on the
-        positive x-axis, pointing in the negative x direction.
-    roll : float
-        Roll angle in degrees
-    distance : float | None
-        The distance of the camera from the rotation point (only makes sense
-        if fov > 0). If None (default) the distance is determined from the
-        scale_factor and fov.
-    See BaseCamera for more.
-
-    Interaction
-    -----------
-    * LMB: orbits the view around its center point.
-    * RMB or scroll: change scale_factor (i.e. zoom level)
-    * SHIFT + LMB: translate the center point
-    * SHIFT + RMB: change FOV
-
-    """
-
-    _state_props = PerspectiveCamera._state_props + ('elevation',
-                                                     'azimuth', 'roll')
-
-    def __init__(self, fov=0.0, elevation=30.0, azimuth=30.0, roll=0.0,
-                 distance=None, **kwargs):
-        super(TurntableCamera, self).__init__(fov=fov, **kwargs)
-
+    def __init__(self, fov=0.0, **kwargs):
+        super(Base3DRotationCamera, self).__init__(fov=fov, **kwargs)
         self._actual_distance = 0.0
         self._event_value = None
-
-        # Set camera attributes
-        self.azimuth = azimuth
-        self.elevation = elevation
-        self.roll = roll  # interaction not implemented yet
-        self.distance = distance  # None means auto-distance
-
-    @property
-    def elevation(self):
-        """ The angle of the camera in degrees above the horizontal (x, z)
-        plane.
-        """
-        return self._elevation
-
-    @elevation.setter
-    def elevation(self, elev):
-        elev = float(elev)
-        self._elevation = min(90, max(-90, elev))
-        self.view_changed()
-
-    @property
-    def azimuth(self):
-        """ The angle of the camera in degrees around the y axis. An angle of
-        0 places the camera within the (y, z) plane.
-        """
-        return self._azimuth
-
-    @azimuth.setter
-    def azimuth(self, azim):
-        azim = float(azim)
-        while azim < -180:
-            azim += 360
-        while azim > 180:
-            azim -= 360
-        self._azimuth = azim
-        self.view_changed()
-
-    @property
-    def roll(self):
-        """ The angle of the camera in degrees around the z axis. An angle of
-        0 places puts the camera upright.
-        """
-        return self._roll
-
-    @roll.setter
-    def roll(self, roll):
-        roll = float(roll)
-        while roll < -180:
-            roll += 360
-        while roll > 180:
-            roll -= 360
-        self._roll = roll
-        self.view_changed()
 
     @property
     def distance(self):
@@ -984,20 +893,6 @@ class TurntableCamera(PerspectiveCamera):
             self._distance = None
         else:
             self._distance = float(distance)
-        self.view_changed()
-
-    def orbit(self, azim, elev):
-        """ Orbits the camera around the center position.
-
-        Parameters
-        ----------
-        azim : float
-            Angle in degrees to rotate horizontally around the center point.
-        elev : float
-            Angle in degrees to rotate vertically around the center point.
-        """
-        self.azimuth += azim
-        self.elevation = np.clip(self.elevation + elev, -90, 90)
         self.view_changed()
 
     def viewbox_mouse_event(self, event):
@@ -1024,10 +919,7 @@ class TurntableCamera(PerspectiveCamera):
 
             if 1 in event.buttons and not modifiers:
                 # Rotate
-                if self._event_value is None:
-                    self._event_value = self.azimuth, self.elevation
-                self.azimuth = self._event_value[0] - (p2 - p1)[0] * 0.5
-                self.elevation = self._event_value[1] + (p2 - p1)[1] * 0.5
+                self._update_rotation(p1, p2)
 
             elif 2 in event.buttons and not modifiers:
                 # Zoom
@@ -1093,8 +985,7 @@ class TurntableCamera(PerspectiveCamera):
             tr.set_mapping(pp1, pp2)
 
             tr.translate(-self._actual_distance * np.array(forward))
-            tr.rotate(self.elevation, -right)
-            tr.rotate(self.azimuth, up)
+            self._rotate_tr(tr)
             tr.scale([1.0/a for a in self._flip_factors])
             tr.translate(np.array(self.center))
 
@@ -1127,6 +1018,208 @@ class TurntableCamera(PerspectiveCamera):
         # Update camera pos, which will use our calculated _distance to offset
         # the camera
         self._update_camera_pos()
+
+    def _update_rotation(self, p1, p2):
+        """Update rotation parmeters based on mouse movement"""
+        raise NotImplementedError
+
+    def _rotate_tr(self, tr):
+        """Rotate the transformation matrix based on camera parameters"""
+        raise NotImplementedError
+
+
+class TurntableCamera(Base3DRotationCamera):
+    """ 3D camera class that orbits around a center point while
+    maintaining a view on a center point.
+
+    For this camera, the ``scale_factor`` indicates the zoom level, and
+    the ``center`` indicates the position to put at the center of the
+    view.
+
+    Parameters
+    ----------
+    fov : float
+        Field of view. Zero (default) means orthographic projection.
+    elevation : float
+        Elevation angle in degrees. Positive angles place the camera
+        above the cente point, negative angles place the camera below
+        the center point.
+    azimuth : float
+        Azimuth angle in degrees. Zero degrees places the camera on the
+        positive x-axis, pointing in the negative x direction.
+    roll : float
+        Roll angle in degrees
+    distance : float | None
+        The distance of the camera from the rotation point (only makes sense
+        if fov > 0). If None (default) the distance is determined from the
+        scale_factor and fov.
+    See BaseCamera for more.
+
+    Interaction
+    -----------
+    * LMB: orbits the view around its center point.
+    * RMB or scroll: change scale_factor (i.e. zoom level)
+    * SHIFT + LMB: translate the center point
+    * SHIFT + RMB: change FOV
+    """
+
+    _state_props = Base3DRotationCamera._state_props + ('elevation',
+                                                        'azimuth', 'roll')
+
+    def __init__(self, fov=0.0, elevation=30.0, azimuth=30.0, roll=0.0,
+                 distance=None, **kwargs):
+        super(TurntableCamera, self).__init__(fov=fov, **kwargs)
+
+        # Set camera attributes
+        self.azimuth = azimuth
+        self.elevation = elevation
+        self.roll = roll  # interaction not implemented yet
+        self.distance = distance  # None means auto-distance
+
+    @property
+    def elevation(self):
+        """ The angle of the camera in degrees above the horizontal (x, z)
+        plane.
+        """
+        return self._elevation
+
+    @elevation.setter
+    def elevation(self, elev):
+        elev = float(elev)
+        self._elevation = min(90, max(-90, elev))
+        self.view_changed()
+
+    @property
+    def azimuth(self):
+        """ The angle of the camera in degrees around the y axis. An angle of
+        0 places the camera within the (y, z) plane.
+        """
+        return self._azimuth
+
+    @azimuth.setter
+    def azimuth(self, azim):
+        azim = float(azim)
+        while azim < -180:
+            azim += 360
+        while azim > 180:
+            azim -= 360
+        self._azimuth = azim
+        self.view_changed()
+
+    @property
+    def roll(self):
+        """ The angle of the camera in degrees around the z axis. An angle of
+        0 places puts the camera upright.
+        """
+        return self._roll
+
+    @roll.setter
+    def roll(self, roll):
+        roll = float(roll)
+        while roll < -180:
+            roll += 360
+        while roll > 180:
+            roll -= 360
+        self._roll = roll
+        self.view_changed()
+
+    def orbit(self, azim, elev):
+        """ Orbits the camera around the center position.
+
+        Parameters
+        ----------
+        azim : float
+            Angle in degrees to rotate horizontally around the center point.
+        elev : float
+            Angle in degrees to rotate vertically around the center point.
+        """
+        self.azimuth += azim
+        self.elevation = np.clip(self.elevation + elev, -90, 90)
+        self.view_changed()
+
+    def _update_rotation(self, p1, p2):
+        """Update rotation parmeters based on mouse movement"""
+        if self._event_value is None:
+            self._event_value = self.azimuth, self.elevation
+        self.azimuth = self._event_value[0] - (p2 - p1)[0] * 0.5
+        self.elevation = self._event_value[1] + (p2 - p1)[1] * 0.5
+
+    def _rotate_tr(self, tr):
+        """Rotate the transformation matrix based on camera parameters"""
+        up, forward, right = self._get_dim_vectors()
+        tr.rotate(self.elevation, -right)
+        tr.rotate(self.azimuth, up)
+
+
+class ArcballCamera(Base3DRotationCamera):
+    """ 3D camera class that orbits around a center point while
+    maintaining a view on a center point.
+
+    For this camera, the ``scale_factor`` indicates the zoom level, and
+    the ``center`` indicates the position to put at the center of the
+    view.
+
+    Parameters
+    ----------
+    fov : float
+        Field of view. Zero (default) means orthographic projection.
+    distance : float | None
+        The distance of the camera from the rotation point (only makes sense
+        if fov > 0). If None (default) the distance is determined from the
+        scale_factor and fov.
+    See BaseCamera for more.
+
+    Interaction
+    -----------
+    * LMB: orbits the view around its center point.
+    * RMB or scroll: change scale_factor (i.e. zoom level)
+    * SHIFT + LMB: translate the center point
+    * SHIFT + RMB: change FOV
+    """
+
+    _state_props = Base3DRotationCamera._state_props
+
+    def __init__(self, fov=0.0, distance=None, **kwargs):
+        super(ArcballCamera, self).__init__(fov=fov, **kwargs)
+
+        # Set camera attributes
+        self._quaternion = Quaternion()
+        self.distance = distance  # None means auto-distance
+
+    def _update_rotation(self, p1, p2):
+        """Update rotation parmeters based on mouse movement"""
+        if self._event_value is None:
+            self._event_value = p2
+        wh = self._viewbox.size
+        self._quaternion = (self._quaternion *
+                            Quaternion(*_arcball(self._event_value, wh)) *
+                            Quaternion(*_arcball(p2, wh)))
+        self._event_value = p2
+        self.view_changed()
+
+    def _rotate_tr(self, tr):
+        """Rotate the transformation matrix based on camera parameters"""
+        tr.matrix = np.dot(self._quaternion.get_matrix().T, tr.matrix)
+
+
+def _arcball(xy, wh):
+    """Convert x,y coordinates to w,x,y,z Quaternion parameters
+
+    Adapted from:
+
+    linalg library
+
+    Copyright (c) 2010-2015, Renaud Blanch <rndblnch at gmail dot com>
+    Licence at your convenience:
+    GPLv3 or higher <http://www.gnu.org/licenses/gpl.html>
+    BSD new <http://opensource.org/licenses/BSD-3-Clause>
+    """
+    x, y = xy
+    w, h = wh
+    r = (w + h) / 2.
+    x, y = (2. * x - w) / r, -(2. * y - h) / r
+    h = np.sqrt(x*x + y*y)
+    return (0., x/h, y/h, 0.) if h > 1. else (0., x, y, np.sqrt(1. - h*h))
 
 
 class FlyCamera(PerspectiveCamera):
@@ -1544,10 +1637,6 @@ class FlyCamera(PerspectiveCamera):
         tr.rotate(-angle, axis_angle[1:])
         tr.scale([1.0/a for a in self._flip_factors])
         tr.translate(self._center)
-
-
-#class ArcballCamera(PerspectiveCamera):
-#    pass
 
 
 #class FirstPersonCamera(PerspectiveCamera):

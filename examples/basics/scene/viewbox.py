@@ -32,7 +32,7 @@ vb2 = scene.widgets.ViewBox(name='vb2', border_color='blue',
                             parent=canvas.scene)
 vb2.parent = canvas.scene
 vb2.clip_method = 'viewport'
-vb2.camera = scene.TurntableCamera(elevation=30, azimuth=30, up='+y')
+vb2.camera = scene.ArcballCamera()
 
 
 # Move these when the canvas changes size
