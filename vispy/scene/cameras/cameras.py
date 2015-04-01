@@ -934,21 +934,13 @@ class Base3DRotationCamera(PerspectiveCamera):
 
             elif 1 in event.buttons and keys.SHIFT in modifiers:
                 # Translate
-                w = self._viewbox.size[0]
+                norm = np.mean(self._viewbox.size)
                 if self._event_value is None:
                     self._event_value = self.center
-                dist = (p1 - p2) / w * self._scale_factor
+                dist = (p1 - p2) / norm * self._scale_factor
                 dist[1] *= -1
                 # Black magic part 1: turn 2D into 3D translations
-                sro, saz, sel = list(map(sind, (self._roll, self._azimuth,
-                                                self._elevation)))
-                cro, caz, cel = list(map(cosd, (self._roll, self._azimuth,
-                                                self._elevation)))
-                dx = (+ dist[0] * (cro * caz + sro * sel * saz)
-                      + dist[1] * (sro * caz - cro * sel * saz))
-                dy = (+ dist[0] * (cro * saz - sro * sel * caz)
-                      + dist[1] * (sro * saz + cro * sel * caz))
-                dz = (- dist[0] * sro * cel + dist[1] * cro * cel)
+                dx, dy, dz = self._dist_to_trans(dist)
                 # Black magic part 2: take up-vector and flipping into account
                 ff = self._flip_factors
                 up, forward, right = self._get_dim_vectors()
@@ -1023,6 +1015,10 @@ class Base3DRotationCamera(PerspectiveCamera):
 
     def _rotate_tr(self):
         """Rotate the transformation matrix based on camera parameters"""
+        raise NotImplementedError
+
+    def _dist_to_trans(self, dist):
+        """Convert mouse x, y movement into x, y, z translations"""
         raise NotImplementedError
 
 
@@ -1150,6 +1146,19 @@ class TurntableCamera(Base3DRotationCamera):
         self.transform.rotate(self.elevation, -right)
         self.transform.rotate(self.azimuth, up)
 
+    def _dist_to_trans(self, dist):
+        """Convert mouse x, y movement into x, y, z translations"""
+        sro, saz, sel = list(map(sind, (self.roll, self.azimuth,
+                                        self.elevation)))
+        cro, caz, cel = list(map(cosd, (self.roll, self.azimuth,
+                                        self.elevation)))
+        dx = (+ dist[0] * (cro * caz + sro * sel * saz)
+              + dist[1] * (sro * caz - cro * sel * saz))
+        dy = (+ dist[0] * (cro * saz - sro * sel * caz)
+              + dist[1] * (sro * saz + cro * sel * caz))
+        dz = (- dist[0] * sro * cel + dist[1] * cro * cel)
+        return dx, dy, dz
+
 
 class ArcballCamera(Base3DRotationCamera):
     """ 3D camera class that orbits around a center point while
@@ -1203,6 +1212,14 @@ class ArcballCamera(Base3DRotationCamera):
         rot, x, y, z = self._quaternion.get_axis_angle()
         self.transform.rotate(180 * rot / np.pi,
                               np.dot(self._get_dim_vectors(), (y, z, x)))
+
+    def _dist_to_trans(self, dist):
+        """Convert mouse x, y movement into x, y, z translations"""
+        rot, x, y, z = self._quaternion.get_axis_angle()
+        tr = AffineTransform()
+        tr.rotate(180 * rot / np.pi, (x, y, z))
+        dx, dz, dy = np.dot(tr.matrix[:3, :3], (dist[0], dist[1], 0.))
+        return dx, dy, dz
 
 
 def _arcball(xy, wh):
