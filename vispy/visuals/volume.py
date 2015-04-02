@@ -707,6 +707,7 @@ class VolumeVisual(Visual):
         return 0, self._vol_shape[2-axis]
     
     def draw(self, transforms):
+        Visual.draw(self, transforms)
         
         full_tr = transforms.get_full_transform()
         self._program.vert['transform'] = full_tr

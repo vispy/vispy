@@ -251,6 +251,14 @@ class LineVisual(Visual):
         for k in self._changed:
             self._changed[k] = False
 
+    def set_gl_state(self, **kwargs):
+        Visual.set_gl_state(self, **kwargs)
+        self._line_visual.set_gl_state(**kwargs)
+
+    def update_gl_state(self, **kwargs):
+        Visual.update_gl_state(self, **kwargs)
+        self._line_visual.update_gl_state(**kwargs)
+
 
 class _GLLineVisual(Visual):
     VERTEX_SHADER = """
@@ -279,8 +287,11 @@ class _GLLineVisual(Visual):
         # Set up the GL program
         self._program = ModularProgram(self.VERTEX_SHADER,
                                        self.FRAGMENT_SHADER)
+        self.set_gl_state('translucent')
 
     def draw(self, transforms):
+        Visual.draw(self, transforms)
+        
         # first see whether we can bail out early
         if self._parent._width <= 0:
             return
@@ -317,8 +328,6 @@ class _GLLineVisual(Visual):
 
         xform = transforms.get_full_transform()
         self._program.vert['transform'] = xform
-
-        gloo.set_state('translucent')
 
         # Do we want to use OpenGL, and can we?
         GL = None
@@ -384,8 +393,11 @@ class _AggLineVisual(Visual):
                        dash_caps=(caps['round'], caps['round']),
                        antialias=1.0)
         self._dash_atlas = gloo.Texture2D(self._da._data)
+        self.set_gl_state('translucent')
 
     def draw(self, transforms):
+        Visual.draw(self, transforms)
+        
         bake = False
         if self._parent._changed['pos']:
             if self._parent._pos is None:
