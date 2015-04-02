@@ -65,6 +65,7 @@ class BaseTransform(object):
     Isometric = None
 
     def __init__(self):
+        # note: this init is expensive!
         self._inverse = None
         self.changed = EventEmitter(source=self, type='transform_changed')
         if self.glsl_map is not None:
