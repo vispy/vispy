@@ -4,29 +4,33 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 import os
+import os.path as op
+
+from vispy import config
 
 
 def find(name):
     """Locate a filename into the shader library."""
 
-    if os.path.exists(name):
+    if op.exists(name):
         return name
 
-    path = os.path.dirname(__file__) or '.'
+    path = op.dirname(__file__) or '.'
 
-    from vispy import config
     paths = [path] + config['include_path']
 
-    filename = os.path.abspath(os.path.join(path, name))
-    if os.path.exists(filename):
-        return filename
+    for path in paths:
+        filename = op.abspath(op.join(path, name))
+        if op.exists(filename):
+            return filename
 
-    for d in os.listdir(path):
-        fullpath = os.path.abspath(os.path.join(path, d))
-        if os.path.isdir(fullpath):
-            filename = os.path.abspath(os.path.join(fullpath, name))
-            if os.path.exists(filename):
-                return filename
+        for d in os.listdir(path):
+            fullpath = op.abspath(op.join(path, d))
+            if op.isdir(fullpath):
+                filename = op.abspath(op.join(fullpath, name))
+                if op.exists(filename):
+                    return filename
+
     return None
 
 
