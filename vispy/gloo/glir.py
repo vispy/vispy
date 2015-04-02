@@ -180,6 +180,7 @@ class GlirQueue(object):
     def _convert_shaders(self, convert, shaders):
         return convert_shaders(convert, shaders)
 
+
 def convert_shaders(convert, shaders):
     """ Modify shading code so that we can write code once
     and make it run "everywhere".
@@ -240,17 +241,20 @@ def convert_shaders(convert, shaders):
         
     return tuple(out)
 
+
 def as_es2_command(command):
     """ Modify a desktop command so it works on es2.
     """
 
     if command[0] == 'FUNC':
-        return (command[0], re.sub(r'^gl([A-Z])', lambda m: m.group(1).lower(), command[1])) + command[2:]
+        return (command[0], re.sub(r'^gl([A-Z])',
+                lambda m: m.group(1).lower(), command[1])) + command[2:]
     if command[0] == 'SHADERS':
         return command[:2] + convert_shaders('es2', command[2:])
     if command[0] == 'UNIFORM':
         return command[:-1] + (command[-1].tolist(),)
     return command
+
 
 class BaseGlirParser(object):
     """ Base clas for GLIR parsers that can be attached to a GLIR queue.
@@ -414,6 +418,7 @@ class GlirParser(BaseGlirParser):
             gl.glEnable(GL_VERTEX_PROGRAM_POINT_SIZE)
             gl.glEnable(GL_POINT_SPRITE)
 
+
 def glir_logger(parser_cls, file_or_filename):
     from ..util.logs import NumPyJSONEncoder
 
@@ -437,7 +442,8 @@ def glir_logger(parser_cls, file_or_filename):
                 self._empty = False
             else:
                 self._file.write(',\n')
-            json.dump(as_es2_command(command), self._file, cls=NumPyJSONEncoder)
+            json.dump(as_es2_command(command),
+                      self._file, cls=NumPyJSONEncoder)
             self._file.write(']')
 
     return cls
