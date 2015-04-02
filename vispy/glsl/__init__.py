@@ -13,6 +13,10 @@ def find(name):
         return name
 
     path = os.path.dirname(__file__) or '.'
+
+    from vispy import config
+    paths = [path] + config['include_path']
+
     filename = os.path.abspath(os.path.join(path, name))
     if os.path.exists(filename):
         return filename
