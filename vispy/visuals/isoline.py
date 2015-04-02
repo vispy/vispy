@@ -116,7 +116,7 @@ class IsolineVisual(LineVisual):
         self._update_color_lev = True
         self._recompute = True
         kwargs['antialias'] = False
-        LineVisual.__init__(self, mode='gl', **kwargs)
+        LineVisual.__init__(self, method='gl', **kwargs)
         self.set_data(vertices=vertices, tris=tris, data=data)
 
     @property

@@ -33,7 +33,7 @@ for i in range(10):
         pos = np.empty((N, 2), dtype=np.float32)
         pos[:, 0] = np.linspace(0, 100, N)
         pos[:, 1] = np.random.normal(size=N)
-        line = scene.visuals.Line(pos=pos, color=(1, 1, 1, 0.5), mode='gl')
+        line = scene.visuals.Line(pos=pos, color=(1, 1, 1, 0.5), method='gl')
         vb.add(line)
 
 

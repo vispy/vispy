@@ -44,7 +44,7 @@ class Widget(Node):
         Node.__init__(self, **kwargs)
         
         # for drawing border
-        self._visual = LineVisual(mode='gl')
+        self._visual = LineVisual(method='gl')
         self.border_color = border_color
         # whether this widget should clip its children
         self._clip = clip
