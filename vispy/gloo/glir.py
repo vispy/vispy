@@ -176,65 +176,69 @@ class GlirQueue(object):
                 resized.add(command[1])
             commands2.append(command)
         return list(reversed(commands2))
-    
-    def _convert_shaders(self, convert, shaders):
-        """ Modify shading code so that we can write code once
-        and make it run "everywhere".
-        """
-        
-        # New version of the shaders
-        out = []
-        
-        if convert == 'es2':
-            
-            for isfragment, shader in enumerate(shaders):
-                has_version = False
-                has_prec_float = False
-                has_prec_int = False
-                lines = []
-                # Iterate over lines
-                for line in shader.lstrip().splitlines():
-                    has_version = has_version or line.startswith('#version')
-                    if line.startswith('precision '):
-                        has_prec_float = has_prec_float or 'float' in line
-                        has_prec_int = has_prec_int or 'int' in line
-                    lines.append(line.rstrip())
-                # Write
-                # BUG: fails on WebGL (Chrome)
-                # if True:
-                #     lines.insert(has_version, '#line 0')
-                if not has_prec_float:
-                    lines.insert(has_version, 'precision highp float;')
-                if not has_prec_int:
-                    lines.insert(has_version, 'precision highp int;')
-                # BUG: fails on WebGL (Chrome)
-                # if not has_version:
-                #     lines.insert(has_version, '#version 100')
-                out.append('\n'.join(lines))
-        
-        elif convert == 'desktop':
-            
-            for isfragment, shader in enumerate(shaders):
-                has_version = False
-                lines = []
-                # Iterate over lines
-                for line in shader.lstrip().splitlines():
-                    has_version = has_version or line.startswith('#version')
-                    if line.startswith('precision '):
-                        line = ''
-                    for prec in (' highp ', ' mediump ', ' lowp '):
-                        line = line.replace(prec, ' ')
-                    lines.append(line.rstrip())
-                # Write
-                if not has_version:
-                    lines.insert(0, '#version 120\n#line 2\n')
-                out.append('\n'.join(lines))
-        
-        else:
-            raise ValueError('Cannot convert shaders to %r.' % convert)
-        
-        return tuple(out)
 
+    def _convert_shaders(self, convert, shaders):
+        return convert_shaders(convert, shaders)
+
+def convert_shaders(convert, shaders):
+    """ Modify shading code so that we can write code once
+    and make it run "everywhere".
+    """
+        
+    # New version of the shaders
+    out = []
+    
+    if convert == 'es2':
+        
+        for isfragment, shader in enumerate(shaders):
+            has_version = False
+            has_prec_float = False
+            has_prec_int = False
+            lines = []
+            # Iterate over lines
+            for line in shader.lstrip().splitlines():
+                if line.startswith('#version'):
+                    has_version = True
+                    continue
+                if line.startswith('precision '):
+                    has_prec_float = has_prec_float or 'float' in line
+                    has_prec_int = has_prec_int or 'int' in line
+                lines.append(line.rstrip())
+            # Write
+            # BUG: fails on WebGL (Chrome)
+            # if True:
+            #     lines.insert(has_version, '#line 0')
+            if not has_prec_float:
+                lines.insert(has_version, 'precision highp float;')
+            if not has_prec_int:
+                lines.insert(has_version, 'precision highp int;')
+            # BUG: fails on WebGL (Chrome)
+            # if not has_version:
+            #     lines.insert(has_version, '#version 100')
+            out.append('\n'.join(lines))
+    
+    elif convert == 'desktop':
+        
+        for isfragment, shader in enumerate(shaders):
+            has_version = False
+            lines = []
+            # Iterate over lines
+            for line in shader.lstrip().splitlines():
+                has_version = has_version or line.startswith('#version')
+                if line.startswith('precision '):
+                    line = ''
+                for prec in (' highp ', ' mediump ', ' lowp '):
+                    line = line.replace(prec, ' ')
+                lines.append(line.rstrip())
+            # Write
+            if not has_version:
+                lines.insert(0, '#version 120\n#line 2\n')
+            out.append('\n'.join(lines))
+    
+    else:
+        raise ValueError('Cannot convert shaders to %r.' % convert)
+        
+    return tuple(out)
 
 class BaseGlirParser(object):
     """ Base clas for GLIR parsers that can be attached to a GLIR queue.
@@ -422,6 +426,8 @@ def glir_logger(parser_cls, file_or_filename):
                 self._empty = False
             else:
                 self._file.write(',\n')
+            if command[0] == 'SHADERS':
+                command = command[:2] + convert_shaders('es2', command[2:])
             value = command[1]
             if isinstance(value, str) and value.startswith('gl'):
                 value = value[2:]
