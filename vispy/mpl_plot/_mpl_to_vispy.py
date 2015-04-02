@@ -133,7 +133,7 @@ class VispyRenderer(Renderer):
         color = Color(style['edgecolor'])
         color.alpha = style['alpha']
         line = Line(data, color=color, width=style['edgewidth'],
-                    mode='gl')  # XXX Looks bad with agg :(
+                    method='gl')  # XXX Looks bad with agg :(
         line.parent = self._mpl_ax_to(mplobj).scene
 
     def _mpl_ax_to(self, mplobj, output='vb'):
