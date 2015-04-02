@@ -41,7 +41,7 @@ N = 1000
 linedata = np.empty((N, 2), np.float32)
 linedata[:, 0] = np.linspace(0, 1, N)
 linedata[:, 1] = np.random.uniform(0.5, 0.1, (N,))
-scene.visuals.Line(pos=linedata, color='#f006', mode='gl', parent=vb.scene)
+scene.visuals.Line(pos=linedata, color='#f006', method='gl', parent=vb.scene)
 
 vb.camera = 'panzoom'
 

@@ -29,7 +29,7 @@ canvas = scene.SceneCanvas(keys='interactive', size=(400, 200), show=True)
 
 # Create a visual that updates the line with different colormaps
 color = next(colormaps)
-line = scene.Line(pos=pos, color=color, mode='gl')
+line = scene.Line(pos=pos, color=color, method='gl')
 line.transform = STTransform(translate=[0, 140])
 line.parent = canvas.central_widget
 

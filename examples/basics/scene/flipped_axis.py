@@ -36,6 +36,7 @@ view = canvas.central_widget.add_view()
 
 # Create the volume visuals, only one is visible
 volume1 = scene.visuals.Volume(vol1, parent=view.scene, threshold=0.5)
+#volume1.method = 'iso'
 volume1.threshold = 0.1
 
 # Plot a line that shows where positive x is, with at the end a small
@@ -77,7 +78,6 @@ def on_key_press(event):
     if event.text == '5':
         cam_toggle = {cam1: cam2, cam2: cam3, cam3: cam4, cam4: cam1}
         view.camera = cam_toggle.get(view.camera, 'fly')
-        print(view.camera)
     elif event.text == '0':
         for cam in cams:
             cam.set_range()

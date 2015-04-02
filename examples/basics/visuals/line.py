@@ -37,31 +37,31 @@ class Canvas(app.Canvas):
                             size=(800, 800))
         # Create several visuals demonstrating different features of Line
         self.lines = [
-            # agg-mode lines:
+            # agg-method lines:
             # per-vertex color
-            visuals.LineVisual(pos=pos, color=color, mode='agg'),
+            visuals.LineVisual(pos=pos, color=color, method='agg'),
             # solid
-            visuals.LineVisual(pos=pos, color=(0, 0.5, 0.3, 1), mode='agg'),
+            visuals.LineVisual(pos=pos, color=(0, 0.5, 0.3, 1), method='agg'),
             # wide
-            visuals.LineVisual(pos=pos, color=color, width=5, mode='agg'),
+            visuals.LineVisual(pos=pos, color=color, width=5, method='agg'),
 
-            # GL-mode lines:
-            visuals.LineVisual(pos=pos, color=color, mode='gl'),
-            visuals.LineVisual(pos=pos, color=(0, 0.5, 0.3, 1), mode='gl'),
-            visuals.LineVisual(pos=pos, color=color, width=5, mode='gl'),
-            # GL-mode: "connect" not available in AGG mode yet
+            # GL-method lines:
+            visuals.LineVisual(pos=pos, color=color, method='gl'),
+            visuals.LineVisual(pos=pos, color=(0, 0.5, 0.3, 1), method='gl'),
+            visuals.LineVisual(pos=pos, color=color, width=5, method='gl'),
+            # GL-method: "connect" not available in AGG method yet
 
             # only connect alternate vert pairs
             visuals.LineVisual(pos=pos, color=(0, 0.5, 0.3, 1),
-                               connect='segments', mode='gl'),
+                               connect='segments', method='gl'),
             # connect specific pairs
             visuals.LineVisual(pos=pos, color=(0, 0.5, 0.3, 1),
-                               connect=connect, mode='gl'),
+                               connect=connect, method='gl'),
         ]
         counts = [0, 0]
         for i, line in enumerate(self.lines):
             # arrange lines in a grid
-            tidx = (line.mode == 'agg')
+            tidx = (line.method == 'agg')
             x = 400 * tidx
             y = 140 * (counts[tidx] + 1)
             counts[tidx] += 1

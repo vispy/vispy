@@ -65,7 +65,7 @@ class LineVisual(Visual):
         Can also be a colormap name, or appropriate `Function`.
     width:
         The width of the line in px. Line widths > 1px are only
-        guaranteed to work when using 'agg' mode.
+        guaranteed to work when using 'agg' method.
     connect : str or array
         Determines which vertices are connected by lines.
             * "strip" causes the line to be drawn with each vertex
@@ -74,7 +74,7 @@ class LineVisual(Visual):
               independent line segment
             * numpy arrays specify the exact set of segment pairs to
               connect.
-    mode : str
+    method : str
         Mode to use for drawing.
             * "agg" uses anti-grain geometry to draw nicely antialiased lines
               with proper joins and endcaps.
@@ -83,11 +83,11 @@ class LineVisual(Visual):
               obey the requested line width or join/endcap styles.
     antialias : bool
         Enables or disables antialiasing.
-        For mode='gl', this specifies whether to use GL's line smoothing, which
-        may be unavailable or inconsistent on some platforms.
+        For method='gl', this specifies whether to use GL's line smoothing, 
+        which may be unavailable or inconsistent on some platforms.
     """
     def __init__(self, pos=None, color=(0.5, 0.5, 0.5, 1), width=1,
-                 connect='strip', mode='gl', antialias=False):
+                 connect='strip', method='gl', antialias=False):
         Visual.__init__(self)
 
         self._changed = {'pos': False, 'color': False, 'width': False,
@@ -103,9 +103,9 @@ class LineVisual(Visual):
         # signatures.
         LineVisual.set_data(self, pos=pos, color=color, width=width,
                             connect=connect)
-        self._mode = 'none'
+        self._method = 'none'
         self.antialias = antialias
-        self.mode = mode
+        self.method = method
 
     @property
     def _program(self):
@@ -121,21 +121,21 @@ class LineVisual(Visual):
         self.update()
 
     @property
-    def mode(self):
-        """The current drawing mode"""
-        return self._mode
+    def method(self):
+        """The current drawing method"""
+        return self._method
 
-    @mode.setter
-    def mode(self, mode):
-        if mode not in ('agg', 'gl'):
-            raise ValueError('mode argument must be "agg" or "gl".')
-        if mode == self._mode:
+    @method.setter
+    def method(self, method):
+        if method not in ('agg', 'gl'):
+            raise ValueError('method argument must be "agg" or "gl".')
+        if method == self._method:
             return
 
-        self._mode = mode
-        if mode == 'gl':
+        self._method = method
+        if method == 'gl':
             self._line_visual = _GLLineVisual(self)
-        elif mode == 'agg':
+        elif method == 'agg':
             self._line_visual = _AggLineVisual(self)
 
         for k in self._changed:
@@ -153,7 +153,7 @@ class LineVisual(Visual):
             must be of shape (..., 4) and provide one rgba color per vertex.
         width:
             The width of the line in px. Line widths > 1px are only
-            guaranteed to work when using 'agg' mode.
+            guaranteed to work when using 'agg' method.
         connect : str or array
             Determines which vertices are connected by lines.
             * "strip" causes the line to be drawn with each vertex
@@ -402,7 +402,7 @@ class _AggLineVisual(Visual):
         if self._parent._changed['connect']:
             if self._parent._connect not in [None, 'strip']:
                 raise NotImplementedError("Only 'strip' connection mode "
-                                          "allowed for agg-mode lines.")
+                                          "allowed for agg-method lines.")
 
         if bake:
             V, I = self._agg_bake(self._pos, self._color)
