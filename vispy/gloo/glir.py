@@ -422,6 +422,11 @@ def glir_logger(parser_cls, file_or_filename):
                 self._empty = False
             else:
                 self._file.write(',\n')
+            value = command[1]
+            if isinstance(value, str) and value.startswith('gl'):
+                value = value[2:]
+                value = value[0].lower() + value[1:]
+            command = (command[0], value) + command[2:] 
             json.dump(command, self._file, cls=NumPyJSONEncoder)
             self._file.write(']')
 
