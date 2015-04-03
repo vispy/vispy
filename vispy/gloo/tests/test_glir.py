@@ -59,7 +59,14 @@ def test_log_parser():
         c.context.clear()
 
     glir_file.seek(0)
-    lines = glir_file.read().splitlines()
+    lines = glir_file.read().split(',\n')
+
+    assert lines[0][0] == '['
+    lines[0] = lines[0][1:]
+
+    assert lines[-1][-1] == ']'
+    lines[-1] = lines[-1][:-1]
+
     i = 0
 
     assert lines[i] == json.dumps(['CURRENT', 0])
@@ -67,11 +74,11 @@ def test_log_parser():
     # The 'CURRENT' command may have been called multiple times
     while lines[i] == lines[i - 1]:
         i += 1
-    assert lines[i] == json.dumps(['FUNC', 'glClearColor', 1.0, 1.0, 1.0, 1.0])
+    assert lines[i] == json.dumps(['FUNC', 'clearColor', 1.0, 1.0, 1.0, 1.0])
     i += 1
-    assert lines[i] == json.dumps(['FUNC', 'glClear', 17664])
+    assert lines[i] == json.dumps(['FUNC', 'clear', 17664])
     i += 1
-    assert lines[i] == json.dumps(['FUNC', 'glFinish'])
+    assert lines[i] == json.dumps(['FUNC', 'finish'])
     i += 1
 
     config.update(glir_file='')
