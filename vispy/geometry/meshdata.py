@@ -167,6 +167,16 @@ class MeshData(object):
         else:
             raise Exception("Invalid indexing mode. Accepts: None, 'faces'")
 
+    def get_bounds(self):
+        if self._vertices_indexed_by_faces is not None:
+            v = self._vertices_indexed_by_faces
+        elif self._vertices is not None:
+            v = self._vertices
+        else:
+            return None
+        bounds = [(v[:, ax].min(), v[:, ax].max()) for ax in range(v.shape[1])]
+        return bounds
+        
     def set_vertices(self, verts=None, indexed=None, reset_normals=True):
         """
         Set the array (Nv, 3) of vertex coordinates.

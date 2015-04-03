@@ -2,13 +2,8 @@
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-import numpy as np
-
 from ._fig import Fig
 from ._plotwidget import _quick_method_list
-
-from ..geometry import MeshData
-from ..io import read_mesh
 
 __all__ = []
 

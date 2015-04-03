@@ -123,7 +123,7 @@ class Canvas(object):
             dpi = util_config['dpi']
         if dpi is None:
             dpi = get_dpi(raise_error=False)
-        self._dpi = float(dpi)
+        self.dpi = dpi
 
         # Create events
         self.events = EmitterGroup(source=self,
@@ -399,7 +399,8 @@ class Canvas(object):
 
     def update(self, event=None):
         """Inform the backend that the Canvas needs to be redrawn"""
-        self._backend._vispy_update()
+        if self._backend is not None:
+            self._backend._vispy_update()
 
     def close(self):
         """Close the canvas

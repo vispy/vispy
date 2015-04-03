@@ -5,7 +5,6 @@
 A spectrogram and waveform plot of 1D data.
 """
 
-import sys
 import numpy as np
 
 from vispy import plot as vp

@@ -192,7 +192,7 @@ class SceneCanvas(app.Canvas):
         with self.scene.events.update.blocker(self._scene_update):
             self.draw_visual(self.scene)
 
-    def draw_visual(self, visual, event=None):
+    def draw_visual(self, visual, event=None, viewport=None):
         """ Draw a visual to the canvas or currently active framebuffer.
         
         Parameters
@@ -202,6 +202,9 @@ class SceneCanvas(app.Canvas):
         event : None or DrawEvent
             Optionally specifies the original canvas draw event that initiated
             this draw.
+        viewport : tuple | None
+            Optionally specifies the viewport to use. If None, the entire
+            physical size is used.
         """
         nfb = len(self._fb_stack)
         nvp = len(self._vp_stack)
@@ -216,7 +219,8 @@ class SceneCanvas(app.Canvas):
         
         scene_event = SceneDrawEvent(canvas=self, event=event, 
                                      transform_cache=tr_cache)
-        scene_event.push_viewport((0, 0) + self.physical_size)
+        vp = (0, 0) + self.physical_size if viewport is None else viewport
+        scene_event.push_viewport(vp)
         try:
             # Force update of transforms on base entities
             # TODO: this should happen as a reaction to resize, push_viewport,

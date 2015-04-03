@@ -457,7 +457,7 @@ class VolumeVisual(Visual):
         # Handle clim
         if clim is not None:
             clim = np.array(clim, float)
-            if not clim.ndim == 1 and clim.size == 2:
+            if not (clim.ndim == 1 and clim.size == 2):
                 raise ValueError('clim must be a 2-element array-like')
             self._clim = tuple(clim)
         if self._clim is None:

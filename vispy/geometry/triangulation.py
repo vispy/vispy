@@ -533,8 +533,7 @@ class Triangulation(object):
         edge. *i* may be either a point or the entire triangle.
         """
         if not np.isscalar(i):
-            i = [x for x in i if x not in edge]
-            i = i[0]
+            i = [x for x in i if x not in edge][0]
 
         try:
             pt1 = self.edges_lookup[edge]

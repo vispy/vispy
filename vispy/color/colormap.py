@@ -124,7 +124,6 @@ def _glsl_mix(controls=None):
         s = "    return mix($color_0, $color_1, t);\n"
     else:
         s = ""
-        last = 0.
         for i in range(ncolors-1):
             if i == 0:
                 ifs = 'if (t < %.6f)' % (controls[i+1])

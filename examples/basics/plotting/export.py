@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
+# vispy: testskip
 """
 Demonstrates rendering a canvas to an image at higher resolution than the
 original display.

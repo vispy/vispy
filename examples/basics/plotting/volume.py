@@ -5,7 +5,6 @@
 Plot various views of a structural MRI.
 """
 
-import sys
 import numpy as np
 
 from vispy import io, plot as vp

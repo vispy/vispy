@@ -10,11 +10,12 @@ from vispy.testing import (assert_raises, requires_application,
 @requires_application()
 def test_figure_creation():
     """Test creating a figure"""
-    fig = vp.Fig(show=False)
-    fig[0, 0:2]
-    fig[1:3, 0:2]
-    ax_right = fig[1:3, 2]
-    assert fig[1:3, 2] is ax_right
-    assert_raises(ValueError, fig.__getitem__, (slice(1, 3), 1))  # collision
+    with vp.Fig(show=False) as fig:
+        fig[0, 0:2]
+        fig[1:3, 0:2]
+        ax_right = fig[1:3, 2]
+        assert fig[1:3, 2] is ax_right
+        # collision
+        assert_raises(ValueError, fig.__getitem__, (slice(1, 3), 1))
 
 run_tests_if_main()
