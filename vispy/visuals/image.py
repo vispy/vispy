@@ -38,7 +38,7 @@ void main()
     }
     gl_FragColor = $color_transform(texture2D(u_texture, texcoord));
 }
-"""
+"""  # noqa
 
 _null_color_transform = 'vec4 pass(vec4 color) { return color; }'
 _c2l = 'float cmap(vec4 color) { return (color.r + color.g + color.b) / 3.; }'
@@ -76,7 +76,7 @@ class ImageVisual(Visual):
     Notes
     -----
     The colormap functionality through ``cmap`` and ``clim`` are only used
-    if the data are of shape (N, M).
+    if the data are 2D.
     """
     def __init__(self, data, method='auto', grid=(10, 10),
                  cmap='cubehelix', clim='auto', **kwargs):
@@ -131,7 +131,7 @@ class ImageVisual(Visual):
 
     @property
     def size(self):
-        return self._data.shape[:2]
+        return self._data.shape[:2][::-1]
 
     def _build_vertex_data(self, transforms):
         method = self._method
@@ -141,7 +141,7 @@ class ImageVisual(Visual):
                 method = 'subdivide'
                 grid = (1, 1)
             else:
-                method ='impostor'
+                method = 'impostor'
         self._method_used = method
 
         # TODO: subdivision and impostor modes should be handled by new
@@ -165,7 +165,7 @@ class ImageVisual(Visual):
             quads[..., :2] += mgrid
             tex_coords = quads.reshape(grid[1]*grid[0]*6, 3)
             tex_coords = np.ascontiguousarray(tex_coords[:, :2])
-            vertices = tex_coords * self._data.shape[:2]
+            vertices = tex_coords * self.size
             
             # vertex shader provides correct texture coordinates
             self._program.frag['map_uv_to_local'] = NullTransform()
@@ -178,8 +178,8 @@ class ImageVisual(Visual):
                                 dtype=np.float32)
             tex_coords = vertices
             tex_transform = STTransform(scale=(1./self._data.shape[0],
-                                         1./self._data.shape[1]))
-            
+                                               1./self._data.shape[1]))
+
             # vertex shader provides ND coordinates; 
             # fragment shader maps to texture coordinates
             self._program.vert['transform'] = NullTransform()
@@ -197,7 +197,7 @@ class ImageVisual(Visual):
         data = self._data
         if data.dtype == np.float64:
             data = data.astype(np.float32)
-        
+
         if data.ndim == 2 or data.shape[2] == 1:
             # deal with clim on CPU b/c of texture depth limits :(
             # can eventually do this by simulating 32-bit float... maybe
@@ -244,6 +244,7 @@ class ImageVisual(Visual):
         if method == 'subdivide':
             self._program.vert['transform'] = transforms.get_full_transform()
         else:
-            self._program.frag['map_uv_to_local'] = transforms.get_full_transform().inverse
+            self._program.frag['map_uv_to_local'] = \
+                transforms.get_full_transform().inverse
             
         self._program.draw('triangles')

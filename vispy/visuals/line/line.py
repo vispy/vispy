@@ -68,19 +68,23 @@ class LineVisual(Visual):
         guaranteed to work when using 'agg' method.
     connect : str or array
         Determines which vertices are connected by lines.
+
             * "strip" causes the line to be drawn with each vertex
               connected to the next.
             * "segments" causes each pair of vertices to draw an
               independent line segment
             * numpy arrays specify the exact set of segment pairs to
               connect.
+
     method : str
         Mode to use for drawing.
+
             * "agg" uses anti-grain geometry to draw nicely antialiased lines
               with proper joins and endcaps.
             * "gl" uses OpenGL's built-in line rendering. This is much faster,
               but produces much lower-quality results and is not guaranteed to
               obey the requested line width or join/endcap styles.
+
     antialias : bool
         Enables or disables antialiasing.
         For method='gl', this specifies whether to use GL's line smoothing, 
@@ -247,6 +251,8 @@ class LineVisual(Visual):
                 return (0, 0)
     
     def draw(self, transforms):
+        if self.width == 0:
+            return
         self._line_visual.draw(transforms)
         for k in self._changed:
             self._changed[k] = False

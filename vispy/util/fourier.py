@@ -5,7 +5,7 @@
 import numpy as np
 
 
-def stft(x, n_fft=1024, step=512, window='hann'):
+def stft(x, n_fft=1024, step=512, fs=2*np.pi, window='hann'):
     """Compute the STFT
 
     Parameters
@@ -15,11 +15,21 @@ def stft(x, n_fft=1024, step=512, window='hann'):
         to length ``n_fft``.
     n_fft : int
         Number of FFT points. Much faster for powers of two.
-    step : int
-        Step size between calculations.
+    step : int | None
+        Step size between calculations. If None, ``n_fft // 2``
+        will be used.
+    fs : float
+        The sample rate of the data.
     window : str | None
         Window function to use. Can be ``'hann'`` for Hann window, or None
         for no windowing.
+
+    Returns
+    -------
+    stft : ndarray
+        Spectrogram of the data, shape (n_freqs, n_steps).
+    freqs : ndarray
+        Frequencies of ``stft``.
     """
     x = np.asarray(x, float)
     if x.ndim != 1:
@@ -30,6 +40,9 @@ def stft(x, n_fft=1024, step=512, window='hann'):
         w = np.hanning(n_fft)
     else:
         w = np.ones(n_fft)
+    n_fft = int(n_fft)
+    step = max(n_fft // 2, 1) if step is None else int(step)
+    fs = float(fs)
     zero_pad = n_fft - len(x)
     if zero_pad > 0:
         x = np.concatenate((x, np.zeros(zero_pad, float)))
@@ -38,7 +51,8 @@ def stft(x, n_fft=1024, step=512, window='hann'):
     result = np.empty((n_freqs, n_estimates), np.complex128)
     for ii in range(n_estimates):
         result[:, ii] = np.fft.rfft(w * x[ii * step:ii * step + n_fft]) / n_fft
-    return result
+    freqs = np.arange(0, n_freqs, dtype=float) / n_fft * fs
+    return result, freqs
 
 
 def fft_freqs(n_fft, fs):

@@ -10,23 +10,22 @@ import numpy as np
 
 from vispy import io, plot as vp
 
-fig = vp.Fig(bgcolor='k', show=False, size=(800, 800))
+fig = vp.Fig(bgcolor='k', size=(800, 800), show=False)
 
 vol_data = np.load(io.load_data_file('brain/mri.npz'))['data']
 vol_data = np.flipud(np.rollaxis(vol_data, 1))
 
+clim = [32, 192]
 vol_pw = fig[0, 0]
-vol_pw.volume(vol_data)
+vol_pw.volume(vol_data, clim=clim)
 vol_pw.camera.elevation = 30
 vol_pw.camera.azimuth = 30
 vol_pw.camera.scale_factor /= 1.5
 
-clim = [0, 255.]
-fig[1, 0].image(vol_data[:, :, vol_data.shape[2] // 2], cmap='grays')
-fig[0, 1].image(vol_data[:, vol_data.shape[1] // 2, :], cmap='grays')
-fig[1, 1].image(vol_data[vol_data.shape[0] // 2, :, :].T, cmap='grays')
+shape = vol_data.shape
+fig[1, 0].image(vol_data[:, :, shape[2] // 2], cmap='grays', clim=clim)
+fig[0, 1].image(vol_data[:, shape[1] // 2, :], cmap='grays', clim=clim)
+fig[1, 1].image(vol_data[shape[0] // 2, :, :].T, cmap='grays', clim=clim)
 
 if __name__ == '__main__':
-    fig.show()
-    if sys.flags.interactive == 0:
-        fig.app.run()
+    fig.show(run=True)

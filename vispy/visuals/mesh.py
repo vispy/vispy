@@ -110,6 +110,7 @@ class MeshVisual(Visual):
 
         # Init
         self.shading = shading
+        self._bounds = None
         # Note we do not call subclass set_data -- often the signatures
         # do no match.
         MeshVisual.set_data(self, vertices=vertices, faces=faces,
@@ -124,6 +125,8 @@ class MeshVisual(Visual):
             self._meshdata = MeshData(vertices=vertices, faces=faces,
                                       vertex_colors=vertex_colors,
                                       face_colors=face_colors)
+        v = self.mesh_data.get_vertices()
+        self._bounds = [(vv.min(), vv.max()) for vv in v.T]
         if color is not None:
             self._color = Color(color).rgba
         self.mesh_data_changed()
@@ -198,9 +201,8 @@ class MeshVisual(Visual):
                                       convert=True)
             else:
                 self._colors.set_data(np.zeros((0, 4), dtype=np.float32))
-
         self._program.vert['position'] = self._vertices
-        
+
         # Position input handling
         if v.shape[-1] == 2:
             self._program.vert['to_vec4'] = vec2to4
@@ -263,3 +265,8 @@ class MeshVisual(Visual):
             self._program.draw(self._mode, self._faces)
         else:
             self._program.draw(self._mode)
+
+    def bounds(self, mode, axis):
+        if self._bounds is None:
+            return None
+        return self._bounds[axis]

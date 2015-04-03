@@ -107,7 +107,7 @@ def _flake():
     sys.argv.append('--exclude=six.py,py24_ordereddict.py,glfw.py,'
                     '_proxy.py,_es2.py,_gl2.py,_pyopengl2.py,'
                     '_constants.py,png.py,decorator.py,ipy_inputhook.py,'
-                    'experimental,wiki,_old,mplexporter.py')
+                    'experimental,wiki,_old,mplexporter.py,cubehelix.py')
     try:
         from flake8.main import main
     except ImportError:
@@ -178,6 +178,8 @@ if hasattr({0}, 'canvas'):
     canvas = {0}.canvas
 elif hasattr({0}, 'Canvas'):
     canvas = {0}.Canvas()
+elif hasattr({0}, 'fig'):
+    canvas = {0}.fig
 else:
     raise RuntimeError('Bad example formatting: fix or add `# vispy: testskip`'
                        ' to the top of the file.')

@@ -6,7 +6,7 @@ This module provides functions for displaying data from a command-line
 interface.
 """
 
-from ._plot import Fig
+from ._fig import Fig
 from . import q
 
 __all__ = ['Fig', 'q']

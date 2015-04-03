@@ -6,26 +6,26 @@ Demonstrates rendering a canvas to an image at higher resolution than the
 original display.
 """
 
-import sys
 import vispy.plot as vp
 
 # Create a canvas showing plot data
-canvas = vp.plot([1, 6, 2, 4, 3, 8, 5, 7, 6, 3])
+fig = vp.Fig()
+fig[0, 0].plot([[1, 6, 2, 4, 3, 8, 5, 7, 6, 3]])
 
 # Render the canvas scene to a numpy array image with higher resolution 
 # than the original canvas
-scale = 4
-image = canvas.render(size=(canvas.size[0]*scale, canvas.size[1]*scale))
+scale = 10
+image = fig.render(size=(fig.size[0]*scale, fig.size[1]*scale))
 
 # Display the data in the array, sub-sampled down to the original canvas
 # resolution
-image = image[::scale, ::scale]
-canvas2 = vp.image(image)
+fig_2 = vp.Fig()
+fig_2[0, 0].image(image[::scale, ::scale])
 
 # By default, the view adds some padding when setting its range.
 # We'll remove that padding so the image looks exactly like the original
 # canvas:
-canvas2.view.camera.set_range(margin=0)
+fig_2[0, 0].camera.set_range(margin=0)
 
-if __name__ == '__main__' and sys.flags.interactive == 0:
-    canvas.app.run()
+if __name__ == '__main__':
+    fig.app.run()

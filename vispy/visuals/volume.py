@@ -383,7 +383,7 @@ class VolumeVisual(Visual):
     ----------
     vol : ndarray
         The volume to display. Must be ndim==2.
-    clim : tuple of two floats
+    clim : tuple of two floats | None
         The contrast limits. The values in the volume are mapped to
         black and white corresponding to these values. Default maps
         between min and max.
@@ -397,20 +397,21 @@ class VolumeVisual(Visual):
         The relative step size to step through the volume. Default 0.8.
         Increase to e.g. 1.5 to increase performance, at the cost of
         quality.
-    
+    cmap : str
+        Colormap to use.
+    emulate_texture : bool
+        Use 2D textures to emulate a 3D texture. OpenGL ES 2.0 compatible,
+        but has lower performance on desktop platforms.
     """
-    
+
     _vb_dtype = dtype = [('a_position', np.float32, 3),
                          ('a_texcoord', np.float32, 3), ]
-    
-    def __init__(self, vol, clim=None, method='mip', threshold=None, 
-                 relative_step_size=0.8, cmap='grays', emulated3d=False):
-        Visual.__init__(self)
 
-        if emulated3d:
-            tex_cls = gloo.TextureEmulated3D
-        else:
-            tex_cls = gloo.Texture3D
+    def __init__(self, vol, clim=None, method='mip', threshold=None, 
+                 relative_step_size=0.8, cmap='grays',
+                 emulate_texture=False):
+        Visual.__init__(self)
+        tex_cls = TextureEmulated3D if emulate_texture else Texture3D
 
         # Variable to determine clipping plane when inside the volume.
         # This value represents the z-value in view coordinates, but
@@ -455,9 +456,10 @@ class VolumeVisual(Visual):
         
         # Handle clim
         if clim is not None:
-            if not isinstance(clim, tuple) or not len(clim) == 2:
-                raise ValueError('clim must be a 2-element tuple')
-            self._clim = clim
+            clim = np.array(clim, float)
+            if not clim.ndim == 1 and clim.size == 2:
+                raise ValueError('clim must be a 2-element array-like')
+            self._clim = tuple(clim)
         if self._clim is None:
             self._clim = vol.min(), vol.max()
         
@@ -494,14 +496,15 @@ class VolumeVisual(Visual):
 
     @property
     def method(self):
-        """ The render method to use:
+        """The render method to use
+
+        Current options are:
         
-        * mip: maxiumum intensity projection. Cast a ray and display the
-          maximum value that was encountered.
-        * iso: isosurface. Cast a ray until a certain threshold is encountered.
-          At that location, lighning calculations are performed to give the
-          visual appearance of a surface.  
-        * more to come ...
+            * mip: maxiumum intensity projection. Cast a ray and display the
+              maximum value that was encountered.
+            * iso: isosurface. Cast a ray until a certain threshold is
+              encountered. At that location, lighning calculations are
+              performed to give the visual appearance of a surface.  
         """
         return self._method
     
@@ -641,9 +644,9 @@ class VolumeVisual(Visual):
         if self._vbo is not None:
             self._vbo.delete()
             self._index_buffer.delete()
-        self._vbo = gloo.VertexBuffer(data)
+        self._vbo = VertexBuffer(data)
         self._program.bind(self._vbo)
-        self._index_buffer = gloo.IndexBuffer(indices)
+        self._index_buffer = IndexBuffer(indices)
     
     def _calc_coords(self, tex_coord1, ver_coord1, div):
         """ Calculate vertices, texcoords and indices.
