@@ -176,64 +176,84 @@ class GlirQueue(object):
                 resized.add(command[1])
             commands2.append(command)
         return list(reversed(commands2))
-    
+
     def _convert_shaders(self, convert, shaders):
-        """ Modify shading code so that we can write code once
-        and make it run "everywhere".
-        """
+        return convert_shaders(convert, shaders)
+
+
+def convert_shaders(convert, shaders):
+    """ Modify shading code so that we can write code once
+    and make it run "everywhere".
+    """
         
-        # New version of the shaders
-        out = []
+    # New version of the shaders
+    out = []
+    
+    if convert == 'es2':
         
-        if convert == 'es2':
-            
-            for isfragment, shader in enumerate(shaders):
-                has_version = False
-                has_prec_float = False
-                has_prec_int = False
-                lines = []
-                # Iterate over lines
-                for line in shader.lstrip().splitlines():
-                    has_version = has_version or line.startswith('#version')
-                    if line.startswith('precision '):
-                        has_prec_float = has_prec_float or 'float' in line
-                        has_prec_int = has_prec_int or 'int' in line
-                    lines.append(line.rstrip())
-                # Write
-                # BUG: fails on WebGL (Chrome)
-                # if True:
-                #     lines.insert(has_version, '#line 0')
-                if not has_prec_float:
-                    lines.insert(has_version, 'precision highp float;')
-                if not has_prec_int:
-                    lines.insert(has_version, 'precision highp int;')
-                # BUG: fails on WebGL (Chrome)
-                # if not has_version:
-                #     lines.insert(has_version, '#version 100')
-                out.append('\n'.join(lines))
+        for isfragment, shader in enumerate(shaders):
+            has_version = False
+            has_prec_float = False
+            has_prec_int = False
+            lines = []
+            # Iterate over lines
+            for line in shader.lstrip().splitlines():
+                if line.startswith('#version'):
+                    has_version = True
+                    continue
+                if line.startswith('precision '):
+                    has_prec_float = has_prec_float or 'float' in line
+                    has_prec_int = has_prec_int or 'int' in line
+                lines.append(line.rstrip())
+            # Write
+            # BUG: fails on WebGL (Chrome)
+            # if True:
+            #     lines.insert(has_version, '#line 0')
+            if not has_prec_float:
+                lines.insert(has_version, 'precision highp float;')
+            if not has_prec_int:
+                lines.insert(has_version, 'precision highp int;')
+            # BUG: fails on WebGL (Chrome)
+            # if not has_version:
+            #     lines.insert(has_version, '#version 100')
+            out.append('\n'.join(lines))
+    
+    elif convert == 'desktop':
         
-        elif convert == 'desktop':
-            
-            for isfragment, shader in enumerate(shaders):
-                has_version = False
-                lines = []
-                # Iterate over lines
-                for line in shader.lstrip().splitlines():
-                    has_version = has_version or line.startswith('#version')
-                    if line.startswith('precision '):
-                        line = ''
-                    for prec in (' highp ', ' mediump ', ' lowp '):
-                        line = line.replace(prec, ' ')
-                    lines.append(line.rstrip())
-                # Write
-                if not has_version:
-                    lines.insert(0, '#version 120\n#line 2\n')
-                out.append('\n'.join(lines))
+        for isfragment, shader in enumerate(shaders):
+            has_version = False
+            lines = []
+            # Iterate over lines
+            for line in shader.lstrip().splitlines():
+                has_version = has_version or line.startswith('#version')
+                if line.startswith('precision '):
+                    line = ''
+                for prec in (' highp ', ' mediump ', ' lowp '):
+                    line = line.replace(prec, ' ')
+                lines.append(line.rstrip())
+            # Write
+            if not has_version:
+                lines.insert(0, '#version 120\n#line 2\n')
+            out.append('\n'.join(lines))
+    
+    else:
+        raise ValueError('Cannot convert shaders to %r.' % convert)
         
-        else:
-            raise ValueError('Cannot convert shaders to %r.' % convert)
-        
-        return tuple(out)
+    return tuple(out)
+
+
+def as_es2_command(command):
+    """ Modify a desktop command so it works on es2.
+    """
+
+    if command[0] == 'FUNC':
+        return (command[0], re.sub(r'^gl([A-Z])',
+                lambda m: m.group(1).lower(), command[1])) + command[2:]
+    if command[0] == 'SHADERS':
+        return command[:2] + convert_shaders('es2', command[2:])
+    if command[0] == 'UNIFORM':
+        return command[:-1] + (command[-1].tolist(),)
+    return command
 
 
 class BaseGlirParser(object):
@@ -408,19 +428,23 @@ def glir_logger(parser_cls, file_or_filename):
 
             if isinstance(file_or_filename, string_types):
                 self._file = open(file_or_filename, 'w')
-                self._close = True
             else:
                 self._file = file_or_filename
-                self._close = False
 
-        def __del__(self):
-            if self._close:
-                self._file.close()
+            self._file.write('[]')
+            self._empty = True
 
         def _parse(self, command):
-            json.dump(command, self._file, cls=NumPyJSONEncoder)
-            self._file.write('\n')
             parser_cls._parse(self, command)
+
+            self._file.seek(self._file.tell() - 1)
+            if self._empty:
+                self._empty = False
+            else:
+                self._file.write(',\n')
+            json.dump(as_es2_command(command),
+                      self._file, cls=NumPyJSONEncoder)
+            self._file.write(']')
 
     return cls
 
