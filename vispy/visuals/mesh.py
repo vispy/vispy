@@ -126,7 +126,10 @@ class MeshVisual(Visual):
                                       vertex_colors=vertex_colors,
                                       face_colors=face_colors)
         v = self.mesh_data.get_vertices()
-        self._bounds = [(vv.min(), vv.max()) for vv in v.T]
+        if v is not None:
+            self._bounds = [(vv.min(), vv.max()) for vv in v.T]
+        else:
+            self._bounds = None
         if color is not None:
             self._color = Color(color).rgba
         self.mesh_data_changed()

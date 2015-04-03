@@ -120,7 +120,7 @@ class VispyRenderer(Renderer):
         face_color.alpha = style['alpha']
         markers = Markers()
         markers.set_data(data, face_color=face_color, edge_color=edge_color,
-                         size=style['markersize'], style=style['marker'])
+                         size=style['markersize'], symbol=style['marker'])
         markers.parent = self._mpl_ax_to(mplobj).scene
 
     def draw_path(self, data, coordinates, pathcodes, style,

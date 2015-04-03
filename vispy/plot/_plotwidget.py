@@ -154,9 +154,6 @@ class PlotWidget(ViewBox):
         """
         if fname is not None:
             if not all(x is None for x in (vertices, faces, meshdata)):
-                print(vertices)
-                print(faces)
-                print(meshdata)
                 raise ValueError('vertices, faces, and meshdata must be None '
                                  'if fname is not None')
             vertices, faces = read_mesh(fname)[:2]
@@ -245,10 +242,9 @@ class PlotWidget(ViewBox):
         --------
         Image
         """
-        # XXX once we have axes, we should use the "freqs" output, too
-        data = stft(x, n_fft, step, fs)[0]
+        # XXX once we have axes, we should use the "fft_freqs", too
+        data = stft(x, n_fft, step, fs)
         data = 20 * np.log10(np.abs(data))
-        print(data.shape)
         image = Image(data, clim=clim, cmap=cmap)
         self.add(image)
         self._set_camera(PanZoomCamera)

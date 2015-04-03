@@ -47,14 +47,14 @@ canvas.measure_fps()
 view = canvas.central_widget.add_view()
 
 # Set whether we are emulating a 3D texture
-emulated3d = True
+emulate_texture = True
 
 # Create the volume visuals, only one is visible
 volume1 = scene.visuals.Volume(vol1, parent=view.scene, threshold=0.5,
-                               emulated3d=emulated3d)
+                               emulate_texture=emulate_texture)
 volume1.transform = scene.STTransform(translate=(64, 64, 0))
 volume2 = scene.visuals.Volume(vol2, parent=view.scene, threshold=0.5,
-                               emulated3d=emulated3d)
+                               emulate_texture=emulate_texture)
 volume2.visible = False
 
 # Create two cameras (1 for firstperson, 3 for 3d person)

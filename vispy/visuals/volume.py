@@ -35,7 +35,7 @@ which the number of steps is very small.
 
 """
 
-from .. import gloo
+from ..gloo import Texture3D, TextureEmulated3D, VertexBuffer, IndexBuffer
 from . import Visual
 from .shaders import Function, ModularProgram
 from ..color import get_colormap
@@ -83,7 +83,7 @@ void main() {
     v_clipplane.xyz = v_ray;
     v_clipplane.w = dot(v_clipplane.xyz, cameraposinvol);
 }
-"""
+"""  # noqa
 
 # Fragment shader
 FRAG_SHADER = """
@@ -267,7 +267,7 @@ vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
     return final_color;
 }}
 
-"""
+"""  # noqa
 
 # Code for calculating number of required steps
 calc_steps = """
@@ -316,7 +316,7 @@ float d2P(vec3 p, vec3 d, vec4 P)
     return (((1.0-invalid) * nom   + invalid * 999999.0) / 
             ((1.0-invalid) * denom + invalid * 1.0));
 }
-"""
+"""  # noqa
 
 
 MIP_SNIPPETS = dict(

@@ -37,7 +37,7 @@ class Canvas(app.Canvas):
         self.tr_sys.visual_to_document = STTransform()
         self.markers = visuals.MarkersVisual()
         self.markers.set_data(pos, face_color=colors)
-        self.markers.set_style(visuals.marker_types[self.index])
+        self.markers.set_symbol(visuals.marker_types[self.index])
 
         self.show()
 
@@ -62,7 +62,7 @@ class Canvas(app.Canvas):
     def on_key_press(self, event):
         if event.text == ' ':
             self.index = (self.index + 1) % (len(visuals.marker_types))
-            self.markers.set_style(visuals.marker_types[self.index])
+            self.markers.set_symbol(visuals.marker_types[self.index])
             self.update()
 
 if __name__ == '__main__':

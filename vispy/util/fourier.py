@@ -28,8 +28,10 @@ def stft(x, n_fft=1024, step=512, fs=2*np.pi, window='hann'):
     -------
     stft : ndarray
         Spectrogram of the data, shape (n_freqs, n_steps).
-    freqs : ndarray
-        Frequencies of ``stft``.
+
+    See also
+    --------
+    fft_freqs
     """
     x = np.asarray(x, float)
     if x.ndim != 1:
@@ -51,8 +53,7 @@ def stft(x, n_fft=1024, step=512, fs=2*np.pi, window='hann'):
     result = np.empty((n_freqs, n_estimates), np.complex128)
     for ii in range(n_estimates):
         result[:, ii] = np.fft.rfft(w * x[ii * step:ii * step + n_fft]) / n_fft
-    freqs = np.arange(0, n_freqs, dtype=float) / n_fft * fs
-    return result, freqs
+    return result
 
 
 def fft_freqs(n_fft, fs):
