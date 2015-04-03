@@ -10,7 +10,8 @@ Example volume rendering
 
 Controls:
 
-* 1 - toggle camera between first person (fly) and regular 3D (turntable)
+* 1 - switch camera between first person (fly), regular 3D (turntable),
+      and arcball
 * 2 - toggle between mip and iso render styles
 * 3 - toggle between stent-CT / brain-MRI image
 * 4 - toggle between colormaps
@@ -40,9 +41,7 @@ vol2 = np.flipud(np.rollaxis(vol2, 1))
 cmaps = cycle(get_colormaps())
 
 # Prepare canvas
-canvas = scene.SceneCanvas(keys='interactive')
-canvas.size = 800, 600
-canvas.show()
+canvas = scene.SceneCanvas(keys='interactive', size=(800, 600), show=True)
 canvas.measure_fps()
 
 # Set up a viewbox to display the image with interactive pan/zoom
@@ -60,16 +59,18 @@ volume2 = scene.visuals.Volume(vol2, parent=view.scene, threshold=0.5,
 volume2.visible = False
 
 # Create two cameras (1 for firstperson, 3 for 3d person)
-cam1 = scene.cameras.FlyCamera(parent=view.scene)
-cam3 = scene.cameras.TurntableCamera(parent=view.scene)
-view.camera = cam3  # Select turntable at first
+fov = 60.
+cam1 = scene.cameras.FlyCamera(parent=view.scene, fov=fov)
+cam2 = scene.cameras.TurntableCamera(parent=view.scene, fov=fov)
+cam3 = scene.cameras.ArcballCamera(parent=view.scene, fov=fov)
+view.camera = cam2  # Select turntable at first
 
 
 # Implement key presses
 @canvas.events.key_press.connect
 def on_key_press(event):
     if event.text == '1':
-        cam_toggle = {cam1: cam3, cam3: cam1}
+        cam_toggle = {cam1: cam2, cam2: cam3, cam3: cam1}
         view.camera = cam_toggle.get(view.camera, 'fly')
     elif event.text == '2':
         style_toggle = {'mip': 'iso', 'iso': 'mip'}
