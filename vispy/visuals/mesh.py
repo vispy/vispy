@@ -24,13 +24,13 @@ from ..color import Color
 vertex_template = """
 
 void main() {
-   gl_Position = $transform($to_vec4($position));
+    gl_Position = $transform($to_vec4($position));
 }
 """
 
 fragment_template = """
 void main() {
-  gl_FragColor = $color;
+    gl_FragColor = $color;
 }
 """
 
@@ -76,7 +76,11 @@ class MeshVisual(Visual):
         Visual.__init__(self, **kwargs)
         # Create a program
         self._program = ModularProgram(vertex_template, fragment_template)
-
+        self._program.vert['pre'] = ''
+        self._program.vert['post'] = ''
+        self._program.frag['pre'] = ''
+        self._program.frag['post'] = ''
+        
         # Define buffers
         self._vertices = VertexBuffer(np.zeros((0, 3), dtype=np.float32))
         self._normals = None

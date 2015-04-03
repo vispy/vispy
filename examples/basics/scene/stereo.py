@@ -28,6 +28,12 @@ canvas.measure_fps()
 # Create two ViewBoxes, place side-by-side
 vb1 = scene.widgets.ViewBox(border_color='yellow', parent=canvas.scene)
 vb2 = scene.widgets.ViewBox(border_color='blue', parent=canvas.scene)
+
+# This is temporarily needed because fragment clipping method is not yet
+# compatible with multiple parenting.
+vb1.clip_method = 'viewport'
+vb2.clip_method = 'viewport'
+
 scenes = vb1.scene, vb2.scene
 #
 grid = canvas.central_widget.add_grid()

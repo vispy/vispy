@@ -12,6 +12,7 @@ from ..cameras import make_camera, BaseCamera
 from ...ext.six import string_types
 from ... color import Color
 from ... import gloo
+from ...visuals.components import Clipper
 
 
 class ViewBox(Widget):
@@ -48,7 +49,8 @@ class ViewBox(Widget):
         Widget.__init__(self, **kwargs)
 
         # Init preferred method to provided a pixel grid
-        self._clip_method = 'viewport'
+        self._clip_method = 'fragment'
+        self._clipper = Clipper()
 
         # Each viewbox has a scene widget, which has a transform that
         # represents the transformation imposed by camera.
@@ -191,7 +193,7 @@ class ViewBox(Widget):
           onto the parent pixel grid, if possible.
         * 'fbo' - use an FBO to draw the subscene to a texture, and
           then render the texture in the parent scene.
-        * 'fragment' - clipping in the fragment shader TODO
+        * 'fragment' - clipping in the fragment shader
         * 'stencil' - TODO
 
         Notes
@@ -224,9 +226,6 @@ class ViewBox(Widget):
         """ Draw the viewbox border/background, and prepare to draw the 
         subscene using the configured clipping method.
         """
-        # todo: we could consider including some padding
-        # so that we have room *inside* the viewbox to draw ticks and stuff
-        
         # -- Calculate resolution
         
         # Get current transform and calculate the 'scale' of the viewbox
@@ -246,7 +245,7 @@ class ViewBox(Widget):
         if prefer is None:
             pass
         elif prefer == 'fragment':
-            raise NotImplementedError('No fragment shader clipping yet.')
+            self._prepare_fragment()
         elif prefer == 'stencil':
             raise NotImplementedError('No stencil buffer clipping yet.')
         elif prefer == 'viewport':
@@ -290,13 +289,36 @@ class ViewBox(Widget):
             finally:
                 event.pop_node()
                 event.pop_viewport()
-
+        elif prefer == 'fragment':
+            self._clipper.bounds = event.visual_to_framebuffer.map(self.rect)
+            event.push_node(self.scene)
+            try:
+                self.scene.draw(event)
+            finally:
+                event.pop_node()
         else:
             # Just draw
-            # todo: invoke fragment shader clipping
-            self.scene.draw(event)
+            event.push_node(self.scene)
+            try:
+                self.scene.draw(event)
+            finally:
+                event.pop_node()
 
         event.pop_viewbox()
+
+    def _prepare_fragment(self, root=None):
+        # Todo: should only be run when there are changes in the graph, not
+        # on every frame.
+        if root is None:
+            root = self.scene
+            
+        for ch in root.children:
+            try:
+                ch.attach(self._clipper)
+            except NotImplementedError:
+                # visual does not support clipping
+                pass
+            self._prepare_fragment(ch)
 
     def _prepare_viewport(self, event):
         fb_transform = event.node_transform(map_from=event.node_cs,

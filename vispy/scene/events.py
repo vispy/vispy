@@ -218,6 +218,14 @@ class SceneEvent(Event, TransformSystem):
     def framebuffer_to_render(self, tr):
         raise RuntimeError("Cannot set transforms on SceneEvent.")
 
+    @property
+    def visual_to_framebuffer(self):
+        """ Transform mapping from visual coordinate frame to the framebuffer
+        (physical pixel) coordinate frame.
+        """
+        return self.node_transform(map_to=self.framebuffer_cs, 
+                                   map_from=self._stack[-1])
+        
     def get_full_transform(self):
         """ Return the transform that maps from the current node to
         normalized device coordinates within the current glViewport and

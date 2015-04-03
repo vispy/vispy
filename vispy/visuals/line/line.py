@@ -108,6 +108,10 @@ class LineVisual(Visual):
         self.mode = mode
 
     @property
+    def _program(self):
+        return self._line_visual._program
+
+    @property
     def antialias(self):
         return self._antialias
 
@@ -252,8 +256,7 @@ class _GLLineVisual(Visual):
     VERTEX_SHADER = """
         varying vec4 v_color;
 
-        void main(void)
-        {
+        void main(void) {
             gl_Position = $transform($to_vec4($position));
             v_color = $color;
         }
@@ -261,8 +264,7 @@ class _GLLineVisual(Visual):
 
     FRAGMENT_SHADER = """
         varying vec4 v_color;
-        void main()
-        {
+        void main() {
             gl_FragColor = v_color;
         }
     """
@@ -273,7 +275,7 @@ class _GLLineVisual(Visual):
         self._color_vbo = gloo.VertexBuffer()
         self._connect_ibo = gloo.IndexBuffer()
         self._connect = None
-
+        
         # Set up the GL program
         self._program = ModularProgram(self.VERTEX_SHADER,
                                        self.FRAGMENT_SHADER)
