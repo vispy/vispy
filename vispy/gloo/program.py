@@ -355,8 +355,9 @@ class Program(GLObject):
                     if data.dtype is not None:
                         numel = self._gtypes[type_][1]
                         if data._last_dim and data._last_dim != numel:
-                            raise ValueError('data.shape[-1] must be %s not %s'
-                                             % (numel, data._last_dim))
+                            raise ValueError('data.shape[-1] must be %s '
+                                             'not %s for %s'
+                                             % (numel, data._last_dim, name))
                     self._user_variables[name] = data
                     value = (data.id, data.stride, data.offset)
                     self.glir.associate(data.glir)
