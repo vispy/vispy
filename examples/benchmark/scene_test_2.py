@@ -10,20 +10,15 @@ provided by scenegraph.
 """
 from __future__ import division
 import numpy as np
-import math
 
 from vispy import gloo, app, scene, visuals
-from vispy.visuals import Visual
-from vispy.visuals.shaders import ModularProgram, Function, Variable
-from vispy.visuals.transforms import TransformSystem, BaseTransform
 from vispy.util.profiler import Profiler
-
 
 
 class GridCanvas(app.Canvas):
     def __init__(self, cells, **kwargs):
         super(GridCanvas, self).__init__(keys='interactive',
-                                            show=True, **kwargs)
+                                         show=True, **kwargs)
         m, n = (10, 10)
         self.grid_size = (m, n)
         self.cells = cells
@@ -39,7 +34,9 @@ class GridCanvas(app.Canvas):
             m, n = len(self.cells), len(self.cells[0])
             cell = self.cells[int(i*m)][n - 1 - int(j*n)]
             if event.press_event.button == 1:
-                offset = np.array(cell.offset) + (dx / (np.array(self.size) / [m, n])) *  (2 / np.array(cell.scale))
+                offset = (np.array(cell.offset) + 
+                          (dx / (np.array(self.size) / [m, n])) *  
+                          (2 / np.array(cell.scale)))
                 cell.set_transform(offset, cell.scale)
                 
             else:
@@ -47,7 +44,7 @@ class GridCanvas(app.Canvas):
             self.update()
 
     def on_draw(self, event):
-        prof = Profiler()
+        prof = Profiler()  # noqa
         gloo.clear()
         M = len(self.cells)
         N = len(self.cells[0])
@@ -92,11 +89,10 @@ class Line(object):
         self.program.draw('line_strip')
 
 
-
 class VisualCanvas(app.Canvas):
     def __init__(self, vis, **kwargs):
         super(VisualCanvas, self).__init__(keys='interactive',
-                                            show=True, **kwargs)
+                                           show=True, **kwargs)
         m, n = (10, 10)
         self.grid_size = (m, n)
         self.visuals = vis
@@ -126,7 +122,7 @@ class VisualCanvas(app.Canvas):
             self.update()
 
     def on_draw(self, event):
-        prof = Profiler()
+        prof = Profiler()  # noqa
         gloo.clear()
         M, N = self.grid_size
         w, h = self.size
@@ -137,15 +133,12 @@ class VisualCanvas(app.Canvas):
                 v.draw(v.tr_sys)
 
 
-
-
 if __name__ == '__main__':
     M, N = (10, 10)
     
     data = np.empty((10000, 2), dtype=np.float32)
     data[:, 0] = np.linspace(0, 100, data.shape[0])
     data[:, 1] = np.random.normal(size=data.shape[0])
-    
     
     # Optimized version
     cells = []
@@ -158,40 +151,38 @@ if __name__ == '__main__':
     gcanvas = GridCanvas(cells, position=(400, 300), size=(800, 600), 
                          title="GridCanvas")
     
-    
     # Visual version
     vlines = []
     for i in range(M):
         row = []
         vlines.append(row)
         for j in range(N):
-            v = visuals.LineVisual(pos=data, color=(1, 1, 1, 0.5), mode='gl')
-            v.transform = visuals.transforms.STTransform(translate=(0, 200), scale=(7, 50))
+            v = visuals.LineVisual(pos=data, color=(1, 1, 1, 0.5), method='gl')
+            v.transform = visuals.transforms.STTransform(translate=(0, 200), 
+                                                         scale=(7, 50))
             row.append(v)
     
     vcanvas = VisualCanvas(vlines, position=(400, 300), size=(800, 600), 
-                         title="VisualCanvas")
-    
+                           title="VisualCanvas")
     
     # Scenegraph version
-    #scanvas = scene.SceneCanvas(show=True, keys='interactive', 
-                                #title="SceneCanvas")
+    scanvas = scene.SceneCanvas(show=True, keys='interactive', 
+                                title="SceneCanvas")
     
-    
-    #scanvas.size = 800, 600
-    #scanvas.show()
-    #grid = scanvas.central_widget.add_grid()
+    scanvas.size = 800, 600
+    scanvas.show()
+    grid = scanvas.central_widget.add_grid()
 
-    #lines = []
-    #for i in range(10):
-        #lines.append([])
-        #for j in range(10):
-            #vb = grid.add_view(row=i, col=j)
-            #vb.camera.rect = (0, -5), (100, 10)
-            #vb.border = (1, 1, 1, 0.4)
-            #line = scene.visuals.Line(pos=data, color=(1, 1, 1, 0.5), mode='gl')
-            #vb.add(line)
-    
+    lines = []
+    for i in range(10):
+        lines.append([])
+        for j in range(10):
+            vb = grid.add_view(row=i, col=j)
+            vb.camera.rect = (0, -5), (100, 10)
+            vb.border = (1, 1, 1, 0.4)
+            line = scene.visuals.Line(pos=data, color=(1, 1, 1, 0.5), 
+                                      method='gl')
+            vb.add(line)
     
     import sys
     if sys.flags.interactive != 1:

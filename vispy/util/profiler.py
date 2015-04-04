@@ -2,7 +2,6 @@
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # Adapted from PyQtGraph
-import os
 import sys
 from . import ptime
 from .. import config
@@ -44,37 +43,42 @@ class Profiler(object):
     
     _depth = 0
     _msgs = []
-    disable = False  # set this flag to disable all or individual profilers at runtime
+    # set this flag to disable all or individual profilers at runtime
+    disable = False
     
     class DisabledProfiler(object):
         def __init__(self, *args, **kwds):
             pass
+        
         def __call__(self, *args):
             pass
+        
         def finish(self):
             pass
+        
         def mark(self, msg=None):
             pass
+        
     _disabled_profiler = DisabledProfiler()
         
     def __new__(cls, msg=None, disabled='env', delayed=True):
         """Optionally create a new profiler based on caller's qualname.
         """
         if (disabled is True or 
-            (disabled == 'env' and len(cls._profilers) == 0)):
+                (disabled == 'env' and len(cls._profilers) == 0)):
             return cls._disabled_profiler
                         
         # determine the qualified name of the caller function
         caller_frame = sys._getframe(1)
         try:
             caller_object_type = type(caller_frame.f_locals["self"])
-        except KeyError: # we are in a regular function
+        except KeyError:  # we are in a regular function
             qualifier = caller_frame.f_globals["__name__"].split(".", 1)[1]
-        else: # we are in a method
+        else:  # we are in a method
             qualifier = caller_object_type.__name__
         func_qualname = qualifier + "." + caller_frame.f_code.co_name
         if (disabled == 'env' and func_qualname not in cls._profilers and
-            'all' not in cls._profilers): # don't do anything
+                'all' not in cls._profilers):  # don't do anything
             return cls._disabled_profiler
         # create an actual profiling object
         cls._depth += 1
@@ -123,13 +127,12 @@ class Profiler(object):
         if msg is not None:
             self(msg)
         self._new_msg("< Exiting %s, total time: %0.4f ms", 
-                     self._name, (ptime.time() - self._firstTime) * 1000)
+                      self._name, (ptime.time() - self._firstTime) * 1000)
         type(self)._depth -= 1
         if self._depth < 1:
             self.flush()
         
     def flush(self):
         if self._msgs:
-            print("\n".join([m[0]%m[1] for m in self._msgs]))
+            print("\n".join([m[0] % m[1] for m in self._msgs]))
             type(self)._msgs = []
-
