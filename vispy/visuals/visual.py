@@ -40,6 +40,8 @@ class Visual(object):
                                    bounds_change=Event,
                                    )
         self._gl_state = {'preset': None}
+        self._filters = set()
+        self._hooks = {}
 
     def set_gl_state(self, preset=None, **kwargs):
         """Completely define the set of GL state parameters to use when drawing
@@ -57,10 +59,6 @@ class Visual(object):
         elif len(args) != 0:
             raise TypeError("Only one positional argument allowed.")
         self._gl_state.update(kwargs)
-    
-        self._filters = set()
-        
-        self._hooks = {}
         
     def _update(self):
         """
