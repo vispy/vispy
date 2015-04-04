@@ -10,7 +10,7 @@ from vispy import app, gloo
 from vispy.util import load_data_file
 from vispy.util.svg import Document
 from vispy.visuals.collections import PathCollection, PolygonCollection
-from panzoom import PanZoomTransform
+from vispy.visuals.transforms import PanZoomTransform
 import faulthandler
 faulthandler.enable()
 

@@ -6,7 +6,7 @@ import sys
 import numpy as np
 from vispy import app, gloo
 from vispy.visuals.collections import PointCollection
-from panzoom import PanZoomTransform
+from vispy.visuals.transforms import PanZoomTransform
 
 canvas = app.Canvas(size=(800, 600), show=True, keys='interactive')
 gloo.set_viewport(0, 0, canvas.size[0], canvas.size[1])

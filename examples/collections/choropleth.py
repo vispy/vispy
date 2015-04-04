@@ -9,7 +9,7 @@ import numpy as np
 from vispy import app, gloo
 from vispy.util import load_data_file
 from vispy.visuals.collections import PathCollection, PolygonCollection
-from panzoom import PanZoomTransform
+from vispy.visuals.transforms import PanZoomTransform
 
 
 path = load_data_file('uscounties/uscounties.geojson')
@@ -42,7 +42,7 @@ canvas = app.Canvas(size=(800, 800), keys='interactive')
 gloo.set_viewport(0, 0, canvas.size[0], canvas.size[1])
 gloo.set_state("translucent", depth_test=False)
 
-panzoom = PanZoomTransform(canvas)
+panzoom = PanZoomTransform(canvas, aspect=1)
 paths = PathCollection(mode="agg+", color="global", transform=panzoom)
 polys = PolygonCollection("raw", color="local", transform=panzoom)
 paths.update.connect(canvas.update)
