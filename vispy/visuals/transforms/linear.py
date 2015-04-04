@@ -215,8 +215,10 @@ class STTransform(BaseTransform):
         
         x0 = np.asarray(x0)
         x1 = np.asarray(x1)
-        if x0.ndim != 2 or x0.shape[0] != 2 or x1.ndim != 2 or x1.shape[0] != 2:
-            raise TypeError("set_mapping requires array inputs of shape (2, N).")
+        if (x0.ndim != 2 or x0.shape[0] != 2 or x1.ndim != 2 or 
+                x1.shape[0] != 2):
+            raise TypeError("set_mapping requires array inputs of shape "
+                            "(2, N).")
         denom = x0[1] - x0[0]
         mask = denom == 0
         denom[mask] = 1.0

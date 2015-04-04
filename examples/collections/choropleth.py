@@ -16,6 +16,7 @@ path = load_data_file('uscounties/uscounties.geojson')
 with open(path, 'r') as f:
     geo = json.load(f)
 
+
 def unique_rows(data):
     v = data.view(data.dtype.descr * data.shape[1])
     _, idx = np.unique(v, return_index=True)
@@ -63,8 +64,6 @@ for feature in geo["features"]:
 paths["color"] = 0, 0, 0, 1
 paths["linewidth"] = 1.0
 paths['viewport'] = 0, 0, 800, 800
-
-
 
 
 @canvas.connect

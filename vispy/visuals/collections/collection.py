@@ -13,11 +13,11 @@ interface.
 
 import numpy as np
 from ... import gloo
-from ...gloo import Program
 from . util import fetchcode
 from . base_collection import BaseCollection
 from ..shaders import ModularProgram
 from ...util.event import EventEmitter
+
 
 class Collection(BaseCollection):
 

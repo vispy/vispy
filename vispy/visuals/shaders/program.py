@@ -81,7 +81,8 @@ class ModularProgram(Program):
         logger.debug("ModularProgram source changed: %s", self)
         if ev.code_changed:
             self._need_build = True
-        self.changed(code_changed=ev.code_changed, value_changed=ev.value_changed)
+        self.changed(code_changed=ev.code_changed, 
+                     value_changed=ev.value_changed)
     
     def draw(self, *args, **kwargs):
         self.build_if_needed()
