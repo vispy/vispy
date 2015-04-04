@@ -26,6 +26,6 @@ void main()
     v_size = size;
     v_color = color;
 
-    gl_Position = transform(position);
+    gl_Position = $transform(vec4(position, 1));
     gl_PointSize = size;
 }

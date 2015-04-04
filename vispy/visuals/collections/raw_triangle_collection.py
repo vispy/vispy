@@ -6,6 +6,7 @@
 import numpy as np
 from vispy import glsl
 from . collection import Collection
+from ..transforms import NullTransform
 
 
 class RawTriangleCollection(Collection):
@@ -26,14 +27,15 @@ class RawTriangleCollection(Collection):
         if vertex is None:
             vertex = glsl.get('collections/raw-triangle.vert')
         if transform is None:
-            transform = "vec4 transform(vec3 position) {return vec4(position,1.0);}"  # noqa
+            transform = NullTransform()
+        self.transform = transform        
         if fragment is None:
             fragment = glsl.get('collections/raw-triangle.frag')
 
-        vertex = transform + vertex
         Collection.__init__(self, dtype=dtype, itype=np.uint32,
                             mode="triangles",
                             vertex=vertex, fragment=fragment, **kwargs)
+        self._programs[0].vert['transform'] = self.transform
 
     def append(self, points, indices, **kwargs):
         """

@@ -54,10 +54,10 @@ void main (void)
     v_miter_limit = miter_limit;
 
     // transform prev/curr/next
-    vec4 p0_ = transform(p0);
-    vec4 p1_ = transform(p1);
-    vec4 p2_ = transform(p2);
-    vec4 p3_ = transform(p3);
+    vec4 p0_ = $transform(vec4(p0, 1));
+    vec4 p1_ = $transform(vec4(p1, 1));
+    vec4 p2_ = $transform(vec4(p2, 1));
+    vec4 p3_ = $transform(vec4(p3, 1));
 
     // prev/curr/next in viewport coordinates
     vec2 _p0 = NDC_to_viewport(p0_, viewport.zw);

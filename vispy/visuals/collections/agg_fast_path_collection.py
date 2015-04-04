@@ -15,6 +15,7 @@ import numpy as np
 from vispy import glsl
 from vispy.gloo import gl
 from . collection import Collection
+from ..transforms import NullTransform
 
 
 class AggFastPathCollection(Collection):
@@ -77,14 +78,17 @@ class AggFastPathCollection(Collection):
         if vertex is None:
             vertex = glsl.get('collections/agg-fast-path.vert')
         if transform is None:
-            transform = "vec4 transform(vec3 position) {return vec4(position,1.0);}"  # noqa
+            transform = NullTransform()
+        self.transform = transform        
         if fragment is None:
             fragment = glsl.get('collections/agg-fast-path.frag')
 
-        vertex = transform + vertex
         Collection.__init__(self, dtype=dtype, itype=None,
                             mode="triangle_strip",
                             vertex=vertex, fragment=fragment, **kwargs)
+
+        program = self._programs[0]
+        program.vert['transform'] = self.transform
 
     def append(self, P, closed=False, itemsize=None, **kwargs):
         """
