@@ -386,6 +386,7 @@ class TextVisual(Visual):
         self.font_size = font_size
         self.pos = pos
         self.rotation = rotation
+        self._text_scale = STTransform()
 
     @property
     def text(self):
@@ -463,7 +464,8 @@ class TextVisual(Visual):
               transforms.framebuffer_to_render)
         px_scale = (tr.map((1, 0)) - tr.map((0, 1)))[:2]
         self._program.vert['transform'] = transforms.get_full_transform()
-        self._program.vert['text_scale'] = STTransform(scale=px_scale * n_pix)
+        self._text_scale.scale = px_scale * n_pix
+        self._program.vert['text_scale'] = self._text_scale
         self._program['u_npix'] = n_pix
         self._program['u_kernel'] = self._font._kernel
         self._program['u_rotation'] = self._rotation

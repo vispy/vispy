@@ -699,11 +699,7 @@ class PanZoomCamera(BaseCamera):
         # side (as if z was flipped).
 
         if self.up == '+z':
-            # Keep it simple, but we need to pass AffineTransform,
-            # because if we toggle to -z and then back to +z, things
-            # work incorrectly (test with flipped_axis.py)
-            # todo: fix this so we can just set to a STTransform
-            thetransform = self.transform * AffineTransform()
+            thetransform = self.transform
         else:
             rr = self._real_rect
             tr = AffineTransform()

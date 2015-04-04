@@ -58,8 +58,7 @@ vb1.camera.rect = 0, 30, 100000, 100
 size = (100, 100)
 
 img_data = np.random.normal(size=size+(3,), loc=58, scale=20).astype(np.ubyte)
-#image = visuals.Image(img_data, method='impostor', parent=vb2.scene)
-image = visuals.Image(img_data, parent=vb2.scene)
+image = visuals.Image(img_data, parent=vb2.scene, method='impostor')
 vb2.camera = MagnifyCamera(mag=3, size_factor=0.3, radius_ratio=0.6)
 vb2.camera.rect = (-10, -10, size[0]+20, size[1]+20) 
 
