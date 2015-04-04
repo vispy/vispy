@@ -44,6 +44,7 @@ gloo.set_state("translucent", depth_test=False)
 panzoom = PanZoomTransform(canvas)
 paths = PathCollection(mode="agg+", color="global", transform=panzoom)
 polys = PolygonCollection("raw", color="local", transform=panzoom)
+paths.update.connect(canvas.update)
 
 for feature in geo["features"]:
     if feature["geometry"]["type"] == 'Polygon':
