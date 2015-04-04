@@ -33,7 +33,7 @@ vb3 = grid.add_view(row=1, col=1)
 
 #
 # Top viewbox: Show a plot line containing fine structure with a 1D 
-# magnigication transform.
+# magnification transform.
 #
 
 
