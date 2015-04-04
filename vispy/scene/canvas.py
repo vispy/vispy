@@ -174,23 +174,23 @@ class SceneCanvas(app.Canvas):
         offset = (0, 0) if region is None else region[:2]
         csize = self.size if region is None else region[2:]
         size = csize if size is None else size
-        fbo = gloo.FrameBuffer(color=gloo.RenderBuffer(size[::-1]), 
+        fbo = gloo.FrameBuffer(color=gloo.RenderBuffer(size[::-1]),
                                depth=gloo.RenderBuffer(size[::-1]))
-        
+
         self.push_fbo(fbo, offset, csize)
         try:
-            self._draw_scene()
+            self._draw_scene(viewport=(0, 0) + size)
             return fbo.read()
         finally:
             self.pop_fbo()
-        
-    def _draw_scene(self):
+
+    def _draw_scene(self, viewport=None):
         self.context.clear(color=self._bgcolor, depth=True)
         # Draw the scene, but first disconnect its change signal--
         # any changes that take place during the paint should not trigger
         # a subsequent repaint.
         with self.scene.events.update.blocker(self._scene_update):
-            self.draw_visual(self.scene)
+            self.draw_visual(self.scene, viewport=viewport)
 
     def draw_visual(self, visual, event=None, viewport=None):
         """ Draw a visual to the canvas or currently active framebuffer.

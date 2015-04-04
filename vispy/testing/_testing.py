@@ -368,12 +368,12 @@ def TestingCanvas(bgcolor='black', size=(100, 100), dpi=None):
             self._entered = True
             return self
 
-        def draw_visual(self, visual, clear=True):
+        def draw_visual(self, visual, event=None, viewport=None, clear=True):
             if not self._entered:
                 return
             if clear:
                 self.context.clear()
-            SceneCanvas.draw_visual(self, visual, self._wanted_vp)
+            SceneCanvas.draw_visual(self, visual, event, viewport)
             # must set this because draw_visual sets it back to the
             # canvas size when it's done
             self.context.set_viewport(*self._wanted_vp)
