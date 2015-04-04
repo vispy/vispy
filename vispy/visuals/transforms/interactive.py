@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
-# vispy: testskip
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 from __future__ import division
 
 import numpy as np
-from vispy.visuals.transforms import STTransform
+from .linear import STTransform
 
 
 class PanZoomTransform(STTransform):
