@@ -134,7 +134,7 @@ class STTransform(BaseTransform):
         if update:
             self._update_map = True
             self._update_imap = True
-            self.update()   # inform listeners there hass been a change
+            self.update()   # inform listeners there has been a change
 
     def move(self, move):
         """Change the translation of this transform by the amount given.

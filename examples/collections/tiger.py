@@ -22,7 +22,7 @@ canvas = app.Canvas(size=(width, height), show=True, keys='interactive')
 gloo.set_viewport(0, 0, width, height)
 gloo.set_state("translucent", depth_test=True)
 
-panzoom = PanZoomTransform(canvas)
+panzoom = PanZoomTransform(canvas, aspect=1.0)
 paths = PathCollection(
     "agg+", linewidth='shared', color="shared", transform=panzoom)
 polys = PolygonCollection("agg", transform=panzoom)
