@@ -13,6 +13,7 @@ of the output is worth the cost.
 import numpy as np
 from vispy import glsl
 from . collection import Collection
+from ..transforms import NullTransform
 
 
 class AggSegmentCollection(Collection):
@@ -74,11 +75,11 @@ class AggSegmentCollection(Collection):
         if vertex is None:
             vertex = glsl.get('collections/agg-segment.vert')
         if transform is None:
-            transform = "vec4 transform(vec3 position) {return vec4(position,1.0);}"  # noqa
+            transform = NullTransform()
+        self.transform = transform        
         if fragment is None:
             fragment = glsl.get('collections/agg-segment.frag')
 
-        vertex = transform + vertex
         Collection.__init__(self, dtype=dtype, itype=np.uint32,
                             mode="triangles",
                             vertex=vertex, fragment=fragment, **kwargs)

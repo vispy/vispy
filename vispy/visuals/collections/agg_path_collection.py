@@ -93,7 +93,6 @@ class AggPathCollection(Collection):
         if fragment is None:
             fragment = glsl.get('collections/agg-path.frag')
 
-        vertex = transform + vertex
         Collection.__init__(self, dtype=dtype, itype=np.uint32,  # 16 for WebGL
                             mode="triangles",
                             vertex=vertex, fragment=fragment, **kwargs)

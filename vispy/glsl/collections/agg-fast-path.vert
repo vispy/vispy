@@ -39,9 +39,9 @@ void main (void)
     v_color     = color;
 
     // transform prev/curr/next
-    vec4 prev_ = transform(prev);
-    vec4 curr_ = transform(curr);
-    vec4 next_ = transform(next);
+    vec4 prev_ = $transform(prev);
+    vec4 curr_ = $transform(curr);
+    vec4 next_ = $transform(next);
 
     // prev/curr/next in viewport coordinates
     vec2 _prev = NDC_to_viewport(prev_, viewport.zw);

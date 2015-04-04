@@ -6,7 +6,8 @@
 import numpy as np
 from vispy import glsl
 from . collection import Collection
-from vispy.geometry import triangulate
+from ..transforms import NullTransform
+from ...geometry import triangulate
 
 
 class RawPolygonCollection(Collection):
@@ -24,11 +25,11 @@ class RawPolygonCollection(Collection):
         if vertex is None:
             vertex = glsl.get('collections/raw-triangle.vert')
         if transform is None:
-            transform = "vec4 transform(vec3 position) {return vec4(position,1.0);}"  # noqa
+            transform = NullTransform()
+        self.transform = transform        
         if fragment is None:
             fragment = glsl.get('collections/raw-triangle.frag')
 
-        vertex = transform + vertex
         Collection.__init__(self, dtype=dtype, itype=np.uint32,  # 16 for WebGL
                             mode="triangles",
                             vertex=vertex, fragment=fragment, **kwargs)
