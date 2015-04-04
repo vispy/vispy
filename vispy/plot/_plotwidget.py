@@ -4,10 +4,9 @@
 
 import numpy as np
 
-from ..scene import (Image, LinePlot, Volume, Mesh,
+from ..scene import (Image, LinePlot, Volume, Mesh, Histogram,
                      ViewBox, PanZoomCamera, TurntableCamera)
 from ..util.fourier import stft
-from ..ext.six import string_types
 from ..io import read_mesh
 from ..geometry import MeshData
 
@@ -38,7 +37,7 @@ class PlotWidget(ViewBox):
             self.camera = cls(*args, **kwargs)
 
     @quick
-    def histogram(self, data, bins=10, color='w', orientation='horizontal'):
+    def histogram(self, data, bins=10, color='w', orientation='h'):
         """Calculate and show a histogram of data
 
         Parameters
@@ -57,37 +56,7 @@ class PlotWidget(ViewBox):
         hist : instance of Polygon
             The histogram polygon.
         """
-        #   4-5
-        #   | |
-        # 1-2/7-8
-        # |/| | |
-        # 0-3-6-9
-        data = np.asarray(data)
-        if data.ndim != 1:
-            raise ValueError('Only 1D data currently supported')
-        if not isinstance(orientation, string_types) or \
-                orientation not in ('h', 'v'):
-            raise ValueError('orientation must be "h" or "v", not %s'
-                             % (orientation,))
-        X, Y = (0, 1) if orientation == 'h' else (1, 0)
-
-        # do the histogramming
-        data, bin_edges = np.histogram(data, bins)
-        # construct our vertices
-        rr = np.zeros((3 * len(bin_edges) - 2, 3), np.float32)
-        rr[:, X] = np.repeat(bin_edges, 3)[1:-1]
-        rr[1::3, Y] = data
-        rr[2::3, Y] = data
-        bin_edges.astype(np.float32)
-        # and now our tris
-        tris = np.zeros((2 * len(bin_edges) - 2, 3), np.uint32)
-        offsets = 3 * np.arange(len(bin_edges) - 1,
-                                dtype=np.uint32)[:, np.newaxis]
-        tri_1 = np.array([0, 2, 1])
-        tri_2 = np.array([2, 0, 3])
-        tris[::2] = tri_1 + offsets
-        tris[1::2] = tri_2 + offsets
-        hist = Mesh(rr, tris, color=color)
+        hist = Histogram(data, bins, color, orientation)
         self.add(hist)
         self._set_camera(PanZoomCamera)
         return hist

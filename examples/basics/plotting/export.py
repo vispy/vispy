@@ -11,17 +11,17 @@ import vispy.plot as vp
 
 # Create a canvas showing plot data
 fig = vp.Fig()
-fig[0, 0].plot([[1, 6, 2, 4, 3, 8, 5, 7, 6, 3]])
+fig[0, 0].plot([1, 6, 2, 4, 3, 8, 5, 7, 6, 3])
 
-# Render the canvas scene to a numpy array image with higher resolution 
+# Render the canvas scene to a numpy array image with higher resolution
 # than the original canvas
-scale = 10
+scale = 4
 image = fig.render(size=(fig.size[0]*scale, fig.size[1]*scale))
 
 # Display the data in the array, sub-sampled down to the original canvas
 # resolution
 fig_2 = vp.Fig()
-fig_2[0, 0].image(image[::scale, ::scale])
+fig_2[0, 0].image(image[::-scale, ::scale])
 
 # By default, the view adds some padding when setting its range.
 # We'll remove that padding so the image looks exactly like the original

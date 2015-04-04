@@ -70,26 +70,9 @@ class LinePlotVisual(Visual):
                       edge_width=edge_width, connect=connect)
 
     def set_data(self, data, **kwargs):
-        args = [np.array(x) for x in data]
+        pos = np.atleast_2d(data).T.astype(np.float32)
 
-        if len(args) == 1:
-            arg = args[0]
-            if arg.ndim == 2:
-                # xy array already provided
-                pos = arg
-            elif arg.ndim == 1:
-                # only y supplied, generate arange x
-                pos = np.empty((len(arg), 2), dtype=np.float32)
-                pos[:, 1] = arg
-                pos[:, 0] = np.arange(len(arg))
-            else:
-                raise TypeError("Invalid argument: array must have ndim "
-                                "<= 2.")
-        elif len(args) == 2:
-            pos = np.concatenate([args[0][:, np.newaxis],
-                                  args[1][:, np.newaxis]], axis=1)
-        # if args are empty, don't modify position
-        elif len(args) == 0:
+        if pos.size == 0:
             pos = self._line.pos
 
             # if both args and keywords are zero, then there is no
@@ -97,8 +80,12 @@ class LinePlotVisual(Visual):
             if len(kwargs) == 0:
                 raise TypeError("neither line points nor line properties"
                                 "are provided")
-        else:
-            raise TypeError("Too many positional arguments given (max is 2).")
+        elif pos.shape[1] == 1:
+            x = np.arange(pos.shape[0], dtype=np.float32)[:, np.newaxis]
+            pos = np.concatenate((x, pos), axis=1)
+        # if args are empty, don't modify position
+        elif pos.shape[1] > 2:
+            raise TypeError("Too many dimensions given (max is 2).")
 
         # todo: have both sub-visuals share the same buffers.
         line_kwargs = {}
