@@ -5,6 +5,7 @@
 import os
 import sys
 from . import ptime
+from .. import config
 
 
 class Profiler(object):
@@ -38,8 +39,8 @@ class Profiler(object):
     only the initial "vispy.." prefix from the module.
     """
 
-    _profilers = os.environ.get("VISPYPROFILE", None)
-    _profilers = _profilers.split(",") if _profilers is not None else []
+    _profilers = (config['profile'].split(",") if config['profile'] is not None
+                  else [])
     
     _depth = 0
     _msgs = []

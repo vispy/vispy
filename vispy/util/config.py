@@ -45,6 +45,7 @@ def _init():
         'logging_level': string_types,
         'qt_lib': string_types,
         'dpi': (int, type(None)),
+        'profile': string_types + (type(None),),
     }
 
     # Default values for all config options
@@ -58,6 +59,7 @@ def _init():
         'logging_level': 'info',
         'qt_lib': 'any',
         'dpi': None,
+        'profile': None,
     }
 
     config = Config(**default_config_options)
@@ -101,8 +103,14 @@ VisPy command line arguments:
   --vispy-glir-file
     Export glir commands to specified file.
 
-  --vispy-profile
-    Enable profiling and print the results when the program exits.
+  --vispy-profile=locations
+    Measure performance at specific code locations and display results. 
+    *locations* may be "all" or a comma-separated list of method names like
+    "SceneCanvas.draw_visual".
+
+  --vispy-cprofile
+    Enable profiling using the built-in cProfile module and display results
+    when the program exits.
 
   --vispy-help
     Display this help message.
@@ -117,7 +125,8 @@ def _parse_command_line_arguments():
     global config
     # Get command line args for vispy
     argnames = ['vispy-backend=', 'vispy-gl-debug', 'vispy-glir-file=',
-                'vispy-log=', 'vispy-help', 'vispy-profile', 'vispy-dpi=']
+                'vispy-log=', 'vispy-help', 'vispy-profile=', 'vispy-cprofile',
+                'vispy-dpi=']
     try:
         opts, args = getopt.getopt(sys.argv[1:], '', argnames)
     except getopt.GetoptError:
@@ -141,6 +150,8 @@ def _parse_command_line_arguments():
                 config['logging_level'] = a
                 set_log_level(verbose, match)
             elif o == '--vispy-profile':
+                config['profile'] = a
+            elif o == '--vispy-cprofile':
                 _enable_profiling()
             elif o == '--vispy-help':
                 print(VISPY_HELP)
