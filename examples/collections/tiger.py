@@ -11,8 +11,6 @@ from vispy.util import load_data_file
 from vispy.util.svg import Document
 from vispy.visuals.collections import PathCollection, PolygonCollection
 from vispy.visuals.transforms import PanZoomTransform
-import faulthandler
-faulthandler.enable()
 
 path = load_data_file('tiger/tiger.svg')
 tiger = Document(path)
