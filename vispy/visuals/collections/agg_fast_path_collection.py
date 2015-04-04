@@ -87,6 +87,9 @@ class AggFastPathCollection(Collection):
                             mode="triangle_strip",
                             vertex=vertex, fragment=fragment, **kwargs)
 
+        program = self._programs[0]
+        program.vert['transform'] = self.transform
+
     def append(self, P, closed=False, itemsize=None, **kwargs):
         """
         Append a new set of vertices to the collection.

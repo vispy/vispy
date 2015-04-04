@@ -181,6 +181,7 @@ class Collection(BaseCollection):
 
         found = False
         for program in self._programs:
+            program.build_if_needed()
             for name, (storage, _, _, _) in program._code_variables.items():
                 if name == key and storage == 'uniform':
                     found = True

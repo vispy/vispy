@@ -66,6 +66,7 @@ class RawSegmentCollection(Collection):
 
         Collection.__init__(self, dtype=dtype, itype=None, mode='lines',
                             vertex=vertex, fragment=fragment, **kwargs)
+        self._programs[0].vert['transform'] = self.transform
 
     def append(self, P0, P1, itemsize=None, **kwargs):
         """

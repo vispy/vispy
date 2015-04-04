@@ -83,6 +83,7 @@ class AggSegmentCollection(Collection):
         Collection.__init__(self, dtype=dtype, itype=np.uint32,
                             mode="triangles",
                             vertex=vertex, fragment=fragment, **kwargs)
+        self._programs[0].vert['transform'] = self.transform
 
     def append(self, P0, P1, itemsize=None, **kwargs):
         """

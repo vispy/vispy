@@ -34,6 +34,10 @@ class RawPolygonCollection(Collection):
                             mode="triangles",
                             vertex=vertex, fragment=fragment, **kwargs)
 
+        # Set hooks if necessary
+        program = self._programs[0]
+        program.vert['transform'] = self.transform
+
     def append(self, points, **kwargs):
         """
         Append a new set of vertices to the collection.
