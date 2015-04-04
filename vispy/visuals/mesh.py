@@ -13,7 +13,7 @@ import numpy as np
 
 from .visual import Visual
 from .shaders import ModularProgram, Function, Varying
-from ..gloo import VertexBuffer, IndexBuffer, set_state
+from ..gloo import VertexBuffer, IndexBuffer
 from ..geometry import MeshData
 from ..color import Color
 
@@ -74,6 +74,10 @@ class MeshVisual(Visual):
                  face_colors=None, color=(0.5, 0.5, 1, 1), meshdata=None,
                  shading=None, mode='triangles', **kwargs):
         Visual.__init__(self, **kwargs)
+        
+        self.set_gl_state('translucent', depth_test=True,
+                          cull_face='front_and_back')
+        
         # Create a program
         self._program = ModularProgram(vertex_template, fragment_template)
         self._program.vert['pre'] = ''
@@ -243,7 +247,8 @@ class MeshVisual(Visual):
         self._shading = value
 
     def draw(self, transforms):
-        set_state('translucent', depth_test=True, cull_face='front_and_back')
+        Visual.draw(self, transforms)
+
         if self._data_changed:
             self._data_changed = False
             self._update_data()

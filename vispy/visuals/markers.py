@@ -10,7 +10,7 @@ Marker Visual and shader definitions.
 import numpy as np
 
 from ..color import ColorArray
-from ..gloo import set_state, VertexBuffer, _check_valid
+from ..gloo import VertexBuffer, _check_valid
 from .shaders import ModularProgram, Function, Variable
 from .visual import Visual
 
@@ -502,6 +502,8 @@ class MarkersVisual(Visual):
         self._program.vert['scalarsize'] = Function(size1d)
         self._program.frag['scalarsize'] = Function(size1d)
         Visual.__init__(self)
+        self.set_gl_state(depth_test=False, blend=True,
+                          blend_func=('src_alpha', 'one_minus_src_alpha'))
 
     def set_data(self, pos=None, style='o', size=10., edge_width=1.,
                  edge_width_rel=None, edge_color='black', face_color='white',
@@ -582,8 +584,8 @@ class MarkersVisual(Visual):
         self._program.frag['marker'] = self._marker_fun
 
     def draw(self, transforms):
-        set_state(depth_test=False, blend=True,
-                  blend_func=('src_alpha', 'one_minus_src_alpha'))
+        Visual.draw(self, transforms)
+        
         xform = transforms.get_full_transform()
         self._program.vert['transform'] = xform
         # TO DO: find a way to avoid copying data and rebinding them to the vbo

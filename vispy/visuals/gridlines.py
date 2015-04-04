@@ -82,6 +82,7 @@ class GridLinesVisual(Visual):
         self._vbo = None
         self._scale = scale
         self._tr_cache = TransformCache()
+        self.set_gl_state('additive', cull_face='front_and_back')
 
     def _buffer(self):
         if self._vbo is None:
@@ -93,7 +94,7 @@ class GridLinesVisual(Visual):
         return self._vbo
 
     def draw(self, transforms):
-        gloo.set_state('additive', cull_face='front_and_back')
+        Visual.draw(self, transforms)
 
         doc_to_ndc = self._tr_cache.get([transforms.framebuffer_to_render, 
                                          transforms.document_to_framebuffer])
