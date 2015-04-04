@@ -647,7 +647,8 @@ class PanZoomCamera(BaseCamera):
                 # Zoom
                 p1c = np.array(event.last_event.pos)[:2]
                 p2c = np.array(event.pos)[:2]
-                scale = (1 + self.zoom_factor) ** ((p1c-p2c) * np.array([1, -1]))
+                scale = ((1 + self.zoom_factor) ** 
+                         ((p1c-p2c) * np.array([1, -1])))
                 center = self._transform.imap(event.press_event.pos[:2])
                 self.zoom(scale, center)
 
