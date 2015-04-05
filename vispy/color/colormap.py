@@ -453,17 +453,6 @@ class _SingleHue(Colormap):
     value : scalar, optional
         The number represting the value component of a color. Must be in the
         range [0, 1.0]. The default value is 1.0.
-    controls : array-like, optional
-        The list of control points for the given colors. It should be
-        an increasing list of floating-point number between 0.0 and 1.0.
-        The first control point must be 0.0. The last control point must be
-        1.0. The number of control points depends on the interpolation scheme.
-    interpolation : str, optional
-        The interpolation mode of the colormap. Default: 'linear'. Can also
-        be 'zero'.
-        If 'linear', ncontrols = ncolors (one color per control point).
-        If 'zero', ncontrols = ncolors+1 (one color per bin).
-
     """
 
     def __init__(self, hue=200, value=1.0):
