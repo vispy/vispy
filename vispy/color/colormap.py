@@ -452,7 +452,7 @@ class _SingleHue(Colormap):
         Defaults to 200 (blue).
     value : scalar, optional
         The number represting the value component of a color. Must be in the
-        range [0, 1.0]. The default value is 100.
+        range [0, 1.0]. The default value is 1.0.
     controls : array-like, optional
         The list of control points for the given colors. It should be
         an increasing list of floating-point number between 0.0 and 1.0.
