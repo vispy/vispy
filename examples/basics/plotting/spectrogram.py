@@ -19,7 +19,7 @@ data = np.cos(2 * np.pi * phase)
 
 fig = vp.Fig(size=(800, 400), show=False)
 fig[0:2, 0].spectrogram(data, fs=fs, clim=(-100, -20))
-fig[2, 0].plot((t, data), marker_size=0)
+fig[2, 0].plot(np.array((t, data)).T, marker_size=0)
 
 if __name__ == '__main__':
     fig.show(run=True)

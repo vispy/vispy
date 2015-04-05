@@ -15,12 +15,49 @@ class Grid(Widget):
     proportionally divide its internal area into a grid.
     """
     def __init__(self, **kwargs):
+        from .viewbox import ViewBox
         self._next_cell = [0, 0]  # row, col
         self._cells = {}
         self._grid_widgets = {}
         self.spacing = 6
         self._n_added = 0
+        self._default_class = ViewBox  # what to add when __getitem__ is used
         Widget.__init__(self, **kwargs)
+
+    def __getitem__(self, idxs):
+        """Return an item or create it if the location is available"""
+        if not isinstance(idxs, tuple):
+            idxs = (idxs,)
+        if len(idxs) == 1:
+            idxs = idxs + (slice(None),)
+        elif len(idxs) != 2:
+            raise ValueError('Incorrect index: %s' % (idxs,))
+        lims = np.empty((2, 2), int)
+        for ii, idx in enumerate(idxs):
+            if isinstance(idx, int):
+                idx = slice(idx, idx + 1, None)
+            if not isinstance(idx, slice):
+                raise ValueError('indices must be slices or integers, not %s'
+                                 % (type(idx),))
+            if idx.step is not None and idx.step != 1:
+                raise ValueError('step must be one or None, not %s' % idx.step)
+            start = 0 if idx.start is None else idx.start
+            end = self.grid_size[ii] if idx.stop is None else idx.stop
+            lims[ii] = [start, end]
+        layout = self.layout_array
+        existing = layout[lims[0, 0]:lims[0, 1], lims[1, 0]:lims[1, 1]] + 1
+        if existing.any():
+            existing = set(list(existing.ravel()))
+            ii = list(existing)[0] - 1
+            if len(existing) != 1 or ((layout == ii).sum() !=
+                                      np.prod(np.diff(lims))):
+                raise ValueError('Cannot add widget (collision)')
+            return self._grid_widgets[ii][-1]
+        spans = np.diff(lims)[:, 0]
+        item = self.add_widget(self._default_class(),
+                               row=lims[0, 0], col=lims[1, 0],
+                               row_span=spans[0], col_span=spans[1])
+        return item
 
     def add_widget(self, widget=None, row=None, col=None, row_span=1, 
                    col_span=1):

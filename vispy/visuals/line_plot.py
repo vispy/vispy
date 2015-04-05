@@ -70,7 +70,11 @@ class LinePlotVisual(Visual):
                       edge_width=edge_width, connect=connect)
 
     def set_data(self, data, **kwargs):
-        pos = np.atleast_2d(data).T.astype(np.float32)
+        pos = np.atleast_1d(data).astype(np.float32)
+        if pos.ndim == 1:
+            pos = pos[:, np.newaxis]
+        elif pos.ndim > 2:
+            raise ValueError('data must have at most two dimensions')
 
         if pos.size == 0:
             pos = self._line.pos
@@ -85,7 +89,8 @@ class LinePlotVisual(Visual):
             pos = np.concatenate((x, pos), axis=1)
         # if args are empty, don't modify position
         elif pos.shape[1] > 2:
-            raise TypeError("Too many dimensions given (max is 2).")
+            raise TypeError("Too many coordinates given (%s; max is 2)."
+                            % pos.shape[1])
 
         # todo: have both sub-visuals share the same buffers.
         line_kwargs = {}
