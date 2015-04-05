@@ -466,14 +466,13 @@ class _SingleHue(Colormap):
 
     """
 
-    def __init__(self, hue=200, value=1.0, controls=None,
-                 interpolation='linear'):
+    def __init__(self, hue=200, value=1.0):
         colors = ColorArray([
-            (hue, 0.1, value),
+            (hue, 0.05, value),
             (hue, 1.0, value)
         ], color_space='hsv')
-        super(_SingleHue, self).__init__(colors, controls=controls,
-                                         interpolation=interpolation)
+        super(_SingleHue, self).__init__(colors)
+
 
 _colormaps = dict(
     autumn=Colormap([(1., 0., 0., 1.), (1., 1., 0., 1.)]),
