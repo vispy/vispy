@@ -12,7 +12,6 @@ Requires matplotlib.
 """
 
 import numpy as np
-import sys
 
 # You can use either matplotlib or vispy to render this example:
 # import matplotlib.pyplot as plt
@@ -54,8 +53,4 @@ plt.draw()
 # We are working to remove this limitation.
 
 if __name__ == '__main__':
-    # If in interactive mode (eg, "python -i"), do not block, because python
-    # will keep running.
-    # Otherwise, eg if called as "python mpl_plot.py", block so that the window
-    # is visible to the user before python quits.
-    plt.show(sys.flags.interactive == 0)
+    plt.show(True)
