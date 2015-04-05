@@ -7,7 +7,8 @@ from __future__ import division  # just to be safe...
 import numpy as np
 
 from .color_array import ColorArray
-
+from ..ext.six import string_types
+from ..ext.cubehelix import cubehelix
 
 ###############################################################################
 # Color maps
@@ -130,8 +131,10 @@ def _glsl_mix(controls=None):
                 ifs = 'else'
             else:
                 ifs = 'else if (t < %.6f)' % (controls[i+1])
-            s += "%s {\n    return mix($color_%d, $color_%d, t);\n} " % \
-                 (ifs, i, i+1)
+            adj_t = '(t - %s) / %s' % (controls[i],
+                                       controls[i+1] - controls[i])
+            s += ("%s {\n    return mix($color_%d, $color_%d, %s);\n} " %
+                  (ifs, i, i+1, adj_t))
     return "vec4 colormap(float t) {\n%s\n}" % s
 
 
@@ -154,7 +157,7 @@ def _glsl_step(controls=None):
 # Mini GLSL template system for colors.
 def _process_glsl_template(template, colors):
     """Replace $color_i by color #i in the GLSL template."""
-    for i in range(len(colors)):
+    for i in range(len(colors) - 1, -1, -1):
         color = colors[i]
         assert len(color) == 4
         vec4_color = 'vec4(%.3f, %.3f, %.3f, %.3f)' % tuple(color)
@@ -357,6 +360,73 @@ class Colormap(BaseColormap):
         return self._map_function(self.colors.rgba, x, self._controls)
 
 
+class CubeHelixColormap(Colormap):
+    def __init__(self, start=0.5, rot=1, gamma=1.0, reverse=True, nlev=32,
+                 minSat=1.2, maxSat=1.2, minLight=0., maxLight=1., **kwargs):
+        """Cube helix colormap
+
+        A full implementation of Dave Green's "cubehelix" for Matplotlib.
+        Based on the FORTRAN 77 code provided in
+        D.A. Green, 2011, BASI, 39, 289.
+
+        http://adsabs.harvard.edu/abs/2011arXiv1108.5083G
+
+        User can adjust all parameters of the cubehelix algorithm.
+        This enables much greater flexibility in choosing color maps, while
+        always ensuring the color map scales in intensity from black
+        to white. A few simple examples:
+
+        Default color map settings produce the standard "cubehelix".
+
+        Create color map in only blues by setting rot=0 and start=0.
+
+        Create reverse (white to black) backwards through the rainbow once
+        by setting rot=1 and reverse=True.
+
+        Parameters
+        ----------
+        start : scalar, optional
+            Sets the starting position in the color space. 0=blue, 1=red,
+            2=green. Defaults to 0.5.
+        rot : scalar, optional
+            The number of rotations through the rainbow. Can be positive
+            or negative, indicating direction of rainbow. Negative values
+            correspond to Blue->Red direction. Defaults to -1.5
+        gamma : scalar, optional
+            The gamma correction for intensity. Defaults to 1.0
+        reverse : boolean, optional
+            Set to True to reverse the color map. Will go from black to
+            white. Good for density plots where shade~density. Defaults to
+            False
+        nlev : scalar, optional
+            Defines the number of discrete levels to render colors at.
+            Defaults to 32.
+        sat : scalar, optional
+            The saturation intensity factor. Defaults to 1.2
+            NOTE: this was formerly known as "hue" parameter
+        minSat : scalar, optional
+            Sets the minimum-level saturation. Defaults to 1.2
+        maxSat : scalar, optional
+            Sets the maximum-level saturation. Defaults to 1.2
+        startHue : scalar, optional
+            Sets the starting color, ranging from [0, 360], as in
+            D3 version by @mbostock
+            NOTE: overrides values in start parameter
+        endHue : scalar, optional
+            Sets the ending color, ranging from [0, 360], as in
+            D3 version by @mbostock
+            NOTE: overrides values in rot parameter
+        minLight : scalar, optional
+            Sets the minimum lightness value. Defaults to 0.
+        maxLight : scalar, optional
+            Sets the maximum lightness value. Defaults to 1.
+        """
+        super(CubeHelixColormap, self).__init__(
+            cubehelix(start=start, rot=rot, gamma=gamma, reverse=reverse,
+                      nlev=nlev, minSat=minSat, maxSat=maxSat,
+                      minLight=minLight, maxLight=maxLight, **kwargs))
+
+
 class _Fire(BaseColormap):
     colors = [(1.0, 1.0, 1.0, 1.0),
               (1.0, 1.0, 0.0, 1.0),
@@ -451,12 +521,27 @@ _colormaps = dict(
     hot=_Hot(),
     ice=_Ice(),
     winter=_Winter(),
+    cubehelix=CubeHelixColormap(),
 )
 
 
 def get_colormap(name):
-    """Return a BaseColormap instance given its name."""
-    return _colormaps[name]
+    """Obtain a colormap
+
+    Parameters
+    ----------
+    name : str | Colormap
+        Colormap name. Can also be a Colormap for pass-through.
+    """
+    if isinstance(name, BaseColormap):
+        cmap = name
+    else:
+        if not isinstance(name, string_types):
+            raise TypeError('colormap must be a Colormap or string name')
+        if name not in _colormaps:
+            raise KeyError('colormap name %s not found' % name)
+        cmap = _colormaps[name]
+    return cmap
 
 
 def get_colormaps():

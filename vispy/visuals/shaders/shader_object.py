@@ -159,5 +159,5 @@ class ShaderObject(object):
             return '<%s at 0x%x>' % (self.__class__.__name__, id(self))
 
 
-from .variable import Variable
-from .expression import TextExpression
+from .variable import Variable  # noqa
+from .expression import TextExpression  # noqa

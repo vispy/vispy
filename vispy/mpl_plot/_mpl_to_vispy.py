@@ -67,7 +67,7 @@ class VispyRenderer(Renderer):
                      bgcolor=props['axesbg'])
         vb.clip_method = 'fbo'  # necessary for bgcolor
         vb.camera = PanZoomCamera()
-        vb.camera.set_range(xlim, ylim)
+        vb.camera.set_range(xlim, ylim, margin=0)
         ax_dict = dict(ax=ax, bounds=bounds, vb=vb, lims=xlim+ylim)
         self._axs[ax] = ax_dict
         self._resize(*self.canvas.size)
@@ -120,7 +120,7 @@ class VispyRenderer(Renderer):
         face_color.alpha = style['alpha']
         markers = Markers()
         markers.set_data(data, face_color=face_color, edge_color=edge_color,
-                         size=style['markersize'], style=style['marker'])
+                         size=style['markersize'], symbol=style['marker'])
         markers.parent = self._mpl_ax_to(mplobj).scene
 
     def draw_path(self, data, coordinates, pathcodes, style,

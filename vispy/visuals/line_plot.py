@@ -14,12 +14,30 @@ class LinePlotVisual(Visual):
 
     Parameters
     ----------
-    args : array | two arrays
-        Arguments can be passed as (Y,), (X, Y) or (np.array((X, Y))).
-    kwargs : keyword arguments
-        Keyword arguments to pass on to the LineVisual and Marker visuals.
-        Supported arguments are width, connect, color, edge_color, face_color,
-        and edge_width.
+    data : array-like
+        Arguments can be passed as ``(Y,)``, ``(X, Y)`` or
+        ``np.array((X, Y))``.
+    color : instance of Color
+        Color of the line.
+    symbol : str
+        Marker symbol to use.
+    line_kind : str
+        Kind of line to draw. For now, only solid lines (``'-'``)
+        are supported.
+    width : float
+        Line width.
+    marker_size : float
+        Marker size. If `size == 0` markers will not be shown.
+    edge_color : instance of Color
+        Color of the marker edge.
+    face_color : instance of Color
+        Color of the marker face.
+    edge_width : float
+        Edge width of the marker.
+    connect : str | array
+        See LineVisual.
+    **kwargs : keyword arguments
+        Argements to pass to the super class.
 
     Examples
     --------
@@ -31,44 +49,34 @@ class LinePlotVisual(Visual):
 
     See also
     --------
-    LineVisual, MarkersVisual
+    LineVisual, MarkersVisual, marker_types
     """
-    _line_kwargs = ['width', 'connect', 'color']
-    _marker_kwargs = ['edge_color', 'face_color', 'edge_width']
+    _line_kwargs = ('color', 'width', 'connect')
+    _marker_kwargs = ('edge_color', 'face_color', 'edge_width',
+                      'marker_size', 'symbol')
+    _kw_trans = dict(marker_size='size')
 
-    def __init__(self, *args, **kwargs):
-        my_kwargs = {}
-        for k in self._line_kwargs + self._marker_kwargs:
-            if k in kwargs:
-                my_kwargs[k] = kwargs.pop(k)
-
+    def __init__(self, data, color='k', symbol='o', line_kind='-',
+                 width=1., marker_size=10., edge_color='k', face_color='w',
+                 edge_width=1., connect='strip', **kwargs):
         Visual.__init__(self, **kwargs)
+        if line_kind != '-':
+            raise ValueError('Only solid lines currently supported')
         self._line = LineVisual()
         self._markers = MarkersVisual()
+        self.set_data(data, color=color, symbol=symbol,
+                      width=width, marker_size=marker_size,
+                      edge_color=edge_color, face_color=face_color,
+                      edge_width=edge_width, connect=connect)
 
-        self.set_data(*args, **my_kwargs)
+    def set_data(self, data, **kwargs):
+        pos = np.atleast_1d(data).astype(np.float32)
+        if pos.ndim == 1:
+            pos = pos[:, np.newaxis]
+        elif pos.ndim > 2:
+            raise ValueError('data must have at most two dimensions')
 
-    def set_data(self, *args, **kwargs):
-        args = [np.array(x) for x in args]
-
-        if len(args) == 1:
-            arg = args[0]
-            if arg.ndim == 2:
-                # xy array already provided
-                pos = arg
-            elif arg.ndim == 1:
-                # only y supplied, generate arange x
-                pos = np.empty((len(arg), 2), dtype=np.float32)
-                pos[:, 1] = arg
-                pos[:, 0] = np.arange(len(arg))
-            else:
-                raise TypeError("Invalid argument: array must have ndim "
-                                "<= 2.")
-        elif len(args) == 2:
-            pos = np.concatenate([args[0][:, np.newaxis],
-                                  args[1][:, np.newaxis]], axis=1)
-        # if args are empty, don't modify position
-        elif len(args) == 0:
+        if pos.size == 0:
             pos = self._line.pos
 
             # if both args and keywords are zero, then there is no
@@ -76,19 +84,26 @@ class LinePlotVisual(Visual):
             if len(kwargs) == 0:
                 raise TypeError("neither line points nor line properties"
                                 "are provided")
-        else:
-            raise TypeError("Too many positional arguments given (max is 2).")
+        elif pos.shape[1] == 1:
+            x = np.arange(pos.shape[0], dtype=np.float32)[:, np.newaxis]
+            pos = np.concatenate((x, pos), axis=1)
+        # if args are empty, don't modify position
+        elif pos.shape[1] > 2:
+            raise TypeError("Too many coordinates given (%s; max is 2)."
+                            % pos.shape[1])
 
         # todo: have both sub-visuals share the same buffers.
         line_kwargs = {}
         for k in self._line_kwargs:
             if k in kwargs:
-                line_kwargs[k] = kwargs.pop(k)
+                k_ = self._kw_trans[k] if k in self._kw_trans else k
+                line_kwargs[k] = kwargs.pop(k_)
         self._line.set_data(pos=pos, **line_kwargs)
         marker_kwargs = {}
         for k in self._marker_kwargs:
             if k in kwargs:
-                marker_kwargs[k] = kwargs.pop(k)
+                k_ = self._kw_trans[k] if k in self._kw_trans else k
+                marker_kwargs[k_] = kwargs.pop(k)
         self._markers.set_data(pos=pos, **marker_kwargs)
         if len(kwargs) > 0:
             raise TypeError("Invalid keyword arguments: %s" % kwargs.keys())

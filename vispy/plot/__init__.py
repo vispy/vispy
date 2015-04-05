@@ -2,10 +2,10 @@
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 """
-[Experimental] This module provides functions for displaying data from a
-command-line interface.
+This module provides functions for displaying data from a command-line
+interface.
 """
 
-from .plot import plot, image, mesh, scatter
+from .fig import Fig
 
-__all__ = ['plot', 'image', 'mesh', 'scatter']
+__all__ = ['Fig']
