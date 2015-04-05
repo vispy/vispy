@@ -508,6 +508,43 @@ class _Winter(BaseColormap):
                            np.sqrt(t))
 
 
+class _SingleHue(Colormap):
+    """A colormap which is solely defined by the given hue and value.
+
+    Given the color hue and value, this color map increases the saturation
+    of a color. The start color is almost white but still contains a hint of
+    the given color, and at the end the color is fully saturated.
+
+    Parameters
+    ----------
+    hue : scalar, optional
+        The number indicating the hue value. Must be in the range [0, 360].
+        Defaults to 200 (blue).
+    value : scalar, optional
+        The number represting the value component of a color. Must be in the
+        range [0, 1.0]. The default value is 100.
+    controls : array-like, optional
+        The list of control points for the given colors. It should be
+        an increasing list of floating-point number between 0.0 and 1.0.
+        The first control point must be 0.0. The last control point must be
+        1.0. The number of control points depends on the interpolation scheme.
+    interpolation : str, optional
+        The interpolation mode of the colormap. Default: 'linear'. Can also
+        be 'zero'.
+        If 'linear', ncontrols = ncolors (one color per control point).
+        If 'zero', ncontrols = ncolors+1 (one color per bin).
+
+    """
+
+    def __init__(self, hue=200, value=1.0, controls=None,
+                 interpolation='linear'):
+        colors = ColorArray([
+            (hue, 0.1, value),
+            (hue, 1.0, value)
+        ], color_space='hsv')
+        super(_SingleHue, self).__init__(colors, controls=controls,
+                                         interpolation=interpolation)
+
 _colormaps = dict(
     autumn=Colormap([(1., 0., 0., 1.), (1., 1., 0., 1.)]),
     blues=Colormap([(1., 1., 1., 1.), (0., 0., 1., 1.)]),
@@ -522,6 +559,7 @@ _colormaps = dict(
     ice=_Ice(),
     winter=_Winter(),
     cubehelix=CubeHelixColormap(),
+    single_hue=_SingleHue()
 )
 
 
