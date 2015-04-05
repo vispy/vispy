@@ -527,7 +527,7 @@ class PanZoomCamera(BaseCamera):
                 raise TypeError("factor must be scalar or length-2 sequence.")
             scale = list(factor)
         if self.aspect is not None:
-            factor[0] = factor[1]
+            scale[0] = scale[1]
         
         # Init some variables
         center = center if (center is not None) else self.center
