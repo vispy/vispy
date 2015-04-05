@@ -21,11 +21,11 @@ images = []
 for i in range(2):
     for j in range(2):
         v = grid.add_view(row=i, col=j, border_color='white')
-        #v.camera = 'turntable'
-        #v.camera.fov = 50
-        #v.camera.distance = 30
-        v.camera = 'panzoom'
-        v.camera.aspect = 1
+        v.camera = 'turntable'
+        v.camera.fov = 50
+        v.camera.distance = 30
+        #v.camera = 'panzoom'
+        #v.camera.aspect = 1
         
         views.append(v)
         image = scene.visuals.Image(imdata, grid=(1, 1))
