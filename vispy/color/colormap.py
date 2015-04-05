@@ -3,6 +3,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division  # just to be safe...
+import inspect
 
 import numpy as np
 
@@ -476,13 +477,29 @@ _colormaps = dict(
     hot=_Hot(),
     ice=_Ice(),
     winter=_Winter(),
-    single_hue=_SingleHue()
+    single_hue=_SingleHue
 )
 
 
-def get_colormap(name):
-    """Return a BaseColormap instance given its name."""
-    return _colormaps[name]
+def get_colormap(name, *args, **kwargs):
+    """Return a BaseColormap instance given its name.
+
+    Some colormaps can have additional configuration parameters. Refer to
+    their corresponding documentation for more information.
+
+    Examples
+    --------
+
+        >>> get_colormap('autumn')
+        >>> get_colormap('single_hue', hue=10)
+    """
+
+    colormap = _colormaps[name]
+
+    if inspect.isclass(colormap):
+        return colormap(*args, **kwargs)
+    else:
+        return colormap
 
 
 def get_colormaps():
