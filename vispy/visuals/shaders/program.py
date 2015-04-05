@@ -71,12 +71,6 @@ class ModularProgram(Program):
         self._need_build = True
         self.changed(code_changed=True, value_changed=False)
 
-    def prepare(self):
-        """ Prepare the Program so we can set attributes and uniforms.
-        """
-        pass
-        # todo: remove!
-
     def _dep_changed(self, dep, code_changed=False, value_changed=False):
         logger.debug("ModularProgram source changed: %s", self)
         if code_changed:
