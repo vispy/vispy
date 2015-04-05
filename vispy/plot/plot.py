@@ -7,6 +7,7 @@ import numpy as np
 from ..geometry import MeshData
 from ..io import read_mesh
 from ..scene import SceneCanvas, visuals, cameras
+from ..color import Colormap
 
 plots = []
 
@@ -16,13 +17,21 @@ def plot(*args, **kwargs):
 
     For arguments, see scene.visuals.LinePlot.
     """
-    canvas = SceneCanvas(keys='interactive')
+    canvas = SceneCanvas(keys='interactive', bgcolor='white')
     canvas.view = canvas.central_widget.add_view()
+    if 'edge_color' in kwargs and isinstance(kwargs['edge_color'], Colormap):
+        kwargs['edge_color'] = kwargs['edge_color'].colors
+    if 'face_color' in kwargs and isinstance(kwargs['face_color'], Colormap):
+        kwargs['face_color'] = kwargs['face_color'].colors
+    if 'color' in kwargs and isinstance(kwargs['color'], Colormap):
+        kwargs['color'] = kwargs['color'].colors
+    if 'face_color' not in kwargs:
+        kwargs['face_color'] = 'black'
     canvas.line = visuals.LinePlot(*args, **kwargs)
     canvas.view.add(canvas.line)
     if False:  # todo: of data-is-3D
         canvas.view.camera = 'turntable'
-    else:    
+    else:
         canvas.view.camera = 'panzoom'
     canvas.show()
     plots.append(canvas)
@@ -105,7 +114,7 @@ def mesh(vertices=None, faces=None, vertex_colors=None, face_colors=None,
                                face_colors=face_colors,
                                color=color, shading='smooth')
     canvas.view.add(canvas.mesh)
-    canvas.view.camera = cameras.TurntableCamera(fov=60, 
+    canvas.view.camera = cameras.TurntableCamera(fov=60,
                                                  azimuth=azimuth,
                                                  elevation=elevation)
     plots.append(canvas)
@@ -128,9 +137,9 @@ def scatter(*args, **kwargs):
     edge_width_rel : float | None
         The width as a fraction of marker size. Exactly one of
         `edge_width` and `edge_width_rel` must be supplied.
-    edge_color : Color | ColorArray
+    edge_color : Color | ColorArray | Colormap
         The color used to draw each symbol outline.
-    face_color : Color | ColorArray
+    face_color : Color | ColorArray | Colormap
         The color used to draw each symbol interior.
     scaling : bool
         If set to True, marker scales when rezooming.
@@ -141,7 +150,7 @@ def scatter(*args, **kwargs):
     vbar, hbar, cross, tailed_arrow, x, triangle_up, triangle_down,
     and star.
     '''
-    canvas = SceneCanvas(keys='interactive')
+    canvas = SceneCanvas(keys='interactive', bgcolor='white')
     canvas.view = canvas.central_widget.add_view()
     _pos = np.zeros((len(args[0]), 2))
     if len(args) == 1:
@@ -156,6 +165,12 @@ def scatter(*args, **kwargs):
         _pos[:, 1] = np.asarray(args[1])
     else:
         raise ValueError('Invalid shape for position data')
+    if 'edge_color' in kwargs and isinstance(kwargs['edge_color'], Colormap):
+        kwargs['edge_color'] = kwargs['edge_color'].colors
+    if 'face_color' in kwargs and isinstance(kwargs['face_color'], Colormap):
+        kwargs['face_color'] = kwargs['face_color'].colors
+    if 'face_color' not in kwargs:
+        kwargs['face_color'] = 'black'
     canvas.scatter = visuals.Markers()
     kwargs['pos'] = _pos
     canvas.scatter.set_data(**kwargs)
