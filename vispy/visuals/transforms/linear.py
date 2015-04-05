@@ -424,8 +424,8 @@ class PerspectiveTransform(AffineTransform):
     glsl_map = """
         vec4 perspective_transform_map(vec4 pos) {
             vec4 p = $matrix * pos;
-            p = p / max(p.w, 0.0000001);
-            p.w = 1.0;
+            //p = p / max(p.w, 0.0000001);
+            //p.w = 1.0;
             return p;
         }
     """
@@ -433,8 +433,8 @@ class PerspectiveTransform(AffineTransform):
     glsl_imap = """
         vec4 perspective_transform_imap(vec4 pos) {
             vec4 p = $inv_matrix * pos;
-            p /= min(p.w, -0.0000001);;
-            p.w = 1.0;
+            //p *= p.w;
+            //p.w = 1.0;
             return p;
         }
     """

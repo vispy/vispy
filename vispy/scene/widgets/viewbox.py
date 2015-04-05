@@ -221,6 +221,7 @@ class ViewBox(Widget):
             t = 'clip_method should be in %s' % str(valid_methods)
             raise ValueError((t + ', not %r') % value)
         self._clip_method = value
+        self.update()
 
     def draw(self, event):
         """ Draw the viewbox border/background, and prepare to draw the 

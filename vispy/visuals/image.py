@@ -128,6 +128,18 @@ class ImageVisual(Visual):
     @cmap.setter
     def cmap(self, cmap):
         self._cmap = get_colormap(cmap)
+        self.update()
+
+    @property
+    def method(self):
+        return self._method
+    
+    @method.setter
+    def method(self, m):
+        if self._method != m:
+            self._method = m
+            self._need_vertex_update = True
+            self.update()
 
     @property
     def size(self):

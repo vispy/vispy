@@ -11,34 +11,55 @@ canvas = scene.SceneCanvas(keys='interactive')
 canvas.size = 800, 600
 canvas.show()
 
-# Create two ViewBoxes, place side-by-side
-vb1 = scene.widgets.ViewBox(border_color='white', parent=canvas.scene)
-vb2 = scene.widgets.ViewBox(border_color='white', parent=canvas.scene)
-vb3 = scene.widgets.ViewBox(border_color='white', parent=canvas.scene)
-vb4 = scene.widgets.ViewBox(border_color='white', parent=canvas.scene)
-vb1.clip_method = 'fragment'
-vb2.clip_method = 'viewport'
-vb3.clip_method = 'viewport'
-vb4.clip_method = 'fbo'
-scenes = vb1.scene, vb2.scene, vb3.scene, vb4.scene
-
-# Put viewboxes in a grid
 grid = canvas.central_widget.add_grid()
-grid.padding = 6
-grid.add_widget(vb1, 0, 0)
-grid.add_widget(vb2, 0, 1)
-grid.add_widget(vb3, 1, 0)
-grid.add_widget(vb4, 1, 1)
+grid.padding = 20
 
-# Create some visuals to show
-im1 = io.load_crate().astype('float32') / 255
-for par in scenes:
-    image = scene.visuals.Image(im1, grid=(20, 20), parent=par)
+imdata = io.load_crate().astype('float32') / 255
 
-# Assign cameras
-for vb in (vb1, vb2, vb3, vb4):
-    vb.camera = scene.TurntableCamera()
-    vb.camera.fov = 50
+views = []
+images = []
+for i in range(2):
+    for j in range(2):
+        v = grid.add_view(row=i, col=j, border_color='white')
+        #v.camera = 'turntable'
+        #v.camera.fov = 50
+        #v.camera.distance = 30
+        v.camera = 'panzoom'
+        v.camera.aspect = 1
+        
+        views.append(v)
+        image = scene.visuals.Image(imdata, grid=(1, 1))
+        image.transform = scene.STTransform(translate=(-12.8, -12.8),
+                                            scale=(0.1, 0.1))
+        v.add(image)
+        images.append(image)
+        
+
+
+@canvas.connect
+def on_key_press(ev):
+    if ev.key.name == '1':
+        print "Image method: impostor"
+        for im in images:
+            im.method = 'impostor'
+    elif ev.key.name == '2':
+        print "Image method: subdivide"
+        for im in images:
+            im.method = 'subdivide'
+    elif ev.key.name == '3':
+        print "Viewbox method: fragment"
+        for vb in views:
+            vb.clip_method = 'fragment'
+    elif ev.key.name == '4':
+        print "Viewbox method: viewport"
+        for vb in views:
+            vb.clip_method = 'viewport'
+    elif ev.key.name == '5':
+        print "Viewbox method: fbo"
+        for vb in views:
+            vb.clip_method = 'fbo'
+    
+
 
 if __name__ == '__main__':
     if sys.flags.interactive != 1:
