@@ -26,6 +26,7 @@ from .mesh import MeshVisual  # noqa
 from .polygon import PolygonVisual  # noqa
 from .rectangle import RectangleVisual  # noqa
 from .regular_polygon import RegularPolygonVisual  # noqa
+from .spectrogram import SpectrogramVisual  # noqa
 from .surface_plot import SurfacePlotVisual  # noqa
 from .text import TextVisual  # noqa
 from .tube import TubeVisual  # noqa

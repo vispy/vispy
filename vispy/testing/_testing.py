@@ -337,7 +337,8 @@ def assert_image_equal(image, reference, limit=0.9):
         for jj in range(len(slice_as)):
             a = image[slice_as[ii], slice_as[jj]]
             b = ref[slice_bs[ii], slice_bs[jj]]
-            corr = np.corrcoef(a.ravel(), b.ravel())[0, 1]
+            with np.errstate(invalid='ignore'):
+                corr = np.corrcoef(a.ravel(), b.ravel())[0, 1]
             if corr > max_corr:
                 max_corr = corr
     if max_corr < limit:

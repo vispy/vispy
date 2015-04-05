@@ -23,11 +23,6 @@ class HistogramVisual(MeshVisual):
         Color of the histogram.
     orientation : {'h', 'v'}
         Orientation of the histogram.
-
-    Returns
-    -------
-    hist : instance of Polygon
-        The histogram polygon.
     """
     def __init__(self, data, bins=10, color='w', orientation='h'):
         #   4-5

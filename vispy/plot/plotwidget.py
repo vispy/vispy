@@ -5,8 +5,7 @@
 import numpy as np
 
 from ..scene import (Image, LinePlot, Volume, Mesh, Histogram,
-                     ViewBox, PanZoomCamera, TurntableCamera)
-from ..util.fourier import stft
+                     Spectrogram, ViewBox, PanZoomCamera, TurntableCamera)
 from ..io import read_mesh
 from ..geometry import MeshData
 
@@ -14,14 +13,6 @@ __all__ = ['PlotWidget']
 
 # Wish list:
 # * bar plot
-
-_quick_method_list = []
-
-
-def quick(fun):
-    """Decorator to auto-populate our plotting method list"""
-    _quick_method_list.append(fun.__name__)
-    return fun
 
 
 class PlotWidget(ViewBox):
@@ -36,7 +27,6 @@ class PlotWidget(ViewBox):
             self._camera_set = True
             self.camera = cls(*args, **kwargs)
 
-    @quick
     def histogram(self, data, bins=10, color='w', orientation='h'):
         """Calculate and show a histogram of data
 
@@ -61,7 +51,6 @@ class PlotWidget(ViewBox):
         self._set_camera(PanZoomCamera)
         return hist
 
-    @quick
     def image(self, data, cmap='cubehelix', clim='auto'):
         """Show an image
 
@@ -89,7 +78,6 @@ class PlotWidget(ViewBox):
         self._set_camera(PanZoomCamera, aspect=1)
         return image
 
-    @quick
     def mesh(self, vertices=None, faces=None, vertex_colors=None,
              face_colors=None, color=(0.5, 0.5, 1.), fname=None,
              meshdata=None, shading='smooth', center=(0., 0., 0.)):
@@ -138,7 +126,6 @@ class PlotWidget(ViewBox):
         self._set_camera(TurntableCamera, azimuth=0, elevation=0)                
         return mesh
 
-    @quick
     def plot(self, data, **kwargs):
         """Plot a series of data using lines and markers
 
@@ -179,9 +166,8 @@ class PlotWidget(ViewBox):
         self._set_camera(PanZoomCamera)
         return line
 
-    @quick
-    def spectrogram(self, x, n_fft=256, step=None, fs=1., cmap='cubehelix',
-                    clim='auto'):
+    def spectrogram(self, x, n_fft=256, step=None, fs=1., window='hann',
+                    color_scale='log', cmap='cubehelix', clim='auto'):
         """Calculate and show a spectrogram
 
         Parameters
@@ -196,6 +182,12 @@ class PlotWidget(ViewBox):
             will be used.
         fs : float
             The sample rate of the data.
+        window : str | None
+            Window function to use. Can be ``'hann'`` for Hann window, or None
+            for no windowing.
+        color_scale : {'linear', 'log'}
+            Scale to apply to the result of the STFT.
+            ``'log'`` will use ``10 * log10(power)``.
         cmap : str
             Colormap name.
         clim : str | tuple
@@ -204,22 +196,20 @@ class PlotWidget(ViewBox):
 
         Returns
         -------
-        spec : instance of Image
+        spec : instance of Spectrogram
             The spectrogram.
 
         See also
         --------
         Image
         """
-        # XXX once we have axes, we should use the "fft_freqs", too
-        data = stft(x, n_fft, step, fs)
-        data = 20 * np.log10(np.abs(data))
-        image = Image(data, clim=clim, cmap=cmap)
-        self.add(image)
+        # XXX once we have axes, we should use "fft_freqs", too
+        spec = Spectrogram(x, n_fft, step, fs, window,
+                           color_scale, cmap, clim)
+        self.add(spec)
         self._set_camera(PanZoomCamera)
-        return image
+        return spec
 
-    @quick
     def volume(self, vol, clim=None, style='mip', threshold=None,
                cmap='grays'):
         """Show a 3D volume
