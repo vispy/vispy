@@ -3,6 +3,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division  # just to be safe...
+import inspect
 
 import numpy as np
 
@@ -551,13 +552,22 @@ _colormaps = dict(
 )
 
 
-def get_colormap(name):
+def get_colormap(name, *args, **kwargs):
     """Obtain a colormap
+
+    Some colormaps can have additional configuration parameters. Refer to
+    their corresponding documentation for more information.
 
     Parameters
     ----------
     name : str | Colormap
         Colormap name. Can also be a Colormap for pass-through.
+
+    Examples
+    --------
+
+        >>> get_colormap('autumn')
+        >>> get_colormap('single_hue', hue=10)
     """
     if isinstance(name, BaseColormap):
         cmap = name
@@ -567,7 +577,11 @@ def get_colormap(name):
         if name not in _colormaps:
             raise KeyError('colormap name %s not found' % name)
         cmap = _colormaps[name]
-    return cmap
+
+        if inspect.isclass(cmap):
+            return cmap(*args, **kwargs)
+        else:
+            return cmap
 
 
 def get_colormaps():
