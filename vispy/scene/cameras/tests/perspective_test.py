@@ -60,7 +60,6 @@ def on_key_press(ev):
             vb.clip_method = 'fbo'
     
 
-
 if __name__ == '__main__':
     if sys.flags.interactive != 1:
         app.run()

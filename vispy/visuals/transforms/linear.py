@@ -49,13 +49,13 @@ class STTransform(BaseTransform):
     """
     glsl_map = """
         vec4 st_transform_map(vec4 pos) {
-            return (pos * $scale) + $translate;
+            return (pos * $scale) + $translate * pos.w;
         }
     """
 
     glsl_imap = """
         vec4 st_transform_imap(vec4 pos) {
-            return (pos - $translate) / $scale;
+            return (pos - $translate * pos.w) / $scale;
         }
     """
 
@@ -418,7 +418,7 @@ class PerspectiveTransform(AffineTransform):
     Matrix transform that also implements perspective division.
 
     """
-    # Note: Although OpenGL operates in homogeneouus coordinates, it may be
+    # Note: Although OpenGL operates in homogeneous coordinates, it may be
     # necessary to manually implement perspective division..
     # Perhaps we can find a way to avoid this.
     glsl_map = """
@@ -457,8 +457,8 @@ class PerspectiveTransform(AffineTransform):
     def map(self, coords):
         # looks backwards, but both matrices are transposed.
         v = np.dot(coords, self.matrix)
-        v /= v[:, 3].reshape(-1, 1)
-        v[:, 2] = 0
+        #v /= v[:, 3].reshape(-1, 1)
+        #v[:, 2] = 0
         return v
 
     #@arg_to_vec4
