@@ -49,13 +49,14 @@ class STTransform(BaseTransform):
     """
     glsl_map = """
         vec4 st_transform_map(vec4 pos) {
-            return (pos * $scale) + $translate * pos.w;
+            return vec4(pos.xyz * $scale.xyz + $translate.xyz * pos.w, pos.w);
         }
     """
 
     glsl_imap = """
         vec4 st_transform_imap(vec4 pos) {
-            return (pos - $translate * pos.w) / $scale;
+            return vec4((pos.xyz - $translate.xyz * pos.w) / $scale.xyz, 
+                        pos.w);
         }
     """
 
@@ -80,13 +81,20 @@ class STTransform(BaseTransform):
 
     @arg_to_vec4
     def map(self, coords):
-        n = coords.shape[-1]
-        return coords * self.scale[:n] + self.translate[:n]
+        m = np.empty(coords.shape)
+        m[:, :3] = (coords[:, :3] * self.scale[np.newaxis, :3] + 
+                    coords[:, 3:] * self.translate[np.newaxis, :3])
+        m[:, 3] = coords[:, 3]
+        return m
 
     @arg_to_vec4
     def imap(self, coords):
-        n = coords.shape[-1]
-        return (coords - self.translate[:n]) / self.scale[:n]
+        m = np.empty(coords.shape)
+        m[:, :3] = ((coords[:, :3] - 
+                     coords[:, 3:] * self.translate[np.newaxis, :3]) / 
+                    self.scale[np.newaxis, :3])
+        m[:, 3] = coords[:, 3]
+        return m
 
     def shader_map(self):
         if self._update_map:
@@ -418,26 +426,26 @@ class PerspectiveTransform(AffineTransform):
     Matrix transform that also implements perspective division.
 
     """
-    # Note: Although OpenGL operates in homogeneous coordinates, it may be
-    # necessary to manually implement perspective division..
-    # Perhaps we can find a way to avoid this.
-    glsl_map = """
-        vec4 perspective_transform_map(vec4 pos) {
-            vec4 p = $matrix * pos;
-            //p = p / max(p.w, 0.0000001);
-            //p.w = 1.0;
-            return p;
-        }
-    """
+    ## Note: Although OpenGL operates in homogeneouus coordinates, it may be
+    ## necessary to manually implement perspective division..
+    ## Perhaps we can find a way to avoid this.
+    #glsl_map = """
+        #vec4 perspective_transform_map(vec4 pos) {
+            #vec4 p = $matrix * pos;
+            #//p = p / max(p.w, 0.0000001);
+            #//p.w = 1.0;
+            #return p;
+        #}
+    #"""
 
-    glsl_imap = """
-        vec4 perspective_transform_imap(vec4 pos) {
-            vec4 p = $inv_matrix * pos;
-            //p *= p.w;
-            //p.w = 1.0;
-            return p;
-        }
-    """
+    #glsl_imap = """
+        #vec4 perspective_transform_imap(vec4 pos) {
+            #vec4 p = $inv_matrix * pos;
+            #//p *= p.w;
+            #//p.w = 1.0;
+            #return p;
+        #}
+    #"""
 
     ## Note 2: Are perspective matrices invertible??
     #glsl_imap = """
@@ -453,19 +461,19 @@ class PerspectiveTransform(AffineTransform):
     def set_frustum(self, l, r, b, t, n, f):
         self.matrix = transforms.frustum(l, r, b, t, n, f)
 
-    @arg_to_vec4
-    def map(self, coords):
-        # looks backwards, but both matrices are transposed.
-        v = np.dot(coords, self.matrix)
-        #v /= v[:, 3].reshape(-1, 1)
-        #v[:, 2] = 0
-        return v
+    #@arg_to_vec4
+    #def map(self, coords):
+        ## looks backwards, but both matrices are transposed.
+        #v = np.dot(coords, self.matrix)
+        ##v /= v[:, 3].reshape(-1, 1)
+        ##v[:, 2] = 0
+        #return v
 
     #@arg_to_vec4
     #def imap(self, coords):
-    #    return np.dot(coords, self.inv_matrix)
+       #return np.dot(coords, self.inv_matrix)
 
-    def __mul__(self, tr):
-        # Override multiplication -- this does not combine well with affine
-        # matrices.
-        return tr.__rmul__(self)
+    #def __mul__(self, tr):
+        ## Override multiplication -- this does not combine well with affine
+        ## matrices.
+        #return tr.__rmul__(self)

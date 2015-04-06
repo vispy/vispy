@@ -39,6 +39,7 @@ class Canvas(vispy.app.Canvas):
 
         tr = AffineTransform()
         tr.rotate(30, (0, 0, 1))
+        tr.rotate(40, (0, 1, 0))
         tr.scale((3, 3))
         self.images[1].transform = (STTransform(translate=(200, 600)) *
                                     tr *
