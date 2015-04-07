@@ -7,6 +7,10 @@
 """
 Compare an optimal pan/zoom implementation to the same functionality
 provided by scenegraph.
+
+Use --vispy-cprofile to see an overview of time spent in all functions.
+Use util.profiler and --vispy-profile=ClassName.method_name for more directed
+profiling measurements.
 """
 import numpy as np
 import math
@@ -344,6 +348,7 @@ if __name__ == '__main__':
     svisual = Signals(data)
     view = scanvas.central_widget.add_view()
     view.add(svisual)
+    view.camera = 'panzoom'
 
     import sys
     if sys.flags.interactive != 1:

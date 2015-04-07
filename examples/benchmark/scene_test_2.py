@@ -7,6 +7,10 @@
 """
 Compare an optimal plot grid implementation to the same functionality
 provided by scenegraph.
+
+Use --vispy-cprofile to see an overview of time spent in all functions.
+Use util.profiler and --vispy-profile=ClassName.method_name for more directed
+profiling measurements.
 """
 from __future__ import division
 import numpy as np
@@ -17,11 +21,11 @@ from vispy.util.profiler import Profiler
 
 class GridCanvas(app.Canvas):
     def __init__(self, cells, **kwargs):
-        super(GridCanvas, self).__init__(keys='interactive',
-                                         show=True, **kwargs)
         m, n = (10, 10)
         self.grid_size = (m, n)
         self.cells = cells
+        super(GridCanvas, self).__init__(keys='interactive',
+                                         show=True, **kwargs)
 
     def on_initialize(self, event):
         gloo.set_state(clear_color='black', blend=True,
