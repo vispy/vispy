@@ -18,15 +18,6 @@ from ...visuals.transforms import (STTransform, PerspectiveTransform,
                                    TransformCache)
 
 
-def sind(q):
-    return math.sin(q*math.pi/180)
-
-
-def cosd(q):
-    return math.cos(q*math.pi/180)
-
-# todo: allow panzoom camera to operate in other planes than Z (i.e. use up)
-
 # todo: Make 3D cameras use same internal state: less code, smooth transitions
 
 
@@ -85,7 +76,8 @@ class BaseCamera(Node):
     # These define the state of the camera
     _state_props = ()
 
-    ZOOM_FACTOR = 0.005
+    # The fractional zoom to apply for a single pixel of mouse motion 
+    zoom_factor = 0.007
 
     def __init__(self, interactive=True, flip=None, up='+z', **kwargs):
         super(BaseCamera, self).__init__(**kwargs)
@@ -500,7 +492,7 @@ class PanZoomCamera(BaseCamera):
         """ The ratio between the x and y dimension. E.g. to show a
         square image as square, the aspect should be 1. If None, the
         dimensions are scaled automatically, dependening on the
-        available space. Otherwise the ration between the dimensions
+        available space. Otherwise the ratio between the dimensions
         is fixed.
         """
         return self._aspect
@@ -518,25 +510,26 @@ class PanZoomCamera(BaseCamera):
 
         Parameters
         ----------
-        factor : float
-            A positive factor zooms in, a negative factor zooms out. The
-            magnification is 2**factor, e.g. zoom(1) will make the scene
-            appear twice as large. Zooming twice with factor x is the same
-            as zooming once with 2*x.
-        center : tuple of 2 or 3 elements
+        factor : float or tuple
+            Fraction by which the scene should be zoomed (e.g. a factor of 2
+            causes the scene to appear twice as large).
+        center : tuple of 2-4 elements
             The center of the view. If not given or None, use the
             current center.
         """
         assert len(center) in (2, 3, 4)
+        
         # Get scale factor, take scale ratio into account
-        if not isinstance(factor, (tuple, list)):
-            factor = factor, factor
-        if self.aspect is None:
-            factor = float(factor[0]), float(factor[1])
+        if np.isscalar(factor):
+            scale = [factor, factor]
         else:
-            factor = factor[1], factor[1]
+            if len(factor) != 2:
+                raise TypeError("factor must be scalar or length-2 sequence.")
+            scale = list(factor)
+        if self.aspect is not None:
+            scale[0] = scale[1]
+        
         # Init some variables
-        scale = 2 ** float(-factor[0]), 2 ** float(-factor[1])
         center = center if (center is not None) else self.center
         rect = self.rect
         # Get space from given center to edges
@@ -549,7 +542,7 @@ class PanZoomCamera(BaseCamera):
         rect.right = center[0] + right_space * scale[0]
         rect.bottom = center[1] - bottom_space * scale[1]
         rect.top = center[1] + top_space * scale[1]
-        #
+
         self.rect = rect
 
     def pan(self, *pan):
@@ -632,7 +625,7 @@ class PanZoomCamera(BaseCamera):
 
         if event.type == 'mouse_wheel':
             center = self._scene_transform.imap(event.pos)
-            self.zoom(event.delta[1] * self.ZOOM_FACTOR*30, center)
+            self.zoom((1 + self.zoom_factor) ** (-event.delta[1] * 30), center)
 
         elif event.type == 'mouse_move':
             if event.press_event is None:
@@ -654,9 +647,10 @@ class PanZoomCamera(BaseCamera):
                 # Zoom
                 p1c = np.array(event.last_event.pos)[:2]
                 p2c = np.array(event.pos)[:2]
-                scale = (p1c-p2c) * np.array([1, -1]) * -self.ZOOM_FACTOR
+                scale = ((1 + self.zoom_factor) ** 
+                         ((p1c-p2c) * np.array([1, -1])))
                 center = self._transform.imap(event.press_event.pos[:2])
-                self.zoom(tuple(scale), center)
+                self.zoom(scale, center)
 
     def _update_transform(self):
 
@@ -699,11 +693,7 @@ class PanZoomCamera(BaseCamera):
         # side (as if z was flipped).
 
         if self.up == '+z':
-            # Keep it simple, but we need to pass AffineTransform,
-            # because if we toggle to -z and then back to +z, things
-            # work incorrectly (test with flipped_axis.py)
-            # todo: fix this so we can just set to a STTransform
-            thetransform = self.transform * AffineTransform()
+            thetransform = self.transform
         else:
             rr = self._real_rect
             tr = AffineTransform()
@@ -925,7 +915,8 @@ class Base3DRotationCamera(PerspectiveCamera):
                 # Zoom
                 if self._event_value is None:
                     self._event_value = (self._scale_factor, self._distance)
-                zoomy = 2 ** float(d[1] * self.ZOOM_FACTOR)
+                zoomy = (1 + self.zoom_factor) ** d[1]
+                
                 self.scale_factor = self._event_value[0] * zoomy
                 # Modify distance if its given
                 if self._distance is not None:
@@ -955,7 +946,6 @@ class Base3DRotationCamera(PerspectiveCamera):
                     self._event_value = self._fov
                 fov = self._event_value - d[1] / 5.0
                 self.fov = min(180.0, max(0.0, fov))
-                print('FOV: %1.2f' % self.fov)
 
     def _update_camera_pos(self):
         """ Set the camera position and orientation"""
@@ -1148,10 +1138,9 @@ class TurntableCamera(Base3DRotationCamera):
 
     def _dist_to_trans(self, dist):
         """Convert mouse x, y movement into x, y, z translations"""
-        sro, saz, sel = list(map(sind, (self.roll, self.azimuth,
-                                        self.elevation)))
-        cro, caz, cel = list(map(cosd, (self.roll, self.azimuth,
-                                        self.elevation)))
+        rae = np.array([self.roll, self.azimuth, self.elevation]) * np.pi / 180
+        sro, saz, sel = np.sin(rae)
+        cro, caz, cel = np.cos(rae)
         dx = (+ dist[0] * (cro * caz + sro * sel * saz)
               + dist[1] * (sro * caz - cro * sel * saz))
         dy = (+ dist[0] * (cro * saz - sro * sel * caz)
