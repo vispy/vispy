@@ -8,6 +8,7 @@ import sys
 
 from ..visuals.visual import Visual
 from ..util.logs import logger, _handle_exception
+from ..util.profiler import Profiler
 
 
 class DrawingSystem(object):
@@ -16,10 +17,12 @@ class DrawingSystem(object):
 
     """
     def process(self, event, node):
+        prof = Profiler(str(node))
         # Draw this node if it is a visual
         if isinstance(node, Visual) and node.visible:
             try:
                 node.draw(event)
+                prof('draw')
             except Exception:
                 # get traceback and store (so we can do postmortem
                 # debugging)
@@ -35,6 +38,7 @@ class DrawingSystem(object):
                 self.process(event, sub_node)
             finally:
                 event.pop_node()
+            prof('process child %s', sub_node)
 
 
 class MouseInputSystem(object):
