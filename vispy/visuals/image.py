@@ -202,7 +202,7 @@ class ImageVisual(Visual):
                     // (if $transform does not affect z values, then this
                     // can be optimized as simply $transform.map(x) )
                     vec4 p1 = $transform(x);
-                    vec4 p2 = $transform(x + vec4(0, 0, 0.1, 0));
+                    vec4 p2 = $transform(x + vec4(0, 0, 0.5, 0));
                     p1 /= p1.w;
                     p2 /= p2.w;
                     vec4 d = p2 - p1;

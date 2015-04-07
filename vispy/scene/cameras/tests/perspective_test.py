@@ -28,11 +28,9 @@ for i in range(2):
         #v.camera.aspect = 1
         
         views.append(v)
-        image = scene.visuals.Image(imdata, method='impostor', grid=(10, 10))
-        #image.transform = scene.STTransform(translate=(-12.8, -12.8),
-                                            #scale=(0.1, 0.1))
-        image.transform = (scene.LogTransform([0, 1.1, 0]) * 
-                           scene.STTransform(translate=(0.1, 0.1), scale=(0.1, 0.1)))
+        image = scene.visuals.Image(imdata, method='impostor', grid=(4, 4))
+        image.transform = scene.STTransform(translate=(-12.8, -12.8),
+                                            scale=(0.1, 0.1))
         v.add(image)
         images.append(image)
         
