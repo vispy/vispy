@@ -80,6 +80,7 @@ def create_cube():
     filled = np.resize(
         np.array([0, 1, 2, 0, 2, 3], dtype=itype), 6 * (2 * 3))
     filled += np.repeat(4 * np.arange(6, dtype=itype), 6)
+    filled = filled.reshape((len(filled) // 3, 3))
 
     outline = np.resize(
         np.array([0, 1, 1, 2, 2, 3, 3, 0], dtype=itype), 6 * (2 * 4))
