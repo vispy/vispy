@@ -9,7 +9,7 @@ import numpy as np
 from ..gloo import set_state, Texture2D
 from ..color import get_colormap
 from .shaders import ModularProgram, Function, FunctionChain
-from .transforms import STTransform, NullTransform
+from .transforms import NullTransform
 from .visual import Visual
 from ..ext.six import string_types
 
@@ -190,8 +190,6 @@ class ImageVisual(Visual):
                                  [-1, -1], [1, 1], [-1, 1]],
                                 dtype=np.float32)
             tex_coords = vertices
-            tex_transform = STTransform(scale=(1./self._data.shape[0],
-                                               1./self._data.shape[1]))
 
             # vertex shader provides ND coordinates; 
             # fragment shader maps to texture coordinates

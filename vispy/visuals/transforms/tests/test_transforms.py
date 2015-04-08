@@ -165,7 +165,7 @@ def test_map_rect():
 
 def test_st_transform():
     # Check that STTransform maps exactly like AffineTransform
-    pts = np.random.normal(size=(10,4))
+    pts = np.random.normal(size=(10, 4))
     
     scale = (1, 7.5, -4e-8)
     translate = (1e6, 0.2, 0)

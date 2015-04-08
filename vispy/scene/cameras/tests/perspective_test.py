@@ -35,7 +35,6 @@ for i in range(2):
         images.append(image)
         
 
-
 @canvas.connect
 def on_key_press(ev):
     if ev.key.name == '1':

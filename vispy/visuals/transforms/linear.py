@@ -426,54 +426,8 @@ class PerspectiveTransform(AffineTransform):
     Matrix transform that also implements perspective division.
 
     """
-    ## Note: Although OpenGL operates in homogeneouus coordinates, it may be
-    ## necessary to manually implement perspective division..
-    ## Perhaps we can find a way to avoid this.
-    #glsl_map = """
-        #vec4 perspective_transform_map(vec4 pos) {
-            #vec4 p = $matrix * pos;
-            #//p = p / max(p.w, 0.0000001);
-            #//p.w = 1.0;
-            #return p;
-        #}
-    #"""
-
-    #glsl_imap = """
-        #vec4 perspective_transform_imap(vec4 pos) {
-            #vec4 p = $inv_matrix * pos;
-            #//p *= p.w;
-            #//p.w = 1.0;
-            #return p;
-        #}
-    #"""
-
-    ## Note 2: Are perspective matrices invertible??
-    #glsl_imap = """
-    #    vec4 perspective_transform_imap(vec4 pos) {
-    #        return $inv_matrix * pos;
-    #    }
-    #"""
-
-    # todo: merge with affinetransform?
     def set_perspective(self, fov, aspect, near, far):
         self.matrix = transforms.perspective(fov, aspect, near, far)
 
     def set_frustum(self, l, r, b, t, n, f):
         self.matrix = transforms.frustum(l, r, b, t, n, f)
-
-    #@arg_to_vec4
-    #def map(self, coords):
-        ## looks backwards, but both matrices are transposed.
-        #v = np.dot(coords, self.matrix)
-        ##v /= v[:, 3].reshape(-1, 1)
-        ##v[:, 2] = 0
-        #return v
-
-    #@arg_to_vec4
-    #def imap(self, coords):
-       #return np.dot(coords, self.inv_matrix)
-
-    #def __mul__(self, tr):
-        ## Override multiplication -- this does not combine well with affine
-        ## matrices.
-        #return tr.__rmul__(self)
