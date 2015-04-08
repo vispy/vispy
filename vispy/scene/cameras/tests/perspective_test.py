@@ -38,23 +38,23 @@ for i in range(2):
 @canvas.connect
 def on_key_press(ev):
     if ev.key.name == '1':
-        print "Image method: impostor"
+        print("Image method: impostor")
         for im in images:
             im.method = 'impostor'
     elif ev.key.name == '2':
-        print "Image method: subdivide"
+        print("Image method: subdivide")
         for im in images:
             im.method = 'subdivide'
     elif ev.key.name == '3':
-        print "Viewbox method: fragment"
+        print("Viewbox method: fragment")
         for vb in views:
             vb.clip_method = 'fragment'
     elif ev.key.name == '4':
-        print "Viewbox method: viewport"
+        print("Viewbox method: viewport")
         for vb in views:
             vb.clip_method = 'viewport'
     elif ev.key.name == '5':
-        print "Viewbox method: fbo"
+        print("Viewbox method: fbo")
         for vb in views:
             vb.clip_method = 'fbo'
     
