@@ -51,37 +51,15 @@ VERT_SHADER = """
 attribute vec3 a_position;
 attribute vec3 a_texcoord;
 uniform vec3 u_shape;
-uniform float u_cameraclip;
 
 varying vec3 v_texcoord;
-varying vec3 v_ray;
+varying vec3 v_position;
 varying vec4 v_clipplane;
 
 void main() {
     v_texcoord = a_texcoord;
-    gl_Position = $transform(vec4(a_position, 1.0));
-    
-    // Project local vertex coordinate to camera position. Then do a step
-    // backward (in cam coords) and project back. Voila, we get our ray vector.
-    // This vector does not interpolate nicely between vertices when 
-    // we have perspective view transform. Therefore we create a grid of 
-    // vertices rather than one quad per face.
-    vec4 pos_in_cam1 = $viewtransformf(vec4(a_position, 1.0));
-    vec4 pos_in_cam2 = pos_in_cam1 + vec4(0.0, 0.0, 1.0, 0.0); // step backward
-    vec4 position2 = $viewtransformi(vec4(pos_in_cam2.xyz, 1.0));
-    
-    // Calculate ray. In the fragment shader we do another normalization
-    // and scale for texture coords; interpolation does not maintain
-    // vector length
-    v_ray = normalize(a_position - position2.xyz);
-    
-    // Calculate a clip plane (in texture coordinates) for the camera
-    // position, in case that the camera is inside the volume.
-    pos_in_cam1.zw = vec2(u_cameraclip, 1.0);
-    vec3 cameraposinvol = $viewtransformi(pos_in_cam1).xyz;
-    cameraposinvol /= u_shape;  // express in texture coords
-    v_clipplane.xyz = v_ray;
-    v_clipplane.w = dot(v_clipplane.xyz, cameraposinvol);
+    v_position = a_position;
+    gl_Position = $transform(vec4(v_position, 1));
 }
 """  # noqa
 
@@ -92,11 +70,12 @@ uniform $sampler_type u_volumetex;
 uniform vec3 u_shape;
 uniform float u_threshold;
 uniform float u_relative_step_size;
+uniform float u_cameraclip;
 
 //varyings
 varying vec3 v_texcoord;
-varying vec3 v_ray;
-varying vec4 v_clipplane;
+varying vec3 v_position;
+vec4 v_clipplane;
 
 // uniforms for lighting. Hard coded until we figure out how to do lights
 const vec4 u_ambient = vec4(0.2, 0.4, 0.2, 1.0);
@@ -106,11 +85,33 @@ const float u_shininess = 40.0;
 
 //varying vec3 lightDirs[1];
 //varying vec3 V; // view direction
+vec3 v_ray;
 
 vec4 calculateColor(vec4, vec3, vec3);
 float rand(vec2 co);
 
 void main() {{
+    // Project local vertex coordinate to camera position. Then do a step
+    // backward (in cam coords) and project back. Voila, we get our ray vector.
+    // This vector does not interpolate nicely between vertices when 
+    // we have perspective view transform. Therefore we create a grid of 
+    // vertices rather than one quad per face.
+    vec4 pos_in_cam1 = $viewtransformf(vec4(v_position, 1));
+    vec4 pos_in_cam2 = pos_in_cam1 + vec4(0.0, 0.0, 1.0, 0.0); // step backward
+    vec4 position2 = $viewtransformi(pos_in_cam2);
+    
+    // Calculate ray. In the fragment shader we do another normalization
+    // and scale for texture coords; interpolation does not maintain
+    // vector length
+    v_ray = normalize(v_position.xyz - position2.xyz/position2.w);
+
+    // Calculate a clip plane (in texture coordinates) for the camera
+    // position, in case that the camera is inside the volume.
+    pos_in_cam1.zw = vec2(u_cameraclip, 1.0);
+    vec3 cameraposinvol = $viewtransformi(pos_in_cam1).xyz;
+    cameraposinvol /= u_shape;  // express in texture coords
+    v_clipplane.xyz = v_ray;
+    v_clipplane.w = dot(v_clipplane.xyz, cameraposinvol);
     
     // Discart front facing
     //if (!gl_FrontFacing)
@@ -628,7 +629,7 @@ class VolumeVisual(Visual):
         
         # Get indices and vertices for triangles. 
         indices, tex_coord, ver_coord = self._calc_coords(tex_coord, ver_coord,
-                                                          div)
+                                                          2)
         
         # Turn into structured array
         N = len(tex_coord)
@@ -720,8 +721,8 @@ class VolumeVisual(Visual):
         # Get and set transforms
         view_tr_f = transforms.visual_to_document
         view_tr_i = view_tr_f.inverse
-        self._program.vert['viewtransformf'] = view_tr_f
-        self._program.vert['viewtransformi'] = view_tr_i
+        self._program.frag['viewtransformf'] = view_tr_f
+        self._program.frag['viewtransformi'] = view_tr_i
         
         # Set attributes that are specific to certain methods
         self._program.build_if_needed()
