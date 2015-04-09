@@ -256,6 +256,7 @@ class Console(Widget):
         # ensure we only have ASCII chars
         text = text.encode('utf-8').decode('ascii', errors='replace')
         self._pending_writes.append((text, wrap))
+        self.update()
 
     def _do_pending_writes(self):
         """Do any pending text writes"""
