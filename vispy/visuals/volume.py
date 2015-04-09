@@ -59,7 +59,7 @@ varying vec4 v_clipplane;
 void main() {
     v_texcoord = a_texcoord;
     v_position = a_position;
-    gl_Position = $transform(vec4(v_position, 1));
+    gl_Position = $transform(vec4(v_position, 1.0));
 }
 """  # noqa
 
