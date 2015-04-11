@@ -459,6 +459,19 @@ class _Grays(BaseColormap):
         else:
             return np.array([t, t, t, 1.0], dtype=np.float32)
 
+class _TGrays(BaseColormap):
+    glsl_map = """
+    vec4 tgrays(float t) {
+        return vec4(t, t, t, t);
+    }
+    """
+
+    def map(self, t):
+        if isinstance(t, np.ndarray):
+            return np.hstack([t, t, t, t]).astype(np.float32)
+        else:
+            return np.array([t, t, t, t], dtype=np.float32)
+
 
 class _Ice(BaseColormap):
     glsl_map = """
@@ -518,6 +531,7 @@ _colormaps = dict(
     summer=Colormap([(0., .5, .4, 1.), (1., 1., .4, 1.)]),
     fire=_Fire(),
     grays=_Grays(),
+    tgrays=_TGrays(),
     hot=_Hot(),
     ice=_Ice(),
     winter=_Winter(),

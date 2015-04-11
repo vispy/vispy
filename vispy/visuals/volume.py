@@ -126,8 +126,8 @@ void main() {{
     
     // Offset the ray with a random amount to make for a smoother
     // appearance when rotating the camera. noise is [0..1].
-    float noise = rand((ray.xy * 10.0 + edgeloc.xy) * 100.0);
-    edgeloc += ray * (0.5 - noise);
+    //float noise = rand((ray.xy * 10.0 + edgeloc.xy) * 100.0);
+    //edgeloc += ray * (0.5 - noise);
     
     // Instead of discarding based on gl_FrontFacing, we can also discard
     // on number of steps.
@@ -328,6 +328,22 @@ MIP_SNIPPETS = dict(
         """,
 )
 
+
+MIP_SNIPPETS = dict(
+    before_loop="""
+        vec4 integrated_color = vec4(0., 0., 0., 0.);
+        """,
+    in_loop="""
+        color = $cmap(color);
+        float t1 = 1.0 - integrated_color.a;
+        float t2 = 1.0 - color.a;
+        integrated_color = vec4((color.rgb * t1) + (integrated_color.rgb * integrated_color.a), (1.0 - t1*t2));
+        """,
+    after_loop="""
+        gl_FragColor = integrated_color;
+        """,
+)
+
 MIP_FRAG_SHADER = FRAG_SHADER.format(**MIP_SNIPPETS)
 
 ISO_SNIPPETS = dict(
@@ -393,7 +409,7 @@ class VolumeVisual(Visual):
     """
 
     def __init__(self, vol, clim=None, method='mip', threshold=None, 
-                 relative_step_size=0.8, cmap='grays',
+                 relative_step_size=0.8, cmap='tgrays',
                  emulate_texture=False):
         Visual.__init__(self)
         tex_cls = TextureEmulated3D if emulate_texture else Texture3D
