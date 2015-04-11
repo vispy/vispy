@@ -598,7 +598,6 @@ _colormaps = dict(
 
 
 def get_colormap(name, *args, **kwargs):
-<<<<<<< HEAD
     """Obtain a colormap
 
     Some colormaps can have additional configuration parameters. Refer to
