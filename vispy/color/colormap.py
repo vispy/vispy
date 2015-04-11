@@ -522,6 +522,12 @@ class _SingleHue(Colormap):
         The number indicating the hue value, which refers to a "true" color, without
         any shading or tinting. Must be in the range [0, 360]. Defaults to
         200 (blue).
+    saturation_range : array-like, optional
+        The saturation represents how "pure" a color is. Less saturation means
+        more white light mixed in the color. A fully saturated color means
+        the pure color defined by the hue. No saturation means completely white.
+        This colormap changes the saturation, and with this parameter you can
+        specify the lower and upper bound. Default is [0.2, 0.8].
     value : scalar, optional
         The number represting the value component of a color. This defines the
         "brightness" of a color: a value of 0.0 means completely black while a value
@@ -535,10 +541,10 @@ class _SingleHue(Colormap):
     .. _wikipedia page: https://en.wikipedia.org/wiki/Hue
     """
 
-    def __init__(self, hue=200, value=1.0):
+    def __init__(self, hue=200, saturation_range=[0.2, 0.8], value=1.0):
         colors = ColorArray([
-            (hue, 0.05, value),
-            (hue, 1.0, value)
+            (hue, saturation_range[0], value),
+            (hue, saturation_range[1], value)
         ], color_space='hsv')
         super(_SingleHue, self).__init__(colors)
 
