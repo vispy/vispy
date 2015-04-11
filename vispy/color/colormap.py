@@ -519,11 +519,20 @@ class _SingleHue(Colormap):
     Parameters
     ----------
     hue : scalar, optional
-        The number indicating the hue value. Must be in the range [0, 360].
-        Defaults to 200 (blue).
+        The number indicating the hue value, which refers to a "true" color, without
+        any shading or tinting. Must be in the range [0, 360]. Defaults to
+        200 (blue).
     value : scalar, optional
-        The number represting the value component of a color. Must be in the
+        The number represting the value component of a color. This defines the
+        "brightness" of a color: a value of 0.0 means completely black while a value
+        of 1.0 means the color defined by the hue without shading. Must be in the
         range [0, 1.0]. The default value is 1.0.
+
+    Notes
+    -----
+    For more information about the hue values see the `wikipedia page`_.
+
+    .. _wikipedia page: https://en.wikipedia.org/wiki/Hue
     """
 
     def __init__(self, hue=200, value=1.0):
@@ -548,17 +557,17 @@ class _HSL(Colormap):
     hue_start : int (optional)
         The hue start value. Must be in the range [0, 360], the default is 0.
     saturation : float (optional)
-        The saturation component of the colors generated. The default is fully
+        The saturation component of the colors to generate. The default is fully
         saturated (1.0). Must be in the range [0, 1.0].
     value : float (optional)
-        The value component of the generated components or "brightness". Must
+        The value component of the colors to generate or "brightness". Must
         be in the range [0, 1.0], and the default is 1.0
-    controls : array-like
-        The list of control points for the given colors. It should be
+    controls : array-like (optional)
+        The list of control points for the colors to generate. It should be
         an increasing list of floating-point number between 0.0 and 1.0.
         The first control point must be 0.0. The last control point must be
         1.0. The number of control points depends on the interpolation scheme.
-    interpolation : str
+    interpolation : str (optional)
         The interpolation mode of the colormap. Default: 'linear'. Can also
         be 'zero'.
         If 'linear', ncontrols = ncolors (one color per control point).
