@@ -10,6 +10,7 @@ import numpy as np
 from .color_array import ColorArray
 from ..ext.six import string_types
 from ..ext.cubehelix import cubehelix
+from ..ext import husl
 
 ###############################################################################
 # Color maps
@@ -593,6 +594,51 @@ class _HSL(Colormap):
                                    interpolation=interpolation)
 
 
+class _HUSL(Colormap):
+    """A colormap which is defined by n evenly spaced points in
+    the HUSL hue space.
+
+    Parameters
+    ---------
+    n_colors : int (optional)
+        The number of colors to generate.
+    hue_start : int (optional)
+        The hue start value. Must be in the range [0, 360], the default is 0.
+    saturation : float (optional)
+        The saturation component of the colors to generate. The default is
+        fully saturated (1.0). Must be in the range [0, 1.0].
+    value : float (optional)
+        The value component of the colors to generate or "brightness". Must
+        be in the range [0, 1.0], and the default is 1.0
+    controls : array-like (optional)
+        The list of control points for the colors to generate. It should be
+        an increasing list of floating-point number between 0.0 and 1.0.
+        The first control point must be 0.0. The last control point must be
+        1.0. The number of control points depends on the interpolation scheme.
+    interpolation : str (optional)
+        The interpolation mode of the colormap. Default: 'linear'. Can also
+        be 'zero'.
+        If 'linear', ncontrols = ncolors (one color per control point).
+        If 'zero', ncontrols = ncolors+1 (one color per bin).
+    """
+
+    def __init__(self, ncolors=6, hue_start=0, saturation=1.0, value=0.7,
+                 controls=None, interpolation='linear'):
+        hues = np.linspace(0, 360, ncolors + 1, dtype='int')[:-1]
+        hues += hue_start
+        hues %= 359
+
+        saturation *= 99
+        value *= 99
+
+        colors = ColorArray(
+            [husl.husl_to_rgb(hue, saturation, value) for hue in hues],
+        )
+
+        super(_HUSL, self).__init__(colors, controls=controls,
+                                    interpolation=interpolation)
+
+
 _colormaps = dict(
     autumn=Colormap([(1., 0., 0., 1.), (1., 1., 0., 1.)]),
     blues=Colormap([(1., 1., 1., 1.), (0., 0., 1., 1.)]),
@@ -608,7 +654,8 @@ _colormaps = dict(
     winter=_Winter(),
     cubehelix=CubeHelixColormap(),
     single_hue=_SingleHue,
-    hsl=_HSL
+    hsl=_HSL,
+    husl=_HUSL
 )
 
 
