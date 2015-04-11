@@ -609,7 +609,7 @@ class _HUSL(Colormap):
         fully saturated (1.0). Must be in the range [0, 1.0].
     value : float (optional)
         The value component of the colors to generate or "brightness". Must
-        be in the range [0, 1.0], and the default is 1.0
+        be in the range [0, 1.0], and the default is 0.7.
     controls : array-like (optional)
         The list of control points for the colors to generate. It should be
         an increasing list of floating-point number between 0.0 and 1.0.
@@ -620,6 +620,10 @@ class _HUSL(Colormap):
         be 'zero'.
         If 'linear', ncontrols = ncolors (one color per control point).
         If 'zero', ncontrols = ncolors+1 (one color per bin).
+
+    Notes
+    -----
+    For more information about HUSL colors see http://husl-colors.org
     """
 
     def __init__(self, ncolors=6, hue_start=0, saturation=1.0, value=0.7,
