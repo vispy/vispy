@@ -538,13 +538,19 @@ class TextureEmulated3D(Texture2D):
 
     _glsl_sample = """
         vec4 sample(sampler2D tex, vec3 texcoord) {
-            float index = floor(texcoord.z * $depth);
+            float z = texcoord.z * $depth;
+            float zindex1 = floor(z);
+            float u1 = (mod(zindex1, $r) + texcoord.x) / $r;
+            float v1 = (floor(zindex1 / $r) + texcoord.y) / $c;
 
-            // Do a lookup in the 2D texture
-            float u = (mod(index, $r) + texcoord.x) / $r;
-            float v = (floor(index / $r) + texcoord.y) / $c;
+            float zindex2 = zindex1 + 1.0;
+            float u2 = (mod(zindex2, $r) + texcoord.x) / $r;
+            float v2 = (floor(zindex2 / $r) + texcoord.y) / $c;
 
-            return texture2D(tex, vec2(u,v));
+            vec4 s1 = texture2D(tex, vec2(u1, v1));
+            vec4 s2 = texture2D(tex, vec2(u2, v2));
+            
+            return s1 * (zindex2 - z) + s2 * (z - zindex1);
         }
     """
 
