@@ -519,9 +519,9 @@ class _SingleHue(Colormap):
     Parameters
     ----------
     hue : scalar, optional
-        The number indicating the hue value, which refers to a "true" color, without
-        any shading or tinting. Must be in the range [0, 360]. Defaults to
-        200 (blue).
+        The number indicating the hue value, which refers to a "true" color,
+        without any shading or tinting. Must be in the range [0, 360]. Defaults
+        to 200 (blue).
     saturation_range : array-like, optional
         The saturation represents how "pure" a color is. Less saturation means
         more white light mixed in the color. A fully saturated color means
@@ -530,9 +530,9 @@ class _SingleHue(Colormap):
         specify the lower and upper bound. Default is [0.2, 0.8].
     value : scalar, optional
         The number represting the value component of a color. This defines the
-        "brightness" of a color: a value of 0.0 means completely black while a value
-        of 1.0 means the color defined by the hue without shading. Must be in the
-        range [0, 1.0]. The default value is 1.0.
+        "brightness" of a color: a value of 0.0 means completely black while a
+        value of 1.0 means the color defined by the hue without shading. Must
+        be in the range [0, 1.0]. The default value is 1.0.
 
     Notes
     -----
@@ -563,8 +563,8 @@ class _HSL(Colormap):
     hue_start : int (optional)
         The hue start value. Must be in the range [0, 360], the default is 0.
     saturation : float (optional)
-        The saturation component of the colors to generate. The default is fully
-        saturated (1.0). Must be in the range [0, 1.0].
+        The saturation component of the colors to generate. The default is
+        fully saturated (1.0). Must be in the range [0, 1.0].
     value : float (optional)
         The value component of the colors to generate or "brightness". Must
         be in the range [0, 1.0], and the default is 1.0
@@ -642,6 +642,7 @@ def get_colormap(name, *args, **kwargs):
             cmap = cmap(*args, **kwargs)
 
     return cmap
+
 
 def get_colormaps():
     """Return the list of colormap names."""
