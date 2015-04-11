@@ -536,7 +536,20 @@ class TextureEmulated3D(Texture2D):
     to a 2D array.
     """
 
-    _glsl_sample = """
+    # TODO: does GL's nearest use floor or round?
+    _glsl_sample_nearest = """
+        vec4 sample(sampler2D tex, vec3 texcoord) {
+            float index = floor(texcoord.z * $depth);
+
+            // Do a lookup in the 2D texture
+            float u = (mod(index, $r) + texcoord.x) / $r;
+            float v = (floor(index / $r) + texcoord.y) / $c;
+
+            return texture2D(tex, vec2(u,v));
+        }
+    """
+
+    _glsl_sample_linear = """
         vec4 sample(sampler2D tex, vec3 texcoord) {
             float z = texcoord.z * $depth;
             float zindex1 = floor(z);
@@ -558,11 +571,14 @@ class TextureEmulated3D(Texture2D):
 
     def __init__(self, data=None, format=None, **kwargs):
         from ..visuals.shaders import Function 
-        self._glsl_sample = Function(self.__class__._glsl_sample)
 
         self._set_emulated_shape(data)
         Texture2D.__init__(self, self._normalize_emulated_shape(data),
                            format, **kwargs)
+        if self.interpolation == 'nearest':
+            self._glsl_sample = Function(self.__class__._glsl_sample_nearest)
+        else:
+            self._glsl_sample = Function(self.__class__._glsl_sample_linear)
         self._update_variables()
 
     def _set_emulated_shape(self, data_or_shape):
