@@ -643,6 +643,23 @@ class _HUSL(Colormap):
                                     interpolation=interpolation)
 
 
+class _Diverging(Colormap):
+
+    def __init__(self, h_pos=20, h_neg=250, saturation=1.0, value=0.7,
+                 center="light"):
+        saturation *= 99
+        value *= 99
+
+        start = husl.husl_to_rgb(h_neg, saturation, value)
+        mid = ((0.133, 0.133, 0.133) if center == "dark" else
+               (0.95, 0.95, 0.95))
+        end = husl.husl_to_rgb(h_pos, saturation, value)
+
+        colors = ColorArray([start, mid, end])
+
+        super(_Diverging, self).__init__(colors)
+
+
 _colormaps = dict(
     autumn=Colormap([(1., 0., 0., 1.), (1., 1., 0., 1.)]),
     blues=Colormap([(1., 1., 1., 1.), (0., 0., 1., 1.)]),
@@ -659,7 +676,8 @@ _colormaps = dict(
     cubehelix=CubeHelixColormap(),
     single_hue=_SingleHue,
     hsl=_HSL,
-    husl=_HUSL
+    husl=_HUSL,
+    diverging=_Diverging
 )
 
 
