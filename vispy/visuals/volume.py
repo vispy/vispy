@@ -335,9 +335,17 @@ MIP_SNIPPETS = dict(
         """,
     in_loop="""
         color = $cmap(color);
-        float t1 = 1.0 - integrated_color.a;
-        float t2 = 1.0 - color.a;
-        integrated_color = vec4((color.rgb * t1) + (integrated_color.rgb * integrated_color.a), (1.0 - t1*t2));
+        float a1 = integrated_color.a;
+        float a2 = color.a;
+        float t1 = 1.0 - a1;
+        float t2 = 1.0 - a2;
+        
+        // Translucent
+        //integrated_color = vec4((color.rgb * t1) + (integrated_color.rgb * a1), );
+        integrated_color = vec4((color.rgb * t1) + (integrated_color.rgb * a1), a1 + a2 * t1);
+        
+        // Additive
+        //integrated_color = vec4(integrated_color.rgb + (color.rgb * color.a), (1.0 - t1*t2));
         """,
     after_loop="""
         gl_FragColor = integrated_color;
@@ -412,6 +420,7 @@ class VolumeVisual(Visual):
                  relative_step_size=0.8, cmap='tgrays',
                  emulate_texture=False):
         Visual.__init__(self)
+        self.set_gl_state('translucent')
         tex_cls = TextureEmulated3D if emulate_texture else Texture3D
 
         # Storage of information of volume

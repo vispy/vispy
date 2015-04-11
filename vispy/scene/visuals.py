@@ -35,6 +35,7 @@ def create_visual_node(subclass):
     def __init__(self, *args, **kwargs):
         parent = kwargs.pop('parent', None)
         name = kwargs.pop('name', None)
+        self.name = name  # to allow __str__ before Node.__init__
         subclass.__init__(self, *args, **kwargs)
         Node.__init__(self, parent=parent, name=name)
     
