@@ -8,14 +8,13 @@ About this technique
 
 In Python, we define the six faces of a cuboid to draw, as well as
 texture cooridnates corresponding with the vertices of the cuboid. In
-the vertex shader, we establish the ray direction and pass it to the
-fragment shader as a varying. In the fragment shader, we have the
-texture coordinate as the starting point of the ray, and we know the
-ray direction. We then calculate the number of steps and use that number
+the vertex shader, we compute the near clipping position along the view
+ray and pass it to the fragment shader as a varying. In the fragment shader, 
+we compute the ray direction and calculate the number of steps to use
 in a for-loop while we iterate through the volume. Each iteration we
 keep track of some voxel information. When the cast is done, we may do
 some final processing. Depending on the render method, the calculations
-at teach iteration and the post-processing may differ.
+at each iteration and the post-processing may differ.
 
 It is important for the texture interpolation in 'linear', since with
 nearest the result look very ugly. The wrapping should be clamp_to_edge
@@ -54,11 +53,25 @@ uniform vec3 u_shape;
 
 varying vec3 v_texcoord;
 varying vec3 v_position;
-varying vec4 v_clipplane;
+varying vec4 v_position2;
+varying vec4 clipplane;
 
 void main() {
     v_texcoord = a_texcoord;
+    
     v_position = a_position;
+    
+    // Project local vertex coordinate to camera position. Then do a step
+    // backward (in cam coords) and project back. Voila, we get our ray vector.
+    vec4 pos_in_cam1 = $viewtransformf(vec4(v_position, 1));
+
+    // step backward
+    vec4 pos_in_cam2 = pos_in_cam1 + vec4(0.0, 0.0, pos_in_cam1.w, 0);
+
+    // position2 is the intersection of the view ray with the near 
+    // clipping plane
+    v_position2 = $viewtransformi(pos_in_cam2);
+    
     gl_Position = $transform(vec4(v_position, 1.0));
 }
 """  # noqa
@@ -70,12 +83,11 @@ uniform $sampler_type u_volumetex;
 uniform vec3 u_shape;
 uniform float u_threshold;
 uniform float u_relative_step_size;
-uniform float u_cameraclip;
 
 //varyings
 varying vec3 v_texcoord;
 varying vec3 v_position;
-vec4 v_clipplane;
+varying vec4 v_position2;
 
 // uniforms for lighting. Hard coded until we figure out how to do lights
 const vec4 u_ambient = vec4(0.2, 0.4, 0.2, 1.0);
@@ -84,61 +96,44 @@ const vec4 u_specular = vec4(1.0, 1.0, 1.0, 1.0);
 const float u_shininess = 40.0;
 
 //varying vec3 lightDirs[1];
-//varying vec3 V; // view direction
-vec3 v_ray;
+
+// global holding view direction in local coordinates
+vec3 view_ray;
+// global defining near clipping plane in texture coordinates
+vec4 clipplane;
 
 vec4 calculateColor(vec4, vec3, vec3);
 float rand(vec2 co);
 
 void main() {{
-    // Project local vertex coordinate to camera position. Then do a step
-    // backward (in cam coords) and project back. Voila, we get our ray vector.
-    // This vector does not interpolate nicely between vertices when 
-    // we have perspective view transform. Therefore we create a grid of 
-    // vertices rather than one quad per face.
-    vec4 pos_in_cam1 = $viewtransformf(vec4(v_position, 1));
-    vec4 pos_in_cam2 = pos_in_cam1 + vec4(0.0, 0.0, 1.0, 0.0); // step backward
-    vec4 position2 = $viewtransformi(pos_in_cam2);
+    vec3 position2 = v_position2.xyz / v_position2.w;
     
     // Calculate ray. In the fragment shader we do another normalization
     // and scale for texture coords; interpolation does not maintain
     // vector length
-    v_ray = normalize(v_position.xyz - position2.xyz/position2.w);
+    view_ray = normalize(v_position.xyz - position2.xyz);
 
     // Calculate a clip plane (in texture coordinates) for the camera
     // position, in case that the camera is inside the volume.
-    pos_in_cam1.zw = vec2(u_cameraclip, 1.0);
-    vec3 cameraposinvol = $viewtransformi(pos_in_cam1).xyz;
-    cameraposinvol /= u_shape;  // express in texture coords
-    v_clipplane.xyz = v_ray;
-    v_clipplane.w = dot(v_clipplane.xyz, cameraposinvol);
-    
-    // Discart front facing
-    //if (!gl_FrontFacing)
-    //    discard;
-    
-    // Uncomment this to show a grid of the backfaces
-    //vec3 pcd = v_texcoord * u_shape;
-    //for (int d=0; d<3; d++)
-    //    if (pcd[d] > 1 && pcd[d] < (u_shape[d]-1) && sin(pcd[d]) > 0.9)
-    //            discard;
+    vec3 cameraposinvol = position2.xyz / u_shape;
+    clipplane.xyz = view_ray;
+    clipplane.w = dot(clipplane.xyz, cameraposinvol);
     
     // Get ray in texture coordinates
-    vec3 ray = normalize(v_ray);
-    ray /= u_shape;
+    vec3 ray = view_ray / u_shape;
     ray *= u_relative_step_size; // performance vs quality
     ray *= -1.0; // flip: we cast rays from back to front
     
     /// Get begin location and number of steps to cast ray
     vec3 edgeloc = v_texcoord;
-    int nsteps = $calculate_steps(edgeloc, ray, v_clipplane);
+    int nsteps = $calculate_steps(edgeloc, ray, clipplane);
     
     // Offset the ray with a random amount to make for a smoother
     // appearance when rotating the camera. noise is [0..1].
     float noise = rand((ray.xy * 10.0 + edgeloc.xy) * 100.0);
     edgeloc += ray * (0.5 - noise);
     
-    // Instead of discarting based on gl_FrontFacing, we can also discard
+    // Instead of discarding based on gl_FrontFacing, we can also discard
     // on number of steps.
     if (nsteps < 4)
         discard;
@@ -147,10 +142,6 @@ void main() {{
     // whether the rays are correctly oriented
     //gl_FragColor = vec4(0.0, nsteps / 3.0 / u_shape.x, 1.0, 1.0);
     //return;
-    
-    // prepare for raycasting
-    //vec3 loc; // current position
-    //vec4 color; // current color
     
     {before_loop}
     
@@ -203,7 +194,7 @@ vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
     vec4 color2;
     
     // View direction
-    vec3 V = normalize(v_ray);
+    vec3 V = normalize(view_ray);
     
     // calculate normal vector from gradient
     vec3 N; // normal
@@ -242,7 +233,7 @@ vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
     for (int i=0; i<nlights; i++)
     {{ 
         // Get light direction (make sure to prevent zero devision)
-        vec3 L = normalize(v_ray);  //lightDirs[i]; 
+        vec3 L = normalize(view_ray);  //lightDirs[i]; 
         float lightEnabled = float( length(L) > 0.0 );
         L = normalize(L+(1.0-lightEnabled));
         
@@ -293,7 +284,7 @@ int calculate_steps(vec3 edgeLoc, vec3 ray, vec4 extra_clipplane)
     smallest = min(smallest, d2P(edgeLoc, ray, vec4(0.0, 0.0, 1.0, 1.0+eps)));
     smallest = min(smallest, d2P(edgeLoc, ray, extra_clipplane));
     
-    // Just in case, set extremely hight value to 0
+    // Just in case, set extremely high value to 0
     smallest *= float(smallest < 10000.0);
     
     // Make int and return
@@ -414,12 +405,6 @@ class VolumeVisual(Visual):
         Visual.__init__(self)
         tex_cls = TextureEmulated3D if emulate_texture else Texture3D
 
-        # Variable to determine clipping plane when inside the volume.
-        # This value represents the z-value in view coordinates, but
-        # other than that I am not sure what the value should be. 10.0
-        # seems to work with the demos I tried ...
-        self._cameraclip = 10.0
-        
         # Storage of information of volume
         self._vol_shape = ()
         self._vertex_cache_id = ()
@@ -715,14 +700,13 @@ class VolumeVisual(Visual):
         
         full_tr = transforms.get_full_transform()
         self._program.vert['transform'] = full_tr
-        self._program['u_cameraclip'] = self._cameraclip
         self._program['u_relative_step_size'] = self._relative_step_size
         
         # Get and set transforms
         view_tr_f = transforms.visual_to_document
         view_tr_i = view_tr_f.inverse
-        self._program.frag['viewtransformf'] = view_tr_f
-        self._program.frag['viewtransformi'] = view_tr_i
+        self._program.vert['viewtransformf'] = view_tr_f
+        self._program.vert['viewtransformi'] = view_tr_i
         
         # Set attributes that are specific to certain methods
         self._program.build_if_needed()
