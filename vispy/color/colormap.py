@@ -624,10 +624,9 @@ def get_colormap(name, *args, **kwargs):
         cmap = _colormaps[name]
 
         if inspect.isclass(cmap):
-            return cmap(*args, **kwargs)
-        else:
-            return cmap
+            cmap = cmap(*args, **kwargs)
 
+    return cmap
 
 def get_colormaps():
     """Return the list of colormap names."""
