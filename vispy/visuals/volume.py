@@ -336,13 +336,12 @@ MIP_SNIPPETS = dict(
     in_loop="""
         color = $cmap(color);
         float a1 = integrated_color.a;
-        float a2 = color.a;
-        float t1 = 1.0 - a1;
-        float t2 = 1.0 - a2;
+        float a2 = color.a * (1 - a1);
+        float alpha = max(a1 + a2, 0.0000001);
         
         // Translucent
         //integrated_color = vec4((color.rgb * t1) + (integrated_color.rgb * a1), );
-        integrated_color = vec4((color.rgb * t1) + (integrated_color.rgb * a1), a1 + a2 * t1);
+        integrated_color = vec4((color.rgb * a2/alpha) + (integrated_color.rgb * a1/alpha), alpha);
         
         // Additive
         //integrated_color = vec4(integrated_color.rgb + (color.rgb * color.a), (1.0 - t1*t2));
