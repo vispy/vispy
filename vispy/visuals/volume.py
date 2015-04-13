@@ -53,7 +53,8 @@ uniform vec3 u_shape;
 
 varying vec3 v_texcoord;
 varying vec3 v_position;
-varying vec4 v_position2;
+varying vec4 v_nearpos;
+varying vec4 v_farpos;
 
 void main() {
     v_texcoord = a_texcoord;
@@ -61,13 +62,15 @@ void main() {
     
     // Project local vertex coordinate to camera position. Then do a step
     // backward (in cam coords) and project back. Voila, we get our ray vector.
-    vec4 pos_in_cam1 = $viewtransformf(vec4(v_position, 1));
+    vec4 pos_in_cam = $viewtransformf(vec4(v_position, 1));
 
-    // step backward
-    vec4 pos_in_cam2 = pos_in_cam1 + vec4(0.0, 0.0, pos_in_cam1.w, 0);
-
-    // position2 is another point along the view ray, closer to the camera.
-    v_position2 = $viewtransformi(pos_in_cam2);
+    // intersection of ray and near clipping plane (z = -1 in clip coords)
+    pos_in_cam.z = -pos_in_cam.w;
+    v_nearpos = $viewtransformi(pos_in_cam);
+    
+    // intersection of ray and far clipping plane (z = +1 in clip coords)
+    pos_in_cam.z = pos_in_cam.w;
+    v_farpos = $viewtransformi(pos_in_cam);
     
     gl_Position = $transform(vec4(v_position, 1.0));
 }
@@ -84,7 +87,8 @@ uniform float u_relative_step_size;
 //varyings
 varying vec3 v_texcoord;
 varying vec3 v_position;
-varying vec4 v_position2;
+varying vec4 v_nearpos;
+varying vec4 v_farpos;
 
 // uniforms for lighting. Hard coded until we figure out how to do lights
 const vec4 u_ambient = vec4(0.2, 0.4, 0.2, 1.0);
@@ -96,47 +100,70 @@ const float u_shininess = 40.0;
 
 // global holding view direction in local coordinates
 vec3 view_ray;
-// global defining near clipping plane in texture coordinates
-vec4 clipplane;
 
 vec4 calculateColor(vec4, vec3, vec3);
 float rand(vec2 co);
+float d2P(vec3 p, vec3 d, vec4 P);
 
 void main() {{
-    vec3 position2 = v_position2.xyz / v_position2.w;
+    vec3 farpos = v_farpos.xyz / v_farpos.w;
+    vec3 nearpos = v_nearpos.xyz / v_nearpos.w;
     
     // Calculate unit vector pointing in the view direction through this 
     // fragment.
-    view_ray = normalize(v_position.xyz - position2.xyz);
+    view_ray = normalize(farpos.xyz - nearpos.xyz);
+
+    // Find starting point along the view ray on the opposite side of the 
+    // cuboid, taking the near clipping plane into account
+    //float near_dist = max(0, dot(nearpos - v_position, view_ray));
+    //vec3 start_pos = v_position;// + view_ray * near_dist;
 
     // Calculate a clip plane (in texture coordinates) for the camera
     // position, in case that the camera is inside the volume.
-    vec3 cameraposinvol = position2.xyz / u_shape;
-    clipplane.xyz = view_ray;
-    clipplane.w = dot(clipplane.xyz, cameraposinvol);
+    //vec3 cameraposinvol = nearpos.xyz / u_shape;
+    //vec4 clipplane;
+    //clipplane.xyz = view_ray;
+    //clipplane.w = dot(clipplane.xyz, cameraposinvol);
     
-    // Get ray in texture coordinates
-    vec3 ray = view_ray / u_shape;
-    ray *= u_relative_step_size; // performance vs quality
-    ray *= -1.0; // flip: we cast rays from back to front
+    // Now compute the distance to the front surface (or near clipping plane)
+    float distance = dot(nearpos-v_position, view_ray);
+    if( view_ray.x != 0 )
+        distance = max(distance, min((0 - v_position.x) / view_ray.x, (u_shape.x - v_position.x) / view_ray.x));
+    if( view_ray.y != 0 )
+        distance = max(distance, min((0 - v_position.y) / view_ray.y, (u_shape.y - v_position.y) / view_ray.y));
+    if( view_ray.z != 0 )
+        distance = max(distance, min((0 - v_position.z) / view_ray.z, (u_shape.z - v_position.z) / view_ray.z));
+        
+    // now we have the starting position on the front surface
+    vec3 loc = v_position + view_ray * distance;
     
-    /// Get begin location and number of steps to cast ray
-    vec3 edgeloc = v_texcoord;
-    int nsteps = $calculate_steps(edgeloc, ray, clipplane);
+    // Decide how many steps to take
+    int nsteps = int(-distance/u_relative_step_size+0.5);
+    if( nsteps < 1 )
+        discard;
+        
+    // Get starting location and ray in texture coordinates
+    vec3 ray = ((v_position - loc) / u_shape) / nsteps;
+    loc = loc / u_shape;
+    
+    //int nsteps = $calculate_steps(loc, ray, clipplane);
     
     // Offset the ray with a random amount to make for a smoother
     // appearance when rotating the camera. noise is [0..1].
     //float noise = rand((ray.xy * 10.0 + edgeloc.xy) * 100.0);
     //edgeloc += ray * (0.5 - noise);
     
-    // Instead of discarding based on gl_FrontFacing, we can also discard
-    // on number of steps.
-    if (nsteps < 4)
-        discard;
-    
     // For testing: show the number of steps. This helps to establish
     // whether the rays are correctly oriented
     //gl_FragColor = vec4(0.0, nsteps / 3.0 / u_shape.x, 1.0, 1.0);
+    //return;
+    
+    //gl_FragColor = vec4(nsteps/200., -nsteps/200., 0, 1);
+    //gl_FragColor = vec4(loc, 1);
+    //gl_FragColor = vec4(ray*100, 1);
+    //gl_FragColor = vec4(distance, -distance, 0, 1);
+    //gl_FragColor = vec4(loc/u_shape, 1);
+    //gl_FragColor = vec4(nsteps/200., 0, 0, 1);
     //return;
     
     {before_loop}
@@ -148,7 +175,11 @@ void main() {{
         for (iter=iter; iter>0; iter--)
         {{
             // Calculate location and sample color
-            vec3 loc = edgeloc + float(iter) * ray;
+            loc += ray;
+            if( loc.x < 0. || loc.y < 0. || loc.z < 0. || loc.x > 1. || loc.y > 1. || loc.z > 1. ) {{
+                //iter = 0;
+                //break;
+            }}
             vec4 color = $sample(u_volumetex, loc);
             float val = color.g;
             
@@ -255,6 +286,25 @@ vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
     return final_color;
 }}
 
+float d2P(vec3 p, vec3 d, vec4 P)
+{{
+    // calculate the distance of a point p to a plane P along direction d.
+    // plane P is defined as ax + by + cz = d
+    // return ~inf if negative
+    
+    // calculate nominator and denominator
+    float nom = - (dot(P.xyz, p) - P.a);
+    float denom =  dot(P.xyz, d);
+    
+    // Turn negative and invalid values into a very high value
+    // A negative value means that the current face lies behind the ray. 
+    // Invalid values can occur for combinations of face and start point
+    if( denom == 0.0 )
+        return nom * 99999999.0;
+    else
+        return nom / denom;
+}}
+
 """  # noqa
 
 # Code for calculating number of required steps
@@ -340,14 +390,16 @@ MIP_SNIPPETS = dict(
         float alpha = max(a1 + a2, 0.0000001);
         
         // Translucent
-        //integrated_color = vec4((color.rgb * t1) + (integrated_color.rgb * a1), );
         integrated_color = vec4((color.rgb * a2/alpha) + (integrated_color.rgb * a1/alpha), alpha);
-        
+        if( integrated_color.a > 0.9999 ) {
+            iter = 0;
+        }
         // Additive
         //integrated_color = vec4(integrated_color.rgb + (color.rgb * color.a), (1.0 - t1*t2));
         """,
     after_loop="""
         gl_FragColor = integrated_color;
+        //gl_FragColor = vec4((nsteps+50)/100.0, 0, 0, 1);
         """,
 )
 
@@ -419,7 +471,11 @@ class VolumeVisual(Visual):
                  relative_step_size=0.8, cmap='tgrays',
                  emulate_texture=False):
         Visual.__init__(self)
-        self.set_gl_state('translucent')
+        
+        # Only show back faces of cuboid. This is required because if we are 
+        # inside the volume, then the front faces are outside of the clipping
+        # box and will not be drawn.
+        self.set_gl_state('translucent', cull_face='back')
         tex_cls = TextureEmulated3D if emulate_texture else Texture3D
 
         # Storage of information of volume
@@ -503,8 +559,12 @@ class VolumeVisual(Visual):
 
         Current options are:
         
+            * translucent: voxel colors are blended along the view ray until
+              the result is opaque.
             * mip: maxiumum intensity projection. Cast a ray and display the
               maximum value that was encountered.
+            * additive: voxel colors are added along the view ray until
+              the result is saturated.
             * iso: isosurface. Cast a ray until a certain threshold is
               encountered. At that location, lighning calculations are
               performed to give the visual appearance of a surface.  
@@ -523,7 +583,7 @@ class VolumeVisual(Visual):
         self._program['u_threshold'] = None
 
         self._program.frag = frag_dict[method]
-        self._program.frag['calculate_steps'] = Function(calc_steps)
+        #self._program.frag['calculate_steps'] = Function(calc_steps)
         self._program.frag['sampler_type'] = self._tex.glsl_sampler_type
         self._program.frag['sample'] = self._tex.glsl_sample
         self._program.frag['cmap'] = Function(self._cmap.glsl_map)
@@ -616,8 +676,9 @@ class VolumeVisual(Visual):
         0-------1
         """
         
-        # Order is chosen such that the near faces of the volume are culled
-        indices = np.array([2, 0, 6, 4, 5, 0, 1, 2, 3, 6, 7, 5, 3, 1], 
+        # Order is chosen such that normals face outward; front faces will be
+        # culled.
+        indices = np.array([2, 6, 0, 4, 5, 6, 7, 2, 3, 0, 1, 5, 3, 7],
                            dtype=np.uint32)
         
         # Get some stats

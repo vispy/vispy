@@ -462,7 +462,7 @@ class _Grays(BaseColormap):
 class _TGrays(BaseColormap):
     glsl_map = """
     vec4 tgrays(float t) {
-        return vec4(pow(t, 0.5), t, t*t, t);
+        return vec4(pow(t, 0.5), t, t*t, max(0, t*1.05 - 0.05));
     }
     """
 
