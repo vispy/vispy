@@ -10,7 +10,7 @@ import numpy as np
 from .color_array import ColorArray
 from ..ext.six import string_types
 from ..ext.cubehelix import cubehelix
-from ..ext import husl
+from ..ext.husl import husl_to_rgb
 
 ###############################################################################
 # Color maps
@@ -636,7 +636,7 @@ class _HUSL(Colormap):
         value *= 99
 
         colors = ColorArray(
-            [husl.husl_to_rgb(hue, saturation, value) for hue in hues],
+            [husl_to_rgb(hue, saturation, value) for hue in hues],
         )
 
         super(_HUSL, self).__init__(colors, controls=controls,
@@ -650,10 +650,10 @@ class _Diverging(Colormap):
         saturation *= 99
         value *= 99
 
-        start = husl.husl_to_rgb(h_neg, saturation, value)
+        start = husl_to_rgb(h_neg, saturation, value)
         mid = ((0.133, 0.133, 0.133) if center == "dark" else
                (0.95, 0.95, 0.95))
-        end = husl.husl_to_rgb(h_pos, saturation, value)
+        end = husl_to_rgb(h_pos, saturation, value)
 
         colors = ColorArray([start, mid, end])
 
