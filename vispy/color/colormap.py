@@ -542,7 +542,7 @@ class _SingleHue(Colormap):
     .. _wikipedia page: https://en.wikipedia.org/wiki/Hue
     """
 
-    def __init__(self, hue=200, saturation_range=[0.2, 0.8], value=1.0):
+    def __init__(self, hue=200, saturation_range=[0.1, 0.8], value=1.0):
         colors = ColorArray([
             (hue, saturation_range[0], value),
             (hue, saturation_range[1], value)
