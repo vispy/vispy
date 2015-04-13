@@ -30,7 +30,7 @@ from itertools import cycle
 import numpy as np
 
 from vispy import app, scene, io
-from vispy.color import get_colormaps
+from vispy.color import get_colormaps, BaseColormap
 
 # Read volume
 vol1 = np.load(io.load_data_file('volume/stent.npz'))['arr_0']
@@ -54,7 +54,7 @@ emulate_texture = True
 volume1 = scene.visuals.Volume(vol1, parent=view.scene, threshold=0.1,
                                emulate_texture=emulate_texture)
 volume1.transform = scene.STTransform(translate=(64, 64, 0))
-volume2 = scene.visuals.Volume(vol2, parent=view.scene, threshold=0.5,
+volume2 = scene.visuals.Volume(vol2, parent=view.scene, threshold=0.2,
                                emulate_texture=emulate_texture)
 volume2.visible = False
 
@@ -66,6 +66,23 @@ cam3 = scene.cameras.ArcballCamera(parent=view.scene, fov=fov)
 view.camera = cam2  # Select turntable at first
 
 
+# create colormaps that work well for translucent and additive volume rendering
+class TransFire(BaseColormap):
+    glsl_map = """
+    vec4 translucent_fire(float t) {
+        return vec4(pow(t, 0.5), t, t*t, max(0, t*1.05 - 0.05));
+    }
+    """
+
+
+class TransGrays(BaseColormap):
+    glsl_map = """
+    vec4 translucent_grays(float t) {
+        return vec4(t, t, t, t*0.05);
+    }
+    """
+
+
 # Implement key presses
 @canvas.events.key_press.connect
 def on_key_press(event):
@@ -74,7 +91,8 @@ def on_key_press(event):
         view.camera = cam_toggle.get(view.camera, 'fly')
     elif event.text == '2':
         methods = ['mip', 'translucent', 'iso', 'additive']
-        cmaps = {'mip': 'grays', 'translucent': 'tgrays', 'iso': 'grays', 'additive': 'tgrays'}
+        cmaps = {'mip': 'grays', 'translucent': TransFire(), 'iso': 'grays', 
+                 'additive': TransGrays()}
         method = methods[(methods.index(volume1.method) + 1) % 4]
         print("Volume render method: %s" % method)
         volume1.method = method
@@ -91,17 +109,18 @@ def on_key_press(event):
     elif event.text == '0':
         cam1.set_range()
         cam3.set_range()
-    elif event.text == '[':
-        volume1.threshold -= 0.025
-        volume2.threshold = volume1.threshold
-    elif event.text == ']':
-        volume1.threshold += 0.025
-        volume2.threshold = volume1.threshold
+    elif event.text in '[]':
+        s = -0.025 if event.text == '[' else 0.025
+        volume1.threshold += s
+        volume2.threshold += s
+        th = volume1.threshold if volume1.visible else volume2.threshold
+        print("Isosurface threshold: %0.3f" % th)
+
 
 # for testing performance
-@canvas.connect
-def on_draw(ev):
-    canvas.update()
+#@canvas.connect
+#def on_draw(ev):
+    #canvas.update()
 
 if __name__ == '__main__':
     print(__doc__)

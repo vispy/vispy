@@ -31,15 +31,23 @@ _setters = [s[4:] for s in __all__
 
 # NOTE: If these are updated to have things beyond glEnable/glBlendFunc
 # calls, set_preset_state will need to be updated to deal with it.
-_gl_presets = dict(
-    opaque=dict(depth_test=True, cull_face=False, blend=False),
-    translucent=dict(depth_test=True, cull_face=False, blend=True,
-                        blend_func=('src_alpha', 'one_minus_src_alpha')),
-    additive=dict(depth_test=False, cull_face=False, blend=True,
-                    blend_func=('src_alpha', 'one'),)
-)
+_gl_presets = {
+    'opaque': dict(
+        depth_test=True, 
+        cull_face=False, 
+        blend=False),
+    'translucent': dict(
+        depth_test=True, 
+        cull_face=False, 
+        blend=True,
+        blend_func=('src_alpha', 'one_minus_src_alpha')),
+    'additive': dict(
+        depth_test=False, 
+        cull_face=False, 
+        blend=True,
+        blend_func=('src_alpha', 'one')),
+}
     
-
 
 def get_current_canvas():
     """ Proxy for context.get_current_canvas to avoud circular import.

@@ -315,7 +315,8 @@ TRANSLUCENT_SNIPPETS = dict(
             float alpha = max(a1 + a2, 0.001);
             
             // Doesn't work.. GLSL optimizer bug?
-            //integrated_color = (integrated_color * a1 / alpha) + (color * a2 / alpha); 
+            //integrated_color = (integrated_color * a1 / alpha) + 
+            //                   (color * a2 / alpha); 
             // This should be identical but does work correctly:
             integrated_color *= a1 / alpha;
             integrated_color += color * a2 / alpha;
