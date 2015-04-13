@@ -11,7 +11,7 @@ Example volume rendering
 Controls:
 
 * 1 - toggle camera between first person (fly) and regular 3D (turntable)
-* 2 - toggle between mip and iso render styles
+* 2 - toggle between volume rendering methods
 * 3 - toggle between stent-CT / brain-MRI image
 * 4 - toggle between colormaps
 * 0 - reset cameras
@@ -72,9 +72,11 @@ def on_key_press(event):
         cam_toggle = {cam1: cam2, cam2: cam3, cam3: cam1}
         view.camera = cam_toggle.get(view.camera, 'fly')
     elif event.text == '2':
-        method_toggle = {'mip': 'iso', 'iso': 'mip'}
-        volume1.method = method_toggle.get(volume1.method, 'mip')
-        volume2.method = volume1.method
+        methods = ['mip', 'translucent', 'iso', 'additive']
+        method = methods[(methods.index(volume1.method) + 1) % 4]
+        print("Volume render method: %s" % method)
+        volume1.method = method
+        volume2.method = method
     elif event.text == '3':
         volume1.visible = not volume1.visible
         volume2.visible = not volume1.visible
@@ -91,6 +93,11 @@ def on_key_press(event):
     elif event.text == ']':
         volume1.threshold += 0.1
         volume2.threshold = volume1.threshold
+
+# for testing performance
+#@canvas.connect
+#def on_draw(ev):
+    #canvas.update()
 
 if __name__ == '__main__':
     print(__doc__)

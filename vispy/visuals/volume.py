@@ -112,78 +112,50 @@ void main() {{
     // Calculate unit vector pointing in the view direction through this 
     // fragment.
     view_ray = normalize(farpos.xyz - nearpos.xyz);
-
-    // Find starting point along the view ray on the opposite side of the 
-    // cuboid, taking the near clipping plane into account
-    //float near_dist = max(0, dot(nearpos - v_position, view_ray));
-    //vec3 start_pos = v_position;// + view_ray * near_dist;
-
-    // Calculate a clip plane (in texture coordinates) for the camera
-    // position, in case that the camera is inside the volume.
-    //vec3 cameraposinvol = nearpos.xyz / u_shape;
-    //vec4 clipplane;
-    //clipplane.xyz = view_ray;
-    //clipplane.w = dot(clipplane.xyz, cameraposinvol);
     
-    // Now compute the distance to the front surface (or near clipping plane)
+    // Compute the distance to the front surface or near clipping plane
     float distance = dot(nearpos-v_position, view_ray);
-    if( view_ray.x != 0 )
-        distance = max(distance, min((0 - v_position.x) / view_ray.x, (u_shape.x - v_position.x) / view_ray.x));
-    if( view_ray.y != 0 )
-        distance = max(distance, min((0 - v_position.y) / view_ray.y, (u_shape.y - v_position.y) / view_ray.y));
-    if( view_ray.z != 0 )
-        distance = max(distance, min((0 - v_position.z) / view_ray.z, (u_shape.z - v_position.z) / view_ray.z));
+    distance = max(distance, min((0 - v_position.x) / view_ray.x, 
+                                 (u_shape.x - v_position.x) / view_ray.x));
+    distance = max(distance, min((0 - v_position.y) / view_ray.y, 
+                                 (u_shape.y - v_position.y) / view_ray.y));
+    distance = max(distance, min((0 - v_position.z) / view_ray.z, 
+                                 (u_shape.z - v_position.z) / view_ray.z));
         
-    // now we have the starting position on the front surface
-    vec3 loc = v_position + view_ray * distance;
+    // Now we have the starting position on the front surface
+    vec3 front = v_position + view_ray * distance;
     
     // Decide how many steps to take
-    int nsteps = int(-distance/u_relative_step_size+0.5);
+    int nsteps = int(-distance / u_relative_step_size + 0.5);
     if( nsteps < 1 )
         discard;
         
-    // Get starting location and ray in texture coordinates
-    vec3 ray = ((v_position - loc) / u_shape) / nsteps;
-    loc = loc / u_shape;
-    
-    //int nsteps = $calculate_steps(loc, ray, clipplane);
-    
-    // Offset the ray with a random amount to make for a smoother
-    // appearance when rotating the camera. noise is [0..1].
-    //float noise = rand((ray.xy * 10.0 + edgeloc.xy) * 100.0);
-    //edgeloc += ray * (0.5 - noise);
+    // Get starting location and step in texture coordinates
+    vec3 step = ((v_position - front) / u_shape) / nsteps;
+    vec3 start_loc = front / u_shape;
     
     // For testing: show the number of steps. This helps to establish
     // whether the rays are correctly oriented
     //gl_FragColor = vec4(0.0, nsteps / 3.0 / u_shape.x, 1.0, 1.0);
     //return;
     
-    //gl_FragColor = vec4(nsteps/200., -nsteps/200., 0, 1);
-    //gl_FragColor = vec4(loc, 1);
-    //gl_FragColor = vec4(ray*100, 1);
-    //gl_FragColor = vec4(distance, -distance, 0, 1);
-    //gl_FragColor = vec4(loc/u_shape, 1);
-    //gl_FragColor = vec4(nsteps/200., 0, 0, 1);
-    //return;
-    
     {before_loop}
     
     // This outer loop seems necessary on some systems for large
     // datasets. Ugly, but it works ...
-    int iter = nsteps;
-    while (iter > 0) {{
-        for (iter=iter; iter>0; iter--)
+    vec3 loc = start_loc;
+    int iter = 0;
+    while (iter < nsteps) {{
+        for (iter=iter; iter<nsteps; iter++)
         {{
-            // Calculate location and sample color
-            loc += ray;
-            if( loc.x < 0. || loc.y < 0. || loc.z < 0. || loc.x > 1. || loc.y > 1. || loc.z > 1. ) {{
-                //iter = 0;
-                //break;
-            }}
+            // Get sample color
             vec4 color = $sample(u_volumetex, loc);
             float val = color.g;
             
             {in_loop}
+            
+            // Advance location deeper into the volume
+            loc += step;
         }}
     }}
     
@@ -307,79 +279,32 @@ float d2P(vec3 p, vec3 d, vec4 P)
 
 """  # noqa
 
-# Code for calculating number of required steps
-calc_steps = """
-
-float d2P(vec3, vec3, vec4);
-
-int calculate_steps(vec3 edgeLoc, vec3 ray, vec4 extra_clipplane)
-{
-    // Given the start pos, returns the number of steps towards the closest
-    // face that is in front of the given ray.
-    
-    // Check for all six planes how many rays fit from the start point.
-    // We operate in texture coordinate here (0..1)
-    // Take the minimum value (not counting negative and invalid).
-    float smallest = 999999.0;
-    float eps = 0.000001;
-    smallest = min(smallest, d2P(edgeLoc, ray, vec4(1.0, 0.0, 0.0, 0.0-eps)));
-    smallest = min(smallest, d2P(edgeLoc, ray, vec4(0.0, 1.0, 0.0, 0.0-eps)));
-    smallest = min(smallest, d2P(edgeLoc, ray, vec4(0.0, 0.0, 1.0, 0.0-eps)));
-    smallest = min(smallest, d2P(edgeLoc, ray, vec4(1.0, 0.0, 0.0, 1.0+eps)));
-    smallest = min(smallest, d2P(edgeLoc, ray, vec4(0.0, 1.0, 0.0, 1.0+eps)));
-    smallest = min(smallest, d2P(edgeLoc, ray, vec4(0.0, 0.0, 1.0, 1.0+eps)));
-    smallest = min(smallest, d2P(edgeLoc, ray, extra_clipplane));
-    
-    // Just in case, set extremely high value to 0
-    smallest *= float(smallest < 10000.0);
-    
-    // Make int and return
-    return int(smallest + 0.5);
-}
-
-float d2P(vec3 p, vec3 d, vec4 P)
-{
-    // calculate the distance of a point p to a plane P along direction d.
-    // plane P is defined as ax + by + cz = d
-    // return ~inf if negative
-    
-    // calculate nominator and denominator
-    float nom = - (dot(P.xyz, p) - P.a);
-    float denom =  dot(P.xyz, d);
-    
-    // Turn negative and invalid values into a very high value
-    // A negative value means that the current face lies behind the ray. 
-    // Invalid values can occur for combinations of face and start point
-    float invalid = float(nom == 0.0 || denom == 0.0 || nom * denom <= 0.0);
-    return (((1.0-invalid) * nom   + invalid * 999999.0) / 
-            ((1.0-invalid) * denom + invalid * 1.0));
-}
-"""  # noqa
-
 
 MIP_SNIPPETS = dict(
     before_loop="""
         float maxval = -99999.0; // The maximum encountered value
-        float maxi = 0.0;  // Where the maximum value was encountered
+        int maxi = 0;  // Where the maximum value was encountered
         """,
     in_loop="""
-        float r = float(val > maxval);
-        maxval = (1.0 - r) * maxval + r * val;
-        maxi = (1.0 - r) * maxi + r * float(iter);
+        if( val > maxval ) {
+            maxval = val;
+            maxi = iter;
+        }
         """,
     after_loop="""
-        vec4 color = vec4(0.0);
-        for (int i=0; i<5; i++) {
-            float newi = maxi + 0.4 - 0.2 * float(i);
-            color = max(color, $cmap($sample(u_volumetex,
-                edgeloc + newi * ray).r));
+        // Refine search for max value
+        loc = start_loc + step * (float(maxi) - 0.5);
+        for (int i=0; i<10; i++) {
+            maxval = max(maxval, $sample(u_volumetex, loc).g);
+            loc += step * 0.1;
         }
-        gl_FragColor = color;
+        gl_FragColor = $cmap(maxval);
         """,
 )
+MIP_FRAG_SHADER = FRAG_SHADER.format(**MIP_SNIPPETS)
 
 
-MIP_SNIPPETS = dict(
+TRANSLUCENT_SNIPPETS = dict(
     before_loop="""
         vec4 integrated_color = vec4(0., 0., 0., 0.);
         """,
@@ -389,54 +314,70 @@ MIP_SNIPPETS = dict(
         float a2 = color.a * (1 - a1);
         float alpha = max(a1 + a2, 0.0000001);
         
-        // Translucent
         integrated_color = vec4((color.rgb * a2/alpha) + (integrated_color.rgb * a1/alpha), alpha);
-        if( integrated_color.a > 0.9999 ) {
-            iter = 0;
+        if( integrated_color.a > 0.99 ) {
+            // Stop integrating if the fragment is already opaque
+            iter = nsteps;
         }
-        // Additive
-        //integrated_color = vec4(integrated_color.rgb + (color.rgb * color.a), (1.0 - t1*t2));
         """,
     after_loop="""
         gl_FragColor = integrated_color;
         //gl_FragColor = vec4((nsteps+50)/100.0, 0, 0, 1);
         """,
 )
+TRANSLUCENT_FRAG_SHADER = FRAG_SHADER.format(**TRANSLUCENT_SNIPPETS)
 
-MIP_FRAG_SHADER = FRAG_SHADER.format(**MIP_SNIPPETS)
+
+ADDITIVE_SNIPPETS = dict(
+    before_loop="""
+        vec4 integrated_color = vec4(0., 0., 0., 0.);
+        """,
+    in_loop="""
+        color = $cmap(color);
+        
+        integrated_color = 1.0 - (1.0 - integrated_color) * (1.0 - color);
+        """,
+    after_loop="""
+        gl_FragColor = integrated_color;
+        //gl_FragColor = vec4((nsteps+50)/100.0, 0, 0, 1);
+        """,
+)
+ADDITIVE_FRAG_SHADER = FRAG_SHADER.format(**ADDITIVE_SNIPPETS)
+
 
 ISO_SNIPPETS = dict(
     before_loop="""
         vec4 color3 = vec4(0.0);  // final color
-        vec3 step = 1.5 / u_shape;  // step to sample derivative
+        vec3 dstep = 1.5 / u_shape;  // step to sample derivative
     """,
     in_loop="""
-        float xxx = 0.5;
         if (val > u_threshold) {
+            gl_FragColor = calculateColor($cmap(val), loc, dstep);
+            iter = nsteps;
             
             // Take the last stride in smaller steps
-            for (int i=0; i<6; i++) {
-                float newi = float(iter) + 1.0 - 0.2 * float(i);
-                loc = edgeloc + newi * ray;
-                val = $sample(u_volumetex, loc).r;
-
+            loc -= step;
+            for (int i=0; i<0; i++) {
+                val = $sample(u_volumetex, loc).g;
                 if (val > u_threshold) {
                     color = $cmap(val);
-                    gl_FragColor = calculateColor(color, loc, step);
-                    return;
+                    gl_FragColor = calculateColor(color, loc, dstep);
+                    iter = nsteps;
+                    break;
                 }
+                loc += step * 0.1;
             }
         }
         """,
     after_loop="""
-        // If we get here, the ray did not meet the threshold
-        discard;
         """,
 )
 
 ISO_FRAG_SHADER = FRAG_SHADER.format(**ISO_SNIPPETS)
 
-frag_dict = {'mip': MIP_FRAG_SHADER, 'iso': ISO_FRAG_SHADER}
+frag_dict = {'mip': MIP_FRAG_SHADER, 'iso': ISO_FRAG_SHADER,
+             'translucent': TRANSLUCENT_FRAG_SHADER, 
+             'additive': ADDITIVE_FRAG_SHADER}
 
 
 class VolumeVisual(Visual):
@@ -450,7 +391,7 @@ class VolumeVisual(Visual):
         The contrast limits. The values in the volume are mapped to
         black and white corresponding to these values. Default maps
         between min and max.
-    method : {'mip', 'iso'}
+    method : {'mip', 'translucent', 'additive', 'iso'}
         The render method to use. See corresponding docs for details.
         Default 'mip'.
     threshold : float
@@ -468,7 +409,7 @@ class VolumeVisual(Visual):
     """
 
     def __init__(self, vol, clim=None, method='mip', threshold=None, 
-                 relative_step_size=0.8, cmap='tgrays',
+                 relative_step_size=0.8, cmap='grays',
                  emulate_texture=False):
         Visual.__init__(self)
         
@@ -574,7 +515,7 @@ class VolumeVisual(Visual):
     @method.setter
     def method(self, method):
         # Check and save
-        known_methods = ('mip', 'iso', 'ray')
+        known_methods = list(frag_dict.keys())
         if method not in known_methods:
             raise ValueError('Volume render method should be in %r, not %r' %
                              (known_methods, method))

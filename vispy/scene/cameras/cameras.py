@@ -287,7 +287,7 @@ class BaseCamera(Node):
             for i in range(3):
                 if bounds[i] is None:
                     bounds[i] = self._viewbox.get_scene_bounds(i)
-        print "setrange", bounds
+        
         # Calculate ranges and margins
         ranges = [b[1] - b[0] for b in bounds]
         margins = [(r*margin or 0.1) for r in ranges]
