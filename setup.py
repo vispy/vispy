@@ -87,6 +87,17 @@ setup(
     platforms='any',
     provides=['vispy'],
     install_requires=['numpy'],
+    extras_requires={
+        'ipython-static': ['ipython'],
+        'ipython-vnc': ['ipython>=2'],
+        'ipython-webgl': ['ipython>=2', 'tornado'],
+        'pyglet': ['pyglet>=1.2'],
+        # 'pyqt4': [],  # Why is this on PyPI, but without downloads?
+        # 'pyqt5': [],  # Ditto.
+        'pyside': ['PySide'],
+        'sdl2': ['PySDL2'],
+        'wx': ['wxPython'],
+    },
     packages=package_tree('vispy'),
     package_dir={
         'vispy': 'vispy'},
@@ -121,7 +132,7 @@ setup(
         'Programming Language :: Python',
         'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3.2',
         'Programming Language :: Python :: 3.3',
+        'Programming Language :: Python :: 3.4',
     ],
 )

@@ -9,16 +9,12 @@ import numpy as np
 from vispy import app, gloo
 from vispy.util import load_data_file
 from vispy.visuals.collections import PathCollection, PolygonCollection
-from panzoom import PanZoom
+from vispy.visuals.transforms import PanZoomTransform
 
 
 path = load_data_file('uscounties/uscounties.geojson')
 with open(path, 'r') as f:
     geo = json.load(f)
-
-panzoom = PanZoom()
-paths = PathCollection(mode="agg+", color="global", transform=panzoom.glsl)
-polys = PolygonCollection("raw", color="local", transform=panzoom.glsl)
 
 
 def unique_rows(data):
@@ -41,6 +37,16 @@ def add(P, color):
         polys.append(p, color=color)
 
 
+# Create the canvas.
+canvas = app.Canvas(size=(800, 800), keys='interactive')
+gloo.set_viewport(0, 0, canvas.size[0], canvas.size[1])
+gloo.set_state("translucent", depth_test=False)
+
+panzoom = PanZoomTransform(canvas, aspect=1)
+paths = PathCollection(mode="agg+", color="global", transform=panzoom)
+polys = PolygonCollection("raw", color="local", transform=panzoom)
+paths.update.connect(canvas.update)
+
 for feature in geo["features"]:
     if feature["geometry"]["type"] == 'Polygon':
         path = feature["geometry"]["coordinates"]
@@ -59,11 +65,6 @@ paths["color"] = 0, 0, 0, 1
 paths["linewidth"] = 1.0
 paths['viewport'] = 0, 0, 800, 800
 
-# Create the canvas.
-canvas = app.Canvas(size=(800, 800), keys='interactive')
-gloo.set_viewport(0, 0, canvas.size[0], canvas.size[1])
-gloo.set_state("translucent", depth_test=False)
-
 
 @canvas.connect
 def on_draw(e):
@@ -77,9 +78,6 @@ def on_resize(event):
     width, height = event.size
     gloo.set_viewport(0, 0, width, height)
     paths['viewport'] = 0, 0, width, height
-
-panzoom.attach(canvas)
-panzoom.add([paths, polys])
 
 if __name__ == '__main__':
     canvas.show()

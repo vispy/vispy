@@ -13,7 +13,7 @@ import numpy as np
 
 from .visual import Visual
 from .shaders import ModularProgram, Function, Varying
-from ..gloo import VertexBuffer, IndexBuffer, set_state
+from ..gloo import VertexBuffer, IndexBuffer
 from ..geometry import MeshData
 from ..color import Color
 
@@ -24,13 +24,13 @@ from ..color import Color
 vertex_template = """
 
 void main() {
-   gl_Position = $transform($to_vec4($position));
+    gl_Position = $transform($to_vec4($position));
 }
 """
 
 fragment_template = """
 void main() {
-  gl_FragColor = $color;
+    gl_FragColor = $color;
 }
 """
 
@@ -74,9 +74,17 @@ class MeshVisual(Visual):
                  face_colors=None, color=(0.5, 0.5, 1, 1), meshdata=None,
                  shading=None, mode='triangles', **kwargs):
         Visual.__init__(self, **kwargs)
+        
+        self.set_gl_state('translucent', depth_test=True,
+                          cull_face='front_and_back')
+        
         # Create a program
         self._program = ModularProgram(vertex_template, fragment_template)
-
+        self._program.vert['pre'] = ''
+        self._program.vert['post'] = ''
+        self._program.frag['pre'] = ''
+        self._program.frag['post'] = ''
+        
         # Define buffers
         self._vertices = VertexBuffer(np.zeros((0, 3), dtype=np.float32))
         self._normals = None
@@ -102,6 +110,7 @@ class MeshVisual(Visual):
 
         # Init
         self.shading = shading
+        self._bounds = None
         # Note we do not call subclass set_data -- often the signatures
         # do no match.
         MeshVisual.set_data(self, vertices=vertices, faces=faces,
@@ -116,6 +125,7 @@ class MeshVisual(Visual):
             self._meshdata = MeshData(vertices=vertices, faces=faces,
                                       vertex_colors=vertex_colors,
                                       face_colors=face_colors)
+        self._bounds = self._meshdata.get_bounds()
         if color is not None:
             self._color = Color(color).rgba
         self.mesh_data_changed()
@@ -190,9 +200,8 @@ class MeshVisual(Visual):
                                       convert=True)
             else:
                 self._colors.set_data(np.zeros((0, 4), dtype=np.float32))
-
         self._program.vert['position'] = self._vertices
-        
+
         # Position input handling
         if v.shape[-1] == 2:
             self._program.vert['to_vec4'] = vec2to4
@@ -239,7 +248,8 @@ class MeshVisual(Visual):
         self._shading = value
 
     def draw(self, transforms):
-        set_state('translucent', depth_test=True, cull_face='front_and_back')
+        Visual.draw(self, transforms)
+
         if self._data_changed:
             self._data_changed = False
             self._update_data()
@@ -254,3 +264,8 @@ class MeshVisual(Visual):
             self._program.draw(self._mode, self._faces)
         else:
             self._program.draw(self._mode)
+
+    def bounds(self, mode, axis):
+        if self._bounds is None:
+            return None
+        return self._bounds[axis]

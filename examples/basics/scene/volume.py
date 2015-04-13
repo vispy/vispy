@@ -40,41 +40,41 @@ vol2 = np.flipud(np.rollaxis(vol2, 1))
 cmaps = cycle(get_colormaps())
 
 # Prepare canvas
-canvas = scene.SceneCanvas(keys='interactive')
-canvas.size = 800, 600
-canvas.show()
+canvas = scene.SceneCanvas(keys='interactive', size=(800, 600), show=True)
 canvas.measure_fps()
 
 # Set up a viewbox to display the image with interactive pan/zoom
 view = canvas.central_widget.add_view()
 
 # Set whether we are emulating a 3D texture
-emulated3d = True
+emulate_texture = True
 
 # Create the volume visuals, only one is visible
 volume1 = scene.visuals.Volume(vol1, parent=view.scene, threshold=0.5,
-                               emulated3d=emulated3d)
+                               emulate_texture=emulate_texture)
 volume1.transform = scene.STTransform(translate=(64, 64, 0))
 volume2 = scene.visuals.Volume(vol2, parent=view.scene, threshold=0.5,
-                               emulated3d=emulated3d)
+                               emulate_texture=emulate_texture)
 volume2.visible = False
 
 # Create two cameras (1 for firstperson, 3 for 3d person)
-cam1 = scene.cameras.FlyCamera(parent=view.scene)
-cam3 = scene.cameras.TurntableCamera(parent=view.scene)
-view.camera = cam3  # Select turntable at first
+fov = 60.
+cam1 = scene.cameras.FlyCamera(parent=view.scene, fov=fov)
+cam2 = scene.cameras.TurntableCamera(parent=view.scene, fov=fov)
+cam3 = scene.cameras.ArcballCamera(parent=view.scene, fov=fov)
+view.camera = cam2  # Select turntable at first
 
 
 # Implement key presses
 @canvas.events.key_press.connect
 def on_key_press(event):
     if event.text == '1':
-        cam_toggle = {cam1: cam3, cam3: cam1}
+        cam_toggle = {cam1: cam2, cam2: cam3, cam3: cam1}
         view.camera = cam_toggle.get(view.camera, 'fly')
     elif event.text == '2':
-        style_toggle = {'mip': 'iso', 'iso': 'mip'}
-        volume1.style = style_toggle.get(volume1.style, 'mip')
-        volume2.style = volume1.style
+        method_toggle = {'mip': 'iso', 'iso': 'mip'}
+        volume1.method = method_toggle.get(volume1.method, 'mip')
+        volume2.method = volume1.method
     elif event.text == '3':
         volume1.visible = not volume1.visible
         volume2.visible = not volume1.visible

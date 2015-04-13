@@ -22,14 +22,13 @@ from itertools import cycle
 import numpy as np
 
 from vispy import app, scene, io
+from vispy.ext.six import next
 
 # Read volume
 vol1 = np.load(io.load_data_file('volume/stent.npz'))['arr_0']
 
 # Prepare canvas
-canvas = scene.SceneCanvas(keys='interactive')
-canvas.size = 800, 600
-canvas.show()
+canvas = scene.SceneCanvas(keys='interactive', size=(800, 600), show=True)
 canvas.measure_fps()
 
 # Set up a viewbox to display the image with interactive pan/zoom
@@ -37,7 +36,7 @@ view = canvas.central_widget.add_view()
 
 # Create the volume visuals, only one is visible
 volume1 = scene.visuals.Volume(vol1, parent=view.scene, threshold=0.5)
-#volume1.style = 'iso'
+#volume1.method = 'iso'
 volume1.threshold = 0.1
 
 # Plot a line that shows where positive x is, with at the end a small
@@ -49,6 +48,8 @@ line1 = scene.visuals.Line(arr, color='red', parent=view.scene)
 cam1 = scene.cameras.PanZoomCamera(parent=view.scene, aspect=1)
 cam2 = scene.cameras.FlyCamera(parent=view.scene)
 cam3 = scene.cameras.TurntableCamera(fov=60, parent=view.scene)
+cam4 = scene.cameras.ArcballCamera(fov=60, parent=view.scene)
+cams = (cam1, cam2, cam3, cam4)
 view.camera = cam3  # Select turntable at first
 
 ups = cycle(('+z', '-z', '+y', '-y', '+x', '-x'))
@@ -58,29 +59,28 @@ ups = cycle(('+z', '-z', '+y', '-y', '+x', '-x'))
 @canvas.events.key_press.connect
 def on_key_press(event):
     if event.text == '1':
-        for cam in (cam1, cam2, cam3):
+        for cam in cams:
             flip = cam.flip
             cam.flip = not flip[0], flip[1], flip[2]
     elif event.text == '2':
-        for cam in (cam1, cam2, cam3):
+        for cam in cams:
             flip = cam.flip
             cam.flip = flip[0], not flip[1], flip[2]
     elif event.text == '3':
-        for cam in (cam1, cam2, cam3):
+        for cam in cams:
             flip = cam.flip
             cam.flip = flip[0], flip[1], not flip[2]
     elif event.text == '4':
-        up = ups.__next__()
+        up = next(ups)
         print('up: ' + up)
-        for cam in (cam1, cam2, cam3):
+        for cam in cams:
             cam.up = up
     if event.text == '5':
-        cam_toggle = {cam1: cam2, cam2: cam3, cam3: cam1}
+        cam_toggle = {cam1: cam2, cam2: cam3, cam3: cam4, cam4: cam1}
         view.camera = cam_toggle.get(view.camera, 'fly')
     elif event.text == '0':
-        cam1.set_range()
-        cam2.set_range()
-        cam3.set_range()
+        for cam in cams:
+            cam.set_range()
 
 if __name__ == '__main__':
     print(__doc__)

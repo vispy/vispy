@@ -12,6 +12,7 @@ from .node import Node
 from ..visuals.transforms import STTransform, TransformCache
 from ..color import Color
 from ..util import logger
+from ..util.profiler import Profiler
 from .subscene import SubScene
 from .events import SceneDrawEvent, SceneMouseEvent
 from .widgets import Widget
@@ -174,25 +175,25 @@ class SceneCanvas(app.Canvas):
         offset = (0, 0) if region is None else region[:2]
         csize = self.size if region is None else region[2:]
         size = csize if size is None else size
-        fbo = gloo.FrameBuffer(color=gloo.RenderBuffer(size[::-1]), 
+        fbo = gloo.FrameBuffer(color=gloo.RenderBuffer(size[::-1]),
                                depth=gloo.RenderBuffer(size[::-1]))
-        
+
         self.push_fbo(fbo, offset, csize)
         try:
-            self._draw_scene()
+            self._draw_scene(viewport=(0, 0) + size)
             return fbo.read()
         finally:
             self.pop_fbo()
-        
-    def _draw_scene(self):
+
+    def _draw_scene(self, viewport=None):
         self.context.clear(color=self._bgcolor, depth=True)
         # Draw the scene, but first disconnect its change signal--
         # any changes that take place during the paint should not trigger
         # a subsequent repaint.
         with self.scene.events.update.blocker(self._scene_update):
-            self.draw_visual(self.scene)
+            self.draw_visual(self.scene, viewport=viewport)
 
-    def draw_visual(self, visual, event=None):
+    def draw_visual(self, visual, event=None, viewport=None):
         """ Draw a visual to the canvas or currently active framebuffer.
         
         Parameters
@@ -202,7 +203,11 @@ class SceneCanvas(app.Canvas):
         event : None or DrawEvent
             Optionally specifies the original canvas draw event that initiated
             this draw.
+        viewport : tuple | None
+            Optionally specifies the viewport to use. If None, the entire
+            physical size is used.
         """
+        prof = Profiler()
         nfb = len(self._fb_stack)
         nvp = len(self._vp_stack)
         
@@ -213,10 +218,15 @@ class SceneCanvas(app.Canvas):
         tr_cache = self._transform_caches.setdefault(visual, TransformCache())
         # and mark the entire cache as aged
         tr_cache.roll()
+        prof('roll transform cache')
         
         scene_event = SceneDrawEvent(canvas=self, event=event, 
                                      transform_cache=tr_cache)
-        scene_event.push_viewport((0, 0) + self.physical_size)
+        prof('create SceneDrawEvent')
+        
+        vp = (0, 0) + self.physical_size if viewport is None else viewport
+        scene_event.push_viewport(vp)
+        prof('push_viewport')
         try:
             # Force update of transforms on base entities
             # TODO: this should happen as a reaction to resize, push_viewport,
@@ -229,7 +239,9 @@ class SceneCanvas(app.Canvas):
             scene_event.push_node(self.framebuffer_cs)
             scene_event.push_node(self.canvas_cs)
             scene_event.push_node(visual)
+            prof('initialize event scenegraph')
             visual.draw(scene_event)
+            prof('draw scene')
         finally:
             scene_event.pop_viewport()
 
@@ -239,6 +251,7 @@ class SceneCanvas(app.Canvas):
             logger.warning("Framebuffer stack not fully cleared after draw.")
 
     def _process_mouse_event(self, event):
+        prof = Profiler()
         tr_cache = self._transform_caches.setdefault(self.scene, 
                                                      TransformCache())
         scene_event = SceneMouseEvent(canvas=self, event=event,
@@ -247,7 +260,10 @@ class SceneCanvas(app.Canvas):
         scene_event.push_node(self.framebuffer_cs)
         scene_event.push_node(self.canvas_cs)
         scene_event.push_node(self._scene)
+        prof('prepare mouse event')
+        
         self._scene._process_mouse_event(scene_event)
+        prof('process')
         
         # If something in the scene handled the scene_event, then we mark
         # the original event accordingly.

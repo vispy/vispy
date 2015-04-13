@@ -9,3 +9,7 @@ from .normal import VertexNormalComponent  # noqa
 from .texture import (TextureComponent, VertexTextureCoordinateComponent,  # noqa
                       TextureCoordinateComponent)  # noqa
 from .vertex import XYPosComponent, XYZPosComponent, HeightFieldComponent  # noqa
+
+
+from .clipper import Clipper  # noqa
+from .color2 import Alpha, ColorFilter  # noqa

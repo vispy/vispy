@@ -167,6 +167,16 @@ class MeshData(object):
         else:
             raise Exception("Invalid indexing mode. Accepts: None, 'faces'")
 
+    def get_bounds(self):
+        if self._vertices_indexed_by_faces is not None:
+            v = self._vertices_indexed_by_faces
+        elif self._vertices is not None:
+            v = self._vertices
+        else:
+            return None
+        bounds = [(v[:, ax].min(), v[:, ax].max()) for ax in range(v.shape[1])]
+        return bounds
+        
     def set_vertices(self, verts=None, indexed=None, reset_normals=True):
         """
         Set the array (Nv, 3) of vertex coordinates.
@@ -305,7 +315,8 @@ class MeshData(object):
             if colors.ndim != 2:
                 raise ValueError('colors must be 2D if indexed is None')
             if colors.shape[0] != self.n_vertices:
-                raise ValueError('incorrect number of colors')
+                raise ValueError('incorrect number of colors %s, expected %s'
+                                 % (colors.shape[0], self.n_vertices))
             self._vertex_colors = colors
             self._vertex_colors_indexed_by_faces = None
         elif indexed == 'faces':
@@ -352,7 +363,8 @@ class MeshData(object):
         """
         colors = _fix_colors(colors)
         if colors.shape[0] != self.n_faces:
-            raise ValueError('incorrect number of colors')
+            raise ValueError('incorrect number of colors %s, expected %s'
+                             % (colors.shape[0], self.n_faces))
         if indexed is None:
             if colors.ndim != 2:
                 raise ValueError('colors must be 2D if indexed is None')

@@ -6,9 +6,6 @@
 # -----------------------------------------------------------------------------
 """
 Demonstrate ViewBox using various clipping methods.
-
-Two boxes are manually positioned on the canvas; they are not updated
-when the canvas resizes.
 """
 import sys
 import numpy as np
@@ -19,31 +16,24 @@ from vispy import scene
 
 # Create canvas
 canvas = scene.SceneCanvas(size=(800, 600), show=True, keys='interactive')
+grid = canvas.central_widget.add_grid()
 
 # Create two ViewBoxes, place side-by-side
+vb1 = grid.add_view(name='vb1', border_color='yellow')
+# Viewboxes can use one of 3 different clipping methods: 'fragment', 
+# 'viewport', or 'fbo'. The default is 'fragment', which does all clipping in
+# the fragment shader.
+vb1.clip_method = 'fragment'
 # First ViewBox uses a 2D pan/zoom camera
-vb1 = scene.widgets.ViewBox(name='vb1', border_color='yellow',
-                            parent=canvas.scene)
-vb1.clip_method = 'fbo'
 vb1.camera = 'panzoom'
 
 # Second ViewBox uses a 3D perspective camera
-vb2 = scene.widgets.ViewBox(name='vb2', border_color='blue',
-                            parent=canvas.scene)
+vb2 = grid.add_view(name='vb2', border_color='yellow')
 vb2.parent = canvas.scene
+# Second ViewBox uses glViewport to implement clipping and a 3D turntable
+# camera.
 vb2.clip_method = 'viewport'
 vb2.camera = scene.TurntableCamera(elevation=30, azimuth=30, up='+y')
-
-
-# Move these when the canvas changes size
-@canvas.events.resize.connect
-def resize(event=None):
-    vb1.pos = 20, 20
-    vb1.size = canvas.size[0]/2. - 40, canvas.size[1] - 40
-    vb2.pos = canvas.size[0]/2. + 20, 20
-    vb2.size = canvas.size[0]/2. - 40, canvas.size[1] - 40
-
-resize()
 
 
 #
@@ -62,10 +52,10 @@ pos[:, 1] = np.random.normal(0.0, 0.5, size=N)
 pos[:20, 1] = -0.5  # So we can see which side is down
 
 # make a single plot line and display in both viewboxes
-line1 = scene.visuals.Line(pos=pos.copy(), color=color, mode='gl',
+line1 = scene.visuals.Line(pos=pos.copy(), color=color, method='gl',
                            antialias=False, name='line1', parent=vb1.scene)
-line1.add_parent(vb1.scene)
-line1.add_parent(vb2.scene)
+line2 = scene.visuals.Line(pos=pos.copy(), color=color, method='gl',
+                           antialias=False, name='line1', parent=vb2.scene)
 
 
 # And some squares:
@@ -77,19 +67,21 @@ box = np.array([[0, 0, 0],
 z = np.array([[0, 0, 1]], dtype=np.float32)
 
 # First two boxes are added to both views
-box1 = scene.visuals.Line(pos=box, color=(0.7, 0, 0, 1), mode='gl',
+box1 = scene.visuals.Line(pos=box, color=(0.7, 0, 0, 1), method='gl',
                           name='unit box', parent=vb1.scene)
-box1.add_parent(vb2.scene)
+box2 = scene.visuals.Line(pos=box, color=(0.7, 0, 0, 1), method='gl',
+                          name='unit box', parent=vb2.scene)
 
-box2 = scene.visuals.Line(pos=(box * 2 - 1),  color=(0, 0.7, 0, 1), mode='gl',
-                          name='nd box', parent=vb1.scene)
-box2.add_parent(vb2.scene)
+box2 = scene.visuals.Line(pos=(box * 2 - 1),  color=(0, 0.7, 0, 1),
+                          method='gl', name='nd box', parent=vb1.scene)
+box3 = scene.visuals.Line(pos=(box * 2 - 1),  color=(0, 0.7, 0, 1),
+                          method='gl', name='nd box', parent=vb2.scene)
 
 # These boxes are only added to the 3D view.
-box3 = scene.visuals.Line(pos=box + z, color=(1, 0, 0, 1), mode='gl',
-                          name='unit box', parent=vb2.scene)
-box4 = scene.visuals.Line(pos=((box + z) * 2 - 1), color=(0, 1, 0, 1),
-                          mode='gl', name='nd box', parent=vb2.scene)
+box3 = scene.visuals.Line(pos=box + z, color=(1, 0, 0, 1),
+                          method='gl', name='unit box', parent=vb2.scene)
+box5 = scene.visuals.Line(pos=((box + z) * 2 - 1), color=(0, 1, 0, 1),
+                          method='gl', name='nd box', parent=vb2.scene)
 
 
 if __name__ == '__main__' and sys.flags.interactive == 0:

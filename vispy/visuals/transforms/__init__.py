@@ -11,13 +11,14 @@ from .base_transform import BaseTransform  # noqa
 from .linear import (NullTransform, STTransform,  # noqa
                      AffineTransform,  PerspectiveTransform)  # noqa
 from .nonlinear import LogTransform, PolarTransform  # noqa
+from .interactive import PanZoomTransform
 from .chain import ChainTransform  # noqa
 from ._util import arg_to_array, arg_to_vec4, as_vec4, TransformCache  # noqa
 from .transform_system import TransformSystem
 
 __all__ = ['NullTransform', 'STTransform', 'AffineTransform',
            'PerspectiveTransform', 'LogTransform', 'PolarTransform',
-           'ChainTransform', 'TransformSystem']
+           'ChainTransform', 'TransformSystem', 'PanZoomTransform']
 
 transform_types = {}
 for o in list(globals().values()):

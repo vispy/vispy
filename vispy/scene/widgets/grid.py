@@ -15,11 +15,49 @@ class Grid(Widget):
     proportionally divide its internal area into a grid.
     """
     def __init__(self, **kwargs):
+        from .viewbox import ViewBox
         self._next_cell = [0, 0]  # row, col
         self._cells = {}
         self._grid_widgets = {}
         self.spacing = 6
+        self._n_added = 0
+        self._default_class = ViewBox  # what to add when __getitem__ is used
         Widget.__init__(self, **kwargs)
+
+    def __getitem__(self, idxs):
+        """Return an item or create it if the location is available"""
+        if not isinstance(idxs, tuple):
+            idxs = (idxs,)
+        if len(idxs) == 1:
+            idxs = idxs + (slice(None),)
+        elif len(idxs) != 2:
+            raise ValueError('Incorrect index: %s' % (idxs,))
+        lims = np.empty((2, 2), int)
+        for ii, idx in enumerate(idxs):
+            if isinstance(idx, int):
+                idx = slice(idx, idx + 1, None)
+            if not isinstance(idx, slice):
+                raise ValueError('indices must be slices or integers, not %s'
+                                 % (type(idx),))
+            if idx.step is not None and idx.step != 1:
+                raise ValueError('step must be one or None, not %s' % idx.step)
+            start = 0 if idx.start is None else idx.start
+            end = self.grid_size[ii] if idx.stop is None else idx.stop
+            lims[ii] = [start, end]
+        layout = self.layout_array
+        existing = layout[lims[0, 0]:lims[0, 1], lims[1, 0]:lims[1, 1]] + 1
+        if existing.any():
+            existing = set(list(existing.ravel()))
+            ii = list(existing)[0] - 1
+            if len(existing) != 1 or ((layout == ii).sum() !=
+                                      np.prod(np.diff(lims))):
+                raise ValueError('Cannot add widget (collision)')
+            return self._grid_widgets[ii][-1]
+        spans = np.diff(lims)[:, 0]
+        item = self.add_widget(self._default_class(),
+                               row=lims[0, 0], col=lims[1, 0],
+                               row_span=spans[0], col_span=spans[1])
+        return item
 
     def add_widget(self, widget=None, row=None, col=None, row_span=1, 
                    col_span=1):
@@ -56,44 +94,82 @@ class Grid(Widget):
 
         _row = self._cells.setdefault(row, {})
         _row[col] = widget
-        self._grid_widgets[widget] = row, col, row_span, col_span
+        self._grid_widgets[self._n_added] = (row, col, row_span, col_span,
+                                             widget)
+        self._n_added += 1
         widget.parent = self
 
         self._next_cell = [row, col+col_span]
         self._update_child_widgets()
         return widget
 
+    def add_grid(self, row=None, col=None, row_span=1, col_span=1, 
+                 **kwargs):
+        """
+        Create a new Grid and add it as a child widget.
+
+        The arguments 'row', 'col', 'row_span', and 'col_span' are passed to 
+        `add_widget()`, whereas all other arguments are passed to `ViewBox()`.
+        """
+        from .grid import Grid
+        grid = Grid(**kwargs)
+        return self.add_widget(grid, row, col, row_span, col_span)
+
+    def add_view(self, row=None, col=None, row_span=1, col_span=1, 
+                 **kwargs):
+        """
+        Create a new ViewBox and add it as a child widget.
+
+        The arguments 'row', 'col', 'row_span', and 'col_span' are passed to 
+        `add_widget()`, whereas all other arguments are passed to `ViewBox()`.
+        """
+        from .viewbox import ViewBox
+        view = ViewBox(**kwargs)
+        return self.add_widget(view, row, col, row_span, col_span)
+
     def next_row(self):
         self._next_cell = [self._next_cell[0] + 1, 0]
+
+    @property
+    def grid_size(self):
+        rvals = [widget[0]+widget[2] for widget in self._grid_widgets.values()]
+        cvals = [widget[1]+widget[3] for widget in self._grid_widgets.values()]
+        return max(rvals + [0]), max(cvals + [0])
+
+    @property
+    def layout_array(self):
+        locs = -1 * np.ones(self.grid_size, int)
+        for key in self._grid_widgets.keys():
+            r, c, rs, cs = self._grid_widgets[key][:4]
+            locs[r:r + rs, c:c + cs] = key
+        return locs
+
+    def __repr__(self):
+        return (('<Grid at %s:\n' % hex(id(self))) +
+                str(self.layout_array + 1) + '>')
 
     def _update_child_widgets(self):
         # Resize all widgets in this grid to share space.
         # This logic will need a lot of work..
-
-        rvals = [widget[0]+widget[2] for widget in self._grid_widgets.values()]
-        cvals = [widget[1]+widget[3] for widget in self._grid_widgets.values()]
-        if len(rvals) == 0 or len(cvals) == 0:
+        n_rows, n_cols = self.grid_size
+        if n_rows == 0:
             return
-
-        nrows = max(rvals)
-        ncols = max(cvals)
-
         # determine starting/ending position of each row and column
         s2 = self.spacing / 2.
         rect = self.rect.padded(self.padding + self.margin - s2)
-        rows = np.linspace(rect.bottom, rect.top, nrows+1)
+        rows = np.linspace(rect.bottom, rect.top, n_rows+1)
         rowstart = rows[:-1] + s2
         rowend = rows[1:] - s2
-        cols = np.linspace(rect.left, rect.right, ncols+1)
+        cols = np.linspace(rect.left, rect.right, n_cols+1)
         colstart = cols[:-1] + s2
         colend = cols[1:] - s2
 
-        for ch in self._grid_widgets:
-            row, col, rspan, cspan = self._grid_widgets[ch]
+        for key in self._grid_widgets.keys():
+            row, col, rspan, cspan, ch = self._grid_widgets[key]
 
             # Translate the origin of the node to the corner of the area
-            #ch.transform.reset()
-            #ch.transform.translate((colstart[col], rowstart[row]))
+            # ch.transform.reset()
+            # ch.transform.translate((colstart[col], rowstart[row]))
             ch.pos = colstart[col], rowstart[row]
 
             # ..and set the size to match.

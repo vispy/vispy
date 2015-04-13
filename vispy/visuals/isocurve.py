@@ -27,7 +27,7 @@ class IsocurveVisual(LineVisual):
         self._data = None
         self._level = level
         self._recompute = True
-        kwargs['mode'] = 'gl'
+        kwargs['method'] = 'gl'
         kwargs['antialias'] = False
         LineVisual.__init__(self, **kwargs)
         if data is not None:

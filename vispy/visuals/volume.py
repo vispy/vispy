@@ -14,7 +14,7 @@ texture coordinate as the starting point of the ray, and we know the
 ray direction. We then calculate the number of steps and use that number
 in a for-loop while we iterate through the volume. Each iteration we
 keep track of some voxel information. When the cast is done, we may do
-some final processing. Depending on the render style, the calculations
+some final processing. Depending on the render method, the calculations
 at teach iteration and the post-processing may differ.
 
 It is important for the texture interpolation in 'linear', since with
@@ -35,14 +35,14 @@ which the number of steps is very small.
 
 """
 
-from .. import gloo
+from ..gloo import Texture3D, TextureEmulated3D, VertexBuffer, IndexBuffer
 from . import Visual
 from .shaders import Function, ModularProgram
 from ..color import get_colormap
 
 import numpy as np
 
-# todo: implement more render styles (port from visvis)
+# todo: implement more render methods (port from visvis)
 # todo: allow anisotropic data
 # todo: what to do about lighting? ambi/diffuse/spec/shinynes on each visual?
 
@@ -83,7 +83,7 @@ void main() {
     v_clipplane.xyz = v_ray;
     v_clipplane.w = dot(v_clipplane.xyz, cameraposinvol);
 }
-"""
+"""  # noqa
 
 # Fragment shader
 FRAG_SHADER = """
@@ -267,7 +267,7 @@ vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
     return final_color;
 }}
 
-"""
+"""  # noqa
 
 # Code for calculating number of required steps
 calc_steps = """
@@ -316,7 +316,7 @@ float d2P(vec3 p, vec3 d, vec4 P)
     return (((1.0-invalid) * nom   + invalid * 999999.0) / 
             ((1.0-invalid) * denom + invalid * 1.0));
 }
-"""
+"""  # noqa
 
 
 MIP_SNIPPETS = dict(
@@ -383,34 +383,35 @@ class VolumeVisual(Visual):
     ----------
     vol : ndarray
         The volume to display. Must be ndim==2.
-    clim : tuple of two floats
+    clim : tuple of two floats | None
         The contrast limits. The values in the volume are mapped to
         black and white corresponding to these values. Default maps
         between min and max.
-    style : {'mip', 'iso'}
-        The render style to use. See corresponding docs for details.
+    method : {'mip', 'iso'}
+        The render method to use. See corresponding docs for details.
         Default 'mip'.
     threshold : float
-        The threshold to use for the isosurafce render style. By default
+        The threshold to use for the isosurafce render method. By default
         the mean of the given volume is used.
     relative_step_size : float
         The relative step size to step through the volume. Default 0.8.
         Increase to e.g. 1.5 to increase performance, at the cost of
         quality.
-    
+    cmap : str
+        Colormap to use.
+    emulate_texture : bool
+        Use 2D textures to emulate a 3D texture. OpenGL ES 2.0 compatible,
+        but has lower performance on desktop platforms.
     """
-    
+
     _vb_dtype = dtype = [('a_position', np.float32, 3),
                          ('a_texcoord', np.float32, 3), ]
-    
-    def __init__(self, vol, clim=None, style='mip', threshold=None, 
-                 relative_step_size=0.8, cmap='grays', emulated3d=False):
-        Visual.__init__(self)
 
-        if emulated3d:
-            tex_cls = gloo.TextureEmulated3D
-        else:
-            tex_cls = gloo.Texture3D
+    def __init__(self, vol, clim=None, method='mip', threshold=None, 
+                 relative_step_size=0.8, cmap='grays',
+                 emulate_texture=False):
+        Visual.__init__(self)
+        tex_cls = TextureEmulated3D if emulate_texture else Texture3D
 
         # Variable to determine clipping plane when inside the volume.
         # This value represents the z-value in view coordinates, but
@@ -440,7 +441,7 @@ class VolumeVisual(Visual):
         self.set_data(vol, clim)
         
         # Set params
-        self.style = style
+        self.method = method
         self.relative_step_size = relative_step_size
         self.threshold = threshold if (threshold is not None) else vol.mean()
     
@@ -455,9 +456,10 @@ class VolumeVisual(Visual):
         
         # Handle clim
         if clim is not None:
-            if not isinstance(clim, tuple) or not len(clim) == 2:
-                raise ValueError('clim must be a 2-element tuple')
-            self._clim = clim
+            clim = np.array(clim, float)
+            if not (clim.ndim == 1 and clim.size == 2):
+                raise ValueError('clim must be a 2-element array-like')
+            self._clim = tuple(clim)
         if self._clim is None:
             self._clim = vol.min(), vol.max()
         
@@ -493,30 +495,31 @@ class VolumeVisual(Visual):
         self.update()
 
     @property
-    def style(self):
-        """ The rende style to use:
+    def method(self):
+        """The render method to use
+
+        Current options are:
         
-        * mip: maxiumum intensity projection. Cast a ray and display the
-          maximum value that was encountered.
-        * iso: isosurface. Cast a ray until a certain threshold is encountered.
-          At that location, lighning calculations are performed to give the
-          visual appearance of a surface.  
-        * more to come ...
+            * mip: maxiumum intensity projection. Cast a ray and display the
+              maximum value that was encountered.
+            * iso: isosurface. Cast a ray until a certain threshold is
+              encountered. At that location, lighning calculations are
+              performed to give the visual appearance of a surface.  
         """
-        return self._style
+        return self._method
     
-    @style.setter
-    def style(self, style):
+    @method.setter
+    def method(self, method):
         # Check and save
-        known_styles = ('mip', 'iso', 'ray')
-        if style not in known_styles:
-            raise ValueError('Volume render style should be in %r, not %r' %
-                             (known_styles, style))
-        self._style = style
+        known_methods = ('mip', 'iso', 'ray')
+        if method not in known_methods:
+            raise ValueError('Volume render method should be in %r, not %r' %
+                             (known_methods, method))
+        self._method = method
         # Get rid of specific variables - they may become invalid
         self._program['u_threshold'] = None
 
-        self._program.frag = frag_dict[style]
+        self._program.frag = frag_dict[method]
         self._program.frag['calculate_steps'] = Function(calc_steps)
         self._program.frag['sampler_type'] = self._tex.glsl_sampler_type
         self._program.frag['sample'] = self._tex.glsl_sample
@@ -525,7 +528,7 @@ class VolumeVisual(Visual):
     
     @property
     def threshold(self):
-        """ The threshold value to apply for the isosurface render style.
+        """ The threshold value to apply for the isosurface render method.
         """
         return self._threshold
     
@@ -541,7 +544,7 @@ class VolumeVisual(Visual):
         Larger values yield higher performance at reduced quality. If
         set > 2.0 the ray skips entire voxels. Recommended values are
         between 0.5 and 1.5. The amount of quality degredation depends
-        on the render style.
+        on the render method.
         """
         return self._relative_step_size
     
@@ -641,9 +644,9 @@ class VolumeVisual(Visual):
         if self._vbo is not None:
             self._vbo.delete()
             self._index_buffer.delete()
-        self._vbo = gloo.VertexBuffer(data)
+        self._vbo = VertexBuffer(data)
         self._program.bind(self._vbo)
-        self._index_buffer = gloo.IndexBuffer(indices)
+        self._index_buffer = IndexBuffer(indices)
     
     def _calc_coords(self, tex_coord1, ver_coord1, div):
         """ Calculate vertices, texcoords and indices.
@@ -707,6 +710,7 @@ class VolumeVisual(Visual):
         return 0, self._vol_shape[2-axis]
     
     def draw(self, transforms):
+        Visual.draw(self, transforms)
         
         full_tr = transforms.get_full_transform()
         self._program.vert['transform'] = full_tr
@@ -719,9 +723,9 @@ class VolumeVisual(Visual):
         self._program.vert['viewtransformf'] = view_tr_f
         self._program.vert['viewtransformi'] = view_tr_i
         
-        # Set attributes that are specific to certain styles
+        # Set attributes that are specific to certain methods
         self._program.build_if_needed()
-        if self._style == 'iso':
+        if self._method == 'iso':
             self._program['u_threshold'] = self._threshold
         
         # Draw!

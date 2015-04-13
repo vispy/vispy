@@ -188,7 +188,7 @@ class Compiler(object):
         # todo: right now we assume all Variables are global, and all
         # Functions are local. Is this actually correct? Are there any
         # global functions? Are there any local variables?
-        from .function import Variable
+        from .variable import Variable
         return isinstance(obj, Variable)
 
     def _name_available(self, obj, name, shaders):

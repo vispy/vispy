@@ -18,6 +18,10 @@ class Rect(object):
         if len(args) == 1 and isinstance(args[0], Rect):
             self._pos = args[0]._pos
             self._size = args[0]._size
+        elif (len(args) == 1 and isinstance(args[0], (list, tuple)) and
+              len(args[0]) == 4):
+            self._pos = args[0][:2]
+            self._size = args[0][2:]
         elif len(args) == 2:
             self._pos = tuple(args[0])
             self._size = tuple(args[1])

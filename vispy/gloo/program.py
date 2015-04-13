@@ -111,8 +111,6 @@ class Program(GLObject):
         
         # Check and set shaders
         if isinstance(vert, string_types) and isinstance(frag, string_types):
-            vert = preprocess(vert)
-            frag = preprocess(frag)
             self.set_shaders(vert, frag)
         elif not (vert is None and frag is None):
             raise ValueError('Vert and frag must either both be str or None')
@@ -145,8 +143,13 @@ class Program(GLObject):
         """
         if not vert or not frag:
             raise ValueError('Vertex and fragment code must both be non-empty')
+        
+        # pre-process shader code for #include directives
+        vert, frag = preprocess(vert), preprocess(frag)
+        
         # Store source code, send it to glir, parse the code for variables
         self._shaders = vert, frag
+
         self._glir.command('SHADERS', self._id, vert, frag)
         # All current variables become pending variables again
         for key, val in self._user_variables.items():
@@ -355,8 +358,9 @@ class Program(GLObject):
                     if data.dtype is not None:
                         numel = self._gtypes[type_][1]
                         if data._last_dim and data._last_dim != numel:
-                            raise ValueError('data.shape[-1] must be %s not %s'
-                                             % (numel, data._last_dim))
+                            raise ValueError('data.shape[-1] must be %s '
+                                             'not %s for %s'
+                                             % (numel, data._last_dim, name))
                     self._user_variables[name] = data
                     value = (data.id, data.stride, data.offset)
                     self.glir.associate(data.glir)

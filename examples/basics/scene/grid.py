@@ -53,7 +53,7 @@ color[:, 0] = np.linspace(0, 1, N)
 color[:, 1] = color[::-1, 0]
 
 # Top grid cell shows plot data in a rectangular coordinate system.
-l1 = scene.visuals.Line(pos=pos, color=color, antialias=False, mode='gl')
+l1 = scene.visuals.Line(pos=pos, color=color, antialias=False, method='gl')
 b1.add(l1)
 grid1 = scene.visuals.GridLines(parent=b1.scene)
 
@@ -61,7 +61,7 @@ grid1 = scene.visuals.GridLines(parent=b1.scene)
 e2 = scene.Node(parent=b2.scene)
 e2.transform = scene.transforms.LogTransform(base=(2, 0, 0))
 l2 = scene.visuals.Line(pos=pos, color=color, antialias=False, parent=e2,
-                        mode='gl')
+                        method='gl')
 grid2 = scene.visuals.GridLines(parent=e2)
 
 # Bottom-right grid cell shows the same data again, but with a much more
@@ -75,7 +75,7 @@ e3.transform = scene.transforms.ChainTransform([
     scene.transforms.PolarTransform(),
     affine])
 l3 = scene.visuals.Line(pos=pos, color=color, antialias=False, parent=e3,
-                        mode='gl')
+                        method='gl')
 grid3 = scene.visuals.GridLines(scale=(np.pi/6., 1.0), parent=e3)
 
 if __name__ == '__main__' and sys.flags.interactive == 0:

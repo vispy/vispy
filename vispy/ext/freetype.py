@@ -210,7 +210,7 @@ def get_handle():
         __handle__ = FT_Library()
         error = FT_Init_FreeType(byref(__handle__))
         if error:
-            raise RuntimeError(error)
+            raise RuntimeError(hex(error))
     return __handle__
 
 
@@ -333,7 +333,7 @@ class Glyph(object):
         error = FT_Glyph_To_Bitmap(byref(self._FT_Glyph),
                                    mode, origin, destroy)
         if error:
-            raise RuntimeError(error)
+            raise RuntimeError(hex(error))
         return BitmapGlyph(self._FT_Glyph)
 
 
@@ -355,7 +355,7 @@ class GlyphSlot(object):
         aglyph = FT_Glyph()
         error = FT_Get_Glyph(self._FT_GlyphSlot, byref(aglyph))
         if error:
-            raise RuntimeError(error)
+            raise RuntimeError(hex(error))
         return Glyph(aglyph)
 
     bitmap = property(lambda self: Bitmap(self._FT_GlyphSlot.contents.bitmap))
@@ -377,7 +377,7 @@ class Face(object):
         u_filename = c_char_p(filename.encode('utf-8'))
         error = FT_New_Face(library, u_filename, index, byref(face))
         if error:
-            raise RuntimeError(error)
+            raise RuntimeError(hex(error))
         self._filename = filename
         self._index = index
         self._FT_Face = face
@@ -389,27 +389,27 @@ class Face(object):
     def attach_file(self, filename):
         error = FT_Attach_File(self._FT_Face, filename)
         if error:
-            raise RuntimeError(error)
+            raise RuntimeError(hex(error))
 
     def set_char_size(self, width=0, height=0, hres=72, vres=72):
         error = FT_Set_Char_Size(self._FT_Face, width, height, hres, vres)
         if error:
-            raise RuntimeError(error)
+            raise RuntimeError('Could not set size: %s' % hex(error))
 
     def set_pixel_sizes(self, width, height):
         error = FT_Set_Pixel_Sizes(self._FT_Face, width, height)
         if error:
-            raise RuntimeError(error)
+            raise RuntimeError(hex(error))
 
     def select_charmap(self, encoding):
         error = FT_Select_Charmap(self._FT_Face, encoding)
         if error:
-            raise RuntimeError(error)
+            raise RuntimeError(hex(error))
 
     def set_charmap(self, charmap):
         error = FT_Set_Charmap(self._FT_Face, charmap._FT_Charmap)
         if error:
-            raise RuntimeError(error)
+            raise RuntimeError(hex(error))
 
     def get_char_index(self, charcode):
         if isinstance(charcode, string_types):
@@ -436,25 +436,25 @@ class Face(object):
     def select_size(self, strike_index):
         error = FT_Select_Size(self._FT_Face, strike_index)
         if error:
-            raise RuntimeError(error)
+            raise RuntimeError(hex(error))
 
     def load_glyph(self, index, flags=FT_LOAD_RENDER):
         error = FT_Load_Glyph(self._FT_Face, index, flags)
         if error:
-            raise RuntimeError(error)
+            raise RuntimeError(hex(error))
 
     def load_char(self, char, flags=FT_LOAD_RENDER):
         if len(char) == 1:
             char = ord(char)
         error = FT_Load_Char(self._FT_Face, char, flags)
         if error:
-            raise RuntimeError(error)
+            raise RuntimeError(hex(error))
 
     def get_advance(self, gindex, flags):
         padvance = FT_Fixed(0)
         error = FT_Get_Advance(self._FT_Face, gindex, flags, byref(padvance))
         if error:
-            raise RuntimeError(error)
+            raise RuntimeError(hex(error))
         return padvance.value
 
     def get_kerning(self, left, right, mode=FT_KERNING_DEFAULT):
@@ -464,7 +464,7 @@ class Face(object):
         error = FT_Get_Kerning(self._FT_Face,
                                left_glyph, right_glyph, mode, byref(kerning))
         if error:
-            raise RuntimeError(error)
+            raise RuntimeError(hex(error))
         return kerning
 
     def get_format(self):

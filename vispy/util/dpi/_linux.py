@@ -8,6 +8,7 @@
 import re
 from subprocess import CalledProcessError
 
+from ..logs import logger
 from ..wrappers import run_subprocess
 
 
@@ -25,8 +26,18 @@ def _get_dpi_from(cmd, pattern, func):
             return func(*map(float, match.groups()))
 
 
-def get_dpi():
-    """Get screen DPI from the OS.
+def get_dpi(raise_error=True):
+    """Get screen DPI from the OS
+
+    Parameters
+    ----------
+    raise_error : bool
+        If True, raise an error if DPI could not be determined.
+
+    Returns
+    -------
+    dpi : float
+        Dots per inch of the primary screen.
     """
 
     from_xdpyinfo = _get_dpi_from(
@@ -40,5 +51,8 @@ def get_dpi():
         lambda x_px, y_px, x_mm, y_mm: 25.4 * (x_px / x_mm + y_px / y_mm) / 2)
     if from_xrandr is not None:
         return from_xrandr
-
-    raise RuntimeError('could not determine DPI')
+    if raise_error:
+        raise RuntimeError('could not determine DPI')
+    else:
+        logger.warning('could not determine DPI')
+    return 96

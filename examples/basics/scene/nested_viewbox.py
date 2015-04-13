@@ -93,7 +93,8 @@ vb11.pos = 0, 0
 vb11.size = 1, 0.5
 vb11.camera = 'panzoom'
 vb11.camera.rect = (0, 0, 1, 1)
-line11 = scene.visuals.Line(pos=pos, color=color, mode='gl', parent=vb11.scene)
+line11 = scene.visuals.Line(pos=pos, color=color, method='gl', 
+                            parent=vb11.scene)
 
 # top-left (+y up)
 vb12 = scene.widgets.ViewBox(parent=vb1.scene, name='vb12', 
@@ -102,7 +103,7 @@ vb12.pos = 0, 0.5
 vb12.size = 1, 0.5
 vb12.camera = 'base'  # use parent cs
 # vb12 does not apply any scaling, so we do that manually here to match vb11
-line12 = scene.visuals.Line(pos=pos * [[1.0, 0.5]], color=color, mode='gl', 
+line12 = scene.visuals.Line(pos=pos * [[1.0, 0.5]], color=color, method='gl', 
                             parent=vb12.scene)
 
 
@@ -125,7 +126,8 @@ vb21.pos = 0, 0
 vb21.size = w2, h2
 vb21.camera = 'panzoom'
 vb21.camera.rect = (0, 0, 1, 1)
-line21 = scene.visuals.Line(pos=pos, color=color, mode='gl', parent=vb21.scene)
+line21 = scene.visuals.Line(pos=pos, color=color, method='gl', 
+                            parent=vb21.scene)
 
 # bottom-right (+y down)
 vb22 = scene.widgets.ViewBox(parent=vb2.scene, name='vb22', 
@@ -134,7 +136,7 @@ vb22.pos = 0, h2
 vb22.size = w2, h2
 vb22.camera = 'base'  # use parent cs
 # vb22 does not apply any scaling, so we do that manually here to match vb21
-line22 = scene.visuals.Line(pos=pos * [[w2, h2]], color=color, mode='gl', 
+line22 = scene.visuals.Line(pos=pos * [[w2, h2]], color=color, method='gl', 
                             parent=vb22.scene)
 
 

@@ -74,7 +74,7 @@ void main()
     pos.z += v_radius*z;
     vec3 pos2 = pos.xyz;
     pos = u_projection * pos;
-    gl_FragDepth = 0.5*(pos.z / pos.w)+0.5;
+//    gl_FragDepth = 0.5*(pos.z / pos.w)+0.5;
     vec3 normal = vec3(x,y,z);
     float diffuse = clamp(dot(normal, v_light_direction), 0.0, 1.0);
 

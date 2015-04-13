@@ -8,7 +8,9 @@ import inspect
 import numpy as np
 
 from .color_array import ColorArray
-
+from ..ext.six import string_types
+from ..ext.cubehelix import cubehelix
+from ..ext import husl
 
 ###############################################################################
 # Color maps
@@ -131,8 +133,10 @@ def _glsl_mix(controls=None):
                 ifs = 'else'
             else:
                 ifs = 'else if (t < %.6f)' % (controls[i+1])
-            s += "%s {\n    return mix($color_%d, $color_%d, t);\n} " % \
-                 (ifs, i, i+1)
+            adj_t = '(t - %s) / %s' % (controls[i],
+                                       controls[i+1] - controls[i])
+            s += ("%s {\n    return mix($color_%d, $color_%d, %s);\n} " %
+                  (ifs, i, i+1, adj_t))
     return "vec4 colormap(float t) {\n%s\n}" % s
 
 
@@ -155,7 +159,7 @@ def _glsl_step(controls=None):
 # Mini GLSL template system for colors.
 def _process_glsl_template(template, colors):
     """Replace $color_i by color #i in the GLSL template."""
-    for i in range(len(colors)):
+    for i in range(len(colors) - 1, -1, -1):
         color = colors[i]
         assert len(color) == 4
         vec4_color = 'vec4(%.3f, %.3f, %.3f, %.3f)' % tuple(color)
@@ -358,6 +362,73 @@ class Colormap(BaseColormap):
         return self._map_function(self.colors.rgba, x, self._controls)
 
 
+class CubeHelixColormap(Colormap):
+    def __init__(self, start=0.5, rot=1, gamma=1.0, reverse=True, nlev=32,
+                 minSat=1.2, maxSat=1.2, minLight=0., maxLight=1., **kwargs):
+        """Cube helix colormap
+
+        A full implementation of Dave Green's "cubehelix" for Matplotlib.
+        Based on the FORTRAN 77 code provided in
+        D.A. Green, 2011, BASI, 39, 289.
+
+        http://adsabs.harvard.edu/abs/2011arXiv1108.5083G
+
+        User can adjust all parameters of the cubehelix algorithm.
+        This enables much greater flexibility in choosing color maps, while
+        always ensuring the color map scales in intensity from black
+        to white. A few simple examples:
+
+        Default color map settings produce the standard "cubehelix".
+
+        Create color map in only blues by setting rot=0 and start=0.
+
+        Create reverse (white to black) backwards through the rainbow once
+        by setting rot=1 and reverse=True.
+
+        Parameters
+        ----------
+        start : scalar, optional
+            Sets the starting position in the color space. 0=blue, 1=red,
+            2=green. Defaults to 0.5.
+        rot : scalar, optional
+            The number of rotations through the rainbow. Can be positive
+            or negative, indicating direction of rainbow. Negative values
+            correspond to Blue->Red direction. Defaults to -1.5
+        gamma : scalar, optional
+            The gamma correction for intensity. Defaults to 1.0
+        reverse : boolean, optional
+            Set to True to reverse the color map. Will go from black to
+            white. Good for density plots where shade~density. Defaults to
+            False
+        nlev : scalar, optional
+            Defines the number of discrete levels to render colors at.
+            Defaults to 32.
+        sat : scalar, optional
+            The saturation intensity factor. Defaults to 1.2
+            NOTE: this was formerly known as "hue" parameter
+        minSat : scalar, optional
+            Sets the minimum-level saturation. Defaults to 1.2
+        maxSat : scalar, optional
+            Sets the maximum-level saturation. Defaults to 1.2
+        startHue : scalar, optional
+            Sets the starting color, ranging from [0, 360], as in
+            D3 version by @mbostock
+            NOTE: overrides values in start parameter
+        endHue : scalar, optional
+            Sets the ending color, ranging from [0, 360], as in
+            D3 version by @mbostock
+            NOTE: overrides values in rot parameter
+        minLight : scalar, optional
+            Sets the minimum lightness value. Defaults to 0.
+        maxLight : scalar, optional
+            Sets the maximum lightness value. Defaults to 1.
+        """
+        super(CubeHelixColormap, self).__init__(
+            cubehelix(start=start, rot=rot, gamma=gamma, reverse=reverse,
+                      nlev=nlev, minSat=minSat, maxSat=maxSat,
+                      minLight=minLight, maxLight=maxLight, **kwargs))
+
+
 class _Fire(BaseColormap):
     colors = [(1.0, 1.0, 1.0, 1.0),
               (1.0, 1.0, 0.0, 1.0),
@@ -448,18 +519,33 @@ class _SingleHue(Colormap):
 
     Parameters
     ----------
-    hue : scalar (optional)
-        The number indicating the hue value. Must be in the range [0, 360].
-        Defaults to 200 (blue).
-    value : scalar (optional)
-        The number represting the value component of a color. Must be in the
-        range [0, 1.0]. The default value is 1.0.
+    hue : scalar, optional
+        The number indicating the hue value, which refers to a "true" color,
+        without any shading or tinting. Must be in the range [0, 360]. Defaults
+        to 200 (blue).
+    saturation_range : array-like, optional
+        The saturation represents how "pure" a color is. Less saturation means
+        more white light mixed in the color. A fully saturated color means
+        the pure color defined by the hue. No saturation means completely
+         hite. This colormap changes the saturation, and with this parameter
+        you can specify the lower and upper bound. Default is [0.2, 0.8].
+    value : scalar, optional
+        The number represting the value component of a color. This defines the
+        "brightness" of a color: a value of 0.0 means completely black while a
+        value of 1.0 means the color defined by the hue without shading. Must
+        be in the range [0, 1.0]. The default value is 1.0.
+
+    Notes
+    -----
+    For more information about the hue values see the `wikipedia page`_.
+
+    .. _wikipedia page: https://en.wikipedia.org/wiki/Hue
     """
 
-    def __init__(self, hue=200, value=1.0):
+    def __init__(self, hue=200, saturation_range=[0.2, 0.8], value=1.0):
         colors = ColorArray([
-            (hue, 0.05, value),
-            (hue, 1.0, value)
+            (hue, saturation_range[0], value),
+            (hue, saturation_range[1], value)
         ], color_space='hsv')
         super(_SingleHue, self).__init__(colors)
 
@@ -473,22 +559,22 @@ class _HSL(Colormap):
 
     Parameters
     ---------
-    n_colors : int (optional)
+    n_colors : int, optional
         The number of colors to generate.
-    hue_start : int (optional)
+    hue_start : int, optional
         The hue start value. Must be in the range [0, 360], the default is 0.
-    saturation : float (optional)
-        The saturation component of the colors generated. The default is fully
-        saturated (1.0). Must be in the range [0, 1.0].
-    value : float (optional)
-        The value component of the generated components or "brightness". Must
+    saturation : float, optional
+        The saturation component of the colors to generate. The default is
+        fully saturated (1.0). Must be in the range [0, 1.0].
+    value : float, optional
+        The value component of the colors to generate or "brightness". Must
         be in the range [0, 1.0], and the default is 1.0
-    controls : array-like
-        The list of control points for the given colors. It should be
+    controls : array-like, optional
+        The list of control points for the colors to generate. It should be
         an increasing list of floating-point number between 0.0 and 1.0.
         The first control point must be 0.0. The last control point must be
         1.0. The number of control points depends on the interpolation scheme.
-    interpolation : str
+    interpolation : str, optional
         The interpolation mode of the colormap. Default: 'linear'. Can also
         be 'zero'.
         If 'linear', ncontrols = ncolors (one color per control point).
@@ -499,13 +585,79 @@ class _HSL(Colormap):
                  controls=None, interpolation='linear'):
         hues = np.linspace(0, 360, ncolors + 1, dtype='int')[:-1]
         hues += hue_start
-        hues %= 360
+        hues %= 359
 
         colors = ColorArray([(hue, saturation, value) for hue in hues],
                             color_space='hsv')
 
         super(_HSL, self).__init__(colors, controls=controls,
                                    interpolation=interpolation)
+
+
+class _HUSL(Colormap):
+    """A colormap which is defined by n evenly spaced points in
+    the HUSL hue space.
+
+    Parameters
+    ---------
+    n_colors : int, optional
+        The number of colors to generate.
+    hue_start : int, optional
+        The hue start value. Must be in the range [0, 360], the default is 0.
+    saturation : float, optional
+        The saturation component of the colors to generate. The default is
+        fully saturated (1.0). Must be in the range [0, 1.0].
+    value : float, optional
+        The value component of the colors to generate or "brightness". Must
+        be in the range [0, 1.0], and the default is 0.7.
+    controls : array-like, optional
+        The list of control points for the colors to generate. It should be
+        an increasing list of floating-point number between 0.0 and 1.0.
+        The first control point must be 0.0. The last control point must be
+        1.0. The number of control points depends on the interpolation scheme.
+    interpolation : str, optional
+        The interpolation mode of the colormap. Default: 'linear'. Can also
+        be 'zero'.
+        If 'linear', ncontrols = ncolors (one color per control point).
+        If 'zero', ncontrols = ncolors+1 (one color per bin).
+
+    Notes
+    -----
+    For more information about HUSL colors see http://husl-colors.org
+    """
+
+    def __init__(self, ncolors=6, hue_start=0, saturation=1.0, value=0.7,
+                 controls=None, interpolation='linear'):
+        hues = np.linspace(0, 360, ncolors + 1, dtype='int')[:-1]
+        hues += hue_start
+        hues %= 359
+
+        saturation *= 99
+        value *= 99
+
+        colors = ColorArray(
+            [husl.husl_to_rgb(hue, saturation, value) for hue in hues],
+        )
+
+        super(_HUSL, self).__init__(colors, controls=controls,
+                                    interpolation=interpolation)
+
+
+class _Diverging(Colormap):
+
+    def __init__(self, h_pos=20, h_neg=250, saturation=1.0, value=0.7,
+                 center="light"):
+        saturation *= 99
+        value *= 99
+
+        start = husl.husl_to_rgb(h_neg, saturation, value)
+        mid = ((0.133, 0.133, 0.133) if center == "dark" else
+               (0.95, 0.95, 0.95))
+        end = husl.husl_to_rgb(h_pos, saturation, value)
+
+        colors = ColorArray([start, mid, end])
+
+        super(_Diverging, self).__init__(colors)
 
 
 _colormaps = dict(
@@ -521,16 +673,24 @@ _colormaps = dict(
     hot=_Hot(),
     ice=_Ice(),
     winter=_Winter(),
+    cubehelix=CubeHelixColormap(),
     single_hue=_SingleHue,
-    hsl=_HSL
+    hsl=_HSL,
+    husl=_HUSL,
+    diverging=_Diverging
 )
 
 
 def get_colormap(name, *args, **kwargs):
-    """Return a BaseColormap instance given its name.
+    """Obtain a colormap
 
     Some colormaps can have additional configuration parameters. Refer to
     their corresponding documentation for more information.
+
+    Parameters
+    ----------
+    name : str | Colormap
+        Colormap name. Can also be a Colormap for pass-through.
 
     Examples
     --------
@@ -538,13 +698,19 @@ def get_colormap(name, *args, **kwargs):
         >>> get_colormap('autumn')
         >>> get_colormap('single_hue', hue=10)
     """
-
-    colormap = _colormaps[name]
-
-    if inspect.isclass(colormap):
-        return colormap(*args, **kwargs)
+    if isinstance(name, BaseColormap):
+        cmap = name
     else:
-        return colormap
+        if not isinstance(name, string_types):
+            raise TypeError('colormap must be a Colormap or string name')
+        if name not in _colormaps:
+            raise KeyError('colormap name %s not found' % name)
+        cmap = _colormaps[name]
+
+        if inspect.isclass(cmap):
+            cmap = cmap(*args, **kwargs)
+
+    return cmap
 
 
 def get_colormaps():

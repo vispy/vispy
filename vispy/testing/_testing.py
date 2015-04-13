@@ -301,7 +301,7 @@ def _save_failed_test(data, expect, filename):
         print(response)
 
 
-def assert_image_equal(image, reference, limit=0.95):
+def assert_image_equal(image, reference, limit=0.9):
     """Downloads reference image and compares with image
 
     Parameters
@@ -309,19 +309,24 @@ def assert_image_equal(image, reference, limit=0.95):
     image: str, numpy.array
         'screenshot' or image data
     reference: str
-        'The filename on the remote ``test-data`` repository to download'
-    limit : int
-        Number of pixels that can differ in the image.
+        The filename on the remote ``test-data`` repository to download.
+    limit : float
+        The minimum acceptable cross-correlation value.
     """
     from ..gloo.util import _screenshot
     from ..io import read_png
+    from ..geometry import resize
 
     if image == "screenshot":
         image = _screenshot(alpha=False)
-    ref = read_png(get_testing_file(reference))[:, :, :3]
-
-    image = image[:ref.shape[0], :ref.shape[1], :]  # can be off in Windows
-    assert_equal(image.shape, ref.shape)
+    if isinstance(reference, string_types):
+        ref = read_png(get_testing_file(reference))[:, :, :3]
+    else:
+        ref = reference
+        reference = 'ndarray'
+    assert isinstance(ref, np.ndarray) and ref.ndim == 3
+    # resize in case we're on a HiDPI display
+    image = resize(image, ref.shape[:2], 'nearest')
 
     # check for minimum number of changed pixels, allowing for overall 1-pixel
     # shift in any direcion
@@ -332,7 +337,8 @@ def assert_image_equal(image, reference, limit=0.95):
         for jj in range(len(slice_as)):
             a = image[slice_as[ii], slice_as[jj]]
             b = ref[slice_bs[ii], slice_bs[jj]]
-            corr = np.corrcoef(a.ravel(), b.ravel())[0, 1]
+            with np.errstate(invalid='ignore'):
+                corr = np.corrcoef(a.ravel(), b.ravel())[0, 1]
             if corr > max_corr:
                 max_corr = corr
     if max_corr < limit:
@@ -344,19 +350,34 @@ def assert_image_equal(image, reference, limit=0.95):
 def TestingCanvas(bgcolor='black', size=(100, 100), dpi=None):
     """Class wrapper to avoid importing scene until necessary"""
     from ..scene import SceneCanvas
-    from .. import gloo
 
     class TestingCanvas(SceneCanvas):
         def __init__(self, bgcolor, size):
+            self._entered = False
             SceneCanvas.__init__(self, size=size, bgcolor=bgcolor, dpi=dpi)
 
         def __enter__(self):
             SceneCanvas.__enter__(self)
-            gloo.clear(color=self._bgcolor)
+            # sometimes our window can be larger than our requsted draw
+            # area (e.g. on Windows), and this messes up our tests that
+            # typically use very small windows. Here we "fix" it.
+            scale = np.array(self.physical_size) / np.array(self.size, float)
+            scale = int(np.round(np.mean(scale)))
+            self._wanted_vp = 0, 0, size[0] * scale, size[1] * scale
+            self.context.set_state(clear_color=self._bgcolor)
+            self.context.set_viewport(*self._wanted_vp)
+            self._entered = True
             return self
 
-        def draw_visual(self, visual):
-            SceneCanvas.draw_visual(self, visual)
+        def draw_visual(self, visual, event=None, viewport=None, clear=True):
+            if not self._entered:
+                return
+            if clear:
+                self.context.clear()
+            SceneCanvas.draw_visual(self, visual, event, viewport)
+            # must set this because draw_visual sets it back to the
+            # canvas size when it's done
+            self.context.set_viewport(*self._wanted_vp)
             self.context.finish()
 
     return TestingCanvas(bgcolor, size)
@@ -368,10 +389,8 @@ def save_testing_image(image, location):
     from ..util import make_png
     if image == "screenshot":
         image = _screenshot(alpha=False)
-    png = make_png(image)
-    f = open(location+'.png', 'wb')
-    f.write(png)
-    f.close()
+    with open(location+'.png', 'wb') as fid:
+        fid.write(make_png(image))
 
 
 @nottest

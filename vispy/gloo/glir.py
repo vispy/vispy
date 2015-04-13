@@ -10,6 +10,7 @@ Implementation to execute GL Intermediate Representation (GLIR)
 
 import sys
 import re
+import json
 
 import numpy as np
 
@@ -175,64 +176,84 @@ class GlirQueue(object):
                 resized.add(command[1])
             commands2.append(command)
         return list(reversed(commands2))
-    
+
     def _convert_shaders(self, convert, shaders):
-        """ Modify shading code so that we can write code once
-        and make it run "everywhere".
-        """
+        return convert_shaders(convert, shaders)
+
+
+def convert_shaders(convert, shaders):
+    """ Modify shading code so that we can write code once
+    and make it run "everywhere".
+    """
         
-        # New version of the shaders
-        out = []
+    # New version of the shaders
+    out = []
+    
+    if convert == 'es2':
         
-        if convert == 'es2':
-            
-            for isfragment, shader in enumerate(shaders):
-                has_version = False
-                has_prec_float = False
-                has_prec_int = False
-                lines = []
-                # Iterate over lines
-                for line in shader.lstrip().splitlines():
-                    has_version = has_version or line.startswith('#version')
-                    if line.startswith('precision '):
-                        has_prec_float = has_prec_float or 'float' in line
-                        has_prec_int = has_prec_int or 'int' in line
-                    lines.append(line.rstrip())
-                # Write
-                # BUG: fails on WebGL (Chrome)
-                # if True:
-                #     lines.insert(has_version, '#line 0')
-                if not has_prec_float:
-                    lines.insert(has_version, 'precision highp float;')
-                if not has_prec_int:
-                    lines.insert(has_version, 'precision highp int;')
-                # BUG: fails on WebGL (Chrome)
-                # if not has_version:
-                #     lines.insert(has_version, '#version 100')
-                out.append('\n'.join(lines))
+        for isfragment, shader in enumerate(shaders):
+            has_version = False
+            has_prec_float = False
+            has_prec_int = False
+            lines = []
+            # Iterate over lines
+            for line in shader.lstrip().splitlines():
+                if line.startswith('#version'):
+                    has_version = True
+                    continue
+                if line.startswith('precision '):
+                    has_prec_float = has_prec_float or 'float' in line
+                    has_prec_int = has_prec_int or 'int' in line
+                lines.append(line.rstrip())
+            # Write
+            # BUG: fails on WebGL (Chrome)
+            # if True:
+            #     lines.insert(has_version, '#line 0')
+            if not has_prec_float:
+                lines.insert(has_version, 'precision highp float;')
+            if not has_prec_int:
+                lines.insert(has_version, 'precision highp int;')
+            # BUG: fails on WebGL (Chrome)
+            # if not has_version:
+            #     lines.insert(has_version, '#version 100')
+            out.append('\n'.join(lines))
+    
+    elif convert == 'desktop':
         
-        elif convert == 'desktop':
-            
-            for isfragment, shader in enumerate(shaders):
-                has_version = False
-                lines = []
-                # Iterate over lines
-                for line in shader.lstrip().splitlines():
-                    has_version = has_version or line.startswith('#version')
-                    if line.startswith('precision '):
-                        line = ''
-                    for prec in (' highp ', ' mediump ', ' lowp '):
-                        line = line.replace(prec, ' ')
-                    lines.append(line.rstrip())
-                # Write
-                if not has_version:
-                    lines.insert(0, '#version 120\n#line 2\n')
-                out.append('\n'.join(lines))
+        for isfragment, shader in enumerate(shaders):
+            has_version = False
+            lines = []
+            # Iterate over lines
+            for line in shader.lstrip().splitlines():
+                has_version = has_version or line.startswith('#version')
+                if line.startswith('precision '):
+                    line = ''
+                for prec in (' highp ', ' mediump ', ' lowp '):
+                    line = line.replace(prec, ' ')
+                lines.append(line.rstrip())
+            # Write
+            if not has_version:
+                lines.insert(0, '#version 120\n#line 2\n')
+            out.append('\n'.join(lines))
+    
+    else:
+        raise ValueError('Cannot convert shaders to %r.' % convert)
         
-        else:
-            raise ValueError('Cannot convert shaders to %r.' % convert)
-        
-        return tuple(out)
+    return tuple(out)
+
+
+def as_es2_command(command):
+    """ Modify a desktop command so it works on es2.
+    """
+
+    if command[0] == 'FUNC':
+        return (command[0], re.sub(r'^gl([A-Z])',
+                lambda m: m.group(1).lower(), command[1])) + command[2:]
+    if command[0] == 'SHADERS':
+        return command[:2] + convert_shaders('es2', command[2:])
+    if command[0] == 'UNIFORM':
+        return command[:-1] + (command[-1].tolist(),)
+    return command
 
 
 class BaseGlirParser(object):
@@ -294,7 +315,75 @@ class GlirParser(BaseGlirParser):
             return 'es2'
         else:
             return 'desktop'
-    
+
+    def _parse(self, command):
+        """ Parse a single command.
+        """
+
+        cmd, id_, args = command[0], command[1], command[2:]
+            
+        if cmd == 'CURRENT':
+            # This context is made current
+            self.env.clear()
+            self._gl_initialize()
+            gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, 0)
+        elif cmd == 'FUNC':
+            # GL function call
+            args = [as_enum(a) for a in args]
+            try:
+                getattr(gl, id_)(*args)
+            except AttributeError:
+                logger.warning('Invalid gl command: %r' % id_)
+        elif cmd == 'CREATE':
+            # Creating an object
+            if args[0] is not None:
+                klass = self._classmap[args[0]]
+                self._objects[id_] = klass(self, id_)
+            else:
+                self._invalid_objects.add(id_)
+        elif cmd == 'DELETE':
+            # Deleting an object
+            ob = self._objects.get(id_, None)
+            if ob is not None:
+                self._objects[id_] = JUST_DELETED
+                ob.delete()
+        else:
+            # Doing somthing to an object
+            ob = self._objects.get(id_, None)
+            if ob == JUST_DELETED:
+                return
+            if ob is None:
+                if id_ not in self._invalid_objects:
+                    raise RuntimeError('Cannot %s object %i because it '
+                                       'does not exist' % (cmd, id_))
+                return
+            # Triage over command. Order of commands is set so most
+            # common ones occur first.
+            if cmd == 'DRAW':  # Program
+                ob.draw(*args)
+            elif cmd == 'TEXTURE':  # Program
+                ob.set_texture(*args)
+            elif cmd == 'UNIFORM':  # Program
+                ob.set_uniform(*args)
+            elif cmd == 'ATTRIBUTE':  # Program
+                ob.set_attribute(*args)
+            elif cmd == 'DATA':  # VertexBuffer, IndexBuffer, Texture
+                ob.set_data(*args)
+            elif cmd == 'SIZE':  # VertexBuffer, IndexBuffer,
+                ob.set_size(*args)  # Texture[1D, 2D, 3D], RenderBuffer
+            elif cmd == 'ATTACH':  # FrameBuffer
+                ob.attach(*args)
+            elif cmd == 'FRAMEBUFFER':  # FrameBuffer
+                ob.set_framebuffer(*args)
+            elif cmd == 'SHADERS':  # Program
+                ob.set_shaders(*args)
+            elif cmd == 'WRAPPING':  # Texture1D, Texture2D, Texture3D
+                ob.set_wrapping(*args)
+            elif cmd == 'INTERPOLATION':  # Texture1D, Texture2D, Texture3D
+                ob.set_interpolation(*args)
+            else:
+                logger.warning('Invalid GLIR command %r' % cmd)
+   
     def parse(self, commands):
         """ Parse a list of commands.
         """
@@ -309,70 +398,8 @@ class GlirParser(BaseGlirParser):
             self._objects.pop(id_)
         
         for command in commands:
-            cmd, id_, args = command[0], command[1], command[2:]
-            
-            if cmd == 'CURRENT':
-                # This context is made current
-                self.env.clear()
-                self._gl_initialize()
-                gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, 0)
-            elif cmd == 'FUNC':
-                # GL function call
-                args = [as_enum(a) for a in args]
-                try:
-                    getattr(gl, id_)(*args)
-                except AttributeError:
-                    logger.warning('Invalid gl command: %r' % id_)
-            elif cmd == 'CREATE':
-                # Creating an object
-                if args[0] is not None:
-                    klass = self._classmap[args[0]]
-                    self._objects[id_] = klass(self, id_)
-                else:
-                    self._invalid_objects.add(id_)
-            elif cmd == 'DELETE':
-                # Deleting an object
-                ob = self._objects.get(id_, None)
-                if ob is not None:
-                    self._objects[id_] = JUST_DELETED
-                    ob.delete()
-            else:
-                # Doing somthing to an object
-                ob = self._objects.get(id_, None)
-                if ob == JUST_DELETED:
-                    continue
-                if ob is None:
-                    if id_ not in self._invalid_objects:
-                        raise RuntimeError('Cannot %s object %i because it '
-                                           'does not exist' % (cmd, id_))
-                    continue
-                # Triage over command. Order of commands is set so most
-                # common ones occur first.
-                if cmd == 'DRAW':  # Program
-                    ob.draw(*args)
-                elif cmd == 'TEXTURE':  # Program
-                    ob.set_texture(*args)
-                elif cmd == 'UNIFORM':  # Program
-                    ob.set_uniform(*args)
-                elif cmd == 'ATTRIBUTE':  # Program
-                    ob.set_attribute(*args)
-                elif cmd == 'DATA':  # VertexBuffer, IndexBuffer, Texture
-                    ob.set_data(*args)
-                elif cmd == 'SIZE':  # VertexBuffer, IndexBuffer,
-                    ob.set_size(*args)  # Texture[1D, 2D, 3D], RenderBuffer
-                elif cmd == 'ATTACH':  # FrameBuffer
-                    ob.attach(*args)
-                elif cmd == 'FRAMEBUFFER':  # FrameBuffer
-                    ob.set_framebuffer(*args)
-                elif cmd == 'SHADERS':  # Program
-                    ob.set_shaders(*args)
-                elif cmd == 'WRAPPING':  # Texture1D, Texture2D, Texture3D
-                    ob.set_wrapping(*args)
-                elif cmd == 'INTERPOLATION':  # Texture1D, Texture2D, Texture3D
-                    ob.set_interpolation(*args)
-                else:
-                    logger.warning('Invalid GLIR command %r' % cmd)
-    
+            self._parse(command)
+
     def get_object(self, id_):
         """ Get the object with the given id or None if it does not exist.
         """
@@ -392,8 +419,37 @@ class GlirParser(BaseGlirParser):
             gl.glEnable(GL_POINT_SPRITE)
 
 
-## GLIR objects
+def glir_logger(parser_cls, file_or_filename):
+    from ..util.logs import NumPyJSONEncoder
 
+    class cls(parser_cls):
+        def __init__(self, *args, **kwargs):
+            parser_cls.__init__(self, *args, **kwargs)
+
+            if isinstance(file_or_filename, string_types):
+                self._file = open(file_or_filename, 'w')
+            else:
+                self._file = file_or_filename
+
+            self._file.write('[]')
+            self._empty = True
+
+        def _parse(self, command):
+            parser_cls._parse(self, command)
+
+            self._file.seek(self._file.tell() - 1)
+            if self._empty:
+                self._empty = False
+            else:
+                self._file.write(',\n')
+            json.dump(as_es2_command(command),
+                      self._file, cls=NumPyJSONEncoder)
+            self._file.write(']')
+
+    return cls
+
+
+## GLIR objects
 
 class GlirObject(object):
     def __init__(self, parser, id_):
@@ -619,7 +675,7 @@ class GlirProgram(GlirObject):
             self._handles[name] = handle  # Store in cache
             if handle < 0:
                 self._known_invalid.add(name)
-                logger.warning('Variable %s is not an active uniform' % name)
+                logger.info('Variable %s is not an active uniform' % name)
                 return
         # Program needs to be active in order to set uniforms
         self.activate()
@@ -660,7 +716,7 @@ class GlirProgram(GlirObject):
             self._handles[name] = handle  # Store in cache
             if handle < 0:
                 self._known_invalid.add(name)
-                logger.warning('Variable %s is not an active uniform' % name)
+                logger.info('Variable %s is not an active uniform' % name)
                 return
         # Look up function to call
         funcname = self.UTYPEMAP[type_]
@@ -693,7 +749,7 @@ class GlirProgram(GlirObject):
                 self._known_invalid.add(name)
                 if value[0] != 0 and value[2] > 0:  # VBO with offset
                     return  # Probably an unused element in a structured VBO
-                logger.warning('Variable %s is not an active attribute' % name)
+                logger.info('Variable %s is not an active attribute' % name)
                 return
         # Program needs to be active in order to set uniforms
         self.activate()
@@ -743,8 +799,8 @@ class GlirProgram(GlirObject):
     def _validate(self):
         # Validate ourselves
         if self._unset_variables:
-            logger.warning('Program has unset variables: %r' % 
-                           self._unset_variables)
+            logger.info('Program has unset variables: %r' %
+                        self._unset_variables)
         # Validate via OpenGL
         gl.glValidateProgram(self._handle)
         if not gl.glGetProgramParameter(self._handle, 

@@ -10,7 +10,7 @@ Marker Visual and shader definitions.
 import numpy as np
 
 from ..color import ColorArray
-from ..gloo import set_state, VertexBuffer, _check_valid
+from ..gloo import VertexBuffer, _check_valid
 from .shaders import ModularProgram, Function, Variable
 from .visual import Visual
 
@@ -502,8 +502,10 @@ class MarkersVisual(Visual):
         self._program.vert['scalarsize'] = Function(size1d)
         self._program.frag['scalarsize'] = Function(size1d)
         Visual.__init__(self)
+        self.set_gl_state(depth_test=False, blend=True,
+                          blend_func=('src_alpha', 'one_minus_src_alpha'))
 
-    def set_data(self, pos=None, style='o', size=10., edge_width=1.,
+    def set_data(self, pos=None, symbol='o', size=10., edge_width=1.,
                  edge_width_rel=None, edge_color='black', face_color='white',
                  scaling=False):
         """ Set the data used to display this visual.
@@ -545,7 +547,7 @@ class MarkersVisual(Visual):
         else:
             if edge_width_rel < 0:
                 raise ValueError('edge_width_rel cannot be negative')
-        self.set_style(style)
+        self.set_symbol(symbol)
         self.scaling = scaling
 
         edge_color = ColorArray(edge_color).rgba
@@ -575,15 +577,15 @@ class MarkersVisual(Visual):
         self._vbo = VertexBuffer(data)
         self.update()
 
-    def set_style(self, style='o'):
-        _check_valid('style', style, marker_types)
-        self._marker_fun = Function(_marker_dict[style])
+    def set_symbol(self, symbol='o'):
+        _check_valid('symbol', symbol, marker_types)
+        self._marker_fun = Function(_marker_dict[symbol])
         self._marker_fun['v_size'] = self._v_size_var
         self._program.frag['marker'] = self._marker_fun
 
     def draw(self, transforms):
-        set_state(depth_test=False, blend=True,
-                  blend_func=('src_alpha', 'one_minus_src_alpha'))
+        Visual.draw(self, transforms)
+        
         xform = transforms.get_full_transform()
         self._program.vert['transform'] = xform
         # TO DO: find a way to avoid copying data and rebinding them to the vbo

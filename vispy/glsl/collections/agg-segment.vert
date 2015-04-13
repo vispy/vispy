@@ -39,8 +39,8 @@ void main (void)
     v_antialias = antialias;
     v_color     = color;
 
-    vec4 P0_ = transform(P0);
-    vec4 P1_ = transform(P1);
+    vec4 P0_ = $transform(vec4(P0, 1));
+    vec4 P1_ = $transform(vec4(P1, 1));
 
     // p0/p1 in viewport coordinates
     vec2 p0 = NDC_to_viewport(P0_, viewport.zw);

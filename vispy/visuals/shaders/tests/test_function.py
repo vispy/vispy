@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
-from vispy.visuals.shaders.function import (Function, Variable, Varying,
-                                            MainFunction, FunctionChain)
+from vispy.visuals.shaders import (Function, MainFunction, Variable, Varying,
+                                   FunctionChain, StatementList)
+
 
 # Users normally don't need these, but I want to test them
-from vispy.visuals.shaders.function import FunctionCall, TextExpression
+from vispy.visuals.shaders.expression import FunctionCall, TextExpression
 
 from vispy.testing import (assert_in, assert_not_in, assert_is,
                            run_tests_if_main, assert_raises, assert_equal)
@@ -278,6 +279,13 @@ def test_function_basics():
     assert_in('\ntransform_scale(XX);\n', text)
     assert_in('\ntransform_scale(YY);\n', text)
     
+    # test pre/post assignments
+    fun = Function('void main() {some stuff;}')
+    fun['pre'] = '__pre__'
+    fun['post'] = '__post__'
+    text = fun.compile()
+    assert text == 'void main() {\n    __pre__\nsome stuff;\n    __post__\n}\n'
+    
     # Test variable expressions
     fun = Function('void main(){$foo; $bar;}')
     fun['foo'] = Variable('uniform float bla')
@@ -415,6 +423,23 @@ def test_FunctionChain():
     assert_in(f3, ch.dependencies())
     assert_in(f4, ch.dependencies())
     assert_in(f5, ch.dependencies())
+
+
+def test_StatementList():
+    func = Function("void func() {}")
+    main = Function("void main() {}")
+    main['pre'] = StatementList()
+    expr = func()
+    main['pre'].append(expr)
+    assert main['pre'].items == [expr]
+    main['pre'].add(expr)
+    assert main['pre'].items == [expr]
+    
+    code = main.compile()
+    assert " func();" in code
+    
+    main['pre'].remove(expr)
+    assert main['pre'].items == []
 
 
 def test_MainFunction():

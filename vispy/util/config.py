@@ -18,7 +18,7 @@ from shutil import rmtree
 
 from .event import EmitterGroup, EventEmitter, Event
 from .logs import logger, set_log_level, use_log_level
-from ..ext.six import string_types
+from ..ext.six import string_types, file_types
 
 config = None
 _data_path = None
@@ -40,9 +40,12 @@ def _init():
         'default_backend': string_types,
         'gl_backend': string_types,
         'gl_debug': (bool,),
+        'glir_file': string_types+file_types,
+        'include_path': list,
         'logging_level': string_types,
         'qt_lib': string_types,
         'dpi': (int, type(None)),
+        'profile': string_types + (type(None),),
     }
 
     # Default values for all config options
@@ -51,9 +54,12 @@ def _init():
         'default_backend': '',
         'gl_backend': 'gl2',
         'gl_debug': False,
+        'glir_file': '',
+        'include_path': [],
         'logging_level': 'info',
         'qt_lib': 'any',
         'dpi': None,
+        'profile': None,
     }
 
     config = Config(**default_config_options)
@@ -94,8 +100,17 @@ VisPy command line arguments:
   --vispy-gl-debug
     Enables error checking for all OpenGL calls.
 
-  --vispy-profile
-    Enable profiling and print the results when the program exits.
+  --vispy-glir-file
+    Export glir commands to specified file.
+
+  --vispy-profile=locations
+    Measure performance at specific code locations and display results. 
+    *locations* may be "all" or a comma-separated list of method names like
+    "SceneCanvas.draw_visual".
+
+  --vispy-cprofile
+    Enable profiling using the built-in cProfile module and display results
+    when the program exits.
 
   --vispy-help
     Display this help message.
@@ -109,8 +124,9 @@ def _parse_command_line_arguments():
     """
     global config
     # Get command line args for vispy
-    argnames = ['vispy-backend=', 'vispy-gl-debug', 'vispy-log=', 'vispy-help',
-                'vispy-profile', 'vispy-dpi=']
+    argnames = ['vispy-backend=', 'vispy-gl-debug', 'vispy-glir-file=',
+                'vispy-log=', 'vispy-help', 'vispy-profile=', 'vispy-cprofile',
+                'vispy-dpi=']
     try:
         opts, args = getopt.getopt(sys.argv[1:], '', argnames)
     except getopt.GetoptError:
@@ -123,6 +139,8 @@ def _parse_command_line_arguments():
                 logger.info('vispy backend: %s', a)
             elif o == '--vispy-gl-debug':
                 config['gl_debug'] = True
+            elif o == '--vispy-glir-file':
+                config['glir_file'] = a
             elif o == '--vispy-log':
                 if ',' in a:
                     verbose, match = a.split(',')
@@ -132,6 +150,8 @@ def _parse_command_line_arguments():
                 config['logging_level'] = a
                 set_log_level(verbose, match)
             elif o == '--vispy-profile':
+                config['profile'] = a
+            elif o == '--vispy-cprofile':
                 _enable_profiling()
             elif o == '--vispy-help':
                 print(VISPY_HELP)

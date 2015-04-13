@@ -130,18 +130,15 @@ class ColorArray(object):
     Under the hood, this class stores data in RGBA format suitable for use
     on the GPU.
     """
-    def __init__(self, color=None, alpha=None,
+    def __init__(self, color=(0., 0., 0.), alpha=None,
                  clip=False, color_space='rgb'):
 
         # if color is RGB, then set the default color to black
-        if color_space == 'rgb':
-            # by default, if the color is None, we pick black
-            color = 'black' if color is None else color
-        elif color_space == 'hsv':
-            color = (0, 0, 0) if color is None else color
+        color = (0,) * 4 if color is None else color
+        if color_space == 'hsv':
             # if the color space is hsv, convert hsv to rgb
             color = _hsv_to_rgb(color)
-        else:
+        elif color_space != 'rgb':
             raise ValueError('color_space should be either "rgb" or'
                              '"hsv", it is ' + color_space)
 

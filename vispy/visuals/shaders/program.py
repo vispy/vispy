@@ -5,30 +5,32 @@
 from __future__ import division
 
 from ...gloo import Program
+from ...gloo.preprocessor import preprocess
 from ...util import logger
 from ...util.event import EventEmitter
-from .function import MainFunction, Variable
+from .function import MainFunction
+from .variable import Variable
 from .compiler import Compiler
 
 
 class ModularProgram(Program):
     """
     Shader program using Function instances as basis for its shaders.
-    
-    Automatically rebuilds program when functions have changed and uploads 
+
+    Automatically rebuilds program when functions have changed and uploads
     program variables.
     """
     def __init__(self, vcode=None, fcode=None):
         Program.__init__(self)
-        
+
         self.changed = EventEmitter(source=self, type='program_change')
 
         # Cache state of Variables so we know which ones require update
         self._variable_state = {}
 
         self.vert = vcode
-        self.frag = fcode       
-        
+        self.frag = fcode
+
     @property
     def vert(self):
         return self._vert
@@ -42,6 +44,7 @@ class ModularProgram(Program):
         if self._vert is None:
             return
 
+        vcode = preprocess(vcode)
         self._vert = MainFunction(vcode)
         self._vert.changed.connect((self, '_source_changed'))
 
@@ -61,6 +64,7 @@ class ModularProgram(Program):
         if self._frag is None:
             return
 
+        fcode = preprocess(fcode)
         self._frag = MainFunction(fcode)
         self._frag.changed.connect((self, '_source_changed'))
 
@@ -72,17 +76,18 @@ class ModularProgram(Program):
         """
         pass
         # todo: remove!
-    
+
     def _source_changed(self, ev):
         logger.debug("ModularProgram source changed: %s", self)
         if ev.code_changed:
             self._need_build = True
-        self.changed()
+        self.changed(code_changed=ev.code_changed, 
+                     value_changed=ev.value_changed)
     
     def draw(self, *args, **kwargs):
         self.build_if_needed()
         Program.draw(self, *args, **kwargs)
-    
+
     def build_if_needed(self):
         """ Reset shader source if necesssary.
         """
@@ -90,7 +95,7 @@ class ModularProgram(Program):
             self._build()
             self._need_build = False
         self.update_variables()
-    
+
     def _build(self):
         logger.debug("Rebuild ModularProgram: %s", self)
         self.compiler = Compiler(vert=self.vert, frag=self.frag)
@@ -100,7 +105,7 @@ class ModularProgram(Program):
         logger.debug('==== Fragment shader ====\n\n%s\n', code['frag'])
         # Note: No need to reset _variable_state, gloo.Program resends
         # attribute/uniform data on setting shaders
-    
+
     def update_variables(self):
         # Clear any variables that we may have set another time.
         # Otherwise we get lots of warnings.
@@ -117,4 +122,4 @@ class ModularProgram(Program):
             state_id = dep.state_id
             if self._variable_state.get(name, None) != state_id:
                 self[name] = dep.value
-                self._variable_state[name] = state_id      
+                self._variable_state[name] = state_id

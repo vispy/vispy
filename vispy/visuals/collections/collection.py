@@ -13,9 +13,10 @@ interface.
 
 import numpy as np
 from ... import gloo
-from ...gloo import Program
 from . util import fetchcode
 from . base_collection import BaseCollection
+from ..shaders import ModularProgram
+from ...util.event import EventEmitter
 
 
 class Collection(BaseCollection):
@@ -70,6 +71,8 @@ class Collection(BaseCollection):
         self._mode = mode
         vtype = []
         utype = []
+        
+        self.update = EventEmitter(source=self, type='collection_update')
 
         # Build vtype and utype according to parameters
         declarations = {"uniforms": "",
@@ -119,7 +122,8 @@ class Collection(BaseCollection):
         self._vertex = vertex
         self._fragment = fragment
 
-        program = Program(vertex, fragment)
+        program = ModularProgram(vertex, fragment)
+        program.changed.connect(self.update)
         self._programs.append(program)
 
         # Initialize uniforms
@@ -177,6 +181,7 @@ class Collection(BaseCollection):
 
         found = False
         for program in self._programs:
+            program.build_if_needed()
             for name, (storage, _, _, _) in program._code_variables.items():
                 if name == key and storage == 'uniform':
                     found = True

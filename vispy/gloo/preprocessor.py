@@ -31,8 +31,7 @@ def remove_comments(code):
 def merge_includes(code):
     """Merge all includes recursively."""
 
-    # pattern = '\#\s*include\s*"(?P<filename>[a-zA-Z0-9\-\.\/]+)"[^\r\n]*\n'
-    pattern = '\#\s*include\s*"(?P<filename>[a-zA-Z0-9\-\.\/]+)"'
+    pattern = '\#\s*include\s*"(?P<filename>[a-zA-Z0-9\_\-\.\/]+)"'
     regex = re.compile(pattern)
     includes = []
 

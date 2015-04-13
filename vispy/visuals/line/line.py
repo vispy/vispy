@@ -14,6 +14,7 @@ from ...color import Color, ColorArray, get_colormap
 from ...ext.six import string_types
 from ..shaders import ModularProgram, Function
 from ..visual import Visual
+from ...util.profiler import Profiler
 
 from .dash_atlas import DashAtlas
 from . import vertex
@@ -65,29 +66,33 @@ class LineVisual(Visual):
         Can also be a colormap name, or appropriate `Function`.
     width:
         The width of the line in px. Line widths > 1px are only
-        guaranteed to work when using 'agg' mode.
+        guaranteed to work when using 'agg' method.
     connect : str or array
         Determines which vertices are connected by lines.
+
             * "strip" causes the line to be drawn with each vertex
               connected to the next.
             * "segments" causes each pair of vertices to draw an
               independent line segment
             * numpy arrays specify the exact set of segment pairs to
               connect.
-    mode : str
+
+    method : str
         Mode to use for drawing.
+
             * "agg" uses anti-grain geometry to draw nicely antialiased lines
               with proper joins and endcaps.
             * "gl" uses OpenGL's built-in line rendering. This is much faster,
               but produces much lower-quality results and is not guaranteed to
               obey the requested line width or join/endcap styles.
+
     antialias : bool
         Enables or disables antialiasing.
-        For mode='gl', this specifies whether to use GL's line smoothing, which
-        may be unavailable or inconsistent on some platforms.
+        For method='gl', this specifies whether to use GL's line smoothing, 
+        which may be unavailable or inconsistent on some platforms.
     """
     def __init__(self, pos=None, color=(0.5, 0.5, 0.5, 1), width=1,
-                 connect='strip', mode='gl', antialias=False):
+                 connect='strip', method='gl', antialias=False):
         Visual.__init__(self)
 
         self._changed = {'pos': False, 'color': False, 'width': False,
@@ -103,9 +108,13 @@ class LineVisual(Visual):
         # signatures.
         LineVisual.set_data(self, pos=pos, color=color, width=width,
                             connect=connect)
-        self._mode = 'none'
+        self._method = 'none'
         self.antialias = antialias
-        self.mode = mode
+        self.method = method
+
+    @property
+    def _program(self):
+        return self._line_visual._program
 
     @property
     def antialias(self):
@@ -117,21 +126,21 @@ class LineVisual(Visual):
         self.update()
 
     @property
-    def mode(self):
-        """The current drawing mode"""
-        return self._mode
+    def method(self):
+        """The current drawing method"""
+        return self._method
 
-    @mode.setter
-    def mode(self, mode):
-        if mode not in ('agg', 'gl'):
-            raise ValueError('mode argument must be "agg" or "gl".')
-        if mode == self._mode:
+    @method.setter
+    def method(self, method):
+        if method not in ('agg', 'gl'):
+            raise ValueError('method argument must be "agg" or "gl".')
+        if method == self._method:
             return
 
-        self._mode = mode
-        if mode == 'gl':
+        self._method = method
+        if method == 'gl':
             self._line_visual = _GLLineVisual(self)
-        elif mode == 'agg':
+        elif method == 'agg':
             self._line_visual = _AggLineVisual(self)
 
         for k in self._changed:
@@ -149,7 +158,7 @@ class LineVisual(Visual):
             must be of shape (..., 4) and provide one rgba color per vertex.
         width:
             The width of the line in px. Line widths > 1px are only
-            guaranteed to work when using 'agg' mode.
+            guaranteed to work when using 'agg' method.
         connect : str or array
             Determines which vertices are connected by lines.
             * "strip" causes the line to be drawn with each vertex
@@ -243,17 +252,26 @@ class LineVisual(Visual):
                 return (0, 0)
     
     def draw(self, transforms):
+        if self.width == 0:
+            return
         self._line_visual.draw(transforms)
         for k in self._changed:
             self._changed[k] = False
+
+    def set_gl_state(self, **kwargs):
+        Visual.set_gl_state(self, **kwargs)
+        self._line_visual.set_gl_state(**kwargs)
+
+    def update_gl_state(self, **kwargs):
+        Visual.update_gl_state(self, **kwargs)
+        self._line_visual.update_gl_state(**kwargs)
 
 
 class _GLLineVisual(Visual):
     VERTEX_SHADER = """
         varying vec4 v_color;
 
-        void main(void)
-        {
+        void main(void) {
             gl_Position = $transform($to_vec4($position));
             v_color = $color;
         }
@@ -261,8 +279,7 @@ class _GLLineVisual(Visual):
 
     FRAGMENT_SHADER = """
         varying vec4 v_color;
-        void main()
-        {
+        void main() {
             gl_FragColor = v_color;
         }
     """
@@ -273,12 +290,16 @@ class _GLLineVisual(Visual):
         self._color_vbo = gloo.VertexBuffer()
         self._connect_ibo = gloo.IndexBuffer()
         self._connect = None
-
+        
         # Set up the GL program
         self._program = ModularProgram(self.VERTEX_SHADER,
                                        self.FRAGMENT_SHADER)
+        self.set_gl_state('translucent')
 
     def draw(self, transforms):
+        prof = Profiler()
+        Visual.draw(self, transforms)
+        
         # first see whether we can bail out early
         if self._parent._width <= 0:
             return
@@ -295,7 +316,8 @@ class _GLLineVisual(Visual):
             elif pos.shape[-1] == 3:
                 self._program.vert['to_vec4'] = vec3to4
             else:
-                raise TypeError("Got bad position array shape: %r" % pos.shape)
+                raise TypeError("Got bad position array shape: %r"
+                                % (pos.shape,))
 
         if self._parent._changed['color']:
             color = self._parent._interpret_color()
@@ -316,8 +338,6 @@ class _GLLineVisual(Visual):
         xform = transforms.get_full_transform()
         self._program.vert['transform'] = xform
 
-        gloo.set_state('translucent')
-
         # Do we want to use OpenGL, and can we?
         GL = None
         try:
@@ -331,7 +351,11 @@ class _GLLineVisual(Visual):
                 GL.glEnable(GL.GL_LINE_SMOOTH)
             else:
                 GL.glDisable(GL.GL_LINE_SMOOTH)
-            GL.glLineWidth(self._parent._width)
+            # this is a bit of a hack to deal with HiDPI
+            tr = transforms.document_to_framebuffer
+            px_scale = np.mean((tr.map((1, 0)) - tr.map((0, 1)))[:2])
+            width = px_scale * self._parent._width
+            GL.glLineWidth(max(width, 1.))
 
         if self._parent._changed['connect']:
             self._connect = self._parent._interpret_connect()
@@ -339,6 +363,8 @@ class _GLLineVisual(Visual):
                 self._connect_ibo.set_data(self._connect)
         if self._connect is None:
             return
+        
+        prof('prepare')
 
         # Draw
         if self._connect == 'strip':
@@ -349,6 +375,8 @@ class _GLLineVisual(Visual):
             self._program.draw('lines', self._connect_ibo)
         else:
             raise ValueError("Invalid line connect mode: %r" % self._connect)
+        
+        prof('draw')
 
 
 class _AggLineVisual(Visual):
@@ -378,8 +406,11 @@ class _AggLineVisual(Visual):
                        dash_caps=(caps['round'], caps['round']),
                        antialias=1.0)
         self._dash_atlas = gloo.Texture2D(self._da._data)
+        self.set_gl_state('translucent')
 
     def draw(self, transforms):
+        Visual.draw(self, transforms)
+        
         bake = False
         if self._parent._changed['pos']:
             if self._parent._pos is None:
@@ -396,7 +427,7 @@ class _AggLineVisual(Visual):
         if self._parent._changed['connect']:
             if self._parent._connect not in [None, 'strip']:
                 raise NotImplementedError("Only 'strip' connection mode "
-                                          "allowed for agg-mode lines.")
+                                          "allowed for agg-method lines.")
 
         if bake:
             V, I = self._agg_bake(self._pos, self._color)

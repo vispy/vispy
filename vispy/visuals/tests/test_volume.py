@@ -18,7 +18,7 @@ def test_volume():
     # Create
     V = Volume(vol)
     assert V.clim == (0, 1)
-    assert V.style == 'mip'
+    assert V.method == 'mip'
     
     # Set wrong data
     assert_raises(ValueError, V.set_data, np.zeros((20, 20), 'float32'))
@@ -28,9 +28,9 @@ def test_volume():
     assert V.clim == (0.5, 0.8)
     assert_raises(ValueError, V.set_data, vol, (0.5, 0.8, 1.0))
     
-    # Style
-    V.style = 'iso'
-    assert V.style == 'iso'
+    # Method
+    V.method = 'iso'
+    assert V.method == 'iso'
     
     # Step size
     V.relative_step_size = 1.1
