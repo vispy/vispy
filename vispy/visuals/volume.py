@@ -7,30 +7,29 @@ About this technique
 --------------------
 
 In Python, we define the six faces of a cuboid to draw, as well as
-texture cooridnates corresponding with the vertices of the cuboid. In
-the vertex shader, we two positions along the view ray and pass both to
-the fragment shader. In the fragment shader, we use these two points to
-compute the ray direction and calculate the number of steps to use
-in a for-loop while we iterate through the volume. Each iteration we
-keep track of some voxel information. When the cast is done, we may do
-some final processing. Depending on the render method, the calculations
-at each iteration and the post-processing may differ.
+texture cooridnates corresponding with the vertices of the cuboid. 
+The back faces of the cuboid are drawn (and front faces are culled)
+because only the back faces are visible when the camera is inside the 
+volume.
+
+In the vertex shader, we intersect the view ray with the near and far 
+clipping planes. In the fragment shader, we use these two points to
+compute the ray direction and then compute the position of the front
+cuboid surface (or near clipping plane) along the view ray.
+
+Next we calculate the number of steps to walk from the front surface
+to the back surface and iterate over these positions in a for-loop.
+At each iteration, the fragment color or other voxel information is 
+updated depending on the selected rendering method.
 
 It is important for the texture interpolation is 'linear', since with
 nearest the result look very ugly. The wrapping should be clamp_to_edge
 to avoid artifacts when the ray takes a small step outside the volume.
 
 The ray direction is established by mapping the vertex to the document
-coordinate frame, taking one step in z, and mapping the coordinate back.
+coordinate frame, adjusting z to +/-1, and mapping the coordinate back.
 The ray is expressed in coordinates local to the volume (i.e. texture
 coordinates).
-
-To calculate the number of steps, we calculate the distance between the
-starting point and six planes corresponding to the faces of the cuboid.
-The planes are placed slightly outside of the cuboid, resulting in sensible
-output for rays that are faced in the wrong direction, allowing us to 
-discard the front-facing sides of the cuboid by discarting fragments for
-which the number of steps is very small.
 
 """
 
@@ -103,7 +102,6 @@ vec3 view_ray;
 
 vec4 calculateColor(vec4, vec3, vec3);
 float rand(vec2 co);
-float d2P(vec3 p, vec3 d, vec4 P);
 
 void main() {{
     vec3 farpos = v_farpos.xyz / v_farpos.w;
@@ -130,7 +128,7 @@ void main() {{
     if( nsteps < 1 )
         discard;
         
-    // Get starting location and step in texture coordinates
+    // Get starting location and step vector in texture coordinates
     vec3 step = ((v_position - front) / u_shape) / nsteps;
     vec3 start_loc = front / u_shape;
     
@@ -256,25 +254,6 @@ vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
     
     // Done
     return final_color;
-}}
-
-float d2P(vec3 p, vec3 d, vec4 P)
-{{
-    // calculate the distance of a point p to a plane P along direction d.
-    // plane P is defined as ax + by + cz = d
-    // return ~inf if negative
-    
-    // calculate nominator and denominator
-    float nom = - (dot(P.xyz, p) - P.a);
-    float denom =  dot(P.xyz, d);
-    
-    // Turn negative and invalid values into a very high value
-    // A negative value means that the current face lies behind the ray. 
-    // Invalid values can occur for combinations of face and start point
-    if( denom == 0.0 )
-        return nom * 99999999.0;
-    else
-        return nom / denom;
 }}
 
 """  # noqa
