@@ -10,11 +10,12 @@ Example volume rendering
 
 Controls:
 
-* 1 - toggle camera between first person (fly) and regular 3D (turntable)
-* 2 - toggle between volume rendering methods
-* 3 - toggle between stent-CT / brain-MRI image
-* 4 - toggle between colormaps
-* 0 - reset cameras
+* 1  - toggle camera between first person (fly) and regular 3D (turntable)
+* 2  - toggle between volume rendering methods
+* 3  - toggle between stent-CT / brain-MRI image
+* 4  - toggle between colormaps
+* 0  - reset cameras
+* [] - decrease/increase isosurface threshold
 
 With fly camera:
 
@@ -50,7 +51,7 @@ view = canvas.central_widget.add_view()
 emulate_texture = True
 
 # Create the volume visuals, only one is visible
-volume1 = scene.visuals.Volume(vol1, parent=view.scene, threshold=0.5,
+volume1 = scene.visuals.Volume(vol1, parent=view.scene, threshold=0.1,
                                emulate_texture=emulate_texture)
 volume1.transform = scene.STTransform(translate=(64, 64, 0))
 volume2 = scene.visuals.Volume(vol2, parent=view.scene, threshold=0.5,
@@ -73,10 +74,13 @@ def on_key_press(event):
         view.camera = cam_toggle.get(view.camera, 'fly')
     elif event.text == '2':
         methods = ['mip', 'translucent', 'iso', 'additive']
+        cmaps = {'mip': 'grays', 'translucent': 'tgrays', 'iso': 'grays', 'additive': 'tgrays'}
         method = methods[(methods.index(volume1.method) + 1) % 4]
         print("Volume render method: %s" % method)
         volume1.method = method
+        volume1.cmap = cmaps[method]
         volume2.method = method
+        volume2.cmap = cmaps[method]
     elif event.text == '3':
         volume1.visible = not volume1.visible
         volume2.visible = not volume1.visible
@@ -88,16 +92,16 @@ def on_key_press(event):
         cam1.set_range()
         cam3.set_range()
     elif event.text == '[':
-        volume1.threshold -= 0.1
+        volume1.threshold -= 0.025
         volume2.threshold = volume1.threshold
     elif event.text == ']':
-        volume1.threshold += 0.1
+        volume1.threshold += 0.025
         volume2.threshold = volume1.threshold
 
 # for testing performance
-#@canvas.connect
-#def on_draw(ev):
-    #canvas.update()
+@canvas.connect
+def on_draw(ev):
+    canvas.update()
 
 if __name__ == '__main__':
     print(__doc__)

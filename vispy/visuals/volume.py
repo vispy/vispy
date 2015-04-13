@@ -309,20 +309,27 @@ TRANSLUCENT_SNIPPETS = dict(
         vec4 integrated_color = vec4(0., 0., 0., 0.);
         """,
     in_loop="""
-        color = $cmap(color);
-        float a1 = integrated_color.a;
-        float a2 = color.a * (1 - a1);
-        float alpha = max(a1 + a2, 0.0000001);
+            color = $cmap(val);
+            float a1 = integrated_color.a;
+            float a2 = color.a * (1 - a1);
+            float alpha = max(a1 + a2, 0.001);
+            
+            // Doesn't work.. GLSL optimizer bug?
+            //integrated_color = (integrated_color * a1 / alpha) + (color * a2 / alpha); 
+            // This should be identical but does work correctly:
+            integrated_color *= a1 / alpha;
+            integrated_color += color * a2 / alpha;
+            
+            integrated_color.a = alpha;
+            
+            if( alpha > 0.99 ){
+                // stop integrating if the fragment becomes opaque
+                iter = nsteps;
+            }
         
-        integrated_color = vec4((color.rgb * a2/alpha) + (integrated_color.rgb * a1/alpha), alpha);
-        if( integrated_color.a > 0.99 ) {
-            // Stop integrating if the fragment is already opaque
-            iter = nsteps;
-        }
         """,
     after_loop="""
         gl_FragColor = integrated_color;
-        //gl_FragColor = vec4((nsteps+50)/100.0, 0, 0, 1);
         """,
 )
 TRANSLUCENT_FRAG_SHADER = FRAG_SHADER.format(**TRANSLUCENT_SNIPPETS)
@@ -333,13 +340,12 @@ ADDITIVE_SNIPPETS = dict(
         vec4 integrated_color = vec4(0., 0., 0., 0.);
         """,
     in_loop="""
-        color = $cmap(color);
+        color = $cmap(val);
         
         integrated_color = 1.0 - (1.0 - integrated_color) * (1.0 - color);
         """,
     after_loop="""
         gl_FragColor = integrated_color;
-        //gl_FragColor = vec4((nsteps+50)/100.0, 0, 0, 1);
         """,
 )
 ADDITIVE_FRAG_SHADER = FRAG_SHADER.format(**ADDITIVE_SNIPPETS)
@@ -351,21 +357,18 @@ ISO_SNIPPETS = dict(
         vec3 dstep = 1.5 / u_shape;  // step to sample derivative
     """,
     in_loop="""
-        if (val > u_threshold) {
-            gl_FragColor = calculateColor($cmap(val), loc, dstep);
-            iter = nsteps;
-            
-            // Take the last stride in smaller steps
-            loc -= step;
-            for (int i=0; i<0; i++) {
-                val = $sample(u_volumetex, loc).g;
+        if (val > u_threshold-0.2) {
+            // Take the last interval in smaller steps
+            vec3 iloc = loc - step;
+            for (int i=0; i<10; i++) {
+                val = $sample(u_volumetex, iloc).g;
                 if (val > u_threshold) {
                     color = $cmap(val);
-                    gl_FragColor = calculateColor(color, loc, dstep);
+                    gl_FragColor = calculateColor(color, iloc, dstep);
                     iter = nsteps;
                     break;
                 }
-                loc += step * 0.1;
+                iloc += step * 0.1;
             }
         }
         """,
