@@ -652,7 +652,7 @@ class _Diverging(Colormap):
 
         start = husl_to_rgb(h_neg, saturation, value)
         mid = ((0.133, 0.133, 0.133) if center == "dark" else
-               (0.95, 0.95, 0.95))
+               (0.92, 0.92, 0.92))
         end = husl_to_rgb(h_pos, saturation, value)
 
         colors = ColorArray([start, mid, end])
