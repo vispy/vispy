@@ -661,6 +661,7 @@ class _Diverging(Colormap):
 
 
 _colormaps = dict(
+    # Some colormap presets
     autumn=Colormap([(1., 0., 0., 1.), (1., 1., 0., 1.)]),
     blues=Colormap([(1., 1., 1., 1.), (0., 0., 1., 1.)]),
     cool=Colormap([(0., 1., 1., 1.), (1., 0., 1., 1.)]),
@@ -673,6 +674,24 @@ _colormaps = dict(
     hot=_Hot(),
     ice=_Ice(),
     winter=_Winter(),
+    light_blues=_SingleHue(),
+    orange=_SingleHue(hue=35),
+
+    # Diverging presets
+    coolwarm=Colormap(ColorArray(
+        [
+            (226, 0.59, 0.92), (222, 0.44, 0.99), (218, 0.26, 0.97),
+            (30, 0.01, 0.87),
+            (20, 0.3, 0.96), (15, 0.5, 0.95), (8, 0.66, 0.86)
+        ],
+        color_space="hsv"
+    )),
+    PuGr=_Diverging(145, 280, 0.85, 0.30),
+    GrBu=_Diverging(255, 133, 0.75, 0.6),
+    GrBu_d=_Diverging(255, 133, 0.75, 0.6, "dark"),
+    RdBu=_Diverging(220, 20, 0.75, 0.5),
+
+    # Configurable colormaps
     cubehelix=CubeHelixColormap(),
     single_hue=_SingleHue,
     hsl=_HSL,
