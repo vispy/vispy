@@ -448,10 +448,10 @@ class _SingleHue(Colormap):
 
     Parameters
     ----------
-    hue : scalar, optional
+    hue : scalar (optional)
         The number indicating the hue value. Must be in the range [0, 360].
         Defaults to 200 (blue).
-    value : scalar, optional
+    value : scalar (optional)
         The number represting the value component of a color. Must be in the
         range [0, 1.0]. The default value is 1.0.
     """
