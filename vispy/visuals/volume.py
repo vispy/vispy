@@ -558,7 +558,7 @@ class VolumeVisual(Visual):
         data = np.empty(8, dtype=[
             ('a_position', np.float32, 3),
             ('a_texcoord', np.float32, 3)
-            ])
+        ])
         
         data['a_position'] = np.array([
             [x0, y0, z0],
