@@ -4,6 +4,7 @@ import sys
 import numpy as np
 from .. import scene, config
 from ..io import read_png, write_png
+from ._testing import _save_failed_test
 
 
 global tester
@@ -60,10 +61,14 @@ def assert_image_approved(image, standard_file, message):
             if std_image is None:
                 raise Exception("Test standard %s does not exist." % std_file)
             else:
+                if os.getenv('TRAVIS') is not None:
+                    _save_failed_test(image, std_image, standard_file)
                 raise
 
 
 class ImageTester(scene.SceneCanvas):
+    """Graphical interface for auditing image comparison tests.
+    """
     def __init__(self):
         scene.SceneCanvas.__init__(self, size=(1000, 800))
         self.bgcolor = (0.1, 0.1, 0.1, 1)
