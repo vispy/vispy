@@ -277,6 +277,7 @@ def _save_failed_test(data, expect, filename):
     if ds != es:
         print("Shape mismatch: got %s, expected %s" % (ds, es))
     
+    
     shape = (max(ds[0], es[0]) + 4, ds[1] + es[1] + 8 + max(ds[1], es[1]), 4)
     img = np.empty(shape, dtype=np.ubyte)
     img[..., :3] = 100
@@ -285,11 +286,7 @@ def _save_failed_test(data, expect, filename):
     img[2:2+ds[0], 2:2+ds[1], :ds[2]] = data
     img[2:2+es[0], ds[1]+4:ds[1]+4+es[1], :es[2]] = expect
     
-    diff = np.empty((max(ds[0], es[0]), max(ds[1], es[1]), 4), dtype=int)
-    diff[:] = 128
-    diff[:ds[0], :ds[1], :min(ds[2], 3)] += data[..., :3]
-    diff[:es[0], :es[1], :min(es[2], 3)] -= expect[..., :3]
-    diff = np.clip(diff, 0, 255).astype(np.ubyte)
+    diff = make_diff_image(data, expect)
     img[2:2+diff.shape[0], -diff.shape[1]-2:-2] = diff
 
     png = _make_png(img)
@@ -303,6 +300,23 @@ def _save_failed_test(data, expect, filename):
     if not response.startswith(b'OK'):
         print("WARNING: Error uploading data to %s" % host)
         print(response)
+
+
+def make_diff_image(im1, im2):
+    """Return image array showing the differences between im1 and im2.
+    
+    Handles images of different shape. Alpha channels are not compared.
+    """
+    ds = im1.shape
+    es = im2.shape
+    
+    diff = np.empty((max(ds[0], es[0]), max(ds[1], es[1]), 4), dtype=int)
+    diff[..., :3] = 128
+    diff[..., 3] = 255
+    diff[:ds[0], :ds[1], :min(ds[2], 3)] += im1[..., :3]
+    diff[:es[0], :es[1], :min(es[2], 3)] -= im2[..., :3]
+    diff = np.clip(diff, 0, 255).astype(np.ubyte)
+    return diff
 
 
 def assert_image_equal(image, reference, limit=0.9):

@@ -4,7 +4,7 @@ import sys
 import numpy as np
 from .. import scene, config
 from ..io import read_png, write_png
-from ._testing import _save_failed_test
+from ._testing import _save_failed_test, make_diff_image
 
 
 global tester
@@ -102,8 +102,7 @@ class ImageTester(scene.SceneCanvas):
         self.console.write('(P)ass or (F)ail this test?')
         self.views[0].image.set_data(im1)
         self.views[1].image.set_data(im2)
-        diff = (im1[:im2.shape[0], :im2.shape[1], :3] - 
-                im2[:im1.shape[0], :im1.shape[1], :3])
+        diff = make_diff_image(im1, im2)
 
         self.views[2].image.set_data(diff)
         self.views[0].camera.set_range()
