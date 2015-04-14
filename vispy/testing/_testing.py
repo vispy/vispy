@@ -409,9 +409,13 @@ def run_tests_if_main():
     except Exception:
         pass
     import __main__
-    print('==== Running tests in script\n==== %s' % fname)
-    run_tests_in_object(__main__)
-    print('==== Tests pass')
+    try:
+        import pytest
+        r = pytest.main(['-s', '--tb=short', fname])
+    except ImportError:
+        print('==== Running tests in script\n==== %s' % fname)
+        run_tests_in_object(__main__)
+        print('==== Tests pass')
 
 
 def run_tests_in_object(ob):

@@ -24,7 +24,7 @@ def assert_image_approved(image, standard_file, message):
     data_path = config['test_data_path']
     if not os.path.isdir(data_path):
         git_path = 'https://github.com/vispy/test-data'
-        cmd = 'git clone %s %s' % (git_path, data_path)
+        cmd = 'git clone --depth=3 %s %s' % (git_path, data_path)
         print("Attempting to create git clone of test data repo in %s.." %
               data_path)
         print(cmd)
