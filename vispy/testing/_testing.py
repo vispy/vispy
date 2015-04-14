@@ -273,20 +273,24 @@ def _save_failed_test(data, expect, filename):
     # concatenate data, expect, and diff into a single image
     ds = data.shape
     es = expect.shape
-    if ds == es:
-        shape = (ds[0], ds[1] * 3 + 2, 4)
-        img = np.empty(shape, dtype=np.ubyte)
-        img[:] = 255
-        img[:, :ds[1], :ds[2]] = data
-        img[:, ds[1]+1:ds[1]*2+1, :ds[2]] = expect
-        img[:, ds[1]*2 + 2:, :ds[2]] = np.abs(data.astype(int) -
-                                              expect.astype(int))
-    else:
-        shape = (ds[0], ds[1] * 2 + 1, 4)
-        img = np.empty(shape, dtype=np.ubyte)
-        img[:] = 255
-        img[:ds[0], :ds[1], :ds[2]] = data
-        img[:es[0], ds[1]+1+es[1]:, :es[2]] = expect
+    
+    if ds != es:
+        print("Shape mismatch: got %s, expected %s" % (ds, es))
+    
+    shape = (max(ds[0], es[0]) + 4, ds[1] + es[1] + 8 + max(ds[1], es[1]), 4)
+    img = np.empty(shape, dtype=np.ubyte)
+    img[..., :3] = 100
+    img[..., 3] = 255
+    
+    img[2:2+ds[0], 2:2+ds[1], :ds[2]] = data
+    img[2:2+es[0], ds[1]+4:ds[1]+4+es[1], :es[2]] = expect
+    
+    diff = np.empty((max(ds[0], es[0]), max(ds[1], es[1]), 4), dtype=int)
+    diff[:] = 128
+    diff[:ds[0], :ds[1], :min(ds[2], 3)] += data[..., :3]
+    diff[:es[0], :es[1], :min(es[2], 3)] -= expect[..., :3]
+    diff = np.clip(diff, 0, 255).astype(np.ubyte)
+    img[2:2+diff.shape[0], -diff.shape[1]-2:-2] = diff
 
     png = _make_png(img)
     conn = httplib.HTTPConnection(host)
