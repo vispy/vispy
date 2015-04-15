@@ -274,10 +274,6 @@ def _save_failed_test(data, expect, filename):
     ds = data.shape
     es = expect.shape
     
-    if ds != es:
-        print("Shape mismatch: got %s, expected %s" % (ds, es))
-    
-    
     shape = (max(ds[0], es[0]) + 4, ds[1] + es[1] + 8 + max(ds[1], es[1]), 4)
     img = np.empty(shape, dtype=np.ubyte)
     img[..., :3] = 100
@@ -296,7 +292,9 @@ def _save_failed_test(data, expect, filename):
     conn.request('POST', '/upload.py', req)
     response = conn.getresponse().read()
     conn.close()
-    print("\nUpload to: \nhttp://%s/data/%s" % (host, filename))
+    print("\nImage comparison failed. Test result: %s %s   Expected result: "
+          "%s %s" % (data.shape, data.dtype, expect.shape, expect.dtype))
+    print("Uploaded to: \nhttp://%s/data/%s" % (host, filename))
     if not response.startswith(b'OK'):
         print("WARNING: Error uploading data to %s" % host)
         print(response)

@@ -152,15 +152,65 @@ class Widget(Node):
         if self.border_color.is_blank:
             return
         m = self.margin
-        r = self.size[0] - m
-        t = self.size[1] - m
+        # subtract 1 so border is drawn within the boundaries of the widget:
+        #
+        #  size = (8, 7)  margin=2
+        #  internal rect = (3, 3, 2, 1)
+        #  ........
+        #  ........
+        #  ..BBBB..
+        #  ..B  B..
+        #  ..BBBB..
+        #  ........
+        #  ........
+        #
+        r = self.size[0] - m - 1
+        t = self.size[1] - m - 1
         
+        # Drawing pixel-perfect lines is a bit tricky. Getting the correct
+        # line _position_ and _length_ requires different considerations. 
+        # 
+        # Line position:
+        # Integer values lie exactly on the boundaries between pixels, which 
+        # leads to 1-pixel offsets. Different GL implementations will have
+        # different offsets, but adding 0.01 should make the pixel location 
+        # unambiguous on all systems:
+        # 
+        #   y = 0.99    1.0    1.01   1.5
+        #     0----------------------------
+        #      ====== -------
+        #     1----------------------------
+        #             ------- ====== ======
+        #     2----------------------------
+        #               ^ 1.0 is ambiguous; depends on GL implementation!
+        #  
+        # Line length:
+        # Integer values lie at the top-left corner of each pixel, so drawing
+        # a segment from x=0 to x=3 results in a line 3 pixels long:
+        # 
+        #    |===|===|===|   |   x2 = 3
+        #    |===|===|===|   |   x2 = 3.49
+        #    |===|===|===|---|   x2 = 3.5    --> depends on GL implementation!
+        #    |===|===|===|===|   x2 = 3.51
+        #    |===|===|===|===|   x2 = 4
+        #    0   1   2   3   4
+        #   
+        # To fill that last pixel, we need to extend the length of the line 
+        # by at least 0.51 (the extra 0.01 avoids implementation-dependent 
+        # ambiguity).
+        # 
+        
+        r += 0.5  # large enough to extend line length, but small enough to 
+        t += 0.5  # avoid shifting the line
         pos = np.array([
             [m, m],
             [r, m],
             [r, t],
             [m, t],
             [m, m]]).astype(np.float32)
+        # to avoid system-dependent ambiguity about pixel boundaries
+        pos += 0.01  
+        
         self._visual.set_data(pos=pos)
 
     def draw(self, event):

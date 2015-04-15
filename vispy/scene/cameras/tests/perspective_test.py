@@ -37,6 +37,9 @@ def test_perspective_render():
                 images.append(image)
         
         image = canvas.render()
+        print("ViewBox shapes")
+        for v in views:
+            print(v.node_transform(canvas.canvas_cs).map(v.rect))
         canvas.close()
         assert_image_approved(image, 'scene/cameras/perspective_test.png',
                               'perspective test 1: 6 identical views with '
