@@ -11,6 +11,7 @@ from vispy.testing import run_tests_if_main
 NT = tr.NullTransform
 ST = tr.STTransform
 AT = tr.AffineTransform
+RT = tr.PerspectiveTransform
 PT = tr.PolarTransform
 LT = tr.LogTransform
 CT = tr.ChainTransform
@@ -162,6 +163,21 @@ def test_map_rect():
     assert r1 == Rect((-6, 24), (26, 38))
 
 
+def test_st_transform():
+    # Check that STTransform maps exactly like AffineTransform
+    pts = np.random.normal(size=(10, 4))
+    
+    scale = (1, 7.5, -4e-8)
+    translate = (1e6, 0.2, 0)
+    st = tr.STTransform(scale=scale, translate=translate)
+    at = tr.AffineTransform()
+    at.scale(scale)
+    at.translate(translate)
+    
+    assert np.allclose(st.map(pts), at.map(pts))
+    assert np.allclose(st.inverse.map(pts), at.inverse.map(pts))    
+    
+
 def test_st_mapping():
     p1 = [[5., 7.], [23., 8.]]
     p2 = [[-1.3, -1.4], [1.1, 1.2]]
@@ -209,6 +225,7 @@ def test_inverse():
         NT(),
         ST(scale=(1e-4, 2e5), translate=(10, -6e9)),
         AT(m),
+        RT(m),
     ]
 
     np.random.seed(0)

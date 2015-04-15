@@ -48,14 +48,18 @@ class ViewBox(Widget):
         self._bgcolor = Color(bgcolor).rgba
         Widget.__init__(self, **kwargs)
 
-        # Init preferred method to provided a pixel grid
+        # Init method to provide a pixel grid
         self._clip_method = 'fragment'
         self._clipper = Clipper()
 
         # Each viewbox has a scene widget, which has a transform that
         # represents the transformation imposed by camera.
         if scene is None:
-            self._scene = SubScene(name=str(self.name) + "_Scene")
+            if self.name is not None:
+                name = str(self.name) + "_Scene"
+            else:
+                name = None
+            self._scene = SubScene(name=name)
         elif isinstance(scene, SubScene):
             self._scene = scene
         else:
@@ -221,6 +225,7 @@ class ViewBox(Widget):
             t = 'clip_method should be in %s' % str(valid_methods)
             raise ValueError((t + ', not %r') % value)
         self._clip_method = value
+        self.update()
 
     def draw(self, event):
         """ Draw the viewbox border/background, and prepare to draw the 
@@ -237,20 +242,17 @@ class ViewBox(Widget):
 
         # Set resolution (note that resolution can be non-integer)
         self._resolution = res
-        # -- Get user clipping preference
 
-        prefer = self.clip_method
+        method = self.clip_method
         viewport, fbo = None, None
 
-        if prefer is None:
-            pass
-        elif prefer == 'fragment':
+        if method == 'fragment':
             self._prepare_fragment()
-        elif prefer == 'stencil':
+        elif method == 'stencil':
             raise NotImplementedError('No stencil buffer clipping yet.')
-        elif prefer == 'viewport':
+        elif method == 'viewport':
             viewport = self._prepare_viewport(event)
-        elif prefer == 'fbo':
+        elif method == 'fbo':
             fbo = self._prepare_fbo(event)
 
         # -- Draw
@@ -289,7 +291,7 @@ class ViewBox(Widget):
             finally:
                 event.pop_node()
                 event.pop_viewport()
-        elif prefer == 'fragment':
+        elif method == 'fragment':
             self._clipper.bounds = event.visual_to_framebuffer.map(self.rect)
             event.push_node(self.scene)
             try:

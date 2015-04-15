@@ -1629,7 +1629,6 @@ class FlyCamera(PerspectiveCamera):
                 d = p2c - p1c
                 fov = self._event_value * math.exp(-0.01*d[1])
                 self._fov = min(90.0, max(10, fov))
-                print('FOV: %1.2f' % self.fov)
 
         # Make transform be updated on the next timer tick.
         # By doing it at timer tick, we avoid shaky behavior

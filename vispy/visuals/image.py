@@ -9,7 +9,7 @@ import numpy as np
 from ..gloo import set_state, Texture2D
 from ..color import get_colormap
 from .shaders import ModularProgram, Function, FunctionChain
-from .transforms import STTransform, NullTransform
+from .transforms import NullTransform
 from .visual import Visual
 from ..ext.six import string_types
 
@@ -31,7 +31,7 @@ varying vec2 v_texcoord;
 
 void main()
 {
-    vec2 texcoord = $map_local_to_tex($map_uv_to_local(vec4(v_texcoord, 0, 1))).xy;
+    vec2 texcoord = $map_uv_to_tex(vec4(v_texcoord, 0, 1)).xy;
     if(texcoord.x < 0.0 || texcoord.x > 1.0 ||
        texcoord.y < 0.0 || texcoord.y > 1.0) {
         discard;
@@ -57,6 +57,8 @@ class ImageVisual(Visual):
         and accuracy. If the transform is linear, this parameter is ignored
         and a single quad is drawn around the area of the image.
 
+            * 'auto': Automatically select 'impostor' if the image is drawn 
+              with a nonlinear transform; otherwise select 'subdivide'.
             * 'subdivide': ImageVisual is represented as a grid of triangles
               with texture coordinates linearly mapped.
             * 'impostor': ImageVisual is represented as a quad covering the
@@ -128,6 +130,18 @@ class ImageVisual(Visual):
     @cmap.setter
     def cmap(self, cmap):
         self._cmap = get_colormap(cmap)
+        self.update()
+
+    @property
+    def method(self):
+        return self._method
+    
+    @method.setter
+    def method(self, m):
+        if self._method != m:
+            self._method = m
+            self._need_vertex_update = True
+            self.update()
 
     @property
     def size(self):
@@ -168,8 +182,7 @@ class ImageVisual(Visual):
             vertices = tex_coords * self.size
             
             # vertex shader provides correct texture coordinates
-            self._program.frag['map_uv_to_local'] = NullTransform()
-            self._program.frag['map_local_to_tex'] = NullTransform()
+            self._program.frag['map_uv_to_tex'] = NullTransform()
         
         elif method == 'impostor':
             # quad covers entire view; frag. shader will deal with image shape
@@ -177,14 +190,29 @@ class ImageVisual(Visual):
                                  [-1, -1], [1, 1], [-1, 1]],
                                 dtype=np.float32)
             tex_coords = vertices
-            tex_transform = STTransform(scale=(1./self._data.shape[0],
-                                               1./self._data.shape[1]))
 
             # vertex shader provides ND coordinates; 
             # fragment shader maps to texture coordinates
             self._program.vert['transform'] = NullTransform()
-            #self._program.frag['map_local_to_tex'] = total_transform
-            self._program.frag['map_local_to_tex'] = tex_transform
+            self._raycast_func = Function('''
+                vec4 map_local_to_tex(vec4 x) {
+                    // Cast ray from 3D viewport to surface of image
+                    // (if $transform does not affect z values, then this
+                    // can be optimized as simply $transform.map(x) )
+                    vec4 p1 = $transform(x);
+                    vec4 p2 = $transform(x + vec4(0, 0, 0.5, 0));
+                    p1 /= p1.w;
+                    p2 /= p2.w;
+                    vec4 d = p2 - p1;
+                    float f = p2.z / d.z;
+                    vec4 p3 = p2 - d * f;
+                    
+                    // finally map local to texture coords
+                    return vec4(p3.xy / $image_size, 0, 1);
+                }
+            ''')
+            self._raycast_func['image_size'] = self.size
+            self._program.frag['map_uv_to_tex'] = self._raycast_func
         
         else:
             raise ValueError("Unknown image draw method '%s'" % method)
@@ -244,7 +272,7 @@ class ImageVisual(Visual):
         if method == 'subdivide':
             self._program.vert['transform'] = transforms.get_full_transform()
         else:
-            self._program.frag['map_uv_to_local'] = \
+            self._raycast_func['transform'] = \
                 transforms.get_full_transform().inverse
             
         self._program.draw('triangles')
