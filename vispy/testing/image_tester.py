@@ -54,6 +54,7 @@ def assert_image_approved(image, standard_file, message):
             sys.excepthook(*sys.exc_info())
             get_tester().test(image, std_image, message)
             std_path = os.path.dirname(std_file)
+            print('Saving new standard image to "%s"' % std_file)
             if not os.path.isdir(std_path):
                 os.makedirs(std_path)
             write_png(std_file, image)
