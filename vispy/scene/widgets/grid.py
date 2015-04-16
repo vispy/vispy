@@ -163,6 +163,12 @@ class Grid(Widget):
         cols = np.linspace(rect.left, rect.right, n_cols+1)
         colstart = cols[:-1] + s2
         colend = cols[1:] - s2
+        
+        # snap to pixel boundaries to avoid drawing artifacts
+        colstart = np.round(colstart)
+        colend = np.round(colend)
+        rowstart = np.round(rowstart)
+        rowend = np.round(rowend)
 
         for key in self._grid_widgets.keys():
             row, col, rspan, cspan, ch = self._grid_widgets[key]

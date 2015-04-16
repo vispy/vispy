@@ -44,7 +44,7 @@ class Widget(Node):
         Node.__init__(self, **kwargs)
         
         # for drawing border
-        self._visual = LineVisual(method='gl')
+        self._visual = LineVisual(method='gl', connect='segments')
         self.border_color = border_color
         # whether this widget should clip its children
         self._clip = clip
@@ -151,7 +151,7 @@ class Widget(Node):
         """ Update border line to match new shape """
         if self.border_color.is_blank:
             return
-        m = self.margin
+        m = int(self.margin)
         # subtract 1 so border is drawn within the boundaries of the widget:
         #
         #  size = (8, 7)  margin=2
@@ -164,8 +164,8 @@ class Widget(Node):
         #  ........
         #  ........
         #
-        r = self.size[0] - m - 1
-        t = self.size[1] - m - 1
+        r = int(self.size[0]) - m - 1
+        t = int(self.size[1]) - m - 1
         
         # Drawing pixel-perfect lines is a bit tricky. Getting the correct
         # line _position_ and _length_ requires different considerations. 
@@ -188,29 +188,28 @@ class Widget(Node):
         # Integer values lie at the top-left corner of each pixel, so drawing
         # a segment from x=0 to x=3 results in a line 3 pixels long:
         # 
-        #    |===|===|===|   |   x2 = 3
-        #    |===|===|===|   |   x2 = 3.49
+        #    |===|===|===|---|   x2 = 3.0    -->
         #    |===|===|===|---|   x2 = 3.5    --> depends on GL implementation!
-        #    |===|===|===|===|   x2 = 3.51
-        #    |===|===|===|===|   x2 = 4
+        #    |===|===|===|---|   x2 = 3.9    -->
+        #    |===|===|===|===|   x2 = 3.99
         #    0   1   2   3   4
         #   
         # To fill that last pixel, we need to extend the length of the line 
-        # by at least 0.51 (the extra 0.01 avoids implementation-dependent 
-        # ambiguity).
-        # 
+        # by some amount--0.5 works on some systems (nVidia), 0.9 is needed on
+        # others, and sometimes the amount depends on the line's position along
+        # the orthogonal axis. The only position that seems to be unambiguous 
+        # across all systems is x+0.99. For example if I want to draw a line
+        # that fills pixels with x=(0, 1, 2), then I need to draw from 
+        # x=-0.01 to x=2.99
         
-        r += 0.5  # large enough to extend line length, but small enough to 
-        t += 0.5  # avoid shifting the line
+        e = 0.01
         pos = np.array([
-            [m, m],
-            [r, m],
-            [r, t],
-            [m, t],
-            [m, m]]).astype(np.float32)
-        # to avoid system-dependent ambiguity about pixel boundaries
-        pos += 0.01  
-        
+            [m-e, m+e], [r+1-e, m+e],  # top and bottom extend full width 
+            [m-e, t+e], [r+1-e, t+e],
+            [m+e, m+1-e], [m+e, t-e],  # left and right do not extend full
+            [r+e, m+1-e], [r+e, t-e]   # height (don't draw corners twice)
+        ]).astype(np.float32)
+
         self._visual.set_data(pos=pos)
 
     def draw(self, event):
