@@ -18,13 +18,39 @@ def get_tester():
     return tester
 
 
-def assert_image_approved(image, standard_file, message):
+def assert_image_approved(image, standard_file, message, **kwargs):
+    """Check that an image test result matches a pre-approved standard.
+    
+    If the result does not match, then the user can optionally invoke a GUI
+    to compare the images and decide whether to fail the test or save the new
+    image as the standard. 
+    
+    This function will automatically clone the test-data repository into 
+    ~/.vispy/test-data. However, it is up to the user to ensure this repository
+    is kept up to date and to commit/push new images after they are saved.
+    
+    Parameters
+    ----------
+    image : (h, w, 4) ndarray
+        The test result to check
+    standard_file : str
+        The name of the approved test image to check against. This file name
+        is relative to the root of the vispy test-data repository and will
+        be automatically fetched.
+    message : str
+        A string description of the image. It is recommended to describe 
+        specific features that an auditor should look for when deciding whether
+        to fail a test.
+        
+    Extra keyword arguments are used to set the thresholds for automatic image
+    comparison (see ``assert_image_match()``).    
+    """
     
     # First make sure we have a test data repo available, possibly invoking 
     # git
     data_path = config['test_data_path']
+    git_path = 'https://github.com/vispy/test-data'
     if not os.path.isdir(data_path):
-        git_path = 'https://github.com/vispy/test-data'
         cmd = 'git clone --depth=3 %s %s' % (git_path, data_path)
         print("Attempting to create git clone of test data repo in %s.." %
               data_path)
@@ -46,9 +72,7 @@ def assert_image_approved(image, standard_file, message):
         
     # If the test image does not match, then we go to audit if requested.
     try:
-        assert std_image.shape == image.shape
-        assert std_image.dtype == image.dtype
-        assert np.all(std_image == image)
+        assert_image_match(image, std_image, **kwargs)
     except Exception:
         if config['audit_tests']:
             sys.excepthook(*sys.exc_info())
@@ -65,6 +89,30 @@ def assert_image_approved(image, standard_file, message):
                 if os.getenv('TRAVIS') is not None:
                     _save_failed_test(image, std_image, standard_file)
                 raise
+
+
+def assert_image_match(im1, im2, px_count=0, px_diff=0, img_diff=0):
+    """Check that two images match.
+    
+    Parameters
+    ----------
+    im1 : (h, w, 4) ndarray
+        Test output image
+    im2 : (h, w, 4) ndarray
+        Test standard image
+    px_count : int
+        Maximum number of pixels that may differ
+    px_diff : float
+        Maximum allowed difference between any two corresponding values
+    img_diff : float
+        Maximum allowed summed difference between images 
+    """
+    assert im1.shape == im2.shape
+    assert im1.dtype == im2.dtype
+    assert np.argwhere(im1 != im2).size <= px_count
+    diff = im1.astype(float) - im2.astype(float)
+    assert np.abs(diff).sum() <= img_diff
+    assert np.abs(diff).max() <= px_diff
 
 
 class ImageTester(scene.SceneCanvas):
