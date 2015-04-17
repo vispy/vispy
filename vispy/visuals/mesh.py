@@ -96,7 +96,7 @@ class MeshVisual(Visual):
         self._indexed = None
 
         # Uniform color
-        self._color = Color(color).rgba
+        self._color = None
 
         # primitive mode
         self._mode = mode
@@ -115,7 +115,8 @@ class MeshVisual(Visual):
         # do no match.
         MeshVisual.set_data(self, vertices=vertices, faces=faces,
                             vertex_colors=vertex_colors,
-                            face_colors=face_colors, meshdata=meshdata)
+                            face_colors=face_colors, meshdata=meshdata,
+                            color=color)
 
     def set_data(self, vertices=None, faces=None, vertex_colors=None,
                  face_colors=None, meshdata=None, color=None):
@@ -127,7 +128,7 @@ class MeshVisual(Visual):
                                       face_colors=face_colors)
         self._bounds = self._meshdata.get_bounds()
         if color is not None:
-            self._color = Color(color).rgba
+            self._color = Color(color)
         self.mesh_data_changed()
 
     @property
@@ -156,6 +157,19 @@ class MeshVisual(Visual):
     def mesh_data(self):
         """The mesh data"""
         return self._meshdata
+    
+    @property
+    def color(self):
+        """The uniform color for this mesh.
+        
+        This value is only used if per-vertex or per-face colors are not 
+        specified.
+        """
+        return self._color
+
+    @color.setter
+    def color(self, c):
+        self.set_data(color=c)
 
     def mesh_data_changed(self):
         self._data_changed = True
@@ -211,7 +225,7 @@ class MeshVisual(Visual):
             raise TypeError("Vertex data must have shape (...,2) or (...,3).")
 
         # Color input handling
-        colors = self._colors if self._colors.size > 0 else self._color
+        colors = self._colors if self._colors.size > 0 else self._color.rgba
         self._program.vert[self._color_var] = colors
 
         # Shading

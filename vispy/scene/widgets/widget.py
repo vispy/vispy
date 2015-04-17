@@ -7,7 +7,7 @@ from __future__ import division
 import numpy as np
 
 from ..node import Node
-from ...visuals.line import LineVisual
+from ...visuals.mesh import MeshVisual
 from ...visuals.transforms import STTransform
 from ...util.event import Event
 from ...geometry import Rect
@@ -43,13 +43,19 @@ class Widget(Node):
                  clip=False, padding=0, margin=0, **kwargs):
         Node.__init__(self, **kwargs)
         
-        # for drawing border
-        self._visual = LineVisual(method='gl', connect='segments')
+        # For drawing border. 
+        # A mesh is required because GL lines cannot be drawn with predictable
+        # shape across all platforms.
+        self._visual = MeshVisual(color=border_color, mode='triangle_strip')
         self.border_color = border_color
+        
         # whether this widget should clip its children
+        # (todo)
         self._clip = clip
+        
         # reserved space inside border
         self._padding = padding
+        
         # reserved space outside border
         self._margin = margin
         
@@ -107,6 +113,18 @@ class Widget(Node):
         self.events.resize()
 
     @property
+    def inner_rect(self):
+        """The rectangular area inside the margin, border and padding.
+        
+        Generally widgets should avoid drawing or placing widgets outside this
+        rectangle.
+        """
+        m = self.margin + self.padding
+        if not self.border_color.is_blank:
+            m += 1
+        return Rect((m, m), (self.size[0]-2*m, self.size[1]-2*m))
+
+    @property
     def border_color(self):
         """ The color of the border.
         """
@@ -152,7 +170,7 @@ class Widget(Node):
         if self.border_color.is_blank:
             return
         m = int(self.margin)
-        # subtract 1 so border is drawn within the boundaries of the widget:
+        # border is drawn within the boundaries of the widget:
         #
         #  size = (8, 7)  margin=2
         #  internal rect = (3, 3, 2, 1)
@@ -164,53 +182,18 @@ class Widget(Node):
         #  ........
         #  ........
         #
-        r = int(self.size[0]) - m - 1
-        t = int(self.size[1]) - m - 1
+        r = int(self.size[0]) - m
+        t = int(self.size[1]) - m
         
-        # Drawing pixel-perfect lines is a bit tricky. Getting the correct
-        # line _position_ and _length_ requires different considerations. 
-        # 
-        # Line position:
-        # Integer values lie exactly on the boundaries between pixels, which 
-        # leads to 1-pixel offsets. Different GL implementations will have
-        # different offsets, but adding 0.01 should make the pixel location 
-        # unambiguous on all systems:
-        # 
-        #   y = 0.99    1.0    1.01   1.5
-        #     0----------------------------
-        #      ====== -------
-        #     1----------------------------
-        #             ------- ====== ======
-        #     2----------------------------
-        #               ^ 1.0 is ambiguous; depends on GL implementation!
-        #  
-        # Line length:
-        # Integer values lie at the top-left corner of each pixel, so drawing
-        # a segment from x=0 to x=3 results in a line 3 pixels long:
-        # 
-        #    |===|===|===|---|   x2 = 3.0    -->
-        #    |===|===|===|---|   x2 = 3.5    --> depends on GL implementation!
-        #    |===|===|===|---|   x2 = 3.9    -->
-        #    |===|===|===|===|   x2 = 3.99
-        #    0   1   2   3   4
-        #   
-        # To fill that last pixel, we need to extend the length of the line 
-        # by some amount--0.5 works on some systems (nVidia), 0.9 is needed on
-        # others, and sometimes the amount depends on the line's position along
-        # the orthogonal axis. The only position that seems to be unambiguous 
-        # across all systems is x+0.99. For example if I want to draw a line
-        # that fills pixels with x=(0, 1, 2), then I need to draw from 
-        # x=-0.01 to x=2.99
-        
-        e = 0.01
         pos = np.array([
-            [m-e, m+e], [r+1-e, m+e],  # top and bottom extend full width 
-            [m-e, t+e], [r+1-e, t+e],
-            [m+e, m+1-e], [m+e, t-e],  # left and right do not extend full
-            [r+e, m+1-e], [r+e, t-e]   # height (don't draw corners twice)
-        ]).astype(np.float32)
-
-        self._visual.set_data(pos=pos)
+            [m, m], [m+1, m+1],
+            [r, m], [r-1, m+1],
+            [r, t], [r-1, t-1],
+            [m, t], [m+1, t-1],
+            [m, m], [m+1, m+1]
+        ], dtype=np.float32)
+        
+        self._visual.set_data(vertices=pos)
 
     def draw(self, event):
         if self.border_color.is_blank:
