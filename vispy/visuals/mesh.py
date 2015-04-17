@@ -180,6 +180,8 @@ class MeshVisual(Visual):
         # Update vertex/index buffers
         if self.shading == 'smooth' and not md.has_face_indexed_data():
             v = md.get_vertices()
+            if v is None:
+                return False
             if v.shape[-1] == 2:
                 v = np.concatenate((v, np.zeros((v.shape[:-1] + (1,)))), -1)
             self._vertices.set_data(v, convert=True)
@@ -194,6 +196,8 @@ class MeshVisual(Visual):
                 self._colors.set_data(np.zeros((0, 4), dtype=np.float32))
         else:
             v = md.get_vertices(indexed='faces')
+            if v is None:
+                return False
             if v.shape[-1] == 2:
                 v = np.concatenate((v, np.zeros((v.shape[:-1] + (1,)))), -1)
             self._vertices.set_data(v, convert=True)
@@ -262,11 +266,12 @@ class MeshVisual(Visual):
         self._shading = value
 
     def draw(self, transforms):
-        Visual.draw(self, transforms)
-
         if self._data_changed:
+            if self._update_data() is False:
+                return
             self._data_changed = False
-            self._update_data()
+            
+        Visual.draw(self, transforms)
 
         full_tr = transforms.get_full_transform()
         self._program.vert['transform'] = full_tr
