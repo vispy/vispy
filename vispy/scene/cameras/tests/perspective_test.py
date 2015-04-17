@@ -49,9 +49,9 @@ def test_perspective_render():
         assert_image_approved(image, 'scene/cameras/perspective_test.png',
                               'perspective test 1: 6 identical views with '
                               'correct perspective',
-                              px_count=50000,
-                              px_diff=150,
-                              img_diff=50000)
+                              px_threshold=20,
+                              px_count=60,
+                              max_px_diff=200)
 
 
 run_tests_if_main()

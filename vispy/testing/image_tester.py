@@ -91,8 +91,12 @@ def assert_image_approved(image, standard_file, message, **kwargs):
                 raise
 
 
-def assert_image_match(im1, im2, px_count=0, px_diff=0, img_diff=0):
+def assert_image_match(im1, im2, px_threshold=50., px_count=None, 
+                       max_px_diff=None, avg_px_diff=None, img_diff=None):
     """Check that two images match.
+    
+    Images that differ in shape or dtype will fail unconditionally.
+    Further tests for similarity depend on the arguments supplied.
     
     Parameters
     ----------
@@ -100,19 +104,36 @@ def assert_image_match(im1, im2, px_count=0, px_diff=0, img_diff=0):
         Test output image
     im2 : (h, w, 4) ndarray
         Test standard image
-    px_count : int
+    px_threshold : float
+        Minimum value difference at which two pixels are considered different
+    px_count : int or None
         Maximum number of pixels that may differ
-    px_diff : float
-        Maximum allowed difference between any two corresponding values
-    img_diff : float
+    max_px_diff : float or None
+        Maximum allowed difference between pixels
+    avg_px_diff : float or None
+        Average allowed difference between pixels
+    img_diff : float or None
         Maximum allowed summed difference between images 
     """
+    assert im1.ndim == 3
+    assert im1.shape[2] == 4
     assert im1.shape == im2.shape
     assert im1.dtype == im2.dtype
-    assert np.argwhere(im1 != im2).size <= px_count
+    
     diff = im1.astype(float) - im2.astype(float)
-    assert np.abs(diff).sum() <= img_diff
-    assert np.abs(diff).max() <= px_diff
+    if img_diff is not None:
+        assert np.abs(diff).sum() <= img_diff
+        
+    pxdiff = diff.max(axis=2)  # largest value difference per pixel
+    mask = np.abs(pxdiff) >= px_threshold
+    if px_count is not None:
+        assert mask.sum() <= px_count
+        
+    masked_diff = diff[mask]
+    if max_px_diff is not None:
+        assert masked_diff.max() <= max_px_diff
+    if avg_px_diff is not None:
+        assert masked_diff.mean() <= avg_px_diff
 
 
 class ImageTester(scene.SceneCanvas):
