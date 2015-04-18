@@ -357,7 +357,6 @@ def assert_image_equal(image, reference, limit=0.9):
                 corr = np.corrcoef(a.ravel(), b.ravel())[0, 1]
             if corr > max_corr:
                 max_corr = corr
-    print(max_corr, limit)
     if max_corr < limit:
         _save_failed_test(image, ref, reference)
         raise AssertionError('max_corr %s < %s' % (max_corr, limit))

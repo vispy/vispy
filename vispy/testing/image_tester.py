@@ -1,9 +1,11 @@
 import time
 import os
 import sys
+import inspect
 import numpy as np
 from .. import scene, config
 from ..io import read_png, write_png
+from ..gloo.util import _screenshot
 from ._testing import _save_failed_test, make_diff_image
 
 
@@ -18,7 +20,7 @@ def get_tester():
     return tester
 
 
-def assert_image_approved(image, standard_file, message, **kwargs):
+def assert_image_approved(image, standard_file, message=None, **kwargs):
     """Check that an image test result matches a pre-approved standard.
     
     If the result does not match, then the user can optionally invoke a GUI
@@ -31,7 +33,7 @@ def assert_image_approved(image, standard_file, message, **kwargs):
     
     Parameters
     ----------
-    image : (h, w, 4) ndarray
+    image : (h, w, 4) ndarray or 'screenshot'
         The test result to check
     standard_file : str
         The name of the approved test image to check against. This file name
@@ -46,8 +48,13 @@ def assert_image_approved(image, standard_file, message, **kwargs):
     comparison (see ``assert_image_match()``).    
     """
     
-    # First make sure we have a test data repo available, possibly invoking 
-    # git
+    if image == "screenshot":
+        image = _screenshot(alpha=True)
+    if message is None:
+        code = inspect.currentframe().f_back.f_code
+        message = "%s::%s" % (code.co_filename, code.co_name)
+        
+    # Make sure we have a test data repo available, possibly invoking git
     data_path = config['test_data_path']
     git_path = 'https://github.com/vispy/test-data'
     if not os.path.isdir(data_path):
@@ -147,11 +154,14 @@ class ImageTester(scene.SceneCanvas):
         self.views = (self.grid.add_view(row=0, col=0, border_color=border), 
                       self.grid.add_view(row=0, col=1, border_color=border),
                       self.grid.add_view(row=0, col=2, border_color=border))
-        for v in self.views:
+        label_text = ['test output', 'standard', 'diff']
+        for i, v in enumerate(self.views):
             v.camera = 'panzoom'
             v.camera.aspect = 1
             v.camera.flip = (False, True)
             v.image = scene.Image(parent=v.scene)
+            v.label = scene.Text(label_text[i], parent=v, color='yellow', 
+                                 anchor_x='left', anchor_y='top')
         
         self.views[1].camera.link(self.views[0].camera)
         self.views[2].camera.link(self.views[0].camera)

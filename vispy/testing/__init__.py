@@ -48,3 +48,4 @@ from ._testing import (SkipTest, requires_application, requires_img_lib,  # noqa
                       assert_is, assert_in, assert_not_in, assert_equal,
                       assert_not_equal, assert_raises, assert_true)  # noqa
 from ._runners import test  # noqa
+from .image_tester import assert_image_approved, assert_image_match  # noqa
