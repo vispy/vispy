@@ -8,7 +8,7 @@ All images are of size (100,100) to keep a small file size
 """
 
 from vispy.scene import visuals, transforms
-from vispy.testing import (requires_application, assert_image_equal,
+from vispy.testing import (requires_application, assert_image_approved,
                            TestingCanvas, run_tests_if_main)
 
 
@@ -19,20 +19,20 @@ def test_circle_draw():
         ellipse = visuals.Ellipse(pos=(75, 35, 0), radius=20,
                                   color=(1, 0, 0, 1))
         c.draw_visual(ellipse)
-        assert_image_equal("screenshot", 'visuals/circle1.png')
+        assert_image_approved("screenshot", 'visuals/circle1.png')
 
         ellipse = visuals.Ellipse(pos=(75, 35, 0), radius=20,
                                   color=(1, 0, 0, 1),
                                   border_color=(0, 1, 1, 1))
         c.draw_visual(ellipse)
-        assert_image_equal("screenshot", 'visuals/circle2.png')
+        assert_image_approved("screenshot", 'visuals/circle2.png')
 
         ellipse = visuals.Ellipse(pos=(75, 35, 0), radius=20,
                                   border_color=(0, 1, 1, 1))
         c.draw_visual(ellipse)
         # low corr here because borders have some variability
         # esp. w/HiDPI
-        assert_image_equal("screenshot", 'visuals/circle3.png', 0.7)
+        assert_image_approved("screenshot", 'visuals/circle3.png')
 
 
 @requires_application()
@@ -44,7 +44,7 @@ def test_ellipse_draw():
         ellipse.transform = transforms.STTransform(scale=(2.0, 3.0),
                                                    translate=(50, 50))
         c.draw_visual(ellipse)
-        assert_image_equal("screenshot", 'visuals/ellipse1.png')
+        assert_image_approved("screenshot", 'visuals/ellipse1.png')
 
         ellipse = visuals.Ellipse(pos=(0., 0.), radius=(20, 15),
                                   color=(0, 0, 1, 1),
@@ -52,14 +52,14 @@ def test_ellipse_draw():
         ellipse.transform = transforms.STTransform(scale=(2.0, 3.0),
                                                    translate=(50, 50))
         c.draw_visual(ellipse)
-        assert_image_equal("screenshot", 'visuals/ellipse2.png')
+        assert_image_approved("screenshot", 'visuals/ellipse2.png')
 
         ellipse = visuals.Ellipse(pos=(0., 0.), radius=(20, 15),
                                   border_color=(1, 0, 0, 1))
         ellipse.transform = transforms.STTransform(scale=(2.0, 3.0),
                                                    translate=(50, 50))
         c.draw_visual(ellipse)
-        assert_image_equal("screenshot", 'visuals/ellipse3.png', 0.7)
+        assert_image_approved("screenshot", 'visuals/ellipse3.png')
 
 
 @requires_application()
@@ -70,13 +70,13 @@ def test_arc_draw1():
                                   start_angle=150., span_angle=120.,
                                   color=(0, 0, 1, 1))
         c.draw_visual(ellipse)
-        assert_image_equal("screenshot", 'visuals/arc1.png')
+        assert_image_approved("screenshot", 'visuals/arc1.png')
 
         ellipse = visuals.Ellipse(pos=(50., 50.), radius=(20, 15),
                                   start_angle=150., span_angle=120.,
                                   border_color=(1, 0, 0, 1))
         c.draw_visual(ellipse)
-        assert_image_equal("screenshot", 'visuals/arc2.png', 0.6)
+        assert_image_approved("screenshot", 'visuals/arc2.png')
 
 
 @requires_application()
@@ -89,31 +89,31 @@ def test_reactive_draw():
 
         ellipse.pos = [70, 40, 0.]
         c.draw_visual(ellipse)
-        assert_image_equal("screenshot", 'visuals/reactive_ellipse1.png')
+        assert_image_approved("screenshot", 'visuals/reactive_ellipse1.png')
 
         ellipse.radius = 25
         c.draw_visual(ellipse)
-        assert_image_equal("screenshot", 'visuals/reactive_ellipse2.png')
+        assert_image_approved("screenshot", 'visuals/reactive_ellipse2.png')
 
         ellipse.color = 'red'
         c.draw_visual(ellipse)
-        assert_image_equal("screenshot", 'visuals/reactive_ellipse3.png')
+        assert_image_approved("screenshot", 'visuals/reactive_ellipse3.png')
 
         ellipse.border_color = 'yellow'
         c.draw_visual(ellipse)
-        assert_image_equal("screenshot", 'visuals/reactive_ellipse4.png')
+        assert_image_approved("screenshot", 'visuals/reactive_ellipse4.png')
 
         ellipse.start_angle = 140.
         c.draw_visual(ellipse)
-        assert_image_equal("screenshot", 'visuals/reactive_ellipse5.png')
+        assert_image_approved("screenshot", 'visuals/reactive_ellipse5.png')
 
         ellipse.span_angle = 100.
         c.draw_visual(ellipse)
-        assert_image_equal("screenshot", 'visuals/reactive_ellipse6.png')
+        assert_image_approved("screenshot", 'visuals/reactive_ellipse6.png')
 
         ellipse.num_segments = 10.
         c.draw_visual(ellipse)
-        assert_image_equal("screenshot", 'visuals/reactive_ellipse7.png')
+        assert_image_approved("screenshot", 'visuals/reactive_ellipse7.png')
 
 
 run_tests_if_main()
