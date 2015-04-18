@@ -175,9 +175,6 @@ class Canvas(object):
         # Create new context
         self._context = GLContext(config, shared)
 
-        # Now we're ready to become current
-        set_current_canvas(self)
-
         # Deal with special keys
         self._set_keys(keys)
 
@@ -191,6 +188,9 @@ class Canvas(object):
         # Create widget now (always do this *last*, after all err checks)
         if create_native:
             self.create_native()
+
+        # Now we're ready to become current
+        self.set_current()
 
         if '--vispy-fps' in sys.argv:
             self.measure_fps()
@@ -376,6 +376,7 @@ class Canvas(object):
     def set_current(self, event=None):
         """Make this the active GL canvas
         """
+        self._backend._vispy_set_current()
         set_current_canvas(self)
 
     def swap_buffers(self, event=None):

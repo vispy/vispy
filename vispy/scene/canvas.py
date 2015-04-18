@@ -207,6 +207,7 @@ class SceneCanvas(app.Canvas):
             Optionally specifies the viewport to use. If None, the entire
             physical size is used.
         """
+        self.set_current()
         prof = Profiler()
         nfb = len(self._fb_stack)
         nvp = len(self._vp_stack)
