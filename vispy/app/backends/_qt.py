@@ -269,7 +269,7 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
         etime = time() + 0.25
         while time() < etime:
             sleep(0.01)
-            self._vispy_set_current()
+            self._vispy_canvas.set_current()
             self._vispy_canvas.app.process_events()
 
     def _vispy_set_title(self, title):
@@ -506,7 +506,7 @@ class CanvasBackendEgl(QtBaseCanvasBackend, QWidget):
         egl.eglSwapBuffers(_EGL_DISPLAY, self._surface)
 
     def initializeGL(self):
-        self._vispy_set_current()
+        self._vispy_canvas.set_current()
         self._vispy_canvas.events.initialize()
 
     def resizeEvent(self, event):
@@ -612,7 +612,7 @@ class CanvasBackendDesktop(QtBaseCanvasBackend, QGLWidget):
         if self._vispy_canvas is None:
             return
         # (0, 0, self.width(), self.height()))
-        self._vispy_set_current()
+        self._vispy_canvas.set_current()
         self._vispy_canvas.events.draw(region=None)
 
 
