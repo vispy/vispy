@@ -437,13 +437,14 @@ class TextVisual(Visual):
 
     @pos.setter
     def pos(self, pos):
-        l = len(pos);
-        if(l!=2 && l!=3):
-            raise TypeError("Test position must have length 2 or 3.")
         pos = [float(p) for p in pos]
+        l = len(pos)
+        if(l!=2 && l!=3):
+            raise TypeError("Text pos must be array-like with 2 or 3 elements")
         if(l == 2):
-            pos.append(float(0.0));
-        self._pos = tuple(pos)
+            self._pos = tuple(pos(0),pos(1),float(0.0))
+        else:
+            self._pos = tuple(pos)
 
     def draw(self, transforms):
         # attributes / uniforms are not available until program is built
