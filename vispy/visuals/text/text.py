@@ -229,7 +229,7 @@ class TextVisual(Visual):
     """
 
     VERTEX_SHADER = """
-        uniform vec2 u_pos;  // anchor position
+        uniform vec3 u_pos;  // anchor position
         uniform float u_rotation;  // rotation in rad
         attribute vec2 a_position; // in point units
         attribute vec2 a_texcoord;
@@ -240,7 +240,7 @@ class TextVisual(Visual):
             mat4 rot = mat4(cos(u_rotation), -sin(u_rotation), 0, 0,
                             sin(u_rotation), cos(u_rotation), 0, 0,
                             0, 0, 1, 0, 0, 0, 0, 1);
-            vec4 pos = $transform(vec4(u_pos, 0.0, 1.0)) +
+            vec4 pos = $transform(vec4(u_pos, 1.0)) +
                        $text_scale(rot * vec4(a_position, 0, 0));
             gl_Position = pos;
             v_texcoord = a_texcoord;
@@ -438,7 +438,7 @@ class TextVisual(Visual):
     @pos.setter
     def pos(self, pos):
         pos = [float(p) for p in pos]
-        assert len(pos) == 2
+        #assert len(pos) == 2
         self._pos = tuple(pos)
 
     def draw(self, transforms):
