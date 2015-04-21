@@ -442,7 +442,7 @@ class TextVisual(Visual):
         if(l!=2 and l!=3):
             raise TypeError("Text pos must be array-like with 2 or 3 elements")
         if(l == 2):
-            self._pos = (pos[0],pos[1],float(0.0))
+            self._pos = (pos[0],pos[1],0.0)
         else:
             self._pos = tuple(pos)
 
