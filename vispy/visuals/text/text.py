@@ -438,7 +438,7 @@ class TextVisual(Visual):
     @pos.setter
     def pos(self, pos):
         pos = [float(p) for p in pos]
-        #assert len(pos) == 2
+        assert len(pos) == 3
         self._pos = tuple(pos)
 
     def draw(self, transforms):
