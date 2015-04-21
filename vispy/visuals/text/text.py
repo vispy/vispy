@@ -437,9 +437,10 @@ class TextVisual(Visual):
 
     @pos.setter
     def pos(self, pos):
-        pos = [float(p) for p in pos]
         l = len(pos);
-        assert(l == 3 or l == 2)
+        if(l!=2 && l!=3):
+            raise TypeError("Test position must have length 2 or 3.")
+        pos = [float(p) for p in pos]
         if(l == 2):
             pos.append(float(0.0));
         self._pos = tuple(pos)
