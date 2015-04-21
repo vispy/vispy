@@ -363,7 +363,7 @@ class TextVisual(Visual):
         """
 
     def __init__(self, text, color='black', bold=False,
-                 italic=False, face='OpenSans', font_size=12, pos=(0, 0),
+                 italic=False, face='OpenSans', font_size=12, pos=(0, 0, 0 ),
                  rotation=0., anchor_x='center', anchor_y='center',
                  font_manager=None, **kwargs):
         Visual.__init__(self, **kwargs)
@@ -438,7 +438,10 @@ class TextVisual(Visual):
     @pos.setter
     def pos(self, pos):
         pos = [float(p) for p in pos]
-        assert len(pos) == 3
+        l = len(pos);
+        assert(l == 3 or l == 2)
+        if(l == 2):
+            pos.append(float(0.0));
         self._pos = tuple(pos)
 
     def draw(self, transforms):
