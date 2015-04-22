@@ -6,7 +6,6 @@ import numpy as np
 from .. import scene, config
 from ..io import read_png, write_png
 from ..gloo.util import _screenshot
-from ._testing import _save_failed_test, make_diff_image
 
 
 global tester
@@ -98,8 +97,9 @@ def assert_image_approved(image, standard_file, message=None, **kwargs):
                 raise
 
 
-def assert_image_match(im1, im2, px_threshold=50., px_count=None, 
-                       max_px_diff=None, avg_px_diff=None, img_diff=None):
+def assert_image_match(im1, im2, min_corr=0.9, px_threshold=50., 
+                       px_count=None, max_px_diff=None, avg_px_diff=None, 
+                       img_diff=None):
     """Check that two images match.
     
     Images that differ in shape or dtype will fail unconditionally.
@@ -111,6 +111,9 @@ def assert_image_match(im1, im2, px_threshold=50., px_count=None,
         Test output image
     im2 : (h, w, 4) ndarray
         Test standard image
+    min_corr : float or None
+        Minimum allowed correlation coefficient between corresponding image
+        values (see numpy.corrcoef)
     px_threshold : float
         Minimum value difference at which two pixels are considered different
     px_count : int or None
@@ -121,11 +124,19 @@ def assert_image_match(im1, im2, px_threshold=50., px_count=None,
         Average allowed difference between pixels
     img_diff : float or None
         Maximum allowed summed difference between images 
+        
     """
     assert im1.ndim == 3
     assert im1.shape[2] == 4
-    assert im1.shape == im2.shape
     assert im1.dtype == im2.dtype
+    if im1.shape != im2.shape:
+        # Allow im1 to be an integer multiple larger than im2 to account for
+        # High-resolution displays
+        ims1 = np.array(im1.shape).astype(float)
+        ims2 = np.array(im2.shape).astype(float)
+        sr = ims1 / ims2
+        assert np.allclose(sr, np.round(sr))
+        im1 = resize(im1, im2.shape[:2], 'nearest')
     
     diff = im1.astype(float) - im2.astype(float)
     if img_diff is not None:
@@ -141,6 +152,66 @@ def assert_image_match(im1, im2, px_threshold=50., px_count=None,
         assert masked_diff.max() <= max_px_diff
     if avg_px_diff is not None:
         assert masked_diff.mean() <= avg_px_diff
+
+    if min_corr is not None:
+        with np.errstate(invalid='ignore'):
+            corr = np.corrcoef(im1.ravel(), im2.ravel())[0, 1]
+        assert corr >= min_corr
+
+
+def _save_failed_test(data, expect, filename):
+    from ..io import _make_png
+    commit, error = run_subprocess(['git', 'rev-parse',  'HEAD'])
+    name = filename.split('/')
+    name.insert(-1, commit.strip())
+    filename = '/'.join(name)
+    host = 'data.vispy.org'
+
+    # concatenate data, expect, and diff into a single image
+    ds = data.shape
+    es = expect.shape
+    
+    shape = (max(ds[0], es[0]) + 4, ds[1] + es[1] + 8 + max(ds[1], es[1]), 4)
+    img = np.empty(shape, dtype=np.ubyte)
+    img[..., :3] = 100
+    img[..., 3] = 255
+    
+    img[2:2+ds[0], 2:2+ds[1], :ds[2]] = data
+    img[2:2+es[0], ds[1]+4:ds[1]+4+es[1], :es[2]] = expect
+    
+    diff = make_diff_image(data, expect)
+    img[2:2+diff.shape[0], -diff.shape[1]-2:-2] = diff
+
+    png = _make_png(img)
+    conn = httplib.HTTPConnection(host)
+    req = urllib.urlencode({'name': filename,
+                            'data': base64.b64encode(png)})
+    conn.request('POST', '/upload.py', req)
+    response = conn.getresponse().read()
+    conn.close()
+    print("\nImage comparison failed. Test result: %s %s   Expected result: "
+          "%s %s" % (data.shape, data.dtype, expect.shape, expect.dtype))
+    print("Uploaded to: \nhttp://%s/data/%s" % (host, filename))
+    if not response.startswith(b'OK'):
+        print("WARNING: Error uploading data to %s" % host)
+        print(response)
+
+
+def make_diff_image(im1, im2):
+    """Return image array showing the differences between im1 and im2.
+    
+    Handles images of different shape. Alpha channels are not compared.
+    """
+    ds = im1.shape
+    es = im2.shape
+    
+    diff = np.empty((max(ds[0], es[0]), max(ds[1], es[1]), 4), dtype=int)
+    diff[..., :3] = 128
+    diff[..., 3] = 255
+    diff[:ds[0], :ds[1], :min(ds[2], 3)] += im1[..., :3]
+    diff[:es[0], :es[1], :min(es[2], 3)] -= im2[..., :3]
+    diff = np.clip(diff, 0, 255).astype(np.ubyte)
+    return diff
 
 
 class ImageTester(scene.SceneCanvas):
