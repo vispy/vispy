@@ -17,6 +17,12 @@ from ..ext.six import string_types
 from ..util.config import config
 
 
+# This is the commit ID in the vispy/test-data repository that should be used
+# when doing image comparison tests. This ID must be updated as needed to 
+# follow changes to the test-data repository.
+test_data_commit_id = '27f2d5ab1cc20342d255694a5a21f35d2d7e376b'
+
+
 ###############################################################################
 # Vispy data directory
 
@@ -90,7 +96,10 @@ def get_testing_file(fname, directory=None, force_download=False):
     fname : str
         The path to the file on the local system.
     """
-    _url_root = 'https://github.com/vispy/test-data/raw/master/'
+    global test_data_commit_id
+    
+    _url_root = ('https://raw.githubusercontent.com/vispy/test-data/%s/' % 
+                 test_data_commit_id)
     url = _url_root + fname
     if directory is None:
         directory = config['data_path']
@@ -98,7 +107,8 @@ def get_testing_file(fname, directory=None, force_download=False):
             raise ValueError('config["data_path"] is not defined, '
                              'so directory must be supplied')
 
-    fname = op.join(directory, op.normcase(fname))  # convert to native
+    # convert to native
+    fname = op.join(directory, test_data_commit_id, op.normcase(fname))
     if op.isfile(fname) and not force_download:  # we're done
         return fname
     if not op.isdir(op.dirname(fname)):
