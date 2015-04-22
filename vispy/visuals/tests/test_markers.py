@@ -2,7 +2,7 @@
 import numpy as np
 from vispy.scene.visuals import Markers
 from vispy.testing import (requires_application, TestingCanvas,
-                           run_tests_if_main)
+                           run_tests_if_main, assert_image_approved)
 from vispy.gloo.util import _screenshot
 
 
@@ -13,10 +13,10 @@ def test_markers():
     # work for people
     with TestingCanvas() as c:
         marker = Markers()
-        marker.set_data(np.array([[50, 50]], np.float32))
+        np.random.seed(57983)
+        marker.set_data(np.random.normal(size=(30, 2), loc=50, scale=10))
         c.draw_visual(marker)
-        marker = _screenshot(alpha=False)
-        assert 10 < (marker == 255).sum() < 100
+        assert_image_approved("screenshot", "visuals/markers.png")
 
 
 run_tests_if_main()

@@ -8,7 +8,7 @@ All images are of size (100,100) to keep a small file size
 """
 
 from vispy.scene import visuals, transforms
-from vispy.testing import (requires_application, assert_image_equal,
+from vispy.testing import (requires_application, assert_image_approved,
                            TestingCanvas, run_tests_if_main)
 
 
@@ -21,7 +21,7 @@ def test_regular_polygon_draw1():
         rpolygon.transform = transforms.STTransform(scale=(50, 50),
                                                     translate=(50, 50))
         c.draw_visual(rpolygon)
-        assert_image_equal("screenshot", 'visuals/regular_polygon1.png')
+        assert_image_approved("screenshot", 'visuals/regular_polygon1.png')
 
         rpolygon = visuals.RegularPolygon(pos=(0., 0.), radius=0.4, sides=8,
                                           color=(1, 0, 0, 1),
@@ -29,14 +29,15 @@ def test_regular_polygon_draw1():
         rpolygon.transform = transforms.STTransform(scale=(50, 50),
                                                     translate=(50, 50))
         c.draw_visual(rpolygon)
-        assert_image_equal("screenshot", 'visuals/regular_polygon2.png')
+        assert_image_approved("screenshot", 'visuals/regular_polygon2.png')
 
         rpolygon = visuals.RegularPolygon(pos=(0., 0.), radius=0.4, sides=8,
                                           border_color=(0, 1, 1, 1))
         rpolygon.transform = transforms.STTransform(scale=(50, 50),
                                                     translate=(50, 50))
         c.draw_visual(rpolygon)
-        assert_image_equal("screenshot", 'visuals/regular_polygon3.png', 0.7)
+        assert_image_approved("screenshot", 'visuals/regular_polygon3.png',
+                              min_corr=0.7)
 
 
 @requires_application()
@@ -48,7 +49,7 @@ def test_regular_polygon_draw2():
         rpolygon.transform = transforms.STTransform(scale=(75, 100),
                                                     translate=(50, 50))
         c.draw_visual(rpolygon)
-        assert_image_equal("screenshot", 'visuals/regular_polygon4.png')
+        assert_image_approved("screenshot", 'visuals/regular_polygon4.png')
 
         rpolygon = visuals.RegularPolygon(pos=(0., 0.), radius=0.4, sides=8,
                                           color=(0, 0, 1, 1),
@@ -56,14 +57,15 @@ def test_regular_polygon_draw2():
         rpolygon.transform = transforms.STTransform(scale=(75, 100),
                                                     translate=(50, 50))
         c.draw_visual(rpolygon)
-        assert_image_equal("screenshot", 'visuals/regular_polygon5.png')
+        assert_image_approved("screenshot", 'visuals/regular_polygon5.png')
 
         rpolygon = visuals.RegularPolygon(pos=(0., 0.), radius=0.4, sides=8,
                                           border_color=(1, 0, 0, 1))
         rpolygon.transform = transforms.STTransform(scale=(75, 100),
                                                     translate=(50, 50))
         c.draw_visual(rpolygon)
-        assert_image_equal("screenshot", 'visuals/regular_polygon6.png', 0.6)
+        assert_image_approved("screenshot", 'visuals/regular_polygon6.png', 
+                              min_corr=0.6)
 
 
 @requires_application()
@@ -76,27 +78,27 @@ def test_reactive_draw():
 
         rpolygon.pos = [70, 40, 0.]
         c.draw_visual(rpolygon)
-        assert_image_equal("screenshot",
+        assert_image_approved("screenshot",
                            'visuals/reactive_regular_polygon1.png')
 
         rpolygon.radius = 25
         c.draw_visual(rpolygon)
-        assert_image_equal("screenshot",
+        assert_image_approved("screenshot",
                            'visuals/reactive_regular_polygon2.png')
 
         rpolygon.color = 'red'
         c.draw_visual(rpolygon)
-        assert_image_equal("screenshot",
+        assert_image_approved("screenshot",
                            'visuals/reactive_regular_polygon3.png')
 
         rpolygon.border_color = 'yellow'
         c.draw_visual(rpolygon)
-        assert_image_equal("screenshot",
+        assert_image_approved("screenshot",
                            'visuals/reactive_regular_polygon4.png')
 
         rpolygon.sides = 6
         c.draw_visual(rpolygon)
-        assert_image_equal("screenshot",
+        assert_image_approved("screenshot",
                            'visuals/reactive_regular_polygon5.png')
 
 
