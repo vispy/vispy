@@ -363,7 +363,7 @@ class TextVisual(Visual):
         """
 
     def __init__(self, text, color='black', bold=False,
-                 italic=False, face='OpenSans', font_size=12, pos=(0, 0, 0 ),
+                 italic=False, face='OpenSans', font_size=12, pos=[0, 0, 0 ],
                  rotation=0., anchor_x='center', anchor_y='center',
                  font_manager=None, **kwargs):
         Visual.__init__(self, **kwargs)
@@ -437,14 +437,11 @@ class TextVisual(Visual):
 
     @pos.setter
     def pos(self, pos):
-        pos = [float(p) for p in pos]
-        l = len(pos)
-        if(l!=2 and l!=3):
-            raise TypeError("Text pos must be array-like with 2 or 3 elements")
-        if(l == 2):
-            self._pos = (pos[0],pos[1],0.0)
-        else:
-            self._pos = tuple(pos)
+        self._pos = np.array(pos, np.float32)
+        if self._pos.ndim != 1 or self._pos.size not in (2, 3):
+            raise ValueError('pos must be array-like with 2 or 3 elements')
+        if self._pos.size == 2:
+            self._pos = np.concatenate((self._pos, [0.]))
 
     def draw(self, transforms):
         # attributes / uniforms are not available until program is built
