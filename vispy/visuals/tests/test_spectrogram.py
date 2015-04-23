@@ -3,7 +3,8 @@ import numpy as np
 
 from vispy.scene.visuals import Spectrogram
 from vispy.testing import (requires_application, TestingCanvas,
-                           assert_image_approved, run_tests_if_main)
+                           run_tests_if_main)
+from vispy.testing.image_tester import assert_image_approved
 
 
 @requires_application()

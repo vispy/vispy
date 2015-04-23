@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
+from pytest import raises
 from vispy import scene
 
-from vispy.testing import run_tests_if_main, requires_pyopengl
-from vispy.testing import (TestingCanvas, requires_application, 
-                           assert_image_approved)
-#from vispy.gloo.util import _screenshot
-from nose.tools import assert_raises
+from vispy.testing import (TestingCanvas, requires_application,
+                           run_tests_if_main, requires_pyopengl)
+from vispy.testing.image_tester import assert_image_approved
 
 
 @requires_pyopengl()
@@ -22,12 +21,14 @@ def test_volume():
     assert V.method == 'mip'
     
     # Set wrong data
-    assert_raises(ValueError, V.set_data, np.zeros((20, 20), 'float32'))
+    with raises(ValueError):
+        V.set_data(np.zeros((20, 20), 'float32'))
     
     # Clim
     V.set_data(vol, (0.5, 0.8))
     assert V.clim == (0.5, 0.8)
-    assert_raises(ValueError, V.set_data, vol, (0.5, 0.8, 1.0))
+    with raises(ValueError):
+        V.set_data(vol, (0.5, 0.8, 1.0))
     
     # Method
     V.method = 'iso'
@@ -37,7 +38,8 @@ def test_volume():
     V.relative_step_size = 1.1
     assert V.relative_step_size == 1.1
     # Disallow 0 step size to avoid GPU stalling
-    assert_raises(ValueError, V.__class__.relative_step_size.fset, V, 0)
+    with raises(ValueError):
+        V.relative_step_size = 0
 
 
 @requires_pyopengl()

@@ -8,8 +8,9 @@ All images are of size (100,100) to keep a small file size
 """
 
 from vispy.scene import visuals, transforms
-from vispy.testing import (requires_application, assert_image_approved,
-                           TestingCanvas, run_tests_if_main)
+from vispy.testing import (requires_application, TestingCanvas,
+                           run_tests_if_main)
+from vispy.testing.image_tester import assert_image_approved
 
 
 @requires_application()
