@@ -132,24 +132,3 @@ def run_subprocess(command, return_code=False, **kwargs):
     if return_code:
         output = output + (p.returncode,)
     return output
-
-
-try:
-    check_output = subprocess.check_output
-except AttributeError:
-    def check_output(*args, **kwds):
-        """Drop-in replacement for subprocess.check_output, which is not 
-        available in python 2.6.
-        """
-        kwds['stdout'] = subprocess.PIPE
-        proc = subprocess.Popen(*args, **kwds)
-        output = proc.stdout.read()
-        proc.wait()
-        if proc.returncode != 0:
-            msg = ("Command '%s' returned non-zero exit status %d" % 
-                   (args[0], proc.returncode))
-            ex = subprocess.CalledProcessError(msg)
-            ex.returncode = proc.returncode
-            ex.output = output
-            raise ex
-        return output

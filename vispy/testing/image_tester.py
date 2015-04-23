@@ -52,7 +52,7 @@ from .. import scene, config
 from ..io import read_png, write_png
 from ..gloo.util import _screenshot
 from ..geometry import resize
-from ..util import check_output, run_subprocess
+from ..util import run_subprocess
 
 
 tester = None
@@ -404,7 +404,7 @@ def git_status(path):
     repository.
     """
     cmd = git_cmd_base(path) + ['status', '--porcelain']
-    return check_output(cmd, universal_newlines=True)
+    return run_subprocess(cmd, stderr=None, universal_newlines=True)[0]
 
 
 def git_commit_id(path, ref):
@@ -412,7 +412,7 @@ def git_commit_id(path, ref):
     """
     cmd = git_cmd_base(path) + ['show', ref]
     try:
-        output = check_output(cmd, universal_newlines=True)
+        output = run_subprocess(cmd, stderr=None, universal_newlines=True)[0]
     except CalledProcessError:
         raise NameError("Unknown git reference '%s'" % ref)
     commit = output.split('\n')[0]
