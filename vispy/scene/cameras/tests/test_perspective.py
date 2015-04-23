@@ -4,8 +4,9 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 from vispy import scene, io
-from vispy.testing import (requires_application, assert_image_approved,
-                           TestingCanvas, run_tests_if_main)
+from vispy.testing import (requires_application, TestingCanvas,
+                           run_tests_if_main)
+from vispy.testing.image_tester import assert_image_approved
 
 
 @requires_application()
