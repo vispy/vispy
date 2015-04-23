@@ -228,7 +228,7 @@ class CanvasBackend(BaseCanvasBackend):
         self._backend2._vispy_set_visible(False)
 
         # Normal behavior
-        self._vispy_set_current()
+        self._vispy_canvas.set_current()
         self._vispy_canvas.events.draw(region=None)
         # Save the encoded screenshot image to widget
         self._save_screenshot()
