@@ -42,11 +42,17 @@ import time
 import os
 import sys
 import inspect
-from subprocess import check_output, check_call, CalledProcessError
+import base64
+from subprocess import check_call, CalledProcessError
 import numpy as np
+
+from ..ext.six.moves import http_client as httplib
+from ..ext.six.moves import urllib_parse as urllib
 from .. import scene, config
 from ..io import read_png, write_png
 from ..gloo.util import _screenshot
+from ..geometry import resize
+from ..util import check_output, run_subprocess
 
 
 tester = None
@@ -109,8 +115,8 @@ def assert_image_approved(image, standard_file, message=None, **kwargs):
     except Exception:
         if standard_file in git_status(data_path):
             print("\n\nWARNING: unit test failed against modified standard "
-                "image %s.\nTo revert this file, run `cd %s; git checkout %s`"
-                "\n" % (std_file, data_path, standard_file))
+                  "image %s.\nTo revert this file, run `cd %s; git checkout "
+                  "%s`\n" % (std_file, data_path, standard_file))
         if config['audit_tests']:
             sys.excepthook(*sys.exc_info())
             get_tester().test(image, std_image, message)
@@ -327,7 +333,6 @@ def get_test_data_repo():
     git_path = 'https://github.com/vispy/test-data'
     gitbase = git_cmd_base(data_path)
     
-    make_clone = True
     if os.path.isdir(data_path):
         # Already have a test-data repository to work with.
         
@@ -352,8 +357,6 @@ def get_test_data_repo():
         if git_commit_id(data_path, 'HEAD') != tag_commit:
             print("Checking out test-data tag '%s'" % test_data_tag)
             check_call(gitbase + ['checkout', test_data_tag])
-        
-        make_clone = False
             
     else:
         print("Attempting to create git clone of test data repo in %s.." %
@@ -370,7 +373,8 @@ def get_test_data_repo():
             cmds = [
                 gitbase + ['init'],
                 gitbase + ['remote', 'add', 'origin', git_path],
-                gitbase + ['fetch', '--tags', 'origin', test_data_tag, '--depth=1'],
+                gitbase + ['fetch', '--tags', 'origin', test_data_tag,
+                           '--depth=1'],
                 gitbase + ['checkout', '-b', 'master', 'FETCH_HEAD'],
             ]
         else:
@@ -414,4 +418,3 @@ def git_commit_id(path, ref):
     commit = output.split('\n')[0]
     assert commit[:7] == 'commit '
     return commit[7:]
-    

@@ -79,27 +79,27 @@ def test_reactive_draw():
         rpolygon.pos = [70, 40, 0.]
         c.draw_visual(rpolygon)
         assert_image_approved("screenshot",
-                           'visuals/reactive_regular_polygon1.png')
+                              'visuals/reactive_regular_polygon1.png')
 
         rpolygon.radius = 25
         c.draw_visual(rpolygon)
         assert_image_approved("screenshot",
-                           'visuals/reactive_regular_polygon2.png')
+                              'visuals/reactive_regular_polygon2.png')
 
         rpolygon.color = 'red'
         c.draw_visual(rpolygon)
         assert_image_approved("screenshot",
-                           'visuals/reactive_regular_polygon3.png')
+                              'visuals/reactive_regular_polygon3.png')
 
         rpolygon.border_color = 'yellow'
         c.draw_visual(rpolygon)
         assert_image_approved("screenshot",
-                           'visuals/reactive_regular_polygon4.png')
+                              'visuals/reactive_regular_polygon4.png')
 
         rpolygon.sides = 6
         c.draw_visual(rpolygon)
         assert_image_approved("screenshot",
-                           'visuals/reactive_regular_polygon5.png')
+                              'visuals/reactive_regular_polygon5.png')
 
 
 run_tests_if_main()

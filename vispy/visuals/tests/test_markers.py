@@ -3,7 +3,6 @@ import numpy as np
 from vispy.scene.visuals import Markers
 from vispy.testing import (requires_application, TestingCanvas,
                            run_tests_if_main, assert_image_approved)
-from vispy.gloo.util import _screenshot
 
 
 @requires_application()

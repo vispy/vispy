@@ -12,5 +12,5 @@ from .config import (config, sys_info, save_config, get_config_keys,  # noqa
 from .fetching import load_data_file  # noqa
 from . import fonts       # noqa
 from . import transforms  # noqa
-from .wrappers import use, run_subprocess  # noqa
+from .wrappers import use, run_subprocess, check_output  # noqa
 from .bunch import SimpleBunch  # noqa

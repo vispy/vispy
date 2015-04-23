@@ -10,14 +10,11 @@ import numpy as np
 import sys
 import os
 import inspect
-import base64
 
 from distutils.version import LooseVersion
 
-from ..ext.six.moves import http_client as httplib
-from ..ext.six.moves import urllib_parse as urllib
 from ..ext.six import string_types
-from ..util import use_log_level, run_subprocess
+from ..util import use_log_level
 
 ###############################################################################
 # Adapted from Python's unittest2

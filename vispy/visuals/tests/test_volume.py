@@ -50,12 +50,8 @@ def test_volume_draw():
         # Create
         np.random.seed(2376)
         vol = np.random.normal(size=(20, 20, 20), loc=0.5, scale=0.2)
-        #vol = np.zeros((20, 20, 20), dtype='float32')
         vol[8:16, 8:16, :] += 1.0
-        V = scene.visuals.Volume(vol, parent=v.scene)
-        #V.transform = scene.STTransform(scale=(2, 2, 1),
-                                        #translate=(50, 50, 0))
-        #c.draw_visual(V)
+        V = scene.visuals.Volume(vol, parent=v.scene)  # noqa
         v.camera.set_range()
         assert_image_approved(c.render(), 'visuals/volume.png')
 

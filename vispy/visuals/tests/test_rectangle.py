@@ -92,23 +92,28 @@ def test_reactive_draw():
 
         rectpolygon.radius = [20., 20, 0., 10.]
         c.draw_visual(rectpolygon)
-        assert_image_approved("screenshot", 'visuals/reactive_rectpolygon1.png')
+        assert_image_approved("screenshot",
+                              'visuals/reactive_rectpolygon1.png')
 
         rectpolygon.pos = (60, 60, 0)
         c.draw_visual(rectpolygon)
-        assert_image_approved("screenshot", 'visuals/reactive_rectpolygon2.png')
+        assert_image_approved("screenshot",
+                              'visuals/reactive_rectpolygon2.png')
 
         rectpolygon.color = 'blue'
         c.draw_visual(rectpolygon)
-        assert_image_approved("screenshot", 'visuals/reactive_rectpolygon3.png')
+        assert_image_approved("screenshot",
+                              'visuals/reactive_rectpolygon3.png')
 
         rectpolygon.border_color = 'yellow'
         c.draw_visual(rectpolygon)
-        assert_image_approved("screenshot", 'visuals/reactive_rectpolygon4.png')
+        assert_image_approved("screenshot",
+                              'visuals/reactive_rectpolygon4.png')
 
         rectpolygon.radius = 10.
         c.draw_visual(rectpolygon)
-        assert_image_approved("screenshot", 'visuals/reactive_rectpolygon5.png')
+        assert_image_approved("screenshot",
+                              'visuals/reactive_rectpolygon5.png')
 
 
 @requires_application()
