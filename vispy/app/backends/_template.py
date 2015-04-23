@@ -170,7 +170,6 @@ class CanvasBackend(BaseCanvasBackend):
     def _vispy_set_current(self):
         # Make this the current context
         raise NotImplementedError()
-        self._vispy_canvas.set_current()  # Mark as current
 
     def _vispy_swap_buffers(self):
         # Swap front and back buffer

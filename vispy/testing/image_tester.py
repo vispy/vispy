@@ -185,9 +185,9 @@ def assert_image_match(im1, im2, min_corr=0.9, px_threshold=50.,
         assert mask.sum() <= px_count
         
     masked_diff = diff[mask]
-    if max_px_diff is not None:
+    if max_px_diff is not None and masked_diff.size > 0:
         assert masked_diff.max() <= max_px_diff
-    if avg_px_diff is not None:
+    if avg_px_diff is not None and masked_diff.size > 0:
         assert masked_diff.mean() <= avg_px_diff
 
     if min_corr is not None:

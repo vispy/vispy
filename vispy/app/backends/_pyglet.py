@@ -236,7 +236,6 @@ class CanvasBackend(_Window, BaseCanvasBackend):
 
     def _vispy_set_current(self):
         # Make this the current context
-        self._vispy_canvas.set_current()  # Mark as current
         self.switch_to()
 
     def _vispy_swap_buffers(self):

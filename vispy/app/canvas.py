@@ -189,8 +189,8 @@ class Canvas(object):
         if create_native:
             self.create_native()
 
-        # Now we're ready to become current
-        self.set_current()
+            # Now we're ready to become current
+            self.set_current()
 
         if '--vispy-fps' in sys.argv:
             self.measure_fps()
