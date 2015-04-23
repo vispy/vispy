@@ -107,6 +107,10 @@ def assert_image_approved(image, standard_file, message=None, **kwargs):
     try:
         assert_image_match(image, std_image, **kwargs)
     except Exception:
+        if standard_file in git_status(data_path):
+            print("\n\nWARNING: unit test failed against modified standard "
+                "image %s.\nTo revert this file, run `cd %s; git checkout %s`"
+                "\n" % (std_file, data_path, standard_file))
         if config['audit_tests']:
             sys.excepthook(*sys.exc_info())
             get_tester().test(image, std_image, message)
@@ -391,17 +395,12 @@ def git_cmd_base(path):
     return ['git', '--git-dir=%s/.git' % path, '--work-tree=%s' % path]
 
 
-def git_tree_unchanged(path):
-    """Return True if the working tree at *path* is not changed relative to 
-    the current git head.
+def git_status(path):
+    """Return a string listing all changes to the working tree in a git
+    repository.
     """
     cmd = git_cmd_base(path) + ['status', '--porcelain']
-    output = check_output(cmd, universal_newlines=True)
-    status = output.strip().split('\n')
-    for line in status:
-        if len(line) >= 2 and line[:2] != '??':
-            return False
-    return True
+    return check_output(cmd, universal_newlines=True)
 
 
 def git_commit_id(path, ref):
