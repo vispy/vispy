@@ -42,7 +42,7 @@ import time
 import os
 import sys
 import inspect
-from subprocess import check_output, check_call
+from subprocess import check_output, check_call, CalledProcessError
 import numpy as np
 from .. import scene, config
 from ..io import read_png, write_png
@@ -331,7 +331,9 @@ def get_test_data_repo():
         try:
             tag_commit = git_commit_id(data_path, test_data_tag)
         except NameError:
-            check_call(gitbase + ['fetch', 'origin'])
+            cmd = gitbase + ['fetch', '--tags', 'origin']
+            print(' '.join(cmd))
+            check_call(cmd)
             try:
                 tag_commit = git_commit_id(data_path, test_data_tag)
             except NameError:
@@ -406,9 +408,11 @@ def git_commit_id(path, ref):
     """Return the commit id of *ref* in the git repository at *path*.
     """
     cmd = git_cmd_base(path) + ['show', ref]
-    output = check_output(cmd, universal_newlines=True)
-    commit = output.split('\n')[0]
-    if commit[:7] != 'commit ':
+    try:
+        output = check_output(cmd, universal_newlines=True)
+    except CalledProcessError:
         raise NameError("Unknown git reference '%s'" % ref)
+    commit = output.split('\n')[0]
+    assert commit[:7] == 'commit '
     return commit[7:]
     

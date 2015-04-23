@@ -17,7 +17,7 @@ from distutils.version import LooseVersion
 from ..ext.six.moves import http_client as httplib
 from ..ext.six.moves import urllib_parse as urllib
 from ..ext.six import string_types
-from ..util import use_log_level, run_subprocess, get_testing_file
+from ..util import use_log_level, run_subprocess
 
 ###############################################################################
 # Adapted from Python's unittest2
