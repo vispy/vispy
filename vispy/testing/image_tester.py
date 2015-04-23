@@ -1,14 +1,54 @@
+
+
+"""
+Procedure for unit-testing with images:
+
+1. Run unit tests at least once; this initializes a git clone of 
+   vispy/test-data in config['test_data_path']. This path is 
+   `~/.vispy/test-data` unless the config variable has been modified.
+
+2. Run individual test scripts with the --vispy-audit flag:
+
+       $ python vispy/visuals/tests/test_ellipse.py --vispy-audit
+
+   Any failing tests will
+   display the test results, standard image, and the differences between the
+   two. If the test result is bad, then press (f)ail. If the test result is 
+   good, then press (p)ass and the new image will be saved to the test-data
+   directory.
+
+3. After adding or changing test images, create a new commit:
+
+        $ cd ~/.vispy/test-data
+        $ git add ...
+        $ git commit -a
+        
+4. Look up the most recent tag name from the `test_data_tag` variable in
+   get_test_data_repo() below. Increment the tag name by 1 in the function
+   and create a new tag in the test-data repository:
+
+        $ git tag test-data-NNN
+        $ git push --tags origin master
+
+    This tag is used to ensure that each vispy commit is linked to a specific
+    commit in the test-data repository. This makes it possible to push new
+    commits to the test-data repository without interfering with existing
+    tests, and also allows unit tests to continue working on older vispy
+    versions.
+
+"""
+
 import time
 import os
 import sys
 import inspect
+from subprocess import check_output, check_call
 import numpy as np
 from .. import scene, config
 from ..io import read_png, write_png
 from ..gloo.util import _screenshot
 
 
-global tester
 tester = None
 
 
@@ -54,20 +94,7 @@ def assert_image_approved(image, standard_file, message=None, **kwargs):
         message = "%s::%s" % (code.co_filename, code.co_name)
         
     # Make sure we have a test data repo available, possibly invoking git
-    data_path = config['test_data_path']
-    git_path = 'https://github.com/vispy/test-data'
-    if not os.path.isdir(data_path):
-        cmd = 'git clone --depth=3 %s %s' % (git_path, data_path)
-        print("Attempting to create git clone of test data repo in %s.." %
-              data_path)
-        print(cmd)
-        rval = os.system(cmd)
-        if rval != 0:
-            raise RuntimeError("Test data path '%s' does not exist and could "
-                               "not be created with git. Either create a git "
-                               "clone of %s or set the test_data_path "
-                               "variable to an existing clone." % 
-                               (data_path, git_path))
+    data_path = get_test_data_repo()
     
     # Read the standard image if it exists
     std_file = os.path.join(data_path, standard_file)
@@ -276,3 +303,112 @@ class ImageTester(scene.SceneCanvas):
 
     def on_key_press(self, event):
         self.last_key = event.key.name
+
+
+def get_test_data_repo():
+    """Return the path to a git repository with the required commit checked
+    out. 
+    
+    If the repository does not exist, then it is cloned from
+    https://github.com/vispy/test-data. If the repository already exists
+    then the required commit is checked out.
+    """
+    
+    # This tag marks the test-data commit that this version of vispy should 
+    # be tested against. When adding or changing test images, create
+    # and push a new tag and update this variable.
+    test_data_tag = 'test-data-1'
+    
+    data_path = config['test_data_path']
+    git_path = 'https://github.com/vispy/test-data'
+    gitbase = git_cmd_base(data_path)
+    
+    make_clone = True
+    if os.path.isdir(data_path):
+        # Already have a test-data repository to work with.
+        
+        # Get the commit ID of test_data_tag. Do a fetch if necessary.
+        try:
+            tag_commit = git_commit_id(data_path, test_data_tag)
+        except NameError:
+            check_call(gitbase + ['fetch', 'origin'])
+            try:
+                tag_commit = git_commit_id(data_path, test_data_tag)
+            except NameError:
+                raise Exception("Could not find tag '%s' in test-data repo at"
+                                " %s" % (test_data_tag, data_path))
+        except Exception:
+            raise Exception("Directory '%s' does not appear to be a git "
+                            "repository. Please remove this directory." % 
+                            data_path)
+            
+        # If HEAD is not the correct commit, then do a checkout
+        if git_commit_id(data_path, 'HEAD') != tag_commit:
+            print("Checking out test-data tag '%s'" % test_data_tag)
+            check_call(gitbase + ['checkout', test_data_tag])
+        
+        make_clone = False
+            
+    else:
+        print("Attempting to create git clone of test data repo in %s.." %
+              data_path)
+        
+        parent_path = os.path.split(data_path)[0]
+        if not os.path.isdir(parent_path):
+            os.makedirs(parent_path)
+        
+        if os.getenv('TRAVIS') is not None:
+            # Create a shallow clone of the test-data repository (to avoid
+            # downloading more data than is necessary)
+            os.makedirs(data_path)
+            cmds = [
+                gitbase + ['init'],
+                gitbase + ['remote', 'add', 'origin', git_path],
+                gitbase + ['fetch', '--tags', 'origin', test_data_tag, '--depth=1'],
+                gitbase + ['checkout', '-b', 'master', 'FETCH_HEAD'],
+            ]
+        else:
+            # Create a full clone
+            cmds = [['git', 'clone', git_path, data_path]]
+        
+        for cmd in cmds:
+            print(' '.join(cmd))
+            rval = check_call(cmd)
+            if rval == 0:
+                continue
+            raise RuntimeError("Test data path '%s' does not exist and could "
+                               "not be created with git. Either create a git "
+                               "clone of %s or set the test_data_path "
+                               "variable to an existing clone." % 
+                               (data_path, git_path))
+    
+    return data_path
+
+
+def git_cmd_base(path):
+    return ['git', '--git-dir=%s/.git' % path, '--work-tree=%s' % path]
+
+
+def git_tree_unchanged(path):
+    """Return True if the working tree at *path* is not changed relative to 
+    the current git head.
+    """
+    cmd = git_cmd_base(path) + ['status', '--porcelain']
+    output = check_output(cmd, universal_newlines=True)
+    status = output.strip().split('\n')
+    for line in status:
+        if len(line) >= 2 and line[:2] != '??':
+            return False
+    return True
+
+
+def git_commit_id(path, ref):
+    """Return the commit id of *ref* in the git repository at *path*.
+    """
+    cmd = git_cmd_base(path) + ['show', ref]
+    output = check_output(cmd, universal_newlines=True)
+    commit = output.split('\n')[0]
+    if commit[:7] != 'commit ':
+        raise NameError("Unknown git reference '%s'" % ref)
+    return commit[7:]
+    
