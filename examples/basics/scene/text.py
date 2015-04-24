@@ -18,7 +18,7 @@ from vispy.scene.visuals import Text
 canvas = scene.SceneCanvas(keys='interactive')
 vb = scene.widgets.ViewBox(parent=canvas.scene, border_color='b')
 vb.camera = scene.TurntableCamera(elevation=30, azimuth=30, up='+z')
-axis = scene.visuals.XYZAxis(parent=vb.scene);
+axis = scene.visuals.XYZAxis(parent=vb.scene)
 vb.camera.rect = 0, 0, 1, 1
 
 

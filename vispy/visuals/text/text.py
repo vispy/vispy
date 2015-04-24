@@ -363,7 +363,7 @@ class TextVisual(Visual):
         """
 
     def __init__(self, text, color='black', bold=False,
-                 italic=False, face='OpenSans', font_size=12, pos=[0, 0, 0 ],
+                 italic=False, face='OpenSans', font_size=12, pos=[0, 0, 0],
                  rotation=0., anchor_x='center', anchor_y='center',
                  font_manager=None, **kwargs):
         Visual.__init__(self, **kwargs)
