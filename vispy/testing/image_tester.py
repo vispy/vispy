@@ -349,9 +349,12 @@ def get_test_data_repo():
                 raise Exception("Could not find tag '%s' in test-data repo at"
                                 " %s" % (test_data_tag, data_path))
         except Exception:
-            raise Exception("Directory '%s' does not appear to be a git "
-                            "repository. Please remove this directory." % 
-                            data_path)
+            if not os.path.exists(os.path.join(data_path, '.git')):
+                raise Exception("Directory '%s' does not appear to be a git "
+                                "repository. Please remove this directory." % 
+                                data_path)
+            else:
+                raise
             
         # If HEAD is not the correct commit, then do a checkout
         if git_commit_id(data_path, 'HEAD') != tag_commit:
