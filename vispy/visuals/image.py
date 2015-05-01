@@ -80,7 +80,7 @@ class ImageVisual(Visual):
     The colormap functionality through ``cmap`` and ``clim`` are only used
     if the data are 2D.
     """
-    def __init__(self, data, method='auto', grid=(10, 10),
+    def __init__(self, data=None, method='auto', grid=(10, 10),
                  cmap='cubehelix', clim='auto', **kwargs):
         super(ImageVisual, self).__init__(**kwargs)
         self._program = ModularProgram(VERT_SHADER, FRAG_SHADER)
@@ -91,7 +91,8 @@ class ImageVisual(Visual):
 
         self._texture = None
         self._interpolation = 'nearest'
-        self.set_data(data)
+        if data is not None:
+            self.set_data(data)
 
         self._method = method
         self._method_used = None

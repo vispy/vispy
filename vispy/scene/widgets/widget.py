@@ -7,7 +7,7 @@ from __future__ import division
 import numpy as np
 
 from ..node import Node
-from ...visuals.line import LineVisual
+from ...visuals.mesh import MeshVisual
 from ...visuals.transforms import STTransform
 from ...util.event import Event
 from ...geometry import Rect
@@ -43,13 +43,19 @@ class Widget(Node):
                  clip=False, padding=0, margin=0, **kwargs):
         Node.__init__(self, **kwargs)
         
-        # for drawing border
-        self._visual = LineVisual(method='gl')
+        # For drawing border. 
+        # A mesh is required because GL lines cannot be drawn with predictable
+        # shape across all platforms.
+        self._visual = MeshVisual(color=border_color, mode='triangle_strip')
         self.border_color = border_color
+        
         # whether this widget should clip its children
+        # (todo)
         self._clip = clip
+        
         # reserved space inside border
         self._padding = padding
+        
         # reserved space outside border
         self._margin = margin
         
@@ -107,6 +113,18 @@ class Widget(Node):
         self.events.resize()
 
     @property
+    def inner_rect(self):
+        """The rectangular area inside the margin, border and padding.
+        
+        Generally widgets should avoid drawing or placing widgets outside this
+        rectangle.
+        """
+        m = self.margin + self.padding
+        if not self.border_color.is_blank:
+            m += 1
+        return Rect((m, m), (self.size[0]-2*m, self.size[1]-2*m))
+
+    @property
     def border_color(self):
         """ The color of the border.
         """
@@ -151,17 +169,31 @@ class Widget(Node):
         """ Update border line to match new shape """
         if self.border_color.is_blank:
             return
-        m = self.margin
-        r = self.size[0] - m
-        t = self.size[1] - m
+        m = int(self.margin)
+        # border is drawn within the boundaries of the widget:
+        #
+        #  size = (8, 7)  margin=2
+        #  internal rect = (3, 3, 2, 1)
+        #  ........
+        #  ........
+        #  ..BBBB..
+        #  ..B  B..
+        #  ..BBBB..
+        #  ........
+        #  ........
+        #
+        r = int(self.size[0]) - m
+        t = int(self.size[1]) - m
         
         pos = np.array([
-            [m, m],
-            [r, m],
-            [r, t],
-            [m, t],
-            [m, m]]).astype(np.float32)
-        self._visual.set_data(pos=pos)
+            [m, m], [m+1, m+1],
+            [r, m], [r-1, m+1],
+            [r, t], [r-1, t-1],
+            [m, t], [m+1, t-1],
+            [m, m], [m+1, m+1]
+        ], dtype=np.float32)
+        
+        self._visual.set_data(vertices=pos)
 
     def draw(self, event):
         if self.border_color.is_blank:

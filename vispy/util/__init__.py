@@ -9,7 +9,7 @@ one or more Vispy sub-packages.
 from .logs import logger, set_log_level, use_log_level  # noqa
 from .config import (config, sys_info, save_config, get_config_keys,  # noqa 
                      set_data_dir, _TempDir)  # noqa
-from .fetching import get_testing_file, load_data_file  # noqa
+from .fetching import load_data_file  # noqa
 from . import fonts       # noqa
 from . import transforms  # noqa
 from .wrappers import use, run_subprocess  # noqa

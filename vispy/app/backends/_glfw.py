@@ -287,7 +287,7 @@ class CanvasBackend(BaseCanvasBackend):
         glfw.glfwSetWindowCloseCallback(self._id, self._on_close)
         self._vispy_canvas_ = None
         self._needs_draw = False
-        self._vispy_set_current()
+        self._vispy_canvas.set_current()
         if p.position is not None:
             self._vispy_set_position(*p.position)
         if p.show:
@@ -295,21 +295,20 @@ class CanvasBackend(BaseCanvasBackend):
 
         # Init
         self._initialized = True
-        self._vispy_set_current()
+        self._vispy_canvas.set_current()
         self._vispy_canvas.events.initialize()
 
     def _vispy_warmup(self):
         etime = time() + 0.25
         while time() < etime:
             sleep(0.01)
-            self._vispy_set_current()
+            self._vispy_canvas.set_current()
             self._vispy_canvas.app.process_events()
 
     def _vispy_set_current(self):
         if self._id is None:
             return
         # Make this the current context
-        self._vispy_canvas.set_current()  # Mark as current
         glfw.glfwMakeContextCurrent(self._id)
 
     def _vispy_swap_buffers(self):
@@ -404,7 +403,7 @@ class CanvasBackend(BaseCanvasBackend):
     def _on_draw(self, _id=None):
         if self._vispy_canvas is None or self._id is None:
             return
-        self._vispy_set_current()
+        self._vispy_canvas.set_current()
         self._vispy_canvas.events.draw(region=None)  # (0, 0, w, h))
 
     def _on_mouse_button(self, _id, button, action, mod):

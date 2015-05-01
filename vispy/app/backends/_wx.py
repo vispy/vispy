@@ -273,7 +273,7 @@ class CanvasBackend(GLCanvas, BaseCanvasBackend):
         dc = wx.PaintDC(self)  # needed for wx
         if not self._init:
             self._initialize()
-        self._vispy_set_current()
+        self._vispy_canvas.set_current()
         self._vispy_canvas.events.draw(region=None)
         del dc
         event.Skip()
@@ -282,24 +282,23 @@ class CanvasBackend(GLCanvas, BaseCanvasBackend):
         if self._vispy_canvas is None:
             return
         self._init = True
-        self._vispy_set_current()
+        self._vispy_canvas.set_current()
         self._vispy_canvas.events.initialize()
         self.on_resize(DummySize(self._size_init))
 
     def _vispy_set_current(self):
-        self._vispy_canvas.set_current()  # Mark as current
         self.SetCurrent(self._gl_context)
 
     def _vispy_warmup(self):
         etime = time() + 0.3
         while time() < etime:
             sleep(0.01)
-            self._vispy_set_current()
+            self._vispy_canvas.set_current()
             self._vispy_canvas.app.process_events()
 
     def _vispy_swap_buffers(self):
         # Swap front and back buffer
-        self._vispy_set_current()
+        self._vispy_canvas.set_current()
         self.SwapBuffers()
 
     def _vispy_set_title(self, title):

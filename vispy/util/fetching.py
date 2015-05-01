@@ -17,12 +17,6 @@ from ..ext.six import string_types
 from ..util.config import config
 
 
-# This is the commit ID in the vispy/test-data repository that should be used
-# when doing image comparison tests. This ID must be updated as needed to 
-# follow changes to the test-data repository.
-test_data_commit_id = '27f2d5ab1cc20342d255694a5a21f35d2d7e376b'
-
-
 ###############################################################################
 # Vispy data directory
 
@@ -74,48 +68,6 @@ def load_data_file(fname, directory=None, force_download=False):
     _fetch_file(url, fname)
     return fname
 
-
-def get_testing_file(fname, directory=None, force_download=False):
-    """Get a standard vispy test data file
-
-    Parameters
-    ----------
-    fname : str
-        The filename on the remote ``test-data`` repository to download,
-        e.g. ``'visuals/square.png'``. These correspond to paths
-        on ``https://github.com/vispy/test-data/``.
-    directory : str | None
-        Directory to use to save the file. By default, the vispy
-        configuration directory is used.
-    force_download : bool
-        If True, the file will be downloaded even if a local copy exists
-        (and this copy will be overwritten).
-
-    Returns
-    -------
-    fname : str
-        The path to the file on the local system.
-    """
-    global test_data_commit_id
-    
-    _url_root = ('https://raw.githubusercontent.com/vispy/test-data/%s/' % 
-                 test_data_commit_id)
-    url = _url_root + fname
-    if directory is None:
-        directory = config['data_path']
-        if directory is None:
-            raise ValueError('config["data_path"] is not defined, '
-                             'so directory must be supplied')
-
-    # convert to native
-    fname = op.join(directory, test_data_commit_id, op.normcase(fname))
-    if op.isfile(fname) and not force_download:  # we're done
-        return fname
-    if not op.isdir(op.dirname(fname)):
-        os.makedirs(op.abspath(op.dirname(fname)))
-    # let's go get the file
-    _fetch_file(url, fname)
-    return fname
 
 ###############################################################################
 # File downloading (most adapted from mne-python)

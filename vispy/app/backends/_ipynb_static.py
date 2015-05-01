@@ -193,7 +193,7 @@ class CanvasBackend(BaseCanvasBackend):
             self._vispy_canvas.events.initialize()
             self._on_resize()
         # Normal behavior
-        self._vispy_set_current()
+        self._vispy_canvas.set_current()
         self._vispy_canvas.events.draw(region=None)
 
         # Generate base64 encoded PNG string

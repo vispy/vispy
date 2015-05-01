@@ -87,8 +87,8 @@ class BaseCamera(Node):
 
         # Linked cameras
         self._linked_cameras = []
-        self._linked_cameras_no_update = False  # internal flag
-
+        self._linked_cameras_no_update = None
+        
         # Variables related to transforms
         self.transform = NullTransform()
         self._pre_transform = None
@@ -436,13 +436,14 @@ class BaseCamera(Node):
 
         # Apply same state to linked cameras, but prevent that camera
         # to return the favor
-        if not self._linked_cameras_no_update:
-            for cam in self._linked_cameras:
-                cam._linked_cameras_no_update = True
-                try:
-                    cam.set_state(self.get_state())
-                finally:
-                    cam._linked_cameras_no_update = False
+        for cam in self._linked_cameras:
+            if cam is self._linked_cameras_no_update:
+                continue
+            try:
+                cam._linked_cameras_no_update = self
+                cam.set_state(self.get_state())
+            finally:
+                cam._linked_cameras_no_update = None
 
 
 class PanZoomCamera(BaseCamera):

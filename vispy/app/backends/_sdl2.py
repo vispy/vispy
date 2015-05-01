@@ -245,7 +245,7 @@ class CanvasBackend(BaseCanvasBackend):
         # Init
         self._initialized = True
         self._needs_draw = False
-        self._vispy_set_current()
+        self._vispy_canvas.set_current()
         self._vispy_canvas.events.initialize()
         if not p.show:
             self._vispy_set_visible(False)
@@ -254,14 +254,13 @@ class CanvasBackend(BaseCanvasBackend):
         etime = time() + 0.1
         while time() < etime:
             sleep(0.01)
-            self._vispy_set_current()
+            self._vispy_canvas.set_current()
             self._vispy_canvas.app.process_events()
 
     def _vispy_set_current(self):
         if self._id is None:
             return
         # Make this the current context
-        self._vispy_canvas.set_current()  # Mark as current
         sdl2.SDL_GL_MakeCurrent(self._id.window, self._native_context)
 
     def _vispy_swap_buffers(self):
@@ -355,7 +354,7 @@ class CanvasBackend(BaseCanvasBackend):
     def _on_draw(self):
         if self._vispy_canvas is None or self._id is None:
             return
-        self._vispy_set_current()
+        self._vispy_canvas.set_current()
         self._vispy_canvas.events.draw(region=None)  # (0, 0, w, h))
 
     def _on_event(self, event):
