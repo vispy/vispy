@@ -18,6 +18,7 @@ from .visual import Visual
 vert = """
 uniform mat4 u_projection;
 uniform float u_antialias;
+uniform int u_px_scale;
 
 attribute vec3  a_position;
 attribute vec4  a_fg_color;
@@ -31,7 +32,7 @@ varying float v_edgewidth;
 varying float v_antialias;
 
 void main (void) {
-    $v_size = a_size;
+    $v_size = a_size * u_px_scale;
     v_edgewidth = a_edgewidth;
     v_antialias = u_antialias;
     v_fg_color  = a_fg_color;
@@ -606,6 +607,9 @@ class MarkersVisual(Visual):
             self._vbo.set_data(update_data)
         self._program.prepare()
         self._program['u_antialias'] = self.antialias
+        
+        d2f = transforms.document_to_framebuffer
+        self._program['u_px_scale'] = (d2f.map((1, 0)) - d2f.map((0, 0)))[0]
         self._program.bind(self._vbo)
         self._program.draw('points')
 

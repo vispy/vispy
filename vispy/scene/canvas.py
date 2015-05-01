@@ -79,6 +79,12 @@ class SceneCanvas(app.Canvas):
         and then the operating system.
     bgcolor : Color
         The background color to use.
+    always_on_top : bool
+        If True, try to create the window in always-on-top mode.
+    px_scale : int > 0
+        A scale factor to apply between logical and physical pixels in addition
+        to the actual scale factor determined by the backend. This option 
+        allows the scale factor to be adjusted for testing.
 
     See also
     --------

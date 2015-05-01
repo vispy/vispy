@@ -11,10 +11,19 @@ def test_markers():
     """Test basic marker / point-sprite support"""
     # this is probably too basic, but it at least ensures that point sprites
     # work for people
+    np.random.seed(57983)
+    data = np.random.normal(size=(30, 2), loc=50, scale=10)
+    
     with TestingCanvas() as c:
         marker = Markers()
-        np.random.seed(57983)
-        marker.set_data(np.random.normal(size=(30, 2), loc=50, scale=10))
+        marker.set_data(data)
+        c.draw_visual(marker)
+        assert_image_approved("screenshot", "visuals/markers.png")
+
+    # Test good correlation at high-dpi
+    with TestingCanvas(px_scale=2) as c:
+        marker = Markers()
+        marker.set_data(data)
         c.draw_visual(marker)
         assert_image_approved("screenshot", "visuals/markers.png")
 

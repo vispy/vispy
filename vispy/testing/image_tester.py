@@ -51,7 +51,6 @@ from ..ext.six.moves import urllib_parse as urllib
 from .. import scene, config
 from ..io import read_png, write_png
 from ..gloo.util import _screenshot
-from ..geometry import resize
 from ..util import run_subprocess
 
 
@@ -111,6 +110,19 @@ def assert_image_approved(image, standard_file, message=None, **kwargs):
         
     # If the test image does not match, then we go to audit if requested.
     try:
+        if image.shape != std_image.shape:
+            # Allow im1 to be an integer multiple larger than im2 to account
+            # for high-resolution displays
+            ims1 = np.array(image.shape).astype(float)
+            ims2 = np.array(std_image.shape).astype(float)
+            sr = ims1 / ims2
+            if (sr[0] != sr[1] or not np.allclose(sr, np.round(sr)) or 
+               sr[0] < 1):
+                raise TypeError("Test result shape %s is not an integer factor"
+                                " larger than standard image shape %s." %
+                                (ims1, ims2))
+            image = downsample(image, sr[0], axis=(0, 1)).astype(image.dtype)
+        
         assert_image_match(image, std_image, **kwargs)
     except Exception:
         if standard_file in git_status(data_path):
@@ -166,14 +178,6 @@ def assert_image_match(im1, im2, min_corr=0.9, px_threshold=50.,
     assert im1.ndim == 3
     assert im1.shape[2] == 4
     assert im1.dtype == im2.dtype
-    if im1.shape != im2.shape:
-        # Allow im1 to be an integer multiple larger than im2 to account for
-        # High-resolution displays
-        ims1 = np.array(im1.shape).astype(float)
-        ims2 = np.array(im2.shape).astype(float)
-        sr = ims1 / ims2
-        assert np.allclose(sr, np.round(sr))
-        im1 = resize(im1, im2.shape[:2], 'nearest')
     
     diff = im1.astype(float) - im2.astype(float)
     if img_diff is not None:
@@ -249,6 +253,32 @@ def make_diff_image(im1, im2):
     diff[:es[0], :es[1], :min(es[2], 3)] -= im2[..., :3]
     diff = np.clip(diff, 0, 255).astype(np.ubyte)
     return diff
+
+
+def downsample(data, n, axis=0):
+    """Downsample by averaging points together across axis.
+    If multiple axes are specified, runs once per axis.
+    """
+    if hasattr(axis, '__len__'):
+        if not hasattr(n, '__len__'):
+            n = [n]*len(axis)
+        for i in range(len(axis)):
+            data = downsample(data, n[i], axis[i])
+        return data
+    
+    if n <= 1:
+        return data
+    nPts = int(data.shape[axis] / n)
+    s = list(data.shape)
+    s[axis] = nPts
+    s.insert(axis+1, n)
+    sl = [slice(None)] * data.ndim
+    sl[axis] = slice(0, nPts*n)
+    d1 = data[tuple(sl)]
+    d1.shape = tuple(s)
+    d2 = d1.mean(axis+1)
+    
+    return d2
 
 
 class ImageTester(scene.SceneCanvas):

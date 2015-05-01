@@ -76,6 +76,10 @@ class Canvas(object):
         and then the operating system.
     always_on_top : bool
         If True, try to create the window in always-on-top mode.
+    px_scale : int > 0
+        A scale factor to apply between logical and physical pixels in addition
+        to the actual scale factor determined by the backend. This option 
+        allows the scale factor to be adjusted for testing.
 
     Notes
     -----
@@ -100,9 +104,9 @@ class Canvas(object):
                  show=False, autoswap=True, app=None, create_native=True,
                  vsync=False, resizable=True, decorate=True, fullscreen=False,
                  config=None, shared=None, keys=None, parent=None, dpi=None,
-                 always_on_top=False):
+                 always_on_top=False, px_scale=1):
 
-        size = [int(s) for s in size]
+        size = [int(s) * px_scale for s in size]
         if len(size) != 2:
             raise ValueError('size must be a 2-element list')
         title = str(title)
@@ -118,6 +122,7 @@ class Canvas(object):
         self._fps_callback = None
         self._backend = None
         self._closed = False
+        self._px_scale = int(px_scale)
 
         if dpi is None:
             dpi = util_config['dpi']
@@ -311,11 +316,13 @@ class Canvas(object):
     @property
     def size(self):
         """ The size of canvas/window """
-        return self._backend._vispy_get_size()
+        size = self._backend._vispy_get_size()
+        return (size[0] // self._px_scale, size[1] // self._px_scale)
 
     @size.setter
     def size(self, size):
-        return self._backend._vispy_set_size(size[0], size[1])
+        return self._backend._vispy_set_size(size[0] * self._px_scale, 
+                                             size[1] * self._px_scale)
 
     @property
     def physical_size(self):
@@ -334,7 +341,7 @@ class Canvas(object):
         Visuals or SceneGraph visualisations; instead you should apply the
         canvas_fb_transform in the SceneGraph canvas. """
 
-        return self.physical_size[0]/self.size[0]
+        return self._px_scale * self.physical_size[0] // self.size[0]
 
     @property
     def fullscreen(self):

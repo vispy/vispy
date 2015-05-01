@@ -260,14 +260,17 @@ def requires_scipy(min_version='0.13'):
 
 
 @nottest
-def TestingCanvas(bgcolor='black', size=(100, 100), dpi=None):
+def TestingCanvas(bgcolor='black', size=(100, 100), dpi=None, **kwargs):
     """Class wrapper to avoid importing scene until necessary"""
     from ..scene import SceneCanvas
 
     class TestingCanvas(SceneCanvas):
-        def __init__(self, bgcolor, size):
+        def __init__(self, bgcolor, size, dpi, **kwargs):
             self._entered = False
-            SceneCanvas.__init__(self, size=size, bgcolor=bgcolor, dpi=dpi)
+            kwargs['bgcolor'] = bgcolor
+            kwargs['size'] = size
+            kwargs['dpi'] = dpi
+            SceneCanvas.__init__(self, **kwargs)
 
         def __enter__(self):
             SceneCanvas.__enter__(self)
@@ -293,7 +296,7 @@ def TestingCanvas(bgcolor='black', size=(100, 100), dpi=None):
             self.context.set_viewport(*self._wanted_vp)
             self.context.finish()
 
-    return TestingCanvas(bgcolor, size)
+    return TestingCanvas(bgcolor, size, dpi, **kwargs)
 
 
 @nottest
