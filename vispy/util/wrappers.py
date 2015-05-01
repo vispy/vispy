@@ -123,6 +123,7 @@ def run_subprocess(command, return_code=False, **kwargs):
     # passed to Popen(). Convert all to unicode str:
     output = ['' if s is None else s for s in output]
     output = [s.decode('utf-8') if isinstance(s, bytes) else s for s in output]
+    output = tuple(output)
     
     if not return_code and p.returncode:
         print(output[0])
