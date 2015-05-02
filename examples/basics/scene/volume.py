@@ -109,7 +109,7 @@ def on_key_press(event):
     elif event.text == '0':
         cam1.set_range()
         cam3.set_range()
-    elif event.text in '[]':
+    elif event.text != '' and event.text in '[]':
         s = -0.025 if event.text == '[' else 0.025
         volume1.threshold += s
         volume2.threshold += s
