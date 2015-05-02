@@ -6,7 +6,6 @@ from __future__ import division
 
 import sys
 
-from ..visuals.visual import Visual
 from ..util.logs import logger, _handle_exception
 from ..util.profiler import Profiler
 
