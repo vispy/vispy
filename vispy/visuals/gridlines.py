@@ -77,7 +77,7 @@ class GridLinesVisual(Visual):
     any scale.
     """
     def __init__(self, scale=(1, 1), **kwargs):
-        super(Visual, self).__init__(**kwargs)
+        super(GridLinesVisual, self).__init__(**kwargs)
         self._program = ModularProgram(VERT, FRAG)
         self._vbo = None
         self._scale = scale
