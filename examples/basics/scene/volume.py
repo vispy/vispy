@@ -37,9 +37,6 @@ vol1 = np.load(io.load_data_file('volume/stent.npz'))['arr_0']
 vol2 = np.load(io.load_data_file('brain/mri.npz'))['data']
 vol2 = np.flipud(np.rollaxis(vol2, 1))
 
-# Setup colormaps
-cmaps = cycle(get_colormaps())
-
 # Prepare canvas
 canvas = scene.SceneCanvas(keys='interactive', size=(800, 600), show=True)
 canvas.measure_fps()
@@ -51,7 +48,7 @@ view = canvas.central_widget.add_view()
 emulate_texture = True
 
 # Create the volume visuals, only one is visible
-volume1 = scene.visuals.Volume(vol1, parent=view.scene, threshold=0.1,
+volume1 = scene.visuals.Volume(vol1, parent=view.scene, threshold=0.225,
                                emulate_texture=emulate_texture)
 volume1.transform = scene.STTransform(translate=(64, 64, 0))
 volume2 = scene.visuals.Volume(vol2, parent=view.scene, threshold=0.2,
@@ -82,28 +79,37 @@ class TransGrays(BaseColormap):
     }
     """
 
+# Setup colormap iterators
+opaque_cmaps = cycle(get_colormaps())
+translucent_cmaps = cycle([TransFire(), TransGrays()])
+opaque_cmap = next(opaque_cmaps)
+translucent_cmap = next(translucent_cmaps)
+
 
 # Implement key presses
 @canvas.events.key_press.connect
 def on_key_press(event):
+    global opaque_cmap, translucent_cmap
     if event.text == '1':
         cam_toggle = {cam1: cam2, cam2: cam3, cam3: cam1}
         view.camera = cam_toggle.get(view.camera, 'fly')
     elif event.text == '2':
         methods = ['mip', 'translucent', 'iso', 'additive']
-        cmaps = {'mip': 'grays', 'translucent': TransFire(), 'iso': 'grays', 
-                 'additive': TransGrays()}
         method = methods[(methods.index(volume1.method) + 1) % 4]
         print("Volume render method: %s" % method)
+        cmap = opaque_cmap if method in ['mip', 'iso'] else translucent_cmap
         volume1.method = method
-        volume1.cmap = cmaps[method]
+        volume1.cmap = cmap
         volume2.method = method
-        volume2.cmap = cmaps[method]
+        volume2.cmap = cmap
     elif event.text == '3':
         volume1.visible = not volume1.visible
         volume2.visible = not volume1.visible
     elif event.text == '4':
-        cmap = next(cmaps)
+        if volume1.method in ['mip', 'iso']:
+            cmap = opaque_cmap = next(opaque_cmaps)
+        else:
+            cmap = translucent_cmap = next(translucent_cmaps)
         volume1.cmap = cmap
         volume2.cmap = cmap
     elif event.text == '0':
