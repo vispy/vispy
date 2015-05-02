@@ -504,7 +504,6 @@ class BaseGlooFunctions(object):
             cull_face = kwargs.pop('cull_face')
             if isinstance(cull_face, bool):
                 funcname = 'glEnable' if cull_face else 'glDisable'
-                #func(_gl_attr('cull_face'))
                 self.glir.command('FUNC', funcname, 'cull_face')
             else:
                 self.glir.command('FUNC', 'glEnable', 'cull_face')

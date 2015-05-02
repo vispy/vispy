@@ -82,7 +82,7 @@ class GridLinesVisual(Visual):
         self._vbo = None
         self._scale = scale
         self._tr_cache = TransformCache()
-        self.set_gl_state('additive', cull_face='front_and_back')
+        self.set_gl_state('additive', cull_face=False)
 
     def _buffer(self):
         if self._vbo is None:
