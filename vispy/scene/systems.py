@@ -19,7 +19,7 @@ class DrawingSystem(object):
     def process(self, event, node):
         prof = Profiler(str(node))
         # Draw this node if it is a visual
-        if isinstance(node, Visual) and node.visible:
+        if hasattr(node, 'draw') and node.visible:
             try:
                 node.draw(event)
                 prof('draw')

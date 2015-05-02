@@ -13,6 +13,7 @@ from ...ext.six import string_types
 from ... color import Color
 from ... import gloo
 from ...visuals.components import Clipper
+from ...visuals import Visual
 
 
 class ViewBox(Widget):
@@ -315,11 +316,12 @@ class ViewBox(Widget):
             root = self.scene
             
         for ch in root.children:
-            try:
-                ch.attach(self._clipper)
-            except NotImplementedError:
-                # visual does not support clipping
-                pass
+            if isinstance(ch, Visual):
+                try:
+                    ch.attach(self._clipper)
+                except NotImplementedError:
+                    # visual does not support clipping
+                    pass
             self._prepare_fragment(ch)
 
     def _prepare_viewport(self, event):

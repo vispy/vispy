@@ -32,9 +32,13 @@ class Node(object):
     name : str
         The name used to identify the node.
     """
+    
+    # Needed to allow subclasses to repr() themselves before Node.__init__()
+    _name = None
 
     def __init__(self, parent=None, name=None, **kwargs):
         self.name = name
+        self._visible = True
 
         # Add some events to the emitter groups:
         events = ['parents_change', 'children_change', 'transform_change',
