@@ -45,7 +45,7 @@ canvas.measure_fps()
 view = canvas.central_widget.add_view()
 
 # Set whether we are emulating a 3D texture
-emulate_texture = True
+emulate_texture = False
 
 # Create the volume visuals, only one is visible
 volume1 = scene.visuals.Volume(vol1, parent=view.scene, threshold=0.225,
