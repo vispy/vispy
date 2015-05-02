@@ -579,6 +579,7 @@ class CanvasBackendDesktop(QtBaseCanvasBackend, QGLWidget):
         if not self.isValid():
             raise RuntimeError('context could not be created')
         self.setAutoBufferSwap(False)  # to make consistent with other backends
+        self.setFocusPolicy(QtCore.Qt.WheelFocus)
 
     def _vispy_close(self):
         # Force the window or widget to shut down
