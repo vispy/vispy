@@ -465,7 +465,7 @@ class Function(ShaderObject):
         if '$' in code:
             v = parsing.find_template_variables(code)
             logger.warning('Unsubstituted placeholders in code: %s\n'
-                           '  replacements made: %s' % 
+                           '  replacements made: %s', 
                            (v, list(self._expressions.keys())))
         
         return code + '\n'
