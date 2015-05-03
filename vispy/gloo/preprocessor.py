@@ -45,7 +45,8 @@ def merge_includes(code):
                 logger.critical('"%s" not found' % filename)
                 raise RuntimeError("File not found", filename)
             text = '\n// --- start of "%s" ---\n' % filename
-            text += open(path).read()
+            with open(path) as fh:
+                text += fh.read()
             text += '// --- end of "%s" ---\n' % filename
             return text
         return ''
