@@ -9,7 +9,7 @@ Marker Visual and shader definitions.
 
 import numpy as np
 
-from ..color import ColorArray
+from ..color import ColorArray, Colormap
 from ..gloo import VertexBuffer, _check_valid
 from .shaders import ModularProgram, Function, Variable
 from .visual import Visual
@@ -524,9 +524,9 @@ class MarkersVisual(Visual):
         edge_width_rel : float | None
             The width as a fraction of marker size. Exactly one of
             `edge_width` and `edge_width_rel` must be supplied.
-        edge_color : Color | ColorArray
+        edge_color : Color | ColorArray | Colormap
             The color used to draw each symbol outline.
-        face_color : Color | ColorArray
+        face_color : Color | ColorArray | Colormap
             The color used to draw each symbol interior.
         scaling : bool
             If set to True, marker scales when rezooming.
@@ -551,11 +551,17 @@ class MarkersVisual(Visual):
         self.set_symbol(symbol)
         self.scaling = scaling
 
-        edge_color = ColorArray(edge_color).rgba
+        if isinstance(edge_color, Colormap):
+            edge_color = edge_color[np.linspace(0., 1., pos.shape[0])].rgba
+        else:
+            edge_color = ColorArray(edge_color).rgba
         if len(edge_color) == 1:
             edge_color = edge_color[0]
 
-        face_color = ColorArray(face_color).rgba
+        if isinstance(face_color, Colormap):
+            face_color = face_color[np.linspace(0., 1., pos.shape[0])].rgba
+        else:
+            face_color = ColorArray(face_color).rgba
         if len(face_color) == 1:
             face_color = face_color[0]
 
@@ -586,7 +592,7 @@ class MarkersVisual(Visual):
 
     def draw(self, transforms):
         Visual.draw(self, transforms)
-        
+
         xform = transforms.get_full_transform()
         self._program.vert['transform'] = xform
         # TO DO: find a way to avoid copying data and rebinding them to the vbo
