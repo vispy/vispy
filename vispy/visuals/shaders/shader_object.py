@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
-from weakref import WeakSet
+from weakref import WeakKeyDictionary
 
 from ...util import logger
 from ...ext.ordereddict import OrderedDict
@@ -56,7 +56,7 @@ class ShaderObject(object):
         self._deps = OrderedDict()  # OrderedDict for consistent code output
         
         # Objects that depend on this one will be informed of changes.
-        self._dependents = WeakSet()
+        self._dependents = WeakKeyDictionary()
     
     @property
     def name(self):
@@ -114,7 +114,7 @@ class ShaderObject(object):
             self._deps[dep] += 1
         else:
             self._deps[dep] = 1
-            dep._dependents.add(self)
+            dep._dependents[self] = None
 
     def _remove_dep(self, dep):
         """ Decrement the reference count for *dep*. If the reference count 
@@ -124,10 +124,10 @@ class ShaderObject(object):
         refcount = self._deps[dep]
         if refcount == 1:
             self._deps.pop(dep)
-            dep._dependents.remove(self)
+            dep._dependents.pop(self)
         else:
             self._deps[dep] -= 1
-        
+
     def _dep_changed(self, dep, code_changed=False, value_changed=False):
         """ Called when a dependency's expression has changed.
         """

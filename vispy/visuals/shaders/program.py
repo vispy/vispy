@@ -38,7 +38,7 @@ class ModularProgram(Program):
     @vert.setter
     def vert(self, vcode):
         if hasattr(self, '_vert') and self._vert is not None:
-            self._vert._dependents.remove(self)
+            self._vert._dependents.pop(self)
 
         self._vert = vcode
         if self._vert is None:
@@ -46,7 +46,7 @@ class ModularProgram(Program):
 
         vcode = preprocess(vcode)
         self._vert = MainFunction(vcode)
-        self._vert._dependents.add(self)
+        self._vert._dependents[self] = None
 
         self._need_build = True
         self.changed(code_changed=True, value_changed=False)
@@ -58,7 +58,7 @@ class ModularProgram(Program):
     @frag.setter
     def frag(self, fcode):
         if hasattr(self, '_frag') and self._frag is not None:
-            self._frag._dependents.remove(self)
+            self._frag._dependents.pop(self)
 
         self._frag = fcode
         if self._frag is None:
@@ -66,7 +66,7 @@ class ModularProgram(Program):
 
         fcode = preprocess(fcode)
         self._frag = MainFunction(fcode)
-        self._frag._dependents.add(self)
+        self._frag._dependents[self] = None
 
         self._need_build = True
         self.changed(code_changed=True, value_changed=False)

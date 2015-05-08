@@ -325,7 +325,7 @@ def test_function_changed():
             ch.pop()
         
     fun1 = Function('void main(){$var1; $var2;}')
-    fun1._dependents.add(ch_obj)
+    fun1._dependents[ch_obj] = None
     fun1['var1'] = 'x'
     fun1['var2'] = 'y'
     assert_changed(fun1)
@@ -339,7 +339,7 @@ def test_function_changed():
     
     fun1['var1'] = 0.5
     var1 = fun1['var1']
-    var1._dependents.add(ch_obj)
+    var1._dependents[ch_obj] = None
     assert_changed(fun1)
     
     var1.name = 'xxx'
@@ -356,7 +356,7 @@ def test_function_changed():
     # test variable disconnect
     fun1['var1'] = Variable('var1', 7)
     var2 = fun1['var1']
-    var2._dependents.add(ch_obj)
+    var2._dependents[ch_obj] = None
     #assert_changed(fun1)
     # var2 is now connected
     var2.value = (1, 2, 3, 4)
@@ -373,9 +373,9 @@ def test_function_changed():
     fun1['var2'] = exp1
     assert_changed(fun1)
     
-    fun2._dependents.add(ch_obj)
-    fun3._dependents.add(ch_obj)
-    exp1._dependents.add(ch_obj)
+    fun2._dependents[ch_obj] = None
+    fun3._dependents[ch_obj] = None
+    exp1._dependents[ch_obj] = None
     
     fun2['var1'] = 'x'
     assert_changed(fun1, fun2, exp1)
