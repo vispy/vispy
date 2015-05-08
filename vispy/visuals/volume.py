@@ -113,13 +113,13 @@ void main() {{
     
     // Compute the distance to the front surface or near clipping plane
     float distance = dot(nearpos-v_position, view_ray);
-    distance = max(distance, min((0 - v_position.x) / view_ray.x, 
-                                 (u_shape.x - v_position.x) / view_ray.x));
-    distance = max(distance, min((0 - v_position.y) / view_ray.y, 
-                                 (u_shape.y - v_position.y) / view_ray.y));
-    distance = max(distance, min((0 - v_position.z) / view_ray.z, 
-                                 (u_shape.z - v_position.z) / view_ray.z));
-        
+    distance = max(distance, min((-0.5 - v_position.x) / view_ray.x, 
+                            (u_shape.x - 0.5 - v_position.x) / view_ray.x));
+    distance = max(distance, min((-0.5 - v_position.y) / view_ray.y, 
+                            (u_shape.y - 0.5 - v_position.y) / view_ray.y));
+    distance = max(distance, min((-0.5 - v_position.z) / view_ray.z, 
+                            (u_shape.z - 0.5 - v_position.z) / view_ray.z));
+    
     // Now we have the starting position on the front surface
     vec3 front = v_position + view_ray * distance;
     
@@ -399,7 +399,7 @@ class VolumeVisual(Visual):
         # Only show back faces of cuboid. This is required because if we are 
         # inside the volume, then the front faces are outside of the clipping
         # box and will not be drawn.
-        self.set_gl_state('translucent', cull_face='back')
+        self.set_gl_state('translucent', cull_face=False)
         tex_cls = TextureEmulated3D if emulate_texture else Texture3D
 
         # Storage of information of volume
