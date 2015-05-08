@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
+from weakref import WeakSet
+
 from ...util import logger
 from ...ext.ordereddict import OrderedDict
 from ...ext.six import string_types
@@ -54,7 +56,7 @@ class ShaderObject(object):
         self._deps = OrderedDict()  # OrderedDict for consistent code output
         
         # Objects that depend on this one will be informed of changes.
-        self._dependents = set()
+        self._dependents = WeakSet()
     
     @property
     def name(self):
@@ -137,7 +139,8 @@ class ShaderObject(object):
         """Inform dependents that this shaderobject has changed.
         """
         for d in self._dependents:
-            d._dep_changed(self, code_changed, value_changed)
+            d._dep_changed(self, code_changed=code_changed,
+                           value_changed=value_changed)
     
     def compile(self):
         """ Return a compilation of this object and its dependencies. 
