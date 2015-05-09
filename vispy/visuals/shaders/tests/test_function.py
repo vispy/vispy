@@ -314,8 +314,10 @@ def test_function_basics():
 def test_function_changed():
     ch = []
     
-    def on_change(event):
-        ch.append(event.source)
+    class C(object):
+        def _dep_changed(self, dep, **kwargs):
+            ch.append(dep)
+    ch_obj = C()
         
     def assert_changed(*objs):
         assert set(ch) == set(objs)
@@ -323,7 +325,7 @@ def test_function_changed():
             ch.pop()
         
     fun1 = Function('void main(){$var1; $var2;}')
-    fun1.changed.connect(on_change)
+    fun1._dependents[ch_obj] = None
     fun1['var1'] = 'x'
     fun1['var2'] = 'y'
     assert_changed(fun1)
@@ -337,7 +339,7 @@ def test_function_changed():
     
     fun1['var1'] = 0.5
     var1 = fun1['var1']
-    var1.changed.connect(on_change)
+    var1._dependents[ch_obj] = None
     assert_changed(fun1)
     
     var1.name = 'xxx'
@@ -354,7 +356,7 @@ def test_function_changed():
     # test variable disconnect
     fun1['var1'] = Variable('var1', 7)
     var2 = fun1['var1']
-    var2.changed.connect(on_change)
+    var2._dependents[ch_obj] = None
     #assert_changed(fun1)
     # var2 is now connected
     var2.value = (1, 2, 3, 4)
@@ -371,9 +373,9 @@ def test_function_changed():
     fun1['var2'] = exp1
     assert_changed(fun1)
     
-    fun2.changed.connect(on_change)
-    fun3.changed.connect(on_change)
-    exp1.changed.connect(on_change)
+    fun2._dependents[ch_obj] = None
+    fun3._dependents[ch_obj] = None
+    exp1._dependents[ch_obj] = None
     
     fun2['var1'] = 'x'
     assert_changed(fun1, fun2, exp1)

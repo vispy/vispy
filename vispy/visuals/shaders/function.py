@@ -19,6 +19,7 @@ trigger a recompile.
 
 import re
 import logging
+import numpy as np
 
 from ...util.eq import eq
 from ...util import logger
@@ -238,14 +239,10 @@ class Function(ShaderObject):
             # try just updating its value.
             variable = storage.get(key, None)
             if isinstance(variable, Variable):
-                try:
+                if np.any(variable.value != val):
                     variable.value = val
                     self.changed(value_changed=True)
-                    return
-                except Exception:
-                    # Setting value on existing Variable failed for some
-                    # reason; will need to create a new Variable instead. 
-                    pass
+                return
             
             # Could not set variable.value directly; instead we will need
             # to create a new ShaderObject
@@ -465,7 +462,7 @@ class Function(ShaderObject):
         if '$' in code:
             v = parsing.find_template_variables(code)
             logger.warning('Unsubstituted placeholders in code: %s\n'
-                           '  replacements made: %s' % 
+                           '  replacements made: %s', 
                            (v, list(self._expressions.keys())))
         
         return code + '\n'

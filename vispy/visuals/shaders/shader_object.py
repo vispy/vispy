@@ -1,18 +1,12 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
+from weakref import WeakKeyDictionary
+
 from ...util import logger
-from ...util.event import EventEmitter, Event
 from ...ext.ordereddict import OrderedDict
 from ...ext.six import string_types
 from .compiler import Compiler
-
-
-class ShaderChangeEvent(Event):
-    def __init__(self, code_changed=False, value_changed=False, **kwargs):
-        Event.__init__(self, type='shader_change', **kwargs)
-        self.code_changed = code_changed
-        self.value_changed = value_changed
 
 
 class ShaderObject(object):
@@ -26,7 +20,7 @@ class ShaderObject(object):
     Dependencies are tracked hierarchically such that changes to any object
     will be propagated up the dependency hierarchy to trigger a recompile.
     """
-    
+
     @classmethod
     def create(self, obj, ref=None):
         """ Convert *obj* to a new ShaderObject. If the output is a Variable
@@ -57,13 +51,12 @@ class ShaderObject(object):
         return obj
     
     def __init__(self):
-        # emitted when any part of the code for this object has changed,
-        # including dependencies.
-        self.changed = EventEmitter(source=self, event_class=ShaderChangeEvent)
-        
         # objects that must be declared before this object's definition.
         # {obj: refcount}
         self._deps = OrderedDict()  # OrderedDict for consistent code output
+        
+        # Objects that depend on this one will be informed of changes.
+        self._dependents = WeakKeyDictionary()
     
     @property
     def name(self):
@@ -121,7 +114,7 @@ class ShaderObject(object):
             self._deps[dep] += 1
         else:
             self._deps[dep] = 1
-            dep.changed.connect(self._dep_changed)
+            dep._dependents[self] = None
 
     def _remove_dep(self, dep):
         """ Decrement the reference count for *dep*. If the reference count 
@@ -131,15 +124,23 @@ class ShaderObject(object):
         refcount = self._deps[dep]
         if refcount == 1:
             self._deps.pop(dep)
-            dep.changed.disconnect(self._dep_changed)
+            dep._dependents.pop(self)
         else:
             self._deps[dep] -= 1
-        
-    def _dep_changed(self, event):
+
+    def _dep_changed(self, dep, code_changed=False, value_changed=False):
         """ Called when a dependency's expression has changed.
         """
-        logger.debug("ShaderObject changed: %r" % event.source)
-        self.changed(event)
+        logger.debug("ShaderObject changed [code=%s, value=%s]", code_changed,
+                     value_changed)
+        self.changed(code_changed, value_changed)
+            
+    def changed(self, code_changed=False, value_changed=False):
+        """Inform dependents that this shaderobject has changed.
+        """
+        for d in self._dependents:
+            d._dep_changed(self, code_changed=code_changed,
+                           value_changed=value_changed)
     
     def compile(self):
         """ Return a compilation of this object and its dependencies. 
