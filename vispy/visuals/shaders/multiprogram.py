@@ -55,11 +55,23 @@ class MultiProgram(object):
         """
         return self._vert
 
+    @vert.setter
+    def vert(self, code):
+        self._vcode = code
+        for p in self._programs.values():
+            p.vert = code
+
     @property
     def frag(self):
         """A wrapper around all fragmet shaders contained in this MultiProgram.
         """
         return self._frag
+
+    @frag.setter
+    def frag(self, code):
+        self._fcode = code
+        for p in self._programs.values():
+            p.frag = code
 
     def __getitem__(self, key):
         return self._set_items[key]

@@ -64,9 +64,15 @@ def test_multiprogram():
     assert 'filter' not in p1.frag.compile()
     assert 'filter' in p2.frag.compile()
     
+    # test changing shader code
+    mp.vert = vert + '\n//test\n'
+    mp.vert['transform'] = tr1
+    assert '//test' in p1.vert.compile()
+    
     # test that newly-added programs inherit all previously set variables
     p3 = mp.add_program()
     assert p3['u_scale'] == 2
     assert p3.frag['color'].value == (1, 1, 1, 1)
-    
+    assert '//test' in p3.vert.compile()
+    assert 'st_transform_map' in p3.vert.compile()
     

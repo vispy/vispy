@@ -463,7 +463,7 @@ class Function(ShaderObject):
             v = parsing.find_template_variables(code)
             logger.warning('Unsubstituted placeholders in code: %s\n'
                            '  replacements made: %s', 
-                           (v, list(self._expressions.keys())))
+                           v, list(self._expressions.keys()))
         
         return code + '\n'
     

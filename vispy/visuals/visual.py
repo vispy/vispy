@@ -11,21 +11,10 @@ from .. import gloo
 """
 Uses for VisualView:
     * Display visual with multiple transforms
+    * Display visual with multiple clipping geometries
     * Display with solid color for picking
     * Display with filtered colors for anaglyph
-
-
-
-
-
-
-
-
-
-
-
-
-
+    
 """
 
 class BaseVisual(object):
