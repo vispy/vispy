@@ -80,18 +80,28 @@ class Visual(VisualView):
     
     Visuals may be viewed many times in different ways
     """
+    
+    vertex_code = None
+    fragment_code = None
+    
     def __init__(self):
-        VisualView.__init__(self, self)
         self._visible = True
         self.events = EmitterGroup(source=self,
                                    auto_connect=True,
                                    update=Event,
                                    bounds_change=Event,
                                    )
-        self._views = [VisualView(self)]
+        self._views = [self]
         self._gl_state = {'preset': None}
         self._filters = set()
         self._hooks = {}
+        self._program = MultiProgram(self.vertex_code, self.fragment_code)
+        
+        VisualView.__init__(self, self)
+
+    @property
+    def program(self):
+        return self._program
 
     def set_gl_state(self, preset=None, **kwargs):
         """Completely define the set of GL state parameters to use when drawing

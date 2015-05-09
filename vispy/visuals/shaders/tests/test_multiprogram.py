@@ -20,10 +20,13 @@ def test_multiprogram():
     }
     """
     
+    # test adding programs
     mp = MultiProgram(vert, frag)
     p1 = mp.add_program()
     p2 = mp.add_program('p2')
     assert 'p2' in mp._programs
+    
+    # test weak reference to program
     mp.add_program('junk')
     assert 'junk' not in mp._programs and len(mp._programs) == 2
 
