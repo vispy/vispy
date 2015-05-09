@@ -27,14 +27,14 @@ class Canvas(vispy.app.Canvas):
         # and create a second view on the image
         self.views = [self.image.default_view, self.image.view()]
         
-        for view in self.views:
+        for i, view in enumerate(self.views):
             # Set up both views to use this canvas for document and framebuffer
             # transforms
             view.transforms.canvas = self
         
             # give each view a different transform
             # (this is shorthand for visual.transforms.visual_to_document = ...)
-            view.transform = STTransform(scale=(7, 7), translate=(50, 50))
+            view.transform = STTransform(scale=(7, 7), translate=(50 * i, 50))
 
             # ..and different clipping:
             view.attach(Clipper(...))
