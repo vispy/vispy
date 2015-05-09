@@ -520,20 +520,19 @@ class _SingleHue(Colormap):
     Parameters
     ----------
     hue : scalar, optional
-        The number indicating the hue value, which refers to a "true" color,
-        without any shading or tinting. Must be in the range [0, 360]. Defaults
-        to 200 (blue).
+        The hue refers to a "true" color, without any shading or tinting.
+        Must be in the range [0, 360]. Defaults to 200 (blue).
     saturation_range : array-like, optional
         The saturation represents how "pure" a color is. Less saturation means
         more white light mixed in the color. A fully saturated color means
         the pure color defined by the hue. No saturation means completely
-         hite. This colormap changes the saturation, and with this parameter
+        white. This colormap changes the saturation, and with this parameter
         you can specify the lower and upper bound. Default is [0.2, 0.8].
     value : scalar, optional
-        The number represting the value component of a color. This defines the
-        "brightness" of a color: a value of 0.0 means completely black while a
-        value of 1.0 means the color defined by the hue without shading. Must
-        be in the range [0, 1.0]. The default value is 1.0.
+        The value defines the "brightness" of a color: a value of 0.0 means
+        completely black while a value of 1.0 means the color defined by the
+        hue without shading. Must be in the range [0, 1.0]. The default value
+        is 1.0.
 
     Notes
     -----
@@ -567,7 +566,7 @@ class _HSL(Colormap):
         The saturation component of the colors to generate. The default is
         fully saturated (1.0). Must be in the range [0, 1.0].
     value : float, optional
-        The value component of the colors to generate or "brightness". Must
+        The value (brightness) component of the colors to generate. Must
         be in the range [0, 1.0], and the default is 1.0
     controls : array-like, optional
         The list of control points for the colors to generate. It should be
