@@ -9,15 +9,26 @@ from .shaders import StatementList
 from .. import gloo
 
 """
-API Issues to work out:
+Uses for VisualView:
+    * Display visual with multiple transforms
+    * Display with solid color for picking
+    * Display with filtered colors for anaglyph
 
-  * Need Visual.bounds() as described here:
-    https://github.com/vispy/vispy/issues/141
+
+
+
+
+
+
+
+
+
+
+
 
 """
 
-
-class Visual(object):
+class BaseVisual(object):
     """
     Abstract class representing a drawable object.
 
@@ -32,13 +43,52 @@ class Visual(object):
 
     """
 
+
+class VisualView(BaseVisual):
+    """Represents a view on a Visual object.
+    
+    Visuals may be rendered multiple times in a single frame and each rendering
+    may have its own transformations or other modifications. For example, a
+    3D model might be viewed simultaneously in multiple orientations, and
+    Visuals that implement picking will be drawn differently when checking for
+    mouse collisions.
+    
+    Each type of rendering requires its own shader program and GL state 
+    options. To implement this, each VisualView contains its own program and 
+    GL state.
+    """
+    def __init__(self, visual, key):
+        self._visual = visual
+        self._view_key = key
+        self._program = visual.program.add_view(key)
+        self._gl_state = {'preset': None}
+
+    @property
+    def program(self):
+        return self._program
+
+    @property
+    def transform_system(self):
+        pass
+    
+    
+
+
+class Visual(VisualView):
+    """Visual represents a single drawable object, defined by a single shader
+    program. 
+    
+    Visuals may be viewed many times in different ways
+    """
     def __init__(self):
+        VisualView.__init__(self, self)
         self._visible = True
         self.events = EmitterGroup(source=self,
                                    auto_connect=True,
                                    update=Event,
                                    bounds_change=Event,
                                    )
+        self._views = [VisualView(self)]
         self._gl_state = {'preset': None}
         self._filters = set()
         self._hooks = {}
@@ -160,3 +210,8 @@ class Visual(object):
         """
         self._filters.remove(filter)
         filter._detach(self)
+
+
+class CompoundVisual(BaseVisual):
+    """Visual consisting entirely of sub-visuals.
+    """
