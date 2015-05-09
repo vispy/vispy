@@ -536,9 +536,16 @@ class TextureEmulated3D(Texture2D):
     to a 2D array.
     """
 
-    _glsl_sample = """
+    # TODO: does GL's nearest use floor or round?
+    _glsl_sample_nearest = """
         vec4 sample(sampler2D tex, vec3 texcoord) {
-            float index = floor(texcoord.z * $depth);
+            // Don't let adjacent frames be interpolated into this one
+            texcoord.x = min(texcoord.x * $shape.x, $shape.x - 0.5);
+            texcoord.x = max(0.5, texcoord.x) / $shape.x;
+            texcoord.y = min(texcoord.y * $shape.y, $shape.y - 0.5);
+            texcoord.y = max(0.5, texcoord.y) / $shape.y;
+            
+            float index = floor(texcoord.z * $shape.z);
 
             // Do a lookup in the 2D texture
             float u = (mod(index, $r) + texcoord.x) / $r;
@@ -548,15 +555,43 @@ class TextureEmulated3D(Texture2D):
         }
     """
 
+    _glsl_sample_linear = """
+        vec4 sample(sampler2D tex, vec3 texcoord) {
+            // Don't let adjacent frames be interpolated into this one
+            texcoord.x = min(texcoord.x * $shape.x, $shape.x - 0.5);
+            texcoord.x = max(0.5, texcoord.x) / $shape.x;
+            texcoord.y = min(texcoord.y * $shape.y, $shape.y - 0.5);
+            texcoord.y = max(0.5, texcoord.y) / $shape.y;
+            
+
+            float z = texcoord.z * $shape.z;
+            float zindex1 = floor(z);
+            float u1 = (mod(zindex1, $r) + texcoord.x) / $r;
+            float v1 = (floor(zindex1 / $r) + texcoord.y) / $c;
+
+            float zindex2 = zindex1 + 1.0;
+            float u2 = (mod(zindex2, $r) + texcoord.x) / $r;
+            float v2 = (floor(zindex2 / $r) + texcoord.y) / $c;
+
+            vec4 s1 = texture2D(tex, vec2(u1, v1));
+            vec4 s2 = texture2D(tex, vec2(u2, v2));
+            
+            return s1 * (zindex2 - z) + s2 * (z - zindex1);
+        }
+    """
+
     _gl_max_texture_size = 1024  # For now, we just set this manually
 
     def __init__(self, data=None, format=None, **kwargs):
         from ..visuals.shaders import Function 
-        self._glsl_sample = Function(self.__class__._glsl_sample)
 
         self._set_emulated_shape(data)
         Texture2D.__init__(self, self._normalize_emulated_shape(data),
                            format, **kwargs)
+        if self.interpolation == 'nearest':
+            self._glsl_sample = Function(self.__class__._glsl_sample_nearest)
+        else:
+            self._glsl_sample = Function(self.__class__._glsl_sample_linear)
         self._update_variables()
 
     def _set_emulated_shape(self, data_or_shape):
@@ -592,7 +627,7 @@ class TextureEmulated3D(Texture2D):
             data_or_shape[3:]
 
     def _update_variables(self):
-        self._glsl_sample['depth'] = self.depth
+        self._glsl_sample['shape'] = self.shape[:3][::-1]
         self._glsl_sample['c'] = self._c
         self._glsl_sample['r'] = self._r
 

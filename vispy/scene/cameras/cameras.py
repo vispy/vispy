@@ -261,7 +261,6 @@ class BaseCamera(Node):
         For e.g. the TurntableCamera the elevation and azimuth are not
         set. One should use reset() for that.
         """
-
         # Flag to indicate that this is an initializing (not user-invoked)
         init = self._xlim is None
 
@@ -288,6 +287,7 @@ class BaseCamera(Node):
             for i in range(3):
                 if bounds[i] is None:
                     bounds[i] = self._viewbox.get_scene_bounds(i)
+        
         # Calculate ranges and margins
         ranges = [b[1] - b[0] for b in bounds]
         margins = [(r*margin or 0.1) for r in ranges]

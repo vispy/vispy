@@ -4,14 +4,12 @@
 
 from __future__ import division
 
-from ..util.event import Event
+from ..util.event import Event, EmitterGroup
 from ..visuals.transforms import (NullTransform, BaseTransform, 
                                   ChainTransform, create_transform)
-from ..visuals import Visual
 
 
-# todo: I though the visuals were mixed, but the base Node was *not* a visual?
-class Node(Visual):
+class Node(object):
     """ Base class representing an object in a scene.
 
     A group of nodes connected through parent-child relationships define a 
@@ -34,18 +32,25 @@ class Node(Visual):
     name : str
         The name used to identify the node.
     """
+    
+    # Needed to allow subclasses to repr() themselves before Node.__init__()
+    _name = None
 
     def __init__(self, parent=None, name=None, **kwargs):
-        Visual.__init__(self, **kwargs)
-        
+        self.name = name
+        self._visible = True
+
         # Add some events to the emitter groups:
         events = ['parents_change', 'children_change', 'transform_change',
                   'mouse_press', 'mouse_move', 'mouse_release', 'mouse_wheel', 
                   'key_press', 'key_release']
+        # Create event emitter if needed (in subclasses that inherit from
+        # Visual, we already have an emitter to share)
+        if not hasattr(self, 'events'):
+            self.events = EmitterGroup(source=self, auto_connect=True,
+                                       update=Event)
         self.events.add(**dict([(ev, Event) for ev in events]))
         
-        self.name = name
-
         # Entities are organized in a parent-children hierarchy
         self._children = []
         # TODO: use weakrefs for parents.
@@ -154,15 +159,15 @@ class Node(Visual):
         parent._remove_child(self)
         self.events.parents_change(removed=parent)
 
-    def _add_child(self, ent):
-        self._children.append(ent)
-        self.events.children_change(added=ent)
-        ent.events.update.connect(self.events.update)
+    def _add_child(self, node):
+        self._children.append(node)
+        self.events.children_change(added=node)
+        node.events.update.connect(self.events.update)
 
-    def _remove_child(self, ent):
-        self._children.remove(ent)
-        self.events.children_change(removed=ent)
-        ent.events.update.disconnect(self.events.update)
+    def _remove_child(self, node):
+        self._children.remove(node)
+        self.events.children_change(removed=node)
+        node.events.update.disconnect(self.events.update)
 
     def update(self):
         """

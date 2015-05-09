@@ -13,6 +13,7 @@ from ...ext.six import string_types
 from ... color import Color
 from ... import gloo
 from ...visuals.components import Clipper
+from ...visuals import Visual
 
 
 class ViewBox(Widget):
@@ -163,7 +164,7 @@ class ViewBox(Widget):
                                         max(bounds[axis][1], b[1]))
         # Set defaults
         for axis in (0, 1, 2):
-            if np.inf in [np.abs(x) for x in bounds[axis]]:
+            if any(np.isinf(bounds[axis])):
                 bounds[axis] = -1, 1
         
         if dim is not None:
@@ -315,11 +316,12 @@ class ViewBox(Widget):
             root = self.scene
             
         for ch in root.children:
-            try:
-                ch.attach(self._clipper)
-            except NotImplementedError:
-                # visual does not support clipping
-                pass
+            if isinstance(ch, Visual):
+                try:
+                    ch.attach(self._clipper)
+                except NotImplementedError:
+                    # visual does not support clipping
+                    pass
             self._prepare_fragment(ch)
 
     def _prepare_viewport(self, event):

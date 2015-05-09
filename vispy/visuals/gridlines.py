@@ -77,12 +77,12 @@ class GridLinesVisual(Visual):
     any scale.
     """
     def __init__(self, scale=(1, 1), **kwargs):
-        super(Visual, self).__init__(**kwargs)
+        super(GridLinesVisual, self).__init__(**kwargs)
         self._program = ModularProgram(VERT, FRAG)
         self._vbo = None
         self._scale = scale
         self._tr_cache = TransformCache()
-        self.set_gl_state('additive', cull_face='front_and_back')
+        self.set_gl_state('additive', cull_face=False)
 
     def _buffer(self):
         if self._vbo is None:

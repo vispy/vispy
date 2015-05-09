@@ -258,7 +258,7 @@ class ImageVisual(Visual):
         if self._data is None:
             return
 
-        set_state(cull_face='front_and_back')
+        set_state(cull_face=False)
 
         # upload texture is needed
         if self._texture is None:

@@ -29,6 +29,25 @@ __all__ = ('set_viewport', 'set_depth_range', 'set_front_face',  # noqa
 _setters = [s[4:] for s in __all__
             if s.startswith('set_') and s != 'set_state']
 
+# NOTE: If these are updated to have things beyond glEnable/glBlendFunc
+# calls, set_preset_state will need to be updated to deal with it.
+_gl_presets = {
+    'opaque': dict(
+        depth_test=True, 
+        cull_face=False, 
+        blend=False),
+    'translucent': dict(
+        depth_test=True, 
+        cull_face=False, 
+        blend=True,
+        blend_func=('src_alpha', 'one_minus_src_alpha')),
+    'additive': dict(
+        depth_test=False, 
+        cull_face=False, 
+        blend=True,
+        blend_func=('src_alpha', 'one')),
+}
+    
 
 def get_current_canvas():
     """ Proxy for context.get_current_canvas to avoud circular import.
@@ -408,16 +427,6 @@ class BaseGlooFunctions(object):
     # glEnable/Disable
     #
     
-    # NOTE: If these are updated to have things beyond glEnable/glBlendFunc
-    # calls, set_preset_state will need to be updated to deal with it.
-    _gl_presets = dict(
-        opaque=dict(depth_test=True, cull_face=False, blend=False),
-        translucent=dict(depth_test=True, cull_face=False, blend=True,
-                         blend_func=('src_alpha', 'one_minus_src_alpha')),
-        additive=dict(depth_test=False, cull_face=False, blend=True,
-                      blend_func=('src_alpha', 'one'),)
-    )
-    
     def get_state_presets(self):
         """The available GL state presets
     
@@ -426,7 +435,7 @@ class BaseGlooFunctions(object):
         presets : dict
             The dictionary of presets usable with ``set_options``.
         """
-        return deepcopy(self._gl_presets)
+        return deepcopy(_gl_presets)
     
     def set_state(self, preset=None, **kwargs):
         """Set OpenGL rendering state, optionally using a preset
@@ -481,7 +490,6 @@ class BaseGlooFunctions(object):
         about those particular functions.
         """
         kwargs = deepcopy(kwargs)
-        _gl_presets = self._gl_presets
         
         # Load preset, if supplied
         if preset is not None:
@@ -496,9 +504,9 @@ class BaseGlooFunctions(object):
             cull_face = kwargs.pop('cull_face')
             if isinstance(cull_face, bool):
                 funcname = 'glEnable' if cull_face else 'glDisable'
-                #func(_gl_attr('cull_face'))
                 self.glir.command('FUNC', funcname, 'cull_face')
             else:
+                self.glir.command('FUNC', 'glEnable', 'cull_face')
                 self.set_cull_face(*_to_args(cull_face))
         
         # Iterate over kwargs

@@ -76,7 +76,7 @@ class MeshVisual(Visual):
         Visual.__init__(self, **kwargs)
         
         self.set_gl_state('translucent', depth_test=True,
-                          cull_face='front_and_back')
+                          cull_face=False)
         
         # Create a program
         self._program = ModularProgram(vertex_template, fragment_template)

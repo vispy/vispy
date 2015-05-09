@@ -110,7 +110,7 @@ class PolygonVisual(Visual):
             return
         if not self._color.is_blank:
             gloo.set_state(polygon_offset_fill=True, 
-                           cull_face='front_and_back')
+                           cull_face=False)
             gloo.set_polygon_offset(1, 1)
             self.mesh.draw(transforms)
         if not self._border_color.is_blank:

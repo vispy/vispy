@@ -45,7 +45,8 @@ def merge_includes(code):
                 logger.critical('"%s" not found' % filename)
                 raise RuntimeError("File not found", filename)
             text = '\n// --- start of "%s" ---\n' % filename
-            text += remove_comments(open(path).read())
+            with open(path) as fh:
+                text += fh.read()
             text += '// --- end of "%s" ---\n' % filename
             return text
         return ''
@@ -64,6 +65,6 @@ def preprocess(code):
     """Preprocess a code by removing comments, version and merging includes."""
 
     if code:
-        code = remove_comments(code)
+        #code = remove_comments(code)
         code = merge_includes(code)
     return code
