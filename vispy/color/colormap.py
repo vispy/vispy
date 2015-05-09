@@ -582,7 +582,7 @@ class _HSL(Colormap):
 
     def __init__(self, ncolors=6, hue_start=0, saturation=1.0, value=1.0,
                  controls=None, interpolation='linear'):
-        hues = np.linspace(0, 360, ncolors + 1, dtype='int')[:-1]
+        hues = np.linspace(0, 360, ncolors + 1)[:-1]
         hues += hue_start
         hues %= 359
 
@@ -627,7 +627,7 @@ class _HUSL(Colormap):
 
     def __init__(self, ncolors=6, hue_start=0, saturation=1.0, value=0.7,
                  controls=None, interpolation='linear'):
-        hues = np.linspace(0, 360, ncolors + 1, dtype='int')[:-1]
+        hues = np.linspace(0, 360, ncolors + 1)[:-1]
         hues += hue_start
         hues %= 359
 
