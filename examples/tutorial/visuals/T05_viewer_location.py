@@ -72,23 +72,25 @@ class MyMeshVisual(visuals.Visual):
 MyMesh = scene.visuals.create_visual_node(MyMeshVisual)
 
 
+# Finally we will test the visual by displaying in a scene.
+
+canvas = scene.SceneCanvas(keys='interactive', show=True)
+
+# Add a ViewBox to let the user zoom/rotate
+view = canvas.central_widget.add_view()
+view.camera = 'turntable'
+view.camera.fov = 50
+view.camera.distance = 2
+
+mesh = MyMesh(parent=view.scene)
+mesh.transform = visuals.transforms.AffineTransform()
+#mesh.transform.translate([-25, -25, -25])
+mesh.transform.rotate(90, (1, 0, 0))
+
+axis = scene.visuals.XYZAxis(parent=view.scene)
+
+# ..and optionally start the event loop
 if __name__ == '__main__':
-    canvas = scene.SceneCanvas(keys='interactive', show=True)
-    
-    # Add a ViewBox to let the user zoom/rotate
-    view = canvas.central_widget.add_view()
-    view.camera = 'turntable'
-    view.camera.fov = 50
-    view.camera.distance = 2
-    
-    mesh = MyMesh(parent=view.scene)
-    mesh.transform = visuals.transforms.AffineTransform()
-    #mesh.transform.translate([-25, -25, -25])
-    mesh.transform.rotate(90, (1, 0, 0))
-    
-    axis = scene.visuals.XYZAxis(parent=view.scene)
-    
-    # ..and optionally start the event loop
     import sys
-    if sys.flags.interactive == 0:
+    if sys.flags.interactive != 1:
         app.run()

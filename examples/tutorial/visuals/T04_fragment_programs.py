@@ -60,18 +60,20 @@ class MyRectVisual(visuals.Visual):
 MyRect = scene.visuals.create_visual_node(MyRectVisual)
 
 
+# Finally we will test the visual by displaying in a scene.
+
+canvas = scene.SceneCanvas(keys='interactive', show=True)
+
+# This time we add a ViewBox to let the user zoom/pan
+view = canvas.central_widget.add_view()
+view.camera = 'panzoom'
+view.camera.rect = (0, 0, 800, 800)
+
+vis = MyRect()
+view.add(vis)
+
+# ..and optionally start the event loop
 if __name__ == '__main__':
-    canvas = scene.SceneCanvas(keys='interactive', show=True)
-    
-    # This time we add a ViewBox to let the user zoom/pan
-    view = canvas.central_widget.add_view()
-    view.camera = 'panzoom'
-    view.camera.rect = (0, 0, 800, 800)
-
-    vis = MyRect()
-    view.add(vis)
-
-    # ..and optionally start the event loop
     import sys
-    if sys.flags.interactive == 0:
+    if sys.flags.interactive != 1:
         app.run()

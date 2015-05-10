@@ -192,32 +192,34 @@ class MyRectVisual(visuals.Visual):
 MyRect = scene.visuals.create_visual_node(MyRectVisual)
 
 
+# Finally we will test the visual by displaying in a scene.
+
+canvas = scene.SceneCanvas(keys='interactive', show=True)
+
+# This time we add a ViewBox to let the user zoom/pan
+view = canvas.central_widget.add_view()
+view.camera = 'panzoom'
+view.camera.rect = (0, 0, 800, 800)
+
+# ..and add the rects to the view instead of canvas.scene
+rects = [MyRect(100, 100, 200, 300, parent=view.scene),
+         MyRect(500, 100, 200, 300, parent=view.scene)]
+
+# Again, rotate one rectangle to ensure the transforms are working as we 
+# expect.
+tr = visuals.transforms.AffineTransform()
+tr.rotate(25, (0, 0, 1))
+rects[1].transform = tr
+
+# Add some text instructions
+text = scene.visuals.Text("Drag right mouse button to zoom.", 
+                          color='w',
+                          anchor_x='left',
+                          parent=view,
+                          pos=(20, 30))
+
+# ..and optionally start the event loop
 if __name__ == '__main__':
-    canvas = scene.SceneCanvas(keys='interactive', show=True)
-    
-    # This time we add a ViewBox to let the user zoom/pan
-    view = canvas.central_widget.add_view()
-    view.camera = 'panzoom'
-    view.camera.rect = (0, 0, 800, 800)
-    
-    # ..and add the rects to the view instead of canvas.scene
-    rects = [MyRect(100, 100, 200, 300, parent=view.scene),
-             MyRect(500, 100, 200, 300, parent=view.scene)]
-
-    # Again, rotate one rectangle to ensure the transforms are working as we 
-    # expect.
-    tr = visuals.transforms.AffineTransform()
-    tr.rotate(25, (0, 0, 1))
-    rects[1].transform = tr
-    
-    # Add some text instructions
-    text = scene.visuals.Text("Drag right mouse button to zoom.", 
-                              color='w',
-                              anchor_x='left',
-                              parent=view,
-                              pos=(20, 30))
-
-    # ..and optionally start the event loop
     import sys
-    if sys.flags.interactive == 0:
+    if sys.flags.interactive != 1:
         app.run()
