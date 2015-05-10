@@ -1,4 +1,3 @@
-# vispy: testskip
 """
    Tutorial: Creating Visuals
       05. Camera location
@@ -19,8 +18,8 @@ void main() {
     vec4 doc_pos = $visual_to_doc(visual_pos);
     gl_Position = $doc_to_render(doc_pos);
     
-    vec4 view_direction = $doc_to_visual(doc_pos + vec4(0, 0, -1, 0)) - 
-                          visual_pos;
+    vec4 visual_pos2 = $doc_to_visual(doc_pos + vec4(0, 0, -1, 0));
+    vec4 view_direction = (visual_pos2 / visual_pos2.w) - visual_pos;
     view_direction = vec4(normalize(view_direction.xyz), 0);
     
     color = vec4(view_direction.rgb, 1);
@@ -56,7 +55,7 @@ class MyMeshVisual(visuals.Visual):
     def draw(self, transforms):
         # Note we use the "additive" GL blending settings so that we do not 
         # have to sort the mesh triangles back-to-front before each draw.
-        gloo.set_state('additive', cull_face='front_and_back')
+        gloo.set_state('additive', cull_face=False)
         
         self.program.vert['visual_to_doc'] = transforms.visual_to_document
         imap = transforms.visual_to_document.inverse
@@ -76,10 +75,11 @@ MyMesh = scene.visuals.create_visual_node(MyMeshVisual)
 if __name__ == '__main__':
     canvas = scene.SceneCanvas(keys='interactive', show=True)
     
-    # This time we add a ViewBox to let the user zoom/pan
+    # Add a ViewBox to let the user zoom/rotate
     view = canvas.central_widget.add_view()
-    view.set_camera('turntable', mode='perspective', up='z', distance=1.5,
-                    azimuth=30., elevation=30.)
+    view.camera = 'turntable'
+    view.camera.fov = 50
+    view.camera.distance = 2
     
     mesh = MyMesh(parent=view.scene)
     mesh.transform = visuals.transforms.AffineTransform()

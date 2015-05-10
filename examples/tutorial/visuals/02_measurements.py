@@ -176,7 +176,7 @@ class MyRectVisual(visuals.Visual):
         self.program.frag['color'] = (1, 0, 0, 1)
         
     def draw(self, transforms):
-        gloo.set_state(cull_face='front_and_back')
+        gloo.set_state(cull_face=False)
         
         # Set the two transforms required by the vertex shader:
         self.program.vert['visual_to_doc'] = transforms.visual_to_document
@@ -198,6 +198,7 @@ if __name__ == '__main__':
     
     # This time we add a ViewBox to let the user zoom/pan
     view = canvas.central_widget.add_view()
+    view.camera = 'panzoom'
     view.camera.rect = (0, 0, 800, 800)
     
     # ..and add the rects to the view instead of canvas.scene

@@ -26,7 +26,7 @@ void main() {
 fragment_shader = """
 void main() {
   vec4 pos = $fb_to_visual(gl_FragCoord);
-  gl_FragColor = vec4(sin(pos.x), sin(pos.y), 0, 1);
+  gl_FragColor = vec4(sin(pos.x / 10.), sin(pos.y / 10.), 0, 1);
 }
 """
 
@@ -46,7 +46,7 @@ class MyRectVisual(visuals.Visual):
         self.program.vert['position'] = self.vbo
         
     def draw(self, transforms):
-        gloo.set_state(cull_face='front_and_back')
+        gloo.set_state(cull_face=False)
         
         tr = (transforms.visual_to_document * 
               transforms.document_to_framebuffer).inverse
@@ -66,6 +66,7 @@ if __name__ == '__main__':
     
     # This time we add a ViewBox to let the user zoom/pan
     view = canvas.central_widget.add_view()
+    view.camera = 'panzoom'
     view.camera.rect = (0, 0, 800, 800)
 
     vis = MyRect()
