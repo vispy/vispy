@@ -31,67 +31,13 @@ class BaseVisual(object):
         Emitted when the bounds of the visual have changed.
 
     """
-
-
-class VisualView(BaseVisual):
-    """Represents a view on a Visual object.
-    
-    Visuals may be rendered multiple times in a single frame and each rendering
-    may have its own transformations or other modifications. For example, a
-    3D model might be viewed simultaneously in multiple orientations, and
-    Visuals that implement picking will be drawn differently when checking for
-    mouse collisions.
-    
-    Each type of rendering requires its own shader program and GL state 
-    options. To implement this, each VisualView contains its own program and 
-    GL state.
-    """
-    def __init__(self, visual, key):
-        self._visual = visual
-        self._view_key = key
-        self._program = visual.program.add_view(key)
-        self._gl_state = {'preset': None}
-
-    @property
-    def program(self):
-        return self._program
-
-    @property
-    def transform_system(self):
-        pass
-    
-    
-
-
-class Visual(VisualView):
-    """Visual represents a single drawable object, defined by a single shader
-    program. 
-    
-    Visuals may be viewed many times in different ways
-    """
-    
-    vertex_code = None
-    fragment_code = None
-    
     def __init__(self):
-        self._visible = True
         self.events = EmitterGroup(source=self,
                                    auto_connect=True,
                                    update=Event,
                                    bounds_change=Event,
                                    )
-        self._views = [self]
-        self._gl_state = {'preset': None}
-        self._filters = set()
-        self._hooks = {}
-        self._program = MultiProgram(self.vertex_code, self.fragment_code)
-        
-        VisualView.__init__(self, self)
-
-    @property
-    def program(self):
-        return self._program
-
+    
     def set_gl_state(self, preset=None, **kwargs):
         """Completely define the set of GL state parameters to use when drawing
         this visual.
@@ -109,13 +55,6 @@ class Visual(VisualView):
             raise TypeError("Only one positional argument allowed.")
         self._gl_state.update(kwargs)
         
-    def _update(self):
-        """
-        This method is called internally whenever the Visual needs to be 
-        redrawn. By default, it emits the update event.
-        """
-        self.events.update()
-
     def draw(self, transforms):
         """
         Draw this visual now.
@@ -172,6 +111,68 @@ class Visual(VisualView):
         Emit an event to inform listeners that this Visual needs to be redrawn.
         """
         self.events.update()
+
+
+
+class VisualView(BaseVisual):
+    """Represents a view on a Visual object.
+    
+    Visuals may be rendered multiple times in a single frame and each rendering
+    may have its own transformations or other modifications. For example, a
+    3D model might be viewed simultaneously in multiple orientations, and
+    Visuals that implement picking will be drawn differently when checking for
+    mouse collisions.
+    
+    Each type of rendering requires its own shader program and GL state 
+    options. To implement this, each VisualView contains its own program and 
+    GL state.
+    """
+    def __init__(self, visual, key):
+        self._visual = visual
+        self._view_key = key
+        self._program = visual.program.add_view(key)
+        self._gl_state = {'preset': None}
+
+    @property
+    def program(self):
+        return self._program
+
+    @property
+    def transform_system(self):
+        pass
+    
+    def draw(self):
+        self._visual.draw(self._view_key)
+        
+    def bounds(self, *args, **kwargs):
+        kwargs['view'] = self._view_key
+        return self._visual.bounds(*args, **kwargs)
+
+
+class Visual(BaseVisual):
+    """Visual represents a single drawable object, defined by a single shader
+    program. 
+    
+    Visuals may be viewed many times in different ways
+    """
+    
+    def __init__(self):
+        self._views = WeakValueDictionary()
+        self._views['default'] = VisualView(self)
+        self._gl_state = {'preset': None}
+        self._filters = set()
+        self._hooks = {}
+        self._program = MultiProgram()
+        
+        VisualView.__init__(self, self)
+
+    @property
+    def program(self):
+        return self._program
+
+    @property
+    def views(self):
+        return self._views[:]
 
     def _get_hook(self, shader, name):
         """Return a FunctionChain that Filters may use to modify the program.
