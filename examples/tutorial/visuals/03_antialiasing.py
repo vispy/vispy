@@ -1,4 +1,3 @@
-# vispy: testskip
 """
    Tutorial: Creating Visuals
         03. Antialiasing

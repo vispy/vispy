@@ -1,4 +1,3 @@
-# vispy: testskip
 """
    Tutorial: Creating Visuals
      04. Fragment Programs

@@ -1,4 +1,3 @@
-# vispy: testskip
 """
    Tutorial: Creating Visuals
 02. Making physical measurements
