@@ -55,7 +55,7 @@ class BaseVisual(object):
             raise TypeError("Only one positional argument allowed.")
         self._gl_state.update(kwargs)
         
-    def draw(self, transforms):
+    def draw(self):
         """
         Draw this visual now.
         The default implementation calls gloo.set_state().
