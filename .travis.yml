@@ -112,7 +112,7 @@ install:
           pip install -q pyglet;
           conda install --yes --quiet wxpython > ${REDIRECT_TO};
         else
-          pip install -q http://pyglet.googlecode.com/archive/tip.zip;
+          pip install -q https://bitbucket.org/pyglet/pyglet/get/tip.zip;
         fi;
         if [ "${PYTHON}" == "3.4" ]; then
           conda install --yes --quiet pillow scipy matplotlib > ${REDIRECT_TO};
@@ -129,6 +129,7 @@ install:
     - cd ~
 
     # GLFW: version 2 shouldn't work (so let's try on Py2.6), version 3 will
+    # We can't use most recent builds because our CMake is too old :(
     - if [ "${PYTHON}" == "2.6" ] && [ "${DEPS}" == "full" ]; then
         travis_retry sudo apt-get -qq install libglfw2 > ${REDIRECT_TO};
       fi
@@ -136,6 +137,7 @@ install:
         travis_retry sudo apt-get -qq install xorg-dev libglu1-mesa-dev > ${REDIRECT_TO};
         git clone git://github.com/glfw/glfw.git &> ${REDIRECT_TO};
         cd glfw;
+        git checkout 5b6e671;
         cmake -DBUILD_SHARED_LIBS=true -DGLFW_BUILD_EXAMPLES=false -DGLFW_BUILD_TESTS=false -DGLFW_BUILD_DOCS=false . > ${REDIRECT_TO};
         sudo make install > ${REDIRECT_TO};
       fi
