@@ -78,7 +78,7 @@ class Canvas(object):
         If True, try to create the window in always-on-top mode.
     px_scale : int > 0
         A scale factor to apply between logical and physical pixels in addition
-        to the actual scale factor determined by the backend. This option 
+        to the actual scale factor determined by the backend. This option
         allows the scale factor to be adjusted for testing.
 
     Notes
@@ -90,7 +90,9 @@ class Canvas(object):
         * draw
         * mouse_press
         * mouse_release
-        * mouse_move,
+        * mouse_click
+        * mouse_double_click
+        * mouse_move
         * mouse_wheel
         * key_press
         * key_release
@@ -137,6 +139,8 @@ class Canvas(object):
                                    draw=DrawEvent,
                                    mouse_press=MouseEvent,
                                    mouse_release=MouseEvent,
+                                   mouse_click=MouseEvent,
+                                   mouse_double_click=MouseEvent,
                                    mouse_move=MouseEvent,
                                    mouse_wheel=MouseEvent,
                                    key_press=KeyEvent,
@@ -260,12 +264,12 @@ class Canvas(object):
     @property
     def context(self):
         """ The OpenGL context of the native widget
-        
+
         It gives access to OpenGL functions to call on this canvas object,
         and to the shared context namespace.
         """
         return self._context
-    
+
     @property
     def app(self):
         """ The vispy Application instance on which this Canvas is based.
@@ -321,7 +325,7 @@ class Canvas(object):
 
     @size.setter
     def size(self, size):
-        return self._backend._vispy_set_size(size[0] * self._px_scale, 
+        return self._backend._vispy_set_size(size[0] * self._px_scale,
                                              size[1] * self._px_scale)
 
     @property
@@ -334,7 +338,7 @@ class Canvas(object):
     def pixel_scale(self):
         """ The ratio between the number of logical pixels, or 'points', and
         the physical pixels on the device. In most cases this will be 1.0,
-        but on certain backends this will be greater than 1. This should be 
+        but on certain backends this will be greater than 1. This should be
         used as a scaling factor when writing your own visualisations
         with Gloo (make a copy and multiply all your logical pixel values
         by it) but you should rarely, if ever, need to use this in your own
@@ -379,7 +383,7 @@ class Canvas(object):
         """The fps of canvas/window, as the rate that events.draw is emitted
         """
         return self._fps
-    
+
     def set_current(self, event=None):
         """Make this the active GL canvas
         """
