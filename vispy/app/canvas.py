@@ -90,7 +90,6 @@ class Canvas(object):
         * draw
         * mouse_press
         * mouse_release
-        * mouse_click
         * mouse_double_click
         * mouse_move
         * mouse_wheel
@@ -139,7 +138,6 @@ class Canvas(object):
                                    draw=DrawEvent,
                                    mouse_press=MouseEvent,
                                    mouse_release=MouseEvent,
-                                   mouse_click=MouseEvent,
                                    mouse_double_click=MouseEvent,
                                    mouse_move=MouseEvent,
                                    mouse_wheel=MouseEvent,

@@ -340,16 +340,6 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
             modifiers=self._modifiers(ev),
         )
 
-    def mouseClickEvent(self, ev):
-        if self._vispy_canvas is None:
-            return
-        self._vispy_mouse_click(
-            native=ev,
-            pos=(ev.pos().x(), ev.pos().y()),
-            button=BUTTONMAP.get(ev.button(), 0),
-            modifiers=self._modifiers(ev),
-        )
-
     def mouseDoubleClickEvent(self, ev):
         if self._vispy_canvas is None:
             return

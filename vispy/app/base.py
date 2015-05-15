@@ -202,14 +202,6 @@ class BaseCanvasBackend(object):
         self._vispy_mouse_data['last_event'] = ev
         return ev
 
-    def _vispy_mouse_click(self, **kwargs):
-        # default method for delivering click events to the canvas
-        kwargs.update(self._vispy_mouse_data)
-
-        ev = self._vispy_canvas.events.mouse_click(**kwargs)
-        self._vispy_mouse_data['last_event'] = ev
-        return ev
-
     def _vispy_mouse_double_click(self, **kwargs):
         # default method for delivering double-click events to the canvas
         kwargs.update(self._vispy_mouse_data)
