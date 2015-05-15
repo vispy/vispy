@@ -211,7 +211,6 @@ class BaseCanvasBackend(object):
         return ev
 
 
-
 class BaseTimerBackend(object):
     """BaseTimerBackend(vispy_timer)
 
