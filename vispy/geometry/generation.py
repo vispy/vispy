@@ -89,22 +89,19 @@ def create_cube():
     return vertices, filled, outline
 
 
-def create_plane(width=1,
-                 height=1,
-                 width_segments=1,
-                 height_segments=1,
+def create_plane(width=1, height=1, width_segments=1, height_segments=1,
                  direction='+z'):
     """ Generate vertices & indices for a filled and outlined plane.
 
     Parameters
     ----------
-    width : numeric
+    width : float
         Plane width.
-    height : numeric
+    height : float
         Plane height.
     width_segments : int
         Plane segments count along the width.
-    height_segments : numeric
+    height_segments : float
         Plane segments count along the height.
     direction: unicode
         ``{'-x', '+x', '-y', '+y', '-z', '+z'}``
@@ -136,28 +133,19 @@ def create_plane(width=1,
     normals = np.zeros(x_grid1 * y_grid1 * 3)
     texcoords = np.zeros(x_grid1 * y_grid1 * 2)
 
-    offset = offset1 = 0
-    for i_y in range(y_grid1):
-        y = i_y * height / y_grid - height / 2
-        for i_x in range(x_grid1):
-            x = i_x * width / x_grid - width / 2
+    y = np.arange(y_grid1) * height / y_grid - height / 2
+    x = np.arange(x_grid1) * width / x_grid - width / 2
 
-            positions[offset] = x
-            positions[offset + 1] = - y
+    positions[::3] = np.tile(x, y_grid1)
+    positions[1::3] = -np.repeat(y, x_grid1)
 
-            normals[offset + 2] = 1
+    normals[2::3] = 1
 
-            texcoords[offset1] = i_x / x_grid
-            texcoords[offset1 + 1] = 1 - (i_y / y_grid)
-
-            offset += 3
-            offset1 += 2
+    texcoords[::2] = np.tile(np.arange(x_grid1) / x_grid, y_grid1)
+    texcoords[1::2] = np.repeat(1 - np.arange(y_grid1) / y_grid, x_grid1)
 
     # Faces and outline.
-    faces = np.zeros(x_grid * y_grid * 6, dtype=np.uint32)
-    outline = np.zeros(x_grid * y_grid * 8, dtype=np.uint32)
-
-    offset = offset1 = 0
+    faces, outline = [], []
     for i_y in range(y_grid):
         for i_x in range(x_grid):
             a = i_x + x_grid1 * i_y
@@ -165,33 +153,15 @@ def create_plane(width=1,
             c = (i_x + 1) + x_grid1 * (i_y + 1)
             d = (i_x + 1) + x_grid1 * i_y
 
-            faces[offset] = a
-            faces[offset + 1] = b
-            faces[offset + 2] = d
-
-            faces[offset + 3] = b
-            faces[offset + 4] = c
-            faces[offset + 5] = d
-
-            outline[offset1] = a
-            outline[offset1 + 1] = b
-
-            outline[offset1 + 2] = b
-            outline[offset1 + 3] = c
-
-            outline[offset1 + 4] = c
-            outline[offset1 + 5] = d
-
-            outline[offset1 + 6] = d
-            outline[offset1 + 7] = a
-
-            offset += 6
-            offset1 += 8
+            faces.extend(((a, b, d), (b, c, d)))
+            outline.extend(((a, b), (b, c), (c, d), (d, a)))
 
     positions = np.reshape(positions, (-1, 3))
+    texcoords = np.reshape(texcoords, (-1, 2))
     normals = np.reshape(normals, (-1, 3))
-    faces = np.reshape(faces, (-1, 3))
-    outline = np.reshape(outline, (-1, 2))
+
+    faces = np.reshape(faces, (-1, 3)).astype(np.uint32)
+    outline = np.reshape(outline, (-1, 2)).astype(np.uint32)
 
     direction = direction.lower()
     if direction in ('-x', '+x'):
@@ -204,16 +174,15 @@ def create_plane(width=1,
     sign = -1 if '-' in direction else 1
 
     positions = np.roll(positions, shift, -1)
-    texcoords = np.reshape(texcoords, (-1, 2))
     normals = np.roll(normals, shift, -1) * sign
-    colours = np.ravel(positions)
-    colours = np.hstack((np.reshape(np.interp(colours,
-                                              (np.min(colours),
-                                               np.max(colours)),
-                                              (0, 1)),
-                                    positions.shape),
-                         np.ones((positions.shape[0], 1))))
-    colours[..., neutral_axis] = 0
+    colors = np.ravel(positions)
+    colors = np.hstack((np.reshape(np.interp(colors,
+                                             (np.min(colors),
+                                              np.max(colors)),
+                                             (0, 1)),
+                                   positions.shape),
+                        np.ones((positions.shape[0], 1))))
+    colors[..., neutral_axis] = 0
 
     vertices = np.zeros(positions.shape[0],
                         [('position', np.float32, 3),
@@ -224,33 +193,28 @@ def create_plane(width=1,
     vertices['position'] = positions
     vertices['texcoord'] = texcoords
     vertices['normal'] = normals
-    vertices['color'] = colours
+    vertices['color'] = colors
 
     return vertices, faces, outline
 
 
-def create_box(width=1,
-               height=1,
-               depth=1,
-               width_segments=1,
-               height_segments=1,
-               depth_segments=1,
-               planes=None):
+def create_box(width=1, height=1, depth=1, width_segments=1, height_segments=1,
+               depth_segments=1, planes=None):
     """ Generate vertices & indices for a filled and outlined box.
 
     Parameters
     ----------
-    width : numeric
+    width : float
         Box width.
-    height : numeric
+    height : float
         Box height.
-    depth : numeric
+    depth : float
         Box depth.
     width_segments : int
         Box segments count along the width.
-    height_segments : numeric
+    height_segments : float
         Box segments count along the height.
-    depth_segments : numeric
+    depth_segments : float
         Box segments count along the depth.
     planes: array_like
         Any combination of ``{'-x', '+x', '-y', '+y', '-z', '+z'}``
@@ -294,9 +258,9 @@ def create_box(width=1,
         planes_m.append(create_plane(depth, height, d_s, h_s, '+x'))
         planes_m[-1][0]['position'][..., 0] += width / 2
 
-    positions = np.zeros((0, 3))
-    texcoords = np.zeros((0, 2))
-    normals = np.zeros((0, 3))
+    positions = np.zeros((0, 3), dtype=np.float32)
+    texcoords = np.zeros((0, 2), dtype=np.float32)
+    normals = np.zeros((0, 3), dtype=np.float32)
 
     faces = np.zeros((0, 3), dtype=np.uint32)
     outline = np.zeros((0, 2), dtype=np.uint32)

@@ -11,6 +11,7 @@ a scenegraph. For scenegraph use, see the complementary Visual+Node classes
 defined in vispy.scene.
 """
 
+from .box import BoxVisual  # noqa
 from .cube import CubeVisual  # noqa
 from .ellipse import EllipseVisual  # noqa
 from .gridlines import GridLinesVisual  # noqa
@@ -23,6 +24,7 @@ from .line import LineVisual  # noqa
 from .line_plot import LinePlotVisual  # noqa
 from .markers import MarkersVisual, marker_types  # noqa
 from .mesh import MeshVisual  # noqa
+from .plane import PlaneVisual  # noqa
 from .polygon import PolygonVisual  # noqa
 from .rectangle import RectangleVisual  # noqa
 from .regular_polygon import RegularPolygonVisual  # noqa
