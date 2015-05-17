@@ -584,7 +584,7 @@ class _HSL(Colormap):
                  controls=None, interpolation='linear'):
         hues = np.linspace(0, 360, ncolors + 1)[:-1]
         hues += hue_start
-        hues %= 359
+        hues %= 360
 
         colors = ColorArray([(hue, saturation, value) for hue in hues],
                             color_space='hsv')
@@ -629,7 +629,7 @@ class _HUSL(Colormap):
                  controls=None, interpolation='linear'):
         hues = np.linspace(0, 360, ncolors + 1)[:-1]
         hues += hue_start
-        hues %= 359
+        hues %= 360
 
         saturation *= 99
         value *= 99
