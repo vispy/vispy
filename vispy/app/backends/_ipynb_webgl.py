@@ -62,7 +62,7 @@ def _prepare_js(force=False):
     else:
         kwargs = {}
     install_nbextension(jsdir, overwrite=force, destination='vispy',
-                        symlink=(False if os.name == 'nt' else True), **kwargs)
+                        symlink=(os.name != 'nt'), **kwargs)
 
 
 class ApplicationBackend(BaseApplicationBackend):
