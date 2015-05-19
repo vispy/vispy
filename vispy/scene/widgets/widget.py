@@ -48,7 +48,7 @@ class Widget(Node):
         # A mesh is required because GL lines cannot be drawn with predictable
         # shape across all platforms.
         self._border_color = self._bgcolor = Color(None)
-        self._visual = MeshVisual(color=border_color, mode='triangles')
+        self._visual = MeshVisual(mode='triangles')
         self._visual.set_gl_state('translucent', depth_test=False)
         self.border_color = border_color
         self.bgcolor = bgcolor
