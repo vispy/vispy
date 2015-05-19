@@ -32,8 +32,8 @@ class Visual(object):
 
     Notes
     -----
-    -   When used in the scenegraph, all Visual classes are mixed with
-    vispy.scene.Node in order to implement the methods, attributes and
+    - When used in the scenegraph, all Visual classes are mixed with
+    `vispy.scene.Node` in order to implement the methods, attributes and
     capabilities required for their usage within it.
     """
 
