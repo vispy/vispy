@@ -30,6 +30,11 @@ class Visual(object):
     bounds_change : Event
         Emitted when the bounds of the visual have changed.
 
+    Notes
+    -----
+    -   This class is mixed with vispy.scene.Node class at import time in
+    order to implement the methods, attributes and capabilities required for
+    its usage within the scenegraph.
     """
 
     def __init__(self):
