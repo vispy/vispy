@@ -494,7 +494,8 @@ class MouseEvent(Event):
     """Mouse event class
 
     Note that each event object has an attribute for each of the input
-    arguments listed below.
+    arguments listed below, as well as a "time" attribute with the event's
+    precision start time.
 
     Parameters
     ----------
@@ -539,6 +540,7 @@ class MouseEvent(Event):
         self._delta = np.zeros(2) if (delta is None) else np.array(delta)
         self._last_event = last_event
         self._press_event = press_event
+        self._time = time()
 
     @property
     def pos(self):
@@ -567,6 +569,10 @@ class MouseEvent(Event):
     @property
     def last_event(self):
         return self._last_event
+
+    @property
+    def time(self):
+        return self._time
 
     def _forget_last_event(self):
         # Needed to break otherwise endless last-event chains

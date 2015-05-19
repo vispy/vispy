@@ -267,7 +267,7 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
 
         # Qt supports OS double-click events, so we set this here to
         # avoid double events
-        # self._double_click_supported = True
+        self._double_click_supported = True
 
     def _vispy_warmup(self):
         etime = time() + 0.25

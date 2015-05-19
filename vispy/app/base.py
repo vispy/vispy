@@ -4,7 +4,6 @@
 
 from ..util import SimpleBunch
 
-
 class BaseApplicationBackend(object):
     """BaseApplicationBackend()
 
@@ -64,6 +63,7 @@ class BaseCanvasBackend(object):
             'buttons': [],
             'press_event': None,
             'last_event': None,
+            'last_mouse_press': None,
         }
 
     def _process_backend_kwargs(self, kwargs):
@@ -169,7 +169,7 @@ class BaseCanvasBackend(object):
         self._vispy_mouse_data['buttons'].append(ev.button)
         self._vispy_mouse_data['last_event'] = ev
 
-        if not getattr(self, "_double_click_supported", False):
+        if not getattr(self, '_double_click_supported', False):
             # double-click events are not supported by this backend, so we
             # detect them manually
             self._vispy_detect_double_click(ev)
@@ -207,11 +207,6 @@ class BaseCanvasBackend(object):
             self._vispy_mouse_data['buttons'].remove(ev.button)
         self._vispy_mouse_data['last_event'] = ev
 
-        if not getattr(self, "_double_click_supported", False):
-            # double-click events are not supported by this backend, so we
-            # detect them manually
-            self._vispy_detect_double_click(ev)
-
         return ev
 
     def _vispy_mouse_double_click(self, **kwargs):
@@ -222,12 +217,33 @@ class BaseCanvasBackend(object):
         self._vispy_mouse_data['last_event'] = ev
         return ev
 
-    def _vispy_detect_double_click(self, ev):
+    def _vispy_detect_double_click(self, ev, **kwargs):
         # Called on every mouse_press or mouse_release, and calls
         # _vispy_mouse_double_click if a double-click is calculated.
         # Should be overridden with an empty function on backends which
         # natively support double-clicking.
-        pass
+
+        dt_max = 0.3 # time in seconds for a double-click detection
+
+        lastev = self._vispy_mouse_data['last_mouse_press']
+
+        if (lastev == None):
+            self._vispy_mouse_data['last_mouse_press'] = ev
+            return
+
+        assert lastev.type == 'mouse_press'
+        assert ev.type == 'mouse_press'
+
+        # For a double-click to be detected, the button should be the same,
+        # the position should be the same, and the two mouse-presses should
+        # be within dt_max.
+        if ((ev.time - lastev.time <= dt_max)
+            & (lastev.pos[0] - ev.pos[0] == 0)
+            & (lastev.pos[1] - ev.pos[1] == 0)
+            & (lastev.button == ev.button)):
+                self._vispy_mouse_double_click(**kwargs)
+
+        self._vispy_mouse_data['last_mouse_press'] = ev
 
 
 class BaseTimerBackend(object):
