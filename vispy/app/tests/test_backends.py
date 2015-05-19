@@ -119,7 +119,7 @@ def _test_module_properties(_module=None):
     # Mouse events are emitted from the CanvasBackend base class.
     ignore = set(['stylus', 'touch', 'mouse_press', 'paint',
                   'mouse_move', 'mouse_release', 'mouse_double_click',
-                  'vispy_detect_double_click', 'close'])
+                  'detect_double_click', 'close'])
     if module_fname == '_egl':
         ignore += ['key_release', 'key_press']
     eventNames = set(canvas.events._emitters.keys()) - ignore
