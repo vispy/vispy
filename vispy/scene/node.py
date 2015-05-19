@@ -36,7 +36,7 @@ class Node(object):
     # Needed to allow subclasses to repr() themselves before Node.__init__()
     _name = None
 
-    def __init__(self, parent=None, name=None, **kwargs):
+    def __init__(self, parent=None, name=None):
         self.name = name
         self._visible = True
 

@@ -10,7 +10,6 @@ from .widget import Widget
 from ..subscene import SubScene
 from ..cameras import make_camera, BaseCamera
 from ...ext.six import string_types
-from ... color import Color
 from ... import gloo
 from ...visuals.components import Clipper
 from ...visuals import Visual
@@ -43,14 +42,14 @@ class ViewBox(Widget):
     
     All extra keyword arguments are passed to :func:`Widget.__init__`.
     """
-    def __init__(self, camera=None, scene=None, bgcolor='black', **kwargs):
-        
+    def __init__(self, camera=None, scene=None, clip_method='fragment',
+                 **kwargs):
+
         self._camera = None
-        self._bgcolor = Color(bgcolor).rgba
         Widget.__init__(self, **kwargs)
 
         # Init method to provide a pixel grid
-        self._clip_method = 'fragment'
+        self._clip_method = clip_method
         self._clipper = Clipper()
 
         # Each viewbox has a scene widget, which has a transform that
@@ -66,7 +65,7 @@ class ViewBox(Widget):
         else:
             raise TypeError('Argument "scene" must be None or SubScene.')
         self._scene.add_parent(self)
-        
+
         # Camera is a helper object that handles scene transformation
         # and user interaction.
         if camera is None:
@@ -81,23 +80,22 @@ class ViewBox(Widget):
     @property
     def camera(self):
         """ Get/set the Camera in use by this ViewBox
-        
+
         If a string is given (e.g. 'panzoom', 'turntable', 'fly'). A
         corresponding camera is selected if it already exists in the
         scene, otherwise a new camera is created.
-        
+
         The camera object is made a child of the scene (if it is not
         already in the scene).
-        
+
         Multiple cameras can exist in one scene, although only one can
         be active at a time. A single camera can be used by multiple
         viewboxes at the same time.
         """
         return self._camera
-    
+
     @camera.setter
     def camera(self, cam):
-        
         if isinstance(cam, string_types):
             # Try to select an existing camera
             for child in self.scene.children:
@@ -125,7 +123,7 @@ class ViewBox(Widget):
         
         else:
             raise ValueError('Not a camera object.')
-    
+
     def is_in_scene(self, node):
         """ Get whether the given node is inside the scene of this viewbox.
         """
@@ -233,7 +231,7 @@ class ViewBox(Widget):
         subscene using the configured clipping method.
         """
         # -- Calculate resolution
-        
+
         # Get current transform and calculate the 'scale' of the viewbox
         size = self.size
         transform = event.visual_to_document
@@ -255,34 +253,33 @@ class ViewBox(Widget):
             viewport = self._prepare_viewport(event)
         elif method == 'fbo':
             fbo = self._prepare_fbo(event)
+        else:
+            raise ValueError('Unknown clipping method %s' % method)
 
         # -- Draw
         super(ViewBox, self).draw(event)
 
         event.push_viewbox(self)
-        
+
         # make sure the current drawing system does not attempt to draw
         # the scene.
         event.handled_children.append(self.scene)
-        
         if fbo:
             canvas_transform = event.visual_to_canvas
             offset = canvas_transform.map((0, 0))[:2]
             size = canvas_transform.map(self.size)[:2] - offset
-            
+
             # Ask the canvas to activate the new FBO
             event.push_fbo(fbo, offset, size)
             event.push_node(self.scene)
             try:
                 # Draw subscene to FBO
-                gloo.clear(color=self._bgcolor, depth=True)
                 self.scene.draw(event)
             finally:
                 event.pop_node()
                 event.pop_fbo()
-            
+
             gloo.set_state(cull_face=False)
-            self._myprogram.draw('triangle_strip')
         elif viewport:
             # Push viewport, draw, pop it
             event.push_viewport(viewport)
@@ -299,13 +296,13 @@ class ViewBox(Widget):
                 self.scene.draw(event)
             finally:
                 event.pop_node()
-        else:
-            # Just draw
-            event.push_node(self.scene)
-            try:
-                self.scene.draw(event)
-            finally:
-                event.pop_node()
+        # else:
+        #     # Just draw
+        #     event.push_node(self.scene)
+        #     try:
+        #         self.scene.draw(event)
+        #     finally:
+        #         event.pop_node()
 
         event.pop_viewbox()
 
@@ -314,7 +311,7 @@ class ViewBox(Widget):
         # on every frame.
         if root is None:
             root = self.scene
-            
+
         for ch in root.children:
             if isinstance(ch, Visual):
                 try:
@@ -348,8 +345,6 @@ class ViewBox(Widget):
         because I do not understand the component system yet.
         """
 
-        from vispy import gloo
-
         render_vertex = """
             attribute vec3 a_position;
             attribute vec2 a_texcoord;
@@ -374,10 +369,10 @@ class ViewBox(Widget):
         # todo: don't do this on every draw
         if True:
             # Create program
-            self._myprogram = gloo.Program(render_vertex, render_fragment)
+            self._fboprogram = gloo.Program(render_vertex, render_fragment)
             # Create texture
             self._tex = gloo.Texture2D((10, 10, 4), interpolation='linear')
-            self._myprogram['u_texture'] = self._tex
+            self._fboprogram['u_texture'] = self._tex
             # Create texcoords and vertices
             # Note y-axis is inverted here because the viewbox coordinate
             # system has origin in the upper-left, but the image is rendered
@@ -385,8 +380,8 @@ class ViewBox(Widget):
             texcoord = np.array([[0, 1], [1, 1], [0, 0], [1, 0]],
                                 dtype=np.float32)
             position = np.zeros((4, 3), np.float32)
-            self._myprogram['a_texcoord'] = gloo.VertexBuffer(texcoord)
-            self._myprogram['a_position'] = self._vert = \
+            self._fboprogram['a_texcoord'] = gloo.VertexBuffer(texcoord)
+            self._fboprogram['a_position'] = self._vert = \
                 gloo.VertexBuffer(position)
 
         # Get fbo, ensure it exists
