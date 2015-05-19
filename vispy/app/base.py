@@ -168,6 +168,12 @@ class BaseCanvasBackend(object):
 
         self._vispy_mouse_data['buttons'].append(ev.button)
         self._vispy_mouse_data['last_event'] = ev
+
+        if not getattr(self, "_double_click_supported", False):
+            # double-click events are not supported by this backend, so we
+            # detect them manually
+            self._vispy_detect_double_click(ev)
+
         return ev
 
     def _vispy_mouse_move(self, **kwargs):
@@ -200,6 +206,12 @@ class BaseCanvasBackend(object):
         if ev.button in self._vispy_mouse_data['buttons']:
             self._vispy_mouse_data['buttons'].remove(ev.button)
         self._vispy_mouse_data['last_event'] = ev
+
+        if not getattr(self, "_double_click_supported", False):
+            # double-click events are not supported by this backend, so we
+            # detect them manually
+            self._vispy_detect_double_click(ev)
+
         return ev
 
     def _vispy_mouse_double_click(self, **kwargs):
@@ -209,6 +221,13 @@ class BaseCanvasBackend(object):
         ev = self._vispy_canvas.events.mouse_double_click(**kwargs)
         self._vispy_mouse_data['last_event'] = ev
         return ev
+
+    def _vispy_detect_double_click(self, ev):
+        # Called on every mouse_press or mouse_release, and calls
+        # _vispy_mouse_double_click if a double-click is calculated.
+        # Should be overridden with an empty function on backends which
+        # natively support double-clicking.
+        pass
 
 
 class BaseTimerBackend(object):
