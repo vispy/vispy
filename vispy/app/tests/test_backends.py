@@ -55,6 +55,7 @@ def _test_module_properties(_module=None):
         '_vispy_mouse_press',
         '_vispy_mouse_release',
         '_vispy_mouse_double_click',
+        '_vispy_detect_double_click',
         '_vispy_get_geometry',
         '_vispy_get_physical_size',
         '_process_backend_kwargs')  # defined in base class
@@ -118,7 +119,7 @@ def _test_module_properties(_module=None):
     # Mouse events are emitted from the CanvasBackend base class.
     ignore = set(['stylus', 'touch', 'mouse_press', 'paint',
                   'mouse_move', 'mouse_release', 'mouse_double_click',
-                  'close'])
+                  'vispy_detect_double_click', 'close'])
     if module_fname == '_egl':
         ignore += ['key_release', 'key_press']
     eventNames = set(canvas.events._emitters.keys()) - ignore

@@ -4,6 +4,7 @@
 
 from ..util import SimpleBunch
 
+
 class BaseApplicationBackend(object):
     """BaseApplicationBackend()
 
@@ -223,11 +224,11 @@ class BaseCanvasBackend(object):
         # Should be overridden with an empty function on backends which
         # natively support double-clicking.
 
-        dt_max = 0.3 # time in seconds for a double-click detection
+        dt_max = 0.3  # time in seconds for a double-click detection
 
         lastev = self._vispy_mouse_data['last_mouse_press']
 
-        if (lastev == None):
+        if lastev is None:
             self._vispy_mouse_data['last_mouse_press'] = ev
             return
 
@@ -237,11 +238,11 @@ class BaseCanvasBackend(object):
         # For a double-click to be detected, the button should be the same,
         # the position should be the same, and the two mouse-presses should
         # be within dt_max.
-        if ((ev.time - lastev.time <= dt_max)
-            & (lastev.pos[0] - ev.pos[0] == 0)
-            & (lastev.pos[1] - ev.pos[1] == 0)
-            & (lastev.button == ev.button)):
-                self._vispy_mouse_double_click(**kwargs)
+        if ((ev.time - lastev.time <= dt_max) &
+           (lastev.pos[0] - ev.pos[0] == 0) &
+           (lastev.pos[1] - ev.pos[1] == 0) &
+           (lastev.button == ev.button)):
+            self._vispy_mouse_double_click(**kwargs)
 
         self._vispy_mouse_data['last_mouse_press'] = ev
 

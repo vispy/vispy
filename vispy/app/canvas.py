@@ -99,6 +99,13 @@ class Canvas(object):
         * touch
         * close
 
+    The ordering of the mouse_double_click, mouse_press, and mouse_release
+    events are not guaranteed to be consistent between backends. Only certain
+    backends natively support double-clicking (currently Qt and WX); on other
+    backends, they are detected manually with a fixed time delay.
+    This can cause problems with accessibility, as increasing the OS detection
+    time or using a dedicated double-click button will not be respected.
+
     """
 
     def __init__(self, title='Vispy canvas', size=(800, 600), position=None,
