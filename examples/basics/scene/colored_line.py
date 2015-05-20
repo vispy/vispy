@@ -9,7 +9,6 @@ Demonstration of various features of Line visual.
 """
 import itertools
 import numpy as np
-import sys
 
 from vispy import app, scene
 from vispy.color import get_colormaps
@@ -47,5 +46,4 @@ timer = app.Timer(.5, connect=on_timer, start=True)
 
 
 if __name__ == '__main__':
-    if sys.flags.interactive != 1:
-        canvas.app.run()
+    canvas.app.run()

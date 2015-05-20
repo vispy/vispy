@@ -14,12 +14,12 @@ class Grid(Widget):
     Widget that automatically sets the position and size of child Widgets to
     proportionally divide its internal area into a grid.
     """
-    def __init__(self, **kwargs):
+    def __init__(self, spacing=6, **kwargs):
         from .viewbox import ViewBox
         self._next_cell = [0, 0]  # row, col
         self._cells = {}
         self._grid_widgets = {}
-        self.spacing = 6
+        self.spacing = spacing
         self._n_added = 0
         self._default_class = ViewBox  # what to add when __getitem__ is used
         Widget.__init__(self, **kwargs)

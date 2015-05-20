@@ -121,6 +121,7 @@ def assert_image_approved(image, standard_file, message=None, **kwargs):
                 raise TypeError("Test result shape %s is not an integer factor"
                                 " larger than standard image shape %s." %
                                 (ims1, ims2))
+            sr = np.round(sr).astype(int)
             image = downsample(image, sr[0], axis=(0, 1)).astype(image.dtype)
         
         assert_image_match(image, std_image, **kwargs)
