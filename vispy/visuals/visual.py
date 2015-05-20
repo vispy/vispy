@@ -30,6 +30,11 @@ class Visual(object):
     bounds_change : Event
         Emitted when the bounds of the visual have changed.
 
+    Notes
+    -----
+    - When used in the scenegraph, all Visual classes are mixed with
+    `vispy.scene.Node` in order to implement the methods, attributes and
+    capabilities required for their usage within it.
     """
 
     def __init__(self):
@@ -37,7 +42,7 @@ class Visual(object):
         self.events = EmitterGroup(source=self,
                                    auto_connect=True,
                                    update=Event,
-                                   bounds_change=Event,
+                                   bounds_change=Event
                                    )
         self._gl_state = {'preset': None}
         self._filters = set()
@@ -49,7 +54,7 @@ class Visual(object):
         """
         self._gl_state = kwargs
         self._gl_state['preset'] = preset
-    
+
     def update_gl_state(self, *args, **kwargs):
         """Modify the set of GL state parameters to use when drawing
         this visual.
@@ -59,7 +64,7 @@ class Visual(object):
         elif len(args) != 0:
             raise TypeError("Only one positional argument allowed.")
         self._gl_state.update(kwargs)
-        
+
     def _update(self):
         """
         This method is called internally whenever the Visual needs to be 
@@ -134,7 +139,7 @@ class Visual(object):
         key = (shader, name)
         if key in self._hooks:
             return self._hooks[key]
-        
+
         prog = getattr(self, '_program', None)
         if prog is None:
             raise NotImplementedError("%s shader does not implement hook '%s'"
@@ -146,7 +151,7 @@ class Visual(object):
             prog.frag[name] = hook
         self._hooks[key] = hook
         return hook
-        
+
     def attach(self, filter):
         """Attach a Filter to this visual. 
         
@@ -154,7 +159,7 @@ class Visual(object):
         """
         filter._attach(self)
         self._filters.add(filter)
-        
+
     def detach(self, filter):
         """Detach a filter.
         """
