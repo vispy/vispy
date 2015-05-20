@@ -48,10 +48,9 @@ class Widget(Node):
         # A mesh is required because GL lines cannot be drawn with predictable
         # shape across all platforms.
         self._border_color = self._bgcolor = Color(None)
+        self._face_colors = None
         self._visual = MeshVisual(mode='triangles')
         self._visual.set_gl_state('translucent', depth_test=False)
-        self.border_color = border_color
-        self.bgcolor = bgcolor
 
         # whether this widget should clip its children
         # (todo)
@@ -71,6 +70,8 @@ class Widget(Node):
         self._widgets = []
         self.pos = pos
         self.size = size
+        self.border_color = border_color
+        self.bgcolor = bgcolor
 
     @property
     def pos(self):
@@ -138,6 +139,7 @@ class Widget(Node):
     def border_color(self, b):
         self._border_color = Color(b)
         self._update_colors()
+        self._update_line()
         self.update()
 
     @property
@@ -150,6 +152,7 @@ class Widget(Node):
     def bgcolor(self, value):
         self._bgcolor = Color(value)
         self._update_colors()
+        self._update_line()
         self.update()
 
     @property
@@ -207,8 +210,14 @@ class Widget(Node):
             [5, 3, 1],
             [1, 5, 7],
         ], dtype=np.int32)
-        self._visual.set_data(vertices=pos, faces=faces,
-                              face_colors=self._face_colors)
+        start = 8 if self._border_color.is_blank else 0
+        stop = 8 if self._bgcolor.is_blank else 10
+        face_colors = None
+        if self._face_colors is not None:
+            face_colors = self._face_colors[start:stop]
+            print(len(face_colors))
+        self._visual.set_data(vertices=pos, faces=faces[start:stop],
+                              face_colors=face_colors)
 
     def _update_colors(self):
         self._face_colors = np.concatenate(

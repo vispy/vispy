@@ -296,13 +296,6 @@ class ViewBox(Widget):
                 self.scene.draw(event)
             finally:
                 event.pop_node()
-        # else:
-        #     # Just draw
-        #     event.push_node(self.scene)
-        #     try:
-        #         self.scene.draw(event)
-        #     finally:
-        #         event.pop_node()
 
         event.pop_viewbox()
 

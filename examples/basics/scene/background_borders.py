@@ -5,7 +5,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 """
-Demonstration of various features of Line visual.
+Demonstration of borders and background colors.
 """
 
 from vispy.scene import SceneCanvas
