@@ -215,7 +215,6 @@ class Widget(Node):
         face_colors = None
         if self._face_colors is not None:
             face_colors = self._face_colors[start:stop]
-            print(len(face_colors))
         self._visual.set_data(vertices=pos, faces=faces[start:stop],
                               face_colors=face_colors)
 
