@@ -5,17 +5,29 @@
 from __future__ import division
 
 from ..util.event import EmitterGroup, Event
-from .shaders import StatementList
+from .shaders import StatementList, MultiProgram
+from .transforms import TransformSystem
 from .. import gloo
 
 """
 Uses for VisualView:
     * Display visual with multiple transforms
     * Display visual with multiple clipping geometries
-    * Display with solid color for picking
-    * Display with filtered colors for anaglyph
+    
+    * Display with solid color for picking  XXX This can be done more simply.
+    * Display with filtered colors for anaglyph  XXX This needs to be done with 2-pass render.
     
 """
+class BaseVisual(object):
+    def draw(self):
+        raise NotImplementedError()
+
+    def bounds(self, axis):
+        raise NotImplementedError()
+        
+    def attach(self, filter):
+        raise NotImplementedError()
+        
 
 class VisualShare(object):
     """Contains data that is shared between all views of a visual.
@@ -23,12 +35,12 @@ class VisualShare(object):
     def __init__(self):
         self.draw_mode = 'triangles'
         self.index_buffer = None
-        self.program = visuals.shaders.MultiProgram()
+        self.program = MultiProgram()
         self.gl_state = {}
         self.bounds = {}
 
 
-class Visual(object):
+class Visual(BaseVisual):
     
     def __init__(self, vshare=None, key=None):
         # give subclasses a chance to override the view and share classes
@@ -48,9 +60,9 @@ class Visual(object):
         
         self._vshare = vshare
         self._view_key = key
-        self.transforms = visuals.transforms.TransformSystem()
+        self.transforms = TransformSystem()
         self._program = vshare.program.add_program(key)
-        self._program.tr_sys = self.transforms
+        self._prepare_transforms(self)
 
     def set_gl_state(self, preset=None, **kwargs):
         """Completely define the set of GL state parameters to use when drawing
@@ -100,6 +112,22 @@ class Visual(object):
         Visuals must implement this method to ensure that all program 
         and GL state variables are updated immediately before drawing.
         """
+        raise NotImplementedError()
+
+    @staticmethod
+    def _prepare_transforms(view):
+        """Assign a view's transforms to the proper shader template variables
+        on the view's shader program. 
+        """
+        
+        # Todo: this method can be removed if we somehow enable the shader
+        # to specify exactly which transform functions it needs by name. For
+        # example:
+        #
+        #     // mapping function is automatically defined from the 
+        #     // corresponding transform in the view's TransformSystem
+        #     gl_Position = visual_to_render(a_position);
+        #     
         raise NotImplementedError()
 
     @property

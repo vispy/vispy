@@ -130,11 +130,10 @@ class TransformSystem(object):
 
     """
 
-    def __init__(self, canvas, dpi=None):
-        self._canvas = canvas
+    def __init__(self, canvas=None, dpi=None):
+        self._canvas = None
+        self.canvas = canvas
         self._cache = TransformCache()
-        if dpi is None:
-            dpi = canvas.dpi
         self._dpi = dpi
 
         # Null by default; visuals draw directly to the document coordinate
@@ -142,8 +141,6 @@ class TransformSystem(object):
         self._visual_to_document = NullTransform()
         self._document_to_framebuffer = STTransform()
         self._framebuffer_to_render = STTransform()
-
-        self.auto_configure()
 
     def auto_configure(self):
         """Automatically configure the TransformSystem:
@@ -172,13 +169,32 @@ class TransformSystem(object):
         """ The Canvas being drawn to.
         """
         return self._canvas
+    
+    @canvas.setter
+    def canvas(self, c):
+        if c != self._canvas:
+            if self._canvas is not None:
+                self._canvas.events.resize.disconnect(self._canvas_resized)
+            self._canvas = c
+            if c is not None:
+                c.events.resize.connect(self._canvas_resized)
+                self.auto_configure()
+    
+    def _canvas_resized(self, event):
+        self.auto_configure()
 
     @property
     def dpi(self):
         """ Physical resolution of the document coordinate system (dots per
         inch).
         """
-        return self._dpi
+        if self._dpi is None:
+            if self._canvas is None:
+                return None
+            else:
+                return self.canvas.dpi
+        else:
+            return self._dpi
 
     @dpi.setter
     def dpi(self, dpi):
