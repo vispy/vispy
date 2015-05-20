@@ -3,6 +3,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division
+import weakref
 
 from ..util.event import EmitterGroup, Event
 from .shaders import StatementList, MultiProgram
@@ -32,17 +33,17 @@ class BaseVisual(object):
 class VisualShare(object):
     """Contains data that is shared between all views of a visual.
     """
-    def __init__(self):
+    def __init__(self, vcode, fcode):
         self.draw_mode = 'triangles'
         self.index_buffer = None
-        self.program = MultiProgram()
+        self.program = MultiProgram(vcode, fcode)
         self.gl_state = {}
         self.bounds = {}
 
 
 class Visual(BaseVisual):
     
-    def __init__(self, vshare=None, key=None):
+    def __init__(self, vshare=None, key=None, vcode=None, fcode=None):
         # give subclasses a chance to override the view and share classes
         self._view_class = getattr(self, '_view_class', VisualView)
         self._share_class = getattr(self, '_share_class', VisualShare)
@@ -54,10 +55,11 @@ class Visual(BaseVisual):
                                    )
         
         if vshare is None:
-            vshare = self._share_class()
+            vshare = self._share_class(vcode, fcode)
             assert key is None
             key = 'default'
         
+        self._views = weakref.WeakValueDictionary()
         self._vshare = vshare
         self._view_key = key
         self.transforms = TransformSystem()
@@ -87,9 +89,17 @@ class Visual(BaseVisual):
             cache[axis] = self._compute_bounds(axis)
         return cache[axis]
 
-    def view(self, key):
+    def view(self, key=None):
         """Return a new view of this visual.
         """
+        if key is None:
+            i = 0
+            while True:
+                key = 'view_%d' % i
+                if key not in self._views:
+                    break
+                i += 1
+                
         return self._view_class(self, key)
 
     @property
@@ -172,8 +182,9 @@ class Visual(BaseVisual):
 
 class VisualView(Visual):
     def __init__(self, visual, key):
-        Visual.__init__(vshare=visual.vshare, key=key)
         self._visual = visual
+        visual._views[key] = self
+        Visual.__init__(self, vshare=visual._vshare, key=key)
         
     @property
     def visual(self):
@@ -182,6 +193,9 @@ class VisualView(Visual):
     def _prepare_draw(self, view=None):
         self._visual._prepare_draw(view=view)
         
+    def _prepare_transforms(self, view):
+        self._visual._prepare_transforms(view)
+    
     def _compute_bounds(self, axis):
         self._visual._compute_bounds(axis)
         

@@ -4,24 +4,25 @@ from vispy import app, gloo, visuals
 
 class LineVisual(visuals.Visual):
     def __init__(self, pos=None):
-        
-        visuals.Visual.__init__(self)
-        self.shared_program.vert = """
-        attribute vec3 a_pos;
+        vcode = """
+        attribute vec2 a_pos;
         
         void main() {
-            gl_Position = $transform(vec4(a_pos, 1)); 
+            gl_Position = $transform(vec4(a_pos, 0, 1)); 
         }
         """
         
-        self.shared_program.frag = """
+        fcode = """
         void main() {
             gl_FragColor = $color;
         }
         """
         
+        visuals.Visual.__init__(self, vcode=vcode, fcode=fcode)
+        
         self.pos_buf = gloo.VertexBuffer()
-        self.program['a_pos'] = self.pos_buf
+        self.shared_program['a_pos'] = self.pos_buf
+        self.shared_program.frag['color'] = (1, 1, 0.5, 1)
         self._need_upload = False
         
         self._draw_mode = 'line_strip'
@@ -44,10 +45,13 @@ class LineVisual(visuals.Visual):
     
 
 if __name__ == '__main__':
+    import sys
     import numpy as np
+    from vispy.visuals.transforms import STTransform
     
-    canvas = app.Canvas(keys='interactive', size=(600, 600))
-    line = LineVisual(pos=np.random.normal(size=(100,2), loc=300, scale=50))
+    canvas = app.Canvas(keys='interactive', size=(600, 600), show=True)
+    pos = np.random.normal(size=(100,2), loc=300, scale=50).astype('float32')
+    line = LineVisual(pos=pos)
     #line.attach(ColorFilter((0.5, 1, 1, 1)))
     
     v1 = line.view()
@@ -59,7 +63,7 @@ if __name__ == '__main__':
     #v2.attach(ColorFilter((1, 1, 1, 0.5)), all_views=False)
     
     @canvas.connect
-    def on_draw(self, ev):
+    def on_draw(event):
         line.draw()
         v1.draw()
         v2.draw()

@@ -14,7 +14,7 @@ class MultiProgram(object):
     very much like a single ModularProgram, but internally manages many
     programs.
     """
-    def __init__(self, vcode=None, fcode=None):
+    def __init__(self, vcode='', fcode=''):
         self._vcode = vcode
         self._fcode = fcode
         self._programs = weakref.WeakValueDictionary()

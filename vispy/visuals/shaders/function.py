@@ -169,19 +169,7 @@ class Function(ShaderObject):
             for dep in dependencies:
                 self._add_dep(dep)
         
-        # Get and strip code
-        if isinstance(code, Function):
-            code = code._code
-        elif not isinstance(code, string_types):
-            raise ValueError('Function needs a string or Function; got %s.' %
-                             type(code))
-        self._code = self._clean_code(code)
-        
-        # (name, args, rval)
-        self._signature = None
-        
-        # $placeholders parsed from the code
-        self._template_vars = None
+        self.code = code
         
         # Expressions replace template variables (also our dependencies)
         self._expressions = OrderedDict()
@@ -192,10 +180,6 @@ class Function(ShaderObject):
         # Stuff to do at the end
         self._assignments = OrderedDict()
         
-        # Create static Variable instances for any global variables declared
-        # in the code
-        self._static_vars = None
-    
     def __setitem__(self, key, val):
         """ Setting of replacements through a dict-like syntax.
         
@@ -360,6 +344,26 @@ class Function(ShaderObject):
         """
         return self._code
     
+    @code.setter
+    def code(self, code):
+        # Get and strip code
+        if isinstance(code, Function):
+            code = code._code
+        elif not isinstance(code, string_types):
+            raise ValueError('Function needs a string or Function; got %s.' %
+                             type(code))
+        self._code = self._clean_code(code)
+
+        # (name, args, rval)
+        self._signature = None
+        
+        # $placeholders parsed from the code
+        self._template_vars = None
+        
+        # Create static Variable instances for any global variables declared
+        # in the code
+        self._static_vars = None
+    
     @property
     def template_vars(self):
         if self._template_vars is None:
@@ -515,6 +519,9 @@ class MainFunction(Function):
         return ('main', [], 'void')
 
     def static_names(self):
+        if self._static_vars is not None:
+            return self._static_vars
+        
         # parse static variables
         names = Function.static_names(self)
         
@@ -526,7 +533,8 @@ class MainFunction(Function):
             names.append(f[0])
             for arg in f[1]:
                 names.append(arg[1])
-        
+                
+        self._static_vars = names
         return names
 
     def add_chain(self, var):
@@ -629,6 +637,16 @@ class FunctionChain(Function):
             self._args = []
         
         self.changed(code_changed=True)
+        
+    @property
+    def code(self):
+        # Code is generated at compile time; hopefully it is not requested
+        # before then..
+        return None
+    
+    @code.setter
+    def code(self, c):
+        raise TypeError("Cannot set code property on FunctionChain.")
 
     @property
     def template_vars(self):
