@@ -42,8 +42,8 @@ class Visual(object):
         self.events = EmitterGroup(source=self,
                                    auto_connect=True,
                                    update=Event,
-                                   bounds_change=Event,
-        )
+                                   bounds_change=Event
+                                   )
         self._gl_state = {'preset': None}
         self._filters = set()
         self._hooks = {}
