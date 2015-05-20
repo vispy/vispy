@@ -205,6 +205,10 @@ class CanvasBackend(GLCanvas, BaseCanvasBackend):
         BaseCanvasBackend.__init__(self, *args)
         p = self._process_backend_kwargs(kwargs)
 
+        # WX supports OS double-click events, so we set this here to
+        # avoid double events
+        self._double_click_supported = True
+
         # Set config
         self._gl_attribs = _set_config(p.context.config)
         # Deal with context
@@ -408,8 +412,10 @@ class CanvasBackend(GLCanvas, BaseCanvasBackend):
             elif evt.RightDClick():
                 button = 2
             else:
-                evt.Skip()            
+                evt.Skip()
             self._vispy_mouse_press(pos=pos, button=button, modifiers=mods)
+            self._vispy_mouse_double_click(pos=pos, button=button,
+                                           modifiers=mods)
         evt.Skip()
 
     def on_key_down(self, evt):

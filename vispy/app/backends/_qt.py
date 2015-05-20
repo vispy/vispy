@@ -265,6 +265,10 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
         if p.show:
             self._vispy_set_visible(True)
 
+        # Qt supports OS double-click events, so we set this here to
+        # avoid double events
+        self._double_click_supported = True
+
     def _vispy_warmup(self):
         etime = time() + 0.25
         while time() < etime:
@@ -337,6 +341,16 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
             native=ev,
             pos=(ev.pos().x(), ev.pos().y()),
             button=BUTTONMAP[ev.button()],
+            modifiers=self._modifiers(ev),
+        )
+
+    def mouseDoubleClickEvent(self, ev):
+        if self._vispy_canvas is None:
+            return
+        self._vispy_mouse_double_click(
+            native=ev,
+            pos=(ev.pos().x(), ev.pos().y()),
+            button=BUTTONMAP.get(ev.button(), 0),
             modifiers=self._modifiers(ev),
         )
 
