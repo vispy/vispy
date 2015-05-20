@@ -129,7 +129,7 @@ class CanvasBackend(BaseCanvasBackend):
         self._vispy_canvas.events.mouse_release(pos=(x, y), button=1,
                                                 modifiers=())
         self._vispy_canvas.events.mouse_double_click(pos=(x, y), button=1,
-                                                modifiers=())
+                                                     modifiers=())
         self._vispy_canvas.events.mouse_move(pos=(x, y), modifiers=())
         self._vispy_canvas.events.mouse_wheel(pos=(x, y), delta=(0, 0),
                                               modifiers=())
