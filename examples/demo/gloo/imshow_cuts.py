@@ -159,6 +159,10 @@ class Canvas(app.Canvas):
 
         yf = 1 - y/(h/2.)
         xf = x/(w/2.) - 1
+
+        x_norm = (x*512)//w
+        y_norm = (y*512)//h
+
         P = np.zeros((4+4+514+514, 2), np.float32)
 
         x_baseline = P[:4]
@@ -170,11 +174,11 @@ class Canvas(app.Canvas):
         y_baseline[...] = (xf, -1), (xf, -1), (xf, 1), (xf, 1)
 
         x_profile[1:-1, 0] = np.linspace(-1, 1, 512)
-        x_profile[1:-1, 1] = yf+0.15*I[y, :]
+        x_profile[1:-1, 1] = yf+0.15*I[y_norm, :]
         x_profile[0] = x_profile[1]
         x_profile[-1] = x_profile[-2]
 
-        y_profile[1:-1, 0] = xf+0.15*I[:, x]
+        y_profile[1:-1, 0] = xf+0.15*I[:, x_norm]
         y_profile[1:-1, 1] = np.linspace(-1, 1, 512)
         y_profile[0] = y_profile[1]
         y_profile[-1] = y_profile[-2]
