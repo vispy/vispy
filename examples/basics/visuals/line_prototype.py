@@ -52,18 +52,22 @@ if __name__ == '__main__':
     canvas = app.Canvas(keys='interactive', size=(600, 600), show=True)
     pos = np.random.normal(size=(100,2), loc=300, scale=50).astype('float32')
     line = LineVisual(pos=pos)
+    line.transforms.canvas = canvas
     #line.attach(ColorFilter((0.5, 1, 1, 1)))
     
     v1 = line.view()
+    v1.transforms.canvas = canvas
     v1.transform = STTransform(scale=(0.5, 2), translate=(100, 100))
     #v1.attach(Clipper(...), all_views=False)
     
     v2 = line.view()
+    v2.transforms.canvas = canvas
     v2.transform = STTransform(scale=(2, 0.5), translate=(-100, -100))
     #v2.attach(ColorFilter((1, 1, 1, 0.5)), all_views=False)
     
     @canvas.connect
     def on_draw(event):
+        canvas.context.set_viewport(0, 0, *canvas.physical_size)
         line.draw()
         v1.draw()
         v2.draw()
