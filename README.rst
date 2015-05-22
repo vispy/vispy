@@ -142,5 +142,5 @@ External links
    :target: https://ci.appveyor.com/project/Eric89GXL/vispy/branch/master
 .. |Coverage Status| image:: https://coveralls.io/repos/vispy/vispy/badge.png?branch=master
    :target: https://coveralls.io/r/vispy/vispy?branch=master
-.. |Zenodo Link| image:: https://zenodo.org/badge/5822/vispy/vispy.png
-   :target: http://dx.doi.org/10.5281/zenodo.11532
+.. |Zenodo Link| image:: https://zenodo.org/badge/5822/vispy/vispy.svg
+   :target: http://dx.doi.org/10.5281/zenodo.17869
