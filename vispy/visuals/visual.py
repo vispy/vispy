@@ -10,17 +10,30 @@ from .shaders import StatementList, MultiProgram
 from .transforms import TransformSystem
 from .. import gloo
 
-"""
-Uses for VisualView:
-    * Display visual with multiple transforms
-    * Display visual with multiple clipping geometries
-    
-    * Display with solid color for picking  XXX This can be done more simply.
-    * Display with filtered colors for anaglyph  XXX This needs to be done with 2-pass render.
-    
-"""
-class BaseVisual(object):
+
+class VisualShare(object):
+    """Contains data that is shared between all views of a visual.
+    """
     def __init__(self):
+        self.bounds = {}
+        self.gl_state = {}
+        self.views = weakref.WeakValueDictionary()
+        self.filters = []
+
+
+class BaseVisual(object):
+    def __init__(self, vshare=None, key=None):
+        self._view_class = getattr(self, '_view_class', VisualView)
+        
+        if vshare is None:
+            vshare = VisualShare()
+            assert key is None
+            key = 'default'
+        
+        self._vshare = vshare
+        self._view_key = key
+        self._vshare.views[key] = self
+        
         self.events = EmitterGroup(source=self,
                                    auto_connect=True,
                                    update=Event,
@@ -37,6 +50,19 @@ class BaseVisual(object):
     def transform(self, tr):
         self.transforms.visual_to_document = tr
 
+    def view(self, key=None):
+        """Return a new view of this visual.
+        """
+        if key is None:
+            i = 0
+            while True:
+                key = 'view_%d' % i
+                if key not in self._vshare.views:
+                    break
+                i += 1
+                
+        return self._view_class(self, key)
+
     def draw(self):
         raise NotImplementedError()
 
@@ -48,39 +74,18 @@ class BaseVisual(object):
         
     def detach(self, filter):
         raise NotImplementedError()
-        
-
-class VisualShare(object):
-    """Contains data that is shared between all views of a visual.
-    """
-    def __init__(self, vcode, fcode):
-        self.draw_mode = 'triangles'
-        self.index_buffer = None
-        self.program = MultiProgram(vcode, fcode)
-        self.bounds = {}
-        self.gl_state = {}
-        self.views = weakref.WeakValueDictionary()
-        self.filters = []
 
 
 class Visual(BaseVisual):
-    
     def __init__(self, vshare=None, key=None, vcode=None, fcode=None):
-        # give subclasses a chance to override the view and share classes
-        self._view_class = getattr(self, '_view_class', VisualView)
-        self._share_class = getattr(self, '_share_class', VisualShare)
-        
-        BaseVisual.__init__(self)
-        
+        self._view_class = VisualView
+        BaseVisual.__init__(self, vshare, key)
         if vshare is None:
-            vshare = self._share_class(vcode, fcode)
-            assert key is None
-            key = 'default'
+            self._vshare.draw_mode = 'triangles'
+            self._vshare.index_buffer = None
+            self._vshare.program = MultiProgram(vcode, fcode)
         
-        self._vshare = vshare
-        self._view_key = key
-        self._vshare.views[key] = self
-        self._program = vshare.program.add_program(key)
+        self._program = self._vshare.program.add_program(key)
         self._prepare_transforms(self)
         self._filters = []
         self._hooks = {}
@@ -107,19 +112,6 @@ class Visual(BaseVisual):
         if axis not in cache:
             cache[axis] = self._compute_bounds(axis)
         return cache[axis]
-
-    def view(self, key=None):
-        """Return a new view of this visual.
-        """
-        if key is None:
-            i = 0
-            while True:
-                key = 'view_%d' % i
-                if key not in self._vshare.views:
-                    break
-                i += 1
-                
-        return self._view_class(self, key)
 
     def _compute_bounds(self, *args):
         """Return the (min, max) bounding values of this visual along *axis*
@@ -230,11 +222,11 @@ class Visual(BaseVisual):
             view._filters.remove(filter)
             filter._detach(view)
         
-        
+
 class VisualView(Visual):
     def __init__(self, visual, key):
         self._visual = visual
-        Visual.__init__(self, vshare=visual._vshare, key=key)
+        Visual.__init__(self, visual._vshare, key)
         for filter in self._vshare.filters:
             filter._attach(self)
         
@@ -254,7 +246,7 @@ class VisualView(Visual):
     def __repr__(self):
         return '<VisualView on %r>' % self._visual
 
-
+        
 class CompoundVisual(BaseVisual):
     """Visual consisting entirely of sub-visuals.
     """
