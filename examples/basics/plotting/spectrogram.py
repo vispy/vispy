@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2014, Vispy Development Team.
+# Copyright (c) 2015, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
+# vispy: gallery 1
 """
 A spectrogram and waveform plot of 1D data.
 """

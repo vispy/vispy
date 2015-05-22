@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2014, Vispy Development Team.
+# Copyright (c) 2015, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from ..scene import (Image, LinePlot, Volume, Mesh, Histogram,
@@ -136,7 +136,7 @@ class PlotWidget(ViewBox):
         return mesh
 
     def plot(self, data, color='k', symbol='o', line_kind='-', width=1.,
-             marker_size=0, edge_color='k', face_color='k', edge_width=1.):
+             marker_size=0., edge_color='k', face_color='k', edge_width=1.):
         """Plot a series of data using lines and markers
 
         Parameters
@@ -223,7 +223,7 @@ class PlotWidget(ViewBox):
         self._set_camera(PanZoomCamera)
         return spec
 
-    def volume(self, vol, clim=None, style='mip', threshold=None,
+    def volume(self, vol, clim=None, method='mip', threshold=None,
                cmap='grays'):
         """Show a 3D volume
 
@@ -235,7 +235,7 @@ class PlotWidget(ViewBox):
             The contrast limits. The values in the volume are mapped to
             black and white corresponding to these values. Default maps
             between min and max.
-        style : {'mip', 'iso'}
+        method : {'mip', 'iso', 'translucent', 'additive'}
             The render style to use. See corresponding docs for details.
             Default 'mip'.
         threshold : float
@@ -253,7 +253,7 @@ class PlotWidget(ViewBox):
         --------
         Volume
         """
-        volume = Volume(vol, clim, style, threshold, cmap=cmap)
+        volume = Volume(vol, clim, method, threshold, cmap=cmap)
         self.add(volume)
         self._set_camera(TurntableCamera, fov=30.)
         return volume
