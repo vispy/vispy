@@ -251,6 +251,7 @@ class CompoundVisual(BaseVisual):
     """Visual consisting entirely of sub-visuals.
     """
     def __init__(self, subvisuals):
+        self._view_class = CompoundVisualView
         BaseVisual.__init__(self)
         self._subvisuals = subvisuals
         for v in subvisuals:
@@ -281,3 +282,34 @@ class CompoundVisual(BaseVisual):
         for v in self._subvisuals:
             v.detach(filter, v)
     
+
+class CompoundVisualView(CompoundVisual):
+    def __init__(self, visual, key):
+        self._visual = visual
+        
+        # Create a view on each sub-visual 
+        subv = [v.view() for v in visual._subvisuals]
+        CompoundVisual.__init__(self, subv)
+        
+        # Attach any shared filters 
+        for filter in self._vshare.filters:
+            for v in self._subvisuals:
+                filter._attach(v)
+        
+    @property
+    def visual(self):
+        return self._visual
+        
+    def _prepare_draw(self, view=None):
+        self._visual._prepare_draw(view=view)
+        
+    def _prepare_transforms(self, view):
+        self._visual._prepare_transforms(view)
+    
+    def _compute_bounds(self, axis):
+        self._visual._compute_bounds(axis)
+        
+    def __repr__(self):
+        return '<VisualView on %r>' % self._visual
+
+        

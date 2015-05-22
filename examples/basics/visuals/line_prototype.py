@@ -90,7 +90,7 @@ if __name__ == '__main__':
     tr = shadow.transforms.document_to_framebuffer.inverse
     shadow.attach(Clipper((20, 20, 260, 260), transform=tr), view=shadow)
     
-    ## And make a second view of the line with different clipping bounds
+    # And make a second view of the line with different clipping bounds
     view = line.view()
     view.transforms.canvas = canvas
     view.transform = STTransform(scale=(2, 0.5), translate=(450, 150))
@@ -104,6 +104,21 @@ if __name__ == '__main__':
     tr = plot.transforms.document_to_framebuffer.inverse
     plot.attach(Clipper((20, 320, 260, 260), transform=tr), view=plot)
 
+    # And make a view on the compound 
+    view2 = plot.view()
+    view2.transforms.canvas = canvas
+    view2.transform = STTransform(scale=(1.5, 1), translate=(450, 400))
+    tr = view2.transforms.document_to_framebuffer.inverse
+    view2.attach(Clipper((320, 320, 260, 260), transform=tr), view=view2)
+    
+    # And a shadow for the view
+    shadow2 = plot.view()
+    shadow2.transforms.canvas = canvas
+    shadow2.transform = STTransform(scale=(1.5, 1), translate=(455, 405))
+    shadow2.attach(ColorFilter((0, 0, 0, 0.6)), view=shadow2)
+    tr = shadow2.transforms.document_to_framebuffer.inverse
+    shadow2.attach(Clipper((320, 320, 260, 260), transform=tr), view=shadow2)
+    
 
     # Proposed collections API
     #
@@ -124,7 +139,8 @@ if __name__ == '__main__':
         line.draw()
         view.draw()
         plot.draw()
-        
+        shadow2.draw()
+        view2.draw()
 
     if sys.flags.interactive != 1:
         app.run()
