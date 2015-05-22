@@ -37,8 +37,9 @@ class VisualShare(object):
         self.draw_mode = 'triangles'
         self.index_buffer = None
         self.program = MultiProgram(vcode, fcode)
-        self.gl_state = {}
         self.bounds = {}
+        self.gl_state = {}
+        self.views = weakref.WeakValueDictionary()
 
 
 class Visual(BaseVisual):
@@ -59,12 +60,14 @@ class Visual(BaseVisual):
             assert key is None
             key = 'default'
         
-        self._views = weakref.WeakValueDictionary()
         self._vshare = vshare
         self._view_key = key
+        self._vshare.views[key] = self
         self.transforms = TransformSystem()
         self._program = vshare.program.add_program(key)
         self._prepare_transforms(self)
+        self._filters = []
+        self._hooks = {}
 
     def set_gl_state(self, preset=None, **kwargs):
         """Completely define the set of GL state parameters to use when drawing
@@ -96,7 +99,7 @@ class Visual(BaseVisual):
             i = 0
             while True:
                 key = 'view_%d' % i
-                if key not in self._views:
+                if key not in self._vshare.views:
                     break
                 i += 1
                 
@@ -176,14 +179,48 @@ class Visual(BaseVisual):
         # check self._vshare for cached bounds before computing
         return None
         
-    def attach(self, component, all_views=True):
-        pass
-    
+    def _get_hook(self, shader, name):
+        """Return a FunctionChain that Filters may use to modify the program.
+        
+        *shader* should be "frag" or "vert"
+        *name* should be "pre" or "post"
+        """
+        assert name in ('pre', 'post')
+        key = (shader, name)
+        if key in self._hooks:
+            return self._hooks[key]
+        
+        hook = StatementList()
+        if shader == 'vert':
+            self.view_program.vert[name] = hook
+        elif shader == 'frag':
+            self.view_program.frag[name] = hook
+        self._hooks[key] = hook
+        return hook
+        
+    def attach(self, filter, view=None):
+        """Attach a Filter to this visual. 
+        
+        Each filter modifies the appearance or behavior of the visual.
+        """
+        views = self._vshare.views.values() if view is None else [view]
+        for view in views:
+            view._filters.append(filter)
+            filter._attach(view)
+        
+    def detach(self, filter, view=None):
+        """Detach a filter.
+        """
+        views = [self._vshare.views] if view is None else [view]
+        for view in views:
+            view._filters.remove(filter)
+            filter._detach(view)
+        
+        
 
 class VisualView(Visual):
     def __init__(self, visual, key):
         self._visual = visual
-        visual._views[key] = self
         Visual.__init__(self, vshare=visual._vshare, key=key)
         
     @property

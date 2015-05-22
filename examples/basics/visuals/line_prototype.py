@@ -1,4 +1,5 @@
 from vispy import app, gloo, visuals
+from vispy.visuals.components import Clipper, Alpha, ColorFilter
 
         
 
@@ -53,7 +54,7 @@ if __name__ == '__main__':
     pos = np.random.normal(size=(100,2), loc=300, scale=50).astype('float32')
     line = LineVisual(pos=pos)
     line.transforms.canvas = canvas
-    #line.attach(ColorFilter((0.5, 1, 1, 1)))
+    line.attach(ColorFilter((0.5, 1, 1, 1)))
     
     v1 = line.view()
     v1.transforms.canvas = canvas
