@@ -194,7 +194,8 @@ class Triangulation(object):
                     assert (i != front[ind1] and 
                             front[ind1] != front[ind2] and 
                             front[ind2] != i)
-                    self._add_tri(i, front[ind1], front[ind2], source='smooth1')
+                    self._add_tri(i, front[ind1], front[ind2],
+                                  source='smooth1')
                     front.pop(ind1)
             #debug("Finished smoothing front.")
             
@@ -810,9 +811,9 @@ class Triangulation(object):
         Return 1 if edges intersect completely (endpoints excluded)
         """
         h12 = self._intersect_edge_arrays(self.pts[np.array(edge1)], 
-                                         self.pts[np.array(edge2)])
+                                          self.pts[np.array(edge2)])
         h21 = self._intersect_edge_arrays(self.pts[np.array(edge2)], 
-                                         self.pts[np.array(edge1)])
+                                          self.pts[np.array(edge1)])
         err = np.geterr()
         np.seterr(divide='ignore', invalid='ignore')
         try:
