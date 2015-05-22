@@ -68,8 +68,6 @@ class STTransform(BaseTransform):
     def __init__(self, scale=None, translate=None):
         super(STTransform, self).__init__()
 
-        self._update_map = True
-        self._update_imap = True
         self._scale = np.ones(4, dtype=np.float32)
         self._translate = np.zeros(4, dtype=np.float32)
 
@@ -78,6 +76,7 @@ class STTransform(BaseTransform):
         t = ((0.0, 0.0, 0.0, 0.0) if translate is None else
              as_vec4(translate, default=(0, 0, 0, 0)))
         self._set_st(s, t)
+        self._update_shaders()
 
     @arg_to_vec4
     def map(self, coords):
@@ -97,17 +96,9 @@ class STTransform(BaseTransform):
         return m
 
     def shader_map(self):
-        if self._update_map:
-            self._shader_map['scale'] = self.scale
-            self._shader_map['translate'] = self.translate
-            self._update_map = False
         return self._shader_map
 
     def shader_imap(self):
-        if self._update_imap:
-            self._shader_imap['scale'] = self.scale
-            self._shader_imap['translate'] = self.translate
-            self._update_imap = False
         return self._shader_imap
 
     @property
@@ -140,10 +131,15 @@ class STTransform(BaseTransform):
             update = True
 
         if update:
-            self._update_map = True
-            self._update_imap = True
+            self._update_shaders()
             self.update()   # inform listeners there has been a change
 
+    def _update_shaders(self):
+        self._shader_map['scale'] = self.scale
+        self._shader_map['translate'] = self.translate
+        self._shader_imap['scale'] = self.scale
+        self._shader_imap['translate'] = self.translate
+    
     def move(self, move):
         """Change the translation of this transform by the amount given.
 

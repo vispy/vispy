@@ -4,12 +4,13 @@ from vispy.visuals.components import Clipper, Alpha, ColorFilter
         
 
 class LineVisual(visuals.Visual):
-    def __init__(self, pos=None):
+    def __init__(self, pos=None, color=(1, 1, 1, 1)):
         vcode = """
         attribute vec2 a_pos;
         
         void main() {
             gl_Position = $transform(vec4(a_pos, 0, 1)); 
+            gl_PointSize = 10;
         }
         """
         
@@ -23,10 +24,11 @@ class LineVisual(visuals.Visual):
         
         self.pos_buf = gloo.VertexBuffer()
         self.shared_program['a_pos'] = self.pos_buf
-        self.shared_program.frag['color'] = (1, 1, 1, 1)
+        self.shared_program.frag['color'] = color
         self._need_upload = False
         
         self._draw_mode = 'line_strip'
+        self.set_gl_state('translucent', depth_test=False)
         
         if pos is not None:
             self.set_data(pos)
@@ -42,8 +44,22 @@ class LineVisual(visuals.Visual):
     
     @staticmethod
     def _prepare_transforms(view):
-        view.view_program.vert['transform'] = view.transforms.get_full_transform()
+        tr = view.transforms.get_full_transform()
+        view.view_program.vert['transform'] = tr
     
+
+class PointVisual(LineVisual):
+    def __init__(self, pos=None, color=(1, 1, 1, 1)):
+        LineVisual.__init__(self, pos, color)
+        self._draw_mode = 'points'
+    
+
+class PlotLineVisual(visuals.CompoundVisual):
+    def __init__(self, pos=None, line_color=(1, 1, 1, 1), point_color=(1, 1, 1, 1)):
+        self._line = LineVisual(pos, color=line_color)
+        self._point = PointVisual(pos, color=point_color)
+        visuals.CompoundVisual.__init__(self, [self._line, self._point])
+
 
 if __name__ == '__main__':
     import sys
@@ -71,17 +87,32 @@ if __name__ == '__main__':
     shadow.transforms.canvas = canvas
     shadow.transform = STTransform(scale=(2, 1), translate=(25, 25))
     shadow.attach(ColorFilter((0, 0, 0, 0.6)), view=shadow)
-    shadow.set_gl_state('translucent', depth_test=False)
     tr = shadow.transforms.document_to_framebuffer.inverse
     shadow.attach(Clipper((20, 20, 260, 260), transform=tr), view=shadow)
     
-    # And make a second view of the line with different clipping bounds
+    ## And make a second view of the line with different clipping bounds
     view = line.view()
     view.transforms.canvas = canvas
     view.transform = STTransform(scale=(2, 0.5), translate=(450, 150))
     tr = view.transforms.document_to_framebuffer.inverse
     view.attach(Clipper((320, 20, 260, 260), transform=tr), view=view)
 
+    # Make a compound visual
+    plot = PlotLineVisual(pos, (0.5, 1, 0.5, 0.2), (0.5, 1, 1, 0.3))
+    plot.transforms.canvas = canvas
+    plot.transform = STTransform(translate=(80, 450), scale=(1.5, 1))
+    tr = plot.transforms.document_to_framebuffer.inverse
+    plot.attach(Clipper((20, 320, 260, 260), transform=tr), view=plot)
+
+
+    # Proposed collections API
+    #
+    # line2 = LineVisual(pos=pos + 20)
+    # collection = VisualCollection([line, line2])
+    # 
+    # def on_draw(event):
+    #     collection.draw()  # draws both lines in one pass
+    #     
 
     
     @canvas.connect
@@ -92,6 +123,7 @@ if __name__ == '__main__':
         shadow.draw()
         line.draw()
         view.draw()
+        plot.draw()
         
 
     if sys.flags.interactive != 1:

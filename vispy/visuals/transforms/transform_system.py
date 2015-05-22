@@ -4,7 +4,8 @@
 
 from __future__ import division
 
-from .linear import NullTransform, STTransform
+from .linear import STTransform, NullTransform
+from .chain import ChainTransform
 from ._util import TransformCache
 
 
@@ -136,11 +137,12 @@ class TransformSystem(object):
         self._cache = TransformCache()
         self._dpi = dpi
 
-        # Null by default; visuals draw directly to the document coordinate
-        # system.
-        self._visual_to_document = NullTransform()
-        self._document_to_framebuffer = STTransform()
-        self._framebuffer_to_render = STTransform()
+        # Assign a ChainTransform for each step. This allows us to always
+        # return the same transform objects regardless of how the user
+        # configures the system.
+        self._visual_to_document = ChainTransform([NullTransform()])
+        self._document_to_framebuffer = ChainTransform([STTransform()])
+        self._framebuffer_to_render = ChainTransform([STTransform()])
 
     def auto_configure(self):
         """Automatically configure the TransformSystem:
@@ -152,17 +154,21 @@ class TransformSystem(object):
         * framebuffer_to_render maps from the framebuffer coordinate system to
           normalized device coordinates (-1 to 1).
         """
+        # TODO: check that d2f and f2r transforms still contain a single
+        # STTransform (if the user has modified these, then auto-config should
+        # either fail or replace the transforms)
+        
         # By default, this should invert the y axis -- no difference between
         # the scale of logical and physical pixels.
         canvas = self._canvas
         map_from = [(0, 0), canvas.size]
         map_to = [(0, canvas.size[1]), (canvas.size[0], 0)]
-        self._document_to_framebuffer.set_mapping(map_from, map_to)
+        self._document_to_framebuffer.transforms[0].set_mapping(map_from, map_to)
 
         # Automatically configure buffer coordinate system to match the canvas
         map_from = [(0, 0), canvas.size]
         map_to = [(-1, -1), (1, 1)]
-        self._framebuffer_to_render.set_mapping(map_from, map_to)
+        self._framebuffer_to_render.transforms[0].set_mapping(map_from, map_to)
 
     @property
     def canvas(self):
@@ -211,7 +217,7 @@ class TransformSystem(object):
     @visual_to_document.setter
     def visual_to_document(self, tr):
         if self._visual_to_document is not tr:
-            self._visual_to_document = tr
+            self._visual_to_document.transforms = [tr]
 
     @property
     def document_to_framebuffer(self):
@@ -223,7 +229,7 @@ class TransformSystem(object):
     @document_to_framebuffer.setter
     def document_to_framebuffer(self, tr):
         if self._document_to_framebuffer is not tr:
-            self._document_to_framebuffer = tr
+            self._document_to_framebuffer.transforms = [tr]
 
     @property
     def framebuffer_to_render(self):
@@ -235,7 +241,7 @@ class TransformSystem(object):
     @framebuffer_to_render.setter
     def framebuffer_to_render(self, tr):
         if self._framebuffer_to_render is not tr:
-            self._framebuffer_to_render = tr
+            self._framebuffer_to_render.transforms = [tr]
 
     def get_full_transform(self):
         """ Convenience method that returns the composition of all three

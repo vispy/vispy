@@ -99,8 +99,11 @@ class ModularProgram(Program):
             if not isinstance(dep, Variable) or dep.vtype not in settable_vars:
                 continue
             name = self.compiler[dep]
-            logger.debug("    %s = %s", name, dep.value)
             state_id = dep.state_id
             if self._variable_state.get(name, None) != state_id:
                 self[name] = dep.value
                 self._variable_state[name] = state_id
+                logger.debug("    %s = %s **", name, dep.value)
+            else:
+                logger.debug("    %s = %s", name, dep.value)
+                

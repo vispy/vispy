@@ -41,8 +41,9 @@ class ChainTransform(BaseTransform):
         self._transforms = trs
 
         # ChainTransform does not have shader maps
-        self._shader_map = None
-        self._shader_imap = None
+        self._shader_map = FunctionChain("transform_map_chain", [])
+        self._shader_imap = FunctionChain("transform_imap_chain", [])
+        self._rebuild_shaders()
 
     @property
     def transforms(self):
@@ -66,13 +67,18 @@ class ChainTransform(BaseTransform):
         """
         return self._transforms
 
-#     @transforms.setter
-#     def transforms(self, tr):
-#         #if self._enabled:
-#             #raise RuntimeError("Shader is already enabled; cannot modify.")
-#         if not isinstance(tr, list):
-#             raise TypeError("Transform chain must be a list")
-#         self._transforms = tr
+    @transforms.setter
+    def transforms(self, tr):
+        if not isinstance(tr, list):
+            raise TypeError("Transform chain must be a list")
+        
+        for t in self._transforms:
+            t.changed.disconnect(self.update)
+        self._transforms = tr
+        for t in self._transforms:
+            t.changed.connect(self.update)
+        self._rebuild_shaders()
+        self.update()
 
     @property
     def Linear(self):
@@ -113,29 +119,14 @@ class ChainTransform(BaseTransform):
         return obj
 
     def shader_map(self):
-        if self._shader_map is None:
-            self._shader_map = self._make_shader_map(imap=False)
-        else:
-            for tr in self._transforms:
-                tr.shader_map()  # force transform to update its shader
         return self._shader_map
 
     def shader_imap(self):
-        if self._shader_imap is None:
-            self._shader_imap = self._make_shader_map(imap=True)
-        else:
-            for tr in self._transforms:
-                tr.shader_imap()  # force transform to update its shader
         return self._shader_imap
-
-    def _make_shader_map(self, imap):
-        if bool(imap):
-            funcs = [tr.shader_imap() for tr in self.transforms]
-        else:
-            funcs = [tr.shader_map() for tr in reversed(self.transforms)]
-
-        name = "transform_%s_chain" % ('imap' if bool(imap) else 'map')
-        return FunctionChain(name, funcs)
+    
+    def _rebuild_shaders(self):
+        self._shader_map.functions = [tr.shader_map() for tr in reversed(self.transforms)]
+        self._shader_imap.functions = [tr.shader_imap() for tr in self.transforms]
 
     def flat(self):
         """
@@ -186,46 +177,24 @@ class ChainTransform(BaseTransform):
         Add a new transform to the end of this chain.
         """
         self.transforms.append(tr)
+        tr.changed.connect(self.update)
+        self._rebuild_shaders()
         self.update()
-        # Keep simple for now. Let's look at efficienty later
-        # I feel that this class should not decide when to compose transforms
-#         while len(self.transforms) > 0:
-#             pr = tr * self.transforms[-1]
-#             if isinstance(pr, ChainTransform):
-#                 self.transforms.append(tr)
-#                 break
-#             else:
-#                 self.transforms.pop()
-#                 tr = pr
-#                 if len(self.transforms)  == 0:
-#                     self._transforms = [pr]
-#                     break
 
     def prepend(self, tr):
         """
         Add a new transform to the beginning of this chain.
         """
         self.transforms.insert(0, tr)
+        tr.changed.connect(self.update)
+        self._rebuild_shaders()
         self.update()
-        # Keep simple for now. Let's look at efficienty later
-#         while len(self.transforms) > 0:
-#             pr = self.transforms[0] * tr
-#             if isinstance(pr, ChainTransform):
-#                 self.transforms.insert(0, tr)
-#                 break
-#             else:
-#                 self.transforms.pop(0)
-#                 tr = pr
-#                 if len(self.transforms)  == 0:
-#                     self._transforms = [pr]
-#                     break
 
     def __setitem__(self, index, tr):
+        self._transforms[index].changed.disconnect(self.update)
         self._transforms[index] = tr
-        if self._shader_map is not None:
-            self._shader_map[-(index+1)] = tr.shader_map()
-        if self._shader_imap is not None:
-            self._shader_imap[index] = tr.shader_imap()
+        tr.changed.connect(self.update)
+        self._rebuild_shaders()
         self.update()
 
     def __mul__(self, tr):

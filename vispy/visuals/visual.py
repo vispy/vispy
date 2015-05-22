@@ -20,6 +20,23 @@ Uses for VisualView:
     
 """
 class BaseVisual(object):
+    def __init__(self):
+        self.events = EmitterGroup(source=self,
+                                   auto_connect=True,
+                                   update=Event,
+                                   bounds_change=Event,
+                                   )
+        
+        self.transforms = TransformSystem()
+
+    @property
+    def transform(self):
+        return self.transforms.visual_to_document
+    
+    @transform.setter
+    def transform(self, tr):
+        self.transforms.visual_to_document = tr
+
     def draw(self):
         raise NotImplementedError()
 
@@ -27,6 +44,9 @@ class BaseVisual(object):
         raise NotImplementedError()
         
     def attach(self, filter):
+        raise NotImplementedError()
+        
+    def detach(self, filter):
         raise NotImplementedError()
         
 
@@ -50,11 +70,7 @@ class Visual(BaseVisual):
         self._view_class = getattr(self, '_view_class', VisualView)
         self._share_class = getattr(self, '_share_class', VisualShare)
         
-        self.events = EmitterGroup(source=self,
-                                   auto_connect=True,
-                                   update=Event,
-                                   bounds_change=Event,
-                                   )
+        BaseVisual.__init__(self)
         
         if vshare is None:
             vshare = self._share_class(vcode, fcode)
@@ -64,7 +80,6 @@ class Visual(BaseVisual):
         self._vshare = vshare
         self._view_key = key
         self._vshare.views[key] = self
-        self.transforms = TransformSystem()
         self._program = vshare.program.add_program(key)
         self._prepare_transforms(self)
         self._filters = []
@@ -105,14 +120,6 @@ class Visual(BaseVisual):
                 i += 1
                 
         return self._view_class(self, key)
-
-    @property
-    def transform(self):
-        return self.transforms.visual_to_document
-    
-    @transform.setter
-    def transform(self, tr):
-        self.transforms.visual_to_document = tr
 
     def _compute_bounds(self, *args):
         """Return the (min, max) bounding values of this visual along *axis*
@@ -224,7 +231,6 @@ class Visual(BaseVisual):
             filter._detach(view)
         
         
-
 class VisualView(Visual):
     def __init__(self, visual, key):
         self._visual = visual
@@ -252,3 +258,34 @@ class VisualView(Visual):
 class CompoundVisual(BaseVisual):
     """Visual consisting entirely of sub-visuals.
     """
+    def __init__(self, subvisuals):
+        BaseVisual.__init__(self)
+        self._subvisuals = subvisuals
+        for v in subvisuals:
+            v.transforms = self.transforms
+            v._prepare_transforms(v)
+        
+    def draw(self):
+        for v in self._subvisuals:
+            v.draw()
+            
+    def bounds(self, axis):
+        # TODO: return union of bounds
+        return self._subvisuals[0].bounds(axis)
+        
+    def set_gl_state(self, preset=None, **kwargs):
+        for v in self._subvisuals:
+            v.set_gl_state(preset=preset, **kwargs)
+    
+    def update_gl_state(self, *args, **kwargs):
+        for v in self._subvisuals:
+            v.update_gl_state(*args, **kwargs)
+
+    def attach(self, filter, view=None):
+        for v in self._subvisuals:
+            v.attach(filter, v)
+    
+    def detach(self, filter, view=None):
+        for v in self._subvisuals:
+            v.detach(filter, v)
+    
