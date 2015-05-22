@@ -171,7 +171,7 @@ class PlotWidget(ViewBox):
         --------
         marker_types, LinePlot
         """
-        line = LinePlot(data, 'connect=strip', color=color, symbol=symbol,
+        line = LinePlot(data, connect='strip', color=color, symbol=symbol,
                         line_kind=line_kind, width=width,
                         marker_size=marker_size, edge_color=edge_color,
                         face_color=face_color, edge_width=edge_width)
