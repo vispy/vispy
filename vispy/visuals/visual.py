@@ -40,6 +40,7 @@ class VisualShare(object):
         self.bounds = {}
         self.gl_state = {}
         self.views = weakref.WeakValueDictionary()
+        self.filters = []
 
 
 class Visual(BaseVisual):
@@ -203,16 +204,22 @@ class Visual(BaseVisual):
         
         Each filter modifies the appearance or behavior of the visual.
         """
-        views = self._vshare.views.values() if view is None else [view]
-        for view in views:
+        if view is None:
+            self._vshare.filters.append(filter)
+            for view in self._vshare.views.values():
+                filter._attach(view)
+        else:
             view._filters.append(filter)
             filter._attach(view)
         
     def detach(self, filter, view=None):
         """Detach a filter.
         """
-        views = [self._vshare.views] if view is None else [view]
-        for view in views:
+        if view is None:
+            self._vshare.filters.remove(filter)
+            for view in self._vshare.views.values():
+                filter._detach(view)
+        else:
             view._filters.remove(filter)
             filter._detach(view)
         
@@ -222,6 +229,8 @@ class VisualView(Visual):
     def __init__(self, visual, key):
         self._visual = visual
         Visual.__init__(self, vshare=visual._vshare, key=key)
+        for filter in self._vshare.filters:
+            filter._attach(self)
         
     @property
     def visual(self):

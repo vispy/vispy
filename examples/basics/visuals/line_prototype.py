@@ -23,7 +23,7 @@ class LineVisual(visuals.Visual):
         
         self.pos_buf = gloo.VertexBuffer()
         self.shared_program['a_pos'] = self.pos_buf
-        self.shared_program.frag['color'] = (1, 1, 0.5, 1)
+        self.shared_program.frag['color'] = (1, 1, 1, 1)
         self._need_upload = False
         
         self._draw_mode = 'line_strip'
@@ -51,27 +51,47 @@ if __name__ == '__main__':
     from vispy.visuals.transforms import STTransform
     
     canvas = app.Canvas(keys='interactive', size=(600, 600), show=True)
-    pos = np.random.normal(size=(100,2), loc=300, scale=50).astype('float32')
+    pos = np.random.normal(size=(1000,2), loc=0, scale=50).astype('float32')
+    pos[0] = [0, 0]
+    
+    # Make a line visual
     line = LineVisual(pos=pos)
     line.transforms.canvas = canvas
-    line.attach(ColorFilter((0.5, 1, 1, 1)))
+    line.transform = STTransform(scale=(2, 1), translate=(20, 20))
     
-    v1 = line.view()
-    v1.transforms.canvas = canvas
-    v1.transform = STTransform(scale=(0.5, 2), translate=(100, 100))
-    #v1.attach(Clipper(...), all_views=False)
+    # Attach color filter to all views (current and future) of the visual
+    line.attach(ColorFilter((1, 1, 0.5, 0.7)))
     
-    v2 = line.view()
-    v2.transforms.canvas = canvas
-    v2.transform = STTransform(scale=(2, 0.5), translate=(-100, -100))
-    #v2.attach(ColorFilter((1, 1, 1, 0.5)), all_views=False)
+    # Attach a clipper just to this view
+    tr = line.transforms.document_to_framebuffer.inverse
+    line.attach(Clipper((20, 20, 260, 260), transform=tr), view=line)
+    
+    # Make a view of the line that will draw its shadow
+    shadow = line.view()
+    shadow.transforms.canvas = canvas
+    shadow.transform = STTransform(scale=(2, 1), translate=(25, 25))
+    shadow.attach(ColorFilter((0, 0, 0, 0.6)), view=shadow)
+    shadow.set_gl_state('translucent', depth_test=False)
+    tr = shadow.transforms.document_to_framebuffer.inverse
+    shadow.attach(Clipper((20, 20, 260, 260), transform=tr), view=shadow)
+    
+    # And make a second view of the line with different clipping bounds
+    view = line.view()
+    view.transforms.canvas = canvas
+    view.transform = STTransform(scale=(2, 0.5), translate=(450, 150))
+    tr = view.transforms.document_to_framebuffer.inverse
+    view.attach(Clipper((320, 20, 260, 260), transform=tr), view=view)
+
+
     
     @canvas.connect
     def on_draw(event):
+        canvas.context.clear((0.3, 0.3, 0.3, 1.0))
         canvas.context.set_viewport(0, 0, *canvas.physical_size)
+        
+        shadow.draw()
         line.draw()
-        v1.draw()
-        v2.draw()
+        view.draw()
         
 
     if sys.flags.interactive != 1:
