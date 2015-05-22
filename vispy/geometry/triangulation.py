@@ -990,7 +990,20 @@ def _triangulate_cpp(vertices_2d, segments):
 
 
 def triangulate(vertices):
-    """Triangulate a set of vertices. Returns a pair (vertices, triangles)."""
+    """Triangulate a set of vertices
+
+    Parameters
+    ----------
+    vertices : array-like
+        The vertices.
+
+    Returns
+    -------
+    vertices : array-like
+        The vertices.
+    tringles : array-like
+        The triangles.
+    """
     n = len(vertices)
     vertices = np.asarray(vertices)
     zmean = vertices[:, 2].mean()

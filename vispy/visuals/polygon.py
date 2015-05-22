@@ -26,11 +26,15 @@ class PolygonVisual(Visual):
     Parameters
     ----------
     pos : array
-        Set of vertices defining the polygon
+        Set of vertices defining the polygon.
     color : str | tuple | list of colors
-        Fill color of the polygon
+        Fill color of the polygon.
     border_color : str | tuple | list of colors
-        Border color of the polygon
+        Border color of the polygon.
+    border_width : int
+        Border width in pixels.
+    **kwargs : dict
+        Keyword arguments to pass to `PolygonVisual`.
     """
     def __init__(self, pos=None, color='black',
                  border_color=None, border_width=1, **kwargs):
@@ -106,6 +110,13 @@ class PolygonVisual(Visual):
         self.mesh.update_gl_options(*args, **kwargs)
 
     def draw(self, transforms):
+        """Draw the visual
+
+        Parameters
+        ----------
+        transforms : instance of TransformSystem
+            The transforms to use.
+        """
         if self._pos is None:
             return
         if not self._color.is_blank:

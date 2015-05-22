@@ -41,7 +41,7 @@ void main() {
 
     float max_alpha = 0.6;
     float x_alpha = 0.0;
-    
+
     if (mod(local_pos.x, 1000 * sx) < px.x) {
         x_alpha = clamp(1 * sx/px.x, 0, max_alpha);
     }
@@ -73,8 +73,13 @@ void main() {
 
 
 class GridLinesVisual(Visual):
-    """ Displays regularly spaced grid lines in any coordinate system and at 
+    """ Displays regularly spaced grid lines in any coordinate system and at
     any scale.
+
+    Parameters
+    ----------
+    scale : tuple
+        The scale to use.
     """
     def __init__(self, scale=(1, 1), **kwargs):
         super(GridLinesVisual, self).__init__(**kwargs)
@@ -94,6 +99,13 @@ class GridLinesVisual(Visual):
         return self._vbo
 
     def draw(self, transforms):
+        """Draw the visual
+
+        Parameters
+        ----------
+        transforms : instance of TransformSystem
+            The transforms to use.
+        """
         Visual.draw(self, transforms)
 
         doc_to_ndc = self._tr_cache.get([transforms.framebuffer_to_render, 

@@ -1,7 +1,9 @@
 """
-   Tutorial: Creating Visuals
-        03. Antialiasing
---------------------------------
+Tutorial: Creating Visuals
+==========================
+
+03. Antialiasing
+----------------
 
 In [tutorial 1] we learned how to draw a simple rectangle, and in [tutorial 2]
 we expanded on this by using the Document coordinate system to draw a 
@@ -16,9 +18,9 @@ has unit-length pixels. However, there are two situations when the actual
 pixels being filled by the fragment shader are not the same size as the pixels
 on the canvas:
 
-1. High-resolution displays (such as retina displays) that report a canvas
-   resolution smaller than the actual framebuffer resolution.
-2. When exporting to an image with a different size than the canvas.
+    1. High-resolution displays (such as retina displays) that report a canvas
+       resolution smaller than the actual framebuffer resolution.
+    2. When exporting to an image with a different size than the canvas.
 
 In most cases the discrepancy between Document and Framebuffer coordinates can
 be corrected by a simple scale factor. However, this fails for some interesting
@@ -26,7 +28,6 @@ corner cases where the transform is more complex, such as in VR applications
 using optical distortion correction. Decide for yourself: is this Visual for 
 my personal use, or is it intended for a broader audience? For simplicity in 
 this example, we will use a simple scale factor.
-
 """
 
 from vispy import app, gloo, visuals, scene

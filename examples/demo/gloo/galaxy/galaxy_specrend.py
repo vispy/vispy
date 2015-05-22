@@ -2,50 +2,51 @@
 # vispy: testskip
 
 """
-                Colour Rendering of Spectra
+Colour Rendering of Spectra
 
-                       by John Walker
-                  http://www.fourmilab.ch/
+by John Walker
+http://www.fourmilab.ch/
 
-         Last updated: March 9, 2003
+Last updated: March 9, 2003
 
-    Converted to Python by Andrew Hutchins, sometime in early
-    2011.
+Converted to Python by Andrew Hutchins, sometime in early
+2011.
 
-           This program is in the public domain.
-           The modifications are also public domain. (AH)
+    This program is in the public domain.
+    The modifications are also public domain. (AH)
 
-    For complete information about the techniques employed in
-    this program, see the World-Wide Web document:
+For complete information about the techniques employed in
+this program, see the World-Wide Web document:
 
-             http://www.fourmilab.ch/documents/specrend/
+    http://www.fourmilab.ch/documents/specrend/
 
-    The xyz_to_rgb() function, which was wrong in the original
-    version of this program, was corrected by:
+The xyz_to_rgb() function, which was wrong in the original
+version of this program, was corrected by:
 
-        Andrew J. S. Hamilton 21 May 1999
-        Andrew.Hamilton@Colorado.EDU
-        http://casa.colorado.edu/~ajsh/
+    Andrew J. S. Hamilton 21 May 1999
+    Andrew.Hamilton@Colorado.EDU
+    http://casa.colorado.edu/~ajsh/
 
-    who also added the gamma correction facilities and
-    modified constrain_rgb() to work by desaturating the
-    colour by adding white.
+who also added the gamma correction facilities and
+modified constrain_rgb() to work by desaturating the
+colour by adding white.
 
-    A program which uses these functions to plot CIE
-    "tongue" diagrams called "ppmcie" is included in
-    the Netpbm graphics toolkit:
-        http://netpbm.sourceforge.net/
-    (The program was called cietoppm in earlier
-    versions of Netpbm.)
+A program which uses these functions to plot CIE
+"tongue" diagrams called "ppmcie" is included in
+the Netpbm graphics toolkit:
+
+    http://netpbm.sourceforge.net/
+
+(The program was called cietoppm in earlier
+versions of Netpbm.)
 
 """
 import math
 
-"""
-/* A colour system is defined by the CIE x and y coordinates of
-   its three primary illuminants and the x and y coordinates of
-   the white point. */
-"""
+# A colour system is defined by the CIE x and y coordinates of
+# its three primary illuminants and the x and y coordinates of
+# the white point.
+
 GAMMA_REC709 = 0
 
 NTSCsystem = {"name": "NTSC",
@@ -246,15 +247,15 @@ def spectrum_to_xyz(spec_intens, temp):
     coordinates of the spectrum are returned in the x, y, and z
     arguments which respect the identity:
 
-            x + y + z = 1.
+        x + y + z = 1.
 
     CIE colour matching functions xBar, yBar, and zBar for
-       wavelengths from 380 through 780 nanometers, every 5
-       nanometers.  For a wavelength lambda in this range:
+    wavelengths from 380 through 780 nanometers, every 5
+    nanometers.  For a wavelength lambda in this range::
 
-            cie_colour_match[(lambda - 380) / 5][0] = xBar
-            cie_colour_match[(lambda - 380) / 5][1] = yBar
-            cie_colour_match[(lambda - 380) / 5][2] = zBar
+        cie_colour_match[(lambda - 380) / 5][0] = xBar
+        cie_colour_match[(lambda - 380) / 5][1] = yBar
+        cie_colour_match[(lambda - 380) / 5][2] = zBar
 
     AH Note 2011: This next bit is kind of irrelevant on modern
     hardware. Unless you are desperate for speed.
@@ -265,7 +266,7 @@ def spectrum_to_xyz(spec_intens, temp):
     significant bits to represent the values. It's declared
     as a double here to avoid warnings about "conversion
     between floating-point types" from certain persnickety
-    compilers. */
+    compilers.
     """
 
     cie_colour_match = [

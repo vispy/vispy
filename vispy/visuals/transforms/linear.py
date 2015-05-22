@@ -24,11 +24,25 @@ class NullTransform(BaseTransform):
     Isometric = True
 
     @arg_to_vec4
-    def map(self, obj):
-        return obj
+    def map(self, coords):
+        """Map coordinates
 
-    def imap(self, obj):
-        return obj
+        Parameters
+        ----------
+        coords : array-like
+            Coordinates to map.
+        """
+        return coords
+
+    def imap(self, coords):
+        """Inverse map coordinates
+
+        Parameters
+        ----------
+        coords : array-like
+            Coordinates to inverse map.
+        """
+        return coords
 
     def __mul__(self, tr):
         return tr
@@ -55,7 +69,7 @@ class STTransform(BaseTransform):
 
     glsl_imap = """
         vec4 st_transform_imap(vec4 pos) {
-            return vec4((pos.xyz - $translate.xyz * pos.w) / $scale.xyz, 
+            return vec4((pos.xyz - $translate.xyz * pos.w) / $scale.xyz,
                         pos.w);
         }
     """
@@ -81,17 +95,41 @@ class STTransform(BaseTransform):
 
     @arg_to_vec4
     def map(self, coords):
+        """Map coordinates
+
+        Parameters
+        ----------
+        coords : array-like
+            Coordinates to map.
+
+        Returns
+        -------
+        coords : ndarray
+            Coordinates.
+        """
         m = np.empty(coords.shape)
-        m[:, :3] = (coords[:, :3] * self.scale[np.newaxis, :3] + 
+        m[:, :3] = (coords[:, :3] * self.scale[np.newaxis, :3] +
                     coords[:, 3:] * self.translate[np.newaxis, :3])
         m[:, 3] = coords[:, 3]
         return m
 
     @arg_to_vec4
     def imap(self, coords):
+        """Invert map coordinates
+
+        Parameters
+        ----------
+        coords : array-like
+            Coordinates to inverse map.
+
+        Returns
+        -------
+        coords : ndarray
+            Coordinates.
+        """
         m = np.empty(coords.shape)
-        m[:, :3] = ((coords[:, :3] - 
-                     coords[:, 3:] * self.translate[np.newaxis, :3]) / 
+        m[:, :3] = ((coords[:, :3] -
+                     coords[:, 3:] * self.translate[np.newaxis, :3]) /
                     self.scale[np.newaxis, :3])
         m[:, 3] = coords[:, 3]
         return m
@@ -147,8 +185,8 @@ class STTransform(BaseTransform):
     def move(self, move):
         """Change the translation of this transform by the amount given.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         move : array-like
             The values to be added to the current translation of the transform.
         """
@@ -187,32 +225,51 @@ class STTransform(BaseTransform):
 
     @classmethod
     def from_mapping(cls, x0, x1):
-        """ Create an STTransform from the given mapping.
-        See ``set_mapping()`` for details.
+        """ Create an STTransform from the given mapping
+
+        See `set_mapping` for details.
+
+        Parameters
+        ----------
+        x0 : array-like
+            Start.
+        x1 : array-like
+            End.
+
+        Returns
+        -------
+        t : instance of STTransform
+            The transform.
         """
         t = cls()
         t.set_mapping(x0, x1)
         return t
 
     def set_mapping(self, x0, x1):
-        """ Configure this transform such that it maps points x0 => x1,
-        where each argument must be an array of shape (2, 2) or (2, 3).
+        """Configure this transform such that it maps points x0 => x1
 
+        Parameters
+        ----------
+        x0 : array-like, shape (2, 2) or (2, 3)
+            Start location.
+        x1 : array-like, shape (2, 2) or (2, 3)
+            End location.
+
+        Examples
+        --------
         For example, if we wish to map the corners of a rectangle::
 
-            p1 = [[0, 0], [200, 300]]
+            >>> p1 = [[0, 0], [200, 300]]
 
         onto a unit cube::
 
-            p2 = [[-1, -1], [1, 1]]
+            >>> p2 = [[-1, -1], [1, 1]]
 
         then we can generate the transform as follows::
 
-            tr = STTransform()
-            tr.set_mapping(p1, p2)
-
-            # test:
-            assert tr.map(p1)[:,:2] == p2
+            >>> tr = STTransform()
+            >>> tr.set_mapping(p1, p2)
+            >>> assert tr.map(p1)[:,:2] == p2  # test
 
         """
         # if args are Rect, convert to array first
@@ -263,7 +320,7 @@ class AffineTransform(BaseTransform):
 
     Parameters
     ----------
-    matrix : array-like
+    matrix : array-like | None
         4x4 array to use for the transform.
     """
     glsl_map = """
@@ -292,11 +349,35 @@ class AffineTransform(BaseTransform):
 
     @arg_to_vec4
     def map(self, coords):
+        """Map coordinates
+
+        Parameters
+        ----------
+        coords : array-like
+            Coordinates to map.
+
+        Returns
+        -------
+        coords : ndarray
+            Coordinates.
+        """
         # looks backwards, but both matrices are transposed.
         return np.dot(coords, self.matrix)
 
     @arg_to_vec4
     def imap(self, coords):
+        """Inverse map coordinates
+
+        Parameters
+        ----------
+        coords : array-like
+            Coordinates to inverse map.
+
+        Returns
+        -------
+        coords : ndarray
+            Coordinates.
+        """
         return np.dot(coords, self.inv_matrix)
 
     def shader_map(self):
@@ -330,10 +411,15 @@ class AffineTransform(BaseTransform):
     @arg_to_vec4
     def translate(self, pos):
         """
-        Translate the matrix by *pos*.
+        Translate the matrix
 
         The translation is applied *after* the transformations already present
         in the matrix.
+
+        Parameters
+        ----------
+        pos : arrayndarray
+            Position to translate by.
         """
         self.matrix = np.dot(self.matrix, transforms.translate(pos[0, :3]))
 
@@ -378,13 +464,35 @@ class AffineTransform(BaseTransform):
     def set_mapping(self, points1, points2):
         """ Set to a 3D transformation matrix that maps points1 onto points2.
 
-        Arguments are specified as arrays of four 3D coordinates, shape (4, 3).
+        Parameters
+        ----------
+        points1 : array-like, shape (4, 3)
+            Four starting 3D coordinates.
+        points2 : array-like, shape (4, 3)
+            Four ending 3D coordinates.
         """
         # note: need to transpose because util.functions uses opposite
         # of standard linear algebra order.
         self.matrix = transforms.affine_map(points1, points2).T
 
     def set_ortho(self, l, r, b, t, n, f):
+        """Set ortho transform
+
+        Parameters
+        ----------
+        l : float
+            Left.
+        r : float
+            Right.
+        b : float
+            Bottom.
+        t : float
+            Top.
+        n : float
+            Near.
+        f : float
+            Far.
+        """
         self.matrix = transforms.ortho(l, r, b, t, n, f)
 
     def reset(self):
@@ -425,9 +533,43 @@ class PerspectiveTransform(AffineTransform):
     """
     Matrix transform that also implements perspective division.
 
+    Parameters
+    ----------
+    matrix : array-like | None
+        4x4 array to use for the transform.
     """
     def set_perspective(self, fov, aspect, near, far):
+        """Set the perspective
+
+        Parameters
+        ----------
+        fov : float
+            Field of view.
+        aspect : float
+            Aspect ratio.
+        near : float
+            Near location.
+        far : float
+            Far location.
+        """
         self.matrix = transforms.perspective(fov, aspect, near, far)
 
     def set_frustum(self, l, r, b, t, n, f):
+        """Set the frustum
+
+        Parameters
+        ----------
+        l : float
+            Left.
+        r : float
+            Right.
+        b : float
+            Bottom.
+        t : float
+            Top.
+        n : float
+            Near.
+        f : float
+            Far.
+        """
         self.matrix = transforms.frustum(l, r, b, t, n, f)

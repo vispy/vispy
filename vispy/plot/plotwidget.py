@@ -9,13 +9,25 @@ from ..geometry import MeshData
 
 __all__ = ['PlotWidget']
 
-# Wish list:
-# * bar plot
-
 
 class PlotWidget(ViewBox):
-    """Class to facilitate plotting"""
+    """Widget to facilitate plotting
 
+    Parameters
+    ----------
+    *args : arguments
+        Arguments passed to the `ViewBox` super class.
+    **kwargs : keywoard arguments
+        Keyword arguments passed to the `ViewBox` super class.
+
+    Notes
+    -----
+    This class is typically instantiated implicitly by a `Figure`
+    instance, e.g., by doing ``fig[0, 0]``.
+
+    See Also
+    --------
+    """
     def __init__(self, *args, **kwargs):
         super(PlotWidget, self).__init__(*args, **kwargs)
         self._camera_set = False
@@ -79,7 +91,7 @@ class PlotWidget(ViewBox):
 
     def mesh(self, vertices=None, faces=None, vertex_colors=None,
              face_colors=None, color=(0.5, 0.5, 1.), fname=None,
-             meshdata=None, shading='smooth', center=(0., 0., 0.)):
+             meshdata=None):
         """Show a 3D mesh
 
         Parameters
@@ -88,8 +100,6 @@ class PlotWidget(ViewBox):
             Vertices.
         faces : array | None
             Face definitions.
-        normals : array | None
-            Vertex normals.
         vertex_colors : array | None
             Vertex colors.
         face_colors : array | None
@@ -122,10 +132,11 @@ class PlotWidget(ViewBox):
         mesh = Mesh(meshdata=meshdata, vertex_colors=vertex_colors,
                     face_colors=face_colors, color=color, shading='smooth')
         self.add(mesh)
-        self._set_camera(TurntableCamera, azimuth=0, elevation=0)                
+        self._set_camera(TurntableCamera, azimuth=0, elevation=0)
         return mesh
 
-    def plot(self, data, **kwargs):
+    def plot(self, data, color='k', symbol='o', line_kind='-', width=1.,
+             marker_size=0, edge_color='k', face_color='k', edge_width=1.):
         """Plot a series of data using lines and markers
 
         Parameters
@@ -160,7 +171,10 @@ class PlotWidget(ViewBox):
         --------
         marker_types, LinePlot
         """
-        line = LinePlot(data, connect='strip', **kwargs)
+        line = LinePlot(data, 'connect=strip', color=color, symbol=symbol,
+                        line_kind=line_kind, width=width,
+                        marker_size=marker_size, edge_color=edge_color,
+                        face_color=face_color, edge_width=edge_width)
         self.add(line)
         self._set_camera(PanZoomCamera)
         return line
@@ -227,6 +241,8 @@ class PlotWidget(ViewBox):
         threshold : float
             The threshold to use for the isosurafce render style. By default
             the mean of the given volume is used.
+        cmap : str
+            The colormap to use.
 
         Returns
         -------

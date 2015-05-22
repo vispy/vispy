@@ -237,6 +237,17 @@ class LineVisual(Visual):
         return color
 
     def bounds(self, mode, axis):
+        """Get the bounds
+
+        Parameters
+        ----------
+        mode : str
+            Describes the type of boundary requested. Can be "visual", "data",
+            or "mouse".
+        axis : 0, 1, 2
+            The axis along which to measure the bounding values, in
+            x-y-z order.
+        """
         # Can and should we calculate bounds?
         if (self._bounds is None) and self._pos is not None:
             pos = self._pos
@@ -244,14 +255,21 @@ class LineVisual(Visual):
                             for d in range(pos.shape[1])]
         # Return what we can
         if self._bounds is None:
-            return 
+            return
         else:
             if axis < len(self._bounds):
                 return self._bounds[axis]
             else:
                 return (0, 0)
-    
+
     def draw(self, transforms):
+        """Draw the visual
+
+        Parameters
+        ----------
+        transforms : instance of TransformSystem
+            The transforms to use.
+        """
         if self.width == 0:
             return
         self._line_visual.draw(transforms)

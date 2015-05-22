@@ -44,7 +44,6 @@ def create_visual_node(subclass):
     # Create new class
     cls = type(clsname, (subclass, Node), {'__init__': __init__, 
                                            '__doc__': doc})
-    
     return cls
 
 

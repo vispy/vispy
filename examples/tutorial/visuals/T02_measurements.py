@@ -1,16 +1,18 @@
 """
-   Tutorial: Creating Visuals
+Tutorial: Creating Visuals
+==========================
+
 02. Making physical measurements
 --------------------------------
 
 In the last tutorial we created a simple Visual subclass that draws a 
 rectangle. In this tutorial, we will make two additions:
 
-1. Draw a rectangular border instead of a solid rectangle
-2. Make the border a fixed pixel width, even when displayed inside a 
-   user-zoomable ViewBox. 
+    1. Draw a rectangular border instead of a solid rectangle
+    2. Make the border a fixed pixel width, even when displayed inside a 
+       user-zoomable ViewBox. 
 
-The border is made by drawing a line_strip with 10 vertices:
+The border is made by drawing a line_strip with 10 vertices::
 
     1--------------3
     |              |
@@ -51,13 +53,13 @@ does correspond to 1 pixel.
 There are a few ways we could make this measurement of pixel length. Here's
 how we'll do it in this tutorial:
 
-1. Begin with vertices for a rectangle with border width 0 (that is, vertex 1
-   is the same as vertex 2, 3=4, and so on).
-2. In the vertex shader, first map the vertices to the document coordinate
-   system using the visual->document transform.
-3. Add/subtract the line width from the mapped vertices.
-4. Map the rest of the way to render coordinates with a second transform:
-   document->framebuffer->render.
+    1. Begin with vertices for a rectangle with border width 0 (that is, vertex
+       1 is the same as vertex 2, 3=4, and so on).
+    2. In the vertex shader, first map the vertices to the document coordinate
+       system using the visual->document transform.
+    3. Add/subtract the line width from the mapped vertices.
+    4. Map the rest of the way to render coordinates with a second transform:
+       document->framebuffer->render.
 
 Note that this problem _cannot_ be solved using a simple scale factor! It is
 necessary to use these transformations in order to draw correctly when there

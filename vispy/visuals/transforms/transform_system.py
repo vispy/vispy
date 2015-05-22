@@ -56,8 +56,10 @@ class TransformSystem(object):
     By default, TransformSystems are configured such that the document
     coordinate system matches the logical pixels of the canvas,
 
-    Examples of use by Visuals
-    --------------------------
+    Examples
+    --------
+    Use by Visuals
+    ~~~~~~~~~~~~~~
 
     1. To convert local vertex coordinates to normalized device coordinates in
     the vertex shader, we first need a vertex shader that supports configurable
@@ -121,8 +123,8 @@ class TransformSystem(object):
 
     4. Using inverse transforms in the fragment shader
 
-    Examples of creating TransformSystem instances
-    ----------------------------------------------
+    Creating TransformSystem instances
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     1. Basic example, including checks for canvas resolution
 

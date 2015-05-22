@@ -8,6 +8,17 @@ from .linear import STTransform
 
 
 class PanZoomTransform(STTransform):
+    """Pan-zoom transform
+
+    Parameters
+    ----------
+    canvas : instance of Canvas | None
+        The canvas to attch to.
+    aspect : float | None
+        The aspect ratio to apply.
+    **kwargs : dict
+        Keyword arguments to pass to the underlying `STTransform`.
+    """
     def __init__(self, canvas=None, aspect=None, **kwargs):
         self._aspect = aspect
         self.attach(canvas)
@@ -15,7 +26,13 @@ class PanZoomTransform(STTransform):
         self.on_resize(None)
         
     def attach(self, canvas):
-        """ Attach this tranform to a canvas """
+        """Attach this tranform to a canvas
+
+        Parameters
+        ----------
+        canvas : instance of Canvas
+            The canvas.
+        """
         self._canvas = canvas
         canvas.events.resize.connect(self.on_resize)
         canvas.events.mouse_wheel.connect(self.on_mouse_wheel)
@@ -28,7 +45,13 @@ class PanZoomTransform(STTransform):
             [(-1, 1), (1, -1)])
         
     def on_resize(self, event):
-        """ Resize event """
+        """Resize handler
+
+        Parameters
+        ----------
+        event : instance of Event
+            The event.
+        """
         if self._aspect is None:
             return
         w, h = self._canvas.size
@@ -37,6 +60,13 @@ class PanZoomTransform(STTransform):
         self.shader_map()
 
     def on_mouse_move(self, event):
+        """Mouse move handler
+
+        Parameters
+        ----------
+        event : instance of Event
+            The event.
+        """
         if event.is_dragging:
             dxy = event.pos - event.last_event.pos
             button = event.press_event.button
@@ -57,4 +87,11 @@ class PanZoomTransform(STTransform):
             self.shader_map()
 
     def on_mouse_wheel(self, event):
+        """Mouse wheel handler
+
+        Parameters
+        ----------
+        event : instance of Event
+            The event.
+        """
         self.zoom(np.exp(event.delta * (0.01, -0.01)), event.pos)

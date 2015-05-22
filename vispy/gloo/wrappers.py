@@ -104,7 +104,7 @@ class BaseGlooFunctions(object):
     
         Parameters
         ----------
-        x, y, w, h : int | tuple
+        *args : tuple
             X and Y coordinates, plus width and height. Can be passed in as
             individual components, or as a single tuple with four values.
         """
@@ -209,24 +209,26 @@ class BaseGlooFunctions(object):
                 self.set_clear_stencil(stencil)
             bits |= gl.GL_STENCIL_BUFFER_BIT
         self.glir.command('FUNC', 'glClear', bits)
-    
+
     def set_clear_color(self, color='black', alpha=None):
         """Set the screen clear color
-    
+
         This is a wrapper for gl.glClearColor.
-    
+
         Parameters
         ----------
         color : str | tuple | instance of Color
             Color to use. See vispy.color.Color for options.
+        alpha : float | None
+            Alpha to use.
         """
         self.glir.command('FUNC', 'glClearColor', *Color(color, alpha).rgba)
-    
+
     def set_clear_depth(self, depth=1.0):
         """Set the clear value for the depth buffer
-    
+
         This is a wrapper for gl.glClearDepth.
-    
+
         Parameters
         ----------
         depth : float

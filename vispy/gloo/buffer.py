@@ -32,10 +32,10 @@ class Buffer(GLObject):
 
     Parameters
     ----------
-    data : ndarray
-        Buffer data
-    nbytes : int
-        Buffer byte size
+    data : ndarray | None
+        Buffer data.
+    nbytes : int | None
+        Buffer byte size.
     """
     
     def __init__(self, data=None, nbytes=None):
@@ -57,10 +57,10 @@ class Buffer(GLObject):
         """ Buffer size in bytes """
 
         return self._nbytes
-    
+
     def set_subdata(self, data, offset=0, copy=False):
         """ Set a sub-region of the buffer (deferred operation).
-        
+
         Parameters
         ----------
 
@@ -86,15 +86,14 @@ class Buffer(GLObject):
         if nbytes == self._nbytes and offset == 0:
             self._glir.command('SIZE', self._id, nbytes)
         self._glir.command('DATA', self._id, offset, data)
-    
+
     def set_data(self, data, copy=False):
         """ Set data in the buffer (deferred operation).
-        
+
         This completely resets the size and contents of the buffer.
 
         Parameters
         ----------
-
         data : ndarray
             Data to be uploaded
         copy: bool
@@ -137,16 +136,8 @@ class DataBuffer(Buffer):
 
     Parameters
     ----------
-    data : ndarray
-        Buffer data
-    dtype : dtype
-        Buffer data type
-    size : int
-        Number of elements in buffer
-    base : DataBuffer
-        Base buffer of this buffer
-    offset : int
-        Byte offset of this buffer relative to base buffer
+    data : ndarray | None
+        Buffer data.
     """
 
     def __init__(self, data=None):
@@ -164,6 +155,22 @@ class DataBuffer(Buffer):
         return data
 
     def set_subdata(self, data, offset=0, copy=False, **kwargs):
+        """ Set a sub-region of the buffer (deferred operation).
+
+        Parameters
+        ----------
+
+        data : ndarray
+            Data to be uploaded
+        offset: int
+            Offset in buffer where to start copying data (in bytes)
+        copy: bool
+            Since the operation is deferred, data may change before
+            data is actually uploaded to GPU memory.
+            Asking explicitly for a copy will prevent this behavior.
+        **kwargs : dict
+            Additional keyword arguments.
+        """
         data = self._prepare_data(data, **kwargs)
         offset = offset * self.itemsize
         Buffer.set_subdata(self, data=data, offset=offset, copy=copy)
@@ -173,15 +180,14 @@ class DataBuffer(Buffer):
 
         Parameters
         ----------
-
         data : ndarray
             Data to be uploaded
-        offset: int
-            Offset in buffer to start copying data (in number of vertices)
         copy: bool
             Since the operation is deferred, data may change before
             data is actually uploaded to GPU memory.
             Asking explicitly for a copy will prevent this behavior.
+        **kwargs : dict
+            Additional arguments.
         """
         data = self._prepare_data(data, **kwargs)
         self._dtype = data.dtype
@@ -412,15 +418,10 @@ class VertexBuffer(DataBuffer):
 
     Parameters
     ----------
-
     data : ndarray
         Buffer data (optional)
-    dtype : dtype
-        Buffer data type (optional)
-    size : int
-        Buffer size (optional)
     """
-    
+
     _GLIR_TYPE = 'VertexBuffer'
 
     def _prepare_data(self, data, convert=False):
@@ -469,12 +470,8 @@ class IndexBuffer(DataBuffer):
     Parameters
     ----------
 
-    data : ndarray
-        Buffer data (optional)
-    dtype : dtype
-        Buffer data type (optional)
-    size : int
-        Buffer size (optional)
+    data : ndarray | None
+        Buffer data.
     """
     
     _GLIR_TYPE = 'IndexBuffer'

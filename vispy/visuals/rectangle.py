@@ -20,9 +20,12 @@ class RectangleVisual(PolygonVisual):
 
     Parameters
     ----------
-
     pos :  array
         Center of the rectangle
+    color : instance of Color
+        The fill color to use.
+    border_color : instance of Color
+        The border color to use.
     height : float
         Length of the rectangle along y-axis
         Defaults to 1.0

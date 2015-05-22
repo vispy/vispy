@@ -205,6 +205,13 @@ class Console(Widget):
         self._current_sizes = new_sizes
 
     def draw(self, event):
+        """Draw the widget
+
+        Parameters
+        ----------
+        event : instance of Event
+            The draw event.
+        """
         super(Console, self).draw(event)
         if event is None:
             raise RuntimeError('Event cannot be None')

@@ -150,6 +150,13 @@ class SceneCanvas(app.Canvas):
         self.update()
 
     def on_draw(self, event):
+        """Draw handler
+
+        Parameters
+        ----------
+        event : instance of Event
+            The draw event.
+        """
         if self._scene is None:
             return  # Can happen on initialization
         logger.debug('Canvas draw')
@@ -277,15 +284,28 @@ class SceneCanvas(app.Canvas):
         event.handled = scene_event.handled
 
     def on_resize(self, event):
+        """Resize handler
+
+        Parameters
+        ----------
+        event : instance of Event
+            The resize event.
+        """
         if self._central_widget is not None:
             self._central_widget.size = self.size
 
     # -------------------------------------------------- transform handling ---
     def push_viewport(self, viewport):
-        """ Push a viewport (x, y, w, h) on the stack. It is the
-        responsibility of the caller to ensure the given values are
+        """ Push a viewport on the stack
+
+        It is the responsibility of the caller to ensure the given values are
         int. The viewport's origin is defined relative to the current
         viewport.
+
+        Parameters
+        ----------
+        viewport : tuple
+            The viewport as (x, y, w, h).
         """
         vp = list(viewport)
         # Normalize viewport before setting;
@@ -295,7 +315,7 @@ class SceneCanvas(app.Canvas):
         if vp[3] < 0:
             vp[1] += vp[3]
             vp[3] *= -1
-            
+
         self._vp_stack.append(vp)
         self.fb_ndc_transform  # update!
         # Apply
@@ -315,17 +335,26 @@ class SceneCanvas(app.Canvas):
             self._set_viewport(self._vp_stack[-1])
             self.fb_ndc_transform  # update!
         return vp
-    
+
     def _set_viewport(self, vp):
         self.context.set_viewport(*vp)
 
     def push_fbo(self, fbo, offset, csize):
         """ Push an FBO on the stack, together with the new viewport.
         and the transform to the FBO.
+
+        Parameters
+        ----------
+        fbo : instance of FrameBuffer
+            The framebuffer.
+        offset : tuple
+            The offset.
+        csize : tuple
+            The size to use.
         """
         self._fb_stack.append((fbo, offset, csize))
         self.canvas_fb_transform  # update!
-        
+
         # Apply
         try:
             fbo.activate()

@@ -515,7 +515,7 @@ class MarkersVisual(Visual):
         ----------
         pos : array
             The array of locations to display each symbol.
-        style : str
+        symbol : str
             The style of symbol to draw (see Notes).
         size : float or array
             The symbol size in px.
@@ -579,14 +579,28 @@ class MarkersVisual(Visual):
         self.update()
 
     def set_symbol(self, symbol='o'):
+        """Set the symbol
+
+        Parameters
+        ----------
+        symbol : str
+            The symbol.
+        """
         _check_valid('symbol', symbol, marker_types)
         self._marker_fun = Function(_marker_dict[symbol])
         self._marker_fun['v_size'] = self._v_size_var
         self._program.frag['marker'] = self._marker_fun
 
     def draw(self, transforms):
+        """Draw the visual
+
+        Parameters
+        ----------
+        transforms : instance of TransformSystem
+            The transforms to use.
+        """
         Visual.draw(self, transforms)
-        
+
         xform = transforms.get_full_transform()
         self._program.vert['transform'] = xform
         # TO DO: find a way to avoid copying data and rebinding them to the vbo
@@ -607,13 +621,24 @@ class MarkersVisual(Visual):
             self._vbo.set_data(update_data)
         self._program.prepare()
         self._program['u_antialias'] = self.antialias
-        
+
         d2f = transforms.document_to_framebuffer
         self._program['u_px_scale'] = (d2f.map((1, 0)) - d2f.map((0, 0)))[0]
         self._program.bind(self._vbo)
         self._program.draw('points')
 
     def bounds(self, mode, axis):
+        """Get the bounds
+
+        Parameters
+        ----------
+        mode : str
+            Describes the type of boundary requested. Can be "visual", "data",
+            or "mouse".
+        axis : 0, 1, 2
+            The axis along which to measure the bounding values, in
+            x-y-z order.
+        """
         pos = self._data['a_position']
         if pos is None:
             return None

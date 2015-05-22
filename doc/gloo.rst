@@ -71,7 +71,7 @@ State methods
 The OpenGL context 
 ==================
 
-.. automodule:: vispy.gloo.GLContext
+.. automodule:: vispy.gloo.context
     :members:
 
 

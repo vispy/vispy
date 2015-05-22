@@ -70,6 +70,15 @@ class LinePlotVisual(Visual):
                       edge_width=edge_width, connect=connect)
 
     def set_data(self, data, **kwargs):
+        """Set the line data
+
+        Parameters
+        ----------
+        data : array-like
+            The data.
+        **kwargs : dict
+            Keywoard arguments to pass to MarkerVisual and LineVisal.
+        """
         pos = np.atleast_1d(data).astype(np.float32)
         if pos.ndim == 1:
             pos = pos[:, np.newaxis]
@@ -109,8 +118,26 @@ class LinePlotVisual(Visual):
             raise TypeError("Invalid keyword arguments: %s" % kwargs.keys())
 
     def bounds(self, mode, axis):
+        """Get the bounds
+
+        Parameters
+        ----------
+        mode : str
+            Describes the type of boundary requested. Can be "visual", "data",
+            or "mouse".
+        axis : 0, 1, 2
+            The axis along which to measure the bounding values, in
+            x-y-z order.
+        """
         return self._line.bounds(mode, axis)
 
     def draw(self, transforms):
+        """Draw the visual
+
+        Parameters
+        ----------
+        transforms : instance of TransformSystem
+            The transforms to use.
+        """
         for v in self._line, self._markers:
             v.draw(transforms)

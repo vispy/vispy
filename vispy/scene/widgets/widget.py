@@ -224,11 +224,25 @@ class Widget(Node):
              np.tile(self.bgcolor.rgba, (2, 1)))).astype(np.float32)
 
     def draw(self, event):
+        """Draw the widget borders
+
+        Parameters
+        ----------
+        event : instance of Event
+            The event containing the transforms.
+        """
         if self.border_color.is_blank and self.bgcolor.is_blank:
             return
         self._visual.draw(event)
 
-    def on_resize(self, ev):
+    def on_resize(self, event):
+        """On resize handler
+
+        Parameters
+        ----------
+        event : instance of Event
+            The resize event.
+        """
         self._update_child_widgets()
 
     def _update_child_widgets(self):
@@ -239,9 +253,21 @@ class Widget(Node):
 
     def add_widget(self, widget):
         """
-        Add a Widget as a managed child of this Widget. The child will be
+        Add a Widget as a managed child of this Widget.
+
+        The child will be
         automatically positioned and sized to fill the entire space inside
         this Widget (unless _update_child_widgets is redefined).
+
+        Parameters
+        ----------
+        widget : instance of Widget
+            The widget to add.
+
+        Returns
+        -------
+        widget : instance of Widget
+            The widget.
         """
         self._widgets.append(widget)
         widget.parent = self
@@ -269,6 +295,14 @@ class Widget(Node):
         return self.add_widget(view)
 
     def remove_widget(self, widget):
+        """
+        Remove a Widget as a managed child of this Widget.
+
+        Parameters
+        ----------
+        widget : instance of Widget
+            The widget to remove.
+        """
         self._widgets.remove(widget)
         widget.remove_parent(self)
         self._update_child_widgets()
