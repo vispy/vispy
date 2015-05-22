@@ -76,6 +76,27 @@ class BaseVisual(object):
         raise NotImplementedError()
 
 
+class BaseVisualView(object):
+    def __init__(self, visual, key):
+        self._visual = visual
+        
+    @property
+    def visual(self):
+        return self._visual
+        
+    def _prepare_draw(self, view=None):
+        self._visual._prepare_draw(view=view)
+        
+    def _prepare_transforms(self, view):
+        self._visual._prepare_transforms(view)
+    
+    def _compute_bounds(self, axis):
+        self._visual._compute_bounds(axis)
+        
+    def __repr__(self):
+        return '<%s on %r>' % (self.__class__.__name__, self._visual)
+
+
 class Visual(BaseVisual):
     def __init__(self, vshare=None, key=None, vcode=None, fcode=None):
         self._view_class = VisualView
@@ -223,28 +244,14 @@ class Visual(BaseVisual):
             filter._detach(view)
         
 
-class VisualView(Visual):
+class VisualView(BaseVisualView, Visual):
     def __init__(self, visual, key):
-        self._visual = visual
+        BaseVisualView.__init__(self, visual, key)
         Visual.__init__(self, visual._vshare, key)
+        
+        # Attach any shared filters 
         for filter in self._vshare.filters:
             filter._attach(self)
-        
-    @property
-    def visual(self):
-        return self._visual
-        
-    def _prepare_draw(self, view=None):
-        self._visual._prepare_draw(view=view)
-        
-    def _prepare_transforms(self, view):
-        self._visual._prepare_transforms(view)
-    
-    def _compute_bounds(self, axis):
-        self._visual._compute_bounds(axis)
-        
-    def __repr__(self):
-        return '<VisualView on %r>' % self._visual
 
         
 class CompoundVisual(BaseVisual):
@@ -283,33 +290,14 @@ class CompoundVisual(BaseVisual):
             v.detach(filter, v)
     
 
-class CompoundVisualView(CompoundVisual):
+class CompoundVisualView(BaseVisualView, CompoundVisual):
     def __init__(self, visual, key):
-        self._visual = visual
-        
+        BaseVisualView.__init__(self, visual, key)
         # Create a view on each sub-visual 
         subv = [v.view() for v in visual._subvisuals]
         CompoundVisual.__init__(self, subv)
-        
+
         # Attach any shared filters 
         for filter in self._vshare.filters:
             for v in self._subvisuals:
-                filter._attach(v)
-        
-    @property
-    def visual(self):
-        return self._visual
-        
-    def _prepare_draw(self, view=None):
-        self._visual._prepare_draw(view=view)
-        
-    def _prepare_transforms(self, view):
-        self._visual._prepare_transforms(view)
-    
-    def _compute_bounds(self, axis):
-        self._visual._compute_bounds(axis)
-        
-    def __repr__(self):
-        return '<VisualView on %r>' % self._visual
-
-        
+                filter._attach(v)        
