@@ -105,7 +105,6 @@ class Canvas(object):
     backends, they are detected manually with a fixed time delay.
     This can cause problems with accessibility, as increasing the OS detection
     time or using a dedicated double-click button will not be respected.
-
     """
 
     def __init__(self, title='Vispy canvas', size=(800, 600), position=None,

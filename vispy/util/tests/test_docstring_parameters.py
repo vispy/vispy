@@ -44,10 +44,6 @@ def get_name(func):
 # functions to ignore
 _ignores = [
     'vispy.scene.visuals',  # not parsed properly by this func, copies anyway
-    'vispy.scene.canvas.SceneCanvas',  # too hard for now
-    'vispy.scene.canvas.__init__',
-    'vispy.geometry.meshdata.',  # also too hard for now
-    'vispy.geometry.triangulation.',
 ]
 
 
