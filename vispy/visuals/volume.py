@@ -430,6 +430,13 @@ class VolumeVisual(Visual):
     
     def set_data(self, vol, clim=None):
         """ Set the volume data. 
+
+        Parameters
+        ----------
+        vol : ndarray
+            The 3D volume.
+        clim : tuple | None
+            Colormap limits to use. None will use the min and max values.
         """
         # Check volume
         if not isinstance(vol, np.ndarray):
@@ -617,16 +624,37 @@ class VolumeVisual(Visual):
         self._program.bind(self._vbo)
         self._index_buffer = IndexBuffer(indices)
         self._vertex_cache_id = vertex_cache_id
-    
+
     def bounds(self, mode, axis):
+        """Get the visual bounds
+
+        Parameters
+        ----------
+        mode : str
+            The mode.
+        axis : int
+            The axis number.
+
+        Returns
+        -------
+        bounds : tuple
+            The lower and upper bounds.
+        """
         # Not sure if this is right. Do I need to take the transform if this
         # node into account?
         # Also, this method has no docstring, and I don't want to repeat
         # the docstring here. Maybe Visual implements _bounds that subclasses
         # can implement?
         return 0, self._vol_shape[2-axis]
-    
+
     def draw(self, transforms):
+        """Draw the visual
+
+        Parameters
+        ----------
+        transforms : instance of TransformSystem
+            The transforms to use.
+        """
         Visual.draw(self, transforms)
         
         full_tr = transforms.get_full_transform()

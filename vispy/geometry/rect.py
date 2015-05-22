@@ -108,7 +108,18 @@ class Rect(object):
         self.size = (self.size[0], y - self.pos[1])
 
     def padded(self, padding):
-        """Return a new Rect padded (smaller) by *padding* on all sides."""
+        """Return a new Rect padded (smaller) by padding on all sides
+
+        Parameters
+        ----------
+        padding : float
+            The padding.
+
+        Returns
+        -------
+        rect : instance of Rect
+            The padded rectangle.
+        """
         return Rect(pos=(self.pos[0]+padding, self.pos[1]+padding),
                     size=(self.size[0]-2*padding, self.size[1]-2*padding))
 
@@ -120,8 +131,19 @@ class Rect(object):
                     size=(abs(self.width), abs(self.height)))
 
     def flipped(self, x=False, y=True):
-        """ Return a Rect with the same bounds, but with the x or y axes 
-        inverted.
+        """Return a Rect with the same bounds but with axes inverted
+
+        Parameters
+        ----------
+        x : bool
+            Flip the X axis.
+        y : bool
+            Flip the Y axis.
+
+        Returns
+        -------
+        rect : instance of Rect
+            The flipped rectangle.
         """
         pos = list(self.pos)
         size = list(self.size)
@@ -143,6 +165,20 @@ class Rect(object):
         return self._transform_out(self._transform_in()[:, :2] + a[:2])
 
     def contains(self, x, y):
+        """Query if the rectangle contains points
+
+        Parameters
+        ----------
+        x : float
+            X coordinate.
+        y : float
+            Y coordinate.
+
+        Returns
+        -------
+        contains : bool
+            True if the point is within the rectangle.
+        """
         return (x >= self.left and x <= self.right and
                 y >= self.bottom and y <= self.top)
 

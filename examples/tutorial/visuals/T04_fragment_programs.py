@@ -1,7 +1,9 @@
 """
-   Tutorial: Creating Visuals
-     04. Fragment Programs
---------------------------------
+Tutorial: Creating Visuals
+==========================
+
+04. Fragment Programs
+---------------------
 
 In this tutorial, we will demonstrate the use of the fragment shader as a 
 raycaster to draw complex shapes on a simple rectanglular mesh.

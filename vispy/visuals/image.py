@@ -57,7 +57,7 @@ class ImageVisual(Visual):
         and accuracy. If the transform is linear, this parameter is ignored
         and a single quad is drawn around the area of the image.
 
-            * 'auto': Automatically select 'impostor' if the image is drawn 
+            * 'auto': Automatically select 'impostor' if the image is drawn
               with a nonlinear transform; otherwise select 'subdivide'.
             * 'subdivide': ImageVisual is represented as a grid of triangles
               with texture coordinates linearly mapped.
@@ -74,6 +74,8 @@ class ImageVisual(Visual):
     clim : str | tuple
         Limits to use for the colormap. Can be 'auto' to auto-set bounds to
         the min and max of the data.
+    **kwargs : dict
+        Keyword arguments to pass to `Visual`.
 
     Notes
     -----
@@ -100,6 +102,13 @@ class ImageVisual(Visual):
         self._need_vertex_update = True
 
     def set_data(self, image):
+        """Set the data
+
+        Parameters
+        ----------
+        image : array-like
+            The image data.
+        """
         data = np.asarray(image)
         if self._data is None or self._data.shape != data.shape:
             self._need_vertex_update = True
@@ -246,15 +255,33 @@ class ImageVisual(Visual):
             fun = Function(_null_color_transform)
         self._program.frag['color_transform'] = fun
         self._texture = Texture2D(data, interpolation=self._interpolation)
-        self._program['u_texture'] = self._texture 
+        self._program['u_texture'] = self._texture
 
     def bounds(self, mode, axis):
+        """Get the bounds
+
+        Parameters
+        ----------
+        mode : str
+            Describes the type of boundary requested. Can be "visual", "data",
+            or "mouse".
+        axis : 0, 1, 2
+            The axis along which to measure the bounding values, in
+            x-y-z order.
+        """
         if axis > 1:
             return (0, 0)
         else:
             return (0, self.size[axis])
 
     def draw(self, transforms):
+        """Draw the visual
+
+        Parameters
+        ----------
+        transforms : instance of TransformSystem
+            The transforms to use.
+        """
         if self._data is None:
             return
 
@@ -263,11 +290,11 @@ class ImageVisual(Visual):
         # upload texture is needed
         if self._texture is None:
             self._build_texture()
-            
+
         # rebuild vertex buffers if needed
         if self._need_vertex_update:
             self._build_vertex_data(transforms)
-            
+
         # update transform
         method = self._method_used
         if method == 'subdivide':
@@ -275,5 +302,5 @@ class ImageVisual(Visual):
         else:
             self._raycast_func['transform'] = \
                 transforms.get_full_transform().inverse
-            
+
         self._program.draw('triangles')

@@ -51,8 +51,8 @@ class SurfacePlotVisual(MeshVisual):
     def set_data(self, x=None, y=None, z=None, colors=None):
         """Update the data in this surface plot.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         x : ndarray | None
             1D array of values specifying the x positions of vertices in the
             grid. If None, values will be assumed to be integers.

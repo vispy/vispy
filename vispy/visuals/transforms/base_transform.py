@@ -76,7 +76,8 @@ class BaseTransform(object):
         """
         Return *obj* mapped through the forward transformation.
 
-        Parameters:
+        Parameters
+        ----------
             obj : tuple (x,y) or (x,y,z)
                   array with shape (..., 2) or (..., 3)
         """
@@ -86,7 +87,8 @@ class BaseTransform(object):
         """
         Return *obj* mapped through the inverse transformation.
 
-        Parameters:
+        Parameters
+        ----------
             obj : tuple (x,y) or (x,y,z)
                   array with shape (..., 2) or (..., 3)
         """

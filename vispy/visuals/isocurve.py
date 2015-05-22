@@ -35,11 +35,11 @@ class IsocurveVisual(LineVisual):
 
     @property
     def level(self):
-        """ The threshold at which the isocurve is constructed from the 
+        """ The threshold at which the isocurve is constructed from the
         2D data.
         """
         return self._level
-    
+
     @level.setter
     def level(self, level):
         self._level = level
@@ -49,8 +49,8 @@ class IsocurveVisual(LineVisual):
     def set_data(self, data):
         """ Set the scalar array data
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         data : ndarray
             A 2D array of scalar values. The isocurve is constructed to show
             all locations in the scalar field equal to ``self.level``.
@@ -60,12 +60,19 @@ class IsocurveVisual(LineVisual):
         self.update()
 
     def draw(self, transforms):
+        """Draw the visual
+
+        Parameters
+        ----------
+        transforms : instance of TransformSystem
+            The transforms to use.
+        """
         if self._data is None or self._level is None:
             return
-        
+
         if self._recompute:
             verts = []
-            paths = isocurve(self._data.astype(float).T, self._level, 
+            paths = isocurve(self._data.astype(float).T, self._level,
                              extend_to_edge=True, connected=True)
             tot = 0
             gaps = []
@@ -73,12 +80,12 @@ class IsocurveVisual(LineVisual):
                 verts.extend(path)
                 tot += len(path)
                 gaps.append(tot-1)
-                
+
             connect = np.ones(tot-1, dtype=bool)
             connect[gaps[:-1]] = False
-            
+
             verts = np.array(verts)
             LineVisual.set_data(self, pos=verts, connect=connect)
             self._recompute = False
-            
+
         LineVisual.draw(self, transforms)

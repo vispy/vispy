@@ -75,8 +75,8 @@ class TextureFont(object):
     def _load_char(self, char):
         """Build and store a glyph corresponding to an individual character
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         char : str
             A single character to be represented.
         """
@@ -226,6 +226,8 @@ class TextVisual(Visual):
         Horizontal text anchor.
     anchor_y : str
         Vertical text anchor.
+    font_manager : object | None
+        Font manager to use (can be shared if the GLContext is shared).
     """
 
     VERTEX_SHADER = """
@@ -444,6 +446,13 @@ class TextVisual(Visual):
             self._pos = np.concatenate((self._pos, [0.]))
 
     def draw(self, transforms):
+        """Draw the Text
+
+        Parameters
+        ----------
+        transforms : instance of TransformSystem
+            The transforms to use.
+        """
         # attributes / uniforms are not available until program is built
         if len(self.text) == 0:
             return

@@ -17,30 +17,31 @@ from ...visuals import Visual
 
 class ViewBox(Widget):
     """ Provides a rectangular widget to which its subscene is rendered.
-    
+
     Three classes work together when using a ViewBox:
     * The :class:`SubScene` class describes a "world" coordinate system and the
-    entities that live inside it. 
+    entities that live inside it.
     * ViewBox is a "window" through which we view the
     subscene. Multiple ViewBoxes may view the same subscene.
-    * :class:`Camera` describes both the perspective from which the 
-    subscene is rendered, and the way user interaction affects that 
-    perspective. 
-    
-    In general it is only necessary to create the ViewBox; a SubScene and 
+    * :class:`Camera` describes both the perspective from which the
+    subscene is rendered, and the way user interaction affects that
+    perspective.
+
+    In general it is only necessary to create the ViewBox; a SubScene and
     Camera will be generated automatically.
-    
+
     Parameters
     ----------
     camera : None, :class:`Camera`, or str
-        The camera through which to view the SubScene. If None, then a 
+        The camera through which to view the SubScene. If None, then a
         PanZoomCamera (2D interaction) is used. If str, then the string is
         used as the argument to :func:`make_camera`.
     scene : None or :class:`SubScene`
-        The :class:`SubScene` instance to view. If None, a new 
-        :class:`SubScene` is created.
-    
-    All extra keyword arguments are passed to :func:`Widget.__init__`.
+        The `SubScene` instance to view. If None, a new `SubScene` is created.
+    clip_method : str
+        Clipping method to use.
+    **kwargs : dict
+        Extra keyword arguments to pass to `Widget`.
     """
     def __init__(self, camera=None, scene=None, clip_method='fragment',
                  **kwargs):
@@ -125,7 +126,12 @@ class ViewBox(Widget):
             raise ValueError('Not a camera object.')
 
     def is_in_scene(self, node):
-        """ Get whether the given node is inside the scene of this viewbox.
+        """Get whether the given node is inside the scene of this viewbox.
+
+        Parameters
+        ----------
+        node : instance of Node
+            The node.
         """
         def _is_child(parent, child):
             if child in parent.children:
@@ -141,8 +147,18 @@ class ViewBox(Widget):
         return _is_child(self.scene, node)
     
     def get_scene_bounds(self, dim=None):
-        """ Get the total bounds based on the visuals present in the scene.
-        Returns a list of 3 tuples.
+        """Get the total bounds based on the visuals present in the scene
+
+        Parameters
+        ----------
+        dim : int | None
+            Dimension to return.
+
+        Returns
+        -------
+        bounds : list | tuple
+            If ``dim is None``, Returns a list of 3 tuples, otherwise
+            the bounds for the requested dimension.
         """
         # todo: handle sub-children
         # todo: handle transformations
@@ -177,10 +193,15 @@ class ViewBox(Widget):
         return self._scene
 
     def add(self, node):
-        """ Add an Node to the scene for this ViewBox. 
-        
-        This is a convenience method equivalent to 
+        """ Add an Node to the scene for this ViewBox.
+
+        This is a convenience method equivalent to
         `node.add_parent(viewbox.scene)`
+
+        Parameters
+        ----------
+        node : instance of Node
+            The node to add.
         """
         node.add_parent(self.scene)
 
@@ -227,8 +248,15 @@ class ViewBox(Widget):
         self.update()
 
     def draw(self, event):
-        """ Draw the viewbox border/background, and prepare to draw the 
+        """ Draw the viewbox border/background
+
+        This also prepares to draw the
         subscene using the configured clipping method.
+
+        Parameters
+        ----------
+        event : instance of Event
+            The draw event.
         """
         # -- Calculate resolution
 

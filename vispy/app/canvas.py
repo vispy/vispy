@@ -105,7 +105,6 @@ class Canvas(object):
     backends, they are detected manually with a fixed time delay.
     This can cause problems with accessibility, as increasing the OS detection
     time or using a dedicated double-click button will not be respected.
-
     """
 
     def __init__(self, title='Vispy canvas', size=(800, 600), position=None,
@@ -299,11 +298,18 @@ class Canvas(object):
         self.update()
 
     def connect(self, fun):
-        """ Connect a function to an event. The name of the function
+        """ Connect a function to an event
+
+        The name of the function
         should be on_X, with X the name of the event (e.g. 'on_draw').
 
-        This method is typically used as a decorater on a function
+        This method is typically used as a decorator on a function
         definition for an event handler.
+
+        Parameters
+        ----------
+        fun : callable
+            The function.
         """
         # Get and check name
         name = fun.__name__
@@ -391,12 +397,22 @@ class Canvas(object):
 
     def set_current(self, event=None):
         """Make this the active GL canvas
+
+        Parameters
+        ----------
+        event : None
+            Not used.
         """
         self._backend._vispy_set_current()
         set_current_canvas(self)
 
     def swap_buffers(self, event=None):
         """Swap GL buffers such that the offscreen buffer becomes visible
+
+        Parameters
+        ----------
+        event : None
+            Not used.
         """
         self._backend._vispy_swap_buffers()
 
@@ -415,7 +431,13 @@ class Canvas(object):
             self.app.run()
 
     def update(self, event=None):
-        """Inform the backend that the Canvas needs to be redrawn"""
+        """Inform the backend that the Canvas needs to be redrawn
+
+        Parameters
+        ----------
+        event : None
+            Not used.
+        """
         if self._backend is not None:
             self._backend._vispy_update()
 

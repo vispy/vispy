@@ -1,11 +1,12 @@
 """
-   Tutorial: Creating Visuals
-      05. Camera location
---------------------------------
+Tutorial: Creating Visuals
+==========================
+
+05. Camera location
+-------------------
 
 In this tutorial we will demonstrate how to determine the direction from which
-a Visual is being viewed. 
-
+a Visual is being viewed.
 """
 
 from vispy import app, gloo, visuals, scene, io

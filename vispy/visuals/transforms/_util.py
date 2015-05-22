@@ -12,8 +12,34 @@ from ...util import logger
 def arg_to_array(func):
     """
     Decorator to convert argument to array.
+
+    Parameters
+    ----------
+    func : function
+        The function to decorate.
+
+    Returns
+    -------
+    func : function
+        The decorated function.
     """
     def fn(self, arg, *args, **kwargs):
+        """Function
+
+        Parameters
+        ----------
+        arg : array-like
+            Argument to convert.
+        *args : tuple
+            Arguments.
+        **kwargs : dict
+            Keyword arguments.
+
+        Returns
+        -------
+        value : object
+            The return value of the function.
+        """
         return func(self, np.array(arg), *args, **kwargs)
     return fn
 
@@ -22,11 +48,26 @@ def as_vec4(obj, default=(0, 0, 0, 1)):
     """
     Convert `obj` to 4-element vector (numpy array with shape[-1] == 4)
 
+    Parameters
+    ----------
+    obj : array-like
+        Original object.
+    default : array-like
+        The defaults to use if the object does not have 4 entries.
+
+    Returns
+    -------
+    obj : array-like
+        The object promoted to have 4 elements.
+
+    Notes
+    -----
     `obj` will have at least two dimensions.
 
     If `obj` has < 4 elements, then new elements are added from `default`.
     For inputs intended as a position or translation, use default=(0,0,0,1).
     For inputs intended as scale factors, use default=(1,1,1,1).
+
     """
     obj = np.atleast_2d(obj)
     # For multiple vectors, reshape to (..., 4)
@@ -42,7 +83,7 @@ def as_vec4(obj, default=(0, 0, 0, 1)):
 
 
 @decorator
-def arg_to_vec4(func, self, arg, *args, **kwargs):
+def arg_to_vec4(func, self_, arg, *args, **kwargs):
     """
     Decorator for converting argument to vec4 format suitable for 4x4 matrix
     multiplication.
@@ -69,13 +110,13 @@ def arg_to_vec4(func, self, arg, *args, **kwargs):
         flatten = arg.ndim == 1
         arg = as_vec4(arg)
 
-        ret = func(self, arg, *args, **kwargs)
+        ret = func(self_, arg, *args, **kwargs)
         if flatten and ret is not None:
             return ret.flatten()
         return ret
     elif hasattr(arg, '_transform_in'):
         arr = arg._transform_in()
-        ret = func(self, arr, *args, **kwargs)
+        ret = func(self_, arr, *args, **kwargs)
         return arg._transform_out(ret)
     else:
         raise TypeError("Cannot convert argument to 4D vector: %s" % arg)

@@ -7,6 +7,7 @@
 import math
 
 import numpy as np
+import warnings
 
 from .globject import GLObject
 from ..ext.six import string_types
@@ -20,23 +21,30 @@ class BaseTexture(GLObject):
 
     Parameters
     ----------
-    data : ndarray | tuple
+    data : ndarray | tuple | None
         Texture data in the form of a numpy array (or something that
         can be turned into one). A tuple with the shape of the texture
         can also be given.
-    format : str | enum
-        See resize.
-    resizeable : bool
+    format : str | enum | None
+        The format of the texture: 'luminance', 'alpha',
+        'luminance_alpha', 'rgb', or 'rgba'. If not given the format
+        is chosen automatically based on the number of channels.
+        When the data has one channel, 'luminance' is assumed.
+    resizable : bool
         Indicates whether texture can be resized. Default True.
-    interpolation : str
-        Interpolation mode, must be one of: 'nearest', 'linear'. 
+    interpolation : str | None
+        Interpolation mode, must be one of: 'nearest', 'linear'.
         Default 'nearest'.
-    wrapping : str
-        Wrapping mode, must be one of: 'repeat', 'clamp_to_edge', 
+    wrapping : str | None
+        Wrapping mode, must be one of: 'repeat', 'clamp_to_edge',
         'mirrored_repeat'. Default 'clamp_to_edge'.
-    shape : tuple
+    shape : tuple | None
         Optional. A tuple with the shape of the texture. If ``data``
         is also a tuple, it will override the value of ``shape``.
+    internalformat : str | None
+        Internal format to use.
+    resizeable : None
+        Deprecated version of `resizable`.
     """
     _ndim = 2
 
@@ -46,7 +54,7 @@ class BaseTexture(GLObject):
         3: 'rgb',
         4: 'rgba'
     }
-    
+
     _inv_formats = {
         'luminance': 1,
         'alpha': 1,
@@ -57,8 +65,8 @@ class BaseTexture(GLObject):
         'rgba': 4
     }
 
-    _inv_internalformats = dict([ 
-        (base + suffix, channels) 
+    _inv_internalformats = dict([
+        (base + suffix, channels)
         for base, channels in [('r', 1), ('rg', 2), ('rgb', 3), ('rgba', 4)]
         for suffix in ['8', '16', '16f', '32f']
     ] + [
@@ -71,21 +79,26 @@ class BaseTexture(GLObject):
         ('rgba', 4)
     ])
 
-    def __init__(self, data=None, format=None, resizeable=True,
-                 interpolation=None, wrapping=None, shape=None, 
-                 internalformat=None):
+    def __init__(self, data=None, format=None, resizable=True,
+                 interpolation=None, wrapping=None, shape=None,
+                 internalformat=None, resizeable=None):
         GLObject.__init__(self)
-        
+        if resizeable is not None:
+            resizable = resizeable
+            warnings.warn('resizeable has been deprecated in favor of '
+                          'resizable and will be removed next release',
+                          DeprecationWarning)
+
         # Init shape and format
-        self._resizeable = True  # at least while we're in init
+        self._resizable = True  # at least while we're in init
         self._shape = tuple([0 for i in range(self._ndim+1)])
         self._format = format
         self._internalformat = internalformat
-        
+
         # Set texture parameters (before setting data)
         self.interpolation = interpolation or 'nearest'
         self.wrapping = wrapping or 'clamp_to_edge'
-        
+
         # Set data or shape (shape arg is for backward compat)
         if isinstance(data, tuple):
             shape, data = data, None
@@ -100,10 +113,10 @@ class BaseTexture(GLObject):
             self._resize(shape, format, internalformat)
         else:
             raise ValueError("Either data or shape must be given")
-        
+
         # Set resizable (at end of init)
-        self._resizeable = bool(resizeable)
-    
+        self._resizable = bool(resizable)
+
     def _normalize_shape(self, data_or_shape):
         # Get data and shape from input
         if isinstance(data_or_shape, np.ndarray):
@@ -138,7 +151,7 @@ class BaseTexture(GLObject):
         """ The texture format (color channels).
         """
         return self._format
-    
+
     @property
     def wrapping(self):
         """ Texture wrapping mode """
@@ -162,7 +175,7 @@ class BaseTexture(GLObject):
                        for i in range(self._ndim)])
         self._wrapping = value
         self._glir.command('WRAPPING', self._id, value)
-    
+
     @property
     def interpolation(self):
         """ Texture interpolation for minification and magnification. """
@@ -181,24 +194,24 @@ class BaseTexture(GLObject):
             raise ValueError('Invalid value for interpolation: %r' % value)
         # Check and set
         valid = 'nearest', 'linear'
-        value = (check_enum(value[0], 'tex interpolation', valid), 
+        value = (check_enum(value[0], 'tex interpolation', valid),
                  check_enum(value[1], 'tex interpolation', valid))
         self._interpolation = value
         self._glir.command('INTERPOLATION', self._id, *value)
-    
+
     def resize(self, shape, format=None, internalformat=None):
         """Set the texture size and format
-        
+
         Parameters
         ----------
         shape : tuple of integers
             New texture shape in zyx order. Optionally, an extra dimention
             may be specified to indicate the number of color channels.
-        format : str | enum
+        format : str | enum | None
             The format of the texture: 'luminance', 'alpha',
             'luminance_alpha', 'rgb', or 'rgba'. If not given the format
             is chosen automatically based on the number of channels.
-            When the data has one channel, 'luminance' is assumed.  
+            When the data has one channel, 'luminance' is assumed.
         internalformat : str | enum | None
             The internal (storage) format of the texture: 'luminance',
             'alpha', 'r8', 'r16', 'r16f', 'r32f'; 'luminance_alpha',
@@ -207,7 +220,6 @@ class BaseTexture(GLObject):
             'rgba32f'.  If None, the internalformat is chosen
             automatically based on the number of channels.  This is a
             hint which may be ignored by the OpenGL implementation.
-
         """
         return self._resize(shape, format, internalformat)
 
@@ -215,11 +227,11 @@ class BaseTexture(GLObject):
         """Internal method for resize.
         """
         shape = self._normalize_shape(shape)
-        
+
         # Check
-        if not self._resizeable:
-            raise RuntimeError("Texture is not resizeable")
-        
+        if not self._resizable:
+            raise RuntimeError("Texture is not resizable")
+
         # Determine format
         if format is None:
             format = self._formats[shape[-1]]
@@ -263,7 +275,7 @@ class BaseTexture(GLObject):
                            self._internalformat)
 
     def set_data(self, data, offset=None, copy=False):
-        """ Set texture data
+        """Set texture data
 
         Parameters
         ----------
@@ -281,7 +293,6 @@ class BaseTexture(GLObject):
         This operation implicitely resizes the texture to the shape of
         the data if given offset is None.
         """
-
         return self._set_data(data, offset, copy)
 
     def _set_data(self, data, offset=None, copy=False):
@@ -376,23 +387,39 @@ class Texture1D(BaseTexture):
 
     Parameters
     ----------
-
-    data : ndarray
-        Texture data shaped as W, or a tuple with the shape for
-        the texture (W).
-    shape : tuple of integers
-        Texture shape (optional), with shape W.
-    format : str | ENUM
-        The format of the texture: 'luminance', 'alpha', 'luminance_alpha',
-        'rgb', or 'rgba'. If not given the format is chosen automatically
-        based on the number of channels. When the data has one channel,
-        'luminance' is assumed.
+    data : ndarray | tuple | None
+        Texture data in the form of a numpy array (or something that
+        can be turned into one). A tuple with the shape of the texture
+        can also be given.
+    format : str | enum | None
+        The format of the texture: 'luminance', 'alpha',
+        'luminance_alpha', 'rgb', or 'rgba'. If not given the format
+        is chosen automatically based on the number of channels.
+        When the data has one channel, 'luminance' is assumed.
+    resizable : bool
+        Indicates whether texture can be resized. Default True.
+    interpolation : str | None
+        Interpolation mode, must be one of: 'nearest', 'linear'.
+        Default 'nearest'.
+    wrapping : str | None
+        Wrapping mode, must be one of: 'repeat', 'clamp_to_edge',
+        'mirrored_repeat'. Default 'clamp_to_edge'.
+    shape : tuple | None
+        Optional. A tuple with the shape of the texture. If ``data``
+        is also a tuple, it will override the value of ``shape``.
+    internalformat : str | None
+        Internal format to use.
+    resizeable : None
+        Deprecated version of `resizable`.
     """
     _ndim = 1
     _GLIR_TYPE = 'Texture1D'
 
-    def __init__(self, data=None, format=None, **kwargs):
-        BaseTexture.__init__(self, data, format, **kwargs)
+    def __init__(self, data=None, format=None, resizable=True,
+                 interpolation=None, wrapping=None, shape=None,
+                 internalformat=None, resizeable=None):
+        BaseTexture.__init__(self, data, format, resizable, interpolation,
+                             wrapping, shape, internalformat, resizeable)
 
     @property
     def width(self):
@@ -424,23 +451,38 @@ class Texture2D(BaseTexture):
 
     Parameters
     ----------
-
     data : ndarray
-        Texture data shaped as HxW, or a tuple with the shape for
-        the texture (H, W).
-    shape : tuple of integers
-        Texture shape (optional), with shape HxW.
-    format : str | ENUM
-        The format of the texture: 'luminance', 'alpha', 'luminance_alpha',
-        'rgb', or 'rgba'. If not given the format is chosen automatically
-        based on the number of channels. When the data has one channel,
-        'luminance' is assumed.
+        Texture data shaped as W, or a tuple with the shape for
+        the texture (W).
+    format : str | enum | None
+        The format of the texture: 'luminance', 'alpha',
+        'luminance_alpha', 'rgb', or 'rgba'. If not given the format
+        is chosen automatically based on the number of channels.
+        When the data has one channel, 'luminance' is assumed.
+    resizable : bool
+        Indicates whether texture can be resized. Default True.
+    interpolation : str
+        Interpolation mode, must be one of: 'nearest', 'linear'.
+        Default 'nearest'.
+    wrapping : str
+        Wrapping mode, must be one of: 'repeat', 'clamp_to_edge',
+        'mirrored_repeat'. Default 'clamp_to_edge'.
+    shape : tuple
+        Optional. A tuple with the shape HxW. If ``data``
+        is also a tuple, it will override the value of ``shape``.
+    internalformat : str | None
+        Internal format to use.
+    resizeable : None
+        Deprecated version of `resizable`.
     """
     _ndim = 2
     _GLIR_TYPE = 'Texture2D'
-    
-    def __init__(self, data=None, format=None, **kwargs):
-        BaseTexture.__init__(self, data, format, **kwargs)
+
+    def __init__(self, data=None, format=None, resizable=True,
+                 interpolation=None, wrapping=None, shape=None,
+                 internalformat=None, resizeable=None):
+        BaseTexture.__init__(self, data, format, resizable, interpolation,
+                             wrapping, shape, internalformat, resizeable)
 
     @property
     def height(self):
@@ -477,20 +519,39 @@ class Texture3D(BaseTexture):
 
     Parameters
     ----------
-    data : ndarray | tuple
-        Texture data, shaped as DxHxW, or a tuple with the shape for
-        the texture (D, H, W).
-    format : str | ENUM
-        The format of the texture: 'luminance', 'alpha', 'luminance_alpha',
-        'rgb', or 'rgba'. If not given the format is chosen automatically
-        based on the number of channels. When the data has one channel,
-        'luminance' is assumed.
+    data : ndarray | tuple | None
+        Texture data in the form of a numpy array (or something that
+        can be turned into one). A tuple with the shape of the texture
+        can also be given.
+    format : str | enum | None
+        The format of the texture: 'luminance', 'alpha',
+        'luminance_alpha', 'rgb', or 'rgba'. If not given the format
+        is chosen automatically based on the number of channels.
+        When the data has one channel, 'luminance' is assumed.
+    resizable : bool
+        Indicates whether texture can be resized. Default True.
+    interpolation : str | None
+        Interpolation mode, must be one of: 'nearest', 'linear'.
+        Default 'nearest'.
+    wrapping : str | None
+        Wrapping mode, must be one of: 'repeat', 'clamp_to_edge',
+        'mirrored_repeat'. Default 'clamp_to_edge'.
+    shape : tuple | None
+        Optional. A tuple with the shape of the texture. If ``data``
+        is also a tuple, it will override the value of ``shape``.
+    internalformat : str | None
+        Internal format to use.
+    resizeable : None
+        Deprecated version of `resizable`.
     """
     _ndim = 3
     _GLIR_TYPE = 'Texture3D'
-    
-    def __init__(self, data=None, format=None, **kwargs):
-        BaseTexture.__init__(self, data, format, **kwargs)
+
+    def __init__(self, data=None, format=None, resizable=True,
+                 interpolation=None, wrapping=None, shape=None,
+                 internalformat=None, resizeable=None):
+        BaseTexture.__init__(self, data, format, resizable, interpolation,
+                             wrapping, shape, internalformat, resizeable)
 
     @property
     def width(self):
@@ -532,8 +593,30 @@ class TextureEmulated3D(Texture2D):
 
     Parameters
     ----------
-    Same as Texture2D, but the data is first reshaped from a 3D array
-    to a 2D array.
+    data : ndarray | tuple | None
+        Texture data in the form of a numpy array (or something that
+        can be turned into one). A tuple with the shape of the texture
+        can also be given.
+    format : str | enum | None
+        The format of the texture: 'luminance', 'alpha',
+        'luminance_alpha', 'rgb', or 'rgba'. If not given the format
+        is chosen automatically based on the number of channels.
+        When the data has one channel, 'luminance' is assumed.
+    resizable : bool
+        Indicates whether texture can be resized. Default True.
+    interpolation : str | None
+        Interpolation mode, must be one of: 'nearest', 'linear'.
+        Default 'nearest'.
+    wrapping : str | None
+        Wrapping mode, must be one of: 'repeat', 'clamp_to_edge',
+        'mirrored_repeat'. Default 'clamp_to_edge'.
+    shape : tuple | None
+        Optional. A tuple with the shape of the texture. If ``data``
+        is also a tuple, it will override the value of ``shape``.
+    internalformat : str | None
+        Internal format to use.
+    resizeable : None
+        Deprecated version of `resizable`.
     """
 
     # TODO: does GL's nearest use floor or round?
@@ -544,7 +627,7 @@ class TextureEmulated3D(Texture2D):
             texcoord.x = max(0.5, texcoord.x) / $shape.x;
             texcoord.y = min(texcoord.y * $shape.y, $shape.y - 0.5);
             texcoord.y = max(0.5, texcoord.y) / $shape.y;
-            
+
             float index = floor(texcoord.z * $shape.z);
 
             // Do a lookup in the 2D texture
@@ -562,7 +645,6 @@ class TextureEmulated3D(Texture2D):
             texcoord.x = max(0.5, texcoord.x) / $shape.x;
             texcoord.y = min(texcoord.y * $shape.y, $shape.y - 0.5);
             texcoord.y = max(0.5, texcoord.y) / $shape.y;
-            
 
             float z = texcoord.z * $shape.z;
             float zindex1 = floor(z);
@@ -575,19 +657,22 @@ class TextureEmulated3D(Texture2D):
 
             vec4 s1 = texture2D(tex, vec2(u1, v1));
             vec4 s2 = texture2D(tex, vec2(u2, v2));
-            
+
             return s1 * (zindex2 - z) + s2 * (z - zindex1);
         }
     """
 
     _gl_max_texture_size = 1024  # For now, we just set this manually
 
-    def __init__(self, data=None, format=None, **kwargs):
-        from ..visuals.shaders import Function 
+    def __init__(self, data=None, format=None, resizable=True,
+                 interpolation=None, wrapping=None, shape=None,
+                 internalformat=None, resizeable=None):
+        from ..visuals.shaders import Function
 
         self._set_emulated_shape(data)
         Texture2D.__init__(self, self._normalize_emulated_shape(data),
-                           format, **kwargs)
+                           format, resizable, interpolation, wrapping,
+                           shape, internalformat, resizeable)
         if self.interpolation == 'nearest':
             self._glsl_sample = Function(self.__class__._glsl_sample_nearest)
         else:
@@ -632,12 +717,51 @@ class TextureEmulated3D(Texture2D):
         self._glsl_sample['r'] = self._r
 
     def set_data(self, data, offset=None, copy=False):
+        """Set texture data
+
+        Parameters
+        ----------
+        data : ndarray
+            Data to be uploaded
+        offset: int | tuple of ints
+            Offset in texture where to start copying data
+        copy: bool
+            Since the operation is deferred, data may change before
+            data is actually uploaded to GPU memory. Asking explicitly
+            for a copy will prevent this behavior.
+
+        Notes
+        -----
+        This operation implicitely resizes the texture to the shape of
+        the data if given offset is None.
+        """
         self._set_emulated_shape(data)
         Texture2D.set_data(self, self._normalize_emulated_shape(data),
                            offset, copy)
         self._update_variables()
 
     def resize(self, shape, format=None, internalformat=None):
+        """Set the texture size and format
+
+        Parameters
+        ----------
+        shape : tuple of integers
+            New texture shape in zyx order. Optionally, an extra dimention
+            may be specified to indicate the number of color channels.
+        format : str | enum | None
+            The format of the texture: 'luminance', 'alpha',
+            'luminance_alpha', 'rgb', or 'rgba'. If not given the format
+            is chosen automatically based on the number of channels.
+            When the data has one channel, 'luminance' is assumed.
+        internalformat : str | enum | None
+            The internal (storage) format of the texture: 'luminance',
+            'alpha', 'r8', 'r16', 'r16f', 'r32f'; 'luminance_alpha',
+            'rg8', 'rg16', 'rg16f', 'rg32f'; 'rgb', 'rgb8', 'rgb16',
+            'rgb16f', 'rgb32f'; 'rgba', 'rgba8', 'rgba16', 'rgba16f',
+            'rgba32f'.  If None, the internalformat is chosen
+            automatically based on the number of channels.  This is a
+            hint which may be ignored by the OpenGL implementation.
+        """
         self._set_emulated_shape(shape)
         Texture2D.resize(self, self._normalize_emulated_shape(shape),
                          format, internalformat)
@@ -685,7 +809,7 @@ class TextureAtlas(Texture2D):
     Parameters
     ----------
     shape : tuple of int
-        Texture width and height (optional).
+        Texture shape (optional).
 
     Notes
     -----
@@ -702,7 +826,7 @@ class TextureAtlas(Texture2D):
         shape = tuple(2 ** (np.log2(shape) + 0.5).astype(int)) + (3,)
         self._atlas_nodes = [(0, 0, shape[1])]
         data = np.zeros(shape, np.float32)
-        super(TextureAtlas, self).__init__(data, interpolation='linear', 
+        super(TextureAtlas, self).__init__(data, interpolation='linear',
                                            wrapping='clamp_to_edge')
 
     def get_free_region(self, width, height):
