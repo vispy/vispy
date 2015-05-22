@@ -1,6 +1,6 @@
 # !/usr/bin/env python
 # -*- coding: utf-8 -*-
-# vispy: gallery 1
+# vispy: gallery 30
 
 """
 A scatter plot of 2D points with matching histograms.
@@ -16,7 +16,8 @@ color = (0.8, 0.25, 0.)
 n_bins = 100
 
 fig = vp.Fig(show=False)
-fig[0:4, 0:4].plot(data, width=0, face_color=color + (0.05,), edge_color=None)
+fig[0:4, 0:4].plot(data, width=0, face_color=color + (0.05,), edge_color=None,
+                   marker_size=10.)
 fig[4, 0:4].histogram(data[:, 0], bins=n_bins, color=color, orientation='h')
 fig[0:4, 4].histogram(data[:, 1], bins=n_bins, color=color, orientation='v')
 
