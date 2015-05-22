@@ -25,7 +25,7 @@ __all__ = ['use', 'sys_info', 'set_log_level', 'test']
 version_info = 0, 5, 0, 'dev0'  # major, minor, patch, extra
 
 # Nice string for the version (mimic how IPython composes its version str)
-__version__ = '-'.join(map(str, version_info)).replace('-', '.', 2).strip('-')
+__version__ = '-'.join(map(str, version_info)).replace('-', '.').strip('-')
 
 from .util import config, set_log_level, keys, sys_info  # noqa
 from .util.wrappers import use  # noqa
