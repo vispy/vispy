@@ -4,6 +4,12 @@ from vispy.visuals.components import Clipper, Alpha, ColorFilter
         
 
 class LineVisual(visuals.Visual):
+    """Example of a very simple GL-line visual. 
+    
+    This shows the minimal set of methods that need to be reimplemented to 
+    make a new visual class.
+    
+    """
     def __init__(self, pos=None, color=(1, 1, 1, 1)):
         vcode = """
         attribute vec2 a_pos;
@@ -23,10 +29,22 @@ class LineVisual(visuals.Visual):
         visuals.Visual.__init__(self, vcode=vcode, fcode=fcode)
         
         self.pos_buf = gloo.VertexBuffer()
+        
+        # The Visual superclass contains a MultiProgram, which is an object that 
+        # behaves like a normal shader program (you can assign shader code, upload
+        # values, set template variables, etc.) but internally manages multiple 
+        # ModularProgram instances, one per view.
+        
+        # The MultiProgram is accessed via the `shared_program` property, so
+        # the following modifications to the program will be applied to all 
+        # views:
         self.shared_program['a_pos'] = self.pos_buf
         self.shared_program.frag['color'] = color
+        
         self._need_upload = False
         
+        # Visual keeps track of draw mode, index buffer, and GL state. These
+        # are shared between all views.
         self._draw_mode = 'line_strip'
         self.set_gl_state('translucent', depth_test=False)
         
@@ -38,23 +56,53 @@ class LineVisual(visuals.Visual):
         self._need_upload = True
         
     def _prepare_draw(self, view=None):
+        """This method is called immediately before each draw.
+        
+        The *view* argument indicates which view is about to be drawn.
+        """
         if self._need_upload:
+            # Note that pos_buf is shared between all views, so we have no need
+            # to use the *view* argument in this example. This will be true
+            # for most visuals.
             self.pos_buf.set_data(self._pos)
             self._need_upload = False
     
     @staticmethod
     def _prepare_transforms(view):
+        """This method is called whenever the TransformSystem instance is
+        changed for a view.
+        
+        Note that each view has its own TransformSystem. In this method we 
+        connect the appropriate mapping functions from the view's
+        TransformSystem to the view's program.
+        """
+        
+        # Note that we access `view_program` instead of `shared_program`
+        # because we do not want this function assigned to other views.
         tr = view.transforms.get_full_transform()
         view.view_program.vert['transform'] = tr
     
 
 class PointVisual(LineVisual):
+    """Another simple visual class. 
+    
+    Due to the simplicity of these example classes, it was only necessary to
+    subclass from LineVisual and set the draw mode to 'points'. A more
+    fully-featured PointVisual class might not follow this approach.
+    """
     def __init__(self, pos=None, color=(1, 1, 1, 1)):
         LineVisual.__init__(self, pos, color)
         self._draw_mode = 'points'
     
 
 class PlotLineVisual(visuals.CompoundVisual):
+    """An example compound visual that draws lines and points.
+    
+    To the user, the compound visual behaves exactly like a normal visual--it
+    has a transform system, draw() and bounds() methods, etc. Internally, the
+    compound visual automatically manages proxying these transforms and methods
+    to its sub-visuals.
+    """
     def __init__(self, pos=None, line_color=(1, 1, 1, 1), point_color=(1, 1, 1, 1)):
         self._line = LineVisual(pos, color=line_color)
         self._point = PointVisual(pos, color=point_color)
@@ -78,7 +126,9 @@ if __name__ == '__main__':
     # Attach color filter to all views (current and future) of the visual
     line.attach(ColorFilter((1, 1, 0.5, 0.7)))
     
-    # Attach a clipper just to this view
+    # Attach a clipper just to this view. The Clipper filter requires a
+    # transform that maps from the framebuffer coordinate system to the 
+    # clipping coordinates.
     tr = line.transforms.document_to_framebuffer.inverse
     line.attach(Clipper((20, 20, 260, 260), transform=tr), view=line)
     
