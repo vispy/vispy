@@ -13,8 +13,17 @@ from .. import gloo
 
 class VisualShare(object):
     """Contains data that is shared between all views of a visual.
+    
+    This includes:
+    
+    * GL state variables (blending, depth test, etc.)
+    * A weak dictionary of all views
+    * A list of filters that should be applied to all views
+    * A cache for bounds.
     """
     def __init__(self):
+        # Note: in some cases we will need to compute bounds independently for each
+        # view. That will have to be worked out later..
         self.bounds = {}
         self.gl_state = {}
         self.views = weakref.WeakValueDictionary()
@@ -22,6 +31,17 @@ class VisualShare(object):
 
 
 class BaseVisual(object):
+    """Superclass for all visuals.
+    
+    This class provides:
+    
+    * A TransformSystem.
+    * Two events: `update` and `bounds_change`.
+    * Minimal framework for creating views of the visual.
+    * A data structure that is shared between all views of the visual.
+    * Abstract `draw`, `bounds`, `attach`, and `detach` methods.
+    
+    """
     def __init__(self, vshare=None, key=None):
         self._view_class = getattr(self, '_view_class', VisualView)
         
@@ -77,6 +97,12 @@ class BaseVisual(object):
 
 
 class BaseVisualView(object):
+    """Base class for a view on a visual.
+    
+    This class must be mixed with another Visual class to work properly. It 
+    works mainly by forwarding the calls to _prepare_draw, _prepare_transforms,
+    and _compute_bounds to the viewed visual.
+    """
     def __init__(self, visual, key):
         self._visual = visual
         
@@ -98,6 +124,17 @@ class BaseVisualView(object):
 
 
 class Visual(BaseVisual):
+    """Base class for all visuals that can be drawn using a single shader 
+    program.
+    
+    This class creates a MultiProgram, which is an object that 
+    behaves like a normal shader program (you can assign shader code, upload
+    values, set template variables, etc.) but internally manages multiple 
+    ModularProgram instances, one per view.
+    
+    Subclasses generally only need to reimplement _compute_bounds,
+    _prepare_draw, and _prepare_transforms.
+    """
     def __init__(self, vshare=None, key=None, vcode=None, fcode=None):
         self._view_class = VisualView
         BaseVisual.__init__(self, vshare, key)
@@ -245,6 +282,10 @@ class Visual(BaseVisual):
         
 
 class VisualView(BaseVisualView, Visual):
+    """A view on another Visual instance.
+    
+    View instances are created by calling ``visual.view()``.
+    """
     def __init__(self, visual, key):
         BaseVisualView.__init__(self, visual, key)
         Visual.__init__(self, visual._vshare, key)
@@ -256,6 +297,11 @@ class VisualView(BaseVisualView, Visual):
         
 class CompoundVisual(BaseVisual):
     """Visual consisting entirely of sub-visuals.
+
+    To the user, a compound visual behaves exactly like a normal visual--it
+    has a transform system, draw() and bounds() methods, etc. Internally, the
+    compound visual automatically manages proxying these transforms and methods
+    to its sub-visuals.
     """
     def __init__(self, subvisuals):
         self._view_class = CompoundVisualView
