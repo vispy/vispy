@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2014, Vispy Development Team. All Rights Reserved.
+# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 """ Fast and failsafe GL console """
@@ -74,6 +74,7 @@ VERTEX_SHADER = """
 uniform vec2 u_logical_scale;
 uniform float u_physical_scale;
 uniform vec4 u_color;
+uniform vec4 u_origin; 
 
 attribute vec2 a_position;
 attribute vec3 a_bytes_012;
@@ -84,8 +85,7 @@ varying vec3 v_bytes_012, v_bytes_345;
 
 void main (void)
 {
-    vec4 pos = $transform(vec4(0., 0., 0., 1.));
-    gl_Position = pos + vec4(a_position * u_logical_scale, 0., 0.);
+    gl_Position = u_origin + vec4(a_position * u_logical_scale, 0., 0.);
     gl_PointSize = 8.0 * u_physical_scale;
     v_color = u_color;
     v_bytes_012 = a_bytes_012;
@@ -205,6 +205,13 @@ class Console(Widget):
         self._current_sizes = new_sizes
 
     def draw(self, event):
+        """Draw the widget
+
+        Parameters
+        ----------
+        event : instance of Event
+            The draw event.
+        """
         super(Console, self).draw(event)
         if event is None:
             raise RuntimeError('Event cannot be None')
@@ -219,7 +226,7 @@ class Console(Widget):
         font_scale = max(n_pix / float((self._char_height-2)), 1)
         self._resize_buffers(font_scale)
         self._do_pending_writes()
-        self._program.vert['transform'] = xform
+        self._program['u_origin'] = xform.map((0, 0, 0, 1))
         self._program.prepare()
         self._program['u_logical_scale'] = font_scale * logical_scale
         self._program['u_color'] = self.text_color.rgba
@@ -256,6 +263,7 @@ class Console(Widget):
         # ensure we only have ASCII chars
         text = text.encode('utf-8').decode('ascii', errors='replace')
         self._pending_writes.append((text, wrap))
+        self.update()
 
     def _do_pending_writes(self):
         """Do any pending text writes"""

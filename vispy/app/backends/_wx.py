@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2014, Vispy Development Team.
+# Copyright (c) 2015, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """
@@ -205,6 +205,10 @@ class CanvasBackend(GLCanvas, BaseCanvasBackend):
         BaseCanvasBackend.__init__(self, *args)
         p = self._process_backend_kwargs(kwargs)
 
+        # WX supports OS double-click events, so we set this here to
+        # avoid double events
+        self._double_click_supported = True
+
         # Set config
         self._gl_attribs = _set_config(p.context.config)
         # Deal with context
@@ -273,7 +277,7 @@ class CanvasBackend(GLCanvas, BaseCanvasBackend):
         dc = wx.PaintDC(self)  # needed for wx
         if not self._init:
             self._initialize()
-        self._vispy_set_current()
+        self._vispy_canvas.set_current()
         self._vispy_canvas.events.draw(region=None)
         del dc
         event.Skip()
@@ -282,24 +286,23 @@ class CanvasBackend(GLCanvas, BaseCanvasBackend):
         if self._vispy_canvas is None:
             return
         self._init = True
-        self._vispy_set_current()
+        self._vispy_canvas.set_current()
         self._vispy_canvas.events.initialize()
         self.on_resize(DummySize(self._size_init))
 
     def _vispy_set_current(self):
-        self._vispy_canvas.set_current()  # Mark as current
         self.SetCurrent(self._gl_context)
 
     def _vispy_warmup(self):
         etime = time() + 0.3
         while time() < etime:
             sleep(0.01)
-            self._vispy_set_current()
+            self._vispy_canvas.set_current()
             self._vispy_canvas.app.process_events()
 
     def _vispy_swap_buffers(self):
         # Swap front and back buffer
-        self._vispy_set_current()
+        self._vispy_canvas.set_current()
         self.SwapBuffers()
 
     def _vispy_set_title(self, title):
@@ -409,8 +412,10 @@ class CanvasBackend(GLCanvas, BaseCanvasBackend):
             elif evt.RightDClick():
                 button = 2
             else:
-                evt.Skip()            
+                evt.Skip()
             self._vispy_mouse_press(pos=pos, button=button, modifiers=mods)
+            self._vispy_mouse_double_click(pos=pos, button=button,
+                                           modifiers=mods)
         evt.Skip()
 
     def on_key_down(self, evt):

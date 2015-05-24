@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2014, Vispy Development Team.
+# Copyright (c) 2015, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 """
 vispy headless backend for egl.
@@ -147,7 +147,7 @@ class CanvasBackend(BaseCanvasBackend):
 
         # Init
         self._initialized = True
-        self._vispy_set_current()
+        self._vispy_canvas.set_current()
         self._vispy_canvas.events.initialize()
 
     def _destroy_surface(self):
@@ -171,7 +171,7 @@ class CanvasBackend(BaseCanvasBackend):
         etime = time() + 0.25
         while time() < etime:
             sleep(0.01)
-            self._vispy_set_current()
+            self._vispy_canvas.set_current()
             self._vispy_canvas.app.process_events()
 
     def _vispy_set_current(self):
@@ -216,7 +216,7 @@ class CanvasBackend(BaseCanvasBackend):
         # This is called by the processing app
         if self._vispy_canvas is None or self._surface is None:
             return
-        self._vispy_set_current()
+        self._vispy_canvas.set_current()
         self._vispy_canvas.events.draw(region=None)  # (0, 0, w, h))
 
 

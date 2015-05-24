@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2014, Vispy Development Team.
+# Copyright (c) 2015, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division
@@ -80,7 +80,7 @@ class LogTransform(BaseTransform):
         ret = np.empty(coords.shape, coords.dtype)
         if base is None:
             base = self.base
-        for i in range(ret.shape[-1]):
+        for i in range(min(ret.shape[-1], 3)):
             if base[i] > 1.0:
                 ret[..., i] = np.log(coords[..., i]) / np.log(base[i])
             elif base[i] < -1.0:

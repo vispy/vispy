@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2014, Vispy Development Team.
+# Copyright (c) 2015, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from ..scene import SceneCanvas
@@ -7,8 +7,33 @@ from .plotwidget import PlotWidget
 
 
 class Fig(SceneCanvas):
-    """Create a figure window"""
+    """Create a figure window
 
+    Parameters
+    ----------
+    bgcolor : instance of Color
+        Color to use for the background.
+    size : tuple
+        Size of the figure window in pixels.
+    show : bool
+        If True, show the window.
+
+    Notes
+    -----
+    You can create a Figure, PlotWidget, and diagonal line plot like this::
+
+        >>> from vispy.plot import Fig
+        >>> fig = Fig()
+        >>> ax = fig[0, 0]  # this creates a PlotWidget
+        >>> ax.plot([[0, 1], [0, 1]])
+
+    See the gallery for many other examples.
+
+    See Also
+    --------
+    PlotWidget : the axis widget for plotting
+    SceneCanvas : the super class
+    """
     def __init__(self, bgcolor='w', size=(800, 600), show=True):
         super(Fig, self).__init__(bgcolor=bgcolor, keys='interactive',
                                   show=show, size=size)

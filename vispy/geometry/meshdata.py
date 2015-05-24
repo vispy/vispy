@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2014, Vispy Development Team.
+# Copyright (c) 2015, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 import numpy as np
@@ -120,9 +120,22 @@ class MeshData(object):
         return self._faces
 
     def get_edges(self, indexed=None):
-        """Array (Nf, 3) of vertex indices, two per edge in the mesh.
+        """Edges of the mesh
+        
+        Parameters
+        ----------
+        indexed : str | None
+           If indexed is None, return (Nf, 3) array of vertex indices,
+           two per edge in the mesh.
            If indexed is 'faces', then return (Nf, 3, 2) array of vertex
-           indices with 3 edges per face, and two vertices per edge."""
+           indices with 3 edges per face, and two vertices per edge.
+
+        Returns
+        -------
+        edges : ndarray
+            The edges.
+        """
+        
         if indexed is None:
             if self._edges is None:
                 self._compute_edges(indexed=None)
@@ -135,9 +148,15 @@ class MeshData(object):
             raise Exception("Invalid indexing mode. Accepts: None, 'faces'")
 
     def set_faces(self, faces):
-        """Set the (Nf, 3) array of faces. Each rown in the array contains
-        three indices into the vertex array, specifying the three corners
-        of a triangular face."""
+        """Set the faces
+
+        Parameters
+        ----------
+        faces : ndarray
+            (Nf, 3) array of faces. Each row in the array contains
+            three indices into the vertex array, specifying the three corners
+            of a triangular face.
+        """
         self._faces = faces
         self._edges = None
         self._edges_indexed_by_faces = None
@@ -148,11 +167,22 @@ class MeshData(object):
         self._face_colors_indexed_by_faces = None
 
     def get_vertices(self, indexed=None):
-        """Return an array (N,3) of the positions of vertices in the mesh.
-        By default, each unique vertex appears only once in the array.
-        If indexed is 'faces', then the array will instead contain three
-        vertices per face in the mesh (and a single vertex may appear more
-        than once in the array)."""
+        """Get the vertices
+
+        Parameters
+        ----------
+        indexed : str | None
+            If Note, return an array (N,3) of the positions of vertices in
+            the mesh. By default, each unique vertex appears only once.
+            If indexed is 'faces', then the array will instead contain three
+            vertices per face in the mesh (and a single vertex may appear more
+            than once in the array).
+
+        Returns
+        -------
+        vertices : ndarray
+            The vertices.
+        """
         if indexed is None:
             if (self._vertices is None and
                     self._vertices_indexed_by_faces is not None):
@@ -168,6 +198,13 @@ class MeshData(object):
             raise Exception("Invalid indexing mode. Accepts: None, 'faces'")
 
     def get_bounds(self):
+        """Get the mesh bounds
+
+        Returns
+        -------
+        bounds : list
+            A list of tuples of mesh bounds.
+        """
         if self._vertices_indexed_by_faces is not None:
             v = self._vertices_indexed_by_faces
         elif self._vertices is not None:
@@ -178,12 +215,19 @@ class MeshData(object):
         return bounds
         
     def set_vertices(self, verts=None, indexed=None, reset_normals=True):
-        """
-        Set the array (Nv, 3) of vertex coordinates.
-        If indexed=='faces', then the data must have shape (Nf, 3, 3) and is
-        assumed to be already indexed as a list of faces.
-        This will cause any pre-existing normal vectors to be cleared
-        unless reset_normals=False.
+        """Set the mesh vertices
+
+        Parameters
+        ----------
+        verts : ndarray | None
+            The array (Nv, 3) of vertex coordinates.
+        indexed : str | None
+            If indexed=='faces', then the data must have shape (Nf, 3, 3) and
+            is assumed to be already indexed as a list of faces. This will
+            cause any pre-existing normal vectors to be cleared unless
+            reset_normals=False.
+        reset_normals : bool
+            If True, reset the normals.
         """
         if indexed is None:
             if verts is not None:
@@ -230,11 +274,19 @@ class MeshData(object):
         return False
 
     def get_face_normals(self, indexed=None):
-        """
-        Return an array (Nf, 3) of normal vectors for each face.
-        If indexed='faces', then instead return an indexed array
-        (Nf, 3, 3)  (this is just the same array with each vector
-        copied three times).
+        """Get face normals
+
+        Parameters
+        ----------
+        indexed : str | None
+            If None, return an array (Nf, 3) of normal vectors for each face.
+            If 'faces', then instead return an indexed array (Nf, 3, 3)
+            (this is just the same array with each vector copied three times).
+
+        Returns
+        -------
+        normals : ndarray
+            The normals.
         """
         if self._face_normals is None:
             v = self.get_vertices(indexed='faces')
@@ -254,12 +306,20 @@ class MeshData(object):
             raise Exception("Invalid indexing mode. Accepts: None, 'faces'")
 
     def get_vertex_normals(self, indexed=None):
-        """
-        Return an array of normal vectors.
-        By default, the array will be (N, 3) with one entry per unique
-        vertex in the mesh. If indexed is 'faces', then the array will
-        contain three normal vectors per face (and some vertices may be
-        repeated).
+        """Get vertex normals
+
+        Parameters
+        ----------
+        indexed : str | None
+            If None, return an (N, 3) array of normal vectors with one entry
+            per unique vertex in the mesh. If indexed is 'faces', then the
+            array will contain three normal vectors per face (and some
+            vertices may be repeated).
+
+        Returns
+        -------
+        normals : ndarray
+            The normals.
         """
         if self._vertex_normals is None:
             faceNorms = self.get_face_normals()
@@ -284,10 +344,19 @@ class MeshData(object):
             raise Exception("Invalid indexing mode. Accepts: None, 'faces'")
 
     def get_vertex_colors(self, indexed=None):
-        """
-        Return an array (Nv, 4) of vertex colors.
-        If indexed=='faces', then instead return an indexed array
-        (Nf, 3, 4).
+        """Get vertex colors
+
+        Parameters
+        ----------
+        indexed : str | None
+            If None, return an array (Nv, 4) of vertex colors.
+            If indexed=='faces', then instead return an indexed array
+            (Nf, 3, 4).
+
+        Returns
+        -------
+        colors : ndarray
+            The vertex colors.
         """
         if indexed is None:
             return self._vertex_colors
@@ -330,11 +399,20 @@ class MeshData(object):
             raise ValueError('indexed must be None or "faces"')
 
     def get_face_colors(self, indexed=None):
-        """
-        Return an array (Nf, 4) of face colors.
-        If indexed=='faces', then instead return an indexed array
-        (Nf, 3, 4)  (note this is just the same array with each color
-        repeated three times).
+        """Get the face colors
+
+        Parameters
+        ----------
+        indexed : str | None
+            If indexed is None, return (Nf, 4) array of face colors.
+            If indexed=='faces', then instead return an indexed array
+            (Nf, 3, 4)  (note this is just the same array with each color
+            repeated three times).
+        
+        Returns
+        -------
+        colors : ndarray
+            The colors.
         """
         if indexed is None:
             return self._face_colors
@@ -476,7 +554,13 @@ class MeshData(object):
             raise Exception("Invalid indexing mode. Accepts: None, 'faces'")
 
     def save(self):
-        """Serialize this mesh to a string appropriate for disk storage"""
+        """Serialize this mesh to a string appropriate for disk storage
+
+        Returns
+        -------
+        state : dict
+            The state.
+        """
         import pickle
         if self._faces is not None:
             names = ['_vertices', '_faces']
@@ -497,7 +581,13 @@ class MeshData(object):
         return pickle.dumps(state)
 
     def restore(self, state):
-        """Restore the state of a mesh previously saved using save()"""
+        """Restore the state of a mesh previously saved using save()
+
+        Parameters
+        ----------
+        state : dict
+            The previous state.
+        """
         import pickle
         state = pickle.loads(state)
         for k in state:

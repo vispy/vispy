@@ -6,9 +6,13 @@ library**. Vispy leverages the computational power of modern **Graphics
 Processing Units (GPUs)** through the **OpenGL** library to display very
 large datasets.
 
+.. toctree::
+   :maxdepth: 1
+
+   index
 
 Overview
---------
+========
 
 Vispy is a young library under heavy development at this time. It
 targets two categories of users:
@@ -37,11 +41,12 @@ We are still working on a complete user guide for Vispy. In the meantime, you
 can:
 
   * Check out the `gallery <http://vispy.org/gallery.html>`_
-  * Use the ``mpl_plot`` experimental OpenGL backend for matplotlib
+  * Use the ``vispy.plot`` and ``vispy.scene`` interfaces for high-level work
+    (WARNING: experimental / developing code)
+  * Use the ``vispy.mpl_plot`` experimental OpenGL backend for matplotlib
   * Start learning OpenGL (see below)
-  * Write your own visualizations with **gloo** (require knowing some 
+  * Write your own visualizations with ``vispy.gloo`` (requires knowing some 
     OpenGL/GLSL)
-  * Start using the higher-level interfaces (visuals, scene graph)
   
 
 Learning the fundamentals of modern OpenGL
@@ -64,7 +69,7 @@ GPUs.
 
 
 API reference
--------------
+=============
 
 .. toctree::
    :maxdepth: 2
@@ -76,6 +81,7 @@ API reference
    vispy.gloo - User-friendly, Pythonic, object-oriented interface to OpenGL <gloo>
    vispy.io - Data IO <io>
    vispy.mpl_plot - OpenGL backend for matplotlib [experimental] <mpl_plot>
+   vispy.plot - Vispy native plotting module <plot>
    vispy.scene - The system underlying the upcoming high-level visualization interfaces [experimental] <scene>
    vispy.util - Miscellaneous utilities <util>
    

@@ -1,17 +1,18 @@
-# vispy: testskip
 """
-   Tutorial: Creating Visuals
+Tutorial: Creating Visuals
+==========================
+
 02. Making physical measurements
 --------------------------------
 
 In the last tutorial we created a simple Visual subclass that draws a 
 rectangle. In this tutorial, we will make two additions:
 
-1. Draw a rectangular border instead of a solid rectangle
-2. Make the border a fixed pixel width, even when displayed inside a 
-   user-zoomable ViewBox. 
+    1. Draw a rectangular border instead of a solid rectangle
+    2. Make the border a fixed pixel width, even when displayed inside a 
+       user-zoomable ViewBox. 
 
-The border is made by drawing a line_strip with 10 vertices:
+The border is made by drawing a line_strip with 10 vertices::
 
     1--------------3
     |              |
@@ -52,13 +53,13 @@ does correspond to 1 pixel.
 There are a few ways we could make this measurement of pixel length. Here's
 how we'll do it in this tutorial:
 
-1. Begin with vertices for a rectangle with border width 0 (that is, vertex 1
-   is the same as vertex 2, 3=4, and so on).
-2. In the vertex shader, first map the vertices to the document coordinate
-   system using the visual->document transform.
-3. Add/subtract the line width from the mapped vertices.
-4. Map the rest of the way to render coordinates with a second transform:
-   document->framebuffer->render.
+    1. Begin with vertices for a rectangle with border width 0 (that is, vertex
+       1 is the same as vertex 2, 3=4, and so on).
+    2. In the vertex shader, first map the vertices to the document coordinate
+       system using the visual->document transform.
+    3. Add/subtract the line width from the mapped vertices.
+    4. Map the rest of the way to render coordinates with a second transform:
+       document->framebuffer->render.
 
 Note that this problem _cannot_ be solved using a simple scale factor! It is
 necessary to use these transformations in order to draw correctly when there
@@ -176,7 +177,7 @@ class MyRectVisual(visuals.Visual):
         self.program.frag['color'] = (1, 0, 0, 1)
         
     def draw(self, transforms):
-        gloo.set_state(cull_face='front_and_back')
+        gloo.set_state(cull_face=False)
         
         # Set the two transforms required by the vertex shader:
         self.program.vert['visual_to_doc'] = transforms.visual_to_document
@@ -193,31 +194,34 @@ class MyRectVisual(visuals.Visual):
 MyRect = scene.visuals.create_visual_node(MyRectVisual)
 
 
+# Finally we will test the visual by displaying in a scene.
+
+canvas = scene.SceneCanvas(keys='interactive', show=True)
+
+# This time we add a ViewBox to let the user zoom/pan
+view = canvas.central_widget.add_view()
+view.camera = 'panzoom'
+view.camera.rect = (0, 0, 800, 800)
+
+# ..and add the rects to the view instead of canvas.scene
+rects = [MyRect(100, 100, 200, 300, parent=view.scene),
+         MyRect(500, 100, 200, 300, parent=view.scene)]
+
+# Again, rotate one rectangle to ensure the transforms are working as we 
+# expect.
+tr = visuals.transforms.AffineTransform()
+tr.rotate(25, (0, 0, 1))
+rects[1].transform = tr
+
+# Add some text instructions
+text = scene.visuals.Text("Drag right mouse button to zoom.", 
+                          color='w',
+                          anchor_x='left',
+                          parent=view,
+                          pos=(20, 30))
+
+# ..and optionally start the event loop
 if __name__ == '__main__':
-    canvas = scene.SceneCanvas(keys='interactive', show=True)
-    
-    # This time we add a ViewBox to let the user zoom/pan
-    view = canvas.central_widget.add_view()
-    view.camera.rect = (0, 0, 800, 800)
-    
-    # ..and add the rects to the view instead of canvas.scene
-    rects = [MyRect(100, 100, 200, 300, parent=view.scene),
-             MyRect(500, 100, 200, 300, parent=view.scene)]
-
-    # Again, rotate one rectangle to ensure the transforms are working as we 
-    # expect.
-    tr = visuals.transforms.AffineTransform()
-    tr.rotate(25, (0, 0, 1))
-    rects[1].transform = tr
-    
-    # Add some text instructions
-    text = scene.visuals.Text("Drag right mouse button to zoom.", 
-                              color='w',
-                              anchor_x='left',
-                              parent=view,
-                              pos=(20, 30))
-
-    # ..and optionally start the event loop
     import sys
-    if sys.flags.interactive == 0:
+    if sys.flags.interactive != 1:
         app.run()

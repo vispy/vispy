@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2014, Vispy Development Team.
+# Copyright (c) 2015, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division
@@ -28,10 +28,13 @@ def make_camera(cam_type, *args, **kwargs):
     ----------
     cam_type : str
         May be one of:
+
             * 'panzoom' : Creates :class:`PanZoomCamera`
             * 'turntable' : Creates :class:`TurntableCamera`
             * None : Creates :class:`Camera`
 
+    Notes
+    -----
     All extra arguments are passed to the __init__ method of the selected
     Camera class.
     """
@@ -70,24 +73,24 @@ class BaseCamera(Node):
         The parent of the camera.
     name : str
         Name used to identify the camera in the scene.
-
     """
 
     # These define the state of the camera
     _state_props = ()
 
-    # The fractional zoom to apply for a single pixel of mouse motion 
+    # The fractional zoom to apply for a single pixel of mouse motion
     zoom_factor = 0.007
 
-    def __init__(self, interactive=True, flip=None, up='+z', **kwargs):
-        super(BaseCamera, self).__init__(**kwargs)
+    def __init__(self, interactive=True, flip=None, up='+z', parent=None,
+                 name=None):
+        super(BaseCamera, self).__init__(parent, name)
 
         # The viewbox for which this camera is active
         self._viewbox = None
 
         # Linked cameras
         self._linked_cameras = []
-        self._linked_cameras_no_update = False  # internal flag
+        self._linked_cameras_no_update = None
 
         # Variables related to transforms
         self.transform = NullTransform()
@@ -253,6 +256,19 @@ class BaseCamera(Node):
     def set_range(self, x=None, y=None, z=None, margin=0.05):
         """ Set the range of the view region for the camera
 
+        Parameters
+        ----------
+        x : tuple | None
+            X range.
+        y : tuple | None
+            Y range.
+        z : tuple | None
+            Z range.
+        margin : float
+            Margin to use.
+
+        Notes
+        -----
         The view is set to the given range or to the scene boundaries
         if ranges are not specified. The ranges should be 2-element
         tuples specifying the min and max for each dimension.
@@ -261,7 +277,6 @@ class BaseCamera(Node):
         For e.g. the TurntableCamera the elevation and azimuth are not
         set. One should use reset() for that.
         """
-
         # Flag to indicate that this is an initializing (not user-invoked)
         init = self._xlim is None
 
@@ -288,6 +303,7 @@ class BaseCamera(Node):
             for i in range(3):
                 if bounds[i] is None:
                     bounds[i] = self._viewbox.get_scene_bounds(i)
+        
         # Calculate ranges and margins
         ranges = [b[1] - b[0] for b in bounds]
         margins = [(r*margin or 0.1) for r in ranges]
@@ -337,6 +353,13 @@ class BaseCamera(Node):
         Should be a dict (or kwargs) as returned by get_state. It can
         be an incomlete dict, in which case only the specified
         properties are set.
+
+        Parameters
+        ----------
+        state : dict
+            The camera state.
+        **kwargs : dict
+            Unused keyword arguments.
         """
         D = state or {}
         D.update(kwargs)
@@ -349,6 +372,11 @@ class BaseCamera(Node):
         """ Link this camera with another camera of the same type
 
         Linked camera's keep each-others' state in sync.
+
+        Parameters
+        ----------
+        camera : instance of Camera
+            The other camera to link.
         """
         cam1, cam2 = self, camera
         # Remove if already linked
@@ -392,6 +420,13 @@ class BaseCamera(Node):
         self.view_changed()
 
     def viewbox_mouse_event(self, event):
+        """Viewbox mouse event handler
+
+        Parameters
+        ----------
+        event : instance of Event
+            The event.
+        """
         # todo: connect this method to viewbox.events.key_down
         # viewbox does not currently support key events
         # A bit awkward way to connect to our canvas; we need event
@@ -403,12 +438,23 @@ class BaseCamera(Node):
             event.canvas.events.key_release.connect(self.viewbox_key_event)
 
     def viewbox_key_event(self, event):
+        """ViewBox key event handler
+
+        Parameters
+        ----------
+        event : instance of Event
+            The event.
+        """
         if event.key == keys.BACKSPACE:
             self.reset()
 
     def viewbox_resize_event(self, event):
-        """
-        The ViewBox was resized; update the transform accordingly.
+        """The ViewBox resize handler to update the transform
+
+        Parameters
+        ----------
+        event : instance of Event
+            The event.
         """
         pass
 
@@ -436,13 +482,14 @@ class BaseCamera(Node):
 
         # Apply same state to linked cameras, but prevent that camera
         # to return the favor
-        if not self._linked_cameras_no_update:
-            for cam in self._linked_cameras:
-                cam._linked_cameras_no_update = True
-                try:
-                    cam.set_state(self.get_state())
-                finally:
-                    cam._linked_cameras_no_update = False
+        for cam in self._linked_cameras:
+            if cam is self._linked_cameras_no_update:
+                continue
+            try:
+                cam._linked_cameras_no_update = self
+                cam.set_state(self.get_state())
+            finally:
+                cam._linked_cameras_no_update = None
 
 
 class PanZoomCamera(BaseCamera):
@@ -465,12 +512,15 @@ class PanZoomCamera(BaseCamera):
         the scene. E.g. to show a square image as square, the aspect
         should be 1. If None (default) the x and y dimensions are scaled
         independently.
-    See BaseCamera for more.
+    **kwargs : dict
+        Keyword arguments to pass to `BaseCamera`.
 
-    Interaction
-    -----------
-    * LMB: pan the view
-    * RMB or scroll: zooms the view
+    Notes
+    -----
+    Interaction:
+
+        * LMB: pan the view
+        * RMB or scroll: zooms the view
 
     """
 
@@ -546,11 +596,11 @@ class PanZoomCamera(BaseCamera):
         self.rect = rect
 
     def pan(self, *pan):
-        """ Pan the view.
+        """Pan the view.
 
         Parameters
         ----------
-        pan : length-2 sequence
+        *pan : length-2 sequence
             The distance to pan the view, in the coordinate system of the
             scene.
         """
@@ -609,6 +659,11 @@ class PanZoomCamera(BaseCamera):
     def viewbox_resize_event(self, event):
         """ Modify the data aspect and scale factor, to adjust to
         the new window size.
+
+        Parameters
+        ----------
+        event : instance of Event
+            The event.
         """
         self.view_changed()
 
@@ -616,6 +671,11 @@ class PanZoomCamera(BaseCamera):
         """
         The SubScene received a mouse event; update transform
         accordingly.
+
+        Parameters
+        ----------
+        event : instance of Event
+            The event.
         """
         if event.handled or not self.interactive:
             return
@@ -729,8 +789,8 @@ class PerspectiveCamera(BaseCamera):
     scale_factor : scalar
         A measure for the scale/range of the scene that the camera
         should show. The exact meaning differs per camera type.
-    See BaseCamera for more.
-
+    **kwargs : dict
+        Keyword arguments to pass to `BaseCamera`.
     """
 
     _state_props = ('scale_factor', 'center', 'fov')
@@ -755,6 +815,11 @@ class PerspectiveCamera(BaseCamera):
         """ The ViewBox received a mouse event; update transform
         accordingly.
         Default implementation adjusts scale factor when scolling.
+
+        Parameters
+        ----------
+        event : instance of Event
+            The event.
         """
         BaseCamera.viewbox_mouse_event(self, event)
         if event.type == 'mouse_wheel':
@@ -819,6 +884,13 @@ class PerspectiveCamera(BaseCamera):
         self.scale_factor = max(rxs, rys) * 1.04  # 4% extra space
 
     def viewbox_resize_event(self, event):
+        """The ViewBox resize handler to update the transform
+
+        Parameters
+        ----------
+        event : instance of Event
+            The event.
+        """
         self.view_changed()
 
     def _update_transform(self, event=None):
@@ -889,6 +961,11 @@ class Base3DRotationCamera(PerspectiveCamera):
         """
         The viewbox received a mouse event; update transform
         accordingly.
+
+        Parameters
+        ----------
+        event : instance of Event
+            The event.
         """
         if event.handled or not self.interactive:
             return
@@ -1037,14 +1114,18 @@ class TurntableCamera(Base3DRotationCamera):
         The distance of the camera from the rotation point (only makes sense
         if fov > 0). If None (default) the distance is determined from the
         scale_factor and fov.
-    See BaseCamera for more.
+    **kwargs : dict
+        Keyword arguments to pass to `BaseCamera`.
 
-    Interaction
-    -----------
-    * LMB: orbits the view around its center point.
-    * RMB or scroll: change scale_factor (i.e. zoom level)
-    * SHIFT + LMB: translate the center point
-    * SHIFT + RMB: change FOV
+    Notes
+    -----
+    Interaction:
+
+        * LMB: orbits the view around its center point.
+        * RMB or scroll: change scale_factor (i.e. zoom level)
+        * SHIFT + LMB: translate the center point
+        * SHIFT + RMB: change FOV
+
     """
 
     _state_props = Base3DRotationCamera._state_props + ('elevation',
@@ -1165,14 +1246,18 @@ class ArcballCamera(Base3DRotationCamera):
         The distance of the camera from the rotation point (only makes sense
         if fov > 0). If None (default) the distance is determined from the
         scale_factor and fov.
-    See BaseCamera for more.
+    **kwargs : dict
+        Keyword arguments to pass to `BaseCamera`.
 
-    Interaction
-    -----------
-    * LMB: orbits the view around its center point.
-    * RMB or scroll: change scale_factor (i.e. zoom level)
-    * SHIFT + LMB: translate the center point
-    * SHIFT + RMB: change FOV
+    Notes
+    -----
+    Interaction:
+
+        * LMB: orbits the view around its center point.
+        * RMB or scroll: change scale_factor (i.e. zoom level)
+        * SHIFT + LMB: translate the center point
+        * SHIFT + RMB: change FOV
+
     """
 
     _state_props = Base3DRotationCamera._state_props
@@ -1247,11 +1332,14 @@ class FlyCamera(PerspectiveCamera):
     ----------
     fov : float
         Field of view. Default 60.0.
-    See BaseCamera for more.
+    rotation : float | None
+        Rotation to use.
+    **kwargs : dict
+        Keyword arguments to pass to `BaseCamera`.
 
-    Interaction
-    -----------
-    Notice: interacting with this camera might need a bit of practice.
+    Notes
+    -----
+    Interacting with this camera might need a bit of practice.
     The reaction to key presses can be customized by modifying the
     keymap property.
 
@@ -1447,6 +1535,13 @@ class FlyCamera(PerspectiveCamera):
         return pf, pr, pl, pu
 
     def on_timer(self, event):
+        """Timer event handler
+
+        Parameters
+        ----------
+        event : instance of Event
+            The event.
+        """
 
         # Set relative speed and acceleration
         rel_speed = event.dt
@@ -1535,7 +1630,13 @@ class FlyCamera(PerspectiveCamera):
             self.view_changed()
 
     def viewbox_key_event(self, event):
+        """ViewBox key event handler
 
+        Parameters
+        ----------
+        event : instance of Event
+            The event.
+        """
         PerspectiveCamera.viewbox_key_event(self, event)
 
         if event.handled or not self.interactive:
@@ -1562,7 +1663,13 @@ class FlyCamera(PerspectiveCamera):
                 vec[dim-1] = val * factor
 
     def viewbox_mouse_event(self, event):
+        """ViewBox mouse event handler
 
+        Parameters
+        ----------
+        event : instance of Event
+            The event.
+        """
         PerspectiveCamera.viewbox_mouse_event(self, event)
 
         if event.handled or not self.interactive:
@@ -1629,7 +1736,6 @@ class FlyCamera(PerspectiveCamera):
                 d = p2c - p1c
                 fov = self._event_value * math.exp(-0.01*d[1])
                 self._fov = min(90.0, max(10, fov))
-                print('FOV: %1.2f' % self.fov)
 
         # Make transform be updated on the next timer tick.
         # By doing it at timer tick, we avoid shaky behavior

@@ -1,17 +1,15 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2014, Vispy Development Team.
+# Copyright (c) 2015, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division
 
-from ..util.event import Event
+from ..util.event import Event, EmitterGroup
 from ..visuals.transforms import (NullTransform, BaseTransform, 
                                   ChainTransform, create_transform)
-from ..visuals import Visual
 
 
-# todo: I though the visuals were mixed, but the base Node was *not* a visual?
-class Node(Visual):
+class Node(object):
     """ Base class representing an object in a scene.
 
     A group of nodes connected through parent-child relationships define a 
@@ -34,18 +32,25 @@ class Node(Visual):
     name : str
         The name used to identify the node.
     """
+    
+    # Needed to allow subclasses to repr() themselves before Node.__init__()
+    _name = None
 
-    def __init__(self, parent=None, name=None, **kwargs):
-        Visual.__init__(self, **kwargs)
-        
+    def __init__(self, parent=None, name=None):
+        self.name = name
+        self._visible = True
+
         # Add some events to the emitter groups:
         events = ['parents_change', 'children_change', 'transform_change',
                   'mouse_press', 'mouse_move', 'mouse_release', 'mouse_wheel', 
                   'key_press', 'key_release']
+        # Create event emitter if needed (in subclasses that inherit from
+        # Visual, we already have an emitter to share)
+        if not hasattr(self, 'events'):
+            self.events = EmitterGroup(source=self, auto_connect=True,
+                                       update=Event)
         self.events.add(**dict([(ev, Event) for ev in events]))
         
-        self.name = name
-
         # Entities are organized in a parent-children hierarchy
         self._children = []
         # TODO: use weakrefs for parents.
@@ -136,10 +141,17 @@ class Node(Visual):
             for parent in parents:
                 if parent not in prev:
                     self.add_parent(parent)
-        
+
         self.events.parents_change(new=parents, old=prev)
 
     def add_parent(self, parent):
+        """Add a parent
+
+        Parameters
+        ----------
+        parent : instance of Node
+            The parent.
+        """
         if parent in self._parents:
             return
         self._parents.append(parent)
@@ -148,21 +160,28 @@ class Node(Visual):
         self.update()
 
     def remove_parent(self, parent):
+        """Remove a parent
+
+        Parameters
+        ----------
+        parent : instance of Node
+            The parent.
+        """
         if parent not in self._parents:
             raise ValueError("Parent not in set of parents for this node.")
         self._parents.remove(parent)
         parent._remove_child(self)
         self.events.parents_change(removed=parent)
 
-    def _add_child(self, ent):
-        self._children.append(ent)
-        self.events.children_change(added=ent)
-        ent.events.update.connect(self.events.update)
+    def _add_child(self, node):
+        self._children.append(node)
+        self.events.children_change(added=node)
+        node.events.update.connect(self.events.update)
 
-    def _remove_child(self, ent):
-        self._children.remove(ent)
-        self.events.children_change(removed=ent)
-        ent.events.update.disconnect(self.events.update)
+    def _remove_child(self, node):
+        self._children.remove(node)
+        self.events.children_change(removed=node)
+        node.events.update.disconnect(self.events.update)
 
     def update(self):
         """
@@ -207,11 +226,21 @@ class Node(Visual):
         self._transform.changed.connect(self._transform_changed)
         self._transform_changed(None)
 
-    def set_transform(self, type, *args, **kwargs):
+    def set_transform(self, type_, *args, **kwargs):
         """ Create a new transform of *type* and assign it to this node.
+
         All extra arguments are used in the construction of the transform.
+
+        Parameters
+        ----------
+        type_ : str
+            The transform type.
+        *args : tuple
+            Arguments.
+        **kwargs : dict
+            Keywoard arguments.
         """
-        self.transform = create_transform(type, *args, **kwargs)
+        self.transform = create_transform(type_, *args, **kwargs)
 
     def _transform_changed(self, event):
         self.events.transform_change()
@@ -268,8 +297,20 @@ class Node(Visual):
 
     def common_parent(self, node):
         """
-        Return the common parent of two entities. If the entities have no
-        common parent, return None. Does not search past multi-parent branches.
+        Return the common parent of two entities
+
+        If the entities have no common parent, return None.
+        Does not search past multi-parent branches.
+
+        Parameters
+        ----------
+        node : instance of Node
+            The other node.
+
+        Returns
+        -------
+        parent : instance of Node | None
+            The parent.
         """
         p1 = self._parent_chain()
         p2 = node._parent_chain()
@@ -277,17 +318,26 @@ class Node(Visual):
             if p in p2:
                 return p
         return None
-    
+
     def node_path_to_child(self, node):
-        """ Return a list describing the path from this node to a child node
-        
+        """Return a list describing the path from this node to a child node
+
         This method assumes that the given node is a child node. Multiple
         parenting is allowed.
+
+        Parameters
+        ----------
+        node : instance of Node
+            The child node.
+
+        Returns
+        -------
+        path : list | None
+            The path.
         """
-        
         if node is self:
             return []
-        
+
         # Go up from the child node as far as we can
         path1 = [node]
         child = node
@@ -312,18 +362,32 @@ class Node(Visual):
                     if possible_path:
                         return possible_path
             return None
-        
+
         # Search from the parent towards the child
         path2 = _is_child([], self, path1[-1])
         if not path2:
             raise RuntimeError('%r is not a child of %r' % (node, self))
-        
+
         # Return
         return path2 + list(reversed(path1))
-    
+
     def node_path(self, node):
-        """Return two lists describing the path from this node to another. 
-        
+        """Return two lists describing the path from this node to another
+
+        Parameters
+        ----------
+        node : instance of Node
+            The other node.
+
+        Returns
+        -------
+        p1 : list
+            First path (see below).
+        p2 : list
+            Second path (see below).
+
+        Notes
+        -----
         The first list starts with this node and ends with the common parent
         between the endpoint nodes. The second list contains the remainder of
         the path from the common parent to the specified ending node.
@@ -362,21 +426,41 @@ class Node(Visual):
         The transforms are listed in reverse order, such that the last 
         transform should be applied first when mapping from this node to 
         the other.
+
+        Parameters
+        ----------
+        node : instance of Node
+            The other node.
+
+        Returns
+        -------
+        transform : instance of Transform
+            The transform.
         """
         a, b = self.node_path(node)
-        return ([n.transform.inverse for n in b] + 
+        return ([n.transform.inverse for n in b] +
                 [n.transform for n in a[:-1]])[::-1]
-        
+
     def node_transform(self, node):
         """
         Return the transform that maps from the coordinate system of
         *self* to the local coordinate system of *node*.
-        
+
         Note that there must be a _single_ path in the scenegraph that connects
-        the two entities; otherwise an exception will be raised.        
+        the two entities; otherwise an exception will be raised.
+
+        Parameters
+        ----------
+        node : instance of Node
+            The other node.
+
+        Returns
+        -------
+        transform : instance of ChainTransform
+            The transform.
         """
         return ChainTransform(self.node_path_transforms(node))
-        
+
     def __repr__(self):
         name = "" if self.name is None else " name="+self.name
         return "<%s%s at 0x%x>" % (self.__class__.__name__, name, id(self))

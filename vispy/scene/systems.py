@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2014, Vispy Development Team.
+# Copyright (c) 2015, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division
 
 import sys
 
-from ..visuals.visual import Visual
 from ..util.logs import logger, _handle_exception
 from ..util.profiler import Profiler
 
@@ -19,7 +18,7 @@ class DrawingSystem(object):
     def process(self, event, node):
         prof = Profiler(str(node))
         # Draw this node if it is a visual
-        if isinstance(node, Visual) and node.visible:
+        if hasattr(node, 'draw') and node.visible:
             try:
                 node.draw(event)
                 prof('draw')

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2014, Vispy Development Team.
+# Copyright (c) 2015, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 
@@ -22,6 +22,10 @@ class EllipseVisual(PolygonVisual):
     ----------
     pos : array
         Center of the ellipse
+    color : instance of Color
+        The face color to use.
+    border_color : instance of Color
+        The border color to use.
     radius : float | tuple
         Radius or radii of the ellipse
         Defaults to  (0.1, 0.1)

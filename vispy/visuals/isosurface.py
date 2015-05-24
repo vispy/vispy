@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2014, Vispy Development Team.
+# Copyright (c) 2015, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division
@@ -31,11 +31,11 @@ class IsosurfaceVisual(MeshVisual):
 
     @property
     def level(self):
-        """ The threshold at which the isosurface is constructed from the 
+        """ The threshold at which the isosurface is constructed from the
         3D data.
         """
         return self._level
-    
+
     @level.setter
     def level(self, level):
         self._level = level
@@ -45,8 +45,8 @@ class IsosurfaceVisual(MeshVisual):
     def set_data(self, data):
         """ Set the scalar array data
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         data : ndarray
             A 3D array of scalar values. The isosurface is constructed to show
             all locations in the scalar field equal to ``self.level``.
@@ -56,12 +56,19 @@ class IsosurfaceVisual(MeshVisual):
         self.update()
 
     def draw(self, transforms):
+        """Draw the visual
+
+        Parameters
+        ----------
+        transforms : instance of TransformSystem
+            The transforms to use.
+        """
         if self._data is None or self._level is None:
             return
-        
+
         if self._recompute:
             verts, faces = isosurface(self._data, self._level)
             MeshVisual.set_data(self, vertices=verts, faces=faces)
             self._recompute = False
-            
+
         MeshVisual.draw(self, transforms)

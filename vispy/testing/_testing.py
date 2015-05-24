@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2014, Vispy Development Team. All Rights Reserved.
+# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
@@ -10,14 +10,11 @@ import numpy as np
 import sys
 import os
 import inspect
-import base64
 
 from distutils.version import LooseVersion
 
-from ..ext.six.moves import http_client as httplib
-from ..ext.six.moves import urllib_parse as urllib
 from ..ext.six import string_types
-from ..util import use_log_level, run_subprocess, get_testing_file
+from ..util import use_log_level
 
 ###############################################################################
 # Adapted from Python's unittest2
@@ -262,99 +259,18 @@ def requires_scipy(min_version='0.13'):
                                  'Requires Scipy version >= %s' % min_version)
 
 
-def _save_failed_test(data, expect, filename):
-    from ..io import _make_png
-    commit, error = run_subprocess(['git', 'rev-parse',  'HEAD'])
-    name = filename.split('/')
-    name.insert(-1, commit.strip())
-    filename = '/'.join(name)
-    host = 'data.vispy.org'
-
-    # concatenate data, expect, and diff into a single image
-    ds = data.shape
-    es = expect.shape
-    if ds == es:
-        shape = (ds[0], ds[1] * 3 + 2, 4)
-        img = np.empty(shape, dtype=np.ubyte)
-        img[:] = 255
-        img[:, :ds[1], :ds[2]] = data
-        img[:, ds[1]+1:ds[1]*2+1, :ds[2]] = expect
-        img[:, ds[1]*2 + 2:, :ds[2]] = np.abs(data.astype(int) -
-                                              expect.astype(int))
-    else:
-        shape = (ds[0], ds[1] * 2 + 1, 4)
-        img = np.empty(shape, dtype=np.ubyte)
-        img[:] = 255
-        img[:ds[0], :ds[1], :ds[2]] = data
-        img[:es[0], ds[1]+1+es[1]:, :es[2]] = expect
-
-    png = _make_png(img)
-    conn = httplib.HTTPConnection(host)
-    req = urllib.urlencode({'name': filename,
-                            'data': base64.b64encode(png)})
-    conn.request('POST', '/upload.py', req)
-    response = conn.getresponse().read()
-    conn.close()
-    print("\nUpload to: \nhttp://%s/data/%s" % (host, filename))
-    if not response.startswith(b'OK'):
-        print("WARNING: Error uploading data to %s" % host)
-        print(response)
-
-
-def assert_image_equal(image, reference, limit=0.9):
-    """Downloads reference image and compares with image
-
-    Parameters
-    ----------
-    image: str, numpy.array
-        'screenshot' or image data
-    reference: str
-        The filename on the remote ``test-data`` repository to download.
-    limit : float
-        The minimum acceptable cross-correlation value.
-    """
-    from ..gloo.util import _screenshot
-    from ..io import read_png
-    from ..geometry import resize
-
-    if image == "screenshot":
-        image = _screenshot(alpha=False)
-    if isinstance(reference, string_types):
-        ref = read_png(get_testing_file(reference))[:, :, :3]
-    else:
-        ref = reference
-        reference = 'ndarray'
-    assert isinstance(ref, np.ndarray) and ref.ndim == 3
-    # resize in case we're on a HiDPI display
-    image = resize(image, ref.shape[:2], 'nearest')
-
-    # check for minimum number of changed pixels, allowing for overall 1-pixel
-    # shift in any direcion
-    slice_as = [slice(0, -1), slice(0, None), slice(1, None)]
-    slice_bs = slice_as[::-1]
-    max_corr = -1
-    for ii in range(len(slice_as)):
-        for jj in range(len(slice_as)):
-            a = image[slice_as[ii], slice_as[jj]]
-            b = ref[slice_bs[ii], slice_bs[jj]]
-            with np.errstate(invalid='ignore'):
-                corr = np.corrcoef(a.ravel(), b.ravel())[0, 1]
-            if corr > max_corr:
-                max_corr = corr
-    if max_corr < limit:
-        _save_failed_test(image, ref, reference)
-        raise AssertionError('max_corr %s < %s' % (max_corr, limit))
-
-
 @nottest
-def TestingCanvas(bgcolor='black', size=(100, 100), dpi=None):
+def TestingCanvas(bgcolor='black', size=(100, 100), dpi=None, **kwargs):
     """Class wrapper to avoid importing scene until necessary"""
     from ..scene import SceneCanvas
 
     class TestingCanvas(SceneCanvas):
-        def __init__(self, bgcolor, size):
+        def __init__(self, bgcolor, size, dpi, **kwargs):
             self._entered = False
-            SceneCanvas.__init__(self, size=size, bgcolor=bgcolor, dpi=dpi)
+            kwargs['bgcolor'] = bgcolor
+            kwargs['size'] = size
+            kwargs['dpi'] = dpi
+            SceneCanvas.__init__(self, **kwargs)
 
         def __enter__(self):
             SceneCanvas.__enter__(self)
@@ -380,7 +296,7 @@ def TestingCanvas(bgcolor='black', size=(100, 100), dpi=None):
             self.context.set_viewport(*self._wanted_vp)
             self.context.finish()
 
-    return TestingCanvas(bgcolor, size)
+    return TestingCanvas(bgcolor, size, dpi, **kwargs)
 
 
 @nottest
@@ -408,9 +324,13 @@ def run_tests_if_main():
     except Exception:
         pass
     import __main__
-    print('==== Running tests in script\n==== %s' % fname)
-    run_tests_in_object(__main__)
-    print('==== Tests pass')
+    try:
+        import pytest
+        pytest.main(['-s', '--tb=short', fname])
+    except ImportError:
+        print('==== Running tests in script\n==== %s' % fname)
+        run_tests_in_object(__main__)
+        print('==== Tests pass')
 
 
 def run_tests_in_object(ob):

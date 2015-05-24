@@ -16,6 +16,7 @@ from vispy.gloo.glir import BaseGlirParser
 from vispy.app.backends.ipython import VispyWidget
 
 import os.path as op
+import os
 # -------------------------------------------------------------------- init ---
 
 capability = dict(  # things that can be set by the backend
@@ -61,7 +62,7 @@ def _prepare_js(force=False):
     else:
         kwargs = {}
     install_nbextension(jsdir, overwrite=force, destination='vispy',
-                        symlink=True, **kwargs)
+                        symlink=(os.name != 'nt'), **kwargs)
 
 
 class ApplicationBackend(BaseApplicationBackend):

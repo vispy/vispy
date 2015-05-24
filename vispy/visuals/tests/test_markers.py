@@ -3,7 +3,7 @@ import numpy as np
 from vispy.scene.visuals import Markers
 from vispy.testing import (requires_application, TestingCanvas,
                            run_tests_if_main)
-from vispy.gloo.util import _screenshot
+from vispy.testing.image_tester import assert_image_approved
 
 
 @requires_application()
@@ -11,12 +11,21 @@ def test_markers():
     """Test basic marker / point-sprite support"""
     # this is probably too basic, but it at least ensures that point sprites
     # work for people
+    np.random.seed(57983)
+    data = np.random.normal(size=(30, 2), loc=50, scale=10)
+    
     with TestingCanvas() as c:
         marker = Markers()
-        marker.set_data(np.array([[50, 50]], np.float32))
+        marker.set_data(data)
         c.draw_visual(marker)
-        marker = _screenshot(alpha=False)
-        assert 10 < (marker == 255).sum() < 100
+        assert_image_approved("screenshot", "visuals/markers.png")
+
+    # Test good correlation at high-dpi
+    with TestingCanvas(px_scale=2) as c:
+        marker = Markers()
+        marker.set_data(data)
+        c.draw_visual(marker)
+        assert_image_approved("screenshot", "visuals/markers.png")
 
 
 run_tests_if_main()

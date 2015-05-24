@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2014, Vispy Development Team.
+# Copyright (c) 2015, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """
@@ -265,11 +265,15 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
         if p.show:
             self._vispy_set_visible(True)
 
+        # Qt supports OS double-click events, so we set this here to
+        # avoid double events
+        self._double_click_supported = True
+
     def _vispy_warmup(self):
         etime = time() + 0.25
         while time() < etime:
             sleep(0.01)
-            self._vispy_set_current()
+            self._vispy_canvas.set_current()
             self._vispy_canvas.app.process_events()
 
     def _vispy_set_title(self, title):
@@ -337,6 +341,16 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
             native=ev,
             pos=(ev.pos().x(), ev.pos().y()),
             button=BUTTONMAP[ev.button()],
+            modifiers=self._modifiers(ev),
+        )
+
+    def mouseDoubleClickEvent(self, ev):
+        if self._vispy_canvas is None:
+            return
+        self._vispy_mouse_double_click(
+            native=ev,
+            pos=(ev.pos().x(), ev.pos().y()),
+            button=BUTTONMAP.get(ev.button(), 0),
             modifiers=self._modifiers(ev),
         )
 
@@ -506,7 +520,7 @@ class CanvasBackendEgl(QtBaseCanvasBackend, QWidget):
         egl.eglSwapBuffers(_EGL_DISPLAY, self._surface)
 
     def initializeGL(self):
-        self._vispy_set_current()
+        self._vispy_canvas.set_current()
         self._vispy_canvas.events.initialize()
 
     def resizeEvent(self, event):
@@ -579,6 +593,7 @@ class CanvasBackendDesktop(QtBaseCanvasBackend, QGLWidget):
         if not self.isValid():
             raise RuntimeError('context could not be created')
         self.setAutoBufferSwap(False)  # to make consistent with other backends
+        self.setFocusPolicy(QtCore.Qt.WheelFocus)
 
     def _vispy_close(self):
         # Force the window or widget to shut down
@@ -590,7 +605,6 @@ class CanvasBackendDesktop(QtBaseCanvasBackend, QGLWidget):
         if self._vispy_canvas is None:
             return  # todo: can we get rid of this now?
         if self.isValid():
-            self._vispy_canvas.set_current()  # Mark as current
             self.makeCurrent()
 
     def _vispy_swap_buffers(self):
@@ -613,7 +627,7 @@ class CanvasBackendDesktop(QtBaseCanvasBackend, QGLWidget):
         if self._vispy_canvas is None:
             return
         # (0, 0, self.width(), self.height()))
-        self._vispy_set_current()
+        self._vispy_canvas.set_current()
         self._vispy_canvas.events.draw(region=None)
 
 

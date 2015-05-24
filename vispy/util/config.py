@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2014, Vispy Development Team.
+# Copyright (c) 2015, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """Vispy configuration functions
@@ -30,9 +30,12 @@ def _init():
     """
     global config, _data_path, _allowed_config_keys
 
-    _data_path = _get_vispy_app_dir()
-    if _data_path is not None:
-        _data_path = op.join(_data_path, 'data')
+    app_dir = _get_vispy_app_dir()
+    if app_dir is not None:
+        _data_path = op.join(app_dir, 'data')
+        _test_data_path = op.join(app_dir, 'test_data')
+    else:
+        _data_path = _test_data_path = None
 
     # All allowed config keys and the types they may have
     _allowed_config_keys = {
@@ -46,6 +49,8 @@ def _init():
         'qt_lib': string_types,
         'dpi': (int, type(None)),
         'profile': string_types + (type(None),),
+        'audit_tests': (bool,),
+        'test_data_path': string_types + (type(None),),
     }
 
     # Default values for all config options
@@ -60,6 +65,8 @@ def _init():
         'qt_lib': 'any',
         'dpi': None,
         'profile': None,
+        'audit_tests': False,
+        'test_data_path': _test_data_path,
     }
 
     config = Config(**default_config_options)
@@ -112,6 +119,9 @@ VisPy command line arguments:
     Enable profiling using the built-in cProfile module and display results
     when the program exits.
 
+  --vispy-audit-tests
+    Enable user auditing of image test results.
+
   --vispy-help
     Display this help message.
 
@@ -126,7 +136,7 @@ def _parse_command_line_arguments():
     # Get command line args for vispy
     argnames = ['vispy-backend=', 'vispy-gl-debug', 'vispy-glir-file=',
                 'vispy-log=', 'vispy-help', 'vispy-profile=', 'vispy-cprofile',
-                'vispy-dpi=']
+                'vispy-dpi=', 'vispy-audit-tests']
     try:
         opts, args = getopt.getopt(sys.argv[1:], '', argnames)
     except getopt.GetoptError:
@@ -157,6 +167,8 @@ def _parse_command_line_arguments():
                 print(VISPY_HELP)
             elif o == '--vispy-dpi':
                 config['dpi'] = int(a)
+            elif o == '--vispy-audit-tests':
+                config['audit_tests'] = True
             else:
                 logger.warning("Unsupported vispy flag: %s" % o)
 
@@ -322,7 +334,17 @@ def save_config(**kwargs):
 
 
 def set_data_dir(directory=None, create=False, save=False):
-    """Set vispy data download directory"""
+    """Set vispy data download directory
+
+    Parameters
+    ----------
+    directory : str | None
+        The directory to use.
+    create : bool
+        If True, create directory if it doesn't exist.
+    save : bool
+        If True, save the configuration to the vispy config.
+    """
     if directory is None:
         directory = _data_path
         if _data_path is None:

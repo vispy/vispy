@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2014, Vispy Development Team.
+# Copyright (c) 2015, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """
@@ -228,7 +228,7 @@ class CanvasBackend(BaseCanvasBackend):
         self._backend2._vispy_set_visible(False)
 
         # Normal behavior
-        self._vispy_set_current()
+        self._vispy_canvas.set_current()
         self._vispy_canvas.events.draw(region=None)
         # Save the encoded screenshot image to widget
         self._save_screenshot()

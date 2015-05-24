@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Copyright (c) 2014, Vispy Development Team.
+# Copyright (c) 2015, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for mo
 
 """
@@ -317,8 +317,11 @@ class Maker:
                 c = m.canvas  # scene examples
             elif hasattr(m, 'Canvas'):
                 c = m.Canvas()
+            elif hasattr(m, 'fig'):
+                c = m.fig
             else:
                 print('Ignore: %s, no canvas' % name)
+                continue
             c.events.draw.connect(grabscreenshot)
             # Show it and draw as many frames as needed
             with c:

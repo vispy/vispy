@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2014, Vispy Development Team.
+# Copyright (c) 2015, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division
@@ -10,58 +10,63 @@ from .widget import Widget
 from ..subscene import SubScene
 from ..cameras import make_camera, BaseCamera
 from ...ext.six import string_types
-from ... color import Color
 from ... import gloo
 from ...visuals.components import Clipper
+from ...visuals import Visual
 
 
 class ViewBox(Widget):
     """ Provides a rectangular widget to which its subscene is rendered.
-    
+
     Three classes work together when using a ViewBox:
     * The :class:`SubScene` class describes a "world" coordinate system and the
-    entities that live inside it. 
+    entities that live inside it.
     * ViewBox is a "window" through which we view the
     subscene. Multiple ViewBoxes may view the same subscene.
-    * :class:`Camera` describes both the perspective from which the 
-    subscene is rendered, and the way user interaction affects that 
-    perspective. 
-    
-    In general it is only necessary to create the ViewBox; a SubScene and 
+    * :class:`Camera` describes both the perspective from which the
+    subscene is rendered, and the way user interaction affects that
+    perspective.
+
+    In general it is only necessary to create the ViewBox; a SubScene and
     Camera will be generated automatically.
-    
+
     Parameters
     ----------
     camera : None, :class:`Camera`, or str
-        The camera through which to view the SubScene. If None, then a 
+        The camera through which to view the SubScene. If None, then a
         PanZoomCamera (2D interaction) is used. If str, then the string is
         used as the argument to :func:`make_camera`.
     scene : None or :class:`SubScene`
-        The :class:`SubScene` instance to view. If None, a new 
-        :class:`SubScene` is created.
-    
-    All extra keyword arguments are passed to :func:`Widget.__init__`.
+        The `SubScene` instance to view. If None, a new `SubScene` is created.
+    clip_method : str
+        Clipping method to use.
+    **kwargs : dict
+        Extra keyword arguments to pass to `Widget`.
     """
-    def __init__(self, camera=None, scene=None, bgcolor='black', **kwargs):
-        
+    def __init__(self, camera=None, scene=None, clip_method='fragment',
+                 **kwargs):
+
         self._camera = None
-        self._bgcolor = Color(bgcolor).rgba
         Widget.__init__(self, **kwargs)
 
-        # Init preferred method to provided a pixel grid
-        self._clip_method = 'fragment'
+        # Init method to provide a pixel grid
+        self._clip_method = clip_method
         self._clipper = Clipper()
 
         # Each viewbox has a scene widget, which has a transform that
         # represents the transformation imposed by camera.
         if scene is None:
-            self._scene = SubScene(name=str(self.name) + "_Scene")
+            if self.name is not None:
+                name = str(self.name) + "_Scene"
+            else:
+                name = None
+            self._scene = SubScene(name=name)
         elif isinstance(scene, SubScene):
             self._scene = scene
         else:
             raise TypeError('Argument "scene" must be None or SubScene.')
         self._scene.add_parent(self)
-        
+
         # Camera is a helper object that handles scene transformation
         # and user interaction.
         if camera is None:
@@ -76,23 +81,22 @@ class ViewBox(Widget):
     @property
     def camera(self):
         """ Get/set the Camera in use by this ViewBox
-        
+
         If a string is given (e.g. 'panzoom', 'turntable', 'fly'). A
         corresponding camera is selected if it already exists in the
         scene, otherwise a new camera is created.
-        
+
         The camera object is made a child of the scene (if it is not
         already in the scene).
-        
+
         Multiple cameras can exist in one scene, although only one can
         be active at a time. A single camera can be used by multiple
         viewboxes at the same time.
         """
         return self._camera
-    
+
     @camera.setter
     def camera(self, cam):
-        
         if isinstance(cam, string_types):
             # Try to select an existing camera
             for child in self.scene.children:
@@ -120,9 +124,14 @@ class ViewBox(Widget):
         
         else:
             raise ValueError('Not a camera object.')
-    
+
     def is_in_scene(self, node):
-        """ Get whether the given node is inside the scene of this viewbox.
+        """Get whether the given node is inside the scene of this viewbox.
+
+        Parameters
+        ----------
+        node : instance of Node
+            The node.
         """
         def _is_child(parent, child):
             if child in parent.children:
@@ -138,8 +147,18 @@ class ViewBox(Widget):
         return _is_child(self.scene, node)
     
     def get_scene_bounds(self, dim=None):
-        """ Get the total bounds based on the visuals present in the scene.
-        Returns a list of 3 tuples.
+        """Get the total bounds based on the visuals present in the scene
+
+        Parameters
+        ----------
+        dim : int | None
+            Dimension to return.
+
+        Returns
+        -------
+        bounds : list | tuple
+            If ``dim is None``, Returns a list of 3 tuples, otherwise
+            the bounds for the requested dimension.
         """
         # todo: handle sub-children
         # todo: handle transformations
@@ -159,7 +178,7 @@ class ViewBox(Widget):
                                         max(bounds[axis][1], b[1]))
         # Set defaults
         for axis in (0, 1, 2):
-            if np.inf in [np.abs(x) for x in bounds[axis]]:
+            if any(np.isinf(bounds[axis])):
                 bounds[axis] = -1, 1
         
         if dim is not None:
@@ -174,10 +193,15 @@ class ViewBox(Widget):
         return self._scene
 
     def add(self, node):
-        """ Add an Node to the scene for this ViewBox. 
-        
-        This is a convenience method equivalent to 
+        """ Add an Node to the scene for this ViewBox.
+
+        This is a convenience method equivalent to
         `node.add_parent(viewbox.scene)`
+
+        Parameters
+        ----------
+        node : instance of Node
+            The node to add.
         """
         node.add_parent(self.scene)
 
@@ -221,13 +245,21 @@ class ViewBox(Widget):
             t = 'clip_method should be in %s' % str(valid_methods)
             raise ValueError((t + ', not %r') % value)
         self._clip_method = value
+        self.update()
 
     def draw(self, event):
-        """ Draw the viewbox border/background, and prepare to draw the 
+        """ Draw the viewbox border/background
+
+        This also prepares to draw the
         subscene using the configured clipping method.
+
+        Parameters
+        ----------
+        event : instance of Event
+            The draw event.
         """
         # -- Calculate resolution
-        
+
         # Get current transform and calculate the 'scale' of the viewbox
         size = self.size
         transform = event.visual_to_document
@@ -237,49 +269,45 @@ class ViewBox(Widget):
 
         # Set resolution (note that resolution can be non-integer)
         self._resolution = res
-        # -- Get user clipping preference
 
-        prefer = self.clip_method
+        method = self.clip_method
         viewport, fbo = None, None
 
-        if prefer is None:
-            pass
-        elif prefer == 'fragment':
+        if method == 'fragment':
             self._prepare_fragment()
-        elif prefer == 'stencil':
+        elif method == 'stencil':
             raise NotImplementedError('No stencil buffer clipping yet.')
-        elif prefer == 'viewport':
+        elif method == 'viewport':
             viewport = self._prepare_viewport(event)
-        elif prefer == 'fbo':
+        elif method == 'fbo':
             fbo = self._prepare_fbo(event)
+        else:
+            raise ValueError('Unknown clipping method %s' % method)
 
         # -- Draw
         super(ViewBox, self).draw(event)
 
         event.push_viewbox(self)
-        
+
         # make sure the current drawing system does not attempt to draw
         # the scene.
         event.handled_children.append(self.scene)
-        
         if fbo:
             canvas_transform = event.visual_to_canvas
             offset = canvas_transform.map((0, 0))[:2]
             size = canvas_transform.map(self.size)[:2] - offset
-            
+
             # Ask the canvas to activate the new FBO
             event.push_fbo(fbo, offset, size)
             event.push_node(self.scene)
             try:
                 # Draw subscene to FBO
-                gloo.clear(color=self._bgcolor, depth=True)
                 self.scene.draw(event)
             finally:
                 event.pop_node()
                 event.pop_fbo()
-            
+
             gloo.set_state(cull_face=False)
-            self._myprogram.draw('triangle_strip')
         elif viewport:
             # Push viewport, draw, pop it
             event.push_viewport(viewport)
@@ -289,15 +317,8 @@ class ViewBox(Widget):
             finally:
                 event.pop_node()
                 event.pop_viewport()
-        elif prefer == 'fragment':
+        elif method == 'fragment':
             self._clipper.bounds = event.visual_to_framebuffer.map(self.rect)
-            event.push_node(self.scene)
-            try:
-                self.scene.draw(event)
-            finally:
-                event.pop_node()
-        else:
-            # Just draw
             event.push_node(self.scene)
             try:
                 self.scene.draw(event)
@@ -311,13 +332,14 @@ class ViewBox(Widget):
         # on every frame.
         if root is None:
             root = self.scene
-            
+
         for ch in root.children:
-            try:
-                ch.attach(self._clipper)
-            except NotImplementedError:
-                # visual does not support clipping
-                pass
+            if isinstance(ch, Visual):
+                try:
+                    ch.attach(self._clipper)
+                except NotImplementedError:
+                    # visual does not support clipping
+                    pass
             self._prepare_fragment(ch)
 
     def _prepare_viewport(self, event):
@@ -344,8 +366,6 @@ class ViewBox(Widget):
         because I do not understand the component system yet.
         """
 
-        from vispy import gloo
-
         render_vertex = """
             attribute vec3 a_position;
             attribute vec2 a_texcoord;
@@ -370,10 +390,10 @@ class ViewBox(Widget):
         # todo: don't do this on every draw
         if True:
             # Create program
-            self._myprogram = gloo.Program(render_vertex, render_fragment)
+            self._fboprogram = gloo.Program(render_vertex, render_fragment)
             # Create texture
             self._tex = gloo.Texture2D((10, 10, 4), interpolation='linear')
-            self._myprogram['u_texture'] = self._tex
+            self._fboprogram['u_texture'] = self._tex
             # Create texcoords and vertices
             # Note y-axis is inverted here because the viewbox coordinate
             # system has origin in the upper-left, but the image is rendered
@@ -381,8 +401,8 @@ class ViewBox(Widget):
             texcoord = np.array([[0, 1], [1, 1], [0, 0], [1, 0]],
                                 dtype=np.float32)
             position = np.zeros((4, 3), np.float32)
-            self._myprogram['a_texcoord'] = gloo.VertexBuffer(texcoord)
-            self._myprogram['a_position'] = self._vert = \
+            self._fboprogram['a_texcoord'] = gloo.VertexBuffer(texcoord)
+            self._fboprogram['a_position'] = self._vert = \
                 gloo.VertexBuffer(position)
 
         # Get fbo, ensure it exists

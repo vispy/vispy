@@ -36,15 +36,15 @@ def test_intersect_edge_arrays():
     t = T(pts, edges)
     
     # intersect array of one edge with a array of many edges
-    intercepts = t.intersect_edge_arrays(lines[0:1], lines[1:])
+    intercepts = t._intersect_edge_arrays(lines[0:1], lines[1:])
     expect = np.array([0.5, 0.0, 0.5, 1.0, np.nan])
     assert_array_eq(intercepts, expect)
 
     # intersect every line with every line
-    intercepts = t.intersect_edge_arrays(lines[:, np.newaxis, ...], 
-                                         lines[np.newaxis, ...])
+    intercepts = t._intersect_edge_arrays(lines[:, np.newaxis, ...], 
+                                          lines[np.newaxis, ...])
     for i in range(lines.shape[0]):
-        int2 = t.intersect_edge_arrays(lines[i], lines)
+        int2 = t._intersect_edge_arrays(lines[i], lines)
         assert_array_eq(intercepts[i], int2)
 
 
@@ -75,7 +75,7 @@ def test_edge_intersections():
     t = T(pts, edges)
     
     # first test find_edge_intersections
-    cuts = t.find_edge_intersections()
+    cuts = t._find_edge_intersections()
     expect = {
         0: [],
         1: [(0.5, [1., 0.5]), 
@@ -100,7 +100,7 @@ def test_edge_intersections():
                 assert_array_almost_equal(np.array(ecut[j]), np.array(vcut[j]))
                 
     # next test that we can split the edges correctly
-    t.split_intersecting_edges()
+    t._split_intersecting_edges()
     pts = np.array([[0., 0.],
                     [1., 0.],
                     [1., 1.],
@@ -148,7 +148,7 @@ def test_edge_intersections():
     
     edges = np.array([[0, 1], [1, 2], [2, 3], [3, 0]])
     t = T(pts, edges)
-    for edge, cuts in t.find_edge_intersections().items():
+    for edge, cuts in t._find_edge_intersections().items():
         assert len(cuts) == 0
 
     
@@ -172,7 +172,7 @@ def test_merge_duplicate_points():
     ])
     
     t = T(pts, edges)
-    t.merge_duplicate_points()
+    t._merge_duplicate_points()
 
     pts = np.array([
         [0, 0],
@@ -217,45 +217,45 @@ def test_utility_methods():
     # skip initialization and just simulate being part-way through 
     # triangulation
     for tri in [[0, 1, 4], [1, 2, 4], [2, 3, 4]]:
-        t.add_tri(*tri)
+        t._add_tri(*tri)
     
     # find_cut_triangle
-    assert t.find_cut_triangle((4, 5)) == (4, 1, 2)
+    assert t._find_cut_triangle((4, 5)) == (4, 1, 2)
     
     # orientation
-    assert t.orientation((4, 5), 0) == 1
-    assert t.orientation((4, 5), 1) == 1
-    assert t.orientation((4, 5), 2) == -1
-    assert t.orientation((4, 5), 3) == -1
-    assert t.orientation((4, 5), 4) == 0
-    assert t.orientation((4, 5), 5) == 0
+    assert t._orientation((4, 5), 0) == 1
+    assert t._orientation((4, 5), 1) == 1
+    assert t._orientation((4, 5), 2) == -1
+    assert t._orientation((4, 5), 3) == -1
+    assert t._orientation((4, 5), 4) == 0
+    assert t._orientation((4, 5), 5) == 0
     
     # distance
     dist = ((t.pts[0]-t.pts[1])**2).sum()**0.5
-    assert t.distance(t.pts[0], t.pts[1]) == dist
+    assert t._distance(t.pts[0], t.pts[1]) == dist
 
     # adjacent_tri
-    assert t.adjacent_tri((1, 4), 0) == (4, 1, 2)
-    assert t.adjacent_tri((0, 4), 1) is None
-    assert t.adjacent_tri((1, 4), (1, 4, 0)) == (4, 1, 2)
-    assert t.adjacent_tri((0, 4), (1, 4, 0)) is None
+    assert t._adjacent_tri((1, 4), 0) == (4, 1, 2)
+    assert t._adjacent_tri((0, 4), 1) is None
+    assert t._adjacent_tri((1, 4), (1, 4, 0)) == (4, 1, 2)
+    assert t._adjacent_tri((0, 4), (1, 4, 0)) is None
     try:
-        t.adjacent_tri((1, 4), 5)
+        t._adjacent_tri((1, 4), 5)
     except RuntimeError:
         pass
     else:
         raise Exception("Expected RuntimeError.")
 
     # edges_intersect
-    assert not t.edges_intersect((0, 1), (1, 2))
-    assert not t.edges_intersect((0, 2), (1, 2))
-    assert t.edges_intersect((4, 5), (1, 2))
+    assert not t._edges_intersect((0, 1), (1, 2))
+    assert not t._edges_intersect((0, 2), (1, 2))
+    assert t._edges_intersect((4, 5), (1, 2))
 
     # is_constraining_edge
-    assert t.is_constraining_edge((4, 5))
-    assert t.is_constraining_edge((5, 4))
-    assert not t.is_constraining_edge((3, 5))
-    assert not t.is_constraining_edge((3, 2))
+    assert t._is_constraining_edge((4, 5))
+    assert t._is_constraining_edge((5, 4))
+    assert not t._is_constraining_edge((3, 5))
+    assert not t._is_constraining_edge((3, 2))
 
 
 def test_projection():
@@ -266,12 +266,12 @@ def test_projection():
     t = T(pts, np.zeros((0, 2)))
     
     a, b, c, d = pts
-    assert np.allclose(t.projection(a, c, b), [1, 0]) 
-    assert np.allclose(t.projection(b, c, a), [1, 0]) 
-    assert np.allclose(t.projection(a, d, b), [3, 0]) 
-    assert np.allclose(t.projection(b, d, a), [3, 0]) 
-    assert np.allclose(t.projection(a, b, c), [1, 2]) 
-    assert np.allclose(t.projection(c, b, a), [1, 2]) 
+    assert np.allclose(t._projection(a, c, b), [1, 0]) 
+    assert np.allclose(t._projection(b, c, a), [1, 0]) 
+    assert np.allclose(t._projection(a, d, b), [3, 0]) 
+    assert np.allclose(t._projection(b, d, a), [3, 0]) 
+    assert np.allclose(t._projection(a, b, c), [1, 2]) 
+    assert np.allclose(t._projection(c, b, a), [1, 2]) 
 
     
 def test_random(): 

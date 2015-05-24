@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2014, Vispy Development Team.
+# Copyright (c) 2015, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division
@@ -41,7 +41,7 @@ void main() {
 
     float max_alpha = 0.6;
     float x_alpha = 0.0;
-    
+
     if (mod(local_pos.x, 1000 * sx) < px.x) {
         x_alpha = clamp(1 * sx/px.x, 0, max_alpha);
     }
@@ -73,16 +73,21 @@ void main() {
 
 
 class GridLinesVisual(Visual):
-    """ Displays regularly spaced grid lines in any coordinate system and at 
+    """ Displays regularly spaced grid lines in any coordinate system and at
     any scale.
+
+    Parameters
+    ----------
+    scale : tuple
+        The scale to use.
     """
     def __init__(self, scale=(1, 1), **kwargs):
-        super(Visual, self).__init__(**kwargs)
+        super(GridLinesVisual, self).__init__(**kwargs)
         self._program = ModularProgram(VERT, FRAG)
         self._vbo = None
         self._scale = scale
         self._tr_cache = TransformCache()
-        self.set_gl_state('additive', cull_face='front_and_back')
+        self.set_gl_state('additive', cull_face=False)
 
     def _buffer(self):
         if self._vbo is None:
@@ -94,6 +99,13 @@ class GridLinesVisual(Visual):
         return self._vbo
 
     def draw(self, transforms):
+        """Draw the visual
+
+        Parameters
+        ----------
+        transforms : instance of TransformSystem
+            The transforms to use.
+        """
         Visual.draw(self, transforms)
 
         doc_to_ndc = self._tr_cache.get([transforms.framebuffer_to_render, 

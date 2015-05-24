@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2014, Vispy Development Team.
+# Copyright (c) 2015, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division
@@ -9,7 +9,7 @@ import numpy as np
 from ..gloo import set_state, Texture2D
 from ..color import get_colormap
 from .shaders import ModularProgram, Function, FunctionChain
-from .transforms import STTransform, NullTransform
+from .transforms import NullTransform
 from .visual import Visual
 from ..ext.six import string_types
 
@@ -31,7 +31,7 @@ varying vec2 v_texcoord;
 
 void main()
 {
-    vec2 texcoord = $map_local_to_tex($map_uv_to_local(vec4(v_texcoord, 0, 1))).xy;
+    vec2 texcoord = $map_uv_to_tex(vec4(v_texcoord, 0, 1)).xy;
     if(texcoord.x < 0.0 || texcoord.x > 1.0 ||
        texcoord.y < 0.0 || texcoord.y > 1.0) {
         discard;
@@ -57,6 +57,8 @@ class ImageVisual(Visual):
         and accuracy. If the transform is linear, this parameter is ignored
         and a single quad is drawn around the area of the image.
 
+            * 'auto': Automatically select 'impostor' if the image is drawn
+              with a nonlinear transform; otherwise select 'subdivide'.
             * 'subdivide': ImageVisual is represented as a grid of triangles
               with texture coordinates linearly mapped.
             * 'impostor': ImageVisual is represented as a quad covering the
@@ -72,13 +74,15 @@ class ImageVisual(Visual):
     clim : str | tuple
         Limits to use for the colormap. Can be 'auto' to auto-set bounds to
         the min and max of the data.
+    **kwargs : dict
+        Keyword arguments to pass to `Visual`.
 
     Notes
     -----
     The colormap functionality through ``cmap`` and ``clim`` are only used
     if the data are 2D.
     """
-    def __init__(self, data, method='auto', grid=(10, 10),
+    def __init__(self, data=None, method='auto', grid=(10, 10),
                  cmap='cubehelix', clim='auto', **kwargs):
         super(ImageVisual, self).__init__(**kwargs)
         self._program = ModularProgram(VERT_SHADER, FRAG_SHADER)
@@ -89,7 +93,8 @@ class ImageVisual(Visual):
 
         self._texture = None
         self._interpolation = 'nearest'
-        self.set_data(data)
+        if data is not None:
+            self.set_data(data)
 
         self._method = method
         self._method_used = None
@@ -97,6 +102,13 @@ class ImageVisual(Visual):
         self._need_vertex_update = True
 
     def set_data(self, image):
+        """Set the data
+
+        Parameters
+        ----------
+        image : array-like
+            The image data.
+        """
         data = np.asarray(image)
         if self._data is None or self._data.shape != data.shape:
             self._need_vertex_update = True
@@ -128,6 +140,18 @@ class ImageVisual(Visual):
     @cmap.setter
     def cmap(self, cmap):
         self._cmap = get_colormap(cmap)
+        self.update()
+
+    @property
+    def method(self):
+        return self._method
+    
+    @method.setter
+    def method(self, m):
+        if self._method != m:
+            self._method = m
+            self._need_vertex_update = True
+            self.update()
 
     @property
     def size(self):
@@ -168,8 +192,7 @@ class ImageVisual(Visual):
             vertices = tex_coords * self.size
             
             # vertex shader provides correct texture coordinates
-            self._program.frag['map_uv_to_local'] = NullTransform()
-            self._program.frag['map_local_to_tex'] = NullTransform()
+            self._program.frag['map_uv_to_tex'] = NullTransform()
         
         elif method == 'impostor':
             # quad covers entire view; frag. shader will deal with image shape
@@ -177,14 +200,29 @@ class ImageVisual(Visual):
                                  [-1, -1], [1, 1], [-1, 1]],
                                 dtype=np.float32)
             tex_coords = vertices
-            tex_transform = STTransform(scale=(1./self._data.shape[0],
-                                               1./self._data.shape[1]))
 
             # vertex shader provides ND coordinates; 
             # fragment shader maps to texture coordinates
             self._program.vert['transform'] = NullTransform()
-            #self._program.frag['map_local_to_tex'] = total_transform
-            self._program.frag['map_local_to_tex'] = tex_transform
+            self._raycast_func = Function('''
+                vec4 map_local_to_tex(vec4 x) {
+                    // Cast ray from 3D viewport to surface of image
+                    // (if $transform does not affect z values, then this
+                    // can be optimized as simply $transform.map(x) )
+                    vec4 p1 = $transform(x);
+                    vec4 p2 = $transform(x + vec4(0, 0, 0.5, 0));
+                    p1 /= p1.w;
+                    p2 /= p2.w;
+                    vec4 d = p2 - p1;
+                    float f = p2.z / d.z;
+                    vec4 p3 = p2 - d * f;
+                    
+                    // finally map local to texture coords
+                    return vec4(p3.xy / $image_size, 0, 1);
+                }
+            ''')
+            self._raycast_func['image_size'] = self.size
+            self._program.frag['map_uv_to_tex'] = self._raycast_func
         
         else:
             raise ValueError("Unknown image draw method '%s'" % method)
@@ -217,34 +255,52 @@ class ImageVisual(Visual):
             fun = Function(_null_color_transform)
         self._program.frag['color_transform'] = fun
         self._texture = Texture2D(data, interpolation=self._interpolation)
-        self._program['u_texture'] = self._texture 
+        self._program['u_texture'] = self._texture
 
     def bounds(self, mode, axis):
+        """Get the bounds
+
+        Parameters
+        ----------
+        mode : str
+            Describes the type of boundary requested. Can be "visual", "data",
+            or "mouse".
+        axis : 0, 1, 2
+            The axis along which to measure the bounding values, in
+            x-y-z order.
+        """
         if axis > 1:
             return (0, 0)
         else:
             return (0, self.size[axis])
 
     def draw(self, transforms):
+        """Draw the visual
+
+        Parameters
+        ----------
+        transforms : instance of TransformSystem
+            The transforms to use.
+        """
         if self._data is None:
             return
 
-        set_state(cull_face='front_and_back')
+        set_state(cull_face=False)
 
         # upload texture is needed
         if self._texture is None:
             self._build_texture()
-            
+
         # rebuild vertex buffers if needed
         if self._need_vertex_update:
             self._build_vertex_data(transforms)
-            
+
         # update transform
         method = self._method_used
         if method == 'subdivide':
             self._program.vert['transform'] = transforms.get_full_transform()
         else:
-            self._program.frag['map_uv_to_local'] = \
+            self._raycast_func['transform'] = \
                 transforms.get_full_transform().inverse
-            
+
         self._program.draw('triangles')

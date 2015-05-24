@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2014, Vispy Development Team.
+# Copyright (c) 2015, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # vispy: gallery 2
 
@@ -39,6 +39,7 @@ class Canvas(vispy.app.Canvas):
 
         tr = AffineTransform()
         tr.rotate(30, (0, 0, 1))
+        tr.rotate(40, (0, 1, 0))
         tr.scale((3, 3))
         self.images[1].transform = (STTransform(translate=(200, 600)) *
                                     tr *

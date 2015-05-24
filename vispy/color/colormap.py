@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2014, Vispy Development Team.
+# Copyright (c) 2015, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division  # just to be safe...
@@ -172,10 +172,15 @@ class BaseColormap(object):
 
         t \in [0, 1] --> rgba_color
 
-    Must be overriden. Child classes need to implement:
-
+    Parameters
+    ----------
     colors : list of lists, tuples, or ndarrays
         The control colors used by the colormap (shape = (ncolors, 4)).
+
+    Notes
+    -----
+    Must be overriden. Child classes need to implement:
+
     glsl_map : string
         The GLSL function for the colormap. Use $color_0 to refer
         to the first color in `colors`, and so on. These are vec4 vectors.
@@ -222,9 +227,8 @@ class BaseColormap(object):
             An array with rgba values, with one color per item. The shape
             should be ``item.shape + (4,)``.
 
-
-        Note
-        ----
+        Notes
+        -----
         Users are expected to use a colormap with ``__getitem__()`` rather
         than ``map()`` (which implements a lower-level API).
 
@@ -358,7 +362,18 @@ class Colormap(BaseColormap):
 
     def map(self, x):
         """The Python mapping function from the [0,1] interval to a
-        list of rgba colors."""
+        list of rgba colors
+
+        Parameters
+        ----------
+        x : array-like
+            The values to map.
+
+        Returns
+        -------
+        colors : list
+            List of rgba colors.
+        """
         return self._map_function(self.colors.rgba, x, self._controls)
 
 

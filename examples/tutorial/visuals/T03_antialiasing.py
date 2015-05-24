@@ -1,8 +1,9 @@
-# vispy: testskip
 """
-   Tutorial: Creating Visuals
-        03. Antialiasing
---------------------------------
+Tutorial: Creating Visuals
+==========================
+
+03. Antialiasing
+----------------
 
 In [tutorial 1] we learned how to draw a simple rectangle, and in [tutorial 2]
 we expanded on this by using the Document coordinate system to draw a 
@@ -17,9 +18,9 @@ has unit-length pixels. However, there are two situations when the actual
 pixels being filled by the fragment shader are not the same size as the pixels
 on the canvas:
 
-1. High-resolution displays (such as retina displays) that report a canvas
-   resolution smaller than the actual framebuffer resolution.
-2. When exporting to an image with a different size than the canvas.
+    1. High-resolution displays (such as retina displays) that report a canvas
+       resolution smaller than the actual framebuffer resolution.
+    2. When exporting to an image with a different size than the canvas.
 
 In most cases the discrepancy between Document and Framebuffer coordinates can
 be corrected by a simple scale factor. However, this fails for some interesting
@@ -27,7 +28,6 @@ corner cases where the transform is more complex, such as in VR applications
 using optical distortion correction. Decide for yourself: is this Visual for 
 my personal use, or is it intended for a broader audience? For simplicity in 
 this example, we will use a simple scale factor.
-
 """
 
 from vispy import app, gloo, visuals, scene
@@ -158,7 +158,7 @@ class MyRectVisual(visuals.Visual):
         self.program.frag['color'] = (1, 0, 0, 1)
         
     def draw(self, transforms):
-        gloo.set_state(cull_face='front_and_back')
+        gloo.set_state(cull_face=False)
         
         # Set the two transforms required by the vertex shader:
         self.program.vert['visual_to_doc'] = transforms.visual_to_document
@@ -183,31 +183,34 @@ class MyRectVisual(visuals.Visual):
 MyRect = scene.visuals.create_visual_node(MyRectVisual)
 
 
+# Finally we will test the visual by displaying in a scene.
+
+canvas = scene.SceneCanvas(keys='interactive', show=True)
+
+# This time we add a ViewBox to let the user zoom/pan
+view = canvas.central_widget.add_view()
+view.camera = 'panzoom'
+view.camera.rect = (0, 0, 800, 800)
+
+# ..and add the rects to the view instead of canvas.scene
+rects = [MyRect(100, 100, 200, 300, parent=view.scene),
+         MyRect(500, 100, 200, 300, parent=view.scene)]
+
+# Again, rotate one rectangle to ensure the transforms are working as we 
+# expect.
+tr = visuals.transforms.AffineTransform()
+tr.rotate(25, (0, 0, 1))
+rects[1].transform = tr
+
+# Add some text instructions
+text = scene.visuals.Text("Drag right mouse button to zoom.", 
+                          color='w',
+                          anchor_x='left',
+                          parent=view,
+                          pos=(20, 30))
+
+# ..and optionally start the event loop
 if __name__ == '__main__':
-    canvas = scene.SceneCanvas(keys='interactive', show=True)
-    
-    # This time we add a ViewBox to let the user zoom/pan
-    view = canvas.central_widget.add_view()
-    view.camera.rect = (0, 0, 800, 800)
-    
-    # ..and add the rects to the view instead of canvas.scene
-    rects = [MyRect(100, 100, 200, 300, parent=view.scene),
-             MyRect(500, 100, 200, 300, parent=view.scene)]
-
-    # Again, rotate one rectangle to ensure the transforms are working as we 
-    # expect.
-    tr = visuals.transforms.AffineTransform()
-    tr.rotate(25, (0, 0, 1))
-    rects[1].transform = tr
-
-    # Add some text instructions
-    text = scene.visuals.Text("Drag right mouse button to zoom.", 
-                              color='w',
-                              anchor_x='left',
-                              parent=view,
-                              pos=(20, 30))
-
-    # ..and optionally start the event loop
     import sys
-    if sys.flags.interactive == 0:
+    if sys.flags.interactive != 1:
         app.run()

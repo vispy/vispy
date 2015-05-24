@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2014, Vispy Development Team.
+# Copyright (c) 2015, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division
@@ -38,7 +38,7 @@ class ModularProgram(Program):
     @vert.setter
     def vert(self, vcode):
         if hasattr(self, '_vert') and self._vert is not None:
-            self._vert.changed.disconnect((self, '_source_changed'))
+            self._vert._dependents.pop(self)
 
         self._vert = vcode
         if self._vert is None:
@@ -46,7 +46,7 @@ class ModularProgram(Program):
 
         vcode = preprocess(vcode)
         self._vert = MainFunction(vcode)
-        self._vert.changed.connect((self, '_source_changed'))
+        self._vert._dependents[self] = None
 
         self._need_build = True
         self.changed(code_changed=True, value_changed=False)
@@ -58,7 +58,7 @@ class ModularProgram(Program):
     @frag.setter
     def frag(self, fcode):
         if hasattr(self, '_frag') and self._frag is not None:
-            self._frag.changed.disconnect((self, '_source_changed'))
+            self._frag._dependents.pop(self)
 
         self._frag = fcode
         if self._frag is None:
@@ -66,7 +66,7 @@ class ModularProgram(Program):
 
         fcode = preprocess(fcode)
         self._frag = MainFunction(fcode)
-        self._frag.changed.connect((self, '_source_changed'))
+        self._frag._dependents[self] = None
 
         self._need_build = True
         self.changed(code_changed=True, value_changed=False)
@@ -77,12 +77,12 @@ class ModularProgram(Program):
         pass
         # todo: remove!
 
-    def _source_changed(self, ev):
+    def _dep_changed(self, dep, code_changed=False, value_changed=False):
         logger.debug("ModularProgram source changed: %s", self)
-        if ev.code_changed:
+        if code_changed:
             self._need_build = True
-        self.changed(code_changed=ev.code_changed, 
-                     value_changed=ev.value_changed)
+        self.changed(code_changed=code_changed, 
+                     value_changed=value_changed)
     
     def draw(self, *args, **kwargs):
         self.build_if_needed()

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2014, Vispy Development Team.
+# Copyright (c) 2015, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """
@@ -193,7 +193,7 @@ class CanvasBackend(BaseCanvasBackend):
             self._vispy_canvas.events.initialize()
             self._on_resize()
         # Normal behavior
-        self._vispy_set_current()
+        self._vispy_canvas.set_current()
         self._vispy_canvas.events.draw(region=None)
 
         # Generate base64 encoded PNG string

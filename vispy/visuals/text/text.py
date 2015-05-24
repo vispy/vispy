@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2014, Vispy Development Team. All Rights Reserved.
+# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
@@ -75,8 +75,8 @@ class TextureFont(object):
     def _load_char(self, char):
         """Build and store a glyph corresponding to an individual character
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         char : str
             A single character to be represented.
         """
@@ -226,10 +226,12 @@ class TextVisual(Visual):
         Horizontal text anchor.
     anchor_y : str
         Vertical text anchor.
+    font_manager : object | None
+        Font manager to use (can be shared if the GLContext is shared).
     """
 
     VERTEX_SHADER = """
-        uniform vec2 u_pos;  // anchor position
+        uniform vec3 u_pos;  // anchor position
         uniform float u_rotation;  // rotation in rad
         attribute vec2 a_position; // in point units
         attribute vec2 a_texcoord;
@@ -240,7 +242,7 @@ class TextVisual(Visual):
             mat4 rot = mat4(cos(u_rotation), -sin(u_rotation), 0, 0,
                             sin(u_rotation), cos(u_rotation), 0, 0,
                             0, 0, 1, 0, 0, 0, 0, 1);
-            vec4 pos = $transform(vec4(u_pos, 0.0, 1.0)) +
+            vec4 pos = $transform(vec4(u_pos, 1.0)) +
                        $text_scale(rot * vec4(a_position, 0, 0));
             gl_Position = pos;
             v_texcoord = a_texcoord;
@@ -363,7 +365,7 @@ class TextVisual(Visual):
         """
 
     def __init__(self, text, color='black', bold=False,
-                 italic=False, face='OpenSans', font_size=12, pos=(0, 0),
+                 italic=False, face='OpenSans', font_size=12, pos=[0, 0, 0],
                  rotation=0., anchor_x='center', anchor_y='center',
                  font_manager=None, **kwargs):
         Visual.__init__(self, **kwargs)
@@ -437,11 +439,20 @@ class TextVisual(Visual):
 
     @pos.setter
     def pos(self, pos):
-        pos = [float(p) for p in pos]
-        assert len(pos) == 2
-        self._pos = tuple(pos)
+        self._pos = np.array(pos, np.float32)
+        if self._pos.ndim != 1 or self._pos.size not in (2, 3):
+            raise ValueError('pos must be array-like with 2 or 3 elements')
+        if self._pos.size == 2:
+            self._pos = np.concatenate((self._pos, [0.]))
 
     def draw(self, transforms):
+        """Draw the Text
+
+        Parameters
+        ----------
+        transforms : instance of TransformSystem
+            The transforms to use.
+        """
         # attributes / uniforms are not available until program is built
         if len(self.text) == 0:
             return

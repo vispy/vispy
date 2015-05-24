@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2014, Vispy Development Team.
+# Copyright (c) 2015, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 
@@ -22,15 +22,15 @@ class RegularPolygonVisual(EllipseVisual):
 
     pos : array
         Center of the regular polygon
+    color : str | tuple | list of colors
+        Fill color of the polygon
+    border_color : str | tuple | list of colors
+        Border color of the polygon
     radius : float
         Radius of the regular polygon
         Defaults to  0.1
     sides : int
         Number of sides of the regular polygon
-    color : str | tuple | list of colors
-        Fill color of the polygon
-    border_color : str | tuple | list of colors
-        Border color of the polygon
     """
     def __init__(self, pos=None, color='black', border_color=None,
                  radius=0.1, sides=4, **kwargs):

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# vispy: gallery 2000
+# vispy: gallery 30
 
 """N-dimensional scatter plot with GPU-based projections.
 The projection axes evolve smoothly over time, following a path on the

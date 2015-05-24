@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2014, Vispy Development Team.
+# Copyright (c) 2015, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """
@@ -216,7 +216,7 @@ class CanvasBackend(_Window, BaseCanvasBackend):
         etime = time() + 0.1
         while time() < etime:
             sleep(0.01)
-            self._vispy_set_current()
+            self._vispy_canvas.set_current()
             self._vispy_canvas.app.process_events()
 
     # Override these ...
@@ -236,7 +236,6 @@ class CanvasBackend(_Window, BaseCanvasBackend):
 
     def _vispy_set_current(self):
         # Make this the current context
-        self._vispy_canvas.set_current()  # Mark as current
         self.switch_to()
 
     def _vispy_swap_buffers(self):
@@ -292,7 +291,7 @@ class CanvasBackend(_Window, BaseCanvasBackend):
             return
         if not self._initialize_sent:
             self._initialize_sent = True
-            self._vispy_set_current()
+            self._vispy_canvas.set_current()
             self._vispy_canvas.events.initialize()
         # Set location now if we must. For some reason we get weird
         # offsets in viewport if set_location is called before the
@@ -319,7 +318,7 @@ class CanvasBackend(_Window, BaseCanvasBackend):
         if not self._draw_ok or self._vispy_canvas is None:
             return
         # (0, 0, self.width, self.height))
-        self._vispy_set_current()
+        self._vispy_canvas.set_current()
         self._vispy_canvas.events.draw(region=None)
 
     def on_mouse_press(self, x, y, button, modifiers=None):

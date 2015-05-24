@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # vispy: testskip
 # -----------------------------------------------------------------------------
-# Copyright (c) 2014, Vispy Development Team. All Rights Reserved.
+# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 # Abstract: show mesh primitive
@@ -214,10 +214,9 @@ class Canvas(app.Canvas):
 
         self.program = gloo.Program(vert, frag)
 
-        self.view = np.eye(4, dtype=np.float32)
         self.model = np.eye(4, dtype=np.float32)
         self.projection = np.eye(4, dtype=np.float32)
-        translate(self.view, 0, 0, -5.0)
+        self.view = translate((0, 0, -5.0))
 
         self.program['u_model'] = self.model
         self.program['u_view'] = self.view
@@ -239,9 +238,8 @@ class Canvas(app.Canvas):
     def on_timer(self, event):
         self.theta += .5
         self.phi += .5
-        self.model = np.eye(4, dtype=np.float32)
-        rotate(self.model, self.theta, 0, 0, 1)
-        rotate(self.model, self.phi, 0, 1, 0)
+        self.model = np.dot(rotate(self.theta, (0, 0, 1)),
+                            rotate(self.phi, (0, 1, 0)))
         self.program['u_model'] = self.model
         self.update()
 
