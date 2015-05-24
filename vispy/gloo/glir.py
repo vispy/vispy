@@ -559,9 +559,6 @@ class GlirProgram(GlirObject):
             if not status:
                 errors = gl.glGetShaderInfoLog(handle)
                 errormsg = self._get_error(code, errors, 4)
-                print(errors)
-                print('---')
-                print(code)
                 raise RuntimeError("Shader compilation error in %s:\n%s" % 
                                    (type_ + ' shader', errormsg))
         # Attach shaders
