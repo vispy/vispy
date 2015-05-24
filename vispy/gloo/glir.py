@@ -233,7 +233,7 @@ def convert_shaders(convert, shaders):
                 lines.append(line.rstrip())
             # Write
             if not has_version:
-                lines.insert(0, '#version 120\n#line 2\n')
+                lines.insert(0, '#version 120\n')
             out.append('\n'.join(lines))
     
     else:
@@ -1193,10 +1193,10 @@ class GlirFrameBuffer(GlirObject):
 
     def set_framebuffer(self, yes):
         if yes:
+            self.activate()
             if not self._validated:
                 self._validated = True
                 self._validate()
-            self.activate()
         else:
             self.deactivate()
     
@@ -1240,27 +1240,24 @@ class GlirFrameBuffer(GlirObject):
                 raise ValueError("Invalid attachment: %s" % type(buffer))
         self._validated = False
         self.deactivate()
-    
+
     def _validate(self):
         res = gl.glCheckFramebufferStatus(gl.GL_FRAMEBUFFER)
         if res == gl.GL_FRAMEBUFFER_COMPLETE:
-            pass
-        elif res == 0:
-            raise RuntimeError('Target not equal to GL_FRAMEBUFFER')
-        elif res == gl.GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
-            raise RuntimeError(
-                'FrameBuffer attachments are incomplete.')
-        elif res == gl.GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
-            raise RuntimeError(
-                'No valid attachments in the FrameBuffer.')
-        elif res == gl.GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS:
-            raise RuntimeError(
-                'attachments do not have the same width and height.')
-        #elif res == gl.GL_FRAMEBUFFER_INCOMPLETE_FORMATS: # not in es 2.0
-        #    raise RuntimeError('Internal format of attachment '
-        #                       'is not renderable.')
-        elif res == gl.GL_FRAMEBUFFER_UNSUPPORTED:
-            raise RuntimeError('Combination of internal formats used '
-                               'by attachments is not supported.')
-        else:
-            raise RuntimeError('Unknown framebuffer error: %r.' % res)
+            return
+        _bad_map = {
+            0: 'Target not equal to GL_FRAMEBUFFER',
+            gl.GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
+                'FrameBuffer attachments are incomplete.',
+            gl.GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
+                'No valid attachments in the FrameBuffer.',
+            gl.GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS:
+                'attachments do not have the same width and height.',
+            # gl.GL_FRAMEBUFFER_INCOMPLETE_FORMATS: \  # not in es 2.0
+            #     'Internal format of attachment is not renderable.'
+            gl.GL_FRAMEBUFFER_UNSUPPORTED:
+                'Combination of internal formats used by attachments is '
+                'not supported.',
+        }
+        raise RuntimeError(_bad_map.get(res, 'Unknown framebuffer error: %r.'
+                                        % res))
