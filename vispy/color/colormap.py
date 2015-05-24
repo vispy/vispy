@@ -3,12 +3,14 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division  # just to be safe...
+import inspect
 
 import numpy as np
 
 from .color_array import ColorArray
 from ..ext.six import string_types
 from ..ext.cubehelix import cubehelix
+from ..ext.husl import husl_to_rgb
 
 ###############################################################################
 # Color maps
@@ -523,7 +525,157 @@ class _Winter(BaseColormap):
                            np.sqrt(t))
 
 
+class _SingleHue(Colormap):
+    """A colormap which is solely defined by the given hue and value.
+
+    Given the color hue and value, this color map increases the saturation
+    of a color. The start color is almost white but still contains a hint of
+    the given color, and at the end the color is fully saturated.
+
+    Parameters
+    ----------
+    hue : scalar, optional
+        The hue refers to a "true" color, without any shading or tinting.
+        Must be in the range [0, 360]. Defaults to 200 (blue).
+    saturation_range : array-like, optional
+        The saturation represents how "pure" a color is. Less saturation means
+        more white light mixed in the color. A fully saturated color means
+        the pure color defined by the hue. No saturation means completely
+        white. This colormap changes the saturation, and with this parameter
+        you can specify the lower and upper bound. Default is [0.2, 0.8].
+    value : scalar, optional
+        The value defines the "brightness" of a color: a value of 0.0 means
+        completely black while a value of 1.0 means the color defined by the
+        hue without shading. Must be in the range [0, 1.0]. The default value
+        is 1.0.
+
+    Notes
+    -----
+    For more information about the hue values see the `wikipedia page`_.
+
+    .. _wikipedia page: https://en.wikipedia.org/wiki/Hue
+    """
+
+    def __init__(self, hue=200, saturation_range=[0.1, 0.8], value=1.0):
+        colors = ColorArray([
+            (hue, saturation_range[0], value),
+            (hue, saturation_range[1], value)
+        ], color_space='hsv')
+        super(_SingleHue, self).__init__(colors)
+
+
+class _HSL(Colormap):
+    """A colormap which is defined by n evenly spaced points in
+    a circular color space.
+
+    This means that we change the hue value while keeping the
+    saturation and value constant.
+
+    Parameters
+    ---------
+    n_colors : int, optional
+        The number of colors to generate.
+    hue_start : int, optional
+        The hue start value. Must be in the range [0, 360], the default is 0.
+    saturation : float, optional
+        The saturation component of the colors to generate. The default is
+        fully saturated (1.0). Must be in the range [0, 1.0].
+    value : float, optional
+        The value (brightness) component of the colors to generate. Must
+        be in the range [0, 1.0], and the default is 1.0
+    controls : array-like, optional
+        The list of control points for the colors to generate. It should be
+        an increasing list of floating-point number between 0.0 and 1.0.
+        The first control point must be 0.0. The last control point must be
+        1.0. The number of control points depends on the interpolation scheme.
+    interpolation : str, optional
+        The interpolation mode of the colormap. Default: 'linear'. Can also
+        be 'zero'.
+        If 'linear', ncontrols = ncolors (one color per control point).
+        If 'zero', ncontrols = ncolors+1 (one color per bin).
+    """
+
+    def __init__(self, ncolors=6, hue_start=0, saturation=1.0, value=1.0,
+                 controls=None, interpolation='linear'):
+        hues = np.linspace(0, 360, ncolors + 1)[:-1]
+        hues += hue_start
+        hues %= 360
+
+        colors = ColorArray([(hue, saturation, value) for hue in hues],
+                            color_space='hsv')
+
+        super(_HSL, self).__init__(colors, controls=controls,
+                                   interpolation=interpolation)
+
+
+class _HUSL(Colormap):
+    """A colormap which is defined by n evenly spaced points in
+    the HUSL hue space.
+
+    Parameters
+    ---------
+    n_colors : int, optional
+        The number of colors to generate.
+    hue_start : int, optional
+        The hue start value. Must be in the range [0, 360], the default is 0.
+    saturation : float, optional
+        The saturation component of the colors to generate. The default is
+        fully saturated (1.0). Must be in the range [0, 1.0].
+    value : float, optional
+        The value component of the colors to generate or "brightness". Must
+        be in the range [0, 1.0], and the default is 0.7.
+    controls : array-like, optional
+        The list of control points for the colors to generate. It should be
+        an increasing list of floating-point number between 0.0 and 1.0.
+        The first control point must be 0.0. The last control point must be
+        1.0. The number of control points depends on the interpolation scheme.
+    interpolation : str, optional
+        The interpolation mode of the colormap. Default: 'linear'. Can also
+        be 'zero'.
+        If 'linear', ncontrols = ncolors (one color per control point).
+        If 'zero', ncontrols = ncolors+1 (one color per bin).
+
+    Notes
+    -----
+    For more information about HUSL colors see http://husl-colors.org
+    """
+
+    def __init__(self, ncolors=6, hue_start=0, saturation=1.0, value=0.7,
+                 controls=None, interpolation='linear'):
+        hues = np.linspace(0, 360, ncolors + 1)[:-1]
+        hues += hue_start
+        hues %= 360
+
+        saturation *= 99
+        value *= 99
+
+        colors = ColorArray(
+            [husl_to_rgb(hue, saturation, value) for hue in hues],
+        )
+
+        super(_HUSL, self).__init__(colors, controls=controls,
+                                    interpolation=interpolation)
+
+
+class _Diverging(Colormap):
+
+    def __init__(self, h_pos=20, h_neg=250, saturation=1.0, value=0.7,
+                 center="light"):
+        saturation *= 99
+        value *= 99
+
+        start = husl_to_rgb(h_neg, saturation, value)
+        mid = ((0.133, 0.133, 0.133) if center == "dark" else
+               (0.92, 0.92, 0.92))
+        end = husl_to_rgb(h_pos, saturation, value)
+
+        colors = ColorArray([start, mid, end])
+
+        super(_Diverging, self).__init__(colors)
+
+
 _colormaps = dict(
+    # Some colormap presets
     autumn=Colormap([(1., 0., 0., 1.), (1., 1., 0., 1.)]),
     blues=Colormap([(1., 1., 1., 1.), (0., 0., 1., 1.)]),
     cool=Colormap([(0., 1., 1., 1.), (1., 0., 1., 1.)]),
@@ -536,17 +688,48 @@ _colormaps = dict(
     hot=_Hot(),
     ice=_Ice(),
     winter=_Winter(),
+    light_blues=_SingleHue(),
+    orange=_SingleHue(hue=35),
+
+    # Diverging presets
+    coolwarm=Colormap(ColorArray(
+        [
+            (226, 0.59, 0.92), (222, 0.44, 0.99), (218, 0.26, 0.97),
+            (30, 0.01, 0.87),
+            (20, 0.3, 0.96), (15, 0.5, 0.95), (8, 0.66, 0.86)
+        ],
+        color_space="hsv"
+    )),
+    PuGr=_Diverging(145, 280, 0.85, 0.30),
+    GrBu=_Diverging(255, 133, 0.75, 0.6),
+    GrBu_d=_Diverging(255, 133, 0.75, 0.6, "dark"),
+    RdBu=_Diverging(220, 20, 0.75, 0.5),
+
+    # Configurable colormaps
     cubehelix=CubeHelixColormap(),
+    single_hue=_SingleHue,
+    hsl=_HSL,
+    husl=_HUSL,
+    diverging=_Diverging
 )
 
 
-def get_colormap(name):
+def get_colormap(name, *args, **kwargs):
     """Obtain a colormap
+
+    Some colormaps can have additional configuration parameters. Refer to
+    their corresponding documentation for more information.
 
     Parameters
     ----------
     name : str | Colormap
         Colormap name. Can also be a Colormap for pass-through.
+
+    Examples
+    --------
+
+        >>> get_colormap('autumn')
+        >>> get_colormap('single_hue', hue=10)
     """
     if isinstance(name, BaseColormap):
         cmap = name
@@ -556,6 +739,10 @@ def get_colormap(name):
         if name not in _colormaps:
             raise KeyError('colormap name %s not found' % name)
         cmap = _colormaps[name]
+
+        if inspect.isclass(cmap):
+            cmap = cmap(*args, **kwargs)
+
     return cmap
 
 
