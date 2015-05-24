@@ -233,7 +233,7 @@ def convert_shaders(convert, shaders):
                 lines.append(line.rstrip())
             # Write
             if not has_version:
-                lines.insert(0, '#version 120\n#line 2\n')
+                lines.insert(0, '#version 120\n')
             out.append('\n'.join(lines))
     
     else:
@@ -559,6 +559,9 @@ class GlirProgram(GlirObject):
             if not status:
                 errors = gl.glGetShaderInfoLog(handle)
                 errormsg = self._get_error(code, errors, 4)
+                print(errors)
+                print('---')
+                print(code)
                 raise RuntimeError("Shader compilation error in %s:\n%s" % 
                                    (type_ + ' shader', errormsg))
         # Attach shaders

@@ -20,6 +20,13 @@ from .event import EmitterGroup, EventEmitter, Event
 from .logs import logger, set_log_level, use_log_level
 from ..ext.six import string_types, file_types
 
+file_types = list(file_types)
+try:
+    file_types += [tempfile._TemporaryFileWrapper]  # Py3k Windows this happens
+except Exception:
+    pass
+file_types = tuple(file_types)
+
 config = None
 _data_path = None
 _allowed_config_keys = None
