@@ -234,10 +234,7 @@ class Visual(BaseVisual):
         
     def draw(self):
         gloo.set_state(**self._vshare.gl_state)
-        
-        self._prepare_transforms(view=self)
         self._prepare_draw(view=self)
-        
         self._program.draw(self._vshare.draw_mode, self._vshare.index_buffer)
         
     def bounds(self):

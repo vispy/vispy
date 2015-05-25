@@ -2,6 +2,7 @@ from vispy import app, gloo, visuals
 from vispy.visuals.components import Clipper, Alpha, ColorFilter
 from vispy.visuals.shaders import MultiProgram
 from vispy.visuals.collections import PointCollection
+from vispy.visuals.transforms import STTransform
         
 
 class LineVisual(visuals.Visual):
@@ -81,7 +82,7 @@ class LineVisual(visuals.Visual):
         # Note that we access `view_program` instead of `shared_program`
         # because we do not want this function assigned to other views.
         tr = view.transforms.get_transform()
-        view.view_program.vert['transform'] = tr.simplified()
+        view.view_program.vert['transform'] = tr # .simplified()
     
 
 class PointVisual(LineVisual):
@@ -121,7 +122,7 @@ class PointCollectionVisual(visuals.Visual):
     @staticmethod
     def _prepare_transforms(view):
         tr = view.transforms.get_transform()
-        view.view_program.vert['transform'] = tr.simplified()
+        view.view_program.vert['transform'] = tr # .simplified()
         
     def _prepare_draw(self, view):
         if self.points._need_update:
@@ -141,10 +142,64 @@ class PointCollectionVisual(visuals.Visual):
         self.points['color'] = c
 
 
+class PanZoomTransform(STTransform):
+    def __init__(self, canvas=None, aspect=None, **kwargs):
+        self._aspect = aspect
+        self.attach(canvas)
+        STTransform.__init__(self, **kwargs)
+        #self.on_resize(None)
+        
+    def attach(self, canvas):
+        """ Attach this tranform to a canvas """
+        self._canvas = canvas
+        #canvas.events.resize.connect(self.on_resize)
+        canvas.events.mouse_wheel.connect(self.on_mouse_wheel)
+        canvas.events.mouse_move.connect(self.on_mouse_move)
+        
+    #@property
+    #def canvas_tr(self):
+        #return STTransform.from_mapping(
+            #[(0, 0), self._canvas.size],
+            #[(-1, 1), (1, -1)])
+        
+    #def on_resize(self, event):
+        #""" Resize event """
+        #if self._aspect is None:
+            #return
+        #w, h = self._canvas.size
+        #aspect = self._aspect / (w / h)
+        #self.scale = (self.scale[0], self.scale[0] / aspect)
+        #self.shader_map()
+
+    def on_mouse_move(self, event):
+        if event.is_dragging:
+            dxy = event.pos - event.last_event.pos
+            button = event.press_event.button
+
+            if button == 1:
+                #dxy = self.canvas_tr.map(dxy)
+                #o = self.canvas_tr.map([0, 0])
+                #t = dxy - o
+                #self.move(t)
+                self.move(dxy)
+            elif button == 2:
+                #center = self.canvas_tr.map(event.press_event.pos)
+                center = event.press_event.pos
+                if self._aspect is None:
+                    self.zoom(np.exp(dxy * (0.01, -0.01)), center)
+                else:
+                    s = dxy[1] * -0.01
+                    self.zoom(np.exp(np.array([s, s])), center)
+                    
+            #self.shader_map()
+
+    def on_mouse_wheel(self, event):
+        self.zoom(np.exp(event.delta * (0.01, -0.01)), event.pos)
+
+
 if __name__ == '__main__':
     import sys
     import numpy as np
-    from vispy.visuals.transforms import STTransform
     
     canvas = app.Canvas(keys='interactive', size=(900, 600), show=True)
     pos = np.random.normal(size=(1000,2), loc=0, scale=50).astype('float32')
@@ -154,6 +209,9 @@ if __name__ == '__main__':
     line = LineVisual(pos=pos)
     line.transforms.canvas = canvas
     line.transform = STTransform(scale=(2, 1), translate=(20, 20))
+    panzoom = PanZoomTransform(canvas)
+    line.transforms.scene_transform = panzoom
+    panzoom.changed.connect(lambda ev: canvas.update())
     
     # Attach color filter to all views (current and future) of the visual
     line.attach(ColorFilter((1, 1, 0.5, 0.7)))
@@ -168,6 +226,7 @@ if __name__ == '__main__':
     shadow = line.view()
     shadow.transforms.canvas = canvas
     shadow.transform = STTransform(scale=(2, 1), translate=(25, 25))
+    shadow.transforms.scene_transform = panzoom
     shadow.attach(ColorFilter((0, 0, 0, 0.6)), view=shadow)
     tr = shadow.transforms.get_transform('framebuffer', 'canvas')
     shadow.attach(Clipper((20, 20, 260, 260), transform=tr), view=shadow)
@@ -227,6 +286,7 @@ if __name__ == '__main__':
         canvas.context.clear((0.3, 0.3, 0.3, 1.0))
         for v in visuals:
             v.draw()
+        canvas.update()
 
     def on_resize(event):
         # Set canvas viewport and reconfigure visual transforms to match.

@@ -73,10 +73,10 @@ class ChainTransform(BaseTransform):
             raise TypeError("Transform chain must be a list")
         
         for t in self._transforms:
-            t.changed.disconnect(self.update)
+            t.changed.disconnect(self._subtr_changed)
         self._transforms = tr
         for t in self._transforms:
-            t.changed.connect(self.update)
+            t.changed.connect(self._subtr_changed)
         self._rebuild_shaders()
         self.update()
 
@@ -177,7 +177,7 @@ class ChainTransform(BaseTransform):
         Add a new transform to the end of this chain.
         """
         self.transforms.append(tr)
-        tr.changed.connect(self.update)
+        tr.changed.connect(self._subtr_changed)
         self._rebuild_shaders()
         self.update()
 
@@ -186,14 +186,19 @@ class ChainTransform(BaseTransform):
         Add a new transform to the beginning of this chain.
         """
         self.transforms.insert(0, tr)
-        tr.changed.connect(self.update)
+        tr.changed.connect(self._subtr_changed)
         self._rebuild_shaders()
         self.update()
 
+    def _subtr_changed(self, ev):
+        """One of the internal transforms changed; propagate the signal. 
+        """
+        self.update()
+
     def __setitem__(self, index, tr):
-        self._transforms[index].changed.disconnect(self.update)
+        self._transforms[index].changed.disconnect(self._subtr_changed)
         self._transforms[index] = tr
-        tr.changed.connect(self.update)
+        tr.changed.connect(self.subtr_changed)
         self._rebuild_shaders()
         self.update()
 

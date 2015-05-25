@@ -254,6 +254,18 @@ class TransformSystem(object):
             self._visual_transform.transforms = [tr]
 
     @property
+    def scene_transform(self):
+        """ Transform mapping from scene coordinate frame to document
+        coordinate frame.
+        """
+        return self._scene_transform
+
+    @scene_transform.setter
+    def scene_transform(self, tr):
+        if self._scene_transform is not tr:
+            self._scene_transform.transforms = [tr]
+
+    @property
     def document_transform(self):
         """ Transform mapping from document coordinate frame to the framebuffer
         (physical pixel) coordinate frame.
@@ -264,6 +276,18 @@ class TransformSystem(object):
     def document_transform(self, tr):
         if self._document_transform is not tr:
             self._document_transform.transforms = [tr]
+
+    @property
+    def canvas_transform(self):
+        """ Transform mapping from canvas coordinate frame to framebuffer
+        coordinate frame.
+        """
+        return self._canvas_transform
+
+    @canvas_transform.setter
+    def canvas_transform(self, tr):
+        if self._canvas_transform is not tr:
+            self._canvas_transform.transforms = [tr]
 
     @property
     def framebuffer_transform(self):
