@@ -76,7 +76,7 @@ def _get_gl_func(name, restype, argtypes):
             ftype = ctypes.WINFUNCTYPE(*fargs)
             if not _have_get_proc_address:
                 raise RuntimeError('Function %s not available '
-                                   '(OpenGL version %s).'
+                                   '(OpenGL version is %s).'
                                    % (name, _get_gl_version(_lib)))
             if not _have_context():
                 raise RuntimeError('Using %s with no OpenGL context.' % name)
@@ -85,7 +85,7 @@ def _get_gl_func(name, restype, argtypes):
                 return ctypes.cast(address, ftype)
         # If not Windows or if we did not return function object on Windows:
         raise RuntimeError('Function %s not present in context '
-                           '(OpenGL version %s).'
+                           '(OpenGL version is %s).'
                            % (name, _get_gl_version(_lib)))
 
 

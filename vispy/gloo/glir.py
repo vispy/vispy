@@ -4,14 +4,14 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
-""" 
+"""
 Implementation to execute GL Intermediate Representation (GLIR)
 """
 
+import os
 import sys
 import re
 import json
-import warnings
 
 import numpy as np
 
@@ -426,14 +426,14 @@ class GlirParser(BaseGlirParser):
             gl.glEnable(GL_VERTEX_PROGRAM_POINT_SIZE)
             gl.glEnable(GL_POINT_SPRITE)
         if self.capabilities['max_texture_size'] is None:  # only do once
-            self.capabilities['gl_version'] = \
-                gl.glGetParameter(gl.GL_VERSION).split(' ')[0]
+            self.capabilities['gl_version'] = gl.glGetParameter(gl.GL_VERSION)
             self.capabilities['max_texture_size'] = \
                 gl.glGetParameter(gl.GL_MAX_TEXTURE_SIZE)
             if int(self.capabilities['gl_version'].split('.')[0]) < 3:
-                warnings.warn('OpenGL version 3.0 or higher recommended, '
-                              'got %s. Some functionality may fail.'
-                              % self.capabilities['gl_version'])
+                if os.getenv('VISPY_IGNORE_OLD_VERSION', '').lower() != 'true':
+                    logger.warning('OpenGL version 3.0 or higher recommended, '
+                                   'got %s. Some functionality may fail.'
+                                   % self.capabilities['gl_version'])
 
 
 def glir_logger(parser_cls, file_or_filename):

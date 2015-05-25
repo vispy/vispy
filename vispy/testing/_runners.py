@@ -167,11 +167,13 @@ _script = """
 import sys
 import time
 import warnings
+import os
 try:
     import faulthandler
     faulthandler.enable()
 except Exception:
     pass
+os.environ['VISPY_IGNORE_OLD_VERSION'] = 'true'
 import {0}
 
 if hasattr({0}, 'canvas'):
