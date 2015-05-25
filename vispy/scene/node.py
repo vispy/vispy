@@ -42,6 +42,8 @@ class Node(object):
         self.name = name
         self._visible = True
         self._canvas = None
+        self._opacity = 1.0
+        self._clipper = None
         self.transforms = kwargs.pop('transforms', TransformSystem())
 
         # Add some events to the emitter groups:
@@ -90,6 +92,30 @@ class Node(object):
         self._name = n
 
     @property
+    def opacity(self):
+        return self._opacity
+    
+    @opacity.setter
+    def opacity(self, o):
+        self._opacity = o
+        self._update_opacity()
+        
+    def _update_opacity(self):
+        pass
+        
+    @property
+    def clipper(self):
+        return self._clipper
+    
+    @clipper.setter
+    def clipper(self, c):
+        self._clipper = c
+        self._update_clipper()
+        
+    def _update_clipper(self):
+        pass
+
+    @property
     def children(self):
         """ A copy of the list of children of this node. Do not add
         items to this list, but use ``x.parent = y`` instead.
@@ -114,9 +140,14 @@ class Node(object):
         self._parent = weakref.ref(parent)
         if prev is not None:
             prev._remove_child(self)
-        if parent is not None:
+        if parent is None:
+            self.canvas = None
+            self.clipper = None
+        else:
             self.canvas = parent.canvas
+            self.clipper = parent.clipper
             parent._add_child(self)
+        
         self.events.parent_change(new=parent, old=prev)
         self.update()
 
@@ -129,6 +160,14 @@ class Node(object):
         self._children.remove(node)
         self.events.children_change(removed=node)
         node.events.update.disconnect(self.events.update)
+
+    def is_child(self, child):
+        if child in self.children:
+            return True
+        for c in self.children:
+            if c.is_child(child):
+                return True
+        return False
 
     @property
     def canvas(self):

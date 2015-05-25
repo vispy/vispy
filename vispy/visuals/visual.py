@@ -64,7 +64,7 @@ class BaseVisual(object):
 
     @property
     def transform(self):
-        return self.transforms.visual_to_document
+        return self.transforms.visual_transform
     
     @transform.setter
     def transform(self, tr):
@@ -94,6 +94,9 @@ class BaseVisual(object):
         
     def detach(self, filter):
         raise NotImplementedError()
+
+    def update(self):
+        self.events.update()
 
 
 class BaseVisualView(object):
@@ -189,6 +192,8 @@ class Visual(BaseVisual):
         
         Visuals must implement this method to ensure that all program 
         and GL state variables are updated immediately before drawing.
+        
+        Return False to indicate that the visual should not be drawn.
         """
         raise NotImplementedError()
 
@@ -234,7 +239,8 @@ class Visual(BaseVisual):
         
     def draw(self):
         gloo.set_state(**self._vshare.gl_state)
-        self._prepare_draw(view=self)
+        if self._prepare_draw(view=self) is False:
+            return
         self._program.draw(self._vshare.draw_mode, self._vshare.index_buffer)
         
     def bounds(self):

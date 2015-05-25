@@ -73,17 +73,11 @@ class MeshVisual(Visual):
     def __init__(self, vertices=None, faces=None, vertex_colors=None,
                  face_colors=None, color=(0.5, 0.5, 1, 1), meshdata=None,
                  shading=None, mode='triangles', **kwargs):
-        Visual.__init__(self, **kwargs)
+        Visual.__init__(self, vcode=vertex_template, fcode=fragment_template,
+                        **kwargs)
         
         self.set_gl_state('translucent', depth_test=True,
                           cull_face=False)
-        
-        # Create a program
-        self._program = ModularProgram(vertex_template, fragment_template)
-        self._program.vert['pre'] = ''
-        self._program.vert['post'] = ''
-        self._program.frag['pre'] = ''
-        self._program.frag['post'] = ''
         
         # Define buffers
         self._vertices = VertexBuffer(np.zeros((0, 3), dtype=np.float32))
@@ -218,23 +212,23 @@ class MeshVisual(Visual):
                                       convert=True)
             else:
                 self._colors.set_data(np.zeros((0, 4), dtype=np.float32))
-        self._program.vert['position'] = self._vertices
+        self.shared_program.vert['position'] = self._vertices
 
         # Position input handling
         if v.shape[-1] == 2:
-            self._program.vert['to_vec4'] = vec2to4
+            self.shared_program.vert['to_vec4'] = vec2to4
         elif v.shape[-1] == 3:
-            self._program.vert['to_vec4'] = vec3to4
+            self.shared_program.vert['to_vec4'] = vec3to4
         else:
             raise TypeError("Vertex data must have shape (...,2) or (...,3).")
 
         # Color input handling
         colors = self._colors if self._colors.size > 0 else self._color.rgba
-        self._program.vert[self._color_var] = colors
+        self.shared_program.vert[self._color_var] = colors
 
         # Shading
         if self.shading is None:
-            self._program.frag['color'] = self._color_var
+            self.shared_program.frag['color'] = self._color_var
         else:
             # Normal data comes via vertex shader
             if self._normals.size > 0:
@@ -242,7 +236,7 @@ class MeshVisual(Visual):
             else:
                 normals = (1., 0., 0.)
 
-            self._program.vert[self._normal_var] = normals
+            self.shared_program.vert[self._normal_var] = normals
             self._phong['normal'] = self._normal_var
 
             # Additional phong properties
@@ -265,24 +259,22 @@ class MeshVisual(Visual):
         assert value in (None, 'flat', 'smooth')
         self._shading = value
 
-    def draw(self, transforms):
+    def _prepare_draw(self, view):
         if self._data_changed:
             if self._update_data() is False:
-                return
+                return False
             self._data_changed = False
-            
-        Visual.draw(self, transforms)
 
-        full_tr = transforms.get_full_transform()
-        self._program.vert['transform'] = full_tr
-        doc_tr = transforms.visual_to_document
-        self._phong['transform'] = doc_tr
-
-        # Draw
-        if self._indexed:
-            self._program.draw(self._mode, self._faces)
-        else:
-            self._program.draw(self._mode)
+    def draw(self, *args, **kwds):
+        Visual.draw(self, *args, **kwds)
+    
+    @staticmethod
+    def _prepare_transforms(view):
+        tr = view.transforms.get_transform()
+        view.view_program.vert['transform'] = tr # .simplified()
+        
+        #doc_tr = view.transforms.get_transform('visual', 'scene')
+        #view.visual._phong['transform'] = doc_tr
 
     def bounds(self, mode, axis):
         if self._bounds is None:

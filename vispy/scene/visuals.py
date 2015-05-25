@@ -14,8 +14,24 @@ import re
 
 from .. import visuals
 from .node import Node
+from ..visuals.components import ColorFilter
 
 
+class VisualNode(Node):
+    def __init__(self, parent=None, name=None):
+        Node.__init__(self, parent=parent, name=name,
+                      transforms=self.transforms)
+        self._opacity_filter = ColorFilter()
+        self.attach(self._opacity_filter)
+
+    def _update_opacity(self):
+        self._opacity_filter.color = (1, 1, 1, self._opacity)
+        
+    def _update_clipper(self):
+        if self.clipper is not None:
+            self.attach(self.clipper)
+
+    
 def create_visual_node(subclass):
     # Create a new subclass of Node.
     
@@ -36,14 +52,13 @@ def create_visual_node(subclass):
         parent = kwargs.pop('parent', None)
         name = kwargs.pop('name', None)
         self.name = name  # to allow __str__ before Node.__init__
-        subclass.__init__(self, *args, **kwargs)
-        Node.__init__(self, parent=parent, name=name,
-                      transforms=self.transforms)
         
+        subclass.__init__(self, *args, **kwargs)
+        VisualNode.__init__(self, parent=parent, name=name)
     
     # Create new class
-    cls = type(clsname, (subclass, Node), {'__init__': __init__, 
-                                           '__doc__': doc})
+    cls = type(clsname, (VisualNode, subclass), {'__init__': __init__, 
+                                                 '__doc__': doc})
     
     return cls
 

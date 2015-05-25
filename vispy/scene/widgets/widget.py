@@ -6,7 +6,8 @@ from __future__ import division
 
 import numpy as np
 
-from ..node import Node
+from ..visuals import VisualNode
+from ...visuals import CompoundVisual
 from ...visuals.mesh import MeshVisual
 from ...visuals.transforms import STTransform
 from ...util.event import Event
@@ -14,7 +15,7 @@ from ...geometry import Rect
 from ...color import Color
 
 
-class Widget(Node):
+class Widget(VisualNode, CompoundVisual):
     """ A widget takes up a rectangular space, intended for use in
     a 2D pixel coordinate frame.
 
@@ -41,13 +42,10 @@ class Widget(Node):
 
     def __init__(self, pos=(0, 0), size=(10, 10), border_color=(0, 0, 0, 0),
                  clip=False, padding=0, margin=0, **kwargs):
-        Node.__init__(self, **kwargs)
-        
         # For drawing border. 
         # A mesh is required because GL lines cannot be drawn with predictable
         # shape across all platforms.
-        self._visual = MeshVisual(color=border_color, mode='triangle_strip')
-        self.border_color = border_color
+        self._mesh = MeshVisual(color=border_color, mode='triangle_strip')
         
         # whether this widget should clip its children
         # (todo)
@@ -59,15 +57,21 @@ class Widget(Node):
         # reserved space outside border
         self._margin = margin
         
-        self.events.add(resize=Event)
         self._size = 16, 16
-        self.transform = STTransform()
         # todo: TTransform (translate only for widgets)
 
         self._widgets = []
+        
+        CompoundVisual.__init__(self, [self._mesh])
+        VisualNode.__init__(self, **kwargs)
+ 
+        self.transform = STTransform()
+        self.events.add(resize=Event)
+        self.border_color = border_color
         self.pos = pos
         self.size = size
-
+        self._update_line()
+        
     @property
     def pos(self):
         return tuple(self.transform.translate[:2])
@@ -128,12 +132,12 @@ class Widget(Node):
     def border_color(self):
         """ The color of the border.
         """
-        return self._visual.color
+        return self._mesh.color
 
     @border_color.setter
     def border_color(self, b):
         b = Color(b)
-        self._visual.set_data(color=b)
+        self._mesh.set_data(color=b)
         self.update()
 
     @property
@@ -193,12 +197,7 @@ class Widget(Node):
             [m, m], [m+1, m+1]
         ], dtype=np.float32)
         
-        self._visual.set_data(vertices=pos)
-
-    def draw(self, event):
-        if self.border_color.is_blank:
-            return
-        self._visual.draw(event)
+        self._mesh.set_data(vertices=pos)
 
     def on_resize(self, ev):
         self._update_child_widgets()

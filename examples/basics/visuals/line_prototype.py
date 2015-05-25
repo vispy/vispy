@@ -304,8 +304,12 @@ if __name__ == '__main__':
     
     Line = create_visual_node(LineVisual)
     canvas2 = SceneCanvas(keys='interactive', title='Scene Canvas', show=True)
-    line = Line(pos, parent=canvas2.scene)
-    
+    v = canvas2.central_widget.add_view()
+    v.border_color = (1, 1, 1, 1)
+    v.bgcolor = (0.3, 0.3, 0.3, 1)
+    v.margin = 10
+    v.camera = 'panzoom'
+    line = Line(pos, parent=v.scene)
     
 
     if sys.flags.interactive != 1:
