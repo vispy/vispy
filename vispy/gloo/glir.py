@@ -259,19 +259,25 @@ def as_es2_command(command):
 class BaseGlirParser(object):
     """ Base clas for GLIR parsers that can be attached to a GLIR queue.
     """
-    
+
+    def __init__(self):
+        self.capabilities = dict(
+            gl_version='Unknown',
+            max_texture_size=None,
+        )
+
     def is_remote(self):
         """ Whether the code is executed remotely. i.e. gloo.gl cannot
         be used.
         """
         raise NotImplementedError()
-    
+
     def convert_shaders(self):
         """ Whether to convert shading code. Valid values are 'es2' and
         'desktop'. If None, the shaders are not modified.
         """
         raise NotImplementedError()
-    
+
     def parse(self, commands):
         """ Parse the GLIR commands. Or sent them away.
         """
@@ -280,17 +286,18 @@ class BaseGlirParser(object):
 
 class GlirParser(BaseGlirParser):
     """ A class for interpreting GLIR commands using gloo.gl
-    
+
     We make use of relatively light GLIR objects that are instantiated
     on CREATE commands. These objects are stored by their id in a
     dictionary so that commands like ACTIVATE and DATA can easily
     be executed on the corresponding objects.
     """
-    
+
     def __init__(self):
+        super(GlirParser, self).__init__()
         self._objects = {}
         self._invalid_objects = set()
-        
+
         self._classmap = {'Program': GlirProgram,
                           'VertexBuffer': GlirVertexBuffer,
                           'IndexBuffer': GlirIndexBuffer,
@@ -300,13 +307,13 @@ class GlirParser(BaseGlirParser):
                           'RenderBuffer': GlirRenderBuffer,
                           'FrameBuffer': GlirFrameBuffer,
                           }
-        
+
         # We keep a dict that the GLIR objects use for storing
         # per-context information. This dict is cleared each time
         # that the context is made current. This seems necessary for
         # when two Canvases share a context.
         self.env = {}
-    
+
     def is_remote(self):
         return False
     
@@ -383,7 +390,7 @@ class GlirParser(BaseGlirParser):
                 ob.set_interpolation(*args)
             else:
                 logger.warning('Invalid GLIR command %r' % cmd)
-   
+
     def parse(self, commands):
         """ Parse a list of commands.
         """
@@ -417,6 +424,11 @@ class GlirParser(BaseGlirParser):
             GL_POINT_SPRITE = 34913
             gl.glEnable(GL_VERTEX_PROGRAM_POINT_SIZE)
             gl.glEnable(GL_POINT_SPRITE)
+        if self.capabilities['max_texture_size'] is None:  # only do once
+            self.capabilities['gl_version'] = \
+                gl.glGetParameter(gl.GL_VERSION).split(' ')[0]
+            self.capabilities['max_texture_size'] = \
+                gl.glGetParameter(gl.GL_MAX_TEXTURE_SIZE)
 
 
 def glir_logger(parser_cls, file_or_filename):
