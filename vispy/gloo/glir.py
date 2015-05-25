@@ -11,6 +11,7 @@ Implementation to execute GL Intermediate Representation (GLIR)
 import sys
 import re
 import json
+import warnings
 
 import numpy as np
 
@@ -429,6 +430,10 @@ class GlirParser(BaseGlirParser):
                 gl.glGetParameter(gl.GL_VERSION).split(' ')[0]
             self.capabilities['max_texture_size'] = \
                 gl.glGetParameter(gl.GL_MAX_TEXTURE_SIZE)
+            if int(self.capabilities['gl_version'].split('.')[0]) < 3:
+                warnings.warn('OpenGL version 3.0 or higher recommended, '
+                              'got %s. Some functionality may fail.'
+                              % self.capabilities['gl_version'])
 
 
 def glir_logger(parser_cls, file_or_filename):
