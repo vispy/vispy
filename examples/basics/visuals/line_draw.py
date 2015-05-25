@@ -16,6 +16,12 @@ import numpy as np
 from vispy import app, scene
 
 class EditLineVisual(scene.visuals.Line):
+    """
+    Mouse editing extension to the Line visual.
+    This class adds mouse picking for line points, mouse_move handling for dragging existing points, and
+    adding new points when clicking into empty space.
+    """
+
     def __init__(self, *args, **kwargs):
         scene.visuals.Line.__init__(self, *args, **kwargs)
 
@@ -32,15 +38,25 @@ class EditLineVisual(scene.visuals.Line):
         scene.visuals.Line.draw(self, transforms)
         self.markers.draw(transforms)
 
-    # print mouse events for debugging purposes
     def print_mouse_event(self, event, what):
+        """ print mouse events for debugging purposes """
         print('%s - pos: %r, button: %s,  delta: %r' %
               (what, event.pos, event.button, event.delta))
 
-    # get line point close to mouse pointer and its index
-    # @param: radius   - max. distance in pixels between mouse and line point to be accepted
-    # @return point, index  (numpy.array, int)
     def select_point(self, event, radius = 5):
+
+        """
+        Get line point close to mouse pointer and its index
+
+        Parameters
+        ----------
+        event : the mouse event being processed
+        radius : scalar
+            max. distance in pixels between mouse and line point to be accepted
+        return: (numpy.array, int)
+            picked point and index of the point in the pos array
+        """
+
         # position in scene/document coordinates
         pos_scene = event.pos[:3]
 
@@ -59,8 +75,9 @@ class EditLineVisual(scene.visuals.Line):
         # no point found, return None
         return None, -1
 
-    # update marker colors, and highlight a selected marker with a given color
+
     def update_markers(self, selected_index = -1, highlight_color=(1,0,0,1)):
+        """ update marker colors, and highlight a selected marker with a given color """
         self.marker_colors.fill( 1)
         # default shape (non-highlighted)
         shape="o"
@@ -72,7 +89,6 @@ class EditLineVisual(scene.visuals.Line):
             size=8
         self.markers.set_data(pos=self.pos, symbol=shape,edge_color='red', size=size, face_color=self.marker_colors)
 
-
     def on_mouse_press(self, event):
         self.print_mouse_event(event, 'Mouse press')
         pos_scene = event.pos[:3]
@@ -81,7 +97,7 @@ class EditLineVisual(scene.visuals.Line):
         self.selected_point, self.selected_index = self.select_point(event)
 
         # if no point was clicked add a new one
-        if self.selected_point == None:
+        if self.selected_point is None:
             print("adding point", len(self.pos))
             self._pos = np.append(self.pos, [pos_scene], axis=0)
             self.set_data(pos=self.pos)
@@ -94,24 +110,21 @@ class EditLineVisual(scene.visuals.Line):
 
     def on_mouse_release(self, event):
         self.print_mouse_event(event, 'Mouse release')
-        self.selected_point = None
+        self.selected_point is None
         self.update_markers()
 
     def on_mouse_move(self, event):
         # left mouse button
         if event.button == 1:
             # self.print_mouse_event(event, 'Mouse drag')
-            if self.selected_point != None:
-
+            if self.selected_point is not None:
                 pos_scene=event.pos
-
                 # update selected point to new position given by mouse
                 self.selected_point[0] = round(pos_scene[0] / self.gridsize) * self.gridsize
                 self.selected_point[1] = round(pos_scene[1] / self.gridsize) * self.gridsize
                 self.set_data(pos=self.pos)
                 self.update_markers(self.selected_index)
 
-                event.handled=True
         else: #  if no button is pressed, just highlight the marker that would be selected on click
             hl_point, hl_index = self.select_point(event)
             self.update_markers(hl_index, highlight_color=(0.5, 0.5, 1.0, 1.0))
@@ -119,8 +132,8 @@ class EditLineVisual(scene.visuals.Line):
 
 
 
-# create a simple test canvas for the EditLineVisual
 class Canvas(scene.SceneCanvas):
+    """ A simple test canvas for testing the EditLineVisual """
     def __init__(self):
         scene.SceneCanvas.__init__(self, keys='interactive',
                                    size=(800, 800))
@@ -142,7 +155,7 @@ class Canvas(scene.SceneCanvas):
 
         self.view.add(self.line)
         self.show()
-        self.selected_point = None
+        self.selected_point is None
         grid1 = scene.visuals.GridLines(parent=self.view.scene)
 
 if __name__ == '__main__':
