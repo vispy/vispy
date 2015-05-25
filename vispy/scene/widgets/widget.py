@@ -70,11 +70,10 @@ class Widget(VisualNode, CompoundVisual):
         self.transform = STTransform()
         self.events.add(resize=Event)
         self.pos = pos
+        self._border_color = Color(border_color)
+        self._bgcolor = Color(bgcolor)
+        self._update_colors()
         self.size = size
-        self._update_line()
-        
-        self.border_color = border_color
-        self.bgcolor = bgcolor
 
     @property
     def pos(self):
@@ -226,17 +225,9 @@ class Widget(VisualNode, CompoundVisual):
             (np.tile(self.border_color.rgba, (8, 1)),
              np.tile(self.bgcolor.rgba, (2, 1)))).astype(np.float32)
 
-    def draw(self, event):
-        """Draw the widget borders
-
-        Parameters
-        ----------
-        event : instance of Event
-            The event containing the transforms.
-        """
+    def _prepare_draw(self):
         if self.border_color.is_blank and self.bgcolor.is_blank:
-            return
-        self._mesh.draw(event)
+            return False
 
     def on_resize(self, event):
         """On resize handler

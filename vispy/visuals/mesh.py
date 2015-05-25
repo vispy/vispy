@@ -17,12 +17,8 @@ from ..gloo import VertexBuffer, IndexBuffer
 from ..geometry import MeshData
 from ..color import Color
 
-## Snippet templates (defined as string to force user to create fresh Function)
-# Consider these stored in a central location in vispy ...
-
 
 vertex_template = """
-
 void main() {
     gl_Position = $transform($to_vec4($position));
 }
@@ -113,7 +109,7 @@ class MeshVisual(Visual):
         self._indexed = None
 
         # Uniform color
-        self._color = None
+        self._color = Color(color)
 
         # primitive mode
         self._mode = mode

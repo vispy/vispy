@@ -38,13 +38,15 @@ class Node(object):
     # Needed to allow subclasses to repr() themselves before Node.__init__()
     _name = None
 
-    def __init__(self, parent=None, name=None):
+    def __init__(self, parent=None, name=None, transforms=None):
         self.name = name
         self._visible = True
         self._canvas = None
         self._opacity = 1.0
         self._clipper = None
-        self.transforms = kwargs.pop('transforms', TransformSystem())
+        
+        self.transforms = (TransformSystem() if transforms is None else 
+                           transforms)
 
         # Add some events to the emitter groups:
         events = ['parent_change', 'children_change', 'transform_change',

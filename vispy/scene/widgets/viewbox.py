@@ -54,6 +54,13 @@ class ViewBox(Widget):
         if self.name is not None:
             name = str(self.name) + "_Scene"
         else:
+            name = None
+            
+        self._scene = SubScene(name=name, parent=self)
+        
+        # All children of the scene inherit the view's clipping boundaries.
+        self._scene.clipper = self._clipper
+        
         # Camera is a helper object that handles scene transformation
         # and user interaction.
         if camera is None:
