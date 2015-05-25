@@ -15,6 +15,7 @@ import numpy as np
 
 from vispy import app, scene
 
+
 class EditLineVisual(scene.visuals.Line):
     """
     Mouse editing extension to the Line visual.
@@ -29,10 +30,11 @@ class EditLineVisual(scene.visuals.Line):
         # initialize point markers
         self.markers = scene.visuals.Markers()
         self.marker_colors = np.ones((len(self.pos), 4), dtype=np.float32)
-        self.markers.set_data(pos=self.pos, symbol="s",edge_color='red', size=6)
+        self.markers.set_data(pos=self.pos, symbol = "s", edge_color = "red",
+                              size=6)
 
         # snap grid size
-        self.gridsize=10
+        self.gridsize = 10
 
     def draw(self, transforms):
         # draw line and markers
@@ -62,36 +64,36 @@ class EditLineVisual(scene.visuals.Line):
         pos_scene = event.pos[:3]
 
         # project mouse radius from screen coordinates to document coordinates
-        mouse_radius = (event.visual_to_canvas.imap(np.array([radius,radius,radius]))-
-                        event.visual_to_canvas.imap(np.array([0,0,0])))[0]
-        #print("Mouse radius in document units: ", mouse_radius)
+        mouse_radius = \
+        (event.visual_to_canvas.imap(np.array([radius, radius, radius])) -
+         event.visual_to_canvas.imap(np.array([0, 0, 0])))[0]
+        # print("Mouse radius in document units: ", mouse_radius)
 
         # find first point within mouse_radius
-        index=0
+        index = 0
         for p in self.pos:
             if np.linalg.norm(pos_scene - p) < mouse_radius:
-                #print p, index
+                # print p, index
                 # point found, return point and its index
                 return p, index
-            index +=1
+            index += 1
         # no point found, return None
         return None, -1
 
-
-    def update_markers(self, selected_index = -1, highlight_color=(1,0,0,1)):
+    def update_markers(self, selected_index = -1, highlight_color = (1, 0, 0, 1)):
         """ update marker colors, and highlight a marker with a given color """
-        self.marker_colors.fill( 1)
+        self.marker_colors.fill(1)
         # default shape (non-highlighted)
-        shape="o"
-        size=6
-        if selected_index >=0 and selected_index <len(self.marker_colors):
+        shape = "o"
+        size = 6
+        if selected_index >= 0 and selected_index < len(self.marker_colors):
             self.marker_colors[selected_index] = highlight_color
             # if there is a highlighted marker,
             # change all marker shapes to a square
-            shape="s"
-            size=8
-        self.markers.set_data(pos=self.pos, symbol=shape, edge_color='red',
-                              size=size, face_color=self.marker_colors)
+            shape = "s"
+            size = 8
+        self.markers.set_data(pos = self.pos, symbol = shape, edge_color = 'red',
+                              size = size, face_color = self.marker_colors)
 
     def on_mouse_press(self, event):
         self.print_mouse_event(event, 'Mouse press')
@@ -103,11 +105,11 @@ class EditLineVisual(scene.visuals.Line):
         # if no point was clicked add a new one
         if self.selected_point is None:
             print("adding point", len(self.pos))
-            self._pos = np.append(self.pos, [pos_scene], axis=0)
+            self._pos = np.append(self.pos, [pos_scene], axis = 0)
             self.set_data(pos=self.pos)
-            self.marker_colors = np.ones((len(self.pos), 4), dtype=np.float32)
+            self.marker_colors = np.ones((len(self.pos), 4), dtype = np.float32)
             self.selected_point = self.pos[-1]
-            self.selected_index=len(self.pos)-1
+            self.selected_index = len(self.pos) - 1
 
         # update markers and highlights
         self.update_markers(self.selected_index)
@@ -122,26 +124,26 @@ class EditLineVisual(scene.visuals.Line):
         if event.button == 1:
             # self.print_mouse_event(event, 'Mouse drag')
             if self.selected_point is not None:
-                pos_scene=event.pos
+                pos_scene = event.pos
                 # update selected point to new position given by mouse
                 self.selected_point[0] = round(pos_scene[0] / self.gridsize) \
                                          * self.gridsize
                 self.selected_point[1] = round(pos_scene[1] / self.gridsize) \
                                          * self.gridsize
-                self.set_data(pos=self.pos)
+                self.set_data(pos = self.pos)
                 self.update_markers(self.selected_index)
 
         else:
-        #  if no button is pressed, just highlight the marker that would be
-        # selected on click
+            #  if no button is pressed, just highlight the marker that would be
+            # selected on click
             hl_point, hl_index = self.select_point(event)
-            self.update_markers(hl_index, highlight_color=(0.5, 0.5, 1.0, 1.0))
+            self.update_markers(hl_index, highlight_color = (0.5, 0.5, 1.0, 1.0))
             self.update()
-
 
 
 class Canvas(scene.SceneCanvas):
     """ A simple test canvas for testing the EditLineVisual """
+
     def __init__(self):
         scene.SceneCanvas.__init__(self, keys='interactive',
                                    size=(800, 800))
@@ -150,23 +152,26 @@ class Canvas(scene.SceneCanvas):
         N = 7
         self.pos = np.zeros((N, 3), dtype=np.float32)
         self.pos[:, 0] = np.linspace(-50, 50, N)
-        self.pos[:, 1] = np.random.normal(size=N, scale=10, loc=0)
+        self.pos[:, 1] = np.random.normal(size = N, scale=10, loc=0)
 
         # create new editable line
-        self.line=EditLineVisual(pos=self.pos, color='w', width=3,
-                                 antialias=True, method='gl')
+        self.line = EditLineVisual(pos = self.pos, color = 'w', width = 3,
+                                   antialias = True, method = 'gl')
 
         self.view = self.central_widget.add_view()
-        self.view.camera = scene.PanZoomCamera(rect=(-100, -100, 200, 200), aspect=1.0)
+        self.view.camera = scene.PanZoomCamera(rect = (-100, -100, 200, 200),
+                                               aspect = 1.0)
         # the left mouse button pan has to be disabled in the camera, as it
         # interferes with dragging line points
         # Proposed change in camera: make mouse buttons configurable
-        self.view.camera._viewbox.events.mouse_move.disconnect(self.view.camera.viewbox_mouse_event)
+        self.view.camera._viewbox.events.mouse_move.disconnect(
+            self.view.camera.viewbox_mouse_event)
 
         self.view.add(self.line)
         self.show()
         self.selected_point = None
         scene.visuals.GridLines(parent=self.view.scene)
+
 
 if __name__ == '__main__':
     win = Canvas()
