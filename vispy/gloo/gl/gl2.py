@@ -52,6 +52,14 @@ def _have_context():
     return _lib.glGetError() != 1282  # GL_INVALID_OPERATION
 
 
+def _get_gl_version(_lib):
+    """Helper to get the GL version string"""
+    try:
+        return _lib.glGetString(7938).decode('utf-8')
+    except Exception:
+        return 'unknown'
+
+
 def _get_gl_func(name, restype, argtypes):
     # Based on a function in Pyglet
     try:
@@ -61,18 +69,15 @@ def _get_gl_func(name, restype, argtypes):
         func.argtypes = argtypes
         return func
     except AttributeError:
-        if hasattr(_lib, 'glGetString'):
-            gl_version = _lib.glGetString(7938).decode('utf-8')
-        else:
-            gl_version = 'unknown'
         if sys.platform.startswith('win'):
             # Ask for a pointer to the function, this is the approach
             # for OpenGL extensions on Windows
             fargs = (restype,) + argtypes
             ftype = ctypes.WINFUNCTYPE(*fargs)
             if not _have_get_proc_address:
-                raise RuntimeError('Function %s not available (version %s).'
-                                   % (name, gl_version))
+                raise RuntimeError('Function %s not available '
+                                   '(OpenGL version %s).'
+                                   % (name, _get_gl_version(_lib)))
             if not _have_context():
                 raise RuntimeError('Using %s with no OpenGL context.' % name)
             address = wglGetProcAddress(name.encode('utf-8'))
@@ -80,7 +85,8 @@ def _get_gl_func(name, restype, argtypes):
                 return ctypes.cast(address, ftype)
         # If not Windows or if we did not return function object on Windows:
         raise RuntimeError('Function %s not present in context '
-                           '(OpenGL version %s).' % (name, gl_version))
+                           '(OpenGL version %s).'
+                           % (name, _get_gl_version(_lib)))
 
 
 # Inject
