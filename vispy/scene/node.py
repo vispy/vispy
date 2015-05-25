@@ -13,8 +13,7 @@ class Node(object):
     """ Base class representing an object in a scene.
 
     A group of nodes connected through parent-child relationships define a 
-    scenegraph. Nodes may have any number of children or parents, although 
-    it is uncommon to have more than one parent.
+    scenegraph. Nodes may have any number of children.
 
     Each Node defines a ``transform`` property, which describes the position,
     orientation, scale, etc. of the Node relative to its parent. The Node's
@@ -22,7 +21,7 @@ class Node(object):
     transformations on top of that. 
     
     With the ``transform`` property, each Node implicitly defines a "local" 
-    coordinate system, and the Nodes and edges in the scenegraph can be though
+    coordinate system, and the Nodes and edges in the scenegraph can be thought
     of as coordinate systems connected by transformation functions.
     
     Parameters
@@ -41,7 +40,7 @@ class Node(object):
         self._visible = True
 
         # Add some events to the emitter groups:
-        events = ['parents_change', 'children_change', 'transform_change',
+        events = ['parent_change', 'children_change', 'transform_change',
                   'mouse_press', 'mouse_move', 'mouse_release', 'mouse_wheel', 
                   'key_press', 'key_release']
         # Create event emitter if needed (in subclasses that inherit from
@@ -54,9 +53,9 @@ class Node(object):
         # Entities are organized in a parent-children hierarchy
         self._children = []
         # TODO: use weakrefs for parents.
-        self._parents = []
+        self._parent = None
         if parent is not None:
-            self.parents = parent
+            self.parent = parent
             
         self._document = None
 
@@ -94,70 +93,26 @@ class Node(object):
 
     @property
     def parent(self):
-        """ Get/set the parent. If the node has multiple parents while
-        using this property as a getter, an error is raised.
+        """ Get/set the parent.
         """
-        if not self._parents:
+        if self._parent is None:
             return None
-        elif len(self._parents) == 1:
-            return self._parents[0]
         else:
-            raise RuntimeError('Ambiguous parent: there are multiple parents.')
+            return self._parent()
 
     @parent.setter
     def parent(self, parent):
-        # This is basically an alias
-        self.parents = parent
-
-    @property
-    def parents(self):
-        """ Get/set a tuple of parents.
-        """
-        return tuple(self._parents)
-
-    @parents.setter
-    def parents(self, parents):
-        # Test input
-        if isinstance(parents, Node):
-            parents = (parents,)
-        if not hasattr(parents, '__iter__'):
-            raise ValueError("Node.parents must be iterable (got %s)"
-                             % type(parents))
-
-        # Test that all parents are entities
-        for p in parents:
-            if not isinstance(p, Node):
-                raise ValueError('A parent of an node must be an node too,'
-                                 ' not %s.' % p.__class__.__name__)
-
-        # Apply
-        prev = list(self._parents)  # No list.copy() on Py2.x
-        with self.events.parents_change.blocker():
-            # Remove parents
-            for parent in prev:
-                if parent not in parents:
-                    self.remove_parent(parent)
-            # Add new parents
-            for parent in parents:
-                if parent not in prev:
-                    self.add_parent(parent)
-        
-        self.events.parents_change(new=parents, old=prev)
-
-    def add_parent(self, parent):
-        if parent in self._parents:
-            return
-        self._parents.append(parent)
-        parent._add_child(self)
-        self.events.parents_change(added=parent)
+        if not isinstance(parent, Node):
+            raise ValueError('Parent must be instance of Node (got %s).'
+                             % p.__class__.__name__)
+        prev = self.parent
+        self._parent = weakref.ref(parent)
+        if prev is not None:
+            prev._remove_child(self)
+        if parent is not None:
+            parent._add_child(self)
+        self.events.parent_change(new=parent, old=prev)
         self.update()
-
-    def remove_parent(self, parent):
-        if parent not in self._parents:
-            raise ValueError("Parent not in set of parents for this node.")
-        self._parents.remove(parent)
-        parent._remove_child(self)
-        self.events.parents_change(removed=parent)
 
     def _add_child(self, node):
         self._children.append(node)
@@ -225,7 +180,7 @@ class Node(object):
     def _parent_chain(self):
         """
         Return the chain of parents starting from this node. The chain ends
-        at the first node with either no parents or multiple parents.
+        at the first node with no parents.
         """
         chain = [self]
         while True:
@@ -274,7 +229,7 @@ class Node(object):
     def common_parent(self, node):
         """
         Return the common parent of two entities. If the entities have no
-        common parent, return None. Does not search past multi-parent branches.
+        common parent, return None.
         """
         p1 = self._parent_chain()
         p2 = node._parent_chain()
@@ -286,8 +241,7 @@ class Node(object):
     def node_path_to_child(self, node):
         """ Return a list describing the path from this node to a child node
         
-        This method assumes that the given node is a child node. Multiple
-        parenting is allowed.
+        If *node* is not a (grand)child of this node, then raise RuntimeError.
         """
         
         if node is self:
@@ -296,7 +250,7 @@ class Node(object):
         # Go up from the child node as far as we can
         path1 = [node]
         child = node
-        while len(child.parents) == 1:
+        while child.parent is not None:
             child = child.parent
             path1.append(child)
             # Early exit
@@ -304,7 +258,7 @@ class Node(object):
                 return list(reversed(path1))
         
         # Verify that we're not cut off
-        if len(path1[-1].parents) == 0:
+        if path1[-1].parent is None:
             raise RuntimeError('%r is not a child of %r' % (node, self))
         
         def _is_child(path, parent, child):
@@ -343,8 +297,6 @@ class Node(object):
         
             ([D, C, B], [E, F])
         
-        Note that there must be a _single_ path in the scenegraph that connects
-        the two entities; otherwise an exception will be raised.        
         """
         p1 = self._parent_chain()
         p2 = node._parent_chain()
