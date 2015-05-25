@@ -135,13 +135,20 @@ class Visual(BaseVisual):
     Subclasses generally only need to reimplement _compute_bounds,
     _prepare_draw, and _prepare_transforms.
     """
-    def __init__(self, vshare=None, key=None, vcode=None, fcode=None):
+    def __init__(self, vshare=None, key=None, vcode='', fcode='',
+                 program=None):
         self._view_class = VisualView
         BaseVisual.__init__(self, vshare, key)
         if vshare is None:
             self._vshare.draw_mode = 'triangles'
             self._vshare.index_buffer = None
-            self._vshare.program = MultiProgram(vcode, fcode)
+            if program is None:
+                self._vshare.program = MultiProgram(vcode, fcode)
+            else:
+                self._vshare.program = program
+                if len(vcode) > 0 or len(fcode) > 0:
+                    raise ValueError("Cannot specify both program and "
+                        "vcode/fcode arguments.")
         
         self._program = self._vshare.program.add_program(key)
         self._prepare_transforms(self)

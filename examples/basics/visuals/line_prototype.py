@@ -1,6 +1,7 @@
 from vispy import app, gloo, visuals
 from vispy.visuals.components import Clipper, Alpha, ColorFilter
-
+from vispy.visuals.shaders import MultiProgram
+from vispy.visuals.collections import PointCollection
         
 
 class LineVisual(visuals.Visual):
@@ -80,7 +81,7 @@ class LineVisual(visuals.Visual):
         # Note that we access `view_program` instead of `shared_program`
         # because we do not want this function assigned to other views.
         tr = view.transforms.get_transform()
-        view.view_program.vert['transform'] = tr
+        view.view_program.vert['transform'] = tr.simplified()
     
 
 class PointVisual(LineVisual):
@@ -109,12 +110,43 @@ class PlotLineVisual(visuals.CompoundVisual):
         visuals.CompoundVisual.__init__(self, [self._line, self._point])
 
 
+class PointCollectionVisual(visuals.Visual):
+    """Thin wrapper around a point collection.
+    """
+    def __init__(self):
+        prog = MultiProgram(vcode='', fcode='')
+        self.points = PointCollection("agg", color="shared", program=prog)
+        visuals.Visual.__init__(self, program=prog)
+    
+    @staticmethod
+    def _prepare_transforms(view):
+        tr = view.transforms.get_transform()
+        view.view_program.vert['transform'] = tr.simplified()
+        
+    def _prepare_draw(self, view):
+        if self.points._need_update:
+            self.points._update()
+        self._draw_mode = self.points._mode
+        self._index_buffer = self.points._indices_buffer
+        
+    def append(self, *args, **kwargs):
+        self.points.append(*args, **kwargs)
+        
+    @property
+    def color(self):
+        return self.points['color']
+
+    @color.setter
+    def color(self, c):
+        self.points['color'] = c
+
+
 if __name__ == '__main__':
     import sys
     import numpy as np
     from vispy.visuals.transforms import STTransform
     
-    canvas = app.Canvas(keys='interactive', size=(600, 600), show=True)
+    canvas = app.Canvas(keys='interactive', size=(900, 600), show=True)
     pos = np.random.normal(size=(1000,2), loc=0, scale=50).astype('float32')
     pos[0] = [0, 0]
     
@@ -170,16 +202,25 @@ if __name__ == '__main__':
     shadow2.attach(Clipper((320, 320, 260, 260), transform=tr), view=shadow2)
     
 
-    # Proposed collections API
-    #
-    # line2 = LineVisual(pos=pos + 20)
-    # collection = VisualCollection([line, line2])
-    # 
-    # def on_draw(event):
-    #     collection.draw()  # draws both lines in one pass
-    #     
+    # Example of a collection visual
+    collection = PointCollectionVisual()
+    collection.transforms.canvas = canvas
+    collection.transform = STTransform(translate=(750, 150))
+    collection.append(np.random.normal(loc=0, scale=20, size=(10000, 3)), 
+                      itemsize=5000)
+    collection.color = (1, 0.5, 0.5, 1), (0.5, 0.5, 1, 1)
+
+
+    shadow3 = collection.view()
+    shadow3.transforms.canvas = canvas
+    shadow3.transform = STTransform(scale=(1, 1), translate=(752, 152))
+    shadow3.attach(ColorFilter((0, 0, 0, 0.6)), view=shadow3)
+    #tr = shadow3.transforms.get_transform('framebuffer', 'canvas')
+    #shadow3.attach(Clipper((320, 320, 260, 260), transform=tr), view=shadow2)
     
-    visuals = [shadow, line, view, plot, shadow2, view2]
+    
+    
+    visuals = [shadow, line, view, plot, shadow2, view2, shadow3, collection]
     
     @canvas.connect
     def on_draw(event):

@@ -85,6 +85,10 @@ class MultiProgram(object):
         for p in self._programs.values():
             yield p
 
+    def bind(self, data):
+        for p in self._programs.values():
+            p.bind(data)
+
 
 class MultiShader(object):
     """Emulates the API of a MainFunction while wrapping all vertex or fragment

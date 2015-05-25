@@ -180,7 +180,9 @@ class TransformSystem(object):
         # either fail or replace the transforms)
         
         canvas = self._canvas
-        
+        if canvas is None:
+            raise RuntimeError("No canvas assigned to this TransformSystem.")
+       
         # By default, this should invert the y axis--canvas origin is in top
         # left, whereas framebuffer origin is in bottom left.
         map_from = [(0, 0), canvas.size]
