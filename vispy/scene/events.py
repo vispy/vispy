@@ -7,16 +7,15 @@ from __future__ import division
 from ..util.event import Event
 
 
-class SceneMouseEvent(SceneEvent):
+class SceneMouseEvent(Event):
     """ Represents a mouse event that occurred on a SceneCanvas. This event is
     delivered to all entities whose mouse interaction area is under the event.
     """
-    def __init__(self, event, visual, **kwargs):
+    def __init__(self, event, visual):
         self.mouse_event = event
         self.visual = visual
         self._pos = None
-        super(SceneMouseEvent, self).__init__(type=event.type, canvas=canvas,
-                                              **kwargs)
+        Event.__init__(self, type=event.type)
 
     @property
     def pos(self):

@@ -14,7 +14,7 @@ from ..color import Color
 from ..util import logger
 from ..util.profiler import Profiler
 from .subscene import SubScene
-from .events import SceneDrawEvent, SceneMouseEvent
+from .events import SceneMouseEvent
 from .widgets import Widget
 
 
@@ -251,8 +251,8 @@ class SceneCanvas(app.Canvas):
         prof = Profiler()
         
         # todo: pick visual under the event
-        
-        scene_event = SceneMouseEvent(event=event)
+        picked = None
+        scene_event = SceneMouseEvent(event=event, visual=picked)
         
         # If something in the scene handled the scene_event, then we mark
         # the original event accordingly.
