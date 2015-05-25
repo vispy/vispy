@@ -56,6 +56,9 @@ def test_context_config():
     assert_raises(KeyError, GLContext, {'foo': 3})
     assert_raises(TypeError, GLContext, {'double_buffer': 'not_bool'})
 
+    # Capabilites are passed on
+    assert 'gl_version' in c.capabilities
+
 
 def test_context_taking():
     """ Test GLContext ownership and taking
