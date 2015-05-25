@@ -76,7 +76,7 @@ def _unit(mode, extra_arg_string):
 
     # We want to set this for all app backends plus "nobackend" to
     # help ensure that app tests are appropriately decorated
-    env.update(dict(_VISPY_TESTING_APP=mode))
+    env.update(dict(_VISPY_TESTING_APP=mode, VISPY_IGNORE_OLD_VERSION='true'))
     env_str = '_VISPY_TESTING_APP=%s ' % mode
     if len(msg) > 0:
         msg = ('%s\n%s:\n%s%s'
