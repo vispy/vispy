@@ -155,7 +155,7 @@ class Canvas(scene.SceneCanvas):
 
         self.view.add(self.line)
         self.show()
-        self.selected_point is None
+        self.selected_point = None
         grid1 = scene.visuals.GridLines(parent=self.view.scene)
 
 if __name__ == '__main__':
