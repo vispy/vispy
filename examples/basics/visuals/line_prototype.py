@@ -286,7 +286,6 @@ if __name__ == '__main__':
         canvas.context.clear((0.3, 0.3, 0.3, 1.0))
         for v in visuals:
             v.draw()
-        canvas.update()
 
     def on_resize(event):
         # Set canvas viewport and reconfigure visual transforms to match.
