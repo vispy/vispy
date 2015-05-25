@@ -68,7 +68,7 @@ class BaseVisual(object):
     
     @transform.setter
     def transform(self, tr):
-        self.transforms.visual_to_document = tr
+        self.transforms.visual_transform = tr
 
     def view(self, key=None):
         """Return a new view of this visual.

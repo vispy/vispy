@@ -79,7 +79,7 @@ class LineVisual(visuals.Visual):
         
         # Note that we access `view_program` instead of `shared_program`
         # because we do not want this function assigned to other views.
-        tr = view.transforms.get_full_transform()
+        tr = view.transforms.get_transform()
         view.view_program.vert['transform'] = tr
     
 
@@ -129,7 +129,7 @@ if __name__ == '__main__':
     # Attach a clipper just to this view. The Clipper filter requires a
     # transform that maps from the framebuffer coordinate system to the 
     # clipping coordinates.
-    tr = line.transforms.document_to_framebuffer.inverse
+    tr = line.transforms.get_transform('framebuffer', 'canvas')
     line.attach(Clipper((20, 20, 260, 260), transform=tr), view=line)
     
     # Make a view of the line that will draw its shadow
@@ -137,28 +137,28 @@ if __name__ == '__main__':
     shadow.transforms.canvas = canvas
     shadow.transform = STTransform(scale=(2, 1), translate=(25, 25))
     shadow.attach(ColorFilter((0, 0, 0, 0.6)), view=shadow)
-    tr = shadow.transforms.document_to_framebuffer.inverse
+    tr = shadow.transforms.get_transform('framebuffer', 'canvas')
     shadow.attach(Clipper((20, 20, 260, 260), transform=tr), view=shadow)
     
     # And make a second view of the line with different clipping bounds
     view = line.view()
     view.transforms.canvas = canvas
     view.transform = STTransform(scale=(2, 0.5), translate=(450, 150))
-    tr = view.transforms.document_to_framebuffer.inverse
+    tr = view.transforms.get_transform('framebuffer', 'canvas')
     view.attach(Clipper((320, 20, 260, 260), transform=tr), view=view)
 
     # Make a compound visual
     plot = PlotLineVisual(pos, (0.5, 1, 0.5, 0.2), (0.5, 1, 1, 0.3))
     plot.transforms.canvas = canvas
     plot.transform = STTransform(translate=(80, 450), scale=(1.5, 1))
-    tr = plot.transforms.document_to_framebuffer.inverse
+    tr = plot.transforms.get_transform('framebuffer', 'canvas')
     plot.attach(Clipper((20, 320, 260, 260), transform=tr), view=plot)
 
     # And make a view on the compound 
     view2 = plot.view()
     view2.transforms.canvas = canvas
     view2.transform = STTransform(scale=(1.5, 1), translate=(450, 400))
-    tr = view2.transforms.document_to_framebuffer.inverse
+    tr = view2.transforms.get_transform('framebuffer', 'canvas')
     view2.attach(Clipper((320, 320, 260, 260), transform=tr), view=view2)
     
     # And a shadow for the view
@@ -166,7 +166,7 @@ if __name__ == '__main__':
     shadow2.transforms.canvas = canvas
     shadow2.transform = STTransform(scale=(1.5, 1), translate=(455, 405))
     shadow2.attach(ColorFilter((0, 0, 0, 0.6)), view=shadow2)
-    tr = shadow2.transforms.document_to_framebuffer.inverse
+    tr = shadow2.transforms.get_transform('framebuffer', 'canvas')
     shadow2.attach(Clipper((320, 320, 260, 260), transform=tr), view=shadow2)
     
 
@@ -178,19 +178,25 @@ if __name__ == '__main__':
     # def on_draw(event):
     #     collection.draw()  # draws both lines in one pass
     #     
-
+    
+    visuals = [shadow, line, view, plot, shadow2, view2]
     
     @canvas.connect
     def on_draw(event):
         canvas.context.clear((0.3, 0.3, 0.3, 1.0))
-        canvas.context.set_viewport(0, 0, *canvas.physical_size)
-        
-        shadow.draw()
-        line.draw()
-        view.draw()
-        plot.draw()
-        shadow2.draw()
-        view2.draw()
+        for v in visuals:
+            v.draw()
+
+    def on_resize(event):
+        # Set canvas viewport and reconfigure visual transforms to match.
+        vp = (0, 0, canvas.physical_size[0], canvas.physical_size[1])
+        canvas.context.set_viewport(*vp)
+        for v in visuals:
+            v.transforms.auto_configure(viewport=vp)
+    canvas.events.resize.connect(on_resize)
+    on_resize(None)
+
+    
 
     if sys.flags.interactive != 1:
         app.run()
