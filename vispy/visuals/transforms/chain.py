@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2014, Vispy Development Team.
+# Copyright (c) 2015, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division
@@ -108,15 +108,39 @@ class ChainTransform(BaseTransform):
             b &= tr.Isometric
         return b
 
-    def map(self, obj):
-        for tr in reversed(self.transforms):
-            obj = tr.map(obj)
-        return obj
+    def map(self, coords):
+        """Map coordinates
 
-    def imap(self, obj):
+        Parameters
+        ----------
+        coords : array-like
+            Coordinates to map.
+
+        Returns
+        -------
+        coords : ndarray
+            Coordinates.
+        """
+        for tr in reversed(self.transforms):
+            coords = tr.map(coords)
+        return coords
+
+    def imap(self, coords):
+        """Inverse map coordinates
+
+        Parameters
+        ----------
+        coords : array-like
+            Coordinates to inverse map.
+
+        Returns
+        -------
+        coords : ndarray
+            Coordinates.
+        """
         for tr in self.transforms:
-            obj = tr.imap(obj)
-        return obj
+            coords = tr.imap(coords)
+        return coords
 
     def shader_map(self):
         return self._shader_map
@@ -175,6 +199,11 @@ class ChainTransform(BaseTransform):
     def append(self, tr):
         """
         Add a new transform to the end of this chain.
+
+        Parameters
+        ----------
+        tr : instance of Transform
+            The transform to use.
         """
         self.transforms.append(tr)
         tr.changed.connect(self._subtr_changed)
@@ -184,6 +213,11 @@ class ChainTransform(BaseTransform):
     def prepend(self, tr):
         """
         Add a new transform to the beginning of this chain.
+
+        Parameters
+        ----------
+        tr : instance of Transform
+            The transform to use.
         """
         self.transforms.insert(0, tr)
         tr.changed.connect(self._subtr_changed)

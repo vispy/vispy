@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2014, Vispy Development Team.
+# Copyright (c) 2015, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division
@@ -68,8 +68,10 @@ class TransformSystem(object):
     By default, TransformSystems are configured such that the document
     coordinate system matches the logical pixels of the canvas,
 
-    Examples of use by Visuals
-    --------------------------
+    Examples
+    --------
+    Use by Visuals
+    ~~~~~~~~~~~~~~
 
     1. To convert local vertex coordinates to normalized device coordinates in
     the vertex shader, we first need a vertex shader that supports configurable

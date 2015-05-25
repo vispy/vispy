@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2014, Vispy Development Team. All Rights Reserved.
+# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
@@ -260,17 +260,20 @@ def requires_scipy(min_version='0.13'):
 
 
 @nottest
-def TestingCanvas(bgcolor='black', size=(100, 100), dpi=None, **kwargs):
+def TestingCanvas(bgcolor='black', size=(100, 100), dpi=None, decorate=False,
+                  **kwargs):
     """Class wrapper to avoid importing scene until necessary"""
+    # On Windows decorations can force windows to be an incorrect size
+    # (e.g., instead of 100x100 they will be 100x248), having no
+    # decorations works around this
     from ..scene import SceneCanvas
 
     class TestingCanvas(SceneCanvas):
-        def __init__(self, bgcolor, size, dpi, **kwargs):
+        def __init__(self, bgcolor, size, dpi, decorate, **kwargs):
             self._entered = False
-            kwargs['bgcolor'] = bgcolor
-            kwargs['size'] = size
-            kwargs['dpi'] = dpi
-            SceneCanvas.__init__(self, **kwargs)
+            SceneCanvas.__init__(self, bgcolor=bgcolor, size=size,
+                                 dpi=dpi, decorate=decorate,
+                                 **kwargs)
 
         def __enter__(self):
             SceneCanvas.__enter__(self)
@@ -296,7 +299,7 @@ def TestingCanvas(bgcolor='black', size=(100, 100), dpi=None, **kwargs):
             self.context.set_viewport(*self._wanted_vp)
             self.context.finish()
 
-    return TestingCanvas(bgcolor, size, dpi, **kwargs)
+    return TestingCanvas(bgcolor, size, dpi, decorate, **kwargs)
 
 
 @nottest

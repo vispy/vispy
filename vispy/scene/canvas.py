@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2014, Vispy Development Team.
+# Copyright (c) 2015, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division
@@ -19,12 +19,7 @@ from .widgets import Widget
 
 
 class SceneCanvas(app.Canvas):
-    """ SceneCanvas provides a Canvas that automatically draws the contents
-    of a scene.
-
-    Receives the following events:
-    initialize, resize, draw, mouse_press, mouse_release, mouse_move,
-    mouse_wheel, key_press, key_release, stylus, touch, close
+    """A Canvas that automatically draws the contents of a scene
 
     Parameters
     ----------
@@ -47,24 +42,22 @@ class SceneCanvas(app.Canvas):
         Note the canvas application can be accessed at ``canvas.app``.
     create_native : bool
         Whether to create the widget immediately. Default True.
-    init_gloo : bool
-        Initialize standard values in gloo (e.g., ``GL_POINT_SPRITE``).
     vsync : bool
         Enable vertical synchronization.
     resizable : bool
         Allow the window to be resized.
     decorate : bool
-        Decorate the window.
+        Decorate the window. Default True.
     fullscreen : bool | int
         If False, windowed mode is used (default). If True, the default
         monitor is used. If int, the given monitor number is used.
-    context : dict | instance SharedContext | None
-        OpenGL configuration to use when creating the context for the
-        canvas, or a context to share objects with. If None,
-        ``vispy.gloo.get_default_config`` will be used to set the OpenGL
-        context parameters. Alternatively, the ``canvas.context``
-        property from an existing canvas (using the same backend) can
-        be used, thereby sharing objects between contexts.
+    config : dict
+        A dict with OpenGL configuration options, which is combined
+        with the default configuration options and used to initialize
+        the context. See ``canvas.context.config`` for possible
+        options.
+    shared : Canvas | GLContext | None
+        An existing canvas or context to share OpenGL objects with.
     keys : str | dict | None
         Default key mapping to use. If 'interactive', escape and F11 will
         close the canvas and toggle full-screen mode, respectively.
@@ -77,20 +70,49 @@ class SceneCanvas(app.Canvas):
         Resolution in dots-per-inch to use for the canvas. If dpi is None,
         then the value will be determined by querying the global config first,
         and then the operating system.
-    bgcolor : Color
-        The background color to use.
     always_on_top : bool
         If True, try to create the window in always-on-top mode.
     px_scale : int > 0
         A scale factor to apply between logical and physical pixels in addition
-        to the actual scale factor determined by the backend. This option 
+        to the actual scale factor determined by the backend. This option
         allows the scale factor to be adjusted for testing.
+    bgcolor : Color
+        The background color to use.
 
     See also
     --------
     vispy.app.Canvas
+
+    Notes
+    -----
+    Receives the following events:
+
+        * initialize
+        * resize
+        * draw
+        * mouse_press
+        * mouse_release
+        * mouse_double_click
+        * mouse_move
+        * mouse_wheel
+        * key_press
+        * key_release
+        * stylus
+        * touch
+        * close
+
+    The ordering of the mouse_double_click, mouse_press, and mouse_release
+    events are not guaranteed to be consistent between backends. Only certain
+    backends natively support double-clicking (currently Qt and WX); on other
+    backends, they are detected manually with a fixed time delay.
+    This can cause problems with accessibility, as increasing the OS detection
+    time or using a dedicated double-click button will not be respected.
     """
-    def __init__(self, *args, **kwargs):
+    def __init__(self, title='Vispy canvas', size=(800, 600), position=None,
+                 show=False, autoswap=True, app=None, create_native=True,
+                 vsync=False, resizable=True, decorate=True, fullscreen=False,
+                 config=None, shared=None, keys=None, parent=None, dpi=None,
+                 always_on_top=False, px_scale=1, bgcolor='black'):
         self._scene = None
         # A default widget that follows the shape of the canvas
         self._central_widget = None
@@ -98,9 +120,12 @@ class SceneCanvas(app.Canvas):
         self._fb_stack = []
         self._vp_stack = []
         self.transforms = TransformSystem(canvas=self)
-        self._bgcolor = Color(kwargs.pop('bgcolor', 'black')).rgba
+        self._bgcolor = Color(bgcolor).rgba
 
-        app.Canvas.__init__(self, *args, **kwargs)
+        super(SceneCanvas, self).__init__(
+            title, size, position, show, autoswap, app, create_native, vsync,
+            resizable, decorate, fullscreen, config, shared, keys, parent, dpi,
+            always_on_top, px_scale)
         self.events.mouse_press.connect(self._process_mouse_event)
         self.events.mouse_move.connect(self._process_mouse_event)
         self.events.mouse_release.connect(self._process_mouse_event)
@@ -146,6 +171,13 @@ class SceneCanvas(app.Canvas):
             self.update()
 
     def on_draw(self, event):
+        """Draw handler
+
+        Parameters
+        ----------
+        event : instance of Event
+            The draw event.
+        """
         if self._scene is None:
             return  # Can happen on initialization
         logger.debug('Canvas draw')
@@ -259,6 +291,13 @@ class SceneCanvas(app.Canvas):
         event.handled = scene_event.handled
 
     def on_resize(self, event):
+        """Resize handler
+
+        Parameters
+        ----------
+        event : instance of Event
+            The resize event.
+        """
         if self._central_widget is not None:
             self._central_widget.size = self.size
             
@@ -271,6 +310,11 @@ class SceneCanvas(app.Canvas):
     def push_viewport(self, viewport):
         """ Push a viewport (x, y, w, h) on the stack. Values must be integers
         relative to the active framebuffer.
+
+        Parameters
+        ----------
+        viewport : tuple
+            The viewport as (x, y, w, h).
         """
         vp = list(viewport)
         # Normalize viewport before setting;
@@ -280,7 +324,7 @@ class SceneCanvas(app.Canvas):
         if vp[3] < 0:
             vp[1] += vp[3]
             vp[3] *= -1
-            
+
         self._vp_stack.append(vp)
         try:
             self.context.set_viewport(*vp)
@@ -304,9 +348,17 @@ class SceneCanvas(app.Canvas):
     def push_fbo(self, fbo, offset, csize):
         """ Push an FBO on the stack, together with the new viewport.
         and the transform to the FBO.
+
+        Parameters
+        ----------
+        fbo : instance of FrameBuffer
+            The framebuffer.
+        offset : tuple
+            The offset.
+        csize : tuple
+            The size to use.
         """
         self._fb_stack.append((fbo, offset, csize))
-        
         try:
             fbo.activate()
             h, w = fbo.color_buffer.shape[:2]

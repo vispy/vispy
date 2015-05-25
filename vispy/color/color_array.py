@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2014, Vispy Development Team.
+# Copyright (c) 2015, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division  # just to be safe...
@@ -91,13 +91,15 @@ class ColorArray(object):
         If array-like, it must be an Nx3 or Nx4 array-like object.
         Can also be a list of colors, such as
         ``['red', '#00ff00', ColorArray('blue')]``.
-    color_space : 'rgb' | 'hsv'
-       'rgb' (default) : color tuples are interpreted as (r, g, b) components.
-       'hsv' : color tuples are interpreted as (h, s, v) components.
     alpha : float | None
         If no alpha is not supplied in ``color`` entry and ``alpha`` is None,
         then this will default to 1.0 (opaque). If float, it will override
         any alpha values in ``color``, if provided.
+    clip : bool
+        Clip the color value.
+    color_space : 'rgb' | 'hsv'
+       'rgb' (default) : color tuples are interpreted as (r, g, b) components.
+       'hsv' : color tuples are interpreted as (h, s, v) components.
 
     Examples
     --------
@@ -200,7 +202,13 @@ class ColorArray(object):
         self._rgba[item] = value
 
     def extend(self, colors):
-        """Extend a ColorArray with new colors."""
+        """Extend a ColorArray with new colors
+
+        Parameters
+        ----------
+        colors : instance of ColorArray
+            The new colors.
+        """
         colors = ColorArray(colors)
         self._rgba = np.vstack((self._rgba, colors._rgba))
         return self
@@ -370,6 +378,8 @@ class Color(ColorArray):
         If no alpha is not supplied in ``color`` entry and ``alpha`` is None,
         then this will default to 1.0 (opaque). If float, it will override
         the alpha value in ``color``, if provided.
+    clip : bool
+        If True, clip the color values.
     """
     def __init__(self, color='black', alpha=None, clip=False):
         """Parse input type, and set attribute"""

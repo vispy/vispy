@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2014, Vispy Development Team.
+# Copyright (c) 2015, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """ This module provides an template for creating backends for vispy.
@@ -128,6 +128,8 @@ class CanvasBackend(BaseCanvasBackend):
                                               modifiers=())
         self._vispy_canvas.events.mouse_release(pos=(x, y), button=1,
                                                 modifiers=())
+        self._vispy_canvas.events.mouse_double_click(pos=(x, y), button=1,
+                                                     modifiers=())
         self._vispy_canvas.events.mouse_move(pos=(x, y), modifiers=())
         self._vispy_canvas.events.mouse_wheel(pos=(x, y), delta=(0, 0),
                                               modifiers=())

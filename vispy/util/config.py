@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2014, Vispy Development Team.
+# Copyright (c) 2015, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """Vispy configuration functions
@@ -19,6 +19,13 @@ from shutil import rmtree
 from .event import EmitterGroup, EventEmitter, Event
 from .logs import logger, set_log_level, use_log_level
 from ..ext.six import string_types, file_types
+
+file_types = list(file_types)
+try:
+    file_types += [tempfile._TemporaryFileWrapper]  # Py3k Windows this happens
+except Exception:
+    pass
+file_types = tuple(file_types)
 
 config = None
 _data_path = None
@@ -334,7 +341,17 @@ def save_config(**kwargs):
 
 
 def set_data_dir(directory=None, create=False, save=False):
-    """Set vispy data download directory"""
+    """Set vispy data download directory
+
+    Parameters
+    ----------
+    directory : str | None
+        The directory to use.
+    create : bool
+        If True, create directory if it doesn't exist.
+    save : bool
+        If True, save the configuration to the vispy config.
+    """
     if directory is None:
         directory = _data_path
         if _data_path is None:

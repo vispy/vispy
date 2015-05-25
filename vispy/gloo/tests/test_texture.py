@@ -180,11 +180,11 @@ class Texture2DTest(unittest.TestCase):
         self.assertRaises(ValueError, T.resize, (5, 5, 5))
         self.assertRaises(ValueError, T.resize, (5, 5, 5, 1))
 
-    # Resize not resizeable
+    # Resize not resizable
     # ---------------------------------
-    def test_resize_unresizeable(self):
+    def test_resize_unresizable(self):
         data = np.zeros((10, 10), dtype=np.uint8)
-        T = Texture2D(data=data, resizeable=False)
+        T = Texture2D(data=data, resizable=False)
         # with self.assertRaises(RuntimeError):
         #    T.resize((5, 5))
         self.assertRaises(RuntimeError, T.resize, (5, 5))
@@ -343,10 +343,10 @@ def test_texture_1D():
     #    T.resize((5, 5, 5, 5))
     assert_raises(ValueError, T.resize, (5, 5, 5, 5))
 
-    # Resize not resizeable
+    # Resize not resizable
     # ---------------------------------
     data = np.zeros((10, ), dtype=np.uint8)
-    T = Texture1D(data=data, resizeable=False)
+    T = Texture1D(data=data, resizable=False)
     # with self.assertRaises(RuntimeError):
     #    T.resize((5, 5, 5))
     assert_raises(RuntimeError, T.resize, (5, ))
@@ -474,10 +474,10 @@ def test_texture_3D():
     #    T.resize((5, 5, 5, 5))
     assert_raises(ValueError, T.resize, (5, 5, 5, 5))
 
-    # Resize not resizeable
+    # Resize not resizable
     # ---------------------------------
     data = np.zeros((10, 10, 10), dtype=np.uint8)
-    T = Texture3D(data=data, resizeable=False)
+    T = Texture3D(data=data, resizable=False)
     # with self.assertRaises(RuntimeError):
     #    T.resize((5, 5, 5))
     assert_raises(RuntimeError, T.resize, (5, 5, 5))

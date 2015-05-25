@@ -1,8 +1,9 @@
-# vispy: testskip
 """
-   Tutorial: Creating Visuals
-     04. Fragment Programs
---------------------------------
+Tutorial: Creating Visuals
+==========================
+
+04. Fragment Programs
+---------------------
 
 In this tutorial, we will demonstrate the use of the fragment shader as a 
 raycaster to draw complex shapes on a simple rectanglular mesh.
@@ -26,7 +27,7 @@ void main() {
 fragment_shader = """
 void main() {
   vec4 pos = $fb_to_visual(gl_FragCoord);
-  gl_FragColor = vec4(sin(pos.x), sin(pos.y), 0, 1);
+  gl_FragColor = vec4(sin(pos.x / 10.), sin(pos.y / 10.), 0, 1);
 }
 """
 
@@ -46,7 +47,7 @@ class MyRectVisual(visuals.Visual):
         self.program.vert['position'] = self.vbo
         
     def draw(self, transforms):
-        gloo.set_state(cull_face='front_and_back')
+        gloo.set_state(cull_face=False)
         
         tr = (transforms.visual_to_document * 
               transforms.document_to_framebuffer).inverse
@@ -61,17 +62,20 @@ class MyRectVisual(visuals.Visual):
 MyRect = scene.visuals.create_visual_node(MyRectVisual)
 
 
+# Finally we will test the visual by displaying in a scene.
+
+canvas = scene.SceneCanvas(keys='interactive', show=True)
+
+# This time we add a ViewBox to let the user zoom/pan
+view = canvas.central_widget.add_view()
+view.camera = 'panzoom'
+view.camera.rect = (0, 0, 800, 800)
+
+vis = MyRect()
+view.add(vis)
+
+# ..and optionally start the event loop
 if __name__ == '__main__':
-    canvas = scene.SceneCanvas(keys='interactive', show=True)
-    
-    # This time we add a ViewBox to let the user zoom/pan
-    view = canvas.central_widget.add_view()
-    view.camera.rect = (0, 0, 800, 800)
-
-    vis = MyRect()
-    view.add(vis)
-
-    # ..and optionally start the event loop
     import sys
-    if sys.flags.interactive == 0:
+    if sys.flags.interactive != 1:
         app.run()

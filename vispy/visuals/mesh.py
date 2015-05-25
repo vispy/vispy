@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2014, Vispy Development Team. All Rights Reserved.
+# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
@@ -70,6 +70,29 @@ vec4 vec2to4(vec2 xyz) {
 
 
 class MeshVisual(Visual):
+    """Mesh visual
+
+    Parameters
+    ----------
+    vertices : array-like | None
+        The vertices.
+    faces : array-like | None
+        The faces.
+    vertex_colors : array-like | None
+        Colors to use for each vertex.
+    face_colors : array-like | None
+        Colors to use for each face.
+    color : instance of Color
+        The color to use.
+    meshdata : instance of MeshData | None
+        The meshdata.
+    shading : str | None
+        Shading to use.
+    mode : str
+        The drawing mode.
+    **kwargs : dict
+        Keyword arguments to pass to `Visual`.
+    """
     def __init__(self, vertices=None, faces=None, vertex_colors=None,
                  face_colors=None, color=(0.5, 0.5, 1, 1), meshdata=None,
                  shading=None, mode='triangles', **kwargs):
@@ -113,7 +136,24 @@ class MeshVisual(Visual):
                             color=color)
 
     def set_data(self, vertices=None, faces=None, vertex_colors=None,
-                 face_colors=None, meshdata=None, color=None):
+                 face_colors=None, color=None, meshdata=None):
+        """Set the mesh data
+
+        Parameters
+        ----------
+        vertices : array-like | None
+            The vertices.
+        faces : array-like | None
+            The faces.
+        vertex_colors : array-like | None
+            Colors to use for each vertex.
+        face_colors : array-like | None
+            Colors to use for each face.
+        color : instance of Color
+            The color to use.
+        meshdata : instance of MeshData | None
+            The meshdata.
+        """
         if meshdata is not None:
             self._meshdata = meshdata
         else:
@@ -128,18 +168,18 @@ class MeshVisual(Visual):
     @property
     def mode(self):
         """The triangle mode used to draw this mesh.
-        
+
         Options are:
-        
-        * 'triangles': Draw one triangle for every three vertices (eg, [1,2,3],
-          [4,5,6], [7,8,9)
-        * 'triangle_strip': Draw one strip for every vertex excluding the first
-          two (eg, [1,2,3], [2,3,4], [3,4,5])
-        * 'triangle_fan': Draw each triangle from the first vertex and the last
-          two vertices (eg, [1,2,3], [1,3,4], [1,4,5])
+
+            * 'triangles': Draw one triangle for every three vertices
+              (eg, [1,2,3], [4,5,6], [7,8,9)
+            * 'triangle_strip': Draw one strip for every vertex excluding the
+              first two (eg, [1,2,3], [2,3,4], [3,4,5])
+            * 'triangle_fan': Draw each triangle from the first vertex and the
+              last two vertices (eg, [1,2,3], [1,3,4], [1,4,5])
         """
         return self._mode
-    
+
     @mode.setter
     def mode(self, m):
         modes = ['triangles', 'triangle_strip', 'triangle_fan']
@@ -151,12 +191,12 @@ class MeshVisual(Visual):
     def mesh_data(self):
         """The mesh data"""
         return self._meshdata
-    
+
     @property
     def color(self):
         """The uniform color for this mesh.
-        
-        This value is only used if per-vertex or per-face colors are not 
+
+        This value is only used if per-vertex or per-face colors are not
         specified.
         """
         return self._color
@@ -205,10 +245,10 @@ class MeshVisual(Visual):
                 self._normals.set_data(np.zeros((0, 3), dtype=np.float32))
             self._indexed = False
             if md.has_vertex_color():
-                self._colors.set_data(md.get_vertex_colors(indexed='faces'), 
+                self._colors.set_data(md.get_vertex_colors(indexed='faces'),
                                       convert=True)
             elif md.has_face_color():
-                self._colors.set_data(md.get_face_colors(indexed='faces'), 
+                self._colors.set_data(md.get_face_colors(indexed='faces'),
                                       convert=True)
             else:
                 self._colors.set_data(np.zeros((0, 4), dtype=np.float32))
@@ -245,7 +285,7 @@ class MeshVisual(Visual):
             self._phong['ambient'] = (0.3, 0.3, 0.3, 1.0)
 
             self._program.frag['color'] = self._phong(self._color_var)
-            
+
         self._data_changed = False
 
     @property
@@ -277,6 +317,17 @@ class MeshVisual(Visual):
         #view.visual._phong['transform'] = doc_tr
 
     def bounds(self, mode, axis):
+        """Get the bounds
+
+        Parameters
+        ----------
+        mode : str
+            Describes the type of boundary requested. Can be "visual", "data",
+            or "mouse".
+        axis : 0, 1, 2
+            The axis along which to measure the bounding values, in
+            x-y-z order.
+        """
         if self._bounds is None:
             return None
         return self._bounds[axis]

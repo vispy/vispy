@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2014, Vispy Development Team.
+# Copyright (c) 2015, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division, print_function
@@ -78,7 +78,7 @@ class Canvas(object):
         If True, try to create the window in always-on-top mode.
     px_scale : int > 0
         A scale factor to apply between logical and physical pixels in addition
-        to the actual scale factor determined by the backend. This option 
+        to the actual scale factor determined by the backend. This option
         allows the scale factor to be adjusted for testing.
 
     Notes
@@ -90,7 +90,8 @@ class Canvas(object):
         * draw
         * mouse_press
         * mouse_release
-        * mouse_move,
+        * mouse_double_click
+        * mouse_move
         * mouse_wheel
         * key_press
         * key_release
@@ -98,6 +99,12 @@ class Canvas(object):
         * touch
         * close
 
+    The ordering of the mouse_double_click, mouse_press, and mouse_release
+    events are not guaranteed to be consistent between backends. Only certain
+    backends natively support double-clicking (currently Qt and WX); on other
+    backends, they are detected manually with a fixed time delay.
+    This can cause problems with accessibility, as increasing the OS detection
+    time or using a dedicated double-click button will not be respected.
     """
 
     def __init__(self, title='Vispy canvas', size=(800, 600), position=None,
@@ -137,6 +144,7 @@ class Canvas(object):
                                    draw=DrawEvent,
                                    mouse_press=MouseEvent,
                                    mouse_release=MouseEvent,
+                                   mouse_double_click=MouseEvent,
                                    mouse_move=MouseEvent,
                                    mouse_wheel=MouseEvent,
                                    key_press=KeyEvent,
@@ -260,12 +268,12 @@ class Canvas(object):
     @property
     def context(self):
         """ The OpenGL context of the native widget
-        
+
         It gives access to OpenGL functions to call on this canvas object,
         and to the shared context namespace.
         """
         return self._context
-    
+
     @property
     def app(self):
         """ The vispy Application instance on which this Canvas is based.
@@ -290,11 +298,18 @@ class Canvas(object):
         self.update()
 
     def connect(self, fun):
-        """ Connect a function to an event. The name of the function
+        """ Connect a function to an event
+
+        The name of the function
         should be on_X, with X the name of the event (e.g. 'on_draw').
 
-        This method is typically used as a decorater on a function
+        This method is typically used as a decorator on a function
         definition for an event handler.
+
+        Parameters
+        ----------
+        fun : callable
+            The function.
         """
         # Get and check name
         name = fun.__name__
@@ -321,7 +336,7 @@ class Canvas(object):
 
     @size.setter
     def size(self, size):
-        return self._backend._vispy_set_size(size[0] * self._px_scale, 
+        return self._backend._vispy_set_size(size[0] * self._px_scale,
                                              size[1] * self._px_scale)
 
     @property
@@ -334,7 +349,7 @@ class Canvas(object):
     def pixel_scale(self):
         """ The ratio between the number of logical pixels, or 'points', and
         the physical pixels on the device. In most cases this will be 1.0,
-        but on certain backends this will be greater than 1. This should be 
+        but on certain backends this will be greater than 1. This should be
         used as a scaling factor when writing your own visualisations
         with Gloo (make a copy and multiply all your logical pixel values
         by it) but you should rarely, if ever, need to use this in your own
@@ -379,15 +394,25 @@ class Canvas(object):
         """The fps of canvas/window, as the rate that events.draw is emitted
         """
         return self._fps
-    
+
     def set_current(self, event=None):
         """Make this the active GL canvas
+
+        Parameters
+        ----------
+        event : None
+            Not used.
         """
         self._backend._vispy_set_current()
         set_current_canvas(self)
 
     def swap_buffers(self, event=None):
         """Swap GL buffers such that the offscreen buffer becomes visible
+
+        Parameters
+        ----------
+        event : None
+            Not used.
         """
         self._backend._vispy_swap_buffers()
 
@@ -406,7 +431,13 @@ class Canvas(object):
             self.app.run()
 
     def update(self, event=None):
-        """Inform the backend that the Canvas needs to be redrawn"""
+        """Inform the backend that the Canvas needs to be redrawn
+
+        Parameters
+        ----------
+        event : None
+            Not used.
+        """
         if self._backend is not None:
             self._backend._vispy_update()
 
@@ -492,7 +523,8 @@ class MouseEvent(Event):
     """Mouse event class
 
     Note that each event object has an attribute for each of the input
-    arguments listed below.
+    arguments listed below, as well as a "time" attribute with the event's
+    precision start time.
 
     Parameters
     ----------
@@ -537,6 +569,7 @@ class MouseEvent(Event):
         self._delta = np.zeros(2) if (delta is None) else np.array(delta)
         self._last_event = last_event
         self._press_event = press_event
+        self._time = time()
 
     @property
     def pos(self):
@@ -565,6 +598,10 @@ class MouseEvent(Event):
     @property
     def last_event(self):
         return self._last_event
+
+    @property
+    def time(self):
+        return self._time
 
     def _forget_last_event(self):
         # Needed to break otherwise endless last-event chains

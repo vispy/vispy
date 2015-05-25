@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2014, Vispy Development Team.
+# Copyright (c) 2015, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """
@@ -86,7 +86,14 @@ def forget_canvas(canvas):
 
 
 class GLContext(BaseGlooFunctions):
-    """An object encapsulating data necessary for a OpenGL context.
+    """An object encapsulating data necessary for a OpenGL context
+
+    Parameters
+    ----------
+    config : dict | None
+        The requested configuration.
+    shared : instance of GLContext | None
+        The shared context.
     """
     
     def __init__(self, config=None, shared=None):
@@ -95,7 +102,7 @@ class GLContext(BaseGlooFunctions):
         assert isinstance(self._shared, GLShared)
         self._glir = GlirQueue()
         self._do_CURRENT_command = False  # flag that CURRENT cmd must be given
-    
+
     def __repr__(self):
         return "<GLContext at 0x%x>" % id(self)
     
@@ -111,6 +118,13 @@ class GLContext(BaseGlooFunctions):
     
     def create_shared(self, name, ref):
         """ For the app backends to create the GLShared object.
+
+        Parameters
+        ----------
+        name : str
+            The name.
+        ref : object
+            The reference.
         """
         if self._shared is not None:
             raise RuntimeError('Can only set_shared once.')
@@ -135,9 +149,20 @@ class GLContext(BaseGlooFunctions):
         potentially be shared between multiple contexts.
         """
         return self._shared
-    
+
+    @property
+    def capabilities(self):
+        """ The OpenGL capabilities
+        """
+        return deepcopy(self.shared.parser.capabilities)
+
     def flush_commands(self, event=None):
         """ Flush
+
+        Parameters
+        ----------
+        event : instance of Event
+            The event.
         """
         if self._do_CURRENT_command:
             self._do_CURRENT_command = False

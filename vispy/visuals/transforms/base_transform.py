@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2014, Vispy Development Team.
+# Copyright (c) 2015, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """
@@ -76,7 +76,8 @@ class BaseTransform(object):
         """
         Return *obj* mapped through the forward transformation.
 
-        Parameters:
+        Parameters
+        ----------
             obj : tuple (x,y) or (x,y,z)
                   array with shape (..., 2) or (..., 3)
         """
@@ -86,7 +87,8 @@ class BaseTransform(object):
         """
         Return *obj* mapped through the inverse transformation.
 
-        Parameters:
+        Parameters
+        ----------
             obj : tuple (x,y) or (x,y,z)
                   array with shape (..., 2) or (..., 3)
         """

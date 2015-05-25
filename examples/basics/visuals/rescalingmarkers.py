@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # vispy: gallery 30
 # -----------------------------------------------------------------------------
-# Copyright (c) 2014, Vispy Development Team. All Rights Reserved.
+# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 """ Display markers at different sizes and line thicknessess.
@@ -24,8 +24,7 @@ for i in range(500):
     r = 10.1 - i * 0.02
     radius -= 0.45
     pos[i] = x/512.+.5, 1.-(y/512.+.5)
-
-green = (0., 1.0, 0., 1.)
+pos *= 512
 
 
 class Canvas(scene.SceneCanvas):
@@ -39,7 +38,7 @@ class Canvas(scene.SceneCanvas):
         )
         self.index = 0
         self.markers = visuals.Markers()
-        self.markers.set_data(pos, face_color=green, scaling=True)
+        self.markers.set_data(pos, face_color=(0, 1, 0), scaling=False)
         self.markers.set_symbol(impl_visuals.marker_types[self.index])
         self.text = visuals.Text(impl_visuals.marker_types[self.index],
                                  pos=(80, 15), font_size=14,
@@ -53,10 +52,11 @@ class Canvas(scene.SceneCanvas):
             self.update()
 
 
+canvas = Canvas()
+grid = canvas.central_widget.add_grid()
+vb1 = grid.add_view(row=0, col=0)
+vb1.add(canvas.markers)
+
 if __name__ == '__main__':
-    canvas = Canvas()
-    grid = canvas.central_widget.add_grid()
-    vb1 = grid.add_view(row=0, col=0)
-    vb1.add(canvas.markers)
     canvas.show()
     app.run()

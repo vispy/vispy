@@ -1,4 +1,3 @@
-# vispy: testskip
 """
 Tutorial: Creating Visuals
 --------------------------
@@ -146,23 +145,23 @@ MyRect = scene.visuals.create_visual_node(MyRectVisual)
 #         
 
 
+# Finally we will test the visual by displaying in a scene.
+
+# Create a canvas to display our visual
+canvas = scene.SceneCanvas(keys='interactive', show=True)
+
+# Create two instances of MyRect, each using canvas.scene as their parent
+rects = [MyRect(100, 100, 200, 300, parent=canvas.scene),
+         MyRect(500, 100, 200, 300, parent=canvas.scene)]
+
+# To test that the user-specified transforms work correctly, I'll rotate
+# one rectangle slightly.
+tr = visuals.transforms.AffineTransform()
+tr.rotate(5, (0, 0, 1))
+rects[1].transform = tr
+
+# ..and optionally start the event loop
 if __name__ == '__main__':
-    # Finally we will test the visual by displaying in a scene.
-    
-    # Create a canvas to display our visual
-    canvas = scene.SceneCanvas(keys='interactive', show=True)
-    
-    # Create two instances of MyRect, each using canvas.scene as their parent
-    rects = [MyRect(100, 100, 200, 300, parent=canvas.scene),
-             MyRect(500, 100, 200, 300, parent=canvas.scene)]
-
-    # To test that the user-specified transforms work correctly, I'll rotate
-    # one rectangle slightly.
-    tr = visuals.transforms.AffineTransform()
-    tr.rotate(5, (0, 0, 1))
-    rects[1].transform = tr
-
-    # ..and optionally start the event loop
     import sys
-    if sys.flags.interactive == 0:
+    if sys.flags.interactive != 1:
         app.run()

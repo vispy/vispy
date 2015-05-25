@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2014, Vispy Development Team.
+# Copyright (c) 2015, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division
@@ -13,13 +13,20 @@ class Grid(Widget):
     """
     Widget that automatically sets the position and size of child Widgets to
     proportionally divide its internal area into a grid.
+
+    Parameters
+    ----------
+    spacing : int
+        Spacing between widgets.
+    **kwargs : dict
+        Keyword arguments to pass to `Widget`.
     """
-    def __init__(self, **kwargs):
+    def __init__(self, spacing=6, **kwargs):
         from .viewbox import ViewBox
         self._next_cell = [0, 0]  # row, col
         self._cells = {}
         self._grid_widgets = {}
-        self.spacing = 6
+        self.spacing = spacing
         self._n_added = 0
         self._default_class = ViewBox  # what to add when __getitem__ is used
         Widget.__init__(self, **kwargs)
@@ -59,12 +66,12 @@ class Grid(Widget):
                                row_span=spans[0], col_span=spans[1])
         return item
 
-    def add_widget(self, widget=None, row=None, col=None, row_span=1, 
+    def add_widget(self, widget=None, row=None, col=None, row_span=1,
                    col_span=1):
         """
         Add a new widget to this grid. This will cause other widgets in the
         grid to be resized to make room for the new widget.
-        
+
         Parameters
         ----------
         widget : Widget
@@ -77,11 +84,10 @@ class Grid(Widget):
             The number of rows to be occupied by this widget. Default is 1.
         col_span : int
             The number of columns to be occupied by this widget. Default is 1.
-        
+
         Notes
         -----
-        
-        The widget's parent is automatically set to this grid, and all other 
+        The widget's parent is automatically set to this grid, and all other
         parent(s) are removed.
         """
         if row is None:
@@ -103,25 +109,45 @@ class Grid(Widget):
         self._update_child_widgets()
         return widget
 
-    def add_grid(self, row=None, col=None, row_span=1, col_span=1, 
+    def add_grid(self, row=None, col=None, row_span=1, col_span=1,
                  **kwargs):
         """
         Create a new Grid and add it as a child widget.
 
-        The arguments 'row', 'col', 'row_span', and 'col_span' are passed to 
-        `add_widget()`, whereas all other arguments are passed to `ViewBox()`.
+        Parameters
+        ----------
+        row : int
+            The row in which to add the widget (0 is the topmost row)
+        col : int
+            The column in which to add the widget (0 is the leftmost column)
+        row_span : int
+            The number of rows to be occupied by this widget. Default is 1.
+        col_span : int
+            The number of columns to be occupied by this widget. Default is 1.
+        **kwargs : dict
+            Keyword arguments to pass to the new `Grid`.
         """
         from .grid import Grid
         grid = Grid(**kwargs)
         return self.add_widget(grid, row, col, row_span, col_span)
 
-    def add_view(self, row=None, col=None, row_span=1, col_span=1, 
+    def add_view(self, row=None, col=None, row_span=1, col_span=1,
                  **kwargs):
         """
         Create a new ViewBox and add it as a child widget.
 
-        The arguments 'row', 'col', 'row_span', and 'col_span' are passed to 
-        `add_widget()`, whereas all other arguments are passed to `ViewBox()`.
+        Parameters
+        ----------
+        row : int
+            The row in which to add the widget (0 is the topmost row)
+        col : int
+            The column in which to add the widget (0 is the leftmost column)
+        row_span : int
+            The number of rows to be occupied by this widget. Default is 1.
+        col_span : int
+            The number of columns to be occupied by this widget. Default is 1.
+        **kwargs : dict
+            Keyword arguments to pass to `ViewBox`.
         """
         from .viewbox import ViewBox
         view = ViewBox(**kwargs)
@@ -163,7 +189,7 @@ class Grid(Widget):
         cols = np.linspace(rect.left, rect.right, n_cols+1)
         colstart = cols[:-1] + s2
         colend = cols[1:] - s2
-        
+
         # snap to pixel boundaries to avoid drawing artifacts
         colstart = np.round(colstart)
         colend = np.round(colend)

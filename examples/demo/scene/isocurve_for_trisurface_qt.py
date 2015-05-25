@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2014, Vispy Development Team. All Rights Reserved.
+# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
@@ -96,7 +96,7 @@ class MainWindow(QtGui.QMainWindow):
 class Canvas(scene.SceneCanvas):
 
     def __init__(self):
-        scene.SceneCanvas.__init__(self, keys='interactive')
+        scene.SceneCanvas.__init__(self, keys=None)
         self.size = 800, 600
         self.view = self.central_widget.add_view()
         self.view.camera = scene.TurntableCamera()
@@ -118,7 +118,7 @@ class Canvas(scene.SceneCanvas):
     def set_data(self, n_levels, cmap):
         self.iso.set_color(cmap)
         cl = np.linspace(-self.radius, self.radius, n_levels + 2)[1:-1]
-        self.iso.set_levels(cl)
+        self.iso.levels = cl
 
 
 # -----------------------------------------------------------------------------

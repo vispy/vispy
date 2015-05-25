@@ -39,6 +39,6 @@ def get(name):
 
     filename = find(name)
     if filename is None:
-        return name
+        raise RuntimeError('Could not find %s' % name)
     with open(filename) as fid:
         return fid.read()

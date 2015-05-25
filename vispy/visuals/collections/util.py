@@ -122,7 +122,7 @@ attribute float     collection_index;
     int i = index_x;
     vec4 _uniform;\n"""
 
-    _utype = {name: count for name, count, _ in _utype}
+    _utype = dict([(name, count) for name, count, _ in _utype])
     store = 0
     # Be very careful with utype name order (_utype.keys is wrong)
     for name in utype.names:

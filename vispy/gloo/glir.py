@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2014, Vispy Development Team. All Rights Reserved.
+# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
-""" 
+"""
 Implementation to execute GL Intermediate Representation (GLIR)
 """
 
+import os
 import sys
 import re
 import json
@@ -233,7 +234,7 @@ def convert_shaders(convert, shaders):
                 lines.append(line.rstrip())
             # Write
             if not has_version:
-                lines.insert(0, '#version 120\n#line 2\n')
+                lines.insert(0, '#version 120\n')
             out.append('\n'.join(lines))
     
     else:
@@ -259,19 +260,25 @@ def as_es2_command(command):
 class BaseGlirParser(object):
     """ Base clas for GLIR parsers that can be attached to a GLIR queue.
     """
-    
+
+    def __init__(self):
+        self.capabilities = dict(
+            gl_version='Unknown',
+            max_texture_size=None,
+        )
+
     def is_remote(self):
         """ Whether the code is executed remotely. i.e. gloo.gl cannot
         be used.
         """
         raise NotImplementedError()
-    
+
     def convert_shaders(self):
         """ Whether to convert shading code. Valid values are 'es2' and
         'desktop'. If None, the shaders are not modified.
         """
         raise NotImplementedError()
-    
+
     def parse(self, commands):
         """ Parse the GLIR commands. Or sent them away.
         """
@@ -280,17 +287,18 @@ class BaseGlirParser(object):
 
 class GlirParser(BaseGlirParser):
     """ A class for interpreting GLIR commands using gloo.gl
-    
+
     We make use of relatively light GLIR objects that are instantiated
     on CREATE commands. These objects are stored by their id in a
     dictionary so that commands like ACTIVATE and DATA can easily
     be executed on the corresponding objects.
     """
-    
+
     def __init__(self):
+        super(GlirParser, self).__init__()
         self._objects = {}
         self._invalid_objects = set()
-        
+
         self._classmap = {'Program': GlirProgram,
                           'VertexBuffer': GlirVertexBuffer,
                           'IndexBuffer': GlirIndexBuffer,
@@ -300,13 +308,13 @@ class GlirParser(BaseGlirParser):
                           'RenderBuffer': GlirRenderBuffer,
                           'FrameBuffer': GlirFrameBuffer,
                           }
-        
+
         # We keep a dict that the GLIR objects use for storing
         # per-context information. This dict is cleared each time
         # that the context is made current. This seems necessary for
         # when two Canvases share a context.
         self.env = {}
-    
+
     def is_remote(self):
         return False
     
@@ -383,7 +391,7 @@ class GlirParser(BaseGlirParser):
                 ob.set_interpolation(*args)
             else:
                 logger.warning('Invalid GLIR command %r' % cmd)
-   
+
     def parse(self, commands):
         """ Parse a list of commands.
         """
@@ -417,6 +425,15 @@ class GlirParser(BaseGlirParser):
             GL_POINT_SPRITE = 34913
             gl.glEnable(GL_VERTEX_PROGRAM_POINT_SIZE)
             gl.glEnable(GL_POINT_SPRITE)
+        if self.capabilities['max_texture_size'] is None:  # only do once
+            self.capabilities['gl_version'] = gl.glGetParameter(gl.GL_VERSION)
+            self.capabilities['max_texture_size'] = \
+                gl.glGetParameter(gl.GL_MAX_TEXTURE_SIZE)
+            if int(self.capabilities['gl_version'].split('.')[0]) < 3:
+                if os.getenv('VISPY_IGNORE_OLD_VERSION', '').lower() != 'true':
+                    logger.warning('OpenGL version 3.0 or higher recommended, '
+                                   'got %s. Some functionality may fail.'
+                                   % self.capabilities['gl_version'])
 
 
 def glir_logger(parser_cls, file_or_filename):
@@ -1193,10 +1210,10 @@ class GlirFrameBuffer(GlirObject):
 
     def set_framebuffer(self, yes):
         if yes:
+            self.activate()
             if not self._validated:
                 self._validated = True
                 self._validate()
-            self.activate()
         else:
             self.deactivate()
     
@@ -1240,27 +1257,24 @@ class GlirFrameBuffer(GlirObject):
                 raise ValueError("Invalid attachment: %s" % type(buffer))
         self._validated = False
         self.deactivate()
-    
+
     def _validate(self):
         res = gl.glCheckFramebufferStatus(gl.GL_FRAMEBUFFER)
         if res == gl.GL_FRAMEBUFFER_COMPLETE:
-            pass
-        elif res == 0:
-            raise RuntimeError('Target not equal to GL_FRAMEBUFFER')
-        elif res == gl.GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
-            raise RuntimeError(
-                'FrameBuffer attachments are incomplete.')
-        elif res == gl.GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
-            raise RuntimeError(
-                'No valid attachments in the FrameBuffer.')
-        elif res == gl.GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS:
-            raise RuntimeError(
-                'attachments do not have the same width and height.')
-        #elif res == gl.GL_FRAMEBUFFER_INCOMPLETE_FORMATS: # not in es 2.0
-        #    raise RuntimeError('Internal format of attachment '
-        #                       'is not renderable.')
-        elif res == gl.GL_FRAMEBUFFER_UNSUPPORTED:
-            raise RuntimeError('Combination of internal formats used '
-                               'by attachments is not supported.')
-        else:
-            raise RuntimeError('Unknown framebuffer error: %r.' % res)
+            return
+        _bad_map = {
+            0: 'Target not equal to GL_FRAMEBUFFER',
+            gl.GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
+                'FrameBuffer attachments are incomplete.',
+            gl.GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
+                'No valid attachments in the FrameBuffer.',
+            gl.GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS:
+                'attachments do not have the same width and height.',
+            # gl.GL_FRAMEBUFFER_INCOMPLETE_FORMATS: \  # not in es 2.0
+            #     'Internal format of attachment is not renderable.'
+            gl.GL_FRAMEBUFFER_UNSUPPORTED:
+                'Combination of internal formats used by attachments is '
+                'not supported.',
+        }
+        raise RuntimeError(_bad_map.get(res, 'Unknown framebuffer error: %r.'
+                                        % res))

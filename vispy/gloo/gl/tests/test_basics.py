@@ -24,6 +24,19 @@ def teardown_module():
 def test_basics_desktop():
     """ Test desktop GL backend for basic functionality. """
     _test_basics('gl2')
+    with Canvas():
+        _test_setting_parameters()
+        _test_enabling_disabling()
+        _test_setting_stuff()
+        _test_object_creation_and_deletion()
+        _test_fbo()
+        try:
+            gl.gl2._get_gl_func('foo', None, ())
+        except RuntimeError as exp:
+            exp = str(exp)
+            assert 'version' in exp
+            assert 'unknown' not in exp
+        gl.glFinish()
 
 
 @requires_application()
@@ -155,7 +168,6 @@ def _test_setting_stuff():
     v = gl.glGetParameter(gl.GL_VERSION)
     assert_true(isinstance(v, string_types))
     assert_true(len(v) > 0)
-    
     gl.check_error()
 
 

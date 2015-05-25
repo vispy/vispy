@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2014, Vispy Development Team.
+# Copyright (c) 2015, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division
@@ -51,8 +51,8 @@ class SurfacePlotVisual(MeshVisual):
     def set_data(self, x=None, y=None, z=None, colors=None):
         """Update the data in this surface plot.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         x : ndarray | None
             1D array of values specifying the x positions of vertices in the
             grid. If None, values will be assumed to be integers.

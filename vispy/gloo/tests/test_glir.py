@@ -51,6 +51,8 @@ def test_queue():
 
 @requires_application()
 def test_log_parser():
+    """Test GLIR log parsing
+    """
     glir_file = tempfile.TemporaryFile(mode='r+')
 
     config.update(glir_file=glir_file)
@@ -84,6 +86,15 @@ def test_log_parser():
     config.update(glir_file='')
 
 
+@requires_application()
+def test_capabilities():
+    """Test GLIR capability reporting
+    """
+    with Canvas() as c:
+        capabilities = c.context.shared.parser.capabilities
+        assert capabilities['max_texture_size'] is not None
+        assert capabilities['gl_version'] != 'unknown'
+
 # The rest is basically tested via our examples
-    
+
 run_tests_if_main()

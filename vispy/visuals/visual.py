@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2014, Vispy Development Team.
+# Copyright (c) 2015, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division
@@ -41,6 +41,11 @@ class BaseVisual(object):
     * A data structure that is shared between all views of the visual.
     * Abstract `draw`, `bounds`, `attach`, and `detach` methods.
     
+    Notes
+    -----
+    When used in the scenegraph, all Visual classes are mixed with
+    `vispy.scene.Node` in order to implement the methods, attributes and
+    capabilities required for their usage within it.
     """
     def __init__(self, vshare=None, key=None):
         self._view_class = getattr(self, '_view_class', VisualView)
@@ -57,7 +62,7 @@ class BaseVisual(object):
         self.events = EmitterGroup(source=self,
                                    auto_connect=True,
                                    update=Event,
-                                   bounds_change=Event,
+                                   bounds_change=Event
                                    )
         
         self.transforms = TransformSystem()
@@ -159,15 +164,27 @@ class Visual(BaseVisual):
         self._hooks = {}
 
     def set_gl_state(self, preset=None, **kwargs):
-        """Completely define the set of GL state parameters to use when drawing
-        this visual.
+        """Define the set of GL state parameters to use when drawing
+
+        Parameters
+        ----------
+        preset : str
+            Preset to use.
+        **kwargs : dict
+            Keyword argments to use.
         """
         self._vshare.gl_state = kwargs
         self._vshare.gl_state['preset'] = preset
     
     def update_gl_state(self, *args, **kwargs):
         """Modify the set of GL state parameters to use when drawing
-        this visual.
+
+        Parameters
+        ----------
+        *args : tuple
+            Arguments.
+        **kwargs : dict
+            Keyword argments.
         """
         if len(args) == 1:
             self._gl_state['preset'] = args[0]
@@ -249,7 +266,7 @@ class Visual(BaseVisual):
         
     def _get_hook(self, shader, name):
         """Return a FunctionChain that Filters may use to modify the program.
-        
+
         *shader* should be "frag" or "vert"
         *name* should be "pre" or "post"
         """
@@ -257,7 +274,6 @@ class Visual(BaseVisual):
         key = (shader, name)
         if key in self._hooks:
             return self._hooks[key]
-        
         hook = StatementList()
         if shader == 'vert':
             self.view_program.vert[name] = hook
@@ -270,6 +286,11 @@ class Visual(BaseVisual):
         """Attach a Filter to this visual. 
         
         Each filter modifies the appearance or behavior of the visual.
+
+        Parameters
+        ----------
+        filt : object
+            The filter to attach.
         """
         if view is None:
             self._vshare.filters.append(filter)
@@ -281,6 +302,11 @@ class Visual(BaseVisual):
         
     def detach(self, filter, view=None):
         """Detach a filter.
+
+        Parameters
+        ----------
+        filt : object
+            The filter to detach.
         """
         if view is None:
             self._vshare.filters.remove(filter)

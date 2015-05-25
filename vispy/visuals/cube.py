@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2014, Vispy Development Team. All Rights Reserved.
+# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
@@ -10,13 +10,13 @@ from .mesh import MeshVisual
 
 
 class CubeVisual(MeshVisual):
-    """Visual that displays a cube or cuboid. 
+    """Visual that displays a cube or cuboid
 
     Parameters
     ----------
-    size : float or tuple 
+    size : float or tuple
         The size of the cuboid. A float gives a cube, whereas tuples may
-        specify the size of each axis (x, y, z) independently. 
+        specify the size of each axis (x, y, z) independently.
     vertex_colors : ndarray
         Same as for `MeshVisual` class. See `create_cube` for vertex ordering.
     face_colors : ndarray
@@ -41,6 +41,13 @@ class CubeVisual(MeshVisual):
             self._outline = None
 
     def draw(self, transforms):
+        """Draw the visual
+
+        Parameters
+        ----------
+        transforms : instance of TransformSystem
+            The transforms to use.
+        """
         MeshVisual.draw(self, transforms)
         if self._outline:
             set_state(polygon_offset=(1, 1), polygon_offset_fill=True)

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2014, Vispy Development Team.
+# Copyright (c) 2015, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division
@@ -10,7 +10,6 @@ from .widget import Widget
 from ..subscene import SubScene
 from ..cameras import make_camera, BaseCamera
 from ...ext.six import string_types
-from ... color import Color
 from ... import gloo
 from ...visuals.components import Clipper
 from ...visuals import Visual
@@ -18,35 +17,34 @@ from ...visuals import Visual
 
 class ViewBox(Widget):
     """ Provides a rectangular widget to which its subscene is rendered.
-    
+
     Three classes work together when using a ViewBox:
     * The :class:`SubScene` class describes a "world" coordinate system and the
-    entities that live inside it. 
+    entities that live inside it.
     * ViewBox is a "window" through which we view the
     subscene. Multiple ViewBoxes may view the same subscene.
-    * :class:`Camera` describes both the perspective from which the 
-    subscene is rendered, and the way user interaction affects that 
-    perspective. 
-    
-    In general it is only necessary to create the ViewBox; a SubScene and 
+    * :class:`Camera` describes both the perspective from which the
+    subscene is rendered, and the way user interaction affects that
+    perspective.
+
+    In general it is only necessary to create the ViewBox; a SubScene and
     Camera will be generated automatically.
-    
+
     Parameters
     ----------
     camera : None, :class:`Camera`, or str
-        The camera through which to view the SubScene. If None, then a 
+        The camera through which to view the SubScene. If None, then a
         PanZoomCamera (2D interaction) is used. If str, then the string is
         used as the argument to :func:`make_camera`.
     scene : None or :class:`SubScene`
-        The :class:`SubScene` instance to view. If None, a new 
-        :class:`SubScene` is created.
-    
-    All extra keyword arguments are passed to :func:`Widget.__init__`.
+        The `SubScene` instance to view. If None, a new `SubScene` is created.
+    clip_method : str
+        Clipping method to use.
+    **kwargs : dict
+        Extra keyword arguments to pass to `Widget`.
     """
-    def __init__(self, camera=None, bgcolor='black', **kwargs):
-        
+    def __init__(self, camera=None, **kwargs):
         self._camera = None
-        self._bgcolor = Color(bgcolor).rgba
         Widget.__init__(self, **kwargs)
 
         self._clipper = Clipper()
@@ -56,12 +54,6 @@ class ViewBox(Widget):
         if self.name is not None:
             name = str(self.name) + "_Scene"
         else:
-            name = None
-        self._scene = SubScene(name=name, parent=self)
-        
-        # All children of the scene inherit the view's clipping boundaries.
-        self._scene.clipper = self._clipper
-        
         # Camera is a helper object that handles scene transformation
         # and user interaction.
         if camera is None:
@@ -76,23 +68,22 @@ class ViewBox(Widget):
     @property
     def camera(self):
         """ Get/set the Camera in use by this ViewBox
-        
+
         If a string is given (e.g. 'panzoom', 'turntable', 'fly'). A
         corresponding camera is selected if it already exists in the
         scene, otherwise a new camera is created.
-        
+
         The camera object is made a child of the scene (if it is not
         already in the scene).
-        
+
         Multiple cameras can exist in one scene, although only one can
         be active at a time. A single camera can be used by multiple
         viewboxes at the same time.
         """
         return self._camera
-    
+
     @camera.setter
     def camera(self, cam):
-        
         if isinstance(cam, string_types):
             # Try to select an existing camera
             for child in self.scene.children:
@@ -120,15 +111,30 @@ class ViewBox(Widget):
         
         else:
             raise ValueError('Not a camera object.')
-    
+
     def is_in_scene(self, node):
-        """ Get whether the given node is inside the scene of this viewbox.
+        """Get whether the given node is inside the scene of this viewbox.
+
+        Parameters
+        ----------
+        node : instance of Node
+            The node.
         """
         return self.scene.is_child(node)
     
     def get_scene_bounds(self, dim=None):
-        """ Get the total bounds based on the visuals present in the scene.
-        Returns a list of 3 tuples.
+        """Get the total bounds based on the visuals present in the scene
+
+        Parameters
+        ----------
+        dim : int | None
+            Dimension to return.
+
+        Returns
+        -------
+        bounds : list | tuple
+            If ``dim is None``, Returns a list of 3 tuples, otherwise
+            the bounds for the requested dimension.
         """
         # todo: handle sub-children
         # todo: handle transformations
@@ -163,9 +169,14 @@ class ViewBox(Widget):
         return self._scene
 
     def add(self, node):
-        """ Add an Node to the scene for this ViewBox. 
-        
-        This is a convenience method equivalent to 
+        """ Add an Node to the scene for this ViewBox.
+
+        This is a convenience method equivalent to
         `node.add_parent(viewbox.scene)`
+
+        Parameters
+        ----------
+        node : instance of Node
+            The node to add.
         """
         node.add_parent(self.scene)

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2014, Vispy Development Team. All Rights Reserved.
+# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 """ Fast and failsafe GL console """
@@ -205,6 +205,13 @@ class Console(Widget):
         self._current_sizes = new_sizes
 
     def draw(self, event):
+        """Draw the widget
+
+        Parameters
+        ----------
+        event : instance of Event
+            The draw event.
+        """
         super(Console, self).draw(event)
         if event is None:
             raise RuntimeError('Event cannot be None')

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2014, Vispy Development Team.
+# Copyright (c) 2015, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 from __future__ import division
 
@@ -12,8 +12,19 @@ from ...app import Timer
 
 
 class MagnifyCamera(PanZoomCamera):
-    """ Camera implementing a MagnifyTransform combined with PanZoomCamera.
+    """Camera implementing a MagnifyTransform combined with PanZoomCamera.
     
+    Parameters
+    ----------
+    size_factor : float
+        The size factor to use.
+    radius_ratio : float
+        The radius ratio to use.
+    **kwargs : dict
+        Keyword arguments to pass to `PanZoomCamera` and create a transform.
+
+    Notes
+    -----
     This Camera uses the mouse cursor position to set the center position of
     the MagnifyTransform, and uses mouse wheel events to adjust the 
     magnification factor.
@@ -24,6 +35,7 @@ class MagnifyCamera(PanZoomCamera):
     
     The camera also adjusts the size of its "lens" area when the view is
     resized.
+
     """
     transform_class = MagnifyTransform
     
@@ -69,6 +81,13 @@ class MagnifyCamera(PanZoomCamera):
         self.timer.stop()
     
     def viewbox_mouse_event(self, event):
+        """ViewBox mouse event handler
+
+        Parameters
+        ----------
+        event : instance of Event
+            The mouse event.
+        """
         # When the attached ViewBox reseives a mouse event, it is sent to the
         # camera here.
         
@@ -91,6 +110,13 @@ class MagnifyCamera(PanZoomCamera):
         self._update_transform()
     
     def on_timer(self, event=None):
+        """Timer event handler
+
+        Parameters
+        ----------
+        event : instance of Event
+            The timer event.
+        """
         # Smoothly update center and magnification properties of the transform
         k = np.clip(100. / self.mag.mag, 10, 100)
         s = 10**(-k * event.dt)
@@ -111,6 +137,13 @@ class MagnifyCamera(PanZoomCamera):
         self._update_transform()
 
     def viewbox_resize_event(self, event):
+        """ViewBox resize event handler
+
+        Parameters
+        ----------
+        event : instance of Event
+            The viewbox resize event.
+        """
         PanZoomCamera.viewbox_resize_event(self, event)
         self.view_changed()
 
@@ -121,9 +154,10 @@ class MagnifyCamera(PanZoomCamera):
             vbs = self._viewbox.size
             r = min(vbs) * self.size_factor
             self.mag.radii = r * self.radius_ratio, r
-        
+
         PanZoomCamera.view_changed(self)
 
 
 class Magnify1DCamera(MagnifyCamera):
     transform_class = Magnify1DTransform
+    __doc__ = MagnifyCamera.__doc__

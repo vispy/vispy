@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2014, Vispy Development Team.
+# Copyright (c) 2015, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division
@@ -102,9 +102,11 @@ class IsolineVisual(LineVisual):
         scalar at vertices
     levels : ndarray, shape (Nlev,) | None
         The levels at which the isocurve is constructed from "data".
-    color : Color, tuple, colormap name or array
+    color_lev : Color, tuple, colormap name or array
         The color to use when drawing the line. If an array is given, it
         must be of shape (Nlev, 4) and provide one rgba color by level.
+    **kwargs : dict
+        Keyword arguments to pass to `LineVisual`.
     """
     def __init__(self, vertices=None, tris=None, data=None,
                  levels=None, color_lev=None, **kwargs):
@@ -125,7 +127,8 @@ class IsolineVisual(LineVisual):
         """
         return self._levels
 
-    def set_levels(self, levels):
+    @levels.setter
+    def levels(self, levels):
         self._levels = levels
         self._recompute = True
         self.update()
@@ -136,6 +139,17 @@ class IsolineVisual(LineVisual):
         return self._vertices, self._tris, self._data
 
     def set_data(self, vertices=None, tris=None, data=None):
+        """Set the data
+
+        Parameters
+        ----------
+        vertices : ndarray, shape (Nv, 3) | None
+            Vertex coordinates.
+        tris : ndarray, shape (Nf, 3) | None
+            Indices into the vertex array.
+        data : ndarray, shape (Nv,) | None
+            scalar at vertices
+        """
         # modifier pour tenier compte des None self._recompute = True
         if data is not None:
             self._data = data
@@ -153,6 +167,13 @@ class IsolineVisual(LineVisual):
         return self._color_lev
 
     def set_color(self, color):
+        """Set the color
+
+        Parameters
+        ----------
+        color : instance of Color
+            The color to use.
+        """
         if color is not None:
             self._color_lev = color
             self._update_color_lev = True
@@ -170,6 +191,13 @@ class IsolineVisual(LineVisual):
         return colors
 
     def draw(self, transforms):
+        """Draw the visual
+
+        Parameters
+        ----------
+        transforms : instance of TransformSystem
+            The transforms to use.
+        """
         if (self._data is None or self._levels is None or self._tris is None or
            self._vertices is None or self._color_lev is None):
             return

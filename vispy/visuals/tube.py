@@ -106,6 +106,13 @@ class TubeVisual(MeshVisual):
                             mode=mode)
 
     def draw(self, transforms):
+        """Draw the visual
+
+        Parameters
+        ----------
+        transforms : instance of TransformSystem
+            The transforms to use.
+        """
         MeshVisual.draw(self, transforms)
 
 

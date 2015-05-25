@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2014, Vispy Development Team.
+# Copyright (c) 2015, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division
@@ -21,7 +21,7 @@ class Widget(VisualNode, CompoundVisual):
 
     The widget is positioned using the transform attribute (as any
     node), and its extent (size) is kept as a separate property.
-    
+
     Parameters
     ----------
     pos : (x, y)
@@ -30,6 +30,8 @@ class Widget(VisualNode, CompoundVisual):
         A 2-element tuple to spicify the size of the widget.
     border_color : color
         The color of the border.
+    bgcolor : color
+        The background color.
     clip : bool
         Not used :)
     padding : int
@@ -37,26 +39,26 @@ class Widget(VisualNode, CompoundVisual):
         the contents and the border).
     margin : int
         The margin to keep outside the widget's border.
-    
     """
 
-    def __init__(self, pos=(0, 0), size=(10, 10), border_color=(0, 0, 0, 0),
-                 clip=False, padding=0, margin=0, **kwargs):
+    def __init__(self, pos=(0, 0), size=(10, 10), border_color=None,
+                 bgcolor=None, clip=False, padding=0, margin=0, **kwargs):
         # For drawing border. 
         # A mesh is required because GL lines cannot be drawn with predictable
         # shape across all platforms.
-        self._mesh = MeshVisual(color=border_color, mode='triangle_strip')
-        
+        self._mesh = MeshVisual(color=border_color, mode='triangles')
+        self._mesh.set_gl_state('translucent', depth_test=False,
+                                cull_face=False)
+
         # whether this widget should clip its children
         # (todo)
         self._clip = clip
-        
+
         # reserved space inside border
         self._padding = padding
-        
+
         # reserved space outside border
         self._margin = margin
-        
         self._size = 16, 16
         # todo: TTransform (translate only for widgets)
 
@@ -67,11 +69,13 @@ class Widget(VisualNode, CompoundVisual):
  
         self.transform = STTransform()
         self.events.add(resize=Event)
-        self.border_color = border_color
         self.pos = pos
         self.size = size
         self._update_line()
         
+        self.border_color = border_color
+        self.bgcolor = bgcolor
+
     @property
     def pos(self):
         return tuple(self.transform.translate[:2])
@@ -119,7 +123,7 @@ class Widget(VisualNode, CompoundVisual):
     @property
     def inner_rect(self):
         """The rectangular area inside the margin, border and padding.
-        
+
         Generally widgets should avoid drawing or placing widgets outside this
         rectangle.
         """
@@ -132,12 +136,13 @@ class Widget(VisualNode, CompoundVisual):
     def border_color(self):
         """ The color of the border.
         """
-        return self._mesh.color
+        return self._border_color
 
     @border_color.setter
     def border_color(self, b):
-        b = Color(b)
-        self._mesh.set_data(color=b)
+        self._border_color = Color(b)
+        self._update_colors()
+        self._update_line()
         self.update()
 
     @property
@@ -149,6 +154,8 @@ class Widget(VisualNode, CompoundVisual):
     @bgcolor.setter
     def bgcolor(self, value):
         self._bgcolor = Color(value)
+        self._update_colors()
+        self._update_line()
         self.update()
 
     @property
@@ -171,8 +178,7 @@ class Widget(VisualNode, CompoundVisual):
 
     def _update_line(self):
         """ Update border line to match new shape """
-        if self.border_color.is_blank:
-            return
+        w = 1  # XXX Eventually this can be a parameter
         m = int(self.margin)
         # border is drawn within the boundaries of the widget:
         #
@@ -186,20 +192,60 @@ class Widget(VisualNode, CompoundVisual):
         #  ........
         #  ........
         #
+        l = b = m
         r = int(self.size[0]) - m
         t = int(self.size[1]) - m
-        
         pos = np.array([
-            [m, m], [m+1, m+1],
-            [r, m], [r-1, m+1],
-            [r, t], [r-1, t-1],
-            [m, t], [m+1, t-1],
-            [m, m], [m+1, m+1]
+            [l, b], [l+w, b+w],
+            [r, b], [r-w, b+w],
+            [r, t], [r-w, t-w],
+            [l, t], [l+w, t-w],
         ], dtype=np.float32)
-        
-        self._mesh.set_data(vertices=pos)
+        faces = np.array([
+            [0, 2, 1],
+            [1, 2, 3],
+            [2, 4, 3],
+            [3, 5, 4],
+            [4, 5, 6],
+            [5, 7, 6],
+            [6, 0, 7],
+            [7, 0, 1],
+            [5, 3, 1],
+            [1, 5, 7],
+        ], dtype=np.int32)
+        start = 8 if self._border_color.is_blank else 0
+        stop = 8 if self._bgcolor.is_blank else 10
+        face_colors = None
+        if self._face_colors is not None:
+            face_colors = self._face_colors[start:stop]
+        self._mesh.set_data(vertices=pos, faces=faces[start:stop],
+                              face_colors=face_colors)
 
-    def on_resize(self, ev):
+    def _update_colors(self):
+        self._face_colors = np.concatenate(
+            (np.tile(self.border_color.rgba, (8, 1)),
+             np.tile(self.bgcolor.rgba, (2, 1)))).astype(np.float32)
+
+    def draw(self, event):
+        """Draw the widget borders
+
+        Parameters
+        ----------
+        event : instance of Event
+            The event containing the transforms.
+        """
+        if self.border_color.is_blank and self.bgcolor.is_blank:
+            return
+        self._mesh.draw(event)
+
+    def on_resize(self, event):
+        """On resize handler
+
+        Parameters
+        ----------
+        event : instance of Event
+            The resize event.
+        """
         self._update_child_widgets()
 
     def _update_child_widgets(self):
@@ -210,9 +256,21 @@ class Widget(VisualNode, CompoundVisual):
 
     def add_widget(self, widget):
         """
-        Add a Widget as a managed child of this Widget. The child will be
+        Add a Widget as a managed child of this Widget.
+
+        The child will be
         automatically positioned and sized to fill the entire space inside
         this Widget (unless _update_child_widgets is redefined).
+
+        Parameters
+        ----------
+        widget : instance of Widget
+            The widget to add.
+
+        Returns
+        -------
+        widget : instance of Widget
+            The widget.
         """
         self._widgets.append(widget)
         widget.parent = self
@@ -223,23 +281,31 @@ class Widget(VisualNode, CompoundVisual):
         """
         Create a new Grid and add it as a child widget.
 
-        All arguments are given to add_widget().
+        All arguments are given to Grid().
         """
         from .grid import Grid
-        grid = Grid()
-        return self.add_widget(grid, *args, **kwargs)
+        grid = Grid(*args, **kwargs)
+        return self.add_widget(grid)
 
     def add_view(self, *args, **kwargs):
         """
         Create a new ViewBox and add it as a child widget.
 
-        All arguments are given to add_widget().
+        All arguments are given to ViewBox().
         """
         from .viewbox import ViewBox
-        view = ViewBox()
-        return self.add_widget(view, *args, **kwargs)
+        view = ViewBox(*args, **kwargs)
+        return self.add_widget(view)
 
     def remove_widget(self, widget):
+        """
+        Remove a Widget as a managed child of this Widget.
+
+        Parameters
+        ----------
+        widget : instance of Widget
+            The widget to remove.
+        """
         self._widgets.remove(widget)
         widget.remove_parent(self)
         self._update_child_widgets()
