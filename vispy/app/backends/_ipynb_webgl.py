@@ -94,6 +94,7 @@ class ApplicationBackend(BaseApplicationBackend):
 # ------------------------------------------------------------------ canvas ---
 class WebGLGlirParser(BaseGlirParser):
     def __init__(self, widget=None):
+        super(WebGLGlirParser, self).__init__()
         self._widget = widget
 
     def set_widget(self, widget):

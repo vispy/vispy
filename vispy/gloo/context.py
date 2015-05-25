@@ -102,7 +102,7 @@ class GLContext(BaseGlooFunctions):
         assert isinstance(self._shared, GLShared)
         self._glir = GlirQueue()
         self._do_CURRENT_command = False  # flag that CURRENT cmd must be given
-    
+
     def __repr__(self):
         return "<GLContext at 0x%x>" % id(self)
     
@@ -149,7 +149,13 @@ class GLContext(BaseGlooFunctions):
         potentially be shared between multiple contexts.
         """
         return self._shared
-    
+
+    @property
+    def capabilities(self):
+        """ The OpenGL capabilities
+        """
+        return deepcopy(self.shared.parser.capabilities)
+
     def flush_commands(self, event=None):
         """ Flush
 
