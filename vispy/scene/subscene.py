@@ -31,30 +31,30 @@ class SubScene(Node):
     def __init__(self, **kwargs):
         Node.__init__(self, **kwargs)
 
-        # Initialize systems
-        self._systems = {}
-        self._systems['draw'] = DrawingSystem()
-        self._systems['mouse'] = MouseInputSystem()
-        self._drawing = False
+        ## Initialize systems
+        #self._systems = {}
+        #self._systems['draw'] = DrawingSystem()
+        #self._systems['mouse'] = MouseInputSystem()
+        #self._drawing = False
     
-    def draw(self, event):
-        # Temporary workaround to avoid infinite recursion. A better solution
-        # would be for ViewBox and Canvas to handle the systems, rather than
-        # subscene.
-        if self._drawing:
-            return
+    #def draw(self, event):
+        ## Temporary workaround to avoid infinite recursion. A better solution
+        ## would be for ViewBox and Canvas to handle the systems, rather than
+        ## subscene.
+        #if self._drawing:
+            #return
         
-        # Invoke our drawing system
-        try:
-            self._drawing = True
-            self.process_system(event, 'draw')
-        finally:
-            self._drawing = False
+        ## Invoke our drawing system
+        #try:
+            #self._drawing = True
+            #self.process_system(event, 'draw')
+        #finally:
+            #self._drawing = False
     
-    def _process_mouse_event(self, event):
-        self.process_system(event, 'mouse') 
+    #def _process_mouse_event(self, event):
+        #self.process_system(event, 'mouse') 
 
-    def process_system(self, event, system_name):
-        """ Process a system.
-        """
-        self._systems[system_name].process(event, self)
+    #def process_system(self, event, system_name):
+        #""" Process a system.
+        #"""
+        #self._systems[system_name].process(event, self)

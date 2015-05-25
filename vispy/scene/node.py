@@ -4,9 +4,12 @@
 
 from __future__ import division
 
+import weakref
+
 from ..util.event import Event, EmitterGroup
 from ..visuals.transforms import (NullTransform, BaseTransform, 
-                                  ChainTransform, create_transform)
+                                  ChainTransform, create_transform,
+                                  TransformSystem)
 
 
 class Node(object):
@@ -38,6 +41,8 @@ class Node(object):
     def __init__(self, parent=None, name=None, **kwargs):
         self.name = name
         self._visible = True
+        self._canvas = None
+        self.transforms = kwargs.pop('transforms', TransformSystem())
 
         # Add some events to the emitter groups:
         events = ['parent_change', 'children_change', 'transform_change',
@@ -110,6 +115,7 @@ class Node(object):
         if prev is not None:
             prev._remove_child(self)
         if parent is not None:
+            self.canvas = parent.canvas
             parent._add_child(self)
         self.events.parent_change(new=parent, old=prev)
         self.update()
@@ -123,6 +129,28 @@ class Node(object):
         self._children.remove(node)
         self.events.children_change(removed=node)
         node.events.update.disconnect(self.events.update)
+
+    @property
+    def canvas(self):
+        """The canvas in which this node's scenegraph is being drawn.
+        """
+        return self._canvas
+    
+    @canvas.setter
+    def canvas(self, c):
+        if self._canvas is c:
+            return
+        
+        self._canvas = c
+        
+        # Use canvas/framebuffer transforms from canvas
+        tr = c.transforms
+        self.transforms.canvas_transform = tr.canvas_transform
+        self.transforms.framebuffer_transform = tr.framebuffer_transform
+        
+        # update all children
+        for ch in self.children:
+            ch.canvas = c
 
     def update(self):
         """
@@ -333,7 +361,7 @@ class Node(object):
         the two entities; otherwise an exception will be raised.        
         """
         return ChainTransform(self.node_path_transforms(node))
-        
+
     def __repr__(self):
         name = "" if self.name is None else " name="+self.name
         return "<%s%s at 0x%x>" % (self.__class__.__name__, name, id(self))

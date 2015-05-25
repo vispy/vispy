@@ -201,7 +201,8 @@ if __name__ == '__main__':
     import sys
     import numpy as np
     
-    canvas = app.Canvas(keys='interactive', size=(900, 600), show=True)
+    canvas = app.Canvas(keys='interactive', size=(900, 600), show=True, 
+                        title="Visual Canvas")
     pos = np.random.normal(size=(1000,2), loc=0, scale=50).astype('float32')
     pos[0] = [0, 0]
     
@@ -279,23 +280,32 @@ if __name__ == '__main__':
     
     
     
-    visuals = [shadow, line, view, plot, shadow2, view2, shadow3, collection]
+    order = [shadow, line, view, plot, shadow2, view2, shadow3, collection]
     
     @canvas.connect
     def on_draw(event):
         canvas.context.clear((0.3, 0.3, 0.3, 1.0))
-        for v in visuals:
+        for v in order:
             v.draw()
 
     def on_resize(event):
         # Set canvas viewport and reconfigure visual transforms to match.
         vp = (0, 0, canvas.physical_size[0], canvas.physical_size[1])
         canvas.context.set_viewport(*vp)
-        for v in visuals:
+        for v in order:
             v.transforms.auto_configure(viewport=vp)
     canvas.events.resize.connect(on_resize)
     on_resize(None)
 
+
+    # Scenegraph tests
+    from vispy.scene import SceneCanvas
+    from vispy.scene.visuals import create_visual_node
+    
+    Line = create_visual_node(LineVisual)
+    canvas2 = SceneCanvas(keys='interactive', title='Scene Canvas', show=True)
+    line = Line(pos, parent=canvas2.scene)
+    
     
 
     if sys.flags.interactive != 1:

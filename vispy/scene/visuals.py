@@ -37,7 +37,9 @@ def create_visual_node(subclass):
         name = kwargs.pop('name', None)
         self.name = name  # to allow __str__ before Node.__init__
         subclass.__init__(self, *args, **kwargs)
-        Node.__init__(self, parent=parent, name=name)
+        Node.__init__(self, parent=parent, name=name,
+                      transforms=self.transforms)
+        
     
     # Create new class
     cls = type(clsname, (subclass, Node), {'__init__': __init__, 
