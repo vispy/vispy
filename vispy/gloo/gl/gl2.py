@@ -11,6 +11,7 @@ import ctypes.util
 
 from . import _copy_gl_functions
 from ._constants import *  # noqa
+from ...util import logger
 
 # Ctypes stuff
 
@@ -43,9 +44,11 @@ else:
     else:
         _fname = ctypes.util.find_library('GL')
     if not _fname:
-        raise RuntimeError('Could not load OpenGL library.')
-    # Load lib
-    _lib = ctypes.cdll.LoadLibrary(_fname)
+        logger.warning('Could not load OpenGL library.')
+        _lib = None
+    else:
+        # Load lib
+        _lib = ctypes.cdll.LoadLibrary(_fname)
 
 
 def _have_context():
@@ -62,6 +65,8 @@ def _get_gl_version(_lib):
 
 def _get_gl_func(name, restype, argtypes):
     # Based on a function in Pyglet
+    if _lib is None:
+        raise RuntimeError('Could not load OpenGL library, gl cannot be used')
     try:
         # Try using normal ctypes stuff
         func = getattr(_lib, name)
