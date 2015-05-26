@@ -45,9 +45,8 @@ class ViewBox(Widget):
     """
     def __init__(self, camera=None, **kwargs):
         self._camera = None
+        self._scene = None
         Widget.__init__(self, **kwargs)
-
-        self._clipper = Clipper()
 
         # Each viewbox has an internal scene node, which has a transform that
         # represents the transformation imposed by camera.
@@ -57,9 +56,8 @@ class ViewBox(Widget):
             name = None
             
         self._scene = SubScene(name=name, parent=self)
-        
-        # All children of the scene inherit the view's clipping boundaries.
-        self._scene.clipper = self._clipper
+        self._scene._clipper = Clipper()
+        self._scene.clip_children = True
         
         # Camera is a helper object that handles scene transformation
         # and user interaction.
@@ -187,3 +185,10 @@ class ViewBox(Widget):
             The node to add.
         """
         node.add_parent(self.scene)
+
+    def on_resize(self, event):
+        if self._scene is None:
+            # happens during init
+            return
+        tr = self.get_transform('visual', 'framebuffer')
+        self._scene._clipper.bounds = tr.map(self.inner_rect)

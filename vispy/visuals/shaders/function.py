@@ -741,15 +741,11 @@ class StatementList(ShaderObject):
     """Represents a list of statements. 
     """
     def __init__(self):
-        self.items = []
+        self.items = {}
+        self.order = []
         ShaderObject.__init__(self)
         
-    def append(self, item):
-        self.items.append(item)
-        self._add_dep(item)
-        self.changed(code_changed=True)
-
-    def add(self, item):
+    def add(self, item, position=5):
         """Add an item to the list unless it is already present.
         
         If the item is an expression, then a semicolon will be appended to it
@@ -757,17 +753,25 @@ class StatementList(ShaderObject):
         """
         if item in self.items:
             return
-        self.append(item)
+        self.items[item] = position
+        self._add_dep(item)
+        self.order = None
+        self.changed(code_changed=True)
         
     def remove(self, item):
         """Remove an item from the list.
         """
-        self.items.remove(item)
+        self.items.pop(item)
         self._remove_dep(item)
+        self.order = None
         self.changed(code_changed=True)
 
     def expression(self, obj_names):
+        if self.order is None:
+            self.order = list(self.items.items())
+            self.order.sort(key=lambda x: x[1])
+            
         code = ""
-        for item in self.items:
+        for item, pos in self.order:
             code += item.expression(obj_names) + ';\n'
         return code

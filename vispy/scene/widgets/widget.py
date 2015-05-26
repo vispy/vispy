@@ -10,6 +10,7 @@ from ..visuals import VisualNode
 from ...visuals import CompoundVisual
 from ...visuals.mesh import MeshVisual
 from ...visuals.transforms import STTransform
+from ...visuals.components import Clipper
 from ...util.event import Event
 from ...geometry import Rect
 from ...color import Color
@@ -42,17 +43,13 @@ class Widget(VisualNode, CompoundVisual):
     """
 
     def __init__(self, pos=(0, 0), size=(10, 10), border_color=None,
-                 bgcolor=None, clip=False, padding=0, margin=0, **kwargs):
+                 bgcolor=None, padding=0, margin=0, **kwargs):
         # For drawing border. 
         # A mesh is required because GL lines cannot be drawn with predictable
         # shape across all platforms.
         self._mesh = MeshVisual(color=border_color, mode='triangles')
         self._mesh.set_gl_state('translucent', depth_test=False,
                                 cull_face=False)
-
-        # whether this widget should clip its children
-        # (todo)
-        self._clip = clip
 
         # reserved space inside border
         self._padding = padding
@@ -104,8 +101,9 @@ class Widget(VisualNode, CompoundVisual):
             return
         self._size = s
         self._update_line()
-        self.events.resize()
         self._update_child_widgets()
+        self._update_clipper()
+        self.events.resize()
 
     @property
     def rect(self):
@@ -130,6 +128,19 @@ class Widget(VisualNode, CompoundVisual):
         if not self.border_color.is_blank:
             m += 1
         return Rect((m, m), (self.size[0]-2*m, self.size[1]-2*m))
+
+    def _update_clipper(self):
+        """Called whenever the clipper for this widget may need to be updated.
+        """
+        if self.clip_children and self._clipper is None:
+            self._clipper = Clipper()
+        elif not self.clip_children:
+            self._clipper = None
+        
+        if self._clipper is None:
+            return
+        tr = self.get_transform('visual', 'framebuffer')
+        self._clipper.rect = tr.map(self.inner_rect)
 
     @property
     def border_color(self):
@@ -228,16 +239,6 @@ class Widget(VisualNode, CompoundVisual):
     def _prepare_draw(self):
         if self.border_color.is_blank and self.bgcolor.is_blank:
             return False
-
-    def on_resize(self, event):
-        """On resize handler
-
-        Parameters
-        ----------
-        event : instance of Event
-            The resize event.
-        """
-        self._update_child_widgets()
 
     def _update_child_widgets(self):
         # Set the position and size of child boxes (only those added

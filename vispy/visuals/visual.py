@@ -75,6 +75,9 @@ class BaseVisual(object):
     def transform(self, tr):
         self.transforms.visual_transform = tr
 
+    def get_transform(self, map_from, map_to):
+        return self.transforms.get_transform(map_from, map_to)
+
     def view(self, key=None):
         """Return a new view of this visual.
         """

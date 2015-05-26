@@ -54,4 +54,4 @@ class ColorFilter(object):
     def _attach(self, visual):
         self._visual = visual
         hook = visual._get_hook('frag', 'post')
-        hook.add(self.shader())
+        hook.add(self.shader(), position=8)

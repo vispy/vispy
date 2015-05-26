@@ -43,6 +43,12 @@ class Node(object):
         self._visible = True
         self._canvas = None
         self._opacity = 1.0
+        
+        # clippers inherited from parents
+        self._clippers = weakref.WeakKeyDictionary()  # {node: clipper}
+
+        # whether this widget should clip its children
+        self._clip_children = False
         self._clipper = None
         
         self.transforms = (TransformSystem() if transforms is None else 
@@ -105,18 +111,36 @@ class Node(object):
     def _update_opacity(self):
         pass
         
-    @property
-    def clipper(self):
-        return self._clipper
-    
-    @clipper.setter
-    def clipper(self, c):
-        self._clipper = c
-        self._update_clipper()
+    def set_clipper(self, node, clipper):
+        """Assign a clipper that is inherited from a parent node.
         
-    def _update_clipper(self):
+        If *clipper* is None, then remove any clippers for *node*.
+        """
         pass
 
+    @property
+    def clip_children(self):
+        """Boolean indicating whether children of this node will inherit its
+        clipper.
+        """
+        return self._clip_children
+    
+    @clip_children.setter
+    def clip_children(self, clip):
+        if self._clip_children == clip:
+            return
+        self._clip_children = clip
+        
+        for ch in self.children:
+            ch.set_clipper(self, self.clipper) 
+
+    @property
+    def clipper(self):
+        """A visual filter that can be used to clip visuals to the boundaries
+        of this node.
+        """
+        return self._clipper
+        
     @property
     def children(self):
         """ A copy of the list of children of this node. Do not add
@@ -142,13 +166,20 @@ class Node(object):
         self._parent = weakref.ref(parent)
         if prev is not None:
             prev._remove_child(self)
+            # remove all clippers inherited from parents
+            for k in self._clippers:
+                self.set_clipper(k, None)
         if parent is None:
             self.canvas = None
-            self.clipper = None
         else:
             self.canvas = parent.canvas
-            self.clipper = parent.clipper
             parent._add_child(self)
+            # inherit clippers from parents
+            p = parent
+            while p is not None:
+                if p.clip_children:
+                    self.set_clipper(p, p.clipper)
+                p = p.parent
         
         self.events.parent_change(new=parent, old=prev)
         self.update()

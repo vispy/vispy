@@ -47,7 +47,7 @@ class Clipper(object):
         except KeyError:
             raise NotImplementedError("Visual %s does not support clipping" %
                                       visual)
-        hook.add(self.clip_expr)
+        hook.add(self.clip_expr, position=1)
 
     def set_transform(self, tr):
         self.clip_shader['fb_to_clip'] = tr
