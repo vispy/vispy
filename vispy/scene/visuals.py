@@ -13,18 +13,29 @@ For developing custom visuals, it is recommended to subclass from
 `vispy.visuals.Visual` rather than `vispy.scene.Node`.
 """
 import re
+import weakref
 
 from .. import visuals
 from .node import Node
-from ..visuals.components import ColorFilter
+from ..visuals.components import ColorFilter, PickingFilter
+from ..visuals.transforms import ChainTransform
 
 
 class VisualNode(Node):
+    _next_id = 1
+    _visual_ids = weakref.WeakValueDictionary()
+    
     def __init__(self, parent=None, name=None):
         Node.__init__(self, parent=parent, name=name,
                       transforms=self.transforms)
         self._opacity_filter = ColorFilter()
         self.attach(self._opacity_filter)
+        
+        self._id = VisualNode._next_id
+        VisualNode._visual_ids[self._id] = self
+        VisualNode._next_id += 1
+        self._picking_filter = PickingFilter(id=self._id)
+        self.attach(self._picking_filter)
 
     def _update_opacity(self):
         self._opacity_filter.color = (1, 1, 1, self._opacity)
@@ -39,6 +50,31 @@ class VisualNode(Node):
         if clipper is not None:
             self.attach(clipper)
             self._clippers[node] = clipper
+
+    @property
+    def picking(self):
+        """Boolean that determines whether this node (and its children) are
+        drawn in picking mode.
+        """
+        return self._picking
+    
+    @picking.setter
+    def picking(self, p):
+        for c in self.children:
+            c.picking = p
+        if self._picking == p:
+            return
+        self._picking = p
+        self._picking_filter.enabled = p
+        self.update_gl_state(blend=not p)
+
+    def _transform_changed(self, event):
+        parents = self.parent_chain()[::-1]
+        tr = ChainTransform([node.transform for node in parents])
+        # TODO: break this up into visual/scene/document transforms
+        self.transforms.visual_transform = tr
+        
+        Node._transform_changed(self, event)
 
     
 def create_visual_node(subclass):

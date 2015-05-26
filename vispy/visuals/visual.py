@@ -190,10 +190,10 @@ class Visual(BaseVisual):
             Keyword argments.
         """
         if len(args) == 1:
-            self._gl_state['preset'] = args[0]
+            self._vshare.gl_state['preset'] = args[0]
         elif len(args) != 0:
             raise TypeError("Only one positional argument allowed.")
-        self._gl_state.update(kwargs)
+        self._vshare.gl_state.update(kwargs)
 
     def bounds(self, axis):
         cache = self.vshare.bounds

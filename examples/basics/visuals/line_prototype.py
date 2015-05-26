@@ -273,18 +273,19 @@ if __name__ == '__main__':
     on_resize(None)
 
 
-    # Scenegraph tests
     from vispy.scene import SceneCanvas
     from vispy.scene.visuals import create_visual_node
     
     Line = create_visual_node(LineVisual)
     canvas2 = SceneCanvas(keys='interactive', title='Scene Canvas', show=True)
-    v = canvas2.central_widget.add_view()
+    v = canvas2.central_widget.add_view(margin=10)
     v.border_color = (1, 1, 1, 1)
     v.bgcolor = (0.3, 0.3, 0.3, 1)
-    v.margin = 10
     v.camera = 'panzoom'
     line2 = Line(pos, parent=v.scene)
+    def mouse(ev):
+        print ev
+    v.events.mouse_press.connect(mouse)
 
     if sys.flags.interactive != 1:
         app.run()

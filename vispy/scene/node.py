@@ -43,6 +43,7 @@ class Node(object):
         self._visible = True
         self._canvas = None
         self._opacity = 1.0
+        self._picking = False
         
         # clippers inherited from parents
         self._clippers = weakref.WeakKeyDictionary()  # {node: clipper}
@@ -55,9 +56,9 @@ class Node(object):
                            transforms)
 
         # Add some events to the emitter groups:
-        events = ['parent_change', 'children_change', 'transform_change',
-                  'mouse_press', 'mouse_move', 'mouse_release', 'mouse_wheel', 
-                  'key_press', 'key_release']
+        events = ['canvas_change', 'parent_change', 'children_change', 
+                  'transform_change', 'mouse_press', 'mouse_move',
+                  'mouse_release', 'mouse_wheel', 'key_press', 'key_release']
         # Create event emitter if needed (in subclasses that inherit from
         # Visual, we already have an emitter to share)
         if not hasattr(self, 'events'):
@@ -213,6 +214,7 @@ class Node(object):
         if self._canvas is c:
             return
         
+        old = self._canvas
         self._canvas = c
         
         # Use canvas/framebuffer transforms from canvas
@@ -223,6 +225,8 @@ class Node(object):
         # update all children
         for ch in self.children:
             ch.canvas = c
+
+        self.events.canvas_change(old=old, new=c)
 
     def update(self):
         """
@@ -284,12 +288,14 @@ class Node(object):
         self.transform = create_transform(type_, *args, **kwargs)
 
     def _transform_changed(self, event):
+        for ch in self.children:
+            ch._transform_changed(event)
         self.events.transform_change()
         self.update()
 
-    def _parent_chain(self):
+    def parent_chain(self):
         """
-        Return the chain of parents starting from this node. The chain ends
+        Return the list of parents starting from this node. The chain ends
         at the first node with no parents.
         """
         chain = [self]
@@ -501,3 +507,16 @@ class Node(object):
     def __repr__(self):
         name = "" if self.name is None else " name="+self.name
         return "<%s%s at 0x%x>" % (self.__class__.__name__, name, id(self))
+
+    @property
+    def picking(self):
+        """Boolean that determines whether this node (and its children) are
+        drawn in picking mode.
+        """
+        return self._picking
+    
+    @picking.setter
+    def picking(self, p):
+        for c in self.children:
+            c.picking = p
+        self._picking = p

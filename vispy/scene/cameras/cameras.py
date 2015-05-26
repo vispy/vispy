@@ -427,15 +427,17 @@ class BaseCamera(Node):
         event : instance of Event
             The event.
         """
-        # todo: connect this method to viewbox.events.key_down
-        # viewbox does not currently support key events
-        # A bit awkward way to connect to our canvas; we need event
-        # object to get a reference to the canvas
-        # todo: fix this, also only receive key events when over the viewbox
-        if not self._key_events_bound:
-            self._key_events_bound = True
-            event.canvas.events.key_press.connect(self.viewbox_key_event)
-            event.canvas.events.key_release.connect(self.viewbox_key_event)
+        pass
+    
+    def on_canvas_change(self, event):
+        # Connect key events from canvas to camera. 
+        # TODO: canvas should keep track of a single node with keyboard focus.
+        if event.old is not None:
+            event.old.events.key_press.disconnect(self.viewbox_key_event)
+            event.old.events.key_release.disconnect(self.viewbox_key_event)
+        if event.new is not None:
+            event.new.events.key_press.connect(self.viewbox_key_event)
+            event.new.events.key_release.connect(self.viewbox_key_event)
 
     def viewbox_key_event(self, event):
         """ViewBox key event handler
@@ -682,7 +684,7 @@ class PanZoomCamera(BaseCamera):
 
         # Scrolling
         BaseCamera.viewbox_mouse_event(self, event)
-
+        
         if event.type == 'mouse_wheel':
             center = self._scene_transform.imap(event.pos)
             self.zoom((1 + self.zoom_factor) ** (-event.delta[1] * 30), center)

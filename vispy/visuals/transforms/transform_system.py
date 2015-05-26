@@ -189,17 +189,17 @@ class TransformSystem(object):
         # left, whereas framebuffer origin is in bottom left.
         map_from = [(0, 0), canvas.size]
         map_to = [(0, canvas.physical_size[1]), (canvas.physical_size[0], 0)]
-        self._canvas_transform.transforms[0].set_mapping(map_from, map_to)
+        self._canvas_transform.transforms[1].set_mapping(map_from, map_to)
 
         if fbo_rect is None:
-            self._canvas_transform.transforms[1].scale = (1, 1, 1)
-            self._canvas_transform.transforms[1].translate = (0, 0, 0)
+            self._canvas_transform.transforms[0].scale = (1, 1, 1)
+            self._canvas_transform.transforms[0].translate = (0, 0, 0)
         else:
             # Map into FBO coordinates
             map_from = [(fbo_rect[0], fbo_rect[1]),
                         (fbo_rect[0] + fbo_rect[2], fbo_rect[1] + fbo_rect[3])]
             map_to = [(0, 0), fbo_size]
-            self._canvas_transform.transforms[1].set_mapping(map_from, 
+            self._canvas_transform.transforms[0].set_mapping(map_from, 
                                                                     map_to)
             
         if viewport is None:

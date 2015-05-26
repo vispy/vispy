@@ -5,10 +5,12 @@
 from __future__ import division
 
 import weakref
+import struct
 
 from .. import gloo
 from .. import app
 from .node import Node
+from .visuals import VisualNode
 from ..visuals.transforms import STTransform, TransformCache, TransformSystem
 from ..color import Color
 from ..util import logger
@@ -119,6 +121,7 @@ class SceneCanvas(app.Canvas):
         self._draw_order = weakref.WeakKeyDictionary()
         self._fb_stack = []
         self._vp_stack = []
+        self._mouse_handler = None
         self.transforms = TransformSystem(canvas=self)
         self._bgcolor = Color(bgcolor).rgba
 
@@ -184,7 +187,7 @@ class SceneCanvas(app.Canvas):
 
         self._draw_scene()
 
-    def render(self, region=None, size=None):
+    def render(self, region=None, size=None, bgcolor=None):
         """ Render the scene to an offscreen buffer and return the image array.
         
         Parameters
@@ -205,6 +208,7 @@ class SceneCanvas(app.Canvas):
             upper-left corner of the rendered region.
         
         """
+        self.set_current()
         # Set up a framebuffer to render to
         offset = (0, 0) if region is None else region[:2]
         csize = self.size if region is None else region[2:]
@@ -214,13 +218,15 @@ class SceneCanvas(app.Canvas):
 
         self.push_fbo(fbo, offset, csize)
         try:
-            self._draw_scene(viewport=(0, 0) + size)
+            self._draw_scene(bgcolor=bgcolor)
             return fbo.read()
         finally:
             self.pop_fbo()
 
-    def _draw_scene(self):
-        self.context.clear(color=self._bgcolor, depth=True)
+    def _draw_scene(self, bgcolor=None):
+        if bgcolor is None:
+            bgcolor = self._bgcolor
+        self.context.clear(color=bgcolor, depth=True)
         # Draw the scene, but first disconnect its change signal--
         # any changes that take place during the paint should not trigger
         # a subsequent repaint.
@@ -246,6 +252,7 @@ class SceneCanvas(app.Canvas):
         if visual not in self._draw_order:
             self._draw_order[visual] = self._generate_draw_order()
         order = self._draw_order[visual]
+        tr = order[2][0].transforms.get_transform()
         
         # draw (while avoiding branches with visible=False)
         stack = []
@@ -281,14 +288,44 @@ class SceneCanvas(app.Canvas):
 
     def _process_mouse_event(self, event):
         prof = Profiler()
+        picked = self.visual_at(event.pos)
+        print picked
         
-        # todo: pick visual under the event
-        picked = None
+        if self._mouse_handler is None:
+            if event.type == 'mouse_press':
+                picked = self.visual_at(event.pos)
+                self._mouse_handler = picked
+            else:
+                picked = None
+        else:
+            picked = self._mouse_handler
+            if event.type == 'mouse_release':
+                self._mouse_handler = None
+        
+        if picked is None:
+            return
+        
         scene_event = SceneMouseEvent(event=event, visual=picked)
-        
+        #getattr(picked.events, event.type)(scene_event)
+        self.update()
         # If something in the scene handled the scene_event, then we mark
         # the original event accordingly.
         event.handled = scene_event.handled
+
+    def visual_at(self, pos):
+        """Return the visual at *pos*.
+        """
+        tr = self.transforms.get_transform('canvas', 'framebuffer')
+        pos = tr.map(pos)[:2]
+
+        try:
+            self._scene.picking = True
+            img = self.render(tuple(pos) + (1, 1), bgcolor=(0, 0, 0, 0))
+        finally:
+            self._scene.picking = False
+        id = struct.unpack('<I', struct.pack('<4B', *tuple(img[0, 0])))[0]
+        print id, img
+        return VisualNode._visual_ids.get(id, None)
 
     def on_resize(self, event):
         """Resize handler
@@ -341,6 +378,8 @@ class SceneCanvas(app.Canvas):
         # Activate latest
         if len(self._vp_stack) > 0:
             self.context.set_viewport(*self._vp_stack[-1])
+        else:
+            self.context.set_viewport(0, 0, *self.physical_size)
         
         self._update_transforms()
         return vp

@@ -13,3 +13,4 @@ from .vertex import XYPosComponent, XYZPosComponent, HeightFieldComponent  # noq
 
 from .clipper import Clipper  # noqa
 from .color2 import Alpha, ColorFilter  # noqa
+from .picking import PickingFilter

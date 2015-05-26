@@ -23,7 +23,8 @@ class SceneMouseEvent(Event):
         visual.
         """
         if self._pos is None:
-            self._pos = self.visual.map_from_canvas(self.mouse_event.pos)
+            tr = self.visual.get_transform('canvas', 'visual')
+            self._pos = tr.map(self.mouse_event.pos)
         return self._pos
 
     @property
