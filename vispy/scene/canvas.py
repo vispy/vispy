@@ -295,13 +295,9 @@ class SceneCanvas(app.Canvas):
 
     def _process_mouse_event(self, event):
         prof = Profiler()
-        picked = self.visual_at(event.pos)
-        print picked
-        
         if self._mouse_handler is None:
             if event.type == 'mouse_press':
                 picked = self.visual_at(event.pos)
-                self._mouse_handler = picked
             else:
                 picked = None
         else:
@@ -309,12 +305,26 @@ class SceneCanvas(app.Canvas):
             if event.type == 'mouse_release':
                 self._mouse_handler = None
         
+        # No visual to handle this event; bail out now
         if picked is None:
             return
         
+        # Create an event to pass to the picked visual
         scene_event = SceneMouseEvent(event=event, visual=picked)
-        #getattr(picked.events, event.type)(scene_event)
-        self.update()
+        
+        # Deliver the event
+        while picked is not None:
+            getattr(picked.events, event.type)(scene_event)
+            if scene_event.handled:
+                if event.type == 'mouse_press':
+                    self._mouse_handler = picked
+                break
+            if event.type == 'mouse_press':
+                # press events that are not handled get passed to parent
+                picked = picked.parent
+            else:
+                picked = None
+            
         # If something in the scene handled the scene_event, then we mark
         # the original event accordingly.
         event.handled = scene_event.handled
@@ -331,8 +341,8 @@ class SceneCanvas(app.Canvas):
         finally:
             self._scene.picking = False
         id = struct.unpack('<I', struct.pack('<4B', *tuple(img[0, 0])))[0]
-        print id, img
-        return VisualNode._visual_ids.get(id, None)
+        vis = VisualNode._visual_ids.get(id, None)
+        return vis
 
     def on_resize(self, event):
         """Resize handler

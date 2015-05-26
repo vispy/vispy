@@ -528,16 +528,14 @@ class PanZoomCamera(BaseCamera):
 
     _state_props = BaseCamera._state_props + ('rect', )
 
-    def __init__(self, rect=None, aspect=None, **kwargs):
+    def __init__(self, rect=(0, 0, 1, 1), aspect=None, **kwargs):
         super(PanZoomCamera, self).__init__(**kwargs)
 
         self.transform = STTransform()
 
         # Set camera attributes
         self.aspect = aspect
-        self._rect = None
-        if rect is not None:
-            self.rect = rect
+        self.rect = rect
 
     @property
     def aspect(self):
@@ -688,6 +686,7 @@ class PanZoomCamera(BaseCamera):
         if event.type == 'mouse_wheel':
             center = self._scene_transform.imap(event.pos)
             self.zoom((1 + self.zoom_factor) ** (-event.delta[1] * 30), center)
+            event.handled = True
 
         elif event.type == 'mouse_move':
             if event.press_event is None:
@@ -704,7 +703,7 @@ class PanZoomCamera(BaseCamera):
                 p1s = self._transform.imap(p1)
                 p2s = self._transform.imap(p2)
                 self.pan(p1s-p2s)
-
+                event.handled = True
             elif 2 in event.buttons and not modifiers:
                 # Zoom
                 p1c = np.array(event.last_event.pos)[:2]
@@ -713,6 +712,15 @@ class PanZoomCamera(BaseCamera):
                          ((p1c-p2c) * np.array([1, -1])))
                 center = self._transform.imap(event.press_event.pos[:2])
                 self.zoom(scale, center)
+                event.handled = True
+            else:
+                event.handled = False
+        elif event.type == 'mouse_press':
+            # accept the event if it is button 1 or 2.
+            # This is required in order to receive future events
+            event.handled = event.button in [1, 2]
+        else:
+            event.handled = False
 
     def _update_transform(self):
 
