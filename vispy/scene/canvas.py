@@ -135,7 +135,8 @@ class SceneCanvas(app.Canvas):
         self.events.mouse_wheel.connect(self._process_mouse_event)
 
         self.scene = SubScene()
-        self.scene.canvas = self
+        self.scene._set_canvas(self)
+        self.scene.events.children_change.connect(self._update_scenegraph)
         
     @property
     def scene(self):
@@ -285,6 +286,12 @@ class SceneCanvas(app.Canvas):
             order.extend(self._generate_draw_order(ch))
         order.append((node, False))
         return order
+
+    def _update_scenegraph(self, event):
+        """Called when topology of scenegraph has changed.
+        """
+        self._draw_order.clear()
+        self.update()
 
     def _process_mouse_event(self, event):
         prof = Profiler()

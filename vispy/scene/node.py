@@ -160,20 +160,21 @@ class Node(object):
 
     @parent.setter
     def parent(self, parent):
-        if not isinstance(parent, Node):
-            raise ValueError('Parent must be instance of Node (got %s).'
+        if not isinstance(parent, (Node, type(None))):
+            raise ValueError('Parent must be Node instance or None (got %s).'
                              % p.__class__.__name__)
         prev = self.parent
-        self._parent = weakref.ref(parent)
         if prev is not None:
             prev._remove_child(self)
             # remove all clippers inherited from parents
-            for k in self._clippers:
+            for k in list(self._clippers):
                 self.set_clipper(k, None)
         if parent is None:
-            self.canvas = None
+            self._set_canvas(None)
+            self._parent = None
         else:
-            self.canvas = parent.canvas
+            self._set_canvas(parent.canvas)
+            self._parent = weakref.ref(parent)
             parent._add_child(self)
             # inherit clippers from parents
             p = parent
@@ -189,11 +190,13 @@ class Node(object):
         self._children.append(node)
         self.events.children_change(added=node)
         node.events.update.connect(self.events.update)
+        node.events.children_change.connect(self.events.children_change)
 
     def _remove_child(self, node):
         self._children.remove(node)
         self.events.children_change(removed=node)
         node.events.update.disconnect(self.events.update)
+        node.events.children_change.disconnect(self.events.children_change)
 
     def is_child(self, child):
         if child in self.children:
@@ -207,24 +210,29 @@ class Node(object):
     def canvas(self):
         """The canvas in which this node's scenegraph is being drawn.
         """
-        return self._canvas
+        if self._canvas is None:
+            return None
+        else:
+            return self._canvas()
     
-    @canvas.setter
-    def canvas(self, c):
+    def _set_canvas(self, c):
         if self._canvas is c:
             return
         
         old = self._canvas
-        self._canvas = c
         
         # Use canvas/framebuffer transforms from canvas
-        tr = c.transforms
-        self.transforms.canvas_transform = tr.canvas_transform
-        self.transforms.framebuffer_transform = tr.framebuffer_transform
+        if c is None:
+            self._canvas = None
+        else:
+            self._canvas = weakref.ref(c)
+            tr = c.transforms
+            self.transforms.canvas_transform = tr.canvas_transform
+            self.transforms.framebuffer_transform = tr.framebuffer_transform
         
         # update all children
         for ch in self.children:
-            ch.canvas = c
+            ch._set_canvas(c)
 
         self.events.canvas_change(old=old, new=c)
 

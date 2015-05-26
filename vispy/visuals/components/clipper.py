@@ -41,13 +41,15 @@ class Clipper(object):
         self.clip_shader['view'] = (b.left, b.right, b.bottom, b.top)
         
     def _attach(self, visual):
-        self._visual = weakref.ref(visual)
         try:
             hook = visual._get_hook('frag', 'pre')
         except KeyError:
             raise NotImplementedError("Visual %s does not support clipping" %
                                       visual)
         hook.add(self.clip_expr, position=1)
+
+    def _detach(self, visual):
+        visual._get_hook('frag', 'pre').remove(self.clip_expr)
 
     def set_transform(self, tr):
         self.clip_shader['fb_to_clip'] = tr
