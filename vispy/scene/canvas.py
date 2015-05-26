@@ -305,7 +305,6 @@ class SceneCanvas(app.Canvas):
             
         if len(self._vp_stack) == 0:
             self.context.set_viewport(0, 0, *self.physical_size)
-            
 
     # -------------------------------------------------- transform handling ---
     def push_viewport(self, viewport):

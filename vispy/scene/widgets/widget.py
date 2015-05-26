@@ -175,7 +175,10 @@ class Widget(VisualNode, CompoundVisual):
     @margin.setter
     def margin(self, m):
         self._margin = m
+        self._update_child_widgets()
         self._update_line()
+        self.update()
+        self.events.resize()
 
     @property
     def padding(self):
@@ -185,7 +188,8 @@ class Widget(VisualNode, CompoundVisual):
     def padding(self, p):
         self._padding = p
         self._update_child_widgets()
-
+        self.update()
+    
     def _update_line(self):
         """ Update border line to match new shape """
         w = 1  # XXX Eventually this can be a parameter
