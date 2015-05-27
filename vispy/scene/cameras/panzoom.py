@@ -6,7 +6,7 @@ from __future__ import division
 
 import numpy as np
 
-from .cameras import BaseCamera
+from .base_camera import BaseCamera
 from ...geometry import Rect
 from ...visuals.transforms import STTransform, AffineTransform
 
@@ -52,6 +52,7 @@ class PanZoomCamera(BaseCamera):
 
         # Set camera attributes
         self.aspect = aspect
+        self._rect = None
         self.rect = rect
 
     @property
@@ -139,10 +140,13 @@ class PanZoomCamera(BaseCamera):
     @rect.setter
     def rect(self, args):
         if isinstance(args, tuple):
-            self._rect = Rect(*args)
+            rect = Rect(*args)
         else:
-            self._rect = Rect(args)
-        self.view_changed()
+            rect = Rect(args)
+
+        if self._rect != rect:
+            self._rect = rect
+            self.view_changed()
 
     @property
     def center(self):

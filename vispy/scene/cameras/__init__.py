@@ -16,7 +16,7 @@ that a certain part of the scene is mapped to the bounding rectangle of the
 ViewBox.
 """
 from ._base import make_camera  # noqa
-from .cameras import BaseCamera  # noqa
+from .base_camera import BaseCamera  # noqa
 from .panzoom import PanZoomCamera  # noqa
 from .arcball import ArcballCamera  # noqa
 from .turntable import TurntableCamera  # noqa

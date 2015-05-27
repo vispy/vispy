@@ -7,7 +7,7 @@ from __future__ import division
 import math
 import numpy as np
 
-from .cameras import BaseCamera
+from .base_camera import BaseCamera
 from ...util import keys
 from ...visuals.transforms import AffineTransform
 

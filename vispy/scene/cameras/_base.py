@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2015, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
-from .cameras import BaseCamera
+from .base_camera import BaseCamera
 from .perspective import PerspectiveCamera
 from .panzoom import PanZoomCamera
 from .arcball import ArcballCamera
