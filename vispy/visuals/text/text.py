@@ -208,7 +208,7 @@ class TextVisual(Visual):
     ----------
     text : str | list of str
         Text to display. Can also be a list of strings.
-        Note: support for list of str will likely be removed soon
+        Note: support for list of str might be removed soon
         in favor of text collections.
     color : instance of Color
         Color to use.
