@@ -10,7 +10,7 @@ from ..visuals import VisualNode
 from ...visuals import CompoundVisual
 from ...visuals.mesh import MeshVisual
 from ...visuals.transforms import STTransform
-from ...visuals.components import Clipper
+from ...visuals.filters import Clipper
 from ...util.event import Event
 from ...geometry import Rect
 from ...color import Color

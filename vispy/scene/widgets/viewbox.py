@@ -11,7 +11,7 @@ from ..subscene import SubScene
 from ..cameras import make_camera, BaseCamera
 from ...ext.six import string_types
 from ... import gloo
-from ...visuals.components import Clipper
+from ...visuals.filters import Clipper
 from ...visuals import Visual
 
 

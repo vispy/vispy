@@ -17,7 +17,7 @@ import weakref
 
 from .. import visuals
 from .node import Node
-from ..visuals.components import ColorFilter, PickingFilter
+from ..visuals.filters import ColorFilter, PickingFilter
 from ..visuals.transforms import ChainTransform
 
 

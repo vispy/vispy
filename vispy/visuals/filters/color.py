@@ -6,8 +6,6 @@ import weakref
 
 from ..shaders import Function
 
-# To replace color.py soon..
-
 
 class Alpha(object):
     def __init__(self, alpha=1.0):
