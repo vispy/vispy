@@ -66,20 +66,14 @@ class Node(object):
                                        update=Event)
         self.events.add(**dict([(ev, Event) for ev in events]))
         
-        # Entities are organized in a parent-children hierarchy
         self._children = []
-        # TODO: use weakrefs for parents.
+        self._transform = NullTransform()
         self._parent = None
         if parent is not None:
             self.parent = parent
             
         self._document = None
-
-        # Components that all entities in vispy have
-        # todo: default transform should be trans-scale-rot transform
-        self._transform = NullTransform()
     
-    # todo: move visible to BaseVisualNode class when we make Node not a Visual
     @property
     def visible(self):
         """ Whether this node should be drawn or not. Only applicable to
@@ -151,7 +145,14 @@ class Node(object):
 
     @property
     def parent(self):
-        """ Get/set the parent.
+        """The parent of this node in the scenegraph.
+        
+        Nodes inherit coordinate transformations and some filters (opacity and
+        clipping by default) from their parents. Setting this property assigns
+        a new parent, changing the topology of the scenegraph.
+        
+        May be set to None to remove this node (and its children) from a
+        scenegraph.
         """
         if self._parent is None:
             return None
@@ -184,6 +185,7 @@ class Node(object):
                 p = p.parent
         
         self.events.parent_change(new=parent, old=prev)
+        self._transform_changed(None)
         self.update()
 
     def _add_child(self, node):
