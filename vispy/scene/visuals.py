@@ -70,9 +70,8 @@ class VisualNode(Node):
 
     def _transform_changed(self, event):
         parents = self.parent_chain()[::-1]
-        tr = ChainTransform([node.transform for node in parents])
         # TODO: break this up into visual/scene/document transforms
-        self.transforms.visual_transform = tr
+        self.transforms.visual_transform = [node.transform for node in parents]
         
         Node._transform_changed(self, event)
 

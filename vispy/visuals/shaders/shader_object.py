@@ -131,8 +131,8 @@ class ShaderObject(object):
     def _dep_changed(self, dep, code_changed=False, value_changed=False):
         """ Called when a dependency's expression has changed.
         """
-        logger.debug("ShaderObject changed [code=%s, value=%s]", code_changed,
-                     value_changed)
+        #logger.debug("ShaderObject %s changed [code=%s, value=%s]", self,
+                     #code_changed, value_changed)
         self.changed(code_changed, value_changed)
             
     def changed(self, code_changed=False, value_changed=False):

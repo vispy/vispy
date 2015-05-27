@@ -252,8 +252,7 @@ class TransformSystem(object):
 
     @visual_transform.setter
     def visual_transform(self, tr):
-        if self._visual_transform is not tr:
-            self._visual_transform.transforms = [tr]
+        self._visual_transform.transforms = tr
 
     @property
     def scene_transform(self):
@@ -264,8 +263,7 @@ class TransformSystem(object):
 
     @scene_transform.setter
     def scene_transform(self, tr):
-        if self._scene_transform is not tr:
-            self._scene_transform.transforms = [tr]
+        self._scene_transform.transforms = tr
 
     @property
     def document_transform(self):
@@ -276,8 +274,7 @@ class TransformSystem(object):
 
     @document_transform.setter
     def document_transform(self, tr):
-        if self._document_transform is not tr:
-            self._document_transform.transforms = [tr]
+        self._document_transform.transforms = tr
 
     @property
     def canvas_transform(self):
@@ -288,8 +285,7 @@ class TransformSystem(object):
 
     @canvas_transform.setter
     def canvas_transform(self, tr):
-        if self._canvas_transform is not tr:
-            self._canvas_transform.transforms = [tr]
+        self._canvas_transform.transforms = tr
 
     @property
     def framebuffer_transform(self):
@@ -300,8 +296,7 @@ class TransformSystem(object):
 
     @framebuffer_transform.setter
     def framebuffer_transform(self, tr):
-        if self._framebuffer_transform is not tr:
-            self._framebuffer_transform.transforms = [tr]
+        self._framebuffer_transform.transforms = tr
 
     def get_transform(self, map_from='visual', map_to='render'):
         """Return a transform mapping between any two coordinate systems.

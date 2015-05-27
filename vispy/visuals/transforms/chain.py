@@ -69,8 +69,20 @@ class ChainTransform(BaseTransform):
 
     @transforms.setter
     def transforms(self, tr):
+        if isinstance(tr, BaseTransform):
+            tr = [tr]
         if not isinstance(tr, list):
             raise TypeError("Transform chain must be a list")
+        
+        # Avoid extra effort if we already have the correct chain
+        if len(tr) == len(self._transforms):
+            changed = False
+            for i in range(len(tr)):
+                if tr[i] is not self._transforms[i]:
+                    changed = True
+                    break
+            if not changed:
+                return
         
         for t in self._transforms:
             t.changed.disconnect(self._subtr_changed)

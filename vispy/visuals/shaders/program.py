@@ -4,6 +4,8 @@
 
 from __future__ import division
 
+import logging
+
 from ...gloo import Program
 from ...gloo.preprocessor import preprocess
 from ...util import logger
@@ -59,7 +61,12 @@ class ModularProgram(Program):
         self.changed(code_changed=True, value_changed=False)
 
     def _dep_changed(self, dep, code_changed=False, value_changed=False):
-        logger.debug("ModularProgram source changed: %s", self)
+        if code_changed and logger.level <= logging.DEBUG:
+            import traceback
+            logger.debug("ModularProgram changed: %s   source=%s, values=%s", self,
+                        code_changed, value_changed)
+            traceback.print_stack()
+            
         if code_changed:
             self._need_build = True
         self.changed(code_changed=code_changed, 
