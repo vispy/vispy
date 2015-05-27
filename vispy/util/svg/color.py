@@ -154,13 +154,14 @@ _keyword_colors = {
     "yellow":               (255, 255,   0),
     "yellowgreen":          (154, 205,  50)}
 
+from itertools import combinations
+from string import hexdigits
 
-_NUMERALS = '0123456789abcdefABCDEF'
-
-
-_HEXDEC = {v: int(v, 16)
-           for v in (x + y for x in _NUMERALS for y in _NUMERALS)}
-
+_HEXDEC = {}
+for x, y in combinations(hexdigits, 2):
+    v = x + y
+    _HEXDEC[v] = int(v, 16)
+    
 
 def _rgb(triplet):
     return _HEXDEC[triplet[0:2]], _HEXDEC[triplet[2:4]], _HEXDEC[triplet[4:6]]
