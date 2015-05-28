@@ -1,5 +1,5 @@
-FRAGMENT_SHADER = """
-const float PI = 3.14159265358979323846264;
+#include "math/constants.glsl"
+
 const float THETA = 15.0 * 3.14159265358979323846264/180.0;
 
 float
@@ -190,13 +190,13 @@ void main()
 
             // Special case for round caps (nicer with this)
             if( (u > _stop) && (dash_stop > segment_stop ) &&
-                (abs(v_angles.y) < PI/2.0))
+                (abs(v_angles.y) < M_PI/2.0))
             {
                 if( dash_caps.x == 1.0) discard;
             }
             // Special case for round caps  (nicer with this)
             else if( (u < _start) && (dash_start < segment_start ) &&
-                     (abs(v_angles.x) < PI/2.0))
+                     (abs(v_angles.x) < M_PI/2.0))
             {
                 if( dash_caps.y == 1.0) discard;
             }
@@ -206,7 +206,7 @@ void main()
             if( (dash_caps.x != 1.0) && (dash_caps.x != 5.0) )
             {
                 if( (dash_start < segment_start ) &&
-                    (abs(v_angles.x) < PI/2.0) )
+                    (abs(v_angles.x) < M_PI/2.0) )
                 {
                     float a = v_angles.x/2.0;
                     float x = (segment_start-dx)*cos(a) - dy*sin(a);
@@ -221,7 +221,7 @@ void main()
             if( (dash_caps.y != 1.0) && (dash_caps.y != 5.0) )
             {
                 if( (dash_stop > segment_stop ) &&
-                    (abs(v_angles.y) < PI/2.0) )
+                    (abs(v_angles.y) < M_PI/2.0) )
                 {
                     float a = v_angles.y/2.0;
                     float x = (dx-segment_stop)*cos(a) - dy*sin(a);
@@ -270,13 +270,13 @@ void main()
             {
                 // For sharp angles, we do not enforce cap shape
                 if( (dash_start < segment_start ) &&
-                    (abs(v_angles.x) > PI/2.0))
+                    (abs(v_angles.x) > M_PI/2.0))
                 {
                     d = abs(dy);
                 }
                 // Antialias at outer border
                 dx = segment_start - dx;
-                float angle = PI/2.+v_angles.x;
+                float angle = M_PI/2.+v_angles.x;
                 float f = abs( dx*cos(angle) - dy*sin(angle));
                 d = max(f,d);
             }
@@ -284,13 +284,13 @@ void main()
             {
                 // For sharp angles, we do not enforce cap shape
                 if( (dash_stop > segment_stop ) &&
-                    (abs(v_angles.y) > PI/2.0) )
+                    (abs(v_angles.y) > M_PI/2.0) )
                 {
                     d = abs(dy);
                 }
                 // Antialias at outer border
                 dx = dx - segment_stop;
-                float angle = PI/2.+v_angles.y;
+                float angle = M_PI/2.+v_angles.y;
                 float f = abs( dx*cos(angle) - dy*sin(angle));
                 d = max(f,d);
             }
@@ -318,4 +318,3 @@ void main()
         gl_FragColor = vec4(v_color.xyz, exp(-d*d)*v_color.a);
     }
 }
-"""

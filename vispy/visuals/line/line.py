@@ -9,7 +9,7 @@ from __future__ import division
 
 import numpy as np
 
-from ... import gloo
+from ... import gloo, glsl
 from ...color import Color, ColorArray, get_colormap
 from ...ext.six import string_types
 from ..shaders import ModularProgram, Function
@@ -17,8 +17,6 @@ from ..visual import Visual
 from ...util.profiler import Profiler
 
 from .dash_atlas import DashAtlas
-from . import vertex
-from . import fragment
 
 
 vec2to4 = Function("""
@@ -88,7 +86,7 @@ class LineVisual(Visual):
 
     antialias : bool
         Enables or disables antialiasing.
-        For method='gl', this specifies whether to use GL's line smoothing, 
+        For method='gl', this specifies whether to use GL's line smoothing,
         which may be unavailable or inconsistent on some platforms.
     """
     def __init__(self, pos=None, color=(0.5, 0.5, 0.5, 1), width=1,
@@ -97,13 +95,13 @@ class LineVisual(Visual):
 
         self._changed = {'pos': False, 'color': False, 'width': False,
                          'connect': False}
-        
+
         self._pos = None
         self._color = None
         self._width = None
         self._connect = None
         self._bounds = None
-        
+
         # don't call subclass set_data; these often have different
         # signatures.
         LineVisual.set_data(self, pos=pos, color=color, width=width,
@@ -308,7 +306,7 @@ class _GLLineVisual(Visual):
         self._color_vbo = gloo.VertexBuffer()
         self._connect_ibo = gloo.IndexBuffer()
         self._connect = None
-        
+
         # Set up the GL program
         self._program = ModularProgram(self.VERTEX_SHADER,
                                        self.FRAGMENT_SHADER)
@@ -317,11 +315,11 @@ class _GLLineVisual(Visual):
     def draw(self, transforms):
         prof = Profiler()
         Visual.draw(self, transforms)
-        
+
         # first see whether we can bail out early
         if self._parent._width <= 0:
             return
-        
+
         if self._parent._changed['pos']:
             if self._parent._pos is None:
                 return
@@ -381,7 +379,7 @@ class _GLLineVisual(Visual):
                 self._connect_ibo.set_data(self._connect)
         if self._connect is None:
             return
-        
+
         prof('prepare')
 
         # Draw
@@ -393,7 +391,7 @@ class _GLLineVisual(Visual):
             self._program.draw('lines', self._connect_ibo)
         else:
             raise ValueError("Invalid line connect mode: %r" % self._connect)
-        
+
         prof('draw')
 
 
@@ -406,6 +404,9 @@ class _AggLineVisual(Visual):
                            ('alength', 'f4', 1),
                            ('color', 'f4', 4)])
 
+    VERTEX_SHADER = glsl.get('lines/agg.vert')
+    FRAGMENT_SHADER = glsl.get('lines/agg.frag')
+
     def __init__(self, parent):
         self._parent = parent
         self._vbo = gloo.VertexBuffer()
@@ -413,8 +414,8 @@ class _AggLineVisual(Visual):
 
         self._pos = None
         self._color = None
-        self._program = ModularProgram(vertex.VERTEX_SHADER,
-                                       fragment.FRAGMENT_SHADER)
+        self._program = ModularProgram(self.VERTEX_SHADER,
+                                       self.FRAGMENT_SHADER)
 
         self._da = DashAtlas()
         dash_index, dash_period = self._da['solid']
@@ -428,7 +429,7 @@ class _AggLineVisual(Visual):
 
     def draw(self, transforms):
         Visual.draw(self, transforms)
-        
+
         bake = False
         if self._parent._changed['pos']:
             if self._parent._pos is None:
@@ -462,7 +463,7 @@ class _AggLineVisual(Visual):
         vert['px_ndc_transform'] = px_ndc
         vert['transform'] = data_doc
 
-        #self._program.prepare()
+        # self._program.prepare()
         self._program.bind(self._vbo)
         uniforms = dict(closed=False, miter_limit=4.0, dash_phase=0.0,
                         linewidth=self._parent._width)
@@ -519,7 +520,7 @@ class _AggLineVisual(Visual):
         L = np.cumsum(N)
         V['a_segment'][+1:, 0] = L
         V['a_segment'][:-1, 1] = L
-        #V['a_lengths'][:,2] = L[-1]
+        # V['a_lengths'][:,2] = L[-1]
 
         # Step 1: A -- B -- C  =>  A -- B, B' -- C
         V = np.repeat(V, 2, axis=0)[1:-1]
