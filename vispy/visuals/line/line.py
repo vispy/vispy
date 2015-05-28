@@ -9,7 +9,7 @@ from __future__ import division
 
 import numpy as np
 
-from ... import gloo
+from ... import gloo, glsl
 from ...color import Color, ColorArray, get_colormap
 from ...ext.six import string_types
 from ..shaders import ModularProgram, Function
@@ -17,8 +17,6 @@ from ..visual import Visual, CompoundVisual
 from ...util.profiler import Profiler
 
 from .dash_atlas import DashAtlas
-from . import vertex
-from . import fragment
 
 
 vec2to4 = Function("""
@@ -88,7 +86,7 @@ class LineVisual(CompoundVisual):
 
     antialias : bool
         Enables or disables antialiasing.
-        For method='gl', this specifies whether to use GL's line smoothing, 
+        For method='gl', this specifies whether to use GL's line smoothing,
         which may be unavailable or inconsistent on some platforms.
     """
     def __init__(self, pos=None, color=(0.5, 0.5, 0.5, 1), width=1,
@@ -97,7 +95,7 @@ class LineVisual(CompoundVisual):
 
         self._changed = {'pos': False, 'color': False, 'width': False,
                          'connect': False}
-        
+
         self._pos = None
         self._color = None
         self._width = None
@@ -106,7 +104,7 @@ class LineVisual(CompoundVisual):
         self._method = 'none'
         
         CompoundVisual.__init__(self, [])
-        
+
         # don't call subclass set_data; these often have different
         # signatures.
         LineVisual.set_data(self, pos=pos, color=color, width=width,
@@ -293,7 +291,7 @@ class _GLLineVisual(Visual):
         self._color_vbo = gloo.VertexBuffer()
         self._connect_ibo = gloo.IndexBuffer()
         self._connect = None
-        
+
         Visual.__init__(self, vcode=self.VERTEX_SHADER,
                         fcode=self.FRAGMENT_SHADER)
         self.set_gl_state('translucent')
@@ -304,7 +302,7 @@ class _GLLineVisual(Visual):
 
     def _prepare_draw(self, view):
         prof = Profiler()
-        
+
         if self._parent._changed['pos']:
             if self._parent._pos is None:
                 return False
@@ -377,7 +375,7 @@ class _GLLineVisual(Visual):
             self._index_buffer = self._connect_ibo
         else:
             raise ValueError("Invalid line connect mode: %r" % self._connect)
-        
+
         prof('draw')
 
 
@@ -389,6 +387,9 @@ class _AggLineVisual(Visual):
                            ('a_texcoord', 'f4', 2),
                            ('alength', 'f4', 1),
                            ('color', 'f4', 4)])
+
+    VERTEX_SHADER = glsl.get('lines/agg.vert')
+    FRAGMENT_SHADER = glsl.get('lines/agg.frag')
 
     def __init__(self, parent):
         self._parent = parent
@@ -405,7 +406,7 @@ class _AggLineVisual(Visual):
                        dash_caps=(caps['round'], caps['round']),
                        antialias=1.0)
         self._dash_atlas = gloo.Texture2D(self._da._data)
-        
+
         Visual.__init__(self, vcode=vertex.VERTEX_SHADER,
                         fcode=fragment.FRAGMENT_SHADER)
         self._index_buffer = gloo.IndexBuffer()
@@ -502,7 +503,7 @@ class _AggLineVisual(Visual):
         L = np.cumsum(N)
         V['a_segment'][+1:, 0] = L
         V['a_segment'][:-1, 1] = L
-        #V['a_lengths'][:,2] = L[-1]
+        # V['a_lengths'][:,2] = L[-1]
 
         # Step 1: A -- B -- C  =>  A -- B, B' -- C
         V = np.repeat(V, 2, axis=0)[1:-1]
