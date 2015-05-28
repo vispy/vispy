@@ -87,7 +87,7 @@ setup(
     platforms='any',
     provides=['vispy'],
     install_requires=['numpy'],
-    extras_requires={
+    extras_require={
         'ipython-static': ['ipython'],
         'ipython-vnc': ['ipython>=2'],
         'ipython-webgl': ['ipython>=2', 'tornado'],
