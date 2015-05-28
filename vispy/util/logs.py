@@ -4,7 +4,6 @@
 
 import base64
 import logging
-import math
 import sys
 import inspect
 import re
@@ -30,7 +29,7 @@ def _get_vispy_caller():
             line = str(record[0].f_lineno)
             func = record[3]
             cls = record[0].f_locals.get('self', None)
-            clsname = "" if cls is None else cls.__class__.__name__ + '.' 
+            clsname = "" if cls is None else cls.__class__.__name__ + '.'
             caller = "{0}:{1}{2}({3}): ".format(module, clsname, func, line)
             return caller
     return 'unknown'
@@ -250,11 +249,11 @@ class use_log_level(object):
 def log_exception(level='warning', tb_skip=2):
     """
     Send an exception and traceback to the logger.
-    
+
     This function is used in cases where an exception is handled safely but
     nevertheless should generate a descriptive error message. An extra line
     is inserted into the stack trace indicating where the exception was caught.
-    
+
     Parameters
     ----------
     level : str

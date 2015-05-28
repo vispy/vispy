@@ -183,12 +183,15 @@ class Maker:
                 * examples - run all examples
                 * examples [examples paths] - run given examples
         """
+        # Note: By default, "python make full" *will* produce coverage data,
+        # whereas vispy.test('full') will not. This is because users won't
+        # really care about coveraged, but developers will.
         if not arg:
             return self.help('test')
         from vispy import test
         try:
             args = arg.split(' ')
-            test(args[0], ' '.join(args[1:]))
+            test(args[0], ' '.join(args[1:]), coverage=True)
         except Exception as err:
             print(err)
             if not isinstance(err, RuntimeError):

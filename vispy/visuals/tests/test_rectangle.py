@@ -7,9 +7,8 @@ All images are of size (100,100) to keep a small file size
 
 from vispy.scene import visuals, transforms
 from vispy.testing import (requires_application, TestingCanvas,
-                           run_tests_if_main)
+                           run_tests_if_main, assert_raises)
 from vispy.testing.image_tester import assert_image_approved
-from pytest import raises
 
 
 @requires_application()
@@ -36,7 +35,7 @@ def test_rectangle_draw():
                                         width=80., radius=10.,
                                         border_color='white')
         c.draw_visual(rectpolygon)
-        assert_image_approved("screenshot", 'visuals/rectpolygon4.png', 
+        assert_image_approved("screenshot", 'visuals/rectpolygon4.png',
                               min_corr=0.5)
 
         rectpolygon = visuals.Rectangle(pos=(50, 50, 0), height=60.,
@@ -71,7 +70,7 @@ def test_rectpolygon_draw():
         rectpolygon.transform = transforms.STTransform(scale=(1.5, 0.5),
                                                        translate=(50, 50))
         c.draw_visual(rectpolygon)
-        assert_image_approved("screenshot", 'visuals/rectpolygon8.png', 
+        assert_image_approved("screenshot", 'visuals/rectpolygon8.png',
                               min_corr=0.5)
 
         rectpolygon = visuals.Rectangle(pos=(0., 0.), height=60.,
@@ -123,16 +122,16 @@ def test_attributes():
     with TestingCanvas():
         rectpolygon = visuals.Rectangle(pos=(50, 50, 0), height=40.,
                                         width=80., color='red')
-        with raises(ValueError):
-            rectpolygon.height = 0
-        with raises(ValueError):
-            rectpolygon.width = 0
-        with raises(ValueError):
-            rectpolygon.radius = [10, 0, 5]
-        with raises(ValueError):
-            rectpolygon.radius = [10.]
-        with raises(ValueError):
-            rectpolygon.radius = 21.
+        assert_raises(ValueError, visuals.Rectangle.height.fset,
+                      rectpolygon, 0)
+        assert_raises(ValueError, visuals.Rectangle.width.fset,
+                      rectpolygon, 0)
+        assert_raises(ValueError, visuals.Rectangle.radius.fset,
+                      rectpolygon, [10, 0, 5])
+        assert_raises(ValueError, visuals.Rectangle.radius.fset,
+                      rectpolygon, [10.])
+        assert_raises(ValueError, visuals.Rectangle.radius.fset,
+                      rectpolygon, 21.)
 
 
 run_tests_if_main()
