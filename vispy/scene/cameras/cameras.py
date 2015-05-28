@@ -1005,6 +1005,8 @@ class Base3DRotationCamera(PerspectiveCamera):
                 norm = np.mean(self._viewbox.size)
                 if self._event_value is None:
                     self._event_value = self.center
+                elif len(self._event_value) == 2:
+                    self._event_value = self.center
                 dist = (p1 - p2) / norm * self._scale_factor
                 dist[1] *= -1
                 # Black magic part 1: turn 2D into 3D translations
