@@ -314,7 +314,7 @@ def _handle_exception(ignore_callback_errors, print_callback_errors, obj,
                     ii = registry[key]
                     # Use logarithmic selection
                     # (1, 2, ..., 10, 20, ..., 100, 200, ...)
-                    if ii % (10 ** int(math.log10(ii))) == 0:
+                    if ii == (2 ** int(np.log2(ii))):
                         this_print = ii
                     else:
                         this_print = None
