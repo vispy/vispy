@@ -1003,7 +1003,7 @@ class Base3DRotationCamera(PerspectiveCamera):
             elif 1 in event.buttons and keys.SHIFT in modifiers:
                 # Translate
                 norm = np.mean(self._viewbox.size)
-                if self._event_value is None:
+                if self._event_value is None or len(self._event_value) == 2:
                     self._event_value = self.center
                 dist = (p1 - p2) / norm * self._scale_factor
                 dist[1] *= -1
