@@ -4,6 +4,10 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
+from itertools import combinations
+from string import hexdigits
+
+
 # See <http://www.w3.org/TR/SVG/types.html#ColorKeywords>
 _keyword_colors = {
     "aliceblue":            (240, 248, 255),
@@ -154,8 +158,6 @@ _keyword_colors = {
     "yellow":               (255, 255,   0),
     "yellowgreen":          (154, 205,  50)}
 
-from itertools import combinations
-from string import hexdigits
 
 _HEXDEC = {}
 for x, y in combinations(hexdigits, 2):
