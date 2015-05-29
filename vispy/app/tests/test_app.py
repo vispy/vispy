@@ -226,19 +226,19 @@ def test_application():
         frag = "void main (void) {gl_FragColor = pos;}"
         program = Program(vert, frag)
         assert_raises(RuntimeError, program.glir.flush, context.shared.parser)
-
+        
         vert = "uniform vec4 pos;\nvoid main (void) {gl_Position = pos;}"
         frag = "uniform vec4 pos;\nvoid main (void) {gl_FragColor = pos;}"
         program = Program(vert, frag)
         # uniform = program.uniforms[0]
         program['pos'] = [1, 2, 3, 4]
-
+        
         vert = "attribute vec4 pos;\nvoid main (void) {gl_Position = pos;}"
         frag = "void main (void) {}"
         program = Program(vert, frag)
         # attribute = program.attributes[0]
         program["pos"] = [1, 2, 3, 4]
-
+        
         # use a real program
         program._glir.clear()
         vert = ("uniform mat4 u_model;"

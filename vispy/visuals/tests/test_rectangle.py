@@ -7,7 +7,7 @@ All images are of size (100,100) to keep a small file size
 
 from vispy.scene import visuals, transforms
 from vispy.testing import (requires_application, TestingCanvas,
-                           run_tests_if_main, assert_raises)
+                           run_tests_if_main, raises)
 from vispy.testing.image_tester import assert_image_approved
 
 
@@ -122,16 +122,16 @@ def test_attributes():
     with TestingCanvas():
         rectpolygon = visuals.Rectangle(pos=(50, 50, 0), height=40.,
                                         width=80., color='red')
-        assert_raises(ValueError, visuals.Rectangle.height.fset,
-                      rectpolygon, 0)
-        assert_raises(ValueError, visuals.Rectangle.width.fset,
-                      rectpolygon, 0)
-        assert_raises(ValueError, visuals.Rectangle.radius.fset,
-                      rectpolygon, [10, 0, 5])
-        assert_raises(ValueError, visuals.Rectangle.radius.fset,
-                      rectpolygon, [10.])
-        assert_raises(ValueError, visuals.Rectangle.radius.fset,
-                      rectpolygon, 21.)
+        with raises(ValueError):
+            rectpolygon.height = 0
+        with raises(ValueError):
+            rectpolygon.width = 0
+        with raises(ValueError):
+            rectpolygon.radius = [10, 0, 5]
+        with raises(ValueError):
+            rectpolygon.radius = [10.]
+        with raises(ValueError):
+            rectpolygon.radius = 21.
 
 
 run_tests_if_main()
