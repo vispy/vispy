@@ -68,7 +68,7 @@ class AggSegmentCollection(Collection):
             vertex = glsl.get('collections/agg-segment.vert')
         if transform is None:
             transform = NullTransform()
-        self.transform = transform        
+        self.transform = transform
         if fragment is None:
             fragment = glsl.get('collections/agg-segment.frag')
 

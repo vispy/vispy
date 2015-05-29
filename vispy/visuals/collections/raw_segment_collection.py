@@ -55,7 +55,7 @@ class RawSegmentCollection(Collection):
             vertex = glsl.get('collections/raw-segment.vert')
         if transform is None:
             transform = NullTransform()
-        self.transform = transform        
+        self.transform = transform
         if fragment is None:
             fragment = glsl.get('collections/raw-segment.frag')
 

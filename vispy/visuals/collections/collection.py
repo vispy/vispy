@@ -65,7 +65,6 @@ class Collection(BaseCollection):
         self._mode = mode
         vtype = []
         utype = []
-        
         self.update = EventEmitter(source=self, type='collection_update')
 
         # Build vtype and utype according to parameters

@@ -410,10 +410,7 @@ class BaseCollection(object):
             self._update()
 
         V = self._vertices_buffer
-        I = None
         U = None
-        if self._indices_list is not None:
-            I = self._indices_buffer  # noqa
         if self._uniforms_list is not None:
             U = self._uniforms_texture.data.ravel().view(self.utype)
 

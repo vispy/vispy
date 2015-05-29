@@ -49,7 +49,7 @@ class RawPathCollection(Collection):
             vertex = glsl.get('collections/raw-path.vert')
         if transform is None:
             transform = NullTransform()
-        self.transform = transform        
+        self.transform = transform
         if fragment is None:
             fragment = glsl.get('collections/raw-path.frag')
 

@@ -71,7 +71,7 @@ class AggFastPathCollection(Collection):
             vertex = glsl.get('collections/agg-fast-path.vert')
         if transform is None:
             transform = NullTransform()
-        self.transform = transform        
+        self.transform = transform
         if fragment is None:
             fragment = glsl.get('collections/agg-fast-path.frag')
 
@@ -177,7 +177,6 @@ class AggFastPathCollection(Collection):
         """
 
         itemsize = itemsize or len(P)
-        itemcount = len(P) / itemsize  # noqa
         n = itemsize
 
         if closed:
