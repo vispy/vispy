@@ -47,10 +47,8 @@ class RawPolygonCollection(Collection):
 
         Parameters
         ----------
-
         points : np.array
             Vertices composing the triangles
-
         color : list, array or 4-tuple
            Path color
         """

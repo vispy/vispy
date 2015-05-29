@@ -39,19 +39,14 @@ class Item(object):
 
         Parameters
         ----------
-
         parent : Collection
             Collection this item belongs to
-
         key : int
             Collection index of this item
-
         vertices: array-like
             Vertices of the item
-
         indices: array-like
             Indices of the item
-
         uniforms: array-like
             Uniform parameters of the item
         """

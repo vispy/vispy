@@ -27,20 +27,15 @@ class AggPointCollection(RawPointCollection):
 
         Parameters
         ----------
-
         user_dtype: list
             The base dtype can be completed (appended) by the used_dtype. It
             only make sense if user also provide vertex and/or fragment shaders
-
         vertex: string
             Vertex shader code
-
         fragment: string
             Fragment  shader code
-
         transform : Transform instance
             Used to define the GLSL transform(vec4) function
-
         color : string
             'local', 'shared' or 'global'
         """

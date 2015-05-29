@@ -45,11 +45,9 @@ class ArrayList(object):
 
         Parameters
         ----------
-
         data : array_like
             An array, any object exposing the array interface, an object
             whose __array__ method returns an array, or any (nested) sequence.
-
         itemsize:  int or 1-D array
             If `itemsize is an integer, N, the array will be divided
             into elements of size N. If such partition is not possible,
@@ -59,13 +57,10 @@ class ArrayList(object):
             elements whose succesive sizes will be picked from itemsize.
             If the sum of itemsize values is different from array size,
             an error is raised.
-
         dtype: np.dtype
             Any object that can be interpreted as a numpy data type.
-
         sizeable : boolean
             Indicate whether item can be appended/inserted/deleted
-
         writeable : boolean
             Indicate whether content can be changed
         """
@@ -287,14 +282,11 @@ class ArrayList(object):
 
         Parameters
         ----------
-
         index : int
             Index before which data will be inserted.
-
         data : array_like
             An array, any object exposing the array interface, an object
             whose __array__ method returns an array, or any (nested) sequence.
-
         itemsize:  int or 1-D array
             If `itemsize is an integer, N, the array will be divided
             into elements of size N. If such partition is not possible,

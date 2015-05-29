@@ -33,29 +33,21 @@ class AggSegmentCollection(Collection):
 
         Parameters
         ----------
-
         user_dtype: list
             The base dtype can be completed (appended) by the used_dtype. It
             only make sense if user also provide vertex and/or fragment shaders
-
         transform : string
             GLSL Transform code defining the vec4 transform(vec3) function
-
         vertex: string
             Vertex shader code
-
         fragment: string
             Fragment  shader code
-
         caps : string
             'local', 'shared' or 'global'
-
         color : string
             'local', 'shared' or 'global'
-
         linewidth : string
             'local', 'shared' or 'global'
-
         antialias : string
             'local', 'shared' or 'global'
         """

@@ -46,13 +46,10 @@ class RawTriangleCollection(Collection):
 
         Parameters
         ----------
-
         points : np.array
             Vertices composing the triangles
-
         indices : np.array
             Indices describing triangles
-
         color : list, array or 4-tuple
            Path color
         """
