@@ -8,6 +8,9 @@ heads on a line.
 
 from __future__ import division
 
+from ... import glsl
+from ...util.profiler import Profiler
+from ..shaders import ModularProgram
 from .line import LineVisual
 
 
@@ -29,7 +32,8 @@ class ArrowVisual(LineVisual):
     Parameters
     ----------
     pos : array
-        Array of shape (..., 2) or (..., 3) specifying vertex coordinates.
+        Array of shape (..., 2) specifying vertex coordinates. Note that for
+        the arrow visual the dimension is currently limited to 2D.
     color : Color, tuple, or array
         The color to use when drawing the line. If an array is given, it
         must be of shape (..., 4) and provide one rgba color per vertex.
@@ -64,12 +68,17 @@ class ArrowVisual(LineVisual):
     arrows : array-like
         Specifies which line segements get an arrow head. It should be an
         iterable containing pairs of vertices which determine the arrow body.
-        The arrow head will be attached to the last vertex of the pair.
+        The arrow head will be attached to the last vertex of the pair. The
+        vertices must be of the shape (..., 2).
 
     arrow_type : str
         Specifies how the arrow heads should look like. See `ARROW_TYPES` for
         the available arrow head types.
     """
+
+    ARROWHEAD_VERTEX_SHADER = glsl.get('arrowheads/arrowheads.vert')
+    ARROWHEAD_FRAGMENT_SHADER = glsl.get('arrowheads/arrowheads.frag')
+
     def __init__(self, pos=None, color=(0.5, 0.5, 0.5, 1), width=1,
                  connect='strip', method='gl', antialias=False, arrows=None,
                  arrow_type='stealth'):
@@ -80,6 +89,9 @@ class ArrowVisual(LineVisual):
         self._arrow_type = None
         self.arrow_type = arrow_type
         self.set_data(arrows=arrows)
+
+        self._arrow_program = ModularProgram(self.ARROWHEAD_VERTEX_SHADER,
+                                             self.ARROWHEAD_FRAGMENT_SHADER)
 
     def set_data(self, pos=None, color=None, width=None, connect=None,
                  arrows=None):
@@ -134,8 +146,18 @@ class ArrowVisual(LineVisual):
         self._changed['arrows'] = True
 
     def draw(self, transforms):
+        prof = Profiler()
         LineVisual.draw(self, transforms)
 
         if self._changed['arrows']:
             # TODO
             pass
+
+        prof('arrowhead prepare')
+
+        xform = transforms.get_full_transform()
+        self._arrow_program.vert['transform'] = xform
+        self._arrow_program.frag['arrow_type'] = self._arrow_type
+
+        self._arrow_program.draw()
+        prof('arrowhead draw')
