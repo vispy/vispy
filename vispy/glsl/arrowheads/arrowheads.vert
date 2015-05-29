@@ -1,6 +1,6 @@
 // ----------------------------------------------------------------------------
-// Copyright (c) 2014, Nicolas P. Rougier. All Rights Reserved.
-// Distributed under the (new) BSD License.
+// Copyright (c) Vispy Development Team
+// Distributed under the (new) BSD License. See LICENSE.txt for more info.
 // ----------------------------------------------------------------------------
 // Hooks:
 //  <transform> : vec4 function(position, ...)
@@ -14,20 +14,16 @@ uniform float antialias;
 
 // Attributes
 // ------------------------------------
-attribute vec2  position;
+attribute vec2  v1;
+attribute vec2  v2;
 attribute float size;
-attribute float head;
-attribute vec4  fg_color;
-attribute vec4  bg_color;
-attribute float orientation;
+attribute vec4  color;
 attribute float linewidth;
 
 // Varyings
 // ------------------------------------
 varying float v_size;
-varying float v_head;
-varying vec4  v_fg_color;
-varying vec4  v_bg_color;
+varying vec4  v_color;
 varying vec2  v_orientation;
 varying float v_antialias;
 varying float v_linewidth;
@@ -37,13 +33,13 @@ varying float v_linewidth;
 void main (void)
 {
     v_size        = size;
-    v_head        = head;
     v_linewidth   = linewidth;
     v_antialias   = antialias;
-    v_fg_color    = fg_color;
-    v_bg_color    = bg_color;
-    v_orientation = vec2(cos(orientation), sin(orientation));
+    v_color       = color;
 
-    gl_Position = <transform>;
+    vec2 body = v2 - v1;
+    v_orientation = (body) / length(body);
+
+    gl_Position = $transform(vec4(v2, 0, 1));
     gl_PointSize = M_SQRT2 * size + 2.0 * (linewidth + 1.5*antialias);
 }

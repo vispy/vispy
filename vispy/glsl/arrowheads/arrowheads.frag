@@ -17,10 +17,8 @@
 varying float v_antialias;
 varying float v_linewidth;
 varying float v_size;
-varying float v_head;
 varying float v_texcoord;
-varying vec4  v_fg_color;
-varying vec4  v_bg_color;
+varying vec4  v_color;
 varying vec2  v_orientation;
 
 // Main (hooked)
@@ -33,6 +31,6 @@ void main()
     float point_size = M_SQRT2*v_size  + 2.0 * (v_linewidth + 1.5*v_antialias);
     float body = v_size/M_SQRT2;
 
-    float distance = arrow_<arrow>(P, body, v_head*body, v_linewidth, v_antialias);
-    gl_FragColor = <paint>(distance, v_linewidth, v_antialias, v_fg_color, v_bg_color);
+    float distance = arrow_$arrow_type(P, body, v_head*body, v_linewidth, v_antialias);
+    gl_FragColor = filled(distance, v_linewidth, v_antialias, v_color, v_color);
 }
