@@ -53,23 +53,36 @@ class VisPyInputHook(InputHookBase):
         """
 
         from .. import app as _app
+
         self.app = app or _app.use_app()
         self.manager.set_inputhook(self._vispy_inputhook)
         return app
 
     def _vispy_inputhook(self):
         try:
-            t = time()
             while not stdin_ready():
                 self.app.process_events()
 
-                used_time = time() - t
-                if used_time > 10.0:
-                    sleep(1.0)
-                elif used_time > 0.1:
-                    sleep(0.05)
+                # refer https://github.com/vispy/vispy/issues/945 for more context
+                # we need to wait out on the event loop to prevent CPU stress
+                # but not wait too much, to maintain fluidity.
+                # if Qt is available, we choose to use Qt's qWait that automatically
+                # guarantees that it will wait for 0.05 seconds maximum, while
+                # ensuring responsiveness
+
+                if self.app.backend_name == "PyQt4":
+                    import PyQt4.QtTest
+
+                    PyQt4.QtTest.QTest.qWait(5)  # in ms
+
+                elif self.app.backend_name == "PyQt5":
+                    import PyQt5.QtTest
+
+                    PyQt5.QtTest.QTest.qWait(5)  # in ms
+
                 else:
-                    sleep(0.001)
+                    sleep(0.005)  # in s
+
         except KeyboardInterrupt:
             pass
         return 0
