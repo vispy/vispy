@@ -4,7 +4,6 @@
 
 import base64
 import logging
-import math
 import sys
 import inspect
 import re
@@ -30,7 +29,7 @@ def _get_vispy_caller():
             line = str(record[0].f_lineno)
             func = record[3]
             cls = record[0].f_locals.get('self', None)
-            clsname = "" if cls is None else cls.__class__.__name__ + '.' 
+            clsname = "" if cls is None else cls.__class__.__name__ + '.'
             caller = "{0}:{1}{2}({3}): ".format(module, clsname, func, line)
             return caller
     return 'unknown'
@@ -314,7 +313,7 @@ def _handle_exception(ignore_callback_errors, print_callback_errors, obj,
                     ii = registry[key]
                     # Use logarithmic selection
                     # (1, 2, ..., 10, 20, ..., 100, 200, ...)
-                    if ii % (10 ** int(math.log10(ii))) == 0:
+                    if ii == (2 ** int(np.log2(ii))):
                         this_print = ii
                     else:
                         this_print = None

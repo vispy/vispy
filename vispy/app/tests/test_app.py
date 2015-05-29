@@ -58,7 +58,7 @@ def _test_callbacks(canvas):
         backend._on_mouse_scroll(_id, 1, 0)
         backend._on_mouse_motion(_id, 10, 10)
         backend._on_close(_id)
-    elif 'qt' in backend_name.lower():
+    elif any(x in backend_name.lower() for x in ('qt', 'pyside')):
         # constructing fake Qt events is too hard :(
         pass
     elif 'sdl2' in backend_name.lower():
@@ -230,13 +230,13 @@ def test_application():
         vert = "uniform vec4 pos;\nvoid main (void) {gl_Position = pos;}"
         frag = "uniform vec4 pos;\nvoid main (void) {gl_FragColor = pos;}"
         program = Program(vert, frag)
-        #uniform = program.uniforms[0]
+        # uniform = program.uniforms[0]
         program['pos'] = [1, 2, 3, 4]
         
         vert = "attribute vec4 pos;\nvoid main (void) {gl_Position = pos;}"
         frag = "void main (void) {}"
         program = Program(vert, frag)
-        #attribute = program.attributes[0]
+        # attribute = program.attributes[0]
         program["pos"] = [1, 2, 3, 4]
         
         # use a real program

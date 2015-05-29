@@ -125,6 +125,25 @@ def assert_is(expr1, expr2, msg=None):
         raise AssertionError(_format_msg(msg, std_msg))
 
 
+class raises(object):
+    """Helper class to test exception raising"""
+    def __init__(self, exc):
+        self.exc = exc
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_typ, exc, tb):
+        if isinstance(exc, self.exc):
+            return True
+        elif exc is None:
+            raise AssertionError("Expected %s (no exception raised)" %
+                                 self.exc.__name__)
+        else:
+            raise AssertionError("Expected %s, got %s instead" % 
+                                 (self.exc.__name__, type(exc).__name__))
+
+
 ###############################################################################
 # GL stuff
 
