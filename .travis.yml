@@ -126,6 +126,7 @@ install:
     # Install vispy
     - cd ${SRC_DIR}
     - python setup.py install > ${REDIRECT_TO}
+    - python setup.py develop > ${REDIRECT_TO}
     - cd ~
 
     # GLFW: version 2 shouldn't work (so let's try on Py2.6), version 3 will
@@ -194,6 +195,7 @@ script:
 after_success:
     # Need to run from source dir to execute appropriate "git" commands
     - if [ "${TEST}" == "standard" ]; then
-        coverage combine;
+        COVERAGE_FILE=.vispy-coverage coverage combine;
+        mv .vispy-coverage .coverage;
         coveralls;
       fi;

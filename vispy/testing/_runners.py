@@ -50,7 +50,7 @@ raise SystemExit(tester.main(%r))
 def _unit(mode, extra_arg_string, coverage=False):
     """Run unit tests using a particular mode"""
     import_dir = _get_import_dir()[0]
-    cwd = op.join(import_dir, '..')
+    cwd = op.abspath(op.join(import_dir, '..'))
     extra_args = [''] + extra_arg_string.split(' ')
     del extra_arg_string
     use_pytest = False
@@ -99,10 +99,16 @@ def _unit(mode, extra_arg_string, coverage=False):
     if return_code:
         raise RuntimeError('unit failure (%s)' % return_code)
     if coverage:
-        out_name = '.coverage.%s' % mode
+        # Running a py.test with coverage will wipe out any files that
+        # exist as .coverage or .coverage.*. It should work to pass
+        # COVERAGE_FILE env var when doing run_subprocess above, but
+        # it does not. Therefore we instead use our own naming scheme,
+        # and in Travis when we combine them, use COVERAGE_FILE with the
+        # `coverage combine` command.
+        out_name = op.join(cwd, '.vispy-coverage.%s' % mode)
         if op.isfile(out_name):
             os.remove(out_name)
-        os.rename('.coverage', out_name)
+        os.rename(op.join(cwd, '.coverage'), out_name)
 
 
 def _flake():
@@ -358,8 +364,7 @@ def test(label='full', extra_arg_string='', coverage=False):
             traceback.print_exception(type_, value, tb)
         else:
             print('Passed\n')
-        finally:
-            sys.stdout.flush()
+        sys.stdout.flush()
     dt = time() - t0
     stat = '%s failed, %s skipped' % (fail if fail else 0, skip if skip else 0)
     extra = 'failed' if fail else 'succeeded'
