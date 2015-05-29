@@ -1366,6 +1366,7 @@ class FlyCamera(PerspectiveCamera):
 
         # Motion speed vector
         self._speed = np.zeros((6,), 'float64')
+        self._distance = None
 
         # Acceleration and braking vectors, set from keyboard
         self._brake = np.zeros((6,), 'uint8')  # bool-ish
