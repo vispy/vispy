@@ -230,6 +230,20 @@ class ApplicationBackend(BaseApplicationBackend):
         # Return
         return app
 
+    def _vispy_sleep(self, duration_sec):
+        if self._vispy_get_backend_name() == "PyQt4":
+            import PyQt4.QtTest
+            PyQt4.QtTest.QTest.qWait(duration_sec * 1000)  # in ms
+
+        elif self._vispy_get_backend_name() == "PyQt5":
+            import PyQt5.QtTest
+            PyQt5.QtTest.QTest.qWait(duration_sec * 1000)  # in ms
+        else:
+            raise RuntimeError("unable to find the expected backend\
+                               for Qt. found backend: %s",
+                               self._vispy_get_backend_name())
+
+
 
 # ------------------------------------------------------------------ canvas ---
 

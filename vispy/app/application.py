@@ -77,6 +77,19 @@ class Application(object):
         """
         return self._backend._vispy_process_events()
 
+    def sleep(self, duration_sec):
+        """
+        Sleep for the given duration. This is used to reduce
+        CPU stress when VisPy is run in interactive mode.
+        see inputhook.py for details
+
+        Parameters
+        ----------
+        duration_sec: int
+            Time to sleep in seconds
+        """
+        self._backend._vispy_sleep(duration_sec)
+
     def create(self):
         """ Create the native application.
         """

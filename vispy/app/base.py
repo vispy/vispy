@@ -33,6 +33,14 @@ class BaseApplicationBackend(object):
         # Should return the native application object
         return self
 
+    # is called by inputhook.py for pauses
+    # to remove CPU stress
+
+    # this is virtual so that some backends which have specialize
+    # functionality to deal with user input / latency can use those methods
+    def _vispy_sleep(self, duration_sec):
+        import time
+        time.sleep(duration_sec)
 
 class BaseCanvasBackend(object):
     """BaseCanvasBackend(vispy_canvas, capability, context_type)
