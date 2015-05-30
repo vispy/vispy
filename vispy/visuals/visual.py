@@ -135,11 +135,11 @@ class Visual(BaseVisual):
     Subclasses generally only need to reimplement _compute_bounds,
     _prepare_draw, and _prepare_transforms.
     """
-    def __init__(self, vshare=None, key=None, vcode='', fcode='',
-                 program=None):
+    def __init__(self, vcode='', fcode='', program=None, 
+                 _vshare=None, _key=None):
         self._view_class = VisualView
-        BaseVisual.__init__(self, vshare, key)
-        if vshare is None:
+        BaseVisual.__init__(self, _vshare, _key)
+        if _vshare is None:
             self._vshare.draw_mode = 'triangles'
             self._vshare.index_buffer = None
             if program is None:
@@ -150,7 +150,7 @@ class Visual(BaseVisual):
                     raise ValueError("Cannot specify both program and "
                         "vcode/fcode arguments.")
         
-        self._program = self._vshare.program.add_program(key)
+        self._program = self._vshare.program.add_program(_key)
         self._prepare_transforms(self)
         self._filters = []
         self._hooks = {}
@@ -292,7 +292,7 @@ class VisualView(BaseVisualView, Visual):
     """
     def __init__(self, visual, key):
         BaseVisualView.__init__(self, visual, key)
-        Visual.__init__(self, visual._vshare, key)
+        Visual.__init__(self, _vshare=visual._vshare, _key=key)
         
         # Attach any shared filters 
         for filter in self._vshare.filters:
