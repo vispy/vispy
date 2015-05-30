@@ -8,6 +8,7 @@ from vispy.testing import run_tests_if_main
 from vispy.geometry import (create_box, create_cube, create_cylinder,
                             create_sphere, create_plane)
 
+
 def test_box():
     """Test box function"""
     vertices, filled, outline = create_box()
