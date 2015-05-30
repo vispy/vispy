@@ -12,6 +12,7 @@ import os
 import sys
 import re
 import json
+import weakref
 
 import numpy as np
 
@@ -67,22 +68,30 @@ def as_enum(enum):
     return enum
 
 
-class GlirQueue(object):
-    """ Representation of a queue of GLIR commands
+class _GlirQueueShare(object):
+    """This class contains the actual queues of GLIR commands that are
+    collected until a context becomes available to execute the commands.
     
-    One instance of this class is attached to each context object, and
-    to each gloo object.
+    Instances of this class are further wrapped by GlirQueue to allow the
+    underlying queues to be transparently merged when GL objects become
+    associated.
     
-    Upon drawing (i.e. `Program.draw()`) and framebuffer switching, the
-    commands in the queue are pushed to a parser, which is stored at
-    context.shared. The parser can interpret the commands in Python,
-    send them to a browser, etc.
+    The motivation for this design is that it allows most glir commands to be
+    added directly to their final queue (the same one used by the context),
+    which reduces the effort required at draw time to determine the complete
+    set of GL commands to be issued.
+    
+    At the same time, all GLObjects begin with their own local queue to allow
+    commands to be queued at any time, even if the GLObject has
+    not been associated yet. This works as expected even for complex topologies
+    of GL objects, when some queues may only be joined at the last possible
+    moment.
     """
-    
-    def __init__(self):
+    def __init__(self, queue):
         self._commands = []  # local commands
         self._verbose = False
-        self._associations = set()
+        # queues that have been merged with this one
+        self._associations = weakref.WeakKeyDictionary({queue: None})
     
     def command(self, *args):
         """ Send a command. See the command spec at:
@@ -101,10 +110,6 @@ class GlirQueue(object):
         """ Print the list of commands currently in the queue. If filter is
         given, print only commands that match the filter.
         """
-        # Show commands in associated queues
-        for q in self._associations:
-            q.show()
-        
         for command in self._commands:
             if command[0] is None:  # or command[1] in self._invalid_objects:
                 continue  # Skip nill commands 
@@ -127,32 +132,13 @@ class GlirQueue(object):
         """ Pop the whole queue (and associated queues) and return a
         list of commands.
         """
-        
-        # Get all commands, discard deletable queues (ques no longer in use)
-        commands = []
-        for q in list(self._associations):
-            commands.extend(q.clear())
-            if hasattr(q, '_deletable'):  # this flag gets set by GLObject
-                self._associations.discard(q)
-        commands.extend(self._commands)
-        self._commands[:] = []
+        commands = self._commands
+        self._commands = []
         return commands
-    
-    def associate(self, queue):
-        """ Associate the given queue. When the current queue gets
-        cleared, it first clears all the associated queues and prepends
-        these commands to the total list. One should call associate()
-        on the queue that relies on the other 
-        (e.g. ``program.glir.associate(texture.glir``).
-        """
-        assert isinstance(queue, GlirQueue)
-        self._associations.add(queue)
     
     def flush(self, parser):
         """ Flush all current commands to the GLIR interpreter.
         """
-#         if self._parser is None:
-#             raise RuntimeError('Cannot flush queue if parser is None')
         if self._verbose:
             show = self._verbose if isinstance(self._verbose, str) else None
             self.show(show)
@@ -182,6 +168,69 @@ class GlirQueue(object):
         return convert_shaders(convert, shaders)
 
 
+class GlirQueue(object):
+    """ Representation of a queue of GLIR commands
+    
+    One instance of this class is attached to each context object, and
+    to each gloo object. Internally, commands are stored in a shared queue 
+    object that may be swapped out and merged with other queues when
+    ``associate()`` is called.
+    
+    Upon drawing (i.e. `Program.draw()`) and framebuffer switching, the
+    commands in the queue are pushed to a parser, which is stored at
+    context.shared. The parser can interpret the commands in Python,
+    send them to a browser, etc.    
+    """
+    def __init__(self):
+        # We do not actually queue any commands here, but on a shared queue
+        # object that may be joined with others as queues are associated.
+        self._shared = _GlirQueueShare(self)
+
+    def command(self, *args):
+        """ Send a command. See the command spec at:
+        https://github.com/vispy/vispy/wiki/Spec.-Gloo-IR
+        """
+        self._shared.command(*args)
+        
+    def set_verbose(self, verbose):
+        """ Set verbose or not. If True, the GLIR commands are printed
+        right before they get parsed. If a string is given, use it as
+        a filter.
+        """
+        self._shared.set_verbose(verbose)
+    
+    def clear(self):
+        """ Pop the whole queue (and associated queues) and return a
+        list of commands.
+        """
+        return self._shared.clear()
+    
+    def associate(self, queue):
+        """Merge this queue with another. 
+        
+        Both queues will use a shared command list and either one can be used
+        to fill or flush the shared queue.
+        """
+        assert isinstance(queue, GlirQueue)
+        if queue._shared is self._shared:
+            return
+        
+        # merge commands
+        self._shared._commands.extend(queue.clear())
+        self._shared._verbose |= queue._shared._verbose
+        self._shared._associations[queue] = None
+        # update queue and all related queues to use the same _shared object 
+        for ch in queue._shared._associations:
+            ch._shared = self._shared
+            self._shared._associations[ch] = None
+        queue._shared = self._shared
+        
+    def flush(self, parser):
+        """ Flush all current commands to the GLIR interpreter.
+        """
+        self._shared.flush(parser)
+    
+        
 def convert_shaders(convert, shaders):
     """ Modify shading code so that we can write code once
     and make it run "everywhere".
@@ -327,7 +376,6 @@ class GlirParser(BaseGlirParser):
     def _parse(self, command):
         """ Parse a single command.
         """
-
         cmd, id_, args = command[0], command[1], command[2:]
             
         if cmd == 'CURRENT':
