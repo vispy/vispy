@@ -69,7 +69,23 @@ def as_enum(enum):
 
 
 class _GlirQueueShare(object):
-    """
+    """This class contains the actual queues of GLIR commands that are
+    collected until a context becomes available to execute the commands.
+    
+    Instances of this class are further wrapped by GlirQueue to allow the
+    underlying queues to be transparently merged when GL objects become
+    associated.
+    
+    The motivation for this design is that it allows most glir commands to be
+    added directly to their final queue (the same one used by the context),
+    which reduces the effort required at draw time to determine the complete
+    set of GL commands to be issued.
+    
+    At the same time, all GLObjects begin with their own local queue to allow
+    commands to be queued at any time, even if the GLObject has
+    not been associated yet. This works as expected even for complex topologies
+    of GL objects, when some queues may only be joined at the last possible
+    moment.
     """
     def __init__(self, queue):
         self._commands = []  # local commands
@@ -156,12 +172,14 @@ class GlirQueue(object):
     """ Representation of a queue of GLIR commands
     
     One instance of this class is attached to each context object, and
-    to each gloo object.
+    to each gloo object. Internally, commands are stored in a shared queue 
+    object that may be swapped out and merged with other queues when
+    ``associate()`` is called.
     
     Upon drawing (i.e. `Program.draw()`) and framebuffer switching, the
     commands in the queue are pushed to a parser, which is stored at
     context.shared. The parser can interpret the commands in Python,
-    send them to a browser, etc.
+    send them to a browser, etc.    
     """
     def __init__(self):
         # We do not actually queue any commands here, but on a shared queue
