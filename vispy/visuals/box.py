@@ -57,6 +57,13 @@ class BoxVisual(MeshVisual):
             self._outline = None
 
     def draw(self, transforms):
+        """Draw the visual
+
+        Parameters
+        ----------
+        transforms : instance of TransformSystem
+            The transforms to use.
+        """
         MeshVisual.draw(self, transforms)
         if self._outline:
             set_state(polygon_offset=(1, 1), polygon_offset_fill=True)
