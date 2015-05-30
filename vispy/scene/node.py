@@ -274,11 +274,13 @@ class Node(object):
 
     @transform.setter
     def transform(self, tr):
-        if self._transform is not None:
-            self._transform.changed.disconnect(self._transform_changed)
+        # Other nodes might be interested in this information, but turning it
+        # on by default is too expensive.
+        #if self._transform is not None:
+            #self._transform.changed.disconnect(self._transform_changed)
         assert isinstance(tr, BaseTransform)
         self._transform = tr
-        self._transform.changed.connect(self._transform_changed)
+        #self._transform.changed.connect(self._transform_changed)
         self._transform_changed(None)
 
     def set_transform(self, type_, *args, **kwargs):
