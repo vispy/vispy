@@ -307,8 +307,8 @@ class STTransform(BaseTransform):
         return super(STTransform, self).__rmul__(tr)
 
     def __repr__(self):
-        return ("<STTransform scale=%s translate=%s>"
-                % (self.scale, self.translate))
+        return ("<STTransform scale=%s translate=%s at 0x%s>"
+                % (self.scale, self.translate, id(self)))
 
 
 class AffineTransform(BaseTransform):

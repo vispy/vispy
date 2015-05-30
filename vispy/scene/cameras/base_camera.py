@@ -438,6 +438,10 @@ class BaseCamera(Node):
             self._transform_cache.roll()
             self._scene_transform = self._transform_cache.get([pre_tr, tr])
 
+        # Mark the transform dynamic so that it will not be collapsed with
+        # others 
+        self._scene_transform.dynamic = True
+        
         # Update scene
         self._viewbox.scene.transform = self._scene_transform
         self._viewbox.update()

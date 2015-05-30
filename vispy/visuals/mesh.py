@@ -307,7 +307,7 @@ class MeshVisual(Visual):
     @staticmethod
     def _prepare_transforms(view):
         tr = view.transforms.get_transform()
-        view.view_program.vert['transform'] = tr # .simplified()
+        view.view_program.vert['transform'] = tr#.simplified
         
         #doc_tr = view.transforms.get_transform('visual', 'scene')
         #view.visual._phong['transform'] = doc_tr

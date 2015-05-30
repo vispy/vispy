@@ -75,7 +75,7 @@ class BaseVisual(object):
     def transform(self, tr):
         self.transforms.visual_transform = tr
 
-    def get_transform(self, map_from, map_to):
+    def get_transform(self, map_from='visual', map_to='render'):
         return self.transforms.get_transform(map_from, map_to)
 
     def view(self, key=None):
