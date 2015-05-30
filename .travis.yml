@@ -101,6 +101,7 @@ install:
         fi;
       fi;
 
+    # On 3.4, install system-wide copies of bundled libraries instead
     # Use Pyglet alpha to get Py3.4 support
     # Also install PyQt4, imaging (PIL or pillow), scipy, mpl, egl
     # Test old (insufficient) version of Pyglet on 2.6
@@ -115,7 +116,10 @@ install:
           pip install -q https://bitbucket.org/pyglet/pyglet/get/tip.zip;
         fi;
         if [ "${PYTHON}" == "3.4" ]; then
-          conda install --yes --quiet pillow scipy matplotlib > ${REDIRECT_TO};
+          conda install --yes --quiet pillow scipy matplotlib decorator six > ${REDIRECT_TO};
+          pip install -q husl pypng > ${REDIRECT_TO};
+          pip install -q https://github.com/mpld3/mplexporter/zipball/master > ${REDIRECT_TO};
+          rm -rf ${SRC_DIR}/vispy/ext/_bundled;
         fi;
         if [ "${PYTHON}" == "2.7" ]; then
           travis_retry sudo apt-get -qq -y install python-qt4-gl python-imaging python-scipy python-matplotlib python-wxgtk2.8 > ${REDIRECT_TO};
