@@ -13,9 +13,6 @@ not use Python's PyOS_InputHook functionality.
 
 from ..ext.ipy_inputhook import inputhook_manager, InputHookBase, stdin_ready
 
-from time import sleep
-from ..util.ptime import time
-
 
 def set_interactive(enabled=True, app=None):
     """Activate the IPython hook for VisPy.  If the app is not specified, the
