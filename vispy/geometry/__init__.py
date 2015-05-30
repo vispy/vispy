@@ -19,5 +19,6 @@ from .triangulation import Triangulation, triangulate  # noqa
 from .torusknot import TorusKnot  # noqa
 from .calculations import (_calculate_normals, _fast_cross_3d,  # noqa
                            resize)  # noqa
-from .generation import create_arrow, create_box, create_cone, create_cube, \
-           create_cylinder, create_plane, create_sphere  # noqa
+from .generation import (create_arrow, create_box, create_cone,  # noqa
+                         create_cube, create_cylinder, create_plane,  # noqa
+                         create_sphere)  # noqa
