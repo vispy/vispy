@@ -1,6 +1,88 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
+"""
+
+Definitions
+===========
+
+Visual : an object that (1) can be drawn on-screen, (2) can be manipulated
+by configuring the coordinate transformations that it uses.
+
+View : a special type of visual that (1) draws the contents of another visual,
+(2) using a different set of transforms. Views have only the basic visual
+interface (draw, bounds, attach, etc.) and lack access to the specific features
+of the visual they are linked to (for example, LineVisual has a ``set_data()``
+method, but there is no corresponding method on a view of a LineVisual).
+
+
+Class Structure
+===============
+
+* `BaseVisual` - provides transforms and view creation
+  This class lays out the basic API for all visuals: ``draw()``, ``bounds()``,
+  ``view()``, and ``attach()`` methods, as well as a `TransformSystem` instance
+  that determines where the visual will be drawn.
+    * `Visual` - defines a shader program to draw.
+      Subclasses are responsible for supplying the shader code and configuring
+      program variables, including transforms.
+        * `VisualView` - clones the shader program from a Visual instance.
+          Instances of `VisualView` contain their own shader program, 
+          transforms and filter attachments, and generally behave like a normal
+          instance of `Visual`.
+    * `CompoundVisual` - wraps multiple Visual instances.
+      These visuals provide no program of their own, but instead rely on one or
+      more internally generated `Visual` instances to do their drawing. For
+      example, a PolygonVisual consists of an internal LineVisual and
+      MeshVisual.
+        * `CompoundVisualView` - wraps multiple VisualView instances.
+          This allows a `CompoundVisual` to be viewed with a different set of
+          transforms and filters.
+
+
+Making Visual Subclasses
+========================
+
+When making subclasses of `Visual`, it is only necessary to reimplement the 
+``_prepare_draw()``, ``_prepare_transforms()``, and ``_compute_bounds()``
+methods. These methods will be called by the visual automatically when it is
+needed for itself or for a view of the visual.
+
+It is important to remember
+when implementing these methods that most changes made to the visual's shader
+program should also be made to the programs for each view. To make this easier,
+the visual uses a `MultiProgram`, which allows all shader programs across the 
+visual and its views to be accessed simultaneously. For example::
+
+    def _prepare_draw(self, view):
+        # This line applies to the visual and all of its views
+        self.shared_program['a_position'] = self._vbo
+        
+        # This line applies only to the view that is about to be drawn
+        view.view_program['u_color'] = (1, 1, 1, 1)
+        
+Under most circumstances, it is not necessary to reimplement `VisualView`
+because a view will directly access the ``_prepare`` and ``_compute`` methods
+from the visual it is viewing. However, if the `Visual` to be viewed is a 
+subclass that reimplements other methods such as ``draw()`` or ``bounds()``,
+then it will be necessary to provide a new matching `VisualView` subclass. 
+
+
+Making CompoundVisual Subclasses
+================================
+
+Compound visual subclasses are generally very easy to construct::
+
+    class PlotLineVisual(visuals.CompoundVisual):
+        def __init__(self, ...):
+            self._line = LineVisual(...)
+            self._point = PointVisual(...)
+            visuals.CompoundVisual.__init__(self, [self._line, self._point])
+
+A compound visual will automatically handle forwarding transform system changes
+and filter attachments to its internally-wrapped visuals. To the user, this
+will appear to behave as a single visual.
+"""
 
 from __future__ import division
 import weakref
@@ -277,6 +359,10 @@ class VisualView(BaseVisualView, Visual):
     """A view on another Visual instance.
     
     View instances are created by calling ``visual.view()``.
+    
+    Because this is a subclass of `Visual`, all instances of `VisualView` 
+    define their own shader program (which is a clone of the viewed visual's
+    program), transforms, and filter attachments. 
     """
     def __init__(self, visual):
         BaseVisualView.__init__(self, visual)
