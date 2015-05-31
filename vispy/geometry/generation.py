@@ -118,7 +118,7 @@ def create_plane(width=1, height=1, width_segments=1, height_segments=1,
 
     References
     ----------
-    [1] Cabello, R. (n.d.). PlaneBufferGeometry.js. Retrieved May 12, 2015,
+    .. [1] Cabello, R. (n.d.). PlaneBufferGeometry.js. Retrieved May 12, 2015,
         from http://git.io/vU1Fh
     """
 

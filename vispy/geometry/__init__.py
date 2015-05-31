@@ -9,8 +9,8 @@ This module implements classes and methods for handling geometric data.
 from __future__ import division
 
 __all__ = ['MeshData', 'PolygonData', 'Rect', 'Triangulation', 'triangulate',
-           'create_arrow', 'create_cone', 'create_cube', 'create_cylinder',
-           'create_sphere', 'resize']
+           'create_arrow', 'create_box', 'create_cone', 'create_cube',
+           'create_cylinder', 'create_plane', 'create_sphere', 'resize']
 
 from .polygon import PolygonData  # noqa
 from .meshdata import MeshData  # noqa
