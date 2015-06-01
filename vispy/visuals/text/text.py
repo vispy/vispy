@@ -198,7 +198,7 @@ def _text_to_vbo(text, font, anchor_x, anchor_y, lowres_size):
         dx = -width / 2.
     vertices['a_position'] += (dx, dy)
     vertices['a_position'] /= lowres_size
-    return VertexBuffer(vertices)
+    return vertices
 
 
 class TextVisual(Visual):
@@ -206,8 +206,10 @@ class TextVisual(Visual):
 
     Parameters
     ----------
-    text : str
-        Text to display.
+    text : str | list of str
+        Text to display. Can also be a list of strings.
+        Note: support for list of str might be removed soon
+        in favor of text collections.
     color : instance of Color
         Color to use.
     bold : bool
@@ -218,8 +220,9 @@ class TextVisual(Visual):
         Font face to use.
     font_size : float
         Point size to use.
-    pos : tuple
-        Position (x, y) of the text.
+    pos : tuple | list of tuple
+        Position (x, y) or (x, y, z) of the text.
+        Can also be a list of tuple if `text` is a list.
     rotation : float
         Rotation (in degrees) of the text clockwise.
     anchor_x : str
@@ -231,10 +234,10 @@ class TextVisual(Visual):
     """
 
     VERTEX_SHADER = """
-        uniform vec3 u_pos;  // anchor position
         uniform float u_rotation;  // rotation in rad
         attribute vec2 a_position; // in point units
         attribute vec2 a_texcoord;
+        attribute vec3 a_pos;  // anchor position
         varying vec2 v_texcoord;
 
         void main(void) {
@@ -242,7 +245,7 @@ class TextVisual(Visual):
             mat4 rot = mat4(cos(u_rotation), -sin(u_rotation), 0, 0,
                             sin(u_rotation), cos(u_rotation), 0, 0,
                             0, 0, 1, 0, 0, 0, 0, 1);
-            vec4 pos = $transform(vec4(u_pos, 1.0)) +
+            vec4 pos = $transform(vec4(a_pos, 1.0)) +
                        $text_scale(rot * vec4(a_position, 0, 0));
             gl_Position = pos;
             v_texcoord = a_texcoord;
@@ -397,9 +400,11 @@ class TextVisual(Visual):
 
     @text.setter
     def text(self, text):
-        assert isinstance(text, string_types)
+        if isinstance(text, list):
+            assert all(isinstance(t, string_types) for t in text)
         self._text = text
         self._vertices = None
+        self._pos_changed = True  # need to update this as well
 
     @property
     def font_size(self):
@@ -439,11 +444,16 @@ class TextVisual(Visual):
 
     @pos.setter
     def pos(self, pos):
-        self._pos = np.array(pos, np.float32)
-        if self._pos.ndim != 1 or self._pos.size not in (2, 3):
-            raise ValueError('pos must be array-like with 2 or 3 elements')
-        if self._pos.size == 2:
-            self._pos = np.concatenate((self._pos, [0.]))
+        pos = np.atleast_2d(pos).astype(np.float32)
+        if pos.shape[1] == 2:
+            pos = np.concatenate((pos, np.zeros((pos.shape[0], 1),
+                                                np.float32)), axis=1)
+        elif pos.shape[1] != 3:
+            raise ValueError('pos must have 2 or 3 elements')
+        elif pos.shape[0] == 0:
+            raise ValueError('at least one position must be given')
+        self._pos = pos
+        self._pos_changed = True
 
     def draw(self, transforms):
         """Draw the Text
@@ -457,17 +467,38 @@ class TextVisual(Visual):
         if len(self.text) == 0:
             return
         if self._vertices is None:
+            text = self.text
+            if isinstance(text, string_types):
+                text = [text]
+            n_char = sum(len(t) for t in text)
             # we delay creating vertices because it requires a context,
             # which may or may not exist when the object is initialized
             transforms.canvas.context.flush_commands()  # flush GLIR commands
-            self._vertices = _text_to_vbo(self._text, self._font,
-                                          self._anchors[0], self._anchors[1],
-                                          self._font._lowres_size)
+            self._vertices = np.concatenate([
+                _text_to_vbo(t, self._font, self._anchors[0], self._anchors[1],
+                             self._font._lowres_size) for t in text])
+            self._vertices = VertexBuffer(self._vertices)
             idx = (np.array([0, 1, 2, 0, 2, 3], np.uint32) +
-                   np.arange(0, 4*len(self._text), 4,
-                             dtype=np.uint32)[:, np.newaxis])
+                   np.arange(0, 4*n_char, 4, dtype=np.uint32)[:, np.newaxis])
             self._ib = IndexBuffer(idx.ravel())
             self._program.bind(self._vertices)
+        if self._pos_changed:
+            # now we promote pos to the proper shape (attribute)
+            text = self.text
+            if not isinstance(text, string_types):
+                repeats = [4 * len(t) for t in text]
+                text = ''.join(text)
+            else:
+                repeats = [4 * len(text)]
+            n_text = len(repeats)
+            pos = self.pos
+            if pos.shape[0] < n_text:
+                pos = np.repeat(pos, [1]*(len(pos)-1) + [n_text-len(pos)+1],
+                                axis=0)
+            pos = np.repeat(pos[:n_text], repeats, axis=0)
+            assert pos.shape[0] == self._vertices.size
+            self._program['a_pos'] = pos
+            self._pos_changed = False
 
         # todo: do some testing to verify that the scaling is correct
         n_pix = (self._font_size / 72.) * transforms.dpi  # logical pix
@@ -480,7 +511,6 @@ class TextVisual(Visual):
         self._program['u_npix'] = n_pix
         self._program['u_kernel'] = self._font._kernel
         self._program['u_rotation'] = self._rotation
-        self._program['u_pos'] = self._pos
         self._program['u_color'] = self._color.rgba
         self._program['u_font_atlas'] = self._font._atlas
         self._program['u_font_atlas_shape'] = self._font._atlas.shape[:2]

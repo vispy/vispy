@@ -57,7 +57,7 @@ from ..util import run_subprocess
 tester = None
 
 
-def get_tester():
+def _get_tester():
     global tester
     if tester is None:
         tester = ImageTester()
@@ -132,7 +132,7 @@ def assert_image_approved(image, standard_file, message=None, **kwargs):
                   "%s`\n" % (std_file, data_path, standard_file))
         if config['audit_tests']:
             sys.excepthook(*sys.exc_info())
-            get_tester().test(image, std_image, message)
+            _get_tester().test(image, std_image, message)
             std_path = os.path.dirname(std_file)
             print('Saving new standard image to "%s"' % std_file)
             if not os.path.isdir(std_path):

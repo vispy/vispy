@@ -101,6 +101,7 @@ install:
         fi;
       fi;
 
+    # On 3.4, install system-wide copies of bundled libraries instead
     # Use Pyglet alpha to get Py3.4 support
     # Also install PyQt4, imaging (PIL or pillow), scipy, mpl, egl
     # Test old (insufficient) version of Pyglet on 2.6
@@ -115,7 +116,10 @@ install:
           pip install -q https://bitbucket.org/pyglet/pyglet/get/tip.zip;
         fi;
         if [ "${PYTHON}" == "3.4" ]; then
-          conda install --yes --quiet pillow scipy matplotlib > ${REDIRECT_TO};
+          conda install --yes --quiet pillow scipy matplotlib decorator six > ${REDIRECT_TO};
+          pip install -q husl pypng > ${REDIRECT_TO};
+          pip install -q https://github.com/mpld3/mplexporter/zipball/master > ${REDIRECT_TO};
+          rm -rf ${SRC_DIR}/vispy/ext/_bundled;
         fi;
         if [ "${PYTHON}" == "2.7" ]; then
           travis_retry sudo apt-get -qq -y install python-qt4-gl python-imaging python-scipy python-matplotlib python-wxgtk2.8 > ${REDIRECT_TO};
@@ -126,6 +130,7 @@ install:
     # Install vispy
     - cd ${SRC_DIR}
     - python setup.py install > ${REDIRECT_TO}
+    - python setup.py develop > ${REDIRECT_TO}
     - cd ~
 
     # GLFW: version 2 shouldn't work (so let's try on Py2.6), version 3 will
@@ -194,6 +199,7 @@ script:
 after_success:
     # Need to run from source dir to execute appropriate "git" commands
     - if [ "${TEST}" == "standard" ]; then
-        coverage combine;
+        COVERAGE_FILE=.vispy-coverage coverage combine;
+        mv .vispy-coverage .coverage;
         coveralls;
       fi;

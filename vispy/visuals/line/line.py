@@ -358,10 +358,13 @@ class _GLLineVisual(Visual):
 
         # Do we want to use OpenGL, and can we?
         GL = None
-        try:
-            import OpenGL.GL as GL
-        except ImportError:
-            pass
+        from vispy.app._default_app import default_app
+        if default_app is not None and \
+                default_app.backend_name != 'ipynb_webgl':
+            try:
+                import OpenGL.GL as GL
+            except Exception:  # can be other than ImportError sometimes
+                pass
 
         # Turn on line smooth and/or line width
         if GL:
