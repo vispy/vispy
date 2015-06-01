@@ -29,6 +29,8 @@ def _find_module(name, path=None):
             path = [path]
 
         fh, path, descr = imp.find_module(part, path)
+        if fh is not None and part != parts[-1]:
+            fh.close()
 
     return fh, path, descr
 
@@ -40,7 +42,11 @@ def _import_six(search_path=_SIX_SEARCH_PATH):
         except ImportError:
             continue
 
-        mod = imp.load_module(__name__, *mod_info)
+        try:
+            mod = imp.load_module(__name__, *mod_info)
+        finally:
+            if mod_info[0] is not None:
+                mod_info[0].close()
 
         try:
             if StrictVersion(mod.__version__) >= _SIX_MIN_VERSION:
