@@ -36,21 +36,21 @@ def teardown_module():
 @requires_application()
 def test_functionality_desktop():
     """ Test desktop GL backend for full functionality. """
-    _test_functonality('gl2')
+    _test_functionality('gl2')
 
 
 @requires_application()
 def test_functionality_proxy():
     """ Test GL proxy class for full functionality. """
     # By using debug mode, we are using the proxy class
-    _test_functonality('gl2 debug')
+    _test_functionality('gl2 debug')
 
 
 @requires_application()
 @requires_pyopengl()
 def test_functionality_pyopengl():
     """ Test pyopengl GL backend for full functionality. """
-    _test_functonality('pyopengl2')
+    _test_functionality('pyopengl2')
 
 
 @requires_application()
@@ -60,7 +60,7 @@ def test_functionality_es2():
         raise SkipTest('Skip es2 functionality test for now.')
     if not sys.platform.startswith('win'):
         raise SkipTest('Can only test es2 functionality on Windows.')
-    _test_functonality('es2')
+    _test_functionality('es2')
 
 
 def _clear_screen():
@@ -68,7 +68,7 @@ def _clear_screen():
     gl.glFinish()
 
 
-def _test_functonality(backend):
+def _test_functionality(backend):
     """ Create app and canvas so we have a context. Then run tests.
     """
     # use the backend
@@ -261,7 +261,7 @@ def _prepare_vis():
     
     # --- get information on attributes and uniforms
     
-    # Count attribbutes and uniforms
+    # Count attributes and uniforms
     natt = gl.glGetProgramParameter(hprog, gl.GL_ACTIVE_ATTRIBUTES)
     nuni = gl.glGetProgramParameter(hprog, gl.GL_ACTIVE_UNIFORMS)
     assert_equal(natt, 4)
