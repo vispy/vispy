@@ -64,9 +64,7 @@ class VisPyInputHook(InputHookBase):
                 # we need to wait out on the event loop to prevent CPU stress
                 # but not wait too much, to maintain fluidity.
                 # refer https://github.com/vispy/vispy/issues/945
-                def sleep_duration_sec():
-                    return 0.05
-                self.app.sleep(sleep_duration_sec())
+                self.app.sleep(duration_sec=0.03)
 
         except KeyboardInterrupt:
             pass
