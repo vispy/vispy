@@ -2,6 +2,18 @@
 Release notes
 =============
 
+**Vispy 0.4**
+
+There have been many changes, which include:
+
+  * minor tweaks and bugfixes to gloo
+  * experimental support for "collections" (batched GL draw calls)
+  * many new Visuals (Volume, Isocurve, etc.)
+  * improvements and extensions of the SceneGraph system
+  * proper HiDPI support
+  * an experimental native high-level plotting interface vispy.plot
+
+
 **Vispy 0.3**
 
 Many changes:
