@@ -234,6 +234,15 @@ def _prepare_vis():
     # touch glDetachShader
     gl.glDetachShader(hprog, hvert)
     gl.glAttachShader(hprog, hvert)
+
+    # Bind all attributes - we could let this occur automatically, but some
+    # implementations bind an attribute to index 0, which has the unfortunate
+    # property of being unable to be modified.
+    gl.glBindAttribLocation(hprog, 1, 'a_1')
+    gl.glBindAttribLocation(hprog, 2, 'a_2')
+    gl.glBindAttribLocation(hprog, 3, 'a_3')
+    gl.glBindAttribLocation(hprog, 4, 'a_4')
+
     gl.glLinkProgram(hprog)
     
     # Test that indeed these shaders are attached
@@ -248,9 +257,6 @@ def _prepare_vis():
     
     # Use it!
     gl.glUseProgram(hprog)
-    
-    # Bind one attribute
-    gl.glBindAttribLocation(hprog, 1, 'a_2')
     
     # Check if all is ok
     assert_equal(gl.glGetError(), 0)
