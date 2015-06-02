@@ -26,12 +26,12 @@
    --------------------------------------------------------- */
 
 float arrow_stealth(vec2 texcoord,
-                    float body, float head,
+                    float size,
                     float linewidth, float antialias)
 {
     float w = linewidth/2.0 + antialias;
-    vec2 start = -vec2(body/2.0, 0.0);
-    vec2 end   = +vec2(body/2.0, 0.0);
+    vec2 start = -vec2(size/2.0, 0.0);
+    vec2 end   = +vec2(size/2.0, 0.0);
     float height = 0.5;
 
     // Head : 4 lines

@@ -29,8 +29,8 @@ void main()
     P = vec2(v_orientation.x*P.x - v_orientation.y*P.y,
              v_orientation.y*P.x + v_orientation.x*P.y) * v_size;
     float point_size = M_SQRT2*v_size  + 2.0 * (v_linewidth + 1.5*v_antialias);
-    float body = v_size/M_SQRT2;
+    float size = v_size/M_SQRT2;
 
-    float distance = arrow_$arrow_type(P, body, v_head*body, v_linewidth, v_antialias);
+    float distance = arrow_$arrow_type(P, size, v_linewidth, v_antialias);
     gl_FragColor = filled(distance, v_linewidth, v_antialias, v_color, v_color);
 }
