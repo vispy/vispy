@@ -38,7 +38,7 @@ void main (void)
     v_color       = color;
 
     vec2 body = v2 - v1;
-    v_orientation = (body) / length(body);
+    v_orientation = body / length(body);
 
     gl_Position = $transform(vec4(v2, 0, 1));
     gl_PointSize = M_SQRT2 * size + 2.0 * (linewidth + 1.5*antialias);

@@ -26,38 +26,33 @@
    --------------------------------------------------------- */
 
 float arrow_curved(vec2 texcoord,
-                   float body, float head,
+                   float size,
                    float linewidth, float antialias)
 {
     float w = linewidth/2.0 + antialias;
-    vec2 start = -vec2(body/2.0, 0.0);
-    vec2 end   = +vec2(body/2.0, 0.0);
+    vec2 start = -vec2(size/2.0, 0.0);
+    vec2 end   = +vec2(size/2.0, 0.0);
     float height = 0.5;
 
-    vec2 p1 = end - head*vec2(+1.0,+height);
-    vec2 p2 = end - head*vec2(+1.0,-height);
+    vec2 p1 = end - size*vec2(+1.0,+height);
+    vec2 p2 = end - size*vec2(+1.0,-height);
     vec2 p3 = end;
 
     // Head : 3 circles
-    vec2 c1  = circle_from_2_points(p1, p3, 1.25*body).zw;
-    float d1 = length(texcoord - c1) - 1.25*body;
-    vec2 c2  = circle_from_2_points(p2, p3, 1.25*body).xy;
-    float d2 = length(texcoord - c2) - 1.25*body;
-    vec2 c3  = circle_from_2_points(p1, p2, max(body-head, 1.0*body)).xy;
-    float d3 = length(texcoord - c3) - max(body-head, 1.0*body);
-
-    // Body : 1 segment
-    float d4 = segment_distance(texcoord, start, end - vec2(linewidth,0.0));
+    vec2 c1  = circle_from_2_points(p1, p3, 1.25*size).zw;
+    float d1 = length(texcoord - c1) - 1.25*size;
+    vec2 c2  = circle_from_2_points(p2, p3, 1.25*size).xy;
+    float d2 = length(texcoord - c2) - 1.25*size;
+    vec2 c3  = circle_from_2_points(p1, p2, 1.25*size).xy;
+    float d3 = length(texcoord - c3) - 1.25*size;
 
     // Outside (because of circles)
     if( texcoord.y > +(2.0*head + antialias) )
          return 1000.0;
     if( texcoord.y < -(2.0*head + antialias) )
          return 1000.0;
-    if( texcoord.x < -(body/2.0 + antialias) )
-         return 1000.0;
-    if( texcoord.x > c1.x ) //(body + antialias) )
+    if( texcoord.x > c1.x ) //(size + antialias) )
          return 1000.0;
 
-    return min( d4, -min(d3,min(d1,d2)));
+    return min(d3,min(d1,d2)));
 }
