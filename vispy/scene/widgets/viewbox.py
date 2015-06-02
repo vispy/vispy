@@ -177,14 +177,14 @@ class ViewBox(Widget):
         """ Add an Node to the scene for this ViewBox.
 
         This is a convenience method equivalent to
-        `node.add_parent(viewbox.scene)`
+        `node.parent = viewbox.scene`
 
         Parameters
         ----------
         node : instance of Node
             The node to add.
         """
-        node.add_parent(self.scene)
+        node.parent = self.scene
 
     def on_resize(self, event):
         if self._scene is None:

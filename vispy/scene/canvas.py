@@ -119,6 +119,7 @@ class SceneCanvas(app.Canvas):
         # A default widget that follows the shape of the canvas
         self._central_widget = None
         self._draw_order = weakref.WeakKeyDictionary()
+        self._drawing = False
         self._fb_stack = []
         self._vp_stack = []
         self._mouse_handler = None
@@ -135,8 +136,6 @@ class SceneCanvas(app.Canvas):
         self.events.mouse_wheel.connect(self._process_mouse_event)
 
         self.scene = SubScene()
-        self.scene._set_canvas(self)
-        self.scene.events.children_change.connect(self._update_scenegraph)
         
     @property
     def scene(self):
@@ -146,11 +145,15 @@ class SceneCanvas(app.Canvas):
         return self._scene
 
     @scene.setter
-    def scene(self, e):
-        if self._scene is not None:
-            self._scene.events.update.disconnect(self._scene_update)
-        self._scene = e
-        self._scene.events.update.connect(self._scene_update)
+    def scene(self, node):
+        oldscene = self._scene
+        self._scene = node
+        if oldscene is not None:
+            oldscene._set_canvas(None)
+            oldscene.events.children_change.disconnect(self._update_scenegraph)
+        if node is not None:
+            node._set_canvas(self)
+            node.events.children_change.connect(self._update_scenegraph)
 
     @property
     def central_widget(self):
@@ -161,9 +164,6 @@ class SceneCanvas(app.Canvas):
             self._central_widget = Widget(size=self.size, parent=self.scene)
         return self._central_widget
 
-    def _scene_update(self, event):
-        self.update()
-
     @property
     def bgcolor(self):
         return Color(self._bgcolor)
@@ -173,6 +173,12 @@ class SceneCanvas(app.Canvas):
         self._bgcolor = Color(color).rgba
         if hasattr(self, '_backend'):
             self.update()
+
+    def update(self, node=None):
+        # TODO: use node bounds to keep track of minimum drawable area
+        if self._drawing:
+            return
+        app.Canvas.update(self)
 
     def on_draw(self, event):
         """Draw handler
@@ -228,11 +234,7 @@ class SceneCanvas(app.Canvas):
         if bgcolor is None:
             bgcolor = self._bgcolor
         self.context.clear(color=bgcolor, depth=True)
-        # Draw the scene, but first disconnect its change signal--
-        # any changes that take place during the paint should not trigger
-        # a subsequent repaint.
-        with self.scene.events.update.blocker(self._scene_update):
-            self.draw_visual(self.scene)
+        self.draw_visual(self.scene)
 
     def draw_visual(self, visual, event=None):
         """ Draw a visual and its children to the canvas or currently active
@@ -249,29 +251,33 @@ class SceneCanvas(app.Canvas):
         # make sure this canvas's context is active
         self.set_current()
         
-        # get order to draw visuals
-        if visual not in self._draw_order:
-            self._draw_order[visual] = self._generate_draw_order()
-        order = self._draw_order[visual]
-        tr = order[2][0].transforms.get_transform()
-        
-        # draw (while avoiding branches with visible=False)
-        stack = []
-        invisible_node = None
-        for node, start in order:
-            if start:
-                stack.append(node)
-                if invisible_node is None:
-                    if not node.visible:
-                        # disable drawing until we exit this node's subtree
-                        invisible_node = node
-                    else:
-                        if hasattr(node, 'draw'):
-                            node.draw()
-            else:
-                if node is invisible_node:
-                    invisible_node = None
-                stack.pop()
+        try:
+            self._drawing = True
+            # get order to draw visuals
+            if visual not in self._draw_order:
+                self._draw_order[visual] = self._generate_draw_order()
+            order = self._draw_order[visual]
+            tr = order[2][0].transforms.get_transform()
+            
+            # draw (while avoiding branches with visible=False)
+            stack = []
+            invisible_node = None
+            for node, start in order:
+                if start:
+                    stack.append(node)
+                    if invisible_node is None:
+                        if not node.visible:
+                            # disable drawing until we exit this node's subtree
+                            invisible_node = node
+                        else:
+                            if hasattr(node, 'draw'):
+                                node.draw()
+                else:
+                    if node is invisible_node:
+                        invisible_node = None
+                    stack.pop()
+        finally:
+            self._drawing = False
 
     def _generate_draw_order(self, node=None):
         """Return a list giving the order to draw visuals.

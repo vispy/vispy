@@ -42,6 +42,8 @@ class Node(object):
         self.name = name
         self._visible = True
         self._canvas = None
+        self._document_node = None
+        self._scene_node = None
         self._opacity = 1.0
         self._picking = False
         
@@ -191,14 +193,17 @@ class Node(object):
     def _add_child(self, node):
         self._children.append(node)
         self.events.children_change(added=node)
-        node.events.update.connect(self.events.update)
         node.events.children_change.connect(self.events.children_change)
+        self.events.parent_change.connect(node.events.parent_change)
 
     def _remove_child(self, node):
         self._children.remove(node)
         self.events.children_change(removed=node)
-        node.events.update.disconnect(self.events.update)
         node.events.children_change.disconnect(self.events.children_change)
+        self.events.parent_change.disconnect(node.events.parent_change)
+
+    def on_parent_change(self, event):
+        self._first_scene = None
 
     def is_child(self, child):
         if child in self.children:
@@ -216,7 +221,37 @@ class Node(object):
             return None
         else:
             return self._canvas()
-    
+
+    @property
+    def document_node(self):
+        """The node to be used as the document coordinate system.
+        
+        By default, the document node is `self.canvas.scene`.
+        """
+        if self._document_node is None:
+            return self.canvas.scene
+        return self._document_node
+
+    @document_node.setter
+    def document_node(self, doc):
+        self._document_node = doc
+        self._update_transform()
+
+    @property
+    def scene_node(self):
+        """The first ancestor of this node that is a SubScene instance, or None
+        of no such node exists.
+        """
+        if self._scene_node is None:
+            from .subscene import SubScene
+            p = self.parent
+            while True:
+                if isinstance(p, SubScene) or p is None:
+                    break
+                p = p.parent
+            self._scene_node = p
+        return self._scene_node
+
     def _set_canvas(self, c):
         if self._canvas is c:
             return
@@ -240,10 +275,13 @@ class Node(object):
 
     def update(self):
         """
-        Emit an event to inform listeners that properties of this Node or its
-        children have changed.
+        Emit an event to inform listeners that properties of this Node have
+        changed. Also request a canvas update.
         """
         self.events.update()
+        c = getattr(self, 'canvas', None)
+        if c is not None:
+            c.update(node=self)
 
     @property
     def document(self):
