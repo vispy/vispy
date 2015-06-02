@@ -29,8 +29,13 @@ class AxisVisual(Visual):
                  tick_color = (0.7, 0.7, 0.7, 1)):
         self.axis_color = axis_color
         self.tick_color = tick_color
-
+        self.scale_type = scale_type
         self.extents = extents
+        self.domain = domain
+
+        self.minor_tick_length = 5
+        self.major_tick_length = 10
+
         self.vec = np.subtract(self.extents[1],self.extents[0])
 
         self.tick_direction = tick_direction or self._get_tick_direction()
@@ -38,15 +43,18 @@ class AxisVisual(Visual):
     def draw(self, transforms):
 
         # Get positions of ticks and labels
-        tick_fractions, tick_labels = self._get_tick_frac_labels()
-        tick_pos, tick_label_pos = self._get_tick_positions(tick_fractions)
+        major_tick_fractions, minor_tick_fractions, tick_labels = \
+            self._get_tick_frac_labels()
+
+        tick_pos, tick_label_pos = self._get_tick_positions(
+            major_tick_fractions, minor_tick_fractions)
 
         # Initialize two LineVisuals - one for ticks, one for
         v_line = LineVisual(pos=self.extents, color=self.axis_color,
-                          method='gl', width=3.0)
+                            method='gl', width=3.0)
 
         v_ticks = LineVisual(pos=tick_pos, color=self.tick_color, method='gl',
-                           width=2.0, connect='segments')
+                             width=2.0, connect='segments')
 
         v_text = TextVisual(list(tick_labels), pos=tick_label_pos, font_size=8,
                             color='w')
@@ -67,28 +75,54 @@ class AxisVisual(Visual):
         # now return a unit vector
         return v / np.linalg.norm(v)
 
-    def _get_tick_positions(self, tick_fractions):
-        tick_length = 10 # length in pixels
+    def _get_tick_positions(self, major_tick_fractions, minor_tick_fractions):
+        minor_vector = self.tick_direction * self.minor_tick_length
+        major_vector = self.tick_direction * self.major_tick_length
 
-        tick_vector = self.tick_direction * tick_length
+        major_origins, major_endpoints = self._tile_ticks(
+            major_tick_fractions, major_vector)
 
-        tick_origins = np.tile(self.vec, (len(tick_fractions), 1))
-        tick_origins = (self.extents[0].T + (tick_origins.T*tick_fractions).T)
+        minor_origins, minor_endpoints = self._tile_ticks(
+            minor_tick_fractions, minor_vector)
 
-        tick_endpoints = tick_vector + tick_origins
+        tick_label_pos = (major_origins + self.tick_direction
+                         * (self.major_tick_length + 20))
 
-        tick_label_pos = tick_origins + self.tick_direction*30
+        num_major = len(major_tick_fractions)
+        num_minor = len(minor_tick_fractions)
 
-        c = np.empty([len(tick_fractions) * 2, 2])
-        c[0::2] = tick_origins
-        c[1::2] = tick_endpoints
+        c = np.empty([(num_major + num_minor) * 2, 2])
+
+        c[0:(num_major-1)*2+1:2] = major_origins
+        c[1:(num_major-1)*2+2:2] = major_endpoints
+        c[(num_major-1)*2+2::2] = minor_origins
+        c[(num_major-1)*2+3::2] = minor_endpoints
 
         return c, tick_label_pos
 
+    def _tile_ticks(self, frac, tickvec):
+        origins = np.tile(self.vec, (len(frac), 1))
+        origins = self.extents[0].T + (origins.T*frac).T
+        endpoints = tickvec + origins
+        return origins, endpoints
+
     def _get_tick_frac_labels(self):
-        tick_num = 11 # number of ticks
+        major_num = 11       # number of ticks
+        minor_num = 4        # maximum number of minor ticks per major division
 
-        tick_fractions = np.linspace(0, 1, num=tick_num)
-        tick_labels = str(tick_fractions)
+        if (self.scale_type == 'linear'):
+            major, majstep = np.linspace(0, 1, num=major_num, retstep=True)
 
-        return tick_fractions, tick_labels
+            labels = str(np.interp(major, [0, 1], self.domain))
+
+            # Naive minor tick labels. TODO: make these nice numbers only
+            # - and faster! Potentially could draw in linspace across the whole
+            # axis and render them before the major ticks, so the overlap
+            # gets hidden. Might be messy. Benchmark trade-off of extra GL
+            # versus extra NumPy.
+            minor = []
+            for i in np.nditer(major[:-1]):
+                minor.extend(np.linspace(i, (i + majstep),
+                             (minor_num + 2))[1:-1])
+
+        return major, minor, labels
