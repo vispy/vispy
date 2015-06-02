@@ -18,7 +18,7 @@ shape = thetas.shape
 linear_shape = thetas.shape[0] * thetas.shape[1]
 cm = get_colormap('hot')
 
-for l in range(5):
+for l in range(3):
     for m in range(l+1):
         harmonic_values = sph_harm(m, l, phis, thetas).real
         rs = 1. + 0.4*harmonic_values
@@ -45,8 +45,7 @@ for l in range(5):
 
         canvas.view.add(mesh)
 
-canvas.view.set_camera('turntable', mode='perspective',
-                       up='z', distance=12)
+canvas.view.camera = 'turntable'
 canvas.show()
 
 if __name__ == '__main__':
