@@ -26,6 +26,7 @@ import os
 import sys
 import atexit
 import ctypes
+from distutils.version import LooseVersion
 
 from ...util import logger
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
@@ -66,6 +67,7 @@ def _check_imports(lib):
 # Get what qt lib to try. This tells us wheter this module is imported
 # via _pyside or _pyqt4 or _pyqt5
 QGLWidget = object
+QT5_NEW_API = False
 if qt_lib == 'pyqt4':
     _check_imports('PyQt4')
     if not USE_EGL:
@@ -75,7 +77,13 @@ if qt_lib == 'pyqt4':
 elif qt_lib == 'pyqt5':
     _check_imports('PyQt5')
     if not USE_EGL:
-        from PyQt5.QtOpenGL import QGLWidget, QGLFormat
+        from PyQt5.QtCore import PYQT_VERSION_STR
+        if LooseVersion(PYQT_VERSION_STR) >= '5.4.0':
+            from PyQt5.QtWidgets import QOpenGLWidget as QGLWidget
+            from PyQt5.QtGui import QSurfaceFormat as QGLFormat
+            QT5_NEW_API = True
+        else:
+            from PyQt5.QtOpenGL import QGLWidget, QGLFormat
     from PyQt5 import QtGui, QtCore, QtWidgets, QtTest
     QWidget, QApplication = QtWidgets.QWidget, QtWidgets.QApplication  # Compat
 elif qt_lib == 'pyside':
@@ -191,15 +199,21 @@ def _set_config(c):
     glformat.setGreenBufferSize(c['green_size'])
     glformat.setBlueBufferSize(c['blue_size'])
     glformat.setAlphaBufferSize(c['alpha_size'])
-    glformat.setAccum(False)
-    glformat.setRgba(True)
-    glformat.setDoubleBuffer(True if c['double_buffer'] else False)
-    glformat.setDepth(True if c['depth_size'] else False)
+    if QT5_NEW_API:
+        # Qt5 >= 5.4.0 - below options automatically enabled if nonzero.
+        glformat.setSwapBehavior(glformat.DoubleBuffer if c['double_buffer']
+                                 else glformat.SingleBuffer)
+    else:
+        # Qt4 and Qt5 < 5.4.0 - buffers must be explicitly requested.
+        glformat.setAccum(False)
+        glformat.setRgba(True)
+        glformat.setDoubleBuffer(True if c['double_buffer'] else False)
+        glformat.setDepth(True if c['depth_size'] else False)
+        glformat.setStencil(True if c['stencil_size'] else False)
+        glformat.setSampleBuffers(True if c['samples'] else False)
     glformat.setDepthBufferSize(c['depth_size'] if c['depth_size'] else 0)
-    glformat.setStencil(True if c['stencil_size'] else False)
     glformat.setStencilBufferSize(c['stencil_size'] if c['stencil_size']
                                   else 0)
-    glformat.setSampleBuffers(True if c['samples'] else False)
     glformat.setSamples(c['samples'] if c['samples'] else 0)
     glformat.setStereo(c['stereo'])
     return glformat
@@ -211,6 +225,9 @@ class ApplicationBackend(BaseApplicationBackend):
 
     def __init__(self):
         BaseApplicationBackend.__init__(self)
+        if QT5_NEW_API:
+            # For Qt5 >= 5.4.0 - Enable sharing of context between windows.
+            QApplication.setAttribute(QtCore.Qt.AA_ShareOpenGLContexts, True)
 
     def _vispy_get_backend_name(self):
         name = QtCore.__name__.split('.')[0]
@@ -656,25 +673,34 @@ class CanvasBackendDesktop(QtBaseCanvasBackend, QGLWidget):
                 raise RuntimeError('Cannot use vispy to share context and '
                                    'use built-in shareWidget.')
 
-        # first arg can be glformat, or a gl context
         if p.always_on_top or not p.decorate:
             hint = 0
             hint |= 0 if p.decorate else QtCore.Qt.FramelessWindowHint
             hint |= QtCore.Qt.WindowStaysOnTopHint if p.always_on_top else 0
         else:
             hint = QtCore.Qt.Widget  # can also be a window type
-        QGLWidget.__init__(self, glformat, p.parent, widget, hint)
+        if QT5_NEW_API:
+            # Qt5 >= 5.4.0 - sharing is automatic
+            QGLWidget.__init__(self, p.parent, hint)
+        else:
+            # Qt4 and Qt5 < 5.4.0 - sharing is explicitly requested
+            QGLWidget.__init__(self, p.parent, widget, hint)
+        self.setFormat(glformat)
         self._initialized = True
-        if not self.isValid():
+        if not QT5_NEW_API and not self.isValid():
+            # On Qt5 >= 5.4.0, isValid is only true once the widget is shown
             raise RuntimeError('context could not be created')
-        self.setAutoBufferSwap(False)  # to make consistent with other backends
+        if not QT5_NEW_API:
+            # to make consistent with other backends
+            self.setAutoBufferSwap(False)
         self.setFocusPolicy(QtCore.Qt.WheelFocus)
 
     def _vispy_close(self):
         # Force the window or widget to shut down
         self.close()
         self.doneCurrent()
-        self.context().reset()
+        if not QT5_NEW_API:
+            self.context().reset()
 
     def _vispy_set_current(self):
         if self._vispy_canvas is None:
@@ -686,7 +712,11 @@ class CanvasBackendDesktop(QtBaseCanvasBackend, QGLWidget):
         # Swap front and back buffer
         if self._vispy_canvas is None:
             return
-        self.swapBuffers()
+        if QT5_NEW_API:
+            ctx = self.context()
+            ctx.swapBuffers(ctx.surface())
+        else:
+            self.swapBuffers()
 
     def initializeGL(self):
         if self._vispy_canvas is None:
