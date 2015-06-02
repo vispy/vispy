@@ -48,7 +48,7 @@ class AxisVisual(Visual):
         v_ticks = LineVisual(pos=tick_pos, color=self.tick_color, method='gl',
                            width=2.0, connect='segments')
 
-        v_text = TextVisual(tick_labels, pos=tick_label_pos, font_size=8,
+        v_text = TextVisual(list(tick_labels), pos=tick_label_pos, font_size=8,
                             color='w')
 
         v_line.draw(transforms)
