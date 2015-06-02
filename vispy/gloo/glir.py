@@ -13,6 +13,7 @@ import sys
 import re
 import json
 import weakref
+from distutils.version import LooseVersion
 
 import numpy as np
 
@@ -477,9 +478,11 @@ class GlirParser(BaseGlirParser):
             self.capabilities['gl_version'] = gl.glGetParameter(gl.GL_VERSION)
             self.capabilities['max_texture_size'] = \
                 gl.glGetParameter(gl.GL_MAX_TEXTURE_SIZE)
-            if int(self.capabilities['gl_version'].split('.')[0]) < 3:
+            this_version = self.capabilities['gl_version'].split(' ')[0]
+            this_version = LooseVersion(this_version)
+            if this_version < '2.1':
                 if os.getenv('VISPY_IGNORE_OLD_VERSION', '').lower() != 'true':
-                    logger.warning('OpenGL version 3.0 or higher recommended, '
+                    logger.warning('OpenGL version 2.1 or higher recommended, '
                                    'got %s. Some functionality may fail.'
                                    % self.capabilities['gl_version'])
 
