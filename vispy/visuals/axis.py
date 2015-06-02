@@ -36,23 +36,24 @@ class AxisVisual(Visual):
         self.tick_direction = tick_direction or self._get_tick_direction()
 
     def draw(self, transforms):
-        v_line = LineVisual(pos=self.extents, color=self.axis_color,
-                          mode='gl', width=3.0)
 
+        # Get positions of ticks and labels
         tick_fractions, tick_labels = self._get_tick_frac_labels()
-
         tick_pos, tick_label_pos = self._get_tick_positions(tick_fractions)
 
-        v_ticks = LineVisual(pos=tick_pos, color=self.tick_color, mode='gl',
+        # Initialize two LineVisuals - one for ticks, one for
+        v_line = LineVisual(pos=self.extents, color=self.axis_color,
+                          method='gl', width=3.0)
+
+        v_ticks = LineVisual(pos=tick_pos, color=self.tick_color, method='gl',
                            width=2.0, connect='segments')
 
-        # TODO: make this a more efficient iterator
-        for x in range(0, len(tick_labels)):
-            TextVisual(str(tick_labels[x]), font_size=8, color='w',
-                       pos=tick_label_pos[x]).draw(transforms)
+        v_text = TextVisual(tick_labels, pos=tick_label_pos, font_size=8,
+                            color='w')
 
-        v_ticks.draw(transforms)
         v_line.draw(transforms)
+        v_ticks.draw(transforms)
+        v_text.draw(transforms)
 
     def _get_tick_direction(self):
         """Determines the tick direction if not specified."""
@@ -88,6 +89,6 @@ class AxisVisual(Visual):
         tick_num = 11 # number of ticks
 
         tick_fractions = np.linspace(0, 1, num=tick_num)
-        tick_labels = tick_fractions
+        tick_labels = str(tick_fractions)
 
         return tick_fractions, tick_labels
