@@ -228,10 +228,10 @@ class Node(object):
     def document_node(self):
         """The node to be used as the document coordinate system.
         
-        By default, the document node is `self.canvas.scene`.
+        By default, the document node is `self.root_node`.
         """
         if self._document_node is None:
-            return self.canvas.scene
+            return self.root_node
         return self._document_node
 
     @document_node.setter
@@ -241,18 +241,29 @@ class Node(object):
 
     @property
     def scene_node(self):
-        """The first ancestor of this node that is a SubScene instance, or None
-        of no such node exists.
+        """The first ancestor of this node that is a SubScene instance, or self
+        if no such node exists.
         """
         if self._scene_node is None:
             from .subscene import SubScene
             p = self.parent
             while True:
                 if isinstance(p, SubScene) or p is None:
+                    self._scene_node = p
                     break
                 p = p.parent
-            self._scene_node = p
+            if self._scene_node is None:
+                self._scene_node = self
         return self._scene_node
+
+    @property
+    def root_node(self):
+        node = self
+        while True:
+            p = node.parent
+            if p is None:
+                return node
+            node = p
 
     def _set_canvas(self, c):
         if self._canvas is c:
@@ -316,11 +327,8 @@ class Node(object):
     def transform(self, tr):
         # Other nodes might be interested in this information, but turning it
         # on by default is too expensive.
-        #if self._transform is not None:
-            #self._transform.changed.disconnect(self._transform_changed)
         assert isinstance(tr, BaseTransform)
         self._transform = tr
-        #self._transform.changed.connect(self._transform_changed)
         self._transform_changed(None)
 
     def set_transform(self, type_, *args, **kwargs):
@@ -410,8 +418,8 @@ class Node(object):
         parent : instance of Node | None
             The parent.
         """
-        p1 = self._parent_chain()
-        p2 = node._parent_chain()
+        p1 = self.parent_chain()
+        p2 = node.parent_chain()
         for p in p1:
             if p in p2:
                 return p
@@ -500,8 +508,8 @@ class Node(object):
             ([D, C, B], [E, F])
         
         """
-        p1 = self._parent_chain()
-        p2 = node._parent_chain()
+        p1 = self.parent_chain()
+        p2 = node.parent_chain()
         cp = None
         for p in p1:
             if p in p2:

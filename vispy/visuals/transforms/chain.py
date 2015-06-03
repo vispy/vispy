@@ -32,10 +32,12 @@ class ChainTransform(BaseTransform):
         super(ChainTransform, self).__init__()
         self._transforms = []
         self._simplified = None
+        self._null_transform = NullTransform()
+        nmap = self._null_transform.shader_map()
         
         # ChainTransform does not have shader maps
-        self._shader_map = FunctionChain("transform_map_chain", [])
-        self._shader_imap = FunctionChain("transform_imap_chain", [])
+        self._shader_map = FunctionChain("transform_map_chain", [nmap])
+        self._shader_imap = FunctionChain("transform_imap_chain", [nmap])
         
         # Set input transforms
         trs = []
@@ -170,8 +172,11 @@ class ChainTransform(BaseTransform):
         return self._shader_imap
     
     def _rebuild_shaders(self):
-        self._shader_map.functions = [tr.shader_map() for tr in reversed(self.transforms)]
-        self._shader_imap.functions = [tr.shader_imap() for tr in self.transforms]
+        trs = self.transforms
+        if len(trs) == 0:
+            trs = [self._null_transform]
+        self._shader_map.functions = [tr.shader_map() for tr in reversed(trs)]
+        self._shader_imap.functions = [tr.shader_imap() for tr in trs]
 
     def append(self, tr):
         """

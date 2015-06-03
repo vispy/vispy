@@ -69,9 +69,12 @@ class VisualNode(Node):
         self.update_gl_state(blend=not p)
 
     def _transform_changed(self, event):
-        parents = self.parent_chain()[::-1]
-        # TODO: break this up into visual/scene/document transforms
-        self.transforms.visual_transform = [node.transform for node in parents]
+        doc = self.document_node
+        scene = self.scene_node
+        root = self.root_node
+        self.transforms.visual_transform = self.node_transform(scene)
+        self.transforms.scene_transform = scene.node_transform(doc)
+        self.transforms.document_transform = doc.node_transform(root)
         
         Node._transform_changed(self, event)
 
