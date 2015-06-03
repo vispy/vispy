@@ -113,7 +113,7 @@ class Canvas(object):
                  config=None, shared=None, keys=None, parent=None, dpi=None,
                  always_on_top=False, px_scale=1):
 
-        size = [int(s) * px_scale for s in size]
+        size = tuple(int(s) * px_scale for s in size)
         if len(size) != 2:
             raise ValueError('size must be a 2-element list')
         title = str(title)
