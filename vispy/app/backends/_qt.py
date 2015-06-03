@@ -140,7 +140,7 @@ BUTTONMAP = {0: 0, 1: 1, 2: 2, 4: 3, 8: 4, 16: 5}
 # Also, ignore spam about tablet input
 def message_handler(*args):
 
-    if qt_lib == "pyqt4":
+    if qt_lib in ("pyqt4", "pyside"):
         msg_type, msg = args
     elif qt_lib == "pyqt5":
         msg_type, context, msg = args
