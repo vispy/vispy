@@ -2,8 +2,6 @@
 # Copyright (c) 2015, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-import os
-import sys
 import numpy as np
 from nose.tools import assert_true, assert_equal
 import warnings
@@ -28,6 +26,7 @@ def test_font_glyph():
     sys_fonts = set(list_fonts()) - set(_vispy_fonts)
     assert_true(len(sys_fonts) > 0)
     for face in ['OpenSans'] + sorted(list(sys_fonts)):
+        print(face)  # useful for debugging
         font_dict = dict(face=face, size=12, bold=False, italic=False)
         glyphs_dict = dict()
         chars = 'foobar^C&#'
