@@ -32,6 +32,7 @@ from ..base import (BaseApplicationBackend, BaseCanvasBackend,
                     BaseTimerBackend)
 from ...util import keys
 from ...ext.six import text_type
+from ...ext.six import string_types
 from ... import config
 from . import qt_lib
 
@@ -138,14 +139,25 @@ BUTTONMAP = {0: 0, 1: 1, 2: 2, 4: 3, 8: 4, 16: 5}
 
 # Properly log Qt messages
 # Also, ignore spam about tablet input
-def message_handler(msg_type, msg):
+def message_handler(*args):
+
+    if qt_lib in ("pyqt4", "pyside"):
+        msg_type, msg = args
+    elif qt_lib == "pyqt5":
+        msg_type, context, msg = args
+    elif qt_lib:
+        raise RuntimeError("Invalid value for qt_lib %r." % qt_lib)
+    else:
+        raise RuntimeError("Module backends._qt ",
+                           "should not be imported directly.")
+
     if msg == ("QCocoaView handleTabletEvent: This tablet device is "
                "unknown (received no proximity event for it). Discarding "
                "event."):
         return
     else:
+        msg = msg.decode() if not isinstance(msg, string_types) else msg
         logger.warning(msg)
-
 try:
     QtCore.qInstallMsgHandler(message_handler)
 except AttributeError:
