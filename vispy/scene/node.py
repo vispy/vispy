@@ -167,6 +167,8 @@ class Node(object):
             raise ValueError('Parent must be Node instance or None (got %s).'
                              % p.__class__.__name__)
         prev = self.parent
+        if parent is prev:
+            return
         if prev is not None:
             prev._remove_child(self)
             # remove all clippers inherited from parents
@@ -203,7 +205,7 @@ class Node(object):
         self.events.parent_change.disconnect(node.events.parent_change)
 
     def on_parent_change(self, event):
-        self._first_scene = None
+        self._scene_node = None
 
     def is_child(self, child):
         if child in self.children:

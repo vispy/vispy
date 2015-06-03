@@ -51,19 +51,30 @@ def test_topology():
     assert len(grid_check.events) == 1
     
     n1 = Node()
+    n1_parent_check = EventCheck(n1.events.parent_change)
+    n1_child_check = EventCheck(n1.events.children_change)
     v1.add(n1)
+    assert len(n1_parent_check.events) == 1
     assert n1.parent is v1.scene
     assert n1.scene_node is v1.scene
     assert n1.document_node is c.scene
     
     n2 = Node(parent=n1)
+    n2_parent_check = EventCheck(n2.events.parent_change)
     assert n2.parent is n1
     assert n2.scene_node is v1.scene
     assert n2.document_node is c.scene
+    assert len(n1_child_check.events) == 1
     
     assert len(grid_check.events) == 2
     
-    
+    v2.add(n1)
+    assert len(grid_check.events) == 2
+    assert len(n1_parent_check.events) == 1
+    assert len(n2_parent_check.events) == 1
+    assert n1.parent is v2.scene
+    assert n2.scene_node is v2.scene
+    assert n2.document_node is c.scene
     
     
 run_tests_if_main()
