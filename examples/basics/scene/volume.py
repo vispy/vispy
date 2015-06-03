@@ -10,7 +10,8 @@ Example volume rendering
 
 Controls:
 
-* 1  - toggle camera between first person (fly) and regular 3D (turntable)
+* 1  - toggle camera between first person (fly), regular 3D (turntable) and
+       arcball
 * 2  - toggle between volume rendering methods
 * 3  - toggle between stent-CT / brain-MRI image
 * 4  - toggle between colormaps
@@ -57,9 +58,10 @@ volume2.visible = False
 
 # Create two cameras (1 for firstperson, 3 for 3d person)
 fov = 60.
-cam1 = scene.cameras.FlyCamera(parent=view.scene, fov=fov)
-cam2 = scene.cameras.TurntableCamera(parent=view.scene, fov=fov)
-cam3 = scene.cameras.ArcballCamera(parent=view.scene, fov=fov)
+cam1 = scene.cameras.FlyCamera(parent=view.scene, fov=fov, name='Fly')
+cam2 = scene.cameras.TurntableCamera(parent=view.scene, fov=fov,
+                                     name='Turntable')
+cam3 = scene.cameras.ArcballCamera(parent=view.scene, fov=fov, name='Arcball')
 view.camera = cam2  # Select turntable at first
 
 
@@ -92,7 +94,8 @@ def on_key_press(event):
     global opaque_cmap, translucent_cmap
     if event.text == '1':
         cam_toggle = {cam1: cam2, cam2: cam3, cam3: cam1}
-        view.camera = cam_toggle.get(view.camera, 'fly')
+        view.camera = cam_toggle.get(view.camera, cam2)
+        print(view.camera.name + ' camera')
     elif event.text == '2':
         methods = ['mip', 'translucent', 'iso', 'additive']
         method = methods[(methods.index(volume1.method) + 1) % 4]

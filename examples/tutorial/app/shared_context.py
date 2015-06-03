@@ -55,6 +55,7 @@ class Window(QtGui.QWidget):
 
     def on_init(self, event):
         self.text = Text('Initialized', font_size=40.,
+                         anchor_x='left', anchor_y='top',
                          parent=[self.vb_0.scene, self.vb_1.scene])
 
     def on_timer(self, event):
