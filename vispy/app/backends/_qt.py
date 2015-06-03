@@ -32,6 +32,7 @@ from ..base import (BaseApplicationBackend, BaseCanvasBackend,
                     BaseTimerBackend)
 from ...util import keys
 from ...ext.six import text_type
+from ...ext.six import string_types
 from ... import config
 from . import qt_lib
 
@@ -155,10 +156,8 @@ def message_handler(*args):
                "event."):
         return
     else:
-        if qt_lib in ("pyqt4", "pyside"):
-            logger.warning(msg.decode())
-        elif qt_lib == "pyqt5":
-            logger.warning(msg)
+        msg = msg.decode() if not isinstance(msg, string_types) else msg
+        logger.warning(msg)
 try:
     QtCore.qInstallMsgHandler(message_handler)
 except AttributeError:
