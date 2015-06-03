@@ -341,6 +341,18 @@ class CompoundVisual(BaseVisual):
     has a transform system, draw() and bounds() methods, etc. Internally, the
     compound visual automatically manages proxying these transforms and methods
     to its sub-visuals.
+    
+    Parameters
+    ----------
+    
+    subvisuals : list of BaseVisual instances
+        The list of visuals to be combined in this compound visual.
+    
+    Notes
+    -----
+    
+    Sub-visuals may optionally be given a boolean ``visible`` attribute that
+    can be used to hide or show each.
     """
     def __init__(self, subvisuals):
         self._view_class = CompoundVisualView
@@ -349,10 +361,15 @@ class CompoundVisual(BaseVisual):
         for v in subvisuals:
             v.transforms = self.transforms
             v._prepare_transforms(v)
+            if not hasattr(v, 'visible'):
+                v.visible = True
         
     def draw(self):
+        if self._prepare_draw(view=self) is False:
+            return
         for v in self._subvisuals:
-            v.draw()
+            if v.visible:
+                v.draw()
             
     def bounds(self, axis):
         # TODO: return union of bounds

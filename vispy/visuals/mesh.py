@@ -112,7 +112,7 @@ class MeshVisual(Visual):
         self._color = Color(color)
 
         # primitive mode
-        self._mode = mode
+        self._draw_mode = mode
 
         # varyings
         self._color_var = Varying('v_color', dtype='vec4')
@@ -174,14 +174,14 @@ class MeshVisual(Visual):
             * 'triangle_fan': Draw each triangle from the first vertex and the
               last two vertices (eg, [1,2,3], [1,3,4], [1,4,5])
         """
-        return self._mode
+        return self._draw_mode
 
     @mode.setter
     def mode(self, m):
         modes = ['triangles', 'triangle_strip', 'triangle_fan']
         if m not in modes:
             raise ValueError("Mesh mode must be one of %s" % ', '.join(modes))
-        self._mode = m
+        self._draw_mode = m
 
     @property
     def mesh_data(self):

@@ -44,12 +44,17 @@ class Widget(VisualNode, CompoundVisual):
 
     def __init__(self, pos=(0, 0), size=(10, 10), border_color=None,
                  bgcolor=None, padding=0, margin=0, **kwargs):
+        self.interactive = False
+        
         # For drawing border. 
         # A mesh is required because GL lines cannot be drawn with predictable
         # shape across all platforms.
         self._mesh = MeshVisual(color=border_color, mode='triangles')
         self._mesh.set_gl_state('translucent', depth_test=False,
                                 cull_face=False)
+        self._picking_mesh = MeshVisual(mode='triangle_fan')
+        self._picking_mesh.set_gl_state(cull_face=False)
+        self._picking_mesh.visible = False
 
         # reserved space inside border
         self._padding = padding
@@ -57,11 +62,10 @@ class Widget(VisualNode, CompoundVisual):
         # reserved space outside border
         self._margin = margin
         self._size = 16, 16
-        # todo: TTransform (translate only for widgets)
 
         self._widgets = []
         
-        CompoundVisual.__init__(self, [self._mesh])
+        CompoundVisual.__init__(self, [self._mesh, self._picking_mesh])
         VisualNode.__init__(self, **kwargs)
  
         self.transform = STTransform()
@@ -116,6 +120,17 @@ class Widget(VisualNode, CompoundVisual):
             self.size = r.size
         self.update()
         self.events.resize()
+
+    @property
+    def interactive(self):
+        """Whether this widget should be allowed to accept mouse and touch
+        events.
+        """
+        return self._interactive
+
+    @interactive.setter
+    def interactive(self, i):
+        self._interactive = i
 
     @property
     def inner_rect(self):
@@ -235,13 +250,33 @@ class Widget(VisualNode, CompoundVisual):
         self._mesh.set_data(vertices=pos, faces=faces[start:stop],
                               face_colors=face_colors)
 
+        # picking mesh covers the entire area
+        self._picking_mesh.set_data(vertices=pos[::2])
+
     def _update_colors(self):
         self._face_colors = np.concatenate(
             (np.tile(self.border_color.rgba, (8, 1)),
              np.tile(self.bgcolor.rgba, (2, 1)))).astype(np.float32)
-
-    def _prepare_draw(self):
-        if self.border_color.is_blank and self.bgcolor.is_blank:
+        self._update_visibility()
+            
+    @property
+    def picking(self):
+        return self._picking
+    
+    @picking.setter
+    def picking(self, p):
+        VisualNode.picking.fset(self, p)
+        self._update_visibility()
+        
+    def _update_visibility(self):
+        blank = self.border_color.is_blank and self.bgcolor.is_blank
+        picking = self.picking
+        self._picking_mesh.visible = picking and self.interactive
+        self._mesh.visible = not picking and not blank
+    
+    def _prepare_draw(self, view):
+        pick = self.picking
+        if not pick and self.border_color.is_blank and self.bgcolor.is_blank:
             return False
 
     def _update_child_widgets(self):

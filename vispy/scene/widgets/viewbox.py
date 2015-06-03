@@ -47,6 +47,7 @@ class ViewBox(Widget):
         self._camera = None
         self._scene = None
         Widget.__init__(self, **kwargs)
+        self.interactive = True
 
         # Each viewbox has an internal scene node, which has a transform that
         # represents the transformation imposed by camera.
