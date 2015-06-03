@@ -1,5 +1,5 @@
 from vispy import app, gloo, visuals
-from vispy.visuals.components import Clipper, Alpha, ColorFilter
+from vispy.visuals.filters import Clipper, Alpha, ColorFilter
 from vispy.visuals.shaders import MultiProgram
 from vispy.visuals.collections import PointCollection
 from vispy.visuals.transforms import STTransform

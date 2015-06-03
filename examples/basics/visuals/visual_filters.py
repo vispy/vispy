@@ -13,7 +13,7 @@ information, but different transformations.
 import numpy as np
 from vispy import app, gloo, visuals
 from vispy.visuals.transforms import STTransform
-from vispy.visuals.components import Clipper, Alpha, ColorFilter
+from vispy.visuals.filters import Clipper, Alpha, ColorFilter
 from vispy.visuals.shaders import Function
 from vispy.geometry import Rect
 

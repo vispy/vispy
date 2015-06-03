@@ -370,6 +370,9 @@ class CompoundVisual(BaseVisual):
         for v in self._subvisuals:
             if v.visible:
                 v.draw()
+
+    def _prepare_draw(self, view):
+        pass
             
     def bounds(self, axis):
         # TODO: return union of bounds
