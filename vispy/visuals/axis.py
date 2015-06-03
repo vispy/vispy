@@ -17,12 +17,18 @@ class AxisVisual(Visual):
         left/down. (This will be normalised to a unit vector)
     domain : tuple
         The data values at the beginning and end of the axis, used for tick
-        labels. i.e. (5, 10) means the axis starts at 5 and ends at 10.
+        labels. i.e. (5, 10) means the axis starts at 5 and ends at 10. Default
+        is (0, 1).
     scale_type : str
         The type of scale. Default is 'linear'. Options:
             * "linear"
             * "logarithmic"
             * "power"
+    axis_color : tuple
+        RGBA values for the axis colour. Default is black.
+    tick_color : tuple
+        RGBA values for the tick colours. The colour for the major and minor
+        ticks is currently fixed to be the same. Default is a dark grey.
     """
     def __init__(self, extents, tick_direction = None, domain=(0., 1.),
                  scale_type="linear", axis_color=(1, 1, 1, 1),
@@ -49,15 +55,16 @@ class AxisVisual(Visual):
         tick_pos, tick_label_pos = self._get_tick_positions(
             major_tick_fractions, minor_tick_fractions)
 
-        # Initialize two LineVisuals - one for ticks, one for
+        # Initialize two LineVisuals - one for the axis line, one for ticks
         v_line = LineVisual(pos=self.extents, color=self.axis_color,
                             method='gl', width=3.0)
 
         v_ticks = LineVisual(pos=tick_pos, color=self.tick_color, method='gl',
                              width=2.0, connect='segments')
 
-        v_text = TextVisual(list(tick_labels), pos=tick_label_pos, font_size=8,
-                            color='w')
+        # THIS DOESN'T WORK. WHY?
+        #v_text = TextVisual(list(tick_labels), pos=tick_label_pos,
+        #                    font_size=8, color='w')
 
         v_line.draw(transforms)
         v_ticks.draw(transforms)
@@ -101,16 +108,18 @@ class AxisVisual(Visual):
         return c, tick_label_pos
 
     def _tile_ticks(self, frac, tickvec):
+        """Tiles tick marks along the axis."""
         origins = np.tile(self.vec, (len(frac), 1))
         origins = self.extents[0].T + (origins.T*frac).T
         endpoints = tickvec + origins
         return origins, endpoints
 
     def _get_tick_frac_labels(self):
-        major_num = 11       # number of ticks
-        minor_num = 4        # maximum number of minor ticks per major division
-
         if (self.scale_type == 'linear'):
+
+            major_num = 11  # maximum number of major ticks
+            minor_num = 4   # maximum number of minor ticks per major division
+
             major, majstep = np.linspace(0, 1, num=major_num, retstep=True)
 
             labels = str(np.interp(major, [0, 1], self.domain))
@@ -124,5 +133,11 @@ class AxisVisual(Visual):
             for i in np.nditer(major[:-1]):
                 minor.extend(np.linspace(i, (i + majstep),
                              (minor_num + 2))[1:-1])
+
+        elif (self.scale_type == 'logarithmic'):
+            return NotImplementedError
+
+        elif (self.scale_type == 'power'):
+            return NotImplementedError
 
         return major, minor, labels
