@@ -27,7 +27,7 @@ def test_font_glyph():
     # try both a vispy and system font
     sys_fonts = set(list_fonts()) - set(_vispy_fonts)
     assert_true(len(sys_fonts) > 0)
-    for face in ['OpenSans'] + list(sys_fonts):
+    for face in ['OpenSans'] + sorted(list(sys_fonts)):
         font_dict = dict(face=face, size=12, bold=False, italic=False)
         glyphs_dict = dict()
         chars = 'foobar^C&#'
