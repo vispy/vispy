@@ -10,9 +10,9 @@ Example demonstrating the use of aspect ratio, and also the flipping
 of axis using negative aspect ratios.
 
 Keys:
-* 1: flip x dimenstion
+* 1: flip x dimension
 * 2: flip y dimension
-* 3: flip z dimenstion
+* 3: flip z dimension
 * 4: cycle through up-vectors
 * 5: cycle through cameras
 """
