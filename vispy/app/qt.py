@@ -20,7 +20,7 @@ if qt_lib in ('pyqt4', 'pyside'):
     from PyQt4 import QtGui
     QWidget, QGridLayout = QtGui.QWidget, QtGui.QGridLayout  # Compat
 elif qt_lib == 'pyqt5':
-    from PyQt5 import QtGui, QtWidgets
+    from PyQt5 import QtWidgets
     QWidget, QGridLayout = QtWidgets.QWidget, QtWidgets.QGridLayout  # Compat
 elif qt_lib:
     raise RuntimeError("Invalid value for qt_lib %r." % qt_lib)
