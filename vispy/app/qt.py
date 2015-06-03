@@ -5,6 +5,8 @@
 # Force the selection of an application backend. If the user has already
 # imported PyQt or PySide, this should result in selection of the corresponding
 # backend.
+from .backends import qt_lib
+
 from . import use_app
 app = use_app()
 try:
@@ -13,16 +15,15 @@ except AttributeError:
     raise RuntimeError("Cannot import Qt library; non-Qt backend is already "
                        "in use.")
 
-from .backends import qt_lib
 
 if qt_lib == 'pyqt4':
-    from PyQt4 import QtGui, QtCore
+    from PyQt4 import QtGui
     QWidget, QGridLayout = QtGui.QWidget, QtGui.QGridLayout  # Compat
 elif qt_lib == 'pyqt5':
-    from PyQt5 import QtGui, QtCore, QtWidgets
+    from PyQt5 import QtGui, QtWidgets
     QWidget, QGridLayout = QtWidgets.QWidget, QtWidgets.QGridLayout  # Compat
 elif qt_lib == 'pyside':
-    from PySide import QtGui, QtCore
+    from PySide import QtGui
     QWidget, QGridLayout = QtGui.QWidget, QtGui.QGridLayout  # Compat
 elif qt_lib:
     raise RuntimeError("Invalid value for qt_lib %r." % qt_lib)

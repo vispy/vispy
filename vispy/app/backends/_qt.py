@@ -147,7 +147,8 @@ def message_handler(*args):
     elif qt_lib:
         raise RuntimeError("Invalid value for qt_lib %r." % qt_lib)
     else:
-        raise RuntimeError("Module backends._qt should not be imported directly.")
+        raise RuntimeError("Module backends._qt ",
+                           "should not be imported directly.")
 
     if msg == ("QCocoaView handleTabletEvent: This tablet device is "
                "unknown (received no proximity event for it). Discarding "
