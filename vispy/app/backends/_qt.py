@@ -155,7 +155,7 @@ def message_handler(*args):
                "event."):
         return
     else:
-        if qt_lib == "pyqt4":
+        if qt_lib in ("pyqt4", "pyside"):
             logger.warning(msg.decode())
         elif qt_lib == "pyqt5":
             logger.warning(msg)
