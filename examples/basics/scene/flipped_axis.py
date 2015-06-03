@@ -45,10 +45,11 @@ arr = np.array([(100, -1, -1), (-1, -1, -1), (-1, 10, -1)])
 line1 = scene.visuals.Line(arr, color='red', parent=view.scene)
 
 # Create cameras
-cam1 = scene.cameras.PanZoomCamera(parent=view.scene, aspect=1)
-cam2 = scene.cameras.FlyCamera(parent=view.scene)
-cam3 = scene.cameras.TurntableCamera(fov=60, parent=view.scene)
-cam4 = scene.cameras.ArcballCamera(fov=60, parent=view.scene)
+cam1 = scene.cameras.PanZoomCamera(parent=view.scene, aspect=1, name='PanZoom')
+cam2 = scene.cameras.FlyCamera(parent=view.scene, name='Fly')
+cam3 = scene.cameras.TurntableCamera(fov=60, parent=view.scene,
+                                     name='Turntable')
+cam4 = scene.cameras.ArcballCamera(fov=60, parent=view.scene, name='Arcball')
 cams = (cam1, cam2, cam3, cam4)
 view.camera = cam3  # Select turntable at first
 
@@ -77,7 +78,8 @@ def on_key_press(event):
             cam.up = up
     if event.text == '5':
         cam_toggle = {cam1: cam2, cam2: cam3, cam3: cam4, cam4: cam1}
-        view.camera = cam_toggle.get(view.camera, 'fly')
+        view.camera = cam_toggle.get(view.camera, cam2)
+        print(view.camera.name + ' camera')
     elif event.text == '0':
         for cam in cams:
             cam.set_range()
