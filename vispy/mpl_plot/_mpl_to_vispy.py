@@ -65,7 +65,6 @@ class VispyRenderer(Renderer):
         #    a['position']  # add borders
         vb = ViewBox(parent=self.canvas.scene, border_color='black',
                      bgcolor=props['axesbg'])
-        vb.clip_method = 'fbo'  # necessary for bgcolor
         vb.camera = PanZoomCamera()
         vb.camera.set_range(xlim, ylim, margin=0)
         ax_dict = dict(ax=ax, bounds=bounds, vb=vb, lims=xlim+ylim)

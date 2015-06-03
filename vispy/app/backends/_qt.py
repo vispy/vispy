@@ -69,19 +69,19 @@ if qt_lib == 'pyqt4':
     _check_imports('PyQt4')
     if not USE_EGL:
         from PyQt4.QtOpenGL import QGLWidget, QGLFormat
-    from PyQt4 import QtGui, QtCore
+    from PyQt4 import QtGui, QtCore, QtTest
     QWidget, QApplication = QtGui.QWidget, QtGui.QApplication  # Compat
 elif qt_lib == 'pyqt5':
     _check_imports('PyQt5')
     if not USE_EGL:
         from PyQt5.QtOpenGL import QGLWidget, QGLFormat
-    from PyQt5 import QtGui, QtCore, QtWidgets
+    from PyQt5 import QtGui, QtCore, QtWidgets, QtTest
     QWidget, QApplication = QtWidgets.QWidget, QtWidgets.QApplication  # Compat
 elif qt_lib == 'pyside':
     _check_imports('PySide')
     if not USE_EGL:
         from PySide.QtOpenGL import QGLWidget, QGLFormat
-    from PySide import QtGui, QtCore
+    from PySide import QtGui, QtCore, QtTest
     QWidget, QApplication = QtGui.QWidget, QtGui.QApplication  # Compat
 elif qt_lib:
     raise RuntimeError("Invalid value for qt_lib %r." % qt_lib)
@@ -229,6 +229,9 @@ class ApplicationBackend(BaseApplicationBackend):
         QtGui._qApp = app
         # Return
         return app
+
+    def _vispy_sleep(self, duration_sec):
+            QtTest.QTest.qWait(duration_sec * 1000)  # in ms
 
 
 # ------------------------------------------------------------------ canvas ---

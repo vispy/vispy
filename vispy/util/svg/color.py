@@ -4,7 +4,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
-from itertools import combinations
+from itertools import product
 from string import hexdigits
 
 
@@ -160,7 +160,7 @@ _keyword_colors = {
 
 
 _HEXDEC = {}
-for x, y in combinations(hexdigits, 2):
+for x, y in product(hexdigits, repeat=2):
     v = x + y
     _HEXDEC[v] = int(v, 16)
     

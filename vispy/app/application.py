@@ -77,6 +77,20 @@ class Application(object):
         """
         return self._backend._vispy_process_events()
 
+    def sleep(self, duration_sec):
+        """ Sleep for the given duration in seconds.
+
+        This is used to reduce
+        CPU stress when VisPy is run in interactive mode.
+        see inputhook.py for details
+
+        Parameters
+        ----------
+        duration_sec: float
+            Time to sleep in seconds
+        """
+        self._backend._vispy_sleep(duration_sec)
+
     def create(self):
         """ Create the native application.
         """
@@ -97,7 +111,7 @@ class Application(object):
 
         # Then we check the application singleton and determine based on
         # a variable it sets.
-        try:            
+        try:
             from IPython.config.application import Application as App
             return App.initialized() and App.instance().interact
         except (ImportError, AttributeError):
