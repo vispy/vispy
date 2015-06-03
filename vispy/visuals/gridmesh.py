@@ -84,6 +84,3 @@ class GridMeshVisual(MeshVisual):
                 colors.shape[0] * colors.shape[1], colors.shape[2]))
 
         MeshVisual.set_data(self, meshdata=self.__meshdata)
-
-    def draw(self, transforms):
-        MeshVisual.draw(self, transforms)
