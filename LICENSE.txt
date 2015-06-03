@@ -46,4 +46,6 @@ project. The core team that coordinates development consists of:
   * Nicolas Rougier
   * Cyrille Rossant
   * Almar Klein
+  * Eric Larson
+
  
