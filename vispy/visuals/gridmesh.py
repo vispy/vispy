@@ -80,23 +80,10 @@ class GridMeshVisual(MeshVisual):
 
         if colors is not None:
             self.__colors = colors
-            self.__meshdata.set_vertex_colors(colors.reshape(colors.shape[0] * colors.shape[1], colors.shape[2]))
-            
+            self.__meshdata.set_vertex_colors(colors.reshape(
+                colors.shape[0] * colors.shape[1], colors.shape[2]))
+
         MeshVisual.set_data(self, meshdata=self.__meshdata)
-
-        # shape = xs.shape
-        # if isinstance(colors, np.ndarray) and colors.ndim == 3:
-        #     colors = colors.reshape((shape[0] * shape[1], colors.shape[2]))
-        
-        # colors = ColorArray(colors).rgba
-        # if vertex_colors is None:
-        #     vertex_colors = np.resize(colors, (shape[0] * shape[1], 4))
-
-        # MeshVisual.__init__(self, vertices, indices,
-        #                     vertex_colors=vertex_colors,
-        #                     face_colors=face_colors,
-        #                     color='purple',
-        #                     shading=shading)
 
     def draw(self, transforms):
         MeshVisual.draw(self, transforms)
