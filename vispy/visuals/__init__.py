@@ -33,3 +33,4 @@ from .tube import TubeVisual  # noqa
 from .visual import Visual  # noqa
 from .volume import VolumeVisual  # noqa
 from .xyz_axis import XYZAxisVisual  # noqa
+from .colorbar import ColorBarVisual #noqa

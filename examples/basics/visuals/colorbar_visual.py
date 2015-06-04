@@ -1,34 +1,29 @@
-# -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
-# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+from vispy import app
+from vispy import gloo
+from vispy.visuals.transforms import STTransform, TransformSystem
+from vispy.visuals import ColorBarVisual
+from vispy.color import Color
 
-"""
-Demonstration of Polygon and subclasses
-"""
-
-#import numpy as np
-
-import sys
-from vispy import app, gloo, visuals
-from vispy.visuals import colorbar
 
 class Canvas(app.Canvas):
     def __init__(self):
-        app.Canvas.__init__(self, keys='interactive', size=(800, 800))
+        app.Canvas.__init__(self, size=(800, 600), keys="interactive")
 
-        self.colorbar = colorbar.ColorbarVisual(colormap="linear", clim=("top", "bottom"))
+        pos = 800, 0
+        halfdim = 500, 80
+
+        self.bar = ColorBarVisual(pos, halfdim, cmap="ice", clim=(0.0, 1.0))
+        self.transform = STTransform(scale=(1, 1), translate=(0, 0))
+
+        self.transform_system = TransformSystem(self)
+        self.transform_system.visual_to_document = self.transform
+
         self.show()
 
-    def on_draw(self, ev):
-        gloo.set_clear_color((0, 0, 0, 1))
-        gloo.set_viewport(0, 0, *self.physical_size)
-        gloo.clear()
-
-        # for vis in self.visuals:
-        #    vis.draw(vis.tr_sys)
+    def on_draw(self, event):
+        gloo.clear(color=Color("white"))
+        self.bar.draw(self.transform_system)
 
 
-if __name__ == '__main__':
-    win = Canvas() 
-    if sys.flags.interactive != 1:
-        win.app.run()
+win = Canvas()
+app.run()
