@@ -3,8 +3,6 @@ from . import Visual
 from .shaders import ModularProgram, Function
 from ..color import get_colormap
 
-from vispy.visuals.shaders import Function
-
 
 import numpy as np
 

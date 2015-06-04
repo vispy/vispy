@@ -12,7 +12,7 @@ class Canvas(app.Canvas):
         pos = 800, 0
         halfdim = 500, 80
 
-        self.bar = ColorBarVisual(pos, halfdim, cmap="ice", clim=(0.0, 1.0))
+        self.bar = ColorBarVisual(pos, halfdim, cmap="autumn", clim=(0.0, 1.0))
         self.transform = STTransform(scale=(1, 1), translate=(0, 0))
 
         self.transform_system = TransformSystem(self)
