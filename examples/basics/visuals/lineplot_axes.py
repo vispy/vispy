@@ -1,13 +1,10 @@
 # -*- coding: utf-8 -*-
-# vispy: testskip (KNOWNFAIL)
 # Copyright (c) 2015, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """
 Demonstration of LinePlot visual with axes.
 """
-
-# from __future__ import division
 
 import numpy as np
 import sys
@@ -32,7 +29,9 @@ extents_y = np.array([[margin_x, canvas_size[1]-margin_y],
 
 pos = np.zeros((N, 2), dtype=np.float32)
 pos[:, 0] = np.linspace(margin_x, canvas_size[0]-margin_x, N)
-pos[:, 1] = np.clip(np.random.normal(size=N, scale=100, loc=canvas_size[1] / 2.), margin_y, canvas_size[0]-margin_y)
+pos[:, 1] = np.clip(np.random.normal(size=N, scale=100,
+                                     loc=canvas_size[1] / 2.),
+                    margin_y, canvas_size[0]-margin_y)
 
 
 class Canvas(app.Canvas):
@@ -44,8 +43,8 @@ class Canvas(app.Canvas):
         self.line = visuals.LinePlotVisual(pos, color='w', edge_color='w',
                                            face_color=(0.2, 0.2, 1))
 
-        self.axis_x = visuals.AxisVisual(extents=extents_x, domain=(0, 100))
-        self.axis_y = visuals.AxisVisual(extents=extents_y, domain=(5, 7.5))
+        self.axis_x = visuals.AxisVisual(extents_x, (0, 100))
+        self.axis_y = visuals.AxisVisual(extents_y, (5, 7.5))
 
         self.tr_sys = visuals.transforms.TransformSystem(self)
 
@@ -54,10 +53,8 @@ class Canvas(app.Canvas):
     def on_draw(self, event):
         gloo.clear('black')
         gloo.set_viewport(0, 0, *self.physical_size)
-
         self.axis_x.draw(self.tr_sys)
         self.axis_y.draw(self.tr_sys)
-
         self.line.draw(self.tr_sys)
 
 
