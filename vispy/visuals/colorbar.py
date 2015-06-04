@@ -153,6 +153,32 @@ class ColorBarVisual(Visual):
                                      pos=[begin_tick_pos, end_tick_pos],
                                      rotation=-90)
 
+    @property
+    def cmap(self):
+        return self._cmap
+
+    @cmap.setter
+    def cmap(self, cmap):
+        self._cmap = get_colormap(cmap)
+        self._program.frag['color_transform'] = Function(self._cmap.glsl_map)
+
+    @property
+    def clim(self):
+        return self._clim
+
+    @clim.setter
+    def clim(self, clim):
+        self._clim = clim
+        # TODO: regenerate the ticks here
+
+    @property
+    def label(self):
+        return self._label
+
+    @label.setter
+    def label(self, label):
+        self._label = label
+
     def draw(self, transforms):
         self._program.vert['transform'] = transforms.get_full_transform()
         self._program.draw('triangles')
