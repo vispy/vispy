@@ -189,7 +189,7 @@ class ArrowVisual(LineVisual):
         prof('arrowhead prepare')
 
         xform = transforms.get_full_transform()
-        self._arrow_program['antialias'] = 1.0
+        self._arrow_program['antialias'] = 0.5
         self._arrow_program.vert['transform'] = xform
         self._arrow_program.frag['arrow_type'] = self._arrow_type
 

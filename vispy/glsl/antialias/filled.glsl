@@ -29,6 +29,10 @@ vec4 filled(float distance, float linewidth, float antialias, vec4 bg_color)
     float alpha = border_distance/antialias;
     alpha = exp(-alpha*alpha);
 
+    if(distance == 1000.0) {
+       return vec4(1.0, 0.0, 0.0, 1.0);
+    }
+
     if( border_distance < 0.0 )
         frag_color = bg_color;
     else if( signed_distance < 0.0 )

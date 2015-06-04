@@ -17,7 +17,6 @@
 varying float v_antialias;
 varying float v_linewidth;
 varying float v_size;
-varying float v_texcoord;
 varying vec4  v_color;
 varying vec2  v_orientation;
 
