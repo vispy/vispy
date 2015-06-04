@@ -180,6 +180,14 @@ class ColorBarVisual(Visual):
         self._label = label
 
     def draw(self, transforms):
+        """Draw the visual
+
+        Parameters
+        ----------
+        transforms : instance of TransformSystem
+            The transforms to use.
+        """
+
         self._program.vert['transform'] = transforms.get_full_transform()
         self._program.draw('triangles')
 
