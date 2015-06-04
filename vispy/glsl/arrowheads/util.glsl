@@ -29,6 +29,7 @@
 
    --------------------------------------------------------- */
 
+/*
 float arrow_triangle(vec2 texcoord,
                      float body, float head, float height,
                      float linewidth, float antialias)
@@ -48,6 +49,8 @@ float arrow_triangle(vec2 texcoord,
     float d = min(max(max(d1, d2), -d3), d4);
     return d;
 }
+
+*/
 
 
 /* ---------------------------------------------------------
@@ -69,6 +72,7 @@ float arrow_triangle(vec2 texcoord,
    Signed distance to the arrow
 
    --------------------------------------------------------- */
+/*
 float arrow_angle(vec2 texcoord,
                   float body, float head, float height,
                   float linewidth, float antialias)
@@ -96,3 +100,4 @@ float arrow_angle(vec2 texcoord,
     }
     return d;
 }
+*/

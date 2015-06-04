@@ -47,12 +47,12 @@ float arrow_curved(vec2 texcoord,
     float d3 = length(texcoord - c3) - 1.25*size;
 
     // Outside (because of circles)
-    if( texcoord.y > +(2.0*head + antialias) )
+    if( texcoord.y > +(2.0*size + antialias) )
          return 1000.0;
-    if( texcoord.y < -(2.0*head + antialias) )
+    if( texcoord.y < -(2.0*size + antialias) )
          return 1000.0;
     if( texcoord.x > c1.x ) //(size + antialias) )
          return 1000.0;
 
-    return min(d3,min(d1,d2)));
+    return min(d3,min(d1,d2));
 }
