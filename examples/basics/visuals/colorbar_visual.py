@@ -22,14 +22,14 @@ def get_horizontal_bar():
         halfdim = 100, 10
         pos = 200, 400
 
-        return ColorBarVisual(pos, halfdim, cmap=spectrum)
+        return ColorBarVisual(pos, halfdim, label="spectrun", cmap=spectrum)
 
 
 def get_vertical_bar():
         pos = 400, 300
         halfdim = 10, 100
 
-        return ColorBarVisual(pos, halfdim, cmap=spectrum,
+        return ColorBarVisual(pos, halfdim, label="spectrum", cmap=spectrum,
                               orientation="vertical")
 
 

@@ -6,13 +6,11 @@
 # Author: Siddharth Bhat
 # -----------------------------------------------------------------------------
 
-from . import Visual
+from . import Visual, TextVisual
 from .shaders import ModularProgram, Function
 from ..color import get_colormap
 
-
 import numpy as np
-
 
 VERT_SHADER = """
 attribute vec2 a_position;
@@ -70,6 +68,9 @@ class ColorBarVisual(Visual):
         from the center. That way, the total dimensions
         of the colorbar is (x - half_width) to (x + half_width)
         and (y - half_height) to (y + half_height)
+    label : string
+        The label that is to be drawn with the colorbar
+        that provides information about the colorbar.
     cmap : str | ColorMap
         either the name of the ColorMap to be used from the standard
         set of names (refer to `vispy.color.get_colormap`),
@@ -80,9 +81,6 @@ class ColorBarVisual(Visual):
         the minimum and maximum values of the data that
         is given to the colorbar. This is used to draw the scale
         on the side of the colorbar.
-    label : string
-        The label that is to be drawn with the colorbar
-        that provides information about the colorbar.
     orientation : {'horizontal', 'vertical'}
         the orientation of the colorbar, used for coloring
 
@@ -92,7 +90,9 @@ class ColorBarVisual(Visual):
               with mimumum corresponding to bottom and maximum to top
     """
 
-    def __init__(self, center_pos, halfdim, cmap,
+    def __init__(self, center_pos, halfdim,
+                 label,
+                 cmap,
                  clim=(0.0, 1.0),
                  orientation="horizontal",
                  **kwargs):
@@ -133,6 +133,29 @@ class ColorBarVisual(Visual):
         self._program['a_position'] = vertices.astype(np.float32)
         self._program['a_texcoord'] = tex_coords.astype(np.float32)
 
+        if orientation == "horizontal":
+            text_x, text_y = x, y + halfh * 1.2
+            self._label = TextVisual(label, pos=(text_x, text_y))
+
+            begin_tick_pos = x - halfw, text_y
+            end_tick_pos = x + halfw, text_y
+
+            self._ticks = TextVisual([str(clim[0]), str(clim[1])],
+                                     pos=[begin_tick_pos, end_tick_pos])
+        elif orientation == "vertical":
+            text_x, text_y = x + halfw * 1.2, y
+            self._label = TextVisual(label, pos=(text_x, text_y), rotation=-90)
+
+            begin_tick_pos = text_x, y - halfh
+            end_tick_pos = text_x, y + halfh
+
+            self._ticks = TextVisual([str(clim[0]), str(clim[1])],
+                                     pos=[begin_tick_pos, end_tick_pos],
+                                     rotation=-90)
+
     def draw(self, transforms):
         self._program.vert['transform'] = transforms.get_full_transform()
         self._program.draw('triangles')
+
+        # self._label.draw(transforms)
+        # self._ticks.draw(transforms)
