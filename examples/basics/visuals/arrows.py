@@ -49,9 +49,9 @@ class Canvas(app.Canvas):
 
         self.lines = [
             visuals.ArrowVisual(line1, color='w', width=2, method='agg',
-                                arrows=arrows1),
+                                arrows=arrows1, arrow_type='curved'),
             visuals.ArrowVisual(line2, color='w', width=2, method='agg',
-                                arrows=arrows2),
+                                arrows=arrows2, arrow_type='curved'),
             visuals.LineVisual(line3, color='w', width=2, method='agg')
         ]
 

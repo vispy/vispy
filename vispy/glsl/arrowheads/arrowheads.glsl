@@ -6,6 +6,7 @@
 #include "arrowheads/util.glsl"
 
 #include "arrowheads/curved.glsl"
+/*
 #include "arrowheads/stealth.glsl"
 
 #include "arrowheads/angle-30.glsl"
@@ -15,3 +16,4 @@
 #include "arrowheads/triangle-30.glsl"
 #include "arrowheads/triangle-60.glsl"
 #include "arrowheads/triangle-90.glsl"
+*/
