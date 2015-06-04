@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+# -----------------------------------------------------------------------------
+# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+# -----------------------------------------------------------------------------
+# Author: Siddharth Bhat
+# -----------------------------------------------------------------------------
 
 from . import Visual
 from .shaders import ModularProgram, Function
@@ -5,6 +12,7 @@ from ..color import get_colormap
 
 
 import numpy as np
+
 
 VERT_SHADER = """
 attribute vec2 a_position;
@@ -15,9 +23,9 @@ void main() {
     v_texcoord = a_texcoord;
     gl_Position = $transform(vec4(a_position, 0, 1));
 }
-"""
+"""  # noqa
 
-FRAG_SHADER_FOR_HORIZONTAL = """
+FRAG_SHADER_HORIZONTAL = """
 varying vec2 v_texcoord;
 
 void main()
@@ -27,6 +35,17 @@ void main()
 }
 """  # noqa
 
+FRAG_SHADER_VERTICAL = """
+varying vec2 v_texcoord;
+ 
+void main()
+{      
+    // we get the texcoords inverted (with respect to the colormap)
+    // so let's invert it to make sure that the colorbar renders correctly 
+    vec4 mapped_color = $color_transform(1.0 - v_texcoord.y);
+    gl_FragColor = mapped_color;
+}
+"""  # noqa
 
 # TODO:
 # * assumes horizontal. allow vertical
@@ -35,35 +54,85 @@ void main()
 # pixel coordinates, how do I do that?)
 # * actually obey clim
 # * write docs for color bar
-class ColorBarVisual(Visual):
 
-    def __init__(self, pos, halfdim, cmap, clim, **kwargs):
+
+class ColorBarVisual(Visual):
+    """Visual subclass displaying a colorbar
+
+    Parameters
+    ----------
+
+    center_pos : tuple (x, y)
+        Position where the colorbar is to be placed with
+        respect to the center of the colorbar
+    halfdim : tuple (half_width, half_height)
+        Half the dimensions of the colorbar measured
+        from the center. That way, the total dimensions
+        of the colorbar is (x - half_width) to (x + half_width)
+        and (y - half_height) to (y + half_height)
+    cmap : str | ColorMap
+        either the name of the ColorMap to be used from the standard
+        set of names (refer to `vispy.color.get_colormap`),
+        or a custom ColorMap object.
+
+        The ColorMap is used to apply a gradient on the colorbar.
+    clim : tuple (min, max)
+        the minimum and maximum values of the data that
+        is given to the colorbar. This is used to draw the scale
+        on the side of the colorbar.
+    label : string
+        The label that is to be drawn with the colorbar
+        that provides information about the colorbar.
+    orientation : {'horizontal', 'vertical'}
+        the orientation of the colorbar, used for coloring
+
+            * 'horizontal': the color is applied from left to right,
+              with minimum corresponding to left and maximum to right
+            * 'vertical': the color is applied from bottom to top,
+              with mimumum corresponding to bottom and maximum to top
+    """
+
+    def __init__(self, center_pos, halfdim, cmap,
+                 clim=(0.0, 1.0),
+                 orientation="horizontal",
+                 **kwargs):
 
         super(ColorBarVisual, self).__init__(**kwargs)
 
-        self.cmap = get_colormap(cmap)
-        self.clim = clim
+        self._cmap = get_colormap(cmap)
+        self._clim = clim
 
-        x, y = pos
+        x, y = center_pos
         halfw, halfh = halfdim
 
-        vertices = np.array([[x - halfw, y - halfh], [x + halfw, y - halfh],
+        vertices = np.array([[x - halfw, y - halfh],
+                            [x + halfw, y - halfh],
                             [x + halfw, y + halfh],
-
-                            [x - halfw, y - halfh], [x + halfw, y + halfh],
+                             # tri 2
+                            [x - halfw, y - halfh],
+                            [x + halfw, y + halfh],
                             [x - halfw, y + halfh]],
                             dtype=np.float32)
 
-        tex_coords = np.array([[0, 0], [1, 0], [1, 0],
-                              [0, 0], [1, 0], [0, 0]],
+        tex_coords = np.array([[0, 0], [1, 0], [1, 1],
+                              [0, 0], [1, 1], [0, 1]],
                               dtype=np.float32)
 
-        self.program = ModularProgram(VERT_SHADER, FRAG_SHADER_FOR_HORIZONTAL)
+        if orientation == "horizontal":
+            self._program = ModularProgram(VERT_SHADER, FRAG_SHADER_HORIZONTAL)
 
-        self.program.frag['color_transform'] = Function(self.cmap.glsl_map)
-        self.program['a_position'] = vertices.astype(np.float32)
-        self.program['a_texcoord'] = tex_coords.astype(np.float32)
+        elif orientation == "vertical":
+            self._program = ModularProgram(VERT_SHADER, FRAG_SHADER_VERTICAL)
+
+        else:
+            raise ValueError("orientation must"
+                             " be \'horizontal\' or \'vertical\'."
+                             " given: %s" % orientation)
+
+        self._program.frag['color_transform'] = Function(self._cmap.glsl_map)
+        self._program['a_position'] = vertices.astype(np.float32)
+        self._program['a_texcoord'] = tex_coords.astype(np.float32)
 
     def draw(self, transforms):
-        self.program.vert['transform'] = transforms.get_full_transform()
-        self.program.draw('triangles')
+        self._program.vert['transform'] = transforms.get_full_transform()
+        self._program.draw('triangles')
