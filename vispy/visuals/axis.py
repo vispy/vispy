@@ -10,6 +10,14 @@ from .visual import Visual
 from .line import LineVisual
 from .text import TextVisual
 
+# XXX TODO list (see code, plus):
+# 1. Automated tick direction?
+# 2. Expand to 3D (only 2D supported currently)
+# 3. Input validation
+# 4. Property support
+# 5. Reactivity to resizing (current tick lengths grow/shrink w/zoom)
+# 6. Improve tick label naming (str(x) is not good) and tick selection
+
 
 class AxisVisual(Visual):
     """Axis visual
@@ -41,7 +49,6 @@ class AxisVisual(Visual):
         if scale_type != 'linear':
             raise NotImplementedError('only linear scaling is currently '
                                       'supported')
-        # XXX TODO: All kinds of input validation, property support, etc.
         self.pos = np.array(pos, float)
         self.domain = domain
         self.tick_direction = np.array(tick_direction, float)
