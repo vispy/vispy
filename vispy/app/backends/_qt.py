@@ -713,6 +713,12 @@ class CanvasBackendDesktop(QtBaseCanvasBackend, QGLWidget):
         else:
             self.swapBuffers()
 
+    def _vispy_get_fb_bind_location(self):
+        if QT5_NEW_API:
+            return self.defaultFramebufferObject()
+        else:
+            return QtBaseCanvasBackend._vispy_get_fb_bind_location(self)
+
     def initializeGL(self):
         if self._vispy_canvas is None:
             return
