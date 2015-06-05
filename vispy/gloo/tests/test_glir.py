@@ -71,8 +71,15 @@ def test_log_parser():
 
     i = 0
 
-    assert lines[i] == json.dumps(['CURRENT', 0])
+    # The FBO argument may be anything based on the backend.
+    expected = json.dumps(['CURRENT', 0, 1])
+    assert len(lines[i]) >= len(expected)
+    expected = expected.split('1')
+    assert lines[i].startswith(expected[0])
+    assert lines[i].endswith(expected[1])
+    assert int(lines[i][len(expected[0]):-len(expected[1])]) is not None
     i += 1
+
     # The 'CURRENT' command may have been called multiple times
     while lines[i] == lines[i - 1]:
         i += 1
