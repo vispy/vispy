@@ -14,9 +14,9 @@ from vispy import app, scene
 N = 200
 pos = np.zeros((N, 2), dtype=np.float32)
 x_lim = [50., 750.]
-y_lim = [-200., 200.]
+y_lim = [-2., 2.]
 pos[:, 0] = np.linspace(x_lim[0], x_lim[1], N)
-pos[:, 1] = np.random.normal(size=N, scale=100)
+pos[:, 1] = np.random.normal(size=N)
 
 # color array
 color = np.ones((N, 4), dtype=np.float32)
@@ -28,10 +28,10 @@ viewbox = canvas.central_widget.add_view()
 
 # add some axes
 domains = np.array([x_lim, y_lim])
-extents = [np.array([domains[0], [domains[1][0]] * 2]).T,
-           np.array([[domains[0][0]] * 2, domains[1]]).T]
-x_axis = scene.Axis(extents[0], domains[0], parent=viewbox.scene)
-y_axis = scene.Axis(extents[1], domains[1], parent=viewbox.scene)
+pos_ax = [np.array([domains[0], [domains[1][0]] * 2]).T,
+          np.array([[domains[0][0]] * 2, domains[1]]).T]
+x_axis = scene.Axis(pos_ax[0], domains[0], (0, -1), parent=viewbox.scene)
+y_axis = scene.Axis(pos_ax[1], domains[1], (-1, 0), parent=viewbox.scene)
 
 viewbox.camera = 'panzoom'  # set after adding axes to auto-zoom
 
@@ -40,7 +40,7 @@ line = scene.Line(pos, color, parent=viewbox.scene)
 
 def update(ev):
     global pos, color, line
-    pos[:, 1] = np.random.normal(size=N, scale=100)
+    pos[:, 1] = np.random.normal(size=N)
     color = np.roll(color, 1, axis=0)
     line.set_data(pos=pos, color=color)
 
