@@ -135,7 +135,7 @@ class ColorBarVisual(Visual):
 
         if orientation == "horizontal":
             text_x, text_y = x, y + halfh * 1.2
-            self._label = TextVisual(label, pos=(text_x, text_y))
+            self._label = TextVisual(label, pos=(text_x, text_y), anchor_y="top")
 
             begin_tick_pos = x - halfw, text_y
             end_tick_pos = x + halfw, text_y
@@ -144,7 +144,7 @@ class ColorBarVisual(Visual):
                                      pos=[begin_tick_pos, end_tick_pos])
         elif orientation == "vertical":
             text_x, text_y = x + halfw * 1.2, y
-            self._label = TextVisual(label, pos=(text_x, text_y), rotation=-90)
+            self._label = TextVisual(label, pos=(text_x, text_y), rotation=-90, anchor_y="top")
 
             begin_tick_pos = text_x, y - halfh
             end_tick_pos = text_x, y + halfh
@@ -192,4 +192,4 @@ class ColorBarVisual(Visual):
         self._program.draw('triangles')
 
         self._label.draw(transforms)
-        self._ticks.draw(transforms)
+        # self._ticks.draw(transforms)

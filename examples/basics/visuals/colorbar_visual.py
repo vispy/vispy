@@ -30,7 +30,7 @@ def get_horizontal_bar():
 
         # construct a horizontally placed color bar
         # using the previously defined `spectrum` colormap
-        return ColorBarVisual(pos, halfdim, label="spectrun", cmap=spectrum)
+        return ColorBarVisual(pos, halfdim, label="spectrum", cmap=spectrum)
 
 
 def get_vertical_bar():
@@ -48,7 +48,13 @@ class Canvas(app.Canvas):
         app.Canvas.__init__(self, size=(800, 600), keys="interactive")
 
         self.horizontal_bar = get_horizontal_bar()
+        self.horizontal_bar.label.font_size = 15
+        self.horizontal_bar.label.color = 'white'
+
         self.vertical_bar = get_vertical_bar()
+
+        self.vertical_bar.label.font_size = 15
+        self.vertical_bar.label.color = 'white'
 
         # construct a default transform that does identity scaling
         # and does not translate the coordinates
