@@ -191,5 +191,5 @@ class ColorBarVisual(Visual):
         self._program.vert['transform'] = transforms.get_full_transform()
         self._program.draw('triangles')
 
-        # self._label.draw(transforms)
-        # self._ticks.draw(transforms)
+        self._label.draw(transforms)
+        self._ticks.draw(transforms)

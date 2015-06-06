@@ -9,7 +9,7 @@
 
 from vispy import app
 from vispy import gloo
-from vispy.visuals.transforms import STTransform, TransformSystem
+from vispy.visuals.transforms import NullTransform, STTransform, TransformSystem
 from vispy.visuals import ColorBarVisual
 from vispy.color import Color
 from vispy.color.colormap import Colormap
@@ -52,7 +52,8 @@ class Canvas(app.Canvas):
 
         # construct a default transform that does identity scaling
         # and does not translate the coordinates
-        self.transform = STTransform(scale=(1, 1), translate=(0, 0))
+        self.transform = NullTransform()
+        # STTransform(scale=(1, 1), translate=(0, 0))
 
         # construct a TransformSystem to encapsulate the previously
         # created transform, and assign it to it
