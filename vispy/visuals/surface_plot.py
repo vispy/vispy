@@ -42,7 +42,6 @@ class SurfacePlotVisual(MeshVisual):
         self._x = None
         self._y = None
         self._z = None
-        self.__color = None
         self.__vertices = None
         self.__meshdata = MeshData()
         MeshVisual.__init__(self, **kwargs)
@@ -85,7 +84,6 @@ class SurfacePlotVisual(MeshVisual):
                 self.__vertices = None
 
         if colors is not None:
-            self.__colors = colors
             self.__meshdata.set_vertex_colors(colors)
 
         if self._z is None:
