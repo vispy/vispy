@@ -3,6 +3,9 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 """Entry point for vispy's IPython bindings"""
 
+import IPython
+from distutils.version import LooseVersion
+
 
 def load_ipython_extension(ipython):
     """ Entry point of the IPython extension
@@ -14,22 +17,30 @@ def load_ipython_extension(ipython):
         An instance of the IPython interpreter that is handed
         over to the extension
     """
-    return _load_webgl_backend()
+
+    # don't continue if IPython version is < 3.0
+    ipy_version = LooseVersion(IPython.__version__)
+    if ipy_version < LooseVersion("3.0.0"):
+        ipython.write_err("You IPython version is less than "
+                          "version 3.0.0, the minimum for Vispy's"
+                          "IPython backend. Please upgrade you IPython"
+                          "version.")
+        return
+
+    _load_webgl_backend(ipython)
 
 
-def _load_webgl_backend():
-    """ Load the webgl backend for the IPython notebook
-
-    Returns
-    -------
-    The instance of the "ipynb_webgl" app
-    """
+def _load_webgl_backend(ipython):
+    """ Load the webgl backend for the IPython notebook"""
 
     from vispy import app
     app_instance = app.use_app("ipynb_webgl")
-    print("Vispy IPython module has loaded successfully")
 
-    return app_instance
+    if app_instance.backend_name == "ipynb_webgl":
+        ipython.write("Vispy IPython module has loaded successfully")
+    else:
+        # TODO: Improve this error message
+        ipython.write_err("Unable to load webgl backend of Vispy")
 
 
 def unload_ipython_extension(ipython):
