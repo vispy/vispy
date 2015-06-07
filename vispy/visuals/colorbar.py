@@ -135,23 +135,42 @@ class ColorBarVisual(Visual):
 
         if orientation == "horizontal":
             text_x, text_y = x, y + halfh * 1.2
-            self._label = TextVisual(label, pos=(text_x, text_y), anchor_y="top")
+            self._label = TextVisual(label, pos=(text_x, text_y),
+                                     anchor_y="top")
 
             begin_tick_pos = x - halfw, text_y
             end_tick_pos = x + halfw, text_y
 
-            self._ticks = TextVisual([str(clim[0]), str(clim[1])],
-                                     pos=[begin_tick_pos, end_tick_pos])
+            # TODO, HACK: This should ideally be a single TextVisual
+            # However, one TextVisual with multiple strings
+            # does not seem to be working as of now. (See #981)
+            # https://github.com/vispy/vispy/issues/981
+            self._ticks = []
+            self._ticks.append(TextVisual(str(clim[0]),
+                               pos=begin_tick_pos,
+                               anchor_y="top"))
+            self._ticks.append(TextVisual(str(clim[1]),
+                               pos=end_tick_pos,
+                               anchor_y="top"))
+
         elif orientation == "vertical":
             text_x, text_y = x + halfw * 1.2, y
-            self._label = TextVisual(label, pos=(text_x, text_y), rotation=-90, anchor_y="top")
+            self._label = TextVisual(label, pos=(text_x, text_y),
+                                     rotation=-90, anchor_y="top")
 
-            begin_tick_pos = text_x, y - halfh
-            end_tick_pos = text_x, y + halfh
+            begin_tick_pos = text_x, y + halfh
+            end_tick_pos = text_x, y - halfh
 
-            self._ticks = TextVisual([str(clim[0]), str(clim[1])],
-                                     pos=[begin_tick_pos, end_tick_pos],
-                                     rotation=-90)
+            # TODO, HACK: See comment about ticks on "hornizontal" branch
+            self._ticks = []
+            self._ticks.append(TextVisual(str(clim[0]),
+                               pos=begin_tick_pos,
+                               rotation=-90,
+                               anchor_y="top"))
+            self._ticks.append(TextVisual(str(clim[1]),
+                               pos=end_tick_pos,
+                               rotation=-90,
+                               anchor_y="top"))
 
     @property
     def cmap(self):
@@ -179,6 +198,14 @@ class ColorBarVisual(Visual):
     def label(self, label):
         self._label = label
 
+    @property
+    def ticks(self):
+        return self._ticks
+
+    @ticks.setter
+    def ticks(self, ticks):
+        self._ticks = ticks
+
     def draw(self, transforms):
         """Draw the visual
 
@@ -192,4 +219,5 @@ class ColorBarVisual(Visual):
         self._program.draw('triangles')
 
         self._label.draw(transforms)
-        # self._ticks.draw(transforms)
+        for tick in self._ticks:
+            tick.draw(transforms)

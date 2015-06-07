@@ -9,7 +9,9 @@
 
 from vispy import app
 from vispy import gloo
-from vispy.visuals.transforms import NullTransform, STTransform, TransformSystem
+from vispy.visuals.transforms import NullTransform
+from vispy.visuals.transforms import TransformSystem
+
 from vispy.visuals import ColorBarVisual
 from vispy.color import Color
 from vispy.color.colormap import Colormap
@@ -39,8 +41,10 @@ def get_vertical_bar():
 
         # similar to the previous case, only
         # with a vertical orientation
+        # use clim to set the lower and upper values of the colorbar
+        # which are drawn as labels on the bottom and top edge
         return ColorBarVisual(pos, halfdim, label="spectrum", cmap=spectrum,
-                              orientation="vertical")
+                              orientation="vertical", clim=(-100, 100))
 
 
 class Canvas(app.Canvas):
@@ -59,7 +63,6 @@ class Canvas(app.Canvas):
         # construct a default transform that does identity scaling
         # and does not translate the coordinates
         self.transform = NullTransform()
-        # STTransform(scale=(1, 1), translate=(0, 0))
 
         # construct a TransformSystem to encapsulate the previously
         # created transform, and assign it to it
@@ -77,6 +80,6 @@ class Canvas(app.Canvas):
         self.horizontal_bar.draw(self.transform_system)
         self.vertical_bar.draw(self.transform_system)
 
-
-win = Canvas()
-app.run()
+if __name__ == '__main__':
+    win = Canvas()
+    app.run()
