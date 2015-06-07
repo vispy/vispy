@@ -11,7 +11,6 @@
 # with the ipython parameter being the actual iPython interpreter
 # object.
 def load_ipython_extension(ipython):
-    print("the iPython vispy extension has been loaded.")
     _load_webgl_backend()
 
 
