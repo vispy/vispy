@@ -2,8 +2,6 @@
 from .mesh import MeshVisual
 from ..geometry import create_grid_mesh, MeshData
 
-import numpy as np
-
 
 class GridMeshVisual(MeshVisual):
     """Displays a mesh in a Cartesian grid about x,y,z coordinates.
