@@ -6,21 +6,23 @@
 # iPython bindings
 
 
+# Entry Point
+# when an iPython extension is loaded, this function is called
+# with the ipython parameter being the actual iPython interpreter
+# object.
+def load_ipython_extension(ipython):
+    print("the iPython vispy extension has been loaded.")
+    _load_webgl_backend()
+
+
 # setup ipython mode for vispy
-def vispy_ipython(line):
+def _load_webgl_backend():
     from vispy import app
     app.use_app("ipynb_webgl")
-
     print("Vispy iPython module has loaded successfully")
 
 
-def load_ipython_extension(ipython):
-    print("the iPython vispy extension has been loaded.\n"
-          "use %vispy_ipython to embed vispy plots in the notebook")
-
-    ipython.register_magic_function(vispy_ipython, magic_kind="line")
-
-
-# if we need to unload things, then we need this
+# if we need to unload things, then we need this.
+# for now, this is empty.
 def unload_ipython_extension(ipython):
     pass
