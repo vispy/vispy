@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2015, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
-"""Tests for Vispy's ipython bindings"""
+"""Tests for Vispy's IPython bindings"""
 
-# from vispy import ipython
+# from vispy import IPython
 from numpy.testing import assert_equal
 from IPython.testing.globalipapp import get_ipython
 
