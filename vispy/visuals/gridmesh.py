@@ -1,7 +1,6 @@
 
 from .mesh import MeshVisual
 from ..geometry import create_grid_mesh, MeshData
-from ..color import ColorArray
 
 import numpy as np
 
@@ -11,6 +10,9 @@ class GridMeshVisual(MeshVisual):
 
     This makes it simple to generate a mesh from e.g. the output
     of numpy.meshgrid.
+
+    All arguments are optional, though they can be changed
+    individually later with the set_data method.
 
     Parameters
     ----------
@@ -23,28 +25,22 @@ class GridMeshVisual(MeshVisual):
     zs : ndarray
         A 2d array of z coordinates for the vertices of the mesh. Must
         have the same dimensions as xs and ys.
-    color : ndarray | Color
-        The color(s) of the points of the mesh. Should be either a
-        (width, height, 4) array of rgba colors at each grid point,
-        a (width, height, 3) array of rgb colors at each grid point,
-        a (width, height) array of a Color at each grid point, or a
-        single Color that will be applied to the entire mesh.
+    colors : ndarray
+        The colors of the points of the mesh. Should be either a
+        (width, height, 4) array of rgba colors at each grid point or
+        a (width, height, 3) array of rgb colors at each grid point.
+        Defaults to None, in which case 
     shading : str | None
         Same as for the `MeshVisual` class. Defaults to 'smooth'.
-    vertex_colors: ndarray | None
-        Same as for the `MeshVisual` class. Defaults to None. Overrides
-        the color argument if set.
-    face_colors: ndarray | None
-        Same as for the `MeshVisual` class. Defaults to None.
     """
 
-    def __init__(self, xs, ys, zs, colors=None,
-                 shading='smooth',
+    def __init__(self, xs, ys, zs, colors=None, shading='smooth',
                  **kwargs):
 
         if xs is None or ys is None or zs is None:
             raise ValueError('All of xs, ys and zs must be initialised '
                              'with arrays.')
+
         self._xs = None
         self._ys = None
         self._zs = None
@@ -57,6 +53,21 @@ class GridMeshVisual(MeshVisual):
         self.set_data(xs, ys, zs, colors)
 
     def set_data(self, xs=None, ys=None, zs=None, colors=None):
+        '''Update the mesh data.
+
+        Parameters
+        ----------
+        xs : ndarray | None
+            A 2d array of x coordinates for the vertices of the mesh.
+        ys : ndarray | None
+            A 2d array of y coordinates for the vertices of the mesh.
+        zs : ndarray | None
+            A 2d array of z coordinates for the vertices of the mesh.
+        colors : ndarray | None
+            The color at each point of the mesh. Must have shape
+            (width, height, 4) or (width, height, 3) for rgba or rgb
+            color definitions respectively.
+        '''
 
         if xs is not None:
             if self._xs is not None:
