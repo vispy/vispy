@@ -252,9 +252,10 @@ def has_ipython(version='3.0'):
         if LooseVersion(IPython.__version__) >= LooseVersion(version):
             return True, "IPython present"
         else:
-            message = ("current IPython version: (%s) is "
-                       "less than expected version: (%s)") % \
-                       IPython.__version__, version
+            message = (
+                "current IPython version: (%s) is "
+                "less than expected version: (%s)") % \
+                IPython.__version__, version
 
             return False, message
 
