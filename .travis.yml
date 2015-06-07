@@ -127,6 +127,9 @@ install:
         travis_retry sudo apt-get -qq -y install libegl1-mesa;
       fi;
 
+    # Install IPython
+    - pip -q install "ipython[notebook]" 
+
     # Install vispy
     - cd ${SRC_DIR}
     - python setup.py install > ${REDIRECT_TO}
