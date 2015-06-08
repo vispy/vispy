@@ -81,13 +81,12 @@ class GridLinesVisual(Visual):
     scale : tuple
         The scale to use.
     """
-    def __init__(self, scale=(1, 1), **kwargs):
-        super(GridLinesVisual, self).__init__(**kwargs)
-        self._program = ModularProgram(VERT, FRAG)
+    def __init__(self, scale=(1, 1)):
+        Visual.__init__(self, vcode=VERT, fcode=FRAG)
         self._vbo = None
         self._scale = scale
-        self._tr_cache = TransformCache()
         self.set_gl_state('additive', cull_face=False)
+        self._draw_mode = 'triangles'
 
     def _buffer(self):
         if self._vbo is None:
@@ -98,25 +97,12 @@ class GridLinesVisual(Visual):
             self._vbo = gloo.VertexBuffer(quad)
         return self._vbo
 
-    def draw(self, transforms):
-        """Draw the visual
+    def _prepare_transforms(self, view):
+        frag = view.view_program.frag
+        trs = self.transforms
+        frag['map_nd_to_doc'] = trs.get_transform('render', 'document')
+        frag['map_doc_to_local'] = trs.get_transform('document', 'visual')
 
-        Parameters
-        ----------
-        transforms : instance of TransformSystem
-            The transforms to use.
-        """
-        Visual.draw(self, transforms)
-
-        doc_to_ndc = self._tr_cache.get([transforms.framebuffer_to_render, 
-                                         transforms.document_to_framebuffer])
-        self._tr_cache.roll()
-        local_to_doc = transforms.visual_to_document
-
-        self._program.frag['map_nd_to_doc'] = doc_to_ndc.inverse
-        self._program.frag['map_doc_to_local'] = local_to_doc.inverse
-        
-        self._program.prepare()
+    def _prepare_draw(self, view):
         self._program['pos'] = self._buffer()
         self._program['scale'] = self._scale
-        self._program.draw('triangles')
