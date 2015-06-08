@@ -21,7 +21,7 @@ def load_ipython_extension(ipython):
     # don't continue if IPython version is < 3.0
     ipy_version = LooseVersion(IPython.__version__)
     if ipy_version < LooseVersion("3.0.0"):
-        ipython.write_err("Your IPython version is less than "
+        ipython.write_err("Your IPython version is older than "
                           "version 3.0.0, the minimum for Vispy's"
                           "IPython backend. Please upgrade your IPython"
                           "version.")
