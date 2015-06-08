@@ -26,7 +26,7 @@ install:
   # Install the dependencies of the project.
   # "conda install --yes --quiet numpy scipy matplotlib setuptools flake8 pyqt nose pytest coverage"
   - "conda install --yes --quiet numpy scipy matplotlib setuptools nose pytest coverage ipython ipython-notebook"
-  - "pip inst all -q pytest-cov"
+  - "pip install -q pytest-cov"
   - "python setup.py develop"
 
 build: false  # Not a C# project, build stuff at the test step instead.
