@@ -3,7 +3,6 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 """Entry point for vispy's IPython bindings"""
 
-import IPython
 from distutils.version import LooseVersion
 
 
@@ -17,13 +16,14 @@ def load_ipython_extension(ipython):
         An instance of the IPython interpreter that is handed
         over to the extension
     """
+    import IPython
 
     # don't continue if IPython version is < 3.0
     ipy_version = LooseVersion(IPython.__version__)
     if ipy_version < LooseVersion("3.0.0"):
-        ipython.write_err("You IPython version is less than "
+        ipython.write_err("Your IPython version is less than "
                           "version 3.0.0, the minimum for Vispy's"
-                          "IPython backend. Please upgrade you IPython"
+                          "IPython backend. Please upgrade your IPython"
                           "version.")
         return
 

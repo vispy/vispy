@@ -5,12 +5,13 @@
 
 # from vispy import IPython
 from numpy.testing import assert_equal
-from IPython.testing.globalipapp import get_ipython
 from vispy.testing import requires_ipython
 
 
 @requires_ipython()
 def test_webgl_loading():
+    from IPython.testing.globalipapp import get_ipython
+
     """Test if the vispy.ipython extension loads
         the webGL backend"""
     ipy = get_ipython()
