@@ -189,7 +189,7 @@ class Node(object):
                 p = p.parent
         
         self.events.parent_change(new=parent, old=prev)
-        self._transform_changed(None)
+        self._update_trsys(None)
         self.update()
 
     def _add_child(self, node):
@@ -329,7 +329,7 @@ class Node(object):
         # on by default is too expensive.
         assert isinstance(tr, BaseTransform)
         self._transform = tr
-        self._transform_changed(None)
+        self._update_trsys(None)
 
     def set_transform(self, type_, *args, **kwargs):
         """ Create a new transform of *type* and assign it to this node.
@@ -347,9 +347,9 @@ class Node(object):
         """
         self.transform = create_transform(type_, *args, **kwargs)
 
-    def _transform_changed(self, event):
+    def _update_trsys(self, event):
         for ch in self.children:
-            ch._transform_changed(event)
+            ch._update_trsys(event)
         self.events.transform_change()
         self.update()
 

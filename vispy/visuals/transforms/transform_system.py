@@ -7,6 +7,7 @@ from __future__ import division
 from .linear import STTransform, NullTransform
 from .chain import ChainTransform
 from ._util import TransformCache
+from ...util.event import EventEmitter
 
 
 class TransformSystem(object):
@@ -137,6 +138,7 @@ class TransformSystem(object):
     """
 
     def __init__(self, canvas=None, dpi=None):
+        self.changed = EventEmitter(source=self, type='transform_changed')
         self._canvas = None
         self._fbo_bounds = None
         self.canvas = canvas
@@ -152,6 +154,11 @@ class TransformSystem(object):
         self._canvas_transform = ChainTransform([STTransform(),
                                                       STTransform()])
         self._framebuffer_transform = ChainTransform([STTransform()])
+        
+        for tr in (self._visual_transform, self._scene_transform, 
+                   self._document_transform, self._canvas_transform,
+                   self._framebuffer_transform):
+            tr.changed.connect(self.changed)
 
     def auto_configure(self, viewport=None, fbo_size=None, fbo_rect=None):
         """Automatically configure the TransformSystem:
@@ -321,3 +328,7 @@ class TransformSystem(object):
                    for t in tr[ito:ifrom]]
         return self._cache.get(trs)
     
+    @property
+    def pixel_scale(self):
+        tr = self._canvas_transform
+        return (tr.map((1, 0)) - tr.map((0, 0)))[0]

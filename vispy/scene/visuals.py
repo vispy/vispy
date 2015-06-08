@@ -68,7 +68,7 @@ class VisualNode(Node):
         self._picking_filter.enabled = p
         self.update_gl_state(blend=not p)
 
-    def _transform_changed(self, event):
+    def _update_trsys(self, event):
         doc = self.document_node
         scene = self.scene_node
         root = self.root_node
@@ -76,7 +76,7 @@ class VisualNode(Node):
         self.transforms.scene_transform = scene.node_transform(doc)
         self.transforms.document_transform = doc.node_transform(root)
         
-        Node._transform_changed(self, event)
+        Node._update_trsys(self, event)
 
     
 def create_visual_node(subclass):
@@ -198,7 +198,7 @@ __all__ = []
 for obj_name in dir(visuals):
     obj = getattr(visuals, obj_name)
     if (isinstance(obj, type) and 
-       issubclass(obj, visuals.Visual) and 
+       issubclass(obj, visuals.BaseVisual) and 
        obj is not visuals.Visual):
         cls = create_visual_node(obj)
         globals()[cls.__name__] = cls

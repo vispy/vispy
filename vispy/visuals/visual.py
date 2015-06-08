@@ -145,6 +145,7 @@ class BaseVisual(object):
                                    )
         
         self.transforms = TransformSystem()
+        self.transforms.changed.connect(self._transform_changed)
 
     @property
     def transform(self):
@@ -177,6 +178,8 @@ class BaseVisual(object):
     def update(self):
         self.events.update()
 
+    def _transform_changed(self, event):
+        self.update()
 
 class BaseVisualView(object):
     """Base class for a view on a visual.
@@ -287,8 +290,7 @@ class Visual(BaseVisual):
         """
         raise NotImplementedError()
 
-    @staticmethod
-    def _prepare_transforms(view):
+    def _prepare_transforms(self, view):
         """Assign a view's transforms to the proper shader template variables
         on the view's shader program. 
         """
@@ -431,12 +433,21 @@ class CompoundVisual(BaseVisual):
     def __init__(self, subvisuals):
         self._view_class = CompoundVisualView
         BaseVisual.__init__(self)
-        self._subvisuals = subvisuals
+        self._subvisuals = []
         for v in subvisuals:
-            v.transforms = self.transforms
-            v._prepare_transforms(v)
-            if not hasattr(v, 'visible'):
-                v.visible = True
+            self.add_subvisual(v)
+        
+    def add_subvisual(self, visual):
+        visual.transforms = self.transforms
+        visual._prepare_transforms(visual)
+        if not hasattr(visual, 'visible'):
+            visual.visible = True
+        self._subvisuals.append(visual)
+        self.update()
+
+    def remove_subvisual(self, visual):
+        self._subvisuals.remove(visuals)
+        self.update()
         
     def draw(self):
         if self._prepare_draw(view=self) is False:
