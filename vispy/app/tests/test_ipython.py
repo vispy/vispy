@@ -10,10 +10,10 @@ from vispy.testing import requires_ipython
 
 @requires_ipython()
 def test_webgl_loading():
+    """Test if the vispy.ipython extension loads the webGL backend"""
+
     from IPython.testing.globalipapp import get_ipython
 
-    """Test if the vispy.ipython extension loads
-        the webGL backend"""
     ipy = get_ipython()
     ipy.run_cell("from vispy import app")
     ipy.run_cell("%load_ext vispy.ipython")
