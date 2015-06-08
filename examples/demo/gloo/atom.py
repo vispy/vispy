@@ -103,7 +103,7 @@ class Canvas(app.Canvas):
 
     def __init__(self):
         app.Canvas.__init__(self, keys='interactive', size=(800, 800))
-        self.title = "Atom [zoom with mouse scroll"
+        self.title = "Atom [zoom with mouse scroll]"
 
         self.translate = 6.5
         self.program = gloo.Program(vert, frag)

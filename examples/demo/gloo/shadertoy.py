@@ -88,6 +88,7 @@ class Canvas(app.Canvas):
         self.program['iSampleRate'] = 44100.
         for i in range(4):
             self.program['iChannelTime[%d]' % i] = 0.
+        self.program['iGlobalTime'] = 0.
 
         self.activate_zoom()
 

@@ -20,13 +20,13 @@ class Galaxy(object):
     def __init__(self, n=20000):
         """ Initialize galaxy """
 
-        # Excentricity of the innermost ellipse
-        self._inner_excentricity = 0.8
+        # Eccentricity of the innermost ellipse
+        self._inner_eccentricity = 0.8
 
-        # Excentricity of the outermost ellipse
-        self._outer_excentricity = 1.0
+        # Eccentricity of the outermost ellipse
+        self._outer_eccentricity = 1.0
 
-        #  Velovity at the innermost core in km/s
+        # Velocity at the innermost core in km/s
         self._center_velocity = 30
 
         # Velocity at the core edge in km/s
@@ -119,8 +119,8 @@ class Galaxy(object):
 
         # Initialize parameters
         # ---------------------
-        self._inner_excentricity = ex1
-        self._outer_excentricity = ex2
+        self._inner_eccentricity = ex1
+        self._outer_eccentricity = ex2
         self._inner_velocity = velInner
         self._outer_velocity = velOuter
         self._angular_offset = deltaAng
@@ -141,7 +141,7 @@ class Galaxy(object):
         stars['velocity'] = 0.000005
 
         for i in range(len(stars)):
-            stars['m_b'][i] = R[i] * self.excentricity(R[i])
+            stars['m_b'][i] = R[i] * self.eccentricity(R[i])
 
         # Initialize dust
         # ---------------
@@ -157,7 +157,7 @@ class Galaxy(object):
         dust['temperature'] = 6000 + R/4
         dust['brightness'] = np.random.uniform(0.01, 0.02)
         for i in range(len(dust)):
-            dust['m_b'][i] = R[i] * self.excentricity(R[i])
+            dust['m_b'][i] = R[i] * self.eccentricity(R[i])
 
         # Initialise H-II
         # ---------------
@@ -187,7 +187,7 @@ class Galaxy(object):
         h2b['brightness'] = h2a['brightness']
 
         for i in range(len(h2a)):
-            h2a['m_b'][i] = R[i] * self.excentricity(R[i])
+            h2a['m_b'][i] = R[i] * self.eccentricity(R[i])
         h2b['m_b'] = h2a['m_b']
 
     def update(self, timestep=100000):
@@ -213,23 +213,23 @@ class Galaxy(object):
         self._h2a['size'] = 2.0*S
         self._h2b['size'] = S/6.0
 
-    def excentricity(self, r):
+    def eccentricity(self, r):
 
         # Core region of the galaxy. Innermost part is round
-        # excentricity increasing linear to the border of the core.
+        # eccentricity increasing linear to the border of the core.
         if r < self._core_radius:
-            return 1 + (r / self._core_radius) * (self._inner_excentricity-1)
+            return 1 + (r / self._core_radius) * (self._inner_eccentricity-1)
 
         elif r > self._core_radius and r <= self._galaxy_radius:
             a = self._galaxy_radius - self._core_radius
-            b = self._outer_excentricity - self._inner_excentricity
-            return self._inner_excentricity + (r - self._core_radius) / a * b
+            b = self._outer_eccentricity - self._inner_eccentricity
+            return self._inner_eccentricity + (r - self._core_radius) / a * b
 
-        # Excentricity is slowly reduced to 1.
+        # Eccentricity is slowly reduced to 1.
         elif r > self._galaxy_radius and r < self._distant_radius:
             a = self._distant_radius - self._galaxy_radius
-            b = 1 - self._outer_excentricity
-            return self._outer_excentricity + (r - self._galaxy_radius) / a * b
+            b = 1 - self._outer_eccentricity
+            return self._outer_eccentricity + (r - self._galaxy_radius) / a * b
 
         else:
             return 1
