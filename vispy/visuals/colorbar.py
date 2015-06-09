@@ -151,7 +151,7 @@ class ColorBarVisual(Visual):
         self._border_color = border_color
 
         # initialize the labels and ticks that will be
-        # positioned with a call to regenerate
+        # positioned with a call to _update
         self._label = TextVisual(label, anchor_y="top")
         self._ticks = []
         self._ticks.append(TextVisual(str(self._clim[0]), anchor_y="top"))
@@ -184,9 +184,9 @@ class ColorBarVisual(Visual):
         self._program.frag['color_transform'] = Function(self._cmap.glsl_map)
         self._program['a_texcoord'] = tex_coords.astype(np.float32)
 
-        self.regenerate()
+        self._update()
 
-    def regenerate(self):
+    def _update(self):
         x, y = self._center_pos
         halfw, halfh = self._halfdim
 
@@ -245,8 +245,8 @@ class ColorBarVisual(Visual):
     @staticmethod
     def _get_orientation_error(orientation):
         return ValueError("orientation must"
-                          " be \'horizontal\' or \'vertical\'."
-                          " given: %s" % orientation)
+                          " be 'horizontal' or 'vertical', "
+                          "not '%s'" % (orientation, ))
 
     @property
     def cmap(self):
@@ -265,7 +265,7 @@ class ColorBarVisual(Visual):
     def clim(self, clim):
         self._clim = clim
         # new TextVisuals need to be created
-        self.regenerate()
+        self._update()
 
     @property
     def label(self):
@@ -275,7 +275,7 @@ class ColorBarVisual(Visual):
     def label(self, label):
         self._label = label
         # position, styling has to be applied
-        self.regenerate()
+        self._update()
 
     @property
     def ticks(self):
@@ -284,7 +284,7 @@ class ColorBarVisual(Visual):
     @ticks.setter
     def ticks(self, ticks):
         self._ticks = ticks
-        self.regenerate()
+        self._update()
 
     @property
     def border_width(self):
@@ -294,7 +294,7 @@ class ColorBarVisual(Visual):
     def border_width(self, border_width):
         self._border_width = border_width
         # positions of text need to be changed accordingly
-        self.regenerate()
+        self._update()
 
     @property
     def border_color(self):
