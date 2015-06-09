@@ -114,7 +114,6 @@ install:
           conda install --yes --quiet wxpython > ${REDIRECT_TO};
         else
           pip install -q pyglet;
-          # pip install -q https://bitbucket.org/pyglet/pyglet/get/tip.zip;
         fi;
         if [ "${PYTHON}" == "3.4" ]; then
           conda install --yes --quiet pillow scipy matplotlib decorator six > ${REDIRECT_TO};
@@ -128,13 +127,7 @@ install:
         travis_retry sudo apt-get -qq -y install libegl1-mesa;
       fi;
 
-
-
     # Install IPython
-    # NOTE: This should be_ the last call to anaconda, since we're trying to *freeze*
-    # the IPython version. If some other package is installed after this, then it
-    # might try and bump up the IPython version. So, make sure that this is the _last call_
-    # to anaconda
     - if [ "${DEPS}" == "full" ]; then
         if [ "${PYTHON}" == "2.7" ]; then
           pip install -q ipython[notebook];
