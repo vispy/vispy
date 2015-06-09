@@ -244,6 +244,10 @@ def requires_img_lib():
 
 def has_ipython(version='3.0'):
     """function that checks the presence of IPython"""
+
+    # typecast version to a string, in case an integer is given
+    version = str(version)
+
     try:
         import IPython  # noqa
     except Exception:

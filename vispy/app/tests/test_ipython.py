@@ -30,7 +30,7 @@ def test_webgl_loading():
         assert_equal(ipy.user_ns["backend_name"], "ipynb_webgl")
     else:
         ipy.run_cell("%load_ext vispy.ipython")
-        # HACK: duplicate code branches for now to see what happens. 
+        # HACK: duplicate code branches for now to see what happens.
         ipy.run_cell("backend_name = app.use_app().backend_name")
         # make sure that the webgl backend got loaded
         assert_equal(ipy.user_ns["backend_name"], "ipynb_webgl")
