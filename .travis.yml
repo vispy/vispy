@@ -130,7 +130,7 @@ install:
     # Install IPython
     - if [ "${DEPS}" == "full" ]; then
         if [ "${PYTHON}" == "2.7" ]; then
-          pip install -q \"ipython[notebook]\";
+          pip install -q '"ipython[notebook]"';
         else
           conda install --yes --quiet ipython ipython-notebook;
         fi;
