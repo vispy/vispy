@@ -53,12 +53,12 @@ class Canvas(app.Canvas):
 
         self.horizontal_bar = get_horizontal_bar()
         self.horizontal_bar.label.font_size = 15
-        self.horizontal_bar.label.color = 'white'
 
         self.vertical_bar = get_vertical_bar()
-
         self.vertical_bar.label.font_size = 15
-        self.vertical_bar.label.color = 'white'
+        self.vertical_bar.border_width = 5
+        self.vertical_bar.border_color = "black"
+        self.vertical_bar.clim = (300, 500)
 
         # construct a default transform that does identity scaling
         # and does not translate the coordinates
@@ -73,7 +73,7 @@ class Canvas(app.Canvas):
 
     def on_draw(self, event):
         # clear the color buffer
-        gloo.clear(color=Color("gray"))
+        gloo.clear(color=Color("white"))
 
         # render the horizontal and vertical bar
         # with the TransformSystem we had created before
