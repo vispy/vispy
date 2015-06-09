@@ -15,7 +15,7 @@ env:
     # Enable python 2 and python 3 builds
     # Note that the 2.6 build doesn't get flake8, and runs old versions of
     # Pyglet and GLFW to make sure we deal with those correctly
-    - PYTHON=2.6 DEPS=full TEST=standard  # functionality
+    - PYTHON=2.6 DEPS=full TEST=standard  IPYTHON="=2.0"# functionality
     - PYTHON=2.7 DEPS=full TEST=standard
     - PYTHON=2.7 DEPS=minimal TEST=standard
     - PYTHON=3.4 DEPS=full TEST=standard
@@ -132,7 +132,7 @@ install:
         if [ "${PYTHON}" == "2.7" ]; then
           pip install -q ipython[notebook];
         else
-          conda install --yes --quiet ipython ipython-notebook;
+          conda install --yes --quiet ipython$IPYTHON ipython-notebook;
         fi;
       fi;
 
