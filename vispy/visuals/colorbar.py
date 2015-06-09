@@ -154,9 +154,6 @@ class ColorBarVisual(Visual):
         # positioned with a call to _update
         self._label = TextVisual(label, anchor_y="top")
         self._ticks = []
-        self._ticks.append(TextVisual(str(self._clim[0]), anchor_y="top"))
-        self._ticks.append(TextVisual(str(self._clim[1]), anchor_y="top"))
-
         # setup border rendering
         self._border_color = Color(border_color)
         self._border_program = ModularProgram(VERT_SHADER_BORDER,
@@ -187,12 +184,30 @@ class ColorBarVisual(Visual):
         self._update()
 
     def _update(self):
+        """Rebuilds the shaders, and repositions the objects
+           that are used internally by the ColorBarVisual
+        """
+
         x, y = self._center_pos
         halfw, halfh = self._halfdim
 
+        # if this is the first time we're initializing ever
+        # i.e - from the constructor, then create the TextVisual objects
+        # otherwise, just change the _text_.
+        # this is SUPER IMPORTANT, since the user might have modified the
+        # ticks first to have say, a white color. And then he might have
+        # edited the ticks.
+        # This way, we retain any changes made by the user
+        # to the _ticks while still reflecting changes in _clim
+        if self._ticks == []:
+            self._ticks.append(TextVisual(str(self._clim[0]), anchor_y="top"))
+            self._ticks.append(TextVisual(str(self._clim[1]), anchor_y="top"))
+        else:
+            self._ticks[0].text = str(self._clim[0])
+            self._ticks[1].text = str(self._clim[1])
+
         if self._orientation == "horizontal":
             text_x, text_y = x, y + halfh * 1.2 + self.border_width
-
             self._label.pos = text_x, text_y
 
             begin_tick_pos = x - halfw, text_y
@@ -209,7 +224,6 @@ class ColorBarVisual(Visual):
 
         elif self._orientation == "vertical":
             text_x, text_y = x + halfw * 1.2 + self._border_width, y
-
             self._label.pos = text_x, text_y
             self._label.rotation = -90
             self._label.anchor_y = "top"
