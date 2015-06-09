@@ -149,7 +149,13 @@ class ColorBarVisual(Visual):
         self._orientation = orientation
         self._border_width = border_width
         self._border_color = border_color
+
+        # initialize the labels and ticks that will be
+        # positioned with a call to regenerate
         self._label = TextVisual(label, anchor_y="top")
+        self._ticks = []
+        self._ticks.append(TextVisual(str(self._clim[0]), anchor_y="top"))
+        self._ticks.append(TextVisual(str(self._clim[1]), anchor_y="top"))
 
         # setup border rendering
         self._border_color = Color(border_color)
@@ -196,13 +202,10 @@ class ColorBarVisual(Visual):
             # However, one TextVisual with multiple strings
             # does not seem to be working as of now. (See #981)
             # https://github.com/vispy/vispy/issues/981
-            self._ticks = []
-            self._ticks.append(TextVisual(str(self._clim[0]),
-                               pos=begin_tick_pos,
-                               anchor_y="top"))
-            self._ticks.append(TextVisual(str(self._clim[1]),
-                               pos=end_tick_pos,
-                               anchor_y="top"))
+            self._ticks[0].pos = begin_tick_pos
+            self._ticks[1].pos = end_tick_pos
+
+            self._ticks[0].anchor_y = self.ticks[1].anchor_y = "top"
 
         elif self._orientation == "vertical":
             text_x, text_y = x + halfw * 1.2 + self._border_width, y
@@ -215,15 +218,12 @@ class ColorBarVisual(Visual):
             end_tick_pos = text_x, y - halfh
 
             # TODO, HACK: See comment about ticks on "horizontal" conditional
-            self._ticks = []
-            self._ticks.append(TextVisual(str(self.clim[0]),
-                               pos=begin_tick_pos,
-                               rotation=-90,
-                               anchor_y="top"))
-            self._ticks.append(TextVisual(str(self.clim[1]),
-                               pos=end_tick_pos,
-                               rotation=-90,
-                               anchor_y="top"))
+            self._ticks[0].pos = begin_tick_pos
+            self._ticks[1].pos = end_tick_pos
+
+            self._ticks[0].anchor_y = self.ticks[1].anchor_y = "top"
+            self._ticks[0].rotation = self.ticks[1].rotation = -90
+
         else:
             raise ColorBarVisual._get_orientation_error(self._orientation)
 

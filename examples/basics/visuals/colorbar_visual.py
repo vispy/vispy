@@ -16,35 +16,47 @@ from vispy.visuals import ColorBarVisual
 from vispy.color import Color
 from vispy.color.colormap import Colormap
 
-
-# construct a colormap from red to blue,
-# similar to the electromagnetic spectrum
-# any default colormap can also be used.
-spectrum = Colormap([(1., 0., 0., 1.),
-                     (1.0, 1.0, 0.0, 1.0),
-                     (0.0, 1.0, 0.0, 1.0),
-                    (0., 0., 1., 1.)])
+# construct a colormap from dark blue to light blue
+spectrum = Colormap(["#0288D1", "#B3E5FC"])
 
 
 def get_horizontal_bar():
-        halfdim = 100, 10
-        pos = 200, 400
+        halfdim = 200, 10
+        pos = 300, 400
 
         # construct a horizontally placed color bar
         # using the previously defined `spectrum` colormap
-        return ColorBarVisual(pos, halfdim, label="spectrum", cmap=spectrum)
+        horizontal = ColorBarVisual(pos, halfdim, label="horizontal-spectrum",
+                                    cmap=spectrum)
+        horizontal.label.font_size = 16
+        horizontal.ticks[0].font_size = 16
+        horizontal.ticks[1].font_size = 16
+
+        horizontal.border_width = 5
+        horizontal.border_color = Color("#212121")
+
+        return horizontal
 
 
 def get_vertical_bar():
-        pos = 400, 300
-        halfdim = 10, 100
+        pos = 600, 300
+        halfdim = 10, 200
 
         # similar to the previous case, only
         # with a vertical orientation
         # use clim to set the lower and upper values of the colorbar
         # which are drawn as labels on the bottom and top edge
-        return ColorBarVisual(pos, halfdim, label="spectrum", cmap=spectrum,
-                              orientation="vertical", clim=(-100, 100))
+        vertical = ColorBarVisual(pos, halfdim, label="vertical-spectrum",
+                                  cmap=spectrum, orientation="vertical")
+        vertical.label.font_size = 16
+        vertical.ticks[0].font_size = 16
+        vertical.ticks[1].font_size = 16
+
+        vertical.border_width = 5
+        vertical.border_color = Color("#212121")
+
+        vertical.clim = (300, 500)
+        return vertical
 
 
 class Canvas(app.Canvas):
@@ -52,13 +64,7 @@ class Canvas(app.Canvas):
         app.Canvas.__init__(self, size=(800, 600), keys="interactive")
 
         self.horizontal_bar = get_horizontal_bar()
-        self.horizontal_bar.label.font_size = 15
-
         self.vertical_bar = get_vertical_bar()
-        self.vertical_bar.label.font_size = 15
-        self.vertical_bar.border_width = 5
-        self.vertical_bar.border_color = "black"
-        self.vertical_bar.clim = (300, 500)
 
         # construct a default transform that does identity scaling
         # and does not translate the coordinates
