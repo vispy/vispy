@@ -255,7 +255,7 @@ def has_ipython(version='3.0'):
             message = (
                 "current IPython version: (%s) is "
                 "older than expected version: (%s)") % \
-                IPython.__version__, version
+                (IPython.__version__, version)
 
             return False, message
 
