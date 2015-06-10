@@ -21,18 +21,21 @@ class Canvas(vispy.app.Canvas):
         vispy.app.Canvas.__init__(self, keys='interactive', size=(800, 800))
 
         self.image = visuals.ImageVisual(image, method='subdivide')
-        self.image_transform = STTransform(scale=(7, 7), translate=(50, 50))
-
-        # Create a TransformSystem that will tell the visual how to draw
-        self.tr_sys = TransformSystem(self)
-        self.tr_sys.visual_to_document = self.image_transform
-
+        self.image.transforms.canvas = self
+        self.image.transform = STTransform(scale=(7, 7), translate=(50, 50))
+        
         self.show()
 
     def on_draw(self, ev):
         gloo.clear(color='black', depth=True)
         gloo.set_viewport(0, 0, *self.physical_size)
-        self.image.draw(self.tr_sys)
+        self.image.draw()
+
+    def on_resize(self, event):
+        # Set canvas viewport and reconfigure visual transforms to match.
+        vp = (0, 0, self.physical_size[0], self.physical_size[1])
+        self.context.set_viewport(*vp)
+        self.image.transforms.auto_configure(viewport=vp)
 
 
 if __name__ == '__main__':
