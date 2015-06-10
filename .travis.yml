@@ -18,8 +18,8 @@ env:
 
     # IPython 1.2.1 is the last version of IPython for python2.6
     # source: https://pypi.python.org/pypi/ipython/1.2.1
-    - PYTHON=2.6 DEPS=full TEST=standard  IPYTHON="=1.2.1" # functionality
-    - PYTHON=2.7 DEPS=full TEST=standard
+    - PYTHON=2.6 DEPS=full TEST=standard   # functionality
+    - PYTHON=2.7 DEPS=full TEST=standard IPYTHON="=1.2.1"
     - PYTHON=2.7 DEPS=minimal TEST=standard
     - PYTHON=3.4 DEPS=full TEST=standard
 
@@ -131,11 +131,17 @@ install:
       fi;
 
     # Install IPython
+    # No IPython for 2.6
+    # Install using conda with old version for 2.7
+    # Install using pip with new version for > 2.7
     - if [ "${DEPS}" == "full" ]; then
         if [ "${PYTHON}" == "2.7" ]; then
-          pip install -q ipython[notebook];
-        else
           conda install --yes --quiet ipython$IPYTHON ipython-notebook;
+        else
+          if [ "${PYTHON}" != "2.6" ]
+            pip install -q ipython[notebook];
+          fi;
+        else
         fi;
       fi;
 
