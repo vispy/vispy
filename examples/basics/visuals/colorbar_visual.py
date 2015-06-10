@@ -90,7 +90,7 @@ def get_vertical_bar():
     A vispy.visual.ColorBarVisual object that represents the
     data of the Mandlebrot set
     """
-    pos = 50, 300
+    pos = 100, 300
     halfdim = 10, 200
 
     # similar to the previous case, only
@@ -98,10 +98,10 @@ def get_vertical_bar():
     # use clim to set the lower and upper values of the colorbar
     # which are drawn as labels on the bottom and top edge
     vertical = ColorBarVisual(pos, halfdim,
-                              label="no. of iterations to escape",
-                              cmap=colormap, orientation="vertical")
+                              label_str="no. of iterations to escape",
+                              cmap=colormap, orientation="left")
 
-    vertical.label.font_size = 16
+    vertical.label.font_size = 20
     vertical.label.color = "white"
 
     vertical.clim = (0, MAX_ITERATIONS)

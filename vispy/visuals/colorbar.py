@@ -80,13 +80,11 @@ void main() {
 }
 """  # noqa
 
-# TODO:
-# * assumes horizontal. allow vertical
-# * draw border around rectangle
-# * allow border width setting (this will require points in
-# pixel coordinates, how do I do that?)
-# * actually obey clim
-# * write docs for color bar
+
+# The padding multiplier that's used to place the text
+# next to the Colorbar. Makes sure the text isn't
+# visually "sticking" to the Colorbar
+_TEXT_PADDING_FACTOR = 1.2
 
 
 class ColorBarVisual(Visual):
@@ -103,7 +101,7 @@ class ColorBarVisual(Visual):
         from the center. That way, the total dimensions
         of the colorbar is (x - half_width) to (x + half_width)
         and (y - half_height) to (y + half_height)
-    label : string
+    label_str : string
         The label that is to be drawn with the colorbar
         that provides information about the colorbar.
     cmap : str | vispy.color.ColorMap
@@ -116,13 +114,31 @@ class ColorBarVisual(Visual):
         the minimum and maximum values of the data that
         is given to the colorbar. This is used to draw the scale
         on the side of the colorbar.
-    orientation : {'horizontal', 'vertical'}
-        the orientation of the colorbar, used for coloring
+    orientation : {'left', 'right', 'top', 'bottom'}
+        the orientation of the colorbar, used for rendering. The
+        orientation can be thought of as the position of the label
+        relative to the color bar.
 
-            * 'horizontal': the color is applied from left to right,
-              with minimum corresponding to left and maximum to right
-            * 'vertical': the color is applied from bottom to top,
-              with mimumum corresponding to bottom and maximum to top
+        When the orientation is 'left' or 'right', the colorbar is
+        vertically placed. When it is 'top' or 'bottom', the colorbar is
+        horizontally placed.
+
+            * 'top': the colorbar is horizontal.
+              Color is applied from left to right.
+              Minimum corresponds to left and maximum to right.
+              Label is to the top of the colorbar
+
+            * 'bottom': Same as top, except that
+              label is to the bottom of the colorbar
+
+            * 'left': the colorbar is vertical.
+              Color is applied from bottom to top.
+              Minimum corresponds to bottom and maximum to top.
+              Label is to the left of the colorbar
+
+            * 'right': Same as left, except that the
+              label is placed to the right of the colorbar
+
     border_width : float (in px)
         The width of the border the colormap should have. This measurement
         is given in pixels
@@ -132,7 +148,7 @@ class ColorBarVisual(Visual):
     """
 
     def __init__(self, center_pos, halfdim,
-                 label,
+                 label_str,
                  cmap,
                  clim=(0.0, 1.0),
                  orientation="horizontal",
@@ -142,6 +158,7 @@ class ColorBarVisual(Visual):
 
         super(ColorBarVisual, self).__init__(**kwargs)
 
+        self._label_str = label_str
         self._cmap = get_colormap(cmap)
         self._clim = clim
         self._center_pos = center_pos
@@ -150,9 +167,7 @@ class ColorBarVisual(Visual):
         self._border_width = border_width
         self._border_color = border_color
 
-        # initialize the labels and ticks that will be
-        # positioned with a call to _update
-        self._label = TextVisual(label, anchor_y="top")
+        self._label = None
         self._ticks = []
         # setup border rendering
         self._border_color = Color(border_color)
@@ -166,10 +181,10 @@ class ColorBarVisual(Visual):
         self._border_program['a_adjust_dir'] = adjust_dir.astype(np.float32)
 
         # setup the right program shader based on color
-        if orientation == "horizontal":
+        if orientation == "top" or orientation == "bottom":
             self._program = ModularProgram(VERT_SHADER, FRAG_SHADER_HORIZONTAL)
 
-        elif orientation == "vertical":
+        elif orientation == "left" or orientation == "right":
             self._program = ModularProgram(VERT_SHADER, FRAG_SHADER_VERTICAL)
         else:
             raise ColorBarVisual._get_orientation_error(self._orientation)
@@ -191,6 +206,16 @@ class ColorBarVisual(Visual):
         x, y = self._center_pos
         halfw, halfh = self._halfdim
 
+        anchor_x, anchor_y = ColorBarVisual._get_anchors(self._orientation)
+        # create a new label if this is the first time this function
+        # is being called. Otherwise, just update the existing bar
+        if self._label is None:
+            self.label = TextVisual(text=self._label_str,
+                                    anchor_x=anchor_x,
+                                    anchor_y=anchor_y)
+        else:
+            self.label.text = self._label_str
+
         # if this is the first time we're initializing ever
         # i.e - from the constructor, then create the TextVisual objects
         # otherwise, just change the _text_.
@@ -200,47 +225,65 @@ class ColorBarVisual(Visual):
         # This way, we retain any changes made by the user
         # to the _ticks while still reflecting changes in _clim
         if self._ticks == []:
-            self._ticks.append(TextVisual(str(self._clim[0]), anchor_y="top"))
-            self._ticks.append(TextVisual(str(self._clim[1]), anchor_y="top"))
+            self._ticks.append(TextVisual(str(self._clim[0]),
+                                          anchor_x=anchor_x,
+                                          anchor_y=anchor_y))
+            self._ticks.append(TextVisual(str(self._clim[1]),
+                                          anchor_x=anchor_x,
+                                          anchor_y=anchor_y))
         else:
             self._ticks[0].text = str(self._clim[0])
             self._ticks[1].text = str(self._clim[1])
 
-        if self._orientation == "horizontal":
-            text_x, text_y = x, y + halfh * 1.2 + self.border_width
-            self._label.pos = text_x, text_y
+        # Place the labels according to the given orientation
+        if self._orientation == "bottom":
+            text_x = x
+            text_y = y + _TEXT_PADDING_FACTOR * (halfh + self.border_width)
 
-            begin_tick_pos = x - halfw, text_y
-            end_tick_pos = x + halfw, text_y
+            self._label.pos = text_x, text_y
 
             # TODO, HACK: This should ideally be a single TextVisual
             # However, one TextVisual with multiple strings
             # does not seem to be working as of now. (See #981)
             # https://github.com/vispy/vispy/issues/981
-            self._ticks[0].pos = begin_tick_pos
-            self._ticks[1].pos = end_tick_pos
+            self._ticks[0].pos = x - halfw, text_y
+            self._ticks[1].pos = x + halfw, text_y
 
-            self._ticks[0].anchor_y = self.ticks[1].anchor_y = "top"
+        elif self._orientation == "top":
+            text_x = x
+            text_y = y - _TEXT_PADDING_FACTOR * (halfh + self.border_width)
+            self._label.pos = text_x, text_y
 
-        elif self._orientation == "vertical":
-            text_x, text_y = x + halfw * 1.2 + self._border_width, y
+            self._ticks[0].pos = x - halfw, text_y
+            self._ticks[1].pos = x + halfw, text_y
+
+        elif self._orientation == "right":
+            text_x = x + _TEXT_PADDING_FACTOR * (halfw + self.border_width)
+            text_y = y
             self._label.pos = text_x, text_y
             self._label.rotation = -90
-            self._label.anchor_y = "top"
-
-            begin_tick_pos = text_x, y + halfh
-            end_tick_pos = text_x, y - halfh
 
             # TODO, HACK: See comment about ticks on "horizontal" conditional
-            self._ticks[0].pos = begin_tick_pos
-            self._ticks[1].pos = end_tick_pos
-
-            self._ticks[0].anchor_y = self.ticks[1].anchor_y = "top"
+            self._ticks[0].pos = text_x, y + halfh
+            self._ticks[1].pos = text_x, y - halfh
             self._ticks[0].rotation = self.ticks[1].rotation = -90
 
+        elif self._orientation == "left":
+            text_x = x - _TEXT_PADDING_FACTOR * (halfw + self.border_width)
+            text_y = y
+            self._label.pos = text_x, text_y
+            self._label.rotation = -270
+
+            self._ticks[0].pos = text_x, y + halfh
+            self._ticks[1].pos = text_x, y - halfh
+            self._ticks[0].rotation = self.ticks[1].rotation = -270
+
         else:
+            # raise an error since the orientation is now what was
+            # expected
             raise ColorBarVisual._get_orientation_error(self._orientation)
 
+        # Set up the attributes that the shaders require
         vertices = np.array([[x - halfw, y - halfh],
                             [x + halfw, y - halfh],
                             [x + halfw, y + halfh],
@@ -261,6 +304,17 @@ class ColorBarVisual(Visual):
         return ValueError("orientation must"
                           " be 'horizontal' or 'vertical', "
                           "not '%s'" % (orientation, ))
+
+    @staticmethod
+    def _get_anchors(orientation):
+        if orientation == "top":
+            return "center", "bottom"
+        elif orientation == "bottom":
+            return "center", "top"
+        elif orientation == "left":
+            return "center", "top"
+        else:  # orientation == "right"
+            return "center", "top"
 
     @property
     def cmap(self):
