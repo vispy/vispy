@@ -31,6 +31,11 @@ def test_webgl_loading():
     else:
         ipy.run_cell("%load_ext vispy.ipython")
         ipy.run_cell("backend_name = app.use_app().backend_name")
+
         # the above call should have failed, and thus the key
         # backend_name should not exist in the namespace
-        assert_raises(KeyError, ipy.user_ns["backend_name"])
+
+        def invalid_backend_access(ipy):
+            ipy.user_ns["backend_name"]
+
+        assert_raises(KeyError, invalid_backend_access, ipy)
