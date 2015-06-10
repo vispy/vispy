@@ -23,13 +23,16 @@ class GridMeshVisual(MeshVisual):
     zs : ndarray
         A 2d array of z coordinates for the vertices of the mesh. Must
         have the same dimensions as xs and ys.
-    colors : ndarray
+    colors : ndarray | None
         The colors of the points of the mesh. Should be either a
         (width, height, 4) array of rgba colors at each grid point or
         a (width, height, 3) array of rgb colors at each grid point.
-        Defaults to None, in which case 
+        Defaults to None, in which case the default color of a
+        MeshVisual is used.
     shading : str | None
         Same as for the `MeshVisual` class. Defaults to 'smooth'.
+    **kwargs :
+        Other arguments are passed directly to MeshVisual.
     """
 
     def __init__(self, xs, ys, zs, colors=None, shading='smooth',
@@ -43,7 +46,6 @@ class GridMeshVisual(MeshVisual):
         self._ys = None
         self._zs = None
 
-        self.__colors = None
         self.__vertices = None
         self.__meshdata = MeshData()
 
@@ -88,7 +90,6 @@ class GridMeshVisual(MeshVisual):
             self.__meshdata.set_faces(indices)
 
         if colors is not None:
-            self.__colors = colors
             self.__meshdata.set_vertex_colors(colors.reshape(
                 colors.shape[0] * colors.shape[1], colors.shape[2]))
 
