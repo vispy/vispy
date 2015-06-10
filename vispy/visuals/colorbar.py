@@ -272,11 +272,11 @@ class ColorBarVisual(Visual):
             text_x = x - _TEXT_PADDING_FACTOR * (halfw + self.border_width)
             text_y = y
             self._label.pos = text_x, text_y
-            self._label.rotation = -270
+            self._label.rotation = -90
 
             self._ticks[0].pos = text_x, y + halfh
             self._ticks[1].pos = text_x, y - halfh
-            self._ticks[0].rotation = self.ticks[1].rotation = -270
+            self._ticks[0].rotation = self.ticks[1].rotation = -90
 
         else:
             # raise an error since the orientation is now what was
@@ -312,7 +312,7 @@ class ColorBarVisual(Visual):
         elif orientation == "bottom":
             return "center", "top"
         elif orientation == "left":
-            return "center", "top"
+            return "center", "bottom"
         else:  # orientation == "right"
             return "center", "top"
 
