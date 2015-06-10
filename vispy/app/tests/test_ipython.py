@@ -4,7 +4,7 @@
 """Tests for Vispy's IPython bindings"""
 
 # from vispy import IPython
-from numpy.testing import assert_equal
+from numpy.testing import assert_equal, assert_raises
 from vispy.testing import requires_ipython
 
 
@@ -30,7 +30,7 @@ def test_webgl_loading():
         assert_equal(ipy.user_ns["backend_name"], "ipynb_webgl")
     else:
         ipy.run_cell("%load_ext vispy.ipython")
-        # HACK: duplicate code branches for now to see what happens.
         ipy.run_cell("backend_name = app.use_app().backend_name")
-        # make sure that the webgl backend got loaded
-        assert_equal(ipy.user_ns["backend_name"], "ipynb_webgl")
+        # the above call should have failed, and thus the key
+        # backend_name should not exist in the namespace
+        assert_raises(KeyError, ipy.user_ns["backend_name"])
