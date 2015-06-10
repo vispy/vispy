@@ -138,10 +138,9 @@ install:
         if [ "${PYTHON}" == "2.7" ]; then
           conda install --yes --quiet ipython$IPYTHON ipython-notebook;
         else
-          if [ "${PYTHON}" != "2.6" ]
+          if [ "${PYTHON}" != "2.6" ]; then
             pip install -q ipython[notebook];
           fi;
-        else
         fi;
       fi;
 
