@@ -148,10 +148,10 @@ class ColorBarVisual(Visual):
     """
 
     def __init__(self, center_pos, halfdim,
-                 label_str,
                  cmap,
+                 orientation,
+                 label_str="",
                  clim=(0.0, 1.0),
-                 orientation="horizontal",
                  border_width=1.0,
                  border_color="black",
                  **kwargs):
