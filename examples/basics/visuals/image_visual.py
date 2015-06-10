@@ -19,16 +19,13 @@ image = np.random.normal(size=(100, 100, 3), loc=128,
 class Canvas(vispy.app.Canvas):
     def __init__(self):
         vispy.app.Canvas.__init__(self, keys='interactive', size=(800, 800))
-
         self.image = visuals.ImageVisual(image, method='subdivide')
         self.image.transforms.canvas = self
         self.image.transform = STTransform(scale=(7, 7), translate=(50, 50))
-        
         self.show()
 
     def on_draw(self, ev):
         gloo.clear(color='black', depth=True)
-        gloo.set_viewport(0, 0, *self.physical_size)
         self.image.draw()
 
     def on_resize(self, event):
