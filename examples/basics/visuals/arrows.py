@@ -9,6 +9,8 @@ This example demonstrates how to draw lines with one or more arrow heads.
 
 import sys
 
+import numpy as np
+
 from vispy import app, gloo, visuals
 from vispy.geometry import curves
 from vispy.visuals.transforms import STTransform, NullTransform
@@ -17,7 +19,7 @@ from vispy.visuals.transforms import STTransform, NullTransform
 class Canvas(app.Canvas):
     def __init__(self):
         app.Canvas.__init__(self, title='Arrows example',
-                            keys='interactive', size=(400, 750))
+                            keys='interactive', size=(450, 750))
 
         line1 = curves.curve4_bezier(
             (10, 0),
@@ -25,7 +27,7 @@ class Canvas(app.Canvas):
             (350, 190),
             (390, 0)
         )
-        arrows1 = (line1[-2:],)
+        arrows1 = ([line1[-3], line1[-2]],)
 
         line2 = curves.curve4_bezier(
             (10, 0),
@@ -47,11 +49,16 @@ class Canvas(app.Canvas):
         print(arrows1)
         print(arrows2)
 
+        body = arrows1[0][1] - arrows1[0][0]
+        print(np.linalg.norm(body), body/np.linalg.norm(body))
+
         self.lines = [
             visuals.ArrowVisual(line1, color='w', width=2, method='agg',
-                                arrows=arrows1, arrow_type='curved'),
+                                arrows=arrows1, arrow_type='curved',
+                                arrow_size=30.0),
             visuals.ArrowVisual(line2, color='w', width=2, method='agg',
-                                arrows=arrows2, arrow_type='curved'),
+                                arrows=arrows2, arrow_type='curved',
+                                arrow_size=3.0),
             visuals.LineVisual(line3, color='w', width=2, method='agg')
         ]
 

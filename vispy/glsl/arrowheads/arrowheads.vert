@@ -45,5 +45,5 @@ void main (void)
     v_orientation = vec2(-v_orientation.y, v_orientation.x);
 
     gl_Position = $transform(vec4(v2, 0, 1));
-    gl_PointSize = M_SQRT2 * 2* size + 2.0 * (linewidth + 1.5*antialias);
+    gl_PointSize = M_SQRT2 * size + 2.0 * (linewidth + 1.5*antialias);
 }
