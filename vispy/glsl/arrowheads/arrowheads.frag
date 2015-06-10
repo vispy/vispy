@@ -20,16 +20,14 @@ varying float v_size;
 varying vec4  v_color;
 varying vec2  v_orientation;
 
-// Main (hooked)
-// ------------------------------------
 void main()
 {
-    vec2 P = gl_PointCoord.xy - vec2(0.5,0.5);
+    vec2 P = gl_PointCoord.xy - vec2(0.5, 0.5);
     P = vec2(v_orientation.x*P.x - v_orientation.y*P.y,
              v_orientation.y*P.x + v_orientation.x*P.y) * v_size;
-    float point_size = M_SQRT2*v_size  + 2.0 * (v_linewidth + 1.5*v_antialias);
-    float size = v_size/M_SQRT2;
 
+    float size = v_size / M_SQRT2;
     float distance = arrow_$arrow_type(P, size, v_linewidth, v_antialias);
+    distance = distance;
     gl_FragColor = filled(distance, v_linewidth, v_antialias, v_color, v_color);
 }
