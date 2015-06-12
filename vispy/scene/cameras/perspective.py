@@ -208,7 +208,8 @@ class Base3DRotationCamera(PerspectiveCamera):
 
         if event.type == 'mouse_release':
             self._event_value = None  # Reset
-
+        elif event.type == 'mouse_press':
+            event.handled = True
         elif event.type == 'mouse_move':
             if event.press_event is None:
                 return
