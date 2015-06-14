@@ -132,14 +132,14 @@ install:
 
     # Install IPython
     # No IPython for 2.6
-    # Install using conda with old version for 2.7
-    # Install using pip with new version for > 2.7
+    # Install using pip with old version for 2.7
+    # Install using conda with new version for > 2.7
     - if [ "${DEPS}" == "full" ]; then
         if [ "${PYTHON}" == "2.7" ]; then
           pip install -q ipython[notebook]$IPYTHON_VERSION;
         else
           if [ "${PYTHON}" != "2.6" ]; then
-            pip install -q ipython[notebook];
+            conda update --yes --quiet ipython ipython-notebook;
           fi;
         fi;
       fi;
