@@ -112,11 +112,9 @@ install:
     # which is required by matplotlib :(
     # No wx on py3k, wxpython doesn't work there (!)
     - if [ "${DEPS}" == "full" ]; then
+        pip install -q pyglet;
         if [ "${PYTHON}" == "2.6" ]; then
-          pip install -q pyglet;
           conda install --yes --quiet wxpython > ${REDIRECT_TO};
-        else
-          pip install -q pyglet;
         fi;
         if [ "${PYTHON}" == "3.4" ]; then
           conda install --yes --quiet pillow scipy matplotlib decorator six > ${REDIRECT_TO};
