@@ -35,8 +35,8 @@ def create_colorbar(center_pos, halfdim, orientation):
 
 
 @requires_application()
-def test_rectangle_draw():
-    """Test drawing Colorbar without transform using RectPolygonVisual"""
+def test_colorbar_draw():
+    """Test drawing Colorbar without transform using ColorbarVisual"""
     with TestingCanvas() as c:
         colorbar_top = create_colorbar(
                         center_pos=(50, 50),
@@ -44,96 +44,75 @@ def test_rectangle_draw():
                         orientation='top')
 
         c.draw_visual(colorbar_top)
-        assert_image_approved("screenshot", 'visuals/colorbar_top.png')
+        assert_image_approved("screenshot", 'visuals/colorbar/top.png')
 
-#         rectpolygon = visuals.Rectangle(pos=(50, 50, 0), height=40.,
-#                                         width=80., radius=10., color='red')
-#         c.draw_visual(rectpolygon)
-#         assert_image_approved("screenshot", 'visuals/rectpolygon2.png')
+        colorbar_bottom = create_colorbar(
+                        center_pos=(50, 50),
+                        halfdim=(30, 2),
+                        orientation='bottom')
 
-#         rectpolygon = visuals.Rectangle(pos=(50, 50, 0), height=40.,
-#                                         width=80., radius=10., color='red',
-#                                         border_color=(0, 1, 1, 1))
-#         c.draw_visual(rectpolygon)
-#         assert_image_approved("screenshot", 'visuals/rectpolygon3.png')
+        c.draw_visual(colorbar_bottom)
+        assert_image_approved("screenshot", 'visuals/colorbar/bottom.png')
 
-#         rectpolygon = visuals.Rectangle(pos=(50, 50, 0), height=40.,
-#                                         width=80., radius=10.,
-#                                         border_color='white')
-#         c.draw_visual(rectpolygon)
-#         assert_image_approved("screenshot", 'visuals/rectpolygon4.png',
-#                               min_corr=0.5)
+        colorbar_left = create_colorbar(
+                        center_pos=(50, 50),
+                        halfdim=(2, 30),
+                        orientation='left')
 
+        c.draw_visual(colorbar_left)
+        assert_image_approved("screenshot", 'visuals/colorbar/left.png')
 
-# @requires_application()
-# def test_rectpolygon_draw():
-#     """Test drawing transformed rectpolygons using RectPolygonVisual"""
-#     with TestingCanvas() as c:
-#         rectpolygon = visuals.Rectangle(pos=(0., 0.), height=20.,
-#                                         width=20., radius=10., color='blue')
-#         rectpolygon.transform = transforms.STTransform(scale=(2.0, 3.0),
-#                                                        translate=(50, 50))
-#         c.draw_visual(rectpolygon)
-#         assert_image_approved("screenshot", 'visuals/rectpolygon6.png')
+        colorbar_right = create_colorbar(
+                        center_pos=(50, 50),
+                        halfdim=(2, 30),
+                        orientation='right')
 
-#         rectpolygon = visuals.Rectangle(pos=(0., 0.), height=20.,
-#                                         width=20., radius=10.,
-#                                         color='blue', border_color='red')
-#         rectpolygon.transform = transforms.STTransform(scale=(2.0, 3.0),
-#                                                        translate=(50, 50))
-#         c.draw_visual(rectpolygon)
-#         assert_image_approved("screenshot", 'visuals/rectpolygon7.png')
-
-#         rectpolygon = visuals.Rectangle(pos=(0., 0.), height=60.,
-#                                         width=60., radius=10.,
-#                                         border_color='red')
-#         rectpolygon.transform = transforms.STTransform(scale=(1.5, 0.5),
-#                                                        translate=(50, 50))
-#         c.draw_visual(rectpolygon)
-#         assert_image_approved("screenshot", 'visuals/rectpolygon8.png',
-#                               min_corr=0.5)
-
-#         rectpolygon = visuals.Rectangle(pos=(0., 0.), height=60.,
-#                                         width=60., radius=[25, 10, 0, 15],
-#                                         color='blue', border_color='red')
-#         rectpolygon.transform = transforms.STTransform(scale=(1.5, 0.5),
-#                                                        translate=(50, 50))
-#         c.draw_visual(rectpolygon)
-#         assert_image_approved("screenshot", 'visuals/rectpolygon9.png')
+        c.draw_visual(colorbar_right)
+        assert_image_approved("screenshot", 'visuals/colorbar/right.png')
 
 
-# @requires_application()
-# def test_reactive_draw():
-#     """Test reactive RectPolygon attributes"""
-#     with TestingCanvas() as c:
-#         rectpolygon = visuals.Rectangle(pos=(50, 50, 0), height=40.,
-#                                         width=80., color='red')
-#         c.draw_visual(rectpolygon)
+@requires_application()
+def test_reactive_draw():
+    """Test reactive RectPolygon attributes"""
+    with TestingCanvas() as c:
+        colorbar = create_colorbar(
+                        center_pos=(50, 50),
+                        halfdim=(30, 2),
+                        orientation='top')
+        c.draw_visual(colorbar)
 
-#         rectpolygon.radius = [20., 20, 0., 10.]
-#         c.draw_visual(rectpolygon)
-#         assert_image_approved("screenshot",
-#                               'visuals/reactive_rectpolygon1.png')
+        colorbar.cmap = "ice"
+        c.draw_visual(colorbar)
+        assert_image_approved("screenshot",
+                              'visuals/colorbar/reactive_cmap.png')
 
-#         rectpolygon.pos = (60, 60, 0)
-#         c.draw_visual(rectpolygon)
-#         assert_image_approved("screenshot",
-#                               'visuals/reactive_rectpolygon2.png')
+        colorbar.clim = (-20, 20)
+        c.draw_visual(colorbar)
+        assert_image_approved("screenshot",
+                              'visuals/colorbar/reactive_clim.png')
 
-#         rectpolygon.color = 'blue'
-#         c.draw_visual(rectpolygon)
-#         assert_image_approved("screenshot",
-#                               'visuals/reactive_rectpolygon3.png')
+        colorbar.label.text = "new label"
+        c.draw_visual(colorbar)
+        assert_image_approved("screenshot",
+                              'visuals/colorbar/reactive_label.png')
 
-#         rectpolygon.border_color = 'yellow'
-#         c.draw_visual(rectpolygon)
-#         assert_image_approved("screenshot",
-#                               'visuals/reactive_rectpolygon4.png')
+        colorbar.ticks[0].color = "red"
+        colorbar.ticks[1].color = "blue"
+        c.draw_visual(colorbar)
+        assert_image_approved("screenshot",
+                              'visuals/colorbar/reactive_ticks.png')
 
-#         rectpolygon.radius = 10.
-#         c.draw_visual(rectpolygon)
-#         assert_image_approved("screenshot",
-#                               'visuals/reactive_rectpolygon5.png')
+        colorbar.border_width = 0
+        c.draw_visual(colorbar)
+        assert_image_approved("screenshot",
+                              'visuals/colorbar/reactive_border_width.png')
+
+        colorbar.border_width = 5
+        colorbar.border_color = "red"
+        c.draw_visual(colorbar)
+        assert_image_approved("screenshot",
+                              'visuals/colorbar/reactive_border_color.png')
+
 
 
 # @requires_application()
