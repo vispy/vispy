@@ -137,7 +137,7 @@ install:
           pip install -q ipython[notebook]$IPYTHON_VERSION;
         else
           if [ "${PYTHON}" != "2.6" ]; then
-            conda update --yes --quiet ipython ipython-notebook;
+            conda install --yes --quiet ipython ipython-notebook;
           fi;
         fi;
       fi;
