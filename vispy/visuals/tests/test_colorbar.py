@@ -114,23 +114,55 @@ def test_reactive_draw():
                               'visuals/colorbar/reactive_border_color.png')
 
 
+@requires_application()
+def test_attributes():
+    """Test if attribute checks are in place"""
+    with TestingCanvas():
 
-# @requires_application()
-# def test_attributes():
-#     """Test if attribute checks are in place"""
-#     with TestingCanvas():
-#         rectpolygon = visuals.Rectangle(pos=(50, 50, 0), height=40.,
-#                                         width=80., color='red')
-#         with raises(ValueError):
-#             rectpolygon.height = 0
-#         with raises(ValueError):
-#             rectpolygon.width = 0
-#         with raises(ValueError):
-#             rectpolygon.radius = [10, 0, 5]
-#         with raises(ValueError):
-#             rectpolygon.radius = [10.]
-#         with raises(ValueError):
-#             rectpolygon.radius = 21.
+        # initialize with wrong dimensions for orientations
+        with raises(ValueError):
+            create_colorbar(
+                        center_pos=(50, 50),
+                        halfdim=(1, 30),
+                        orientation='top')
 
+        with raises(ValueError):
+            create_colorbar(
+                        center_pos=(50, 50),
+                        halfdim=(1, 30),
+                        orientation='bottom')
+
+        with raises(ValueError):
+            create_colorbar(
+                        center_pos=(50, 50),
+                        halfdim=(30, 1),
+                        orientation='left')
+
+        with raises(ValueError):
+            create_colorbar(
+                        center_pos=(50, 50),
+                        halfdim=(30, 1),
+                        orientation='right')
+
+        # set width to 0
+        with raises(ValueError):
+            create_colorbar(
+                        center_pos=(50, 50),
+                        halfdim=(0, 1),
+                        orientation='right')
+
+        # set height to 0
+        with raises(ValueError):
+            create_colorbar(
+                        center_pos=(50, 50),
+                        halfdim=(1, 0),
+                        orientation='right')
+
+        # set invalid orientation
+        with raises(ValueError):
+            create_colorbar(
+                        center_pos=(50, 50),
+                        halfdim=(30, 2),
+                        orientation='top-invalid')
 
 run_tests_if_main()
