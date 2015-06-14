@@ -235,6 +235,20 @@ class ColorBarVisual(Visual):
             self._ticks[0].text = str(self._clim[0])
             self._ticks[1].text = str(self._clim[1])
 
+        if (self._orientation == "bottom" or
+           self._orientation == "top"):
+                if halfw < halfh:
+                    raise ValueError("half-width(%s) < half-height(%s) for"
+                                     "%s orientation,"
+                                     " expected half-width >= half-height",
+                                     (halfw, halfh, self._orientation, ))
+        else:  # orientation == left or orientation == right
+            if halfw > halfh:
+                raise ValueError("half-width(%s) > half-height(%s) for"
+                                 "%s orientation,"
+                                 " expected half-width <= half-height",
+                                 (halfw, halfh, self._orientation, ))
+
         # Place the labels according to the given orientation
         if self._orientation == "bottom":
             text_x = x
