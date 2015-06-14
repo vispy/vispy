@@ -101,19 +101,12 @@ class ColorBarVisual(Visual):
         from the center. That way, the total dimensions
         of the colorbar is (x - half_width) to (x + half_width)
         and (y - half_height) to (y + half_height)
-    label_str : string
-        The label that is to be drawn with the colorbar
-        that provides information about the colorbar.
     cmap : str | vispy.color.ColorMap
         either the name of the ColorMap to be used from the standard
         set of names (refer to `vispy.color.get_colormap`),
         or a custom ColorMap object.
 
         The ColorMap is used to apply a gradient on the colorbar.
-    clim : tuple (min, max)
-        the minimum and maximum values of the data that
-        is given to the colorbar. This is used to draw the scale
-        on the side of the colorbar.
     orientation : {'left', 'right', 'top', 'bottom'}
         the orientation of the colorbar, used for rendering. The
         orientation can be thought of as the position of the label
@@ -138,7 +131,13 @@ class ColorBarVisual(Visual):
 
             * 'right': Same as left, except that the
               label is placed to the right of the colorbar
-
+    label_str : string
+        The label that is to be drawn with the colorbar
+        that provides information about the colorbar.
+    clim : tuple (min, max)
+        the minimum and maximum values of the data that
+        is given to the colorbar. This is used to draw the scale
+        on the side of the colorbar.
     border_width : float (in px)
         The width of the border the colormap should have. This measurement
         is given in pixels
@@ -342,6 +341,8 @@ class ColorBarVisual(Visual):
 
     @property
     def cmap(self):
+        """ The colormap of the Colorbar
+        """
         return self._cmap
 
     @cmap.setter
@@ -351,6 +352,13 @@ class ColorBarVisual(Visual):
 
     @property
     def clim(self):
+        """ The data limits of the Colorbar
+
+        Returns
+        -------
+        clim: tuple(min, max)
+        """
+
         return self._clim
 
     @clim.setter
@@ -361,6 +369,8 @@ class ColorBarVisual(Visual):
 
     @property
     def label(self):
+        """ The vispy.visuals.TextVisual associated with the label
+        """
         return self._label
 
     @label.setter
@@ -371,6 +381,13 @@ class ColorBarVisual(Visual):
 
     @property
     def ticks(self):
+        """ The vispy.visuals.TextVisual associated with the ticks
+
+        Returns
+        -------
+        ticks: [vispy.visual.TextVisual]
+            The array is of length 2
+        """
         return self._ticks
 
     @ticks.setter
@@ -380,6 +397,8 @@ class ColorBarVisual(Visual):
 
     @property
     def border_width(self):
+        """ The width of the border around the ColorBar in pixels
+        """
         return self._border_width
 
     @border_width.setter
@@ -390,6 +409,8 @@ class ColorBarVisual(Visual):
 
     @property
     def border_color(self):
+        """ The color of the border around the ColorBar in pixels
+        """
         return self._border_color
 
     @border_color.setter
