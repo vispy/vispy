@@ -235,6 +235,16 @@ class ColorBarVisual(Visual):
             self._ticks[0].text = str(self._clim[0])
             self._ticks[1].text = str(self._clim[1])
 
+        # test that width and height are non-zero
+        if halfw <= 0:
+            raise ValueError("half-width must be positive and non-zero"
+                             ", not %s", halfw)
+        if halfh <= 0:
+            raise ValueError("half-height must be positive and non-zero"
+                             ", not %s", halfh)
+
+        # test that the given width and height is consistent
+        # with the orientation
         if (self._orientation == "bottom" or
            self._orientation == "top"):
                 if halfw < halfh:
