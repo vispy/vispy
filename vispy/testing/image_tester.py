@@ -361,7 +361,7 @@ def get_test_data_repo():
     # This tag marks the test-data commit that this version of vispy should 
     # be tested against. When adding or changing test images, create
     # and push a new tag and update this variable.
-    test_data_tag = 'test-data-1'
+    test_data_tag = 'test-data-2'
     
     data_path = config['test_data_path']
     git_path = 'https://github.com/vispy/test-data'
