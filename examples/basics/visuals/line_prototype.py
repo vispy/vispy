@@ -268,7 +268,7 @@ if __name__ == '__main__':
         vp = (0, 0, canvas.physical_size[0], canvas.physical_size[1])
         canvas.context.set_viewport(*vp)
         for v in order:
-            v.transforms.auto_configure(viewport=vp)
+            v.transforms.configure(canvas=canvas, viewport=vp)
     canvas.events.resize.connect(on_resize)
     on_resize(None)
 

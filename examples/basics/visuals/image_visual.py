@@ -20,7 +20,6 @@ class Canvas(vispy.app.Canvas):
     def __init__(self):
         vispy.app.Canvas.__init__(self, keys='interactive', size=(800, 800))
         self.image = visuals.ImageVisual(image, method='subdivide')
-        self.image.transforms.canvas = self
         self.image.transform = STTransform(scale=(7, 7), translate=(50, 50))
         self.show()
 
@@ -32,7 +31,7 @@ class Canvas(vispy.app.Canvas):
         # Set canvas viewport and reconfigure visual transforms to match.
         vp = (0, 0, self.physical_size[0], self.physical_size[1])
         self.context.set_viewport(*vp)
-        self.image.transforms.auto_configure(viewport=vp)
+        self.image.transforms.configure(canvas=self, viewport=vp)
 
 
 if __name__ == '__main__':

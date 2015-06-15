@@ -57,9 +57,6 @@ class Canvas(vispy.app.Canvas):
                                     STTransform(scale=(np.pi/200, 0.005),
                                                 translate=(-3*np.pi/4., 0.1)))
 
-        for img in self.images:
-            img.transforms.canvas = self
-
         self.show()
 
     def on_draw(self, ev):
@@ -72,7 +69,7 @@ class Canvas(vispy.app.Canvas):
         vp = (0, 0, self.physical_size[0], self.physical_size[1])
         self.context.set_viewport(*vp)
         for img in self.images:
-            img.transforms.auto_configure(viewport=vp)
+            img.transforms.configure(canvas=self, viewport=vp)
 
 
 # A simple custom Transform
