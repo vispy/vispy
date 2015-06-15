@@ -11,6 +11,7 @@ a scenegraph. For scenegraph use, see the complementary Visual+Node classes
 defined in vispy.scene.
 """
 
+from .axis import AxisVisual  # noqa
 from .box import BoxVisual  # noqa
 from .cube import CubeVisual  # noqa
 from .ellipse import EllipseVisual  # noqa
