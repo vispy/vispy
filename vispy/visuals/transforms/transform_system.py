@@ -160,7 +160,8 @@ class TransformSystem(object):
                    self._framebuffer_transform):
             tr.changed.connect(self.changed)
 
-    def auto_configure(self, viewport=None, fbo_size=None, fbo_rect=None):
+    def configure(self, viewport=None, fbo_size=None, fbo_rect=None,
+                  canvas=None):
         """Automatically configure the TransformSystem:
 
         * canvas_transform maps from the Canvas logical pixel
@@ -183,11 +184,15 @@ class TransformSystem(object):
             The position and size (x, y, w, h) of the FBO in the coordinate
             system of the canvas's framebuffer. If None, then the bounds are
             assumed to cover the entire active framebuffer.
+        canvas : Canvas instance
+            Optionally set the canvas for this TransformSystem. See the 
+            `canvas` property.
         """
         # TODO: check that d2f and f2r transforms still contain a single
         # STTransform (if the user has modified these, then auto-config should
         # either fail or replace the transforms)
-        
+        if canvas is not None:
+            self.canvas = canvas
         canvas = self._canvas
         if canvas is None:
             raise RuntimeError("No canvas assigned to this TransformSystem.")

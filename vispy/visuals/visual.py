@@ -149,7 +149,7 @@ class BaseVisual(object):
 
     @property
     def transform(self):
-        return self.transforms.visual_transform
+        return self.transforms.visual_transform.transforms[0]
     
     @transform.setter
     def transform(self, tr):
@@ -181,6 +181,7 @@ class BaseVisual(object):
     def _transform_changed(self, event):
         self.update()
 
+
 class BaseVisualView(object):
     """Base class for a view on a visual.
     
@@ -201,8 +202,8 @@ class BaseVisualView(object):
     def _prepare_transforms(self, view):
         self._visual._prepare_transforms(view)
     
-    def _compute_bounds(self, axis):
-        self._visual._compute_bounds(axis)
+    def _compute_bounds(self, axis, view):
+        self._visual._compute_bounds(axis, view)
         
     def __repr__(self):
         return '<%s on %r>' % (self.__class__.__name__, self._visual)
@@ -271,10 +272,10 @@ class Visual(BaseVisual):
     def bounds(self, axis):
         cache = self.vshare.bounds
         if axis not in cache:
-            cache[axis] = self._compute_bounds(axis)
+            cache[axis] = self._compute_bounds(axis, view=self)
         return cache[axis]
 
-    def _compute_bounds(self, *args):
+    def _compute_bounds(self, axis, view):
         """Return the (min, max) bounding values of this visual along *axis*
         in the local coordinate system.
         """
@@ -459,10 +460,6 @@ class CompoundVisual(BaseVisual):
     def _prepare_draw(self, view):
         pass
             
-    def bounds(self, axis):
-        # TODO: return union of bounds
-        return self._subvisuals[0].bounds(axis)
-        
     def set_gl_state(self, preset=None, **kwargs):
         for v in self._subvisuals:
             v.set_gl_state(preset=preset, **kwargs)
@@ -478,6 +475,17 @@ class CompoundVisual(BaseVisual):
     def detach(self, filter, view=None):
         for v in self._subvisuals:
             v.detach(filter, v)
+    
+    def _compute_bounds(self, axis, view):
+        bounds = None
+        for v in self._subvisuals:
+            if v.visible:
+                vb = b.bounds(axis, view)
+                if bounds is None:
+                    bounds = vb
+                else:
+                    bounds = [min(bounds[0], vb[0]), max(bounds[1], vb[1])]
+        return bounds
     
 
 class CompoundVisualView(BaseVisualView, CompoundVisual):
