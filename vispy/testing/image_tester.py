@@ -74,6 +74,9 @@ def assert_image_approved(image, standard_file, message=None, **kwargs):
     This function will automatically clone the test-data repository into 
     ~/.vispy/test-data. However, it is up to the user to ensure this repository
     is kept up to date and to commit/push new images after they are saved.
+
+    Run the test with python <test-path> --vispy-audit-tests to bring up
+    the auditing GUI.
     
     Parameters
     ----------
@@ -358,7 +361,7 @@ def get_test_data_repo():
     # This tag marks the test-data commit that this version of vispy should 
     # be tested against. When adding or changing test images, create
     # and push a new tag and update this variable.
-    test_data_tag = 'test-data-1'
+    test_data_tag = 'test-data-2'
     
     data_path = config['test_data_path']
     git_path = 'https://github.com/vispy/test-data'
