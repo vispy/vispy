@@ -92,7 +92,6 @@ class ColorBarVisual(Visual):
 
     Parameters
     ----------
-
     center_pos : tuple (x, y)
         Position where the colorbar is to be placed with
         respect to the center of the colorbar
@@ -102,13 +101,12 @@ class ColorBarVisual(Visual):
         of the colorbar is (x - half_width) to (x + half_width)
         and (y - half_height) to (y + half_height)
     cmap : str | vispy.color.ColorMap
-        either the name of the ColorMap to be used from the standard
+        Either the name of the ColorMap to be used from the standard
         set of names (refer to `vispy.color.get_colormap`),
         or a custom ColorMap object.
-
         The ColorMap is used to apply a gradient on the colorbar.
     orientation : {'left', 'right', 'top', 'bottom'}
-        the orientation of the colorbar, used for rendering. The
+        The orientation of the colorbar, used for rendering. The
         orientation can be thought of as the position of the label
         relative to the color bar.
 
@@ -131,7 +129,7 @@ class ColorBarVisual(Visual):
 
             * 'right': Same as left, except that the
               label is placed to the right of the colorbar
-    label_str : string
+    label_str : str
         The label that is to be drawn with the colorbar
         that provides information about the colorbar.
     clim : tuple (min, max)
@@ -141,9 +139,9 @@ class ColorBarVisual(Visual):
     border_width : float (in px)
         The width of the border the colormap should have. This measurement
         is given in pixels
-    border_color : string | vispy.color.Color
+    border_color : str | vispy.color.Color
         The color of the border of the colormap. This can either be a
-        string as the color's name or an actual instace of a vipy.color.Color
+        str as the color's name or an actual instace of a vipy.color.Color
     """
 
     def __init__(self, center_pos, halfdim,

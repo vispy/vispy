@@ -5,7 +5,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
-"""Using Colorbars with the Canvas"""
+"""Using Colorbars with the Canvas to demo different types"""
 
 from vispy import app
 from vispy import gloo

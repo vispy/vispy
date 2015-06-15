@@ -5,12 +5,12 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
-"""Using Colorbars with the Canvas"""
+"""Using Colorbars with the Canvas with the Mandlebrot set"""
 
 from vispy import app
 from vispy import gloo
-from vispy.visuals.transforms import NullTransform, STTransform
-from vispy.visuals.transforms import TransformSystem
+from vispy.visuals.transforms import (NullTransform, STTransform,
+                                      TransformSystem)
 
 from vispy.visuals import ColorBarVisual, ImageVisual
 from vispy.color import Color, get_colormap
