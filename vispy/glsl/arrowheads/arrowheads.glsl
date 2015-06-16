@@ -8,3 +8,4 @@
 #include "arrowheads/curved.glsl"
 #include "arrowheads/stealth.glsl"
 #include "arrowheads/triangle.glsl"
+#include "arrowheads/angle.glsl"
