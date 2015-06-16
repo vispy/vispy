@@ -8,6 +8,7 @@ This example demonstrates how to draw lines with one or more arrow heads.
 """
 
 import sys
+import math
 
 import numpy as np
 
@@ -49,6 +50,19 @@ class Canvas(app.Canvas):
         print(arrows1)
         print(arrows2)
 
+        print("Direction vectors")
+        for v1, v2 in arrows1:
+            body = v2 - v1
+            length = np.linalg.norm(body)
+            corner = (math.acos(body[0]/length) * 360) / (2*math.pi)
+            print(length, body/length, corner)
+
+        for v1, v2 in arrows2:
+            body = v2 - v1
+            length = np.linalg.norm(body)
+            corner = (math.acos(body[0]/length) * 360) / (2*math.pi)
+            print(length, body/length, corner)
+
         body = arrows1[0][1] - arrows1[0][0]
         print(np.linalg.norm(body), body/np.linalg.norm(body))
 
@@ -58,7 +72,7 @@ class Canvas(app.Canvas):
                                 arrow_size=30.0),
             visuals.ArrowVisual(line2, color='w', width=2, method='agg',
                                 arrows=arrows2, arrow_type='curved',
-                                arrow_size=3.0),
+                                arrow_size=10.0),
             visuals.LineVisual(line3, color='w', width=2, method='agg')
         ]
 
