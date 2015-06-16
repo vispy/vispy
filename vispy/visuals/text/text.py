@@ -370,8 +370,9 @@ class TextVisual(Visual):
     def __init__(self, text, color='black', bold=False,
                  italic=False, face='OpenSans', font_size=12, pos=[0, 0, 0],
                  rotation=0., anchor_x='center', anchor_y='center',
-                 font_manager=None, **kwargs):
-        Visual.__init__(self, **kwargs)
+                 font_manager=None):
+        Visual.__init__(self, vcode=self.VERTEX_SHADER,
+                        fcode=self.FRAGMENT_SHADER)
         # Check input
         valid_keys = ('top', 'center', 'middle', 'baseline', 'bottom')
         _check_valid('anchor_y', anchor_y, valid_keys)
@@ -381,8 +382,6 @@ class TextVisual(Visual):
         # _font_manager is a temporary solution to use global mananger
         self._font_manager = font_manager or FontManager()
         self._font = self._font_manager.get_font(face, bold, italic)
-        self._program = ModularProgram(self.VERTEX_SHADER,
-                                       self.FRAGMENT_SHADER)
         self._vertices = None
         self._anchors = (anchor_x, anchor_y)
         # Init text properties
@@ -392,6 +391,10 @@ class TextVisual(Visual):
         self.pos = pos
         self.rotation = rotation
         self._text_scale = STTransform()
+        self._draw_mode = 'triangles'
+        self.set_gl_state(blend=True, depth_test=False, cull_face=False,
+                          blend_func=('src_alpha', 'one_minus_src_alpha'))
+        
 
     @property
     def text(self):
@@ -455,14 +458,8 @@ class TextVisual(Visual):
         self._pos = pos
         self._pos_changed = True
 
-    def draw(self, transforms):
-        """Draw the Text
-
-        Parameters
-        ----------
-        transforms : instance of TransformSystem
-            The transforms to use.
-        """
+    def _prepare_draw(self, view):
+        transforms = self.transforms
         # attributes / uniforms are not available until program is built
         if len(self.text) == 0:
             return
@@ -480,8 +477,8 @@ class TextVisual(Visual):
             self._vertices = VertexBuffer(self._vertices)
             idx = (np.array([0, 1, 2, 0, 2, 3], np.uint32) +
                    np.arange(0, 4*n_char, 4, dtype=np.uint32)[:, np.newaxis])
-            self._ib = IndexBuffer(idx.ravel())
-            self._program.bind(self._vertices)
+            self._index_buffer = IndexBuffer(idx.ravel())
+            self.shared_program.bind(self._vertices)
         if self._pos_changed:
             # now we promote pos to the proper shape (attribute)
             text = self.text
@@ -497,23 +494,23 @@ class TextVisual(Visual):
                                 axis=0)
             pos = np.repeat(pos[:n_text], repeats, axis=0)
             assert pos.shape[0] == self._vertices.size
-            self._program['a_pos'] = pos
+            self.shared_program['a_pos'] = pos
             self._pos_changed = False
 
         # todo: do some testing to verify that the scaling is correct
         n_pix = (self._font_size / 72.) * transforms.dpi  # logical pix
-        tr = (transforms.document_to_framebuffer *
-              transforms.framebuffer_to_render)
+        tr = transforms.get_transform('document', 'render')
         px_scale = (tr.map((1, 0)) - tr.map((0, 1)))[:2]
-        self._program.vert['transform'] = transforms.get_full_transform()
         self._text_scale.scale = px_scale * n_pix
-        self._program.vert['text_scale'] = self._text_scale
-        self._program['u_npix'] = n_pix
-        self._program['u_kernel'] = self._font._kernel
-        self._program['u_rotation'] = self._rotation
-        self._program['u_color'] = self._color.rgba
-        self._program['u_font_atlas'] = self._font._atlas
-        self._program['u_font_atlas_shape'] = self._font._atlas.shape[:2]
-        set_state(blend=True, depth_test=False,
-                  blend_func=('src_alpha', 'one_minus_src_alpha'))
-        self._program.draw('triangles', self._ib)
+        self.shared_program.vert['text_scale'] = self._text_scale
+        self.shared_program['u_npix'] = n_pix
+        self.shared_program['u_kernel'] = self._font._kernel
+        self.shared_program['u_rotation'] = self._rotation
+        self.shared_program['u_color'] = self._color.rgba
+        self.shared_program['u_font_atlas'] = self._font._atlas
+        self.shared_program['u_font_atlas_shape'] = self._font._atlas.shape[:2]
+
+    def _prepare_transforms(self, view):
+        self._pos_changed = True
+        trs = view.transforms
+        view.view_program.vert['transform'] = trs.get_transform()

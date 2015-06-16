@@ -468,5 +468,5 @@ class SceneCanvas(app.Canvas):
         else:
             viewport = self._vp_stack[-1]
         
-        self.transforms.auto_configure(viewport=viewport, fbo_size=fb_size,
-                                       fbo_rect=fb_rect)
+        self.transforms.configure(viewport=viewport, fbo_size=fb_size,
+                                  fbo_rect=fb_rect)

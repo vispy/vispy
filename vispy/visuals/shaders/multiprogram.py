@@ -86,8 +86,8 @@ class MultiProgram(object):
             yield p
 
     def bind(self, data):
-        for p in self._programs.values():
-            p.bind(data)
+        for name in data.dtype.names:
+            self[name] = data[name]
 
 
 class MultiShader(object):

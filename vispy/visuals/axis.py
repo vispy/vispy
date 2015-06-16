@@ -6,7 +6,7 @@
 
 import numpy as np
 
-from .visual import Visual
+from .visual import CompoundVisual
 from .line import LineVisual
 from .text import TextVisual
 
@@ -19,7 +19,7 @@ from .text import TextVisual
 # 6. Improve tick label naming (str(x) is not good) and tick selection
 
 
-class AxisVisual(Visual):
+class AxisVisual(CompoundVisual):
     """Axis visual
 
     Parameters
@@ -44,8 +44,7 @@ class AxisVisual(Visual):
     """
     def __init__(self, pos, domain=(0., 1.), tick_direction=(-1., 0.),
                  scale_type="linear", axis_color=(1, 1, 1),
-                 tick_color=(0.7, 0.7, 0.7), **kwargs):
-        Visual.__init__(self, **kwargs)
+                 tick_color=(0.7, 0.7, 0.7)):
         if scale_type != 'linear':
             raise NotImplementedError('only linear scaling is currently '
                                       'supported')
@@ -61,44 +60,32 @@ class AxisVisual(Visual):
         self.major_tick_length = 10  # px
         self.label_margin = 5  # px
 
-        self._text = None
-        self._line = None
-        self._ticks = None
+        CompoundVisual.__init__(self, [])
+        self._make_subvisuals()
 
     @property
     def _vec(self):
         """Vector in the direction of the axis line"""
         return self.pos[1] - self.pos[0]
 
-    def draw(self, transforms):
-        """Draw the visual
+    def _make_subvisuals(self):
+        major_tick_fractions, minor_tick_fractions, tick_labels = \
+            self._get_tick_frac_labels()
 
-        Parameters
-        ----------
-        transforms : instance of TransformSystem
-            The transforms to use.
-        """
+        tick_pos, tick_label_pos, anchors = self._get_tick_positions(
+            major_tick_fractions, minor_tick_fractions)
 
-        # Initialize two LineVisuals - one for the axis line, one for ticks
-        if self._text is None:
-            major_tick_fractions, minor_tick_fractions, tick_labels = \
-                self._get_tick_frac_labels()
-
-            tick_pos, tick_label_pos, anchors = self._get_tick_positions(
-                major_tick_fractions, minor_tick_fractions, transforms)
-
-            self._line = LineVisual(pos=self.pos, color=self.axis_color,
-                                    method='gl', width=3.0)
-            self._ticks = LineVisual(pos=tick_pos, color=self.tick_color,
-                                     method='gl', width=2.0,
-                                     connect='segments')
-            self._text = TextVisual(list(tick_labels), pos=tick_label_pos,
-                                    font_size=8, color='w',
-                                    anchor_x=anchors[0], anchor_y=anchors[1])
-
-        self._line.draw(transforms)
-        self._ticks.draw(transforms)
-        self._text.draw(transforms)
+        self._line = LineVisual(pos=self.pos, color=self.axis_color,
+                                method='gl', width=3.0)
+        self._ticks = LineVisual(pos=tick_pos, color=self.tick_color,
+                                    method='gl', width=2.0,
+                                    connect='segments')
+        self._text = TextVisual(list(tick_labels), pos=tick_label_pos,
+                                font_size=8, color='w',
+                                anchor_x=anchors[0], anchor_y=anchors[1])
+        self.add_subvisual(self._line)
+        self.add_subvisual(self._ticks)
+        self.add_subvisual(self._text)
 
     def bounds(self, mode, axis):
         """Get the bounds
@@ -118,10 +105,10 @@ class AxisVisual(Visual):
         # now axis in (0, 1)
         return self.pos[:, axis].min(), self.pos[:, axis].max()
 
-    def _get_tick_positions(self, major_tick_fractions, minor_tick_fractions,
-                            transforms):
+    def _get_tick_positions(self, major_tick_fractions, minor_tick_fractions):
         # transform our tick direction to document coords
-        visual_to_document = transforms.visual_to_document
+        trs = self.transforms
+        visual_to_document = trs.get_transform('visual', 'document')
         direction = visual_to_document.map(np.array([[0., 0.],
                                                      self.tick_direction],
                                                     float))

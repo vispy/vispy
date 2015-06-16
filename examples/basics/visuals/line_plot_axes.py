@@ -43,15 +43,21 @@ class Canvas(app.Canvas):
                                            face_color=(0.2, 0.2, 1))
         self.axis_x = visuals.AxisVisual(pos_xax, (0, 100), (0., 1.))
         self.axis_y = visuals.AxisVisual(pos_yax, (5, 7.5), (-1., 0.))
-        self.tr_sys = visuals.transforms.TransformSystem(self)
         self.show()
 
     def on_draw(self, event):
         gloo.clear('black')
-        gloo.set_viewport(0, 0, *self.physical_size)
-        self.axis_x.draw(self.tr_sys)
-        self.axis_y.draw(self.tr_sys)
-        self.line.draw(self.tr_sys)
+        self.axis_x.draw()
+        self.axis_y.draw()
+        self.line.draw()
+
+    def on_resize(self, event):
+        # Set canvas viewport and reconfigure visual transforms to match.
+        vp = (0, 0, self.physical_size[0], self.physical_size[1])
+        self.context.set_viewport(*vp)
+        self.axis_x.transforms.configure(canvas=self, viewport=vp)
+        self.axis_y.transforms.configure(canvas=self, viewport=vp)
+        self.line.transforms.configure(canvas=self, viewport=vp)
 
 
 if __name__ == '__main__':

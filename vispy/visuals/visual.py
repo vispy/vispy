@@ -459,6 +459,10 @@ class CompoundVisual(BaseVisual):
 
     def _prepare_draw(self, view):
         pass
+
+    def _prepare_transforms(self, view):
+        for v in view._subvisuals:
+            v._prepare_transforms(v)
             
     def set_gl_state(self, preset=None, **kwargs):
         for v in self._subvisuals:

@@ -6,10 +6,10 @@ import numpy as np
 
 from .line import LineVisual
 from .markers import MarkersVisual
-from .visual import Visual
+from .visual import CompoundVisual
 
 
-class LinePlotVisual(Visual):
+class LinePlotVisual(CompoundVisual):
     """Visual displaying a plot line with optional markers.
 
     Parameters
@@ -58,12 +58,12 @@ class LinePlotVisual(Visual):
 
     def __init__(self, data, color='k', symbol='o', line_kind='-',
                  width=1., marker_size=10., edge_color='k', face_color='w',
-                 edge_width=1., connect='strip', **kwargs):
-        Visual.__init__(self, **kwargs)
+                 edge_width=1., connect='strip'):
         if line_kind != '-':
             raise ValueError('Only solid lines currently supported')
-        self._line = LineVisual()
+        self._line = LineVisual(method='gl')
         self._markers = MarkersVisual()
+        CompoundVisual.__init__(self, [self._line, self._markers])
         self.set_data(data, color=color, symbol=symbol,
                       width=width, marker_size=marker_size,
                       edge_color=edge_color, face_color=face_color,
@@ -116,28 +116,3 @@ class LinePlotVisual(Visual):
         self._markers.set_data(pos=pos, **marker_kwargs)
         if len(kwargs) > 0:
             raise TypeError("Invalid keyword arguments: %s" % kwargs.keys())
-
-    def bounds(self, mode, axis):
-        """Get the bounds
-
-        Parameters
-        ----------
-        mode : str
-            Describes the type of boundary requested. Can be "visual", "data",
-            or "mouse".
-        axis : 0, 1, 2
-            The axis along which to measure the bounding values, in
-            x-y-z order.
-        """
-        return self._line.bounds(mode, axis)
-
-    def draw(self, transforms):
-        """Draw the visual
-
-        Parameters
-        ----------
-        transforms : instance of TransformSystem
-            The transforms to use.
-        """
-        for v in self._line, self._markers:
-            v.draw(transforms)
