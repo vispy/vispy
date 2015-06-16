@@ -31,6 +31,13 @@ ARROW_TYPES = [
 ]
 
 
+FILL_TYPES = [
+    'filled',
+    'outline',
+    'stroke'
+]
+
+
 class ArrowVisual(LineVisual):
     """ArrowVisual: lines with one or more heads
 
@@ -94,16 +101,18 @@ class ArrowVisual(LineVisual):
 
     def __init__(self, pos=None, color=(0.5, 0.5, 0.5, 1), width=1,
                  connect='strip', method='gl', antialias=False, arrows=None,
-                 arrow_type='stealth', arrow_size=None):
+                 arrow_type='stealth', arrow_size=None, fill_type="filled"):
 
         LineVisual.__init__(self, pos, color, width, connect, method,
                             antialias)
 
         self._arrow_type = None
         self._arrow_size = None
+        self._fill_type = None
         self._arrows = None
         self.arrow_type = arrow_type
         self.arrow_size = arrow_size
+        self.fill_type = fill_type
         self.set_data(arrows=arrows)
 
         self._arrow_vbo = gloo.VertexBuffer()
@@ -173,6 +182,25 @@ class ArrowVisual(LineVisual):
         else:
             self._arrow_size = value
 
+    @property
+    def fill_type(self):
+        return self._fill_type
+
+    @fill_type.setter
+    def fill_type(self, value):
+        if value not in FILL_TYPES:
+            raise ValueError(
+                "Invalid fill type '{}'. Should be one of {}".format(
+                    value, ", ".join(FILL_TYPES)
+                )
+            )
+
+        if value == self._fill_type:
+            return
+
+        self._fill_type = value
+        self._changed['arrows'] = True
+
     def draw(self, transforms):
         prof = Profiler()
 
@@ -189,9 +217,10 @@ class ArrowVisual(LineVisual):
         prof('arrowhead prepare')
 
         xform = transforms.get_full_transform()
-        self._arrow_program['antialias'] = 0.5
+        self._arrow_program['antialias'] = 1.0
         self._arrow_program.vert['transform'] = xform
         self._arrow_program.frag['arrow_type'] = self._arrow_type
+        self._arrow_program.frag['fill_type'] = self._fill_type
 
         self._arrow_program.draw('points')
         prof('arrowhead draw')
