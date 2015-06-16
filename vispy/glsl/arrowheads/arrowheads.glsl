@@ -6,3 +6,4 @@
 #include "arrowheads/util.glsl"
 
 #include "arrowheads/curved.glsl"
+#include "arrowheads/stealth.glsl"
