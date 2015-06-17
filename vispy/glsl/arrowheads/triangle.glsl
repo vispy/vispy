@@ -9,17 +9,23 @@
 #include "arrowheads/util.glsl"
 
 /**
- * Computes the signed distance to a triangle arrow
+ * Computes the signed distance to a triangle arrow. This is a helper function,
+ * and in general you'll use arrow_triangle_30, arrow_triangle_60, or
+ * arrow_triangle_90.
  *
  * Parameters:
  * -----------
  *
- * texcoord : Point to compute distance to
- * body :     Total length of the arrow (pixels, body+head)
- * head :     Length of the head (pixels)
- * height :   Height of the head (pixel)
- * linewidth: Stroke line width (in pixels)
- * antialias: Stroke antialiased area (in pixels)
+ * texcoord 
+ *     Point to compute distance to
+ * size
+ *     Size of the arrow head in pixels
+ * height
+ *     Height of the head (pixel)
+ * 
+ * See also
+ * --------
+ * arrow_triangle_30, arrow_triangle_60, arrow_triangle_90
  *
  * Return:
  * -------
@@ -32,8 +38,8 @@ float arrow_triangle(vec2 texcoord, float size, float height)
     vec2 end   = +vec2(size/2.0, 0.0);
 
     // Head : 3 lines
-    vec2 p1 = start + (size) * vec2(0.0, +height);
-    vec2 p2 = start + (size) * vec2(0.0, -height);
+    vec2 p1 = start + size*vec2(0.0, +height);
+    vec2 p2 = start + size*vec2(0.0, -height);
 
     float d1 = line_distance(texcoord, end, p1);
     float d2 = line_distance(texcoord, p2, end);
@@ -43,16 +49,40 @@ float arrow_triangle(vec2 texcoord, float size, float height)
     return max(max(d1, d2), d3);
 }
 
+/**
+ * Returns the signed distance to an triangle arrow head with a tip corner
+ * of 30 degrees.
+ *
+ * See also
+ * --------
+ * arrow_triangle, arrow_triangle_60, arrow_triangle_90
+ */
 float arrow_triangle_30(vec2 texcoord, float size)
 {
     return arrow_triangle(texcoord, size, 0.25);
 }
 
+/**
+ * Returns the signed distance to an triangle arrow head with a tip corner
+ * of 60 degrees.
+ *
+ * See also
+ * --------
+ * arrow_triangle, arrow_triangle_30, arrow_triangle_90
+ */
 float arrow_triangle_60(vec2 texcoord, float size)
 {
     return arrow_triangle(texcoord, size, 0.5);
 }
 
+/**
+ * Returns the signed distance to an triangle arrow head with a tip corner
+ * of 90 degrees.
+ *
+ * See also
+ * --------
+ * arrow_triangle, arrow_triangle_30, arrow_triangle_60
+ */
 float arrow_triangle_90(vec2 texcoord, float size)
 {
     return arrow_triangle(texcoord, size, 1.0);

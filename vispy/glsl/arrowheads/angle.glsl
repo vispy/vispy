@@ -9,25 +9,27 @@
 
 #include "arrowheads/util.glsl"
 
-/* ---------------------------------------------------------
-
-   Computes the signed distance to an angle arrow
-
-   Parameters:
-   -----------
-
-   texcoord : Point to compute distance to
-   body :     Total length of the arrow (pixels, body+head)
-   head :     Length of the head (pixels)
-   height :   Height of the head (pixel)
-   linewidth: Stroke line width (in pixels)
-   antialias: Stroke antialiased area (in pixels)
-
-   Return:
-   -------
-   Signed distance to the arrow
-
-   --------------------------------------------------------- */
+/**
+ * Computes the signed distance to an angle arrow. This is a helper function,
+ * and in general you'll use arrow_angle_30, arrow_angle_60 or arrow_angle_90.
+ *
+ * Parameters:
+ * -----------
+ * texcoord 
+ *     Point to compute distance to
+ * size 
+ *     Size of the arrow head in pixels
+ * height
+ *     Height of the head (pixel)
+ * 
+ * See also
+ * --------
+ * arrow_angle_30, arrow_angle_60, arrow_angle_90
+ *
+ * Return:
+ * -------
+ * Signed distance to the arrow
+ */
 float arrow_angle(vec2 texcoord, float size, float height)
 {
     float d;
@@ -56,16 +58,37 @@ float arrow_angle(vec2 texcoord, float size, float height)
     return d;
 }
 
+/**
+ * Returns the distance to an arrow with tip corner of 30 degrees
+ *
+ * See also
+ * --------
+ * arro_angle, arrow_angle_60, arrow_angle_90
+ */
 float arrow_angle_30(vec2 texcoord, float size)
 {
     return arrow_angle(texcoord, size, 0.25);
 }
 
+/**
+ * Returns the distance to an arrow with tip corner of 60 degrees
+ *
+ * See also
+ * --------
+ * arro_angle, arrow_angle_30, arrow_angle_90
+ */
 float arrow_angle_60(vec2 texcoord, float size)
 {
     return arrow_angle(texcoord, size, 0.5);
 }
 
+/**
+ * Returns the distance to an arrow with tip corner of 90 degrees
+ *
+ * See also
+ * --------
+ * arro_angle, arrow_angle_30, arrow_angle_60
+ */
 float arrow_angle_90(vec2 texcoord, float size)
 {
     return arrow_angle(texcoord, size, 1.0);
