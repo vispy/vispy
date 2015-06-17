@@ -369,7 +369,7 @@ class VolumeVisual(Visual):
     Parameters
     ----------
     vol : ndarray
-        The volume to display. Must be ndim==2.
+        The volume to display. Must be ndim==3.
     clim : tuple of two floats | None
         The contrast limits. The values in the volume are mapped to
         black and white corresponding to these values. Default maps
