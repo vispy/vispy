@@ -70,18 +70,19 @@ class Canvas(app.Canvas):
                                    STTransform(scale=(0.01, 0.1),
                                                translate=(4, 20)))
 
-        for line in self.lines:
-            tr_sys = visuals.transforms.TransformSystem(self)
-            tr_sys.visual_to_document = line.transform
-            line.tr_sys = tr_sys
-
         self.show()
 
     def on_draw(self, ev):
         gloo.clear('black', depth=True)
-        gloo.set_viewport(0, 0, *self.physical_size)
         for line in self.lines:
-            line.draw(line.tr_sys)
+            line.draw()
+            
+    def on_resize(self, event):
+        # Set canvas viewport and reconfigure visual transforms to match.
+        vp = (0, 0, self.physical_size[0], self.physical_size[1])
+        self.context.set_viewport(*vp)
+        for line in self.lines:
+            line.transforms.configure(canvas=self, viewport=vp)
 
 if __name__ == '__main__':
     win = Canvas()

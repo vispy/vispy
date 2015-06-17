@@ -144,8 +144,8 @@ class BaseVisual(object):
                                    bounds_change=Event
                                    )
         
+        self._transforms = None
         self.transforms = TransformSystem()
-        self.transforms.changed.connect(self._transform_changed)
 
     @property
     def transform(self):
@@ -154,6 +154,20 @@ class BaseVisual(object):
     @transform.setter
     def transform(self, tr):
         self.transforms.visual_transform = tr
+
+    @property
+    def transforms(self):
+        return self._transforms
+    
+    @transforms.setter
+    def transforms(self, trs):
+        if trs is self._transforms:
+            return
+        if self._transforms is not None:
+            self._transforms.changed.disconnect(self._transform_changed)
+        self._transforms = trs
+        trs.changed.connect(self._transform_changed)
+        self._transform_changed()
 
     def get_transform(self, map_from='visual', map_to='render'):
         return self.transforms.get_transform(map_from, map_to)
@@ -178,7 +192,7 @@ class BaseVisual(object):
     def update(self):
         self.events.update()
 
-    def _transform_changed(self, event):
+    def _transform_changed(self, event=None):
         self.update()
 
 
@@ -433,8 +447,8 @@ class CompoundVisual(BaseVisual):
     """
     def __init__(self, subvisuals):
         self._view_class = CompoundVisualView
-        BaseVisual.__init__(self)
         self._subvisuals = []
+        BaseVisual.__init__(self)
         for v in subvisuals:
             self.add_subvisual(v)
         
@@ -450,6 +464,11 @@ class CompoundVisual(BaseVisual):
         self._subvisuals.remove(visuals)
         self.update()
         
+    def _transform_changed(self, event=None):
+        for v in self._subvisuals:
+            v.transforms = self.transforms
+        BaseVisual._transform_changed(self)
+        
     def draw(self):
         if self._prepare_draw(view=self) is False:
             return
@@ -459,6 +478,10 @@ class CompoundVisual(BaseVisual):
 
     def _prepare_draw(self, view):
         pass
+
+    def _prepare_transforms(self, view):
+        for v in view._subvisuals:
+            v._prepare_transforms(v)
             
     def set_gl_state(self, preset=None, **kwargs):
         for v in self._subvisuals:
