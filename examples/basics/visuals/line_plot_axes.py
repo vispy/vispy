@@ -37,13 +37,12 @@ pos[:, 1] = np.clip(np.random.normal(size=N, scale=100,
 class Canvas(app.Canvas):
 
     def __init__(self):
-        app.Canvas.__init__(self, keys='interactive',
-                            size=canvas_size, show=True)
         self.line = visuals.LinePlotVisual(pos, color='w', edge_color='w',
                                            face_color=(0.2, 0.2, 1))
         self.axis_x = visuals.AxisVisual(pos_xax, (0, 100), (0., 1.))
         self.axis_y = visuals.AxisVisual(pos_yax, (5, 7.5), (-1., 0.))
-        self.show()
+        app.Canvas.__init__(self, keys='interactive',
+                            size=canvas_size, show=True)
 
     def on_draw(self, event):
         gloo.clear('black')
