@@ -47,14 +47,11 @@ class EllipseVisual(PolygonVisual):
         self._span_angle = span_angle
         self._num_segments = num_segments
 
-        vertices = EllipseVisual._generate_vertices(pos, radius,
-                                                    start_angle,
-                                                    span_angle,
-                                                    num_segments)
-
-        PolygonVisual.__init__(self, pos=vertices, color=color,
+        PolygonVisual.__init__(self, pos=None, color=color,
                                border_color=border_color,
                                border_width=border_width, **kwargs)
+
+        self._update_vertices()
 
     @staticmethod
     def _generate_vertices(center, radius, start_angle, span_angle,
@@ -131,9 +128,6 @@ class EllipseVisual(PolygonVisual):
         self._update_vertices()
 
     def _update_vertices(self):
-        if self._pos is None:
-            return
-
         vertices = self._generate_vertices(center=self._center,
                                            radius=self._radius,
                                            start_angle=self._start_angle,
