@@ -92,6 +92,10 @@ class MeshVisual(Visual):
     def __init__(self, vertices=None, faces=None, vertex_colors=None,
                  face_colors=None, color=(0.5, 0.5, 1, 1), meshdata=None,
                  shading=None, mode='triangles', **kwargs):
+
+        # Function for computing phong shading
+        self._phong = Function(phong_template)
+
         Visual.__init__(self, vcode=vertex_template, fcode=fragment_template,
                         **kwargs)
 
@@ -117,9 +121,6 @@ class MeshVisual(Visual):
         # varyings
         self._color_var = Varying('v_color', dtype='vec4')
         self._normal_var = Varying('v_normal', dtype='vec3')
-
-        # Function for computing phong shading
-        self._phong = Function(phong_template)
 
         # Init
         self.shading = shading
@@ -309,8 +310,8 @@ class MeshVisual(Visual):
         tr = view.transforms.get_transform()
         view.view_program.vert['transform'] = tr  # .simplified
 
-        # doc_tr = view.transforms.get_transform('visual', 'scene')
-        # view.visual._phong['transform'] = doc_tr
+        doc_tr = view.transforms.get_transform('visual', 'scene')
+        view._phong['transform'] = doc_tr
 
     def bounds(self, mode, axis):
         """Get the bounds
