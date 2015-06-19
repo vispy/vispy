@@ -110,7 +110,7 @@ class VisualShare(object):
         self.gl_state = {}
         self.views = weakref.WeakKeyDictionary()
         self.filters = []
-
+        self.visible = True
 
 class BaseVisual(object):
     """Superclass for all visuals.
@@ -171,6 +171,16 @@ class BaseVisual(object):
 
     def get_transform(self, map_from='visual', map_to='render'):
         return self.transforms.get_transform(map_from, map_to)
+
+    @property
+    def visible(self):
+        return self._vshare.visible
+    
+    @visible.setter
+    def visible(self, v):
+        if v != self._vshare.visible:
+            self._vshare.visible = v
+            self.update()
 
     def view(self):
         """Return a new view of this visual.
@@ -345,6 +355,8 @@ class Visual(BaseVisual):
         self._vshare.index_buffer = buf
         
     def draw(self):
+        if not self.visible:
+            return
         gloo.set_state(**self._vshare.gl_state)
         if self._prepare_draw(view=self) is False:
             return
@@ -438,12 +450,6 @@ class CompoundVisual(BaseVisual):
     
     subvisuals : list of BaseVisual instances
         The list of visuals to be combined in this compound visual.
-    
-    Notes
-    -----
-    
-    Sub-visuals may optionally be given a boolean ``visible`` attribute that
-    can be used to hide or show each.
     """
     def __init__(self, subvisuals):
         self._view_class = CompoundVisualView
@@ -455,8 +461,6 @@ class CompoundVisual(BaseVisual):
     def add_subvisual(self, visual):
         visual.transforms = self.transforms
         visual._prepare_transforms(visual)
-        if not hasattr(visual, 'visible'):
-            visual.visible = True
         self._subvisuals.append(visual)
         self.update()
 
@@ -470,6 +474,8 @@ class CompoundVisual(BaseVisual):
         BaseVisual._transform_changed(self)
         
     def draw(self):
+        if not self.visible:
+            return
         if self._prepare_draw(view=self) is False:
             return
         for v in self._subvisuals:

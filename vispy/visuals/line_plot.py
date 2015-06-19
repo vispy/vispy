@@ -56,7 +56,7 @@ class LinePlotVisual(CompoundVisual):
                       'marker_size', 'symbol')
     _kw_trans = dict(marker_size='size')
 
-    def __init__(self, data, color='k', symbol='o', line_kind='-',
+    def __init__(self, data, color='k', symbol=None, line_kind='-',
                  width=1., marker_size=10., edge_color='k', face_color='w',
                  edge_width=1., connect='strip'):
         if line_kind != '-':

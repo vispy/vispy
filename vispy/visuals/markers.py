@@ -473,7 +473,8 @@ _marker_dict = {
     '>': arrow,
     '^': triangle_up,
     'v': triangle_down,
-    '*': star
+    '*': star,
+    None: None,
 }
 marker_types = tuple(sorted(list(_marker_dict.keys())))
 
@@ -573,15 +574,20 @@ class MarkersVisual(Visual):
             The symbol.
         """
         _check_valid('symbol', symbol, marker_types)
-        self._marker_fun = Function(_marker_dict[symbol])
-        self._marker_fun['v_size'] = self._v_size_var
-        self.shared_program.frag['marker'] = self._marker_fun
+        if symbol is None:
+            self._marker_fun = None
+        else:
+            self._marker_fun = Function(_marker_dict[symbol])
+            self._marker_fun['v_size'] = self._v_size_var
+            self.shared_program.frag['marker'] = self._marker_fun
 
     def _prepare_transforms(self, view):
         xform = view.transforms.get_transform()
         view.view_program.vert['transform'] = xform
 
     def _prepare_draw(self, view):
+        if self._marker_fun is None:
+            return False
         view.view_program['u_px_scale'] = view.transforms.pixel_scale
         if self.scaling:
             tr = view.transforms.get_transform('visual', 'document').simplified
