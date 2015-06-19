@@ -141,4 +141,6 @@ class EllipseVisual(PolygonVisual):
                                            num_segments=self._num_segments)
 
         # to the PolygonVisual, "pos" is the array of vertices
+        # this will trigger the PolygonVisual's _update()
+        # which gets the ball rolling
         self.pos = vertices
