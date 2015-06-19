@@ -112,7 +112,7 @@ def _unit(mode, extra_arg_string, coverage=False):
 
 
 def _flake():
-    """Test flake8"""
+    """Test flake8 and docstrings"""
     orig_dir = os.getcwd()
     import_dir, dev = _get_import_dir()
     os.chdir(op.join(import_dir, '..'))
