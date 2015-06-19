@@ -48,7 +48,8 @@ class AxisVisual(CompoundVisual):
         if scale_type != 'linear':
             raise NotImplementedError('only linear scaling is currently '
                                       'supported')
-        self.pos = np.array(pos, float)
+        self._pos = None
+        self.pos = pos
         self.domain = domain
         self.tick_direction = np.array(tick_direction, float)
         self.tick_direction = self.tick_direction
@@ -59,47 +60,51 @@ class AxisVisual(CompoundVisual):
         self.minor_tick_length = 5  # px
         self.major_tick_length = 10  # px
         self.label_margin = 5  # px
+        
+        self._need_update = True
 
         CompoundVisual.__init__(self, [])
-        self._make_subvisuals()
+        
+        self._line = LineVisual(method='gl', width=3.0)
+        self._ticks = LineVisual(method='gl', width=2.0, connect='segments')
+        self._text = TextVisual(font_size=8, color='w')
+        self.add_subvisual(self._line)
+        self.add_subvisual(self._ticks)
+        self.add_subvisual(self._text)
+
+    @property
+    def pos(self):
+        return self._pos
+    
+    @pos.setter
+    def pos(self, pos):
+        self._pos = np.array(pos, float)
+        self.update()
 
     @property
     def _vec(self):
         """Vector in the direction of the axis line"""
         return self.pos[1] - self.pos[0]
 
-    def _make_subvisuals(self):
+    def _update_subvisuals(self):
         major_tick_fractions, minor_tick_fractions, tick_labels = \
             self._get_tick_frac_labels()
 
         tick_pos, tick_label_pos, anchors = self._get_tick_positions(
             major_tick_fractions, minor_tick_fractions)
 
-        self._line = LineVisual(pos=self.pos, color=self.axis_color,
-                                method='gl', width=3.0)
-        self._ticks = LineVisual(pos=tick_pos, color=self.tick_color,
-                                    method='gl', width=2.0,
-                                    connect='segments')
-        self._text = TextVisual(list(tick_labels), pos=tick_label_pos,
-                                font_size=8, color='w',
-                                anchor_x=anchors[0], anchor_y=anchors[1])
-        self.add_subvisual(self._line)
-        self.add_subvisual(self._ticks)
-        self.add_subvisual(self._text)
+        self._line.set_data(pos=self.pos, color=self.axis_color)
+        self._ticks.set_data(pos=tick_pos, color=self.tick_color)
+        self._text.set_data(list(tick_labels), pos=tick_label_pos,
+                            anchor_x=anchors[0], anchor_y=anchors[1])
 
-    def bounds(self, mode, axis):
-        """Get the bounds
+        self._need_update = False
 
-        Parameters
-        ----------
-        mode : str
-            Describes the type of boundary requested. Can be "visual", "data",
-            or "mouse".
-        axis : 0, 1, 2
-            The axis along which to measure the bounding values, in
-            x-y-z order.
-        """
-        assert axis in (0, 1, 2)
+    def _prepare_draw(self, view):
+        if self._need_update():
+            self._update_subvisuals()
+
+    def _compute_bounds(self, axis, view):
         if axis == 2:
             return (0., 0.)
         # now axis in (0, 1)
