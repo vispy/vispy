@@ -41,6 +41,11 @@ class EllipseVisual(PolygonVisual):
     def __init__(self, pos=None, color='black', border_color=None,
                  border_width=0, radius=(0.1, 0.1), start_angle=0.,
                  span_angle=360., num_segments=100, **kwargs):
+        self._center = pos
+        self._radius = radius
+        self._start_angle = start_angle
+        self._span_angle = span_angle
+        self._num_segments = num_segments
 
         vertices = EllipseVisual._generate_vertices(pos, radius,
                                                     start_angle,
@@ -50,10 +55,9 @@ class EllipseVisual(PolygonVisual):
         PolygonVisual.__init__(self, pos=vertices, color=color,
                                border_color=border_color,
                                border_width=border_width, **kwargs)
-        self._mesh.mode = 'triangle_fan'
 
     @staticmethod
-    def _generate_vertices(pos, radius, start_angle, span_angle,
+    def _generate_vertices(center, radius, start_angle, span_angle,
                            num_segments):
         if isinstance(radius, (list, tuple)):
             if len(radius) == 2:
@@ -68,13 +72,14 @@ class EllipseVisual(PolygonVisual):
         curve_segments = int(num_segments * span_angle / 360.)
         start_angle *= (np.pi/180.)
 
-        vertices = np.empty([curve_segments, 2], dtype=np.float32)
+        vertices = np.empty([curve_segments + 1, 2], dtype=np.float32)
         theta = np.linspace(start_angle,
                             start_angle + (span_angle/180.)*np.pi,
                             curve_segments)
 
-        vertices[:, 0] = pos[0] + xr * np.cos(theta)
-        vertices[:, 1] = pos[1] + yr * np.sin(theta)
+        vertices[:-1, 0] = center[0] + xr * np.cos(theta)
+        vertices[:-1, 1] = center[1] + yr * np.sin(theta)
+        vertices[curve_segments] = center
 
         return vertices
 
@@ -87,7 +92,7 @@ class EllipseVisual(PolygonVisual):
     @radius.setter
     def radius(self, radius):
         self._radius = radius
-        self._update()
+        self._update_vertices()
 
     @property
     def start_angle(self):
@@ -98,7 +103,7 @@ class EllipseVisual(PolygonVisual):
     @start_angle.setter
     def start_angle(self, start_angle):
         self._start_angle = start_angle
-        self._update()
+        self._update_vertices()
 
     @property
     def span_angle(self):
@@ -109,7 +114,7 @@ class EllipseVisual(PolygonVisual):
     @span_angle.setter
     def span_angle(self, span_angle):
         self._span_angle = span_angle
-        self._update()
+        self._update_vertices()
 
     @property
     def num_segments(self):
@@ -123,21 +128,17 @@ class EllipseVisual(PolygonVisual):
             raise ValueError('EllipseVisual must consist of more than 1 '
                              'segment')
         self._num_segments = num_segments
-        self._update()
+        self._update_vertices()
 
-    # def _update(self):
-    #     if self._pos is None:
-    #         return
+    def _update_vertices(self):
+        if self._pos is None:
+            return
 
-    #     self._generate_vertices(pos=self._pos, radius=self._radius,
-    #                             start_angle=self._start_angle,
-    #                             span_angle=self._span_angle,
-    #                             num_segments=self._num_segments)
-    #     if not self._color.is_blank:
-    #         self._mesh.set_data(vertices=self._vertices,
-    #                            color=self._color.rgba)
-    #     if not self._border_color.is_blank:
-    #         self._border.set_data(pos=self._vertices[1:],
-    #                              color=self._border_color.rgba)
+        vertices = self._generate_vertices(center=self._center,
+                                           radius=self._radius,
+                                           start_angle=self._start_angle,
+                                           span_angle=self._span_angle,
+                                           num_segments=self._num_segments)
 
-        # self.update()
+        # to the PolygonVisual, "pos" is the array of vertices
+        self.pos = vertices

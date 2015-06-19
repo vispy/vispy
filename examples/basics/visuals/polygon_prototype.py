@@ -29,7 +29,13 @@ if __name__ == '__main__':
 
     e = Ellipse(pos=(0.5, 0.2), radius=(0.1, 0.05),
                 color=blue,
-                parent=v.scene)
+                parent=v.scene,
+                border_width=2,
+                border_color=white)
+
+    e.num_segments = 50
+    e.start_angle = 0
+    e.span_angle = 135
 
     if sys.flags.interactive != 1:
         app.run()
