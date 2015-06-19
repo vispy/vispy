@@ -36,15 +36,15 @@ class PolygonVisual(CompoundVisual):
     """
     def __init__(self, pos=None, color='black',
                  border_color=None, border_width=1, **kwargs):
-        self.mesh = MeshVisual()
-        self.border = LineVisual()
+        self._mesh = MeshVisual()
+        self._border = LineVisual()
         self._pos = pos
         self._color = Color(color)
         self._border_width = border_width
         self._border_color = Color(border_color)
         self._update()
 
-        CompoundVisual.__init__(self, [self.mesh, self.border])
+        CompoundVisual.__init__(self, [self._mesh, self._border], **kwargs)
 
     def _update(self):
         self.data = PolygonData(vertices=np.array(self._pos, dtype=np.float32))
@@ -52,18 +52,18 @@ class PolygonVisual(CompoundVisual):
             return
         if not self._color.is_blank:
             pts, tris = self.data.triangulate()
-            self.mesh.set_data(vertices=pts, faces=tris.astype(np.uint32),
-                               color=self._color.rgba)
+            self._mesh.set_data(vertices=pts, faces=tris.astype(np.uint32),
+                                color=self._color.rgba)
         if not self._border_color.is_blank:
             # Close border if it is not already.
             border_pos = self._pos
             if np.any(border_pos[0] != border_pos[1]):
                 border_pos = np.concatenate([border_pos, border_pos[:1]],
                                             axis=0)
-            self.border.set_data(pos=border_pos,
-                                 color=self._border_color.rgba,
-                                 width=self._border_width,
-                                 connect='strip')
+            self._border.set_data(pos=border_pos,
+                                  color=self._border_color.rgba,
+                                  width=self._border_width,
+                                  connect='strip')
 
     @property
     def pos(self):

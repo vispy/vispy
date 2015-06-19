@@ -10,7 +10,6 @@ Simple ellipse visual based on PolygonVisual
 from __future__ import division
 
 import numpy as np
-from ..color import Color
 from .polygon import PolygonVisual
 
 
@@ -40,21 +39,21 @@ class EllipseVisual(PolygonVisual):
         Defaults to 100
     """
     def __init__(self, pos=None, color='black', border_color=None,
-                 radius=(0.1, 0.1), start_angle=0., span_angle=360.,
-                 num_segments=100, **kwargs):
-        super(EllipseVisual, self).__init__()
-        self.mesh.mode = 'triangle_fan'
-        self._vertices = None
-        self._pos = pos
-        self._color = Color(color)
-        self._border_color = Color(border_color)
-        self._radius = radius
-        self._start_angle = start_angle
-        self._span_angle = span_angle
-        self._num_segments = num_segments
-        self._update()
+                 border_width=0, radius=(0.1, 0.1), start_angle=0.,
+                 span_angle=360., num_segments=100, **kwargs):
 
-    def _generate_vertices(self, pos, radius, start_angle, span_angle,
+        vertices = EllipseVisual._generate_vertices(pos, radius,
+                                                    start_angle,
+                                                    span_angle,
+                                                    num_segments)
+
+        PolygonVisual.__init__(self, pos=vertices, color=color,
+                               border_color=border_color,
+                               border_width=border_width, **kwargs)
+        self._mesh.mode = 'triangle_fan'
+
+    @staticmethod
+    def _generate_vertices(pos, radius, start_angle, span_angle,
                            num_segments):
         if isinstance(radius, (list, tuple)):
             if len(radius) == 2:
@@ -65,14 +64,19 @@ class EllipseVisual(PolygonVisual):
                                                              len(radius)))
         else:
             xr = yr = radius
+
         curve_segments = int(num_segments * span_angle / 360.)
         start_angle *= (np.pi/180.)
-        self._vertices = np.empty([curve_segments+2, 2], dtype=np.float32)
-        self._vertices[0] = np.float32([pos[0], pos[1]])
-        theta = np.linspace(start_angle, start_angle + (span_angle/180.)*np.pi,
-                            curve_segments+1)
-        self._vertices[1:, 0] = pos[0] + xr * np.cos(theta)
-        self._vertices[1:, 1] = pos[1] + yr * np.sin(theta)
+
+        vertices = np.empty([curve_segments, 2], dtype=np.float32)
+        theta = np.linspace(start_angle,
+                            start_angle + (span_angle/180.)*np.pi,
+                            curve_segments)
+
+        vertices[:, 0] = pos[0] + xr * np.cos(theta)
+        vertices[:, 1] = pos[1] + yr * np.sin(theta)
+
+        return vertices
 
     @property
     def radius(self):
@@ -121,19 +125,19 @@ class EllipseVisual(PolygonVisual):
         self._num_segments = num_segments
         self._update()
 
-    def _update(self):
-        if self._pos is None:
-            return
-        
-        self._generate_vertices(pos=self._pos, radius=self._radius,
-                                start_angle=self._start_angle,
-                                span_angle=self._span_angle,
-                                num_segments=self._num_segments)
-        if not self._color.is_blank:
-            self.mesh.set_data(vertices=self._vertices,
-                               color=self._color.rgba)
-        if not self._border_color.is_blank:
-            self.border.set_data(pos=self._vertices[1:],
-                                 color=self._border_color.rgba)
-        
-        self.update()
+    # def _update(self):
+    #     if self._pos is None:
+    #         return
+
+    #     self._generate_vertices(pos=self._pos, radius=self._radius,
+    #                             start_angle=self._start_angle,
+    #                             span_angle=self._span_angle,
+    #                             num_segments=self._num_segments)
+    #     if not self._color.is_blank:
+    #         self._mesh.set_data(vertices=self._vertices,
+    #                            color=self._color.rgba)
+    #     if not self._border_color.is_blank:
+    #         self._border.set_data(pos=self._vertices[1:],
+    #                              color=self._border_color.rgba)
+
+        # self.update()
