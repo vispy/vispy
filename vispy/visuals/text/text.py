@@ -18,7 +18,7 @@ import sys
 from ._sdf import SDFRenderer
 from ...gloo import (TextureAtlas, set_state, IndexBuffer, VertexBuffer,
                      set_viewport)
-from ...gloo import gl
+from ...gloo import gl, context
 from ...gloo.wrappers import _check_valid
 from ...ext.six import string_types
 from ...util.fonts import _load_glyph
@@ -133,7 +133,14 @@ class FontManager(object):
 
 
 def _text_to_vbo(text, font, anchor_x, anchor_y, lowres_size):
-    """Convert text characters to VBO"""
+    """Convert text characters to VBO"""    
+    # Necessary to flush commands before requesting current viewport because
+    # There may be a set_viewport command waiting in the queue.
+    # TODO: would be nicer if each canvas just remembers and manages its own
+    # viewport, rather than relying on the context for this.
+    canvas = context.get_current_canvas()
+    canvas.context.flush_commands()
+    
     text_vtype = np.dtype([('a_position', 'f4', 2),
                            ('a_texcoord', 'f4', 2)])
     vertices = np.zeros(len(text) * 4, dtype=text_vtype)
@@ -470,7 +477,6 @@ class TextVisual(Visual):
             n_char = sum(len(t) for t in text)
             # we delay creating vertices because it requires a context,
             # which may or may not exist when the object is initialized
-            transforms.canvas.context.flush_commands()  # flush GLIR commands
             self._vertices = np.concatenate([
                 _text_to_vbo(t, self._font, self._anchors[0], self._anchors[1],
                              self._font._lowres_size) for t in text])
