@@ -596,7 +596,7 @@ class MarkersVisual(Visual):
         else:
             view.view_program['u_scale'] = 1
 
-    def _compute_bounds(self, axis):
+    def _compute_bounds(self, axis, view):
         pos = self._data['a_position']
         if pos is None:
             return None

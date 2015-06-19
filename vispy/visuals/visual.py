@@ -112,6 +112,7 @@ class VisualShare(object):
         self.filters = []
         self.visible = True
 
+
 class BaseVisual(object):
     """Superclass for all visuals.
     
@@ -190,14 +191,24 @@ class BaseVisual(object):
     def draw(self):
         raise NotImplementedError()
 
-    def bounds(self, axis):
-        raise NotImplementedError()
-        
     def attach(self, filter):
         raise NotImplementedError()
         
     def detach(self, filter):
         raise NotImplementedError()
+    
+    def bounds(self, axis, view=None):
+        if view is None:
+            view = self
+        if axis not in self._vshare.bounds:
+            self._vshare.bounds[axis] = self._compute_bounds(axis, view)
+        return self._vshare.bounds[axis]
+            
+    def _compute_bounds(self, axis, view):
+        raise NotImplementedError()
+            
+    def _bounds_changed(self):
+        self._vshare.bounds.clear()
 
     def update(self):
         self.events.update()
@@ -293,12 +304,6 @@ class Visual(BaseVisual):
             raise TypeError("Only one positional argument allowed.")
         self._vshare.gl_state.update(kwargs)
 
-    def bounds(self, axis):
-        cache = self.vshare.bounds
-        if axis not in cache:
-            cache[axis] = self._compute_bounds(axis, view=self)
-        return cache[axis]
-
     def _compute_bounds(self, axis, view):
         """Return the (min, max) bounding values of this visual along *axis*
         in the local coordinate system.
@@ -361,10 +366,6 @@ class Visual(BaseVisual):
         if self._prepare_draw(view=self) is False:
             return
         self._program.draw(self._vshare.draw_mode, self._vshare.index_buffer)
-        
-    def bounds(self):
-        # check self._vshare for cached bounds before computing
-        return None
         
     def _get_hook(self, shader, name):
         """Return a FunctionChain that Filters may use to modify the program.
@@ -462,10 +463,15 @@ class CompoundVisual(BaseVisual):
         visual.transforms = self.transforms
         visual._prepare_transforms(visual)
         self._subvisuals.append(visual)
+        visual.events.update.connect(self._subv_update)
         self.update()
 
     def remove_subvisual(self, visual):
-        self._subvisuals.remove(visuals)
+        visual.events.update.disconnect(self._subv_update)
+        self._subvisuals.remove(visual)
+        self.update()
+        
+    def _subv_update(self, event):
         self.update()
         
     def _transform_changed(self, event=None):
@@ -507,9 +513,9 @@ class CompoundVisual(BaseVisual):
     
     def _compute_bounds(self, axis, view):
         bounds = None
-        for v in self._subvisuals:
+        for v in view._subvisuals:
             if v.visible:
-                vb = b.bounds(axis, view)
+                vb = v.bounds(axis)
                 if bounds is None:
                     bounds = vb
                 else:

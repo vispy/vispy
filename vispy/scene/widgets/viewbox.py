@@ -145,7 +145,6 @@ class ViewBox(Widget):
         # todo: handle sub-children
         # todo: handle transformations
         # Init
-        mode = 'data'  # or visual?
         bounds = [(np.inf, -np.inf), (np.inf, -np.inf), (np.inf, -np.inf)]
         # Get bounds of all children
         for ob in self.scene.children:
@@ -153,7 +152,7 @@ class ViewBox(Widget):
                 for axis in (0, 1, 2):
                     if (dim is not None) and dim != axis:
                         continue
-                    b = ob.bounds(mode, axis)
+                    b = ob.bounds(axis)
                     if b is not None:
                         b = min(b), max(b)  # Ensure correct order
                         bounds[axis] = (min(bounds[axis][0], b[0]), 

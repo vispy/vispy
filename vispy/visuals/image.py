@@ -288,18 +288,7 @@ class ImageVisual(Visual):
         self._texture.set_data(data)
         self._need_texture_upload = False
 
-    def bounds(self, mode, axis):
-        """Get the bounds
-
-        Parameters
-        ----------
-        mode : str
-            Describes the type of boundary requested. Can be "visual", "data",
-            or "mouse".
-        axis : 0, 1, 2
-            The axis along which to measure the bounding values, in
-            x-y-z order.
-        """
+    def _compute_bounds(self, axis, view):
         if axis > 1:
             return (0, 0)
         else:
