@@ -114,9 +114,13 @@ def _unit(mode, extra_arg_string, coverage=False):
 def _docs():
     """test docstring paramters
     using vispy/utils/tests/test_docstring_parameters.py"""
+    print ("warning: this imports vispy from the vispy installation. it is"
+           " recommended to setup vispy using 'python setup.py develop'"
+           " so that the latest sources are used automatically")
     try:
         # this should always be importable
         from vispy.util.tests import test_docstring_parameters
+        print("Running docstring test...")
         test_docstring_parameters.test_docstring_parameters()
     except AssertionError as docstring_violations:
         # the test harness expects runtime errors,
