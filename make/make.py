@@ -180,6 +180,7 @@ class Maker:
                 * extra - run extra tests (line endings and style)
                 * lineendings - test line ending consistency
                 * flake - flake style testing (PEP8 and more)
+                * docs - test docstring parameters for correctness
                 * examples - run all examples
                 * examples [examples paths] - run given examples
         """

@@ -111,8 +111,23 @@ def _unit(mode, extra_arg_string, coverage=False):
         os.rename(op.join(cwd, '.coverage'), out_name)
 
 
+def _docs():
+    """test docstring paramters
+    using vispy/utils/tests/test_docstring_parameters.py"""
+    orig_dir = os.getcwd()
+    import_dir, dev = _get_import_dir()
+    os.chdir(op.join(import_dir, '..'))
+    try:
+        from vispy.util.tests import test_docstring_parameters
+        test_docstring_parameters.test_docstring_parameters()
+    except Exception as e:
+        print("unable to test docs: %s" % str(e))
+
+    os.chdir(orig_dir)
+
+
 def _flake():
-    """Test flake8 and docstrings"""
+    """Test flake8"""
     orig_dir = os.getcwd()
     import_dir, dev = _get_import_dir()
     os.chdir(op.join(import_dir, '..'))
@@ -304,7 +319,7 @@ def test(label='full', extra_arg_string='', coverage=False):
     ----------
     label : str
         Can be one of 'full', 'unit', 'nobackend', 'extra', 'lineendings',
-        'flake', or any backend name (e.g., 'qt').
+        'flake', 'docs', or any backend name (e.g., 'qt').
     extra_arg_string : str
         Extra arguments to sent to ``pytest``.
     coverage : bool
@@ -314,7 +329,7 @@ def test(label='full', extra_arg_string='', coverage=False):
     label = label.lower()
     label = 'pytest' if label == 'nose' else label
     known_types = ['full', 'unit', 'lineendings', 'extra', 'flake',
-                   'nobackend', 'examples']
+                   'docs', 'nobackend', 'examples']
 
     if label not in known_types + backend_names:
         raise ValueError('label must be one of %s, or a backend name %s, '
@@ -344,6 +359,9 @@ def test(label='full', extra_arg_string='', coverage=False):
         runs.append([_check_line_endings, 'lineendings'])
     if label in ('full', 'extra', 'flake'):
         runs.append([_flake, 'flake'])
+    if label in ('full', 'extra', 'docs'):
+        runs.append([_docs, 'docs'])
+
     t0 = time()
     fail = []
     skip = []
