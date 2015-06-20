@@ -363,7 +363,7 @@ def test(label='full', extra_arg_string='', coverage=False):
         runs.append([_check_line_endings, 'lineendings'])
     if label in ('full', 'extra', 'flake'):
         runs.append([_flake, 'flake'])
-    if label in ('full', 'extra', 'docs'):
+    if label in ('extra', 'docs'):
         runs.append([_docs, 'docs'])
 
     t0 = time()
