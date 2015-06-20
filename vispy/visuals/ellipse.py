@@ -25,6 +25,8 @@ class EllipseVisual(PolygonVisual):
         The face color to use.
     border_color : instance of Color
         The border color to use.
+    border_width: float
+        The width of the border in pixels
     radius : float | tuple
         Radius or radii of the ellipse
         Defaults to  (0.1, 0.1)
@@ -67,11 +69,11 @@ class EllipseVisual(PolygonVisual):
             xr = yr = radius
 
         curve_segments = int(num_segments * span_angle / 360.)
-        start_angle *= (np.pi/180.)
+        start_angle = np.deg2rad(start_angle)
 
         vertices = np.empty([curve_segments + 1, 2], dtype=np.float32)
         theta = np.linspace(start_angle,
-                            start_angle + (span_angle/180.)*np.pi,
+                            start_angle + np.deg2rad(span_angle),
                             curve_segments)
 
         vertices[:-1, 0] = center[0] + xr * np.cos(theta)
