@@ -114,16 +114,16 @@ def _unit(mode, extra_arg_string, coverage=False):
 def _docs():
     """test docstring paramters
     using vispy/utils/tests/test_docstring_parameters.py"""
-    orig_dir = os.getcwd()
-    import_dir, dev = _get_import_dir()
-    os.chdir(op.join(import_dir, '..'))
     try:
+        # this should always be importable
         from vispy.util.tests import test_docstring_parameters
         test_docstring_parameters.test_docstring_parameters()
-    except Exception as e:
-        print("unable to test docs: %s" % str(e))
-
-    os.chdir(orig_dir)
+    except AssertionError as docstring_violations:
+        # the test harness expects runtime errors,
+        # not AssertionError. So wrap the AssertionError
+        # that is thrown by test_docstring_parameters()
+        # with a RuntimeError
+        raise RuntimeError(docstring_violations)
 
 
 def _flake():
