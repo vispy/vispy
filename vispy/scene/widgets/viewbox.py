@@ -59,6 +59,7 @@ class ViewBox(Widget):
         self._scene = SubScene(name=name, parent=self)
         self._scene._clipper = Clipper()
         self._scene.clip_children = True
+        self.transforms.changed.connect(self._update_scene_clipper)
         
         # Camera is a helper object that handles scene transformation
         # and user interaction.
@@ -190,5 +191,9 @@ class ViewBox(Widget):
         if self._scene is None:
             # happens during init
             return
+        self._update_scene_clipper()
+        
+    def _update_scene_clipper(self, event=None):
         tr = self.get_transform('visual', 'framebuffer')
         self._scene._clipper.bounds = tr.map(self.inner_rect)
+

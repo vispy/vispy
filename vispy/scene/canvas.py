@@ -341,14 +341,22 @@ class SceneCanvas(app.Canvas):
         tr = self.transforms.get_transform('canvas', 'framebuffer')
         pos = tr.map(pos)[:2]
 
+        id = self.render_picking(region=(pos[0]-10, pos[1]-10, 20, 20))
+        vis = VisualNode._visual_ids.get(id[10, 10], None)
+        return vis
+
+    def render_picking(self, **kwargs):
+        """Render the scene in picking mode, returning a 2D array of visual 
+        IDs.
+        """
         try:
             self._scene.picking = True
-            img = self.render(tuple(pos) + (1, 1), bgcolor=(0, 0, 0, 0))
+            img = self.render(bgcolor=(0, 0, 0, 0), **kwargs)
         finally:
             self._scene.picking = False
-        id = struct.unpack('<I', struct.pack('<4B', *tuple(img[0, 0])))[0]
-        vis = VisualNode._visual_ids.get(id, None)
-        return vis
+        img = img.astype('int32') * [2**0, 2**8, 2**16, 2**24]
+        id = img.sum(axis=2).astype('int32')
+        return id
 
     def on_resize(self, event):
         """Resize handler
@@ -408,17 +416,23 @@ class SceneCanvas(app.Canvas):
         return vp
 
     def push_fbo(self, fbo, offset, csize):
-        """ Push an FBO on the stack, together with the new viewport.
-        and the transform to the FBO.
+        """ Push an FBO on the stack.
+        
+        This activates the framebuffer and causes subsequent rendering to be
+        written to the framebuffer rather than the canvas's back buffer. This
+        will also set the canvas viewport to cover the boundaries of the 
+        framebuffer.
 
         Parameters
         ----------
         fbo : instance of FrameBuffer
-            The framebuffer.
+            The framebuffer object .
         offset : tuple
-            The offset.
+            The location of the fbo origin relative to the canvas's framebuffer
+            origin.
         csize : tuple
-            The size to use.
+            The size of the region in the canvas's framebuffer that should be 
+            covered by this framebuffer.
         """
         self._fb_stack.append((fbo, offset, csize))
         try:

@@ -28,10 +28,16 @@ class Clipper(object):
         self.bounds = bounds  # (x, y, w, h)
         if transform is None:
             transform = NullTransform()
-        self.set_transform(transform)
+        self._transform = None
+        self.transform = transform
     
     @property
     def bounds(self):
+        """The clipping boundaries.
+        
+        This must be a tuple (x, y, w, h) in a clipping coordinate system
+        that is defined by the `transform` property.
+        """
         return self._bounds
     
     @bounds.setter
@@ -39,6 +45,20 @@ class Clipper(object):
         self._bounds = Rect(b).normalized()
         b = self._bounds
         self.clip_shader['view'] = (b.left, b.right, b.bottom, b.top)
+
+    @property
+    def transform(self):
+        """The transform that maps from framebuffer coordinates to clipping
+        coordinates.
+        """
+        return self._transform
+
+    @transform.setter
+    def transform(self, tr):
+        if tr is self._transform:
+            return
+        self._transform = tr
+        self.clip_shader['fb_to_clip'] = tr
         
     def _attach(self, visual):
         try:
@@ -50,6 +70,3 @@ class Clipper(object):
 
     def _detach(self, visual):
         visual._get_hook('frag', 'pre').remove(self.clip_expr)
-
-    def set_transform(self, tr):
-        self.clip_shader['fb_to_clip'] = tr

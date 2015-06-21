@@ -6,8 +6,7 @@ from __future__ import division
 
 import numpy as np
 
-from ..visuals import VisualNode
-from ...visuals import CompoundVisual
+from ..visuals import Compound
 from ...visuals.mesh import MeshVisual
 from ...visuals.transforms import STTransform
 from ...visuals.filters import Clipper
@@ -16,7 +15,7 @@ from ...geometry import Rect
 from ...color import Color
 
 
-class Widget(VisualNode, CompoundVisual):
+class Widget(Compound):
     """ A widget takes up a rectangular space, intended for use in
     a 2D pixel coordinate frame.
 
@@ -65,8 +64,7 @@ class Widget(VisualNode, CompoundVisual):
 
         self._widgets = []
         
-        CompoundVisual.__init__(self, [self._mesh, self._picking_mesh])
-        VisualNode.__init__(self, **kwargs)
+        Compound.__init__(self, [self._mesh, self._picking_mesh], **kwargs)
  
         self.transform = STTransform()
         self.events.add(resize=Event)
@@ -92,9 +90,8 @@ class Widget(VisualNode, CompoundVisual):
 
     @property
     def size(self):
-        # Note that we cannot let the size be reflected in the transform.
-        # Consider a widget of 40x40 in a pixel grid, a child widget therin
-        # with size 20x20 would get a scale of 800x800!
+        """The size (w, h) of this widget.
+        """
         return self._size
 
     @size.setter
@@ -154,8 +151,8 @@ class Widget(VisualNode, CompoundVisual):
         
         if self._clipper is None:
             return
-        tr = self.get_transform('visual', 'framebuffer')
-        self._clipper.rect = tr.map(self.inner_rect)
+        self._clipper.rect = self.inner_rect
+        self._clipper.transform = self.get_transform('framebuffer', 'visual')
 
     @property
     def border_color(self):
@@ -265,7 +262,7 @@ class Widget(VisualNode, CompoundVisual):
     
     @picking.setter
     def picking(self, p):
-        VisualNode.picking.fset(self, p)
+        Compound.picking.fset(self, p)
         self._update_visibility()
         
     def _update_visibility(self):
@@ -274,11 +271,6 @@ class Widget(VisualNode, CompoundVisual):
         self._picking_mesh.visible = picking and self.interactive
         self._mesh.visible = not picking and not blank
     
-    def _prepare_draw(self, view):
-        pick = self.picking
-        if not pick and self.border_color.is_blank and self.bgcolor.is_blank:
-            return False
-
     def _update_child_widgets(self):
         # Set the position and size of child boxes (only those added
         # using add_widget)
