@@ -42,14 +42,13 @@ class AxisVisual(CompoundVisual):
     **kwargs : dict
         Keyword arguments to pass to `Visual`.
     """
-    def __init__(self, pos, domain=(0., 1.), tick_direction=(-1., 0.),
+    def __init__(self, pos=None, domain=(0., 1.), tick_direction=(-1., 0.),
                  scale_type="linear", axis_color=(1, 1, 1),
                  tick_color=(0.7, 0.7, 0.7)):
         if scale_type != 'linear':
             raise NotImplementedError('only linear scaling is currently '
                                       'supported')
         self._pos = None
-        self.pos = pos
         self.domain = domain
         self.tick_direction = np.array(tick_direction, float)
         self.tick_direction = self.tick_direction
@@ -71,6 +70,9 @@ class AxisVisual(CompoundVisual):
         self.add_subvisual(self._line)
         self.add_subvisual(self._ticks)
         self.add_subvisual(self._text)
+
+        if pos is not None:
+            self.pos = pos
 
     @property
     def pos(self):
@@ -95,13 +97,16 @@ class AxisVisual(CompoundVisual):
 
         self._line.set_data(pos=self.pos, color=self.axis_color)
         self._ticks.set_data(pos=tick_pos, color=self.tick_color)
-        self._text.set_data(list(tick_labels), pos=tick_label_pos,
-                            anchor_x=anchors[0], anchor_y=anchors[1])
+        self._text.text = list(tick_labels)
+        self._text.pos = tick_label_pos
+        self._text.anchors = anchors
 
         self._need_update = False
 
     def _prepare_draw(self, view):
-        if self._need_update():
+        if self._pos is None:
+            return False
+        if self._need_update:
             self._update_subvisuals()
 
     def _compute_bounds(self, axis, view):
