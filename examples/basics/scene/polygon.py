@@ -37,7 +37,7 @@ if __name__ == '__main__':
     ellipse.span_angle = 120
 
     rect = Rectangle(center=(0.6, 0.2), width=0.1, height=0.2,
-                     color=orange, border_width=2, border_color=white,
+                     color=orange, border_color=white,
                      radius=0.02, parent=v.scene)
 
     regular_poly = RegularPolygon(center=(0.8, 0.2),
