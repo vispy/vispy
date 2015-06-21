@@ -1,7 +1,7 @@
 from vispy import app
 import sys
 from vispy.scene import SceneCanvas
-from vispy.scene.visuals import Polygon, Ellipse, Rectangle
+from vispy.scene.visuals import Polygon, Ellipse, Rectangle, RegularPolygon
 from vispy.color import Color
 
 white = Color("#ecf0f1")
@@ -20,31 +20,30 @@ if __name__ == '__main__':
     cx, cy = (0.2, 0.2)
     halfx, halfy = (0.1, 0.1)
 
-    rect_coords = [(cx - halfx, cy - halfy),
+    poly_coords = [(cx - halfx, cy - halfy),
                    (cx + halfx, cy - halfy),
                    (cx + halfx, cy + halfy),
                    (cx - halfx, cy + halfy)]
+    poly = Polygon(poly_coords, color=red, border_color=white,
+                   border_width=3,  parent=v.scene)
 
-    p = Polygon(rect_coords, color=red, border_color=white,
-                border_width=3,  parent=v.scene)
+    ellipse = Ellipse(center=(0.4, 0.2), radius=(0.1, 0.05),
+                      color=blue, border_width=2, border_color=white,
+                      num_segments=1,
+                      parent=v.scene)
 
-    e = Ellipse(pos=(0.4, 0.2), radius=(0.1, 0.05),
-                color=blue,
-                border_width=2,
-                border_color=white,
-                num_segments=1,
-                parent=v.scene)
+    ellipse.num_segments = 10
+    ellipse.start_angle = 0
+    ellipse.span_angle = 120
 
-    r = Rectangle(pos=(0.6, 0.2), width=0.1, height=0.2,
-                  color=orange,
-                  border_width=2,
-                  border_color=white,
-                  radius=0.02,
-                  parent=v.scene)
+    rect = Rectangle(center=(0.6, 0.2), width=0.1, height=0.2,
+                     color=orange, border_width=2, border_color=white,
+                     radius=0.02, parent=v.scene)
 
-    e.num_segments = 10
-    e.start_angle = 0
-    e.span_angle = 120
+    regular_poly = RegularPolygon(center=(0.8, 0.2),
+                                  radius=0.1, sides=6, color=blue,
+                                  border_color=white, border_width=2,
+                                  parent=v.scene)
 
     if sys.flags.interactive != 1:
         app.run()
