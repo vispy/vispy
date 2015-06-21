@@ -76,19 +76,19 @@ class EllipseVisual(PolygonVisual):
         # curve_segments = int(num_segments * span_angle / 360.)
         start_angle = np.deg2rad(start_angle)
 
-        vertices = np.empty([num_segments + 1, 2], dtype=np.float32)
+        vertices = np.empty([num_segments + 2, 2], dtype=np.float32)
 
         # split the total angle into num_segments intances
         theta = np.linspace(start_angle,
                             start_angle + np.deg2rad(span_angle),
-                            num_segments)
+                            num_segments + 1)
 
         # PolarProjection
         vertices[:-1, 0] = center[0] + xr * np.cos(theta)
         vertices[:-1, 1] = center[1] + yr * np.sin(theta)
 
         # close the curve
-        vertices[num_segments] = center
+        vertices[num_segments + 1] = center
 
         return vertices
 
