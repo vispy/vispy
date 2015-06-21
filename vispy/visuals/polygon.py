@@ -16,6 +16,7 @@ from .mesh import MeshVisual
 from .line import LineVisual
 from ..color import Color
 from ..geometry import PolygonData
+from ..gloo import set_state
 
 
 class PolygonVisual(CompoundVisual):
@@ -42,8 +43,9 @@ class PolygonVisual(CompoundVisual):
         self._color = Color(color)
         self._border_width = border_width
         self._border_color = Color(border_color)
-        self._update()
+        set_state(polygon_offset_fill=False)
 
+        self._update()
         CompoundVisual.__init__(self, [self._mesh, self._border], **kwargs)
 
     def _update(self):
