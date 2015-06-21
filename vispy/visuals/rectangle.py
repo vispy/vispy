@@ -26,6 +26,8 @@ class RectangleVisual(PolygonVisual):
         The fill color to use.
     border_color : instance of Color
         The border color to use.
+    border_width : int
+        Border width in pixels.
     height : float
         Length of the rectangle along y-axis
         Defaults to 1.0
