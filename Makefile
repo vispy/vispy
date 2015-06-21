@@ -53,6 +53,9 @@ test3: clean-test
 flake: clean-test
 	python make test flake
 
+docs: clean-test
+	python make test docs
+
 flake3: clean-test
 	python3 make test flake
 

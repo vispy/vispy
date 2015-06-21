@@ -8,6 +8,7 @@ from __future__ import print_function
 
 import sys
 import os
+import warnings
 from os import path as op
 from copy import deepcopy
 from functools import partial
@@ -109,6 +110,30 @@ def _unit(mode, extra_arg_string, coverage=False):
         if op.isfile(out_name):
             os.remove(out_name)
         os.rename(op.join(cwd, '.coverage'), out_name)
+
+
+def _docs():
+    """test docstring paramters
+    using vispy/utils/tests/test_docstring_parameters.py"""
+    dev = _get_import_dir()[1]
+
+    if not dev:
+        warnings.warn("Docstring test imports Vispy from"
+                      " Vispy's installation. It is"
+                      " recommended to setup Vispy using"
+                      " 'python setup.py develop'"
+                      " so that the latest sources are used automatically")
+    try:
+        # this should always be importable
+        from vispy.util.tests import test_docstring_parameters
+        print("Running docstring test...")
+        test_docstring_parameters.test_docstring_parameters()
+    except AssertionError as docstring_violations:
+        # the test harness expects runtime errors,
+        # not AssertionError. So wrap the AssertionError
+        # that is thrown by test_docstring_parameters()
+        # with a RuntimeError
+        raise RuntimeError(docstring_violations)
 
 
 def _flake():
@@ -304,7 +329,7 @@ def test(label='full', extra_arg_string='', coverage=False):
     ----------
     label : str
         Can be one of 'full', 'unit', 'nobackend', 'extra', 'lineendings',
-        'flake', or any backend name (e.g., 'qt').
+        'flake', 'docs', or any backend name (e.g., 'qt').
     extra_arg_string : str
         Extra arguments to sent to ``pytest``.
     coverage : bool
@@ -314,7 +339,7 @@ def test(label='full', extra_arg_string='', coverage=False):
     label = label.lower()
     label = 'pytest' if label == 'nose' else label
     known_types = ['full', 'unit', 'lineendings', 'extra', 'flake',
-                   'nobackend', 'examples']
+                   'docs', 'nobackend', 'examples']
 
     if label not in known_types + backend_names:
         raise ValueError('label must be one of %s, or a backend name %s, '
@@ -344,6 +369,9 @@ def test(label='full', extra_arg_string='', coverage=False):
         runs.append([_check_line_endings, 'lineendings'])
     if label in ('full', 'extra', 'flake'):
         runs.append([_flake, 'flake'])
+    if label in ('extra', 'docs'):
+        runs.append([_docs, 'docs'])
+
     t0 = time()
     fail = []
     skip = []
