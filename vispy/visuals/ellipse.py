@@ -19,7 +19,7 @@ class EllipseVisual(PolygonVisual):
 
     Parameters
     ----------
-    pos : array
+    center : array
         Center of the ellipse
     color : instance of Color
         The face color to use.
@@ -40,10 +40,10 @@ class EllipseVisual(PolygonVisual):
         Number of segments to be used to draw the ellipse
         Defaults to 100
     """
-    def __init__(self, pos=None, color='black', border_color=None,
+    def __init__(self, center=None, color='black', border_color=None,
                  border_width=0, radius=(0.1, 0.1), start_angle=0.,
                  span_angle=360., num_segments=100, **kwargs):
-        self._center = pos
+        self._center = center
         self._radius = radius
         self._start_angle = start_angle
         self._span_angle = span_angle
