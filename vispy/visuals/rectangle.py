@@ -20,7 +20,7 @@ class RectangleVisual(PolygonVisual):
 
     Parameters
     ----------
-    pos :  array
+    center :  array
         Center of the rectangle
     color : instance of Color
         The fill color to use.
@@ -36,11 +36,11 @@ class RectangleVisual(PolygonVisual):
         Radii of curvatures of corners in clockwise order from top-left
         Defaults to 0.
     """
-    def __init__(self, pos=None, color='black', border_color=None,
+    def __init__(self, center=None, color='black', border_color=None,
                  border_width=0, height=1.0, width=1.0,
                  radius=[0., 0., 0., 0.], **kwargs):
 
-        self._center = pos
+        self._center = center
         self._color = Color(color)
         self._border_color = Color(border_color)
         self._border_width = border_width
