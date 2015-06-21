@@ -32,6 +32,7 @@ if __name__ == '__main__':
                 color=blue,
                 border_width=2,
                 border_color=white,
+                num_segments=1,
                 parent=v.scene)
 
     r = Rectangle(pos=(0.6, 0.2), width=0.1, height=0.2,
@@ -41,9 +42,9 @@ if __name__ == '__main__':
                   radius=0.02,
                   parent=v.scene)
 
-    e.num_segments = 50
+    e.num_segments = 10
     e.start_angle = 0
-    e.span_angle = 135
+    e.span_angle = 120
 
     if sys.flags.interactive != 1:
         app.run()

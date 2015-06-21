@@ -53,6 +53,7 @@ class EllipseVisual(PolygonVisual):
                                border_color=border_color,
                                border_width=border_width, **kwargs)
 
+        self._mesh.mode = "triangle_fan"
         self._update_vertices()
 
     @staticmethod
@@ -68,17 +69,26 @@ class EllipseVisual(PolygonVisual):
         else:
             xr = yr = radius
 
-        curve_segments = int(num_segments * span_angle / 360.)
+        # divide the total sweeped angle into curve_segments
+        # so that the _total_ curve has num_segments, and a
+        # curve of span_ange < 360 will have that fraction
+        # of num_segments
+        # curve_segments = int(num_segments * span_angle / 360.)
         start_angle = np.deg2rad(start_angle)
 
-        vertices = np.empty([curve_segments + 1, 2], dtype=np.float32)
+        vertices = np.empty([num_segments + 1, 2], dtype=np.float32)
+
+        # split the total angle into num_segments intances
         theta = np.linspace(start_angle,
                             start_angle + np.deg2rad(span_angle),
-                            curve_segments)
+                            num_segments)
 
+        # PolarProjection
         vertices[:-1, 0] = center[0] + xr * np.cos(theta)
         vertices[:-1, 1] = center[1] + yr * np.sin(theta)
-        vertices[curve_segments] = center
+
+        # close the curve
+        vertices[num_segments] = center
 
         return vertices
 
@@ -130,13 +140,30 @@ class EllipseVisual(PolygonVisual):
         self._update_vertices()
 
     def _update_vertices(self):
+        if self._center is None:
+            return
+
         vertices = self._generate_vertices(center=self._center,
                                            radius=self._radius,
                                            start_angle=self._start_angle,
                                            span_angle=self._span_angle,
                                            num_segments=self._num_segments)
 
-        # to the PolygonVisual, "pos" is the array of vertices
-        # this will trigger the PolygonVisual's _update()
-        # which gets the ball rolling
-        self.pos = vertices
+        # NOTE: we do not use PolygonVisual's
+        # inbuilt update() because the triangulation method
+        # it uses is expensive. See discussion on
+        # (campagnola/vispy #2) for more details
+        if not self._color.is_blank:
+            self._mesh.set_data(vertices=vertices,
+                                color=self._color.rgba)
+
+        # connect vertices for a closed loop when
+        # drawing the border
+        if not self._border_color.is_blank:
+            border_pos = vertices
+            border_pos = np.concatenate([border_pos, border_pos[:1]], axis=0)
+
+            self._border.set_data(pos=border_pos,
+                                  color=self._border_color.rgba,
+                                  width=self._border_width,
+                                  connect='strip')
