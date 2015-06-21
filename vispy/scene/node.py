@@ -328,8 +328,9 @@ class Node(object):
         # Other nodes might be interested in this information, but turning it
         # on by default is too expensive.
         assert isinstance(tr, BaseTransform)
-        self._transform = tr
-        self._update_trsys(None)
+        if tr is not self._transform:
+            self._transform = tr
+            self._update_trsys(None)
 
     def set_transform(self, type_, *args, **kwargs):
         """ Create a new transform of *type* and assign it to this node.
