@@ -69,11 +69,6 @@ class EllipseVisual(PolygonVisual):
         else:
             xr = yr = radius
 
-        # divide the total sweeped angle into curve_segments
-        # so that the _total_ curve has num_segments, and a
-        # curve of span_ange < 360 will have that fraction
-        # of num_segments
-        # curve_segments = int(num_segments * span_angle / 360.)
         start_angle = np.deg2rad(start_angle)
 
         vertices = np.empty([num_segments + 2, 2], dtype=np.float32)
