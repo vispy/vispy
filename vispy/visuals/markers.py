@@ -474,7 +474,6 @@ _marker_dict = {
     '^': triangle_up,
     'v': triangle_down,
     '*': star,
-    None: None,
 }
 marker_types = tuple(sorted(list(_marker_dict.keys())))
 
