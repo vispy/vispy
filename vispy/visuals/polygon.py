@@ -99,3 +99,27 @@ class PolygonVisual(CompoundVisual):
     def border_color(self, border_color):
         self._border_color = Color(border_color)
         self._update()
+
+    @property
+    def mesh(self):
+        """The vispy.visuals.MeshVisual that is owned by the PolygonVisual.
+           It is used to fill in the polygon
+        """
+        return self._mesh
+
+    @mesh.setter
+    def mesh(self, mesh):
+        self._mesh = mesh
+        self._update()
+
+    @property
+    def border(self):
+        """The vispy.visuals.LineVisual that is owned by the PolygonVisual.
+           It is used to draw the border of the polygon
+        """
+        return self._border
+
+    @border.setter
+    def border(self, border):
+        self._border = border
+        self._update()
