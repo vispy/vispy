@@ -53,7 +53,7 @@ class Canvas(app.Canvas):
                                                    translate=(600, 600))
         self.visuals.append(polygon)
 
-        ellipse = visuals.EllipseVisual(pos=(0, 0, 0), radius=(100, 150),
+        ellipse = visuals.EllipseVisual(center=(0, 0, 0), radius=(100, 150),
                                         color=(0.2, 0.2, 0.8, 1),
                                         border_color=(1, 1, 1, 1),
                                         start_angle=180., span_angle=150.)
@@ -61,7 +61,7 @@ class Canvas(app.Canvas):
                                                    translate=(200, 300))
         self.visuals.append(ellipse)
 
-        rect = visuals.RectangleVisual(pos=(600, 200, 0), height=200.,
+        rect = visuals.RectangleVisual(center=(600, 200, 0), height=200.,
                                        width=300.,
                                        radius=[30., 30., 0., 0.],
                                        color=(0.5, 0.5, 0.2, 1),
@@ -69,12 +69,12 @@ class Canvas(app.Canvas):
         rect.transform = transforms.NullTransform()
         self.visuals.append(rect)
 
-        rpolygon = visuals.RegularPolygonVisual(pos=(200., 600., 0), 
+        rpolygon = visuals.RegularPolygonVisual(center=(200., 600., 0), 
                                                 radius=160,
                                                 color=(0.2, 0.8, 0.2, 1),
                                                 border_color=(1, 1, 1, 1),
                                                 sides=6)
-        rpolygon.transform = transforms.NullTransform()
+        rpolygon.transfor = transforms.NullTransform()
         self.visuals.append(rpolygon)
 
         for v in self.visuals:
@@ -83,12 +83,20 @@ class Canvas(app.Canvas):
 
         self.show()
 
+
+    def on_resize(self, event):
+        # Set canvas viewport and reconfigure visual transforms to match.
+        vp = (0, 0, self.physical_size[0], self.physical_size[1])
+        self.context.set_viewport(*vp)
+        for visual in self.visuals:
+            visual.transforms.configure(canvas=self, viewport=vp)
+
     def on_draw(self, ev):
         gloo.set_clear_color((0, 0, 0, 1))
         gloo.set_viewport(0, 0, *self.physical_size)
         gloo.clear()
         for vis in self.visuals:
-            vis.draw(vis.tr_sys)
+            vis.draw()
 
 
 if __name__ == '__main__':

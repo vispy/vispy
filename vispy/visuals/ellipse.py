@@ -83,7 +83,7 @@ class EllipseVisual(PolygonVisual):
         vertices[:-1, 1] = center[1] + yr * np.sin(theta)
 
         # close the curve
-        vertices[num_segments + 1] = center
+        vertices[num_segments + 1] = np.float32([center[0], center[1]])
 
         return vertices
 
