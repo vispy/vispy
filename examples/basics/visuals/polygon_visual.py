@@ -14,10 +14,10 @@ from vispy.visuals import transforms
 
 # vertex positions of polygon data to draw
 pos = np.array([[0, 0, 0],
-               [0.25, 0.22, 0],
-               [0.25, 0.5, 0],
-               [0, 0.5, 0],
-               [-0.25, 0.25, 0]])
+                [0.25, 0.22, 0],
+                [0.25, 0.5, 0],
+                [0, 0.5, 0],
+                [-0.25, 0.25, 0]])
 
 pos = np.array([[0, 0],
                 [10, 0],
@@ -43,6 +43,7 @@ pos[-1] = pos[0]
 
 
 class Canvas(app.Canvas):
+
     def __init__(self):
         app.Canvas.__init__(self, keys='interactive', size=(800, 800))
         global pos
@@ -69,7 +70,7 @@ class Canvas(app.Canvas):
         rect.transform = transforms.NullTransform()
         self.visuals.append(rect)
 
-        rpolygon = visuals.RegularPolygonVisual(center=(200., 600., 0), 
+        rpolygon = visuals.RegularPolygonVisual(center=(200., 600., 0),
                                                 radius=160,
                                                 color=(0.2, 0.8, 0.2, 1),
                                                 border_color=(1, 1, 1, 1),
@@ -83,11 +84,9 @@ class Canvas(app.Canvas):
 
         self.show()
 
-
     def on_resize(self, event):
-        # Set canvas viewport and reconfigure visual transforms to match.
         vp = (0, 0, self.physical_size[0], self.physical_size[1])
-        self.context.set_viewport(*vp)
+
         for visual in self.visuals:
             visual.transforms.configure(canvas=self, viewport=vp)
 
@@ -100,6 +99,7 @@ class Canvas(app.Canvas):
 
 
 if __name__ == '__main__':
-    win = Canvas() 
+    win = Canvas()
+
     if sys.flags.interactive != 1:
         win.app.run()
