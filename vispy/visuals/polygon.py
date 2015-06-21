@@ -43,7 +43,6 @@ class PolygonVisual(CompoundVisual):
         self._color = Color(color)
         self._border_width = border_width
         self._border_color = Color(border_color)
-        set_state(polygon_offset_fill=False)
 
         self._update()
         CompoundVisual.__init__(self, [self._mesh, self._border], **kwargs)
@@ -54,6 +53,7 @@ class PolygonVisual(CompoundVisual):
             return
         if not self._color.is_blank:
             pts, tris = self.data.triangulate()
+            set_state(polygon_offset_fill=False)
             self._mesh.set_data(vertices=pts, faces=tris.astype(np.uint32),
                                 color=self._color.rgba)
         if not self._border_color.is_blank:
