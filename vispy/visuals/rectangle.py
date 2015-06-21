@@ -172,15 +172,23 @@ class RectangleVisual(PolygonVisual):
         self._update_vertices()
 
     def _update_vertices(self):
+        if not self._center:
+            return
+
         vertices = self._generate_vertices(center=self._center,
                                            radius=self._radius,
                                            height=self._height,
                                            width=self._width)
 
         self.pos = vertices
-        # TODO, FIXME: The position setter writes the mesh
-        # vertices after triangulating which is WRONG.
-        # we need a way to directly set the vertices
-        # without going through the _update()
-        self._mesh.set_data(vertices=vertices)
-        self._mesh.mode = 'triangle_fan'
+
+        # NOTE: Do not call PolygonVisual's _update() here because it
+        # uses triangulation which is super slow
+        if not self._color.is_blank:
+            self.mesh.set_data(vertices=vertices,
+                               color=self._color.rgba)
+        if not self._border_color.is_blank:
+            self.border.set_data(pos=vertices,
+                                 color=self._border_color.rgba)
+
+        self.update()
