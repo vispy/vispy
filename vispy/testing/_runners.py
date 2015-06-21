@@ -8,6 +8,7 @@ from __future__ import print_function
 
 import sys
 import os
+import warnings
 from os import path as op
 from copy import deepcopy
 from functools import partial
@@ -114,9 +115,14 @@ def _unit(mode, extra_arg_string, coverage=False):
 def _docs():
     """test docstring paramters
     using vispy/utils/tests/test_docstring_parameters.py"""
-    print("warning: this imports vispy from the vispy installation. it is"
-          " recommended to setup vispy using 'python setup.py develop'"
-          " so that the latest sources are used automatically")
+    dev = _get_import_dir()[1]
+
+    if not dev:
+        warnings.warn("Docstring test imports Vispy from"
+                      " Vispy's installation. It is"
+                      " recommended to setup Vispy using"
+                      " 'python setup.py develop'"
+                      " so that the latest sources are used automatically")
     try:
         # this should always be importable
         from vispy.util.tests import test_docstring_parameters
