@@ -7,9 +7,10 @@
 from ..geometry import create_cube
 from ..gloo import set_state
 from .mesh import MeshVisual
+from .visual import CompoundVisual
 
 
-class CubeVisual(MeshVisual):
+class CubeVisual(CompoundVisual):
     """Visual that displays a cube or cuboid
 
     Parameters
@@ -28,27 +29,20 @@ class CubeVisual(MeshVisual):
         cube edges are drawn.
     """
     def __init__(self, size=1.0, vertex_colors=None, face_colors=None,
-                 color=(0.5, 0.5, 1, 1), edge_color=None):
+                 color=(0.5, 0.5, 1, 1), edge_color=None, **kwargs):
+
         vertices, filled_indices, outline_indices = create_cube()
         vertices['position'] *= size
 
-        MeshVisual.__init__(self, vertices['position'], filled_indices,
-                            vertex_colors, face_colors, color)
+        self._mesh = MeshVisual(vertices=vertices['position'],
+                                faces=filled_indices,
+                                vertex_colors=vertex_colors,
+                                face_colors=face_colors, color=color)
         if edge_color:
-            self._outline = MeshVisual(vertices['position'], outline_indices,
-                                       color=edge_color, mode='lines')
+            self._border = MeshVisual(vertices=vertices['position'],
+                                      faces=outline_indices,
+                                      color=edge_color, mode='lines')
         else:
-            self._outline = None
+            self._border = MeshVisual()
 
-    def draw(self, transforms):
-        """Draw the visual
-
-        Parameters
-        ----------
-        transforms : instance of TransformSystem
-            The transforms to use.
-        """
-        MeshVisual.draw(self, transforms)
-        if self._outline:
-            set_state(polygon_offset=(1, 1), polygon_offset_fill=True)
-            self._outline.draw(transforms)
+        CompoundVisual.__init__(self, [self._mesh, self._border], **kwargs)
