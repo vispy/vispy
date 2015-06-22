@@ -24,9 +24,6 @@ class Canvas(app.Canvas):
 
         # Create a TransformSystem that will tell the visual how to draw
         self.cube_transform = transforms.AffineTransform()
-        # self.tr_sys = transforms.TransformSystem(self)
-        # self.tr_sys.visual_to_document = self.cube_transform
-
         self.cube.transform = self.cube_transform
 
         self._timer = app.Timer('auto', connect=self.on_timer, start=True)
