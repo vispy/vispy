@@ -27,7 +27,8 @@ ARROW_TYPES = [
     'angle_90',
     'triangle_30',
     'triangle_60',
-    'triangle_90'
+    'triangle_90',
+    'inhibitor_round'
 ]
 
 
