@@ -60,7 +60,11 @@ class Widget(Compound):
 
         # reserved space outside border
         self._margin = margin
-        self._size = 16, 16
+        self._size = 100, 100
+        
+        # layout interaction
+        self._fixed_size = (None, None)
+        self._stretch = (None, None)
 
         self._widgets = []
         
@@ -86,11 +90,13 @@ class Widget(Compound):
             return
         self.transform.translate = p[0], p[1], 0, 0
         self._update_line()
-        #self.events.resize()
 
     @property
     def size(self):
         """The size (w, h) of this widget.
+        
+        If the widget is a child of another widget, then its size is assigned
+        automatically by its parent.
         """
         return self._size
 
@@ -141,6 +147,41 @@ class Widget(Compound):
             m += 1
         return Rect((m, m), (self.size[0]-2*m, self.size[1]-2*m))
 
+    @property
+    def stretch(self):
+        """Stretch factors (w, h) used when determining how much space to
+        allocate to this widget in a layout.
+        
+        If either stretch factor is None, then it will be assigned when the
+        widget is added to a layout based on the number of columns or rows it
+        occupies.
+        """
+        return self._stretch
+
+    @stretch.setter
+    def stretch(self, s):
+        self._stretch = s
+        self._update_layout()
+
+    @property
+    def fixed_size(self):
+        """Fixed size (w, h) of the widget.
+        
+        Specifying a fixed size for either axis forces the widget to have a 
+        specific size in a layout. Setting either axis to None allows the 
+        widget to be resized by the layout.
+        """
+        return self._fixed_size
+    
+    @fixed_size.setter
+    def fixed_size(self, s):
+        self._fixed_size = s
+        self._update_layout()
+
+    def _update_layout(self):
+        if isinstance(self.parent, Widget):
+            self.parent._update_child_widgets()
+    
     def _update_clipper(self):
         """Called whenever the clipper for this widget may need to be updated.
         """
