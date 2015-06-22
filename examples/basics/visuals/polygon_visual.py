@@ -75,12 +75,8 @@ class Canvas(app.Canvas):
                                                 color=(0.2, 0.8, 0.2, 1),
                                                 border_color=(1, 1, 1, 1),
                                                 sides=6)
-        rpolygon.transfor = transforms.NullTransform()
+        rpolygon.transform = transforms.NullTransform()
         self.visuals.append(rpolygon)
-
-        for v in self.visuals:
-            v.tr_sys = transforms.TransformSystem(self)
-            v.tr_sys.visual_to_document = v.transform
 
         self.show()
 
