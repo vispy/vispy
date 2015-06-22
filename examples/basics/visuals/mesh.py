@@ -16,7 +16,7 @@ from vispy.visuals.transforms import (STTransform, AffineTransform,
 class Canvas(app.Canvas):
     def __init__(self):
         app.Canvas.__init__(self, keys='interactive', size=(800, 550))
-        
+
         self.meshes = []
         self.rotation = AffineTransform()
 
@@ -27,10 +27,10 @@ class Canvas(app.Canvas):
         # Mesh with pre-indexed vertices, uniform color
         self.meshes.append(visuals.MeshVisual(meshdata=mdata, color='r'))
 
-        ## Mesh with pre-indexed vertices, per-face color
-        ##   Because vertices are pre-indexed, we get a different color
-        ##   every time a vertex is visited, resulting in sharp color
-        ##   differences between edges.
+        # Mesh with pre-indexed vertices, per-face color
+        # Because vertices are pre-indexed, we get a different color
+        # every time a vertex is visited, resulting in sharp color
+        # differences between edges.
         verts = mdata.get_vertices(indexed='faces')
         nf = verts.size//9
         fcolor = np.ones((nf, 3, 4), dtype=np.float32)
@@ -40,10 +40,10 @@ class Canvas(app.Canvas):
         mesh = visuals.MeshVisual(vertices=verts, face_colors=fcolor)
         self.meshes.append(mesh)
 
-        ## Mesh with unindexed vertices, per-vertex color
-        ##   Because vertices are unindexed, we get the same color
-        ##   every time a vertex is visited, resulting in no color differences
-        ##   between edges.
+        # Mesh with unindexed vertices, per-vertex color
+        # Because vertices are unindexed, we get the same color
+        # every time a vertex is visited, resulting in no color differences
+        # between edges.
         verts = mdata.get_vertices()
         faces = mdata.get_faces()
         nv = verts.size//3
@@ -52,9 +52,9 @@ class Canvas(app.Canvas):
         vcolor[:, 1] = np.random.normal(size=nv)
         vcolor[:, 2] = np.linspace(0, 1, nv)
         self.meshes.append(visuals.MeshVisual(verts, faces, vcolor))
-        self.meshes.append(visuals.MeshVisual(verts, faces, vcolor, 
+        self.meshes.append(visuals.MeshVisual(verts, faces, vcolor,
                                               shading='flat'))
-        self.meshes.append(visuals.MeshVisual(verts, faces, vcolor, 
+        self.meshes.append(visuals.MeshVisual(verts, faces, vcolor,
                                               shading='smooth'))
 
         # Lay out meshes in a grid
