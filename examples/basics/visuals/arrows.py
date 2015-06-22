@@ -25,7 +25,7 @@ class Canvas(app.Canvas):
             (350, 190),
             (390, 0.0)
         )
-        arrows1 = (line1[-2:],)
+        arrows1 = ([line1[-3], line1[-1]],)
 
         line2 = curves.curve4_bezier(
             (10.0, 0.0),
@@ -34,8 +34,8 @@ class Canvas(app.Canvas):
             (390, 0.0)
         )
         arrows2 = (
-            line2[1::-1],
-            line2[-2:]
+            [line2[2], line2[0]],
+            [line2[-3], line2[-1]],
         )
 
         line3 = curves.curve3_bezier(
@@ -44,11 +44,9 @@ class Canvas(app.Canvas):
             (390, 0.0)
         )
 
-        arrows3 = (
-            line3[-2:],
-        )
+        arrows3 = ([line3[-3], line3[-1]],)
 
-        arrow_types = ["curved", "stealth", "triangle_60", "angle_60"]
+        arrow_types = ["curved", "stealth", "inhibitor_round", "angle_60"]
         self.lines = []
 
         for i, arrow_type in enumerate(arrow_types):
