@@ -11,6 +11,10 @@ from ...visuals import AxisVisual
 
 class AxisWidget(Widget):
     def __init__(self, orientation='left', **kwargs):
+        if 'tick_direction' not in kwargs:
+            tickdir = {'left': (-1, 0), 'right': (1, 0), 'bottom': (0, 1), 
+                       'top': (0, -1)}[orientation]
+            kwargs['tick_direction'] = tickdir
         self.axis = AxisVisual(**kwargs)
         self.orientation = orientation
         Widget.__init__(self)

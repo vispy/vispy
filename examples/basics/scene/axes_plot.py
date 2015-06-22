@@ -21,7 +21,7 @@ yaxis.stretch = (0.2, 1)
 grid.add_widget(yaxis, row=0, col=0)
 xaxis = scene.AxisWidget(orientation='bottom')
 grid.add_widget(xaxis, row=1, col=1)
-xaxis.stretch = (1, 0.2)
+xaxis.stretch = (1, 0.1)
 
 view = grid.add_view(row=0, col=1)
 plot = scene.Line(np.random.normal(size=(1000,2)), parent=view.scene)
