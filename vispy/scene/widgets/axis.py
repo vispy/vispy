@@ -12,6 +12,7 @@ from ...visuals import AxisVisual
 class AxisWidget(Widget):
     def __init__(self, orientation='left', **kwargs):
         self.axis = AxisVisual(**kwargs)
+        self.orientation = orientation
         Widget.__init__(self)
         self.add_subvisual(self.axis)
         self._linked_view = None
@@ -20,8 +21,14 @@ class AxisWidget(Widget):
         self._update_axis()
         
     def _update_axis(self):
+        self.axis.pos = self._axis_ends()
+        
+    def _axis_ends(self):
         r = self.inner_rect
-        self.axis.pos = np.array([[r.right, r.bottom], [r.right, r.top]])
+        if self.orientation == 'left':
+            return np.array([[r.right, r.bottom], [r.right, r.top]])
+        elif self.orientation == 'bottom':
+            return np.array([[r.left, r.bottom], [r.right, r.bottom]])
         
     def link_view(self, view):
         """Link this axis to a ViewBox such that its domain always matches the
@@ -39,9 +46,10 @@ class AxisWidget(Widget):
         """Linked view transform has changed; update ticks.
         """
         tr = self.node_transform(self._linked_view.scene)
-        r = self.inner_rect
-        p1 = tr.map((r.right, r.bottom))
-        p2 = tr.map((r.right, r.top))
-        self.axis.domain = (p1[1], p2[1])
-        
+        p1, p2 = tr.map(self._axis_ends())
+        if self.orientation in ('left', 'right'):
+            self.axis.domain = (p1[1], p2[1])
+        else:
+            self.axis.domain = (p1[0], p2[0])
+            
         

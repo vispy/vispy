@@ -16,14 +16,19 @@ canvas = scene.SceneCanvas(keys='interactive', size=(600, 600), show=True)
 grid = canvas.central_widget.add_grid()
 grid.spacing = 0
 
-axis = scene.AxisWidget()
-grid.add_widget(axis, row=0, col=0)
+yaxis = scene.AxisWidget(orientation='left')
+yaxis.stretch = (0.2, 1)
+grid.add_widget(yaxis, row=0, col=0)
+xaxis = scene.AxisWidget(orientation='bottom')
+grid.add_widget(xaxis, row=1, col=1)
+xaxis.stretch = (1, 0.2)
 
 view = grid.add_view(row=0, col=1)
 plot = scene.Line(np.random.normal(size=(1000,2)), parent=view.scene)
 view.camera = 'panzoom'
 
-axis.link_view(view)
+xaxis.link_view(view)
+yaxis.link_view(view)
 
 
 if __name__ == '__main__' and sys.flags.interactive == 0:
