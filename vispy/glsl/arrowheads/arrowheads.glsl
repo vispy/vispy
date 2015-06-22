@@ -9,3 +9,4 @@
 #include "arrowheads/stealth.glsl"
 #include "arrowheads/triangle.glsl"
 #include "arrowheads/angle.glsl"
+#include "arrowheads/inhibitor.glsl"
