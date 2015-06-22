@@ -54,7 +54,7 @@ void main()
     P = vec2(v_orientation.x*P.x - v_orientation.y*P.y,
              v_orientation.y*P.x + v_orientation.x*P.y) * v_point_size;
 
-    float distance = arrow_$arrow_type(P, v_size);
+    float distance = arrow_$arrow_type(P, v_size, v_linewidth, v_antialias);
     gl_FragColor = $fill_type(distance, v_linewidth, v_antialias, v_color,
                               v_color);
 }

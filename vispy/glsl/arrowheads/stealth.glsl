@@ -18,12 +18,17 @@
  *     Point to compute distance to
  * size
  *     Size of the arrow head in pixels
+ * linewidth
+ *     Width of the line
+ * antialias
+ *     Anti alias width
  *
  * Return:
  * -------
  * Signed distance to the arrow
  */
-float arrow_stealth(vec2 texcoord, float size)
+float arrow_stealth(vec2 texcoord, float size, 
+                    float linewidth, float antialias)
 {
     vec2 start = -vec2(size/2.0, 0.0);
     vec2 end   = +vec2(size/2.0, 0.0);

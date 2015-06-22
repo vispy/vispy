@@ -30,7 +30,8 @@
  * -------
  * Signed distance to the arrow
  */
-float arrow_angle(vec2 texcoord, float size, float height)
+float arrow_angle(vec2 texcoord, float size, 
+                  float linewidth, float antialias, float height)
 {
     float d;
     vec2 start = -vec2(size/2.0, 0.0);
@@ -65,9 +66,10 @@ float arrow_angle(vec2 texcoord, float size, float height)
  * --------
  * arro_angle, arrow_angle_60, arrow_angle_90
  */
-float arrow_angle_30(vec2 texcoord, float size)
+float arrow_angle_30(vec2 texcoord, float size,
+                     float linewidth, float antialias)
 {
-    return arrow_angle(texcoord, size, 0.25);
+    return arrow_angle(texcoord, size, linewidth, antialias, 0.25);
 }
 
 /**
@@ -77,9 +79,10 @@ float arrow_angle_30(vec2 texcoord, float size)
  * --------
  * arro_angle, arrow_angle_30, arrow_angle_90
  */
-float arrow_angle_60(vec2 texcoord, float size)
+float arrow_angle_60(vec2 texcoord, float size,
+                     float linewidth, float antialias)
 {
-    return arrow_angle(texcoord, size, 0.5);
+    return arrow_angle(texcoord, size, linewidth, antialias, 0.5);
 }
 
 /**
@@ -89,7 +92,8 @@ float arrow_angle_60(vec2 texcoord, float size)
  * --------
  * arro_angle, arrow_angle_30, arrow_angle_60
  */
-float arrow_angle_90(vec2 texcoord, float size)
+float arrow_angle_90(vec2 texcoord, float size,
+                     float linewidth, float antialias)
 {
-    return arrow_angle(texcoord, size, 1.0);
+    return arrow_angle(texcoord, size, linewidth, antialias, 1.0);
 }

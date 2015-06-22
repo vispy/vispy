@@ -20,6 +20,10 @@
  *     Point to compute distance to
  * size
  *     Size of the arrow head in pixels
+ * linewidth
+ *     Width of the line
+ * antialias
+ *     Anti alias width
  * height
  *     Height of the head (pixel)
  * 
@@ -32,7 +36,8 @@
  * Signed distance to the arrow
  *
  */
-float arrow_triangle(vec2 texcoord, float size, float height)
+float arrow_triangle(vec2 texcoord, float size, 
+                     float linewidth, float antialias, float height)
 {
     vec2 start = -vec2(size/2.0, 0.0);
     vec2 end   = +vec2(size/2.0, 0.0);
@@ -57,9 +62,10 @@ float arrow_triangle(vec2 texcoord, float size, float height)
  * --------
  * arrow_triangle, arrow_triangle_60, arrow_triangle_90
  */
-float arrow_triangle_30(vec2 texcoord, float size)
+float arrow_triangle_30(vec2 texcoord, float size,
+                        float linewidth, float antialias)
 {
-    return arrow_triangle(texcoord, size, 0.25);
+    return arrow_triangle(texcoord, size, linewidth, antialias, 0.25);
 }
 
 /**
@@ -70,9 +76,10 @@ float arrow_triangle_30(vec2 texcoord, float size)
  * --------
  * arrow_triangle, arrow_triangle_30, arrow_triangle_90
  */
-float arrow_triangle_60(vec2 texcoord, float size)
+float arrow_triangle_60(vec2 texcoord, float size,
+                        float linewidth, float antialias)
 {
-    return arrow_triangle(texcoord, size, 0.5);
+    return arrow_triangle(texcoord, size, linewidth, antialias, 0.5);
 }
 
 /**
@@ -83,7 +90,8 @@ float arrow_triangle_60(vec2 texcoord, float size)
  * --------
  * arrow_triangle, arrow_triangle_30, arrow_triangle_60
  */
-float arrow_triangle_90(vec2 texcoord, float size)
+float arrow_triangle_90(vec2 texcoord, float size,
+                        float linewidth, float antialias)
 {
-    return arrow_triangle(texcoord, size, 1.0);
+    return arrow_triangle(texcoord, size, linewidth, antialias, 1.0);
 }
