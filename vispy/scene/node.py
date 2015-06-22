@@ -272,6 +272,7 @@ class Node(object):
         old = self._canvas
         
         # Use canvas/framebuffer transforms from canvas
+        self.transforms.canvas = c
         if c is None:
             self._canvas = None
         else:

@@ -49,7 +49,7 @@ class AxisVisual(CompoundVisual):
             raise NotImplementedError('only linear scaling is currently '
                                       'supported')
         self._pos = None
-        self.domain = domain
+        self._domain = None
         self.tick_direction = np.array(tick_direction, float)
         self.tick_direction = self.tick_direction
         self.scale_type = scale_type
@@ -73,6 +73,7 @@ class AxisVisual(CompoundVisual):
 
         if pos is not None:
             self.pos = pos
+        self.domain = domain
 
     @property
     def pos(self):
@@ -81,7 +82,19 @@ class AxisVisual(CompoundVisual):
     @pos.setter
     def pos(self, pos):
         self._pos = np.array(pos, float)
+        self._need_update = True
         self.update()
+
+    @property
+    def domain(self):
+        return self._domain
+    
+    @domain.setter
+    def domain(self, d):
+        if d != self._domain:
+            self._domain = d
+            self._need_update = True
+            self.update()
 
     @property
     def _vec(self):
