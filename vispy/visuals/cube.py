@@ -5,7 +5,6 @@
 # -----------------------------------------------------------------------------
 
 from ..geometry import create_cube
-from ..gloo import set_state
 from .mesh import MeshVisual
 from .visual import CompoundVisual
 

@@ -22,10 +22,10 @@ from ..gloo import set_state
 class PolygonVisual(CompoundVisual):
     """
     Displays a 2D polygon
-    
+
     Parameters
     ----------
-    
+
     pos : array
         Set of vertices defining the polygon.
     color : str | tuple | list of colors

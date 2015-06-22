@@ -12,7 +12,7 @@ from __future__ import division
 import numpy as np
 
 from .visual import Visual
-from .shaders import ModularProgram, Function, Varying
+from .shaders import Function, Varying
 from ..gloo import VertexBuffer, IndexBuffer
 from ..geometry import MeshData
 from ..color import Color
@@ -49,7 +49,7 @@ vec4 phong_shading(vec4 color) {
 }
 """
 
-## Functions that can be used as is (don't have template variables)
+# Functions that can be used as is (don't have template variables)
 # Consider these stored in a central location in vispy ...
 
 vec3to4 = Function("""
@@ -94,10 +94,10 @@ class MeshVisual(Visual):
                  shading=None, mode='triangles', **kwargs):
         Visual.__init__(self, vcode=vertex_template, fcode=fragment_template,
                         **kwargs)
-        
+
         self.set_gl_state('translucent', depth_test=True,
                           cull_face=False)
-        
+
         # Define buffers
         self._vertices = VertexBuffer(np.zeros((0, 3), dtype=np.float32))
         self._normals = None
@@ -303,14 +303,14 @@ class MeshVisual(Visual):
 
     def draw(self, *args, **kwds):
         Visual.draw(self, *args, **kwds)
-    
+
     @staticmethod
     def _prepare_transforms(view):
         tr = view.transforms.get_transform()
-        view.view_program.vert['transform'] = tr#.simplified
-        
-        #doc_tr = view.transforms.get_transform('visual', 'scene')
-        #view.visual._phong['transform'] = doc_tr
+        view.view_program.vert['transform'] = tr  # .simplified
+
+        # doc_tr = view.transforms.get_transform('visual', 'scene')
+        # view.visual._phong['transform'] = doc_tr
 
     def bounds(self, mode, axis):
         """Get the bounds
