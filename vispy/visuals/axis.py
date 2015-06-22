@@ -50,6 +50,7 @@ class AxisVisual(CompoundVisual):
                                       'supported')
         self._pos = None
         self._domain = None
+        self.ticker = Ticker(self)
         self.tick_direction = np.array(tick_direction, float)
         self.tick_direction = self.tick_direction
         self.scale_type = scale_type
@@ -102,16 +103,12 @@ class AxisVisual(CompoundVisual):
         return self.pos[1] - self.pos[0]
 
     def _update_subvisuals(self):
-        major_tick_fractions, minor_tick_fractions, tick_labels = \
-            self._get_tick_frac_labels()
-
-        tick_pos, tick_label_pos, anchors = self._get_tick_positions(
-            major_tick_fractions, minor_tick_fractions)
+        tick_pos, labels, label_pos, anchors = self.ticker.get_update()
 
         self._line.set_data(pos=self.pos, color=self.axis_color)
         self._ticks.set_data(pos=tick_pos, color=self.tick_color)
-        self._text.text = list(tick_labels)
-        self._text.pos = tick_label_pos
+        self._text.text = list(labels)
+        self._text.pos = label_pos
         self._text.anchors = anchors
 
         self._need_update = False
@@ -128,12 +125,24 @@ class AxisVisual(CompoundVisual):
         # now axis in (0, 1)
         return self.pos[:, axis].min(), self.pos[:, axis].max()
 
+
+class Ticker(object):
+    def __init__(self, axis):
+        self.axis = axis
+        
+    def get_update(self):
+        major_tick_fractions, minor_tick_fractions, tick_labels = \
+            self._get_tick_frac_labels()
+        tick_pos, label_pos, anchors = self._get_tick_positions(
+            major_tick_fractions, minor_tick_fractions)
+        return tick_pos, tick_labels, label_pos, anchors
+
     def _get_tick_positions(self, major_tick_fractions, minor_tick_fractions):
         # transform our tick direction to document coords
-        trs = self.transforms
+        trs = self.axis.transforms
         visual_to_document = trs.get_transform('visual', 'document')
         direction = visual_to_document.map(np.array([[0., 0.],
-                                                     self.tick_direction],
+                                                     self.axis.tick_direction],
                                                     float))
         direction = (direction[1] - direction[0])[:2]
         direction /= np.linalg.norm(direction)
@@ -154,10 +163,10 @@ class AxisVisual(CompoundVisual):
 
         # now figure out the tick positions in visual (data) coords
         vectors = np.array([[0., 0.],
-                            direction * self.minor_tick_length,
-                            direction * self.major_tick_length,
-                            direction * (self.major_tick_length +
-                                         self.label_margin)], float)
+                            direction * self.axis.minor_tick_length,
+                            direction * self.axis.major_tick_length,
+                            direction * (self.axis.major_tick_length +
+                                         self.axis.label_margin)], float)
         vectors = visual_to_document.imap(vectors)[:, :2]
         minor_vector = vectors[1] - vectors[0]
         major_vector = vectors[2] - vectors[0]
@@ -185,15 +194,15 @@ class AxisVisual(CompoundVisual):
 
     def _tile_ticks(self, frac, tickvec):
         """Tiles tick marks along the axis."""
-        origins = np.tile(self._vec, (len(frac), 1))
-        origins = self.pos[0].T + (origins.T*frac).T
+        origins = np.tile(self.axis._vec, (len(frac), 1))
+        origins = self.axis.pos[0].T + (origins.T*frac).T
         endpoints = tickvec + origins
         return origins, endpoints
 
     def _get_tick_frac_labels(self):
         # This conditional is currently unnecessary since we only support
         # linear, but eventually we will support others so we leave it in
-        if (self.scale_type == 'linear'):
+        if (self.axis.scale_type == 'linear'):
 
             major_num = 11  # maximum number of major ticks
             minor_num = 4   # maximum number of minor ticks per major division
@@ -201,7 +210,7 @@ class AxisVisual(CompoundVisual):
             major, majstep = np.linspace(0, 1, num=major_num, retstep=True)
 
             # XXX TODO: this should be better than just str(x)
-            labels = [str(x) for x in np.interp(major, [0, 1], self.domain)]
+            labels = [str(x) for x in np.interp(major, [0, 1], self.axis.domain)]
 
             # XXX TODO: make these nice numbers only
             # - and faster! Potentially could draw in linspace across the whole
