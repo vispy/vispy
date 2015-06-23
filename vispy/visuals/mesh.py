@@ -303,7 +303,7 @@ class MeshVisual(Visual):
             self._data_changed = False
 
     def draw(self, *args, **kwds):
-        self.set_gl_state(polygon_offset_fill=True)
+        self.set_gl_state(polygon_offset_fill=True, depth_test=True)
         Visual.draw(self, *args, **kwds)
 
     @staticmethod
