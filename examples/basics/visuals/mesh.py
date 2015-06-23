@@ -54,6 +54,8 @@ class Canvas(app.Canvas):
         self.meshes.append(visuals.MeshVisual(verts, faces, vcolor))
         self.meshes.append(visuals.MeshVisual(verts, faces, vcolor,
                                               shading='flat'))
+        self.meshes.append(visuals.MeshVisual(verts, faces, vcolor,
+                                              shading='smooth'))
 
         # Lay out meshes in a grid
         grid = (3, 3)
