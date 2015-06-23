@@ -40,7 +40,6 @@ class Canvas(app.Canvas):
         gloo.set_viewport(0, 0, *self.physical_size)
         gloo.clear('white', depth=True)
 
-        # self.cube.transforms.configure(canvas=self)
         self.cube.draw()
 
     def on_timer(self, event):
