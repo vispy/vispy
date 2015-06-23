@@ -45,3 +45,23 @@ class CubeVisual(CompoundVisual):
             self._border = MeshVisual()
 
         CompoundVisual.__init__(self, [self._mesh, self._border], **kwargs)
+
+    @property
+    def mesh(self):
+        """The vispy.visuals.MeshVisual that used to fill in.
+        """
+        return self._mesh
+
+    @mesh.setter
+    def mesh(self, mesh):
+        self._mesh = mesh
+
+    @property
+    def border(self):
+        """The vispy.visuals.MeshVisual that used to draw the border.
+        """
+        return self._border
+
+    @border.setter
+    def border(self, border):
+        self._border = border

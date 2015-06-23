@@ -49,11 +49,31 @@ class BoxVisual(CompoundVisual):
             depth_segments, planes)
 
         self._mesh = MeshVisual(vertices['position'], filled_indices,
-                            vertex_colors, face_colors, color)
+                                vertex_colors, face_colors, color)
         if edge_color:
             self._border = MeshVisual(vertices['position'], outline_indices,
-                                       color=edge_color, mode='lines')
+                                      color=edge_color, mode='lines')
         else:
             self._border = MeshVisual()
 
         CompoundVisual.__init__(self, [self._mesh, self._border], **kwargs)
+
+    @property
+    def mesh(self):
+        """The vispy.visuals.MeshVisual that used to fill in.
+        """
+        return self._mesh
+
+    @mesh.setter
+    def mesh(self, mesh):
+        self._mesh = mesh
+
+    @property
+    def border(self):
+        """The vispy.visuals.MeshVisual that used to draw the border.
+        """
+        return self._border
+
+    @border.setter
+    def border(self, border):
+        self._border = border
