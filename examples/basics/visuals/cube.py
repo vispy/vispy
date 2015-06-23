@@ -18,7 +18,7 @@ class Canvas(app.Canvas):
                             size=(400, 400))
 
         self.cube = CubeVisual((1.0, 0.5, 0.25), color='red',
-                               edge_color='black')
+                               edge_color="k")
         self.theta = 0
         self.phi = 0
 
@@ -30,11 +30,17 @@ class Canvas(app.Canvas):
 
         self.show()
 
+    def on_resize(self, event):
+        # Set canvas viewport and reconfigure visual transforms to match.
+        vp = (0, 0, self.physical_size[0], self.physical_size[1])
+        self.context.set_viewport(*vp)
+        self.cube.transforms.configure(canvas=self, viewport=vp)
+
     def on_draw(self, event):
         gloo.set_viewport(0, 0, *self.physical_size)
-        gloo.clear('white')
+        gloo.clear('white', depth=True)
 
-        self.cube.transforms.configure(canvas=self)
+        # self.cube.transforms.configure(canvas=self)
         self.cube.draw()
 
     def on_timer(self, event):

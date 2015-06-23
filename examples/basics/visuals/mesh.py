@@ -79,13 +79,20 @@ class Canvas(app.Canvas):
         self.rotation.rotate(0.6, (2 ** 0.5, 3 ** 0.5, 7 ** 0.5))
         self.update()
 
+    def on_resize(self, event):
+        # Set canvas viewport and reconfigure visual transforms to match.
+        vp = (0, 0, self.physical_size[0], self.physical_size[1])
+        self.context.set_viewport(*vp)
+
+        for mesh in self.meshes:
+            mesh.transforms.configure(canvas=self, viewport=vp)
+
     def on_draw(self, ev):
         vp = (0, 0, self.physical_size[0], self.physical_size[1])
         gloo.set_viewport(0, 0, *self.physical_size)
         gloo.clear(color='black', depth=True)
+
         for mesh in self.meshes:
-            mesh.transforms.configure(canvas=self, viewport=vp)
-            # mesh._prepare_transforms(mesh)
             mesh.draw()
 
 
