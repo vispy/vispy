@@ -54,6 +54,6 @@ class BoxVisual(CompoundVisual):
             self._border = MeshVisual(vertices['position'], outline_indices,
                                        color=edge_color, mode='lines')
         else:
-            self._border = None
+            self._border = MeshVisual()
 
         CompoundVisual.__init__(self, [self._mesh, self._border], **kwargs)
