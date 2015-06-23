@@ -99,9 +99,6 @@ class MeshVisual(Visual):
         Visual.__init__(self, vcode=vertex_template, fcode=fragment_template,
                         **kwargs)
 
-        self.set_gl_state('translucent', depth_test=True,
-                          cull_face=False)
-
         # Define buffers
         self._vertices = VertexBuffer(np.zeros((0, 3), dtype=np.float32))
         self._normals = None
@@ -303,7 +300,7 @@ class MeshVisual(Visual):
             self._data_changed = False
 
     def draw(self, *args, **kwds):
-        self.set_gl_state(polygon_offset_fill=True, depth_test=True)
+        self.set_gl_state('translucent', cull_face=False)
         Visual.draw(self, *args, **kwds)
 
     @staticmethod

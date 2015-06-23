@@ -25,8 +25,8 @@ cube = scene.visuals.Cube(size=0.5, color=color, edge_color="black",
                           parent=view.scene)
 cube_transform = AffineTransform()
 # cube_transform.rotate(30, (1, 0, 1))
-cube_transform.translate([0.5, 0.5, 0.5])
-cube.transform = cube_transform
+# cube_transform.translate([0.5, 0.5, 0.5])
+# cube.transform = cube_transform
 
 if __name__ == '__main__' and sys.flags.interactive == 0:
     canvas.app.run()
