@@ -4,7 +4,6 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
-import math
 import numpy as np
 
 from .visual import CompoundVisual
@@ -210,23 +209,53 @@ class Ticker(object):
 
     def _get_tick_frac_labels(self):
         """Get the major ticks, minor ticks, and major labels"""
-        major_num = 11  # number of major ticks
         minor_num = 4  # number of minor ticks per major division
         if (self.axis.scale_type == 'linear'):
-            major, majstep = np.linspace(0, 1, num=major_num, retstep=True)
-            labels = ['%g' % x
-                      for x in np.interp(major, [0, 1], self.axis.domain)]
+            domain = self.axis.domain
+            if domain[1] < domain[0]:
+                flip = True
+                domain = domain[::-1]
+            else:
+                flip = False
+            offset = domain[0]
+            scale = domain[1] - domain[0]
+
+            tr_sys = self.axis.transforms
+            visual_to_document = tr_sys.get_transform('visual', 'document')
+            length = np.array([self.axis.bounds(0), self.axis.bounds(1)]).T
+            length = visual_to_document.map(length)  # pixels
+            length = length[1] - length[0]
+            # XXX for some reason this doesn't update when resizing, bug with
+            # the transform system?
+            n_inches = np.sqrt(np.sum(length ** 2)) / tr_sys.dpi
+
+            # major = np.linspace(domain[0], domain[1], num=11)
+            # major = MaxNLocator(10).tick_values(*domain)
+            major = _get_ticks_talbot(domain[0], domain[1], n_inches)
+
+            labels = ['%g' % x for x in major]
+            majstep = major[1] - major[0]
             minor = []
+            minstep = majstep / (minor_num + 1)
             for i in major[:-1]:
-                minor.extend(np.linspace(i, (i + majstep),
-                             (minor_num + 2))[1:-1])
+                minor.extend(np.linspace(i + minstep, i + majstep - minstep,
+                             (minor_num)))
+            major_frac = major / scale - offset
+            minor_frac = np.array(minor) / scale - offset
+            major_frac = major_frac[::-1] if flip else major_frac
+            use_mask = (major_frac > -0.0001) & (major_frac < 1.0001)
+            major_frac = major_frac[use_mask]
+            labels = [l for li, l in enumerate(labels) if use_mask[li]]
+            minor_frac = minor_frac[(minor_frac > -0.0001) &
+                                    (minor_frac < 1.0001)]
         elif self.axis.scale_type == 'logarithmic':
             return NotImplementedError
         elif self.axis.scale_type == 'power':
             return NotImplementedError
-        return major, minor, labels
+        return major_frac, minor_frac, labels
 
 
+# #############################################################################
 # Translated from matplotlib
 
 class MaxNLocator(object):
@@ -266,7 +295,7 @@ class MaxNLocator(object):
                     "prune must be 'upper', 'lower', 'both', or None")
             self._prune = prune
             if steps is None:
-                steps = [1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10]
+                steps = [1, 2, 2.5, 3, 4, 5, 6, 8, 10]
             else:
                 if int(steps[-1]) != 10:
                     steps = list(steps)
@@ -336,16 +365,136 @@ def scale_range(vmin, vmax, n=1, threshold=100):
     if abs(meanv) / dv < threshold:
         offset = 0
     elif meanv > 0:
-        ex = divmod(math.log10(meanv), 1)[0]
+        ex = divmod(np.log10(meanv), 1)[0]
         offset = 10 ** ex
     else:
-        ex = divmod(math.log10(-meanv), 1)[0]
+        ex = divmod(np.log10(-meanv), 1)[0]
         offset = -10 ** ex
-    ex = divmod(math.log10(dv / n), 1)[0]
+    ex = divmod(np.log10(dv / n), 1)[0]
     scale = 10 ** ex
     return scale, offset
 
 
-class AutoLocator(MaxNLocator):
-    def __init__(self):
-        MaxNLocator.__init__(self, nbins=9, steps=[1, 2, 5, 10])
+# #############################################################################
+# Tranlated from http://www.justintalbot.com/research/axis-labeling/
+
+# See "An Extension of Wilkinson's Algorithm for Positioning Tick Labels
+# on Axes" # by Justin Talbot, Sharon Lin, and Pat Hanrahan, InfoVis 2010.
+
+
+def _coverage(dmin, dmax, lmin, lmax):
+    return 1 - 0.5 * ((dmax - lmax) ** 2 +
+                      (dmin - lmin) ** 2) / (0.1 * (dmax - dmin)) ** 2
+
+
+def _coverage_max(dmin, dmax, span):
+    range_ = dmax - dmin
+    if span <= range_:
+        return 1.
+    else:
+        half = (span - range_) / 2.0
+        return 1 - half ** 2 / (0.1 * range_) ** 2
+
+
+def _density(k, m, dmin, dmax, lmin, lmax):
+    r = (k-1.0) / (lmax-lmin)
+    rt = (m-1.0) / (max(lmax, dmax) - min(lmin, dmin))
+    return 2 - max(r / rt, rt / r)
+
+
+def _density_max(k, m):
+    return 2 - (k-1.0) / (m-1.0) if k >= m else 1.
+
+
+def _simplicity(q, Q, j, lmin, lmax, lstep):
+    eps = 1e-10
+    n = len(Q)
+    i = Q.index(q) + 1
+    if ((lmin % lstep) < eps or
+            (lstep - lmin % lstep) < eps) and lmin <= 0 and lmax >= 0:
+        v = 1
+    else:
+        v = 0
+    return (n - i) / (n - 1.0) + v - j
+
+
+def _simplicity_max(q, Q, j):
+    n = len(Q)
+    i = Q.index(q) + 1
+    return (n - i)/(n - 1.0) + 1. - j
+
+
+def _get_ticks_talbot(dmin, dmax, n_inches, density=1.):
+    # density * size gives target number of intervals,
+    # density * size + 1 gives target number of tick marks,
+    # the density function converts this back to a density in data units
+    # (not inches)
+    n_inches = max(n_inches, 2.0)  # Set minimum otherwise code can crash :(
+    m = density * n_inches + 1.0
+    only_inside = False  # we cull values outside ourselves
+    Q = [1, 5, 2, 2.5, 4, 3]
+    w = [0.25, 0.2, 0.5, 0.05]
+    best_score = -2.0
+
+    j = 1.0
+    n_max = 1000
+    while j < n_max:
+        for q in Q:
+            sm = _simplicity_max(q, Q, j)
+
+            if w[0] * sm + w[1] + w[2] + w[3] < best_score:
+                j = n_max
+                break
+
+            k = 2.0
+            while k < n_max:
+                dm = _density_max(k, n_inches)
+
+                if w[0] * sm + w[1] + w[2] * dm + w[3] < best_score:
+                    break
+
+                delta = (dmax-dmin)/(k+1.0)/j/q
+                z = np.ceil(np.log10(delta))
+
+                while z < float('infinity'):
+                    step = j * q * 10 ** z
+                    cm = _coverage_max(dmin, dmax, step*(k-1.0))
+
+                    if (w[0] * sm +
+                            w[1] * cm +
+                            w[2] * dm +
+                            w[3] < best_score):
+                        break
+
+                    min_start = np.floor(dmax/step)*j - (k-1.0)*j
+                    max_start = np.ceil(dmin/step)*j
+
+                    if min_start > max_start:
+                        z = z+1
+                        break
+
+                    for start in range(int(min_start), int(max_start)+1):
+                        lmin = start * (step/j)
+                        lmax = lmin + step*(k-1.0)
+                        lstep = step
+
+                        s = _simplicity(q, Q, j, lmin, lmax, lstep)
+                        c = _coverage(dmin, dmax, lmin, lmax)
+                        d = _density(k, m, dmin, dmax, lmin, lmax)
+                        l = 1.  # _legibility(lmin, lmax, lstep)
+
+                        score = w[0] * s + w[1] * c + w[2] * d + w[3] * l
+
+                        if (score > best_score and
+                                (not only_inside or (lmin >= dmin and
+                                                     lmax <= dmax))):
+                            best_score = score
+                            best = (lmin, lmax, lstep, q, k)
+                    z += 1
+                k += 1
+            if k == n_max:
+                raise RuntimeError('could not converge on ticks')
+        j += 1
+    if j == n_max:
+        raise RuntimeError('could not converge on ticks')
+    return np.arange(best[4]) * best[2] + best[0]
