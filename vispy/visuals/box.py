@@ -5,11 +5,11 @@
 # -----------------------------------------------------------------------------
 
 from ..geometry import create_box
-from ..gloo import set_state
 from .mesh import MeshVisual
+from .visual import CompoundVisual
 
 
-class BoxVisual(MeshVisual):
+class BoxVisual(CompoundVisual):
     """Visual that displays a box.
 
     Parameters
@@ -43,28 +43,17 @@ class BoxVisual(MeshVisual):
     def __init__(self, width=1, height=1, depth=1, width_segments=1,
                  height_segments=1, depth_segments=1, planes=None,
                  vertex_colors=None, face_colors=None,
-                 color=(0.5, 0.5, 1, 1), edge_color=None):
+                 color=(0.5, 0.5, 1, 1), edge_color=None, **kwargs):
         vertices, filled_indices, outline_indices = create_box(
             width, height, depth, width_segments, height_segments,
             depth_segments, planes)
 
-        MeshVisual.__init__(self, vertices['position'], filled_indices,
+        self._mesh = MeshVisual(vertices['position'], filled_indices,
                             vertex_colors, face_colors, color)
         if edge_color:
-            self._outline = MeshVisual(vertices['position'], outline_indices,
+            self._border = MeshVisual(vertices['position'], outline_indices,
                                        color=edge_color, mode='lines')
         else:
-            self._outline = None
+            self._border = None
 
-    def draw(self, transforms):
-        """Draw the visual
-
-        Parameters
-        ----------
-        transforms : instance of TransformSystem
-            The transforms to use.
-        """
-        MeshVisual.draw(self, transforms)
-        if self._outline:
-            set_state(polygon_offset=(1, 1), polygon_offset_fill=True)
-            self._outline.draw(transforms)
+        CompoundVisual.__init__(self, [self._mesh, self._border], **kwargs)
