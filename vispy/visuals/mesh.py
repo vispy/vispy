@@ -280,6 +280,7 @@ class MeshVisual(Visual):
 
             self._program.frag['color'] = self._phong(self._color_var)
 
+        self.set_gl_state('translucent', cull_face=False)
         self._data_changed = False
 
     @property
@@ -300,7 +301,6 @@ class MeshVisual(Visual):
             self._data_changed = False
 
     def draw(self, *args, **kwds):
-        self.set_gl_state('translucent', cull_face=False)
         Visual.draw(self, *args, **kwds)
 
     @staticmethod
