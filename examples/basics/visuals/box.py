@@ -6,35 +6,34 @@
 Simple demonstration of Mesh visual.
 """
 
-import numpy as np
 from vispy import app, gloo, visuals
 from vispy.geometry import create_box
-# from vispy.visuals.transforms import STTransform
 from vispy.visuals.transforms import (STTransform, AffineTransform,
                                       ChainTransform)
 
 
 class Canvas(app.Canvas):
+
     def __init__(self):
         app.Canvas.__init__(self, keys='interactive', size=(800, 550))
 
         vertices, faces, outline = create_box(width=2, height=4, depth=8,
-                                               width_segments=4,
-                                               height_segments=8,
-                                               depth_segments=16)
+                                              width_segments=4,
+                                              height_segments=8,
+                                              depth_segments=16)
 
-        self.box = visuals.BoxVisual(width=4, height=4, depth=8, width_segments=4,
-                        height_segments=8, depth_segments=16,
-                        vertex_colors=vertices['color'],
-                        edge_color='b')
-
+        self.box = visuals.BoxVisual(width=4, height=4, depth=8,
+                                     width_segments=4,
+                                     height_segments=8, depth_segments=16,
+                                     vertex_colors=vertices['color'],
+                                     edge_color='b')
 
         self.rotation = AffineTransform()
 
         self.box.transform = ChainTransform([STTransform(translate=(400, 400),
-                                                    scale=(40, 40, 1)),
-                                        self.rotation])
-          
+                                            scale=(40, 40, 1)),
+                                            self.rotation])
+
         self.show()
 
         self.timer = app.Timer(connect=self.rotate)
