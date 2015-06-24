@@ -104,12 +104,13 @@ class VisualShare(object):
     * A cache for bounds.
     """
     def __init__(self):
-        # Note: in some cases we will need to compute bounds independently for each
-        # view. That will have to be worked out later..
+        # Note: in some cases we will need to compute bounds independently for
+        # each view. That will have to be worked out later..
         self.bounds = {}
         self.gl_state = {}
         self.views = weakref.WeakKeyDictionary()
         self.filters = []
+        self.visible = True
 
 
 class BaseVisual(object):
@@ -172,6 +173,16 @@ class BaseVisual(object):
     def get_transform(self, map_from='visual', map_to='render'):
         return self.transforms.get_transform(map_from, map_to)
 
+    @property
+    def visible(self):
+        return self._vshare.visible
+    
+    @visible.setter
+    def visible(self, v):
+        if v != self._vshare.visible:
+            self._vshare.visible = v
+            self.update()
+
     def view(self):
         """Return a new view of this visual.
         """
@@ -180,14 +191,24 @@ class BaseVisual(object):
     def draw(self):
         raise NotImplementedError()
 
-    def bounds(self, axis):
-        raise NotImplementedError()
-        
     def attach(self, filter):
         raise NotImplementedError()
         
     def detach(self, filter):
         raise NotImplementedError()
+    
+    def bounds(self, axis, view=None):
+        if view is None:
+            view = self
+        if axis not in self._vshare.bounds:
+            self._vshare.bounds[axis] = self._compute_bounds(axis, view)
+        return self._vshare.bounds[axis]
+            
+    def _compute_bounds(self, axis, view):
+        raise NotImplementedError()
+            
+    def _bounds_changed(self):
+        self._vshare.bounds.clear()
 
     def update(self):
         self.events.update()
@@ -247,7 +268,7 @@ class Visual(BaseVisual):
                 self._vshare.program = program
                 if len(vcode) > 0 or len(fcode) > 0:
                     raise ValueError("Cannot specify both program and "
-                        "vcode/fcode arguments.")
+                                     "vcode/fcode arguments.")
         
         self._program = self._vshare.program.add_program()
         self._prepare_transforms(self)
@@ -282,12 +303,6 @@ class Visual(BaseVisual):
         elif len(args) != 0:
             raise TypeError("Only one positional argument allowed.")
         self._vshare.gl_state.update(kwargs)
-
-    def bounds(self, axis):
-        cache = self.vshare.bounds
-        if axis not in cache:
-            cache[axis] = self._compute_bounds(axis, view=self)
-        return cache[axis]
 
     def _compute_bounds(self, axis, view):
         """Return the (min, max) bounding values of this visual along *axis*
@@ -345,14 +360,12 @@ class Visual(BaseVisual):
         self._vshare.index_buffer = buf
         
     def draw(self):
+        if not self.visible:
+            return
         gloo.set_state(**self._vshare.gl_state)
         if self._prepare_draw(view=self) is False:
             return
         self._program.draw(self._vshare.draw_mode, self._vshare.index_buffer)
-        
-    def bounds(self):
-        # check self._vshare for cached bounds before computing
-        return None
         
     def _get_hook(self, shader, name):
         """Return a FunctionChain that Filters may use to modify the program.
@@ -438,12 +451,6 @@ class CompoundVisual(BaseVisual):
     
     subvisuals : list of BaseVisual instances
         The list of visuals to be combined in this compound visual.
-    
-    Notes
-    -----
-    
-    Sub-visuals may optionally be given a boolean ``visible`` attribute that
-    can be used to hide or show each.
     """
     def __init__(self, subvisuals):
         self._view_class = CompoundVisualView
@@ -455,13 +462,16 @@ class CompoundVisual(BaseVisual):
     def add_subvisual(self, visual):
         visual.transforms = self.transforms
         visual._prepare_transforms(visual)
-        if not hasattr(visual, 'visible'):
-            visual.visible = True
         self._subvisuals.append(visual)
+        visual.events.update.connect(self._subv_update)
         self.update()
 
     def remove_subvisual(self, visual):
-        self._subvisuals.remove(visuals)
+        visual.events.update.disconnect(self._subv_update)
+        self._subvisuals.remove(visual)
+        self.update()
+        
+    def _subv_update(self, event):
         self.update()
         
     def _transform_changed(self, event=None):
@@ -470,6 +480,8 @@ class CompoundVisual(BaseVisual):
         BaseVisual._transform_changed(self)
         
     def draw(self):
+        if not self.visible:
+            return
         if self._prepare_draw(view=self) is False:
             return
         for v in self._subvisuals:
@@ -501,9 +513,9 @@ class CompoundVisual(BaseVisual):
     
     def _compute_bounds(self, axis, view):
         bounds = None
-        for v in self._subvisuals:
+        for v in view._subvisuals:
             if v.visible:
-                vb = b.bounds(axis, view)
+                vb = v.bounds(axis)
                 if bounds is None:
                     bounds = vb
                 else:

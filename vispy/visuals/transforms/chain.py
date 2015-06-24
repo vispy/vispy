@@ -247,7 +247,6 @@ class SimplifiedChainTransform(ChainTransform):
         self._chain = chain
         chain.changed.connect(self.source_changed)
         self.source_changed(None)
-        
 
     def source_changed(self, event):
         """Generate a simplified chain by joining adjacent transforms.
@@ -284,7 +283,8 @@ class SimplifiedChainTransform(ChainTransform):
             for t2 in tr[1:]:
                 t1 = new_tr[-1]
                 pr = t1 * t2
-                if not t1.dynamic and not t2.dynamic and not isinstance(pr, ChainTransform):
+                if (not t1.dynamic and not t2.dynamic and not 
+                   isinstance(pr, ChainTransform)):
                     cont = True
                     new_tr.pop()
                     new_tr.append(pr)
@@ -293,4 +293,3 @@ class SimplifiedChainTransform(ChainTransform):
             tr = new_tr
 
         self.transforms = tr
-

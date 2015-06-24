@@ -261,8 +261,8 @@ class BaseTexture(GLObject):
             pass
         elif internalformat not in self._inv_internalformats:
             raise ValueError(
-                'Invalid texture internalformat: %r.' 
-                % internalformat
+                'Invalid texture internalformat: %r. Allowed formats: %r' 
+                % (internalformat, self._inv_internalformats)
             )
         elif shape[-1] != self._inv_internalformats[internalformat]:
             raise ValueError('Internalformat does not match with given shape.')

@@ -313,18 +313,7 @@ class MeshVisual(Visual):
         doc_tr = view.transforms.get_transform('visual', 'scene')
         view._phong['transform'] = doc_tr
 
-    def bounds(self, mode, axis):
-        """Get the bounds
-
-        Parameters
-        ----------
-        mode : str
-            Describes the type of boundary requested. Can be "visual", "data",
-            or "mouse".
-        axis : 0, 1, 2
-            The axis along which to measure the bounding values, in
-            x-y-z order.
-        """
+    def _compute_bounds(self, axis, view):
         if self._bounds is None:
             return None
         return self._bounds[axis]

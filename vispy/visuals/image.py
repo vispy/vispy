@@ -6,9 +6,9 @@ from __future__ import division
 
 import numpy as np
 
-from ..gloo import set_state, Texture2D, VertexBuffer
+from ..gloo import Texture2D, VertexBuffer
 from ..color import get_colormap
-from .shaders import ModularProgram, Function, FunctionChain
+from .shaders import Function, FunctionChain
 from .transforms import NullTransform
 from .visual import Visual
 from ..ext.six import string_types
@@ -217,7 +217,7 @@ class ImageVisual(Visual):
         h = 1.0 / grid[0]
 
         quad = np.array([[0, 0, 0], [w, 0, 0], [w, h, 0],
-                            [0, 0, 0], [w, h, 0], [0, h, 0]],
+                         [0, 0, 0], [w, h, 0], [0, h, 0]],
                         dtype=np.float32)
         quads = np.empty((grid[1], grid[0], 6, 3), dtype=np.float32)
         quads[:] = quad
@@ -288,18 +288,7 @@ class ImageVisual(Visual):
         self._texture.set_data(data)
         self._need_texture_upload = False
 
-    def bounds(self, mode, axis):
-        """Get the bounds
-
-        Parameters
-        ----------
-        mode : str
-            Describes the type of boundary requested. Can be "visual", "data",
-            or "mouse".
-        axis : 0, 1, 2
-            The axis along which to measure the bounding values, in
-            x-y-z order.
-        """
+    def _compute_bounds(self, axis, view):
         if axis > 1:
             return (0, 0)
         else:

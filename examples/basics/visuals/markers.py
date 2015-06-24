@@ -9,8 +9,8 @@
 
 import numpy as np
 
-from vispy import app, gloo, visuals
-from vispy.visuals.transforms import STTransform, TransformSystem
+from vispy import app, visuals
+from vispy.visuals.transforms import STTransform
 
 n = 500
 pos = np.zeros((n, 2))
@@ -44,7 +44,8 @@ class Canvas(app.Canvas):
 
     def on_mouse_wheel(self, event):
         """Use the mouse wheel to zoom."""
-        self.markers.transform.zoom((1.25**event.delta[1],)*2, center=event.pos)
+        self.markers.transform.zoom((1.25**event.delta[1],)*2, 
+                                    center=event.pos)
         self.update()
 
     def on_resize(self, event):

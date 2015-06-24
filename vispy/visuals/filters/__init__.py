@@ -4,4 +4,4 @@
 
 from .clipper import Clipper  # noqa
 from .color import Alpha, ColorFilter  # noqa
-from .picking import PickingFilter
+from .picking import PickingFilter  # noqa

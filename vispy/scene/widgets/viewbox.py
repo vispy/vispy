@@ -10,9 +10,7 @@ from .widget import Widget
 from ..subscene import SubScene
 from ..cameras import make_camera, BaseCamera
 from ...ext.six import string_types
-from ... import gloo
 from ...visuals.filters import Clipper
-from ...visuals import Visual
 
 
 class ViewBox(Widget):
@@ -59,6 +57,7 @@ class ViewBox(Widget):
         self._scene = SubScene(name=name, parent=self)
         self._scene._clipper = Clipper()
         self._scene.clip_children = True
+        self.transforms.changed.connect(self._update_scene_clipper)
         
         # Camera is a helper object that handles scene transformation
         # and user interaction.
@@ -145,7 +144,6 @@ class ViewBox(Widget):
         # todo: handle sub-children
         # todo: handle transformations
         # Init
-        mode = 'data'  # or visual?
         bounds = [(np.inf, -np.inf), (np.inf, -np.inf), (np.inf, -np.inf)]
         # Get bounds of all children
         for ob in self.scene.children:
@@ -153,7 +151,7 @@ class ViewBox(Widget):
                 for axis in (0, 1, 2):
                     if (dim is not None) and dim != axis:
                         continue
-                    b = ob.bounds(mode, axis)
+                    b = ob.bounds(axis)
                     if b is not None:
                         b = min(b), max(b)  # Ensure correct order
                         bounds[axis] = (min(bounds[axis][0], b[0]), 
@@ -191,5 +189,8 @@ class ViewBox(Widget):
         if self._scene is None:
             # happens during init
             return
+        self._update_scene_clipper()
+        
+    def _update_scene_clipper(self, event=None):
         tr = self.get_transform('visual', 'framebuffer')
         self._scene._clipper.bounds = tr.map(self.inner_rect)

@@ -42,14 +42,15 @@ class AxisVisual(CompoundVisual):
     **kwargs : dict
         Keyword arguments to pass to `Visual`.
     """
-    def __init__(self, pos, domain=(0., 1.), tick_direction=(-1., 0.),
+    def __init__(self, pos=None, domain=(0., 1.), tick_direction=(-1., 0.),
                  scale_type="linear", axis_color=(1, 1, 1),
                  tick_color=(0.7, 0.7, 0.7)):
         if scale_type != 'linear':
             raise NotImplementedError('only linear scaling is currently '
                                       'supported')
-        self.pos = np.array(pos, float)
-        self.domain = domain
+        self._pos = None
+        self._domain = None
+        self.ticker = Ticker(self)
         self.tick_direction = np.array(tick_direction, float)
         self.tick_direction = self.tick_direction
         self.scale_type = scale_type
@@ -59,58 +60,89 @@ class AxisVisual(CompoundVisual):
         self.minor_tick_length = 5  # px
         self.major_tick_length = 10  # px
         self.label_margin = 5  # px
+        
+        self._need_update = True
 
         CompoundVisual.__init__(self, [])
-        self._make_subvisuals()
+        
+        self._line = LineVisual(method='gl', width=3.0)
+        self._ticks = LineVisual(method='gl', width=2.0, connect='segments')
+        self._text = TextVisual(font_size=8, color='w')
+        self.add_subvisual(self._line)
+        self.add_subvisual(self._ticks)
+        self.add_subvisual(self._text)
+
+        if pos is not None:
+            self.pos = pos
+        self.domain = domain
+
+    @property
+    def pos(self):
+        return self._pos
+    
+    @pos.setter
+    def pos(self, pos):
+        self._pos = np.array(pos, float)
+        self._need_update = True
+        self.update()
+
+    @property
+    def domain(self):
+        return self._domain
+    
+    @domain.setter
+    def domain(self, d):
+        if d != self._domain:
+            self._domain = d
+            self._need_update = True
+            self.update()
 
     @property
     def _vec(self):
         """Vector in the direction of the axis line"""
         return self.pos[1] - self.pos[0]
 
-    def _make_subvisuals(self):
-        major_tick_fractions, minor_tick_fractions, tick_labels = \
-            self._get_tick_frac_labels()
+    def _update_subvisuals(self):
+        tick_pos, labels, label_pos, anchors = self.ticker.get_update()
 
-        tick_pos, tick_label_pos, anchors = self._get_tick_positions(
-            major_tick_fractions, minor_tick_fractions)
+        self._line.set_data(pos=self.pos, color=self.axis_color)
+        self._ticks.set_data(pos=tick_pos, color=self.tick_color)
+        self._text.text = list(labels)
+        self._text.pos = label_pos
+        self._text.anchors = anchors
 
-        self._line = LineVisual(pos=self.pos, color=self.axis_color,
-                                method='gl', width=3.0)
-        self._ticks = LineVisual(pos=tick_pos, color=self.tick_color,
-                                    method='gl', width=2.0,
-                                    connect='segments')
-        self._text = TextVisual(list(tick_labels), pos=tick_label_pos,
-                                font_size=8, color='w',
-                                anchor_x=anchors[0], anchor_y=anchors[1])
-        self.add_subvisual(self._line)
-        self.add_subvisual(self._ticks)
-        self.add_subvisual(self._text)
+        self._need_update = False
 
-    def bounds(self, mode, axis):
-        """Get the bounds
+    def _prepare_draw(self, view):
+        if self._pos is None:
+            return False
+        if self._need_update:
+            self._update_subvisuals()
 
-        Parameters
-        ----------
-        mode : str
-            Describes the type of boundary requested. Can be "visual", "data",
-            or "mouse".
-        axis : 0, 1, 2
-            The axis along which to measure the bounding values, in
-            x-y-z order.
-        """
-        assert axis in (0, 1, 2)
+    def _compute_bounds(self, axis, view):
         if axis == 2:
             return (0., 0.)
         # now axis in (0, 1)
         return self.pos[:, axis].min(), self.pos[:, axis].max()
 
+
+class Ticker(object):
+    def __init__(self, axis):
+        self.axis = axis
+        
+    def get_update(self):
+        major_tick_fractions, minor_tick_fractions, tick_labels = \
+            self._get_tick_frac_labels()
+        tick_pos, label_pos, anchors = self._get_tick_positions(
+            major_tick_fractions, minor_tick_fractions)
+        return tick_pos, tick_labels, label_pos, anchors
+
     def _get_tick_positions(self, major_tick_fractions, minor_tick_fractions):
         # transform our tick direction to document coords
-        trs = self.transforms
+        trs = self.axis.transforms
         visual_to_document = trs.get_transform('visual', 'document')
         direction = visual_to_document.map(np.array([[0., 0.],
-                                                     self.tick_direction],
+                                                     self.axis.tick_direction],
                                                     float))
         direction = (direction[1] - direction[0])[:2]
         direction /= np.linalg.norm(direction)
@@ -131,10 +163,10 @@ class AxisVisual(CompoundVisual):
 
         # now figure out the tick positions in visual (data) coords
         vectors = np.array([[0., 0.],
-                            direction * self.minor_tick_length,
-                            direction * self.major_tick_length,
-                            direction * (self.major_tick_length +
-                                         self.label_margin)], float)
+                            direction * self.axis.minor_tick_length,
+                            direction * self.axis.major_tick_length,
+                            direction * (self.axis.major_tick_length +
+                                         self.axis.label_margin)], float)
         vectors = visual_to_document.imap(vectors)[:, :2]
         minor_vector = vectors[1] - vectors[0]
         major_vector = vectors[2] - vectors[0]
@@ -162,15 +194,15 @@ class AxisVisual(CompoundVisual):
 
     def _tile_ticks(self, frac, tickvec):
         """Tiles tick marks along the axis."""
-        origins = np.tile(self._vec, (len(frac), 1))
-        origins = self.pos[0].T + (origins.T*frac).T
+        origins = np.tile(self.axis._vec, (len(frac), 1))
+        origins = self.axis.pos[0].T + (origins.T*frac).T
         endpoints = tickvec + origins
         return origins, endpoints
 
     def _get_tick_frac_labels(self):
         # This conditional is currently unnecessary since we only support
         # linear, but eventually we will support others so we leave it in
-        if (self.scale_type == 'linear'):
+        if (self.axis.scale_type == 'linear'):
 
             major_num = 11  # maximum number of major ticks
             minor_num = 4   # maximum number of minor ticks per major division
@@ -178,7 +210,8 @@ class AxisVisual(CompoundVisual):
             major, majstep = np.linspace(0, 1, num=major_num, retstep=True)
 
             # XXX TODO: this should be better than just str(x)
-            labels = [str(x) for x in np.interp(major, [0, 1], self.domain)]
+            labels = [str(x) for x in 
+                      np.interp(major, [0, 1], self.axis.domain)]
 
             # XXX TODO: make these nice numbers only
             # - and faster! Potentially could draw in linspace across the whole

@@ -16,14 +16,12 @@ from os import path as op
 import sys
 
 from ._sdf import SDFRenderer
-from ...gloo import (TextureAtlas, set_state, IndexBuffer, VertexBuffer,
-                     set_viewport)
-from ...gloo import gl
+from ...gloo import (TextureAtlas, IndexBuffer, VertexBuffer, set_viewport)
+from ...gloo import gl, context
 from ...gloo.wrappers import _check_valid
 from ...ext.six import string_types
 from ...util.fonts import _load_glyph
 from ..transforms import STTransform
-from ..shaders import ModularProgram
 from ...color import Color
 from ..visual import Visual
 from ...io import _data_dir
@@ -133,7 +131,14 @@ class FontManager(object):
 
 
 def _text_to_vbo(text, font, anchor_x, anchor_y, lowres_size):
-    """Convert text characters to VBO"""
+    """Convert text characters to VBO"""    
+    # Necessary to flush commands before requesting current viewport because
+    # There may be a set_viewport command waiting in the queue.
+    # TODO: would be nicer if each canvas just remembers and manages its own
+    # viewport, rather than relying on the context for this.
+    canvas = context.get_current_canvas()
+    canvas.context.flush_commands()
+    
     text_vtype = np.dtype([('a_position', 'f4', 2),
                            ('a_texcoord', 'f4', 2)])
     vertices = np.zeros(len(text) * 4, dtype=text_vtype)
@@ -367,7 +372,7 @@ class TextVisual(Visual):
         }
         """
 
-    def __init__(self, text, color='black', bold=False,
+    def __init__(self, text=None, color='black', bold=False,
                  italic=False, face='OpenSans', font_size=12, pos=[0, 0, 0],
                  rotation=0., anchor_x='center', anchor_y='center',
                  font_manager=None):
@@ -394,7 +399,6 @@ class TextVisual(Visual):
         self._draw_mode = 'triangles'
         self.set_gl_state(blend=True, depth_test=False, cull_face=False,
                           blend_func=('src_alpha', 'one_minus_src_alpha'))
-        
 
     @property
     def text(self):
@@ -405,9 +409,23 @@ class TextVisual(Visual):
     def text(self, text):
         if isinstance(text, list):
             assert all(isinstance(t, string_types) for t in text)
+        if text is None:
+            text = []
         self._text = text
         self._vertices = None
         self._pos_changed = True  # need to update this as well
+        self.update()
+
+    @property
+    def anchors(self):
+        return self._anchors
+    
+    @anchors.setter
+    def anchors(self, a):
+        self._anchors = a
+        self._vertices = None
+        self._pos_changed = True
+        self.update()
 
     @property
     def font_size(self):
@@ -418,6 +436,7 @@ class TextVisual(Visual):
     @font_size.setter
     def font_size(self, size):
         self._font_size = max(0.0, float(size))
+        self.update()
 
     @property
     def color(self):
@@ -428,6 +447,7 @@ class TextVisual(Visual):
     @color.setter
     def color(self, color):
         self._color = Color(color)
+        self.update()
 
     @property
     def rotation(self):
@@ -438,6 +458,7 @@ class TextVisual(Visual):
     @rotation.setter
     def rotation(self, rotation):
         self._rotation = float(rotation) * np.pi / 180.
+        self.update()
 
     @property
     def pos(self):
@@ -457,6 +478,7 @@ class TextVisual(Visual):
             raise ValueError('at least one position must be given')
         self._pos = pos
         self._pos_changed = True
+        self.update()
 
     def _prepare_draw(self, view):
         transforms = self.transforms
@@ -470,7 +492,6 @@ class TextVisual(Visual):
             n_char = sum(len(t) for t in text)
             # we delay creating vertices because it requires a context,
             # which may or may not exist when the object is initialized
-            transforms.canvas.context.flush_commands()  # flush GLIR commands
             self._vertices = np.concatenate([
                 _text_to_vbo(t, self._font, self._anchors[0], self._anchors[1],
                              self._font._lowres_size) for t in text])
