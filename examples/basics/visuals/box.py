@@ -3,7 +3,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """
-Simple demonstration of Mesh visual.
+Simple demonstration of Box visual.
 """
 
 from vispy import app, gloo, visuals
