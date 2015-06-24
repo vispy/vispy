@@ -22,8 +22,8 @@ from .isocurve import IsocurveVisual  # noqa
 from .isoline import IsolineVisual  # noqa
 from .isosurface import IsosurfaceVisual  # noqa
 from .line import LineVisual  # noqa
-from .line_plot import LinePlotVisual  # noqa
-from .markers import MarkersVisual, marker_types  # noqa
+# from .line_plot import LinePlotVisual  # noqa
+# from .markers import MarkersVisual, marker_types  # noqa
 from .mesh import MeshVisual  # noqa
 from .plane import PlaneVisual  # noqa
 from .polygon import PolygonVisual  # noqa
