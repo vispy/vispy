@@ -17,23 +17,26 @@ class Canvas(app.Canvas):
     def __init__(self):
         app.Canvas.__init__(self, keys='interactive', size=(800, 550))
 
-        vertices, faces, outline = create_box(width=2, height=4, depth=8,
+        vertices, faces, outline = create_box(width=1, height=1, depth=1,
                                               width_segments=4,
                                               height_segments=8,
                                               depth_segments=16)
 
-        self.box = visuals.BoxVisual(width=4, height=4, depth=8,
+        self.box = visuals.BoxVisual(width=1, height=1, depth=1,
                                      width_segments=4,
-                                     height_segments=8, depth_segments=16,
+                                     height_segments=8,
+                                     depth_segments=16,
                                      vertex_colors=vertices['color'],
                                      edge_color='b')
 
-        self.rotation = AffineTransform()
+        self.cube = visuals.CubeVisual((1.0, 0.5, 0.25), color='red',
+                                       edge_color="k")
+        self.theta = 0
+        self.phi = 0
 
-        self.box.transform = ChainTransform([STTransform(translate=(400, 400),
-                                            scale=(40, 40, 1)),
-                                            self.rotation])
+        self.transform = AffineTransform()
 
+        self.box.transform = self.transform
         self.show()
 
         self.timer = app.Timer(connect=self.rotate)
@@ -42,7 +45,13 @@ class Canvas(app.Canvas):
     def rotate(self, event):
         # rotate with an irrational amount over each axis so there is no
         # periodicity
-        self.rotation.rotate(0.6, (2 ** 0.5, 3 ** 0.5, 7 ** 0.5))
+        self.theta += .5
+        self.phi += .5
+        self.transform.reset()
+        self.transform.rotate(self.theta, (0, 0, 1))
+        self.transform.rotate(self.phi, (0, 1, 0))
+        self.transform.scale((100, 100, 0.001))
+        self.transform.translate((200, 200))
         self.update()
 
     def on_resize(self, event):
@@ -53,12 +62,8 @@ class Canvas(app.Canvas):
         self.box.transforms.configure(canvas=self, viewport=vp)
 
     def on_draw(self, ev):
-        vp = (0, 0, self.physical_size[0], self.physical_size[1])
-        gloo.set_viewport(0, 0, *self.physical_size)
         gloo.clear(color='white', depth=True)
-        
         self.box.draw()
-
 
 if __name__ == '__main__':
     win = Canvas()
