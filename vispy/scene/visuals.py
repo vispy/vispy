@@ -18,7 +18,6 @@ import weakref
 from .. import visuals
 from .node import Node
 from ..visuals.filters import ColorFilter, PickingFilter
-from ..visuals.transforms import ChainTransform
 
 
 class VisualNode(Node):

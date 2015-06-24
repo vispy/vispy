@@ -5,13 +5,11 @@
 from __future__ import division
 
 import weakref
-import struct
 
 from .. import gloo
 from .. import app
-from .node import Node
 from .visuals import VisualNode
-from ..visuals.transforms import STTransform, TransformCache, TransformSystem
+from ..visuals.transforms import TransformSystem
 from ..color import Color
 from ..util import logger
 from ..util.profiler import Profiler
@@ -257,7 +255,6 @@ class SceneCanvas(app.Canvas):
             if visual not in self._draw_order:
                 self._draw_order[visual] = self._generate_draw_order()
             order = self._draw_order[visual]
-            tr = order[2][0].transforms.get_transform()
             
             # draw (while avoiding branches with visible=False)
             stack = []
@@ -300,7 +297,7 @@ class SceneCanvas(app.Canvas):
         self.update()
 
     def _process_mouse_event(self, event):
-        prof = Profiler()
+        prof = Profiler()  # noqa
         if self._mouse_handler is None:
             if event.type == 'mouse_press':
                 picked = self.visual_at(event.pos)

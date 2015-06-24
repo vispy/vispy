@@ -47,7 +47,8 @@ class TransformSystem(object):
       back buffer of the canvas, and the canvas will have _logical_ and
       _physical_ pixels of the same size. However, the scale may be different
       in the case of high-resolution displays, or when rendering to an 
-      off-screen framebuffer with different scaling or boundaries than the canvas.
+      off-screen framebuffer with different scaling or boundaries than the
+      canvas.
 
     * **Render** - This coordinate system is the obligatory system for
       vertices returned by a vertex shader. It has coordinates (-1, -1) to
@@ -152,7 +153,7 @@ class TransformSystem(object):
         self._scene_transform = ChainTransform([NullTransform()])
         self._document_transform = ChainTransform([NullTransform()])
         self._canvas_transform = ChainTransform([STTransform(),
-                                                      STTransform()])
+                                                 STTransform()])
         self._framebuffer_transform = ChainTransform([STTransform()])
         
         for tr in (self._visual_transform, self._scene_transform, 
@@ -211,8 +212,7 @@ class TransformSystem(object):
             map_from = [(fbo_rect[0], fbo_rect[1]),
                         (fbo_rect[0] + fbo_rect[2], fbo_rect[1] + fbo_rect[3])]
             map_to = [(0, 0), fbo_size]
-            self._canvas_transform.transforms[0].set_mapping(map_from, 
-                                                                    map_to)
+            self._canvas_transform.transforms[0].set_mapping(map_from,  map_to)
             
         if viewport is None:
             if fbo_size is None:
@@ -315,11 +315,13 @@ class TransformSystem(object):
         
         Parameters
         ==========
-        map_from : str (visual | scene | document | canvas | framebuffer | render)
-            The starting coordinate system to map from.
+        map_from : str
+            The starting coordinate system to map from. Must be one of: visual,
+            scene, document, canvas, framebuffer, or render.
             
-        map_to : str (visual | scene | document | canvas | framebuffer | render)
-            The ending coordinate system to map to.
+        map_to : str
+            The ending coordinate system to map to. Must be one of: visual,
+            scene, document, canvas, framebuffer, or render.
         """
         tr = ['visual', 'scene', 'document', 'canvas', 'framebuffer', 'render']
         ifrom = tr.index(map_from)

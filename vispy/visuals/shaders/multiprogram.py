@@ -116,12 +116,12 @@ class MultiShader(object):
         
     def __setitem__(self, key, value):
         self._set_items[key] = value
-        for k,p in self._program._programs.items():
+        for k, p in self._program._programs.items():
             getattr(p, self._shader)[key] = value
 
     def _new_program(self, p):
         """New program was added to the multiprogram; update items in the
         shader.
         """
-        for k,v in self._set_items.items():
+        for k, v in self._set_items.items():
             getattr(p, self._shader)[k] = v

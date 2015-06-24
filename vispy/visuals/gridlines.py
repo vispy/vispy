@@ -8,8 +8,6 @@ import numpy as np
 
 from .. import gloo
 from .visual import Visual
-from .shaders import ModularProgram
-from .transforms import TransformCache
 
 VERT = """
 attribute vec2 pos;

@@ -3,7 +3,6 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 from weakref import WeakKeyDictionary
 
-from ...util import logger
 from ...ext.ordereddict import OrderedDict
 from ...ext.six import string_types
 from .compiler import Compiler
@@ -131,8 +130,6 @@ class ShaderObject(object):
     def _dep_changed(self, dep, code_changed=False, value_changed=False):
         """ Called when a dependency's expression has changed.
         """
-        #logger.debug("ShaderObject %s changed [code=%s, value=%s]", self,
-                     #code_changed, value_changed)
         self.changed(code_changed, value_changed)
             
     def changed(self, code_changed=False, value_changed=False):

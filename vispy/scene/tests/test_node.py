@@ -1,10 +1,7 @@
 # -*- coding: utf-8 -*-
-import numpy as np
-
 from vispy.scene.node import Node
 from vispy.testing import (requires_application, TestingCanvas,
                            run_tests_if_main)
-from vispy.testing.image_tester import assert_image_approved
 
 
 class EventCheck(object):

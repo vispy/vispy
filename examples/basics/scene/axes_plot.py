@@ -24,7 +24,7 @@ grid.add_widget(xaxis, row=1, col=1)
 xaxis.stretch = (1, 0.1)
 
 view = grid.add_view(row=0, col=1)
-plot = scene.Line(np.random.normal(size=(1000,2)), parent=view.scene)
+plot = scene.Line(np.random.normal(size=(1000, 2)), parent=view.scene)
 view.camera = 'panzoom'
 
 xaxis.link_view(view)

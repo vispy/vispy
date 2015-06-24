@@ -104,8 +104,8 @@ class VisualShare(object):
     * A cache for bounds.
     """
     def __init__(self):
-        # Note: in some cases we will need to compute bounds independently for each
-        # view. That will have to be worked out later..
+        # Note: in some cases we will need to compute bounds independently for
+        # each view. That will have to be worked out later..
         self.bounds = {}
         self.gl_state = {}
         self.views = weakref.WeakKeyDictionary()
@@ -268,7 +268,7 @@ class Visual(BaseVisual):
                 self._vshare.program = program
                 if len(vcode) > 0 or len(fcode) > 0:
                     raise ValueError("Cannot specify both program and "
-                        "vcode/fcode arguments.")
+                                     "vcode/fcode arguments.")
         
         self._program = self._vshare.program.add_program()
         self._prepare_transforms(self)

@@ -210,7 +210,8 @@ class Ticker(object):
             major, majstep = np.linspace(0, 1, num=major_num, retstep=True)
 
             # XXX TODO: this should be better than just str(x)
-            labels = [str(x) for x in np.interp(major, [0, 1], self.axis.domain)]
+            labels = [str(x) for x in 
+                      np.interp(major, [0, 1], self.axis.domain)]
 
             # XXX TODO: make these nice numbers only
             # - and faster! Potentially could draw in linspace across the whole

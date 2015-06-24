@@ -10,9 +10,7 @@ from .widget import Widget
 from ..subscene import SubScene
 from ..cameras import make_camera, BaseCamera
 from ...ext.six import string_types
-from ... import gloo
 from ...visuals.filters import Clipper
-from ...visuals import Visual
 
 
 class ViewBox(Widget):
@@ -196,4 +194,3 @@ class ViewBox(Widget):
     def _update_scene_clipper(self, event=None):
         tr = self.get_transform('visual', 'framebuffer')
         self._scene._clipper.bounds = tr.map(self.inner_rect)
-

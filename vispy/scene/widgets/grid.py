@@ -191,16 +191,17 @@ class Grid(Widget):
         occupied = np.zeros((n_rows, n_cols), dtype=bool)
         stretch = np.zeros((n_rows, n_cols, 2), dtype=float)
         stretch[:] = np.nan
-        minsize = np.zeros((n_rows, n_cols, 2), dtype=float)
+        #minsize = np.zeros((n_rows, n_cols, 2), dtype=float)
         for key, val in self._grid_widgets.items():
             w = val[4]
             row, col, rspan, cspan, ch = self._grid_widgets[key]
             occupied[row:row+rspan, col:col+cspan] = True
-            stretch[row:row+rspan, col:col+cspan] = np.array(w.stretch) / [cspan, rspan]
+            stretch[row:row+rspan, col:col+cspan] = (np.array(w.stretch) /
+                                                     [cspan, rspan])
         row_occ = occupied.sum(axis=1) > 0
         col_occ = occupied.sum(axis=0) > 0
-        row_stretch = np.nanmean(stretch[...,1], axis=1)
-        col_stretch = np.nanmean(stretch[...,0], axis=0)
+        row_stretch = np.nanmean(stretch[..., 1], axis=1)
+        col_stretch = np.nanmean(stretch[..., 0], axis=0)
         row_stretch[np.isnan(row_stretch)] = 0
         col_stretch[np.isnan(col_stretch)] = 0
         

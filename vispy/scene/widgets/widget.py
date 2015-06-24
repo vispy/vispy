@@ -286,7 +286,7 @@ class Widget(Compound):
         if self._face_colors is not None:
             face_colors = self._face_colors[start:stop]
         self._mesh.set_data(vertices=pos, faces=faces[start:stop],
-                              face_colors=face_colors)
+                            face_colors=face_colors)
 
         # picking mesh covers the entire area
         self._picking_mesh.set_data(vertices=pos[::2])

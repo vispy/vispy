@@ -1,12 +1,12 @@
 from vispy import app, gloo, visuals
-from vispy.visuals.filters import Clipper, Alpha, ColorFilter
+from vispy.visuals.filters import Clipper, ColorFilter
 from vispy.visuals.shaders import MultiProgram
 from vispy.visuals.collections import PointCollection
 from vispy.visuals.transforms import STTransform
-        
+       
 
 class LineVisual(visuals.Visual):
-    """Example of a very simple GL-line visual. 
+    """Example of a very simple GL-line visual.
     
     This shows the minimal set of methods that need to be reimplemented to 
     make a new visual class.
@@ -32,10 +32,10 @@ class LineVisual(visuals.Visual):
         
         self.pos_buf = gloo.VertexBuffer()
         
-        # The Visual superclass contains a MultiProgram, which is an object that 
-        # behaves like a normal shader program (you can assign shader code, upload
-        # values, set template variables, etc.) but internally manages multiple 
-        # ModularProgram instances, one per view.
+        # The Visual superclass contains a MultiProgram, which is an object
+        # that behaves like a normal shader program (you can assign shader
+        # code, upload values, set template variables, etc.) but internally
+        # manages multiple ModularProgram instances, one per view.
         
         # The MultiProgram is accessed via the `shared_program` property, so
         # the following modifications to the program will be applied to all 
@@ -82,8 +82,8 @@ class LineVisual(visuals.Visual):
         # Note that we access `view_program` instead of `shared_program`
         # because we do not want this function assigned to other views.
         tr = view.transforms.get_transform()
-        view.view_program.vert['transform'] = tr # .simplified()
-    
+        view.view_program.vert['transform'] = tr  # .simplified()
+
 
 class PointVisual(LineVisual):
     """Another simple visual class. 
@@ -105,7 +105,8 @@ class PlotLineVisual(visuals.CompoundVisual):
     compound visual automatically manages proxying these transforms and methods
     to its sub-visuals.
     """
-    def __init__(self, pos=None, line_color=(1, 1, 1, 1), point_color=(1, 1, 1, 1)):
+    def __init__(self, pos=None, line_color=(1, 1, 1, 1),
+                 point_color=(1, 1, 1, 1)):
         self._line = LineVisual(pos, color=line_color)
         self._point = PointVisual(pos, color=point_color)
         visuals.CompoundVisual.__init__(self, [self._line, self._point])
@@ -122,7 +123,7 @@ class PointCollectionVisual(visuals.Visual):
     @staticmethod
     def _prepare_transforms(view):
         tr = view.transforms.get_transform()
-        view.view_program.vert['transform'] = tr # .simplified()
+        view.view_program.vert['transform'] = tr  # .simplified()
         
     def _prepare_draw(self, view):
         if self.points._need_update:
@@ -179,7 +180,7 @@ if __name__ == '__main__':
     
     canvas = app.Canvas(keys='interactive', size=(900, 600), show=True, 
                         title="Visual Canvas")
-    pos = np.random.normal(size=(1000,2), loc=0, scale=50).astype('float32')
+    pos = np.random.normal(size=(1000, 2), loc=0, scale=50).astype('float32')
     pos[0] = [0, 0]
     
     # Make a line visual
@@ -237,7 +238,6 @@ if __name__ == '__main__':
     tr = shadow2.transforms.get_transform('framebuffer', 'canvas')
     shadow2.attach(Clipper((320, 320, 260, 260), transform=tr), view=shadow2)
     
-
     # Example of a collection visual
     collection = PointCollectionVisual()
     collection.transforms.canvas = canvas
@@ -246,14 +246,12 @@ if __name__ == '__main__':
                       itemsize=5000)
     collection.color = (1, 0.5, 0.5, 1), (0.5, 0.5, 1, 1)
 
-
     shadow3 = collection.view()
     shadow3.transforms.canvas = canvas
     shadow3.transform = STTransform(scale=(1, 1), translate=(752, 152))
     shadow3.attach(ColorFilter((0, 0, 0, 0.6)), view=shadow3)
     #tr = shadow3.transforms.get_transform('framebuffer', 'canvas')
     #shadow3.attach(Clipper((320, 320, 260, 260), transform=tr), view=shadow2)
-    
     
     order = [shadow, line, view, plot, shadow2, view2, shadow3, collection]
     
@@ -272,7 +270,6 @@ if __name__ == '__main__':
     canvas.events.resize.connect(on_resize)
     on_resize(None)
 
-
     from vispy.scene import SceneCanvas
     from vispy.scene.visuals import create_visual_node
     
@@ -283,10 +280,11 @@ if __name__ == '__main__':
     v.bgcolor = (0.3, 0.3, 0.3, 1)
     v.camera = 'panzoom'
     line2 = Line(pos, parent=v.scene)
+    
     def mouse(ev):
         print ev
+    
     v.events.mouse_press.connect(mouse)
 
     if sys.flags.interactive != 1:
         app.run()
-    

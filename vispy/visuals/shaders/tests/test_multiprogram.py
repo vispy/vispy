@@ -4,6 +4,7 @@
 from vispy.visuals.shaders import MultiProgram, Function, StatementList
 from vispy.visuals.transforms import STTransform, AffineTransform
 
+
 def test_multiprogram():
     vert = """
     uniform float u_scale;
@@ -75,4 +76,3 @@ def test_multiprogram():
     assert p3.frag['color'].value == (1, 1, 1, 1)
     assert '//test' in p3.vert.compile()
     assert 'st_transform_map' in p3.vert.compile()
-    

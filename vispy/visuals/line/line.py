@@ -336,7 +336,6 @@ class _GLLineVisual(Visual):
                     self._color_vbo.set_data(color)
                     self._program.vert['color'] = self._color_vbo
 
-
         # Do we want to use OpenGL, and can we?
         GL = None
         from ...app._default_app import default_app

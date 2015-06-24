@@ -11,7 +11,7 @@ import numpy as np
 
 from ..color import ColorArray
 from ..gloo import VertexBuffer, _check_valid
-from .shaders import ModularProgram, Function, Variable
+from .shaders import Function, Variable
 from .visual import Visual
 
 

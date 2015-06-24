@@ -12,9 +12,8 @@ import vispy.app
 from vispy import gloo
 from vispy import visuals
 from vispy.visuals.transforms import (AffineTransform, STTransform,
-                                      arg_to_array, TransformSystem,
-                                      LogTransform, PolarTransform,
-                                      BaseTransform)
+                                      arg_to_array, LogTransform, 
+                                      PolarTransform, BaseTransform)
 
 image = np.random.normal(size=(100, 100, 3))
 image[20:80, 20:80] += 3.

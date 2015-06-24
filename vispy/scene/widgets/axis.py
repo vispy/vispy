@@ -41,7 +41,8 @@ class AxisWidget(Widget):
         if view is self._linked_view:
             return
         if self._linked_view is not None:
-            self._linked_view.scene.transform.changed.disconnect(self._view_changed)
+            self._linked_view.scene.transform.changed.disconnect(
+                self._view_changed)
         self._linked_view = view
         view.scene.transform.changed.connect(self._view_changed)
         self._view_changed()
@@ -55,5 +56,3 @@ class AxisWidget(Widget):
             self.axis.domain = (p1[1], p2[1])
         else:
             self.axis.domain = (p1[0], p2[0])
-            
-        

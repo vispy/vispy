@@ -35,7 +35,7 @@ coordinates).
 
 from ..gloo import Texture3D, TextureEmulated3D, VertexBuffer, IndexBuffer
 from . import Visual
-from .shaders import Function, ModularProgram
+from .shaders import Function
 from ..color import get_colormap
 
 import numpy as np
@@ -474,7 +474,8 @@ class VolumeVisual(Visual):
         
         # Apply to texture
         self._tex.set_data(vol)  # will be efficient if vol is same shape
-        self.shared_program['u_shape'] = vol.shape[2], vol.shape[1], vol.shape[0]
+        self.shared_program['u_shape'] = (vol.shape[2], vol.shape[1], 
+                                          vol.shape[0])
         
         shape = vol.shape[:3]
         if self._vol_shape != shape:
@@ -592,7 +593,6 @@ class VolumeVisual(Visual):
             [x0, y1, z1],
             [x1, y1, z1],
         ], dtype=np.float32)
-        
         
         """
           6-------7

@@ -165,7 +165,7 @@ class Node(object):
     def parent(self, parent):
         if not isinstance(parent, (Node, type(None))):
             raise ValueError('Parent must be Node instance or None (got %s).'
-                             % p.__class__.__name__)
+                             % parent.__class__.__name__)
         prev = self.parent
         if parent is prev:
             return

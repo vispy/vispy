@@ -16,14 +16,12 @@ from os import path as op
 import sys
 
 from ._sdf import SDFRenderer
-from ...gloo import (TextureAtlas, set_state, IndexBuffer, VertexBuffer,
-                     set_viewport)
+from ...gloo import (TextureAtlas, IndexBuffer, VertexBuffer, set_viewport)
 from ...gloo import gl, context
 from ...gloo.wrappers import _check_valid
 from ...ext.six import string_types
 from ...util.fonts import _load_glyph
 from ..transforms import STTransform
-from ..shaders import ModularProgram
 from ...color import Color
 from ..visual import Visual
 from ...io import _data_dir
