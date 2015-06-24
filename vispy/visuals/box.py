@@ -56,6 +56,12 @@ class BoxVisual(CompoundVisual):
         else:
             self._border = MeshVisual()
 
+        self._border.gl_state = {
+            "polygon_offset_fill": True,
+            "depth_test": True,
+            "cull_face": False,
+        }
+
         CompoundVisual.__init__(self, [self._mesh, self._border], **kwargs)
 
     @property
