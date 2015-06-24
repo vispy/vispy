@@ -474,6 +474,7 @@ _marker_dict = {
     '^': triangle_up,
     'v': triangle_down,
     '*': star,
+    'None': None,
 }
 marker_types = tuple(sorted(list(_marker_dict.keys())))
 
@@ -573,7 +574,7 @@ class MarkersVisual(Visual):
             The symbol.
         """
         _check_valid('symbol', symbol, marker_types)
-        if symbol is None:
+        if symbol is 'None':
             self._marker_fun = None
         else:
             self._marker_fun = Function(_marker_dict[symbol])
