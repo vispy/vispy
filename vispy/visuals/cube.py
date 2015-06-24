@@ -46,8 +46,8 @@ class CubeVisual(CompoundVisual):
 
         self._border.gl_state = {
             "polygon_offset_fill": True,
-            "depth_test": True,
-            "cull_face": False,
+            "polygon_offset": (1, 1),
+            "depth_test": True
         }
 
         CompoundVisual.__init__(self, [self._mesh, self._border], **kwargs)
