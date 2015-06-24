@@ -456,11 +456,11 @@ class VolumeVisual(Visual):
         # Apply clim
         vol = np.array(vol, dtype='float32', copy=False)
         if self._clim[1] == self._clim[0]:
-            if not self._clim[0] == 0.:
+            if self._clim[0] != 0.:
                 vol *= 1.0 / self._clim[0]
         else:
             vol -= self._clim[0]
-            vol *= 1.0 / (self._clim[1] - self._clim[0])
+            vol /= self._clim[1] - self._clim[0]
         
         # Apply to texture
         self._tex.set_data(vol)  # will be efficient if vol is same shape
