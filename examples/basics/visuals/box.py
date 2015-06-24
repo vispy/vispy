@@ -8,8 +8,7 @@ Simple demonstration of Mesh visual.
 
 from vispy import app, gloo, visuals
 from vispy.geometry import create_box
-from vispy.visuals.transforms import (STTransform, AffineTransform,
-                                      ChainTransform)
+from vispy.visuals.transforms import AffineTransform
 
 
 class Canvas(app.Canvas):

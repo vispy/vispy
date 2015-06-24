@@ -88,7 +88,6 @@ class Canvas(app.Canvas):
             mesh.transforms.configure(canvas=self, viewport=vp)
 
     def on_draw(self, ev):
-        vp = (0, 0, self.physical_size[0], self.physical_size[1])
         gloo.set_viewport(0, 0, *self.physical_size)
         gloo.clear(color='black', depth=True)
 

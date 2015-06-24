@@ -10,7 +10,6 @@ Simple use of SceneCanvas to display a cube with an arcball camera.
 import sys
 
 from vispy import scene
-from vispy.visuals.transforms import AffineTransform
 from vispy.color import Color
 canvas = scene.SceneCanvas(keys='interactive', size=(800, 600), show=True)
 
