@@ -53,7 +53,7 @@ class Canvas(app.Canvas):
                                                    translate=(600, 600))
         self.visuals.append(polygon)
 
-        ellipse = visuals.EllipseVisual(pos=(0, 0, 0), radius=(100, 100),
+        ellipse = visuals.EllipseVisual(center=(0, 0, 0), radius=(100, 100),
                                         color=(0.2, 0.2, 0.8, 1),
                                         border_color=(1, 1, 1, 1),
                                         start_angle=180., span_angle=150.)
@@ -61,7 +61,7 @@ class Canvas(app.Canvas):
                                                    translate=(200, 200))
         self.visuals.append(ellipse)
 
-        rect = visuals.RectangleVisual(pos=(600, 200, 0), height=200.,
+        rect = visuals.RectangleVisual(center=(600, 200, 0), height=200.,
                                        width=300.,
                                        radius=[30., 30., 0., 0.],
                                        color=(0.5, 0.5, 0.2, 1),
@@ -69,7 +69,7 @@ class Canvas(app.Canvas):
         rect.transform = transforms.NullTransform()
         self.visuals.append(rect)
 
-        rpolygon = visuals.RegularPolygonVisual(pos=(200., 600., 0), 
+        rpolygon = visuals.RegularPolygonVisual(center=(200., 600., 0), 
                                                 radius=160,
                                                 color=(0.2, 0.8, 0.2, 1),
                                                 border_color=(1, 1, 1, 1),
@@ -90,21 +90,29 @@ class Canvas(app.Canvas):
         gloo.set_viewport(0, 0, *self.physical_size)
         gloo.clear()
         for vis in self.visuals:
-            vis.draw(vis.tr_sys)
+            vis.draw()
+
+    def on_resize(self, event):
+        # Set canvas viewport and reconfigure visual transforms to match.
+        vp = (0, 0, self.physical_size[0], self.physical_size[1])
+        self.context.set_viewport(*vp)
+
+        for vis in self.visuals:
+            vis.transforms.configure(canvas=self, viewport=vp)
 
     def on_timer(self, event):
         polygon, ellipse, rect, rpolygon = self.visuals
         r = ellipse.radius
         ellipse.radius = r[0], r[1] + np.sin(event.elapsed * 10)
         ellipse.span_angle = (ellipse.span_angle + 100. * event.dt) % 360
-        
+
         polygon.color = (0.3 * (0.5 + np.sin(event.elapsed*2 + 0)),
                          0.3 * (0.5 + np.sin(event.elapsed*2 + np.pi * 2./3.)),
                          0.3 * (0.5 + np.sin(event.elapsed*2 + np.pi * 4./3.)),
                          )
         polygon.border_color = (.8, .8, .8, 
                                 0.5 + (0.5 * np.sin(event.elapsed*10)))
-        
+
         rpolygon.radius = 100 + 10 * np.sin(event.elapsed * 3.1)
         rpolygon.sides = int(20 + 17 * np.sin(event.elapsed))
         
