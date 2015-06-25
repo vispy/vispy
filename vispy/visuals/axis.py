@@ -227,11 +227,11 @@ class Ticker(object):
             length = length[1] - length[0]
             # XXX for some reason this doesn't update when resizing, bug with
             # the transform system?
-            n_inches = np.sqrt(np.sum(length ** 2)) / tr_sys.dpi
+            # n_inches = np.sqrt(np.sum(length ** 2)) / tr_sys.dpi
 
             # major = np.linspace(domain[0], domain[1], num=11)
-            # major = MaxNLocator(10).tick_values(*domain)
-            major = _get_ticks_talbot(domain[0], domain[1], n_inches)
+            major = MaxNLocator(10).tick_values(*domain)
+            # major = _get_ticks_talbot(domain[0], domain[1], n_inches)
 
             labels = ['%g' % x for x in major]
             majstep = major[1] - major[0]
