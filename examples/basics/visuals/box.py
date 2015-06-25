@@ -28,8 +28,6 @@ class Canvas(app.Canvas):
                                      vertex_colors=vertices['color'],
                                      edge_color='b')
 
-        self.cube = visuals.CubeVisual((1.0, 0.5, 0.25), color='red',
-                                       edge_color="k")
         self.theta = 0
         self.phi = 0
 
@@ -42,8 +40,6 @@ class Canvas(app.Canvas):
         self.timer.start(0.016)
 
     def rotate(self, event):
-        # rotate with an irrational amount over each axis so there is no
-        # periodicity
         self.theta += .5
         self.phi += .5
         self.transform.reset()
