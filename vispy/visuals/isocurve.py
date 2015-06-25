@@ -59,16 +59,9 @@ class IsocurveVisual(LineVisual):
         self._recompute = True
         self.update()
 
-    def draw(self, transforms):
-        """Draw the visual
-
-        Parameters
-        ----------
-        transforms : instance of TransformSystem
-            The transforms to use.
-        """
+    def _prepare_draw(self, view):
         if self._data is None or self._level is None:
-            return
+            return False
 
         if self._recompute:
             verts = []
@@ -87,5 +80,5 @@ class IsocurveVisual(LineVisual):
             verts = np.array(verts)
             LineVisual.set_data(self, pos=verts, connect=connect)
             self._recompute = False
-
-        LineVisual.draw(self, transforms)
+        
+        return LineVisual._prepare_draw(self, view)
