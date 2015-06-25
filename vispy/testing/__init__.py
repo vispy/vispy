@@ -40,7 +40,8 @@ use e.g. full dependencies, minimal dependencies, etc. See ``.travis.yml``
 to determine what automatic tests are run.
 """
 
-from ._testing import (SkipTest, requires_application, requires_img_lib,  # noqa
+from ._testing import (SkipTest, requires_application, requires_ipython,  # noqa
+                      requires_img_lib,  # noqa
                       has_backend, requires_pyopengl,  # noqa
                       requires_scipy, has_matplotlib,  # noqa
                       save_testing_image, TestingCanvas, has_pyopengl,  # noqa
