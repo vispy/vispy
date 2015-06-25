@@ -153,10 +153,11 @@ class EllipseVisual(PolygonVisual):
                                 color=self._color.rgba)
 
         # connect vertices for a closed loop when
-        # drawing the border
+        # drawing the border. However, delete the last
+        # vertex so there is no line connecting the center
+        # to the border
         if not self._border_color.is_blank:
-            border_pos = vertices
-            border_pos = vertices[:-1]#np.concatenate([border_pos, border_pos[:1]], axis=0)
+            border_pos = vertices[:-1]
 
             self._border.set_data(pos=border_pos,
                                   color=self._border_color.rgba,
