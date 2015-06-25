@@ -190,7 +190,12 @@ class RectangleVisual(PolygonVisual):
             self.mesh.set_data(vertices=vertices,
                                color=self._color.rgba)
         if not self._border_color.is_blank:
-            self.border.set_data(pos=vertices,
+            # remove the loop at the beginning
+            # when passing vertices to the border, since PolygonVisual
+            # closes loops. However, closing the loop of a solid figure
+            # will create a solid line from the center of the solid figure
+            # to the edge
+            self.border.set_data(pos=vertices[1:, ..., :2],
                                  color=self._border_color.rgba)
 
         self.update()

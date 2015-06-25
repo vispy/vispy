@@ -68,11 +68,9 @@ class PolygonVisual(CompoundVisual):
                                   color=self._border_color.rgba,
                                   width=self._border_width,
                                   connect='strip')
-            self._border.gl_state = {
-                "polygon_offset_fill": True,
-                "polygon_offset": (1, 1)
-            }
 
+            self._border.set_gl_state(polygon_offset_fill=True,
+                                      polygon_offset=(1, 1), cull_face=False)
 
     @property
     def pos(self):

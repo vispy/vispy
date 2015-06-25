@@ -156,7 +156,7 @@ class EllipseVisual(PolygonVisual):
         # drawing the border
         if not self._border_color.is_blank:
             border_pos = vertices
-            border_pos = np.concatenate([border_pos, border_pos[:1]], axis=0)
+            border_pos = vertices[:-1]#np.concatenate([border_pos, border_pos[:1]], axis=0)
 
             self._border.set_data(pos=border_pos,
                                   color=self._border_color.rgba,
