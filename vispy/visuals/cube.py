@@ -44,13 +44,9 @@ class CubeVisual(CompoundVisual):
         else:
             self._border = MeshVisual()
 
-        self._border.gl_state = {
-            "polygon_offset_fill": True,
-            "polygon_offset": (1, 1),
-            "depth_test": True
-        }
-
         CompoundVisual.__init__(self, [self._mesh, self._border], **kwargs)
+        self.border.set_gl_state(polygon_offset_fill=True,
+                                 polygon_offset=(1, 1), depth_test=True)
 
     @property
     def mesh(self):
