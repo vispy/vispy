@@ -221,17 +221,12 @@ class Ticker(object):
             scale = domain[1] - domain[0]
 
             tr_sys = self.axis.transforms
-            visual_to_document = tr_sys.get_transform('visual', 'document')
-            length = np.array([self.axis.bounds(0), self.axis.bounds(1)]).T
-            length = visual_to_document.map(length)  # pixels
-            length = length[1] - length[0]
-            # XXX for some reason this doesn't update when resizing, bug with
-            # the transform system?
-            # n_inches = np.sqrt(np.sum(length ** 2)) / tr_sys.dpi
+            length = self.axis.pos[1] - self.axis.pos[0]  # in logical coords
+            n_inches = np.sqrt(np.sum(length ** 2)) / tr_sys.dpi
 
             # major = np.linspace(domain[0], domain[1], num=11)
-            major = MaxNLocator(10).tick_values(*domain)
-            # major = _get_ticks_talbot(domain[0], domain[1], n_inches)
+            # major = MaxNLocator(10).tick_values(*domain)
+            major = _get_ticks_talbot(domain[0], domain[1], n_inches, 2)
 
             labels = ['%g' % x for x in major]
             majstep = major[1] - major[0]
