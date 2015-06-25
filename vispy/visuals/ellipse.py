@@ -41,7 +41,7 @@ class EllipseVisual(PolygonVisual):
         Defaults to 100
     """
     def __init__(self, center=None, color='black', border_color=None,
-                 border_width=0, radius=(0.1, 0.1), start_angle=0.,
+                 border_width=1, radius=(0.1, 0.1), start_angle=0.,
                  span_angle=360., num_segments=100, **kwargs):
         self._center = center
         self._radius = radius

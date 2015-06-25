@@ -39,7 +39,7 @@ class RectangleVisual(PolygonVisual):
         Defaults to 0.
     """
     def __init__(self, center=None, color='black', border_color=None,
-                 border_width=0, height=1.0, width=1.0,
+                 border_width=1, height=1.0, width=1.0,
                  radius=[0., 0., 0., 0.], **kwargs):
 
         self._center = center
