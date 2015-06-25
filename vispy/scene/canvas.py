@@ -299,7 +299,7 @@ class SceneCanvas(app.Canvas):
     def _process_mouse_event(self, event):
         prof = Profiler()  # noqa
         if self._mouse_handler is None:
-            if event.type == 'mouse_press':
+            if event.type in ('mouse_press', 'mouse_wheel'):
                 picked = self.visual_at(event.pos)
             else:
                 picked = None
@@ -322,7 +322,7 @@ class SceneCanvas(app.Canvas):
                 if event.type == 'mouse_press':
                     self._mouse_handler = picked
                 break
-            if event.type == 'mouse_press':
+            if event.type in ('mouse_press', 'mouse_wheel'):
                 # press events that are not handled get passed to parent
                 picked = picked.parent
             else:
