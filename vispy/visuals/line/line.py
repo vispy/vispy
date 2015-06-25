@@ -238,7 +238,7 @@ class LineVisual(CompoundVisual):
                 color = color[0]
         return color
 
-    def _compute_bounds(self, mode, axis):
+    def _compute_bounds(self, axis, view):
         """Get the bounds
 
         Parameters
