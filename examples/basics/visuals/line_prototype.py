@@ -282,7 +282,7 @@ if __name__ == '__main__':
     line2 = Line(pos, parent=v.scene)
     
     def mouse(ev):
-        print ev
+        print(ev)
     
     v.events.mouse_press.connect(mouse)
 
