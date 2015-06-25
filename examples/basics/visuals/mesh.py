@@ -76,7 +76,9 @@ class Canvas(app.Canvas):
     def rotate(self, event):
         # rotate with an irrational amount over each axis so there is no
         # periodicity
-        self.rotation.rotate(0.6, (2 ** 0.5, 3 ** 0.5, 7 ** 0.5))
+        self.rotation.rotate(0.2 ** 0.5, (1, 0, 0))
+        self.rotation.rotate(0.3 ** 0.5, (0, 1, 0))
+        self.rotation.rotate(0.5 ** 0.5, (0, 0, 1))
         self.update()
 
     def on_resize(self, event):
