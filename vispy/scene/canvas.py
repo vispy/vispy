@@ -202,9 +202,10 @@ class SceneCanvas(app.Canvas):
             (x, y, w, h). By default, the entire canvas is rendered.
         size : tuple | None
             Specifies the size of the image array to return. If no size is 
-            given, then the size of the *region* is used. This argument allows
-            the scene to be rendered at resolutions different from the native
-            canvas resolution.
+            given, then the size of the *region* is used, multiplied by the 
+            pixel scaling factor of the canvas (see `pixel_scale`). This
+            argument allows the scene to be rendered at resolutions different
+            from the native canvas resolution.
 
         Returns
         -------
@@ -217,7 +218,8 @@ class SceneCanvas(app.Canvas):
         # Set up a framebuffer to render to
         offset = (0, 0) if region is None else region[:2]
         csize = self.size if region is None else region[2:]
-        size = csize if size is None else size
+        s = self.pixel_scale
+        size = tuple([x * s for x in csize]) if size is None else size
         fbo = gloo.FrameBuffer(color=gloo.RenderBuffer(size[::-1]),
                                depth=gloo.RenderBuffer(size[::-1]))
 
@@ -429,7 +431,7 @@ class SceneCanvas(app.Canvas):
             origin.
         csize : tuple
             The size of the region in the canvas's framebuffer that should be 
-            covered by this framebuffer.
+            covered by this framebuffer object.
         """
         self._fb_stack.append((fbo, offset, csize))
         try:
