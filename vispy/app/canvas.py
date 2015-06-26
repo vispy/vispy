@@ -351,12 +351,10 @@ class Canvas(object):
         the physical pixels on the device. In most cases this will be 1.0,
         but on certain backends this will be greater than 1. This should be
         used as a scaling factor when writing your own visualisations
-        with Gloo (make a copy and multiply all your logical pixel values
-        by it) but you should rarely, if ever, need to use this in your own
-        Visuals or SceneGraph visualisations; instead you should apply the
-        canvas_fb_transform in the SceneGraph canvas. """
-
-        return self._px_scale * self.physical_size[0] // self.size[0]
+        with gloo (make a copy and multiply all your logical pixel values
+        by it). When writing Visuals or SceneGraph visualisations, this value
+        is exposed as `TransformSystem.px_scale`."""
+        return self.physical_size[0] // self.size[0]
 
     @property
     def fullscreen(self):

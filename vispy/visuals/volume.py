@@ -369,7 +369,7 @@ class VolumeVisual(Visual):
     Parameters
     ----------
     vol : ndarray
-        The volume to display. Must be ndim==2.
+        The volume to display. Must be ndim==3.
     clim : tuple of two floats | None
         The contrast limits. The values in the volume are mapped to
         black and white corresponding to these values. Default maps
@@ -613,27 +613,8 @@ class VolumeVisual(Visual):
         self._vertices.set_data(pos)
         self._index_buffer.set_data(indices)
 
-    def bounds(self, mode, axis):
-        """Get the visual bounds
-
-        Parameters
-        ----------
-        mode : str
-            The mode.
-        axis : int
-            The axis number.
-
-        Returns
-        -------
-        bounds : tuple
-            The lower and upper bounds.
-        """
-        # Not sure if this is right. Do I need to take the transform if this
-        # node into account?
-        # Also, this method has no docstring, and I don't want to repeat
-        # the docstring here. Maybe Visual implements _bounds that subclasses
-        # can implement?
-        return 0, self._vol_shape[2-axis]
+    def _compute_bounds(self, axis, view):
+        return 0, self._vol_shape[axis]
 
     def _prepare_transforms(self, view):
         trs = view.transforms

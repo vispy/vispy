@@ -15,8 +15,11 @@ env:
     # Enable python 2 and python 3 builds
     # Note that the 2.6 build doesn't get flake8, and runs old versions of
     # Pyglet and GLFW to make sure we deal with those correctly
-    - PYTHON=2.6 DEPS=full TEST=standard  # functionality
-    - PYTHON=2.7 DEPS=full TEST=standard
+
+    # IPython 1.2.1 is the last version of IPython for python2.6
+    # source: https://pypi.python.org/pypi/ipython/1.2.1
+    - PYTHON=2.6 DEPS=full TEST=standard   # functionality
+    - PYTHON=2.7 DEPS=full TEST=standard IPYTHON_VERSION="==2"
     - PYTHON=2.7 DEPS=minimal TEST=standard
     - PYTHON=3.4 DEPS=full TEST=standard
 
@@ -109,11 +112,9 @@ install:
     # which is required by matplotlib :(
     # No wx on py3k, wxpython doesn't work there (!)
     - if [ "${DEPS}" == "full" ]; then
+        pip install -q pyglet;
         if [ "${PYTHON}" == "2.6" ]; then
-          pip install -q pyglet;
           conda install --yes --quiet wxpython > ${REDIRECT_TO};
-        else
-          pip install -q https://bitbucket.org/pyglet/pyglet/get/tip.zip;
         fi;
         if [ "${PYTHON}" == "3.4" ]; then
           conda install --yes --quiet pillow scipy matplotlib decorator six > ${REDIRECT_TO};
@@ -125,6 +126,20 @@ install:
           travis_retry sudo apt-get -qq -y install python-qt4-gl python-imaging python-scipy python-matplotlib python-wxgtk2.8 > ${REDIRECT_TO};
         fi;
         travis_retry sudo apt-get -qq -y install libegl1-mesa;
+      fi;
+
+    # Install IPython
+    # No IPython for 2.6
+    # Install using pip with old version for 2.7
+    # Install using conda with new version for > 2.7
+    - if [ "${DEPS}" == "full" ]; then
+        if [ "${PYTHON}" == "2.7" ]; then
+          pip install -q ipython[notebook]$IPYTHON_VERSION;
+        else
+          if [ "${PYTHON}" != "2.6" ]; then
+            conda install --yes --quiet ipython ipython-notebook;
+          fi;
+        fi;
       fi;
 
     # Install vispy
