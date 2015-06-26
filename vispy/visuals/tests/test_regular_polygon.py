@@ -25,6 +25,7 @@ def test_regular_polygon_draw1():
                                                     translate=(50, 50))
         assert_image_approved(c.render(), 'visuals/regular_polygon1.png')
 
+        rpolygon.parent = None
         rpolygon = visuals.RegularPolygon(center=(0., 0.), radius=0.4, sides=8,
                                           color=(1, 0, 0, 1),
                                           border_color=(0, 1, 1, 1),
@@ -34,6 +35,7 @@ def test_regular_polygon_draw1():
                                                     translate=(50, 50))
         assert_image_approved(c.render(), 'visuals/regular_polygon2.png')
 
+        rpolygon.parent = None
         rpolygon = visuals.RegularPolygon(center=(0., 0.), radius=0.4, sides=8,
                                           border_color=(0, 1, 1, 1),
                                           parent=c.scene)
@@ -56,6 +58,7 @@ def test_regular_polygon_draw2():
                                                     translate=(50, 50))
         assert_image_approved(c.render(), 'visuals/regular_polygon4.png')
 
+        rpolygon.parent = None
         rpolygon = visuals.RegularPolygon(center=(0., 0.), radius=0.4, sides=8,
                                           color=(0, 0, 1, 1),
                                           border_color=(1, 0, 0, 1),
@@ -64,7 +67,7 @@ def test_regular_polygon_draw2():
         rpolygon.transform = transforms.STTransform(scale=(75, 100),
                                                     translate=(50, 50))
         assert_image_approved(c.render(), 'visuals/regular_polygon5.png')
-
+        rpolygon.parent = None
         rpolygon = visuals.RegularPolygon(center=(0., 0.), radius=0.4, sides=8,
                                           border_color=(1, 0, 0, 1),
                                           parent=c.scene)

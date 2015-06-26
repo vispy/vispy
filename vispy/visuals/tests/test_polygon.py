@@ -29,6 +29,7 @@ def test_square_draw():
 
         assert_image_approved(c.render(), 'visuals/square1.png')
 
+        polygon.parent = None
         polygon = visuals.Polygon(pos=pos, color=(1, 0, 0, 1),
                                   border_color=(1, 1, 1, 1),
                                   parent=c.scene)
@@ -37,6 +38,7 @@ def test_square_draw():
 
         assert_image_approved(c.render(), 'visuals/square2.png')
 
+        polygon.parent = None
         polygon = visuals.Polygon(pos=pos, border_color=(1, 1, 1, 1),
                                   parent=c.scene)
         polygon.transform = transforms.STTransform(scale=(50, 50),
@@ -61,6 +63,7 @@ def test_rectangle_draw():
 
         assert_image_approved(c.render(), 'visuals/rectangle1.png')
 
+        polygon.parent = None
         polygon = visuals.Polygon(pos=pos, color=(1, 1, 0, 1),
                                   border_color=(1, 0, 0, 1),
                                   parent=c.scene)
@@ -69,6 +72,7 @@ def test_rectangle_draw():
 
         assert_image_approved(c.render(), 'visuals/rectangle2.png')
 
+        polygon.parent = None
         polygon = visuals.Polygon(pos=pos, border_color=(1, 0, 0, 1),
                                   border_width=1, parent=c.scene)
         polygon.transform = transforms.STTransform(scale=(200.0, 25),

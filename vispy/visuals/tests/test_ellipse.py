@@ -17,20 +17,22 @@ from vispy.testing.image_tester import assert_image_approved
 def test_circle_draw():
     """Test drawing circles without transform using EllipseVisual"""
     with TestingCanvas() as c:
-        visuals.Ellipse(center=(75, 35, 0), radius=20,
-                        color=(1, 0, 0, 1),
-                        parent=c.scene)
+        ellipse = visuals.Ellipse(center=(75, 35, 0), radius=20,
+                                  color=(1, 0, 0, 1),
+                                  parent=c.scene)
         assert_image_approved(c.render(), 'visuals/circle1.png')
 
-        visuals.Ellipse(center=(75, 35, 0), radius=20,
-                        color=(1, 0, 0, 1),
-                        border_color=(0, 1, 1, 1),
-                        parent=c.scene)
+        ellipse.parent = None
+        ellipse = visuals.Ellipse(center=(75, 35, 0), radius=20,
+                                  color=(1, 0, 0, 1),
+                                  border_color=(0, 1, 1, 1),
+                                  parent=c.scene)
         assert_image_approved(c.render(), 'visuals/circle2.png')
 
-        visuals.Ellipse(center=(75, 35, 0), radius=20,
-                        border_color=(0, 1, 1, 1),
-                        parent=c.scene)
+        ellipse.parent = None
+        ellipse = visuals.Ellipse(center=(75, 35, 0), radius=20,
+                                  border_color=(0, 1, 1, 1),
+                                  parent=c.scene)
 
         # low corr here because borders have some variability
         # esp. w/HiDPI
@@ -49,6 +51,7 @@ def test_ellipse_draw():
                                                    translate=(50, 50))
         assert_image_approved(c.render(), 'visuals/ellipse1.png')
 
+        ellipse.parent = None
         ellipse = visuals.Ellipse(center=(0., 0.), radius=(20, 15),
                                   color=(0, 0, 1, 1),
                                   border_color=(1, 0, 0, 1),
@@ -57,6 +60,7 @@ def test_ellipse_draw():
                                                    translate=(50, 50))
         assert_image_approved(c.render(), 'visuals/ellipse2.png')
 
+        ellipse.parent = None
         ellipse = visuals.Ellipse(center=(0., 0.), radius=(20, 15),
                                   border_color=(1, 0, 0, 1),
                                   parent=c.scene)
@@ -70,16 +74,17 @@ def test_ellipse_draw():
 def test_arc_draw1():
     """Test drawing arcs using EllipseVisual"""
     with TestingCanvas() as c:
-        visuals.Ellipse(center=(50., 50.), radius=(20, 15),
-                        start_angle=150., span_angle=120.,
-                        color=(0, 0, 1, 1),
-                        parent=c.scene)
+        ellipse = visuals.Ellipse(center=(50., 50.), radius=(20, 15),
+                                  start_angle=150., span_angle=120.,
+                                  color=(0, 0, 1, 1),
+                                  parent=c.scene)
         assert_image_approved(c.render(), 'visuals/arc1.png')
 
-        visuals.Ellipse(center=(50., 50.), radius=(20, 15),
-                        start_angle=150., span_angle=120.,
-                        border_color=(1, 0, 0, 1),
-                        parent=c.scene)
+        ellipse.parent = None
+        ellipse = visuals.Ellipse(center=(50., 50.), radius=(20, 15),
+                                  start_angle=150., span_angle=120.,
+                                  border_color=(1, 0, 0, 1),
+                                  parent=c.scene)
         assert_image_approved(c.render(), 'visuals/arc2.png',
                               min_corr=0.6)
 

@@ -15,37 +15,41 @@ from vispy.testing.image_tester import assert_image_approved
 def test_rectangle_draw():
     """Test drawing rectpolygons without transform using RectPolygonVisual"""
     with TestingCanvas() as c:
-        visuals.Rectangle(center=(50, 50, 0), height=40.,
-                          width=80., color='red',
-                          parent=c.scene)
+        rectpolygon = visuals.Rectangle(center=(50, 50, 0), height=40.,
+                                        width=80., color='red',
+                                        parent=c.scene)
 
         assert_image_approved(c.render(), 'visuals/rectpolygon1.png')
 
-        visuals.Rectangle(center=(50, 50, 0), height=40.,
-                          width=80., radius=10., color='red',
-                          parent=c.scene)
+        rectpolygon.parent = None
+        rectpolygon = visuals.Rectangle(center=(50, 50, 0), height=40.,
+                                        width=80., radius=10., color='red',
+                                        parent=c.scene)
 
         assert_image_approved(c.render(), 'visuals/rectpolygon2.png')
 
-        visuals.Rectangle(center=(50, 50, 0), height=40.,
-                          width=80., radius=10., color='red',
-                          border_color=(0, 1, 1, 1),
-                          parent=c.scene)
+        rectpolygon.parent = None
+        rectpolygon = visuals.Rectangle(center=(50, 50, 0), height=40.,
+                                        width=80., radius=10., color='red',
+                                        border_color=(0, 1, 1, 1),
+                                        parent=c.scene)
 
         assert_image_approved(c.render(), 'visuals/rectpolygon3.png')
 
-        visuals.Rectangle(center=(50, 50, 0), height=40.,
-                          width=80., radius=10.,
-                          border_color='white',
-                          parent=c.scene)
+        rectpolygon.parent = None
+        rectpolygon = visuals.Rectangle(center=(50, 50, 0), height=40.,
+                                        width=80., radius=10.,
+                                        border_color='white',
+                                        parent=c.scene)
 
         assert_image_approved(c.render(), 'visuals/rectpolygon4.png',
                               min_corr=0.5)
 
-        visuals.Rectangle(center=(50, 50, 0), height=60.,
-                          width=80., radius=[25, 10, 0, 15],
-                          color='red', border_color=(0, 1, 1, 1),
-                          parent=c.scene)
+        rectpolygon.parent = None
+        rectpolygon = visuals.Rectangle(center=(50, 50, 0), height=60.,
+                                        width=80., radius=[25, 10, 0, 15],
+                                        color='red', border_color=(0, 1, 1, 1),
+                                        parent=c.scene)
 
         assert_image_approved(c.render(), 'visuals/rectpolygon5.png')
 
@@ -62,6 +66,7 @@ def test_rectpolygon_draw():
 
         assert_image_approved(c.render(), 'visuals/rectpolygon6.png')
 
+        rectpolygon.parent = None
         rectpolygon = visuals.Rectangle(center=(0., 0.), height=20.,
                                         width=20., radius=10.,
                                         color='blue', border_color='red',
@@ -71,6 +76,7 @@ def test_rectpolygon_draw():
 
         assert_image_approved(c.render(), 'visuals/rectpolygon7.png')
 
+        rectpolygon.parent = None
         rectpolygon = visuals.Rectangle(center=(0., 0.), height=60.,
                                         width=60., radius=10.,
                                         border_color='red',
@@ -81,6 +87,7 @@ def test_rectpolygon_draw():
         assert_image_approved(c.render(), 'visuals/rectpolygon8.png',
                               min_corr=0.5)
 
+        rectpolygon.parent = None
         rectpolygon = visuals.Rectangle(center=(0., 0.), height=60.,
                                         width=60., radius=[25, 10, 0, 15],
                                         color='blue', border_color='red',
