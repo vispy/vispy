@@ -56,7 +56,7 @@ class RectangleVisual(PolygonVisual):
         self.radius = radius
 
         self._mesh.mode = 'triangle_fan'
-        self._update_vertices()
+        self._update()
 
     def _generate_vertices(self, center, radius, height, width):
 
@@ -116,6 +116,19 @@ class RectangleVisual(PolygonVisual):
         return vertices
 
     @property
+    def center(self):
+        """ The center of the ellipse
+        """
+        return self._center
+
+    @center.setter
+    def center(self, center):
+        """ The center of the ellipse
+        """
+        self._center = center
+        self._update()
+
+    @property
     def height(self):
         """ The height of the rectangle.
         """
@@ -126,7 +139,7 @@ class RectangleVisual(PolygonVisual):
         if height <= 0.:
             raise ValueError('Height must be positive')
         self._height = height
-        self._update_vertices()
+        self._update()
 
     @property
     def width(self):
@@ -139,7 +152,7 @@ class RectangleVisual(PolygonVisual):
         if width <= 0.:
             raise ValueError('Width must be positive')
         self._width = width
-        self._update_vertices()
+        self._update()
 
     @property
     def radius(self):
@@ -171,9 +184,9 @@ class RectangleVisual(PolygonVisual):
             radius = np.full(4, radius)
 
         self._radius = radius
-        self._update_vertices()
+        self._update()
 
-    def _update_vertices(self):
+    def _update(self):
         if not self._center:
             return
 

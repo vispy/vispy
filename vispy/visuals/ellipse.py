@@ -54,7 +54,7 @@ class EllipseVisual(PolygonVisual):
                                border_width=border_width, **kwargs)
 
         self._mesh.mode = "triangle_fan"
-        self._update_vertices()
+        self._update()
 
     @staticmethod
     def _generate_vertices(center, radius, start_angle, span_angle,
@@ -88,6 +88,19 @@ class EllipseVisual(PolygonVisual):
         return vertices
 
     @property
+    def center(self):
+        """ The center of the ellipse
+        """
+        return self._center
+
+    @center.setter
+    def center(self, center):
+        """ The center of the ellipse
+        """
+        self._center = center
+        self._update()
+
+    @property
     def radius(self):
         """ The start radii of the ellipse.
         """
@@ -96,7 +109,7 @@ class EllipseVisual(PolygonVisual):
     @radius.setter
     def radius(self, radius):
         self._radius = radius
-        self._update_vertices()
+        self._update()
 
     @property
     def start_angle(self):
@@ -107,7 +120,7 @@ class EllipseVisual(PolygonVisual):
     @start_angle.setter
     def start_angle(self, start_angle):
         self._start_angle = start_angle
-        self._update_vertices()
+        self._update()
 
     @property
     def span_angle(self):
@@ -118,7 +131,7 @@ class EllipseVisual(PolygonVisual):
     @span_angle.setter
     def span_angle(self, span_angle):
         self._span_angle = span_angle
-        self._update_vertices()
+        self._update()
 
     @property
     def num_segments(self):
@@ -132,9 +145,9 @@ class EllipseVisual(PolygonVisual):
             raise ValueError('EllipseVisual must consist of more than 1 '
                              'segment')
         self._num_segments = num_segments
-        self._update_vertices()
+        self._update()
 
-    def _update_vertices(self):
+    def _update(self):
         if self._center is None:
             return
 
