@@ -42,18 +42,27 @@ class RectangleVisual(PolygonVisual):
                  border_width=1, height=1.0, width=1.0,
                  radius=[0., 0., 0., 0.], **kwargs):
 
-        self._center = center
+        self._height = height
+        self._width = width
         self._color = Color(color)
         self._border_color = Color(border_color)
         self._border_width = border_width
-        self._height = height
-        self._width = width
+
+        # HACK, NOTE: this order is _intentional_
+        # the self._radius is set to none to block all
+        # calls to self._update(). This is because
+        # self._update() depends on having self.mesh and
+        # self.border which are instantiated by PolygonVisual's
+        # __init__
+        self._radius = None
+        self.center = None
 
         PolygonVisual.__init__(self, pos=None, color=color,
                                border_color=border_color,
                                border_width=border_width, **kwargs)
 
         self.radius = radius
+        self.center = center
 
         self._mesh.mode = 'triangle_fan'
         self._update()
@@ -190,12 +199,15 @@ class RectangleVisual(PolygonVisual):
         if not self._center:
             return
 
+        if self._radius is None:
+            return
+
         vertices = self._generate_vertices(center=self._center,
                                            radius=self._radius,
                                            height=self._height,
                                            width=self._width)
 
-        self.pos = vertices
+        self._pos = vertices
 
         # NOTE: Do not call PolygonVisual's _update() here because it
         # uses triangulation which is super slow
@@ -211,5 +223,3 @@ class RectangleVisual(PolygonVisual):
         if not self._border_color.is_blank:
             self.border.set_data(pos=vertices[1:, ..., :2],
                                  color=self._border_color.rgba)
-
-        self.update()
