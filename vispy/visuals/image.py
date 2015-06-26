@@ -119,6 +119,7 @@ class ImageVisual(Visual):
         self._grid = grid
         self._need_texture_upload = True
         self._need_vertex_update = True
+        self._need_colortransform_update = True
         self._texture = Texture2D(np.zeros((1, 1, 4)),
                                   interpolation=self._interpolation)
         self._subdiv_position = VertexBuffer()
@@ -191,6 +192,7 @@ class ImageVisual(Visual):
     @cmap.setter
     def cmap(self, cmap):
         self._cmap = get_colormap(cmap)
+        self._need_colortransform_update = True
         self.update()
 
     @property
@@ -261,6 +263,16 @@ class ImageVisual(Visual):
         view._need_method_update = False
         self._prepare_transforms(view)
 
+    def _build_color_transform(self):
+        data = self._data
+        if data.ndim == 2 or data.shape[2] == 1:
+            fun = FunctionChain(None, [Function(_c2l),
+                                       Function(self._cmap.glsl_map)])
+        else:
+            fun = Function(_null_color_transform)
+        self.shared_program.frag['color_transform'] = fun
+        self._need_colortransform_update = False
+
     def _build_texture(self):
         data = self._data
         if data.dtype == np.float64:
@@ -278,13 +290,8 @@ class ImageVisual(Visual):
                 data /= clim[1] - clim[0]
             else:
                 data[:] = 1 if data[0, 0] != 0 else 0
-            fun = FunctionChain(None, [Function(_c2l),
-                                       Function(self.cmap.glsl_map)])
             self._clim = np.array(clim)
-        else:
-            fun = Function(_null_color_transform)
-        
-        self.shared_program.frag['color_transform'] = fun
+
         self._texture.set_data(data)
         self._need_texture_upload = False
 
@@ -311,6 +318,9 @@ class ImageVisual(Visual):
 
         if self._need_texture_upload:
             self._build_texture()
+
+        if self._need_colortransform_update:
+            self._build_color_transform()
 
         if self._need_vertex_update:
             self._build_vertex_data()
