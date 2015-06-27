@@ -49,7 +49,7 @@ vec4 phong_shading(vec4 color) {
 }
 """
 
-## Functions that can be used as is (don't have template variables)
+# Functions that can be used as is (don't have template variables)
 # Consider these stored in a central location in vispy ...
 
 vec3to4 = Function("""
@@ -92,12 +92,16 @@ class MeshVisual(Visual):
     def __init__(self, vertices=None, faces=None, vertex_colors=None,
                  face_colors=None, color=(0.5, 0.5, 1, 1), meshdata=None,
                  shading=None, mode='triangles', **kwargs):
+
+        # Function for computing phong shading
+        self._phong = Function(phong_template)
+
         Visual.__init__(self, vcode=vertex_template, fcode=fragment_template,
                         **kwargs)
-        
+
         self.set_gl_state('translucent', depth_test=True,
                           cull_face=False)
-        
+
         # Define buffers
         self._vertices = VertexBuffer(np.zeros((0, 3), dtype=np.float32))
         self._normals = None
@@ -117,9 +121,6 @@ class MeshVisual(Visual):
         # varyings
         self._color_var = Varying('v_color', dtype='vec4')
         self._normal_var = Varying('v_normal', dtype='vec3')
-
-        # Function for computing phong shading
-        self._phong = Function(phong_template)
 
         # Init
         self.shading = shading
@@ -303,14 +304,14 @@ class MeshVisual(Visual):
 
     def draw(self, *args, **kwds):
         Visual.draw(self, *args, **kwds)
-    
+
     @staticmethod
     def _prepare_transforms(view):
         tr = view.transforms.get_transform()
         view.view_program.vert['transform'] = tr  # .simplified
-        
-        #doc_tr = view.transforms.get_transform('visual', 'scene')
-        #view.visual._phong['transform'] = doc_tr
+
+        doc_tr = view.transforms.get_transform('visual', 'scene')
+        view._phong['transform'] = doc_tr
 
     def _compute_bounds(self, axis, view):
         if self._bounds is None:
