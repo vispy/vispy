@@ -17,7 +17,68 @@ from ..gloo import VertexBuffer, IndexBuffer
 from ..geometry import MeshData
 from ..color import Color
 
+new_vertex_template = """
+varying vec4 v_color;
 
+void main() {
+    vec4 pos_scene = $visual2scene($to_vec4($position));
+    vec4 normal_scene = $visual2scene(vec4($normal, 1));
+    vec4 origin_scene = $visual2scene(vec4(0, 0, 0, 1));
+
+    normal_scene /= normal_scene.w;
+    origin_scene /= origin_scene.w;
+
+    vec3 normal = normalize(normal_scene.xyz - origin_scene.xyz);
+
+    vec4 pos_front = $scene2doc(pos_scene);
+    pos_front.z += 0.01;
+    pos_front = $doc2scene(pos_front);
+    pos_front /= pos_front.w;
+
+    vec4 pos_back = $scene2doc(pos_scene);
+    pos_back.z -= 0.01;
+    pos_back = $doc2scene(pos_back);
+    pos_back /= pos_back.w;
+
+    vec3 eye = normalize(pos_front.xyz - pos_back.xyz);
+
+    //DIFFUSE
+    vec3 light = normalize($light_dir.xyz);
+    float diffusek = dot(light, normal);
+    //clamp, because 0 < theta < pi/2
+    diffusek = (diffusek < 0. ? 0. : diffusek);
+    vec4 diffuse_color = $light_color * diffusek;
+    diffuse_color.a = 1.0;
+
+
+    //SPECULAR
+    //if light and normal are obtuse, no specular highlight
+    float speculark = dot(normal, light) < 0.0 ? 0 : 1;
+    //reflect light wrt normal for the reflected ray, then
+    //find the angle made with th eye
+    speculark = speculark * dot(reflect(light, normal), eye);
+    speculark = (speculark < 0. ? 0. : speculark);
+    //raise to the material's shininess, multiply with a
+    //small factor for spread
+    speculark = 1.5 * pow(speculark, 150.0);
+
+    vec4 specular_color = $light_color * speculark;
+
+    v_color = $base_color * $ambientk + diffuse_color + specular_color;
+    gl_Position = $transform($to_vec4($position));
+}
+"""
+
+new_fragment_template = """
+varying vec4 v_color;
+
+void main() {
+    gl_FragColor = v_color;
+}
+"""
+
+# -------------------------------
+# OLD CODE-------------------------------
 vertex_template = """
 void main() {
     gl_Position = $transform($to_vec4($position));
@@ -29,6 +90,7 @@ void main() {
     gl_FragColor = $color;
 }
 """
+
 
 phong_template = """
 vec4 phong_shading(vec4 color) {
@@ -94,10 +156,18 @@ class MeshVisual(Visual):
                  shading=None, mode='triangles', **kwargs):
 
         # Function for computing phong shading
-        self._phong = Function(phong_template)
+        # self._phong = Function(phong_template)
 
-        Visual.__init__(self, vcode=vertex_template, fcode=fragment_template,
-                        **kwargs)
+        # Visual.__init__ -> prepare_transforms() -> uses shading
+        self.shading = shading
+
+        if shading is not None:
+            Visual.__init__(self, vcode=new_vertex_template, fcode=new_fragment_template,
+                            **kwargs)
+
+        else:
+            Visual.__init__(self, vcode=vertex_template, fcode=fragment_template,
+                            **kwargs)
 
         self.set_gl_state('translucent', depth_test=True,
                           cull_face=False)
@@ -120,10 +190,9 @@ class MeshVisual(Visual):
 
         # varyings
         self._color_var = Varying('v_color', dtype='vec4')
-        self._normal_var = Varying('v_normal', dtype='vec3')
+        # self._normal_var = Varying('v_normal', dtype='vec3')
 
         # Init
-        self.shading = shading
         self._bounds = None
         # Note we do not call subclass set_data -- often the signatures
         # do no match.
@@ -273,15 +342,16 @@ class MeshVisual(Visual):
             else:
                 normals = (1., 0., 0.)
 
-            self.shared_program.vert[self._normal_var] = normals
-            self._phong['normal'] = self._normal_var
+            # self.shared_program.vert[self._normal_var] = normals
+            #self.shared_program.vert['baseColor'] = colors
+            self.shared_program.vert['normal'] = normals;
 
             # Additional phong properties
-            self._phong['light_dir'] = (1.0, 1.0, 5.0)
-            self._phong['light_color'] = (1.0, 1.0, 1.0, 1.0)
-            self._phong['ambient'] = (0.3, 0.3, 0.3, 1.0)
-
-            self._program.frag['color'] = self._phong(self._color_var)
+            self.shared_program.vert['light_dir'] = (1.0, 1.0, 5.0)
+            self.shared_program.vert['light_color'] = (1.0, 1.0, 1.0, 1.0)
+            self.shared_program.vert['ambientk'] = (0.3, 0.3, 0.3, 1.0)
+            self.shared_program.vert['base_color'] = colors
+            # self._program.frag['color'] = self._phong(self._color_var)
 
         self._data_changed = False
 
@@ -310,8 +380,16 @@ class MeshVisual(Visual):
         tr = view.transforms.get_transform()
         view.view_program.vert['transform'] = tr  # .simplified
 
-        doc_tr = view.transforms.get_transform('visual', 'scene')
-        view._phong['transform'] = doc_tr
+        if view.shading is not None:
+            visual2scene = view.transforms.get_transform('visual', 'scene')
+            scene2doc = view.transforms.get_transform('scene', 'document')
+            doc2scene = view.transforms.get_transform('document', 'scene')
+            view.shared_program.vert['visual2scene'] = visual2scene
+            view.shared_program.vert['scene2doc'] = scene2doc
+            view.shared_program.vert['doc2scene'] = doc2scene
+            
+
+            # view.shared_program.vert['transform'] = doc_tr
 
     def _compute_bounds(self, axis, view):
         if self._bounds is None:
