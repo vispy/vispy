@@ -393,12 +393,9 @@ class _AggLineVisual(Visual):
     def __init__(self, parent):
         self._parent = parent
         self._vbo = gloo.VertexBuffer()
-        self._ibo = gloo.IndexBuffer()
 
         self._pos = None
         self._color = None
-        self._program = ModularProgram(vertex.VERTEX_SHADER,
-                                       fragment.FRAGMENT_SHADER)
 
         self._da = DashAtlas()
         dash_index, dash_period = self._da['solid']
@@ -408,15 +405,28 @@ class _AggLineVisual(Visual):
                        dash_caps=(caps['round'], caps['round']),
                        antialias=1.0)
         self._dash_atlas = gloo.Texture2D(self._da._data)
-        self.set_gl_state('translucent')
-
-    def draw(self, transforms):
-        Visual.draw(self, transforms)
         
+        Visual.__init__(self, vcode=vertex.VERTEX_SHADER,
+                        fcode=fragment.FRAGMENT_SHADER)
+        self._index_buffer = gloo.IndexBuffer()
+        self.set_gl_state('translucent', depth_test=False)
+        self._draw_mode = 'triangles'
+
+    def _prepare_transforms(self, view):
+        data_doc = view.get_transform('visual', 'document')
+        doc_px = view.get_transform('document', 'framebuffer')
+        px_ndc = view.get_transform('framebuffer', 'render')
+
+        vert = view.view_program.vert
+        vert['transform'] = data_doc
+        vert['doc_px_transform'] = doc_px
+        vert['px_ndc_transform'] = px_ndc
+
+    def _prepare_draw(self, view):
         bake = False
         if self._parent._changed['pos']:
             if self._parent._pos is None:
-                return
+                return False
             # todo: does this result in unnecessary copies?
             self._pos = np.ascontiguousarray(
                 self._parent._pos.astype(np.float32))
@@ -434,28 +444,17 @@ class _AggLineVisual(Visual):
         if bake:
             V, I = self._agg_bake(self._pos, self._color)
             self._vbo.set_data(V)
-            self._ibo.set_data(I)
-
-        gloo.set_state('translucent', depth_test=False)
-        data_doc = transforms.visual_to_document
-        doc_px = transforms.document_to_framebuffer
-        px_ndc = transforms.framebuffer_to_render
-
-        vert = self._program.vert
-        vert['doc_px_transform'] = doc_px
-        vert['px_ndc_transform'] = px_ndc
-        vert['transform'] = data_doc
+            self._index_buffer.set_data(I)
 
         #self._program.prepare()
-        self._program.bind(self._vbo)
+        self.shared_program.bind(self._vbo)
         uniforms = dict(closed=False, miter_limit=4.0, dash_phase=0.0,
                         linewidth=self._parent._width)
         for n, v in uniforms.items():
-            self._program[n] = v
+            self.shared_program[n] = v
         for n, v in self._U.items():
-            self._program[n] = v
-        self._program['u_dash_atlas'] = self._dash_atlas
-        self._program.draw('triangles', self._ibo)
+            self.shared_program[n] = v
+        self.shared_program['u_dash_atlas'] = self._dash_atlas
 
     @classmethod
     def _agg_bake(cls, vertices, color, closed=False):
