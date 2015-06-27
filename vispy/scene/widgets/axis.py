@@ -30,7 +30,7 @@ class AxisWidget(Widget):
     def _axis_ends(self):
         r = self.inner_rect
         if self.orientation == 'left':
-            return np.array([[r.right, r.bottom], [r.right, r.top]])
+            return np.array([[r.right, r.top], [r.right, r.bottom]])
         elif self.orientation == 'bottom':
             return np.array([[r.left, r.bottom], [r.right, r.bottom]])
         

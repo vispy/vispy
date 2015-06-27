@@ -484,7 +484,7 @@ class TextVisual(Visual):
         transforms = self.transforms
         # attributes / uniforms are not available until program is built
         if len(self.text) == 0:
-            return
+            return False
         if self._vertices is None:
             text = self.text
             if isinstance(text, string_types):
