@@ -539,12 +539,12 @@ class Node(object):
 
         Returns
         -------
-        transform : instance of Transform
-            The transform.
+        transforms : list
+            A list of Transform instances.
         """
         a, b = self.node_path(node)
-        return ([n.transform.inverse for n in b] +
-                [n.transform for n in a[:-1]])[::-1]
+        return ([n.transform for n in a[:-1]] + 
+                [n.transform.inverse for n in b])[::-1]
 
     def node_transform(self, node):
         """
