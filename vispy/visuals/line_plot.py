@@ -56,12 +56,12 @@ class LinePlotVisual(CompoundVisual):
                       'marker_size', 'symbol')
     _kw_trans = dict(marker_size='size')
 
-    def __init__(self, data, color='k', symbol='None', line_kind='-',
+    def __init__(self, data, color='k', symbol=None, line_kind='-',
                  width=1., marker_size=10., edge_color='k', face_color='w',
                  edge_width=1., connect='strip'):
         if line_kind != '-':
             raise ValueError('Only solid lines currently supported')
-        self._line = LineVisual(method='gl')
+        self._line = LineVisual(method='gl', antialias=True)
         self._markers = MarkersVisual()
         CompoundVisual.__init__(self, [self._line, self._markers])
         self.set_data(data, color=color, symbol=symbol,
@@ -79,7 +79,11 @@ class LinePlotVisual(CompoundVisual):
         **kwargs : dict
             Keywoard arguments to pass to MarkerVisual and LineVisal.
         """
-        pos = np.atleast_1d(data).astype(np.float32)
+        if isinstance(data, tuple):
+            pos = np.array(data).T.astype(np.float32)
+        else:
+            pos = np.atleast_1d(data).astype(np.float32)
+        
         if pos.ndim == 1:
             pos = pos[:, np.newaxis]
         elif pos.ndim > 2:

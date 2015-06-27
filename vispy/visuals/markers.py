@@ -474,7 +474,6 @@ _marker_dict = {
     '^': triangle_up,
     'v': triangle_down,
     '*': star,
-    'None': None,
 }
 marker_types = tuple(sorted(list(_marker_dict.keys())))
 
@@ -483,8 +482,10 @@ class MarkersVisual(Visual):
     """ Visual displaying marker symbols.
     """
     def __init__(self):
-        Visual.__init__(self, vcode=vert, fcode=frag)
+        self._vbo = VertexBuffer()
         self._v_size_var = Variable('varying float v_size')
+        self._symbol = None
+        Visual.__init__(self, vcode=vert, fcode=frag)
         self.shared_program.vert['v_size'] = self._v_size_var
         self.shared_program.frag['v_size'] = self._v_size_var
         self.set_gl_state(depth_test=False, blend=True,
@@ -533,7 +534,7 @@ class MarkersVisual(Visual):
         else:
             if edge_width_rel < 0:
                 raise ValueError('edge_width_rel cannot be negative')
-        self.set_symbol(symbol)
+        self.symbol = symbol
         self.scaling = scaling
 
         edge_color = ColorArray(edge_color).rgba
@@ -561,32 +562,34 @@ class MarkersVisual(Visual):
         self.antialias = 1.
         self.shared_program['u_antialias'] = self.antialias
         self._data = data
-        self._vbo = VertexBuffer(data)
+        self._vbo.set_data(data)
         self.shared_program.bind(self._vbo)
         self.update()
 
-    def set_symbol(self, symbol='o'):
-        """Set the symbol
-
-        Parameters
-        ----------
-        symbol : str
-            The symbol.
-        """
-        _check_valid('symbol', symbol, marker_types)
-        if symbol == 'None':
+    @property
+    def symbol(self):
+        return self._symbol
+    
+    @symbol.setter
+    def symbol(self, symbol):
+        if symbol == self._symbol:
+            return
+        self._symbol = symbol
+        if symbol is None:
             self._marker_fun = None
         else:
+            _check_valid('symbol', symbol, marker_types)
             self._marker_fun = Function(_marker_dict[symbol])
             self._marker_fun['v_size'] = self._v_size_var
             self.shared_program.frag['marker'] = self._marker_fun
+        self.update()
 
     def _prepare_transforms(self, view):
         xform = view.transforms.get_transform()
         view.view_program.vert['transform'] = xform
 
     def _prepare_draw(self, view):
-        if self._marker_fun is None:
+        if self._symbol is None:
             return False
         view.view_program['u_px_scale'] = view.transforms.pixel_scale
         if self.scaling:

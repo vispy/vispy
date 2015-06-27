@@ -135,8 +135,8 @@ class PlotWidget(ViewBox):
         self._set_camera(TurntableCamera, azimuth=0, elevation=0)
         return mesh
 
-    def plot(self, data, color='k', symbol='None', line_kind='-', width=1.,
-             marker_size=0., edge_color='k', face_color='k', edge_width=1.):
+    def plot(self, data, color='k', symbol=None, line_kind='-', width=1.,
+             marker_size=10., edge_color='k', face_color='b', edge_width=1.):
         """Plot a series of data using lines and markers
 
         Parameters
