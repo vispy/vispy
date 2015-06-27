@@ -5,11 +5,11 @@
 # -----------------------------------------------------------------------------
 
 from ..geometry import create_plane
-from ..gloo import set_state
+from .visual import CompoundVisual
 from .mesh import MeshVisual
 
 
-class PlaneVisual(MeshVisual):
+class PlaneVisual(CompoundVisual):
     """Visual that displays a plane.
 
     Parameters
@@ -42,23 +42,14 @@ class PlaneVisual(MeshVisual):
         vertices, filled_indices, outline_indices = create_plane(
             width, height, width_segments, height_segments, direction)
 
-        MeshVisual.__init__(self, vertices['position'], filled_indices,
-                            vertex_colors, face_colors, color)
+        self._mesh = MeshVisual(vertices['position'], filled_indices,
+                                vertex_colors, face_colors, color)
+        self._mesh.update_gl_state(polygon_offset=(1, 1),
+                                   polygon_offset_fill=True)
+        CompoundVisual.__init__(self, [self._mesh])
         if edge_color:
             self._outline = MeshVisual(vertices['position'], outline_indices,
                                        color=edge_color, mode='lines')
+            self.add_subvisual(self._outline)
         else:
             self._outline = None
-
-    def draw(self, transforms):
-        """Draw the visual
-
-        Parameters
-        ----------
-        transforms : instance of TransformSystem
-            The transforms to use.
-        """
-        MeshVisual.draw(self, transforms)
-        if self._outline:
-            set_state(polygon_offset=(1, 1), polygon_offset_fill=True)
-            self._outline.draw(transforms)
