@@ -50,6 +50,12 @@ class AxisVisual(CompoundVisual):
                                       'supported')
         self._pos = None
         self._domain = None
+        
+        # If True, then axis stops at the first / last major tick.
+        # If False, then axis extends to edge of *pos*
+        # (private until we come up with a better name for this)
+        self._stop_at_major = (False, False)
+        
         self.ticker = Ticker(self)
         self.tick_direction = np.array(tick_direction, float)
         self.tick_direction = self.tick_direction
@@ -232,8 +238,11 @@ class Ticker(object):
             majstep = major[1] - major[0]
             minor = []
             minstep = majstep / (minor_num + 1)
-            for i in major[:-1]:
-                minor.extend(np.linspace(i + minstep, i + majstep - minstep,
+            minstart = 0 if self.axis._stop_at_major[0] else -1
+            minstop = -1 if self.axis._stop_at_major[1] else 0
+            for i in range(minstart, len(major) + minstop):
+                maj = major[0] + i * majstep
+                minor.extend(np.linspace(maj + minstep, maj + majstep - minstep,
                              (minor_num)))
             major_frac = (major - offset) / scale
             minor_frac = (np.array(minor) - offset) / scale
