@@ -106,6 +106,11 @@ class Rect(object):
     @top.setter
     def top(self, y):
         self.size = (self.size[0], y - self.pos[1])
+        
+    @property
+    def center(self):
+        return (self.pos[0] + self.size[0] * 0.5,
+                self.pos[1] + self.size[1] * 0.5)
 
     def padded(self, padding):
         """Return a new Rect padded (smaller) by padding on all sides
