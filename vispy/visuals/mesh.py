@@ -64,7 +64,7 @@ void main() {
 
     vec4 specular_color = $light_color * speculark;
 
-    v_color = $base_color * $ambientk + diffuse_color + specular_color;
+    v_color = $base_color * ($ambientk + diffuse_color) + specular_color;
     gl_Position = $transform($to_vec4($position));
 }
 """
@@ -344,7 +344,7 @@ class MeshVisual(Visual):
             self.shared_program.vert['normal'] = normals;
 
             # Additional phong properties
-            self.shared_program.vert['light_dir'] = (1.0, 1.0, 5.0)
+            self.shared_program.vert['light_dir'] = (1.0, 1.0, -1.0)
             self.shared_program.vert['light_color'] = (1.0, 1.0, 1.0, 1.0)
             self.shared_program.vert['ambientk'] = (0.3, 0.3, 0.3, 1.0)
             self.shared_program.vert['base_color'] = colors
