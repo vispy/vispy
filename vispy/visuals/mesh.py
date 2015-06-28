@@ -179,14 +179,8 @@ class MeshVisual(Visual):
         self._colors = VertexBuffer(np.zeros((0, 4), dtype=np.float32))
         self._normals = VertexBuffer(np.zeros((0, 3), dtype=np.float32))
 
-        # Whether to use _faces index
-        self._indexed = None
-
         # Uniform color
         self._color = Color(color)
-
-        # primitive mode
-        self._draw_mode = mode
 
         # varyings
         self._color_var = Varying('v_color', dtype='vec4')
@@ -200,6 +194,9 @@ class MeshVisual(Visual):
                             vertex_colors=vertex_colors,
                             face_colors=face_colors, meshdata=meshdata,
                             color=color)
+        
+        # primitive mode
+        self._draw_mode = mode
 
     def set_data(self, vertices=None, faces=None, vertex_colors=None,
                  face_colors=None, color=None, meshdata=None):
@@ -287,7 +284,7 @@ class MeshVisual(Visual):
             self._vertices.set_data(v, convert=True)
             self._normals.set_data(md.get_vertex_normals(), convert=True)
             self._faces.set_data(md.get_faces(), convert=True)
-            self._indexed = True
+            self._index_buffer = self._faces
             if md.has_vertex_color():
                 self._colors.set_data(md.get_vertex_colors(), convert=True)
             elif md.has_face_color():
@@ -309,7 +306,7 @@ class MeshVisual(Visual):
                 self._normals.set_data(normals, convert=True)
             else:
                 self._normals.set_data(np.zeros((0, 3), dtype=np.float32))
-            self._indexed = False
+            self._index_buffer = None
             if md.has_vertex_color():
                 self._colors.set_data(md.get_vertex_colors(indexed='faces'),
                                       convert=True)
