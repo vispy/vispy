@@ -17,10 +17,23 @@ from ..gloo import VertexBuffer, IndexBuffer
 from ..geometry import MeshData
 from ..color import Color
 
-new_vertex_template = """
-varying vec4 v_color;
+shading_vertex_template = """
+varying vec3 v_normal_vec;
+varying vec3 v_light_vec;
+varying vec3 v_eye_vec;
+
+varying vec4 v_ambientk;
+varying vec4 v_light_color;
+varying vec4 v_base_color;
+
 
 void main() {
+
+    v_ambientk = $ambientk;
+    v_light_color = $light_color;
+    v_base_color = $base_color;
+
+
     vec4 pos_scene = $visual2scene($to_vec4($position));
     vec4 normal_scene = $visual2scene(vec4($normal, 1));
     vec4 origin_scene = $visual2scene(vec4(0, 0, 0, 1));
@@ -29,6 +42,7 @@ void main() {
     origin_scene /= origin_scene.w;
 
     vec3 normal = normalize(normal_scene.xyz - origin_scene.xyz);
+    v_normal_vec = normal; //VARYING COPY
 
     vec4 pos_front = $scene2doc(pos_scene);
     pos_front.z += 0.01;
@@ -41,39 +55,48 @@ void main() {
     pos_back /= pos_back.w;
 
     vec3 eye = normalize(pos_front.xyz - pos_back.xyz);
+    v_eye_vec = eye; //VARYING COPY
 
-    //DIFFUSE
     vec3 light = normalize($light_dir.xyz);
-    float diffusek = dot(light, normal);
-    //clamp, because 0 < theta < pi/2
-    diffusek = (diffusek < 0. ? 0. : diffusek);
-    vec4 diffuse_color = $light_color * diffusek;
-    diffuse_color.a = 1.0;
+    v_light_vec = light; //VARYING COPY
 
-
-    //SPECULAR
-    //if light and normal are obtuse, no specular highlight
-    float speculark = dot(normal, light) < 0.0 ? 0 : 1;
-    //reflect light wrt normal for the reflected ray, then
-    //find the angle made with th eye
-    speculark = speculark * dot(reflect(light, normal), eye);
-    speculark = (speculark < 0. ? 0. : speculark);
-    //raise to the material's shininess, multiply with a
-    //small factor for spread
-    speculark = 1.5 * pow(speculark, 150.0);
-
-    vec4 specular_color = $light_color * speculark;
-
-    v_color = $base_color * ($ambientk + diffuse_color) + specular_color;
     gl_Position = $transform($to_vec4($position));
 }
 """
 
-new_fragment_template = """
-varying vec4 v_color;
+shading_fragment_template = """
+varying vec3 v_normal_vec;
+varying vec3 v_light_vec;
+varying vec3 v_eye_vec;
+
+varying vec4 v_ambientk;
+varying vec4 v_light_color;
+varying vec4 v_base_color;
 
 void main() {
-    gl_FragColor = v_color;
+    //DIFFUSE
+    float diffusek = dot(v_light_vec, v_normal_vec);
+    //clamp, because 0 < theta < pi/2
+    diffusek = (diffusek < 0. ? 0. : diffusek);
+    vec4 diffuse_color = v_light_color * diffusek;
+    diffuse_color.a = 1.0;
+
+    //SPECULAR
+    //if light and normal are obtuse, no specular highlight
+    float speculark = dot(v_normal_vec, v_light_vec) < 0.0 ? 0 : 1;
+    //reflect light wrt normal for the reflected ray, then
+    //find the angle made with the eye
+    speculark = speculark * dot(reflect(v_light_vec, v_normal_vec), v_eye_vec);
+    speculark = (speculark < 0. ? 0. : speculark);
+    //raise to the material's shininess, multiply with a
+    //small factor for spread
+    speculark = 10 * pow(speculark, 200.0);
+
+    vec4 specular_color = v_light_color * speculark;
+
+
+    gl_FragColor =
+        v_base_color * (v_ambientk + diffuse_color) + specular_color;
 }
 """
 
@@ -162,11 +185,13 @@ class MeshVisual(Visual):
         self.shading = shading
 
         if shading is not None:
-            Visual.__init__(self, vcode=new_vertex_template, fcode=new_fragment_template,
+            Visual.__init__(self, vcode=shading_vertex_template,
+                            fcode=shading_fragment_template,
                             **kwargs)
 
         else:
-            Visual.__init__(self, vcode=vertex_template, fcode=fragment_template,
+            Visual.__init__(self, vcode=vertex_template,
+                            fcode=fragment_template,
                             **kwargs)
 
         self.set_gl_state('translucent', depth_test=True,
@@ -194,7 +219,7 @@ class MeshVisual(Visual):
                             vertex_colors=vertex_colors,
                             face_colors=face_colors, meshdata=meshdata,
                             color=color)
-        
+
         # primitive mode
         self._draw_mode = mode
 
@@ -339,16 +364,13 @@ class MeshVisual(Visual):
             else:
                 normals = (1., 0., 0.)
 
-            # self.shared_program.vert[self._normal_var] = normals
-            #self.shared_program.vert['baseColor'] = colors
-            self.shared_program.vert['normal'] = normals;
+            self.shared_program.vert['normal'] = normals
+            self.shared_program.vert['base_color'] = colors
 
             # Additional phong properties
             self.shared_program.vert['light_dir'] = (1.0, 1.0, -1.0)
             self.shared_program.vert['light_color'] = (1.0, 1.0, 1.0, 1.0)
             self.shared_program.vert['ambientk'] = (0.3, 0.3, 0.3, 1.0)
-            self.shared_program.vert['base_color'] = colors
-            # self._program.frag['color'] = self._phong(self._color_var)
 
         self._data_changed = False
 
@@ -384,9 +406,6 @@ class MeshVisual(Visual):
             view.shared_program.vert['visual2scene'] = visual2scene
             view.shared_program.vert['scene2doc'] = scene2doc
             view.shared_program.vert['doc2scene'] = doc2scene
-            
-
-            # view.shared_program.vert['transform'] = doc_tr
 
     def _compute_bounds(self, axis, view):
         if self._bounds is None:
