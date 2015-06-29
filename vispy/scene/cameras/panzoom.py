@@ -244,12 +244,11 @@ class PanZoomCamera(BaseCamera):
             event.handled = False
 
     def _update_transform(self):
-
         rect = self.rect
         self._real_rect = Rect(rect)
         vbr = self._viewbox.rect.flipped(x=self.flip[0], y=(not self.flip[1]))
         d = self._get_depth_value()
-
+        
         # apply scale ratio constraint
         if self._aspect is not None:
             # Aspect ratio of the requested range
@@ -272,7 +271,7 @@ class PanZoomCamera(BaseCamera):
                 self._real_rect.right += dx
 
         # Apply mapping between viewbox and cam view
-        self.transform.set_mapping(self._real_rect, vbr)
+        self.transform.set_mapping(self._real_rect, vbr, update=False)
         # Scale z, so that the clipping planes are between -alot and +alot
         self.transform.zoom((1, 1, 1/d))
 

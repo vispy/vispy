@@ -316,6 +316,13 @@ class EventEmitter(object):
         callback_refs = self.callback_refs
         if callback in callbacks:
             return
+        
+        # dereference methods into a (self, method_name) pair so that we can 
+        # make the connection without making a strong reference to the 
+        # instance.
+        if inspect.ismethod(callback):
+            callback = (callback.__self__, callback.__name__)
+        
         # always use a weak ref
         if isinstance(callback, tuple):
             callback = (weakref.ref(callback[0]),) + callback[1:]

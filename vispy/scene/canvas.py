@@ -248,6 +248,8 @@ class SceneCanvas(app.Canvas):
             Optionally specifies the original canvas draw event that initiated
             this draw.
         """
+        prof = Profiler()
+        
         # make sure this canvas's context is active
         self.set_current()
         
@@ -271,6 +273,7 @@ class SceneCanvas(app.Canvas):
                         else:
                             if hasattr(node, 'draw'):
                                 node.draw()
+                                prof.mark(str(node))
                 else:
                     if node is invisible_node:
                         invisible_node = None

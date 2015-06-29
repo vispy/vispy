@@ -199,8 +199,6 @@ class InverseTransform(BaseTransform):
     def __init__(self, transform):
         BaseTransform.__init__(self)
         self._inverse = transform
-        self.shader_map = transform.shader_imap
-        self.shader_imap = transform.shader_map
         self.map = transform.imap
         self.imap = transform.map
     
@@ -219,6 +217,14 @@ class InverseTransform(BaseTransform):
     @property
     def Isometric(self):
         return self._inverse.Isometric
+    
+    @property
+    def shader_map(self):
+        return self._inverse.shader_imap
+    
+    @property
+    def shader_imap(self):
+        return self._inverse.shader_map
     
     def __repr__(self):
         return ("<Inverse of %r>" % repr(self._inverse))

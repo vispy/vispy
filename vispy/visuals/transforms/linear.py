@@ -157,18 +157,18 @@ class STTransform(BaseTransform):
         t = as_vec4(t, default=(0, 0, 0, 0))
         self._set_st(translate=t)
 
-    def _set_st(self, scale=None, translate=None):
-        update = False
+    def _set_st(self, scale=None, translate=None, update=True):
+        need_update = False
 
         if scale is not None and not np.all(scale == self._scale):
             self._scale[:] = scale
-            update = True
+            need_update = True
 
         if translate is not None and not np.all(translate == self._translate):
             self._translate[:] = translate
-            update = True
+            need_update = True
 
-        if update:
+        if update and need_update:
             self._update_shaders()
             self.update()   # inform listeners there has been a change
 
@@ -241,7 +241,7 @@ class STTransform(BaseTransform):
         t.set_mapping(x0, x1)
         return t
 
-    def set_mapping(self, x0, x1):
+    def set_mapping(self, x0, x1, update=True):
         """Configure this transform such that it maps points x0 => x1
 
         Parameters
@@ -250,6 +250,8 @@ class STTransform(BaseTransform):
             Start location.
         x1 : array-like, shape (2, 2) or (2, 3)
             End location.
+        update : bool
+            If False, then the update event is not emitted.
 
         Examples
         --------
@@ -289,7 +291,7 @@ class STTransform(BaseTransform):
         t = x1[0] - s * x0[0]
         s = as_vec4(s, default=(1, 1, 1, 1))
         t = as_vec4(t, default=(0, 0, 0, 0))
-        self._set_st(scale=s, translate=t)
+        self._set_st(scale=s, translate=t, update=update)
 
     def __mul__(self, tr):
         if isinstance(tr, STTransform):
