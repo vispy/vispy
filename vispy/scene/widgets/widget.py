@@ -43,7 +43,6 @@ class Widget(Compound):
 
     def __init__(self, pos=(0, 0), size=(10, 10), border_color=None,
                  bgcolor=None, padding=0, margin=0, **kwargs):
-        self.interactive = False
         
         # For drawing border. 
         # A mesh is required because GL lines cannot be drawn with predictable
@@ -123,17 +122,6 @@ class Widget(Compound):
             self.size = r.size
         self.update()
         self.events.resize()
-
-    @property
-    def interactive(self):
-        """Whether this widget should be allowed to accept mouse and touch
-        events.
-        """
-        return self._interactive
-
-    @interactive.setter
-    def interactive(self, i):
-        self._interactive = i
 
     @property
     def inner_rect(self):

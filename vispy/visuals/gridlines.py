@@ -104,3 +104,6 @@ class GridLinesVisual(Visual):
     def _prepare_draw(self, view):
         self._program['pos'] = self._buffer()
         self._program['scale'] = self._scale
+
+    def _compute_bounds(self, axis, view):
+        return None

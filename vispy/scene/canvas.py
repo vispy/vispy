@@ -304,14 +304,12 @@ class SceneCanvas(app.Canvas):
     def _process_mouse_event(self, event):
         prof = Profiler()  # noqa
         if self._mouse_handler is None:
-            if event.type in ('mouse_press', 'mouse_wheel'):
+            if event.type in ('mouse_press', 'mouse_wheel', 'mouse_move'):
                 picked = self.visual_at(event.pos)
             else:
                 picked = None
         else:
             picked = self._mouse_handler
-            if event.type == 'mouse_release':
-                self._mouse_handler = None
         
         # No visual to handle this event; bail out now
         if picked is None:
@@ -321,17 +319,27 @@ class SceneCanvas(app.Canvas):
         scene_event = SceneMouseEvent(event=event, visual=picked)
         
         # Deliver the event
-        while picked is not None:
+        if picked == self._mouse_handler:
+            # If we already have a mouse handler, then no other node may
+            # receive the event
+            if event.type == 'mouse_release':
+                self._mouse_handler = None
             getattr(picked.events, event.type)(scene_event)
-            if scene_event.handled:
-                if event.type == 'mouse_press':
-                    self._mouse_handler = picked
-                break
-            if event.type in ('mouse_press', 'mouse_wheel'):
-                # press events that are not handled get passed to parent
-                picked = picked.parent
-            else:
-                picked = None
+        else:
+            # If we don't have a mouse handler, then pass the event through
+            # the chain of parents until a node accepts the event.
+            while picked is not None:
+                getattr(picked.events, event.type)(scene_event)
+                if scene_event.handled:
+                    if event.type == 'mouse_press':
+                        self._mouse_handler = picked
+                    break
+                if event.type in ('mouse_press', 'mouse_wheel', 'mouse_move'):
+                    # events that are not handled get passed to parent
+                    picked = picked.parent
+                    scene_event.visual = picked
+                else:
+                    picked = None
             
         # If something in the scene handled the scene_event, then we mark
         # the original event accordingly.
@@ -375,6 +383,12 @@ class SceneCanvas(app.Canvas):
             
         if len(self._vp_stack) == 0:
             self.context.set_viewport(0, 0, *self.physical_size)
+            
+    def on_close(self, event):
+        self.events.mouse_press.disconnect(self._process_mouse_event)
+        self.events.mouse_move.disconnect(self._process_mouse_event)
+        self.events.mouse_release.disconnect(self._process_mouse_event)
+        self.events.mouse_wheel.disconnect(self._process_mouse_event)
 
     # -------------------------------------------------- transform handling ---
     def push_viewport(self, viewport):

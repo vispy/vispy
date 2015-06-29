@@ -27,6 +27,7 @@ class VisualNode(Node):
     def __init__(self, parent=None, name=None):
         Node.__init__(self, parent=parent, name=name,
                       transforms=self.transforms)
+        self.interactive = False
         self._opacity_filter = ColorFilter()
         self.attach(self._opacity_filter)
         
@@ -76,6 +77,17 @@ class VisualNode(Node):
         self.transforms.document_transform = doc.node_transform(root)
         
         Node._update_trsys(self, event)
+
+    @property
+    def interactive(self):
+        """Whether this widget should be allowed to accept mouse and touch
+        events.
+        """
+        return self._interactive
+
+    @interactive.setter
+    def interactive(self, i):
+        self._interactive = i
 
     
 def create_visual_node(subclass):

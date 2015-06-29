@@ -14,8 +14,16 @@ class SceneMouseEvent(Event):
     def __init__(self, event, visual):
         self.mouse_event = event
         self.visual = visual
-        self._pos = None
         Event.__init__(self, type=event.type)
+
+    @property
+    def visual(self):
+        return self._visual
+    
+    @visual.setter
+    def visual(self, v):
+        self._visual = v
+        self._pos = None
 
     @property
     def pos(self):

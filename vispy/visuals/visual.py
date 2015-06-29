@@ -189,13 +189,13 @@ class BaseVisual(object):
         return self._view_class(self)
 
     def draw(self):
-        raise NotImplementedError()
+        raise NotImplementedError(self)
 
     def attach(self, filter):
-        raise NotImplementedError()
+        raise NotImplementedError(self)
         
     def detach(self, filter):
-        raise NotImplementedError()
+        raise NotImplementedError(self)
     
     def bounds(self, axis, view=None):
         if view is None:
@@ -205,7 +205,7 @@ class BaseVisual(object):
         return self._vshare.bounds[axis]
             
     def _compute_bounds(self, axis, view):
-        raise NotImplementedError()
+        raise NotImplementedError(self)
             
     def _bounds_changed(self):
         self._vshare.bounds.clear()
@@ -308,7 +308,7 @@ class Visual(BaseVisual):
         """Return the (min, max) bounding values of this visual along *axis*
         in the local coordinate system.
         """
-        raise NotImplementedError()
+        raise NotImplementedError(self)
 
     def _prepare_draw(self, view=None):
         """This visual is about to be drawn.
@@ -318,7 +318,7 @@ class Visual(BaseVisual):
         
         Return False to indicate that the visual should not be drawn.
         """
-        raise NotImplementedError()
+        raise NotImplementedError(self)
 
     def _prepare_transforms(self, view):
         """Assign a view's transforms to the proper shader template variables

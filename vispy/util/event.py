@@ -314,18 +314,12 @@ class EventEmitter(object):
         """
         callbacks = self.callbacks
         callback_refs = self.callback_refs
+        
+        callback = self._normalize_cb(callback)
+        
         if callback in callbacks:
             return
         
-        # dereference methods into a (self, method_name) pair so that we can 
-        # make the connection without making a strong reference to the 
-        # instance.
-        if inspect.ismethod(callback):
-            callback = (callback.__self__, callback.__name__)
-        
-        # always use a weak ref
-        if isinstance(callback, tuple):
-            callback = (weakref.ref(callback[0]),) + callback[1:]
         # deal with the ref
         if isinstance(ref, bool):
             if ref:
@@ -388,12 +382,25 @@ class EventEmitter(object):
             self._callbacks = []
             self._callback_refs = []
         else:
-            if isinstance(callback, tuple):
-                callback = (weakref.ref(callback[0]),) + callback[1:]
+            callback = self._normalize_cb(callback)
             if callback in self._callbacks:
                 idx = self._callbacks.index(callback)
                 self._callbacks.pop(idx)
                 self._callback_refs.pop(idx)
+
+    def _normalize_cb(self, callback):
+        # dereference methods into a (self, method_name) pair so that we can 
+        # make the connection without making a strong reference to the 
+        # instance.
+        if inspect.ismethod(callback):
+            callback = (callback.__self__, callback.__name__)
+        
+        # always use a weak ref
+        if (isinstance(callback, tuple) and not 
+            isinstance(callback[0], weakref.ref)):
+            callback = (weakref.ref(callback[0]),) + callback[1:]
+            
+        return callback
 
     def __call__(self, *args, **kwargs):
         """ __call__(**kwargs)
@@ -431,18 +438,27 @@ class EventEmitter(object):
             if blocked.get(None, 0) > 0:  # this is the same as self.blocked()
                 return event
 
+            rem = []
             for cb in self._callbacks:
-                if blocked.get(cb, 0) > 0:
-                    continue
-                
                 if isinstance(cb, tuple):
-                    cb = getattr(cb[0](), cb[1], None)
+                    obj = cb[0]()
+                    if obj is None:
+                        rem.append(cb)
+                        continue
+                    cb = getattr(obj, cb[1], None)
                     if cb is None:
                         continue
+                
+                if blocked.get(cb, 0) > 0:
+                    continue
                 
                 self._invoke_callback(cb, event)
                 if event.blocked:
                     break
+                
+            # remove callbacks to dead objects
+            for cb in rem:
+                self.disconnect(cb)
         finally:
             self._emitting = False
             if event._pop_source() != self.source:
