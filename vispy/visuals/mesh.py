@@ -97,6 +97,7 @@ void main() {
 
     gl_FragColor =
         v_base_color * (v_ambientk + diffuse_color) + specular_color;
+
 }
 """
 
@@ -368,7 +369,7 @@ class MeshVisual(Visual):
             self.shared_program.vert['base_color'] = colors
 
             # Additional phong properties
-            self.shared_program.vert['light_dir'] = (1.0, 1.0, -1.0)
+            self.shared_program.vert['light_dir'] = (1.0, -10.0, -5.0)
             self.shared_program.vert['light_color'] = (1.0, 1.0, 1.0, 1.0)
             self.shared_program.vert['ambientk'] = (0.3, 0.3, 0.3, 1.0)
 
