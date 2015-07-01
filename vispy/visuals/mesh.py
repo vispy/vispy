@@ -17,6 +17,7 @@ from ..gloo import VertexBuffer, IndexBuffer
 from ..geometry import MeshData
 from ..color import Color
 
+# Shaders for lit rendering (using phong shading)
 shading_vertex_template = """
 varying vec3 v_normal_vec;
 varying vec3 v_light_vec;
@@ -74,12 +75,14 @@ varying vec4 v_light_color;
 varying vec4 v_base_color;
 
 void main() {
+
+
     //DIFFUSE
     float diffusek = dot(v_light_vec, v_normal_vec);
     //clamp, because 0 < theta < pi/2
     diffusek = (diffusek < 0. ? 0. : diffusek);
     vec4 diffuse_color = v_light_color * diffusek;
-    diffuse_color.a = 1.0;
+    //diffuse_color.a = 1.0;
 
     //SPECULAR
     //if light and normal are obtuse, no specular highlight
@@ -101,8 +104,7 @@ void main() {
 }
 """
 
-# -------------------------------
-# OLD CODE-------------------------------
+# Shader code for non lighted rendering
 vertex_template = """
 void main() {
     gl_Position = $transform($to_vec4($position));
@@ -115,25 +117,6 @@ void main() {
 }
 """
 
-
-phong_template = """
-vec4 phong_shading(vec4 color) {
-    vec4 o = $transform(vec4(0, 0, 0, 1));
-    vec4 n = $transform(vec4($normal, 1));
-    vec3 norm = normalize((n-o).xyz);
-    vec3 light = normalize($light_dir.xyz);
-    float p = dot(light, norm);
-    p = (p < 0. ? 0. : p);
-    vec4 diffuse = $light_color * p;
-    diffuse.a = 1.0;
-    p = dot(reflect(light, norm), vec3(0,0,1));
-    if (p < 0.0) {
-        p = 0.0;
-    }
-    vec4 specular = $light_color * 5.0 * pow(p, 100.);
-    return color * ($ambient + diffuse) + specular;
-}
-"""
 
 # Functions that can be used as is (don't have template variables)
 # Consider these stored in a central location in vispy ...
@@ -369,7 +352,7 @@ class MeshVisual(Visual):
             self.shared_program.vert['base_color'] = colors
 
             # Additional phong properties
-            self.shared_program.vert['light_dir'] = (1.0, -10.0, -5.0)
+            self.shared_program.vert['light_dir'] = (-1.0, -10.0, 0)
             self.shared_program.vert['light_color'] = (1.0, 1.0, 1.0, 1.0)
             self.shared_program.vert['ambientk'] = (0.3, 0.3, 0.3, 1.0)
 
