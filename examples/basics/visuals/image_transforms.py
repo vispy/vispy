@@ -14,14 +14,9 @@ from vispy import visuals
 from vispy.visuals.transforms import (AffineTransform, STTransform,
                                       arg_to_array, LogTransform, 
                                       PolarTransform, BaseTransform)
+from image_visual import get_image
 
-image = np.random.normal(size=(100, 100, 3))
-image[20:80, 20:80] += 3.
-image[50] += 3.
-image[:, 50] += 3.
-
-image = ((image-image.min()) *
-         (253. / (image.max()-image.min()))).astype(np.ubyte)
+image = get_image()
 
 
 class Canvas(vispy.app.Canvas):
@@ -30,11 +25,20 @@ class Canvas(vispy.app.Canvas):
 
         self.images = [visuals.ImageVisual(image, method='impostor')
                        for i in range(4)]
+        
+        # Transform all images to a standard size / location (because
+        # get_image() might return unexpected sizes)
+        s = 100. / max(self.images[0].size)
+        tx = 0.5 * (100 - (self.images[0].size[0] * s))
+        ty = 0.5 * (100 - (self.images[0].size[1] * s))
+        base_tr = STTransform(scale=(s, s), translate=(tx, ty))
+        
         self.images[0].transform = (STTransform(scale=(30, 30),
                                                 translate=(600, 600)) *
                                     SineTransform() *
                                     STTransform(scale=(0.1, 0.1),
-                                                translate=(-5, -5)))
+                                                translate=(-5, -5)) *
+                                    base_tr)
 
         tr = AffineTransform()
         tr.rotate(30, (0, 0, 1))
@@ -42,19 +46,22 @@ class Canvas(vispy.app.Canvas):
         tr.scale((3, 3))
         self.images[1].transform = (STTransform(translate=(200, 600)) *
                                     tr *
-                                    STTransform(translate=(-50, -50)))
+                                    STTransform(translate=(-50, -50)) *
+                                    base_tr)
 
         self.images[2].transform = (STTransform(scale=(3, -150),
                                                 translate=(200, 100)) *
                                     LogTransform((0, 2, 0)) *
                                     STTransform(scale=(1, -0.01),
-                                                translate=(-50, 1.3)))
+                                                translate=(-50, 1.3)) *
+                                    base_tr)
 
         self.images[3].transform = (STTransform(scale=(400, 400),
                                                 translate=(600, 300)) *
                                     PolarTransform() *
                                     STTransform(scale=(np.pi/200, 0.005),
-                                                translate=(-3*np.pi/4., 0.1)))
+                                                translate=(-3*np.pi/4., 0.1)) *
+                                    base_tr)
 
         self.show()
 
