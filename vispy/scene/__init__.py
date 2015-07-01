@@ -30,8 +30,6 @@ For more information see:
 
 """
 
-__all__ = ['SceneCanvas', 'Node']
-
 from .visuals import *  # noqa
 from .cameras import *  # noqa
 from ..visuals.transforms import *  # noqa

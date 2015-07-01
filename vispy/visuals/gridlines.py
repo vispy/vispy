@@ -8,6 +8,7 @@ import numpy as np
 
 from .. import gloo
 from .visual import Visual
+from ..color import Color
 
 VERT = """
 attribute vec2 pos;
@@ -21,6 +22,7 @@ void main() {
 FRAG = """
 varying vec4 v_pos;
 uniform vec2 scale;
+uniform vec4 color;
 
 void main() {
     vec4 px_pos = $map_nd_to_doc(v_pos);
@@ -65,7 +67,7 @@ void main() {
     if (alpha == 0) {
         discard;
     }
-    gl_FragColor = vec4(1, 1, 1, alpha);
+    gl_FragColor = vec4(color.rgb, color.a * alpha);
 }
 """
 
@@ -79,12 +81,13 @@ class GridLinesVisual(Visual):
     scale : tuple
         The scale to use.
     """
-    def __init__(self, scale=(1, 1)):
+    def __init__(self, scale=(1, 1), color='w'):
         Visual.__init__(self, vcode=VERT, fcode=FRAG)
         self._vbo = None
         self._scale = scale
         self.set_gl_state('additive', cull_face=False)
         self._draw_mode = 'triangles'
+        self.shared_program['color'] = Color(color).rgba
 
     def _buffer(self):
         if self._vbo is None:

@@ -33,5 +33,4 @@ Then plots are accomplished via methods of the `PlotWidget` instances::
 
 from .fig import Fig
 from .plotwidget import PlotWidget
-
-__all__ = ['Fig', 'PlotWidget']
+from ..scene import *

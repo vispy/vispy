@@ -223,10 +223,10 @@ class Grid(Widget):
         rowstart = rowend - rowsizes
 
         # snap to pixel boundaries to avoid drawing artifacts
-        colstart = np.round(colstart)
-        colend = np.round(colend)
-        rowstart = np.round(rowstart)
-        rowend = np.round(rowend)
+        colstart = np.round(colstart) + self.margin
+        colend = np.round(colend) + self.margin
+        rowstart = np.round(rowstart) + self.margin
+        rowend = np.round(rowend) + self.margin
 
         for key in self._grid_widgets.keys():
             row, col, rspan, cspan, ch = self._grid_widgets[key]

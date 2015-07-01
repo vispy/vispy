@@ -44,7 +44,7 @@ class AxisVisual(CompoundVisual):
     """
     def __init__(self, pos=None, domain=(0., 1.), tick_direction=(-1., 0.),
                  scale_type="linear", axis_color=(1, 1, 1),
-                 tick_color=(0.7, 0.7, 0.7)):
+                 tick_color=(0.7, 0.7, 0.7), text_color='w'):
         if scale_type != 'linear':
             raise NotImplementedError('only linear scaling is currently '
                                       'supported')
@@ -73,7 +73,7 @@ class AxisVisual(CompoundVisual):
         
         self._line = LineVisual(method='gl', width=3.0)
         self._ticks = LineVisual(method='gl', width=2.0, connect='segments')
-        self._text = TextVisual(font_size=8, color='w')
+        self._text = TextVisual(font_size=8, color=text_color)
         self.add_subvisual(self._line)
         self.add_subvisual(self._ticks)
         self.add_subvisual(self._text)

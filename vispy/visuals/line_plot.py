@@ -61,7 +61,7 @@ class LinePlotVisual(CompoundVisual):
                  edge_width=1., connect='strip'):
         if line_kind != '-':
             raise ValueError('Only solid lines currently supported')
-        self._line = LineVisual(method='gl', antialias=False)
+        self._line = LineVisual(method='gl', antialias=True)
         self._markers = MarkersVisual()
         CompoundVisual.__init__(self, [self._line, self._markers])
         self.set_data(data, color=color, symbol=symbol,
