@@ -11,7 +11,7 @@ import numpy as np
 import vispy.app
 from vispy import gloo
 from vispy import visuals
-from vispy.visuals.transforms import (AffineTransform, STTransform,
+from vispy.visuals.transforms import (MatrixTransform, STTransform,
                                       arg_to_array, LogTransform, 
                                       PolarTransform, BaseTransform)
 from image_visual import get_image
@@ -40,7 +40,7 @@ class Canvas(vispy.app.Canvas):
                                                 translate=(-5, -5)) *
                                     base_tr)
 
-        tr = AffineTransform()
+        tr = MatrixTransform()
         tr.rotate(30, (0, 0, 1))
         tr.rotate(40, (0, 1, 0))
         tr.scale((3, 3))

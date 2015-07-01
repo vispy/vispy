@@ -6,7 +6,7 @@ from __future__ import division
 
 from ...util import keys
 from ..node import Node
-from ...visuals.transforms import (STTransform, PerspectiveTransform,
+from ...visuals.transforms import (STTransform, MatrixTransform,
                                    NullTransform, TransformCache)
 
 
@@ -56,7 +56,7 @@ class BaseCamera(Node):
         self.transform = NullTransform()
         self._pre_transform = None
         self._viewbox_tr = STTransform()  # correction for viewbox
-        self._projection = PerspectiveTransform()
+        self._projection = MatrixTransform()
         self._transform_cache = TransformCache()
 
         # For internal use, to store event related information

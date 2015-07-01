@@ -9,7 +9,7 @@ import numpy as np
 
 from .base_camera import BaseCamera
 from ...util import keys
-from ...visuals.transforms import AffineTransform
+from ...visuals.transforms import MatrixTransform
 
 
 class PerspectiveCamera(BaseCamera):
@@ -32,7 +32,7 @@ class PerspectiveCamera(BaseCamera):
     def __init__(self, fov=60.0, scale_factor=None, center=None, **kwargs):
         super(PerspectiveCamera, self).__init__(**kwargs)
         # Camera transform
-        self.transform = AffineTransform()
+        self.transform = MatrixTransform()
 
         # Set camera attributes
         self.fov = fov

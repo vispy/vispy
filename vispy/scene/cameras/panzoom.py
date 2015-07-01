@@ -8,7 +8,7 @@ import numpy as np
 
 from .base_camera import BaseCamera
 from ...geometry import Rect
-from ...visuals.transforms import STTransform, AffineTransform
+from ...visuals.transforms import STTransform, MatrixTransform
 
 
 class PanZoomCamera(BaseCamera):
@@ -286,7 +286,7 @@ class PanZoomCamera(BaseCamera):
             thetransform = self.transform
         else:
             rr = self._real_rect
-            tr = AffineTransform()
+            tr = MatrixTransform()
             d = d if (self.up[0] == '+') else -d
             pp1 = [(vbr.left, vbr.bottom, 0), (vbr.left, vbr.top, 0),
                    (vbr.right, vbr.bottom, 0), (vbr.left, vbr.bottom, 1)]

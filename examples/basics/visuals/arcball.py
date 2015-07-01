@@ -25,7 +25,7 @@ class Canvas(app.Canvas):
         self.quaternion = Quaternion()
 
         # Create a TransformSystem that will tell the visual how to draw
-        self.cube_transform = transforms.AffineTransform()
+        self.cube_transform = transforms.MatrixTransform()
         self.cube_transform.scale((100, 100, 0.001))
         self.cube_transform.translate((200, 200))
         self.tr_sys = transforms.TransformSystem(self)

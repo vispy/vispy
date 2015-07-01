@@ -67,7 +67,7 @@ grid2 = scene.visuals.GridLines(parent=e2)
 # Bottom-right grid cell shows the same data again, but with a much more
 # interesting transformation.
 e3 = scene.Node(parent=b3.scene)
-affine = scene.transforms.AffineTransform()
+affine = scene.transforms.MatrixTransform()
 affine.scale((1, 0.1))
 affine.rotate(10, (0, 0, 1))
 affine.translate((0, 1))

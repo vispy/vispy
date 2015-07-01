@@ -5,7 +5,7 @@
 """
 API Issues to work out:
 
-  - AffineTransform and STTransform both have 'scale' and 'translate'
+  - MatrixTransform and STTransform both have 'scale' and 'translate'
     attributes, but they are used in very different ways. It would be nice
     to keep this consistent, but how?
 

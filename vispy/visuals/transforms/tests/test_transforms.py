@@ -10,8 +10,8 @@ from vispy.testing import run_tests_if_main
 
 NT = tr.NullTransform
 ST = tr.STTransform
-AT = tr.AffineTransform
-RT = tr.PerspectiveTransform
+AT = tr.MatrixTransform
+RT = tr.MatrixTransform
 PT = tr.PolarTransform
 LT = tr.LogTransform
 CT = tr.ChainTransform
@@ -164,13 +164,13 @@ def test_map_rect():
 
 
 def test_st_transform():
-    # Check that STTransform maps exactly like AffineTransform
+    # Check that STTransform maps exactly like MatrixTransform
     pts = np.random.normal(size=(10, 4))
     
     scale = (1, 7.5, -4e-8)
     translate = (1e6, 0.2, 0)
     st = tr.STTransform(scale=scale, translate=translate)
-    at = tr.AffineTransform()
+    at = tr.MatrixTransform()
     at.scale(scale)
     at.translate(translate)
     
@@ -189,7 +189,7 @@ def test_st_mapping():
 
 
 def test_affine_mapping():
-    t = tr.AffineTransform()
+    t = tr.MatrixTransform()
     p1 = np.array([[0, 0, 0],
                    [1, 0, 0],
                    [0, 1, 0],

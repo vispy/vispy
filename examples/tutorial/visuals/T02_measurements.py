@@ -209,7 +209,7 @@ rects = [MyRect(100, 100, 200, 300, parent=view.scene),
 
 # Again, rotate one rectangle to ensure the transforms are working as we 
 # expect.
-tr = visuals.transforms.AffineTransform()
+tr = visuals.transforms.MatrixTransform()
 tr.rotate(25, (0, 0, 1))
 rects[1].transform = tr
 
