@@ -90,18 +90,26 @@ class Canvas(app.Canvas):
 
         # construct a default transform that does identity scaling
         # and does not translate the coordinates
-        transform = NullTransform()
-        self.transform_sys = TransformSystem(self)
-        self.transform_sys.visual_to_document = transform
+        # transform = NullTransform()
+        # self.transform_sys = TransformSystem(self)
+        # self.transform_sys.visual_to_document = transform
 
         self.show()
+
+    def on_resize(self, event):
+        # Set canvas viewport and reconfigure visual transforms to match.
+        vp = (0, 0, self.physical_size[0], self.physical_size[1])
+        self.context.set_viewport(*vp)
+
+        for bar in self.bars:
+            bar.transforms.configure(canvas=self, viewport=vp)
 
     def on_draw(self, event):
         # clear the color buffer
         gloo.clear(color="white")
 
         for bar in self.bars:
-            bar.draw(self.transform_sys)
+            bar.draw()
 
 if __name__ == '__main__':
     win = Canvas()

@@ -153,8 +153,7 @@ class ColorBarVisual(Visual):
                  border_color="black",
                  **kwargs):
 
-        super(ColorBarVisual, self).__init__(**kwargs)
-
+        
         self._label_str = label_str
         self._cmap = get_colormap(cmap)
         self._clim = clim
@@ -179,10 +178,13 @@ class ColorBarVisual(Visual):
 
         # setup the right program shader based on color
         if orientation == "top" or orientation == "bottom":
-            self._program = ModularProgram(VERT_SHADER, FRAG_SHADER_HORIZONTAL)
+            #self._program = ModularProgram(VERT_SHADER, FRAG_SHADER_HORIZONTAL)
+            Visual.__init__(self, vcode=VERT_SHADER, fcode=FRAG_SHADER_HORIZONTAL, **kwargs)
 
         elif orientation == "left" or orientation == "right":
-            self._program = ModularProgram(VERT_SHADER, FRAG_SHADER_VERTICAL)
+            Visual.__init__(self, vcode=VERT_SHADER, fcode=FRAG_SHADER_VERTICAL, **kwargs)
+
+            #self._program = ModularProgram(VERT_SHADER, FRAG_SHADER_VERTICAL)
         else:
             raise ColorBarVisual._get_orientation_error(self._orientation)
 
@@ -190,8 +192,8 @@ class ColorBarVisual(Visual):
                               [0, 0], [1, 1], [0, 1]],
                               dtype=np.float32)
 
-        self._program.frag['color_transform'] = Function(self._cmap.glsl_map)
-        self._program['a_texcoord'] = tex_coords.astype(np.float32)
+        self.shared_program.frag['color_transform'] = Function(self._cmap.glsl_map)
+        self.shared_program['a_texcoord'] = tex_coords.astype(np.float32)
 
         self._update()
 
@@ -314,7 +316,7 @@ class ColorBarVisual(Visual):
                             [x - halfw, y + halfh]],
                             dtype=np.float32)
 
-        self._program['a_position'] = vertices.astype(np.float32)
+        self.shared_program['a_position'] = vertices.astype(np.float32)
         self._border_program['a_position'] = vertices.astype(np.float32)
 
         self._border_program.vert['border_width'] = self._border_width
@@ -416,7 +418,29 @@ class ColorBarVisual(Visual):
         self._border_color = Color(border_color)
         self._border_program.frag['border_color'] = self._border_color.rgba
 
-    def draw(self, transforms):
+    @staticmethod
+    def _prepare_transforms(view):
+        # transfrorm = view.transforms.get_transform()
+
+        program = view.view_program
+        border_program = view._border_program
+
+        border_program.vert['visual_to_doc'] = \
+            view.transforms.get_transform('visual', 'document')
+        border_program.vert['doc_to_render'] = \
+            view.transforms.get_transform('document', 'render')
+
+        program.vert['transform'] = view.transforms.get_transform()
+
+        # program.vert['transform'] = transforms.get_full_transform()
+        if view._label is not None:
+            view._label._prepare_transforms(view)
+
+        if view._ticks is not None:
+            for tick in view._ticks:
+                tick._prepare_transforms(view)
+
+    def draw(self):
         """Draw the visual
 
         Parameters
@@ -425,17 +449,10 @@ class ColorBarVisual(Visual):
             The transforms to use.
         """
 
-        self._border_program.vert['visual_to_doc'] = \
-            transforms.visual_to_document
-        self._border_program.vert['doc_to_render'] = (
-            transforms.framebuffer_to_render *
-            transforms.document_to_framebuffer)
+        self._program.draw('triangles')
         self._border_program.draw("triangles")
 
-        self._program.vert['transform'] = transforms.get_full_transform()
-        self._program.draw('triangles')
+        # self._label.draw()
 
-        self._label.draw(transforms)
-
-        for tick in self._ticks:
-            tick.draw(transforms)
+        # for tick in self._ticks:
+        #    tick.draw()
