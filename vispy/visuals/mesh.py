@@ -80,26 +80,27 @@ void main() {
     //DIFFUSE
     float diffusek = dot(v_light_vec, v_normal_vec);
     //clamp, because 0 < theta < pi/2
-    diffusek = (diffusek < 0. ? 0. : diffusek);
+    diffusek  = clamp(diffusek, 0, 1);
     vec4 diffuse_color = v_light_color * diffusek;
     //diffuse_color.a = 1.0;
 
     //SPECULAR
-    //if light and normal are obtuse, no specular highlight
-    float speculark = dot(v_normal_vec, v_light_vec) < 0.0 ? 0 : 1;
     //reflect light wrt normal for the reflected ray, then
     //find the angle made with the eye
-    speculark = speculark * dot(reflect(v_light_vec, v_normal_vec), v_eye_vec);
-    speculark = (speculark < 0. ? 0. : speculark);
+    float speculark = dot(reflect(v_light_vec, v_normal_vec), v_eye_vec);
+    speculark = clamp(speculark, 0, 1);
     //raise to the material's shininess, multiply with a
     //small factor for spread
-    speculark = 10 * pow(speculark, 200.0);
+    speculark = 20 * pow(speculark, 200.0);
 
     vec4 specular_color = v_light_color * speculark;
 
 
     gl_FragColor =
-        v_base_color * (v_ambientk + diffuse_color) + specular_color;
+       v_base_color * (v_ambientk + diffuse_color) + specular_color;
+
+    //gl_FragColor = vec4(speculark, 0, 1, 1.0);
+
 
 }
 """
@@ -352,7 +353,7 @@ class MeshVisual(Visual):
             self.shared_program.vert['base_color'] = colors
 
             # Additional phong properties
-            self.shared_program.vert['light_dir'] = (-1.0, -10.0, 0)
+            self.shared_program.vert['light_dir'] = (10, 5, -5)
             self.shared_program.vert['light_color'] = (1.0, 1.0, 1.0, 1.0)
             self.shared_program.vert['ambientk'] = (0.3, 0.3, 0.3, 1.0)
 
