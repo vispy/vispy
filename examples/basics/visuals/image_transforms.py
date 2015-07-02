@@ -68,19 +68,26 @@ class Canvas(vispy.app.Canvas):
                                                 translate=(-3.3*np.pi/4., 0.7)) *
                                     base_tr)
 
+        text = visuals.TextVisual(
+            text=['logarithmic', 'polar', 'perspective', 'custom (sine)'],
+            pos=[(100, 20), (500, 20), (100, 420), (500, 420)],
+            color='w', font_size=16)
+        
+        self.visuals = self.images + [text]
+
         self.show()
 
     def on_draw(self, ev):
         gloo.clear(color='black', depth=True)
-        for img in self.images:
-            img.draw()
+        for vis in self.visuals:
+            vis.draw()
 
     def on_resize(self, event):
         # Set canvas viewport and reconfigure visual transforms to match.
         vp = (0, 0, self.physical_size[0], self.physical_size[1])
         self.context.set_viewport(*vp)
-        for img in self.images:
-            img.transforms.configure(canvas=self, viewport=vp)
+        for vis in self.visuals:
+            vis.transforms.configure(canvas=self, viewport=vp)
 
 
 # A simple custom Transform
