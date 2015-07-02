@@ -32,7 +32,7 @@ class PlotWidget(scene.Widget):
 
         self.grid = self.add_grid(spacing=0, margin=10)
         
-        self.title = scene.Label("")
+        self.title = scene.Label("", font_size=16)
         self.title.stretch = (1, 0.1)
         self.grid.add_widget(self.title, row=0, col=2)
 

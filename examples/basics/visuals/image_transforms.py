@@ -70,15 +70,15 @@ class Canvas(vispy.app.Canvas):
 
         text = visuals.TextVisual(
             text=['logarithmic', 'polar', 'perspective', 'custom (sine)'],
-            pos=[(100, 20), (500, 20), (100, 420), (500, 420)],
-            color='w', font_size=16)
+            pos=[(100, 20), (500, 20), (100, 410), (500, 410)],
+            color='k', font_size=16)
         
         self.visuals = self.images + [text]
 
         self.show()
 
     def on_draw(self, ev):
-        gloo.clear(color='black', depth=True)
+        gloo.clear(color='w', depth=True)
         for vis in self.visuals:
             vis.draw()
 

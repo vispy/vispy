@@ -11,11 +11,12 @@ from vispy import plot as vp
 
 fig = vp.Fig(size=(600, 500), show=False)
 
+# Plot the target square wave shape 
 x = np.linspace(0, 10, 1000)
 y = np.zeros(1000)
 y[1:500] = 1
 y[500:-1] = -1
-line = fig[0, 0].plot((x, y), width=5,
+line = fig[0, 0].plot((x, y), width=3, color='k',
                       title='Square Wave Fourier Expansion',
                       xlabel='x', ylabel='4/π Σ[ 1/n sin(nπx/L) | n=1,3,5,...]')
 

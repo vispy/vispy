@@ -295,7 +295,9 @@ class SceneCanvas(app.Canvas):
         if node is None:
             node = self._scene
         order = [(node, True)]
-        for ch in node.children:
+        children = node.children
+        children.sort(key=lambda ch: ch.order)
+        for ch in children:
             order.extend(self._generate_draw_order(ch))
         order.append((node, False))
         return order
