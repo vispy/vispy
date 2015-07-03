@@ -28,6 +28,7 @@ class PlotWidget(scene.Widget):
     --------
     """
     def __init__(self, *args, **kwargs):
+        fg = kwargs.pop('fg_color', 'k')
         super(PlotWidget, self).__init__(*args, **kwargs)
 
         self.grid = self.add_grid(spacing=0, margin=10)
@@ -36,8 +37,8 @@ class PlotWidget(scene.Widget):
         self.title.stretch = (1, 0.1)
         self.grid.add_widget(self.title, row=0, col=2)
 
-        self.yaxis = scene.AxisWidget(orientation='left', text_color='k',
-                                      axis_color='k', tick_color='k')
+        self.yaxis = scene.AxisWidget(orientation='left', text_color=fg,
+                                      axis_color=fg, tick_color=fg)
         self.yaxis.stretch = (0.1, 1)
         self.grid.add_widget(self.yaxis, row=1, col=1)
 
@@ -45,8 +46,8 @@ class PlotWidget(scene.Widget):
         self.ylabel.stretch = (0.05, 1)
         self.grid.add_widget(self.ylabel, row=1, col=0)
 
-        self.xaxis = scene.AxisWidget(orientation='bottom', text_color='k',
-                                      axis_color='k', tick_color='k')
+        self.xaxis = scene.AxisWidget(orientation='bottom', text_color=fg,
+                                      axis_color=fg, tick_color=fg)
         self.xaxis.stretch = (1, 0.1)
         self.grid.add_widget(self.xaxis, row=2, col=2)
 
