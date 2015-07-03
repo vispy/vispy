@@ -12,7 +12,8 @@ from vispy import app, scene, visuals
 from vispy.util.filter import gaussian_filter
 import numpy as np
 
-canvas = scene.SceneCanvas(keys='interactive')
+canvas = scene.SceneCanvas(keys='interactive',
+                           title='Isocurve(s) overlayed over Random Image Example')
 canvas.size = 800, 600
 canvas.show()
 
@@ -45,4 +46,4 @@ view.camera = scene.PanZoomCamera(aspect=1)
 view.camera.set_range()
 
 if __name__ == '__main__' and sys.flags.interactive == 0:
-    canvas.app.run()
+    app.run()
