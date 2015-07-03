@@ -64,9 +64,10 @@ class Canvas(app.Canvas):
             x = 800. * (i % grid[0]) / grid[0] + 400. / grid[0] - 2
             y = 800. * (i // grid[1]) / grid[1] + 400. / grid[1] + 2
             transform = ChainTransform([STTransform(translate=(x, y),
-                                                    scale=(s, s, 1)),
+                                                    scale=(s, s, s)),
                                         self.rotation])
             mesh.transform = transform
+            mesh.transforms.scene_transform = STTransform(scale=(1, 1, 0.01))
 
         self.show()
 
