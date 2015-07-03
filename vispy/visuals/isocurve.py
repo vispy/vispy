@@ -7,8 +7,15 @@ from __future__ import division
 import numpy as np
 
 from .line import LineVisual
+from ..color import ColorArray
+from ..color.colormap import _normalize, get_colormap
 from ..geometry.isocurve import isocurve
+from ..testing import has_matplotlib
 
+# checking for matplotlib
+_HAS_MPL = has_matplotlib()
+if _HAS_MPL:
+    from matplotlib import _cntr as cntr
 
 class IsocurveVisual(LineVisual):
     """Displays an isocurve of a 2D scalar array.
@@ -17,16 +24,26 @@ class IsocurveVisual(LineVisual):
     ----------
     data : ndarray | None
         2D scalar array.
-    level: float | None
-        The level at which the isocurve is constructed from *data*.
+    levels : ndarray, shape (Nlev,) | None
+        The levels at which the isocurve is constructed from "*data*".
+    color_lev : Color, colormap name, tuple, list or array
+        The color to use when drawing the line. If a list is given, it
+        must be of shape (Nlev), if an array is given, it must be of
+        shape (Nlev, ...). and provide one color per level (rgba, colorname).
+    **kwargs : dict
+        Keyword arguments to pass to `LineVisual`.
 
     Notes
     -----
     """
-    def __init__(self, data=None, level=None, **kwargs):
+    def __init__(self, data=None, color_lev=None, levels=None, clim=None, **kwargs):
         self._data = None
-        self._level = level
-        self._recompute = True
+        self._levels = levels
+        self._color_lev = color_lev
+        self._clim = clim
+        self._need_color_update = True
+        self._need_level_update = True
+        self._need_recompute = True
         kwargs['method'] = 'gl'
         kwargs['antialias'] = False
         LineVisual.__init__(self, **kwargs)
@@ -34,16 +51,28 @@ class IsocurveVisual(LineVisual):
             self.set_data(data)
 
     @property
-    def level(self):
+    def levels(self):
         """ The threshold at which the isocurve is constructed from the
         2D data.
         """
-        return self._level
+        return self._levels
 
-    @level.setter
-    def level(self, level):
-        self._level = level
-        self._recompute = True
+    @levels.setter
+    def levels(self, levels):
+        self._levels = levels
+        self._need_level_update = True
+        self._need_recompute = True
+        self.update()
+
+    @property
+    def color(self):
+        return self._color_lev
+
+    @color.setter
+    def color(self, color):
+        self._color_lev = color
+        self._need_level_update = True
+        self._need_color_update = True
         self.update()
 
     def set_data(self, data):
@@ -53,32 +82,111 @@ class IsocurveVisual(LineVisual):
         ----------
         data : ndarray
             A 2D array of scalar values. The isocurve is constructed to show
-            all locations in the scalar field equal to ``self.level``.
+            all locations in the scalar field equal to ``self.levels``.
         """
         self._data = data
-        self._recompute = True
+
+        # if using matplotlib isoline algorithm we have to check for meshgrid
+        # and we can setup the tracer object here
+        if _HAS_MPL:
+            try:
+                if not (self._X.T.shape == data.shape):
+                    raise
+            except:
+                self._X, self._Y = np.meshgrid(np.arange(data.shape[0]),np.arange(data.shape[1]))
+
+            self._iso = cntr.Cntr(self._X, self._Y, self._data.astype(float))
+
+        if self._clim is None:
+            self._clim = (data.min(), data.max())
+        self._need_recompute = True
         self.update()
 
+    def _get_verts_and_connect(self, paths):
+        """ retrieve vertices and connects from given paths-list
+        """
+        verts = np.vstack(paths)
+        gaps = np.add.accumulate(np.array([len(x) for x in paths])) - 1
+        connect = np.ones(gaps[-1], dtype=bool)
+        connect[gaps[:-1]] = False
+        return verts, connect
+
+    def _compute_iso_line(self):
+        """ compute LineVisual vertices, connects and color-index
+        """
+        level_index = []
+        connects = []
+        verts = []
+
+        for level in self.levels:
+            # if we use matplotlib isoline algorithm we need to add half a pixel
+            # in both (x,y) dimensions because isolines are aligned to pixel centers
+            if _HAS_MPL:
+                nlist = self._iso.trace(level, level, 0)
+                paths = nlist[:len(nlist)//2]
+                v, c =  self._get_verts_and_connect(paths)
+                v += np.array([0.5, 0.5])
+            else:
+                paths = isocurve(self._data.astype(float).T, level,
+                                 extend_to_edge=True, connected=True)
+                v, c =  self._get_verts_and_connect(paths)
+
+            level_index.append(v.shape[0])
+            connects.append(np.hstack((c, [False])))
+            verts.append(v)
+
+        self._li = np.hstack(level_index)
+        self._connect = np.hstack(connects)
+        self._verts = np.vstack(verts)
+
+    def _compute_iso_color(self):
+        """ compute LineVisual color from level index and corresponding color
+        """
+        level_color = []
+        colors = self._lc
+        for i, index in enumerate(self._li):
+            level_color.append(np.zeros((index, 4)) + colors[i])
+        self._cl = np.vstack(level_color)
+
+    def _levels_to_colors(self):
+        # computes ColorArrays for given levels
+        # try _color_lev as colormap, except as everything else
+        try:
+            f_color_levs = get_colormap(self._color_lev)
+        except:
+            colors = ColorArray(self._color_lev).rgba
+        else:
+            lev = _normalize(self._levels, self._clim[0], self._clim[1])
+            # map function expects (Nlev,1)!
+            colors = f_color_levs.map(lev[:,np.newaxis])
+
+        # broadcast to (nlev, 4) array
+        if len(colors) == 1:
+            colors = colors * np.ones((len(self._levels), 1))
+
+        # detect color_lev/levels mismatch and raise error
+        if (len(colors) != len(self._levels)):
+            raise TypeError("Color/level mismatch. Color must be of shape (Nlev, ...) and provide one color per level")
+
+        self._lc = colors
+
     def _prepare_draw(self, view):
-        if self._data is None or self._level is None:
+        if self._data is None or self._levels is None or self._color_lev is None:
             return False
 
-        if self._recompute:
-            verts = []
-            paths = isocurve(self._data.astype(float).T, self._level,
-                             extend_to_edge=True, connected=True)
-            tot = 0
-            gaps = []
-            for path in paths:
-                verts.extend(path)
-                tot += len(path)
-                gaps.append(tot-1)
+        if self._need_level_update:
+            self._levels_to_colors()
+            self._need_level_update = False
 
-            connect = np.ones(tot-1, dtype=bool)
-            connect[gaps[:-1]] = False
+        if self._need_recompute:
+            self._compute_iso_line()
+            self._compute_iso_color()
+            LineVisual.set_data(self, pos=self._verts, connect=self._connect, color=self._cl)
+            self._need_recompute = False
 
-            verts = np.array(verts)
-            LineVisual.set_data(self, pos=verts, connect=connect)
-            self._recompute = False
-        
+        if self._need_color_update:
+            self._compute_iso_color()
+            LineVisual.set_data(self, color=self._cl)
+            self._need_color_update = False
+
         return LineVisual._prepare_draw(self, view)
