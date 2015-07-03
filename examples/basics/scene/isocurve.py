@@ -28,18 +28,21 @@ image = scene.visuals.Image(img_data, parent=view.scene)
 # move image behind curves
 image.transform = visuals.transforms.STTransform(translate=(0, 0, 0.5)) 
 
+# level and color setup
+levels = [40, 50, 60]
+color_lev = [(1, 0, 0, 1),
+             (1, 0.5, 0, 1),
+             (1, 1, 0, 1)]
+
 # Create isocurve, make a child of the image to ensure the two are always
 # aligned.
-curve1 = scene.visuals.Isocurve(noise, level=60, color=(1, 1, 0, 1), 
-                                parent=view.scene)
-curve2 = scene.visuals.Isocurve(noise, level=50, color=(1, 0.5, 0, 1), 
-                                parent=view.scene)
-curve3 = scene.visuals.Isocurve(noise, level=40, color=(1, 0, 0, 1), 
+curve = scene.visuals.Isocurve(noise, levels=levels, color_lev=color_lev,
                                 parent=view.scene)
 
-# Set 2D camera (the camera will scale to the contents in the scene)
+# Set 2D camera
 view.camera = scene.PanZoomCamera(aspect=1)
-
+# the camera will scale to the contents in the scene
+view.camera.set_range()
 
 if __name__ == '__main__' and sys.flags.interactive == 0:
-    app.run()
+    canvas.app.run()
