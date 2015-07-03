@@ -45,9 +45,11 @@ class ScrollingLinesVisual(visuals.Visual):
         """
         self._pos_data = None
         self._offset = 0
-        self._pos_tex = gloo.Texture2D(np.zeros((n_lines, line_size, 1), dtype='float32'), format='luminance', internalformat='r32f')
+        
+        data = np.zeros((n_lines, line_size), dtype='float32')
+        self._pos_tex = gloo.Texture2D(data, format='luminance', internalformat='r32f')
         self._index_buf = gloo.VertexBuffer()
-        self._data_shape = (n_lines, line_size)
+        self._data_shape = data.shape
         
         visuals.Visual.__init__(self, vcode=self.vertex_code, fcode=self.fragment_code)
         
@@ -56,13 +58,13 @@ class ScrollingLinesVisual(visuals.Visual):
         self.shared_program['columns'] = columns
         self.shared_program['cell_size'] = cell_size
         self.shared_program['dt'] = dt
-        self.shared_program['pos_size'] = self._data_shape
-        self.shared_program['offset'] = 0
-
-        index = np.empty(self._data_shape + (2,), dtype='float32')
-        index[..., 1] = np.arange(self._data_shape[0])[:, np.newaxis]
-        index[..., 0] = np.arange(self._data_shape[1])[np.newaxis, :]
-        index = index.reshape((index.shape[0] * index.shape[1], index.shape[2]))
+        self.shared_program['pos_size'] = data.shape[::-1]
+        self.shared_program['offset'] = self._offset
+        
+        index = np.empty((data.shape[0], data.shape[1], 2), dtype='float32')
+        index[..., 1] = np.arange(data.shape[0])[:, np.newaxis]
+        index[..., 0] = np.arange(data.shape[1])[np.newaxis, :]
+        index = index.reshape((index.shape[0]*index.shape[1], index.shape[2]))
         self._index_buf.set_data(index)
         
         self._draw_mode = 'line_strip'
@@ -95,21 +97,32 @@ class ScrollingLinesVisual(visuals.Visual):
 
 ScrollingLines = create_visual_node(ScrollingLinesVisual)
 
-win = scene.SceneCanvas(keys='interactive', show=True)
-view = win.central_widget.add_view()
-view.camera = 'panzoom'
-view.camera.rect = (0, 0, 60, 400)
+win = scene.SceneCanvas(keys='interactive', show=True, size=(1024, 768))
+grid = win.central_widget.add_grid()
+view = grid.add_view(0, 1)
+view.camera = scene.MagnifyCamera(mag=3, size_factor=0.3, radius_ratio=0.6)
+#view.camera = 'panzoom'
 
-N = 1000
-M = 5000
+# Add axes
+yax = scene.AxisWidget(orientation='left')
+yax.stretch = (0.05, 1)
+grid.add_widget(yax, 0, 0)
+yax.link_view(view)
+
+xax = scene.AxisWidget(orientation='bottom')
+xax.stretch = (1, 0.05)
+grid.add_widget(xax, 1, 1)
+xax.link_view(view)
+
+
+N = 10000
+M = 2000
 cols = int(N**0.5)
+view.camera.rect = (0, 0, cols, N/cols)
 
 lines = ScrollingLines(n_lines=N, line_size=M, columns=cols, dt=0.8/M,
-                       cell_size=(1, 5), parent=view.scene)
-
-# Add labels to cols / rows
-#text = scene.Text(
-
+                       cell_size=(1, 8), parent=view.scene)
+lines.transform = scene.STTransform(scale=(1, 1/8.))
 
 def update(ev):
     m = 10
