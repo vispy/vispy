@@ -89,6 +89,11 @@ class VisualNode(Node):
     def interactive(self, i):
         self._interactive = i
 
+    def draw(self):
+        if self.picking and not self.interactive:
+            return
+        self._visual_superclass.draw(self)
+
     
 def create_visual_node(subclass):
     # Create a new subclass of Node.
@@ -110,6 +115,7 @@ def create_visual_node(subclass):
         parent = kwargs.pop('parent', None)
         name = kwargs.pop('name', None)
         self.name = name  # to allow __str__ before Node.__init__
+        self._visual_superclass = subclass
         
         subclass.__init__(self, *args, **kwargs)
         VisualNode.__init__(self, parent=parent, name=name)

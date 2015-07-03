@@ -100,7 +100,7 @@ ScrollingLines = create_visual_node(ScrollingLinesVisual)
 win = scene.SceneCanvas(keys='interactive', show=True, size=(1024, 768))
 grid = win.central_widget.add_grid()
 view = grid.add_view(0, 1)
-view.camera = scene.MagnifyCamera(mag=3, size_factor=0.3, radius_ratio=0.6)
+view.camera = scene.MagnifyCamera(mag=1, size_factor=0.5, radius_ratio=0.6)
 #view.camera = 'panzoom'
 
 # Add axes
