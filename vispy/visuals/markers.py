@@ -481,7 +481,7 @@ marker_types = tuple(sorted(list(_marker_dict.keys())))
 class MarkersVisual(Visual):
     """ Visual displaying marker symbols.
     """
-    def __init__(self):
+    def __init__(self, **kwargs):
         self._vbo = VertexBuffer()
         self._v_size_var = Variable('varying float v_size')
         self._symbol = None
@@ -491,6 +491,8 @@ class MarkersVisual(Visual):
         self.set_gl_state(depth_test=False, blend=True,
                           blend_func=('src_alpha', 'one_minus_src_alpha'))
         self._draw_mode = 'points'
+        if len(kwargs) > 0:
+            self.set_data(**kwargs)
 
     def set_data(self, pos=None, symbol='o', size=10., edge_width=1.,
                  edge_width_rel=None, edge_color='black', face_color='white',
