@@ -28,7 +28,7 @@ class PlotWidget(scene.Widget):
     --------
     """
     def __init__(self, *args, **kwargs):
-        fg = kwargs.pop('fg_color', 'k')
+        self._fg = kwargs.pop('fg_color', 'k')
         super(PlotWidget, self).__init__(*args, **kwargs)
 
         self.grid = self.add_grid(spacing=0, margin=10)
@@ -36,7 +36,17 @@ class PlotWidget(scene.Widget):
         self.title = scene.Label("", font_size=16)
         self.title.stretch = (1, 0.1)
         self.grid.add_widget(self.title, row=0, col=2)
+        self.view = self.grid.add_view(row=1, col=2, border_color='grey')
 
+        self._configured = False
+        
+        self.visuals = []
+        
+    def _configure_2d(self):
+        if self._configured:
+            return
+        
+        fg = self._fg
         self.yaxis = scene.AxisWidget(orientation='left', text_color=fg,
                                       axis_color=fg, tick_color=fg)
         self.yaxis.stretch = (0.1, 1)
@@ -55,13 +65,19 @@ class PlotWidget(scene.Widget):
         self.xlabel.stretch = (1, 0.05)
         self.grid.add_widget(self.xlabel, row=3, col=2)
 
-        self.view = self.grid.add_view(row=1, col=2, border_color='grey')
         self.view.camera = 'panzoom'
         
         self.xaxis.link_view(self.view)
         self.yaxis.link_view(self.view)
         
-        self.visuals = []
+        self._configured = True
+
+    def _configure_3d(self):
+        if self._configured:
+            return
+        self.view.camera = 'turntable'
+        
+        self._configured = True
 
     def histogram(self, data, bins=10, color='w', orientation='h'):
         """Calculate and show a histogram of data
@@ -82,10 +98,10 @@ class PlotWidget(scene.Widget):
         hist : instance of Polygon
             The histogram polygon.
         """
-        self._view = self.add_view()
+        self._configure_2d()
         hist = scene.Histogram(data, bins, color, orientation)
-        self._view.add(hist)
-        self._view.set_camera(scene.PanZoomCamera)
+        self.view.add(hist)
+        self.view.camera.set_range()
         return hist
 
     def image(self, data, cmap='cubehelix', clim='auto'):
@@ -110,10 +126,12 @@ class PlotWidget(scene.Widget):
         -----
         The colormap is only used if the image pixels are scalars.
         """
-        self._view = self.add_view()
+        self._configure_2d()
         image = scene.Image(data, cmap=cmap, clim=clim)
-        self._view.add(image)
-        self._view.set_camera(scene.PanZoomCamera, aspect=1)
+        self.view.add(image)
+        self.view.camera.aspect = 1
+        self.view.camera.set_range()
+        
         return image
 
     def mesh(self, vertices=None, faces=None, vertex_colors=None,
@@ -145,7 +163,7 @@ class PlotWidget(scene.Widget):
         mesh : instance of Mesh
             The mesh.
         """
-        self._view = self.add_view()
+        self._configure_3d()
         if fname is not None:
             if not all(x is None for x in (vertices, faces, meshdata)):
                 raise ValueError('vertices, faces, and meshdata must be None '
@@ -160,8 +178,8 @@ class PlotWidget(scene.Widget):
         mesh = scene.Mesh(meshdata=meshdata, vertex_colors=vertex_colors,
                           face_colors=face_colors, color=color,
                           shading='smooth')
-        self._view.add(mesh)
-        self._view.set_camera(scene.TurntableCamera, azimuth=0, elevation=0)
+        self.view.add(mesh)
+        self.view.camera.set_range()
         return mesh
 
     def plot(self, data, color='k', symbol=None, line_kind='-', width=1.,
@@ -201,6 +219,7 @@ class PlotWidget(scene.Widget):
         --------
         marker_types, LinePlot
         """
+        self._configure_2d()
         line = scene.LinePlot(data, connect='strip', color=color,
                                    symbol=symbol, line_kind=line_kind,
                                    width=width, marker_size=marker_size,
@@ -257,12 +276,12 @@ class PlotWidget(scene.Widget):
         --------
         Image
         """
-        self._view = self.add_view()
+        self._configure_2d()
         # XXX once we have axes, we should use "fft_freqs", too
         spec = scene.Spectrogram(x, n_fft, step, fs, window,
                                  color_scale, cmap, clim)
-        self._view.add(spec)
-        self._view.set_camera(scene.PanZoomCamera)
+        self.view.add(spec)
+        self.view.camera.set_range()
         return spec
 
     def volume(self, vol, clim=None, method='mip', threshold=None,
@@ -295,8 +314,8 @@ class PlotWidget(scene.Widget):
         --------
         Volume
         """
-        self._view = self.add_view()
+        self._configure_3d()
         volume = scene.Volume(vol, clim, method, threshold, cmap=cmap)
-        self._view.add(volume)
-        self._view.set_camera(scene.TurntableCamera, fov=30.)
+        self.view.add(volume)
+        self.view.camera.set_range()
         return volume
