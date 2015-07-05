@@ -56,7 +56,7 @@ class LinePlotVisual(CompoundVisual):
                       'marker_size', 'symbol')
     _kw_trans = dict(marker_size='size')
 
-    def __init__(self, data, color='k', symbol=None, line_kind='-',
+    def __init__(self, data=None, color='k', symbol=None, line_kind='-',
                  width=1., marker_size=10., edge_color='k', face_color='w',
                  edge_width=1., connect='strip'):
         if line_kind != '-':
@@ -69,7 +69,7 @@ class LinePlotVisual(CompoundVisual):
                       edge_color=edge_color, face_color=face_color,
                       edge_width=edge_width, connect=connect)
 
-    def set_data(self, data, **kwargs):
+    def set_data(self, data=None, **kwargs):
         """Set the line data
 
         Parameters
@@ -79,31 +79,34 @@ class LinePlotVisual(CompoundVisual):
         **kwargs : dict
             Keywoard arguments to pass to MarkerVisual and LineVisal.
         """
-        if isinstance(data, tuple):
-            pos = np.array(data).T.astype(np.float32)
+        if data is None:
+            pos = None
         else:
-            pos = np.atleast_1d(data).astype(np.float32)
-        
-        if pos.ndim == 1:
-            pos = pos[:, np.newaxis]
-        elif pos.ndim > 2:
-            raise ValueError('data must have at most two dimensions')
+            if isinstance(data, tuple):
+                pos = np.array(data).T.astype(np.float32)
+            else:
+                pos = np.atleast_1d(data).astype(np.float32)
+            
+            if pos.ndim == 1:
+                pos = pos[:, np.newaxis]
+            elif pos.ndim > 2:
+                raise ValueError('data must have at most two dimensions')
 
-        if pos.size == 0:
-            pos = self._line.pos
+            if pos.size == 0:
+                pos = self._line.pos
 
-            # if both args and keywords are zero, then there is no
-            # point in calling this function.
-            if len(kwargs) == 0:
-                raise TypeError("neither line points nor line properties"
-                                "are provided")
-        elif pos.shape[1] == 1:
-            x = np.arange(pos.shape[0], dtype=np.float32)[:, np.newaxis]
-            pos = np.concatenate((x, pos), axis=1)
-        # if args are empty, don't modify position
-        elif pos.shape[1] > 2:
-            raise TypeError("Too many coordinates given (%s; max is 2)."
-                            % pos.shape[1])
+                # if both args and keywords are zero, then there is no
+                # point in calling this function.
+                if len(kwargs) == 0:
+                    raise TypeError("neither line points nor line properties"
+                                    "are provided")
+            elif pos.shape[1] == 1:
+                x = np.arange(pos.shape[0], dtype=np.float32)[:, np.newaxis]
+                pos = np.concatenate((x, pos), axis=1)
+            # if args are empty, don't modify position
+            elif pos.shape[1] > 2:
+                raise TypeError("Too many coordinates given (%s; max is 2)."
+                                % pos.shape[1])
 
         # todo: have both sub-visuals share the same buffers.
         line_kwargs = {}
@@ -111,12 +114,15 @@ class LinePlotVisual(CompoundVisual):
             if k in kwargs:
                 k_ = self._kw_trans[k] if k in self._kw_trans else k
                 line_kwargs[k] = kwargs.pop(k_)
-        self._line.set_data(pos=pos, **line_kwargs)
+        if pos is not None or len(line_kwargs) > 0:
+            self._line.set_data(pos=pos, **line_kwargs)
+        
         marker_kwargs = {}
         for k in self._marker_kwargs:
             if k in kwargs:
                 k_ = self._kw_trans[k] if k in self._kw_trans else k
                 marker_kwargs[k_] = kwargs.pop(k)
-        self._markers.set_data(pos=pos, **marker_kwargs)
+        if pos is not None or len(marker_kwargs) > 0:
+            self._markers.set_data(pos=pos, **marker_kwargs)
         if len(kwargs) > 0:
             raise TypeError("Invalid keyword arguments: %s" % kwargs.keys())

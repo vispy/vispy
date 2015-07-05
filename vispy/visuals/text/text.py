@@ -535,3 +535,6 @@ class TextVisual(Visual):
         self._pos_changed = True
         trs = view.transforms
         view.view_program.vert['transform'] = trs.get_transform()
+
+    def _compute_bounds(self, axis, view):
+        return self._pos[:,axis].min(), self._pos[:,axis].max()

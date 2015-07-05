@@ -30,8 +30,7 @@ lines = scene.ScrollingLines(n_lines=N, line_size=M, columns=cols, dt=0.8/M,
 lines.transform = scene.STTransform(scale=(1, 1/8.))
 
 def update(ev):
-    m = 10
-    data = np.zeros((N, m))
+    m = 50
     data = np.random.normal(size=(N, m), scale=0.3)
     data[data > 1] += 4
     lines.roll_data(data)

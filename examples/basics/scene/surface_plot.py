@@ -15,7 +15,7 @@ from vispy import app, scene
 from vispy.util.filter import gaussian_filter
 
 
-canvas = scene.SceneCanvas(keys='interactive')
+canvas = scene.SceneCanvas(keys='interactive', bgcolor='w')
 view = canvas.central_widget.add_view()
 view.camera = scene.TurntableCamera(up='z', fov=60)
 
@@ -37,11 +37,11 @@ view.add(p1)
 
 
 xax = scene.Axis(pos=[[-0.5, -0.5], [0.5, -0.5]], tick_direction=(0, -1),
-                 font_size=16, parent=view.scene)
+                 font_size=16, axis_color='k', tick_color='k', text_color='k', parent=view.scene)
 xax.transform = scene.STTransform(translate=(0, 0, -0.2))
 
 yax = scene.Axis(pos=[[-0.5, -0.5], [-0.5, 0.5]], tick_direction=(-1, 0),
-                 font_size=16, parent=view.scene)
+                 font_size=16, axis_color='k', tick_color='k', text_color='k', parent=view.scene)
 yax.transform = scene.STTransform(translate=(0, 0, -0.2))
 
 # Add a 3D axis to keep us oriented

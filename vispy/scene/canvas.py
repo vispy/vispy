@@ -5,6 +5,7 @@
 from __future__ import division
 
 import weakref
+import numpy as np
 
 from .. import gloo
 from .. import app
@@ -366,6 +367,26 @@ class SceneCanvas(app.Canvas):
         id = self.render_picking(region=(pos[0]-10, pos[1]-10, 20, 20))
         vis = VisualNode._visual_ids.get(id[10, 10], None)
         return vis
+
+    def visuals_at(self, pos, radius=10):
+        """Return a list of visuals within *radius* pixels of *pos*.
+        
+        Visuals are sorted by their proximity to *pos*.
+        """
+        tr = self.transforms.get_transform('canvas', 'framebuffer')
+        pos = tr.map(pos)[:2]
+
+        id = self.render_picking(region=(pos[0]-radius, pos[1]-radius,
+                                         radius * 2 + 1, radius * 2 + 1))
+        ids = []
+        seen = set()
+        for i in range(radius):
+            subr = id[radius-i:radius+i+1, radius-i:radius+i+1]
+            subr_ids = set(list(np.unique(subr)))
+            ids.extend(list(subr_ids - seen))
+            seen |= subr_ids
+        visuals = [VisualNode._visual_ids.get(x, None) for x in ids]
+        return [v for v in visuals if v is not None]
 
     def render_picking(self, **kwargs):
         """Render the scene in picking mode, returning a 2D array of visual 
