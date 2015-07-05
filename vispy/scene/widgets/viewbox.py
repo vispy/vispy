@@ -30,14 +30,10 @@ class ViewBox(Widget):
 
     Parameters
     ----------
-    camera : None, :class:`Camera`, or str
+    camera : instance of Camera | str | None
         The camera through which to view the SubScene. If None, then a
         PanZoomCamera (2D interaction) is used. If str, then the string is
         used as the argument to :func:`make_camera`.
-    scene : None or :class:`SubScene`
-        The `SubScene` instance to view. If None, a new `SubScene` is created.
-    clip_method : str
-        Clipping method to use.
     **kwargs : dict
         Extra keyword arguments to pass to `Widget`.
     """
@@ -186,6 +182,13 @@ class ViewBox(Widget):
         node.parent = self.scene
 
     def on_resize(self, event):
+        """Resize event handler
+
+        Parameters
+        ----------
+        event : instance of Event
+            The event.
+        """
         if self._scene is None:
             # happens during init
             return

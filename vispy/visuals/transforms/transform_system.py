@@ -314,11 +314,10 @@ class TransformSystem(object):
         """Return a transform mapping between any two coordinate systems.
         
         Parameters
-        ==========
+        ----------
         map_from : str
             The starting coordinate system to map from. Must be one of: visual,
             scene, document, canvas, framebuffer, or render.
-            
         map_to : str
             The ending coordinate system to map to. Must be one of: visual,
             scene, document, canvas, framebuffer, or render.
