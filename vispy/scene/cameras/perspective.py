@@ -158,7 +158,7 @@ class PerspectiveCamera(BaseCamera):
         self._set_scene_transform(full_tr)
 
     def _update_projection_transform(self, fx, fy):
-        d = self._get_depth_value()
+        d = self.depth_value
         if self._fov == 0:
             self._projection.set_ortho(-0.5*fx, 0.5*fx, -0.5*fy, 0.5*fy, 0, d)
         else:
@@ -295,7 +295,7 @@ class Base3DRotationCamera(PerspectiveCamera):
         return np.array(up), np.array(forward), right
 
     def _update_projection_transform(self, fx, fy):
-        d = self._get_depth_value()
+        d = self.depth_value
         if self._fov == 0:
             self._projection.set_ortho(-0.5*fx, 0.5*fx, -0.5*fy, 0.5*fy, -d, d)
             self._actual_distance = self._distance or 0.0

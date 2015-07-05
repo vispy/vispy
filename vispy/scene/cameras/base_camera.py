@@ -79,28 +79,39 @@ class BaseCamera(Node):
         # available in all cameras. Note that PanZoom does not use _center
         self._fov = 0.0
         self._center = None
+        self._depth_value = 1e6  # bit+depth >= 24, otherwise should do 3e3
 
         # Set parameters. These are all not part of the "camera state"
         self.interactive = bool(interactive)
         self.flip = flip if (flip is not None) else (False, False, False)
         self.up = up
 
-    def _get_depth_value(self):
-        """ Get the depth value to use in orthographic and perspective projection
+    @property
+    def depth_value(self):
+        """The depth value to use  in orthographic and perspective projection
 
-        For 24 bits and more, we're fine with 100.000, but for 16 bits we
-        need 3000 or so. The criterion is that at the center, we should be
-        able to distinguish between 0.1, 0.0 and -0.1 etc.
+        For orthographic projections, ``depth_value`` is the distance between
+        the near and far clipping planes. For perspective projections, it is
+        the ratio between the near and far clipping plane distances.
+
+        GL has a fixed amount of precision in the depth buffer, and a fixed
+        constant will not work for both a very large range and very high
+        precision. This property provides the user a way to override
+        the default value if necessary.
         """
-        if True:  # bit+depth >= 24
-            return 100000.0
-        else:
-            return 3000.0
+        return self._depth_value
+
+    @depth_value.setter
+    def depth_value(self, value):
+        value = float(value)
+        if value <= 0:
+            raise ValueError('depth value must be positive')
+        self._depth_value = value
 
     def _depth_to_z(self, depth):
         """ Get the z-coord, given the depth value.
         """
-        val = self._get_depth_value()
+        val = self.depth_value
         return val - depth * 2 * val
 
     def _viewbox_set(self, viewbox):

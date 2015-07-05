@@ -247,7 +247,7 @@ class PanZoomCamera(BaseCamera):
         rect = self.rect
         self._real_rect = Rect(rect)
         vbr = self._viewbox.rect.flipped(x=self.flip[0], y=(not self.flip[1]))
-        d = self._get_depth_value()
+        d = self.depth_value
         
         # apply scale ratio constraint
         if self._aspect is not None:
