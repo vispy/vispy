@@ -90,6 +90,10 @@ class BaseCamera(Node):
     def depth_value(self):
         """The depth value to use  in orthographic and perspective projection
 
+        For orthographic projections, ``depth_value`` is the distance between
+        the near and far clipping planes. For perspective projections, it is
+        the ratio between the near and far clipping plane distances.
+
         GL has a fixed amount of precision in the depth buffer, and a fixed
         constant will not work for both a very large range and very high
         precision. This property provides the user a way to override
