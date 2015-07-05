@@ -130,11 +130,9 @@ def test_transforms():
     assert np.all(n2.node_transform(n4).map(pts) == n4.transform.inverse.map(
         n3.transform.inverse.map(n2.transform.map(pts))))
     
-
     # test transform simplification
     assert np.all(n2.node_transform(n4).map(pts) == 
-                  n2.node_transform(n4).simplified.map(pts))
-    
+                  n2.node_transform(n4).simplified.map(pts))    
 
     
 run_tests_if_main()

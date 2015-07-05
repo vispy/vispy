@@ -242,8 +242,9 @@ class Ticker(object):
             minstop = -1 if self.axis._stop_at_major[1] else 0
             for i in range(minstart, len(major) + minstop):
                 maj = major[0] + i * majstep
-                minor.extend(np.linspace(maj + minstep, maj + majstep - minstep,
-                             (minor_num)))
+                minor.extend(np.linspace(maj + minstep,
+                                         maj + majstep - minstep,
+                                         minor_num))
             major_frac = (major - offset) / scale
             minor_frac = (np.array(minor) - offset) / scale
             major_frac = major_frac[::-1] if flip else major_frac

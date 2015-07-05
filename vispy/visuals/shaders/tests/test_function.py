@@ -432,16 +432,16 @@ def test_StatementList():
     main = Function("void main() {}")
     main['pre'] = StatementList()
     expr = func()
-    main['pre'].append(expr)
-    assert main['pre'].items == [expr]
+    main['pre'].add(expr, 0)
+    assert list(main['pre'].items) == [expr]
     main['pre'].add(expr)
-    assert main['pre'].items == [expr]
+    assert list(main['pre'].items) == [expr]
     
     code = main.compile()
     assert " func();" in code
     
     main['pre'].remove(expr)
-    assert main['pre'].items == []
+    assert list(main['pre'].items) == []
 
 
 def test_MainFunction():
