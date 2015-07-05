@@ -364,7 +364,7 @@ class Visual(BaseVisual):
         """Return the (min, max) bounding values of this visual along *axis*
         in the local coordinate system.
         """
-        raise NotImplementedError(self)
+        return None
 
     def _prepare_draw(self, view=None):
         """This visual is about to be drawn.
@@ -491,7 +491,7 @@ class VisualView(BaseVisualView, Visual):
     """
     def __init__(self, visual):
         BaseVisualView.__init__(self, visual)
-        Visual.__init__(self, _vshare=visual._vshare)
+        Visual.__init__(self, vshare=visual._vshare)
         
         # Attach any shared filters 
         for filter in self._vshare.filters:

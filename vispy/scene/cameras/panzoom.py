@@ -203,7 +203,7 @@ class PanZoomCamera(BaseCamera):
 
         # Scrolling
         BaseCamera.viewbox_mouse_event(self, event)
-        
+
         if event.type == 'mouse_wheel':
             center = self._scene_transform.imap(event.pos)
             self.zoom((1 + self.zoom_factor) ** (-event.delta[1] * 30), center)
