@@ -140,7 +140,7 @@ class raises(object):
             raise AssertionError("Expected %s (no exception raised)" %
                                  self.exc.__name__)
         else:
-            raise AssertionError("Expected %s, got %s instead" % 
+            raise AssertionError("Expected %s, got %s instead" %
                                  (self.exc.__name__, type(exc).__name__))
 
 
