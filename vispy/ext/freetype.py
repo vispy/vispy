@@ -30,6 +30,7 @@ FT_LOAD_NO_AUTOHINT = 32768
 FT_LOAD_TARGET_LCD = 196608
 FT_LOAD_TARGET_LIGHT = 65536
 FT_LOAD_NO_SCALE = 1
+FT_FACE_FLAG_SCALABLE = 1
 
 _64_bit = (8 * struct.calcsize("P")) == 64
 ##############################################################################
