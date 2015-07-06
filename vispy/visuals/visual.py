@@ -369,18 +369,28 @@ class Visual(BaseVisual):
     def _prepare_draw(self, view=None):
         """This visual is about to be drawn.
         
-        Visuals must implement this method to ensure that all program 
+        Visuals should implement this method to ensure that all program 
         and GL state variables are updated immediately before drawing.
         
         Return False to indicate that the visual should not be drawn.
         """
-        raise NotImplementedError(self)
+        return True
 
     def _prepare_transforms(self, view):
-        """Assign a view's transforms to the proper shader template variables
-        on the view's shader program. 
+        """This method is called whenever the TransformSystem instance is
+        changed for a view.
+
+        Assign a view's transforms to the proper shader template variables
+        on the view's shader program.
+
+        Note that each view has its own TransformSystem. In this method we
+        connect the appropriate mapping functions from the view's
+        TransformSystem to the view's program.
         """
-        
+        # Note that we access `view_program` instead of `shared_program`
+        # because we do not want this function assigned to other views.
+        tr = view.transforms.get_transform()
+        view.view_program.vert['transform'] = tr  # .simplified()
         # Todo: this method can be removed if we somehow enable the shader
         # to specify exactly which transform functions it needs by name. For
         # example:
@@ -389,7 +399,6 @@ class Visual(BaseVisual):
         #     // corresponding transform in the view's TransformSystem
         #     gl_Position = visual_to_render(a_position);
         #     
-        raise NotImplementedError()
 
     @property
     def shared_program(self):

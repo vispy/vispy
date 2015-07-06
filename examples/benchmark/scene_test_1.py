@@ -316,11 +316,6 @@ class SignalsVisual(Visual):
         """
         pass
 
-    @staticmethod
-    def _prepare_transforms(view):
-        tr = view.transforms.get_transform()
-        view.view_program.vert['transform'] = tr  # .simplified()
-
 
 Signals = scene.visuals.create_visual_node(SignalsVisual)
 

@@ -74,47 +74,22 @@ class MyRectVisual(visuals.Visual):
     # There are no constraints on the signature of the __init__ method; use
     # whatever makes the most sense for your visual.
     def __init__(self, x, y, w, h):
-        visuals.Visual.__init__(self)
+        # Initialize the visual with a vertex shader and fragment shader
+        visuals.Visual.__init__(self, vertex_shader, fragment_shader)
         
         # vertices for two triangles forming a rectangle
         self.vbo = gloo.VertexBuffer(np.array([
             [x, y], [x+w, y], [x+w, y+h],
             [x, y], [x+w, y+h], [x, y+h]
         ], dtype=np.float32))
-        
-        # We use a ModularProgram because it allows us to plug in arbitrary 
-        # transformation functions. This is recommended but not strictly 
-        # required.
-        self.program = visuals.shaders.ModularProgram(vertex_shader, 
-                                                      fragment_shader)
-        
+
         # Assign values to the $position and $color template variables in 
         # the shaders. ModularProgram automatically handles generating the 
         # necessary attribute and uniform declarations with unique variable
         # names.
-        self.program.vert['position'] = self.vbo
-        self.program.frag['color'] = (1, 0, 0, 1)
-        
-    # The draw method is required to take a single argument that will be an
-    # instance of visuals.transforms.TransformSystem.
-    def draw(self, transforms):
-        # The TransformSystem provides information about:
-        # 
-        # * The transformation requested by the user (usually translation, 
-        #   rotation, and scaling)
-        # * The canvas dpi and the size of logical pixels
-        # * The relationship between physical pixels and logical pixels, which
-        #   is important for some high-resolution displays and when exporting 
-        #   to images
-        
-        # For the simple case of this visual, all we need to know is how to 
-        # convert from the user-specified coordinates (x, y, w, h) to the 
-        # normalized device coordinates required by the vertex shader. We will
-        # explore other uses of the TransformSystem in later tutorials.
-        self.program.vert['transform'] = transforms.get_full_transform()
-        
-        # Finally, draw the triangles.
-        self.program.draw('triangles')
+        self.shared_program.vert['position'] = self.vbo
+        self.shared_program.frag['color'] = (1, 0, 0, 1)
+        self._draw_mode = 'triangles'
 
 
 # At this point the visual is ready to use, but it takes some extra effort to
