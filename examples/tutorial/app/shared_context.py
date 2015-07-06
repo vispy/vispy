@@ -9,6 +9,8 @@ This is a very simple example that demonstrates using a shared context
 between two Qt widgets.
 """
 
+# XXX THIS IS STILL BROKEN
+
 from PyQt4 import QtGui, QtCore  # can also use pyside
 from functools import partial
 
@@ -54,9 +56,11 @@ class Window(QtGui.QWidget):
         self.show()
 
     def on_init(self, event):
-        self.text = Text('Initialized', font_size=40.,
-                         anchor_x='left', anchor_y='top',
-                         parent=[self.vb_0.scene, self.vb_1.scene])
+        self.text = Text('Initialized', font_size=10.,
+                         anchor_x='left', anchor_y='top')
+        self.views = [self.text.view(), self.text.view()]
+        self.vb_0.add(self.views[0])
+        self.vb_1.add(self.views[1])
 
     def on_timer(self, event):
         self.tick_count += 1

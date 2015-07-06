@@ -483,10 +483,10 @@ class Visual(BaseVisual):
         if view is None:
             self._vshare.filters.remove(filt)
             for view in self._vshare.views.keys():
-                filter._detach(view)
+                filt._detach(view)
         else:
             view._filters.remove(filt)
-            filter._detach(view)
+            filt._detach(view)
         
 
 class VisualView(BaseVisualView, Visual):
@@ -503,8 +503,8 @@ class VisualView(BaseVisualView, Visual):
         Visual.__init__(self, vshare=visual._vshare)
         
         # Attach any shared filters 
-        for filter in self._vshare.filters:
-            filter._attach(self)
+        for filt in self._vshare.filters:
+            filt._attach(self)
 
         
 class CompoundVisual(BaseVisual):
@@ -653,6 +653,6 @@ class CompoundVisualView(BaseVisualView, CompoundVisual):
         CompoundVisual.__init__(self, subv)
 
         # Attach any shared filters 
-        for filter in self._vshare.filters:
+        for filt in self._vshare.filters:
             for v in self._subvisuals:
-                filter._attach(v)        
+                filt._attach(v)
