@@ -10,6 +10,16 @@ from ...visuals import AxisVisual
 
 
 class AxisWidget(Widget):
+    """Widget containing an axis
+
+    Parameters
+    ----------
+    orientation : str
+        Orientation of the axis, 'left' or 'bottom'.
+    **kwargs : dict
+        Keyword arguments to pass to AxisVisual.
+    """
+
     def __init__(self, orientation='left', **kwargs):
         if 'tick_direction' not in kwargs:
             tickdir = {'left': (-1, 0), 'right': (1, 0), 'bottom': (0, 1), 
@@ -22,6 +32,13 @@ class AxisWidget(Widget):
         self._linked_view = None
         
     def on_resize(self, event):
+        """Resize event handler
+
+        Parameters
+        ----------
+        event : instance of Event
+            The event.
+        """
         self._update_axis()
         
     def _update_axis(self):
@@ -35,8 +52,15 @@ class AxisWidget(Widget):
             return np.array([[r.left, r.bottom], [r.right, r.bottom]])
         
     def link_view(self, view):
-        """Link this axis to a ViewBox such that its domain always matches the
+        """Link this axis to a ViewBox
+
+        This makes it so that the axis's domain always matches the
         visible range in the ViewBox.
+
+        Parameters
+        ----------
+        view : instance of ViewBox
+            The ViewBox to link.
         """
         if view is self._linked_view:
             return

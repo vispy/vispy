@@ -397,7 +397,7 @@ class EventEmitter(object):
         
         # always use a weak ref
         if (isinstance(callback, tuple) and not 
-            isinstance(callback[0], weakref.ref)):
+                isinstance(callback[0], weakref.ref)):
             callback = (weakref.ref(callback[0]),) + callback[1:]
             
         return callback

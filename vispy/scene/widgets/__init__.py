@@ -12,5 +12,5 @@ from .console import Console  # noqa
 from .grid import Grid  # noqa
 from .viewbox import ViewBox  # noqa
 from .widget import Widget  # noqa
-from .axis import AxisWidget
+from .axis import AxisWidget  # noqa
 from .label import Label  # noqa
