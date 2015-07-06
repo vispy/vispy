@@ -11,7 +11,8 @@ your machine.
 
 import math
 import time
-from vispy import app, gloo
+
+from vispy import app
 
 
 class Canvas(app.Canvas):

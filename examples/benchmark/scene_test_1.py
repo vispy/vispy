@@ -150,7 +150,7 @@ class PanZoomCanvas(app.Canvas):
             self.update()
 
     def on_mouse_wheel(self, event):
-        prof = Profiler()  # analysis:ignore, noqa
+        prof = Profiler()  # noqa
         if not event.modifiers:
             dx = np.sign(event.delta[1])*.05
             x0, y0 = self._normalize(event.pos)

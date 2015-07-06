@@ -317,19 +317,15 @@ class SceneCanvas(app.Canvas):
 
     def _process_mouse_event(self, event):
         prof = Profiler()  # noqa
+        deliver_types = ['mouse_press', 'mouse_wheel']
         if self._send_hover_events:
-            deliver_types = ('mouse_press', 'mouse_wheel', 'mouse_move')
-        else:
-            deliver_types = ('mouse_press', 'mouse_wheel')
-            
-        if self._mouse_handler is None:
+            deliver_types += ['mouse_move']
+
+        picked = self._mouse_handler
+        if picked is None:
             if event.type in deliver_types:
                 picked = self.visual_at(event.pos)
-            else:
-                picked = None
-        else:
-            picked = self._mouse_handler
-        
+
         # No visual to handle this event; bail out now
         if picked is None:
             return

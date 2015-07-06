@@ -103,9 +103,6 @@ class VisualCanvas(app.Canvas):
         m, n = (10, 10)
         self.grid_size = (m, n)
         self.visuals = vis
-        for row in vis:
-            for v in row:
-                v.tr_sys = visuals.transforms.TransformSystem(self)
 
     def on_initialize(self, event):
         self.context.set_state(clear_color='black', blend=True,
@@ -120,8 +117,9 @@ class VisualCanvas(app.Canvas):
             v = self.visuals[i][j]
             tr = v.transform
             if event.press_event.button == 1:
-                tr.translate = np.array(tr.translate)[:2] + dx * scales * (1, -1)
-                
+                tr.translate = np.array(tr.translate)[:2] + \
+                    dx * scales * (1, -1)
+
             else:
                 tr.scale = tr.scale[:2] * 1.05 ** (dx * (1, -1))
             self.update()
