@@ -100,16 +100,18 @@ class PanZoomCanvas(app.Canvas):
         self._pz.zoom = Variable('uniform vec2 u_zoom', (1, 1))
 
         self.width, self.height = self.size
-        gloo.set_viewport(0, 0, self.physical_size[0], self.physical_size[1])
-        gloo.set_state(clear_color='black', blend=True,
-                       blend_func=('src_alpha', 'one_minus_src_alpha'))
+        self.context.set_viewport(0, 0, self.physical_size[0],
+                                  self.physical_size[1])
+        self.context.set_state(clear_color='black', blend=True,
+                               blend_func=('src_alpha', 'one_minus_src_alpha'))
 
         self._tr = TransformSystem(self)
         self.show()
 
     def on_resize(self, event):
         self.width, self.height = event.size
-        gloo.set_viewport(0, 0, event.physical_size[0], event.physical_size[1])
+        self.context.set_viewport(0, 0, event.physical_size[0],
+                                  event.physical_size[1])
 
     def _normalize(self, x_y):
         x, y = x_y
@@ -148,7 +150,7 @@ class PanZoomCanvas(app.Canvas):
             self.update()
 
     def on_mouse_wheel(self, event):
-        prof = Profiler()  # noqa
+        prof = Profiler()  # analysis:ignore, noqa
         if not event.modifiers:
             dx = np.sign(event.delta[1])*.05
             x0, y0 = self._normalize(event.pos)
@@ -183,7 +185,7 @@ class PanZoomCanvas(app.Canvas):
 
     def on_draw(self, event):
         prof = Profiler()
-        gloo.clear()
+        self.context.clear()
         for visual in self.visuals:
             visual.draw()
             prof('draw visual')
@@ -272,14 +274,15 @@ class SignalsVisual(Visual):
         self.shared_program.vert['get_x'] = x_transform
 
         y_transform = Function(Y_TRANSFORM)
-        y_transform['scale'] = Variable('uniform float u_signal_scale', 5.)
+        y_transform['scale'] = Variable('uniform float u_signal_scale', 1.)
         y_transform['nsignals'] = nsignals
         self.shared_program.vert['get_y'] = y_transform
         self._y_transform = y_transform
 
         colormap = Function(DISCRETE_CMAP)
-        cmap = np.random.uniform(size=(1, nsignals, 3),
-                                 low=.5, high=.9).astype(np.float32)
+        rng = np.random.RandomState(0)
+        cmap = rng.uniform(size=(1, nsignals, 3),
+                           low=.5, high=.9).astype(np.float32)
         tex = gloo.Texture2D((cmap * 255).astype(np.uint8))
         colormap['colormap'] = Variable('uniform sampler2D u_colormap', tex)
         colormap['ncolors'] = nsignals
@@ -319,10 +322,7 @@ class SignalsVisual(Visual):
         view.view_program.vert['transform'] = tr  # .simplified()
 
 
-class Signals(SignalsVisual, scene.visuals.Node):
-    def __init__(self, data):
-        SignalsVisual.__init__(self, data)
-        scene.visuals.Node.__init__(self)
+Signals = scene.visuals.create_visual_node(SignalsVisual)
 
 
 if __name__ == '__main__':
@@ -335,10 +335,10 @@ if __name__ == '__main__':
 
     scanvas = scene.SceneCanvas(show=True, keys='interactive',
                                 title="SceneCanvas", vsync=False)
-    svisual = Signals(data)
-    view = scanvas.central_widget.add_view()
-    view.camera = 'panzoom'
-    view.add(svisual)
+    view = scanvas.central_widget.add_view('panzoom')
+    svisual = Signals(data, parent=view.scene)
+    view.camera.set_range([-0.9, 0.9], [-0.9, 0.9])
+    print(scanvas.scene.children[0].children[0].children[0].children)
 
     # let's do some work
     @scanvas.events.draw.connect
