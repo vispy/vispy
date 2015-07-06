@@ -85,7 +85,7 @@ class AxisVisual(CompoundVisual):
     @property
     def pos(self):
         return self._pos
-    
+
     @pos.setter
     def pos(self, pos):
         self._pos = np.array(pos, float)
@@ -95,10 +95,10 @@ class AxisVisual(CompoundVisual):
     @property
     def domain(self):
         return self._domain
-    
+
     @domain.setter
     def domain(self, d):
-        if d != self._domain:
+        if self._domain is None or d != self._domain:
             self._domain = d
             self._need_update = True
             self.update()

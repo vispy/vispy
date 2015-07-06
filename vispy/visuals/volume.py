@@ -47,16 +47,16 @@ import numpy as np
 # Vertex shader
 VERT_SHADER = """
 attribute vec3 a_position;
-attribute vec3 a_texcoord;
+// attribute vec3 a_texcoord;
 uniform vec3 u_shape;
 
-varying vec3 v_texcoord;
+// varying vec3 v_texcoord;
 varying vec3 v_position;
 varying vec4 v_nearpos;
 varying vec4 v_farpos;
 
 void main() {
-    v_texcoord = a_texcoord;
+    // v_texcoord = a_texcoord;
     v_position = a_position;
     
     // Project local vertex coordinate to camera position. Then do a step
@@ -84,7 +84,7 @@ uniform float u_threshold;
 uniform float u_relative_step_size;
 
 //varyings
-varying vec3 v_texcoord;
+// varying vec3 v_texcoord;
 varying vec3 v_position;
 varying vec4 v_nearpos;
 varying vec4 v_farpos;
@@ -530,7 +530,8 @@ class VolumeVisual(Visual):
                              (known_methods, method))
         self._method = method
         # Get rid of specific variables - they may become invalid
-        self.shared_program['u_threshold'] = None
+        if 'u_threshold' in self.shared_program:
+            self.shared_program['u_threshold'] = None
 
         self.shared_program.frag = frag_dict[method]
         self.shared_program.frag['sampler_type'] = self._tex.glsl_sampler_type
@@ -547,7 +548,8 @@ class VolumeVisual(Visual):
     @threshold.setter
     def threshold(self, value):
         self._threshold = float(value)
-        self.shared_program['u_threshold'] = self._threshold
+        if 'u_threshold' in self.shared_program:
+            self.shared_program['u_threshold'] = self._threshold
         self.update()
     
     @property
@@ -619,7 +621,7 @@ class VolumeVisual(Visual):
     def _prepare_transforms(self, view):
         trs = view.transforms
         view.view_program.vert['transform'] = trs.get_transform()
-        
+
         view_tr_f = trs.get_transform('visual', 'document')
         view_tr_i = view_tr_f.inverse
         view.view_program.vert['viewtransformf'] = view_tr_f
