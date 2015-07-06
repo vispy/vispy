@@ -338,19 +338,6 @@ if __name__ == '__main__':
     view = scanvas.central_widget.add_view('panzoom')
     svisual = Signals(data, parent=view.scene)
     view.camera.set_range([-0.9, 0.9], [-0.9, 0.9])
-    print(scanvas.scene.children[0].children[0].children[0].children)
-
-    # let's do some work
-    @scanvas.events.draw.connect
-    def on_draw_scene(event):
-        scanvas.update()
-
-    @pzcanvas.events.draw.connect
-    def on_draw_panzoom(event):
-        pzcanvas.update()
-
-    scanvas.measure_fps(callback='Scene:         %1.1f FPS')
-    pzcanvas.measure_fps(callback='PanZoomCanvas: %1.1f FPS')
 
     import sys
     if sys.flags.interactive != 1:
