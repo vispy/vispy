@@ -40,22 +40,24 @@ class VectorFieldVisual(visuals.Visual):
     void main() {
         float offset = texture2D(phase_offset, ij / shape).r * 2 * 3.1415;
         float alpha = (sin(dist*3 - phase + offset) + 1) * 0.5;
-        gl_FragColor = vec4(1, 1, 1, alpha);
+        gl_FragColor = vec4(1, 1, 1, alpha * 0.3);
     }    
     """
     
-    def __init__(self, field, spacing=10):
+    def __init__(self, field, spacing=10, segments=3):
         self._phase = 0.0
         rows = field.shape[0] / spacing
         cols = field.shape[1] / spacing
-        index = np.empty((rows * cols * 2, 2), dtype=np.float32)
-        index[0::2, 0] = np.arange(rows * cols)
-        index[1::2, 0] = index[::2, 0]
-        index[0::2, 1] = 0
-        index[1::2, 1] = 1
+        index = np.empty((rows * cols, segments * 2, 2), dtype=np.float32)
+        
+        # encodes starting position within vector field
+        index[:, :, 0] = np.arange(rows * cols)[:, np.newaxis]
+        # encodes distance along length of line
+        index[:, ::2, 1] = np.arange(segments)[np.newaxis, :]
+        index[:, 1::2, 1] = np.arange(segments)[np.newaxis, :] + 1
         self._index = gloo.VertexBuffer(index)
+        
         offset = np.random.uniform(256, size=(rows, cols)).astype(np.ubyte)
-        print offset
         self._phase_offset = gloo.Texture2D(offset, format='luminance')
         self._field = gloo.Texture2D(field, format='rg', internalformat='rg32f',
                                      interpolation='linear')
@@ -72,7 +74,7 @@ class VectorFieldVisual(visuals.Visual):
         self.shared_program['phase_offset'] = self._phase_offset
         
         self._draw_mode = 'lines'
-        self.set_gl_state('translucent')
+        self.set_gl_state('translucent', depth_test=False)
         
         self.timer = app.Timer(interval='auto', connect=self.update_phase)
         self.timer.start()
@@ -99,14 +101,14 @@ VectorField = scene.visuals.create_visual_node(VectorFieldVisual)
 
 
 field = np.zeros((100, 100, 3), dtype='float32')
-field[..., 0] = np.fromfunction(lambda x,y: y-50, (100, 100))
-field[..., 1] = np.fromfunction(lambda x,y: x-50, (100, 100))
+field[..., 0] = np.fromfunction(lambda x,y: x-50, (100, 100))
+field[..., 1] = np.fromfunction(lambda x,y: y-50, (100, 100))
 
 win = scene.SceneCanvas(keys='interactive', show=True)
 view = win.central_widget.add_view(camera='panzoom')
 #img = scene.Image(field, parent=view.scene)
 
-vfield = VectorField(field[..., :2], spacing=2, parent=view.scene)
+vfield = VectorField(field[..., :2], spacing=0.5, segments=6, parent=view.scene)
 view.camera.set_range()
 
 
