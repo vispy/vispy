@@ -29,10 +29,12 @@ class Canvas(app.Canvas):
         self.quaternion = Quaternion()
         self.show()
 
-    def on_draw(self, event):
+    def on_resize(self, event):
         vp = (0, 0, self.physical_size[0], self.physical_size[1])
         self.context.set_viewport(*vp)
         self.cube.transforms.configure(canvas=self, viewport=vp)
+
+    def on_draw(self, event):
         self.context.clear('white')
         self.cube.draw()
 
