@@ -44,6 +44,7 @@ class SurfacePlotVisual(MeshVisual):
         self._z = None
         self.__vertices = None
         self.__meshdata = MeshData()
+        kwargs.setdefault('shading', 'smooth')
         MeshVisual.__init__(self, **kwargs)
         self.set_data(x, y, z, colors)
 

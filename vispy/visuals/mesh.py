@@ -393,6 +393,6 @@ class MeshVisual(Visual):
             view.shared_program.vert['doc2scene'] = doc2scene
 
     def _compute_bounds(self, axis, view):
-        if self._bounds is None:
+        if self._bounds is None or axis >= len(self._bounds):
             return None
         return self._bounds[axis]

@@ -24,7 +24,7 @@ view.camera = scene.TurntableCamera(up='z', fov=60)
 z = np.random.normal(size=(250, 250), scale=200)
 z[100, 100] += 50000
 z = gaussian_filter(z, (10, 10))
-p1 = scene.visuals.SurfacePlot(z=z, color=(0.3, 0.3, 1, 1), shading='smooth')
+p1 = scene.visuals.SurfacePlot(z=z, color=(0.3, 0.3, 1, 1))
 p1.transform = scene.transforms.MatrixTransform()
 p1.transform.scale([1/249., 1/249., 1/249.])
 p1.transform.translate([-0.5, -0.5, 0])

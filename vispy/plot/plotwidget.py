@@ -319,3 +319,15 @@ class PlotWidget(scene.Widget):
         self.view.add(volume)
         self.view.camera.set_range()
         return volume
+
+    def surface(self, zdata, **kwargs):
+        self._configure_3d()
+        surf = scene.SurfacePlot(z=zdata, **kwargs)
+        #offset = (-zdata.shape[0]/2.+25, -zdata.shape[1]/2.)
+        #print offset
+        #surf.transform = scene.STTransform(translate=offset)
+        self.view.add(surf)
+        self.view.camera.set_range()
+        return surf
+        
+        
