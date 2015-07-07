@@ -25,13 +25,16 @@ M = 2000
 cols = int(N**0.5)
 view.camera.rect = (0, 0, cols, N/cols)
 
-lines = scene.ScrollingLines(n_lines=N, line_size=M, columns=cols, dt=0.8/M,
+lines = scene.ScrollingLines(n_lines=N, line_size=M, columns=cols, dx=0.8/M,
                              cell_size=(1, 8), parent=view.scene)
 lines.transform = scene.STTransform(scale=(1, 1/8.))
 
 def update(ev):
     m = 50
     data = np.random.normal(size=(N, m), scale=0.3)
+    data[0] = 0
+    data[1] = 1
+    data[100] = 2
     data[data > 1] += 4
     lines.roll_data(data)
 

@@ -12,24 +12,25 @@ from .. import gloo
 
 class ScrollingLinesVisual(Visual):
     vertex_code = """
-    attribute vec2 index;  // .x=line #, .y=vertex #
+    attribute vec2 index;  // .x=line_n, .y=vertex_n
     uniform sampler2D position;
+    uniform sampler1D pos_offset;
     
-    uniform vec2 pos_size;
-    uniform float offset;
-    uniform int columns;
-    uniform float dt;
-    uniform vec2 cell_size;
+    uniform vec2 pos_size;  // x=n_lines, y=n_verts_per_line
+    uniform float offset;  // rolling pointer into vertexes
+    uniform float dx;  // x step per sample
     
     varying vec2 v_index;
     
     
     void main() {
-        v_index = vec2(mod(index.x + offset, pos_size.x), index.y);
-        vec4 pos = vec4(index.x * dt, texture2D(position, v_index / (pos_size-1)).r, 0, 1);
-        float col = mod(v_index.y, columns);
-        float row = (v_index.y - col) / columns;
-        pos = pos + vec4(col * cell_size.x, row * cell_size.y, 0, 0);
+        v_index = vec2(mod(index.y + offset, pos_size.y), index.x);
+        vec2 uv = (v_index + 0.5) / (pos_size.yx);
+        vec4 pos = vec4(index.y * dx, texture2D(position, uv).r, 0, 1);
+        
+        // fetch starting position from texture lookup:
+        pos += vec4(texture1D(pos_offset, (index.x + 0.5) / pos_size.x).rg, 0, 0); 
+        
         gl_Position = $transform(pos);
     }
     """
@@ -45,7 +46,8 @@ class ScrollingLinesVisual(Visual):
     }
     """
     
-    def __init__(self, n_lines, line_size, dt, columns=1, cell_size=(1, 1)):
+    def __init__(self, n_lines, line_size, dx, pos_offset=None, columns=None,
+                 cell_size=None):
         """Displays many lines of equal length, with the option to add new
         vertex data to one end of the lines.
         """
@@ -61,20 +63,35 @@ class ScrollingLinesVisual(Visual):
         
         self.shared_program['position'] = self._pos_tex
         self.shared_program['index'] = self._index_buf
-        self.shared_program['columns'] = columns
-        self.shared_program['cell_size'] = cell_size
-        self.shared_program['dt'] = dt
-        self.shared_program['pos_size'] = data.shape[::-1]
+        self.shared_program['dx'] = dx
+        self.shared_program['pos_size'] = data.shape
         self.shared_program['offset'] = self._offset
         
+        # set an array giving the x/y origin for each plot
+        if pos_offset is None:
+            # construct positions as a grid 
+            rows = np.ceil(n_lines / columns)
+            pos_offset = np.empty((rows, columns, 3), dtype='float32')
+            pos_offset[..., 0] = np.arange(columns)[np.newaxis, :] * cell_size[0]
+            pos_offset[..., 1] = np.arange(rows)[:, np.newaxis] * cell_size[1]
+            pos_offset = pos_offset.reshape((rows*columns), 3)
+        self._pos_offset = gloo.Texture1D(pos_offset, internalformat='rgb32f',
+                                          interpolation='nearest')
+        self.shared_program['pos_offset'] = self._pos_offset
+        
+        # construct a vertex buffer index containing (plot_n, vertex_n) for
+        # each vertex
         index = np.empty((data.shape[0], data.shape[1], 2), dtype='float32')
-        index[..., 1] = np.arange(data.shape[0])[:, np.newaxis]
-        index[..., 0] = np.arange(data.shape[1])[np.newaxis, :]
+        index[..., 0] = np.arange(data.shape[0])[:, np.newaxis]
+        index[..., 1] = np.arange(data.shape[1])[np.newaxis, :]
         index = index.reshape((index.shape[0]*index.shape[1], index.shape[2]))
         self._index_buf.set_data(index)
         
         self._draw_mode = 'line_strip'
         self.set_gl_state('translucent', line_width=1)
+
+    def set_pos_offset(self, po):
+        self._pos_offset.set_data(po)
 
     def _prepare_transforms(self, view):
         view.view_program.vert['transform'] = view.get_transform().simplified
@@ -99,3 +116,9 @@ class ScrollingLinesVisual(Visual):
             self._offset += data.shape[1]
         self.shared_program['offset'] = self._offset
         self.update()
+
+    def set_data(self, index, data):
+        self._pos_tex[index] = data
+        self.update()
+        
+                 

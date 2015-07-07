@@ -149,9 +149,10 @@ def fn(y, x):
 field = np.fromfunction(fn, (100, 100)).transpose(1, 2, 0).astype('float32')
 field[..., 0] += 10 * np.cos(np.linspace(0, 2*3.1415, 100))
 
-color = np.zeros((100, 100, 3), dtype='float32')
+color = np.zeros((100, 100, 4), dtype='float32')
 color[...,:2] = (field + 5) / 10.
 color[...,2] = 0.5
+color[...,3] = 0.5
 
 win = scene.SceneCanvas(keys='interactive', show=True)
 view = win.central_widget.add_view(camera='panzoom')
