@@ -42,6 +42,7 @@ void main()
     // so let's invert it to make sure that the colorbar renders correctly 
     vec4 mapped_color = $color_transform(1.0 - v_texcoord.y);
     gl_FragColor = mapped_color;
+    gl_FragColor = vec4(1, 1, 0, 1);
 }
 """  # noqa
 
@@ -153,7 +154,6 @@ class ColorBarVisual(Visual):
                  border_color="black",
                  **kwargs):
 
-        
         self._label_str = label_str
         self._cmap = get_colormap(cmap)
         self._clim = clim
@@ -178,13 +178,15 @@ class ColorBarVisual(Visual):
 
         # setup the right program shader based on color
         if orientation == "top" or orientation == "bottom":
-            #self._program = ModularProgram(VERT_SHADER, FRAG_SHADER_HORIZONTAL)
-            Visual.__init__(self, vcode=VERT_SHADER, fcode=FRAG_SHADER_HORIZONTAL, **kwargs)
+            # self._program=ModularProgram(VERT_SHADER,FRAG_SHADER_HORIZONTAL)
+            Visual.__init__(self, vcode=VERT_SHADER,
+                            fcode=FRAG_SHADER_HORIZONTAL, **kwargs)
 
         elif orientation == "left" or orientation == "right":
-            Visual.__init__(self, vcode=VERT_SHADER, fcode=FRAG_SHADER_VERTICAL, **kwargs)
+            Visual.__init__(self, vcode=VERT_SHADER,
+                            fcode=FRAG_SHADER_VERTICAL, **kwargs)
 
-            #self._program = ModularProgram(VERT_SHADER, FRAG_SHADER_VERTICAL)
+            # self._program = ModularProgram(VERT_SHADER, FRAG_SHADER_VERTICAL)
         else:
             raise ColorBarVisual._get_orientation_error(self._orientation)
 
@@ -192,7 +194,8 @@ class ColorBarVisual(Visual):
                               [0, 0], [1, 1], [0, 1]],
                               dtype=np.float32)
 
-        self.shared_program.frag['color_transform'] = Function(self._cmap.glsl_map)
+        glsl_map_fn = Function(self._cmap.glsl_map)
+        self.shared_program.frag['color_transform'] = glsl_map_fn
         self.shared_program['a_texcoord'] = tex_coords.astype(np.float32)
 
         self._update()
@@ -450,7 +453,7 @@ class ColorBarVisual(Visual):
         """
 
         self._program.draw('triangles')
-        self._border_program.draw("triangles")
+        # self._border_program.draw("triangles")
 
         # self._label.draw()
 

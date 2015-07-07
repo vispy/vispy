@@ -11,8 +11,10 @@ from vispy import app
 from vispy import gloo
 from vispy.visuals import ColorBarVisual
 from vispy.color import get_colormap
-from vispy.visuals.transforms import NullTransform
-from vispy.visuals.transforms.transform_system import TransformSystem
+from vispy.color import Color
+
+# from vispy.visuals.transforms import NullTransform
+# from vispy.visuals.transforms.transform_system import TransformSystem
 
 colormap = get_colormap("ice")
 
@@ -28,8 +30,8 @@ def style_colorbar(colorbar):
     colorbar.ticks[0].color = "black"
     colorbar.ticks[1].color = "black"
 
-    colorbar.border_width = 2
-    colorbar.border_color = "black"
+    colorbar.border_width = -10
+    colorbar.border_color = Color(color=(0, 0, 1, 0))
 
     return colorbar
 
