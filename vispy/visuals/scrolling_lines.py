@@ -15,12 +15,14 @@ class ScrollingLinesVisual(Visual):
     attribute vec2 index;  // .x=line_n, .y=vertex_n
     uniform sampler2D position;
     uniform sampler1D pos_offset;
+    uniform sampler1D color;
     
     uniform vec2 pos_size;  // x=n_lines, y=n_verts_per_line
     uniform float offset;  // rolling pointer into vertexes
     uniform float dx;  // x step per sample
     
     varying vec2 v_index;
+    varying vec4 v_color;
     
     
     void main() {
@@ -32,22 +34,25 @@ class ScrollingLinesVisual(Visual):
         pos += vec4(texture1D(pos_offset, (index.x + 0.5) / pos_size.x).rg, 0, 0); 
         
         gl_Position = $transform(pos);
+        
+        v_color = vec4(1, 1, 1, 1); //texture1D(color, (index.x + 0.5) / pos_size.x);
     }
     """
     
     fragment_code = """
     varying vec2 v_index;
+    varying vec4 v_color;
     
     void main() {
         if (v_index.y - floor(v_index.y) > 0) {
             discard;
         }
-        gl_FragColor = vec4(1, 1, 1, 1);
+        gl_FragColor = $color;
     }
     """
     
-    def __init__(self, n_lines, line_size, dx, pos_offset=None, columns=None,
-                 cell_size=None):
+    def __init__(self, n_lines, line_size, dx, color=None, pos_offset=None,
+                 columns=None, cell_size=None):
         """Displays many lines of equal length, with the option to add new
         vertex data to one end of the lines.
         """
@@ -78,6 +83,12 @@ class ScrollingLinesVisual(Visual):
         self._pos_offset = gloo.Texture1D(pos_offset, internalformat='rgb32f',
                                           interpolation='nearest')
         self.shared_program['pos_offset'] = self._pos_offset
+
+        if color is None:
+            self.shared_program.frag['color'] = (1, 1, 1, 1)
+        else:
+            self._color_tex = gloo.Texture1D(color)
+            self.shared_program.frag['color'] = 'v_color'
         
         # construct a vertex buffer index containing (plot_n, vertex_n) for
         # each vertex
