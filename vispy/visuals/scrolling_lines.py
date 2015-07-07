@@ -15,7 +15,7 @@ class ScrollingLinesVisual(Visual):
     attribute vec2 index;  // .x=line_n, .y=vertex_n
     uniform sampler2D position;
     uniform sampler1D pos_offset;
-    uniform sampler1D color;
+    uniform sampler1D color_tex;
     
     uniform vec2 pos_size;  // x=n_lines, y=n_verts_per_line
     uniform float offset;  // rolling pointer into vertexes
@@ -35,7 +35,7 @@ class ScrollingLinesVisual(Visual):
         
         gl_Position = $transform(pos);
         
-        v_color = vec4(1, 1, 1, 1); //texture1D(color, (index.x + 0.5) / pos_size.x);
+        v_color = texture1D(color_tex, (index.x + 0.5) / pos_size.x);
     }
     """
     
@@ -88,6 +88,7 @@ class ScrollingLinesVisual(Visual):
             self.shared_program.frag['color'] = (1, 1, 1, 1)
         else:
             self._color_tex = gloo.Texture1D(color)
+            self.shared_program['color_tex'] = self._color_tex
             self.shared_program.frag['color'] = 'v_color'
         
         # construct a vertex buffer index containing (plot_n, vertex_n) for
@@ -103,6 +104,9 @@ class ScrollingLinesVisual(Visual):
 
     def set_pos_offset(self, po):
         self._pos_offset.set_data(po)
+
+    def set_color(self, c):
+        self._color_tex.set_data(c)
 
     def _prepare_transforms(self, view):
         view.view_program.vert['transform'] = view.get_transform().simplified
@@ -129,7 +133,7 @@ class ScrollingLinesVisual(Visual):
         self.update()
 
     def set_data(self, index, data):
-        self._pos_tex[index] = data
+        self._pos_tex[index, :] = data
         self.update()
         
                  
