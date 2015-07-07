@@ -11,7 +11,7 @@ import numpy as np
 
 from .widget import Widget
 from ...visuals import Visual
-from ...gloo import VertexBuffer, set_state
+from ...gloo import VertexBuffer
 from ...color import Color
 from ...ext.six import string_types
 
@@ -154,9 +154,15 @@ class Console(Widget):
         self.add_subvisual(self._visual)
         
     def on_resize(self, event):
+        """Resize event handler
+
+        Parameters
+        ----------
+        event : instance of Event
+            The event.
+        """
         self._visual.size = self.size
         
-
     def clear(self):
         """Clear the console"""
         self._visual.clear()

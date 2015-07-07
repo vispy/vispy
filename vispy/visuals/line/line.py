@@ -12,7 +12,7 @@ import numpy as np
 from ... import gloo
 from ...color import Color, ColorArray, get_colormap
 from ...ext.six import string_types
-from ..shaders import ModularProgram, Function
+from ..shaders import Function
 from ..visual import Visual, CompoundVisual
 from ...util.profiler import Profiler
 

@@ -76,13 +76,6 @@ class Canvas(app.Canvas):
         for text in self.texts:
             text.transform = NullTransform()
         self.visuals = self.lines + self.texts
-
-        # create a TransformSystem for each visual.
-        # (these are stored as attributes of each visual for convenience)
-        for visual in self.visuals:
-            visual.tr_sys = visuals.transforms.TransformSystem(self)
-            visual.tr_sys.visual_to_document = visual.transform
-
         self.show()
 
     def on_draw(self, event):
@@ -108,7 +101,7 @@ if __name__ == '__main__':
 
     timer = app.Timer()
     timer.connect(update)
-    #timer.start(0)
+    timer.start(1.0)
 
     if sys.flags.interactive != 1:
         app.run()

@@ -9,7 +9,7 @@ Demonstration of Polygon and subclasses
 import sys
 import numpy as np
 
-from vispy import app, gloo, visuals
+from vispy import app, visuals
 from vispy.visuals import transforms
 
 # vertex positions of polygon data to draw
@@ -69,7 +69,7 @@ class Canvas(app.Canvas):
         rect.transform = transforms.NullTransform()
         self.visuals.append(rect)
 
-        rpolygon = visuals.RegularPolygonVisual(center=(200., 600., 0), 
+        rpolygon = visuals.RegularPolygonVisual(center=(200., 600., 0),
                                                 radius=160,
                                                 color=(0.2, 0.8, 0.2, 1),
                                                 border_color=(1, 1, 1, 1),
@@ -77,18 +77,13 @@ class Canvas(app.Canvas):
         rpolygon.transform = transforms.NullTransform()
         self.visuals.append(rpolygon)
 
-        for v in self.visuals:
-            v.tr_sys = transforms.TransformSystem(self)
-            v.tr_sys.visual_to_document = v.transform
-
         self._timer = app.Timer('auto', connect=self.on_timer, start=True)
-
         self.show()
 
     def on_draw(self, ev):
-        gloo.set_clear_color((0, 0, 0, 1))
-        gloo.set_viewport(0, 0, *self.physical_size)
-        gloo.clear()
+        self.context.set_clear_color((0, 0, 0, 1))
+        self.context.set_viewport(0, 0, *self.physical_size)
+        self.context.clear()
         for vis in self.visuals:
             vis.draw()
 
@@ -110,12 +105,12 @@ class Canvas(app.Canvas):
                          0.3 * (0.5 + np.sin(event.elapsed*2 + np.pi * 2./3.)),
                          0.3 * (0.5 + np.sin(event.elapsed*2 + np.pi * 4./3.)),
                          )
-        polygon.border_color = (.8, .8, .8, 
+        polygon.border_color = (.8, .8, .8,
                                 0.5 + (0.5 * np.sin(event.elapsed*10)))
 
         rpolygon.radius = 100 + 10 * np.sin(event.elapsed * 3.1)
         rpolygon.sides = int(20 + 17 * np.sin(event.elapsed))
-        
+
         self.update()
 
 

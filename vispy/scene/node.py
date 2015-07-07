@@ -33,6 +33,8 @@ class Node(object):
         The parent of the Node.
     name : str
         The name used to identify the node.
+    transforms : instance of TransformSystem | None
+        The associated transforms.
     """
     
     # Needed to allow subclasses to repr() themselves before Node.__init__()
@@ -108,7 +110,7 @@ class Node(object):
     def _update_opacity(self):
         pass
         
-    def set_clipper(self, node, clipper):
+    def _set_clipper(self, node, clipper):
         """Assign a clipper that is inherited from a parent node.
         
         If *clipper* is None, then remove any clippers for *node*.
@@ -129,7 +131,7 @@ class Node(object):
         self._clip_children = clip
         
         for ch in self.children:
-            ch.set_clipper(self, self.clipper) 
+            ch._set_clipper(self, self.clipper) 
 
     @property
     def clipper(self):
@@ -173,7 +175,7 @@ class Node(object):
             prev._remove_child(self)
             # remove all clippers inherited from parents
             for k in list(self._clippers):
-                self.set_clipper(k, None)
+                self._set_clipper(k, None)
         if parent is None:
             self._set_canvas(None)
             self._parent = None
@@ -185,7 +187,7 @@ class Node(object):
             p = parent
             while p is not None:
                 if p.clip_children:
-                    self.set_clipper(p, p.clipper)
+                    self._set_clipper(p, p.clipper)
                 p = p.parent
         
         self.events.parent_change(new=parent, old=prev)
@@ -205,13 +207,32 @@ class Node(object):
         self.events.parent_change.disconnect(node.events.parent_change)
 
     def on_parent_change(self, event):
+        """Parent change event handler
+
+        Parameters
+        ----------
+        event : instance of Event
+            The event.
+        """
         self._scene_node = None
 
-    def is_child(self, child):
-        if child in self.children:
+    def is_child(self, node):
+        """Check if a node is a child of the current node
+
+        Parameters
+        ----------
+        node : instance of Node
+            The potential child.
+
+        Returns
+        -------
+        child : bool
+            Whether or not the node is a child.
+        """
+        if node in self.children:
             return True
         for c in self.children:
-            if c.is_child(child):
+            if c.is_child(node):
                 return True
         return False
 

@@ -25,6 +25,7 @@ from vispy.util import filter
 # Make a canvas and partition it into 3 viewboxes.
 #
 canvas = vispy.scene.SceneCanvas(keys='interactive', show=True)
+canvas._send_hover_events = True  # temporary workaround
 grid = canvas.central_widget.add_grid()
 
 vb1 = grid.add_view(row=0, col=0, col_span=2)
