@@ -79,11 +79,10 @@ def iso_mesh_line(vertices, tris, vertex_data, levels):
                 vertex_level = np.append(vertex_level,
                                          np.zeros(len(point)) +
                                          lev)
-                level_index = np.append(level_index, len(point))
+                level_index = np.append(level_index, np.array(len(point)))
             else:
                 lines = point
-                connects = np.arange(0, nbr*2).reshape((nbr, 2)) + \
-                    len(lines)
+                connects = np.arange(0, nbr*2).reshape((nbr, 2))
                 vertex_level = np.zeros(len(point)) + lev
                 level_index = np.array(len(point))
 
@@ -195,7 +194,7 @@ class IsolineVisual(LineVisual):
             colors = f_color_levs.map(lev[:,np.newaxis])
 
         if len(colors) == 1:
-            colors = colors * np.ones((len(self._vl), 1))
+            colors = colors * np.ones((len(self._levels), 1))
 
         # detect color/level mismatch and raise error
         if (len(colors) != len(self._levels)):
