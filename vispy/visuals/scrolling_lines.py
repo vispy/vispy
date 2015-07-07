@@ -58,6 +58,7 @@ class ScrollingLinesVisual(Visual):
         """
         self._pos_data = None
         self._offset = 0
+        self._dx = dx
         
         data = np.zeros((n_lines, line_size), dtype='float32')
         self._pos_tex = gloo.Texture2D(data, format='luminance', internalformat='r32f')
