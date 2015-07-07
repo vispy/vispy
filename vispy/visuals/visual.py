@@ -364,23 +364,33 @@ class Visual(BaseVisual):
         """Return the (min, max) bounding values of this visual along *axis*
         in the local coordinate system.
         """
-        raise NotImplementedError(self)
+        return None
 
     def _prepare_draw(self, view=None):
         """This visual is about to be drawn.
         
-        Visuals must implement this method to ensure that all program 
+        Visuals should implement this method to ensure that all program 
         and GL state variables are updated immediately before drawing.
         
         Return False to indicate that the visual should not be drawn.
         """
-        raise NotImplementedError(self)
+        return True
 
     def _prepare_transforms(self, view):
-        """Assign a view's transforms to the proper shader template variables
-        on the view's shader program. 
+        """This method is called whenever the TransformSystem instance is
+        changed for a view.
+
+        Assign a view's transforms to the proper shader template variables
+        on the view's shader program.
+
+        Note that each view has its own TransformSystem. In this method we
+        connect the appropriate mapping functions from the view's
+        TransformSystem to the view's program.
         """
-        
+        # Note that we access `view_program` instead of `shared_program`
+        # because we do not want this function assigned to other views.
+        tr = view.transforms.get_transform()
+        view.view_program.vert['transform'] = tr  # .simplified()
         # Todo: this method can be removed if we somehow enable the shader
         # to specify exactly which transform functions it needs by name. For
         # example:
@@ -389,7 +399,6 @@ class Visual(BaseVisual):
         #     // corresponding transform in the view's TransformSystem
         #     gl_Position = visual_to_render(a_position);
         #     
-        raise NotImplementedError()
 
     @property
     def shared_program(self):
@@ -474,10 +483,10 @@ class Visual(BaseVisual):
         if view is None:
             self._vshare.filters.remove(filt)
             for view in self._vshare.views.keys():
-                filter._detach(view)
+                filt._detach(view)
         else:
             view._filters.remove(filt)
-            filter._detach(view)
+            filt._detach(view)
         
 
 class VisualView(BaseVisualView, Visual):
@@ -491,11 +500,11 @@ class VisualView(BaseVisualView, Visual):
     """
     def __init__(self, visual):
         BaseVisualView.__init__(self, visual)
-        Visual.__init__(self, _vshare=visual._vshare)
+        Visual.__init__(self, vshare=visual._vshare)
         
         # Attach any shared filters 
-        for filter in self._vshare.filters:
-            filter._attach(self)
+        for filt in self._vshare.filters:
+            filt._attach(self)
 
         
 class CompoundVisual(BaseVisual):
@@ -644,6 +653,6 @@ class CompoundVisualView(BaseVisualView, CompoundVisual):
         CompoundVisual.__init__(self, subv)
 
         # Attach any shared filters 
-        for filter in self._vshare.filters:
+        for filt in self._vshare.filters:
             for v in self._subvisuals:
-                filter._attach(v)        
+                filt._attach(v)

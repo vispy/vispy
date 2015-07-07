@@ -387,7 +387,10 @@ class Program(GLObject):
             # so we cannot establish whether this is a uniform or
             # attribute, nor check its type. Try again later.
             self._pending_variables[name] = data
-    
+
+    def __contains__(self, key):
+        return key in self._code_variables
+
     def __getitem__(self, name):
         """ Get user-defined data for attributes and uniforms.
         """

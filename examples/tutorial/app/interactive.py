@@ -31,7 +31,7 @@ class Canvas(app.Canvas):
         c = Color(self.color).rgb
         # Simple sinusoid wave animation.
         s = abs(0.5 + 0.5 * math.sin(t))
-        gloo.set_clear_color((c[0] * s, c[1] * s, c[2] * s, 1))
+        self.context.set_clear_color((c[0] * s, c[1] * s, c[2] * s, 1))
         self.update()
 
 

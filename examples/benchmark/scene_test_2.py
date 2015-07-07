@@ -28,8 +28,8 @@ class GridCanvas(app.Canvas):
                                          show=True, **kwargs)
 
     def on_initialize(self, event):
-        gloo.set_state(clear_color='black', blend=True,
-                       blend_func=('src_alpha', 'one_minus_src_alpha'))
+        self.context.set_state(clear_color='black', blend=True,
+                               blend_func=('src_alpha', 'one_minus_src_alpha'))
 
     def on_mouse_move(self, event):
         if event.is_dragging and not event.modifiers:
@@ -49,13 +49,13 @@ class GridCanvas(app.Canvas):
 
     def on_draw(self, event):
         prof = Profiler()  # noqa
-        gloo.clear()
+        self.context.clear()
         M = len(self.cells)
         N = len(self.cells[0])
         w, h = self.size
         for i in range(M):
             for j in range(N):
-                gloo.set_viewport(w*i/M, h*j/N, w/M, h/N)
+                self.context.set_viewport(w*i/M, h*j/N, w/M, h/N)
                 self.cells[i][j].draw()
 
 
@@ -93,6 +93,9 @@ class Line(object):
         self.program.draw('line_strip')
 
 
+scales = np.array((1.9 / 100., 2. / 10.))
+
+
 class VisualCanvas(app.Canvas):
     def __init__(self, vis, **kwargs):
         super(VisualCanvas, self).__init__(keys='interactive',
@@ -100,94 +103,87 @@ class VisualCanvas(app.Canvas):
         m, n = (10, 10)
         self.grid_size = (m, n)
         self.visuals = vis
-        for row in vis:
-            for v in row:
-                v.tr_sys = visuals.transforms.TransformSystem(self)
-                v.tr_sys.visual_to_document = v.transform
 
     def on_initialize(self, event):
-        gloo.set_state(clear_color='black', blend=True,
-                       blend_func=('src_alpha', 'one_minus_src_alpha'))
+        self.context.set_state(clear_color='black', blend=True,
+                               blend_func=('src_alpha', 'one_minus_src_alpha'))
 
     def on_mouse_move(self, event):
         if event.is_dragging and not event.modifiers:
-            dx = (event.pos - event.last_event.pos)
+            dx = np.array(event.pos - event.last_event.pos)
             x, y = event.press_event.pos / self.size
             m, n = self.grid_size
             i, j = int(x*m), n - 1 - int(y*n)
             v = self.visuals[i][j]
             tr = v.transform
             if event.press_event.button == 1:
-                offset = np.array(tr.translate)[:2] + dx
-                tr.translate = offset
-                
+                tr.translate = np.array(tr.translate)[:2] + \
+                    dx * scales * (1, -1)
+
             else:
                 tr.scale = tr.scale[:2] * 1.05 ** (dx * (1, -1))
             self.update()
 
     def on_draw(self, event):
         prof = Profiler()  # noqa
-        gloo.clear()
+        self.context.clear()
         M, N = self.grid_size
         w, h = self.size
         for i in range(M):
             for j in range(N):
-                gloo.set_viewport(w*i/M, h*j/N, w/M, h/N)
-                v = self.visuals[i][j]
-                v.draw(v.tr_sys)
+                self.context.set_viewport(w*i/M, h*j/N, w/M, h/N)
+                self.visuals[i][j].draw()
 
 
 if __name__ == '__main__':
     M, N = (10, 10)
-    
+
     data = np.empty((10000, 2), dtype=np.float32)
     data[:, 0] = np.linspace(0, 100, data.shape[0])
     data[:, 1] = np.random.normal(size=data.shape[0])
-    
+
     # Optimized version
     cells = []
     for i in range(M):
         row = []
         cells.append(row)
         for j in range(N):
-            row.append(Line(data, offset=(-50, 0), scale=(1.9/100, 2/10)))
-    
-    gcanvas = GridCanvas(cells, position=(400, 300), size=(800, 600), 
+            row.append(Line(data, offset=(-50, 0), scale=scales))
+
+    gcanvas = GridCanvas(cells, position=(400, 300), size=(800, 600),
                          title="GridCanvas")
-    
+
     # Visual version
     vlines = []
     for i in range(M):
         row = []
         vlines.append(row)
         for j in range(N):
-            v = visuals.LineVisual(pos=data, color=(1, 1, 1, 0.5), method='gl')
-            v.transform = visuals.transforms.STTransform(translate=(0, 200), 
-                                                         scale=(7, 50))
+            v = visuals.LineVisual(pos=data, color='w', method='gl')
+            v.transform = visuals.transforms.STTransform(
+                translate=(-1, 0), scale=scales)
             row.append(v)
-    
+
     vcanvas = VisualCanvas(vlines, position=(400, 300), size=(800, 600), 
                            title="VisualCanvas")
-    
+
     # Scenegraph version
     scanvas = scene.SceneCanvas(show=True, keys='interactive', 
                                 title="SceneCanvas")
     
     scanvas.size = 800, 600
-    scanvas.show()
-    grid = scanvas.central_widget.add_grid()
+    grid = scanvas.central_widget.add_grid(margin=0)
 
     lines = []
     for i in range(10):
         lines.append([])
         for j in range(10):
-            vb = grid.add_view(row=i, col=j)
-            vb.camera.rect = (0, -5), (100, 10)
-            vb.border = (1, 1, 1, 0.4)
-            line = scene.visuals.Line(pos=data, color=(1, 1, 1, 0.5), 
-                                      method='gl')
+            vb = grid.add_view(camera='panzoom', row=i, col=j)
+            vb.camera.set_range([0, 100], [-5, 5], margin=0)
+            line = scene.visuals.Line(pos=data, color='w', method='gl')
             vb.add(line)
-    
+    scanvas.show()
+
     import sys
     if sys.flags.interactive != 1:
         app.run()

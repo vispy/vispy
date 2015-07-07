@@ -85,7 +85,7 @@ class AxisVisual(CompoundVisual):
     @property
     def pos(self):
         return self._pos
-    
+
     @pos.setter
     def pos(self, pos):
         self._pos = np.array(pos, float)
@@ -95,10 +95,10 @@ class AxisVisual(CompoundVisual):
     @property
     def domain(self):
         return self._domain
-    
+
     @domain.setter
     def domain(self, d):
-        if d != self._domain:
+        if self._domain is None or d != self._domain:
             self._domain = d
             self._need_update = True
             self.update()
@@ -226,9 +226,9 @@ class Ticker(object):
             offset = domain[0]
             scale = domain[1] - domain[0]
 
-            tr_sys = self.axis.transforms
+            transforms = self.axis.transforms
             length = self.axis.pos[1] - self.axis.pos[0]  # in logical coords
-            n_inches = np.sqrt(np.sum(length ** 2)) / tr_sys.dpi
+            n_inches = np.sqrt(np.sum(length ** 2)) / transforms.dpi
 
             # major = np.linspace(domain[0], domain[1], num=11)
             # major = MaxNLocator(10).tick_values(*domain)
