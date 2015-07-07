@@ -99,6 +99,15 @@ class IsocurveVisual(LineVisual):
 
         if self._clim is None:
             self._clim = (data.min(), data.max())
+
+        # sanity check,
+        # should we raise an error here, since no isolines can be drawn?
+        # for now, _prepare_draw returns False if no isoline can be drawn
+        if self._data.min() != self._data.max():
+            self._data_is_uniform = False
+        else:
+            self._data_is_uniform = True
+
         self._need_recompute = True
         self.update()
 
@@ -118,7 +127,16 @@ class IsocurveVisual(LineVisual):
         connects = []
         verts = []
 
-        for level in self.levels:
+        # calculate which level are within data range
+        # this works for now and the existing examples, but should be tested thoroughly
+        # also with the data-sanity check in set_data-function
+        choice = np.nonzero((self.levels > self._data.min()) & (self._levels < self._data.max()))
+        levels_to_calc = np.array(self.levels)[choice]
+
+        # save minimum level index
+        self._level_min = choice[0][0]
+
+        for level in levels_to_calc:
             # if we use matplotlib isoline algorithm we need to add half a pixel
             # in both (x,y) dimensions because isolines are aligned to pixel centers
             if _HAS_MPL:
@@ -145,7 +163,7 @@ class IsocurveVisual(LineVisual):
         level_color = []
         colors = self._lc
         for i, index in enumerate(self._li):
-            level_color.append(np.zeros((index, 4)) + colors[i])
+            level_color.append(np.zeros((index, 4)) + colors[i+self._level_min])
         self._cl = np.vstack(level_color)
 
     def _levels_to_colors(self):
@@ -171,7 +189,7 @@ class IsocurveVisual(LineVisual):
         self._lc = colors
 
     def _prepare_draw(self, view):
-        if self._data is None or self._levels is None or self._color_lev is None:
+        if self._data is None or self._levels is None or self._color_lev is None or self._data_is_uniform:
             return False
 
         if self._need_level_update:
