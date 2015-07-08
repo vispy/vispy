@@ -5,6 +5,7 @@
 from __future__ import division
 
 import numpy as np
+import warnings
 
 from .widget import Widget
 from ...util.np_backport import nanmean
@@ -201,8 +202,9 @@ class Grid(Widget):
                                                      [cspan, rspan])
         row_occ = occupied.sum(axis=1) > 0
         col_occ = occupied.sum(axis=0) > 0
-        row_stretch = nanmean(stretch[..., 1], axis=1)
-        col_stretch = nanmean(stretch[..., 0], axis=0)
+        with warnings.catch_warnings(record=True):  # mean of empty slice
+            row_stretch = nanmean(stretch[..., 1], axis=1)
+            col_stretch = nanmean(stretch[..., 0], axis=0)
         row_stretch[np.isnan(row_stretch)] = 0
         col_stretch[np.isnan(col_stretch)] = 0
         

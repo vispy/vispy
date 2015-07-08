@@ -11,7 +11,7 @@ import numpy as np
 import vispy.plot as vp
 
 np.random.seed(2324)
-n = 1000000
+n = 100000
 data = np.empty((n, 2))
 lasti = 0
 for i in range(1, 20):

@@ -1,5 +1,5 @@
 from __future__ import division
-from vispy import app, scene, plot
+from vispy import app, scene, plot, gloo, visuals
 from vispy.util.filter import gaussian_filter
 import numpy as np
 import threading
@@ -134,27 +134,92 @@ class Oscilloscope(scene.ScrollingLines):
         self.set_pos_offset(self.pos_offset)
         
         self.plot_ptr = (self.plot_ptr + 1) % self._data_shape[0]
+
+
+rolling_tex = """
+float rolling_texture(vec2 pos) {
+    if( pos.x < 0 || pos.x > 1 || pos.y < 0 || pos.y > 1 ) {
+        return 0;
+    }
+    vec2 uv = vec2(mod(pos.x+$shift, 1), pos.y);
+    return texture2D($texture, uv).r;
+}
+"""
+
+cmap = """
+vec4 colormap(float x) {
+    x = x - 1e4;
+    return vec4(x/5e6, x/2e5, x/1e4, 1); 
+}
+"""
+
+class ScrollingImage(scene.Image):
+    def __init__(self, shape, parent):
+        self._shape = shape
+        self._color_fn = visuals.shaders.Function(rolling_tex)
+        self._ctex = gloo.Texture2D(np.zeros(shape+(1,), dtype='float32'), format='luminance', internalformat='r32f')
+        self._color_fn['texture'] = self._ctex
+        self._color_fn['shift'] = 0
+        scene.Image.__init__(self, method='impostor', parent=parent)
+        #self.set_gl_state('additive', cull_face=False)
+        self.shared_program.frag['get_data'] = self._color_fn
+        cfun = visuals.shaders.Function(cmap)
+        self.shared_program.frag['color_transform'] = cfun
+        self.ptr = 0
+        
+    @property
+    def size(self):
+        return self._shape
+
+    def roll(self, data):
+        data = data.reshape(data.shape[0], 1, 1)
+        
+        self._ctex[:, self.ptr] = data
+        self._color_fn['shift'] = (self.ptr+1) / self._shape[1]
+        self.ptr = (self.ptr + 1) % self._shape[1]
+        self.update()
+
+    def _prepare_draw(self, view):
+        if self._need_vertex_update:
+            self._build_vertex_data()
+            
+        if view._need_method_update:
+            self._update_method(view)
+
        
 mic = MicrophoneRecorder()
+n_fft_frames = 8
+fft_samples = mic.chunksize * n_fft_frames
 
 win = scene.SceneCanvas(keys='interactive', show=True)
 grid = win.central_widget.add_grid()
 
-view1 = grid.add_view(row=0, col=0, camera='panzoom', border_color='grey')
+view3 = grid.add_view(row=0, col=0, col_span=2, camera='panzoom', border_color='grey')
+image = ScrollingImage((1 + fft_samples//2, 10000), parent=view3.scene)
+image.transform = scene.LogTransform((0, 10, 0))
+#view3.camera.rect = (0, 0, image.size[1], np.log10(image.size[0]))
+view3.camera.rect = (3493.32, 1.85943, 605.554, 1.41858)
+
+view1 = grid.add_view(row=1, col=0, camera='panzoom', border_color='grey')
 view1.camera.rect = (-0.01, -0.6, 0.02, 1.2)
 gridlines = scene.GridLines(color=(1, 1, 1, 0.5), parent=view1.scene)
 scope = Oscilloscope(line_size=mic.chunksize, dx=1.0/mic.rate, parent=view1.scene)
 
-view2 = grid.add_view(row=1, col=0, camera='panzoom', border_color='grey')
+view2 = grid.add_view(row=1, col=1, camera='panzoom', border_color='grey')
 view2.camera.rect = (0.5, -0.5e6, np.log10(mic.rate/2), 5e6)
 lognode = scene.Node(parent=view2.scene)
 lognode.transform = scene.LogTransform((10, 0, 0))
 gridlines2 = scene.GridLines(color=(1, 1, 1, 1), parent=lognode)
 
-n_fft_frames = 8
-fft_samples = mic.chunksize * n_fft_frames
-spectrum = Oscilloscope(line_size=fft_samples/2, n_lines=10, dx=mic.rate/fft_samples,
+spectrum = Oscilloscope(line_size=1 + fft_samples // 2, n_lines=10, dx=mic.rate/fft_samples,
                         trigger=None, parent=lognode)
+
+
+import vispy.io
+title_img = vispy.io.read_png('titlepage.png')
+title = scene.Image(title_img, parent=win.scene)
+title.set_gl_state('additive')
+title.transform = scene.STTransform(translate=(0, 100))
 
 mic.start()
 
@@ -165,14 +230,19 @@ def update(ev):
     global fft_frames, scope, spectrum, mic
     data = mic.get_frames()
     for frame in data:
+        #import scipy.ndimage as ndi
+        #frame -= ndi.gaussian_filter(frame, 200)
+        
         scope.new_frame(frame)
         
         fft_frames.append(frame)
         if len(fft_frames) >= n_fft_frames:
             cframes = np.concatenate(fft_frames) * window
-            fft = np.fft.rfft(cframes).astype('float32')
+            fft = np.abs(np.fft.rfft(cframes)).astype('float32')
             fft_frames.pop(0)
-            spectrum.new_frame(np.abs(fft))
+            
+            spectrum.new_frame(fft)
+            image.roll(fft)
 
 
 timer = app.Timer(interval='auto', connect=update)
