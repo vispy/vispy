@@ -12,7 +12,7 @@ import numpy as np
 from ... import gloo, glsl
 from ...color import Color, ColorArray, get_colormap
 from ...ext.six import string_types
-from ..shaders import ModularProgram, Function
+from ..shaders import Function
 from ..visual import Visual, CompoundVisual
 from ...util.profiler import Profiler
 
@@ -102,7 +102,7 @@ class LineVisual(CompoundVisual):
         self._connect = None
         self._bounds = None
         self._method = 'none'
-        
+
         CompoundVisual.__init__(self, [])
 
         # don't call subclass set_data; these often have different
@@ -136,7 +136,7 @@ class LineVisual(CompoundVisual):
         self._method = method
         if self._line_visual is not None:
             self.remove_subvisual(self._line_visual)
-            
+
         if method == 'gl':
             self._line_visual = _GLLineVisual(self)
         elif method == 'agg':
@@ -360,7 +360,7 @@ class _GLLineVisual(Visual):
                 self._connect_ibo.set_data(self._connect)
         if self._connect is None:
             return False
-        
+
         prof('prepare')
 
         # Draw
