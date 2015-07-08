@@ -8,9 +8,9 @@ try:
     import pyaudio
     
     class MicrophoneRecorder(object):
-        rate = 44100 #Hz
-        chunksize = 2048 #samples
-        def __init__(self):
+        def __init__(self, rate=44100, chunksize=1024):
+            self.rate = rate
+            self.chunksize = chunksize
             self.p = pyaudio.PyAudio()
             self.stream = self.p.open(format=pyaudio.paInt16,
                                 channels=1,
@@ -70,7 +70,9 @@ except ImportError:
 
 class Oscilloscope(scene.ScrollingLines):
     def __init__(self, n_lines=100, line_size=1024, dx=1e-4,
-                 color=(20, 255, 50), parent=None):
+                 color=(20, 255, 50), trigger=(0, 0.05, 5e-4), parent=None):
+        
+        self._trigger = trigger  # trigger_level, trigger_height, trigger_width
         
         # lateral positioning for trigger
         self.pos_offset = np.zeros((n_lines, 3), dtype=np.float32)
@@ -79,10 +81,9 @@ class Oscilloscope(scene.ScrollingLines):
         self.color = np.empty((n_lines, 4), dtype=np.ubyte)
         self.color[:, :3] = [list(color)]
         self.color[:, 3] = 0
+        self._dim_speed = 0.01 ** (1 / n_lines)
         
         self.frames = []  # running list of recently received frames
-        self.triggers = []
-        self.last_trigger = [0, 0]  # frame_ind, sample_ind
         self.plot_ptr = 0
         
         scene.ScrollingLines.__init__(self, n_lines=n_lines, 
@@ -96,26 +97,32 @@ class Oscilloscope(scene.ScrollingLines):
         # see if we can discard older frames
         while len(self.frames) > 10:
             self.frames.pop(0)
-            self.triggers.pop(0)
-            self.last_trigger[0] -= 1
         
-        # search for next trigger
-        tw = 20  # trigger window width
-        th = 0.05  # trigger window height
-        
-        trig = np.argwhere((data[tw:] > th) & (data[:-tw] < -th))
-        self.triggers.append(trig)
-        if len(trig) > 0:
-            m = np.argmin(np.abs(trig - len(data) / 2))
-            i = trig[m, 0]
-            y1 = data[i]
-            y2 = data[i + tw * 2]
-            s = y2 / (y2 - y1)
-            i = i + tw * 2 * (1-s)
-            dx = i * self._dx
+        if self._trigger is None:
+            dx = 0
+        else:
+            # search for next trigger
+            th = self._trigger[1]  # trigger window height
+            tw = self._trigger[2] / self._dx  # trigger window width
+            thresh = self._trigger[0]
             
-            # if a trigger was found, add new data to the plot
-            self.plot(data, -dx)
+            trig = np.argwhere((data[tw:] > thresh+th) & (data[:-tw] < thresh-th))
+            if len(trig) > 0:
+                m = np.argmin(np.abs(trig - len(data) / 2))
+                i = trig[m, 0]
+                y1 = data[i]
+                y2 = data[i + tw * 2]
+                s = y2 / (y2 - y1)
+                i = i + tw * 2 * (1-s)
+                dx = i * self._dx
+            else:
+                # default trigger at center of trace
+                # (optionally we could skip plotting instead, or place this 
+                # after the most recent trace)
+                dx = self._dx * len(data) / 2.
+            
+        # if a trigger was found, add new data to the plot
+        self.plot(data, -dx)
         
     def plot(self, data, dx=0):
         self.set_data(self.plot_ptr, data)
@@ -128,22 +135,37 @@ class Oscilloscope(scene.ScrollingLines):
         
         self.plot_ptr = (self.plot_ptr + 1) % self._data_shape[0]
        
+mic = MicrophoneRecorder()
 
 win = scene.SceneCanvas(keys='interactive', show=True)
-view = win.central_widget.add_view(camera='panzoom')
-view.camera.rect = (-0.02, -0.6, 0.04, 1.2)
-grid = scene.GridLines(color=(1, 1, 1, 0.5), parent=view.scene)
+grid = win.central_widget.add_grid()
 
-mic = MicrophoneRecorder()
-plots = Oscilloscope(line_size=mic.chunksize, dx=1.0/mic.rate, parent=view.scene)
+view1 = grid.add_view(row=0, col=0, camera='panzoom', border_color='grey')
+view1.camera.rect = (-0.02, -0.6, 0.04, 1.2)
+gridlines = scene.GridLines(color=(1, 1, 1, 0.5), parent=view1.scene)
+scope = Oscilloscope(line_size=mic.chunksize, dx=1.0/mic.rate, parent=view1.scene)
+
+view2 = grid.add_view(row=1, col=0, camera='panzoom', border_color='grey')
+view2.camera.rect = (0, 0, np.log10(mic.rate/2), 10e6)
+fft_samples = mic.chunksize * 4
+spectrum = Oscilloscope(line_size=fft_samples/2, n_lines=10, dx=mic.rate/fft_samples,
+                        trigger=None, parent=view2.scene)
+spectrum.transform = scene.LogTransform((10, 0, 0))
 
 mic.start()
 
-
+fft_frames = []
 def update(ev):
+    global fft_frames, scope, spectrum, mic
     data = mic.get_frames()
     for frame in data:
-        plots.new_frame(frame)
+        scope.new_frame(frame)
+        
+        fft_frames.append(frame)
+        if len(fft_frames) > 3:
+            fft = np.fft.rfft(np.concatenate(fft_frames)).astype('float32')
+            fft_frames.pop(0)
+            spectrum.new_frame(np.abs(fft))
 
 
 timer = app.Timer(interval='auto', connect=update)
