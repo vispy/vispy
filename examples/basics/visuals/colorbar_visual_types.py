@@ -31,7 +31,7 @@ def style_colorbar(colorbar):
     colorbar.ticks[1].color = "black"
 
     colorbar.border_width = -10
-    colorbar.border_color = Color(color=(0, 0, 1, 0))
+    colorbar.border_color = "red"
 
     return colorbar
 

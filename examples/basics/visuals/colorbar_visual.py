@@ -138,16 +138,26 @@ class Canvas(app.Canvas):
 
         self.show()
 
+
+    def on_resize(self, event):
+        # Set canvas viewport and reconfigure visual transforms to match.
+        vp = (0, 0, self.physical_size[0], self.physical_size[1])
+        self.context.set_viewport(*vp)
+
+        self.image.transforms.configure(canvas=self, viewport=vp)
+        self.vertical_bar.transforms.configure(canvas=self, viewport=vp)
+
+
     def on_draw(self, event):
         # clear the color buffer
         gloo.clear(color=colormap[0.0])
 
-        self.image.draw(self.image_transform_sys)
+        self.image.draw()
 
         # render the horizontal and vertical bar
         # with the TransformSystem we had created before
         # self.horizontal_bar.draw(self.colorbar_transform_sys)
-        self.vertical_bar.draw(self.colorbar_transform_sys)
+        self.vertical_bar.draw()
 
 if __name__ == '__main__':
     win = Canvas()
