@@ -111,7 +111,7 @@ class Oscilloscope(scene.ScrollingLines):
                 m = np.argmin(np.abs(trig - len(data) / 2))
                 i = trig[m, 0]
                 y1 = data[i]
-                y2 = data[i + tw * 2]
+                y2 = data[min(i + tw * 2, len(data) - 1)]
                 s = y2 / (y2 - y1)
                 i = i + tw * 2 * (1-s)
                 dx = i * self._dx
@@ -141,18 +141,24 @@ win = scene.SceneCanvas(keys='interactive', show=True)
 grid = win.central_widget.add_grid()
 
 view1 = grid.add_view(row=0, col=0, camera='panzoom', border_color='grey')
-view1.camera.rect = (-0.02, -0.6, 0.04, 1.2)
+view1.camera.rect = (-0.01, -0.6, 0.02, 1.2)
 gridlines = scene.GridLines(color=(1, 1, 1, 0.5), parent=view1.scene)
 scope = Oscilloscope(line_size=mic.chunksize, dx=1.0/mic.rate, parent=view1.scene)
 
 view2 = grid.add_view(row=1, col=0, camera='panzoom', border_color='grey')
-view2.camera.rect = (0, 0, np.log10(mic.rate/2), 10e6)
-fft_samples = mic.chunksize * 4
+view2.camera.rect = (0.5, -0.5e6, np.log10(mic.rate/2), 5e6)
+lognode = scene.Node(parent=view2.scene)
+lognode.transform = scene.LogTransform((10, 0, 0))
+gridlines2 = scene.GridLines(color=(1, 1, 1, 1), parent=lognode)
+
+n_fft_frames = 8
+fft_samples = mic.chunksize * n_fft_frames
 spectrum = Oscilloscope(line_size=fft_samples/2, n_lines=10, dx=mic.rate/fft_samples,
-                        trigger=None, parent=view2.scene)
-spectrum.transform = scene.LogTransform((10, 0, 0))
+                        trigger=None, parent=lognode)
 
 mic.start()
+
+window = np.hanning(fft_samples)
 
 fft_frames = []
 def update(ev):
@@ -162,8 +168,9 @@ def update(ev):
         scope.new_frame(frame)
         
         fft_frames.append(frame)
-        if len(fft_frames) > 3:
-            fft = np.fft.rfft(np.concatenate(fft_frames)).astype('float32')
+        if len(fft_frames) >= n_fft_frames:
+            cframes = np.concatenate(fft_frames) * window
+            fft = np.fft.rfft(cframes).astype('float32')
             fft_frames.pop(0)
             spectrum.new_frame(np.abs(fft))
 
