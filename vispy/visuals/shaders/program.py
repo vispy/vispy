@@ -34,7 +34,7 @@ class ModularProgram(Program):
         self._frag = MainFunction('')
         self._vert._dependents[self] = None
         self._frag._dependents[self] = None
-        
+
         self.vert = vcode
         self.frag = fcode
 

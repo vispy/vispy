@@ -178,6 +178,13 @@ class SceneCanvas(app.Canvas):
             self.update()
 
     def update(self, node=None):
+        """Update the scene
+
+        Parameters
+        ----------
+        node : instance of Node
+            Not used.
+        """
         # TODO: use node bounds to keep track of minimum drawable area
         if self._drawing:
             return
@@ -198,7 +205,7 @@ class SceneCanvas(app.Canvas):
         self._draw_scene()
 
     def render(self, region=None, size=None, bgcolor=None):
-        """ Render the scene to an offscreen buffer and return the image array.
+        """Render the scene to an offscreen buffer and return the image array.
         
         Parameters
         ----------
@@ -211,6 +218,8 @@ class SceneCanvas(app.Canvas):
             pixel scaling factor of the canvas (see `pixel_scale`). This
             argument allows the scene to be rendered at resolutions different
             from the native canvas resolution.
+        bgcolor : instance of Color | None
+            The background color to use.
 
         Returns
         -------
@@ -308,19 +317,15 @@ class SceneCanvas(app.Canvas):
 
     def _process_mouse_event(self, event):
         prof = Profiler()  # noqa
+        deliver_types = ['mouse_press', 'mouse_wheel']
         if self._send_hover_events:
-            deliver_types = ('mouse_press', 'mouse_wheel', 'mouse_move')
-        else:
-            deliver_types = ('mouse_press', 'mouse_wheel')
-            
-        if self._mouse_handler is None:
+            deliver_types += ['mouse_move']
+
+        picked = self._mouse_handler
+        if picked is None:
             if event.type in deliver_types:
                 picked = self.visual_at(event.pos)
-            else:
-                picked = None
-        else:
-            picked = self._mouse_handler
-        
+
         # No visual to handle this event; bail out now
         if picked is None:
             return
@@ -356,17 +361,27 @@ class SceneCanvas(app.Canvas):
         event.handled = scene_event.handled
 
     def visual_at(self, pos):
-        """Return the visual at *pos*.
+        """Return the visual at a given position
+
+        Parameters
+        ----------
+        pos : tuple
+            The position in logical coordinates to query.
+
+        Returns
+        -------
+        visual : instance of Visual | None
+            The visual at the position, if it exists.
         """
         tr = self.transforms.get_transform('canvas', 'framebuffer')
         pos = tr.map(pos)[:2]
 
-        id = self.render_picking(region=(pos[0]-10, pos[1]-10, 20, 20))
-        vis = VisualNode._visual_ids.get(id[10, 10], None)
+        id_ = self._render_picking(region=(pos[0]-10, pos[1]-10, 20, 20))
+        vis = VisualNode._visual_ids.get(id_[10, 10], None)
         return vis
 
-    def render_picking(self, **kwargs):
-        """Render the scene in picking mode, returning a 2D array of visual 
+    def _render_picking(self, **kwargs):
+        """Render the scene in picking mode, returning a 2D array of visual
         IDs.
         """
         try:
@@ -375,8 +390,8 @@ class SceneCanvas(app.Canvas):
         finally:
             self._scene.picking = False
         img = img.astype('int32') * [2**0, 2**8, 2**16, 2**24]
-        id = img.sum(axis=2).astype('int32')
-        return id
+        id_ = img.sum(axis=2).astype('int32')
+        return id_
 
     def on_resize(self, event):
         """Resize handler
@@ -395,6 +410,13 @@ class SceneCanvas(app.Canvas):
             self.context.set_viewport(0, 0, *self.physical_size)
             
     def on_close(self, event):
+        """Close event handler
+
+        Parameters
+        ----------
+        event : instance of Event
+            The event.
+        """
         self.events.mouse_press.disconnect(self._process_mouse_event)
         self.events.mouse_move.disconnect(self._process_mouse_event)
         self.events.mouse_release.disconnect(self._process_mouse_event)

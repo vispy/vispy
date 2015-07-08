@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+# -----------------------------------------------------------------------------
+# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+# -----------------------------------------------------------------------------
 """
 Tutorial: Creating Visuals
 ==========================
@@ -136,7 +141,7 @@ class MyRectVisual(visuals.Visual):
     """
     
     def __init__(self, x, y, w, h, weight=4.0):
-        visuals.Visual.__init__(self)
+        visuals.Visual.__init__(self, vertex_shader, fragment_shader)
         
         # 10 vertices for 8 triangles (using triangle_strip) forming a 
         # rectangular outline
@@ -168,25 +173,19 @@ class MyRectVisual(visuals.Visual):
             [1, 1],
         ], dtype=np.float32))
         
-        self.program = visuals.shaders.ModularProgram(vertex_shader, 
-                                                      fragment_shader)
-        
-        self.program.vert['position'] = self.vert_buffer
-        self.program.vert['adjust_dir'] = self.adj_buffer
-        self.program.vert['line_width'] = weight
-        self.program.frag['color'] = (1, 0, 0, 1)
-        
-    def draw(self, transforms):
-        gloo.set_state(cull_face=False)
-        
+        self.shared_program.vert['position'] = self.vert_buffer
+        self.shared_program.vert['adjust_dir'] = self.adj_buffer
+        self.shared_program.vert['line_width'] = weight
+        self.shared_program.frag['color'] = (1, 0, 0, 1)
+        self.set_gl_state(cull_face=False)
+        self._draw_mode = 'triangle_strip'
+
+    def _prepare_transforms(self, view):
         # Set the two transforms required by the vertex shader:
-        self.program.vert['visual_to_doc'] = transforms.visual_to_document
-        self.program.vert['doc_to_render'] = (
-            transforms.framebuffer_to_render *
-            transforms.document_to_framebuffer) 
-        
-        # Finally, draw the triangles.
-        self.program.draw('triangle_strip')
+        tr = view.transforms
+        view_vert = view.view_program.vert
+        view_vert['visual_to_doc'] = tr.get_transform('visual', 'document')
+        view_vert['doc_to_render'] = tr.get_transform('document', 'render')
 
 
 # As in the previous tutorial, we auto-generate a Visual+Node class for use
@@ -207,18 +206,15 @@ view.camera.rect = (0, 0, 800, 800)
 rects = [MyRect(100, 100, 200, 300, parent=view.scene),
          MyRect(500, 100, 200, 300, parent=view.scene)]
 
-# Again, rotate one rectangle to ensure the transforms are working as we 
+# Again, rotate one rectangle to ensure the transforms are working as we
 # expect.
 tr = visuals.transforms.AffineTransform()
 tr.rotate(25, (0, 0, 1))
 rects[1].transform = tr
 
 # Add some text instructions
-text = scene.visuals.Text("Drag right mouse button to zoom.", 
-                          color='w',
-                          anchor_x='left',
-                          parent=view,
-                          pos=(20, 30))
+text = scene.visuals.Text("Drag right mouse button to zoom.", color='w',
+                          anchor_x='left', parent=view, pos=(20, 30))
 
 # ..and optionally start the event loop
 if __name__ == '__main__':

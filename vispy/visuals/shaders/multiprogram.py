@@ -73,9 +73,12 @@ class MultiProgram(object):
         for p in self._programs.values():
             p.frag = code
 
+    def __contains__(self, key):
+        return any(key in p for p in self._programs.values())
+
     def __getitem__(self, key):
         return self._set_items[key]
-        
+
     def __setitem__(self, key, value):
         self._set_items[key] = value
         for program in self._programs.values():
@@ -110,13 +113,13 @@ class MultiShader(object):
         self._program = program
         self._shader = shader
         self._set_items = {}
-        
+
     def __getitem__(self, key):
         return self._set_items[key]
-        
+
     def __setitem__(self, key, value):
         self._set_items[key] = value
-        for k, p in self._program._programs.items():
+        for p in self._program._programs.values():
             getattr(p, self._shader)[key] = value
 
     def _new_program(self, p):

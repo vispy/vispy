@@ -32,8 +32,6 @@ class Widget(Compound):
         The color of the border.
     bgcolor : color
         The background color.
-    clip : bool
-        Not used :)
     padding : int
         The amount of padding in the widget (i.e. the space reserved between
         the contents and the border).

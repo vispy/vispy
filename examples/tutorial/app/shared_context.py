@@ -9,6 +9,8 @@ This is a very simple example that demonstrates using a shared context
 between two Qt widgets.
 """
 
+# XXX THIS IS CURRENTLY BROKEN
+
 from PyQt4 import QtGui, QtCore  # can also use pyside
 from functools import partial
 

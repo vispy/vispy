@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+# vispy: gallery 10
+# Copyright (c) 2015, Vispy Development Team.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+
 from vispy import app, gloo, visuals
 from vispy.visuals.filters import Clipper, ColorFilter
 from vispy.visuals.shaders import MultiProgram
@@ -68,21 +73,6 @@ class LineVisual(visuals.Visual):
             # for most visuals.
             self.pos_buf.set_data(self._pos)
             self._need_upload = False
-    
-    @staticmethod
-    def _prepare_transforms(view):
-        """This method is called whenever the TransformSystem instance is
-        changed for a view.
-        
-        Note that each view has its own TransformSystem. In this method we 
-        connect the appropriate mapping functions from the view's
-        TransformSystem to the view's program.
-        """
-        
-        # Note that we access `view_program` instead of `shared_program`
-        # because we do not want this function assigned to other views.
-        tr = view.transforms.get_transform()
-        view.view_program.vert['transform'] = tr  # .simplified()
 
 
 class PointVisual(LineVisual):
@@ -120,11 +110,6 @@ class PointCollectionVisual(visuals.Visual):
         self.points = PointCollection("agg", color="shared", program=prog)
         visuals.Visual.__init__(self, program=prog)
     
-    @staticmethod
-    def _prepare_transforms(view):
-        tr = view.transforms.get_transform()
-        view.view_program.vert['transform'] = tr  # .simplified()
-        
     def _prepare_draw(self, view):
         if self.points._need_update:
             self.points._update()

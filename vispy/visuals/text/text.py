@@ -533,5 +533,4 @@ class TextVisual(Visual):
 
     def _prepare_transforms(self, view):
         self._pos_changed = True
-        trs = view.transforms
-        view.view_program.vert['transform'] = trs.get_transform()
+        Visual._prepare_transforms(self, view)

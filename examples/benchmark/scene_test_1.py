@@ -17,15 +17,15 @@ import math
 
 from vispy import gloo, app, scene
 from vispy.visuals import Visual
-from vispy.visuals.shaders import ModularProgram, Function, Variable
+from vispy.visuals.shaders import Function, Variable
 from vispy.visuals.transforms import TransformSystem, BaseTransform
 from vispy.util.profiler import Profiler
 
 
 class PanZoomTransform(BaseTransform):
     glsl_map = """
-        vec4 pz_transform_map(vec2 pos) {
-            return vec4($zoom * (pos + $pan), 0, 1);
+        vec4 pz_transform_map(vec4 pos) {
+            return vec4($zoom * (pos.xy + $pan), 0., 1.);
         }
     """
 
@@ -100,16 +100,18 @@ class PanZoomCanvas(app.Canvas):
         self._pz.zoom = Variable('uniform vec2 u_zoom', (1, 1))
 
         self.width, self.height = self.size
-        gloo.set_viewport(0, 0, self.physical_size[0], self.physical_size[1])
-        gloo.set_state(clear_color='black', blend=True,
-                       blend_func=('src_alpha', 'one_minus_src_alpha'))
+        self.context.set_viewport(0, 0, self.physical_size[0],
+                                  self.physical_size[1])
+        self.context.set_state(clear_color='black', blend=True,
+                               blend_func=('src_alpha', 'one_minus_src_alpha'))
 
         self._tr = TransformSystem(self)
         self.show()
 
     def on_resize(self, event):
         self.width, self.height = event.size
-        gloo.set_viewport(0, 0, event.physical_size[0], event.physical_size[1])
+        self.context.set_viewport(0, 0, event.physical_size[0],
+                                  event.physical_size[1])
 
     def _normalize(self, x_y):
         x, y = x_y
@@ -168,7 +170,7 @@ class PanZoomCanvas(app.Canvas):
             self.update()
 
     def add_visual(self, name, value):
-        value._program.vert['transform'] = self._pz
+        value.shared_program.vert['transform'] = self._pz
         value.events.update.connect(self.update)
         self._visuals.append(value)
 
@@ -183,9 +185,9 @@ class PanZoomCanvas(app.Canvas):
 
     def on_draw(self, event):
         prof = Profiler()
-        gloo.clear()
+        self.context.clear()
         for visual in self.visuals:
-            visual.draw(self._tr)
+            visual.draw()
             prof('draw visual')
 
 
@@ -225,8 +227,8 @@ class SignalsVisual(Visual):
     uniform float u_nsamples;
 
     void main() {
-        vec2 position = vec2($get_x(a_index.y),
-                             $get_y(a_index.x, a_position));
+        vec4 position = vec4($get_x(a_index.y),
+                             $get_y(a_index.x, a_position), 0., 1.);
         gl_Position = $transform(position);
 
         v_index = a_index;
@@ -246,10 +248,7 @@ class SignalsVisual(Visual):
     """
 
     def __init__(self, data):
-        super(SignalsVisual, self).__init__()
-
-        self._program = ModularProgram(self.VERTEX_SHADER,
-                                       self.FRAGMENT_SHADER)
+        Visual.__init__(self, self.VERTEX_SHADER, self.FRAGMENT_SHADER)
 
         nsignals, nsamples = data.shape
         # nsamples, nsignals = data.shape
@@ -267,26 +266,29 @@ class SignalsVisual(Visual):
         # self._ibuffer = gloo.IndexBuffer(indices)
 
         self._buffer = gloo.VertexBuffer(data.reshape(-1, 1))
-        self._program['a_position'] = self._buffer
-        self._program['a_index'] = a_index
+        self.shared_program['a_position'] = self._buffer
+        self.shared_program['a_index'] = a_index
 
         x_transform = Function(X_TRANSFORM)
         x_transform['nsamples'] = nsamples
-        self._program.vert['get_x'] = x_transform
+        self.shared_program.vert['get_x'] = x_transform
 
         y_transform = Function(Y_TRANSFORM)
-        y_transform['scale'] = Variable('uniform float u_signal_scale', 5.)
+        y_transform['scale'] = Variable('uniform float u_signal_scale', 1.)
         y_transform['nsignals'] = nsignals
-        self._program.vert['get_y'] = y_transform
+        self.shared_program.vert['get_y'] = y_transform
         self._y_transform = y_transform
 
         colormap = Function(DISCRETE_CMAP)
-        cmap = np.random.uniform(size=(1, nsignals, 3),
-                                 low=.5, high=.9).astype(np.float32)
+        rng = np.random.RandomState(0)
+        cmap = rng.uniform(size=(1, nsignals, 3),
+                           low=.5, high=.9).astype(np.float32)
         tex = gloo.Texture2D((cmap * 255).astype(np.uint8))
         colormap['colormap'] = Variable('uniform sampler2D u_colormap', tex)
         colormap['ncolors'] = nsignals
-        self._program.frag['get_color'] = colormap
+        self.shared_program.frag['get_color'] = colormap
+        self._draw_mode = 'line_strip'
+        self.set_gl_state('translucent', depth_test=False)
 
     @property
     def data(self):
@@ -307,48 +309,30 @@ class SignalsVisual(Visual):
         self._y_transform['scale'].value = value
         self.update()
 
-    def draw(self, transform_system):
-        self._program.draw('line_strip')
+    def _prepare_draw(self, view=None):
+        """This method is called immediately before each draw.
+
+        The *view* argument indicates which view is about to be drawn.
+        """
+        pass
 
 
-class Signals(SignalsVisual, scene.visuals.Node):
-    VERTEX_SHADER = """
-    attribute float a_position;
-
-    attribute vec2 a_index;
-    varying vec2 v_index;
-
-    uniform float u_nsignals;
-    uniform float u_nsamples;
-
-    void main() {
-        vec4 position = vec4($get_x(a_index.y),
-                             $get_y(a_index.x, a_position), 0, 1);
-        gl_Position = $transform(position);
-
-        v_index = a_index;
-    }
-    """
-
-    def draw(self, transform_system):
-        self._program.vert['transform'] = transform_system.get_full_transform()
-        self._program.draw('line_strip')
+Signals = scene.visuals.create_visual_node(SignalsVisual)
 
 
 if __name__ == '__main__':
     data = np.random.normal(size=(128, 1000)).astype(np.float32)
 
     pzcanvas = PanZoomCanvas(position=(400, 300), size=(800, 600),
-                             title="PanZoomCanvas")
+                             title="PanZoomCanvas", vsync=False)
     visual = SignalsVisual(data)
     pzcanvas.add_visual('signal', visual)
 
     scanvas = scene.SceneCanvas(show=True, keys='interactive',
-                                title="SceneCanvas")
-    svisual = Signals(data)
-    view = scanvas.central_widget.add_view()
-    view.add(svisual)
-    view.camera = 'panzoom'
+                                title="SceneCanvas", vsync=False)
+    view = scanvas.central_widget.add_view('panzoom')
+    svisual = Signals(data, parent=view.scene)
+    view.camera.set_range([-0.9, 0.9], [-0.9, 0.9])
 
     import sys
     if sys.flags.interactive != 1:
