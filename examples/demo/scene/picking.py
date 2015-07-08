@@ -11,6 +11,7 @@ dt = 1e-4  # this data is sampled at 10 kHz
 # create figure with plot
 fig = vp.Fig()
 plt = fig[0, 0]
+plt._configure_2d()
 plt.title.text = 'Current Clamp Recording'
 plt.ylabel.text = 'Membrane Potential (mV)'
 plt.xlabel.text = 'Time (ms)'
