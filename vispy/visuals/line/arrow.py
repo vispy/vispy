@@ -12,7 +12,8 @@ import numpy as np
 
 from ... import glsl, gloo
 from ...util.profiler import Profiler
-from ..shaders import ModularProgram
+from ..visual import Visual
+from ..markers import MarkersVisual
 from .line import LineVisual
 
 import OpenGL
@@ -39,47 +40,22 @@ FILL_TYPES = [
 ]
 
 
-class ArrowVisual(LineVisual):
-    """ArrowVisual: lines with one or more heads
+class _ArrowHeadVisual(Visual):
+    """ArrowHeadVisual: several shapes to put on the end of a line.
+
+    This visual differs from MarkersVisual in the sense that this visual
+    calculates the orientation of the visual on the GPU, by calculating the
+    tangent of the line between two given vertices.
 
     Parameters
     ----------
-    pos : array
-        Array of shape (..., 2) specifying vertex coordinates. Note that for
-        the arrow visual the dimension is currently limited to 2D.
-    color : Color, tuple, or array
-        The color to use when drawing the line. If an array is given, it
-        must be of shape (..., 4) and provide one rgba color per vertex.
-        Can also be a colormap name, or appropriate `Function`.
-    width:
-        The width of the line in px. Line widths > 1px are only
-        guaranteed to work when using 'agg' method.
-    connect : str or array
-        Determines which vertices are connected by lines.
-
-            * "strip" causes the line to be drawn with each vertex
-              connected to the next.
-            * "segments" causes each pair of vertices to draw an
-              independent line segment
-            * numpy arrays specify the exact set of segment pairs to
-              connect.
-
-    method : str
-        Mode to use for drawing.
-
-            * "agg" uses anti-grain geometry to draw nicely antialiased lines
-              with proper joins and endcaps.
-            * "gl" uses OpenGL's built-in line rendering. This is much faster,
-              but produces much lower-quality results and is not guaranteed to
-              obey the requested line width or join/endcap styles.
-
     antialias : bool
         Enables or disables antialiasing.
         For method='gl', this specifies whether to use GL's line smoothing,
         which may be unavailable or inconsistent on some platforms.
 
     arrows : array-like
-        Specifies which line segements get an arrow head. It should be an
+        Specifies which line segments get an arrow head. It should be an
         iterable containing pairs of vertices which determine the arrow body.
         The arrow head will be attached to the last vertex of the pair. The
         vertices must be of the shape (..., 2).
@@ -100,29 +76,89 @@ class ArrowVisual(LineVisual):
         ('linewidth', 'f4', 1)
     ])
 
+    def __init__(self, parent):
+
+        Visual.__init__(self, self.ARROWHEAD_VERTEX_SHADER,
+                        self.ARROWHEAD_FRAGMENT_SHADER)
+
+        self._parent = parent
+        self._arrow_vbo = gloo.VertexBuffer()
+
+    def _prepare_transforms(self, view):
+        xform = view.transforms.get_tranform()
+        view.view_program.vert['transform'] = xform
+
+    def _prepare_draw(self, view=None):
+
+        if self._parent._arrows_changed:
+            v = self._prepare_vertex_data()
+            self._arrow_vbo.set_data(v)
+
+            self._parent._arrows_changed = False
+
+        self.shared_program.bind(self._arrow_vbo)
+
+        self.shared_program['antialias'] = self._parent.antialias
+        self.shared_program.frag['arrow_type'] = self._parent.arrow_type
+        self.shared_program.frag['fill_type'] = self._parent.fill_type
+
+    def _prepare_vertex_data(self):
+        num_arrows = len(self._parent.arrows)
+        v = np.zeros(num_arrows, dtype=self._arrow_vtype)
+        arrows = np.array(self._parent.arrows).astype(float)
+
+        # Create matrix with column 0 and 1 representing v1.x and v1.y
+        # and column 2 and 3 represents v2.x and v2.y
+        arrows = arrows.reshape((num_arrows, arrows.shape[1] * 2))
+
+        v['v1'] = arrows[:, 0:2]
+        v['v2'] = arrows[:, 2:4]
+
+        v['size'][:] = self._parent.arrow_size
+        v['color'][:] = self._parent.interpret_color()
+        v['linewidth'][:] = self._parent.width
+
+        return v
+
+
+class ArrowVisual(LineVisual):
+    """ArrowVisual
+
+    A special line visual which can also draw optional arrow heads at the
+    specified vertices.
+
+    Parameters
+    ----------
+    """
+
     def __init__(self, pos=None, color=(0.5, 0.5, 0.5, 1), width=1,
                  connect='strip', method='gl', antialias=False, arrows=None,
                  arrow_type='stealth', arrow_size=None, fill_type="filled"):
 
-        LineVisual.__init__(self, pos, color, width, connect, method,
-                            antialias)
+        # Do not use the self._changed dictionary as it gets overwritten by
+        # the LineVisual constructor.
+        self._arrows_changed = False
 
         self._arrow_type = None
         self._arrow_size = None
         self._fill_type = None
         self._arrows = None
+
         self.arrow_type = arrow_type
         self.arrow_size = arrow_size
         self.fill_type = fill_type
-        self.set_data(arrows=arrows)
+        ArrowVisual.set_data(self, arrows=arrows)
 
-        self._arrow_vbo = gloo.VertexBuffer()
-        self._arrow_program = ModularProgram(self.ARROWHEAD_VERTEX_SHADER,
-                                             self.ARROWHEAD_FRAGMENT_SHADER)
+        LineVisual.__init__(self, pos, color, width, connect, method,
+                            antialias)
+
+        # Add marker visual for the arrow head
+        self.arrow_head = MarkersVisual()
+        self.add_subvisual(self.arrow_head)
 
     def set_data(self, pos=None, color=None, width=None, connect=None,
-                 arrows=None):
-        """Set the data used to draw this visual.
+                 arrows=None, _update=True):
+        """Set the data used for this visual
 
         Parameters
         ----------
@@ -143,15 +179,20 @@ class ArrowVisual(LineVisual):
             * int numpy arrays specify the exact set of segment pairs to
               connect.
             * bool numpy arrays specify which _adjacent_ pairs to connect.
+        arrows : array-like
+            Specifies which line segments get an arrow head. It should be an
+            iterable containing pairs of vertices which determine the arrow
+            body. The arrow head will be attached to the last vertex of the
+            pair. The vertices must be of the shape (..., 2). The reason you
+            need to specify two vertices for a single arrow head is that we
+            need to determine the orientation of the arrow head.
         """
-
-        LineVisual.set_data(self, pos, color, width, connect)
 
         if arrows is not None:
             self._arrows = arrows
-            self._changed['arrows'] = True
+            self._arrows_changed = True
 
-        self.update()
+        LineVisual.set_data(self, pos, color, width, connect)
 
     @property
     def arrow_type(self):
@@ -170,7 +211,7 @@ class ArrowVisual(LineVisual):
             return
 
         self._arrow_type = value
-        self._changed['arrows'] = True
+        self._arrows_changed = True
 
     @property
     def arrow_size(self):
@@ -182,6 +223,8 @@ class ArrowVisual(LineVisual):
             self._arrow_size = 5.0
         else:
             self._arrow_size = value
+
+        self._arrows_changed = True
 
     @property
     def fill_type(self):
@@ -200,51 +243,4 @@ class ArrowVisual(LineVisual):
             return
 
         self._fill_type = value
-        self._changed['arrows'] = True
-
-    def draw(self, transforms):
-        prof = Profiler()
-
-        # Keep backup of changed dict as it is reset by LineVisual
-        changed = self._changed.copy()
-        LineVisual.draw(self, transforms)
-
-        if changed['arrows']:
-            V = self._prepare_vertex_data()
-            self._arrow_vbo.set_data(V)
-            print(V)
-
-        self._arrow_program.bind(self._arrow_vbo)
-        prof('arrowhead prepare')
-
-        xform = transforms.get_full_transform()
-        self._arrow_program['antialias'] = 1.0
-        self._arrow_program.vert['transform'] = xform
-        self._arrow_program.frag['arrow_type'] = self._arrow_type
-        self._arrow_program.frag['fill_type'] = self._fill_type
-
-        self._arrow_program.draw('points')
-        prof('arrowhead draw')
-
-    def _prepare_vertex_data(self):
-        num_arrows = len(self._arrows)
-        V = np.zeros(num_arrows, dtype=self._arrow_vtype)
-        arrows = np.array(self._arrows).astype(float)
-
-        # Create matrix with column 0 and 1 representing v1.x and v1.y
-        # and column 2 and 3 represents v2.x and v2.y
-        arrows = arrows.reshape((num_arrows, arrows.shape[1] * 2))
-
-        print("Num:", num_arrows)
-        print(arrows)
-        print("arrows 0", arrows[0, 0:2])
-        print("arrows 1", arrows[0, 2:4])
-
-        V['v1'] = arrows[:, 0:2]
-        V['v2'] = arrows[:, 2:4]
-
-        V['size'][:] = self._arrow_size
-        V['color'][:] = self._interpret_color()
-        V['linewidth'][:] = self._width
-
-        return V
+        self._arrows_changed = True
