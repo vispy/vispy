@@ -100,11 +100,18 @@ class Oscilloscope(scene.ScrollingLines):
             self.last_trigger[0] -= 1
         
         # search for next trigger
-        trig = np.argwhere((data[1:] > 0) & (data[:-1] < 0))
+        tw = 20  # trigger window width
+        th = 0.05  # trigger window height
+        
+        trig = np.argwhere((data[tw:] > th) & (data[:-tw] < -th))
         self.triggers.append(trig)
         if len(trig) > 0:
             m = np.argmin(np.abs(trig - len(data) / 2))
             i = trig[m, 0]
+            y1 = data[i]
+            y2 = data[i + tw * 2]
+            s = y2 / (y2 - y1)
+            i = i + tw * 2 * (1-s)
             dx = i * self._dx
             
             # if a trigger was found, add new data to the plot
