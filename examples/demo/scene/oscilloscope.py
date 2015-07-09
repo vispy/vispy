@@ -70,7 +70,7 @@ except ImportError:
 
 class Oscilloscope(scene.ScrollingLines):
     def __init__(self, n_lines=100, line_size=1024, dx=1e-4,
-                 color=(20, 255, 50), trigger=(0, 0.05, 5e-4), parent=None):
+                 color=(20, 255, 50), trigger=(0, 0.002, 1e-4), parent=None):
         
         self._trigger = trigger  # trigger_level, trigger_height, trigger_width
         
@@ -191,7 +191,7 @@ mic = MicrophoneRecorder()
 n_fft_frames = 8
 fft_samples = mic.chunksize * n_fft_frames
 
-win = scene.SceneCanvas(keys='interactive', show=True)
+win = scene.SceneCanvas(keys='interactive', show=True, fullscreen=True)
 grid = win.central_widget.add_grid()
 
 view3 = grid.add_view(row=0, col=0, col_span=2, camera='panzoom', border_color='grey')
@@ -231,7 +231,8 @@ def update(ev):
     data = mic.get_frames()
     for frame in data:
         #import scipy.ndimage as ndi
-        #frame -= ndi.gaussian_filter(frame, 200)
+        #frame -= ndi.gaussian_filter(frame, 50)
+        #frame -= frame.mean()
         
         scope.new_frame(frame)
         
