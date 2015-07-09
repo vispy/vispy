@@ -215,12 +215,6 @@ spectrum = Oscilloscope(line_size=1 + fft_samples // 2, n_lines=10, dx=mic.rate/
                         trigger=None, parent=lognode)
 
 
-import vispy.io
-title_img = vispy.io.read_png('titlepage.png')
-title = scene.Image(title_img, parent=win.scene)
-title.set_gl_state('additive')
-title.transform = scene.STTransform(translate=(0, 100))
-
 mic.start()
 
 window = np.hanning(fft_samples)
