@@ -16,8 +16,8 @@ class Rect(object):
         self._size = (0, 0)
 
         if len(args) == 1 and isinstance(args[0], Rect):
-            self._pos = args[0]._pos
-            self._size = args[0]._size
+            self._pos = args[0]._pos[:]
+            self._size = args[0]._size[:]
         elif (len(args) == 1 and isinstance(args[0], (list, tuple)) and
               len(args[0]) == 4):
             self._pos = args[0][:2]
@@ -106,7 +106,7 @@ class Rect(object):
     @top.setter
     def top(self, y):
         self.size = (self.size[0], y - self.pos[1])
-        
+
     @property
     def center(self):
         return (self.pos[0] + self.size[0] * 0.5,

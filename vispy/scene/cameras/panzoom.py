@@ -86,7 +86,6 @@ class PanZoomCamera(BaseCamera):
             current center.
         """
         assert len(center) in (2, 3, 4)
-        
         # Get scale factor, take scale ratio into account
         if np.isscalar(factor):
             scale = [factor, factor]
@@ -96,10 +95,12 @@ class PanZoomCamera(BaseCamera):
             scale = list(factor)
         if self.aspect is not None:
             scale[0] = scale[1]
-        
+
         # Init some variables
         center = center if (center is not None) else self.center
-        rect = self.rect
+        # Make a new object (copy), so that allocation will
+        # trigger view_changed:
+        rect = Rect(self.rect)
         # Get space from given center to edges
         left_space = center[0] - rect.left
         right_space = rect.right - center[0]
@@ -110,7 +111,6 @@ class PanZoomCamera(BaseCamera):
         rect.right = center[0] + right_space * scale[0]
         rect.bottom = center[1] - bottom_space * scale[1]
         rect.top = center[1] + top_space * scale[1]
-
         self.rect = rect
 
     def pan(self, *pan):
@@ -229,7 +229,7 @@ class PanZoomCamera(BaseCamera):
                 # Zoom
                 p1c = np.array(event.last_event.pos)[:2]
                 p2c = np.array(event.pos)[:2]
-                scale = ((1 + self.zoom_factor) ** 
+                scale = ((1 + self.zoom_factor) **
                          ((p1c-p2c) * np.array([1, -1])))
                 center = self._transform.imap(event.press_event.pos[:2])
                 self.zoom(scale, center)
@@ -248,7 +248,7 @@ class PanZoomCamera(BaseCamera):
         self._real_rect = Rect(rect)
         vbr = self._viewbox.rect.flipped(x=self.flip[0], y=(not self.flip[1]))
         d = self.depth_value
-        
+
         # apply scale ratio constraint
         if self._aspect is not None:
             # Aspect ratio of the requested range
