@@ -83,9 +83,6 @@ class SurfacePlotVisual(MeshVisual):
                     self._z.shape != self.__vertices.shape[:2]):
                 self.__vertices = None
 
-        if colors is not None:
-            self.__meshdata.set_vertex_colors(colors)
-
         if self._z is None:
             return
 
@@ -122,6 +119,10 @@ class SurfacePlotVisual(MeshVisual):
 
         if new_vertices or z is not None:
             self.__vertices[..., 2] = self._z
+            update_mesh = True
+
+        if colors is not None:
+            self.__meshdata.set_vertex_colors(colors)
             update_mesh = True
 
         ## Update MeshData
