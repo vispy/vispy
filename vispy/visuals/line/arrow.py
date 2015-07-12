@@ -41,28 +41,19 @@ FILL_TYPES = [
 
 
 class _ArrowHeadVisual(Visual):
-    """ArrowHeadVisual: several shapes to put on the end of a line.
-
+    """
+    ArrowHeadVisual: several shapes to put on the end of a line.
     This visual differs from MarkersVisual in the sense that this visual
     calculates the orientation of the visual on the GPU, by calculating the
     tangent of the line between two given vertices.
 
+    This is not really a visual you would use on your own,
+    use :class:`ArrowVisual` instead.
+
     Parameters
     ----------
-    antialias : bool
-        Enables or disables antialiasing.
-        For method='gl', this specifies whether to use GL's line smoothing,
-        which may be unavailable or inconsistent on some platforms.
-
-    arrows : array-like
-        Specifies which line segments get an arrow head. It should be an
-        iterable containing pairs of vertices which determine the arrow body.
-        The arrow head will be attached to the last vertex of the pair. The
-        vertices must be of the shape (..., 2).
-
-    arrow_type : str
-        Specifies how the arrow heads should look like. See `ARROW_TYPES` for
-        the available arrow head types.
+    parent : ArrowVisual
+        This actual ArrowVisual this arrow head is part of.
     """
 
     ARROWHEAD_VERTEX_SHADER = glsl.get('arrowheads/arrowheads.vert')
@@ -85,16 +76,15 @@ class _ArrowHeadVisual(Visual):
         self._arrow_vbo = gloo.VertexBuffer()
 
     def _prepare_transforms(self, view):
-        xform = view.transforms.get_tranform()
+        xform = view.transforms.get_transform()
         view.view_program.vert['transform'] = xform
 
     def _prepare_draw(self, view=None):
 
         if self._parent._arrows_changed:
             v = self._prepare_vertex_data()
+            print(v)
             self._arrow_vbo.set_data(v)
-
-            self._parent._arrows_changed = False
 
         self.shared_program.bind(self._arrow_vbo)
 
@@ -115,7 +105,7 @@ class _ArrowHeadVisual(Visual):
         v['v2'] = arrows[:, 2:4]
 
         v['size'][:] = self._parent.arrow_size
-        v['color'][:] = self._parent.interpret_color()
+        v['color'][:] = self._parent._interpret_color()
         v['linewidth'][:] = self._parent.width
 
         return v
@@ -147,13 +137,17 @@ class ArrowVisual(LineVisual):
         self.arrow_type = arrow_type
         self.arrow_size = arrow_size
         self.fill_type = fill_type
-        ArrowVisual.set_data(self, arrows=arrows)
 
+        # TODO: `LineVisual.__init__` also calls its own `set_data` method,
+        # which triggers an *update* event. This results in a redraw. After
+        # that we call our own `set_data` method, which triggers another
+        # redraw. This should be fixed.
         LineVisual.__init__(self, pos, color, width, connect, method,
                             antialias)
+        ArrowVisual.set_data(self, arrows=arrows)
 
         # Add marker visual for the arrow head
-        self.arrow_head = MarkersVisual()
+        self.arrow_head = _ArrowHeadVisual(self)
         self.add_subvisual(self.arrow_head)
 
     def set_data(self, pos=None, color=None, width=None, connect=None,
@@ -244,3 +238,7 @@ class ArrowVisual(LineVisual):
 
         self._fill_type = value
         self._arrows_changed = True
+
+    @property
+    def arrows(self):
+        return self._arrows
