@@ -25,7 +25,7 @@ class Canvas(app.Canvas):
             (350, 190),
             (390, 0.0)
         )
-        arrows1 = ([line1[-3], line1[-1]],)
+        arrows1 = ([line1[-2], line1[-1]],)
 
         line2 = curves.curve4_bezier(
             (10.0, 0.0),
@@ -34,8 +34,8 @@ class Canvas(app.Canvas):
             (390, 0.0)
         )
         arrows2 = (
-            [line2[2], line2[0]],
-            [line2[-3], line2[-1]],
+            [line2[1], line2[0]],
+            [line2[-2], line2[-1]],
         )
 
         line3 = curves.curve3_bezier(
@@ -44,7 +44,7 @@ class Canvas(app.Canvas):
             (390, 0.0)
         )
 
-        arrows3 = ([line3[-3], line3[-1]],)
+        arrows3 = ([line3[-2], line3[-1]],)
 
         arrow_types = ["curved", "stealth", "inhibitor_round", "angle_60"]
         self.lines = []
@@ -69,22 +69,23 @@ class Canvas(app.Canvas):
 
                 visual.transform = STTransform(translate=[x, y],
                                                scale=(0.5, 1.0))
+                visual.events.update.connect(lambda event: self.update())
 
             self.lines.extend(arrows)
-
-        # Initialize transform systems for each visual
-        for visual in self.lines:
-            visual.tr_sys = visuals.transforms.TransformSystem(self)
-            visual.tr_sys.visual_to_document = visual.transform
 
         self.show()
 
     def on_draw(self, event):
         gloo.clear('black')
-        gloo.set_viewport(0, 0, *self.physical_size)
 
         for visual in self.lines:
-            visual.draw(visual.tr_sys)
+            visual.draw()
+
+    def on_resize(self, event):
+        vp = (0, 0, self.physical_size[0], self.physical_size[1])
+        self.context.set_viewport(*vp)
+        for visual in self.lines:
+            visual.transforms.configure(canvas=self, viewport=vp)
 
 if __name__ == '__main__':
     win = Canvas()
