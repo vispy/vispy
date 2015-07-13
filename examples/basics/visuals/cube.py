@@ -23,7 +23,7 @@ class Canvas(app.Canvas):
         self.phi = 0
 
         # Create a TransformSystem that will tell the visual how to draw
-        self.cube_transform = transforms.AffineTransform()
+        self.cube_transform = transforms.MatrixTransform()
         self.cube.transform = self.cube_transform
 
         self._timer = app.Timer('auto', connect=self.on_timer, start=True)

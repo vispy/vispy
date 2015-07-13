@@ -22,7 +22,7 @@ class Canvas(app.Canvas):
 
         self.cube = CubeVisual((1.0, 0.5, 0.25), color='red',
                                edge_color='black')
-        self.cube.transform = transforms.AffineTransform()
+        self.cube.transform = transforms.MatrixTransform()
         self.cube.transform.scale((100, 100, 0.001))
         self.cube.transform.translate((200, 200))
 

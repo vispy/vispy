@@ -136,7 +136,7 @@ rects = [MyRect(100, 100, 200, 300, parent=canvas.scene),
 
 # To test that the user-specified transforms work correctly, I'll rotate
 # one rectangle slightly.
-tr = visuals.transforms.AffineTransform()
+tr = visuals.transforms.MatrixTransform()
 tr.rotate(5, (0, 0, 1))
 rects[1].transform = tr
 

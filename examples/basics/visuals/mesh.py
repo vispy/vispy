@@ -9,7 +9,7 @@ Simple demonstration of Mesh visual.
 import numpy as np
 from vispy import app, gloo, visuals
 from vispy.geometry import create_sphere
-from vispy.visuals.transforms import (STTransform, AffineTransform,
+from vispy.visuals.transforms import (STTransform, MatrixTransform,
                                       ChainTransform)
 
 
@@ -18,7 +18,7 @@ class Canvas(app.Canvas):
         app.Canvas.__init__(self, keys='interactive', size=(800, 550))
 
         self.meshes = []
-        self.rotation = AffineTransform()
+        self.rotation = MatrixTransform()
 
         # Generate some data to work with
         global mdata
@@ -64,9 +64,10 @@ class Canvas(app.Canvas):
             x = 800. * (i % grid[0]) / grid[0] + 400. / grid[0] - 2
             y = 800. * (i // grid[1]) / grid[1] + 400. / grid[1] + 2
             transform = ChainTransform([STTransform(translate=(x, y),
-                                                    scale=(s, s, 1)),
+                                                    scale=(s, s, s)),
                                         self.rotation])
             mesh.transform = transform
+            mesh.transforms.scene_transform = STTransform(scale=(1, 1, 0.01))
 
         self.show()
 

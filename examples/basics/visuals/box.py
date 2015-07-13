@@ -8,7 +8,7 @@ Simple demonstration of Box visual.
 
 from vispy import app, gloo, visuals
 from vispy.geometry import create_box
-from vispy.visuals.transforms import AffineTransform
+from vispy.visuals.transforms import MatrixTransform
 
 
 class Canvas(app.Canvas):
@@ -31,7 +31,7 @@ class Canvas(app.Canvas):
         self.theta = 0
         self.phi = 0
 
-        self.transform = AffineTransform()
+        self.transform = MatrixTransform()
 
         self.box.transform = self.transform
         self.show()

@@ -84,7 +84,7 @@ view.camera.fov = 50
 view.camera.distance = 2
 
 mesh = MyMesh(parent=view.scene)
-mesh.transform = visuals.transforms.AffineTransform()
+mesh.transform = visuals.transforms.MatrixTransform()
 #mesh.transform.translate([-25, -25, -25])
 mesh.transform.rotate(90, (1, 0, 0))
 

@@ -16,7 +16,7 @@ from os import path as op
 import sys
 
 from ._sdf import SDFRenderer
-from ...gloo import (TextureAtlas, IndexBuffer, VertexBuffer, set_viewport)
+from ...gloo import (TextureAtlas, IndexBuffer, VertexBuffer)
 from ...gloo import gl, context
 from ...gloo.wrappers import _check_valid
 from ...ext.six import string_types
@@ -153,7 +153,7 @@ def _text_to_vbo(text, font, anchor_x, anchor_y, lowres_size):
     # Need to store the original viewport, because the font[char] will
     # trigger SDF rendering, which changes our viewport
     # todo: get rid of call to glGetParameter!
-    orig_viewport = gl.glGetParameter(gl.GL_VIEWPORT)
+    orig_viewport = canvas.context.get_viewport()
     for ii, char in enumerate(text):
         glyph = font[char]
         kerning = glyph['kerning'].get(prev, 0.) * ratio
@@ -183,7 +183,9 @@ def _text_to_vbo(text, font, anchor_x, anchor_y, lowres_size):
         ascender = max(ascender, y0 - slop)
         descender = min(descender, y1 + slop)
         height = max(height, glyph['size'][1] - 2*slop)
-    set_viewport(*orig_viewport)
+    
+    if orig_viewport is not None:
+        canvas.context.set_viewport(*orig_viewport)
 
     # Tight bounding box (loose would be width, font.height /.asc / .desc)
     width -= glyph['advance'] * ratio - (glyph['size'][0] - 2*slop)
@@ -537,3 +539,5 @@ class TextVisual(Visual):
         tr = view.transforms.get_transform()
         view.view_program.vert['transform'] = tr  # .simplified()
         
+    def _compute_bounds(self, axis, view):
+        return self._pos[:,axis].min(), self._pos[:,axis].max()

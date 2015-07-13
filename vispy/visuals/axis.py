@@ -44,7 +44,7 @@ class AxisVisual(CompoundVisual):
     """
     def __init__(self, pos=None, domain=(0., 1.), tick_direction=(-1., 0.),
                  scale_type="linear", axis_color=(1, 1, 1),
-                 tick_color=(0.7, 0.7, 0.7)):
+                 tick_color=(0.7, 0.7, 0.7), text_color='w', font_size=8):
         if scale_type != 'linear':
             raise NotImplementedError('only linear scaling is currently '
                                       'supported')
@@ -73,7 +73,7 @@ class AxisVisual(CompoundVisual):
         
         self._line = LineVisual(method='gl', width=3.0)
         self._ticks = LineVisual(method='gl', width=2.0, connect='segments')
-        self._text = TextVisual(font_size=8, color='w')
+        self._text = TextVisual(font_size=font_size, color=text_color)
         self.add_subvisual(self._line)
         self.add_subvisual(self._ticks)
         self.add_subvisual(self._text)
@@ -152,13 +152,15 @@ class Ticker(object):
         return tick_pos, tick_labels, label_pos, anchors
 
     def _get_tick_positions(self, major_tick_fractions, minor_tick_fractions):
-        # transform our tick direction to document coords
+        # tick direction is defined in visual coords, but use document
+        # coords to determine the tick length
         trs = self.axis.transforms
         visual_to_document = trs.get_transform('visual', 'document')
-        direction = visual_to_document.map(np.array([[0., 0.],
-                                                     self.axis.tick_direction],
-                                                    float))
-        direction = (direction[1] - direction[0])[:2]
+        #direction = visual_to_document.map(np.array([[0., 0.],
+                                                     #self.axis.tick_direction],
+                                                    #float))
+        #direction = (direction[1] - direction[0])[:2]
+        direction = np.array(self.axis.tick_direction)
         direction /= np.linalg.norm(direction)
         # use the document (pixel) coord system to set text anchors
         anchors = []
@@ -176,12 +178,16 @@ class Ticker(object):
             anchors.append('middle')
 
         # now figure out the tick positions in visual (data) coords
+        doc_unit = visual_to_document.map([[0, 0], direction[:2]])
+        doc_unit = doc_unit[1] - doc_unit[0]
+        doc_len = np.linalg.norm(doc_unit)
+        
         vectors = np.array([[0., 0.],
-                            direction * self.axis.minor_tick_length,
-                            direction * self.axis.major_tick_length,
+                            direction * self.axis.minor_tick_length / doc_len,
+                            direction * self.axis.major_tick_length / doc_len,
                             direction * (self.axis.major_tick_length +
-                                         self.axis.label_margin)], float)
-        vectors = visual_to_document.imap(vectors)[:, :2]
+                                         self.axis.label_margin) / doc_len], float)
+        #vectors = visual_to_document.imap(vectors)[:, :2]
         minor_vector = vectors[1] - vectors[0]
         major_vector = vectors[2] - vectors[0]
         label_vector = vectors[3] - vectors[0]
