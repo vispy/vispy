@@ -302,10 +302,9 @@ class Node(object):
             node = p
 
     def _set_canvas(self, c):
-        if self._canvas is c:
+        old = self.canvas
+        if old is c:
             return
-        
-        old = self._canvas
         
         # Use canvas/framebuffer transforms from canvas
         self.transforms.canvas = c

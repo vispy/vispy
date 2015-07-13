@@ -66,6 +66,7 @@ class PlotWidget(scene.Widget):
         self.grid.add_widget(self.xlabel, row=3, col=2)
 
         self.view.camera = 'panzoom'
+        self.camera = self.view.camera
         
         self.xaxis.link_view(self.view)
         self.yaxis.link_view(self.view)
@@ -76,6 +77,7 @@ class PlotWidget(scene.Widget):
         if self._configured:
             return
         self.view.camera = 'turntable'
+        self.camera = self.view.camera
         
         self._configured = True
 
