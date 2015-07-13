@@ -84,7 +84,6 @@ class _ArrowHeadVisual(Visual):
 
         if self._parent._arrows_changed:
             v = self._prepare_vertex_data()
-            print(v)
             self._arrow_vbo.set_data(v)
 
         self.shared_program.bind(self._arrow_vbo)

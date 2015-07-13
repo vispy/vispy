@@ -569,7 +569,6 @@ class CompoundVisual(BaseVisual):
         if self._prepare_draw(view=self) is False:
             return
 
-        print(self._subvisuals)
         for v in self._subvisuals:
             if v.visible:
                 v.draw()
