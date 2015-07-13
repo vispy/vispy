@@ -407,8 +407,8 @@ class _AggLineVisual(Visual):
                        antialias=1.0)
         self._dash_atlas = gloo.Texture2D(self._da._data)
 
-        Visual.__init__(self, vcode=vertex.VERTEX_SHADER,
-                        fcode=fragment.FRAGMENT_SHADER)
+        Visual.__init__(self, vcode=self.VERTEX_SHADER,
+                        fcode=self.FRAGMENT_SHADER)
         self._index_buffer = gloo.IndexBuffer()
         self.set_gl_state('translucent', depth_test=False)
         self._draw_mode = 'triangles'
