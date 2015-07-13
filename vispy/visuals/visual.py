@@ -316,7 +316,7 @@ class Visual(BaseVisual):
         self._view_class = VisualView
         BaseVisual.__init__(self, vshare)
         if vshare is None:
-            self._vshare.draw_mode = 'triangles'
+            self._vshare.draw_mode = None
             self._vshare.index_buffer = None
             if program is None:
                 self._vshare.program = MultiProgram(vcode, fcode)
@@ -430,6 +430,8 @@ class Visual(BaseVisual):
         gloo.set_state(**self._vshare.gl_state)
         if self._prepare_draw(view=self) is False:
             return
+        if self._vshare.draw_mode is None:
+            raise ValueError("_draw_mode has not been set for visual %r" % self)
         self._program.draw(self._vshare.draw_mode, self._vshare.index_buffer)
         
     def _get_hook(self, shader, name):
