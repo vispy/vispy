@@ -31,7 +31,8 @@ class ScrollingLinesVisual(Visual):
         vec4 pos = vec4(index.y * dx, texture2D(position, uv).r, 0, 1);
         
         // fetch starting position from texture lookup:
-        pos += vec4(texture1D(pos_offset, (index.x + 0.5) / pos_size.x).rg, 0, 0); 
+        pos += vec4(texture1D(pos_offset, (index.x + 0.5) / pos_size.x).rg,
+                              0, 0); 
         
         gl_Position = $transform(pos);
         
@@ -61,7 +62,8 @@ class ScrollingLinesVisual(Visual):
         self._dx = dx
         
         data = np.zeros((n_lines, line_size), dtype='float32')
-        self._pos_tex = gloo.Texture2D(data, format='luminance', internalformat='r32f')
+        self._pos_tex = gloo.Texture2D(data, format='luminance',
+                                       internalformat='r32f')
         self._index_buf = gloo.VertexBuffer()
         self._data_shape = data.shape
         
@@ -78,7 +80,8 @@ class ScrollingLinesVisual(Visual):
             # construct positions as a grid 
             rows = np.ceil(n_lines / columns)
             pos_offset = np.empty((rows, columns, 3), dtype='float32')
-            pos_offset[..., 0] = np.arange(columns)[np.newaxis, :] * cell_size[0]
+            pos_offset[..., 0] = (np.arange(columns)[np.newaxis, :] * 
+                                  cell_size[0])
             pos_offset[..., 1] = np.arange(rows)[:, np.newaxis] * cell_size[1]
             pos_offset = pos_offset.reshape((rows*columns), 3)
         self._pos_offset = gloo.Texture1D(pos_offset, internalformat='rgb32f',
@@ -136,5 +139,3 @@ class ScrollingLinesVisual(Visual):
     def set_data(self, index, data):
         self._pos_tex[index, :] = data
         self.update()
-        
-                 

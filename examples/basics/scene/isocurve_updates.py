@@ -5,8 +5,8 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 """
-Show use of SceneCanvas to display and update Image and Isocurve visuals using ViewBox
-visual.
+Show use of SceneCanvas to display and update Image and Isocurve visuals using
+ViewBox visual.
 """
 import sys
 import numpy as np
@@ -51,7 +51,7 @@ img_data1[:] = noise[..., np.newaxis]
 
 # create 2d array with some function
 x, y = np.mgrid[0:2*np.pi:101j, 0:2*np.pi:101j]
-myfunc = np.cos(2*x[:-1,:-1]) + np.sin(2*y[:-1,:-1])
+myfunc = np.cos(2*x[:-1, :-1]) + np.sin(2*y[:-1, :-1])
 
 # add image to viewbox1
 image1 = scene.visuals.Image(noise, parent=vb1.scene, cmap='cubehelix')
@@ -71,27 +71,31 @@ levels2 = np.linspace(myfunc.min(), myfunc.max(), num=52, endpoint=True)[1:-1]
 
 # create curve 1a (image overlay, black) and 1b (plain, cubehelix colored)
 # to viewboxes 1 and 3
-curve1a = scene.visuals.Isocurve(noise, levels=levels1[::4], color_lev='k', parent=vb1.scene)
-curve1b = scene.visuals.Isocurve(noise, levels=levels1, color_lev='cubehelix', parent=vb3.scene)
+curve1a = scene.visuals.Isocurve(
+    noise, levels=levels1[::4], color_lev='k', parent=vb1.scene)
+curve1b = scene.visuals.Isocurve(
+    noise, levels=levels1, color_lev='cubehelix', parent=vb3.scene)
 
 # create curve 2a (2darray overlay, black) and 2b (plain, cubehelix colored)
 # to viewboxes 2 and 4
-curve2a = scene.visuals.Isocurve(myfunc, levels=levels2[::4], color_lev='k', parent=vb2.scene)
-curve2b = scene.visuals.Isocurve(myfunc, levels=levels2, color_lev='cubehelix', parent=vb4.scene)
+curve2a = scene.visuals.Isocurve(
+    myfunc, levels=levels2[::4], color_lev='k', parent=vb2.scene)
+curve2b = scene.visuals.Isocurve(
+    myfunc, levels=levels2, color_lev='cubehelix', parent=vb4.scene)
 
 # set viewport
-vb3.camera.set_range((0,100), (0,100))
-vb4.camera.set_range((0,100), (0,100))
+vb3.camera.set_range((0, 100), (0, 100))
+vb4.camera.set_range((0, 100), (0, 100))
 
 
 # setup update parameters
 up = 1
 index = 1
-clip = np.linspace(myfunc.min(), myfunc.max(),num=51)
+clip = np.linspace(myfunc.min(), myfunc.max(), num=51)
 cmap = cycle(get_colormaps())
 color = cycle(get_color_names())
 
-# update function
+
 def update(ev):
     global myfunc, index, up, levels2, noise, cmap, color
 
@@ -103,7 +107,7 @@ def update(ev):
         curve1b.set_data(noise)
 
         # update colors/colormap
-        if not index%5:
+        if (index % 5) == 0:
             curve1b.color = next(color)
             cm = next(cmap)
             image2.cmap = cm
@@ -114,7 +118,7 @@ def update(ev):
         curve1b.levels = levels1[index:-index]
 
         # update curve2b data with clipped data
-        im2 = np.clip(myfunc,clip[index], clip[-index])
+        im2 = np.clip(myfunc, clip[index], clip[-index])
         curve2b.set_data(im2)
 
         index += up

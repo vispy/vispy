@@ -17,15 +17,15 @@ y = np.zeros(1000)
 y[1:500] = 1
 y[500:-1] = -1
 line = fig[0, 0].plot((x, y), width=3, color='k',
-                      title='Square Wave Fourier Expansion',
-                      xlabel='x', ylabel='4/π Σ[ 1/n sin(nπx/L) | n=1,3,5,...]')
+                      title='Square Wave Fourier Expansion', xlabel='x', 
+                      ylabel='4/π Σ[ 1/n sin(nπx/L) | n=1,3,5,...]')
 
 y = np.zeros(1000)
 L = 5
 colors = [(0.8, 0, 0, 1),
           (0.8, 0, 0.8, 1),
           (0, 0, 1.0, 1),
-          (0, 0.7, 0, 1),]
+          (0, 0.7, 0, 1), ]
 plot_nvals = [1, 3, 7, 31]
 for i in range(16):
     n = i * 2 + 1
@@ -58,7 +58,6 @@ boxgrid.add_widget(hspacer2, row=0, col=1)
 grid = vp.visuals.GridLines(color=(0, 0, 0, 0.5))
 grid.set_gl_state('translucent')
 fig[0, 0].view.add(grid)
-
 
 
 if __name__ == '__main__':

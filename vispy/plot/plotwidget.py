@@ -223,11 +223,11 @@ class PlotWidget(scene.Widget):
         """
         self._configure_2d()
         line = scene.LinePlot(data, connect='strip', color=color,
-                                   symbol=symbol, line_kind=line_kind,
-                                   width=width, marker_size=marker_size,
-                                   edge_color=edge_color,
-                                   face_color=face_color,
-                                   edge_width=edge_width)
+                              symbol=symbol, line_kind=line_kind,
+                              width=width, marker_size=marker_size,
+                              edge_color=edge_color,
+                              face_color=face_color,
+                              edge_width=edge_width)
         self.view.add(line)
         self.view.camera.set_range()
         self.visuals.append(line)
@@ -331,5 +331,3 @@ class PlotWidget(scene.Widget):
         self.view.add(surf)
         self.view.camera.set_range()
         return surf
-        
-        

@@ -17,6 +17,7 @@ _HAS_MPL = has_matplotlib()
 if _HAS_MPL:
     from matplotlib import _cntr as cntr
 
+
 class IsocurveVisual(LineVisual):
     """Displays an isocurve of a 2D scalar array.
 
@@ -39,7 +40,8 @@ class IsocurveVisual(LineVisual):
     Notes
     -----
     """
-    def __init__(self, data=None, levels=None, color_lev=None, clim=None, **kwargs):
+    def __init__(self, data=None, levels=None, color_lev=None, clim=None,
+                 **kwargs):
         self._data = None
         self._levels = levels
         self._color_lev = color_lev
@@ -96,7 +98,8 @@ class IsocurveVisual(LineVisual):
                 if not (self._X.T.shape == data.shape):
                     raise
             except:
-                self._X, self._Y = np.meshgrid(np.arange(data.shape[0]),np.arange(data.shape[1]))
+                self._X, self._Y = np.meshgrid(np.arange(data.shape[0]),
+                                               np.arange(data.shape[1]))
 
             self._iso = cntr.Cntr(self._X, self._Y, self._data.astype(float))
 
@@ -131,26 +134,28 @@ class IsocurveVisual(LineVisual):
         verts = []
 
         # calculate which level are within data range
-        # this works for now and the existing examples, but should be tested thoroughly
-        # also with the data-sanity check in set_data-function
-        choice = np.nonzero((self.levels > self._data.min()) & (self._levels < self._data.max()))
+        # this works for now and the existing examples, but should be tested
+        # thoroughly also with the data-sanity check in set_data-function
+        choice = np.nonzero((self.levels > self._data.min()) &
+                            (self._levels < self._data.max()))
         levels_to_calc = np.array(self.levels)[choice]
 
         # save minimum level index
         self._level_min = choice[0][0]
 
         for level in levels_to_calc:
-            # if we use matplotlib isoline algorithm we need to add half a pixel
-            # in both (x,y) dimensions because isolines are aligned to pixel centers
+            # if we use matplotlib isoline algorithm we need to add half a
+            # pixel in both (x,y) dimensions because isolines are aligned to
+            # pixel centers
             if _HAS_MPL:
                 nlist = self._iso.trace(level, level, 0)
                 paths = nlist[:len(nlist)//2]
-                v, c =  self._get_verts_and_connect(paths)
+                v, c = self._get_verts_and_connect(paths)
                 v += np.array([0.5, 0.5])
             else:
                 paths = isocurve(self._data.astype(float).T, level,
                                  extend_to_edge=True, connected=True)
-                v, c =  self._get_verts_and_connect(paths)
+                v, c = self._get_verts_and_connect(paths)
 
             level_index.append(v.shape[0])
             connects.append(np.hstack((c, [False])))
@@ -166,7 +171,8 @@ class IsocurveVisual(LineVisual):
         level_color = []
         colors = self._lc
         for i, index in enumerate(self._li):
-            level_color.append(np.zeros((index, 4)) + colors[i+self._level_min])
+            level_color.append(np.zeros((index, 4)) +
+                               colors[i+self._level_min])
         self._cl = np.vstack(level_color)
 
     def _levels_to_colors(self):
@@ -179,7 +185,7 @@ class IsocurveVisual(LineVisual):
         else:
             lev = _normalize(self._levels, self._clim[0], self._clim[1])
             # map function expects (Nlev,1)!
-            colors = f_color_levs.map(lev[:,np.newaxis])
+            colors = f_color_levs.map(lev[:, np.newaxis])
 
         # broadcast to (nlev, 4) array
         if len(colors) == 1:
@@ -187,12 +193,14 @@ class IsocurveVisual(LineVisual):
 
         # detect color_lev/levels mismatch and raise error
         if (len(colors) != len(self._levels)):
-            raise TypeError("Color/level mismatch. Color must be of shape (Nlev, ...) and provide one color per level")
+            raise TypeError("Color/level mismatch. Color must be of shape "
+                            "(Nlev, ...) and provide one color per level")
 
         self._lc = colors
 
     def _prepare_draw(self, view):
-        if self._data is None or self._levels is None or self._color_lev is None or self._data_is_uniform:
+        if (self._data is None or self._levels is None or
+                self._color_lev is None or self._data_is_uniform):
             return False
 
         if self._need_level_update:
@@ -202,7 +210,8 @@ class IsocurveVisual(LineVisual):
         if self._need_recompute:
             self._compute_iso_line()
             self._compute_iso_color()
-            LineVisual.set_data(self, pos=self._verts, connect=self._connect, color=self._cl)
+            LineVisual.set_data(self, pos=self._verts, connect=self._connect,
+                                color=self._cl)
             self._need_recompute = False
 
         if self._need_color_update:

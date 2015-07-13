@@ -24,7 +24,8 @@ class Canvas(app.Canvas):
         app.Canvas.__init__(self, keys='interactive',
                             size=(800, 800))
         self.line = visuals.LinePlotVisual(pos, color='w', edge_color='w',
-                                           symbol='o', face_color=(0.2, 0.2, 1))
+                                           symbol='o', 
+                                           face_color=(0.2, 0.2, 1))
         self.show()
 
     def on_draw(self, event):

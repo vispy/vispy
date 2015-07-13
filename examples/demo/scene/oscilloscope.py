@@ -1,5 +1,5 @@
 from __future__ import division
-from vispy import app, scene, plot
+from vispy import app, scene
 from vispy.util.filter import gaussian_filter
 import numpy as np
 import threading
@@ -13,11 +13,11 @@ try:
             self.chunksize = chunksize
             self.p = pyaudio.PyAudio()
             self.stream = self.p.open(format=pyaudio.paInt16,
-                                channels=1,
-                                rate=self.rate,
-                                input=True,
-                                frames_per_buffer=self.chunksize,
-                                stream_callback=self.new_frame)
+                                      channels=1,
+                                      rate=self.rate,
+                                      input=True,
+                                      frames_per_buffer=self.chunksize,
+                                      stream_callback=self.new_frame)
             self.lock = threading.Lock()
             self.stop = False
             self.frames = []
@@ -50,12 +50,13 @@ except ImportError:
     class MicrophoneRecorder(object):
         def __init__(self):
             rate = 44100.
-            dt = 1 / rate
             t = np.linspace(0, 10, rate*10)
             self.data = (np.sin(t * 10.) * 0.3).astype('float32')
             self.data += np.sin((t + 0.3) * 20.) * 0.15
-            self.data += gaussian_filter(np.random.normal(size=self.data.shape)*0.2, (0.4, 8))
-            self.data += gaussian_filter(np.random.normal(size=self.data.shape)*0.005, (0, 1))
+            self.data += gaussian_filter(np.random.normal(size=self.data.shape)
+                                         * 0.2, (0.4, 8))
+            self.data += gaussian_filter(np.random.normal(size=self.data.shape)
+                                         * 0.005, (0, 1))
             self.ptr = 0
             
         def get_frame(self):
@@ -65,7 +66,6 @@ except ImportError:
         
         def start(self):
             pass
-
 
 
 class Oscilloscope(scene.ScrollingLines):
@@ -86,9 +86,11 @@ class Oscilloscope(scene.ScrollingLines):
         self.frames = []  # running list of recently received frames
         self.plot_ptr = 0
         
-        scene.ScrollingLines.__init__(self, n_lines=n_lines, 
-                                      line_size=line_size, dx=dx, color=self.color,
-                                    pos_offset=self.pos_offset, parent=parent)
+        scene.ScrollingLines.__init__(self, n_lines=n_lines,
+                                      line_size=line_size, dx=dx,
+                                      color=self.color,
+                                      pos_offset=self.pos_offset,
+                                      parent=parent)
         self.set_gl_state('additive', line_width=2)
         
     def new_frame(self, data):
@@ -106,7 +108,8 @@ class Oscilloscope(scene.ScrollingLines):
             tw = self._trigger[2] / self._dx  # trigger window width
             thresh = self._trigger[0]
             
-            trig = np.argwhere((data[tw:] > thresh+th) & (data[:-tw] < thresh-th))
+            trig = np.argwhere((data[tw:] > thresh + th) & 
+                               (data[:-tw] < thresh - th))
             if len(trig) > 0:
                 m = np.argmin(np.abs(trig - len(data) / 2))
                 i = trig[m, 0]
@@ -134,6 +137,7 @@ class Oscilloscope(scene.ScrollingLines):
         self.set_pos_offset(self.pos_offset)
         
         self.plot_ptr = (self.plot_ptr + 1) % self._data_shape[0]
+
        
 mic = MicrophoneRecorder()
 
@@ -143,7 +147,8 @@ grid = win.central_widget.add_grid()
 view1 = grid.add_view(row=0, col=0, camera='panzoom', border_color='grey')
 view1.camera.rect = (-0.01, -0.6, 0.02, 1.2)
 gridlines = scene.GridLines(color=(1, 1, 1, 0.5), parent=view1.scene)
-scope = Oscilloscope(line_size=mic.chunksize, dx=1.0/mic.rate, parent=view1.scene)
+scope = Oscilloscope(line_size=mic.chunksize, dx=1.0/mic.rate,
+                     parent=view1.scene)
 
 view2 = grid.add_view(row=1, col=0, camera='panzoom', border_color='grey')
 view2.camera.rect = (0.5, -0.5e6, np.log10(mic.rate/2), 5e6)
@@ -153,7 +158,8 @@ gridlines2 = scene.GridLines(color=(1, 1, 1, 1), parent=lognode)
 
 n_fft_frames = 8
 fft_samples = mic.chunksize * n_fft_frames
-spectrum = Oscilloscope(line_size=fft_samples/2, n_lines=10, dx=mic.rate/fft_samples,
+spectrum = Oscilloscope(line_size=fft_samples/2, n_lines=10,
+                        dx=mic.rate/fft_samples,
                         trigger=None, parent=lognode)
 
 mic.start()
@@ -161,6 +167,8 @@ mic.start()
 window = np.hanning(fft_samples)
 
 fft_frames = []
+
+
 def update(ev):
     global fft_frames, scope, spectrum, mic
     data = mic.get_frames()

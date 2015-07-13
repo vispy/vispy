@@ -12,8 +12,8 @@ from vispy import app, scene, visuals
 from vispy.util.filter import gaussian_filter
 import numpy as np
 
-canvas = scene.SceneCanvas(keys='interactive',
-                           title='Isocurve(s) overlayed over Random Image Example')
+canvas = scene.SceneCanvas(keys='interactive', title='Isocurve(s) overlayed '
+                           'over Random Image Example')
 canvas.size = 800, 600
 canvas.show()
 
@@ -38,7 +38,7 @@ color_lev = [(1, 0, 0, 1),
 # Create isocurve, make a child of the image to ensure the two are always
 # aligned.
 curve = scene.visuals.Isocurve(noise, levels=levels, color_lev=color_lev,
-                                parent=view.scene)
+                               parent=view.scene)
 
 # Set 2D camera
 view.camera = scene.PanZoomCamera(aspect=1)

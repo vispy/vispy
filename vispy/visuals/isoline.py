@@ -69,7 +69,7 @@ def iso_mesh_line(vertices, tris, vertex_data, levels):
             # Linear interpolation
             ratio = np.array([(lev - edge_datas_Ok[:, 0]) /
                               (edge_datas_Ok[:, 1] - edge_datas_Ok[:, 0])])
-            point = xyz[:, 0, :] + ratio.T*(xyz[:, 1, :] - xyz[:, 0, :])
+            point = xyz[:, 0, :] + ratio.T * (xyz[:, 1, :] - xyz[:, 0, :])
             nbr = point.shape[0]//2
             if connects is not None:
                 connect = np.arange(0, nbr*2).reshape((nbr, 2)) + \
@@ -189,22 +189,24 @@ class IsolineVisual(LineVisual):
         except:
             colors = ColorArray(self._color_lev).rgba
         else:
-            lev = _normalize(self._levels, self._levels.min(), self._levels.max())
+            lev = _normalize(self._levels, self._levels.min(),
+                             self._levels.max())
             # map function expects (Nlev,1)!
-            colors = f_color_levs.map(lev[:,np.newaxis])
+            colors = f_color_levs.map(lev[:, np.newaxis])
 
         if len(colors) == 1:
             colors = colors * np.ones((len(self._levels), 1))
 
         # detect color/level mismatch and raise error
         if (len(colors) != len(self._levels)):
-            raise TypeError("Color/level mismatch. Color must be of shape (Nlev, ...) "
-                            "and provide one color per level")
+            raise TypeError("Color/level mismatch. Color must be of shape "
+                            "(Nlev, ...) and provide one color per level")
 
         self._lc = colors
 
     def _compute_iso_color(self):
-        """ compute LineVisual color from level index and corresponding level color
+        """ compute LineVisual color from level index and corresponding level
+        color
         """
         level_color = []
         colors = self._lc
@@ -218,12 +220,12 @@ class IsolineVisual(LineVisual):
             return False
 
         if self._need_recompute:
-            self._v, self._c, self._vl, self._li = iso_mesh_line(self._vertices,
-                                                       self._tris, self._data,
-                                                       self._levels)
+            self._v, self._c, self._vl, self._li = iso_mesh_line(
+                self._vertices, self._tris, self._data, self._levels)
             self._levels_to_colors()
             self._compute_iso_color()
-            LineVisual.set_data(self, pos=self._v, connect=self._c, color=self._cl)
+            LineVisual.set_data(self, pos=self._v, connect=self._c,
+                                color=self._cl)
             self._recompute = False
 
         if self._need_color_update:

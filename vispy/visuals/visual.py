@@ -432,7 +432,8 @@ class Visual(BaseVisual):
             raise ValueError("_draw_mode has not been set for visual %r" %
                              self)
         try:
-            self._program.draw(self._vshare.draw_mode, self._vshare.index_buffer)
+            self._program.draw(self._vshare.draw_mode,
+                               self._vshare.index_buffer)
         except Exception:
             logger.warn("Error drawing visual %r" % self)
             raise

@@ -380,7 +380,8 @@ class SceneCanvas(app.Canvas):
         fbpos = tr.map(pos)[:2]
 
         try:
-            id_ = self._render_picking(region=(fbpos[0]-10, fbpos[1]-10, 20, 20))
+            id_ = self._render_picking(region=(fbpos[0]-10, fbpos[1]-10,
+                                               20, 20))
             vis = VisualNode._visual_ids.get(id_[10, 10], None)
         except RuntimeError:
             # Don't have read_pixels() support for IPython. Fall back to
@@ -400,7 +401,7 @@ class SceneCanvas(app.Canvas):
                 return hit
         
         if (not isinstance(node, VisualNode) or not node.visible or 
-            not node.interactive):
+                not node.interactive):
             return None
         
         bounds = [node.bounds(axis=i) for i in range(2)]
@@ -415,8 +416,8 @@ class SceneCanvas(app.Canvas):
             [bounds[0][1], bounds[1][0]],
             [bounds[0][1], bounds[1][1]]])
         bounds = tr.map(corners)
-        xhit = bounds[:,0].min() < pos[0] < bounds[:,0].max()
-        yhit = bounds[:,1].min() < pos[1] < bounds[:,1].max()
+        xhit = bounds[:, 0].min() < pos[0] < bounds[:, 0].max()
+        yhit = bounds[:, 1].min() < pos[1] < bounds[:, 1].max()
         if xhit and yhit:
             return node
 

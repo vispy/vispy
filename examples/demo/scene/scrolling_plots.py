@@ -1,4 +1,4 @@
-from vispy import app, scene, visuals, gloo, plot
+from vispy import app, scene
 import numpy as np
 
 
@@ -28,6 +28,7 @@ view.camera.rect = (0, 0, cols, N/cols)
 lines = scene.ScrollingLines(n_lines=N, line_size=M, columns=cols, dx=0.8/M,
                              cell_size=(1, 8), parent=view.scene)
 lines.transform = scene.STTransform(scale=(1, 1/8.))
+
 
 def update(ev):
     m = 50

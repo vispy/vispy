@@ -53,8 +53,8 @@ def get_image():
     image[20:80, 20:80] += 3.
     image[50] += 3.
     image[:, 50] += 3.
-    image = ((image-image.min()) *
-                (253. / (image.max()-image.min()))).astype(np.ubyte)
+    image = ((image - image.min()) *
+             (253. / (image.max() - image.min()))).astype(np.ubyte)
     
     return image
 

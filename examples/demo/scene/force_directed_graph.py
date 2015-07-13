@@ -1,7 +1,6 @@
 from vispy import app, scene, color
 import numpy as np
 
-
 # Generate clusters of data points and a graph of connections
 
 # Initialize arrays for position, color, edges, and types for each point in
@@ -55,7 +54,6 @@ colors *= 1.1 ** np.random.normal(size=colors.shape)
 colors = np.clip(colors, 0, 1)
 
 
-
 # Display the data
 win = scene.SceneCanvas(keys='interactive', show=True)
 view = win.central_widget.add_view()
@@ -64,15 +62,16 @@ view.camera.aspect = 1
 
 lines = scene.Line(pos=pos, connect=edges, antialias=False, method='gl',
                    color=(1, 1, 1, 0.2), parent=view.scene)
-markers = scene.Markers(pos=pos, face_color=colors, symbol='o', parent=view.scene)
+markers = scene.Markers(pos=pos, face_color=colors, symbol='o',
+                        parent=view.scene)
 
 view.camera.set_range()
 
-
 i = 1
+
+
 def update(ev):
     global pos, edges, lines, markers, view, force, dist, i
-    
     
     dx = np.empty((npts, npts, 2), dtype='float32')
     dx[:] = pos[:, np.newaxis, :]
@@ -107,6 +106,7 @@ def update(ev):
     markers.set_data(pos=pos, face_color=colors)
     
     i += 1
+
 
 timer = app.Timer(interval=0, connect=update, start=True)
 

@@ -65,7 +65,8 @@ class ZColormapFilter(object):
         """)
         self.fshader = Function("""
             void apply_z_colormap() {
-                gl_FragColor = $cmap(($zval - $zrange.x) / ($zrange.y - $zrange.x));
+                gl_FragColor = $cmap(($zval - $zrange.x) / 
+                                     ($zrange.y - $zrange.x));
             }
         """)
         if isinstance(cmap, str):
@@ -84,5 +85,3 @@ class ZColormapFilter(object):
         fhook.add(self.fshader(), position=3)
         
         self.vshader['position'] = visual.shared_program.vert['position']
-
-

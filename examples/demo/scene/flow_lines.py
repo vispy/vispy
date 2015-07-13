@@ -1,7 +1,7 @@
 from __future__ import division
 
 from vispy import app, scene, visuals, gloo
-from vispy.util import filter, ptime
+from vispy.util import ptime
 import numpy as np
 
 
@@ -88,7 +88,8 @@ class VectorFieldVisual(visuals.Visual):
         
         offset = np.random.uniform(256, size=(rows, cols, 3)).astype(np.ubyte)
         self._offset = gloo.Texture2D(offset, format='rgb')
-        self._field = gloo.Texture2D(field, format='rg', internalformat='rg32f',
+        self._field = gloo.Texture2D(field, format='rg',
+                                     internalformat='rg32f',
                                      interpolation='linear')
         self._field_shape = field.shape[:2]
         
@@ -135,34 +136,27 @@ class VectorFieldVisual(visuals.Visual):
 VectorField = scene.visuals.create_visual_node(VectorFieldVisual)
 
 
-
-#field = np.zeros((100, 100, 3), dtype='float32')
-#field[..., 0] = np.fromfunction(lambda x,y: x-50, (100, 100))
-#field[..., 1] = np.fromfunction(lambda x,y: y-50, (100, 100))
-#field *= 0.01
-
 def fn(y, x):
     dx = x-50
     dy = y-30
     l = (dx**2 + dy**2)**0.5
-    return np.array([100*dy/l**1.7, -100*dx/l**1.8])
+    return np.array([100*dy / l**1.7, -100*dx / l**1.8])
+
 field = np.fromfunction(fn, (100, 100)).transpose(1, 2, 0).astype('float32')
-field[..., 0] += 10 * np.cos(np.linspace(0, 2*3.1415, 100))
+field[..., 0] += 10 * np.cos(np.linspace(0, 2 * 3.1415, 100))
 
 color = np.zeros((100, 100, 4), dtype='float32')
-color[...,:2] = (field + 5) / 10.
-color[...,2] = 0.5
-color[...,3] = 0.5
+color[..., :2] = (field + 5) / 10.
+color[..., 2] = 0.5
+color[..., 3] = 0.5
 
 win = scene.SceneCanvas(keys='interactive', show=True)
 view = win.central_widget.add_view(camera='panzoom')
 #img = scene.Image(field, parent=view.scene)
 
-vfield = VectorField(field[..., :2], spacing=0.5, segments=30, seg_len=0.05, parent=view.scene, color=color)
+vfield = VectorField(field[..., :2], spacing=0.5, segments=30, seg_len=0.05,
+                     parent=view.scene, color=color)
 view.camera.set_range()
-
-
-
 
 if __name__ == '__main__':
     app.run()

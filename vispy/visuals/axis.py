@@ -156,10 +156,6 @@ class Ticker(object):
         # coords to determine the tick length
         trs = self.axis.transforms
         visual_to_document = trs.get_transform('visual', 'document')
-        #direction = visual_to_document.map(np.array([[0., 0.],
-                                                     #self.axis.tick_direction],
-                                                    #float))
-        #direction = (direction[1] - direction[0])[:2]
         direction = np.array(self.axis.tick_direction)
         direction /= np.linalg.norm(direction)
         # use the document (pixel) coord system to set text anchors
@@ -186,8 +182,8 @@ class Ticker(object):
                             direction * self.axis.minor_tick_length / doc_len,
                             direction * self.axis.major_tick_length / doc_len,
                             direction * (self.axis.major_tick_length +
-                                         self.axis.label_margin) / doc_len], float)
-        #vectors = visual_to_document.imap(vectors)[:, :2]
+                                         self.axis.label_margin) / doc_len],
+                           dtype=float)
         minor_vector = vectors[1] - vectors[0]
         major_vector = vectors[2] - vectors[0]
         label_vector = vectors[3] - vectors[0]

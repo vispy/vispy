@@ -31,6 +31,6 @@ Then plots are accomplished via methods of the `PlotWidget` instances::
 
 """
 
-from .fig import Fig
-from .plotwidget import PlotWidget
-from ..scene import *
+from .fig import Fig  # noqa
+from .plotwidget import PlotWidget  # noqa
+from ..scene import *  # noqa

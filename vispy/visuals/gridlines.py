@@ -4,9 +4,6 @@
 
 from __future__ import division
 
-import numpy as np
-
-from .. import gloo
 from .image import ImageVisual
 from ..color import Color
 from .shaders import Function

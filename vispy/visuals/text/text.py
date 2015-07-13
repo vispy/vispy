@@ -17,7 +17,7 @@ import sys
 
 from ._sdf import SDFRenderer
 from ...gloo import (TextureAtlas, IndexBuffer, VertexBuffer)
-from ...gloo import gl, context
+from ...gloo import context
 from ...gloo.wrappers import _check_valid
 from ...ext.six import string_types
 from ...util.fonts import _load_glyph
@@ -540,4 +540,4 @@ class TextVisual(Visual):
         view.view_program.vert['transform'] = tr  # .simplified()
         
     def _compute_bounds(self, axis, view):
-        return self._pos[:,axis].min(), self._pos[:,axis].max()
+        return self._pos[:, axis].min(), self._pos[:, axis].max()

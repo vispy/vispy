@@ -59,7 +59,8 @@ def on_mouse_press(event):
 @fig.connect
 def on_mouse_move(event):
     update_cursor(event.pos)
-    
+
+
 def update_cursor(pos):
     global selected, cursor, data, dt, plt
     if selected is None:
@@ -87,7 +88,8 @@ def update_cursor(pos):
         cursor_text.pos = x + offset, y
         rect = plt.view.camera.rect
         cursor_line.set_data(np.array([[x, rect.bottom], [x, rect.top]]))
-        cursor_symbol.set_data(pos=np.array([[x, y]]), symbol='+', face_color='b')
+        cursor_symbol.set_data(pos=np.array([[x, y]]), symbol='+',
+                               face_color='b')
         cursor_text.visible = True
         cursor_line.visible = True
         cursor_symbol.visible = True
