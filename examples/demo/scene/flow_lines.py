@@ -17,6 +17,9 @@ class VectorFieldVisual(visuals.Visual):
     uniform sampler2D offset;
     uniform float seg_len;
     uniform int n_iter;  // iterations to integrate along field per vertex
+    uniform vec2 attractor;
+    varying vec4 base_color;
+    uniform sampler2D color;
     
     void main() {
         // distance along one line
@@ -28,14 +31,27 @@ class VectorFieldVisual(visuals.Visual):
         // the appearance of combs in the field 
         vec2 off = texture2D(offset, ij / shape).xy - 0.5;
         local = spacing * (ij + off);
+        vec2 uv;
+        vec2 dir;
+        vec2 da;
         for( int i=0; i<index.y; i+=1 ) {
             for ( int j=0; j<n_iter; j += 1 ) {
-                vec2 uv = local / field_shape;
-                vec2 dir = texture2D(field, uv).xy;
+                uv = local / field_shape;
+                dir = texture2D(field, uv).xy;
+                
+                // add influence of variable attractor (mouse)
+                da = attractor - local;
+                float al = 0.1 * length(da);
+                da /= 0.5 * (1 + al*al);
+                
+                dir += da;
+                
                 // maybe pick a more accurate integration method?
                 local += seg_len * dir / n_iter;
             }
         }
+        base_color = texture2D(color, uv);
+        
         gl_Position = $transform(vec4(local, 0, 1));
     }
     """
@@ -46,10 +62,10 @@ class VectorFieldVisual(visuals.Visual):
     varying float dist;
     varying vec2 ij;
     uniform sampler2D offset;
-    uniform sampler2D color;
     uniform vec2 shape;
     uniform float nseg;
     uniform float seg_len;
+    varying vec4 base_color;
     
     void main() {
         float totlen = nseg * seg_len;
@@ -63,7 +79,6 @@ class VectorFieldVisual(visuals.Visual):
         // add a cosine envelope to fade in and out smoothly at the ends
         alpha *= (1 - cos(2 * 3.141592 * dist / totlen)) * 0.5;
         
-        vec4 base_color = texture2D(color, ij / shape);
         gl_FragColor = vec4(base_color.rgb, base_color.a * alpha);
     }
     """
@@ -107,6 +122,8 @@ class VectorFieldVisual(visuals.Visual):
         self.shared_program['seg_len'] = seg_len
         self.shared_program['nseg'] = segments
         self.shared_program['n_iter'] = 1
+        self.shared_program['attractor'] = (0, 0)
+        self.shared_program['time'] = 0
         
         self._draw_mode = 'lines'
         self.set_gl_state('translucent', depth_test=False)
@@ -139,8 +156,8 @@ VectorField = scene.visuals.create_visual_node(VectorFieldVisual)
 def fn(y, x):
     dx = x-50
     dy = y-30
-    l = (dx**2 + dy**2)**0.5
-    return np.array([100*dy / l**1.7, -100*dx / l**1.8])
+    l = (dx**2 + dy**2)**0.5 + 0.01
+    return np.array([100 * dy / l**1.7, -100 * dx / l**1.8])
 
 field = np.fromfunction(fn, (100, 100)).transpose(1, 2, 0).astype('float32')
 field[..., 0] += 10 * np.cos(np.linspace(0, 2 * 3.1415, 100))
@@ -157,6 +174,14 @@ view = win.central_widget.add_view(camera='panzoom')
 vfield = VectorField(field[..., :2], spacing=0.5, segments=30, seg_len=0.05,
                      parent=view.scene, color=color)
 view.camera.set_range()
+
+
+@win.connect
+def on_mouse_move(event):
+    if 3 in event.buttons:
+        tr = win.scene.node_transform(vfield)
+        vfield.shared_program['attractor'] = tr.map(event.pos)[:2]
+
 
 if __name__ == '__main__':
     app.run()

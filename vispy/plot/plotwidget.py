@@ -42,11 +42,13 @@ class PlotWidget(scene.Widget):
         
         self.visuals = []
         
-    def _configure_2d(self):
+    def _configure_2d(self, fg_color=None):
         if self._configured:
             return
-        
-        fg = self._fg
+        if fg_color is None:
+            fg = self._fg
+        else:
+            fg = fg_color
         self.yaxis = scene.AxisWidget(orientation='left', text_color=fg,
                                       axis_color=fg, tick_color=fg)
         self.yaxis.stretch = (0.1, 1)
@@ -106,7 +108,7 @@ class PlotWidget(scene.Widget):
         self.view.camera.set_range()
         return hist
 
-    def image(self, data, cmap='cubehelix', clim='auto'):
+    def image(self, data, cmap='cubehelix', clim='auto', fg_color=None):
         """Show an image
 
         Parameters
@@ -128,7 +130,7 @@ class PlotWidget(scene.Widget):
         -----
         The colormap is only used if the image pixels are scalars.
         """
-        self._configure_2d()
+        self._configure_2d(fg_color)
         image = scene.Image(data, cmap=cmap, clim=clim)
         self.view.add(image)
         self.view.camera.aspect = 1

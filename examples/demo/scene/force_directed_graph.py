@@ -55,7 +55,7 @@ colors = np.clip(colors, 0, 1)
 
 
 # Display the data
-win = scene.SceneCanvas(keys='interactive', show=True)
+win = scene.SceneCanvas(keys='interactive', show=True, fullscreen=True)
 view = win.central_widget.add_view()
 view.camera = 'panzoom'
 view.camera.aspect = 1
