@@ -74,7 +74,7 @@ class _ArrowHeadVisual(Visual):
 
         self._parent = parent
         self._arrow_vbo = gloo.VertexBuffer()
-        self._vshare.draw_mode = 'points'
+        self._draw_mode = 'points'
 
     def _prepare_transforms(self, view):
         xform = view.transforms.get_transform()
