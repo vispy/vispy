@@ -278,7 +278,7 @@ class _CoreColorBarVisual(Visual):
 # The padding multiplier that's used to place the text
 # next to the Colorbar. Makes sure the text isn't
 # visually "sticking" to the Colorbar
-_TEXT_PADDING_FACTOR = 1.2
+_TEXT_PADDING_FACTOR = 1.3
 
 
 class ColorBarVisual(CompoundVisual):
@@ -463,6 +463,11 @@ class ColorBarVisual(CompoundVisual):
             # raise an error since the orientation is now what was
             # expected
             raise ColorBarVisual._get_orientation_error(self._orientation)
+
+    def _prepare_transforms(self, view):
+        print("preparing transorms")
+        CompoundVisual._prepare_transforms(view)
+        view._update()
 
     @staticmethod
     def _get_orientation_error(orientation):

@@ -15,6 +15,7 @@ from vispy.visuals.transforms import (NullTransform, STTransform,
 from vispy.visuals import ColorBarVisual, ImageVisual
 from vispy.color import Color, get_colormap
 
+
 import numpy as np
 
 
