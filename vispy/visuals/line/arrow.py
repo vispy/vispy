@@ -74,6 +74,7 @@ class _ArrowHeadVisual(Visual):
 
         self._parent = parent
         self._arrow_vbo = gloo.VertexBuffer()
+        self._vshare.draw_mode = 'points'
 
     def _prepare_transforms(self, view):
         xform = view.transforms.get_transform()
@@ -88,7 +89,7 @@ class _ArrowHeadVisual(Visual):
 
         self.shared_program.bind(self._arrow_vbo)
 
-        self.shared_program['antialias'] = self._parent.antialias
+        self.shared_program['antialias'] = 1.0
         self.shared_program.frag['arrow_type'] = self._parent.arrow_type
         self.shared_program.frag['fill_type'] = self._parent.fill_type
 
