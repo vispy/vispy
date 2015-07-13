@@ -7,35 +7,11 @@ sudo : false
 addons:
   apt:
     sources:
-    - kalakris-cmake
+    - &full_sources [kalakris-cmake]
     packages:
-    - cmake
-    - libgl1-mesa-dri
-    - libegl1-mesa
-    # old GLFW
-    - libglfw2
-    # GLFW build
-    - xorg-dev
-    - libglu1-mesa-dev
-    # SDL2 build
-    - mercurial
-    - libdbus-1-dev
-    - libgl1-mesa-dev
-    - libglu1-mesa-dev
-    - libpulse-dev
-    - libx11-dev
-    - libxcursor-dev
-    - libxext-dev
-    - libxi-dev
-    - libxinerama-dev
-    - libxrandr-dev
-    - libxss-dev
-    - libxt-dev
-    - libxv-dev
-    - libxxf86vm-dev
-    - libasound2-dev
-    - libts-dev
-    - libudev-dev
+    - &mesa_apt [libgl1-mesa-dri]
+    - &py26_apt [libglfw2]
+    - &full_apt [libegl1-mesa, cmake, xorg-dev, libglu1-mesa-dev, mercurial, libdbus-1-dev, libgl1-mesa-dev, libglu1-mesa-dev, libpulse-dev, libx11-dev, libxcursor-dev, libxext-dev, libxi-dev, libxinerama-dev, libxrandr-dev, libxss-dev, libxt-dev, libxv-dev, libxxf86vm-dev, libasound2-dev, libts-dev, libudev-dev]
 
 # Here we use Anaconda for our builds, since it provides the simplest
 # interface for running different versions of Python. We could also use
@@ -44,18 +20,49 @@ addons:
 
 # Size testing can be skipped by adding "[size skip]" within a commit message.
 
-env:
+matrix:
+  include:
     # Enable python 2 and python 3 builds
     # Note that the 2.6 build doesn't get flake8, and runs old versions of
     # Pyglet and GLFW to make sure we deal with those correctly
 
     # IPython 1.2.1 is the last version of IPython for python2.6
     # source: https://pypi.python.org/pypi/ipython/1.2.1
-    - PYTHON=2.6 DEPS=full TEST=standard   # functionality
-    - PYTHON=2.7 DEPS=full TEST=standard IPYTHON="=2" # NUMPY="=1.7"
-    - PYTHON=3.4 DEPS=full TEST=standard
-    - PYTHON=3.4 DEPS=full TEST=examples  # test examples
-    - PYTHON=3.4 DEPS=minimal TEST=standard  # also tests file sizes, style, line endings
+    - env: PYTHON=2.6 DEPS=full TEST=standard   # functionality
+      addons:
+        apt:
+          sources:
+          packages:
+            - *mesa_apt
+            - *py26_apt
+    - env: PYTHON=2.7 DEPS=full TEST=standard IPYTHON="=2" # NUMPY="=1.7"
+      addons:
+        apt:
+          sources:
+            - *full_sources
+          packages:
+            - *mesa_apt
+            - *full_apt
+    - env: PYTHON=3.4 DEPS=full TEST=standard
+      addons:
+        apt:
+          sources:
+            - *full_sources
+          packages:
+            - *mesa_apt
+            - *full_apt
+    - env: PYTHON=3.4 DEPS=full TEST=examples  # test examples
+      addons:
+        apt:
+          sources:
+            - *full_sources
+          packages:
+            - *mesa_apt
+            - *full_apt
+    - env: PYTHON=3.4 DEPS=minimal TEST=standard  # also tests file sizes, style, line endings
+      addons:
+        apt:
+          packages:
 
 
 before_install:
