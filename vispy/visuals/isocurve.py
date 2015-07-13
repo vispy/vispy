@@ -30,13 +30,16 @@ class IsocurveVisual(LineVisual):
         The color to use when drawing the line. If a list is given, it
         must be of shape (Nlev), if an array is given, it must be of
         shape (Nlev, ...). and provide one color per level (rgba, colorname).
+    clim : tuple
+        (min, max) limits to apply when mapping level values through a
+        colormap.
     **kwargs : dict
         Keyword arguments to pass to `LineVisual`.
 
     Notes
     -----
     """
-    def __init__(self, data=None, color_lev=None, levels=None, clim=None, **kwargs):
+    def __init__(self, data=None, levels=None, color_lev=None, clim=None, **kwargs):
         self._data = None
         self._levels = levels
         self._color_lev = color_lev

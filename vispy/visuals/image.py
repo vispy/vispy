@@ -136,7 +136,7 @@ class ImageVisual(Visual):
         super(ImageVisual, self).__init__(vcode=VERT_SHADER, fcode=FRAG_SHADER)
         self.shared_program['u_texture'] = self._texture
         self.set_gl_state('translucent', cull_face=False)
-        self._draw_method = 'triangles'
+        self._draw_mode = 'triangles'
         
         self.clim = clim
         self.cmap = cmap

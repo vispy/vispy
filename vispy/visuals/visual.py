@@ -87,10 +87,11 @@ will appear to behave as a single visual.
 from __future__ import division
 import weakref
 
+from .. import gloo
 from ..util.event import EmitterGroup, Event
+from ..util import logger
 from .shaders import StatementList, MultiProgram
 from .transforms import TransformSystem
-from .. import gloo
 
 
 class VisualShare(object):
@@ -387,10 +388,7 @@ class Visual(BaseVisual):
         connect the appropriate mapping functions from the view's
         TransformSystem to the view's program.
         """
-        # Note that we access `view_program` instead of `shared_program`
-        # because we do not want this function assigned to other views.
-        tr = view.transforms.get_transform()
-        view.view_program.vert['transform'] = tr  # .simplified()
+        raise NotImplementedError()
         # Todo: this method can be removed if we somehow enable the shader
         # to specify exactly which transform functions it needs by name. For
         # example:
@@ -431,8 +429,13 @@ class Visual(BaseVisual):
         if self._prepare_draw(view=self) is False:
             return
         if self._vshare.draw_mode is None:
-            raise ValueError("_draw_mode has not been set for visual %r" % self)
-        self._program.draw(self._vshare.draw_mode, self._vshare.index_buffer)
+            raise ValueError("_draw_mode has not been set for visual %r" %
+                             self)
+        try:
+            self._program.draw(self._vshare.draw_mode, self._vshare.index_buffer)
+        except Exception:
+            logger.warn("Error drawing visual %r" % self)
+            raise
         
     def _get_hook(self, shader, name):
         """Return a FunctionChain that Filters may use to modify the program.

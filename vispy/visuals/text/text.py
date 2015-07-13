@@ -481,7 +481,6 @@ class TextVisual(Visual):
         self.update()
 
     def _prepare_draw(self, view):
-        transforms = self.transforms
         # attributes / uniforms are not available until program is built
         if len(self.text) == 0:
             return False
@@ -518,7 +517,7 @@ class TextVisual(Visual):
             self.shared_program['a_pos'] = pos
             self._pos_changed = False
 
-        # todo: do some testing to verify that the scaling is correct
+        transforms = self.transforms
         n_pix = (self._font_size / 72.) * transforms.dpi  # logical pix
         tr = transforms.get_transform('document', 'render')
         px_scale = (tr.map((1, 0)) - tr.map((0, 1)))[:2]
@@ -533,4 +532,8 @@ class TextVisual(Visual):
 
     def _prepare_transforms(self, view):
         self._pos_changed = True
-        Visual._prepare_transforms(self, view)
+        # Note that we access `view_program` instead of `shared_program`
+        # because we do not want this function assigned to other views.
+        tr = view.transforms.get_transform()
+        view.view_program.vert['transform'] = tr  # .simplified()
+        
