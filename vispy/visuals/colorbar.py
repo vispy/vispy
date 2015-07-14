@@ -97,7 +97,16 @@ void main() {
 
 
 class _CoreColorBarVisual(Visual):
+    """
+    Visual subclass that actually renders the ColorBar.
 
+    Note
+    ----
+    This is purely internal.
+    Externally, the ColorBarVisual must be used.
+    This class was separated out to encapsulate rendering information
+    That way, ColorBar simply becomes a CompoundVisual
+    """
     def __init__(self, center_pos, halfdim,
                  cmap,
                  orientation,
