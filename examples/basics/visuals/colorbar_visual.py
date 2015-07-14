@@ -139,7 +139,6 @@ class Canvas(app.Canvas):
 
         self.show()
 
-
     def on_resize(self, event):
         # Set canvas viewport and reconfigure visual transforms to match.
         vp = (0, 0, self.physical_size[0], self.physical_size[1])
@@ -147,7 +146,6 @@ class Canvas(app.Canvas):
 
         self.image.transforms.configure(canvas=self, viewport=vp)
         self.vertical_bar.transforms.configure(canvas=self, viewport=vp)
-
 
     def on_draw(self, event):
         # clear the color buffer
