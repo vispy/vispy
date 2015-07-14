@@ -11,10 +11,6 @@ from vispy import app
 from vispy import gloo
 from vispy.visuals import ColorBarVisual
 from vispy.color import get_colormap
-from vispy.color import Color
-
-# from vispy.visuals.transforms import NullTransform
-# from vispy.visuals.transforms.transform_system import TransformSystem
 
 colormap = get_colormap("ice")
 
@@ -81,6 +77,7 @@ def get_bottom_orientation_bar():
 
 
 class Canvas(app.Canvas):
+
     def __init__(self):
         app.Canvas.__init__(self, size=(800, 600), keys="interactive")
 
@@ -89,12 +86,6 @@ class Canvas(app.Canvas):
         self.bars.append(get_right_orientation_bar())
         self.bars.append(get_top_orientation_bar())
         self.bars.append(get_bottom_orientation_bar())
-
-        # construct a default transform that does identity scaling
-        # and does not translate the coordinates
-        # transform = NullTransform()
-        # self.transform_sys = TransformSystem(self)
-        # self.transform_sys.visual_to_document = transform
 
         self.show()
 
