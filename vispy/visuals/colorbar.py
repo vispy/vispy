@@ -50,29 +50,43 @@ attribute vec2 a_position;
 attribute vec2 a_adjust_dir;
 
 void main() {
+    // First map the vertex to document coordinates
     vec4 doc_pos = $visual_to_doc(vec4(a_position, 0, 1));
 
-    vec4 doc_x = $visual_to_doc(vec4(a_adjust_dir.x, 0, 0, 0)) -
-                $visual_to_doc(vec4(0, 0, 0, 0));
+    // Also need to map the adjustment direction vector, but this is tricky!
+    // We need to adjust separately for each component of the vector:
+    vec4 adjusted;
+    if ( a_adjust_dir.x == 0 ) {
+        // If this is an outer vertex, no adjustment for line weight is needed.
+        // (In fact, trying to make the adjustment would result in no
+        // triangles being drawn, hence the if/else block)
+        adjusted = doc_pos;
+    }
+    else {
+        // Inner vertexes must be adjusted for line width, but this is
+        // surprisingly tricky given that the rectangle may have been scaled
+        // and rotated!
+        vec4 doc_x = $visual_to_doc(vec4(a_adjust_dir.x, 0, 0, 0)) -
+                    $visual_to_doc(vec4(0, 0, 0, 0));
+        vec4 doc_y = $visual_to_doc(vec4(0, a_adjust_dir.y, 0, 0)) -
+                    $visual_to_doc(vec4(0, 0, 0, 0));
+        doc_x = normalize(doc_x);
+        doc_y = normalize(doc_y);
 
-    vec4 doc_y = $visual_to_doc(vec4(0, a_adjust_dir.y, 0, 0)) -
-                $visual_to_doc(vec4(0, 0, 0, 0));
-    doc_x = normalize(doc_x);
-    doc_y = normalize(doc_y);
+        // Now doc_x + doc_y points in the direction we need in order to
+        // correct the line weight of _both_ segments, but the magnitude of
+        // that correction is wrong. To correct it we first need to
+        // measure the width that would result from using doc_x + doc_y:
+        vec4 proj_y_x = dot(doc_x, doc_y) * doc_x;  // project y onto x
+        float cur_width = length(doc_y - proj_y_x);  // measure current weight
 
-    // Now doc_x + doc_y points in the direction we need in order to
-    // correct the line weight of _both_ segments, but the magnitude of
-    // that correction is wrong. To correct it we first need to
-    // measure the width that would result from using doc_x + doc_y:
-    vec4 proj_y_x = dot(doc_x, doc_y) * doc_x;  // project y onto x
-    float cur_width = 1; //length(doc_y - proj_y_x);  // measure current weight
+        // And now we can adjust vertex position for line width:
+        adjusted = doc_pos + ($border_width / cur_width) * (doc_x + doc_y);
+    }
 
-    // And now we can adjust vertex position for line width:
-    float scaling = $border_width / cur_width;
-    gl_Position = $doc_to_render(doc_pos + scaling * (doc_x + doc_y));
-    //gl_Position = doc_pos + doc_x + doc_y;
+    // Finally map the remainder of the way to render coordinates
+    gl_Position = $doc_to_render(adjusted);
 }
-
 """
 
 FRAG_SHADER_BORDER = """
@@ -102,22 +116,6 @@ class _CoreColorBarVisual(Visual):
         self._border_program = ModularProgram(VERT_SHADER_BORDER,
                                               FRAG_SHADER_BORDER)
 
-        # Direction each vertex should move to correct for line width
-        adjust_dir = np.array([
-            [0, 0],
-            [1, 1],
-            [0, 0],
-            [-1, 1],
-            [0, 0],
-            [-1, -1],
-            [0, 0],
-            [1, -1],
-            [0, 0],
-            [1, 1],
-        ], dtype=np.float32)
-
-        self._border_program['a_adjust_dir'] = adjust_dir.astype(np.float32)
-
         # setup the right program shader based on color
         if orientation == "top" or orientation == "bottom":
             # self._program=ModularProgram(VERT_SHADER,FRAG_SHADER_HORIZONTAL)
@@ -142,7 +140,6 @@ class _CoreColorBarVisual(Visual):
 
         self._update()
 
-
     def _update(self):
         """Rebuilds the shaders, and repositions the objects
            that are used internally by the ColorBarVisual
@@ -163,8 +160,7 @@ class _CoreColorBarVisual(Visual):
 
         # test that the given width and height is consistent
         # with the orientation
-        if (self._orientation == "bottom" or
-           self._orientation == "top"):
+        if (self._orientation == "bottom" or self._orientation == "top"):
                 if halfw < halfh:
                     raise ValueError("half-width(%s) < half-height(%s) for"
                                      "%s orientation,"
@@ -185,24 +181,38 @@ class _CoreColorBarVisual(Visual):
                              [x - halfw, y - halfh],
                              [x + halfw, y + halfh],
                              [x - halfw, y + halfh]],
-                             dtype=np.float32)
+                            dtype=np.float32)
 
         border_vertices = np.array([
             [x - halfw, y - halfh],
             [x - halfw, y - halfh],
+
             [x + halfw, y - halfh],
             [x + halfw, y - halfh],
+
             [x + halfw, y + halfh],
             [x + halfw, y + halfh],
+
             [x - halfw, y + halfh],
             [x - halfw, y + halfh],
+
             [x - halfw, y - halfh],
             [x - halfw, y - halfh],
         ], dtype=np.float32)
 
-        self.shared_program['a_position'] = vertices
-        self._border_program['a_position'] = border_vertices
+        # Direction each vertex should move to correct for line width
+        adjust_dir = np.array([
+            [0, 0], [-1, -1],
+            [0, 0], [1, -1],
+            [0, 0], [1, 1],
+            [0, 0], [-1, 1],
+            [0, 0], [-1, -1],
+        ], dtype=np.float32)
 
+        self.shared_program['a_position'] = vertices
+
+        self._border_program['a_position'] = border_vertices
+        self._border_program['a_adjust_dir'] = adjust_dir
         self._border_program.vert['border_width'] = self._border_width
         self._border_program.frag['border_color'] = self._border_color.rgba
 
@@ -274,7 +284,6 @@ class _CoreColorBarVisual(Visual):
         self._border_program.draw("triangle_strip")
 
 
-
 # The padding multiplier that's used to place the text
 # next to the Colorbar. Makes sure the text isn't
 # visually "sticking" to the Colorbar
@@ -282,6 +291,7 @@ _TEXT_PADDING_FACTOR = 1.3
 
 
 class ColorBarVisual(CompoundVisual):
+
     """Visual subclass displaying a colorbar
 
     Parameters
@@ -358,26 +368,28 @@ class ColorBarVisual(CompoundVisual):
 
         anchor_x, anchor_y = ColorBarVisual._get_anchors(self._orientation)
         self._label = TextVisual(text=self._label_str,
-                                    anchor_x=anchor_x,
-                                    anchor_y=anchor_y)
+                                 anchor_x=anchor_x,
+                                 anchor_y=anchor_y)
 
         self._ticks = []
 
         self._ticks.append(TextVisual(str(self._clim[0]),
-                                          anchor_x=anchor_x,
-                                          anchor_y=anchor_y))
+                                      anchor_x=anchor_x,
+                                      anchor_y=anchor_y))
 
         self._ticks.append(TextVisual(str(self._clim[1]),
-                                          anchor_x=anchor_x,
-                                          anchor_y=anchor_y))
+                                      anchor_x=anchor_x,
+                                      anchor_y=anchor_y))
 
         self._colorbar = _CoreColorBarVisual(center_pos,
-            halfdim, cmap,  orientation, border_width, border_color)
+                                             halfdim, cmap,
+                                             orientation,
+                                             border_width, border_color)
 
         CompoundVisual.__init__(self, [self._label,
-                                     self._ticks[0],
-                                    self._ticks[1],
-                                     self._colorbar])
+                                       self._ticks[0],
+                                       self._ticks[1],
+                                       self._colorbar])
 
         self._update()
 
@@ -414,7 +426,6 @@ class ColorBarVisual(CompoundVisual):
         if halfh <= 0:
             raise ValueError("half-height must be positive and non-zero"
                              ", not %s", halfh)
-
 
         # Place the labels according to the given orientation
         if self._orientation == "bottom":
