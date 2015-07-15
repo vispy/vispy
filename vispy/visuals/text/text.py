@@ -501,6 +501,10 @@ class TextVisual(Visual):
                    np.arange(0, 4*n_char, 4, dtype=np.uint32)[:, np.newaxis])
             self._index_buffer = IndexBuffer(idx.ravel())
             self.shared_program.bind(self._vertices)
+            # This is necessary to reset the GL drawing state after generating
+            # SDF textures. A better way would be to enable the state to be
+            # pushed/popped by the context.
+            self._configure_gl_state()
         if self._pos_changed:
             # now we promote pos to the proper shape (attribute)
             text = self.text

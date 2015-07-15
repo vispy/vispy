@@ -425,7 +425,7 @@ class Visual(BaseVisual):
     def draw(self):
         if not self.visible:
             return
-        gloo.set_state(**self._vshare.gl_state)
+        self._configure_gl_state()
         if self._prepare_draw(view=self) is False:
             return
         if self._vshare.draw_mode is None:
@@ -437,6 +437,9 @@ class Visual(BaseVisual):
         except Exception:
             logger.warn("Error drawing visual %r" % self)
             raise
+
+    def _configure_gl_state(self):
+        gloo.set_state(**self._vshare.gl_state)
         
     def _get_hook(self, shader, name):
         """Return a FunctionChain that Filters may use to modify the program.
