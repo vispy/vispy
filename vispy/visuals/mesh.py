@@ -194,7 +194,6 @@ class MeshVisual(Visual):
 
         # varyings
         self._color_var = Varying('v_color', dtype='vec4')
-        # self._normal_var = Varying('v_normal', dtype='vec3')
 
         # Init
         self._bounds = None
@@ -336,8 +335,12 @@ class MeshVisual(Visual):
             raise TypeError("Vertex data must have shape (...,2) or (...,3).")
 
         # Color input handling
+        # If non-lit shading is used, then just pass the colors
+        # Otherwise, the shader uses a base_color to represent the underlying
+        # color, which is then lit with the lighting model
         colors = self._colors if self._colors.size > 0 else self._color.rgba
-        self.shared_program.vert[self._color_var] = colors
+        if self.shading is None:
+            self.shared_program.vert[self._color_var] = colors
 
         # Shading
         if self.shading is None:
@@ -393,6 +396,6 @@ class MeshVisual(Visual):
             view.shared_program.vert['doc2scene'] = doc2scene
 
     def _compute_bounds(self, axis, view):
-        if self._bounds is None or axis >= len(self._bounds):
+        if self._bounds is None:
             return None
         return self._bounds[axis]
