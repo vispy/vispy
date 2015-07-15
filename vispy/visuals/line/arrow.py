@@ -93,13 +93,10 @@ class _ArrowHeadVisual(Visual):
         self.shared_program.frag['fill_type'] = self._parent.fill_type
 
     def _prepare_vertex_data(self):
-        num_arrows = len(self._parent.arrows)
-        v = np.zeros(num_arrows, dtype=self._arrow_vtype)
-        arrows = np.array(self._parent.arrows).astype(float)
+        arrows = self._parent.arrows
 
-        # Create matrix with column 0 and 1 representing v1.x and v1.y
-        # and column 2 and 3 represents v2.x and v2.y
-        arrows = arrows.reshape((num_arrows, arrows.shape[1] * 2))
+        num_arrows = arrows.shape[0]
+        v = np.zeros(num_arrows, dtype=self._arrow_vtype)
 
         v['v1'] = arrows[:, 0:2]
         v['v2'] = arrows[:, 2:4]
