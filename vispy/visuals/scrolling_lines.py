@@ -11,6 +11,28 @@ from .. import gloo
 
 
 class ScrollingLinesVisual(Visual):
+    """Displays many line strips of equal length, with the option to add new
+    vertex data to one end of the lines.
+    
+    Parameters
+    ----------
+    n_lines : int
+        The number of independent line strips to draw.
+    line_size : int
+        The number of samples in each line strip.
+    dx : float
+        The x distance between samples
+    color : array-like
+        An array of colors to assign to each line strip.
+    pos_offset : array-like
+        An array of x, y position offsets to apply to each line strip.
+    columns : int
+        Arrange line strips into a grid with this number of columns. This
+        option is not compatible with *pos_offset*.
+    cell_size : tuple
+        The x, y distance between cells in the grid.
+    """
+    
     vertex_code = """
     attribute vec2 index;  // .x=line_n, .y=vertex_n
     uniform sampler2D position;
@@ -54,9 +76,6 @@ class ScrollingLinesVisual(Visual):
     
     def __init__(self, n_lines, line_size, dx, color=None, pos_offset=None,
                  columns=None, cell_size=None):
-        """Displays many lines of equal length, with the option to add new
-        vertex data to one end of the lines.
-        """
         self._pos_data = None
         self._offset = 0
         self._dx = dx
@@ -107,9 +126,23 @@ class ScrollingLinesVisual(Visual):
         self.set_gl_state('translucent', line_width=1)
 
     def set_pos_offset(self, po):
+        """Set the array of position offsets for each line strip.
+        
+        Parameters
+        ----------
+        po : array-like
+            An array of xy offset values.
+        """
         self._pos_offset.set_data(po)
 
-    def set_color(self, c):
+    def set_color(self, color):
+        """Set the array of colors for each line strip.
+        
+        Parameters
+        ----------
+        color : array-like
+            An array of rgba values.
+        """
         self._color_tex.set_data(c)
 
     def _prepare_transforms(self, view):
@@ -124,6 +157,14 @@ class ScrollingLinesVisual(Visual):
         return self._pos_data[..., axis].min(), self.pos_data[..., axis].max()
     
     def roll_data(self, data):
+        """Append new data to the right side of every line strip and remove
+        as much data from the left.
+        
+        Parameters
+        ----------
+        data : array-like
+            A data array to append.
+        """
         data = data.astype('float32')[..., np.newaxis]
         s1 = self._data_shape[1] - self._offset
         if data.shape[1] > s1:
@@ -137,5 +178,14 @@ class ScrollingLinesVisual(Visual):
         self.update()
 
     def set_data(self, index, data):
+        """Set the complete data for a single line strip.
+        
+        Parameters
+        ----------
+        index : int
+            The index of the line strip to be replaced.
+        data : array-like
+            The data to assign to the selected line strip.
+        """
         self._pos_tex[index, :] = data
         self.update()

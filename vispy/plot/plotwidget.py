@@ -120,6 +120,8 @@ class PlotWidget(scene.Widget):
         clim : str | tuple
             Colormap limits. Should be ``'auto'`` or a two-element tuple of
             min and max values.
+        fg_color : Color or None
+            Sets the plot foreground color if specified.
 
         Returns
         -------
@@ -213,6 +215,12 @@ class PlotWidget(scene.Widget):
             Color of the marker face.
         edge_width : float
             Edge width of the marker.
+        title : str | None
+            The title string to be displayed above the plot
+        xlabel : str | None
+            The label to display along the bottom axis
+        ylabel : str | None
+            The label to display along the left axis.
 
         Returns
         -------
@@ -325,11 +333,18 @@ class PlotWidget(scene.Widget):
         return volume
 
     def surface(self, zdata, **kwargs):
+        """Show a 3D surface plot.
+        
+        Extra keyword arguments are passed to `SurfacePlot()`.
+        
+        Parameters
+        ----------
+        zdata : array-like
+            A 2D array of the surface Z values.
+            
+        """
         self._configure_3d()
         surf = scene.SurfacePlot(z=zdata, **kwargs)
-        #offset = (-zdata.shape[0]/2.+25, -zdata.shape[1]/2.)
-        #print offset
-        #surf.transform = scene.STTransform(translate=offset)
         self.view.add(surf)
         self.view.camera.set_range()
         return surf

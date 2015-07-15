@@ -39,6 +39,10 @@ class AxisVisual(CompoundVisual):
     tick_color : tuple
         RGBA values for the tick colours. The colour for the major and minor
         ticks is currently fixed to be the same. Default is a dark grey.
+    text_color : Color
+        The color to use for drawing tick values.
+    font_size : float
+        The font size to use for rendering tick values.
     **kwargs : dict
         Keyword arguments to pass to `Visual`.
     """

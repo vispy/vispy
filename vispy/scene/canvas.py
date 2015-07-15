@@ -425,6 +425,13 @@ class SceneCanvas(app.Canvas):
         """Return a list of visuals within *radius* pixels of *pos*.
         
         Visuals are sorted by their proximity to *pos*.
+        
+        Parameters
+        ----------
+        pos : tuple
+            (x, y) position at which to find visuals.
+        radius : int
+            Distance away from *pos* to search for visuals.
         """
         tr = self.transforms.get_transform('canvas', 'framebuffer')
         pos = tr.map(pos)[:2]
