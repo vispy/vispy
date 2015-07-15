@@ -42,28 +42,31 @@ def test_colorbar_draw():
                                        orientation='top')
 
         c.draw_visual(colorbar_top)
-        assert_image_approved("screenshot", 'visuals/colorbar/top.png')
+        assert_image_approved(c.render(), 'visuals/colorbar/top.png')
+        colorbar_top.parent = None
 
         colorbar_bottom = create_colorbar(center_pos=(50, 50),
                                           halfdim=(30, 2),
                                           orientation='bottom')
 
         c.draw_visual(colorbar_bottom)
-        assert_image_approved("screenshot", 'visuals/colorbar/bottom.png')
+        assert_image_approved(c.render(), 'visuals/colorbar/bottom.png')
+        colorbar_bottom.parent = None
 
         colorbar_left = create_colorbar(center_pos=(50, 50),
                                         halfdim=(2, 30),
                                         orientation='left')
 
         c.draw_visual(colorbar_left)
-        assert_image_approved("screenshot", 'visuals/colorbar/left.png')
+        assert_image_approved(c.render(), 'visuals/colorbar/left.png')
+        colorbar_left.parent = None
 
         colorbar_right = create_colorbar(center_pos=(50, 50),
                                          halfdim=(2, 30),
                                          orientation='right')
 
         c.draw_visual(colorbar_right)
-        assert_image_approved("screenshot", 'visuals/colorbar/right.png')
+        assert_image_approved(c.render(), 'visuals/colorbar/right.png')
 
 
 @requires_application()
@@ -76,35 +79,29 @@ def test_reactive_draw():
         c.draw_visual(colorbar)
 
         colorbar.cmap = "ice"
-        c.draw_visual(colorbar)
-        assert_image_approved("screenshot",
+        assert_image_approved(c.render(),
                               'visuals/colorbar/reactive_cmap.png')
 
         colorbar.clim = (-20, 20)
-        c.draw_visual(colorbar)
-        assert_image_approved("screenshot",
+        assert_image_approved(c.render(),
                               'visuals/colorbar/reactive_clim.png')
 
         colorbar.label.text = "new label"
-        c.draw_visual(colorbar)
-        assert_image_approved("screenshot",
+        assert_image_approved(c.render(),
                               'visuals/colorbar/reactive_label.png')
 
         colorbar.ticks[0].color = "red"
         colorbar.ticks[1].color = "blue"
-        c.draw_visual(colorbar)
-        assert_image_approved("screenshot",
+        assert_image_approved(c.render(),
                               'visuals/colorbar/reactive_ticks.png')
 
         colorbar.border_width = 0
-        c.draw_visual(colorbar)
-        assert_image_approved("screenshot",
+        assert_image_approved(c.render(),
                               'visuals/colorbar/reactive_border_width.png')
 
         colorbar.border_width = 5
         colorbar.border_color = "red"
-        c.draw_visual(colorbar)
-        assert_image_approved("screenshot",
+        assert_image_approved(c.render(),
                               'visuals/colorbar/reactive_border_color.png')
 
 
