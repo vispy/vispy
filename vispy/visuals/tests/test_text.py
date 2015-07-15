@@ -11,7 +11,7 @@ def test_text():
 
     with TestingCanvas(bgcolor='w', size=(92, 92), dpi=92) as c:
         pos = [92 // 2] * 2
-        text = Text('o', font_size=8, color='k',
+        text = Text('testing', font_size=20, color='k',
                     pos=pos, anchor_x='center', anchor_y='baseline',
                     parent=c.scene)
         # Test image created in Illustrator CS5, 1"x1" output @ 92 DPI
