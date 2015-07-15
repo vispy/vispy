@@ -26,7 +26,6 @@ class Canvas(app.Canvas):
         self.num_rows = 8
         self.num_cols = 16
 
-        self.grid_coords = []
         self.line_vertices = []
 
         # Generate grid
@@ -36,8 +35,6 @@ class Canvas(app.Canvas):
             y = 25 + (50 * i)
 
             coords = np.array([x, y])
-
-            self.grid_coords.append(coords)
 
             # Initial line vertices, all arrows point upwards
             self.line_vertices.extend([
