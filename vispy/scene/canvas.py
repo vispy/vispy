@@ -436,8 +436,8 @@ class SceneCanvas(app.Canvas):
         tr = self.transforms.get_transform('canvas', 'framebuffer')
         pos = tr.map(pos)[:2]
 
-        id = self.render_picking(region=(pos[0]-radius, pos[1]-radius,
-                                         radius * 2 + 1, radius * 2 + 1))
+        id = self._render_picking(region=(pos[0]-radius, pos[1]-radius,
+                                          radius * 2 + 1, radius * 2 + 1))
         ids = []
         seen = set()
         for i in range(radius):

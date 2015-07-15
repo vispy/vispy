@@ -1,4 +1,13 @@
+# -*- coding: utf-8 -*-
+# vispy: testskip
+# Copyright (c) 2015, Vispy Development Team.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+"""
+Make a realtime oscilloscope
+"""
+
 from __future__ import division
+
 import threading
 import atexit
 import numpy as np

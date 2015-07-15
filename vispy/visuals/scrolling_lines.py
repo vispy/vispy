@@ -143,7 +143,7 @@ class ScrollingLinesVisual(Visual):
         color : array-like
             An array of rgba values.
         """
-        self._color_tex.set_data(c)
+        self._color_tex.set_data(color)
 
     def _prepare_transforms(self, view):
         view.view_program.vert['transform'] = view.get_transform().simplified

@@ -1,3 +1,13 @@
+# -*- coding: utf-8 -*-
+# -----------------------------------------------------------------------------
+# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+# -----------------------------------------------------------------------------
+
+"""
+Show vector field flow
+"""
+
 from __future__ import division
 
 from vispy import app, scene, visuals, gloo
@@ -167,19 +177,18 @@ color[..., :2] = (field + 5) / 10.
 color[..., 2] = 0.5
 color[..., 3] = 0.5
 
-win = scene.SceneCanvas(keys='interactive', show=True)
-view = win.central_widget.add_view(camera='panzoom')
-#img = scene.Image(field, parent=view.scene)
+canvas = scene.SceneCanvas(keys='interactive', show=True)
+view = canvas.central_widget.add_view(camera='panzoom')
 
 vfield = VectorField(field[..., :2], spacing=0.5, segments=30, seg_len=0.05,
                      parent=view.scene, color=color)
 view.camera.set_range()
 
 
-@win.connect
+@canvas.connect
 def on_mouse_move(event):
     if 3 in event.buttons:
-        tr = win.scene.node_transform(vfield)
+        tr = canvas.scene.node_transform(vfield)
         vfield.shared_program['attractor'] = tr.map(event.pos)[:2]
 
 

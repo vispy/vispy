@@ -1,7 +1,11 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) 2015, Vispy Development Team.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+"""
+Plot clusters of data points and a graph of connections
+"""
 from vispy import app, scene, color
 import numpy as np
-
-# Generate clusters of data points and a graph of connections
 
 # Initialize arrays for position, color, edges, and types for each point in
 # the graph.
@@ -55,8 +59,8 @@ colors = np.clip(colors, 0, 1)
 
 
 # Display the data
-win = scene.SceneCanvas(keys='interactive', show=True, fullscreen=True)
-view = win.central_widget.add_view()
+canvas = scene.SceneCanvas(keys='interactive', show=True)
+view = canvas.central_widget.add_view()
 view.camera = 'panzoom'
 view.camera.aspect = 1
 
@@ -78,6 +82,7 @@ def update(ev):
     dx -= pos[np.newaxis, :, :]
 
     dist = (dx**2).sum(axis=2)**0.5
+    dist[dist == 0] = 1.
     ndx = dx / dist[..., np.newaxis]
     
     force = np.zeros((npts, npts, 2), dtype='float32')

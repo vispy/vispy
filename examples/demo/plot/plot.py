@@ -10,7 +10,7 @@ import numpy as np
 from vispy import plot as vp
 from vispy.io import load_data_file
 
-data = np.load(load_data_file('electrophys/iv_curve.npz'))
+data = np.load(load_data_file('electrophys/iv_curve.npz'))['arr_0']
 time = np.arange(0, data.shape[1], 1e-4)
 
 fig = vp.Fig(size=(800, 800), show=False)
