@@ -22,9 +22,10 @@ drawing stages or make use of sub-visuals to construct larger objects.
 In this example we will create a very simple Visual that draws a rectangle.
 Visuals are defined by:
 
-1. Creating a subclass of vispy.visuals.Visual
-2. Defining a draw() method that takes into account some user-specified
-   transformation functions.
+1. Creating a subclass of vispy.visuals.Visual that specifies the GLSL code
+   and buffer objects to use.
+2. Defining a _prepare_transforms() method that will be called whenever the
+   user (or scenegraph) assigns a new set of transforms to the visual.
 
 
 """
@@ -96,6 +97,17 @@ class MyRectVisual(visuals.Visual):
         self.shared_program.frag['color'] = (1, 0, 0, 1)
         self._draw_mode = 'triangles'
 
+    def _prepare_transforms(self, view):
+        # This method is called when the user or the scenegraph has assigned
+        # new transforms to this visual (ignore the *view* argument for now;
+        # we'll get to that later). This method is thus responsible for
+        # connecting the proper transform functions to the shader program.
+        
+        # The most common approach here is to simply take the complete
+        # transformation from visual coordinates to render coordinates. Later
+        # tutorials detail more complex transform handling.
+        view.view_program.vert['transform'] = view.get_transform()
+
 
 # At this point the visual is ready to use, but it takes some extra effort to
 # set up a Canvas and TransformSystem for drawing (the examples in 
@@ -136,7 +148,7 @@ rects = [MyRect(100, 100, 200, 300, parent=canvas.scene),
 
 # To test that the user-specified transforms work correctly, I'll rotate
 # one rectangle slightly.
-tr = visuals.transforms.AffineTransform()
+tr = visuals.transforms.MatrixTransform()
 tr.rotate(5, (0, 0, 1))
 rects[1].transform = tr
 

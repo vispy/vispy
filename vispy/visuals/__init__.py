@@ -29,6 +29,7 @@ from .plane import PlaneVisual  # noqa
 from .polygon import PolygonVisual  # noqa
 from .rectangle import RectangleVisual  # noqa
 from .regular_polygon import RegularPolygonVisual  # noqa
+from .scrolling_lines import ScrollingLinesVisual  # noqa
 from .spectrogram import SpectrogramVisual  # noqa
 from .surface_plot import SurfacePlotVisual  # noqa
 from .text import TextVisual  # noqa

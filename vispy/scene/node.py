@@ -47,6 +47,7 @@ class Node(object):
         self._document_node = None
         self._scene_node = None
         self._opacity = 1.0
+        self._order = 0
         self._picking = False
         
         # clippers inherited from parents
@@ -139,6 +140,20 @@ class Node(object):
         of this node.
         """
         return self._clipper
+        
+    @property
+    def order(self):
+        """A value used to determine the order in which nodes are drawn.
+        
+        Greater values are drawn later. Children are always drawn after their
+        parent.
+        """
+        return self._order
+    
+    @order.setter
+    def order(self, o):
+        self._order = o
+        self.update()
         
     @property
     def children(self):
@@ -287,10 +302,9 @@ class Node(object):
             node = p
 
     def _set_canvas(self, c):
-        if self._canvas is c:
+        old = self.canvas
+        if old is c:
             return
-        
-        old = self._canvas
         
         # Use canvas/framebuffer transforms from canvas
         self.transforms.canvas = c

@@ -6,7 +6,7 @@
 # Author: Siddharth Bhat
 # -----------------------------------------------------------------------------
 
-from . import Visual, TextVisual
+from . import Visual, TextVisual, CompoundVisual
 from .shaders import ModularProgram, Function
 from ..color import get_colormap, Color
 
@@ -27,7 +27,7 @@ FRAG_SHADER_HORIZONTAL = """
 varying vec2 v_texcoord;
 
 void main()
-{   
+{
     vec4 mapped_color = $color_transform(v_texcoord.x);
     gl_FragColor = mapped_color;
 }
@@ -35,11 +35,11 @@ void main()
 
 FRAG_SHADER_VERTICAL = """
 varying vec2 v_texcoord;
- 
+
 void main()
-{      
+{
     // we get the texcoords inverted (with respect to the colormap)
-    // so let's invert it to make sure that the colorbar renders correctly 
+    // so let's invert it to make sure that the colorbar renders correctly
     vec4 mapped_color = $color_transform(1.0 - v_texcoord.y);
     gl_FragColor = mapped_color;
 }
@@ -50,28 +50,43 @@ attribute vec2 a_position;
 attribute vec2 a_adjust_dir;
 
 void main() {
+    // First map the vertex to document coordinates
     vec4 doc_pos = $visual_to_doc(vec4(a_position, 0, 1));
 
-    vec4 doc_x = $visual_to_doc(vec4(a_adjust_dir.x, 0, 0, 0)) -
-                $visual_to_doc(vec4(0, 0, 0, 0));
+    // Also need to map the adjustment direction vector, but this is tricky!
+    // We need to adjust separately for each component of the vector:
+    vec4 adjusted;
+    if ( a_adjust_dir.x == 0 ) {
+        // If this is an outer vertex, no adjustment for line weight is needed.
+        // (In fact, trying to make the adjustment would result in no
+        // triangles being drawn, hence the if/else block)
+        adjusted = doc_pos;
+    }
+    else {
+        // Inner vertexes must be adjusted for line width, but this is
+        // surprisingly tricky given that the rectangle may have been scaled
+        // and rotated!
+        vec4 doc_x = $visual_to_doc(vec4(a_adjust_dir.x, 0, 0, 0)) -
+                    $visual_to_doc(vec4(0, 0, 0, 0));
+        vec4 doc_y = $visual_to_doc(vec4(0, a_adjust_dir.y, 0, 0)) -
+                    $visual_to_doc(vec4(0, 0, 0, 0));
+        doc_x = normalize(doc_x);
+        doc_y = normalize(doc_y);
 
-    vec4 doc_y = $visual_to_doc(vec4(0, a_adjust_dir.y, 0, 0)) -
-                $visual_to_doc(vec4(0, 0, 0, 0));
-    doc_x = normalize(doc_x);
-    doc_y = normalize(doc_y);
+        // Now doc_x + doc_y points in the direction we need in order to
+        // correct the line weight of _both_ segments, but the magnitude of
+        // that correction is wrong. To correct it we first need to
+        // measure the width that would result from using doc_x + doc_y:
+        vec4 proj_y_x = dot(doc_x, doc_y) * doc_x;  // project y onto x
+        float cur_width = length(doc_y - proj_y_x);  // measure current weight
 
-    // Now doc_x + doc_y points in the direction we need in order to
-    // correct the line weight of _both_ segments, but the magnitude of
-    // that correction is wrong. To correct it we first need to
-    // measure the width that would result from using doc_x + doc_y:
-    vec4 proj_y_x = dot(doc_x, doc_y) * doc_x;  // project y onto x
-    float cur_width = length(doc_y - proj_y_x);  // measure current weight
+        // And now we can adjust vertex position for line width:
+        adjusted = doc_pos + ($border_width / cur_width) * (doc_x + doc_y);
+    }
 
-    // And now we can adjust vertex position for line width:
-    float scaling = $border_width / cur_width;
-    gl_Position = $doc_to_render(doc_pos + scaling * (doc_x + doc_y));
+    // Finally map the remainder of the way to render coordinates
+    gl_Position = $doc_to_render(adjusted);
 }
-
 """
 
 FRAG_SHADER_BORDER = """
@@ -81,13 +96,211 @@ void main() {
 """  # noqa
 
 
+class _CoreColorBarVisual(Visual):
+    """
+    Visual subclass that actually renders the ColorBar.
+
+    Note
+    ----
+    This is purely internal.
+    Externally, the ColorBarVisual must be used.
+    This class was separated out to encapsulate rendering information
+    That way, ColorBar simply becomes a CompoundVisual
+    """
+    def __init__(self, center_pos, halfdim,
+                 cmap,
+                 orientation,
+                 border_width=1.0,
+                 border_color="black",
+                 **kwargs):
+
+        self._cmap = get_colormap(cmap)
+        self._center_pos = center_pos
+        self._halfdim = halfdim
+        self._orientation = orientation
+        self._border_width = border_width
+        self._border_color = border_color
+        # setup border rendering
+        self._border_color = Color(border_color)
+        self._border_program = ModularProgram(VERT_SHADER_BORDER,
+                                              FRAG_SHADER_BORDER)
+
+        # setup the right program shader based on color
+        if orientation == "top" or orientation == "bottom":
+            # self._program=ModularProgram(VERT_SHADER,FRAG_SHADER_HORIZONTAL)
+            Visual.__init__(self, vcode=VERT_SHADER,
+                            fcode=FRAG_SHADER_HORIZONTAL, **kwargs)
+
+        elif orientation == "left" or orientation == "right":
+            Visual.__init__(self, vcode=VERT_SHADER,
+                            fcode=FRAG_SHADER_VERTICAL, **kwargs)
+
+            # self._program = ModularProgram(VERT_SHADER, FRAG_SHADER_VERTICAL)
+        else:
+            raise ColorBarVisual._get_orientation_error(self._orientation)
+
+        tex_coords = np.array([[0, 0], [1, 0], [1, 1],
+                               [0, 0], [1, 1], [0, 1]],
+                              dtype=np.float32)
+
+        glsl_map_fn = Function(self._cmap.glsl_map)
+        self.shared_program.frag['color_transform'] = glsl_map_fn
+        self.shared_program['a_texcoord'] = tex_coords.astype(np.float32)
+
+        self._update()
+
+    def _update(self):
+        """Rebuilds the shaders, and repositions the objects
+           that are used internally by the ColorBarVisual
+        """
+
+        x, y = self._center_pos
+        halfw, halfh = self._halfdim
+
+        anchor_x, anchor_y = ColorBarVisual._get_anchors(self._orientation)
+
+        # test that width and height are non-zero
+        if halfw <= 0:
+            raise ValueError("half-width must be positive and non-zero"
+                             ", not %s", halfw)
+        if halfh <= 0:
+            raise ValueError("half-height must be positive and non-zero"
+                             ", not %s", halfh)
+
+        # test that the given width and height is consistent
+        # with the orientation
+        if (self._orientation == "bottom" or self._orientation == "top"):
+                if halfw < halfh:
+                    raise ValueError("half-width(%s) < half-height(%s) for"
+                                     "%s orientation,"
+                                     " expected half-width >= half-height",
+                                     (halfw, halfh, self._orientation, ))
+        else:  # orientation == left or orientation == right
+            if halfw > halfh:
+                raise ValueError("half-width(%s) > half-height(%s) for"
+                                 "%s orientation,"
+                                 " expected half-width <= half-height",
+                                 (halfw, halfh, self._orientation, ))
+
+        # Set up the attributes that the shaders require
+        vertices = np.array([[x - halfw, y - halfh],
+                             [x + halfw, y - halfh],
+                             [x + halfw, y + halfh],
+                             # tri 2
+                             [x - halfw, y - halfh],
+                             [x + halfw, y + halfh],
+                             [x - halfw, y + halfh]],
+                            dtype=np.float32)
+
+        border_vertices = np.array([
+            [x - halfw, y - halfh],
+            [x - halfw, y - halfh],
+
+            [x + halfw, y - halfh],
+            [x + halfw, y - halfh],
+
+            [x + halfw, y + halfh],
+            [x + halfw, y + halfh],
+
+            [x - halfw, y + halfh],
+            [x - halfw, y + halfh],
+
+            [x - halfw, y - halfh],
+            [x - halfw, y - halfh],
+        ], dtype=np.float32)
+
+        # Direction each vertex should move to correct for line width
+        adjust_dir = np.array([
+            [0, 0], [-1, -1],
+            [0, 0], [1, -1],
+            [0, 0], [1, 1],
+            [0, 0], [-1, 1],
+            [0, 0], [-1, -1],
+        ], dtype=np.float32)
+
+        self.shared_program['a_position'] = vertices
+
+        self._border_program['a_position'] = border_vertices
+        self._border_program['a_adjust_dir'] = adjust_dir
+        self._border_program.vert['border_width'] = self._border_width
+        self._border_program.frag['border_color'] = self._border_color.rgba
+
+    @staticmethod
+    def _get_orientation_error(orientation):
+        return ValueError("orientation must"
+                          " be 'horizontal' or 'vertical', "
+                          "not '%s'" % (orientation, ))
+
+    @property
+    def cmap(self):
+        """ The colormap of the Colorbar
+        """
+        return self._cmap
+
+    @cmap.setter
+    def cmap(self, cmap):
+        self._cmap = get_colormap(cmap)
+        self._program.frag['color_transform'] = Function(self._cmap.glsl_map)
+
+    @property
+    def border_width(self):
+        """ The width of the border around the ColorBar in pixels
+        """
+        return self._border_width
+
+    @border_width.setter
+    def border_width(self, border_width):
+        self._border_width = border_width
+        # positions of text need to be changed accordingly
+        self._update()
+
+    @property
+    def border_color(self):
+        """ The color of the border around the ColorBar in pixels
+        """
+        return self._border_color
+
+    @border_color.setter
+    def border_color(self, border_color):
+        self._border_color = Color(border_color)
+        self._border_program.frag['border_color'] = self._border_color.rgba
+
+    @staticmethod
+    def _prepare_transforms(view):
+        # transfrorm = view.transforms.get_transform()
+
+        program = view.view_program
+        border_program = view._border_program
+
+        border_program.vert['visual_to_doc'] = \
+            view.transforms.get_transform('visual', 'document')
+        border_program.vert['doc_to_render'] = \
+            view.transforms.get_transform('document', 'render')
+
+        program.vert['transform'] = view.transforms.get_transform()
+
+    def draw(self):
+        """Draw the visual
+
+        Parameters
+        ----------
+        transforms : instance of TransformSystem
+            The transforms to use.
+        """
+
+        self._program.draw('triangles')
+        self.set_gl_state(cull_face=False)
+        self._border_program.draw("triangle_strip")
+
+
 # The padding multiplier that's used to place the text
 # next to the Colorbar. Makes sure the text isn't
 # visually "sticking" to the Colorbar
-_TEXT_PADDING_FACTOR = 1.2
+_TEXT_PADDING_FACTOR = 1.3
 
 
-class ColorBarVisual(Visual):
+class ColorBarVisual(CompoundVisual):
+
     """Visual subclass displaying a colorbar
 
     Parameters
@@ -153,8 +366,6 @@ class ColorBarVisual(Visual):
                  border_color="black",
                  **kwargs):
 
-        super(ColorBarVisual, self).__init__(**kwargs)
-
         self._label_str = label_str
         self._cmap = get_colormap(cmap)
         self._clim = clim
@@ -162,36 +373,32 @@ class ColorBarVisual(Visual):
         self._halfdim = halfdim
         self._orientation = orientation
         self._border_width = border_width
-        self._border_color = border_color
-
-        self._label = None
-        self._ticks = []
-        # setup border rendering
         self._border_color = Color(border_color)
-        self._border_program = ModularProgram(VERT_SHADER_BORDER,
-                                              FRAG_SHADER_BORDER)
 
-        adjust_dir = np.array([[-1, -1], [1, -1], [1, 1],
-                              [-1, -1], [1, 1], [-1, 1]],
-                              dtype=np.float32)
+        anchor_x, anchor_y = ColorBarVisual._get_anchors(self._orientation)
+        self._label = TextVisual(text=self._label_str,
+                                 anchor_x=anchor_x,
+                                 anchor_y=anchor_y)
 
-        self._border_program['a_adjust_dir'] = adjust_dir.astype(np.float32)
+        self._ticks = []
 
-        # setup the right program shader based on color
-        if orientation == "top" or orientation == "bottom":
-            self._program = ModularProgram(VERT_SHADER, FRAG_SHADER_HORIZONTAL)
+        self._ticks.append(TextVisual(str(self._clim[0]),
+                                      anchor_x=anchor_x,
+                                      anchor_y=anchor_y))
 
-        elif orientation == "left" or orientation == "right":
-            self._program = ModularProgram(VERT_SHADER, FRAG_SHADER_VERTICAL)
-        else:
-            raise ColorBarVisual._get_orientation_error(self._orientation)
+        self._ticks.append(TextVisual(str(self._clim[1]),
+                                      anchor_x=anchor_x,
+                                      anchor_y=anchor_y))
 
-        tex_coords = np.array([[0, 0], [1, 0], [1, 1],
-                              [0, 0], [1, 1], [0, 1]],
-                              dtype=np.float32)
+        self._colorbar = _CoreColorBarVisual(center_pos,
+                                             halfdim, cmap,
+                                             orientation,
+                                             border_width, border_color)
 
-        self._program.frag['color_transform'] = Function(self._cmap.glsl_map)
-        self._program['a_texcoord'] = tex_coords.astype(np.float32)
+        CompoundVisual.__init__(self, [self._label,
+                                       self._ticks[0],
+                                       self._ticks[1],
+                                       self._colorbar])
 
         self._update()
 
@@ -200,18 +407,15 @@ class ColorBarVisual(Visual):
            that are used internally by the ColorBarVisual
         """
 
+        self._colorbar._update()
+
         x, y = self._center_pos
         halfw, halfh = self._halfdim
 
         anchor_x, anchor_y = ColorBarVisual._get_anchors(self._orientation)
         # create a new label if this is the first time this function
         # is being called. Otherwise, just update the existing bar
-        if self._label is None:
-            self.label = TextVisual(text=self._label_str,
-                                    anchor_x=anchor_x,
-                                    anchor_y=anchor_y)
-        else:
-            self.label.text = self._label_str
+        self.label.text = self._label_str
 
         # if this is the first time we're initializing ever
         # i.e - from the constructor, then create the TextVisual objects
@@ -221,16 +425,8 @@ class ColorBarVisual(Visual):
         # edited the ticks.
         # This way, we retain any changes made by the user
         # to the _ticks while still reflecting changes in _clim
-        if self._ticks == []:
-            self._ticks.append(TextVisual(str(self._clim[0]),
-                                          anchor_x=anchor_x,
-                                          anchor_y=anchor_y))
-            self._ticks.append(TextVisual(str(self._clim[1]),
-                                          anchor_x=anchor_x,
-                                          anchor_y=anchor_y))
-        else:
-            self._ticks[0].text = str(self._clim[0])
-            self._ticks[1].text = str(self._clim[1])
+        self._ticks[0].text = str(self._clim[0])
+        self._ticks[1].text = str(self._clim[1])
 
         # test that width and height are non-zero
         if halfw <= 0:
@@ -239,22 +435,6 @@ class ColorBarVisual(Visual):
         if halfh <= 0:
             raise ValueError("half-height must be positive and non-zero"
                              ", not %s", halfh)
-
-        # test that the given width and height is consistent
-        # with the orientation
-        if (self._orientation == "bottom" or
-           self._orientation == "top"):
-                if halfw < halfh:
-                    raise ValueError("half-width(%s) < half-height(%s) for"
-                                     "%s orientation,"
-                                     " expected half-width >= half-height",
-                                     (halfw, halfh, self._orientation, ))
-        else:  # orientation == left or orientation == right
-            if halfw > halfh:
-                raise ValueError("half-width(%s) > half-height(%s) for"
-                                 "%s orientation,"
-                                 " expected half-width <= half-height",
-                                 (halfw, halfh, self._orientation, ))
 
         # Place the labels according to the given orientation
         if self._orientation == "bottom":
@@ -304,21 +484,10 @@ class ColorBarVisual(Visual):
             # expected
             raise ColorBarVisual._get_orientation_error(self._orientation)
 
-        # Set up the attributes that the shaders require
-        vertices = np.array([[x - halfw, y - halfh],
-                            [x + halfw, y - halfh],
-                            [x + halfw, y + halfh],
-                             # tri 2
-                            [x - halfw, y - halfh],
-                            [x + halfw, y + halfh],
-                            [x - halfw, y + halfh]],
-                            dtype=np.float32)
-
-        self._program['a_position'] = vertices.astype(np.float32)
-        self._border_program['a_position'] = vertices.astype(np.float32)
-
-        self._border_program.vert['border_width'] = self._border_width
-        self._border_program.frag['border_color'] = self._border_color.rgba
+    def _prepare_transforms(self, view):
+        print("preparing transorms")
+        CompoundVisual._prepare_transforms(view)
+        view._update()
 
     @staticmethod
     def _get_orientation_error(orientation):
@@ -341,12 +510,11 @@ class ColorBarVisual(Visual):
     def cmap(self):
         """ The colormap of the Colorbar
         """
-        return self._cmap
+        return self._colorbar._cmap
 
     @cmap.setter
     def cmap(self, cmap):
-        self._cmap = get_colormap(cmap)
-        self._program.frag['color_transform'] = Function(self._cmap.glsl_map)
+        self._colorbar.cmap = cmap
 
     @property
     def clim(self):
@@ -397,11 +565,11 @@ class ColorBarVisual(Visual):
     def border_width(self):
         """ The width of the border around the ColorBar in pixels
         """
-        return self._border_width
+        return self._colorbar.border_width
 
     @border_width.setter
     def border_width(self, border_width):
-        self._border_width = border_width
+        self._colorbar.border_width = border_width
         # positions of text need to be changed accordingly
         self._update()
 
@@ -409,33 +577,8 @@ class ColorBarVisual(Visual):
     def border_color(self):
         """ The color of the border around the ColorBar in pixels
         """
-        return self._border_color
+        return self._colorbar.border_color
 
     @border_color.setter
     def border_color(self, border_color):
-        self._border_color = Color(border_color)
-        self._border_program.frag['border_color'] = self._border_color.rgba
-
-    def draw(self, transforms):
-        """Draw the visual
-
-        Parameters
-        ----------
-        transforms : instance of TransformSystem
-            The transforms to use.
-        """
-
-        self._border_program.vert['visual_to_doc'] = \
-            transforms.visual_to_document
-        self._border_program.vert['doc_to_render'] = (
-            transforms.framebuffer_to_render *
-            transforms.document_to_framebuffer)
-        self._border_program.draw("triangles")
-
-        self._program.vert['transform'] = transforms.get_full_transform()
-        self._program.draw('triangles')
-
-        self._label.draw(transforms)
-
-        for tick in self._ticks:
-            tick.draw(transforms)
+        self._colorbar.border_color = border_color

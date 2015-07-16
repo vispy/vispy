@@ -16,8 +16,8 @@ from os import path as op
 import sys
 
 from ._sdf import SDFRenderer
-from ...gloo import (TextureAtlas, IndexBuffer, VertexBuffer, set_viewport)
-from ...gloo import gl, context
+from ...gloo import (TextureAtlas, IndexBuffer, VertexBuffer)
+from ...gloo import context
 from ...gloo.wrappers import _check_valid
 from ...ext.six import string_types
 from ...util.fonts import _load_glyph
@@ -153,7 +153,7 @@ def _text_to_vbo(text, font, anchor_x, anchor_y, lowres_size):
     # Need to store the original viewport, because the font[char] will
     # trigger SDF rendering, which changes our viewport
     # todo: get rid of call to glGetParameter!
-    orig_viewport = gl.glGetParameter(gl.GL_VIEWPORT)
+    orig_viewport = canvas.context.get_viewport()
     for ii, char in enumerate(text):
         glyph = font[char]
         kerning = glyph['kerning'].get(prev, 0.) * ratio
@@ -183,7 +183,9 @@ def _text_to_vbo(text, font, anchor_x, anchor_y, lowres_size):
         ascender = max(ascender, y0 - slop)
         descender = min(descender, y1 + slop)
         height = max(height, glyph['size'][1] - 2*slop)
-    set_viewport(*orig_viewport)
+    
+    if orig_viewport is not None:
+        canvas.context.set_viewport(*orig_viewport)
 
     # Tight bounding box (loose would be width, font.height /.asc / .desc)
     width -= glyph['advance'] * ratio - (glyph['size'][0] - 2*slop)
@@ -481,7 +483,6 @@ class TextVisual(Visual):
         self.update()
 
     def _prepare_draw(self, view):
-        transforms = self.transforms
         # attributes / uniforms are not available until program is built
         if len(self.text) == 0:
             return False
@@ -500,6 +501,10 @@ class TextVisual(Visual):
                    np.arange(0, 4*n_char, 4, dtype=np.uint32)[:, np.newaxis])
             self._index_buffer = IndexBuffer(idx.ravel())
             self.shared_program.bind(self._vertices)
+            # This is necessary to reset the GL drawing state after generating
+            # SDF textures. A better way would be to enable the state to be
+            # pushed/popped by the context.
+            self._configure_gl_state()
         if self._pos_changed:
             # now we promote pos to the proper shape (attribute)
             text = self.text
@@ -518,7 +523,7 @@ class TextVisual(Visual):
             self.shared_program['a_pos'] = pos
             self._pos_changed = False
 
-        # todo: do some testing to verify that the scaling is correct
+        transforms = self.transforms
         n_pix = (self._font_size / 72.) * transforms.dpi  # logical pix
         tr = transforms.get_transform('document', 'render')
         px_scale = (tr.map((1, 0)) - tr.map((0, 1)))[:2]
@@ -533,4 +538,10 @@ class TextVisual(Visual):
 
     def _prepare_transforms(self, view):
         self._pos_changed = True
-        Visual._prepare_transforms(self, view)
+        # Note that we access `view_program` instead of `shared_program`
+        # because we do not want this function assigned to other views.
+        tr = view.transforms.get_transform()
+        view.view_program.vert['transform'] = tr  # .simplified()
+        
+    def _compute_bounds(self, axis, view):
+        return self._pos[:, axis].min(), self._pos[:, axis].max()

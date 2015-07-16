@@ -2,7 +2,7 @@
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 from vispy.visuals.shaders import MultiProgram, Function, StatementList
-from vispy.visuals.transforms import STTransform, AffineTransform
+from vispy.visuals.transforms import STTransform, MatrixTransform
 
 
 def test_multiprogram():
@@ -56,7 +56,7 @@ def test_multiprogram():
     p2.frag['post_hook'].add(func())
     
     tr1 = STTransform()
-    tr2 = AffineTransform()
+    tr2 = MatrixTransform()
     p1.vert['transform'] = tr1
     p2.vert['transform'] = tr2
     

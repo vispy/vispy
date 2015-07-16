@@ -101,10 +101,10 @@ class Canvas(app.Canvas):
         ellipse.radius = r[0], r[1] + np.sin(event.elapsed * 10)
         ellipse.span_angle = (ellipse.span_angle + 100. * event.dt) % 360
 
-        polygon.color = (0.3 * (0.5 + np.sin(event.elapsed*2 + 0)),
-                         0.3 * (0.5 + np.sin(event.elapsed*2 + np.pi * 2./3.)),
-                         0.3 * (0.5 + np.sin(event.elapsed*2 + np.pi * 4./3.)),
-                         )
+        c = (0.3 * (0.5 + np.sin(event.elapsed * 2 + 0)),
+             0.3 * (0.5 + np.sin(event.elapsed * 2 + np.pi * 2./3.)),
+             0.3 * (0.5 + np.sin(event.elapsed * 2 + np.pi * 4./3.)))
+        polygon.color = c
         polygon.border_color = (.8, .8, .8,
                                 0.5 + (0.5 * np.sin(event.elapsed*10)))
 

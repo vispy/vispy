@@ -255,7 +255,9 @@ class BaseTexture(GLObject):
         if format not in self._inv_formats:
             raise ValueError('Invalid texture format: %r.' % format)
         elif shape[-1] != self._inv_formats[format]:
-            raise ValueError('Format does not match with given shape.')
+            raise ValueError('Format does not match with given shape. '
+                             '(format expects %d elements, data has %d)' %
+                             (self._inv_formats[format], shape[-1]))
         
         if internalformat is None:
             pass

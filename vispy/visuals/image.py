@@ -61,16 +61,20 @@ void main()
         texcoord = map_local_to_tex(vec4(v_texcoord, 0, 1)).xy;
     }
     
-    if(texcoord.x < 0.0 || texcoord.x > 1.0 ||
-       texcoord.y < 0.0 || texcoord.y > 1.0) {
-        discard;
-    }
-    gl_FragColor = $color_transform(texture2D(u_texture, texcoord));
+    gl_FragColor = $color_transform($get_data(texcoord));
 }
 """  # noqa
 
 _null_color_transform = 'vec4 pass(vec4 color) { return color; }'
 _c2l = 'float cmap(vec4 color) { return (color.r + color.g + color.b) / 3.; }'
+_texture_lookup = """
+    vec4 texture_lookup(vec2 texcoord) { 
+        if(texcoord.x < 0.0 || texcoord.x > 1.0 ||
+        texcoord.y < 0.0 || texcoord.y > 1.0) {
+            discard;
+        }
+        return texture2D($texture, texcoord); 
+    }"""
 
 
 class ImageVisual(Visual):
@@ -134,9 +138,13 @@ class ImageVisual(Visual):
         
         self._init_view(self)
         super(ImageVisual, self).__init__(vcode=VERT_SHADER, fcode=FRAG_SHADER)
-        self.shared_program['u_texture'] = self._texture
         self.set_gl_state('translucent', cull_face=False)
-        self._draw_method = 'triangles'
+        self._draw_mode = 'triangles'
+        
+        # by default, this visual pulls data from a texture
+        self._data_lookup_fn = Function(_texture_lookup)
+        self.shared_program.frag['get_data'] = self._data_lookup_fn
+        self._data_lookup_fn['texture'] = self._texture
         
         self.clim = clim
         self.cmap = cmap
