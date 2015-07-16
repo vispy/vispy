@@ -25,24 +25,9 @@ class Canvas(app.Canvas):
 
         self.num_rows = 8
         self.num_cols = 16
+        self.line_vertices = None
 
-        self.line_vertices = []
-
-        # Generate grid
-        for i, j in itertools.product(range(self.num_rows),
-                                      range(self.num_cols)):
-            x = 25 + (50 * j)
-            y = 25 + (50 * i)
-
-            coords = np.array([x, y])
-
-            # Initial line vertices, all arrows point upwards
-            self.line_vertices.extend([
-                coords + np.array([0, 0.5*self.arrow_length]),
-                coords - np.array([0, 0.5*self.arrow_length])
-            ])
-
-        self.line_vertices = np.array(self.line_vertices)
+        self.generate_initial_vertices()
 
         self.visual = visuals.ArrowVisual(
             pos=self.line_vertices,
@@ -57,11 +42,38 @@ class Canvas(app.Canvas):
 
         self.show()
 
+    def generate_initial_vertices(self):
+        vertices = []
+        # Generate grid
+        for i, j in itertools.product(range(self.num_rows),
+                                      range(self.num_cols)):
+            x = 25 + (50 * j)
+            y = 25 + (50 * i)
+
+            coords = np.array([x, y])
+
+            # Initial line vertices, all arrows point upwards
+            vertices.extend([
+                coords - np.array([0.5*self.arrow_length, 0.0]),
+                coords + np.array([0.5*self.arrow_length, 0.0])
+            ])
+
+        self.line_vertices = np.array(vertices)
+
+
     def on_draw(self, event):
         gloo.clear('black')
         self.visual.draw()
 
     def on_resize(self, event):
+        self.num_cols = int(self.physical_size[0] / 50)
+        self.num_rows = int(self.physical_size[1] / 50)
+        self.generate_initial_vertices()
+        self.visual.set_data(
+            pos=self.line_vertices,
+            arrows=self.line_vertices.reshape(len(self.line_vertices)/2, 4)
+        )
+
         vp = (0, 0, self.physical_size[0], self.physical_size[1])
         self.context.set_viewport(*vp)
         self.visual.transforms.configure(canvas=self, viewport=vp)
@@ -75,18 +87,24 @@ class Canvas(app.Canvas):
         for i, v1 in enumerate(vertices_iter):
             v2 = next(vertices_iter)
 
-            center = v1 - np.array([0, 0.5*self.arrow_length])
-            center = np.append(center, [0.0])
-            direction_vect = (np.array([event.pos[0], event.pos[1], 0.0]) -
-                              center)
+            center = v1 + np.array([0.5*self.arrow_length, 0.0])
+            direction_vect = np.array(event.pos) - center
             direction_vect /= np.linalg.norm(direction_vect)
-            print(direction_vect)
+            direction_vect[1] = -direction_vect[1]
 
-            angle = math.degrees(math.acos(direction_vect[0]))
-            print(angle)
-            rot_matrix = transforms.rotate(angle, center)
-            v1 = np.append(v1, [0.0, 1.0]).T.dot(rot_matrix)
-            v2 = np.append(v2, [0.0, 1.0]).T.dot(rot_matrix)
+            # Rotate around its center pojnt
+            rot_matrix = np.matrix([
+                [direction_vect[0], -direction_vect[1]],
+                [direction_vect[1],  direction_vect[0]]
+            ])
+
+            translated1 = v1 - center
+            v1 = translated1.dot(rot_matrix)
+            v1 += center
+
+            translated2 = v2 - center
+            v2 = translated2.dot(rot_matrix)
+            v2 += center
 
             new_line_vertices[i*2] = v1[0:2]
             new_line_vertices[(i*2)+1] = v2[0:2]
