@@ -8,13 +8,11 @@ This example shows how to use the `ArrowVisual` for a quiver plot
 """
 
 import sys
-import math
 import itertools
 
 import numpy as np
 from vispy import app, gloo, visuals
 from vispy.visuals.transforms import NullTransform
-from vispy.util import transforms
 
 class Canvas(app.Canvas):
     def __init__(self):
@@ -52,7 +50,7 @@ class Canvas(app.Canvas):
 
             coords = np.array([x, y])
 
-            # Initial line vertices, all arrows point upwards
+            # Initial line vertices, all arrows point towards the right
             vertices.extend([
                 coords - np.array([0.5*self.arrow_length, 0.0]),
                 coords + np.array([0.5*self.arrow_length, 0.0])
