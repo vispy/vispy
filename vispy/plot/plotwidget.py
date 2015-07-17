@@ -32,16 +32,16 @@ class PlotWidget(scene.Widget):
         super(PlotWidget, self).__init__(*args, **kwargs)
 
         self.grid = self.add_grid(spacing=0, margin=10)
-        
+
         self.title = scene.Label("", font_size=16)
         self.title.stretch = (1, 0.1)
         self.grid.add_widget(self.title, row=0, col=2)
         self.view = self.grid.add_view(row=1, col=2, border_color='grey')
 
         self._configured = False
-        
+
         self.visuals = []
-        
+
     def _configure_2d(self, fg_color=None):
         if self._configured:
             return
@@ -69,10 +69,10 @@ class PlotWidget(scene.Widget):
 
         self.view.camera = 'panzoom'
         self.camera = self.view.camera
-        
+
         self.xaxis.link_view(self.view)
         self.yaxis.link_view(self.view)
-        
+
         self._configured = True
 
     def _configure_3d(self):
@@ -80,10 +80,10 @@ class PlotWidget(scene.Widget):
             return
         self.view.camera = 'turntable'
         self.camera = self.view.camera
-        
+
         self._configured = True
 
-    def histogram(self, data, bins=10, color='w', orientation='h'):
+    def histogram(self, data, bins=10, color='blue', orientation='h'):
         """Calculate and show a histogram of data
 
         Parameters
@@ -137,7 +137,7 @@ class PlotWidget(scene.Widget):
         self.view.add(image)
         self.view.camera.aspect = 1
         self.view.camera.set_range()
-        
+
         return image
 
     def mesh(self, vertices=None, faces=None, vertex_colors=None,
@@ -241,14 +241,14 @@ class PlotWidget(scene.Widget):
         self.view.add(line)
         self.view.camera.set_range()
         self.visuals.append(line)
-        
+
         if title is not None:
             self.title.text = title
         if xlabel is not None:
             self.xlabel.text = xlabel
         if ylabel is not None:
             self.ylabel.text = ylabel
-        
+
         return line
 
     def spectrogram(self, x, n_fft=256, step=None, fs=1., window='hann',
@@ -334,17 +334,36 @@ class PlotWidget(scene.Widget):
 
     def surface(self, zdata, **kwargs):
         """Show a 3D surface plot.
-        
+
         Extra keyword arguments are passed to `SurfacePlot()`.
-        
+
         Parameters
         ----------
         zdata : array-like
             A 2D array of the surface Z values.
-            
+
         """
         self._configure_3d()
         surf = scene.SurfacePlot(z=zdata, **kwargs)
         self.view.add(surf)
         self.view.camera.set_range()
         return surf
+
+    def colorbar(self, cmap, label_str, clim=("", ""),
+                 border_width=0.0, border_color="black", **kwargs):
+        """Show a ColorBar
+        """
+
+        self._configure_2d()
+        colorbar = scene.ColorBar(center_pos=(0.5, 0.5),
+                                  halfdim=(0.4, 0.01),
+                                  orientation="top",
+                                  label_str=label_str,
+                                  cmap=cmap,
+                                  clim=clim,
+                                  border_width=border_width,
+                                  border_color=border_color,
+                                  **kwargs)
+        self.view.add(colorbar)
+        # self.view.camera.set_range()
+        return colorbar

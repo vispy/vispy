@@ -137,7 +137,7 @@ class _CoreColorBarVisual(Visual):
 
             # self._program = ModularProgram(VERT_SHADER, FRAG_SHADER_VERTICAL)
         else:
-            raise ColorBarVisual._get_orientation_error(self._orientation)
+            raise _CoreColorBarVisual._get_orientation_error(self._orientation)
 
         tex_coords = np.array([[0, 0], [1, 0], [1, 1],
                                [0, 0], [1, 1], [0, 1]],
@@ -227,9 +227,10 @@ class _CoreColorBarVisual(Visual):
 
     @staticmethod
     def _get_orientation_error(orientation):
-        return ValueError("orientation must"
-                          " be 'horizontal' or 'vertical', "
-                          "not '%s'" % (orientation, ))
+            return ValueError("orientation must"
+                              " be one of 'top', 'bottom', "
+                              "'left', or 'right', "
+                              "not '%s'" % (orientation, ))
 
     @property
     def cmap(self):
@@ -372,8 +373,7 @@ class ColorBarVisual(CompoundVisual):
         self._center_pos = center_pos
         self._halfdim = halfdim
         self._orientation = orientation
-        self._border_width = border_width
-        self._border_color = Color(border_color)
+        self._text_padding = 0
 
         anchor_x, anchor_y = ColorBarVisual._get_anchors(self._orientation)
         self._label = TextVisual(text=self._label_str,
@@ -439,7 +439,7 @@ class ColorBarVisual(CompoundVisual):
         # Place the labels according to the given orientation
         if self._orientation == "bottom":
             text_x = x
-            text_y = y + _TEXT_PADDING_FACTOR * (halfh + self.border_width)
+            text_y = y + self._text_padding#y + _TEXT_PADDING_FACTOR * (halfh + self.border_width)
 
             self._label.pos = text_x, text_y
 
@@ -452,7 +452,7 @@ class ColorBarVisual(CompoundVisual):
 
         elif self._orientation == "top":
             text_x = x
-            text_y = y - _TEXT_PADDING_FACTOR * (halfh + self.border_width)
+            text_y = y - self._text_padding#y - _TEXT_PADDING_FACTOR * (halfh + self.border_width)
             self._label.pos = text_x, text_y
 
             self._ticks[0].pos = x - halfw, text_y
@@ -482,18 +482,12 @@ class ColorBarVisual(CompoundVisual):
         else:
             # raise an error since the orientation is now what was
             # expected
-            raise ColorBarVisual._get_orientation_error(self._orientation)
+            raise _CoreColorBarVisual._get_orientation_error(self._orientation)
 
     def _prepare_transforms(self, view):
-        print("preparing transorms")
         CompoundVisual._prepare_transforms(view)
+        view._text_padding = 10 * view.transforms.get_transform() * self.halfdim[1]
         view._update()
-
-    @staticmethod
-    def _get_orientation_error(orientation):
-        return ValueError("orientation must"
-                          " be 'horizontal' or 'vertical', "
-                          "not '%s'" % (orientation, ))
 
     @staticmethod
     def _get_anchors(orientation):
