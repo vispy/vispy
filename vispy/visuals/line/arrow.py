@@ -11,13 +11,8 @@ from __future__ import division
 import numpy as np
 
 from ... import glsl, gloo
-from ...util.profiler import Profiler
 from ..visual import Visual
-from ..markers import MarkersVisual
 from .line import LineVisual
-
-import OpenGL
-OpenGL.ERROR_LOGGING = True
 
 
 ARROW_TYPES = [
@@ -30,13 +25,6 @@ ARROW_TYPES = [
     'triangle_60',
     'triangle_90',
     'inhibitor_round'
-]
-
-
-FILL_TYPES = [
-    'filled',
-    'outline',
-    'stroke'
 ]
 
 
@@ -90,7 +78,7 @@ class _ArrowHeadVisual(Visual):
 
         self.shared_program['antialias'] = 1.0
         self.shared_program.frag['arrow_type'] = self._parent.arrow_type
-        self.shared_program.frag['fill_type'] = self._parent.fill_type
+        self.shared_program.frag['fill_type'] = "filled"
 
     def _prepare_vertex_data(self):
         arrows = self._parent.arrows
@@ -114,13 +102,73 @@ class ArrowVisual(LineVisual):
     A special line visual which can also draw optional arrow heads at the
     specified vertices.
 
+    You add an arrow head by specifying two vertices `v1` and `v2` which
+    represent the arrow body. This visual will draw an arrow head using `v2`
+    as center point, and the orientation of the arrow head is automatically
+    determined by calculating the direction vector between `v1` and `v2`.
+
     Parameters
     ----------
+    pos : array
+        Array of shape (..., 2) or (..., 3) specifying vertex coordinates.
+    color : Color, tuple, or array
+        The color to use when drawing the line. If an array is given, it
+        must be of shape (..., 4) and provide one rgba color per vertex.
+        Can also be a colormap name, or appropriate `Function`.
+    width:
+        The width of the line in px. Line widths > 1px are only
+        guaranteed to work when using 'agg' method.
+    connect : str or array
+        Determines which vertices are connected by lines.
+
+            * "strip" causes the line to be drawn with each vertex
+              connected to the next.
+            * "segments" causes each pair of vertices to draw an
+              independent line segment
+            * numpy arrays specify the exact set of segment pairs to
+              connect.
+
+    method : str
+        Mode to use for drawing.
+
+            * "agg" uses anti-grain geometry to draw nicely antialiased lines
+              with proper joins and endcaps.
+            * "gl" uses OpenGL's built-in line rendering. This is much faster,
+              but produces much lower-quality results and is not guaranteed to
+              obey the requested line width or join/endcap styles.
+
+    antialias : bool
+        Enables or disables antialiasing.
+        For method='gl', this specifies whether to use GL's line smoothing,
+        which may be unavailable or inconsistent on some platforms.
+
+    arrows : array
+        A Nx4 matrix where each row contains the x and y coordinate of the
+        first and second vertex of the arrow body. Remember that the second
+        vertex is used as center point for the arrow head, and the first
+        vertex is only used for determining the arrow head orientation.
+
+    arrow_type : string
+        Specify the arrow head type, the currently available arrow head types
+        are:
+
+        * stealth
+        * curved
+        * triangle_30
+        * triangle_60
+        * triangle_90
+        * angle_30
+        * angle_60
+        * angle_90
+        * inhibitor_round
+
+    arrow_size : float
+        Specify the arrow size
     """
 
     def __init__(self, pos=None, color=(0.5, 0.5, 0.5, 1), width=1,
                  connect='strip', method='gl', antialias=False, arrows=None,
-                 arrow_type='stealth', arrow_size=None, fill_type="filled"):
+                 arrow_type='stealth', arrow_size=None):
 
         # Do not use the self._changed dictionary as it gets overwritten by
         # the LineVisual constructor.
@@ -128,12 +176,10 @@ class ArrowVisual(LineVisual):
 
         self._arrow_type = None
         self._arrow_size = None
-        self._fill_type = None
         self._arrows = None
 
         self.arrow_type = arrow_type
         self.arrow_size = arrow_size
-        self.fill_type = fill_type
 
         # TODO: `LineVisual.__init__` also calls its own `set_data` method,
         # which triggers an *update* event. This results in a redraw. After
@@ -148,7 +194,7 @@ class ArrowVisual(LineVisual):
         self.add_subvisual(self.arrow_head)
 
     def set_data(self, pos=None, color=None, width=None, connect=None,
-                 arrows=None, _update=True):
+                 arrows=None):
         """Set the data used for this visual
 
         Parameters
@@ -158,25 +204,25 @@ class ArrowVisual(LineVisual):
         color : Color, tuple, or array
             The color to use when drawing the line. If an array is given, it
             must be of shape (..., 4) and provide one rgba color per vertex.
+            Can also be a colormap name, or appropriate `Function`.
         width:
             The width of the line in px. Line widths > 1px are only
             guaranteed to work when using 'agg' method.
         connect : str or array
             Determines which vertices are connected by lines.
-            * "strip" causes the line to be drawn with each vertex
-              connected to the next.
-            * "segments" causes each pair of vertices to draw an
-              independent line segment
-            * int numpy arrays specify the exact set of segment pairs to
-              connect.
-            * bool numpy arrays specify which _adjacent_ pairs to connect.
-        arrows : array-like
-            Specifies which line segments get an arrow head. It should be an
-            iterable containing pairs of vertices which determine the arrow
-            body. The arrow head will be attached to the last vertex of the
-            pair. The vertices must be of the shape (..., 2). The reason you
-            need to specify two vertices for a single arrow head is that we
-            need to determine the orientation of the arrow head.
+
+                * "strip" causes the line to be drawn with each vertex
+                  connected to the next.
+                * "segments" causes each pair of vertices to draw an
+                  independent line segment
+                * numpy arrays specify the exact set of segment pairs to
+                  connect.
+        arrows : array
+            A Nx4 matrix where each row contains the x and y coordinate of the
+            first and second vertex of the arrow body. Remember that the second
+            vertex is used as center point for the arrow head, and the first
+            vertex is only used for determining the arrow head orientation.
+
         """
 
         if arrows is not None:
@@ -215,25 +261,6 @@ class ArrowVisual(LineVisual):
         else:
             self._arrow_size = value
 
-        self._arrows_changed = True
-
-    @property
-    def fill_type(self):
-        return self._fill_type
-
-    @fill_type.setter
-    def fill_type(self, value):
-        if value not in FILL_TYPES:
-            raise ValueError(
-                "Invalid fill type '{}'. Should be one of {}".format(
-                    value, ", ".join(FILL_TYPES)
-                )
-            )
-
-        if value == self._fill_type:
-            return
-
-        self._fill_type = value
         self._arrows_changed = True
 
     @property

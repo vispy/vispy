@@ -14,6 +14,7 @@ import numpy as np
 from vispy import app, gloo, visuals
 from vispy.visuals.transforms import NullTransform
 
+
 class Canvas(app.Canvas):
     def __init__(self):
         app.Canvas.__init__(self, title="Quiver plot", keys="interactive",
@@ -30,7 +31,7 @@ class Canvas(app.Canvas):
         self.visual = visuals.ArrowVisual(
             color='white',
             connect='segments',
-            arrow_size=8,
+            arrow_size=8
         )
 
         self.visual.events.update.connect(lambda evt: self.update())
@@ -62,8 +63,7 @@ class Canvas(app.Canvas):
 
     def rotate_arrows(self, point_towards):
         direction_vectors = (self.grid_coords - point_towards).astype('f32')
-        norms = np.sqrt(np.sum(np.abs(direction_vectors)**2,
-                               axis=-1))
+        norms = np.sqrt(np.sum(direction_vectors**2, axis=-1))
         direction_vectors[:, 0] /= norms
         direction_vectors[:, 1] /= norms
 
@@ -75,8 +75,9 @@ class Canvas(app.Canvas):
 
         self.visual.set_data(
             pos=vertices,
-            arrows=vertices.reshape((len(vertices)/2, 4))
+            arrows=vertices.reshape((len(vertices)/2, 4)),
         )
+        self.visual.antialias = True
 
     def on_mouse_move(self, event):
         self.last_mouse = event.pos
