@@ -1,4 +1,4 @@
-Vispy: interactive scientific visualization in Python
+VisPy: interactive scientific visualization in Python
 -----------------------------------------------------
 
 Main website: http://vispy.org
@@ -7,10 +7,10 @@ Main website: http://vispy.org
 
 ----
 
-Vispy is a **high-performance interactive 2D/3D data visualization
-library**. Vispy leverages the computational power of modern **Graphics
+VisPy is a **high-performance interactive 2D/3D data visualization
+library**. VisPy leverages the computational power of modern **Graphics
 Processing Units (GPUs)** through the **OpenGL** library to display very
-large datasets. Applications of Vispy include:
+large datasets. Applications of VisPy include:
 
 -  High-quality interactive scientific plots with millions of points.
 -  Direct visualization of real-time data.
@@ -25,11 +25,11 @@ Announcements
 -------------
 
 - **Release!** Version 0.4, May 22, 2015
-- `Vispy tutorial in the IPython Cookbook <http://ipython-books.github.io/featured-06/>`__
+- `VisPy tutorial in the IPython Cookbook <http://ipython-books.github.io/featured-06/>`__
 - **Release!** Version 0.3, August 29, 2014
 - **EuroSciPy 2014**: talk at Saturday 30, and sprint at Sunday 31, August 2014
 - `Article in Linux Magazine, French Edition <https://github.com/vispy/linuxmag-article>`__, July 2014
-- **GSoC 2014**: `two GSoC students are currently working on Vispy under the PSF umbrella <https://github.com/vispy/vispy/wiki/Project.%20GSoC-2014>`__
+- **GSoC 2014**: `two GSoC students are currently working on VisPy under the PSF umbrella <https://github.com/vispy/vispy/wiki/Project.%20GSoC-2014>`__
 - **Release!**, Version 0.2.1 04-11-2013
 - **Presentation at BI forum**, Budapest, 6 November 2013
 - **Presentation at Euroscipy**, Belgium, August 2013
@@ -37,10 +37,10 @@ Announcements
 - **Release!** Version 0.1.0 14-08-2013
 
 
-Using Vispy
+Using VisPy
 -----------
 
-Vispy is a young library under heavy development at this time. It
+VisPy is a young library under heavy development at this time. It
 targets two categories of users:
 
 1. **Users knowing OpenGL**, or willing to learn OpenGL, who want to
@@ -49,26 +49,26 @@ targets two categories of users:
 2. **Scientists without any knowledge of OpenGL**, who are seeking a
    high-level, high-performance plotting toolkit.
 
-If you're in the first category, you can already start using Vispy.
-Vispy offers a Pythonic, NumPy-aware, user-friendly interface for OpenGL
+If you're in the first category, you can already start using VisPy.
+VisPy offers a Pythonic, NumPy-aware, user-friendly interface for OpenGL
 ES 2.0 called **gloo**. You can focus on writing your GLSL code instead
-of dealing with the complicated OpenGL API - Vispy takes care of that
+of dealing with the complicated OpenGL API - VisPy takes care of that
 automatically for you.
 
 If you're in the second category, we're starting to build experimental
-high-level plotting interfaces. Notably, Vispy now ships a very basic
+high-level plotting interfaces. Notably, VisPy now ships a very basic
 and experimental OpenGL backend for matplotlib.
 
 
 Installation
 ------------
 
-Vispy runs on Python 2.6+ and Python 3.3+ and depends on NumPy. You also
+VisPy runs on Python 2.6+ and Python 3.3+ and depends on NumPy. You also
 need a backend (PyQt4/PySide, glfw, pyglet, SDL, or wx).
 
-As Vispy is under heavy development at this time, we highly recommend
+As VisPy is under heavy development at this time, we highly recommend
 you to use the development version on Github (master branch). You need
-to clone the repository and install Vispy with
+to clone the repository and install VisPy with
 ``python setup.py install``.
 
 If you need to install Python for the first time, consider using the
@@ -76,7 +76,7 @@ If you need to install Python for the first time, consider using the
 provides a convenient package management system.
 
 
-Structure of Vispy
+Structure of VisPy
 ------------------
 
 Currently, the main subpackages are:
@@ -99,29 +99,29 @@ Currently, the main subpackages are:
       together snippets of GLSL code.
    -  The **scene graph** tracks all objects within a transformation
       graph.
+-  **plot**: high-level plotting interfaces.
 
 The API of all public interfaces are subject to change in the future,
 although **app** and **gloo** are *relatively* stable at this point.
 
 
-About us
---------
+Genesis
+-------
 
-The core development team consists of:
+VisPy began when four developers with their own visualization libraries
+decided to team up:
 
--  `Luke Campagnola <http://luke.campagnola.me/>`__
--  `Almar Klein <http://www.almarklein.org/>`__
--  `Eric Larson <http://larsoner.com>`__
--  `Cyrille Rossant <http://cyrille.rossant.net>`__
--  `Nicolas Rougier <http://www.loria.fr/~rougier/index.html>`__
+-  `Luke Campagnola <http://luke.campagnola.me/>`__ with
+   `PyQtGraph <http://www.pyqtgraph.org/>`__
+-  `Almar Klein <http://www.almarklein.org/>`__ with
+   `Visvis <https://code.google.com/p/visvis/>`__
+-  `Cyrille Rossant <http://cyrille.rossant.net>`__ with
+   `Galry <https://github.com/rossant/galry>`__
+-  `Nicolas Rougier <http://www.loria.fr/~rougier/index.html>`__ with
+   `Glumpy <https://github.com/rougier/Glumpy>`__
 
-Four of us have written our own Python visualization toolkit
-(`PyQtGraph <http://www.pyqtgraph.org/>`__ by LC,
-`Visvis <https://code.google.com/p/visvis/>`__ by AK,
-`Glumpy <https://github.com/rougier/Glumpy>`__ by NR, and
-`Galry <https://github.com/rossant/galry>`__ by CR), and we decided to
-team up to create a unique high-performance, high-quality interactive
-visualization library.
+Now VisPy looks to build on the expertise of these developers and the
+broader open-source community to build a high-performance OpenGL library.
 
 ----
 
