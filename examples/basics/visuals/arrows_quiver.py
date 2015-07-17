@@ -21,18 +21,16 @@ class Canvas(app.Canvas):
 
         self.arrow_length = 20
 
-        self.num_rows = 8
-        self.num_cols = 16
+        self.grid_coords = None
         self.line_vertices = None
+        self.last_mouse = (0, 0)
 
-        self.generate_initial_vertices()
+        self.generate_grid()
 
         self.visual = visuals.ArrowVisual(
-            pos=self.line_vertices,
             color='white',
             connect='segments',
             arrow_size=8,
-            arrows=self.line_vertices.reshape((len(self.line_vertices)/2, 4))
         )
 
         self.visual.events.update.connect(lambda evt: self.update())
@@ -40,78 +38,53 @@ class Canvas(app.Canvas):
 
         self.show()
 
-    def generate_initial_vertices(self):
-        vertices = []
+    def generate_grid(self):
+        num_cols = int(self.physical_size[0] / 50)
+        num_rows = int(self.physical_size[1] / 50)
+        coords = []
+
         # Generate grid
-        for i, j in itertools.product(range(self.num_rows),
-                                      range(self.num_cols)):
+        for i, j in itertools.product(range(num_rows), range(num_cols)):
             x = 25 + (50 * j)
             y = 25 + (50 * i)
 
-            coords = np.array([x, y])
+            coords.append((x, y))
 
-            # Initial line vertices, all arrows point towards the right
-            vertices.extend([
-                coords - np.array([0.5*self.arrow_length, 0.0]),
-                coords + np.array([0.5*self.arrow_length, 0.0])
-            ])
-
-        self.line_vertices = np.array(vertices)
-
-
-    def on_draw(self, event):
-        gloo.clear('black')
-        self.visual.draw()
+        self.grid_coords = np.array(coords)
 
     def on_resize(self, event):
-        self.num_cols = int(self.physical_size[0] / 50)
-        self.num_rows = int(self.physical_size[1] / 50)
-        self.generate_initial_vertices()
-        self.visual.set_data(
-            pos=self.line_vertices,
-            arrows=self.line_vertices.reshape(len(self.line_vertices)/2, 4)
-        )
+        self.generate_grid()
+        self.rotate_arrows(np.array(self.last_mouse))
 
         vp = (0, 0, self.physical_size[0], self.physical_size[1])
         self.context.set_viewport(*vp)
         self.visual.transforms.configure(canvas=self, viewport=vp)
 
-    def on_mouse_move(self, event):
-        # Keep original line vertices so we can always apply the rotation
-        # matrix on the original vertices, and we don't have to think about
-        # relative corners etc.
-        new_line_vertices = np.zeros_like(self.line_vertices)
-        vertices_iter = iter(self.line_vertices)
-        for i, v1 in enumerate(vertices_iter):
-            v2 = next(vertices_iter)
+    def rotate_arrows(self, point_towards):
+        direction_vectors = (self.grid_coords - point_towards).astype('f32')
+        norms = np.sqrt(np.sum(np.abs(direction_vectors)**2,
+                               axis=-1))
+        direction_vectors[:, 0] /= norms
+        direction_vectors[:, 1] /= norms
 
-            center = v1 + np.array([0.5*self.arrow_length, 0.0])
-            direction_vect = np.array(event.pos) - center
-            direction_vect /= np.linalg.norm(direction_vect)
-            direction_vect[1] = -direction_vect[1]
-
-            # Rotate around its center pojnt
-            rot_matrix = np.matrix([
-                [direction_vect[0], -direction_vect[1]],
-                [direction_vect[1],  direction_vect[0]]
-            ])
-
-            translated1 = v1 - center
-            v1 = translated1.dot(rot_matrix)
-            v1 += center
-
-            translated2 = v2 - center
-            v2 = translated2.dot(rot_matrix)
-            v2 += center
-
-            new_line_vertices[i*2] = v1[0:2]
-            new_line_vertices[(i*2)+1] = v2[0:2]
+        vertices = np.repeat(self.grid_coords, 2, axis=0)
+        vertices[::2] = vertices[::2] + ((0.5 * self.arrow_length) *
+                                         direction_vectors)
+        vertices[1::2] = vertices[1::2] - ((0.5 * self.arrow_length) *
+                                           direction_vectors)
 
         self.visual.set_data(
-            new_line_vertices,
-            arrows=new_line_vertices.reshape((len(new_line_vertices)/2, 4))
+            pos=vertices,
+            arrows=vertices.reshape((len(vertices)/2, 4))
         )
 
+    def on_mouse_move(self, event):
+        self.last_mouse = event.pos
+        self.rotate_arrows(np.array(event.pos))
+
+    def on_draw(self, event):
+        gloo.clear('black')
+        self.visual.draw()
 
 if __name__ == '__main__':
     win = Canvas()
