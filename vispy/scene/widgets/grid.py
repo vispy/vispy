@@ -108,13 +108,13 @@ class Grid(Widget):
         widget.parent = self
 
         self._next_cell = [row, col+col_span]
-        
+
         # update stretch based on colspan/rowspan
         stretch = list(widget.stretch)
         stretch[0] = col_span if stretch[0] is None else stretch[0]
         stretch[1] = row_span if stretch[1] is None else stretch[1]
         widget.stretch = stretch
-        
+
         self._update_child_widgets()
         return widget
 
@@ -188,12 +188,12 @@ class Grid(Widget):
         n_rows, n_cols = self.grid_size
         if n_rows == 0 or n_cols == 0:
             return
-        
+
         # 1. Collect information about occupied cells and their contents
         occupied = np.zeros((n_rows, n_cols), dtype=bool)
         stretch = np.zeros((n_rows, n_cols, 2), dtype=float)
         stretch[:] = np.nan
-        #minsize = np.zeros((n_rows, n_cols, 2), dtype=float)
+        # minsize = np.zeros((n_rows, n_cols, 2), dtype=float)
         for key, val in self._grid_widgets.items():
             w = val[4]
             row, col, rspan, cspan, ch = self._grid_widgets[key]
@@ -207,7 +207,7 @@ class Grid(Widget):
             col_stretch = nanmean(stretch[..., 0], axis=0)
         row_stretch[np.isnan(row_stretch)] = 0
         col_stretch[np.isnan(col_stretch)] = 0
-        
+
         # 2. Decide width of each row/col
         rect = self.rect.padded(self.padding + self.margin)
         n_cols = col_occ.sum()
@@ -218,7 +218,7 @@ class Grid(Widget):
         rowspace = rect.height - (n_rows-1) * self.spacing
         rowsizes = row_stretch * rowspace / row_stretch.sum()
         rowsizes[rowsizes == 0] = -self.spacing
-        
+
         # 3. Decide placement of row/col edges
         colend = np.cumsum(colsizes) + self.spacing * np.arange(len(colsizes))
         colstart = colend - colsizes
