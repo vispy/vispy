@@ -6,7 +6,7 @@
 # Author: Siddharth Bhat
 # -----------------------------------------------------------------------------
 
-from . import Visual, TextVisual, CompoundVisual
+from . import Visual, TextVisual, CompoundVisual, PolygonVisual
 from .shaders import ModularProgram, Function
 from ..color import get_colormap, Color
 
@@ -305,7 +305,7 @@ class _CoreColorBarVisual(Visual):
         """
 
         self._program.draw('triangles')
-        self.set_gl_state(cull_face=False)
+        # self.set_gl_state(cull_face=True)
         self._border_program.draw("triangle_strip")
 
 
@@ -408,12 +408,24 @@ class ColorBarVisual(CompoundVisual):
         self._colorbar = _CoreColorBarVisual(center_pos,
                                              halfdim, cmap,
                                              orientation,
-                                             border_width, border_color)
+                                             0, border_color)
+                                             # border_width, border_color)
+
+        border_pos = [(center_pos[0] - halfdim[0], center_pos[1] - halfdim[1]),
+                      (center_pos[0] + halfdim[0], center_pos[1] - halfdim[1]),
+                      (center_pos[0] + halfdim[0], center_pos[1] + halfdim[1]),
+                      (center_pos[0] - halfdim[0], center_pos[1] + halfdim[1])]
+
+        self._borderRect = PolygonVisual(pos=border_pos,
+                                         color=Color(color=(0, 0, 0), alpha=0),
+                                         border_width=border_width,
+                                         border_color=border_color)
 
         CompoundVisual.__init__(self, [self._label,
                                        self._ticks[0],
                                        self._ticks[1],
-                                       self._colorbar])
+                                       self._colorbar,
+                                       self._borderRect])
 
         self._update()
 
