@@ -84,6 +84,7 @@ def test_log_parser():
     i += 1
 
     config.update(glir_file='')
+    glir_file.close()
 
 
 @requires_application()
