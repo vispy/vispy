@@ -13,7 +13,7 @@ class PickingFilter(object):
     Note that the ID color uses the alpha channel, so this may not be used
     with blending enabled.
     """
-    def __init__(self, id=None):
+    def __init__(self, id_=None):
         self.shader = Function("""
             void picking_filter() {
                 if( $enabled == 0 )
@@ -23,7 +23,7 @@ class PickingFilter(object):
                 gl_FragColor = $id_color;
             }
         """)
-        self.id = id
+        self.id = id_
         self.enabled = False
 
     @property
