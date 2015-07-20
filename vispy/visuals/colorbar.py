@@ -6,11 +6,11 @@
 # Author: Siddharth Bhat
 # -----------------------------------------------------------------------------
 
-from . import Visual, TextVisual, CompoundVisual, PolygonVisual
-from .shaders import ModularProgram, Function
-from ..color import get_colormap, Color
-
 import numpy as np
+
+from . import Visual, TextVisual, CompoundVisual
+from .shaders import Function
+from ..color import get_colormap, Color
 
 VERT_SHADER = """
 attribute vec2 a_position;
@@ -97,6 +97,17 @@ void main() {
 
 
 class _CoreColorBarBorderVisual(Visual):
+    """
+    Visual subclass that renders the borders.
+
+    Note
+    ----
+    This is purely internal.
+    Externally, the ColorBarVisual must be used.
+    This class was separated out to encapsulate rendering information
+    That way, ColorBar simply becomes a CompoundVisual
+    """
+
     def __init__(self, center_pos, halfdim,
                  border_width=1.0,
                  border_color="black",
@@ -110,21 +121,15 @@ class _CoreColorBarBorderVisual(Visual):
 
         Visual.__init__(self, vcode=VERT_SHADER_BORDER,
                         fcode=FRAG_SHADER_BORDER, **kwargs)
-        # self.prepar()
 
     @staticmethod
     def _prepare_transforms(view):
-        # transfrorm = view.transforms.get_transform()
-        print("preparing transforms - corecolorbar")
 
         program = view.shared_program
         program.vert['visual_to_doc'] = \
             view.transforms.get_transform('visual', 'document')
         program.vert['doc_to_render'] = \
             view.transforms.get_transform('document', 'render')
-
-        # total_transform = view.transforms.get_transform()
-        # program.vert['transform'] = total_transform
 
     def _update(self):
         x, y = self._center_pos
@@ -204,16 +209,12 @@ class _CoreColorBarVisual(Visual):
     def __init__(self, center_pos, halfdim,
                  cmap,
                  orientation,
-                 border_width=1.0,
-                 border_color="black",
                  **kwargs):
 
         self._cmap = get_colormap(cmap)
         self._center_pos = center_pos
         self._halfdim = halfdim
         self._orientation = orientation
-        self._border_width = border_width
-        self._border_color = border_color
         self._text_padding = 0
         # setup border rendering
 
@@ -305,16 +306,12 @@ class _CoreColorBarVisual(Visual):
         self._cmap = get_colormap(cmap)
         self._program.frag['color_transform'] = Function(self._cmap.glsl_map)
 
-
     @property
     def text_padding(self):
         return self._text_padding
 
     @staticmethod
     def _prepare_transforms(view):
-        # transfrorm = view.transforms.get_transform()
-        print("preparing transforms - corecolorbar")
-
         # figure out padding by considering the entire transform
         # on the width and height
         program = view.view_program
@@ -431,19 +428,7 @@ class ColorBarVisual(CompoundVisual):
 
         self._colorbar = _CoreColorBarVisual(center_pos,
                                              halfdim, cmap,
-                                             orientation,
-                                             0, border_color)
-                                             # border_width, border_color)
-
-        border_pos = [(center_pos[0] - halfdim[0], center_pos[1] - halfdim[1]),
-                      (center_pos[0] + halfdim[0], center_pos[1] - halfdim[1]),
-                      (center_pos[0] + halfdim[0], center_pos[1] + halfdim[1]),
-                      (center_pos[0] - halfdim[0], center_pos[1] + halfdim[1])]
-
-        self._borderRect = PolygonVisual(pos=border_pos,
-                                         color=Color(color=(0, 0, 0), alpha=0),
-                                         border_width=border_width,
-                                         border_color=border_color)
+                                             orientation)
 
         self._colorbar_border = _CoreColorBarBorderVisual(center_pos,
                                                           halfdim,
