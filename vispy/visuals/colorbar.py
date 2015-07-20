@@ -96,6 +96,100 @@ void main() {
 """  # noqa
 
 
+class _CoreColorBarBorderVisual(Visual):
+    def __init__(self, center_pos, halfdim,
+                 border_width=1.0,
+                 border_color="black",
+                 **kwargs):
+
+        self._center_pos = center_pos
+        self._halfdim = halfdim
+        self._border_width = border_width
+        self._border_color = border_color
+        self._border_color = Color(border_color)
+
+        Visual.__init__(self, vcode=VERT_SHADER_BORDER,
+                        fcode=FRAG_SHADER_BORDER, **kwargs)
+        # self.prepar()
+
+    @staticmethod
+    def _prepare_transforms(view):
+        # transfrorm = view.transforms.get_transform()
+        print("preparing transforms - corecolorbar")
+
+        program = view.shared_program
+        program.vert['visual_to_doc'] = \
+            view.transforms.get_transform('visual', 'document')
+        program.vert['doc_to_render'] = \
+            view.transforms.get_transform('document', 'render')
+
+        # total_transform = view.transforms.get_transform()
+        # program.vert['transform'] = total_transform
+
+    def _update(self):
+        x, y = self._center_pos
+        halfw, halfh = self._halfdim
+
+        border_vertices = np.array([
+            [x - halfw, y - halfh],
+            [x - halfw, y - halfh],
+
+            [x + halfw, y - halfh],
+            [x + halfw, y - halfh],
+
+            [x + halfw, y + halfh],
+            [x + halfw, y + halfh],
+
+            [x - halfw, y + halfh],
+            [x - halfw, y + halfh],
+
+            [x - halfw, y - halfh],
+            [x - halfw, y - halfh],
+        ], dtype=np.float32)
+
+        # Direction each vertex should move to correct for line width
+        adjust_dir = np.array([
+            [0, 0], [-1, -1],
+            [0, 0], [1, -1],
+            [0, 0], [1, 1],
+            [0, 0], [-1, 1],
+            [0, 0], [-1, -1],
+        ], dtype=np.float32)
+
+        self.shared_program['a_position'] = border_vertices
+        self.shared_program['a_adjust_dir'] = adjust_dir
+        self.shared_program.vert['border_width'] = self._border_width
+        self.shared_program.frag['border_color'] = self._border_color.rgba
+
+    def _prepare_draw(self, view=None):
+        self._update()
+        self._draw_mode = "triangle_strip"
+        return True
+
+    @property
+    def border_width(self):
+        """ The width of the border around the ColorBar in pixels
+        """
+        return self._border_width
+
+    @border_width.setter
+    def border_width(self, border_width):
+        self._border_width = border_width
+        # positions of text need to be changed accordingly
+        self._update()
+
+    @property
+    def border_color(self):
+        """ The color of the border around the ColorBar in pixels
+        """
+        return self._border_color
+
+    @border_color.setter
+    def border_color(self, border_color):
+        self._border_color = Color(border_color)
+        self.shared_program.frag['border_color'] = self._border_color.rgba
+
+
 class _CoreColorBarVisual(Visual):
     """
     Visual subclass that actually renders the ColorBar.
@@ -122,9 +216,6 @@ class _CoreColorBarVisual(Visual):
         self._border_color = border_color
         self._text_padding = 0
         # setup border rendering
-        self._border_color = Color(border_color)
-        self._border_program = ModularProgram(VERT_SHADER_BORDER,
-                                              FRAG_SHADER_BORDER)
 
         # setup the right program shader based on color
         if orientation == "top" or orientation == "bottom":
@@ -145,6 +236,7 @@ class _CoreColorBarVisual(Visual):
                               dtype=np.float32)
 
         glsl_map_fn = Function(self._cmap.glsl_map)
+
         self.shared_program.frag['color_transform'] = glsl_map_fn
         self.shared_program['a_texcoord'] = tex_coords.astype(np.float32)
 
@@ -193,38 +285,7 @@ class _CoreColorBarVisual(Visual):
                              [x - halfw, y + halfh]],
                             dtype=np.float32)
 
-        border_vertices = np.array([
-            [x - halfw, y - halfh],
-            [x - halfw, y - halfh],
-
-            [x + halfw, y - halfh],
-            [x + halfw, y - halfh],
-
-            [x + halfw, y + halfh],
-            [x + halfw, y + halfh],
-
-            [x - halfw, y + halfh],
-            [x - halfw, y + halfh],
-
-            [x - halfw, y - halfh],
-            [x - halfw, y - halfh],
-        ], dtype=np.float32)
-
-        # Direction each vertex should move to correct for line width
-        adjust_dir = np.array([
-            [0, 0], [-1, -1],
-            [0, 0], [1, -1],
-            [0, 0], [1, 1],
-            [0, 0], [-1, 1],
-            [0, 0], [-1, -1],
-        ], dtype=np.float32)
-
         self.shared_program['a_position'] = vertices
-
-        self._border_program['a_position'] = border_vertices
-        self._border_program['a_adjust_dir'] = adjust_dir
-        self._border_program.vert['border_width'] = self._border_width
-        self._border_program.frag['border_color'] = self._border_color.rgba
 
     @staticmethod
     def _get_orientation_error(orientation):
@@ -244,28 +305,6 @@ class _CoreColorBarVisual(Visual):
         self._cmap = get_colormap(cmap)
         self._program.frag['color_transform'] = Function(self._cmap.glsl_map)
 
-    @property
-    def border_width(self):
-        """ The width of the border around the ColorBar in pixels
-        """
-        return self._border_width
-
-    @border_width.setter
-    def border_width(self, border_width):
-        self._border_width = border_width
-        # positions of text need to be changed accordingly
-        self._update()
-
-    @property
-    def border_color(self):
-        """ The color of the border around the ColorBar in pixels
-        """
-        return self._border_color
-
-    @border_color.setter
-    def border_color(self, border_color):
-        self._border_color = Color(border_color)
-        self._border_program.frag['border_color'] = self._border_color.rgba
 
     @property
     def text_padding(self):
@@ -275,17 +314,12 @@ class _CoreColorBarVisual(Visual):
     def _prepare_transforms(view):
         # transfrorm = view.transforms.get_transform()
         print("preparing transforms - corecolorbar")
-        program = view.view_program
-        border_program = view._border_program
-        total_transform = view.transforms.get_transform()
-
-        border_program.vert['visual_to_doc'] = \
-            view.transforms.get_transform('visual', 'document')
-        border_program.vert['doc_to_render'] = \
-            view.transforms.get_transform('document', 'render')
 
         # figure out padding by considering the entire transform
         # on the width and height
+        program = view.view_program
+        total_transform = view.transforms.get_transform()
+
         program.vert['transform'] = total_transform
         padding_x, padding_y, _, _ = total_transform.map(view._halfdim)
 
@@ -295,19 +329,9 @@ class _CoreColorBarVisual(Visual):
             view._text_padding = padding_x
         view._text_padding *= _TEXT_PADDING_FACTOR
 
-    def draw(self):
-        """Draw the visual
-
-        Parameters
-        ----------
-        transforms : instance of TransformSystem
-            The transforms to use.
-        """
-
-        self._program.draw('triangles')
-        # self.set_gl_state(cull_face=True)
-        self._border_program.draw("triangle_strip")
-
+    def _prepare_draw(self, view):
+        self._draw_mode = "triangles"
+        return True
 
 # The padding multiplier that's used to place the text
 # next to the Colorbar. Makes sure the text isn't
@@ -421,11 +445,15 @@ class ColorBarVisual(CompoundVisual):
                                          border_width=border_width,
                                          border_color=border_color)
 
-        CompoundVisual.__init__(self, [self._label,
+        self._colorbar_border = _CoreColorBarBorderVisual(center_pos,
+                                                          halfdim,
+                                                          border_width,
+                                                          border_color)
+        CompoundVisual.__init__(self, [self._colorbar_border,
+                                       self._colorbar,
                                        self._ticks[0],
                                        self._ticks[1],
-                                       self._colorbar,
-                                       self._borderRect])
+                                       self._label])
 
         self._update()
 
@@ -435,6 +463,7 @@ class ColorBarVisual(CompoundVisual):
         """
 
         self._colorbar._update()
+        self._colorbar_border._update()
 
         x, y = self._center_pos
         halfw, halfh = self._halfdim
@@ -581,11 +610,11 @@ class ColorBarVisual(CompoundVisual):
     def border_width(self):
         """ The width of the border around the ColorBar in pixels
         """
-        return self._colorbar.border_width
+        return self._colorbar_border.border_width
 
     @border_width.setter
     def border_width(self, border_width):
-        self._colorbar.border_width = border_width
+        self._colorbar_border.border_width = border_width
         # positions of text need to be changed accordingly
         self._update()
 
@@ -593,8 +622,8 @@ class ColorBarVisual(CompoundVisual):
     def border_color(self):
         """ The color of the border around the ColorBar in pixels
         """
-        return self._colorbar.border_color
+        return self._colorbar_border.border_color
 
     @border_color.setter
     def border_color(self, border_color):
-        self._colorbar.border_color = border_color
+        self._colorbar_border.border_color = border_color
