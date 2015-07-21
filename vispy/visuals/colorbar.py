@@ -131,6 +131,22 @@ class _CoreColorBarBorderVisual(Visual):
         program.vert['doc_to_render'] = \
             view.transforms.get_transform('document', 'render')
 
+    @property
+    def visual_border_width(self):
+        """
+            returns the border width in visual coordinates
+        """
+        render_to_doc =  \
+            self.transforms.get_transform('document', 'visual')
+
+        vec = render_to_doc.map([self.border_width, self.border_width, 0])
+        origin = render_to_doc.map([0, 0, 0])
+        self._visual_border_width = [vec[0] - origin[0], vec[1] - origin[1]]
+        # we need to flip the y axis because coordinate systems are inverted
+        self._visual_border_width[1] *= -1
+
+        return self._visual_border_width
+
     def _update(self):
         x, y = self._center_pos
         halfw, halfh = self._halfdim
@@ -437,10 +453,6 @@ class ColorBarVisual(CompoundVisual):
         self._colorbar._update()
         self._colorbar_border._update()
 
-        x, y = self._center_pos
-        halfw, halfh = self._halfdim
-
-        anchor_x, anchor_y = ColorBarVisual._get_anchors(self._orientation)
         # create a new label if this is the first time this function
         # is being called. Otherwise, just update the existing bar
         self.label.text = self._label_str
@@ -456,6 +468,17 @@ class ColorBarVisual(CompoundVisual):
         self._ticks[0].text = str(self._clim[0])
         self._ticks[1].text = str(self._clim[1])
 
+        self._update_positions()
+
+    def _update_positions(self):
+        """
+        updates the positions of the colorbars and labels
+        """
+        x, y = self._center_pos
+        halfw, halfh = self._halfdim
+
+        anchor_x, anchor_y = ColorBarVisual._get_anchors(self._orientation)
+
         # test that width and height are non-zero
         if halfw <= 0:
             raise ValueError("half-width must be positive and non-zero"
@@ -468,6 +491,7 @@ class ColorBarVisual(CompoundVisual):
         if self._orientation == "bottom":
             text_x = x
             text_y = y - halfh
+            text_y -= self._colorbar_border.visual_border_width[1]
 
             self._label.pos = text_x, text_y
 
@@ -480,7 +504,9 @@ class ColorBarVisual(CompoundVisual):
 
         elif self._orientation == "top":
             text_x = x
-            text_y = y  + halfh # - self._text_padding
+            text_y = y + halfh
+            text_y += self._colorbar_border.visual_border_width[1]
+
             self._label.pos = text_x, text_y
 
             self._ticks[0].pos = x - halfw, text_y
@@ -488,17 +514,19 @@ class ColorBarVisual(CompoundVisual):
 
         elif self._orientation == "right":
             text_x = x + halfw
+            text_x += self._colorbar_border.visual_border_width[0]
             text_y = y
             self._label.pos = text_x, text_y
             self._label.rotation = -90
 
-            # TODO, HACK: See comment about ticks on "horizontal" conditional
+            # TODO, HACK: See comment - ticks on "horizontal" conditional
             self._ticks[0].pos = text_x, y + halfh
             self._ticks[1].pos = text_x, y - halfh
             self._ticks[0].rotation = self.ticks[1].rotation = -90
 
         elif self._orientation == "left":
             text_x = x - halfw
+            text_x -= self._colorbar_border.visual_border_width[0]
             text_y = y
             self._label.pos = text_x, text_y
             self._label.rotation = -90
@@ -512,19 +540,8 @@ class ColorBarVisual(CompoundVisual):
             # expected
             raise _CoreColorBarVisual._get_orientation_error(self._orientation)
 
-    def _prepare_transforms(self, view):
-        (halfw, halfh) = self._halfdim
-
-        if self._orientation in ("top", "bottom"):
-            self._text_padding = halfh
-        else: # orientation in ("left", "right")
-            self._text_padding = halfw
-
-        render_to_visual = view.transforms.get_transform("render", "visual")
-        border_in_visual = self.border_width * render_to_visual
-        # self._text_padding += border_in_visual
-
-        CompoundVisual._prepare_transforms(self, view)
+    def _prepare_draw(self, view):
+        self._update_positions()
 
     @staticmethod
     def _get_anchors(orientation):
