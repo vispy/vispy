@@ -10,6 +10,7 @@ This example demonstrates how to draw lines with one or more arrow heads.
 
 import sys
 
+import numpy as np
 from vispy import app, gloo, visuals
 from vispy.geometry import curves
 from vispy.visuals.transforms import STTransform
@@ -26,7 +27,10 @@ class Canvas(app.Canvas):
             (350, 190),
             (390, 0.0)
         )
-        arrows1 = ([line1[-2], line1[-1]],)
+        arrows1 = np.array([
+            line1[-2],
+            line1[-1]
+        ]).reshape((1, 4))
 
         line2 = curves.curve4_bezier(
             (10.0, 0.0),
@@ -34,10 +38,12 @@ class Canvas(app.Canvas):
             (210, 190),
             (390, 0.0)
         )
-        arrows2 = (
-            [line2[1], line2[0]],
-            [line2[-2], line2[-1]],
-        )
+        arrows2 = np.array([
+            line2[1],
+            line2[0],
+            line2[-2],
+            line2[-1]
+        ]).reshape((2, 4))
 
         line3 = curves.curve3_bezier(
             (10.0, 0.0),
@@ -45,7 +51,10 @@ class Canvas(app.Canvas):
             (390, 0.0)
         )
 
-        arrows3 = ([line3[-2], line3[-1]],)
+        arrows3 = np.array([
+            line3[-2],
+            line3[-1]
+        ]).reshape((1, 4))
 
         arrow_types = ["curved", "stealth", "inhibitor_round", "angle_60"]
         self.lines = []
