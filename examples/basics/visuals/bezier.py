@@ -48,20 +48,15 @@ class Canvas(app.Canvas):
 
         self.texts = [
             visuals.TextVisual('4 point Bezier curve', bold=True, color='w',
-                               font_size=24, pos=(200, 75)),
+                               font_size=14, pos=(200, 75)),
             visuals.TextVisual('3 point Bezier curve', bold=True, color='w',
-                               font_size=24, pos=(200, 525)),
+                               font_size=14, pos=(200, 525)),
         ]
 
         for text in self.texts:
             text.transform = NullTransform()
 
-        # Initialize transform systems for each visual
         self.visuals = self.lines + self.texts
-        for visual in self.visuals:
-            visual.tr_sys = visuals.transforms.TransformSystem(self)
-            visual.tr_sys.visual_to_document = visual.transform
-
         self.show()
 
     def on_draw(self, event):
@@ -69,7 +64,14 @@ class Canvas(app.Canvas):
         gloo.set_viewport(0, 0, *self.physical_size)
 
         for visual in self.visuals:
-            visual.draw(visual.tr_sys)
+            visual.draw()
+
+    def on_resize(self, event):
+        vp = (0, 0, self.physical_size[0], self.physical_size[1])
+        self.context.set_viewport(*vp)
+        for visual in self.visuals:
+            visual.transforms.configure(canvas=self, viewport=vp)
+
 
 if __name__ == '__main__':
     win = Canvas()
