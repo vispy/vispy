@@ -72,9 +72,12 @@ to clone the repository and install Vispy with
 ``python setup.py install``.
 
 As a one-liner, assuming `git` is installed:
-```
+
+
 git clone https://github.com/vispy/vispy.git && cd vispy && python setup.py install --user
-```
+::
+
+
 will automatically install the latest version of vispy
 
 If you need to install Python for the first time, consider using the
