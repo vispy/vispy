@@ -11,11 +11,11 @@ from __future__ import division
 import numpy as np
 
 from ... import glsl, gloo
-from ..visual import Visual
+from ..visual import Visual, CompoundVisual
 from .line import LineVisual
 
 
-ARROW_TYPES = [
+ARROW_TYPES = (
     'stealth',
     'curved',
     'angle_30',
@@ -25,7 +25,7 @@ ARROW_TYPES = [
     'triangle_60',
     'triangle_90',
     'inhibitor_round'
-]
+)
 
 
 class _ArrowHeadVisual(Visual):
@@ -90,13 +90,13 @@ class _ArrowHeadVisual(Visual):
         v['v2'] = arrows[:, 2:4]
 
         v['size'][:] = self._parent.arrow_size
-        v['color'][:] = self._parent._interpret_color()
-        v['linewidth'][:] = self._parent.width
+        v['color'][:] = self._parent.line_visual._interpret_color()
+        v['linewidth'][:] = self._parent.line_visual.width
 
         return v
 
 
-class ArrowVisual(LineVisual):
+class ArrowVisual(CompoundVisual):
     """ArrowVisual
 
     A special line visual which can also draw optional arrow heads at the
@@ -170,8 +170,6 @@ class ArrowVisual(LineVisual):
                  connect='strip', method='gl', antialias=False, arrows=None,
                  arrow_type='stealth', arrow_size=None):
 
-        # Do not use the self._changed dictionary as it gets overwritten by
-        # the LineVisual constructor.
         self._arrows_changed = False
 
         self._arrow_type = None
@@ -181,17 +179,12 @@ class ArrowVisual(LineVisual):
         self.arrow_type = arrow_type
         self.arrow_size = arrow_size
 
-        # TODO: `LineVisual.__init__` also calls its own `set_data` method,
-        # which triggers an *update* event. This results in a redraw. After
-        # that we call our own `set_data` method, which triggers another
-        # redraw. This should be fixed.
-        LineVisual.__init__(self, pos, color, width, connect, method,
-                            antialias)
-        ArrowVisual.set_data(self, arrows=arrows)
-
-        # Add marker visual for the arrow head
+        self.line_visual = LineVisual(pos, color, width, connect, method,
+                                      antialias)
         self.arrow_head = _ArrowHeadVisual(self)
-        self.add_subvisual(self.arrow_head)
+        CompoundVisual.__init__(self, [self.line_visual, self.arrow_head])
+
+        ArrowVisual.set_data(self, arrows=arrows)
 
     def set_data(self, pos=None, color=None, width=None, connect=None,
                  arrows=None):
@@ -229,7 +222,9 @@ class ArrowVisual(LineVisual):
             self._arrows = arrows
             self._arrows_changed = True
 
-        LineVisual.set_data(self, pos, color, width, connect)
+        self.line_visual.set_data(pos, color, width, connect)
+
+        self.update()
 
     @property
     def arrow_type(self):
