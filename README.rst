@@ -71,7 +71,7 @@ you to use the development version on Github (master branch). You need
 to clone the repository and install Vispy with
 ``python setup.py install``.
 
-As a one-liner, assuming `git` is installed: ::
+As a one-liner, assuming `git` is installed ::
 
 
     git clone https://github.com/vispy/vispy.git && cd vispy && python setup.py install --user
