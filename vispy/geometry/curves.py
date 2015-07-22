@@ -52,7 +52,9 @@
 #
 # ----------------------------------------------------------------------------
 import math
+
 import numpy as np
+
 
 curve_distance_epsilon = 1e-30
 curve_collinearity_epsilon = 1e-30
@@ -64,20 +66,17 @@ m_approximation_scale = 1.0
 m_distance_tolerance_square = (0.5 / m_approximation_scale)**2
 
 
-# -----------------------------------------------------------------------------
 def calc_sq_distance(x1, y1, x2, y2):
     dx = x2 - x1
     dy = y2 - y1
     return dx * dx + dy * dy
 
 
-# -----------------------------------------------------------------------------
 def curve3_recursive_bezier(points, x1, y1, x2, y2, x3, y3, level=0):
     if level > curve_recursion_limit:
         return
 
     # Calculate all the mid-points of the line segments
-    # -------------------------------------------------
     x12 = (x1 + x2) / 2.
     y12 = (y1 + y2) / 2.
     x23 = (x2 + x3) / 2.
@@ -91,7 +90,6 @@ def curve3_recursive_bezier(points, x1, y1, x2, y2, x3, y3, level=0):
 
     if d > curve_collinearity_epsilon:
         # Regular case
-        # ------------
         if d * d <= m_distance_tolerance_square * (dx * dx + dy * dy):
             # If the curvature doesn't exceed the distance_tolerance value
             # we tend to finish subdivisions.
@@ -111,7 +109,6 @@ def curve3_recursive_bezier(points, x1, y1, x2, y2, x3, y3, level=0):
                 return
     else:
         # Collinear case
-        # --------------
         da = dx * dx + dy * dy
         if da == 0:
             d = calc_sq_distance(x1, y1, x2, y2)
@@ -133,18 +130,15 @@ def curve3_recursive_bezier(points, x1, y1, x2, y2, x3, y3, level=0):
             return
 
     # Continue subdivision
-    # --------------------
     curve3_recursive_bezier(points, x1, y1, x12, y12, x123, y123, level + 1)
     curve3_recursive_bezier(points, x123, y123, x23, y23, x3, y3, level + 1)
 
 
-# -----------------------------------------------------------------------------
 def curve4_recursive_bezier(points, x1, y1, x2, y2, x3, y3, x4, y4, level=0):
     if level > curve_recursion_limit:
         return
 
     # Calculate all the mid-points of the line segments
-    # -------------------------------------------------
     x12 = (x1 + x2) / 2.
     y12 = (y1 + y2) / 2.
     x23 = (x2 + x3) / 2.
@@ -159,7 +153,6 @@ def curve4_recursive_bezier(points, x1, y1, x2, y2, x3, y3, x4, y4, level=0):
     y1234 = (y123 + y234) / 2.
 
     # Try to approximate the full cubic curve by a single straight line
-    # -----------------------------------------------------------------
     dx = x4 - x1
     dy = y4 - y1
     d2 = math.fabs(((x2 - x4) * dy - (y2 - y4) * dx))
@@ -170,7 +163,6 @@ def curve4_recursive_bezier(points, x1, y1, x2, y2, x3, y3, x4, y4, level=0):
 
     if s == 0:
         # All collinear OR p1==p4
-        # ----------------------
         k = dx * dx + dy * dy
         if k == 0:
             d2 = calc_sq_distance(x1, y1, x2, y2)
@@ -214,7 +206,6 @@ def curve4_recursive_bezier(points, x1, y1, x2, y2, x3, y3, x4, y4, level=0):
 
     elif s == 1:
         # p1,p2,p4 are collinear, p3 is significant
-        # -----------------------------------------
         if d3 * d3 <= m_distance_tolerance_square * (dx * dx + dy * dy):
             if m_angle_tolerance < curve_angle_tolerance_epsilon:
                 points.append((x23, y23))
@@ -238,7 +229,6 @@ def curve4_recursive_bezier(points, x1, y1, x2, y2, x3, y3, x4, y4, level=0):
 
     elif s == 2:
         # p1,p3,p4 are collinear, p2 is significant
-        # -----------------------------------------
         if d2 * d2 <= m_distance_tolerance_square * (dx * dx + dy * dy):
             if m_angle_tolerance < curve_angle_tolerance_epsilon:
                 points.append((x23, y23))
@@ -262,7 +252,6 @@ def curve4_recursive_bezier(points, x1, y1, x2, y2, x3, y3, x4, y4, level=0):
 
     elif s == 3:
         # Regular case
-        # ------------
         if (d2 + d3) * (d2 + d3) <= m_distance_tolerance_square * (
                 dx * dx + dy * dy):
             # If the curvature doesn't exceed the distance_tolerance value
@@ -298,7 +287,6 @@ def curve4_recursive_bezier(points, x1, y1, x2, y2, x3, y3, x4, y4, level=0):
                     return
 
     # Continue subdivision
-    # --------------------
     curve4_recursive_bezier(
         points, x1, y1, x12, y12, x123, y123, x1234, y1234, level + 1)
     curve4_recursive_bezier(
