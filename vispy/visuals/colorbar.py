@@ -8,9 +8,10 @@
 
 import numpy as np
 
-from . import Visual, TextVisual, CompoundVisual
+from . import Visual, TextVisual, CompoundVisual, BorderVisual
+# from .border import BorderVisual
 from .shaders import Function
-from ..color import get_colormap, Color
+from ..color import get_colormap
 
 VERT_SHADER = """
 attribute vec2 a_position;
@@ -44,171 +45,6 @@ void main()
     gl_FragColor = mapped_color;
 }
 """  # noqa
-
-VERT_SHADER_BORDER = """
-attribute vec2 a_position;
-attribute vec2 a_adjust_dir;
-
-void main() {
-    // First map the vertex to document coordinates
-    vec4 doc_pos = $visual_to_doc(vec4(a_position, 0, 1));
-
-    // Also need to map the adjustment direction vector, but this is tricky!
-    // We need to adjust separately for each component of the vector:
-    vec4 adjusted;
-    if ( a_adjust_dir.x == 0 ) {
-        // If this is an outer vertex, no adjustment for line weight is needed.
-        // (In fact, trying to make the adjustment would result in no
-        // triangles being drawn, hence the if/else block)
-        adjusted = doc_pos;
-    }
-    else {
-        // Inner vertexes must be adjusted for line width, but this is
-        // surprisingly tricky given that the rectangle may have been scaled
-        // and rotated!
-        vec4 doc_x = $visual_to_doc(vec4(a_adjust_dir.x, 0, 0, 0)) -
-                    $visual_to_doc(vec4(0, 0, 0, 0));
-        vec4 doc_y = $visual_to_doc(vec4(0, a_adjust_dir.y, 0, 0)) -
-                    $visual_to_doc(vec4(0, 0, 0, 0));
-        doc_x = normalize(doc_x);
-        doc_y = normalize(doc_y);
-
-        // Now doc_x + doc_y points in the direction we need in order to
-        // correct the line weight of _both_ segments, but the magnitude of
-        // that correction is wrong. To correct it we first need to
-        // measure the width that would result from using doc_x + doc_y:
-        vec4 proj_y_x = dot(doc_x, doc_y) * doc_x;  // project y onto x
-        float cur_width = length(doc_y - proj_y_x);  // measure current weight
-
-        // And now we can adjust vertex position for line width:
-        adjusted = doc_pos + ($border_width / cur_width) * (doc_x + doc_y);
-    }
-
-    // Finally map the remainder of the way to render coordinates
-    gl_Position = $doc_to_render(adjusted);
-}
-"""
-
-FRAG_SHADER_BORDER = """
-void main() {
-    gl_FragColor = $border_color;
-}
-"""  # noqa
-
-
-class _CoreColorBarBorderVisual(Visual):
-    """
-    Visual subclass that renders the borders.
-
-    Note
-    ----
-    This is purely internal.
-    Externally, the ColorBarVisual must be used.
-    This class was separated out to encapsulate rendering information
-    That way, ColorBar simply becomes a CompoundVisual
-    """
-
-    def __init__(self, center_pos, halfdim,
-                 border_width=1.0,
-                 border_color="black",
-                 **kwargs):
-
-        self._center_pos = center_pos
-        self._halfdim = halfdim
-        self._border_width = border_width
-        self._border_color = border_color
-        self._border_color = Color(border_color)
-
-        Visual.__init__(self, vcode=VERT_SHADER_BORDER,
-                        fcode=FRAG_SHADER_BORDER, **kwargs)
-
-    @staticmethod
-    def _prepare_transforms(view):
-
-        program = view.shared_program
-        program.vert['visual_to_doc'] = \
-            view.transforms.get_transform('visual', 'document')
-        program.vert['doc_to_render'] = \
-            view.transforms.get_transform('document', 'render')
-
-    @property
-    def visual_border_width(self):
-        """
-            returns the border width in visual coordinates
-        """
-        render_to_doc =  \
-            self.transforms.get_transform('document', 'visual')
-
-        vec = render_to_doc.map([self.border_width, self.border_width, 0])
-        origin = render_to_doc.map([0, 0, 0])
-        self._visual_border_width = [vec[0] - origin[0], vec[1] - origin[1]]
-        # we need to flip the y axis because coordinate systems are inverted
-        self._visual_border_width[1] *= -1
-
-        return self._visual_border_width
-
-    def _update(self):
-        x, y = self._center_pos
-        halfw, halfh = self._halfdim
-
-        border_vertices = np.array([
-            [x - halfw, y - halfh],
-            [x - halfw, y - halfh],
-
-            [x + halfw, y - halfh],
-            [x + halfw, y - halfh],
-
-            [x + halfw, y + halfh],
-            [x + halfw, y + halfh],
-
-            [x - halfw, y + halfh],
-            [x - halfw, y + halfh],
-
-            [x - halfw, y - halfh],
-            [x - halfw, y - halfh],
-        ], dtype=np.float32)
-
-        # Direction each vertex should move to correct for line width
-        adjust_dir = np.array([
-            [0, 0], [-1, -1],
-            [0, 0], [1, -1],
-            [0, 0], [1, 1],
-            [0, 0], [-1, 1],
-            [0, 0], [-1, -1],
-        ], dtype=np.float32)
-
-        self.shared_program['a_position'] = border_vertices
-        self.shared_program['a_adjust_dir'] = adjust_dir
-        self.shared_program.vert['border_width'] = self._border_width
-        self.shared_program.frag['border_color'] = self._border_color.rgba
-
-    def _prepare_draw(self, view=None):
-        self._update()
-        self._draw_mode = "triangle_strip"
-        return True
-
-    @property
-    def border_width(self):
-        """ The width of the border around the ColorBar in pixels
-        """
-        return self._border_width
-
-    @border_width.setter
-    def border_width(self, border_width):
-        self._border_width = border_width
-        # positions of text need to be changed accordingly
-        self._update()
-
-    @property
-    def border_color(self):
-        """ The color of the border around the ColorBar in pixels
-        """
-        return self._border_color
-
-    @border_color.setter
-    def border_color(self, border_color):
-        self._border_color = Color(border_color)
-        self.shared_program.frag['border_color'] = self._border_color.rgba
 
 
 class _CoreColorBarVisual(Visual):
@@ -328,7 +164,6 @@ class _CoreColorBarVisual(Visual):
         total_transform = view.transforms.get_transform()
         program.vert['transform'] = total_transform
 
-
     def _prepare_draw(self, view):
         self._draw_mode = "triangles"
         return True
@@ -433,15 +268,16 @@ class ColorBarVisual(CompoundVisual):
                                              halfdim, cmap,
                                              orientation)
 
-        self._colorbar_border = _CoreColorBarBorderVisual(center_pos,
-                                                          halfdim,
-                                                          border_width,
-                                                          border_color)
-        CompoundVisual.__init__(self, [self._colorbar_border,
-                                       self._colorbar,
-                                       self._ticks[0],
+        self._border = BorderVisual(center_pos,
+                                    halfdim,
+                                    border_width,
+                                    border_color)
+
+        CompoundVisual.__init__(self, [self._ticks[0],
                                        self._ticks[1],
-                                       self._label])
+                                       self._label,
+                                       self._colorbar,
+                                       self._border])
 
         self._update()
 
@@ -451,7 +287,7 @@ class ColorBarVisual(CompoundVisual):
         """
 
         self._colorbar._update()
-        self._colorbar_border._update()
+        self._border._update()
 
         # create a new label if this is the first time this function
         # is being called. Otherwise, just update the existing bar
@@ -487,11 +323,21 @@ class ColorBarVisual(CompoundVisual):
             raise ValueError("half-height must be positive and non-zero"
                              ", not %s", halfh)
 
+        visual_to_doc = self.transforms.get_transform('visual', 'document')
+        doc_to_visual = self.transforms.get_transform('document', 'visual')
+
+        xdoc = visual_to_doc.map([x, 0,  0, 1])
+        ydoc = visual_to_doc.map([y, 0, 0, 1])
+
+        halfwdoc = visual_to_doc.map([halfw, 0, 0, 1])
+        halfhdoc = visual_to_doc.map((halfh, 0, 0, 1))
+
         # Place the labels according to the given orientation
         if self._orientation == "bottom":
-            text_x = x
-            text_y = y - halfh
-            text_y -= self._colorbar_border.visual_border_width[1]
+            text_y = ydoc + halfhdoc
+            text_x = xdoc
+            text_y = ydoc
+            text_y -= self._border.visual_border_width[1]
 
             self._label.pos = text_x, text_y
 
@@ -504,8 +350,8 @@ class ColorBarVisual(CompoundVisual):
 
         elif self._orientation == "top":
             text_x = x
-            text_y = y + halfh
-            text_y += self._colorbar_border.visual_border_width[1]
+            text_y = y - halfh
+            text_y += self._border.visual_border_width[1]
 
             self._label.pos = text_x, text_y
 
@@ -514,7 +360,7 @@ class ColorBarVisual(CompoundVisual):
 
         elif self._orientation == "right":
             text_x = x + halfw
-            text_x += self._colorbar_border.visual_border_width[0]
+            text_x += self._border.visual_border_width[0]
             text_y = y
             self._label.pos = text_x, text_y
             self._label.rotation = -90
@@ -526,7 +372,7 @@ class ColorBarVisual(CompoundVisual):
 
         elif self._orientation == "left":
             text_x = x - halfw
-            text_x -= self._colorbar_border.visual_border_width[0]
+            text_x -= self._border.visual_border_width[0]
             text_y = y
             self._label.pos = text_x, text_y
             self._label.rotation = -90
@@ -541,6 +387,7 @@ class ColorBarVisual(CompoundVisual):
             raise _CoreColorBarVisual._get_orientation_error(self._orientation)
 
     def _prepare_draw(self, view):
+        print ("preparing draw")
         self._update_positions()
 
     @staticmethod
@@ -613,11 +460,11 @@ class ColorBarVisual(CompoundVisual):
     def border_width(self):
         """ The width of the border around the ColorBar in pixels
         """
-        return self._colorbar_border.border_width
+        return self._border.border_width
 
     @border_width.setter
     def border_width(self, border_width):
-        self._colorbar_border.border_width = border_width
+        self._border.border_width = border_width
         # positions of text need to be changed accordingly
         self._update()
 
@@ -625,8 +472,8 @@ class ColorBarVisual(CompoundVisual):
     def border_color(self):
         """ The color of the border around the ColorBar in pixels
         """
-        return self._colorbar_border.border_color
+        return self._border.border_color
 
     @border_color.setter
     def border_color(self, border_color):
-        self._colorbar_border.border_color = border_color
+        self._border.border_color = border_color
