@@ -5,6 +5,7 @@
 from __future__ import division
 
 import numpy as np
+from vispy.visuals import BorderVisual
 
 from ..visuals import Compound
 from ...visuals.mesh import MeshVisual
@@ -41,10 +42,15 @@ class Widget(Compound):
 
     def __init__(self, pos=(0, 0), size=(10, 10), border_color=None,
                  bgcolor=None, padding=0, margin=0, **kwargs):
-        
-        # For drawing border. 
+
+        # For drawing a border.
         # A mesh is required because GL lines cannot be drawn with predictable
         # shape across all platforms.
+        self._border = BorderVisual(center_pos=pos,
+                                    halfdim=(size[0] * 0.5, size[1] * 0.5),
+                                    border_width=10,
+                                    border_color="#0000ff")
+
         self._mesh = MeshVisual(color=border_color, mode='triangles')
         self._mesh.set_gl_state('translucent', depth_test=False,
                                 cull_face=False)
@@ -58,15 +64,17 @@ class Widget(Compound):
         # reserved space outside border
         self._margin = margin
         self._size = 100, 100
-        
+
         # layout interaction
         self._fixed_size = (None, None)
         self._stretch = (None, None)
 
         self._widgets = []
-        
-        Compound.__init__(self, [self._mesh, self._picking_mesh], **kwargs)
- 
+
+        Compound.__init__(self, [self._border,
+                                 self._mesh,
+                                 self._picking_mesh], **kwargs)
+
         self.transform = STTransform()
         self.events.add(resize=Event)
         self.pos = pos
@@ -91,7 +99,7 @@ class Widget(Compound):
     @property
     def size(self):
         """The size (w, h) of this widget.
-        
+
         If the widget is a child of another widget, then its size is assigned
         automatically by its parent.
         """
@@ -137,7 +145,7 @@ class Widget(Compound):
     def stretch(self):
         """Stretch factors (w, h) used when determining how much space to
         allocate to this widget in a layout.
-        
+
         If either stretch factor is None, then it will be assigned when the
         widget is added to a layout based on the number of columns or rows it
         occupies.
@@ -152,13 +160,13 @@ class Widget(Compound):
     @property
     def fixed_size(self):
         """Fixed size (w, h) of the widget.
-        
-        Specifying a fixed size for either axis forces the widget to have a 
-        specific size in a layout. Setting either axis to None allows the 
+
+        Specifying a fixed size for either axis forces the widget to have a
+        specific size in a layout. Setting either axis to None allows the
         widget to be resized by the layout.
         """
         return self._fixed_size
-    
+
     @fixed_size.setter
     def fixed_size(self, s):
         self._fixed_size = s
@@ -167,7 +175,7 @@ class Widget(Compound):
     def _update_layout(self):
         if isinstance(self.parent, Widget):
             self.parent._update_child_widgets()
-    
+
     def _update_clipper(self):
         """Called whenever the clipper for this widget may need to be updated.
         """
@@ -175,7 +183,7 @@ class Widget(Compound):
             self._clipper = Clipper()
         elif not self.clip_children:
             self._clipper = None
-        
+
         if self._clipper is None:
             return
         self._clipper.rect = self.inner_rect
@@ -228,7 +236,7 @@ class Widget(Compound):
         self._padding = p
         self._update_child_widgets()
         self.update()
-    
+
     def _update_line(self):
         """ Update border line to match new shape """
         w = 1  # XXX Eventually this can be a parameter
@@ -274,6 +282,12 @@ class Widget(Compound):
         self._mesh.set_data(vertices=pos, faces=faces[start:stop],
                             face_colors=face_colors)
 
+        # Center the border, with dimensions equal to half the dimensions
+        # minus the margin width
+        (halfx, halfy) = (self.size[0] * 0.5, self.size[1] * 0.5)
+        self._border.halfdim = (halfx - m, halfy - m)
+        self._border.center_pos = (halfx * 0.5, halfy * 0.5)
+
         # picking mesh covers the entire area
         self._picking_mesh.set_data(vertices=pos[::2])
 
@@ -282,22 +296,23 @@ class Widget(Compound):
             (np.tile(self.border_color.rgba, (8, 1)),
              np.tile(self.bgcolor.rgba, (2, 1)))).astype(np.float32)
         self._update_visibility()
-            
+
     @property
     def picking(self):
         return self._picking
-    
+
     @picking.setter
     def picking(self, p):
         Compound.picking.fset(self, p)
         self._update_visibility()
-        
+
     def _update_visibility(self):
         blank = self.border_color.is_blank and self.bgcolor.is_blank
         picking = self.picking
         self._picking_mesh.visible = picking and self.interactive
         self._mesh.visible = not picking and not blank
-    
+        self._border.visible = self._mesh.visible
+
     def _update_child_widgets(self):
         # Set the position and size of child boxes (only those added
         # using add_widget)
