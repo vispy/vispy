@@ -48,8 +48,8 @@ class Widget(Compound):
         # shape across all platforms.
         self._border = BorderVisual(center_pos=pos,
                                     halfdim=(size[0] * 0.5, size[1] * 0.5),
-                                    border_width=10,
-                                    border_color="#0000ff")
+                                    border_width=2,
+                                    border_color="#000000")
 
         self._mesh = MeshVisual(color=border_color, mode='triangles')
         self._mesh.set_gl_state('translucent', depth_test=False,
@@ -71,9 +71,9 @@ class Widget(Compound):
 
         self._widgets = []
 
-        Compound.__init__(self, [self._border,
-                                 self._mesh,
-                                 self._picking_mesh], **kwargs)
+        Compound.__init__(self, [self._mesh,
+                                 self._picking_mesh,
+                                 self._border], **kwargs)
 
         self.transform = STTransform()
         self.events.add(resize=Event)
@@ -203,6 +203,17 @@ class Widget(Compound):
         self.update()
 
     @property
+    def border_width(self):
+        return self._border.border_width
+
+    @border_width.setter
+    def border_width(self, border_width):
+        self._border.border_width = border_width
+        self._update_colors()
+        self._update_line()
+        self.update()
+
+    @property
     def bgcolor(self):
         """ The background color of the Widget.
         """
@@ -239,7 +250,7 @@ class Widget(Compound):
 
     def _update_line(self):
         """ Update border line to match new shape """
-        w = 1  # XXX Eventually this can be a parameter
+        w = self._border.border_width
         m = int(self.margin)
         # border is drawn within the boundaries of the widget:
         #
@@ -282,11 +293,11 @@ class Widget(Compound):
         self._mesh.set_data(vertices=pos, faces=faces[start:stop],
                             face_colors=face_colors)
 
-        # Center the border, with dimensions equal to half the dimensions
-        # minus the margin width
-        (halfx, halfy) = (self.size[0] * 0.5, self.size[1] * 0.5)
-        self._border.halfdim = (halfx - m, halfy - m)
-        self._border.center_pos = (halfx * 0.5, halfy * 0.5)
+        # Draw the border at the center, leaving gaps for the borders
+        # and the margin in the dimensions
+        halfw, halfh = (self.size[0] * 0.5, self.size[1] * 0.5)
+        self._border.center_pos = (halfw, halfh)
+        self._border.halfdim = (halfw - w - m, halfh - w - m)
 
         # picking mesh covers the entire area
         self._picking_mesh.set_data(vertices=pos[::2])
@@ -295,6 +306,7 @@ class Widget(Compound):
         self._face_colors = np.concatenate(
             (np.tile(self.border_color.rgba, (8, 1)),
              np.tile(self.bgcolor.rgba, (2, 1)))).astype(np.float32)
+        self._border.border_color = self.border_color
         self._update_visibility()
 
     @property
