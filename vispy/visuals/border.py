@@ -166,7 +166,7 @@ class BorderVisual(Visual):
 
     @property
     def border_width(self):
-        """ The width of the border around the ColorBar in pixels
+        """ The width of the border
         """
         return self._border_width
 
@@ -178,7 +178,7 @@ class BorderVisual(Visual):
 
     @property
     def border_color(self):
-        """ The color of the border around the ColorBar in pixels
+        """ The color of the border in pixels
         """
         return self._border_color
 
@@ -186,3 +186,26 @@ class BorderVisual(Visual):
     def border_color(self, border_color):
         self._border_color = Color(border_color)
         self.shared_program.frag['border_color'] = self._border_color.rgba
+
+    @property
+    def center_pos(self):
+        """ The center of the BorderVisual
+        """
+        return self._center_pos
+
+    @center_pos.setter
+    def center_pos(self, center_pos):
+        self._center_pos = center_pos
+        self._update()
+
+    @property
+    def halfdim(self):
+        """ The half-dimensions measured from the center of the BorderVisual
+        """
+
+        return self._halfdim
+
+    @halfdim.setter
+    def halfdim(self, halfdim):
+        self._halfdim = halfdim
+        self._update()
