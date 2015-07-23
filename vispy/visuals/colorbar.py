@@ -273,11 +273,12 @@ class ColorBarVisual(CompoundVisual):
                                     border_width,
                                     border_color)
 
-        CompoundVisual.__init__(self, [self._ticks[0],
+        CompoundVisual.__init__(self, [self._colorbar,
+                                       self._border,
+                                       self._ticks[0],
                                        self._ticks[1],
                                        self._label,
-                                       self._colorbar,
-                                       self._border])
+                                       ])
 
         self._update()
 
@@ -326,37 +327,32 @@ class ColorBarVisual(CompoundVisual):
         visual_to_doc = self.transforms.get_transform('visual', 'document')
         doc_to_visual = self.transforms.get_transform('document', 'visual')
 
-        xdoc = visual_to_doc.map([x, 0,  0, 1])
-        ydoc = visual_to_doc.map([y, 0, 0, 1])
+        center_doc = visual_to_doc.map(np.array([x, y, 0, 1]))
 
-        halfwdoc = visual_to_doc.map([halfw, 0, 0, 1])
-        halfhdoc = visual_to_doc.map((halfh, 0, 0, 1))
+        axis_x = visual_to_doc.map(np.array([halfw, 0, 0, 1]))
+        axis_y = visual_to_doc.map(np.array([0, halfh, 0, 1]))
+
+        print("center: %s\naxis_x:%s\naxis_y:%s\n" %
+              (center_doc, axis_x, axis_y))
 
         # Place the labels according to the given orientation
         if self._orientation == "bottom":
-            text_y = ydoc + halfhdoc
-            text_x = xdoc
-            text_y = ydoc
-            text_y -= self._border.visual_border_width[1]
+            baseline = center_doc + axis_y
 
-            self._label.pos = text_x, text_y
-
+            self._label.pos = doc_to_visual.map(baseline)[:-1]
             # TODO, HACK: This should ideally be a single TextVisual
             # However, one TextVisual with multiple strings
             # does not seem to be working as of now. (See #981)
             # https://github.com/vispy/vispy/issues/981
-            self._ticks[0].pos = x - halfw, text_y
-            self._ticks[1].pos = x + halfw, text_y
+            self._ticks[0].pos = doc_to_visual.map(baseline + axis_x)[:-1]
+            self._ticks[1].pos = doc_to_visual.map(baseline - axis_x)[:-1]
 
         elif self._orientation == "top":
-            text_x = x
-            text_y = y - halfh
-            text_y += self._border.visual_border_width[1]
+            baseline = center_doc - axis_y
 
-            self._label.pos = text_x, text_y
-
-            self._ticks[0].pos = x - halfw, text_y
-            self._ticks[1].pos = x + halfw, text_y
+            self._label.pos = doc_to_visual.map(baseline)[:-1]
+            self._ticks[0].pos = doc_to_visual.map(baseline - axis_x)[:-1]
+            self._ticks[1].pos = doc_to_visual.map(baseline + axis_x)[:-1]
 
         elif self._orientation == "right":
             text_x = x + halfw
@@ -394,10 +390,13 @@ class ColorBarVisual(CompoundVisual):
     def _get_anchors(orientation):
         if orientation == "top":
             return "center", "bottom"
+
         elif orientation == "bottom":
             return "center", "top"
+
         elif orientation == "left":
             return "center", "bottom"
+
         else:  # orientation == "right"
             return "center", "top"
 
