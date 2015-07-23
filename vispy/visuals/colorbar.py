@@ -290,18 +290,8 @@ class ColorBarVisual(CompoundVisual):
         self._colorbar._update()
         self._border._update()
 
-        # create a new label if this is the first time this function
-        # is being called. Otherwise, just update the existing bar
         self.label.text = self._label_str
 
-        # if this is the first time we're initializing ever
-        # i.e - from the constructor, then create the TextVisual objects
-        # otherwise, just change the _text_.
-        # this is SUPER IMPORTANT, since the user might have modified the
-        # ticks first to have say, a white color. And then he might have
-        # edited the ticks.
-        # This way, we retain any changes made by the user
-        # to the _ticks while still reflecting changes in _clim
         self._ticks[0].text = str(self._clim[0])
         self._ticks[1].text = str(self._clim[1])
 
@@ -324,66 +314,24 @@ class ColorBarVisual(CompoundVisual):
             raise ValueError("half-height must be positive and non-zero"
                              ", not %s", halfh)
 
-        visual_to_doc = self.transforms.get_transform('visual', 'document')
-        doc_to_visual = self.transforms.get_transform('document', 'visual')
+        (label_pos, ticks_pos) = \
+            ColorBarVisual._calc_positions(center=self._center_pos,
+                                           halfdim=self._halfdim,
+                                           border_width=self.border_width,
+                                           orientation=self._orientation,
+                                           transforms=self.transforms)
 
-        center_doc = visual_to_doc.map(np.array([x, y, 0, 1]))
+        self._label.pos = label_pos
+        self._ticks[0].pos = ticks_pos[0]
+        self._ticks[1].pos = ticks_pos[1]
 
-        axis_x = visual_to_doc.map(np.array([halfw, 0, 0, 1]))
-        axis_y = visual_to_doc.map(np.array([0, halfh, 0, 1]))
-
-        print("center: %s\naxis_x:%s\naxis_y:%s\n" %
-              (center_doc, axis_x, axis_y))
-
-        # Place the labels according to the given orientation
-        if self._orientation == "bottom":
-            baseline = center_doc + axis_y
-
-            self._label.pos = doc_to_visual.map(baseline)[:-1]
-            # TODO, HACK: This should ideally be a single TextVisual
-            # However, one TextVisual with multiple strings
-            # does not seem to be working as of now. (See #981)
-            # https://github.com/vispy/vispy/issues/981
-            self._ticks[0].pos = doc_to_visual.map(baseline + axis_x)[:-1]
-            self._ticks[1].pos = doc_to_visual.map(baseline - axis_x)[:-1]
-
-        elif self._orientation == "top":
-            baseline = center_doc - axis_y
-
-            self._label.pos = doc_to_visual.map(baseline)[:-1]
-            self._ticks[0].pos = doc_to_visual.map(baseline - axis_x)[:-1]
-            self._ticks[1].pos = doc_to_visual.map(baseline + axis_x)[:-1]
-
-        elif self._orientation == "right":
-            text_x = x + halfw
-            text_x += self._border.visual_border_width[0]
-            text_y = y
-            self._label.pos = text_x, text_y
+        if self._orientation == "right" or self._orientation == "left":
             self._label.rotation = -90
-
-            # TODO, HACK: See comment - ticks on "horizontal" conditional
-            self._ticks[0].pos = text_x, y + halfh
-            self._ticks[1].pos = text_x, y - halfh
-            self._ticks[0].rotation = self.ticks[1].rotation = -90
-
-        elif self._orientation == "left":
-            text_x = x - halfw
-            text_x -= self._border.visual_border_width[0]
-            text_y = y
-            self._label.pos = text_x, text_y
-            self._label.rotation = -90
-
-            self._ticks[0].pos = text_x, y + halfh
-            self._ticks[1].pos = text_x, y - halfh
-            self._ticks[0].rotation = self.ticks[1].rotation = -90
-
-        else:
-            # raise an error since the orientation is now what was
-            # expected
-            raise _CoreColorBarVisual._get_orientation_error(self._orientation)
+            self._ticks[0].rotation = -90
+            self._ticks[1].rotation = -90
 
     def _prepare_draw(self, view):
-        print ("preparing draw")
+        # print ("preparing draw")
         self._update_positions()
 
     @staticmethod
@@ -399,6 +347,91 @@ class ColorBarVisual(CompoundVisual):
 
         else:  # orientation == "right"
             return "center", "top"
+
+    @staticmethod
+    def _calc_positions(center, halfdim, border_width,
+                        orientation, transforms):
+        """
+        Calculate the text centeritions given the ColorBar
+        parameters.
+
+        Note
+        ----
+        This is static because in principle, this
+        function does not need access to the state of the ColorBar
+        at all. It's a computation function that computes coordinate
+        transforms
+
+        Parameters
+        ----------
+        center: tuple (x, y)
+            Center of the ColorBar
+        halfdim: tuple (halfw, halfh)
+            Half of the dimensions measured from the center
+        border_width: float
+            Width of the border of the ColorBar
+        orientation: "top" | "bottom" | "left" | "right"
+            Position of the label with respect to the ColorBar
+        transforms: TransformSystem
+            the transforms of the ColorBar
+        """
+        (x, y) = center
+        (halfw, halfh) = halfdim
+
+        visual_to_doc = transforms.get_transform('visual', 'document')
+        doc_to_visual = transforms.get_transform('document', 'visual')
+
+        center_doc = visual_to_doc.map(np.array([x, y, 0, 1]))
+
+        half_axis_x = visual_to_doc.map(np.array([halfw, 0, 0, 1]))
+        half_axis_y = visual_to_doc.map(np.array([0, halfh, 0, 1]))
+
+        # -------------------
+        #               ^
+        #            half_axis_y
+        #               v
+        #               .(center)
+        # <-half_axis_x->
+        # --------------------
+
+        if orientation == "bottom" or orientation == "top":
+            perp_axis = half_axis_y
+        else:  # orientation == "left" or orientation == "right"
+            perp_axis = half_axis_x
+
+        # scale up the perpendicular by including the
+        # border width (we can add it directly) since
+        # we are in the document coordinate system
+        # plus a text padding factor
+        perp_scale = np.linalg.norm(perp_axis)
+        perp_scale += border_width
+        perp_scale *= _TEXT_PADDING_FACTOR
+        perp_axis *= perp_scale / np.linalg.norm(perp_axis)
+
+        # figure out the "baseline", which is
+        # where the label will be placed.
+        # the ticks are just displaced from the baseline
+        if orientation == "bottom":
+            baseline_doc = center_doc + half_axis_y
+
+        elif orientation == "top":
+            baseline_doc = center_doc - half_axis_y
+
+        elif orientation == "left":
+            baseline_doc = center_doc - half_axis_x
+
+        else:  # orientation == "top":
+            baseline_doc = center_doc + half_axis_x
+
+        label_pos = doc_to_visual.map(baseline_doc)[:-1]
+        if orientation == "top" or orientation == "bottom":
+            ticks_pos = [doc_to_visual.map(baseline_doc - half_axis_x)[:-1],
+                         doc_to_visual.map(baseline_doc + half_axis_x)[:-1]]
+        else:  # orientation == "top" or orientation == "bottom"
+            ticks_pos = [doc_to_visual.map(baseline_doc + half_axis_y)[:-1],
+                         doc_to_visual.map(baseline_doc - half_axis_y)[:-1]]
+
+        return (label_pos, ticks_pos)
 
     @property
     def cmap(self):
