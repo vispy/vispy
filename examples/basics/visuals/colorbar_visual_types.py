@@ -26,7 +26,7 @@ def style_colorbar(colorbar):
     colorbar.ticks[0].color = "black"
     colorbar.ticks[1].color = "black"
 
-    colorbar.border_width = 3
+    colorbar.border_width = 10
     colorbar.border_color = "black"
 
     return colorbar
