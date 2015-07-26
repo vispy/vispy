@@ -47,9 +47,9 @@ class Canvas(app.Canvas):
             line.transform = STTransform(translate=[x, y])
 
         self.texts = [
-            visuals.TextVisual('4 point Bezier curve', bold=True, color='w',
+            visuals.TextVisual('Third order curve', bold=True, color='w',
                                font_size=14, pos=(200, 75)),
-            visuals.TextVisual('3 point Bezier curve', bold=True, color='w',
+            visuals.TextVisual('Quadratic curve', bold=True, color='w',
                                font_size=14, pos=(200, 525)),
         ]
 
