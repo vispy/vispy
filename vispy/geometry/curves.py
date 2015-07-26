@@ -1,4 +1,4 @@
-# ----------------------------------------------------------------------------
+#
 # Anti-Grain Geometry - Version 2.4
 # Copyright (C) 2002-2005 Maxim Shemanarev (McSeem)
 #
@@ -59,7 +59,7 @@
 # those of the authors and should not be interpreted as representing official
 # policies, either expressed or implied, of Nicolas P. Rougier.
 #
-# ----------------------------------------------------------------------------
+
 import math
 
 import numpy as np
@@ -81,7 +81,7 @@ def calc_sq_distance(x1, y1, x2, y2):
     return dx * dx + dy * dy
 
 
-def curve3_recursive_bezier(points, x1, y1, x2, y2, x3, y3, level=0):
+def _curve3_recursive_bezier(points, x1, y1, x2, y2, x3, y3, level=0):
     if level > curve_recursion_limit:
         return
 
@@ -139,11 +139,11 @@ def curve3_recursive_bezier(points, x1, y1, x2, y2, x3, y3, level=0):
             return
 
     # Continue subdivision
-    curve3_recursive_bezier(points, x1, y1, x12, y12, x123, y123, level + 1)
-    curve3_recursive_bezier(points, x123, y123, x23, y23, x3, y3, level + 1)
+    _curve3_recursive_bezier(points, x1, y1, x12, y12, x123, y123, level + 1)
+    _curve3_recursive_bezier(points, x123, y123, x23, y23, x3, y3, level + 1)
 
 
-def curve4_recursive_bezier(points, x1, y1, x2, y2, x3, y3, x4, y4, level=0):
+def _curve4_recursive_bezier(points, x1, y1, x2, y2, x3, y3, x4, y4, level=0):
     if level > curve_recursion_limit:
         return
 
@@ -221,7 +221,6 @@ def curve4_recursive_bezier(points, x1, y1, x2, y2, x3, y3, x4, y4, level=0):
                 return
 
             # Angle Condition
-            # ---------------
             da1 = math.fabs(
                 math.atan2(y4 - y3, x4 - x3) - math.atan2(y3 - y2, x3 - x2))
             if da1 >= math.pi:
@@ -271,7 +270,6 @@ def curve4_recursive_bezier(points, x1, y1, x2, y2, x3, y3, x4, y4, level=0):
                 return
 
             # Angle & Cusp Condition
-            # ----------------------
             k = math.atan2(y3 - y2, x3 - x2)
             da1 = math.fabs(k - math.atan2(y2 - y1, x2 - x1))
             da2 = math.fabs(math.atan2(y4 - y3, x4 - x3) - k)
@@ -282,7 +280,6 @@ def curve4_recursive_bezier(points, x1, y1, x2, y2, x3, y3, x4, y4, level=0):
 
             if da1 + da2 < m_angle_tolerance:
                 # Finally we can stop the recursion
-                # ---------------------------------
                 points.append((x23, y23))
                 return
 
@@ -296,19 +293,49 @@ def curve4_recursive_bezier(points, x1, y1, x2, y2, x3, y3, x4, y4, level=0):
                     return
 
     # Continue subdivision
-    curve4_recursive_bezier(
+    _curve4_recursive_bezier(
         points, x1, y1, x12, y12, x123, y123, x1234, y1234, level + 1)
-    curve4_recursive_bezier(
+    _curve4_recursive_bezier(
         points, x1234, y1234, x234, y234, x34, y34, x4, y4, level + 1)
 
 
-# -----------------------------------------------------------------------------
 def curve3_bezier(p1, p2, p3):
+    """
+    Generate the vertices for a quadratic Bezier curve.
+
+    The vertices returned by this function can be passed to a LineVisual or
+    ArrowVisual.
+
+    Parameters
+    ----------
+    p1 : array
+        2D coordinates of the start point
+    p2 : array
+        2D coordinates of the first curve point
+    p3 : array
+        2D coordinates of the end point
+
+    Returns
+    -------
+    coords : list
+        Vertices for the Bezier curve.
+
+    See Also
+    --------
+    curve4_bezier
+
+    Notes
+    -----
+    For more information about Bezier curves please refer to the `Wikipedia`_
+    page.
+
+    .. _Wikipedia: https://en.wikipedia.org/wiki/B%C3%A9zier_curve
+    """
     x1, y1 = p1
     x2, y2 = p2
     x3, y3 = p3
     points = []
-    curve3_recursive_bezier(points, x1, y1, x2, y2, x3, y3)
+    _curve3_recursive_bezier(points, x1, y1, x2, y2, x3, y3)
 
     dx, dy = points[0][0] - x1, points[0][1] - y1
     if (dx * dx + dy * dy) > 1e-10:
@@ -321,14 +348,46 @@ def curve3_bezier(p1, p2, p3):
     return np.array(points).reshape(len(points), 2)
 
 
-# -----------------------------------------------------------------------------
 def curve4_bezier(p1, p2, p3, p4):
+    """
+    Generate the vertices for a third order Bezier curve.
+
+    The vertices returned by this function can be passed to a LineVisual or
+    ArrowVisual.
+
+    Parameters
+    ----------
+    p1 : array
+        2D coordinates of the start point
+    p2 : array
+        2D coordinates of the first curve point
+    p3 : array
+        2D coordinates of the second curve point
+    p4 : array
+        2D coordinates of the end point
+
+    Returns
+    -------
+    coords : list
+        Vertices for the Bezier curve.
+
+    See Also
+    --------
+    curve3_bezier
+
+    Notes
+    -----
+    For more information about Bezier curves please refer to the `Wikipedia`_
+    page.
+
+    .. _Wikipedia: https://en.wikipedia.org/wiki/B%C3%A9zier_curve
+    """
     x1, y1 = p1
     x2, y2 = p2
     x3, y3 = p3
     x4, y4 = p4
     points = []
-    curve4_recursive_bezier(points, x1, y1, x2, y2, x3, y3, x4, y4)
+    _curve4_recursive_bezier(points, x1, y1, x2, y2, x3, y3, x4, y4)
 
     dx, dy = points[0][0] - x1, points[0][1] - y1
     if (dx * dx + dy * dy) > 1e-10:
