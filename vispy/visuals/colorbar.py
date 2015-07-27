@@ -70,15 +70,12 @@ class _CoreColorBarVisual(Visual):
 
         # setup the right program shader based on color
         if orientation == "top" or orientation == "bottom":
-            # self._program=ModularProgram(VERT_SHADER,FRAG_SHADER_HORIZONTAL)
             Visual.__init__(self, vcode=VERT_SHADER,
                             fcode=FRAG_SHADER_HORIZONTAL, **kwargs)
 
         elif orientation == "left" or orientation == "right":
             Visual.__init__(self, vcode=VERT_SHADER,
                             fcode=FRAG_SHADER_VERTICAL, **kwargs)
-
-            # self._program = ModularProgram(VERT_SHADER, FRAG_SHADER_VERTICAL)
         else:
             raise _CoreColorBarVisual._get_orientation_error(self._orientation)
 
@@ -101,15 +98,13 @@ class _CoreColorBarVisual(Visual):
         x, y = self._center_pos
         halfw, halfh = self._halfdim
 
-        anchor_x, anchor_y = ColorBarVisual._get_anchors(self._orientation)
-
         # test that width and height are non-zero
         if halfw <= 0:
             raise ValueError("half-width must be positive and non-zero"
-                             ", not %s", halfw)
+                             ", not %s" % halfw)
         if halfh <= 0:
             raise ValueError("half-height must be positive and non-zero"
-                             ", not %s", halfh)
+                             ", not %s" % halfh)
 
         # test that the given width and height is consistent
         # with the orientation
@@ -117,13 +112,13 @@ class _CoreColorBarVisual(Visual):
                 if halfw < halfh:
                     raise ValueError("half-width(%s) < half-height(%s) for"
                                      "%s orientation,"
-                                     " expected half-width >= half-height",
+                                     " expected half-width >= half-height" %
                                      (halfw, halfh, self._orientation, ))
         else:  # orientation == left or orientation == right
             if halfw > halfh:
                 raise ValueError("half-width(%s) > half-height(%s) for"
                                  "%s orientation,"
-                                 " expected half-width <= half-height",
+                                 " expected half-width <= half-height" %
                                  (halfw, halfh, self._orientation, ))
 
         # Set up the attributes that the shaders require
@@ -171,7 +166,7 @@ class _CoreColorBarVisual(Visual):
 # The padding multiplier that's used to place the text
 # next to the Colorbar. Makes sure the text isn't
 # visually "sticking" to the Colorbar
-_TEXT_PADDING_FACTOR = 1.5
+_TEXT_PADDING_FACTOR = 1.05
 
 
 class ColorBarVisual(CompoundVisual):
@@ -249,20 +244,13 @@ class ColorBarVisual(CompoundVisual):
         self._orientation = orientation
         self._text_padding = 0
 
-        anchor_x, anchor_y = ColorBarVisual._get_anchors(self._orientation)
-        self._label = TextVisual(text=self._label_str,
-                                 anchor_x=anchor_x,
-                                 anchor_y=anchor_y)
+        self._label = TextVisual(text=self._label_str)
 
         self._ticks = []
 
-        self._ticks.append(TextVisual(str(self._clim[0]),
-                                      anchor_x=anchor_x,
-                                      anchor_y=anchor_y))
+        self._ticks.append(TextVisual(str(self._clim[0])))
 
-        self._ticks.append(TextVisual(str(self._clim[1]),
-                                      anchor_x=anchor_x,
-                                      anchor_y=anchor_y))
+        self._ticks.append(TextVisual(str(self._clim[1])))
 
         self._colorbar = _CoreColorBarVisual(center_pos,
                                              halfdim, cmap,
@@ -279,7 +267,6 @@ class ColorBarVisual(CompoundVisual):
                                        self._ticks[1],
                                        self._label,
                                        ])
-
         self._update()
 
     def _update(self):
@@ -300,11 +287,24 @@ class ColorBarVisual(CompoundVisual):
     def _update_positions(self):
         """
         updates the positions of the colorbars and labels
+
         """
+
+        if self._orientation == "right" or self._orientation == "left":
+            self._label.rotation = -90
+            self._ticks[0].rotation = -90
+            self._ticks[1].rotation = -90
+
         x, y = self._center_pos
         halfw, halfh = self._halfdim
 
-        anchor_x, anchor_y = ColorBarVisual._get_anchors(self._orientation)
+        anchors = ColorBarVisual._get_anchors(center=self._center_pos,
+                                              halfdim=self._halfdim,
+                                              orientation=self._orientation,
+                                              transforms=self.label.transforms)
+        self._label.anchors = anchors
+        self._ticks[0].anchors = anchors
+        self._ticks[1].anchors = anchors
 
         # test that width and height are non-zero
         if halfw <= 0:
@@ -325,28 +325,44 @@ class ColorBarVisual(CompoundVisual):
         self._ticks[0].pos = ticks_pos[0]
         self._ticks[1].pos = ticks_pos[1]
 
-        if self._orientation == "right" or self._orientation == "left":
-            self._label.rotation = -90
-            self._ticks[0].rotation = -90
-            self._ticks[1].rotation = -90
-
     def _prepare_draw(self, view):
         # print ("preparing draw")
         self._update_positions()
 
     @staticmethod
-    def _get_anchors(orientation):
-        if orientation == "top":
-            return "center", "bottom"
+    def _get_anchors(center, halfdim, orientation, transforms):
+        # tick direction is defined in visual coords, but use document
+        # coords to determine the tick length
 
-        elif orientation == "bottom":
-            return "center", "top"
-
+        visual_to_document = transforms.get_transform('visual', 'document')
+        if orientation == "bottom":
+            direction = [0, -1]
+        elif orientation == "top":
+            direction = [0, 1]
         elif orientation == "left":
-            return "center", "bottom"
+            direction = [0, -1]
+        elif orientation == "right":
+            direction = [0, 1]
 
-        else:  # orientation == "right"
-            return "center", "top"
+        direction = np.array(direction, dtype=np.float32)
+        direction /= np.linalg.norm(direction)
+        # use the document (pixel) coord system to set text anchors
+        anchors = []
+        if direction[0] < 0:
+            anchors.append('right')
+        elif direction[0] > 0:
+            anchors.append('left')
+        else:
+            anchors.append('center')
+        if direction[1] < 0:
+            anchors.append('bottom')
+        elif direction[1] > 0:
+            anchors.append('top')
+        else:
+            anchors.append('middle')
+
+        print ("\n\norientation: %s\nanchors: %s" % (orientation, anchors))
+        return anchors
 
     @staticmethod
     def _calc_positions(center, halfdim, border_width,
@@ -381,10 +397,12 @@ class ColorBarVisual(CompoundVisual):
         visual_to_doc = transforms.get_transform('visual', 'document')
         doc_to_visual = transforms.get_transform('document', 'visual')
 
-        center_doc = visual_to_doc.map(np.array([x, y, 0, 1]))
+        origin_doc = visual_to_doc.map(np.array([0, 0, 0, 1], dtype=np.float32))
+        half_axis_x = visual_to_doc.map(np.array([halfw, 0, 0, 1], dtype=np.float32))
+        half_axis_y = visual_to_doc.map(np.array([0, halfh, 0, 1], dtype=np.float32))
 
-        half_axis_x = visual_to_doc.map(np.array([halfw, 0, 0, 1]))
-        half_axis_y = visual_to_doc.map(np.array([0, halfh, 0, 1]))
+        half_axis_x -= origin_doc
+        half_axis_y -= origin_doc
 
         # -------------------
         #               ^
@@ -394,42 +412,43 @@ class ColorBarVisual(CompoundVisual):
         # <-half_axis_x->
         # --------------------
 
-        if orientation == "bottom" or orientation == "top":
+        # downward y is positive
+        if orientation in ["bottom", "top"]:
             perp_axis = half_axis_y
-        else:  # orientation == "left" or orientation == "right"
+        else:
             perp_axis = half_axis_x
 
         # scale up the perpendicular by including the
         # border width (we can add it directly) since
         # we are in the document coordinate system
         # plus a text padding factor
-        perp_scale = np.linalg.norm(perp_axis)
-        perp_scale += border_width
-        perp_scale *= _TEXT_PADDING_FACTOR
-        perp_axis *= perp_scale / np.linalg.norm(perp_axis)
+        perp_length = np.linalg.norm(perp_axis)
+        perp_axis /= perp_length
+        perp_length += border_width
+        perp_length *= _TEXT_PADDING_FACTOR
+        perp_axis *= perp_length
 
-        # figure out the "baseline", which is
-        # where the label will be placed.
-        # the ticks are just displaced from the baseline
-        if orientation == "bottom":
-            baseline_doc = center_doc + half_axis_y
+        center = np.array([x, y, 0, 0], dtype=np.float32)
+        perp_axis = doc_to_visual.map(perp_axis)
 
-        elif orientation == "top":
-            baseline_doc = center_doc - half_axis_y
-
+        if orientation == "top":
+            baseline_doc = center + perp_axis
+        elif orientation == "bottom":
+            baseline_doc = center - perp_axis
         elif orientation == "left":
-            baseline_doc = center_doc - half_axis_x
+            baseline_doc = center - perp_axis
+        elif orientation == "right":
+            baseline_doc = center + perp_axis
 
-        else:  # orientation == "top":
-            baseline_doc = center_doc + half_axis_x
-
-        label_pos = doc_to_visual.map(baseline_doc)[:-1]
+        label_pos = baseline_doc[:-1]
+        half_axis_x = np.array([halfw, 0, 0], dtype=np.float32)
+        half_axis_y = np.array([0, halfh, 0], dtype=np.float32)
         if orientation == "top" or orientation == "bottom":
-            ticks_pos = [doc_to_visual.map(baseline_doc - half_axis_x)[:-1],
-                         doc_to_visual.map(baseline_doc + half_axis_x)[:-1]]
+            ticks_pos = [label_pos + half_axis_x,
+                         label_pos - half_axis_x]
         else:  # orientation == "top" or orientation == "bottom"
-            ticks_pos = [doc_to_visual.map(baseline_doc + half_axis_y)[:-1],
-                         doc_to_visual.map(baseline_doc - half_axis_y)[:-1]]
+            ticks_pos = [label_pos + half_axis_y,
+                         label_pos - half_axis_y]
 
         return (label_pos, ticks_pos)
 
