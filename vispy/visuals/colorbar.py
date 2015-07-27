@@ -347,15 +347,15 @@ class ColorBarVisual(CompoundVisual):
         perp_direction /= np.linalg.norm(perp_direction)
         # use the document (pixel) coord system to set text anchors
         anchors = []
-        if direction[0] < 0:
+        if perp_direction[0] < 0:
             anchors.append('right')
-        elif direction[0] > 0:
+        elif perp_direction[0] > 0:
             anchors.append('left')
         else:
             anchors.append('center')
-        if direction[1] < 0:
+        if perp_direction[1] < 0:
             anchors.append('bottom')
-        elif direction[1] > 0:
+        elif perp_direction[1] > 0:
             anchors.append('top')
         else:
             anchors.append('middle')
