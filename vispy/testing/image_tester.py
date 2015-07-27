@@ -36,6 +36,8 @@ Procedure for unit-testing with images:
     tests, and also allows unit tests to continue working on older vispy
     versions.
 
+    Finally, update the tag name in ``get_test_data_repo`` to the new name.
+
 """
 
 import time
@@ -361,7 +363,7 @@ def get_test_data_repo():
     # This tag marks the test-data commit that this version of vispy should 
     # be tested against. When adding or changing test images, create
     # and push a new tag and update this variable.
-    test_data_tag = 'test-data-2'
+    test_data_tag = 'test-data-3'
     
     data_path = config['test_data_path']
     git_path = 'https://github.com/vispy/test-data'

@@ -99,7 +99,7 @@ class Canvas(scene.SceneCanvas):
         scene.SceneCanvas.__init__(self, keys=None)
         self.size = 800, 600
         self.view = self.central_widget.add_view()
-        self.view.camera = scene.TurntableCamera()
+        self.view.camera = 'turntable'
         self.radius = 2.0
         mesh = create_sphere(20, 20, radius=self.radius)
         vertices = mesh.get_vertices()

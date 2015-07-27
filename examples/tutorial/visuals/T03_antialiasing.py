@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+# -----------------------------------------------------------------------------
+# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+# -----------------------------------------------------------------------------
 """
 Tutorial: Creating Visuals
 ==========================
@@ -115,8 +120,8 @@ class MyRectVisual(visuals.Visual):
     """
     
     def __init__(self, x, y, w, h, weight=4.0):
-        visuals.Visual.__init__(self)
         self.weight = weight
+        visuals.Visual.__init__(self, vertex_shader, fragment_shader)
         
         # 10 vertices for 8 triangles (using triangle_strip) forming a 
         # rectangular outline
@@ -148,35 +153,29 @@ class MyRectVisual(visuals.Visual):
             [1, 1],
         ], dtype=np.float32))
         
-        self.program = visuals.shaders.ModularProgram(vertex_shader, 
-                                                      fragment_shader)
-        
-        self.program.vert['position'] = self.vert_buffer
-        self.program.vert['adjust_dir'] = self.adj_buffer
+        self.shared_program.vert['position'] = self.vert_buffer
+        self.shared_program.vert['adjust_dir'] = self.adj_buffer
         # To compensate for antialiasing, add 1 to border width:
-        self.program.vert['line_width'] = weight + 1
-        self.program.frag['color'] = (1, 0, 0, 1)
-        
-    def draw(self, transforms):
-        gloo.set_state(cull_face=False)
-        
+        self.shared_program.vert['line_width'] = weight + 1
+        self.shared_program.frag['color'] = (1, 0, 0, 1)
+        self._draw_mode = 'triangle_strip'
+        self.set_gl_state(cull_face=False)
+
+    def _prepare_transforms(self, view):
         # Set the two transforms required by the vertex shader:
-        self.program.vert['visual_to_doc'] = transforms.visual_to_document
-        self.program.vert['doc_to_render'] = (
-            transforms.framebuffer_to_render *
-            transforms.document_to_framebuffer) 
-        
+        tr = view.transforms
+        view_vert = view.view_program.vert
+        view_vert['visual_to_doc'] = tr.get_transform('visual', 'document')
+        view_vert['doc_to_render'] = tr.get_transform('document', 'render')
+
         # Set the scale factor between document and framebuffer coordinate
         # systems. This assumes a simple linear / isotropic scale; more complex
         # transforms will yield strange results!
-        fbs = np.linalg.norm(transforms.document_to_framebuffer.map([1, 0]) -
-                             transforms.document_to_framebuffer.map([0, 0]))
-        self.program.frag['doc_fb_scale'] = fbs
-        self.program.frag['line_width'] = (self.weight + 1) * fbs
-        
-        # Finally, draw the triangles.
-        self.program.draw('triangle_strip')
-
+        doc_to_fb = tr.get_transform('document', 'framebuffer')
+        fbs = np.linalg.norm(doc_to_fb.map([1, 0]) - doc_to_fb.map([0, 0]))
+        view_frag = view.view_program.frag
+        view_frag['doc_fb_scale'] = fbs
+        view_frag['line_width'] = (self.weight + 1) * fbs
 
 # As in the previous tutorial, we auto-generate a Visual+Node class for use
 # in the scenegraph.
@@ -198,7 +197,7 @@ rects = [MyRect(100, 100, 200, 300, parent=view.scene),
 
 # Again, rotate one rectangle to ensure the transforms are working as we 
 # expect.
-tr = visuals.transforms.AffineTransform()
+tr = visuals.transforms.MatrixTransform()
 tr.rotate(25, (0, 0, 1))
 rects[1].transform = tr
 

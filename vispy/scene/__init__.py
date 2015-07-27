@@ -30,8 +30,6 @@ For more information see:
 
 """
 
-__all__ = ['SceneCanvas', 'Node']
-
 from .visuals import *  # noqa
 from .cameras import *  # noqa
 from ..visuals.transforms import *  # noqa
@@ -39,6 +37,7 @@ from .widgets import *  # noqa
 from .canvas import SceneCanvas  # noqa
 from . import visuals  # noqa
 from ..visuals import transforms  # noqa
+from ..visuals import filters  # noqa
 from . import widgets  # noqa
 from . import cameras  # noqa
 from .node import Node  # noqa

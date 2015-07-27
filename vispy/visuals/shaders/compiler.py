@@ -33,9 +33,11 @@ class Compiler(object):
         name = compiler[obj]
 
     """
-    def __init__(self, **shaders):
+    def __init__(self, namespace=None, **shaders):
         # cache of compilation results for each function and variable
-        self._object_names = {}  # {object: name}
+        if namespace is None:
+            namespace = {}
+        self._object_names = namespace  # {object: name}
         self.shaders = shaders
 
     def __getitem__(self, item):

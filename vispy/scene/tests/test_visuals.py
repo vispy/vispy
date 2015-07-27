@@ -1,4 +1,5 @@
 from vispy.scene import visuals, Node
+from vispy.scene.visuals import VisualNode
 import vispy.visuals
 
 
@@ -7,7 +8,7 @@ def test_docstrings():
     for name in dir(visuals):
         obj = getattr(visuals, name)
         if isinstance(obj, type) and issubclass(obj, Node):
-            if obj is Node:
+            if obj is Node or VisualNode:
                 continue
             assert "This class inherits from visuals." in obj.__doc__
             assert "parent : Node" in obj.__doc__

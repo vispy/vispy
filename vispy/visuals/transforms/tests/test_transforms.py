@@ -10,8 +10,8 @@ from vispy.testing import run_tests_if_main
 
 NT = tr.NullTransform
 ST = tr.STTransform
-AT = tr.AffineTransform
-RT = tr.PerspectiveTransform
+AT = tr.MatrixTransform
+RT = tr.MatrixTransform
 PT = tr.PolarTransform
 LT = tr.LogTransform
 CT = tr.ChainTransform
@@ -95,14 +95,6 @@ def test_transform_chain():
     chain.prepend(c)
     assert chain.transforms == [c, b, a, b, c]
 
-    # Test flattening
-    chain1 = tr.ChainTransform(a, b)
-    chain2 = tr.ChainTransform(c)
-    chain3 = tr.ChainTransform(chain1, chain2)
-    chain4 = tr.ChainTransform(a, b, c, chain3)
-    chain5 = chain4.flat()
-    assert chain5.transforms == [a, b, c, a, b, c]
-
     # Test simplifying
     t1 = tr.STTransform(scale=(2, 3))
     t2 = tr.STTransform(translate=(3, 4))
@@ -112,17 +104,13 @@ def test_transform_chain():
     t321 = t3*t2*t1
     c123 = tr.ChainTransform(t1, t2, t3)
     c321 = tr.ChainTransform(t3, t2, t1)
-    c123s = c123.simplified()
-    c321s = c321.simplified()
+    c123s = c123.simplified
+    c321s = c321.simplified
     #
     assert isinstance(t123, tr.STTransform)  # or the test is useless
     assert isinstance(t321, tr.STTransform)  # or the test is useless
-    assert isinstance(c123s, tr.STTransform)  # or the test is useless
-    assert isinstance(c321s, tr.STTransform)  # or the test is useless
-    assert np.all(c123s.scale == t123.scale)
-    assert np.all(c123s.translate == t123.translate)
-    assert np.all(c321s.scale == t321.scale)
-    assert np.all(c321s.translate == t321.translate)
+    assert isinstance(c123s, tr.ChainTransform)  # or the test is useless
+    assert isinstance(c321s, tr.ChainTransform)  # or the test is useless
 
     # Test Mapping
     t1 = tr.STTransform(scale=(2, 3))
@@ -164,13 +152,13 @@ def test_map_rect():
 
 
 def test_st_transform():
-    # Check that STTransform maps exactly like AffineTransform
+    # Check that STTransform maps exactly like MatrixTransform
     pts = np.random.normal(size=(10, 4))
     
     scale = (1, 7.5, -4e-8)
     translate = (1e6, 0.2, 0)
     st = tr.STTransform(scale=scale, translate=translate)
-    at = tr.AffineTransform()
+    at = tr.MatrixTransform()
     at.scale(scale)
     at.translate(translate)
     
@@ -189,7 +177,7 @@ def test_st_mapping():
 
 
 def test_affine_mapping():
-    t = tr.AffineTransform()
+    t = tr.MatrixTransform()
     p1 = np.array([[0, 0, 0],
                    [1, 0, 0],
                    [0, 1, 0],

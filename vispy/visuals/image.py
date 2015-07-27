@@ -6,15 +6,16 @@ from __future__ import division
 
 import numpy as np
 
-from ..gloo import set_state, Texture2D
+from ..gloo import Texture2D, VertexBuffer
 from ..color import get_colormap
-from .shaders import ModularProgram, Function, FunctionChain
+from .shaders import Function, FunctionChain
 from .transforms import NullTransform
 from .visual import Visual
 from ..ext.six import string_types
 
 
 VERT_SHADER = """
+uniform int method;  // 0=subdivide, 1=impostor
 attribute vec2 a_position;
 attribute vec2 a_texcoord;
 varying vec2 v_texcoord;
@@ -26,22 +27,54 @@ void main() {
 """
 
 FRAG_SHADER = """
+uniform vec2 image_size;
+uniform int method;  // 0=subdivide, 1=impostor
 uniform sampler2D u_texture;
 varying vec2 v_texcoord;
 
+vec4 map_local_to_tex(vec4 x) {
+    // Cast ray from 3D viewport to surface of image
+    // (if $transform does not affect z values, then this
+    // can be optimized as simply $transform.map(x) )
+    vec4 p1 = $transform(x);
+    vec4 p2 = $transform(x + vec4(0, 0, 0.5, 0));
+    p1 /= p1.w;
+    p2 /= p2.w;
+    vec4 d = p2 - p1;
+    float f = p2.z / d.z;
+    vec4 p3 = p2 - d * f;
+    
+    // finally map local to texture coords
+    return vec4(p3.xy / image_size, 0, 1);
+}
+
+
 void main()
 {
-    vec2 texcoord = $map_uv_to_tex(vec4(v_texcoord, 0, 1)).xy;
-    if(texcoord.x < 0.0 || texcoord.x > 1.0 ||
-       texcoord.y < 0.0 || texcoord.y > 1.0) {
-        discard;
+    vec2 texcoord;
+    if( method == 0 ) {
+        texcoord = v_texcoord;
     }
-    gl_FragColor = $color_transform(texture2D(u_texture, texcoord));
+    else {
+        // vertex shader ouptuts clip coordinates; 
+        // fragment shader maps to texture coordinates
+        texcoord = map_local_to_tex(vec4(v_texcoord, 0, 1)).xy;
+    }
+    
+    gl_FragColor = $color_transform($get_data(texcoord));
 }
 """  # noqa
 
 _null_color_transform = 'vec4 pass(vec4 color) { return color; }'
 _c2l = 'float cmap(vec4 color) { return (color.r + color.g + color.b) / 3.; }'
+_texture_lookup = """
+    vec4 texture_lookup(vec2 texcoord) { 
+        if(texcoord.x < 0.0 || texcoord.x > 1.0 ||
+        texcoord.y < 0.0 || texcoord.y > 1.0) {
+            discard;
+        }
+        return texture2D($texture, texcoord); 
+    }"""
 
 
 class ImageVisual(Visual):
@@ -82,24 +115,41 @@ class ImageVisual(Visual):
     The colormap functionality through ``cmap`` and ``clim`` are only used
     if the data are 2D.
     """
-    def __init__(self, data=None, method='auto', grid=(10, 10),
+    def __init__(self, data=None, method='auto', grid=(1, 1),
                  cmap='cubehelix', clim='auto', **kwargs):
-        super(ImageVisual, self).__init__(**kwargs)
-        self._program = ModularProgram(VERT_SHADER, FRAG_SHADER)
+        self._data = None
+        self._interpolation = 'nearest'
+        self._method = method
+        self._grid = grid
+        self._need_texture_upload = True
+        self._need_vertex_update = True
+        self._need_colortransform_update = True
+        self._texture = Texture2D(np.zeros((1, 1, 4)),
+                                  interpolation=self._interpolation)
+        self._subdiv_position = VertexBuffer()
+        self._subdiv_texcoord = VertexBuffer()
+        
+        # impostor quad covers entire viewport
+        vertices = np.array([[-1, -1], [1, -1], [1, 1],
+                             [-1, -1], [1, 1], [-1, 1]],
+                            dtype=np.float32)
+        self._impostor_coords = VertexBuffer(vertices)
+        self._null_tr = NullTransform()
+        
+        self._init_view(self)
+        super(ImageVisual, self).__init__(vcode=VERT_SHADER, fcode=FRAG_SHADER)
+        self.set_gl_state('translucent', cull_face=False)
+        self._draw_mode = 'triangles'
+        
+        # by default, this visual pulls data from a texture
+        self._data_lookup_fn = Function(_texture_lookup)
+        self.shared_program.frag['get_data'] = self._data_lookup_fn
+        self._data_lookup_fn['texture'] = self._texture
+        
         self.clim = clim
         self.cmap = cmap
-
-        self._data = None
-
-        self._texture = None
-        self._interpolation = 'nearest'
         if data is not None:
             self.set_data(data)
-
-        self._method = method
-        self._method_used = None
-        self._grid = grid
-        self._need_vertex_update = True
 
     def set_data(self, image):
         """Set the data
@@ -113,7 +163,17 @@ class ImageVisual(Visual):
         if self._data is None or self._data.shape != data.shape:
             self._need_vertex_update = True
         self._data = data
-        self._texture = None
+        self._need_texture_upload = True
+
+    def view(self):
+        v = Visual.view(self)
+        self._init_view(v)
+        return v
+
+    def _init_view(self, view):
+        # Store some extra variables per-view
+        view._need_method_update = True
+        view._method_used = None
 
     @property
     def clim(self):
@@ -140,6 +200,7 @@ class ImageVisual(Visual):
     @cmap.setter
     def cmap(self, cmap):
         self._cmap = get_colormap(cmap)
+        self._need_colortransform_update = True
         self.update()
 
     @property
@@ -157,79 +218,68 @@ class ImageVisual(Visual):
     def size(self):
         return self._data.shape[:2][::-1]
 
-    def _build_vertex_data(self, transforms):
-        method = self._method
+    def _build_vertex_data(self):
+        """Rebuild the vertex buffers used for rendering the image when using
+        the subdivide method.
+        """
         grid = self._grid
+        w = 1.0 / grid[1]
+        h = 1.0 / grid[0]
+
+        quad = np.array([[0, 0, 0], [w, 0, 0], [w, h, 0],
+                         [0, 0, 0], [w, h, 0], [0, h, 0]],
+                        dtype=np.float32)
+        quads = np.empty((grid[1], grid[0], 6, 3), dtype=np.float32)
+        quads[:] = quad
+
+        mgrid = np.mgrid[0.:grid[1], 0.:grid[0]].transpose(1, 2, 0)
+        mgrid = mgrid[:, :, np.newaxis, :]
+        mgrid[..., 0] *= w
+        mgrid[..., 1] *= h
+
+        quads[..., :2] += mgrid
+        tex_coords = quads.reshape(grid[1]*grid[0]*6, 3)
+        tex_coords = np.ascontiguousarray(tex_coords[:, :2])
+        vertices = tex_coords * self.size
+        
+        self._subdiv_position.set_data(vertices.astype('float32'))
+        self._subdiv_texcoord.set_data(tex_coords.astype('float32'))
+        
+    def _update_method(self, view):
+        """Decide which method to use for *view* and configure it accordingly.
+        """
+        method = self._method
         if method == 'auto':
-            if transforms.get_full_transform().Linear:
+            if view.transforms.get_transform().Linear:
                 method = 'subdivide'
-                grid = (1, 1)
             else:
                 method = 'impostor'
-        self._method_used = method
-
-        # TODO: subdivision and impostor modes should be handled by new
-        # components?
+        view._method_used = method
+        
         if method == 'subdivide':
-            # quads cover area of image as closely as possible
-            w = 1.0 / grid[1]
-            h = 1.0 / grid[0]
-
-            quad = np.array([[0, 0, 0], [w, 0, 0], [w, h, 0],
-                             [0, 0, 0], [w, h, 0], [0, h, 0]],
-                            dtype=np.float32)
-            quads = np.empty((grid[1], grid[0], 6, 3), dtype=np.float32)
-            quads[:] = quad
-
-            mgrid = np.mgrid[0.:grid[1], 0.:grid[0]].transpose(1, 2, 0)
-            mgrid = mgrid[:, :, np.newaxis, :]
-            mgrid[..., 0] *= w
-            mgrid[..., 1] *= h
-
-            quads[..., :2] += mgrid
-            tex_coords = quads.reshape(grid[1]*grid[0]*6, 3)
-            tex_coords = np.ascontiguousarray(tex_coords[:, :2])
-            vertices = tex_coords * self.size
-            
-            # vertex shader provides correct texture coordinates
-            self._program.frag['map_uv_to_tex'] = NullTransform()
-        
+            view.view_program['method'] = 0
+            view.view_program['a_position'] = self._subdiv_position
+            view.view_program['a_texcoord'] = self._subdiv_texcoord
         elif method == 'impostor':
-            # quad covers entire view; frag. shader will deal with image shape
-            vertices = np.array([[-1, -1], [1, -1], [1, 1],
-                                 [-1, -1], [1, 1], [-1, 1]],
-                                dtype=np.float32)
-            tex_coords = vertices
-
-            # vertex shader provides ND coordinates; 
-            # fragment shader maps to texture coordinates
-            self._program.vert['transform'] = NullTransform()
-            self._raycast_func = Function('''
-                vec4 map_local_to_tex(vec4 x) {
-                    // Cast ray from 3D viewport to surface of image
-                    // (if $transform does not affect z values, then this
-                    // can be optimized as simply $transform.map(x) )
-                    vec4 p1 = $transform(x);
-                    vec4 p2 = $transform(x + vec4(0, 0, 0.5, 0));
-                    p1 /= p1.w;
-                    p2 /= p2.w;
-                    vec4 d = p2 - p1;
-                    float f = p2.z / d.z;
-                    vec4 p3 = p2 - d * f;
-                    
-                    // finally map local to texture coords
-                    return vec4(p3.xy / $image_size, 0, 1);
-                }
-            ''')
-            self._raycast_func['image_size'] = self.size
-            self._program.frag['map_uv_to_tex'] = self._raycast_func
-        
+            view.view_program['method'] = 1
+            view.view_program['a_position'] = self._impostor_coords
+            view.view_program['a_texcoord'] = self._impostor_coords
         else:
             raise ValueError("Unknown image draw method '%s'" % method)
         
-        self._program['a_position'] = vertices.astype(np.float32)
-        self._program['a_texcoord'] = tex_coords.astype(np.float32)
-        self._need_vertex_update = False
+        self.shared_program['image_size'] = self.size
+        view._need_method_update = False
+        self._prepare_transforms(view)
+
+    def _build_color_transform(self):
+        data = self._data
+        if data.ndim == 2 or data.shape[2] == 1:
+            fun = FunctionChain(None, [Function(_c2l),
+                                       Function(self._cmap.glsl_map)])
+        else:
+            fun = Function(_null_color_transform)
+        self.shared_program.frag['color_transform'] = fun
+        self._need_colortransform_update = False
 
     def _build_texture(self):
         data = self._data
@@ -248,59 +298,40 @@ class ImageVisual(Visual):
                 data /= clim[1] - clim[0]
             else:
                 data[:] = 1 if data[0, 0] != 0 else 0
-            fun = FunctionChain(None, [Function(_c2l),
-                                       Function(self.cmap.glsl_map)])
             self._clim = np.array(clim)
-        else:
-            fun = Function(_null_color_transform)
-        self._program.frag['color_transform'] = fun
-        self._texture = Texture2D(data, interpolation=self._interpolation)
-        self._program['u_texture'] = self._texture
 
-    def bounds(self, mode, axis):
-        """Get the bounds
+        self._texture.set_data(data)
+        self._need_texture_upload = False
 
-        Parameters
-        ----------
-        mode : str
-            Describes the type of boundary requested. Can be "visual", "data",
-            or "mouse".
-        axis : 0, 1, 2
-            The axis along which to measure the bounding values, in
-            x-y-z order.
-        """
+    def _compute_bounds(self, axis, view):
         if axis > 1:
             return (0, 0)
         else:
             return (0, self.size[axis])
 
-    def draw(self, transforms):
-        """Draw the visual
+    def _prepare_transforms(self, view):
+        trs = view.transforms
+        prg = view.view_program
+        method = view._method_used
+        if method == 'subdivide':
+            prg.vert['transform'] = trs.get_transform()
+            prg.frag['transform'] = self._null_tr
+        else:
+            prg.vert['transform'] = self._null_tr
+            prg.frag['transform'] = trs.get_transform().inverse
 
-        Parameters
-        ----------
-        transforms : instance of TransformSystem
-            The transforms to use.
-        """
+    def _prepare_draw(self, view):
         if self._data is None:
-            return
+            return False
 
-        set_state(cull_face=False)
-
-        # upload texture is needed
-        if self._texture is None:
+        if self._need_texture_upload:
             self._build_texture()
 
-        # rebuild vertex buffers if needed
+        if self._need_colortransform_update:
+            self._build_color_transform()
+
         if self._need_vertex_update:
-            self._build_vertex_data(transforms)
-
-        # update transform
-        method = self._method_used
-        if method == 'subdivide':
-            self._program.vert['transform'] = transforms.get_full_transform()
-        else:
-            self._raycast_func['transform'] = \
-                transforms.get_full_transform().inverse
-
-        self._program.draw('triangles')
+            self._build_vertex_data()
+            
+        if view._need_method_update:
+            self._update_method(view)

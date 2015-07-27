@@ -4,6 +4,8 @@
 
 from __future__ import division
 
+import logging
+
 from ...gloo import Program
 from ...gloo.preprocessor import preprocess
 from ...util import logger
@@ -20,13 +22,18 @@ class ModularProgram(Program):
     Automatically rebuilds program when functions have changed and uploads
     program variables.
     """
-    def __init__(self, vcode=None, fcode=None):
+    def __init__(self, vcode='', fcode=''):
         Program.__init__(self)
 
         self.changed = EventEmitter(source=self, type='program_change')
 
         # Cache state of Variables so we know which ones require update
         self._variable_state = {}
+
+        self._vert = MainFunction('')
+        self._frag = MainFunction('')
+        self._vert._dependents[self] = None
+        self._frag._dependents[self] = None
 
         self.vert = vcode
         self.frag = fcode
@@ -37,17 +44,8 @@ class ModularProgram(Program):
 
     @vert.setter
     def vert(self, vcode):
-        if hasattr(self, '_vert') and self._vert is not None:
-            self._vert._dependents.pop(self)
-
-        self._vert = vcode
-        if self._vert is None:
-            return
-
         vcode = preprocess(vcode)
-        self._vert = MainFunction(vcode)
-        self._vert._dependents[self] = None
-
+        self._vert.code = vcode
         self._need_build = True
         self.changed(code_changed=True, value_changed=False)
 
@@ -57,28 +55,18 @@ class ModularProgram(Program):
 
     @frag.setter
     def frag(self, fcode):
-        if hasattr(self, '_frag') and self._frag is not None:
-            self._frag._dependents.pop(self)
-
-        self._frag = fcode
-        if self._frag is None:
-            return
-
         fcode = preprocess(fcode)
-        self._frag = MainFunction(fcode)
-        self._frag._dependents[self] = None
-
+        self._frag.code = fcode
         self._need_build = True
         self.changed(code_changed=True, value_changed=False)
 
-    def prepare(self):
-        """ Prepare the Program so we can set attributes and uniforms.
-        """
-        pass
-        # todo: remove!
-
     def _dep_changed(self, dep, code_changed=False, value_changed=False):
-        logger.debug("ModularProgram source changed: %s", self)
+        if code_changed and logger.level <= logging.DEBUG:
+            import traceback
+            logger.debug("ModularProgram changed: %s   source=%s, values=%s", 
+                         self, code_changed, value_changed)
+            traceback.print_stack()
+            
         if code_changed:
             self._need_build = True
         self.changed(code_changed=code_changed, 
@@ -118,8 +106,10 @@ class ModularProgram(Program):
             if not isinstance(dep, Variable) or dep.vtype not in settable_vars:
                 continue
             name = self.compiler[dep]
-            logger.debug("    %s = %s", name, dep.value)
             state_id = dep.state_id
             if self._variable_state.get(name, None) != state_id:
                 self[name] = dep.value
                 self._variable_state[name] = state_id
+                logger.debug("    %s = %s **", name, dep.value)
+            else:
+                logger.debug("    %s = %s", name, dep.value)

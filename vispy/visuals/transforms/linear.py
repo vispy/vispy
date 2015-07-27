@@ -82,8 +82,6 @@ class STTransform(BaseTransform):
     def __init__(self, scale=None, translate=None):
         super(STTransform, self).__init__()
 
-        self._update_map = True
-        self._update_imap = True
         self._scale = np.ones(4, dtype=np.float32)
         self._translate = np.zeros(4, dtype=np.float32)
 
@@ -92,6 +90,7 @@ class STTransform(BaseTransform):
         t = ((0.0, 0.0, 0.0, 0.0) if translate is None else
              as_vec4(translate, default=(0, 0, 0, 0)))
         self._set_st(s, t)
+        self._update_shaders()
 
     @arg_to_vec4
     def map(self, coords):
@@ -135,17 +134,9 @@ class STTransform(BaseTransform):
         return m
 
     def shader_map(self):
-        if self._update_map:
-            self._shader_map['scale'] = self.scale
-            self._shader_map['translate'] = self.translate
-            self._update_map = False
         return self._shader_map
 
     def shader_imap(self):
-        if self._update_imap:
-            self._shader_imap['scale'] = self.scale
-            self._shader_imap['translate'] = self.translate
-            self._update_imap = False
         return self._shader_imap
 
     @property
@@ -166,22 +157,27 @@ class STTransform(BaseTransform):
         t = as_vec4(t, default=(0, 0, 0, 0))
         self._set_st(translate=t)
 
-    def _set_st(self, scale=None, translate=None):
-        update = False
+    def _set_st(self, scale=None, translate=None, update=True):
+        need_update = False
 
         if scale is not None and not np.all(scale == self._scale):
             self._scale[:] = scale
-            update = True
+            need_update = True
 
         if translate is not None and not np.all(translate == self._translate):
             self._translate[:] = translate
-            update = True
+            need_update = True
 
-        if update:
-            self._update_map = True
-            self._update_imap = True
+        if update and need_update:
+            self._update_shaders()
             self.update()   # inform listeners there has been a change
 
+    def _update_shaders(self):
+        self._shader_map['scale'] = self.scale
+        self._shader_map['translate'] = self.translate
+        self._shader_imap['scale'] = self.scale
+        self._shader_imap['translate'] = self.translate
+    
     def move(self, move):
         """Change the translation of this transform by the amount given.
 
@@ -217,8 +213,8 @@ class STTransform(BaseTransform):
             trans = self.scale * (1 - zoom) * center + self.translate
         self._set_st(scale=scale, translate=trans)
 
-    def as_affine(self):
-        m = AffineTransform()
+    def as_matrix(self):
+        m = MatrixTransform()
         m.scale(self.scale)
         m.translate(self.translate)
         return m
@@ -245,7 +241,7 @@ class STTransform(BaseTransform):
         t.set_mapping(x0, x1)
         return t
 
-    def set_mapping(self, x0, x1):
+    def set_mapping(self, x0, x1, update=True):
         """Configure this transform such that it maps points x0 => x1
 
         Parameters
@@ -254,6 +250,8 @@ class STTransform(BaseTransform):
             Start location.
         x1 : array-like, shape (2, 2) or (2, 3)
             End location.
+        update : bool
+            If False, then the update event is not emitted.
 
         Examples
         --------
@@ -293,29 +291,29 @@ class STTransform(BaseTransform):
         t = x1[0] - s * x0[0]
         s = as_vec4(s, default=(1, 1, 1, 1))
         t = as_vec4(t, default=(0, 0, 0, 0))
-        self._set_st(scale=s, translate=t)
+        self._set_st(scale=s, translate=t, update=update)
 
     def __mul__(self, tr):
         if isinstance(tr, STTransform):
             s = self.scale * tr.scale
             t = self.translate + (tr.translate * self.scale)
             return STTransform(scale=s, translate=t)
-        elif isinstance(tr, AffineTransform):
-            return self.as_affine() * tr
+        elif isinstance(tr, MatrixTransform):
+            return self.as_matrix() * tr
         else:
             return super(STTransform, self).__mul__(tr)
 
     def __rmul__(self, tr):
-        if isinstance(tr, AffineTransform):
-            return tr * self.as_affine()
+        if isinstance(tr, MatrixTransform):
+            return tr * self.as_matrix()
         return super(STTransform, self).__rmul__(tr)
 
     def __repr__(self):
-        return ("<STTransform scale=%s translate=%s>"
-                % (self.scale, self.translate))
+        return ("<STTransform scale=%s translate=%s at 0x%s>"
+                % (self.scale, self.translate, id(self)))
 
 
-class AffineTransform(BaseTransform):
+class MatrixTransform(BaseTransform):
     """Affine transformation class
 
     Parameters
@@ -341,7 +339,7 @@ class AffineTransform(BaseTransform):
     Isometric = False
 
     def __init__(self, matrix=None):
-        super(AffineTransform, self).__init__()
+        super(MatrixTransform, self).__init__()
         if matrix is not None:
             self.matrix = matrix
         else:
@@ -381,12 +379,12 @@ class AffineTransform(BaseTransform):
         return np.dot(coords, self.inv_matrix)
 
     def shader_map(self):
-        fn = super(AffineTransform, self).shader_map()
+        fn = super(MatrixTransform, self).shader_map()
         fn['matrix'] = self.matrix  # uniform mat4
         return fn
 
     def shader_imap(self):
-        fn = super(AffineTransform, self).shader_imap()
+        fn = super(MatrixTransform, self).shader_imap()
         fn['inv_matrix'] = self.inv_matrix  # uniform mat4
         return fn
 
@@ -499,10 +497,10 @@ class AffineTransform(BaseTransform):
         self.matrix = np.eye(4)
 
     def __mul__(self, tr):
-        if (isinstance(tr, AffineTransform) and not
+        if (isinstance(tr, MatrixTransform) and not
                 any(tr.matrix[:3, 3] != 0)):
             # don't multiply if the perspective column is used
-            return AffineTransform(matrix=np.dot(tr.matrix, self.matrix))
+            return MatrixTransform(matrix=np.dot(tr.matrix, self.matrix))
         else:
             return tr.__rmul__(self)
 
@@ -515,29 +513,6 @@ class AffineTransform(BaseTransform):
         s += indent + str(list(self.matrix[3])) + "] at 0x%x)" % id(self)
         return s
 
-
-#class SRTTransform(BaseTransform):
-#    """ Transform performing scale, rotate, and translate, in that order.
-#
-#    This transformation allows objects to be placed arbitrarily in a scene
-#    much the same way AffineTransform does. However, an incorrect order of
-#    operations in AffineTransform may result in shearing the object (if scale
-#    is applied after rotate) or in unpredictable translation (if scale/rotate
-#    is applied after translation). SRTTransform avoids these problems by
-#    enforcing the correct order of operations.
-#    """
-#    # TODO
-
-
-class PerspectiveTransform(AffineTransform):
-    """
-    Matrix transform that also implements perspective division.
-
-    Parameters
-    ----------
-    matrix : array-like | None
-        4x4 array to use for the transform.
-    """
     def set_perspective(self, fov, aspect, near, far):
         """Set the perspective
 
@@ -573,3 +548,16 @@ class PerspectiveTransform(AffineTransform):
             Far.
         """
         self.matrix = transforms.frustum(l, r, b, t, n, f)
+
+        
+#class SRTTransform(BaseTransform):
+#    """ Transform performing scale, rotate, and translate, in that order.
+#
+#    This transformation allows objects to be placed arbitrarily in a scene
+#    much the same way MatrixTransform does. However, an incorrect order of
+#    operations in MatrixTransform may result in shearing the object (if scale
+#    is applied after rotate) or in unpredictable translation (if scale/rotate
+#    is applied after translation). SRTTransform avoids these problems by
+#    enforcing the correct order of operations.
+#    """
+#    # TODO

@@ -22,24 +22,29 @@ def test_square_draw():
                     [0.5, -0.5, 0],
                     [-0.5, -0.5, 0]])
     with TestingCanvas() as c:
-        polygon = visuals.Polygon(pos=pos, color=(1, 0, 0, 1))
-        polygon.transform = transforms.STTransform(scale=(50, 50),
-                                                   translate=(50, 50))
-        c.draw_visual(polygon)
-        assert_image_approved("screenshot", 'visuals/square1.png')
-
         polygon = visuals.Polygon(pos=pos, color=(1, 0, 0, 1),
-                                  border_color=(1, 1, 1, 1))
+                                  parent=c.scene)
         polygon.transform = transforms.STTransform(scale=(50, 50),
                                                    translate=(50, 50))
-        c.draw_visual(polygon)
-        assert_image_approved("screenshot", 'visuals/square2.png')
 
-        polygon = visuals.Polygon(pos=pos, border_color=(1, 1, 1, 1))
+        assert_image_approved(c.render(), 'visuals/square1.png')
+
+        polygon.parent = None
+        polygon = visuals.Polygon(pos=pos, color=(1, 0, 0, 1),
+                                  border_color=(1, 1, 1, 1),
+                                  parent=c.scene)
         polygon.transform = transforms.STTransform(scale=(50, 50),
                                                    translate=(50, 50))
-        c.draw_visual(polygon)
-        assert_image_approved("screenshot", 'visuals/square3.png',
+
+        assert_image_approved(c.render(), 'visuals/square2.png')
+
+        polygon.parent = None
+        polygon = visuals.Polygon(pos=pos, border_color=(1, 1, 1, 1),
+                                  parent=c.scene)
+        polygon.transform = transforms.STTransform(scale=(50, 50),
+                                                   translate=(50, 50))
+
+        assert_image_approved(c.render(), 'visuals/square3.png',
                               min_corr=0.45)
 
 
@@ -52,25 +57,28 @@ def test_rectangle_draw():
                     [0.1, -0.5, 0],
                     [-0.1, -0.5, 0]])
     with TestingCanvas() as c:
-        polygon = visuals.Polygon(pos=pos, color=(1, 1, 0, 1))
+        polygon = visuals.Polygon(pos=pos, color=(1, 1, 0, 1), parent=c.scene)
         polygon.transform = transforms.STTransform(scale=(200.0, 25),
                                                    translate=(50, 50))
-        c.draw_visual(polygon)
-        assert_image_approved("screenshot", 'visuals/rectangle1.png')
 
+        assert_image_approved(c.render(), 'visuals/rectangle1.png')
+
+        polygon.parent = None
         polygon = visuals.Polygon(pos=pos, color=(1, 1, 0, 1),
-                                  border_color=(1, 0, 0, 1))
+                                  border_color=(1, 0, 0, 1),
+                                  parent=c.scene)
         polygon.transform = transforms.STTransform(scale=(200.0, 25),
                                                    translate=(50, 50))
-        c.draw_visual(polygon)
-        assert_image_approved("screenshot", 'visuals/rectangle2.png')
 
+        assert_image_approved(c.render(), 'visuals/rectangle2.png')
+
+        polygon.parent = None
         polygon = visuals.Polygon(pos=pos, border_color=(1, 0, 0, 1),
-                                  border_width=1)
+                                  border_width=1, parent=c.scene)
         polygon.transform = transforms.STTransform(scale=(200.0, 25),
                                                    translate=(50, 49))
-        c.draw_visual(polygon)
-        assert_image_approved("screenshot", 'visuals/rectangle3.png',
+
+        assert_image_approved(c.render(), 'visuals/rectangle3.png',
                               min_corr=0.7)
 
 
@@ -83,22 +91,21 @@ def test_reactive_draw():
                     [0.1, -0.5, 0],
                     [-0.1, -0.5, 0]])
     with TestingCanvas() as c:
-        polygon = visuals.Polygon(pos=pos, color='yellow')
+        polygon = visuals.Polygon(pos=pos, color='yellow', parent=c.scene)
         polygon.transform = transforms.STTransform(scale=(50, 50),
                                                    translate=(50, 50))
-        c.draw_visual(polygon)
 
         polygon.pos += [0.1, -0.1, 0]
-        c.draw_visual(polygon)
-        assert_image_approved("screenshot", 'visuals/reactive_polygon1.png')
+
+        assert_image_approved(c.render(), 'visuals/reactive_polygon1.png')
 
         polygon.color = 'red'
-        c.draw_visual(polygon)
-        assert_image_approved("screenshot", 'visuals/reactive_polygon2.png')
+
+        assert_image_approved(c.render(), 'visuals/reactive_polygon2.png')
 
         polygon.border_color = 'yellow'
-        c.draw_visual(polygon)
-        assert_image_approved("screenshot", 'visuals/reactive_polygon3.png',
+
+        assert_image_approved(c.render(), 'visuals/reactive_polygon3.png',
                               min_corr=0.8)
 
 

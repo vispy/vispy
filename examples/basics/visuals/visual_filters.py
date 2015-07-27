@@ -11,9 +11,9 @@ information, but different transformations.
 """
 
 import numpy as np
-from vispy import app, gloo, visuals
+from vispy import app, visuals
 from vispy.visuals.transforms import STTransform
-from vispy.visuals.components import Clipper, Alpha, ColorFilter
+from vispy.visuals.filters import Clipper, Alpha, ColorFilter
 from vispy.visuals.shaders import Function
 from vispy.geometry import Rect
 
@@ -35,7 +35,7 @@ class Canvas(app.Canvas):
         
         # Clipping filter (requires update when window is resized) 
         self.lines[1].transform = STTransform(translate=(400, 50))
-        self.clipper = Clipper([500, 725, 200, 50])
+        self.clipper = Clipper()
         self.lines[1].attach(self.clipper)
         
         # Opacity filter
@@ -76,29 +76,22 @@ class Canvas(app.Canvas):
         self.lines[5].attach(Hatching())
         
         app.Canvas.__init__(self, keys='interactive', size=(800, 800))
-        
-        for line in self.lines:
-            tr_sys = visuals.transforms.TransformSystem(self)
-            tr_sys.visual_to_document = line.transform
-            line.tr_sys = tr_sys
-
         self.show(True)
 
     def on_draw(self, ev):
-        gloo.clear('black', depth=True)
-        gloo.set_viewport(0, 0, *self.physical_size)
+        self.context.clear('black', depth=True)
         for line in self.lines:
-            line.draw(line.tr_sys)
+            line.draw()
 
     def on_resize(self, event):
+        vp = (0, 0, self.physical_size[0], self.physical_size[1])
+        self.context.set_viewport(*vp)
         for line in self.lines:
-            # let the transform systems know that the window has resized
-            line.tr_sys.auto_configure()
-            
+            line.transforms.configure(canvas=self, viewport=vp)
+
         # Need to update clipping boundaries if the window resizes.
-        trs = self.lines[1].tr_sys
-        tr = trs.document_to_framebuffer * trs.visual_to_document
-        self.clipper.bounds = tr.map(Rect(50, -15, 250, 30))
+        tr = self.lines[1].transforms.get_transform('visual', 'framebuffer')
+        self.clipper.bounds = tr.map(Rect(100, -20, 200, 40))
 
 
 if __name__ == '__main__':

@@ -20,12 +20,14 @@ class RectangleVisual(PolygonVisual):
 
     Parameters
     ----------
-    pos :  array
+    center :  array
         Center of the rectangle
     color : instance of Color
         The fill color to use.
     border_color : instance of Color
         The border color to use.
+    border_width : int
+        Border width in pixels.
     height : float
         Length of the rectangle along y-axis
         Defaults to 1.0
@@ -36,20 +38,36 @@ class RectangleVisual(PolygonVisual):
         Radii of curvatures of corners in clockwise order from top-left
         Defaults to 0.
     """
-    def __init__(self, pos=None, color='black', border_color=None,
-                 height=1.0, width=1.0, radius=[0., 0., 0., 0.], **kwargs):
-        super(RectangleVisual, self).__init__()
-        self.mesh.mode = 'triangle_fan'
-        self._vertices = None
-        self._pos = pos
-        self._color = Color(color)
-        self._border_color = Color(border_color)
+    def __init__(self, center=None, color='black', border_color=None,
+                 border_width=1, height=1.0, width=1.0,
+                 radius=[0., 0., 0., 0.], **kwargs):
+
         self._height = height
         self._width = width
+        self._color = Color(color)
+        self._border_color = Color(border_color)
+        self._border_width = border_width
+
+        # HACK, NOTE: this order is _intentional_
+        # the self._radius is set to none to block all
+        # calls to self._update(). This is because
+        # self._update() depends on having self.mesh and
+        # self.border which are instantiated by PolygonVisual's
+        # __init__
+        self._radius = None
+        self.center = None
+
+        PolygonVisual.__init__(self, pos=None, color=color,
+                               border_color=border_color,
+                               border_width=border_width, **kwargs)
+
         self.radius = radius
+        self.center = center
+
+        self._mesh.mode = 'triangle_fan'
         self._update()
 
-    def _generate_vertices(self, pos, radius, height, width):
+    def _generate_vertices(self, center, radius, height, width):
 
         half_height = self._height / 2.
         half_width = self._width / 2.
@@ -70,40 +88,54 @@ class RectangleVisual(PolygonVisual):
 
         theta = np.linspace(end_angle, start_angle, num_segments[0]+1)
 
-        corner1[:, 0] = pos[0] - bias1[0] - radius[0] * np.sin(theta)
-        corner1[:, 1] = pos[1] - bias2[0] - radius[0] * np.cos(theta)
+        corner1[:, 0] = center[0] - bias1[0] - radius[0] * np.sin(theta)
+        corner1[:, 1] = center[1] - bias2[0] - radius[0] * np.cos(theta)
         corner1[:, 2] = 0
 
         theta = np.linspace(start_angle, end_angle, num_segments[1]+1)
 
-        corner2[:, 0] = pos[0] + bias1[1] + radius[1] * np.sin(theta)
-        corner2[:, 1] = pos[1] - bias2[1] - radius[1] * np.cos(theta)
+        corner2[:, 0] = center[0] + bias1[1] + radius[1] * np.sin(theta)
+        corner2[:, 1] = center[1] - bias2[1] - radius[1] * np.cos(theta)
         corner2[:, 2] = 0
 
         theta = np.linspace(end_angle, start_angle, num_segments[2]+1)
 
-        corner3[:, 0] = pos[0] + bias1[2] + radius[2] * np.sin(theta)
-        corner3[:, 1] = pos[1] + bias2[2] + radius[2] * np.cos(theta)
+        corner3[:, 0] = center[0] + bias1[2] + radius[2] * np.sin(theta)
+        corner3[:, 1] = center[1] + bias2[2] + radius[2] * np.cos(theta)
         corner3[:, 2] = 0
 
         theta = np.linspace(start_angle, end_angle, num_segments[3]+1)
 
-        corner4[:, 0] = pos[0] - bias1[3] - radius[3] * np.sin(theta)
-        corner4[:, 1] = pos[1] + bias2[3] + radius[3] * np.cos(theta)
+        corner4[:, 0] = center[0] - bias1[3] - radius[3] * np.sin(theta)
+        corner4[:, 1] = center[1] + bias2[3] + radius[3] * np.cos(theta)
         corner4[:, 2] = 0
 
-        output = np.concatenate(([[pos[0], pos[1], 0.]],
-                                 [[pos[0] - half_width, pos[1], 0.]],
+        output = np.concatenate(([[center[0], center[1], 0.]],
+                                 [[center[0] - half_width, center[1], 0.]],
                                  corner1,
-                                 [[pos[0], pos[1] - half_height, 0.]],
+                                 [[center[0], center[1] - half_height, 0.]],
                                  corner2,
-                                 [[pos[0] + half_width, pos[1], 0.]],
+                                 [[center[0] + half_width, center[1], 0.]],
                                  corner3,
-                                 [[pos[0], pos[1] + half_height, 0.]],
+                                 [[center[0], center[1] + half_height, 0.]],
                                  corner4,
-                                 [[pos[0] - half_width, pos[1], 0.]]))
+                                 [[center[0] - half_width, center[1], 0.]]))
 
-        self._vertices = np.array(output, dtype=np.float32)
+        vertices = np.array(output, dtype=np.float32)
+        return vertices
+
+    @property
+    def center(self):
+        """ The center of the ellipse
+        """
+        return self._center
+
+    @center.setter
+    def center(self, center):
+        """ The center of the ellipse
+        """
+        self._center = center
+        self._update()
 
     @property
     def height(self):
@@ -164,16 +196,30 @@ class RectangleVisual(PolygonVisual):
         self._update()
 
     def _update(self):
-        if self._pos is None:
+        if not self._center:
             return
-        self._generate_vertices(pos=self._pos, radius=self._radius,
-                                height=self._height, width=self._width)
-        
-        if not self._color.is_blank:
-            self.mesh.set_data(vertices=self._vertices, 
-                               color=self._color.rgba)
-        if not self._border_color.is_blank:
-            self.border.set_data(pos=self._vertices[1:, ..., :2],
-                                 color=self._border_color.rgba)
 
-        self.update()
+        if self._radius is None:
+            return
+
+        vertices = self._generate_vertices(center=self._center,
+                                           radius=self._radius,
+                                           height=self._height,
+                                           width=self._width)
+
+        self._pos = vertices
+
+        # NOTE: Do not call PolygonVisual's _update() here because it
+        # uses triangulation which is super slow
+        if not self._color.is_blank:
+            self.mesh.set_data(vertices=vertices,
+                               color=self._color.rgba)
+
+        # when passing vertices to the Border, delete the
+        # vertices that creates loops since PolygonVisual
+        # closes loops. However, closing the loop of a solid figure
+        # will create a solid line from the center of the solid figure
+        # to the edge
+        if not self._border_color.is_blank:
+            self.border.set_data(pos=vertices[1:, ..., :2],
+                                 color=self._border_color.rgba)

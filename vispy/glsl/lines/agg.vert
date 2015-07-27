@@ -1,5 +1,3 @@
-VERTEX_SHADER = """
-const float PI = 3.14159265358979323846264;
 const float THETA = 15.0 * 3.14159265358979323846264/180.0;
 
 // Cross product of v1 and v2
@@ -24,7 +22,6 @@ vec2 transform_vector(vec2 x, vec2 base) {
     vec4 o = $transform(vec4(base, 0, 1));
     return ($transform(vec4(base+x, 0, 1)) - o).xy;
 }
-
 
 
 // Uniforms
@@ -248,4 +245,3 @@ void main()
     gl_Position = $px_ndc_transform($doc_px_transform(vec4(position,
                                                            0.0, 1.0)));
 }
-"""

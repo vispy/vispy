@@ -9,16 +9,14 @@ from __future__ import division
 
 import numpy as np
 
-from ... import gloo
+from ... import gloo, glsl
 from ...color import Color, ColorArray, get_colormap
 from ...ext.six import string_types
-from ..shaders import ModularProgram, Function
-from ..visual import Visual
+from ..shaders import Function
+from ..visual import Visual, CompoundVisual
 from ...util.profiler import Profiler
 
 from .dash_atlas import DashAtlas
-from . import vertex
-from . import fragment
 
 
 vec2to4 = Function("""
@@ -53,7 +51,7 @@ caps = {'': 0, 'none': 0, '.': 0,
         '|': 5}
 
 
-class LineVisual(Visual):
+class LineVisual(CompoundVisual):
     """Line visual
 
     Parameters
@@ -88,33 +86,31 @@ class LineVisual(Visual):
 
     antialias : bool
         Enables or disables antialiasing.
-        For method='gl', this specifies whether to use GL's line smoothing, 
+        For method='gl', this specifies whether to use GL's line smoothing,
         which may be unavailable or inconsistent on some platforms.
     """
     def __init__(self, pos=None, color=(0.5, 0.5, 0.5, 1), width=1,
                  connect='strip', method='gl', antialias=False):
-        Visual.__init__(self)
+        self._line_visual = None
 
         self._changed = {'pos': False, 'color': False, 'width': False,
                          'connect': False}
-        
+
         self._pos = None
         self._color = None
         self._width = None
         self._connect = None
         self._bounds = None
-        
+        self._method = 'none'
+
+        CompoundVisual.__init__(self, [])
+
         # don't call subclass set_data; these often have different
         # signatures.
         LineVisual.set_data(self, pos=pos, color=color, width=width,
                             connect=connect)
-        self._method = 'none'
         self.antialias = antialias
         self.method = method
-
-    @property
-    def _program(self):
-        return self._line_visual._program
 
     @property
     def antialias(self):
@@ -138,10 +134,14 @@ class LineVisual(Visual):
             return
 
         self._method = method
+        if self._line_visual is not None:
+            self.remove_subvisual(self._line_visual)
+
         if method == 'gl':
             self._line_visual = _GLLineVisual(self)
         elif method == 'agg':
             self._line_visual = _AggLineVisual(self)
+        self.add_subvisual(self._line_visual)
 
         for k in self._changed:
             self._changed[k] = True
@@ -236,7 +236,7 @@ class LineVisual(Visual):
                 color = color[0]
         return color
 
-    def bounds(self, mode, axis):
+    def _compute_bounds(self, axis, view):
         """Get the bounds
 
         Parameters
@@ -262,27 +262,10 @@ class LineVisual(Visual):
             else:
                 return (0, 0)
 
-    def draw(self, transforms):
-        """Draw the visual
-
-        Parameters
-        ----------
-        transforms : instance of TransformSystem
-            The transforms to use.
-        """
-        if self.width == 0:
-            return
-        self._line_visual.draw(transforms)
-        for k in self._changed:
-            self._changed[k] = False
-
-    def set_gl_state(self, **kwargs):
-        Visual.set_gl_state(self, **kwargs)
-        self._line_visual.set_gl_state(**kwargs)
-
-    def update_gl_state(self, **kwargs):
-        Visual.update_gl_state(self, **kwargs)
-        self._line_visual.update_gl_state(**kwargs)
+    def _prepare_draw(self, view):
+        if self._width == 0:
+            return False
+        CompoundVisual._prepare_draw(self, view)
 
 
 class _GLLineVisual(Visual):
@@ -308,23 +291,21 @@ class _GLLineVisual(Visual):
         self._color_vbo = gloo.VertexBuffer()
         self._connect_ibo = gloo.IndexBuffer()
         self._connect = None
-        
-        # Set up the GL program
-        self._program = ModularProgram(self.VERTEX_SHADER,
-                                       self.FRAGMENT_SHADER)
+
+        Visual.__init__(self, vcode=self.VERTEX_SHADER,
+                        fcode=self.FRAGMENT_SHADER)
         self.set_gl_state('translucent')
 
-    def draw(self, transforms):
+    def _prepare_transforms(self, view):
+        xform = view.transforms.get_transform()
+        view.view_program.vert['transform'] = xform
+
+    def _prepare_draw(self, view):
         prof = Profiler()
-        Visual.draw(self, transforms)
-        
-        # first see whether we can bail out early
-        if self._parent._width <= 0:
-            return
-        
+
         if self._parent._changed['pos']:
             if self._parent._pos is None:
-                return
+                return False
             # todo: does this result in unnecessary copies?
             pos = np.ascontiguousarray(self._parent._pos.astype(np.float32))
             self._pos_vbo.set_data(pos)
@@ -341,7 +322,7 @@ class _GLLineVisual(Visual):
             color = self._parent._interpret_color()
             # If color is not visible, just quit now
             if isinstance(color, Color) and color.is_blank:
-                return
+                return False
             if isinstance(color, Function):
                 # TODO: Change to the parametric coordinate once that is done
                 self._program.vert['color'] = color(
@@ -353,12 +334,9 @@ class _GLLineVisual(Visual):
                     self._color_vbo.set_data(color)
                     self._program.vert['color'] = self._color_vbo
 
-        xform = transforms.get_full_transform()
-        self._program.vert['transform'] = xform
-
         # Do we want to use OpenGL, and can we?
         GL = None
-        from vispy.app._default_app import default_app
+        from ...app._default_app import default_app
         if default_app is not None and \
                 default_app.backend_name != 'ipynb_webgl':
             try:
@@ -372,9 +350,7 @@ class _GLLineVisual(Visual):
                 GL.glEnable(GL.GL_LINE_SMOOTH)
             else:
                 GL.glDisable(GL.GL_LINE_SMOOTH)
-            # this is a bit of a hack to deal with HiDPI
-            tr = transforms.document_to_framebuffer
-            px_scale = np.mean((tr.map((1, 0)) - tr.map((0, 1)))[:2])
+            px_scale = self.transforms.pixel_scale
             width = px_scale * self._parent._width
             GL.glLineWidth(max(width, 1.))
 
@@ -383,20 +359,23 @@ class _GLLineVisual(Visual):
             if isinstance(self._connect, np.ndarray):
                 self._connect_ibo.set_data(self._connect)
         if self._connect is None:
-            return
-        
+            return False
+
         prof('prepare')
 
         # Draw
         if self._connect == 'strip':
-            self._program.draw('line_strip')
+            self._draw_mode = 'line_strip'
+            self._index_buffer = None
         elif self._connect == 'segments':
-            self._program.draw('lines')
+            self._draw_mode = 'lines'
+            self._index_buffer = None
         elif isinstance(self._connect, np.ndarray):
-            self._program.draw('lines', self._connect_ibo)
+            self._draw_mode = 'lines'
+            self._index_buffer = self._connect_ibo
         else:
             raise ValueError("Invalid line connect mode: %r" % self._connect)
-        
+
         prof('draw')
 
 
@@ -409,15 +388,15 @@ class _AggLineVisual(Visual):
                            ('alength', 'f4', 1),
                            ('color', 'f4', 4)])
 
+    VERTEX_SHADER = glsl.get('lines/agg.vert')
+    FRAGMENT_SHADER = glsl.get('lines/agg.frag')
+
     def __init__(self, parent):
         self._parent = parent
         self._vbo = gloo.VertexBuffer()
-        self._ibo = gloo.IndexBuffer()
 
         self._pos = None
         self._color = None
-        self._program = ModularProgram(vertex.VERTEX_SHADER,
-                                       fragment.FRAGMENT_SHADER)
 
         self._da = DashAtlas()
         dash_index, dash_period = self._da['solid']
@@ -427,15 +406,28 @@ class _AggLineVisual(Visual):
                        dash_caps=(caps['round'], caps['round']),
                        antialias=1.0)
         self._dash_atlas = gloo.Texture2D(self._da._data)
-        self.set_gl_state('translucent')
 
-    def draw(self, transforms):
-        Visual.draw(self, transforms)
-        
+        Visual.__init__(self, vcode=self.VERTEX_SHADER,
+                        fcode=self.FRAGMENT_SHADER)
+        self._index_buffer = gloo.IndexBuffer()
+        self.set_gl_state('translucent', depth_test=False)
+        self._draw_mode = 'triangles'
+
+    def _prepare_transforms(self, view):
+        data_doc = view.get_transform('visual', 'document')
+        doc_px = view.get_transform('document', 'framebuffer')
+        px_ndc = view.get_transform('framebuffer', 'render')
+
+        vert = view.view_program.vert
+        vert['transform'] = data_doc
+        vert['doc_px_transform'] = doc_px
+        vert['px_ndc_transform'] = px_ndc
+
+    def _prepare_draw(self, view):
         bake = False
         if self._parent._changed['pos']:
             if self._parent._pos is None:
-                return
+                return False
             # todo: does this result in unnecessary copies?
             self._pos = np.ascontiguousarray(
                 self._parent._pos.astype(np.float32))
@@ -453,28 +445,17 @@ class _AggLineVisual(Visual):
         if bake:
             V, I = self._agg_bake(self._pos, self._color)
             self._vbo.set_data(V)
-            self._ibo.set_data(I)
-
-        gloo.set_state('translucent', depth_test=False)
-        data_doc = transforms.visual_to_document
-        doc_px = transforms.document_to_framebuffer
-        px_ndc = transforms.framebuffer_to_render
-
-        vert = self._program.vert
-        vert['doc_px_transform'] = doc_px
-        vert['px_ndc_transform'] = px_ndc
-        vert['transform'] = data_doc
+            self._index_buffer.set_data(I)
 
         #self._program.prepare()
-        self._program.bind(self._vbo)
+        self.shared_program.bind(self._vbo)
         uniforms = dict(closed=False, miter_limit=4.0, dash_phase=0.0,
                         linewidth=self._parent._width)
         for n, v in uniforms.items():
-            self._program[n] = v
+            self.shared_program[n] = v
         for n, v in self._U.items():
-            self._program[n] = v
-        self._program['u_dash_atlas'] = self._dash_atlas
-        self._program.draw('triangles', self._ibo)
+            self.shared_program[n] = v
+        self.shared_program['u_dash_atlas'] = self._dash_atlas
 
     @classmethod
     def _agg_bake(cls, vertices, color, closed=False):
@@ -522,7 +503,7 @@ class _AggLineVisual(Visual):
         L = np.cumsum(N)
         V['a_segment'][+1:, 0] = L
         V['a_segment'][:-1, 1] = L
-        #V['a_lengths'][:,2] = L[-1]
+        # V['a_lengths'][:,2] = L[-1]
 
         # Step 1: A -- B -- C  =>  A -- B, B' -- C
         V = np.repeat(V, 2, axis=0)[1:-1]

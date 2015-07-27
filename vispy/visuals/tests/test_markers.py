@@ -15,17 +15,15 @@ def test_markers():
     data = np.random.normal(size=(30, 2), loc=50, scale=10)
     
     with TestingCanvas() as c:
-        marker = Markers()
+        marker = Markers(parent=c.scene)
         marker.set_data(data)
-        c.draw_visual(marker)
-        assert_image_approved("screenshot", "visuals/markers.png")
+        assert_image_approved(c.render(), "visuals/markers.png")
 
     # Test good correlation at high-dpi
     with TestingCanvas(px_scale=2) as c:
-        marker = Markers()
+        marker = Markers(parent=c.scene)
         marker.set_data(data)
-        c.draw_visual(marker)
-        assert_image_approved("screenshot", "visuals/markers.png")
+        assert_image_approved(c.render(), "visuals/markers.png")
 
 
 run_tests_if_main()
