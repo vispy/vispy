@@ -34,8 +34,7 @@ def test_line_draw():
         for arrow_type in ARROW_TYPES:
             arrow = visuals.Arrow(pos=vertices, arrow_type=arrow_type,
                                   arrows=arrows, arrow_size=10, color='red',
-                                  connect="segments", antialias=True,
-                                  parent=c.scene)
+                                  connect="segments", parent=c.scene)
 
             assert_image_approved(c.render(), 'visuals/arrow_type_%s.png' %
                                   arrow_type)
