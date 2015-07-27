@@ -10,27 +10,29 @@ from vispy.testing import (requires_application, TestingCanvas,
                            run_tests_if_main, raises)
 from vispy.testing.image_tester import assert_image_approved
 
+
+vertices = np.array([
+    [25, 25],
+    [25, 75],
+    [50, 25],
+    [50, 75],
+    [75, 25],
+    [75, 75]
+]).astype('f32')
+
+vertices += 0.33
+
+arrows = np.array([
+    vertices[:2],
+    vertices[3:1:-1],
+    vertices[4:],
+    vertices[-1:-3:-1]
+]).reshape((4, 4))
+
+
 @requires_application()
-def test_line_draw():
+def test_arrow_draw():
     """Test drawing arrows without transforms"""
-
-    vertices = np.array([
-        [25, 25],
-        [25, 75],
-        [50, 25],
-        [50, 75],
-        [75, 25],
-        [75, 75]
-    ]).astype('f32')
-
-    vertices += 0.33
-
-    arrows = np.array([
-        vertices[:2],
-        vertices[3:1:-1],
-        vertices[4:],
-        vertices[-1:-3:-1]
-    ]).reshape((4, 4))
 
     with TestingCanvas() as c:
         for arrow_type in ARROW_TYPES:
@@ -42,6 +44,57 @@ def test_line_draw():
                                   arrow_type)
 
             arrow.parent = None
+
+@requires_application()
+def test_arrow_transform_draw():
+    """Tests the ArrowVisual when a transform is applied"""
+
+    with TestingCanvas() as c:
+        for arrow_type in ARROW_TYPES:
+            arrow = visuals.Arrow(pos=vertices, arrow_type=arrow_type,
+                                  arrows=arrows, arrow_size=10, color='red',
+                                  connect="segments", parent=c.scene)
+            arrow.transform = transforms.STTransform(scale=(0.5, 0.75),
+                                                     translate=(-20, -20))
+
+            assert_image_approved(c.render(),
+                                  'visuals/arrow_transform_type_%s.png' %
+                                  arrow_type)
+
+            arrow.parent = None
+
+
+@requires_application()
+def test_arrow_reactive():
+    """Tests the reactive behaviour of the ArrowVisual properties"""
+
+    with TestingCanvas() as c:
+        arrow = visuals.Arrow(pos=vertices, arrows=arrows,
+                              connect="segments", parent=c.scene)
+
+        arrow.arrow_type = "stealth"
+        assert_image_approved(c.render(), 'visuals/arrow_reactive1.png')
+
+        arrow.arrow_size = 20
+        assert_image_approved(c.render(), 'visuals/arrow_reactive2.png')
+
+
+@requires_application()
+def test_arrow_attributes():
+    """Tests if the ArrowVisual performs the required checks for the
+    attributes"""
+
+    with TestingCanvas() as c:
+        arrow = visuals.Arrow(pos=vertices, arrow_type="stealth",
+                              arrows=arrows, arrow_size=10, color='red',
+                              connect="segments", parent=c.scene)
+
+        with raises(ValueError):
+            arrow.arrow_size = 0.0
+
+        with raises(ValueError):
+            arrow.arrow_type = "random_non_existent"
+
 
 run_tests_if_main()
 
