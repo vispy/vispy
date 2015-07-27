@@ -26,7 +26,7 @@ def style_colorbar(colorbar):
     colorbar.ticks[0].color = "black"
     colorbar.ticks[1].color = "black"
 
-    colorbar.border_width = 10
+    colorbar.border_width = 15
     colorbar.border_color = "black"
 
     return colorbar
@@ -34,7 +34,7 @@ def style_colorbar(colorbar):
 
 def get_left_orientation_bar():
     pos = 50, 300
-    halfdim = 10, 200
+    halfdim = 5, 200
 
     colorbar = ColorBarVisual(pos, halfdim,
                               label_str="orientation left",
@@ -45,7 +45,7 @@ def get_left_orientation_bar():
 
 def get_right_orientation_bar():
     pos = 200, 300
-    halfdim = 10, 200
+    halfdim = 5, 200
 
     colorbar = ColorBarVisual(pos, halfdim,
                               label_str="orientation right",
@@ -56,7 +56,7 @@ def get_right_orientation_bar():
 
 def get_top_orientation_bar():
     pos = 600, 400
-    halfdim = 150, 10
+    halfdim = 150, 5
 
     colorbar = ColorBarVisual(pos, halfdim,
                               label_str="orientation top",
@@ -67,7 +67,7 @@ def get_top_orientation_bar():
 
 def get_bottom_orientation_bar():
     pos = 600, 150
-    halfdim = 150, 10
+    halfdim = 150, 5
 
     colorbar = ColorBarVisual(pos, halfdim,
                               label_str="orientation bottom",
