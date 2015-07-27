@@ -6,7 +6,7 @@
  *
  * Variables
  * ---------
- * $transform 
+ * $transform
  *     Projection matrix of vertex to the screen
  *
  * Attributes
@@ -78,10 +78,6 @@ void main (void)
     vec2 body = v2 - v1;
     v_orientation = (body / length(body));
     v_orientation.y = -v_orientation.y;
-
-    // Rotate 90 degrees, as arrow heads are by default oriented in the x
-    // direction.
-    //v_orientation = vec2(-v_orientation.y, v_orientation.x);
 
     gl_Position = $transform(vec4(v2, 0, 1));
     gl_PointSize = v_point_size;
