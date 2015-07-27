@@ -334,9 +334,9 @@ class ColorBarVisual(CompoundVisual):
         visual_to_doc = transforms.get_transform("visual", "document")
 
         if orientation == "bottom":
-            perp_direction = [0, -1]
-        elif orientation == "top":
             perp_direction = [0, 1]
+        elif orientation == "top":
+            perp_direction = [0, -1]
         elif orientation == "left":
             perp_direction = [-1, 0]
         elif orientation == "right":
@@ -407,15 +407,18 @@ class ColorBarVisual(CompoundVisual):
         visual_to_doc = transforms.get_transform('visual', 'document')
         doc_to_visual = transforms.get_transform('document', 'visual')
 
-        origin_doc = visual_to_doc.map(np.array([0, 0, 0, 1],
-                                                dtype=np.float32))
-        half_axis_x = visual_to_doc.map(np.array([halfw, 0, 0, 1],
-                                                 dtype=np.float32))
-        half_axis_y = visual_to_doc.map(np.array([0, halfh, 0, 1],
-                                                 dtype=np.float32))
+        if orientation == "bottom":
+            perp_axis = [0, halfh]
+        elif orientation == "top":
+            perp_axis = [0, -halfh]
+        elif orientation == "left":
+            perp_axis = [-halfw, 0]
+        elif orientation == "right":
+            perp_axis = [halfw, 0]
 
-        half_axis_x -= origin_doc
-        half_axis_y -= origin_doc
+        perp_axis = visual_to_doc.map(np.array(perp_axis, dtype=np.float32))
+        origin_doc = visual_to_doc.map(np.array([0, 0], dtype=np.float32))
+        perp_axis -= origin_doc
 
         # -------------------
         #               ^
@@ -424,12 +427,6 @@ class ColorBarVisual(CompoundVisual):
         #               .(center)
         # <-half_axis_x->
         # --------------------
-
-        # downward y is positive
-        if orientation in ["bottom", "top"]:
-            perp_axis = half_axis_y
-        else:
-            perp_axis = half_axis_x
 
         # scale up the perpendicular by including the
         # border width (we can add it directly) since
@@ -441,17 +438,19 @@ class ColorBarVisual(CompoundVisual):
         perp_length *= _TEXT_PADDING_FACTOR
         perp_axis *= perp_length
 
-        center = np.array([x, y, 0, 0], dtype=np.float32)
+        # visual coordinates, now
         perp_axis = doc_to_visual.map(perp_axis)
+        center = np.array([x, y, 0, 0], dtype=np.float32)
+        baseline_doc = center + perp_axis
 
-        if orientation == "top":
-            baseline_doc = center + perp_axis
-        elif orientation == "bottom":
-            baseline_doc = center - perp_axis
-        elif orientation == "left":
-            baseline_doc = center - perp_axis
-        elif orientation == "right":
-            baseline_doc = center + perp_axis
+        # if orientation == "top":
+        #     baseline_doc = center - perp_axis
+        # elif orientation == "bottom":
+        #     baseline_doc = center + perp_axis
+        # elif orientation == "left":
+        #     baseline_doc = center - perp_axis
+        # elif orientation == "right":
+        #     baseline_doc = center + perp_axis
 
         label_pos = baseline_doc[:-1]
         half_axis_x = np.array([halfw, 0, 0], dtype=np.float32)

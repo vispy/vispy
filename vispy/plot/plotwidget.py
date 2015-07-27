@@ -349,16 +349,87 @@ class PlotWidget(scene.Widget):
         self.view.camera.set_range()
         return surf
 
-    def colorbar(self, cmap, label_str, clim=("", ""),
-                 border_width=0.0, border_color="black", **kwargs):
+    def colorbar(self, pos, halfdim, cmap, orientation="",
+                 label="", clim=("", ""),
+                 border_width=0.0, border_color="black",
+                 **kwargs):
         """Show a ColorBar
+
+        Parameters
+        ----------
+        pos : tuple (x, y)
+            Center of the colorbar
+        halfdim : tuple (half_width, half_height)
+            Half the dimensions of the colorbar measured
+            from the center. That way, the total dimensions
+            of the colorbar is (x - half_width) to (x + half_width)
+            and (y - half_height) to (y + half_height)
+        cmap : str | vispy.color.ColorMap
+            Either the name of the ColorMap to be used from the standard
+            set of names (refer to `vispy.color.get_colormap`),
+            or a custom ColorMap object.
+            The ColorMap is used to apply a gradient on the colorbar.
+        orientation : {'left', 'right', 'top', 'bottom'}
+            The orientation of the colorbar, used for rendering. The
+            orientation can be thought of as the position of the label
+            relative to the color bar.
+
+            When the orientation is 'left' or 'right', the colorbar is
+            vertically placed. When it is 'top' or 'bottom', the colorbar is
+            horizontally placed.
+
+                * 'top': the colorbar is horizontal.
+                  Color is applied from left to right.
+                  Minimum corresponds to left and maximum to right.
+                  Label is to the top of the colorbar
+
+                * 'bottom': Same as top, except that
+                  label is to the bottom of the colorbar
+
+                * 'left': the colorbar is vertical.
+                  Color is applied from bottom to top.
+                  Minimum corresponds to bottom and maximum to top.
+                  Label is to the left of the colorbar
+
+                * 'right': Same as left, except that the
+                  label is placed to the right of the colorbar
+        label : str
+            The label that is to be drawn with the colorbar
+            that provides information about the colorbar.
+        clim : tuple (min, max)
+            the minimum and maximum values of the data that
+            is given to the colorbar. This is used to draw the scale
+            on the side of the colorbar.
+        border_width : float (in px)
+            The width of the border the colormap should have. This measurement
+            is given in pixels
+        border_color : str | vispy.color.Color
+            The color of the border of the colormap. This can either be a
+            str as the color's name or an actual instace of a vipy.color.Color
+
+        Returns
+        -------
+        volume : instance of Volume
+            The volume visualization.
+
+        See also
+        --------
+        Volume
         """
 
         self._configure_2d()
-        colorbar = scene.ColorBar(center_pos=(0.5, 0.5),
-                                  halfdim=(1, 1),
-                                  orientation="right",
-                                  label_str="right",
+
+        if orientation == "":
+            (halfw, halfh) = halfdim
+            if halfw > halfh:
+                orientation = "bottom"
+            else:
+                orientation = "right"
+
+        colorbar = scene.ColorBar(center_pos=pos,
+                                  halfdim=halfdim,
+                                  orientation=orientation,
+                                  label_str=label,
                                   cmap=cmap,
                                   clim=clim,
                                   border_width=border_width,
