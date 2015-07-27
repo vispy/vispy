@@ -23,6 +23,8 @@ def test_line_draw():
         [75, 75]
     ]).astype('f32')
 
+    vertices += 0.33
+
     arrows = np.array([
         vertices[:2],
         vertices[3:1:-1],
