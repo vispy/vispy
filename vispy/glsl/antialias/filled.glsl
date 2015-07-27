@@ -11,13 +11,13 @@
  * Parameters:
  * -----------
  *
- * distance 
+ * distance
  *     Signed distance to border (in pixels)
- * linewidth 
+ * linewidth
  *     Stroke line width (in pixels)
- * antialias 
+ * antialias
  *     Stroke antialiased area (in pixels)
- * bg_color 
+ * bg_color
  *     Fill color
  *
  * Return:
