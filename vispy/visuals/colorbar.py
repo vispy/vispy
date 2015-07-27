@@ -331,30 +331,43 @@ class ColorBarVisual(CompoundVisual):
 
     @staticmethod
     def _get_anchors(center, halfdim, orientation, transforms):
+        visual_to_doc = transforms.get_transform("visual", "document")
+
         if orientation == "bottom":
             perp_direction = [0, -1]
         elif orientation == "top":
             perp_direction = [0, 1]
-        # NOTE: we use these as the perp directions for left and right,
-        # because the label gets rotated by (-90) degrees at the end.
         elif orientation == "left":
-            perp_direction = [0, -1]
+            perp_direction = [-1, 0]
         elif orientation == "right":
-            perp_direction = [0, 1]
+            perp_direction = [1, 0]
 
         perp_direction = np.array(perp_direction, dtype=np.float32)
         perp_direction /= np.linalg.norm(perp_direction)
+
+        perp_doc = visual_to_doc.map(perp_direction)
+        origin_doc = visual_to_doc.map([0., 0.])
+        perp_doc -= origin_doc
+
+        # rotate axes by -90 degrees to mimic label's rotation
+        if orientation in ["left", "right"]:
+            x = perp_doc[0]
+            y = perp_doc[1]
+
+            perp_doc[0] = -y
+            perp_doc[1] = x
+
         # use the document (pixel) coord system to set text anchors
         anchors = []
-        if perp_direction[0] < 0:
+        if perp_doc[0] < 0:
             anchors.append('right')
-        elif perp_direction[0] > 0:
+        elif perp_doc[0] > 0:
             anchors.append('left')
         else:
             anchors.append('center')
-        if perp_direction[1] < 0:
+        if perp_doc[1] < 0:
             anchors.append('bottom')
-        elif perp_direction[1] > 0:
+        elif perp_doc[1] > 0:
             anchors.append('top')
         else:
             anchors.append('middle')
