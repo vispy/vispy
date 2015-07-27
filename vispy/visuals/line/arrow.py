@@ -62,6 +62,8 @@ class _ArrowHeadVisual(Visual):
 
         self._parent = parent
         self._arrow_vbo = gloo.VertexBuffer()
+        self.set_gl_state(depth_test=False, blend=True,
+                          blend_func=('src_alpha', 'one_minus_src_alpha'))
         self._draw_mode = 'points'
 
     def _prepare_transforms(self, view):
@@ -259,6 +261,9 @@ class ArrowVisual(LineVisual):
         if value is None:
             self._arrow_size = 5.0
         else:
+            if value <= 0.0:
+                raise ValueError("Arrow size should be greater than zero.")
+
             self._arrow_size = value
 
         self._arrows_changed = True
