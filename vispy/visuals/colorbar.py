@@ -331,7 +331,6 @@ class ColorBarVisual(CompoundVisual):
 
     @staticmethod
     def _get_anchors(center, halfdim, orientation, transforms):
-        visual_to_document = transforms.get_transform('visual', 'document')
         if orientation == "bottom":
             perp_direction = [0, -1]
         elif orientation == "top":
@@ -360,7 +359,6 @@ class ColorBarVisual(CompoundVisual):
         else:
             anchors.append('middle')
 
-        print ("\n\norientation: %s\nanchors: %s" % (orientation, anchors))
         return anchors
 
     @staticmethod
@@ -396,9 +394,12 @@ class ColorBarVisual(CompoundVisual):
         visual_to_doc = transforms.get_transform('visual', 'document')
         doc_to_visual = transforms.get_transform('document', 'visual')
 
-        origin_doc = visual_to_doc.map(np.array([0, 0, 0, 1], dtype=np.float32))
-        half_axis_x = visual_to_doc.map(np.array([halfw, 0, 0, 1], dtype=np.float32))
-        half_axis_y = visual_to_doc.map(np.array([0, halfh, 0, 1], dtype=np.float32))
+        origin_doc = visual_to_doc.map(np.array([0, 0, 0, 1],
+                                                dtype=np.float32))
+        half_axis_x = visual_to_doc.map(np.array([halfw, 0, 0, 1],
+                                                 dtype=np.float32))
+        half_axis_y = visual_to_doc.map(np.array([0, halfh, 0, 1],
+                                                 dtype=np.float32))
 
         half_axis_x -= origin_doc
         half_axis_y -= origin_doc
