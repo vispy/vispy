@@ -77,7 +77,6 @@ class Canvas(app.Canvas):
             pos=vertices,
             arrows=vertices.reshape((len(vertices)/2, 4)),
         )
-        self.visual.antialias = True
 
     def on_mouse_move(self, event):
         self.last_mouse = event.pos
