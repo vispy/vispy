@@ -5,7 +5,7 @@ from __future__ import division
 
 import numpy as np
 
-from .cameras import PanZoomCamera
+from .panzoom import PanZoomCamera
 from ...visuals.transforms.nonlinear import (MagnifyTransform, 
                                              Magnify1DTransform)
 from ...app import Timer

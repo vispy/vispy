@@ -76,20 +76,19 @@ class Canvas(app.Canvas):
         for text in self.texts:
             text.transform = NullTransform()
         self.visuals = self.lines + self.texts
-
-        # create a TransformSystem for each visual.
-        # (these are stored as attributes of each visual for convenience)
-        for visual in self.visuals:
-            visual.tr_sys = visuals.transforms.TransformSystem(self)
-            visual.tr_sys.visual_to_document = visual.transform
-
         self.show()
 
     def on_draw(self, event):
         gloo.clear('black')
-        gloo.set_viewport(0, 0, *self.physical_size)
         for visual in self.visuals:
-            visual.draw(visual.tr_sys)
+            visual.draw()
+
+    def on_resize(self, event):
+        # Set canvas viewport and reconfigure visual transforms to match.
+        vp = (0, 0, self.physical_size[0], self.physical_size[1])
+        self.context.set_viewport(*vp)
+        for visual in self.visuals:
+            visual.transforms.configure(canvas=self, viewport=vp)
 
 
 if __name__ == '__main__':
@@ -102,7 +101,7 @@ if __name__ == '__main__':
 
     timer = app.Timer()
     timer.connect(update)
-    timer.start(0)
+    timer.start(1.0)
 
     if sys.flags.interactive != 1:
         app.run()

@@ -2,15 +2,14 @@
 # Copyright (c) 2015, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-from ..scene import (Image, LinePlot, Volume, Mesh, Histogram,
-                     Spectrogram, ViewBox, PanZoomCamera, TurntableCamera)
+from ..import scene
 from ..io import read_mesh
 from ..geometry import MeshData
 
 __all__ = ['PlotWidget']
 
 
-class PlotWidget(ViewBox):
+class PlotWidget(scene.Widget):
     """Widget to facilitate plotting
 
     Parameters
@@ -29,14 +28,60 @@ class PlotWidget(ViewBox):
     --------
     """
     def __init__(self, *args, **kwargs):
+        self._fg = kwargs.pop('fg_color', 'k')
         super(PlotWidget, self).__init__(*args, **kwargs)
-        self._camera_set = False
 
-    def _set_camera(self, cls, *args, **kwargs):
-        if not self._camera_set:
-            self._camera_set = True
-            self.camera = cls(*args, **kwargs)
-            self.camera.set_range(margin=0)
+        self.grid = self.add_grid(spacing=0, margin=10)
+        
+        self.title = scene.Label("", font_size=16)
+        self.title.stretch = (1, 0.1)
+        self.grid.add_widget(self.title, row=0, col=2)
+        self.view = self.grid.add_view(row=1, col=2, border_color='grey')
+
+        self._configured = False
+        
+        self.visuals = []
+        
+    def _configure_2d(self, fg_color=None):
+        if self._configured:
+            return
+        if fg_color is None:
+            fg = self._fg
+        else:
+            fg = fg_color
+        self.yaxis = scene.AxisWidget(orientation='left', text_color=fg,
+                                      axis_color=fg, tick_color=fg)
+        self.yaxis.stretch = (0.1, 1)
+        self.grid.add_widget(self.yaxis, row=1, col=1)
+
+        self.ylabel = scene.Label("", rotation=-90)
+        self.ylabel.stretch = (0.05, 1)
+        self.grid.add_widget(self.ylabel, row=1, col=0)
+
+        self.xaxis = scene.AxisWidget(orientation='bottom', text_color=fg,
+                                      axis_color=fg, tick_color=fg)
+        self.xaxis.stretch = (1, 0.1)
+        self.grid.add_widget(self.xaxis, row=2, col=2)
+
+        self.xlabel = scene.Label("")
+        self.xlabel.stretch = (1, 0.05)
+        self.grid.add_widget(self.xlabel, row=3, col=2)
+
+        self.view.camera = 'panzoom'
+        self.camera = self.view.camera
+        
+        self.xaxis.link_view(self.view)
+        self.yaxis.link_view(self.view)
+        
+        self._configured = True
+
+    def _configure_3d(self):
+        if self._configured:
+            return
+        self.view.camera = 'turntable'
+        self.camera = self.view.camera
+        
+        self._configured = True
 
     def histogram(self, data, bins=10, color='w', orientation='h'):
         """Calculate and show a histogram of data
@@ -57,12 +102,13 @@ class PlotWidget(ViewBox):
         hist : instance of Polygon
             The histogram polygon.
         """
-        hist = Histogram(data, bins, color, orientation)
-        self.add(hist)
-        self._set_camera(PanZoomCamera)
+        self._configure_2d()
+        hist = scene.Histogram(data, bins, color, orientation)
+        self.view.add(hist)
+        self.view.camera.set_range()
         return hist
 
-    def image(self, data, cmap='cubehelix', clim='auto'):
+    def image(self, data, cmap='cubehelix', clim='auto', fg_color=None):
         """Show an image
 
         Parameters
@@ -74,6 +120,8 @@ class PlotWidget(ViewBox):
         clim : str | tuple
             Colormap limits. Should be ``'auto'`` or a two-element tuple of
             min and max values.
+        fg_color : Color or None
+            Sets the plot foreground color if specified.
 
         Returns
         -------
@@ -84,9 +132,12 @@ class PlotWidget(ViewBox):
         -----
         The colormap is only used if the image pixels are scalars.
         """
-        image = Image(data, cmap=cmap, clim=clim)
-        self.add(image)
-        self._set_camera(PanZoomCamera, aspect=1)
+        self._configure_2d(fg_color)
+        image = scene.Image(data, cmap=cmap, clim=clim)
+        self.view.add(image)
+        self.view.camera.aspect = 1
+        self.view.camera.set_range()
+        
         return image
 
     def mesh(self, vertices=None, faces=None, vertex_colors=None,
@@ -118,6 +169,7 @@ class PlotWidget(ViewBox):
         mesh : instance of Mesh
             The mesh.
         """
+        self._configure_3d()
         if fname is not None:
             if not all(x is None for x in (vertices, faces, meshdata)):
                 raise ValueError('vertices, faces, and meshdata must be None '
@@ -129,14 +181,16 @@ class PlotWidget(ViewBox):
                                  'fname is not None')
         else:
             meshdata = MeshData(vertices, faces)
-        mesh = Mesh(meshdata=meshdata, vertex_colors=vertex_colors,
-                    face_colors=face_colors, color=color, shading='smooth')
-        self.add(mesh)
-        self._set_camera(TurntableCamera, azimuth=0, elevation=0)
+        mesh = scene.Mesh(meshdata=meshdata, vertex_colors=vertex_colors,
+                          face_colors=face_colors, color=color,
+                          shading='smooth')
+        self.view.add(mesh)
+        self.view.camera.set_range()
         return mesh
 
-    def plot(self, data, color='k', symbol='o', line_kind='-', width=1.,
-             marker_size=0., edge_color='k', face_color='k', edge_width=1.):
+    def plot(self, data, color='k', symbol=None, line_kind='-', width=1.,
+             marker_size=10., edge_color='k', face_color='b', edge_width=1.,
+             title=None, xlabel=None, ylabel=None):
         """Plot a series of data using lines and markers
 
         Parameters
@@ -161,6 +215,12 @@ class PlotWidget(ViewBox):
             Color of the marker face.
         edge_width : float
             Edge width of the marker.
+        title : str | None
+            The title string to be displayed above the plot
+        xlabel : str | None
+            The label to display along the bottom axis
+        ylabel : str | None
+            The label to display along the left axis.
 
         Returns
         -------
@@ -171,12 +231,24 @@ class PlotWidget(ViewBox):
         --------
         marker_types, LinePlot
         """
-        line = LinePlot(data, connect='strip', color=color, symbol=symbol,
-                        line_kind=line_kind, width=width,
-                        marker_size=marker_size, edge_color=edge_color,
-                        face_color=face_color, edge_width=edge_width)
-        self.add(line)
-        self._set_camera(PanZoomCamera)
+        self._configure_2d()
+        line = scene.LinePlot(data, connect='strip', color=color,
+                              symbol=symbol, line_kind=line_kind,
+                              width=width, marker_size=marker_size,
+                              edge_color=edge_color,
+                              face_color=face_color,
+                              edge_width=edge_width)
+        self.view.add(line)
+        self.view.camera.set_range()
+        self.visuals.append(line)
+        
+        if title is not None:
+            self.title.text = title
+        if xlabel is not None:
+            self.xlabel.text = xlabel
+        if ylabel is not None:
+            self.ylabel.text = ylabel
+        
         return line
 
     def spectrogram(self, x, n_fft=256, step=None, fs=1., window='hann',
@@ -216,11 +288,12 @@ class PlotWidget(ViewBox):
         --------
         Image
         """
+        self._configure_2d()
         # XXX once we have axes, we should use "fft_freqs", too
-        spec = Spectrogram(x, n_fft, step, fs, window,
-                           color_scale, cmap, clim)
-        self.add(spec)
-        self._set_camera(PanZoomCamera)
+        spec = scene.Spectrogram(x, n_fft, step, fs, window,
+                                 color_scale, cmap, clim)
+        self.view.add(spec)
+        self.view.camera.set_range()
         return spec
 
     def volume(self, vol, clim=None, method='mip', threshold=None,
@@ -253,7 +326,25 @@ class PlotWidget(ViewBox):
         --------
         Volume
         """
-        volume = Volume(vol, clim, method, threshold, cmap=cmap)
-        self.add(volume)
-        self._set_camera(TurntableCamera, fov=30.)
+        self._configure_3d()
+        volume = scene.Volume(vol, clim, method, threshold, cmap=cmap)
+        self.view.add(volume)
+        self.view.camera.set_range()
         return volume
+
+    def surface(self, zdata, **kwargs):
+        """Show a 3D surface plot.
+        
+        Extra keyword arguments are passed to `SurfacePlot()`.
+        
+        Parameters
+        ----------
+        zdata : array-like
+            A 2D array of the surface Z values.
+            
+        """
+        self._configure_3d()
+        surf = scene.SurfacePlot(z=zdata, **kwargs)
+        self.view.add(surf)
+        self.view.camera.set_range()
+        return surf

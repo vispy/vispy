@@ -9,9 +9,9 @@
 
 import numpy as np
 
-from ...visuals.shaders import ModularProgram
 from .widget import Widget
-from ...gloo import VertexBuffer, set_state
+from ...visuals import Visual
+from ...gloo import VertexBuffer
 from ...color import Color
 from ...ext.six import string_types
 
@@ -149,17 +149,80 @@ class Console(Widget):
         Point size to use.
     """
     def __init__(self, text_color='black', font_size=12., **kwargs):
+        self._visual = ConsoleVisual(text_color, font_size)
+        Widget.__init__(self, **kwargs)
+        self.add_subvisual(self._visual)
+        
+    def on_resize(self, event):
+        """Resize event handler
+
+        Parameters
+        ----------
+        event : instance of Event
+            The event.
+        """
+        self._visual.size = self.size
+        
+    def clear(self):
+        """Clear the console"""
+        self._visual.clear()
+
+    def write(self, text='', wrap=True):
+        """Write text and scroll
+
+        Parameters
+        ----------
+        text : str
+            Text to write. ``''`` can be used for a blank line, as a newline
+            is automatically added to the end of each line.
+        wrap : str
+            If True, long messages will be wrapped to span multiple lines.
+        """
+        self._visual.write(text)
+        
+    @property
+    def text_color(self):
+        """The color of the text"""
+        return self._visual._text_color
+
+    @text_color.setter
+    def text_color(self, color):
+        self._visual._text_color = Color(color)
+
+    @property
+    def font_size(self):
+        """The font size (in points) of the text"""
+        return self._visual._font_size
+
+    @font_size.setter
+    def font_size(self, font_size):
+        self._visual._font_size = float(font_size)
+
+        
+class ConsoleVisual(Visual):
+    def __init__(self, text_color, font_size, **kwargs):
         # Harcoded because of font above and shader program
         self.text_color = text_color
         self.font_size = font_size
         self._char_width = 6
         self._char_height = 10
-        self._program = ModularProgram(VERTEX_SHADER, FRAGMENT_SHADER)
         self._pending_writes = []
         self._text_lines = []
         self._col = 0
         self._current_sizes = (-1,) * 3
-        Widget.__init__(self, **kwargs)
+        self._size = (100, 100)
+        Visual.__init__(self, VERTEX_SHADER, FRAGMENT_SHADER)
+        self._draw_mode = 'points'
+        self.set_gl_state(depth_test=False, blend=True,
+                          blend_func=('src_alpha', 'one_minus_src_alpha'))
+
+    @property
+    def size(self):
+        return self._size
+    
+    @size.setter
+    def size(self, s):
+        self._size = s
 
     @property
     def text_color(self):
@@ -204,22 +267,11 @@ class Console(Widget):
             self._insert_text_buf(line, ii)
         self._current_sizes = new_sizes
 
-    def draw(self, event):
-        """Draw the widget
-
-        Parameters
-        ----------
-        event : instance of Event
-            The draw event.
-        """
-        super(Console, self).draw(event)
-        if event is None:
-            raise RuntimeError('Event cannot be None')
-        xform = event.get_full_transform()
-        tr = (event.document_to_framebuffer *
-              event.framebuffer_to_render)
+    def _prepare_draw(self, view):
+        xform = view.get_transform()
+        tr = view.get_transform('document', 'render')
         logical_scale = np.diff(tr.map(([0, 1], [1, 0])), axis=0)[0, :2]
-        tr = event.document_to_framebuffer
+        tr = view.get_transform('document', 'framebuffer')
         log_to_phy = np.mean(np.diff(tr.map(([0, 1], [1, 0])), axis=0)[0, :2])
         n_pix = (self.font_size / 72.) * 92.  # num of pixels tall
         # The -2 here is because the char_height has a gap built in
@@ -227,16 +279,15 @@ class Console(Widget):
         self._resize_buffers(font_scale)
         self._do_pending_writes()
         self._program['u_origin'] = xform.map((0, 0, 0, 1))
-        self._program.prepare()
         self._program['u_logical_scale'] = font_scale * logical_scale
         self._program['u_color'] = self.text_color.rgba
         self._program['u_physical_scale'] = font_scale * log_to_phy
         self._program['a_position'] = self._position
         self._program['a_bytes_012'] = VertexBuffer(self._bytes_012)
         self._program['a_bytes_345'] = VertexBuffer(self._bytes_345)
-        set_state(depth_test=False, blend=True,
-                  blend_func=('src_alpha', 'one_minus_src_alpha'))
-        self._program.draw('points')
+
+    def _prepare_transforms(self, view):
+        pass
 
     def clear(self):
         """Clear the console"""

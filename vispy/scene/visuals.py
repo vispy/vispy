@@ -13,11 +13,88 @@ For developing custom visuals, it is recommended to subclass from
 `vispy.visuals.Visual` rather than `vispy.scene.Node`.
 """
 import re
+import weakref
 
 from .. import visuals
 from .node import Node
+from ..visuals.filters import ColorFilter, PickingFilter
 
 
+class VisualNode(Node):
+    _next_id = 1
+    _visual_ids = weakref.WeakValueDictionary()
+    
+    def __init__(self, parent=None, name=None):
+        Node.__init__(self, parent=parent, name=name,
+                      transforms=self.transforms)
+        self.interactive = False
+        self._opacity_filter = ColorFilter()
+        self.attach(self._opacity_filter)
+        
+        self._id = VisualNode._next_id
+        VisualNode._visual_ids[self._id] = self
+        VisualNode._next_id += 1
+        self._picking_filter = PickingFilter(id=self._id)
+        self.attach(self._picking_filter)
+
+    def _update_opacity(self):
+        self._opacity_filter.color = (1, 1, 1, self._opacity)
+        
+    def _set_clipper(self, node, clipper):
+        """Assign a clipper that is inherited from a parent node.
+        
+        If *clipper* is None, then remove any clippers for *node*.
+        """
+        if node in self._clippers:
+            self.detach(self._clippers.pop(node))
+        if clipper is not None:
+            self.attach(clipper)
+            self._clippers[node] = clipper
+
+    @property
+    def picking(self):
+        """Boolean that determines whether this node (and its children) are
+        drawn in picking mode.
+        """
+        return self._picking
+    
+    @picking.setter
+    def picking(self, p):
+        for c in self.children:
+            c.picking = p
+        if self._picking == p:
+            return
+        self._picking = p
+        self._picking_filter.enabled = p
+        self.update_gl_state(blend=not p)
+
+    def _update_trsys(self, event):
+        doc = self.document_node
+        scene = self.scene_node
+        root = self.root_node
+        self.transforms.visual_transform = self.node_transform(scene)
+        self.transforms.scene_transform = scene.node_transform(doc)
+        self.transforms.document_transform = doc.node_transform(root)
+        
+        Node._update_trsys(self, event)
+
+    @property
+    def interactive(self):
+        """Whether this widget should be allowed to accept mouse and touch
+        events.
+        """
+        return self._interactive
+
+    @interactive.setter
+    def interactive(self, i):
+        self._interactive = i
+
+    def draw(self):
+        if self.picking and not self.interactive:
+            return
+        self._visual_superclass.draw(self)
+
+    
 def create_visual_node(subclass):
     # Create a new subclass of Node.
     
@@ -38,12 +115,15 @@ def create_visual_node(subclass):
         parent = kwargs.pop('parent', None)
         name = kwargs.pop('name', None)
         self.name = name  # to allow __str__ before Node.__init__
+        self._visual_superclass = subclass
+        
         subclass.__init__(self, *args, **kwargs)
-        Node.__init__(self, parent=parent, name=name)
+        VisualNode.__init__(self, parent=parent, name=name)
     
     # Create new class
-    cls = type(clsname, (subclass, Node), {'__init__': __init__, 
-                                           '__doc__': doc})
+    cls = type(clsname, (VisualNode, subclass), {'__init__': __init__, 
+                                                 '__doc__': doc})
+    
     return cls
 
 
@@ -135,7 +215,7 @@ __all__ = []
 for obj_name in dir(visuals):
     obj = getattr(visuals, obj_name)
     if (isinstance(obj, type) and 
-       issubclass(obj, visuals.Visual) and 
+       issubclass(obj, visuals.BaseVisual) and 
        obj is not visuals.Visual):
         cls = create_visual_node(obj)
         globals()[cls.__name__] = cls

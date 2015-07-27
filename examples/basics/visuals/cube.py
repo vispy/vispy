@@ -18,24 +18,29 @@ class Canvas(app.Canvas):
                             size=(400, 400))
 
         self.cube = CubeVisual((1.0, 0.5, 0.25), color='red',
-                               edge_color='black')
+                               edge_color="k")
         self.theta = 0
         self.phi = 0
 
         # Create a TransformSystem that will tell the visual how to draw
-        self.cube_transform = transforms.AffineTransform()
-        self.tr_sys = transforms.TransformSystem(self)
-        self.tr_sys.visual_to_document = self.cube_transform
+        self.cube_transform = transforms.MatrixTransform()
+        self.cube.transform = self.cube_transform
 
         self._timer = app.Timer('auto', connect=self.on_timer, start=True)
 
         self.show()
 
+    def on_resize(self, event):
+        # Set canvas viewport and reconfigure visual transforms to match.
+        vp = (0, 0, self.physical_size[0], self.physical_size[1])
+        self.context.set_viewport(*vp)
+        self.cube.transforms.configure(canvas=self, viewport=vp)
+
     def on_draw(self, event):
         gloo.set_viewport(0, 0, *self.physical_size)
-        gloo.clear('white')
-        self.tr_sys.auto_configure()
-        self.cube.draw(self.tr_sys)
+        gloo.clear('white', depth=True)
+
+        self.cube.draw()
 
     def on_timer(self, event):
         self.theta += .5

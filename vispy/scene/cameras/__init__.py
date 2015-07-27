@@ -15,6 +15,10 @@ Internally, Cameras work by setting the transform of a SubScene object such
 that a certain part of the scene is mapped to the bounding rectangle of the 
 ViewBox.
 """
-from .cameras import (make_camera, BaseCamera, PanZoomCamera,  # noqa 
-                      TurntableCamera, FlyCamera, ArcballCamera)  # noqa
+from ._base import make_camera  # noqa
+from .base_camera import BaseCamera  # noqa
+from .panzoom import PanZoomCamera  # noqa
+from .arcball import ArcballCamera  # noqa
+from .turntable import TurntableCamera  # noqa
+from .fly import FlyCamera  # noqa
 from .magnify import MagnifyCamera, Magnify1DCamera  # noqa

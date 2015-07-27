@@ -15,11 +15,10 @@ def test_histogram():
     with TestingCanvas(size=size, bgcolor='w') as c:
         np.random.seed(2397)
         data = np.random.normal(size=100)
-        hist = Histogram(data, bins=20, color='k')
+        hist = Histogram(data, bins=20, color='k', parent=c.scene)
         hist.transform = STTransform((size[0] // 10, -size[1] // 20, 1),
                                      (100, size[1]))
-        c.draw_visual(hist)
-        assert_image_approved("screenshot", "visuals/histogram.png")
+        assert_image_approved(c.render(), "visuals/histogram.png")
 
 
 run_tests_if_main()

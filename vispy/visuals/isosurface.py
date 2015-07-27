@@ -55,20 +55,13 @@ class IsosurfaceVisual(MeshVisual):
         self._recompute = True
         self.update()
 
-    def draw(self, transforms):
-        """Draw the visual
-
-        Parameters
-        ----------
-        transforms : instance of TransformSystem
-            The transforms to use.
-        """
+    def _prepare_draw(self, view):
         if self._data is None or self._level is None:
-            return
+            return False
 
         if self._recompute:
             verts, faces = isosurface(self._data, self._level)
             MeshVisual.set_data(self, vertices=verts, faces=faces)
             self._recompute = False
 
-        MeshVisual.draw(self, transforms)
+        return MeshVisual._prepare_draw(self, view)

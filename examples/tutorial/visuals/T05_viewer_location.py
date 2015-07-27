@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+# -----------------------------------------------------------------------------
+# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+# -----------------------------------------------------------------------------
 """
 Tutorial: Creating Visuals
 ==========================
@@ -38,35 +43,30 @@ void main() {
 class MyMeshVisual(visuals.Visual):
     """
     """
-    
+
     def __init__(self):
-        visuals.Visual.__init__(self)
-        
+        visuals.Visual.__init__(self, vertex_shader, fragment_shader)
+
         # Create an interesting mesh shape for demonstration.
         fname = io.load_data_file('orig/triceratops.obj.gz')
         vertices, faces, normals, tex = io.read_mesh(fname)
-        
+
         self._ibo = gloo.IndexBuffer(faces)
-        
-        self.program = visuals.shaders.ModularProgram(vertex_shader, 
-                                                      fragment_shader)
-        self.program.vert['position'] = gloo.VertexBuffer(vertices)
-        #self.program.vert['normal'] = gloo.VertexBuffer(normals)
-        
-    def draw(self, transforms):
-        # Note we use the "additive" GL blending settings so that we do not 
+
+        self.shared_program.vert['position'] = gloo.VertexBuffer(vertices)
+        # self.program.vert['normal'] = gloo.VertexBuffer(normals)
+        self.set_gl_state('additive', cull_face=False)
+        self._draw_mode = 'triangles'
+        self._index_buffer = self._ibo
+
+    def _prepare_transforms(self, view):
+        # Note we use the "additive" GL blending settings so that we do not
         # have to sort the mesh triangles back-to-front before each draw.
-        gloo.set_state('additive', cull_face=False)
-        
-        self.program.vert['visual_to_doc'] = transforms.visual_to_document
-        imap = transforms.visual_to_document.inverse
-        self.program.vert['doc_to_visual'] = imap
-        self.program.vert['doc_to_render'] = (
-            transforms.framebuffer_to_render * 
-            transforms.document_to_framebuffer)
-        
-        # Finally, draw the triangles.
-        self.program.draw('triangles', self._ibo)
+        tr = view.transforms
+        view_vert = view.view_program.vert
+        view_vert['visual_to_doc'] = tr.get_transform('visual', 'document')
+        view_vert['doc_to_visual'] = tr.get_transform('document', 'visual')
+        view_vert['doc_to_render'] = tr.get_transform('document', 'render')
 
 
 # Auto-generate a Visual+Node class for use in the scenegraph.
@@ -84,7 +84,7 @@ view.camera.fov = 50
 view.camera.distance = 2
 
 mesh = MyMesh(parent=view.scene)
-mesh.transform = visuals.transforms.AffineTransform()
+mesh.transform = visuals.transforms.MatrixTransform()
 #mesh.transform.translate([-25, -25, -25])
 mesh.transform.rotate(90, (1, 0, 0))
 
