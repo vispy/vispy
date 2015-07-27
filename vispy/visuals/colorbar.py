@@ -331,21 +331,20 @@ class ColorBarVisual(CompoundVisual):
 
     @staticmethod
     def _get_anchors(center, halfdim, orientation, transforms):
-        # tick direction is defined in visual coords, but use document
-        # coords to determine the tick length
-
         visual_to_document = transforms.get_transform('visual', 'document')
         if orientation == "bottom":
-            direction = [0, -1]
+            perp_direction = [0, -1]
         elif orientation == "top":
-            direction = [0, 1]
+            perp_direction = [0, 1]
+        # NOTE: we use these as the perp directions for left and right,
+        # because the label gets rotated by (-90) degrees at the end.
         elif orientation == "left":
-            direction = [0, -1]
+            perp_direction = [0, -1]
         elif orientation == "right":
-            direction = [0, 1]
+            perp_direction = [0, 1]
 
-        direction = np.array(direction, dtype=np.float32)
-        direction /= np.linalg.norm(direction)
+        perp_direction = np.array(perp_direction, dtype=np.float32)
+        perp_direction /= np.linalg.norm(perp_direction)
         # use the document (pixel) coord system to set text anchors
         anchors = []
         if direction[0] < 0:
