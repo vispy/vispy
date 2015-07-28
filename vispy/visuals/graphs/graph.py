@@ -26,7 +26,8 @@ class GraphVisual(CompoundVisual):
 
     """
 
-    _arrow_kwargs = ('line_color', 'line_width', 'arrow_type')
+    _arrow_attributes = ('arrow_type',)
+    _arrow_kwargs = ('line_color', 'line_width')
     _node_kwargs = ('node_symbol', 'node_size', 'edge_color', 'face_color',
                     'edge_width')
 
@@ -37,7 +38,7 @@ class GraphVisual(CompoundVisual):
                  arrow_type=None, node_symbol=None, node_size=None,
                  edge_color=None, face_color=None, edge_width=None):
 
-        self._edges = ArrowVisual(method='gl', antialias=True)
+        self._edges = ArrowVisual(method='gl', connect='segments')
         self._nodes = MarkersVisual()
 
         CompoundVisual.__init__(self, [self._edges, self._nodes])
@@ -60,16 +61,17 @@ class GraphVisual(CompoundVisual):
             # Randomly place nodes, visual coordinate system is between -1 and 1
             num_nodes = adjacency_mat.shape[0]
             node_coords = np.random.rand(num_nodes, 2)
-            node_coords = -np.ones((num_nodes, 2)) + 2*node_coords
 
             line_vertices = []
             arrows = []
             for edge in itertools.combinations(range(num_nodes), 2):
-                line_vertices.extend([node_coords[edge[0]],
-                                      node_coords[edge[1]]])
+                reverse = (edge[1], edge[0])
+
+                if adjacency_mat[edge] == 1 or adjacency_mat[reverse] == 1:
+                    line_vertices.extend([node_coords[edge[0]],
+                                          node_coords[edge[1]]])
 
                 # Check if edge is directed, and if so, add an arrow head
-                reverse = (edge[1], edge[0])
                 if adjacency_mat[edge] == 1 and adjacency_mat[reverse] == 0:
                     arrows.extend([
                         node_coords[edge[0]], node_coords[edge[1]]
@@ -81,6 +83,13 @@ class GraphVisual(CompoundVisual):
 
             line_vertices = np.array(line_vertices)
             arrows = np.array(arrows).reshape((len(arrows)/2, 4))
+
+        for k in self._arrow_attributes:
+            if k in kwargs:
+                translated = (self._arrow_kw_trans[k] if k in
+                              self._arrow_kw_trans else k)
+
+                setattr(self._edges, translated, kwargs.pop(k))
 
         arrow_kwargs = {}
         for k in self._arrow_kwargs:
