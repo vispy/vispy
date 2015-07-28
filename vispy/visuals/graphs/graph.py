@@ -58,12 +58,13 @@ class GraphVisual(CompoundVisual):
                 raise ValueError("Adjacency matrix should be square.")
 
             # Randomly place nodes, visual coordinate system is between -1 and 1
-            node_coords = np.random.rand(len(adjacency_mat), 2)
-            node_coords = -np.ones((len(adjacency_mat), 2)) + 2*node_coords
+            num_nodes = adjacency_mat.shape[0]
+            node_coords = np.random.rand(num_nodes, 2)
+            node_coords = -np.ones((num_nodes, 2)) + 2*node_coords
 
             line_vertices = []
             arrows = []
-            for edge in itertools.combinations(range(len(adjacency_mat)), 2):
+            for edge in itertools.combinations(range(num_nodes), 2):
                 line_vertices.extend([node_coords[edge[0]],
                                       node_coords[edge[1]]])
 
