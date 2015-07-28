@@ -12,9 +12,9 @@ import itertools
 
 import numpy as np
 
-from .visual import CompoundVisual
-from .line import ArrowVisual
-from .markers import MarkersVisual
+from ..visual import CompoundVisual
+from ..line import ArrowVisual
+from ..markers import MarkersVisual
 
 
 class GraphVisual(CompoundVisual):
