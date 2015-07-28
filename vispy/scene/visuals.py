@@ -23,14 +23,14 @@ from ..visuals.filters import ColorFilter, PickingFilter
 class VisualNode(Node):
     _next_id = 1
     _visual_ids = weakref.WeakValueDictionary()
-    
+
     def __init__(self, parent=None, name=None):
         Node.__init__(self, parent=parent, name=name,
                       transforms=self.transforms)
         self.interactive = False
         self._opacity_filter = ColorFilter()
         self.attach(self._opacity_filter)
-        
+
         self._id = VisualNode._next_id
         VisualNode._visual_ids[self._id] = self
         VisualNode._next_id += 1
@@ -39,10 +39,10 @@ class VisualNode(Node):
 
     def _update_opacity(self):
         self._opacity_filter.color = (1, 1, 1, self._opacity)
-        
+
     def _set_clipper(self, node, clipper):
         """Assign a clipper that is inherited from a parent node.
-        
+
         If *clipper* is None, then remove any clippers for *node*.
         """
         if node in self._clippers:
@@ -57,7 +57,7 @@ class VisualNode(Node):
         drawn in picking mode.
         """
         return self._picking
-    
+
     @picking.setter
     def picking(self, p):
         for c in self.children:
@@ -75,7 +75,7 @@ class VisualNode(Node):
         self.transforms.visual_transform = self.node_transform(scene)
         self.transforms.scene_transform = scene.node_transform(doc)
         self.transforms.document_transform = doc.node_transform(root)
-        
+
         Node._update_trsys(self, event)
 
     @property
@@ -94,50 +94,50 @@ class VisualNode(Node):
             return
         self._visual_superclass.draw(self)
 
-    
+
 def create_visual_node(subclass):
     # Create a new subclass of Node.
-    
+
     # Decide on new class name
     clsname = subclass.__name__
     assert clsname.endswith('Visual')
     clsname = clsname[:-6]
-    
+
     # Generate new docstring based on visual docstring
     try:
         doc = generate_docstring(subclass, clsname)
     except Exception:
         # If parsing fails, just return the original Visual docstring
         doc = subclass.__doc__
-    
+
     # New __init__ method
     def __init__(self, *args, **kwargs):
         parent = kwargs.pop('parent', None)
         name = kwargs.pop('name', None)
         self.name = name  # to allow __str__ before Node.__init__
         self._visual_superclass = subclass
-        
+
         subclass.__init__(self, *args, **kwargs)
         VisualNode.__init__(self, parent=parent, name=name)
-    
+
     # Create new class
-    cls = type(clsname, (VisualNode, subclass), {'__init__': __init__, 
+    cls = type(clsname, (VisualNode, subclass), {'__init__': __init__,
                                                  '__doc__': doc})
-    
+
     return cls
 
 
 def generate_docstring(subclass, clsname):
     # Generate a Visual+Node docstring by modifying the Visual's docstring
     # to include information about Node inheritance and extra init args.
-    
+
     sc_doc = subclass.__doc__
     if sc_doc is None:
         sc_doc = ""
-        
+
     # find locations within docstring to insert new parameters
     lines = sc_doc.split("\n")
-    
+
     # discard blank lines at start
     while lines and lines[0].strip() == '':
         lines.pop(0)
@@ -150,7 +150,7 @@ def generate_docstring(subclass, clsname):
     while i < len(lines):
         line = lines[i]
         # ignore blank lines and '------' lines
-        if re.search(r'\w', line):  
+        if re.search(r'\w', line):
             indent = len(line) - len(line.lstrip())
             # If Params section has already started, check for end of params
             # (that is where we will insert new params)
@@ -162,16 +162,16 @@ def generate_docstring(subclass, clsname):
                     if re.match(r'\s*[a-zA-Z0-9_]+\s*:\s*\S+', line) is None:
                         break
                 param_end = i + 1
-            
+
             # Check for beginning of params section
             elif re.match(r'\s*Parameters\s*', line):
                 params_started = True
                 param_indent = indent
                 if first_blank is None:
                     first_blank = i
-        
+
         # Check for first blank line
-        # (this is where the Node inheritance description will be 
+        # (this is where the Node inheritance description will be
         # inserted)
         elif first_blank is None and line.strip() == '':
             first_blank = i
@@ -188,7 +188,7 @@ def generate_docstring(subclass, clsname):
         if first_blank is None:
             first_blank = param_end - 3
         params_started = True
-    
+
     # build class and parameter description strings
     class_desc = ("\n    This class inherits from visuals.%sVisual and "
                   "scene.Node, allowing the visual to be placed inside a "
@@ -198,25 +198,53 @@ def generate_docstring(subclass, clsname):
                 "    name : string\n"
                 "        A name for this node, used primarily for debugging\n"
                 "        (optional).")
-    
+
     # assemble all docstring parts
     lines = (lines[:first_blank] +
              [class_desc] +
              lines[first_blank:param_end] +
              [parm_doc] +
              lines[param_end:])
-            
+
     doc = '\n'.join(lines)
     return doc
 
+# This is _not_ automated to help with auto-completion of IDEs,
+# python REPL and IPython.
+# Explicitly initializing these members allow IDEs to lookup
+# and provide auto-completion. One problem is the fact that
+# Docstrings are _not_ looked up correctly by IDEs, since they
+# are attached programatically in the create_visual_node call.
+# However, help(vispy.scene.FooVisual) still works
 
-__all__ = []
+Axis = create_visual_node(visuals.AxisVisual)
+Box = create_visual_node(visuals.BoxVisual)
+Cube = create_visual_node(visuals.CubeVisual)
+Ellipse = create_visual_node(visuals.EllipseVisual)
+GridLines = create_visual_node(visuals.GridLinesVisual)
+Image = create_visual_node(visuals.ImageVisual)
+Histogram = create_visual_node(visuals.HistogramVisual)
+Isocurve = create_visual_node(visuals.IsocurveVisual)
+Isoline = create_visual_node(visuals.IsolineVisual)
+Isosurface = create_visual_node(visuals.IsosurfaceVisual)
+Line = create_visual_node(visuals.LineVisual)
+LinePlot = create_visual_node(visuals.LinePlotVisual)
+Markers = create_visual_node(visuals.MarkersVisual)
+Mesh = create_visual_node(visuals.MeshVisual)
+Plane = create_visual_node(visuals.PlaneVisual)
+Polygon = create_visual_node(visuals.PolygonVisual)
+Rectangle = create_visual_node(visuals.RectangleVisual)
+RegularPolygon = create_visual_node(visuals.RegularPolygonVisual)
+ScrollingLines = create_visual_node(visuals.ScrollingLinesVisual)
+Spectrogram = create_visual_node(visuals.SpectrogramVisual)
+SurfacePlot = create_visual_node(visuals.SurfacePlotVisual)
+Text = create_visual_node(visuals.TextVisual)
+Tube = create_visual_node(visuals.TubeVisual)
+# Visual = create_visual_node(visuals.Visual)  # Should not be created
+Compound = create_visual_node(visuals.CompoundVisual)
+Volume = create_visual_node(visuals.VolumeVisual)
+XYZAxis = create_visual_node(visuals.XYZAxisVisual)
+ColorBar = create_visual_node(visuals.ColorBarVisual)
 
-for obj_name in dir(visuals):
-    obj = getattr(visuals, obj_name)
-    if (isinstance(obj, type) and 
-       issubclass(obj, visuals.BaseVisual) and 
-       obj is not visuals.Visual):
-        cls = create_visual_node(obj)
-        globals()[cls.__name__] = cls
-        __all__.append(cls.__name__)
+__all__ = [name for (name, obj) in globals().items()
+           if isinstance(obj, type) and issubclass(obj, VisualNode)]
