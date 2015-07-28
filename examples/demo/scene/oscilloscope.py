@@ -59,7 +59,8 @@ try:
 except ImportError:
     class MicrophoneRecorder(object):
         def __init__(self):
-            rate = 44100.
+            self.chunksize = 1024
+            self.rate = rate = 44100.
             t = np.linspace(0, 10, rate*10)
             self.data = (np.sin(t * 10.) * 0.3).astype('float32')
             self.data += np.sin((t + 0.3) * 20.) * 0.15
@@ -69,10 +70,14 @@ except ImportError:
                                          * 0.005, (0, 1))
             self.ptr = 0
             
-        def get_frame(self):
-            frame = self.data[self.ptr:self.ptr+1024]
+        def get_frames(self):
+            if self.ptr + 1024 > len(self.data):
+                end = 1024 - (len(self.data) - self.ptr)
+                frame = np.concatenate((self.data[self.ptr:], self.data[:end]))
+            else:
+                frame = self.data[self.ptr:self.ptr+1024]
             self.ptr = (self.ptr + 1024) % (len(self.data) - 1024)
-            return frame
+            return [frame]
         
         def start(self):
             pass
@@ -117,7 +122,7 @@ class Oscilloscope(scene.ScrollingLines):
             th = self._trigger[1]  # trigger window height
             tw = self._trigger[2] / self._dx  # trigger window width
             thresh = self._trigger[0]
-            
+
             trig = np.argwhere((data[tw:] > thresh + th) & 
                                (data[:-tw] < thresh - th))
             if len(trig) > 0:
