@@ -40,3 +40,4 @@ from .volume import VolumeVisual  # noqa
 from .xyz_axis import XYZAxisVisual  # noqa
 from .border import _BorderVisual  # noqa
 from .colorbar import ColorBarVisual  # noqa
+from .graphs import GraphVisual  # noqa
