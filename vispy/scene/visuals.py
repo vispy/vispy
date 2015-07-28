@@ -34,7 +34,7 @@ class VisualNode(Node):
         self._id = VisualNode._next_id
         VisualNode._visual_ids[self._id] = self
         VisualNode._next_id += 1
-        self._picking_filter = PickingFilter(id=self._id)
+        self._picking_filter = PickingFilter(id_=self._id)
         self.attach(self._picking_filter)
 
     def _update_opacity(self):
