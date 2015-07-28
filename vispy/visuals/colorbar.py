@@ -331,8 +331,7 @@ class ColorBarVisual(CompoundVisual):
 
     @staticmethod
     def _get_anchors(center, halfdim, orientation, transforms):
-        visual_to_doc = transforms.get_transform("visual", "document")
-
+        # NOTE: these are in document coordinates
         if orientation == "bottom":
             perp_direction = [0, 1]
         elif orientation == "top":
@@ -345,29 +344,25 @@ class ColorBarVisual(CompoundVisual):
         perp_direction = np.array(perp_direction, dtype=np.float32)
         perp_direction /= np.linalg.norm(perp_direction)
 
-        perp_doc = visual_to_doc.map(perp_direction)
-        origin_doc = visual_to_doc.map([0., 0.])
-        perp_doc -= origin_doc
-
         # rotate axes by -90 degrees to mimic label's rotation
         if orientation in ["left", "right"]:
-            x = perp_doc[0]
-            y = perp_doc[1]
+            x = perp_direction[0]
+            y = perp_direction[1]
 
-            perp_doc[0] = -y
-            perp_doc[1] = x
+            perp_direction[0] = -y
+            perp_direction[1] = x
 
         # use the document (pixel) coord system to set text anchors
         anchors = []
-        if perp_doc[0] < 0:
+        if perp_direction[0] < 0:
             anchors.append('right')
-        elif perp_doc[0] > 0:
+        elif perp_direction[0] > 0:
             anchors.append('left')
         else:
             anchors.append('center')
-        if perp_doc[1] < 0:
+        if perp_direction[1] < 0:
             anchors.append('bottom')
-        elif perp_doc[1] > 0:
+        elif perp_direction[1] > 0:
             anchors.append('top')
         else:
             anchors.append('middle')
@@ -407,62 +402,47 @@ class ColorBarVisual(CompoundVisual):
         visual_to_doc = transforms.get_transform('visual', 'document')
         doc_to_visual = transforms.get_transform('document', 'visual')
 
-        if orientation == "bottom":
-            perp_axis = [0, halfh]
-        elif orientation == "top":
-            perp_axis = [0, -halfh]
+        doc_widths = visual_to_doc.map(np.array([halfw, halfh, 0, 0],
+                                                dtype=np.float32))
+        doc_halfw = np.abs(doc_widths[0])
+        doc_halfh = np.abs(doc_widths[1])
+
+        if orientation == "top":
+            doc_perp_vector = np.array([0, -doc_halfh, 0, 0], dtype=np.float32)
+        elif orientation == "bottom":
+            doc_perp_vector = np.array([0, doc_halfh, 0, 0], dtype=np.float32)
         elif orientation == "left":
-            perp_axis = [-halfw, 0]
-        elif orientation == "right":
-            perp_axis = [halfw, 0]
+            doc_perp_vector = np.array([-doc_halfw, 0, 0, 0], dtype=np.float32)
+        if orientation == "right":
+            doc_perp_vector = np.array([doc_halfw, 0, 0, 0], dtype=np.float32)
 
-        perp_axis = visual_to_doc.map(np.array(perp_axis, dtype=np.float32))
-        origin_doc = visual_to_doc.map(np.array([0, 0], dtype=np.float32))
-        perp_axis -= origin_doc
+        perp_len = np.linalg.norm(doc_perp_vector)
+        doc_perp_vector /= perp_len
+        perp_len += border_width
+        perp_len *= _TEXT_PADDING_FACTOR
+        doc_perp_vector *= perp_len
 
-        # -------------------
-        #               ^
-        #            half_axis_y
-        #               v
-        #               .(center)
-        # <-half_axis_x->
-        # --------------------
+        doc_center = visual_to_doc.map(np.array([x, y, 0, 0],
+                                                dtype=np.float32))
+        doc_label_pos = doc_center + doc_perp_vector
+        visual_label_pos = doc_to_visual.map(doc_label_pos)[:3]
 
-        # scale up the perpendicular by including the
-        # border width (we can add it directly) since
-        # we are in the document coordinate system
-        # plus a text padding factor
-        perp_length = np.linalg.norm(perp_axis)
-        perp_axis /= perp_length
-        perp_length += border_width
-        perp_length *= _TEXT_PADDING_FACTOR
-        perp_axis *= perp_length
+        # next, calculate tick positions
+        if orientation in ["top", "bottom"]:
+            ticks_axis = np.array([doc_halfw, 0, 0, 0], dtype=np.float32)
+            doc_ticks_pos = [doc_label_pos - ticks_axis,
+                             doc_label_pos + ticks_axis]
+        else:
+            ticks_axis = np.array([0, doc_halfh, 0, 0], dtype=np.float32)
+            doc_ticks_pos = [doc_label_pos + ticks_axis,
+                             doc_label_pos - ticks_axis]
 
-        # visual coordinates, now
-        perp_axis = doc_to_visual.map(perp_axis)
-        center = np.array([x, y, 0, 0], dtype=np.float32)
-        baseline_doc = center + perp_axis
+        visual_ticks_pos = []
+        visual_ticks_pos.append(doc_to_visual.map(doc_ticks_pos[0])[:3])
+        visual_ticks_pos.append(doc_to_visual.map(doc_ticks_pos[1])[:3])
 
-        # if orientation == "top":
-        #     baseline_doc = center - perp_axis
-        # elif orientation == "bottom":
-        #     baseline_doc = center + perp_axis
-        # elif orientation == "left":
-        #     baseline_doc = center - perp_axis
-        # elif orientation == "right":
-        #     baseline_doc = center + perp_axis
+        return (visual_label_pos, visual_ticks_pos)
 
-        label_pos = baseline_doc[:-1]
-        half_axis_x = np.array([halfw, 0, 0], dtype=np.float32)
-        half_axis_y = np.array([0, halfh, 0], dtype=np.float32)
-        if orientation == "top" or orientation == "bottom":
-            ticks_pos = [label_pos + half_axis_x,
-                         label_pos - half_axis_x]
-        else:  # orientation == "top" or orientation == "bottom"
-            ticks_pos = [label_pos + half_axis_y,
-                         label_pos - half_axis_y]
-
-        return (label_pos, ticks_pos)
 
     @property
     def cmap(self):
