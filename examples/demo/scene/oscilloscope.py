@@ -218,7 +218,7 @@ grid = win.central_widget.add_grid()
 
 view3 = grid.add_view(row=0, col=0, col_span=2, camera='panzoom',
                       border_color='grey')
-image = ScrollingImage((1 + fft_samples//2, 10000), parent=view3.scene)
+image = ScrollingImage((1 + fft_samples // 2, 4000), parent=view3.scene)
 image.transform = scene.LogTransform((0, 10, 0))
 #view3.camera.rect = (0, 0, image.size[1], np.log10(image.size[0]))
 view3.camera.rect = (3493.32, 1.85943, 605.554, 1.41858)
