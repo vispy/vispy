@@ -68,6 +68,8 @@ except ImportError:
                                          * 0.2, (0.4, 8))
             self.data += gaussian_filter(np.random.normal(size=self.data.shape)
                                          * 0.005, (0, 1))
+            self.data += np.sin(t * 1760 * np.pi)  # 880 Hz
+            self.data = (self.data * 2**10 - 2**9).astype('int16')
             self.ptr = 0
             
         def get_frames(self):
