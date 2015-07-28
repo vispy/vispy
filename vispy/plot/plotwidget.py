@@ -436,5 +436,5 @@ class PlotWidget(scene.Widget):
                                   border_color=border_color,
                                   **kwargs)
         self.view.add(colorbar)
-        # self.view.camera.set_range()
+        self.view.camera.set_range()
         return colorbar
