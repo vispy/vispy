@@ -157,7 +157,7 @@ class Oscilloscope(scene.ScrollingLines):
 rolling_tex = """
 float rolling_texture(vec2 pos) {
     if( pos.x < 0 || pos.x > 1 || pos.y < 0 || pos.y > 1 ) {
-        return 0;
+        return 0.0f;
     }
     vec2 uv = vec2(mod(pos.x+$shift, 1), pos.y);
     return texture2D($texture, uv).r;
