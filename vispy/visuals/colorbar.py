@@ -331,15 +331,31 @@ class ColorBarVisual(CompoundVisual):
 
     @staticmethod
     def _get_anchors(center, halfdim, orientation, transforms):
+
+        visual_to_doc = transforms.get_transform('visual', 'document')
+        doc_to_visual = transforms.get_transform('document', 'visual')
+
+        # doc_widths = visual_to_doc.map(np.array([halfw, halfh, 0, 0],
+        #                                         dtype=np.float32))
+
+        doc_x = visual_to_doc.map(np.array([1, 0, 0, 0], dtype=np.float32))
+        doc_y = visual_to_doc.map(np.array([0, 1, 0, 0], dtype=np.float32))
+
+        if doc_x[0] < 0:
+            doc_x *= -1
+
+        if doc_y[1] < 0:
+            doc_y *= -1
+
         # NOTE: these are in document coordinates
         if orientation == "bottom":
-            perp_direction = [0, 1]
+            perp_direction = doc_y
         elif orientation == "top":
-            perp_direction = [0, -1]
+            perp_direction = -doc_y
         elif orientation == "left":
-            perp_direction = [-1, 0]
+            perp_direction = -doc_x
         elif orientation == "right":
-            perp_direction = [1, 0]
+            perp_direction = doc_x
 
         perp_direction = np.array(perp_direction, dtype=np.float32)
         perp_direction /= np.linalg.norm(perp_direction)
@@ -402,19 +418,29 @@ class ColorBarVisual(CompoundVisual):
         visual_to_doc = transforms.get_transform('visual', 'document')
         doc_to_visual = transforms.get_transform('document', 'visual')
 
-        doc_widths = visual_to_doc.map(np.array([halfw, halfh, 0, 0],
-                                                dtype=np.float32))
-        doc_halfw = np.abs(doc_widths[0])
-        doc_halfh = np.abs(doc_widths[1])
+        # doc_widths = visual_to_doc.map(np.array([halfw, halfh, 0, 0],
+        #                                         dtype=np.float32))
+
+        doc_x = visual_to_doc.map(np.array([halfw, 0, 0, 0], dtype=np.float32))
+        doc_y = visual_to_doc.map(np.array([0, halfh, 0, 0], dtype=np.float32))
+
+        if doc_x[0] < 0:
+            doc_x *= -1
+
+        if doc_y[1] < 0:
+            doc_y *= -1
+
+        # doc_halfw = np.abs(doc_widths[0])
+        # doc_halfh = np.abs(doc_widths[1])
 
         if orientation == "top":
-            doc_perp_vector = np.array([0, -doc_halfh, 0, 0], dtype=np.float32)
+            doc_perp_vector = -doc_y
         elif orientation == "bottom":
-            doc_perp_vector = np.array([0, doc_halfh, 0, 0], dtype=np.float32)
+            doc_perp_vector = doc_y
         elif orientation == "left":
-            doc_perp_vector = np.array([-doc_halfw, 0, 0, 0], dtype=np.float32)
+            doc_perp_vector = -doc_x
         if orientation == "right":
-            doc_perp_vector = np.array([doc_halfw, 0, 0, 0], dtype=np.float32)
+            doc_perp_vector = doc_x
 
         perp_len = np.linalg.norm(doc_perp_vector)
         doc_perp_vector /= perp_len
@@ -429,13 +455,18 @@ class ColorBarVisual(CompoundVisual):
 
         # next, calculate tick positions
         if orientation in ["top", "bottom"]:
-            ticks_axis = np.array([doc_halfw, 0, 0, 0], dtype=np.float32)
-            doc_ticks_pos = [doc_label_pos - ticks_axis,
-                             doc_label_pos + ticks_axis]
+            # ticks_axis = visual_to_doc.map(np.array([halfw, 0, 0, 0], dtype=np.float32))
+            #if ticks_axis[0] < 0:
+            #    ticks_axis *= -1
+            doc_ticks_pos = [doc_label_pos - doc_x,
+                             doc_label_pos + doc_x]
         else:
-            ticks_axis = np.array([0, doc_halfh, 0, 0], dtype=np.float32)
-            doc_ticks_pos = [doc_label_pos + ticks_axis,
-                             doc_label_pos - ticks_axis]
+            # ticks_axis = visual_to_doc.map(np.array([0, halfh, 0, 0], dtype=np.float32))
+            # if ticks_axis[1] < 0:
+            #    ticks_axis *= -1
+
+            doc_ticks_pos = [doc_label_pos + doc_y,
+                             doc_label_pos - doc_y]
 
         visual_ticks_pos = []
         visual_ticks_pos.append(doc_to_visual.map(doc_ticks_pos[0])[:3])
