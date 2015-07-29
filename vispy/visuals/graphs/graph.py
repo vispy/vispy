@@ -26,7 +26,7 @@ class GraphVisual(CompoundVisual):
 
     """
 
-    _arrow_attributes = ('arrow_type',)
+    _arrow_attributes = ('arrow_type', 'arrow_size')
     _arrow_kwargs = ('line_color', 'line_width')
     _node_kwargs = ('node_symbol', 'node_size', 'edge_color', 'face_color',
                     'edge_width')
@@ -35,8 +35,9 @@ class GraphVisual(CompoundVisual):
     _node_kw_trans = dict(node_symbol='symbol', node_size='size')
 
     def __init__(self, adjacency_mat=None, line_color=None, line_width=None,
-                 arrow_type=None, node_symbol=None, node_size=None,
-                 edge_color=None, face_color=None, edge_width=None):
+                 arrow_type=None, arrow_size=None, node_symbol=None,
+                 node_size=None, edge_color=None, face_color=None,
+                 edge_width=None):
 
         self._edges = ArrowVisual(method='gl', connect='segments')
         self._nodes = MarkersVisual()
@@ -45,9 +46,9 @@ class GraphVisual(CompoundVisual):
 
         self.set_data(adjacency_mat, line_color=line_color,
                       line_width=line_width, arrow_type=arrow_type,
-                      node_symbol=node_symbol, node_size=node_size,
-                      edge_color=edge_color, face_color=face_color,
-                      edge_width=edge_width)
+                      arrow_size=arrow_size, node_symbol=node_symbol,
+                      node_size=node_size, edge_color=edge_color,
+                      face_color=face_color, edge_width=edge_width)
 
     def set_data(self, adjacency_mat=None, **kwargs):
         line_vertices = None
@@ -76,6 +77,7 @@ class GraphVisual(CompoundVisual):
                     arrows.extend([
                         node_coords[edge[0]], node_coords[edge[1]]
                     ])
+
                 elif adjacency_mat[edge] == 0 and adjacency_mat[reverse] == 1:
                     arrows.extend([
                         node_coords[reverse[0]], node_coords[reverse[1]]
