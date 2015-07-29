@@ -108,7 +108,7 @@ class Canvas(object):
     time or using a dedicated double-click button will not be respected.
     """
 
-    def __init__(self, title='Vispy canvas', size=(800, 600), position=None,
+    def __init__(self, title='VisPy canvas', size=(800, 600), position=None,
                  show=False, autoswap=True, app=None, create_native=True,
                  vsync=False, resizable=True, decorate=True, fullscreen=False,
                  config=None, shared=None, keys=None, parent=None, dpi=None,

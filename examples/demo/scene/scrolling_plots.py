@@ -1,12 +1,18 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) 2015, Vispy Development Team.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+# vispy: testskip - Travis can't handle it
+"""
+Show 10,000 realtime scrolling plots
+"""
 from vispy import app, scene
 import numpy as np
 
 
-win = scene.SceneCanvas(keys='interactive', show=True, size=(1024, 768))
-grid = win.central_widget.add_grid()
+canvas = scene.SceneCanvas(keys='interactive', show=True, size=(1024, 768))
+grid = canvas.central_widget.add_grid()
 view = grid.add_view(0, 1)
 view.camera = scene.MagnifyCamera(mag=1, size_factor=0.5, radius_ratio=0.6)
-#view.camera = 'panzoom'
 
 # Add axes
 yax = scene.AxisWidget(orientation='left')

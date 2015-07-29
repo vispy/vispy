@@ -109,7 +109,7 @@ class SceneCanvas(app.Canvas):
     This can cause problems with accessibility, as increasing the OS detection
     time or using a dedicated double-click button will not be respected.
     """
-    def __init__(self, title='Vispy canvas', size=(800, 600), position=None,
+    def __init__(self, title='VisPy canvas', size=(800, 600), position=None,
                  show=False, autoswap=True, app=None, create_native=True,
                  vsync=False, resizable=True, decorate=True, fullscreen=False,
                  config=None, shared=None, keys=None, parent=None, dpi=None,
@@ -436,8 +436,8 @@ class SceneCanvas(app.Canvas):
         tr = self.transforms.get_transform('canvas', 'framebuffer')
         pos = tr.map(pos)[:2]
 
-        id = self.render_picking(region=(pos[0]-radius, pos[1]-radius,
-                                         radius * 2 + 1, radius * 2 + 1))
+        id = self._render_picking(region=(pos[0]-radius, pos[1]-radius,
+                                          radius * 2 + 1, radius * 2 + 1))
         ids = []
         seen = set()
         for i in range(radius):

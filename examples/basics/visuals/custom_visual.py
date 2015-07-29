@@ -76,6 +76,9 @@ class MarkerVisual(Visual):
                           blend_func=('src_alpha', 'one_minus_src_alpha'))
         self._draw_mode = 'points'
 
+    def _prepare_transforms(self, view=None):
+        view.view_program.vert['transform'] = view.transforms.get_transform()
+
     def _prepare_draw(self, view):
         # attributes / uniforms are not available until program is built
         self.shared_program['a_position'] = VertexBuffer(self._pos)

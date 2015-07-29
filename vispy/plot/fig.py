@@ -17,6 +17,8 @@ class Fig(SceneCanvas):
         Size of the figure window in pixels.
     show : bool
         If True, show the window.
+    **kwargs : dict
+        Keywoard arguments to pass to `SceneCanvas` base class.
 
     Notes
     -----

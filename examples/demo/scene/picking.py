@@ -20,9 +20,9 @@ selected = None
 # plot data
 cmap = get_colormap('hsl', value=0.5)
 colors = cmap.map(np.linspace(0.1, 0.9, data.shape[0]))
-x = np.arange(data.shape[1]) * (dt * 1000)
+t = np.arange(data.shape[1]) * (dt * 1000)
 for i, y in enumerate(data):
-    line = plt.plot((x, y), color=colors[i])
+    line = plt.plot((t, y), color=colors[i])
     line.interactive = True
     line.data_index = i
 
@@ -76,7 +76,7 @@ def update_cursor(pos):
         pos = tr.map(pos)
         
         # get interpolated y coordinate
-        x = pos[0]
+        x = min(max(pos[0], t[0]), t[-2])
         ind = x / (dt * 1000)
         i = np.floor(ind)
         s = ind - i

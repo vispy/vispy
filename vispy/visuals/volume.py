@@ -100,78 +100,6 @@ const float u_shininess = 40.0;
 // global holding view direction in local coordinates
 vec3 view_ray;
 
-vec4 calculateColor(vec4, vec3, vec3);
-float rand(vec2 co);
-
-void main() {{
-    vec3 farpos = v_farpos.xyz / v_farpos.w;
-    vec3 nearpos = v_nearpos.xyz / v_nearpos.w;
-    
-    // Calculate unit vector pointing in the view direction through this 
-    // fragment.
-    view_ray = normalize(farpos.xyz - nearpos.xyz);
-    
-    // Compute the distance to the front surface or near clipping plane
-    float distance = dot(nearpos-v_position, view_ray);
-    distance = max(distance, min((-0.5 - v_position.x) / view_ray.x, 
-                            (u_shape.x - 0.5 - v_position.x) / view_ray.x));
-    distance = max(distance, min((-0.5 - v_position.y) / view_ray.y, 
-                            (u_shape.y - 0.5 - v_position.y) / view_ray.y));
-    distance = max(distance, min((-0.5 - v_position.z) / view_ray.z, 
-                            (u_shape.z - 0.5 - v_position.z) / view_ray.z));
-    
-    // Now we have the starting position on the front surface
-    vec3 front = v_position + view_ray * distance;
-    
-    // Decide how many steps to take
-    int nsteps = int(-distance / u_relative_step_size + 0.5);
-    if( nsteps < 1 )
-        discard;
-        
-    // Get starting location and step vector in texture coordinates
-    vec3 step = ((v_position - front) / u_shape) / nsteps;
-    vec3 start_loc = front / u_shape;
-    
-    // For testing: show the number of steps. This helps to establish
-    // whether the rays are correctly oriented
-    //gl_FragColor = vec4(0.0, nsteps / 3.0 / u_shape.x, 1.0, 1.0);
-    //return;
-    
-    {before_loop}
-    
-    // This outer loop seems necessary on some systems for large
-    // datasets. Ugly, but it works ...
-    vec3 loc = start_loc;
-    int iter = 0;
-    while (iter < nsteps) {{
-        for (iter=iter; iter<nsteps; iter++)
-        {{
-            // Get sample color
-            vec4 color = $sample(u_volumetex, loc);
-            float val = color.g;
-            
-            {in_loop}
-            
-            // Advance location deeper into the volume
-            loc += step;
-        }}
-    }}
-    
-    {after_loop}
-    
-    /* Set depth value - from visvis TODO
-    int iter_depth = int(maxi);
-    // Calculate end position in world coordinates
-    vec4 position2 = vertexPosition;
-    position2.xyz += ray*shape*float(iter_depth);
-    // Project to device coordinates and set fragment depth
-    vec4 iproj = gl_ModelViewProjectionMatrix * position2;
-    iproj.z /= iproj.w;
-    gl_FragDepth = (iproj.z+1.0)/2.0;
-    */
-}}
-
-
 float rand(vec2 co)
 {{
     // Create a pseudo-random number between 0 and 1.
@@ -255,6 +183,78 @@ vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
     // Done
     return final_color;
 }}
+
+// for some reason, this has to be the last function in order for the
+// filters to be inserted in the correct place...
+
+void main() {{
+    vec3 farpos = v_farpos.xyz / v_farpos.w;
+    vec3 nearpos = v_nearpos.xyz / v_nearpos.w;
+
+    // Calculate unit vector pointing in the view direction through this
+    // fragment.
+    view_ray = normalize(farpos.xyz - nearpos.xyz);
+
+    // Compute the distance to the front surface or near clipping plane
+    float distance = dot(nearpos-v_position, view_ray);
+    distance = max(distance, min((-0.5 - v_position.x) / view_ray.x,
+                            (u_shape.x - 0.5 - v_position.x) / view_ray.x));
+    distance = max(distance, min((-0.5 - v_position.y) / view_ray.y,
+                            (u_shape.y - 0.5 - v_position.y) / view_ray.y));
+    distance = max(distance, min((-0.5 - v_position.z) / view_ray.z,
+                            (u_shape.z - 0.5 - v_position.z) / view_ray.z));
+
+    // Now we have the starting position on the front surface
+    vec3 front = v_position + view_ray * distance;
+
+    // Decide how many steps to take
+    int nsteps = int(-distance / u_relative_step_size + 0.5);
+    if( nsteps < 1 )
+        discard;
+
+    // Get starting location and step vector in texture coordinates
+    vec3 step = ((v_position - front) / u_shape) / nsteps;
+    vec3 start_loc = front / u_shape;
+
+    // For testing: show the number of steps. This helps to establish
+    // whether the rays are correctly oriented
+    //gl_FragColor = vec4(0.0, nsteps / 3.0 / u_shape.x, 1.0, 1.0);
+    //return;
+
+    {before_loop}
+
+    // This outer loop seems necessary on some systems for large
+    // datasets. Ugly, but it works ...
+    vec3 loc = start_loc;
+    int iter = 0;
+    while (iter < nsteps) {{
+        for (iter=iter; iter<nsteps; iter++)
+        {{
+            // Get sample color
+            vec4 color = $sample(u_volumetex, loc);
+            float val = color.g;
+
+            {in_loop}
+
+            // Advance location deeper into the volume
+            loc += step;
+        }}
+    }}
+
+    {after_loop}
+
+    /* Set depth value - from visvis TODO
+    int iter_depth = int(maxi);
+    // Calculate end position in world coordinates
+    vec4 position2 = vertexPosition;
+    position2.xyz += ray*shape*float(iter_depth);
+    // Project to device coordinates and set fragment depth
+    vec4 iproj = gl_ModelViewProjectionMatrix * position2;
+    iproj.z /= iproj.w;
+    gl_FragDepth = (iproj.z+1.0)/2.0;
+    */
+}}
+
 
 """  # noqa
 
@@ -358,9 +358,12 @@ ISO_SNIPPETS = dict(
 
 ISO_FRAG_SHADER = FRAG_SHADER.format(**ISO_SNIPPETS)
 
-frag_dict = {'mip': MIP_FRAG_SHADER, 'iso': ISO_FRAG_SHADER,
-             'translucent': TRANSLUCENT_FRAG_SHADER, 
-             'additive': ADDITIVE_FRAG_SHADER}
+frag_dict = {
+    'mip': MIP_FRAG_SHADER,
+    'iso': ISO_FRAG_SHADER,
+    'translucent': TRANSLUCENT_FRAG_SHADER,
+    'additive': ADDITIVE_FRAG_SHADER,
+}
 
 
 class VolumeVisual(Visual):
