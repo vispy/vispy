@@ -22,12 +22,13 @@ class Canvas(app.Canvas):
         app.Canvas.__init__(self, title="Simple NetworkX Graph",
                             keys="interactive", size=(800, 600))
 
-        self.graph = nx.fast_gnp_random_graph(100, 0.02)
+        self.graph = nx.fast_gnp_random_graph(100, 0.02, directed=True)
 
         self.visual = visuals.GraphVisual(
             nx.adjacency_matrix(self.graph),
             line_color=(1.0, 1.0, 1.0, 1.0),
             arrow_type="stealth",
+            arrow_size=7.5,
             node_symbol="disc",
             node_size=10,
             face_color="red",
