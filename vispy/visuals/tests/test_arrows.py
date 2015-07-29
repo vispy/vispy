@@ -7,7 +7,7 @@ import numpy as np
 from vispy.visuals.line.arrow import ARROW_TYPES
 from vispy.scene import visuals, transforms
 from vispy.testing import (requires_application, TestingCanvas,
-                           run_tests_if_main, raises)
+                           run_tests_if_main, assert_raises)
 from vispy.testing.image_tester import assert_image_approved
 
 
@@ -89,11 +89,19 @@ def test_arrow_attributes():
                               arrows=arrows, arrow_size=10, color='red',
                               connect="segments", parent=c.scene)
 
-        with raises(ValueError):
+        def size_test():
             arrow.arrow_size = 0.0
 
-        with raises(ValueError):
+        def type_test():
             arrow.arrow_type = "random_non_existent"
+
+        assert_raises(
+            ValueError, size_test
+        )
+
+        assert_raises(
+            ValueError, type_test
+        )
 
 
 run_tests_if_main()
