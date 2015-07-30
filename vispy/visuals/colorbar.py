@@ -250,7 +250,6 @@ class ColorBarVisual(CompoundVisual):
                 orientation = "right"
 
         self._orientation = orientation
-        self._text_padding = 0
 
         self._label = TextVisual(text=self._label_str)
 
@@ -298,19 +297,25 @@ class ColorBarVisual(CompoundVisual):
 
         if self._orientation == "right" or self._orientation == "left":
             self._label.rotation = -90
-            self._ticks[0].rotation = -90
-            self._ticks[1].rotation = -90
 
         x, y = self._center_pos
         halfw, halfh = self._halfdim
 
-        anchors = ColorBarVisual._get_anchors(center=self._center_pos,
+        label_anchors = \
+            ColorBarVisual._get_label_anchors(center=self._center_pos,
                                               halfdim=self._halfdim,
                                               orientation=self._orientation,
                                               transforms=self.label.transforms)
-        self._label.anchors = anchors
-        self._ticks[0].anchors = anchors
-        self._ticks[1].anchors = anchors
+        self._label.anchors = label_anchors
+
+        ticks_anchors = \
+            ColorBarVisual._get_ticks_anchors(center=self._center_pos,
+                                              halfdim=self._halfdim,
+                                              orientation=self._orientation,
+                                              transforms=self.label.transforms)
+
+        self._ticks[0].anchors = ticks_anchors
+        self._ticks[1].anchors = ticks_anchors
 
         # test that width and height are non-zero
         if halfw <= 0:
@@ -336,13 +341,8 @@ class ColorBarVisual(CompoundVisual):
         self._update_positions()
 
     @staticmethod
-    def _get_anchors(center, halfdim, orientation, transforms):
-
+    def _get_label_anchors(center, halfdim, orientation, transforms):
         visual_to_doc = transforms.get_transform('visual', 'document')
-        doc_to_visual = transforms.get_transform('document', 'visual')
-
-        # doc_widths = visual_to_doc.map(np.array([halfw, halfh, 0, 0],
-        #                                         dtype=np.float32))
 
         doc_x = visual_to_doc.map(np.array([1, 0, 0, 0], dtype=np.float32))
         doc_y = visual_to_doc.map(np.array([0, 1, 0, 0], dtype=np.float32))
@@ -373,6 +373,49 @@ class ColorBarVisual(CompoundVisual):
 
             perp_direction[0] = -y
             perp_direction[1] = x
+
+        # use the document (pixel) coord system to set text anchors
+        anchors = []
+        if perp_direction[0] < 0:
+            anchors.append('right')
+        elif perp_direction[0] > 0:
+            anchors.append('left')
+        else:
+            anchors.append('center')
+        if perp_direction[1] < 0:
+            anchors.append('bottom')
+        elif perp_direction[1] > 0:
+            anchors.append('top')
+        else:
+            anchors.append('middle')
+
+        return anchors
+
+    @staticmethod
+    def _get_ticks_anchors(center, halfdim, orientation, transforms):
+        visual_to_doc = transforms.get_transform('visual', 'document')
+
+        doc_x = visual_to_doc.map(np.array([1, 0, 0, 0], dtype=np.float32))
+        doc_y = visual_to_doc.map(np.array([0, 1, 0, 0], dtype=np.float32))
+
+        if doc_x[0] < 0:
+            doc_x *= -1
+
+        if doc_y[1] < 0:
+            doc_y *= -1
+
+        # NOTE: these are in document coordinates
+        if orientation == "bottom":
+            perp_direction = doc_y
+        elif orientation == "top":
+            perp_direction = -doc_y
+        elif orientation == "left":
+            perp_direction = -doc_x
+        elif orientation == "right":
+            perp_direction = doc_x
+
+        perp_direction = np.array(perp_direction, dtype=np.float32)
+        perp_direction /= np.linalg.norm(perp_direction)
 
         # use the document (pixel) coord system to set text anchors
         anchors = []
@@ -451,6 +494,7 @@ class ColorBarVisual(CompoundVisual):
         perp_len = np.linalg.norm(doc_perp_vector)
         doc_perp_vector /= perp_len
         perp_len += border_width
+        perp_len += 5  # pixels
         perp_len *= _TEXT_PADDING_FACTOR
         doc_perp_vector *= perp_len
 
