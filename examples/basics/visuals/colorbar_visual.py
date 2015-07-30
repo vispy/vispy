@@ -98,7 +98,8 @@ def get_vertical_bar():
     # with a vertical orientation
     # use clim to set the lower and upper values of the colorbar
     # which are drawn as labels on the bottom and top edge
-    vertical = ColorBarVisual(pos, halfdim,
+    vertical = ColorBarVisual(center_pos=pos,
+                              halfdim=halfdim,
                               label_str="no. of iterations to escape",
                               cmap=colormap, orientation="left")
 

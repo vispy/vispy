@@ -175,19 +175,19 @@ class ColorBarVisual(CompoundVisual):
 
     Parameters
     ----------
-    center_pos : tuple (x, y)
-        Position where the colorbar is to be placed with
-        respect to the center of the colorbar
-    halfdim : tuple (half_width, half_height)
-        Half the dimensions of the colorbar measured
-        from the center. That way, the total dimensions
-        of the colorbar is (x - half_width) to (x + half_width)
-        and (y - half_height) to (y + half_height)
     cmap : str | vispy.color.ColorMap
         Either the name of the ColorMap to be used from the standard
         set of names (refer to `vispy.color.get_colormap`),
         or a custom ColorMap object.
         The ColorMap is used to apply a gradient on the colorbar.
+    halfdim : tuple (half_width, half_height)
+        Half the dimensions of the colorbar measured
+        from the center. That way, the total dimensions
+        of the colorbar is (x - half_width) to (x + half_width)
+        and (y - half_height) to (y + half_height)
+    center_pos : tuple (x, y)
+        Position where the colorbar is to be placed with
+        respect to the center of the colorbar
     orientation : {'left', 'right', 'top', 'bottom'}
         The orientation of the colorbar, used for rendering. The
         orientation can be thought of as the position of the label
@@ -227,9 +227,9 @@ class ColorBarVisual(CompoundVisual):
         str as the color's name or an actual instace of a vipy.color.Color
     """
 
-    def __init__(self, center_pos, halfdim,
-                 cmap,
-                 orientation,
+    def __init__(self, cmap, halfdim,
+                 center_pos=[0, 0],
+                 orientation="",
                  label_str="",
                  clim=(0.0, 1.0),
                  border_width=1.0,
@@ -241,15 +241,21 @@ class ColorBarVisual(CompoundVisual):
         self._clim = clim
         self._center_pos = center_pos
         self._halfdim = halfdim
+
+        if orientation == "":
+            (halfw, halfh) = halfdim
+            if halfw > halfh:
+                    orientation = "bottom"
+            else:
+                orientation = "right"
+
         self._orientation = orientation
         self._text_padding = 0
 
         self._label = TextVisual(text=self._label_str)
 
         self._ticks = []
-
         self._ticks.append(TextVisual(str(self._clim[0])))
-
         self._ticks.append(TextVisual(str(self._clim[1])))
 
         self._colorbar = _CoreColorBarVisual(center_pos,

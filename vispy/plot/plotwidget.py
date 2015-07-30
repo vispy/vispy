@@ -349,7 +349,7 @@ class PlotWidget(scene.Widget):
         self.view.camera.set_range()
         return surf
 
-    def colorbar(self, pos, halfdim, cmap, orientation="",
+    def colorbar(self, cmap, halfdim, pos, orientation="",
                  label="", clim=("", ""),
                  border_width=0.0, border_color="black",
                  **kwargs):
@@ -357,8 +357,6 @@ class PlotWidget(scene.Widget):
 
         Parameters
         ----------
-        pos : tuple (x, y)
-            Center of the colorbar
         halfdim : tuple (half_width, half_height)
             Half the dimensions of the colorbar measured
             from the center. That way, the total dimensions
@@ -369,6 +367,8 @@ class PlotWidget(scene.Widget):
             set of names (refer to `vispy.color.get_colormap`),
             or a custom ColorMap object.
             The ColorMap is used to apply a gradient on the colorbar.
+        pos : tuple (x, y)
+            Center of the colorbar
         orientation : {'left', 'right', 'top', 'bottom'}
             The orientation of the colorbar, used for rendering. The
             orientation can be thought of as the position of the label
@@ -391,7 +391,7 @@ class PlotWidget(scene.Widget):
                   Minimum corresponds to bottom and maximum to top.
                   Label is to the left of the colorbar
 
-                * 'right': Same as left, except that the
+            * 'right': Same as left, except that the
                   label is placed to the right of the colorbar
         label : str
             The label that is to be drawn with the colorbar
@@ -418,13 +418,6 @@ class PlotWidget(scene.Widget):
         """
 
         self._configure_2d()
-
-        if orientation == "":
-            (halfw, halfh) = halfdim
-            if halfw > halfh:
-                orientation = "bottom"
-            else:
-                orientation = "right"
 
         colorbar = scene.ColorBar(center_pos=pos,
                                   halfdim=halfdim,
