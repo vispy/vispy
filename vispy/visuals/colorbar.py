@@ -505,16 +505,9 @@ class ColorBarVisual(CompoundVisual):
 
         # next, calculate tick positions
         if orientation in ["top", "bottom"]:
-            # ticks_axis = visual_to_doc.map(np.array([halfw, 0, 0, 0], dtype=np.float32))
-            #if ticks_axis[0] < 0:
-            #    ticks_axis *= -1
             doc_ticks_pos = [doc_label_pos - doc_x,
                              doc_label_pos + doc_x]
         else:
-            # ticks_axis = visual_to_doc.map(np.array([0, halfh, 0, 0], dtype=np.float32))
-            # if ticks_axis[1] < 0:
-            #    ticks_axis *= -1
-
             doc_ticks_pos = [doc_label_pos + doc_y,
                              doc_label_pos - doc_y]
 
@@ -523,7 +516,6 @@ class ColorBarVisual(CompoundVisual):
         visual_ticks_pos.append(doc_to_visual.map(doc_ticks_pos[1])[:3])
 
         return (visual_label_pos, visual_ticks_pos)
-
 
     @property
     def cmap(self):
