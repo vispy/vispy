@@ -31,6 +31,8 @@ class Widget(Compound):
         A 2-element tuple to spicify the size of the widget.
     border_color : color
         The color of the border.
+    border_width : float
+        The width of the border line in pixels.
     bgcolor : color
         The background color.
     padding : int
@@ -41,9 +43,8 @@ class Widget(Compound):
     """
 
     def __init__(self, pos=(0, 0), size=(10, 10), border_color=None,
-                 bgcolor=None, padding=0, margin=0, **kwargs):
+                 border_width=1, bgcolor=None, padding=0, margin=0, **kwargs):
 
-        # For drawing a border.
         # A mesh is required because GL lines cannot be drawn with predictable
         # shape across all platforms.
         self._border = BorderVisual(center_pos=pos,
@@ -61,11 +62,14 @@ class Widget(Compound):
         # reserved space inside border
         self._padding = padding
 
+        self._border_width = border_width
+
         # reserved space outside border
         self._margin = margin
         self._size = 100, 100
 
         # layout interaction
+        # todo: use Cassowary; see #277
         self._fixed_size = (None, None)
         self._stretch = (None, None)
 
@@ -131,12 +135,12 @@ class Widget(Compound):
 
     @property
     def inner_rect(self):
-        """The rectangular area inside the margin, border and padding.
+        """The rectangular area inside the margin, border, and padding.
 
-        Generally widgets should avoid drawing or placing widgets outside this
-        rectangle.
+        Generally widgets should avoid drawing or placing sub-widgets outside
+        this rectangle.
         """
-        m = self.margin + self.padding
+        m = self.margin + self._border_width + self.padding
         if not self.border_color.is_blank:
             m += 1
         return Rect((m, m), (self.size[0]-2*m, self.size[1]-2*m))
@@ -169,7 +173,7 @@ class Widget(Compound):
 
     @fixed_size.setter
     def fixed_size(self, s):
-        self._fixed_size = s
+        self._stretch = float(s[0]), float(s[1])
         self._update_layout()
 
     def _update_layout(self):
@@ -250,8 +254,8 @@ class Widget(Compound):
 
     def _update_line(self):
         """ Update border line to match new shape """
-        w = self._border.border_width
-        m = int(self.margin)
+        w = self._border_width
+        m = self.margin
         # border is drawn within the boundaries of the widget:
         #
         #  size = (8, 7)  margin=2
@@ -265,8 +269,8 @@ class Widget(Compound):
         #  ........
         #
         l = b = m
-        r = int(self.size[0]) - m
-        t = int(self.size[1]) - m
+        r = self.size[0] - m
+        t = self.size[1] - m
         pos = np.array([
             [l, b], [l+w, b+w],
             [r, b], [r-w, b+w],

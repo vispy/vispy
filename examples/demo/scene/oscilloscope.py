@@ -3,7 +3,10 @@
 # Copyright (c) 2015, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 """
-Make a realtime oscilloscope
+An oscilloscope, spectrum analyzer, and spectrogram.
+
+This demo uses pyaudio to record data from the microphone. If pyaudio is not
+available, then a signal will be generated instead.
 """
 
 from __future__ import division
@@ -59,7 +62,8 @@ try:
 except ImportError:
     class MicrophoneRecorder(object):
         def __init__(self):
-            rate = 44100.
+            self.chunksize = 1024
+            self.rate = rate = 44100.
             t = np.linspace(0, 10, rate*10)
             self.data = (np.sin(t * 10.) * 0.3).astype('float32')
             self.data += np.sin((t + 0.3) * 20.) * 0.15
@@ -67,18 +71,46 @@ except ImportError:
                                          * 0.2, (0.4, 8))
             self.data += gaussian_filter(np.random.normal(size=self.data.shape)
                                          * 0.005, (0, 1))
+            self.data += np.sin(t * 1760 * np.pi)  # 880 Hz
+            self.data = (self.data * 2**10 - 2**9).astype('int16')
             self.ptr = 0
             
-        def get_frame(self):
-            frame = self.data[self.ptr:self.ptr+1024]
+        def get_frames(self):
+            if self.ptr + 1024 > len(self.data):
+                end = 1024 - (len(self.data) - self.ptr)
+                frame = np.concatenate((self.data[self.ptr:], self.data[:end]))
+            else:
+                frame = self.data[self.ptr:self.ptr+1024]
             self.ptr = (self.ptr + 1024) % (len(self.data) - 1024)
-            return frame
+            return [frame]
         
         def start(self):
             pass
 
 
 class Oscilloscope(scene.ScrollingLines):
+    """A set of lines that are temporally aligned on a trigger.
+    
+    Data is added in chunks to the oscilloscope, and each new chunk creates a
+    new line to draw. Older lines are slowly faded out until they are removed.
+    
+    Parameters
+    ----------
+    n_lines : int
+        The maximum number of lines to draw.
+    line_size : int
+        The number of samples in each line.
+    dx : float
+        The x spacing between adjacent samples in a line.
+    color : tuple
+        The base color to use when drawing lines. Older lines are faded by
+        decreasing their alpha value.
+    trigger : tuple
+        A set of parameters (level, height, width) that determine how triggers
+        are detected.
+    parent : Node
+        An optional parent scenegraph node.
+    """
     def __init__(self, n_lines=100, line_size=1024, dx=1e-4,
                  color=(20, 255, 50), trigger=(0, 0.002, 1e-4), parent=None):
         
@@ -117,7 +149,7 @@ class Oscilloscope(scene.ScrollingLines):
             th = self._trigger[1]  # trigger window height
             tw = self._trigger[2] / self._dx  # trigger window width
             thresh = self._trigger[0]
-            
+
             trig = np.argwhere((data[tw:] > thresh + th) & 
                                (data[:-tw] < thresh - th))
             if len(trig) > 0:
@@ -152,7 +184,7 @@ class Oscilloscope(scene.ScrollingLines):
 rolling_tex = """
 float rolling_texture(vec2 pos) {
     if( pos.x < 0 || pos.x > 1 || pos.y < 0 || pos.y > 1 ) {
-        return 0;
+        return 0.0f;
     }
     vec2 uv = vec2(mod(pos.x+$shift, 1), pos.y);
     return texture2D($texture, uv).r;
@@ -211,7 +243,7 @@ grid = win.central_widget.add_grid()
 
 view3 = grid.add_view(row=0, col=0, col_span=2, camera='panzoom',
                       border_color='grey')
-image = ScrollingImage((1 + fft_samples//2, 10000), parent=view3.scene)
+image = ScrollingImage((1 + fft_samples // 2, 4000), parent=view3.scene)
 image.transform = scene.LogTransform((0, 10, 0))
 #view3.camera.rect = (0, 0, image.size[1], np.log10(image.size[0]))
 view3.camera.rect = (3493.32, 1.85943, 605.554, 1.41858)
