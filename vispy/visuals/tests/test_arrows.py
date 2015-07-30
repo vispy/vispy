@@ -45,6 +45,7 @@ def test_arrow_draw():
 
             arrow.parent = None
 
+
 @requires_application()
 def test_arrow_transform_draw():
     """Tests the ArrowVisual when a transform is applied"""
@@ -105,4 +106,3 @@ def test_arrow_attributes():
 
 
 run_tests_if_main()
-
