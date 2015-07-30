@@ -24,18 +24,25 @@ color[:, 0] = np.linspace(0, 1, N)
 color[:, 1] = color[::-1, 0]
 
 canvas = scene.SceneCanvas(keys='interactive', show=True)
-viewbox = canvas.central_widget.add_view()
+grid = canvas.central_widget.add_grid(spacing=0)
+
+viewbox = grid.add_view(row=0, col=1, camera='panzoom')
 
 # add some axes
-domains = np.array([x_lim, y_lim])
-pos_ax = [np.array([domains[0], [domains[1][0]] * 2]).T,
-          np.array([[domains[0][0]] * 2, domains[1]]).T]
-x_axis = scene.Axis(pos_ax[0], domains[0], (0, -1), parent=viewbox.scene)
-y_axis = scene.Axis(pos_ax[1], domains[1], (-1, 0), parent=viewbox.scene)
+x_axis = scene.AxisWidget(orientation='bottom')
+x_axis.stretch = (1, 0.1)
+grid.add_widget(x_axis, row=1, col=1)
+x_axis.link_view(viewbox)
+y_axis = scene.AxisWidget(orientation='left')
+y_axis.stretch = (0.1, 1)
+grid.add_widget(y_axis, row=0, col=0)
+y_axis.link_view(viewbox)
 
-viewbox.camera = 'panzoom'  # set after adding axes to auto-zoom
-
+# add a line plot inside the viewbox
 line = scene.Line(pos, color, parent=viewbox.scene)
+
+# auto-scale to see the whole line.
+viewbox.camera.set_range()
 
 
 def update(ev):

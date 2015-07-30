@@ -69,6 +69,9 @@ class VisualNode(Node):
         self.update_gl_state(blend=not p)
 
     def _update_trsys(self, event):
+        """Transform object(s) have changed for this Node; assign these to the
+        visual's TransformSystem.
+        """
         doc = self.document_node
         scene = self.scene_node
         root = self.root_node

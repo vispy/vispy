@@ -380,9 +380,9 @@ class SceneCanvas(app.Canvas):
         fbpos = tr.map(pos)[:2]
 
         try:
-            id_ = self._render_picking(region=(fbpos[0]-10, fbpos[1]-10,
-                                               20, 20))
-            vis = VisualNode._visual_ids.get(id_[10, 10], None)
+            id_ = self._render_picking(region=(fbpos[0], fbpos[1],
+                                               1, 1))
+            vis = VisualNode._visual_ids.get(id_[0, 0], None)
         except RuntimeError:
             # Don't have read_pixels() support for IPython. Fall back to
             # bounds checking.

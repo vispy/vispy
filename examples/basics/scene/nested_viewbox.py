@@ -87,7 +87,7 @@ vb1.camera.rect = (0, 0, 1, 1)
 vb1.camera.interactive = False
 
 # bottom-left (+y down)
-vb11 = scene.widgets.ViewBox(parent=vb1.scene, name='vb11', 
+vb11 = scene.widgets.ViewBox(parent=vb1.scene, name='vb11', border_width=2e-3, 
                              margin=0.02, border_color='green')
 vb11.pos = 0, 0
 vb11.size = 1, 0.5
@@ -97,7 +97,7 @@ line11 = scene.visuals.Line(pos=pos, color=color, method='gl',
                             parent=vb11.scene)
 
 # top-left (+y up)
-vb12 = scene.widgets.ViewBox(parent=vb1.scene, name='vb12', 
+vb12 = scene.widgets.ViewBox(parent=vb1.scene, name='vb12', border_width=2e-3, 
                              margin=0.02, border_color='blue')
 vb12.pos = 0, 0.5
 vb12.size = 1, 0.5
