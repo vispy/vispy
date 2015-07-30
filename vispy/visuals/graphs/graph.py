@@ -34,13 +34,20 @@ class GraphVisual(CompoundVisual):
     _arrow_kw_trans = dict(line_color='color', line_width='width')
     _node_kw_trans = dict(node_symbol='symbol', node_size='size')
 
-    def __init__(self, adjacency_mat=None, line_color=None, line_width=None,
-                 arrow_type=None, arrow_size=None, node_symbol=None,
-                 node_size=None, edge_color=None, face_color=None,
-                 edge_width=None):
+    def __init__(self, adjacency_mat=None, directed=False, line_color=None,
+                 line_width=None, arrow_type=None, arrow_size=None,
+                 node_symbol=None, node_size=None, edge_color=None,
+                 face_color=None, edge_width=None, layout=None):
 
         self._edges = ArrowVisual(method='gl', connect='segments')
         self._nodes = MarkersVisual()
+
+        self._adjacency_mat = None
+        self._layout = None
+        self._layout_iter = None
+        self.layout = layout
+        self._directed = directed
+        self.directed = directed
 
         CompoundVisual.__init__(self, [self._edges, self._nodes])
 
@@ -49,6 +56,64 @@ class GraphVisual(CompoundVisual):
                       arrow_size=arrow_size, node_symbol=node_symbol,
                       node_size=node_size, edge_color=edge_color,
                       face_color=face_color, edge_width=edge_width)
+
+    @property
+    def adjacency_matrix(self):
+        return self._adjacency_mat
+
+    @property
+    def layout(self):
+        return self._layout
+
+    @layout.setter
+    def layout(self, value):
+        self._layout = value
+
+    @property
+    def directed(self):
+        return self._directed
+
+    @directed.setter
+    def directed(self, value):
+        self._directed = bool(value)
+
+    def animate_layout(self):
+        if self._layout_iter is None:
+            if self._adjacency_mat is None:
+                raise ValueError("No adjacency matrix set yet. An adjacency "
+                                 "matrix is required to calculate the layout.")
+
+            self._layout_iter = iter(self._layout(self._adjacency_mat))
+
+        try:
+            node_vertices, line_vertices = next(self._layout_iter)
+        except StopIteration:
+            return False
+
+        self._nodes.set_data(pos=node_vertices)
+
+        if self._directed:
+            # TODO: Fix arrows
+            pass
+
+        self._edges.set_data(pos=line_vertices)
+
+        return True
+
+    def final_layout(self):
+        if self._layout_iter is None:
+            if self._adjacency_mat is None:
+                raise ValueError("No adjacency matrix set yet. An adjacency "
+                                 "matrix is required to calculate the layout.")
+
+            self._layout_iter = iter(self._layout(self._adjacency_mat))
+
+        node_vertices, line_vertices = None
+        for node_vertices, line_vertices in self._layout_iter:
+            pass
+
+        self._nodes.set_data(pos=node_vertices)
+        self._edges.set_data(pos=line_vertices)
 
     def set_data(self, adjacency_mat=None, **kwargs):
         line_vertices = None
