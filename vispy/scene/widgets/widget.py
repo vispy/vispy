@@ -60,6 +60,7 @@ class Widget(Compound):
         self._size = 100, 100
         
         # layout interaction
+        # todo: use Cassowary; see #277 
         self._fixed_size = (None, None)
         self._stretch = (None, None)
 
@@ -146,22 +147,7 @@ class Widget(Compound):
 
     @stretch.setter
     def stretch(self, s):
-        self._stretch = s
-        self._update_layout()
-
-    @property
-    def fixed_size(self):
-        """Fixed size (w, h) of the widget.
-        
-        Specifying a fixed size for either axis forces the widget to have a 
-        specific size in a layout. Setting either axis to None allows the 
-        widget to be resized by the layout.
-        """
-        return self._fixed_size
-    
-    @fixed_size.setter
-    def fixed_size(self, s):
-        self._fixed_size = s
+        self._stretch = float(s[0]), float(s[1])
         self._update_layout()
 
     def _update_layout(self):
