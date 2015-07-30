@@ -44,6 +44,7 @@ line = scene.Line(pos, color, parent=viewbox.scene)
 # auto-scale to see the whole line.
 viewbox.camera.set_range()
 
+
 def update(ev):
     global pos, color, line
     pos[:, 1] = np.random.normal(size=N)
