@@ -34,7 +34,9 @@ class ColorBarWidget(Widget):
         self._set_pos()
 
     def _set_pos(self):
-        self._colorbar.center_pos = self.rect.center
+        # keep the ColorBar at (0, 0, 0), but move the coordinate of the
+        # Widget to the center of the rect.
+        self.pos = self.rect.center
 
     @property
     def cmap(self):
@@ -43,14 +45,6 @@ class ColorBarWidget(Widget):
     @cmap.setter
     def cmap(self, cmap):
         self._colorbar.cmap = cmap
-
-    @property
-    def halfdim(self):
-        return self._colorbar.halfdim
-
-    @halfdim.setter
-    def halfdim(self, halfdim):
-        self._colorbar.halfdim = halfdim
 
     @property
     def label(self):
