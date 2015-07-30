@@ -217,8 +217,11 @@ def generate_docstring(subclass, clsname):
 # are attached programatically in the create_visual_node call.
 # However, help(vispy.scene.FooVisual) still works
 
+Arrow = create_visual_node(visuals.ArrowVisual)
 Axis = create_visual_node(visuals.AxisVisual)
 Box = create_visual_node(visuals.BoxVisual)
+ColorBar = create_visual_node(visuals.ColorBarVisual)
+Compound = create_visual_node(visuals.CompoundVisual)
 Cube = create_visual_node(visuals.CubeVisual)
 Ellipse = create_visual_node(visuals.EllipseVisual)
 GridLines = create_visual_node(visuals.GridLinesVisual)
@@ -228,7 +231,6 @@ Isocurve = create_visual_node(visuals.IsocurveVisual)
 Isoline = create_visual_node(visuals.IsolineVisual)
 Isosurface = create_visual_node(visuals.IsosurfaceVisual)
 Line = create_visual_node(visuals.LineVisual)
-Arrow = create_visual_node(visuals.ArrowVisual)
 LinePlot = create_visual_node(visuals.LinePlotVisual)
 Markers = create_visual_node(visuals.MarkersVisual)
 Mesh = create_visual_node(visuals.MeshVisual)
@@ -242,10 +244,8 @@ SurfacePlot = create_visual_node(visuals.SurfacePlotVisual)
 Text = create_visual_node(visuals.TextVisual)
 Tube = create_visual_node(visuals.TubeVisual)
 # Visual = create_visual_node(visuals.Visual)  # Should not be created
-Compound = create_visual_node(visuals.CompoundVisual)
 Volume = create_visual_node(visuals.VolumeVisual)
 XYZAxis = create_visual_node(visuals.XYZAxisVisual)
-ColorBar = create_visual_node(visuals.ColorBarVisual)
 
 __all__ = [name for (name, obj) in globals().items()
            if isinstance(obj, type) and issubclass(obj, VisualNode)]
