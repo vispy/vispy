@@ -380,6 +380,9 @@ class FlyCamera(PerspectiveCamera):
                 print('scale factor: %1.1f units/s' % self.scale_factor)
             return
 
+        if event.type == 'mouse_press':
+            event.handled = True
+
         if event.type == 'mouse_release':
             # Reset
             self._event_value = None
