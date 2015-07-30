@@ -40,7 +40,7 @@ class Widget(Compound):
     """
 
     def __init__(self, pos=(0, 0), size=(10, 10), border_color=None,
-                 bgcolor=None, padding=0, margin=0, **kwargs):
+                 bgcolor=None, border_width=1, padding=0, margin=0, **kwargs):
         
         # For drawing border. 
         # A mesh is required because GL lines cannot be drawn with predictable
@@ -54,6 +54,8 @@ class Widget(Compound):
 
         # reserved space inside border
         self._padding = padding
+        
+        self._border_width = border_width
 
         # reserved space outside border
         self._margin = margin
@@ -217,8 +219,8 @@ class Widget(Compound):
     
     def _update_line(self):
         """ Update border line to match new shape """
-        w = 1  # XXX Eventually this can be a parameter
-        m = int(self.margin)
+        w = self._border_width
+        m = self.margin
         # border is drawn within the boundaries of the widget:
         #
         #  size = (8, 7)  margin=2
@@ -232,8 +234,8 @@ class Widget(Compound):
         #  ........
         #
         l = b = m
-        r = int(self.size[0]) - m
-        t = int(self.size[1]) - m
+        r = self.size[0] - m
+        t = self.size[1] - m
         pos = np.array([
             [l, b], [l+w, b+w],
             [r, b], [r-w, b+w],
