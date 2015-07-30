@@ -357,16 +357,16 @@ class PlotWidget(scene.Widget):
 
         Parameters
         ----------
-        halfdim : tuple (half_width, half_height)
-            Half the dimensions of the colorbar measured
-            from the center. That way, the total dimensions
-            of the colorbar is (x - half_width) to (x + half_width)
-            and (y - half_height) to (y + half_height)
         cmap : str | vispy.color.ColorMap
             Either the name of the ColorMap to be used from the standard
             set of names (refer to `vispy.color.get_colormap`),
             or a custom ColorMap object.
             The ColorMap is used to apply a gradient on the colorbar.
+        halfdim : tuple (half_width, half_height)
+            Half the dimensions of the colorbar measured
+            from the center. That way, the total dimensions
+            of the colorbar is (x - half_width) to (x + half_width)
+            and (y - half_height) to (y + half_height)
         pos : tuple (x, y)
             Center of the colorbar
         orientation : {'left', 'right', 'top', 'bottom'}
