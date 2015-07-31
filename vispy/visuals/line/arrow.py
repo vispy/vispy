@@ -15,7 +15,7 @@ from ..visual import Visual
 from .line import LineVisual
 
 
-ARROW_TYPES = [
+ARROW_TYPES = (
     'stealth',
     'curved',
     'angle_30',
@@ -25,7 +25,7 @@ ARROW_TYPES = [
     'triangle_60',
     'triangle_90',
     'inhibitor_round'
-]
+)
 
 
 class _ArrowHeadVisual(Visual):
@@ -131,7 +131,6 @@ class ArrowVisual(LineVisual):
               independent line segment
             * numpy arrays specify the exact set of segment pairs to
               connect.
-
     method : str
         Mode to use for drawing.
 
@@ -140,32 +139,28 @@ class ArrowVisual(LineVisual):
             * "gl" uses OpenGL's built-in line rendering. This is much faster,
               but produces much lower-quality results and is not guaranteed to
               obey the requested line width or join/endcap styles.
-
     antialias : bool
         Enables or disables antialiasing.
         For method='gl', this specifies whether to use GL's line smoothing,
         which may be unavailable or inconsistent on some platforms.
-
     arrows : array
         A Nx4 matrix where each row contains the x and y coordinate of the
         first and second vertex of the arrow body. Remember that the second
         vertex is used as center point for the arrow head, and the first
         vertex is only used for determining the arrow head orientation.
-
     arrow_type : string
         Specify the arrow head type, the currently available arrow head types
         are:
 
-        * stealth
-        * curved
-        * triangle_30
-        * triangle_60
-        * triangle_90
-        * angle_30
-        * angle_60
-        * angle_90
-        * inhibitor_round
-
+            * stealth
+            * curved
+            * triangle_30
+            * triangle_60
+            * triangle_90
+            * angle_30
+            * angle_60
+            * angle_90
+            * inhibitor_round
     arrow_size : float
         Specify the arrow size
     """
