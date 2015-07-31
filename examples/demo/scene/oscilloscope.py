@@ -3,7 +3,10 @@
 # Copyright (c) 2015, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 """
-Make a realtime oscilloscope
+An oscilloscope, spectrum analyzer, and spectrogram.
+
+This demo uses pyaudio to record data from the microphone. If pyaudio is not
+available, then a signal will be generated instead.
 """
 
 from __future__ import division
@@ -86,6 +89,28 @@ except ImportError:
 
 
 class Oscilloscope(scene.ScrollingLines):
+    """A set of lines that are temporally aligned on a trigger.
+    
+    Data is added in chunks to the oscilloscope, and each new chunk creates a
+    new line to draw. Older lines are slowly faded out until they are removed.
+    
+    Parameters
+    ----------
+    n_lines : int
+        The maximum number of lines to draw.
+    line_size : int
+        The number of samples in each line.
+    dx : float
+        The x spacing between adjacent samples in a line.
+    color : tuple
+        The base color to use when drawing lines. Older lines are faded by
+        decreasing their alpha value.
+    trigger : tuple
+        A set of parameters (level, height, width) that determine how triggers
+        are detected.
+    parent : Node
+        An optional parent scenegraph node.
+    """
     def __init__(self, n_lines=100, line_size=1024, dx=1e-4,
                  color=(20, 255, 50), trigger=(0, 0.002, 1e-4), parent=None):
         

@@ -26,7 +26,7 @@ _font_dict = {}
 # and isn't using fonts (Windows)
 
 def _load_font(face, bold, italic):
-    from ...ext.freetype import Face
+    from ...ext.freetype import Face, FT_FACE_FLAG_SCALABLE
     key = '%s-%s-%s' % (face, bold, italic)
     if key in _font_dict:
         return _font_dict[key]
@@ -35,6 +35,9 @@ def _load_font(face, bold, italic):
     else:
         fname = find_font(face, bold, italic)
     font = Face(fname)
+    if (FT_FACE_FLAG_SCALABLE & font.face_flags) == 0:
+        raise RuntimeError('Font %s is not scalable, so cannot be loaded'
+                           % face)
     _font_dict[key] = font
     return font
 

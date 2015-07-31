@@ -34,11 +34,13 @@ Announcing:
 
 import os
 from os import path as op
+from warnings import warn
 
 try:
     # use setuptools namespace, allows for "develop"
     import setuptools  # noqa, analysis:ignore
 except ImportError:
+    warn("unable to load setuptools. 'setup.py develop' will not work")
     pass  # it's not essential for installation
 from distutils.core import setup
 
