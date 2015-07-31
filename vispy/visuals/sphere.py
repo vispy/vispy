@@ -16,6 +16,8 @@ class SphereVisual(MeshVisual):
     ----------
     radius : float
         The size of the sphere.
+    cols, rows : int
+        Number of rows and cols that make up the sphere mesh.
     vertex_colors : ndarray
         Same as for `MeshVisual` class. See `create_sphere` for vertex ordering.
     face_colors : ndarray
@@ -58,6 +60,6 @@ class SphereVisual(MeshVisual):
             The transforms to use.
         """
         MeshVisual.draw(self, transforms)
-        if self._outline:
+        if self._outline is not None:
             set_state(polygon_offset=(1, 1), polygon_offset_fill=True)
             self._outline.draw(transforms)
