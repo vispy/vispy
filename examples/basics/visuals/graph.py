@@ -14,6 +14,7 @@ import networkx as nx
 import numpy as np
 
 from vispy import app, gloo, visuals
+from vispy.visuals.graphs import layouts
 from vispy.visuals.transforms import STTransform
 
 
@@ -26,6 +27,7 @@ class Canvas(app.Canvas):
 
         self.visual = visuals.GraphVisual(
             nx.adjacency_matrix(self.graph),
+            layout=layouts.random,
             line_color=(1.0, 1.0, 1.0, 1.0),
             arrow_type="stealth",
             arrow_size=7.5,
