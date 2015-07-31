@@ -13,7 +13,7 @@ from .. import gloo
 class ScrollingLinesVisual(Visual):
     """Displays many line strips of equal length, with the option to add new
     vertex data to one end of the lines.
-    
+
     Parameters
     ----------
     n_lines : int
@@ -32,7 +32,7 @@ class ScrollingLinesVisual(Visual):
     cell_size : tuple
         The x, y distance between cells in the grid.
     """
-    
+
     vertex_code = """
     attribute vec2 index;  // .x=line_n, .y=vertex_n
     uniform sampler2D position;
@@ -124,6 +124,7 @@ class ScrollingLinesVisual(Visual):
         
         self._draw_mode = 'line_strip'
         self.set_gl_state('translucent', line_width=1)
+        self.freeze()
 
     def set_pos_offset(self, po):
         """Set the array of position offsets for each line strip.

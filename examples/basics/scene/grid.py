@@ -25,22 +25,18 @@ grid = canvas.central_widget.add_grid()
 b1 = grid.add_view(row=0, col=0)
 b1.border_color = (0.5, 0.5, 0.5, 1)
 b1.camera = scene.PanZoomCamera(rect=(-0.5, -5, 11, 10))
-b1.border = (1, 0, 0, 1)
 
 b2 = grid.add_view(row=0, col=1)
 b2.camera = 'turntable'
 b2.border_color = (0.5, 0.5, 0.5, 1)
-b2.border = (1, 0, 0, 1)
 
 b3 = grid.add_view(row=1, col=0)
 b3.border_color = (0.5, 0.5, 0.5, 1)
 b3.camera = scene.PanZoomCamera(rect=(-10, -5, 15, 10))
-b3.border = (1, 0, 0, 1)
 
 b4 = grid.add_view(row=1, col=1)
 b4.border_color = (0.5, 0.5, 0.5, 1)
 b4.camera = scene.PanZoomCamera(rect=(-5, -5, 10, 10))
-b4.border = (1, 0, 0, 1)
 
 
 # Generate some random vertex data and a color gradient

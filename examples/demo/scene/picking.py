@@ -24,7 +24,9 @@ t = np.arange(data.shape[1]) * (dt * 1000)
 for i, y in enumerate(data):
     line = plt.plot((t, y), color=colors[i])
     line.interactive = True
+    line.unfreeze()
     line.data_index = i
+    line.freeze()
 
 
 # Build visuals used for cursor

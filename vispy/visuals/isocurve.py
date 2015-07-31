@@ -49,6 +49,16 @@ class IsocurveVisual(LineVisual):
         self._need_color_update = True
         self._need_level_update = True
         self._need_recompute = True
+        self._X = None
+        self._Y = None
+        self._iso = None
+        self._level_min = None
+        self._data_is_uniform = False
+        self._lc = None
+        self._cl = None
+        self._li = None
+        self._connect = None
+        self._verts = None
         kwargs['method'] = 'gl'
         kwargs['antialias'] = False
         LineVisual.__init__(self, **kwargs)
@@ -96,8 +106,8 @@ class IsocurveVisual(LineVisual):
         if _HAS_MPL:
             try:
                 if not (self._X.T.shape == data.shape):
-                    raise
-            except:
+                    raise Exception
+            except Exception:
                 self._X, self._Y = np.meshgrid(np.arange(data.shape[0]),
                                                np.arange(data.shape[1]))
 

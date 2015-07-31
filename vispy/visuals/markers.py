@@ -485,6 +485,10 @@ class MarkersVisual(Visual):
         self._vbo = VertexBuffer()
         self._v_size_var = Variable('varying float v_size')
         self._symbol = None
+        self._marker_fun = None
+        self._data = None
+        self.antialias = 1
+        self.scaling = False
         Visual.__init__(self, vcode=vert, fcode=frag)
         self.shared_program.vert['v_size'] = self._v_size_var
         self.shared_program.frag['v_size'] = self._v_size_var
@@ -493,6 +497,7 @@ class MarkersVisual(Visual):
         self._draw_mode = 'points'
         if len(kwargs) > 0:
             self.set_data(**kwargs)
+        self.freeze()
 
     def set_data(self, pos=None, symbol='o', size=10., edge_width=1.,
                  edge_width_rel=None, edge_color='black', face_color='white',
@@ -561,8 +566,7 @@ class MarkersVisual(Visual):
             data['a_edgewidth'] = size*edge_width_rel
         data['a_position'][:, :pos.shape[1]] = pos
         data['a_size'] = size
-        self.antialias = 1.
-        self.shared_program['u_antialias'] = self.antialias
+        self.shared_program['u_antialias'] = self.antialias  # XXX make prop
         self._data = data
         self._vbo.set_data(data)
         self.shared_program.bind(self._vbo)
@@ -571,7 +575,7 @@ class MarkersVisual(Visual):
     @property
     def symbol(self):
         return self._symbol
-    
+
     @symbol.setter
     def symbol(self, symbol):
         if symbol == self._symbol:

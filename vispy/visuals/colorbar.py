@@ -399,7 +399,6 @@ class ColorBarVisual(CompoundVisual):
                                        self._ticks[0],
                                        self._ticks[1],
                                        self._colorbar])
-
         self._update()
 
     def _update(self):

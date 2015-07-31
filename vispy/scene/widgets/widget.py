@@ -43,8 +43,7 @@ class Widget(Compound):
 
     def __init__(self, pos=(0, 0), size=(10, 10), border_color=None,
                  border_width=1, bgcolor=None, padding=0, margin=0, **kwargs):
-        
-        # For drawing border. 
+        # For drawing border.
         # A mesh is required because GL lines cannot be drawn with predictable
         # shape across all platforms.
         self._mesh = MeshVisual(color=border_color, mode='triangles')
@@ -69,14 +68,15 @@ class Widget(Compound):
         self._stretch = (None, None)
 
         self._widgets = []
-        
+        self._border_color = Color(border_color)
+        self._bgcolor = Color(bgcolor)
+        self._face_colors = None
+
         Compound.__init__(self, [self._mesh, self._picking_mesh], **kwargs)
  
         self.transform = STTransform()
         self.events.add(resize=Event)
         self.pos = pos
-        self._border_color = Color(border_color)
-        self._bgcolor = Color(bgcolor)
         self._update_colors()
         self.size = size
 

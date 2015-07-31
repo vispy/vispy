@@ -207,12 +207,12 @@ class ScrollingImage(scene.Image):
                                     format='luminance', internalformat='r32f')
         self._color_fn['texture'] = self._ctex
         self._color_fn['shift'] = 0
+        self.ptr = 0
         scene.Image.__init__(self, method='impostor', parent=parent)
         #self.set_gl_state('additive', cull_face=False)
         self.shared_program.frag['get_data'] = self._color_fn
         cfun = visuals.shaders.Function(cmap)
         self.shared_program.frag['color_transform'] = cfun
-        self.ptr = 0
         
     @property
     def size(self):
