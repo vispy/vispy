@@ -4,9 +4,11 @@
 
 from __future__ import division
 
+import warnings
 import numpy as np
 
 from .widget import Widget
+from ...util.np_backport import nanmean
 
 
 class Grid(Widget):
@@ -106,6 +108,13 @@ class Grid(Widget):
         widget.parent = self
 
         self._next_cell = [row, col+col_span]
+        
+        # update stretch based on colspan/rowspan
+        stretch = list(widget.stretch)
+        stretch[0] = col_span if stretch[0] is None else stretch[0]
+        stretch[1] = row_span if stretch[1] is None else stretch[1]
+        widget.stretch = stretch
+        
         self._update_child_widgets()
         return widget
 
@@ -176,25 +185,51 @@ class Grid(Widget):
 
     def _update_child_widgets(self):
         # Resize all widgets in this grid to share space.
-        # This logic will need a lot of work..
         n_rows, n_cols = self.grid_size
-        if n_rows == 0:
+        if n_rows == 0 or n_cols == 0:
             return
-        # determine starting/ending position of each row and column
-        s2 = self.spacing / 2.
-        rect = self.rect.padded(self.padding + self.margin - s2)
-        rows = np.linspace(rect.bottom, rect.top, n_rows+1)
-        rowstart = rows[:-1] + s2
-        rowend = rows[1:] - s2
-        cols = np.linspace(rect.left, rect.right, n_cols+1)
-        colstart = cols[:-1] + s2
-        colend = cols[1:] - s2
+        
+        # 1. Collect information about occupied cells and their contents
+        occupied = np.zeros((n_rows, n_cols), dtype=bool)
+        stretch = np.zeros((n_rows, n_cols, 2), dtype=float)
+        stretch[:] = np.nan
+        #minsize = np.zeros((n_rows, n_cols, 2), dtype=float)
+        for key, val in self._grid_widgets.items():
+            w = val[4]
+            row, col, rspan, cspan, ch = self._grid_widgets[key]
+            occupied[row:row+rspan, col:col+cspan] = True
+            stretch[row:row+rspan, col:col+cspan] = (np.array(w.stretch) /
+                                                     [cspan, rspan])
+        row_occ = occupied.sum(axis=1) > 0
+        col_occ = occupied.sum(axis=0) > 0
+        with warnings.catch_warnings(record=True):  # mean of empty slice
+            row_stretch = nanmean(stretch[..., 1], axis=1)
+            col_stretch = nanmean(stretch[..., 0], axis=0)
+        row_stretch[np.isnan(row_stretch)] = 0
+        col_stretch[np.isnan(col_stretch)] = 0
+        
+        # 2. Decide width of each row/col
+        rect = self.rect.padded(self.padding + self.margin)
+        n_cols = col_occ.sum()
+        colspace = rect.width - (n_cols-1) * self.spacing
+        colsizes = col_stretch * colspace / col_stretch.sum()
+        colsizes[colsizes == 0] = -self.spacing
+        n_rows = row_occ.sum()
+        rowspace = rect.height - (n_rows-1) * self.spacing
+        rowsizes = row_stretch * rowspace / row_stretch.sum()
+        rowsizes[rowsizes == 0] = -self.spacing
+        
+        # 3. Decide placement of row/col edges
+        colend = np.cumsum(colsizes) + self.spacing * np.arange(len(colsizes))
+        colstart = colend - colsizes
+        rowend = np.cumsum(rowsizes) + self.spacing * np.arange(len(rowsizes))
+        rowstart = rowend - rowsizes
 
         # snap to pixel boundaries to avoid drawing artifacts
-        colstart = np.round(colstart)
-        colend = np.round(colend)
-        rowstart = np.round(rowstart)
-        rowend = np.round(rowend)
+        colstart = np.round(colstart) + self.margin
+        colend = np.round(colend) + self.margin
+        rowstart = np.round(rowstart) + self.margin
+        rowend = np.round(rowend) + self.margin
 
         for key in self._grid_widgets.keys():
             row, col, rspan, cspan, ch = self._grid_widgets[key]

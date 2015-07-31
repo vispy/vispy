@@ -102,6 +102,7 @@ class GLContext(BaseGlooFunctions):
         assert isinstance(self._shared, GLShared)
         self._glir = GlirQueue()
         self._do_CURRENT_command = False  # flag that CURRENT cmd must be given
+        self._last_viewport = None
 
     def __repr__(self):
         return "<GLContext at 0x%x>" % id(self)
@@ -168,6 +169,13 @@ class GLContext(BaseGlooFunctions):
             self._do_CURRENT_command = False
             self.shared.parser.parse([('CURRENT', 0)])
         self.glir.flush(self.shared.parser)
+        
+    def set_viewport(self, *args):
+        BaseGlooFunctions.set_viewport(self, *args)
+        self._last_viewport = args
+        
+    def get_viewport(self):
+        return self._last_viewport
 
 
 class GLShared(object):

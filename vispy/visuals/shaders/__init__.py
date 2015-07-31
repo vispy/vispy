@@ -7,10 +7,11 @@ code snippets.
 """
 
 __all__ = ['ModularProgram', 'Function', 'MainFunction', 'Variable', 'Varying',
-           'FunctionChain', 'Compiler']
+           'FunctionChain', 'Compiler', 'MultiProgram']
 
 from .program import ModularProgram  # noqa
 from .function import Function, MainFunction, FunctionChain  # noqa
 from .function import StatementList  # noqa
 from .variable import Variable, Varying  # noqa
 from .compiler import Compiler  # noqa
+from .multiprogram import MultiProgram  # noqa

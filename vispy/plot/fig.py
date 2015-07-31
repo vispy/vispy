@@ -17,6 +17,8 @@ class Fig(SceneCanvas):
         Size of the figure window in pixels.
     show : bool
         If True, show the window.
+    **kwargs : dict
+        Keywoard arguments to pass to `SceneCanvas` base class.
 
     Notes
     -----
@@ -34,9 +36,9 @@ class Fig(SceneCanvas):
     PlotWidget : the axis widget for plotting
     SceneCanvas : the super class
     """
-    def __init__(self, bgcolor='w', size=(800, 600), show=True):
+    def __init__(self, bgcolor='w', size=(800, 600), show=True, **kwargs):
         super(Fig, self).__init__(bgcolor=bgcolor, keys='interactive',
-                                  show=show, size=size)
+                                  show=show, size=size, **kwargs)
         self._grid = self.central_widget.add_grid()
         self._grid._default_class = PlotWidget
         self._plot_widgets = []

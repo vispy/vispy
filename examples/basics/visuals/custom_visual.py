@@ -7,11 +7,9 @@ from __future__ import division
 import numpy as np
 
 from vispy import app
-from vispy import gloo
-from vispy.visuals.shaders import ModularProgram
+from vispy.gloo import VertexBuffer
 from vispy.visuals import Visual
-from vispy.visuals.transforms import (STTransform, LogTransform,
-                                      TransformSystem, ChainTransform)
+from vispy.visuals.transforms import STTransform
 
 
 class MarkerVisual(Visual):
@@ -70,34 +68,22 @@ class MarkerVisual(Visual):
     """
 
     def __init__(self, pos=None, color=None, size=None):
-        self._program = ModularProgram(self.VERTEX_SHADER,
-                                       self.FRAGMENT_SHADER)
-        self.set_data(pos=pos, color=color, size=size)
-
-    def set_options(self):
-        """Special function that is used to set the options. Automatically
-        called at initialization."""
-        gloo.set_state(clear_color=(1, 1, 1, 1), blend=True,
-                       blend_func=('src_alpha', 'one_minus_src_alpha'))
-
-    def set_data(self, pos=None, color=None, size=None):
-        """I'm not required to use this function. We could also have a system
-        of trait attributes, such that a user doing
-        `visual.position = myndarray` results in an automatic update of the
-        buffer. Here I just set the buffers manually."""
+        Visual.__init__(self, self.VERTEX_SHADER, self.FRAGMENT_SHADER)
         self._pos = pos
         self._color = color
         self._size = size
+        self.set_gl_state(blend=True,
+                          blend_func=('src_alpha', 'one_minus_src_alpha'))
+        self._draw_mode = 'points'
 
-    def draw(self, transforms):
+    def _prepare_transforms(self, view=None):
+        view.view_program.vert['transform'] = view.transforms.get_transform()
+
+    def _prepare_draw(self, view):
         # attributes / uniforms are not available until program is built
-        tr = transforms.get_full_transform()
-        self._program.vert['transform'] = tr.shader_map()
-        self._program.prepare()  # Force ModularProgram to set shaders
-        self._program['a_position'] = gloo.VertexBuffer(self._pos)
-        self._program['a_color'] = gloo.VertexBuffer(self._color)
-        self._program['a_size'] = gloo.VertexBuffer(self._size)
-        self._program.draw('points')
+        self.shared_program['a_position'] = VertexBuffer(self._pos)
+        self.shared_program['a_color'] = VertexBuffer(self._color)
+        self.shared_program['a_size'] = VertexBuffer(self._size)
 
 
 class Canvas(app.Canvas):
@@ -112,18 +98,9 @@ class Canvas(app.Canvas):
         size = np.random.uniform(2*ps, 12*ps, (n, 1)).astype(np.float32)
 
         self.points = MarkerVisual(pos=pos, color=color, size=size)
-
-        self.panzoom = STTransform(scale=(1, 0.2), translate=(0, 500))
-        w2 = (self.size[0]/2, self.size[1]/2)
-        self.transform = ChainTransform([self.panzoom,
-                                         STTransform(scale=w2, translate=w2),
-                                         LogTransform(base=(0, 2, 0))])
-
-        self.tr_sys = TransformSystem(self)
-        self.tr_sys.visual_to_document = self.transform
-
-        gloo.set_state(blend=True,
-                       blend_func=('src_alpha', 'one_minus_src_alpha'))
+        w, h = self.size
+        self.points.transform = STTransform(scale=(w / 2., h / 2.),
+                                            translate=(w / 2., h / 2.))
 
     def on_mouse_move(self, event):
         if event.is_dragging:
@@ -131,20 +108,21 @@ class Canvas(app.Canvas):
             button = event.press_event.button
 
             if button == 1:
-                self.panzoom.move(dxy)
+                self.points.transform.move(dxy)
             elif button == 2:
                 center = event.press_event.pos
-                self.panzoom.zoom(np.exp(dxy * (0.01, -0.01)), center)
+                self.points.transform.zoom(np.exp(dxy * (0.01, -0.01)), center)
 
             self.update()
 
     def on_resize(self, event):
-        self.width, self.height = event.size
-        gloo.set_viewport(0, 0, self.width, self.height)
+        vp = (0, 0, self.physical_size[0], self.physical_size[1])
+        self.context.set_viewport(*vp)
+        self.points.transforms.configure(canvas=self, viewport=vp)
 
     def on_draw(self, event):
-        gloo.clear()
-        self.points.draw(self.tr_sys)
+        self.context.clear('white')
+        self.points.draw()
 
 if __name__ == '__main__':
     c = Canvas()

@@ -169,19 +169,7 @@ class Function(ShaderObject):
             for dep in dependencies:
                 self._add_dep(dep)
         
-        # Get and strip code
-        if isinstance(code, Function):
-            code = code._code
-        elif not isinstance(code, string_types):
-            raise ValueError('Function needs a string or Function; got %s.' %
-                             type(code))
-        self._code = self._clean_code(code)
-        
-        # (name, args, rval)
-        self._signature = None
-        
-        # $placeholders parsed from the code
-        self._template_vars = None
+        self.code = code
         
         # Expressions replace template variables (also our dependencies)
         self._expressions = OrderedDict()
@@ -192,10 +180,6 @@ class Function(ShaderObject):
         # Stuff to do at the end
         self._assignments = OrderedDict()
         
-        # Create static Variable instances for any global variables declared
-        # in the code
-        self._static_vars = None
-    
     def __setitem__(self, key, val):
         """ Setting of replacements through a dict-like syntax.
         
@@ -360,6 +344,26 @@ class Function(ShaderObject):
         """
         return self._code
     
+    @code.setter
+    def code(self, code):
+        # Get and strip code
+        if isinstance(code, Function):
+            code = code._code
+        elif not isinstance(code, string_types):
+            raise ValueError('Function needs a string or Function; got %s.' %
+                             type(code))
+        self._code = self._clean_code(code)
+
+        # (name, args, rval)
+        self._signature = None
+        
+        # $placeholders parsed from the code
+        self._template_vars = None
+        
+        # Create static Variable instances for any global variables declared
+        # in the code
+        self._static_vars = None
+    
     @property
     def template_vars(self):
         if self._template_vars is None:
@@ -463,7 +467,7 @@ class Function(ShaderObject):
             v = parsing.find_template_variables(code)
             logger.warning('Unsubstituted placeholders in code: %s\n'
                            '  replacements made: %s', 
-                           (v, list(self._expressions.keys())))
+                           v, list(self._expressions.keys()))
         
         return code + '\n'
     
@@ -515,6 +519,9 @@ class MainFunction(Function):
         return ('main', [], 'void')
 
     def static_names(self):
+        if self._static_vars is not None:
+            return self._static_vars
+        
         # parse static variables
         names = Function.static_names(self)
         
@@ -526,7 +533,8 @@ class MainFunction(Function):
             names.append(f[0])
             for arg in f[1]:
                 names.append(arg[1])
-        
+                
+        self._static_vars = names
         return names
 
     def add_chain(self, var):
@@ -629,6 +637,16 @@ class FunctionChain(Function):
             self._args = []
         
         self.changed(code_changed=True)
+        
+    @property
+    def code(self):
+        # Code is generated at compile time; hopefully it is not requested
+        # before then..
+        return None
+    
+    @code.setter
+    def code(self, c):
+        raise TypeError("Cannot set code property on FunctionChain.")
 
     @property
     def template_vars(self):
@@ -723,15 +741,11 @@ class StatementList(ShaderObject):
     """Represents a list of statements. 
     """
     def __init__(self):
-        self.items = []
+        self.items = {}
+        self.order = []
         ShaderObject.__init__(self)
         
-    def append(self, item):
-        self.items.append(item)
-        self._add_dep(item)
-        self.changed(code_changed=True)
-
-    def add(self, item):
+    def add(self, item, position=5):
         """Add an item to the list unless it is already present.
         
         If the item is an expression, then a semicolon will be appended to it
@@ -739,17 +753,25 @@ class StatementList(ShaderObject):
         """
         if item in self.items:
             return
-        self.append(item)
+        self.items[item] = position
+        self._add_dep(item)
+        self.order = None
+        self.changed(code_changed=True)
         
     def remove(self, item):
         """Remove an item from the list.
         """
-        self.items.remove(item)
+        self.items.pop(item)
         self._remove_dep(item)
+        self.order = None
         self.changed(code_changed=True)
 
     def expression(self, obj_names):
+        if self.order is None:
+            self.order = list(self.items.items())
+            self.order.sort(key=lambda x: x[1])
+            
         code = ""
-        for item in self.items:
+        for item, pos in self.order:
             code += item.expression(obj_names) + ';\n'
         return code

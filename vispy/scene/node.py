@@ -4,17 +4,19 @@
 
 from __future__ import division
 
+import weakref
+
 from ..util.event import Event, EmitterGroup
 from ..visuals.transforms import (NullTransform, BaseTransform, 
-                                  ChainTransform, create_transform)
+                                  ChainTransform, create_transform,
+                                  TransformSystem)
 
 
 class Node(object):
     """ Base class representing an object in a scene.
 
     A group of nodes connected through parent-child relationships define a 
-    scenegraph. Nodes may have any number of children or parents, although 
-    it is uncommon to have more than one parent.
+    scenegraph. Nodes may have any number of children.
 
     Each Node defines a ``transform`` property, which describes the position,
     orientation, scale, etc. of the Node relative to its parent. The Node's
@@ -22,7 +24,7 @@ class Node(object):
     transformations on top of that. 
     
     With the ``transform`` property, each Node implicitly defines a "local" 
-    coordinate system, and the Nodes and edges in the scenegraph can be though
+    coordinate system, and the Nodes and edges in the scenegraph can be thought
     of as coordinate systems connected by transformation functions.
     
     Parameters
@@ -31,19 +33,37 @@ class Node(object):
         The parent of the Node.
     name : str
         The name used to identify the node.
+    transforms : instance of TransformSystem | None
+        The associated transforms.
     """
     
     # Needed to allow subclasses to repr() themselves before Node.__init__()
     _name = None
 
-    def __init__(self, parent=None, name=None):
+    def __init__(self, parent=None, name=None, transforms=None):
         self.name = name
         self._visible = True
+        self._canvas = None
+        self._document_node = None
+        self._scene_node = None
+        self._opacity = 1.0
+        self._order = 0
+        self._picking = False
+        
+        # clippers inherited from parents
+        self._clippers = weakref.WeakKeyDictionary()  # {node: clipper}
+
+        # whether this widget should clip its children
+        self._clip_children = False
+        self._clipper = None
+        
+        self.transforms = (TransformSystem() if transforms is None else 
+                           transforms)
 
         # Add some events to the emitter groups:
-        events = ['parents_change', 'children_change', 'transform_change',
-                  'mouse_press', 'mouse_move', 'mouse_release', 'mouse_wheel', 
-                  'key_press', 'key_release']
+        events = ['canvas_change', 'parent_change', 'children_change', 
+                  'transform_change', 'mouse_press', 'mouse_move',
+                  'mouse_release', 'mouse_wheel', 'key_press', 'key_release']
         # Create event emitter if needed (in subclasses that inherit from
         # Visual, we already have an emitter to share)
         if not hasattr(self, 'events'):
@@ -51,20 +71,14 @@ class Node(object):
                                        update=Event)
         self.events.add(**dict([(ev, Event) for ev in events]))
         
-        # Entities are organized in a parent-children hierarchy
         self._children = []
-        # TODO: use weakrefs for parents.
-        self._parents = []
+        self._transform = NullTransform()
+        self._parent = None
         if parent is not None:
-            self.parents = parent
+            self.parent = parent
             
         self._document = None
-
-        # Components that all entities in vispy have
-        # todo: default transform should be trans-scale-rot transform
-        self._transform = NullTransform()
     
-    # todo: move visible to BaseVisualNode class when we make Node not a Visual
     @property
     def visible(self):
         """ Whether this node should be drawn or not. Only applicable to
@@ -86,6 +100,62 @@ class Node(object):
         self._name = n
 
     @property
+    def opacity(self):
+        return self._opacity
+    
+    @opacity.setter
+    def opacity(self, o):
+        self._opacity = o
+        self._update_opacity()
+        
+    def _update_opacity(self):
+        pass
+        
+    def _set_clipper(self, node, clipper):
+        """Assign a clipper that is inherited from a parent node.
+        
+        If *clipper* is None, then remove any clippers for *node*.
+        """
+        pass
+
+    @property
+    def clip_children(self):
+        """Boolean indicating whether children of this node will inherit its
+        clipper.
+        """
+        return self._clip_children
+    
+    @clip_children.setter
+    def clip_children(self, clip):
+        if self._clip_children == clip:
+            return
+        self._clip_children = clip
+        
+        for ch in self.children:
+            ch._set_clipper(self, self.clipper) 
+
+    @property
+    def clipper(self):
+        """A visual filter that can be used to clip visuals to the boundaries
+        of this node.
+        """
+        return self._clipper
+        
+    @property
+    def order(self):
+        """A value used to determine the order in which nodes are drawn.
+        
+        Greater values are drawn later. Children are always drawn after their
+        parent.
+        """
+        return self._order
+    
+    @order.setter
+    def order(self, o):
+        self._order = o
+        self.update()
+        
+    @property
     def children(self):
         """ A copy of the list of children of this node. Do not add
         items to this list, but use ``x.parent = y`` instead.
@@ -94,101 +164,173 @@ class Node(object):
 
     @property
     def parent(self):
-        """ Get/set the parent. If the node has multiple parents while
-        using this property as a getter, an error is raised.
+        """The parent of this node in the scenegraph.
+        
+        Nodes inherit coordinate transformations and some filters (opacity and
+        clipping by default) from their parents. Setting this property assigns
+        a new parent, changing the topology of the scenegraph.
+        
+        May be set to None to remove this node (and its children) from a
+        scenegraph.
         """
-        if not self._parents:
+        if self._parent is None:
             return None
-        elif len(self._parents) == 1:
-            return self._parents[0]
         else:
-            raise RuntimeError('Ambiguous parent: there are multiple parents.')
+            return self._parent()
 
     @parent.setter
     def parent(self, parent):
-        # This is basically an alias
-        self.parents = parent
-
-    @property
-    def parents(self):
-        """ Get/set a tuple of parents.
-        """
-        return tuple(self._parents)
-
-    @parents.setter
-    def parents(self, parents):
-        # Test input
-        if isinstance(parents, Node):
-            parents = (parents,)
-        if not hasattr(parents, '__iter__'):
-            raise ValueError("Node.parents must be iterable (got %s)"
-                             % type(parents))
-
-        # Test that all parents are entities
-        for p in parents:
-            if not isinstance(p, Node):
-                raise ValueError('A parent of an node must be an node too,'
-                                 ' not %s.' % p.__class__.__name__)
-
-        # Apply
-        prev = list(self._parents)  # No list.copy() on Py2.x
-        with self.events.parents_change.blocker():
-            # Remove parents
-            for parent in prev:
-                if parent not in parents:
-                    self.remove_parent(parent)
-            # Add new parents
-            for parent in parents:
-                if parent not in prev:
-                    self.add_parent(parent)
-
-        self.events.parents_change(new=parents, old=prev)
-
-    def add_parent(self, parent):
-        """Add a parent
-
-        Parameters
-        ----------
-        parent : instance of Node
-            The parent.
-        """
-        if parent in self._parents:
+        if not isinstance(parent, (Node, type(None))):
+            raise ValueError('Parent must be Node instance or None (got %s).'
+                             % parent.__class__.__name__)
+        prev = self.parent
+        if parent is prev:
             return
-        self._parents.append(parent)
-        parent._add_child(self)
-        self.events.parents_change(added=parent)
+        if prev is not None:
+            prev._remove_child(self)
+            # remove all clippers inherited from parents
+            for k in list(self._clippers):
+                self._set_clipper(k, None)
+        if parent is None:
+            self._set_canvas(None)
+            self._parent = None
+        else:
+            self._set_canvas(parent.canvas)
+            self._parent = weakref.ref(parent)
+            parent._add_child(self)
+            # inherit clippers from parents
+            p = parent
+            while p is not None:
+                if p.clip_children:
+                    self._set_clipper(p, p.clipper)
+                p = p.parent
+        
+        self.events.parent_change(new=parent, old=prev)
+        self._update_trsys(None)
         self.update()
-
-    def remove_parent(self, parent):
-        """Remove a parent
-
-        Parameters
-        ----------
-        parent : instance of Node
-            The parent.
-        """
-        if parent not in self._parents:
-            raise ValueError("Parent not in set of parents for this node.")
-        self._parents.remove(parent)
-        parent._remove_child(self)
-        self.events.parents_change(removed=parent)
 
     def _add_child(self, node):
         self._children.append(node)
         self.events.children_change(added=node)
-        node.events.update.connect(self.events.update)
+        node.events.children_change.connect(self.events.children_change)
+        self.events.parent_change.connect(node.events.parent_change)
 
     def _remove_child(self, node):
         self._children.remove(node)
         self.events.children_change(removed=node)
-        node.events.update.disconnect(self.events.update)
+        node.events.children_change.disconnect(self.events.children_change)
+        self.events.parent_change.disconnect(node.events.parent_change)
+
+    def on_parent_change(self, event):
+        """Parent change event handler
+
+        Parameters
+        ----------
+        event : instance of Event
+            The event.
+        """
+        self._scene_node = None
+
+    def is_child(self, node):
+        """Check if a node is a child of the current node
+
+        Parameters
+        ----------
+        node : instance of Node
+            The potential child.
+
+        Returns
+        -------
+        child : bool
+            Whether or not the node is a child.
+        """
+        if node in self.children:
+            return True
+        for c in self.children:
+            if c.is_child(node):
+                return True
+        return False
+
+    @property
+    def canvas(self):
+        """The canvas in which this node's scenegraph is being drawn.
+        """
+        if self._canvas is None:
+            return None
+        else:
+            return self._canvas()
+
+    @property
+    def document_node(self):
+        """The node to be used as the document coordinate system.
+        
+        By default, the document node is `self.root_node`.
+        """
+        if self._document_node is None:
+            return self.root_node
+        return self._document_node
+
+    @document_node.setter
+    def document_node(self, doc):
+        self._document_node = doc
+        self._update_transform()
+
+    @property
+    def scene_node(self):
+        """The first ancestor of this node that is a SubScene instance, or self
+        if no such node exists.
+        """
+        if self._scene_node is None:
+            from .subscene import SubScene
+            p = self.parent
+            while True:
+                if isinstance(p, SubScene) or p is None:
+                    self._scene_node = p
+                    break
+                p = p.parent
+            if self._scene_node is None:
+                self._scene_node = self
+        return self._scene_node
+
+    @property
+    def root_node(self):
+        node = self
+        while True:
+            p = node.parent
+            if p is None:
+                return node
+            node = p
+
+    def _set_canvas(self, c):
+        old = self.canvas
+        if old is c:
+            return
+        
+        # Use canvas/framebuffer transforms from canvas
+        self.transforms.canvas = c
+        if c is None:
+            self._canvas = None
+        else:
+            self._canvas = weakref.ref(c)
+            tr = c.transforms
+            self.transforms.canvas_transform = tr.canvas_transform
+            self.transforms.framebuffer_transform = tr.framebuffer_transform
+        
+        # update all children
+        for ch in self.children:
+            ch._set_canvas(c)
+
+        self.events.canvas_change(old=old, new=c)
 
     def update(self):
         """
-        Emit an event to inform listeners that properties of this Node or its
-        children have changed.
+        Emit an event to inform listeners that properties of this Node have
+        changed. Also request a canvas update.
         """
         self.events.update()
+        c = getattr(self, 'canvas', None)
+        if c is not None:
+            c.update(node=self)
 
     @property
     def document(self):
@@ -219,12 +361,12 @@ class Node(object):
 
     @transform.setter
     def transform(self, tr):
-        if self._transform is not None:
-            self._transform.changed.disconnect(self._transform_changed)
+        # Other nodes might be interested in this information, but turning it
+        # on by default is too expensive.
         assert isinstance(tr, BaseTransform)
-        self._transform = tr
-        self._transform.changed.connect(self._transform_changed)
-        self._transform_changed(None)
+        if tr is not self._transform:
+            self._transform = tr
+            self._update_trsys(None)
 
     def set_transform(self, type_, *args, **kwargs):
         """ Create a new transform of *type* and assign it to this node.
@@ -242,14 +384,25 @@ class Node(object):
         """
         self.transform = create_transform(type_, *args, **kwargs)
 
-    def _transform_changed(self, event):
+    def _update_trsys(self, event):
+        """Called when  has changed.
+        
+        This allows the node and its children to react (notably, VisualNode
+        uses this to update its TransformSystem).
+        
+        Note that this method is only called when one transform is replaced by
+        another; it is not called if an existing transform internally changes
+        its state.
+        """
+        for ch in self.children:
+            ch._update_trsys(event)
         self.events.transform_change()
         self.update()
 
-    def _parent_chain(self):
+    def parent_chain(self):
         """
-        Return the chain of parents starting from this node. The chain ends
-        at the first node with either no parents or multiple parents.
+        Return the list of parents starting from this node. The chain ends
+        at the first node with no parents.
         """
         chain = [self]
         while True:
@@ -300,7 +453,6 @@ class Node(object):
         Return the common parent of two entities
 
         If the entities have no common parent, return None.
-        Does not search past multi-parent branches.
 
         Parameters
         ----------
@@ -312,8 +464,8 @@ class Node(object):
         parent : instance of Node | None
             The parent.
         """
-        p1 = self._parent_chain()
-        p2 = node._parent_chain()
+        p1 = self.parent_chain()
+        p2 = node.parent_chain()
         for p in p1:
             if p in p2:
                 return p
@@ -322,8 +474,7 @@ class Node(object):
     def node_path_to_child(self, node):
         """Return a list describing the path from this node to a child node
 
-        This method assumes that the given node is a child node. Multiple
-        parenting is allowed.
+        If *node* is not a (grand)child of this node, then raise RuntimeError.
 
         Parameters
         ----------
@@ -341,7 +492,7 @@ class Node(object):
         # Go up from the child node as far as we can
         path1 = [node]
         child = node
-        while len(child.parents) == 1:
+        while child.parent is not None:
             child = child.parent
             path1.append(child)
             # Early exit
@@ -349,7 +500,7 @@ class Node(object):
                 return list(reversed(path1))
         
         # Verify that we're not cut off
-        if len(path1[-1].parents) == 0:
+        if path1[-1].parent is None:
             raise RuntimeError('%r is not a child of %r' % (node, self))
         
         def _is_child(path, parent, child):
@@ -402,11 +553,9 @@ class Node(object):
         
             ([D, C, B], [E, F])
         
-        Note that there must be a _single_ path in the scenegraph that connects
-        the two entities; otherwise an exception will be raised.        
         """
-        p1 = self._parent_chain()
-        p2 = node._parent_chain()
+        p1 = self.parent_chain()
+        p2 = node.parent_chain()
         cp = None
         for p in p1:
             if p in p2:
@@ -434,12 +583,12 @@ class Node(object):
 
         Returns
         -------
-        transform : instance of Transform
-            The transform.
+        transforms : list
+            A list of Transform instances.
         """
         a, b = self.node_path(node)
-        return ([n.transform.inverse for n in b] +
-                [n.transform for n in a[:-1]])[::-1]
+        return ([n.transform for n in a[:-1]] + 
+                [n.transform.inverse for n in b])[::-1]
 
     def node_transform(self, node):
         """
@@ -464,3 +613,16 @@ class Node(object):
     def __repr__(self):
         name = "" if self.name is None else " name="+self.name
         return "<%s%s at 0x%x>" % (self.__class__.__name__, name, id(self))
+
+    @property
+    def picking(self):
+        """Boolean that determines whether this node (and its children) are
+        drawn in picking mode.
+        """
+        return self._picking
+    
+    @picking.setter
+    def picking(self, p):
+        for c in self.children:
+            c.picking = p
+        self._picking = p

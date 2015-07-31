@@ -11,14 +11,14 @@ import numpy as np
 
 from ..color import ColorArray
 from ..gloo import VertexBuffer, _check_valid
-from .shaders import ModularProgram, Function, Variable
+from .shaders import Function, Variable
 from .visual import Visual
 
 
 vert = """
-uniform mat4 u_projection;
 uniform float u_antialias;
-uniform int u_px_scale;
+uniform float u_px_scale;
+uniform float u_scale;
 
 attribute vec3  a_position;
 attribute vec4  a_fg_color;
@@ -32,14 +32,14 @@ varying float v_edgewidth;
 varying float v_antialias;
 
 void main (void) {
-    $v_size = a_size * u_px_scale;
-    v_edgewidth = a_edgewidth;
+    $v_size = a_size * u_px_scale * u_scale;
+    v_edgewidth = a_edgewidth * u_px_scale;
     v_antialias = u_antialias;
     v_fg_color  = a_fg_color;
     v_bg_color  = a_bg_color;
     gl_Position = $transform(vec4(a_position,1.0));
     float edgewidth = max(v_edgewidth, 1.0);
-    gl_PointSize = $scalarsize($v_size) + 4*(edgewidth + 1.5*v_antialias);
+    gl_PointSize = $v_size + 4*(edgewidth + 1.5*v_antialias);
 }
 """
 
@@ -55,7 +55,7 @@ void main()
     float edgewidth = max(v_edgewidth, 1.0);
     float edgealphafactor = min(v_edgewidth, 1.0);
 
-    float size = $scalarsize($v_size) + 4*(edgewidth + 1.5*v_antialias);
+    float size = $v_size + 4*(edgewidth + 1.5*v_antialias);
     // factor 6 for acute edge angles that need room as for star marker
 
     // The marker function needs to be linked with this shader
@@ -114,20 +114,6 @@ void main()
             }
         }
     }
-}
-"""
-
-size1d = """
-float size1d(float size)
-{
-    return size;
-}
-"""
-
-size2d = """
-float size2d(vec2 size)
-{
-    return max(size.x, size.y);
 }
 """
 
@@ -487,7 +473,7 @@ _marker_dict = {
     '>': arrow,
     '^': triangle_up,
     'v': triangle_down,
-    '*': star
+    '*': star,
 }
 marker_types = tuple(sorted(list(_marker_dict.keys())))
 
@@ -495,16 +481,18 @@ marker_types = tuple(sorted(list(_marker_dict.keys())))
 class MarkersVisual(Visual):
     """ Visual displaying marker symbols.
     """
-    def __init__(self):
-        self._program = ModularProgram(vert, frag)
+    def __init__(self, **kwargs):
+        self._vbo = VertexBuffer()
         self._v_size_var = Variable('varying float v_size')
-        self._program.vert['v_size'] = self._v_size_var
-        self._program.frag['v_size'] = self._v_size_var
-        self._program.vert['scalarsize'] = Function(size1d)
-        self._program.frag['scalarsize'] = Function(size1d)
-        Visual.__init__(self)
+        self._symbol = None
+        Visual.__init__(self, vcode=vert, fcode=frag)
+        self.shared_program.vert['v_size'] = self._v_size_var
+        self.shared_program.frag['v_size'] = self._v_size_var
         self.set_gl_state(depth_test=False, blend=True,
                           blend_func=('src_alpha', 'one_minus_src_alpha'))
+        self._draw_mode = 'points'
+        if len(kwargs) > 0:
+            self.set_data(**kwargs)
 
     def set_data(self, pos=None, symbol='o', size=10., edge_width=1.,
                  edge_width_rel=None, edge_color='black', face_color='white',
@@ -548,7 +536,7 @@ class MarkersVisual(Visual):
         else:
             if edge_width_rel < 0:
                 raise ValueError('edge_width_rel cannot be negative')
-        self.set_symbol(symbol)
+        self.symbol = symbol
         self.scaling = scaling
 
         edge_color = ColorArray(edge_color).rgba
@@ -574,71 +562,46 @@ class MarkersVisual(Visual):
         data['a_position'][:, :pos.shape[1]] = pos
         data['a_size'] = size
         self.antialias = 1.
+        self.shared_program['u_antialias'] = self.antialias
         self._data = data
-        self._vbo = VertexBuffer(data)
+        self._vbo.set_data(data)
+        self.shared_program.bind(self._vbo)
         self.update()
 
-    def set_symbol(self, symbol='o'):
-        """Set the symbol
+    @property
+    def symbol(self):
+        return self._symbol
+    
+    @symbol.setter
+    def symbol(self, symbol):
+        if symbol == self._symbol:
+            return
+        self._symbol = symbol
+        if symbol is None:
+            self._marker_fun = None
+        else:
+            _check_valid('symbol', symbol, marker_types)
+            self._marker_fun = Function(_marker_dict[symbol])
+            self._marker_fun['v_size'] = self._v_size_var
+            self.shared_program.frag['marker'] = self._marker_fun
+        self.update()
 
-        Parameters
-        ----------
-        symbol : str
-            The symbol.
-        """
-        _check_valid('symbol', symbol, marker_types)
-        self._marker_fun = Function(_marker_dict[symbol])
-        self._marker_fun['v_size'] = self._v_size_var
-        self._program.frag['marker'] = self._marker_fun
+    def _prepare_transforms(self, view):
+        xform = view.transforms.get_transform()
+        view.view_program.vert['transform'] = xform
 
-    def draw(self, transforms):
-        """Draw the visual
-
-        Parameters
-        ----------
-        transforms : instance of TransformSystem
-            The transforms to use.
-        """
-        Visual.draw(self, transforms)
-
-        xform = transforms.get_full_transform()
-        self._program.vert['transform'] = xform
-        # TO DO: find a way to avoid copying data and rebinding them to the vbo
+    def _prepare_draw(self, view):
+        if self._symbol is None:
+            return False
+        view.view_program['u_px_scale'] = view.transforms.pixel_scale
         if self.scaling:
-            update_data = self._data.copy()
-            # 0.5 factor due to the difference between the viewbox spanning
-            # [-1, 1] in the framebuffer coordinates intervals
-            # and the viewbox spanning [0, 1] intervals
-            # in the Visual coordinates
-            # TO DO: find a way to get the scale directly
-            scale = (
-                0.5*transforms.visual_to_document.simplified().scale[:2] *
-                transforms.document_to_framebuffer.simplified().scale[:2] *
-                transforms.framebuffer_to_render.simplified().scale[:2]
-            )
-            update_data['a_size'] *= min(scale)
-            update_data['a_edgewidth'] *= min(scale)
-            self._vbo.set_data(update_data)
-        self._program.prepare()
-        self._program['u_antialias'] = self.antialias
+            tr = view.transforms.get_transform('visual', 'document').simplified
+            scale = np.linalg.norm((tr.map([1, 0]) - tr.map([0, 0]))[:2])
+            view.view_program['u_scale'] = scale
+        else:
+            view.view_program['u_scale'] = 1
 
-        d2f = transforms.document_to_framebuffer
-        self._program['u_px_scale'] = (d2f.map((1, 0)) - d2f.map((0, 0)))[0]
-        self._program.bind(self._vbo)
-        self._program.draw('points')
-
-    def bounds(self, mode, axis):
-        """Get the bounds
-
-        Parameters
-        ----------
-        mode : str
-            Describes the type of boundary requested. Can be "visual", "data",
-            or "mouse".
-        axis : 0, 1, 2
-            The axis along which to measure the bounding values, in
-            x-y-z order.
-        """
+    def _compute_bounds(self, axis, view):
         pos = self._data['a_position']
         if pos is None:
             return None

@@ -39,7 +39,7 @@ class Canvas(scene.SceneCanvas):
         self.index = 0
         self.markers = visuals.Markers()
         self.markers.set_data(pos, face_color=(0, 1, 0), scaling=False)
-        self.markers.set_symbol(impl_visuals.marker_types[self.index])
+        self.markers.symbol = impl_visuals.marker_types[self.index]
         self.text = visuals.Text(impl_visuals.marker_types[self.index],
                                  pos=(80, 15), font_size=14,
                                  color='black', parent=self.scene)
@@ -47,7 +47,7 @@ class Canvas(scene.SceneCanvas):
     def on_key_press(self, event):
         if event.text == ' ':
             self.index = (self.index + 1) % (len(impl_visuals.marker_types))
-            self.markers.set_symbol(impl_visuals.marker_types[self.index])
+            self.markers.symbol = impl_visuals.marker_types[self.index]
             self.text.text = impl_visuals.marker_types[self.index]
             self.update()
 
