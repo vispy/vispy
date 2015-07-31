@@ -31,6 +31,6 @@ def random(adjacency_mat):
 
     # Random layout does not have intermediate results, so this yield is more
     # like a return
-    yield node_coords, line_vertices
+    yield node_coords, np.array(line_vertices)
 
 
