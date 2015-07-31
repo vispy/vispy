@@ -75,8 +75,8 @@ class RectangleVisual(PolygonVisual):
 
         num_segments = (radius / hw * 500.).astype(int)
 
-        bias1 = np.full(4, half_width) - radius
-        bias2 = np.full(4, half_height) - radius
+        bias1 = np.ones(4) * half_width - radius
+        bias2 = np.ones(4) * half_height - radius
 
         corner1 = np.empty([num_segments[0]+1, 3], dtype=np.float32)
         corner2 = np.empty([num_segments[1]+1, 3], dtype=np.float32)
@@ -181,7 +181,7 @@ class RectangleVisual(PolygonVisual):
                                  " (got %s of length %d)" % (type(radius),
                                                              len(radius)))
 
-            if (radius > np.full(4, hw)).all():
+            if (radius > np.ones(4) * hw).all():
                 raise ValueError('Radius of curvature cannot be greater than\
                                   half of min(width, height)')
             radius = np.array(radius, dtype=np.float32)
@@ -190,7 +190,7 @@ class RectangleVisual(PolygonVisual):
             if radius > hw:
                 raise ValueError('Radius of curvature cannot be greater than\
                                   half of min(width, height)')
-            radius = np.full(4, radius)
+            radius = np.ones(4) * radius
 
         self._radius = radius
         self._update()
