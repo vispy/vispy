@@ -8,13 +8,17 @@ Graph Visual
 This visual can be used to visualise graphs or networks.
 """
 
-import itertools
-
-import numpy as np
-
 from ..visual import CompoundVisual
 from ..line import ArrowVisual
 from ..markers import MarkersVisual
+from . import layouts
+
+
+_layouts_map = {
+    'random': layouts.random,
+}
+
+AVAILABLE_LAYOUTS = _layouts_map.keys()
 
 
 class GraphVisual(CompoundVisual):
@@ -34,20 +38,29 @@ class GraphVisual(CompoundVisual):
     _arrow_kw_trans = dict(line_color='color', line_width='width')
     _node_kw_trans = dict(node_symbol='symbol', node_size='size')
 
-    def __init__(self, adjacency_mat=None, directed=False, line_color=None,
-                 line_width=None, arrow_type=None, arrow_size=None,
-                 node_symbol=None, node_size=None, edge_color=None,
-                 face_color=None, edge_width=None, layout=None):
+    def __init__(self, adjacency_mat=None, directed=False, layout=None,
+                 animate=False, line_color=None, line_width=None,
+                 arrow_type=None, arrow_size=None, node_symbol=None,
+                 node_size=None, edge_color=None, face_color=None,
+                 edge_width=None):
 
         self._edges = ArrowVisual(method='gl', connect='segments')
         self._nodes = MarkersVisual()
 
+        self._arrow_data = {}
+        self._node_data = {}
+
         self._adjacency_mat = None
+
         self._layout = None
         self._layout_iter = None
         self.layout = layout
+
         self._directed = directed
         self.directed = directed
+
+        self._animate = False
+        self.animate = animate
 
         CompoundVisual.__init__(self, [self._edges, self._nodes])
 
@@ -67,7 +80,18 @@ class GraphVisual(CompoundVisual):
 
     @layout.setter
     def layout(self, value):
-        self._layout = value
+        if type(value) == str:
+            if value not in AVAILABLE_LAYOUTS:
+                raise ValueError(
+                    "Invalid graph layout '{}'. Should be one of {}.".format(
+                        value,
+                        ", ".join(AVAILABLE_LAYOUTS)
+                    )
+                )
+
+            self._layout = _layouts_map[value]
+        else:
+            self._layout = value
 
     @property
     def directed(self):
@@ -76,6 +100,14 @@ class GraphVisual(CompoundVisual):
     @directed.setter
     def directed(self, value):
         self._directed = bool(value)
+
+    @property
+    def animate(self):
+        return self._animate
+
+    @animate.setter
+    def animate(self, value):
+        self._animate = bool(value)
 
     def animate_layout(self):
         if self._layout_iter is None:
@@ -100,56 +132,35 @@ class GraphVisual(CompoundVisual):
 
         return True
 
-    def final_layout(self):
+    def set_final_layout(self):
         if self._layout_iter is None:
             if self._adjacency_mat is None:
                 raise ValueError("No adjacency matrix set yet. An adjacency "
                                  "matrix is required to calculate the layout.")
 
             self._layout_iter = iter(self._layout(self._adjacency_mat))
+            print(self._layout_iter)
 
-        node_vertices, line_vertices = None
+        # Calculate the final position of the nodes and lines
+        node_vertices = None
+        line_vertices = None
         for node_vertices, line_vertices in self._layout_iter:
             pass
 
-        self._nodes.set_data(pos=node_vertices)
-        self._edges.set_data(pos=line_vertices)
+        self._nodes.set_data(pos=node_vertices, **self._node_data)
+
+        if self._directed:
+            # TODO: Fix arrows
+            pass
+
+        self._edges.set_data(pos=line_vertices, **self._arrow_data)
 
     def set_data(self, adjacency_mat=None, **kwargs):
-        line_vertices = None
-        arrows = None
-        node_coords = None
-
         if adjacency_mat is not None:
             if adjacency_mat.shape[0] != adjacency_mat.shape[1]:
                 raise ValueError("Adjacency matrix should be square.")
 
-            # Randomly place nodes, visual coordinate system is between -1 and 1
-            num_nodes = adjacency_mat.shape[0]
-            node_coords = np.random.rand(num_nodes, 2)
-
-            line_vertices = []
-            arrows = []
-            for edge in itertools.combinations(range(num_nodes), 2):
-                reverse = (edge[1], edge[0])
-
-                if adjacency_mat[edge] == 1 or adjacency_mat[reverse] == 1:
-                    line_vertices.extend([node_coords[edge[0]],
-                                          node_coords[edge[1]]])
-
-                # Check if edge is directed, and if so, add an arrow head
-                if adjacency_mat[edge] == 1 and adjacency_mat[reverse] == 0:
-                    arrows.extend([
-                        node_coords[edge[0]], node_coords[edge[1]]
-                    ])
-
-                elif adjacency_mat[edge] == 0 and adjacency_mat[reverse] == 1:
-                    arrows.extend([
-                        node_coords[reverse[0]], node_coords[reverse[1]]
-                    ])
-
-            line_vertices = np.array(line_vertices)
-            arrows = np.array(arrows).reshape((len(arrows)/2, 4))
+            self._adjacency_mat = adjacency_mat
 
         for k in self._arrow_attributes:
             if k in kwargs:
@@ -166,8 +177,6 @@ class GraphVisual(CompoundVisual):
 
                 arrow_kwargs[translated] = kwargs.pop(k)
 
-        self._edges.set_data(pos=line_vertices, arrows=arrows, **arrow_kwargs)
-
         node_kwargs = {}
         for k in self._node_kwargs:
             if k in kwargs:
@@ -176,8 +185,6 @@ class GraphVisual(CompoundVisual):
 
                 node_kwargs[translated] = kwargs.pop(k)
 
-        self._nodes.set_data(pos=node_coords, **node_kwargs)
-
         if len(kwargs) > 0:
             raise TypeError(
                 "{}.set_data() got invalid keyword arguments: {}".format(
@@ -185,3 +192,11 @@ class GraphVisual(CompoundVisual):
                     kwargs.keys()
                 )
             )
+
+        # The actual data is set in GraphVisual.animate_layout or
+        # GraphVisual.set_final_layout
+        self._arrow_data = arrow_kwargs
+        self._node_data = node_kwargs
+
+        if not self._animate:
+            self.set_final_layout()
