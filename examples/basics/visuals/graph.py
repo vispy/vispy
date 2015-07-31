@@ -21,13 +21,13 @@ from vispy.visuals.transforms import STTransform
 class Canvas(app.Canvas):
     def __init__(self):
         app.Canvas.__init__(self, title="Simple NetworkX Graph",
-                            keys="interactive", size=(800, 600))
+                            keys="interactive", size=(600, 600))
 
         self.graph = nx.fast_gnp_random_graph(100, 0.02)
 
         self.visual = visuals.GraphVisual(
             nx.adjacency_matrix(self.graph),
-            layout=layouts.random,
+            layout=layouts.circular,
             line_color=(1.0, 1.0, 1.0, 1.0),
             arrow_type="stealth",
             arrow_size=7.5,
@@ -38,12 +38,19 @@ class Canvas(app.Canvas):
         )
 
         self.visual.events.update.connect(lambda evt: self.update())
-        self.visual.transform = STTransform(self.physical_size)
+        self.visual.transform = STTransform(self.visual_size, (20, 20))
 
         self.show()
 
+    @property
+    def visual_size(self):
+        return (
+            self.physical_size[0] - 40,
+            self.physical_size[1] - 40
+        )
+
     def on_resize(self, event):
-        self.visual.transform.scale = self.physical_size
+        self.visual.transform.scale = self.visual_size
 
         vp = (0, 0, self.physical_size[0], self.physical_size[1])
         self.context.set_viewport(*vp)
