@@ -38,7 +38,8 @@ class SphereVisual(CompoundVisual):
                                 vertex_colors=vertex_colors,
                                 face_colors=face_colors, color=color)
         if edge_color:
-            self._border = MeshVisual(vertices['position'], mesh.get_edges(),
+            self._border = MeshVisual(vertices=mesh.get_vertices(),
+                                      faces=mesh.get_edges(),
                                       color=edge_color, mode='lines')
         else:
             self._border = MeshVisual()
