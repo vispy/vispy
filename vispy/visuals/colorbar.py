@@ -593,3 +593,7 @@ class ColorBarVisual(CompoundVisual):
     @border_color.setter
     def border_color(self, border_color):
         self._border.border_color = border_color
+
+    @property
+    def orientation(self):
+        return self._orientation
