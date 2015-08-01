@@ -36,8 +36,7 @@ class ColorBarWidget(Widget):
         self._set_pos()
 
     def _set_pos(self):
-        # keep the ColorBar at (0, 0, 0), but move the coordinate of the
-        # Widget to the center of the rect.
+        # move the colorbar to the center of the rect
         self._colorbar.pos = self.rect.center
 
     @property
