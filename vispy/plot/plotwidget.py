@@ -419,7 +419,7 @@ class PlotWidget(scene.Widget):
 
         self._configure_2d()
 
-        colorbar = scene.ColorBar(center_pos=pos,
+        colorbar = scene.ColorBar(pos=pos,
                                   halfdim=halfdim,
                                   orientation=orientation,
                                   label_str=label,

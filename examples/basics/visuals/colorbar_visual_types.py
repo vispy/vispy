@@ -36,7 +36,7 @@ def get_left_orientation_bar():
     pos = 50, 300
     halfdim = 5, 200
 
-    colorbar = ColorBarVisual(center_pos=pos, halfdim=halfdim,
+    colorbar = ColorBarVisual(pos=pos, halfdim=halfdim,
                               label_str="orientation left",
                               cmap=colormap, orientation="left")
 
@@ -47,7 +47,7 @@ def get_right_orientation_bar():
     pos = 200, 300
     halfdim = 5, 200
 
-    colorbar = ColorBarVisual(center_pos=pos, halfdim=halfdim,
+    colorbar = ColorBarVisual(pos=pos, halfdim=halfdim,
                               label_str="orientation right",
                               cmap=colormap, orientation="right")
 
@@ -58,7 +58,7 @@ def get_top_orientation_bar():
     pos = 600, 400
     halfdim = 150, 5
 
-    colorbar = ColorBarVisual(center_pos=pos, halfdim=halfdim,
+    colorbar = ColorBarVisual(pos=pos, halfdim=halfdim,
                               label_str="orientation top",
                               cmap=colormap, orientation="top")
 
@@ -69,7 +69,7 @@ def get_bottom_orientation_bar():
     pos = 600, 150
     halfdim = 150, 5
 
-    colorbar = ColorBarVisual(center_pos=pos, halfdim=halfdim,
+    colorbar = ColorBarVisual(pos=pos, halfdim=halfdim,
                               label_str="orientation bottom",
                               cmap=colormap, orientation="bottom")
 

@@ -47,7 +47,7 @@ class Widget(Compound):
 
         # A mesh is required because GL lines cannot be drawn with predictable
         # shape across all platforms.
-        self._border = BorderVisual(center_pos=pos,
+        self._border = BorderVisual(pos=pos,
                                     halfdim=(size[0] * 0.5, size[1] * 0.5),
                                     border_width=2,
                                     border_color="#000000")
@@ -300,7 +300,7 @@ class Widget(Compound):
         # Draw the border at the center, leaving gaps for the borders
         # and the margin in the dimensions
         halfw, halfh = (self.size[0] * 0.5, self.size[1] * 0.5)
-        self._border.center_pos = (halfw, halfh)
+        self._border.pos = (halfw, halfh)
         self._border.halfdim = (halfw - w - m, halfh - w - m)
 
         # picking mesh covers the entire area

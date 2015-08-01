@@ -58,13 +58,13 @@ class _CoreColorBarVisual(Visual):
     This class was separated out to encapsulate rendering information
     That way, ColorBar simply becomes a CompoundVisual
     """
-    def __init__(self, center_pos, halfdim,
+    def __init__(self, pos, halfdim,
                  cmap,
                  orientation,
                  **kwargs):
 
         self._cmap = get_colormap(cmap)
-        self._center_pos = center_pos
+        self._pos = pos
         self._halfdim = halfdim
         self._orientation = orientation
 
@@ -95,7 +95,7 @@ class _CoreColorBarVisual(Visual):
            that are used internally by the ColorBarVisual
         """
 
-        x, y = self._center_pos
+        x, y = self._pos
         halfw, halfh = self._halfdim
 
         # test that width and height are non-zero
@@ -185,7 +185,7 @@ class ColorBarVisual(CompoundVisual):
         from the center. That way, the total dimensions
         of the colorbar is (x - half_width) to (x + half_width)
         and (y - half_height) to (y + half_height)
-    center_pos : tuple (x, y)
+    pos : tuple (x, y)
         Position where the colorbar is to be placed with
         respect to the center of the colorbar
     orientation : {'left', 'right', 'top', 'bottom'}
@@ -228,7 +228,7 @@ class ColorBarVisual(CompoundVisual):
     """
 
     def __init__(self, cmap, halfdim,
-                 center_pos=[0, 0],
+                 pos=[0, 0],
                  orientation="",
                  label_str="",
                  clim=(0.0, 1.0),
@@ -239,7 +239,7 @@ class ColorBarVisual(CompoundVisual):
         self._label_str = label_str
         self._cmap = get_colormap(cmap)
         self._clim = clim
-        self._center_pos = center_pos
+        self._pos = pos
         self._halfdim = halfdim
 
         if orientation == "":
@@ -257,11 +257,11 @@ class ColorBarVisual(CompoundVisual):
         self._ticks.append(TextVisual(str(self._clim[0])))
         self._ticks.append(TextVisual(str(self._clim[1])))
 
-        self._colorbar = _CoreColorBarVisual(center_pos,
+        self._colorbar = _CoreColorBarVisual(pos,
                                              halfdim, cmap,
                                              orientation)
 
-        self._border = BorderVisual(center_pos,
+        self._border = BorderVisual(pos,
                                     halfdim,
                                     border_width,
                                     border_color)
@@ -298,18 +298,18 @@ class ColorBarVisual(CompoundVisual):
         if self._orientation == "right" or self._orientation == "left":
             self._label.rotation = -90
 
-        x, y = self._center_pos
+        x, y = self._pos
         halfw, halfh = self._halfdim
 
         label_anchors = \
-            ColorBarVisual._get_label_anchors(center=self._center_pos,
+            ColorBarVisual._get_label_anchors(center=self._pos,
                                               halfdim=self._halfdim,
                                               orientation=self._orientation,
                                               transforms=self.label.transforms)
         self._label.anchors = label_anchors
 
         ticks_anchors = \
-            ColorBarVisual._get_ticks_anchors(center=self._center_pos,
+            ColorBarVisual._get_ticks_anchors(center=self._pos,
                                               halfdim=self._halfdim,
                                               orientation=self._orientation,
                                               transforms=self.label.transforms)
@@ -326,7 +326,7 @@ class ColorBarVisual(CompoundVisual):
                              ", not %s", halfh)
 
         (label_pos, ticks_pos) = \
-            ColorBarVisual._calc_positions(center=self._center_pos,
+            ColorBarVisual._calc_positions(center=self._pos,
                                            halfdim=self._halfdim,
                                            border_width=self.border_width,
                                            orientation=self._orientation,

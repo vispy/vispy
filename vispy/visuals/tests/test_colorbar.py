@@ -12,8 +12,8 @@ from vispy.testing.image_tester import assert_image_approved
 from pytest import raises
 
 
-def create_colorbar(center_pos, halfdim, orientation):
-    colorbar = visuals.ColorBar(center_pos=center_pos,
+def create_colorbar(pos, halfdim, orientation):
+    colorbar = visuals.ColorBar(pos=pos,
                                 halfdim=halfdim,
                                 orientation=orientation,
                                 label_str='label string here',
@@ -37,7 +37,7 @@ def create_colorbar(center_pos, halfdim, orientation):
 def test_colorbar_draw():
     """Test drawing Colorbar without transform using ColorbarVisual"""
     with TestingCanvas() as c:
-        colorbar_top = create_colorbar(center_pos=(50, 50),
+        colorbar_top = create_colorbar(pos=(50, 50),
                                        halfdim=(30, 2),
                                        orientation='top')
 
@@ -45,7 +45,7 @@ def test_colorbar_draw():
         assert_image_approved(c.render(), 'visuals/colorbar/top.png')
         colorbar_top.parent = None
 
-        colorbar_bottom = create_colorbar(center_pos=(50, 50),
+        colorbar_bottom = create_colorbar(pos=(50, 50),
                                           halfdim=(30, 2),
                                           orientation='bottom')
 
@@ -53,7 +53,7 @@ def test_colorbar_draw():
         assert_image_approved(c.render(), 'visuals/colorbar/bottom.png')
         colorbar_bottom.parent = None
 
-        colorbar_left = create_colorbar(center_pos=(50, 50),
+        colorbar_left = create_colorbar(pos=(50, 50),
                                         halfdim=(2, 30),
                                         orientation='left')
 
@@ -61,7 +61,7 @@ def test_colorbar_draw():
         assert_image_approved(c.render(), 'visuals/colorbar/left.png')
         colorbar_left.parent = None
 
-        colorbar_right = create_colorbar(center_pos=(50, 50),
+        colorbar_right = create_colorbar(pos=(50, 50),
                                          halfdim=(2, 30),
                                          orientation='right')
 
@@ -73,7 +73,7 @@ def test_colorbar_draw():
 def test_reactive_draw():
     """Test reactive RectPolygon attributes"""
     with TestingCanvas() as c:
-        colorbar = create_colorbar(center_pos=(50, 50),
+        colorbar = create_colorbar(pos=(50, 50),
                                    halfdim=(30, 2),
                                    orientation='top')
         c.draw_visual(colorbar)
@@ -112,40 +112,40 @@ def test_attributes():
 
         # initialize with wrong dimensions for orientations
         with raises(ValueError):
-            create_colorbar(center_pos=(50, 50),
+            create_colorbar(pos=(50, 50),
                             halfdim=(1, 30),
                             orientation='top')
 
         with raises(ValueError):
-            create_colorbar(center_pos=(50, 50),
+            create_colorbar(pos=(50, 50),
                             halfdim=(1, 30),
                             orientation='bottom')
 
         with raises(ValueError):
-            create_colorbar(center_pos=(50, 50),
+            create_colorbar(pos=(50, 50),
                             halfdim=(30, 1),
                             orientation='left')
 
         with raises(ValueError):
-            create_colorbar(center_pos=(50, 50),
+            create_colorbar(pos=(50, 50),
                             halfdim=(30, 1),
                             orientation='right')
 
         # set width to 0
         with raises(ValueError):
-            create_colorbar(center_pos=(50, 50),
+            create_colorbar(pos=(50, 50),
                             halfdim=(0, 1),
                             orientation='right')
 
         # set height to 0
         with raises(ValueError):
-            create_colorbar(center_pos=(50, 50),
+            create_colorbar(pos=(50, 50),
                             halfdim=(1, 0),
                             orientation='right')
 
         # set invalid orientation
         with raises(ValueError):
-            create_colorbar(center_pos=(50, 50),
+            create_colorbar(pos=(50, 50),
                             halfdim=(30, 2),
                             orientation='top-invalid')
 

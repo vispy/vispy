@@ -68,7 +68,7 @@ class BorderVisual(Visual):
 
     Parameters
     ----------
-    center_pos : tuple (x, y)
+    pos : tuple (x, y)
         Position where the colorbar is to be placed with
         respect to the center of the colorbar
     halfdim : tuple (half_width, half_height)
@@ -84,12 +84,12 @@ class BorderVisual(Visual):
         str as the color's name or an actual instace of a vipy.color.Color
     """
 
-    def __init__(self, center_pos, halfdim,
+    def __init__(self, pos, halfdim,
                  border_width=1.0,
                  border_color="black",
                  **kwargs):
 
-        self._center_pos = center_pos
+        self._pos = pos
         self._halfdim = halfdim
         self._border_width = border_width
         self._border_color = border_color
@@ -125,7 +125,7 @@ class BorderVisual(Visual):
         return visual_border_width
 
     def _update(self):
-        x, y = self._center_pos
+        x, y = self._pos
         halfw, halfh = self._halfdim
 
         border_vertices = np.array([
@@ -188,14 +188,14 @@ class BorderVisual(Visual):
         self.shared_program.frag['border_color'] = self._border_color.rgba
 
     @property
-    def center_pos(self):
+    def pos(self):
         """ The center of the BorderVisual
         """
-        return self._center_pos
+        return self._pos
 
-    @center_pos.setter
-    def center_pos(self, center_pos):
-        self._center_pos = center_pos
+    @pos.setter
+    def pos(self, pos):
+        self._pos = pos
         self._update()
 
     @property
