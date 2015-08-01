@@ -50,9 +50,9 @@ class Widget(Compound):
         self._border = BorderVisual(pos=pos,
                                     halfdim=(size[0] * 0.5, size[1] * 0.5),
                                     border_width=2,
-                                    border_color="#000000")
+                                    border_color=border_color)
 
-        self._mesh = MeshVisual(color=border_color, mode='triangles')
+        self._mesh = MeshVisual(color=bgcolor, mode='triangles')
         self._mesh.set_gl_state('translucent', depth_test=False,
                                 cull_face=False)
         self._picking_mesh = MeshVisual(mode='triangle_fan')
