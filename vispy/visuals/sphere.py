@@ -5,11 +5,10 @@
 # -----------------------------------------------------------------------------
 
 from ..geometry import create_sphere
-from ..gloo import set_state
 from .mesh import MeshVisual
+from .visual import CompoundVisual
 
-
-class SphereVisual(MeshVisual):
+class SphereVisual(CompoundVisual):
     """Visual that displays a sphere
 
     Parameters
@@ -29,19 +28,44 @@ class SphereVisual(MeshVisual):
         sphere edges are drawn.
     """
     def __init__(self, radius=1.0, cols=30, rows=30, vertex_colors=None,
-                 face_colors=None, color=(0.5, 0.5, 1, 1), edge_color=None):
+                 face_colors=None, color=(0.5, 0.5, 1, 1), edge_color=None,
+                 **kwargs):
 
         mesh = create_sphere(cols, rows, radius=radius)
 
-        MeshVisual.__init__(self, mesh.get_vertices(), mesh.get_faces(),
-                            vertex_colors, face_colors, color)
+        self._mesh = MeshVisual(vertices=mesh.get_vertices(),
+                                faces=mesh.get_faces(),
+                                vertex_colors=vertex_colors,
+                                face_colors=face_colors, color=color)
         if edge_color:
-            self._outline = MeshVisual(vertices['position'], outline_indices,
-                                       color=edge_color, mode='lines')
+            self._border = MeshVisual(vertices['position'], mesh.get_edges(),
+                                      color=edge_color, mode='lines')
         else:
-            self._outline = None
+            self._border = MeshVisual()
 
-        self.mesh = mesh
+        CompoundVisual.__init__(self, [self._mesh, self._border], **kwargs)
+        self.mesh.set_gl_state(polygon_offset_fill=True,
+                               polygon_offset=(1, 1), depth_test=True)
+
+    @property
+    def mesh(self):
+        """The vispy.visuals.MeshVisual that used to fil in.
+        """
+        return self._mesh
+
+    @mesh.setter
+    def mesh(self, mesh):
+        self._mesh = mesh
+
+    @property
+    def border(self):
+        """The vispy.visuals.MeshVisual that used to draw the border.
+        """
+        return self._border
+
+    @border.setter
+    def border(self, border):
+        self._border = border
 
     @property
     def vertices(self):
@@ -51,15 +75,15 @@ class SphereVisual(MeshVisual):
     def faces(self):
         return self.mesh.get_faces()
 
-    def draw(self, transforms):
-        """Draw the visual
-
-        Parameters
-        ----------
-        transforms : instance of TransformSystem
-            The transforms to use.
-        """
-        MeshVisual.draw(self, transforms)
-        if self._outline is not None:
-            set_state(polygon_offset=(1, 1), polygon_offset_fill=True)
-            self._outline.draw(transforms)
+    # def draw(self, transforms):
+    #     """Draw the visual
+    #
+    #     Parameters
+    #     ----------
+    #     transforms : instance of TransformSystem
+    #         The transforms to use.
+    #     """
+    #     MeshVisual.draw(self, transforms)
+    #     if self._outline is not None:
+    #         set_state(polygon_offset=(1, 1), polygon_offset_fill=True)
+    #         self._outline.draw(transforms)
