@@ -18,7 +18,6 @@ import weakref
 from .. import visuals
 from .node import Node
 from ..visuals.filters import ColorFilter, PickingFilter
-from ..util import Frozen
 
 
 class VisualNode(Node):
@@ -104,9 +103,10 @@ def create_visual_node(subclass):
 
     # Decide on new class name
     clsname = subclass.__name__
-    if not (clsname.endswith('Visual') and issubclass(subclass, Frozen)):
+    if not (clsname.endswith('Visual') and
+            issubclass(subclass, visuals.BaseVisual)):
         raise RuntimeError('Class "%s" must end with Visual, and must '
-                           'subclass Frozen' % clsname)
+                           'subclass BaseVisual' % clsname)
     clsname = clsname[:-6]
 
     # Generate new docstring based on visual docstring
