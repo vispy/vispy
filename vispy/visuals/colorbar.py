@@ -141,6 +141,15 @@ class _CoreColorBarVisual(Visual):
                               "not '%s'" % (orientation, ))
 
     @property
+    def pos(self):
+        return self._pos
+
+    @pos.setter
+    def pos(self, pos):
+        self._pos = pos
+        self._update()
+
+    @property
     def cmap(self):
         """ The colormap of the Colorbar
         """
@@ -282,7 +291,7 @@ class ColorBarVisual(CompoundVisual):
         self._colorbar._update()
         self._border._update()
 
-        self.label.text = self._label_str
+        self._label.text = self._label_str
 
         self._ticks[0].text = str(self._clim[0])
         self._ticks[1].text = str(self._clim[1])
@@ -294,6 +303,8 @@ class ColorBarVisual(CompoundVisual):
         updates the positions of the colorbars and labels
 
         """
+        self._colorbar.pos = self._pos
+        self._border.pos = self._pos
 
         if self._orientation == "right" or self._orientation == "left":
             self._label.rotation = -90
@@ -518,6 +529,17 @@ class ColorBarVisual(CompoundVisual):
         return (visual_label_pos, visual_ticks_pos)
 
     @property
+    def pos(self):
+        """ The position of the text anchor in the local coordinate frame
+        """
+        return self._pos
+
+    @pos.setter
+    def pos(self, pos):
+        self._pos = pos
+        self._update_positions()
+
+    @property
     def cmap(self):
         """ The colormap of the Colorbar
         """
@@ -597,3 +619,7 @@ class ColorBarVisual(CompoundVisual):
     @property
     def orientation(self):
         return self._orientation
+
+    @property
+    def halfdim(self):
+        return self._halfdim
