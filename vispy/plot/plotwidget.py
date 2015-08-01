@@ -39,6 +39,7 @@ class PlotWidget(scene.Widget):
         self.view = self.grid.add_view(row=1, col=2, border_color='grey')
 
         self._configured = False
+        self.cbar = None
 
         self.visuals = []
 
@@ -349,7 +350,7 @@ class PlotWidget(scene.Widget):
         self.view.camera.set_range()
         return surf
 
-    def colorbar(self, cmap, halfdim, pos, orientation="",
+    def colorbar(self, cmap, halfdim, pos=(0, 0), orientation="",
                  label="", clim=("", ""),
                  border_width=0.0, border_color="black",
                  **kwargs):
@@ -419,15 +420,24 @@ class PlotWidget(scene.Widget):
 
         self._configure_2d()
 
-        colorbar = scene.ColorBar(pos=pos,
-                                  halfdim=halfdim,
-                                  orientation=orientation,
-                                  label_str=label,
-                                  cmap=cmap,
-                                  clim=clim,
-                                  border_width=border_width,
-                                  border_color=border_color,
-                                  **kwargs)
-        self.view.add(colorbar)
-        self.view.camera.set_range()
-        return colorbar
+        self.cbar = scene.ColorBarWidget(pos=pos,
+                                             halfdim=halfdim,
+                                             orientation=orientation,
+                                             label_str=label,
+                                             cmap=cmap,
+                                             clim=clim,
+                                             border_width=border_width,
+                                             border_color=border_color,
+                                             **kwargs)
+
+        if self.cbar.orientation in ["bottom", "top"]:
+            self.grid.add_widget(self.cbar, row=5, col=3)
+            self.cbar.stretch = (1, 0.1)
+        else:  # colorbar.orientation in ["left", "right"]:
+            self.cbar.stretch = (0.1, 1)
+            self.grid.add_widget(self.cbar, row=1, col=3)
+
+
+        # self.view.add(colorbar)
+        # self.view.camera.set_range()
+        # return colorbar
