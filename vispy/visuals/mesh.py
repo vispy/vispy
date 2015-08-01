@@ -17,6 +17,7 @@ from ..gloo import VertexBuffer, IndexBuffer
 from ..geometry import MeshData
 from ..color import Color
 
+
 # Shaders for lit rendering (using phong shading)
 shading_vertex_template = """
 varying vec3 v_normal_vec;
@@ -206,6 +207,7 @@ class MeshVisual(Visual):
 
         # primitive mode
         self._draw_mode = mode
+        self.freeze()
 
     def set_data(self, vertices=None, faces=None, vertex_colors=None,
                  face_colors=None, color=None, meshdata=None):

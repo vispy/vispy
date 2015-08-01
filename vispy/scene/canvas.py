@@ -12,14 +12,14 @@ from .. import app
 from .visuals import VisualNode
 from ..visuals.transforms import TransformSystem
 from ..color import Color
-from ..util import logger
+from ..util import logger, Frozen
 from ..util.profiler import Profiler
 from .subscene import SubScene
 from .events import SceneMouseEvent
 from .widgets import Widget
 
 
-class SceneCanvas(app.Canvas):
+class SceneCanvas(app.Canvas, Frozen):
     """A Canvas that automatically draws the contents of a scene
 
     Parameters
@@ -140,6 +140,7 @@ class SceneCanvas(app.Canvas):
         self.events.mouse_wheel.connect(self._process_mouse_event)
 
         self.scene = SubScene()
+        self.freeze()
         
     @property
     def scene(self):

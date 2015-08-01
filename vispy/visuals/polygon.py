@@ -50,6 +50,7 @@ class PolygonVisual(CompoundVisual):
         CompoundVisual.__init__(self, [self._mesh, self._border], **kwargs)
         self._mesh.set_gl_state(polygon_offset_fill=True,
                                 polygon_offset=(1, 1), cull_face=False)
+        self.freeze()
 
     def _update(self):
         self.data = PolygonData(vertices=np.array(self._pos, dtype=np.float32))

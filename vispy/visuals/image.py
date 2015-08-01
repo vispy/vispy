@@ -150,6 +150,7 @@ class ImageVisual(Visual):
         self.cmap = cmap
         if data is not None:
             self.set_data(data)
+        self.freeze()
 
     def set_data(self, image):
         """Set the data

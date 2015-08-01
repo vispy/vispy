@@ -103,7 +103,10 @@ def create_visual_node(subclass):
 
     # Decide on new class name
     clsname = subclass.__name__
-    assert clsname.endswith('Visual')
+    if not (clsname.endswith('Visual') and
+            issubclass(subclass, visuals.BaseVisual)):
+        raise RuntimeError('Class "%s" must end with Visual, and must '
+                           'subclass BaseVisual' % clsname)
     clsname = clsname[:-6]
 
     # Generate new docstring based on visual docstring
@@ -121,11 +124,13 @@ def create_visual_node(subclass):
         self._visual_superclass = subclass
 
         subclass.__init__(self, *args, **kwargs)
+        self.unfreeze()
         VisualNode.__init__(self, parent=parent, name=name)
+        self.freeze()
 
     # Create new class
-    cls = type(clsname, (VisualNode, subclass), {'__init__': __init__,
-                                                 '__doc__': doc})
+    cls = type(clsname, (VisualNode, subclass),
+               {'__init__': __init__, '__doc__': doc})
 
     return cls
 

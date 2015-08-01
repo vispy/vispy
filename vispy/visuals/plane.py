@@ -46,10 +46,9 @@ class PlaneVisual(CompoundVisual):
                                 vertex_colors, face_colors, color)
         self._mesh.update_gl_state(polygon_offset=(1, 1),
                                    polygon_offset_fill=True)
+        self._outline = None
         CompoundVisual.__init__(self, [self._mesh])
         if edge_color:
             self._outline = MeshVisual(vertices['position'], outline_indices,
                                        color=edge_color, mode='lines')
             self.add_subvisual(self._outline)
-        else:
-            self._outline = None
