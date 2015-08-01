@@ -18,7 +18,9 @@ class ColorBarWidget(Widget):
         Keyword arguments to pass to ColorBarVisual.
     """
     def __init__(self, **kwargs):
-        self._colorbar = ColorBarVisual(**kwargs)
+        colorbar_args = kwargs
+
+        self._colorbar = ColorBarVisual(**colorbar_args)
         Widget.__init__(self)
         self.add_subvisual(self._colorbar)
         self._set_pos()
@@ -36,7 +38,7 @@ class ColorBarWidget(Widget):
     def _set_pos(self):
         # keep the ColorBar at (0, 0, 0), but move the coordinate of the
         # Widget to the center of the rect.
-        self.pos = self.rect.center
+        self._colorbar.pos = self.rect.center
 
     @property
     def cmap(self):
@@ -61,3 +63,7 @@ class ColorBarWidget(Widget):
     @clim.setter
     def clim(self, clim):
         self._colorbar.clim = clim
+
+    @property
+    def orientation(self):
+        return self._colorbar.orientation
