@@ -3,10 +3,9 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # vispy: gallery 1
 """
-Plot different styles of ColorBar
+Plot different styles of ColorBar using vispy.plot
 """
 
-import numpy as np
 from vispy import plot as vp
 
 fig = vp.Fig(size=(800, 400), show=False)
