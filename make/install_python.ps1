@@ -116,8 +116,7 @@ function InstallMinicondaPip ($python_home) {
 
 
 function main () {
-    # Don't download mesa for now since AppVeyor is unreliable with it
-    # DownloadMesaOpenGL $env:PYTHON_ARCH
+    DownloadMesaOpenGL $env:PYTHON_ARCH
     InstallMiniconda $env:PYTHON_VERSION $env:PYTHON_ARCH $env:PYTHON
     InstallMinicondaPip $env:PYTHON
 }

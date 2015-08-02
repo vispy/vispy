@@ -62,7 +62,8 @@ def _unit(mode, extra_arg_string, coverage=False):
         try:
             import nose  # noqa, analysis:ignore
         except ImportError:
-            raise SkipTest('Skipping unit tests, pytest not installed')
+            raise SkipTest('Skipping unit tests, neither pytest nor nose '
+                           'installed')
 
     if mode == 'nobackend':
         msg = 'Running tests with no backend'
@@ -71,6 +72,16 @@ def _unit(mode, extra_arg_string, coverage=False):
         else:
             extra_args += ['-a', '"!vispy_app_test"']
     else:
+        # check to make sure we actually have the backend of interest
+        invalid = run_subprocess([sys.executable, '-c',
+                                  'import vispy.app; '
+                                  'vispy.app.use_app("%s"); exit(0)' % mode],
+                                 return_code=True)[2]
+        if invalid:
+            print('%s\n%s\n%s' % (_line_sep, 'Skipping backend %s, not '
+                                  'installed or working properly' % mode,
+                                  _line_sep))
+            raise SkipTest()
         msg = 'Running tests with %s backend' % mode
         if use_pytest:
             extra_args += ['-m', 'vispy_app_test']

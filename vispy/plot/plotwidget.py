@@ -29,19 +29,25 @@ class PlotWidget(scene.Widget):
     """
     def __init__(self, *args, **kwargs):
         self._fg = kwargs.pop('fg_color', 'k')
-        super(PlotWidget, self).__init__(*args, **kwargs)
+        self.grid = None
+        self.camera = None
+        self.title = None
+        self.yaxis = None
+        self.xaxis = None
+        self.xlabel = None
+        self.ylabel = None
+        self._configured = False
+        self.cbar = None
 
+        self.visuals = []
+
+        super(PlotWidget, self).__init__(*args, **kwargs)
         self.grid = self.add_grid(spacing=0, margin=10)
 
         self.title = scene.Label("", font_size=16)
         self.title.stretch = (1, 0.1)
         self.grid.add_widget(self.title, row=0, col=3)
         self.view = self.grid.add_view(row=1, col=3, border_color='grey')
-
-        self._configured = False
-        self.cbar = None
-
-        self.visuals = []
 
     def _configure_2d(self, fg_color=None):
         if self._configured:

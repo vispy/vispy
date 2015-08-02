@@ -1,54 +1,78 @@
 language: python
 
-# Here we use anaconda for 2.6 and 3.4, since it provides the simplest
+# use container-based infrastructure
+sudo : false
+
+# install a newer cmake since at this time Travis only has version 2.8.7
+# liblgfw2 is not whitelisted by Travis, so we don't try using it here (not usable anyway)
+addons:
+  apt:
+    sources:
+    - &full_sources [kalakris-cmake]
+    packages:
+    - &mesa_apt [libgl1-mesa-dri]
+    - &full_apt [libegl1-mesa, cmake, xorg-dev, libglu1-mesa-dev, mercurial, libdbus-1-dev, libgl1-mesa-dev, libglu1-mesa-dev, libpulse-dev, libx11-dev, libxcursor-dev, libxext-dev, libxi-dev, libxinerama-dev, libxrandr-dev, libxss-dev, libxt-dev, libxv-dev, libxxf86vm-dev, libasound2-dev, libts-dev, libudev-dev]
+
+# Here we use Anaconda for our builds, since it provides the simplest
 # interface for running different versions of Python. We could also use
 # it for 2.7, but the Ubuntu system has installable 2.7 Qt4-GL, which
 # allows for more complete testing.
 
 # Size testing can be skipped by adding "[size skip]" within a commit message.
 
-virtualenv:
-    system_site_packages: true
-
-
-env:
+matrix:
+  include:
     # Enable python 2 and python 3 builds
     # Note that the 2.6 build doesn't get flake8, and runs old versions of
     # Pyglet and GLFW to make sure we deal with those correctly
 
     # IPython 1.2.1 is the last version of IPython for python2.6
     # source: https://pypi.python.org/pypi/ipython/1.2.1
-    - PYTHON=2.6 DEPS=full TEST=standard   # functionality
-    - PYTHON=2.7 DEPS=full TEST=standard IPYTHON_VERSION="==2"
-    - PYTHON=2.7 DEPS=minimal TEST=standard
-    - PYTHON=3.4 DEPS=full TEST=standard
-
-    - PYTHON=2.7 DEPS=full TEST=examples  # test examples
-    - PYTHON=3.4 DEPS=full TEST=examples
-
-    - PYTHON=3.4 DEPS=minimal TEST=extra  # test file sizes, style, line endings
+    - env: PYTHON=2.6 DEPS=full TEST=standard # functionality
+      addons:
+        apt:
+          sources:
+          packages:
+            - *mesa_apt
+    - env: PYTHON=2.7 DEPS=full TEST=standard IPYTHON="=2" NUMPY="=1.7"
+      addons:
+        apt:
+          sources:
+            - *full_sources
+          packages:
+            - *mesa_apt
+            - *full_apt
+    - env: PYTHON=3.4 DEPS=full TEST=standard
+      addons:
+        apt:
+          sources:
+            - *full_sources
+          packages:
+            - *mesa_apt
+            - *full_apt
+    - env: PYTHON=3.4 DEPS=backend TEST=examples  # test examples
+      addons:
+        apt:
+          sources:
+          packages:
+            - *mesa_apt
+    - env: PYTHON=3.4 DEPS=minimal TEST=standard  # also tests file sizes, style, line endings
+      addons:
+        apt:
+          packages:
 
 
 before_install:
     - REDIRECT_TO=/dev/stdout  # change to /dev/null to silence Travis
-    # install a newer cmake since at this time Travis only has version 2.8.7
-    - if [ "${PYTHON}" != "2.6" ] && [ "${DEPS}" == "full" ]; then
-        travis_retry sudo add-apt-repository -y ppa:kalakris/cmake;
-        travis_retry sudo apt-get -y update -qq;
-        travis_retry sudo apt-get -qq -y install cmake;
-      fi;
-    - if [ "${PYTHON}" != "2.7" ]; then
-        wget -q http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
-        chmod +x miniconda.sh;
-        ./miniconda.sh -b -p ~/anaconda &> ${REDIRECT_TO};
-        export PATH=~/anaconda/bin:$PATH;
-        conda update --yes --quiet conda &> ${REDIRECT_TO};
-        travis_retry sudo apt-get -qq -y install libgl1-mesa-dri;
-      fi;
+    - wget -q http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
+    - chmod +x miniconda.sh
+    - ./miniconda.sh -b -p ~/anaconda &> ${REDIRECT_TO}
+    - export PATH=~/anaconda/bin:$PATH
+    - conda update --yes --quiet conda &> ${REDIRECT_TO}
 
     - SRC_DIR=$(pwd)
-    # file size checks
-    - if [ "${TEST}" == "extra" ]; then
+    # file size checks run on minimal build for time
+    - if [ "${DEPS}" == "minimal" ]; then
         if [ "${TRAVIS_PULL_REQUEST}" != "false" ]; then
           GIT_TARGET_EXTRA="+refs/heads/${TRAVIS_BRANCH}";
           GIT_SOURCE_EXTRA="+refs/pull/${TRAVIS_PULL_REQUEST}/merge";
@@ -76,14 +100,9 @@ before_install:
 
 install:
     # Install numpy, flake
-    - if [ "${PYTHON}" != "2.7" ]; then
-        conda create -n testenv --yes --quiet pip python=$PYTHON > ${REDIRECT_TO};
-        source activate testenv > ${REDIRECT_TO};
-        conda install --yes --quiet numpy nose pytest > ${REDIRECT_TO};
-      else
-        travis_retry sudo apt-get -qq -y install python-numpy python-setuptools > ${REDIRECT_TO};
-        pip install -q pytest > ${REDIRECT_TO};
-      fi;
+    - conda create -n testenv --yes --quiet pip python=$PYTHON > ${REDIRECT_TO};
+    - source activate testenv > ${REDIRECT_TO};
+    - conda install --yes --quiet numpy$NUMPY nose pytest > ${REDIRECT_TO};
     - pip install -q coveralls pytest-cov
     # Dont install flake8 on 2.6 to make sure tests still run without it
     - if [ "${PYTHON}" != "2.6" ]; then
@@ -92,53 +111,27 @@ install:
         pip install -q unittest2;
       fi
 
-    # Install PyOpenGL
-    - if [ "${DEPS}" == "full" ]; then
-        travis_retry sudo apt-get -qq -y install freeglut3 > ${REDIRECT_TO};
-        if [ "${PYTHON}" == "2.7" ]; then
-          echo "Using OpenGL stable version (repos)";
-          travis_retry sudo apt-get -qq -y install python-opengl > ${REDIRECT_TO};
-        else
-          echo "Using OpenGL stable version (pip)";
-          pip install -q PyOpenGL;
-        fi;
-      fi;
-
     # On 3.4, install system-wide copies of bundled libraries instead
     # Use Pyglet alpha to get Py3.4 support
     # Also install PyQt4, imaging (PIL or pillow), scipy, mpl, egl
-    # Test old (insufficient) version of Pyglet on 2.6
     # On conda, can't install pyside-pyzo b/c it conflicts with pyqt4,
     # which is required by matplotlib :(
-    # No wx on py3k, wxpython doesn't work there (!)
-    - if [ "${DEPS}" == "full" ]; then
+    # No wx on py27 or py34, wxpython doesn't work properly there
+    # If we only need a single backend (DEPS=backend), then use PyQT4
+    - if [ "${DEPS}" == "backend" ]; then
+        conda install --yes --quiet pyqt pyopengl;
+      elif [ "${DEPS}" == "full" ]; then
+        conda install --yes --quiet pyqt pyopengl;
         pip install -q pyglet;
         if [ "${PYTHON}" == "2.6" ]; then
-          conda install --yes --quiet wxpython > ${REDIRECT_TO};
+          conda install --yes --quiet wxpython numpy$NUMPY > ${REDIRECT_TO};
+        else
+          conda install --yes --quiet ipython$IPYTHON ipython-notebook numpy$NUMPY > ${REDIRECT_TO};
         fi;
         if [ "${PYTHON}" == "3.4" ]; then
-          conda install --yes --quiet pillow scipy matplotlib decorator six > ${REDIRECT_TO};
-          pip install -q husl pypng > ${REDIRECT_TO};
-          pip install -q https://github.com/mpld3/mplexporter/zipball/master > ${REDIRECT_TO};
+          pip install -q freetype-py husl pypng https://github.com/mpld3/mplexporter/zipball/master > ${REDIRECT_TO};
+          conda install --yes --quiet pillow scipy matplotlib decorator six numpy$NUMPY > ${REDIRECT_TO};
           rm -rf ${SRC_DIR}/vispy/ext/_bundled;
-        fi;
-        if [ "${PYTHON}" == "2.7" ]; then
-          travis_retry sudo apt-get -qq -y install python-qt4-gl python-imaging python-scipy python-matplotlib python-wxgtk2.8 > ${REDIRECT_TO};
-        fi;
-        travis_retry sudo apt-get -qq -y install libegl1-mesa;
-      fi;
-
-    # Install IPython
-    # No IPython for 2.6
-    # Install using pip with old version for 2.7
-    # Install using conda with new version for > 2.7
-    - if [ "${DEPS}" == "full" ]; then
-        if [ "${PYTHON}" == "2.7" ]; then
-          pip install -q ipython[notebook]$IPYTHON_VERSION;
-        else
-          if [ "${PYTHON}" != "2.6" ]; then
-            conda install --yes --quiet ipython ipython-notebook;
-          fi;
         fi;
       fi;
 
@@ -150,37 +143,31 @@ install:
 
     # GLFW: version 2 shouldn't work (so let's try on Py2.6), version 3 will
     # We can't use most recent builds because our CMake is too old :(
-    - if [ "${PYTHON}" == "2.6" ] && [ "${DEPS}" == "full" ]; then
-        travis_retry sudo apt-get -qq install libglfw2 > ${REDIRECT_TO};
-      fi
     - if [ "${PYTHON}" != "2.6" ] && [ "${DEPS}" == "full" ]; then
-        travis_retry sudo apt-get -qq install xorg-dev libglu1-mesa-dev > ${REDIRECT_TO};
         git clone git://github.com/glfw/glfw.git &> ${REDIRECT_TO};
         cd glfw;
         git checkout 5b6e671;
-        cmake -DBUILD_SHARED_LIBS=true -DGLFW_BUILD_EXAMPLES=false -DGLFW_BUILD_TESTS=false -DGLFW_BUILD_DOCS=false . > ${REDIRECT_TO};
-        sudo make install > ${REDIRECT_TO};
+        cmake -DCMAKE_INSTALL_PREFIX=$HOME -DBUILD_SHARED_LIBS=true -DGLFW_BUILD_EXAMPLES=false -DGLFW_BUILD_TESTS=false -DGLFW_BUILD_DOCS=false . &> ${REDIRECT_TO};
+        make install &> ${REDIRECT_TO};
+        cd ~;
+        export GLFW_LIBRARY=${HOME}/lib/libglfw.so;
       fi
 
-    # Install SDL2 (on 2.6, let's only install sdl2-python to test handling)
+    # Install SDL2 (on 2.6, let's only install PySDL2 to test handling)
     - if [ "${DEPS}" == "full" ]; then
         if [ "${PYTHON}" != "2.6" ]; then
-          cd ~;
-          travis_retry sudo apt-get -qq -y install mercurial libdbus-1-dev libgl1-mesa-dev libglu1-mesa-dev libpulse-dev libx11-dev libxcursor-dev libxext-dev libxi-dev libxinerama-dev libxrandr-dev libxss-dev libxt-dev libxv-dev libxxf86vm-dev libasound2-dev libts-dev libudev-dev > ${REDIRECT_TO};
           wget -q http://www.libsdl.org/release/SDL2-2.0.3.tar.gz;
           tar xzf SDL2-2.0.3.tar.gz &> ${REDIRECT_TO};
           cd SDL2-2.0.3;
           mkdir build;
           cd build;
-          ../configure --disable-audio --disable-render --disable-joystick --disable-haptic --disable-power --disable-cpuinfo &> ${REDIRECT_TO};
+          ../configure --prefix=$HOME --disable-audio --disable-render --disable-joystick --disable-haptic --disable-power --disable-cpuinfo &> ${REDIRECT_TO};
           make -j 2 &> ${REDIRECT_TO};
-          sudo make install &> ${REDIRECT_TO};
+          make install &> ${REDIRECT_TO};
+          export PYSDL2_DLL_PATH=${HOME}/lib;
         fi;
         pip install -q PySDL2;
       fi;
-
-    # after manual builds we need to update .so search
-    - sudo ldconfig
 
 
 before_script:
@@ -197,11 +184,11 @@ script:
     - if [ "${TEST}" == "examples" ] || [ "${DEPS}" == "minimal" ]; then
         make examples;
       fi;
-    - if [ "${TEST}" == "extra" ]; then
+    - if [ "${DEPS}" == "minimal" ]; then
         make extra;
       fi;
     # Each line must be run in a separate line to ensure exit code accuracy
-    - if [ "${TEST}" == "extra" ]; then
+    - if [ "${DEPS}" == "minimal" ]; then
         echo "Size difference ${SIZE_DIFF} kB";
         if git log --format=%B -n 2 | grep -q "\[size skip\]"; then
           echo "Skipping size test";

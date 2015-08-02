@@ -141,6 +141,7 @@ class EllipseVisual(PolygonVisual):
 
     @num_segments.setter
     def num_segments(self, num_segments):
+        num_segments = int(num_segments)
         if num_segments < 1:
             raise ValueError('EllipseVisual must consist of more than 1 '
                              'segment')

@@ -130,6 +130,7 @@ class Canvas(object):
         self._fps_callback = None
         self._backend = None
         self._closed = False
+        self._fps_window = 0.
         self._px_scale = int(px_scale)
 
         if dpi is None:

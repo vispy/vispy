@@ -86,7 +86,7 @@ class LinePlotVisual(CompoundVisual):
                 pos = np.array(data).T.astype(np.float32)
             else:
                 pos = np.atleast_1d(data).astype(np.float32)
-            
+
             if pos.ndim == 1:
                 pos = pos[:, np.newaxis]
             elif pos.ndim > 2:
@@ -116,7 +116,7 @@ class LinePlotVisual(CompoundVisual):
                 line_kwargs[k] = kwargs.pop(k_)
         if pos is not None or len(line_kwargs) > 0:
             self._line.set_data(pos=pos, **line_kwargs)
-        
+
         marker_kwargs = {}
         for k in self._marker_kwargs:
             if k in kwargs:

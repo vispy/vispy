@@ -140,7 +140,7 @@ class raises(object):
             raise AssertionError("Expected %s (no exception raised)" %
                                  self.exc.__name__)
         else:
-            raise AssertionError("Expected %s, got %s instead" % 
+            raise AssertionError("Expected %s, got %s instead" %
                                  (self.exc.__name__, type(exc).__name__))
 
 
@@ -318,6 +318,7 @@ def TestingCanvas(bgcolor='black', size=(100, 100), dpi=None, decorate=False,
     class TestingCanvas(SceneCanvas):
         def __init__(self, bgcolor, size, dpi, decorate, **kwargs):
             self._entered = False
+            self._wanted_vp = None
             SceneCanvas.__init__(self, bgcolor=bgcolor, size=size,
                                  dpi=dpi, decorate=decorate,
                                  **kwargs)

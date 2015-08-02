@@ -444,6 +444,7 @@ class VolumeVisual(Visual):
         self.method = method
         self.relative_step_size = relative_step_size
         self.threshold = threshold if (threshold is not None) else vol.mean()
+        self.freeze()
     
     def set_data(self, vol, clim=None):
         """ Set the volume data. 
@@ -472,8 +473,12 @@ class VolumeVisual(Visual):
         
         # Apply clim
         vol = np.array(vol, dtype='float32', copy=False)
-        vol -= self._clim[0]
-        vol *= 1.0 / (self._clim[1] - self._clim[0])
+        if self._clim[1] == self._clim[0]:
+            if self._clim[0] != 0.:
+                vol *= 1.0 / self._clim[0]
+        else:
+            vol -= self._clim[0]
+            vol /= self._clim[1] - self._clim[0]
         
         # Apply to texture
         self._tex.set_data(vol)  # will be efficient if vol is same shape

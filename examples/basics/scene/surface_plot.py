@@ -31,9 +31,9 @@ p1.transform.translate([-0.5, -0.5, 0])
 
 view.add(p1)
 
-#p1._update_data()  # cheating.
-#cf = scene.filters.ZColormapFilter('fire', zrange=(z.max(), z.min()))
-#p1.attach(cf)
+# p1._update_data()  # cheating.
+# cf = scene.filters.ZColormapFilter('fire', zrange=(z.max(), z.min()))
+# p1.attach(cf)
 
 
 xax = scene.Axis(pos=[[-0.5, -0.5], [0.5, -0.5]], tick_direction=(0, -1),

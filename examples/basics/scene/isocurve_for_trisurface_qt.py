@@ -98,9 +98,10 @@ class Canvas(scene.SceneCanvas):
     def __init__(self):
         scene.SceneCanvas.__init__(self, keys=None)
         self.size = 800, 600
+        self.unfreeze()
         self.view = self.central_widget.add_view()
-        self.view.camera = 'turntable'
         self.radius = 2.0
+        self.view.camera = 'turntable'
         mesh = create_sphere(20, 20, radius=self.radius)
         vertices = mesh.get_vertices()
         tris = mesh.get_faces()
@@ -111,6 +112,7 @@ class Canvas(scene.SceneCanvas):
                                          data=vertices[:, 2],
                                          levels=cl, color_lev='autumn',
                                          parent=self.view.scene)
+        self.freeze()
 
         # Add a 3D axis to keep us oriented
         scene.visuals.XYZAxis(parent=self.view.scene)

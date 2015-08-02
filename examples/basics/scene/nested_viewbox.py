@@ -45,14 +45,6 @@ from vispy import scene
 
 #gloo.gl.use('desktop debug')
 
-# <<< Change method here
-# With the None method you can see the absence of clipping.
-# With the 'fbo' method you can see the texture interpolation (induced by
-# a delibirate mismatch in screen and textue resolution)
-# Try different combinarions, like a viewport in an fbo
-CLIP_METHOD1 = 'viewport'  # none, viewport, fbo (fragment to come)
-CLIP_METHOD2 = 'fbo'
-
 
 # Create lines for use in ndc and pixel coordinates
 N = 1000
@@ -138,14 +130,6 @@ vb22.camera = 'base'  # use parent cs
 # vb22 does not apply any scaling, so we do that manually here to match vb21
 line22 = scene.visuals.Line(pos=pos * [[w2, h2]], color=color, method='gl', 
                             parent=vb22.scene)
-
-
-# Set preferred clipping methods
-for vb in [vb1, vb11, vb21]:
-    vb.clip_method = CLIP_METHOD1
-for vb in [vb2, vb12, vb22]:
-    vb.clip_method = CLIP_METHOD2
-
 
 if __name__ == '__main__':
     app.run()

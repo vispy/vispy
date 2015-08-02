@@ -86,13 +86,12 @@ class BorderVisual(Visual):
 
     def __init__(self, pos, halfdim,
                  border_width=1.0,
-                 border_color="black",
+                 border_color=None,
                  **kwargs):
 
         self._pos = pos
         self._halfdim = halfdim
         self._border_width = border_width
-        self._border_color = border_color
         self._border_color = Color(border_color)
 
         Visual.__init__(self, vcode=VERT_SHADER_BORDER,

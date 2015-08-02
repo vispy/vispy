@@ -36,6 +36,7 @@ class Canvas(scene.SceneCanvas):
             title="Marker demo [press space to change marker]",
             bgcolor='white'
         )
+        self.unfreeze()
         self.index = 0
         self.markers = visuals.Markers()
         self.markers.set_data(pos, face_color=(0, 1, 0), scaling=False)
@@ -43,6 +44,7 @@ class Canvas(scene.SceneCanvas):
         self.text = visuals.Text(impl_visuals.marker_types[self.index],
                                  pos=(80, 15), font_size=14,
                                  color='black', parent=self.scene)
+        self.freeze()
 
     def on_key_press(self, event):
         if event.text == ' ':

@@ -44,14 +44,15 @@ class Widget(Compound):
 
     def __init__(self, pos=(0, 0), size=(10, 10), border_color=None,
                  border_width=1, bgcolor=None, padding=0, margin=0, **kwargs):
-
-        # A mesh is required because GL lines cannot be drawn with predictable
-        # shape across all platforms.
+        # For drawing border.
         self._border = BorderVisual(pos=pos,
                                     halfdim=(size[0] * 0.5, size[1] * 0.5),
-                                    border_width=2,
+                                    border_width=border_width,
                                     border_color=border_color)
 
+        # A mesh is used to fill in the background color
+        self._bgcolor = Color(bgcolor)
+        self._face_colors = None
         self._mesh = MeshVisual(color=bgcolor, mode='triangles')
         self._mesh.set_gl_state('translucent', depth_test=False,
                                 cull_face=False)
@@ -82,8 +83,6 @@ class Widget(Compound):
         self.transform = STTransform()
         self.events.add(resize=Event)
         self.pos = pos
-        self._border_color = Color(border_color)
-        self._bgcolor = Color(bgcolor)
         self._update_colors()
         self.size = size
 
@@ -141,7 +140,7 @@ class Widget(Compound):
         this rectangle.
         """
         m = self.margin + self._border_width + self.padding
-        if not self.border_color.is_blank:
+        if not self._border.border_color.is_blank:
             m += 1
         return Rect((m, m), (self.size[0]-2*m, self.size[1]-2*m))
 
@@ -197,11 +196,11 @@ class Widget(Compound):
     def border_color(self):
         """ The color of the border.
         """
-        return self._border_color
+        return self._border.border_color
 
     @border_color.setter
     def border_color(self, b):
-        self._border_color = Color(b)
+        self._border.border_color = Color(b)
         self._update_colors()
         self._update_line()
         self.update()
@@ -289,7 +288,7 @@ class Widget(Compound):
             [5, 3, 1],
             [1, 5, 7],
         ], dtype=np.int32)
-        start = 8 if self._border_color.is_blank else 0
+        start = 8 if self._border.border_color.is_blank else 0
         stop = 8 if self._bgcolor.is_blank else 10
         face_colors = None
         if self._face_colors is not None:

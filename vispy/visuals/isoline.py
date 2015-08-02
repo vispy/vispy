@@ -119,6 +119,13 @@ class IsolineVisual(LineVisual):
         self._color_lev = color_lev
         self._need_color_update = True
         self._need_recompute = True
+        self._v = None
+        self._c = None
+        self._vl = None
+        self._li = None
+        self._lc = None
+        self._cl = None
+        self._update_color_lev = False
         kwargs['antialias'] = False
         LineVisual.__init__(self, method='gl', **kwargs)
         self.set_data(vertices=vertices, tris=tris, data=data)
@@ -132,7 +139,7 @@ class IsolineVisual(LineVisual):
     @levels.setter
     def levels(self, levels):
         self._levels = levels
-        self._recompute = True
+        self._need_recompute = True
         self.update()
 
     @property
@@ -155,13 +162,13 @@ class IsolineVisual(LineVisual):
         # modifier pour tenier compte des None self._recompute = True
         if data is not None:
             self._data = data
-            self._recompute = True
+            self._need_recompute = True
         if vertices is not None:
             self._vertices = vertices
-            self._recompute = True
+            self._need_recompute = True
         if tris is not None:
             self._tris = tris
-            self._recompute = True
+            self._need_recompute = True
         self.update()
 
     @property
@@ -226,7 +233,7 @@ class IsolineVisual(LineVisual):
             self._compute_iso_color()
             LineVisual.set_data(self, pos=self._v, connect=self._c,
                                 color=self._cl)
-            self._recompute = False
+            self._need_recompute = False
 
         if self._need_color_update:
             self._levels_to_colors()

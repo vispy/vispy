@@ -23,8 +23,7 @@ import inspect
 def use(app=None, gl=None):
     """ Set the usage options for vispy
 
-    Specify what app backend and GL backend to use. Also see
-    ``vispy.app.use_app()`` and ``vispy.gloo.gl.use_gl()``.
+    Specify what app backend and GL backend to use.
 
     Parameters
     ----------
@@ -64,6 +63,11 @@ def use(app=None, gl=None):
     that backend first. If this is unsuccessful, it will try the
     'default_backend' provided in the vispy config. If still not
     succesful, it will try each backend in a predetermined order.
+
+    See Also
+    --------
+    vispy.app.use_app
+    vispy.gloo.gl.use_gl
     """
     if app is None and gl is None:
         raise TypeError('Must specify at least one of "app" or "gl".')

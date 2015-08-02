@@ -27,9 +27,9 @@ class AxisWidget(Widget):
             kwargs['tick_direction'] = tickdir
         self.axis = AxisVisual(**kwargs)
         self.orientation = orientation
+        self._linked_view = None
         Widget.__init__(self)
         self.add_subvisual(self.axis)
-        self._linked_view = None
         
     def on_resize(self, event):
         """Resize event handler

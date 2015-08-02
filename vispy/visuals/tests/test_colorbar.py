@@ -7,9 +7,8 @@ All images are of size (100,100) to keep a small file size
 
 from vispy.scene import visuals
 from vispy.testing import (requires_application, TestingCanvas,
-                           run_tests_if_main)
+                           run_tests_if_main, raises)
 from vispy.testing.image_tester import assert_image_approved
-from pytest import raises
 
 
 def create_colorbar(pos, halfdim, orientation):

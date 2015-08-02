@@ -27,7 +27,7 @@ noise = gaussian_filter(noise, (4, 4, 0))
 img_data[:] = noise[..., np.newaxis]
 image = scene.visuals.Image(img_data, parent=view.scene)
 # move image behind curves
-image.transform = visuals.transforms.STTransform(translate=(0, 0, 0.5)) 
+image.transform = visuals.transforms.STTransform(translate=(0, 0, 0.5))
 
 # level and color setup
 levels = [40, 50, 60]
