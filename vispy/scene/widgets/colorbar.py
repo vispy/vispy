@@ -12,7 +12,7 @@ from ...visuals import ColorBarVisual
 class ColorBarWidget(Widget):
     """Widget containing a ColorBar
 
-        Parameters
+    Parameters
     ----------
     cmap : str | vispy.color.ColorMap
         Either the name of the ColorMap to be used from the standard
@@ -61,13 +61,15 @@ class ColorBarWidget(Widget):
                  label="", clim=("", ""),
                  border_width=0.0, border_color="black", **kwargs):
 
-        halfdim = (1, 1)
-        self._colorbar = ColorBarVisual(halfdim=halfdim, cmap=cmap,
+        dummy_halfdim = (1, 1)
+        self._colorbar = ColorBarVisual(halfdim=dummy_halfdim, cmap=cmap,
                                         orientation=orientation,
                                         label=label, clim=clim,
                                         border_width=border_width,
                                         border_color=border_color, **kwargs)
+
         Widget.__init__(self)
+
         self.add_subvisual(self._colorbar)
         self._update_colorbar()
 
@@ -92,23 +94,23 @@ class ColorBarWidget(Widget):
 
         # the padding that the colorbar should leave with respect
         # to the total halfdim
-        MAJOR_AXIS_PADDING = 0.4
-        MINOR_AXIS_PADDING = 0.2
+        MAJOR_AXIS_PADDING = 0.2
+        MINOR_AXIS_PADDING = 0.8
 
         # ratio of minor axis to major axis
-        MINOR_AXIS_RATIO = 0.3
+        MINOR_AXIS_RATIO = 0.05
 
         if orientation in ["bottom", "top"]:
             (total_major_axis, total_minor_axis) = (total_halfx, total_halfy)
         else:
             (total_major_axis, total_minor_axis) = (total_halfy, total_halfy)
 
-        major_axis = total_major_axis * MAJOR_AXIS_PADDING
+        major_axis = total_major_axis * (1.0 - MAJOR_AXIS_PADDING)
         minor_axis = major_axis * MINOR_AXIS_RATIO
 
         # if the minor axis is "leaking" from the padding, then clamp
         minor_axis = np.minimum(minor_axis,
-                                total_minor_axis * MINOR_AXIS_PADDING)
+                                total_minor_axis * (1.0 - MINOR_AXIS_PADDING))
 
         if orientation in ["bottom", "top"]:
             halfx, halfy = (major_axis, minor_axis)
