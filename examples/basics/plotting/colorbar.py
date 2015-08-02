@@ -23,7 +23,7 @@ for i in range(0, len(dimensions)):
                          label=orientations[i],
                          clim=(0, 100),
                          cmap="winter",
-                         border_width=4,
+                         border_width=1,
                          border_color="#212121")
 
 if __name__ == '__main__':
