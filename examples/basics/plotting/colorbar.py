@@ -11,16 +11,14 @@ from vispy import plot as vp
 fig = vp.Fig(size=(800, 400), show=False)
 plot = fig[0, 0]
 
-dimensions = [(200, 10), (10, 200), (10, 200)]
 # note: "bottom" could also be used, but this would
 # conflict with top.
 orientations = ["top", "left", "right"]
 
 
-for i in range(0, len(dimensions)):
-    cbar = plot.colorbar(halfdim=dimensions[i],
-                         orientation=orientations[i],
-                         label=orientations[i],
+for orientation in orientations:
+    cbar = plot.colorbar(orientation=orientation,
+                         label=orientation,
                          clim=(0, 100),
                          cmap="winter",
                          border_width=1,
