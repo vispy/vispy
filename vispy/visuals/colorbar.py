@@ -150,6 +150,14 @@ class _CoreColorBarVisual(Visual):
         self._update()
 
     @property
+    def halfdim(self):
+        return self._halfdim
+
+    @halfdim.setter
+    def halfdim(self, halfdim):
+        self._halfdim = halfdim
+
+    @property
     def cmap(self):
         """ The colormap of the Colorbar
         """
@@ -287,16 +295,17 @@ class ColorBarVisual(CompoundVisual):
         """Rebuilds the shaders, and repositions the objects
            that are used internally by the ColorBarVisual
         """
-
-        self._colorbar._update()
-        self._border._update()
+        self._colorbar.halfdim = self._halfdim
+        self._border.halfdim = self._halfdim
 
         self._label.text = self._label_str
-
         self._ticks[0].text = str(self._clim[0])
         self._ticks[1].text = str(self._clim[1])
 
         self._update_positions()
+
+        self._colorbar._update()
+        self._border._update()
 
     def _update_positions(self):
         """
@@ -623,3 +632,8 @@ class ColorBarVisual(CompoundVisual):
     @property
     def halfdim(self):
         return self._halfdim
+
+    @halfdim.setter
+    def halfdim(self, halfdim):
+        self._halfdim = halfdim
+        self._update()
