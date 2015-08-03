@@ -113,7 +113,7 @@ install:
     # Install numpy, flake
     - conda create -n testenv --yes --quiet pip python=$PYTHON > ${REDIRECT_TO};
     - source activate testenv > ${REDIRECT_TO};
-    - conda install --yes --quiet numpy$NUMPY nose pytest > ${REDIRECT_TO};
+    - conda install --yes --quiet numpy$NUMPY nose pytest networkx > ${REDIRECT_TO};
     - pip install -q coveralls pytest-cov
     # Dont install flake8 on 2.6 to make sure tests still run without it
     - if [ "${PYTHON}" != "2.6" ]; then
