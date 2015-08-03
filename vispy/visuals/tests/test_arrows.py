@@ -2,12 +2,15 @@
 # Copyright (c) 2015, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
+import os
+import sys
+
 import numpy as np
 
 from vispy.visuals.line.arrow import ARROW_TYPES
 from vispy.scene import visuals, transforms
 from vispy.testing import (requires_application, TestingCanvas,
-                           run_tests_if_main, assert_raises)
+                           run_tests_if_main, assert_raises, SkipTest)
 from vispy.testing.image_tester import assert_image_approved
 
 
@@ -34,6 +37,9 @@ arrows = np.array([
 def test_arrow_draw():
     """Test drawing arrows without transforms"""
 
+    if os.getenv('TRAVIS', 'false') == 'true' and sys.version[:3] == '2.6':
+        raise SkipTest('Travis fails due to FB stack problem')  # TODO: fix this
+
     with TestingCanvas() as c:
         for arrow_type in ARROW_TYPES:
             arrow = visuals.Arrow(pos=vertices, arrow_type=arrow_type,
@@ -49,6 +55,9 @@ def test_arrow_draw():
 @requires_application()
 def test_arrow_transform_draw():
     """Tests the ArrowVisual when a transform is applied"""
+
+    if os.getenv('TRAVIS', 'false') == 'true' and sys.version[:3] == '2.6':
+        raise SkipTest('Travis fails due to FB stack problem')  # TODO: fix this
 
     with TestingCanvas() as c:
         for arrow_type in ARROW_TYPES:
