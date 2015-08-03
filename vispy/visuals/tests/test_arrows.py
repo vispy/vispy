@@ -38,7 +38,8 @@ def test_arrow_draw():
     """Test drawing arrows without transforms"""
 
     if os.getenv('TRAVIS', 'false') == 'true' and sys.version[:3] == '2.6':
-        raise SkipTest('Travis fails due to FB stack problem')  # TODO: fix this
+        # TODO: Fix this (issue #1042)
+        raise SkipTest('Travis fails due to FB stack problem')
 
     with TestingCanvas() as c:
         for arrow_type in ARROW_TYPES:
@@ -57,7 +58,8 @@ def test_arrow_transform_draw():
     """Tests the ArrowVisual when a transform is applied"""
 
     if os.getenv('TRAVIS', 'false') == 'true' and sys.version[:3] == '2.6':
-        raise SkipTest('Travis fails due to FB stack problem')  # TODO: fix this
+        # TODO: Fix this (issue #1042)
+        raise SkipTest('Travis fails due to FB stack problem')
 
     with TestingCanvas() as c:
         for arrow_type in ARROW_TYPES:
