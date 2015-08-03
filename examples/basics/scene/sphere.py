@@ -9,9 +9,8 @@ This example demonstrates how to create a sphere.
 """
 
 import sys
-import numpy as np
 
-from vispy import app, scene
+from vispy import scene
 canvas = scene.SceneCanvas(keys='interactive', size=(800, 600), show=True)
 
 view = canvas.central_widget.add_view()
