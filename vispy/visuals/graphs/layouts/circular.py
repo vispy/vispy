@@ -8,12 +8,12 @@ Circular Layout
 This module contains several graph layouts which rely heavily on circles.
 """
 
-import itertools
-
 import numpy as np
 
+from ..util import straight_line_vertices
 
-def circular(adjacency_mat):
+
+def circular(adjacency_mat, directed=False):
     """Places all nodes on a single circle.
 
     Parameters
@@ -23,7 +23,7 @@ def circular(adjacency_mat):
 
     Yields
     ------
-    (node_vertices, line_vertices) : tuple
+    (node_vertices, line_vertices, arrow_vertices) : tuple
         Yields the node and line vertices in a tuple. This layout only yields a
         single time, and has no builtin animation
     """
@@ -39,16 +39,7 @@ def circular(adjacency_mat):
     # radius 0.5 and center it at the point (0.5, 0.5).
     node_coords = np.transpose(0.5 * np.array([np.cos(t), np.sin(t)]) + 0.5)
 
-    line_vertices = []
-    for edge in itertools.combinations(range(num_nodes), 2):
-        reverse = (edge[1], edge[0])
+    line_vertices, arrows = straight_line_vertices(adjacency_mat,
+                                                   node_coords, directed)
 
-        if adjacency_mat[edge] == 1 or adjacency_mat[reverse] == 1:
-            line_vertices.extend([node_coords[edge[0]],
-                                  node_coords[edge[1]]])
-
-    yield node_coords, np.array(line_vertices)
-
-
-
-
+    yield node_coords, line_vertices, arrows
