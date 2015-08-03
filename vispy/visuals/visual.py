@@ -89,7 +89,7 @@ import weakref
 
 from .. import gloo
 from ..util.event import EmitterGroup, Event
-from ..util import logger
+from ..util import logger, Frozen
 from .shaders import StatementList, MultiProgram
 from .transforms import TransformSystem
 
@@ -115,7 +115,7 @@ class VisualShare(object):
         self.visible = True
 
 
-class BaseVisual(object):
+class BaseVisual(Frozen):
     """Superclass for all visuals.
 
     This class provides:
@@ -136,6 +136,9 @@ class BaseVisual(object):
     When used in the scenegraph, all Visual classes are mixed with
     `vispy.scene.Node` in order to implement the methods, attributes and
     capabilities required for their usage within it.
+
+    This subclasses Frozen so that subclasses can easily freeze their
+    properties.
     """
     def __init__(self, vshare=None):
         self._view_class = getattr(self, '_view_class', VisualView)
@@ -536,6 +539,7 @@ class CompoundVisual(BaseVisual):
         BaseVisual.__init__(self)
         for v in subvisuals:
             self.add_subvisual(v)
+        self.freeze()
 
     def add_subvisual(self, visual):
         """Add a subvisual

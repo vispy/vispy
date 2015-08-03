@@ -54,12 +54,12 @@ class AxisVisual(CompoundVisual):
                                       'supported')
         self._pos = None
         self._domain = None
-        
+
         # If True, then axis stops at the first / last major tick.
         # If False, then axis extends to edge of *pos*
         # (private until we come up with a better name for this)
         self._stop_at_major = (False, False)
-        
+
         self.ticker = Ticker(self)
         self.tick_direction = np.array(tick_direction, float)
         self.tick_direction = self.tick_direction
@@ -70,18 +70,13 @@ class AxisVisual(CompoundVisual):
         self.minor_tick_length = 5  # px
         self.major_tick_length = 10  # px
         self.label_margin = 5  # px
-        
+
         self._need_update = True
 
-        CompoundVisual.__init__(self, [])
-        
         self._line = LineVisual(method='gl', width=3.0)
         self._ticks = LineVisual(method='gl', width=2.0, connect='segments')
         self._text = TextVisual(font_size=font_size, color=text_color)
-        self.add_subvisual(self._line)
-        self.add_subvisual(self._ticks)
-        self.add_subvisual(self._text)
-
+        CompoundVisual.__init__(self, [self._line, self._text, self._ticks])
         if pos is not None:
             self.pos = pos
         self.domain = domain

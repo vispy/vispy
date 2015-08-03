@@ -401,6 +401,7 @@ class TextVisual(Visual):
         self._draw_mode = 'triangles'
         self.set_gl_state(blend=True, depth_test=False, cull_face=False,
                           blend_func=('src_alpha', 'one_minus_src_alpha'))
+        self.freeze()
 
     @property
     def text(self):

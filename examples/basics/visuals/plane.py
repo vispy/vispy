@@ -8,8 +8,7 @@ Simple demonstration of the plane geometry.
 
 import sys
 
-from vispy import scene
-from vispy import geometry
+from vispy import scene, geometry
 
 canvas = scene.SceneCanvas(keys='interactive', size=(800, 600), show=True)
 

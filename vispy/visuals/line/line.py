@@ -101,6 +101,7 @@ class LineVisual(CompoundVisual):
         self._width = None
         self._connect = None
         self._bounds = None
+        self._antialias = None
         self._method = 'none'
 
         CompoundVisual.__init__(self, [])

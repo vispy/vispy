@@ -444,6 +444,7 @@ class VolumeVisual(Visual):
         self.method = method
         self.relative_step_size = relative_step_size
         self.threshold = threshold if (threshold is not None) else vol.mean()
+        self.freeze()
     
     def set_data(self, vol, clim=None):
         """ Set the volume data. 

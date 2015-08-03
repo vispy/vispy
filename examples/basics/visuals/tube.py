@@ -10,7 +10,7 @@ from colorsys import hsv_to_rgb
 import numpy as np
 
 canvas = scene.SceneCanvas(keys='interactive')
-canvas.view = canvas.central_widget.add_view()
+view = canvas.central_widget.add_view()
 
 points1 = TorusKnot(5, 3).first_component[:-1]
 points1[:, 0] -= 20.
@@ -56,13 +56,13 @@ l4 = scene.visuals.Tube(points4,
                         tube_points=8,
                         mode='lines')
 
-canvas.view.add(l1)
-canvas.view.add(l2)
-canvas.view.add(l3)
-canvas.view.add(l4)
-canvas.view.camera = scene.TurntableCamera()
+view.add(l1)
+view.add(l2)
+view.add(l3)
+view.add(l4)
+view.camera = scene.TurntableCamera()
 # tube does not expose its limits yet
-canvas.view.camera.set_range((-20, 20), (-20, 20), (-20, 20))
+view.camera.set_range((-20, 20), (-20, 20), (-20, 20))
 canvas.show()
 
 if __name__ == '__main__':

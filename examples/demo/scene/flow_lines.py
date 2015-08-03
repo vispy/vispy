@@ -119,6 +119,9 @@ class VectorFieldVisual(visuals.Visual):
         self._field_shape = field.shape[:2]
         
         visuals.Visual.__init__(self, vcode=self.vertex, fcode=self.fragment)
+        self.timer = app.Timer(interval='auto', connect=self.update_time,
+                               start=False)
+        self.freeze()
         
         self.shared_program['field'] = self._field
         self.shared_program['field_shape'] = self._field.shape[:2]
@@ -134,11 +137,9 @@ class VectorFieldVisual(visuals.Visual):
         self.shared_program['n_iter'] = 1
         self.shared_program['attractor'] = (0, 0)
         self.shared_program['time'] = 0
-        
         self._draw_mode = 'lines'
         self.set_gl_state('translucent', depth_test=False)
         
-        self.timer = app.Timer(interval='auto', connect=self.update_time)
         self.timer.start()
         
     def _prepare_transforms(self, view):

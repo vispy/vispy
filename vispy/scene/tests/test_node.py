@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from vispy.scene.node import Node
 from vispy.testing import (requires_application, TestingCanvas,
-                           run_tests_if_main)
+                           run_tests_if_main, raises)
 from vispy.visuals.transforms import STTransform
 import numpy as np
 
@@ -26,6 +26,8 @@ class EventCheck(object):
 def test_topology():
     c = TestingCanvas()
     assert c.scene.canvas is c
+    with raises(AttributeError):
+        c.foo = 'bar'
     
     w = c.central_widget
     assert w.parent is c.scene
@@ -33,6 +35,8 @@ def test_topology():
     assert w.document_node is c.scene
     
     g = w.add_grid()
+    with raises(AttributeError):
+        g.foo = 'bar'
     
     grid_check = EventCheck(g.events.children_change)
     

@@ -21,16 +21,16 @@ install:
   - "python --version"
   - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
   # Skip using MESA for now since AppVeyor is unreliable with it
-  # "SET VISPY_GL_LIB=%CD%\\opengl32.dll"
+  - "SET VISPY_GL_LIB=%CD%\\opengl32.dll"
 
   # Install the dependencies of the project.
-  # "conda install --yes --quiet numpy scipy matplotlib setuptools flake8 pyqt nose pytest coverage"
-  - "conda install --yes --quiet numpy scipy matplotlib setuptools nose pytest coverage ipython ipython-notebook"
+  - "conda install --yes --quiet numpy scipy pyqt matplotlib setuptools nose pytest coverage ipython ipython-notebook"
   - "pip install -q pytest-cov"
   - "python setup.py develop"
 
 build: false  # Not a C# project, build stuff at the test step instead.
 
 test_script:
-  # Run the project tests
+  # Run the project tests (don't do examples because they are too slow)
   - "python make test nobackend"
+  - "python make test pyqt4"
