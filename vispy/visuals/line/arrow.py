@@ -180,6 +180,9 @@ class ArrowVisual(LineVisual):
         self.arrow_type = arrow_type
         self.arrow_size = arrow_size
 
+        # Add marker visual for the arrow head
+        self.arrow_head = _ArrowHeadVisual(self)
+
         # TODO: `LineVisual.__init__` also calls its own `set_data` method,
         # which triggers an *update* event. This results in a redraw. After
         # that we call our own `set_data` method, which triggers another
@@ -188,8 +191,6 @@ class ArrowVisual(LineVisual):
                             antialias)
         ArrowVisual.set_data(self, arrows=arrows)
 
-        # Add marker visual for the arrow head
-        self.arrow_head = _ArrowHeadVisual(self)
         self.add_subvisual(self.arrow_head)
 
     def set_data(self, pos=None, color=None, width=None, connect=None,
