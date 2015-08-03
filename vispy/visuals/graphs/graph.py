@@ -91,6 +91,7 @@ class GraphVisual(CompoundVisual):
 
             self._layout = _layouts_map[value]
         else:
+            assert callable(value)
             self._layout = value
 
     @property
@@ -115,20 +116,17 @@ class GraphVisual(CompoundVisual):
                 raise ValueError("No adjacency matrix set yet. An adjacency "
                                  "matrix is required to calculate the layout.")
 
-            self._layout_iter = iter(self._layout(self._adjacency_mat))
+            self._layout_iter = iter(self._layout(self._adjacency_mat,
+                                                  self._directed))
 
         try:
-            node_vertices, line_vertices = next(self._layout_iter)
+            node_vertices, line_vertices, arrows = next(self._layout_iter)
         except StopIteration:
             return False
 
-        self._nodes.set_data(pos=node_vertices)
-
-        if self._directed:
-            # TODO: Fix arrows
-            pass
-
-        self._edges.set_data(pos=line_vertices)
+        self._nodes.set_data(pos=node_vertices, **self._node_data)
+        self._edges.set_data(pos=line_vertices, arrows=arrows,
+                             **self._arrow_data)
 
         return True
 
@@ -138,22 +136,19 @@ class GraphVisual(CompoundVisual):
                 raise ValueError("No adjacency matrix set yet. An adjacency "
                                  "matrix is required to calculate the layout.")
 
-            self._layout_iter = iter(self._layout(self._adjacency_mat))
-            print(self._layout_iter)
+            self._layout_iter = iter(self._layout(self._adjacency_mat,
+                                                  self._directed))
 
         # Calculate the final position of the nodes and lines
         node_vertices = None
         line_vertices = None
-        for node_vertices, line_vertices in self._layout_iter:
+        arrows = None
+        for node_vertices, line_vertices, arrows in self._layout_iter:
             pass
 
         self._nodes.set_data(pos=node_vertices, **self._node_data)
-
-        if self._directed:
-            # TODO: Fix arrows
-            pass
-
-        self._edges.set_data(pos=line_vertices, **self._arrow_data)
+        self._edges.set_data(pos=line_vertices, arrows=arrows,
+                             **self._arrow_data)
 
     def set_data(self, adjacency_mat=None, **kwargs):
         if adjacency_mat is not None:
