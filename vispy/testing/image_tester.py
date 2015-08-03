@@ -3,8 +3,8 @@
 """
 Procedure for unit-testing with images:
 
-1. Run unit tests at least once; this initializes a git clone of 
-   vispy/test-data in config['test_data_path']. This path is 
+1. Run unit tests at least once; this initializes a git clone of
+   vispy/test-data in config['test_data_path']. This path is
    `~/.vispy/test-data` unless the config variable has been modified.
 
 2. Run individual test scripts with the --vispy-audit flag:
@@ -13,7 +13,7 @@ Procedure for unit-testing with images:
 
    Any failing tests will
    display the test results, standard image, and the differences between the
-   two. If the test result is bad, then press (f)ail. If the test result is 
+   two. If the test result is bad, then press (f)ail. If the test result is
    good, then press (p)ass and the new image will be saved to the test-data
    directory.
 
@@ -22,7 +22,7 @@ Procedure for unit-testing with images:
         $ cd ~/.vispy/test-data
         $ git add ...
         $ git commit -a
-        
+
 4. Look up the most recent tag name from the `test_data_tag` variable in
    get_test_data_repo() below. Increment the tag name by 1 in the function
    and create a new tag in the test-data repository:
@@ -68,18 +68,18 @@ def _get_tester():
 
 def assert_image_approved(image, standard_file, message=None, **kwargs):
     """Check that an image test result matches a pre-approved standard.
-    
+
     If the result does not match, then the user can optionally invoke a GUI
     to compare the images and decide whether to fail the test or save the new
-    image as the standard. 
-    
-    This function will automatically clone the test-data repository into 
+    image as the standard.
+
+    This function will automatically clone the test-data repository into
     ~/.vispy/test-data. However, it is up to the user to ensure this repository
     is kept up to date and to commit/push new images after they are saved.
 
     Run the test with python <test-path> --vispy-audit-tests to bring up
     the auditing GUI.
-    
+
     Parameters
     ----------
     image : (h, w, 4) ndarray or 'screenshot'
@@ -89,30 +89,30 @@ def assert_image_approved(image, standard_file, message=None, **kwargs):
         is relative to the root of the vispy test-data repository and will
         be automatically fetched.
     message : str
-        A string description of the image. It is recommended to describe 
+        A string description of the image. It is recommended to describe
         specific features that an auditor should look for when deciding whether
         to fail a test.
-        
+
     Extra keyword arguments are used to set the thresholds for automatic image
-    comparison (see ``assert_image_match()``).    
+    comparison (see ``assert_image_match()``).
     """
-    
+
     if image == "screenshot":
         image = _screenshot(alpha=True)
     if message is None:
         code = inspect.currentframe().f_back.f_code
         message = "%s::%s" % (code.co_filename, code.co_name)
-        
+
     # Make sure we have a test data repo available, possibly invoking git
     data_path = get_test_data_repo()
-    
+
     # Read the standard image if it exists
     std_file = os.path.join(data_path, standard_file)
     if not os.path.isfile(std_file):
         std_image = None
     else:
         std_image = read_png(std_file)
-        
+
     # If the test image does not match, then we go to audit if requested.
     try:
         if image.shape != std_image.shape:
@@ -121,14 +121,14 @@ def assert_image_approved(image, standard_file, message=None, **kwargs):
             ims1 = np.array(image.shape).astype(float)
             ims2 = np.array(std_image.shape).astype(float)
             sr = ims1 / ims2
-            if (sr[0] != sr[1] or not np.allclose(sr, np.round(sr)) or 
+            if (sr[0] != sr[1] or not np.allclose(sr, np.round(sr)) or
                sr[0] < 1):
                 raise TypeError("Test result shape %s is not an integer factor"
                                 " larger than standard image shape %s." %
                                 (ims1, ims2))
             sr = np.round(sr).astype(int)
             image = downsample(image, sr[0], axis=(0, 1)).astype(image.dtype)
-        
+
         assert_image_match(image, std_image, **kwargs)
     except Exception:
         if standard_file in git_status(data_path):
@@ -152,14 +152,14 @@ def assert_image_approved(image, standard_file, message=None, **kwargs):
                 raise
 
 
-def assert_image_match(im1, im2, min_corr=0.9, px_threshold=50., 
-                       px_count=None, max_px_diff=None, avg_px_diff=None, 
+def assert_image_match(im1, im2, min_corr=0.9, px_threshold=50.,
+                       px_count=None, max_px_diff=None, avg_px_diff=None,
                        img_diff=None):
     """Check that two images match.
-    
+
     Images that differ in shape or dtype will fail unconditionally.
     Further tests for similarity depend on the arguments supplied.
-    
+
     Parameters
     ----------
     im1 : (h, w, 4) ndarray
@@ -178,22 +178,22 @@ def assert_image_match(im1, im2, min_corr=0.9, px_threshold=50.,
     avg_px_diff : float or None
         Average allowed difference between pixels
     img_diff : float or None
-        Maximum allowed summed difference between images 
-        
+        Maximum allowed summed difference between images
+
     """
     assert im1.ndim == 3
     assert im1.shape[2] == 4
     assert im1.dtype == im2.dtype
-    
+
     diff = im1.astype(float) - im2.astype(float)
     if img_diff is not None:
         assert np.abs(diff).sum() <= img_diff
-        
+
     pxdiff = diff.max(axis=2)  # largest value difference per pixel
     mask = np.abs(pxdiff) >= px_threshold
     if px_count is not None:
         assert mask.sum() <= px_count
-        
+
     masked_diff = diff[mask]
     if max_px_diff is not None and masked_diff.size > 0:
         assert masked_diff.max() <= max_px_diff
@@ -217,15 +217,15 @@ def _save_failed_test(data, expect, filename):
     # concatenate data, expect, and diff into a single image
     ds = data.shape
     es = expect.shape
-    
+
     shape = (max(ds[0], es[0]) + 4, ds[1] + es[1] + 8 + max(ds[1], es[1]), 4)
     img = np.empty(shape, dtype=np.ubyte)
     img[..., :3] = 100
     img[..., 3] = 255
-    
+
     img[2:2+ds[0], 2:2+ds[1], :ds[2]] = data
     img[2:2+es[0], ds[1]+4:ds[1]+4+es[1], :es[2]] = expect
-    
+
     diff = make_diff_image(data, expect)
     img[2:2+diff.shape[0], -diff.shape[1]-2:-2] = diff
 
@@ -246,12 +246,12 @@ def _save_failed_test(data, expect, filename):
 
 def make_diff_image(im1, im2):
     """Return image array showing the differences between im1 and im2.
-    
+
     Handles images of different shape. Alpha channels are not compared.
     """
     ds = im1.shape
     es = im2.shape
-    
+
     diff = np.empty((max(ds[0], es[0]), max(ds[1], es[1]), 4), dtype=int)
     diff[..., :3] = 128
     diff[..., 3] = 255
@@ -271,7 +271,7 @@ def downsample(data, n, axis=0):
         for i in range(len(axis)):
             data = downsample(data, n[i], axis[i])
         return data
-    
+
     if n <= 1:
         return data
     nPts = int(data.shape[axis] / n)
@@ -283,7 +283,7 @@ def downsample(data, n, axis=0):
     d1 = data[tuple(sl)]
     d1.shape = tuple(s)
     d2 = d1.mean(axis+1)
-    
+
     return d2
 
 
@@ -295,7 +295,7 @@ class ImageTester(scene.SceneCanvas):
         self.bgcolor = (0.1, 0.1, 0.1, 1)
         self.grid = self.central_widget.add_grid()
         border = (0.3, 0.3, 0.3, 1)
-        self.views = (self.grid.add_view(row=0, col=0, border_color=border), 
+        self.views = (self.grid.add_view(row=0, col=0, border_color=border),
                       self.grid.add_view(row=0, col=1, border_color=border),
                       self.grid.add_view(row=0, col=2, border_color=border))
         label_text = ['test output', 'standard', 'diff']
@@ -304,24 +304,24 @@ class ImageTester(scene.SceneCanvas):
             v.camera.aspect = 1
             v.camera.flip = (False, True)
             v.image = scene.Image(parent=v.scene)
-            v.label = scene.Text(label_text[i], parent=v, color='yellow', 
+            v.label = scene.Text(label_text[i], parent=v, color='yellow',
                                  anchor_x='left', anchor_y='top')
-        
+
         self.views[1].camera.link(self.views[0].camera)
         self.views[2].camera.link(self.views[0].camera)
         self.console = scene.Console(text_color='white', border_color=border)
         self.grid.add_widget(self.console, row=1, col=0, col_span=3)
-        
+
     def test(self, im1, im2, message):
         self.show()
         self.console.write('------------------')
         self.console.write(message)
         if im2 is None:
-            self.console.write('Image1: %s %s   Image2: [no standard]' % 
+            self.console.write('Image1: %s %s   Image2: [no standard]' %
                                (im1.shape, im1.dtype))
             im2 = np.zeros((1, 1, 3), dtype=np.ubyte)
         else:
-            self.console.write('Image1: %s %s   Image2: %s %s' % 
+            self.console.write('Image1: %s %s   Image2: %s %s' %
                                (im1.shape, im1.dtype, im2.shape, im2.dtype))
         self.console.write('(P)ass or (F)ail this test?')
         self.views[0].image.set_data(im1)
@@ -330,7 +330,7 @@ class ImageTester(scene.SceneCanvas):
 
         self.views[2].image.set_data(diff)
         self.views[0].camera.set_range()
-        
+
         self.last_key = None
         while True:
             self.app.process_events()
@@ -343,7 +343,7 @@ class ImageTester(scene.SceneCanvas):
                 self.console.write('FAIL')
                 raise Exception("User rejected test result.")
             time.sleep(0.03)
-        
+
         for v in self.views:
             v.image.set_data(np.zeros((1, 1, 3), dtype=np.ubyte))
 
@@ -353,25 +353,25 @@ class ImageTester(scene.SceneCanvas):
 
 def get_test_data_repo():
     """Return the path to a git repository with the required commit checked
-    out. 
-    
+    out.
+
     If the repository does not exist, then it is cloned from
     https://github.com/vispy/test-data. If the repository already exists
     then the required commit is checked out.
     """
-    
-    # This tag marks the test-data commit that this version of vispy should 
+
+    # This tag marks the test-data commit that this version of vispy should
     # be tested against. When adding or changing test images, create
     # and push a new tag and update this variable.
-    test_data_tag = 'test-data-3'
-    
+    test_data_tag = 'test-data-4'
+
     data_path = config['test_data_path']
     git_path = 'https://github.com/vispy/test-data'
     gitbase = git_cmd_base(data_path)
-    
+
     if os.path.isdir(data_path):
         # Already have a test-data repository to work with.
-        
+
         # Get the commit ID of test_data_tag. Do a fetch if necessary.
         try:
             tag_commit = git_commit_id(data_path, test_data_tag)
@@ -387,24 +387,24 @@ def get_test_data_repo():
         except Exception:
             if not os.path.exists(os.path.join(data_path, '.git')):
                 raise Exception("Directory '%s' does not appear to be a git "
-                                "repository. Please remove this directory." % 
+                                "repository. Please remove this directory." %
                                 data_path)
             else:
                 raise
-            
+
         # If HEAD is not the correct commit, then do a checkout
         if git_commit_id(data_path, 'HEAD') != tag_commit:
             print("Checking out test-data tag '%s'" % test_data_tag)
             check_call(gitbase + ['checkout', test_data_tag])
-            
+
     else:
         print("Attempting to create git clone of test data repo in %s.." %
               data_path)
-        
+
         parent_path = os.path.split(data_path)[0]
         if not os.path.isdir(parent_path):
             os.makedirs(parent_path)
-        
+
         if os.getenv('TRAVIS') is not None:
             # Create a shallow clone of the test-data repository (to avoid
             # downloading more data than is necessary)
@@ -419,7 +419,7 @@ def get_test_data_repo():
         else:
             # Create a full clone
             cmds = [['git', 'clone', git_path, data_path]]
-        
+
         for cmd in cmds:
             print(' '.join(cmd))
             rval = check_call(cmd)
@@ -428,9 +428,9 @@ def get_test_data_repo():
             raise RuntimeError("Test data path '%s' does not exist and could "
                                "not be created with git. Either create a git "
                                "clone of %s or set the test_data_path "
-                               "variable to an existing clone." % 
+                               "variable to an existing clone." %
                                (data_path, git_path))
-    
+
     return data_path
 
 
