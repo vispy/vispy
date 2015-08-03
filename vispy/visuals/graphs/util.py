@@ -29,6 +29,7 @@ def straight_line_vertices(adjacency_mat, node_coords, directed=False):
                                   node_coords[edge[1]]])
 
         if directed:
+            # TODO: This can probably be vectorized
             if adjacency_mat[edge] == 1 and adjacency_mat[reverse] == 0:
                 arrows.extend([
                     node_coords[edge[0]],
