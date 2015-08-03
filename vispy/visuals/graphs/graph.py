@@ -16,6 +16,7 @@ from . import layouts
 
 _layouts_map = {
     'random': layouts.random,
+    'circular': layouts.circular
 }
 
 AVAILABLE_LAYOUTS = _layouts_map.keys()
