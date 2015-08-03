@@ -8,6 +8,7 @@ from ..geometry import create_sphere
 from .mesh import MeshVisual
 from .visual import CompoundVisual
 
+
 class SphereVisual(CompoundVisual):
     """Visual that displays a sphere
 
@@ -18,9 +19,11 @@ class SphereVisual(CompoundVisual):
     cols, rows : int
         Number of rows and cols that make up the sphere mesh.
     vertex_colors : ndarray
-        Same as for `MeshVisual` class. See `create_sphere` for vertex ordering.
+        Same as for `MeshVisual` class.
+        See `create_sphere` for vertex ordering.
     face_colors : ndarray
-        Same as for `MeshVisual` class. See `create_sphere` for vertex ordering.
+        Same as for `MeshVisual` class.
+        See `create_sphere` for vertex ordering.
     color : Color
         The `Color` to use when drawing the sphere faces.
     edge_color : tuple or Color
@@ -67,24 +70,3 @@ class SphereVisual(CompoundVisual):
     @border.setter
     def border(self, border):
         self._border = border
-
-    @property
-    def vertices(self):
-        return self.mesh.get_vertices()
-
-    @property
-    def faces(self):
-        return self.mesh.get_faces()
-
-    # def draw(self, transforms):
-    #     """Draw the visual
-    #
-    #     Parameters
-    #     ----------
-    #     transforms : instance of TransformSystem
-    #         The transforms to use.
-    #     """
-    #     MeshVisual.draw(self, transforms)
-    #     if self._outline is not None:
-    #         set_state(polygon_offset=(1, 1), polygon_offset_fill=True)
-    #         self._outline.draw(transforms)
