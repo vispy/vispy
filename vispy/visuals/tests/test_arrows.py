@@ -18,7 +18,7 @@ vertices = np.array([
     [50, 75],
     [75, 25],
     [75, 75]
-], dtype=np.float32)
+]).astype('f32')
 
 vertices += 0.33
 
@@ -34,8 +34,8 @@ arrows = np.array([
 def test_arrow_draw():
     """Test drawing arrows without transforms"""
 
-    for arrow_type in ARROW_TYPES:
-        with TestingCanvas() as c:
+    with TestingCanvas() as c:
+        for arrow_type in ARROW_TYPES:
             arrow = visuals.Arrow(pos=vertices, arrow_type=arrow_type,
                                   arrows=arrows, arrow_size=10, color='red',
                                   connect="segments", parent=c.scene)
@@ -43,13 +43,15 @@ def test_arrow_draw():
             assert_image_approved(c.render(), 'visuals/arrow_type_%s.png' %
                                   arrow_type)
 
+            arrow.parent = None
+
 
 @requires_application()
 def test_arrow_transform_draw():
     """Tests the ArrowVisual when a transform is applied"""
 
-    for arrow_type in ARROW_TYPES:
-        with TestingCanvas() as c:
+    with TestingCanvas() as c:
+        for arrow_type in ARROW_TYPES:
             arrow = visuals.Arrow(pos=vertices, arrow_type=arrow_type,
                                   arrows=arrows, arrow_size=10, color='red',
                                   connect="segments", parent=c.scene)
@@ -59,6 +61,8 @@ def test_arrow_transform_draw():
             assert_image_approved(c.render(),
                                   'visuals/arrow_transform_type_%s.png' %
                                   arrow_type)
+
+            arrow.parent = None
 
 
 @requires_application()
