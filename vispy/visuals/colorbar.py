@@ -372,10 +372,6 @@ class ColorBarVisual(CompoundVisual):
         self._ticks[0].pos = ticks_pos[0]
         self._ticks[1].pos = ticks_pos[1]
 
-    def _prepare_draw(self, view):
-        # print ("preparing draw")
-        self._update_positions()
-
     @staticmethod
     def _get_label_anchors(center, halfdim, orientation, transforms):
         visual_to_doc = transforms.get_transform('visual', 'document')
