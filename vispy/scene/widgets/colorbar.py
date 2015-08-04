@@ -26,7 +26,8 @@ class ColorBarWidget(Widget):
 
         When the orientation is 'left' or 'right', the colorbar is
         vertically placed. When it is 'top' or 'bottom', the colorbar is
-        horizontally placed.
+        horizontally placed. The colorbar automatically resizes when its
+        container's dimension changes.
 
             * 'top': the colorbar is horizontal.
               Color is applied from left to right.
@@ -57,12 +58,12 @@ class ColorBarWidget(Widget):
         The color of the border of the colormap. This can either be a
         str as the color's name or an actual instace of a vipy.color.Color
     """
-    def __init__(self, cmap, orientation="",
+    def __init__(self, cmap, orientation,
                  label="", clim=("", ""),
                  border_width=0.0, border_color="black", **kwargs):
 
-        dummy_halfdim = (1, 1)
-        self._colorbar = ColorBarVisual(halfdim=dummy_halfdim, cmap=cmap,
+        dummy_size = (1, 1)
+        self._colorbar = ColorBarVisual(size=dummy_size, cmap=cmap,
                                         orientation=orientation,
                                         label=label, clim=clim,
                                         border_width=border_width,
@@ -85,11 +86,11 @@ class ColorBarWidget(Widget):
 
     def _update_colorbar(self):
         self._colorbar.pos = self.rect.center
-        self._colorbar.halfdim = ColorBarWidget._calc_halfdim(self.rect,
-                                                              self._colorbar.orientation)  # noqa
+        self._colorbar.size = \
+            ColorBarWidget.calc_size(self.rect, self._colorbar.orientation)
 
     @staticmethod
-    def _calc_halfdim(rect, orientation):
+    def calc_size(rect, orientation):
         (total_halfx, total_halfy) = rect.center
 
         # the padding that the colorbar should leave with respect
@@ -112,16 +113,7 @@ class ColorBarWidget(Widget):
         minor_axis = np.minimum(minor_axis,
                                 total_minor_axis * (1.0 - MINOR_AXIS_PADDING))
 
-        if orientation in ["bottom", "top"]:
-            halfx, halfy = (major_axis, minor_axis)
-        else:
-            halfy, halfx = (major_axis, minor_axis)
-
-        # these can become 0 if the grid is compressed
-        halfx = np.maximum(halfx, 1)
-        halfy = np.maximum(halfy, 1)
-
-        return (halfx, halfy)
+        return (major_axis, minor_axis)
 
     @property
     def cmap(self):
