@@ -46,9 +46,9 @@ class Widget(Compound):
                  border_width=1, bgcolor=None, padding=0, margin=0, **kwargs):
         # For drawing border.
         self._border = _BorderVisual(pos=pos,
-                                    halfdim=(size[0] * 0.5, size[1] * 0.5),
-                                    border_width=border_width,
-                                    border_color=border_color)
+                                     halfdim=(size[0] * 0.5, size[1] * 0.5),
+                                     border_width=border_width,
+                                     border_color=border_color)
 
         # A mesh is used to fill in the background color
         self._bgcolor = Color(bgcolor)
