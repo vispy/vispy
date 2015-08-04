@@ -5,7 +5,7 @@
 from __future__ import division
 
 import numpy as np
-from vispy.visuals import BorderVisual
+from vispy.visuals import _BorderVisual
 
 from ..visuals import Compound
 from ...visuals.mesh import MeshVisual
@@ -45,7 +45,7 @@ class Widget(Compound):
     def __init__(self, pos=(0, 0), size=(10, 10), border_color=None,
                  border_width=1, bgcolor=None, padding=0, margin=0, **kwargs):
         # For drawing border.
-        self._border = BorderVisual(pos=pos,
+        self._border = _BorderVisual(pos=pos,
                                     halfdim=(size[0] * 0.5, size[1] * 0.5),
                                     border_width=border_width,
                                     border_color=border_color)
