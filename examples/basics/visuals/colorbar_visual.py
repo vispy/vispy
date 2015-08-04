@@ -9,8 +9,7 @@
 
 from vispy import app
 from vispy import gloo
-from vispy.visuals.transforms import (NullTransform, STTransform,
-                                      TransformSystem)
+from vispy.visuals.transforms import STTransform
 
 from vispy.visuals import ColorBarVisual, ImageVisual
 from vispy.color import Color, get_colormap
