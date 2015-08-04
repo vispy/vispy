@@ -11,7 +11,6 @@ GraphVisual.
 import sys
 
 import networkx as nx
-import numpy as np
 
 from vispy import app, gloo, visuals
 from vispy.visuals.graphs import layouts
