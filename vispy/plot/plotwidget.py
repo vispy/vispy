@@ -356,7 +356,7 @@ class PlotWidget(scene.Widget):
         self.view.camera.set_range()
         return surf
 
-    def colorbar(self, cmap, position="",
+    def colorbar(self, cmap, position="right",
                  label="", clim=("", ""),
                  border_width=0.0, border_color="black",
                  **kwargs):
@@ -398,7 +398,7 @@ class PlotWidget(scene.Widget):
 
         self._configure_2d()
 
-        self.cbar = scene.ColorBarWidget(orientation=orientation,
+        self.cbar = scene.ColorBarWidget(orientation=position,
                                          label_str=label,
                                          cmap=cmap,
                                          clim=clim,
