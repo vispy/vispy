@@ -18,9 +18,9 @@ from vispy.color import Color, get_colormap
 import numpy as np
 
 
-ESCAPE_MAGNITUDE = 100
-MIN_MAGNITUDE = 0.001
-MAX_ITERATIONS = 100
+ESCAPE_MAGNITUDE = 2
+MIN_MAGNITUDE = 0.002
+MAX_ITERATIONS = 50
 
 colormap = get_colormap("hot")
 
@@ -83,7 +83,7 @@ def get_mandlebrot_escape_values(width, height):
     return v_get_num_escape_turns(*grid).astype(np.float)
 
 
-def get_vertical_bar(pos, halfdim):
+def get_vertical_bar(pos, size):
     """
     Constructs the vertical bar that represents the
     color values for the Mandlebrot set
@@ -94,7 +94,7 @@ def get_vertical_bar(pos, halfdim):
     data of the Mandlebrot set
     """
     vertical = ColorBarVisual(pos=pos,
-                              halfdim=halfdim,
+                              size=size,
                               label_str="iterations to escape",
                               cmap=colormap, orientation="left")
 
@@ -120,10 +120,10 @@ class Canvas(app.Canvas):
         img_dim = np.array([700, 500])
         # position of colorbar
         colorbar_pos = np.array([100, 300])
-        # half of dim of colorbar
-        colorbar_halfdim = np.array([10, 200])
-        # padding betweem colorbar and image
-        colorbar_padding = np.array([100, 0])
+        # size of the colorbar, measured as (major, minor)
+        colorbar_size = np.array([400, 20])
+        # position of the generated image
+        image_pos = np.array([200, 80])
 
         app.Canvas.__init__(self, size=(800, 600), keys="interactive")
 
@@ -132,10 +132,9 @@ class Canvas(app.Canvas):
 
         self.image.transform = \
             STTransform(scale=1.1,
-                        translate=colorbar_pos -
-                        colorbar_halfdim + colorbar_padding)
+                        translate=image_pos)
 
-        self.vertical_bar = get_vertical_bar(colorbar_pos, colorbar_halfdim)
+        self.vertical_bar = get_vertical_bar(colorbar_pos, colorbar_size)
 
         self.show()
 

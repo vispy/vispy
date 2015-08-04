@@ -17,7 +17,7 @@ canvas.show()
 grid = canvas.central_widget.add_grid(margin=10)
 
 
-cbar_widget = scene.ColorBarWidget(cmap="cool")
+cbar_widget = scene.ColorBarWidget(cmap="cool", orientation="right")
 grid.add_widget(cbar_widget)
 
 cbar_widget.pos = (300, 100)
