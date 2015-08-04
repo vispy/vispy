@@ -62,7 +62,7 @@ void main() {
 """  # noqa
 
 
-class BorderVisual(Visual):
+class _BorderVisual(Visual):
     """
     Visual subclass to display 2D pixel-width borders.
 
