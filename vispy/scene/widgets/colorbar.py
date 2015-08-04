@@ -94,7 +94,7 @@ class ColorBarWidget(Widget):
 
         # the padding that the colorbar should leave with respect
         # to the total halfdim
-        MAJOR_AXIS_PADDING = 0.2
+        MAJOR_AXIS_PADDING = 0.1
         MINOR_AXIS_PADDING = 0.8
 
         # ratio of minor axis to major axis
@@ -103,7 +103,7 @@ class ColorBarWidget(Widget):
         if orientation in ["bottom", "top"]:
             (total_major_axis, total_minor_axis) = (total_halfx, total_halfy)
         else:
-            (total_major_axis, total_minor_axis) = (total_halfy, total_halfy)
+            (total_major_axis, total_minor_axis) = (total_halfy, total_halfx)
 
         major_axis = total_major_axis * (1.0 - MAJOR_AXIS_PADDING)
         minor_axis = major_axis * MINOR_AXIS_RATIO
