@@ -356,7 +356,7 @@ class PlotWidget(scene.Widget):
         self.view.camera.set_range()
         return surf
 
-    def colorbar(self, cmap, orientation="",
+    def colorbar(self, cmap, position="",
                  label="", clim=("", ""),
                  border_width=0.0, border_color="black",
                  **kwargs):
@@ -369,30 +369,10 @@ class PlotWidget(scene.Widget):
             set of names (refer to `vispy.color.get_colormap`),
             or a custom ColorMap object.
             The ColorMap is used to apply a gradient on the colorbar.
-        orientation : {'left', 'right', 'top', 'bottom'}
-            The orientation of the colorbar, used for rendering. The
-            orientation can be thought of as the position of the label
-            relative to the color bar.
-
-            When the orientation is 'left' or 'right', the colorbar is
-            vertically placed. When it is 'top' or 'bottom', the colorbar is
-            horizontally placed.
-
-                * 'top': the colorbar is horizontal.
-                  Color is applied from left to right.
-                  Minimum corresponds to left and maximum to right.
-                  Label is to the top of the colorbar
-
-                * 'bottom': Same as top, except that
-                  label is to the bottom of the colorbar
-
-                * 'left': the colorbar is vertical.
-                  Color is applied from bottom to top.
-                  Minimum corresponds to bottom and maximum to top.
-                  Label is to the left of the colorbar
-
-            * 'right': Same as left, except that the
-                  label is placed to the right of the colorbar
+        position : {'left', 'right', 'top', 'bottom'}
+            The position of the colorbar with respect to the plot.
+            'top' and 'bottom' are placed horizontally, while
+            'left' and 'right' are placed vertically
         label : str
             The label that is to be drawn with the colorbar
             that provides information about the colorbar.
