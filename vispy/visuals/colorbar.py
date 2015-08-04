@@ -8,8 +8,8 @@
 
 import numpy as np
 
-from . import Visual, TextVisual, CompoundVisual, BorderVisual
-# from .border import BorderVisual
+from . import Visual, TextVisual, CompoundVisual, _BorderVisual
+# from .border import _BorderVisual
 from .shaders import Function
 from ..color import get_colormap
 
@@ -50,13 +50,35 @@ void main()
 class _CoreColorBarVisual(Visual):
     """
     Visual subclass that actually renders the ColorBar.
-
+    Parameters
+    ----------
+     pos : tuple (x, y)
+        Position where the colorbar is to be placed with
+        respect to the center of the colorbar
+    halfdim : tuple (half_width, half_height)
+        Half the dimensions of the colorbar measured
+        from the center. That way, the total dimensions
+        of the colorbar is (x - half_width) to (x + half_width)
+        and (y - half_height) to (y + half_height)
+    cmap : str | vispy.color.ColorMap
+        Either the name of the ColorMap to be used from the standard
+        set of names (refer to `vispy.color.get_colormap`),
+        or a custom ColorMap object.
+        The ColorMap is used to apply a gradient on the colorbar.
+     orientation : {'left', 'right', 'top', 'bottom'}
+        The orientation of the colorbar, used for rendering. The
+        orientation can be thought of as the position of the label
+        relative to the color bar.
     Note
     ----
     This is purely internal.
     Externally, the ColorBarVisual must be used.
     This class was separated out to encapsulate rendering information
     That way, ColorBar simply becomes a CompoundVisual
+
+    See Also
+    --------
+    vispy.visuals.ColorBarVisual
     """
     def __init__(self, pos, halfdim,
                  cmap,
@@ -197,14 +219,6 @@ class ColorBarVisual(CompoundVisual):
         set of names (refer to `vispy.color.get_colormap`),
         or a custom ColorMap object.
         The ColorMap is used to apply a gradient on the colorbar.
-    halfdim : tuple (half_width, half_height)
-        Half the dimensions of the colorbar measured
-        from the center. That way, the total dimensions
-        of the colorbar is (x - half_width) to (x + half_width)
-        and (y - half_height) to (y + half_height)
-    pos : tuple (x, y)
-        Position where the colorbar is to be placed with
-        respect to the center of the colorbar
     orientation : {'left', 'right', 'top', 'bottom'}
         The orientation of the colorbar, used for rendering. The
         orientation can be thought of as the position of the label
@@ -229,6 +243,19 @@ class ColorBarVisual(CompoundVisual):
 
             * 'right': Same as left, except that the
               label is placed to the right of the colorbar
+    size : (major_axis_length, minor_axis_length)
+        lengths with respect to the major and minor axes.
+        The minor axis is the shorter axis, while the major axis is
+        the longer axis with respect to the orientation
+
+        For orientations 'top' and 'bottom', the major axis is
+        along the length.
+
+        For orientations 'left' and 'right', the major axis is
+        along the breadth
+    pos : tuple (x, y)
+        Position where the colorbar is to be placed with
+        respect to the center of the colorbar
     label_str : str
         The label that is to be drawn with the colorbar
         that provides information about the colorbar.
@@ -244,9 +271,8 @@ class ColorBarVisual(CompoundVisual):
         str as the color's name or an actual instace of a vipy.color.Color
     """
 
-    def __init__(self, cmap, halfdim,
+    def __init__(self, cmap, orientation, size,
                  pos=[0, 0],
-                 orientation="",
                  label_str="",
                  clim=(0.0, 1.0),
                  border_width=1.0,
@@ -257,15 +283,7 @@ class ColorBarVisual(CompoundVisual):
         self._cmap = get_colormap(cmap)
         self._clim = clim
         self._pos = pos
-        self._halfdim = halfdim
-
-        if orientation == "":
-            (halfw, halfh) = halfdim
-            if halfw > halfh:
-                    orientation = "bottom"
-            else:
-                orientation = "right"
-
+        self._size = size
         self._orientation = orientation
 
         self._label = TextVisual(text=self._label_str)
@@ -274,14 +292,20 @@ class ColorBarVisual(CompoundVisual):
         self._ticks.append(TextVisual(str(self._clim[0])))
         self._ticks.append(TextVisual(str(self._clim[1])))
 
-        self._colorbar = _CoreColorBarVisual(pos,
-                                             halfdim, cmap,
-                                             orientation)
+        if orientation in ["top", "bottom"]:
+            (width, height) = size
+        elif orientation in ["left", "right"]:
+            (height, width) = size
+        else:
+            raise _CoreColorBarVisual._get_orientation_error(orientation)
 
-        self._border = BorderVisual(pos,
-                                    halfdim,
-                                    border_width,
-                                    border_color)
+        self._halfdim = (width * 0.5, height * 0.5)
+
+        self._colorbar = _CoreColorBarVisual(pos, self._halfdim,
+                                             cmap, orientation)
+
+        self._border = _BorderVisual(pos, self._halfdim,
+                                     border_width, border_color)
 
         CompoundVisual.__init__(self, [self._colorbar,
                                        self._border,
@@ -336,14 +360,6 @@ class ColorBarVisual(CompoundVisual):
 
         self._ticks[0].anchors = ticks_anchors
         self._ticks[1].anchors = ticks_anchors
-
-        # test that width and height are non-zero
-        if halfw <= 0:
-            raise ValueError("half-width must be positive and non-zero"
-                             ", not %s", halfw)
-        if halfh <= 0:
-            raise ValueError("half-height must be positive and non-zero"
-                             ", not %s", halfh)
 
         (label_pos, ticks_pos) = \
             ColorBarVisual._calc_positions(center=self._pos,
@@ -572,7 +588,6 @@ class ColorBarVisual(CompoundVisual):
     @clim.setter
     def clim(self, clim):
         self._clim = clim
-        # new TextVisuals need to be created
         self._update()
 
     @property
@@ -584,7 +599,6 @@ class ColorBarVisual(CompoundVisual):
     @label.setter
     def label(self, label):
         self._label = label
-        # position, styling has to be applied
         self._update()
 
     @property
@@ -612,7 +626,6 @@ class ColorBarVisual(CompoundVisual):
     @border_width.setter
     def border_width(self, border_width):
         self._border.border_width = border_width
-        # positions of text need to be changed accordingly
         self._update()
 
     @property
@@ -627,13 +640,49 @@ class ColorBarVisual(CompoundVisual):
 
     @property
     def orientation(self):
+        """ The orientation of the ColorBar
+        """
         return self._orientation
 
     @property
-    def halfdim(self):
-        return self._halfdim
+    def size(self):
+        """ The size of the ColorBar
 
-    @halfdim.setter
-    def halfdim(self, halfdim):
-        self._halfdim = halfdim
+        Returns
+        -------
+        size: (major_axis_length, minor_axis_length)
+            major and minor axis are defined by the
+            orientation of the ColorBar
+        """
+        (halfw, halfh) = self._halfdim
+        if self.orientation in ["top", "bottom"]:
+            return (halfw * 2., halfh * 2.)
+        else:
+            return (halfh * 2., halfw * 2.)
+
+    @size.setter
+    def size(self, size):
+        if size[0] < size[1]:
+            raise ValueError("Major axis must be greater than or equal to "
+                             "Minor axis. Given "
+                             "Major axis: (%s) < Minor axis (%s)" % (size[0],
+                                                                     size[1]))
+
+        if self.orientation in ["top", "bottom"]:
+            (width, height) = size
+        else:
+            (height, width) = size
+
+        if width < 0.:
+            raise ValueError("width must be non-negative, not %s " % (width, ))
+        elif width == 0.:
+            raise ValueError("width must be non-zero, not %s" % (width, ))
+
+        if height < 0.:
+            raise ValueError("height must be non-negative, not %s " %
+                             (height, ))
+        elif height == 0.:
+            raise ValueError("height must be non-zero, not %s" % (height, ))
+
+        self._halfdim = (width, height)
         self._update()
