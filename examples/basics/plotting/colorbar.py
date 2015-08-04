@@ -33,6 +33,7 @@ plot.bgcolor = "#efefef"
 
 img = gen_image(500, 500)
 plot.image(img, cmap="hsl")
+plot.camera.set_range((100, 400), (100, 400))
 
 positions = ["top", "bottom", "left", "right"]
 
