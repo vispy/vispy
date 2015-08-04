@@ -37,7 +37,11 @@ class PlotWidget(scene.Widget):
         self.xlabel = None
         self.ylabel = None
         self._configured = False
-        self.cbar = None
+
+        self.cbar_top = None
+        self.cbar_bottom = None
+        self.cbar_left = None
+        self.cbar_right = None
 
         self.visuals = []
 
@@ -47,7 +51,7 @@ class PlotWidget(scene.Widget):
         self.title = scene.Label("", font_size=16)
         self.title.stretch = (1, 0.1)
         self.grid.add_widget(self.title, row=0, col=3)
-        self.view = self.grid.add_view(row=1, col=3, border_color='grey')
+        self.view = self.grid.add_view(row=2, col=3, border_color='grey')
 
     def _configure_2d(self, fg_color=None):
         if self._configured:
@@ -59,20 +63,20 @@ class PlotWidget(scene.Widget):
         self.yaxis = scene.AxisWidget(orientation='left', text_color=fg,
                                       axis_color=fg, tick_color=fg)
         self.yaxis.stretch = (0.1, 1)
-        self.grid.add_widget(self.yaxis, row=1, col=2)
+        self.grid.add_widget(self.yaxis, row=2, col=2)
 
         self.ylabel = scene.Label("", rotation=-90)
         self.ylabel.stretch = (0.05, 1)
-        self.grid.add_widget(self.ylabel, row=1, col=1)
+        self.grid.add_widget(self.ylabel, row=2, col=1)
 
         self.xaxis = scene.AxisWidget(orientation='bottom', text_color=fg,
                                       axis_color=fg, tick_color=fg)
         self.xaxis.stretch = (1, 0.1)
-        self.grid.add_widget(self.xaxis, row=2, col=3)
+        self.grid.add_widget(self.xaxis, row=3, col=3)
 
         self.xlabel = scene.Label("")
         self.xlabel.stretch = (1, 0.05)
-        self.grid.add_widget(self.xlabel, row=3, col=3)
+        self.grid.add_widget(self.xlabel, row=4, col=3)
 
         self.view.camera = 'panzoom'
         self.camera = self.view.camera
@@ -398,22 +402,29 @@ class PlotWidget(scene.Widget):
 
         self._configure_2d()
 
-        self.cbar = scene.ColorBarWidget(orientation=position,
-                                         label_str=label,
-                                         cmap=cmap,
-                                         clim=clim,
-                                         border_width=border_width,
-                                         border_color=border_color,
-                                         **kwargs)
+        cbar = scene.ColorBarWidget(orientation=position,
+                                    label_str=label,
+                                    cmap=cmap,
+                                    clim=clim,
+                                    border_width=border_width,
+                                    border_color=border_color,
+                                    **kwargs)
 
-        if self.cbar.orientation in ["bottom", "top"]:
-            self.grid.add_widget(self.cbar, row=4, col=3)
-            self.cbar.stretch = (1, 0.1)
-        elif self.cbar.orientation == "left":
-            self.cbar.stretch = (0.1, 1)
-            self.grid.add_widget(self.cbar, row=1, col=0)
-        else:  # self.cbar.orientation == "right"
-            self.cbar.stretch = (0.1, 1)
-            self.grid.add_widget(self.cbar, row=1, col=4)
+        if cbar.orientation == "bottom":
+            self.grid.add_widget(cbar, row=5, col=3)
+            cbar.stretch = (1, 0.3)
+            self.cbar_bottom = cbar
+        elif cbar.orientation == "top":
+            self.grid.add_widget(cbar, row=1, col=3)
+            cbar.stretch = (1, 0.3)
+            self.cbar_top = cbar
+        elif cbar.orientation == "left":
+            cbar.stretch = (0.3, 1)
+            self.grid.add_widget(cbar, row=2, col=0)
+            self.cbar_left = cbar
+        else:  # cbar.orientation == "right"
+            cbar.stretch = (0.3, 1)
+            self.grid.add_widget(cbar, row=2, col=4)
+            self.cbar_right = cbar
 
-        return self.cbar
+        return cbar
