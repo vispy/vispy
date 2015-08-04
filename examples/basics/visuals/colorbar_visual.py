@@ -19,10 +19,11 @@ from vispy.color import Color, get_colormap
 import numpy as np
 
 
-MAX_AMPLITUDE = 2
-MAX_ITERATIONS = 30
+ESCAPE_MAGNITUDE = 100
+MIN_MAGNITUDE = 0.001
+MAX_ITERATIONS = 100
 
-colormap = get_colormap("RdBu")
+colormap = get_colormap("hot")
 
 
 def get_num_escape_turns(x, y):
@@ -47,10 +48,12 @@ def get_num_escape_turns(x, y):
 
     """
     c = complex(x, y)
-    z = complex(0, 0)
+    z = complex(x, y)
 
     num_iterations = 0
-    while np.absolute(z) < MAX_AMPLITUDE and num_iterations < MAX_ITERATIONS:
+
+    while (MIN_MAGNITUDE < np.absolute(z) < ESCAPE_MAGNITUDE and
+           num_iterations < MAX_ITERATIONS):
         z = (z ** 2) + c
         num_iterations += 1
 
@@ -81,7 +84,7 @@ def get_mandlebrot_escape_values(width, height):
     return v_get_num_escape_turns(*grid).astype(np.float)
 
 
-def get_vertical_bar():
+def get_vertical_bar(pos, halfdim):
     """
     Constructs the vertical bar that represents the
     color values for the Mandlebrot set
@@ -91,52 +94,49 @@ def get_vertical_bar():
     A vispy.visual.ColorBarVisual object that represents the
     data of the Mandlebrot set
     """
-    pos = 100, 300
-    halfdim = 10, 200
-
-    # similar to the previous case, only
-    # with a vertical orientation
-    # use clim to set the lower and upper values of the colorbar
-    # which are drawn as labels on the bottom and top edge
     vertical = ColorBarVisual(pos=pos,
                               halfdim=halfdim,
-                              label_str="no. of iterations to escape",
+                              label_str="iterations to escape",
                               cmap=colormap, orientation="left")
 
-    vertical.label.font_size = 20
+    vertical.label.font_size = 15
     vertical.label.color = "white"
 
     vertical.clim = (0, MAX_ITERATIONS)
 
-    vertical.ticks[0].font_size = 20
-    vertical.ticks[1].font_size = 20
+    vertical.ticks[0].font_size = 10
+    vertical.ticks[1].font_size = 10
     vertical.ticks[0].color = "white"
     vertical.ticks[1].color = "white"
 
-    vertical.border_width = 2
-    vertical.border_color = Color("#222222")
+    vertical.border_width = 1
+    vertical.border_color = Color("#ababab")
 
     return vertical
 
 
 class Canvas(app.Canvas):
     def __init__(self):
+        # dimensions of generated image
+        img_dim = np.array([700, 500])
+        # position of colorbar
+        colorbar_pos = np.array([100, 300])
+        # half of dim of colorbar
+        colorbar_halfdim = np.array([10, 200])
+        # padding betweem colorbar and image
+        colorbar_padding = np.array([100, 0])
+
         app.Canvas.__init__(self, size=(800, 600), keys="interactive")
 
-        img_data = get_mandlebrot_escape_values(600, 400)
+        img_data = get_mandlebrot_escape_values(img_dim[0], img_dim[1])
         self.image = ImageVisual(img_data,  cmap=colormap)
 
-        image_transform = STTransform(scale=(1.3, 1.3), translate=(100, 0))
-        self.image_transform_sys = TransformSystem(self)
-        self.image_transform_sys.visual_to_document = image_transform
+        self.image.transform = \
+            STTransform(scale=1.1,
+                        translate=colorbar_pos -
+                        colorbar_halfdim + colorbar_padding)
 
-        self.vertical_bar = get_vertical_bar()
-
-        # construct a default transform that does identity scaling
-        # and does not translate the coordinates
-        colorbar_transform = NullTransform()
-        self.colorbar_transform_sys = TransformSystem(self)
-        self.colorbar_transform_sys.visual_to_document = colorbar_transform
+        self.vertical_bar = get_vertical_bar(colorbar_pos, colorbar_halfdim)
 
         self.show()
 
