@@ -11,9 +11,8 @@ which requires the minimum energy.
 """
 
 import numpy as np
-from scipy.sparse import coo_matrix
 
-from ..util import straight_line_vertices
+from ..util import straight_line_vertices, rescale_layout
 
 
 class fruchterman_reingold:
@@ -29,16 +28,19 @@ class fruchterman_reingold:
         self.pos = pos
 
     def __call__(self, adjacency_mat, directed=False):
-        if adjacency_mat.shape[0] != adjacency_mat[1]:
+        if adjacency_mat.shape[0] != adjacency_mat.shape[1]:
             raise ValueError("Adjacency matrix should be square.")
 
         self.num_nodes = adjacency_mat.shape[0]
 
         if self.num_nodes < 500:
             # Use the sparse solver
-            self._sparse_fruchterman_reingold(adjacency_mat, directed)
+            solver = self._sparse_fruchterman_reingold
         else:
-            self._fruchterman_reingold(adjacency_mat, directed)
+            solver = self._fruchterman_reingold
+
+        for result in solver(adjacency_mat, directed):
+            yield result
 
     def _fruchterman_reingold(self, adjacency_mat, directed=False):
         if self.optimal is None:
@@ -48,10 +50,15 @@ class fruchterman_reingold:
             # Random initial positions
             pos = np.asarray(
                 np.random.random((self.num_nodes, self.dim)),
-                dtype=adjacency_mat.dtype
+                dtype='f32'
             )
         else:
-            pos = self.pos.astype(adjacency_mat.dtype)
+            pos = self.pos.astype('f32')
+
+        # Yield initial positions
+        line_vertices, arrows = straight_line_vertices(adjacency_mat, pos,
+                                                       directed)
+        yield pos, line_vertices, arrows
 
         # The initial "temperature"  is about .1 of domain area (=1x1)
         # this is the largest step allowed in the dynamics.
@@ -91,6 +98,7 @@ class fruchterman_reingold:
             length = np.where(length < 0.01, 0.1, length)
             delta_pos = np.transpose(np.transpose(displacement)*t/length)
             pos += delta_pos
+            pos = rescale_layout(pos)
 
             # cool temperature
             t -= dt
@@ -107,19 +115,21 @@ class fruchterman_reingold:
             self.optimal = 1 / np.sqrt(self.num_nodes)
 
         # make sure we have a LIst of Lists representation
-        try:
-            adjacency_mat = adjacency_mat.tolil()
-        except:
-            adjacency_mat = (coo_matrix(adjacency_mat)).tolil()
+        adjacency_mat = adjacency_mat.tolil()
 
         if self.pos is None:
             # Random initial positions
             pos = np.asarray(
                 np.random.random((self.num_nodes, self.dim)),
-                dtype=adjacency_mat.dtype
+                dtype='f32'
             )
         else:
-            pos = self.pos.astype(adjacency_mat.dtype)
+            pos = self.pos.astype('f32')
+
+        # Yield initial positions
+        line_vertices, arrows = straight_line_vertices(adjacency_mat, pos,
+                                                       directed)
+        yield pos, line_vertices, arrows
 
         # The initial "temperature"  is about .1 of domain area (=1x1)
         # This is the largest step allowed in the dynamics.
@@ -155,6 +165,7 @@ class fruchterman_reingold:
             length = np.sqrt((displacement**2).sum(axis=0))
             length = np.where(length < 0.01, 0.1, length)
             pos += (displacement*t/length).T
+            pos = rescale_layout(pos)
 
             # Cool temperature
             t -= dt
