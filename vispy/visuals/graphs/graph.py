@@ -11,10 +11,39 @@ This visual can be used to visualise graphs or networks.
 from ..visual import CompoundVisual
 from ..line import ArrowVisual
 from ..markers import MarkersVisual
+from . import layouts
 
 
 class GraphVisual(CompoundVisual):
     """Visual for displaying graphs or networks.
+
+    Parameters
+    ----------
+    adjacency_mat : array
+        The adjacency matrix of the graph.
+    directed : bool
+        Whether the graph is directed or not. If True, then this visual will
+        draw arrows for the directed edges.
+    line_color : str or :class:`vispy.color.colormap.ColorMap`
+        The color to use for the edges.
+    line_width : number
+        The edge thickness.
+    arrow_type : str
+        The kind of arrow head to use. See :class:`vispy.visuals.ArrowHead`
+        for more information.
+    arrow_size : number
+        The size of the arrow head.
+    node_symbol : string
+        The marker to use for nodes. See
+        :class:`vispy.visuals.MarkersVisual` for more information.
+    node_size : number
+        The size of the node
+    border_color : str or :class:`vispy.color.colormap.ColorMap`
+        The border color for nodes.
+    face_color : str or :class:`vispy.color.colormap.ColorMap`
+        The face color for nodes.
+    border_width : number
+        The border size for nodes.
 
     See Also
     --------
@@ -24,17 +53,18 @@ class GraphVisual(CompoundVisual):
 
     _arrow_attributes = ('arrow_type', 'arrow_size')
     _arrow_kwargs = ('line_color', 'line_width')
-    _node_kwargs = ('node_symbol', 'node_size', 'edge_color', 'face_color',
-                    'edge_width')
+    _node_kwargs = ('node_symbol', 'node_size', 'border_color', 'face_color',
+                    'border_width')
 
     _arrow_kw_trans = dict(line_color='color', line_width='width')
-    _node_kw_trans = dict(node_symbol='symbol', node_size='size')
+    _node_kw_trans = dict(node_symbol='symbol', node_size='size',
+                          border_color='edge_color', border_width='edge_width')
 
     def __init__(self, adjacency_mat=None, directed=False, layout=None,
                  animate=False, line_color=None, line_width=None,
                  arrow_type=None, arrow_size=None, node_symbol=None,
-                 node_size=None, edge_color=None, face_color=None,
-                 edge_width=None):
+                 node_size=None, border_color=None, face_color=None,
+                 border_width=None):
 
         self._edges = ArrowVisual(method='gl', connect='segments')
         self._nodes = MarkersVisual()
@@ -59,8 +89,8 @@ class GraphVisual(CompoundVisual):
         self.set_data(adjacency_mat, line_color=line_color,
                       line_width=line_width, arrow_type=arrow_type,
                       arrow_size=arrow_size, node_symbol=node_symbol,
-                      node_size=node_size, edge_color=edge_color,
-                      face_color=face_color, edge_width=edge_width)
+                      node_size=node_size, border_color=border_color,
+                      face_color=face_color, border_width=border_width)
 
     @property
     def adjacency_matrix(self):
@@ -73,18 +103,12 @@ class GraphVisual(CompoundVisual):
     @layout.setter
     def layout(self, value):
         if type(value) == str:
-            if value not in AVAILABLE_LAYOUTS:
-                raise ValueError(
-                    "Invalid graph layout '{}'. Should be one of {}.".format(
-                        value,
-                        ", ".join(AVAILABLE_LAYOUTS)
-                    )
-                )
-
-            self._layout = _layouts_map[value]
+            self._layout = layouts.get(value)
         else:
             assert callable(value)
             self._layout = value
+
+        self._layout_iter = None
 
     @property
     def directed(self):
@@ -141,6 +165,9 @@ class GraphVisual(CompoundVisual):
         self._nodes.set_data(pos=node_vertices, **self._node_data)
         self._edges.set_data(pos=line_vertices, arrows=arrows,
                              **self._arrow_data)
+
+    def reset_layout(self):
+        self._layout_iter = None
 
     def set_data(self, adjacency_mat=None, **kwargs):
         if adjacency_mat is not None:
