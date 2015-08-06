@@ -12,10 +12,37 @@ _layout_map = {
     'spring_layout': fruchterman_reingold
 }
 
+AVAILABLE_LAYOUTS = _layout_map.keys()
+
 
 def get(name, *args, **kwargs):
+    """
+    Retrieve a graph layout
+
+    Some graph layouts accept extra options. Please refer to their
+    documentation for more information.
+
+    Parameters
+    ----------
+    name : string
+        The name of the layout. The variable :data`AVAILBLE_LAYOUTS`
+        contains all available layouts.
+    *args
+        Positional arguments which are passed to the layout.
+    **kwargs
+        Keyword arguments which are passed to the layout.
+
+    Returns
+    -------
+    layout : callable
+        The callable generator which will calculate the graph layout
+    """
     if name not in _layout_map:
-        raise KeyError("Graph layout '{}' not found.".format(name))
+        raise KeyError(
+            "Graph layout '{}' not found. Should be one of {}".format(
+                name, ", ".join(AVAILABLE_LAYOUTS)
+            )
+        )
 
     layout = _layout_map[name]
 

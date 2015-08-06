@@ -18,6 +18,16 @@ from ..util import straight_line_vertices, rescale_layout
 class fruchterman_reingold:
     """
     Fruchterman-Reingold implementation adapted from NetworkX.
+
+    Paramters
+    ---------
+    optimal : number
+        Optimal distance between nodes. Defaults to :math:`1/\sqrt{N}` where
+        N is the number of nodes.
+    iterations : int
+        Number of iterations to perform for layout calculation.
+    pos : array
+        Initial positions of the nodes
     """
 
     def __init__(self, optimal=None, iterations=50, pos=None):
@@ -28,6 +38,31 @@ class fruchterman_reingold:
         self.pos = pos
 
     def __call__(self, adjacency_mat, directed=False):
+        """
+        Starts the calculation of the graph layout.
+
+        This is a generator, and after each iteration it yields the new
+        positions for the nodes, together with the vertices for the edges
+        and the arrows.
+
+        There are two solvers here: one specially adapted for SciPy sparse
+        matrices, and the other for larger networks.
+
+        Parameters
+        ----------
+        adjacency_mat : array
+            The graph adjacency matrix.
+        directed : bool
+            Wether the graph is directed or not. If this is True,
+            it will draw arrows for directed edges.
+
+        Yields
+        ------
+        layout : tuple
+            For each iteration of the layout calculation it yields a tuple
+            containing (node_vertices, line_vertices, arrow_vertices). These
+            vertices can be passed to the `MarkersVisual` and `ArrowVisual`.
+        """
         if adjacency_mat.shape[0] != adjacency_mat.shape[1]:
             raise ValueError("Adjacency matrix should be square.")
 

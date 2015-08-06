@@ -5,7 +5,7 @@
 Graph utilities
 ===============
 
-A module containing several graph utility functions
+A module containing several graph utility functions.
 """
 
 import itertools
@@ -14,6 +14,28 @@ import numpy as np
 
 
 def straight_line_vertices(adjacency_mat, node_coords, directed=False):
+    """
+    Generate the vertices for straight lines between nodes.
+
+    If it is a directed graph, it also generates the vertices which can be
+    passed to an :class:`ArrowVisual`.
+
+    Parameters
+    ----------
+    adjacency_mat : array
+        The adjacency matrix of the graph
+    node_coords : array
+        The current coordinates of all nodes in the graph
+    directed : bool
+        Wether the graph is directed. If this is true it will also generate
+        the vertices for arrows which can be passed to :class:`ArrowVisual`.
+
+    Returns
+    -------
+    vertices : tuple
+        Returns a tuple containing containing (`line_vertices`,
+        `arrow_vertices`)
+    """
     if adjacency_mat.shape[0] != adjacency_mat.shape[1]:
         raise ValueError("Adjacency matrix should be square.")
 
@@ -69,7 +91,7 @@ def rescale_layout(pos, scale=1):
     """
 
     # shift origin to (0,0)
-    lim = 0 # max coordinate for all axes
+    lim = 0  # max coordinate for all axes
     for i in range(pos.shape[1]):
         pos[:, i] -= pos[:, i].min()
         lim = max(pos[:, i].max(), lim)
