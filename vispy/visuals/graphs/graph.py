@@ -123,13 +123,13 @@ class GraphVisual(CompoundVisual):
         try:
             node_vertices, line_vertices, arrows = next(self._layout_iter)
         except StopIteration:
-            return False
+            return True
 
         self._nodes.set_data(pos=node_vertices, **self._node_data)
         self._edges.set_data(pos=line_vertices, arrows=arrows,
                              **self._arrow_data)
 
-        return True
+        return False
 
     def set_final_layout(self):
         if self._layout_iter is None:
