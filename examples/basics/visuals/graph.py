@@ -33,7 +33,7 @@ class Canvas(app.Canvas):
             node_symbol="disc",
             node_size=10,
             face_color="red",
-            edge_width=0.0,
+            border_width=0.0,
             animate=True
         )
 
