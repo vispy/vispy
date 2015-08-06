@@ -45,3 +45,37 @@ def straight_line_vertices(adjacency_mat, node_coords, directed=False):
     arrows = np.array(arrows).reshape((len(arrows)/2, 4))
 
     return line_vertices, arrows
+
+
+def rescale_layout(pos, scale=1):
+    """
+    Normalize the given coordinate list to the range [0, `scale`].
+
+    Parameters
+    ----------
+    pos : array
+        Coordinate list
+    scale : number
+        The upperbound value for the coordinates range
+
+    Returns
+    -------
+    pos : array
+        The rescaled (normalized) coordinates in the range [0, `scale`].
+
+    Notes
+    -----
+    Adapted from NetworkX.
+    """
+
+    # shift origin to (0,0)
+    lim = 0 # max coordinate for all axes
+    for i in range(pos.shape[1]):
+        pos[:, i] -= pos[:, i].min()
+        lim = max(pos[:, i].max(), lim)
+
+    # rescale to (0,scale) in all directions, preserves aspect
+    for i in range(pos.shape[1]):
+        pos[:, i] *= scale/lim
+
+    return pos
