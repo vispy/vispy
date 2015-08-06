@@ -26,18 +26,21 @@ class Canvas(app.Canvas):
 
         self.visual = visuals.GraphVisual(
             nx.adjacency_matrix(self.graph),
-            layout=layouts.circular,
+            layout=layouts.get('force_directed'),
             line_color=(1.0, 1.0, 1.0, 1.0),
             arrow_type="stealth",
             arrow_size=7.5,
             node_symbol="disc",
             node_size=10,
             face_color="red",
-            edge_width=0.0
+            edge_width=0.0,
+            animate=True
         )
 
         self.visual.events.update.connect(lambda evt: self.update())
         self.visual.transform = STTransform(self.visual_size, (20, 20))
+
+        self.timer = app.Timer(interval=0, connect=self.animate, start=True)
 
         self.show()
 
@@ -58,6 +61,12 @@ class Canvas(app.Canvas):
     def on_draw(self, event):
         gloo.clear('black')
         self.visual.draw()
+
+    def animate(self, event):
+        ready = self.visual.animate_layout()
+
+        if ready:
+            self.timer.disconnect(self.animate)
 
 
 if __name__ == '__main__':
