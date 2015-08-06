@@ -11,15 +11,6 @@ This visual can be used to visualise graphs or networks.
 from ..visual import CompoundVisual
 from ..line import ArrowVisual
 from ..markers import MarkersVisual
-from . import layouts
-
-
-_layouts_map = {
-    'random': layouts.random,
-    'circular': layouts.circular
-}
-
-AVAILABLE_LAYOUTS = _layouts_map.keys()
 
 
 class GraphVisual(CompoundVisual):
