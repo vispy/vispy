@@ -111,9 +111,11 @@ setup(
 
         'vispy.glsl': ['*.vert','*.frag', "*.glsl"],
         'vispy.glsl.antialias': ['*.vert','*.frag', "*.glsl"],
+        'vispy.glsl.arrowheads': ['*.vert','*.frag', "*.glsl"],
         'vispy.glsl.arrows': ['*.vert','*.frag', "*.glsl"],
         'vispy.glsl.collections': ['*.vert','*.frag', "*.glsl"],
         'vispy.glsl.colormaps': ['*.vert','*.frag', "*.glsl"],
+        'vispy.glsl.lines': ['*.vert','*.frag', "*.glsl"],
         'vispy.glsl.markers': ['*.vert','*.frag', "*.glsl"],
         'vispy.glsl.math': ['*.vert','*.frag', "*.glsl"],
         'vispy.glsl.misc': ['*.vert','*.frag', "*.glsl"],
