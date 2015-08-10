@@ -157,7 +157,7 @@ class Widget(Compound):
 
     @stretch.setter
     def stretch(self, s):
-        self._stretch = s
+        self._stretch = float(s[0]), float(s[1])
         self._update_layout()
 
     @property
