@@ -28,7 +28,7 @@ class Widget(Compound):
     pos : (x, y)
         A 2-element tuple to specify the top left corner of the widget.
     size : (w, h)
-        A 2-element tuple to spicify the size of the widget.
+        A 2-element tuple to specify the size of the widget.
     border_color : color
         The color of the border.
     border_width : float
