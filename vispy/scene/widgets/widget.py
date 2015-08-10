@@ -139,7 +139,7 @@ class Widget(Compound):
         Generally widgets should avoid drawing or placing sub-widgets outside
         this rectangle.
         """
-        m = self.margin + self._border_width + self.padding
+        m = self.margin + self.padding
         if not self._border.border_color.is_blank:
             m += 1
         return Rect((m, m), (self.size[0]-2*m, self.size[1]-2*m))
