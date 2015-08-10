@@ -10,6 +10,14 @@ from ...visuals import ColorBarVisual
 
 
 class ColorBarWidget(Widget):
+    # padding with respect to the major and minor axis
+    # units are normalized [0, 1] with 1 representing occupying
+    # all of the length along the given axis
+    major_axis_padding = 0.1
+    minor_axis_padding = 0.8
+    # ratio of minor axis to major axis
+    minor_axis_ratio = 0.05
+
     """Widget containing a ColorBar
 
     Parameters
@@ -92,26 +100,19 @@ class ColorBarWidget(Widget):
     @staticmethod
     def calc_size(rect, orientation):
         (total_halfx, total_halfy) = rect.center
-
-        # the padding that the colorbar should leave with respect
-        # to the total halfdim
-        MAJOR_AXIS_PADDING = 0.1
-        MINOR_AXIS_PADDING = 0.8
-
-        # ratio of minor axis to major axis
-        MINOR_AXIS_RATIO = 0.05
-
         if orientation in ["bottom", "top"]:
             (total_major_axis, total_minor_axis) = (total_halfx, total_halfy)
         else:
             (total_major_axis, total_minor_axis) = (total_halfy, total_halfx)
 
-        major_axis = total_major_axis * (1.0 - MAJOR_AXIS_PADDING)
-        minor_axis = major_axis * MINOR_AXIS_RATIO
+        major_axis = total_major_axis * (1.0 -
+                                         ColorBarWidget.major_axis_padding)
+        minor_axis = major_axis * ColorBarWidget.minor_axis_ratio
 
         # if the minor axis is "leaking" from the padding, then clamp
         minor_axis = np.minimum(minor_axis,
-                                total_minor_axis * (1.0 - MINOR_AXIS_PADDING))
+                                total_minor_axis *
+                                (1.0 - ColorBarWidget.minor_axis_padding))
 
         return (major_axis, minor_axis)
 
