@@ -8,6 +8,8 @@ Graph utilities
 A module containing several graph utility functions.
 """
 
+import itertools
+
 import numpy as np
 
 try:
@@ -39,6 +41,39 @@ def _get_edges(adjacency_mat):
     i, j = np.where(adjacency_mat)
 
     return zip(i, j)
+
+
+def get_directed_edges(adjacency_mat):
+    if issparse(adjacency_mat):
+        func = _sparse_get_directed_edges
+    else:
+        func = _get_directed_edges
+
+    for result in func(adjacency_mat):
+        print("Directed", result)
+        yield result
+
+
+def _sparse_get_directed_edges(adjacency_mat):
+    iu = np.triu_indices_from(adjacency_mat, 1)
+    il = np.tril_indices_from(adjacency_mat)
+
+    lower = adjacency_mat.copy()
+    lower[il] = 0
+
+    adjacency_mat[iu] = 0
+
+    return itertools.chain(
+        _sparse_get_edges(adjacency_mat),
+        _sparse_get_edges(lower)
+    )
+
+
+def _get_directed_edges(adjacency_mat):
+    upper = np.triu(adjacency_mat, k=1)
+    lower = np.tril(adjacency_mat)
+
+    return itertools.chain(get_edges(upper), get_edges(lower))
 
 
 def straight_line_vertices(adjacency_mat, node_coords, directed=False):
@@ -73,14 +108,17 @@ def straight_line_vertices(adjacency_mat, node_coords, directed=False):
             adjacency_mat.shape[1]):
         raise ValueError("Adjacency matrix should be square.")
 
-    arrows = []
+    arrow_vertices = np.array([])
 
     edges = np.array(list(get_edges(adjacency_mat)))
     line_vertices = node_coords[edges.ravel()]
 
-    arrows = np.array(arrows).reshape((len(arrows)/2, 4))
+    if directed:
+        arrows = np.array(list(get_directed_edges(adjacency_mat)))
+        arrow_vertices = node_coords[arrows.ravel()]
+        arrow_vertices = arrow_vertices.reshape((len(arrow_vertices)/2, 4))
 
-    return line_vertices, arrows
+    return line_vertices, arrow_vertices
 
 
 def rescale_layout(pos, scale=1):
