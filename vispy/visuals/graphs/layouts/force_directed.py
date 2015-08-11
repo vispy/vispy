@@ -12,6 +12,12 @@ which requires the minimum energy.
 
 import numpy as np
 
+try:
+    from scipy.sparse import issparse
+except ImportError:
+    def issparse(*args, **kwargs):
+        return False
+
 from ..util import straight_line_vertices, rescale_layout
 
 
@@ -68,7 +74,7 @@ class fruchterman_reingold:
 
         self.num_nodes = adjacency_mat.shape[0]
 
-        if self.num_nodes < 500:
+        if issparse(adjacency_mat) and self.num_nodes < 10000:
             # Use the sparse solver
             solver = self._sparse_fruchterman_reingold
         else:
@@ -131,7 +137,7 @@ class fruchterman_reingold:
             # update positions
             length = np.sqrt((displacement**2).sum(axis=1))
             length = np.where(length < 0.01, 0.1, length)
-            delta_pos = np.transpose(np.transpose(displacement)*t/length)
+            delta_pos = displacement * t / length[:, np.newaxis]
             pos += delta_pos
             pos = rescale_layout(pos)
 

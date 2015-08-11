@@ -12,6 +12,33 @@ import itertools
 
 import numpy as np
 
+try:
+    from scipy.sparse import issparse
+except ImportError:
+    def issparse(*args, **kwargs):
+        return False
+
+
+def get_edges(adjacency_mat):
+    if issparse(adjacency_mat):
+        func = _sparse_get_edges
+    else:
+        func = _get_edges
+
+    for result in func(adjacency_mat):
+        yield result
+
+
+def _sparse_get_edges(adjacency_mat):
+    coo_mat = adjacency_mat.tocoo()
+    return zip(coo_mat.row, coo_mat.col)
+
+
+def _get_edges(adjacency_mat):
+    i, j = np.where(adjacency_mat)
+
+    return zip(i, j)
+
 
 def straight_line_vertices(adjacency_mat, node_coords, directed=False):
     """
@@ -36,14 +63,19 @@ def straight_line_vertices(adjacency_mat, node_coords, directed=False):
         Returns a tuple containing containing (`line_vertices`,
         `arrow_vertices`)
     """
-    if adjacency_mat.shape[0] != adjacency_mat.shape[1]:
-        raise ValueError("Adjacency matrix should be square.")
 
-    num_nodes = adjacency_mat.shape[0]
+    if (not issparse(adjacency_mat) and not isinstance(adjacency_mat,
+                                                       np.ndarray)):
+        adjacency_mat = np.array(adjacency_mat, float)
+
+    if (adjacency_mat.ndim != 2 or adjacency_mat.shape[0] !=
+            adjacency_mat.shape[1]):
+        raise ValueError("Adjacency matrix should be square.")
 
     line_vertices = []
     arrows = []
-    for edge in itertools.combinations(range(num_nodes), 2):
+
+    for edge in get_edges(adjacency_mat):
         reverse = (edge[1], edge[0])
 
         if adjacency_mat[edge] == 1 or adjacency_mat[reverse] == 1:
@@ -51,7 +83,6 @@ def straight_line_vertices(adjacency_mat, node_coords, directed=False):
                                   node_coords[edge[1]]])
 
         if directed:
-            # TODO: This can probably be vectorized
             if adjacency_mat[edge] == 1 and adjacency_mat[reverse] == 0:
                 arrows.extend([
                     node_coords[edge[0]],
