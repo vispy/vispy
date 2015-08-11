@@ -120,20 +120,6 @@ def rescale_layout(pos, scale=1):
     -----
     Changes `pos` in place.
     """
-    # shift origin to (0,0)
-    """
-    lim = 0  # max coordinate for all axes
-    for i in range(pos.shape[1]):
-        print(pos[:, i])
-        print(pos[:, i].min())
-        print()
-        pos[:, i] -= pos[:, i].min()
-        lim = max(pos[:, i].max(), lim)
-
-    # rescale to (0,scale) in all directions, preserves aspect
-    for i in range(pos.shape[1]):
-        pos[:, i] *= scale/lim
-    """
 
     pos -= pos.min(axis=0)
     pos *= scale / pos.max()
