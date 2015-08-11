@@ -202,13 +202,12 @@ class _CoreColorBarVisual(Visual):
         self._draw_mode = "triangles"
         return True
 
-# The padding multiplier that's used to place the text
-# next to the Colorbar. Makes sure the text isn't
-# visually "sticking" to the Colorbar
-_TEXT_PADDING_FACTOR = 1.05
-
 
 class ColorBarVisual(CompoundVisual):
+    # The padding multiplier that's used to place the text
+    # next to the Colorbar. Makes sure the text isn't
+    # visually "sticking" to the Colorbar
+    text_padding_factor = 1.05
 
     """Visual subclass displaying a colorbar
 
@@ -527,7 +526,7 @@ class ColorBarVisual(CompoundVisual):
         doc_perp_vector /= perp_len
         perp_len += border_width
         perp_len += 5  # pixels
-        perp_len *= _TEXT_PADDING_FACTOR
+        perp_len *= ColorBarVisual.text_padding_factor
         doc_perp_vector *= perp_len
 
         doc_center = visual_to_doc.map(np.array([x, y, 0, 0],
