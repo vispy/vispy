@@ -675,7 +675,10 @@ class _Diverging(Colormap):
 
 # https://github.com/matplotlib/matplotlib/pull/4707/files#diff-893cf0348279e9f4570488a7a297ab1eR774
 # Taken from original Viridis colormap data in matplotlib implementation
-# Sampled at 128 points from raw data-set.
+# Sampled 128 points from the raw data-set of 256 samples.
+# Sub sampled to 128 points since 256 points causes VisPy to freeze.
+# HACK: Ideally, all 256 points should be included, with VisPy generating
+# a 1D texture lookup for ColorMap, rather than branching code.
 _viridis_data = [[0.267004, 0.004874, 0.329415],
                  [0.269944, 0.014625, 0.341379],
                  [0.272594, 0.025563, 0.353093],
