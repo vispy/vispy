@@ -144,7 +144,7 @@ class SpatialFilter(object):
         code += '%s' % filter_2
         code += '(sampler2D texture, sampler2D kernel, float index, vec2 uv, vec2 pixel )\n'  # noqa
         code += '{\n'
-        code += '    vec2 texel = uv/pixel - vec2(0.0,0.0) ;\n'
+        code += '    vec2 texel = uv/pixel - vec2(0.5,0.5) ;\n'
         code += '    vec2 f = fract(texel);\n'
         code += '    texel = (texel-fract(texel)+vec2(0.001,0.001))*pixel;\n'
         for i in range(2*n):
