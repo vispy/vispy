@@ -22,7 +22,7 @@ filter1D_radius1( sampler2D kernel, float index, float x, vec4 c0, vec4 c1 )
 vec4
 filter2D_radius1(sampler2D texture, sampler2D kernel, float index, vec2 uv, vec2 pixel )
 {
-    vec2 texel = uv/pixel - vec2(0.0,0.0) ;
+    vec2 texel = uv/pixel - vec2(0.5,0.5) ;
     vec2 f = fract(texel);
     texel = (texel-fract(texel)+vec2(0.001,0.001))*pixel;
     vec4 t0 = filter1D_radius1(kernel, index, f.x,
@@ -56,7 +56,7 @@ filter1D_radius2( sampler2D kernel, float index, float x, vec4 c0, vec4 c1, vec4
 vec4
 filter2D_radius2(sampler2D texture, sampler2D kernel, float index, vec2 uv, vec2 pixel )
 {
-    vec2 texel = uv/pixel - vec2(0.0,0.0) ;
+    vec2 texel = uv/pixel - vec2(0.5,0.5) ;
     vec2 f = fract(texel);
     texel = (texel-fract(texel)+vec2(0.001,0.001))*pixel;
     vec4 t0 = filter1D_radius2(kernel, index, f.x,
@@ -110,7 +110,7 @@ filter1D_radius3( sampler2D kernel, float index, float x, vec4 c0, vec4 c1, vec4
 vec4
 filter2D_radius3(sampler2D texture, sampler2D kernel, float index, vec2 uv, vec2 pixel )
 {
-    vec2 texel = uv/pixel - vec2(0.0,0.0) ;
+    vec2 texel = uv/pixel - vec2(0.5,0.5) ;
     vec2 f = fract(texel);
     texel = (texel-fract(texel)+vec2(0.001,0.001))*pixel;
     vec4 t0 = filter1D_radius3(kernel, index, f.x,
@@ -192,7 +192,7 @@ filter1D_radius4( sampler2D kernel, float index, float x, vec4 c0, vec4 c1, vec4
 vec4
 filter2D_radius4(sampler2D texture, sampler2D kernel, float index, vec2 uv, vec2 pixel )
 {
-    vec2 texel = uv/pixel - vec2(0.0,0.0) ;
+    vec2 texel = uv/pixel - vec2(0.5,0.5) ;
     vec2 f = fract(texel);
     texel = (texel-fract(texel)+vec2(0.001,0.001))*pixel;
     vec4 t0 = filter1D_radius4(kernel, index, f.x,
@@ -320,3 +320,4 @@ vec4 Lanczos(sampler2D texture, vec2 shape, vec2 uv)
 
 vec4 Blackman(sampler2D texture, vec2 shape, vec2 uv)
 { return filter2D_radius4(texture, u_kernel, 0.968750, uv, 1.0/shape); }
+
