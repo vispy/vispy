@@ -10,6 +10,8 @@ import numpy as np
 from .widget import Widget
 from ...util.np_backport import nanmean
 
+from vispy.ext.cassowary import cassowary
+
 
 class Grid(Widget):
     """
