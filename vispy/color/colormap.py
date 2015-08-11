@@ -673,6 +673,9 @@ class _Diverging(Colormap):
 
         super(_Diverging, self).__init__(colors)
 
+# https://github.com/matplotlib/matplotlib/pull/4707/files#diff-893cf0348279e9f4570488a7a297ab1eR774
+# Taken from original Viridis colormap data in matplotlib implementation
+# Sampled at 128 points from raw data-set.
 _viridis_data = [[0.267004, 0.004874, 0.329415],
                  [0.269944, 0.014625, 0.341379],
                  [0.272594, 0.025563, 0.353093],
