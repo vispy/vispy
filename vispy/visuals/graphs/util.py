@@ -28,11 +28,14 @@ def get_edges(adjacency_mat):
 
 
 def _sparse_get_edges(adjacency_mat):
+    # Each non zero value in a COO matrix is stored in (row, col, value)
+    # format
     coo_mat = adjacency_mat.tocoo()
     return zip(coo_mat.row, coo_mat.col)
 
 
 def _get_edges(adjacency_mat):
+    # Get indices of all non zero values
     i, j = np.where(adjacency_mat)
 
     return zip(i, j)
@@ -70,29 +73,11 @@ def straight_line_vertices(adjacency_mat, node_coords, directed=False):
             adjacency_mat.shape[1]):
         raise ValueError("Adjacency matrix should be square.")
 
-    line_vertices = []
     arrows = []
 
-    for edge in get_edges(adjacency_mat):
-        reverse = (edge[1], edge[0])
+    edges = np.array(list(get_edges(adjacency_mat)))
+    line_vertices = node_coords[edges.ravel()]
 
-        if adjacency_mat[edge] == 1 or adjacency_mat[reverse] == 1:
-            line_vertices.extend([node_coords[edge[0]],
-                                  node_coords[edge[1]]])
-
-        if directed:
-            if adjacency_mat[edge] == 1 and adjacency_mat[reverse] == 0:
-                arrows.extend([
-                    node_coords[edge[0]],
-                    node_coords[edge[1]]
-                ])
-            elif adjacency_mat[edge] == 0 and adjacency_mat[reverse] == 0:
-                arrows.extend([
-                    node_coords[reverse[0]],
-                    node_coords[reverse[1]]
-                ])
-
-    line_vertices = np.array(line_vertices)
     arrows = np.array(arrows).reshape((len(arrows)/2, 4))
 
     return line_vertices, arrows
