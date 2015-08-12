@@ -14,6 +14,7 @@ from .visual import Visual
 from ..ext.six import string_types
 
 
+
 VERT_SHADER = """
 uniform int method;  // 0=subdivide, 1=impostor
 attribute vec2 a_position;
@@ -67,15 +68,33 @@ void main()
 
 _null_color_transform = 'vec4 pass(vec4 color) { return color; }'
 _c2l = 'float cmap(vec4 color) { return (color.r + color.g + color.b) / 3.; }'
+
+_ipol_template = """
+    #include "misc/spatial-filters.frag"
+    vec4 texture_lookup(vec2 texcoord) {
+        /*if(texcoord.x < 0.0 || texcoord.x > 1.0 ||
+        texcoord.y < 0.0 || texcoord.y > 1.0) {
+            discard;
+        }*/
+        return %s($texture, $shape, texcoord);
+    }"""
+
 _texture_lookup = """
-    vec4 texture_lookup(vec2 texcoord) { 
+    vec4 texture_lookup(vec2 texcoord) {
         if(texcoord.x < 0.0 || texcoord.x > 1.0 ||
         texcoord.y < 0.0 || texcoord.y > 1.0) {
             discard;
         }
-        return texture2D($texture, texcoord); 
+        return texture2D($texture, texcoord);
     }"""
 
+def create_ipol_frag():
+    from ..io import load_spatial_filters
+    from ..ext.ordereddict import OrderedDict
+
+    kernel, names = load_spatial_filters()
+
+    return kernel, names, OrderedDict(zip(names, [Function(_ipol_template % name) for name in names]))
 
 class ImageVisual(Visual):
     """Visual subclass displaying an image.
@@ -116,19 +135,34 @@ class ImageVisual(Visual):
     if the data are 2D.
     """
     def __init__(self, data=None, method='auto', grid=(1, 1),
-                 cmap='cubehelix', clim='auto', **kwargs):
+                 cmap='cubehelix', clim='auto',
+                 ipol='nearest', **kwargs):
         self._data = None
-        self._interpolation = 'nearest'
+
+        # check whether hw ipol or shader ipol
+        self._ipol = ipol
+        if self._ipol in ['nearest', 'linear']:
+            self._interpolation = self._ipol
+        else:
+            self._interpolation = 'nearest'
+
         self._method = method
         self._grid = grid
         self._need_texture_upload = True
         self._need_vertex_update = True
         self._need_colortransform_update = True
+        self._need_ipol_update = True
         self._texture = Texture2D(np.zeros((1, 1, 4)),
                                   interpolation=self._interpolation)
         self._subdiv_position = VertexBuffer()
         self._subdiv_texcoord = VertexBuffer()
-        
+
+        self._kernel, self._names, self._ipolfrag = create_ipol_frag()
+        self._kerneltex = Texture2D(self._kernel, interpolation='nearest',
+                                     internalformat='r16f')
+        for i in self._ipolfrag:
+            print(i)
+
         # impostor quad covers entire viewport
         vertices = np.array([[-1, -1], [1, -1], [1, 1],
                              [-1, -1], [1, 1], [-1, 1]],
@@ -142,9 +176,11 @@ class ImageVisual(Visual):
         self._draw_mode = 'triangles'
         
         # by default, this visual pulls data from a texture
-        self._data_lookup_fn = Function(_texture_lookup)
-        self.shared_program.frag['get_data'] = self._data_lookup_fn
-        self._data_lookup_fn['texture'] = self._texture
+        self._data_lookup_fn = None#Function(_texture_lookup)
+        self.shared_program['u_kernel'] = self._kerneltex
+
+        #self.shared_program.frag['get_data'] = self._data_lookup_fn
+        #self._data_lookup_fn['texture'] = self._texture
         
         self.clim = clim
         self.cmap = cmap
@@ -218,6 +254,36 @@ class ImageVisual(Visual):
     @property
     def size(self):
         return self._data.shape[:2][::-1]
+
+    @property
+    def ipol(self):
+        return self._ipol
+
+    @ipol.setter
+    def ipol(self, i):
+        if self._ipol != i:
+            self._ipol = i
+            self._need_ipol_update = True
+            self.update()
+
+    def _update_ipol(self):
+        ipol = self._ipol
+        if ipol in ['nearest', 'linear']:
+            print(ipol)
+            self._interpolation = ipol
+            self._data_lookup_fn = Function(_texture_lookup)
+            self.shared_program.frag['get_data'] = self._data_lookup_fn
+            self._data_lookup_fn['texture'] = self._texture
+            self._data_lookup_fn['texture'].interpolation = ipol
+        else:
+            self._interpolation = 'nearest'
+            self._data_lookup_fn = self._ipolfrag[ipol]
+            self.shared_program.frag['get_data'] = self._data_lookup_fn
+            self._texture.interpolation = 'nearest'
+            self._data_lookup_fn['texture'] = self._texture
+            self._data_lookup_fn['shape'] = self._data.shape[1], self._data.shape[0]
+
+        self._need_ipol_update = False
 
     def _build_vertex_data(self):
         """Rebuild the vertex buffers used for rendering the image when using
@@ -324,6 +390,9 @@ class ImageVisual(Visual):
     def _prepare_draw(self, view):
         if self._data is None:
             return False
+
+        if self._need_ipol_update:
+            self._update_ipol()
 
         if self._need_texture_upload:
             self._build_texture()
