@@ -44,9 +44,9 @@ def load_spatial_filters():
         16x1024 16 interpolation kernel with length 1024 each.
     names : list with respective interpolation names
     """
-    names = ["Bilinear", "Hanning", "Hamming", "Hermite",
+    names = ("Bilinear", "Hanning", "Hamming", "Hermite",
              "Kaiser", "Quadric", "Bicubic", "CatRom",
              "Mitchell", "Spline16", "Spline36", "Gaussian",
-             "Bessel", "Sinc", "Lanczos", "Blackman"]
+             "Bessel", "Sinc", "Lanczos", "Blackman")
 
     return (np.load(op.join(DATA_DIR, 'spatial-filters.npy')), names)

@@ -125,8 +125,7 @@ class Canvas(app.Canvas):
         self.program['u_shape'] = I.shape[1], I.shape[0]
         self.program['u_interpolation'] = 0
 
-        self.names = ["Nearest"]
-        self.names.extend(names)
+        self.names = tuple(["Nearest"]) + names
 
         self.title = 'Spatial Filtering using %s Filter' % \
                      self.names[int(self.program['u_interpolation'])]
