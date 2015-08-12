@@ -14,66 +14,41 @@ import numpy as np
 
 try:
     from scipy.sparse import issparse
+    from scipy import sparse
 except ImportError:
     def issparse(*args, **kwargs):
         return False
 
 
-def get_edges(adjacency_mat):
-    if issparse(adjacency_mat):
-        func = _sparse_get_edges
-    else:
-        func = _get_edges
-
-    for result in func(adjacency_mat):
-        yield result
+def _get_edges(adjacency_mat):
+    func = _sparse_get_edges if issparse(adjacency_mat) else _ndarray_get_edges
+    return func(adjacency_mat)
 
 
 def _sparse_get_edges(adjacency_mat):
-    # Each non zero value in a COO matrix is stored in (row, col, value)
-    # format
-    coo_mat = adjacency_mat.tocoo()
-    return zip(coo_mat.row, coo_mat.col)
+    return np.concatenate((adjacency_mat.row[:, np.newaxis],
+                           adjacency_mat.col[:, np.newaxis]), axis=-1)
 
 
-def _get_edges(adjacency_mat):
+def _ndarray_get_edges(adjacency_mat):
     # Get indices of all non zero values
     i, j = np.where(adjacency_mat)
 
-    return zip(i, j)
-
-
-def get_directed_edges(adjacency_mat):
-    if issparse(adjacency_mat):
-        func = _sparse_get_directed_edges
-    else:
-        func = _get_directed_edges
-
-    for result in func(adjacency_mat):
-        print("Directed", result)
-        yield result
-
-
-def _sparse_get_directed_edges(adjacency_mat):
-    iu = np.triu_indices_from(adjacency_mat, 1)
-    il = np.tril_indices_from(adjacency_mat)
-
-    lower = adjacency_mat.copy()
-    lower[il] = 0
-
-    adjacency_mat[iu] = 0
-
-    return itertools.chain(
-        _sparse_get_edges(adjacency_mat),
-        _sparse_get_edges(lower)
-    )
+    return np.concatenate((i[:, np.newaxis], j[:, np.newaxis]), axis=-1)
 
 
 def _get_directed_edges(adjacency_mat):
-    upper = np.triu(adjacency_mat, k=1)
-    lower = np.tril(adjacency_mat)
+    func = _sparse_get_edges if issparse(adjacency_mat) else _ndarray_get_edges
+    triu = sparse.triu if issparse(adjacency_mat) else np.triu
+    tril = sparse.tril if issparse(adjacency_mat) else np.tril
 
-    return itertools.chain(get_edges(upper), get_edges(lower))
+    upper = triu(adjacency_mat)
+    lower = tril(adjacency_mat)
+
+    return np.concatenate((
+        func(upper),
+        func(lower)
+    ))
 
 
 def straight_line_vertices(adjacency_mat, node_coords, directed=False):
@@ -100,9 +75,8 @@ def straight_line_vertices(adjacency_mat, node_coords, directed=False):
         `arrow_vertices`)
     """
 
-    if (not issparse(adjacency_mat) and not isinstance(adjacency_mat,
-                                                       np.ndarray)):
-        adjacency_mat = np.array(adjacency_mat, float)
+    if not issparse(adjacency_mat):
+        adjacency_mat = np.asarray(adjacency_mat, float)
 
     if (adjacency_mat.ndim != 2 or adjacency_mat.shape[0] !=
             adjacency_mat.shape[1]):
@@ -110,11 +84,11 @@ def straight_line_vertices(adjacency_mat, node_coords, directed=False):
 
     arrow_vertices = np.array([])
 
-    edges = np.array(list(get_edges(adjacency_mat)))
+    edges = _get_edges(adjacency_mat)
     line_vertices = node_coords[edges.ravel()]
 
     if directed:
-        arrows = np.array(list(get_directed_edges(adjacency_mat)))
+        arrows = np.array(list(_get_directed_edges(adjacency_mat)))
         arrow_vertices = node_coords[arrows.ravel()]
         arrow_vertices = arrow_vertices.reshape((len(arrow_vertices)/2, 4))
 
