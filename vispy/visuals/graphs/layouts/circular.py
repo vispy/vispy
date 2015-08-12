@@ -37,7 +37,7 @@ def circular(adjacency_mat, directed=False):
 
     # Visual coordinate system is between 0 and 1, so generate a circle with
     # radius 0.5 and center it at the point (0.5, 0.5).
-    node_coords = np.transpose(0.5 * np.array([np.cos(t), np.sin(t)]) + 0.5)
+    node_coords = (0.5 * np.array([np.cos(t), np.sin(t)]) + 0.5).T
 
     line_vertices, arrows = straight_line_vertices(adjacency_mat,
                                                    node_coords, directed)
