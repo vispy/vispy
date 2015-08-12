@@ -18,7 +18,7 @@ except ImportError:
     def issparse(*args, **kwargs):
         return False
 
-from ..util import straight_line_vertices, rescale_layout
+from ..util import _straight_line_vertices, rescale_layout
 
 
 class fruchterman_reingold:
@@ -97,7 +97,7 @@ class fruchterman_reingold:
             pos = self.pos.astype('f32')
 
         # Yield initial positions
-        line_vertices, arrows = straight_line_vertices(adjacency_mat, pos,
+        line_vertices, arrows = _straight_line_vertices(adjacency_mat, pos,
                                                        directed)
         yield pos, line_vertices, arrows
 
@@ -145,7 +145,7 @@ class fruchterman_reingold:
             t -= dt
 
             # Calculate edge vertices and arrows
-            line_vertices, arrows = straight_line_vertices(adjacency_mat,
+            line_vertices, arrows = _straight_line_vertices(adjacency_mat,
                                                            pos, directed)
 
             yield pos, line_vertices, arrows
@@ -170,7 +170,7 @@ class fruchterman_reingold:
             pos = self.pos.astype('f32')
 
         # Yield initial positions
-        line_vertices, arrows = straight_line_vertices(adjacency_coo, pos,
+        line_vertices, arrows = _straight_line_vertices(adjacency_coo, pos,
                                                        directed)
         yield pos, line_vertices, arrows
 
@@ -215,7 +215,7 @@ class fruchterman_reingold:
             t -= dt
 
             # Calculate line vertices
-            line_vertices, arrows = straight_line_vertices(adjacency_coo,
+            line_vertices, arrows = _straight_line_vertices(adjacency_coo,
                                                            pos, directed)
 
             yield pos, line_vertices, arrows

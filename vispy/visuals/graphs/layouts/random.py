@@ -10,7 +10,7 @@ This layout positions the nodes at random
 
 import numpy as np
 
-from ..util import straight_line_vertices
+from ..util import _straight_line_vertices
 
 
 def random(adjacency_mat, directed=False):
@@ -21,7 +21,7 @@ def random(adjacency_mat, directed=False):
     num_nodes = adjacency_mat.shape[0]
     node_coords = np.random.rand(num_nodes, 2)
 
-    line_vertices, arrows = straight_line_vertices(adjacency_mat,
+    line_vertices, arrows = _straight_line_vertices(adjacency_mat,
                                                    node_coords, directed)
 
     yield node_coords, line_vertices, arrows
