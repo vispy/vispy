@@ -55,54 +55,54 @@ void main()
     // using if-statements here is inefficient
     // used here just for selection of interpolation function
     if (u_interpolation < 0.5) {
-        gl_FragColor = Nearest(u_texture, u_shape, v_texcoord);
-    }
-    else if (u_interpolation < 1.5) {
         gl_FragColor = Bilinear(u_texture, u_shape, v_texcoord);
     }
-    else if (u_interpolation < 2.5) {
+    else if (u_interpolation < 1.5) {
         gl_FragColor = Hanning(u_texture, u_shape, v_texcoord);
     }
-    else if (u_interpolation < 3.5) {
+    else if (u_interpolation < 2.5) {
         gl_FragColor = Hamming(u_texture, u_shape, v_texcoord);
     }
-    else if (u_interpolation < 4.5) {
+    else if (u_interpolation < 3.5) {
         gl_FragColor = Hermite(u_texture, u_shape, v_texcoord);
     }
-    else if (u_interpolation < 5.5) {
+    else if (u_interpolation < 4.5) {
         gl_FragColor = Kaiser(u_texture, u_shape, v_texcoord);
     }
-    else if (u_interpolation < 6.5) {
+    else if (u_interpolation < 5.5) {
         gl_FragColor = Quadric(u_texture, u_shape, v_texcoord);
     }
-    else if (u_interpolation < 7.5) {
+    else if (u_interpolation < 6.5) {
         gl_FragColor = Bicubic(u_texture, u_shape, v_texcoord);
     }
-    else if (u_interpolation < 8.5) {
+    else if (u_interpolation < 7.5) {
         gl_FragColor = CatRom(u_texture, u_shape, v_texcoord);
     }
-    else if (u_interpolation < 9.5) {
+    else if (u_interpolation < 8.5) {
         gl_FragColor = Mitchell(u_texture, u_shape, v_texcoord);
     }
-    else if (u_interpolation < 10.5) {
+    else if (u_interpolation < 9.5) {
         gl_FragColor = Spline16(u_texture, u_shape, v_texcoord);
     }
-    else if (u_interpolation < 11.5) {
+    else if (u_interpolation < 10.5) {
         gl_FragColor = Spline36(u_texture, u_shape, v_texcoord);
     }
-    else if (u_interpolation < 12.5) {
+    else if (u_interpolation < 11.5) {
         gl_FragColor = Gaussian(u_texture, u_shape, v_texcoord);
     }
-    else if (u_interpolation < 13.5) {
+    else if (u_interpolation < 12.5) {
         gl_FragColor = Bessel(u_texture, u_shape, v_texcoord);
     }
-    else if (u_interpolation < 14.5) {
+    else if (u_interpolation < 13.5) {
         gl_FragColor = Sinc(u_texture, u_shape, v_texcoord);
     }
-    else if (u_interpolation < 15.5) {
+    else if (u_interpolation < 14.5) {
         gl_FragColor = Lanczos(u_texture, u_shape, v_texcoord);
     }
-    else gl_FragColor = Blackman(u_texture, u_shape, v_texcoord);
+    else if (u_interpolation < 15.5) {
+        gl_FragColor = Blackman(u_texture, u_shape, v_texcoord);
+    }
+    else gl_FragColor = Nearest(u_texture, u_shape, v_texcoord);
 }
 
 """
@@ -123,9 +123,9 @@ class Canvas(app.Canvas):
         self.program['u_texture'] = self.texture
         self.program['u_kernel'] = self.kernel
         self.program['u_shape'] = I.shape[1], I.shape[0]
-        self.program['u_interpolation'] = 0
+        self.program['u_interpolation'] = 16
 
-        self.names = tuple(["Nearest"]) + names
+        self.names = names
 
         self.title = 'Spatial Filtering using %s Filter' % \
                      self.names[int(self.program['u_interpolation'])]
