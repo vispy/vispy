@@ -5,10 +5,9 @@ Example demonstrating spatial filtering using spatial-filters fragment shader.
 Left and Right Arrow Keys toggle through available filters.
 """
 
-import os
 import numpy as np
 
-from vispy.io import _data_dir
+from vispy.io import load_spatial_filters
 from vispy import gloo
 from vispy import app
 
@@ -20,7 +19,7 @@ I[1::2, 2] = 0.5
 I[2, 2] = 1.0
 
 # loading interpolation kernel
-kernel = np.load(os.path.join(_data_dir, 'spatial-filters.npy'))
+kernel = load_spatial_filters()
 
 # A simple texture quad
 data = np.zeros(4, dtype=[('a_position', np.float32, 2),

@@ -33,3 +33,14 @@ def load_crate():
         256x256x3 crate image.
     """
     return np.load(load_data_file('orig/crate.npz'))['crate']
+
+
+def load_spatial_filters():
+    """Load spatial-filters kernel
+
+    Returns
+    -------
+    kernel : array
+        16x1024 16 interpolation kernel with length 1024 each.
+    """
+    return np.load(op.join(DATA_DIR, 'spatial-filters.npy'))
