@@ -10,7 +10,7 @@ This module contains several graph layouts which rely heavily on circles.
 
 import numpy as np
 
-from ..util import straight_line_vertices
+from ..util import _straight_line_vertices
 
 
 def circular(adjacency_mat, directed=False):
@@ -39,7 +39,7 @@ def circular(adjacency_mat, directed=False):
     # radius 0.5 and center it at the point (0.5, 0.5).
     node_coords = (0.5 * np.array([np.cos(t), np.sin(t)]) + 0.5).T
 
-    line_vertices, arrows = straight_line_vertices(adjacency_mat,
+    line_vertices, arrows = _straight_line_vertices(adjacency_mat,
                                                    node_coords, directed)
 
     yield node_coords, line_vertices, arrows

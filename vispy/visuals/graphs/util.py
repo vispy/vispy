@@ -51,7 +51,7 @@ def _get_directed_edges(adjacency_mat):
     ))
 
 
-def straight_line_vertices(adjacency_mat, node_coords, directed=False):
+def _straight_line_vertices(adjacency_mat, node_coords, directed=False):
     """
     Generate the vertices for straight lines between nodes.
 
