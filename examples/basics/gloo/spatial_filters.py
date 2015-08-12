@@ -148,9 +148,9 @@ class Canvas(app.Canvas):
                 step = -1
             self.program['u_interpolation'] = \
                 (self.program['u_interpolation'] + step) % 17
-        self.title = 'Spatial Filtering using %s Filter' % \
-                     self.names[int(self.program['u_interpolation'])]
-        self.update()
+            self.title = 'Spatial Filtering using %s Filter' % \
+                         self.names[int(self.program['u_interpolation'])]
+            self.update()
 
     def on_draw(self, event):
         gloo.clear(color=True, depth=True)
