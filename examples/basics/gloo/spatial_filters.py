@@ -132,8 +132,8 @@ class Canvas(app.Canvas):
 
         self.program.bind(gloo.VertexBuffer(data))
 
-        gloo.set_clear_color('white')
-
+        self.context.set_clear_color('white')
+        self.context.set_viewport(0, 0, 512, 512)
         self.show()
 
     def on_key_press(self, event):
@@ -148,8 +148,11 @@ class Canvas(app.Canvas):
                          self.names[int(self.program['u_interpolation'])]
             self.update()
 
+    def on_resize(self, event):
+        self.context.set_viewport(0, 0, *event.physical_size)
+
     def on_draw(self, event):
-        gloo.clear(color=True, depth=True)
+        self.context.clear(color=True, depth=True)
         self.program.draw('triangle_strip')
 
 
