@@ -209,7 +209,7 @@ class fruchterman_reingold:
             length = np.sqrt((displacement**2).sum(axis=0))
             length = np.where(length < 0.01, 0.1, length)
             pos += (displacement*t/length).T
-            pos = rescale_layout(pos)
+            rescale_layout(pos)
 
             # Cool temperature
             t -= dt
