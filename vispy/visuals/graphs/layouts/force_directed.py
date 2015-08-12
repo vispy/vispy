@@ -155,8 +155,10 @@ class fruchterman_reingold:
         if self.optimal is None:
             self.optimal = 1 / np.sqrt(self.num_nodes)
 
-        # make sure we have a LIst of Lists representation
+        # Change to list of list format
+        # Also construct the matrix in COO format for easy edge construction
         adjacency_mat = adjacency_mat.tolil()
+        adjacency_coo = adjacency_mat.tocoo()
 
         if self.pos is None:
             # Random initial positions
@@ -168,7 +170,7 @@ class fruchterman_reingold:
             pos = self.pos.astype('f32')
 
         # Yield initial positions
-        line_vertices, arrows = straight_line_vertices(adjacency_mat, pos,
+        line_vertices, arrows = straight_line_vertices(adjacency_coo, pos,
                                                        directed)
         yield pos, line_vertices, arrows
 
@@ -192,7 +194,8 @@ class fruchterman_reingold:
                 # enforce minimum distance of 0.01
                 distance = np.where(distance < 0.01, 0.01, distance)
                 # the adjacency matrix row
-                row = np.asarray(adjacency_mat.getrowview(i).toarray())
+                row = adjacency_mat.getrowview(i).toarray()
+
                 # displacement "force"
                 displacement[:, i] += (
                     delta * (
@@ -212,7 +215,8 @@ class fruchterman_reingold:
             t -= dt
 
             # Calculate line vertices
-            line_vertices, arrows = straight_line_vertices(adjacency_mat,
+            line_vertices, arrows = straight_line_vertices(adjacency_coo,
                                                            pos, directed)
 
             yield pos, line_vertices, arrows
+
