@@ -19,7 +19,7 @@ I[1::2, 2] = 0.5
 I[2, 2] = 1.0
 
 # loading interpolation kernel
-kernel = load_spatial_filters()
+kernel, names = load_spatial_filters()
 
 # A simple texture quad
 data = np.zeros(4, dtype=[('a_position', np.float32, 2),
@@ -125,11 +125,8 @@ class Canvas(app.Canvas):
         self.program['u_shape'] = I.shape[1], I.shape[0]
         self.program['u_interpolation'] = 0
 
-        self.names = [
-            "Nearest", "Bilinear", "Hanning", "Hamming",
-            "Hermite", "Kaiser", "Quadric", "Bicubic",
-            "CatRom", "Mitchell", "Spline16", "Spline36",
-            "Gaussian", "Bessel", "Sinc", "Lanczos", "Blackman"]
+        self.names = ["Nearest"]
+        self.names.extend(names)
 
         self.title = 'Spatial Filtering using %s Filter' % \
                      self.names[int(self.program['u_interpolation'])]
