@@ -90,7 +90,7 @@ class Canvas(app.Canvas):
         self.texture = gloo.Texture2D(I, interpolation='nearest')
 
         self.kernel = gloo.Texture2D(np.load(os.path.join(_data_dir, 'spatial-filters.npy')),
-                                     interpolation='nearest')
+                                     interpolation='nearest', internalformat='r16f')
 
         self.program['u_texture'] = self.texture
         self.program['u_kernel'] = self.kernel
