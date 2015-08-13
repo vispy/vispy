@@ -12,8 +12,7 @@ from .shaders import Function, FunctionChain
 from .transforms import NullTransform
 from .visual import Visual
 from ..ext.six import string_types
-
-
+from ..io import load_spatial_filters
 
 VERT_SHADER = """
 uniform int method;  // 0=subdivide, 1=impostor
@@ -69,13 +68,13 @@ void main()
 _null_color_transform = 'vec4 pass(vec4 color) { return color; }'
 _c2l = 'float cmap(vec4 color) { return (color.r + color.g + color.b) / 3.; }'
 
-_ipol_template = """
+_interpolation_template = """
     #include "misc/spatial-filters.frag"
     vec4 texture_lookup(vec2 texcoord) {
-        /*if(texcoord.x < 0.0 || texcoord.x > 1.0 ||
+        if(texcoord.x < 0.0 || texcoord.x > 1.0 ||
         texcoord.y < 0.0 || texcoord.y > 1.0) {
             discard;
-        }*/
+        }
         return %s($texture, $shape, texcoord);
     }"""
 
@@ -88,13 +87,6 @@ _texture_lookup = """
         return texture2D($texture, texcoord);
     }"""
 
-def create_ipol_frag():
-    from ..io import load_spatial_filters
-    from ..ext.ordereddict import OrderedDict
-
-    kernel, names = load_spatial_filters()
-
-    return kernel, names, OrderedDict(zip(names, [Function(_ipol_template % name) for name in names]))
 
 class ImageVisual(Visual):
     """Visual subclass displaying an image.
@@ -136,32 +128,39 @@ class ImageVisual(Visual):
     """
     def __init__(self, data=None, method='auto', grid=(1, 1),
                  cmap='cubehelix', clim='auto',
-                 ipol='nearest', **kwargs):
+                 interpolation='nearest', **kwargs):
         self._data = None
 
-        # check whether hw ipol or shader ipol
-        self._ipol = ipol
-        if self._ipol in ['nearest', 'linear']:
-            self._interpolation = self._ipol
+        # check texture interpolation
+        self._interpolation = interpolation
+        if self._interpolation in ['nearest', 'linear']:
+            self._texture_interpolation = self._interpolation
         else:
-            self._interpolation = 'nearest'
+            self._texture_interpolation = 'nearest'
 
         self._method = method
         self._grid = grid
         self._need_texture_upload = True
         self._need_vertex_update = True
         self._need_colortransform_update = True
-        self._need_ipol_update = True
+        self._need_interpolation_update = True
         self._texture = Texture2D(np.zeros((1, 1, 4)),
-                                  interpolation=self._interpolation)
+                                  interpolation=self._texture_interpolation)
         self._subdiv_position = VertexBuffer()
         self._subdiv_texcoord = VertexBuffer()
 
-        self._kernel, self._names, self._ipolfrag = create_ipol_frag()
+        # load interpolation kernel
+        self._kernel, self._names = load_spatial_filters()
+        # create interpolation shader functions for available
+        # interpolations
+        fun = [Function(_interpolation_template % n) for n in self._names]
+        self._interpolation_fun = dict(zip(self._names, fun))
+        self._names = ('nearest', 'linear',) + self._names
+        self._interpolation_fun['nearest'] = Function(_texture_lookup)
+        self._interpolation_fun['linear'] = Function(_texture_lookup)
+        # create interpolation kernel Texture2D
         self._kerneltex = Texture2D(self._kernel, interpolation='nearest',
-                                     internalformat='r16f')
-        for i in self._ipolfrag:
-            print(i)
+                                    internalformat='r16f')
 
         # impostor quad covers entire viewport
         vertices = np.array([[-1, -1], [1, -1], [1, 1],
@@ -169,19 +168,16 @@ class ImageVisual(Visual):
                             dtype=np.float32)
         self._impostor_coords = VertexBuffer(vertices)
         self._null_tr = NullTransform()
-        
+
         self._init_view(self)
         super(ImageVisual, self).__init__(vcode=VERT_SHADER, fcode=FRAG_SHADER)
         self.set_gl_state('translucent', cull_face=False)
         self._draw_mode = 'triangles'
-        
-        # by default, this visual pulls data from a texture
-        self._data_lookup_fn = None#Function(_texture_lookup)
-        self.shared_program['u_kernel'] = self._kerneltex
 
-        #self.shared_program.frag['get_data'] = self._data_lookup_fn
-        #self._data_lookup_fn['texture'] = self._texture
-        
+        # define lookup_function as None, will be setup in
+        # self._build_interpolation()
+        self._data_lookup_fn = None
+
         self.clim = clim
         self.cmap = cmap
         if data is not None:
@@ -243,7 +239,7 @@ class ImageVisual(Visual):
     @property
     def method(self):
         return self._method
-    
+
     @method.setter
     def method(self, m):
         if self._method != m:
@@ -256,34 +252,40 @@ class ImageVisual(Visual):
         return self._data.shape[:2][::-1]
 
     @property
-    def ipol(self):
-        return self._ipol
+    def interpolation(self):
+        return self._interpolation
 
-    @ipol.setter
-    def ipol(self, i):
-        if self._ipol != i:
-            self._ipol = i
-            self._need_ipol_update = True
+    @interpolation.setter
+    def interpolation(self, i):
+        if self._interpolation != i:
+            self._interpolation = i
+            self._need_interpolation_update = True
             self.update()
 
-    def _update_ipol(self):
-        ipol = self._ipol
-        if ipol in ['nearest', 'linear']:
-            print(ipol)
-            self._interpolation = ipol
-            self._data_lookup_fn = Function(_texture_lookup)
-            self.shared_program.frag['get_data'] = self._data_lookup_fn
-            self._data_lookup_fn['texture'] = self._texture
-            self._data_lookup_fn['texture'].interpolation = ipol
-        else:
-            self._interpolation = 'nearest'
-            self._data_lookup_fn = self._ipolfrag[ipol]
-            self.shared_program.frag['get_data'] = self._data_lookup_fn
-            self._texture.interpolation = 'nearest'
-            self._data_lookup_fn['texture'] = self._texture
-            self._data_lookup_fn['shape'] = self._data.shape[1], self._data.shape[0]
+    def _build_interpolation(self):
+        """Rebuild the _data_lookup_fn using different interpolations within
+        the shader
+        """
+        interpolation = self._interpolation
+        print(interpolation)
 
-        self._need_ipol_update = False
+        self._data_lookup_fn = self._interpolation_fun[interpolation]
+        self.shared_program.frag['get_data'] = self._data_lookup_fn
+
+        if interpolation in ['nearest', 'linear']:
+            texture_interpolation = interpolation
+        else:
+            # Nearest doesn't need use u_kernel and shape, so INFO is generated
+            self.shared_program['u_kernel'] = self._kerneltex
+            self._data_lookup_fn['shape'] = self._data.shape[:2][::-1]
+            texture_interpolation = 'nearest'
+
+        if self._texture_interpolation != texture_interpolation:
+                self._texture_interpolation = texture_interpolation
+        self._texture.interpolation = self._texture_interpolation
+        self._data_lookup_fn['texture'] = self._texture
+
+        self._need_interpolation_update = False
 
     def _build_vertex_data(self):
         """Rebuild the vertex buffers used for rendering the image when using
@@ -308,10 +310,10 @@ class ImageVisual(Visual):
         tex_coords = quads.reshape(grid[1]*grid[0]*6, 3)
         tex_coords = np.ascontiguousarray(tex_coords[:, :2])
         vertices = tex_coords * self.size
-        
+
         self._subdiv_position.set_data(vertices.astype('float32'))
         self._subdiv_texcoord.set_data(tex_coords.astype('float32'))
-        
+
     def _update_method(self, view):
         """Decide which method to use for *view* and configure it accordingly.
         """
@@ -322,7 +324,7 @@ class ImageVisual(Visual):
             else:
                 method = 'impostor'
         view._method_used = method
-        
+
         if method == 'subdivide':
             view.view_program['method'] = 0
             view.view_program['a_position'] = self._subdiv_position
@@ -333,7 +335,7 @@ class ImageVisual(Visual):
             view.view_program['a_texcoord'] = self._impostor_coords
         else:
             raise ValueError("Unknown image draw method '%s'" % method)
-        
+
         self.shared_program['image_size'] = self.size
         view._need_method_update = False
         self._prepare_transforms(view)
@@ -391,8 +393,8 @@ class ImageVisual(Visual):
         if self._data is None:
             return False
 
-        if self._need_ipol_update:
-            self._update_ipol()
+        if self._need_interpolation_update:
+            self._build_interpolation()
 
         if self._need_texture_upload:
             self._build_texture()
@@ -402,6 +404,6 @@ class ImageVisual(Visual):
 
         if self._need_vertex_update:
             self._build_vertex_data()
-            
+
         if view._need_method_update:
             self._update_method(view)
