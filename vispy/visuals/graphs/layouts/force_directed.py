@@ -111,34 +111,16 @@ class fruchterman_reingold(object):
         dt = t / float(self.iterations+1)
         delta = np.zeros(
             (pos.shape[0], pos.shape[0], pos.shape[1]),
-            dtype=adjacency_mat.dtype
+            dtype='f32'
         )
 
         # The inscrutable (but fast) version
         # This is still O(V^2)
         # Could use multilevel methods to speed this up significantly
         for iteration in range(self.iterations):
-            # Matrix of difference between points
-            delta[:, :, :] = pos[:, np.newaxis, :] - pos[:, :]
-
-            # Distance between points
-            distance = np.sqrt((delta*delta).sum(axis=-1))
-            # Enforce minimum distance of 0.01
-            distance = np.where(distance < 0.01, 0.01, distance)
-            # Displacement "force"
-            displacement = (
-                delta * (
-                    (self.optimal * self.optimal) / (distance*distance) -
-                    (adjacency_mat * distance) / self.optimal
-                )[:, :, np.newaxis]
-            ).sum(axis=1)
-
-            # update positions
-            length = np.sqrt((displacement**2).sum(axis=1))
-            length = np.where(length < 0.01, 0.1, length)
-            delta_pos = displacement * t / length[:, np.newaxis]
+            delta_pos = self._calculate_delta_pos(adjacency_mat, pos, delta, t)
             pos += delta_pos
-            pos = rescale_layout(pos)
+            rescale_layout(pos)
 
             # cool temperature
             t -= dt
@@ -156,7 +138,7 @@ class fruchterman_reingold(object):
 
         # Change to list of list format
         # Also construct the matrix in COO format for easy edge construction
-        adjacency_mat = adjacency_mat.tolil()
+        adjacency_mat = adjacency_mat.tocsr()
         adjacency_coo = adjacency_mat.tocoo()
 
         if self.pos is None:
@@ -180,34 +162,15 @@ class fruchterman_reingold(object):
         # Linearly step down by dt on each iteration so last iteration is
         # size dt.
         dt = t / float(self.iterations+1)
+        delta = np.zeros(
+            (pos.shape[0], pos.shape[0], pos.shape[1]),
+            dtype='f32'
+        )
 
-        displacement = np.zeros((self.dim, self.num_nodes))
         for iteration in range(self.iterations):
-            displacement *= 0
-            # Loop over rows
-            for i in range(adjacency_mat.shape[0]):
-                # difference between this row's node position and all others
-                delta = (pos[i]-pos).T
-                # distance between points
-                distance = np.sqrt((delta**2).sum(axis=0))
-                # enforce minimum distance of 0.01
-                distance = np.where(distance < 0.01, 0.01, distance)
-                # the adjacency matrix row
-                row = adjacency_mat.getrowview(i).toarray()
-
-                # displacement "force"
-                displacement[:, i] += (
-                    delta * (
-                        self.optimal *
-                        self.optimal/distance**2 -
-                        row*distance/self.optimal
-                    )
-                ).sum(axis=1)
-
-            # Update positions
-            length = np.sqrt((displacement**2).sum(axis=0))
-            length = np.where(length < 0.01, 0.1, length)
-            pos += (displacement*t/length).T
+            delta_pos = self._calculate_delta_pos(adjacency_mat.toarray(), pos,
+                                                  delta, t)
+            pos += delta_pos
             rescale_layout(pos)
 
             # Cool temperature
@@ -218,4 +181,25 @@ class fruchterman_reingold(object):
                                                             pos, directed)
 
             yield pos, line_vertices, arrows
+
+    def _calculate_delta_pos(self, adjacency_mat, pos, delta, t):
+        delta[:, :, :] = pos[:, np.newaxis, :] - pos[:, :]
+
+        # Distance between points
+        distance = np.sqrt((delta*delta).sum(axis=-1))
+        # Enforce minimum distance of 0.01
+        distance = np.where(distance < 0.01, 0.01, distance)
+        # Displacement "force"
+        displacement = (
+            delta * (
+                (self.optimal * self.optimal) / (distance*distance) -
+                (adjacency_mat * distance) / self.optimal
+            )[:, :, np.newaxis]
+        ).sum(axis=1)
+
+        length = np.sqrt((displacement**2).sum(axis=1))
+        length = np.where(length < 0.01, 0.1, length)
+        delta_pos = displacement * t / length[:, np.newaxis]
+
+        return delta_pos
 
