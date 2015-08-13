@@ -18,8 +18,12 @@ def circular(adjacency_mat, directed=False):
 
     Parameters
     ----------
-    adjacency_mat : matrix
+    adjacency_mat : matrix or sparse
         The graph adjacency matrix
+    directed : bool
+        Whether the graph is directed. If this is True, is will also
+        generate the vertices for arrows, which can be passed to an
+        ArrowVisual.
 
     Yields
     ------
@@ -27,9 +31,6 @@ def circular(adjacency_mat, directed=False):
         Yields the node and line vertices in a tuple. This layout only yields a
         single time, and has no builtin animation
     """
-
-    if adjacency_mat.shape[0] != adjacency_mat.shape[1]:
-        raise ValueError("Adjacency matrix should be square.")
 
     num_nodes = adjacency_mat.shape[0]
 
@@ -40,6 +41,6 @@ def circular(adjacency_mat, directed=False):
     node_coords = (0.5 * np.array([np.cos(t), np.sin(t)]) + 0.5).T
 
     line_vertices, arrows = _straight_line_vertices(adjacency_mat,
-                                                   node_coords, directed)
+                                                    node_coords, directed)
 
     yield node_coords, line_vertices, arrows
