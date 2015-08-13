@@ -202,4 +202,3 @@ class fruchterman_reingold(object):
         delta_pos = displacement * t / length[:, np.newaxis]
 
         return delta_pos
-
