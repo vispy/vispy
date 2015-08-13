@@ -5,7 +5,6 @@
 from __future__ import division
 
 import numpy as np
-from vispy.visuals import _BorderVisual
 
 from ..visuals import Compound
 from ...visuals.mesh import MeshVisual
@@ -28,7 +27,7 @@ class Widget(Compound):
     pos : (x, y)
         A 2-element tuple to specify the top left corner of the widget.
     size : (w, h)
-        A 2-element tuple to specify the size of the widget.
+        A 2-element tuple to spicify the size of the widget.
     border_color : color
         The color of the border.
     border_width : float
@@ -45,15 +44,9 @@ class Widget(Compound):
     def __init__(self, pos=(0, 0), size=(10, 10), border_color=None,
                  border_width=1, bgcolor=None, padding=0, margin=0, **kwargs):
         # For drawing border.
-        self._border = _BorderVisual(pos=pos,
-                                     halfdim=(size[0] * 0.5, size[1] * 0.5),
-                                     border_width=border_width,
-                                     border_color=border_color)
-
-        # A mesh is used to fill in the background color
-        self._bgcolor = Color(bgcolor)
-        self._face_colors = None
-        self._mesh = MeshVisual(color=bgcolor, mode='triangles')
+        # A mesh is required because GL lines cannot be drawn with predictable
+        # shape across all platforms.
+        self._mesh = MeshVisual(color=border_color, mode='triangles')
         self._mesh.set_gl_state('translucent', depth_test=False,
                                 cull_face=False)
         self._picking_mesh = MeshVisual(mode='triangle_fan')
@@ -75,10 +68,11 @@ class Widget(Compound):
         self._stretch = (None, None)
 
         self._widgets = []
+        self._border_color = Color(border_color)
+        self._bgcolor = Color(bgcolor)
+        self._face_colors = None
 
-        Compound.__init__(self, [self._mesh,
-                                 self._picking_mesh,
-                                 self._border], **kwargs)
+        Compound.__init__(self, [self._mesh, self._picking_mesh], **kwargs)
 
         self.transform = STTransform()
         self.events.add(resize=Event)
@@ -139,9 +133,7 @@ class Widget(Compound):
         Generally widgets should avoid drawing or placing sub-widgets outside
         this rectangle.
         """
-        m = self.margin + self.padding
-        if not self._border.border_color.is_blank:
-            m += 1
+        m = self.margin + self._border_width + self.padding
         return Rect((m, m), (self.size[0]-2*m, self.size[1]-2*m))
 
     @property
@@ -157,21 +149,6 @@ class Widget(Compound):
 
     @stretch.setter
     def stretch(self, s):
-        self._stretch = float(s[0]), float(s[1])
-        self._update_layout()
-
-    @property
-    def fixed_size(self):
-        """Fixed size (w, h) of the widget.
-
-        Specifying a fixed size for either axis forces the widget to have a
-        specific size in a layout. Setting either axis to None allows the
-        widget to be resized by the layout.
-        """
-        return self._fixed_size
-
-    @fixed_size.setter
-    def fixed_size(self, s):
         self._stretch = float(s[0]), float(s[1])
         self._update_layout()
 
@@ -196,22 +173,11 @@ class Widget(Compound):
     def border_color(self):
         """ The color of the border.
         """
-        return self._border.border_color
+        return self._border_color
 
     @border_color.setter
     def border_color(self, b):
-        self._border.border_color = Color(b)
-        self._update_colors()
-        self._update_line()
-        self.update()
-
-    @property
-    def border_width(self):
-        return self._border.border_width
-
-    @border_width.setter
-    def border_width(self, border_width):
-        self._border.border_width = border_width
+        self._border_color = Color(b)
         self._update_colors()
         self._update_line()
         self.update()
@@ -288,19 +254,13 @@ class Widget(Compound):
             [5, 3, 1],
             [1, 5, 7],
         ], dtype=np.int32)
-        start = 8 if self._border.border_color.is_blank else 0
+        start = 8 if self._border_color.is_blank else 0
         stop = 8 if self._bgcolor.is_blank else 10
         face_colors = None
         if self._face_colors is not None:
             face_colors = self._face_colors[start:stop]
         self._mesh.set_data(vertices=pos, faces=faces[start:stop],
                             face_colors=face_colors)
-
-        # Draw the border at the center, leaving gaps for the borders
-        # and the margin in the dimensions
-        halfw, halfh = (self.size[0] * 0.5, self.size[1] * 0.5)
-        self._border.pos = (halfw, halfh)
-        self._border.halfdim = (halfw - w - m, halfh - w - m)
 
         # picking mesh covers the entire area
         self._picking_mesh.set_data(vertices=pos[::2])
@@ -309,7 +269,6 @@ class Widget(Compound):
         self._face_colors = np.concatenate(
             (np.tile(self.border_color.rgba, (8, 1)),
              np.tile(self.bgcolor.rgba, (2, 1)))).astype(np.float32)
-        self._border.border_color = self.border_color
         self._update_visibility()
 
     @property
@@ -326,7 +285,6 @@ class Widget(Compound):
         picking = self.picking
         self._picking_mesh.visible = picking and self.interactive
         self._mesh.visible = not picking and not blank
-        self._border.visible = self._mesh.visible
 
     def _update_child_widgets(self):
         # Set the position and size of child boxes (only those added

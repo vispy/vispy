@@ -23,7 +23,6 @@ grid.add_widget(cbar_widget)
 cbar_widget.pos = (300, 100)
 cbar_widget.border_color = "#212121"
 grid.bgcolor = "#ffffff"
-grid.border_width = 1
 
 if __name__ == '__main__' and sys.flags.interactive == 0:
     app.run()
