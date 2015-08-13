@@ -119,19 +119,18 @@ class fruchterman_reingold(object):
         # Could use multilevel methods to speed this up significantly
         for iteration in range(self.iterations):
             # Matrix of difference between points
-            for i in range(pos.shape[1]):
-                delta[:, :, i] = pos[:, i, None] - pos[:, i]
+            delta[:, :, :] = pos[:, np.newaxis, :] - pos[:, :]
 
             # Distance between points
-            distance = np.sqrt((delta**2).sum(axis=-1))
+            distance = np.sqrt((delta*delta).sum(axis=-1))
             # Enforce minimum distance of 0.01
             distance = np.where(distance < 0.01, 0.01, distance)
             # Displacement "force"
-            displacement = np.transpose(
-                np.transpose(delta) * (
-                    self.optimal * self.optimal/distance**2 -
-                    adjacency_mat*distance/self.optimal
-                )
+            displacement = (
+                delta * (
+                    (self.optimal * self.optimal) / (distance*distance) -
+                    (adjacency_mat * distance) / self.optimal
+                )[:, :, np.newaxis]
             ).sum(axis=1)
 
             # update positions
