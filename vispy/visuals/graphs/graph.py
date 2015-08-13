@@ -103,7 +103,7 @@ class GraphVisual(CompoundVisual):
     @layout.setter
     def layout(self, value):
         if type(value) == str:
-            self._layout = layouts.get(value)
+            self._layout = layouts.get_layout(value)
         else:
             assert callable(value)
             self._layout = value
