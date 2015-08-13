@@ -21,7 +21,7 @@ except ImportError:
 from ..util import _straight_line_vertices, rescale_layout
 
 
-class fruchterman_reingold:
+class fruchterman_reingold(object):
     """
     Fruchterman-Reingold implementation adapted from NetworkX.
 
