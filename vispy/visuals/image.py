@@ -267,7 +267,6 @@ class ImageVisual(Visual):
         the shader
         """
         interpolation = self._interpolation
-        print(interpolation)
 
         self._data_lookup_fn = self._interpolation_fun[interpolation]
         self.shared_program.frag['get_data'] = self._data_lookup_fn
