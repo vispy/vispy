@@ -10,6 +10,7 @@ GraphVisual.
 
 import sys
 
+import numpy as np
 import networkx as nx
 
 from vispy import app, gloo, visuals
@@ -22,19 +23,21 @@ class Canvas(app.Canvas):
         app.Canvas.__init__(self, title="Simple NetworkX Graph",
                             keys="interactive", size=(600, 600))
 
-        self.graph = nx.fast_gnp_random_graph(100, 0.02)
+        self.graph = nx.fast_gnp_random_graph(1000, 0.0006, directed=True)
 
         self.visual = visuals.GraphVisual(
+            # np.asarray(nx.to_numpy_matrix(self.graph)),
             nx.adjacency_matrix(self.graph),
-            layout=layouts.get('force_directed'),
+            layout=layouts.get_layout('force_directed'),
             line_color=(1.0, 1.0, 1.0, 1.0),
             arrow_type="stealth",
-            arrow_size=7.5,
+            arrow_size=15,
             node_symbol="disc",
             node_size=10,
             face_color="red",
             border_width=0.0,
-            animate=True
+            animate=True,
+            directed=True
         )
 
         self.visual.events.update.connect(lambda evt: self.update())
