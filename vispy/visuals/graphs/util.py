@@ -8,8 +8,6 @@ Graph utilities
 A module containing several graph utility functions.
 """
 
-import itertools
-
 import numpy as np
 
 try:
