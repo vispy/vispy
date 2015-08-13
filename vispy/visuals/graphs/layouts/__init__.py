@@ -15,7 +15,7 @@ _layout_map = {
 AVAILABLE_LAYOUTS = _layout_map.keys()
 
 
-def get(name, *args, **kwargs):
+def get_layout(name, *args, **kwargs):
     """
     Retrieve a graph layout
 
@@ -25,7 +25,7 @@ def get(name, *args, **kwargs):
     Parameters
     ----------
     name : string
-        The name of the layout. The variable :data`AVAILBLE_LAYOUTS`
+        The name of the layout. The variable `AVAILABLE_LAYOUTS`
         contains all available layouts.
     *args
         Positional arguments which are passed to the layout.

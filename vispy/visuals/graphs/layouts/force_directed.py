@@ -74,7 +74,7 @@ class fruchterman_reingold:
 
         self.num_nodes = adjacency_mat.shape[0]
 
-        if issparse(adjacency_mat) and self.num_nodes < 10000:
+        if issparse(adjacency_mat):
             # Use the sparse solver
             solver = self._sparse_fruchterman_reingold
         else:
@@ -98,7 +98,7 @@ class fruchterman_reingold:
 
         # Yield initial positions
         line_vertices, arrows = _straight_line_vertices(adjacency_mat, pos,
-                                                       directed)
+                                                        directed)
         yield pos, line_vertices, arrows
 
         # The initial "temperature"  is about .1 of domain area (=1x1)
@@ -146,7 +146,7 @@ class fruchterman_reingold:
 
             # Calculate edge vertices and arrows
             line_vertices, arrows = _straight_line_vertices(adjacency_mat,
-                                                           pos, directed)
+                                                            pos, directed)
 
             yield pos, line_vertices, arrows
 
@@ -171,7 +171,7 @@ class fruchterman_reingold:
 
         # Yield initial positions
         line_vertices, arrows = _straight_line_vertices(adjacency_coo, pos,
-                                                       directed)
+                                                        directed)
         yield pos, line_vertices, arrows
 
         # The initial "temperature"  is about .1 of domain area (=1x1)
@@ -216,7 +216,7 @@ class fruchterman_reingold:
 
             # Calculate line vertices
             line_vertices, arrows = _straight_line_vertices(adjacency_coo,
-                                                           pos, directed)
+                                                            pos, directed)
 
             yield pos, line_vertices, arrows
 
