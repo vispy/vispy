@@ -70,7 +70,7 @@ _c2l = 'float cmap(vec4 color) { return (color.r + color.g + color.b) / 3.; }'
 
 _interpolation_template = """
     #include "misc/spatial-filters.frag"
-    vec4 texture_lookup(vec2 texcoord) {
+    vec4 texture_lookup_filtered(vec2 texcoord) {
         if(texcoord.x < 0.0 || texcoord.x > 1.0 ||
         texcoord.y < 0.0 || texcoord.y > 1.0) {
             discard;
@@ -118,6 +118,17 @@ class ImageVisual(Visual):
     clim : str | tuple
         Limits to use for the colormap. Can be 'auto' to auto-set bounds to
         the min and max of the data.
+    interpolation : str
+        Selects method of image interpolation. Makes use of the two Texture2D
+        interpolation methods and the available interpolation methods defined
+        in vispy/gloo/glsl/misc/spatial_filters.frag
+
+            * 'Nearest': Default, uses 'nearest' with Texture2D interpolation.
+            * 'Bilinear': uses 'linear' with Texture2D interpolation.
+            * 'Hanning', 'Hamming', 'Hermite', 'Kaiser', 'Quadric', 'Bicubic',
+                'CatRom', 'Mitchell', 'Spline16', 'Spline36', 'Gaussian',
+                'Bessel', 'Sinc', 'Lanczos', 'Blackman'
+
     **kwargs : dict
         Keyword arguments to pass to `Visual`.
 
@@ -128,15 +139,15 @@ class ImageVisual(Visual):
     """
     def __init__(self, data=None, method='auto', grid=(1, 1),
                  cmap='cubehelix', clim='auto',
-                 interpolation='nearest', **kwargs):
+                 interpolation='Nearest', **kwargs):
         self._data = None
 
         # check texture interpolation
         self._interpolation = interpolation
-        if self._interpolation in ['nearest', 'linear']:
-            self._texture_interpolation = self._interpolation
+        if self._interpolation == 'Bilinear':
+            texture_interpolation = 'linear'
         else:
-            self._texture_interpolation = 'nearest'
+            texture_interpolation = 'nearest'
 
         self._method = method
         self._grid = grid
@@ -145,20 +156,27 @@ class ImageVisual(Visual):
         self._need_colortransform_update = True
         self._need_interpolation_update = True
         self._texture = Texture2D(np.zeros((1, 1, 4)),
-                                  interpolation=self._texture_interpolation)
+                                  interpolation=texture_interpolation)
         self._subdiv_position = VertexBuffer()
         self._subdiv_texcoord = VertexBuffer()
 
         # load interpolation kernel
-        self._kernel, self._names = load_spatial_filters()
+        self._kernel, self._interpolation_names = load_spatial_filters()
+
         # create interpolation shader functions for available
         # interpolations
-        fun = [Function(_interpolation_template % n) for n in self._names]
-        self._interpolation_fun = dict(zip(self._names, fun))
-        self._names = ('nearest', 'linear',) + self._names
-        self._interpolation_fun['nearest'] = Function(_texture_lookup)
-        self._interpolation_fun['linear'] = Function(_texture_lookup)
-        # create interpolation kernel Texture2D
+        fun = [Function(_interpolation_template % n)
+               for n in self._interpolation_names]
+        self._interpolation_fun = dict(zip(self._interpolation_names, fun))
+        self.interpolation_filters = self._interpolation_names
+
+        # overwrite "Nearest" and "Bilinear" spatial-filters
+        # with  "hardware" interpolation _data_lookup_fn
+        self._interpolation_fun['Nearest'] = Function(_texture_lookup)
+        self._interpolation_fun['Bilinear'] = Function(_texture_lookup)
+
+        # create interpolation kernel Texture2D, using 'r16f'
+        # as discussed in issue #1017
         self._kerneltex = Texture2D(self._kernel, interpolation='nearest',
                                     internalformat='r16f')
 
@@ -174,7 +192,7 @@ class ImageVisual(Visual):
         self.set_gl_state('translucent', cull_face=False)
         self._draw_mode = 'triangles'
 
-        # define lookup_function as None, will be setup in
+        # define _data_lookup_fn as None, will be setup in
         # self._build_interpolation()
         self._data_lookup_fn = None
 
@@ -262,26 +280,32 @@ class ImageVisual(Visual):
             self._need_interpolation_update = True
             self.update()
 
+    @property
+    def interpolation_functions(self):
+        return self._interpolation_names
+
     def _build_interpolation(self):
         """Rebuild the _data_lookup_fn using different interpolations within
         the shader
         """
         interpolation = self._interpolation
-
         self._data_lookup_fn = self._interpolation_fun[interpolation]
         self.shared_program.frag['get_data'] = self._data_lookup_fn
 
-        if interpolation in ['nearest', 'linear']:
-            texture_interpolation = interpolation
+        # only 'Bilinear' uses 'linear' texture interpolation
+        if interpolation == 'Bilinear':
+            texture_interpolation = 'linear'
         else:
-            # Nearest doesn't need use u_kernel and shape, so INFO is generated
-            self.shared_program['u_kernel'] = self._kerneltex
-            self._data_lookup_fn['shape'] = self._data.shape[:2][::-1]
+            # 'Nearest' (and also 'Bilinear') doesn't use spatial_filters.frag
+            # so u_kernel and shape setting is skipped
             texture_interpolation = 'nearest'
+            if interpolation != 'Nearest':
+                self.shared_program['u_kernel'] = self._kerneltex
+                self._data_lookup_fn['shape'] = self._data.shape[:2][::-1]
 
-        if self._texture_interpolation != texture_interpolation:
-                self._texture_interpolation = texture_interpolation
-        self._texture.interpolation = self._texture_interpolation
+        if self._texture.interpolation != texture_interpolation:
+            self._texture.interpolation = texture_interpolation
+
         self._data_lookup_fn['texture'] = self._texture
 
         self._need_interpolation_update = False

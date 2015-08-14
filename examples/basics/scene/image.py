@@ -12,6 +12,29 @@ from vispy import scene
 from vispy import app
 import numpy as np
 
+
+def get_image():
+    """Load an image from the demo-data repository if possible. Otherwise,
+    just return a randomly generated image.
+    """
+    from vispy.io import load_data_file, read_png
+
+    try:
+        return read_png(load_data_file('mona_lisa/mona_lisa_sm.png'))
+    except Exception as exc:
+        # fall back to random image
+        print("Error loading demo image data: %r" % exc)
+
+    # generate random image
+    image = np.random.normal(size=(100, 100, 3))
+    image[20:80, 20:80] += 3.
+    image[50] += 3.
+    image[:, 50] += 3.
+    image = ((image - image.min()) *
+             (253. / (image.max() - image.min()))).astype(np.ubyte)
+
+    return image
+
 canvas = scene.SceneCanvas(keys='interactive')
 canvas.size = 800, 600
 canvas.show()
@@ -20,25 +43,24 @@ canvas.show()
 view = canvas.central_widget.add_view()
 
 # Create the image
-# img_data = np.random.normal(size=(100, 100, 3), loc=128,
-#                            scale=50).astype(np.ubyte)
-img_data = np.zeros(25).reshape((5, 5)).astype(np.float32)
-img_data[1:4, 1::2] = 0.5
-img_data[1::2, 2] = 0.5
-img_data[2, 2] = 1.0
-interpolation = 'nearest'
-act = 0
-image = scene.visuals.Image(img_data, interpolation=interpolation,
-                            parent=view.scene)
+interpolation = 'Nearest'
+image = scene.visuals.Image(get_image(), interpolation=interpolation,
+                            parent=view.scene, method='subdivide')
+
 canvas.title = 'Spatial Filtering using %s Filter' % interpolation
 
 # Set 2D camera (the camera will scale to the contents in the scene)
 view.camera = scene.PanZoomCamera(aspect=1)
+# flip y-axis to have correct aligment
+view.camera.flip = (0, 1, 0)
 view.camera.set_range()
 
-# hack for now, should rename "names" to something useful
-# and make public
-names = image._names
+# get interpolation functions from Image
+names = image.interpolation_functions
+names = list(names)
+names.sort()
+print(names)
+act = 17
 
 
 # Implement key presses
@@ -55,6 +77,7 @@ def on_key_press(event):
     image.interpolation = interpolation
     canvas.title = 'Spatial Filtering using %s Filter' % interpolation
     canvas.update()
+
 
 if __name__ == '__main__' and sys.flags.interactive == 0:
     app.run()
