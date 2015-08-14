@@ -142,8 +142,35 @@ class ImageVisual(Visual):
                  interpolation='nearest', **kwargs):
         self._data = None
 
-        # check texture interpolation
+        # load interpolation kernel
+        self._kernel, self._interpolation_names = load_spatial_filters()
+        # create interpolation shader functions for available
+        # interpolations
+        fun = [Function(_interpolation_template % n)
+               for n in self._interpolation_names]
+        self._interpolation_names = [n.lower()
+                                     for n in self._interpolation_names]
+
+        self._interpolation_fun = dict(zip(self._interpolation_names, fun))
+        self.interpolation_filters = self._interpolation_names
+
+        # overwrite "nearest" and "bilinear" spatial-filters
+        # with  "hardware" interpolation _data_lookup_fn
+        self._interpolation_fun['nearest'] = Function(_texture_lookup)
+        self._interpolation_fun['bilinear'] = Function(_texture_lookup)
+
+        # create interpolation kernel Texture2D, using 'r16f'
+        # as discussed in issue #1017
+        self._kerneltex = Texture2D(self._kernel, interpolation='nearest',
+                                    internalformat='r16f')
+
+        if interpolation not in self._interpolation_names:
+            raise ValueError("interpolation must be one of %s" %
+                             ', '.join(self._interpolation_names))
+
         self._interpolation = interpolation
+
+        # check texture interpolation
         if self._interpolation == 'bilinear':
             texture_interpolation = 'linear'
         else:
@@ -159,26 +186,6 @@ class ImageVisual(Visual):
                                   interpolation=texture_interpolation)
         self._subdiv_position = VertexBuffer()
         self._subdiv_texcoord = VertexBuffer()
-
-        # load interpolation kernel
-        self._kernel, self._interpolation_names = load_spatial_filters()
-        # create interpolation shader functions for available
-        # interpolations
-        fun = [Function(_interpolation_template % n)
-               for n in self._interpolation_names]
-        self._interpolation_names = [n.lower() for n in self._interpolation_names]
-        self._interpolation_fun = dict(zip(self._interpolation_names, fun))
-        self.interpolation_filters = self._interpolation_names
-
-        # overwrite "nearest" and "bilinear" spatial-filters
-        # with  "hardware" interpolation _data_lookup_fn
-        self._interpolation_fun['nearest'] = Function(_texture_lookup)
-        self._interpolation_fun['bilinear'] = Function(_texture_lookup)
-
-        # create interpolation kernel Texture2D, using 'r16f'
-        # as discussed in issue #1017
-        self._kerneltex = Texture2D(self._kernel, interpolation='nearest',
-                                    internalformat='r16f')
 
         # impostor quad covers entire viewport
         vertices = np.array([[-1, -1], [1, -1], [1, 1],
@@ -275,6 +282,8 @@ class ImageVisual(Visual):
 
     @interpolation.setter
     def interpolation(self, i):
+        if i not in self._interpolation_names:
+            raise ValueError("interpolation must be one of %s" % ', '.join(self._interpolation_names))
         if self._interpolation != i:
             self._interpolation = i
             self._need_interpolation_update = True
