@@ -134,6 +134,7 @@ install:
       elif [ "${DEPS}" == "full" ]; then
         conda install --yes --quiet pyqt pyopengl;
         pip install -q pyglet;
+        pip install -q cassowary;
         if [ "${PYTHON}" == "2.6" ]; then
           conda install --yes --quiet wxpython numpy$NUMPY > ${REDIRECT_TO};
         else
