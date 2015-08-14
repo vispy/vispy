@@ -10,30 +10,7 @@ Simple use of SceneCanvas to display an Image.
 import sys
 from vispy import scene
 from vispy import app
-import numpy as np
-
-
-def get_image():
-    """Load an image from the demo-data repository if possible. Otherwise,
-    just return a randomly generated image.
-    """
-    from vispy.io import load_data_file, read_png
-
-    try:
-        return read_png(load_data_file('mona_lisa/mona_lisa_sm.png'))
-    except Exception as exc:
-        # fall back to random image
-        print("Error loading demo image data: %r" % exc)
-
-    # generate random image
-    image = np.random.normal(size=(100, 100, 3))
-    image[20:80, 20:80] += 3.
-    image[50] += 3.
-    image[:, 50] += 3.
-    image = ((image - image.min()) *
-             (253. / (image.max() - image.min()))).astype(np.ubyte)
-
-    return image
+from vispy.io import load_data_file, read_png
 
 canvas = scene.SceneCanvas(keys='interactive')
 canvas.size = 800, 600
@@ -43,8 +20,10 @@ canvas.show()
 view = canvas.central_widget.add_view()
 
 # Create the image
+img_data = read_png(load_data_file('mona_lisa/mona_lisa_sm.png'))
 interpolation = 'Nearest'
-image = scene.visuals.Image(get_image(), interpolation=interpolation,
+
+image = scene.visuals.Image(img_data, interpolation=interpolation,
                             parent=view.scene, method='subdivide')
 
 canvas.title = 'Spatial Filtering using %s Filter' % interpolation
@@ -59,7 +38,6 @@ view.camera.set_range()
 names = image.interpolation_functions
 names = list(names)
 names.sort()
-print(names)
 act = 17
 
 
@@ -72,11 +50,11 @@ def on_key_press(event):
             step = 1
         else:
             step = -1
-    act = (act + step) % len(names)
-    interpolation = names[act]
-    image.interpolation = interpolation
-    canvas.title = 'Spatial Filtering using %s Filter' % interpolation
-    canvas.update()
+        act = (act + step) % len(names)
+        interpolation = names[act]
+        image.interpolation = interpolation
+        canvas.title = 'Spatial Filtering using %s Filter' % interpolation
+        canvas.update()
 
 
 if __name__ == '__main__' and sys.flags.interactive == 0:
