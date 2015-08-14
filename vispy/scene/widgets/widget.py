@@ -64,9 +64,11 @@ class Widget(Compound):
         
         # layout interaction
         # todo: use Cassowary; see #277 
-        self._width_limits = (None, None)
-        self._height_limits = (None, None)
+        self._width_limits = [None, None]
+        self._height_limits = [None, None]
         self._stretch = (None, None)
+        self.var_w = self.var_h = None  # HACK
+        self.var_x = self.var_y = None  # HACK
 
         self._widgets = []
         self._border_color = Color(border_color)
@@ -74,7 +76,7 @@ class Widget(Compound):
         self._face_colors = None
 
         Compound.__init__(self, [self._mesh, self._picking_mesh], **kwargs)
- 
+
         self.transform = STTransform()
         self.events.add(resize=Event)
         self.pos = pos
@@ -116,6 +118,15 @@ class Widget(Compound):
         self.events.resize()
 
     @property
+    def width(self):
+        """The width of this widget"""
+        return self._size[0]
+
+    @width.setter
+    def width(self, width):
+        self.size = (width, self._size[1])
+
+    @property
     def min_width(self):
         return self._width_limits[0]
 
@@ -129,7 +140,7 @@ class Widget(Compound):
 
     @property
     def max_width(self):
-        return self._width_limits[0]
+        return self._width_limits[1]
 
     @max_width.setter
     def max_width(self, max_width):
@@ -138,6 +149,39 @@ class Widget(Compound):
             return
 
         self._width_limits[1] = float(max_width)
+
+    @property
+    def height(self):
+        """The height of this widget"""
+        return self._size[1]
+
+    @height.setter
+    def height(self, height):
+        self.size = (self._size[0], height)
+
+    @property
+    def min_height(self):
+        return self._height_limits[0]
+
+    @min_height.setter
+    def min_height(self, min_height):
+        if min_height is None:
+            self._height_limits[0] = None
+            return
+
+        self._height_limits[0] = float(min_height)
+
+    @property
+    def max_height(self):
+        return self._height_limits[1]
+
+    @max_height.setter
+    def max_height(self, max_height):
+        if max_height is None:
+            self._height_limits[1] = None
+            return
+
+        self._height_limits[1] = float(max_height)
 
     @property
     def rect(self):

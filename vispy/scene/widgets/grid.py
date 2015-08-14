@@ -10,7 +10,8 @@ import numpy as np
 from .widget import Widget
 from ...util.np_backport import nanmean
 
-from vispy.ext.cassowary import cassowary
+from vispy.ext.cassowary import (SimplexSolver, expression,
+                                 Variable, STRONG, MEDIUM, WEAK)
 
 
 class Grid(Widget):
@@ -193,73 +194,131 @@ class Grid(Widget):
             return
         print("---")
 
-        grid_layout = np.zeros((n_rows, n_cols), dtype=Widget)
-        for key, (row, col, rspan, cspan, ch) in self._grid_widgets.items():
-            grid_layout[row:row+rspan, col:col+cspan] = ch
+        grid_layout = np.array([[None for _ in range(0, n_cols)]
+                                for _ in range(0, n_rows)])
+
+        for key, value in self._grid_widgets.items():
+            (row, col, rspan, cspan, widget) = value
+            grid_layout[row:row+rspan, col:col+cspan] = widget
 
         print("grid layout:\n%s" % grid_layout)
 
-        solver = cassowary.SimplexSolver()
-        width_vars_grid = []
-        prev_widget = None
+        rect = self.rect.padded(self.padding + self.margin)
+        solver = SimplexSolver()
 
+        # x, width constraints ------
+        
         for nrow, row in enumerate(grid_layout):
-            width_row = []
+            stretch_lhs = None
+            prev_widget = None
+            total_w_expr = expression.Expression()
 
-            stretch_equality_term = None
+            if len(row) == 0:
+                continue
 
             for ncol, widget in enumerate(row):
-                # skip if its a widget occupying multiple rows
-                if prev_widget == widget or not isinstance(widget, Widget):
+                if prev_widget == widget or widget is None:
                     continue
-                prev_widget = widget
-                width_var = cassowary.Variable("width (%s, %s)" % (nrow, ncol))
-                width_var.widget = widget
 
-                width_row.append(width_var)
+                var_w = Variable("width(%s, %s)" % (nrow, ncol))
+                widget.var_w = var_w
 
-                print("widget: %s" % widget)
+                widget.var_x = Variable("x(%s, %s)" % (nrow, ncol))
+
+                # add the width the solver
+                total_w_expr.add_expression(var_w)
+
                 if widget.min_width is not None:
-                    solver.add_constraint(width_var >= widget.min_width)
+                    solver.add_constraint(var_w >= widget.min_width,
+                                          strength=STRONG)
 
                 if widget.max_width is not None:
-                    solver.add_constraint(width_var <= widget.min_width)
+                    solver.add_constraint(var_w <= widget.max_width,
+                                          strength=STRONG)
 
                 (stretch_w, stretch_h) = widget.stretch
 
-                if stretch_equality_term is None:
-                    stretch_equality_term = width_var / stretch_w
+                if stretch_lhs is None:
+                    stretch_lhs = var_w / stretch_w
                 else:
-                    stretch_constraint = \
-                        stretch_equality_term == width_var / stretch_w
-                    solver.add_constraint(stretch_constraint)
-                    print("stretch constraint:\n%s" % stretch_constraint)
+                    solver.add_constraint(stretch_lhs == var_w / stretch_w,
+                                          strength=MEDIUM)
 
-            width_vars_grid.append(width_row)
+                if prev_widget is not None:
+                    solver.add_constraint(widget.var_x >= prev_widget.var_w + prev_widget.var_x, strength=MEDIUM)
+                else:
+                    widget.var_x.value = 0
+                    solver.add_stay(widget.var_x)
+                prev_widget = widget
 
-        print("width vars:\n\n%s" % np.array(width_vars_grid))
+            # total width = width
+            if len(total_w_expr.terms) > 0:
+                solver.add_constraint(total_w_expr == rect.width)
 
-        rect = self.rect.padded(self.padding + self.margin)
+        # height constraints ---------
+        print("\n\ntranspose: %s" % grid_layout.transpose())
 
-        for row in width_vars_grid:
-            if len(row) == 0:
+        for ncol, col in enumerate(grid_layout.transpose()):
+            print("ncol %s : %s" % (ncol, col))
+            stretch_lhs = None
+            prev_widget = None
+            total_h_expr = expression.Expression()
+            
+            if len(col) == 0:
                 continue
 
-            width_sum_expr = cassowary.expression.Expression()
-            for width_var in row:
-                width_sum_expr.add_expression(width_var)
+            for nrow, widget in enumerate(col):
+                if prev_widget == widget or widget is None:
+                    continue
 
-            print("width sum expr: %s" % (width_sum_expr == rect.width))
-            solver.add_constraint(width_sum_expr == rect.width)
+                var_h = Variable("height %s (%s, %s)" % (widget, nrow, ncol))
+                widget.var_h = var_h  # store to set the height after solving
+
+                widget.var_y = Variable("y %s (%s, %s)" % (widget, nrow, ncol))
+
+                # add the height the solver
+                total_h_expr.add_expression(var_h)
+
+                if widget.min_height is not None:
+                    solver.add_constraint(var_h >= widget.min_height,
+                                          strength=STRONG)
+
+                if widget.max_height is not None:
+                    solver.add_constraint(var_h <= widget.max_height,
+                                          strength=STRONG)
+
+                (stretch_w, stretch_h) = widget.stretch
+
+                if stretch_lhs is None:
+                    stretch_lhs = var_h / stretch_h
+                else:
+                    solver.add_constraint(stretch_lhs == var_h / stretch_h,
+                                          strength=WEAK)
+
+                if prev_widget is not None:
+                    c = widget.var_y >= prev_widget.var_h + prev_widget.var_y
+                    print(c)
+                    solver.add_constraint(c)
+                else:
+                    widget.var_y.value = 0
+                    solver.add_stay(widget.var_y)
+                    # solver.add_constraint(widget.var_y -  prev_widget.var_y == widget.var_h + prev_widget.var_h)
+
+                prev_widget = widget
+
+            # total height = height
+            if len(total_h_expr.terms) > 0:
+                solver.add_constraint(total_h_expr == rect.height)
 
         solver.solve()
-        print("---\nVARS:\n----\n%s" % width_vars_grid)
 
-        for row in width_vars_grid:
-            if len(row) == 0:
-                continue
-            for width_var in row:
-                width_var.widget.size = width_var.value, width_var.widget.size[1]
+        # copy solution
+        for (_, val) in self._grid_widgets.items():
+            (_, _, _, _, widget) = val
+            widget.width = widget.var_w.value
+            widget.height = widget.var_h.value
+            widget.pos = widget.var_x.value, widget.var_y.value
+        return
 
         # -- END OF HACK --
         # 1. Collect information about occupied cells and their contents
