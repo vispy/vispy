@@ -185,12 +185,83 @@ class Grid(Widget):
         return (('<Grid at %s:\n' % hex(id(self))) +
                 str(self.layout_array + 1) + '>')
 
+    # MODIFIED VERSION
     def _update_child_widgets(self):
         # Resize all widgets in this grid to share space.
         n_rows, n_cols = self.grid_size
         if n_rows == 0 or n_cols == 0:
             return
+        print("---")
 
+        grid_layout = np.zeros((n_rows, n_cols), dtype=Widget)
+        for key, (row, col, rspan, cspan, ch) in self._grid_widgets.items():
+            grid_layout[row:row+rspan, col:col+cspan] = ch
+
+        print("grid layout:\n%s" % grid_layout)
+
+        solver = cassowary.SimplexSolver()
+        width_vars_grid = []
+        prev_widget = None
+
+        for nrow, row in enumerate(grid_layout):
+            width_row = []
+
+            stretch_equality_term = None
+
+            for ncol, widget in enumerate(row):
+                # skip if its a widget occupying multiple rows
+                if prev_widget == widget or not isinstance(widget, Widget):
+                    continue
+                prev_widget = widget
+                width_var = cassowary.Variable("width (%s, %s)" % (nrow, ncol))
+                width_var.widget = widget
+
+                width_row.append(width_var)
+
+                print("widget: %s" % widget)
+                if widget.min_width is not None:
+                    solver.add_constraint(width_var >= widget.min_width)
+
+                if widget.max_width is not None:
+                    solver.add_constraint(width_var <= widget.min_width)
+
+                (stretch_w, stretch_h) = widget.stretch
+
+                if stretch_equality_term is None:
+                    stretch_equality_term = width_var / stretch_w
+                else:
+                    stretch_constraint = \
+                        stretch_equality_term == width_var / stretch_w
+                    solver.add_constraint(stretch_constraint)
+                    print("stretch constraint:\n%s" % stretch_constraint)
+
+            width_vars_grid.append(width_row)
+
+        print("width vars:\n\n%s" % np.array(width_vars_grid))
+
+        rect = self.rect.padded(self.padding + self.margin)
+
+        for row in width_vars_grid:
+            if len(row) == 0:
+                continue
+
+            width_sum_expr = cassowary.expression.Expression()
+            for width_var in row:
+                width_sum_expr.add_expression(width_var)
+
+            print("width sum expr: %s" % (width_sum_expr == rect.width))
+            solver.add_constraint(width_sum_expr == rect.width)
+
+        solver.solve()
+        print("---\nVARS:\n----\n%s" % width_vars_grid)
+
+        for row in width_vars_grid:
+            if len(row) == 0:
+                continue
+            for width_var in row:
+                width_var.widget.size = width_var.value, width_var.widget.size[1]
+
+        # -- END OF HACK --
         # 1. Collect information about occupied cells and their contents
         occupied = np.zeros((n_rows, n_cols), dtype=bool)
         stretch = np.zeros((n_rows, n_cols, 2), dtype=float)
@@ -244,4 +315,65 @@ class Grid(Widget):
             # ..and set the size to match.
             w = colend[col+cspan-1]-colstart[col]
             h = rowend[row+rspan-1]-rowstart[row]
-            ch.size = w, h
+            ch.size = ch.size[0], h
+
+    # def _update_child_widgets(self):
+    #     # Resize all widgets in this grid to share space.
+    #     n_rows, n_cols = self.grid_size
+    #     if n_rows == 0 or n_cols == 0:
+    #         return
+
+    #     # 1. Collect information about occupied cells and their contents
+    #     occupied = np.zeros((n_rows, n_cols), dtype=bool)
+    #     stretch = np.zeros((n_rows, n_cols, 2), dtype=float)
+    #     stretch[:] = np.nan
+    #     #minsize = np.zeros((n_rows, n_cols, 2), dtype=float)
+    #     for key, val in self._grid_widgets.items():
+    #         w = val[4]
+    #         row, col, rspan, cspan, ch = self._grid_widgets[key]
+    #         occupied[row:row+rspan, col:col+cspan] = True
+    #         stretch[row:row+rspan, col:col+cspan] = (np.array(w.stretch) /
+    #                                                  [cspan, rspan])
+    #     row_occ = occupied.sum(axis=1) > 0
+    #     col_occ = occupied.sum(axis=0) > 0
+    #     with warnings.catch_warnings(record=True):  # mean of empty slice
+    #         row_stretch = nanmean(stretch[..., 1], axis=1)
+    #         col_stretch = nanmean(stretch[..., 0], axis=0)
+    #     row_stretch[np.isnan(row_stretch)] = 0
+    #     col_stretch[np.isnan(col_stretch)] = 0
+        
+    #     # 2. Decide width of each row/col
+    #     rect = self.rect.padded(self.padding + self.margin)
+    #     n_cols = col_occ.sum()
+    #     colspace = rect.width - (n_cols-1) * self.spacing
+    #     colsizes = col_stretch * colspace / col_stretch.sum()
+    #     colsizes[colsizes == 0] = -self.spacing
+    #     n_rows = row_occ.sum()
+    #     rowspace = rect.height - (n_rows-1) * self.spacing
+    #     rowsizes = row_stretch * rowspace / row_stretch.sum()
+    #     rowsizes[rowsizes == 0] = -self.spacing
+        
+    #     # 3. Decide placement of row/col edges
+    #     colend = np.cumsum(colsizes) + self.spacing * np.arange(len(colsizes))
+    #     colstart = colend - colsizes
+    #     rowend = np.cumsum(rowsizes) + self.spacing * np.arange(len(rowsizes))
+    #     rowstart = rowend - rowsizes
+
+    #     # snap to pixel boundaries to avoid drawing artifacts
+    #     colstart = np.round(colstart) + self.margin
+    #     colend = np.round(colend) + self.margin
+    #     rowstart = np.round(rowstart) + self.margin
+    #     rowend = np.round(rowend) + self.margin
+
+    #     for key in self._grid_widgets.keys():
+    #         row, col, rspan, cspan, ch = self._grid_widgets[key]
+
+    #         # Translate the origin of the node to the corner of the area
+    #         # ch.transform.reset()
+    #         # ch.transform.translate((colstart[col], rowstart[row]))
+    #         ch.pos = colstart[col], rowstart[row]
+
+    #         # ..and set the size to match.
+    #         w = colend[col+cspan-1]-colstart[col]
+    #         h = rowend[row+rspan-1]-rowstart[row]
+    #         ch.size = w, h
