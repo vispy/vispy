@@ -55,16 +55,17 @@ class Widget(Compound):
 
         # reserved space inside border
         self._padding = padding
-
+        
         self._border_width = border_width
 
         # reserved space outside border
         self._margin = margin
         self._size = 100, 100
-
+        
         # layout interaction
-        # todo: use Cassowary; see #277
-        self._fixed_size = (None, None)
+        # todo: use Cassowary; see #277 
+        self._width_limits = (None, None)
+        self._height_limits = (None, None)
         self._stretch = (None, None)
 
         self._widgets = []
@@ -73,7 +74,7 @@ class Widget(Compound):
         self._face_colors = None
 
         Compound.__init__(self, [self._mesh, self._picking_mesh], **kwargs)
-
+ 
         self.transform = STTransform()
         self.events.add(resize=Event)
         self.pos = pos
@@ -115,6 +116,30 @@ class Widget(Compound):
         self.events.resize()
 
     @property
+    def min_width(self):
+        return self._width_limits[0]
+
+    @min_width.setter
+    def min_width(self, min_width):
+        if min_width is None:
+            self._width_limits[0] = None
+            return
+
+        self._width_limits[0] = float(min_width)
+
+    @property
+    def max_width(self):
+        return self._width_limits[0]
+
+    @max_width.setter
+    def max_width(self, max_width):
+        if max_width is None:
+            self._width_limits[1] = None
+            return
+
+        self._width_limits[1] = float(max_width)
+
+    @property
     def rect(self):
         return Rect((0, 0), self.size)
 
@@ -134,13 +159,15 @@ class Widget(Compound):
         this rectangle.
         """
         m = self.margin + self._border_width + self.padding
+        if not self.border_color.is_blank:
+            m += 1
         return Rect((m, m), (self.size[0]-2*m, self.size[1]-2*m))
 
     @property
     def stretch(self):
         """Stretch factors (w, h) used when determining how much space to
         allocate to this widget in a layout.
-
+        
         If either stretch factor is None, then it will be assigned when the
         widget is added to a layout based on the number of columns or rows it
         occupies.
@@ -155,7 +182,7 @@ class Widget(Compound):
     def _update_layout(self):
         if isinstance(self.parent, Widget):
             self.parent._update_child_widgets()
-
+    
     def _update_clipper(self):
         """Called whenever the clipper for this widget may need to be updated.
         """
@@ -163,7 +190,7 @@ class Widget(Compound):
             self._clipper = Clipper()
         elif not self.clip_children:
             self._clipper = None
-
+        
         if self._clipper is None:
             return
         self._clipper.rect = self.inner_rect
@@ -216,7 +243,7 @@ class Widget(Compound):
         self._padding = p
         self._update_child_widgets()
         self.update()
-
+    
     def _update_line(self):
         """ Update border line to match new shape """
         w = self._border_width
@@ -270,22 +297,22 @@ class Widget(Compound):
             (np.tile(self.border_color.rgba, (8, 1)),
              np.tile(self.bgcolor.rgba, (2, 1)))).astype(np.float32)
         self._update_visibility()
-
+            
     @property
     def picking(self):
         return self._picking
-
+    
     @picking.setter
     def picking(self, p):
         Compound.picking.fset(self, p)
         self._update_visibility()
-
+        
     def _update_visibility(self):
         blank = self.border_color.is_blank and self.bgcolor.is_blank
         picking = self.picking
         self._picking_mesh.visible = picking and self.interactive
         self._mesh.visible = not picking and not blank
-
+    
     def _update_child_widgets(self):
         # Set the position and size of child boxes (only those added
         # using add_widget)
