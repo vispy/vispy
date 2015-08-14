@@ -11,7 +11,7 @@ from .widget import Widget
 from ...util.np_backport import nanmean
 
 from vispy.ext.cassowary import (SimplexSolver, expression,
-                                 Variable, STRONG, MEDIUM, WEAK)
+                                 Variable, STRONG, MEDIUM, WEAK, REQUIRED)
 
 
 class Grid(Widget):
@@ -228,6 +228,10 @@ class Grid(Widget):
                 # add the width the solver
                 total_w_expr.add_expression(var_w)
 
+                solver.add_constraint(widget.var_w >= 0, strength=REQUIRED)
+                solver.add_constraint(widget.var_x >= 0, strength=REQUIRED)
+
+
                 if widget.min_width is not None:
                     solver.add_constraint(var_w >= widget.min_width,
                                           strength=STRONG)
@@ -236,16 +240,19 @@ class Grid(Widget):
                     solver.add_constraint(var_w <= widget.max_width,
                                           strength=STRONG)
 
-                (stretch_w, stretch_h) = widget.stretch
+                (stretch_w, _) = widget.stretch
 
-                if stretch_lhs is None:
-                    stretch_lhs = var_w / stretch_w
-                else:
-                    solver.add_constraint(stretch_lhs == var_w / stretch_w,
-                                          strength=MEDIUM)
+                if stretch_w is not None:
+                    if stretch_lhs is None:
+                        stretch_lhs = var_w / stretch_w
+                    else:
+                        solver.add_constraint(stretch_lhs == var_w / stretch_w,
+                                              strength=MEDIUM)
 
                 if prev_widget is not None:
-                    solver.add_constraint(widget.var_x >= prev_widget.var_w + prev_widget.var_x, strength=MEDIUM)
+                    solver.add_constraint(widget.var_x + widget.var_w * 0.5 -
+                                          (prev_widget.var_w  * 0.5 + prev_widget.var_x) ==
+                                          widget.var_w * 0.5 + prev_widget.var_w * 0.5, strength=REQUIRED)
                 else:
                     widget.var_x.value = 0
                     solver.add_stay(widget.var_x)
@@ -263,7 +270,7 @@ class Grid(Widget):
             stretch_lhs = None
             prev_widget = None
             total_h_expr = expression.Expression()
-            
+
             if len(col) == 0:
                 continue
 
@@ -279,6 +286,10 @@ class Grid(Widget):
                 # add the height the solver
                 total_h_expr.add_expression(var_h)
 
+                solver.add_constraint(widget.var_h >= 0, strength=REQUIRED)
+                solver.add_constraint(widget.var_y >= 0, strength=REQUIRED)
+
+
                 if widget.min_height is not None:
                     solver.add_constraint(var_h >= widget.min_height,
                                           strength=STRONG)
@@ -287,22 +298,22 @@ class Grid(Widget):
                     solver.add_constraint(var_h <= widget.max_height,
                                           strength=STRONG)
 
-                (stretch_w, stretch_h) = widget.stretch
+                (_, stretch_h) = widget.stretch
 
-                if stretch_lhs is None:
-                    stretch_lhs = var_h / stretch_h
-                else:
-                    solver.add_constraint(stretch_lhs == var_h / stretch_h,
-                                          strength=WEAK)
+                if stretch_h is not None:
+                    if stretch_lhs is None:
+                        stretch_lhs = var_h / stretch_h
+                    else:
+                        solver.add_constraint(stretch_lhs == var_h / stretch_h,
+                                              strength=WEAK)
 
                 if prev_widget is not None:
-                    c = widget.var_y >= prev_widget.var_h + prev_widget.var_y
-                    print(c)
-                    solver.add_constraint(c)
+                   solver.add_constraint(widget.var_y + widget.var_h * 0.5 -
+                                          (prev_widget.var_h  * 0.5 + prev_widget.var_y) ==
+                                          widget.var_h * 0.5 + prev_widget.var_h * 0.5, strength=REQUIRED)
                 else:
                     widget.var_y.value = 0
                     solver.add_stay(widget.var_y)
-                    # solver.add_constraint(widget.var_y -  prev_widget.var_y == widget.var_h + prev_widget.var_h)
 
                 prev_widget = widget
 
@@ -310,7 +321,7 @@ class Grid(Widget):
             if len(total_h_expr.terms) > 0:
                 solver.add_constraint(total_h_expr == rect.height)
 
-        solver.solve()
+        solver.resolve()
 
         # copy solution
         for (_, val) in self._grid_widgets.items():
@@ -320,62 +331,7 @@ class Grid(Widget):
             widget.pos = widget.var_x.value, widget.var_y.value
         return
 
-        # -- END OF HACK --
-        # 1. Collect information about occupied cells and their contents
-        occupied = np.zeros((n_rows, n_cols), dtype=bool)
-        stretch = np.zeros((n_rows, n_cols, 2), dtype=float)
-        stretch[:] = np.nan
-        # minsize = np.zeros((n_rows, n_cols, 2), dtype=float)
-        for key, val in self._grid_widgets.items():
-            w = val[4]
-            row, col, rspan, cspan, ch = self._grid_widgets[key]
-            occupied[row:row+rspan, col:col+cspan] = True
-            stretch[row:row+rspan, col:col+cspan] = (np.array(w.stretch) /
-                                                     [cspan, rspan])
-        row_occ = occupied.sum(axis=1) > 0
-        col_occ = occupied.sum(axis=0) > 0
-        with warnings.catch_warnings(record=True):  # mean of empty slice
-            row_stretch = nanmean(stretch[..., 1], axis=1)
-            col_stretch = nanmean(stretch[..., 0], axis=0)
-        row_stretch[np.isnan(row_stretch)] = 0
-        col_stretch[np.isnan(col_stretch)] = 0
-
-        # 2. Decide width of each row/col
-        rect = self.rect.padded(self.padding + self.margin)
-        n_cols = col_occ.sum()
-        colspace = rect.width - (n_cols-1) * self.spacing
-        colsizes = col_stretch * colspace / col_stretch.sum()
-        colsizes[colsizes == 0] = -self.spacing
-        n_rows = row_occ.sum()
-        rowspace = rect.height - (n_rows-1) * self.spacing
-        rowsizes = row_stretch * rowspace / row_stretch.sum()
-        rowsizes[rowsizes == 0] = -self.spacing
-
-        # 3. Decide placement of row/col edges
-        colend = np.cumsum(colsizes) + self.spacing * np.arange(len(colsizes))
-        colstart = colend - colsizes
-        rowend = np.cumsum(rowsizes) + self.spacing * np.arange(len(rowsizes))
-        rowstart = rowend - rowsizes
-
-        # snap to pixel boundaries to avoid drawing artifacts
-        colstart = np.round(colstart) + self.margin
-        colend = np.round(colend) + self.margin
-        rowstart = np.round(rowstart) + self.margin
-        rowend = np.round(rowend) + self.margin
-
-        for key in self._grid_widgets.keys():
-            row, col, rspan, cspan, ch = self._grid_widgets[key]
-
-            # Translate the origin of the node to the corner of the area
-            # ch.transform.reset()
-            # ch.transform.translate((colstart[col], rowstart[row]))
-            ch.pos = colstart[col], rowstart[row]
-
-            # ..and set the size to match.
-            w = colend[col+cspan-1]-colstart[col]
-            h = rowend[row+rspan-1]-rowstart[row]
-            ch.size = ch.size[0], h
-
+        
     # def _update_child_widgets(self):
     #     # Resize all widgets in this grid to share space.
     #     n_rows, n_cols = self.grid_size

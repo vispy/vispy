@@ -150,6 +150,9 @@ class Widget(Compound):
 
         self._width_limits[1] = float(max_width)
 
+    def fixed_width(self, fixed_width):
+        self.min_width = self.max_width = fixed_width
+
     @property
     def height(self):
         """The height of this widget"""
@@ -182,6 +185,10 @@ class Widget(Compound):
             return
 
         self._height_limits[1] = float(max_height)
+
+    def fixed_height(self, fixed_height):
+        self.min_height = fixed_height
+        self.max_height = fixed_height
 
     @property
     def rect(self):
