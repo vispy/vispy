@@ -7,6 +7,6 @@ Handle loading cassowary package from system or from the bundled copy
 """
 
 try:
-    from ._bundled import cassowary  # noqa
+    from ._bundled.cassowary import *  # noqa
 except ImportError:
     import cassowary  # noqa
