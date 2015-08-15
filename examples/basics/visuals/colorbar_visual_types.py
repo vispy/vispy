@@ -12,7 +12,7 @@ from vispy import gloo
 from vispy.visuals import ColorBarVisual
 from vispy.color import get_colormap
 
-colormap = get_colormap("ice")
+colormap = get_colormap("viridis")
 
 
 def style_colorbar(colorbar):
