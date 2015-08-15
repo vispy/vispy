@@ -64,8 +64,8 @@ class Widget(Compound):
         
         # layout interaction
         # todo: use Cassowary; see #277 
-        self._width_limits = [None, None]
-        self._height_limits = [None, None]
+        self._width_limits = [0, None]
+        self._height_limits = [0, None]
         self._stretch = (None, None)
         self.var_w = self.var_h = None  # HACK
         self.var_x = self.var_y = None  # HACK
