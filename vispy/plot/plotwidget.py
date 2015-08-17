@@ -38,14 +38,47 @@ class PlotWidget(scene.Widget):
         self.ylabel = None
         self._configured = False
         self.visuals = []
+        self.section_y_x = None
 
         super(PlotWidget, self).__init__(*args, **kwargs)
         self.grid = self.add_grid(spacing=0, margin=10)
-        self.title = scene.Label("", font_size=16)
-        # self.title.stretch = (1, 0.1)
-        # self.grid.add_widget(self.title, row=0, col=0, col_span=2)
-        self.view = self.grid.add_view(row=0, col=0, border_color='grey', bgcolor="#000000")
 
+        fg = self._fg
+
+        self.title = scene.Label("", font_size=16, color="#ff0000")
+        self.grid.add_widget(self.title, row=0, col=0, col_span=3)
+        self.title.min_height = 40
+        self.title.stretch = (1, 0.1)
+
+        self.ylabel = scene.Label("", rotation=-90)
+        self.ylabel.max_width = 1
+        self.ylabel.stretch = (0.1, 1)
+        self.grid.add_widget(self.ylabel, row=1, col=0, row_span=2)
+
+        self.yaxis = scene.AxisWidget(orientation='left', text_color=fg,
+                                      axis_color=fg, tick_color=fg)
+
+        self.yaxis.visible = False
+        self.yaxis.stretch = (0.1, 1)
+        self.yaxis.max_width = 1
+        self.grid.add_widget(self.yaxis, row=1, col=1)
+
+        self.view = self.grid.add_view(row=1, col=2, border_color='grey', bgcolor="#efefef")
+
+
+
+        self.xaxis = scene.AxisWidget(orientation='bottom', text_color=fg,
+                                      axis_color=fg, tick_color=fg)
+        self.grid.add_widget(self.xaxis, row=2, col=1, col_span=2)
+        self.xaxis.max_height = 1
+        self.xaxis.stretch = (1, 0.1)
+        self.xaxis.visible = False
+
+        self.xlabel = scene.Label("")
+        self.xlabel.max_height = 1
+        self.grid.add_widget(self.xlabel, row=3, col=1, col_span=2)
+
+     
     def _configure_2d(self, fg_color=None):
         if self._configured:
             return
@@ -53,22 +86,44 @@ class PlotWidget(scene.Widget):
             fg = self._fg
         else:
             fg = fg_color
-        self.yaxis = scene.AxisWidget(orientation='left', text_color=fg,
-                                      axis_color=fg, tick_color=fg)
+
+        self.yaxis.visible = True
+        self.yaxis.max_width = 50
+        self.yaxis.min_width = 30
+
+        self.ylabel.max_width = 50
+        self.ylabel.min_width = 30
+
+        # self.section_y_x.min_width = self.yaxis.min_width
+        # self.section_y_x.max_width = self.yaxis.max_width
+
+
+        self.xaxis.visible = True
+        self.xaxis.max_height = 50
+        self.xaxis.min_height = 30
+
+        self.xlabel.max_height = 50
+        self.xlabel.min_height = 30
+
+
+        # self.yaxis = scene.AxisWidget(orientation='left', text_color=fg,
+        #                              axis_color=fg, tick_color=fg)
         # self.yaxis.min_width = 50
         # self.yaxis.stretch = (0.1, 1)
         # self.grid.add_widget(self.yaxis, row=1, col=0)
 
-        self.ylabel = scene.Label("", rotation=-90)
+        # self.ylabel = scene.Label("", rotation=-90)
         # self.ylabel.stretch = (0.05, 1)
+        # self.ylabel.max_width = 100
         # self.grid.add_widget(self.ylabel, row=1, col=0)
 
-        self.xaxis = scene.AxisWidget(orientation='bottom', text_color=fg,
-                                      axis_color=fg, tick_color=fg)
-        # self.xaxis.stretch = (1, 0.1)
-        # self.grid.add_widget(self.xaxis, row=2, col=0, col_span=2)
+        # self.xaxis = scene.AxisWidget(orientation='bottom', text_color=fg,
+        #                              axis_color=fg, tick_color=fg)
+        # self.xaxis.min_height = 10
+        # self.xaxis.visible = True
+        # self.xaxis.max_height = 100
 
-        self.xlabel = scene.Label("")
+        # self.xlabel = scene.Label("")
         # self.xlabel.min_height = 300
         # self.xlabel.stretch = (1, 0.05)
         # self.grid.add_widget(self.xlabel, row=3, col=2)
