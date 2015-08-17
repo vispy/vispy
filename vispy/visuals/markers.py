@@ -485,6 +485,9 @@ class MarkersVisual(Visual):
     ----------
     depth_test : boolean
         Control if the markers are checked for being visible.
+
+    **kwargs : dict
+        keyword arguments to pass to the set_data method of MarkersVisual.
     """
     def __init__(self, depth_test=False, **kwargs):
 
