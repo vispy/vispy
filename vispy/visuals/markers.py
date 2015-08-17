@@ -480,8 +480,14 @@ marker_types = tuple(sorted(list(_marker_dict.keys())))
 
 class MarkersVisual(Visual):
     """ Visual displaying marker symbols.
+
+    Parameters
+    ----------
+    depth_test : boolean
+        Control if the markers are checked for being visible.
     """
-    def __init__(self, **kwargs):
+    def __init__(self, depth_test=False, **kwargs):
+
         self._vbo = VertexBuffer()
         self._v_size_var = Variable('varying float v_size')
         self._symbol = None
@@ -492,7 +498,7 @@ class MarkersVisual(Visual):
         Visual.__init__(self, vcode=vert, fcode=frag)
         self.shared_program.vert['v_size'] = self._v_size_var
         self.shared_program.frag['v_size'] = self._v_size_var
-        self.set_gl_state(depth_test=False, blend=True,
+        self.set_gl_state(depth_test=depth_test, blend=True,
                           blend_func=('src_alpha', 'one_minus_src_alpha'))
         self._draw_mode = 'points'
         if len(kwargs) > 0:
