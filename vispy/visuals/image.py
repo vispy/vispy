@@ -283,7 +283,8 @@ class ImageVisual(Visual):
     @interpolation.setter
     def interpolation(self, i):
         if i not in self._interpolation_names:
-            raise ValueError("interpolation must be one of %s" % ', '.join(self._interpolation_names))
+            raise ValueError("interpolation must be one of %s" %
+                             ', '.join(self._interpolation_names))
         if self._interpolation != i:
             self._interpolation = i
             self._need_interpolation_update = True
