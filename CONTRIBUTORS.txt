@@ -5,7 +5,7 @@ Core team
 
 - Almar Klein
 
-- Nicolas Rougier 
+- Nicolas Rougier
 
 - Cyrille Rossant
 
@@ -16,7 +16,7 @@ Contributors
 ------------
 
 - Jerome Kieffer
-  keep it compatible with python 2.6 #68 
+  keep it compatible with python 2.6 #68
 
 - M S Suraj
   Reactive visuals (#353, #368)
@@ -37,7 +37,7 @@ Contributors
   Support for 3D textures (#292)
 
 - gouarin
-  fix bug in game-of-life.py (#266) 
+  fix bug in game-of-life.py (#266)
 
 - Per Rosengren
   unstructured_2d demo (203, #276)
@@ -53,3 +53,7 @@ Contributors
 
 - Tom Pohl
   added required constants and input keys to handle 3d textures (#27)
+
+- Michael Aye
+  adding Sphere visual (#1035)
+  adding depth_test to Marker visual (#1060)
