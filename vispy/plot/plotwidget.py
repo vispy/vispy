@@ -37,14 +37,21 @@ class PlotWidget(scene.Widget):
         self.xlabel = None
         self.ylabel = None
         self._configured = False
+
+        self.cbar_top = None
+        self.cbar_bottom = None
+        self.cbar_left = None
+        self.cbar_right = None
+
         self.visuals = []
 
         super(PlotWidget, self).__init__(*args, **kwargs)
         self.grid = self.add_grid(spacing=0, margin=10)
+
         self.title = scene.Label("", font_size=16)
         self.title.stretch = (1, 0.1)
-        self.grid.add_widget(self.title, row=0, col=2)
-        self.view = self.grid.add_view(row=1, col=2, border_color='grey')
+        self.grid.add_widget(self.title, row=0, col=3)
+        self.view = self.grid.add_view(row=2, col=3, border_color='grey')
 
     def _configure_2d(self, fg_color=None):
         if self._configured:
@@ -56,27 +63,27 @@ class PlotWidget(scene.Widget):
         self.yaxis = scene.AxisWidget(orientation='left', text_color=fg,
                                       axis_color=fg, tick_color=fg)
         self.yaxis.stretch = (0.1, 1)
-        self.grid.add_widget(self.yaxis, row=1, col=1)
+        self.grid.add_widget(self.yaxis, row=2, col=2)
 
         self.ylabel = scene.Label("", rotation=-90)
         self.ylabel.stretch = (0.05, 1)
-        self.grid.add_widget(self.ylabel, row=1, col=0)
+        self.grid.add_widget(self.ylabel, row=2, col=1)
 
         self.xaxis = scene.AxisWidget(orientation='bottom', text_color=fg,
                                       axis_color=fg, tick_color=fg)
         self.xaxis.stretch = (1, 0.1)
-        self.grid.add_widget(self.xaxis, row=2, col=2)
+        self.grid.add_widget(self.xaxis, row=3, col=3)
 
         self.xlabel = scene.Label("")
         self.xlabel.stretch = (1, 0.05)
-        self.grid.add_widget(self.xlabel, row=3, col=2)
+        self.grid.add_widget(self.xlabel, row=4, col=3)
 
         self.view.camera = 'panzoom'
         self.camera = self.view.camera
-        
+
         self.xaxis.link_view(self.view)
         self.yaxis.link_view(self.view)
-        
+
         self._configured = True
 
     def _configure_3d(self):
@@ -84,10 +91,10 @@ class PlotWidget(scene.Widget):
             return
         self.view.camera = 'turntable'
         self.camera = self.view.camera
-        
+
         self._configured = True
 
-    def histogram(self, data, bins=10, color='w', orientation='h'):
+    def histogram(self, data, bins=10, color='blue', orientation='h'):
         """Calculate and show a histogram of data
 
         Parameters
@@ -141,7 +148,7 @@ class PlotWidget(scene.Widget):
         self.view.add(image)
         self.view.camera.aspect = 1
         self.view.camera.set_range()
-        
+
         return image
 
     def mesh(self, vertices=None, faces=None, vertex_colors=None,
@@ -245,14 +252,14 @@ class PlotWidget(scene.Widget):
         self.view.add(line)
         self.view.camera.set_range()
         self.visuals.append(line)
-        
+
         if title is not None:
             self.title.text = title
         if xlabel is not None:
             self.xlabel.text = xlabel
         if ylabel is not None:
             self.ylabel.text = ylabel
-        
+
         return line
 
     def spectrogram(self, x, n_fft=256, step=None, fs=1., window='hann',
@@ -338,17 +345,86 @@ class PlotWidget(scene.Widget):
 
     def surface(self, zdata, **kwargs):
         """Show a 3D surface plot.
-        
+
         Extra keyword arguments are passed to `SurfacePlot()`.
-        
+
         Parameters
         ----------
         zdata : array-like
             A 2D array of the surface Z values.
-            
+
         """
         self._configure_3d()
         surf = scene.SurfacePlot(z=zdata, **kwargs)
         self.view.add(surf)
         self.view.camera.set_range()
         return surf
+
+    def colorbar(self, cmap, position="right",
+                 label="", clim=("", ""),
+                 border_width=0.0, border_color="black",
+                 **kwargs):
+        """Show a ColorBar
+
+        Parameters
+        ----------
+        cmap : str | vispy.color.ColorMap
+            Either the name of the ColorMap to be used from the standard
+            set of names (refer to `vispy.color.get_colormap`),
+            or a custom ColorMap object.
+            The ColorMap is used to apply a gradient on the colorbar.
+        position : {'left', 'right', 'top', 'bottom'}
+            The position of the colorbar with respect to the plot.
+            'top' and 'bottom' are placed horizontally, while
+            'left' and 'right' are placed vertically
+        label : str
+            The label that is to be drawn with the colorbar
+            that provides information about the colorbar.
+        clim : tuple (min, max)
+            the minimum and maximum values of the data that
+            is given to the colorbar. This is used to draw the scale
+            on the side of the colorbar.
+        border_width : float (in px)
+            The width of the border the colormap should have. This measurement
+            is given in pixels
+        border_color : str | vispy.color.Color
+            The color of the border of the colormap. This can either be a
+            str as the color's name or an actual instace of a vipy.color.Color
+
+        Returns
+        -------
+        colorbar : instance of ColorBarWidget
+
+        See also
+        --------
+        ColorBarWidget
+        """
+
+        self._configure_2d()
+
+        cbar = scene.ColorBarWidget(orientation=position,
+                                    label_str=label,
+                                    cmap=cmap,
+                                    clim=clim,
+                                    border_width=border_width,
+                                    border_color=border_color,
+                                    **kwargs)
+
+        if cbar.orientation == "bottom":
+            self.grid.add_widget(cbar, row=5, col=3)
+            cbar.stretch = (1, 0.3)
+            self.cbar_bottom = cbar
+        elif cbar.orientation == "top":
+            self.grid.add_widget(cbar, row=1, col=3)
+            cbar.stretch = (1, 0.3)
+            self.cbar_top = cbar
+        elif cbar.orientation == "left":
+            cbar.stretch = (0.3, 1)
+            self.grid.add_widget(cbar, row=2, col=0)
+            self.cbar_left = cbar
+        else:  # cbar.orientation == "right"
+            cbar.stretch = (0.3, 1)
+            self.grid.add_widget(cbar, row=2, col=4)
+            self.cbar_right = cbar
+
+        return cbar

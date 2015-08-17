@@ -655,7 +655,7 @@ class CompoundVisual(BaseVisual):
                 vb = v.bounds(axis)
                 if bounds is None:
                     bounds = vb
-                else:
+                elif vb is not None:
                     bounds = [min(bounds[0], vb[0]), max(bounds[1], vb[1])]
         return bounds
 

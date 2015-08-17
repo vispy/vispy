@@ -56,7 +56,7 @@ volume2 = scene.visuals.Volume(vol2, parent=view.scene, threshold=0.2,
                                emulate_texture=emulate_texture)
 volume2.visible = False
 
-# Create two cameras (1 for firstperson, 3 for 3d person)
+# Create three cameras (Fly, Turntable and Arcball)
 fov = 60.
 cam1 = scene.cameras.FlyCamera(parent=view.scene, fov=fov, name='Fly')
 cam2 = scene.cameras.TurntableCamera(parent=view.scene, fov=fov,
@@ -127,9 +127,9 @@ def on_key_press(event):
 
 
 # for testing performance
-#@canvas.connect
-#def on_draw(ev):
-    #canvas.update()
+# @canvas.connect
+# def on_draw(ev):
+# canvas.update()
 
 if __name__ == '__main__':
     print(__doc__)
