@@ -42,9 +42,9 @@ class PlotWidget(scene.Widget):
         super(PlotWidget, self).__init__(*args, **kwargs)
         self.grid = self.add_grid(spacing=0, margin=10)
         self.title = scene.Label("", font_size=16)
-        self.title.stretch = (1, 0.1)
-        self.grid.add_widget(self.title, row=0, col=2)
-        self.view = self.grid.add_view(row=1, col=2, border_color='grey')
+        # self.title.stretch = (1, 0.1)
+        # self.grid.add_widget(self.title, row=0, col=0, col_span=2)
+        self.view = self.grid.add_view(row=0, col=0, border_color='grey', bgcolor="#000000")
 
     def _configure_2d(self, fg_color=None):
         if self._configured:
@@ -56,29 +56,29 @@ class PlotWidget(scene.Widget):
         self.yaxis = scene.AxisWidget(orientation='left', text_color=fg,
                                       axis_color=fg, tick_color=fg)
         # self.yaxis.min_width = 50
-        self.yaxis.stretch = (0.1, 1)
-        self.grid.add_widget(self.yaxis, row=1, col=1)
+        # self.yaxis.stretch = (0.1, 1)
+        # self.grid.add_widget(self.yaxis, row=1, col=0)
 
         self.ylabel = scene.Label("", rotation=-90)
         # self.ylabel.stretch = (0.05, 1)
-        self.grid.add_widget(self.ylabel, row=1, col=0)
+        # self.grid.add_widget(self.ylabel, row=1, col=0)
 
         self.xaxis = scene.AxisWidget(orientation='bottom', text_color=fg,
                                       axis_color=fg, tick_color=fg)
         # self.xaxis.stretch = (1, 0.1)
-        self.grid.add_widget(self.xaxis, row=2, col=2)
+        # self.grid.add_widget(self.xaxis, row=2, col=0, col_span=2)
 
         self.xlabel = scene.Label("")
-        self.xlabel.min_height = 300
+        # self.xlabel.min_height = 300
         # self.xlabel.stretch = (1, 0.05)
-        self.grid.add_widget(self.xlabel, row=3, col=2)
+        # self.grid.add_widget(self.xlabel, row=3, col=2)
 
         self.view.camera = 'panzoom'
         self.camera = self.view.camera
-        
+
         self.xaxis.link_view(self.view)
         self.yaxis.link_view(self.view)
-        
+
         self._configured = True
 
     def _configure_3d(self):
@@ -143,7 +143,7 @@ class PlotWidget(scene.Widget):
         self.view.add(image)
         self.view.camera.aspect = 1
         self.view.camera.set_range()
-        
+
         return image
 
     def mesh(self, vertices=None, faces=None, vertex_colors=None,
@@ -354,7 +354,3 @@ class PlotWidget(scene.Widget):
         self.view.add(surf)
         self.view.camera.set_range()
         return surf
-
-     def _update_child_widgets(self):
-        super(self, scene.Widget)._update_child_widgets()
-        self.grid._update_child_widgets()
