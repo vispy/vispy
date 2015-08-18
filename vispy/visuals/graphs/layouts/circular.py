@@ -10,7 +10,7 @@ This module contains several graph layouts which rely heavily on circles.
 
 import numpy as np
 
-from ..util import _straight_line_vertices
+from ..util import _straight_line_vertices, issparse
 
 
 def circular(adjacency_mat, directed=False):
@@ -32,9 +32,12 @@ def circular(adjacency_mat, directed=False):
         single time, and has no builtin animation
     """
 
+    if issparse(adjacency_mat):
+        adjacency_mat = adjacency_mat.tocoo()
+
     num_nodes = adjacency_mat.shape[0]
 
-    t = np.linpsace(0, 2 * np.pi, num_nodes, endpt=False, dtype=np.float32)
+    t = np.linspace(0, 2 * np.pi, num_nodes, endpoint=False, dtype=np.float32)
 
     # Visual coordinate system is between 0 and 1, so generate a circle with
     # radius 0.5 and center it at the point (0.5, 0.5).

@@ -10,7 +10,7 @@ This layout positions the nodes at random
 
 import numpy as np
 
-from ..util import _straight_line_vertices
+from ..util import _straight_line_vertices, issparse
 
 
 def random(adjacency_mat, directed=False):
@@ -32,8 +32,9 @@ def random(adjacency_mat, directed=False):
         Yields the node and line vertices in a tuple. This layout only yields a
         single time, and has no builtin animation
     """
-    if adjacency_mat.shape[0] != adjacency_mat.shape[1]:
-        raise ValueError("Adjacency matrix should be square.")
+
+    if issparse(adjacency_mat):
+        adjacency_mat = adjacency_mat.tocoo()
 
     # Randomly place nodes, visual coordinate system is between 0 and 1
     num_nodes = adjacency_mat.shape[0]
