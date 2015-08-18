@@ -18,7 +18,7 @@ except ImportError:
     def issparse(*args, **kwargs):
         return False
 
-from ..util import _straight_line_vertices, rescale_layout
+from ..util import _straight_line_vertices, _rescale_layout
 
 
 class fruchterman_reingold(object):
@@ -120,7 +120,7 @@ class fruchterman_reingold(object):
         for iteration in range(self.iterations):
             delta_pos = self._calculate_delta_pos(adjacency_mat, pos, delta, t)
             pos += delta_pos
-            rescale_layout(pos)
+            _rescale_layout(pos)
 
             # cool temperature
             t -= dt
@@ -171,7 +171,7 @@ class fruchterman_reingold(object):
             delta_pos = self._calculate_delta_pos(adjacency_mat.toarray(), pos,
                                                   delta, t)
             pos += delta_pos
-            rescale_layout(pos)
+            _rescale_layout(pos)
 
             # Cool temperature
             t -= dt

@@ -93,7 +93,7 @@ def _straight_line_vertices(adjacency_mat, node_coords, directed=False):
     return line_vertices, arrow_vertices
 
 
-def rescale_layout(pos, scale=1):
+def _rescale_layout(pos, scale=1):
     """
     Normalize the given coordinate list to the range [0, `scale`].
 
