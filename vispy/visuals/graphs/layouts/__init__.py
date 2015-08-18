@@ -12,7 +12,7 @@ _layout_map = {
     'spring_layout': fruchterman_reingold
 }
 
-AVAILABLE_LAYOUTS = _layout_map.keys()
+AVAILABLE_LAYOUTS = tuple(_layout_map.keys())
 
 
 def get_layout(name, *args, **kwargs):
