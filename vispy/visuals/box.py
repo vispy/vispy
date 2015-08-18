@@ -38,6 +38,8 @@ class BoxVisual(CompoundVisual):
     edge_color : tuple or Color
         The `Color` to use when drawing the cube edges. If `None`, then no
         cube edges are drawn.
+    **kwargs : dict
+        keyword dict to pass to the CompoundVisual constructor.
     """
 
     def __init__(self, width=1, height=1, depth=1, width_segments=1,

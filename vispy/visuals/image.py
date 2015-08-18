@@ -43,7 +43,7 @@ vec4 map_local_to_tex(vec4 x) {
     vec4 d = p2 - p1;
     float f = p2.z / d.z;
     vec4 p3 = p2 - d * f;
-    
+
     // finally map local to texture coords
     return vec4(p3.xy / image_size, 0, 1);
 }
@@ -56,11 +56,11 @@ void main()
         texcoord = v_texcoord;
     }
     else {
-        // vertex shader ouptuts clip coordinates; 
+        // vertex shader ouptuts clip coordinates;
         // fragment shader maps to texture coordinates
         texcoord = map_local_to_tex(vec4(v_texcoord, 0, 1)).xy;
     }
-    
+
     gl_FragColor = $color_transform($get_data(texcoord));
 }
 """  # noqa
@@ -68,12 +68,12 @@ void main()
 _null_color_transform = 'vec4 pass(vec4 color) { return color; }'
 _c2l = 'float cmap(vec4 color) { return (color.r + color.g + color.b) / 3.; }'
 _texture_lookup = """
-    vec4 texture_lookup(vec2 texcoord) { 
+    vec4 texture_lookup(vec2 texcoord) {
         if(texcoord.x < 0.0 || texcoord.x > 1.0 ||
         texcoord.y < 0.0 || texcoord.y > 1.0) {
             discard;
         }
-        return texture2D($texture, texcoord); 
+        return texture2D($texture, texcoord);
     }"""
 
 
@@ -128,24 +128,25 @@ class ImageVisual(Visual):
                                   interpolation=self._interpolation)
         self._subdiv_position = VertexBuffer()
         self._subdiv_texcoord = VertexBuffer()
-        
+
         # impostor quad covers entire viewport
         vertices = np.array([[-1, -1], [1, -1], [1, 1],
                              [-1, -1], [1, 1], [-1, 1]],
                             dtype=np.float32)
         self._impostor_coords = VertexBuffer(vertices)
         self._null_tr = NullTransform()
-        
+
         self._init_view(self)
-        super(ImageVisual, self).__init__(vcode=VERT_SHADER, fcode=FRAG_SHADER)
+        super(ImageVisual, self).__init__(vcode=VERT_SHADER, fcode=FRAG_SHADER,
+                                          **kwargs)
         self.set_gl_state('translucent', cull_face=False)
         self._draw_mode = 'triangles'
-        
+
         # by default, this visual pulls data from a texture
         self._data_lookup_fn = Function(_texture_lookup)
         self.shared_program.frag['get_data'] = self._data_lookup_fn
         self._data_lookup_fn['texture'] = self._texture
-        
+
         self.clim = clim
         self.cmap = cmap
         if data is not None:
@@ -178,6 +179,8 @@ class ImageVisual(Visual):
 
     @property
     def clim(self):
+        """ The data limits of the Image
+        """
         return (self._clim if isinstance(self._clim, string_types) else
                 tuple(self._clim))
 
@@ -196,6 +199,8 @@ class ImageVisual(Visual):
 
     @property
     def cmap(self):
+        """ The colormap of the Image
+        """
         return self._cmap
 
     @cmap.setter
@@ -207,7 +212,7 @@ class ImageVisual(Visual):
     @property
     def method(self):
         return self._method
-    
+
     @method.setter
     def method(self, m):
         if self._method != m:
@@ -239,13 +244,13 @@ class ImageVisual(Visual):
         mgrid[..., 1] *= h
 
         quads[..., :2] += mgrid
-        tex_coords = quads.reshape(grid[1]*grid[0]*6, 3)
+        tex_coords = quads.reshape(grid[1] * grid[0] * 6, 3)
         tex_coords = np.ascontiguousarray(tex_coords[:, :2])
         vertices = tex_coords * self.size
-        
+
         self._subdiv_position.set_data(vertices.astype('float32'))
         self._subdiv_texcoord.set_data(tex_coords.astype('float32'))
-        
+
     def _update_method(self, view):
         """Decide which method to use for *view* and configure it accordingly.
         """
@@ -256,7 +261,7 @@ class ImageVisual(Visual):
             else:
                 method = 'impostor'
         view._method_used = method
-        
+
         if method == 'subdivide':
             view.view_program['method'] = 0
             view.view_program['a_position'] = self._subdiv_position
@@ -267,7 +272,7 @@ class ImageVisual(Visual):
             view.view_program['a_texcoord'] = self._impostor_coords
         else:
             raise ValueError("Unknown image draw method '%s'" % method)
-        
+
         self.shared_program['image_size'] = self.size
         view._need_method_update = False
         self._prepare_transforms(view)
@@ -333,6 +338,6 @@ class ImageVisual(Visual):
 
         if self._need_vertex_update:
             self._build_vertex_data()
-            
+
         if view._need_method_update:
             self._update_method(view)

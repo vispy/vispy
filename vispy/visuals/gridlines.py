@@ -99,6 +99,6 @@ class GridLinesVisual(ImageVisual):
     def _prepare_draw(self, view):
         if self._need_vertex_update:
             self._build_vertex_data()
-            
+
         if view._need_method_update:
             self._update_method(view)

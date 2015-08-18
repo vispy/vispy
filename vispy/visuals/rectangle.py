@@ -37,6 +37,8 @@ class RectangleVisual(PolygonVisual):
     radius : float | array
         Radii of curvatures of corners in clockwise order from top-left
         Defaults to 0.
+    **kwargs : dict
+        Keyword dict to pass to the PolygonVisual constructor.
     """
     def __init__(self, center=None, color='black', border_color=None,
                  border_width=1, height=1.0, width=1.0,

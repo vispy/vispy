@@ -29,6 +29,8 @@ class SphereVisual(CompoundVisual):
     edge_color : tuple or Color
         The `Color` to use when drawing the sphere edges. If `None`, then no
         sphere edges are drawn.
+    **kwargs : dict
+        Keyword dict to pass to CompoundVisual constructor.
     """
     def __init__(self, radius=1.0, cols=30, rows=30, vertex_colors=None,
                  face_colors=None, color=(0.5, 0.5, 1, 1), edge_color=None,

@@ -17,6 +17,8 @@ class IsosurfaceVisual(MeshVisual):
         3D scalar array.
     level: float | None
         The level at which the isosurface is constructed from *data*.
+    **kwargs : dict
+        Keyword dict to pass to the MeshVisual constructor.
 
     Notes
     -----

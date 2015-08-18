@@ -25,6 +25,8 @@ class SurfacePlotVisual(MeshVisual):
         2D array of height values for each grid vertex.
     colors : ndarray
         (width, height, 4) array of vertex colors.
+    **kwargs : dict
+        Keyword dict to pass to MeshVisual constructor.
 
     Notes
     -----

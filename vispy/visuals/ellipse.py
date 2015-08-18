@@ -39,6 +39,8 @@ class EllipseVisual(PolygonVisual):
     num_segments : int
         Number of segments to be used to draw the ellipse
         Defaults to 100
+    **kwargs : dict
+        Keyword dict to pass to the PolygonVisual constructor.
     """
     def __init__(self, center=None, color='black', border_color=None,
                  border_width=1, radius=(0.1, 0.1), start_angle=0.,

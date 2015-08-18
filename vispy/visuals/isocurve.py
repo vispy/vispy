@@ -81,6 +81,8 @@ class IsocurveVisual(LineVisual):
 
     @property
     def color(self):
+        """ The color of the isocurve.
+        """
         return self._color_lev
 
     @color.setter
@@ -155,7 +157,7 @@ class IsocurveVisual(LineVisual):
             # pixel centers
             if _HAS_MPL:
                 nlist = self._iso.trace(level, level, 0)
-                paths = nlist[:len(nlist)//2]
+                paths = nlist[:len(nlist) // 2]
                 v, c = self._get_verts_and_connect(paths)
                 v += np.array([0.5, 0.5])
             else:
@@ -178,7 +180,7 @@ class IsocurveVisual(LineVisual):
         colors = self._lc
         for i, index in enumerate(self._li):
             level_color.append(np.zeros((index, 4)) +
-                               colors[i+self._level_min])
+                               colors[i + self._level_min])
         self._cl = np.vstack(level_color)
 
     def _levels_to_colors(self):

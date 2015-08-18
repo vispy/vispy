@@ -83,6 +83,8 @@ class AxisVisual(CompoundVisual):
 
     @property
     def pos(self):
+        """ The vertex position of the axis.
+        """
         return self._pos
 
     @pos.setter
@@ -142,7 +144,7 @@ class Ticker(object):
 
     def __init__(self, axis):
         self.axis = axis
-        
+
     def get_update(self):
         major_tick_fractions, minor_tick_fractions, tick_labels = \
             self._get_tick_frac_labels()
@@ -176,7 +178,7 @@ class Ticker(object):
         doc_unit = visual_to_document.map([[0, 0], direction[:2]])
         doc_unit = doc_unit[1] - doc_unit[0]
         doc_len = np.linalg.norm(doc_unit)
-        
+
         vectors = np.array([[0., 0.],
                             direction * self.axis.minor_tick_length / doc_len,
                             direction * self.axis.major_tick_length / doc_len,

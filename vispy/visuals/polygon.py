@@ -35,7 +35,7 @@ class PolygonVisual(CompoundVisual):
     border_width : int
         Border width in pixels.
     **kwargs : dict
-        Keyword arguments to pass to `PolygonVisual`.
+        Keyword arguments to pass to `CompoundVisual`.
     """
     def __init__(self, pos=None, color='black',
                  border_color=None, border_width=1, **kwargs):
