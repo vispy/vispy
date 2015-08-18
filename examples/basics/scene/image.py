@@ -33,7 +33,7 @@ view.camera = scene.PanZoomCamera(aspect=1)
 # flip y-axis to have correct aligment
 view.camera.flip = (0, 1, 0)
 view.camera.set_range()
-view.camera.zoom(0.1, (250,200))
+view.camera.zoom(0.1, (250, 200))
 
 # get interpolation functions from Image
 names = image.interpolation_functions
