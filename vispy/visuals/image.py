@@ -294,6 +294,8 @@ class ImageVisual(Visual):
     def interpolation_functions(self):
         return self._interpolation_names
 
+    # The interpolation code could be transferred to a dedicated filter
+    # function in visuals/filters as discussed in #1051
     def _build_interpolation(self):
         """Rebuild the _data_lookup_fn using different interpolations within
         the shader
@@ -302,11 +304,11 @@ class ImageVisual(Visual):
         self._data_lookup_fn = self._interpolation_fun[interpolation]
         self.shared_program.frag['get_data'] = self._data_lookup_fn
 
-        # only 'Bilinear' uses 'linear' texture interpolation
+        # only 'bilinear' uses 'linear' texture interpolation
         if interpolation == 'bilinear':
             texture_interpolation = 'linear'
         else:
-            # 'Nearest' (and also 'Bilinear') doesn't use spatial_filters.frag
+            # 'nearest' (and also 'bilinear') doesn't use spatial_filters.frag
             # so u_kernel and shape setting is skipped
             texture_interpolation = 'nearest'
             if interpolation != 'nearest':
