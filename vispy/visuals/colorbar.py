@@ -170,11 +170,11 @@ class _CoreColorBarVisual(Visual):
         # test that the given width and height is consistent
         # with the orientation
         if (self._orientation == "bottom" or self._orientation == "top"):
-                if halfw < halfh:
-                    raise ValueError("half-width(%s) < half-height(%s) for"
-                                     "%s orientation,"
-                                     " expected half-width >= half-height",
-                                     (halfw, halfh, self._orientation, ))
+            if halfw < halfh:
+                raise ValueError("half-width(%s) < half-height(%s) for"
+                                 "%s orientation,"
+                                 " expected half-width >= half-height",
+                                 (halfw, halfh, self._orientation, ))
         else:  # orientation == left or orientation == right
             if halfw > halfh:
                 raise ValueError("half-width(%s) > half-height(%s) for"
@@ -355,6 +355,8 @@ class ColorBarVisual(CompoundVisual):
     border_color : str | vispy.color.Color
         The color of the border of the colormap. This can either be a
         str as the color's name or an actual instace of a vipy.color.Color
+    **kwargs : dict
+        Keyword dictionary to pass to CompoundVisual constructor.
     """
 
     def __init__(self, center_pos, halfdim,
@@ -398,7 +400,8 @@ class ColorBarVisual(CompoundVisual):
         CompoundVisual.__init__(self, [self._label,
                                        self._ticks[0],
                                        self._ticks[1],
-                                       self._colorbar])
+                                       self._colorbar],
+                                **kwargs)
         self._update()
 
     def _update(self):

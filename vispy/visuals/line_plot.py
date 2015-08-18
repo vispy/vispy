@@ -37,7 +37,7 @@ class LinePlotVisual(CompoundVisual):
     connect : str | array
         See LineVisual.
     **kwargs : keyword arguments
-        Argements to pass to the super class.
+        Arguments to pass to the set_data method.
 
     Examples
     --------
@@ -58,7 +58,7 @@ class LinePlotVisual(CompoundVisual):
 
     def __init__(self, data=None, color='k', symbol=None, line_kind='-',
                  width=1., marker_size=10., edge_color='k', face_color='w',
-                 edge_width=1., connect='strip'):
+                 edge_width=1., connect='strip', **kwargs):
         if line_kind != '-':
             raise ValueError('Only solid lines currently supported')
         self._line = LineVisual(method='gl', antialias=False)
@@ -67,7 +67,8 @@ class LinePlotVisual(CompoundVisual):
         self.set_data(data, color=color, symbol=symbol,
                       width=width, marker_size=marker_size,
                       edge_color=edge_color, face_color=face_color,
-                      edge_width=edge_width, connect=connect)
+                      edge_width=edge_width, connect=connect,
+                      **kwargs)
 
     def set_data(self, data=None, **kwargs):
         """Set the line data
@@ -77,7 +78,7 @@ class LinePlotVisual(CompoundVisual):
         data : array-like
             The data.
         **kwargs : dict
-            Keywoard arguments to pass to MarkerVisual and LineVisal.
+            Keywoard arguments to pass to MarkerVisual and LineVisual.
         """
         if data is None:
             pos = None

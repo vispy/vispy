@@ -37,9 +37,12 @@ class SpectrogramVisual(ImageVisual):
     clim : str | tuple
         Colormap limits. Should be ``'auto'`` or a two-element tuple of
         min and max values.
+    **kwargs : dict
+        Keyword dict to pass to ImageVisual
     """
     def __init__(self, x, n_fft=256, step=None, fs=1., window='hann',
-                 color_scale='log', cmap='cubehelix', clim='auto'):
+                 color_scale='log', cmap='cubehelix', clim='auto',
+                 **kwargs):
         self._n_fft = int(n_fft)
         self._fs = float(fs)
         if not isinstance(color_scale, string_types) or \
@@ -48,7 +51,8 @@ class SpectrogramVisual(ImageVisual):
         data = stft(x, self._n_fft, step, self._fs, window)
         data = np.abs(data)
         data = 20 * np.log10(data) if color_scale == 'log' else data
-        super(SpectrogramVisual, self).__init__(data, clim=clim, cmap=cmap)
+        super(SpectrogramVisual, self).__init__(data, clim=clim, cmap=cmap,
+                                                **kwargs)
 
     @property
     def freqs(self):

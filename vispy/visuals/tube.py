@@ -42,7 +42,8 @@ class TubeVisual(MeshVisual):
         Same as for the `MeshVisual` class.
     mode : str
         Same as for the `MeshVisual` class. Defaults to 'triangles'.
-
+    **kwargs : dict
+        Keyword dict to pass to MeshVisual constructor.
     """
     def __init__(self, points, radius=1.0,
                  closed=False,
@@ -51,7 +52,8 @@ class TubeVisual(MeshVisual):
                  shading='smooth',
                  vertex_colors=None,
                  face_colors=None,
-                 mode='triangles'):
+                 mode='triangles',
+                 **kwargs):
 
         points = np.array(points)
 
@@ -103,7 +105,8 @@ class TubeVisual(MeshVisual):
                             vertex_colors=vertex_colors,
                             face_colors=face_colors,
                             shading=shading,
-                            mode=mode)
+                            mode=mode,
+                            **kwargs)
 
 
 def _frenet_frames(points, closed):
