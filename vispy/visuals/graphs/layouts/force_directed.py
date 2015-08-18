@@ -91,10 +91,10 @@ class fruchterman_reingold(object):
             # Random initial positions
             pos = np.asarray(
                 np.random.random((self.num_nodes, self.dim)),
-                dtype='f32'
+                dtype=np.float32
             )
         else:
-            pos = self.pos.astype('f32')
+            pos = self.pos.astype(np.float32)
 
         # Yield initial positions
         line_vertices, arrows = _straight_line_vertices(adjacency_mat, pos,
@@ -111,7 +111,7 @@ class fruchterman_reingold(object):
         dt = t / float(self.iterations+1)
         delta = np.zeros(
             (pos.shape[0], pos.shape[0], pos.shape[1]),
-            dtype='f32'
+            dtype=np.float32
         )
 
         # The inscrutable (but fast) version
@@ -145,10 +145,10 @@ class fruchterman_reingold(object):
             # Random initial positions
             pos = np.asarray(
                 np.random.random((self.num_nodes, self.dim)),
-                dtype='f32'
+                dtype=np.float32
             )
         else:
-            pos = self.pos.astype('f32')
+            pos = self.pos.astype(np.float32)
 
         # Yield initial positions
         line_vertices, arrows = _straight_line_vertices(adjacency_coo, pos,
@@ -164,7 +164,7 @@ class fruchterman_reingold(object):
         dt = t / float(self.iterations+1)
         delta = np.zeros(
             (pos.shape[0], pos.shape[0], pos.shape[1]),
-            dtype='f32'
+            dtype=np.float32
         )
 
         for iteration in range(self.iterations):
