@@ -34,7 +34,7 @@ def circular(adjacency_mat, directed=False):
 
     num_nodes = adjacency_mat.shape[0]
 
-    t = np.arange(0, 2.0*np.pi, 2.0*np.pi/num_nodes, dtype=np.float32)
+    t = np.linpsace(0, 2 * np.pi, num_nodes, endpt=False, dtype=np.float32)
 
     # Visual coordinate system is between 0 and 1, so generate a circle with
     # radius 0.5 and center it at the point (0.5, 0.5).
