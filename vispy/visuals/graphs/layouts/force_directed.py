@@ -122,16 +122,11 @@ class fruchterman_reingold(object):
         # Linearly step down by dt on each iteration so last iteration is
         # size dt.
         dt = t / float(self.iterations+1)
-        delta = np.zeros(
-            (pos.shape[0], pos.shape[0], pos.shape[1]),
-            dtype=np.float32
-        )
-
         # The inscrutable (but fast) version
         # This is still O(V^2)
         # Could use multilevel methods to speed this up significantly
         for iteration in range(self.iterations):
-            delta_pos = self._calculate_delta_pos(adjacency_mat, pos, delta, t)
+            delta_pos = self._calculate_delta_pos(adjacency_mat, pos, t)
             pos += delta_pos
             _rescale_layout(pos)
 
@@ -175,14 +170,9 @@ class fruchterman_reingold(object):
         # Linearly step down by dt on each iteration so last iteration is
         # size dt.
         dt = t / float(self.iterations+1)
-        delta = np.zeros(
-            (pos.shape[0], pos.shape[0], pos.shape[1]),
-            dtype=np.float32
-        )
-
         for iteration in range(self.iterations):
             delta_pos = self._calculate_delta_pos(adjacency_mat.toarray(), pos,
-                                                  delta, t)
+                                                  t)
             pos += delta_pos
             _rescale_layout(pos)
 
@@ -195,8 +185,8 @@ class fruchterman_reingold(object):
 
             yield pos, line_vertices, arrows
 
-    def _calculate_delta_pos(self, adjacency_mat, pos, delta, t):
-        delta[:, :, :] = pos[:, np.newaxis, :] - pos[:, :]
+    def _calculate_delta_pos(self, adjacency_mat, pos, t):
+        delta = pos[:, np.newaxis, :] - pos[:, :]
 
         # Distance between points
         distance = np.sqrt((delta*delta).sum(axis=-1))
