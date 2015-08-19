@@ -5,9 +5,10 @@
 Force-Directed Graph Layout
 ===========================
 
-This module contains implementations for a force-directed layout, where each
-edge is modelled like a spring, and the whole graph tries to reach a state
-which requires the minimum energy.
+This module contains implementations for a force-directed layout, where the
+graph is modelled like a collection of springs or as a collection of
+particles attracting and repelling each other. The whole graph tries to
+reach a state which requires the minimum energy.
 """
 
 import numpy as np
@@ -25,6 +26,10 @@ class fruchterman_reingold(object):
     """
     Fruchterman-Reingold implementation adapted from NetworkX.
 
+    In the Fruchterman-Reingold algorithm, the whole graph is modelled as a
+    collection of particles, it runs a simplified particle simulation to
+    find a nice layout for the graph.
+
     Paramters
     ---------
     optimal : number
@@ -34,6 +39,14 @@ class fruchterman_reingold(object):
         Number of iterations to perform for layout calculation.
     pos : array
         Initial positions of the nodes
+
+    Notes
+    -----
+    The algorithm is explained in more detail in the original paper [1]_.
+
+    .. [1] Fruchterman, Thomas MJ, and Edward M. Reingold. "Graph drawing by
+       force-directed placement." Softw., Pract. Exper. 21.11 (1991),
+       1129-1164.
     """
 
     def __init__(self, optimal=None, iterations=50, pos=None):
