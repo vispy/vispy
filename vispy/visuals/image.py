@@ -159,10 +159,10 @@ class ImageVisual(Visual):
         self._interpolation_fun['nearest'] = Function(_texture_lookup)
         self._interpolation_fun['bilinear'] = Function(_texture_lookup)
 
-        # create interpolation kernel Texture2D, using 'r16f'
-        # as discussed in issue #1017
-        self._kerneltex = Texture2D(self._kernel, interpolation='nearest',
-                                    internalformat='r16f')
+        # create interpolation kernel Texture2D, using 'r32f' and 'linear'
+        # interpolation as discussed in issue #1068
+        self._kerneltex = Texture2D(self._kernel, interpolation='linear',
+                                    internalformat='r32f')
 
         if interpolation not in self._interpolation_names:
             raise ValueError("interpolation must be one of %s" %
