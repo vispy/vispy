@@ -34,7 +34,7 @@ img_data[1:4, 1::2] = 0.5
 img_data[1::2, 2] = 0.5
 img_data[2, 2] = 1.0
 
-#img_data = read_png(load_data_file('mona_lisa/mona_lisa_sm.png'))
+img_data = read_png(load_data_file('mona_lisa/mona_lisa_sm.png'))
 #img_data = np.dot(img_data[...,:3], [0.299, 0.587, 0.144])
 #img_data = img_data[...,0] * img_data[...,1] * img_data[...,2]
 #img_data /= 3.

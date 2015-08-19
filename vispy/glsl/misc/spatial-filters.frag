@@ -6,6 +6,15 @@ const float kernel_bias  = -0.234377;
 const float kernel_scale = 1.241974;
 uniform sampler2D u_kernel;
 
+float unpack (vec4 color)
+{
+    const vec4 bitShifts = vec4(1.0 / (256.0 * 256.0 * 256.0),
+                                1.0 / (256.0 * 256.0),
+                                1.0 / 256.0,
+                                1);
+    return dot(color , bitShifts);
+}
+
 vec4
 filter1D_radius1( sampler2D kernel, float index, float x, vec4 c0, vec4 c1 )
 {
@@ -39,16 +48,16 @@ filter1D_radius2( sampler2D kernel, float index, float x, vec4 c0, vec4 c1, vec4
 {
     float w, w_sum = 0.0;
     vec4 r = vec4(0.0,0.0,0.0,0.0);
-    w = texture2D(kernel, vec2(0.500000+(x/2.0),index) ).r;
+    w = unpack(texture2D(kernel, vec2(0.500000+(x/2.0),index) ));//.r;
     w = w*kernel_scale + kernel_bias;
     r += c0 * w;
-    w = texture2D(kernel, vec2(0.500000-(x/2.0),index) ).r;
+    w = unpack(texture2D(kernel, vec2(0.500000-(x/2.0),index) ));//.r;
     w = w*kernel_scale + kernel_bias;
     r += c2 * w;
-    w = texture2D(kernel, vec2(0.000000+(x/2.0),index) ).r;
+    w = unpack(texture2D(kernel, vec2(0.000000+(x/2.0),index) ));//.r;
     w = w*kernel_scale + kernel_bias;
     r += c1 * w;
-    w = texture2D(kernel, vec2(1.000000-(x/2.0),index) ).r;
+    w = unpack(texture2D(kernel, vec2(1.000000-(x/2.0),index) ));//.r;
     w = w*kernel_scale + kernel_bias;
     r += c3 * w;
     return r;

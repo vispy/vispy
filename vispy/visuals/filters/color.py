@@ -30,8 +30,8 @@ class Isoline(object):
                 //const vec3 w = vec3(0.2126, 0.7152, 0.0722);
                 //float value = dot(gl_FragColor.rgb, w);
 
-                //float value = dot(val3, w);
-                float value = $coords;
+                float value = dot(val3, w);
+                //float value = $coords;
 
 
                 // setup lw, aa
@@ -84,8 +84,8 @@ class Isoline(object):
         self.width = width
         self.color = color
         self.antialias = antialias
-        self.vshader['coords'] = Varying('coords', dtype='float')
-        self.fshader['coords'] = self.vshader['coords']
+        #self.vshader['coords'] = Varying('coords', dtype='float')
+        #self.fshader['coords'] = self.vshader['coords']
 
     @property
     def level(self):
@@ -124,7 +124,7 @@ class Isoline(object):
         self.fshader['antialias'] = a
 
     def _attach(self, visual):
-        visual._get_hook('vert', 'post').add(self.vshader())
+        #visual._get_hook('vert', 'post').add(self.vshader())
         visual._get_hook('frag', 'post').add(self.fshader())
 
         try:
@@ -137,7 +137,7 @@ class Isoline(object):
             self.fshader['color_transform1'] = \
                 Function('vec4 pass(vec4 color) { return color; }')
 
-        self.vshader['position'] = visual.shared_program.vert['position']
+        #self.vshader['position'] = visual.shared_program.vert['position']
 
 
 class Alpha(object):

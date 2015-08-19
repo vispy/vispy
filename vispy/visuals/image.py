@@ -87,6 +87,22 @@ _texture_lookup = """
         return texture2D($texture, texcoord);
     }"""
 
+def frac(f):
+    return f - f.astype(np.uint8)
+
+def floatToFixed(f):
+    toFixed = 255.0/256
+    #toFixed = 1.0/256
+    f *= toFixed
+    fr0 = frac(f)
+    f *= 255
+    fr1 = frac(f)
+    f *= 255
+    fr2 = frac(f)
+    f *= 255
+    fr3 = frac(f)
+    arr = np.dstack((fr0.astype(np.uint8), fr1.astype(np.uint8), fr2.astype(np.uint8), fr3.astype(np.uint8)))
+    return arr
 
 class ImageVisual(Visual):
     """Visual subclass displaying an image.
@@ -161,8 +177,12 @@ class ImageVisual(Visual):
 
         # create interpolation kernel Texture2D, using 'r32f' and 'linear'
         # interpolation as discussed in issue #1068
-        self._kerneltex = Texture2D(self._kernel, interpolation='linear',
-                                    internalformat='r32f')
+        self._kernel8 = np.zeros((16, 1024, 4),dtype=np.uint8)
+        print(self._kernel.shape, self._kernel8.shape, floatToFixed(self._kernel).shape)
+        self._kernel8[:] = floatToFixed(self._kernel)
+        print(self._kernel.shape, self._kernel8.shape)
+        self._kerneltex = Texture2D(self._kernel8, interpolation='nearest',
+                                    internalformat='rgba')
 
         if interpolation not in self._interpolation_names:
             raise ValueError("interpolation must be one of %s" %
