@@ -186,7 +186,7 @@ class fruchterman_reingold(object):
             yield pos, line_vertices, arrows
 
     def _calculate_delta_pos(self, adjacency_mat, pos, t):
-        delta = pos[:, np.newaxis, :] - pos[:, :]
+        delta = pos[:, np.newaxis, :] - pos
 
         # Distance between points
         distance = np.sqrt((delta*delta).sum(axis=-1))
