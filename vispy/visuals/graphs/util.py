@@ -43,10 +43,7 @@ def _get_directed_edges(adjacency_mat):
     upper = triu(adjacency_mat)
     lower = tril(adjacency_mat)
 
-    return np.concatenate((
-        func(upper),
-        func(lower)
-    ))
+    return np.concatenate((func(upper), func(lower)))
 
 
 def _straight_line_vertices(adjacency_mat, node_coords, directed=False):
