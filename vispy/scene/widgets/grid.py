@@ -3,12 +3,9 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division
-
-import warnings
 import numpy as np
 
 from .widget import Widget
-from ...util.np_backport import nanmean
 
 from ...ext.cassowary import (SimplexSolver, expression,
                               Variable, STRONG, WEAK, REQUIRED)
@@ -112,16 +109,54 @@ class Grid(Widget):
 
         self._next_cell = [row, col+col_span]
 
+        widget.var_w = Variable("w-(row: %s | col: %s)" % (row, col))
+        widget.var_h = Variable("h-(row: %s | col: %s)" % (row, col))
+
         if list(widget.stretch) == [None, None]:
             print("%s took default stretch" % widget)
             widget.stretch = (1, 1)
 
-        widget.var_w = Variable("w-(row: %s | col: %s)" % (row, col))
-        widget.var_h = Variable("h-(row: %s | col: %s)" % (row, col))
-
         self._update_child_widgets()
 
         return widget
+
+    def remove_widget(self, widget):
+        self._grid_widgets = { key : val for (key, val) in self._grid_widgets.items() if val[-1] != widget}
+
+    def resize_widget(self, widget, row_span, col_span):
+        row = None
+        col = None
+
+        print(self._grid_widgets)
+
+        for (r, c, _, _, w) in self._grid_widgets.values():
+            if w == widget:
+                row = r
+                col = c
+                break
+
+        if row is None or col is None:
+            raise ValueError("%s not found in grid" % widget)
+
+        self.remove_widget(widget)
+        self.add_widget(widget, row, col, row_span, col_span)
+
+    def move_widget(self, widget, row, col):
+        row_span = None
+        col_span = None
+
+        for (_, _, rspan, cspan, w) in self._grid_widgets.values():
+            if w == widget:
+                row_span = rspan
+                col_span = cspan
+                break
+
+        if row_span is None or col_span is None:
+            raise ValueError("%s not found in grid." %
+                             (widget, ))
+
+        self.remove_widget(widget)
+        self.add_widget(widget, row, col, row_span, col_span)
 
     def _prepare_draw(self, view):
         self._update_child_widgets()
@@ -259,10 +294,13 @@ class Grid(Widget):
         # set total width, height eqns
         for w_eqn in total_w_eqns:
             if len(w_eqn.terms) > 0:
-                solver.add_constraint(w_eqn == rect.width, strength=REQUIRED)
+                solver.add_constraint(w_eqn == rect.width, strength=STRONG)
+                solver.add_constraint(w_eqn <= rect.width, strength=REQUIRED)
         for h_eqn in total_h_eqns:
             if len(h_eqn.terms) > 0:
-                solver.add_constraint(h_eqn == rect.height, strength=REQUIRED)
+                print("\nheight eqn: %s" % (h_eqn == rect.height))
+                solver.add_constraint(h_eqn == rect.height, strength=STRONG)
+                solver.add_constraint(h_eqn <= rect.height, strength=REQUIRED)
 
         # add stretch eqns
         for terms_arr in stretch_w_eqn_terms:
