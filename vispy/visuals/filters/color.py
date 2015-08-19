@@ -8,11 +8,11 @@ from ..shaders import Function, Varying
 from ...color import colormap, Color
 
 class Isoline(object):
-    def __init__(self, level=10., width=1.0, color='black', antialias=1.0):
+    def __init__(self, level=1., width=1.0, color='black', antialias=1.0):
         self.vshader = Function("""
             void position_support()
             {
-                $coords = gl_Position.xyz;
+                $coords = $position.z;
             }
         """)
 
@@ -30,7 +30,8 @@ class Isoline(object):
                 //const vec3 w = vec3(0.2126, 0.7152, 0.0722);
                 //float value = dot(gl_FragColor.rgb, w);
 
-                float value = dot(val3, w);
+                //float value = dot(val3, w);
+                float value = $coords;
 
 
                 // setup lw, aa
@@ -47,19 +48,19 @@ class Isoline(object):
                 float v  = $isolevel * value - 0.5;
                 vec3 v3  = $isolevel * val3 - 0.5;
 
-                //float dv = linewidth/2.0 * fwidth(v);
+                float dv = linewidth/2.0 * fwidth(v);
                 vec3 dv3 = linewidth/2.0 * fwidth(v3);
 
-                //float f = abs(fract(v) - 0.5);
+                float f = abs(fract(v) - 0.5);
                 vec3 f3 = abs(fract(v3) - 0.5);
 
-                //float d = smoothstep(-dv, +dv, f);
+                float d = smoothstep(-dv, +dv, f);
                 vec3 d3 = smoothstep(-dv3, +dv3, f3);
 
                 float t = linewidth/2.0 - $antialias;
 
-                //d = abs(d)*linewidth/2.0 - t;
-                float d = d3.x * d3.y *d3.z *linewidth/2.0 - t;
+                d = abs(d)*linewidth/2.0 - t;
+                //float d = d3.x * d3.y *d3.z *linewidth/2.0 - t;
 
                 if( d < - linewidth ) {
                     d = 1.0;
@@ -83,8 +84,8 @@ class Isoline(object):
         self.width = width
         self.color = color
         self.antialias = antialias
-        #self.vshader['coords'] = Varying('coords', dtype='vec3')
-        #self.fshader['coords'] = self.vshader['coords']
+        self.vshader['coords'] = Varying('coords', dtype='float')
+        self.fshader['coords'] = self.vshader['coords']
 
     @property
     def level(self):
@@ -123,8 +124,8 @@ class Isoline(object):
         self.fshader['antialias'] = a
 
     def _attach(self, visual):
+        visual._get_hook('vert', 'post').add(self.vshader())
         visual._get_hook('frag', 'post').add(self.fshader())
-        #visual._get_hook('vert', 'post').add(self.vshader())
 
         try:
             # this works for single and multi channel data
@@ -136,8 +137,7 @@ class Isoline(object):
             self.fshader['color_transform1'] = \
                 Function('vec4 pass(vec4 color) { return color; }')
 
-        #self.vshader['position'] = visual.shared_program.vert['position']
-
+        self.vshader['position'] = visual.shared_program.vert['position']
 
 
 class Alpha(object):
