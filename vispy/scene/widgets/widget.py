@@ -55,20 +55,20 @@ class Widget(Compound):
 
         # reserved space inside border
         self._padding = padding
-        
+
         self._border_width = border_width
 
         # reserved space outside border
         self._margin = margin
         self._size = 100, 100
-        
+
         # layout interaction
-        # todo: use Cassowary; see #277 
         self._width_limits = [0, None]
         self._height_limits = [0, None]
-        self._stretch = (None, None)
-        self.var_w = self.var_h = None  # HACK
-        self.var_x = self.var_y = None  # HACK
+        self._stretch = [None, None]
+        # used by the constraint solver
+        # in grid - these will be Cassowary Variable
+        self.var_w = self.var_h = None
 
         self._widgets = []
         self._border_color = Color(border_color)

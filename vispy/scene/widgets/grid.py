@@ -116,6 +116,9 @@ class Grid(Widget):
             print("%s took default stretch" % widget)
             widget.stretch = (1, 1)
 
+        widget.var_w = Variable("w-(row: %s | col: %s)" % (row, col))
+        widget.var_h = Variable("h-(row: %s | col: %s)" % (row, col))
+
         self._update_child_widgets()
 
         return widget
@@ -211,17 +214,16 @@ class Grid(Widget):
         height_slop.value = 0
         solver.add_stay(height_slop, strength=STRONG)
 
-        total_w_eqns = [expression.Expression(width_slop) for _ in range(0, n_rows)]
-        total_h_eqns = [expression.Expression(height_slop) for _ in range(0, n_cols)]
+        total_w_eqns = [expression.Expression(width_slop)
+                        for _ in range(0, n_rows)]
+        total_h_eqns = [expression.Expression(height_slop)
+                        for _ in range(0, n_cols)]
 
         stretch_w_eqn_terms = [[] for _ in range(0, n_rows)]
         stretch_h_eqn_terms = [[] for _ in range(0, n_cols)]
 
         for _, value in self._grid_widgets.items():
             (row, col, rspan, cspan, widget) = value
-
-            widget.var_w = Variable("w-(row: %s | col: %s)" % (row, col))
-            widget.var_h = Variable("h-(row: %s | col: %s)" % (row, col))
 
             # dimensions
             for h_eqn in total_h_eqns[col:col+cspan]:
@@ -257,7 +259,6 @@ class Grid(Widget):
         # set total width, height eqns
         for w_eqn in total_w_eqns:
             if len(w_eqn.terms) > 0:
-                print("w eqn: %s" % (w_eqn == rect.width))
                 solver.add_constraint(w_eqn == rect.width, strength=REQUIRED)
         for h_eqn in total_h_eqns:
             if len(h_eqn.terms) > 0:
@@ -274,12 +275,6 @@ class Grid(Widget):
                 for term in terms_arr[1:]:
                     solver.add_constraint(term == terms_arr[0], strength=WEAK)
 
-        # print("\n\n\nlayout:\n%s" % self.layout_array)
-        # print("\nnrows: %s | ncols: %s " % (n_rows, n_cols))
-        # print ("\nwidth eqns:\n------\n%s" % np.array(total_w_eqns))
-        # print ("\nheight eqns:\n------\n%s" % np.array(total_h_eqns))
-        # print ("\nstretch_w terms:\n------\n%s" % np.array(stretch_w_eqn_terms))
-        # print ("\nstretch_h terms:\n------\n%s" % np.array(stretch_h_eqn_terms))
         solver.solve()
 
         # copy dimensions
