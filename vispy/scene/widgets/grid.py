@@ -121,18 +121,41 @@ class Grid(Widget):
         return widget
 
     def remove_widget(self, widget):
-        self._grid_widgets = { key : val for (key, val) in self._grid_widgets.items() if val[-1] != widget}
+        """Remove a widget from this grid
+
+        Parameters
+        ----------
+        widget : Widget
+            The Widget to remove
+        """
+
+        self._grid_widgets = {key: val
+                              for (key, val) in self._grid_widgets.items()
+                              if val[-1] != widget}
 
     def resize_widget(self, widget, row_span, col_span):
+        """Resize a widget in the grid to new dimensions.
+
+        Parameters
+        ----------
+        widget : Widget
+            The widget to resize
+        row_span : int
+            The number of rows to be occupied by this widget.
+        col_span : int
+            The number of columns to be occupied by this widget.
+        """
+
         row = None
         col = None
 
         print(self._grid_widgets)
 
-        for (r, c, _, _, w) in self._grid_widgets.values():
+        for (r, c, rspan, cspan, w) in self._grid_widgets.values():
             if w == widget:
                 row = r
                 col = c
+
                 break
 
         if row is None or col is None:
@@ -142,6 +165,18 @@ class Grid(Widget):
         self.add_widget(widget, row, col, row_span, col_span)
 
     def move_widget(self, widget, row, col):
+        """Move the given widget to the specified row and column.
+
+        Parameters
+        ----------
+        widget : Widget
+            The Widget to add
+        row : int
+            The row in which to move the widget (0 is the topmost row)
+        col : int
+            The row in which to move the widget (0 is the leftmost column)
+
+        """
         row_span = None
         col_span = None
 

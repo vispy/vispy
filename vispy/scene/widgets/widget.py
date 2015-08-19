@@ -218,7 +218,7 @@ class Widget(Compound):
     def stretch(self):
         """Stretch factors (w, h) used when determining how much space to
         allocate to this widget in a layout.
-        
+
         If either stretch factor is None, then it will be assigned when the
         widget is added to a layout based on the number of columns or rows it
         occupies.
@@ -233,7 +233,7 @@ class Widget(Compound):
     def _update_layout(self):
         if isinstance(self.parent, Widget):
             self.parent._update_child_widgets()
-    
+
     def _update_clipper(self):
         """Called whenever the clipper for this widget may need to be updated.
         """
@@ -241,7 +241,7 @@ class Widget(Compound):
             self._clipper = Clipper()
         elif not self.clip_children:
             self._clipper = None
-        
+
         if self._clipper is None:
             return
         self._clipper.rect = self.inner_rect
@@ -294,7 +294,7 @@ class Widget(Compound):
         self._padding = p
         self._update_child_widgets()
         self.update()
-    
+
     def _update_line(self):
         """ Update border line to match new shape """
         w = self._border_width
