@@ -37,8 +37,13 @@ def _ndarray_get_edges(adjacency_mat):
 
 def _get_directed_edges(adjacency_mat):
     func = _sparse_get_edges if issparse(adjacency_mat) else _ndarray_get_edges
-    triu = sparse.triu if issparse(adjacency_mat) else np.triu
-    tril = sparse.tril if issparse(adjacency_mat) else np.tril
+
+    if issparse(adjacency_mat):
+        triu = sparse.triu
+        tril = sparse.tril
+    else:
+        triu = np.triu
+        tril = np.tril
 
     upper = triu(adjacency_mat)
     lower = tril(adjacency_mat)
