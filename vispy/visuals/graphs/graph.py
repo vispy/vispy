@@ -19,7 +19,7 @@ class GraphVisual(CompoundVisual):
 
     Parameters
     ----------
-    adjacency_mat : array
+    adjacency_mat : array or sparse
         The adjacency matrix of the graph.
     directed : bool
         Whether the graph is directed or not. If True, then this visual will
