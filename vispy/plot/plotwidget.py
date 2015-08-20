@@ -66,31 +66,21 @@ class PlotWidget(scene.Widget):
 
         self.yaxis = scene.AxisWidget(orientation='left', text_color=fg,
                                       axis_color=fg, tick_color=fg)
-        self.yaxis.width_max = 50
-        self.yaxis.width_min = 30
+        self.yaxis.width = 50
         self.grid.add_widget(self.yaxis, row=1, col=1)
 
         self.ylabel = scene.Label("", rotation=-90)
-        self.ylabel.stretch = (0.1, 1)
         self.grid.add_widget(self.ylabel, row=1, col=0, row_span=2)
-
-        self.ylabel.width_max = 50
-        self.ylabel.width_min = 30
+        self.ylabel.width = 50
 
         self.xaxis = scene.AxisWidget(orientation='bottom', text_color=fg,
                                       axis_color=fg, tick_color=fg)
         self.grid.add_widget(self.xaxis, row=2, col=1, col_span=2)
-
-        self.xaxis.stretch = (1, 0.1)
-        self.xaxis.height_max = 50
-        self.xaxis.height_min = 30
+        self.xaxis.height = 30
 
         self.xlabel = scene.Label("")
-        self.xlabel.height_max = 1
         self.grid.add_widget(self.xlabel, row=3, col=1, col_span=2)
-
-        self.xlabel.height_max = 50
-        self.xlabel.height_min = 30
+        self.xlabel.height = 30
 
         self.view.camera = 'panzoom'
         self.camera = self.view.camera
