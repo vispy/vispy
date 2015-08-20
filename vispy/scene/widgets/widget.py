@@ -119,76 +119,134 @@ class Widget(Compound):
 
     @property
     def width(self):
-        """The width of this widget"""
+        """The actual width of this widget"""
         return self._size[0]
 
     @width.setter
     def width(self, width):
-        self.size = (width, self._size[1])
+        """Set the width of the widget to be a fixed width
+
+        Parameters
+        ----------
+        width: float
+        The fixed width of the widget
+        """
+        self.width_min = width
+        self.width_max = width
 
     @property
-    def min_width(self):
+    def width_min(self):
+        """The minimum width the widget can have"""
         return self._width_limits[0]
 
-    @min_width.setter
-    def min_width(self, min_width):
-        if min_width is None:
-            self._width_limits[0] = None
+    @width_min.setter
+    def width_min(self, width_min):
+        """Set the minimum height of the widget
+
+        Parameters
+        ----------
+
+        height_min: float
+            the minimum height of the widget
+        """
+
+        if width_min is None:
+            self._width_limits = (0, self._width_limits[1])
             return
 
-        self._width_limits[0] = float(min_width)
+        width_min = float(width_min)
+        assert(0 <= width_min)
+
+        if self.width_max is not None:
+            assert(width_min <= self.width_max)
+
+        self._width_limits = (width_min, self._width_limits[1])
 
     @property
-    def max_width(self):
+    def width_max(self):
+        """The maximum width the widget can have"""
         return self._width_limits[1]
 
-    @max_width.setter
-    def max_width(self, max_width):
-        if max_width is None:
-            self._width_limits[1] = None
+    @width_max.setter
+    def width_max(self, width_max):
+        """Set the maximum width of the widget.
+
+        Parameters
+        ----------
+        width_max: None | float
+            the maximum width of the widget. if None, maximum width
+            is unbounded
+        """
+        if width_max is None:
+            self._width_limits = (self._width_limits[0], None)
             return
 
-        self._width_limits[1] = float(max_width)
-
-    def fixed_width(self, fixed_width):
-        self.min_width = self.max_width = fixed_width
+        width_max = float(width_max)
+        assert(0 <= self.width_min <= width_max)
+        self._width_limits = (self._width_limits[0], width_max)
 
     @property
     def height(self):
-        """The height of this widget"""
+        """The actual height of the widget"""
         return self._size[1]
 
     @height.setter
     def height(self, height):
-        self.size = (self._size[0], height)
+        """Set the height of the widget to be a fixed height
+
+        Parameters
+        ----------
+        height: float
+        The fixed height of the widget
+        """
+        self._size = (self._size[0], height)
 
     @property
-    def min_height(self):
+    def height_min(self):
+        """The minimum height of the widget"""
         return self._height_limits[0]
 
-    @min_height.setter
-    def min_height(self, min_height):
-        if min_height is None:
-            self._height_limits[0] = None
+    @height_min.setter
+    def height_min(self, height_min):
+        """Set the minimum height of the widget
+
+        Parameters
+        ----------
+
+        height_min: float
+            the minimum height of the widget
+        """
+        if height_min is None:
+            self._height_limits = (0, self._height_limits[1])
             return
 
-        self._height_limits[0] = float(min_height)
+        height_min = float(height_min)
+        assert(height_min >= 0)
+
+        self._height_limits = (height_min, self._height_limits[1])
 
     @property
-    def max_height(self):
+    def height_max(self):
+        """The maximum height of the widget"""
         return self._height_limits[1]
 
-    @max_height.setter
-    def max_height(self, max_height):
-        if max_height is None:
-            self._height_limits[1] = None
+    @height_max.setter
+    def height_max(self, height_max):
+        """Set the maximum height of the widget.
+
+        Parameters
+        ----------
+        height_max: None | float
+            the maximum height of the widget. if None, maximum height
+            is unbounded
+        """
+        if height_max is None:
+            self._height_limits = (self._height_limits[0], None)
             return
 
-        self._height_limits[1] = float(max_height)
-
-    def fixed_height(self, fixed_height):
-        self.min_height = fixed_height
-        self.max_height = fixed_height
+        height_max = float(height_max)
+        assert(0 <= self.height_min <= height_max)
+        self._height_limits = (self._height_limits[0], height_max)
 
     @property
     def rect(self):
