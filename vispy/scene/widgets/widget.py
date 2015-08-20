@@ -199,7 +199,8 @@ class Widget(Compound):
         height: float
         The fixed height of the widget
         """
-        self._size = (self._size[0], height)
+        self.height_min = height
+        self.height_max = height
 
     @property
     def height_min(self):
