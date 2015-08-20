@@ -46,7 +46,7 @@ class PlotWidget(scene.Widget):
 
         self.title = scene.Label("", font_size=16, color="#ff0000")
         self.title_widget = self.grid.add_widget(self.title, row=0, col=0)
-        self.title.min_height = 40
+        self.title.height_min = 40
         self.title.stretch = (1, 0.1)
 
         self.view = self.grid.add_view(row=1, col=0,
@@ -66,31 +66,31 @@ class PlotWidget(scene.Widget):
 
         self.yaxis = scene.AxisWidget(orientation='left', text_color=fg,
                                       axis_color=fg, tick_color=fg)
-        self.yaxis.max_width = 50
-        self.yaxis.min_width = 30
+        self.yaxis.width_max = 50
+        self.yaxis.width_min = 30
         self.grid.add_widget(self.yaxis, row=1, col=1)
 
         self.ylabel = scene.Label("", rotation=-90)
         self.ylabel.stretch = (0.1, 1)
         self.grid.add_widget(self.ylabel, row=1, col=0, row_span=2)
 
-        self.ylabel.max_width = 50
-        self.ylabel.min_width = 30
+        self.ylabel.width_max = 50
+        self.ylabel.width_min = 30
 
         self.xaxis = scene.AxisWidget(orientation='bottom', text_color=fg,
                                       axis_color=fg, tick_color=fg)
         self.grid.add_widget(self.xaxis, row=2, col=1, col_span=2)
 
         self.xaxis.stretch = (1, 0.1)
-        self.xaxis.max_height = 50
-        self.xaxis.min_height = 30
+        self.xaxis.height_max = 50
+        self.xaxis.height_min = 30
 
         self.xlabel = scene.Label("")
-        self.xlabel.max_height = 1
+        self.xlabel.height_max = 1
         self.grid.add_widget(self.xlabel, row=3, col=1, col_span=2)
 
-        self.xlabel.max_height = 50
-        self.xlabel.min_height = 30
+        self.xlabel.height_max = 50
+        self.xlabel.height_min = 30
 
         self.view.camera = 'panzoom'
         self.camera = self.view.camera
@@ -266,14 +266,14 @@ class PlotWidget(scene.Widget):
         self.view.add(line)
         self.view.camera.set_range()
         self.visuals.append(line)
-        
+
         if title is not None:
             self.title.text = title
         if xlabel is not None:
             self.xlabel.text = xlabel
         if ylabel is not None:
             self.ylabel.text = ylabel
-        
+
         return line
 
     def spectrogram(self, x, n_fft=256, step=None, fs=1., window='hann',
