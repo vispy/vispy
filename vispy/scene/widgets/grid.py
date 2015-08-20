@@ -113,7 +113,6 @@ class Grid(Widget):
         widget.var_h = Variable("h-(row: %s | col: %s)" % (row, col))
 
         if list(widget.stretch) == [None, None]:
-            print("%s took default stretch" % widget)
             widget.stretch = (1, 1)
 
         self._update_child_widgets()
@@ -148,8 +147,6 @@ class Grid(Widget):
 
         row = None
         col = None
-
-        print(self._grid_widgets)
 
         for (r, c, rspan, cspan, w) in self._grid_widgets.values():
             if w == widget:
@@ -195,7 +192,6 @@ class Grid(Widget):
 
     def _prepare_draw(self, view):
         self._update_child_widgets()
-        print("grid update: %s" % self)
 
     def add_grid(self, row=None, col=None, row_span=1, col_span=1,
                  **kwargs):
@@ -329,7 +325,6 @@ class Grid(Widget):
                 solver.add_constraint(w_eqn <= rect.width, strength=REQUIRED)
         for h_eqn in h_total_eqns:
             if len(h_eqn.terms) > 0:
-                print("\nheight eqn: %s" % (h_eqn == rect.height))
                 solver.add_constraint(h_eqn == rect.height, strength=STRONG)
                 solver.add_constraint(h_eqn <= rect.height, strength=REQUIRED)
 
