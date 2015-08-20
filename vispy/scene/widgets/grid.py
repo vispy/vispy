@@ -134,9 +134,9 @@ class Grid(Widget):
             The Widget to remove
         """
 
-        self._grid_widgets = {key: val
-                              for (key, val) in self._grid_widgets.items()
-                              if val[-1] != widget}
+        self._grid_widgets = dict((key, val)
+                                  for (key, val) in self._grid_widgets.items()
+                                  if val[-1] != widget)
 
         self._need_solver_recreate = True
 
