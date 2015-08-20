@@ -297,25 +297,7 @@ def create_box(width=1, height=1, depth=1, width_segments=1, height_segments=1,
     return vertices, faces, outline
 
 
-def create_sphere(rows, cols, radius=1.0, offset=True):
-    """Create a sphere
-
-    Parameters
-    ----------
-    rows : int
-        Number of rows.
-    cols : int
-        Number of columns.
-    radius : float
-        Sphere radius.
-    offset : bool
-        Rotate each row by half a column.
-
-    Returns
-    -------
-    sphere : MeshData
-        Vertices and faces computed for a spherical surface.
-    """
+def _latlon(rows, cols, radius, offset):
     verts = np.empty((rows+1, cols, 3), dtype=np.float32)
 
     # compute vertices
@@ -352,7 +334,100 @@ def create_sphere(rows, cols, radius=1.0, offset=True):
     faces -= vmin
     vmax = verts.shape[0]-1
     faces[faces > vmax] = vmax
-    return MeshData(vertices=verts, faces=faces)
+    return MeshData(verts, faces)
+    
+def _icosphere(radius, subdivisions):
+    # golden ratio
+    t = (1.0 + np.sqrt(5.0))/2.0
+    
+    # vertices of a icosahedron    
+    verts = [(-1,  t,  0),
+             ( 1,  t,  0),
+             (-1, -t,  0),
+             ( 1, -t,  0),
+             ( 0, -1,  t),
+             ( 0,  1,  t),
+             ( 0, -1, -t),
+             ( 0,  1, -t),
+             ( t,  0, -1),
+             ( t,  0,  1),
+             (-t,  0, -1),
+             (-t,  0,  1)]
+
+    # faces of the icosahedron
+    faces = [( 0, 11,  5),
+             ( 0,  5,  1),
+             ( 0,  1,  7),
+             ( 0,  7, 10),
+             ( 0, 10, 11),
+             ( 1,  5,  9),
+             ( 5, 11,  4),
+             (11, 10,  2),
+             (10,  7,  6),
+             ( 7,  1,  8),
+             ( 3,  9,  4),
+             ( 3,  4,  2),
+             ( 3,  2,  6),
+             ( 3,  6,  8),
+             ( 3,  8,  9),
+             ( 4,  9,  5),
+             ( 2,  4, 11),
+             ( 6,  2, 10),
+             ( 8,  6,  7),
+             ( 9,  8,  1)]
+
+    def midpoint(v1, v2):
+        return ((v1[0]+v2[0])/2, (v1[1]+v2[1])/2, (v1[2]+v2[2])/2)
+        
+    # subdivision
+    for _ in range(subdivisions):
+        for idx in range(len(faces)):
+            i,j,k = faces[idx]
+            a, b, c = verts[i], verts[j], verts[k]
+            ab, bc, ca = midpoint(a, b), midpoint(b, c), midpoint(c, a)
+            verts += [ab, bc, ca]
+            ij, jk, ki = len(verts)-3, len(verts)-2, len(verts)-1
+            faces.append([i, ij, ki])
+            faces.append([ij, j, jk])
+            faces.append([ki, jk, k])
+            faces[idx] = [jk, ki, ij]
+    verts = np.array(verts)
+    faces = np.array(faces)
+    
+    # make each vertex to lie on the sphere
+    lengths = np.sqrt((verts*verts).sum(axis=1))
+    verts /= lengths[:, np.newaxis]/radius
+    return MeshData(verts, faces)
+
+def create_sphere(rows=10, cols=10, radius=1.0, offset=True, subdivisions=3, method='latlon'):
+    """Create a sphere
+    Parameters
+    ----------
+    rows : int
+        Number of rows (for method='latlon').
+    cols : int
+        Number of columns (for method='latlon').
+    radius : float
+        Sphere radius.
+    offset : bool
+        Rotate each row by half a column (for method='latlon').
+    subdivisions : int
+        Number of subdivisions to perform (for method='icosphere')
+    method : str
+        Method for generating sphere. Accepts 'latlon' for latitude-longitude, and 'icosphere' for 
+        icosahedron based tessellation.
+        
+    Returns
+    -------
+    sphere : MeshData
+        Vertices and faces computed for a spherical surface.
+    """
+    if method == 'latlon':
+        return _latlon(rows, cols, radius, offset)
+    elif method == 'icosphere':
+        return _icosphere(radius, subdivisions)
+    else:
+        raise Exception("Invalid method. Accepts: 'latlon', 'icosphere'")
 
 
 def create_cylinder(rows, cols, radius=[1.0, 1.0], length=1.0, offset=False):
