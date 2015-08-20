@@ -164,6 +164,10 @@ class ImageVisual(Visual):
         kernel8 = np.fromstring(kernel.tostring(), np.ubyte)
         kernel8.shape = kernel.shape + (4,)
         self._kerneltex = Texture2D(kernel8, interpolation='nearest')
+        # The unpacking can be debugged by changing "spatial-filters.frag"
+        # to have the "unpack" function just return the .r component. That
+        # combined with using the below as the _kerneltex allows debugging
+        # of the pipeline
         # self._kerneltex = Texture2D(kernel, interpolation='linear',
         #                             internalformat='r32f')
 
