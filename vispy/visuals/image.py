@@ -183,6 +183,9 @@ class ImageVisual(Visual):
         self._kerneltex = Texture2D(self._kernel8, interpolation='nearest',
                                     internalformat='rgba8')
 
+        #self._kerneltex = Texture2D(self._kernel, interpolation='linear',
+        #                            internalformat='r32f')
+
         if interpolation not in self._interpolation_names:
             raise ValueError("interpolation must be one of %s" %
                              ', '.join(self._interpolation_names))

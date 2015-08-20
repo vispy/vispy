@@ -8,7 +8,7 @@ uniform sampler2D u_kernel;
 
 float unpack(vec4 rgba) {
     //return rgba.r;
-    rgba.rgba = rgba.abgr * 255.;
+    rgba.rgba = rgba.abgr * 255;
     float sign = 1.0 - step(128.0,rgba[0])*2.0;
     float exponent = 2.0 * mod(rgba[0],128.0) + step(128.0,rgba[1]) - 127.0;
     float mantissa = mod(rgba[1],128.0)*65536.0 + rgba[2]*256.0 + rgba[3] + float(0x800000);
@@ -44,45 +44,60 @@ filter2D_radius1(sampler2D texture, sampler2D kernel, float index, vec2 uv, vec2
     return filter1D_radius1(kernel, index, f.y, t0, t1);
 }
 
-float lerp(sampler2D kernel, vec2 uv, float f1) {
+float lerp(sampler2D kernel, vec2 uv) {
     vec2 texel = uv;
-    vec2 f = fract(texel);
-    texel = (texel-fract(texel));
-    vec4 c0 = vec4(1.0,1.0,1.0,1.0);
-    vec4 c1 = vec4(1.0,1.0,1.0,1.0);
+    float u = texel.x;
+    float v = texel.y;
+    float uf = fract(u);
 
-    //float d1 = unpack(texture2D(kernel, vec2(0.00000+(f.x/1.0), uv.y)));
-    //float d2 = unpack(texture2D(kernel, vec2(1.00000-(f.x/1.0), uv.y)));
-
-    float d1 = unpack(texture2D(kernel, vec2(0.0000 + uv.x, uv.y)));
-    float d2 = unpack(texture2D(kernel, vec2(1.0000 - uv.x, uv.y)));
-
-    return mix(d2, d1, f1).r;
+    float d0 = unpack(texture2D(kernel, vec2(u - uf, v)));
+    float d1 = unpack(texture2D(kernel, vec2(u - uf + 1, v)));
+    return mix(d0, d1, uf);
 }
 
 vec4
-filter1D_radius2( sampler2D kernel, float index, float x, vec4 c0, vec4 c1, vec4 c2, vec4 c3 )
+filter1D_radius2( sampler2D kernel, float index, float x, vec4 c0, vec4 c1, vec4 c2, vec4 c3)
 {
     float w, w_sum = 0.0;
     vec4 r = vec4(0.0,0.0,0.0,0.0);
-    w = lerp(kernel, vec2(0.500000+(x/2.0),index), x);//.r;
+    w = lerp(kernel, vec2(0.500000+(x/2.0),index));//.r;
     w = w*kernel_scale + kernel_bias;
     r += c0 * w;
-    w = lerp(kernel, vec2(0.500000-(x/2.0),index), x );//.r;
+    w = lerp(kernel, vec2(0.500000-(x/2.0),index));//.r;
     w = w*kernel_scale + kernel_bias;
     r += c2 * w;
-    w = lerp(kernel, vec2(0.000000+(x/2.0),index), x );//.r;
+    w = lerp(kernel, vec2(0.000000+(x/2.0),index));//.r;
     w = w*kernel_scale + kernel_bias;
     r += c1 * w;
-    w = lerp(kernel, vec2(1.000000-(x/2.0),index), x );//.r;
+    w = lerp(kernel, vec2(1.000000-(x/2.0),index));//.r;
     w = w*kernel_scale + kernel_bias;
     r += c3 * w;
     return r;
 }
 vec4
+filter1D_radius2a( sampler2D kernel, float index, float x, vec4 c0, vec4 c1, vec4 c2, vec4 c3)
+{
+    float w, w_sum = 0.0;
+    vec4 r = vec4(0.0,0.0,0.0,0.0);
+    w = texture2D(kernel, vec2(0.500000+(x/2.0),index)).r;
+    w = w*kernel_scale + kernel_bias;
+    r += c0 * w;
+    w = texture2D(kernel, vec2(0.500000-(x/2.0),index)).r;
+    w = w*kernel_scale + kernel_bias;
+    r += c2 * w;
+    w = texture2D(kernel, vec2(0.000000+(x/2.0),index)).r;
+    w = w*kernel_scale + kernel_bias;
+    r += c1 * w;
+    w = texture2D(kernel, vec2(1.000000-(x/2.0),index)).r;
+    w = w*kernel_scale + kernel_bias;
+    r += c3 * w;
+    return r;
+}
+
+vec4
 filter2D_radius2(sampler2D texture, sampler2D kernel, float index, vec2 uv, vec2 pixel )
 {
-    vec2 texel = uv/pixel - vec2(0.5,0.5) ;
+    vec2 texel = uv/pixel - vec2(0.5,0.5);
     vec2 f = fract(texel);
     texel = (texel-fract(texel)+vec2(0.001,0.001))*pixel;
     vec4 t0 = filter1D_radius2(kernel, index, f.x,

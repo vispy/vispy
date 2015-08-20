@@ -26,8 +26,8 @@ class Isoline(object):
                 //vec3 val3 = $coords.rgb;
 
 
-                const vec3 w = vec3(0.299, 0.587, 0.114);
-                //const vec3 w = vec3(0.2126, 0.7152, 0.0722);
+                //const vec3 w = vec3(0.299, 0.587, 0.114);
+                const vec3 w = vec3(0.2126, 0.7152, 0.0722);
                 //float value = dot(gl_FragColor.rgb, w);
 
                 float value = dot(val3, w);
@@ -60,7 +60,7 @@ class Isoline(object):
                 float t = linewidth/2.0 - $antialias;
 
                 d = abs(d)*linewidth/2.0 - t;
-                //float d = d3.x * d3.y *d3.z *linewidth/2.0 - t;
+                //d = d3.x * d3.y *d3.z *linewidth/2.0 - t;
 
                 if( d < - linewidth ) {
                     d = 1.0;
