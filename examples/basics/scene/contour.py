@@ -23,16 +23,55 @@ canvas.show()
 # Set up a viewbox to display the image with interactive pan/zoom
 view = canvas.central_widget.add_view()
 
+
+t = 2.23547566289471
+
+import struct, array
+
+#myarray1 = array.array('f')
+myarray = array.array('f')
+myarray.append(t)
+
+def unpack_helper(data):
+    str = data.tostring()
+    size = len(data) * 4
+    fmt = "!%dB" % size
+    print(fmt, size)
+    #size = struct.calcsize(fmt)
+    return struct.unpack(fmt, str)
+
+def pack_helper(data):
+    return struct.pack("!%sf" % len(data), *data)
+
+
+p = myarray.tostring()
+#p = struct.pack('!f', t)
+u = struct.unpack('!4B', p)
+print(t,p,u)
+
 # Create the image
 interpolation = 'bicubic'
 np.random.seed(1000)
 img_data = np.random.normal(size=(100, 100), loc=50, scale=150)
 img_data = gaussian_filter(img_data, (4, 4, 0)).astype(np.float32)
 
-img_data = np.zeros(25).reshape((5, 5)).astype(np.float32)
+
+
+img_data = np.zeros(25).reshape((5, 5)).astype(np.float32)# + 1.223
 img_data[1:4, 1::2] = 0.5
 img_data[1::2, 2] = 0.5
 img_data[2, 2] = 1.0
+
+myarray = array.array('f', img_data.ravel())
+#mystring = myarray.tostring()
+
+#d = mystring
+#p = pack_helper(mystring)
+#print(p)
+print(myarray)
+u = unpack_helper(myarray)
+print(u)
+
 
 img_data = read_png(load_data_file('mona_lisa/mona_lisa_sm.png'))
 #img_data = np.dot(img_data[...,:3], [0.299, 0.587, 0.144])
@@ -69,6 +108,7 @@ view.camera = scene.PanZoomCamera(aspect=1)
 # flip y-axis to have correct aligment
 view.camera.flip = (0, 1, 0)
 view.camera.set_range()
+
 
 # get interpolation functions from Image
 names = image.interpolation_functions
@@ -110,7 +150,6 @@ def on_key_press(event):
         iso.level = level
     canvas.title = 'Spatial Filtering using %s Filter - Isoline %d level' % (interpolation, level)
     canvas.update()
-
 
 if __name__ == '__main__' and sys.flags.interactive == 0:
     app.run()
