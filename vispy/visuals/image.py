@@ -87,21 +87,6 @@ _texture_lookup = """
         return texture2D($texture, texcoord);
     }"""
 
-import array, struct
-
-def floatToFixed(f):
-    str = array.array('f', f.ravel()).tostring()
-    print(len(str))
-    size = f.size * 4
-    fmt = "!%dB" % size
-    print(fmt, size, f.shape + (4,))
-    #size = struct.calcsize(fmt)
-    arr = struct.unpack(fmt, str)
-    arr = np.array(arr)
-    arr.shape = (f.shape + (4,))
-    print(arr.shape)
-    return arr
-
 
 class ImageVisual(Visual):
     """Visual subclass displaying an image.
@@ -158,7 +143,7 @@ class ImageVisual(Visual):
         self._data = None
 
         # load interpolation kernel
-        self._kernel, self._interpolation_names = load_spatial_filters()
+        kernel, self._interpolation_names = load_spatial_filters()
         # create interpolation shader functions for available
         # interpolations
         fun = [Function(_interpolation_template % n)
@@ -167,24 +152,20 @@ class ImageVisual(Visual):
                                      for n in self._interpolation_names]
 
         self._interpolation_fun = dict(zip(self._interpolation_names, fun))
-        self.interpolation_filters = self._interpolation_names
+        self._interpolation_names.sort()
+        self._interpolation_names = tuple(self._interpolation_names)
 
         # overwrite "nearest" and "bilinear" spatial-filters
         # with  "hardware" interpolation _data_lookup_fn
         self._interpolation_fun['nearest'] = Function(_texture_lookup)
         self._interpolation_fun['bilinear'] = Function(_texture_lookup)
 
-        # create interpolation kernel Texture2D, using 'r32f' and 'linear'
-        # interpolation as discussed in issue #1068
-        self._kernel8 = np.zeros((16, 1024, 4),dtype=np.uint8)
-        #print(self._kernel.shape, self._kernel8.shape, floatToFixed(self._kernel).shape)
-        self._kernel8[:] = floatToFixed(self._kernel)
-        print(self._kernel.shape, self._kernel8.shape)
-        self._kerneltex = Texture2D(self._kernel8, interpolation='nearest',
-                                    internalformat='rgba8')
-
-        #self._kerneltex = Texture2D(self._kernel, interpolation='linear',
-        #                            internalformat='r32f')
+        # convert our kernel to a packed representation
+        kernel8 = np.fromstring(kernel.tostring(), np.ubyte)
+        kernel8.shape = kernel.shape + (4,)
+        self._kerneltex = Texture2D(kernel8, interpolation='nearest')
+        # self._kerneltex = Texture2D(kernel, interpolation='linear',
+        #                             internalformat='r32f')
 
         if interpolation not in self._interpolation_names:
             raise ValueError("interpolation must be one of %s" %
