@@ -284,78 +284,72 @@ class Grid(Widget):
         height_slop.value = 0
         solver.add_stay(height_slop, strength=STRONG)
 
-        total_w_eqns = [expression.Expression(width_slop)
+        w_total_eqns = [expression.Expression(width_slop)
                         for _ in range(0, n_rows)]
-        total_h_eqns = [expression.Expression(height_slop)
+        h_total_eqns = [expression.Expression(height_slop)
                         for _ in range(0, n_cols)]
 
-        stretch_w_eqn_terms = [[] for _ in range(0, n_rows)]
-        stretch_h_eqn_terms = [[] for _ in range(0, n_cols)]
+        w_stretch_terms = [[] for _ in range(0, n_rows)]
+        h_stretch_terms = [[] for _ in range(0, n_cols)]
 
         for _, value in self._grid_widgets.items():
             (row, col, rspan, cspan, widget) = value
 
             # dimensions
-            for h_eqn in total_h_eqns[col:col+cspan]:
+            for h_eqn in h_total_eqns[col:col+cspan]:
                     h_eqn.add_expression(widget.var_h)
 
-            for w_eqn in total_w_eqns[row:row+rspan]:
+            for w_eqn in w_total_eqns[row:row+rspan]:
                     w_eqn.add_expression(widget.var_w)
 
-            if widget.min_width is not None:
-                solver.add_constraint(widget.var_w >= widget.min_width)
-            else:
-                solver.add_constraint(widget.var_w >= 0)
+            assert(widget.width_min is not None)
+            solver.add_constraint(widget.var_w >= widget.width_min)
 
-            if widget.max_width is not None:
-                solver.add_constraint(widget.var_w <= widget.max_width)
+            if widget.width_max is not None:
+                solver.add_constraint(widget.var_w <= widget.width_max)
 
-            if widget.min_height is not None:
-                solver.add_constraint(widget.var_h >= widget.min_height)
-            else:
-                solver.add_constraint(widget.var_h >= 0)
+            assert(widget.height_min is not None)
+            solver.add_constraint(widget.var_h >= widget.height_min)
 
-            if widget.max_height is not None:
-                solver.add_constraint(widget.var_h <= widget.max_height)
+            if widget.height_max is not None:
+                solver.add_constraint(widget.var_h <= widget.height_max)
 
             if widget.stretch[0] is not None:
-                for terms_arr in stretch_w_eqn_terms[row:row+rspan]:
+                for terms_arr in w_stretch_terms[row:row+rspan]:
                     terms_arr.append(widget.var_w / widget.stretch[0])
 
             if widget.stretch[1] is not None:
-                for terms_arr in stretch_h_eqn_terms[col:col+cspan]:
+                for terms_arr in h_stretch_terms[col:col+cspan]:
                     terms_arr.append(widget.var_h / widget.stretch[1])
 
         # set total width, height eqns
-        for w_eqn in total_w_eqns:
+        for w_eqn in w_total_eqns:
             if len(w_eqn.terms) > 0:
                 solver.add_constraint(w_eqn == rect.width, strength=STRONG)
                 solver.add_constraint(w_eqn <= rect.width, strength=REQUIRED)
-        for h_eqn in total_h_eqns:
+        for h_eqn in h_total_eqns:
             if len(h_eqn.terms) > 0:
                 print("\nheight eqn: %s" % (h_eqn == rect.height))
                 solver.add_constraint(h_eqn == rect.height, strength=STRONG)
                 solver.add_constraint(h_eqn <= rect.height, strength=REQUIRED)
 
         # add stretch eqns
-        for terms_arr in stretch_w_eqn_terms:
+        for terms_arr in w_stretch_terms:
             if len(terms_arr) > 1:
                 for term in terms_arr[1:]:
                     solver.add_constraint(term == terms_arr[0], strength=WEAK)
 
-        for terms_arr in stretch_h_eqn_terms:
+        for terms_arr in h_stretch_terms:
             if len(terms_arr) > 1:
                 for term in terms_arr[1:]:
                     solver.add_constraint(term == terms_arr[0], strength=WEAK)
 
-        solver.solve()
+        solver.resolve()
 
         # copy dimensions
         for (_, val) in self._grid_widgets.items():
             (row, col, rspan, cspan, widget) = val
-            widget.width = widget.var_w.value
-            widget.height = widget.var_h.value
-
+            widget.size = (widget.var_w.value, widget.var_h.value)
         for (_, val) in self._grid_widgets.items():
             row, col, rs, cs, widget = val
             pos_x = self.margin
