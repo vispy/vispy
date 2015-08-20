@@ -12,7 +12,17 @@ float unpack(vec4 rgba) {
     float sign = 1.0 - step(128.0,rgba[0])*2.0;
     float exponent = 2.0 * mod(rgba[0],128.0) + step(128.0,rgba[1]) - 127.0;
     float mantissa = mod(rgba[1],128.0)*65536.0 + rgba[2]*256.0 + rgba[3] + float(0x800000);
-    return sign * exp2(exponent) * (mantissa * exp2(-23.0 ));
+    return sign * exp2(exponent) * (mantissa * exp2(-23.0));
+}
+
+float unpack_interpolate(sampler2D kernel, vec2 uv) {
+    float u = uv.x;
+    float v = uv.y;
+    float u1 = ceil(u);
+    float uf = u1 - u;
+    float d0 = unpack(texture2D(kernel, vec2(u1 - 1, v)));
+    float d1 = unpack(texture2D(kernel, vec2(u1, v)));
+    return mix(d0, d1, uf);
 }
 
 vec4
@@ -20,10 +30,10 @@ filter1D_radius1( sampler2D kernel, float index, float x, vec4 c0, vec4 c1 )
 {
     float w, w_sum = 0.0;
     vec4 r = vec4(0.0,0.0,0.0,0.0);
-    w = texture2D(kernel, vec2(0.000000+(x/1.0),index) ).r;
+    w = unpack_interpolate(kernel, vec2(0.000000+(x/1.0),index) );
     w = w*kernel_scale + kernel_bias;
     r += c0 * w;
-    w = texture2D(kernel, vec2(1.000000-(x/1.0),index) ).r;
+    w = unpack_interpolate(kernel, vec2(1.000000-(x/1.0),index) );
     w = w*kernel_scale + kernel_bias;
     r += c1 * w;
     return r;
@@ -44,51 +54,21 @@ filter2D_radius1(sampler2D texture, sampler2D kernel, float index, vec2 uv, vec2
     return filter1D_radius1(kernel, index, f.y, t0, t1);
 }
 
-float lerp(sampler2D kernel, vec2 uv) {
-    vec2 texel = uv;
-    float u = texel.x;
-    float v = texel.y;
-    float uf = fract(u);
-
-    float d0 = unpack(texture2D(kernel, vec2(u - uf, v)));
-    float d1 = unpack(texture2D(kernel, vec2(u - uf + 1, v)));
-    return mix(d0, d1, uf);
-}
-
 vec4
 filter1D_radius2( sampler2D kernel, float index, float x, vec4 c0, vec4 c1, vec4 c2, vec4 c3)
 {
     float w, w_sum = 0.0;
     vec4 r = vec4(0.0,0.0,0.0,0.0);
-    w = lerp(kernel, vec2(0.500000+(x/2.0),index));//.r;
+    w = unpack_interpolate(kernel, vec2(0.500000+(x/2.0),index));
     w = w*kernel_scale + kernel_bias;
     r += c0 * w;
-    w = lerp(kernel, vec2(0.500000-(x/2.0),index));//.r;
+    w = unpack_interpolate(kernel, vec2(0.500000-(x/2.0),index));
     w = w*kernel_scale + kernel_bias;
     r += c2 * w;
-    w = lerp(kernel, vec2(0.000000+(x/2.0),index));//.r;
+    w = unpack_interpolate(kernel, vec2(0.000000+(x/2.0),index));
     w = w*kernel_scale + kernel_bias;
     r += c1 * w;
-    w = lerp(kernel, vec2(1.000000-(x/2.0),index));//.r;
-    w = w*kernel_scale + kernel_bias;
-    r += c3 * w;
-    return r;
-}
-vec4
-filter1D_radius2a( sampler2D kernel, float index, float x, vec4 c0, vec4 c1, vec4 c2, vec4 c3)
-{
-    float w, w_sum = 0.0;
-    vec4 r = vec4(0.0,0.0,0.0,0.0);
-    w = texture2D(kernel, vec2(0.500000+(x/2.0),index)).r;
-    w = w*kernel_scale + kernel_bias;
-    r += c0 * w;
-    w = texture2D(kernel, vec2(0.500000-(x/2.0),index)).r;
-    w = w*kernel_scale + kernel_bias;
-    r += c2 * w;
-    w = texture2D(kernel, vec2(0.000000+(x/2.0),index)).r;
-    w = w*kernel_scale + kernel_bias;
-    r += c1 * w;
-    w = texture2D(kernel, vec2(1.000000-(x/2.0),index)).r;
+    w = unpack_interpolate(kernel, vec2(1.000000-(x/2.0),index));
     w = w*kernel_scale + kernel_bias;
     r += c3 * w;
     return r;
@@ -128,22 +108,22 @@ filter1D_radius3( sampler2D kernel, float index, float x, vec4 c0, vec4 c1, vec4
 {
     float w, w_sum = 0.0;
     vec4 r = vec4(0.0,0.0,0.0,0.0);
-    w = texture2D(kernel, vec2(0.666667+(x/3.0),index) ).r;
+    w = unpack_interpolate(kernel, vec2(0.666667+(x/3.0),index) );
     w = w*kernel_scale + kernel_bias;
     r += c0 * w;
-    w = texture2D(kernel, vec2(0.333333-(x/3.0),index) ).r;
+    w = unpack_interpolate(kernel, vec2(0.333333-(x/3.0),index) );
     w = w*kernel_scale + kernel_bias;
     r += c3 * w;
-    w = texture2D(kernel, vec2(0.333333+(x/3.0),index) ).r;
+    w = unpack_interpolate(kernel, vec2(0.333333+(x/3.0),index) );
     w = w*kernel_scale + kernel_bias;
     r += c1 * w;
-    w = texture2D(kernel, vec2(0.666667-(x/3.0),index) ).r;
+    w = unpack_interpolate(kernel, vec2(0.666667-(x/3.0),index) );
     w = w*kernel_scale + kernel_bias;
     r += c4 * w;
-    w = texture2D(kernel, vec2(0.000000+(x/3.0),index) ).r;
+    w = unpack_interpolate(kernel, vec2(0.000000+(x/3.0),index) );
     w = w*kernel_scale + kernel_bias;
     r += c2 * w;
-    w = texture2D(kernel, vec2(1.000000-(x/3.0),index) ).r;
+    w = unpack_interpolate(kernel, vec2(1.000000-(x/3.0),index) );
     w = w*kernel_scale + kernel_bias;
     r += c5 * w;
     return r;
@@ -204,28 +184,28 @@ filter1D_radius4( sampler2D kernel, float index, float x, vec4 c0, vec4 c1, vec4
 {
     float w, w_sum = 0.0;
     vec4 r = vec4(0.0,0.0,0.0,0.0);
-    w = texture2D(kernel, vec2(0.750000+(x/4.0),index) ).r;
+    w = unpack_interpolate(kernel, vec2(0.750000+(x/4.0),index) );
     w = w*kernel_scale + kernel_bias;
     r += c0 * w;
-    w = texture2D(kernel, vec2(0.250000-(x/4.0),index) ).r;
+    w = unpack_interpolate(kernel, vec2(0.250000-(x/4.0),index) );
     w = w*kernel_scale + kernel_bias;
     r += c4 * w;
-    w = texture2D(kernel, vec2(0.500000+(x/4.0),index) ).r;
+    w = unpack_interpolate(kernel, vec2(0.500000+(x/4.0),index) );
     w = w*kernel_scale + kernel_bias;
     r += c1 * w;
-    w = texture2D(kernel, vec2(0.500000-(x/4.0),index) ).r;
+    w = unpack_interpolate(kernel, vec2(0.500000-(x/4.0),index) );
     w = w*kernel_scale + kernel_bias;
     r += c5 * w;
-    w = texture2D(kernel, vec2(0.250000+(x/4.0),index) ).r;
+    w = unpack_interpolate(kernel, vec2(0.250000+(x/4.0),index) );
     w = w*kernel_scale + kernel_bias;
     r += c2 * w;
-    w = texture2D(kernel, vec2(0.750000-(x/4.0),index) ).r;
+    w = unpack_interpolate(kernel, vec2(0.750000-(x/4.0),index) );
     w = w*kernel_scale + kernel_bias;
     r += c6 * w;
-    w = texture2D(kernel, vec2(0.000000+(x/4.0),index) ).r;
+    w = unpack_interpolate(kernel, vec2(0.000000+(x/4.0),index) );
     w = w*kernel_scale + kernel_bias;
     r += c3 * w;
-    w = texture2D(kernel, vec2(1.000000-(x/4.0),index) ).r;
+    w = unpack_interpolate(kernel, vec2(1.000000-(x/4.0),index) );
     w = w*kernel_scale + kernel_bias;
     r += c7 * w;
     return r;

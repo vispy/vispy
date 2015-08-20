@@ -8,12 +8,10 @@
 Simple use of SceneCanvas to display an Image.
 """
 import sys
-from vispy import scene
-from vispy import app
-from vispy import visuals
-from vispy.util.filter import gaussian_filter
-from vispy.visuals.filters import Isoline
 import numpy as np
+
+from vispy import scene, app, visuals
+from vispy.visuals.filters import IsolineFilter
 from vispy.io import load_data_file, read_png
 
 canvas = scene.SceneCanvas(keys='interactive')
@@ -23,85 +21,17 @@ canvas.show()
 # Set up a viewbox to display the image with interactive pan/zoom
 view = canvas.central_widget.add_view()
 
-
-t = 2.23547566289471
-
-import struct, array
-
-#myarray1 = array.array('f')
-myarray = array.array('f')
-myarray.append(t)
-
-def unpack_helper(data):
-    str = data.tostring()
-    size = len(data) * 4
-    fmt = "!%dB" % size
-    print(fmt, size)
-    #size = struct.calcsize(fmt)
-    return struct.unpack(fmt, str)
-
-def pack_helper(data):
-    return struct.pack("!%sf" % len(data), *data)
-
-
-p = myarray.tostring()
-#p = struct.pack('!f', t)
-u = struct.unpack('!4B', p)
-print(t,p,u)
-
-# Create the image
 interpolation = 'bicubic'
-np.random.seed(1000)
-img_data = np.random.normal(size=(100, 100), loc=50, scale=150)
-img_data = gaussian_filter(img_data, (4, 4, 0)).astype(np.float32)
-
-
-
-img_data = np.zeros(25).reshape((5, 5)).astype(np.float32)# + 1.223
-img_data[1:4, 1::2] = 0.5
-img_data[1::2, 2] = 0.5
-img_data[2, 2] = 1.0
-
-myarray = array.array('f', img_data.ravel())
-#mystring = myarray.tostring()
-
-#d = mystring
-#p = pack_helper(mystring)
-#print(p)
-print(myarray)
-u = unpack_helper(myarray)
-print(u)
-
-
 img_data = read_png(load_data_file('mona_lisa/mona_lisa_sm.png'))
-#img_data = np.dot(img_data[...,:3], [0.299, 0.587, 0.144])
-#img_data = img_data[...,0] * img_data[...,1] * img_data[...,2]
-#img_data /= 3.
-#image = scene.visuals.Image(img_data, interpolation=interpolation,
-#                            parent=view.scene, method='subdivide')
-
-img_data1 = np.zeros((100, 100))
-img_data1[0,0] = -0.5
-img_data1[99,99] = +0.5
 image = scene.visuals.Image(img_data, interpolation=interpolation,
-                            parent=view.scene, method='subdivide')
-
-#image = scene.visuals.Contour(img_data, interpolation='bicubic1',
-#                            parent=view.scene, method='subdivide',
-#                            levels=2, width=1.0, color='yellow')
-
+                            parent=view.scene)
 image.transform = visuals.transforms.STTransform(translate=(0, 0, 0.5))
 
-levels = np.linspace(img_data.min(), img_data.max(), num=13, endpoint=True)[1:-1]
+levels = np.linspace(img_data.min(), img_data.max(), 13)[1:-1]
 color_lev = 'white'
-# Create isocurve, make a child of the image to ensure the two are always
-# aligned.
-#curve = scene.visuals.Isocurve(img_data, levels=levels, color_lev=color_lev,
-#                              parent=view.scene, method='subdivide')
-
-iso = Isoline(level=10, width=1., color='black')
-
-canvas.title = 'Spatial Filtering using %s Filter' % interpolation
+level = 0
+iso = IsolineFilter(level=level, width=1., color='black')
+image.attach(iso)
 
 # Set 2D camera (the camera will scale to the contents in the scene)
 view.camera = scene.PanZoomCamera(aspect=1)
@@ -112,15 +42,7 @@ view.camera.set_range()
 
 # get interpolation functions from Image
 names = image.interpolation_functions
-names = list(names)
-names.sort()
-print(names)
-act = 17
-
-act = -1
-
-level = 2
-first = True
+act = names.index(interpolation)
 
 
 # Implement key presses
@@ -133,22 +55,12 @@ def on_key_press(event):
         else:
             step = -1
         act = (act + step) % len(names)
-        interpolation = names[act]
-        image.interpolation = interpolation
+        image.interpolation = names[act]
 
     if event.key in ['Up', 'Down']:
-        if first:
-            image.attach(iso)
-            first = False
-        if event.key == 'Up':
-            level += 1
-        else:
-            if level > 1:
-                level -= 1
-        #levels = np.linspace(img_data.min(), img_data.max(), num=level+1, endpoint=True)[1:-1]
-        #curve.levels = levels
-        iso.level = level
-    canvas.title = 'Spatial Filtering using %s Filter - Isoline %d level' % (interpolation, level)
+        iso.level += 1 if event.key == 'Up' else -1
+    canvas.title = ('Spatial Filtering using %s Filter - Isoline %d level'
+                    % (image.interpolation, iso.level))
     canvas.update()
 
 if __name__ == '__main__' and sys.flags.interactive == 0:

@@ -7,7 +7,8 @@ import weakref
 from ..shaders import Function, Varying
 from ...color import colormap, Color
 
-class Isoline(object):
+
+class IsolineFilter(object):
     def __init__(self, level=1., width=1.0, color='black', antialias=1.0):
         self.vshader = Function("""
             void position_support()
@@ -18,6 +19,11 @@ class Isoline(object):
 
         self.fshader = Function("""
             void isoline() {
+                if ($isolevel <= 0 || $isowidth <= 0) {
+                    gl_FragColor = $color_transform1(gl_FragColor);
+                    return;
+                }
+
                 // function taken from glumpy/examples/isocurves.py
                 // and extended to have level, width and color as parameters
 
@@ -93,6 +99,8 @@ class Isoline(object):
 
     @level.setter
     def level(self, l):
+        if l <= 0:
+            l = 0
         self._level = l
         self.fshader['isolevel'] = l
 
