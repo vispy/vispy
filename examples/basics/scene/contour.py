@@ -8,14 +8,13 @@
 Simple use of SceneCanvas to display an Image.
 """
 import sys
-import numpy as np
 
 from vispy import scene, app, visuals
 from vispy.visuals.filters import IsolineFilter
 from vispy.io import load_data_file, read_png
 
 canvas = scene.SceneCanvas(keys='interactive')
-canvas.size = 800, 600
+canvas.size = 600, 800
 canvas.show()
 
 # Set up a viewbox to display the image with interactive pan/zoom
@@ -27,9 +26,7 @@ image = scene.visuals.Image(img_data, interpolation=interpolation,
                             parent=view.scene)
 image.transform = visuals.transforms.STTransform(translate=(0, 0, 0.5))
 
-levels = np.linspace(img_data.min(), img_data.max(), 13)[1:-1]
-color_lev = 'white'
-level = 0
+level = 10
 iso = IsolineFilter(level=level, width=1., color='black')
 image.attach(iso)
 
@@ -37,8 +34,11 @@ image.attach(iso)
 view.camera = scene.PanZoomCamera(aspect=1)
 # flip y-axis to have correct aligment
 view.camera.flip = (0, 1, 0)
-view.camera.set_range()
+# select face part
+view.camera.rect = (160, 130, 240, 200)
 
+canvas.title = ('Spatial Filtering using %s Filter - Isoline %d level'
+                % (image.interpolation, iso.level))
 
 # get interpolation functions from Image
 names = image.interpolation_functions

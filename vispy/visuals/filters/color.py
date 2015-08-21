@@ -10,13 +10,6 @@ from ...color import colormap, Color
 
 class IsolineFilter(object):
     def __init__(self, level=1., width=1.0, color='black', antialias=1.0):
-        self.vshader = Function("""
-            void position_support()
-            {
-                $coords = $position.z;
-            }
-        """)
-
         self.fshader = Function("""
             void isoline() {
                 if ($isolevel <= 0 || $isowidth <= 0) {
@@ -25,20 +18,15 @@ class IsolineFilter(object):
                 }
 
                 // function taken from glumpy/examples/isocurves.py
-                // and extended to have level, width and color as parameters
+                // and extended to have level, width, color and antialiasing
+                // as parameters
 
                 // Extract data value
-                vec3 val3 = gl_FragColor.rgb;
-                //vec3 val3 = $coords.rgb;
-
-
-                //const vec3 w = vec3(0.299, 0.587, 0.114);
-                const vec3 w = vec3(0.2126, 0.7152, 0.0722);
-                //float value = dot(gl_FragColor.rgb, w);
-
-                float value = dot(val3, w);
-                //float value = $coords;
-
+                // this accounts for perception,
+                // have to decide, which one to use or make this a uniform
+                const vec3 w = vec3(0.299, 0.587, 0.114);
+                //const vec3 w = vec3(0.2126, 0.7152, 0.0722);
+                float value = dot(gl_FragColor.rgb, w);
 
                 // setup lw, aa
                 float linewidth = $isowidth + $antialias;
@@ -50,23 +38,13 @@ class IsolineFilter(object):
                         linewidth = linewidth * 2;
                 }
 
-                // Trace contouriso
+                // Trace contour isoline
                 float v  = $isolevel * value - 0.5;
-                vec3 v3  = $isolevel * val3 - 0.5;
-
                 float dv = linewidth/2.0 * fwidth(v);
-                vec3 dv3 = linewidth/2.0 * fwidth(v3);
-
                 float f = abs(fract(v) - 0.5);
-                vec3 f3 = abs(fract(v3) - 0.5);
-
                 float d = smoothstep(-dv, +dv, f);
-                vec3 d3 = smoothstep(-dv3, +dv3, f3);
-
                 float t = linewidth/2.0 - $antialias;
-
                 d = abs(d)*linewidth/2.0 - t;
-                //d = d3.x * d3.y *d3.z *linewidth/2.0 - t;
 
                 if( d < - linewidth ) {
                     d = 1.0;
@@ -74,8 +52,8 @@ class IsolineFilter(object):
                      d /= $antialias;
                 }
 
+                // setup background and foreground
                 vec4 bg = $color_transform1(gl_FragColor);
-
                 vec4 fc = vec4($isocolor.rgb, 0);
 
                 if (d < 1.) {
@@ -90,8 +68,6 @@ class IsolineFilter(object):
         self.width = width
         self.color = color
         self.antialias = antialias
-        #self.vshader['coords'] = Varying('coords', dtype='float')
-        #self.fshader['coords'] = self.vshader['coords']
 
     @property
     def level(self):
@@ -132,20 +108,20 @@ class IsolineFilter(object):
         self.fshader['antialias'] = a
 
     def _attach(self, visual):
-        #visual._get_hook('vert', 'post').add(self.vshader())
         visual._get_hook('frag', 'post').add(self.fshader())
 
+        # check if shared_program has color_transform
         try:
-            # this works for single and multi channel data
+            # get color_transform from parent visual
+            # and override parent visual color_transform
             self.fshader['color_transform1'] = \
                 visual.shared_program.frag['color_transform']
             visual.shared_program.frag['color_transform'] = \
                 Function('vec4 pass(vec4 color) { return color; }')
         except:
+            # keep original color
             self.fshader['color_transform1'] = \
                 Function('vec4 pass(vec4 color) { return color; }')
-
-        #self.vshader['position'] = visual.shared_program.vert['position']
 
 
 class Alpha(object):
@@ -156,16 +132,16 @@ class Alpha(object):
             }
         """)
         self.alpha = alpha
-    
+
     @property
     def alpha(self):
         return self._alpha
-    
+
     @alpha.setter
     def alpha(self, a):
         self._alpha = a
         self.shader['alpha'] = a
-        
+
     def _attach(self, visual):
         self._visual = weakref.ref(visual)
         hook = visual._get_hook('frag', 'post')
@@ -180,16 +156,16 @@ class ColorFilter(object):
             }
         """)
         self.filter = filter
-    
+
     @property
     def filter(self):
         return self._filter
-    
+
     @filter.setter
     def filter(self, f):
         self._filter = tuple(f)
         self.shader['filter'] = self._filter
-        
+
     def _attach(self, visual):
         self._visual = visual
         hook = visual._get_hook('frag', 'post')
@@ -205,8 +181,8 @@ class ZColormapFilter(object):
         """)
         self.fshader = Function("""
             void apply_z_colormap() {
-                gl_FragColor = $cmap(($zval - $zrange.x) / 
-                                     ($zrange.y - $zrange.x));
+                gl_FragColor = $cmap(($zval - $zrange.x) /
+                                        ($zrange.y - $zrange.x));
             }
         """)
         if isinstance(cmap, str):
@@ -216,12 +192,12 @@ class ZColormapFilter(object):
         self.fshader['zrange'] = zrange
         self.vshader['zval'] = Varying('v_zval', dtype='float')
         self.fshader['zval'] = self.vshader['zval']
-        
+
     def _attach(self, visual):
         self._visual = visual
         vhook = visual._get_hook('vert', 'post')
         vhook.add(self.vshader(), position=9)
         fhook = visual._get_hook('frag', 'post')
         fhook.add(self.fshader(), position=3)
-        
+
         self.vshader['position'] = visual.shared_program.vert['position']
