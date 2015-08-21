@@ -25,7 +25,10 @@ def test_cube():
 
 def test_sphere():
     """Test sphere function"""
-    md = create_sphere(10, 20, radius=10)
+    md = create_sphere(10, 20, radius=10, method='latlon')
+    radii = np.sqrt((md.get_vertices() ** 2).sum(axis=1))
+    assert_allclose(radii, np.ones_like(radii) * 10)
+    md = create_sphere(10, 20, radius=10, method='ico')
     radii = np.sqrt((md.get_vertices() ** 2).sum(axis=1))
     assert_allclose(radii, np.ones_like(radii) * 10)
 

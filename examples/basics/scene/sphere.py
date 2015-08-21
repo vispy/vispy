@@ -17,7 +17,7 @@ view = canvas.central_widget.add_view()
 view.camera = 'arcball'
 view.padding = 100
 
-sphere = scene.visuals.Sphere(radius=1, parent=view.scene,
+sphere = scene.visuals.Sphere(radius=1, method='ico', parent=view.scene,
                               edge_color='black')
 
 if __name__ == '__main__' and sys.flags.interactive == 0:
