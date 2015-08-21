@@ -40,7 +40,8 @@ class SphereVisual(CompoundVisual):
                  method='latlon', vertex_colors=None, face_colors=None,
                  color=(0.5, 0.5, 1, 1), edge_color=None, **kwargs):
 
-        mesh = create_sphere(cols, rows, radius=radius, method=method)
+        mesh = create_sphere(cols, rows, radius=radius,
+                             subdivisions=subdivisions, method=method)
 
         self._mesh = MeshVisual(vertices=mesh.get_vertices(),
                                 faces=mesh.get_faces(),
