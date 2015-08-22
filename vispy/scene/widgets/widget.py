@@ -69,6 +69,7 @@ class Widget(Compound):
         # used by the constraint solver
         # in grid - these will be Cassowary Variable
         self.var_w = self.var_h = None
+        self.var_x = self.var_y = None
 
         self._widgets = []
         self._border_color = Color(border_color)
