@@ -297,28 +297,6 @@ class Grid(Widget):
             (row, col, rspan, cspan, widget) = val
             widget.size = (widget.var_w.value, widget.var_h.value)
             widget.pos = (widget.var_x.value, widget.var_y.value)
-        
-        # for (_, val) in self._grid_widgets.items():
-        #     row, col, rs, cs, widget = val
-        #     pos_x, pos_y = rect.left, rect.bottom
-
-        #     if row > 0:
-        #         prev_widget_idx = self.layout_array[row - 1][col]
-        #         if prev_widget_idx != -1:
-        #             prev_widget = self._grid_widgets[prev_widget_idx][4]
-        #             pos_y = prev_widget.pos[1] + prev_widget.height + self.spacing
-
-        #     if col > 0:
-        #         prev_widget_idx = self.layout_array[row][col - 1]
-        #         if prev_widget_idx != -1:
-        #             prev_widget = self._grid_widgets[prev_widget_idx][4]
-        #             pos_x = prev_widget.pos[0] + prev_widget.width + self.spacing
-
-        # for _, val in self._grid_widgets.items():
-        #     _, _, _, _, widget = val
-        #     print("widget: %s | pos: %s | dim: %s" % (widget,
-        #                                                           widget.pos,
-        #                                                           widget.size))
 
     def _recreate_child_widet_constraints(self):
         # Resize all widgets in this grid to share space.
@@ -391,7 +369,10 @@ class Grid(Widget):
                 if prev_widget_id != -1:
                     prev_widget = self._grid_widgets[prev_widget_id][-1]
                     if prev_widget is not None:
-                        self._solver.add_constraint(widget.var_x == prev_widget.var_x + prev_widget.var_w + self.spacing)
+                        self._solver.add_constraint(widget.var_x ==
+                                                    prev_widget.var_x +
+                                                    prev_widget.var_w +
+                                                    self.spacing)
 
             # y axis pos
             if row == 0:
@@ -401,19 +382,29 @@ class Grid(Widget):
                 prev_widget_id = self.layout_array[row - 1][col]
                 if prev_widget_id != -1:
                     prev_widget = self._grid_widgets[prev_widget_id][-1]
-                    if prev_widget is not None:   
-                        self._solver.add_constraint(widget.var_y == prev_widget.var_y + prev_widget.var_h)
+
+                    if prev_widget is not None:
+                        self._solver.add_constraint(widget.var_y ==
+                                                    prev_widget.var_y +
+                                                    prev_widget.var_h +
+                                                    self.spacing)
 
         # set total width, height eqns
         for row, w_eqn in enumerate(w_total_eqns):
             if len(w_eqn.terms) > 0:
-                cols_in_row = len(set([l for l in self.layout_array[row] if l != -1]))
-                self._solver.add_constraint(w_eqn == self.var_w - self.spacing * (cols_in_row - 1),
+                cols_in_row = len(set([l for l in self.layout_array[row]
+                                       if l != -1]))
+                self._solver.add_constraint(w_eqn ==
+                                            self.var_w -
+                                            self.spacing * (cols_in_row - 1),
                                             strength=REQUIRED)
-        for h_eqn in h_total_eqns:
+        for col, h_eqn in enumerate(h_total_eqns):
             if len(h_eqn.terms) > 0:
-              
-                self._solver.add_constraint(h_eqn == self.var_h,
+                rows_in_col = len(set([l for l in self.layout_array.T[col]
+                                       if l != -1]))
+
+                self._solver.add_constraint(h_eqn == self.var_h -
+                                            self.spacing * (rows_in_col - 1),
                                             strength=REQUIRED)
 
         # add stretch eqns
@@ -426,5 +417,5 @@ class Grid(Widget):
         for terms_arr in h_stretch_terms:
             if len(terms_arr) > 1:
                 for term in terms_arr[1:]:
-                    self._solver.add_constraint(term == terms_arr[1],
+                    self._solver.add_constraint(term == terms_arr[0],
                                                 strength=STRONG)

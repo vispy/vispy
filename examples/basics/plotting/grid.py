@@ -29,7 +29,7 @@ widget_left.bgcolor = "#dd0000"
 widget_right = grid.add_widget(row=1, col=1)
 widget_right.bgcolor = "#0000dd"
 
-widget_bottom = grid.add_widget(row=2, col=0)
+widget_bottom = grid.add_widget(row=2, col=0, col_span=2)
 widget_bottom.bgcolor = "#666666"
 
 if __name__ == '__main__' and sys.flags.interactive == 0:
