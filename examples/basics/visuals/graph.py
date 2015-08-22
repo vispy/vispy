@@ -13,7 +13,7 @@ import sys
 import numpy as np
 import networkx as nx
 
-from vispy import app, gloo, visuals
+from vispy import app, visuals
 from vispy.visuals.graphs import layouts
 from vispy.visuals.transforms import STTransform
 
@@ -23,53 +23,33 @@ class Canvas(app.Canvas):
         app.Canvas.__init__(self, title="Simple NetworkX Graph",
                             keys="interactive", size=(600, 600))
 
-        self.graph = nx.fast_gnp_random_graph(1000, 0.0006, directed=True)
+        graph = nx.adjacency_matrix(
+            nx.fast_gnp_random_graph(500, 0.005, directed=True))
+        layout = layouts.get_layout('force_directed', iterations=100)
 
         self.visual = visuals.GraphVisual(
-            # np.asarray(nx.to_numpy_matrix(self.graph)),
-            nx.adjacency_matrix(self.graph),
-            layout=layouts.get_layout('force_directed'),
-            line_color=(1.0, 1.0, 1.0, 1.0),
-            arrow_type="stealth",
-            arrow_size=15,
-            node_symbol="disc",
-            node_size=10,
-            face_color="red",
-            border_width=0.0,
-            animate=True,
-            directed=True
-        )
+            graph, layout=layout, line_color='black', arrow_type="stealth",
+            arrow_size=30, node_symbol="disc", node_size=20,
+            face_color=(1, 0, 0, 0.5), border_width=0.0, animate=True, directed=False)
 
-        self.visual.events.update.connect(lambda evt: self.update())
         self.visual.transform = STTransform(self.visual_size, (20, 20))
-
-        self.timer = app.Timer(interval=0, connect=self.animate, start=True)
-
         self.show()
 
     @property
     def visual_size(self):
-        return (
-            self.physical_size[0] - 40,
-            self.physical_size[1] - 40
-        )
+        return self.physical_size[0] - 40, self.physical_size[1] - 40
 
     def on_resize(self, event):
         self.visual.transform.scale = self.visual_size
-
         vp = (0, 0, self.physical_size[0], self.physical_size[1])
         self.context.set_viewport(*vp)
         self.visual.transforms.configure(canvas=self, viewport=vp)
 
     def on_draw(self, event):
-        gloo.clear('black')
+        self.context.clear('white')
         self.visual.draw()
-
-    def animate(self, event):
-        ready = self.visual.animate_layout()
-
-        if ready:
-            self.timer.disconnect(self.animate)
+        if not self.visual.animate_layout():
+            self.update()
 
 
 if __name__ == '__main__':
