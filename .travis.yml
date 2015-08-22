@@ -113,7 +113,7 @@ install:
     # Install numpy, flake
     - conda create -n testenv --yes --quiet pip python=$PYTHON > ${REDIRECT_TO};
     - source activate testenv > ${REDIRECT_TO};
-    - conda install --yes --quiet numpy$NUMPY nose pytest networkx > ${REDIRECT_TO};
+    - conda install --yes --quiet numpy$NUMPY nose pytest > ${REDIRECT_TO};
     - pip install -q coveralls pytest-cov
     # Dont install flake8 on 2.6 to make sure tests still run without it
     - if [ "${PYTHON}" != "2.6" ]; then
@@ -137,7 +137,7 @@ install:
         if [ "${PYTHON}" == "2.6" ]; then
           conda install --yes --quiet wxpython numpy$NUMPY > ${REDIRECT_TO};
         else
-          conda install --yes --quiet ipython$IPYTHON ipython-notebook numpy$NUMPY > ${REDIRECT_TO};
+          conda install --yes --quiet ipython$IPYTHON ipython-notebook numpy$NUMPY networkx > ${REDIRECT_TO};
         fi;
         if [ "${PYTHON}" == "3.4" ]; then
           pip install -q freetype-py husl pypng https://github.com/mpld3/mplexporter/zipball/master > ${REDIRECT_TO};
