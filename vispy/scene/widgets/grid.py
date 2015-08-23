@@ -8,7 +8,7 @@ import numpy as np
 from .widget import Widget
 
 from ...ext.cassowary import (SimplexSolver, expression,
-                              Variable, STRONG, WEAK, REQUIRED)
+                              Variable, STRONG, REQUIRED, WEAK)
 
 
 class Grid(Widget):
@@ -31,16 +31,16 @@ class Grid(Widget):
         self.spacing = spacing
         self._n_added = 0
         self._default_class = ViewBox  # what to add when __getitem__ is used
-        # width and height of the Rect used to place child widgets
-        # self.var_w_rect = Variable("w_rect")
-        # self.var_h_rect = Variable("h_rect")
         self._solver = None
         self._need_solver_recreate = True
 
         Widget.__init__(self, **kwargs)
 
+        # width and height of the Rect used to place child widgets
         self.var_w = Variable("w_rect")
         self.var_h = Variable("h_rect")
+        self.var_x = Variable("x_rect")
+        self.var_y = Variable("x_rect")
 
     def __getitem__(self, idxs):
         """Return an item or create it if the location is available"""
@@ -123,9 +123,6 @@ class Grid(Widget):
 
         widget.var_x = Variable("x-(row: %s | col: %s)" % (row, col))
         widget.var_y = Variable("y-(row: %s | col: %s)" % (row, col))
-
-        if list(widget.stretch) == [None, None]:
-            widget.stretch = (1, 1)
 
         self._need_solver_recreate = True
 
@@ -371,8 +368,7 @@ class Grid(Widget):
                     if prev_widget is not None:
                         self._solver.add_constraint(widget.var_x ==
                                                     prev_widget.var_x +
-                                                    prev_widget.var_w +
-                                                    self.spacing)
+                                                    prev_widget.var_w)
 
             # y axis pos
             if row == 0:
@@ -386,8 +382,7 @@ class Grid(Widget):
                     if prev_widget is not None:
                         self._solver.add_constraint(widget.var_y ==
                                                     prev_widget.var_y +
-                                                    prev_widget.var_h +
-                                                    self.spacing)
+                                                    prev_widget.var_h)
 
         # set total width, height eqns
         for row, w_eqn in enumerate(w_total_eqns):
@@ -395,16 +390,14 @@ class Grid(Widget):
                 cols_in_row = len(set([l for l in self.layout_array[row]
                                        if l != -1]))
                 self._solver.add_constraint(w_eqn ==
-                                            self.var_w -
-                                            self.spacing * (cols_in_row - 1),
+                                            self.var_w,
                                             strength=REQUIRED)
         for col, h_eqn in enumerate(h_total_eqns):
             if len(h_eqn.terms) > 0:
                 rows_in_col = len(set([l for l in self.layout_array.T[col]
                                        if l != -1]))
 
-                self._solver.add_constraint(h_eqn == self.var_h -
-                                            self.spacing * (rows_in_col - 1),
+                self._solver.add_constraint(h_eqn == self.var_h,
                                             strength=REQUIRED)
 
         # add stretch eqns
@@ -412,10 +405,10 @@ class Grid(Widget):
             if len(terms_arr) > 1:
                 for term in terms_arr[1:]:
                     self._solver.add_constraint(term == terms_arr[0],
-                                                strength=STRONG)
+                                                strength=WEAK)
 
         for terms_arr in h_stretch_terms:
             if len(terms_arr) > 1:
                 for term in terms_arr[1:]:
                     self._solver.add_constraint(term == terms_arr[0],
-                                                strength=STRONG)
+                                                strength=WEAK)
