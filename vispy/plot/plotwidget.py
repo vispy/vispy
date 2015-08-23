@@ -59,24 +59,26 @@ class PlotWidget(scene.Widget):
         else:
             fg = fg_color
 
-        title_widget = self.grid.add_widget(self.title, row=0, col=2, col_span=3)
-        title_widget.height = 50
+        height_title = 50
+        width_yaxis = height_xaxis = 50
+        width_ylabel = height_xlabel = 30
 
+        title_widget = self.grid.add_widget(self.title, row=0, col=2,
+                                            col_span=3)
+        title_widget.height = height_title
         self.view = self.grid.add_view(row=1, col=2, row_span=3, col_span=3,
                                        border_color='grey', bgcolor="#efefef")
-        self.view.stretch = (1, 0.8)
 
         space_filler_title = self.grid.add_widget(row=0, col=0,
                                                   col_span=2)
 
-        space_filler_title.width = 30
-        space_filler_title.height = 50
+        space_filler_title.width = width_ylabel
+        space_filler_title.height = height_title
 
         self.ylabel = scene.Label("", rotation=-90)
         ylabel_widget = self.grid.add_widget(self.ylabel,
                                              row=1, col=0, row_span=3)
-        ylabel_widget.width = 30
-        ylabel_widget.stretch = (1, 0.8)
+        ylabel_widget.width = width_ylabel
 
         self.yaxis = scene.AxisWidget(orientation='left',
                                       text_color=fg,
@@ -84,24 +86,24 @@ class PlotWidget(scene.Widget):
 
         yaxis_widget = self.grid.add_widget(self.yaxis, row=1, col=1,
                                             row_span=3)
-        yaxis_widget.width = 50
+        yaxis_widget.width = width_yaxis
 
         space_filler_x_axis = self.grid.add_widget(row=4, col=0,
                                                    col_span=2, row_span=2)
-        space_filler_x_axis.width = 30 + 50
-        space_filler_x_axis.height = 50 + 30
+        space_filler_x_axis.width = width_yaxis + width_ylabel
+        space_filler_x_axis.height = height_xaxis + height_xlabel
 
         self.xaxis = scene.AxisWidget(orientation='bottom', text_color=fg,
                                       axis_color=fg, tick_color=fg)
 
         xaxis_widget = self.grid.add_widget(self.xaxis, row=4, col=2,
                                             col_span=3)
-        xaxis_widget.height = 50
+        xaxis_widget.height = height_xaxis
 
         self.xlabel = scene.Label("")
         xlabel_widget = self.grid.add_widget(self.xlabel, row=5, col=2,
                                              col_span=3)
-        xlabel_widget.height = 30
+        xlabel_widget.height = height_xlabel
 
         self.view.camera = 'panzoom'
         self.camera = self.view.camera
