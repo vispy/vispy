@@ -401,15 +401,28 @@ def _ico(radius, subdivisions):
     return MeshData(vertices=verts, faces=faces)
 
 
-def create_sphere(rows=10, cols=10, radius=1.0, offset=True,
+def _cube(rows, cols, depth, radius):
+    # vertices and faces of tessellated cube
+    verts, faces, _ = create_box(1, 1, 1, rows, cols, depth)
+    verts = verts['position']
+
+    # make each vertex to lie on the sphere
+    lengths = np.sqrt((verts*verts).sum(axis=1))
+    verts /= lengths[:, np.newaxis]/radius
+    return MeshData(vertices=verts, faces=faces)
+
+
+def create_sphere(rows=10, cols=10, depth=10, radius=1.0, offset=True,
                   subdivisions=3, method='latlon'):
     """Create a sphere
     Parameters
     ----------
     rows : int
-        Number of rows (for method='latlon').
+        Number of rows (for method='latlon' and 'cube').
     cols : int
-        Number of columns (for method='latlon').
+        Number of columns (for method='latlon' and 'cube').
+    depth : int
+        Number of depth segments (for method='latlon' and 'cube').
     radius : float
         Sphere radius.
     offset : bool
@@ -418,7 +431,7 @@ def create_sphere(rows=10, cols=10, radius=1.0, offset=True,
         Number of subdivisions to perform (for method='ico')
     method : str
         Method for generating sphere. Accepts 'latlon' for latitude-longitude,
-        and 'ico' for icosahedron based tessellation.
+        'ico' for icosahedron, and 'cube' for cube based tessellation.
 
     Returns
     -------
@@ -429,6 +442,8 @@ def create_sphere(rows=10, cols=10, radius=1.0, offset=True,
         return _latlon(rows, cols, radius, offset)
     elif method == 'ico':
         return _ico(radius, subdivisions)
+    elif method == 'cube':
+        return _cube(rows, cols, depth, radius)
     else:
         raise Exception("Invalid method. Accepts: 'latlon', 'ico'")
 
