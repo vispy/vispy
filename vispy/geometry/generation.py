@@ -445,7 +445,7 @@ def create_sphere(rows=10, cols=10, depth=10, radius=1.0, offset=True,
     elif method == 'cube':
         return _cube(rows, cols, depth, radius)
     else:
-        raise Exception("Invalid method. Accepts: 'latlon', 'ico'")
+        raise Exception("Invalid method. Accepts: 'latlon', 'ico', 'cube'")
 
 
 def create_cylinder(rows, cols, radius=[1.0, 1.0], length=1.0, offset=False):
