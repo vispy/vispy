@@ -9,7 +9,7 @@ Simple use of SceneCanvas to display an Image.
 """
 import sys
 
-from vispy import scene, app, visuals
+from vispy import scene, app
 from vispy.visuals.filters import IsolineFilter
 from vispy.io import load_data_file, read_png
 
@@ -23,11 +23,10 @@ view = canvas.central_widget.add_view()
 interpolation = 'bicubic'
 img_data = read_png(load_data_file('mona_lisa/mona_lisa_sm.png'))
 image = scene.visuals.Image(img_data, interpolation=interpolation,
-                            parent=view.scene)
-image.transform = visuals.transforms.STTransform(translate=(0, 0, 0.5))
+                            parent=view.scene, method='impostor')
 
 level = 10
-iso = IsolineFilter(level=level, width=1., color='black')
+iso = IsolineFilter(level=2, width=1., color='white')
 image.attach(iso)
 
 # Set 2D camera (the camera will scale to the contents in the scene)

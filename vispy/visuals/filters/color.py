@@ -9,7 +9,7 @@ from ...color import colormap, Color
 
 
 class IsolineFilter(object):
-    def __init__(self, level=1., width=1.0, color='black', antialias=1.0):
+    def __init__(self, level=2., width=2.0, antialias=1.0, color='black'):
         self.fshader = Function("""
             void isoline() {
                 if ($isolevel <= 0 || $isowidth <= 0) {
@@ -54,13 +54,11 @@ class IsolineFilter(object):
 
                 // setup background and foreground
                 vec4 bg = $color_transform1(gl_FragColor);
-                vec4 fc = vec4($isocolor.rgb, 0);
+                vec4 fc = $isocolor;
 
                 if (d < 1.) {
-                    fc.a = 1-d;
+                    gl_FragColor = mix(bg, fc, 1-d);
                 }
-
-                gl_FragColor = mix(bg, fc, fc.a);
 
             }
         """)
