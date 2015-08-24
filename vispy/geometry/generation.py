@@ -297,25 +297,7 @@ def create_box(width=1, height=1, depth=1, width_segments=1, height_segments=1,
     return vertices, faces, outline
 
 
-def create_sphere(rows, cols, radius=1.0, offset=True):
-    """Create a sphere
-
-    Parameters
-    ----------
-    rows : int
-        Number of rows.
-    cols : int
-        Number of columns.
-    radius : float
-        Sphere radius.
-    offset : bool
-        Rotate each row by half a column.
-
-    Returns
-    -------
-    sphere : MeshData
-        Vertices and faces computed for a spherical surface.
-    """
+def _latitude(rows, cols, radius, offset):
     verts = np.empty((rows+1, cols, 3), dtype=np.float32)
 
     # compute vertices
@@ -353,6 +335,118 @@ def create_sphere(rows, cols, radius=1.0, offset=True):
     vmax = verts.shape[0]-1
     faces[faces > vmax] = vmax
     return MeshData(vertices=verts, faces=faces)
+
+
+def _ico(radius, subdivisions):
+    # golden ratio
+    t = (1.0 + np.sqrt(5.0))/2.0
+
+    # vertices of a icosahedron
+    verts = [(-1, t, 0),
+             (1, t, 0),
+             (-1, -t, 0),
+             (1, -t, 0),
+             (0, -1, t),
+             (0, 1, t),
+             (0, -1, -t),
+             (0, 1, -t),
+             (t, 0, -1),
+             (t, 0, 1),
+             (-t, 0, -1),
+             (-t, 0, 1)]
+
+    # faces of the icosahedron
+    faces = [(0, 11, 5),
+             (0, 5, 1),
+             (0, 1, 7),
+             (0, 7, 10),
+             (0, 10, 11),
+             (1, 5, 9),
+             (5, 11, 4),
+             (11, 10, 2),
+             (10, 7, 6),
+             (7, 1, 8),
+             (3, 9, 4),
+             (3, 4, 2),
+             (3, 2, 6),
+             (3, 6, 8),
+             (3, 8, 9),
+             (4, 9, 5),
+             (2, 4, 11),
+             (6, 2, 10),
+             (8, 6, 7),
+             (9, 8, 1)]
+
+    def midpoint(v1, v2):
+        return ((v1[0]+v2[0])/2, (v1[1]+v2[1])/2, (v1[2]+v2[2])/2)
+
+    # subdivision
+    for _ in range(subdivisions):
+        for idx in range(len(faces)):
+            i, j, k = faces[idx]
+            a, b, c = verts[i], verts[j], verts[k]
+            ab, bc, ca = midpoint(a, b), midpoint(b, c), midpoint(c, a)
+            verts += [ab, bc, ca]
+            ij, jk, ki = len(verts)-3, len(verts)-2, len(verts)-1
+            faces.append([i, ij, ki])
+            faces.append([ij, j, jk])
+            faces.append([ki, jk, k])
+            faces[idx] = [jk, ki, ij]
+    verts = np.array(verts)
+    faces = np.array(faces)
+
+    # make each vertex to lie on the sphere
+    lengths = np.sqrt((verts*verts).sum(axis=1))
+    verts /= lengths[:, np.newaxis]/radius
+    return MeshData(vertices=verts, faces=faces)
+
+
+def _cube(rows, cols, depth, radius):
+    # vertices and faces of tessellated cube
+    verts, faces, _ = create_box(1, 1, 1, rows, cols, depth)
+    verts = verts['position']
+
+    # make each vertex to lie on the sphere
+    lengths = np.sqrt((verts*verts).sum(axis=1))
+    verts /= lengths[:, np.newaxis]/radius
+    return MeshData(vertices=verts, faces=faces)
+
+
+def create_sphere(rows=10, cols=10, depth=10, radius=1.0, offset=True,
+                  subdivisions=3, method='latitude'):
+    """Create a sphere
+    Parameters
+    ----------
+    rows : int
+        Number of rows (for method='latitude' and 'cube').
+    cols : int
+        Number of columns (for method='latitude' and 'cube').
+    depth : int
+        Number of depth segments (for method='cube').
+    radius : float
+        Sphere radius.
+    offset : bool
+        Rotate each row by half a column (for method='latitude').
+    subdivisions : int
+        Number of subdivisions to perform (for method='ico')
+    method : str
+        Method for generating sphere. Accepts 'latitude' for latitude-
+        longitude, 'ico' for icosahedron, and 'cube' for cube based
+        tessellation.
+
+    Returns
+    -------
+    sphere : MeshData
+        Vertices and faces computed for a spherical surface.
+    """
+    if method == 'latitude':
+        return _latitude(rows, cols, radius, offset)
+    elif method == 'ico':
+        return _ico(radius, subdivisions)
+    elif method == 'cube':
+        return _cube(rows, cols, depth, radius)
+    else:
+        raise Exception("Invalid method. Accepts: 'latitude', 'ico', 'cube'")
 
 
 def create_cylinder(rows, cols, radius=[1.0, 1.0], length=1.0, offset=False):
