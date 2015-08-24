@@ -18,15 +18,16 @@ class SphereVisual(CompoundVisual):
         The size of the sphere.
     cols, rows : int
         Number of rows and cols that make up the sphere mesh
-        (for method='latlon' and 'cube').
+        (for method='latitude' and 'cube').
     depth : int
         Number of depth segments that make up the sphere mesh
         (for method='cube').
     subdivisions : int
         Number of subdivisions to perform (for method='ico').
     method : str
-        Method for generating sphere. Accepts 'latlon' for latitude-longitude,
-        'ico' for icosahedron, and 'cube' for cube based tessellation.
+        Method for generating sphere. Accepts 'latitude' for
+        latitude-longitude, 'ico' for icosahedron, and 'cube'
+        for cube based tessellation.
     vertex_colors : ndarray
         Same as for `MeshVisual` class.
         See `create_sphere` for vertex ordering.
@@ -40,7 +41,7 @@ class SphereVisual(CompoundVisual):
         sphere edges are drawn.
     """
     def __init__(self, radius=1.0, cols=30, rows=30, depth=30, subdivisions=3,
-                 method='latlon', vertex_colors=None, face_colors=None,
+                 method='latitude', vertex_colors=None, face_colors=None,
                  color=(0.5, 0.5, 1, 1), edge_color=None, **kwargs):
 
         mesh = create_sphere(cols, rows, depth, radius=radius,
