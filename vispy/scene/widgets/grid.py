@@ -349,11 +349,11 @@ class Grid(Widget):
             if widget.height_max is not None:
                 self._solver.add_constraint(widget.var_h <= widget.height_max)
 
-            if widget.stretch[0] is not None and widget.width_max is None:
+            if widget.stretch[0] is not None:  # and widget.width_max is None:
                 for terms_arr in w_stretch_terms[row:row+rspan]:
                     terms_arr.append(widget.var_w / float(widget.stretch[0]))
 
-            if widget.stretch[1] is not None and widget.height_max is None:
+            if widget.stretch[1] is not None:  # and widget.height_max is None:
                 for terms_arr in h_stretch_terms[col:col+cspan]:
                     terms_arr.append(widget.var_h / float(widget.stretch[1]))
 
