@@ -138,12 +138,23 @@ class ImageVisual(Visual):
     if the data are 2D.
     """
     def __init__(self, data=None, method='auto', grid=(1, 1),
-                 cmap='cubehelix', clim='auto',
+                 cmap='viridis', clim='auto',
                  interpolation='nearest', **kwargs):
         self._data = None
 
-        # load interpolation kernel
+        # load 'float packed rgba8' interpolation kernel
+        # to load float interpolation kernel use
+        # `load_spatial_filters(packed=False)`
         kernel, self._interpolation_names = load_spatial_filters()
+
+        self._kerneltex = Texture2D(kernel, interpolation='nearest')
+        # The unpacking can be debugged by changing "spatial-filters.frag"
+        # to have the "unpack" function just return the .r component. That
+        # combined with using the below as the _kerneltex allows debugging
+        # of the pipeline
+        # self._kerneltex = Texture2D(kernel, interpolation='linear',
+        #                             internalformat='r32f')
+
         # create interpolation shader functions for available
         # interpolations
         fun = [Function(_interpolation_template % n)
@@ -159,17 +170,6 @@ class ImageVisual(Visual):
         # with  "hardware" interpolation _data_lookup_fn
         self._interpolation_fun['nearest'] = Function(_texture_lookup)
         self._interpolation_fun['bilinear'] = Function(_texture_lookup)
-
-        # convert our kernel to a packed representation
-        kernel8 = np.fromstring(kernel.tostring(), np.ubyte)
-        kernel8.shape = kernel.shape + (4,)
-        self._kerneltex = Texture2D(kernel8, interpolation='nearest')
-        # The unpacking can be debugged by changing "spatial-filters.frag"
-        # to have the "unpack" function just return the .r component. That
-        # combined with using the below as the _kerneltex allows debugging
-        # of the pipeline
-        # self._kerneltex = Texture2D(kernel, interpolation='linear',
-        #                             internalformat='r32f')
 
         if interpolation not in self._interpolation_names:
             raise ValueError("interpolation must be one of %s" %
