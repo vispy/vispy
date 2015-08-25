@@ -656,16 +656,29 @@ print("")
 print("const float kernel_bias  = %f;" % bias)
 print("const float kernel_scale = %f;" % scale)
 print("const float kernel_size = %f;" % n)
+print("const vec4 bits = vec4(1.0, 1.0/256.0, 1.0/(256.0*256.0), 1.0/(256.0*256.0*256.0));")  # noqa
 print("uniform sampler2D u_kernel;")
 print("")
 
 code = 'float\n'
-code += 'unpack(vec4 rgba)\n'
+code += 'unpack_unit(vec4 rgba)\n'
+code += '{\n'
+code += '\t// return rgba.r;  // uncomment this for r32f debugging\n'
+code += '\treturn dot(rgba, bits);\n'
+code += '}\n'
+print(code.expandtabs(4))
+
+code = 'float\n'
+code += 'unpack_ieee(vec4 rgba)\n'
 code += '{\n'
 code += '\t// return rgba.r;  // uncomment this for r32f debugging\n'
 code += '\trgba.rgba = rgba.abgr * 255;\n'
-code += '\tconst vec4 bits = vec4(1.0/(256.0*256.0*256.0), 1.0/(256.0*256.0), 1.0/256.0, 1.0);\n'
-code += '\treturn dot(rgba, bits);\n'
+code += '\tfloat sign = 1.0 - step(128.0,rgba[0])*2.0;\n'
+code += '\tfloat exponent = 2.0 * mod(rgba[0],128.0) + ' \
+        'step(128.0,rgba[1]) - 127.0;\n'
+code += '\tfloat mantissa = mod(rgba[1],128.0)*65536.0 + rgba[2]*256.0 + ' \
+        'rgba[3] + float(0x800000);\n'
+code += '\treturn sign * exp2(exponent) * (mantissa * exp2(-23));\n'
 code += '}\n'
 print(code.expandtabs(4))
 
@@ -680,8 +693,8 @@ code += '\tfloat v = uv.y;\n'
 code += '\tfloat uf = fract(u);\n'
 code += '\tu = (u - uf) * kpixel;\n'
 code += '\n'
-code += '\tfloat d0 = unpack(texture2D(kernel, vec2(u, v)));\n'
-code += '\tfloat d1 = unpack(texture2D(kernel, vec2(u + 1 * kpixel, v)));\n'
+code += '\tfloat d0 = unpack_unit(texture2D(kernel, vec2(u, v)));\n'
+code += '\tfloat d1 = unpack_unit(texture2D(kernel, vec2(u + 1 * kpixel, v)));\n'  # noqa
 code += '\treturn mix(d0, d1, uf);\n'
 code += '}\n'
 print(code.expandtabs(4))
