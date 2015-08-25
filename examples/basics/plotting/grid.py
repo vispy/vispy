@@ -29,11 +29,6 @@ widget_left.bgcolor = "#dd0000"
 widget_right = grid.add_widget(row=1, col=1)
 widget_right.bgcolor = "#0000dd"
 
-fg = "#ffffff"
-axis_widget = scene.AxisWidget(orientation='bottom', text_color=fg,
-                               axis_color=fg, tick_color=fg)
-
-widget_bottom = grid.add_widget(axis_widget, row=2, col=0, col_span=2)
 
 if __name__ == '__main__' and sys.flags.interactive == 0:
     app.run()
