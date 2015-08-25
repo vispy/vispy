@@ -89,7 +89,7 @@ class Canvas(app.Canvas):
             self.filter = (self.filter + step) % 17
             self.program.set_shaders(VERT_SHADER,
                                      FRAG_SHADER % self.names[self.filter])
-            print(self.names[self.filter])
+
             if self.names[self.filter] != 'Nearest':
                 self.program['u_kernel'] = self.kernel
                 self.program['u_shape'] = I.shape[1], I.shape[0]
