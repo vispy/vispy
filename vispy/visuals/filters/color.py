@@ -13,7 +13,6 @@ class IsolineFilter(object):
         self.fshader = Function("""
             void isoline() {
                 if ($isolevel <= 0 || $isowidth <= 0) {
-                    gl_FragColor = $color_transform1(gl_FragColor);
                     return;
                 }
 
@@ -52,12 +51,12 @@ class IsolineFilter(object):
                      d /= $antialias;
                 }
 
-                // setup background and foreground
-                vec4 bg = $color_transform1(gl_FragColor);
+                // setup foreground
                 vec4 fc = $isocolor;
 
+                // mix with background
                 if (d < 1.) {
-                    gl_FragColor = mix(bg, fc, 1-d);
+                    gl_FragColor = mix(gl_FragColor, fc, 1-d);
                 }
 
             }
@@ -66,6 +65,7 @@ class IsolineFilter(object):
         self.width = width
         self.color = color
         self.antialias = antialias
+        self.isoline_expr = self.fshader()
 
     @property
     def level(self):
@@ -106,20 +106,8 @@ class IsolineFilter(object):
         self.fshader['antialias'] = a
 
     def _attach(self, visual):
-        visual._get_hook('frag', 'post').add(self.fshader())
-
-        # check if shared_program has color_transform
-        try:
-            # get color_transform from parent visual
-            # and override parent visual color_transform
-            self.fshader['color_transform1'] = \
-                visual.shared_program.frag['color_transform']
-            visual.shared_program.frag['color_transform'] = \
-                Function('vec4 pass(vec4 color) { return color; }')
-        except:
-            # keep original color
-            self.fshader['color_transform1'] = \
-                Function('vec4 pass(vec4 color) { return color; }')
+        hook = visual._get_hook('frag', 'post')
+        hook.add(self.isoline_expr)
 
 
 class Alpha(object):
