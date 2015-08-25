@@ -54,10 +54,18 @@ def load_spatial_filters(packed=True):
              "Mitchell", "Spline16", "Spline36", "Gaussian",
              "Bessel", "Sinc", "Lanczos", "Blackman", "Nearest")
 
+    def pack_float_to_rgba(value):
+        pack = np.zeros(value.shape + (4,))
+        vec = [1., 256., 256., 256.]
+        for i, v in enumerate(vec):
+            value, pack[..., i] = np.modf(value * v)
+        return pack
 
     kernel = np.load(op.join(DATA_DIR, 'spatial-filters.npy'))
     if packed:
         # convert the kernel to a packed representation
-        kernel = np.fromstring(kernel.tostring(), np.ubyte).reshape((kernel.shape + (4,)))
+        #kernel = np.fromstring(kernel.tostring(),
+        #                       np.ubyte).reshape((kernel.shape + (4,)))
+        kernel = pack_float_to_rgba(kernel).astype(np.ubyte)
 
     return kernel, names

@@ -5,7 +5,6 @@
 const float kernel_bias  = -0.234377;
 const float kernel_scale = 1.241974;
 const float kernel_size = 1024.000000;
-const float M_2_m23 = 0.00000011920928955078125;
 uniform sampler2D u_kernel;
 
 float
@@ -13,10 +12,8 @@ unpack(vec4 rgba)
 {
     // return rgba.r;  // uncomment this for r32f debugging
     rgba.rgba = rgba.abgr * 255;
-    float sign = 1.0 - step(128.0,rgba[0])*2.0;
-    float exponent = 2.0 * mod(rgba[0],128.0) + step(128.0,rgba[1]) - 127.0;
-    float mantissa = mod(rgba[1],128.0)*65536.0 + rgba[2]*256.0 + rgba[3] + float(0x800000);
-    return sign * exp2(exponent) * (mantissa * M_2_m23);
+    const vec4 bits = vec4(1.0/(256.0*256.0*256.0), 1.0/(256.0*256.0), 1.0/256.0, 1.0);
+    return dot(rgba, bits);
 }
 
 float
