@@ -129,29 +129,30 @@ class SpatialFilter(object):
         code += '    float w, w_sum = 0.0;\n'
         code += '    vec4 r = vec4(0.0,0.0,0.0,0.0);\n'
         for i in range(n):
-            code += '    w = texture2D(kernel, vec2(%f+(x/%.1f),index) ).r;\n' % (1.0 - (i + 1) / float(n), n)  # noqa
+            code += '    w = unpack_interpolate(kernel, vec2(%f+(x/%.1f), index));\n' % (1.0 - (i + 1) / float(n), n)  # noqa
             code += '    w = w*kernel_scale + kernel_bias;\n'  # noqa
             # code += '   w_sum += w;'
             code += '    r += c%d * w;\n' % i
-            code += '    w = texture2D(kernel, vec2(%f-(x/%.1f),index) ).r;\n' % ((i+1)/float(n), n)  # noqa
+            code += '    w = unpack_interpolate(kernel, vec2(%f-(x/%.1f), index));\n' % ((i+1)/float(n), n)  # noqa
             code += '    w = w*kernel_scale + kernel_bias;\n'
             # code += '   w_sum += w;'
             code += '    r += c%d * w;\n' % (i + n)
         # code += '    return r/w_sum;\n'
         code += '    return r;\n'
         code += '}\n'
+        code += "\n"
         code += 'vec4\n'
         code += '%s' % filter_2
-        code += '(sampler2D texture, sampler2D kernel, float index, vec2 uv, vec2 pixel )\n'  # noqa
+        code += '(sampler2D texture, sampler2D kernel, float index, vec2 uv, vec2 pixel)\n'  # noqa
         code += '{\n'
-        code += '    vec2 texel = uv/pixel - vec2(0.5,0.5) ;\n'
+        code += '    vec2 texel = uv/pixel - vec2(0.5, 0.5) ;\n'
         code += '    vec2 f = fract(texel);\n'
-        code += '    texel = (texel-fract(texel)+vec2(0.001,0.001))*pixel;\n'
+        code += '    texel = (texel-fract(texel) + vec2(0.001, 0.001)) * pixel;\n'  # noqa
         for i in range(2*n):
             code += '    vec4 t%d = %s(kernel, index, f.x,\n' % (i, filter_1)
             for j in range(2*n):
                 x, y = (-n+1+j, -n+1+i)
-                code += '        texture2D( texture, texel + vec2(%d,%d)*pixel),\n' % (x, y)  # noqa
+                code += '        texture2D( texture, texel + vec2(%d, %d) * pixel),\n' % (x, y)  # noqa
 
             # Remove last trailing',' and close function call
             code = code[:-2] + ');\n'
@@ -198,8 +199,8 @@ class Nearest(SpatialFilter):
     def _get_code(self):
         self.build_LUT()
         code = 'vec4\n'
-        code += 'interpolate( sampler2D texture, sampler1D kernel, vec2 uv, vec2 pixel )\n'  # noqa
-        code += '{\n   return texture2D( texture, uv );\n}\n'
+        code += 'interpolate(sampler2D texture, sampler1D kernel, vec2 uv, vec2 pixel)\n'  # noqa
+        code += '{\n   return texture2D(texture, uv);\n}\n'
         return code
     code = property(_get_code, doc='''filter functions code''')
 
@@ -646,7 +647,7 @@ for i, f in enumerate(filters):
 bias = K.min()
 scale = K.max()-K.min()
 K = (K-bias)/scale
-np.save("spatial-filters.npy", K.astype(np.float32))
+# np.save("spatial-filters.npy", K.astype(np.float32))
 
 print("// ------------------------------------")
 print("// Automatically generated, do not edit")
@@ -654,8 +655,41 @@ print("// ------------------------------------")
 print("")
 print("const float kernel_bias  = %f;" % bias)
 print("const float kernel_scale = %f;" % scale)
+print("const float kernel_size = %f;" % n)
+print("const float M_2_m23 = 0.00000011920928955078125;")
 print("uniform sampler2D u_kernel;")
 print("")
+
+code = 'float\n'
+code += 'unpack(vec4 rgba)\n'
+code += '{\n'
+code += '\t// return rgba.r;  // uncomment this for r32f debugging\n'
+code += '\trgba.rgba = rgba.abgr * 255;\n'
+code += '\tfloat sign = 1.0 - step(128.0,rgba[0])*2.0;\n'
+code += '\tfloat exponent = 2.0 * mod(rgba[0],128.0) + ' \
+        'step(128.0,rgba[1]) - 127.0;\n'
+code += '\tfloat mantissa = mod(rgba[1],128.0)*65536.0 + rgba[2]*256.0 + ' \
+        'rgba[3] + float(0x800000);\n'
+code += '\treturn sign * exp2(exponent) * (mantissa * M_2_m23);\n'
+code += '}\n'
+print(code.expandtabs(4))
+
+code = 'float\n'
+code += 'unpack_interpolate(sampler2D kernel, vec2 uv)\n'
+code += '{\n'
+code += '\t// return texture2D(kernel, uv).r; ' \
+        '//uncomment this for r32f debug without interpolation\n'
+code += '\tfloat kpixel = 1/kernel_size;\n'
+code += '\tfloat u = uv.x / kpixel;\n'
+code += '\tfloat v = uv.y;\n'
+code += '\tfloat uf = fract(u);\n'
+code += '\tu = (u - uf) * kpixel;\n'
+code += '\n'
+code += '\tfloat d0 = unpack(texture2D(kernel, vec2(u, v)));\n'
+code += '\tfloat d1 = unpack(texture2D(kernel, vec2(u + 1 * kpixel, v)));\n'
+code += '\treturn mix(d0, d1, uf);\n'
+code += '}\n'
+print(code.expandtabs(4))
 
 F = SpatialFilter(1.0)
 print(F.filter_code())

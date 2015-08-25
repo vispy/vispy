@@ -35,13 +35,16 @@ def load_crate():
     return np.load(load_data_file('orig/crate.npz'))['crate']
 
 
-def load_spatial_filters():
+def load_spatial_filters(packed=True):
     """Load spatial-filters kernel
 
     Returns
     -------
     kernel : array
-        16x1024 16 interpolation kernel with length 1024 each.
+        16x1024x4 (packed float in rgba8) or
+        16x1024 (unpacked float)
+        16 interpolation kernel with length 1024 each.
+
     names : tuple of strings
         Respective interpolation names, plus "Nearest" which does
         not require a filter but can still be used
@@ -51,4 +54,10 @@ def load_spatial_filters():
              "Mitchell", "Spline16", "Spline36", "Gaussian",
              "Bessel", "Sinc", "Lanczos", "Blackman", "Nearest")
 
-    return (np.load(op.join(DATA_DIR, 'spatial-filters.npy')), names)
+
+    kernel = np.load(op.join(DATA_DIR, 'spatial-filters.npy'))
+    if packed:
+        # convert the kernel to a packed representation
+        kernel = np.fromstring(kernel.tostring(), np.ubyte).reshape((kernel.shape + (4,)))
+
+    return kernel, names
