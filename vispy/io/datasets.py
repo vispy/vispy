@@ -35,13 +35,42 @@ def load_crate():
     return np.load(load_data_file('orig/crate.npz'))['crate']
 
 
-def load_spatial_filters():
+def pack_unit(value):
+    """Packs float values between [0,1] into 4 unsigned int8
+
+    Returns
+    -------
+    pack: array
+        packed interpolation kernel
+    """
+    pack = np.zeros(value.shape + (4,), dtype=np.ubyte)
+    for i in range(4):
+        value, pack[..., i] = np.modf(value * 256.)
+    return pack
+
+
+def pack_ieee(value):
+    """Packs float ieee binary representation into 4 unsigned int8
+
+    Returns
+    -------
+    pack: array
+        packed interpolation kernel
+    """
+    return np.fromstring(value.tostring(),
+                         np.ubyte).reshape((value.shape + (4,)))
+
+
+def load_spatial_filters(packed=True):
     """Load spatial-filters kernel
 
     Returns
     -------
     kernel : array
-        16x1024 16 interpolation kernel with length 1024 each.
+        16x1024x4 (packed float in rgba) or
+        16x1024 (unpacked float)
+        16 interpolation kernel with length 1024 each.
+
     names : tuple of strings
         Respective interpolation names, plus "Nearest" which does
         not require a filter but can still be used
@@ -51,4 +80,9 @@ def load_spatial_filters():
              "Mitchell", "Spline16", "Spline36", "Gaussian",
              "Bessel", "Sinc", "Lanczos", "Blackman", "Nearest")
 
-    return (np.load(op.join(DATA_DIR, 'spatial-filters.npy')), names)
+    kernel = np.load(op.join(DATA_DIR, 'spatial-filters.npy'))
+    if packed:
+        # convert the kernel to a packed representation
+        kernel = pack_unit(kernel)
+
+    return kernel, names
