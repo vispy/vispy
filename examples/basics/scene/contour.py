@@ -24,10 +24,8 @@ interpolation = 'bicubic'
 img_data = read_png(load_data_file('mona_lisa/mona_lisa_sm.png'))
 image = scene.visuals.Image(img_data, interpolation=interpolation,
                             parent=view.scene, method='impostor')
-
 level = 10
-iso = IsolineFilter(level=2, width=1., color='white')
-image.attach(iso)
+iso = IsolineFilter(level=level, width=1., color='white')
 
 # Set 2D camera (the camera will scale to the contents in the scene)
 view.camera = scene.PanZoomCamera(aspect=1)
@@ -61,6 +59,14 @@ def on_key_press(event):
     canvas.title = ('Spatial Filtering using %s Filter - Isoline %d level'
                     % (image.interpolation, iso.level))
     canvas.update()
+
+
+# attaching of isoline filter via timer
+def on_timer1(event):
+    image.attach(iso)
+    canvas.update()
+
+timer1 = app.Timer('auto', iterations=1, connect=on_timer1, start=True)
 
 if __name__ == '__main__' and sys.flags.interactive == 0:
     app.run()
