@@ -43,7 +43,6 @@ def pack_unit(value):
     pack: array
         packed interpolation kernel
     """
-    print(value.max(), value.min())
     pack = np.zeros(value.shape + (4,), dtype=np.ubyte)
     for i in range(4):
         value, pack[..., i] = np.modf(value * 256.)
