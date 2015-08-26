@@ -12,7 +12,6 @@ from __future__ import division
 
 import numpy as np
 from copy import deepcopy
-from os import path as op
 import sys
 
 from ._sdf import SDFRenderer
@@ -24,7 +23,7 @@ from ...util.fonts import _load_glyph
 from ..transforms import STTransform
 from ...color import Color
 from ..visual import Visual
-from ...io import _data_dir
+from ...io import load_spatial_filters
 
 
 class TextureFont(object):
@@ -40,7 +39,7 @@ class TextureFont(object):
     def __init__(self, font, renderer):
         self._atlas = TextureAtlas()
         self._atlas.wrapping = 'clamp_to_edge'
-        self._kernel = np.load(op.join(_data_dir, 'spatial-filters.npy'))
+        self._kernel, _ = load_spatial_filters()
         self._renderer = renderer
         self._font = deepcopy(font)
         self._font['size'] = 256  # use high resolution point size for SDF
@@ -260,72 +259,17 @@ class TextVisual(Visual):
         """
 
     FRAGMENT_SHADER = """
+        #include "misc/spatial-filters.frag"
         // Adapted from glumpy with permission
         const float M_SQRT1_2 = 0.707106781186547524400844362104849039;
-        const float kernel_bias  = -0.234377;
-        const float kernel_scale = 1.241974;
 
         uniform sampler2D u_font_atlas;
         uniform vec2 u_font_atlas_shape;
         uniform vec4 u_color;
         uniform float u_npix;
-        uniform sampler2D u_kernel;
 
         varying vec2 v_texcoord;
         const float center = 0.5;
-
-        // CatRom interpolation code
-        vec4 filter1D_radius2(sampler2D kernel, float index, float x,
-                              vec4 c0, vec4 c1, vec4 c2, vec4 c3) {
-            float w, w_sum = 0.0;
-            vec4 r = vec4(0.0,0.0,0.0,0.0);
-            w = texture2D(kernel, vec2(0.500000+(x/2.0),index) ).r;
-            w = w*kernel_scale + kernel_bias;
-            r += c0 * w;
-            w = texture2D(kernel, vec2(0.500000-(x/2.0),index) ).r;
-            w = w*kernel_scale + kernel_bias;
-            r += c2 * w;
-            w = texture2D(kernel, vec2(0.000000+(x/2.0),index) ).r;
-            w = w*kernel_scale + kernel_bias;
-            r += c1 * w;
-            w = texture2D(kernel, vec2(1.000000-(x/2.0),index) ).r;
-            w = w*kernel_scale + kernel_bias;
-            r += c3 * w;
-            return r;
-        }
-
-        vec4 filter2D_radius2(sampler2D texture, sampler2D kernel, float index,
-                              vec2 uv, vec2 pixel) {
-            vec2 texel = uv/pixel - vec2(0.0,0.0) ;
-            vec2 f = fract(texel);
-            texel = (texel-fract(texel)+vec2(0.001,0.001))*pixel;
-            vec4 t0 = filter1D_radius2(kernel, index, f.x,
-                texture2D( texture, texel + vec2(-1,-1)*pixel),
-                texture2D( texture, texel + vec2(0,-1)*pixel),
-                texture2D( texture, texel + vec2(1,-1)*pixel),
-                texture2D( texture, texel + vec2(2,-1)*pixel));
-            vec4 t1 = filter1D_radius2(kernel, index, f.x,
-                texture2D( texture, texel + vec2(-1,0)*pixel),
-                texture2D( texture, texel + vec2(0,0)*pixel),
-                texture2D( texture, texel + vec2(1,0)*pixel),
-                texture2D( texture, texel + vec2(2,0)*pixel));
-            vec4 t2 = filter1D_radius2(kernel, index, f.x,
-                texture2D( texture, texel + vec2(-1,1)*pixel),
-                texture2D( texture, texel + vec2(0,1)*pixel),
-                texture2D( texture, texel + vec2(1,1)*pixel),
-                texture2D( texture, texel + vec2(2,1)*pixel));
-            vec4 t3 = filter1D_radius2(kernel, index, f.x,
-                texture2D( texture, texel + vec2(-1,2)*pixel),
-                texture2D( texture, texel + vec2(0,2)*pixel),
-                texture2D( texture, texel + vec2(1,2)*pixel),
-                texture2D( texture, texel + vec2(2,2)*pixel));
-            return filter1D_radius2(kernel, index, f.y, t0, t1, t2, t3);
-        }
-
-        vec4 CatRom(sampler2D texture, vec2 shape, vec2 uv) {
-            return filter2D_radius2(texture, u_kernel, 0.468750,
-                                    uv, 1.0/shape);
-        }
 
         float contour(in float d, in float w)
         {
