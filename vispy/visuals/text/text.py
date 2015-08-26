@@ -130,14 +130,14 @@ class FontManager(object):
 
 
 def _text_to_vbo(text, font, anchor_x, anchor_y, lowres_size):
-    """Convert text characters to VBO"""    
+    """Convert text characters to VBO"""
     # Necessary to flush commands before requesting current viewport because
     # There may be a set_viewport command waiting in the queue.
     # TODO: would be nicer if each canvas just remembers and manages its own
     # viewport, rather than relying on the context for this.
     canvas = context.get_current_canvas()
     canvas.context.flush_commands()
-    
+
     text_vtype = np.dtype([('a_position', 'f4', 2),
                            ('a_texcoord', 'f4', 2)])
     vertices = np.zeros(len(text) * 4, dtype=text_vtype)
@@ -182,7 +182,7 @@ def _text_to_vbo(text, font, anchor_x, anchor_y, lowres_size):
         ascender = max(ascender, y0 - slop)
         descender = min(descender, y1 + slop)
         height = max(height, glyph['size'][1] - 2*slop)
-    
+
     if orig_viewport is not None:
         canvas.context.set_viewport(*orig_viewport)
 
@@ -366,7 +366,7 @@ class TextVisual(Visual):
     @property
     def anchors(self):
         return self._anchors
-    
+
     @anchors.setter
     def anchors(self, a):
         self._anchors = a
@@ -487,6 +487,6 @@ class TextVisual(Visual):
         # because we do not want this function assigned to other views.
         tr = view.transforms.get_transform()
         view.view_program.vert['transform'] = tr  # .simplified()
-        
+
     def _compute_bounds(self, axis, view):
         return self._pos[:, axis].min(), self._pos[:, axis].max()
