@@ -20,13 +20,10 @@ canvas.show()
 # be automatically resized whenever the grid is resized.
 grid = canvas.central_widget.add_grid()
 
-widget_top = grid.add_widget(row=0, col=0, col_span=2)
-widget_top.bgcolor = "#999999"
-
-widget_left = grid.add_widget(row=1, col=0)
+widget_left = grid.add_widget(row=0, col=0)
 widget_left.bgcolor = "#dd0000"
 
-widget_right = grid.add_widget(row=1, col=1)
+widget_right = grid.add_widget(row=0, col=1)
 widget_right.bgcolor = "#0000dd"
 
 
