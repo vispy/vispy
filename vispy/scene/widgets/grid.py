@@ -33,7 +33,7 @@ class Grid(Widget):
         self._default_class = ViewBox  # what to add when __getitem__ is used
         self._solver = None
         self._need_solver_recreate = True
-
+        self._var_grid = None
         Widget.__init__(self, **kwargs)
 
         # width and height of the Rect used to place child widgets
@@ -123,6 +123,12 @@ class Grid(Widget):
 
         widget.var_x = Variable("x-(row: %s | col: %s)" % (row, col))
         widget.var_y = Variable("y-(row: %s | col: %s)" % (row, col))
+
+        # update stretch based on colspan/rowspan
+        stretch = list(widget.stretch)
+        stretch[0] = col_span if stretch[0] is None else stretch[0]
+        stretch[1] = row_span if stretch[1] is None else stretch[1]
+        widget.stretch = stretch
 
         self._need_solver_recreate = True
 
@@ -319,6 +325,13 @@ class Grid(Widget):
         height_slop.value = 0
         self._solver.add_stay(height_slop, strength=STRONG)
 
+        self._var_grid = np.array([[Variable("(%s, %s)" % (x, y))
+                              for y in range(0, n_rows)]
+                              for x in range(0, n_cols)])
+
+        print("var grid:\n %s " % np.array(self._var_grid))
+        # self._solver.add_stay(height_slop, strength=STRONG)
+
         w_total_eqns = [expression.Expression(width_slop)
                         for _ in range(0, n_rows)]
         h_total_eqns = [expression.Expression(height_slop)
@@ -327,35 +340,69 @@ class Grid(Widget):
         w_stretch_terms = [[] for _ in range(0, n_rows)]
         h_stretch_terms = [[] for _ in range(0, n_cols)]
 
+        for r, row in enumerate(self._var_grid):
+            for elem in row:
+                w_total_eqns[r].add_expression(elem)
+
+        for c, col in enumerate(self._var_grid.T):
+            for elem in col:
+                h_total_eqns[c].add_expression(elem)
+
+        # set total width, height eqns
+        for row, w_eqn in enumerate(w_total_eqns):
+            if len(w_eqn.terms) > 0:
+                self._solver.add_constraint(w_eqn ==
+                                            self.var_w,
+                                            strength=REQUIRED)
+        for col, h_eqn in enumerate(h_total_eqns):
+            if len(h_eqn.terms) > 0:
+                self._solver.add_constraint(h_eqn == self.var_h,
+                                            strength=REQUIRED)
+
         for _, value in self._grid_widgets.items():
             (row, col, rspan, cspan, widget) = value
 
-            # dimensions
-            for w_eqn in w_total_eqns[row:row+rspan]:
-                    w_eqn.add_expression(widget.var_w)
+            widget_widths_sum = expression.Expression()
+            for w_var in self._var_grid[row, col:col+cspan]:
+                widget_widths_sum += w_var
+            self._solver.add_constraint(widget.var_w == widget_widths_sum,
+                                        strength=REQUIRED)
 
-            for h_eqn in h_total_eqns[col:col+cspan]:
-                    h_eqn.add_expression(widget.var_h)
+            widget_heights_sum = expression.Expression()
+            for h_var in self._var_grid[row:row+rspan, col]:
+                widget_heights_sum += h_var
+            self._solver.add_constraint(widget.var_h == widget_heights_sum,
+                                        strength=REQUIRED)
 
-            assert(widget.width_min is not None)
-            self._solver.add_constraint(widget.var_w >= widget.width_min)
-
-            if widget.width_max is not None:
-                self._solver.add_constraint(widget.var_w <= widget.width_max)
-
-            assert(widget.height_min is not None)
-            self._solver.add_constraint(widget.var_h >= widget.height_min)
-
-            if widget.height_max is not None:
-                self._solver.add_constraint(widget.var_h <= widget.height_max)
-
-            if widget.stretch[0] is not None:  # and widget.width_max is None:
+            print("stretch: %s" % (widget.stretch, ))
+            if widget.stretch[0] is not None:
                 for terms_arr in w_stretch_terms[row:row+rspan]:
-                    terms_arr.append(widget.var_w / float(widget.stretch[0]))
+                    terms_arr.append(widget_widths_sum / float(widget.stretch[0]))
 
-            if widget.stretch[1] is not None:  # and widget.height_max is None:
+            if widget.stretch[1] is not None:
                 for terms_arr in h_stretch_terms[col:col+cspan]:
-                    terms_arr.append(widget.var_h / float(widget.stretch[1]))
+                    terms_arr.append(widget_heights_sum / float(widget.stretch[1]))
+
+        print("terms arr:\n%s" % np.array(terms_arr))
+        print("widget width eqns:\n%s" % w_total_eqns)
+        print("widget height eqns:\n%s" % h_total_eqns)
+
+        # width stretch
+        for terms_arr in w_stretch_terms:
+            if len(terms_arr) > 1:
+                for term in terms_arr[1:]:
+                    self._solver.add_constraint(term == terms_arr[0],
+                                                strength=WEAK)
+        # height stretch
+        for terms_arr in h_stretch_terms:
+            if len(terms_arr) > 1:
+                for term in terms_arr[1:]:
+                    self._solver.add_constraint(term == terms_arr[0],
+                                                strength=WEAK)
+
+        # positioning
+        for _, value in self._grid_widgets.items():
+            (row, col, rspan, cspan, widget) = value
 
             # x axis pos
             if col == 0:
@@ -368,8 +415,8 @@ class Grid(Widget):
                     if prev_widget is not None:
                         self._solver.add_constraint(widget.var_x ==
                                                     prev_widget.var_x +
-                                                    prev_widget.var_w)
-
+                                                    prev_widget.var_w,
+                                                    strength=REQUIRED)
             # y axis pos
             if row == 0:
                 widget.var_y.value = rect.bottom
@@ -382,33 +429,34 @@ class Grid(Widget):
                     if prev_widget is not None:
                         self._solver.add_constraint(widget.var_y ==
                                                     prev_widget.var_y +
-                                                    prev_widget.var_h)
+                                                    prev_widget.var_h,
+                                                    strength=REQUIRED)
 
-        # set total width, height eqns
-        for row, w_eqn in enumerate(w_total_eqns):
-            if len(w_eqn.terms) > 0:
-                cols_in_row = len(set([l for l in self.layout_array[row]
-                                       if l != -1]))
-                self._solver.add_constraint(w_eqn ==
-                                            self.var_w,
-                                            strength=REQUIRED)
-        for col, h_eqn in enumerate(h_total_eqns):
-            if len(h_eqn.terms) > 0:
-                rows_in_col = len(set([l for l in self.layout_array.T[col]
-                                       if l != -1]))
+        #     # dimensions
+        #     for w_eqn in w_total_eqns[row:row+rspan]:
+        #             w_eqn.add_expression(widget.var_w)
 
-                self._solver.add_constraint(h_eqn == self.var_h,
-                                            strength=REQUIRED)
+        #     for h_eqn in h_total_eqns[col:col+cspan]:
+        #             h_eqn.add_expression(widget.var_h)
 
-        # add stretch eqns
-        for terms_arr in w_stretch_terms:
-            if len(terms_arr) > 1:
-                for term in terms_arr[1:]:
-                    self._solver.add_constraint(term == terms_arr[0],
-                                                strength=WEAK)
+        #     assert(widget.width_min is not None)
+        #     self._solver.add_constraint(widget.var_w >= widget.width_min, strength=STRONG)
 
-        for terms_arr in h_stretch_terms:
-            if len(terms_arr) > 1:
-                for term in terms_arr[1:]:
-                    self._solver.add_constraint(term == terms_arr[0],
-                                                strength=WEAK)
+        #     if widget.width_max is not None:
+        #         self._solver.add_constraint(widget.var_w <= widget.width_max, strength=STRONG)
+
+        #     assert(widget.height_min is not None)
+        #     self._solver.add_constraint(widget.var_h >= widget.height_min, strength=STRONG)
+
+        #     if widget.height_max is not None:
+        #         self._solver.add_constraint(widget.var_h <= widget.height_max, strength=STRONG)
+
+        #     if widget.stretch[0] is not None:
+        #         for terms_arr in w_stretch_terms[row:row+rspan]:
+        #             terms_arr.append(widget.var_w / float(widget.stretch[0]))
+
+        #     if widget.stretch[1] is not None:
+        #         for terms_arr in h_stretch_terms[col:col+cspan]:
+        #             terms_arr.append(widget.var_h / float(widget.stretch[1]))
+
+        
