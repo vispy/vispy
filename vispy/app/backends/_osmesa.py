@@ -5,6 +5,23 @@
 """
 OSMesa backend for offscreen rendering on Linux/Unix
 """
+from __future__ import division
+import atexit
+from time import sleep
+from ...util.ptime import time
+from ..base import (BaseApplicationBackend, BaseCanvasBackend,
+                    BaseTimerBackend)
+from vispy.gloo import gl
+
+try:
+    from ...ext import osmesa
+except Exception as exp:
+    available, testable, why_not, which = False, False, str(exp), None
+else:
+    # TODO: Should be ready, no ?
+    available, testable, why_not = True, True, 'Not ready for testing'
+    which = 'OSMesa'
+
 # -------------------------------------------------------------- capability ---
 capability = dict(
     # if True they mean:
@@ -45,32 +62,56 @@ def _set_config(c):
     return glformat
 
 
+_VP_OSMESA_ALL_WINDOWS = []
+
+def _get_osmesa_windows():
+    return [win for win in _VP_OSMESA_ALL_WINDOWS
+            if isinstance(win, CanvasBackend)]
+
 # ------------------------------------------------------------- application ---
 class ApplicationBackend(BaseApplicationBackend):
 
     def __init__(self):
         BaseApplicationBackend.__init__(self)
+        self._timers = list()
+
+    def _add_timer(self, timer):
+        if timer not in self._timers:
+            self._timers.append(timer)
 
     def _vispy_get_backend_name(self):
         return 'osmesa'
 
     def _vispy_process_events(self):
-        pass
+        for timer in self._timers:
+            timer._tick()
+        wins = _get_osmesa_windows()
+        for win in wins:
+            if win._needs_draw:
+                win._needs_draw = False
+                win._on_draw()
 
     def _vispy_run(self):
-        pass
+        wins = _get_osmesa_windows()
+        while all(w._pixels is not None for w in wins):
+            self._vispy_process_events()
+        self._vispy_quit()
 
     def _vispy_quit(self):
-        pass
+        wins = _get_osmesa_windows()
+        for win in wins:
+            win._vispy_close()
+        for timer in self._timers:
+            timer._vispy_stop()
+        self._timers = []
 
     def _vispy_get_native_app(self):
-        pass
+        return osmesa
 
 # ------------------------------------------------------------------ canvas ---
 
 class CanvasBackend(BaseCanvasBackend):
     """OSMesa backend for Canvas"""
-    # TODO: For now, this is copied from _template
 
     # args are for BaseCanvasBackend, kwargs are for us.
     def __init__(self, *args, **kwargs):
@@ -82,65 +123,95 @@ class CanvasBackend(BaseCanvasBackend):
         # Deal with config
         # ... use context.config
         # Deal with context
-        p.context.shared.add_ref('backend-name', self)
+        p.context.shared.add_ref('osmesa', self)
         if p.context.shared.ref is self:
-            self._native_context = None  # ...
+            self._native_context = osmesa.OSMesaCreateContext()
         else:
             self._native_context = p.context.shared.ref._native_context
 
-        # NativeWidgetClass.__init__(self, foo, bar)
+        self._pixels = None
+        self._vispy_set_size(*p.size)
+        _VP_OSMESA_ALL_WINDOWS.append(self)
+
+        self._vispy_canvas.set_current()
+        self._vispy_canvas.events.initialize()
 
     def _vispy_set_current(self):
-        # Make this the current context
-        raise NotImplementedError()
+        if self._pixels is None:
+            return
+        ok = osmesa.OSMesaMakeCurrent(self._native_context, self._pixels,
+                                      self._size[0], self._size[1])
+        if not ok:
+            raise RuntimeError('Failed attaching OSMesa rendering buffer')
 
     def _vispy_swap_buffers(self):
-        # Swap front and back buffer
-        raise NotImplementedError()
+        if self._pixels is None:
+            return
+        gl.glFinish()
 
     def _vispy_set_title(self, title):
-        # Set the window title. Has no effect for widgets
-        raise NotImplementedError()
+        pass
 
     def _vispy_set_size(self, w, h):
-        # Set size of the widget or window
-        raise NotImplementedError()
+        self._pixels = osmesa.allocate_pixels_buffer(w, h)
+        self._size = (w, h)
+        self._vispy_set_current()
+        self._vispy_update()
 
     def _vispy_set_position(self, x, y):
-        # Set location of the widget or window. May have no effect for widgets
-        raise NotImplementedError()
+        pass
 
     def _vispy_set_visible(self, visible):
-        # Show or hide the window or widget
-        raise NotImplementedError()
+        pass
 
     def _vispy_set_fullscreen(self, fullscreen):
-        # Set the current fullscreen state
-        raise NotImplementedError()
+        pass
 
     def _vispy_update(self):
-        # Invoke a redraw
-        raise NotImplementedError()
+        # This is checked by osmesa ApplicationBackend in process_events
+        self._needs_draw = True
 
     def _vispy_close(self):
-        # Force the window or widget to shut down
-        raise NotImplementedError()
+        osmesa.OSMesaDestroyContext(self._native_context)
+        self._native_context = None
+        self._pixels = None
 
     def _vispy_get_size(self):
-        # Should return widget size
-        raise NotImplementedError()
+        if self._pixels is None:
+            return
+        return self._size
 
     def _vispy_get_position(self):
-        # Should return widget position
-        raise NotImplementedError()
+        return 0, 0
 
     def _vispy_get_fullscreen(self):
-        # Should return the current fullscreen state
-        raise NotImplementedError()
+        return False
 
-    def _vispy_get_native_canvas(self):
-        # Should return the native widget object.
-        # If this is self, this method can be omitted.
-        return self
+    def _on_draw(self):
+        # This is called by the osmesa ApplicationBackend
+        if self._vispy_canvas is None or self._pixels is None:
+            return
+        self._vispy_canvas.set_current()
+        self._vispy_canvas.events.draw(region=None) # (0, 0, w, h)
 
+# ------------------------------------------------------------------- timer ---
+
+class TimerBackend(BaseTimerBackend):
+
+    def __init__(self, vispy_timer):
+        BaseTimerBackend.__init__(self, vispy_timer)
+        vispy_timer._app._backend._add_timer(self)
+        self._vispy_stop()
+
+    def _vispy_start(self, interval):
+        self._interval = interval
+        self._next_time = time() + self._interval
+
+    def _vispy_stop(self):
+        self._next_time = float('inf')
+
+    def _tick(self):
+        if time() > self._next_time:
+            self._vispy_timer._timeout()
+            self._next_time = time() + self._interval
 

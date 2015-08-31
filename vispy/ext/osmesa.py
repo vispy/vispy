@@ -50,7 +50,7 @@ _lib.OSMesaMakeCurrent.restype = _c_int
 # OSMesaGetCurrentContext( void );
 _lib.OSMesaGetCurrentContext.restype = c_void_p
 
-def allocate_buffer(width, height):
+def allocate_pixels_buffer(width, height):
     """Helper function to allocate a buffer to contain an image of
     width * height suitable for OSMesaMakeCurrent"""
     # Seems like OSMesa has some trouble with non-RGBA buffers, so enforce
@@ -74,13 +74,13 @@ def OSMesaGetCurrentContext():
 if __name__ == '__main__':
     """This test basic functionality"""
     # Execute with
-    # VISPY_GL_LIB=/opt/osmesa_llvmpipe/lib/libglapi.so \
+    # VISPY_GL_LIB=/opt/osmesa_llvmpipe/lib/libGLESv2.so \
     #   LD_LIBRARY_PATH=/opt/osmesa_llvmpipe/lib/ \
     #   OSMESA_LIBRARY=/opt/osmesa_llvmpipe/lib/libOSMesa.so \
     #   python vispy/ext/osmesa.py
     context = OSMesaCreateContext()
     w, h = 640, 480
-    pixels = allocate_buffer(w, h)
+    pixels = allocate_pixels_buffer(w, h)
     ok = OSMesaMakeCurrent(context, pixels, 640, 480)
     assert ok == True, 'Failed to OSMesaMakeCurrent'
     assert OSMesaGetCurrentContext().value == context.value
