@@ -6,8 +6,6 @@
 OSMesa backend for offscreen rendering on Linux/Unix
 """
 from __future__ import division
-import atexit
-from time import sleep
 from ...util.ptime import time
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
                     BaseTimerBackend)
@@ -40,33 +38,14 @@ capability = dict(
     always_on_top=False,  # can be made always-on-top
 )
 
-# ------------------------------------------------------- set_configuration ---
-def _set_config(c):
-    """Set the OpenGL configuration"""
-    glformat = QGLFormat()
-    glformat.setRedBufferSize(c['red_size'])
-    glformat.setGreenBufferSize(c['green_size'])
-    glformat.setBlueBufferSize(c['blue_size'])
-    glformat.setAlphaBufferSize(c['alpha_size'])
-    glformat.setAccum(False)
-    glformat.setRgba(True)
-    glformat.setDoubleBuffer(True if c['double_buffer'] else False)
-    glformat.setDepth(True if c['depth_size'] else False)
-    glformat.setDepthBufferSize(c['depth_size'] if c['depth_size'] else 0)
-    glformat.setStencil(True if c['stencil_size'] else False)
-    glformat.setStencilBufferSize(c['stencil_size'] if c['stencil_size']
-                                  else 0)
-    glformat.setSampleBuffers(True if c['samples'] else False)
-    glformat.setSamples(c['samples'] if c['samples'] else 0)
-    glformat.setStereo(c['stereo'])
-    return glformat
-
 
 _VP_OSMESA_ALL_WINDOWS = []
+
 
 def _get_osmesa_windows():
     return [win for win in _VP_OSMESA_ALL_WINDOWS
             if isinstance(win, CanvasBackend)]
+
 
 # ------------------------------------------------------------- application ---
 class ApplicationBackend(BaseApplicationBackend):
@@ -108,8 +87,8 @@ class ApplicationBackend(BaseApplicationBackend):
     def _vispy_get_native_app(self):
         return osmesa
 
-# ------------------------------------------------------------------ canvas ---
 
+# ------------------------------------------------------------------ canvas ---
 class CanvasBackend(BaseCanvasBackend):
     """OSMesa backend for Canvas"""
 
@@ -192,10 +171,10 @@ class CanvasBackend(BaseCanvasBackend):
         if self._vispy_canvas is None or self._pixels is None:
             return
         self._vispy_canvas.set_current()
-        self._vispy_canvas.events.draw(region=None) # (0, 0, w, h)
+        self._vispy_canvas.events.draw(region=None)  # (0, 0, w, h)
+
 
 # ------------------------------------------------------------------- timer ---
-
 class TimerBackend(BaseTimerBackend):
 
     def __init__(self, vispy_timer):
@@ -214,4 +193,3 @@ class TimerBackend(BaseTimerBackend):
         if time() > self._next_time:
             self._vispy_timer._timeout()
             self._next_time = time() + self._interval
-

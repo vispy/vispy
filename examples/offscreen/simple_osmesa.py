@@ -11,21 +11,12 @@ Execute with something like :
         OSMESA_LIBRARY=/opt/osmesa_llvmpipe/lib/libOSMesa.so \
         python examples/offscreen/simple_osmesa.py
 """
-##
 import vispy.app
-vispy.app.use_app(backend_name='osmesa')
-
+vispy.app.use_app(backend_name='osmesa')  # noqa
 import numpy as np
 import vispy.plot as vp
 import vispy.io as io
-import vispy.gloo.gl as gl
 
-# This doesn't work using ctypes but work in C
-#   import vispy.gloo.gl.es2 as es2
-#   es2._lib.glGetString(7938) # GL_VERSION
-#print 'OpenGL version : ', gl.glGetParameter(gl.GL_VERSION).decode('utf-8')
-
-##
 data = np.load(io.load_data_file('electrophys/iv_curve.npz'))['arr_0']
 time = np.arange(0, data.shape[1], 1e-4)
 
@@ -41,11 +32,5 @@ fig[0, 0].view.add(grid)
 
 fig.show()
 
-## -- Save to PNG
 img = fig.render()
 io.write_png("osmesa.png", img)
-
-##
-#if __name__ == '__main__':
-    #fig.show(run=True)
-##
