@@ -8,9 +8,7 @@
 
 import os
 import ctypes
-from ctypes import c_int as _c_int, c_uint as _c_uint, \
-                   c_void_p
-
+from ctypes import c_int as _c_int, c_uint as _c_uint, c_void_p
 from vispy.gloo import gl
 
 _osmesa_file = None
