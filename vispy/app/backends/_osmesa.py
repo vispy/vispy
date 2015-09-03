@@ -16,9 +16,7 @@ try:
 except Exception as exp:
     available, testable, why_not, which = False, False, str(exp), None
 else:
-    # TODO: Should be ready, no ?
-    available, testable, why_not = True, True, 'Not ready for testing'
-    which = 'OSMesa'
+    available, testable, why_not, which = True, True, None, 'OSMesa'
 
 # -------------------------------------------------------------- capability ---
 capability = dict(
@@ -29,7 +27,7 @@ capability = dict(
     show=False,           # can show/hide window XXX ?
     vsync=False,          # can set window to sync to blank
     resizable=False,      # can toggle resizability (e.g., no user resizing)
-    decorate=False,       # can toggle decorations
+    decorate=True,       # can toggle decorations
     fullscreen=False,     # fullscreen window support
     context=False,        # can share contexts between windows
     multi_window=False,   # can use multiple windows at once
@@ -154,6 +152,9 @@ class CanvasBackend(BaseCanvasBackend):
         osmesa.OSMesaDestroyContext(self._native_context)
         self._native_context = None
         self._pixels = None
+
+    def _vispy_warmup(self):
+        pass
 
     def _vispy_get_size(self):
         if self._pixels is None:
