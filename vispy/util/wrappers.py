@@ -16,8 +16,10 @@ backends, but it should be(come) aware of (in)compatibilities between
 them.
 """
 
+import os
 import subprocess
 import inspect
+from . import logger
 
 
 def use(app=None, gl=None):
@@ -76,6 +78,18 @@ def use(app=None, gl=None):
     if app == 'ipynb_webgl':
         app = 'headless'
         gl = 'webgl'
+
+    if app == 'osmesa':
+        # When using OSMesa, the gl functions (from libGL) are included
+        # in libOSMesa.so. We modify the VISPY_GL_LIB env variable here so
+        # gl2 picks up libOSMesa.so as the OpenGL library
+        if 'VISPY_GL_LIB' in os.environ:
+            logger.warning('VISPY_GL_LIB is ignored when using OSMesa. Use '
+                           'OSMESA_LIBRARY instead.')
+        if 'OSMESA_LIBRARY' in os.environ:
+            os.environ['VISPY_GL_LIB'] = os.environ['OSMESA_LIBRARY']
+        else:
+            os.environ['VISPY_GL_LIB'] = 'libOSMesa.so'
 
     # Apply now
     if gl:
