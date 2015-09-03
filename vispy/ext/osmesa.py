@@ -8,8 +8,8 @@
 
 import os
 import ctypes
-from ctypes import c_int as _c_int, c_uint as _c_uint, POINTER as _POINTER, \
-                   c_void_p, c_char_p
+from ctypes import c_int as _c_int, c_uint as _c_uint, \
+                   c_void_p
 
 from vispy.gloo import gl
 
@@ -29,10 +29,10 @@ if _osmesa_file is None:
 # Load it
 _lib = ctypes.CDLL(_osmesa_file)
 
-## Constants
+# Constants
 OSMESA_RGBA = gl.GL_RGBA
 
-## Functions
+# Functions
 
 # GLAPI OSMesaContext GLAPIENTRY
 # OSMesaCreateContext( GLenum format, OSMesaContext sharelist );
@@ -50,6 +50,7 @@ _lib.OSMesaMakeCurrent.restype = _c_int
 # OSMesaGetCurrentContext( void );
 _lib.OSMesaGetCurrentContext.restype = c_void_p
 
+
 def allocate_pixels_buffer(width, height):
     """Helper function to allocate a buffer to contain an image of
     width * height suitable for OSMesaMakeCurrent"""
@@ -57,16 +58,20 @@ def allocate_pixels_buffer(width, height):
     # RGBA
     return (_c_uint * width * height * 4)()
 
+
 def OSMesaCreateContext():
     return ctypes.cast(_lib.OSMesaCreateContext(OSMESA_RGBA, None), c_void_p)
 
+
 def OSMesaDestroyContext(context):
     _lib.OSMesaDestroyContext(context)
+
 
 def OSMesaMakeCurrent(context, buffer, width, height):
     ret = _lib.OSMesaMakeCurrent(context, buffer, gl.GL_UNSIGNED_BYTE,
                                  width, height)
     return ret != 0
+
 
 def OSMesaGetCurrentContext():
     return c_void_p(_lib.OSMesaGetCurrentContext())
@@ -82,8 +87,8 @@ if __name__ == '__main__':
     w, h = 640, 480
     pixels = allocate_pixels_buffer(w, h)
     ok = OSMesaMakeCurrent(context, pixels, 640, 480)
-    assert ok == True, 'Failed to OSMesaMakeCurrent'
+    assert ok, 'Failed to OSMesaMakeCurrent'
     assert OSMesaGetCurrentContext().value == context.value
 
     OSMesaDestroyContext(context)
-    assert OSMesaGetCurrentContext().value == None
+    assert OSMesaGetCurrentContext().value is None
