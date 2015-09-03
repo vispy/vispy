@@ -13,21 +13,21 @@ from ctypes import c_int as _c_int, c_uint as _c_uint, POINTER as _POINTER, \
 
 from vispy.gloo import gl
 
-_egl_file = None
+_osmesa_file = None
 if 'OSMESA_LIBRARY' in os.environ:
     if os.path.exists(os.environ['OSMESA_LIBRARY']):
-        _egl_file = os.path.realpath(os.environ['OSMESA_LIBRARY'])
+        _osmesa_file = os.path.realpath(os.environ['OSMESA_LIBRARY'])
 
 # Else, try to find it
-if _egl_file is None:
-    _egl_file = ctypes.util.find_library('OSMesa')
+if _osmesa_file is None:
+    _osmesa_file = ctypes.util.find_library('OSMesa')
 
 # Else, we failed and exit
-if _egl_file is None:
+if _osmesa_file is None:
     raise OSError('OSMesa library not found')
 
 # Load it
-_lib = ctypes.CDLL(_egl_file)
+_lib = ctypes.CDLL(_osmesa_file)
 
 ## Constants
 OSMESA_RGBA = gl.GL_RGBA
