@@ -17,7 +17,6 @@ vispy.use(app='osmesa')  # noqa
 import numpy as np
 import vispy.plot as vp
 import vispy.io as io
-import vispy.gloo.gl as gl
 
 # Check the application correctly picked up osmesa
 assert vispy.app.use_app().backend_name == 'osmesa', 'Not using OSMesa'
