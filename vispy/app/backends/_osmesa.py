@@ -10,6 +10,7 @@ from ...util.ptime import time
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
                     BaseTimerBackend)
 from vispy.gloo import gl
+from time import sleep
 
 try:
     from ...ext import osmesa
@@ -162,6 +163,7 @@ class CanvasBackend(BaseCanvasBackend):
     def _vispy_set_visible(self, visible):
         if visible:
             self._vispy_set_current()
+            self._vispy_update()
 
     def _vispy_set_fullscreen(self, fullscreen):
         pass
@@ -184,7 +186,11 @@ class CanvasBackend(BaseCanvasBackend):
         return
 
     def _vispy_warmup(self):
-        self._vispy_canvas.set_current()
+        etime = time() + 0.1
+        while time() < etime:
+            sleep(0.01)
+            self._vispy_canvas.set_current()
+            self._vispy_canvas.app.process_events()
 
     def _vispy_get_size(self):
         if self._pixels is None:
@@ -206,6 +212,7 @@ class CanvasBackend(BaseCanvasBackend):
         if self._vispy_canvas is None or self._pixels is None:
             raise RuntimeError('draw with no canvas or pixels attached')
             return
+        self._vispy_set_current()
         self._vispy_canvas.events.draw(region=None)  # (0, 0, w, h)
 
 
