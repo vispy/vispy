@@ -11,7 +11,6 @@ from subprocess import CalledProcessError
 from ..logs import logger
 from ..wrappers import run_subprocess
 
-
 def _get_dpi_from(cmd, pattern, func):
     """Match pattern against the output of func, passing the results as
     floats to func.  If anything fails, return None.
@@ -39,6 +38,11 @@ def get_dpi(raise_error=True):
     dpi : float
         Dots per inch of the primary screen.
     """
+    # If we are using OSMesa (i.e. : no X server), use a fixed DPI
+    from vispy.app import use_app
+    app = use_app()
+    if app.backend_name.lower() == 'osmesa':
+        return 96.
 
     from_xdpyinfo = _get_dpi_from(
         'xdpyinfo', r'(\d+)x(\d+) dots per inch',
