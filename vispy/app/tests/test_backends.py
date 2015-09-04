@@ -31,7 +31,7 @@ def _test_module_properties(_module=None):
 
     # Test that the keymap contains all keys supported by vispy.
     module_fname = _module.__name__.split('.')[-1]
-    if module_fname != '_egl':  # skip keys for EGL
+    if module_fname not in ('_egl', '_osmesa'):  # skip keys for EGL, osmesa
         keymap = _module.KEYMAP
         vispy_keys = keymap.values()
         for keyname in dir(keys):
@@ -121,8 +121,8 @@ def _test_module_properties(_module=None):
     ignore = set(['stylus', 'touch', 'mouse_press', 'paint',
                   'mouse_move', 'mouse_release', 'mouse_double_click',
                   'detect_double_click', 'close'])
-    if module_fname == '_egl':
-        ignore += ['key_release', 'key_press']
+    if module_fname in ('_egl', '_osmesa'):
+        ignore = ignore.union(['mouse_wheel', 'key_release', 'key_press'])
     eventNames = set(canvas.events._emitters.keys()) - ignore
 
     if not alt_modname:  # Only check for non-proxy modules

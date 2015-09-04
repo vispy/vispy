@@ -113,6 +113,7 @@ class CanvasBackend(BaseCanvasBackend):
         p = self._process_backend_kwargs(kwargs)
 
         # Deal with config
+        # TODO: We do not support setting config
         # ... use context.config
         # Deal with context
         p.context.shared.add_ref('osmesa', self)
@@ -151,6 +152,7 @@ class CanvasBackend(BaseCanvasBackend):
     def _vispy_set_size(self, w, h):
         self._pixels = osmesa.allocate_pixels_buffer(w, h)
         self._size = (w, h)
+        self._vispy_canvas.events.resize(size=(w, h))
         self._vispy_set_current()
         self._vispy_update()
 
