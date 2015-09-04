@@ -1,6 +1,7 @@
 import os
 from . import logger
 
+
 def fix_osmesa_gl_lib():
     """
     When using OSMesa, the gl functions (from libGL) are included
@@ -17,4 +18,3 @@ def fix_osmesa_gl_lib():
         os.environ['VISPY_GL_LIB'] = os.environ['OSMESA_LIBRARY']
     else:
         os.environ['VISPY_GL_LIB'] = 'libOSMesa.so'
-

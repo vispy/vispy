@@ -16,10 +16,8 @@ backends, but it should be(come) aware of (in)compatibilities between
 them.
 """
 
-import os
 import subprocess
 import inspect
-from . import logger
 
 
 def use(app=None, gl=None):
@@ -128,13 +126,13 @@ def run_subprocess(command, return_code=False, **kwargs):
 
     p = subprocess.Popen(command, **use_kwargs)
     output = p.communicate()
-    
-    # communicate() may return bytes, str, or None depending on the kwargs 
+
+    # communicate() may return bytes, str, or None depending on the kwargs
     # passed to Popen(). Convert all to unicode str:
     output = ['' if s is None else s for s in output]
     output = [s.decode('utf-8') if isinstance(s, bytes) else s for s in output]
     output = tuple(output)
-    
+
     if not return_code and p.returncode:
         print(output[0])
         print(output[1])

@@ -11,6 +11,7 @@ from subprocess import CalledProcessError
 from ..logs import logger
 from ..wrappers import run_subprocess
 
+
 def _get_dpi_from(cmd, pattern, func):
     """Match pattern against the output of func, passing the results as
     floats to func.  If anything fails, return None.
