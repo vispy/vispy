@@ -24,12 +24,12 @@ capability = dict(
     title=True,          # can set title on the fly
     size=True,           # can set size on the fly
     position=False,       # can set position on the fly
-    show=False,           # can show/hide window XXX ?
+    show=True,           # can show/hide window XXX ?
     vsync=False,          # can set window to sync to blank
     resizable=False,      # can toggle resizability (e.g., no user resizing)
     decorate=True,       # can toggle decorations
     fullscreen=False,     # fullscreen window support
-    context=False,        # can share contexts between windows
+    context=True,        # can share contexts between windows
     multi_window=False,   # can use multiple windows at once
     scroll=False,         # scroll-wheel events are supported
     parent=False,         # can pass native widget backend parent
@@ -70,7 +70,7 @@ class ApplicationBackend(BaseApplicationBackend):
 
     def _vispy_run(self):
         wins = _get_osmesa_windows()
-        while all(w._pixels is not None for w in wins):
+        while not all(w.closed for w in wins):
             self._vispy_process_events()
         self._vispy_quit()
 
@@ -84,6 +84,21 @@ class ApplicationBackend(BaseApplicationBackend):
 
     def _vispy_get_native_app(self):
         return osmesa
+
+
+class OSMesaContext(object):
+    """
+    A wrapper around an OSMesa context that destroy the context when
+    garbage collected
+    """
+    def __init__(self):
+        self.context = osmesa.OSMesaCreateContext()
+
+    def make_current(self, pixels, width, height):
+        return osmesa.OSMesaMakeCurrent(self.context, pixels, width, height)
+
+    def __del__(self):
+        osmesa.OSMesaDestroyContext(self.context)
 
 
 # ------------------------------------------------------------------ canvas ---
@@ -102,10 +117,11 @@ class CanvasBackend(BaseCanvasBackend):
         # Deal with context
         p.context.shared.add_ref('osmesa', self)
         if p.context.shared.ref is self:
-            self._native_context = osmesa.OSMesaCreateContext()
+            self._native_context = OSMesaContext()
         else:
             self._native_context = p.context.shared.ref._native_context
 
+        self._closed = False
         self._pixels = None
         self._vispy_set_size(*p.size)
         _VP_OSMESA_ALL_WINDOWS.append(self)
@@ -114,16 +130,19 @@ class CanvasBackend(BaseCanvasBackend):
         self._vispy_canvas.events.initialize()
 
     def _vispy_set_current(self):
+        if self._native_context is None:
+            raise RuntimeError('Native context is None')
         if self._pixels is None:
-            return
-        ok = osmesa.OSMesaMakeCurrent(self._native_context, self._pixels,
-                                      self._size[0], self._size[1])
+            raise RuntimeError('Pixel buffer has already been deleted')
+
+        ok = self._native_context.make_current(self._pixels, self._size[0],
+                                               self._size[1])
         if not ok:
             raise RuntimeError('Failed attaching OSMesa rendering buffer')
 
     def _vispy_swap_buffers(self):
         if self._pixels is None:
-            return
+            raise RuntimeError('No pixel buffer')
         gl.glFinish()
 
     def _vispy_set_title(self, title):
@@ -139,7 +158,8 @@ class CanvasBackend(BaseCanvasBackend):
         pass
 
     def _vispy_set_visible(self, visible):
-        pass
+        if visible:
+            self._vispy_set_current()
 
     def _vispy_set_fullscreen(self, fullscreen):
         pass
@@ -149,17 +169,29 @@ class CanvasBackend(BaseCanvasBackend):
         self._needs_draw = True
 
     def _vispy_close(self):
-        osmesa.OSMesaDestroyContext(self._native_context)
-        self._native_context = None
-        self._pixels = None
+        if self.closed:
+            return
+        # We do not set self._native_context = None here because this causes
+        # trouble in case a canvas is closed multiple times (as in
+        # app.test_run()). The problem occurs in gloo's glir._gl_initialize
+        # when it tries to call glGetString(GL_VERSION).
+        # But OSMesa requires a context to be attached when calling
+        # glGetString otherwise it returns an empty string, which gloo doesn't
+        # like
+        self._closed = True
+        return
 
     def _vispy_warmup(self):
-        pass
+        self._vispy_canvas.set_current()
 
     def _vispy_get_size(self):
         if self._pixels is None:
             return
         return self._size
+
+    @property
+    def closed(self):
+        return self._closed
 
     def _vispy_get_position(self):
         return 0, 0
@@ -170,8 +202,8 @@ class CanvasBackend(BaseCanvasBackend):
     def _on_draw(self):
         # This is called by the osmesa ApplicationBackend
         if self._vispy_canvas is None or self._pixels is None:
+            raise RuntimeError('draw with no canvas or pixels attached')
             return
-        self._vispy_canvas.set_current()
         self._vispy_canvas.events.draw(region=None)  # (0, 0, w, h)
 
 

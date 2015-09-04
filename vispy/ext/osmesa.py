@@ -88,5 +88,7 @@ if __name__ == '__main__':
     assert ok, 'Failed to OSMesaMakeCurrent'
     assert OSMesaGetCurrentContext().value == context.value
 
+    print "OpenGL version : ", gl.glGetParameter(gl.GL_VERSION)
+
     OSMesaDestroyContext(context)
     assert OSMesaGetCurrentContext().value is None
