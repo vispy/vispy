@@ -280,25 +280,55 @@ class Grid(Widget):
 
         if self._need_solver_recreate:
             self._need_solver_recreate = False
-            self._recreate_child_widet_constraints()
+            # self._recreate_child_widet_constraints()
+
+        # think in terms of (x, y). (row, col) makes code harder to read
+        ymax, xmax = self.grid_size
+        if ymax <= 0 or xmax <= 0:
+            return
 
         rect = self.rect.padded(self.padding + self.margin)
-
         if rect.width <= 0 or rect.height <= 0:
             return
 
+
+        self._solver = SimplexSolver()
+
+        width_grid = [[ Variable("width(x: %s, y: %s" %
+                      (x, y)) for x in range(0, xmax)] for y in range(0, ymax)]
+
+
+        for xs in width_grid:
+            width_expr = expression.Expression()
+            for x in xs:
+                width_expr = width_expr + x
+            self._solver.add_constraint(width_expr == self.var_w)
+
+        height_grid = [[ Variable("height(x: %s, y: %s" %
+                         (x, y)) for y in range(0, ymax)] for x in range(0, xmax)]
+        for ys in height_grid:
+            height_expr = expression.Expression()
+            for y in ys:
+                height_expr = height_expr + y
+            self._solver.add_constraint(height_expr == self.var_h)
+
+
         self._solver.add_edit_var(self.var_w)
+        self._solver.add_stay(self.var_w, rect.width)
+
         self._solver.add_edit_var(self.var_h)
+        self._solver.add_stay(self.var_h, rect.height);
 
         with self._solver.edit():
-                self._solver.suggest_value(self.var_w, rect.width)
-                self._solver.suggest_value(self.var_h, rect.height)
+                self._solver.suggest_value(self.var_w, int(rect.width))
+                self._solver.suggest_value(self.var_h, int(rect.height))
 
+        self._solver.solve()
+
+        print("widths:\n%s" % width_grid)
+        print("heights:\n%s" % height_grid)
         # copy dimensions
         for (_, val) in self._grid_widgets.items():
             (row, col, rspan, cspan, widget) = val
             widget.size = (widget.var_w.value, widget.var_h.value)
             widget.pos = (widget.var_x.value, widget.var_y.value)
-
-    def _recreate_child_widet_constraints(self):
-        pass
