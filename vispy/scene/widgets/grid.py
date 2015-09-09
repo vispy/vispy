@@ -296,24 +296,27 @@ class Grid(Widget):
         width_grid = [[Variable("width(x: %s, y: %s" %
                      (x, y)) for x in range(0, xmax)] for y in range(0, ymax)]
 
-        for xs in width_grid:
+        for ws in width_grid:
             width_expr = expression.Expression()
-            stretch_expr = xs[0] if len(xs) > 0 else None
+            stretch_expr = ws[0] if len(ws) > 0 else None
 
-            for x in xs:
-                width_expr = width_expr + x
+            for w in ws:
+                width_expr = width_expr + w
                 if stretch_expr is not None:
-                    self._solver.add_constraint(x == stretch_expr)
+                    self._solver.add_constraint(w == stretch_expr)
             self._solver.add_constraint(width_expr == self.var_w)
 
         height_grid = [[Variable("height(x: %s, y: %s" %
                          (x, y)) for y in range(0, ymax)] for x in range(0, xmax)]
-        for ys in height_grid:
+        for hs in height_grid:
             height_expr = expression.Expression()
-            stretch_expr = ys[0] if len(ys) > 0 else None
+            stretch_expr = hs[0] if len(hs) > 0 else None
 
-            for y in ys:
-                height_expr = height_expr + y
+            for h in hs:
+                height_expr = height_expr + h
+            if stretch_expr is not None:
+                self._solver.add_constraint(h == stretch_expr)
+
             self._solver.add_constraint(height_expr == self.var_h)
 
         self._solver.add_edit_var(self.var_w)
