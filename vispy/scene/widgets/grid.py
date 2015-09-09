@@ -291,33 +291,36 @@ class Grid(Widget):
         if rect.width <= 0 or rect.height <= 0:
             return
 
-
         self._solver = SimplexSolver()
 
-        width_grid = [[ Variable("width(x: %s, y: %s" %
-                      (x, y)) for x in range(0, xmax)] for y in range(0, ymax)]
-
+        width_grid = [[Variable("width(x: %s, y: %s" %
+                     (x, y)) for x in range(0, xmax)] for y in range(0, ymax)]
 
         for xs in width_grid:
             width_expr = expression.Expression()
+            stretch_expr = xs[0] if len(xs) > 0 else None
+
             for x in xs:
                 width_expr = width_expr + x
+                if stretch_expr is not None:
+                    self._solver.add_constraint(x == stretch_expr)
             self._solver.add_constraint(width_expr == self.var_w)
 
-        height_grid = [[ Variable("height(x: %s, y: %s" %
+        height_grid = [[Variable("height(x: %s, y: %s" %
                          (x, y)) for y in range(0, ymax)] for x in range(0, xmax)]
         for ys in height_grid:
             height_expr = expression.Expression()
+            stretch_expr = ys[0] if len(ys) > 0 else None
+
             for y in ys:
                 height_expr = height_expr + y
             self._solver.add_constraint(height_expr == self.var_h)
-
 
         self._solver.add_edit_var(self.var_w)
         self._solver.add_stay(self.var_w, rect.width)
 
         self._solver.add_edit_var(self.var_h)
-        self._solver.add_stay(self.var_h, rect.height);
+        self._solver.add_stay(self.var_h, rect.height)
 
         with self._solver.edit():
                 self._solver.suggest_value(self.var_w, int(rect.width))
@@ -328,7 +331,23 @@ class Grid(Widget):
         print("widths:\n%s" % width_grid)
         print("heights:\n%s" % height_grid)
         # copy dimensions
+
+        value_vectorized = np.vectorize(lambda x: x.value)
+
         for (_, val) in self._grid_widgets.items():
             (row, col, rspan, cspan, widget) = val
-            widget.size = (widget.var_w.value, widget.var_h.value)
-            widget.pos = (widget.var_x.value, widget.var_y.value)
+
+            width = np.sum(value_vectorized(width_grid[row][col:col+cspan]))
+            height = np.sum(value_vectorized(height_grid[col][row:row+rspan]))
+            if col == 0:
+                x = 0
+            else:
+                x = np.sum(value_vectorized(width_grid[row][0:col]))
+
+            if row == 0:
+                y = 0
+            else:
+                y = np.sum(value_vectorized(height_grid[col][0:row]))
+            print("width: %s | height: %s | x: %s | y: %s" % (width, height, x, y))
+            widget.size = (width, height)
+            widget.pos = (x, y)
