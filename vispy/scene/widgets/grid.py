@@ -297,8 +297,8 @@ class Grid(Widget):
                       (x, y)) for x in range(0, xmax)]
                       for y in range(0, ymax)]
 
-        stretch_widths_grid = np.array([[1 for _ in range(0, xmax)
-                                        for _ in range(0, ymax)]], dtype=np.float)
+        stretch_widths_grid = np.array([[1 for _ in range(0, xmax)]
+                                        for _ in range(0, ymax)], dtype=np.float)
 
         for (_, val) in self._grid_widgets.items():
             (row, col, rspan, cspan, widget) = val
@@ -308,6 +308,7 @@ class Grid(Widget):
         for (y, ws) in enumerate(width_grid):
             width_expr = expression.Expression()
             print("y: %s, ws: %s" % (y, ws))
+            print("\nstretches:\n%s" % stretch_widths_grid)
             stretch_expr = ws[0] / stretch_widths_grid[y][0] if len(ws) > 0 else None
 
             for (x, w) in enumerate(ws):
