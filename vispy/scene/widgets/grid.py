@@ -293,29 +293,51 @@ class Grid(Widget):
 
         self._solver = SimplexSolver()
 
-        width_grid = [[Variable("width(x: %s, y: %s" %
-                     (x, y)) for x in range(0, xmax)] for y in range(0, ymax)]
+        width_grid = [[Variable("width(x: %s, y: %s)" %
+                      (x, y)) for x in range(0, xmax)]
+                      for y in range(0, ymax)]
 
-        for ws in width_grid:
+        stretch_widths_grid = np.array([[1 for _ in range(0, xmax)
+                                        for _ in range(0, ymax)]], dtype=np.float)
+
+        for (_, val) in self._grid_widgets.items():
+            (row, col, rspan, cspan, widget) = val
+            (stretch_w, stretch_h) = widget.stretch
+            stretch_widths_grid[row:row+rspan, col:col+cspan] = stretch_w
+
+        for (y, ws) in enumerate(width_grid):
             width_expr = expression.Expression()
-            stretch_expr = ws[0] if len(ws) > 0 else None
+            print("y: %s, ws: %s" % (y, ws))
+            stretch_expr = ws[0] / stretch_widths_grid[y][0] if len(ws) > 0 else None
 
-            for w in ws:
+            for (x, w) in enumerate(ws):
                 width_expr = width_expr + w
                 if stretch_expr is not None:
-                    self._solver.add_constraint(w == stretch_expr)
+                    self._solver.add_constraint(w / float(stretch_widths_grid[y][x])
+                                                == stretch_expr)
             self._solver.add_constraint(width_expr == self.var_w)
 
         height_grid = [[Variable("height(x: %s, y: %s" %
-                         (x, y)) for y in range(0, ymax)] for x in range(0, xmax)]
-        for hs in height_grid:
-            height_expr = expression.Expression()
-            stretch_expr = hs[0] if len(hs) > 0 else None
+                       (x, y)) for y in range(0, ymax)]
+                       for x in range(0, xmax)]
 
-            for h in hs:
+        stretch_height_grid = np.array([[1 for _ in range(0, ymax)]
+                                         for _ in range(0, xmax)], dtype=np.float)
+
+        for (_, val) in self._grid_widgets.items():
+            (row, col, rspan, cspan, widget) = val
+            (stretch_w, stretch_h) = widget.stretch
+            stretch_height_grid[col:col+cspan][row:row+rspan] = stretch_h
+
+        for (x, hs) in enumerate(height_grid):
+            height_expr = expression.Expression()
+            stretch_expr = hs[0] / stretch_height_grid[x][0] if len(hs) > 0 else None
+
+            for (y, h) in enumerate(hs):
                 height_expr = height_expr + h
             if stretch_expr is not None:
-                self._solver.add_constraint(h == stretch_expr)
+                self._solver.add_constraint(h / float(stretch_height_grid[x][y])
+                                            == stretch_expr)
 
             self._solver.add_constraint(height_expr == self.var_h)
 
