@@ -297,32 +297,74 @@ class Grid(Widget):
         xmax = len(height_grid)
         ymax = len(width_grid)
 
-        stretch_grid = np.zeros(shape=(xmax, ymax, 2), dtype=float)
-        stretch_grid.fill(1)
+        stretch_widths = [[] for _ in range(0, ymax)]
+        stretch_heights = [[] for _ in range(0, xmax)]
 
         for (_, val) in grid_widgets.items():
             (y, x, ys, xs, widget) = val
-            stretch_grid[x:x+xs, y:y+ys] = widget.stretch
 
-        print("stretch grid:\n%s\n\n" % stretch_grid)
-        for (x, hs) in enumerate(height_grid):
-            if len(hs) <= 1: continue
+            for ws in width_grid[y:y+ys]:
+                total_w = np.sum(ws[x:x+xs])
 
-            comparator = hs[0] / stretch_grid[x][0][1]
+                for sw in stretch_widths[y:y+ys]:
+                    sw.append((total_w, widget.stretch[0]))
 
-            for y in range(1, ymax):
-                stretch_term = hs[y] / stretch_grid[x][y][1]
-                solver.add_constraint(stretch_term == comparator, strength=WEAK)
+            for hs in height_grid[x:x+xs]:
+                total_h = np.sum(hs[y:y+ys])
 
-        for (y, ws) in enumerate(width_grid):
-            if len(ws) <= 1: continue
+                for sh in stretch_heights[x:x+xs]:
+                    print("appending to %s" % sh)
+                    sh.append((total_h, widget.stretch[1]))
 
-            comparator = ws[0] / stretch_grid[0][y][0]
+        print("stretch widths:\n---------\n%s" % stretch_widths)
+        print("stretch heights:\n--------\n%s" % stretch_heights)
+        for sws in stretch_widths:
+            if len(sws) <= 1:
+                continue
 
-            for x in range(1, xmax):
-                stretch_term = ws[x] / stretch_grid[x][y][0]
-                print("adding stretch eqn: %s " % (stretch_term == comparator))
-                solver.add_constraint(stretch_term == comparator, strength=WEAK)
+            comparator = sws[0][0] / sws[0][1]
+
+            for (stretch_term, stretch_val) in sws[1:]:
+                solver.add_constraint(comparator == stretch_term / stretch_val, strength=WEAK)
+
+        for sws in stretch_heights:
+            if len(sws) <= 1:
+                continue
+
+            comparator = sws[0][0] / sws[0][1]
+
+            for (stretch_term, stretch_val) in sws[1:]:
+                solver.add_constraint(comparator == stretch_term / stretch_val, strength=WEAK)
+
+
+        # stretch_grid = np.zeros(shape=(xmax, ymax, 2), dtype=float)
+        # stretch_grid.fill(1)
+        #
+        # for (_, val) in grid_widgets.items():
+        #     (y, x, ys, xs, widget) = val
+        #     stretch_grid[x:x+xs, y:y+ys] = widget.stretch
+        #
+        # print("stretch grid:\n%s\n\n" % stretch_grid)
+        # for (x, hs) in enumerate(height_grid):
+        #     if len(hs) <= 1: continue
+        #
+        #     comparator = hs[0] / stretch_grid[x][0][1]
+        #
+        #     for y in range(1, ymax):
+        #         stretch_term = hs[y] / stretch_grid[x][y][1]
+        #         solver.add_constraint(stretch_term == comparator, strength=WEAK)
+        #
+        # for (y, ws) in enumerate(width_grid):
+        #     if len(ws) <= 1: continue
+        #
+        #     comparator = ws[0] / stretch_grid[0][y][0]
+        #
+        #     for x in range(1, xmax):
+        #         stretch_term = ws[x] / stretch_grid[x][y][0]
+        #         print("adding stretch eqn: %s " % (stretch_term == comparator))
+        #         solver.add_constraint(stretch_term == comparator, strength=WEAK)
+        #
+
     @staticmethod
     def _add_widget_dim_constraints(solver, width_grid, height_grid, grid_widgets):
         for (_, val) in grid_widgets.items():
