@@ -168,7 +168,7 @@ install:
         fi;
         pip install -q PySDL2;
       fi;
-      
+
     # Install OSMesa
     - wget https://github.com/julienr/vispy_osmesa_docker_12_04/releases/download/0.1/osmesa.tar.bz2 -O /tmp/osmesa.tar.bz2
     - mkdir $HOME/osmesa; tar -xvjf /tmp/osmesa.tar.bz2 -C $HOME/osmesa
@@ -177,12 +177,12 @@ install:
 before_script:
     - if [ "${TEST}" != "osmesa" ]; then
         # We need to create a (fake) display on Travis, let's use a funny resolution
-        export DISPLAY=:99.0
-        /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1400x900x24 -ac +extension GLX +render
+        export DISPLAY=:99.0;
+        /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1400x900x24 -ac +extension GLX +render;
       fi;
     - if [ "${TEST}" == "osmesa" ]; then
-        export LD_LIBRARY_PATH=$HOME/osmesa/lib
-        export LIBRARY_PATH=$HOME/osmesa/lib
+        export LD_LIBRARY_PATH=$HOME/osmesa/lib;
+        export LIBRARY_PATH=$HOME/osmesa/lib;
       fi;
 
 
@@ -198,7 +198,7 @@ script:
         make extra;
       fi;
     - if [ "${TEST}" == "osmesa" ]; then
-        make test osmesa
+        make test osmesa;
       fi;
     # Each line must be run in a separate line to ensure exit code accuracy
     - if [ "${DEPS}" == "minimal" ]; then
