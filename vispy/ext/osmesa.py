@@ -5,7 +5,7 @@
 
 """A ctypes-based API to OSMesa
 """
-
+from __future__ import print_function
 import os
 import ctypes
 from ctypes import c_int as _c_int, c_uint as _c_uint, c_void_p
@@ -88,7 +88,7 @@ if __name__ == '__main__':
     assert ok, 'Failed to OSMesaMakeCurrent'
     assert OSMesaGetCurrentContext().value == context.value
 
-    print "OpenGL version : ", gl.glGetParameter(gl.GL_VERSION)
+    print("OpenGL version : ", gl.glGetParameter(gl.GL_VERSION))
 
     OSMesaDestroyContext(context)
     assert OSMesaGetCurrentContext().value is None
