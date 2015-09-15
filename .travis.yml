@@ -42,6 +42,13 @@ matrix:
           packages:
             - *mesa_apt
             - *full_apt
+    - env: PYTHON=2.7 DEPS=full TEST=osmesa IPYTHON="=2" NUMPY="=1.7"
+      addons:
+        apt:
+          sources:
+            - *full_sources
+          packages:
+            - *full_apt
     - env: PYTHON=3.4 DEPS=full TEST=standard
       addons:
         apt:
@@ -198,7 +205,7 @@ script:
         make extra;
       fi;
     - if [ "${TEST}" == "osmesa" ]; then
-        make test osmesa
+        make unit;
       fi;
     # Each line must be run in a separate line to ensure exit code accuracy
     - if [ "${DEPS}" == "minimal" ]; then

@@ -36,6 +36,7 @@ def use(app=None, gl=None):
             * 'Glfw': use Glfw backend (successor of Glut). Widely available
               on Linux.
             * 'SDL2': use SDL v2 backend.
+            * 'osmesa': Use OSMesa backend
         Additional backends:
             * 'ipynb_vnc': render in the IPython notebook via a VNC approach
               (experimental)
@@ -80,6 +81,7 @@ def use(app=None, gl=None):
     if app == 'osmesa':
         from vispy.util.osmesa_gl import fix_osmesa_gl_lib
         fix_osmesa_gl_lib()
+        assert gl is None, "Do not specify GL when using osmesa"
 
     # Apply now
     if gl:
