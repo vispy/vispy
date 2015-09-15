@@ -205,7 +205,7 @@ script:
         make extra;
       fi;
     - if [ "${TEST}" == "osmesa" ]; then
-        make unit;
+        make osmesa;
       fi;
     # Each line must be run in a separate line to ensure exit code accuracy
     - if [ "${DEPS}" == "minimal" ]; then
