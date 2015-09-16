@@ -57,6 +57,9 @@ class VispyWidget(DOMWidget):
         self.gen_event = self.canvas_backend._gen_event
         #setup the backend widget then.
 
+    # In IPython < 4, these callbacks are given two arguments; in
+    # IPython/jupyter 4, they take 3. events_received is variadic to
+    # accommodate both cases.
     def events_received(self, _, msg, *args):
         if msg['msg_type'] == 'init':
             self.canvas_backend._reinit_widget()
