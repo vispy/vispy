@@ -42,7 +42,7 @@ class SphereVisual(CompoundVisual):
     """
     def __init__(self, radius=1.0, cols=30, rows=30, depth=30, subdivisions=3,
                  method='latitude', vertex_colors=None, face_colors=None,
-                 color=(0.5, 0.5, 1, 1), edge_color=None, **kwargs):
+                 color=(0.5, 0.5, 1, 1), edge_color=None, shading=None, **kwargs):
 
         mesh = create_sphere(cols, rows, depth, radius=radius,
                              subdivisions=subdivisions, method=method)
@@ -50,14 +50,14 @@ class SphereVisual(CompoundVisual):
         self._mesh = MeshVisual(vertices=mesh.get_vertices(),
                                 faces=mesh.get_faces(),
                                 vertex_colors=vertex_colors,
-                                face_colors=face_colors, color=color)
+                                face_colors=face_colors, color=color,
+                                shading=shading)
         if edge_color:
             self._border = MeshVisual(vertices=mesh.get_vertices(),
                                       faces=mesh.get_edges(),
                                       color=edge_color, mode='lines')
         else:
             self._border = MeshVisual()
-
         CompoundVisual.__init__(self, [self._mesh, self._border], **kwargs)
         self.mesh.set_gl_state(polygon_offset_fill=True,
                                polygon_offset=(1, 1), depth_test=True)
