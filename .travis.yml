@@ -181,7 +181,7 @@ install:
       fi;
 
     # Install OSMesa
-    - wget https://github.com/julienr/vispy_osmesa_docker_12_04/releases/download/0.1/osmesa.tar.bz2 -O /tmp/osmesa.tar.bz2
+    - wget https://github.com/vispy/demo-data/raw/master/osmesa/osmesa_11.0.0_12.04.tar.bz2 -O /tmp/osmesa.tar.bz2
     - mkdir $HOME/osmesa; tar -xvjf /tmp/osmesa.tar.bz2 -C $HOME/osmesa
 
 
