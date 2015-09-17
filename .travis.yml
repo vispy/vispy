@@ -42,6 +42,10 @@ matrix:
           packages:
             - *mesa_apt
             - *full_apt
+    # OSMesa requires a specific Travis run because since the system also
+    # has (on-screen) OpenGL installed, we need to setup environment variable
+    # to avoid having the linker load the wrong libglapi.so which would cause
+    # OSMesa to crash
     - env: PYTHON=2.7 DEPS=full TEST=osmesa IPYTHON="=2" NUMPY="=1.7"
       addons:
         apt:
