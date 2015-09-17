@@ -6,11 +6,12 @@
 This is a simple osmesa example that produce an image of a cube
 
 If you have both osmesa and normal (X) OpenGL installed, execute with
-something like the following to pickup the OSMesa libraries :
+something like the following to pickup the OSMesa libraries::
+
     VISPY_GL_LIB=/opt/osmesa_llvmpipe/lib/libGLESv2.so \
-        LD_LIBRARY_PATH=/opt/osmesa_llvmpipe/lib/ \
-        OSMESA_LIBRARY=/opt/osmesa_llvmpipe/lib/libOSMesa.so \
-        python examples/offscreen/simple_osmesa.py
+    LD_LIBRARY_PATH=/opt/osmesa_llvmpipe/lib/ \
+    OSMESA_LIBRARY=/opt/osmesa_llvmpipe/lib/libOSMesa.so \
+    python examples/offscreen/simple_osmesa.py
 """
 import vispy
 vispy.use(app='osmesa')  # noqa
