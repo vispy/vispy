@@ -81,7 +81,8 @@ def use(app=None, gl=None):
     if app == 'osmesa':
         from vispy.util.osmesa_gl import fix_osmesa_gl_lib
         fix_osmesa_gl_lib()
-        assert gl is None, "Do not specify GL when using osmesa"
+        if gl is not None:
+            raise ValueError("Do not specify gl when using osmesa")
 
     # Apply now
     if gl:

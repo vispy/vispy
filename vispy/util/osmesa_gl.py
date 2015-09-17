@@ -14,7 +14,4 @@ def fix_osmesa_gl_lib():
     if 'VISPY_GL_LIB' in os.environ:
         logger.warning('VISPY_GL_LIB is ignored when using OSMesa. Use '
                        'OSMESA_LIBRARY instead.')
-    if 'OSMESA_LIBRARY' in os.environ:
-        os.environ['VISPY_GL_LIB'] = os.environ['OSMESA_LIBRARY']
-    else:
-        os.environ['VISPY_GL_LIB'] = 'libOSMesa.so'
+    os.environ['VISPY_GL_LIB'] = os.getenv('OSMESA_LIBRARY', 'libOSMesa.so')
