@@ -8,8 +8,13 @@
 from __future__ import print_function
 import os
 import ctypes
+import ctypes.util
 from ctypes import c_int as _c_int, c_uint as _c_uint, c_void_p
-from vispy.gloo import gl
+
+# See vispy/gloo/gl/_constants.py for reference
+GL_RGBA = 6408
+GL_UNSIGNED_BYTE = 5121
+GL_VERSION = 7938
 
 _osmesa_file = None
 if 'OSMESA_LIBRARY' in os.environ:
@@ -28,7 +33,7 @@ if _osmesa_file is None:
 _lib = ctypes.CDLL(_osmesa_file)
 
 # Constants
-OSMESA_RGBA = gl.GL_RGBA
+OSMESA_RGBA = GL_RGBA
 
 # Functions
 
@@ -66,7 +71,7 @@ def OSMesaDestroyContext(context):
 
 
 def OSMesaMakeCurrent(context, buffer, width, height):
-    ret = _lib.OSMesaMakeCurrent(context, buffer, gl.GL_UNSIGNED_BYTE,
+    ret = _lib.OSMesaMakeCurrent(context, buffer, GL_UNSIGNED_BYTE,
                                  width, height)
     return ret != 0
 
@@ -75,8 +80,8 @@ def OSMesaGetCurrentContext():
     return c_void_p(_lib.OSMesaGetCurrentContext())
 
 if __name__ == '__main__':
-    """This test basic functionality"""
-    # Execute with
+    """This test basic OSMesa functionality"""
+    # If you have OSMesa installed alongside normal OpenGL, execute with
     # VISPY_GL_LIB=/opt/osmesa_llvmpipe/lib/libGLESv2.so \
     #   LD_LIBRARY_PATH=/opt/osmesa_llvmpipe/lib/ \
     #   OSMESA_LIBRARY=/opt/osmesa_llvmpipe/lib/libOSMesa.so \
@@ -85,10 +90,16 @@ if __name__ == '__main__':
     w, h = 640, 480
     pixels = allocate_pixels_buffer(w, h)
     ok = OSMesaMakeCurrent(context, pixels, 640, 480)
-    assert ok, 'Failed to OSMesaMakeCurrent'
-    assert OSMesaGetCurrentContext().value == context.value
+    if not ok:
+        raise RuntimeError('Failed OSMesaMakeCurrent')
+    if not (OSMesaGetCurrentContext().value == context.value):
+        raise RuntimeError('OSMesa context not correctly attached')
 
-    print("OpenGL version : ", gl.glGetParameter(gl.GL_VERSION))
+    _lib.glGetString.argtypes = (ctypes.c_uint,)
+    _lib.glGetString.restype = ctypes.c_char_p
+
+    print("OpenGL version : ", _lib.glGetString(GL_VERSION))
 
     OSMesaDestroyContext(context)
-    assert OSMesaGetCurrentContext().value is None
+    if OSMesaGetCurrentContext().value is not None:
+        raise RuntimeError('Failed to destroy OSMesa context')
