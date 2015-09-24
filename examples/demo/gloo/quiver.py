@@ -7,7 +7,6 @@
 
 from vispy import app, gloo
 
-
 vertex = """
 attribute vec2 position;
 void main()
@@ -261,6 +260,9 @@ void main()
 
 
 canvas = app.Canvas(size=(2*512, 2*512), keys='interactive')
+canvas.context.set_state(blend=True, 
+                         blend_func=('src_alpha', 'one_minus_src_alpha'),
+                         blend_equation='func_add')
 
 
 @canvas.connect
