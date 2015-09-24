@@ -6,7 +6,6 @@
 # -----------------------------------------------------------------------------
 
 from vispy import app, gloo
-from vispy.gloo import gl
 
 vertex = """
 attribute vec2 position;
