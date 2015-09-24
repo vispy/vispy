@@ -6,7 +6,7 @@
 # -----------------------------------------------------------------------------
 
 from vispy import app, gloo
-
+from vispy.gloo import gl
 
 vertex = """
 attribute vec2 position;
@@ -261,6 +261,13 @@ void main()
 
 
 canvas = app.Canvas(size=(2*512, 2*512), keys='interactive')
+
+
+@canvas.connect
+def on_initialize(event):
+    gl.glEnable(gl.GL_BLEND)
+    gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+    gl.glBlendEquation(gl.GL_FUNC_ADD)
 
 
 @canvas.connect
