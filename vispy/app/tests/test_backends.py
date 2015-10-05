@@ -122,7 +122,7 @@ def _test_module_properties(_module=None):
                   'mouse_move', 'mouse_release', 'mouse_double_click',
                   'detect_double_click', 'close'])
     if module_fname == '_egl':
-        ignore += ['key_release', 'key_press']
+        ignore += ['key_release', 'key_press', 'key_char']
     eventNames = set(canvas.events._emitters.keys()) - ignore
 
     if not alt_modname:  # Only check for non-proxy modules
