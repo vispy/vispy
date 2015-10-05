@@ -281,6 +281,7 @@ class CanvasBackend(BaseCanvasBackend):
         glfw.glfwSetWindowRefreshCallback(self._id, self._on_draw)
         glfw.glfwSetWindowSizeCallback(self._id, self._on_resize)
         glfw.glfwSetKeyCallback(self._id, self._on_key_press)
+        glfw.glfwSetCharCallback(self._id, self._on_key_char)
         glfw.glfwSetMouseButtonCallback(self._id, self._on_mouse_button)
         glfw.glfwSetScrollCallback(self._id, self._on_mouse_scroll)
         glfw.glfwSetCursorPosCallback(self._id, self._on_mouse_motion)
@@ -433,6 +434,9 @@ class CanvasBackend(BaseCanvasBackend):
         if self._vispy_canvas is None:
             return
         self._vispy_mouse_move(pos=(x, y), modifiers=self._mod)
+
+    def _on_key_char(self, _id, text):
+        self._vispy_canvas.events.key_char(text=chr(text))
 
     def _on_key_press(self, _id, key, scancode, action, mod):
         if self._vispy_canvas is None:

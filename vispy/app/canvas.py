@@ -95,6 +95,7 @@ class Canvas(object):
         * mouse_move
         * mouse_wheel
         * key_press
+        * key_char
         * key_release
         * stylus
         * touch
@@ -150,6 +151,7 @@ class Canvas(object):
                                    mouse_move=MouseEvent,
                                    mouse_wheel=MouseEvent,
                                    key_press=KeyEvent,
+                                   key_char=CharEvent,
                                    key_release=KeyEvent,
                                    stylus=Event,
                                    touch=Event,
@@ -712,6 +714,29 @@ class KeyEvent(Event):
     @property
     def modifiers(self):
         return self._modifiers
+
+
+class CharEvent(Event):
+    """Char event class
+
+    Note that each event object has an attribute for each of the input
+    arguments listed below.
+
+    Parameters
+    ----------
+    text : str
+        Locale-specific string resulting from keyboard interaction. 
+    **kwargs : keyword arguments
+        All extra keyword arguments become attributes of the event object.
+    """
+
+    def __init__(self, type, text, **kwargs):
+        Event.__init__(self, type, **kwargs)
+        self._text = text
+
+    @property
+    def text(self):
+        return self._text
 
 
 class ResizeEvent(Event):
