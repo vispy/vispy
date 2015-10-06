@@ -714,29 +714,6 @@ class KeyEvent(Event):
         return self._modifiers
 
 
-class CharEvent(Event):
-    """Char event class
-
-    Note that each event object has an attribute for each of the input
-    arguments listed below.
-
-    Parameters
-    ----------
-    text : str
-        Locale-specific string resulting from keyboard interaction. 
-    **kwargs : keyword arguments
-        All extra keyword arguments become attributes of the event object.
-    """
-
-    def __init__(self, type, text, **kwargs):
-        Event.__init__(self, type, **kwargs)
-        self._text = text
-
-    @property
-    def text(self):
-        return self._text
-
-
 class ResizeEvent(Event):
     """Resize event class
 
