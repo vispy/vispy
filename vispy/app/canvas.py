@@ -95,7 +95,6 @@ class Canvas(object):
         * mouse_move
         * mouse_wheel
         * key_press
-        * key_char
         * key_release
         * stylus
         * touch
@@ -151,7 +150,6 @@ class Canvas(object):
                                    mouse_move=MouseEvent,
                                    mouse_wheel=MouseEvent,
                                    key_press=KeyEvent,
-                                   key_char=CharEvent,
                                    key_release=KeyEvent,
                                    stylus=Event,
                                    touch=Event,

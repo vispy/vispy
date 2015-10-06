@@ -296,6 +296,7 @@ class CanvasBackend(BaseCanvasBackend):
 
         # Init
         self._initialized = True
+        self._next_key_events = []
         self._vispy_canvas.set_current()
         self._vispy_canvas.events.initialize()
 
@@ -435,9 +436,6 @@ class CanvasBackend(BaseCanvasBackend):
             return
         self._vispy_mouse_move(pos=(x, y), modifiers=self._mod)
 
-    def _on_key_char(self, _id, text):
-        self._vispy_canvas.events.key_char(text=chr(text))
-
     def _on_key_press(self, _id, key, scancode, action, mod):
         if self._vispy_canvas is None:
             return
@@ -451,7 +449,18 @@ class CanvasBackend(BaseCanvasBackend):
         else:
             return
         self._process_mod(key, down=down)
-        fun(key=key, text=text, modifiers=self._mod)
+        
+        # NOTE: GLFW only provides localized characters via _on_key_char, so if
+        # this event contains a character we store all other data and dispatch
+        # it once the final unicode character is sent shortly after.
+        if text != '' and action == glfw.GLFW_PRESS:
+            self._next_key_events.append((fun, key, self._mod))
+        else:
+            fun(key=key, text=text, modifiers=self._mod)
+
+    def _on_key_char(self, _id, text):
+        (fun, key, mod) = self._next_key_events.pop(0)
+        fun(key=key, text=chr(text), modifiers=mod)
 
     def _process_key(self, key):
         if 32 <= key <= 127:
