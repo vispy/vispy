@@ -100,6 +100,9 @@ def _test_callbacks(canvas):
     elif 'wx' in backend_name.lower():
         # Constructing fake wx events is too hard
         pass
+    elif 'osmesa' in backend_name.lower():
+        # No events for osmesa backend
+        pass
     else:
         raise ValueError
 

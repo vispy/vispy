@@ -346,6 +346,12 @@ def test(label='full', extra_arg_string='', coverage=False):
     coverage : bool
         If True, collect coverage data.
     """
+    if label == 'osmesa':
+        # Special case for OSMesa, we have to modify the VISPY_GL_LIB envvar
+        # before the vispy.gloo package gets imported
+        from vispy.util.osmesa_gl import fix_osmesa_gl_lib
+        fix_osmesa_gl_lib()
+
     from vispy.app.backends import BACKEND_NAMES as backend_names
     label = label.lower()
     label = 'pytest' if label == 'nose' else label

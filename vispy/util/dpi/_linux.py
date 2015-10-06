@@ -4,7 +4,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
-
+import os
 import re
 from subprocess import CalledProcessError
 
@@ -39,6 +39,9 @@ def get_dpi(raise_error=True):
     dpi : float
         Dots per inch of the primary screen.
     """
+    # If we are running without an X server (e.g. OSMesa), use a fixed DPI
+    if 'DISPLAY' not in os.environ:
+        return 96.
 
     from_xdpyinfo = _get_dpi_from(
         'xdpyinfo', r'(\d+)x(\d+) dots per inch',

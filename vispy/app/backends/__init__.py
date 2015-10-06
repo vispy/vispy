@@ -21,6 +21,7 @@ CORE_BACKENDS = [
     ('SDL2', '_sdl2', 'sdl2'),
     ('wx', '_wx', 'wx'),
     ('EGL', '_egl', 'vispy.ext.egl'),
+    ('osmesa', '_osmesa', 'vispy.ext.osmesa'),
 ]
 
 # Whereas core backends really represents libraries that can create a

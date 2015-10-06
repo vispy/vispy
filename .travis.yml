@@ -42,6 +42,17 @@ matrix:
           packages:
             - *mesa_apt
             - *full_apt
+    # OSMesa requires a specific Travis run because since the system also
+    # has (on-screen) OpenGL installed, we need to setup environment variable
+    # to avoid having the linker load the wrong libglapi.so which would cause
+    # OSMesa to crash
+    - env: PYTHON=2.7 DEPS=full TEST=osmesa IPYTHON="=2" NUMPY="=1.7"
+      addons:
+        apt:
+          sources:
+            - *full_sources
+          packages:
+            - *full_apt
     - env: PYTHON=3.4 DEPS=full TEST=standard
       addons:
         apt:
@@ -169,11 +180,21 @@ install:
         pip install -q PySDL2;
       fi;
 
+    # Install OSMesa
+    - wget https://github.com/vispy/demo-data/raw/master/osmesa/osmesa_11.0.0_12.04.tar.bz2 -O /tmp/osmesa.tar.bz2
+    - mkdir $HOME/osmesa; tar -xvjf /tmp/osmesa.tar.bz2 -C $HOME/osmesa
+
 
 before_script:
     # We need to create a (fake) display on Travis, let's use a funny resolution
-    - export DISPLAY=:99.0
-    - /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1400x900x24 -ac +extension GLX +render
+    - if [ "${TEST}" != "osmesa" ]; then
+        export DISPLAY=:99.0;
+        /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1400x900x24 -ac +extension GLX +render;
+      fi;
+    - if [ "${TEST}" == "osmesa" ]; then
+        export LD_LIBRARY_PATH=$HOME/osmesa/lib;
+        export LIBRARY_PATH=$HOME/osmesa/lib;
+      fi;
 
 
 script:
@@ -186,6 +207,9 @@ script:
       fi;
     - if [ "${DEPS}" == "minimal" ]; then
         make extra;
+      fi;
+    - if [ "${TEST}" == "osmesa" ]; then
+        make osmesa;
       fi;
     # Each line must be run in a separate line to ensure exit code accuracy
     - if [ "${DEPS}" == "minimal" ]; then
