@@ -297,6 +297,7 @@ class CanvasBackend(BaseCanvasBackend):
         # Init
         self._initialized = True
         self._next_key_events = []
+        self._next_key_text = {}
         self._vispy_canvas.set_current()
         self._vispy_canvas.events.initialize()
 
@@ -456,11 +457,19 @@ class CanvasBackend(BaseCanvasBackend):
         if text != '' and action == glfw.GLFW_PRESS:
             self._next_key_events.append((fun, key, self._mod))
         else:
+            if key in self._next_key_text:
+                text = self._next_key_text[key]
+                del self._next_key_text[key]
             fun(key=key, text=text, modifiers=self._mod)
 
     def _on_key_char(self, _id, text):
+        # Repeat strokes (frequency configured at OS) are sent here only, no events.
+        if len(self._next_key_events) == 0:
+            return
+
         (fun, key, mod) = self._next_key_events.pop(0)
         fun(key=key, text=chr(text), modifiers=mod)
+        self._next_key_text[key] = text
 
     def _process_key(self, key):
         if 32 <= key <= 127:
