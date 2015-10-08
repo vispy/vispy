@@ -463,7 +463,8 @@ class CanvasBackend(BaseCanvasBackend):
             fun(key=key, text=text, modifiers=self._mod)
 
     def _on_key_char(self, _id, text):
-        # Repeat strokes (frequency configured at OS) are sent here only, no events.
+        # Repeat strokes (frequency configured at OS) are sent here only,
+        # no regular _on_key_press events. Currently ignored!
         if len(self._next_key_events) == 0:
             return
 
