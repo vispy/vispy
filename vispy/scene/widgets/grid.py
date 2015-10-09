@@ -38,7 +38,7 @@ class Grid(Widget):
         if not isinstance(idxs, tuple):
             idxs = (idxs,)
         if len(idxs) == 1:
-            idxs = idxs + (slice(None),)
+            idxs = idxs + (slice(0, 1, None),)
         elif len(idxs) != 2:
             raise ValueError('Incorrect index: %s' % (idxs,))
         lims = np.empty((2, 2), int)
