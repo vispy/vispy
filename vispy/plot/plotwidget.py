@@ -45,71 +45,80 @@ class PlotWidget(scene.Widget):
         self.grid = self.add_grid(spacing=0, margin=10)
 
         self.title = scene.Label("", font_size=16, color="#ff0000")
-        # self.title_widget = self.grid.add_widget(self.title, row=0, col=0)
+
+        self.title_widget = self.grid.add_widget(self.title, row=0, col=0)
+        self.title_widget.height = 60
+
         # self.title.height = 40
 
-        # self.view = self.grid.add_view(row=1, col=0,
-        #                               border_color='grey', bgcolor="#efefef")
+        self.view = self.grid.add_view(row=1, col=0,
+                                       border_color='grey', bgcolor="#efefef")
 
     def _configure_2d(self, fg_color=None):
         if self._configured:
             return
-        if fg_color is None:
-            fg = self._fg
-        else:
-            fg = fg_color
 
-        height_title = 50
-        width_yaxis = height_xaxis = 50
-        width_ylabel = height_xlabel = 30
+        # if fg_color is None:
+        #     fg = self._fg
+        # else:
+        #     fg = fg_color
 
-        title_widget = self.grid.add_widget(self.title, row=0, col=2,
-                                            col_span=3)
-        title_widget.height = height_title
-        self.view = self.grid.add_view(row=1, col=2, row_span=3, col_span=3,
-                                       border_color='grey', bgcolor="#efefef")
+        # height_title = 50
+        # width_yaxis = height_xaxis = 50
+        # width_ylabel = height_xlabel = 30
 
-        space_filler_title = self.grid.add_widget(row=0, col=0,
-                                                  col_span=2)
-
-        space_filler_title.width = width_ylabel
-        space_filler_title.height = height_title
-
-        self.ylabel = scene.Label("", rotation=-90)
-        ylabel_widget = self.grid.add_widget(self.ylabel,
-                                             row=1, col=0, row_span=3)
-        ylabel_widget.width = width_ylabel
-
-        self.yaxis = scene.AxisWidget(orientation='left',
-                                      text_color=fg,
-                                      axis_color=fg, tick_color=fg)
-
-        yaxis_widget = self.grid.add_widget(self.yaxis, row=1, col=1,
-                                            row_span=3)
-        yaxis_widget.width = width_yaxis
-
-        space_filler_x_axis = self.grid.add_widget(row=4, col=0,
-                                                   col_span=2, row_span=2)
-        space_filler_x_axis.width = width_yaxis + width_ylabel
-        space_filler_x_axis.height = height_xaxis + height_xlabel
-
-        self.xaxis = scene.AxisWidget(orientation='bottom', text_color=fg,
-                                      axis_color=fg, tick_color=fg)
-
-        xaxis_widget = self.grid.add_widget(self.xaxis, row=4, col=2,
-                                            col_span=3)
-        xaxis_widget.height = height_xaxis
-
-        self.xlabel = scene.Label("")
-        xlabel_widget = self.grid.add_widget(self.xlabel, row=5, col=2,
-                                             col_span=3)
-        xlabel_widget.height = height_xlabel
+        # title_widget = self.grid.add_widget(self.title, row=0, col=0,
+        #                                    col_span=3)
 
         self.view.camera = 'panzoom'
         self.camera = self.view.camera
 
-        self.xaxis.link_view(self.view)
-        self.yaxis.link_view(self.view)
+
+        # title_widget.height = height_title
+        # self.view = self.grid.add_view(row=1, col=2, row_span=3, col_span=3,
+        #                                border_color='grey', bgcolor="#efefef")
+        #
+        # space_filler_title = self.grid.add_widget(row=0, col=0,
+        #                                           col_span=2)
+        #
+        # space_filler_title.width = width_ylabel
+        # space_filler_title.height = height_title
+        #
+        # self.ylabel = scene.Label("", rotation=-90)
+        # ylabel_widget = self.grid.add_widget(self.ylabel,
+        #                                      row=1, col=0, row_span=3)
+        # ylabel_widget.width = width_ylabel
+        #
+        # self.yaxis = scene.AxisWidget(orientation='left',
+        #                               text_color=fg,
+        #                               axis_color=fg, tick_color=fg)
+        #
+        # yaxis_widget = self.grid.add_widget(self.yaxis, row=1, col=1,
+        #                                     row_span=3)
+        # yaxis_widget.width = width_yaxis
+        #
+        # space_filler_x_axis = self.grid.add_widget(row=4, col=0,
+        #                                            col_span=2, row_span=2)
+        # space_filler_x_axis.width = width_yaxis + width_ylabel
+        # space_filler_x_axis.height = height_xaxis + height_xlabel
+        #
+        # self.xaxis = scene.AxisWidget(orientation='bottom', text_color=fg,
+        #                               axis_color=fg, tick_color=fg)
+        #
+        # xaxis_widget = self.grid.add_widget(self.xaxis, row=4, col=2,
+        #                                     col_span=3)
+        # xaxis_widget.height = height_xaxis
+        #
+        # self.xlabel = scene.Label("")
+        # xlabel_widget = self.grid.add_widget(self.xlabel, row=5, col=2,
+        #                                      col_span=3)
+        # xlabel_widget.height = height_xlabel
+        #
+        # self.view.camera = 'panzoom'
+        # self.camera = self.view.camera
+        #
+        # self.xaxis.link_view(self.view)
+        # self.yaxis.link_view(self.view)
 
         self._configured = True
 
@@ -282,10 +291,10 @@ class PlotWidget(scene.Widget):
 
         if title is not None:
             self.title.text = title
-        if xlabel is not None:
-            self.xlabel.text = xlabel
-        if ylabel is not None:
-            self.ylabel.text = ylabel
+        # if xlabel is not None:
+        #     self.xlabel.text = xlabel
+        # if ylabel is not None:
+        #     self.ylabel.text = ylabel
 
         return line
 

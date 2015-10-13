@@ -65,7 +65,7 @@ class Widget(Compound):
         # layout interaction
         self._width_limits = (0, None)
         self._height_limits = (0, None)
-        self._stretch = (None, None)
+        self._stretch = (1, 1)
         # used by the constraint solver
         # in grid - these will be Cassowary Variable
         self.var_w = self.var_h = None
@@ -162,6 +162,7 @@ class Widget(Compound):
             assert(width_min <= self.width_max)
 
         self._width_limits = (width_min, self._width_limits[1])
+        self._update_layout()
 
     @property
     def width_max(self):
@@ -185,6 +186,7 @@ class Widget(Compound):
         width_max = float(width_max)
         assert(0 <= self.width_min <= width_max)
         self._width_limits = (self._width_limits[0], width_max)
+        self._update_layout()
 
     @property
     def height(self):
@@ -226,6 +228,7 @@ class Widget(Compound):
         assert(height_min >= 0)
 
         self._height_limits = (height_min, self._height_limits[1])
+        self._update_layout()
 
     @property
     def height_max(self):
@@ -249,6 +252,7 @@ class Widget(Compound):
         height_max = float(height_max)
         assert(0 <= self.height_min <= height_max)
         self._height_limits = (self._height_limits[0], height_max)
+        self._update_layout()
 
     @property
     def rect(self):
