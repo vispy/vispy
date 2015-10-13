@@ -322,7 +322,6 @@ class Grid(Widget):
                 total_h = np.sum(hs[y:y+ys])
 
                 for sh in stretch_heights[x:x+xs]:
-                    print("appending to %s" % sh)
                     sh.append((total_h, widget.stretch[1]))
 
         for sws in stretch_widths:
