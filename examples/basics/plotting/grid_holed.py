@@ -35,8 +35,6 @@ widget_top_right = grid.add_widget(row=0, col=2, row_span=1)
 widget_top_right.bgcolor = "#dd0000"
 # widget_top_right.stretch = (1, 2)
 
-
-
 widget_bottom_left = grid.add_widget(row=1, col=0)
 widget_bottom_left.bgcolor = "#0000dd"
 # widget_bottom_left.stretch = (1, 2)
