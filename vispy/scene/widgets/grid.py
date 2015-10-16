@@ -302,7 +302,7 @@ class Grid(Widget):
 
     @staticmethod
     def _add_stretch_constraints(solver, width_grid, height_grid,
-                                 grid_widgets):
+                                 grid_widgets, widget_grid):
         xmax = len(height_grid)
         ymax = len(width_grid)
 
@@ -323,6 +323,12 @@ class Grid(Widget):
 
                 for sh in stretch_heights[x:x+xs]:
                     sh.append((total_h, widget.stretch[1]))
+
+        for (x, xs) in enumerate(widget_grid):
+            for(y, widget) in enumerate(xs):
+                    if widget is None:
+                        stretch_widths[y].append((width_grid[y][x], 1))
+                        stretch_heights[x].append((height_grid[x][y], 1))
 
         for sws in stretch_widths:
             if len(sws) <= 1:
@@ -417,10 +423,12 @@ class Grid(Widget):
                                           self._width_grid, self.var_w)
         Grid._add_total_height_constraints(self._solver,
                                            self._height_grid, self.var_h)
+
         Grid._add_stretch_constraints(self._solver,
                                       self._width_grid,
                                       self._height_grid,
-                                      self._grid_widgets)
+                                      self._grid_widgets,
+                                      self._widget_grid)
         Grid._add_widget_dim_constraints(self._solver,
                                          self._width_grid,
                                          self._height_grid,
@@ -481,3 +489,14 @@ class Grid(Widget):
 
             widget.size = (width, height)
             widget.pos = (x, y)
+
+    @property
+    def _widget_grid(self):
+        ymax, xmax = self.grid_size
+        widget_grid = np.array([[None for _ in range(0, ymax)]
+                               for _ in range(0, xmax)])
+        for (_, val) in self._grid_widgets.items():
+            (y, x, ys, xs, widget) = val
+            widget_grid[x:x+xs, y:y+ys] = widget
+
+        return widget_grid
