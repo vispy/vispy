@@ -283,6 +283,7 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
         # Qt supports OS double-click events, so we set this here to
         # avoid double events
         self._double_click_supported = True
+        self._physical_size = p.size
 
     def _vispy_warmup(self):
         etime = time() + 0.25
@@ -300,6 +301,14 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
     def _vispy_set_size(self, w, h):
         # Set size of the widget or window
         self.resize(w, h)
+
+    def _vispy_set_physical_size(self, w, h):
+        self._physical_size = (w, h)
+
+    def _vispy_get_physical_size(self):
+        if self._vispy_canvas is None:
+            return
+        return self._physical_size
 
     def _vispy_set_position(self, x, y):
         # Set location of the widget or window. May have no effect for widgets
@@ -636,7 +645,8 @@ class CanvasBackendDesktop(QtBaseCanvasBackend, QGLWidget):
     def resizeGL(self, w, h):
         if self._vispy_canvas is None:
             return
-        self._vispy_canvas.events.resize(size=(w, h))
+        self._vispy_set_physical_size(w, h)
+        self._vispy_canvas.events.resize(size=(self.width(), self.height()), physical_size=(w, h))
 
     def paintGL(self):
         if self._vispy_canvas is None:
