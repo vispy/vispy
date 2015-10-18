@@ -69,19 +69,22 @@ class GridMeshVisual(MeshVisual):
             color definitions respectively.
         '''
 
-        if xs is not None:
-            if self._xs is not None:
-                self.__vertices = None
+        if xs is None:
+            xs = self._xs
+            self.__vertices = None
+
+        if ys is None:
+            ys = self._ys
+            self.__vertices = None
+
+        if zs is None:
+            zs = self._zs
+            self.__vertices = None
+
+        if self.__vertices is None:
+            vertices, indices = create_grid_mesh(xs, ys, zs)
             self._xs = xs
-
-        if ys is not None:
-            if self._ys is not None:
-                self.__vertices = None
             self._ys = ys
-
-        if zs is not None:
-            if self._zs is not None:
-                self.__vertices = None
             self._zs = zs
 
         if self.__vertices is None:
