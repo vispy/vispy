@@ -10,7 +10,7 @@ import numpy as np
 from scipy.special import sph_harm
 
 canvas = scene.SceneCanvas(keys='interactive')
-canvas.view = canvas.central_widget.add_view()
+view = canvas.central_widget.add_view()
 
 thetas, phis = np.meshgrid(np.linspace(0, np.pi, 100),
                            np.linspace(0, 2*np.pi, 150))
@@ -43,9 +43,9 @@ for l in range(3):
 
         mesh = scene.visuals.GridMesh(xs, ys, zs, colors=colors)
 
-        canvas.view.add(mesh)
+        view.add(mesh)
 
-canvas.view.camera = 'turntable'
+view.camera = 'turntable'
 canvas.show()
 
 if __name__ == '__main__':
