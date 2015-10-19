@@ -30,7 +30,8 @@ class Canvas(app.Canvas):
         self.visual = visuals.GraphVisual(
             graph, layout=layout, line_color='black', arrow_type="stealth",
             arrow_size=30, node_symbol="disc", node_size=20,
-            face_color=(1, 0, 0, 0.5), border_width=0.0, animate=True, directed=False)
+            face_color=(1, 0, 0, 0.5), border_width=0.0, animate=True,
+            directed=False)
 
         self.visual.transform = STTransform(self.visual_size, (20, 20))
         self.show()
