@@ -365,10 +365,12 @@ class _GLLineVisual(Visual):
         prof('prepare')
 
         # Draw
-        if self._connect == 'strip':
+        if isinstance(self._connect, string_types) and \
+                self._connect == 'strip':
             self._draw_mode = 'line_strip'
             self._index_buffer = None
-        elif self._connect == 'segments':
+        elif isinstance(self._connect, string_types) and \
+                self._connect == 'segments':
             self._draw_mode = 'lines'
             self._index_buffer = None
         elif isinstance(self._connect, np.ndarray):
