@@ -62,8 +62,8 @@ class Canvas(app.Canvas):
         self.visual.transforms.configure(canvas=self, viewport=vp)
 
     def rotate_arrows(self, point_towards):
-        direction_vectors = (self.grid_coords -
-                             point_towards).astype(np.float32)
+        direction_vectors = (self.grid_coords - point_towards).astype(
+            np.float32)
         norms = np.sqrt(np.sum(direction_vectors**2, axis=-1))
         direction_vectors[:, 0] /= norms
         direction_vectors[:, 1] /= norms
