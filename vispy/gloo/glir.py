@@ -635,8 +635,8 @@ class GlirProgram(GlirObject):
         # Link the program and check
         gl.glLinkProgram(self._handle)
         if not gl.glGetProgramParameter(self._handle, gl.GL_LINK_STATUS):
-            print(gl.glGetProgramInfoLog(self._handle))
-            raise RuntimeError('Program linking error')
+            raise RuntimeError('Program linking error:\n%s'
+                               % gl.glGetProgramInfoLog(self._handle))
         # Now we can remove the shaders. We no longer need them and it
         # frees up precious GPU memory:
         # http://gamedev.stackexchange.com/questions/47910
@@ -873,8 +873,8 @@ class GlirProgram(GlirObject):
         gl.glValidateProgram(self._handle)
         if not gl.glGetProgramParameter(self._handle, 
                                         gl.GL_VALIDATE_STATUS):
-            print(gl.glGetProgramInfoLog(self._handle))
-            raise RuntimeError('Program validation error')
+            raise RuntimeError('Program validation error:\n%s'
+                               % gl.glGetProgramInfoLog(self._handle))
     
     def _post_draw(self):
         # No need to deactivate each texture/buffer, just set to 0

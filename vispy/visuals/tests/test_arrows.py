@@ -4,6 +4,7 @@
 
 import os
 import sys
+from distutils.version import LooseVersion
 
 import numpy as np
 
@@ -21,7 +22,7 @@ vertices = np.array([
     [50, 75],
     [75, 25],
     [75, 75]
-]).astype('f32')
+], np.float32)
 
 vertices += 0.33
 
@@ -57,8 +58,10 @@ def test_arrow_draw():
 def test_arrow_transform_draw():
     """Tests the ArrowVisual when a transform is applied"""
 
-    if os.getenv('TRAVIS', 'false') == 'true' and sys.version[:3] == '2.6':
-        # TODO: Fix this (issue #1042)
+    old_numpy = LooseVersion(np.__version__) < '1.8'
+    if os.getenv('TRAVIS', 'false') == 'true' and (sys.version[:3] == '2.6' or
+                                                   old_numpy):
+        # TODO: Fix this (issue #1042
         raise SkipTest('Travis fails due to FB stack problem')
 
     with TestingCanvas() as c:
@@ -68,11 +71,9 @@ def test_arrow_transform_draw():
                                   connect="segments", parent=c.scene)
             arrow.transform = transforms.STTransform(scale=(0.5, 0.75),
                                                      translate=(-20, -20))
-
             assert_image_approved(c.render(),
                                   'visuals/arrow_transform_type_%s.png' %
                                   arrow_type)
-
             arrow.parent = None
 
 
