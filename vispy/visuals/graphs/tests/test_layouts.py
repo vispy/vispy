@@ -2,9 +2,6 @@
 # Copyright (c) 2015, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-import os
-import sys
-
 import numpy as np
 from numpy.testing import assert_equal
 import networkx as nx
@@ -22,7 +19,14 @@ adjacency_mat = nx.adjacency_matrix(graph)
 def test_get_layout():
     from vispy.visuals.graphs.layouts.random import random
 
+    # Simple retrieval
     assert_equal(random, get_layout('random'))
+
+    # Pass arguments
+    fruchterman_reingold = get_layout('force_directed', iterations=100)
+    assert_equal(fruchterman_reingold.iterations, 100)
+
+    # Check if layout exists
     assert_raises(KeyError, lambda: get_layout('fdgdfgs_non_existent'))
 
 
@@ -122,6 +126,63 @@ def test_circular_layout():
 
     assert_equal(pos, expected_pos)
     assert_equal(line_vertices, expected_vertices)
+
+
+def test_fruchterman_reingold():
+    layout = get_layout('force_directed', iterations=50)
+
+    num_iterations = 0
+    pos = None
+    line_vertices = None
+
+    for pos, line_vertices, arrows in layout(adjacency_mat):
+        num_iterations += 1
+
+    expected_pos = np.array([
+        [0.8477345108985901, 0.1526947021484375],
+        [0.4108354449272156, 0.25038453936576843],
+        [0.8138194680213928, 0.9228063821792603],
+        [0.2601155638694763, 0.9589926600456238],
+        [0.0, 0.3128381669521332],
+        [0.19341342151165009, 0.08144436031579971],
+        [0.566563606262207, 0.0],
+        [0.13434556126594543, 0.5582712292671204],
+        [0.579529881477356, 1.0],
+        [0.9434024095535278, 0.7556478977203369]
+    ])
+
+    expected_vertices = np.array([
+        [0.8477345108985901, 0.1526947021484375],
+        [0.4108354449272156, 0.25038453936576843],
+        [0.4108354449272156, 0.25038453936576843],
+        [0.8477345108985901, 0.1526947021484375],
+        [0.4108354449272156, 0.25038453936576843],
+        [0.0, 0.3128381669521332],
+        [0.4108354449272156, 0.25038453936576843],
+        [0.566563606262207, 0.0],
+        [0.4108354449272156, 0.25038453936576843],
+        [0.13434556126594543, 0.5582712292671204],
+        [0.2601155638694763, 0.9589926600456238],
+        [0.579529881477356, 1.0],
+        [0.0, 0.3128381669521332],
+        [0.4108354449272156, 0.25038453936576843],
+        [0.566563606262207, 0.0],
+        [0.4108354449272156, 0.25038453936576843],
+        [0.13434556126594543, 0.5582712292671204],
+        [0.4108354449272156, 0.25038453936576843],
+        [0.579529881477356, 1.0],
+        [0.2601155638694763, 0.9589926600456238],
+        [0.579529881477356, 1.0],
+        [0.9434024095535278, 0.7556478977203369],
+        [0.9434024095535278, 0.7556478977203369],
+        [0.579529881477356, 1.0]
+    ])
+
+    assert_equal(pos, expected_pos)
+    assert_equal(line_vertices, expected_vertices)
+
+    # One iteration extra because the layout yields the initial positions
+    assert_equal(num_iterations, 51)
 
 
 run_tests_if_main()
