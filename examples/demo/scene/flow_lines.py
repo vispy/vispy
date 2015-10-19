@@ -36,7 +36,7 @@ class VectorFieldVisual(visuals.Visual):
         dist = index.y * seg_len;
         
         vec2 local;
-        ij = vec2(mod(index.x, shape.x), floor(index.x / shape.y));
+        ij = vec2(mod(index.x, shape.x), floor(index.x / shape.x));
         // *off* is a random offset to the starting location, which prevents
         // the appearance of combs in the field 
         vec2 off = texture2D(offset, ij / shape).xy - 0.5;
