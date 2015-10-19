@@ -22,7 +22,7 @@ vertices = np.array([
     [50, 75],
     [75, 25],
     [75, 75]
-], np.float32)
+]).astype(np.float32)
 
 vertices += 0.33
 
@@ -76,9 +76,11 @@ def test_arrow_transform_draw():
                                   connect="segments", parent=c.scene)
             arrow.transform = transforms.STTransform(scale=(0.5, 0.75),
                                                      translate=(-20, -20))
+
             assert_image_approved(c.render(),
                                   'visuals/arrow_transform_type_%s.png' %
                                   arrow_type)
+
             arrow.parent = None
 
 
