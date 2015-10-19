@@ -381,13 +381,13 @@ class _GLLineVisual(Visual):
 
 
 class _AggLineVisual(Visual):
-    _agg_vtype = np.dtype([('a_position', 'f4', 2),
-                           ('a_tangents', 'f4', 4),
-                           ('a_segment',  'f4', 2),
-                           ('a_angles',   'f4', 2),
-                           ('a_texcoord', 'f4', 2),
-                           ('alength', 'f4', 1),
-                           ('color', 'f4', 4)])
+    _agg_vtype = np.dtype([('a_position', np.float32, 2),
+                           ('a_tangents', np.float32, 4),
+                           ('a_segment',  np.float32, 2),
+                           ('a_angles',   np.float32, 2),
+                           ('a_texcoord', np.float32, 2),
+                           ('alength', np.float32, 1),
+                           ('color', np.float32, 4)])
 
     VERTEX_SHADER = glsl.get('lines/agg.vert')
     FRAGMENT_SHADER = glsl.get('lines/agg.frag')

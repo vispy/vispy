@@ -138,8 +138,8 @@ def _text_to_vbo(text, font, anchor_x, anchor_y, lowres_size):
     canvas = context.get_current_canvas()
     canvas.context.flush_commands()
 
-    text_vtype = np.dtype([('a_position', 'f4', 2),
-                           ('a_texcoord', 'f4', 2)])
+    text_vtype = np.dtype([('a_position', np.float32, 2),
+                           ('a_texcoord', np.float32, 2)])
     vertices = np.zeros(len(text) * 4, dtype=text_vtype)
     prev = None
     width = height = ascender = descender = 0
