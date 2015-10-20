@@ -646,7 +646,8 @@ class CanvasBackendDesktop(QtBaseCanvasBackend, QGLWidget):
         if self._vispy_canvas is None:
             return
         self._vispy_set_physical_size(w, h)
-        self._vispy_canvas.events.resize(size=(self.width(), self.height()), physical_size=(w, h))
+        self._vispy_canvas.events.resize(size=(self.width(), self.height()),
+                                         physical_size=(w, h))
 
     def paintGL(self):
         if self._vispy_canvas is None:
