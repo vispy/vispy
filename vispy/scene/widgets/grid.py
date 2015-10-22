@@ -84,15 +84,15 @@ class Grid(Widget):
         return item
 
     def add_widget(self, widget=None, row=None, col=None, row_span=1,
-                   col_span=1):
+                   col_span=1, **kwargs):
         """
         Add a new widget to this grid. This will cause other widgets in the
         grid to be resized to make room for the new widget.
 
         Parameters
         ----------
-        widget : Widget
-            The Widget to add
+        widget : Widget | None
+            The Widget to add. New widget is constructed if widget is None.
         row : int
             The row in which to add the widget (0 is the topmost row)
         col : int
@@ -101,7 +101,9 @@ class Grid(Widget):
             The number of rows to be occupied by this widget. Default is 1.
         col_span : int
             The number of columns to be occupied by this widget. Default is 1.
-
+        **kwargs : dict
+            parameters sent to the new Widget that is constructed if
+            widget is None
         Notes
         -----
         The widget's parent is automatically set to this grid, and all other
@@ -113,7 +115,7 @@ class Grid(Widget):
             col = self._next_cell[1]
 
         if widget is None:
-            widget = Widget()
+            widget = Widget(**kwargs)
 
         _row = self._cells.setdefault(row, {})
         _row[col] = widget
