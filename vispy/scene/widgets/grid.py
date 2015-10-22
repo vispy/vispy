@@ -131,6 +131,10 @@ class Grid(Widget):
         widget.var_y = Variable("y-(row: %s | col: %s)" % (row, col))
 
         # update stretch based on colspan/rowspan
+        # usually, if you make something consume more grids or columns,
+        # you also want it to actually *take it up*, ratio wise.
+        # otherwise, it will never *use* the extra rows and columns,
+        # thereby collapsing the extras to 0.
         stretch = list(widget.stretch)
         stretch[0] = col_span if stretch[0] is None else stretch[0]
         stretch[1] = row_span if stretch[1] is None else stretch[1]

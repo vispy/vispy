@@ -32,14 +32,9 @@ widget_top_left.bgcolor = "#999999"
 
 widget_top_right = grid.add_widget(row=0, col=1, col_span=2)
 widget_top_right.bgcolor = "#dd0000"
-# Note: without this stretch, this *will not* work, because it will
-# position column 1-2 in such a way that the top half is evenly divided
-# while obeying the bottom constraints. Try it out
-widget_top_right.stretch = (2, 1)
 
 widget_bottom_left = grid.add_widget(row=1, col=0, col_span=2)
 widget_bottom_left.bgcolor = "#0000dd"
-widget_bottom_left.stretch = (2, 1)
 
 
 widget_bottom_right = grid.add_widget(row=1, col=2)
