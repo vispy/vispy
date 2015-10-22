@@ -301,6 +301,20 @@ class Grid(Widget):
             solver.add_constraint(height_expr == var_h, strength=STRONG)
 
     @staticmethod
+    def _add_gridding_width_constraints(solver, width_grid):
+        # access one "y" of widths
+        for ws in width_grid:
+            for w in ws[1:]:
+                solver.add_constraint(ws[0] == w, strength=STRONG)
+
+    @staticmethod
+    def _add_griddint_height_constraints(solver, height_grid):
+        # access one "x" of height
+        for hs in height_grid:
+            for h in hs[1:]:
+                solver.add_constraint(hs[0] == h, strength=STRONG)
+
+    @staticmethod
     def _add_stretch_constraints(solver, width_grid, height_grid,
                                  grid_widgets, widget_grid):
         xmax = len(height_grid)
@@ -403,13 +417,13 @@ class Grid(Widget):
 
         # add widths
         self._width_grid = np.array([[Variable("width(x: %s, y: %s)" % (x, y))
-                                     for x in range(0, xmax)]
+                                      for x in range(0, xmax)]
                                      for y in range(0, ymax)])
 
         # add heights
         self._height_grid = np.array([[Variable("height(x: %s, y: %s" % (x, y))
-                                     for y in range(0, ymax)]
-                                     for x in range(0, xmax)])
+                                       for y in range(0, ymax)]
+                                      for x in range(0, xmax)])
 
         # setup stretch
         stretch_grid = np.zeros(shape=(xmax, ymax, 2), dtype=float)
@@ -423,6 +437,9 @@ class Grid(Widget):
                                           self._width_grid, self.var_w)
         Grid._add_total_height_constraints(self._solver,
                                            self._height_grid, self.var_h)
+
+        Grid._add_gridding_width_constraints(self._solver, self._width_grid)
+        Grid._add_griddint_height_constraints(self._solver, self._height_grid)
 
         Grid._add_stretch_constraints(self._solver,
                                       self._width_grid,
@@ -494,7 +511,7 @@ class Grid(Widget):
     def _widget_grid(self):
         ymax, xmax = self.grid_size
         widget_grid = np.array([[None for _ in range(0, ymax)]
-                               for _ in range(0, xmax)])
+                                for _ in range(0, xmax)])
         for (_, val) in self._grid_widgets.items():
             (y, x, ys, xs, widget) = val
             widget_grid[x:x+xs, y:y+ys] = widget
