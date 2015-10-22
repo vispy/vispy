@@ -302,15 +302,15 @@ class Grid(Widget):
 
     @staticmethod
     def _add_gridding_width_constraints(solver, width_grid):
-        # access one "y" of widths
-        for ws in width_grid:
+        # access widths of one "y", different x
+        for ws in width_grid.T:
             for w in ws[1:]:
                 solver.add_constraint(ws[0] == w, strength=STRONG)
 
     @staticmethod
-    def _add_griddint_height_constraints(solver, height_grid):
-        # access one "x" of height
-        for hs in height_grid:
+    def _add_gridding_height_constraints(solver, height_grid):
+        # access heights of one "y"
+        for hs in height_grid.T:
             for h in hs[1:]:
                 solver.add_constraint(hs[0] == h, strength=STRONG)
 
@@ -439,13 +439,14 @@ class Grid(Widget):
                                            self._height_grid, self.var_h)
 
         Grid._add_gridding_width_constraints(self._solver, self._width_grid)
-        Grid._add_griddint_height_constraints(self._solver, self._height_grid)
+        Grid._add_gridding_height_constraints(self._solver, self._height_grid)
 
         Grid._add_stretch_constraints(self._solver,
                                       self._width_grid,
                                       self._height_grid,
                                       self._grid_widgets,
                                       self._widget_grid)
+
         Grid._add_widget_dim_constraints(self._solver,
                                          self._width_grid,
                                          self._height_grid,
@@ -482,8 +483,8 @@ class Grid(Widget):
                 self._solver.suggest_value(self.var_w, rect.width)
                 self._solver.suggest_value(self.var_h, rect.height)
 
-        self._solver.solve()
-        self._solver.resolve()
+        # self._solver.solve()
+        # self._solver.resolve()
 
         value_vectorized = np.vectorize(lambda x: x.value)
 
