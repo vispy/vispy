@@ -58,12 +58,12 @@ class PlotWidget(scene.Widget):
         # row 0
         self.title_widget = self.grid.add_widget(self.title, row=0, col=0,
                                                  col_span=3)
-        self.title_widget.height = 100
+        self.title_widget.height = 50
 
         # row 1
         self.ylabel = scene.Label("", rotation=-90)
         ylabel_widget = self.grid.add_widget(self.ylabel, row=1, col=0)
-        ylabel_widget.width = 50
+        ylabel_widget.width = 100
 
         self.yaxis = scene.AxisWidget(orientation='left',
                                       text_color=fg,
@@ -76,23 +76,19 @@ class PlotWidget(scene.Widget):
         self.view = self.grid.add_view(row=1, col=2,
                                        border_color='grey', bgcolor="#efefef")
 
-        space_filler_x_axis = self.grid.add_widget(row=2, col=0, col_span=2)
-        space_filler_x_axis.width = 100
-        space_filler_x_axis.height = 30
-
         self.xaxis = scene.AxisWidget(orientation='bottom', text_color=fg,
                                       axis_color=fg, tick_color=fg)
         xaxis_widget = self.grid.add_widget(self.xaxis, row=2, col=2)
-        xaxis_widget.height = 30
+        xaxis_widget.height = 100
 
         # row 3
         self.xlabel = scene.Label("")
-        xlabel_widget = self.grid.add_widget(self.xlabel, row=3, col=0,
+        xlabel_widget = self.grid.add_widget(self.xlabel, row=2, col=0,
                                              col_span=3)
-        xlabel_widget.height = 50
+        xlabel_widget.height = 100
 
         # right side padding
-        right_padding = self.grid.add_widget(row=0, col=3, row_span=4)
+        right_padding = self.grid.add_widget(row=0, col=3)
         right_padding.width = 30
 
         self.view.camera = 'panzoom'
