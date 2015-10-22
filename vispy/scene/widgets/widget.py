@@ -63,8 +63,8 @@ class Widget(Compound):
         self._size = 100, 100
 
         # layout interaction
-        self._width_limits = (0, None)
-        self._height_limits = (0, None)
+        self._width_limits = (1, None)
+        self._height_limits = (1, None)
         self._stretch = (None, None)
         # used by the constraint solver
         # in grid - these will be Cassowary Variable
