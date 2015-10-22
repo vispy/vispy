@@ -25,18 +25,19 @@ canvas.show()
 
 grid = canvas.central_widget.add_grid()
 
+# top_left
+grid.add_widget(row=0, col=0, col_span=2, bgcolor="#ffffff")
 
-widget_top_left = grid.add_widget(row=0, col=0, col_span=2)
-widget_top_left.bgcolor = "#ffffff"
+# top_right
+grid.add_widget(row=0, col=2, row_span=2, bgcolor="#dddddd")
 
-widget_top_right = grid.add_widget(row=0, col=2, row_span=2)
-widget_top_right.bgcolor = "#dddddd"
+# bottom_left
+grid.add_widget(row=1, col=0, row_span=2, bgcolor="#444444")
 
-widget_bottom_left = grid.add_widget(row=1, col=0, row_span=2)
-widget_bottom_left.bgcolor = "#444444"
 
-widget_bottom_right = grid.add_widget(row=2, col=1, col_span=2)
-widget_bottom_right.bgcolor = "#888888"
+# bottom_right
+grid.add_widget(row=2, col=1, col_span=2, bgcolor="#888888")
+
 
 if __name__ == '__main__' and sys.flags.interactive == 0:
     app.run()
