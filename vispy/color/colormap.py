@@ -969,7 +969,7 @@ _colormaps = dict(
     RdBu=_Diverging(220, 20, 0.75, 0.5),
 
     # Configurable colormaps
-    cubehelix=CubeHelixColormap(),
+    cubehelix=CubeHelixColormap,
     single_hue=_SingleHue,
     hsl=_HSL,
     husl=_HUSL,
