@@ -116,6 +116,9 @@ class Grid(Widget):
 
         if widget is None:
             widget = Widget(**kwargs)
+        else:
+            if kwargs:
+                raise ValueError("cannot send kwargs if widget is given")
 
         _row = self._cells.setdefault(row, {})
         _row[col] = widget
