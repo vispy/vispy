@@ -467,16 +467,25 @@ class Grid(Widget):
         if self._need_solver_recreate:
             self._need_solver_recreate = False
             self._recreate_solver()
-        else:
-            self._solver.remove_constraint(self._height_stay)
-            self._solver.remove_constraint(self._width_stay)
 
+        # yes, this little dance is necessary for cassowary to not screw up :/
+        # NOTE: the new constraint is added, only then is the old
+        # constraint removed.
+        # This is needed since cassowary will recognize situations when the
+        # value is unbounded and error out
         self.var_h.value = rect.height
-        self._height_stay = self._solver.add_stay(self.var_h, strength=STRONG)
+        height_stay_new = self._solver.add_stay(self.var_h, strength=STRONG)
+        if self._height_stay is not None:
+            self._solver.remove_constraint(self._height_stay)
+        self._height_stay = height_stay_new
+
         self._solver.add_edit_var(self.var_h)
 
         self.var_w.value = rect.width
-        self._width_stay = self._solver.add_stay(self.var_w, strength=STRONG)
+        width_stay_new = self._solver.add_stay(self.var_w, strength=STRONG)
+        if self._width_stay is not None:
+            self._solver.remove_constraint(self._width_stay)
+        self._width_stay = width_stay_new
         self._solver.add_edit_var(self.var_w)
 
         with self._solver.edit():
