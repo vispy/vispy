@@ -8,7 +8,7 @@ import numpy as np
 from .widget import Widget
 
 from ...ext.cassowary import (SimplexSolver, expression,
-                              Variable, STRONG, WEAK)
+                              Variable, STRONG, WEAK, REQUIRED)
 
 
 class Grid(Widget):
@@ -469,31 +469,19 @@ class Grid(Widget):
             self._recreate_solver()
 
         # yes, this little dance is necessary for cassowary to not screw up :/
-        # NOTE: the new constraint is added, only then is the old
-        # constraint removed.
-        # This is needed since cassowary will recognize situations when the
-        # value is unbounded and error out
-        self.var_h.value = rect.height
-        height_stay_new = self._solver.add_stay(self.var_h, strength=STRONG)
-        if self._height_stay is not None:
+        if self._height_stay:
             self._solver.remove_constraint(self._height_stay)
-        self._height_stay = height_stay_new
 
-        self._solver.add_edit_var(self.var_h)
+        self.var_h.value = rect.height
+        self._height_stay = self._solver.add_stay(self.var_h,
+                                                  strength=REQUIRED)
+
+        # self.var_w.value = rect.width
+        if self._width_stay:
+            self._solver.remove_constraint(self._width_stay)
 
         self.var_w.value = rect.width
-        width_stay_new = self._solver.add_stay(self.var_w, strength=STRONG)
-        if self._width_stay is not None:
-            self._solver.remove_constraint(self._width_stay)
-        self._width_stay = width_stay_new
-        self._solver.add_edit_var(self.var_w)
-
-        with self._solver.edit():
-                self._solver.suggest_value(self.var_w, rect.width)
-                self._solver.suggest_value(self.var_h, rect.height)
-
-        # self._solver.solve()
-        # self._solver.resolve()
+        self._width_stay = self._solver.add_stay(self.var_w, strength=REQUIRED)
 
         value_vectorized = np.vectorize(lambda x: x.value)
 
