@@ -132,8 +132,8 @@ class Grid(Widget):
 
         # update stretch based on colspan/rowspan
         stretch = list(widget.stretch)
-        # stretch[0] = col_span if stretch[0] is None else stretch[0]
-        # stretch[1] = row_span if stretch[1] is None else stretch[1]
+        stretch[0] = col_span if stretch[0] is None else stretch[0]
+        stretch[1] = row_span if stretch[1] is None else stretch[1]
         widget.stretch = stretch
 
         self._need_solver_recreate = True
