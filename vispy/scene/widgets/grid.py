@@ -37,8 +37,6 @@ class Grid(Widget):
         # width and height of the Rect used to place child widgets
         self.var_w = Variable("w_rect")
         self.var_h = Variable("h_rect")
-        self.var_x = Variable("x_rect")
-        self.var_y = Variable("x_rect")
 
         self._width_grid = None
         self._height_grid = None
@@ -131,9 +129,6 @@ class Grid(Widget):
 
         widget.var_w = Variable("w-(row: %s | col: %s)" % (row, col))
         widget.var_h = Variable("h-(row: %s | col: %s)" % (row, col))
-
-        widget.var_x = Variable("x-(row: %s | col: %s)" % (row, col))
-        widget.var_y = Variable("y-(row: %s | col: %s)" % (row, col))
 
         # update stretch based on colspan/rowspan
         # usually, if you make something consume more grids or columns,
