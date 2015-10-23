@@ -167,7 +167,7 @@ class BaseCollection(object):
             # that we can append new fields
             vtype = eval(str(np.dtype(vtype)))
             # We add a uniform index to access uniform data
-            vtype.append(('collection_index', 'f4'))
+            vtype.append(('collection_index', np.float32))
             vtype = np.dtype(vtype)
 
             # Check utype is made of float32 only
@@ -182,7 +182,7 @@ class BaseCollection(object):
             # Make utype a power of two
             count = next_power_of_2(r_utype[1])
             if (count - r_utype[1]) > 0:
-                utype.append(('__unused__', 'f4', count - r_utype[1]))
+                utype.append(('__unused__', np.float32, count - r_utype[1]))
 
             self._uniforms_list = ArrayList(dtype=utype)
             self._uniforms_float_count = count

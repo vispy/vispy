@@ -36,6 +36,7 @@ def use(app=None, gl=None):
             * 'Glfw': use Glfw backend (successor of Glut). Widely available
               on Linux.
             * 'SDL2': use SDL v2 backend.
+            * 'osmesa': Use OSMesa backend
         Additional backends:
             * 'ipynb_vnc': render in the IPython notebook via a VNC approach
               (experimental)
@@ -76,6 +77,12 @@ def use(app=None, gl=None):
     if app == 'ipynb_webgl':
         app = 'headless'
         gl = 'webgl'
+
+    if app == 'osmesa':
+        from vispy.util.osmesa_gl import fix_osmesa_gl_lib
+        fix_osmesa_gl_lib()
+        if gl is not None:
+            raise ValueError("Do not specify gl when using osmesa")
 
     # Apply now
     if gl:
@@ -122,13 +129,13 @@ def run_subprocess(command, return_code=False, **kwargs):
 
     p = subprocess.Popen(command, **use_kwargs)
     output = p.communicate()
-    
-    # communicate() may return bytes, str, or None depending on the kwargs 
+
+    # communicate() may return bytes, str, or None depending on the kwargs
     # passed to Popen(). Convert all to unicode str:
     output = ['' if s is None else s for s in output]
     output = [s.decode('utf-8') if isinstance(s, bytes) else s for s in output]
     output = tuple(output)
-    
+
     if not return_code and p.returncode:
         print(output[0])
         print(output[1])

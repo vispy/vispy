@@ -18,7 +18,7 @@ class PickingFilter(object):
             void picking_filter() {
                 if( $enabled == 0 )
                     return;
-                if( gl_FragColor.a == 0 )
+                if( gl_FragColor.a == 0.0 )
                     discard;
                 gl_FragColor = $id_color;
             }

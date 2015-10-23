@@ -135,4 +135,4 @@ def cubehelix(start=0.5, rot=1, gamma=1.0, reverse=True, nlev=256.,
         blu = blu[::-1]
         grn = grn[::-1]
 
-    return np.array((red, blu, grn)).T
+    return np.array((red, grn, blu)).T

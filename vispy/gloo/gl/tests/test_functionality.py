@@ -105,6 +105,8 @@ def _test_functionality(backend):
 # Most variables are nullified however, but we must make sure we do this
 # in a way that the compiler won't optimize out :)
 VERT = """
+#version 120
+
 attribute float a_1;
 attribute vec2 a_2;
 attribute vec3 a_3;
@@ -147,6 +149,7 @@ void main()
 """
 
 FRAG = """
+#version 120
 
 uniform sampler2D s_1;
 uniform int u_i1;

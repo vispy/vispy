@@ -239,7 +239,8 @@ class SDFRenderer(object):
 
         # Initialize variables
         self.fbo_to = [FrameBuffer(), FrameBuffer(), FrameBuffer()]
-        vtype = np.dtype([('a_position', 'f4', 2), ('a_texcoord', 'f4', 2)])
+        vtype = np.dtype([('a_position', np.float32, 2),
+                          ('a_texcoord', np.float32, 2)])
         vertices = np.zeros(4, dtype=vtype)
         vertices['a_position'] = [[-1., -1.], [-1., 1.], [1., -1.], [1., 1.]]
         vertices['a_texcoord'] = [[0., 0.], [0., 1.], [1., 0.], [1., 1.]]

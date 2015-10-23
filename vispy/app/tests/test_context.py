@@ -14,6 +14,9 @@ def test_context_properties():
     a = use_app()
     if a.backend_name.lower() == 'pyglet':
         return  # cannot set more than once on Pyglet
+    if a.backend_name.lower() == 'osmesa':
+        return  # cannot set config on OSMesa
+
     # stereo, double buffer won't work on every sys
     configs = [dict(samples=4), dict(stencil_size=8),
                dict(samples=4, stencil_size=8)]

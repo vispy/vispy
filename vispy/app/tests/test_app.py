@@ -53,7 +53,18 @@ def _test_callbacks(canvas):
         _id = backend._id
         backend._on_draw(_id)
         backend._on_resize(_id, 100, 100)
-        backend._on_key_press(_id, 50, 50, 1, 0)
+        
+        backend._on_key_press(_id, 340, 340, 1, 0)  # Shift.
+        backend._on_key_press(_id, 50, 50, 1, 0)    # 2
+        backend._on_key_char(_id, 50)
+        backend._on_key_press(_id, 50, 50, 0, 0)
+        backend._on_key_press(_id, 340, 340, 0, 0)
+
+        backend._on_key_press(_id, 65, 65, 1, 0)    # Plain A
+        backend._on_key_char(_id, 197)              # Unicode A.
+        backend._on_key_char(_id, 197)              # Repeat A.
+        backend._on_key_press(_id, 65, 65, 0, 0)
+
         backend._on_mouse_button(_id, 1, 1, 0)
         backend._on_mouse_scroll(_id, 1, 0)
         backend._on_mouse_motion(_id, 10, 10)
@@ -99,6 +110,9 @@ def _test_callbacks(canvas):
         backend._on_event(event)
     elif 'wx' in backend_name.lower():
         # Constructing fake wx events is too hard
+        pass
+    elif 'osmesa' in backend_name.lower():
+        # No events for osmesa backend
         pass
     else:
         raise ValueError

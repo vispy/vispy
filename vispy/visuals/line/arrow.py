@@ -48,20 +48,17 @@ class _ArrowHeadVisual(Visual):
     ARROWHEAD_FRAGMENT_SHADER = glsl.get('arrowheads/arrowheads.frag')
 
     _arrow_vtype = np.dtype([
-        ('v1', 'f4', 2),
-        ('v2', 'f4', 2),
-        ('size', 'f4', 1),
-        ('color', 'f4', 4),
-        ('linewidth', 'f4', 1)
+        ('v1', np.float32, 2),
+        ('v2', np.float32, 2),
+        ('size', np.float32, 1),
+        ('color', np.float32, 4),
+        ('linewidth', np.float32, 1)
     ])
 
     def __init__(self, parent):
-
         Visual.__init__(self, self.ARROWHEAD_VERTEX_SHADER,
                         self.ARROWHEAD_FRAGMENT_SHADER)
-
         self._parent = parent
-        self._arrow_vbo = gloo.VertexBuffer()
         self.set_gl_state(depth_test=False, blend=True,
                           blend_func=('src_alpha', 'one_minus_src_alpha'))
         self._draw_mode = 'points'
@@ -71,13 +68,9 @@ class _ArrowHeadVisual(Visual):
         view.view_program.vert['transform'] = xform
 
     def _prepare_draw(self, view=None):
-
         if self._parent._arrows_changed:
-            v = self._prepare_vertex_data()
-            self._arrow_vbo.set_data(v)
-
+            self._prepare_vertex_data()
         self.shared_program.bind(self._arrow_vbo)
-
         self.shared_program['antialias'] = 1.0
         self.shared_program.frag['arrow_type'] = self._parent.arrow_type
         self.shared_program.frag['fill_type'] = "filled"
@@ -86,18 +79,13 @@ class _ArrowHeadVisual(Visual):
         arrows = self._parent.arrows
         if arrows is None:
             return np.array([], dtype=self._arrow_vtype)
-
-        num_arrows = arrows.shape[0]
-        v = np.zeros(num_arrows, dtype=self._arrow_vtype)
-
+        v = np.zeros(len(arrows), dtype=self._arrow_vtype)
         v['v1'] = arrows[:, 0:2]
         v['v2'] = arrows[:, 2:4]
-
         v['size'][:] = self._parent.arrow_size
         v['color'][:] = self._parent._interpret_color()
         v['linewidth'][:] = self._parent.width
-
-        return v
+        self._arrow_vbo = gloo.VertexBuffer(v)
 
 
 class ArrowVisual(LineVisual):

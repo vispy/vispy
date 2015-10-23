@@ -37,8 +37,8 @@ void main() {
 
 
     vec4 pos_scene = $visual2scene($to_vec4($position));
-    vec4 normal_scene = $visual2scene(vec4($normal, 1));
-    vec4 origin_scene = $visual2scene(vec4(0, 0, 0, 1));
+    vec4 normal_scene = $visual2scene(vec4($normal, 1.0));
+    vec4 origin_scene = $visual2scene(vec4(0.0, 0.0, 0.0, 1.0));
 
     normal_scene /= normal_scene.w;
     origin_scene /= origin_scene.w;
@@ -81,7 +81,7 @@ void main() {
     //DIFFUSE
     float diffusek = dot(v_light_vec, v_normal_vec);
     //clamp, because 0 < theta < pi/2
-    diffusek  = clamp(diffusek, 0, 1);
+    diffusek  = clamp(diffusek, 0.0, 1.0);
     vec4 diffuse_color = v_light_color * diffusek;
     //diffuse_color.a = 1.0;
 
@@ -89,10 +89,10 @@ void main() {
     //reflect light wrt normal for the reflected ray, then
     //find the angle made with the eye
     float speculark = dot(reflect(v_light_vec, v_normal_vec), v_eye_vec);
-    speculark = clamp(speculark, 0, 1);
+    speculark = clamp(speculark, 0.0, 1.0);
     //raise to the material's shininess, multiply with a
     //small factor for spread
-    speculark = 20 * pow(speculark, 200.0);
+    speculark = 20.0 * pow(speculark, 200.0);
 
     vec4 specular_color = v_light_color * speculark;
 

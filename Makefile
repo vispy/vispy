@@ -89,5 +89,8 @@ wx: clean-test
 egl: clean-test
 	python make test egl
 
+osmesa: clean-test
+	python make test osmesa
+
 ipynb_vnc: clean-test
 	python make test ipynb_vnc
