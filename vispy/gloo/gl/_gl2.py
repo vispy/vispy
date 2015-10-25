@@ -977,8 +977,8 @@ def glPolygonOffset(factor, units):
 
 # void = glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, GLvoid* pixels)
 def glReadPixels(x, y, width, height, format, type):
-    # GL_ALPHA, GL_RGB, GL_RGBA
-    t = {6406:1, 6407:3, 6408:4}[format]
+    # GL_ALPHA, GL_RGB, GL_RGBA, GL_DEPTH_COMPONENT
+    t = {6406:1, 6407:3, 6408:4, 6402:1}[format]
     # GL_UNSIGNED_BYTE, GL_FLOAT
     nb = {5121:1, 5126:4}[type]
     size = int(width*height*t*nb)
