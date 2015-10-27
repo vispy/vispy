@@ -6,7 +6,6 @@ import random
 
 import numpy as np
 from numpy.testing import assert_equal
-import networkx as nx
 
 from vispy.visuals.graphs.layouts import get_layout
 from vispy.scene import visuals, transforms
@@ -15,8 +14,19 @@ from vispy.testing import (run_tests_if_main, assert_raises)
 
 random.seed(0xDEADBEEF)
 np.random.seed(0xDEADBEEF)
-graph = nx.fast_gnp_random_graph(10, 0.1, 0xDEADBEEF)
-adjacency_mat = nx.adjacency_matrix(graph)
+
+adjacency_mat = [
+    [0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
+    [1, 0, 0, 1, 0, 0, 0, 0, 1, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
+    [1, 0, 0, 0, 1, 0, 1, 0, 0, 0],
+    [0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+]
 
 
 def test_get_layout():
