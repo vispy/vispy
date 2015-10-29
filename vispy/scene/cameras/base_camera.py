@@ -107,6 +107,7 @@ class BaseCamera(Node):
         if value <= 0:
             raise ValueError('depth value must be positive')
         self._depth_value = value
+        self.view_changed()
 
     def _depth_to_z(self, depth):
         """ Get the z-coord, given the depth value.
