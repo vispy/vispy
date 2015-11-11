@@ -42,7 +42,7 @@ sphere3.transform = STTransform(translate=[2.5, 0, 0])
 view.camera.set_range(x=[-3, 3])
 
 writer = imageio.get_writer('animation.gif')
-for i in xrange(n_steps * 2):
+for i in range(n_steps * 2):
     im = canvas.render()
     writer.append_data(im)
     if i >= n_steps:
