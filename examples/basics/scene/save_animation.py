@@ -8,8 +8,6 @@
 This example demonstrates how to create a sphere.
 """
 
-import sys
-
 import imageio
 
 from vispy import scene
