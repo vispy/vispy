@@ -20,8 +20,7 @@ y2 = np.sin(x) + 0.2 * np.random.randn(len(x))
 sp1 = fig[0, 0]
 sp2 = fig[1, 0]
 line1 = sp1.plot((x, y1), color='#00b4b2', width=1, title='I/V Curve',
-        xlabel='Current (pA)', ylabel='Membrane Potential (mV)',
-        face_color='w')
+    xlabel='Current (pA)', ylabel='Membrane Potential (mV)', face_color='w')
 line2 = sp2.plot((x, y2), color='#ff0000')
 
 #note: for complete sync is better connect cameras directly
