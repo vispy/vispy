@@ -25,4 +25,4 @@ from .arcball import ArcballCamera  # noqa
 from .turntable import TurntableCamera  # noqa
 from .fly import FlyCamera  # noqa
 from .magnify import MagnifyCamera, Magnify1DCamera  # noqa
-from .sync import SyncCamera2D # noqa
+from .sync import SyncCamera2D  # noqa
