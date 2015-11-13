@@ -8,8 +8,8 @@ from ...geometry import Rect
 
 
 class SyncCamera2D(BaseCamera):
-    def __init__(self, sync_x=False, sync_y=False,**kwargs):
-        BaseCamera.__init__(self,**kwargs)
+    def __init__(self, sync_x=False, sync_y=False, **kwargs):
+        BaseCamera.__init__(self, **kwargs)
         self.sync_x = sync_x
         self.sync_y = sync_y
         
@@ -30,6 +30,6 @@ class SyncCamera2D(BaseCamera):
                 if not self.sync_y:
                     r.top = cam_rect.top
                     r.bottom = cam_rect.bottom
-                cam.set_state({'rect':r})
+                cam.set_state({'rect': r})
             finally:
                 cam._linked_cameras_no_update = None
