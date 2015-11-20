@@ -345,5 +345,4 @@ class Widget(Compound):
             The widget to remove.
         """
         self._widgets.remove(widget)
-        widget.remove_parent(self)
         self._update_child_widgets()
