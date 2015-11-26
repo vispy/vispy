@@ -13,7 +13,7 @@ import io
 from distutils.version import StrictVersion
 
 
-_SIX_MIN_VERSION = StrictVersion('1.4.1')
+_SIX_MIN_VERSION = StrictVersion('1.8.0')
 _SIX_SEARCH_PATH = ['vispy.ext._bundled.six', 'six']
 
 
