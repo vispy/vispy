@@ -75,7 +75,7 @@ def _calculate_normals(rr, tris):
     nn = np.zeros((npts, 3))
     for verts in tris.T:  # note this only loops 3x (number of verts per tri)
         for idx in range(3):  # x, y, z
-            nn[:, idx] += np.bincount(verts, tri_nn[:, idx], minlength=npts)
+            nn[:, idx] += np.bincount(verts.astype(np.int32), tri_nn[:, idx], minlength=npts)
     size = np.sqrt(np.sum(nn * nn, axis=1))
     size[size == 0] = 1.0  # prevent ugly divide-by-zero
     nn /= size[:, np.newaxis]
