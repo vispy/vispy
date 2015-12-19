@@ -248,6 +248,10 @@ class ApplicationBackend(BaseApplicationBackend):
 
 # ------------------------------------------------------------------ canvas ---
 
+def _get_qpoint_pos(pos):
+    """Return the coordinates of a QPointF object."""
+    return pos.x(), pos.y()
+
 
 class QtBaseCanvasBackend(BaseCanvasBackend):
     """Base functionality of Qt backend. No OpenGL Stuff."""
@@ -284,6 +288,10 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
         # avoid double events
         self._double_click_supported = True
         self._physical_size = p.size
+
+        # Activate touch and gesture.
+        self.setAttribute(QtCore.Qt.WA_AcceptTouchEvents)
+        self.grabGesture(QtCore.Qt.PinchGesture)
 
     def _vispy_warmup(self):
         etime = time() + 0.25
@@ -414,6 +422,40 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
 
     def keyReleaseEvent(self, ev):
         self._keyEvent(self._vispy_canvas.events.key_release, ev)
+
+    def event(self, ev):
+        out = super(QtBaseCanvasBackend, self).event(ev)
+        t = ev.type()
+        # Two-finger pinch.
+        if (t == QtCore.QEvent.TouchBegin):
+            self._vispy_canvas.events.touch(type='begin')
+        if (t == QtCore.QEvent.TouchEnd):
+            self._vispy_canvas.events.touch(type='end')
+        if (t == QtCore.QEvent.Gesture):
+            gesture = ev.gesture(QtCore.Qt.PinchGesture)
+            if gesture:
+                (x, y) = _get_qpoint_pos(gesture.centerPoint())
+                scale = gesture.scaleFactor()
+                last_scale = gesture.lastScaleFactor()
+                rotation = gesture.rotationAngle()
+                self._vispy_canvas.events.touch(type='pinch',
+                                                pos=(x, y),
+                                                last_pos=None,
+                                                scale=scale,
+                                                last_scale=last_scale,
+                                                rotation=rotation,
+                                                )
+        # General touch event.
+        elif (t == QtCore.QEvent.TouchUpdate):
+            points = ev.touchPoints()
+            # These variables are lists of (x, y) coordinates.
+            pos = [_get_qpoint_pos(p.pos()) for p in points]
+            lpos = [_get_qpoint_pos(p.lastPos()) for p in points]
+            self._vispy_canvas.events.touch(type='touch',
+                                            pos=pos,
+                                            last_pos=lpos,
+                                            )
+        return out
 
     def _keyEvent(self, func, ev):
         # evaluates the keycode of qt, and transform to vispy key.
