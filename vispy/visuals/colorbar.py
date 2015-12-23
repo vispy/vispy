@@ -593,6 +593,7 @@ class ColorBarVisual(CompoundVisual):
 
     @label.setter
     def label(self, label):
+        assert()
         self._label = label
         self._update()
 

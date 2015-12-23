@@ -41,6 +41,11 @@ class PlotWidget(scene.Widget):
         self.visuals = []
         self.section_y_x = None
 
+        self.cbar_top = None
+        self.cbar_bottom = None
+        self.cbar_left = None
+        self.cbar_right = None
+
         super(PlotWidget, self).__init__(*args, **kwargs)
         self.grid = self.add_grid(spacing=0, margin=10)
 
@@ -56,43 +61,52 @@ class PlotWidget(scene.Widget):
             fg = fg_color
 
         # row 0
+        # title - column 0 to 4
+        # padding - column 4 to 5
         self.title_widget = self.grid.add_widget(self.title, row=0, col=0,
-                                                 col_span=3)
+                                                 col_span=4)
         self.title_widget.height = 50
 
+        # right side padding
+        right_padding = self.grid.add_widget(row=0, col=4)
+        right_padding.width = 30
+
         # row 1
+        # ylabel - column 0
+        # yaxis - column 1
+        # view - column 2
+        # colorbar - column 3 to 4
         self.ylabel = scene.Label("", rotation=-90)
         ylabel_widget = self.grid.add_widget(self.ylabel, row=1, col=0)
-        ylabel_widget.width = 100
+        ylabel_widget.width = 60
 
         self.yaxis = scene.AxisWidget(orientation='left',
                                       text_color=fg,
                                       axis_color=fg, tick_color=fg)
 
         yaxis_widget = self.grid.add_widget(self.yaxis, row=1, col=1)
-        yaxis_widget.width = 50
+        yaxis_widget.width = 40
 
-        # row 2
         self.view = self.grid.add_view(row=1, col=2,
                                        border_color='grey', bgcolor="#efefef")
+        self.view.camera = 'panzoom'
+        self.camera = self.view.camera
 
+        cbar_right_placeholder = self.grid.add_widget(None, row=1, col=3)
+        cbar_right_placeholder.width = 1
+
+        # row 2
+        # xaxis - column 2
         self.xaxis = scene.AxisWidget(orientation='bottom', text_color=fg,
                                       axis_color=fg, tick_color=fg)
         xaxis_widget = self.grid.add_widget(self.xaxis, row=2, col=2)
-        xaxis_widget.height = 100
+        xaxis_widget.height = 40
 
         # row 3
         self.xlabel = scene.Label("")
-        xlabel_widget = self.grid.add_widget(self.xlabel, row=2, col=0,
-                                             col_span=3)
-        xlabel_widget.height = 100
-
-        # right side padding
-        right_padding = self.grid.add_widget(row=0, col=3)
-        right_padding.width = 30
-
-        self.view.camera = 'panzoom'
-        self.camera = self.view.camera
+        xlabel_widget = self.grid.add_widget(self.xlabel, row=3, col=0,
+                                             col_span=5)
+        xlabel_widget.height = 40
 
         self._configured = True
         self.xaxis.link_view(self.view)
@@ -371,3 +385,73 @@ class PlotWidget(scene.Widget):
         self.view.add(surf)
         self.view.camera.set_range()
         return surf
+
+    def colorbar(self, cmap, position="right",
+                 label="", clim=("", ""),
+                 border_width=0.0, border_color="black",
+                 **kwargs):
+        """Show a ColorBar
+
+        Parameters
+        ----------
+        cmap : str | vispy.color.ColorMap
+            Either the name of the ColorMap to be used from the standard
+            set of names (refer to `vispy.color.get_colormap`),
+            or a custom ColorMap object.
+            The ColorMap is used to apply a gradient on the colorbar.
+        position : {'left', 'right', 'top', 'bottom'}
+            The position of the colorbar with respect to the plot.
+            'top' and 'bottom' are placed horizontally, while
+            'left' and 'right' are placed vertically
+        label : str
+            The label that is to be drawn with the colorbar
+            that provides information about the colorbar.
+        clim : tuple (min, max)
+            the minimum and maximum values of the data that
+            is given to the colorbar. This is used to draw the scale
+            on the side of the colorbar.
+        border_width : float (in px)
+            The width of the border the colormap should have. This measurement
+            is given in pixels
+        border_color : str | vispy.color.Color
+            The color of the border of the colormap. This can either be a
+            str as the color's name or an actual instace of a vipy.color.Color
+
+        Returns
+        -------
+        colorbar : instance of ColorBarWidget
+
+        See also
+        --------
+        ColorBarWidget
+        """
+
+        self._configure_2d()
+
+        cbar = scene.ColorBarWidget(orientation=position,
+                                    label_str=label,
+                                    cmap=cmap,
+                                    clim=clim,
+                                    border_width=border_width,
+                                    border_color=border_color,
+                                    **kwargs)
+
+        if cbar.orientation == "bottom":
+            self.grid.add_widget(cbar, row=5, col=3)
+            # cbar.stretch = (1, 0.3)
+            self.cbar_bottom = cbar
+        elif cbar.orientation == "top":
+            self.grid.add_widget(cbar, row=1, col=3)
+            # cbar.stretch = (1, 0.3)
+            self.cbar_top = cbar
+        elif cbar.orientation == "left":
+            # cbar.stretch = (0.3, 1)
+            self.grid.add_widget(cbar, row=2, col=0)
+            self.cbar_left = cbar
+        else:  # cbar.orientation == "right"
+            # cbar.stretch = (0.3, 1)
+            self.grid.add_widget(cbar, row=1, col=3)
+            cbar.width = 100
+            self.cbar_right = cbar
+
+        return cbar

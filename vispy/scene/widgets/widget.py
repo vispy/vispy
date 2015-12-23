@@ -158,9 +158,6 @@ class Widget(Compound):
         width_min = float(width_min)
         assert(0 <= width_min)
 
-        if self.width_max is not None:
-            assert(width_min <= self.width_max)
-
         self._width_limits = (width_min, self._width_limits[1])
         self._update_layout()
 
@@ -184,7 +181,8 @@ class Widget(Compound):
             return
 
         width_max = float(width_max)
-        assert(0 <= self.width_min <= width_max)
+        assert(self.width_min <= width_max)
+
         self._width_limits = (self._width_limits[0], width_max)
         self._update_layout()
 
@@ -202,8 +200,8 @@ class Widget(Compound):
         height: float
         The fixed height of the widget
         """
-        self.height_min = height
         self.height_max = height
+        self.height_min = height
 
     @property
     def height_min(self):
