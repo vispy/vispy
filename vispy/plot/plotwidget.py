@@ -61,48 +61,52 @@ class PlotWidget(scene.Widget):
             fg = fg_color
 
         # row 0
-        # title - column 0 to 4
-        # padding - column 4 to 5
-        self.title_widget = self.grid.add_widget(self.title, row=0, col=0,
-                                                 col_span=4)
+        # title - column 3 to 4
+        # padding - column 5 to 6
+        self.title_widget = self.grid.add_widget(self.title, row=0, col=3)
         self.title_widget.height = 50
 
         # right side padding
-        right_padding = self.grid.add_widget(row=0, col=4)
-        right_padding.width = 30
+        right_padding = self.grid.add_widget(row=0, col=5)
+        right_padding.width = 20
 
         # row 1
-        # ylabel - column 0
-        # yaxis - column 1
-        # view - column 2
-        # colorbar - column 3 to 4
+        # colorbar_left - column 0
+        # ylabel - column 1
+        # yaxis - column 2
+        # view - column 3
+        # colorbar_right - column 4 to 5
+        cbar_left_placeholder = self.grid.add_widget(None, row=1, col=0)
+        cbar_left_placeholder.width = 1
+
         self.ylabel = scene.Label("", rotation=-90)
-        ylabel_widget = self.grid.add_widget(self.ylabel, row=1, col=0)
+        ylabel_widget = self.grid.add_widget(self.ylabel, row=1, col=1)
         ylabel_widget.width = 60
 
         self.yaxis = scene.AxisWidget(orientation='left',
                                       text_color=fg,
                                       axis_color=fg, tick_color=fg)
 
-        yaxis_widget = self.grid.add_widget(self.yaxis, row=1, col=1)
+        yaxis_widget = self.grid.add_widget(self.yaxis, row=1, col=2)
         yaxis_widget.width = 40
 
-        self.view = self.grid.add_view(row=1, col=2,
+        self.view = self.grid.add_view(row=1, col=3,
                                        border_color='grey', bgcolor="#efefef")
         self.view.camera = 'panzoom'
         self.camera = self.view.camera
 
-        cbar_right_placeholder = self.grid.add_widget(None, row=1, col=3)
+        cbar_right_placeholder = self.grid.add_widget(None, row=1, col=4)
         cbar_right_placeholder.width = 1
 
         # row 2
-        # xaxis - column 2
+        # xaxis - column 3
         self.xaxis = scene.AxisWidget(orientation='bottom', text_color=fg,
                                       axis_color=fg, tick_color=fg)
-        xaxis_widget = self.grid.add_widget(self.xaxis, row=2, col=2)
+        xaxis_widget = self.grid.add_widget(self.xaxis, row=2, col=3)
         xaxis_widget.height = 40
 
         # row 3
+        # xlabel - column 0
         self.xlabel = scene.Label("")
         xlabel_widget = self.grid.add_widget(self.xlabel, row=3, col=0,
                                              col_span=5)
@@ -446,11 +450,12 @@ class PlotWidget(scene.Widget):
             self.cbar_top = cbar
         elif cbar.orientation == "left":
             # cbar.stretch = (0.3, 1)
-            self.grid.add_widget(cbar, row=2, col=0)
+            self.grid.add_widget(cbar, row=1, col=0)
+            cbar.width = 100
             self.cbar_left = cbar
         else:  # cbar.orientation == "right"
             # cbar.stretch = (0.3, 1)
-            self.grid.add_widget(cbar, row=1, col=3)
+            self.grid.add_widget(cbar, row=1, col=4)
             cbar.width = 100
             self.cbar_right = cbar
 
