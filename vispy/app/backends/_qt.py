@@ -290,8 +290,9 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
         self._physical_size = p.size
 
         # Activate touch and gesture.
-        self.setAttribute(QtCore.Qt.WA_AcceptTouchEvents)
-        self.grabGesture(QtCore.Qt.PinchGesture)
+        if sys.platform == 'darwin':
+            self.setAttribute(QtCore.Qt.WA_AcceptTouchEvents)
+            self.grabGesture(QtCore.Qt.PinchGesture)
 
     def _vispy_warmup(self):
         etime = time() + 0.25
