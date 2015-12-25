@@ -8,7 +8,7 @@ import numpy as np
 from .widget import Widget
 
 from ...ext.cassowary import (SimplexSolver, expression,
-                              Variable, STRONG, WEAK, REQUIRED)
+                              Variable, WEAK, REQUIRED)
 
 
 class Grid(Widget):
@@ -294,7 +294,7 @@ class Grid(Widget):
             width_expr = expression.Expression()
             for (x, w) in enumerate(ws):
                 width_expr = width_expr + w
-            solver.add_constraint(width_expr == var_w, strength=STRONG)
+            solver.add_constraint(width_expr == var_w, strength=REQUIRED)
 
     @staticmethod
     def _add_total_height_constraints(solver, height_grid, var_h):
@@ -302,21 +302,21 @@ class Grid(Widget):
             height_expr = expression.Expression()
             for h in hs:
                 height_expr += h
-            solver.add_constraint(height_expr == var_h, strength=STRONG)
+            solver.add_constraint(height_expr == var_h, strength=REQUIRED)
 
     @staticmethod
     def _add_gridding_width_constraints(solver, width_grid):
         # access widths of one "y", different x
         for ws in width_grid.T:
             for w in ws[1:]:
-                solver.add_constraint(ws[0] == w, strength=STRONG)
+                solver.add_constraint(ws[0] == w, strength=REQUIRED)
 
     @staticmethod
     def _add_gridding_height_constraints(solver, height_grid):
         # access heights of one "y"
         for hs in height_grid.T:
             for h in hs[1:]:
-                solver.add_constraint(hs[0] == h, strength=STRONG)
+                solver.add_constraint(hs[0] == h, strength=REQUIRED)
 
     @staticmethod
     def _add_stretch_constraints(solver, width_grid, height_grid,
@@ -373,11 +373,11 @@ class Grid(Widget):
                                     var_w, var_h, grid_widgets):
         for ws in width_grid:
             for w in ws:
-                solver.add_constraint(w >= 0, strength=STRONG)
+                solver.add_constraint(w >= 0, strength=REQUIRED)
 
         for hs in height_grid:
             for h in hs:
-                solver.add_constraint(h >= 0, strength=STRONG)
+                solver.add_constraint(h >= 0, strength=REQUIRED)
 
         for (_, val) in grid_widgets.items():
             (y, x, ys, xs, widget) = val
@@ -385,22 +385,22 @@ class Grid(Widget):
             for ws in width_grid[y:y+ys]:
                 total_w = np.sum(ws[x:x+xs])
                 solver.add_constraint(total_w >= widget.width_min,
-                                      strength=STRONG)
+                                      strength=REQUIRED)
 
                 if widget.width_max is not None:
                     solver.add_constraint(total_w <= widget.width_max,
-                                          strength=STRONG)
+                                          strength=REQUIRED)
                 else:
                     solver.add_constraint(total_w <= var_w)
 
             for hs in height_grid[x:x+xs]:
                 total_h = np.sum(hs[y:y+ys])
                 solver.add_constraint(total_h >= widget.height_min,
-                                      strength=STRONG)
+                                      strength=REQUIRED)
 
                 if widget.height_max is not None:
                     solver.add_constraint(total_h <= widget.height_max,
-                                          strength=STRONG)
+                                          strength=REQUIRED)
                 else:
                     solver.add_constraint(total_h <= var_h)
 

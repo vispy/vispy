@@ -410,22 +410,22 @@ class Widget(Compound):
             (np.tile(self.border_color.rgba, (8, 1)),
              np.tile(self.bgcolor.rgba, (2, 1)))).astype(np.float32)
         self._update_visibility()
-            
+
     @property
     def picking(self):
         return self._picking
-    
+
     @picking.setter
     def picking(self, p):
         Compound.picking.fset(self, p)
         self._update_visibility()
-        
+
     def _update_visibility(self):
         blank = self.border_color.is_blank and self.bgcolor.is_blank
         picking = self.picking
         self._picking_mesh.visible = picking and self.interactive
         self._mesh.visible = not picking and not blank
-    
+
     def _update_child_widgets(self):
         # Set the position and size of child boxes (only those added
         # using add_widget)
