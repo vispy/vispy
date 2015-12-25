@@ -64,11 +64,11 @@ class PlotWidget(scene.Widget):
         # title - column 3 to 4
         # padding - column 5 to 6
         self.title_widget = self.grid.add_widget(self.title, row=0, col=3)
-        self.title_widget.height = 50
+        self.title_widget.height = 30
 
         # right side padding
         right_padding = self.grid.add_widget(row=0, col=5)
-        right_padding.width = 20
+        right_padding.width = 0
 
         # row 1
         # colorbar_left - column 0
@@ -77,7 +77,7 @@ class PlotWidget(scene.Widget):
         # view - column 3
         # colorbar_right - column 4 to 5
         cbar_left_placeholder = self.grid.add_widget(None, row=1, col=0)
-        cbar_left_placeholder.width = 1
+        cbar_left_placeholder.width = 0
 
         self.ylabel = scene.Label("", rotation=-90)
         ylabel_widget = self.grid.add_widget(self.ylabel, row=1, col=1)
@@ -96,7 +96,7 @@ class PlotWidget(scene.Widget):
         self.camera = self.view.camera
 
         cbar_right_placeholder = self.grid.add_widget(None, row=1, col=4)
-        cbar_right_placeholder.width = 1
+        cbar_right_placeholder.width = 0
 
         # row 2
         # xaxis - column 3
