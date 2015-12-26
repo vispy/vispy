@@ -371,6 +371,9 @@ class Grid(Widget):
     @staticmethod
     def _add_widget_dim_constraints(solver, width_grid, height_grid,
                                     var_w, var_h, grid_widgets):
+        assert(var_w is not None)
+        assert(var_h is not None)
+
         for ws in width_grid:
             for w in ws:
                 solver.add_constraint(w >= 0, strength=REQUIRED)
