@@ -290,6 +290,9 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
         self._physical_size = p.size
 
         # Activate touch and gesture.
+        # NOTE: we only activate touch on OS X because there seems to be
+        # problems on Ubuntu computers with touchscreen.
+        # See https://github.com/vispy/vispy/pull/1143
         if sys.platform == 'darwin':
             self.setAttribute(QtCore.Qt.WA_AcceptTouchEvents)
             self.grabGesture(QtCore.Qt.PinchGesture)
