@@ -381,7 +381,7 @@ class SimplexSolver(Tableau):
             raise RequiredFailure()
 
         e = self.rows.get(av)
-        if e != None:
+        if e is not None:
             # print("av exists")
             if e.is_constant:
                 # print("av is constant")
