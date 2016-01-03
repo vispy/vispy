@@ -387,6 +387,7 @@ class Grid(Widget):
 
             for ws in width_grid[y:y+ys]:
                 total_w = np.sum(ws[x:x+xs])
+                # assert(total_w is not None)
                 solver.add_constraint(total_w >= widget.width_min,
                                       strength=REQUIRED)
 
