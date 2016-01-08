@@ -124,18 +124,6 @@ class Widget(Compound):
         """The actual width of this widget"""
         return self._size[0]
 
-    @width.setter
-    def width(self, width):
-        """Set the width of the widget to be a fixed width
-
-        Parameters
-        ----------
-        width: float
-        The fixed width of the widget
-        """
-        self.width_min = width
-        self.width_max = width
-
     @property
     def width_min(self):
         """The minimum width the widget can have"""
@@ -191,18 +179,6 @@ class Widget(Compound):
     def height(self):
         """The actual height of the widget"""
         return self._size[1]
-
-    @height.setter
-    def height(self, height):
-        """Set the height of the widget to be a fixed height
-
-        Parameters
-        ----------
-        height: float
-        The fixed height of the widget
-        """
-        self.height_max = height
-        self.height_min = height
 
     @property
     def height_min(self):
