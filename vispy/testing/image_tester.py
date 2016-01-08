@@ -6,6 +6,7 @@ Procedure for unit-testing with images:
 1. Run unit tests at least once; this initializes a git clone of
    vispy/test-data in config['test_data_path']. This path is
    `~/.vispy/test-data` unless the config variable has been modified.
+   The config file is located at `vispy/vispy/util/config.py`
 
 2. Run individual test scripts with the --vispy-audit flag:
 
