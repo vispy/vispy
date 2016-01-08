@@ -63,11 +63,12 @@ class Widget(Compound):
         self._size = 100, 100
 
         # layout interaction
-        self._width_limits = (1, None)
-        self._height_limits = (1, None)
-        self._stretch = (None, None)
+        self._width_limits = [0, None]
+        self._height_limits = [0, None]
+        self._stretch = [None, None]
+
         # used by the constraint solver
-        # in grid - these will be Cassowary Variable
+        # in Grid - these are Cassowary variables
         self.var_w = self.var_h = None
         self.var_x = self.var_y = None
 
@@ -152,13 +153,13 @@ class Widget(Compound):
         """
 
         if width_min is None:
-            self._width_limits = (0, self._width_limits[1])
+            self._width_limits[0] = 0
             return
 
         width_min = float(width_min)
         assert(0 <= width_min)
 
-        self._width_limits = (width_min, self._width_limits[1])
+        self._width_limits[0] = width_min
         self._update_layout()
 
     @property
@@ -177,13 +178,13 @@ class Widget(Compound):
             is unbounded
         """
         if width_max is None:
-            self._width_limits = (self._width_limits[0], None)
+            self._width_limits[1] = None
             return
 
         width_max = float(width_max)
         assert(self.width_min <= width_max)
 
-        self._width_limits = (self._width_limits[0], width_max)
+        self._width_limits[1] = width_max
         self._update_layout()
 
     @property
@@ -219,13 +220,13 @@ class Widget(Compound):
             the minimum height of the widget
         """
         if height_min is None:
-            self._height_limits = (0, self._height_limits[1])
+            self._height_limits[0] = 0
             return
 
         height_min = float(height_min)
         assert(height_min >= 0)
 
-        self._height_limits = (height_min, self._height_limits[1])
+        self._height_limits[0] = height_min
         self._update_layout()
 
     @property
@@ -244,12 +245,12 @@ class Widget(Compound):
             is unbounded
         """
         if height_max is None:
-            self._height_limits = (self._height_limits[0], None)
+            self._height_limits[1] = None
             return
 
         height_max = float(height_max)
         assert(0 <= self.height_min <= height_max)
-        self._height_limits = (self._height_limits[0], height_max)
+        self._height_limits[1] = height_max
         self._update_layout()
 
     @property
