@@ -29,19 +29,20 @@ grid = canvas.central_widget.add_grid()
 
 widget_y_axis = grid.add_widget(row=0, col=0)
 widget_y_axis.bgcolor = "#999999"
-widget_y_axis.stretch = (0.2, 1)
 
 widget_viewbox = grid.add_widget(row=0, col=1)
 widget_viewbox.bgcolor = "#dd0000"
-widget_viewbox.stretch = (1, 1)
 
 widget_spacer_bottom = grid.add_widget(row=1, col=0)
 widget_spacer_bottom.bgcolor = "#efefef"
-widget_spacer_bottom.stretch = (0.2, 0.2)
 
 widget_x_axis = grid.add_widget(row=1, col=1)
 widget_x_axis.bgcolor = "#0000dd"
-widget_x_axis.stretch = (1, 0.2)
+
+widget_y_axis.width_min = 50
+widget_y_axis.width_max = 50
+widget_x_axis.height_min = 50
+widget_x_axis.height_max = 50
 
 if __name__ == '__main__' and sys.flags.interactive == 0:
     app.run()
