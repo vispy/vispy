@@ -50,6 +50,10 @@ class AxisWidget(Widget):
             return np.array([[r.right, r.top], [r.right, r.bottom]])
         elif self.orientation == 'bottom':
             return np.array([[r.left, r.bottom], [r.right, r.bottom]])
+        elif self.orientation == 'right':
+            return np.array([[r.left, r.top], [r.left, r.bottom]])
+        elif self.orientation == 'top':
+            return np.array([[r.left, r.top], [r.right, r.top]])
         
     def link_view(self, view):
         """Link this axis to a ViewBox
