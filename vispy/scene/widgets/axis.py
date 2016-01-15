@@ -55,7 +55,8 @@ class AxisWidget(Widget):
         elif self.orientation == 'top':
             return np.array([[r.left, r.top], [r.right, r.top]])
         else:
-            raise RuntimeError('Orientation %s not supported.' % self.orientation)
+            raise RuntimeError(
+                'Orientation %s not supported.' % self.orientation)
         
     def link_view(self, view):
         """Link this axis to a ViewBox
