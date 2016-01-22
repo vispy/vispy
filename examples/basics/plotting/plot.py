@@ -38,8 +38,8 @@ labelgrid = fig[0, 0].view.add_grid(margin=10)
 
 box = vp.Widget(bgcolor=(1, 1, 1, 0.6), border_color='k')
 box_widget = labelgrid.add_widget(box, row=0, col=1)
-box_widget.width = 90
-box_widget.height = 120
+box_widget.width_max = 90
+box_widget.height_max = 120
 
 bottom_spacer = vp.Widget()
 labelgrid.add_widget(bottom_spacer, row=1, col=0)

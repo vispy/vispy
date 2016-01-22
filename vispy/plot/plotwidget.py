@@ -64,11 +64,11 @@ class PlotWidget(scene.Widget):
         # title - column 3 to 4
         # padding - column 5 to 6
         self.title_widget = self.grid.add_widget(self.title, row=0, col=3)
-        self.title_widget.height = 30
+        self.title_widget.height_min = self.title_widget.height_max = 30
 
         # right side padding
         right_padding = self.grid.add_widget(row=0, col=5)
-        right_padding.width = 1
+        right_padding.width_min = right_padding.width_max = 30
 
         # row 1
         # colorbar_left - column 0
@@ -77,18 +77,18 @@ class PlotWidget(scene.Widget):
         # view - column 3
         # colorbar_right - column 4 to 5
         cbar_left_placeholder = self.grid.add_widget(None, row=1, col=0)
-        cbar_left_placeholder.width = 1
+        cbar_left_placeholder.width_max = 1
 
         self.ylabel = scene.Label("", rotation=-90)
         ylabel_widget = self.grid.add_widget(self.ylabel, row=1, col=1)
-        ylabel_widget.width = 60
+        ylabel_widget.width_max = 60
 
         self.yaxis = scene.AxisWidget(orientation='left',
                                       text_color=fg,
                                       axis_color=fg, tick_color=fg)
 
         yaxis_widget = self.grid.add_widget(self.yaxis, row=1, col=2)
-        yaxis_widget.width = 40
+        yaxis_widget.width_max = 40
 
         self.view = self.grid.add_view(row=1, col=3,
                                        border_color='grey', bgcolor="#efefef")
@@ -96,21 +96,21 @@ class PlotWidget(scene.Widget):
         self.camera = self.view.camera
 
         cbar_right_placeholder = self.grid.add_widget(None, row=1, col=4)
-        cbar_right_placeholder.width = 1
+        cbar_right_placeholder.width_max = 1
 
         # row 2
         # xaxis - column 3
         self.xaxis = scene.AxisWidget(orientation='bottom', text_color=fg,
                                       axis_color=fg, tick_color=fg)
         xaxis_widget = self.grid.add_widget(self.xaxis, row=2, col=3)
-        xaxis_widget.height = 40
+        xaxis_widget.height_max = 40
 
         # row 3
         # xlabel - column 0
         self.xlabel = scene.Label("")
         xlabel_widget = self.grid.add_widget(self.xlabel, row=3, col=0,
                                              col_span=5)
-        xlabel_widget.height = 40
+        xlabel_widget.height_max = 40
 
         self._configured = True
         self.xaxis.link_view(self.view)
