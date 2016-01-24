@@ -164,6 +164,9 @@ class Application(object):
         # with requires_application()
         test_name = os.getenv('_VISPY_TESTING_APP', None)
 
+        if backend_name is not None:
+            backends.SELECTED_BY_USER_BACKEND = backend_name.lower()
+
         # Check whether the given name is valid
         if backend_name is not None:
             if backend_name.lower() == 'default':

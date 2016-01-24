@@ -17,8 +17,14 @@ try:
     for lib in ['PyQt4', 'PyQt5']:
         lib += '.QtCore'
         if lib in sys.modules:
-            raise RuntimeError("Refusing to import PySide because %s is "
-                               "already imported." % lib)
+            # If user choose this backend then load it, print warning about conflict.
+            if backends.SELECTED_BY_USER_BACKEND == 'pyside':
+                logger.warning('It was found a library "%s" that conflicts with "%s"'
+                               % (lib, 'PySide.QtCore'))
+            # else pass import.
+            else:
+                raise RuntimeError("Refusing to import PySide because %s is "
+                                   "already imported." % lib)
     # Try importing (QtOpenGL first to fail without import QtCore)
     if not USE_EGL:
         from PySide import QtOpenGL  # noqa
