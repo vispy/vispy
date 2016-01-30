@@ -22,7 +22,7 @@ from .histogram import HistogramVisual  # noqa
 from .isocurve import IsocurveVisual  # noqa
 from .isoline import IsolineVisual  # noqa
 from .isosurface import IsosurfaceVisual  # noqa
-from .line import LineVisual, ArrowVisual  # noqa
+from .line import LineVisual, ArrowVisual, InfiniteLineVisual  # noqa
 from .line_plot import LinePlotVisual  # noqa
 from .markers import MarkersVisual, marker_types  # noqa
 from .mesh import MeshVisual  # noqa
