@@ -113,8 +113,10 @@ class InfiniteLineVisual(Visual):
             self._changed['pos'] = True
 
         if color is not None:
-            if type(color) not in [tuple, list, np.ndarray] and len(color) != 4:
-                raise ValueError('color must be a float rgba tuple, list or array')
+            if type(color) not in [tuple, list, np.ndarray] \
+               or len(color) != 4:
+                raise ValueError('color must be a float rgba tuple, '
+                                 'list or array')
             self._color = np.ascontiguousarray(list(color), dtype=np.float32)
             self._changed['color'] = True
 
@@ -136,8 +138,10 @@ class InfiniteLineVisual(Visual):
     def _prepare_transforms(self, view=None):
         program = view.view_program
         transforms = view.transforms
-        program.vert['render_to_visual'] = transforms.get_transform('render', 'visual')
-        program.vert['transform'] = transforms.get_transform('visual', 'render')
+        program.vert['render_to_visual'] = transforms.get_transform('render',
+                                                                    'visual')
+        program.vert['transform'] = transforms.get_transform('visual',
+                                                             'render')
 
     def _prepare_draw(self, view=None):
         """This method is called immediately before each draw.

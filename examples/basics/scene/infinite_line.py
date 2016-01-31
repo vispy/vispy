@@ -42,12 +42,16 @@ y_axis.link_view(viewbox)
 line = scene.Line(pos, color, parent=viewbox.scene)
 
 # add vertical lines
-vert_line1 = scene.InfiniteLine(100, [1.0, 0.0, 0.0, 1.0], parent=viewbox.scene)
-vert_line2 = scene.InfiniteLine(549.2, [0.0, 1.0, 0.0, 1.0], vertical=True, parent=viewbox.scene)
+vert_line1 = scene.InfiniteLine(100, [1.0, 0.0, 0.0, 1.0],
+                                parent=viewbox.scene)
+vert_line2 = scene.InfiniteLine(549.2, [0.0, 1.0, 0.0, 1.0], vertical=True,
+                                parent=viewbox.scene)
 
 # add horizontal lines
-hor_line1 = scene.InfiniteLine(0.3, [1.0, 0.0, 1.0, 1.0], vertical=False, parent=viewbox.scene)
-hor_line2 = scene.InfiniteLine(-5.1, [1.0, 1.0, 0.0, 1.0], vertical=False, parent=viewbox.scene)
+hor_line1 = scene.InfiniteLine(0.3, [1.0, 0.0, 1.0, 1.0], vertical=False,
+                               parent=viewbox.scene)
+hor_line2 = scene.InfiniteLine(-5.1, [1.0, 1.0, 0.0, 1.0], vertical=False,
+                               parent=viewbox.scene)
 
 # auto-scale to see the whole line.
 viewbox.camera.set_range()
