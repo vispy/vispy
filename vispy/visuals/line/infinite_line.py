@@ -4,22 +4,6 @@ from ... import gloo
 from ..visual import Visual
 
 
-# Horizontal infinite line
-VERT_SHADER_H = """
-    attribute vec2 a_pos;
-    varying vec4 v_color;
-
-    void main() {
-        vec4 pos = vec4(a_pos, 0, 1);
-        pos.x = $render_to_visual(pos).x;
-        gl_Position = $transform(pos);
-        gl_PointSize = 10;
-        v_color = $color;
-
-    }
-    """
-
-# Vertical infinite line
 VERT_SHADER = """
     attribute vec2 a_pos;
     varying vec4 v_color;
