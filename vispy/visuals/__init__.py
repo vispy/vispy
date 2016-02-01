@@ -24,6 +24,7 @@ from .isoline import IsolineVisual  # noqa
 from .isosurface import IsosurfaceVisual  # noqa
 from .line import LineVisual, ArrowVisual, InfiniteLineVisual  # noqa
 from .line_plot import LinePlotVisual  # noqa
+from .linear_region import LinearRegionVisual  # noqa
 from .markers import MarkersVisual, marker_types  # noqa
 from .mesh import MeshVisual  # noqa
 from .plane import PlaneVisual  # noqa
