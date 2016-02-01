@@ -4,4 +4,3 @@
 
 from .line import LineVisual  # noqa
 from .arrow import ArrowVisual  # noqa
-from .infinite_line import InfiniteLineVisual  # noqa
