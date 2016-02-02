@@ -41,15 +41,16 @@ class LinearRegionVisual(Visual):
     Parameters
     ----------
     pos : list, tuple or numpy array
-        Bounds of the region along the axis. len(bounds) must be 2.
+        Bounds of the region along the axis. len(pos) must be >=2.
     color : list, tuple, or array
-        The color to use when drawing the line. If an array is given, it
-        must be of shape (1, 4) and provide one rgba color.
+        The color to use when drawing the line. It must have a shape of
+        (1, 4) for a single color region or (len(pos), 4) for a multicolor
+        region.
     vertical:
         True for drawing a vertical region, False for an horizontal region
     """
 
-    def __init__(self, pos=None, color=(1.0, 1.0, 1.0, 1.0), vertical=True):
+    def __init__(self, pos=None, color=[1.0, 1.0, 1.0, 1.0], vertical=True):
         """
 
         """
@@ -58,6 +59,7 @@ class LinearRegionVisual(Visual):
         self._changed = {'pos': False, 'color': False}
 
         self.pos_buf = gloo.VertexBuffer()
+        self.color_buf = gloo.VertexBuffer()
         # The Visual superclass contains a MultiProgram, which is an object
         # that behaves like a normal shader program (you can assign shader
         # code, upload values, set template variables, etc.) but internally
@@ -82,26 +84,45 @@ class LinearRegionVisual(Visual):
 
     def set_data(self, pos=None, color=None):
         if pos is not None:
-
-            b0 = min(pos)
-            b1 = max(pos)
+            num_elements = len(pos)
+            pos = np.array(pos, dtype=np.float32).ravel()
+            vertex = np.empty((num_elements*2, 2), dtype=np.float32)
             if self._is_vertical:
-                self._pos = np.array([[b1, 1], [b0, 1],
-                                      [b1, -1], [b0, -1]],
-                                     dtype=np.float32)
+                vertex[:, 0] = np.repeat(pos, 2)
+                vertex[:, 1] = np.tile([-1, 1], num_elements)
             else:
-                self._pos = np.array([[1, b1], [1, b0],
-                                      [-1, b1], [-1, b0]],
-                                     dtype=np.float32)
+                vertex[:, 1] = np.repeat(pos, 2)
+                vertex[:, 0] = np.tile([1, -1], num_elements)
+            self._pos = vertex
             self._changed['pos'] = True
 
         if color is not None:
-            if type(color) not in [tuple, list, np.ndarray] \
-               or len(color) != 4:
-                raise ValueError('color must be a float rgba tuple, '
-                                 'list or array')
-            self._color = np.ascontiguousarray(list(color), dtype=np.float32)
+            if type(color) not in [tuple, list, np.ndarray]:
+                raise ValueError('color must be a float rgba iterable of'
+                                 ' tuple, list or array')
+            num_elements = self._pos.shape[0] / 2
+            color = np.array(list(color), dtype=np.float32)
+            if color.ndim == 2:
+                if color.shape[0] != num_elements:
+                    raise ValueError('Expected a color for each pos')
+                if color.shape[1] != 4:
+                    raise ValueError('Each color must be a RGBA array')
+                color = np.repeat(color, 2, axis=0).astype(np.float32)
+            elif color.ndim == 1:
+                if color.shape[0] != 4:
+                    raise ValueError('Each color must be a RGBA array')
+                color = np.repeat([color], num_elements*2, axis=0)
+                color = color.astype(np.float32)
+            else:
+                raise ValueError('Expected a numpy array of shape '
+                                 '(%d, 4) or (1, 4)' % num_elements)
+            self._color = color
             self._changed['color'] = True
+
+        # Ensure pos and color have the same size
+        if self._pos.shape[0] != self._color.shape[0]:
+            print self._pos.shape, self._color.shape
+            raise ValueError('pos and color does not have the same size')
 
     @property
     def color(self):
@@ -111,9 +132,11 @@ class LinearRegionVisual(Visual):
     def pos(self):
         pos = self._pos
         if self._is_vertical:
-            return (pos[1, 0], pos[0, 0])
+            ret_pos = pos[:, 0].ravel()[::2]
+            return ret_pos
         else:
-            return (pos[1, 1], pos[0, 1])
+            ret_pos = pos[:, 1].ravel()[::2]
+            return ret_pos
 
     def _compute_bounds(self, axis, view):
         """Return the (min, max) bounding values of this visual along *axis*
@@ -122,9 +145,9 @@ class LinearRegionVisual(Visual):
         is_vertical = self._is_vertical
         pos = self._pos
         if axis == 0 and is_vertical:
-            return (pos[1, 0], pos[0, 0])
+            return (pos[0, 0], pos[-1, 0])
         elif axis == 1 and not is_vertical:
-            return (pos[1, 1], pos[0, 1])
+            return (pos[0, 1], pos[-1, 1])
 
         return None
 
@@ -151,7 +174,8 @@ class LinearRegionVisual(Visual):
             self._changed['pos'] = False
 
         if self._changed['color']:
-            self._program.vert['color'] = self._color
+            self.color_buf.set_data(self._color)
+            self._program.vert['color'] = self.color_buf
             self._changed['color'] = False
 
         return True
