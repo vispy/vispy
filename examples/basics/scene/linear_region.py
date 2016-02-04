@@ -51,8 +51,6 @@ color = np.array([[1.0, 0.0, 0.0, 1.0],
 pos = np.array([100, 120, 140, 160, 180, 200], dtype=np.float32)
 vert_region1 = scene.LinearRegion(pos, color,
                                   parent=viewbox.scene)
-pos_test = vert_region1.pos
-print 'Elements are equals:', np.equal(pos, pos_test), pos_test
 
 vert_region2 = scene.LinearRegion([549.2, 700], [0.0, 1.0, 0.0, 0.5],
                                   vertical=True,
@@ -63,8 +61,6 @@ pos = np.array([0.3, 0.0, -0.1], dtype=np.float32)
 hor_region1 = scene.LinearRegion(pos, [1.0, 0.0, 0.0, 0.5],
                                  vertical=False,
                                  parent=viewbox.scene)
-pos_test = hor_region1.pos
-print 'Elements are equals:', np.equal(pos, pos_test), pos_test
 
 hor_region2 = scene.LinearRegion([-5.1, -2.0], [0.0, 0.0, 1.0, 0.5],
                                  vertical=False,

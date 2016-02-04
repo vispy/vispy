@@ -121,7 +121,6 @@ class LinearRegionVisual(Visual):
 
         # Ensure pos and color have the same size
         if self._pos.shape[0] != self._color.shape[0]:
-            print self._pos.shape, self._color.shape
             raise ValueError('pos and color does not have the same size')
 
     @property
