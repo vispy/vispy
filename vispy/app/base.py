@@ -4,6 +4,7 @@
 
 from ..util import SimpleBunch
 import time
+from timeit import default_timer
 
 
 class BaseApplicationBackend(object):
@@ -60,6 +61,7 @@ class BaseCanvasBackend(object):
         from .canvas import Canvas  # Avoid circular import
         assert isinstance(vispy_canvas, Canvas)
         self._vispy_canvas = vispy_canvas
+        self._last_time = 0
 
         # We set the _backend attribute of the vispy_canvas to self,
         # because at the end of the __init__ of the CanvasBackend
@@ -186,6 +188,10 @@ class BaseCanvasBackend(object):
         return ev
 
     def _vispy_mouse_move(self, **kwargs):
+        if default_timer() - self._last_time < .01:
+            return
+        self._last_time = default_timer()
+
         # default method for delivering mouse move events to the canvas
         kwargs.update(self._vispy_mouse_data)
 
