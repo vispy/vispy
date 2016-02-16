@@ -480,6 +480,7 @@ class Grid(Widget):
         if self._height_stay:
             self._solver.remove_constraint(self._height_stay)
 
+        print("self: %s | rect.height: %s | var_h: %s" % (self, rect.height, self._var_h))
         self._var_h.value = rect.height
         self._height_stay = self._solver.add_stay(self._var_h,
                                                   strength=REQUIRED)

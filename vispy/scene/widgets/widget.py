@@ -65,7 +65,7 @@ class Widget(Compound):
         # layout interaction
         self._width_limits = [0, None]
         self._height_limits = [0, None]
-        self._stretch = [None, None]
+        self._stretch = [1, 1]
 
         # used by the constraint solver
         # in Grid - these are Cassowary variables
@@ -266,7 +266,14 @@ class Widget(Compound):
 
     @stretch.setter
     def stretch(self, s):
-        self._stretch = float(s[0]), float(s[1])
+        self._stretch = [float(s[0]), float(s[1])]
+
+        if self._stretch[0] == 0:
+            raise RuntimeError("received 0 as stretch parameter: %s", s)
+
+        if self._stretch[1] == 0:
+            raise RuntimeError("received 0 as stretch parameter: %s", s)
+
         self._update_layout()
 
     def _update_layout(self):
