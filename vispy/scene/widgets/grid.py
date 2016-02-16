@@ -85,7 +85,8 @@ class Grid(Widget):
                    col_span=1, **kwargs):
         """
         Add a new widget to this grid. This will cause other widgets in the
-        grid to be resized to make room for the new widget.
+        grid to be resized to make room for the new widget. Can be used
+        to replace a widget as well
 
         Parameters
         ----------
@@ -158,7 +159,6 @@ class Grid(Widget):
                                   if val[-1] != widget)
 
         self._need_solver_recreate = True
-        self._update_child_widget_dim()
 
     def resize_widget(self, widget, row_span, col_span):
         """Resize a widget in the grid to new dimensions.
@@ -185,36 +185,6 @@ class Grid(Widget):
 
         if row is None or col is None:
             raise ValueError("%s not found in grid" % widget)
-
-        self.remove_widget(widget)
-        self.add_widget(widget, row, col, row_span, col_span)
-        self._need_solver_recreate = True
-
-    def move_widget(self, widget, row, col):
-        """Move the given widget to the specified row and column.
-
-        Parameters
-        ----------
-        widget : Widget
-            The Widget to add
-        row : int
-            The row in which to move the widget (0 is the topmost row)
-        col : int
-            The row in which to move the widget (0 is the leftmost column)
-
-        """
-        row_span = None
-        col_span = None
-
-        for (_, _, rspan, cspan, w) in self._grid_widgets.values():
-            if w == widget:
-                row_span = rspan
-                col_span = cspan
-                break
-
-        if row_span is None or col_span is None:
-            raise ValueError("%s not found in grid." %
-                             (widget, ))
 
         self.remove_widget(widget)
         self.add_widget(widget, row, col, row_span, col_span)
