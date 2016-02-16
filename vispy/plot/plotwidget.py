@@ -142,6 +142,10 @@ class PlotWidget(scene.Widget):
     def _configure_3d(self):
         if self._configured:
             return
+
+        self.view = self.grid.add_view(row=0, col=0,
+                                       border_color='grey', bgcolor="#efefef")
+
         self.view.camera = 'turntable'
         self.camera = self.view.camera
 

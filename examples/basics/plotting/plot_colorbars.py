@@ -3,17 +3,10 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 """
 Show use of colorbars in plot
-
-Run with
-python -i ipython-base.py
 """
+import vispy.plot as vp
 
-
-import vispy
-from vispy.plot import *
-
-
-fig = Fig(size=(600, 500), show=False)
+fig = vp.Fig(size=(600, 500), show=False)
 plotwidget = fig[0, 0]
 
 plotwidget.plot([(x, x**2) for x in range(0, 100)])

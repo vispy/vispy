@@ -8,11 +8,8 @@ interpreter as a playground.
 Run with
 python -i ipython-base.py
 """
+from vispy import plot as vp  # noqa
+import numpy as np  # noqa
 
-
-import vispy
-from vispy.plot import *
-
-
-fig = Fig(size=(600, 500))
+fig = vp.Fig(size=(600, 500))  # noqa
 plotwidget = fig[0, 0]
