@@ -87,12 +87,12 @@ class PlotWidget(scene.Widget):
         # yaxis - column 2
         # view - column 3
         # colorbar_right - column 4
-        cbar_left_placeholder = self.grid.add_widget(None, row=1, col=0)
-        cbar_left_placeholder.width_max = 1
+        self.cbar_left = self.grid.add_widget(None, row=1, col=0)
+        self.cbar_left.width_max = 1
 
         self.ylabel = scene.Label("", rotation=-90)
         ylabel_widget = self.grid.add_widget(self.ylabel, row=1, col=1)
-        ylabel_widget.width_max = 60
+        ylabel_widget.width_max = 1
 
         self.yaxis = scene.AxisWidget(orientation='left',
                                       text_color=fg,
@@ -108,6 +108,7 @@ class PlotWidget(scene.Widget):
 
         cbar_right_placeholder = self.grid.add_widget(None, row=1, col=4)
         cbar_right_placeholder.width_max = 1
+        self.cbar_right = cbar_right_placeholder
 
         # row 2
         # xaxis - column 3
@@ -460,13 +461,15 @@ class PlotWidget(scene.Widget):
             self.cbar_top = cbar
         elif cbar.orientation == "left":
             # cbar.stretch = (0.3, 1)
-            self.grid.add_widget(cbar, row=1, col=0)
-            cbar.width = 100
-            self.cbar_left = cbar
+            self.grid.remove_widget(self.cbar_left)
+            self.cbar_left = self.grid.add_widget(cbar, row=1, col=0)
+            self.cbar_left.width_max = 100
+            self.cbar_left.width_min = 100
         else:  # cbar.orientation == "right"
             # cbar.stretch = (0.3, 1)
-            self.grid.add_widget(cbar, row=1, col=4)
-            cbar.width = 100
-            self.cbar_right = cbar
+            self.grid.remove_widget(self.cbar_right)
+            self.cbar_right = self.grid.add_widget(cbar, row=1, col=4)
+            self.cbar_right.width_max = 100
+            self.cbar_right.width_min = 100
 
         return cbar
