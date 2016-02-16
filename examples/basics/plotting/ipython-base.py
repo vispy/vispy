@@ -16,6 +16,3 @@ from vispy.plot import *
 
 fig = Fig()
 plotwidget = fig[0]
-
-
-grid = plotwidget.plot([1, 2, 3])
