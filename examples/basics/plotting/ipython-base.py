@@ -14,5 +14,5 @@ import vispy
 from vispy.plot import *
 
 
-fig = Fig()
-plotwidget = fig[0]
+fig = Fig(size=(600, 500))
+plotwidget = fig[0, 0]

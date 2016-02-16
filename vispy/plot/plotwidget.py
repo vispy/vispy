@@ -60,16 +60,20 @@ class PlotWidget(scene.Widget):
         else:
             fg = fg_color
 
-        #     c0      c1      c2      c3      c4
-        #  r0 +-------|-------|-------|-------|---------+
-        #     |                       | title |         |
-        #  r1 +-------+-------+-------+-------+---------+
-        #     | cbar  | ylabel| yaxis |  view | cbar    |
-        #  r2 +-------+-------+-------+-------+---------+
-        #     |                       | xaxis |         |
-        #  r3 +-----------------------+-------+---------+
-        #     |                       | xlabel|         |
-        #     +-----------------------+-------+---------+
+        #     c0      c1      c2      c3      c4         c5
+        #  r0 +-------+-------+-------+-------+---------+---------+
+        #     |                       | title |         |         |
+        #  r1 +-------+-------+-------+-------+---------+         |
+        #     | cbar  | ylabel| yaxis |  view | cbar    | padding |
+        #  r2 +-------+-------+-------+-------+---------+         |
+        #     |                       | xaxis |         |         |
+        #  r3 +-----------------------+-------+---------+         |
+        #     |                       | xlabel|         |         |
+        #     +-----------------------+-------+---------+---------+
+
+        # padding
+        padding = self.grid.add_widget(None, row=0, row_span=4, col=5)
+        padding.width_max = 60
 
         # row 0
         # title - column 3 to 4
@@ -115,8 +119,7 @@ class PlotWidget(scene.Widget):
         # row 3
         # xlabel - column 3
         self.xlabel = scene.Label("")
-        xlabel_widget = self.grid.add_widget(self.xlabel, row=3, col=3,
-                                             col_span=5)
+        xlabel_widget = self.grid.add_widget(self.xlabel, row=3, col=3)
         xlabel_widget.height_max = 40
 
         self._configured = True
@@ -280,24 +283,24 @@ class PlotWidget(scene.Widget):
         marker_types, LinePlot
         """
         self._configure_2d()
-        # line = scene.LinePlot(data, connect='strip', color=color,
-        #                       symbol=symbol, line_kind=line_kind,
-        #                       width=width, marker_size=marker_size,
-        #                       edge_color=edge_color,
-        #                       face_color=face_color,
-        #                       edge_width=edge_width)
-        # self.view.add(line)
-        # self.view.camera.set_range()
-        # self.visuals.append(line)
+        line = scene.LinePlot(data, connect='strip', color=color,
+                              symbol=symbol, line_kind=line_kind,
+                              width=width, marker_size=marker_size,
+                              edge_color=edge_color,
+                              face_color=face_color,
+                              edge_width=edge_width)
+        self.view.add(line)
+        self.view.camera.set_range()
+        self.visuals.append(line)
 
-        # if title is not None:
-        #     self.title.text = title
-        # if xlabel is not None:
-        #     self.xlabel.text = xlabel
-        # if ylabel is not None:
-        #     self.ylabel.text = ylabel
+        if title is not None:
+            self.title.text = title
+        if xlabel is not None:
+            self.xlabel.text = xlabel
+        if ylabel is not None:
+            self.ylabel.text = ylabel
 
-        # return line
+        return line
 
     def spectrogram(self, x, n_fft=256, step=None, fs=1., window='hann',
                     color_scale='log', cmap='cubehelix', clim='auto'):
