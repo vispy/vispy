@@ -260,9 +260,9 @@ class Grid(Widget):
 
     @staticmethod
     def _add_total_width_constraints(solver, width_grid, _var_w):
-        for (y, ws) in enumerate(width_grid):
+        for ws in width_grid:
             width_expr = expression.Expression()
-            for (x, w) in enumerate(ws):
+            for w in ws:
                 width_expr = width_expr + w
             solver.add_constraint(width_expr == _var_w, strength=REQUIRED)
 
@@ -297,9 +297,7 @@ class Grid(Widget):
         stretch_widths = [[] for _ in range(0, ymax)]
         stretch_heights = [[] for _ in range(0, xmax)]
 
-        for (_, val) in grid_widgets.items():
-            (y, x, ys, xs, widget) = val
-
+        for (y, x, ys, xs, widget) in grid_widgets.values():
             for ws in width_grid[y:y+ys]:
                 total_w = np.sum(ws[x:x+xs])
 
