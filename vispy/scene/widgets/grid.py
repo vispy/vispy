@@ -8,7 +8,7 @@ import numpy as np
 from .widget import Widget
 
 from ...ext.cassowary import (SimplexSolver, expression,
-                              Variable, WEAK, REQUIRED)
+                              Variable, WEAK, REQUIRED, RequiredFailure)
 
 
 class Grid(Widget):
@@ -439,48 +439,53 @@ class Grid(Widget):
         rect = self.rect  # .padded(self.padding + self.margin)
         if rect.width <= 0 or rect.height <= 0:
             return
+        try:
+            if self._need_solver_recreate:
+                self._need_solver_recreate = False
+                self._recreate_solver()
 
-        if self._need_solver_recreate:
-            self._need_solver_recreate = False
-            self._recreate_solver()
+            # yes, this little dance is necessary for cassowary
+            # to not screw up :/
+            if self._height_stay:
+                self._solver.remove_constraint(self._height_stay)
 
-        # yes, this little dance is necessary for cassowary to not screw up :/
-        if self._height_stay:
-            self._solver.remove_constraint(self._height_stay)
+            self._var_h.value = rect.height
+            self._height_stay = self._solver.add_stay(self._var_h,
+                                                      strength=REQUIRED)
 
-        self._var_h.value = rect.height
-        self._height_stay = self._solver.add_stay(self._var_h,
-                                                  strength=REQUIRED)
+            # self._var_w.value = rect.width
+            if self._width_stay:
+                self._solver.remove_constraint(self._width_stay)
 
-        # self._var_w.value = rect.width
-        if self._width_stay:
-            self._solver.remove_constraint(self._width_stay)
+            self._var_w.value = rect.width
+            self._width_stay = self._solver.add_stay(self._var_w,
+                                                     strength=REQUIRED)
 
-        self._var_w.value = rect.width
-        self._width_stay = self._solver.add_stay(self._var_w,
-                                                 strength=REQUIRED)
+            value_vectorized = np.vectorize(lambda x: x.value)
 
-        value_vectorized = np.vectorize(lambda x: x.value)
+            for (_, val) in self._grid_widgets.items():
+                (row, col, rspan, cspan, widget) = val
 
-        for (_, val) in self._grid_widgets.items():
-            (row, col, rspan, cspan, widget) = val
+                width = np.sum(value_vectorized(
+                               self._width_grid[row][col:col+cspan]))
+                height = np.sum(value_vectorized(
+                                self._height_grid[col][row:row+rspan]))
+                if col == 0:
+                    x = 0
+                else:
+                    x = np.sum(value_vectorized(self._width_grid[row][0:col]))
 
-            width = np.sum(value_vectorized(
-                           self._width_grid[row][col:col+cspan]))
-            height = np.sum(value_vectorized(
-                            self._height_grid[col][row:row+rspan]))
-            if col == 0:
-                x = 0
-            else:
-                x = np.sum(value_vectorized(self._width_grid[row][0:col]))
+                if row == 0:
+                    y = 0
+                else:
+                    y = np.sum(value_vectorized(self._height_grid[col][0:row]))
 
-            if row == 0:
-                y = 0
-            else:
-                y = np.sum(value_vectorized(self._height_grid[col][0:row]))
+                widget.size = (width, height)
+                widget.pos = (x, y)
 
-            widget.size = (width, height)
-            widget.pos = (x, y)
+        except RequiredFailure as e:
+                print("cassowary failure\n%s" % e)
+                self._need_solver_recreate = True
 
     @property
     def _widget_grid(self):

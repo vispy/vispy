@@ -9,8 +9,9 @@ import vispy.plot as vp
 fig = vp.Fig(size=(600, 500), show=False)
 plotwidget = fig[0, 0]
 
-plotwidget.plot([(x, x**2) for x in range(0, 100)])
-plotwidget.colorbar(position="top", cmap="viridis")
+fig.title = "bollu"
+plotwidget.plot([(x, x**2) for x in range(0, 100)], title="y = x^2")
+plotwidget.colorbar(position="top", cmap="autumn")
 
 if __name__ == '__main__':
     fig.show(run=True)
