@@ -101,6 +101,8 @@ class IsosurfaceVisual(MeshVisual):
             MeshVisual.set_data(self,
                                 vertices=self._vertices_cache,
                                 faces=self._faces_cache,
+                                vertex_colors=self._vertex_colors,
+                                face_colors=self._face_colors,
                                 color=self._color)
             self._update_meshvisual = False
 
