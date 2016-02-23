@@ -47,7 +47,8 @@ class IsosurfaceVisual(MeshVisual):
         self._recompute = True
         self.update()
 
-    def set_data(self, data=None, vertex_colors=None, face_colors=None, color=None):
+    def set_data(self, data=None, vertex_colors=None, face_colors=None,
+                 color=None):
         """ Set the scalar array data
 
         Parameters
@@ -62,7 +63,7 @@ class IsosurfaceVisual(MeshVisual):
         color : instance of Color
             The color to use.
         """
-        # We only change the internal variables if they are provided by the user
+        # We only change the internal variables if they are provided
         if data is not None:
             self._data = data
         if vertex_colors is not None:
