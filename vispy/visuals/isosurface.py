@@ -37,7 +37,6 @@ class IsosurfaceVisual(MeshVisual):
         self._recompute = True
         self._update_meshvisual = True
 
-
         MeshVisual.__init__(self, **kwargs)
         if data is not None:
             self.set_data(data)
@@ -93,7 +92,7 @@ class IsosurfaceVisual(MeshVisual):
 
         if self._recompute:
             self._vertices_cache, self._faces_cache = isosurface(self._data,
-                                                              self._level)
+                                                                 self._level)
             self._recompute = False
             self._update_meshvisual = True
 
