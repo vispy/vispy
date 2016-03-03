@@ -232,7 +232,7 @@ class ProgramTest(unittest.TestCase):
         program['a'] = np.ones((10,), np.float32)
         assert np.all(program._buffer['a'] == 1)
         
-    def test_vayings(self):
+    def test_varyings(self):
         
         # Varyings and constants are detected
         program = Program("varying float A; const vec4 B;", "foo")
