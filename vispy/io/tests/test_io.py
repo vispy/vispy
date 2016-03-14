@@ -36,6 +36,31 @@ def test_wavefront():
                     rtol=1e-7, atol=1e-7)
 
 
+def test_wavefront_non_triangular():
+    '''Test wavefront writing with non-triangular faces'''
+    vertices = np.array([[0.5, 1.375, 0.],
+                         [0.5, 0.625, 0.],
+                         [3.25, 1., 0.],
+                         [1., 0.375, 0.],
+                         [2., 0.375, 0.],
+                         [1.5, 0.625, 0.],
+                         [1.5, 1.375, 0.],
+                         [1., 1.625, 0.],
+                         [2., 1.625, 0.]])
+
+    faces = np.array([[1, 0, 7, 6, 5, 3],
+                      [4, 5, 6, 8, 2]])
+    fname_out = op.join(temp_dir, 'temp.obj')
+    write_mesh(fname_out, vertices=vertices,
+               faces=faces, normals=None,
+               texcoords=None, overwrite=True)
+    assert_raises(RuntimeError, read_mesh, fname_out)
+    with open(fname_out, 'r+') as out_file:
+        lines = out_file.readlines()
+    assert lines[-1].startswith('f 5 6 7 9 3')
+    assert lines[-2].startswith('f 2 1 8 7 6 4')
+
+
 def _slow_calculate_normals(rr, tris):
     """Efficiently compute vertex normals for triangulated surface"""
     # first, compute triangle normals

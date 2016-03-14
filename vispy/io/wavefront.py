@@ -79,7 +79,9 @@ class WavefrontReader(object):
         # Done
         t0 = time.time()
         mesh = reader.finish()
-        logger.debug('reading mesh took ' + str(time.time() - t0) + ' seconds')
+        logger.debug('reading mesh took ' +
+                     str(time.time() - t0) +
+                     ' seconds')
         return mesh
 
     def readLine(self):
@@ -303,10 +305,14 @@ class WavefrontWriter(object):
         if faces is None:
             faces = np.arange(len(vertices))
 
-        # Reshape faces
-        Nfaces = faces.size // 3
-        faces = faces.reshape((Nfaces, 3))
-
+        try:
+            # Reshape faces
+            Nfaces = faces.size // 3
+            faces = faces.reshape((Nfaces, 3))
+        except ValueError:
+            logger.warning(
+                '''Faces doesn't appear to be triangular, '''
+                '''be advised the file cannot be read back in vispy''')
         # Number of vertices
         N = vertices.shape[0]
 
