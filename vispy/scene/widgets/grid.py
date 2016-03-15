@@ -409,31 +409,39 @@ class Grid(Widget):
             (y, x, ys, xs, widget) = val
             stretch_grid[x:x+xs, y:y+ys] = widget.stretch
 
+        # even though these are REQUIRED, these should never fail
+        # since they're added first, and thus the slack will "simply work".
         Grid._add_total_width_constraints(self._solver,
                                           self._width_grid, self._var_w)
         Grid._add_total_height_constraints(self._solver,
                                            self._height_grid, self._var_h)
 
         try:
+            # these are REQUIRED constraints for width and height.
+            # These are the constraints which can fail if
+            # the corresponding dimension of the widget cannot be fit in the
+            # grid.
             Grid._add_gridding_width_constraints(self._solver,
                                                  self._width_grid)
             Grid._add_gridding_height_constraints(self._solver,
                                                   self._height_grid)
-
-            Grid._add_stretch_constraints(self._solver,
-                                          self._width_grid,
-                                          self._height_grid,
-                                          self._grid_widgets,
-                                          self._widget_grid)
-
-            Grid._add_widget_dim_constraints(self._solver,
-                                             self._width_grid,
-                                             self._height_grid,
-                                             self._var_w,
-                                             self._var_h,
-                                             self._grid_widgets)
         except RequiredFailure:
                 self._need_solver_recreate = True
+
+        # these are WEAK constraints, so these constraints will never fail
+        # with a RequiredFailure.
+        Grid._add_stretch_constraints(self._solver,
+                                      self._width_grid,
+                                      self._height_grid,
+                                      self._grid_widgets,
+                                      self._widget_grid)
+
+        Grid._add_widget_dim_constraints(self._solver,
+                                         self._width_grid,
+                                         self._height_grid,
+                                         self._var_w,
+                                         self._var_h,
+                                         self._grid_widgets)
 
     def _update_child_widget_dim(self):
         # think in terms of (x, y). (row, col) makes code harder to read
