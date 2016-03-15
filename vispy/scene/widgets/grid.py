@@ -8,7 +8,8 @@ import numpy as np
 from .widget import Widget
 
 from ...ext.cassowary import (SimplexSolver, expression,
-                              Variable, WEAK, REQUIRED, STRONG, RequiredFailure)
+                              Variable, WEAK, REQUIRED,
+                              STRONG, RequiredFailure)
 
 
 class Grid(Widget):
@@ -479,7 +480,7 @@ class Grid(Widget):
             (row, col, rspan, cspan, widget) = val
 
             width = np.sum(value_vectorized(
-                            self._width_grid[row][col:col+cspan]))
+                           self._width_grid[row][col:col+cspan]))
             height = np.sum(value_vectorized(
                             self._height_grid[col][row:row+rspan]))
             if col == 0:
