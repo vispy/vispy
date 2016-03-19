@@ -2,13 +2,15 @@
 """ plot3d using existing visuals : LinePlotVisual """
 
 import numpy as np
+import sys
+
 from vispy import app, visuals, scene
 
 # build visuals
 Plot3D = scene.visuals.create_visual_node(visuals.LinePlotVisual)
 
 # build canvas
-canvas = scene.SceneCanvas(keys='interactive', show=True)
+canvas = scene.SceneCanvas(keys='interactive', title='plot3d', show=True)
 
 # Add a ViewBox to let the user zoom/rotate
 view = canvas.central_widget.add_view()
@@ -24,9 +26,11 @@ z = np.linspace(-2, 2, N)
 
 # plot
 pos = np.c_[x, y, z]
-p1 = Plot3D(pos, width=2.0, color='red',
-            edge_color='w', symbol='o', face_color=(0.2, 0.2, 1, 0.8),
-            parent=view.scene)
+Plot3D(pos, width=2.0, color='red',
+       edge_color='w', symbol='o', face_color=(0.2, 0.2, 1, 0.8),
+       parent=view.scene)
 
-# run
-app.run()
+
+if __name__ == '__main__':
+    if sys.flags.interactive != 1:
+        app.run()
