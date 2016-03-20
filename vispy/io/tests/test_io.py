@@ -53,7 +53,8 @@ def test_wavefront_non_triangular():
     fname_out = op.join(temp_dir, 'temp.obj')
     write_mesh(fname_out, vertices=vertices,
                faces=faces, normals=None,
-               texcoords=None, overwrite=True)
+               texcoords=None, overwrite=True,
+               reshape_faces=False)
     assert_raises(RuntimeError, read_mesh, fname_out)
     with open(fname_out, 'r+') as out_file:
         lines = out_file.readlines()
