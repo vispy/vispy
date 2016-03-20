@@ -319,7 +319,7 @@ class WavefrontWriter(object):
             is_triangular = np.array([len(f) == 3
                                       for f in faces])
             if not(np.all(is_triangular)):
-                log.warning('''Faces doesn't appear to be triangular,
+                logger.warning('''Faces doesn't appear to be triangular,
                 be advised the file cannot be read back in vispy''')
         # Number of vertices
         N = vertices.shape[0]
