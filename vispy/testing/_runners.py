@@ -160,7 +160,8 @@ def _flake():
     sys.argv.append('--exclude=six.py,ordereddict.py,glfw.py,'
                     '_proxy.py,_es2.py,_gl2.py,_pyopengl2.py,'
                     '_constants.py,png.py,decorator.py,ipy_inputhook.py,'
-                    'experimental,wiki,_old,mplexporter.py,cubehelix.py')
+                    'experimental,wiki,_old,mplexporter.py,cubehelix.py,'
+                    'cassowary')
     try:
         from flake8.main import main
     except ImportError:

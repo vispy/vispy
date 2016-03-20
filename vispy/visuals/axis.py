@@ -441,6 +441,7 @@ def _get_ticks_talbot(dmin, dmax, n_inches, density=1.):
     Q = [1, 5, 2, 2.5, 4, 3]
     w = [0.25, 0.2, 0.5, 0.05]
     best_score = -2.0
+    best = None
 
     j = 1.0
     n_max = 1000
@@ -502,5 +503,8 @@ def _get_ticks_talbot(dmin, dmax, n_inches, density=1.):
                 raise RuntimeError('could not converge on ticks')
         j += 1
     if j == n_max:
+        raise RuntimeError('could not converge on ticks')
+
+    if best is None:
         raise RuntimeError('could not converge on ticks')
     return np.arange(best[4]) * best[2] + best[0]

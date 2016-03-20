@@ -63,9 +63,14 @@ class Widget(Compound):
         self._size = 100, 100
 
         # layout interaction
-        # todo: use Cassowary; see #277
-        self._fixed_size = (None, None)
-        self._stretch = (None, None)
+        self._width_limits = [0, None]
+        self._height_limits = [0, None]
+        self._stretch = [None, None]
+
+        # used by the constraint solver
+        # in Grid - these are Cassowary variables
+        self._var_w = self._var_h = None
+        self._var_x = self._var_y = None
 
         self._widgets = []
         self._border_color = Color(border_color)
@@ -115,6 +120,116 @@ class Widget(Compound):
         self.events.resize()
 
     @property
+    def width(self):
+        """The actual width of this widget"""
+        return self._size[0]
+
+    @property
+    def width_min(self):
+        """The minimum width the widget can have"""
+        return self._width_limits[0]
+
+    @width_min.setter
+    def width_min(self, width_min):
+        """Set the minimum height of the widget
+
+        Parameters
+        ----------
+
+        height_min: float
+            the minimum height of the widget
+        """
+
+        if width_min is None:
+            self._width_limits[0] = 0
+            return
+
+        width_min = float(width_min)
+        assert(0 <= width_min)
+
+        self._width_limits[0] = width_min
+        self._update_layout()
+
+    @property
+    def width_max(self):
+        """The maximum width the widget can have"""
+        return self._width_limits[1]
+
+    @width_max.setter
+    def width_max(self, width_max):
+        """Set the maximum width of the widget.
+
+        Parameters
+        ----------
+        width_max: None | float
+            the maximum width of the widget. if None, maximum width
+            is unbounded
+        """
+        if width_max is None:
+            self._width_limits[1] = None
+            return
+
+        width_max = float(width_max)
+        assert(self.width_min <= width_max)
+
+        self._width_limits[1] = width_max
+        self._update_layout()
+
+    @property
+    def height(self):
+        """The actual height of the widget"""
+        return self._size[1]
+
+    @property
+    def height_min(self):
+        """The minimum height of the widget"""
+        return self._height_limits[0]
+
+    @height_min.setter
+    def height_min(self, height_min):
+        """Set the minimum height of the widget
+
+        Parameters
+        ----------
+
+        height_min: float
+            the minimum height of the widget
+        """
+        if height_min is None:
+            self._height_limits[0] = 0
+            return
+
+        height_min = float(height_min)
+        assert(height_min >= 0)
+
+        self._height_limits[0] = height_min
+        self._update_layout()
+
+    @property
+    def height_max(self):
+        """The maximum height of the widget"""
+        return self._height_limits[1]
+
+    @height_max.setter
+    def height_max(self, height_max):
+        """Set the maximum height of the widget.
+
+        Parameters
+        ----------
+        height_max: None | float
+            the maximum height of the widget. if None, maximum height
+            is unbounded
+        """
+        if height_max is None:
+            self._height_limits[1] = None
+            return
+
+        height_max = float(height_max)
+        assert(0 <= self.height_min <= height_max)
+        self._height_limits[1] = height_max
+        self._update_layout()
+
+    @property
     def rect(self):
         return Rect((0, 0), self.size)
 
@@ -134,6 +249,8 @@ class Widget(Compound):
         this rectangle.
         """
         m = self.margin + self._border_width + self.padding
+        if not self.border_color.is_blank:
+            m += 1
         return Rect((m, m), (self.size[0]-2*m, self.size[1]-2*m))
 
     @property
@@ -149,7 +266,14 @@ class Widget(Compound):
 
     @stretch.setter
     def stretch(self, s):
-        self._stretch = float(s[0]), float(s[1])
+        self._stretch = [float(s[0]), float(s[1])]
+
+        if self._stretch[0] == 0:
+            raise RuntimeError("received 0 as stretch parameter: %s", s)
+
+        if self._stretch[1] == 0:
+            raise RuntimeError("received 0 as stretch parameter: %s", s)
+
         self._update_layout()
 
     def _update_layout(self):
