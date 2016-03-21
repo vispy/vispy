@@ -39,7 +39,8 @@ class IsosurfaceVisual(MeshVisual):
 
         MeshVisual.__init__(self, **kwargs)
         if data is not None:
-            self.set_data(data)
+            self.set_data(data, vertex_colors=vertex_colors,
+                          face_colors=face_colors, color=color)
 
     @property
     def level(self):
