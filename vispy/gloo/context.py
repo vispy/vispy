@@ -24,7 +24,7 @@ from .wrappers import BaseGlooFunctions
 from .. import config
 
 _default_dict = dict(red_size=8, green_size=8, blue_size=8, alpha_size=8,
-                     depth_size=16, stencil_size=0, double_buffer=True,
+                     depth_size=24, stencil_size=0, double_buffer=True,
                      stereo=False, samples=0)
 
 

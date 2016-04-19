@@ -17,7 +17,7 @@ large datasets. Applications of VisPy include:
 -  Fast interactive visualization of 3D models (meshes, volume
    rendering).
 -  OpenGL visualization demos.
--  Scientific GUIs with fast, scalable visualization widgets (Qt or
+-  Scientific GUIs with fast, scalable visualization widgets (`Qt <http://www.qt.io>`__ or
    `IPython notebook <http://ipython.org/notebook.html>`__ with WebGL).
 
 

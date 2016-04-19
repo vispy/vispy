@@ -15,8 +15,8 @@ class LinePlotVisual(CompoundVisual):
     Parameters
     ----------
     data : array-like
-        Arguments can be passed as ``(Y,)``, ``(X, Y)`` or
-        ``np.array((X, Y))``.
+        Arguments can be passed as ``(Y,)``, ``(X, Y)``, ``(X, Y, Z)`` or
+        ``np.array((X, Y))``, ``np.array((X, Y, Z))``.
     color : instance of Color
         Color of the line.
     symbol : str
@@ -104,8 +104,8 @@ class LinePlotVisual(CompoundVisual):
                 x = np.arange(pos.shape[0], dtype=np.float32)[:, np.newaxis]
                 pos = np.concatenate((x, pos), axis=1)
             # if args are empty, don't modify position
-            elif pos.shape[1] > 2:
-                raise TypeError("Too many coordinates given (%s; max is 2)."
+            elif pos.shape[1] > 3:
+                raise TypeError("Too many coordinates given (%s; max is 3)."
                                 % pos.shape[1])
 
         # todo: have both sub-visuals share the same buffers.

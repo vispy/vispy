@@ -45,8 +45,8 @@ import struct
 import zlib
 # http://www.python.org/doc/2.4.4/lib/module-warnings.html
 import warnings
-from .six.moves import map as imap
-from .six import string_types
+from ..six.moves import map as imap
+from ..six import string_types
 import itertools
 
 

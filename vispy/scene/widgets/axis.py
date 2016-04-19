@@ -22,7 +22,7 @@ class AxisWidget(Widget):
 
     def __init__(self, orientation='left', **kwargs):
         if 'tick_direction' not in kwargs:
-            tickdir = {'left': (-1, 0), 'right': (1, 0), 'bottom': (0, 1), 
+            tickdir = {'left': (-1, 0), 'right': (1, 0), 'bottom': (0, 1),
                        'top': (0, -1)}[orientation]
             kwargs['tick_direction'] = tickdir
         self.axis = AxisVisual(**kwargs)
@@ -30,7 +30,7 @@ class AxisWidget(Widget):
         self._linked_view = None
         Widget.__init__(self)
         self.add_subvisual(self.axis)
-        
+
     def on_resize(self, event):
         """Resize event handler
 
@@ -40,16 +40,23 @@ class AxisWidget(Widget):
             The event.
         """
         self._update_axis()
-        
+
     def _update_axis(self):
         self.axis.pos = self._axis_ends()
         
     def _axis_ends(self):
-        r = self.inner_rect
+        r = self.rect
         if self.orientation == 'left':
             return np.array([[r.right, r.top], [r.right, r.bottom]])
         elif self.orientation == 'bottom':
             return np.array([[r.left, r.bottom], [r.right, r.bottom]])
+        elif self.orientation == 'right':
+            return np.array([[r.left, r.top], [r.left, r.bottom]])
+        elif self.orientation == 'top':
+            return np.array([[r.left, r.top], [r.right, r.top]])
+        else:
+            raise RuntimeError(
+                'Orientation %s not supported.' % self.orientation)
         
     def link_view(self, view):
         """Link this axis to a ViewBox

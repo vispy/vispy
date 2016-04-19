@@ -6,6 +6,7 @@ Procedure for unit-testing with images:
 1. Run unit tests at least once; this initializes a git clone of
    vispy/test-data in config['test_data_path']. This path is
    `~/.vispy/test-data` unless the config variable has been modified.
+   The config file is located at `vispy/vispy/util/config.py`
 
 2. Run individual test scripts with the --vispy-audit flag:
 
@@ -291,7 +292,13 @@ class ImageTester(scene.SceneCanvas):
     """Graphical interface for auditing image comparison tests.
     """
     def __init__(self):
+        self.grid = None
+        self.views = None
+        self.console = None
+        self.last_key = None
+
         scene.SceneCanvas.__init__(self, size=(1000, 800))
+
         self.bgcolor = (0.1, 0.1, 0.1, 1)
         self.grid = self.central_widget.add_grid()
         border = (0.3, 0.3, 0.3, 1)
@@ -303,9 +310,14 @@ class ImageTester(scene.SceneCanvas):
             v.camera = 'panzoom'
             v.camera.aspect = 1
             v.camera.flip = (False, True)
+            # unfreeze it to set the image and label on the view
+            # this is slightly hacky, but it is simpler than
+            # creating another class/storing as a dict or a tuple
+            v.unfreeze()
             v.image = scene.Image(parent=v.scene)
             v.label = scene.Text(label_text[i], parent=v, color='yellow',
                                  anchor_x='left', anchor_y='top')
+            v.freeze()
 
         self.views[1].camera.link(self.views[0].camera)
         self.views[2].camera.link(self.views[0].camera)
@@ -331,7 +343,6 @@ class ImageTester(scene.SceneCanvas):
         self.views[2].image.set_data(diff)
         self.views[0].camera.set_range()
 
-        self.last_key = None
         while True:
             self.app.process_events()
             if self.last_key is None:
@@ -363,7 +374,7 @@ def get_test_data_repo():
     # This tag marks the test-data commit that this version of vispy should
     # be tested against. When adding or changing test images, create
     # and push a new tag and update this variable.
-    test_data_tag = 'test-data-4'
+    test_data_tag = 'test-data-5'
 
     data_path = config['test_data_path']
     git_path = 'https://github.com/vispy/test-data'
