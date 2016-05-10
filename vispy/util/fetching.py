@@ -43,7 +43,7 @@ def load_data_file(fname, directory=None, force_download=False):
     fname : str
         The path to the file on the local system.
     """
-    _url_root = 'https://github.com/vispy/demo-data/raw/master/'
+    _url_root = 'http://github.com/vispy/demo-data/raw/master/'
     url = _url_root + fname
     if directory is None:
         directory = config['data_path']

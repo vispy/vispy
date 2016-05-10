@@ -377,7 +377,7 @@ def get_test_data_repo():
     test_data_tag = 'test-data-5'
 
     data_path = config['test_data_path']
-    git_path = 'https://github.com/vispy/test-data'
+    git_path = 'http://github.com/vispy/test-data'
     gitbase = git_cmd_base(data_path)
 
     if os.path.isdir(data_path):
