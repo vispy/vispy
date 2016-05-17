@@ -11,7 +11,7 @@ of uniforms provided they are a combination of floats.
 """
 import math
 import numpy as np
-from vispy.gloo import Texture2D, VertexBuffer, IndexBuffer
+from ...gloo import Texture2D, VertexBuffer, IndexBuffer
 from . util import dtype_reduce
 from . array_list import ArrayList
 

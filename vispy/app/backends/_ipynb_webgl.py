@@ -12,8 +12,8 @@ from ..base import (BaseApplicationBackend, BaseCanvasBackend,
                     BaseTimerBackend)
 from ...util import logger, keys
 from ...ext import six
-from vispy.gloo.glir import BaseGlirParser
-from vispy.app.backends.ipython import VispyWidget
+from ...gloo.glir import BaseGlirParser
+from ...app.backends.ipython import VispyWidget
 
 import os.path as op
 import os

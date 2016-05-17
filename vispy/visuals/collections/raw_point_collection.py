@@ -11,7 +11,7 @@ used at small size only (2/3 pixels). You've been warned.
 """
 
 import numpy as np
-from vispy import glsl
+from ... import glsl
 from . collection import Collection
 from ..transforms import NullTransform
 
