@@ -79,7 +79,7 @@ class Program(GLObject):
         'ivec2':        (np.int32,   2),
         'ivec3':        (np.int32,   3),
         'ivec4':        (np.int32,   4),
-        'bool':         (np.bool,    1),
+        'bool':         (np.int32,   1),
         'bvec2':        (np.bool,    2),
         'bvec3':        (np.bool,    3),
         'bvec4':        (np.bool,    4),
