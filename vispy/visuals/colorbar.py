@@ -679,5 +679,5 @@ class ColorBarVisual(CompoundVisual):
         elif height == 0.:
             raise ValueError("height must be non-zero, not %s" % (height, ))
 
-        self._halfdim = (width, height)
+        self._halfdim = (width / 2., height / 2.)
         self._update()
