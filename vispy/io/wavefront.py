@@ -79,7 +79,9 @@ class WavefrontReader(object):
         # Done
         t0 = time.time()
         mesh = reader.finish()
-        logger.debug('reading mesh took ' + str(time.time() - t0) + ' seconds')
+        logger.debug('reading mesh took ' +
+                     str(time.time() - t0) +
+                     ' seconds')
         return mesh
 
     def readLine(self):
@@ -224,7 +226,8 @@ class WavefrontWriter(object):
         self._f = f
 
     @classmethod
-    def write(cls, fname, vertices, faces, normals, texcoords, name=''):
+    def write(cls, fname, vertices, faces, normals,
+              texcoords, name='', reshape_faces=True):
         """ This classmethod is the entry point for writing mesh data to OBJ.
 
         Parameters
@@ -239,6 +242,9 @@ class WavefrontWriter(object):
             The texture coordinate per vertex
         name : str
             The name of the object (e.g. 'teapot')
+        reshape_faces : bool
+            Reshape the `faces` array to (Nf, 3). Set to `False`
+            if you need to write a mesh with non triangular faces.
         """
         # Open file
         fmt = op.splitext(fname)[1].lower()
@@ -249,7 +255,8 @@ class WavefrontWriter(object):
         f = opener(fname, 'wb')
         try:
             writer = WavefrontWriter(f)
-            writer.writeMesh(vertices, faces, normals, texcoords, name)
+            writer.writeMesh(vertices, faces, normals,
+                             texcoords, name, reshape_faces=reshape_faces)
         except EOFError:
             pass
         finally:
@@ -290,7 +297,8 @@ class WavefrontWriter(object):
         # Write line
         self.writeLine('%s %s' % (what, val))
 
-    def writeMesh(self, vertices, faces, normals, values, name=''):
+    def writeMesh(self, vertices, faces, normals, values,
+                  name='', reshape_faces=True):
         """ Write the given mesh instance.
         """
 
@@ -302,11 +310,17 @@ class WavefrontWriter(object):
         # Get faces and number of vertices
         if faces is None:
             faces = np.arange(len(vertices))
+            reshape_faces = True
 
-        # Reshape faces
-        Nfaces = faces.size // 3
-        faces = faces.reshape((Nfaces, 3))
-
+        if reshape_faces:
+            Nfaces = faces.size // 3
+            faces = faces.reshape((Nfaces, 3))
+        else:
+            is_triangular = np.array([len(f) == 3
+                                      for f in faces])
+            if not(np.all(is_triangular)):
+                logger.warning('''Faces doesn't appear to be triangular,
+                be advised the file cannot be read back in vispy''')
         # Number of vertices
         N = vertices.shape[0]
 
