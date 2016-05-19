@@ -1,3 +1,11 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# vispy: testskip
+# -----------------------------------------------------------------------------
+# 2016, Scott Paine
+# Distributed under the terms of the new BSD License.
+# -----------------------------------------------------------------------------
+
 from __future__ import division, print_function, absolute_import
 from vispy import app, visuals
 from vispy.visuals import transforms
