@@ -495,6 +495,8 @@ class WigglyBar(app.Canvas):
 class Paramlist(object):
 
     def __init__(self, parameters):
+        """Container for object parameters.
+        Based on methods from vispy/examples/demos/primitive_mesh_viewer_qt."""
         self.parameters = parameters
         self.props = dict()
         self.props['pivot'] = False
@@ -509,7 +511,8 @@ class SetupWidget(QtGui.QWidget):
     changed_parameter_sig = QtCore.pyqtSignal(Paramlist, name='paramChanged')
 
     def __init__(self, parent=None):
-        """Widget for holding all the parameter options in neat lists"""
+        """Widget for holding all the parameter options in neat lists.
+        Based on methods from vispy/examples/demos/primitive_mesh_viewer_qt.py"""
         super(SetupWidget, self).__init__(parent)
 
         # Create the parameter list from the default parameters given here
