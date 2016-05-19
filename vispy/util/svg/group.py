@@ -5,7 +5,7 @@
 # -----------------------------------------------------------------------------
 
 import copy
-from vispy.util import logger
+from ...util import logger
 from . path import Path
 from . base import namespace
 from . transformable import Transformable

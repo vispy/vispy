@@ -12,8 +12,8 @@ the quality of the output is worth the cost. Note that no control can be made
 on miter joins which may result in some glitches on screen.
 """
 import numpy as np
-from vispy import glsl
-from vispy.gloo import gl
+from ... import glsl
+from ...gloo import gl
 from . collection import Collection
 from ..transforms import NullTransform
 

@@ -13,8 +13,8 @@ except Exception as exp:
     available, testable, why_not, which = False, False, str(exp), None
 else:
     available, testable, why_not, which = True, False, None, None
-from vispy.app.backends._ipynb_util import create_glir_message
-from vispy.app import Timer
+from ....app.backends._ipynb_util import create_glir_message
+from ....app import Timer
 
 
 # ---------------------------------------------------------- IPython Widget ---
