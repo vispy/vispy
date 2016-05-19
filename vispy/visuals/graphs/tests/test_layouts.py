@@ -2,18 +2,11 @@
 # Copyright (c) 2015, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-import random
-
 import numpy as np
-from numpy.testing import assert_equal
+from numpy.testing import assert_allclose, assert_equal
 
 from vispy.visuals.graphs.layouts import get_layout
-from vispy.scene import visuals, transforms
 from vispy.testing import (run_tests_if_main, assert_raises)
-
-
-random.seed(0xDEADBEEF)
-np.random.seed(0xDEADBEEF)
 
 
 adjacency_mat = np.array([
@@ -41,7 +34,7 @@ def test_get_layout():
     assert_equal(fruchterman_reingold.iterations, 100)
 
     # Check if layout exists
-    assert_raises(KeyError, lambda: get_layout('fdgdfgs_non_existent'))
+    assert_raises(KeyError, get_layout, 'fdgdfgs_non_existent')
 
 
 def test_random_layout():
@@ -87,10 +80,11 @@ def test_random_layout():
         [0.5758593091748346, 0.8158957494444451]
     ])
 
-    pos, line_vertices, arrows = next(layout(adjacency_mat))
+    pos, line_vertices, arrows = next(layout(adjacency_mat,
+                                             random_state=0xDEADBEEF))
 
-    assert_equal(pos, expected_pos)
-    assert_equal(line_vertices, expected_vertices)
+    assert_allclose(pos, expected_pos, atol=1e-7)
+    assert_allclose(line_vertices, expected_vertices, atol=1e-7)
 
 
 def test_circular_layout():
@@ -138,8 +132,8 @@ def test_circular_layout():
 
     pos, line_vertices, arrows = next(layout(adjacency_mat))
 
-    assert_equal(pos, expected_pos)
-    assert_equal(line_vertices, expected_vertices)
+    assert_allclose(pos, expected_pos, atol=1e-4)
+    assert_allclose(line_vertices, expected_vertices, atol=1e-4)
 
 
 run_tests_if_main()

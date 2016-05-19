@@ -42,11 +42,8 @@ def get_layout(name, *args, **kwargs):
         The callable generator which will calculate the graph layout
     """
     if name not in _layout_map:
-        raise KeyError(
-            "Graph layout '{}' not found. Should be one of {}".format(
-                name, ", ".join(AVAILABLE_LAYOUTS)
-            )
-        )
+        raise KeyError("Graph layout '%s' not found. Should be one of %s"
+                       % (name, AVAILABLE_LAYOUTS))
 
     layout = _layout_map[name]
 

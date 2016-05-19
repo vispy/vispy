@@ -13,7 +13,7 @@ import numpy as np
 from ..util import _straight_line_vertices, issparse
 
 
-def random(adjacency_mat, directed=False):
+def random(adjacency_mat, directed=False, random_state=None):
     """
     Place the graph nodes at random places.
 
@@ -25,6 +25,8 @@ def random(adjacency_mat, directed=False):
         Whether the graph is directed. If this is True, is will also
         generate the vertices for arrows, which can be passed to an
         ArrowVisual.
+    random_state : instance of RandomState | int | None
+        Random state to use. Can be None to use ``np.random``.
 
     Yields
     ------
@@ -32,13 +34,17 @@ def random(adjacency_mat, directed=False):
         Yields the node and line vertices in a tuple. This layout only yields a
         single time, and has no builtin animation
     """
+    if random_state is None:
+        random_state = np.random
+    elif not isinstance(random_state, np.random.RandomState):
+        random_state = np.random.RandomState(random_state)
 
     if issparse(adjacency_mat):
         adjacency_mat = adjacency_mat.tocoo()
 
     # Randomly place nodes, visual coordinate system is between 0 and 1
     num_nodes = adjacency_mat.shape[0]
-    node_coords = np.random.rand(num_nodes, 2)
+    node_coords = random_state.rand(num_nodes, 2)
 
     line_vertices, arrows = _straight_line_vertices(adjacency_mat,
                                                     node_coords, directed)
