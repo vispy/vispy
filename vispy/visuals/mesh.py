@@ -277,7 +277,9 @@ class MeshVisual(Visual):
 
     @color.setter
     def color(self, c):
-        self.set_data(color=c)
+        if c is not None:
+            self._color = Color(c)
+        self.mesh_data_changed()
 
     def mesh_data_changed(self):
         self._data_changed = True
