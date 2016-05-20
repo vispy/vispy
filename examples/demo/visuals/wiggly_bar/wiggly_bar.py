@@ -264,11 +264,12 @@ class WigglyBar(app.Canvas):
         self.spring_1.transform = transforms.MatrixTransform()
         self.spring_1.transform.rotate(90, (0, 1, 0))
         self.spring_1.transform.scale(
-            (self.scale*(
-                1.0-(self.x*self.px_per_m)/(self.scale*self.px_len/2)
-            ),
-             self.scale, 
-             0.0001)
+            (
+                self.scale *
+                (1.0-(self.x*self.px_per_m)/(self.scale*self.px_len/2)),
+                self.scale,
+                0.0001
+            )
         )
         self.spring_1.transform.translate(self.center + self.s1_loc)
 
