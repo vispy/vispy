@@ -38,7 +38,7 @@ PARAMETERS = [('d1',        0.0,      10.0,    'double', 0.97),
 CONVERSION_DICT = {'d1': 'd1', 'd2': 'd2', 'm': 'little_m', 'M': 'big_m',
                    'k1': 'spring_k1', 'k2': 'spring_k2', 'b': 'b',
                    'x': 'x', 'x dot': 'x_dot', 'theta': 'theta', 
-                   'theta dot': 'theta_dot','scale': 'scale', 
+                   'theta dot': 'theta_dot', 'scale': 'scale',
                    'time step': 'dt', 'font size': 'font_size'}
 
 
@@ -50,7 +50,8 @@ def make_spiral(num_points=100, num_turns=4, height=12, radius=2.0,
     Parameters
     ----------
     num_points : int
-        Number of points to map spiral over. More points means a rounder spring.
+        Number of points to map spiral over. More points means a
+        rounder spring.
     num_turns : int
         Number of coils in the spiral
     height : float
@@ -111,7 +112,8 @@ def make_spring(num_points=300, num_turns=4, height=12, radius=2.0,
             The height of the spring. Keep it in whatever units the rest of the 
             spring is in.
         radius : float
-            The radius of the coils. The spring will end up being 2*radius wide.
+            The radius of the coils. The spring will end up being
+            2*radius wide.
         xnot : float
             Initial x-coordinate for the spring coordinates to start at.
         ynot : float
@@ -262,7 +264,9 @@ class WigglyBar(app.Canvas):
         self.spring_1.transform = transforms.MatrixTransform()
         self.spring_1.transform.rotate(90, (0, 1, 0))
         self.spring_1.transform.scale(
-            (self.scale*(1.0-(self.x*self.px_per_m)/(self.scale*self.px_len/2)),
+            (self.scale*(
+                1.0-(self.x*self.px_per_m)/(self.scale*self.px_len/2)
+            ),
              self.scale, 
              0.0001)
         )
