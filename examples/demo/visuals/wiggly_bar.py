@@ -14,16 +14,24 @@ Usage of VisPy to numerically simulate and view a simple physics model.
 
 .. image:: http://i.imgur.com/ad0s9lB.png
 
-This is a simple example of using VisPy to simulate a system with two springs, a pivot, and a mass. # noqa
+This is a simple example of using VisPy to simulate a system with
+two springs, a pivot, and a mass.
+
 The system evolves in a nonlinear fashion, according to two equations:
 
 .. image:: http://i.imgur.com/8reci4N.png
 
-In these equations, the J term is the polar moment of inertia of the rod, given by: #noqa
+In these equations, the J term is the polar moment of inertia of the rod
+given by:
 
 .. image:: http://i.imgur.com/94cI1TL.png
 
-The system has the option to update once every step using the `Euler Method <https://en.wikipedia.org/wiki/Euler_method>`_ or a more stable third-order `Runge-Kutta Method <https://en.wikipedia.org/wiki/Runge%E2%80%93Kutta_methods>`_. The instability of the Euler Method becomes apparent as the time step is increased. #noqa
+The system has the option to update once every step using the
+`Euler <https://en.wikipedia.org/wiki/Euler_method>`_ method
+or a more stable third-order
+`Runge-Kutta <https://en.wikipedia.org/wiki/Runge%E2%80%93Kutta_methods>`_
+method. The instability of the Euler Method becomes apparent as the time step
+is increased.
 """
 
 from __future__ import division, print_function, absolute_import
@@ -206,6 +214,55 @@ class WigglyBar(app.Canvas):
                  x=None, x_dot=None, theta=None, theta_dot=None,
                  px_len=None, scale=None, pivot=False, method='Euler', dt=None, 
                  font_size=None):
+        """
+        Main VisPy Canvas for simulation of physical system.
+
+        Parameters
+        ----------
+        d1 : float
+            Length of rod (in meters) from pivot to upper spring.
+        d2 : float
+            Length of rod (in meters) from pivot to lower spring.
+        little_m : float
+            Mass of attached cube (in kilograms).
+        big_m : float
+            Mass of rod (in kilograms).
+        spring_k1 : float
+            Spring constant of lower spring (in N/m).
+        spring_k2 : float
+            Spring constant of upper spring (in N/m).
+        b : float
+            Coefficient of quadratic sliding friction (in kg/m).
+        x : float
+            Initial x-position of mass (in m).
+        x_dot : float
+            Initial x-velocity of mass (in m/s).
+        theta : float
+            Initial angle of rod, with respect to vertical (in radians).
+        theta_dot : float
+            Initial angular velocity of rod (in rad/s).
+        px_len : int
+            Length of the rod, in pixels.
+        scale : int
+            Scaling factor to change size of elements.
+        pivot : bool
+            Switch for showing/hiding pivot point.
+        method : str
+            Method to use for updating.
+        dt : float
+            Time step for simulation.
+        font_size : float
+            Size of font for text elements, in points.
+
+        Notes
+        -----
+
+        As of right now, the only supported methods are "euler" or
+        "runge-kutta". These correspond to an Euler method or an
+        order 3 Runge-Kutta method for updating x, theta, x dot, and theta dot.
+
+        """
+
         app.Canvas.__init__(self, title='Wiggly Bar', size=(800, 800))
 
         # Some initialization constants that won't change
@@ -429,8 +486,9 @@ class WigglyBar(app.Canvas):
             self._runge_kutta_update(dt)
 
     def _euler_update(self, dt):
-        """Update system using Euler's method 
-        (equivalent to order 1 Runge-Kutta Method)"""
+        """Update system using Euler's method (equivalent to order 1
+        Runge-Kutta Method).
+        """
         # Calculate the second derivative of x
         x_dd_t1 = -self.b * self.x_dot * np.abs(self.x_dot)
         x_dd_t2 = -self.spring_k1 * (self.x + self.d2 * self.theta)
@@ -452,7 +510,8 @@ class WigglyBar(app.Canvas):
         self.theta_dot += dt * theta_dot_dot
 
     def _runge_kutta_update(self, dt):
-        """Update using order 3 Runge-Kutta Method"""
+        """Update using order 3 Runge-Kutta Method.
+        """
         info_vector = np.asarray(
             [self.x_dot, self.theta_dot, self.x, self.theta]
         ).copy()
@@ -522,6 +581,53 @@ class WigglyBar(app.Canvas):
                     x=None, x_dot=None, theta=None, theta_dot=None,
                     px_len=None, scale=None, pivot=False, method='Euler',
                     dt=None, font_size=None):
+        """
+        Reset system with a new set of paramters.
+
+        Parameters
+        ----------
+        d1 : float
+            Length of rod (in meters) from pivot to upper spring.
+        d2 : float
+            Length of rod (in meters) from pivot to lower spring.
+        little_m : float
+            Mass of attached cube (in kilograms).
+        big_m : float
+            Mass of rod (in kilograms).
+        spring_k1 : float
+            Spring constant of lower spring (in N/m).
+        spring_k2 : float
+            Spring constant of upper spring (in N/m).
+        b : float
+            Coefficient of quadratic sliding friction (in kg/m).
+        x : float
+            Initial x-position of mass (in m).
+        x_dot : float
+            Initial x-velocity of mass (in m/s).
+        theta : float
+            Initial angle of rod, with respect to vertical (in radians).
+        theta_dot : float
+            Initial angular velocity of rod (in rad/s).
+        px_len : int
+            Length of the rod, in pixels.
+        scale : int
+            Scaling factor to change size of elements.
+        pivot : bool
+            Switch for showing/hiding pivot point.
+        method : str
+            Method to use for updating.
+        dt : float
+            Time step for simulation.
+        font_size : float
+            Size of font for text elements, in points.
+
+        Notes
+        -----
+
+        Since the time is reset, the system is reset as well by calling
+        this method.
+
+        """
 
         self._set_up_system(
             d1=d1, d2=d2, little_m=little_m, big_m=big_m,
@@ -536,6 +642,9 @@ class WigglyBar(app.Canvas):
                        x=None, x_dot=None, theta=None, theta_dot=None,
                        px_len=None, scale=None, pivot=False, method='Euler',
                        dt=None, font_size=None):
+        """Initialize constants for the system that will be used later.
+        """
+
         self.method = (string.capwords(method, '-')
                        if method.lower() in VALID_METHODS else 'Euler')
         self.font_size = font_size
@@ -609,7 +718,8 @@ class Paramlist(object):
 
     def __init__(self, parameters):
         """Container for object parameters.
-        Based on methods from vispy/examples/demos/primitive_mesh_viewer_qt."""
+        Based on methods from ../gloo/primitive_mesh_viewer_qt.
+        """
         self.parameters = parameters
         self.props = dict()
         self.props['pivot'] = False
@@ -621,12 +731,12 @@ class Paramlist(object):
 
 class SetupWidget(QtGui.QWidget):
 
-    changed_parameter_sig = QtCore.pyqtSignal(Paramlist, name='paramChanged')
+    changed_parameter_sig = QtCore.pyqtSignal(Paramlist)
 
     def __init__(self, parent=None):
         """Widget for holding all the parameter options in neat lists.
-        Based on methods from
-        vispy/examples/demos/primitive_mesh_viewer_qt.py"""
+        Based on methods from ../gloo/primitive_mesh_viewer_qt.
+        """
         super(SetupWidget, self).__init__(parent)
 
         # Create the parameter list from the default parameters given here
@@ -724,6 +834,7 @@ class SetupWidget(QtGui.QWidget):
         self.setLayout(vbox)
 
     def update_parameters(self, option):
+        """When the system parameters change, get the state and emit it."""
         self.param.props['pivot'] = self.pivot_chk.isChecked()
         self.param.props['method'] = self.method_list[
             self.method_options.currentIndex()
@@ -737,8 +848,9 @@ class SetupWidget(QtGui.QWidget):
 class MainWindow(QtGui.QMainWindow):
 
     def __init__(self, param=None):
-        """Main Window for holding the Vispy Canvas
-        and the parameter control menu"""
+        """Main Window for holding the Vispy Canvas and the parameter
+        control menu.
+        """
         QtGui.QMainWindow.__init__(self)
 
         self.resize(1067, 800)
@@ -764,6 +876,8 @@ class MainWindow(QtGui.QMainWindow):
         self.setCentralWidget(splitter)
 
     def update_view(self, param):
+        """Update the VisPy canvas when the parameters change.
+        """
         self.view_box.reset_parms(**param.props)
 
 
