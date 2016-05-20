@@ -21,13 +21,19 @@ def isosurface(data, level):
     # guarantees.
     # Thomas Lewiner, Helio Lopes, Antonio Wilson Vieira and Geovan Tavares.
     # Journal of Graphics Tools 8(2): pp. 1-15 (december 2003)
-    
+
     (face_shift_tables, edge_shifts, 
      edge_table, n_table_faces) = _get_data_cache()
     
     ## mark everything below the isosurface level
     mask = data < level
-    
+
+    # Because we make use of the strides data attribute below, we have to make 
+    # sure that the data is contiguous (which it won't be if the user did 
+    # data.transpose() for example). Note that this doesn't copy the data if it 
+    # is already contiguous.
+    data = np.ascontiguousarray(data)
+
     ### make eight sub-fields and compute indexes for grid cells
     index = np.zeros([x-1 for x in data.shape], dtype=np.ubyte)
     fields = np.empty((2, 2, 2), dtype=object)

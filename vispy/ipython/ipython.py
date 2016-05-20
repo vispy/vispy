@@ -33,7 +33,7 @@ def load_ipython_extension(ipython):
 def _load_webgl_backend(ipython):
     """ Load the webgl backend for the IPython notebook"""
 
-    from vispy import app
+    from .. import app
     app_instance = app.use_app("ipynb_webgl")
 
     if app_instance.backend_name == "ipynb_webgl":

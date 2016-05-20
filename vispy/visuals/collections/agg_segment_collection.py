@@ -11,7 +11,7 @@ consume x2 more memory than regular lines and is a bit slower, but the quality
 of the output is worth the cost.
 """
 import numpy as np
-from vispy import glsl
+from ... import glsl
 from . collection import Collection
 from ..transforms import NullTransform
 

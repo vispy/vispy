@@ -605,7 +605,7 @@ class CanvasBackendEgl(QtBaseCanvasBackend, QWidget):
             # screenshot and draw that for now ...
             # Further, QImage keeps a ref to the data that we pass, so
             # we need to use a static buffer to prevent memory leakage
-            from vispy import gloo
+            from ... import gloo
             import numpy as np
             if not hasattr(self, '_gl_buffer'):
                 self._gl_buffer = np.ones((3000 * 3000 * 4), np.uint8) * 255

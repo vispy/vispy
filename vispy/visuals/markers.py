@@ -492,7 +492,7 @@ class MarkersVisual(Visual):
         Visual.__init__(self, vcode=vert, fcode=frag)
         self.shared_program.vert['v_size'] = self._v_size_var
         self.shared_program.frag['v_size'] = self._v_size_var
-        self.set_gl_state(depth_test=False, blend=True,
+        self.set_gl_state(depth_test=True, blend=True,
                           blend_func=('src_alpha', 'one_minus_src_alpha'))
         self._draw_mode = 'points'
         if len(kwargs) > 0:

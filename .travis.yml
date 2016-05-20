@@ -137,10 +137,10 @@ install:
         if [ "${PYTHON}" == "2.6" ]; then
           conda install --yes --quiet wxpython numpy$NUMPY > ${REDIRECT_TO};
         else
-          conda install --yes --quiet ipython$IPYTHON ipython-notebook numpy$NUMPY > ${REDIRECT_TO};
+          conda install --yes --quiet ipython$IPYTHON ipython-notebook numpy$NUMPY networkx > ${REDIRECT_TO};
         fi;
         if [ "${PYTHON}" == "3.4" ]; then
-          pip install -q freetype-py husl pypng https://github.com/mpld3/mplexporter/zipball/master > ${REDIRECT_TO};
+          pip install -q freetype-py husl pypng cassowary https://github.com/mpld3/mplexporter/zipball/master > ${REDIRECT_TO};
           conda install --yes --quiet pillow scipy matplotlib decorator six numpy$NUMPY > ${REDIRECT_TO};
           rm -rf ${SRC_DIR}/vispy/ext/_bundled;
         fi;

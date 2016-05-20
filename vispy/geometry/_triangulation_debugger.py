@@ -10,7 +10,7 @@ from __future__ import division
 import numpy as np
 import time
 
-from vispy.util.geometry.triangulation import Triangulation
+from ..util.geometry.triangulation import Triangulation
 
 
 class DebugTriangulation(Triangulation):
