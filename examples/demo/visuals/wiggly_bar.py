@@ -6,9 +6,30 @@
 # Distributed under the terms of the new BSD License.
 # -----------------------------------------------------------------------------
 
+"""
+**********
+Wiggly Bar
+**********
+Usage of VisPy to numerically simulate and view a simple physics model.
+
+.. image:: http://i.imgur.com/ad0s9lB.png
+
+This is a simple example of using VisPy to simulate a system with two springs, a pivot, and a mass. # noqa
+The system evolves in a nonlinear fashion, according to two equations:
+
+.. image:: http://i.imgur.com/8reci4N.png
+
+In these equations, the J term is the polar moment of inertia of the rod, given by: #noqa
+
+.. image:: http://i.imgur.com/94cI1TL.png
+
+The system has the option to update once every step using the `Euler Method <https://en.wikipedia.org/wiki/Euler_method>`_ or a more stable third-order `Runge-Kutta Method <https://en.wikipedia.org/wiki/Runge%E2%80%93Kutta_methods>`_. The instability of the Euler Method becomes apparent as the time step is increased. #noqa
+"""
+
 from __future__ import division, print_function, absolute_import
 from vispy import app, visuals
 from vispy.visuals import transforms
+from vispy.io import load_data_file
 import sys
 import numpy as np
 import string
@@ -721,7 +742,8 @@ class MainWindow(QtGui.QMainWindow):
         QtGui.QMainWindow.__init__(self)
 
         self.resize(1067, 800)
-        self.setWindowIcon(QtGui.QIcon('spring.ico'))
+        icon = load_data_file('wiggly_bar/spring.ico')
+        self.setWindowIcon(QtGui.QIcon(icon))
         self.setWindowTitle('Nonlinear Physical Model Simulation')
 
         self.parameter_object = SetupWidget(self)
