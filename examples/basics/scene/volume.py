@@ -94,6 +94,7 @@ translucent_cmaps = cycle([TransFire(), TransGrays()])
 opaque_cmap = next(opaque_cmaps)
 translucent_cmap = next(translucent_cmaps)
 
+
 # Implement axis connection with cam2
 @canvas.events.mouse_move.connect
 def on_mouse_move(event):
@@ -107,6 +108,7 @@ def on_mouse_move(event):
         axis.transform.scale((50, 50, 0.001))
         axis.transform.translate((50., 50.))
         axis.update()
+
 
 # Implement key presses
 @canvas.events.key_press.connect
