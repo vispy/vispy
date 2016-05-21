@@ -86,7 +86,7 @@ class LinearRegionVisual(Visual):
         if pos is not None:
             num_elements = len(pos)
             pos = np.array(pos, dtype=np.float32).ravel()
-            vertex = np.empty((num_elements*2, 2), dtype=np.float32)
+            vertex = np.empty((num_elements * 2, 2), dtype=np.float32)
             if self._is_vertical:
                 vertex[:, 0] = np.repeat(pos, 2)
                 vertex[:, 1] = np.tile([-1, 1], num_elements)
@@ -111,7 +111,7 @@ class LinearRegionVisual(Visual):
             elif color.ndim == 1:
                 if color.shape[0] != 4:
                     raise ValueError('Each color must be a RGBA array')
-                color = np.repeat([color], num_elements*2, axis=0)
+                color = np.repeat([color], num_elements * 2, axis=0)
                 color = color.astype(np.float32)
             else:
                 raise ValueError('Expected a numpy array of shape '
