@@ -50,11 +50,12 @@ class LinearRegionVisual(Visual):
         True for drawing a vertical region, False for an horizontal region
     """
 
-    def __init__(self, pos=None, color=[1.0, 1.0, 1.0, 1.0], vertical=True):
+    def __init__(self, pos=None, color=[1.0, 1.0, 1.0, 1.0],
+                 vertical=True, **kwargs):
         """
 
         """
-        Visual.__init__(self, vcode=VERT_SHADER, fcode=FRAG_SHADER)
+        Visual.__init__(self, vcode=VERT_SHADER, fcode=FRAG_SHADER, **kwargs)
 
         self._changed = {'pos': False, 'color': False}
 
@@ -74,6 +75,7 @@ class LinearRegionVisual(Visual):
         self._need_upload = False
         self._is_vertical = bool(vertical)
         self._pos = np.zeros((4, 2), dtype=np.float32)
+        self._color = np.ones((1, 4), dtype=np.float32)
 
         # Visual keeps track of draw mode, index buffer, and GL state. These
         # are shared between all views.
@@ -83,9 +85,14 @@ class LinearRegionVisual(Visual):
         self.set_data(pos=pos, color=color)
 
     def set_data(self, pos=None, color=None):
+        new_pos = self._pos
+        new_color = self._color
+
         if pos is not None:
             num_elements = len(pos)
-            pos = np.array(pos, dtype=np.float32).ravel()
+            pos = np.array(pos, dtype=np.float32)
+            if pos.ndim != 1:
+                raise ValueError('Expected 1D array')
             vertex = np.empty((num_elements * 2, 2), dtype=np.float32)
             if self._is_vertical:
                 vertex[:, 0] = np.repeat(pos, 2)
@@ -93,15 +100,12 @@ class LinearRegionVisual(Visual):
             else:
                 vertex[:, 1] = np.repeat(pos, 2)
                 vertex[:, 0] = np.tile([1, -1], num_elements)
-            self._pos = vertex
+            new_pos = vertex
             self._changed['pos'] = True
 
         if color is not None:
-            if type(color) not in [tuple, list, np.ndarray]:
-                raise ValueError('color must be a float rgba iterable of'
-                                 ' tuple, list or array')
-            num_elements = self._pos.shape[0] / 2
-            color = np.array(list(color), dtype=np.float32)
+            color = np.array(color, dtype=np.float32)
+            num_elements = new_pos.shape[0] / 2
             if color.ndim == 2:
                 if color.shape[0] != num_elements:
                     raise ValueError('Expected a color for each pos')
@@ -111,31 +115,31 @@ class LinearRegionVisual(Visual):
             elif color.ndim == 1:
                 if color.shape[0] != 4:
                     raise ValueError('Each color must be a RGBA array')
-                color = np.repeat([color], num_elements * 2, axis=0)
+                color = np.repeat([color], new_pos.shape[0], axis=0)
                 color = color.astype(np.float32)
             else:
                 raise ValueError('Expected a numpy array of shape '
                                  '(%d, 4) or (1, 4)' % num_elements)
-            self._color = color
+            new_color = color
             self._changed['color'] = True
 
         # Ensure pos and color have the same size
-        if self._pos.shape[0] != self._color.shape[0]:
-            raise ValueError('pos and color does not have the same size')
+        if new_pos.shape[0] != new_color.shape[0]:
+            raise ValueError('pos and color does must have the same size')
+
+        self._color = new_color
+        self._pos = new_pos
 
     @property
     def color(self):
-        return self._color
+        return self._color[::2]
 
     @property
     def pos(self):
-        pos = self._pos
         if self._is_vertical:
-            ret_pos = pos[:, 0].ravel()[::2]
-            return ret_pos
+            return self._pos[:, 0].ravel()[::2]
         else:
-            ret_pos = pos[:, 1].ravel()[::2]
-            return ret_pos
+            return self._pos[:, 1].ravel()[::2]
 
     def _compute_bounds(self, axis, view):
         """Return the (min, max) bounding values of this visual along *axis*
