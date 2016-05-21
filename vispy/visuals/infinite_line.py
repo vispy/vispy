@@ -49,11 +49,12 @@ class InfiniteLineVisual(Visual):
         True for drawing a vertical line, False for an horizontal line
     """
 
-    def __init__(self, pos=None, color=(1.0, 1.0, 1.0, 1.0), vertical=True):
+    def __init__(self, pos=None, color=(1.0, 1.0, 1.0, 1.0),
+                 vertical=True, **kwargs):
         """
 
         """
-        Visual.__init__(self, vcode=VERT_SHADER, fcode=FRAG_SHADER)
+        Visual.__init__(self, vcode=VERT_SHADER, fcode=FRAG_SHADER, **kwargs)
 
         self._changed = {'pos': False, 'color': False}
 
@@ -72,6 +73,7 @@ class InfiniteLineVisual(Visual):
         self._need_upload = False
         self._is_vertical = bool(vertical)
         self._pos = np.zeros((2, 2), dtype=np.float32)
+        self._color = np.ones(4, dtype=np.float32)
 
         # Visual keeps track of draw mode, index buffer, and GL state. These
         # are shared between all views.
@@ -97,11 +99,11 @@ class InfiniteLineVisual(Visual):
             self._changed['pos'] = True
 
         if color is not None:
-            if type(color) not in [tuple, list, np.ndarray] \
-               or len(color) != 4:
-                raise ValueError('color must be a float rgba tuple, '
-                                 'list or array')
-            self._color = np.ascontiguousarray(list(color), dtype=np.float32)
+            color = np.array(color, dtype=np.float32)
+            if color.ndim != 1 or color.shape[0] != 4:
+                raise ValueError('color must be a 4 element float rgba tuple,'
+                                 ' list or array')
+            self._color = color
             self._changed['color'] = True
 
     @property
