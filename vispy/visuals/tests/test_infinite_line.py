@@ -8,7 +8,7 @@ All images are of size (100,100) to keep a small file size
 """
 
 import numpy as np
-from vispy import app
+
 from vispy.scene import visuals
 from vispy.testing import (requires_application, TestingCanvas,
                            run_tests_if_main)
