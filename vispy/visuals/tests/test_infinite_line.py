@@ -20,10 +20,12 @@ from vispy.testing import raises
 def test_set_data():
     """Test InfiniteLineVisual"""
 
-    pos = 5.
-    color = [1, 1, 0.5, 0.5]
+    pos = 5.0
+    color = [1.0, 1.0, 0.5, 0.5]
+    expected_color = np.array(color, dtype=np.float32)
 
-    for is_vertical in [True, False]:
+    for is_vertical, reference_image in [(True, 'infinite_line.png'),
+                                         (False, 'infinite_line_h.png')]:
 
         with TestingCanvas() as c:
             # Check set_data is working correctly within visual constructor
@@ -32,21 +34,24 @@ def test_set_data():
                                           vertical=is_vertical,
                                           parent=c.scene)
             assert region.pos == pos
-            assert np.all(region.color == np.array(color, dtype=np.float32))
+            assert np.all(region.color == expected_color)
             assert region.is_vertical == is_vertical
 
-            if is_vertical:
-                assert_image_approved(c.render(), 'visuals/infinite_line.png')
-            else:
-                assert_image_approved(c.render(),
-                                      'visuals/infinite_line_h.png')
+            # Check tuple color argument is accepted
+            region.set_data(color=tuple(color))
+            assert np.all(region.color == expected_color)
 
-            # Only number are accepted
+            assert_image_approved(c.render(), 'visuals/%s' % reference_image)
+
+            # Check only numbers are accepted
             with raises(TypeError):
                 region.set_data(pos=[[1, 2], [3, 4]])
 
+            # Check color argument can be only a 4 length 1D array
             with raises(ValueError):
                 region.set_data(color=[[1, 2], [3, 4]])
+            with raises(ValueError):
+                region.set_data(color=[1, 2])
 
 
 run_tests_if_main()
