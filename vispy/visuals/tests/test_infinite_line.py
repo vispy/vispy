@@ -13,7 +13,7 @@ from vispy.scene import visuals
 from vispy.testing import (requires_application, TestingCanvas,
                            run_tests_if_main)
 from vispy.testing.image_tester import assert_image_approved
-from vispy.testing import raises
+from vispy.testing import assert_raises
 
 
 @requires_application()
@@ -44,14 +44,11 @@ def test_set_data():
             assert_image_approved(c.render(), 'visuals/%s' % reference_image)
 
             # Check only numbers are accepted
-            with raises(TypeError):
-                region.set_data(pos=[[1, 2], [3, 4]])
+            assert_raises(TypeError, region.set_data, pos=[[1, 2], [3, 4]])
 
             # Check color argument can be only a 4 length 1D array
-            with raises(ValueError):
-                region.set_data(color=[[1, 2], [3, 4]])
-            with raises(ValueError):
-                region.set_data(color=[1, 2])
+            assert_raises(ValueError, region.set_data, color=[[1, 2], [3, 4]])
+            assert_raises(ValueError, region.set_data, color=[1, 2])
 
 
 run_tests_if_main()

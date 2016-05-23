@@ -13,7 +13,7 @@ from vispy.scene import visuals
 from vispy.testing import (requires_application, TestingCanvas,
                            run_tests_if_main)
 from vispy.testing.image_tester import assert_image_approved
-from vispy.testing import raises
+from vispy.testing import assert_raises
 
 
 @requires_application()
@@ -76,8 +76,7 @@ def test_linear_region_vertical_horizontal():
             assert_image_approved(c.render(), 'visuals/%s' % reference_image)
 
             # Check ValueError is raised when pos is not 1D
-            with raises(ValueError):
-                region.set_data(pos=[[1, 2], [3, 4]])
+            assert_raises(ValueError, region.set_data, pos=[[1, 2], [3, 4]])
 
 
 @requires_application()
@@ -120,12 +119,11 @@ def test_linear_region_color():
 
         # Check a ValueError is raised when the length of color argument
         # is not 4.
-        with raises(ValueError):
-            region.set_data(color=[1.0, 0.5, 0.5])
+        assert_raises(ValueError, region.set_data, color=[1.0, 0.5, 0.5])
 
         # Check a ValueError is raised when too many colors are provided
-        with raises(ValueError):
-            region.set_data(color=[color1, color1, color1])
+        assert_raises(ValueError, region.set_data,
+                      color=[color1, color1, color1])
 
 
 @requires_application()
