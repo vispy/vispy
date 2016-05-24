@@ -141,7 +141,7 @@ class raises(object):
                                  self.exc.__name__)
         else:
             raise AssertionError("Expected %s, got %s instead (%s)" %
-                                 (self.exc.__name__, type(exc).__name__), exc)
+                                 (self.exc.__name__, type(exc).__name__, exc))
 
 
 ###############################################################################
