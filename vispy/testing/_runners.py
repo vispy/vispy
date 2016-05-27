@@ -156,7 +156,7 @@ def _flake():
         sys.argv[1:] = ['vispy', 'examples', 'make']
     else:
         sys.argv[1:] = [op.basename(import_dir)]
-    sys.argv.append('--ignore=E226,E241,E265,E266,W291,W293,W503')
+    sys.argv.append('--ignore=E226,E241,E265,E266,W291,W293,W503,F999')
     sys.argv.append('--exclude=six.py,ordereddict.py,glfw.py,'
                     '_proxy.py,_es2.py,_gl2.py,_pyopengl2.py,'
                     '_constants.py,png.py,decorator.py,ipy_inputhook.py,'

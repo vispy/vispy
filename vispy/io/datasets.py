@@ -64,6 +64,12 @@ def pack_ieee(value):
 def load_spatial_filters(packed=True):
     """Load spatial-filters kernel
 
+    Parameters
+    ----------
+    packed : bool
+        Whether or not the data should be in "packed" representation
+        for use in GLSL code.
+
     Returns
     -------
     kernel : array
