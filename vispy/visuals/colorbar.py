@@ -50,6 +50,7 @@ void main()
 class _CoreColorBarVisual(Visual):
     """
     Visual subclass that actually renders the ColorBar.
+
     Parameters
     ----------
      pos : tuple (x, y)
@@ -69,6 +70,7 @@ class _CoreColorBarVisual(Visual):
         The orientation of the colorbar, used for rendering. The
         orientation can be thought of as the position of the label
         relative to the color bar.
+
     Note
     ----
     This is purely internal.
@@ -204,11 +206,6 @@ class _CoreColorBarVisual(Visual):
 
 
 class ColorBarVisual(CompoundVisual):
-    # The padding multiplier that's used to place the text
-    # next to the Colorbar. Makes sure the text isn't
-    # visually "sticking" to the Colorbar
-    text_padding_factor = 1.05
-
     """Visual subclass displaying a colorbar
 
     Parameters
@@ -242,6 +239,7 @@ class ColorBarVisual(CompoundVisual):
 
             * 'right': Same as left, except that the
               label is placed to the right of the colorbar
+
     size : (major_axis_length, minor_axis_length)
         lengths with respect to the major and minor axes.
         The minor axis is the shorter axis, while the major axis is
@@ -269,6 +267,10 @@ class ColorBarVisual(CompoundVisual):
         The color of the border of the colormap. This can either be a
         str as the color's name or an actual instace of a vipy.color.Color
     """
+    # The padding multiplier that's used to place the text
+    # next to the Colorbar. Makes sure the text isn't
+    # visually "sticking" to the Colorbar
+    text_padding_factor = 1.05
 
     def __init__(self, cmap, orientation, size,
                  pos=[0, 0],

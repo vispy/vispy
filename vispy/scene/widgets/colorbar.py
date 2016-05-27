@@ -103,6 +103,8 @@ class ColorBarWidget(Widget):
 
         Parameters
         ----------
+        rect : rectangle
+            The rectangle.
         orientation : str
             Either "bottom" or "top".
         """
