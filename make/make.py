@@ -37,7 +37,7 @@ else:
 
 
 # Define directories and repos of interest
-DOC_DIR = op.join(ROOT_DIR, 'doc')
+DOC_DIR = op.join(ROOT_DIR, 'docs')
 #
 WEBSITE_DIR = op.join(ROOT_DIR, '_website')
 WEBSITE_REPO = 'git@github.com:vispy/vispy-website'
