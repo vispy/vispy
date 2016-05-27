@@ -15,7 +15,6 @@ public_modules = [
     'vispy.geometry',
     'vispy.gloo',
     'vispy.io',
-    'vispy.mpl_plot',
     'vispy.plot',
     'vispy.scene',
     'vispy.util',
