@@ -85,6 +85,17 @@ class LinearRegionVisual(Visual):
         self.set_data(pos=pos, color=color)
 
     def set_data(self, pos=None, color=None):
+        """Set the data
+
+        Parameters
+        ----------
+        pos : list, tuple or numpy array
+            Bounds of the region along the axis. len(pos) must be >=2.
+        color : list, tuple, or array
+            The color to use when drawing the line. It must have a shape of
+            (1, 4) for a single color region or (len(pos), 4) for a multicolor
+            region.
+        """
         new_pos = self._pos
         new_color = self._color
 

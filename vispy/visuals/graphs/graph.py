@@ -12,6 +12,7 @@ from ..visual import CompoundVisual
 from ..line import ArrowVisual
 from ..markers import MarkersVisual
 from . import layouts
+from ...ext.six import string_types
 
 
 class GraphVisual(CompoundVisual):
@@ -24,6 +25,10 @@ class GraphVisual(CompoundVisual):
     directed : bool
         Whether the graph is directed or not. If True, then this visual will
         draw arrows for the directed edges.
+    layout : str
+        They layout to use.
+    animate : bool
+        Whether or not to animate.
     line_color : str or :class:`vispy.color.colormap.ColorMap`
         The color to use for the edges.
     line_width : number
@@ -102,7 +107,7 @@ class GraphVisual(CompoundVisual):
 
     @layout.setter
     def layout(self, value):
-        if type(value) == str:
+        if isinstance(value, string_types):
             self._layout = layouts.get_layout(value)
         else:
             assert callable(value)
@@ -170,6 +175,15 @@ class GraphVisual(CompoundVisual):
         self._layout_iter = None
 
     def set_data(self, adjacency_mat=None, **kwargs):
+        """Set the data
+
+        Parameters
+        ----------
+        adjacency_mat : ndarray | None
+            The adjacency matrix.
+        **kwargs : dict
+            Keyword arguments to pass to the arrows.
+        """
         if adjacency_mat is not None:
             if adjacency_mat.shape[0] != adjacency_mat.shape[1]:
                 raise ValueError("Adjacency matrix should be square.")

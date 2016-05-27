@@ -415,6 +415,7 @@ def _cube(rows, cols, depth, radius):
 def create_sphere(rows=10, cols=10, depth=10, radius=1.0, offset=True,
                   subdivisions=3, method='latitude'):
     """Create a sphere
+
     Parameters
     ----------
     rows : int

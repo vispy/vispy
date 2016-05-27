@@ -16,8 +16,11 @@ class SphereVisual(CompoundVisual):
     ----------
     radius : float
         The size of the sphere.
-    cols, rows : int
-        Number of rows and cols that make up the sphere mesh
+    cols : int
+        Number of cols that make up the sphere mesh
+        (for method='latitude' and 'cube').
+    rows : int
+        Number of rows that make up the sphere mesh
         (for method='latitude' and 'cube').
     depth : int
         Number of depth segments that make up the sphere mesh

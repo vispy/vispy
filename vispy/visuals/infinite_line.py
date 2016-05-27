@@ -83,6 +83,16 @@ class InfiniteLineVisual(Visual):
         self.set_data(pos=pos, color=color)
 
     def set_data(self, pos=None, color=None):
+        """Set the data
+
+        Parameters
+        ----------
+        pos : float
+            Position of the line along the axis.
+        color : list, tuple, or array
+            The color to use when drawing the line. If an array is given, it
+            must be of shape (1, 4) and provide one rgba color per vertex.
+        """
         if pos is not None:
             pos = float(pos)
             xy = self._pos
