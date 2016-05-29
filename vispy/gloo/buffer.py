@@ -191,7 +191,13 @@ class DataBuffer(Buffer):
         """
         data = self._prepare_data(data, **kwargs)
         self._dtype = data.dtype
-        self._stride = data.strides[-1]
+        # This works around some strange NumPy bug where a float32 array
+        # of shape (155407, 1) was said to have strides
+        # (4, 9223372036854775807), which is crazy
+        if data.ndim == 2 and data.shape[1] == 1:
+            self._stride = data.strides[0]
+        else:
+            self._stride = data.strides[-1]
         self._itemsize = self._dtype.itemsize
         Buffer.set_data(self, data=data, copy=copy)
 
@@ -210,7 +216,6 @@ class DataBuffer(Buffer):
     @property
     def stride(self):
         """ Stride of data in memory """
-
         return self._stride
 
     @property
