@@ -382,7 +382,7 @@ class VolumeVisual(Visual):
         The render method to use. See corresponding docs for details.
         Default 'mip'.
     threshold : float
-        The threshold to use for the isosurafce render method. By default
+        The threshold to use for the isosurface render method. By default
         the mean of the given volume is used.
     relative_step_size : float
         The relative step size to step through the volume. Default 0.8.
