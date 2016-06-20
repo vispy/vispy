@@ -158,8 +158,8 @@ class LineVisual(CompoundVisual):
             The color to use when drawing the line. If an array is given, it
             must be of shape (..., 4) and provide one rgba color per vertex.
         width:
-            The width of the line in px. Line widths > 1px are only
-            guaranteed to work when using 'agg' method.
+            The width of the line in px. Line widths < 1 px will be rounded up
+            to 1 px when using the 'gl' method.
         connect : str or array
             Determines which vertices are connected by lines.
             * "strip" causes the line to be drawn with each vertex
