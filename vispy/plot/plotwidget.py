@@ -236,7 +236,8 @@ class PlotWidget(scene.Widget):
         meshdata : MeshData | None
             Meshdata to use. If not None, then vertices, faces, and fname
             must be None.
-
+        shading : str | None
+            Shading to use.
         Returns
         -------
         mesh : instance of Mesh
