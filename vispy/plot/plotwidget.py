@@ -215,7 +215,7 @@ class PlotWidget(scene.Widget):
 
     def mesh(self, vertices=None, faces=None, vertex_colors=None,
              face_colors=None, color=(0.5, 0.5, 1.), fname=None,
-             meshdata=None):
+             meshdata=None, shading=None):
         """Show a 3D mesh
 
         Parameters
@@ -253,10 +253,11 @@ class PlotWidget(scene.Widget):
                 raise ValueError('vertices, faces, and fname must be None if '
                                  'fname is not None')
         else:
-            meshdata = MeshData(vertices, faces)
+            meshdata = MeshData(vertices, faces, face_colors=face_colors,
+                                vertex_colors=vertex_colors)
         mesh = scene.Mesh(meshdata=meshdata, vertex_colors=vertex_colors,
                           face_colors=face_colors, color=color,
-                          shading='smooth')
+                          shading=shading)
         self.view.add(mesh)
         self.view.camera.set_range()
         return mesh
