@@ -255,7 +255,7 @@ class ImageVisual(Visual):
             if clim.shape != (2,):
                 raise ValueError('clim must have two elements')
         self._clim = clim
-        self._need_vertex_update = True
+        self._need_texture_upload = True
         self.update()
 
     @property

@@ -10,14 +10,6 @@ from ...visuals import ColorBarVisual
 
 
 class ColorBarWidget(Widget):
-    # padding with respect to the major and minor axis
-    # units are normalized [0, 1] with 1 representing occupying
-    # all of the length along the given axis
-    major_axis_padding = 0.1
-    minor_axis_padding = 0.8
-    # ratio of minor axis to major axis
-    minor_axis_ratio = 0.05
-
     """Widget containing a ColorBar
 
     Parameters
@@ -66,6 +58,14 @@ class ColorBarWidget(Widget):
         The color of the border of the colormap. This can either be a
         str as the color's name or an actual instace of a vipy.color.Color
     """
+    # padding with respect to the major and minor axis
+    # units are normalized [0, 1] with 1 representing occupying
+    # all of the length along the given axis
+    major_axis_padding = 0.1
+    minor_axis_padding = 0.8
+    # ratio of minor axis to major axis
+    minor_axis_ratio = 0.05
+
     def __init__(self, cmap, orientation,
                  label="", clim=("", ""),
                  border_width=0.0, border_color="black", **kwargs):
@@ -99,6 +99,15 @@ class ColorBarWidget(Widget):
 
     @staticmethod
     def calc_size(rect, orientation):
+        """Calculate a size
+
+        Parameters
+        ----------
+        rect : rectangle
+            The rectangle.
+        orientation : str
+            Either "bottom" or "top".
+        """
         (total_halfx, total_halfy) = rect.center
         if orientation in ["bottom", "top"]:
             (total_major_axis, total_minor_axis) = (total_halfx, total_halfy)

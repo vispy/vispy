@@ -492,7 +492,7 @@ class PlotWidget(scene.Widget):
 
         else:  # cbar.orientation == "right"
             self.grid.remove_widget(self.cbar_right)
-            self.cbar_right = self.grid.add_widget(cbar, row=2, col=1)
+            self.cbar_right = self.grid.add_widget(cbar, row=2, col=5)
             self.cbar_right.width_max = \
                 self.cbar_right.width_min = CBAR_LONG_DIM
 

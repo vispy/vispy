@@ -136,7 +136,7 @@ def _docs():
                       " so that the latest sources are used automatically")
     try:
         # this should always be importable
-        from vispy.util.tests import test_docstring_parameters
+        from ..util.tests import test_docstring_parameters
         print("Running docstring test...")
         test_docstring_parameters.test_docstring_parameters()
     except AssertionError as docstring_violations:
@@ -156,7 +156,7 @@ def _flake():
         sys.argv[1:] = ['vispy', 'examples', 'make']
     else:
         sys.argv[1:] = [op.basename(import_dir)]
-    sys.argv.append('--ignore=E226,E241,E265,E266,W291,W293,W503')
+    sys.argv.append('--ignore=E226,E241,E265,E266,W291,W293,W503,F999')
     sys.argv.append('--exclude=six.py,ordereddict.py,glfw.py,'
                     '_proxy.py,_es2.py,_gl2.py,_pyopengl2.py,'
                     '_constants.py,png.py,decorator.py,ipy_inputhook.py,'
@@ -350,10 +350,10 @@ def test(label='full', extra_arg_string='', coverage=False):
     if label == 'osmesa':
         # Special case for OSMesa, we have to modify the VISPY_GL_LIB envvar
         # before the vispy.gloo package gets imported
-        from vispy.util.osmesa_gl import fix_osmesa_gl_lib
+        from ..util.osmesa_gl import fix_osmesa_gl_lib
         fix_osmesa_gl_lib()
 
-    from vispy.app.backends import BACKEND_NAMES as backend_names
+    from ..app.backends import BACKEND_NAMES as backend_names
     label = label.lower()
     label = 'pytest' if label == 'nose' else label
     known_types = ['full', 'unit', 'lineendings', 'extra', 'flake',

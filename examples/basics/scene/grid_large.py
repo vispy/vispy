@@ -28,7 +28,7 @@ for i in range(10):
         vb = grid.add_view(row=i, col=j)
         vb.camera = 'panzoom'
         vb.camera.rect = (0, -5), (100, 10)
-        vb.border = (1, 1, 1, 0.4)
+        # vb.border = (1, 1, 1, 0.4)
 
         pos = np.empty((N, 2), dtype=np.float32)
         pos[:, 0] = np.linspace(0, 100, N)

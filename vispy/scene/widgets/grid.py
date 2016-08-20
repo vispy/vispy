@@ -104,6 +104,7 @@ class Grid(Widget):
         **kwargs : dict
             parameters sent to the new Widget that is constructed if
             widget is None
+
         Notes
         -----
         The widget's parent is automatically set to this grid, and all other

@@ -466,9 +466,9 @@ def _get_data_cache():
         for i in range(1, 6):
             ## compute lookup table of index: vertexes mapping
             faceTableI = np.zeros((len(triTable), i*3), dtype=np.ubyte)
-            faceTableInds = np.argwhere(n_table_faces == i)
-            faceTableI[faceTableInds[:, 0]] = np.array([triTable[j] for j in 
-                                                        faceTableInds])
+            faceTableInds = np.argwhere(n_table_faces == i)[:, 0]
+            faceTableI[faceTableInds] = np.array([triTable[j] for j in
+                                                 faceTableInds])
             faceTableI = faceTableI.reshape((len(triTable), i, 3))
             face_shift_tables.append(edge_shifts[faceTableI])
             

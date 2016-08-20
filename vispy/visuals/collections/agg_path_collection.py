@@ -11,8 +11,8 @@ is memory hungry (x8) and slow (x.25) so it is to be used sparingly, mainly for
 thick paths where quality is critical.
 """
 import numpy as np
-from vispy import glsl
-from vispy.gloo import gl
+from ... import glsl
+from ...gloo import gl
 from . collection import Collection
 from ..transforms import NullTransform
 

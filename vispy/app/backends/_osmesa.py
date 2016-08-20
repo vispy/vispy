@@ -9,7 +9,7 @@ from __future__ import division
 from ...util.ptime import time
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
                     BaseTimerBackend)
-from vispy.gloo import gl
+from ...gloo import gl
 from time import sleep
 
 try:

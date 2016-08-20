@@ -63,6 +63,9 @@ class _ArrowHeadVisual(Visual):
                           blend_func=('src_alpha', 'one_minus_src_alpha'))
         self._draw_mode = 'points'
 
+        self._arrow_vbo = gloo.VertexBuffer(
+            np.array([], dtype=self._arrow_vtype))
+
     def _prepare_transforms(self, view):
         xform = view.transforms.get_transform()
         view.view_program.vert['transform'] = xform
@@ -77,8 +80,12 @@ class _ArrowHeadVisual(Visual):
 
     def _prepare_vertex_data(self):
         arrows = self._parent.arrows
-        if arrows is None:
-            return np.array([], dtype=self._arrow_vtype)
+
+        if arrows is None or arrows.size == 0:
+            self._arrow_vbo = gloo.VertexBuffer(
+                np.array([], dtype=self._arrow_vtype))
+            return
+
         v = np.zeros(len(arrows), dtype=self._arrow_vtype)
         v['v1'] = arrows[:, 0:2]
         v['v2'] = arrows[:, 2:4]
@@ -168,7 +175,6 @@ class ArrowVisual(LineVisual):
         self.arrow_type = arrow_type
         self.arrow_size = arrow_size
 
-        # Add marker visual for the arrow head
         self.arrow_head = _ArrowHeadVisual(self)
 
         # TODO: `LineVisual.__init__` also calls its own `set_data` method,
@@ -179,6 +185,7 @@ class ArrowVisual(LineVisual):
                             antialias)
         ArrowVisual.set_data(self, arrows=arrows)
 
+        # Add marker visual for the arrow head
         self.add_subvisual(self.arrow_head)
 
     def set_data(self, pos=None, color=None, width=None, connect=None,

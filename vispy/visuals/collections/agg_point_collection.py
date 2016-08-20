@@ -8,7 +8,7 @@ Antigrain Geometry Point Collection
 
 This collection provides fast points. Output quality is perfect.
 """
-from vispy import glsl
+from ... import glsl
 from . raw_point_collection import RawPointCollection
 
 

@@ -6,7 +6,7 @@
 import os
 import os.path as op
 
-from vispy import config
+from .. import config
 
 
 def find(name):

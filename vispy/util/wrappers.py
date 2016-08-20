@@ -79,20 +79,19 @@ def use(app=None, gl=None):
         gl = 'webgl'
 
     if app == 'osmesa':
-        from vispy.util.osmesa_gl import fix_osmesa_gl_lib
+        from ..util.osmesa_gl import fix_osmesa_gl_lib
         fix_osmesa_gl_lib()
         if gl is not None:
             raise ValueError("Do not specify gl when using osmesa")
 
     # Apply now
     if gl:
-        import vispy.gloo
-        from vispy import config
+        from .. import gloo, config
         config['gl_backend'] = gl
-        vispy.gloo.gl.use_gl(gl)
+        gloo.gl.use_gl(gl)
     if app:
-        import vispy.app
-        vispy.app.use_app(app)
+        from ..app import use_app
+        use_app(app)
 
 
 def run_subprocess(command, return_code=False, **kwargs):

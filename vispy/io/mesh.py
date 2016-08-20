@@ -44,7 +44,7 @@ def read_mesh(fname):
 
 
 def write_mesh(fname, vertices, faces, normals, texcoords, name='',
-               format='obj', overwrite=False):
+               format='obj', overwrite=False, reshape_faces=True):
     """ Write mesh data to file.
 
     Parameters
@@ -65,6 +65,9 @@ def write_mesh(fname, vertices, faces, normals, texcoords, name='',
         Currently only "obj" is supported.
     overwrite : bool
         If the file exists, overwrite it.
+    reshape_faces : bool
+        Reshape the `faces` array to (Nf, 3). Set to `False`
+        if you need to write a mesh with non triangular faces.
     """
     # Check file
     if op.isfile(fname) and not overwrite:
@@ -73,4 +76,5 @@ def write_mesh(fname, vertices, faces, normals, texcoords, name='',
     # Check format
     if format not in ('obj'):
         raise ValueError('Only "obj" format writing currently supported')
-    WavefrontWriter.write(fname, vertices, faces, normals, texcoords, name)
+    WavefrontWriter.write(fname, vertices, faces,
+                          normals, texcoords, name, reshape_faces)
