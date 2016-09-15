@@ -62,8 +62,9 @@ class AxisVisual(CompoundVisual):
         Margin between ticks and axis labels
     axis_font_size : float
         The font size to use for rendering axis labels.
-    font_size : str
-        Deprecated and replaced by tick_font_size
+    font_size : float
+        Font size for both the tick and axis labels. If this is set,
+        tick_font_size and axis_font_size are ignored.
     anchors : iterable
         A 2-element iterable (tuple, list, etc.) giving the horizontal and
         vertical alignment of the tick labels. The first element should be one
@@ -85,8 +86,8 @@ class AxisVisual(CompoundVisual):
                                       'supported')
 
         if font_size is not None:
-            warnings.warn("font_size is deprecated, use tick_font_size instead")
             tick_font_size = font_size
+            axis_font_size = font_size
 
         self._pos = None
         self._domain = None
