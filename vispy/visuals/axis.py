@@ -4,6 +4,8 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
+import warnings
+
 import numpy as np
 
 from .visual import CompoundVisual
@@ -40,19 +42,48 @@ class AxisVisual(CompoundVisual):
         RGBA values for the tick colours. The colour for the major and minor
         ticks is currently fixed to be the same. Default is a dark grey.
     text_color : Color
-        The color to use for drawing tick values.
-    font_size : float
-        The font size to use for rendering tick values.
-    **kwargs : dict
-        Keyword arguments to pass to `Visual`.
+        The color to use for drawing tick and axis labels
+    minor_tick_length : float
+        The length of minor ticks, in pixels
+    major_tick_length : float
+        The length of major ticks, in pixels
+    tick_width : float
+        Line width for the ticks
+    tick_label_margin : float
+        Margin between ticks and tick labels
+    tick_font_size : float
+        The font size to use for rendering tick labels.
+    axis_width : float
+        Line width for the axis
+    axis_label : str
+        Text to use for the axis label
+    axis_label_margin : float
+        Margin between ticks and axis labels
+    axis_font_size : float
+        The font size to use for rendering axis labels.
+    anchors : iterable
+        A 2-element iterable (tuple, list, etc.) giving the horizontal and
+        vertical alignment of the tick labels. The first element should be one
+        of 'left', 'center', or 'right', and the second element should be one
+        of 'bottom', 'middle', or 'top'. If this is not specified, it is
+        determined automatically.
     """
     def __init__(self, pos=None, domain=(0., 1.), tick_direction=(-1., 0.),
                  scale_type="linear", axis_color=(1, 1, 1),
-                 tick_color=(0.7, 0.7, 0.7), text_color='w', font_size=8,
-                 axis_label=None):
+                 tick_color=(0.7, 0.7, 0.7), text_color='w', tick_font_size=8,
+                 minor_tick_length=5, major_tick_length=10,
+                 axis_width=3, tick_width=2, axis_label=None,
+                 tick_label_margin=15, axis_label_margin=35, axis_font_size=10,
+                 font_size=None, anchors=None):
+
         if scale_type != 'linear':
             raise NotImplementedError('only linear scaling is currently '
                                       'supported')
+
+        if font_size is not None:
+            warnings.warn("font_size is deprecated, use tick_font_size instead")
+            tick_font_size = font_size
+
         self._pos = None
         self._domain = None
 
@@ -61,25 +92,26 @@ class AxisVisual(CompoundVisual):
         # (private until we come up with a better name for this)
         self._stop_at_major = (False, False)
 
-        self.ticker = Ticker(self)
+        self.ticker = Ticker(self, anchors=anchors)
         self.tick_direction = np.array(tick_direction, float)
         self.tick_direction = self.tick_direction
         self.scale_type = scale_type
         self.axis_color = axis_color
         self.tick_color = tick_color
 
-        self.minor_tick_length = 5  # px
-        self.major_tick_length = 10  # px
-        self.label_margin = 5  # px
+        self.minor_tick_length = minor_tick_length  # px
+        self.major_tick_length = major_tick_length  # px
+        self.tick_label_margin = tick_label_margin  # px
+        self.axis_label_margin = axis_label_margin  # px
 
         self.axis_label = axis_label
 
         self._need_update = True
 
-        self._line = LineVisual(method='gl', width=3.0)
-        self._ticks = LineVisual(method='gl', width=2.0, connect='segments')
-        self._text = TextVisual(font_size=font_size, color=text_color)
-        self._axis_label = TextVisual(font_size=font_size, color=text_color)
+        self._line = LineVisual(method='gl', width=axis_width)
+        self._ticks = LineVisual(method='gl', width=tick_width, connect='segments')
+        self._text = TextVisual(font_size=tick_font_size, color=text_color)
+        self._axis_label = TextVisual(font_size=axis_font_size, color=text_color)
         CompoundVisual.__init__(self, [self._line, self._text, self._ticks, self._axis_label])
         if pos is not None:
             self.pos = pos
@@ -146,8 +178,9 @@ class Ticker(object):
         The AxisVisual to generate ticks for.
     """
 
-    def __init__(self, axis):
+    def __init__(self, axis, anchors=None):
         self.axis = axis
+        self._anchors = anchors
 
     def get_update(self):
         major_tick_fractions, minor_tick_fractions, tick_labels = \
@@ -163,20 +196,24 @@ class Ticker(object):
         visual_to_document = trs.get_transform('visual', 'document')
         direction = np.array(self.axis.tick_direction)
         direction /= np.linalg.norm(direction)
-        # use the document (pixel) coord system to set text anchors
-        anchors = []
-        if direction[0] < 0:
-            anchors.append('right')
-        elif direction[0] > 0:
-            anchors.append('left')
+
+        if self._anchors is None:
+            # use the document (pixel) coord system to set text anchors
+            anchors = []
+            if direction[0] < 0:
+                anchors.append('right')
+            elif direction[0] > 0:
+                anchors.append('left')
+            else:
+                anchors.append('center')
+            if direction[1] < 0:
+                anchors.append('bottom')
+            elif direction[1] > 0:
+                anchors.append('top')
+            else:
+                anchors.append('middle')
         else:
-            anchors.append('center')
-        if direction[1] < 0:
-            anchors.append('bottom')
-        elif direction[1] > 0:
-            anchors.append('top')
-        else:
-            anchors.append('middle')
+            anchors = self._anchors
 
         # now figure out the tick positions in visual (data) coords
         doc_unit = visual_to_document.map([[0, 0], direction[:2]])
@@ -187,15 +224,14 @@ class Ticker(object):
                             direction * self.axis.minor_tick_length / doc_len,
                             direction * self.axis.major_tick_length / doc_len,
                             direction * (self.axis.major_tick_length +
-                                         self.axis.label_margin) / doc_len],
+                                         self.axis.tick_label_margin) / doc_len],
                            dtype=float)
         minor_vector = vectors[1] - vectors[0]
         major_vector = vectors[2] - vectors[0]
         label_vector = vectors[3] - vectors[0]
 
-        # TODO implement this more sensibly so that it depends on the font
-        # size and can be overriden by the user.
-        axislabel_vector = label_vector * 10
+        axislabel_vector = direction * (self.axis.major_tick_length +
+                                        self.axis.axis_label_margin) / doc_len
 
         major_origins, major_endpoints = self._tile_ticks(
             major_tick_fractions, major_vector)
