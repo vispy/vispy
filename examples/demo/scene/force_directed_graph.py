@@ -27,7 +27,7 @@ ptr = 0
 typ = 0
 while ptr < npts:
     size = np.random.random() * grpsize + grpsize // 2
-    types[ptr:ptr+size] = typ
+    types[int(ptr):int(ptr+size)] = typ
     typ += 1
     ptr = ptr + size
 

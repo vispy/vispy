@@ -10,6 +10,8 @@ This collection provides very fast points. Output quality is ugly so it must be
 used at small size only (2/3 pixels). You've been warned.
 """
 
+from __future__ import division
+
 import numpy as np
 from ... import glsl
 from . collection import Collection
@@ -93,7 +95,7 @@ class RawPointCollection(Collection):
         """
 
         itemsize = itemsize or 1
-        itemcount = len(P) / itemsize
+        itemcount = len(P) // itemsize
 
         V = np.empty(len(P), dtype=self.vtype)
 
