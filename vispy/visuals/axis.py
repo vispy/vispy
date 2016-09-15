@@ -62,21 +62,22 @@ class AxisVisual(CompoundVisual):
         Margin between ticks and axis labels
     axis_font_size : float
         The font size to use for rendering axis labels.
+    font_size : str
+        Deprecated and replaced by tick_font_size
     anchors : iterable
         A 2-element iterable (tuple, list, etc.) giving the horizontal and
         vertical alignment of the tick labels. The first element should be one
         of 'left', 'center', or 'right', and the second element should be one
         of 'bottom', 'middle', or 'top'. If this is not specified, it is
         determined automatically.
-    font_size : str
-        Deprecated and replaced by tick_font_size
     """
     def __init__(self, pos=None, domain=(0., 1.), tick_direction=(-1., 0.),
                  scale_type="linear", axis_color=(1, 1, 1),
-                 tick_color=(0.7, 0.7, 0.7), text_color='w', tick_font_size=8,
+                 tick_color=(0.7, 0.7, 0.7), text_color='w',
                  minor_tick_length=5, major_tick_length=10,
-                 axis_width=3, tick_width=2, axis_label=None,
-                 tick_label_margin=15, axis_label_margin=35, axis_font_size=10,
+                 tick_width=2, tick_label_margin=15, tick_font_size=8,
+                 axis_width=3,  axis_label=None,
+                 axis_label_margin=35, axis_font_size=10,
                  font_size=None, anchors=None):
 
         if scale_type != 'linear':
