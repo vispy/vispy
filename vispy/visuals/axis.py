@@ -68,6 +68,8 @@ class AxisVisual(CompoundVisual):
         of 'left', 'center', or 'right', and the second element should be one
         of 'bottom', 'middle', or 'top'. If this is not specified, it is
         determined automatically.
+    font_size : str
+        Deprecated and replaced by tick_font_size
     """
     def __init__(self, pos=None, domain=(0., 1.), tick_direction=(-1., 0.),
                  scale_type="linear", axis_color=(1, 1, 1),
