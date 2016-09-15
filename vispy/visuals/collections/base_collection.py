@@ -457,7 +457,7 @@ class BaseCollection(object):
         # linesize = gl.glGetInteger(gl.GL_MAX_TEXTURE_SIZE)
         linesize = 1024
         count = self._uniforms_float_count
-        cols = linesize // float(count / 4)
+        cols = 4 * linesize // int(count)
         rows = max(1, int(math.ceil(size / float(cols))))
         shape = rows, cols * (count // 4), count
         self._ushape = shape

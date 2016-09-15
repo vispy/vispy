@@ -97,9 +97,9 @@ class VectorFieldVisual(visuals.Visual):
                  color=(1, 1, 1, 0.3)):
         self._time = 0.0
         self._last_time = ptime.time()
-        rows = field.shape[0] // spacing
-        cols = field.shape[1] // spacing
-        index = np.empty((rows * cols, segments * 2, 2), dtype=np.float32)
+        rows = int(field.shape[0] / spacing)
+        cols = int(field.shape[1] / spacing)
+        index = np.empty((rows * cols, int(segments) * 2, 2), dtype=np.float32)
         
         # encodes starting position within vector field
         index[:, :, 0] = np.arange(rows * cols)[:, np.newaxis]
