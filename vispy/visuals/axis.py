@@ -4,6 +4,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
+import math
 import warnings
 
 import numpy as np
@@ -159,6 +160,14 @@ class AxisVisual(CompoundVisual):
     def _prepare_draw(self, view):
         if self._pos is None:
             return False
+        if self.axis_label is not None:
+            # TODO: make sure we only call get_transform if the transform for
+            # the line is updated
+            tr = self._line.get_transform(map_from='visual', map_to='canvas')
+            x1, y1, x2, y2 = tr.map(self.pos)[:,:2].ravel()
+            if x1 > x2:
+                x1, y1, x2, y2 = x2, y2, x1, y1
+            self._axis_label.rotation = math.degrees(math.atan2(y2-y1, x2-x1))
         if self._need_update:
             self._update_subvisuals()
 
