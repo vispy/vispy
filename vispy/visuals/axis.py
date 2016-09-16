@@ -76,7 +76,7 @@ class AxisVisual(CompoundVisual):
                  scale_type="linear", axis_color=(1, 1, 1),
                  tick_color=(0.7, 0.7, 0.7), text_color='w',
                  minor_tick_length=5, major_tick_length=10,
-                 tick_width=2, tick_label_margin=15, tick_font_size=8,
+                 tick_width=2, tick_label_margin=5, tick_font_size=8,
                  axis_width=3,  axis_label=None,
                  axis_label_margin=35, axis_font_size=10,
                  font_size=None, anchors=None):
