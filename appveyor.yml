@@ -6,7 +6,7 @@ environment:
   global:
       MINICONDA_VERSION: "3.5.5"
       PYTHON: "C:\\conda"
-      CONDA_DEPENDENCIES: "numpy scipy pyqt matplotlib setuptools nose pytest coverage ipython ipython-notebook pytest-cov"
+      CONDA_DEPENDENCIES: "numpy scipy pyqt matplotlib setuptools nose pytest coverage ipython=4.2.0 ipython-notebook pytest-cov"
 
   matrix:
       - PYTHON_VERSION: "3.4"
