@@ -60,20 +60,21 @@ class ColorBarWidget(Widget):
     border_color : str | vispy.color.Color
         The color of the border of the colormap. This can either be a
         str as the color's name or an actual instace of a vipy.color.Color
+    padding : tuple (major_axis, minor_axis) [0, 1]
+        padding with respect to the major and minor axis
+    axis_ratio : float
+        ratio of minor axis to major axis
     """
-    # padding with respect to the major and minor axis
-    # units are normalized [0, 1] with 1 representing occupying
-    # all of the length along the given axis
-    major_axis_padding = 0.1
-    minor_axis_padding = 0.8
-    # ratio of minor axis to major axis
-    minor_axis_ratio = 0.05
-
     def __init__(self, cmap, orientation,
                  label="", label_color='black', clim=("", ""),
-                 border_width=0.0, border_color="black", **kwargs):
+                 border_width=0.0, border_color="black",
+                 padding=(0.2, 0.2), axis_ratio=0.05, **kwargs):
 
         dummy_size = (1, 1)
+        self._major_axis_padding = padding[0]
+        self._minor_axis_padding = padding[1]
+        self._minor_axis_ratio = axis_ratio
+
         self._colorbar = ColorBarVisual(size=dummy_size, cmap=cmap,
                                         orientation=orientation,
                                         label_str=label, clim=clim,
@@ -98,34 +99,25 @@ class ColorBarWidget(Widget):
 
     def _update_colorbar(self):
         self._colorbar.pos = self.rect.center
-        self._colorbar.size = \
-            ColorBarWidget.calc_size(self.rect, self._colorbar.orientation)
+        self._colorbar.size = self._calc_size()
 
-    @staticmethod
-    def calc_size(rect, orientation):
+    def _calc_size(self):
         """Calculate a size
-
-        Parameters
-        ----------
-        rect : rectangle
-            The rectangle.
-        orientation : str
-            Either "bottom" or "top".
         """
-        (total_halfx, total_halfy) = rect.center
-        if orientation in ["bottom", "top"]:
+        (total_halfx, total_halfy) = (self.rect.right, self.rect.top)
+        if self._colorbar.orientation in ["bottom", "top"]:
             (total_major_axis, total_minor_axis) = (total_halfx, total_halfy)
         else:
             (total_major_axis, total_minor_axis) = (total_halfy, total_halfx)
 
         major_axis = total_major_axis * (1.0 -
-                                         ColorBarWidget.major_axis_padding)
-        minor_axis = major_axis * ColorBarWidget.minor_axis_ratio
+                                         self._major_axis_padding)
+        minor_axis = major_axis * self._minor_axis_ratio
 
         # if the minor axis is "leaking" from the padding, then clamp
         minor_axis = np.minimum(minor_axis,
                                 total_minor_axis *
-                                (1.0 - ColorBarWidget.minor_axis_padding))
+                                (1.0 - self._minor_axis_padding))
 
         return (major_axis, minor_axis)
 
