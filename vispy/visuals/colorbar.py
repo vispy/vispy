@@ -256,6 +256,9 @@ class ColorBarVisual(CompoundVisual):
     label_str : str
         The label that is to be drawn with the colorbar
         that provides information about the colorbar.
+    label_color : str | vispy.color.Color
+        The color of the labels. This can either be a
+        str as the color's name or an actual instace of a vipy.color.Color
     clim : tuple (min, max)
         the minimum and maximum values of the data that
         is given to the colorbar. This is used to draw the scale
