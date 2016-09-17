@@ -465,7 +465,7 @@ class PlotWidget(scene.Widget):
         self._configure_2d()
 
         cbar = scene.ColorBarWidget(orientation=position,
-                                    label_str=label,
+                                    label=label,
                                     cmap=cmap,
                                     clim=clim,
                                     border_width=border_width,
