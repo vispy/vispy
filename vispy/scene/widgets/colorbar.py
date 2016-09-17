@@ -67,13 +67,14 @@ class ColorBarWidget(Widget):
     minor_axis_ratio = 0.05
 
     def __init__(self, cmap, orientation,
-                 label="", clim=("", ""),
+                 label="", clim=("", ""), label_color='black',
                  border_width=0.0, border_color="black", **kwargs):
 
         dummy_size = (1, 1)
         self._colorbar = ColorBarVisual(size=dummy_size, cmap=cmap,
                                         orientation=orientation,
-                                        label=label, clim=clim,
+                                        label_str=label, clim=clim,
+                                        label_color=label_color,
                                         border_width=border_width,
                                         border_color=border_color, **kwargs)
 
@@ -142,12 +143,40 @@ class ColorBarWidget(Widget):
         self._colorbar.label = label
 
     @property
+    def ticks(self):
+        return self._colorbar.ticks
+
+    @ticks.setter
+    def ticks(self, ticks):
+        self._colorbar.ticks = ticks
+
+    @property
     def clim(self):
         return self._colorbar.clim
 
     @clim.setter
     def clim(self, clim):
         self._colorbar.clim = clim
+
+    @property
+    def border_color(self):
+        """ The color of the border around the ColorBar in pixels
+        """
+        return self._colorbar.border_color
+
+    @border_color.setter
+    def border_color(self, border_color):
+        self._colorbar.border_color = border_color
+
+    @property
+    def border_width(self):
+        """ The width of the border around the ColorBar in pixels
+        """
+        return self._colorbar.border_width
+
+    @border_width.setter
+    def border_width(self, border_width):
+        self._colorbar.border_width = border_width
 
     @property
     def orientation(self):
