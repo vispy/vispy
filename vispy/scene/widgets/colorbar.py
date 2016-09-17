@@ -70,7 +70,7 @@ class ColorBarWidget(Widget):
     minor_axis_ratio = 0.05
 
     def __init__(self, cmap, orientation,
-                 label="", clim=("", ""), label_color='black',
+                 label="", label_color='black', clim=("", ""),
                  border_width=0.0, border_color="black", **kwargs):
 
         dummy_size = (1, 1)
