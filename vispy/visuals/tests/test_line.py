@@ -10,9 +10,9 @@ from vispy.testing import (requires_application, TestingCanvas,
 
 
 @requires_application()
-def test_axis():
+def test_line():
     with TestingCanvas() as c:
-        axis = visuals.Axis(pos=[[-1.0, 0], [1.0, 0]])
+        axis = visuals.Line(pos=[[-1.0, 0], [1.0, 0]])
         c.draw_visual(axis)
 
 
