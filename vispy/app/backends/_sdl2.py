@@ -166,7 +166,7 @@ class ApplicationBackend(BaseApplicationBackend):
 
     def _vispy_run(self):
         wins = _get_sdl2_windows()
-        while all(w._id is not None for w in wins):
+        while any(w._id is not None for w in wins):
             self._vispy_process_events()
         self._vispy_quit()  # to clean up
 
