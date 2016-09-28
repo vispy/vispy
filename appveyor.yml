@@ -45,6 +45,9 @@ install:
   # Install vispy
   - "python setup.py develop"
 
+  # Print out OpenGL info
+  - "python .opengl_info.py"
+
 build: false  # Not a C# project, build stuff at the test step instead.
 
 test_script:
