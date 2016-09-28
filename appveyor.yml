@@ -49,5 +49,6 @@ build: false  # Not a C# project, build stuff at the test step instead.
 
 test_script:
   # Run the project tests (don't do examples because they are too slow)
+  - "python info.py"
   - "python make test nobackend"
   - "python make test pyqt4"
