@@ -40,30 +40,34 @@ from ctypes import (Structure, POINTER, CFUNCTYPE, byref, c_char_p, c_int,
                     c_uint, c_double, c_float, c_ushort)
 
 
-# _glfw_file = None
+_glfw_file = None
 
-# # First if there is an environment variable pointing to the library
-# if 'GLFW_LIBRARY' in os.environ:
-#     if os.path.exists(os.environ['GLFW_LIBRARY']):
-#         _glfw_file = os.path.realpath(os.environ['GLFW_LIBRARY'])
+# First if there is an environment variable pointing to the library
+if 'GLFW_LIBRARY' in os.environ:
+    if os.path.exists(os.environ['GLFW_LIBRARY']):
+        _glfw_file = os.path.realpath(os.environ['GLFW_LIBRARY'])
 
-# # Else, try to find it
-# if _glfw_file is None:
-#     order = ['glfw3', 'glfw']
-#     for check in order:
-#         _glfw_file = ctypes.util.find_library(check)
-#         if _glfw_file is not None:
-#             break
+# Second, try bundled dlls
+if _glfw_file is None:
+    current_path = os.path.dirname(__file__)
+    _file_path = os.path.join(current_path, "../bin/", "glfw3.dll")
+    if os.path.isfile(_file_path):
+        _glfw_file = _file_path
 
-# # Else, we failed and exit
-# if _glfw_file is None:
-#     raise OSError('GLFW library not found')
+# Else, try to find it
+if _glfw_file is None:
+    order = ['glfw3', 'glfw']
+    for check in order:
+        _glfw_file = ctypes.util.find_library(check)
+        if _glfw_file is not None:
+            break
 
-# # Load it
-# _glfw = ctypes.CDLL(_glfw_file)
+# Else, we failed and exit
+if _glfw_file is None:
+    raise OSError('GLFW library not found')
 
-current_path = os.path.dirname(__file__)
-_glfw = ctypes.CDLL(os.path.join(current_path, "../bin/", "glfw3.dll"))
+# Load it
+_glfw = ctypes.CDLL(_glfw_file)
 
 # Ensure it's new enough
 def glfwGetVersion():
