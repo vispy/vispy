@@ -52,5 +52,5 @@ build: false  # Not a C# project, build stuff at the test step instead.
 
 test_script:
   # Run the project tests (don't do examples because they are too slow)
-  - "python make test nobackend"
-  - "python make test pyqt4"
+  - "python -X faulthandler make test nobackend"
+  - "python -X faulthandler make test pyqt4"
