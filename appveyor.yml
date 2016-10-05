@@ -7,6 +7,7 @@ environment:
       MINICONDA_VERSION: "3.5.5"
       PYTHON: "C:\\conda"
       CONDA_DEPENDENCIES: "numpy scipy pyqt=4 matplotlib setuptools nose pytest coverage ipython=4.2.0 ipython-notebook pytest-cov"
+      PIP_DEPENDENCIES: "pytest-faulthandler"
 
   matrix:
       - PYTHON_VERSION: "3.4"
