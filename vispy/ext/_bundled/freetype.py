@@ -175,6 +175,7 @@ FT_Face = POINTER(FT_FaceRec)
 # __init__.py
 
 __dll__ = None
+FT_Library_filename = None
 
 current_path = os.path.dirname(__file__)
 FT_internal = os.path.join(current_path, "../../bin/", "freetype253.dll")
