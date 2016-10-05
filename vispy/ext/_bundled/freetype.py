@@ -13,6 +13,7 @@ Adapted from freetype-py.
 '''
 
 import sys
+import os
 import struct
 from ctypes import (byref, c_char_p, c_ushort, cast, util, CDLL, Structure,
                     POINTER, c_int, c_short, c_long, c_void_p, c_uint,
@@ -173,15 +174,18 @@ FT_Face = POINTER(FT_FaceRec)
 ##############################################################################
 # __init__.py
 
-__dll__ = None
-FT_Library_filename = util.find_library('freetype')
-if not FT_Library_filename and sys.platform.startswith('win'):
-    fname_end = '_x64.dll' if _64_bit else '.dll'
-    FT_Library_filename = load_data_file('freetype/freetype253' + fname_end)
-if not FT_Library_filename:
-    raise ImportError('Freetype library not found')
-if not __dll__:
-    __dll__ = CDLL(FT_Library_filename)
+# __dll__ = None
+# FT_Library_filename = util.find_library('freetype')
+# if not FT_Library_filename and sys.platform.startswith('win'):
+#     fname_end = '_x64.dll' if _64_bit else '.dll'
+#     FT_Library_filename = load_data_file('freetype/freetype253' + fname_end)
+# if not FT_Library_filename:
+#     raise ImportError('Freetype library not found')
+# if not __dll__:
+#     __dll__ = CDLL(FT_Library_filename)
+
+current_path = os.path.dirname(__file__)
+__dll__ = CDLL(os.path.join(current_path, "../../bin/", "freetype253.dll"))
 
 
 FT_Init_FreeType = __dll__.FT_Init_FreeType
