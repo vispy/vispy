@@ -9,6 +9,7 @@ doc/_build
 /_images
 /_demo-data
 .idea
+.vscode
 build
 dist
 MANIFEST
