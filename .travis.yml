@@ -141,7 +141,7 @@ install:
         fi;
         if [ "${PYTHON}" == "3.4" ]; then
           pip install -q freetype-py husl pypng cassowary > ${REDIRECT_TO};
-          conda install --yes --quiet pillow scipy matplotlib decorator six numpy$NUMPY > ${REDIRECT_TO};
+          conda install --yes --quiet pillow scipy pyqt=4 matplotlib decorator six numpy$NUMPY > ${REDIRECT_TO};
           rm -rf ${SRC_DIR}/vispy/ext/_bundled;
         fi;
       fi;
