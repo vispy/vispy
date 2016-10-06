@@ -18,7 +18,7 @@ define(function(require) {
     }
 
     var vispy = require("/nbextensions/vispy/vispy.min.js");
-    var widget = require("widgets/js/widget");
+    var widget = require("jupyter-js-widgets");
 
     var VispyView = widget.DOMWidgetView.extend({
 
