@@ -73,6 +73,8 @@ class PlotWidget(scene.Widget):
         #     |         |                       | xlabel|         |         |
         #  r5 |         +-----------------------+-------+---------+         |
         #     |         |                       | cbar  |         |         |
+        #  r6 |---------+-----------------------+-------+---------+---------|
+        #     |                           padding                           |
         #     +---------+-----------------------+-------+---------+---------+
 
         # padding left
@@ -84,6 +86,11 @@ class PlotWidget(scene.Widget):
         padding_right = self.grid.add_widget(None, row=0, row_span=5, col=6)
         padding_right.width_min = 30
         padding_right.width_max = 60
+
+        # padding right
+        padding_bottom = self.grid.add_widget(None, row=6, col=0, col_span=6)
+        padding_bottom.height_min = 20
+        padding_bottom.height_max = 40
 
         # row 0
         # title - column 4 to 5
@@ -465,7 +472,7 @@ class PlotWidget(scene.Widget):
         self._configure_2d()
 
         cbar = scene.ColorBarWidget(orientation=position,
-                                    label_str=label,
+                                    label=label,
                                     cmap=cmap,
                                     clim=clim,
                                     border_width=border_width,

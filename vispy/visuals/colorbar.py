@@ -256,6 +256,9 @@ class ColorBarVisual(CompoundVisual):
     label_str : str
         The label that is to be drawn with the colorbar
         that provides information about the colorbar.
+    label_color : str | vispy.color.Color
+        The color of the labels. This can either be a
+        str as the color's name or an actual instace of a vipy.color.Color
     clim : tuple (min, max)
         the minimum and maximum values of the data that
         is given to the colorbar. This is used to draw the scale
@@ -275,23 +278,25 @@ class ColorBarVisual(CompoundVisual):
     def __init__(self, cmap, orientation, size,
                  pos=[0, 0],
                  label_str="",
+                 label_color='black',
                  clim=(0.0, 1.0),
                  border_width=1.0,
                  border_color="black",
                  **kwargs):
 
         self._label_str = label_str
+        self._label_color = label_color
         self._cmap = get_colormap(cmap)
         self._clim = clim
         self._pos = pos
         self._size = size
         self._orientation = orientation
 
-        self._label = TextVisual(text=self._label_str)
+        self._label = TextVisual(self._label_str, color=self._label_color)
 
         self._ticks = []
-        self._ticks.append(TextVisual(str(self._clim[0])))
-        self._ticks.append(TextVisual(str(self._clim[1])))
+        self._ticks.append(TextVisual(str(self._clim[0]), color=self._label_color))
+        self._ticks.append(TextVisual(str(self._clim[1]), color=self._label_color))
 
         if orientation in ["top", "bottom"]:
             (width, height) = size
@@ -323,7 +328,6 @@ class ColorBarVisual(CompoundVisual):
         self._colorbar.halfdim = self._halfdim
         self._border.halfdim = self._halfdim
 
-        self._label.text = self._label_str
         self._ticks[0].text = str(self._clim[0])
         self._ticks[1].text = str(self._clim[1])
 
@@ -634,6 +638,7 @@ class ColorBarVisual(CompoundVisual):
     @border_color.setter
     def border_color(self, border_color):
         self._border.border_color = border_color
+        self._update()
 
     @property
     def orientation(self):
