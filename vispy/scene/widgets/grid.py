@@ -460,20 +460,21 @@ class Grid(Widget):
 
         # yes, this little dance is necessary for cassowary
         # to not screw up :/
-        if self._height_stay:
-            self._solver.remove_constraint(self._height_stay)
+        if rect.height != self._var_h.value:
+            if self._height_stay:
+                self._solver.remove_constraint(self._height_stay)
 
-        self._var_h.value = rect.height
-        self._height_stay = self._solver.add_stay(self._var_h,
-                                                  strength=STRONG)
+            self._var_h.value = rect.height
+            self._height_stay = self._solver.add_stay(self._var_h,
+                                                      strength=STRONG)
 
-        # self._var_w.value = rect.width
-        if self._width_stay:
-            self._solver.remove_constraint(self._width_stay)
+        if rect.width != self._var_w.value:
+            if self._width_stay:
+                self._solver.remove_constraint(self._width_stay)
 
-        self._var_w.value = rect.width
-        self._width_stay = self._solver.add_stay(self._var_w,
-                                                 strength=STRONG)
+            self._var_w.value = rect.width
+            self._width_stay = self._solver.add_stay(self._var_w,
+                                                     strength=STRONG)
 
         value_vectorized = np.vectorize(lambda x: x.value)
 
