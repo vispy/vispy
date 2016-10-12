@@ -304,7 +304,11 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
         # Qt supports OS double-click events, so we set this here to
         # avoid double events
         self._double_click_supported = True
-        self._physical_size = p.size
+
+        # We call this here to set the physical size. We do this rather than set
+        # the physical size directly, because resizeGL takes into account any
+        # non-unity device pixel ratio.
+        self.resizeGL(*p.size)
 
         # Activate touch and gesture.
         # NOTE: we only activate touch on OS X because there seems to be
@@ -727,6 +731,12 @@ class CanvasBackendDesktop(QtBaseCanvasBackend, QGLWidget):
     def resizeGL(self, w, h):
         if self._vispy_canvas is None:
             return
+        if qt_lib == 'pyqt5':
+            # We take into account devicePixelRatio, which is non-unity on
+            # e.g HiDPI displays.
+            ratio = self.devicePixelRatio()
+            w = w * ratio
+            h = h * ratio
         self._vispy_set_physical_size(w, h)
         self._vispy_canvas.events.resize(size=(self.width(), self.height()),
                                          physical_size=(w, h))
