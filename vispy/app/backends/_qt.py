@@ -732,6 +732,12 @@ class CanvasBackendDesktop(QtBaseCanvasBackend, QGLWidget):
     def resizeGL(self, w, h):
         if self._vispy_canvas is None:
             return
+        if qt_lib == 'pyqt5':
+            # We take into account devicePixelRatio, which is non-unity on
+            # e.g HiDPI displays.
+            ratio = self.devicePixelRatio()
+            w = w * ratio
+            h = h * ratio
         self._vispy_set_physical_size(w, h)
         self._vispy_canvas.events.resize(size=(self.width(), self.height()),
                                          physical_size=(w, h))
