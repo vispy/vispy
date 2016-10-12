@@ -458,8 +458,8 @@ class Grid(Widget):
             self._need_solver_recreate = False
             self._recreate_solver()
 
-        # yes, this little dance is necessary for cassowary
-        # to not screw up :/
+        # we only need to remove and add the height and width constraints of
+        # the solver if they are not the same as the current value
         if rect.height != self._var_h.value:
             if self._height_stay:
                 self._solver.remove_constraint(self._height_stay)
