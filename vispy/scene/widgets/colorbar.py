@@ -133,6 +133,15 @@ class ColorBarWidget(Widget):
         self._colorbar.label = label
 
     @property
+    def label_str(self):
+        return self._label_str
+
+    @label_str.setter
+    def label_str(self, label_str):
+        self._label_str = label_str
+        self._update()
+
+    @property
     def clim(self):
         return self._colorbar.clim
 
