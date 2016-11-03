@@ -605,6 +605,15 @@ class ColorBarVisual(CompoundVisual):
         self._update()
 
     @property
+    def label_str(self):
+        return self._label_str
+
+    @label_str.setter
+    def label_str(self, label_str):
+        self._label_str = label_str
+        self._update()
+
+    @property
     def ticks(self):
         """ The vispy.visuals.TextVisual associated with the ticks
 
