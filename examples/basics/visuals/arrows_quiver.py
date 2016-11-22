@@ -7,6 +7,8 @@
 This example shows how to use the `ArrowVisual` for a quiver plot
 """
 
+from __future__ import division
+
 import sys
 import itertools
 
@@ -76,7 +78,7 @@ class Canvas(app.Canvas):
 
         self.visual.set_data(
             pos=vertices,
-            arrows=vertices.reshape((len(vertices)/2, 4)),
+            arrows=vertices.reshape((len(vertices)//2, 4)),
         )
 
     def on_mouse_move(self, event):

@@ -6,7 +6,7 @@ environment:
   global:
       MINICONDA_VERSION: "3.5.5"
       PYTHON: "C:\\conda"
-      CONDA_DEPENDENCIES: "numpy scipy pyqt matplotlib setuptools nose pytest coverage ipython ipython-notebook pytest-cov"
+      CONDA_DEPENDENCIES: "numpy scipy pyqt=4 matplotlib setuptools nose pytest coverage ipython=4.2.0 ipython-notebook pytest-cov"
 
   matrix:
       - PYTHON_VERSION: "3.4"
@@ -25,7 +25,7 @@ install:
   - "git clone git://github.com/astropy/ci-helpers.git"
   - "rm ci-helpers/test_env.py"
   - "powershell ci-helpers/appveyor/install-miniconda.ps1"
-  
+
   # Prepend newly installed Python to the PATH of this build (this cannot be
   # done from inside the powershell script as it would require to restart
   # the parent CMD process).
