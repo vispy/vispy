@@ -238,6 +238,7 @@ class PlotWidget(scene.Widget):
             must be None.
         shading : str | None
             Shading to use.
+
         Returns
         -------
         mesh : instance of Mesh
