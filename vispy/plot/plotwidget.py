@@ -267,7 +267,7 @@ class PlotWidget(scene.Widget):
         mesh = scene.Mesh(meshdata=meshdata, vertex_colors=vertex_colors,
                           face_colors=face_colors, color=color,
                           shading=shading)
-        self.view.add(mesh)
+        self.view.add(mesh )
         self.view.camera.set_range()
         return mesh
 
