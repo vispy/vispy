@@ -222,7 +222,7 @@ class PlotWidget(scene.Widget):
 
     def mesh(self, vertices=None, faces=None, vertex_colors=None,
              face_colors=None, color=(0.5, 0.5, 1.), fname=None,
-             meshdata=None):
+             meshdata=None, shading='auto'):
         """Show a 3D mesh
 
         Parameters
@@ -243,6 +243,10 @@ class PlotWidget(scene.Widget):
         meshdata : MeshData | None
             Meshdata to use. If not None, then vertices, faces, and fname
             must be None.
+        shading : str
+            Shading to use, can be None, 'smooth', 'flat', or 'auto'.
+            Default ('auto') will use None if face_colors is set, and
+            'smooth' otherwise.
 
         Returns
         -------
@@ -250,6 +254,10 @@ class PlotWidget(scene.Widget):
             The mesh.
         """
         self._configure_3d()
+        if shading == 'auto':
+            shading = 'smooth'
+            if face_colors is not None:
+                shading = None
         if fname is not None:
             if not all(x is None for x in (vertices, faces, meshdata)):
                 raise ValueError('vertices, faces, and meshdata must be None '
@@ -260,10 +268,11 @@ class PlotWidget(scene.Widget):
                 raise ValueError('vertices, faces, and fname must be None if '
                                  'fname is not None')
         else:
-            meshdata = MeshData(vertices, faces)
+            meshdata = MeshData(vertices, faces, vertex_colors=vertex_colors,
+                          face_colors=face_colors)
         mesh = scene.Mesh(meshdata=meshdata, vertex_colors=vertex_colors,
                           face_colors=face_colors, color=color,
-                          shading='smooth')
+                          shading=shading)
         self.view.add(mesh)
         self.view.camera.set_range()
         return mesh
