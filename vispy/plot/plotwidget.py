@@ -222,7 +222,7 @@ class PlotWidget(scene.Widget):
 
     def mesh(self, vertices=None, faces=None, vertex_colors=None,
              face_colors=None, color=(0.5, 0.5, 1.), fname=None,
-             meshdata=None, shading=None):
+             meshdata=None, shading='auto'):
         """Show a 3D mesh
 
         Parameters
@@ -243,8 +243,9 @@ class PlotWidget(scene.Widget):
         meshdata : MeshData | None
             Meshdata to use. If not None, then vertices, faces, and fname
             must be None.
-        shading : str | None
-            Shading to use.
+        shading : str | 'auto'
+            Shading to use. Default shading is set to 'smooth'. If face_colors
+            is set, shading is set to None.
 
         Returns
         -------
@@ -252,6 +253,9 @@ class PlotWidget(scene.Widget):
             The mesh.
         """
         self._configure_3d()
+        shading = 'smooth'
+        if face_colors is not None:
+            shading = None
         if fname is not None:
             if not all(x is None for x in (vertices, faces, meshdata)):
                 raise ValueError('vertices, faces, and meshdata must be None '
