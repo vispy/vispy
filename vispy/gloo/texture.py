@@ -258,12 +258,12 @@ class BaseTexture(GLObject):
             raise ValueError('Format does not match with given shape. '
                              '(format expects %d elements, data has %d)' %
                              (self._inv_formats[format], shape[-1]))
-        
+
         if internalformat is None:
             pass
         elif internalformat not in self._inv_internalformats:
             raise ValueError(
-                'Invalid texture internalformat: %r. Allowed formats: %r' 
+                'Invalid texture internalformat: %r. Allowed formats: %r'
                 % (internalformat, self._inv_internalformats)
             )
         elif shape[-1] != self._inv_internalformats[internalformat]:
@@ -273,7 +273,7 @@ class BaseTexture(GLObject):
         self._shape = shape
         self._format = format
         self._internalformat = internalformat
-        self._glir.command('SIZE', self._id, self._shape, self._format, 
+        self._glir.command('SIZE', self._id, self._shape, self._format,
                            self._internalformat)
 
     def set_data(self, data, offset=None, copy=False):
@@ -300,32 +300,32 @@ class BaseTexture(GLObject):
     def _set_data(self, data, offset=None, copy=False):
         """Internal method for set_data.
         """
-        
+
         # Copy if needed, check/normalize shape
         data = np.array(data, copy=copy)
         data = self._normalize_shape(data)
-        
+
         # Maybe resize to purge DATA commands?
         if offset is None:
             self._resize(data.shape)
         elif all([i == 0 for i in offset]) and data.shape == self._shape:
             self._resize(data.shape)
-        
+
         # Convert offset to something usable
         offset = offset or tuple([0 for i in range(self._ndim)])
         assert len(offset) == self._ndim
-        
+
         # Check if data fits
         for i in range(len(data.shape)-1):
             if offset[i] + data.shape[i] > self._shape[i]:
                 raise ValueError("Data is too large")
-        
+
         # Send GLIR command
         self._glir.command('DATA', self._id, offset, data)
-    
+
     def __setitem__(self, key, data):
         """ x.__getitem__(y) <==> x[y] """
-        
+
         # Make sure key is a tuple
         if isinstance(key, (int, slice)) or key == Ellipsis:
             key = (key,)
@@ -367,7 +367,7 @@ class BaseTexture(GLObject):
         offset = tuple([s.start for s in slices])[:self._ndim]
         shape = tuple([s.stop - s.start for s in slices])
         size = np.prod(shape) if len(shape) > 0 else 1
-        
+
         # Make sure data is an array
         if not isinstance(data, np.ndarray):
             data = np.array(data, copy=False)
@@ -377,7 +377,7 @@ class BaseTexture(GLObject):
 
         # Set data (deferred)
         self._set_data(data=data, offset=offset, copy=False)
-    
+
     def __repr__(self):
         return "<%s shape=%r format=%r at 0x%x>" % (
             self.__class__.__name__, self._shape, self._format, id(self))
