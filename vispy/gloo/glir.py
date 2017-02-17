@@ -355,6 +355,7 @@ class GlirParser(BaseGlirParser):
                           'Texture1D': GlirTexture1D,
                           'Texture2D': GlirTexture2D,
                           'Texture3D': GlirTexture3D,
+                          'TextureCubeMap': GlirTextureCubeMap,
                           'RenderBuffer': GlirRenderBuffer,
                           'FrameBuffer': GlirFrameBuffer,
                           }
@@ -1215,6 +1216,63 @@ class GlirTexture3D(GlirTexture):
             gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, alignment)
         # Upload
         glTexSubImage3D(self._target, 0, x, y, z, format, gtype, data)
+        # Set alignment back
+        if alignment != 4:
+            gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 4)
+
+
+GL_SAMPLER_CUBE = gl.Enum('GL_SAMPLER_CUBE', 35680)
+GL_TEXTURE_CUBE_MAP = gl.Enum('GL_TEXTURE_CUBE_MAP', 34067)
+GL_TEXTURE_CUBE_MAP_POSITIVE_X = gl.Enum('GL_TEXTURE_CUBE_MAP_POSITIVE_X', 34069)
+GL_TEXTURE_CUBE_MAP_NEGATIVE_X = gl.Enum('GL_TEXTURE_CUBE_MAP_NEGATIVE_X', 34070)
+GL_TEXTURE_CUBE_MAP_POSITIVE_Y = gl.Enum('GL_TEXTURE_CUBE_MAP_POSITIVE_Y', 34071)
+GL_TEXTURE_CUBE_MAP_NEGATIVE_Y = gl.Enum('GL_TEXTURE_CUBE_MAP_NEGATIVE_Y', 34072)
+GL_TEXTURE_CUBE_MAP_POSITIVE_Z = gl.Enum('GL_TEXTURE_CUBE_MAP_POSITIVE_Z', 34073)
+GL_TEXTURE_CUBE_MAP_NEGATIVE_Z = gl.Enum('GL_TEXTURE_CUBE_MAP_NEGATIVE_Z', 34074)
+
+
+class GlirTextureCubeMap(GlirTexture):
+    _target = GL_TEXTURE_CUBE_MAP
+    _cube_targets = [
+        GL_TEXTURE_CUBE_MAP_POSITIVE_X,
+        GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
+        GL_TEXTURE_CUBE_MAP_POSITIVE_Y,
+        GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
+        GL_TEXTURE_CUBE_MAP_POSITIVE_Z,
+        GL_TEXTURE_CUBE_MAP_NEGATIVE_Z,
+    ]
+
+    def set_size(self, shape, format, internalformat):
+        format = as_enum(format)
+        if internalformat is not None:
+            internalformat = as_enum(internalformat)
+        else:
+            internalformat = format
+        # Shape is depth, height, width
+        if (shape, format, internalformat) != self._shape_formats:
+            self.activate()
+            self._shape_formats = shape, format, internalformat
+            for target in self._cube_targets:
+                gl.glTexImage2D(target, 0, internalformat, format,
+                                gl.GL_UNSIGNED_BYTE, shape[1:3])
+
+    def set_data(self, offset, data):
+        self.activate()
+
+        shape, format, internalformat = self._shape_formats
+        y, x = offset[:2]
+        # Get gtype
+        gtype = self._types.get(np.dtype(data.dtype), None)
+        if gtype is None:
+            raise ValueError("Type not allowed for texture")
+        # Set alignment (width is nbytes_per_pixel * npixels_per_line)
+
+        alignment = self._get_alignment(data.shape[-2] * data.shape[-1])
+        if alignment != 4:
+            gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, alignment)
+        # Upload
+        for i, target in enumerate(self._cube_targets):
+            gl.glTexSubImage2D(target, 0, x, y, format, gtype, data[i])
         # Set alignment back
         if alignment != 4:
             gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 4)

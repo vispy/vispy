@@ -589,6 +589,82 @@ class Texture3D(BaseTexture):
         return 'texture3D'
 
 
+class TextureCubeMap(BaseTexture):
+    """ Texture Cube Map
+
+    Parameters
+    ----------
+    data : ndarray | tuple | None
+        Texture data in the form of a numpy array (or something that
+        can be turned into one). A tuple with the shape of the texture
+        can also be given. Dimensions should be FxHxWxC where F is the number
+        of faces, H is the height, W is the width, and C is the number of
+        channels.
+    format : str | enum | None
+        The format of the texture: 'luminance', 'alpha',
+        'luminance_alpha', 'rgb', or 'rgba'. If not given the format
+        is chosen automatically based on the number of channels.
+        When the data has one channel, 'luminance' is assumed.
+    resizable : bool
+        Indicates whether texture can be resized. Default True.
+    interpolation : str | None
+        Interpolation mode, must be one of: 'nearest', 'linear'.
+        Default 'nearest'.
+    wrapping : str | None
+        Wrapping mode, must be one of: 'repeat', 'clamp_to_edge',
+        'mirrored_repeat'. Default 'clamp_to_edge'.
+    shape : tuple | None
+        Optional. A tuple with the shape of the texture. If ``data``
+        is also a tuple, it will override the value of ``shape``.
+    internalformat : str | None
+        Internal format to use.
+    resizeable : None
+        Deprecated version of `resizable`.
+    """
+    _ndim = 3
+    _GLIR_TYPE = 'TextureCubeMap'
+
+    def __init__(self, data=None, format=None, resizable=True,
+                 interpolation=None, wrapping=None, shape=None,
+                 internalformat=None, resizeable=None):
+        BaseTexture.__init__(self, data, format, resizable, interpolation,
+                             wrapping, shape, internalformat, resizeable)
+
+    @property
+    def width(self):
+        """ Texture width """
+        return self._shape[2]
+
+    @property
+    def height(self):
+        """ Texture height """
+        return self._shape[1]
+
+    @property
+    def depth(self):
+        """ Texture depth """
+        return self._shape[0]
+
+    @property
+    def glsl_type(self):
+        """ GLSL declaration strings required for a variable to hold this data.
+        """
+        return 'uniform', 'samplerCube'
+
+    @property
+    def glsl_sampler_type(self):
+        """ GLSL type of the sampler.
+        """
+        return 'samplerCube'
+
+    @property
+    def glsl_sample(self):
+        """ GLSL function that samples the texture.
+        """
+        return 'textureCube'
+
+
+
 # ------------------------------------------------- TextureEmulated3D class ---
 class TextureEmulated3D(Texture2D):
     """ Two dimensional texture that is emulating a three dimensional texture

@@ -32,7 +32,8 @@ import numpy as np
 
 from .globject import GLObject
 from .buffer import VertexBuffer, IndexBuffer, DataBuffer
-from .texture import BaseTexture, Texture2D, Texture3D, Texture1D
+from .texture import BaseTexture, Texture2D, Texture3D, Texture1D, \
+    TextureCubeMap
 from ..util import logger
 from .util import check_enum 
 from ..ext.six import string_types
@@ -301,6 +302,8 @@ class Program(GLObject):
                         data = Texture2D(data)
                     elif type_ == 'sampler3D':
                         data = Texture3D(data)
+                    elif type_ == 'samplerCube':
+                        data = TextureCubeMap(data)
                     else:
                         # This should not happen
                         raise RuntimeError('Unknown type %s' % type_)
