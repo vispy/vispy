@@ -134,9 +134,13 @@ def texSubImage2D(target, level, xoffset, yoffset, format, type, pixels):
 
 
 def readPixels(x, y, width, height, format, type):
-    # --- gl es mock
+    # --- es
     # GL_ALPHA, GL_RGB, GL_RGBA
     t = {6406:1, 6407:3, 6408:4}[format]
+    # --- gl mock
+    # GL_ALPHA, GL_RGB, GL_RGBA, GL_DEPTH_COMPONENT
+    t = {6406:1, 6407:3, 6408:4, 6402:1}[format]
+    # --- gl es mock
     # GL_UNSIGNED_BYTE, GL_FLOAT
     nb = {5121:1, 5126:4}[type]
     size = int(width*height*t*nb)
@@ -596,6 +600,8 @@ class FunctionAnnotation:
         """ Get the lines for this function based on the given backend. 
         The given API call is inserted at the correct location.
         """
+        if backend is None:
+            raise RuntimeError("Backend must be specified!")
         backend_selector = (backend, )  # first lines are for all backends
         lines = []
         for line in self.lines:
