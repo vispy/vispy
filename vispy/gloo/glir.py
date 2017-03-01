@@ -982,7 +982,8 @@ class GlirIndexBuffer(GlirBuffer):
 
 class GlirTexture(GlirObject):
     _target = None
-    
+    _mipmap_levels = None
+
     _types = {
         np.dtype(np.int8): gl.GL_BYTE,
         np.dtype(np.uint8): gl.GL_UNSIGNED_BYTE,
@@ -1039,9 +1040,11 @@ class GlirTexture(GlirObject):
                                gl.GL_TEXTURE_WRAP_S, wrapping[-2])
         gl.glTexParameterf(self._target, gl.GL_TEXTURE_WRAP_T, wrapping[-1])
 
-    def set_interpolation(self, min, mag):
+    def set_interpolation(self, min, mag, mipmap_levels):
         self.activate()
         min, mag = as_enum(min), as_enum(mag)
+        if 'MIPMAP' in min.name or 'MIPMAP' in mag.name:
+            self._mipmap_levels = mipmap_levels
         gl.glTexParameterf(self._target, gl.GL_TEXTURE_MIN_FILTER, min)
         gl.glTexParameterf(self._target, gl.GL_TEXTURE_MAG_FILTER, mag)
 
@@ -1116,8 +1119,15 @@ class GlirTexture2D(GlirTexture):
         alignment = self._get_alignment(data.shape[-2]*data.shape[-1])
         if alignment != 4:
             gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, alignment)
+        if self._mipmap_levels and hasattr(gl, 'glTexStorage2D'):
+            height, width = shape[-3:-1]
+            gl.glTexStorage2D(self._target, self._mipmap_levels,
+                              internalformat, width, height)
         # Upload
         gl.glTexSubImage2D(self._target, 0, x, y, format, gtype, data)
+        # Set mippmapping if enabled.
+        if self._mipmap_levels:
+            gl.glGenerateMipmap(self._target)
         # Set alignment back
         if alignment != 4:
             gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 4)

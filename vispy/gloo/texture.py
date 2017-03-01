@@ -33,7 +33,11 @@ class BaseTexture(GLObject):
     resizable : bool
         Indicates whether texture can be resized. Default True.
     interpolation : str | None
-        Interpolation mode, must be one of: 'nearest', 'linear'.
+        Interpolation mode, must be one of or a tuple of:
+            'nearest', 'linear', 'linear_mipmap_linear',
+            'linear_mipmap_nearest', 'nearest_mipmap_nearest',
+            'nearest_mipmap_linear'
+        If a tuple the tuple represents (min_filter, mag_filter).
         Default 'nearest'.
     wrapping : str | None
         Wrapping mode, must be one of: 'repeat', 'clamp_to_edge',
@@ -81,7 +85,7 @@ class BaseTexture(GLObject):
 
     def __init__(self, data=None, format=None, resizable=True,
                  interpolation=None, wrapping=None, shape=None,
-                 internalformat=None, resizeable=None):
+                 internalformat=None, resizeable=None, mipmap_levels=8):
         GLObject.__init__(self)
         if resizeable is not None:
             resizable = resizeable
@@ -96,6 +100,7 @@ class BaseTexture(GLObject):
         self._internalformat = internalformat
 
         # Set texture parameters (before setting data)
+        self._mipmap_levels = mipmap_levels
         self.interpolation = interpolation or 'nearest'
         self.wrapping = wrapping or 'clamp_to_edge'
 
@@ -177,6 +182,15 @@ class BaseTexture(GLObject):
         self._glir.command('WRAPPING', self._id, value)
 
     @property
+    def mipmap_levels(self):
+        return self._mipmap_levels
+
+    @mipmap_levels.setter
+    def mipmap_levels(self, value):
+        self._mipmap_levels = value
+        self.interpolation = self._interpolation
+
+    @property
     def interpolation(self):
         """ Texture interpolation for minification and magnification. """
         value = self._interpolation
@@ -193,11 +207,15 @@ class BaseTexture(GLObject):
         else:
             raise ValueError('Invalid value for interpolation: %r' % value)
         # Check and set
-        valid = 'nearest', 'linear'
+        valid = ('nearest', 'linear', 'linear_mipmap_linear',
+                 'linear_mipmap_nearest', 'nearest_mipmap_nearest',
+                 'nearest_mipmap_linear')
         value = (check_enum(value[0], 'tex interpolation', valid),
                  check_enum(value[1], 'tex interpolation', valid))
+        min, mag = value
         self._interpolation = value
-        self._glir.command('INTERPOLATION', self._id, *value)
+        self._glir.command(
+            'INTERPOLATION', self._id, min, mag, self._mipmap_levels)
 
     def resize(self, shape, format=None, internalformat=None):
         """Set the texture size and format
@@ -463,8 +481,12 @@ class Texture2D(BaseTexture):
         When the data has one channel, 'luminance' is assumed.
     resizable : bool
         Indicates whether texture can be resized. Default True.
-    interpolation : str
-        Interpolation mode, must be one of: 'nearest', 'linear'.
+    interpolation : str | tuple
+        Interpolation mode, must be one of or a tuple of:
+            'nearest', 'linear', 'linear_mipmap_linear',
+            'linear_mipmap_nearest', 'nearest_mipmap_nearest',
+            'nearest_mipmap_linear'
+        If a tuple the tuple represents (min_filter, mag_filter).
         Default 'nearest'.
     wrapping : str
         Wrapping mode, must be one of: 'repeat', 'clamp_to_edge',
@@ -482,9 +504,10 @@ class Texture2D(BaseTexture):
 
     def __init__(self, data=None, format=None, resizable=True,
                  interpolation=None, wrapping=None, shape=None,
-                 internalformat=None, resizeable=None):
+                 internalformat=None, resizeable=None, mipmap_levels=8):
         BaseTexture.__init__(self, data, format, resizable, interpolation,
-                             wrapping, shape, internalformat, resizeable)
+                             wrapping, shape, internalformat, resizeable,
+                             mipmap_levels)
 
     @property
     def height(self):
