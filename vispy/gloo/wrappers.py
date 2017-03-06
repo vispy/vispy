@@ -603,8 +603,8 @@ for name in dir(global_gloo_functions):
 ## Functions that do not use the glir queue
 
 
-def read_pixels(viewport=None, alpha=True, out_type='unsigned_byte'):
-    """Read pixels from the currently selected buffer. 
+def read_pixels(viewport=None, format='rgba', out_type='unsigned_byte'):
+    """Read pixels from the currently selected buffer.
     
     Under most circumstances, this function reads from the front buffer.
     Unlike all other functions in vispy.gloo, this function directly executes
@@ -615,9 +615,9 @@ def read_pixels(viewport=None, alpha=True, out_type='unsigned_byte'):
     viewport : array-like | None
         4-element list of x, y, w, h parameters. If None (default),
         the current GL viewport will be queried and used.
-    alpha : bool
-        If True (default), the returned array has 4 elements (RGBA).
-        If False, it has 3 (RGB).
+    format : str
+        Can be 'rgba', 'rgb' or 'depth'. The returned array have 4 elements if
+        'rgba', 3 elements if 'rgb', and 1 element if 'depth'.
     out_type : str | dtype
         Can be 'unsigned_byte' or 'float'. Note that this does not
         use casting, but instead determines how values are read from
@@ -650,7 +650,17 @@ def read_pixels(viewport=None, alpha=True, out_type='unsigned_byte'):
                          % (viewport,))
     x, y, w, h = viewport
     gl.glPixelStorei(gl.GL_PACK_ALIGNMENT, 1)  # PACK, not UNPACK
-    fmt = gl.GL_RGBA if alpha else gl.GL_RGB
+    if format == 'rgb':
+        n_channels = 3
+        fmt = gl.GL_RGB
+    elif format == 'rgba':
+        n_channels = 4
+        fmt = gl.GL_RGBA
+    elif format == 'depth':
+        n_channels = 1
+        fmt = gl.GL_DEPTH_COMPONENT
+    else:
+        raise ValueError("Unknown format %s." % format)
     im = gl.glReadPixels(x, y, w, h, fmt, type_)
     gl.glPixelStorei(gl.GL_PACK_ALIGNMENT, 4)
     # reshape, flip, and return
@@ -658,8 +668,8 @@ def read_pixels(viewport=None, alpha=True, out_type='unsigned_byte'):
         np_dtype = np.uint8 if type_ == gl.GL_UNSIGNED_BYTE else np.float32
         im = np.frombuffer(im, np_dtype)
 
-    im.shape = h, w, (4 if alpha else 3)  # RGBA vs RGB
-    im = im[::-1, :, :]  # flip the image
+    im.shape = (h, w, n_channels) if n_channels > 1 else (h, w)
+    im = np.flipud(im)
     return im
 
 

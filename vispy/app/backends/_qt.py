@@ -610,7 +610,7 @@ class CanvasBackendEgl(QtBaseCanvasBackend, QWidget):
             if not hasattr(self, '_gl_buffer'):
                 self._gl_buffer = np.ones((3000 * 3000 * 4), np.uint8) * 255
             # Take screenshot and turn into RGB QImage
-            im = gloo.read_pixels()
+            im = gloo.read_pixels(format='rgba')
             sze = im.shape[0] * im.shape[1]
             self._gl_buffer[0:0+sze*4:4] = im[:, :, 2].ravel()
             self._gl_buffer[1:0+sze*4:4] = im[:, :, 1].ravel()

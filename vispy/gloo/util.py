@@ -27,7 +27,8 @@ def _screenshot(viewport=None, alpha=True):
         3D array of pixels in np.uint8 format
     """
     # gl.glReadBuffer(gl.GL_BACK)  Not avaliable in ES 2.0
-    return read_pixels(viewport, alpha)
+    format = 'rgba' if alpha else 'rgb'
+    return read_pixels(viewport, format=format)
 
 
 KEYWORDS = set(['active', 'asm', 'cast', 'class', 'common', 'default',

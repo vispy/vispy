@@ -170,7 +170,7 @@ def test_wrappers():
         assert_true(isinstance(x, np.ndarray))
         assert_true(isinstance(gloo.read_pixels((0, 0, 1, 1)), np.ndarray))
         assert_raises(ValueError, gloo.read_pixels, (0, 0, 1))  # bad port
-        y = gloo.read_pixels(alpha=False, out_type=np.ubyte)
+        y = gloo.read_pixels(format='rgb', out_type=np.ubyte)
         assert_equal(y.shape, x.shape[:2] + (3,))
         assert_array_equal(x[..., :3], y)
         y = gloo.read_pixels(out_type='float')
@@ -236,7 +236,7 @@ def test_read_pixels():
         c._program.draw('triangle_strip')
 
         # Check if the return of read_pixels is the same as our drawing
-        img = read_pixels(alpha=False)
+        img = read_pixels(format='rgb')
         assert_equal(img.shape[:2], c.size[::-1])
         top_left = sum(img[0, 0])
         assert_true(top_left > 0)  # Should be > 0 (255*4)

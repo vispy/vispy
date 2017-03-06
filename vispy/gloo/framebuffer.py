@@ -250,5 +250,10 @@ class FrameBuffer(GLObject):
         
         # todo: this is ostensibly required, but not available in gloo.gl
         #gl.glReadBuffer(buffer._target)
-        
-        return read_pixels((0, 0, w, h), alpha=alpha)
+
+        if mode == 'color':
+            format = 'rgba' if alpha else 'rgb'
+        elif mode == 'depth':
+            format = 'depth'
+
+        return read_pixels((0, 0, w, h), format=format)
