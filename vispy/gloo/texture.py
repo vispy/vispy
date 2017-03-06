@@ -62,7 +62,8 @@ class BaseTexture(GLObject):
         'luminance_alpha': 2,
         'rg': 2,
         'rgb': 3,
-        'rgba': 4
+        'rgba': 4,
+        'depth_component': 1,
     }
 
     _inv_internalformats = dict([
@@ -76,7 +77,8 @@ class BaseTexture(GLObject):
         ('luminance_alpha', 2),
         ('rg', 2),
         ('rgb', 3),
-        ('rgba', 4)
+        ('rgba', 4),
+        ('depth_component', 1),
     ])
 
     def __init__(self, data=None, format=None, resizable=True,
