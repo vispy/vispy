@@ -40,6 +40,33 @@ from .context import get_current_canvas
 from .preprocessor import preprocess
 
 
+
+
+# ------------------------------------------------------------ Shader class ---
+class Shader(GLObject):
+    def __init__(self, code=None):
+        GLObject.__init__(self)
+        if code is not None:
+            self.code = code
+
+    @property
+    def code(self):
+        return self._code
+    
+    @code.setter
+    def code(self, code):
+        self._code = preprocess(code)
+        self._glir.command('DATA', self._id, self._code)
+
+
+class VertexShader(Shader):
+    _GLIR_TYPE = 'VertexShader'
+
+
+class FragmentShader(Shader):
+    _GLIR_TYPE = 'FragmentShader'
+
+
 # ----------------------------------------------------------- Program class ---
 class Program(GLObject):
     """ Shader program object
@@ -96,7 +123,7 @@ class Program(GLObject):
         GLObject.__init__(self)
         
         # Init source code for vertex and fragment shader
-        self._shaders = '', '' 
+        self._shaders = '', ''
         
         # Init description of variables obtained from source code
         self._code_variables = {}  # name -> (kind, type_, name)
@@ -145,12 +172,18 @@ class Program(GLObject):
             raise ValueError('Vertex and fragment code must both be non-empty')
         
         # pre-process shader code for #include directives
-        vert, frag = preprocess(vert), preprocess(frag)
+        vert = VertexShader(vert)
+        frag = FragmentShader(frag)
+        self.glir.associate(vert.glir)
+        self.glir.associate(frag.glir)
         
         # Store source code, send it to glir, parse the code for variables
         self._shaders = vert, frag
 
-        self._glir.command('SHADERS', self._id, vert, frag)
+        self._glir.command('ATTACH', self._id, vert.id)
+        self._glir.command('ATTACH', self._id, frag.id)
+        self._glir.command('LINK', self._id)
+
         # All current variables become pending variables again
         for key, val in self._user_variables.items():
             self._pending_variables[key] = val
@@ -162,7 +195,8 @@ class Program(GLObject):
     def shaders(self):
         """ Source code for vertex and fragment shader
         """
-        return self._shaders
+        v, f = self._shaders
+        return v.code, f.code
     
     @property
     def variables(self):
@@ -186,7 +220,7 @@ class Program(GLObject):
         """
         
         # Get one string of code with comments removed
-        code = '\n\n'.join(self._shaders)
+        code = '\n\n'.join(self.shaders)
         code = re.sub(r'(.*)(//.*)', r'\1', code, re.M)
         
         # Regexp to look for variable names
@@ -468,3 +502,6 @@ class Program(GLObject):
         
         # Process GLIR commands
         canvas.context.flush_commands()
+        
+    
+    

@@ -349,7 +349,9 @@ class GlirParser(BaseGlirParser):
         self._objects = {}
         self._invalid_objects = set()
 
-        self._classmap = {'Program': GlirProgram,
+        self._classmap = {'VertexShader': GlirVertexShader,
+                          'FragmentShader': GlirFragmentShader,
+                          'Program': GlirProgram,
                           'VertexBuffer': GlirVertexBuffer,
                           'IndexBuffer': GlirIndexBuffer,
                           'Texture1D': GlirTexture1D,
@@ -378,6 +380,7 @@ class GlirParser(BaseGlirParser):
         """ Parse a single command.
         """
         cmd, id_, args = command[0], command[1], command[2:]
+        #print("GLIR parse:", cmd, id_, args)
             
         if cmd == 'CURRENT':
             # This context is made current
@@ -424,16 +427,18 @@ class GlirParser(BaseGlirParser):
                 ob.set_uniform(*args)
             elif cmd == 'ATTRIBUTE':  # Program
                 ob.set_attribute(*args)
-            elif cmd == 'DATA':  # VertexBuffer, IndexBuffer, Texture
+            elif cmd == 'DATA':  # VertexBuffer, IndexBuffer, Texture, Shader
                 ob.set_data(*args)
             elif cmd == 'SIZE':  # VertexBuffer, IndexBuffer,
                 ob.set_size(*args)  # Texture[1D, 2D, 3D], RenderBuffer
-            elif cmd == 'ATTACH':  # FrameBuffer
+            elif cmd == 'ATTACH':  # FrameBuffer, Program
                 ob.attach(*args)
             elif cmd == 'FRAMEBUFFER':  # FrameBuffer
                 ob.set_framebuffer(*args)
             elif cmd == 'SHADERS':  # Program
                 ob.set_shaders(*args)
+            elif cmd == 'LINK':  # Program
+                ob.link_program(*args)
             elif cmd == 'WRAPPING':  # Texture1D, Texture2D, Texture3D
                 ob.set_wrapping(*args)
             elif cmd == 'INTERPOLATION':  # Texture1D, Texture2D, Texture3D
@@ -538,6 +543,85 @@ class GlirObject(object):
         return '<%s %i at 0x%x>' % (self.__class__.__name__, self.id, id(self))
 
 
+class GlirShader(GlirObject):
+    _target = None
+    
+    def create(self):
+        self._handle = gl.glCreateShader(self._target)
+
+    def set_data(self, code):
+        gl.glShaderSource(self._handle, code)
+        gl.glCompileShader(self._handle)
+        status = gl.glGetShaderParameter(self._handle, gl.GL_COMPILE_STATUS)
+        if not status:
+            errors = gl.glGetShaderInfoLog(self._handle)
+            errormsg = self._get_error(code, errors, 4)
+            raise RuntimeError("Shader compilation error in %s:\n%s" % 
+                                (type_ + ' shader', errormsg))
+    
+    def delete(self):
+        gl.glDeleteShader(self._handle)    
+
+    def _get_error(self, code, errors, indentation=0):
+        """Get error and show the faulty line + some context
+        Other GLIR implementations may omit this.
+        """
+        # Init
+        results = []
+        lines = None
+        if code is not None:
+            lines = [line.strip() for line in code.split('\n')]
+
+        for error in errors.split('\n'):
+            # Strip; skip empy lines
+            error = error.strip()
+            if not error:
+                continue
+            # Separate line number from description (if we can)
+            linenr, error = self._parse_error(error)
+            if None in (linenr, lines):
+                results.append('%s' % error)
+            else:
+                results.append('on line %i: %s' % (linenr, error))
+                if linenr > 0 and linenr < len(lines):
+                    results.append('  %s' % lines[linenr - 1])
+
+        # Add indentation and return
+        results = [' ' * indentation + r for r in results]
+        return '\n'.join(results)
+    
+    def _parse_error(self, error):
+        """ Parses a single GLSL error and extracts the linenr and description
+        Other GLIR implementations may omit this.
+        """
+        error = str(error)
+        # Nvidia
+        # 0(7): error C1008: undefined variable "MV"
+        m = re.match(r'(\d+)\((\d+)\)\s*:\s(.*)', error)
+        if m:
+            return int(m.group(2)), m.group(3)
+        # ATI / Intel
+        # ERROR: 0:131: '{' : syntax error parse error
+        m = re.match(r'ERROR:\s(\d+):(\d+):\s(.*)', error)
+        if m:
+            return int(m.group(2)), m.group(3)
+        # Nouveau
+        # 0:28(16): error: syntax error, unexpected ')', expecting '('
+        m = re.match(r'(\d+):(\d+)\((\d+)\):\s(.*)', error)
+        if m:
+            return int(m.group(2)), m.group(4)
+        # Other ...
+        return None, error
+
+
+class GlirVertexShader(GlirShader):
+    _target = gl.GL_VERTEX_SHADER
+
+
+class GlirFragmentShader(GlirShader):
+    _target = gl.GL_FRAGMENT_SHADER
+
+
 class GlirProgram(GlirObject):
     
     UTYPEMAP = {
@@ -579,6 +663,8 @@ class GlirProgram(GlirObject):
     
     def create(self):
         self._handle = gl.glCreateProgram()
+        self._shader_handles = []
+        self._attached_shader_handles = []
         self._validated = False
         self._linked = False
         # Keeping track of uniforms/attributes
@@ -616,41 +702,47 @@ class GlirProgram(GlirObject):
         to use.
         """
         self._linked = False
-        # Create temporary shader objects
-        vert_handle = gl.glCreateShader(gl.GL_VERTEX_SHADER)
-        frag_handle = gl.glCreateShader(gl.GL_FRAGMENT_SHADER)
+        
         # For both vertex and fragment shader: set source, compile, check
-        for code, handle, type_ in [(vert, vert_handle, 'vertex'), 
-                                    (frag, frag_handle, 'fragment')]:
-            gl.glShaderSource(handle, code)
-            gl.glCompileShader(handle)
-            status = gl.glGetShaderParameter(handle, gl.GL_COMPILE_STATUS)
-            if not status:
-                errors = gl.glGetShaderInfoLog(handle)
-                errormsg = self._get_error(code, errors, 4)
-                raise RuntimeError("Shader compilation error in %s:\n%s" % 
-                                   (type_ + ' shader', errormsg))
-        # Attach shaders
-        gl.glAttachShader(self._handle, vert_handle)
-        gl.glAttachShader(self._handle, frag_handle)
-        # Link the program and check
+        for code, type_ in [(vert, 'vertex'), 
+                            (frag, 'fragment')]:
+            self.attach_shader(code, type_)
+            
+        self.link_program()
+
+    def attach(self, handle):
+        """ Attach a shader to this program.
+        """
+        gl.glAttachShader(self._handle, handle)
+        self._attached_shader_handles.append(handle)
+
+    def link_program(self):
+        """ Link the complete program and check.
+        
+        All shaders are detached and deleted if the program was successfully
+        linked.
+        """
         gl.glLinkProgram(self._handle)
         if not gl.glGetProgramParameter(self._handle, gl.GL_LINK_STATUS):
             raise RuntimeError('Program linking error:\n%s'
                                % gl.glGetProgramInfoLog(self._handle))
+
         # Now we can remove the shaders. We no longer need them and it
         # frees up precious GPU memory:
         # http://gamedev.stackexchange.com/questions/47910
-        gl.glDetachShader(self._handle, vert_handle)
-        gl.glDetachShader(self._handle, frag_handle)
-        gl.glDeleteShader(vert_handle)
-        gl.glDeleteShader(frag_handle)
+        for handle in self._attached_shader_handles:
+            gl.glDetachShader(self._handle, handle)
+        self._attached_shader_handles = []
+        for handle in self._shader_handles:
+            gl.glDeleteShader(handle)
+        self._shader_handles = []
+        
         # Now we know what variables will be used by the program
         self._unset_variables = self._get_active_attributes_and_uniforms()
         self._handles = {}
         self._known_invalid = set()
         self._linked = True
-        
+
     def _get_active_attributes_and_uniforms(self):
         """ Retrieve active attributes and uniforms to be able to check that
         all uniforms/attributes are set by the user.
@@ -677,57 +769,6 @@ class GlirProgram(GlirObject):
                     container.append((name, gtype))
         #return attributes, uniforms
         return set([v[0] for v in attributes] + [v[0] for v in uniforms])
-    
-    def _parse_error(self, error):
-        """ Parses a single GLSL error and extracts the linenr and description
-        Other GLIR implementations may omit this.
-        """
-        error = str(error)
-        # Nvidia
-        # 0(7): error C1008: undefined variable "MV"
-        m = re.match(r'(\d+)\((\d+)\)\s*:\s(.*)', error)
-        if m:
-            return int(m.group(2)), m.group(3)
-        # ATI / Intel
-        # ERROR: 0:131: '{' : syntax error parse error
-        m = re.match(r'ERROR:\s(\d+):(\d+):\s(.*)', error)
-        if m:
-            return int(m.group(2)), m.group(3)
-        # Nouveau
-        # 0:28(16): error: syntax error, unexpected ')', expecting '('
-        m = re.match(r'(\d+):(\d+)\((\d+)\):\s(.*)', error)
-        if m:
-            return int(m.group(2)), m.group(4)
-        # Other ...
-        return None, error
-
-    def _get_error(self, code, errors, indentation=0):
-        """Get error and show the faulty line + some context
-        Other GLIR implementations may omit this.
-        """
-        # Init
-        results = []
-        lines = None
-        if code is not None:
-            lines = [line.strip() for line in code.split('\n')]
-
-        for error in errors.split('\n'):
-            # Strip; skip empy lines
-            error = error.strip()
-            if not error:
-                continue
-            # Separate line number from description (if we can)
-            linenr, error = self._parse_error(error)
-            if None in (linenr, lines):
-                results.append('%s' % error)
-            else:
-                results.append('on line %i: %s' % (linenr, error))
-                if linenr > 0 and linenr < len(lines):
-                    results.append('  %s' % lines[linenr - 1])
-
-        # Add indentation and return
-        results = [' ' * indentation + r for r in results]
-        return '\n'.join(results)
     
     def set_texture(self, name, value):
         """ Set a texture sampler. Value is the id of the texture to link.
