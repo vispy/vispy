@@ -663,7 +663,6 @@ class GlirProgram(GlirObject):
     
     def create(self):
         self._handle = gl.glCreateProgram()
-        self._shader_handles = []
         self._attached_shader_handles = []
         self._validated = False
         self._linked = False
@@ -710,11 +709,12 @@ class GlirProgram(GlirObject):
             
         self.link_program()
 
-    def attach(self, handle):
+    def attach(self, id_):
         """ Attach a shader to this program.
         """
-        gl.glAttachShader(self._handle, handle)
-        self._attached_shader_handles.append(handle)
+        shader = self._parser.get_object(id_)
+        gl.glAttachShader(self._handle, shader.handle)
+        self._attached_shader_handles.append(shader.handle)
 
     def link_program(self):
         """ Link the complete program and check.
@@ -732,10 +732,8 @@ class GlirProgram(GlirObject):
         # http://gamedev.stackexchange.com/questions/47910
         for handle in self._attached_shader_handles:
             gl.glDetachShader(self._handle, handle)
-        self._attached_shader_handles = []
-        for handle in self._shader_handles:
             gl.glDeleteShader(handle)
-        self._shader_handles = []
+        self._attached_shader_handles = []
         
         # Now we know what variables will be used by the program
         self._unset_variables = self._get_active_attributes_and_uniforms()
