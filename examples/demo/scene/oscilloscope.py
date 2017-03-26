@@ -172,7 +172,7 @@ class Oscilloscope(scene.ScrollingLines):
     def plot(self, data, dx=0):
         self.set_data(self.plot_ptr, data)
         
-        self.color[..., 3] *= 0.98
+        np.multiply(self.color[..., 3], 0.98, out=self.color[..., 3], casting='unsafe')
         self.color[self.plot_ptr, 3] = 50
         self.set_color(self.color)
         self.pos_offset[self.plot_ptr] = (dx, 0, 0)
