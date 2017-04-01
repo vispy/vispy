@@ -127,7 +127,7 @@ class Program(GLObject):
         GLObject.__init__(self)
         
         # Init source code for vertex and fragment shader
-        self._shaders = '', ''
+        self._shaders = None, None
         
         # Init description of variables obtained from source code
         self._code_variables = {}  # name -> (kind, type_, name)
@@ -210,7 +210,8 @@ class Program(GLObject):
         """ Source code for vertex and fragment shader
         """
         v, f = self._shaders
-        return v.code, f.code
+        return ("" if v is None else v.code, 
+                "" if f is None else f.code)
     
     @property
     def variables(self):

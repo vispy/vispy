@@ -12,7 +12,6 @@ functions are omitted, as well as any functions that are in our ES 2.0 API.
 from OpenGL import GL as _GL
 from . import _pyopengl2
 from . import _constants
-from ..import gl
 
 
 def _inject():
@@ -23,12 +22,6 @@ def _inject():
     # Get namespaces
     NS = globals()
     GLNS = _GL.__dict__
-    
-    # Load names from the internal GL API
-    # This is necessary to make some _pyopengl2 functions work correctly
-    # (notably, _glGetIntegerv is required)
-    for name in dir(gl.current_backend):
-        NS[name] = getattr(gl.current_backend, name)
     
     # Get names that we use in our API
     used_names = []
