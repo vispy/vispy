@@ -249,9 +249,16 @@ class Program(GLObject):
         
         # Parse uniforms, attributes and varyings
         self._code_variables = {}
-        for kind in ('uniform', 'attribute', 'varying', 'const'):
+        for kind in ('uniform', 'attribute', 'varying', 'const', 'in', 'out'):
             regex = re.compile(var_regexp.replace('VARIABLE', kind),
                                flags=re.MULTILINE)
+
+            # treat *in* like attribute, *out* like varying
+            if kind == 'in':
+                kind = 'attribute'
+            elif kind == 'out':
+                kind = 'varying'
+                
             for m in re.finditer(regex, code):
                 gtype = m.group('type')
                 size = int(m.group('size')) if m.group('size') else -1

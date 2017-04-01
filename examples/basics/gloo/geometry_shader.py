@@ -15,7 +15,9 @@ position = np.random.normal(loc=0, scale=0.3, size=(1000, 2)).astype('float32')
 
 
 VERT_SHADER = """
-attribute vec2 a_position;
+#version 330
+
+in vec2 a_position;
 
 void main (void) {
     gl_Position = vec4(a_position, 0, 1);
@@ -47,9 +49,13 @@ void main(void) {
 
 
 FRAG_SHADER = """
+#version 330
+
+out vec4 frag_color;
+
 void main()
 {
-    gl_FragColor = vec4(0,0,0,0.5);
+    frag_color = vec4(0,0,0,0.5);
 }
 """
 
