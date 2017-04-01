@@ -123,7 +123,7 @@ class Program(GLObject):
     }
     
     # ---------------------------------
-    def __init__(self, vert=None, frag=None, geom=None, count=0):
+    def __init__(self, vert=None, frag=None, count=0):
         GLObject.__init__(self)
         
         # Init source code for vertex and fragment shader
@@ -142,7 +142,7 @@ class Program(GLObject):
         
         # Check and set shaders
         if isinstance(vert, string_types) and isinstance(frag, string_types):
-            self.set_shaders(vert, frag, geom)
+            self.set_shaders(vert, frag)
         elif not (vert is None and frag is None):
             raise ValueError('Vert and frag must either both be str or None')
         
