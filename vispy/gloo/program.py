@@ -67,6 +67,10 @@ class FragmentShader(Shader):
     _GLIR_TYPE = 'FragmentShader'
 
 
+class GeometryShader(Shader):
+    _GLIR_TYPE = 'GeometryShader'
+
+
 # ----------------------------------------------------------- Program class ---
 class Program(GLObject):
     """ Shader program object
@@ -119,7 +123,7 @@ class Program(GLObject):
     }
     
     # ---------------------------------
-    def __init__(self, vert=None, frag=None, count=0):
+    def __init__(self, vert=None, frag=None, geom=None, count=0):
         GLObject.__init__(self)
         
         # Init source code for vertex and fragment shader
@@ -138,7 +142,7 @@ class Program(GLObject):
         
         # Check and set shaders
         if isinstance(vert, string_types) and isinstance(frag, string_types):
-            self.set_shaders(vert, frag)
+            self.set_shaders(vert, frag, geom)
         elif not (vert is None and frag is None):
             raise ValueError('Vert and frag must either both be str or None')
         
@@ -158,7 +162,7 @@ class Program(GLObject):
             self._buffer = np.zeros(self._count, dtype=dtype)
             self.bind(VertexBuffer(self._buffer))
 
-    def set_shaders(self, vert, frag):
+    def set_shaders(self, vert, frag, geom=None):
         """ Set the vertex and fragment shaders.
         
         Parameters
@@ -167,23 +171,33 @@ class Program(GLObject):
             Source code for vertex shader.
         frag : str
             Source code for fragment shaders.
+        geom : str (optional)
+            Source code for geometry shader.
         """
         if not vert or not frag:
             raise ValueError('Vertex and fragment code must both be non-empty')
         
         # pre-process shader code for #include directives
-        vert = VertexShader(vert)
-        frag = FragmentShader(frag)
-        self.glir.associate(vert.glir)
-        self.glir.associate(frag.glir)
+        shaders = [VertexShader(vert), FragmentShader(frag)]
+        if geom is not None:
+            shaders.append(GeometryShader(geom))
+        
+        for shader in shaders:
+            self.glir.associate(shader.glir)
+            self._glir.command('ATTACH', self._id, shader.id)
         
         # Store source code, send it to glir, parse the code for variables
-        self._shaders = vert, frag
-
-        self._glir.command('ATTACH', self._id, vert.id)
-        self._glir.command('ATTACH', self._id, frag.id)
+        self._shaders = tuple(shaders)[:2]
+        
+        # Link all shaders into one program. All shaders are detached after
+        # linking is complete.
         self._glir.command('LINK', self._id)
-
+        
+        # Delete shaders. We no longer need them and it frees up precious GPU
+        # memory: http://gamedev.stackexchange.com/questions/47910
+        for shader in shaders:
+            shader.delete()
+ 
         # All current variables become pending variables again
         for key, val in self._user_variables.items():
             self._pending_variables[key] = val

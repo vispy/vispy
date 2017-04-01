@@ -351,6 +351,7 @@ class GlirParser(BaseGlirParser):
 
         self._classmap = {'VertexShader': GlirVertexShader,
                           'FragmentShader': GlirFragmentShader,
+                          'GeometryShader': GlirGeometryShader,
                           'Program': GlirProgram,
                           'VertexBuffer': GlirVertexBuffer,
                           'IndexBuffer': GlirIndexBuffer,
@@ -557,7 +558,7 @@ class GlirShader(GlirObject):
             errors = gl.glGetShaderInfoLog(self._handle)
             errormsg = self._get_error(code, errors, 4)
             raise RuntimeError("Shader compilation error in %s:\n%s" % 
-                                (type_ + ' shader', errormsg))
+                                (self._target, errormsg))
     
     def delete(self):
         gl.glDeleteShader(self._handle)    
@@ -622,6 +623,18 @@ class GlirFragmentShader(GlirShader):
     _target = gl.GL_FRAGMENT_SHADER
 
 
+class GlirGeometryShader(GlirShader):
+    # _target assignment must be delayed because GL_GEOMETRY_SHADER does not
+    # exist until the user calls use_gl('gl+')
+    _target = None
+    def __init__(self, *args, **kwargs):
+        if not hasattr(gl, 'GL_GEOMETRY_SHADER'):
+            raise RuntimeError("GL2 backend does not support geometry shaders."
+                               " Try gloo.gl.use_gl('gl+').")
+        GlirGeometryShader._target = gl.GL_GEOMETRY_SHADER
+        GlirShader.__init__(self, *args, **kwargs)
+    
+
 class GlirProgram(GlirObject):
     
     UTYPEMAP = {
@@ -663,7 +676,7 @@ class GlirProgram(GlirObject):
     
     def create(self):
         self._handle = gl.glCreateProgram()
-        self._attached_shader_handles = []
+        self._attached_shaders = []
         self._validated = False
         self._linked = False
         # Keeping track of uniforms/attributes
@@ -714,7 +727,7 @@ class GlirProgram(GlirObject):
         """
         shader = self._parser.get_object(id_)
         gl.glAttachShader(self._handle, shader.handle)
-        self._attached_shader_handles.append(shader.handle)
+        self._attached_shaders.append(shader)
 
     def link_program(self):
         """ Link the complete program and check.
@@ -726,14 +739,12 @@ class GlirProgram(GlirObject):
         if not gl.glGetProgramParameter(self._handle, gl.GL_LINK_STATUS):
             raise RuntimeError('Program linking error:\n%s'
                                % gl.glGetProgramInfoLog(self._handle))
-
-        # Now we can remove the shaders. We no longer need them and it
-        # frees up precious GPU memory:
-        # http://gamedev.stackexchange.com/questions/47910
-        for handle in self._attached_shader_handles:
-            gl.glDetachShader(self._handle, handle)
-            gl.glDeleteShader(handle)
-        self._attached_shader_handles = []
+        
+        # Detach all shaders to prepare them for deletion (they are no longer
+        # needed after linking is complete)
+        for shader in self._attached_shaders:
+            gl.glDetachShader(self._handle, shader.handle)
+        self._attached_shaders = []
         
         # Now we know what variables will be used by the program
         self._unset_variables = self._get_active_attributes_and_uniforms()
