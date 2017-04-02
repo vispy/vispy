@@ -169,7 +169,10 @@ def make_debug_wrapper(fn):
         ret = fn(*args)
         # Log return value
         if ret is not None:
-            logger.debug(" <= %s" % repr(ret))
+            if fn.__name__ == 'glReadPixels':
+                logger.debug(" <= %s[%s]" % (type(ret), len(ret)))                
+            else:
+                logger.debug(" <= %s" % repr(ret))
         # Check for errors (raises if an error occured)
         check_error(fn.__name__)
         # Return

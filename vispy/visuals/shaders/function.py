@@ -411,7 +411,7 @@ class Function(ShaderObject):
             template_vars.add(var)
         return template_vars
     
-    def _get_replaced_code(self, names):
+    def _get_replaced_code(self, names, version):
         """ Return code, with new name, expressions, and replacements applied.
         """
         code = self._code
@@ -471,8 +471,8 @@ class Function(ShaderObject):
         
         return code + '\n'
     
-    def definition(self, names):
-        return self._get_replaced_code(names)
+    def definition(self, names, version):
+        return self._get_replaced_code(names, version)
 
     def expression(self, names):
         return names[self]
@@ -517,6 +517,22 @@ class MainFunction(Function):
     @property
     def signature(self):
         return ('main', [], 'void')
+    
+    @property
+    def version_pragma(self):
+        """Return version number and extra qualifiers from pragma if present.
+        """
+        m = re.search(parsing.re_version_pragma, self.code)
+        if m is None:
+            return None
+        return int(m.group(1)), m.group(2)
+    
+    def definition(self, obj_names, version):
+        code = Function.definition(self, obj_names, version)
+        # strip out version pragma before returning code; this will be 
+        # added to the final compiled code later.
+        code = re.sub(parsing.re_version_pragma, '', code)
+        return code        
 
     def static_names(self):
         if self._static_vars is not None:
@@ -686,7 +702,7 @@ class FunctionChain(Function):
         if update:
             self._update()
 
-    def definition(self, obj_names):
+    def definition(self, obj_names, version):
         name = obj_names[self]
 
         args = ", ".join(["%s %s" % arg for arg in self.args])

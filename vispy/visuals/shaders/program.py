@@ -22,7 +22,7 @@ class ModularProgram(Program):
     Automatically rebuilds program when functions have changed and uploads
     program variables.
     """
-    def __init__(self, vcode='', fcode=''):
+    def __init__(self, vcode='', fcode='', gcode=None):
         Program.__init__(self)
 
         self.changed = EventEmitter(source=self, type='program_change')
@@ -34,9 +34,11 @@ class ModularProgram(Program):
         self._frag = MainFunction('')
         self._vert._dependents[self] = None
         self._frag._dependents[self] = None
+        self._geom = None
 
         self.vert = vcode
         self.frag = fcode
+        self.geom = gcode
 
     @property
     def vert(self):
@@ -57,6 +59,23 @@ class ModularProgram(Program):
     def frag(self, fcode):
         fcode = preprocess(fcode)
         self._frag.code = fcode
+        self._need_build = True
+        self.changed(code_changed=True, value_changed=False)
+
+    @property
+    def geom(self):
+        return self._geom
+
+    @geom.setter
+    def geom(self, gcode):
+        if gcode is None:
+            self._geom = None
+            return
+        gcode = preprocess(gcode)
+        if self._geom is None:
+            self._geom = MainFunction('')
+            self._geom._dependents[self] = None
+        self._geom.code = gcode
         self._need_build = True
         self.changed(code_changed=True, value_changed=False)
 
@@ -86,11 +105,17 @@ class ModularProgram(Program):
 
     def _build(self):
         logger.debug("Rebuild ModularProgram: %s", self)
-        self.compiler = Compiler(vert=self.vert, frag=self.frag)
+        shaders = {'vert': self.vert, 'frag': self.frag}
+        if self.geom is not None:
+            shaders['geom'] = self.geom
+        self.compiler = Compiler(**shaders)
         code = self.compiler.compile()
-        self.set_shaders(code['vert'], code['frag'])
+        self.set_shaders(**code)
         logger.debug('==== Vertex Shader ====\n\n%s\n', code['vert'])
+        if 'geom' in code:
+            logger.debug('==== Geometry shader ====\n\n%s\n', code['geom'])
         logger.debug('==== Fragment shader ====\n\n%s\n', code['frag'])
+            
         # Note: No need to reset _variable_state, gloo.Program resends
         # attribute/uniform data on setting shaders
 
@@ -99,9 +124,11 @@ class ModularProgram(Program):
         # Otherwise we get lots of warnings.
         self._pending_variables = {}
         # set all variables
-        settable_vars = 'attribute', 'uniform'
+        settable_vars = 'attribute', 'uniform', 'in'
         logger.debug("Apply variables:")
         deps = self.vert.dependencies() + self.frag.dependencies()
+        deps = deps + ([] if self.geom is None else self.geom.dependencies())
+        
         for dep in deps:
             if not isinstance(dep, Variable) or dep.vtype not in settable_vars:
                 continue

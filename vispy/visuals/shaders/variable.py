@@ -27,6 +27,10 @@ class Variable(ShaderObject):
         The data type of the variable, e.g. 'float', 'vec4', 'mat', etc.
     
     """
+    
+    _vtype_32_conversion = {'in': 'attribute', 'out': 'varying'}
+    _vtype_23_conversion = {'attribute': 'in', 'varying': 'out'}
+    
     def __init__(self, name, value=None, vtype=None, dtype=None):
         super(Variable, self).__init__()
         
@@ -158,19 +162,29 @@ class Variable(ShaderObject):
     
     def expression(self, names):
         return names[self]
-    
-    def definition(self, names):
+
+    def _vtype_for_version(self, version):
+        """Return the vtype for this variable, converted based on the GLSL
+        version.
+        """
+        vtype = self.vtype
+        if version is None or version[0] == 120:
+            return self._vtype_32_conversion.get(vtype, vtype) 
+        else:
+            return self._vtype_23_conversion.get(vtype, vtype) 
+
+    def definition(self, names, version):
         if self.vtype is None:
             raise RuntimeError("Variable has no vtype: %r" % self)
         if self.dtype is None:
             raise RuntimeError("Variable has no dtype: %r" % self)
         
         name = names[self]
-        if self.vtype == 'const':
-            return '%s %s %s = %s;' % (self.vtype, self.dtype, name, 
-                                       self.value)
+        vtype = self._vtype_for_version(version)
+        if vtype == 'const':
+            return '%s %s %s = %s;' % (vtype, self.dtype, name, self.value)
         else:
-            return '%s %s %s;' % (self.vtype, self.dtype, name)
+            return '%s %s %s;' % (vtype, self.dtype, name)
 
 
 class Varying(Variable):

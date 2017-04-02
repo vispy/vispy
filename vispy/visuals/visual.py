@@ -310,20 +310,23 @@ class Visual(BaseVisual):
         Vertex shader code.
     fcode : str
         Fragment shader code.
+    gcode : str or None
+        Optional geometry shader code.
     program : instance of Program | None
         The program to use. If None, a program will be constructed using
         ``vcode`` and ``fcode``.
     vshare : instance of VisualShare | None
         The visual share, if necessary.
     """
-    def __init__(self, vcode='', fcode='', program=None, vshare=None):
+    def __init__(self, vcode='', fcode='', gcode=None, program=None,
+                 vshare=None):
         self._view_class = VisualView
         BaseVisual.__init__(self, vshare)
         if vshare is None:
             self._vshare.draw_mode = None
             self._vshare.index_buffer = None
             if program is None:
-                self._vshare.program = MultiProgram(vcode, fcode)
+                self._vshare.program = MultiProgram(vcode, fcode, gcode)
             else:
                 self._vshare.program = program
                 if len(vcode) > 0 or len(fcode) > 0:
@@ -448,7 +451,7 @@ class Visual(BaseVisual):
     def _get_hook(self, shader, name):
         """Return a FunctionChain that Filters may use to modify the program.
 
-        *shader* should be "frag" or "vert"
+        *shader* should be "vert", "geom", or "frag"
         *name* should be "pre" or "post"
         """
         assert name in ('pre', 'post')
@@ -460,6 +463,10 @@ class Visual(BaseVisual):
             self.view_program.vert[name] = hook
         elif shader == 'frag':
             self.view_program.frag[name] = hook
+        elif shader == 'geom':
+            self.view_program.geom[name] = hook
+        else:
+            raise ValueError("shader must be vert, geom, or frag")
         self._hooks[key] = hook
         return hook
 
