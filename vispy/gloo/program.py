@@ -187,7 +187,7 @@ class Program(GLObject):
             self._glir.command('ATTACH', self._id, shader.id)
         
         # Store source code, send it to glir, parse the code for variables
-        self._shaders = tuple(shaders)[:2]
+        self._shaders = shaders
         
         # Link all shaders into one program. All shaders are detached after
         # linking is complete.
@@ -207,11 +207,9 @@ class Program(GLObject):
     
     @property
     def shaders(self):
-        """ Source code for vertex and fragment shader
+        """ All currently attached shaders
         """
-        v, f = self._shaders
-        return ("" if v is None else v.code, 
-                "" if f is None else f.code)
+        return self._shaders
     
     @property
     def variables(self):
@@ -235,7 +233,7 @@ class Program(GLObject):
         """
         
         # Get one string of code with comments removed
-        code = '\n\n'.join(self.shaders)
+        code = '\n\n'.join([sh.code for sh in self._shaders])
         code = re.sub(r'(.*)(//.*)', r'\1', code, re.M)
         
         # Regexp to look for variable names
@@ -484,7 +482,8 @@ class Program(GLObject):
         # Check leftover variables, warn, discard them
         # In GLIR we check whether all attributes are indeed set
         for name in self._pending_variables:
-            logger.warn('Variable %r is given but not known.' % name)
+            logger.warn('Value provided for %r, but this variable was not '
+                        'found in the shader program.' % name)
         self._pending_variables = {}
         
         # Check attribute sizes

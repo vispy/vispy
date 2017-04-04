@@ -81,10 +81,10 @@ class ModularProgram(Program):
 
     def _dep_changed(self, dep, code_changed=False, value_changed=False):
         if code_changed and logger.level <= logging.DEBUG:
-            import traceback
             logger.debug("ModularProgram changed: %s   source=%s, values=%s", 
                          self, code_changed, value_changed)
-            traceback.print_stack()
+            #import traceback
+            #traceback.print_stack()
             
         if code_changed:
             self._need_build = True

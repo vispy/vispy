@@ -267,7 +267,7 @@ class Function(ShaderObject):
             import traceback
             last = traceback.format_list(traceback.extract_stack()[-2:-1])
             logger.debug("Assignment would trigger shader recompile:\n"
-                         "Original:\n%r\nReplacement:\n%r\nSource:\n%s", 
+                         "Original: %r\nReplacement: %r\nSource: %s", 
                          oldval, val, ''.join(last))
     
     def __getitem__(self, key):
