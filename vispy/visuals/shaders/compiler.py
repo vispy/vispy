@@ -100,7 +100,7 @@ class Compiler(object):
             code = []
             version = shader.version_pragma
             for dep in self._shader_deps[shader_name]:
-                dep_code = dep.definition(obj_names, version)
+                dep_code = dep.definition(obj_names, version, shader)
                 if dep_code is not None:
                     code.append(dep_code)
                   

@@ -30,8 +30,8 @@ class ModularProgram(Program):
         # Cache state of Variables so we know which ones require update
         self._variable_state = {}
 
-        self._vert = MainFunction('')
-        self._frag = MainFunction('')
+        self._vert = MainFunction('vertex', '')
+        self._frag = MainFunction('fragment', '')
         self._vert._dependents[self] = None
         self._frag._dependents[self] = None
         self._geom = None
@@ -73,7 +73,7 @@ class ModularProgram(Program):
             return
         gcode = preprocess(gcode)
         if self._geom is None:
-            self._geom = MainFunction('')
+            self._geom = MainFunction('geometry', '')
             self._geom._dependents[self] = None
         self._geom.code = gcode
         self._need_build = True

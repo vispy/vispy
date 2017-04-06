@@ -411,7 +411,7 @@ class Function(ShaderObject):
             template_vars.add(var)
         return template_vars
     
-    def _get_replaced_code(self, names, version):
+    def _get_replaced_code(self, names, version, shader):
         """ Return code, with new name, expressions, and replacements applied.
         """
         code = self._code
@@ -471,8 +471,8 @@ class Function(ShaderObject):
         
         return code + '\n'
     
-    def definition(self, names, version):
-        return self._get_replaced_code(names, version)
+    def definition(self, names, version, shader):
+        return self._get_replaced_code(names, version, shader)
 
     def expression(self, names):
         return names[self]
@@ -510,7 +510,8 @@ class MainFunction(Function):
     be defined in a single code string. The code must contain a main() function
     definition.
     """
-    def __init__(self, *args, **kwargs):
+    def __init__(self, shader_type, *args, **kwargs):
+        self.shader_type = shader_type
         self._chains = {}
         Function.__init__(self, *args, **kwargs)
     
@@ -527,8 +528,8 @@ class MainFunction(Function):
             return None
         return int(m.group(1)), m.group(2)
     
-    def definition(self, obj_names, version):
-        code = Function.definition(self, obj_names, version)
+    def definition(self, obj_names, version, shader):
+        code = Function.definition(self, obj_names, version, shader)
         # strip out version pragma before returning code; this will be 
         # added to the final compiled code later.
         code = re.sub(parsing.re_version_pragma, '', code)
@@ -702,7 +703,7 @@ class FunctionChain(Function):
         if update:
             self._update()
 
-    def definition(self, obj_names, version):
+    def definition(self, obj_names, version, shader):
         name = obj_names[self]
 
         args = ", ".join(["%s %s" % arg for arg in self.args])

@@ -794,7 +794,8 @@ class GlirProgram(GlirObject):
             self._handles[name] = handle  # Store in cache
             if handle < 0:
                 self._known_invalid.add(name)
-                logger.info('Variable %s is not an active uniform' % name)
+                logger.info('Not setting texture data for variable %s; '
+                            'uniform is not active.' % name)
                 return
         # Program needs to be active in order to set uniforms
         self.activate()
@@ -835,7 +836,8 @@ class GlirProgram(GlirObject):
             self._handles[name] = handle  # Store in cache
             if handle < 0:
                 self._known_invalid.add(name)
-                logger.info('Variable %s is not an active uniform' % name)
+                logger.info('Not setting value for variable %s %s; '
+                            'uniform is not active.' % (type_, name))
                 return
         # Look up function to call
         funcname = self.UTYPEMAP[type_]
@@ -868,7 +870,8 @@ class GlirProgram(GlirObject):
                 self._known_invalid.add(name)
                 if value[0] != 0 and value[2] > 0:  # VBO with offset
                     return  # Probably an unused element in a structured VBO
-                logger.info('Variable %s is not an active attribute' % name)
+                logger.info('Not setting data for variable %s %s; '
+                            'attribute is not active.' % (type_, name))
                 return
         # Program needs to be active in order to set uniforms
         self.activate()
