@@ -5,6 +5,7 @@
 from __future__ import division
 
 import logging
+from weakref import WeakKeyDictionary
 
 from ...gloo import Program
 from ...gloo.preprocessor import preprocess
@@ -28,7 +29,10 @@ class ModularProgram(Program):
         self.changed = EventEmitter(source=self, type='program_change')
 
         # Cache state of Variables so we know which ones require update
-        self._variable_state = {}
+        self._variable_state = WeakKeyDictionary()
+        
+        # List of settable variables to be checked for value changes
+        self._variables = []
 
         self._vert = MainFunction('vertex', '')
         self._frag = MainFunction('fragment', '')
@@ -83,8 +87,8 @@ class ModularProgram(Program):
         if code_changed and logger.level <= logging.DEBUG:
             logger.debug("ModularProgram changed: %s   source=%s, values=%s", 
                          self, code_changed, value_changed)
-            #import traceback
-            #traceback.print_stack()
+            import traceback
+            traceback.print_stack()
             
         if code_changed:
             self._need_build = True
@@ -100,7 +104,24 @@ class ModularProgram(Program):
         """
         if self._need_build:
             self._build()
+            
+            # after recompile, we need to upload all variables again
+            # (some variables may have changed name)
+            self._variable_state.clear()
+            
+            # Collect a list of all settable variables
+            settable_vars = 'attribute', 'uniform', 'in'
+            deps = [d for d in self.vert.dependencies() if (
+                isinstance(d, Variable) and d.vtype in settable_vars)]
+            deps += [d for d in self.frag.dependencies() if (
+                isinstance(d, Variable) and d.vtype == 'uniform')]
+            if self.geom is not None:
+                deps += [d for d in self.geom.dependencies() if (
+                    isinstance(d, Variable) and d.vtype == 'uniform')]
+            self._variables = deps
+
             self._need_build = False
+            
         self.update_variables()
 
     def _build(self):
@@ -115,28 +136,20 @@ class ModularProgram(Program):
         if 'geom' in code:
             logger.debug('==== Geometry shader ====\n\n%s\n', code['geom'])
         logger.debug('==== Fragment shader ====\n\n%s\n', code['frag'])
-            
-        # Note: No need to reset _variable_state, gloo.Program resends
-        # attribute/uniform data on setting shaders
-
+        
     def update_variables(self):
         # Clear any variables that we may have set another time.
         # Otherwise we get lots of warnings.
         self._pending_variables = {}
-        # set all variables
-        settable_vars = 'attribute', 'uniform', 'in'
-        logger.debug("Apply variables:")
-        deps = self.vert.dependencies() + self.frag.dependencies()
-        deps = deps + ([] if self.geom is None else self.geom.dependencies())
         
-        for dep in deps:
-            if not isinstance(dep, Variable) or dep.vtype not in settable_vars:
-                continue
+        # Set any variables that have a new value
+        logger.debug("Apply variables:")
+        for dep in self._variables:
             name = self.compiler[dep]
             state_id = dep.state_id
-            if self._variable_state.get(name, None) != state_id:
+            if self._variable_state.get(dep, None) != state_id:
                 self[name] = dep.value
-                self._variable_state[name] = state_id
+                self._variable_state[dep] = state_id
                 logger.debug("    %s = %s **", name, dep.value)
             else:
                 logger.debug("    %s = %s", name, dep.value)
