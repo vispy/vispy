@@ -29,7 +29,7 @@ class ModularProgram(Program):
         self.changed = EventEmitter(source=self, type='program_change')
 
         # Cache state of Variables so we know which ones require update
-        self._variable_state = WeakKeyDictionary()
+        self._variable_cache = WeakKeyDictionary()
         
         # List of settable variables to be checked for value changes
         self._variables = []
@@ -97,6 +97,7 @@ class ModularProgram(Program):
     
     def draw(self, *args, **kwargs):
         self.build_if_needed()
+        self.update_variables()
         Program.draw(self, *args, **kwargs)
 
     def build_if_needed(self):
@@ -107,7 +108,7 @@ class ModularProgram(Program):
             
             # after recompile, we need to upload all variables again
             # (some variables may have changed name)
-            self._variable_state.clear()
+            self._variable_cache.clear()
             
             # Collect a list of all settable variables
             settable_vars = 'attribute', 'uniform', 'in'
@@ -121,8 +122,6 @@ class ModularProgram(Program):
             self._variables = deps
 
             self._need_build = False
-            
-        self.update_variables()
 
     def _build(self):
         logger.debug("Rebuild ModularProgram: %s", self)
@@ -131,25 +130,32 @@ class ModularProgram(Program):
             shaders['geom'] = self.geom
         self.compiler = Compiler(**shaders)
         code = self.compiler.compile()
+        
+        # Update shader code, but don't let the program update variables yet 
+        code['update_variables'] = False
         self.set_shaders(**code)
+        
         logger.debug('==== Vertex Shader ====\n\n%s\n', code['vert'])
         if 'geom' in code:
             logger.debug('==== Geometry shader ====\n\n%s\n', code['geom'])
         logger.debug('==== Fragment shader ====\n\n%s\n', code['frag'])
         
     def update_variables(self):
-        # Clear any variables that we may have set another time.
-        # Otherwise we get lots of warnings.
-        self._pending_variables = {}
-        
         # Set any variables that have a new value
         logger.debug("Apply variables:")
-        for dep in self._variables:
+        for dep in sorted(self._variables, key=lambda d: self.compiler[d]):
             name = self.compiler[dep]
             state_id = dep.state_id
-            if self._variable_state.get(dep, None) != state_id:
+            if self._variable_cache.get(dep, None) != state_id:
                 self[name] = dep.value
-                self._variable_state[dep] = state_id
+                self._variable_cache[dep] = state_id
                 logger.debug("    %s = %s **", name, dep.value)
             else:
                 logger.debug("    %s = %s", name, dep.value)
+
+        # Process any pending variables and discard anything else that is
+        # not active in the program (otherwise we get lots of warnings).
+        self._process_pending_variables()
+        logger.debug("Discarding unused variables before draw: %s" % 
+                     self._pending_variables.keys())
+        self._pending_variables = {}

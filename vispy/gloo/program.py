@@ -162,7 +162,7 @@ class Program(GLObject):
             self._buffer = np.zeros(self._count, dtype=dtype)
             self.bind(VertexBuffer(self._buffer))
 
-    def set_shaders(self, vert, frag, geom=None):
+    def set_shaders(self, vert, frag, geom=None, update_variables=True):
         """ Set the vertex and fragment shaders.
         
         Parameters
@@ -173,6 +173,9 @@ class Program(GLObject):
             Source code for fragment shaders.
         geom : str (optional)
             Source code for geometry shader.
+        update_variables : bool
+            If True, then process any pending variables immediately after
+            setting shader code. Default is True.
         """
         if not vert or not frag:
             raise ValueError('Vertex and fragment code must both be non-empty')
@@ -203,7 +206,7 @@ class Program(GLObject):
             self._pending_variables[key] = val
         self._user_variables = {}
         # Parse code (and process pending variables)
-        self._parse_variables_from_code()
+        self._parse_variables_from_code(update_variables=update_variables)
     
     @property
     def shaders(self):
@@ -228,7 +231,7 @@ class Program(GLObject):
         # that maps names -> tuples, for easy looking up by name.
         return [x[:3] for x in self._code_variables.values()]
    
-    def _parse_variables_from_code(self):
+    def _parse_variables_from_code(self, update_variables=True):
         """ Parse uniforms, attributes and varyings from the source code.
         """
         
@@ -273,7 +276,8 @@ class Program(GLObject):
 
         # Now that our code variables are up-to date, we can process
         # the variables that were set but yet unknown.
-        self._process_pending_variables()
+        if update_variables:
+            self._process_pending_variables()
 
     def bind(self, data):
         """ Bind a VertexBuffer that has structured data
@@ -331,10 +335,12 @@ class Program(GLObject):
                 self._buffer[name] = data
                 return
         
+        # Forget any pending values for this variable
+        self._pending_variables.pop(name, None)
+        
         # Delete?
         if data is None:
             self._user_variables.pop(name, None)
-            self._pending_variables.pop(name, None)
             return
         
         if name in self._code_variables:
@@ -523,6 +529,4 @@ class Program(GLObject):
         
         # Process GLIR commands
         canvas.context.flush_commands()
-        
-    
     
