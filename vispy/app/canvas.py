@@ -137,7 +137,7 @@ class Canvas(object):
             dpi = util_config['dpi']
         if dpi is None:
             dpi = get_dpi(raise_error=False)
-        self.dpi = dpi
+        self._dpi = dpi
 
         # Create events
         self.events = EmitterGroup(source=self,
