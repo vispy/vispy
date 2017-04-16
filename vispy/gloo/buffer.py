@@ -75,7 +75,9 @@ class Buffer(GLObject):
         """
         data = np.array(data, copy=copy)
         nbytes = data.nbytes
-
+        
+        if nbytes == 0:
+            raise ValueError('Cannot set data with zero bytes')
         if offset < 0:
             raise ValueError("Offset must be positive")
         elif (offset + nbytes) > self._nbytes:
@@ -103,15 +105,16 @@ class Buffer(GLObject):
         """
         data = np.array(data, copy=copy)
         nbytes = data.nbytes
-
+        
+        if nbytes == 0:
+            raise ValueError('Cannot set data with zero bytes')
         if nbytes != self._nbytes:
             self.resize_bytes(nbytes)
         else:
             # Use SIZE to discard any previous data setting
             self._glir.command('SIZE', self._id, nbytes)
         
-        if nbytes:  # Only set data if there *is* data
-            self._glir.command('DATA', self._id, 0, data)
+        self._glir.command('DATA', self._id, 0, data)
     
     def resize_bytes(self, size):
         """ Resize this buffer (deferred operation). 
@@ -121,6 +124,8 @@ class Buffer(GLObject):
         size : int
             New buffer size in bytes.
         """
+        if size == 0:
+            raise ValueError('Cannot set data with zero bytes')
         self._nbytes = size
         self._glir.command('SIZE', self._id, size)
         # Invalidate any view on this buffer
