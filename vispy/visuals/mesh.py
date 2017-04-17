@@ -17,9 +17,10 @@ from ..gloo import VertexBuffer, IndexBuffer
 from ..geometry import MeshData
 from ..color import Color
 
+import Image
 
-# Shaders for lit rendering (using phong shading)
-shading_vertex_template = """
+# shaders for lit rendering (using phong shading)
+shading_vertex_template = """ 
 varying vec3 v_normal_vec;
 varying vec3 v_light_vec;
 varying vec3 v_eye_vec;
@@ -66,7 +67,28 @@ void main() {
 }
 """
 
-shading_fragment_template = """
+textured_vertex_template = """
+varying vec3 v_normal_vec;
+
+uniform sampler2D u_texture;
+
+void main() {
+
+    vec4 pos_scene = $visual2scene($to_vec4($position));
+    vec4 normal_scene = $visual2scene(vec4($normal, 1));
+    vec4 origin_scene = $visual2scene(vec4(0, 0, 0, 1));
+
+    normal_scene /= normal_scene.w;
+    origin_scene /= origin_scene.w;
+
+    vec3 normal = normalize(normal_scene.xyz - origin_scene.xyz);
+    v_normal_vec = normal; //VARYING COPY
+
+    gl_Position = $transform($to_vec4($position));
+}
+"""
+
+shading_fragment_template = """ 
 varying vec3 v_normal_vec;
 varying vec3 v_light_vec;
 varying vec3 v_eye_vec;
@@ -98,10 +120,36 @@ void main() {
 
 
     gl_FragColor =
-       v_base_color * (v_ambientk + diffuse_color) + specular_color;
+        v_base_color * (v_ambientk + diffuse_color) + specular_color;
 
     //gl_FragColor = vec4(speculark, 0, 1, 1.0);
 
+}
+"""
+
+textured_fragment_template = """
+varying vec3 v_normal_vec;
+
+uniform sampler2D u_texture;
+
+void main() {
+    
+    float pi = 3.14159265359;
+
+    float phi = asin(v_normal_vec.z);
+    float theta = acos(v_normal_vec.x/cos(phi));
+    
+    if(sign(v_normal_vec.y) > 0){
+        theta = theta*-1;
+        theta += 2*pi;
+    }
+        
+
+    vec2 texcoord = vec2(theta/(2*pi), phi/pi + 0.5);
+
+    gl_FragColor = vec4(texture2D(u_texture, texcoord).xyz, 1.0);
+
+    //gl_FragColor = vec4(0.0 ,0.0 ,theta/(2*3.1416), 1.0);
 
 }
 """
@@ -170,9 +218,14 @@ class MeshVisual(Visual):
         # Visual.__init__ -> prepare_transforms() -> uses shading
         self.shading = shading
 
-        if shading is not None:
+        if shading is not None and shading != 'textured_globe':
             Visual.__init__(self, vcode=shading_vertex_template,
                             fcode=shading_fragment_template,
+                            **kwargs)
+        
+        elif shading == "textured_globe":
+            Visual.__init__(self, vcode=textured_vertex_template,
+                            fcode=textured_fragment_template,
                             **kwargs)
 
         else:
@@ -311,14 +364,14 @@ class MeshVisual(Visual):
             if v.shape[-1] == 2:
                 v = np.concatenate((v, np.zeros((v.shape[:-1] + (1,)))), -1)
             self._vertices.set_data(v, convert=True)
-            if self.shading == 'smooth':
+            if self.shading in ['smooth', 'textured_globe']:
                 normals = md.get_vertex_normals(indexed='faces')
                 self._normals.set_data(normals, convert=True)
             elif self.shading == 'flat':
                 normals = md.get_face_normals(indexed='faces')
                 self._normals.set_data(normals, convert=True)
             else:
-                self._normals.set_data(np.zeros((0, 3), dtype=np.float32))
+                self._normals.set_data(np.zeros((0,3), dtype = np.float32))
             self._index_buffer = None
             if md.has_vertex_color():
                 self._colors.set_data(md.get_vertex_colors(indexed='faces'),
@@ -329,6 +382,11 @@ class MeshVisual(Visual):
             else:
                 self._colors.set_data(np.zeros((0, 4), dtype=np.float32))
         self.shared_program.vert['position'] = self._vertices
+
+        if self.shading == 'textured_globe':
+            jpg = Image.open('Platecarretissot.png')
+
+            self.shared_program['u_texture'] = np.asarray(jpg)
 
         # Position input handling
         if v.shape[-1] == 2:
@@ -357,12 +415,13 @@ class MeshVisual(Visual):
                 normals = (1., 0., 0.)
 
             self.shared_program.vert['normal'] = normals
-            self.shared_program.vert['base_color'] = colors
+            if self.shading != 'textured_globe':
+                self.shared_program.vert['base_color'] = colors
 
-            # Additional phong properties
-            self.shared_program.vert['light_dir'] = (10, 5, -5)
-            self.shared_program.vert['light_color'] = (1.0, 1.0, 1.0, 1.0)
-            self.shared_program.vert['ambientk'] = (0.3, 0.3, 0.3, 1.0)
+                # Additional phong properties
+                self.shared_program.vert['light_dir'] = (10, 5, -5)
+                self.shared_program.vert['light_color'] = (1.0, 1.0, 1.0, 1.0)
+                self.shared_program.vert['ambientk'] = (0.3, 0.3, 0.3, 1.0)
 
         self._data_changed = False
 
@@ -374,7 +433,7 @@ class MeshVisual(Visual):
 
     @shading.setter
     def shading(self, value):
-        assert value in (None, 'flat', 'smooth')
+        assert value in (None, 'flat', 'smooth', 'textured_globe')
         self._shading = value
 
     def _prepare_draw(self, view):
@@ -396,8 +455,9 @@ class MeshVisual(Visual):
             scene2doc = view.transforms.get_transform('scene', 'document')
             doc2scene = view.transforms.get_transform('document', 'scene')
             view.shared_program.vert['visual2scene'] = visual2scene
-            view.shared_program.vert['scene2doc'] = scene2doc
-            view.shared_program.vert['doc2scene'] = doc2scene
+            if view.shading != 'textured_globe':
+                view.shared_program.vert['scene2doc'] = scene2doc
+                view.shared_program.vert['doc2scene'] = doc2scene
 
     def _compute_bounds(self, axis, view):
         if self._bounds is None:
