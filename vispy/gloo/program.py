@@ -187,7 +187,7 @@ class Program(GLObject):
         
         # Get one string of code with comments removed
         code = '\n\n'.join(self._shaders)
-        code = re.sub(r'(.*)(//.*)', r'\1', code, re.M)
+        code = re.sub(r'(.*)(//.*)', r'\1', code)
         
         # Regexp to look for variable names
         var_regexp = ("\s*VARIABLE\s+"  # kind of variable
