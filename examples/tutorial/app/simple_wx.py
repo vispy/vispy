@@ -29,8 +29,10 @@ class Canvas(app.Canvas):
         c = abs(math.sin(self.tick))
         gloo.set_clear_color((c, c, c, 1))
         self.update()
-
-
+    
+    def stop_timer(self):    
+        self._timer.stop()
+        
 class TestFrame(wx.Frame):
     def __init__(self):
         wx.Frame.__init__(self, None, -1, "Vispy Test",
@@ -42,11 +44,11 @@ class TestFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.on_quit, id=wx.ID_EXIT)
         MenuBar.Append(file_menu, "&File")
         self.SetMenuBar(MenuBar)
-
-        self.canvas = Canvas(app="wx", parent=self)
-        self.canvas.native.Show()
-
+        
+        self.canvas = Canvas(app="wx", parent=self, show=True)
+        
     def on_quit(self, event):
+        self.canvas.stop_timer()
         self.Close(True)
 
 if __name__ == '__main__':
