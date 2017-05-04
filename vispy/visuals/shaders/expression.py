@@ -10,7 +10,7 @@ class Expression(ShaderObject):
     definition nor dependencies)
     """
     
-    def definition(self, names):
+    def definition(self, names, version):
         # expressions are declared inline.
         return None
 

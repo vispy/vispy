@@ -54,49 +54,8 @@ class MainProxy(BaseGLProxy):
         return func(*args)
 
 
-class DebugProxy(BaseGLProxy):
-    """ Proxy for debug version of the GL ES 2.0 API. 
-    
-    This proxy calls the functions of the currently selected backend.
-    In addition it logs debug information, and it runs check_error()
-    on each API call. Intended for internal use.
-    """
-    
-    def _arg_repr(self, arg):
-        """ Get a useful (and not too large) represetation of an argument.
-        """
-        r = repr(arg)
-        max = 40
-        if len(r) > max:
-            if hasattr(arg, 'shape'):
-                r = 'array:' + 'x'.join([repr(s) for s in arg.shape])
-            else:
-                r = r[:max-3] + '...'
-        return r
-    
-    def __call__(self, funcname, returns, *args):
-        # Avoid recursion for glGetError
-        if funcname == 'glGetError':
-            func = getattr(current_backend, funcname)
-            return func()
-        # Log function call
-        argstr = ', '.join(map(self._arg_repr, args))
-        logger.debug("%s(%s)" % (funcname, argstr))
-        # Call function
-        func = getattr(current_backend, funcname)
-        ret = func(*args)
-        # Log return value
-        if returns:
-            logger.debug(" <= %s" % repr(ret))
-        # Check for errors (raises if an error occured)
-        check_error(funcname)
-        # Return
-        return ret
-
-
 # Instantiate proxy objects
 proxy = MainProxy()
-_debug_proxy = DebugProxy()
 
 
 def use_gl(target='gl2'):
@@ -142,12 +101,10 @@ def use_gl(target='gl2'):
     _clear_namespace()
     if 'plus' in target:
         # Copy PyOpenGL funcs, extra funcs, constants, no debug
-        _copy_gl_functions(mod._pyopengl2, globals())
-        _copy_gl_functions(mod, globals(), True)
-    elif debug:
-        _copy_gl_functions(_debug_proxy, globals())
+        _copy_gl_functions(mod._pyopengl2, globals(), debug=debug)
+        _copy_gl_functions(mod, globals(), True, debug=debug)
     else:
-        _copy_gl_functions(mod, globals())
+        _copy_gl_functions(mod, globals(), debug=debug)
 
 
 def _clear_namespace():
@@ -162,7 +119,7 @@ def _clear_namespace():
                 del NS[name]
 
 
-def _copy_gl_functions(source, dest, constants=False):
+def _copy_gl_functions(source, dest, constants=False, debug=False):
     """ Inject all objects that start with 'gl' from the source
     into the dest. source and dest can be dicts, modules or BaseGLProxy's.
     """
@@ -179,12 +136,51 @@ def _copy_gl_functions(source, dest, constants=False):
     # Copy names
     funcnames = [name for name in source.keys() if name.startswith('gl')]
     for name in funcnames:
-        dest[name] = source[name]
+        if debug and name != 'glGetError':
+            dest[name] = make_debug_wrapper(source[name])
+        else:
+            dest[name] = source[name]
     # Copy constants
     if constants:
         constnames = [name for name in source.keys() if name.startswith('GL_')]
         for name in constnames:
             dest[name] = source[name]
+
+
+def _arg_repr(arg):
+    """ Get a useful (and not too large) represetation of an argument.
+    """
+    r = repr(arg)
+    max = 40
+    if len(r) > max:
+        if hasattr(arg, 'shape'):
+            r = 'array:' + 'x'.join([repr(s) for s in arg.shape])
+        else:
+            r = r[:max-3] + '...'
+    return r
+
+
+def make_debug_wrapper(fn):
+    def gl_debug_wrapper(*args):
+        # Log function call
+        argstr = ', '.join(map(_arg_repr, args))
+        logger.debug("%s(%s)" % (fn.__name__, argstr))
+        # Call function
+        ret = fn(*args)
+        # Log return value
+        if ret is not None:
+            if fn.__name__ == 'glReadPixels':
+                logger.debug(" <= %s[%s]" % (type(ret), len(ret)))                
+            else:
+                logger.debug(" <= %s" % repr(ret))
+        # Check for errors (raises if an error occured)
+        check_error(fn.__name__)
+        # Return
+        return ret
+    gl_debug_wrapper.__name__ = fn.__name__ + '_debug_wrapper'
+    # Store reference to wrapped function just for introspection
+    gl_debug_wrapper._wrapped_function = fn
+    return gl_debug_wrapper
 
 
 def check_error(when='periodic check'):

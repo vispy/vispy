@@ -98,20 +98,15 @@ class Compiler(object):
 
         for shader_name, shader in self.shaders.items():
             code = []
+            version = shader.version_pragma
             for dep in self._shader_deps[shader_name]:
-                dep_code = dep.definition(obj_names)
+                dep_code = dep.definition(obj_names, version, shader)
                 if dep_code is not None:
-                    # strip out version pragma if present;
-                    regex = r'#version (\d+)'
-                    m = re.search(regex, dep_code)
-                    if m is not None:
-                        # check requested version
-                        if m.group(1) != '120':
-                            raise RuntimeError("Currently only GLSL #version "
-                                               "120 is supported.")
-                        dep_code = re.sub(regex, '', dep_code)
                     code.append(dep_code)
-
+                  
+            if version is not None:
+                code.insert(0, '#version %s %s' % version)
+            
             compiled[shader_name] = '\n'.join(code)
 
         self.code = compiled

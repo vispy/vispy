@@ -40,6 +40,37 @@ from .context import get_current_canvas
 from .preprocessor import preprocess
 
 
+
+
+# ------------------------------------------------------------ Shader class ---
+class Shader(GLObject):
+    def __init__(self, code=None):
+        GLObject.__init__(self)
+        if code is not None:
+            self.code = code
+
+    @property
+    def code(self):
+        return self._code
+    
+    @code.setter
+    def code(self, code):
+        self._code = preprocess(code)
+        self._glir.command('DATA', self._id, self._code)
+
+
+class VertexShader(Shader):
+    _GLIR_TYPE = 'VertexShader'
+
+
+class FragmentShader(Shader):
+    _GLIR_TYPE = 'FragmentShader'
+
+
+class GeometryShader(Shader):
+    _GLIR_TYPE = 'GeometryShader'
+
+
 # ----------------------------------------------------------- Program class ---
 class Program(GLObject):
     """ Shader program object
@@ -96,7 +127,7 @@ class Program(GLObject):
         GLObject.__init__(self)
         
         # Init source code for vertex and fragment shader
-        self._shaders = '', '' 
+        self._shaders = None, None
         
         # Init description of variables obtained from source code
         self._code_variables = {}  # name -> (kind, type_, name)
@@ -131,7 +162,7 @@ class Program(GLObject):
             self._buffer = np.zeros(self._count, dtype=dtype)
             self.bind(VertexBuffer(self._buffer))
 
-    def set_shaders(self, vert, frag):
+    def set_shaders(self, vert, frag, geom=None, update_variables=True):
         """ Set the vertex and fragment shaders.
         
         Parameters
@@ -140,27 +171,46 @@ class Program(GLObject):
             Source code for vertex shader.
         frag : str
             Source code for fragment shaders.
+        geom : str (optional)
+            Source code for geometry shader.
+        update_variables : bool
+            If True, then process any pending variables immediately after
+            setting shader code. Default is True.
         """
         if not vert or not frag:
             raise ValueError('Vertex and fragment code must both be non-empty')
         
         # pre-process shader code for #include directives
-        vert, frag = preprocess(vert), preprocess(frag)
+        shaders = [VertexShader(vert), FragmentShader(frag)]
+        if geom is not None:
+            shaders.append(GeometryShader(geom))
+        
+        for shader in shaders:
+            self.glir.associate(shader.glir)
+            self._glir.command('ATTACH', self._id, shader.id)
         
         # Store source code, send it to glir, parse the code for variables
-        self._shaders = vert, frag
-
-        self._glir.command('SHADERS', self._id, vert, frag)
+        self._shaders = shaders
+        
+        # Link all shaders into one program. All shaders are detached after
+        # linking is complete.
+        self._glir.command('LINK', self._id)
+        
+        # Delete shaders. We no longer need them and it frees up precious GPU
+        # memory: http://gamedev.stackexchange.com/questions/47910
+        for shader in shaders:
+            shader.delete()
+ 
         # All current variables become pending variables again
         for key, val in self._user_variables.items():
             self._pending_variables[key] = val
         self._user_variables = {}
         # Parse code (and process pending variables)
-        self._parse_variables_from_code()
+        self._parse_variables_from_code(update_variables=update_variables)
     
     @property
     def shaders(self):
-        """ Source code for vertex and fragment shader
+        """ All currently attached shaders
         """
         return self._shaders
     
@@ -181,12 +231,12 @@ class Program(GLObject):
         # that maps names -> tuples, for easy looking up by name.
         return [x[:3] for x in self._code_variables.values()]
    
-    def _parse_variables_from_code(self):
+    def _parse_variables_from_code(self, update_variables=True):
         """ Parse uniforms, attributes and varyings from the source code.
         """
         
         # Get one string of code with comments removed
-        code = '\n\n'.join(self._shaders)
+        code = '\n\n'.join([sh.code for sh in self._shaders])
         code = re.sub(r'(.*)(//.*)', r'\1', code, re.M)
         
         # Regexp to look for variable names
@@ -201,9 +251,16 @@ class Program(GLObject):
         
         # Parse uniforms, attributes and varyings
         self._code_variables = {}
-        for kind in ('uniform', 'attribute', 'varying', 'const'):
+        for kind in ('uniform', 'attribute', 'varying', 'const', 'in', 'out'):
             regex = re.compile(var_regexp.replace('VARIABLE', kind),
                                flags=re.MULTILINE)
+
+            # treat *in* like attribute, *out* like varying
+            if kind == 'in':
+                kind = 'attribute'
+            elif kind == 'out':
+                kind = 'varying'
+                
             for m in re.finditer(regex, code):
                 gtype = m.group('type')
                 size = int(m.group('size')) if m.group('size') else -1
@@ -219,7 +276,8 @@ class Program(GLObject):
 
         # Now that our code variables are up-to date, we can process
         # the variables that were set but yet unknown.
-        self._process_pending_variables()
+        if update_variables:
+            self._process_pending_variables()
 
     def bind(self, data):
         """ Bind a VertexBuffer that has structured data
@@ -277,10 +335,12 @@ class Program(GLObject):
                 self._buffer[name] = data
                 return
         
+        # Forget any pending values for this variable
+        self._pending_variables.pop(name, None)
+        
         # Delete?
         if data is None:
             self._user_variables.pop(name, None)
-            self._pending_variables.pop(name, None)
             return
         
         if name in self._code_variables:
@@ -428,7 +488,8 @@ class Program(GLObject):
         # Check leftover variables, warn, discard them
         # In GLIR we check whether all attributes are indeed set
         for name in self._pending_variables:
-            logger.warn('Variable %r is given but not known.' % name)
+            logger.warn('Value provided for %r, but this variable was not '
+                        'found in the shader program.' % name)
         self._pending_variables = {}
         
         # Check attribute sizes
@@ -468,3 +529,4 @@ class Program(GLObject):
         
         # Process GLIR commands
         canvas.context.flush_commands()
+    

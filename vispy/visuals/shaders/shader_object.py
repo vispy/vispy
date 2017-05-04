@@ -63,9 +63,10 @@ class ShaderObject(object):
         """
         return None
         
-    def definition(self, obj_names):
+    def definition(self, obj_names, version, shader):
         """ Return the GLSL definition for this object. Use *obj_names* to
-        determine the names of dependencies.
+        determine the names of dependencies, and *version* (number, qualifier)
+        to adjust code output. 
         """
         return None
     
