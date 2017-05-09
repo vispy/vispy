@@ -95,7 +95,7 @@ class PerspectiveCamera(BaseCamera):
         w, h = float(w), float(h)
         
         if (w == 0) or (h == 0):
-                return
+            return
                 
         # Get range and translation for x and y
         x1, y1, z1 = self._xlim[0], self._ylim[0], self._zlim[0]
@@ -142,7 +142,7 @@ class PerspectiveCamera(BaseCamera):
         w, h = self._viewbox.size
         
         if (w == 0) or (h == 0):
-                return
+            return
                 
         if w / h > 1:
             fx *= w / h
