@@ -156,6 +156,10 @@ def _glsl_step(controls=None):
     return """vec4 colormap(float t) {\n%s\n}""" % s
 
 
+def _create_texture_for_cmap(controls=None, colors):
+    pass
+
+
 # Mini GLSL template system for colors.
 def _process_glsl_template(template, colors):
     """Replace $color_i by color #i in the GLSL template."""
