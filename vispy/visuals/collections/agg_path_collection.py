@@ -34,35 +34,25 @@ class AggPathCollection(Collection):
 
         Parameters
         ----------
-
         user_dtype: list
             The base dtype can be completed (appended) by the used_dtype. It
             only make sense if user also provide vertex and/or fragment shaders
-
         transform : Transform instance
             Used to define the transform(vec4) function
-
         vertex: string
             Vertex shader code
-
         fragment: string
             Fragment  shader code
-
         caps : string
             'local', 'shared' or 'global'
-
         join : string
             'local', 'shared' or 'global'
-
         color : string
             'local', 'shared' or 'global'
-
         miter_limit : string
             'local', 'shared' or 'global'
-
         linewidth : string
             'local', 'shared' or 'global'
-
         antialias : string
             'local', 'shared' or 'global'
         """
@@ -89,7 +79,7 @@ class AggPathCollection(Collection):
             vertex = glsl.get('collections/agg-path.vert')
         if transform is None:
             transform = NullTransform()
-        self.transform = transform        
+        self.transform = transform
         if fragment is None:
             fragment = glsl.get('collections/agg-path.frag')
 
@@ -107,31 +97,22 @@ class AggPathCollection(Collection):
 
         Parameters
         ----------
-
         P : np.array
             Vertices positions of the path(s) to be added
-
         closed: bool
             Whether path(s) is/are closed
-
         itemsize: int or None
             Size of an individual path
-
         caps : list, array or 2-tuple
            Path start /end cap
-
         join : list, array or float
            path segment join
-
         color : list, array or 4-tuple
            Path color
-
         miter_limit : list, array or float
            Miter limit for join
-
         linewidth : list, array or float
            Path linewidth
-
         antialias : list, array or float
            Path antialias area
         """

@@ -26,7 +26,7 @@ class RawPolygonCollection(Collection):
             vertex = glsl.get('collections/raw-triangle.vert')
         if transform is None:
             transform = NullTransform()
-        self.transform = transform        
+        self.transform = transform
         if fragment is None:
             fragment = glsl.get('collections/raw-triangle.frag')
 
@@ -47,10 +47,8 @@ class RawPolygonCollection(Collection):
 
         Parameters
         ----------
-
         points : np.array
             Vertices composing the triangles
-
         color : list, array or 4-tuple
            Path color
         """

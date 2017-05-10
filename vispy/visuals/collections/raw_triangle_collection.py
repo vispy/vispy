@@ -28,7 +28,7 @@ class RawTriangleCollection(Collection):
             vertex = glsl.get('collections/raw-triangle.vert')
         if transform is None:
             transform = NullTransform()
-        self.transform = transform        
+        self.transform = transform
         if fragment is None:
             fragment = glsl.get('collections/raw-triangle.frag')
 
@@ -46,13 +46,10 @@ class RawTriangleCollection(Collection):
 
         Parameters
         ----------
-
         points : np.array
             Vertices composing the triangles
-
         indices : np.array
             Indices describing triangles
-
         color : list, array or 4-tuple
            Path color
         """

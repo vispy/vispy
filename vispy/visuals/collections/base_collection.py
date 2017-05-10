@@ -42,19 +42,14 @@ class Item(object):
 
         Parameters
         ----------
-
         parent : Collection
             Collection this item belongs to
-
         key : int
             Collection index of this item
-
         vertices: array-like
             Vertices of the item
-
         indices: array-like
             Indices of the item
-
         uniforms: array-like
             Uniform parameters of the item
         """
@@ -418,10 +413,7 @@ class BaseCollection(object):
             self._update()
 
         V = self._vertices_buffer
-        I = None
         U = None
-        if self._indices_list is not None:
-            I = self._indices_buffer  # noqa
         if self._uniforms_list is not None:
             U = self._uniforms_texture.data.ravel().view(self.utype)
 

@@ -30,23 +30,17 @@ class Collection(BaseCollection):
 
     Parameters
     ----------
-
     dtype: list
         Data individual types as (name, dtype, scope, default)
-
     itype: np.dtype or None
         Indices data type
-
     mode : GL_ENUM
         GL_POINTS, GL_LINES, GL_LINE_STRIP, GL_LINE_LOOP,
         GL_TRIANGLES, GL_TRIANGLE_STRIP, GL_TRIANGLE_FAN
-
     vertex: str or tuple of str
        Vertex shader to use to draw this collection
-
     fragment:  str or tuple of str
        Fragment shader to use to draw this collection
-
     kwargs: str
         Scope can also be specified using keyword argument,
         where parameter name must be one of the dtype.
@@ -72,7 +66,6 @@ class Collection(BaseCollection):
         self._mode = mode
         vtype = []
         utype = []
-        
         self.update = EventEmitter(source=self, type='collection_update')
 
         # Build vtype and utype according to parameters

@@ -36,29 +36,21 @@ class AggFastPathCollection(Collection):
 
         Parameters
         ----------
-
         user_dtype: list
             The base dtype can be completed (appended) by the used_dtype. It
             only make sense if user also provide vertex and/or fragment shaders
-
         transform : string
             GLSL Transform code defining the vec4 transform(vec3) function
-
         vertex: string
             Vertex shader code
-
         fragment: string
             Fragment  shader code
-
         caps : string
             'local', 'shared' or 'global'
-
         color : string
             'local', 'shared' or 'global'
-
         linewidth : string
             'local', 'shared' or 'global'
-
         antialias : string
             'local', 'shared' or 'global'
         """
@@ -79,7 +71,7 @@ class AggFastPathCollection(Collection):
             vertex = glsl.get('collections/agg-fast-path.vert')
         if transform is None:
             transform = NullTransform()
-        self.transform = transform        
+        self.transform = transform
         if fragment is None:
             fragment = glsl.get('collections/agg-fast-path.frag')
 
@@ -99,25 +91,18 @@ class AggFastPathCollection(Collection):
 
         Parameters
         ----------
-
         P : np.array
             Vertices positions of the path(s) to be added
-
         closed: bool
             Whether path(s) is/are closed
-
         itemsize: int or None
             Size of an individual path
-
         caps : list, array or 2-tuple
            Path start /end cap
-
         color : list, array or 4-tuple
            Path color
-
         linewidth : list, array or float
            Path linewidth
-
         antialias : list, array or float
            Path antialias area
         """
@@ -192,7 +177,6 @@ class AggFastPathCollection(Collection):
         """
 
         itemsize = itemsize or len(P)
-        itemcount = len(P) / itemsize  # noqa
         n = itemsize
 
         if closed:
