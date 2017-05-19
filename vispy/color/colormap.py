@@ -953,7 +953,7 @@ _colormaps = dict(
     winter=_Winter(),
     light_blues=_SingleHue(),
     orange=_SingleHue(hue=35),
-    viridis=Colormap(ColorArray(_viridis_data[::2])),
+    viridis=Colormap(ColorArray(_viridis_data[::4])),
     # Diverging presets
     coolwarm=Colormap(ColorArray(
         [
