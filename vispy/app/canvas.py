@@ -395,6 +395,16 @@ class Canvas(object):
         """
         return self._fps
 
+    def hide(self, run=False):
+        """alias for show(False, run=run)
+
+        Parameters
+        ----------
+        run : bool
+            Run the backend event loop.
+        """
+        self.show(False, run=run)
+
     def set_current(self, event=None):
         """Make this the active GL canvas
 
