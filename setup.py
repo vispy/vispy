@@ -33,6 +33,7 @@ Announcing:
 """
 
 import os
+import sys
 from os import path as op
 from warnings import warn
 
@@ -73,6 +74,15 @@ def package_tree(pkgroot):
                if '__init__.py' in i[2]]
     return subdirs
 
+# if we are on windows, copy appropriate glfw and freetype, as well as OpenSans
+# otherwise, copy nothing ?
+if sys.platform.startswith('win'):
+    if sys.maxsize > 2**32:         # https://docs.python.org/3/library/platform.html
+        _data_files = [ ('vispy/bin', ['vispy/bin/x64/freetype253.dll','vispy/bin/x64/glfw3.dll','vispy/bin/OpenSans-Regular.ttf']) ]
+    else:
+        _data_files = [ ('vispy/bin', ['vispy/bin/x86/freetype253.dll','vispy/bin/x86/glfw3.dll','vispy/bin/OpenSans-Regular.ttf']) ]
+else:
+    _data_files = []
 
 setup(
     name=name,
@@ -122,6 +132,7 @@ setup(
         'vispy.glsl.transforms': ['*.vert','*.frag', "*.glsl"],
 
                   },
+    data_files=_data_files,
     zip_safe=False,
     classifiers=[
         'Development Status :: 3 - Alpha',

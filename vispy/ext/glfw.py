@@ -47,6 +47,13 @@ if 'GLFW_LIBRARY' in os.environ:
     if os.path.exists(os.environ['GLFW_LIBRARY']):
         _glfw_file = os.path.realpath(os.environ['GLFW_LIBRARY'])
 
+# Second, try bundled dlls
+if _glfw_file is None:
+    current_path = os.path.dirname(__file__)
+    _file_path = os.path.join(current_path, "../bin/", "glfw3.dll")
+    if os.path.isfile(_file_path):
+        _glfw_file = _file_path
+
 # Else, try to find it
 if _glfw_file is None:
     order = ['glfw3', 'glfw']
@@ -61,7 +68,6 @@ if _glfw_file is None:
 
 # Load it
 _glfw = ctypes.CDLL(_glfw_file)
-
 
 # Ensure it's new enough
 def glfwGetVersion():

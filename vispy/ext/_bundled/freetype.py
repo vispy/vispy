@@ -13,6 +13,7 @@ Adapted from freetype-py.
 '''
 
 import sys
+import os
 import struct
 from ctypes import (byref, c_char_p, c_ushort, cast, util, CDLL, Structure,
                     POINTER, c_int, c_short, c_long, c_void_p, c_uint,
@@ -174,7 +175,14 @@ FT_Face = POINTER(FT_FaceRec)
 # __init__.py
 
 __dll__ = None
-FT_Library_filename = util.find_library('freetype')
+
+current_path = os.path.dirname(__file__)
+FT_internal = os.path.join(current_path, "../../bin/", "freetype253.dll")
+if os.path.isfile(FT_internal):
+    __dll__ = CDLL(FT_internal)
+    FT_Library_filename = FT_internal
+if not FT_Library_filename:
+    FT_Library_filename = util.find_library('freetype')
 if not FT_Library_filename and sys.platform.startswith('win'):
     fname_end = '_x64.dll' if _64_bit else '.dll'
     FT_Library_filename = load_data_file('freetype/freetype253' + fname_end)
