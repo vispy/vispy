@@ -21,7 +21,9 @@ def remove_comments(code):
         # if the 2nd group (capturing comments) is not None,
         # it means we have captured a non-quoted (real) comment string.
         if match.group(2) is not None:
-            return ""  # so we will return empty to remove the comment
+            # so we will return only line breaks to remove the comment
+            # and to leave unchanged the number of lines
+            return "\n" * len(re.findall("\n", match.group(2)))
         else:  # otherwise, we will return the 1st group
             return match.group(1)  # captured quoted-string
 
@@ -65,6 +67,6 @@ def preprocess(code):
     """Preprocess a code by removing comments, version and merging includes."""
 
     if code:
-        #code = remove_comments(code)
+        code = remove_comments(code)
         code = merge_includes(code)
     return code
