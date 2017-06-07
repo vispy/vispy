@@ -46,5 +46,8 @@ BACKENDMAP = dict([(be[0].lower(), be) for be in BACKENDS])
 # List of attempted backends. For logging.
 TRIED_BACKENDS = []
 
+# For allow conflicted libraries if user select some one.
+SELECTED_BY_USER_BACKEND = None
+
 # Flag for _pyside, _pyqt4 and _qt modules to communicate.
 qt_lib = None

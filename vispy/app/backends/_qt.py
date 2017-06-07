@@ -34,7 +34,7 @@ from ...util import keys
 from ...ext.six import text_type
 from ...ext.six import string_types
 from ... import config
-from . import qt_lib
+from . import qt_lib, SELECTED_BY_USER_BACKEND
 
 USE_EGL = config['gl_backend'].lower().startswith('es')
 
@@ -54,6 +54,9 @@ elif sys.platform.startswith('win'):
 
 
 def _check_imports(lib):
+    # If user select library then OK.
+    if lib is not None and SELECTED_BY_USER_BACKEND == lib.lower():
+        return True
     # Make sure no conflicting libraries have been imported.
     libs = ['PyQt4', 'PyQt5', 'PySide']
     libs.remove(lib)
