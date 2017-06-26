@@ -42,8 +42,13 @@ try:
     IPYTHON_MAJOR_VERSION = IPython.version_info[0]
     if IPYTHON_MAJOR_VERSION < 2:
         raise RuntimeError('ipynb_webgl backend requires IPython >= 2.0')
-    from IPython.html.nbextensions import install_nbextension
     from IPython.display import display
+    try:
+        # ipython >=3.0
+        from notebook import install_nbextension
+    except ImportError:
+        # ipython <3.0
+        from IPython.html.nbextensions import install_nbextension
 except Exception as exp:
     # raise ImportError("The WebGL backend requires IPython >= 2.0")
     available, testable, why_not, which = False, False, str(exp), None
