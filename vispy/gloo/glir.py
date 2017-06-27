@@ -189,7 +189,7 @@ class GlirQueue(object):
 
     def command(self, *args):
         """ Send a command. See the command spec at:
-        https://github.com/vispy/vispy/wiki/Spec.-Gloo-IR
+        https://github.com/vispy/vispy/wiki/Spec.-GLIR
         """
         self._shared.command(*args)
 
