@@ -259,7 +259,7 @@ class TextVisual(Visual):
         """
 
     FRAGMENT_SHADER = """
-        // Extensions for WebGL (ignored on desktop)
+        // Extensions for WebGL
         #extension GL_OES_standard_derivatives : enable
         #extension GL_OES_element_index_uint : enable
         #include "misc/spatial-filters.frag"
