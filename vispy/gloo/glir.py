@@ -255,7 +255,6 @@ def convert_shaders(convert, shaders):
                     has_version = True
                     continue
                 if line_strip.startswith('#extension'):
-                    print(line)
                     extensions.append(line_strip)
                     line = ''
                 if line_strip.startswith('precision '):

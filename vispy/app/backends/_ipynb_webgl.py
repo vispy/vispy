@@ -162,7 +162,11 @@ class CanvasBackend(BaseCanvasBackend):
         pass
 
     def _vispy_swap_buffers(self):
-        pass
+        if self._vispy_canvas is None:
+            return
+        # Send frontend a special "you're allowed to swap buffers now" command
+        context = self._vispy_canvas.context
+        context.shared.parser.parse([('SWAP',)])
 
     def _vispy_set_title(self, title):
         raise NotImplementedError()
