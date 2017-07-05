@@ -88,7 +88,7 @@ def _unit(mode, extra_arg_string, coverage=False):
         else:
             extra_args += ['-a', 'vispy_app_test']
     if coverage and use_pytest:
-        extra_args += ['--cov', 'vispy', '--no-cov-on-fail']
+        extra_args += ['--cov', 'vispy', '--no-cov-on-fail', '-v', '-s']
     # make a call to "python" so that it inherits whatever the system
     # thinks is "python" (e.g., virtualenvs)
     extra_arg_string = ' '.join(extra_args)

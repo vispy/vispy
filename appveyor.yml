@@ -7,11 +7,13 @@ environment:
       MINICONDA_VERSION: "3.5.5"
       PYTHON: "C:\\conda"
       CONDA_DEPENDENCIES: "numpy scipy pyqt=4 matplotlib setuptools nose pytest coverage ipython=4.2.0 ipython-notebook pytest-cov"
+      PIP_DEPENDENCIES: "pytest-faulthandler"
 
   matrix:
       - PYTHON_VERSION: "3.4"
         PYTHON_ARCH: "64"
-
+      - PYTHON_VERSION: "3.5"
+        PYTHON_ARCH: "64"
 platform:
     -x64
 
@@ -44,9 +46,12 @@ install:
   # Install vispy
   - "python setup.py develop"
 
+  # Print out OpenGL info
+  - "python .opengl_info.py"
+
 build: false  # Not a C# project, build stuff at the test step instead.
 
 test_script:
   # Run the project tests (don't do examples because they are too slow)
-  - "python make test nobackend"
-  - "python make test pyqt4"
+  - "python -X faulthandler make test nobackend"
+  - "python -X faulthandler make test pyqt4"
