@@ -97,7 +97,7 @@ class SpatialFilter(object):
     def kernel(self, size=4*512):
         radius = self.radius
         r = int(max(1.0, math.ceil(radius)))
-        samples = size / r
+        samples = size // r
         n = size  # r*samples
         kernel = np.zeros(n)
         X = np.linspace(0, r, n)
