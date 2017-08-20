@@ -68,10 +68,11 @@ class Canvas(app.Canvas):
 
         self.ps = self.pixel_scale
 
-        self.seeds = np.random.uniform(0, 1.0*self.ps,
+        self.seeds = np.random.uniform(0, 1.0 * self.ps,
                                        size=(32, 2)).astype(np.float32)
         self.colors = np.random.uniform(0.3, 0.8,
                                         size=(32, 3)).astype(np.float32)
+        self.idx = 0
 
         # Set Voronoi program.
         self.program_v = gloo.Program(VS_voronoi, FS_voronoi)
@@ -102,17 +103,21 @@ class Canvas(app.Canvas):
     def activate_zoom(self):
         self.width, self.height = self.size
         gloo.set_viewport(0, 0, *self.physical_size)
-        self.program_v['u_screen'] = (self.width, self.height)
+        self.program_v['u_screen'] = self.physical_size
 
     def on_mouse_move(self, event):
         x, y = event.pos
-        x, y = x/float(self.width), 1-y/float(self.height)
-        self.program_v['u_seeds[0]'] = x*self.ps, y*self.ps
+        x, y = x / float(self.width), 1 - y / float(self.height)
+        self.program_v['u_seeds[%d]' % self.idx] = x * self.ps, y * self.ps
         # TODO: just update the first line in the VBO instead of uploading the
         # whole array of seed points.
-        self.seeds[0, :] = x, y
+        self.seeds[self.idx, :] = x, y
         self.program_s['a_position'].set_data(self.seeds)
         self.update()
+
+    def on_mouse_press(self, event):
+        self.idx = (self.idx + 1) % 32
+
 
 if __name__ == "__main__":
     c = Canvas()

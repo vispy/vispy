@@ -677,6 +677,12 @@ class _Diverging(Colormap):
 # Taken from original Viridis colormap data in matplotlib implementation
 # Sampled 128 points from the raw data-set of 256 samples.
 # Sub sampled to 128 points since 256 points causes VisPy to freeze.
+#
+# Issue #1331 https://github.com/vispy/vispy/issues/1331 explains that the 128 viridis sample size
+# fails on some GPUs but lowering to 64 samples allows more GPUs to use viridis.
+# The 64 samples are linearly interpolated anyhow and yeild smooth colormaps. To get 64 samples
+# the original Viridis colormap data is sampled with a stride of 4 ie [::4].
+#
 # HACK: Ideally, all 256 points should be included, with VisPy generating
 # a 1D texture lookup for ColorMap, rather than branching code.
 _viridis_data = [[0.267004, 0.004874, 0.329415],
@@ -953,7 +959,7 @@ _colormaps = dict(
     winter=_Winter(),
     light_blues=_SingleHue(),
     orange=_SingleHue(hue=35),
-    viridis=Colormap(ColorArray(_viridis_data[::2])),
+    viridis=Colormap(ColorArray(_viridis_data[::4])),
     # Diverging presets
     coolwarm=Colormap(ColorArray(
         [

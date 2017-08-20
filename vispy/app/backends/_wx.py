@@ -237,6 +237,7 @@ class CanvasBackend(GLCanvas, BaseCanvasBackend):
                 self._fullscreen = False
             _wx_app.SetTopWindow(self._frame)
             parent = self._frame
+            self._frame.Show()
             self._frame.Raise()
             self._frame.Bind(wx.EVT_CLOSE, self.on_close)
         else:
@@ -379,16 +380,16 @@ class CanvasBackend(GLCanvas, BaseCanvasBackend):
         pos = (evt.GetX(), evt.GetY())
         mods = _get_mods(evt)
         if evt.GetWheelRotation() != 0:
-            delta = (0., float(evt.GetWheelRotation()))
+            delta = (0., float(evt.GetWheelRotation())/120.0)
             self._vispy_canvas.events.mouse_wheel(delta=delta, pos=pos,
                                                   modifiers=mods)
         elif evt.Moving() or evt.Dragging():  # mouse move event
             self._vispy_mouse_move(pos=pos, modifiers=mods)
         elif evt.ButtonDown():
             if evt.LeftDown():
-                button = 0
-            elif evt.MiddleDown():
                 button = 1
+            elif evt.MiddleDown():
+                button = 3
             elif evt.RightDown():
                 button = 2
             else:
@@ -396,9 +397,9 @@ class CanvasBackend(GLCanvas, BaseCanvasBackend):
             self._vispy_mouse_press(pos=pos, button=button, modifiers=mods)
         elif evt.ButtonUp():
             if evt.LeftUp():
-                button = 0
-            elif evt.MiddleUp():
                 button = 1
+            elif evt.MiddleUp():
+                button = 3
             elif evt.RightUp():
                 button = 2
             else:
@@ -406,9 +407,9 @@ class CanvasBackend(GLCanvas, BaseCanvasBackend):
             self._vispy_mouse_release(pos=pos, button=button, modifiers=mods)
         elif evt.ButtonDClick():
             if evt.LeftDClick():
-                button = 0
-            elif evt.MiddleDClick():
                 button = 1
+            elif evt.MiddleDClick():
+                button = 3
             elif evt.RightDClick():
                 button = 2
             else:

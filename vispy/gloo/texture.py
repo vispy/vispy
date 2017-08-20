@@ -715,8 +715,13 @@ class TextureEmulated3D(Texture2D):
 
     def _update_variables(self):
         self._glsl_sample['shape'] = self.shape[:3][::-1]
-        self._glsl_sample['c'] = self._c
-        self._glsl_sample['r'] = self._r
+        # On Windows with Python 2.7, self._c can end up being a long
+        # integer because Numpy array shapes return long integers. This
+        # causes issues when setting the gloo variables since these are
+        # expected to be native ints, so we cast the integers to ints
+        # to avoid this.
+        self._glsl_sample['c'] = int(self._c)
+        self._glsl_sample['r'] = int(self._r)
 
     def set_data(self, data, offset=None, copy=False):
         """Set texture data

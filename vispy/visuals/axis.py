@@ -4,6 +4,9 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
+import math
+import warnings
+
 import numpy as np
 
 from .visual import CompoundVisual
@@ -40,18 +43,52 @@ class AxisVisual(CompoundVisual):
         RGBA values for the tick colours. The colour for the major and minor
         ticks is currently fixed to be the same. Default is a dark grey.
     text_color : Color
-        The color to use for drawing tick values.
+        The color to use for drawing tick and axis labels
+    minor_tick_length : float
+        The length of minor ticks, in pixels
+    major_tick_length : float
+        The length of major ticks, in pixels
+    tick_width : float
+        Line width for the ticks
+    tick_label_margin : float
+        Margin between ticks and tick labels
+    tick_font_size : float
+        The font size to use for rendering tick labels.
+    axis_width : float
+        Line width for the axis
+    axis_label : str
+        Text to use for the axis label
+    axis_label_margin : float
+        Margin between ticks and axis labels
+    axis_font_size : float
+        The font size to use for rendering axis labels.
     font_size : float
-        The font size to use for rendering tick values.
-    **kwargs : dict
-        Keyword arguments to pass to `Visual`.
+        Font size for both the tick and axis labels. If this is set,
+        tick_font_size and axis_font_size are ignored.
+    anchors : iterable
+        A 2-element iterable (tuple, list, etc.) giving the horizontal and
+        vertical alignment of the tick labels. The first element should be one
+        of 'left', 'center', or 'right', and the second element should be one
+        of 'bottom', 'middle', or 'top'. If this is not specified, it is
+        determined automatically.
     """
     def __init__(self, pos=None, domain=(0., 1.), tick_direction=(-1., 0.),
                  scale_type="linear", axis_color=(1, 1, 1),
-                 tick_color=(0.7, 0.7, 0.7), text_color='w', font_size=8):
+                 tick_color=(0.7, 0.7, 0.7), text_color='w',
+                 minor_tick_length=5, major_tick_length=10,
+                 tick_width=2, tick_label_margin=5, tick_font_size=8,
+                 axis_width=3,  axis_label=None,
+                 axis_label_margin=35, axis_font_size=10,
+                 font_size=None, anchors=None):
+
         if scale_type != 'linear':
             raise NotImplementedError('only linear scaling is currently '
                                       'supported')
+
+        if font_size is not None:
+            tick_font_size = font_size
+            axis_font_size = font_size
+
         self._pos = None
         self._domain = None
 
@@ -60,23 +97,27 @@ class AxisVisual(CompoundVisual):
         # (private until we come up with a better name for this)
         self._stop_at_major = (False, False)
 
-        self.ticker = Ticker(self)
+        self.ticker = Ticker(self, anchors=anchors)
         self.tick_direction = np.array(tick_direction, float)
         self.tick_direction = self.tick_direction
         self.scale_type = scale_type
         self.axis_color = axis_color
         self.tick_color = tick_color
 
-        self.minor_tick_length = 5  # px
-        self.major_tick_length = 10  # px
-        self.label_margin = 5  # px
+        self.minor_tick_length = minor_tick_length  # px
+        self.major_tick_length = major_tick_length  # px
+        self.tick_label_margin = tick_label_margin  # px
+        self.axis_label_margin = axis_label_margin  # px
+
+        self.axis_label = axis_label
 
         self._need_update = True
 
-        self._line = LineVisual(method='gl', width=3.0)
-        self._ticks = LineVisual(method='gl', width=2.0, connect='segments')
-        self._text = TextVisual(font_size=font_size, color=text_color)
-        CompoundVisual.__init__(self, [self._line, self._text, self._ticks])
+        self._line = LineVisual(method='gl', width=axis_width)
+        self._ticks = LineVisual(method='gl', width=tick_width, connect='segments')
+        self._text = TextVisual(font_size=tick_font_size, color=text_color)
+        self._axis_label = TextVisual(font_size=axis_font_size, color=text_color)
+        CompoundVisual.__init__(self, [self._line, self._text, self._ticks, self._axis_label])
         if pos is not None:
             self.pos = pos
         self.domain = domain
@@ -108,19 +149,29 @@ class AxisVisual(CompoundVisual):
         return self.pos[1] - self.pos[0]
 
     def _update_subvisuals(self):
-        tick_pos, labels, label_pos, anchors = self.ticker.get_update()
+        tick_pos, labels, tick_label_pos, anchors, axis_label_pos = self.ticker.get_update()
 
         self._line.set_data(pos=self.pos, color=self.axis_color)
         self._ticks.set_data(pos=tick_pos, color=self.tick_color)
         self._text.text = list(labels)
-        self._text.pos = label_pos
+        self._text.pos = tick_label_pos
         self._text.anchors = anchors
-
+        if self.axis_label is not None:
+            self._axis_label.text = self.axis_label
+            self._axis_label.pos = axis_label_pos
         self._need_update = False
 
     def _prepare_draw(self, view):
         if self._pos is None:
             return False
+        if self.axis_label is not None:
+            # TODO: make sure we only call get_transform if the transform for
+            # the line is updated
+            tr = self._line.get_transform(map_from='visual', map_to='canvas')
+            x1, y1, x2, y2 = tr.map(self.pos)[:,:2].ravel()
+            if x1 > x2:
+                x1, y1, x2, y2 = x2, y2, x1, y1
+            self._axis_label.rotation = math.degrees(math.atan2(y2-y1, x2-x1))
         if self._need_update:
             self._update_subvisuals()
 
@@ -140,15 +191,16 @@ class Ticker(object):
         The AxisVisual to generate ticks for.
     """
 
-    def __init__(self, axis):
+    def __init__(self, axis, anchors=None):
         self.axis = axis
-        
+        self._anchors = anchors
+
     def get_update(self):
         major_tick_fractions, minor_tick_fractions, tick_labels = \
             self._get_tick_frac_labels()
-        tick_pos, label_pos, anchors = self._get_tick_positions(
+        tick_pos, tick_label_pos, axis_label_pos, anchors = self._get_tick_positions(
             major_tick_fractions, minor_tick_fractions)
-        return tick_pos, tick_labels, label_pos, anchors
+        return tick_pos, tick_labels, tick_label_pos, anchors, axis_label_pos
 
     def _get_tick_positions(self, major_tick_fractions, minor_tick_fractions):
         # tick direction is defined in visual coords, but use document
@@ -157,35 +209,42 @@ class Ticker(object):
         visual_to_document = trs.get_transform('visual', 'document')
         direction = np.array(self.axis.tick_direction)
         direction /= np.linalg.norm(direction)
-        # use the document (pixel) coord system to set text anchors
-        anchors = []
-        if direction[0] < 0:
-            anchors.append('right')
-        elif direction[0] > 0:
-            anchors.append('left')
+
+        if self._anchors is None:
+            # use the document (pixel) coord system to set text anchors
+            anchors = []
+            if direction[0] < 0:
+                anchors.append('right')
+            elif direction[0] > 0:
+                anchors.append('left')
+            else:
+                anchors.append('center')
+            if direction[1] < 0:
+                anchors.append('bottom')
+            elif direction[1] > 0:
+                anchors.append('top')
+            else:
+                anchors.append('middle')
         else:
-            anchors.append('center')
-        if direction[1] < 0:
-            anchors.append('bottom')
-        elif direction[1] > 0:
-            anchors.append('top')
-        else:
-            anchors.append('middle')
+            anchors = self._anchors
 
         # now figure out the tick positions in visual (data) coords
         doc_unit = visual_to_document.map([[0, 0], direction[:2]])
         doc_unit = doc_unit[1] - doc_unit[0]
         doc_len = np.linalg.norm(doc_unit)
-        
+
         vectors = np.array([[0., 0.],
                             direction * self.axis.minor_tick_length / doc_len,
                             direction * self.axis.major_tick_length / doc_len,
                             direction * (self.axis.major_tick_length +
-                                         self.axis.label_margin) / doc_len],
+                                         self.axis.tick_label_margin) / doc_len],
                            dtype=float)
         minor_vector = vectors[1] - vectors[0]
         major_vector = vectors[2] - vectors[0]
         label_vector = vectors[3] - vectors[0]
+
+        axislabel_vector = direction * (self.axis.major_tick_length +
+                                        self.axis.axis_label_margin) / doc_len
 
         major_origins, major_endpoints = self._tile_ticks(
             major_tick_fractions, major_vector)
@@ -194,6 +253,8 @@ class Ticker(object):
             minor_tick_fractions, minor_vector)
 
         tick_label_pos = major_origins + label_vector
+
+        axis_label_pos = 0.5 * (self.axis.pos[0] + self.axis.pos[1]) + axislabel_vector
 
         num_major = len(major_tick_fractions)
         num_minor = len(minor_tick_fractions)
@@ -205,7 +266,7 @@ class Ticker(object):
         c[(num_major-1)*2+2::2] = minor_origins
         c[(num_major-1)*2+3::2] = minor_endpoints
 
-        return c, tick_label_pos, anchors
+        return c, tick_label_pos, axis_label_pos, anchors
 
     def _tile_ticks(self, frac, tickvec):
         """Tiles tick marks along the axis."""

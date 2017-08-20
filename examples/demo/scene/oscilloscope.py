@@ -146,11 +146,11 @@ class Oscilloscope(scene.ScrollingLines):
             dx = 0
         else:
             # search for next trigger
-            th = self._trigger[1]  # trigger window height
-            tw = self._trigger[2] / self._dx  # trigger window width
+            th = int(self._trigger[1])  # trigger window height
+            tw = int(self._trigger[2] / self._dx)  # trigger window width
             thresh = self._trigger[0]
 
-            trig = np.argwhere((data[tw:] > thresh + th) & 
+            trig = np.argwhere((data[tw:] > thresh + th) &
                                (data[:-tw] < thresh - th))
             if len(trig) > 0:
                 m = np.argmin(np.abs(trig - len(data) / 2))
@@ -172,7 +172,7 @@ class Oscilloscope(scene.ScrollingLines):
     def plot(self, data, dx=0):
         self.set_data(self.plot_ptr, data)
         
-        self.color[..., 3] *= 0.98
+        np.multiply(self.color[..., 3], 0.98, out=self.color[..., 3], casting='unsafe')
         self.color[self.plot_ptr, 3] = 50
         self.set_color(self.color)
         self.pos_offset[self.plot_ptr] = (dx, 0, 0)

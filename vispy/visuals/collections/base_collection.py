@@ -9,6 +9,9 @@ the same vertex structure (vtype) and same uniforms type (utype). A collection
 allows to manipulate objects individually and each object can have its own set
 of uniforms provided they are a combination of floats.
 """
+
+from __future__ import division
+
 import math
 import numpy as np
 from ...gloo import Texture2D, VertexBuffer, IndexBuffer
@@ -454,9 +457,9 @@ class BaseCollection(object):
         # linesize = gl.glGetInteger(gl.GL_MAX_TEXTURE_SIZE)
         linesize = 1024
         count = self._uniforms_float_count
-        cols = linesize // float(count / 4)
+        cols = 4 * linesize // int(count)
         rows = max(1, int(math.ceil(size / float(cols))))
-        shape = rows, cols * (count / 4), count
+        shape = rows, cols * (count // 4), count
         self._ushape = shape
         return shape
 

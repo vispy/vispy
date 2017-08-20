@@ -18,28 +18,29 @@ grid.spacing = 0
 
 title = scene.Label("Plot Title", color='white')
 title.height_max = 40
-grid.add_widget(title, row=0, col=0, col_span=3)
+grid.add_widget(title, row=0, col=0, col_span=2)
 
-yaxis = scene.AxisWidget(orientation='left')
-yaxis.width_max = 40
-grid.add_widget(yaxis, row=1, col=1)
+yaxis = scene.AxisWidget(orientation='left',
+                         axis_label='Y Axis',
+                         axis_font_size=12,
+                         axis_label_margin=50,
+                         tick_label_margin=5)
+yaxis.width_max = 80
+grid.add_widget(yaxis, row=1, col=0)
 
-ylabel = scene.Label('Y Axis', rotation=-90, color='white')
-ylabel.width_max = 40
-grid.add_widget(ylabel, row=1, col=0)
+xaxis = scene.AxisWidget(orientation='bottom',
+                         axis_label='X Axis',
+                         axis_font_size=12,
+                         axis_label_margin=50,
+                         tick_label_margin=5)
 
-xaxis = scene.AxisWidget(orientation='bottom')
-xaxis.height_max = 40
-grid.add_widget(xaxis, row=2, col=2)
+xaxis.height_max = 80
+grid.add_widget(xaxis, row=2, col=1)
 
-xlabel = scene.Label('X Axis', color='white')
-xlabel.height_max = 40
-grid.add_widget(xlabel, row=3, col=0, col_span=3)
-
-right_padding = grid.add_widget(row=0, col=3, row_span=3)
+right_padding = grid.add_widget(row=1, col=2, row_span=1)
 right_padding.width_max = 50
 
-view = grid.add_view(row=1, col=2, border_color='white')
+view = grid.add_view(row=1, col=1, border_color='white')
 data = np.random.normal(size=(1000, 2))
 data[0] = -10, -10
 data[1] = 10, -10
