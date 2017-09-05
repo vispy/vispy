@@ -1,9 +1,7 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# vispy: testskip
+# Copyright (c) 2017. Oliver Braun
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
-# -----------------------------------------------------------------------------
 """
 This example demonstrates how to draw 3d-vectors and apply rotation/translation and scaling with time
 """
