@@ -55,7 +55,7 @@ class mbVector(scene.visuals.Vector):
         
         # calculates the rotation (orthogonal O3 Trafo) on bases of the orientation vector)
         ex, ey, ez = self._get_ortho_base((scale_x, scale_y, scale_z))
-        new_base = (*ex,*ey,*ez)
+        new_base = (ex[0], ex[1], ex[2], ey[0], ey[1], ey[2], ez[0], ez[1], ez[2])
 
         self._doTrafo( dx,dy,dz, base=new_base , scale=scale, reset=False)
 
@@ -107,7 +107,7 @@ class mbVector(scene.visuals.Vector):
 
     def _get_ortho_base(self, n):
         """ 
-        calc an ottho base for one direction, such that ex is pointing in the end to that direction 
+        calc an ortho base for one direction, such that ex is pointing in the end to that direction 
         """
         ex = self._norm(n)        
         ey = self._norm(self._ortho(ex))
