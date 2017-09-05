@@ -473,6 +473,39 @@ class MatrixTransform(BaseTransform):
         # of standard linear algebra order.
         self.matrix = transforms.affine_map(points1, points2).T
 
+    def set_rotation(self, base):
+        """
+        Define an arbitrary Orthogonal Base-Trafo (Rotation)
+
+        It is not accumulating as other trafos here
+
+        Parameters
+        ----------
+        base: an orthogonal base of the form (exx, exy, exz, eyx, eyy, eyz, ezy, ezy, ezz) 
+        """
+        M = np.array([[base[0], base[3], base[6], 0.],
+                      [base[1], base[4], base[7], 0.],
+                      [base[2], base[5], base[8], 0.],
+                      [0., 0., 0., 1.]]).T
+        self.matrix = M
+
+    def mult_rotation(self, base):
+        """
+        Define an arbitrary Orthogonal Base-Trafo (Rotation)
+
+        It is accumulating as other trafos here
+
+        Parameters
+        ----------
+        base: an orthogonal base of the form (exx, exy, exz, eyx, eyy, eyz, ezy, ezy, ezz) 
+        """
+        M = np.array([[base[0], base[3], base[6], 0.],
+                      [base[1], base[4], base[7], 0.],
+                      [base[2], base[5], base[8], 0.],
+                      [0., 0., 0., 1.]]).T
+        self.matrix = np.dot(self.matrix, M)
+
+
     def set_ortho(self, l, r, b, t, n, f):
         """Set ortho transform
 
