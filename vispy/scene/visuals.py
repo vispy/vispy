@@ -259,6 +259,7 @@ Tube = create_visual_node(visuals.TubeVisual)
 # Visual = create_visual_node(visuals.Visual)  # Should not be created
 Volume = create_visual_node(visuals.VolumeVisual)
 XYZAxis = create_visual_node(visuals.XYZAxisVisual)
+Vector = create_visual_node(visuals.VectorVisual)
 
 __all__ = [name for (name, obj) in globals().items()
            if isinstance(obj, type) and issubclass(obj, VisualNode)]
