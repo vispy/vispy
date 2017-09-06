@@ -47,8 +47,9 @@ class VectorVisual(CompoundVisual):
                                 vertex_colors=vertex_colors,
                                 face_colors=face_colors, color=color, shading=shading)
 
+        self._border = MeshVisual()
 
-        CompoundVisual.__init__(self, [self._mesh], **kwargs)
+        CompoundVisual.__init__(self, [self._mesh, self._border], **kwargs)
         self.mesh.set_gl_state(polygon_offset_fill=True,
                                polygon_offset=(1, 1), depth_test=True)
 
@@ -62,4 +63,12 @@ class VectorVisual(CompoundVisual):
     def mesh(self, mesh):
         self._mesh = mesh
 
+    @property
+    def border(self):
+        """The vispy.visuals.MeshVisual that used to draw the border.
+        """
+        return self._border
 
+    @border.setter
+    def border(self, border):
+        self._border = border
