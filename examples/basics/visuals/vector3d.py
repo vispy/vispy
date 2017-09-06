@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 # vispy: testskip
-# Copyright (c) 2017. Oliver Braun
+# -----------------------------------------------------------------------------
+# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
+# -----------------------------------------------------------------------------
 """
 This example demonstrates how to draw 3d-vectors and apply rotation/translation and scaling with time
 """
@@ -17,7 +19,7 @@ class mbVector(scene.visuals.Vector):
     a simple wrapper class which includes the transformation done on the vector
     """
     def __init__(self, view, face_color, state_vec, orient_vec):
-        super(mbVector, self).__init__(10, 10, 0.05, 1., 0.1, 0.25, color=face_color, shading=None, parent=view)
+        super(mbVector, self).__init__(10, 10, 0.05, 1., 0.1, 0.25, color=face_color, shading="smooth", parent=view)
         self.unfreeze()
         self.n = 0
         self.n_max = len(state_vec)
@@ -72,36 +74,31 @@ class mbVector(scene.visuals.Vector):
 
     def _norm(self, n):
         """ normalizing a vector n = (x,y,z) """
-        x, y, z = n
-        norm = np.sqrt(x*x + y*y + z*z)
-        return x/norm, y/norm, z/norm
+        norm = np.linalg.norm(n)
+        if norm > 0:
+            return n/norm
 
     def _cross(self, n0, n1):
         """ doing a crossproduct i.e. n1 x n2 """
-        x0, y0, z0 = n0
-        x1, y1, z1 = n1
-        x = y0*z1 - z0*y1
-        y = z0*x1 - x0*z1
-        z = x0*y1 - y0*x1
-        return x,y,z
+        return np.cross(n0, n1)
 
     def _ortho(self, n):
         """ finding an arbitrary orthogonal vector to another in 3d """
         x,y,z = n
         if z!=0. and y!=0.:
-            return 0., z, -y
+            return np.array((0., z, -y))
         elif x!=0. and y!=0.:
-            return y, -x, 0.
+            return np.array((y, -x, 0.))
         elif x!=0. and z!=0.:
-            return z, 0., -x
+            return np.array((z, 0., -x))
         elif x==0 and y==0:
-            return 1.,0.,0.
+            return np.array((1.,0.,0.))
         elif x==0 and z==0:
-            return 1.,0.,0.
+            return np.array((1.,0.,0.))
         elif y==0 and z==0:
-            return 0.,1.,0.
+            return np.array((0.,1.,0.))
         else:
-            return 0.,0.,0.
+            return np.array((0.,0.,0.))
 
     def _get_ortho_base(self, n):
         """ 
@@ -118,7 +115,7 @@ class mbCanvas(scene.SceneCanvas):
     """
     def __init__(self):
         super(mbCanvas, self).__init__( keys='interactive', bgcolor='white',
-                           size=(800, 600), show=True)
+                           size=(800, 600), show=True, config={'depth_size': 24})
 
         self.unfreeze()
 
@@ -133,7 +130,8 @@ class mbCanvas(scene.SceneCanvas):
         # call the setter for the camera
         self.view.camera = 'arcball'    
         self.view.camera.set_range(x=[-6, 6])
-
+        # prevent artefacts 
+        self.view.camera.depth_value = 10000.0
         self.timer.start()
     # ---------------------------------
     def on_key_press(self, event):
