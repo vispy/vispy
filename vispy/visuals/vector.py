@@ -34,13 +34,10 @@ class VectorVisual(CompoundVisual):
         Same as for `MeshVisual` class. See `create_cube` for vertex ordering.
     color : Color
         The `Color` to use when drawing the cube faces.
-    edge_color : tuple or Color
-        The `Color` to use when drawing the cube edges. If `None`, then no
-        cube edges are drawn.
     shading: one of "smooth", "flat" or None (default)
     """
     def __init__(self, rows, cols, radius, length, cone_radius, cone_length, vertex_colors=None, face_colors=None,
-                 color=(0.5, 0.5, 1, 1), edge_color=None, shading=None, **kwargs):
+                 color=(0.5, 0.5, 1, 1), shading=None, **kwargs):
 
         mesh = create_arrow(rows, cols, radius, length,
                  cone_radius, cone_length)
@@ -50,14 +47,8 @@ class VectorVisual(CompoundVisual):
                                 vertex_colors=vertex_colors,
                                 face_colors=face_colors, color=color, shading=shading)
 
-        if edge_color:
-            self._border = MeshVisual(vertices=vertices['position'],
-                                      faces=outline_indices,
-                                      color=edge_color, mode='lines')
-        else:
-            self._border = MeshVisual()
 
-        CompoundVisual.__init__(self, [self._mesh, self._border], **kwargs)
+        CompoundVisual.__init__(self, [self._mesh], **kwargs)
         self.mesh.set_gl_state(polygon_offset_fill=True,
                                polygon_offset=(1, 1), depth_test=True)
 
