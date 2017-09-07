@@ -26,14 +26,6 @@ matrix:
     # Note that the 2.6 build doesn't get flake8, and runs old versions of
     # Pyglet and GLFW to make sure we deal with those correctly
 
-    # IPython 1.2.1 is the last version of IPython for python2.6
-    # source: https://pypi.python.org/pypi/ipython/1.2.1
-    - env: PYTHON=2.6 DEPS=full TEST=standard # functionality
-      addons:
-        apt:
-          sources:
-          packages:
-            - *mesa_apt
     - env: PYTHON=2.7 DEPS=full TEST=standard IPYTHON="=2" NUMPY="=1.7"
       addons:
         apt:
