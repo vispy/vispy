@@ -200,10 +200,6 @@ def test_application():
                 # todo: disable more tests based on capability
                 canvas.position = pos
             canvas.size = size
-        if 'ipynb_vnc' in canvas.app.backend_name.lower():
-            assert len(l) >= 1
-        else:
-            assert len(l) == 0, l
         canvas.connect(on_mouse_move)
         assert_raises(ValueError, canvas.connect, _on_mouse_move)
         if sys.platform != 'darwin':  # XXX knownfail, prob. needs warmup

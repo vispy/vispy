@@ -15,6 +15,16 @@ addons:
 
 matrix:
   include:
+    - env: PYTHON=3.6 DEPS=minimal TEST=standard  # also tests file sizes, style, line endings
+      addons:
+        apt:
+          packages:
+    - env: PYTHON=3.6 DEPS=full TEST=standard
+      addons:
+        apt:
+          packages:
+            - *mesa_apt
+            - *full_apt
     - env: PYTHON=2.7 DEPS=full TEST=standard NUMPY="=1.9"
       addons:
         apt:
@@ -30,29 +40,13 @@ matrix:
         apt:
           packages:
             - *full_apt
-    - env: PYTHON=3.6 DEPS=full TEST=standard
+    # Run on 2.7 so we have PyQt4 (some examples need it)
+    - env: PYTHON=2.7 DEPS=full TEST=examples  # test examples
       addons:
         apt:
           packages:
             - *mesa_apt
             - *full_apt
-    - env: PYTHON=3.6 DEPS=full TEST=standard
-      os: osx
-      addons:
-        apt:
-          packages:
-            - *mesa_apt
-            - *full_apt
-    - env: PYTHON=3.6 DEPS=full TEST=examples  # test examples
-      addons:
-        apt:
-          packages:
-            - *mesa_apt
-            - *full_apt
-    - env: PYTHON=3.6 DEPS=minimal TEST=standard  # also tests file sizes, style, line endings
-      addons:
-        apt:
-          packages:
 
 
 before_install:

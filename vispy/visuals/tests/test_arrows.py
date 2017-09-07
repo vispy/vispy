@@ -38,6 +38,10 @@ def test_arrow_draw():
     """Test drawing arrows without transforms"""
     with TestingCanvas() as c:
         for arrow_type in ARROW_TYPES:
+            if os.getenv('TRAVIS', 'false') == 'true' and \
+                    c.app.backend_name == 'pyqt4':
+                # TODO: Fix this (issue #1042
+                raise SkipTest('Travis fails due to FB stack problem')
             arrow = visuals.Arrow(pos=vertices, arrow_type=arrow_type,
                                   arrows=arrows, arrow_size=10, color='red',
                                   connect="segments", parent=c.scene)
