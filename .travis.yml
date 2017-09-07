@@ -36,6 +36,13 @@ matrix:
           packages:
             - *mesa_apt
             - *full_apt
+    - env: PYTHON=3.6 DEPS=full TEST=standard
+      os: osx
+      addons:
+        apt:
+          packages:
+            - *mesa_apt
+            - *full_apt
     - env: PYTHON=3.6 DEPS=full TEST=examples  # test examples
       addons:
         apt:

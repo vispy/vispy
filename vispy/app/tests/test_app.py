@@ -53,7 +53,7 @@ def _test_callbacks(canvas):
         _id = backend._id
         backend._on_draw(_id)
         backend._on_resize(_id, 100, 100)
-        
+
         backend._on_key_press(_id, 340, 340, 1, 0)  # Shift.
         backend._on_key_press(_id, 50, 50, 1, 0)    # 2
         backend._on_key_char(_id, 50)
@@ -201,9 +201,9 @@ def test_application():
                 canvas.position = pos
             canvas.size = size
         if 'ipynb_vnc' in canvas.app.backend_name.lower():
-            assert_true(len(l) >= 1)
+            assert len(l) >= 1
         else:
-            assert_true(len(l) == 0)
+            assert len(l) == 0, l
         canvas.connect(on_mouse_move)
         assert_raises(ValueError, canvas.connect, _on_mouse_move)
         if sys.platform != 'darwin':  # XXX knownfail, prob. needs warmup
@@ -240,19 +240,19 @@ def test_application():
         frag = "void main (void) {gl_FragColor = pos;}"
         program = Program(vert, frag)
         assert_raises(RuntimeError, program.glir.flush, context.shared.parser)
-        
+
         vert = "uniform vec4 pos;\nvoid main (void) {gl_Position = pos;}"
         frag = "uniform vec4 pos;\nvoid main (void) {gl_FragColor = pos;}"
         program = Program(vert, frag)
         # uniform = program.uniforms[0]
         program['pos'] = [1, 2, 3, 4]
-        
+
         vert = "attribute vec4 pos;\nvoid main (void) {gl_Position = pos;}"
         frag = "void main (void) {}"
         program = Program(vert, frag)
         # attribute = program.attributes[0]
         program["pos"] = [1, 2, 3, 4]
-        
+
         # use a real program
         program._glir.clear()
         vert = ("uniform mat4 u_model;"

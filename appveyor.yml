@@ -9,11 +9,11 @@ environment:
 
   matrix:
       - PYTHON_VERSION: "2.7"
-        PIP_DEPENDENCIES: "pyglet numpydoc mock"
+        PIP_DEPENDENCIES: "numpydoc mock"
         CONDA_DEPENDENCIES: "numpy scipy pyqt matplotlib pyqt=4 jupyter setuptools nose pytest coverage pytest-cov"
       - PYTHON_VERSION: "3.6"
         CONDA_DEPENDENCIES: "numpy scipy setuptools nose pytest coverage pytest-cov"
-        PIP_DEPENDENCIES: "pyglet numpydoc"
+        PIP_DEPENDENCIES: "numpydoc"
 
 platform:
     -x64

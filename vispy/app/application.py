@@ -225,8 +225,9 @@ class Application(object):
                            (native_module_name, name, str(mod.why_not)))
                     logger.warning(msg)
                 else:
-                    # Inform otherwise
-                    logger.info(msg)
+                    if backend_name is not None:
+                        # Inform only if one isn't available
+                        logger.info(msg)
             else:
                 # Success!
                 self._backend_module = mod
