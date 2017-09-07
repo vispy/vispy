@@ -35,7 +35,7 @@ functionality, or drawing things with OpenGL), it's best to look at existing
 examples in the test suite.
 
 The code base gets automatically tested by Travis-CI (Linux) and AppVeyor
-(Windows) on Python 2.6, 2.7, 3.4. There are multiple testing modes that
+(Windows) on Python 2.7 and 3.6. There are multiple testing modes that
 use e.g. full dependencies, minimal dependencies, etc. See ``.travis.yml``
 to determine what automatic tests are run.
 """

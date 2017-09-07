@@ -111,11 +111,10 @@ install:
     # No wx on py27 or py34, wxpython doesn't work properly there
     # If we only need a single backend (DEPS=backend), then use PyQT4
     - if [ "${DEPS}" == "full" ]; then
-        conda install --yes --quiet pyqt=4 pyopengl ipython$IPYTHON ipython-notebook numpy$NUMPY networkx;
+        conda install --yes --quiet pyqt pyopengl scipy matplotlib wxpython ipython$IPYTHON ipython-notebook numpy$NUMPY networkx;
         pip install -q pyglet;
         if [ "${PYTHON}" == "3.6" ]; then
-          pip install -q freetype-py husl pypng cassowary;
-          conda install --yes --quiet pillow scipy pyqt=4 matplotlib decorator six numpy$NUMPY;
+          pip install -q freetype-py husl pypng cassowary pillow decorator six;
           rm -rf ${SRC_DIR}/vispy/ext/_bundled;
         fi;
       fi;

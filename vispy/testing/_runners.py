@@ -131,7 +131,7 @@ def _docs():
 
     if not dev:
         warnings.warn("Docstring test imports Vispy from"
-                      " Vispy's installation. It is"
+                      " Vispy's installation. It is"p
                       " recommended to setup Vispy using"
                       " 'python setup.py develop'"
                       " so that the latest sources are used automatically")
@@ -158,7 +158,7 @@ def _flake():
     else:
         sys.argv[1:] = [op.basename(import_dir)]
     sys.argv.append('--ignore=E226,E241,E265,E266,W291,W293,W503,F999')
-    sys.argv.append('--exclude=six.py,ordereddict.py,glfw.py,'
+    sys.argv.append('--exclude=six.py,glfw.py,'
                     '_proxy.py,_es2.py,_gl2.py,_pyopengl2.py,'
                     '_constants.py,png.py,decorator.py,ipy_inputhook.py,'
                     'experimental,wiki,_old,mplexporter.py,cubehelix.py,'
