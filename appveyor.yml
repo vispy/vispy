@@ -9,11 +9,11 @@ environment:
 
   matrix:
       - PYTHON_VERSION: "2.7"
-        PIP_DEPENDENCIES: "numpydoc mock"
         CONDA_DEPENDENCIES: "numpy scipy pyqt matplotlib pyqt=4 jupyter setuptools nose pytest coverage pytest-cov"
+        PIP_DEPENDENCIES: "numpydoc mock coveralls"
       - PYTHON_VERSION: "3.6"
         CONDA_DEPENDENCIES: "numpy scipy setuptools nose pytest coverage pytest-cov"
-        PIP_DEPENDENCIES: "numpydoc"
+        PIP_DEPENDENCIES: "numpydoc coveralls"
 
 platform:
     -x64
@@ -53,3 +53,6 @@ build: false  # Not a C# project, build stuff at the test step instead.
 test_script:
   # Run the project tests (don't do examples because they are too slow)
   - "python make test unit"
+
+on_success:
+  - "coveralls"
