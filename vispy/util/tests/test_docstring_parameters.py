@@ -4,6 +4,8 @@ from __future__ import print_function
 import inspect
 import warnings
 from vispy.testing import run_tests_if_main, requires_numpydoc
+from vispy.utils import _get_args
+
 
 public_modules = [
     # the list of modules users need to access for all functionality
@@ -45,7 +47,7 @@ def check_parameters_match(func, doc=None):
         return incorrect
     if inspect.isdatadescriptor(func):
         return incorrect
-    args, varargs, varkw, defaults = inspect.getargspec(func)
+    args = _get_args(func)
     # drop self
     if len(args) > 0 and args[0] in ('self', 'cls'):
         args = args[1:]

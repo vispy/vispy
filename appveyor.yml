@@ -6,13 +6,14 @@ environment:
   global:
       PYTHON: "C:\\conda"
       CONDA_DEPENDENCIES: "numpy scipy pyqt matplotlib setuptools nose pytest coverage jupyter pytest-cov"
-      PIP_DEPENDENCIES: "pyglet numpydoc"
 
   matrix:
       - PYTHON_VERSION: "3.6"
         PYTHON_ARCH: "64"
+        PIP_DEPENDENCIES: "pyglet numpydoc"
       - PYTHON_VERSION: "2.7"
         PYTHON_ARCH: "64"
+        PIP_DEPENDENCIES: "pyglet numpydoc mock"
 
 platform:
     -x64
