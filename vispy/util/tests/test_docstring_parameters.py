@@ -4,7 +4,7 @@ from __future__ import print_function
 import inspect
 import warnings
 from vispy.testing import run_tests_if_main, requires_numpydoc
-from vispy.utils import _get_args
+from vispy.util import _get_args
 
 
 public_modules = [
