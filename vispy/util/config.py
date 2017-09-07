@@ -16,6 +16,8 @@ import tempfile
 import atexit
 from shutil import rmtree
 
+import numpy as np
+
 from .event import EmitterGroup, EventEmitter, Event
 from .logs import logger, set_log_level, use_log_level
 from ..ext.six import string_types, file_types
@@ -118,7 +120,7 @@ VisPy command line arguments:
     Export glir commands to specified file.
 
   --vispy-profile=locations
-    Measure performance at specific code locations and display results. 
+    Measure performance at specific code locations and display results.
     *locations* may be "all" or a comma-separated list of method names like
     "SceneCanvas.draw_visual".
 
@@ -424,6 +426,7 @@ def sys_info(fname=None, overwrite=False):
             with use_log_level('warning', print_msg=False):
                 which = has_backend(backend, out=['which'])[1]
             out += '{0:<9} {1}\n'.format(backend + ':', which)
+        out += 'NumPy:    %s\n' % (np.__version__,)
         out += '\n'
         # We need an OpenGL context to get GL info
         canvas = Canvas('Test', (10, 10), show=False, app=app)
