@@ -101,7 +101,7 @@ install:
     # PyQt5 is currently broken, but will be installed on 3.6 so don't do it
     - if [ "${DEPS}" == "full" ]; then
         conda install --yes pyopengl scipy numpy$NUMPY networkx;
-        pip install -q numpydoc;
+        pip install -q numpydoc PySDL2;
         if [ "${PYTHON}" == "3.6" ]; then
           pip install -q freetype-py husl pypng cassowary pillow decorator six;
           rm -rf ${SRC_DIR}/vispy/ext/_bundled;
