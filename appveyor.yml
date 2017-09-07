@@ -46,6 +46,7 @@ install:
 
   # Install vispy
   - "python setup.py develop"
+  - "python -c \"import vispy; print(vispy.sys_info())\""
 
 build: false  # Not a C# project, build stuff at the test step instead.
 

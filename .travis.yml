@@ -112,14 +112,15 @@ install:
     # No wx on py27 or py34, wxpython doesn't work properly there
     # If we only need a single backend (DEPS=backend), then use PyQT4
     # Don't test Pyglet because it currently segfaults (but AppVeyor checks it)
+    # PyQt5 is currently broken, but will be installed on 3.6 so don't do it
     - if [ "${DEPS}" == "full" ]; then
-        conda install --yes --quiet pyopengl scipy jupyter numpy$NUMPY networkx;
+        conda install --yes pyopengl scipy numpy$NUMPY networkx;
         pip install -q numpydoc;
         if [ "${PYTHON}" == "3.6" ]; then
           pip install -q freetype-py husl pypng cassowary pillow decorator six;
           rm -rf ${SRC_DIR}/vispy/ext/_bundled;
         else
-          conda install --yes --quiet wxpython matplotlib pyqt=4;
+          conda install --yes --quiet wxpython matplotlib jupyter pyqt=4;
         fi;
       fi;
 

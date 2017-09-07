@@ -51,12 +51,12 @@ def test_arrow_draw():
 @requires_application()
 def test_arrow_transform_draw():
     """Tests the ArrowVisual when a transform is applied"""
-    old_numpy = LooseVersion(np.__version__) < LooseVersion('1.8')
-    if os.getenv('TRAVIS', 'false') == 'true' and old_numpy:
-        # TODO: Fix this (issue #1042
-        raise SkipTest('Travis fails due to FB stack problem')
 
     with TestingCanvas() as c:
+        if os.getenv('TRAVIS', 'false') == 'true' and \
+                c.app.backend_name == 'pyqt4':
+            # TODO: Fix this (issue #1042
+            raise SkipTest('Travis fails due to FB stack problem')
         for arrow_type in ARROW_TYPES:
             arrow = visuals.Arrow(pos=vertices, arrow_type=arrow_type,
                                   arrows=arrows, arrow_size=10, color='red',

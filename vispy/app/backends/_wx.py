@@ -292,7 +292,8 @@ class CanvasBackend(GLCanvas, BaseCanvasBackend):
         self.on_resize(DummySize(self._size_init))
 
     def _vispy_set_current(self):
-        self.SetCurrent(self._gl_context)
+        if self.IsShown():
+            self.SetCurrent(self._gl_context)
 
     def _vispy_warmup(self):
         etime = time() + 0.3
