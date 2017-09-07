@@ -56,6 +56,7 @@ matrix:
           sources:
           packages:
             - *mesa_apt
+            - *full_apt
     - env: PYTHON=3.6 DEPS=minimal TEST=standard  # also tests file sizes, style, line endings
       addons:
         apt:
