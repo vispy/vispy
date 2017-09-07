@@ -213,7 +213,7 @@ class CanvasBackend(_Window, BaseCanvasBackend):
             self._vispy_set_position(*p.position)
 
     def _vispy_warmup(self):
-        etime = time() + 0.1
+        etime = time() + 0.2
         while time() < etime:
             sleep(0.01)
             self._vispy_canvas.set_current()
