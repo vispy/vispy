@@ -4,30 +4,20 @@ language: python
 sudo : false
 dist: trusty
 
-# install a newer cmake since at this time Travis only has version 2.8.7
 # liblgfw2 is not whitelisted by Travis, so we don't try using it here (not usable anyway)
 addons:
   apt:
-    sources:
-    - &full_sources [kalakris-cmake]
     packages:
     - &mesa_apt [libgl1-mesa-dri]
     - &full_apt [libegl1-mesa, cmake, xorg-dev, libglu1-mesa-dev, mercurial, libdbus-1-dev, libgl1-mesa-dev, libglu1-mesa-dev, libpulse-dev, libx11-dev, libxcursor-dev, libxext-dev, libxi-dev, libxinerama-dev, libxrandr-dev, libxss-dev, libxt-dev, libxv-dev, libxxf86vm-dev, libasound2-dev, libts-dev, libudev-dev]
-
-# Here we use Anaconda for our builds, since it provides the simplest
-# interface for running different versions of Python. We could also use
-# it for 2.7, but the Ubuntu system has installable 2.7 Qt4-GL, which
-# allows for more complete testing.
 
 # Size testing can be skipped by adding "[size skip]" within a commit message.
 
 matrix:
   include:
-    - env: PYTHON=2.7 DEPS=full TEST=standard NUMPY="=1.7"
+    - env: PYTHON=2.7 DEPS=full TEST=standard NUMPY="=1.9"
       addons:
         apt:
-          sources:
-            - *full_sources
           packages:
             - *mesa_apt
             - *full_apt
@@ -35,25 +25,20 @@ matrix:
     # has (on-screen) OpenGL installed, we need to setup environment variable
     # to avoid having the linker load the wrong libglapi.so which would cause
     # OSMesa to crash
-    - env: PYTHON=2.7 DEPS=full TEST=osmesa NUMPY="=1.7"
+    - env: PYTHON=2.7 DEPS=full TEST=osmesa NUMPY="=1.9"
       addons:
         apt:
-          sources:
-            - *full_sources
           packages:
             - *full_apt
     - env: PYTHON=3.6 DEPS=full TEST=standard
       addons:
         apt:
-          sources:
-            - *full_sources
           packages:
             - *mesa_apt
             - *full_apt
     - env: PYTHON=3.6 DEPS=full TEST=examples  # test examples
       addons:
         apt:
-          sources:
           packages:
             - *mesa_apt
             - *full_apt
