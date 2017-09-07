@@ -48,5 +48,5 @@ from ._testing import (SkipTest, requires_application, requires_ipython,  # noqa
                       run_tests_if_main,
                       assert_is, assert_in, assert_not_in, assert_equal,
                       assert_not_equal, assert_raises, assert_true,  # noqa
-                      raises)  # noqa
+                      raises, requires_numpydoc)  # noqa
 from ._runners import test  # noqa

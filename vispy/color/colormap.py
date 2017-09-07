@@ -168,9 +168,9 @@ def _process_glsl_template(template, colors):
 
 
 class BaseColormap(object):
-    """Class representing a colormap:
+    u"""Class representing a colormap:
 
-        t \in [0, 1] --> rgba_color
+        t in [0, 1] --> rgba_color
 
     Parameters
     ----------
@@ -187,7 +187,6 @@ class BaseColormap(object):
     map(item) : function
         Takes a (N, 1) vector of values in [0, 1], and returns a rgba array
         of size (N, 4).
-
     """
 
     # Control colors used by the colormap.

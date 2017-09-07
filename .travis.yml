@@ -23,7 +23,7 @@ addons:
 
 matrix:
   include:
-    - env: PYTHON=2.7 DEPS=full TEST=standard IPYTHON="=2" NUMPY="=1.7"
+    - env: PYTHON=2.7 DEPS=full TEST=standard NUMPY="=1.7"
       addons:
         apt:
           sources:
@@ -35,7 +35,7 @@ matrix:
     # has (on-screen) OpenGL installed, we need to setup environment variable
     # to avoid having the linker load the wrong libglapi.so which would cause
     # OSMesa to crash
-    - env: PYTHON=2.7 DEPS=full TEST=osmesa IPYTHON="=2" NUMPY="=1.7"
+    - env: PYTHON=2.7 DEPS=full TEST=osmesa NUMPY="=1.7"
       addons:
         apt:
           sources:
@@ -111,8 +111,8 @@ install:
     # No wx on py27 or py34, wxpython doesn't work properly there
     # If we only need a single backend (DEPS=backend), then use PyQT4
     - if [ "${DEPS}" == "full" ]; then
-        conda install --yes --quiet pyqt pyopengl scipy matplotlib wxpython ipython$IPYTHON ipython-notebook numpy$NUMPY networkx;
-        pip install -q pyglet;
+        conda install --yes --quiet pyqt pyopengl scipy matplotlib wxpython jupyter numpy$NUMPY networkx;
+        pip install -q pyglet==1.2.4 numpydoc;
         if [ "${PYTHON}" == "3.6" ]; then
           pip install -q freetype-py husl pypng cassowary pillow decorator six;
           rm -rf ${SRC_DIR}/vispy/ext/_bundled;
