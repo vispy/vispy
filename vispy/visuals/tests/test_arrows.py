@@ -58,7 +58,7 @@ def test_arrow_draw():
 def test_arrow_transform_draw():
     """Tests the ArrowVisual when a transform is applied"""
 
-    old_numpy = LooseVersion(np.__version__) < '1.8'
+    old_numpy = LooseVersion(np.__version__) < LooseVersion('1.8')
     if os.getenv('TRAVIS', 'false') == 'true' and old_numpy:
         # TODO: Fix this (issue #1042
         raise SkipTest('Travis fails due to FB stack problem')
