@@ -9,7 +9,7 @@ addons:
   apt:
     packages:
     - &mesa_apt [libgl1-mesa-dri]
-    - &full_apt [libegl1-mesa, cmake, xorg-dev, libglu1-mesa-dev, mercurial, libdbus-1-dev, libgl1-mesa-dev, libglu1-mesa-dev, libpulse-dev, libx11-dev, libxcursor-dev, libxext-dev, libxi-dev, libxinerama-dev, libxrandr-dev, libxss-dev, libxt-dev, libxv-dev, libxxf86vm-dev, libasound2-dev, libts-dev, libudev-dev]
+    - &full_apt [libegl1-mesa, cmake, xorg-dev, libglu1-mesa-dev, mercurial, libdbus-1-dev, libgl1-mesa-dev, libglu1-mesa-dev, libpulse-dev, libx11-dev, libxcursor-dev, libxext-dev, libxi-dev, libxinerama-dev, libxrandr-dev, libxss-dev, libxt-dev, libxv-dev, libxxf86vm-dev, libasound2-dev, libts-dev, libudev-dev, libsdl2]
 
 # Size testing can be skipped by adding "[size skip]" within a commit message.
 
@@ -106,6 +106,7 @@ install:
           rm -rf ${SRC_DIR}/vispy/ext/_bundled;
         else
           conda install --yes --quiet wxpython matplotlib jupyter pyqt=4;
+          pip install -q mock;
         fi;
       fi;
 
@@ -123,20 +124,6 @@ install:
         cd ~;
         export GLFW_LIBRARY=${HOME}/lib/libglfw.so;
       fi
-
-    # Install SDL2
-    - if [ "${DEPS}" == "full" ]; then
-        wget -q http://www.libsdl.org/release/SDL2-2.0.3.tar.gz;
-        tar xzf SDL2-2.0.3.tar.gz;
-        cd SDL2-2.0.3;
-        mkdir build;
-        cd build;
-        ../configure --prefix=$HOME --disable-audio --disable-render --disable-joystick --disable-haptic --disable-power --disable-cpuinfo;
-        make -j 2;
-        make install;
-        export PYSDL2_DLL_PATH=${HOME}/lib;
-        pip install -q PySDL2;
-      fi;
 
     # Install OSMesa
     - wget https://github.com/vispy/demo-data/raw/master/osmesa/osmesa_11.0.0_12.04.tar.bz2 -O /tmp/osmesa.tar.bz2
