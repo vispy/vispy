@@ -131,7 +131,7 @@ def _docs():
 
     if not dev:
         warnings.warn("Docstring test imports Vispy from"
-                      " Vispy's installation. It is"p
+                      " Vispy's installation. It is"
                       " recommended to setup Vispy using"
                       " 'python setup.py develop'"
                       " so that the latest sources are used automatically")
