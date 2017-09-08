@@ -269,7 +269,7 @@ class PlotWidget(scene.Widget):
                                  'fname is not None')
         else:
             meshdata = MeshData(vertices, faces, vertex_colors=vertex_colors,
-                          face_colors=face_colors)
+                                face_colors=face_colors)
         mesh = scene.Mesh(meshdata=meshdata, vertex_colors=vertex_colors,
                           face_colors=face_colors, color=color,
                           shading=shading)

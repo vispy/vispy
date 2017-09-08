@@ -295,8 +295,10 @@ class ColorBarVisual(CompoundVisual):
         self._label = TextVisual(self._label_str, color=self._label_color)
 
         self._ticks = []
-        self._ticks.append(TextVisual(str(self._clim[0]), color=self._label_color))
-        self._ticks.append(TextVisual(str(self._clim[1]), color=self._label_color))
+        self._ticks.append(TextVisual(str(self._clim[0]),
+                                      color=self._label_color))
+        self._ticks.append(TextVisual(str(self._clim[1]),
+                                      color=self._label_color))
 
         if orientation in ["top", "bottom"]:
             (width, height) = size

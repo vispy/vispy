@@ -195,7 +195,7 @@ def test_application():
         print(canvas)  # __repr__
         assert_equal(canvas.title, title)
         canvas.title = 'you'
-        with use_log_level('warning', record=True, print_msg=False) as l:
+        with use_log_level('warning', record=True, print_msg=False):
             if app.backend_module.capability['position']:
                 # todo: disable more tests based on capability
                 canvas.position = pos

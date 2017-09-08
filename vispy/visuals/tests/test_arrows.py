@@ -3,7 +3,6 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 import os
-from distutils.version import LooseVersion
 
 import numpy as np
 
