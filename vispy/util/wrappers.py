@@ -17,7 +17,7 @@ them.
 """
 
 import subprocess
-import inspect
+from .config import _get_args
 
 
 def use(app=None, gl=None):
@@ -139,7 +139,7 @@ def run_subprocess(command, return_code=False, **kwargs):
         print(output[0])
         print(output[1])
         err_fun = subprocess.CalledProcessError.__init__
-        if 'output' in inspect.getargspec(err_fun).args:
+        if 'output' in _get_args(err_fun):
             raise subprocess.CalledProcessError(p.returncode, command, output)
         else:
             raise subprocess.CalledProcessError(p.returncode, command)

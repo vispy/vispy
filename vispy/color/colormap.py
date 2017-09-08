@@ -168,9 +168,9 @@ def _process_glsl_template(template, colors):
 
 
 class BaseColormap(object):
-    """Class representing a colormap:
+    u"""Class representing a colormap:
 
-        t \in [0, 1] --> rgba_color
+        t in [0, 1] --> rgba_color
 
     Parameters
     ----------
@@ -187,7 +187,6 @@ class BaseColormap(object):
     map(item) : function
         Takes a (N, 1) vector of values in [0, 1], and returns a rgba array
         of size (N, 4).
-
     """
 
     # Control colors used by the colormap.
@@ -673,14 +672,16 @@ class _Diverging(Colormap):
 
         super(_Diverging, self).__init__(colors)
 
-# https://github.com/matplotlib/matplotlib/pull/4707/files#diff-893cf0348279e9f4570488a7a297ab1eR774
+# https://github.com/matplotlib/matplotlib/pull/4707/files#diff-893cf0348279e9f4570488a7a297ab1eR774  # noqa
 # Taken from original Viridis colormap data in matplotlib implementation
 # Sampled 128 points from the raw data-set of 256 samples.
 # Sub sampled to 128 points since 256 points causes VisPy to freeze.
 #
-# Issue #1331 https://github.com/vispy/vispy/issues/1331 explains that the 128 viridis sample size
-# fails on some GPUs but lowering to 64 samples allows more GPUs to use viridis.
-# The 64 samples are linearly interpolated anyhow and yeild smooth colormaps. To get 64 samples
+# Issue #1331 https://github.com/vispy/vispy/issues/1331 explains that the
+# 128 viridis sample size
+# fails on some GPUs but lowering to 64 samples allows more GPUs to use
+# viridis. The 64 samples are linearly interpolated anyhow and yeild smooth
+# colormaps. To get 64 samples
 # the original Viridis colormap data is sampled with a stride of 4 ie [::4].
 #
 # HACK: Ideally, all 256 points should be included, with VisPy generating
