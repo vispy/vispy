@@ -5,21 +5,27 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 """
-This example demonstrates how to draw 3d-vectors and apply rotation/translation and scaling with time
+This example demonstrates how to draw 3d-vectors and apply
+rotation/translation and scaling with time
+
 """
-import os,sys
+import sys
 import numpy as np
 from vispy import app, scene
 from vispy.visuals.transforms import MatrixTransform
 
 graphics_objects = []
 
+
 class mbVector(scene.visuals.Vector):
     """
     a simple wrapper class which includes the transformation done on the vector
     """
+
     def __init__(self, view, face_color, state_vec, orient_vec):
-        super(mbVector, self).__init__(10, 10, 0.05, 1., 0.1, 0.25, color=face_color, shading="smooth", parent=view)
+        super(mbVector, self).__init__(10, 10, 0.05, 1., 0.1, 0.25,
+                                       color=face_color, shading="smooth",
+                                       parent=view)
         self.unfreeze()
         self.n = 0
         self.n_max = len(state_vec)
@@ -34,32 +40,37 @@ class mbVector(scene.visuals.Vector):
         called for every time-step
         """
         self.n += 1
-        if self.n > self.n_max-1:
+        if self.n > self.n_max - 1:
             self.n = 0
             return
-           
-        # first flip the vector in the x direction, such that further rotations are handled correctly
-        self.trafo.set_rotation((0,0,1,0,1,0,1,0,0))
 
-        # calculates the scaling of the object on bases of the orientation vector
+        # first flip the vector in the x direction, such that further
+        # rotations are handled correctly
+        self.trafo.set_rotation((0, 0, 1, 0, 1, 0, 1, 0, 0))
+
+        # calculates the scaling of the object on bases of the orientation
+        # vector
         scale_x = self.orient_vec[self.n][0]
-        scale_y = self.orient_vec[self.n][1] 
+        scale_y = self.orient_vec[self.n][1]
         scale_z = self.orient_vec[self.n][2]
-        scale = np.sqrt(scale_x*scale_x+scale_y*scale_y+scale_z*scale_z)
+        scale = np.sqrt(scale_x * scale_x + scale_y *
+                        scale_y + scale_z * scale_z)
         scale = (scale, 1., 1.)
 
         # calculates the translation of the object on bases of the state vector
         dx = self.state_vec[self.n][0]
-        dy = self.state_vec[self.n][1] 
+        dy = self.state_vec[self.n][1]
         dz = self.state_vec[self.n][2]
-        
-        # calculates the rotation (orthogonal O3 Trafo) on bases of the orientation vector)
+
+        # calculates the rotation (orthogonal O3 Trafo) on bases of the
+        # orientation vector)
         ex, ey, ez = self._get_ortho_base((scale_x, scale_y, scale_z))
-        new_base = (ex[0], ex[1], ex[2], ey[0], ey[1], ey[2], ez[0], ez[1], ez[2])
+        new_base = (ex[0], ex[1], ex[2], ey[0],
+                    ey[1], ey[2], ez[0], ez[1], ez[2])
 
-        self._doTrafo( dx,dy,dz, base=new_base , scale=scale, reset=False)
+        self._doTrafo(dx, dy, dz, base=new_base, scale=scale, reset=False)
 
-    def _doTrafo(self, x=0.,y=0.,z=0., base=None, scale=None, reset=True):
+    def _doTrafo(self, x=0., y=0., z=0., base=None, scale=None, reset=True):
         """
         doing first the scale then rotation and afterwards translate
         """
@@ -69,14 +80,14 @@ class mbVector(scene.visuals.Vector):
             self.trafo.scale(scale)
         if base is not None:
             self.trafo.mult_rotation(base)
-        self.trafo.translate((x,y,z))
+        self.trafo.translate((x, y, z))
         self.transform = self.trafo
 
     def _norm(self, n):
         """ normalizing a vector n = (x,y,z) """
         norm = np.linalg.norm(n)
         if norm > 0:
-            return n/norm
+            return n / norm
 
     def _cross(self, n0, n1):
         """ doing a crossproduct i.e. n1 x n2 """
@@ -84,38 +95,42 @@ class mbVector(scene.visuals.Vector):
 
     def _ortho(self, n):
         """ finding an arbitrary orthogonal vector to another in 3d """
-        x,y,z = n
-        if z!=0. and y!=0.:
+        x, y, z = n
+        if z != 0. and y != 0.:
             return np.array((0., z, -y))
-        elif x!=0. and y!=0.:
+        elif x != 0. and y != 0.:
             return np.array((y, -x, 0.))
-        elif x!=0. and z!=0.:
+        elif x != 0. and z != 0.:
             return np.array((z, 0., -x))
-        elif x==0 and y==0:
-            return np.array((1.,0.,0.))
-        elif x==0 and z==0:
-            return np.array((1.,0.,0.))
-        elif y==0 and z==0:
-            return np.array((0.,1.,0.))
+        elif x == 0 and y == 0:
+            return np.array((1., 0., 0.))
+        elif x == 0 and z == 0:
+            return np.array((1., 0., 0.))
+        elif y == 0 and z == 0:
+            return np.array((0., 1., 0.))
         else:
-            return np.array((0.,0.,0.))
+            return np.array((0., 0., 0.))
 
     def _get_ortho_base(self, n):
-        """ 
-        calc an ortho base for one direction, such that ex is pointing in the end to that direction 
         """
-        ex = self._norm(n)        
+        calc an ortho base for one direction, such that ex is pointing in the
+        end to that direction
+        """
+        ex = self._norm(n)
         ey = self._norm(self._ortho(ex))
         ez = self._cross(ex, ey)
         return ex, ey, ez
+
 
 class mbCanvas(scene.SceneCanvas):
     """
     A scene canvas class with some add-ons
     """
+
     def __init__(self):
-        super(mbCanvas, self).__init__( keys='interactive', bgcolor='white',
-                           size=(800, 600), show=True, config={'depth_size': 24})
+        super(mbCanvas, self).__init__(keys='interactive', bgcolor='white',
+                                       size=(800, 600), show=True,
+                                       config={'depth_size': 24})
 
         self.unfreeze()
 
@@ -123,20 +138,22 @@ class mbCanvas(scene.SceneCanvas):
         self.tt = 0.
         self.timer = app.Timer(interval='auto')
         self.timer.connect(self.on_timer)
-        
+
         # adds a viewbox to the canvas-central-widget
         self.view = self.central_widget.add_view()
 
         # call the setter for the camera
-        self.view.camera = 'arcball'    
+        self.view.camera = 'arcball'
         self.view.camera.set_range(x=[-6, 6])
-        # prevent artefacts 
+        # prevent artefacts
         self.view.camera.depth_value = 10000.0
         self.timer.start()
     # ---------------------------------
+
     def on_key_press(self, event):
         """
-        event is included in the parent canvas. here used to start/stop the animation loop
+        event is included in the parent canvas. here used to start/stop the
+        animation loop
         """
         if event.text == ' ':
             if self.timer.running:
@@ -147,8 +164,9 @@ class mbCanvas(scene.SceneCanvas):
     # ---------------------------------
     def on_timer(self, event):
         """
-        the update frame function, for physical processes must consider the global time
-        
+        the update frame function, for physical processes must consider the
+        global time
+
         called with interval if possible or mostly in arbitrary time steps
         """
         global graphics_objects
@@ -157,18 +175,18 @@ class mbCanvas(scene.SceneCanvas):
         for obj in graphics_objects:
             obj._update()
 
+
 if __name__ == '__main__' and sys.flags.interactive == 0:
     canvas = mbCanvas()
-    # the time series 
-    time = np.linspace(0, 2.*np.pi, 100)    
+    # the time series
+    time = np.linspace(0, 2. * np.pi, 100)
     # the vector itself
     vx, vy, vz = np.sin(time), np.cos(time), np.ones(100)
-    orient_vector = np.transpose(np.vstack((vx,vy,vz)))
+    orient_vector = np.transpose(np.vstack((vx, vy, vz)))
     # the vector points from this point
     ox, oy, oz = np.sin(time), np.zeros(100), np.zeros(100)
-    state_vector = np.transpose(np.vstack((ox,oy,oz)))
+    state_vector = np.transpose(np.vstack((ox, oy, oz)))
     # append for convience just to the global graphics objects
-    graphics_objects.append(mbVector(canvas.view.scene, "red", state_vector, orient_vector))
+    graphics_objects.append(
+        mbVector(canvas.view.scene, "red", state_vector, orient_vector))
     canvas.app.run()
-
-

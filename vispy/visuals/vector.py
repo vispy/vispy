@@ -36,16 +36,19 @@ class VectorVisual(CompoundVisual):
         The `Color` to use when drawing the cube faces.
     shading: one of "smooth", "flat" or None (default)
     """
-    def __init__(self, rows, cols, radius, length, cone_radius, cone_length, vertex_colors=None, face_colors=None,
+
+    def __init__(self, rows, cols, radius, length, cone_radius, cone_length,
+                 vertex_colors=None, face_colors=None,
                  color=(0.5, 0.5, 1, 1), shading=None, **kwargs):
 
         mesh = create_arrow(rows, cols, radius, length,
-                 cone_radius, cone_length)
+                            cone_radius, cone_length)
 
         self._mesh = MeshVisual(vertices=mesh.get_vertices(),
                                 faces=mesh.get_faces(),
                                 vertex_colors=vertex_colors,
-                                face_colors=face_colors, color=color, shading=shading)
+                                face_colors=face_colors, color=color,
+                                shading=shading)
 
         self._border = MeshVisual()
 

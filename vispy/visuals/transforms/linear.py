@@ -177,7 +177,7 @@ class STTransform(BaseTransform):
         self._shader_map['translate'] = self.translate
         self._shader_imap['scale'] = self.scale
         self._shader_imap['translate'] = self.translate
-    
+
     def move(self, move):
         """Change the translation of this transform by the amount given.
 
@@ -275,10 +275,10 @@ class STTransform(BaseTransform):
             x0 = x0._transform_in()[:3]
         if isinstance(x1, Rect):
             x1 = x1._transform_in()[:3]
-        
+
         x0 = np.asarray(x0)
         x1 = np.asarray(x1)
-        if (x0.ndim != 2 or x0.shape[0] != 2 or x1.ndim != 2 or 
+        if (x0.ndim != 2 or x0.shape[0] != 2 or x1.ndim != 2 or
                 x1.shape[0] != 2):
             raise TypeError("set_mapping requires array inputs of shape "
                             "(2, N).")
@@ -481,7 +481,8 @@ class MatrixTransform(BaseTransform):
 
         Parameters
         ----------
-        base: an orthogonal base of the form (exx, exy, exz, eyx, eyy, eyz, ezy, ezy, ezz) 
+        base: an orthogonal base of the form (exx, exy, exz, eyx, eyy, eyz,
+            ezy, ezy, ezz)
         """
         M = np.array([[base[0], base[3], base[6], 0.],
                       [base[1], base[4], base[7], 0.],
@@ -497,14 +498,14 @@ class MatrixTransform(BaseTransform):
 
         Parameters
         ----------
-        base: an orthogonal base of the form (exx, exy, exz, eyx, eyy, eyz, ezy, ezy, ezz) 
+        base: an orthogonal base of the form (exx, exy, exz, eyx, eyy, eyz,
+            ezy, ezy, ezz)
         """
         M = np.array([[base[0], base[3], base[6], 0.],
                       [base[1], base[4], base[7], 0.],
                       [base[2], base[5], base[8], 0.],
                       [0., 0., 0., 1.]]).T
         self.matrix = np.dot(self.matrix, M)
-
 
     def set_ortho(self, l, r, b, t, n, f):
         """Set ortho transform
@@ -539,7 +540,7 @@ class MatrixTransform(BaseTransform):
 
     def __repr__(self):
         s = "%s(matrix=[" % self.__class__.__name__
-        indent = " "*len(s)
+        indent = " " * len(s)
         s += str(list(self.matrix[0])) + ",\n"
         s += indent + str(list(self.matrix[1])) + ",\n"
         s += indent + str(list(self.matrix[2])) + ",\n"
@@ -582,8 +583,8 @@ class MatrixTransform(BaseTransform):
         """
         self.matrix = transforms.frustum(l, r, b, t, n, f)
 
-        
-#class SRTTransform(BaseTransform):
+
+# class SRTTransform(BaseTransform):
 #    """ Transform performing scale, rotate, and translate, in that order.
 #
 #    This transformation allows objects to be placed arbitrarily in a scene
