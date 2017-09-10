@@ -3,8 +3,6 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 import os
-import sys
-from distutils.version import LooseVersion
 
 import numpy as np
 
@@ -37,13 +35,12 @@ arrows = np.array([
 @requires_application()
 def test_arrow_draw():
     """Test drawing arrows without transforms"""
-
-    if os.getenv('TRAVIS', 'false') == 'true' and sys.version[:3] == '2.6':
-        # TODO: Fix this (issue #1042)
-        raise SkipTest('Travis fails due to FB stack problem')
-
     with TestingCanvas() as c:
         for arrow_type in ARROW_TYPES:
+            if os.getenv('TRAVIS', 'false') == 'true' and \
+                    c.app.backend_name == 'pyqt4':
+                # TODO: Fix this (issue #1042
+                raise SkipTest('Travis fails due to FB stack problem')
             arrow = visuals.Arrow(pos=vertices, arrow_type=arrow_type,
                                   arrows=arrows, arrow_size=10, color='red',
                                   connect="segments", parent=c.scene)
@@ -58,18 +55,11 @@ def test_arrow_draw():
 def test_arrow_transform_draw():
     """Tests the ArrowVisual when a transform is applied"""
 
-    # TODO: fix AppVeyor - error comes up with bollu/vispy:cassowary-constaints
-    # commit SHA: 29303009a76d5c6931b1991aa7bdf5192ace9c4f
-    if os.getenv('APPVEYOR', '').lower() == 'true':
-        raise SkipTest('AppVeyor has unknown failure')
-
-    old_numpy = LooseVersion(np.__version__) < '1.8'
-    if os.getenv('TRAVIS', 'false') == 'true' and (sys.version[:3] == '2.6' or
-                                                   old_numpy):
-        # TODO: Fix this (issue #1042
-        raise SkipTest('Travis fails due to FB stack problem')
-
     with TestingCanvas() as c:
+        if os.getenv('TRAVIS', 'false') == 'true' and \
+                c.app.backend_name == 'pyqt4':
+            # TODO: Fix this (issue #1042
+            raise SkipTest('Travis fails due to FB stack problem')
         for arrow_type in ARROW_TYPES:
             arrow = visuals.Arrow(pos=vertices, arrow_type=arrow_type,
                                   arrows=arrows, arrow_size=10, color='red',
@@ -86,13 +76,7 @@ def test_arrow_transform_draw():
 
 @requires_application()
 def test_arrow_reactive():
-    """Tests the reactive behaviour of the ArrowVisual properties"""
-
-    # TODO: fix AppVeyor - error comes up with bollu/vispy:cassowary-constaints
-    # commit SHA: 29303009a76d5c6931b1991aa7bdf5192ace9c4f
-    if os.getenv('APPVEYOR', '').lower() == 'true':
-        raise SkipTest('AppVeyor has unknown failure')
-
+    """Tests the reactive behaviour of the ArrowVisual properties."""
     with TestingCanvas() as c:
         arrow = visuals.Arrow(pos=vertices, arrows=arrows,
                               connect="segments", parent=c.scene)
@@ -106,9 +90,7 @@ def test_arrow_reactive():
 
 @requires_application()
 def test_arrow_attributes():
-    """Tests if the ArrowVisual performs the required checks for the
-    attributes"""
-
+    """Tests if the ArrowVisual performs the required checks for attributes."""
     with TestingCanvas() as c:
         arrow = visuals.Arrow(pos=vertices, arrow_type="stealth",
                               arrows=arrows, arrow_size=10, color='red',

@@ -18,3 +18,5 @@ htmlcov
 vispy.egg-info
 *.swp
 .ipynb_checkpoints
+.cache/
+

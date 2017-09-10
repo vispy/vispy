@@ -270,6 +270,16 @@ def requires_ipython(version='3.0'):
     return np.testing.dec.skipif(not ipython_present, message)
 
 
+def requires_numpydoc():
+    try:
+        import numpydoc  # noqa
+    except Exception:
+        present = False
+    else:
+        present = True
+    return np.testing.dec.skipif(not present, 'numpydoc is required')
+
+
 def has_matplotlib(version='1.2'):
     """Determine if mpl is a usable version"""
     try:

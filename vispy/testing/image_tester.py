@@ -49,6 +49,7 @@ import base64
 from subprocess import check_call, CalledProcessError
 import numpy as np
 
+from ..ext.six import string_types
 from ..ext.six.moves import http_client as httplib
 from ..ext.six.moves import urllib_parse as urllib
 from .. import scene, config
@@ -98,7 +99,7 @@ def assert_image_approved(image, standard_file, message=None, **kwargs):
     comparison (see ``assert_image_match()``).
     """
 
-    if image == "screenshot":
+    if isinstance(image, string_types) and image == "screenshot":
         image = _screenshot(alpha=True)
     if message is None:
         code = inspect.currentframe().f_back.f_code

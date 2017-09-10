@@ -88,7 +88,8 @@ def _unit(mode, extra_arg_string, coverage=False):
         else:
             extra_args += ['-a', 'vispy_app_test']
     if coverage and use_pytest:
-        extra_args += ['--cov', 'vispy', '--no-cov-on-fail']
+        # Don't actually print the coverage because it's way too long
+        extra_args += ['--cov', 'vispy', '--cov-report=']
     # make a call to "python" so that it inherits whatever the system
     # thinks is "python" (e.g., virtualenvs)
     extra_arg_string = ' '.join(extra_args)
@@ -156,14 +157,18 @@ def _flake():
         sys.argv[1:] = ['vispy', 'examples', 'make']
     else:
         sys.argv[1:] = [op.basename(import_dir)]
-    sys.argv.append('--ignore=E226,E241,E265,E266,W291,W293,W503,F999')
-    sys.argv.append('--exclude=six.py,ordereddict.py,glfw.py,'
+    sys.argv.append('--ignore=E226,E241,E265,E266,W291,W293,W503,F999,E305,'
+                    'F405')
+    sys.argv.append('--exclude=six.py,glfw.py,'
                     '_proxy.py,_es2.py,_gl2.py,_pyopengl2.py,'
                     '_constants.py,png.py,decorator.py,ipy_inputhook.py,'
                     'experimental,wiki,_old,mplexporter.py,cubehelix.py,'
                     'cassowary')
     try:
-        from flake8.main import main
+        try:
+            from flake8.main import main
+        except ImportError:
+            from flake8.main.cli import main
     except ImportError:
         print('Skipping flake8 test, flake8 not installed')
     else:

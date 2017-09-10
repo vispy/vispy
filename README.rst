@@ -63,7 +63,7 @@ and experimental OpenGL backend for matplotlib.
 Installation
 ------------
 
-VisPy runs on Python 2.6+ and Python 3.3+ and depends on NumPy. You also
+VisPy runs on Python 2.7+ and Python 3.3+ and depends on NumPy. You also
 need a backend (PyQt4/PySide, glfw, pyglet, SDL, or wx).
 
 As VisPy is under heavy development at this time, we highly recommend

@@ -155,7 +155,7 @@ class SkewY(Matrix):
 
 
 # --------------------------------------------------------------- Transform ---
-class Transform:
+class Transform(object):
 
     """
     A Transform is defined as a list of transform definitions, which are
@@ -175,7 +175,7 @@ class Transform:
                       "skewx":     SkewX,
                       "skewy":     SkewY}
         keys = "|".join(converters.keys())
-        pattern = "(?P<name>%s)\s*\((?P<args>[^)]*)\)" % keys
+        pattern = r"(?P<name>%s)\s*\((?P<args>[^)]*)\)" % keys
 
         for match in re.finditer(pattern, content):
             name = match.group("name").strip()

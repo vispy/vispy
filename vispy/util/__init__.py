@@ -7,8 +7,8 @@ one or more Vispy sub-packages.
 """
 
 from .logs import logger, set_log_level, use_log_level  # noqa
-from .config import (config, sys_info, save_config, get_config_keys,  # noqa 
-                     set_data_dir, _TempDir)  # noqa
+from .config import (config, sys_info, save_config, get_config_keys,  # noqa
+                     set_data_dir, _TempDir, _get_args)  # noqa
 from .fetching import load_data_file  # noqa
 from .frozen import Frozen  # noqa
 from . import fonts       # noqa
