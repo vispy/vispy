@@ -80,14 +80,14 @@ class MeshData(object):
         self._vertex_edges = None  # maps vertex ID to a list of edge IDs
 
         # Per-vertex data
-        self._vertex_normals = None                  # (Nv, 3) normals
-        self._vertex_normals_indexed_by_faces = None # (Nf, 3, 3) normals
-        self._vertex_colors = None                   # (Nv, 4) colors
-        self._vertex_colors_indexed_by_faces = None  # (Nf, 3, 4) colors
-        self._vertex_colors_indexed_by_edges = None  # (Nf, 2, 4) colors
-        self._vertex_values = None                   # (Nv,) values
-        self._vertex_values_indexed_by_faces = None  # (Nv, 3) values
-        self._vertex_values_indexed_by_edges = None  # (Nv, 2) values
+        self._vertex_normals = None                   # (Nv, 3) normals
+        self._vertex_normals_indexed_by_faces = None  # (Nf, 3, 3) normals
+        self._vertex_colors = None                    # (Nv, 4) colors
+        self._vertex_colors_indexed_by_faces = None   # (Nf, 3, 4) colors
+        self._vertex_colors_indexed_by_edges = None   # (Nf, 2, 4) colors
+        self._vertex_values = None                    # (Nv,) values
+        self._vertex_values_indexed_by_faces = None   # (Nv, 3) values
+        self._vertex_values_indexed_by_edges = None   # (Nv, 2) values
 
         # Per-face data
         self._face_normals = None                # (Nf, 3) face normals
