@@ -12,7 +12,7 @@ from __future__ import division
 import numpy as np
 
 from .visual import Visual
-from .shaders import Function, Varying, FunctionChain
+from .shaders import Function, FunctionChain
 from ..gloo import VertexBuffer, IndexBuffer
 from ..geometry import MeshData
 from ..color import Color, get_colormap
@@ -99,14 +99,18 @@ void main() {
 
 # Shader code for non lighted rendering
 vertex_template = """
+varying vec4 v_base_color;
+
 void main() {
+    v_base_color = $color_transform($base_color);
     gl_Position = $transform($to_vec4($position));
 }
 """
 
 fragment_template = """
+varying vec4 v_base_color;
 void main() {
-    gl_FragColor = $color;
+    gl_FragColor = v_base_color;
 }
 """
 
@@ -412,11 +416,13 @@ class MeshVisual(Visual):
         # If non-lit shading is used, then just pass the colors
         # Otherwise, the shader uses a base_color to represent the underlying
         # color, which is then lit with the lighting model
-        if self.shading is None:
-            color_var = Varying('v_color', dtype='vec4')
-            self.shared_program.vert[color_var] = colors
-            self.shared_program.frag['color'] = color_var
+        self.shared_program.vert['color_transform'] = \
+            _build_color_transform(colors, self._cmap, self._clim_values)
+        if colors.ndim == 1:
+            self.shared_program.vert['base_color'] = colors
         else:
+            self.shared_program.vert['base_color'] = VertexBuffer(colors)
+        if self.shading is not None:
             # Normal data comes via vertex shader
             if self._normals.size > 0:
                 normals = self._normals
@@ -424,12 +430,6 @@ class MeshVisual(Visual):
                 normals = (1., 0., 0.)
 
             self.shared_program.vert['normal'] = normals
-            self.shared_program.vert['color_transform'] = \
-                _build_color_transform(colors, self._cmap, self._clim_values)
-            if colors.ndim == 1:
-                self.shared_program.vert['base_color'] = colors
-            else:
-                self.shared_program.vert['base_color'] = VertexBuffer(colors)
 
             # Additional phong properties
             self.shared_program.vert['light_dir'] = self._light_dir
