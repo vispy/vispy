@@ -218,13 +218,18 @@ class CanvasBackend(GLCanvas, BaseCanvasBackend):
         else:
             self._gl_context = p.context.shared.ref._gl_context
 
+        if p.position == None:
+            pos = wx.DefaultPosition
+        else:
+            pos = p.position
+
         if p.parent is None:
             style = (wx.MINIMIZE_BOX | wx.MAXIMIZE_BOX | wx.CLOSE_BOX |
                      wx.SYSTEM_MENU | wx.CAPTION | wx.CLIP_CHILDREN)
             style |= wx.NO_BORDER if not p.decorate else wx.RESIZE_BORDER
             style |= wx.STAY_ON_TOP if p.always_on_top else 0
-            self._frame = wx.Frame(None, wx.ID_ANY, p.title, p.position,
-                                   p.size, style)
+            self._frame = wx.Frame(None, wx.ID_ANY, p.title, pos, p.size, style)
+
             if not p.resizable:
                 self._frame.SetSizeHints(p.size[0], p.size[1],
                                          p.size[0], p.size[1])
@@ -245,7 +250,7 @@ class CanvasBackend(GLCanvas, BaseCanvasBackend):
             self._frame = None
             self._fullscreen = False
         self._init = False
-        GLCanvas.__init__(self, parent, wx.ID_ANY, pos=p.position,
+        GLCanvas.__init__(self, parent, wx.ID_ANY, pos=pos,
                           size=p.size, style=0, name='GLCanvas',
                           attribList=self._gl_attribs)
 
