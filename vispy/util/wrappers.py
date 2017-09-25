@@ -38,7 +38,8 @@ def use(app=None, gl=None):
             * 'SDL2': use SDL v2 backend.
             * 'osmesa': Use OSMesa backend
         Additional backends:
-            * 'ipynb_webgl': run vispy from a Jupyter notebook (not fully functional)
+            * 'ipynb_webgl': run vispy from a Jupyter notebook (not fully
+               functional)
             * 'ipynb_vnc': render in a Jupyter notebook via a VNC approach
               (experimental)
     gl : str
