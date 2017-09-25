@@ -135,6 +135,8 @@ _null_color_transform = 'vec4 pass(vec4 color) { return color; }'
 _clim = 'float cmap(float val) { return (val - $cmin) / ($cmax - $cmin); }'
 
 
+# Eventually this could be de-duplicated with visuals/image.py, which does
+# something similar (but takes a ``color`` instead of ``float``)
 def _build_color_transform(data, cmap, clim=(0., 1.)):
     if data.ndim == 2 and data.shape[1] == 1:
         fun = Function(_clim)
