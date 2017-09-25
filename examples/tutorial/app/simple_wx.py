@@ -47,12 +47,14 @@ class TestFrame(wx.Frame):
         MenuBar.Append(file_menu, "&File")
         self.SetMenuBar(MenuBar)
 
+        self.canvas = Canvas(app="wx", parent=self)
+
     def on_quit(self, event):
         self.canvas.stop_timer()
         self.Close(True)
 
     def on_show(self, event):
-        self.canvas = Canvas(app="wx", parent=self, show=True)
+        self.canvas.show()
         event.Skip()
 
 
