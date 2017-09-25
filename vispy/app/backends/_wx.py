@@ -128,7 +128,7 @@ class ApplicationBackend(BaseApplicationBackend):
 
     def __init__(self):
         BaseApplicationBackend.__init__(self)
-        self._event_loop = wx.EventLoop()
+        self._event_loop = wx.GUIEventLoop()
         wx.EventLoop.SetActive(self._event_loop)
 
     def _vispy_get_backend_name(self):
