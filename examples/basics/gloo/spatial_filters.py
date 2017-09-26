@@ -68,6 +68,7 @@ class Canvas(app.Canvas):
         # using packed data as discussed in pr #1069
         self.kernel = gloo.Texture2D(kernel, interpolation='nearest')
         self.program['u_texture'] = self.texture
+        self.program['u_shape'] = I.shape[1], I.shape[0]
 
         self.names = names
         self.filter = 16
@@ -90,9 +91,8 @@ class Canvas(app.Canvas):
             self.program.set_shaders(VERT_SHADER,
                                      FRAG_SHADER % self.names[self.filter])
 
-            if self.names[self.filter] != 'Nearest':
-                self.program['u_kernel'] = self.kernel
-                self.program['u_shape'] = I.shape[1], I.shape[0]
+            self.program['u_kernel'] = self.kernel
+            self.program['u_shape'] = I.shape[1], I.shape[0]
             self.title = 'Spatial Filtering using %s Filter' % \
                          self.names[self.filter]
             self.update()
