@@ -112,7 +112,12 @@ class Application(object):
         # Then we check the application singleton and determine based on
         # a variable it sets.
         try:
-            from IPython.config.application import Application as App
+            try:
+                # ipython >=3.0
+                from traitlets.config.application import Application as App
+            except ImportError:
+                # ipython <3.0
+                from IPython.config.application import Application as App
             return App.initialized() and App.instance().interact
         except (ImportError, AttributeError):
             return False

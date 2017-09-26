@@ -189,7 +189,7 @@ class GlirQueue(object):
 
     def command(self, *args):
         """ Send a command. See the command spec at:
-        https://github.com/vispy/vispy/wiki/Spec.-Gloo-IR
+        https://github.com/vispy/vispy/wiki/Spec.-GLIR
         """
         self._shared.command(*args)
 
@@ -247,12 +247,17 @@ def convert_shaders(convert, shaders):
             has_prec_float = False
             has_prec_int = False
             lines = []
+            extensions = []
             # Iterate over lines
             for line in shader.lstrip().splitlines():
-                if line.startswith('#version'):
+                line_strip = line.lstrip()
+                if line_strip.startswith('#version'):
                     has_version = True
                     continue
-                if line.startswith('precision '):
+                if line_strip.startswith('#extension'):
+                    extensions.append(line_strip)
+                    line = ''
+                if line_strip.startswith('precision '):
                     has_prec_float = has_prec_float or 'float' in line
                     has_prec_int = has_prec_int or 'int' in line
                 lines.append(line.rstrip())
@@ -264,6 +269,11 @@ def convert_shaders(convert, shaders):
                 lines.insert(has_version, 'precision highp float;')
             if not has_prec_int:
                 lines.insert(has_version, 'precision highp int;')
+            # Make sure extensions are at the top before precision
+            # but after version
+            if extensions:
+                for ext_line in extensions:
+                    lines.insert(has_version, ext_line)
             # BUG: fails on WebGL (Chrome)
             # if not has_version:
             #     lines.insert(has_version, '#version 100')
@@ -274,15 +284,24 @@ def convert_shaders(convert, shaders):
         for isfragment, shader in enumerate(shaders):
             has_version = False
             lines = []
+            extensions = []
             # Iterate over lines
             for line in shader.lstrip().splitlines():
+                line_strip = line.lstrip()
                 has_version = has_version or line.startswith('#version')
-                if line.startswith('precision '):
+                if line_strip.startswith('precision '):
+                    line = ''
+                if line_strip.startswith('#extension'):
+                    extensions.append(line_strip)
                     line = ''
                 for prec in (' highp ', ' mediump ', ' lowp '):
                     line = line.replace(prec, ' ')
                 lines.append(line.rstrip())
             # Write
+            # Make sure extensions are at the top, but after version
+            if extensions:
+                for ext_line in extensions:
+                    lines.insert(has_version, ext_line)
             if not has_version:
                 lines.insert(0, '#version 120\n')
             out.append('\n'.join(lines))
