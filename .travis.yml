@@ -85,10 +85,10 @@ before_install:
         git fetch origin ${GIT_TARGET_EXTRA} && git checkout -qf FETCH_HEAD;
         git tag travis-merge-target;
         git gc --aggressive;
-        TARGET_SIZE=`du -s . | sed -e "s/\t.*//"`;
+        TARGET_SIZE=`du -s . | sed -e "s/[[:space:]].*//"`;
         git pull origin ${GIT_SOURCE_EXTRA};
         git gc --aggressive;
-        MERGE_SIZE=`du -s . | sed -e "s/\t.*//"`;
+        MERGE_SIZE=`du -s . | sed -e "s/[[:space:]].*//"`;
         if [ "${MERGE_SIZE}" != "${TARGET_SIZE}" ]; then
           SIZE_DIFF=`expr \( ${MERGE_SIZE} - ${TARGET_SIZE} \)`;
         else
