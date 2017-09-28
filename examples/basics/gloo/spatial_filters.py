@@ -10,6 +10,12 @@ import numpy as np
 from vispy.io import load_spatial_filters
 from vispy import gloo
 from vispy import app
+from vispy.util.logs import set_log_level
+# turn off INFO messages, see PR #1363
+# Some shader compilers will optimize out the 'u_shape' and 'u_kernel'
+# uniforms for the Nearest filter since they are unused, resulting in
+# an INFO message about them not being active
+set_log_level('warning')
 
 # create 5x5 matrix with border pixels 0, center pixels 1
 # and other pixels 0.5
@@ -105,11 +111,5 @@ class Canvas(app.Canvas):
 
 
 if __name__ == '__main__':
-    from vispy.util.logs import use_log_level
-    # turn off INFO messages, see PR #1363
-    # Some shader compilers will optimize out the 'u_shape' and 'u_kernel'
-    # uniforms for the Nearest filter since they are unused, resulting in
-    # an INFO message about them not being active
-    with use_log_level('warning', print_msg=False):
-        c = Canvas()
-        app.run()
+    c = Canvas()
+    app.run()
