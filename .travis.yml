@@ -67,6 +67,7 @@ before_install:
     - chmod +x miniconda.sh
     - ./miniconda.sh -b -p ~/anaconda
     - export PATH=~/anaconda/bin:$PATH
+    - conda config --add channels conda-forge
     - conda update --yes --quiet conda
 
     - SRC_DIR=$(pwd)
