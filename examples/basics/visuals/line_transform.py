@@ -14,8 +14,6 @@ import numpy as np
 from vispy import app, gloo, visuals
 from vispy.visuals.transforms import (STTransform, LogTransform,
                                       MatrixTransform, PolarTransform)
-import vispy.util
-vispy.util.use_log_level('debug')
 
 # vertex positions of data to draw
 N = 200
