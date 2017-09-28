@@ -300,9 +300,9 @@ def _examples(fnames_str):
         root_name = op.join(op.split(op.split(root_name[0])[0])[1],
                             op.split(root_name[0])[1], root_name[1])
         good = True
-        with open(fname, 'r') as fid:
+        with open(fname, 'rb') as fid:
             for _ in range(10):  # just check the first 10 lines
-                line = fid.readline()
+                line = fid.readline().decode('utf-8')
                 if line == '':
                     break
                 elif line.startswith('# vispy: ') and 'testskip' in line:
