@@ -312,6 +312,7 @@ def _examples(fnames_str):
             n_ran -= 1
             n_skipped += 1
             continue
+        print("Running example: {}".format(fname))
         sys.stdout.flush()
         cwd = op.dirname(fname)
         cmd = [sys.executable, '-c', _script.format(op.split(fname)[1][:-3])]
