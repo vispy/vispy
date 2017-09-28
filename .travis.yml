@@ -110,6 +110,8 @@ install:
     # On conda, can't install pyside-pyzo b/c it conflicts with pyqt4,
     # which is required by matplotlib :(
     # No wx on py27 or py34, wxpython doesn't work properly there
+    # wxpython available from conda-forge but not for OSX:
+    #     https://github.com/conda-forge/wxpython-feedstock/issues/2
     # If we only need a single backend (DEPS=backend), then use PyQT4
     # Don't test Pyglet because it currently segfaults (but AppVeyor checks it)
     # PyQt5 is currently broken, but will be installed on 3.6 so don't do it
@@ -121,11 +123,11 @@ install:
             pip install -q freetype-py husl pypng cassowary pillow decorator six;
             rm -rf ${SRC_DIR}/vispy/ext/_bundled;
           else
-            conda install --yes --quiet wxpython matplotlib jupyter pyqt=4;
+            conda install --yes wxpython matplotlib jupyter pyqt=4;
             pip install -q mock;
           fi;
         else
-          conda install --yes --quiet matplotlib jupyter pyqt=4;
+          conda install --yes matplotlib jupyter pyqt=4;
           pip install -q mock;
         fi;
       fi;
