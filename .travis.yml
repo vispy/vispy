@@ -115,11 +115,16 @@ install:
     - if [ "${DEPS}" == "full" ]; then
         conda install --yes pyopengl scipy numpy$NUMPY networkx;
         pip install -q numpydoc PySDL2;
-        if [ "${PYTHON}" == "3.6" ]; then
-          pip install -q freetype-py husl pypng cassowary pillow decorator six;
-          rm -rf ${SRC_DIR}/vispy/ext/_bundled;
+        if [ "${TRAVIS_OS_NAME}" == "linux" ]; then
+          if [ "${PYTHON}" == "3.6" ]; then
+            pip install -q freetype-py husl pypng cassowary pillow decorator six;
+            rm -rf ${SRC_DIR}/vispy/ext/_bundled;
+          else
+            conda install --yes --quiet wxpython matplotlib jupyter pyqt=4;
+            pip install -q mock;
+          fi;
         else
-          conda install --yes --quiet wxpython matplotlib jupyter pyqt=4;
+          conda install --yes --quiet matplotlib jupyter pyqt=4;
           pip install -q mock;
         fi;
       fi;
@@ -151,7 +156,7 @@ before_script:
     # For OSX: https://github.com/travis-ci/travis-ci/issues/7313#issuecomment-279914149
     - if [ "${TEST}" != "osmesa" ]; then
         export DISPLAY=:99.0;
-        if [ "${TRAVIS_OS_NAME}" = "osx" ]; then ( sudo Xvfb :99 -ac -screen 0 1400x900x24 +extension GLX +render +iglx; echo ok )& fi;
+        if [ "${TRAVIS_OS_NAME}" = "osx" ]; then ( sudo Xvfb :99 -ac -screen 0 1400x900x24 +render +iglx; echo ok )& fi;
         if [ "${TRAVIS_OS_NAME}" = "linux" ]; then
           /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1400x900x24 -ac +extension GLX +render;
         fi;
