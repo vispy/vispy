@@ -251,6 +251,22 @@ with canvas as c:
 """
 
 
+def _skip_example(fname):
+    if os.getenv('TRAVIS', 'false') == 'true' and sys.platform == 'darwin':
+        # example scripts that contain non-ascii text
+        # seem to fail on Travis OSX
+        bad_examples = [
+            'examples/basics/plotting/colorbar.py',
+            'examples/basics/plotting/plot.py',
+            'examples/demo/gloo/high_frequency.py',
+        ]
+        for bad_ex in bad_examples:
+            if fname.endswith(bad_ex):
+                return True
+
+    return False
+
+
 def _examples(fnames_str):
     """Run examples and make sure they work.
 
@@ -308,9 +324,7 @@ def _examples(fnames_str):
                 elif line.startswith('# vispy: ') and 'testskip' in line:
                     good = False
                     break
-        if (fname.endswith('colorbar.py') and
-                os.getenv('TRAVIS', 'false') == 'true' and
-                sys.platform == 'darwin'):
+        if _skip_example(fname):
             print("Skipping example that fails on " +
                   "Travis CI OSX: {}".format(fname))
             good = False
