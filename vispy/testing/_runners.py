@@ -251,6 +251,22 @@ with canvas as c:
 """
 
 
+def _skip_example(fname):
+    if os.getenv('TRAVIS', 'false') == 'true' and sys.platform == 'darwin':
+        # example scripts that contain non-ascii text
+        # seem to fail on Travis OSX
+        bad_examples = [
+            'examples/basics/plotting/colorbar.py',
+            'examples/basics/plotting/plot.py',
+            'examples/demo/gloo/high_frequency.py',
+        ]
+        for bad_ex in bad_examples:
+            if fname.endswith(bad_ex):
+                return True
+
+    return False
+
+
 def _examples(fnames_str):
     """Run examples and make sure they work.
 
@@ -300,18 +316,23 @@ def _examples(fnames_str):
         root_name = op.join(op.split(op.split(root_name[0])[0])[1],
                             op.split(root_name[0])[1], root_name[1])
         good = True
-        with open(fname, 'r') as fid:
+        with open(fname, 'rb') as fid:
             for _ in range(10):  # just check the first 10 lines
-                line = fid.readline()
+                line = fid.readline().decode('utf-8')
                 if line == '':
                     break
                 elif line.startswith('# vispy: ') and 'testskip' in line:
                     good = False
                     break
+        if _skip_example(fname):
+            print("Skipping example that fails on " +
+                  "Travis CI OSX: {}".format(fname))
+            good = False
         if not good:
             n_ran -= 1
             n_skipped += 1
             continue
+        print("Running example: {}".format(fname))
         sys.stdout.flush()
         cwd = op.dirname(fname)
         cmd = [sys.executable, '-c', _script.format(op.split(fname)[1][:-3])]

@@ -10,6 +10,12 @@ import numpy as np
 from vispy.io import load_spatial_filters
 from vispy import gloo
 from vispy import app
+from vispy.util.logs import set_log_level
+# turn off INFO messages, see PR #1363
+# Some shader compilers will optimize out the 'u_shape' and 'u_kernel'
+# uniforms for the Nearest filter since they are unused, resulting in
+# an INFO message about them not being active
+set_log_level('warning')
 
 # create 5x5 matrix with border pixels 0, center pixels 1
 # and other pixels 0.5
@@ -68,6 +74,8 @@ class Canvas(app.Canvas):
         # using packed data as discussed in pr #1069
         self.kernel = gloo.Texture2D(kernel, interpolation='nearest')
         self.program['u_texture'] = self.texture
+        self.program['u_shape'] = I.shape[1], I.shape[0]
+        self.program['u_kernel'] = self.kernel
 
         self.names = names
         self.filter = 16
@@ -90,9 +98,6 @@ class Canvas(app.Canvas):
             self.program.set_shaders(VERT_SHADER,
                                      FRAG_SHADER % self.names[self.filter])
 
-            if self.names[self.filter] != 'Nearest':
-                self.program['u_kernel'] = self.kernel
-                self.program['u_shape'] = I.shape[1], I.shape[0]
             self.title = 'Spatial Filtering using %s Filter' % \
                          self.names[self.filter]
             self.update()

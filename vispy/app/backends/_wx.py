@@ -140,7 +140,10 @@ class ApplicationBackend(BaseApplicationBackend):
         for _ in range(3):  # trial-and-error found this to work (!)
             while self._event_loop.Pending():
                 self._event_loop.Dispatch()
-            _wx_app.ProcessIdle()
+            if hasattr(_wx_app, 'ProcessIdle'):
+                _wx_app.ProcessIdle()
+            else:
+                self._event_loop.ProcessIdle()
             sleep(0.01)
 
     def _vispy_run(self):
@@ -155,7 +158,11 @@ class ApplicationBackend(BaseApplicationBackend):
         global _wx_app
         _wx_app = wx.GetApp()  # in case the user already has one
         if _wx_app is None:
-            _wx_app = wx.PySimpleApp()
+            if hasattr(wx, 'PySimpleApp'):
+                # legacy wx
+                _wx_app = wx.PySimpleApp()
+            else:
+                _wx_app = wx.App()
         _wx_app.SetExitOnFrameDelete(True)
         return _wx_app
 
