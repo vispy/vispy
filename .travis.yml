@@ -147,9 +147,9 @@ install:
         make install;
         cd ~;
         if [ "${TRAVIS_OS_NAME}" == "linux" ]; then
-          export PYGLFW_LIBRARY=${HOME}/lib/libglfw.so;
+          export GLFW_LIBRARY=${HOME}/lib/libglfw.so;
         else
-          export PYGLFW_LIBRARY=${HOME}/lib/libglfw.dylib;
+          export GLFW_LIBRARY=${HOME}/lib/libglfw.dylib;
         fi;
       fi
 
