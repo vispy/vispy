@@ -16,7 +16,7 @@ def triangulate(P):
     n = len(P)
     S = np.repeat(np.arange(n + 1), 2)[1:-1]
     S[-2:] = n - 1, 0
-    S = S.reshape(len(S) / 2, 2)
+    S = S.reshape(len(S) // 2, 2)
     T = Triangulation(P[:, :2], S)
     T.triangulate()
     points = T.pts
