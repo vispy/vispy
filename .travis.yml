@@ -18,6 +18,9 @@ matrix:
     - env: PYTHON=3.6 DEPS=minimal TEST=standard
       os: osx
       language: generic
+    - env: PYTHON=3.6 DEPS=full TEST=standard
+      os: osx
+      language: generic
 # Travis Examples are extremely slow for OSX (times out)
 #    - env: PYTHON=3.6 DEPS=full TEST=examples
 #      os: osx
@@ -32,7 +35,13 @@ matrix:
           packages:
             - *mesa_apt
             - *full_apt
-    - env: PYTHON=2.7 DEPS=full TEST=standard NUMPY="=1.9"
+    - env: PYTHON=3.6 DEPS=full TEST=examples  # test examples
+      addons:
+        apt:
+          packages:
+            - *mesa_apt
+            - *full_apt
+    - env: PYTHON=2.7 DEPS=full TEST=standard
       addons:
         apt:
           packages:
@@ -42,20 +51,11 @@ matrix:
     # has (on-screen) OpenGL installed, we need to setup environment variable
     # to avoid having the linker load the wrong libglapi.so which would cause
     # OSMesa to crash
-    - env: PYTHON=2.7 DEPS=full TEST=osmesa NUMPY="=1.9"
+    - env: PYTHON=2.7 DEPS=full TEST=osmesa
       addons:
         apt:
           packages:
             - *full_apt
-    # Run on 2.7 so we have PyQt4 (some examples need it)
-    - env: PYTHON=2.7 DEPS=full TEST=examples  # test examples
-      addons:
-        apt:
-          packages:
-            - *mesa_apt
-            - *full_apt
-  allow_failures:
-    - os: osx
 
 
 before_install:
@@ -110,7 +110,6 @@ install:
     # Also install PyQt4, imaging (PIL or pillow), scipy, mpl, egl
     # On conda, can't install pyside-pyzo b/c it conflicts with pyqt4,
     # which is required by matplotlib :(
-    # No wx on py27 or py34, wxpython doesn't work properly there
     # wxpython available from conda-forge but not for OSX:
     #     https://github.com/conda-forge/wxpython-feedstock/issues/2
     # If we only need a single backend (DEPS=backend), then use PyQT4
@@ -120,11 +119,11 @@ install:
         conda install --yes pyopengl scipy numpy$NUMPY networkx;
         pip install -q numpydoc PySDL2;
         if [ "${TRAVIS_OS_NAME}" == "linux" ]; then
+          conda install --yes wxpython matplotlib jupyter pyqt=4 pillow decorator six;
           if [ "${PYTHON}" == "3.6" ]; then
-            pip install -q freetype-py husl pypng cassowary pillow decorator six;
+            pip install -q freetype-py husl pypng cassowary imageio;
             rm -rf ${SRC_DIR}/vispy/ext/_bundled;
           else
-            conda install --yes wxpython matplotlib jupyter pyqt=4;
             pip install -q mock;
           fi;
         else
@@ -139,13 +138,18 @@ install:
     - python setup.py develop
     - cd ~
 
-    - if [ "${DEPS}" == "full" ]; then
+    # Install glfw (fails with virtual buffer on OSX)
+    - if [ "${DEPS}" == "full" ] && [ "${TRAVIS_OS_NAME}" == "linux" ]; then
         git clone git://github.com/glfw/glfw.git;
         cd glfw;
         cmake -DCMAKE_INSTALL_PREFIX=$HOME -DBUILD_SHARED_LIBS=true -DGLFW_BUILD_EXAMPLES=false -DGLFW_BUILD_TESTS=false -DGLFW_BUILD_DOCS=false .;
         make install;
         cd ~;
-        export GLFW_LIBRARY=${HOME}/lib/libglfw.so;
+        if [ "${TRAVIS_OS_NAME}" == "linux" ]; then
+          export GLFW_LIBRARY=${HOME}/lib/libglfw.so;
+        else
+          export GLFW_LIBRARY=${HOME}/lib/libglfw.dylib;
+        fi;
       fi
 
     # Install OSMesa
