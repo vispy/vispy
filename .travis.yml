@@ -111,7 +111,6 @@ install:
     # Also install PyQt4, imaging (PIL or pillow), scipy, mpl, egl
     # On conda, can't install pyside-pyzo b/c it conflicts with pyqt4,
     # which is required by matplotlib :(
-    # No wx on py27 or py34, wxpython doesn't work properly there
     # wxpython available from conda-forge but not for OSX:
     #     https://github.com/conda-forge/wxpython-feedstock/issues/2
     # If we only need a single backend (DEPS=backend), then use PyQT4
@@ -121,11 +120,11 @@ install:
         conda install --yes pyopengl scipy numpy$NUMPY networkx;
         pip install -q numpydoc PySDL2;
         if [ "${TRAVIS_OS_NAME}" == "linux" ]; then
+          conda install --yes wxpython matplotlib jupyter pyqt=4;
           if [ "${PYTHON}" == "3.6" ]; then
             pip install -q freetype-py husl pypng cassowary pillow decorator six;
             rm -rf ${SRC_DIR}/vispy/ext/_bundled;
           else
-            conda install --yes wxpython matplotlib jupyter pyqt=4;
             pip install -q mock;
           fi;
         else
@@ -140,7 +139,8 @@ install:
     - python setup.py develop
     - cd ~
 
-    - if [ "${DEPS}" == "full" ]; then
+    # Install glfw (fails with virtual buffer on OSX)
+    - if [ "${DEPS}" == "full" ] && [ "${TRAVIS_OS_NAME}" == "linux" ]; then
         git clone git://github.com/glfw/glfw.git;
         cd glfw;
         cmake -DCMAKE_INSTALL_PREFIX=$HOME -DBUILD_SHARED_LIBS=true -DGLFW_BUILD_EXAMPLES=false -DGLFW_BUILD_TESTS=false -DGLFW_BUILD_DOCS=false .;
