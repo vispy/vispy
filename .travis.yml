@@ -146,7 +146,11 @@ install:
         cmake -DCMAKE_INSTALL_PREFIX=$HOME -DBUILD_SHARED_LIBS=true -DGLFW_BUILD_EXAMPLES=false -DGLFW_BUILD_TESTS=false -DGLFW_BUILD_DOCS=false .;
         make install;
         cd ~;
-        export GLFW_LIBRARY=${HOME}/lib/libglfw.so;
+        if [ "${TRAVIS_OS_NAME}" == "linux" ]; then
+          export PYGLFW_LIBRARY=${HOME}/lib/libglfw.so;
+        else
+          export PYGLFW_LIBRARY=${HOME}/lib/libglfw.dylib;
+        fi;
       fi
 
     # Install OSMesa
