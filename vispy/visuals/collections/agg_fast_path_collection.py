@@ -122,8 +122,8 @@ class AggFastPathCollection(Collection):
            Path antialias area
         """
 
-        itemsize = itemsize or len(P)
-        itemcount = int(len(P) / itemsize)
+        itemsize = int(itemsize or len(P))
+        itemcount = len(P) // itemsize
 
         P = P.reshape(itemcount, itemsize, 3)
         if closed:
