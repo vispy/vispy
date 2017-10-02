@@ -158,11 +158,11 @@ class ApplicationBackend(BaseApplicationBackend):
         global _wx_app
         _wx_app = wx.GetApp()  # in case the user already has one
         if _wx_app is None:
-            if hasattr(wx, 'PySimpleApp'):
+            if hasattr(wx, 'App'):
+                _wx_app = wx.App()
+            else:
                 # legacy wx
                 _wx_app = wx.PySimpleApp()
-            else:
-                _wx_app = wx.App()
         _wx_app.SetExitOnFrameDelete(True)
         return _wx_app
 
@@ -329,7 +329,12 @@ class CanvasBackend(GLCanvas, BaseCanvasBackend):
         # Set size of the widget or window
         if not self._init:
             self._size_init = (w, h)
-        self.SetSizeWH(w, h)
+        if hasattr(self, 'SetSize'):
+            # phoenix
+            self.SetSize(w, h)
+        else:
+            # legacy
+            self.SetSizeWH(w, h)
 
     def _vispy_set_position(self, x, y):
         # Set positionof the widget or window. May have no effect for widgets
