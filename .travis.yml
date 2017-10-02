@@ -18,6 +18,9 @@ matrix:
     - env: PYTHON=3.6 DEPS=minimal TEST=standard
       os: osx
       language: generic
+    - env: PYTHON=3.6 DEPS=full TEST=standard
+      os: osx
+      language: generic
 # Travis Examples are extremely slow for OSX (times out)
 #    - env: PYTHON=3.6 DEPS=full TEST=examples
 #      os: osx
@@ -54,8 +57,6 @@ matrix:
           packages:
             - *mesa_apt
             - *full_apt
-  allow_failures:
-    - os: osx
 
 
 before_install:
