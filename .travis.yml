@@ -120,10 +120,9 @@ install:
         conda install --yes pyopengl scipy numpy$NUMPY networkx;
         pip install -q numpydoc PySDL2;
         if [ "${TRAVIS_OS_NAME}" == "linux" ]; then
-          conda install --yes wxpython matplotlib jupyter pyqt=4;
+          conda install --yes wxpython matplotlib jupyter pyqt=4 pillow decorator six;
           if [ "${PYTHON}" == "3.6" ]; then
-            pip install -q freetype-py husl pypng cassowary pillow decorator six;
-            rm -rf ${SRC_DIR}/vispy/ext/_bundled;
+            pip install -q freetype-py husl pypng cassowary;
           else
             pip install -q mock;
           fi;
