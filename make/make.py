@@ -486,7 +486,7 @@ def sphinx_copy_pages(html_dir, pages_dir, pages_repo):
         if op.isdir(tmp_git_dir):
             shutil.rmtree(tmp_git_dir)
     # Copy individual files
-    for fname in ['CNAME', 'README.md', 'conf.py', '.nojekyll', 'Makefile']:
+    for fname in ['CNAME', 'README.rst', 'conf.py', '.nojekyll', 'Makefile']:
         shutil.copyfile(op.join(WEBSITE_DIR, fname),
                         op.join(pages_dir, fname))
     # Messages
