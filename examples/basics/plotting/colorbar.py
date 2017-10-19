@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
-# vispy: gallery 1
+# vispy: gallery 2
 """
 Plot different styles of ColorBar using vispy.plot
 """
