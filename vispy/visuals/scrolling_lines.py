@@ -97,7 +97,7 @@ class ScrollingLinesVisual(Visual):
         # set an array giving the x/y origin for each plot
         if pos_offset is None:
             # construct positions as a grid 
-            rows = np.ceil(n_lines / columns)
+            rows = int(np.ceil(n_lines / columns))
             pos_offset = np.empty((rows, columns, 3), dtype='float32')
             pos_offset[..., 0] = (np.arange(columns)[np.newaxis, :] * 
                                   cell_size[0])
