@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # This shim has been imported from Astropy.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
