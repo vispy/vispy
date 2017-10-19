@@ -30,8 +30,8 @@ def generate_terrain(r_min, r_max, c_min, c_max, disp):
     c = points[r_max, c_min, 2]
     d = points[r_max, c_max, 2]
 
-    r_mid = int((r_min + r_max)/2)
-    c_mid = int((c_min + c_max)/2)
+    r_mid = (r_min + r_max) // 2
+    c_mid = (c_min + c_max) // 2
 
     e = (a+b+c+d)/4 + np.random.uniform(0, disp)
 
