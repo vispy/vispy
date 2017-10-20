@@ -309,14 +309,12 @@ class MagnifyTransform(BaseTransform):
         m = self.mag
         r1, r2 = self.radii
         
-        #c = np.array(c).reshape(1,2)
         xm = np.empty(x.shape, dtype=x.dtype)
         
         dx = (x - c)
         dist = (((dx**2).sum(axis=-1)) ** 0.5)[..., np.newaxis]
         dist[np.isnan(dist)] = 0
-        unit = dx / dist
-        
+        unit = dx / np.where(dist != 0, dist, 1)
         # magnified center region
         if _inverse:
             inner = (dist < r1)[:, 0]
@@ -342,7 +340,7 @@ class MagnifyTransform(BaseTransform):
             tind = (dist[trans] - (r1/m)) * len(temp) / (r2 - (r1/m))
         tind = np.clip(tind, 0, temp.shape[0]-1)
         s = temp[tind.astype(int)]
-        
+
         xm[trans] = c + unit[trans] * s
         return xm
 

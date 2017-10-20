@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# vispy: gallery 30
+# vispy: gallery 2
 # -----------------------------------------------------------------------------
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
@@ -21,7 +21,6 @@ from vispy import scene, app
 
 canvas = scene.SceneCanvas(keys='interactive')
 canvas.size = 600, 600
-canvas.show()
 
 # This is the top-level widget that will hold three ViewBoxes, which will
 # be automatically resized whenever the grid is resized.
@@ -33,6 +32,7 @@ widget_left.bgcolor = "#dd0000"
 widget_right = grid.add_widget(row=0, col=1)
 widget_right.bgcolor = "#0000dd"
 
+canvas.show()
 
 if __name__ == '__main__' and sys.flags.interactive == 0:
     app.run()
