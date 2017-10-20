@@ -110,7 +110,8 @@ class ScrollingLinesVisual(Visual):
 
         if color is None:
             # default to white (1, 1, 1, 1)
-            self._color_tex = gloo.Texture1D(np.ones((n_lines, 4), dtype=np.float32))
+            self._color_tex = gloo.Texture1D(
+                np.ones((n_lines, 4), dtype=np.float32))
             self.shared_program['color_tex'] = self._color_tex
             self.shared_program.frag['color'] = 'v_color'
         else:
