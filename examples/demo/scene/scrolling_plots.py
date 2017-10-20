@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
-# vispy: testskip - Travis can't handle it
+# vispy: gallery 30, testskip - Travis can't handle it
 """
 Show 10,000 realtime scrolling plots
 """
