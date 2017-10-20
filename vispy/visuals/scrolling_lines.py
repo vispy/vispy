@@ -101,13 +101,18 @@ class ScrollingLinesVisual(Visual):
             pos_offset[..., 0] = (np.arange(columns)[np.newaxis, :] * 
                                   cell_size[0])
             pos_offset[..., 1] = np.arange(rows)[:, np.newaxis] * cell_size[1]
-            pos_offset = pos_offset.reshape((rows*columns), 3)
+            # limit position texture to the number of lines in case there are
+            # more row/column cells than lines
+            pos_offset = pos_offset.reshape((rows*columns), 3)[:n_lines, :]
         self._pos_offset = gloo.Texture1D(pos_offset, internalformat='rgb32f',
                                           interpolation='nearest')
         self.shared_program['pos_offset'] = self._pos_offset
 
         if color is None:
-            self.shared_program.frag['color'] = (1, 1, 1, 1)
+            # default to white (1, 1, 1, 1)
+            self._color_tex = gloo.Texture1D(np.ones((n_lines, 4), dtype=np.float32))
+            self.shared_program['color_tex'] = self._color_tex
+            self.shared_program.frag['color'] = 'v_color'
         else:
             self._color_tex = gloo.Texture1D(color)
             self.shared_program['color_tex'] = self._color_tex
