@@ -108,7 +108,8 @@ setup(
     package_data={
         'vispy': [op.join('io', '_data', '*'),
                   op.join('html', 'static', 'js', '*'),
-                  op.join('app', 'tests', 'qt-designer.ui')
+                  op.join('app', 'tests', 'qt-designer.ui'),
+                  op.join('..', 'doc', '*'),
                   ],
 
         'vispy.glsl': ['*.vert','*.frag', "*.glsl"],
