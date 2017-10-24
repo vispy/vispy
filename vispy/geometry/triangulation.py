@@ -137,24 +137,24 @@ class Triangulation(object):
             # and "edge events" (3.4.2).
 
             # get index along front that intersects pts[i]
-            l = 0
-            while pts[front[l+1], 0] <= pi[0]:
-                l += 1
-            pl = pts[front[l]]
+            idx = 0
+            while pts[front[idx+1], 0] <= pi[0]:
+                idx += 1
+            pl = pts[front[idx]]
 
             # "(i) middle case"
             if pi[0] > pl[0]:
                 #debug("  mid case")
                 # Add a single triangle connecting pi,pl,pr
-                self._add_tri(front[l], front[l+1], i)
-                front.insert(l+1, i)
+                self._add_tri(front[idx], front[idx+1], i)
+                front.insert(idx+1, i)
             # "(ii) left case"
             else:
                 #debug("  left case")
                 # Add triangles connecting pi,pl,ps and pi,pl,pr
-                self._add_tri(front[l], front[l+1], i)
-                self._add_tri(front[l-1], front[l], i)
-                front[l] = i
+                self._add_tri(front[idx], front[idx+1], i)
+                self._add_tri(front[idx-1], front[idx], i)
+                front[idx] = i
 
             #debug(front)
 
@@ -217,16 +217,16 @@ class Triangulation(object):
         #debug("== Fill hull")
         front = list(OrderedDict.fromkeys(self._front))
 
-        l = len(front) - 2
+        idx = len(front) - 2
         k = 1
-        while k < l-1:
+        while k < idx-1:
             # if edges lie in counterclockwise direction, then signed area
             # is positive
             if self._iscounterclockwise(front[k], front[k+1], front[k+2]):
                 self._add_tri(front[k], front[k+1], front[k+2], legal=False,
                               source='fill_hull')
                 front.pop(k+1)
-                l -= 1
+                idx -= 1
                 continue
             k += 1
 

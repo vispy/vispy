@@ -186,7 +186,7 @@ class IsocurveVisual(LineVisual):
         # try _color_lev as colormap, except as everything else
         try:
             f_color_levs = get_colormap(self._color_lev)
-        except:
+        except (KeyError, TypeError):
             colors = ColorArray(self._color_lev).rgba
         else:
             lev = _normalize(self._levels, self._clim[0], self._clim[1])

@@ -49,10 +49,10 @@ class Canvas(app.Canvas):
         self.timer = app.Timer('auto', self.on_timer)
 
         # Build cube data
-        V, I, O = create_cube()
+        V, I, outline = create_cube()
         vertices = VertexBuffer(V)
         self.faces = IndexBuffer(I)
-        self.outline = IndexBuffer(O)
+        self.outline = IndexBuffer(outline)
 
         # Build program
         # --------------------------------------

@@ -25,12 +25,12 @@ def assert_chain_objects(chain1, chain2):
     assert chain1.transforms == chain2.transforms
 
 
-def tesst_multiplication():
+def test_multiplication():
     n = NT()
     s = ST()
     a = AT()
     p = PT()
-    l = LT()
+    log_trans = LT()
     c1 = CT([s, a, p])
     assert c1
     c2 = CT([s, a, s])
@@ -49,7 +49,7 @@ def tesst_multiplication():
     assert_chain_types(s * p * s, [ST, PT, ST])
     assert_chain_types(s * a * p * s * a, [AT, PT, AT])
     assert_chain_types(c2 * a, [AT])
-    assert_chain_types(p * l * s, [ST, LT, PT])
+    assert_chain_types(p * log_trans * s, [ST, LT, PT])
 
 
 def test_transform_chain():

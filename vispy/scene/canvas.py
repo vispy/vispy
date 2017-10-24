@@ -513,7 +513,7 @@ class SceneCanvas(app.Canvas, Frozen):
         self._vp_stack.append(vp)
         try:
             self.context.set_viewport(*vp)
-        except:
+        except Exception:
             self._vp_stack.pop()
             raise
         

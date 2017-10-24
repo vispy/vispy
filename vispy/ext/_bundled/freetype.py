@@ -230,7 +230,7 @@ def version():
 
 try:
     FT_Library_SetLcdFilter = __dll__.FT_Library_SetLcdFilter
-except:
+except AttributeError:
     def FT_Library_SetLcdFilter(*args, **kwargs):
         return 0
 if version() >= (2, 4, 0):

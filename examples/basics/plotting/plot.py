@@ -31,8 +31,9 @@ for i in range(16):
     n = i * 2 + 1
     y += (4. / np.pi) * (1. / n) * np.sin(n * np.pi * x / L)
     if n in plot_nvals:
-        l = fig[0, 0].plot((x, y), color=colors[plot_nvals.index(n)], width=2)
-        l.update_gl_state(depth_test=False)
+        tmp_line = fig[0, 0].plot((x, y), color=colors[plot_nvals.index(n)],
+                                  width=2)
+        tmp_line.update_gl_state(depth_test=False)
 
 labelgrid = fig[0, 0].view.add_grid(margin=10)
 

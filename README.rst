@@ -24,7 +24,7 @@ large datasets. Applications of VisPy include:
 Announcements
 -------------
 
-- **Release!** Version 0.5, October 23, 2017
+- **Release!** Version 0.5, October 24, 2017
 - **Release!** Version 0.4, May 22, 2015
 - `VisPy tutorial in the IPython Cookbook <http://ipython-books.github.io/featured-06/>`__
 - **Release!** Version 0.3, August 29, 2014

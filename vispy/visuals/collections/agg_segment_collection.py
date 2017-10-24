@@ -129,10 +129,10 @@ class AggSegmentCollection(Collection):
         V = V.repeat(4, axis=0)
         V['index'] = np.resize([0, 1, 2, 3], 4 * itemcount * itemsize)
 
-        I = np.ones((itemcount, 6), dtype=int)
-        I[:] = 0, 1, 2, 0, 2, 3
-        I[:] += 4 * np.arange(itemcount)[:, np.newaxis]
-        I = I.ravel()
+        idxs = np.ones((itemcount, 6), dtype=int)
+        idxs[:] = 0, 1, 2, 0, 2, 3
+        idxs[:] += 4 * np.arange(itemcount)[:, np.newaxis]
+        idxs = idxs.ravel()
 
         # Uniforms
         if self.utype:
@@ -144,4 +144,4 @@ class AggSegmentCollection(Collection):
             U = None
 
         Collection.append(
-            self, vertices=V, uniforms=U, indices=I, itemsize=4 * itemcount)
+            self, vertices=V, uniforms=U, indices=idxs, itemsize=4 * itemcount)

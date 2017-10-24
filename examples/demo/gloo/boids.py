@@ -159,10 +159,10 @@ class Canvas(app.Canvas):
         A = -(V - V.sum(axis=0) / n)
 
         # Repulsion: steer to avoid crowding local flockmates
-        D, I = cKDTree(P).query(P, 5)
+        D, idxs = cKDTree(P).query(P, 5)
         M = np.repeat(D < 0.05, 3, axis=1).reshape(n, 5, 3)
         Z = np.repeat(P, 5, axis=0).reshape(n, 5, 3)
-        R = -((P[I] - Z) * M).sum(axis=1)
+        R = -((P[idxs] - Z) * M).sum(axis=1)
 
         # Target : Follow target
         T = self.target['position'] - P
