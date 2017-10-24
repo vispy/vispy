@@ -84,10 +84,10 @@ class Canvas(app.Canvas):
         self.timer = app.Timer('auto', self.on_timer)
 
         # Build cube data
-        V, F, O = create_cube()
+        V, F, outline = create_cube()
         vertices = VertexBuffer(V)
         self.faces = IndexBuffer(F)
-        self.outline = IndexBuffer(O)
+        self.outline = IndexBuffer(outline)
 
         # Build view, model, projection & normal
         # --------------------------------------

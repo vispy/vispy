@@ -357,14 +357,14 @@ class Widget(Compound):
         #  ........
         #  ........
         #
-        l = b = m
-        r = self.size[0] - m
-        t = self.size[1] - m
+        left = bot = m
+        right = self.size[0] - m
+        top = self.size[1] - m
         pos = np.array([
-            [l, b], [l+w, b+w],
-            [r, b], [r-w, b+w],
-            [r, t], [r-w, t-w],
-            [l, t], [l+w, t-w],
+            [left, bot], [left+w, bot+w],
+            [right, bot], [right-w, bot+w],
+            [right, top], [right-w, top-w],
+            [left, top], [left+w, top-w],
         ], dtype=np.float32)
         faces = np.array([
             [0, 2, 1],

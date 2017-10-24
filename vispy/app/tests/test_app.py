@@ -320,12 +320,12 @@ def test_fs():
     if (a.backend_name.lower() == 'glfw' or
             (a.backend_name.lower() == 'sdl2' and sys.platform == 'darwin')):
         raise SkipTest('Backend takes over screen')
-    with use_log_level('warning', record=True, print_msg=False) as l:
+    with use_log_level('warning', record=True, print_msg=False) as emit_list:
         with Canvas(fullscreen=False) as c:
             assert_equal(c.fullscreen, False)
             c.fullscreen = True
             assert_equal(c.fullscreen, True)
-    assert_equal(len(l), 0)
+    assert_equal(len(emit_list), 0)
     with use_log_level('warning', record=True, print_msg=False):
         # some backends print a warning b/c fullscreen can't be specified
         with Canvas(fullscreen=0) as c:

@@ -72,11 +72,11 @@ class IsolineFilter(object):
         return self._level
 
     @level.setter
-    def level(self, l):
-        if l <= 0:
-            l = 0
-        self._level = l
-        self.fshader['isolevel'] = l
+    def level(self, lev):
+        if lev <= 0:
+            lev = 0
+        self._level = lev
+        self.fshader['isolevel'] = lev
 
     @property
     def width(self):

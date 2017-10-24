@@ -446,9 +446,9 @@ class _AggLineVisual(Visual):
                                           "allowed for agg-method lines.")
 
         if bake:
-            V, I = self._agg_bake(self._pos, self._color)
+            V, idxs = self._agg_bake(self._pos, self._color)
             self._vbo.set_data(V)
-            self._index_buffer.set_data(I)
+            self._index_buffer.set_data(idxs)
 
         #self._program.prepare()
         self.shared_program.bind(self._vbo)
@@ -522,9 +522,9 @@ class _AggLineVisual(Visual):
         V['a_texcoord'][1::2, 1] = +1
         idx = np.repeat(idx, 2)
 
-        I = np.resize(np.array([0, 1, 2, 1, 2, 3], dtype=np.uint32),
-                      (n-1)*(2*3))
-        I += np.repeat(4*np.arange(n-1, dtype=np.uint32), 6)
+        idxs = np.resize(np.array([0, 1, 2, 1, 2, 3], dtype=np.uint32),
+                         (n-1)*(2*3))
+        idxs += np.repeat(4*np.arange(n-1, dtype=np.uint32), 6)
 
         # Length
         V['alength'] = L[-1] * np.ones(len(V))
@@ -539,4 +539,4 @@ class _AggLineVisual(Visual):
                              'vertices %s' % (len(color), n))
         V['color'] = color
 
-        return V, I
+        return V, idxs

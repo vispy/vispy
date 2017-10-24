@@ -555,9 +555,9 @@ def _get_ticks_talbot(dmin, dmax, n_inches, density=1.):
                         s = _simplicity(q, Q, j, lmin, lmax, lstep)
                         c = _coverage(dmin, dmax, lmin, lmax)
                         d = _density(k, m, dmin, dmax, lmin, lmax)
-                        l = 1.  # _legibility(lmin, lmax, lstep)
+                        leg = 1.  # _legibility(lmin, lmax, lstep)
 
-                        score = w[0] * s + w[1] * c + w[2] * d + w[3] * l
+                        score = w[0] * s + w[1] * c + w[2] * d + w[3] * leg
 
                         if (score > best_score and
                                 (not only_inside or (lmin >= dmin and

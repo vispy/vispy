@@ -14,7 +14,7 @@ from vispy import app
 
 # Image to be displayed
 W, H = 64, 48
-I = np.random.uniform(0, 1, (W, H)).astype(np.float32)
+img_array = np.random.uniform(0, 1, (W, H)).astype(np.float32)
 
 # A simple texture quad
 data = np.zeros(4, dtype=[('a_position', np.float32, 2),
@@ -63,7 +63,7 @@ class Canvas(app.Canvas):
         app.Canvas.__init__(self, keys='interactive', size=((W * 5), (H * 5)))
 
         self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
-        self.texture = gloo.Texture2D(I, interpolation='linear')
+        self.texture = gloo.Texture2D(img_array, interpolation='linear')
 
         self.program['u_texture'] = self.texture
         self.program.bind(gloo.VertexBuffer(data))
@@ -104,8 +104,8 @@ class Canvas(app.Canvas):
 
     def on_draw(self, event):
         gloo.clear(color=True, depth=True)
-        I[...] = np.random.uniform(0, 1, (W, H)).astype(np.float32)
-        self.texture.set_data(I)
+        img_array[...] = np.random.uniform(0, 1, (W, H)).astype(np.float32)
+        self.texture.set_data(img_array)
         self.program.draw('triangle_strip')
 
 
