@@ -148,7 +148,7 @@ class LineVisual(CompoundVisual):
             self._changed[k] = True
 
     def set_data(self, pos=None, color=None, width=None, connect=None):
-        """ Set the data used to draw this visual.
+        """Set the data used to draw this visual.
 
         Parameters
         ----------
@@ -162,13 +162,15 @@ class LineVisual(CompoundVisual):
             to 1 px when using the 'gl' method.
         connect : str or array
             Determines which vertices are connected by lines.
-            * "strip" causes the line to be drawn with each vertex
-              connected to the next.
-            * "segments" causes each pair of vertices to draw an
-              independent line segment
-            * int numpy arrays specify the exact set of segment pairs to
-              connect.
-            * bool numpy arrays specify which _adjacent_ pairs to connect.
+
+                * "strip" causes the line to be drawn with each vertex
+                  connected to the next.
+                * "segments" causes each pair of vertices to draw an
+                  independent line segment
+                * int numpy arrays specify the exact set of segment pairs to
+                  connect.
+                * bool numpy arrays specify which _adjacent_ pairs to connect.
+
         """
         if pos is not None:
             self._bounds = None

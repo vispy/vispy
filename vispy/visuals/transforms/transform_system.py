@@ -72,8 +72,6 @@ class TransformSystem(object):
 
     Examples
     --------
-    Use by Visuals
-    ~~~~~~~~~~~~~~
 
     1. To convert local vertex coordinates to normalized device coordinates in
     the vertex shader, we first need a vertex shader that supports configurable
