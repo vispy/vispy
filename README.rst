@@ -95,7 +95,6 @@ Currently, the main subpackages are:
    with/without WebGL, and others). Relatively stable API.
 -  **gloo**: a Pythonic, object-oriented interface to OpenGL. Relatively
    stable API.
--  **mpl\_plot**: an OpenGL backend for matplotlib. Experimental.
 -  **scene**: this is the system underlying our upcoming high level
    visualization interfaces. Under heavy development and still
    experimental, it contains several modules.
@@ -119,15 +118,10 @@ Genesis
 
 VisPy began when four developers with their own visualization libraries
 decided to team up:
-
--  `Luke Campagnola <http://luke.campagnola.me/>`__ with
-   `PyQtGraph <http://www.pyqtgraph.org/>`__
--  `Almar Klein <http://www.almarklein.org/>`__ with
-   `Visvis <https://code.google.com/p/visvis/>`__
--  `Cyrille Rossant <http://cyrille.rossant.net>`__ with
-   `Galry <https://github.com/rossant/galry>`__
--  `Nicolas Rougier <http://www.loria.fr/~rougier/index.html>`__ with
-   `Glumpy <https://github.com/rougier/Glumpy>`__
+`Luke Campagnola <http://luke.campagnola.me/>`__ with `PyQtGraph <http://www.pyqtgraph.org/>`__,
+`Almar Klein <http://www.almarklein.org/>`__ with `Visvis <https://github.com/almarklein/visvis>`__,
+`Cyrille Rossant <http://cyrille.rossant.net>`__ with `Galry <https://github.com/rossant/galry>`__,
+`Nicolas Rougier <http://www.loria.fr/~rougier/index.html>`__ with `Glumpy <https://github.com/rougier/Glumpy>`__.
 
 Now VisPy looks to build on the expertise of these developers and the
 broader open-source community to build a high-performance OpenGL library.
