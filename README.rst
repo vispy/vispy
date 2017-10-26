@@ -67,22 +67,40 @@ Installation
 VisPy runs on Python 2.7+ and Python 3.3+ and depends on NumPy. You also
 need a backend (PyQt4/PySide, glfw, pyglet, SDL, or wx).
 
+VisPy can be installed either via `pip`:
+
+```
+pip install vispy
+```
+
+or within the `Anaconda <https://www.anaconda.com/download/>`_ Python
+distribution. Anaconda provides a convenient package management system.
+Installing VisPy can then easily be achieved by adding `conda-forge` to the
+channels with:
+
+```
+conda config --add channels conda-forge
+```
+
+Once the `conda-forge` channel has been enabled, `vispy` can be installed with:
+
+```
+conda install vispy
+```
+
+Development Installation
+------------------------
+
 As VisPy is under heavy development at this time, we highly recommend
-you to use the development version on Github (master branch). You need
+developers to use the development version on Github (master branch). You need
 to clone the repository and install VisPy with
 ``python setup.py install``.
 
 As a one-liner, assuming `git` is installed ::
 
-
     git clone https://github.com/vispy/vispy.git && cd vispy && python setup.py install --user
 
-
 This will automatically install the latest version of vispy.
-
-If you need to install Python for the first time, consider using the
-`Anaconda <http://continuum.io/downloads>`_ Python distribution. It
-provides a convenient package management system.
 
 
 Structure of VisPy
