@@ -93,7 +93,7 @@ class _ArrowHeadVisual(Visual):
         v['v1'] = np.c_[arrows[:, 0:sh], v_complete]
         v['v2'] = np.c_[arrows[:, sh:int(2 * sh)], v_complete]
         v['size'][:] = self._parent.arrow_size
-        v['color'][:] = self._parent._interpret_color()
+        v['color'][:] = self._parent._interpret_color(self._parent.arrow_color)
         v['linewidth'][:] = self._parent.width
         self._arrow_vbo = gloo.VertexBuffer(v)
 
@@ -165,7 +165,8 @@ class ArrowVisual(LineVisual):
 
     def __init__(self, pos=None, color=(0.5, 0.5, 0.5, 1), width=1,
                  connect='strip', method='gl', antialias=False, arrows=None,
-                 arrow_type='stealth', arrow_size=None):
+                 arrow_type='stealth', arrow_size=None,
+                 arrow_color=(0.5, 0.5, 0.5, 1)):
 
         # Do not use the self._changed dictionary as it gets overwritten by
         # the LineVisual constructor.
@@ -177,6 +178,7 @@ class ArrowVisual(LineVisual):
 
         self.arrow_type = arrow_type
         self.arrow_size = arrow_size
+        self.arrow_color = arrow_color
 
         self.arrow_head = _ArrowHeadVisual(self)
 
@@ -267,6 +269,16 @@ class ArrowVisual(LineVisual):
             self._arrow_size = value
 
         self._arrows_changed = True
+
+    @property
+    def arrow_color(self):
+        return self._arrow_color
+
+    @arrow_color.setter
+    def arrow_color(self, value):
+        if value is not None:
+            self._arrow_color = value
+            self._arrows_changed = True
 
     @property
     def arrows(self):
