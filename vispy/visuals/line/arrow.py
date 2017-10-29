@@ -29,11 +29,12 @@ ARROW_TYPES = (
 
 
 class _ArrowHeadVisual(Visual):
-    """
-    ArrowHeadVisual: several shapes to put on the end of a line.
-    This visual differs from MarkersVisual in the sense that this visual
-    calculates the orientation of the visual on the GPU, by calculating the
-    tangent of the line between two given vertices.
+    """Arrow head visual
+
+    Several shapes to put on the end of a line. This visual differs from
+    MarkersVisual in the sense that this visual calculates the orientation of
+    the visual on the GPU, by calculating the tangent of the line between two
+    given vertices.
 
     This is not really a visual you would use on your own,
     use :class:`ArrowVisual` instead.
@@ -99,7 +100,7 @@ class _ArrowHeadVisual(Visual):
 
 
 class ArrowVisual(LineVisual):
-    """ArrowVisual
+    """Arrow visual
 
     A special line visual which can also draw optional arrow heads at the
     specified vertices.
@@ -142,10 +143,11 @@ class ArrowVisual(LineVisual):
         For method='gl', this specifies whether to use GL's line smoothing,
         which may be unavailable or inconsistent on some platforms.
     arrows : array
-        A Nx4 matrix where each row contains the x and y coordinate of the
-        first and second vertex of the arrow body. Remember that the second
-        vertex is used as center point for the arrow head, and the first
-        vertex is only used for determining the arrow head orientation.
+        A (N, 4) or (N, 6) matrix where each row contains the (x, y) or the
+        (x, y, z) coordinate of the first and second vertex of the arrow
+        body. Remember that the second vertex is used as center point for
+        the arrow head, and the first vertex is only used for determining
+        the arrow head orientation.
     arrow_type : string
         Specify the arrow head type, the currently available arrow head types
         are:
@@ -161,6 +163,10 @@ class ArrowVisual(LineVisual):
             * inhibitor_round
     arrow_size : float
         Specify the arrow size
+    arrow_color : Color, tuple, or array
+        The arrow head color. If an array is given, it must be of shape
+        (..., 4) and provide one rgba color per arrow head. Can also be a
+        colormap name, or appropriate `Function`.
     """
 
     def __init__(self, pos=None, color=(0.5, 0.5, 0.5, 1), width=1,
@@ -218,11 +224,11 @@ class ArrowVisual(LineVisual):
                 * numpy arrays specify the exact set of segment pairs to
                   connect.
         arrows : array
-            A Nx4 matrix where each row contains the x and y coordinate of the
-            first and second vertex of the arrow body. Remember that the second
-            vertex is used as center point for the arrow head, and the first
-            vertex is only used for determining the arrow head orientation.
-
+            A (N, 4) or (N, 6) matrix where each row contains the (x, y) or the
+            (x, y, z) coordinate of the first and second vertex of the arrow
+            body. Remember that the second vertex is used as center point for
+            the arrow head, and the first vertex is only used for determining
+            the arrow head orientation.
         """
 
         if arrows is not None:
