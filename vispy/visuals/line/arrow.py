@@ -48,8 +48,8 @@ class _ArrowHeadVisual(Visual):
     ARROWHEAD_FRAGMENT_SHADER = glsl.get('arrowheads/arrowheads.frag')
 
     _arrow_vtype = np.dtype([
-        ('v1', np.float32, 2),
-        ('v2', np.float32, 2),
+        ('v1', np.float32, 3),
+        ('v2', np.float32, 3),
         ('size', np.float32, 1),
         ('color', np.float32, 4),
         ('linewidth', np.float32, 1)
@@ -87,8 +87,11 @@ class _ArrowHeadVisual(Visual):
             return
 
         v = np.zeros(len(arrows), dtype=self._arrow_vtype)
-        v['v1'] = arrows[:, 0:2]
-        v['v2'] = arrows[:, 2:4]
+        # 2d // 3d v1 v2.
+        sh = int(arrows.shape[1] / 2)
+        v_complete = np.zeros((len(arrows), 3 - sh), dtype=arrows.dtype)
+        v['v1'] = np.c_[arrows[:, 0:sh], v_complete]
+        v['v2'] = np.c_[arrows[:, sh:int(2 * sh)], v_complete]
         v['size'][:] = self._parent.arrow_size
         v['color'][:] = self._parent._interpret_color()
         v['linewidth'][:] = self._parent.width
@@ -221,6 +224,10 @@ class ArrowVisual(LineVisual):
         """
 
         if arrows is not None:
+            assert isinstance(arrows, np.ndarray)
+            if arrows.shape[1] not in [4, 6]:
+                raise ValueError("Invalid arrows shape. Must either be a "
+                                 "(N, 4) or (N, 6) array.")
             self._arrows = arrows
             self._arrows_changed = True
 
