@@ -232,10 +232,6 @@ class ArrowVisual(LineVisual):
         """
 
         if arrows is not None:
-            assert isinstance(arrows, np.ndarray)
-            if arrows.shape[1] not in [4, 6]:
-                raise ValueError("Invalid arrows shape. Must either be a "
-                                 "(N, 4) or (N, 6) array.")
             self._arrows = arrows
             self._arrows_changed = True
 
