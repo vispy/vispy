@@ -50,8 +50,8 @@ uniform float antialias;
 
 // Attributes
 // ------------------------------------
-attribute vec3  v1;
-attribute vec3  v2;
+attribute vec4  v1;
+attribute vec4  v2;
 attribute float size;
 attribute vec4  color;
 attribute float linewidth;

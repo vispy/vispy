@@ -11,6 +11,7 @@ from __future__ import division
 import numpy as np
 
 from ... import glsl, gloo
+from ..transforms._util import as_vec4
 from ..visual import Visual
 from .line import LineVisual
 
@@ -49,8 +50,8 @@ class _ArrowHeadVisual(Visual):
     ARROWHEAD_FRAGMENT_SHADER = glsl.get('arrowheads/arrowheads.frag')
 
     _arrow_vtype = np.dtype([
-        ('v1', np.float32, 3),
-        ('v2', np.float32, 3),
+        ('v1', np.float32, 4),
+        ('v2', np.float32, 4),
         ('size', np.float32, 1),
         ('color', np.float32, 4),
         ('linewidth', np.float32, 1)
@@ -90,9 +91,8 @@ class _ArrowHeadVisual(Visual):
         v = np.zeros(len(arrows), dtype=self._arrow_vtype)
         # 2d // 3d v1 v2.
         sh = int(arrows.shape[1] / 2)
-        v_complete = np.zeros((len(arrows), 3 - sh), dtype=arrows.dtype)
-        v['v1'] = np.c_[arrows[:, 0:sh], v_complete]
-        v['v2'] = np.c_[arrows[:, sh:int(2 * sh)], v_complete]
+        v['v1'] = as_vec4(arrows[:, 0:sh])
+        v['v2'] = as_vec4(arrows[:, sh:int(2 * sh)])
         v['size'][:] = self._parent.arrow_size
         v['color'][:] = self._parent._interpret_color(self._parent.arrow_color)
         v['linewidth'][:] = self._parent.width
