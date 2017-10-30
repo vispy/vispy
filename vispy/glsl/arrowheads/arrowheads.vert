@@ -75,9 +75,9 @@ void main (void)
     v_color       = color;
     v_linewidth   = linewidth;
 
-    vec3 body = $transform(vec4(v2 - v1, 0.)).xyz;
+    vec3 body = $transform(v2).xyz - $transform(v1).xyz;
     v_orientation = (body / length(body));
 
-    gl_Position = $transform(vec4(v2, 1));
+    gl_Position = $transform(v2);
     gl_PointSize = v_point_size;
 }
