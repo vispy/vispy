@@ -28,8 +28,9 @@ def _get_dpi_from(cmd, pattern, func):
 
 def _xrandr_calc(x_px, y_px, x_mm, y_mm):
     if x_mm == 0 or y_mm == 0:
-        logger.warning("'xrandr' output has screen dimension of 0mm, can't compute proper DPI")
-        return None
+        logger.warning("'xrandr' output has screen dimension of 0mm, " +
+                       "can't compute proper DPI")
+        return 96.
     return 25.4 * (x_px / x_mm + y_px / y_mm) / 2
 
 
