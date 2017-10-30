@@ -287,7 +287,12 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
         # Qt supports OS double-click events, so we set this here to
         # avoid double events
         self._double_click_supported = True
-        self._physical_size = p.size
+        if hasattr(self, 'devicePixelRatio'):
+            # handle high DPI displays in PyQt5
+            ratio = self.devicePixelRatio()
+        else:
+            ratio = 1
+        self._physical_size = (p.size[0] * ratio, p.size[1] * ratio)
 
         # Activate touch and gesture.
         # NOTE: we only activate touch on OS X because there seems to be
