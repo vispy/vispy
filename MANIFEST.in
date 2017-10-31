@@ -1,0 +1,7 @@
+# Add documentation to the source tarball but not in the installation
+include doc/Makefile doc/.nojekyll doc/conf.py
+include doc/*.rst
+recursive-include doc/ext *
+recursive-include doc/_static *
+recursive-include doc/_templates *
+
