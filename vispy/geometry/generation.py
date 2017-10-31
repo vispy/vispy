@@ -403,7 +403,7 @@ def _ico(radius, subdivisions):
 
 def _cube(rows, cols, depth, radius):
     # vertices and faces of tessellated cube
-    verts, faces, _ = create_box(1, 1, 1, rows, cols, depth)
+    verts, faces, _ = create_box(1, 1, 1, cols, rows, depth)
     verts = verts['position']
 
     # make each vertex to lie on the sphere
