@@ -224,17 +224,18 @@ class LineVisual(CompoundVisual):
         else:
             return self._connect
 
-    def _interpret_color(self):
-        if isinstance(self._color, string_types):
+    def _interpret_color(self, color_in=None):
+        color_in = self._color if color_in is None else color_in
+        if isinstance(color_in, string_types):
             try:
-                colormap = get_colormap(self._color)
+                colormap = get_colormap(color_in)
                 color = Function(colormap.glsl_map)
             except KeyError:
-                color = Color(self._color).rgba
-        elif isinstance(self._color, Function):
-            color = Function(self._color)
+                color = Color(color_in).rgba
+        elif isinstance(color_in, Function):
+            color = Function(color_in)
         else:
-            color = ColorArray(self._color).rgba
+            color = ColorArray(color_in).rgba
             if len(color) == 1:
                 color = color[0]
         return color
