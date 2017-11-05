@@ -5,7 +5,9 @@
 from __future__ import division
 import numpy as np
 
+from vispy.geometry import Rect
 from .widget import Widget
+from .viewbox import ViewBox
 
 from ...ext.cassowary import (SimplexSolver, expression,
                               Variable, WEAK, REQUIRED,
@@ -25,7 +27,6 @@ class Grid(Widget):
         Keyword arguments to pass to `Widget`.
     """
     def __init__(self, spacing=6, **kwargs):
-        from .viewbox import ViewBox
         self._next_cell = [0, 0]  # row, col
         self._cells = {}
         self._grid_widgets = {}
@@ -235,7 +236,6 @@ class Grid(Widget):
         **kwargs : dict
             Keyword arguments to pass to `ViewBox`.
         """
-        from .viewbox import ViewBox
         view = ViewBox(**kwargs)
         return self.add_widget(view, row, col, row_span, col_span)
 
@@ -495,8 +495,11 @@ class Grid(Widget):
             else:
                 y = np.sum(value_vectorized(self._height_grid[col][0:row]))
 
-            widget.size = (width, height)
-            widget.pos = (x, y)
+            if isinstance(widget, ViewBox):
+                widget.rect = Rect(x, y, width, height)
+            else:
+                widget.size = (width, height)
+                widget.pos = (x, y)
 
     @property
     def _widget_grid(self):
