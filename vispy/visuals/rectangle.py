@@ -37,6 +37,8 @@ class RectangleVisual(PolygonVisual):
     radius : float | array
         Radii of curvatures of corners in clockwise order from top-left
         Defaults to 0.
+    **kwargs : dict
+        Keyword arguments to pass to `PolygonVisual`.
     """
     def __init__(self, center=None, color='black', border_color=None,
                  border_width=1, height=1.0, width=1.0,
@@ -196,7 +198,7 @@ class RectangleVisual(PolygonVisual):
         self._update()
 
     def _update(self):
-        if not self._center:
+        if self._center is None:
             return
 
         if self._radius is None:
@@ -222,4 +224,5 @@ class RectangleVisual(PolygonVisual):
         # to the edge
         if not self._border_color.is_blank:
             self.border.set_data(pos=vertices[1:, ..., :2],
-                                 color=self._border_color.rgba)
+                                 color=self._border_color.rgba,
+                                 width=self._border_width)
