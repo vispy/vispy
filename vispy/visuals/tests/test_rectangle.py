@@ -53,6 +53,14 @@ def test_rectangle_draw():
 
         assert_image_approved(c.render(), 'visuals/rectpolygon5.png')
 
+        rectpolygon.parent = None
+        rectpolygon = visuals.Rectangle(center=(50, 50, 0), height=60.,
+                                        width=80., radius=[25, 10, 0, 15],
+                                        color='red', border_color=(0, 1, 1, 1),
+                                        border_width=5, parent=c.scene)
+
+        assert_image_approved(c.render(), 'visuals/rectpolygon10.png')
+
 
 @requires_application()
 def test_rectpolygon_draw():
