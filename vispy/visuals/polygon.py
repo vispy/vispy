@@ -34,6 +34,8 @@ class PolygonVisual(CompoundVisual):
         Border color of the polygon.
     border_width : int
         Border width in pixels.
+    triangulate : boolean
+        Triangulate the set of vertices
     **kwargs : dict
         Keyword arguments to pass to `CompoundVisual`.
     """
