@@ -28,6 +28,8 @@ class RectangleVisual(PolygonVisual):
         The border color to use.
     border_width : int
         Border width in pixels.
+        Line widths > 1px are only
+        guaranteed to work when using `border_method='agg'` method.
     height : float
         Length of the rectangle along y-axis
         Defaults to 1.0

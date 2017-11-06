@@ -34,16 +34,27 @@ class PolygonVisual(CompoundVisual):
         Border color of the polygon.
     border_width : int
         Border width in pixels.
+        Line widths > 1px are only
+        guaranteed to work when using `border_method='agg'` method.
+    border_method : str
+        Mode to use for drawing the border line (see `LineVisual`).
+
+            * "agg" uses anti-grain geometry to draw nicely antialiased lines
+              with proper joins and endcaps.
+            * "gl" uses OpenGL's built-in line rendering. This is much faster,
+              but produces much lower-quality results and is not guaranteed to
+              obey the requested line width or join/endcap styles.
+
     triangulate : boolean
         Triangulate the set of vertices
     **kwargs : dict
         Keyword arguments to pass to `CompoundVisual`.
     """
     def __init__(self, pos=None, color='black',
-                 border_color=None, border_width=1, triangulate=True,
-                 **kwargs):
+                 border_color=None, border_width=1, border_method='gl',
+                 triangulate=True, **kwargs):
         self._mesh = MeshVisual()
-        self._border = LineVisual()
+        self._border = LineVisual(method=border_method)
         self._pos = pos
         self._color = Color(color)
         self._border_width = border_width

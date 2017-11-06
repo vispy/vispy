@@ -27,6 +27,8 @@ class EllipseVisual(PolygonVisual):
         The border color to use.
     border_width: float
         The width of the border in pixels
+        Line widths > 1px are only
+        guaranteed to work when using `border_method='agg'` method.
     radius : float | tuple
         Radius or radii of the ellipse
         Defaults to  (0.1, 0.1)
