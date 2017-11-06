@@ -149,7 +149,8 @@ def assert_image_approved(image, standard_file, message=None, **kwargs):
             if std_image is None:
                 raise Exception("Test standard %s does not exist." % std_file)
             else:
-                if os.getenv('TRAVIS') is not None:
+                if os.getenv('TRAVIS') is not None or \
+                        os.getenv('APPVEYOR') is not None:
                     _save_failed_test(image, std_image, standard_file)
                 raise
 
@@ -375,7 +376,7 @@ def get_test_data_repo():
     # This tag marks the test-data commit that this version of vispy should
     # be tested against. When adding or changing test images, create
     # and push a new tag and update this variable.
-    test_data_tag = 'test-data-6'
+    test_data_tag = 'test-data-7'
 
     data_path = config['test_data_path']
     git_path = 'http://github.com/vispy/test-data'

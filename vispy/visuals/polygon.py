@@ -34,17 +34,32 @@ class PolygonVisual(CompoundVisual):
         Border color of the polygon.
     border_width : int
         Border width in pixels.
+        Line widths > 1px are only
+        guaranteed to work when using `border_method='agg'` method.
+    border_method : str
+        Mode to use for drawing the border line (see `LineVisual`).
+
+            * "agg" uses anti-grain geometry to draw nicely antialiased lines
+              with proper joins and endcaps.
+            * "gl" uses OpenGL's built-in line rendering. This is much faster,
+              but produces much lower-quality results and is not guaranteed to
+              obey the requested line width or join/endcap styles.
+
+    triangulate : boolean
+        Triangulate the set of vertices
     **kwargs : dict
-        Keyword arguments to pass to `PolygonVisual`.
+        Keyword arguments to pass to `CompoundVisual`.
     """
     def __init__(self, pos=None, color='black',
-                 border_color=None, border_width=1, **kwargs):
+                 border_color=None, border_width=1, border_method='gl',
+                 triangulate=True, **kwargs):
         self._mesh = MeshVisual()
-        self._border = LineVisual()
+        self._border = LineVisual(method=border_method)
         self._pos = pos
         self._color = Color(color)
         self._border_width = border_width
         self._border_color = Color(border_color)
+        self._triangulate = triangulate
 
         self._update()
         CompoundVisual.__init__(self, [self._mesh, self._border], **kwargs)
@@ -53,25 +68,27 @@ class PolygonVisual(CompoundVisual):
         self.freeze()
 
     def _update(self):
-        self.data = PolygonData(vertices=np.array(self._pos, dtype=np.float32))
         if self._pos is None:
             return
-        if not self._color.is_blank:
-            pts, tris = self.data.triangulate()
+        if not self._color.is_blank and self._triangulate:
+            data = PolygonData(vertices=np.array(self._pos, dtype=np.float32))
+            pts, tris = data.triangulate()
             set_state(polygon_offset_fill=False)
             self._mesh.set_data(vertices=pts, faces=tris.astype(np.uint32),
                                 color=self._color.rgba)
+        elif not self._color.is_blank:
+            self.mesh.set_data(vertices=self._pos,
+                               color=self._color.rgba)
 
         if not self._border_color.is_blank:
             # Close border if it is not already.
             border_pos = self._pos
-            if np.any(border_pos[0] != border_pos[1]):
+            if np.any(border_pos[0] != border_pos[-1]):
                 border_pos = np.concatenate([border_pos, border_pos[:1]],
                                             axis=0)
             self._border.set_data(pos=border_pos,
                                   color=self._border_color.rgba,
-                                  width=self._border_width,
-                                  connect='strip')
+                                  width=self._border_width)
 
             self._border.update()
 
