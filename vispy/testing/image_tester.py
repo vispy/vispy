@@ -150,7 +150,7 @@ def assert_image_approved(image, standard_file, message=None, **kwargs):
                 raise Exception("Test standard %s does not exist." % std_file)
             else:
                 if os.getenv('TRAVIS') is not None or \
-                                os.getenv('APPVEYOR') is not None:
+                        os.getenv('APPVEYOR') is not None:
                     _save_failed_test(image, std_image, standard_file)
                 raise
 
