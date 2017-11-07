@@ -119,6 +119,7 @@ class SceneCanvas(app.Canvas, Frozen):
         self._central_widget = None
         self._draw_order = weakref.WeakKeyDictionary()
         self._drawing = False
+        self._update_pending = False
         self._fb_stack = []
         self._vp_stack = []
         self._mouse_handler = None
@@ -190,7 +191,13 @@ class SceneCanvas(app.Canvas, Frozen):
         # TODO: use node bounds to keep track of minimum drawable area
         if self._drawing:
             return
-        app.Canvas.update(self)
+
+        # Keep things civil in the node update system. Once an update
+        # has been scheduled, there is no need to flood the event queue
+        # of the backend with additional updates.
+        if not self._update_pending:
+            self._update_pending = True
+            app.Canvas.update(self)
 
     def on_draw(self, event):
         """Draw handler
@@ -204,6 +211,9 @@ class SceneCanvas(app.Canvas, Frozen):
             return  # Can happen on initialization
         logger.debug('Canvas draw')
 
+        # Now that a draw event is going to be handled, open up the
+        # scheduling of further updates
+        self._update_pending = False
         self._draw_scene()
 
     def render(self, region=None, size=None, bgcolor=None):
