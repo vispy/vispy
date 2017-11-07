@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+# vispy: testskip
 
 """
 Example demonstrating the use of two GLCanvases in one QtApp.
