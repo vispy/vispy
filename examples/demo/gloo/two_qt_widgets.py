@@ -1,18 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# vispy: gallery 20
 
 """
-Example demonstrating simulation of fireworks using point sprites.
-(adapted from the "OpenGL ES 2.0 Programming Guide")
-
-This example demonstrates a series of explosions that last one second. The
-visualization during the explosion is highly optimized using a Vertex Buffer
-Object (VBO). After each explosion, vertex data for the next explosion are
-calculated, such that each explostion is unique.
+Example demonstrating the use of two GLCanvases in one QtApp.
 """
-# !/usr/bin/env python
-# used with examples from https://github.com/vispy
 
 from PyQt4 import QtGui, QtCore
 import sys
