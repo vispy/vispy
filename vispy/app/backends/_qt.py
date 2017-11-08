@@ -21,6 +21,7 @@ and segfaults.
 
 from __future__ import division
 
+from copy import deepcopy
 from time import sleep, time
 import os
 import sys
@@ -62,6 +63,7 @@ def _check_imports(lib):
         if lib2 in sys.modules:
             raise RuntimeError("Refusing to import %s because %s is already "
                                "imported." % (lib, lib2))
+
 
 # Get what qt lib to try. This tells us wheter this module is imported
 # via _pyside or _pyqt4 or _pyqt5
@@ -158,6 +160,8 @@ def message_handler(*args):
     else:
         msg = msg.decode() if not isinstance(msg, string_types) else msg
         logger.warning(msg)
+
+
 try:
     QtCore.qInstallMsgHandler(message_handler)
 except AttributeError:
@@ -190,7 +194,8 @@ def _set_config(c):
     glformat.setRedBufferSize(c['red_size'])
     glformat.setGreenBufferSize(c['green_size'])
     glformat.setBlueBufferSize(c['blue_size'])
-    glformat.setAlphaBufferSize(c['alpha_size'])
+    if c['alpha_size'] > 0:
+        glformat.setAlphaBufferSize(c['alpha_size'])
     glformat.setAccum(False)
     glformat.setRgba(True)
     glformat.setDoubleBuffer(True if c['double_buffer'] else False)
@@ -642,7 +647,10 @@ class CanvasBackendDesktop(QtBaseCanvasBackend, QGLWidget):
     def _init_specific(self, p, kwargs):
 
         # Deal with config
-        glformat = _set_config(p.context.config)
+        config = deepcopy(p.context.config)
+        # For non-see-through windows OSX and Windows (gh-2138), use default
+        config['alpha_size'] = -1
+        glformat = _set_config(config)
         glformat.setSwapInterval(1 if p.vsync else 0)
         # Deal with context
         widget = kwargs.pop('shareWidget', None) or self

@@ -19,7 +19,19 @@ try:
 except ImportError:
     pass
 
-from PyQt4 import QtGui, QtCore
+try:
+    from PyQt5.QtCore import pyqtSignal, QLocale, Qt
+    from PyQt5.QtWidgets import (QWidget, QSplitter, QMainWindow, QApplication,
+                                 QGroupBox, QListWidget, QGridLayout, QLabel,
+                                 QSpinBox, QDoubleSpinBox, QHBoxLayout,
+                                 QVBoxLayout, QSplitter)
+except Exception:
+    from PyQt4.QtCore import pyqtSignal, QLocale, Qt
+    from PyQt4.QtGui import (QApplication, QMainWindow, QWidget, QGroupBox,
+                             QListWidget, QGridLayout, QLabel, QSpinBox,
+                             QDoubleSpinBox, QHBoxLayout, QVBoxLayout,
+                             QSplitter)
+
 import sys
 
 import numpy as np
@@ -135,11 +147,11 @@ class ObjectParam(object):
 # -----------------------------------------------------------------------------
 
 
-class ObjectWidget(QtGui.QWidget):
+class ObjectWidget(QWidget):
     """
     Widget for editing OBJECT parameters
     """
-    signal_objet_changed = QtCore.pyqtSignal(ObjectParam, name='objectChanged')
+    signal_object_changed = pyqtSignal(ObjectParam, name='objectChanged')
 
     def __init__(self, parent=None, param=None):
         super(ObjectWidget, self).__init__(parent)
@@ -149,23 +161,23 @@ class ObjectWidget(QtGui.QWidget):
         else:
             self.param = param
 
-        self.gb_c = QtGui.QGroupBox(u"Hide/Show %s" % self.param.name)
+        self.gb_c = QGroupBox(u"Hide/Show %s" % self.param.name)
         self.gb_c.setCheckable(True)
         self.gb_c.setChecked(self.param.props['visible'])
         self.gb_c.toggled.connect(self.update_param)
 
         lL = []
         self.sp = []
-        gb_c_lay = QtGui.QGridLayout()
+        gb_c_lay = QGridLayout()
         for nameV, minV, maxV, typeV, iniV in self.param.list_param:
-            lL.append(QtGui.QLabel(nameV, self.gb_c))
+            lL.append(QLabel(nameV, self.gb_c))
             if typeV == 'double':
-                self.sp.append(QtGui.QDoubleSpinBox(self.gb_c))
+                self.sp.append(QDoubleSpinBox(self.gb_c))
                 self.sp[-1].setDecimals(2)
                 self.sp[-1].setSingleStep(0.1)
-                self.sp[-1].setLocale(QtCore.QLocale(QtCore.QLocale.English))
+                self.sp[-1].setLocale(QLocale(QLocale.English))
             elif typeV == 'int':
-                self.sp.append(QtGui.QSpinBox(self.gb_c))
+                self.sp.append(QSpinBox(self.gb_c))
             self.sp[-1].setMinimum(minV)
             self.sp[-1].setMaximum(maxV)
             self.sp[-1].setValue(iniV)
@@ -179,8 +191,8 @@ class ObjectWidget(QtGui.QWidget):
 
         self.gb_c.setLayout(gb_c_lay)
 
-        vbox = QtGui.QVBoxLayout()
-        hbox = QtGui.QHBoxLayout()
+        vbox = QVBoxLayout()
+        hbox = QHBoxLayout()
         hbox.addWidget(self.gb_c)
         hbox.addStretch(1.0)
         vbox.addLayout(hbox)
@@ -197,14 +209,14 @@ class ObjectWidget(QtGui.QWidget):
         for pos, nameV in enumerate(keys):
             self.param.props[nameV] = self.sp[pos].value()
         # emit signal
-        self.signal_objet_changed.emit(self.param)
+        self.signal_object_changed.emit(self.param)
 # -----------------------------------------------------------------------------
 
 
 class Canvas(app.Canvas):
 
-    def __init__(self,):
-        app.Canvas.__init__(self)
+    def __init__(self, parent):
+        app.Canvas.__init__(self, parent=parent)
         self.size = 800, 600
         # fovy, zfar params
         self.fovy = 45.0
@@ -281,33 +293,31 @@ class Canvas(app.Canvas):
 # -----------------------------------------------------------------------------
 
 
-class MainWindow(QtGui.QMainWindow):
+class MainWindow(QMainWindow):
 
     def __init__(self):
-        QtGui.QMainWindow.__init__(self)
+        QMainWindow.__init__(self)
 
         self.resize(700, 500)
         self.setWindowTitle('vispy example ...')
 
-        self.list_object = QtGui.QListWidget()
+        self.list_object = QListWidget()
         self.list_object.setAlternatingRowColors(True)
         self.list_object.itemSelectionChanged.connect(self.list_objectChanged)
 
         self.list_object.addItems(list(OBJECT.keys()))
         self.props_widget = ObjectWidget(self)
-        self.props_widget.signal_objet_changed.connect(self.update_view)
+        self.props_widget.signal_object_changed.connect(self.update_view)
 
-        self.splitter_v = QtGui.QSplitter(QtCore.Qt.Vertical)
+        self.splitter_v = QSplitter(Qt.Vertical)
         self.splitter_v.addWidget(self.list_object)
         self.splitter_v.addWidget(self.props_widget)
 
-        self.canvas = Canvas()
-        self.canvas.create_native()
-        self.canvas.native.setParent(self)
+        self.canvas = Canvas(self)
         self.canvas.measure_fps(0.1, self.show_fps)
 
         # Central Widget
-        splitter1 = QtGui.QSplitter(QtCore.Qt.Horizontal)
+        splitter1 = QSplitter(Qt.Horizontal)
         splitter1.addWidget(self.splitter_v)
         splitter1.addWidget(self.canvas.native)
 
@@ -328,7 +338,7 @@ class MainWindow(QtGui.QMainWindow):
             self.props_widget = ObjectWidget(self, param=ObjectParam(name,
                                              OBJECT[name]))
             self.splitter_v.addWidget(self.props_widget)
-            self.props_widget.signal_objet_changed.connect(self.update_view)
+            self.props_widget.signal_object_changed.connect(self.update_view)
             self.update_view(self.props_widget.param)
 
     def show_fps(self, fps):
@@ -369,10 +379,10 @@ class MainWindow(QtGui.QMainWindow):
         vertices, filled, outline = self.mesh.get_glTriangles()
         self.canvas.set_data(vertices, filled, outline)
 
+
 # Start Qt event loop unless running in interactive mode.
 if __name__ == '__main__':
-
-    appQt = QtGui.QApplication(sys.argv)
+    appQt = QApplication(sys.argv)
     win = MainWindow()
     win.show()
     appQt.exec_()
