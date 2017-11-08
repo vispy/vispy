@@ -134,7 +134,7 @@ class ColorBarWidget(Widget):
 
     @property
     def label_str(self):
-        return self._label_str
+        return self._colorbar._label_str
 
     @label_str.setter
     def label_str(self, label_str):
