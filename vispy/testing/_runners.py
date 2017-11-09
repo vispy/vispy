@@ -295,26 +295,25 @@ def _examples(fnames_str):
     # otherwise, use the full example paths that have been
     # passed to us
     if fnames_str:
+        examples_dir = ''
         fnames = fnames_str.split(' ')
 
     else:
+        examples_dir = op.join(import_dir, '..', 'examples')
         fnames = [op.join(d[0], fname)
-                  for d in os.walk(op.join(import_dir, '..', 'examples'))
+                  for d in os.walk(examples_dir)
                   for fname in d[2] if fname.endswith('.py')]
 
     fnames = sorted(fnames, key=lambda x: x.lower())
-    print(_line_sep + '\nRunning %s examples using %s backend'
-          % (len(fnames), backend))
+    print(_line_sep + '\nRunning examples using %s backend' % (backend,))
     op.join('tutorial', 'app', 'shared_context.py'),  # non-standard
 
     fails = []
     n_ran = n_skipped = 0
     t0 = time()
-    for fname in fnames:
+    for fi, fname in enumerate(fnames):
         n_ran += 1
-        root_name = op.split(fname)
-        root_name = op.join(op.split(op.split(root_name[0])[0])[1],
-                            op.split(root_name[0])[1], root_name[1])
+        root_name = fname[-len(fname) + len(examples_dir):]
         good = True
         with open(fname, 'rb') as fid:
             for _ in range(10):  # just check the first 10 lines
@@ -332,7 +331,8 @@ def _examples(fnames_str):
             n_ran -= 1
             n_skipped += 1
             continue
-        print("Running example: {}".format(fname))
+        line_str = ('[%3d/%3d] %s' % (fi + 1, len(fnames), root_name))
+        print(line_str.ljust(len(_line_sep) - 1), end='')
         sys.stdout.flush()
         cwd = op.dirname(fname)
         cmd = [sys.executable, '-c', _script.format(op.split(fname)[1][:-3])]
@@ -342,14 +342,14 @@ def _examples(fnames_str):
         if retcode or len(stderr.strip()) > 0:
             # Skipping due to missing dependency is okay
             if "ImportError: " in stderr:
-                print('S', end='')
+                print('S')
             else:
                 ext = '\n' + _line_sep + '\n'
-                fails.append('%sExample %s failed (%s):%s%s%s'
+                fails.append('X%sExample %s failed (%s):%s%s%s'
                              % (ext, root_name, retcode, ext, stderr, ext))
                 print(fails[-1])
         else:
-            print('.', end='')
+            print('✓')
         sys.stdout.flush()
     print('')
     t = (': %s failed, %s succeeded, %s skipped in %s seconds'
