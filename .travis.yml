@@ -127,7 +127,7 @@ install:
             pip install -q mock;
           fi;
         else
-          conda install --yes matplotlib jupyter pyqt=4;
+          conda install --yes matplotlib jupyter pyqt=5;
           pip install -q mock;
         fi;
       fi;
