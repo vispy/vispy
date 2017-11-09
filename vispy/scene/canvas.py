@@ -197,7 +197,7 @@ class SceneCanvas(app.Canvas, Frozen):
         # of the backend with additional updates.
         if not self._update_pending:
             self._update_pending = True
-            app.Canvas.update(self)
+            super(SceneCanvas, self).update()
 
     def on_draw(self, event):
         """Draw handler
