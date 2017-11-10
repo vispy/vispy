@@ -67,8 +67,8 @@ def test_multiple_canvases():
             while (ct[0] < n_check or ct[1] < n_check) and time() < timeout:
                 app.process_events()
             print((ct, n_check))
-            assert n_check <= ct[0] <= n_check + 2  # be a bit lenient
-            assert n_check <= ct[1] <= n_check + 2
+            assert n_check <= ct[0] <= n_check + 20  # be quite lenient
+            assert n_check <= ct[1] <= n_check + 20
 
             # check timer
             global timer_ran
