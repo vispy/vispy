@@ -1041,8 +1041,8 @@ class GlirTexture(GlirObject):
         # if we can divide the width by the
         # alignment cleanly
         # valid alignments are 1,2,4 and 8
-        # put 4 first, since it's the default
-        alignments = [4, 8, 2, 1]
+        # 4 is the default
+        alignments = [8, 4, 2, 1]
         for alignment in alignments:
             if width % alignment == 0:
                 return alignment
