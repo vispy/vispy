@@ -495,6 +495,11 @@ class Grid(Widget):
             else:
                 y = np.sum(value_vectorized(self._height_grid[col][0:row]))
 
+            # Ensure we only update the widgets when a change occurs. Allow for
+            # floating point discrepencies in the comparisons.
+            if abs(widget.size[0] - width) < 1e-4 and abs(widget.size[1] - height) < 1e-4 and \
+                abs(widget.pos[0] - x) < 1e-4 and abs(widget.pos[1] - y) < 1e-4:
+                continue
             if isinstance(widget, ViewBox):
                 widget.rect = Rect(x, y, width, height)
             else:
