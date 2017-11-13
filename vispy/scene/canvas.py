@@ -470,7 +470,8 @@ class SceneCanvas(app.Canvas, Frozen):
         crop : array-like
             The crop (x, y, w, h) of the framebuffer to read. For picking the
             full canvas is rendered and cropped on read as it is much faster
-            than triggering transform updates across the scene with every click.
+            than triggering transform updates across the scene with every
+            click.
         """
         try:
             self._scene.picking = True

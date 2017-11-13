@@ -93,7 +93,9 @@ class Widget(Compound):
     def pos(self, p):
         assert isinstance(p, tuple)
         assert len(p) == 2
-        if p == self.pos:
+        # Handle floating point discrepancies
+        if abs(p[0] - self.pos[0]) < 1e-4 and \
+           abs(p[1] - self.pos[1]) < 1e-4:
             return
         self.transform.translate = p[0], p[1], 0, 0
         self._update_line()
@@ -111,7 +113,9 @@ class Widget(Compound):
     def size(self, s):
         assert isinstance(s, tuple)
         assert len(s) == 2
-        if self._size == s:
+        # Handle floating point discrepancies
+        if abs(s[0] - self._size[0]) < 1e-4 and \
+           abs(s[1] - self._size[1]) < 1e-4:
             return
         self._size = s
         self._update_line()
