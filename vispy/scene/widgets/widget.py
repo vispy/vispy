@@ -77,6 +77,9 @@ class Widget(Compound):
         self._bgcolor = Color(bgcolor)
         self._face_colors = None
 
+        # Flag to allow rect setter to know if pos or size changed.
+        self._pos_or_size_changed = False
+
         Compound.__init__(self, [self._mesh, self._picking_mesh], **kwargs)
 
         self.transform = STTransform()
@@ -97,6 +100,7 @@ class Widget(Compound):
         if abs(p[0] - self.pos[0]) < 1e-4 and \
            abs(p[1] - self.pos[1]) < 1e-4:
             return
+        self._pos_or_size_changed = True
         self.transform.translate = p[0], p[1], 0, 0
         self._update_line()
 
@@ -117,6 +121,7 @@ class Widget(Compound):
         if abs(s[0] - self._size[0]) < 1e-4 and \
            abs(s[1] - self._size[1]) < 1e-4:
             return
+        self._pos_or_size_changed = True
         self._size = s
         self._update_line()
         self._update_child_widgets()
@@ -239,11 +244,13 @@ class Widget(Compound):
 
     @rect.setter
     def rect(self, r):
+        self._pos_or_size_changed = False
         with self.events.resize.blocker():
             self.pos = r.pos
             self.size = r.size
-        self.update()
-        self.events.resize()
+        if self._pos_or_size_changed:
+            self.update()
+            self.events.resize()
 
     @property
     def inner_rect(self):
