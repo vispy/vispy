@@ -606,10 +606,18 @@ class ColorBarVisual(CompoundVisual):
 
     @property
     def label_str(self):
+        """ Get the string describing the label for the colorbar
+        :return: Label string value (self._label_str)
+        """
         return self._label_str
 
     @label_str.setter
     def label_str(self, label_str):
+        """ Set the string that describes the label of the colorbar
+
+        :param label_str: string describing the colorbar
+        :return:
+        """
         self._label_str = label_str
         self._update()
 
