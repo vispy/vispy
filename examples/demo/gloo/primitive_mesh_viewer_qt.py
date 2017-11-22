@@ -24,7 +24,7 @@ try:
     from PyQt5.QtWidgets import (QWidget, QSplitter, QMainWindow, QApplication,
                                  QGroupBox, QListWidget, QGridLayout, QLabel,
                                  QSpinBox, QDoubleSpinBox, QHBoxLayout,
-                                 QVBoxLayout, QSplitter)
+                                 QVBoxLayout)
 except Exception:
     from PyQt4.QtCore import pyqtSignal, QLocale, Qt
     from PyQt4.QtGui import (QApplication, QMainWindow, QWidget, QGroupBox,
