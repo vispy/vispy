@@ -59,7 +59,7 @@ else:
 # ------------------------------------------------------------- application ---
 def _prepare_js(force=False):
     pkgdir = op.dirname(__file__)
-    jsdir = op.join(pkgdir, '../../html/static/js/')
+    jsdir = op.join(pkgdir, '../../static/')
     # Make sure the JS files are installed to user directory (new argument
     # in IPython 3.0).
     if IPYTHON_MAJOR_VERSION >= 3:

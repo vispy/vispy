@@ -1,26 +1,32 @@
+"use strict";
 
+var widgets = require('@jupyter-widgets/base');
+var vispy = require('./vispy.min.js');
 
-// VispyWidget code
-define(function(require) {
-    "use strict";
-
-    function _inline_glir_commands(commands, buffers) {
-        // Put back the buffers within the GLIR commands before passing them
-        // to the GLIR JavaScript interpretor.
-        for (var i = 0; i < commands.length; i++) {
-            var command = commands[i];
-            if (command[0] == 'DATA') {
-                var buffer_index = command[3]['buffer_index'];
-                command[3] = buffers[buffer_index];
-            }
+function _inline_glir_commands(commands, buffers) {
+    // Put back the buffers within the GLIR commands before passing them
+    // to the GLIR JavaScript interpretor.
+    for (var i = 0; i < commands.length; i++) {
+        var command = commands[i];
+        if (command[0] == 'DATA') {
+            var buffer_index = command[3]['buffer_index'];
+            command[3] = buffers[buffer_index];
         }
-        return commands;
     }
+    return commands;
+}
 
-    var vispy = require("/nbextensions/vispy/vispy.min.js");
-    var widget = require("jupyter-js-widgets");
+// var vispy = require("/nbextensions/vispy/vispy.min.js");
+// var widget, control;
+// try {
+//     widget = require("@jupyter-widgets/base");
+//     control = require("@jupyter-widgets/controls");
+// } catch (e) {
+//     console.warn("Importing old ipywidgets <7.0");
+//     widget = require("jupyter-js-widgets");
+// }
 
-    var VispyView = widget.DOMWidgetView.extend({
+var VispyView = widgets.DOMWidgetView.extend({
 
         initialize: function (parameters) {
             VispyView.__super__.initialize.apply(this, [parameters]);
@@ -112,7 +118,7 @@ define(function(require) {
                 for (var i = 0; i < commands_inlined.length; i++) {
                     var command = commands[i];
                     // Replace
-                    // console.debug(command);
+                    console.debug(command);
                     this.c.command(command);
                 }
             }
@@ -135,6 +141,7 @@ define(function(require) {
         }
     });
 
-    //IPython.WidgetManager.register_widget_view('VispyView', VispyView);
-    return { 'VispyView' : VispyView };
-});
+
+module.exports = {
+    VispyView: VispyView,
+};
