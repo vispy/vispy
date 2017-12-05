@@ -71,7 +71,6 @@ class VispyWidget(widgets.DOMWidget):
     # IPython/jupyter 4, they take 3. events_received is variadic to
     # accommodate both cases.
     def events_received(self, _, msg, *args):
-        print("Event received: ", _, msg, args)
         if msg['msg_type'] == 'init':
             self.canvas_backend._reinit_widget()
         elif msg['msg_type'] == 'events':
@@ -84,7 +83,6 @@ class VispyWidget(widgets.DOMWidget):
                 _stop_timers(self.canvas_backend._vispy_canvas)
 
     def send_glir_commands(self, commands):
-        print("Commands: ", commands)
         # TODO: check whether binary websocket is available (ipython >= 3)
         # Until IPython 3.0 is released, use base64.
         array_serialization = 'base64'
