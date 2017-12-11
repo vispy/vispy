@@ -359,7 +359,7 @@ class CanvasBackend(_Window, BaseCanvasBackend):
             return
         self._vispy_canvas.events.mouse_wheel(
             delta=(float(scroll_x), float(scroll_y)),
-            pos=(x, y),
+            pos=(x, self.get_size()[1] - y),
             modifiers=self._modifiers(),
         )
 
