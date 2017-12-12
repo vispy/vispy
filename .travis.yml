@@ -9,7 +9,7 @@ addons:
   apt:
     packages:
     - &mesa_apt [libgl1-mesa-dri]
-    - &full_apt [libegl1-mesa, cmake, xorg-dev, libglu1-mesa-dev, mercurial, libdbus-1-dev, libgl1-mesa-dev, libglu1-mesa-dev, libpulse-dev, libx11-dev, libxcursor-dev, libxext-dev, libxi-dev, libxinerama-dev, libxrandr-dev, libxss-dev, libxt-dev, libxv-dev, libxxf86vm-dev, libasound2-dev, libts-dev, libudev-dev, libsdl2-2.0-0]
+    - &full_apt [libgl1-mesa-dri, libegl1-mesa, cmake, xorg-dev, libglu1-mesa-dev, mercurial, libdbus-1-dev, libgl1-mesa-dev, libglu1-mesa-dev, libpulse-dev, libx11-dev, libxcursor-dev, libxext-dev, libxi-dev, libxinerama-dev, libxrandr-dev, libxss-dev, libxt-dev, libxv-dev, libxxf86vm-dev, libasound2-dev, libts-dev, libudev-dev, libsdl2-2.0-0]
 
 # Size testing can be skipped by adding "[size skip]" within a commit message.
 
@@ -122,7 +122,7 @@ install:
         conda install --yes pyopengl scipy numpy$NUMPY networkx;
         pip install -q numpydoc PySDL2;
         if [ "${TRAVIS_OS_NAME}" == "linux" ]; then
-          conda install --yes wxpython "llvm!=3.3" matplotlib jupyter pyqt=4 pillow decorator six;
+          conda install --yes matplotlib jupyter pyqt=4 pillow decorator six;
           if [ "${PYTHON}" == "3.6" ]; then
             pip install -q freetype-py husl pypng cassowary imageio;
             rm -rf ${SRC_DIR}/vispy/ext/_bundled;
