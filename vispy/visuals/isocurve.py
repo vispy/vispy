@@ -104,9 +104,9 @@ class IsocurveVisual(LineVisual):
         # if using matplotlib isoline algorithm we have to check for meshgrid
         # and we can setup the tracer object here
         if _HAS_MPL:
-            if self._X is None or self._X.T.shape != data.shape:
-                self._X, self._Y = np.meshgrid(np.arange(data.shape[0]),
-                                               np.arange(data.shape[1]))
+            if self._X is None or self._X.shape != data.shape:
+                self._X, self._Y = np.meshgrid(np.arange(data.shape[1]),
+                                               np.arange(data.shape[0]))
             self._iso = cntr.Cntr(self._X, self._Y, self._data.astype(float))
 
         if self._clim is None:
