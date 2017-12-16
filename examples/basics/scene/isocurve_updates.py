@@ -44,13 +44,13 @@ for box in vb:
     box.camera.aspect = 1.0
 
 # Create random image
-img_data1 = np.empty((100, 100, 3), dtype=np.ubyte)
-noise = np.random.normal(size=(100, 100), loc=50, scale=150)
+img_data1 = np.empty((200, 100, 3), dtype=np.ubyte)
+noise = np.random.normal(size=(200, 100), loc=50, scale=150)
 noise = gaussian_filter(noise, (4, 4, 0))
 img_data1[:] = noise[..., np.newaxis]
 
 # create 2d array with some function
-x, y = np.mgrid[0:2*np.pi:101j, 0:2*np.pi:101j]
+x, y = np.mgrid[0:2*np.pi:201j, 0:2*np.pi:101j]
 myfunc = np.cos(2*x[:-1, :-1]) + np.sin(2*y[:-1, :-1])
 
 # add image to viewbox1
@@ -84,8 +84,8 @@ curve2b = scene.visuals.Isocurve(
     myfunc, levels=levels2, color_lev='cubehelix', parent=vb4.scene)
 
 # set viewport
-vb3.camera.set_range((0, 100), (0, 100))
-vb4.camera.set_range((0, 100), (0, 100))
+vb3.camera.set_range((-100, 200), (0, 200))
+vb4.camera.set_range((0, 100), (0, 200))
 
 
 # setup update parameters
