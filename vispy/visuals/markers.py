@@ -32,7 +32,7 @@ varying float v_edgewidth;
 varying float v_antialias;
 
 void main (void) {
-    if (a_size != 0.)
+    if (a_size > 0.)
     {
         $v_size = a_size * u_px_scale * u_scale;
         v_edgewidth = a_edgewidth * float(u_px_scale);
