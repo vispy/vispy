@@ -52,6 +52,10 @@ varying float v_antialias;
 
 void main()
 {
+    // Discard plotting marker body and edge if zero-size
+    if ($v_size <= 0.)
+        discard;
+
     float edgewidth = max(v_edgewidth, 1.0);
     float edgealphafactor = min(v_edgewidth, 1.0);
 
