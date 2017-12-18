@@ -32,17 +32,14 @@ varying float v_edgewidth;
 varying float v_antialias;
 
 void main (void) {
-    if (a_size > 0.)
-    {
-        $v_size = a_size * u_px_scale * u_scale;
-        v_edgewidth = a_edgewidth * float(u_px_scale);
-        v_antialias = u_antialias;
-        v_fg_color  = a_fg_color;
-        v_bg_color  = a_bg_color;
-        gl_Position = $transform(vec4(a_position,1.0));
-        float edgewidth = max(v_edgewidth, 1.0);
-        gl_PointSize = ($v_size) + 4.*(edgewidth + 1.5*v_antialias);
-        }
+    $v_size = a_size * u_px_scale * u_scale;
+    v_edgewidth = a_edgewidth * float(u_px_scale);
+    v_antialias = u_antialias;
+    v_fg_color  = a_fg_color;
+    v_bg_color  = a_bg_color;
+    gl_Position = $transform(vec4(a_position,1.0));
+    float edgewidth = max(v_edgewidth, 1.0);
+    gl_PointSize = ($v_size) + 4.*(edgewidth + 1.5*v_antialias);
 }
 """
 
@@ -55,6 +52,10 @@ varying float v_antialias;
 
 void main()
 {
+    // Discard plotting marker body and edge if zero-size
+    if ($v_size <= 0.)
+        discard;
+
     float edgewidth = max(v_edgewidth, 1.0);
     float edgealphafactor = min(v_edgewidth, 1.0);
 
