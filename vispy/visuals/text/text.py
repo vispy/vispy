@@ -514,6 +514,11 @@ class SDFRendererCPU(object):
         h, w = sdf.shape
         tex_w, tex_h = size
         _calc_distance_field(sdf, w, h, 32)
+        # This tweaking gets us a result more similar to the GPU SDFs,
+        # for which the text rendering code was optimized
+        sdf = 2 * sdf - 1.
+        sdf = np.sign(sdf) * np.abs(sdf) ** 0.75 / 2. + 0.5
+        # Downsample using NumPy (because we can't guarantee SciPy)
         xp = (np.arange(w) + 0.5) / float(w)
         x = (np.arange(tex_w) + 0.5) / float(tex_w)
         bitmap = np.array([np.interp(x, xp, ss) for ss in sdf])
