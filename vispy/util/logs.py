@@ -249,11 +249,11 @@ class use_log_level(object):
 def log_exception(level='warning', tb_skip=2):
     """
     Send an exception and traceback to the logger.
-    
+
     This function is used in cases where an exception is handled safely but
     nevertheless should generate a descriptive error message. An extra line
     is inserted into the stack trace indicating where the exception was caught.
-    
+
     Parameters
     ----------
     level : str

@@ -38,13 +38,16 @@ import os
 from os import path as op
 from warnings import warn
 
+from Cython.Distutils import build_ext
+import numpy as np
+
 try:
     # use setuptools namespace, allows for "develop"
     import setuptools  # noqa, analysis:ignore
 except ImportError:
     warn("unable to load setuptools. 'setup.py develop' will not work")
     pass  # it's not essential for installation
-from distutils.core import setup
+from distutils.core import setup, Extension
 
 name = 'vispy'
 description = 'Interactive visualization in Python'
@@ -76,6 +79,10 @@ def package_tree(pkgroot):
     return subdirs
 
 
+extensions = [Extension('vispy.visuals.text._sdf_cpu',
+                        [op.join('vispy', 'visuals', 'text', '_sdf_cpu.pyx')]),
+              ]
+
 setup(
     name=name,
     version=__version__,
@@ -103,6 +110,9 @@ setup(
         'wx': ['wxPython'],
     },
     packages=package_tree('vispy'),
+    cmdclass=dict(build_ext=build_ext),
+    ext_modules=extensions,
+    include_dirs=[np.get_include()],
     package_dir={
         'vispy': 'vispy'},
     package_data={

@@ -14,7 +14,8 @@ import numpy as np
 from copy import deepcopy
 import sys
 
-from ._sdf import SDFRenderer
+from ._sdf_gpu import SDFRendererGPU
+from ._sdf_cpu import _calc_distance_field
 from ...gloo import (TextureAtlas, IndexBuffer, VertexBuffer)
 from ...gloo import context
 from ...gloo.wrappers import _check_valid
@@ -48,6 +49,8 @@ class TextureFont(object):
         # spread/border at the high-res for SDF calculation; must be chosen
         # relative to fragment_insert.glsl multiplication factor to ensure we
         # get to zero at the edges of characters
+        # This is also used in SDFRendererCPU, so changing this needs to
+        # propagate at least 2 other places.
         self._spread = 32
         assert self._spread % self.ratio == 0
         self._glyphs = {}
@@ -110,11 +113,18 @@ class TextureFont(object):
 
 class FontManager(object):
     """Helper to create TextureFont instances and reuse them when possible"""
-    # todo: store a font-manager on each context,
+    # XXX: should store a font-manager on each context,
     # or let TextureFont use a TextureAtlas for each context
-    def __init__(self):
+    def __init__(self, method='cpu'):
         self._fonts = {}
-        self._renderer = SDFRenderer()
+        if not isinstance(method, string_types) or \
+                method not in ('cpu', 'gpu'):
+            raise ValueError('method must be "cpu" or "gpu", got %s (%s)'
+                             % (method, type(method)))
+        if method == 'cpu':
+            self._renderer = SDFRendererCPU()
+        else:  # method == 'gpu':
+            self._renderer = SDFRendererGPU()
 
     def get_font(self, face, bold=False, italic=False):
         """Get a font described by face and size"""
@@ -493,3 +503,25 @@ class TextVisual(Visual):
 
     def _compute_bounds(self, axis, view):
         return self._pos[:, axis].min(), self._pos[:, axis].max()
+
+
+class SDFRendererCPU(object):
+    """Render SDFs using the CPU."""
+    # This should probably live in _sdf_cpu.pyx, but doing so makes
+    # debugging substantially more annoying
+    def render_to_texture(self, data, texture, offset, size):
+        sdf = (data / 255).astype(np.float32)  # from ubyte -> float
+        h, w = sdf.shape
+        tex_w, tex_h = size
+        _calc_distance_field(sdf, w, h, 32)
+        xp = (np.arange(w) + 0.5) / float(w)
+        x = (np.arange(tex_w) + 0.5) / float(tex_w)
+        bitmap = np.array([np.interp(x, xp, ss) for ss in sdf])
+        xp = (np.arange(h) + 0.5) / float(h)
+        x = (np.arange(tex_h) + 0.5) / float(tex_h)
+        bitmap = np.array([np.interp(x, xp, ss) for ss in bitmap.T]).T
+        assert bitmap.shape[::-1] == size
+        bitmap = np.tile(bitmap[..., np.newaxis].astype(np.float32),
+                         (1, 1, 3))
+        texture[offset[1]:offset[1] + size[1],
+                offset[0]:offset[0] + size[0], :] = bitmap
