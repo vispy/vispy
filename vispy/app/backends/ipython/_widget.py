@@ -3,18 +3,13 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 try:
-    try:
-        # ipython >=3.0
-        from ipywidgets import widgets
-        from traitlets import Unicode, Int, Bool
-    except ImportError:
-        # ipython <3.0
-        from IPython.html import widgets
-        from IPython.utils.traitlets import Unicode, Int, Bool
+    from ipywidgets.widgets import DOMWidget, register
+    from traitlets import Unicode, Int, Bool
 except Exception as exp:
-    # Init dummy objects needed to import this module withour errors.
+    # Init dummy objects needed to import this module without errors.
     # These are all overwritten with imports from IPython (on success)
     DOMWidget = object
+    register = lambda x: x
     Unicode = Int = Float = Bool = lambda *args, **kwargs: None
     available, testable, why_not, which = False, False, str(exp), None
 else:
@@ -37,20 +32,18 @@ def _stop_timers(canvas):
             attr_obj.stop()
 
 
-@widgets.register
-class VispyWidget(widgets.DOMWidget):
-    _view_name = Unicode("VispyView", sync=True)
-    _view_module = Unicode('vispy', sync=True)
-    # _view_module = Unicode('vispy', sync=True)
-    # XXX: Is the `sync` still needed in ipywidgets 7.0+?
-    _view_module_version = Unicode('0.1.0', sync=True)
+@register
+class VispyWidget(DOMWidget):
+    _view_name = Unicode("VispyView").tag(sync=True)
+    _view_module = Unicode('vispy').tag(sync=True)
+    _view_module_version = Unicode('0.1.0').tag(sync=True)
 
     #height/width of the widget is managed by IPython.
     #it's a string and can be anything valid in CSS.
     #here we only manage the size of the viewport.
-    width = Int(sync=True)
-    height = Int(sync=True)
-    resizable = Bool(value=True, sync=True)
+    width = Int('width').tag(sync=True)
+    height = Int('height').tag(sync=True)
+    resizable = Bool('resizable', value=True).tag(sync=True)
 
     def __init__(self, **kwargs):
         super(VispyWidget, self).__init__(**kwargs)
@@ -67,18 +60,15 @@ class VispyWidget(widgets.DOMWidget):
         self.gen_event = self.canvas_backend._gen_event
         #setup the backend widget then.
 
-    # In IPython < 4, these callbacks are given two arguments; in
-    # IPython/jupyter 4, they take 3. events_received is variadic to
-    # accommodate both cases.
-    def events_received(self, _, msg, *args):
-        if msg['msg_type'] == 'init':
+    def events_received(self, widget, content, buffers):
+        if content['msg_type'] == 'init':
             self.canvas_backend._reinit_widget()
-        elif msg['msg_type'] == 'events':
-            events = msg['contents']
+        elif content['msg_type'] == 'events':
+            events = content['contents']
             for ev in events:
                 self.gen_event(ev)
-        elif msg['msg_type'] == 'status':
-            if msg['contents'] == 'removed':
+        elif content['msg_type'] == 'status':
+            if content['contents'] == 'removed':
                 # Stop all timers associated to the widget.
                 _stop_timers(self.canvas_backend._vispy_canvas)
 
