@@ -9,8 +9,20 @@ except Exception as exp:
     # Init dummy objects needed to import this module without errors.
     # These are all overwritten with imports from IPython (on success)
     DOMWidget = object
-    register = lambda x: x
-    Unicode = Int = Float = Bool = lambda *args, **kwargs: None
+
+    def _noop(x):
+        return x
+    
+    register = _noop
+
+    class _MockTraitlet(object):
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def tag(self, *args, **kwargs):
+            pass
+
+    Unicode = Int = Float = Bool = _MockTraitlet
     available, testable, why_not, which = False, False, str(exp), None
 else:
     available, testable, why_not, which = True, False, None, None
