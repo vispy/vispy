@@ -53,9 +53,9 @@ class VispyWidget(DOMWidget):
     #height/width of the widget is managed by IPython.
     #it's a string and can be anything valid in CSS.
     #here we only manage the size of the viewport.
-    width = Int('width').tag(sync=True)
-    height = Int('height').tag(sync=True)
-    resizable = Bool('resizable', value=True).tag(sync=True)
+    width = Int().tag(sync=True)
+    height = Int().tag(sync=True)
+    resizable = Bool(value=True).tag(sync=True)
 
     def __init__(self, **kwargs):
         super(VispyWidget, self).__init__(**kwargs)
@@ -85,19 +85,14 @@ class VispyWidget(DOMWidget):
                 _stop_timers(self.canvas_backend._vispy_canvas)
 
     def send_glir_commands(self, commands):
-        # TODO: check whether binary websocket is available (ipython >= 3)
-        # Until IPython 3.0 is released, use base64.
-        array_serialization = 'base64'
-        # array_serialization = 'binary'
+        # older versions of ipython (<3.0) use base64
+        # array_serialization = 'base64'
+        array_serialization = 'binary'
+        msg = create_glir_message(commands, array_serialization)
+        msg['array_serialization'] = array_serialization
         if array_serialization == 'base64':
-            msg = create_glir_message(commands, 'base64')
-            msg['array_serialization'] = 'base64'
             self.send(msg)
         elif array_serialization == 'binary':
-            msg = create_glir_message(commands, 'binary')
-            msg['array_serialization'] = 'binary'
             # Remove the buffers from the JSON message: they will be sent
             # independently via binary WebSocket.
-            buffers = msg.pop('buffers')
-            self.comm.send({"method": "custom", "content": msg},
-                           buffers=buffers)
+            self.send(msg, buffers=msg.pop('buffers', None))

@@ -177,9 +177,7 @@ var VispyView = widgets.DOMWidgetView.extend({
             this.c.resizable();
         },
 
-        on_msg: function(comm_msg) {
-            var buffers = comm_msg.buffers;
-            var msg = comm_msg; //.content.data.content;
+        on_msg: function(msg, buffers) {
             if (msg == undefined) return;
             // Receive and execute the GLIR commands.
             if (msg.msg_type == 'glir_commands') {
@@ -187,8 +185,7 @@ var VispyView = widgets.DOMWidgetView.extend({
                 // Get the buffers messages.
                 if (msg.array_serialization == 'base64') {
                     var buffers_msg = msg.buffers;
-                }
-                else if (msg.array_serialization == 'binary') {
+                } else if (msg.array_serialization == 'binary') {
                     // Need to put the raw binary buffers in JavaScript
                     // objects for the inline commands.
                     var buffers_msg = [];
@@ -206,8 +203,6 @@ var VispyView = widgets.DOMWidgetView.extend({
                     commands, buffers_msg);
                 for (var i = 0; i < commands_inlined.length; i++) {
                     var command = commands[i];
-                    // Replace
-                    console.debug(command);
                     this.c.command(command);
                 }
             }
