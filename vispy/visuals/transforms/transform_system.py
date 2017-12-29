@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division
@@ -72,8 +72,6 @@ class TransformSystem(object):
 
     Examples
     --------
-    Use by Visuals
-    ~~~~~~~~~~~~~~
 
     1. To convert local vertex coordinates to normalized device coordinates in
     the vertex shader, we first need a vertex shader that supports configurable

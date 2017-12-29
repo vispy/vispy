@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division
@@ -193,7 +193,7 @@ class IsolineVisual(LineVisual):
         # try _color_lev as colormap, except as everything else
         try:
             f_color_levs = get_colormap(self._color_lev)
-        except:
+        except (KeyError, TypeError):
             colors = ColorArray(self._color_lev).rgba
         else:
             lev = _normalize(self._levels, self._levels.min(),

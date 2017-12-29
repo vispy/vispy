@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 """
 Cameras are responsible for determining which part of a scene is displayed
@@ -15,6 +15,9 @@ Internally, Cameras work by setting the transform of a SubScene object such
 that a certain part of the scene is mapped to the bounding rectangle of the 
 ViewBox.
 """
+__all__ = ['ArcballCamera', 'BaseCamera', 'FlyCamera', 'MagnifyCamera',
+           'Magnify1DCamera', 'PanZoomCamera', 'TurntableCamera']
+
 from ._base import make_camera  # noqa
 from .base_camera import BaseCamera  # noqa
 from .panzoom import PanZoomCamera  # noqa

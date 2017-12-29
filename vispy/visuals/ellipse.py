@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 
@@ -27,6 +27,8 @@ class EllipseVisual(PolygonVisual):
         The border color to use.
     border_width: float
         The width of the border in pixels
+        Line widths > 1px are only
+        guaranteed to work when using `border_method='agg'` method.
     radius : float | tuple
         Radius or radii of the ellipse
         Defaults to  (0.1, 0.1)
@@ -35,10 +37,12 @@ class EllipseVisual(PolygonVisual):
         Defaults to 0.
     span_angle : float
         Span angle of the ellipse in degrees
-        Defaults to 0.
+        Defaults to 360.
     num_segments : int
         Number of segments to be used to draw the ellipse
         Defaults to 100
+    **kwargs : dict
+        Keyword arguments to pass to `PolygonVisual`.
     """
     def __init__(self, center=None, color='black', border_color=None,
                  border_width=1, radius=(0.1, 0.1), start_angle=0.,
@@ -49,11 +53,14 @@ class EllipseVisual(PolygonVisual):
         self._span_angle = span_angle
         self._num_segments = num_segments
 
+        # triangulation can be very slow
+        kwargs.setdefault('triangulate', False)
         PolygonVisual.__init__(self, pos=None, color=color,
                                border_color=border_color,
                                border_width=border_width, **kwargs)
 
         self._mesh.mode = "triangle_fan"
+        self._regen_pos()
         self._update()
 
     @staticmethod
@@ -79,11 +86,11 @@ class EllipseVisual(PolygonVisual):
                             num_segments + 1)
 
         # PolarProjection
-        vertices[:-1, 0] = center[0] + xr * np.cos(theta)
-        vertices[:-1, 1] = center[1] + yr * np.sin(theta)
+        vertices[1:, 0] = center[0] + xr * np.cos(theta)
+        vertices[1:, 1] = center[1] + yr * np.sin(theta)
 
-        # close the curve
-        vertices[num_segments + 1] = np.float32([center[0], center[1]])
+        # specify center point (not used in border)
+        vertices[0] = np.float32([center[0], center[1]])
 
         return vertices
 
@@ -98,6 +105,7 @@ class EllipseVisual(PolygonVisual):
         """ The center of the ellipse
         """
         self._center = center
+        self._regen_pos()
         self._update()
 
     @property
@@ -109,6 +117,7 @@ class EllipseVisual(PolygonVisual):
     @radius.setter
     def radius(self, radius):
         self._radius = radius
+        self._regen_pos()
         self._update()
 
     @property
@@ -120,6 +129,7 @@ class EllipseVisual(PolygonVisual):
     @start_angle.setter
     def start_angle(self, start_angle):
         self._start_angle = start_angle
+        self._regen_pos()
         self._update()
 
     @property
@@ -131,6 +141,7 @@ class EllipseVisual(PolygonVisual):
     @span_angle.setter
     def span_angle(self, span_angle):
         self._span_angle = span_angle
+        self._regen_pos()
         self._update()
 
     @property
@@ -146,34 +157,14 @@ class EllipseVisual(PolygonVisual):
             raise ValueError('EllipseVisual must consist of more than 1 '
                              'segment')
         self._num_segments = num_segments
+        self._regen_pos()
         self._update()
 
-    def _update(self):
-        if self._center is None:
-            return
-
+    def _regen_pos(self):
         vertices = self._generate_vertices(center=self._center,
                                            radius=self._radius,
                                            start_angle=self._start_angle,
                                            span_angle=self._span_angle,
                                            num_segments=self._num_segments)
-
-        # NOTE: we do not use PolygonVisual's
-        # inbuilt update() because the triangulation method
-        # it uses is expensive. See discussion on
-        # (campagnola/vispy #2) for more details
-        if not self._color.is_blank:
-            self._mesh.set_data(vertices=vertices,
-                                color=self._color.rgba)
-
-        # connect vertices for a closed loop when
-        # drawing the border. However, delete the last
-        # vertex so there is no line connecting the center
-        # to the border
-        if not self._border_color.is_blank:
-            border_pos = vertices[:-1]
-
-            self._border.set_data(pos=border_pos,
-                                  color=self._border_color.rgba,
-                                  width=self._border_width,
-                                  connect='strip')
+        # don't use the center point
+        self._pos = vertices[1:]

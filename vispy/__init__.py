@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """
@@ -22,7 +22,7 @@ from __future__ import division
 __all__ = ['use', 'sys_info', 'set_log_level', 'test']
 
 # Definition of the version number
-version_info = 0, 5, 0, 'dev0'  # major, minor, patch, extra
+version_info = 0, 6, 0, 'dev0'  # major, minor, patch, extra
 
 # Nice string for the version (mimic how IPython composes its version str)
 __version__ = '-'.join(map(str, version_info)).replace('-', '.').strip('-')

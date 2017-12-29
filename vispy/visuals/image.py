@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division
@@ -43,7 +43,7 @@ vec4 map_local_to_tex(vec4 x) {
     vec4 d = p2 - p1;
     float f = p2.z / d.z;
     vec4 p3 = p2 - d * f;
-    
+
     // finally map local to texture coords
     return vec4(p3.xy / image_size, 0, 1);
 }
@@ -56,17 +56,14 @@ void main()
         texcoord = v_texcoord;
     }
     else {
-        // vertex shader ouptuts clip coordinates; 
+        // vertex shader ouptuts clip coordinates;
         // fragment shader maps to texture coordinates
         texcoord = map_local_to_tex(vec4(v_texcoord, 0, 1)).xy;
     }
-    
+
     gl_FragColor = $color_transform($get_data(texcoord));
 }
 """  # noqa
-
-_null_color_transform = 'vec4 pass(vec4 color) { return color; }'
-_c2l = 'float cmap(vec4 color) { return (color.r + color.g + color.b) / 3.; }'
 
 _interpolation_template = """
     #include "misc/spatial-filters.frag"
@@ -86,6 +83,18 @@ _texture_lookup = """
         }
         return texture2D($texture, texcoord);
     }"""
+
+
+_null_color_transform = 'vec4 pass(vec4 color) { return color; }'
+_c2l = 'float cmap(vec4 color) { return (color.r + color.g + color.b) / 3.; }'
+
+
+def _build_color_transform(data, cmap):
+    if data.ndim == 2 or data.shape[2] == 1:
+        fun = FunctionChain(None, [Function(_c2l), Function(cmap.glsl_map)])
+    else:
+        fun = Function(_null_color_transform)
+    return fun
 
 
 class ImageVisual(Visual):
@@ -382,16 +391,6 @@ class ImageVisual(Visual):
         view._need_method_update = False
         self._prepare_transforms(view)
 
-    def _build_color_transform(self):
-        data = self._data
-        if data.ndim == 2 or data.shape[2] == 1:
-            fun = FunctionChain(None, [Function(_c2l),
-                                       Function(self._cmap.glsl_map)])
-        else:
-            fun = Function(_null_color_transform)
-        self.shared_program.frag['color_transform'] = fun
-        self._need_colortransform_update = False
-
     def _build_texture(self):
         data = self._data
         if data.dtype == np.float64:
@@ -442,7 +441,9 @@ class ImageVisual(Visual):
             self._build_texture()
 
         if self._need_colortransform_update:
-            self._build_color_transform()
+            self.shared_program.frag['color_transform'] = \
+                _build_color_transform(self._data, self.cmap)
+            self._need_colortransform_update = False
 
         if self._need_vertex_update:
             self._build_vertex_data()

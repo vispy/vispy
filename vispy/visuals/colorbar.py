@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 # Author: Siddharth Bhat
@@ -295,8 +295,10 @@ class ColorBarVisual(CompoundVisual):
         self._label = TextVisual(self._label_str, color=self._label_color)
 
         self._ticks = []
-        self._ticks.append(TextVisual(str(self._clim[0]), color=self._label_color))
-        self._ticks.append(TextVisual(str(self._clim[1]), color=self._label_color))
+        self._ticks.append(TextVisual(str(self._clim[0]),
+                                      color=self._label_color))
+        self._ticks.append(TextVisual(str(self._clim[1]),
+                                      color=self._label_color))
 
         if orientation in ["top", "bottom"]:
             (width, height) = size

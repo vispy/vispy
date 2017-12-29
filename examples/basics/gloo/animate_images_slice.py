@@ -21,13 +21,13 @@ from vispy.visuals.shaders import ModularProgram
 D, H, W = 30, 60, 90
 
 # Modulated image
-I = np.random.uniform(0, 0.1, (D, H, W, 3)).astype(np.float32)
+img_array = np.random.uniform(0, 0.1, (D, H, W, 3)).astype(np.float32)
 # Depth slices are dark->light
-I[...] += np.linspace(0, 0.9, D)[:, np.newaxis, np.newaxis, np.newaxis]
+img_array[...] += np.linspace(0, 0.9, D)[:, np.newaxis, np.newaxis, np.newaxis]
 # Make vertical direction more green moving upward
-I[..., 1] *= np.linspace(0, 1, H)[np.newaxis, :, np.newaxis]
+img_array[..., 1] *= np.linspace(0, 1, H)[np.newaxis, :, np.newaxis]
 # Make horizontal direction more red moving rightward
-I[..., 0] *= np.linspace(0, 1, W)[np.newaxis, np.newaxis, :]
+img_array[..., 0] *= np.linspace(0, 1, W)[np.newaxis, np.newaxis, :]
 
 # A simple texture quad
 data = np.zeros(4, dtype=[('a_position', np.float32, 2),
@@ -80,7 +80,7 @@ class Canvas(app.Canvas):
             tex_cls = gloo.TextureEmulated3D
         else:
             tex_cls = gloo.Texture3D
-        self.texture = tex_cls(I, interpolation='nearest',
+        self.texture = tex_cls(img_array, interpolation='nearest',
                                wrapping='clamp_to_edge')
 
         self.program = ModularProgram(VERT_SHADER, FRAG_SHADER)

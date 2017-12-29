@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
@@ -12,10 +12,11 @@ from __future__ import division
 import numpy as np
 
 from .visual import Visual
-from .shaders import Function, Varying
+from .shaders import Function, FunctionChain
 from ..gloo import VertexBuffer, IndexBuffer
 from ..geometry import MeshData
-from ..color import Color
+from ..color import Color, get_colormap
+from ..ext.six import string_types
 
 
 # Shaders for lit rendering (using phong shading)
@@ -28,12 +29,10 @@ varying vec4 v_ambientk;
 varying vec4 v_light_color;
 varying vec4 v_base_color;
 
-
 void main() {
-
     v_ambientk = $ambientk;
     v_light_color = $light_color;
-    v_base_color = $base_color;
+    v_base_color = $color_transform($base_color);
 
 
     vec4 pos_scene = $visual2scene($to_vec4($position));
@@ -76,46 +75,42 @@ varying vec4 v_light_color;
 varying vec4 v_base_color;
 
 void main() {
-
-
     //DIFFUSE
     float diffusek = dot(v_light_vec, v_normal_vec);
-    //clamp, because 0 < theta < pi/2
+    // clamp, because 0 < theta < pi/2
     diffusek  = clamp(diffusek, 0.0, 1.0);
     vec4 diffuse_color = v_light_color * diffusek;
-    //diffuse_color.a = 1.0;
 
     //SPECULAR
     //reflect light wrt normal for the reflected ray, then
     //find the angle made with the eye
-    float speculark = dot(reflect(v_light_vec, v_normal_vec), v_eye_vec);
-    speculark = clamp(speculark, 0.0, 1.0);
-    //raise to the material's shininess, multiply with a
-    //small factor for spread
-    speculark = 20.0 * pow(speculark, 200.0);
-
+    float speculark = 0.0;
+    if ($shininess > 0) {
+        speculark = dot(reflect(v_light_vec, v_normal_vec), v_eye_vec);
+        speculark = clamp(speculark, 0.0, 1.0);
+        //raise to the material's shininess, multiply with a
+        //small factor for spread
+        speculark = 20.0 * pow(speculark, 1.0 / $shininess);
+    }
     vec4 specular_color = v_light_color * speculark;
-
-
-    gl_FragColor =
-       v_base_color * (v_ambientk + diffuse_color) + specular_color;
-
-    //gl_FragColor = vec4(speculark, 0, 1, 1.0);
-
-
+    gl_FragColor = v_base_color * (v_ambientk + diffuse_color) + specular_color;
 }
-"""
+"""  # noqa
 
 # Shader code for non lighted rendering
 vertex_template = """
+varying vec4 v_base_color;
+
 void main() {
+    v_base_color = $color_transform($base_color);
     gl_Position = $transform($to_vec4($position));
 }
 """
 
 fragment_template = """
+varying vec4 v_base_color;
 void main() {
-    gl_FragColor = $color;
+    gl_FragColor = v_base_color;
 }
 """
 
@@ -136,6 +131,23 @@ vec4 vec2to4(vec2 xyz) {
 """)
 
 
+_null_color_transform = 'vec4 pass(vec4 color) { return color; }'
+_clim = 'float cmap(float val) { return (val - $cmin) / ($cmax - $cmin); }'
+
+
+# Eventually this could be de-duplicated with visuals/image.py, which does
+# something similar (but takes a ``color`` instead of ``float``)
+def _build_color_transform(data, cmap, clim=(0., 1.)):
+    if data.ndim == 2 and data.shape[1] == 1:
+        fun = Function(_clim)
+        fun['cmin'] = clim[0]
+        fun['cmax'] = clim[1]
+        fun = FunctionChain(None, [fun, Function(cmap.glsl_map)])
+    else:
+        fun = Function(_null_color_transform)
+    return fun
+
+
 class MeshVisual(Visual):
     """Mesh visual
 
@@ -151,6 +163,8 @@ class MeshVisual(Visual):
         Colors to use for each face.
     color : instance of Color
         The color to use.
+    vertex_values : array-like | None
+        The values to use for each vertex (for colormapping).
     meshdata : instance of MeshData | None
         The meshdata.
     shading : str | None
@@ -161,8 +175,8 @@ class MeshVisual(Visual):
         Keyword arguments to pass to `Visual`.
     """
     def __init__(self, vertices=None, faces=None, vertex_colors=None,
-                 face_colors=None, color=(0.5, 0.5, 1, 1), meshdata=None,
-                 shading=None, mode='triangles', **kwargs):
+                 face_colors=None, color=(0.5, 0.5, 1, 1), vertex_values=None,
+                 meshdata=None, shading=None, mode='triangles', **kwargs):
 
         # Function for computing phong shading
         # self._phong = Function(phong_template)
@@ -187,30 +201,32 @@ class MeshVisual(Visual):
         self._vertices = VertexBuffer(np.zeros((0, 3), dtype=np.float32))
         self._normals = None
         self._faces = IndexBuffer()
-        self._colors = VertexBuffer(np.zeros((0, 4), dtype=np.float32))
         self._normals = VertexBuffer(np.zeros((0, 3), dtype=np.float32))
+        self._ambient_light_color = Color((0.3, 0.3, 0.3, 1.0))
+        self._light_dir = (10, 5, -5)
+        self._shininess = 1. / 200.
+        self._cmap = get_colormap('cubehelix')
+        self._clim = 'auto'
 
         # Uniform color
         self._color = Color(color)
-
-        # varyings
-        self._color_var = Varying('v_color', dtype='vec4')
 
         # Init
         self._bounds = None
         # Note we do not call subclass set_data -- often the signatures
         # do no match.
-        MeshVisual.set_data(self, vertices=vertices, faces=faces,
-                            vertex_colors=vertex_colors,
-                            face_colors=face_colors, meshdata=meshdata,
-                            color=color)
+        MeshVisual.set_data(
+            self, vertices=vertices, faces=faces, vertex_colors=vertex_colors,
+            face_colors=face_colors, vertex_values=vertex_values,
+            meshdata=meshdata, color=color)
 
         # primitive mode
         self._draw_mode = mode
         self.freeze()
 
     def set_data(self, vertices=None, faces=None, vertex_colors=None,
-                 face_colors=None, color=None, meshdata=None):
+                 face_colors=None, color=None, vertex_values=None,
+                 meshdata=None):
         """Set the mesh data
 
         Parameters
@@ -225,6 +241,8 @@ class MeshVisual(Visual):
             Colors to use for each face.
         color : instance of Color
             The color to use.
+        vertex_values : array-like | None
+            Values for each vertex.
         meshdata : instance of MeshData | None
             The meshdata.
         """
@@ -233,10 +251,49 @@ class MeshVisual(Visual):
         else:
             self._meshdata = MeshData(vertices=vertices, faces=faces,
                                       vertex_colors=vertex_colors,
-                                      face_colors=face_colors)
+                                      face_colors=face_colors,
+                                      vertex_values=vertex_values)
         self._bounds = self._meshdata.get_bounds()
         if color is not None:
             self._color = Color(color)
+        self.mesh_data_changed()
+
+    @property
+    def clim(self):
+        return (self._clim if isinstance(self._clim, string_types) else
+                tuple(self._clim))
+
+    @clim.setter
+    def clim(self, clim):
+        if isinstance(clim, string_types):
+            if clim != 'auto':
+                raise ValueError('clim must be "auto" if a string')
+        else:
+            clim = np.array(clim, float)
+            if clim.shape != (2,):
+                raise ValueError('clim must have two elements')
+        self._clim = clim
+        self.mesh_data_changed()
+
+    @property
+    def _clim_values(self):
+        if isinstance(self._clim, string_types):  # == 'auto'
+            if self._meshdata.has_vertex_value():
+                clim = self._meshdata.get_vertex_values()
+                clim = (np.min(clim), np.max(clim))
+            else:
+                clim = (0, 1)
+        else:
+            clim = self._clim
+        return clim
+
+    @property
+    def cmap(self):
+        return self._cmap
+
+    @cmap.setter
+    def cmap(self, cmap):
+        self._cmap = get_colormap(cmap)
         self.mesh_data_changed()
 
     @property
@@ -268,15 +325,21 @@ class MeshVisual(Visual):
 
     @property
     def color(self):
-        """The uniform color for this mesh.
-
-        This value is only used if per-vertex or per-face colors are not
-        specified.
-        """
+        """The uniform color for this mesh"""
         return self._color
 
     @color.setter
     def color(self, c):
+        """Set the uniform color of the mesh
+
+        This value is only used if per-vertex or per-face colors are not
+        specified.
+
+        Parameters
+        ----------
+        c : instance of Color
+            The color to use.
+        """
         if c is not None:
             self._color = Color(c)
         self.mesh_data_changed()
@@ -299,12 +362,20 @@ class MeshVisual(Visual):
             self._faces.set_data(md.get_faces(), convert=True)
             self._index_buffer = self._faces
             if md.has_vertex_color():
-                self._colors.set_data(md.get_vertex_colors(), convert=True)
+                colors = md.get_vertex_colors()
+                colors = colors.astype(np.float32)
             elif md.has_face_color():
-                self._colors.set_data(md.get_face_colors(), convert=True)
+                colors = md.get_face_colors()
+                colors = colors.astype(np.float32)
+            elif md.has_vertex_value():
+                colors = md.get_vertex_values()[:, np.newaxis]
+                colors = colors.astype(np.float32)
             else:
-                self._colors.set_data(np.zeros((0, 4), dtype=np.float32))
+                colors = self._color.rgba
         else:
+            # It might actually be slower to prefer the indexed='faces' mode.
+            # It certainly adds some complexity, and I'm not sure what the
+            # benefits are, or if they justify this additional complexity.
             v = md.get_vertices(indexed='faces')
             if v is None:
                 return False
@@ -321,13 +392,17 @@ class MeshVisual(Visual):
                 self._normals.set_data(np.zeros((0, 3), dtype=np.float32))
             self._index_buffer = None
             if md.has_vertex_color():
-                self._colors.set_data(md.get_vertex_colors(indexed='faces'),
-                                      convert=True)
+                colors = md.get_vertex_colors(indexed='faces')
+                colors = colors.astype(np.float32)
             elif md.has_face_color():
-                self._colors.set_data(md.get_face_colors(indexed='faces'),
-                                      convert=True)
+                colors = md.get_face_colors(indexed='faces')
+                colors = colors.astype(np.float32)
+            elif md.has_vertex_value():
+                colors = md.get_vertex_values(indexed='faces')
+                colors = colors.ravel()[:, np.newaxis]
+                colors = colors.astype(np.float32)
             else:
-                self._colors.set_data(np.zeros((0, 4), dtype=np.float32))
+                colors = self._color.rgba
         self.shared_program.vert['position'] = self._vertices
 
         # Position input handling
@@ -338,18 +413,18 @@ class MeshVisual(Visual):
         else:
             raise TypeError("Vertex data must have shape (...,2) or (...,3).")
 
-        # Color input handling
+        # Shading and colors
+        #
         # If non-lit shading is used, then just pass the colors
         # Otherwise, the shader uses a base_color to represent the underlying
         # color, which is then lit with the lighting model
-        colors = self._colors if self._colors.size > 0 else self._color.rgba
-        if self.shading is None:
-            self.shared_program.vert[self._color_var] = colors
-
-        # Shading
-        if self.shading is None:
-            self.shared_program.frag['color'] = self._color_var
+        self.shared_program.vert['color_transform'] = \
+            _build_color_transform(colors, self._cmap, self._clim_values)
+        if colors.ndim == 1:
+            self.shared_program.vert['base_color'] = colors
         else:
+            self.shared_program.vert['base_color'] = VertexBuffer(colors)
+        if self.shading is not None:
             # Normal data comes via vertex shader
             if self._normals.size > 0:
                 normals = self._normals
@@ -357,14 +432,69 @@ class MeshVisual(Visual):
                 normals = (1., 0., 0.)
 
             self.shared_program.vert['normal'] = normals
-            self.shared_program.vert['base_color'] = colors
 
             # Additional phong properties
-            self.shared_program.vert['light_dir'] = (10, 5, -5)
+            self.shared_program.vert['light_dir'] = self._light_dir
             self.shared_program.vert['light_color'] = (1.0, 1.0, 1.0, 1.0)
-            self.shared_program.vert['ambientk'] = (0.3, 0.3, 0.3, 1.0)
+            self.shared_program.vert['ambientk'] = \
+                self._ambient_light_color.rgba
+            self.shared_program.frag['shininess'] = self._shininess
 
         self._data_changed = False
+
+    @property
+    def shininess(self):
+        """The shininess"""
+        return self._shininess
+
+    @shininess.setter
+    def shininess(self, shine):
+        """Set the shininess
+
+        Parameters
+        ----------
+        shine : float
+            The shininess to use.
+        """
+        self._shininess = float(shine)
+        self.mesh_data_changed()
+
+    @property
+    def ambient_light_color(self):
+        """The ambient light color"""
+        return self._ambient_light_color
+
+    @ambient_light_color.setter
+    def ambient_light_color(self, ambient):
+        """Set the ambient light
+
+        Parameters
+        ----------
+        color : instance of Color
+            The color to use.
+        """
+        self._ambient_light_color = Color(ambient)
+        self.mesh_data_changed()
+
+    @property
+    def light_dir(self):
+        """The light direction"""
+        return self._light_dir
+
+    @light_dir.setter
+    def light_dir(self, direction):
+        """Set the light direction
+
+        Parameters
+        ----------
+        direction : ndarray, shape (3,)
+            The light direction.
+        """
+        direction = np.array(direction, float).ravel()
+        if direction.size != 3 or not np.isfinite(direction).all():
+            raise ValueError('Invalid direction %s' % direction)
+        self._light_dir = tuple(direction)
+        self.mesh_data_changed()
 
     @property
     def shading(self):

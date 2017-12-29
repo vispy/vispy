@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 """
@@ -33,13 +33,13 @@ varying float v_antialias;
 
 void main (void) {
     $v_size = a_size * u_px_scale * u_scale;
-    v_edgewidth = a_edgewidth * u_px_scale;
+    v_edgewidth = a_edgewidth * float(u_px_scale);
     v_antialias = u_antialias;
     v_fg_color  = a_fg_color;
     v_bg_color  = a_bg_color;
     gl_Position = $transform(vec4(a_position,1.0));
     float edgewidth = max(v_edgewidth, 1.0);
-    gl_PointSize = $v_size + 4*(edgewidth + 1.5*v_antialias);
+    gl_PointSize = ($v_size) + 4.*(edgewidth + 1.5*v_antialias);
 }
 """
 
@@ -52,10 +52,14 @@ varying float v_antialias;
 
 void main()
 {
+    // Discard plotting marker body and edge if zero-size
+    if ($v_size <= 0.)
+        discard;
+
     float edgewidth = max(v_edgewidth, 1.0);
     float edgealphafactor = min(v_edgewidth, 1.0);
 
-    float size = $v_size + 4*(edgewidth + 1.5*v_antialias);
+    float size = $v_size + 4.*(edgewidth + 1.5*v_antialias);
     // factor 6 for acute edge angles that need room as for star marker
 
     // The marker function needs to be linked with this shader
@@ -103,7 +107,7 @@ void main()
         {
             float alpha = d/v_antialias;
             alpha = exp(-alpha*alpha);
-            if (r > 0)
+            if (r > 0.)
             {
                 // outer part of the edge: fade out into the background...
                 gl_FragColor = vec4(edgecolor.rgb, alpha*edgecolor.a);
@@ -121,7 +125,7 @@ disc = """
 float disc(vec2 pointcoord, float size)
 {
     float r = length((pointcoord.xy - vec2(0.5,0.5))*size);
-    r -= $v_size/2;
+    r -= $v_size/2.;
     return r;
 }
 """

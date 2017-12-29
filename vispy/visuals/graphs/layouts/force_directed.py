@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 """
 Force-Directed Graph Layout
@@ -33,7 +33,7 @@ class fruchterman_reingold(object):
     Paramters
     ---------
     optimal : number
-        Optimal distance between nodes. Defaults to :math:`1/\sqrt{N}` where
+        Optimal distance between nodes. Defaults to :math:`1/\\sqrt{N}` where
         N is the number of nodes.
     iterations : int
         Number of iterations to perform for layout calculation.

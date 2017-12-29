@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
@@ -47,7 +47,7 @@ class SphereVisual(CompoundVisual):
                  method='latitude', vertex_colors=None, face_colors=None,
                  color=(0.5, 0.5, 1, 1), edge_color=None, **kwargs):
 
-        mesh = create_sphere(cols, rows, depth, radius=radius,
+        mesh = create_sphere(rows, cols, depth, radius=radius,
                              subdivisions=subdivisions, method=method)
 
         self._mesh = MeshVisual(vertices=mesh.get_vertices(),

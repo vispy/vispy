@@ -1,12 +1,11 @@
 # TODO inspect for Cython (see sagenb.misc.sageinspect)
 from __future__ import print_function
 
-from nose.plugins.skip import SkipTest
-from os import path as op
 import inspect
 import warnings
-import imp
-from vispy.testing import run_tests_if_main
+from vispy.testing import run_tests_if_main, requires_numpydoc
+from vispy.util import _get_args
+
 
 public_modules = [
     # the list of modules users need to access for all functionality
@@ -20,13 +19,6 @@ public_modules = [
     'vispy.util',
     'vispy.visuals',
 ]
-
-docscrape_path = op.join(op.dirname(__file__), '..', '..', '..', 'doc', 'ext',
-                         'docscrape.py')
-if op.isfile(docscrape_path):
-    docscrape = imp.load_source('docscrape', docscrape_path)
-else:
-    docscrape = None
 
 
 def get_name(func):
@@ -48,13 +40,14 @@ _ignores = [
 
 def check_parameters_match(func, doc=None):
     """Helper to check docstring, returns list of incorrect results"""
+    from numpydoc import docscrape
     incorrect = []
     name_ = get_name(func)
     if not name_.startswith('vispy.'):
         return incorrect
     if inspect.isdatadescriptor(func):
         return incorrect
-    args, varargs, varkw, defaults = inspect.getargspec(func)
+    args = _get_args(func)
     # drop self
     if len(args) > 0 and args[0] in ('self', 'cls'):
         args = args[1:]
@@ -81,10 +74,10 @@ def check_parameters_match(func, doc=None):
     return incorrect
 
 
+@requires_numpydoc()
 def test_docstring_parameters():
     """Test module docsting formatting"""
-    if docscrape is None:
-        raise SkipTest('This must be run from the vispy source directory')
+    from numpydoc import docscrape
     incorrect = []
     for name in public_modules:
         module = __import__(name, globals())

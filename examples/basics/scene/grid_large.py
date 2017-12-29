@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # vispy: testskip  # disabled due to segfaults on travis
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 """

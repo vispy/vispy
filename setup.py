@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2013, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """ Vispy setup script.
@@ -10,21 +10,23 @@ Preparations:
   * Test on Windows, Linux, Mac
   * Make release notes
   * Update API documentation and other docs that need updating.
-
-Test installation:
-  * clear the build and dist dir (if they exist)
-  * python setup.py register -r http://testpypi.python.org/pypi
-  * python setup.py sdist upload -r http://testpypi.python.org/pypi
-  * pip install -i http://testpypi.python.org/pypi
+  * Install 'twine' package for uploading to PyPI
 
 Define the version:
   * update __version__ in __init__.py
-  * Tag the tip changeset as version x.x
+  * tag the tip changeset as version x.x.x; `git tag -a 'vX.Y.Z'`
 
-Generate and upload package (preferably on Windows)
-  * python setup.py register
-  * python setup.py sdist upload
-  * python setup.py bdist_wininst upload
+Test installation:
+  * clear the build and dist dir (if they exist)
+  * python setup.py sdist
+  * twine register --repository-url https://test.pypi.org/legacy/ dist/*
+  * twine upload --repository-url https://test.pypi.org/legacy/ dist/*
+  * pip install -i https://testpypi.python.org/pypi vispy
+
+Generate and upload package
+  * python setup.py sdist
+  * twine register dist/*
+  * twine upload dist/*
 
 Announcing:
   * It can be worth waiting a day for eager users to report critical bugs
@@ -106,7 +108,7 @@ setup(
     package_data={
         'vispy': [op.join('io', '_data', '*'),
                   op.join('html', 'static', 'js', '*'),
-                  op.join('app', 'tests', 'qt-designer.ui')
+                  op.join('app', 'tests', 'qt-designer.ui'),
                   ],
 
         'vispy.glsl': ['*.vert','*.frag', "*.glsl"],
@@ -134,10 +136,11 @@ setup(
         'Operating System :: Microsoft :: Windows',
         'Operating System :: POSIX',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
         'Framework :: IPython'
     ],
 )

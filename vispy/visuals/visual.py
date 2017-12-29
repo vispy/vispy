@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 """
 
@@ -526,7 +526,7 @@ class CompoundVisual(BaseVisual):
     To the user, a compound visual behaves exactly like a normal visual--it
     has a transform system, draw() and bounds() methods, etc. Internally, the
     compound visual automatically manages proxying these transforms and methods
-    to its sub-visuals.
+    to its sub-visuals. 
 
     Parameters
     ----------

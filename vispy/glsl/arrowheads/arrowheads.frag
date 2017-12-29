@@ -41,7 +41,7 @@
 varying float v_size;
 varying float v_point_size;
 varying vec4  v_color;
-varying vec2  v_orientation;
+varying vec3  v_orientation;
 varying float v_antialias;
 varying float v_linewidth;
 

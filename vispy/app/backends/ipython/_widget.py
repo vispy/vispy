@@ -1,10 +1,16 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2014, 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 try:
-    from IPython.html.widgets import DOMWidget
-    from IPython.utils.traitlets import Unicode, Int, Bool
+    try:
+        # ipython >=3.0
+        from ipywidgets.widgets import DOMWidget
+        from traitlets import Unicode, Int, Bool
+    except ImportError:
+        # ipython <3.0
+        from IPython.html.widgets import DOMWidget
+        from IPython.utils.traitlets import Unicode, Int, Bool
 except Exception as exp:
     # Init dummy objects needed to import this module withour errors.
     # These are all overwritten with imports from IPython (on success)

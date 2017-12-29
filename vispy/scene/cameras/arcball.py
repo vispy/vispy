@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division
@@ -41,7 +41,7 @@ class ArcballCamera(Base3DRotationCamera):
 
     """
 
-    _state_props = Base3DRotationCamera._state_props
+    _state_props = Base3DRotationCamera._state_props + ('_quaternion',)
 
     def __init__(self, fov=0.0, distance=None, **kwargs):
         super(ArcballCamera, self).__init__(fov=fov, **kwargs)

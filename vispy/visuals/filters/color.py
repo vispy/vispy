@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 import weakref
@@ -72,11 +72,11 @@ class IsolineFilter(object):
         return self._level
 
     @level.setter
-    def level(self, l):
-        if l <= 0:
-            l = 0
-        self._level = l
-        self.fshader['isolevel'] = l
+    def level(self, lev):
+        if lev <= 0:
+            lev = 0
+        self._level = lev
+        self.fshader['isolevel'] = lev
 
     @property
     def width(self):

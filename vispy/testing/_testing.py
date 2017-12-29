@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
@@ -268,6 +268,16 @@ def requires_ipython(version='3.0'):
     ipython_present, message = has_ipython(version)
 
     return np.testing.dec.skipif(not ipython_present, message)
+
+
+def requires_numpydoc():
+    try:
+        import numpydoc  # noqa
+    except Exception:
+        present = False
+    else:
+        present = True
+    return np.testing.dec.skipif(not present, 'numpydoc is required')
 
 
 def has_matplotlib(version='1.2'):

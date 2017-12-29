@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # vispy: testskip
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 """Test running functions"""
 
@@ -88,7 +88,8 @@ def _unit(mode, extra_arg_string, coverage=False):
         else:
             extra_args += ['-a', 'vispy_app_test']
     if coverage and use_pytest:
-        extra_args += ['--cov', 'vispy', '--no-cov-on-fail']
+        # Don't actually print the coverage because it's way too long
+        extra_args += ['--cov', 'vispy', '--cov-report=']
     # make a call to "python" so that it inherits whatever the system
     # thinks is "python" (e.g., virtualenvs)
     extra_arg_string = ' '.join(extra_args)
@@ -156,14 +157,18 @@ def _flake():
         sys.argv[1:] = ['vispy', 'examples', 'make']
     else:
         sys.argv[1:] = [op.basename(import_dir)]
-    sys.argv.append('--ignore=E226,E241,E265,E266,W291,W293,W503,F999')
-    sys.argv.append('--exclude=six.py,ordereddict.py,glfw.py,'
+    sys.argv.append('--ignore=E226,E241,E265,E266,W291,W293,W503,F999,E305,'
+                    'F405')
+    sys.argv.append('--exclude=six.py,glfw.py,'
                     '_proxy.py,_es2.py,_gl2.py,_pyopengl2.py,'
                     '_constants.py,png.py,decorator.py,ipy_inputhook.py,'
                     'experimental,wiki,_old,mplexporter.py,cubehelix.py,'
                     'cassowary')
     try:
-        from flake8.main import main
+        try:
+            from flake8.main import main
+        except ImportError:
+            from flake8.main.cli import main
     except ImportError:
         print('Skipping flake8 test, flake8 not installed')
     else:
@@ -246,6 +251,22 @@ with canvas as c:
 """
 
 
+def _skip_example(fname):
+    if os.getenv('TRAVIS', 'false') == 'true' and sys.platform == 'darwin':
+        # example scripts that contain non-ascii text
+        # seem to fail on Travis OSX
+        bad_examples = [
+            'examples/basics/plotting/colorbar.py',
+            'examples/basics/plotting/plot.py',
+            'examples/demo/gloo/high_frequency.py',
+        ]
+        for bad_ex in bad_examples:
+            if fname.endswith(bad_ex):
+                return True
+
+    return False
+
+
 def _examples(fnames_str):
     """Run examples and make sure they work.
 
@@ -295,18 +316,23 @@ def _examples(fnames_str):
         root_name = op.join(op.split(op.split(root_name[0])[0])[1],
                             op.split(root_name[0])[1], root_name[1])
         good = True
-        with open(fname, 'r') as fid:
+        with open(fname, 'rb') as fid:
             for _ in range(10):  # just check the first 10 lines
-                line = fid.readline()
+                line = fid.readline().decode('utf-8')
                 if line == '':
                     break
                 elif line.startswith('# vispy: ') and 'testskip' in line:
                     good = False
                     break
+        if _skip_example(fname):
+            print("Skipping example that fails on " +
+                  "Travis CI OSX: {}".format(fname))
+            good = False
         if not good:
             n_ran -= 1
             n_skipped += 1
             continue
+        print("Running example: {}".format(fname))
         sys.stdout.flush()
         cwd = op.dirname(fname)
         cmd = [sys.executable, '-c', _script.format(op.split(fname)[1][:-3])]
