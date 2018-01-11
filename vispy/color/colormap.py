@@ -122,10 +122,11 @@ def _glsl_mix(controls=None):
     assert (controls[0], controls[-1]) == (0., 1.)
     ncolors = len(controls)
     assert ncolors >= 2
+    diff = np.array(controls[:-1])-np.array(controls[1:])
+    variance = np.var(diff)
     if ncolors == 2:
         s = "    return mix($color_0, $color_1, t);\n"
-    elif ncolors < 64:
-#    else:
+    elif ((ncolors < 16) or variance > 1e-10):
         s = ""
         for i in range(ncolors-1):
             if i == 0:
@@ -139,41 +140,6 @@ def _glsl_mix(controls=None):
             s += ("%s {\n    return mix($color_%d, $color_%d, %s);\n} " %
                   (ifs, i, i+1, adj_t))
     else:
-# switch-case
-# moves mix() outside of the switch-case, double -> float
-# 256 control points: 540 fps
-#        s = ("int scaled_t = int(t*%d);\n" % ncolors)
-#        s += "vec4 color1=vec4(0.0f,0.0f,0.0f,0.0f);\n"
-#        s += "vec4 color2=vec4(0.0f,0.0f,0.0f,0.0f);\n"
-#        s += "float adj_t;\n"
-#        s += "switch(scaled_t){\n"
-#        for i in range(ncolors-1):
-#            if i == 0:
-#                ifs = 'case(0):\n'
-#            elif i == (ncolors-2):
-#                ifs = ('case(%d):\n' % i)
-#                ifs += ('case(%d):\n' % (i+1))
-#                ifs += ('case(%d):\n' % (i+2))
-#            else:
-#                ifs = ('case(%d):\n' % i)
-
-#            adj_t = '(t - %sf) / %sf' % (controls[i],
-#                                       controls[i+1] - controls[i])
-
-#            s += ifs
-#            s += "color1=$color_%d;\n" % i
-#            s += "color2=$color_%d;\n" % (i+1)
-#            s += "adj_t=%s;\n" % adj_t
-#            s += "break;\n"
-
-#        s += "}\n"
-#        s += "{\n    return mix(color1, color2, adj_t);\n} "
-
-# mix() is inside switch-case
-# 256 control points: 652 fps
-# 128 control points: 837 fps
-# 64 control points: 837 fps
-# TODO: handle non-uniform control point distribution
         s = ("int scaled_t = int(t*%d);\n" % ncolors)
         s += "switch(scaled_t){"
         for i in range(ncolors-1):
@@ -1043,8 +1009,8 @@ _colormaps = dict(
     winter=_Winter(),
     light_blues=_SingleHue(),
     orange=_SingleHue(hue=35),
-#    viridis=Colormap(ColorArray(_viridis_data[::4])),
-    viridis=Colormap(ColorArray(_viridis_data[::1])),
+    viridis=Colormap(ColorArray(_viridis_data[::4])),
+#    viridis=Colormap(ColorArray(_viridis_data[::1])),
     # Diverging presets
     coolwarm=Colormap(ColorArray(
         [
