@@ -147,7 +147,7 @@ def _glsl_mix(controls=None):
                 ifs = 'case(1): '
             elif i == (ncolors-2):
                 ifs = ('case(%d): ' % (i+1))
-                ifs = ('case(%d): ' % (i+2))
+                ifs += ('case(%d): ' % (i+2))
             else:
                 ifs = ('case(%d): ' % (i+1))
 
@@ -1009,8 +1009,8 @@ _colormaps = dict(
     winter=_Winter(),
     light_blues=_SingleHue(),
     orange=_SingleHue(hue=35),
-    viridis=Colormap(ColorArray(_viridis_data[::4])),
-#    viridis=Colormap(ColorArray(_viridis_data[::1])),
+#    viridis=Colormap(ColorArray(_viridis_data[::4])),
+    viridis=Colormap(ColorArray(_viridis_data[::1])),
     # Diverging presets
     coolwarm=Colormap(ColorArray(
         [
