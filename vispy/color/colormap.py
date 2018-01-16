@@ -123,10 +123,10 @@ def _glsl_mix(controls=None):
     ncolors = len(controls)
     assert ncolors >= 2
     diff = np.array(controls[:-1])-np.array(controls[1:])
-    variance = np.var(diff)
+    variance = np.var(diff) # a uniform 'controls' distribution has a small variance
     if ncolors == 2:
         s = "    return mix($color_0, $color_1, t);\n"
-    elif ((ncolors < 16) or variance > 1e-10):
+    elif ((ncolors < 8) or (variance > 1e-10)):
         s = ""
         for i in range(ncolors-1):
             if i == 0:
@@ -159,7 +159,7 @@ def _glsl_mix(controls=None):
 
         s += "}\n"
 
-    print("vec4 colormap(float t) {\n%s\n}" % s)
+#    print("vec4 colormap(float t) {\n%s\n}" % s)
     return "vec4 colormap(float t) {\n%s\n}" % s
 
 
@@ -729,7 +729,7 @@ class _RedYellowBlueCyan(Colormap):
 # Issue #1331 https://github.com/vispy/vispy/issues/1331 explains that the
 # 128 viridis sample size
 # fails on some GPUs but lowering to 64 samples allows more GPUs to use
-# viridis. The 64 samples are linearly interpolated anyhow and yeild smooth
+# viridis. The 64 samples are linearly interpolated anyhow and yield smooth
 # colormaps. To get 64 samples
 # the original Viridis colormap data is sampled with a stride of 4 ie [::4].
 #
