@@ -116,9 +116,21 @@ def step(colors, x, controls=None):
 
 
 # GLSL interpolation functions.
-def _glsl_mix(controls=None):
+def _glsl_mix(controls=None, colors=None):
     """Generate a GLSL template function from a given interpolation patterns
-    and control points."""
+    and control points.
+
+    Parameters
+    ----------
+    colors : list of lists, tuples, or ndarrays
+        The control colors used by the colormap (shape = (ncolors, 4)).
+
+    controls : The list of control points for the given colors. It should be
+        an increasing list of floating-point number between 0.0 and 1.0.
+        The first control point must be 0.0. The last control point must be
+        1.0. The number of control points depends on the interpolation scheme.
+
+"""
     assert (controls[0], controls[-1]) == (0., 1.)
     ncolors = len(controls)
     assert ncolors >= 2
@@ -126,44 +138,76 @@ def _glsl_mix(controls=None):
     variance = np.var(diff) # a uniform 'controls' distribution has a small variance
     if ncolors == 2:
         s = "    return mix($color_0, $color_1, t);\n"
-    elif ((ncolors < 8) or (variance > 1e-10)):
-        s = ""
-        for i in range(ncolors-1):
-            if i == 0:
-                ifs = 'if (t < %.6f)' % (controls[i+1])
-            elif i == (ncolors-2):
-                ifs = 'else'
-            else:
-                ifs = 'else if (t < %.6f)' % (controls[i+1])
-            adj_t = '(t - %s) / %s' % (controls[i],
-                                       controls[i+1] - controls[i])
-            s += ("%s {\n    return mix($color_%d, $color_%d, %s);\n} " %
-                  (ifs, i, i+1, adj_t))
+#    elif ((ncolors < 8) or (variance > 1e-10)):
+#        s = ""
+#        for i in range(ncolors-1):
+#            if i == 0:
+#                ifs = 'if (t < %.6f)' % (controls[i+1])
+#            elif i == (ncolors-2):
+#                ifs = 'else'
+#            else:
+#                ifs = 'else if (t < %.6f)' % (controls[i+1])
+#            adj_t = '(t - %s) / %s' % (controls[i],
+#                                       controls[i+1] - controls[i])
+#            s += ("%s {\n    return mix($color_%d, $color_%d, %s);\n} " %
+#                  (ifs, i, i+1, adj_t))
     else:
-        s = ("int scaled_t = int(t*%d);\n" % ncolors)
-        s += "switch(scaled_t){"
-        for i in range(ncolors-1):
+#        s = ("int scaled_t = int(t*%d);\n" % ncolors)
+#        s += "switch(scaled_t){"
+#        for i in range(ncolors-1):
+#            if i == 0:
+#                ifs = 'case(1): '
+#            elif i == (ncolors-2):
+#                ifs = ('case(%d): ' % (i+1))
+#                ifs += ('case(%d): ' % (i+2))
+#            else:
+#                ifs = ('case(%d): ' % (i+1))
+#
+#            adj_t = '(t - %s) / %s' % (controls[i],
+#                                       controls[i+1] - controls[i])
+#
+#            s += ("%s {\n    return mix($color_%d, $color_%d, %s);\n} " %
+#                  (ifs, i, i+1, adj_t))
+#
+#        s += "}\n"
+
+        LUT_len = 1024
+        LUT_tex_idx = np.linspace(0.0, 1.0, LUT_len)
+        LUT=np.zeros((LUT_len,4))
+
+        for i in range(LUT_len):
+            t = LUT_tex_idx[i]
+
+            # find the first 'controls' value that is smaller than 't'
+            bn=np.nonzero(controls>=t) 
+            j=bn[0][0]-1
+#            if (j<0): # t==0.0
+#                j = 0
+#            elif (j>(ncolors-2)): # t==1.0
+#                j = ncolors-2
+            j = np.clip(j, 0, len(controls) - 2)
+
+            adj_t = (t - controls[j]) / (controls[j+1] - controls[j])
+            LUT[i] = colors[j].rgba*(1-adj_t)+colors[j+1].rgba*adj_t
+#            LUT[i] = _mix_simple(colors[j].rgba, colors[j+1].rgba, adj_t)
+
+        s = "const vec4 LUT_colors[%d]=vec4[%d]" % (LUT_len, LUT_len)
+        for i in range(LUT_len):
             if i == 0:
-                ifs = 'case(1): '
-            elif i == (ncolors-2):
-                ifs = ('case(%d): ' % (i+1))
-                ifs += ('case(%d): ' % (i+2))
+                s += '(vec4(%.6f, %.6f, %.6f, %.6f)' % (LUT[i][0], LUT[i][1], LUT[i][2], LUT[i][3])
+            elif i == (LUT_len-1):
+                s += ',vec4(%.6f, %.6f, %.6f, %.6f));\n' % (LUT[i][0], LUT[i][1], LUT[i][2], LUT[i][3])
             else:
-                ifs = ('case(%d): ' % (i+1))
+                s += ',vec4(%.6f, %.6f, %.6f, %.6f)' % (LUT[i][0], LUT[i][1], LUT[i][2], LUT[i][3])
 
-            adj_t = '(t - %s) / %s' % (controls[i],
-                                       controls[i+1] - controls[i])
+        s += ("{\n    return LUT_colors[int(clamp(int(t*%d), 0, %d))];\n} " %
+                  (LUT_len-1, LUT_len-1))
 
-            s += ("%s {\n    return mix($color_%d, $color_%d, %s);\n} " %
-                  (ifs, i, i+1, adj_t))
-
-        s += "}\n"
-
-#    print("vec4 colormap(float t) {\n%s\n}" % s)
+    print("vec4 colormap(float t) {\n%s\n}" % s)
     return "vec4 colormap(float t) {\n%s\n}" % s
 
 
-def _glsl_step(controls=None):
+def _glsl_step(controls=None, colors=None):
     assert (controls[0], controls[-1]) == (0., 1.)
     ncolors = len(controls) - 1
     assert ncolors >= 2
@@ -310,7 +354,7 @@ def _default_controls(ncolors):
 _interpolation_info = {
     'linear': {
         'ncontrols': lambda ncolors: ncolors,  # take ncolors as argument
-        'glsl_map': _glsl_mix,  # take 'controls' as argument
+        'glsl_map': _glsl_mix,  # take 'controls' and 'colors' as arguments
         'map': mix,
     },
     'zero': {
@@ -358,7 +402,7 @@ class Colormap(BaseColormap):
             controls = _default_controls(ncontrols)
         assert len(controls) == ncontrols
         self._controls = np.array(controls, dtype=np.float32)
-        self.glsl_map = self._glsl_map_generator(self._controls)
+        self.glsl_map = self._glsl_map_generator(self._controls, colors)
         super(Colormap, self).__init__(colors)
 
     @property
@@ -1009,8 +1053,8 @@ _colormaps = dict(
     winter=_Winter(),
     light_blues=_SingleHue(),
     orange=_SingleHue(hue=35),
-#    viridis=Colormap(ColorArray(_viridis_data[::4])),
-    viridis=Colormap(ColorArray(_viridis_data[::1])),
+    viridis=Colormap(ColorArray(_viridis_data[::4])),
+#    viridis=Colormap(ColorArray(_viridis_data[::1])),
     # Diverging presets
     coolwarm=Colormap(ColorArray(
         [
