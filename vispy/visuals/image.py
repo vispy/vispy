@@ -6,7 +6,7 @@ from __future__ import division
 
 import numpy as np
 
-from ..gloo import Texture2D, VertexBuffer
+from ..gloo import Texture1D, Texture2D, VertexBuffer
 from ..color import get_colormap
 from .shaders import Function, FunctionChain
 from .transforms import NullTransform
@@ -200,6 +200,10 @@ class ImageVisual(Visual):
         self._need_interpolation_update = True
         self._texture = Texture2D(np.zeros((1, 1, 4)),
                                   interpolation=texture_interpolation)
+        LUT_len = 1024 # TODO: the same constant is also defined in colormap.py -> import
+        # Texture map used by the 'colormap' GLSL function for luminance to RGBA conversion
+        self._texture_LUT = Texture1D(np.zeros((LUT_len, 4)),
+                                  interpolation='linear')
         self._subdiv_position = VertexBuffer()
         self._subdiv_texcoord = VertexBuffer()
 
@@ -423,6 +427,7 @@ class ImageVisual(Visual):
         trs = view.transforms
         prg = view.view_program
         method = view._method_used
+        prg['texture1D_LUT'] = self._texture_LUT
         if method == 'subdivide':
             prg.vert['transform'] = trs.get_transform()
             prg.frag['transform'] = self._null_tr
@@ -443,6 +448,11 @@ class ImageVisual(Visual):
         if self._need_colortransform_update:
             self.shared_program.frag['color_transform'] = \
                 _build_color_transform(self._data, self.cmap)
+            if self._cmap.texture_map_data is not None:
+                print(self._cmap.texture_map_data.shape)
+                self._texture_LUT.set_data(self._cmap.texture_map_data, offset=None, copy=True)
+            else:
+                print('None')
             self._need_colortransform_update = False
 
         if self._need_vertex_update:

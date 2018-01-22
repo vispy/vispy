@@ -116,7 +116,7 @@ def step(colors, x, controls=None):
 
 
 # GLSL interpolation functions.
-def _glsl_mix(controls=None, colors=None):
+def _glsl_mix(controls=None, colors=None, texture_map_data=None):
     """Generate a GLSL template function from a given interpolation patterns
     and control points.
 
@@ -130,27 +130,33 @@ def _glsl_mix(controls=None, colors=None):
         The first control point must be 0.0. The last control point must be
         1.0. The number of control points depends on the interpolation scheme.
 
+    texture_map_data : TODO
+
 """
     assert (controls[0], controls[-1]) == (0., 1.)
     ncolors = len(controls)
     assert ncolors >= 2
     diff = np.array(controls[:-1])-np.array(controls[1:])
     variance = np.var(diff) # a uniform 'controls' distribution has a small variance
-    if ncolors == 2:
-        s = "    return mix($color_0, $color_1, t);\n"
+    s2 = ""
+    if texture_map_data is None:
+        if ncolors == 2:
+            s = "    return mix($color_0, $color_1, t);\n"
 #    elif ((ncolors < 8) or (variance > 1e-10)):
-#        s = ""
-#        for i in range(ncolors-1):
-#            if i == 0:
-#                ifs = 'if (t < %.6f)' % (controls[i+1])
-#            elif i == (ncolors-2):
-#                ifs = 'else'
-#            else:
-#                ifs = 'else if (t < %.6f)' % (controls[i+1])
-#            adj_t = '(t - %s) / %s' % (controls[i],
-#                                       controls[i+1] - controls[i])
-#            s += ("%s {\n    return mix($color_%d, $color_%d, %s);\n} " %
-#                  (ifs, i, i+1, adj_t))
+#    elif ((ncolors < 64)):
+        else:
+            s = ""
+            for i in range(ncolors-1):
+                if i == 0:
+                    ifs = 'if (t < %.6f)' % (controls[i+1])
+                elif i == (ncolors-2):
+                    ifs = 'else'
+                else:
+                    ifs = 'else if (t < %.6f)' % (controls[i+1])
+                adj_t = '(t - %s) / %s' % (controls[i],
+                                       controls[i+1] - controls[i])
+                s += ("%s {\n    return mix($color_%d, $color_%d, %s);\n} " %
+                      (ifs, i, i+1, adj_t))
     else:
 #        s = ("int scaled_t = int(t*%d);\n" % ncolors)
 #        s += "switch(scaled_t){"
@@ -171,9 +177,11 @@ def _glsl_mix(controls=None, colors=None):
 #
 #        s += "}\n"
 
-        LUT_len = 1024
+#        LUT_len = 1024
+#        LUT=np.zeros((LUT_len,4))
+        LUT = texture_map_data
+        LUT_len = texture_map_data.shape[0]
         LUT_tex_idx = np.linspace(0.0, 1.0, LUT_len)
-        LUT=np.zeros((LUT_len,4))
 
         for i in range(LUT_len):
             t = LUT_tex_idx[i]
@@ -203,11 +211,15 @@ def _glsl_mix(controls=None, colors=None):
         s += ("{\n    return LUT_colors[int(clamp(int(t*%d), 0, %d))];\n} " %
                   (LUT_len-1, LUT_len-1))
 
-    print("vec4 colormap(float t) {\n%s\n}" % s)
-    return "vec4 colormap(float t) {\n%s\n}" % s
+# TEST using 1D-texture as a look-up table
+        s2 = "uniform sampler1D texture1D_LUT;"
+        s = "{\n return texture1D(texture1D_LUT, t);\n} "
+
+    print("%s\nvec4 colormap(float t) {\n%s\n}" % (s2, s))
+    return "%s\nvec4 colormap(float t) {\n%s\n}" % (s2, s)
 
 
-def _glsl_step(controls=None, colors=None):
+def _glsl_step(controls=None, colors=None, texture_map_data=None):
     assert (controls[0], controls[-1]) == (0., 1.)
     ncolors = len(controls) - 1
     assert ncolors >= 2
@@ -261,6 +273,9 @@ class BaseColormap(object):
 
     # GLSL string with a function implementing the color map.
     glsl_map = None
+
+    # Texture map data used by the 'colormap' GLSL function for luminance to RGBA conversion.
+    texture_map_data = None
 
     def __init__(self, colors=None):
         # Ensure the colors are arrays.
@@ -402,7 +417,10 @@ class Colormap(BaseColormap):
             controls = _default_controls(ncontrols)
         assert len(controls) == ncontrols
         self._controls = np.array(controls, dtype=np.float32)
-        self.glsl_map = self._glsl_map_generator(self._controls, colors)
+        if(len(controls) > 2): # use texture map LUT?
+            LUT_len = 1024
+            self.texture_map_data=np.zeros((LUT_len,4), dtype=np.float32)
+        self.glsl_map = self._glsl_map_generator(self._controls, colors, self.texture_map_data)
         super(Colormap, self).__init__(colors)
 
     @property
