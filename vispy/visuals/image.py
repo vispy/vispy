@@ -203,7 +203,10 @@ class ImageVisual(Visual):
                                   interpolation=texture_interpolation)
         # Texture map used by the 'colormap' GLSL function for luminance to RGBA conversion
         self._texture_LUT = Texture1D(np.zeros((LUT_len, 4)),
-                                  interpolation='linear')
+                                  wrapping='repeat',
+#                                  interpolation='nearest')
+                                 interpolation='linear') # artifacts near t=0.0 on GTX590
+
         self._subdiv_position = VertexBuffer()
         self._subdiv_texcoord = VertexBuffer()
 
@@ -449,10 +452,8 @@ class ImageVisual(Visual):
             self.shared_program.frag['color_transform'] = \
                 _build_color_transform(self._data, self.cmap)
             if self._cmap.texture_map_data is not None:
-                print(self._cmap.texture_map_data.shape)
                 self._texture_LUT.set_data(self._cmap.texture_map_data, offset=None, copy=True)
             else:
-                print('None')
             self._need_colortransform_update = False
 
         if self._need_vertex_update:
