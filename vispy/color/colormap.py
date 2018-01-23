@@ -15,6 +15,7 @@ from ..ext.husl import husl_to_rgb
 ###############################################################################
 # Color maps
 
+LUT_len = 1024
 
 # Utility functions for interpolation in NumPy.
 def _vector_or_scalar(x, type='row'):
@@ -177,8 +178,6 @@ def _glsl_mix(controls=None, colors=None, texture_map_data=None):
 #
 #        s += "}\n"
 
-#        LUT_len = 1024
-#        LUT=np.zeros((LUT_len,4))
         LUT = texture_map_data
         LUT_len = texture_map_data.shape[0]
         LUT_tex_idx = np.linspace(0.0, 1.0, LUT_len)
@@ -417,8 +416,7 @@ class Colormap(BaseColormap):
             controls = _default_controls(ncontrols)
         assert len(controls) == ncontrols
         self._controls = np.array(controls, dtype=np.float32)
-        if(len(controls) > 2): # use texture map LUT?
-            LUT_len = 1024
+        if(len(controls) > 2): # use texture map for luminance to RGBA conversion
             self.texture_map_data=np.zeros((LUT_len,4), dtype=np.float32)
         self.glsl_map = self._glsl_map_generator(self._controls, colors, self.texture_map_data)
         super(Colormap, self).__init__(colors)

@@ -13,6 +13,7 @@ from .transforms import NullTransform
 from .visual import Visual
 from ..ext.six import string_types
 from ..io import load_spatial_filters
+from ..color import LUT_len
 
 VERT_SHADER = """
 uniform int method;  // 0=subdivide, 1=impostor
@@ -200,7 +201,6 @@ class ImageVisual(Visual):
         self._need_interpolation_update = True
         self._texture = Texture2D(np.zeros((1, 1, 4)),
                                   interpolation=texture_interpolation)
-        LUT_len = 1024 # TODO: the same constant is also defined in colormap.py -> import
         # Texture map used by the 'colormap' GLSL function for luminance to RGBA conversion
         self._texture_LUT = Texture1D(np.zeros((LUT_len, 4)),
                                   interpolation='linear')
