@@ -173,13 +173,10 @@ def _glsl_mix(controls=None, colors=None, texture_map_data=None):
             j = np.clip(j, 0, len(controls) - 2)
 
             adj_t = (t - controls[j]) / (controls[j+1] - controls[j])
-            LUT[i] = _mix_simple(colors[j].rgba, colors[j+1].rgba, adj_t)
+            LUT[i,0,:] = _mix_simple(colors[j].rgba, colors[j+1].rgba, adj_t)
 
-        LUT[1000:]= LUT[0]
-
-        s2 = "uniform sampler1D texture1D_LUT;"
-        s = "{\n return texture1D(texture1D_LUT, clamp(t, 0.0, 1.0));\n} "
-#        s = "{\n return texture1D(texture1D_LUT, clamp(t, 0.02, 0.98));\n} " # removed artifacts for 'linear' texture mapping
+        s2 = "uniform sampler2D texture2D_LUT;"
+        s = "{\n return texture2D(texture2D_LUT, vec2(0.0, clamp(t, 0.0, 1.0)));\n} "
 
     return "%s\nvec4 colormap(float t) {\n%s\n}" % (s2, s)
 
@@ -383,7 +380,7 @@ class Colormap(BaseColormap):
         assert len(controls) == ncontrols
         self._controls = np.array(controls, dtype=np.float32)
         if(len(controls) > 2): # use texture map for luminance to RGBA conversion
-            self.texture_map_data=np.zeros((LUT_len,4), dtype=np.float32)
+            self.texture_map_data=np.zeros((LUT_len,1,4), dtype=np.float32)
         self.glsl_map = self._glsl_map_generator(self._controls, colors, self.texture_map_data)
         super(Colormap, self).__init__(colors)
 
