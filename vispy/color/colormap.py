@@ -176,7 +176,7 @@ def _glsl_mix(controls=None, colors=None, texture_map_data=None):
             if(isinstance(colors, ColorArray)):
                 LUT[i,0,:] = _mix_simple(colors[j].rgba, colors[j+1].rgba, adj_t)
             else:
-                LUT[i,0,:colors[j].shape[0]] = _mix_simple(colors[j], colors[j+1], adj_t)
+                LUT[i,0,:len(colors[j])] = _mix_simple(colors[j], colors[j+1], adj_t)
 
         s2 = "uniform sampler2D texture2D_LUT;"
         s = "{\n return texture2D(texture2D_LUT, vec2(0.0, clamp(t, 0.0, 1.0)));\n} "
@@ -216,7 +216,7 @@ def _glsl_step(controls=None, colors=None, texture_map_data=None):
             if(isinstance(colors, ColorArray)):
                 LUT[i,0,:] = colors[j].rgba
             else:
-                LUT[i,0,:colors[j].shape[0]] = colors[j]
+                LUT[i,0,:len(colors[j])] = colors[j]
 
         s2 = "uniform sampler2D texture2D_LUT;"
         s = "{\n return texture2D(texture2D_LUT, vec2(0.0, clamp(t, 0.0, 1.0)));\n} "

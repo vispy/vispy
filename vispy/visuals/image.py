@@ -202,8 +202,8 @@ class ImageVisual(Visual):
                                   interpolation=texture_interpolation)
         # Texture map used by the 'colormap' GLSL function for luminance to RGBA conversion
         self._texture_LUT = Texture2D(np.zeros((LUT_len, 1, 4)),
-#                                 interpolation='linear')
-                                 interpolation='nearest') # works for both 'linear' and 'zero' Colormap interpolation
+                                 interpolation='linear') # introduces articafacts for 'zero' Colormap interpolation at boundaries
+#                                 interpolation='nearest') # works for both 'linear' and 'zero' Colormap interpolation
 
         self._subdiv_position = VertexBuffer()
         self._subdiv_texcoord = VertexBuffer()
