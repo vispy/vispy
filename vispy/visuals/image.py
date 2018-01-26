@@ -7,13 +7,12 @@ from __future__ import division
 import numpy as np
 
 from ..gloo import Texture2D, VertexBuffer
-from ..color import get_colormap
+from ..color import get_colormap, LUT_len
 from .shaders import Function, FunctionChain
 from .transforms import NullTransform
 from .visual import Visual
 from ..ext.six import string_types
 from ..io import load_spatial_filters
-from ..color import LUT_len
 
 VERT_SHADER = """
 uniform int method;  // 0=subdivide, 1=impostor
@@ -203,7 +202,8 @@ class ImageVisual(Visual):
                                   interpolation=texture_interpolation)
         # Texture map used by the 'colormap' GLSL function for luminance to RGBA conversion
         self._texture_LUT = Texture2D(np.zeros((LUT_len, 1, 4)),
-                                 interpolation='linear')
+#                                 interpolation='linear')
+                                 interpolation='nearest') # works for both 'linear' and 'zero' Colormap interpolation
 
         self._subdiv_position = VertexBuffer()
         self._subdiv_texcoord = VertexBuffer()

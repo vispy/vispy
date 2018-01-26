@@ -124,7 +124,7 @@ def _glsl_mix(controls=None, colors=None, texture_map_data=None):
 
     Parameters
     ----------
-    colors : list of lists, tuples, or ndarrays
+    colors : list of lists, tuples, ndarrays or ColorArrays
         The control colors used by the colormap (shape = (ncolors, 4)).
 
     controls : The list of control points for the given colors. It should be
@@ -173,7 +173,10 @@ def _glsl_mix(controls=None, colors=None, texture_map_data=None):
             j = np.clip(j, 0, len(controls) - 2)
 
             adj_t = (t - controls[j]) / (controls[j+1] - controls[j])
-            LUT[i,0,:] = _mix_simple(colors[j].rgba, colors[j+1].rgba, adj_t)
+            if(isinstance(colors, ColorArray)):
+                LUT[i,0,:] = _mix_simple(colors[j].rgba, colors[j+1].rgba, adj_t)
+            else:
+                LUT[i,0,:] = _mix_simple(colors[j], colors[j+1], adj_t)
 
         s2 = "uniform sampler2D texture2D_LUT;"
         s = "{\n return texture2D(texture2D_LUT, vec2(0.0, clamp(t, 0.0, 1.0)));\n} "
@@ -185,16 +188,40 @@ def _glsl_step(controls=None, colors=None, texture_map_data=None):
     assert (controls[0], controls[-1]) == (0., 1.)
     ncolors = len(controls) - 1
     assert ncolors >= 2
-    s = ""
-    for i in range(ncolors-1):
-        if i == 0:
-            ifs = 'if (t < %.6f)' % (controls[i+1])
-        elif i == (ncolors-2):
-            ifs = 'else'
-        else:
-            ifs = 'else if (t < %.6f)' % (controls[i+1])
-        s += """%s {\n    return $color_%d;\n} """ % (ifs, i)
-    return """vec4 colormap(float t) {\n%s\n}""" % s
+
+    if texture_map_data is None:
+        s2 = ""
+        s = ""
+        for i in range(ncolors-1):
+            if i == 0:
+                ifs = 'if (t < %.6f)' % (controls[i+1])
+            elif i == (ncolors-2):
+                ifs = 'else'
+            else:
+                ifs = 'else if (t < %.6f)' % (controls[i+1])
+            s += """%s {\n    return $color_%d;\n} """ % (ifs, i)
+    else:
+        LUT = texture_map_data
+        LUT_len = texture_map_data.shape[0]
+        LUT_tex_idx = np.linspace(0.0, 1.0, LUT_len)
+
+        for i in range(LUT_len):
+            t = LUT_tex_idx[i]
+
+            # find the first 'controls' value that is smaller than 't'
+            bn=np.nonzero(controls>=t) 
+            j=bn[0][0]-1
+            j = np.clip(j, 0, len(controls) - 2)
+
+            if(isinstance(colors, ColorArray)):
+                LUT[i,0,:] = colors[j].rgba
+            else:
+                LUT[i,0,:] = colors[j]
+
+        s2 = "uniform sampler2D texture2D_LUT;"
+        s = "{\n return texture2D(texture2D_LUT, vec2(0.0, clamp(t, 0.0, 1.0)));\n} "
+
+    return "%s\nvec4 colormap(float t) {\n%s\n}" % (s2, s)
 
 
 # Mini GLSL template system for colors.
@@ -751,7 +778,7 @@ class _RedYellowBlueCyan(Colormap):
 # 128 viridis sample size fails on some GPUs 
 # but lowering to 64 samples allows more GPUs to use viridis. 
 # 
-# VisPy has beem updated to use a 1D texture lookup for a large number of ColorMap control points
+# VisPy has beem updated to use a texture map lookup.
 # Thus, sampling of the Viridis colormap data is no longer necessary.
 _viridis_data = [[0.267004, 0.004874, 0.329415],
                  [0.268510, 0.009605, 0.335427],
