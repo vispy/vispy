@@ -395,7 +395,6 @@ class Colormap(BaseColormap):
     """
     def __init__(self, colors, controls=None, interpolation='linear'):
         self.interpolation = interpolation
-        self.interpolation_str = interpolation # interpolation type as a string
         ncontrols = self._ncontrols(len(colors))
         # Default controls.
         if controls is None:
