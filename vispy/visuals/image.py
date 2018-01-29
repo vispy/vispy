@@ -186,6 +186,8 @@ class ImageVisual(Visual):
 
         self._interpolation = interpolation
 
+        self._texture_LUT = None
+
         # check texture interpolation
         if self._interpolation == 'bilinear':
             texture_interpolation = 'linear'
@@ -200,11 +202,6 @@ class ImageVisual(Visual):
         self._need_interpolation_update = True
         self._texture = Texture2D(np.zeros((1, 1, 4)),
                                   interpolation=texture_interpolation)
-        # Texture map used by the 'colormap' GLSL function for luminance to RGBA conversion
-        self._texture_LUT = Texture2D(np.zeros((LUT_len, 1, 4)),
-                                 interpolation='linear') # introduces articafacts for 'zero' Colormap interpolation at boundaries
-#                                 interpolation='nearest') # works for both 'linear' and 'zero' Colormap interpolation
-
         self._subdiv_position = VertexBuffer()
         self._subdiv_texcoord = VertexBuffer()
 
@@ -428,7 +425,6 @@ class ImageVisual(Visual):
         trs = view.transforms
         prg = view.view_program
         method = view._method_used
-        prg['texture2D_LUT'] = self._texture_LUT
         if method == 'subdivide':
             prg.vert['transform'] = trs.get_transform()
             prg.frag['transform'] = self._null_tr
@@ -447,9 +443,18 @@ class ImageVisual(Visual):
             self._build_texture()
 
         if self._need_colortransform_update:
+            prg = view.view_program
             self.shared_program.frag['color_transform'] = \
                 _build_color_transform(self._data, self.cmap)
             if self._cmap.texture_map_data is not None:
+                # Texture map used by the 'colormap' GLSL function for luminance to RGBA conversion
+                if(self._cmap.interpolation_str == 'linear'):
+                    self._texture_LUT = Texture2D(np.zeros((LUT_len, 1, 4)),
+                                        interpolation='linear')
+                else: # '_cmap.interpolation_str == zero'
+                    self._texture_LUT = Texture2D(np.zeros((LUT_len, 1, 4)),
+                                        interpolation='nearest')
+                prg['texture2D_LUT'] = self._texture_LUT
                 self._texture_LUT.set_data(self._cmap.texture_map_data, offset=None, copy=True)
             self._need_colortransform_update = False
 
