@@ -116,6 +116,12 @@ def step(colors, x, controls=None):
     x_step = _find_controls(x, controls, ncolors-1)
     return colors[x_step, ...]
 
+# find the first 'controls' value that is smaller than 't'
+def find_color_index(controls=None, t=None, ncolors=None):
+    bn = np.nonzero(controls>=t) 
+    j = bn[0][0]-1
+    j = np.clip(j, 0, ncolors-1)
+    return j
 
 # GLSL interpolation functions.
 def _glsl_mix(controls=None, colors=None, texture_map_data=None):
@@ -166,12 +172,7 @@ def _glsl_mix(controls=None, colors=None, texture_map_data=None):
 
         for i in range(LUT_len):
             t = LUT_tex_idx[i]
-
-            # find the first 'controls' value that is smaller than 't'
-            bn=np.nonzero(controls>=t) 
-            j=bn[0][0]-1
-            j = np.clip(j, 0, len(controls) - 2)
-
+            j=find_color_index(controls, t, ncolors)
             adj_t = (t - controls[j]) / (controls[j+1] - controls[j])
             if(isinstance(colors, ColorArray)):
                 LUT[i,0,:] = _mix_simple(colors[j].rgba, colors[j+1].rgba, adj_t)
@@ -182,7 +183,6 @@ def _glsl_mix(controls=None, colors=None, texture_map_data=None):
         s = "{\n return texture2D(texture2D_LUT, vec2(0.0, clamp(t, 0.0, 1.0)));\n} "
 
     return "%s\nvec4 colormap(float t) {\n%s\n}" % (s2, s)
-
 
 def _glsl_step(controls=None, colors=None, texture_map_data=None):
     assert (controls[0], controls[-1]) == (0., 1.)
@@ -207,12 +207,7 @@ def _glsl_step(controls=None, colors=None, texture_map_data=None):
 
         for i in range(LUT_len):
             t = LUT_tex_idx[i]
-
-            # find the first 'controls' value that is smaller than 't'
-            bn=np.nonzero(controls>=t) 
-            j=bn[0][0]-1
-            j = np.clip(j, 0, len(controls) - 2)
-
+            j=find_color_index(controls, t, ncolors)
             if(isinstance(colors, ColorArray)):
                 LUT[i,0,:] = colors[j].rgba
             else:
