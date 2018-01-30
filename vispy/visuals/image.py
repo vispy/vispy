@@ -7,7 +7,7 @@ from __future__ import division
 import numpy as np
 
 from ..gloo import Texture2D, VertexBuffer
-from ..color import get_colormap, LUT_len
+from ..color import get_colormap
 from .shaders import Function, FunctionChain
 from .transforms import NullTransform
 from .visual import Visual
@@ -448,12 +448,9 @@ class ImageVisual(Visual):
                 _build_color_transform(self._data, self.cmap)
             if self._cmap.texture_map_data is not None:
                 # Texture map used by the 'colormap' GLSL function for luminance to RGBA conversion
-                if(self._cmap.interpolation_str == 'linear'):
-                    self._texture_LUT = Texture2D(np.zeros((LUT_len, 1, 4)),
-                                        interpolation='linear')
-                else: # '_cmap.interpolation_str == zero'
-                    self._texture_LUT = Texture2D(np.zeros((LUT_len, 1, 4)),
-                                        interpolation='nearest')
+                interpolation_mode = 'linear' if(str(self._cmap.interpolation) == 'linear') else 'nearest'
+                self._texture_LUT = Texture2D(np.zeros(self._cmap.texture_map_data.shape),
+                                        interpolation=interpolation_mode)
                 prg['texture2D_LUT'] = self._texture_LUT
                 self._texture_LUT.set_data(self._cmap.texture_map_data, offset=None, copy=True)
             self._need_colortransform_update = False
