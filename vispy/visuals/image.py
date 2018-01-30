@@ -453,6 +453,9 @@ class ImageVisual(Visual):
                                         interpolation=interpolation_mode)
                 prg['texture2D_LUT'] = self._texture_LUT
                 self._texture_LUT.set_data(self._cmap.texture_map_data, offset=None, copy=True)
+            else:
+                self._texture_LUT = None
+                prg['texture2D_LUT'] = None
             self._need_colortransform_update = False
 
         if self._need_vertex_update:
