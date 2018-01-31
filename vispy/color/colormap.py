@@ -176,6 +176,8 @@ def _glsl_mix(controls=None, colors=None, texture_map_data=None):
             adj_t = (t - controls[j]) / (controls[j+1] - controls[j])
             if(isinstance(colors, ColorArray)):
                 LUT[i,0,:] = _mix_simple(colors[j].rgba, colors[j+1].rgba, adj_t)
+            elif(isinstance(colors[j], str)):
+                LUT[i,0,:3] = _mix_simple(ColorArray(colors[j]).rgb, ColorArray(colors[j+1]).rgb, adj_t)
             else:
                 LUT[i,0,:len(colors[j])] = _mix_simple(np.array(colors[j]), np.array(colors[j+1]), adj_t)
 
