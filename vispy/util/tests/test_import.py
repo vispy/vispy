@@ -82,7 +82,7 @@ def test_import_vispy_app2():
     assert_not_in('PySide', allmodnames)
     assert_not_in('PySide2', allmodnames)
     assert_not_in('PyQt4', allmodnames)
-    # assert_not_in('PyQt5', allmodnames) # should PyQt5 be tested against too
+    assert_not_in('PyQt5', allmodnames)
     assert_not_in('pyglet', allmodnames)
 
 
