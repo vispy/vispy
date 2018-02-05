@@ -7,7 +7,7 @@ import inspect
 
 import numpy as np
 
-from .color_array import ColorArray
+from .color_array import ColorArray, Color
 from ..ext.six import string_types
 from ..ext.cubehelix import cubehelix
 from ..ext.husl import husl_to_rgb
@@ -174,12 +174,7 @@ def _glsl_mix(controls=None, colors=None, texture_map_data=None):
             t = LUT_tex_idx[i]
             j=find_color_index(controls, t, ncolors)
             adj_t = (t - controls[j]) / (controls[j+1] - controls[j])
-            if(isinstance(colors, ColorArray)):
-                LUT[i,0,:] = _mix_simple(colors[j].rgba, colors[j+1].rgba, adj_t)
-            elif(isinstance(colors[j], str)):
-                LUT[i,0,:3] = _mix_simple(ColorArray(colors[j]).rgb, ColorArray(colors[j+1]).rgb, adj_t)
-            else:
-                LUT[i,0,:len(colors[j])] = _mix_simple(np.array(colors[j]), np.array(colors[j+1]), adj_t)
+            LUT[i,0,:] = _mix_simple(Color(colors[j]).rgba, Color(colors[j+1]).rgba, adj_t)
 
         s2 = "uniform sampler2D texture2D_LUT;"
         s = "{\n return texture2D(texture2D_LUT, vec2(0.0, clamp(t, 0.0, 1.0)));\n} "
