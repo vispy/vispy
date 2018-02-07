@@ -407,7 +407,7 @@ class VolumeVisual(Visual):
         self._need_vertex_update = True
 
         # Set the colormap
-        self._cmap = get_colormap(cmap)
+        self.cmap = cmap
 
         # Create gloo objects
         self._vertices = VertexBuffer()
@@ -545,7 +545,6 @@ class VolumeVisual(Visual):
         self.shared_program.frag = frag_dict[method]
         self.shared_program.frag['sampler_type'] = self._tex.glsl_sampler_type
         self.shared_program.frag['sample'] = self._tex.glsl_sample
-        self.shared_program.frag['cmap'] = Function(self._cmap.glsl_map)
         self.update()
     
     @property
