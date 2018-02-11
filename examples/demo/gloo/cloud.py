@@ -219,7 +219,7 @@ class Canvas(app.Canvas):
         ps = self.pixel_scale
 
         # Create vertices
-        n = 1000
+        n = 1000000
         data = np.zeros(n, [('a_position', np.float32, 3),
                             ('a_bg_color', np.float32, 4),
                             ('a_fg_color', np.float32, 4),
