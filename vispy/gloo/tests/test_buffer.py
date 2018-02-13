@@ -313,7 +313,12 @@ class DataBufferTest(unittest.TestCase):
         B[-1] = data[0]
         B[:5] = data[:5]
         B[5:0] = data[:5]  # Weird, but we apparently support this
-        B[1] = b''  # Gets conveted into array of dtype. Lists do not work
+        # the below is no longer supported starting with NumPy 1.14.0
+        # this used to be converted to a single element array of the above
+        # dtype filled with 0s. This is no longer supported.
+        # B[1] = b''  # Gets converted into array of dtype. Lists do not work
+        B[1] = 0
+        B[1] = ([0, 0, 0], [0, 0], [0, 0, 0, 0],)
         
         self.assertRaises(IndexError, B.__setitem__, +999, data[0])
         self.assertRaises(IndexError, B.__setitem__, -999, data[0])
