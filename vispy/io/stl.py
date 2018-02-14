@@ -1,3 +1,11 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) 2015 Michael Dawson-Haggerty
+# Distributed under the MIT License.
+# Copied from the trimesh project.
+# See https://github.com/mikedh/trimesh for more information.
+# See https://github.com/mikedh/trimesh/blob/master/LICENSE.md for
+# the license.
+
 import numpy as np
 
 
