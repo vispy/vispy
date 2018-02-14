@@ -29,11 +29,12 @@ except Exception as exp:
 else:
     # Success
     available, testable, why_not = True, True, None
-    has_uic = False  # What is this for? PyQt5 sets this to true, PySide sets this to false
+    # What is this for? PyQt5 sets this to true, PySide sets this to false
+    has_uic = False
     import PySide2
 
-    # PySide2 doesn't have qWait for some reason
-    # See: https://github.com/pyqtgraph/pyqtgraph/pull/376/commits/8bdc19be75a7552cc0043bf8b5f5e0ee796edda0
+    # PySide2 doesn't have qWait for some reason see:
+    # https://github.com/pyqtgraph/pyqtgraph/pull/376/commits/8bdc19be75a7552cc0043bf8b5f5e0ee796edda0
     from PySide2 import QtTest
     if not hasattr(QtTest.QTest, 'qWait'):
         @staticmethod
