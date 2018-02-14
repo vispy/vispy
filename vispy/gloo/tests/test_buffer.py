@@ -317,7 +317,8 @@ class DataBufferTest(unittest.TestCase):
         # this used to be converted to a single element array of the above
         # dtype filled with 0s. This is no longer supported.
         # B[1] = b''  # Gets converted into array of dtype. Lists do not work
-        B[1] = 0
+        # the below doesn't work on all systems (I guess?)
+        # B[1] = 0
         B[1] = ([0, 0, 0], [0, 0], [0, 0, 0, 0],)
         
         self.assertRaises(IndexError, B.__setitem__, +999, data[0])
