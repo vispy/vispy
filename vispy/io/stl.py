@@ -130,7 +130,8 @@ def load_stl_ascii(file_obj):
               faces:        (m,3) int, indexes of vertices
               face_normals: (m,3) float, normal vector of each face
     '''
-    header = file_obj.readline()
+    # header (not used by this function)
+    file_obj.readline()
 
     text = file_obj.read()
     if hasattr(text, 'decode'):

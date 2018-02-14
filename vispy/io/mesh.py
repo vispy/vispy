@@ -44,7 +44,7 @@ def read_mesh(fname):
         faces = mesh.faces
         normals = mesh.face_normals
         texcoords = None
-        return  vertices, faces, normals, texcoords
+        return vertices, faces, normals, texcoords
     elif not format:
         raise ValueError('read_mesh needs could not determine format.')
     else:
