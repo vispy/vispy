@@ -149,7 +149,7 @@ def message_handler(*args):
 
     if qt_lib in ("pyqt4", "pyside"):
         msg_type, msg = args
-    elif qt_lib == ("pyqt5", "pyside2"):  # Is this correct for pyside2?
+    elif qt_lib in ("pyqt5", "pyside2"):  # Is this correct for pyside2?
         msg_type, context, msg = args
     elif qt_lib:
         raise RuntimeError("Invalid value for qt_lib %r." % qt_lib)
