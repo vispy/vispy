@@ -1,4 +1,4 @@
-# -*- coding: utf8 -*- 
+# -*- coding: utf-8 -*-
 """
 Debugging system for Triangulation class. Displays stepwise visual 
 representation of the algorithm. 
