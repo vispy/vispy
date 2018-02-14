@@ -19,13 +19,11 @@ Define the version:
 Test installation:
   * clear the build and dist dir (if they exist)
   * python setup.py sdist
-  * twine register --repository-url https://test.pypi.org/legacy/ dist/*
   * twine upload --repository-url https://test.pypi.org/legacy/ dist/*
   * pip install -i https://testpypi.python.org/pypi vispy
 
 Generate and upload package
   * python setup.py sdist
-  * twine register dist/*
   * twine upload dist/*
 
 Announcing:
