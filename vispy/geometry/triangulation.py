@@ -120,8 +120,7 @@ class Triangulation(object):
         self._edges_lookup = {}
 
     def triangulate(self):
-        """Do the triangulation
-        """
+        """Do the triangulation."""
         self._initialize()
 
         pts = self.pts
@@ -257,8 +256,8 @@ class Triangulation(object):
                 self._remove_tri(*t)
 
     def _edge_event(self, i, j):
-        """
-        Force edge (i, j) to be present in mesh.
+        """Force edge (i, j) to be present in mesh.
+
         This works by removing intersected triangles and filling holes up to
         the cutting edge.
         """
@@ -445,7 +444,8 @@ class Triangulation(object):
         return None
 
     def _edge_in_front(self, edge):
-        """ Return the index where *edge* appears in the current front.
+        """Return the index where *edge* appears in the current front.
+
         If the edge is not in the front, return -1
         """
         e = (list(edge), list(edge)[::-1])
@@ -455,15 +455,15 @@ class Triangulation(object):
         return -1
 
     def _edge_opposite_point(self, tri, i):
-        """ Given a triangle, return the edge that is opposite point i.
+        """Given a triangle, return the edge that is opposite point i.
+
         Vertexes are returned in the same orientation as in tri.
         """
         ind = tri.index(i)
         return (tri[(ind+1) % 3], tri[(ind+2) % 3])
 
     def _adjacent_tri(self, edge, i):
-        """
-        Given a triangle formed by edge and i, return the triangle that shares
+        """Given a triangle formed by edge and i, return the triangle that shares
         edge. *i* may be either a point or the entire triangle.
         """
         if not np.isscalar(i):
@@ -484,8 +484,9 @@ class Triangulation(object):
                                "in this mesh." % (edge, i))
 
     def _tri_from_edge(self, edge):
-        """Return the only tri that contains *edge*. If two tris share this
-        edge, raise an exception.
+        """Return the only tri that contains *edge*.
+
+        If two tris share this edge, raise an exception.
         """
         edge = tuple(edge)
         p1 = self._edges_lookup.get(edge, None)
@@ -500,8 +501,7 @@ class Triangulation(object):
             raise RuntimeError("Two triangles connected to edge %r" % (edge,))
 
     def _edges_in_tri_except(self, tri, edge):
-        """Return the edges in *tri*, excluding *edge*.
-        """
+        """Return the edges in *tri*, excluding *edge*."""
         edges = [(tri[i], tri[(i+1) % 3]) for i in range(3)]
         try:
             edges.remove(tuple(edge))
@@ -534,8 +534,7 @@ class Triangulation(object):
                 return edge
 
     def _find_edge_intersections(self):
-        """
-        Return a dictionary containing, for each edge in self.edges, a list
+        """Return a dictionary containing, for each edge in self.edges, a list
         of the positions at which the edge should be split.
         """
         edges = self.pts[self.edges]
