@@ -73,7 +73,7 @@ void main(void)
 
 
 class Canvas(app.Canvas):
-    def __init__(self, pause=False):
+    def __init__(self):
         app.Canvas.__init__(self, size=(800, 600), keys='interactive')
         self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
         self.program["u_global_time"] = 0
