@@ -5,18 +5,18 @@
 """
 Base code for the Qt backends. Note that this is *not* (anymore) a
 backend by itself! One has to explicitly use either PySide, PyQt4 or
-PyQt5. Note that the automatic backend selection prefers a GUI toolkit
-that is already imported.
+PySide2, PyQt5. Note that the automatic backend selection prefers
+a GUI toolkit that is already imported.
 
-The _pyside, _pyqt4 and _pyqt5 modules will import * from this module,
-and also keep a ref to the module object. Note that if two of the
-backends are used, this module is actually reloaded. This is a sorts
-of poor mans "subclassing" to get a working version for both backends
-using the same code.
+The _pyside, _pyqt4, _pyside2 and _pyqt5 modules will import * from
+this module, and also keep a ref to the module object. Note that if
+two of the backends are used, this module is actually reloaded. This
+is a sorts of poor mans "subclassing" to get a working version for
+both backends using the same code.
 
-Note that it is strongly discouraged to use the PySide/PyQt4/PyQt5
-backends simultaneously. It is known to cause unpredictable behavior
-and segfaults.
+Note that it is strongly discouraged to use the
+PySide/PyQt4/PySide2/PyQt5 backends simultaneously. It is known to
+cause unpredictable behavior and segfaults.
 """
 
 from __future__ import division
@@ -55,7 +55,7 @@ elif sys.platform.startswith('win'):
 
 def _check_imports(lib):
     # Make sure no conflicting libraries have been imported.
-    libs = ['PyQt4', 'PyQt5', 'PySide']
+    libs = ['PyQt4', 'PyQt5', 'PySide', 'PySide2']
     libs.remove(lib)
     for lib2 in libs:
         lib2 += '.QtCore'
@@ -77,6 +77,12 @@ elif qt_lib == 'pyqt5':
     if not USE_EGL:
         from PyQt5.QtOpenGL import QGLWidget, QGLFormat
     from PyQt5 import QtGui, QtCore, QtWidgets, QtTest
+    QWidget, QApplication = QtWidgets.QWidget, QtWidgets.QApplication  # Compat
+elif qt_lib == 'pyside2':
+    _check_imports('PySide2')
+    if not USE_EGL:
+        from PySide2.QtOpenGL import QGLWidget, QGLFormat
+    from PySide2 import QtGui, QtCore, QtWidgets, QtTest
     QWidget, QApplication = QtWidgets.QWidget, QtWidgets.QApplication  # Compat
 elif qt_lib == 'pyside':
     _check_imports('PySide')
@@ -143,7 +149,7 @@ def message_handler(*args):
 
     if qt_lib in ("pyqt4", "pyside"):
         msg_type, msg = args
-    elif qt_lib == "pyqt5":
+    elif qt_lib in ("pyqt5", "pyside2"):  # Is this correct for pyside2?
         msg_type, context, msg = args
     elif qt_lib:
         raise RuntimeError("Invalid value for qt_lib %r." % qt_lib)
