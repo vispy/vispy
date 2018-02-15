@@ -650,12 +650,6 @@ class Triangulation(object):
         mask = self.edges[:, 0] != self.edges[:, 1]
         self.edges = self.edges[mask]
 
-    def _distance(self, A, B):
-        # Distance between points A and B
-        n = len(A)
-        assert len(B) == n
-        return np.linalg.norm(np.array(list(A)) - np.array(list(B)))
-
     def _distances_from_line(self, edge, points):
         # Distance of a set of points from a given line
         e1 = self.pts[edge[0]]
