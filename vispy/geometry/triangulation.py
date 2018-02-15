@@ -180,8 +180,7 @@ class Triangulation(object):
                     assert (i != front[ind1] and
                             front[ind1] != front[ind2] and
                             front[ind2] != i)
-                    self._add_tri(i, front[ind1], front[ind2],
-                                  source='smooth1')
+                    self._add_tri(i, front[ind1], front[ind2])
                     front.pop(ind1)
 
             # "edge event" (sec. 3.4.2)
@@ -210,8 +209,7 @@ class Triangulation(object):
             # if edges lie in counterclockwise direction, then signed area
             # is positive
             if self._iscounterclockwise(front[k], front[k+1], front[k+2]):
-                self._add_tri(front[k], front[k+1], front[k+2], legal=False,
-                              source='fill_hull')
+                self._add_tri(front[k], front[k+1], front[k+2])
                 front.pop(k+1)
                 idx -= 1
                 continue
@@ -412,8 +410,7 @@ class Triangulation(object):
             while len(polygon) > 2:
                 ind = np.argmax(dist)
                 self._add_tri(polygon[ind], polygon[ind-1],
-                              polygon[ind+1], legal=False,
-                              source='edge_event')
+                              polygon[ind+1])
                 polygon.pop(ind)
                 dist.pop(ind)
 
@@ -760,9 +757,7 @@ class Triangulation(object):
         c = np.cross(v1, v2)  # positive if v1 is CW from v2
         return 1 if c > 0 else (-1 if c < 0 else 0)
 
-    def _add_tri(self, a, b, c, legal=True, source=None):
-        # source is just used for #debugging
-
+    def _add_tri(self, a, b, c):
         # sanity check
         assert a != b and b != c and c != a
 
