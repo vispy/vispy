@@ -883,10 +883,3 @@ def triangulate(vertices):
     vertices[:, :2] = vertices_2d
     vertices[:, 2] = zmean
     return vertices, triangles
-
-
-# Note: using custom #debug instead of logging because
-# there are MANY messages and logger might be too expensive.
-# After this becomes stable, we might just remove them altogether.
-def debug(*args):
-    print(*args)
