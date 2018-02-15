@@ -235,10 +235,6 @@ def test_utility_methods():
     assert t._orientation((4, 5), 4) == 0
     assert t._orientation((4, 5), 5) == 0
 
-    # distance
-    dist = ((t.pts[0]-t.pts[1])**2).sum()**0.5
-    assert t._distance(t.pts[0], t.pts[1]) == dist
-
     # adjacent_tri
     assert t._adjacent_tri((1, 4), 0) == (4, 1, 2)
     assert t._adjacent_tri((0, 4), 1) is None
