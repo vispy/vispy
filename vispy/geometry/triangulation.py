@@ -69,7 +69,7 @@ class Triangulation(object):
 
     def _initialize(self):
         self._normalize()
-        ## Initialization (sec. 3.3)
+        # Initialization (sec. 3.3)
 
         # sort points by y, then x
         flat_shape = self.pts.shape[0] * self.pts.shape[1]
@@ -127,7 +127,7 @@ class Triangulation(object):
         pts = self.pts
         front = self._front
 
-        ## Begin sweep (sec. 3.4)
+        # Begin sweep (sec. 3.4)
         for i in range(3, pts.shape[0]):
             pi = pts[i]
 
@@ -200,7 +200,7 @@ class Triangulation(object):
         self.tris = np.array(list(self.tris.keys()), dtype=int)
 
     def _finalize(self):
-        ## Finalize (sec. 3.5)
+        # Finalize (sec. 3.5)
 
         # (i) Add bordering triangles to fill hull
         front = list(OrderedDict.fromkeys(self._front))
