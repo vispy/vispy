@@ -4,4 +4,4 @@ include doc/*.rst
 recursive-include doc/ext *
 recursive-include doc/_static *
 recursive-include doc/_templates *
-
+recursive-include vispy/static *.*

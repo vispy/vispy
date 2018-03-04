@@ -8,6 +8,7 @@
 from os import path as op
 
 from .wavefront import WavefrontReader, WavefrontWriter
+from .stl import load_stl
 
 
 def read_mesh(fname):
@@ -37,6 +38,13 @@ def read_mesh(fname):
 
     if fmt in ('.obj'):
         return WavefrontReader.read(fname)
+    elif fmt in ('.stl'):
+        mesh = load_stl(fname)
+        vertices = mesh.vertices
+        faces = mesh.faces
+        normals = mesh.face_normals
+        texcoords = None
+        return vertices, faces, normals, texcoords
     elif not format:
         raise ValueError('read_mesh needs could not determine format.')
     else:
