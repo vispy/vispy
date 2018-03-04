@@ -36,20 +36,24 @@ import os
 import sys
 import platform
 from os import path as op
-from setuptools import setup, find_packages, Command
+from distutils import log
+from setuptools import setup, find_packages, Command, Extension
 from setuptools.command.sdist import sdist
 from setuptools.command.build_py import build_py
+from setuptools.command.build_ext import build_ext as _build_ext
 from setuptools.command.egg_info import egg_info
 from subprocess import check_call
-from distutils import log
-from distutils.core import Extension
+import numpy as np
+
+
+try:
+    from Cython.Build import cythonize
+except ImportError:
+    cythonize = None
+
 log.set_verbosity(log.DEBUG)
 log.info('setup.py entered')
 log.info('$PATH=%s' % os.environ['PATH'])
-from warnings import warn
-from Cython.Distutils import build_ext
-import numpy as np
-
 
 name = 'vispy'
 description = 'Interactive visualization in Python'
@@ -82,6 +86,59 @@ npm_path = os.pathsep.join([
     os.path.join(node_root, 'node_modules', '.bin'),
     os.environ.get('PATH', os.defpath),
 ])
+
+
+def set_builtin(name, value):
+    if isinstance(__builtins__, dict):
+        __builtins__[name] = value
+    else:
+        setattr(__builtins__, name, value)
+
+
+class build_ext(_build_ext):
+    """Work around to bootstrap numpy includes in to extensions.
+
+    Copied from:
+
+        http://stackoverflow.com/questions/19919905/
+            how-to-bootstrap-numpy-installation-in-setup-py
+
+    """
+
+    def finalize_options(self):
+        _build_ext.finalize_options(self)
+        # Prevent numpy from thinking it is still in its setup process:
+        set_builtin('__NUMPY_SETUP__', False)
+        import numpy
+        self.include_dirs.append(numpy.get_include())
+
+
+if cythonize is None:
+    def cythonize(extensions, **_ignore):
+        """Fake function to compile from C/C++ files.
+
+        Normally compiled from .pyx files with cython. If installed from
+        a source distribution (sdist) this function should be enough to
+        compile extensions for the C/C++ files included in the sdist.
+
+        """
+        for extension in extensions:
+            sources = []
+            for sfile in extension.sources:
+                path, ext = os.path.splitext(sfile)
+                if ext in ('.pyx', '.py'):
+                    if extension.language == 'c++':
+                        ext = '.cpp'
+                    else:
+                        ext = '.c'
+                    sfile = path + ext
+                if not os.path.isfile(sfile):
+                    raise OSError("Missing cython C/C++ source file: "
+                                  "{}. Install 'cython' to compile "
+                                  "them.".format(sfile))
+                sources.append(sfile)
+            extension.sources[:] = sources
+        return extensions
 
 
 def js_prerelease(command, strict=False):
@@ -160,22 +217,26 @@ class NPM(Command):
     def run(self):
         has_npm = self.has_npm()
         if not has_npm:
-            log.error("`npm` unavailable.  If you're running this command using sudo, make sure `npm` is available to sudo")
+            log.error("`npm` unavailable.  If you're running this command "
+                      "using sudo, make sure `npm` is available to sudo")
 
         env = os.environ.copy()
         env['PATH'] = npm_path
 
         if self.should_run_npm_install():
-            log.info("Installing build dependencies with npm.  This may take a while...")
+            log.info("Installing build dependencies with npm.  This may take "
+                     "a while...")
             npmName = self.get_npm_name();
-            check_call([npmName, 'install'], cwd=node_root, stdout=sys.stdout, stderr=sys.stderr)
+            check_call([npmName, 'install'], cwd=node_root,
+                       stdout=sys.stdout, stderr=sys.stderr)
             os.utime(self.node_modules, None)
 
         for t in self.targets:
             if not os.path.exists(t):
                 msg = 'Missing file: %s' % t
                 if not has_npm:
-                    msg += '\nnpm is required to build a development version of a widget extension'
+                    msg += '\nnpm is required to build a development ' \
+                           'version of a widget extension'
                 raise ValueError(msg)
 
         # update package data in case this created new files
@@ -233,7 +294,7 @@ setup(
         'wx': ['wxPython'],
     },
     packages=find_packages(),
-    ext_modules=extensions,
+    ext_modules=cythonize(extensions),
     include_dirs=[np.get_include()],
     package_dir={
         'vispy': 'vispy'},
