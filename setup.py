@@ -141,6 +141,9 @@ class NPM(Command):
 
     def has_npm(self):
         npmName = self.get_npm_name();
+        if platform.system() == 'Windows':
+            # HACK: See if we can get appveyor installation to work
+            return False
         try:
             check_call([npmName, '--version'])
             return True
