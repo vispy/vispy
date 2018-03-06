@@ -2,7 +2,7 @@
 # Authors: Olivier Grisel, Jonathan Helmus and Kyle Kastner
 # License: CC0 1.0 Universal: http://creativecommons.org/publicdomain/zero/1.0/
 
-$MESA_GL_URL = "https://github.com/vispy/demo-data/raw/master/mesa/"
+$MESA_GL_URL = "http://github.com/vispy/demo-data/raw/master/mesa/"
 
 # Mesa DLLs found linked from:
 #     http://qt-project.org/wiki/Cross-compiling-Mesa-for-Windows
