@@ -15,7 +15,13 @@ from ..testing import has_matplotlib
 # checking for matplotlib
 _HAS_MPL = has_matplotlib()
 if _HAS_MPL:
-    from matplotlib import _cntr as cntr
+    try:
+        from matplotlib import _cntr as cntr
+    except ImportError:
+        import warnings
+        warnings.warn("VisPy is not yet compatible with matplotlib 2.2+")
+        _HAS_MPL = False
+        cntr = None
 
 
 class IsocurveVisual(LineVisual):
