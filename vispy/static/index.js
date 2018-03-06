@@ -248,7 +248,7 @@ var require;var require;!function(e){if(true)module.exports=e();else if("functio
 /* 4 */
 /***/ (function(module, exports) {
 
-module.exports = {"name":"vispy","version":"0.1.0","description":"A Custom Jupyter Widget Library for the VisPy Python Library","author":"Vispy Development Team","license":"BSD-3-Clause","main":"lib/index.js","repository":{"type":"git","url":"https://github.com/VisPy/vispy.git"},"keywords":["jupyter","widgets","ipython","ipywidgets"],"files":["lib/**/*.js","dist/*.js"],"scripts":{"clean":"rimraf dist/","prepublish":"webpack","test":"echo \"Error: no test specified\" && exit 1"},"devDependencies":{"webpack":"^3.5.5","rimraf":"^2.6.1"},"dependencies":{"@jupyter-widgets/base":"^1.0.0","lodash":"^4.17.4"}}
+module.exports = {"name":"vispy","version":"0.1.0","description":"A Custom Jupyter Widget Library for the VisPy Python Library","author":"Vispy Development Team","license":"BSD-3-Clause","main":"lib/index.js","repository":{"type":"git","url":"https://github.com/VisPy/vispy.git"},"keywords":["jupyter","widgets","ipython","ipywidgets"],"files":["lib/**/*.js","dist/*.js"],"scripts":{"clean":"rimraf dist/","prepare":"webpack","test":"echo \"Error: no test specified\" && exit 1"},"devDependencies":{"rimraf":"^2.6.1","webpack":"^3.11.0"},"dependencies":{"@jupyter-widgets/base":"^1.1.8","lodash":"^4.17.5"}}
 
 /***/ })
 /******/ ])});;
