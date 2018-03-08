@@ -54,5 +54,5 @@ test_script:
   # Run the project tests (don't do examples because they are too slow)
   - "python make test unit"
 
-#on_success:
-#  - "coveralls"
+on_success:
+  - "coveralls"
