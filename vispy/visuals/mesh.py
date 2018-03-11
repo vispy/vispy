@@ -21,6 +21,7 @@ from ..ext.six import string_types
 
 # Shaders for lit rendering (using phong shading)
 shading_vertex_template = """
+attribute float a_vert_data;
 varying vec3 v_normal_vec;
 varying vec3 v_light_vec;
 varying vec3 v_eye_vec;
@@ -28,8 +29,10 @@ varying vec3 v_eye_vec;
 varying vec4 v_ambientk;
 varying vec4 v_light_color;
 varying vec4 v_base_color;
+varying float v_vert_data;
 
 void main() {
+    v_vert_data = a_vert_data;
     v_ambientk = $ambientk;
     v_light_color = $light_color;
     v_base_color = $color_transform($base_color);
@@ -69,6 +72,7 @@ shading_fragment_template = """
 varying vec3 v_normal_vec;
 varying vec3 v_light_vec;
 varying vec3 v_eye_vec;
+varying float v_vert_data;
 
 varying vec4 v_ambientk;
 varying vec4 v_light_color;
@@ -93,15 +97,18 @@ void main() {
         speculark = 20.0 * pow(speculark, 1.0 / $shininess);
     }
     vec4 specular_color = v_light_color * speculark;
-    gl_FragColor = v_base_color * (v_ambientk + diffuse_color) + specular_color;
+    gl_FragColor = $fun_color * (v_ambientk + diffuse_color) + specular_color;
 }
 """  # noqa
 
 # Shader code for non lighted rendering
 vertex_template = """
 varying vec4 v_base_color;
+attribute float a_vert_data;
+varying float v_vert_data;
 
 void main() {
+    v_vert_data = a_vert_data;
     v_base_color = $color_transform($base_color);
     gl_Position = $transform($to_vec4($position));
 }
@@ -109,8 +116,9 @@ void main() {
 
 fragment_template = """
 varying vec4 v_base_color;
+varying float v_vert_data;
 void main() {
-    gl_FragColor = v_base_color;
+    gl_FragColor = $fun_color;
 }
 """
 
@@ -133,13 +141,23 @@ vec4 vec2to4(vec2 xyz) {
 
 _null_color_transform = 'vec4 pass(vec4 color) { return color; }'
 _clim = 'float cmap(float val) { return (val - $cmin) / ($cmax - $cmin); }'
-
+#_clim_banded = 'float cmap(float val) { return floor((val - $cmin) / ($cmax - $cmin)*$nband)/$nband; }'
+_clim_banded = """float cmap(float val){
+    float y;
+    y = floor((val - $cmin) / ($cmax - $cmin)*$nband);
+    if (y == $nband) {
+        y -= 1.0;
+    }
+    return y/($nband-1.0);}"""
 
 # Eventually this could be de-duplicated with visuals/image.py, which does
 # something similar (but takes a ``color`` instead of ``float``)
-def _build_color_transform(data, cmap, clim=(0., 1.)):
+def _build_color_transform(data, cmap, clim=(0., 1.), banded=False, nband=10):
     if data.ndim == 2 and data.shape[1] == 1:
         fun = Function(_clim)
+        if banded:
+            fun = Function(_clim_banded)
+            fun['nband'] = float(nband)
         fun['cmin'] = clim[0]
         fun['cmax'] = clim[1]
         fun = FunctionChain(None, [fun, Function(cmap.glsl_map)])
@@ -171,12 +189,17 @@ class MeshVisual(Visual):
         Shading to use.
     mode : str
         The drawing mode.
+    banded : bool 
+        If True apply a banded glsl shader for the colormap
+    nband : int
+        the number of band in the glsl banded shader
     **kwargs : dict
         Keyword arguments to pass to `Visual`.
     """
     def __init__(self, vertices=None, faces=None, vertex_colors=None,
                  face_colors=None, color=(0.5, 0.5, 1, 1), vertex_values=None,
-                 meshdata=None, shading=None, mode='triangles', **kwargs):
+                 meshdata=None, shading=None, mode='triangles', banded=False,
+                 nband=10, **kwargs):
 
         # Function for computing phong shading
         # self._phong = Function(phong_template)
@@ -207,6 +230,8 @@ class MeshVisual(Visual):
         self._shininess = 1. / 200.
         self._cmap = get_colormap('cubehelix')
         self._clim = 'auto'
+        self._banded = banded
+        self._nband = nband
 
         # Uniform color
         self._color = Color(color)
@@ -324,6 +349,26 @@ class MeshVisual(Visual):
         return self._meshdata
 
     @property
+    def banded(self):
+        """ banded shader for colormap in the case of vertex value
+        """
+        return self._banded
+
+    @banded.setter
+    def banded(self, banded):
+        self._banded = banded
+
+    @property
+    def nband(self):
+        """ the number of band in the banded colormap
+        """
+        return self._nband
+
+    @nband.setter
+    def nband(self, nband):
+        self._nband = nband
+
+    @property
     def color(self):
         """The uniform color for this mesh"""
         return self._color
@@ -418,12 +463,18 @@ class MeshVisual(Visual):
         # If non-lit shading is used, then just pass the colors
         # Otherwise, the shader uses a base_color to represent the underlying
         # color, which is then lit with the lighting model
+        self.shared_program.frag['fun_color'] = 'v_base_color'
         self.shared_program.vert['color_transform'] = \
-            _build_color_transform(colors, self._cmap, self._clim_values)
+            _build_color_transform(colors, self._cmap, self._clim_values)        
         if colors.ndim == 1:
             self.shared_program.vert['base_color'] = colors
         else:
             self.shared_program.vert['base_color'] = VertexBuffer(colors)
+            if self._banded:
+                self.shared_program.frag['fun_color'] = '$color_transform(v_vert_data)'
+                self.shared_program.frag['color_transform'] = \
+                    _build_color_transform(colors, self._cmap, self._clim_values, banded=True, nband=self._nband)                 
+                self.shared_program['a_vert_data'] = VertexBuffer(colors)
         if self.shading is not None:
             # Normal data comes via vertex shader
             if self._normals.size > 0:
