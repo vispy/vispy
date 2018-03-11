@@ -44,7 +44,7 @@ def get_left_orientation_bar():
 
 
 def get_right_orientation_bar():
-    pos = 200, 300
+    pos = 100, 300
     size = 400, 10
 
     colorbar = ColorBarVisual(pos=pos, size=size,
@@ -54,8 +54,31 @@ def get_right_orientation_bar():
     return style_colorbar(colorbar)
 
 
+def get_left_orientation_bar_banded():
+    pos = 200, 300
+    size = 400, 10
+
+    colorbar = ColorBarVisual(pos=pos, size=size,
+                              label_str="orientation left banded with 3 band",
+                              cmap=colormap, orientation="left",
+                              banded=True, nband=3)
+
+    return style_colorbar(colorbar)
+
+
+def get_right_orientation_bar_banded():
+    pos = 250, 300
+    size = 400, 10
+
+    colorbar = ColorBarVisual(pos=pos, size=size,
+                              label_str="orientation right banded with 5 band",
+                              cmap=colormap, orientation="right",
+                              banded=True, nband=5)
+
+    return style_colorbar(colorbar)
+
 def get_top_orientation_bar():
-    pos = 600, 400
+    pos = 600, 500
     size = 300, 10
 
     colorbar = ColorBarVisual(pos=pos, size=size,
@@ -66,12 +89,36 @@ def get_top_orientation_bar():
 
 
 def get_bottom_orientation_bar():
-    pos = 600, 150
+    pos = 600, 400
     size = 300, 10
 
     colorbar = ColorBarVisual(pos=pos, size=size,
                               label_str="orientation bottom",
                               cmap=colormap, orientation="bottom")
+
+    return style_colorbar(colorbar)
+
+
+def get_top_orientation_bar_banded():
+    pos = 600, 300
+    size = 300, 10
+
+    colorbar = ColorBarVisual(pos=pos, size=size,
+                              label_str="orientation top banded with 4 band",
+                              cmap=colormap, orientation="top",
+                              banded=True, nband=4)
+
+    return style_colorbar(colorbar)
+
+
+def get_bottom_orientation_bar_banded():
+    pos = 600, 200
+    size = 300, 10
+
+    colorbar = ColorBarVisual(pos=pos, size=size,
+                              label_str="orientation bottom banded with 6 band",
+                              cmap=colormap, orientation="bottom",
+                              banded=True, nband=6)
 
     return style_colorbar(colorbar)
 
@@ -84,8 +131,12 @@ class Canvas(app.Canvas):
         self.bars = []
         self.bars.append(get_left_orientation_bar())
         self.bars.append(get_right_orientation_bar())
+        self.bars.append(get_left_orientation_bar_banded())
+        self.bars.append(get_right_orientation_bar_banded())
         self.bars.append(get_top_orientation_bar())
         self.bars.append(get_bottom_orientation_bar())
+        self.bars.append(get_top_orientation_bar_banded())
+        self.bars.append(get_bottom_orientation_bar_banded())
 
         self.show()
 

@@ -10,7 +10,7 @@ import numpy as np
 
 from . import Visual, TextVisual, CompoundVisual, _BorderVisual
 # from .border import _BorderVisual
-from .shaders import Function
+from .shaders import Function, FunctionChain
 from ..color import get_colormap
 
 VERT_SHADER = """
@@ -47,6 +47,15 @@ void main()
 """  # noqa
 
 
+_clim_not_banded = 'float cmap(float val) { return val;}'
+_clim_banded = """float rint(float val){
+    float y;
+    y = floor(val*$nband);
+    if (y == $nband) {
+        y -= 1.0;
+    }
+    return y/($nband-1.0);}"""
+
 class _CoreColorBarVisual(Visual):
     """
     Visual subclass that actually renders the ColorBar.
@@ -70,7 +79,11 @@ class _CoreColorBarVisual(Visual):
         The orientation of the colorbar, used for rendering. The
         orientation can be thought of as the position of the label
         relative to the color bar.
-
+    banded : bool 
+        If True apply a banded glsl shader for the colormap
+    nband : int
+        the number of band in the glsl banded shader
+    
     Note
     ----
     This is purely internal.
@@ -85,33 +98,36 @@ class _CoreColorBarVisual(Visual):
     def __init__(self, pos, halfdim,
                  cmap,
                  orientation,
+                 banded=True,
+                 nband=10,
                  **kwargs):
 
         self._cmap = get_colormap(cmap)
         self._pos = pos
         self._halfdim = halfdim
         self._orientation = orientation
+        self._banded = banded
+        self._nband = nband
 
         # setup the right program shader based on color
         if orientation == "top" or orientation == "bottom":
             Visual.__init__(self, vcode=VERT_SHADER,
                             fcode=FRAG_SHADER_HORIZONTAL, **kwargs)
-
         elif orientation == "left" or orientation == "right":
             Visual.__init__(self, vcode=VERT_SHADER,
                             fcode=FRAG_SHADER_VERTICAL, **kwargs)
         else:
             raise _CoreColorBarVisual._get_orientation_error(self._orientation)
 
+
         tex_coords = np.array([[0, 0], [1, 0], [1, 1],
                                [0, 0], [1, 1], [0, 1]],
                               dtype=np.float32)
-
-        glsl_map_fn = Function(self._cmap.glsl_map)
-
-        self.shared_program.frag['color_transform'] = glsl_map_fn
+   
         self.shared_program['a_texcoord'] = tex_coords.astype(np.float32)
 
+
+        self.shared_program.frag['color_transform'] = self.define_fun()
         self._update()
 
     def _update(self):
@@ -190,7 +206,7 @@ class _CoreColorBarVisual(Visual):
     @cmap.setter
     def cmap(self, cmap):
         self._cmap = get_colormap(cmap)
-        self._program.frag['color_transform'] = Function(self._cmap.glsl_map)
+        self._program.frag['color_transform'] = self.define_fun()
 
     @staticmethod
     def _prepare_transforms(view):
@@ -203,7 +219,35 @@ class _CoreColorBarVisual(Visual):
     def _prepare_draw(self, view):
         self._draw_mode = "triangles"
         return True
+    
+    @property
+    def banded(self):
+        return self._banded
 
+    @banded.setter
+    def banded(self, banded):
+        self._banded = banded
+        self.shared_program.frag['color_transform'] = self.define_fun()
+        self._update()   
+        
+    @property
+    def nband(self):
+        return self._nband
+    
+    @nband.setter
+    def nband(self, nband):
+        self._nband = nband
+        self.shared_program.frag['color_transform'] = self.define_fun()
+        self._update()
+    
+    def define_fun(self):
+        fun_clim = _clim_not_banded
+        fun = Function(fun_clim)
+        if self._banded:
+            fun_clim = _clim_banded
+            fun = Function(fun_clim)
+            fun['nband'] = self._nband
+        return FunctionChain(None, [fun, Function(self._cmap.glsl_map)])        
 
 class ColorBarVisual(CompoundVisual):
     """Visual subclass displaying a colorbar
@@ -269,6 +313,10 @@ class ColorBarVisual(CompoundVisual):
     border_color : str | vispy.color.Color
         The color of the border of the colormap. This can either be a
         str as the color's name or an actual instace of a vipy.color.Color
+    banded : bool 
+        If True apply a banded glsl shader for the colormap
+    nband : int
+        the number of band in the glsl banded shader        
     """
     # The padding multiplier that's used to place the text
     # next to the Colorbar. Makes sure the text isn't
@@ -282,6 +330,8 @@ class ColorBarVisual(CompoundVisual):
                  clim=(0.0, 1.0),
                  border_width=1.0,
                  border_color="black",
+                 banded=False,
+                 nband=10,
                  **kwargs):
 
         self._label_str = label_str
@@ -291,6 +341,8 @@ class ColorBarVisual(CompoundVisual):
         self._pos = pos
         self._size = size
         self._orientation = orientation
+        self._banded = banded
+        self._nband = nband
 
         self._label = TextVisual(self._label_str, color=self._label_color)
 
@@ -310,7 +362,8 @@ class ColorBarVisual(CompoundVisual):
         self._halfdim = (width * 0.5, height * 0.5)
 
         self._colorbar = _CoreColorBarVisual(pos, self._halfdim,
-                                             cmap, orientation)
+                                             cmap, orientation, 
+                                             banded=banded, nband=nband)
 
         self._border = _BorderVisual(pos, self._halfdim,
                                      border_width, border_color)
@@ -594,6 +647,27 @@ class ColorBarVisual(CompoundVisual):
         self._update()
 
     @property
+    def banded(self):
+        """ The banded flag for colormap
+        """
+        return self._colorbar._banded
+
+    @banded.setter
+    def banded(self, banded):
+        self._colorbar.banded = banded
+
+    @property
+    def nband(self):
+        """ The number of band for colormap
+        """
+        return self._colorbar._nband
+
+    @nband.setter
+    def nband(self, nband):
+        self._colorbar.nband = nband        
+
+
+    @property
     def label(self):
         """ The vispy.visuals.TextVisual associated with the label
         """
@@ -606,20 +680,19 @@ class ColorBarVisual(CompoundVisual):
 
     @property
     def label_str(self):
-        """ Get the string describing the label for the colorbar
-        :return: Label string value (self._label_str)
+        """Get the colorbar string
         """
-        return self._label_str
+        return self._colorbar._label_str
 
     @label_str.setter
     def label_str(self, label_str):
-        """ Set the string that describes the label of the colorbar
-
-        :param label_str: string describing the colorbar
-        :return:
+        """Set the colorbar string
+        Parameters
+        ----------
+        label_str : string label to be displayed with the colorbar
         """
-        self._label_str = label_str
-        self._update()
+        self._colorbar._label_str = label_str
+        self._update()        
 
     @property
     def ticks(self):
@@ -650,7 +723,7 @@ class ColorBarVisual(CompoundVisual):
 
     @property
     def border_color(self):
-        """ The color of the border around the ColorBar in pixels
+        """ The color of the border around the ColorBar
         """
         return self._border.border_color
 

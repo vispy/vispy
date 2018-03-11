@@ -64,11 +64,16 @@ class ColorBarWidget(Widget):
         padding with respect to the major and minor axis
     axis_ratio : float
         ratio of minor axis to major axis
+    banded : bool 
+        If True apply a banded glsl shader for the colormap
+    nband : int
+        the number of band in the glsl banded shader        
     """
     def __init__(self, cmap, orientation,
                  label="", label_color='black', clim=("", ""),
                  border_width=0.0, border_color="black",
-                 padding=(0.2, 0.2), axis_ratio=0.05, **kwargs):
+                 padding=(0.2, 0.2), axis_ratio=0.05, 
+                 banded=False, nband=10, **kwargs):
 
         dummy_size = (1, 1)
         self._major_axis_padding = padding[0]
@@ -80,7 +85,9 @@ class ColorBarWidget(Widget):
                                         label_str=label, clim=clim,
                                         label_color=label_color,
                                         border_width=border_width,
-                                        border_color=border_color, **kwargs)
+                                        border_color=border_color, 
+                                        banded=banded,
+                                        nband=nband, **kwargs)
 
         Widget.__init__(self)
 
@@ -130,6 +137,22 @@ class ColorBarWidget(Widget):
         self._colorbar.cmap = cmap
 
     @property
+    def banded(self):
+        return self._colorbar.banded
+
+    @banded.setter
+    def banded(self, banded):
+        self._colorbar.banded = banded
+
+    @property
+    def nband(self):
+        return self._colorbar.nband
+
+    @nband.setter
+    def nband(self, nband):
+        self._colorbar.nband = nband
+
+    @property
     def label(self):
         return self._colorbar.label
 
@@ -138,13 +161,6 @@ class ColorBarWidget(Widget):
         self._colorbar.label = label
 
     @property
-    def ticks(self):
-        return self._colorbar.ticks
-
-    @ticks.setter
-    def ticks(self, ticks):
-        self._colorbar.ticks = ticks
-
     def label_str(self):
         """Get the colorbar string
         """
@@ -153,13 +169,20 @@ class ColorBarWidget(Widget):
     @label_str.setter
     def label_str(self, label_str):
         """Set the colorbar string
-
         Parameters
         ----------
         label_str : string label to be displayed with the colorbar
         """
         self._colorbar._label_str = label_str
         self._update()
+
+    @property
+    def ticks(self):
+        return self._colorbar.ticks
+
+    @ticks.setter
+    def ticks(self, ticks):
+        self._colorbar.ticks = ticks
 
     @property
     def clim(self):
