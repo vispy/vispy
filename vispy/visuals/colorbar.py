@@ -48,7 +48,7 @@ void main()
 
 
 _clim_not_banded = 'float cmap(float val) { return val;}'
-_clim_banded = """float rint(float val){
+_clim_banded = """float cmap(float val){
     float y;
     y = floor(val*$nband);
     if (y == $nband) {
