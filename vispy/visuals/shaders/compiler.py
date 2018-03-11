@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division
@@ -33,9 +33,11 @@ class Compiler(object):
         name = compiler[obj]
 
     """
-    def __init__(self, **shaders):
+    def __init__(self, namespace=None, **shaders):
         # cache of compilation results for each function and variable
-        self._object_names = {}  # {object: name}
+        if namespace is None:
+            namespace = {}
+        self._object_names = namespace  # {object: name}
         self.shaders = shaders
 
     def __getitem__(self, item):

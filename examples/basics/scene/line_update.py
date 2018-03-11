@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-# vispy: testskip  # disabled due to segfaults on travis
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """
@@ -14,22 +13,41 @@ from vispy import app, scene
 # vertex positions of data to draw
 N = 200
 pos = np.zeros((N, 2), dtype=np.float32)
-pos[:, 0] = np.linspace(50., 750., N)
-pos[:, 1] = np.random.normal(size=N, scale=100, loc=400)
+x_lim = [50., 750.]
+y_lim = [-2., 2.]
+pos[:, 0] = np.linspace(x_lim[0], x_lim[1], N)
+pos[:, 1] = np.random.normal(size=N)
 
 # color array
 color = np.ones((N, 4), dtype=np.float32)
 color[:, 0] = np.linspace(0, 1, N)
 color[:, 1] = color[::-1, 0]
 
-canvas = scene.SceneCanvas(keys='interactive', size=(800, 800), show=True)
+canvas = scene.SceneCanvas(keys='interactive', show=True)
+grid = canvas.central_widget.add_grid(spacing=0)
 
-line = scene.Line(pos, color, parent=canvas.scene)
+viewbox = grid.add_view(row=0, col=1, camera='panzoom')
+
+# add some axes
+x_axis = scene.AxisWidget(orientation='bottom')
+x_axis.stretch = (1, 0.1)
+grid.add_widget(x_axis, row=1, col=1)
+x_axis.link_view(viewbox)
+y_axis = scene.AxisWidget(orientation='left')
+y_axis.stretch = (0.1, 1)
+grid.add_widget(y_axis, row=0, col=0)
+y_axis.link_view(viewbox)
+
+# add a line plot inside the viewbox
+line = scene.Line(pos, color, parent=viewbox.scene)
+
+# auto-scale to see the whole line.
+viewbox.camera.set_range()
 
 
 def update(ev):
     global pos, color, line
-    pos[:, 1] = np.random.normal(size=N, scale=100, loc=400)
+    pos[:, 1] = np.random.normal(size=N)
     color = np.roll(color, 1, axis=0)
     line.set_data(pos=pos, color=color)
 

@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
 # vispy: testskip
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 """
 This is a very simple example that demonstrates using a shared context
 between two Qt widgets.
 """
+
+# XXX THIS IS CURRENTLY BROKEN
 
 from PyQt4 import QtGui, QtCore  # can also use pyside
 from functools import partial
@@ -55,6 +57,7 @@ class Window(QtGui.QWidget):
 
     def on_init(self, event):
         self.text = Text('Initialized', font_size=40.,
+                         anchor_x='left', anchor_y='top',
                          parent=[self.vb_0.scene, self.vb_1.scene])
 
     def on_timer(self, event):

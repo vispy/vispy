@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
@@ -11,8 +11,12 @@ On queues
 ---------
 
 The queue on the GLObject can be associated with other queues. These
-can be queues of other gloo objects, or of the canvas.context. A program
-associates the textures/buffers when they are set via __setitem__. A
+can be queues of other gloo objects, or of the canvas.context. Queues that are
+associated behave as if they are a single queue; this allows GL commands for
+two or more interdependent GL objects to be combined such that they are always
+sent to the same context together.
+
+A program associates the textures/buffers when they are set via __setitem__. A
 FrameBuffer does so when assigning buffers. A program associates itself
 with the canvas.context in draw(). A FrameBuffer does the same in
 activate().
@@ -22,18 +26,16 @@ Example:
     prog1, prog2 = Program(), Program()
     tex1, tex2 = Texture(), Texture()
 
-    prog1.glir.associate(tex1.glir)
-    prog1.glir.associate(tex2.glir)
+    prog1.glir.associate(tex1.glir)  # prog1 and tex1 now share a queue
+    prog2.glir.associate(tex2.glir)  # prog2 and tex2 now share a queue
 
-    canvas1.context.glir.associate(prog1.glir)
-    canvas1.context.glir.associate(prog2.glir)
-    canvas2.context.glir.associate(prog2.glir)
-
-Now, when canvas1 flushes its queue, it takes all the pending commands
-from prog1 and prog2, and subsequently from tex1 and tex2. When canvas2
-is flushed, only commands from prog2 get taken. A similar situation
-holds for a texture that is associated with a program and a frame
-buffer.
+    # this causes prog1, tex1, and canvas.context to all share a queue:
+    canvas.context.glir.associate(prog1.glir)
+    # and now all objects share a single queue
+    canvas.context.glir.associate(prog2.glir)
+ 
+Now, when the canvas flushes its queue, it takes all the pending commands
+from prog1, prog2, tex1, and tex2. 
 """
 
 from .glir import GlirQueue

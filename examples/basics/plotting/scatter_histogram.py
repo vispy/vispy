@@ -1,4 +1,4 @@
-# !/usr/bin/env python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # vispy: gallery 30
 
@@ -10,14 +10,29 @@ import numpy as np
 
 import vispy.plot as vp
 
+np.random.seed(2324)
 n = 100000
-data = np.random.randn(n, 2)
-color = (0.8, 0.25, 0.)
+data = np.empty((n, 2))
+lasti = 0
+for i in range(1, 20):
+    nexti = lasti + (n - lasti) // 2
+    scale = np.abs(np.random.randn(2)) + 0.1
+    scale[1] = scale.mean()
+    data[lasti:nexti] = np.random.normal(size=(nexti-lasti, 2),
+                                         loc=np.random.randn(2),
+                                         scale=scale / i)
+    lasti = nexti
+data = data[:lasti]
+
+
+color = (0.3, 0.5, 0.8)
 n_bins = 100
 
 fig = vp.Fig(show=False)
-fig[0:4, 0:4].plot(data, width=0, face_color=color + (0.05,), edge_color=None,
-                   marker_size=10.)
+line = fig[0:4, 0:4].plot(data, symbol='o', width=0,
+                          face_color=color + (0.02,), edge_color=None,
+                          marker_size=4)
+line.set_gl_state(depth_test=False)
 fig[4, 0:4].histogram(data[:, 0], bins=n_bins, color=color, orientation='h')
 fig[0:4, 4].histogram(data[:, 1], bins=n_bins, color=color, orientation='v')
 

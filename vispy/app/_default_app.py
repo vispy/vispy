@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from .application import Application
@@ -36,7 +36,8 @@ def use_app(backend_name=None, call_reuse=True):
         names = default_app.backend_name.lower().replace('(', ' ').strip(') ')
         names = [name for name in names.split(' ') if name]
         if backend_name and backend_name.lower() not in names:
-            raise RuntimeError('Can only select a backend once.')
+            raise RuntimeError('Can only select a backend once, already using '
+                               '%s.' % names)
         else:
             if call_reuse:
                 default_app.reuse()

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # vispy: gallery 2, testskip
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """
@@ -88,6 +88,7 @@ class Canvas(app.Canvas):
         self.program['iSampleRate'] = 44100.
         for i in range(4):
             self.program['iChannelTime[%d]' % i] = 0.
+        self.program['iGlobalTime'] = 0.
 
         self.activate_zoom()
 

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
@@ -23,7 +23,7 @@ from ...ext.gdi32plus import (gdiplus, gdi32, user32, winreg, LOGFONT,
 
 # XXX This isn't perfect, but it should work for now...
 
-def find_font(face, bold, italic):
+def find_font(face, bold, italic, orig_face=None):
     style_dict = {'Regular': 0, 'Bold': 1, 'Italic': 2, 'Bold Italic': 3}
 
     # Figure out which font to actually use by trying to instantiate by name
@@ -46,7 +46,7 @@ def find_font(face, bold, italic):
     use_face = cast(byref(metrics, metrics.otmpFamilyName), c_wchar_p).value
     if use_face != face:
         warnings.warn('Could not find face match "%s", falling back to "%s"'
-                      % (face, use_face))
+                      % (orig_face or face, use_face))
     use_style = cast(byref(metrics, metrics.otmpStyleName), c_wchar_p).value
     use_style = style_dict.get(use_style, 'Regular')
     # AK: I get "Standaard" for use_style, which is Dutch for standard/regular
@@ -78,8 +78,8 @@ def find_font(face, bold, italic):
                     assert gdiplus.GdipGetFamilyName(family, buf, 0) == 0
                     assert buf.value == use_face
                     fname = ff
-    if fname is None:
-        raise RuntimeError('Could not find system font %s' % use_face)
+                    break
+    fname = fname or find_font('', bold, italic, face)  # fall back to default
     return fname
 
 

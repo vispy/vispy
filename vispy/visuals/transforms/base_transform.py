@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """
 API Issues to work out:
 
-  - AffineTransform and STTransform both have 'scale' and 'translate'
+  - MatrixTransform and STTransform both have 'scale' and 'translate'
     attributes, but they are used in very different ways. It would be nice
     to keep this consistent, but how?
 
@@ -66,6 +66,7 @@ class BaseTransform(object):
 
     def __init__(self):
         self._inverse = None
+        self._dynamic = False
         self.changed = EventEmitter(source=self, type='transform_changed')
         if self.glsl_map is not None:
             self._shader_map = Function(self.glsl_map)
@@ -102,6 +103,22 @@ class BaseTransform(object):
             self._inverse = InverseTransform(self)
         return self._inverse
 
+    @property
+    def dynamic(self):
+        """Boolean flag that indicates whether this transform is expected to 
+        change frequently.
+        
+        Transforms that are flagged as dynamic will not be collapsed in 
+        ``ChainTransform.simplified``. This allows changes to the transform
+        to propagate through the chain without requiring the chain to be
+        re-simplified.
+        """
+        return self._dynamic
+
+    @dynamic.setter
+    def dynamic(self, d):
+        self._dynamic = d
+
     def shader_map(self):
         """
         Return a shader Function that accepts only a single vec4 argument
@@ -129,11 +146,11 @@ class BaseTransform(object):
         """
         return self.shader_map()
 
-    def update(self):
+    def update(self, *args):
         """
         Called to inform any listeners that this transform has changed.
         """
-        self.changed()
+        self.changed(*args)
 
     def __mul__(self, tr):
         """
@@ -180,34 +197,37 @@ class BaseTransform(object):
 
 class InverseTransform(BaseTransform):
     def __init__(self, transform):
-        self._transform = transform
-        self.shader_map = self._transform.shader_imap
-        self.shader_imap = self._transform.shader_map
-        self.map = self._transform.imap
-        self.imap = self._transform.map
-        
-    @property
-    def inverse(self):
-        return self._transform
+        BaseTransform.__init__(self)
+        self._inverse = transform
+        self.map = transform.imap
+        self.imap = transform.map
     
     @property
     def Linear(self):
-        return self._transform.Linear
+        return self._inverse.Linear
 
     @property
     def Orthogonal(self):
-        return self._transform.Orthogonal
+        return self._inverse.Orthogonal
 
     @property
     def NonScaling(self):
-        return self._transform.NonScaling
+        return self._inverse.NonScaling
 
     @property
     def Isometric(self):
-        return self._transform.Isometric
+        return self._inverse.Isometric
+    
+    @property
+    def shader_map(self):
+        return self._inverse.shader_imap
+    
+    @property
+    def shader_imap(self):
+        return self._inverse.shader_map
     
     def __repr__(self):
-        return ("<Inverse of %r>" % repr(self._transform))
+        return ("<Inverse of %r>" % repr(self._inverse))
         
 
 # import here to avoid import cycle; needed for BaseTransform.__mul__.

@@ -53,12 +53,23 @@ def _test_callbacks(canvas):
         _id = backend._id
         backend._on_draw(_id)
         backend._on_resize(_id, 100, 100)
-        backend._on_key_press(_id, 50, 50, 1, 0)
+
+        backend._on_key_press(_id, 340, 340, 1, 0)  # Shift.
+        backend._on_key_press(_id, 50, 50, 1, 0)    # 2
+        backend._on_key_char(_id, 50)
+        backend._on_key_press(_id, 50, 50, 0, 0)
+        backend._on_key_press(_id, 340, 340, 0, 0)
+
+        backend._on_key_press(_id, 65, 65, 1, 0)    # Plain A
+        backend._on_key_char(_id, 197)              # Unicode A.
+        backend._on_key_char(_id, 197)              # Repeat A.
+        backend._on_key_press(_id, 65, 65, 0, 0)
+
         backend._on_mouse_button(_id, 1, 1, 0)
         backend._on_mouse_scroll(_id, 1, 0)
         backend._on_mouse_motion(_id, 10, 10)
         backend._on_close(_id)
-    elif 'qt' in backend_name.lower():
+    elif any(x in backend_name.lower() for x in ('qt', 'pyside')):
         # constructing fake Qt events is too hard :(
         pass
     elif 'sdl2' in backend_name.lower():
@@ -99,6 +110,9 @@ def _test_callbacks(canvas):
         backend._on_event(event)
     elif 'wx' in backend_name.lower():
         # Constructing fake wx events is too hard
+        pass
+    elif 'osmesa' in backend_name.lower():
+        # No events for osmesa backend
         pass
     else:
         raise ValueError
@@ -181,15 +195,11 @@ def test_application():
         print(canvas)  # __repr__
         assert_equal(canvas.title, title)
         canvas.title = 'you'
-        with use_log_level('warning', record=True, print_msg=False) as l:
+        with use_log_level('warning', record=True, print_msg=False):
             if app.backend_module.capability['position']:
                 # todo: disable more tests based on capability
                 canvas.position = pos
             canvas.size = size
-        if 'ipynb_vnc' in canvas.app.backend_name.lower():
-            assert_true(len(l) >= 1)
-        else:
-            assert_true(len(l) == 0)
         canvas.connect(on_mouse_move)
         assert_raises(ValueError, canvas.connect, _on_mouse_move)
         if sys.platform != 'darwin':  # XXX knownfail, prob. needs warmup
@@ -226,19 +236,19 @@ def test_application():
         frag = "void main (void) {gl_FragColor = pos;}"
         program = Program(vert, frag)
         assert_raises(RuntimeError, program.glir.flush, context.shared.parser)
-        
+
         vert = "uniform vec4 pos;\nvoid main (void) {gl_Position = pos;}"
         frag = "uniform vec4 pos;\nvoid main (void) {gl_FragColor = pos;}"
         program = Program(vert, frag)
-        #uniform = program.uniforms[0]
+        # uniform = program.uniforms[0]
         program['pos'] = [1, 2, 3, 4]
-        
+
         vert = "attribute vec4 pos;\nvoid main (void) {gl_Position = pos;}"
         frag = "void main (void) {}"
         program = Program(vert, frag)
-        #attribute = program.attributes[0]
+        # attribute = program.attributes[0]
         program["pos"] = [1, 2, 3, 4]
-        
+
         # use a real program
         program._glir.clear()
         vert = ("uniform mat4 u_model;"
@@ -310,12 +320,12 @@ def test_fs():
     if (a.backend_name.lower() == 'glfw' or
             (a.backend_name.lower() == 'sdl2' and sys.platform == 'darwin')):
         raise SkipTest('Backend takes over screen')
-    with use_log_level('warning', record=True, print_msg=False) as l:
+    with use_log_level('warning', record=True, print_msg=False) as emit_list:
         with Canvas(fullscreen=False) as c:
             assert_equal(c.fullscreen, False)
             c.fullscreen = True
             assert_equal(c.fullscreen, True)
-    assert_equal(len(l), 0)
+    assert_equal(len(emit_list), 0)
     with use_log_level('warning', record=True, print_msg=False):
         # some backends print a warning b/c fullscreen can't be specified
         with Canvas(fullscreen=0) as c:

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # vispy: gallery 30
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 # Author: Nicolas P .Rougier
@@ -103,7 +103,7 @@ class Canvas(app.Canvas):
 
     def __init__(self):
         app.Canvas.__init__(self, keys='interactive', size=(800, 800))
-        self.title = "Atom [zoom with mouse scroll"
+        self.title = "Atom [zoom with mouse scroll]"
 
         self.translate = 6.5
         self.program = gloo.Program(vert, frag)

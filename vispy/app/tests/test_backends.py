@@ -8,14 +8,13 @@ implementation is corect.
 
 """
 
-from inspect import getargspec
-
 import vispy
 from vispy import keys
 from vispy.testing import (requires_application, assert_in, run_tests_if_main,
                            assert_raises)
 from vispy.app import use_app, Application
 from vispy.app.backends import _template
+from vispy.util import _get_args
 
 
 class DummyApplication(Application):
@@ -31,7 +30,7 @@ def _test_module_properties(_module=None):
 
     # Test that the keymap contains all keys supported by vispy.
     module_fname = _module.__name__.split('.')[-1]
-    if module_fname != '_egl':  # skip keys for EGL
+    if module_fname not in ('_egl', '_osmesa'):  # skip keys for EGL, osmesa
         keymap = _module.KEYMAP
         vispy_keys = keymap.values()
         for keyname in dir(keys):
@@ -42,7 +41,7 @@ def _test_module_properties(_module=None):
 
     # For Qt backend, we have a common implementation
     alt_modname = ''
-    if module_fname in ('_pyside', '_pyqt4', '_pyqt5'):
+    if module_fname in ('_pyside', '_pyqt4', '_pyqt5', '_pyside2'):
         alt_modname = _module.__name__.rsplit('.', 1)[0] + '._qt'
 
     # Test that all _vispy_x methods are there.
@@ -58,6 +57,7 @@ def _test_module_properties(_module=None):
         '_vispy_detect_double_click',
         '_vispy_get_geometry',
         '_vispy_get_physical_size',
+        '_vispy_sleep',
         '_process_backend_kwargs')  # defined in base class
 
     class KlassRef(vispy.app.base.BaseCanvasBackend):
@@ -70,7 +70,7 @@ def _test_module_properties(_module=None):
             method = getattr(Klass, key)
             if key not in exceptions:
                 print(key)
-                args = [None] * (len(getargspec(method).args) - 1)
+                args = [None] * (len(_get_args(method)) - 1)
                 assert_raises(NotImplementedError, getattr(base, key), *args)
                 if hasattr(method, '__module__'):
                     mod_str = method.__module__  # Py3k
@@ -120,8 +120,8 @@ def _test_module_properties(_module=None):
     ignore = set(['stylus', 'touch', 'mouse_press', 'paint',
                   'mouse_move', 'mouse_release', 'mouse_double_click',
                   'detect_double_click', 'close'])
-    if module_fname == '_egl':
-        ignore += ['key_release', 'key_press']
+    if module_fname in ('_egl', '_osmesa'):
+        ignore = ignore.union(['mouse_wheel', 'key_release', 'key_press'])
     eventNames = set(canvas.events._emitters.keys()) - ignore
 
     if not alt_modname:  # Only check for non-proxy modules

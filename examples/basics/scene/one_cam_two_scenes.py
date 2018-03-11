@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 # vispy: gallery 2
@@ -45,7 +45,8 @@ vb1.camera.aspect = vb2.camera.aspect = 1  # no auto-scale
 vb1.camera.link(vb2.camera)
 
 # Set the view bounds to show the entire image with some padding
-#view.camera.rect = (-10, -10, image.size[0]+20, image.size[1]+20)
+vb1.camera.set_range()
+
 
 if __name__ == '__main__':
     app.run()

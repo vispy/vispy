@@ -8,11 +8,15 @@ doc/_build
 /_gh-pages
 /_images
 /_demo-data
+.idea
 build
 dist
 MANIFEST
+.vispy-coverage*
 .coverage*
 htmlcov
 vispy.egg-info
 *.swp
 .ipynb_checkpoints
+.cache/
+.pytest_cache/

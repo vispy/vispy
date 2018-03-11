@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from ..util import SimpleBunch
+import time
+from timeit import default_timer
 
 
 class BaseApplicationBackend(object):
@@ -33,6 +35,13 @@ class BaseApplicationBackend(object):
         # Should return the native application object
         return self
 
+    # is called by inputhook.py for pauses
+    # to remove CPU stress
+    # this is virtual so that some backends which have specialize
+    # functionality to deal with user input / latency can use those methods
+    def _vispy_sleep(self, duration_sec):
+        time.sleep(duration_sec)
+
 
 class BaseCanvasBackend(object):
     """BaseCanvasBackend(vispy_canvas, capability, context_type)
@@ -52,6 +61,7 @@ class BaseCanvasBackend(object):
         from .canvas import Canvas  # Avoid circular import
         assert isinstance(vispy_canvas, Canvas)
         self._vispy_canvas = vispy_canvas
+        self._last_time = 0
 
         # We set the _backend attribute of the vispy_canvas to self,
         # because at the end of the __init__ of the CanvasBackend
@@ -178,6 +188,10 @@ class BaseCanvasBackend(object):
         return ev
 
     def _vispy_mouse_move(self, **kwargs):
+        if default_timer() - self._last_time < .01:
+            return
+        self._last_time = default_timer()
+
         # default method for delivering mouse move events to the canvas
         kwargs.update(self._vispy_mouse_data)
 

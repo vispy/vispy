@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 """
 Support for interactive mode to allow VisPy's event loop to be run alongside
@@ -12,9 +12,6 @@ not use Python's PyOS_InputHook functionality.
 """
 
 from ..ext.ipy_inputhook import inputhook_manager, InputHookBase, stdin_ready
-
-from time import sleep
-from ..util.ptime import time
 
 
 def set_interactive(enabled=True, app=None):
@@ -53,23 +50,22 @@ class VisPyInputHook(InputHookBase):
         """
 
         from .. import app as _app
+
         self.app = app or _app.use_app()
         self.manager.set_inputhook(self._vispy_inputhook)
         return app
 
     def _vispy_inputhook(self):
         try:
-            t = time()
             while not stdin_ready():
                 self.app.process_events()
 
-                used_time = time() - t
-                if used_time > 10.0:
-                    sleep(1.0)
-                elif used_time > 0.1:
-                    sleep(0.05)
-                else:
-                    sleep(0.001)
+                # for more context.
+                # we need to wait out on the event loop to prevent CPU stress
+                # but not wait too much, to maintain fluidity.
+                # refer https://github.com/vispy/vispy/issues/945
+                self.app.sleep(duration_sec=0.03)
+
         except KeyboardInterrupt:
             pass
         return 0

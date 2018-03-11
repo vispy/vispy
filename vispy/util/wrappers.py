@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 """
 Some wrappers to avoid circular imports, or make certain calls easier.
@@ -17,14 +17,13 @@ them.
 """
 
 import subprocess
-import inspect
+from .config import _get_args
 
 
 def use(app=None, gl=None):
     """ Set the usage options for vispy
 
-    Specify what app backend and GL backend to use. Also see
-    ``vispy.app.use_app()`` and ``vispy.gloo.gl.use_gl()``.
+    Specify what app backend and GL backend to use.
 
     Parameters
     ----------
@@ -33,12 +32,16 @@ def use(app=None, gl=None):
             * 'PyQt4': use Qt widget toolkit via PyQt4.
             * 'PyQt5': use Qt widget toolkit via PyQt5.
             * 'PySide': use Qt widget toolkit via PySide.
+            * 'PySide2': use Qt widget toolkit via PySide2.
             * 'PyGlet': use Pyglet backend.
             * 'Glfw': use Glfw backend (successor of Glut). Widely available
               on Linux.
             * 'SDL2': use SDL v2 backend.
+            * 'osmesa': Use OSMesa backend
         Additional backends:
-            * 'ipynb_vnc': render in the IPython notebook via a VNC approach
+            * 'ipynb_webgl': run vispy from a Jupyter notebook (not fully
+               functional)
+            * 'ipynb_vnc': render in a Jupyter notebook via a VNC approach
               (experimental)
     gl : str
         The gl backend to use (case insensitive). Options are:
@@ -64,6 +67,11 @@ def use(app=None, gl=None):
     that backend first. If this is unsuccessful, it will try the
     'default_backend' provided in the vispy config. If still not
     succesful, it will try each backend in a predetermined order.
+
+    See Also
+    --------
+    vispy.app.use_app
+    vispy.gloo.gl.use_gl
     """
     if app is None and gl is None:
         raise TypeError('Must specify at least one of "app" or "gl".')
@@ -73,15 +81,20 @@ def use(app=None, gl=None):
         app = 'headless'
         gl = 'webgl'
 
+    if app == 'osmesa':
+        from ..util.osmesa_gl import fix_osmesa_gl_lib
+        fix_osmesa_gl_lib()
+        if gl is not None:
+            raise ValueError("Do not specify gl when using osmesa")
+
     # Apply now
     if gl:
-        import vispy.gloo
-        from vispy import config
+        from .. import gloo, config
         config['gl_backend'] = gl
-        vispy.gloo.gl.use_gl(gl)
+        gloo.gl.use_gl(gl)
     if app:
-        import vispy.app
-        vispy.app.use_app(app)
+        from ..app import use_app
+        use_app(app)
 
 
 def run_subprocess(command, return_code=False, **kwargs):
@@ -118,18 +131,18 @@ def run_subprocess(command, return_code=False, **kwargs):
 
     p = subprocess.Popen(command, **use_kwargs)
     output = p.communicate()
-    
-    # communicate() may return bytes, str, or None depending on the kwargs 
+
+    # communicate() may return bytes, str, or None depending on the kwargs
     # passed to Popen(). Convert all to unicode str:
     output = ['' if s is None else s for s in output]
     output = [s.decode('utf-8') if isinstance(s, bytes) else s for s in output]
     output = tuple(output)
-    
+
     if not return_code and p.returncode:
         print(output[0])
         print(output[1])
         err_fun = subprocess.CalledProcessError.__init__
-        if 'output' in inspect.getargspec(err_fun).args:
+        if 'output' in _get_args(err_fun):
             raise subprocess.CalledProcessError(p.returncode, command, output)
         else:
             raise subprocess.CalledProcessError(p.returncode, command)

@@ -61,7 +61,8 @@ class Collection(BaseCollection):
                ('int32', 3): "ivec3",
                ('int32', 4): "ivec4"}
 
-    def __init__(self, dtype, itype, mode, vertex, fragment, **kwargs):
+    def __init__(self, dtype, itype, mode, vertex, fragment, program=None, 
+                 **kwargs):
         """
         """
 
@@ -85,7 +86,7 @@ class Collection(BaseCollection):
             if scope[0] == "!":
                 scope = scope[1:]
             else:
-                scope = kwargs.get(name, scope)
+                scope = kwargs.pop(name, scope)
             defaults[name] = default
             gtype = Collection._gtypes[(basetype, count)]
             if scope == "local":
@@ -99,6 +100,10 @@ class Collection(BaseCollection):
                 declarations["uniforms"] += "uniform %s %s;\n" % (gtype, name)
                 self._uniforms[name] = None
 
+        if len(kwargs) > 0:
+            raise NameError("Invalid keyword argument(s): %s" % 
+                            list(kwargs.keys()))
+        
         vtype = np.dtype(vtype)
         itype = np.dtype(itype) if itype else None
         utype = np.dtype(utype) if utype else None
@@ -122,8 +127,13 @@ class Collection(BaseCollection):
         self._vertex = vertex
         self._fragment = fragment
 
-        program = ModularProgram(vertex, fragment)
-        program.changed.connect(self.update)
+        if program is None:
+            program = ModularProgram(vertex, fragment)
+        else:
+            program.vert = vertex
+            program.frag = fragment
+        if hasattr(program, 'changed'):
+            program.changed.connect(self.update)
         self._programs.append(program)
 
         # Initialize uniforms
@@ -178,16 +188,11 @@ class Collection(BaseCollection):
         return BaseCollection.__getitem__(self, key)
 
     def __setitem__(self, key, value):
-
-        found = False
-        for program in self._programs:
-            program.build_if_needed()
-            for name, (storage, _, _, _) in program._code_variables.items():
-                if name == key and storage == 'uniform':
-                    found = True
-                    program[key] = value
-        if not found:
+        try:
             BaseCollection.__setitem__(self, key, value)
+        except IndexError:
+            for program in self._programs:
+                program[key] = value
 
     def draw(self, mode=None):
         """ Draw collection """

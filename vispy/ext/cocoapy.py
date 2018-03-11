@@ -579,7 +579,7 @@ class ObjCMethod(object):
         try:
             self.argtypes = [self.ctype_for_encoding(t)
                              for t in self.argument_types]
-        except:
+        except ValueError:
             self.argtypes = None
         try:
             if self.return_type == b'@':
@@ -588,7 +588,7 @@ class ObjCMethod(object):
                 self.restype = ObjCClass
             else:
                 self.restype = self.ctype_for_encoding(self.return_type)
-        except:
+        except ValueError:
             self.restype = None
         self.func = None
 
@@ -606,8 +606,8 @@ class ObjCMethod(object):
         elif encoding[0:2] == b'r^' and encoding[2:] in self.typecodes:
             return POINTER(self.typecodes[encoding[2:]])
         else:
-            raise Exception('unknown encoding for %s: %s'
-                            % (self.name, encoding))
+            raise ValueError('unknown encoding for %s: %s'
+                             % (self.name, encoding))
 
     def get_prototype(self):
         if self.restype == ObjCInstance or self.restype == ObjCClass:

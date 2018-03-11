@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+# -----------------------------------------------------------------------------
+# Copyright (c) Vispy Development Team. All Rights Reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+# -----------------------------------------------------------------------------
 """
 Tutorial: Creating Visuals
 ==========================
@@ -37,25 +42,18 @@ class MyRectVisual(visuals.Visual):
     """
     
     def __init__(self):
-        visuals.Visual.__init__(self)
+        visuals.Visual.__init__(self, vertex_shader, fragment_shader)
         self.vbo = gloo.VertexBuffer(np.array([
             [-1, -1], [1, -1], [1, 1],
             [-1, -1], [1, 1], [-1, 1]
         ], dtype=np.float32))
-        self.program = visuals.shaders.ModularProgram(vertex_shader, 
-                                                      fragment_shader)
-        self.program.vert['position'] = self.vbo
-        
-    def draw(self, transforms):
-        gloo.set_state(cull_face=False)
-        
-        tr = (transforms.visual_to_document * 
-              transforms.document_to_framebuffer).inverse
-        self.program.frag['fb_to_visual'] = tr
-                
-        # Finally, draw the triangles.
-        self.program.draw('triangle_fan')
+        self.shared_program.vert['position'] = self.vbo
+        self.set_gl_state(cull_face=False)
+        self._draw_mode = 'triangle_fan'
 
+    def _prepare_transforms(self, view):
+        view.view_program.frag['fb_to_visual'] = \
+            view.transforms.get_transform('framebuffer', 'visual')
 
 # As in the previous tutorial, we auto-generate a Visual+Node class for use
 # in the scenegraph.

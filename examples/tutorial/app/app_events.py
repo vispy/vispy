@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 """
 This example shows how to retrieve event information from a callback.
@@ -39,9 +39,7 @@ class Canvas(app.Canvas):
         self.print_mouse_event(event, 'Mouse release')
 
     def on_mouse_move(self, event):
-        if (event.pos[0] < self.size[0] * 0.5 and
-                event.pos[1] < self.size[1] * 0.5):
-            self.print_mouse_event(event, 'Mouse move')
+        self.print_mouse_event(event, 'Mouse move')
 
     def on_mouse_wheel(self, event):
         self.print_mouse_event(event, 'Mouse wheel')

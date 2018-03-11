@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # vispy: gallery 1
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """
@@ -13,9 +13,7 @@ information, but different transformations.
 import numpy as np
 from vispy import app, gloo, visuals
 from vispy.visuals.transforms import (STTransform, LogTransform,
-                                      AffineTransform, PolarTransform)
-import vispy.util
-vispy.util.use_log_level('debug')
+                                      MatrixTransform, PolarTransform)
 
 # vertex positions of data to draw
 N = 200
@@ -58,7 +56,7 @@ class Canvas(app.Canvas):
                                    LogTransform(base=(10, 0, 0)) *
                                    STTransform(translate=(1, 0, 0)))
 
-        self.lines[4].transform = AffineTransform()
+        self.lines[4].transform = MatrixTransform()
         self.lines[4].transform.rotate(45, (0, 0, 1))
         self.lines[4].transform.scale((0.3, 0.3, 1))
         self.lines[4].transform.translate((200, 200, 0))
@@ -70,18 +68,19 @@ class Canvas(app.Canvas):
                                    STTransform(scale=(0.01, 0.1),
                                                translate=(4, 20)))
 
-        for line in self.lines:
-            tr_sys = visuals.transforms.TransformSystem(self)
-            tr_sys.visual_to_document = line.transform
-            line.tr_sys = tr_sys
-
         self.show()
 
     def on_draw(self, ev):
         gloo.clear('black', depth=True)
-        gloo.set_viewport(0, 0, *self.physical_size)
         for line in self.lines:
-            line.draw(line.tr_sys)
+            line.draw()
+            
+    def on_resize(self, event):
+        # Set canvas viewport and reconfigure visual transforms to match.
+        vp = (0, 0, self.physical_size[0], self.physical_size[1])
+        self.context.set_viewport(*vp)
+        for line in self.lines:
+            line.transforms.configure(canvas=self, viewport=vp)
 
 if __name__ == '__main__':
     win = Canvas()

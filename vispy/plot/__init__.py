@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 """
 This module provides functions for displaying data from a command-line
@@ -31,7 +31,6 @@ Then plots are accomplished via methods of the `PlotWidget` instances::
 
 """
 
-from .fig import Fig
-from .plotwidget import PlotWidget
-
-__all__ = ['Fig', 'PlotWidget']
+from .fig import Fig  # noqa
+from .plotwidget import PlotWidget  # noqa
+from ..scene import *  # noqa

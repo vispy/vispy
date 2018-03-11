@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
@@ -125,6 +125,25 @@ def assert_is(expr1, expr2, msg=None):
         raise AssertionError(_format_msg(msg, std_msg))
 
 
+class raises(object):
+    """Helper class to test exception raising"""
+    def __init__(self, exc):
+        self.exc = exc
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_typ, exc, tb):
+        if isinstance(exc, self.exc):
+            return True
+        elif exc is None:
+            raise AssertionError("Expected %s (no exception raised)" %
+                                 self.exc.__name__)
+        else:
+            raise AssertionError("Expected %s, got %s instead (%s)" %
+                                 (self.exc.__name__, type(exc).__name__, exc))
+
+
 ###############################################################################
 # GL stuff
 
@@ -223,6 +242,44 @@ def requires_img_lib():
     return np.testing.dec.skipif(not has_img_lib, 'imageio or PIL required')
 
 
+def has_ipython(version='3.0'):
+    """function that checks the presence of IPython"""
+
+    # typecast version to a string, in case an integer is given
+    version = str(version)
+
+    try:
+        import IPython  # noqa
+    except Exception:
+        return False, "IPython library not found"
+    else:
+        if LooseVersion(IPython.__version__) >= LooseVersion(version):
+            return True, "IPython present"
+        else:
+            message = (
+                "current IPython version: (%s) is "
+                "older than expected version: (%s)") % \
+                (IPython.__version__, version)
+
+            return False, message
+
+
+def requires_ipython(version='3.0'):
+    ipython_present, message = has_ipython(version)
+
+    return np.testing.dec.skipif(not ipython_present, message)
+
+
+def requires_numpydoc():
+    try:
+        import numpydoc  # noqa
+    except Exception:
+        present = False
+    else:
+        present = True
+    return np.testing.dec.skipif(not present, 'numpydoc is required')
+
+
 def has_matplotlib(version='1.2'):
     """Determine if mpl is a usable version"""
     try:
@@ -271,6 +328,7 @@ def TestingCanvas(bgcolor='black', size=(100, 100), dpi=None, decorate=False,
     class TestingCanvas(SceneCanvas):
         def __init__(self, bgcolor, size, dpi, decorate, **kwargs):
             self._entered = False
+            self._wanted_vp = None
             SceneCanvas.__init__(self, bgcolor=bgcolor, size=size,
                                  dpi=dpi, decorate=decorate,
                                  **kwargs)
@@ -288,15 +346,10 @@ def TestingCanvas(bgcolor='black', size=(100, 100), dpi=None, decorate=False,
             self._entered = True
             return self
 
-        def draw_visual(self, visual, event=None, viewport=None, clear=True):
+        def draw_visual(self, visual, event=None):
             if not self._entered:
                 return
-            if clear:
-                self.context.clear()
-            SceneCanvas.draw_visual(self, visual, event, viewport)
-            # must set this because draw_visual sets it back to the
-            # canvas size when it's done
-            self.context.set_viewport(*self._wanted_vp)
+            SceneCanvas.draw_visual(self, visual, event)
             self.context.finish()
 
     return TestingCanvas(bgcolor, size, dpi, decorate, **kwargs)

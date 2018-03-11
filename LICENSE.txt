@@ -3,7 +3,7 @@ Vispy licensing terms
 
 Vispy is licensed under the terms of the (new) BSD license:
 
-Copyright (c) 2013, Vispy Development Team
+Copyright (c) 2013-2017, Vispy Development Team. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -34,16 +34,3 @@ Exceptions
 
 The examples code in the examples directory can be considered public 
 domain, unless otherwise indicated in the corresponding source file.
-
-
-The Vispy Development Team
---------------------------
-
-The Vispy Development Team is the set of all contributors to the Vispy
-project. The core team that coordinates development consists of: 
-
-  * Luke Campagnola
-  * Nicolas Rougier
-  * Cyrille Rossant
-  * Almar Klein
- 

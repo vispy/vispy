@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 # vispy: gallery 2
@@ -10,9 +10,9 @@ Example demonstrating the use of aspect ratio, and also the flipping
 of axis using negative aspect ratios.
 
 Keys:
-* 1: flip x dimenstion
+* 1: flip x dimension
 * 2: flip y dimension
-* 3: flip z dimenstion
+* 3: flip z dimension
 * 4: cycle through up-vectors
 * 5: cycle through cameras
 """
@@ -45,10 +45,11 @@ arr = np.array([(100, -1, -1), (-1, -1, -1), (-1, 10, -1)])
 line1 = scene.visuals.Line(arr, color='red', parent=view.scene)
 
 # Create cameras
-cam1 = scene.cameras.PanZoomCamera(parent=view.scene, aspect=1)
-cam2 = scene.cameras.FlyCamera(parent=view.scene)
-cam3 = scene.cameras.TurntableCamera(fov=60, parent=view.scene)
-cam4 = scene.cameras.ArcballCamera(fov=60, parent=view.scene)
+cam1 = scene.cameras.PanZoomCamera(parent=view.scene, aspect=1, name='PanZoom')
+cam2 = scene.cameras.FlyCamera(parent=view.scene, name='Fly')
+cam3 = scene.cameras.TurntableCamera(fov=60, parent=view.scene,
+                                     name='Turntable')
+cam4 = scene.cameras.ArcballCamera(fov=60, parent=view.scene, name='Arcball')
 cams = (cam1, cam2, cam3, cam4)
 view.camera = cam3  # Select turntable at first
 
@@ -77,7 +78,8 @@ def on_key_press(event):
             cam.up = up
     if event.text == '5':
         cam_toggle = {cam1: cam2, cam2: cam3, cam3: cam4, cam4: cam1}
-        view.camera = cam_toggle.get(view.camera, 'fly')
+        view.camera = cam_toggle.get(view.camera, cam2)
+        print(view.camera.name + ' camera')
     elif event.text == '0':
         for cam in cams:
             cam.set_range()

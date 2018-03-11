@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """ Reading and writing of data like images and meshes.
@@ -8,6 +8,7 @@
 from os import path as op
 
 from .wavefront import WavefrontReader, WavefrontWriter
+from .stl import load_stl
 
 
 def read_mesh(fname):
@@ -37,6 +38,13 @@ def read_mesh(fname):
 
     if fmt in ('.obj'):
         return WavefrontReader.read(fname)
+    elif fmt in ('.stl'):
+        mesh = load_stl(fname)
+        vertices = mesh.vertices
+        faces = mesh.faces
+        normals = mesh.face_normals
+        texcoords = None
+        return vertices, faces, normals, texcoords
     elif not format:
         raise ValueError('read_mesh needs could not determine format.')
     else:
@@ -44,7 +52,7 @@ def read_mesh(fname):
 
 
 def write_mesh(fname, vertices, faces, normals, texcoords, name='',
-               format='obj', overwrite=False):
+               format='obj', overwrite=False, reshape_faces=True):
     """ Write mesh data to file.
 
     Parameters
@@ -65,6 +73,9 @@ def write_mesh(fname, vertices, faces, normals, texcoords, name='',
         Currently only "obj" is supported.
     overwrite : bool
         If the file exists, overwrite it.
+    reshape_faces : bool
+        Reshape the `faces` array to (Nf, 3). Set to `False`
+        if you need to write a mesh with non triangular faces.
     """
     # Check file
     if op.isfile(fname) and not overwrite:
@@ -73,4 +84,5 @@ def write_mesh(fname, vertices, faces, normals, texcoords, name='',
     # Check format
     if format not in ('obj'):
         raise ValueError('Only "obj" format writing currently supported')
-    WavefrontWriter.write(fname, vertices, faces, normals, texcoords, name)
+    WavefrontWriter.write(fname, vertices, faces,
+                          normals, texcoords, name, reshape_faces)

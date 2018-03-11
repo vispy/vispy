@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # vispy: testskip
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 """Test running functions"""
 
@@ -8,70 +8,92 @@ from __future__ import print_function
 
 import sys
 import os
+import warnings
 from os import path as op
 from copy import deepcopy
 from functools import partial
 
 from ..util import use_log_level, run_subprocess
 from ..util.ptime import time
-from ._testing import SkipTest, has_backend, has_application, nottest
+from ._testing import SkipTest, has_application, nottest
 
 
 _line_sep = '-' * 70
 
 
-def _get_root_dir():
-    root_dir = os.getcwd()
-    if (op.isfile(op.join(root_dir, 'setup.py')) and
-            op.isdir(op.join(root_dir, 'vispy'))):
+def _get_import_dir():
+    import_dir = op.abspath(op.join(op.dirname(__file__), '..'))
+    up_dir = op.join(import_dir, '..')
+    if (op.isfile(op.join(up_dir, 'setup.py')) and
+            op.isdir(op.join(up_dir, 'vispy')) and
+            op.isdir(op.join(up_dir, 'examples'))):
         dev = True
     else:
-        root_dir = op.abspath(op.join(op.dirname(__file__), '..', '..'))
-        dev = True if op.isfile(op.join(root_dir, 'setup.py')) else False
-    return root_dir, dev
+        dev = False
+    return import_dir, dev
 
 
 _unit_script = """
-import pytest
+try:
+    import pytest as tester
+except ImportError:
+    import nose as tester
 try:
     import faulthandler
     faulthandler.enable()
 except Exception:
     pass
 
-raise SystemExit(pytest.main(%r))
+raise SystemExit(tester.main(%r))
 """
 
 
-def _unit(mode, extra_arg_string):
+def _unit(mode, extra_arg_string, coverage=False):
     """Run unit tests using a particular mode"""
-    cwd = os.getcwd()
+    import_dir = _get_import_dir()[0]
+    cwd = op.abspath(op.join(import_dir, '..'))
+    extra_args = [''] + extra_arg_string.split(' ')
+    del extra_arg_string
+    use_pytest = False
     try:
         import pytest  # noqa, analysis:ignore
+        use_pytest = True
     except ImportError:
-        print('Skipping pytest, pytest not installed')
-        raise SkipTest()
+        try:
+            import nose  # noqa, analysis:ignore
+        except ImportError:
+            raise SkipTest('Skipping unit tests, neither pytest nor nose '
+                           'installed')
 
     if mode == 'nobackend':
         msg = 'Running tests with no backend'
-        extra_arg_string = '-m "not vispy_app_test" ' + extra_arg_string
-        coverage = True
+        if use_pytest:
+            extra_args += ['-m', '"not vispy_app_test"']
+        else:
+            extra_args += ['-a', '"!vispy_app_test"']
     else:
-        with use_log_level('warning', print_msg=False):
-            has, why_not = has_backend(mode, out=['why_not'])
-        if not has:
-            msg = ('Skipping tests for backend %s, not found (%s)'
-                   % (mode, why_not))
-            print(_line_sep + '\n' + msg + '\n' + _line_sep + '\n')
-            raise SkipTest(msg)
+        # check to make sure we actually have the backend of interest
+        invalid = run_subprocess([sys.executable, '-c',
+                                  'import vispy.app; '
+                                  'vispy.app.use_app("%s"); exit(0)' % mode],
+                                 return_code=True)[2]
+        if invalid:
+            print('%s\n%s\n%s' % (_line_sep, 'Skipping backend %s, not '
+                                  'installed or working properly' % mode,
+                                  _line_sep))
+            raise SkipTest()
         msg = 'Running tests with %s backend' % mode
-        extra_arg_string = '-m vispy_app_test ' + extra_arg_string
-        coverage = True
-    if coverage:
-        extra_arg_string += ' --cov vispy --no-cov-on-fail '
+        if use_pytest:
+            extra_args += ['-m', 'vispy_app_test']
+        else:
+            extra_args += ['-a', 'vispy_app_test']
+    if coverage and use_pytest:
+        # Don't actually print the coverage because it's way too long
+        extra_args += ['--cov', 'vispy', '--cov-report=']
     # make a call to "python" so that it inherits whatever the system
     # thinks is "python" (e.g., virtualenvs)
-    cmd = [sys.executable, '-c', _unit_script % extra_arg_string]
+    extra_args += [import_dir]  # positional argument
+    cmd = [sys.executable, '-c', _unit_script % (extra_args,)]
     env = deepcopy(os.environ)
 
     # We want to set this for all app backends plus "nobackend" to
@@ -79,37 +101,73 @@ def _unit(mode, extra_arg_string):
     env.update(dict(_VISPY_TESTING_APP=mode, VISPY_IGNORE_OLD_VERSION='true'))
     env_str = '_VISPY_TESTING_APP=%s ' % mode
     if len(msg) > 0:
+        extra_arg_string = ' '.join(extra_args)
         msg = ('%s\n%s:\n%s%s'
                % (_line_sep, msg, env_str, extra_arg_string))
         print(msg)
     sys.stdout.flush()
-    return_code = run_subprocess(cmd, return_code=True, cwd=cwd, env=env,
-                                 stdout=None, stderr=None)[2]
+    return_code = run_subprocess(cmd, return_code=True, cwd=cwd,
+                                 env=env, stdout=None, stderr=None)[2]
     if return_code:
         raise RuntimeError('unit failure (%s)' % return_code)
-    else:
-        out_name = '.coverage.%s' % mode
+    if coverage:
+        # Running a py.test with coverage will wipe out any files that
+        # exist as .coverage or .coverage.*. It should work to pass
+        # COVERAGE_FILE env var when doing run_subprocess above, but
+        # it does not. Therefore we instead use our own naming scheme,
+        # and in Travis when we combine them, use COVERAGE_FILE with the
+        # `coverage combine` command.
+        out_name = op.join(cwd, '.vispy-coverage.%s' % mode)
         if op.isfile(out_name):
             os.remove(out_name)
-        os.rename('.coverage', out_name)
+        os.rename(op.join(cwd, '.coverage'), out_name)
+
+
+def _docs():
+    """test docstring paramters
+    using vispy/utils/tests/test_docstring_parameters.py"""
+    dev = _get_import_dir()[1]
+
+    if not dev:
+        warnings.warn("Docstring test imports Vispy from"
+                      " Vispy's installation. It is"
+                      " recommended to setup Vispy using"
+                      " 'python setup.py develop'"
+                      " so that the latest sources are used automatically")
+    try:
+        # this should always be importable
+        from ..util.tests import test_docstring_parameters
+        print("Running docstring test...")
+        test_docstring_parameters.test_docstring_parameters()
+    except AssertionError as docstring_violations:
+        # the test harness expects runtime errors,
+        # not AssertionError. So wrap the AssertionError
+        # that is thrown by test_docstring_parameters()
+        # with a RuntimeError
+        raise RuntimeError(docstring_violations)
 
 
 def _flake():
     """Test flake8"""
     orig_dir = os.getcwd()
-    root_dir, dev = _get_root_dir()
-    os.chdir(root_dir)
+    import_dir, dev = _get_import_dir()
+    os.chdir(op.join(import_dir, '..'))
     if dev:
         sys.argv[1:] = ['vispy', 'examples', 'make']
     else:
-        sys.argv[1:] = ['vispy']
-    sys.argv.append('--ignore=E226,E241,E265,E266,W291,W293,W503')
-    sys.argv.append('--exclude=six.py,py24_ordereddict.py,glfw.py,'
+        sys.argv[1:] = [op.basename(import_dir)]
+    sys.argv.append('--ignore=E226,E241,E265,E266,W291,W293,W503,F999,E305,'
+                    'F405')
+    sys.argv.append('--exclude=six.py,glfw.py,'
                     '_proxy.py,_es2.py,_gl2.py,_pyopengl2.py,'
                     '_constants.py,png.py,decorator.py,ipy_inputhook.py,'
-                    'experimental,wiki,_old,mplexporter.py,cubehelix.py')
+                    'experimental,wiki,_old,mplexporter.py,cubehelix.py,'
+                    'cassowary')
     try:
-        from flake8.main import main
+        try:
+            from flake8.main import main
+        except ImportError:
+            from flake8.main.cli import main
     except ImportError:
         print('Skipping flake8 test, flake8 not installed')
     else:
@@ -135,16 +193,14 @@ def _check_line_endings():
     print('Running line endings check... ')
     sys.stdout.flush()
     report = []
-    root_dir, dev = _get_root_dir()
-    if not dev:
-        root_dir = op.join(root_dir, 'vispy')
-    for dirpath, dirnames, filenames in os.walk(root_dir):
+    import_dir, dev = _get_import_dir()
+    for dirpath, dirnames, filenames in os.walk(import_dir):
         for fname in filenames:
             if op.splitext(fname)[1] in ('.pyc', '.pyo', '.so', '.dll'):
                 continue
             # Get filename
             filename = op.join(dirpath, fname)
-            relfilename = op.relpath(filename, root_dir)
+            relfilename = op.relpath(filename, import_dir)
             # Open and check
             try:
                 with open(filename, 'rb') as fid:
@@ -194,6 +250,22 @@ with canvas as c:
 """
 
 
+def _skip_example(fname):
+    if os.getenv('TRAVIS', 'false') == 'true' and sys.platform == 'darwin':
+        # example scripts that contain non-ascii text
+        # seem to fail on Travis OSX
+        bad_examples = [
+            'examples/basics/plotting/colorbar.py',
+            'examples/basics/plotting/plot.py',
+            'examples/demo/gloo/high_frequency.py',
+        ]
+        for bad_ex in bad_examples:
+            if fname.endswith(bad_ex):
+                return True
+
+    return False
+
+
 def _examples(fnames_str):
     """Run examples and make sure they work.
 
@@ -203,7 +275,7 @@ def _examples(fnames_str):
         Can be a space-separated list of paths to test, or an empty string to
         auto-detect and run all examples.
     """
-    root_dir, dev = _get_root_dir()
+    import_dir, dev = _get_import_dir()
     reason = None
     if not dev:
         reason = 'Cannot test examples unless in vispy git directory'
@@ -226,7 +298,7 @@ def _examples(fnames_str):
 
     else:
         fnames = [op.join(d[0], fname)
-                  for d in os.walk(op.join(root_dir, 'examples'))
+                  for d in os.walk(op.join(import_dir, '..', 'examples'))
                   for fname in d[2] if fname.endswith('.py')]
 
     fnames = sorted(fnames, key=lambda x: x.lower())
@@ -243,18 +315,23 @@ def _examples(fnames_str):
         root_name = op.join(op.split(op.split(root_name[0])[0])[1],
                             op.split(root_name[0])[1], root_name[1])
         good = True
-        with open(fname, 'r') as fid:
+        with open(fname, 'rb') as fid:
             for _ in range(10):  # just check the first 10 lines
-                line = fid.readline()
+                line = fid.readline().decode('utf-8')
                 if line == '':
                     break
                 elif line.startswith('# vispy: ') and 'testskip' in line:
                     good = False
                     break
+        if _skip_example(fname):
+            print("Skipping example that fails on " +
+                  "Travis CI OSX: {}".format(fname))
+            good = False
         if not good:
             n_ran -= 1
             n_skipped += 1
             continue
+        print("Running example: {}".format(fname))
         sys.stdout.flush()
         cwd = op.dirname(fname)
         cmd = [sys.executable, '-c', _script.format(op.split(fname)[1][:-3])]
@@ -282,36 +359,46 @@ def _examples(fnames_str):
 
 
 @nottest
-def test(label='full', extra_arg_string=''):
+def test(label='full', extra_arg_string='', coverage=False):
     """Test vispy software
 
     Parameters
     ----------
     label : str
         Can be one of 'full', 'unit', 'nobackend', 'extra', 'lineendings',
-        'flake', or any backend name (e.g., 'qt').
+        'flake', 'docs', or any backend name (e.g., 'qt').
     extra_arg_string : str
         Extra arguments to sent to ``pytest``.
+    coverage : bool
+        If True, collect coverage data.
     """
-    from vispy.app.backends import BACKEND_NAMES as backend_names
+    if label == 'osmesa':
+        # Special case for OSMesa, we have to modify the VISPY_GL_LIB envvar
+        # before the vispy.gloo package gets imported
+        from ..util.osmesa_gl import fix_osmesa_gl_lib
+        fix_osmesa_gl_lib()
+
+    from ..app.backends import BACKEND_NAMES as backend_names
     label = label.lower()
     label = 'pytest' if label == 'nose' else label
     known_types = ['full', 'unit', 'lineendings', 'extra', 'flake',
-                   'nobackend', 'examples']
+                   'docs', 'nobackend', 'examples']
 
     if label not in known_types + backend_names:
         raise ValueError('label must be one of %s, or a backend name %s, '
                          'not \'%s\'' % (known_types, backend_names, label))
-    work_dir = _get_root_dir()[0]
-    orig_dir = os.getcwd()
     # figure out what we actually need to run
     runs = []
     if label in ('full', 'unit'):
         for backend in backend_names:
-            runs.append([partial(_unit, backend, extra_arg_string),
+            runs.append([partial(_unit, backend, extra_arg_string, coverage),
                          backend])
     elif label in backend_names:
-        runs.append([partial(_unit, label, extra_arg_string), label])
+        runs.append([partial(_unit, label, extra_arg_string, coverage), label])
+
+    if label in ('full', 'unit', 'nobackend'):
+        runs.append([partial(_unit, 'nobackend', extra_arg_string, coverage),
+                     'nobackend'])
 
     if label == "examples":
         # take the extra arguments so that specific examples can be run
@@ -321,19 +408,18 @@ def test(label='full', extra_arg_string=''):
         # run all the examples
         runs.append([partial(_examples, ""), 'examples'])
 
-    if label in ('full', 'unit', 'nobackend'):
-        runs.append([partial(_unit, 'nobackend', extra_arg_string),
-                     'nobackend'])
     if label in ('full', 'extra', 'lineendings'):
         runs.append([_check_line_endings, 'lineendings'])
     if label in ('full', 'extra', 'flake'):
         runs.append([_flake, 'flake'])
+    if label in ('extra', 'docs'):
+        runs.append([_docs, 'docs'])
+
     t0 = time()
     fail = []
     skip = []
     for run in runs:
         try:
-            os.chdir(work_dir)
             run[0]()
         except RuntimeError as exp:
             print('Failed: %s' % str(exp))
@@ -349,9 +435,7 @@ def test(label='full', extra_arg_string=''):
             traceback.print_exception(type_, value, tb)
         else:
             print('Passed\n')
-        finally:
-            sys.stdout.flush()
-            os.chdir(orig_dir)
+        sys.stdout.flush()
     dt = time() - t0
     stat = '%s failed, %s skipped' % (fail if fail else 0, skip if skip else 0)
     extra = 'failed' if fail else 'succeeded'

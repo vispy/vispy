@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """
@@ -14,12 +14,12 @@ For more information see http://github.com/vispy/vispy/wiki/API_Events
 
 from __future__ import division
 
+from collections import OrderedDict
 import inspect
-import weakref
 import traceback
+import weakref
 
 from .logs import logger, _handle_exception
-from ..ext.ordereddict import OrderedDict
 from ..ext.six import string_types
 
 
@@ -314,11 +314,12 @@ class EventEmitter(object):
         """
         callbacks = self.callbacks
         callback_refs = self.callback_refs
+
+        callback = self._normalize_cb(callback)
+
         if callback in callbacks:
             return
-        # always use a weak ref
-        if isinstance(callback, tuple):
-            callback = (weakref.ref(callback[0]),) + callback[1:]
+
         # deal with the ref
         if isinstance(ref, bool):
             if ref:
@@ -381,12 +382,25 @@ class EventEmitter(object):
             self._callbacks = []
             self._callback_refs = []
         else:
-            if isinstance(callback, tuple):
-                callback = (weakref.ref(callback[0]),) + callback[1:]
+            callback = self._normalize_cb(callback)
             if callback in self._callbacks:
                 idx = self._callbacks.index(callback)
                 self._callbacks.pop(idx)
                 self._callback_refs.pop(idx)
+
+    def _normalize_cb(self, callback):
+        # dereference methods into a (self, method_name) pair so that we can
+        # make the connection without making a strong reference to the
+        # instance.
+        if inspect.ismethod(callback):
+            callback = (callback.__self__, callback.__name__)
+
+        # always use a weak ref
+        if (isinstance(callback, tuple) and not
+                isinstance(callback[0], weakref.ref)):
+            callback = (weakref.ref(callback[0]),) + callback[1:]
+
+        return callback
 
     def __call__(self, *args, **kwargs):
         """ __call__(**kwargs)
@@ -424,18 +438,27 @@ class EventEmitter(object):
             if blocked.get(None, 0) > 0:  # this is the same as self.blocked()
                 return event
 
+            rem = []
             for cb in self._callbacks:
-                if blocked.get(cb, 0) > 0:
-                    continue
-                
                 if isinstance(cb, tuple):
-                    cb = getattr(cb[0](), cb[1], None)
+                    obj = cb[0]()
+                    if obj is None:
+                        rem.append(cb)
+                        continue
+                    cb = getattr(obj, cb[1], None)
                     if cb is None:
                         continue
-                
+
+                if blocked.get(cb, 0) > 0:
+                    continue
+
                 self._invoke_callback(cb, event)
                 if event.blocked:
                     break
+
+            # remove callbacks to dead objects
+            for cb in rem:
+                self.disconnect(cb)
         finally:
             self._emitting = False
             if event._pop_source() != self.source:
@@ -486,14 +509,14 @@ class EventEmitter(object):
 
     def unblock(self, callback=None):
         """ Unblock this emitter. See :func:`event.EventEmitter.block`.
-        
-        Note: Use of ``unblock(None)`` only reverses the effect of 
-        ``block(None)``; it does not unblock callbacks that were explicitly 
-        blocked using ``block(callback)``. 
+
+        Note: Use of ``unblock(None)`` only reverses the effect of
+        ``block(None)``; it does not unblock callbacks that were explicitly
+        blocked using ``block(callback)``.
         """
         if callback not in self._blocked or self._blocked[callback] == 0:
             raise RuntimeError("Cannot unblock %s for callback %s; emitter "
-                               "was not previously blocked." % 
+                               "was not previously blocked." %
                                (self, callback))
         b = self._blocked[callback] - 1
         if b == 0 and callback is not None:

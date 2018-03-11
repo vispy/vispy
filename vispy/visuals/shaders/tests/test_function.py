@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 from vispy.visuals.shaders import (Function, MainFunction, Variable, Varying,
                                    FunctionChain, StatementList)
@@ -432,16 +432,16 @@ def test_StatementList():
     main = Function("void main() {}")
     main['pre'] = StatementList()
     expr = func()
-    main['pre'].append(expr)
-    assert main['pre'].items == [expr]
+    main['pre'].add(expr, 0)
+    assert list(main['pre'].items) == [expr]
     main['pre'].add(expr)
-    assert main['pre'].items == [expr]
+    assert list(main['pre'].items) == [expr]
     
     code = main.compile()
     assert " func();" in code
     
     main['pre'].remove(expr)
-    assert main['pre'].items == []
+    assert list(main['pre'].items) == []
 
 
 def test_MainFunction():

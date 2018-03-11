@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # vispy: gallery 30
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
@@ -13,13 +13,12 @@ class Canvas(app.Canvas):
         app.Canvas.__init__(self, title='Glyphs', keys='interactive')
         self.font_size = 48.
         self.text = visuals.TextVisual('', bold=True)
-        self.tr_sys = visuals.transforms.TransformSystem(self)
         self.apply_zoom()
 
     def on_draw(self, event):
         gloo.clear(color='white')
         gloo.set_viewport(0, 0, *self.physical_size)
-        self.text.draw(self.tr_sys)
+        self.text.draw()
 
     def on_mouse_wheel(self, event):
         """Use the mouse wheel to zoom."""
@@ -28,6 +27,10 @@ class Canvas(app.Canvas):
         self.apply_zoom()
 
     def on_resize(self, event):
+        # Set canvas viewport and reconfigure visual transforms to match.
+        vp = (0, 0, self.physical_size[0], self.physical_size[1])
+        self.context.set_viewport(*vp)
+        self.text.transforms.configure(canvas=self, viewport=vp)
         self.apply_zoom()
 
     def apply_zoom(self):

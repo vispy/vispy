@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
@@ -17,7 +17,8 @@ from vispy.geometry.generation import create_sphere
 import sys
 
 # Create a canvas with a 3D viewport
-canvas = scene.SceneCanvas(keys='interactive')
+canvas = scene.SceneCanvas(keys='interactive',
+                           title='Isocurve for Triangular Mesh Example')
 canvas.show()
 view = canvas.central_widget.add_view()
 
@@ -40,7 +41,5 @@ scene.visuals.XYZAxis(parent=view.scene)
 view.camera = scene.TurntableCamera()
 view.camera.set_range((-1, 1), (-1, 1), (-1, 1))
 
-if __name__ == '__main__':
-    canvas.show()
-    if sys.flags.interactive == 0:
-        app.run()
+if __name__ == '__main__' and sys.flags.interactive == 0:
+    app.run()

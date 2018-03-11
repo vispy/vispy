@@ -21,13 +21,19 @@ def isosurface(data, level):
     # guarantees.
     # Thomas Lewiner, Helio Lopes, Antonio Wilson Vieira and Geovan Tavares.
     # Journal of Graphics Tools 8(2): pp. 1-15 (december 2003)
-    
+
     (face_shift_tables, edge_shifts, 
      edge_table, n_table_faces) = _get_data_cache()
     
     ## mark everything below the isosurface level
     mask = data < level
-    
+
+    # Because we make use of the strides data attribute below, we have to make 
+    # sure that the data is contiguous (which it won't be if the user did 
+    # data.transpose() for example). Note that this doesn't copy the data if it 
+    # is already contiguous.
+    data = np.ascontiguousarray(data)
+
     ### make eight sub-fields and compute indexes for grid cells
     index = np.zeros([x-1 for x in data.shape], dtype=np.ubyte)
     fields = np.empty((2, 2, 2), dtype=object)
@@ -460,9 +466,9 @@ def _get_data_cache():
         for i in range(1, 6):
             ## compute lookup table of index: vertexes mapping
             faceTableI = np.zeros((len(triTable), i*3), dtype=np.ubyte)
-            faceTableInds = np.argwhere(n_table_faces == i)
-            faceTableI[faceTableInds[:, 0]] = np.array([triTable[j] for j in 
-                                                        faceTableInds])
+            faceTableInds = np.argwhere(n_table_faces == i)[:, 0]
+            faceTableI[faceTableInds] = np.array([triTable[j] for j in
+                                                 faceTableInds])
             faceTableI = faceTableI.reshape((len(triTable), i, 3))
             face_shift_tables.append(edge_shifts[faceTableI])
             

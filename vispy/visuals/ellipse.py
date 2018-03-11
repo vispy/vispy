@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 
@@ -10,7 +10,6 @@ Simple ellipse visual based on PolygonVisual
 from __future__ import division
 
 import numpy as np
-from ..color import Color
 from .polygon import PolygonVisual
 
 
@@ -20,12 +19,16 @@ class EllipseVisual(PolygonVisual):
 
     Parameters
     ----------
-    pos : array
+    center : array
         Center of the ellipse
     color : instance of Color
         The face color to use.
     border_color : instance of Color
         The border color to use.
+    border_width: float
+        The width of the border in pixels
+        Line widths > 1px are only
+        guaranteed to work when using `border_method='agg'` method.
     radius : float | tuple
         Radius or radii of the ellipse
         Defaults to  (0.1, 0.1)
@@ -34,27 +37,34 @@ class EllipseVisual(PolygonVisual):
         Defaults to 0.
     span_angle : float
         Span angle of the ellipse in degrees
-        Defaults to 0.
+        Defaults to 360.
     num_segments : int
         Number of segments to be used to draw the ellipse
         Defaults to 100
+    **kwargs : dict
+        Keyword arguments to pass to `PolygonVisual`.
     """
-    def __init__(self, pos=None, color='black', border_color=None,
-                 radius=(0.1, 0.1), start_angle=0., span_angle=360.,
-                 num_segments=100, **kwargs):
-        super(EllipseVisual, self).__init__()
-        self.mesh.mode = 'triangle_fan'
-        self._vertices = None
-        self._pos = pos
-        self._color = Color(color)
-        self._border_color = Color(border_color)
+    def __init__(self, center=None, color='black', border_color=None,
+                 border_width=1, radius=(0.1, 0.1), start_angle=0.,
+                 span_angle=360., num_segments=100, **kwargs):
+        self._center = center
         self._radius = radius
         self._start_angle = start_angle
         self._span_angle = span_angle
         self._num_segments = num_segments
+
+        # triangulation can be very slow
+        kwargs.setdefault('triangulate', False)
+        PolygonVisual.__init__(self, pos=None, color=color,
+                               border_color=border_color,
+                               border_width=border_width, **kwargs)
+
+        self._mesh.mode = "triangle_fan"
+        self._regen_pos()
         self._update()
 
-    def _generate_vertices(self, pos, radius, start_angle, span_angle,
+    @staticmethod
+    def _generate_vertices(center, radius, start_angle, span_angle,
                            num_segments):
         if isinstance(radius, (list, tuple)):
             if len(radius) == 2:
@@ -65,14 +75,38 @@ class EllipseVisual(PolygonVisual):
                                                              len(radius)))
         else:
             xr = yr = radius
-        curve_segments = int(num_segments * span_angle / 360.)
-        start_angle *= (np.pi/180.)
-        self._vertices = np.empty([curve_segments+2, 2], dtype=np.float32)
-        self._vertices[0] = np.float32([pos[0], pos[1]])
-        theta = np.linspace(start_angle, start_angle + (span_angle/180.)*np.pi,
-                            curve_segments+1)
-        self._vertices[1:, 0] = pos[0] + xr * np.cos(theta)
-        self._vertices[1:, 1] = pos[1] + yr * np.sin(theta)
+
+        start_angle = np.deg2rad(start_angle)
+
+        vertices = np.empty([num_segments + 2, 2], dtype=np.float32)
+
+        # split the total angle into num_segments intances
+        theta = np.linspace(start_angle,
+                            start_angle + np.deg2rad(span_angle),
+                            num_segments + 1)
+
+        # PolarProjection
+        vertices[1:, 0] = center[0] + xr * np.cos(theta)
+        vertices[1:, 1] = center[1] + yr * np.sin(theta)
+
+        # specify center point (not used in border)
+        vertices[0] = np.float32([center[0], center[1]])
+
+        return vertices
+
+    @property
+    def center(self):
+        """ The center of the ellipse
+        """
+        return self._center
+
+    @center.setter
+    def center(self, center):
+        """ The center of the ellipse
+        """
+        self._center = center
+        self._regen_pos()
+        self._update()
 
     @property
     def radius(self):
@@ -83,6 +117,7 @@ class EllipseVisual(PolygonVisual):
     @radius.setter
     def radius(self, radius):
         self._radius = radius
+        self._regen_pos()
         self._update()
 
     @property
@@ -94,6 +129,7 @@ class EllipseVisual(PolygonVisual):
     @start_angle.setter
     def start_angle(self, start_angle):
         self._start_angle = start_angle
+        self._regen_pos()
         self._update()
 
     @property
@@ -105,6 +141,7 @@ class EllipseVisual(PolygonVisual):
     @span_angle.setter
     def span_angle(self, span_angle):
         self._span_angle = span_angle
+        self._regen_pos()
         self._update()
 
     @property
@@ -115,25 +152,19 @@ class EllipseVisual(PolygonVisual):
 
     @num_segments.setter
     def num_segments(self, num_segments):
+        num_segments = int(num_segments)
         if num_segments < 1:
             raise ValueError('EllipseVisual must consist of more than 1 '
                              'segment')
         self._num_segments = num_segments
+        self._regen_pos()
         self._update()
 
-    def _update(self):
-        if self._pos is None:
-            return
-        
-        self._generate_vertices(pos=self._pos, radius=self._radius,
-                                start_angle=self._start_angle,
-                                span_angle=self._span_angle,
-                                num_segments=self._num_segments)
-        if not self._color.is_blank:
-            self.mesh.set_data(vertices=self._vertices,
-                               color=self._color.rgba)
-        if not self._border_color.is_blank:
-            self.border.set_data(pos=self._vertices[1:],
-                                 color=self._border_color.rgba)
-        
-        self.update()
+    def _regen_pos(self):
+        vertices = self._generate_vertices(center=self._center,
+                                           radius=self._radius,
+                                           start_angle=self._start_angle,
+                                           span_angle=self._span_angle,
+                                           num_segments=self._num_segments)
+        # don't use the center point
+        self._pos = vertices[1:]

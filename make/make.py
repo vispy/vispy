@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for mo
 
 """
@@ -15,7 +15,6 @@ from __future__ import division, print_function
 import sys
 import os
 from os import path as op
-import time
 import shutil
 import subprocess
 import re
@@ -23,7 +22,11 @@ import webbrowser
 import traceback
 import numpy as np
 
-# Save where we came frome and where this module lives
+if sys.version_info[0] < 3:
+    input = raw_input  # noqa
+
+
+# Save where we came from and where this module lives
 START_DIR = op.abspath(os.getcwd())
 THIS_DIR = op.abspath(op.dirname(__file__))
 
@@ -174,21 +177,25 @@ class Maker:
         """ Run tests:
                 * full - run all tests
                 * unit - run tests (also for each backend)
-                * any backend name (e.g. pyside, pyqt4, etc.) -
+                * any backend name (e.g. pyside2, pyside, pyqt4, etc.) -
                   run tests for the given backend
                 * nobackend - run tests that do not require a backend
                 * extra - run extra tests (line endings and style)
                 * lineendings - test line ending consistency
                 * flake - flake style testing (PEP8 and more)
+                * docs - test docstring parameters for correctness
                 * examples - run all examples
                 * examples [examples paths] - run given examples
         """
+        # Note: By default, "python make full" *will* produce coverage data,
+        # whereas vispy.test('full') will not. This is because users won't
+        # really care about coveraged, but developers will.
         if not arg:
             return self.help('test')
         from vispy import test
         try:
             args = arg.split(' ')
-            test(args[0], ' '.join(args[1:]))
+            test(args[0], ' '.join(args[1:]), coverage=True)
         except Exception as err:
             print(err)
             if not isinstance(err, RuntimeError):
@@ -272,7 +279,7 @@ class Maker:
 
             # Check if should make a screenshot
             frames = []
-            lines = open(filename, 'rt').read().splitlines()
+            lines = open(filename, 'rb').read().decode('utf-8').splitlines()
             for line in lines[:10]:
                 if line.startswith('# vispy:') and 'gallery' in line:
                     # Get what frames to grab
@@ -341,6 +348,7 @@ class Maker:
 
     def _images_thumbnails(self):
         from vispy.io import imsave, imread
+        # TODO: Switch to using PIL for resizing
         from skimage.transform import resize
         import numpy as np
         gallery_dir = op.join(IMAGES_DIR, 'gallery')
@@ -365,56 +373,8 @@ class Maker:
 
             print('Created thumbnail and carousel %s' % fname)
 
-    def copyright(self, arg):
-        """ Update all copyright notices to the current year.
-        """
-        # Initialize
-        TEMPLATE = "# Copyright (c) %i, Vispy Development Team."
-        CURYEAR = int(time.strftime('%Y'))
-        OLDTEXT = TEMPLATE % (CURYEAR - 1)
-        NEWTEXT = TEMPLATE % CURYEAR
-        # Initialize counts
-        count_ok, count_replaced = 0, 0
-
-        # Processing the whole root directory
-        for dirpath, dirnames, filenames in os.walk(ROOT_DIR):
-            # Check if we should skip this directory
-            reldirpath = op.relpath(dirpath, ROOT_DIR)
-            if reldirpath[0] in '._' or reldirpath.endswith('__pycache__'):
-                continue
-            if op.split(reldirpath)[0] in ('build', 'dist'):
-                continue
-            # Process files
-            for fname in filenames:
-                if not fname.endswith('.py'):
-                    continue
-                # Open and check
-                filename = op.join(dirpath, fname)
-                text = open(filename, 'rt').read()
-                if NEWTEXT in text:
-                    count_ok += 1
-                elif OLDTEXT in text:
-                    text = text.replace(OLDTEXT, NEWTEXT)
-                    open(filename, 'wt').write(text)
-                    print(
-                        '  Update copyright year in %s/%s' %
-                        (reldirpath, fname))
-                    count_replaced += 1
-                elif 'copyright' in text[:200].lower():
-                    print(
-                        '  Unknown copyright mentioned in %s/%s' %
-                        (reldirpath, fname))
-        # Report
-        print('Replaced %i copyright statements' % count_replaced)
-        print('Found %i copyright statements up to date' % count_ok)
-
 
 # Functions used by the maker
-
-if sys.version_info[0] < 3:
-    input = raw_input  # noqa
-
-
 def sh(cmd):
     """Execute command in a subshell, return status code."""
     return subprocess.check_call(cmd, shell=True)
@@ -482,7 +442,7 @@ def sphinx_copy_pages(html_dir, pages_dir, pages_repo):
         if op.isdir(tmp_git_dir):
             shutil.rmtree(tmp_git_dir)
     # Copy individual files
-    for fname in ['CNAME', 'README.md', 'conf.py', '.nojekyll', 'Makefile']:
+    for fname in ['CNAME', 'README.rst', 'conf.py', '.nojekyll', 'Makefile']:
         shutil.copyfile(op.join(WEBSITE_DIR, fname),
                         op.join(pages_dir, fname))
     # Messages

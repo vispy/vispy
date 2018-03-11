@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # vispy: gallery 30
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 """
@@ -20,19 +20,12 @@ grid = canvas.central_widget.add_grid()
 
 # Create two ViewBoxes, place side-by-side
 vb1 = grid.add_view(name='vb1', border_color='yellow')
-# Viewboxes can use one of 3 different clipping methods: 'fragment', 
-# 'viewport', or 'fbo'. The default is 'fragment', which does all clipping in
-# the fragment shader.
-vb1.clip_method = 'fragment'
 # First ViewBox uses a 2D pan/zoom camera
 vb1.camera = 'panzoom'
 
 # Second ViewBox uses a 3D perspective camera
 vb2 = grid.add_view(name='vb2', border_color='yellow')
 vb2.parent = canvas.scene
-# Second ViewBox uses glViewport to implement clipping and a 3D turntable
-# camera.
-vb2.clip_method = 'viewport'
 vb2.camera = scene.TurntableCamera(elevation=30, azimuth=30, up='+y')
 
 

@@ -53,6 +53,9 @@ test3: clean-test
 flake: clean-test
 	python make test flake
 
+docs: clean-test
+	python make test docs
+
 flake3: clean-test
 	python3 make test flake
 
@@ -71,6 +74,9 @@ pyqt4: clean-test
 pyside: clean-test
 	python make test pyside
 
+pyside2: clean-test
+	python make test pyside2
+
 pyglet: clean-test
 	python make test pyglet
 
@@ -85,6 +91,9 @@ wx: clean-test
 
 egl: clean-test
 	python make test egl
+
+osmesa: clean-test
+	python make test osmesa
 
 ipynb_vnc: clean-test
 	python make test ipynb_vnc

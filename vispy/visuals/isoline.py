@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division
@@ -8,7 +8,6 @@ import numpy as np
 
 from .line import LineVisual
 from ..color import ColorArray
-from ..ext.six import string_types
 from ..color.colormap import _normalize, get_colormap
 
 
@@ -43,6 +42,7 @@ def iso_mesh_line(vertices, tris, vertex_data, levels):
     lines = None
     connects = None
     vertex_level = None
+    level_index = None
     if not all([isinstance(x, np.ndarray) for x in (vertices, tris,
                 vertex_data, levels)]):
         raise ValueError('all inputs must be numpy arrays')
@@ -69,7 +69,7 @@ def iso_mesh_line(vertices, tris, vertex_data, levels):
             # Linear interpolation
             ratio = np.array([(lev - edge_datas_Ok[:, 0]) /
                               (edge_datas_Ok[:, 1] - edge_datas_Ok[:, 0])])
-            point = xyz[:, 0, :] + ratio.T*(xyz[:, 1, :] - xyz[:, 0, :])
+            point = xyz[:, 0, :] + ratio.T * (xyz[:, 1, :] - xyz[:, 0, :])
             nbr = point.shape[0]//2
             if connects is not None:
                 connect = np.arange(0, nbr*2).reshape((nbr, 2)) + \
@@ -79,14 +79,16 @@ def iso_mesh_line(vertices, tris, vertex_data, levels):
                 vertex_level = np.append(vertex_level,
                                          np.zeros(len(point)) +
                                          lev)
+                level_index = np.append(level_index, np.array(len(point)))
             else:
                 lines = point
-                connects = np.arange(0, nbr*2).reshape((nbr, 2)) + \
-                    len(lines)
+                connects = np.arange(0, nbr*2).reshape((nbr, 2))
                 vertex_level = np.zeros(len(point)) + lev
+                level_index = np.array(len(point))
+
             vertex_level = vertex_level.reshape((vertex_level.size, 1))
 
-    return lines, connects, vertex_level
+    return lines, connects, vertex_level, level_index
 
 
 class IsolineVisual(LineVisual):
@@ -115,8 +117,15 @@ class IsolineVisual(LineVisual):
         self._tris = None
         self._levels = levels
         self._color_lev = color_lev
-        self._update_color_lev = True
-        self._recompute = True
+        self._need_color_update = True
+        self._need_recompute = True
+        self._v = None
+        self._c = None
+        self._vl = None
+        self._li = None
+        self._lc = None
+        self._cl = None
+        self._update_color_lev = False
         kwargs['antialias'] = False
         LineVisual.__init__(self, method='gl', **kwargs)
         self.set_data(vertices=vertices, tris=tris, data=data)
@@ -130,7 +139,7 @@ class IsolineVisual(LineVisual):
     @levels.setter
     def levels(self, levels):
         self._levels = levels
-        self._recompute = True
+        self._need_recompute = True
         self.update()
 
     @property
@@ -153,13 +162,13 @@ class IsolineVisual(LineVisual):
         # modifier pour tenier compte des None self._recompute = True
         if data is not None:
             self._data = data
-            self._recompute = True
+            self._need_recompute = True
         if vertices is not None:
             self._vertices = vertices
-            self._recompute = True
+            self._need_recompute = True
         if tris is not None:
             self._tris = tris
-            self._recompute = True
+            self._need_recompute = True
         self.update()
 
     @property
@@ -176,43 +185,60 @@ class IsolineVisual(LineVisual):
         """
         if color is not None:
             self._color_lev = color
-            self._update_color_lev = True
+            self._need_color_update = True
             self.update()
 
     def _levels_to_colors(self):
-        if isinstance(self._color_lev, string_types):
+        # computes ColorArrays for given levels
+        # try _color_lev as colormap, except as everything else
+        try:
             f_color_levs = get_colormap(self._color_lev)
-            lev = _normalize(self._vl, self._vl.min(), self._vl.max())
-            colors = f_color_levs.map(lev)
-        else:
+        except (KeyError, TypeError):
             colors = ColorArray(self._color_lev).rgba
-            if len(colors) == 1:
-                colors = colors[0]
-        return colors
+        else:
+            lev = _normalize(self._levels, self._levels.min(),
+                             self._levels.max())
+            # map function expects (Nlev,1)!
+            colors = f_color_levs.map(lev[:, np.newaxis])
 
-    def draw(self, transforms):
-        """Draw the visual
+        if len(colors) == 1:
+            colors = colors * np.ones((len(self._levels), 1))
 
-        Parameters
-        ----------
-        transforms : instance of TransformSystem
-            The transforms to use.
+        # detect color/level mismatch and raise error
+        if (len(colors) != len(self._levels)):
+            raise TypeError("Color/level mismatch. Color must be of shape "
+                            "(Nlev, ...) and provide one color per level")
+
+        self._lc = colors
+
+    def _compute_iso_color(self):
+        """ compute LineVisual color from level index and corresponding level
+        color
         """
+        level_color = []
+        colors = self._lc
+        for i, index in enumerate(self._li):
+            level_color.append(np.zeros((index, 4)) + colors[i])
+        self._cl = np.vstack(level_color)
+
+    def _prepare_draw(self, view):
         if (self._data is None or self._levels is None or self._tris is None or
            self._vertices is None or self._color_lev is None):
-            return
+            return False
 
-        if self._recompute:
-            self._v, self._c, self._vl = iso_mesh_line(self._vertices,
-                                                       self._tris, self._data,
-                                                       self._levels)
-            self._cl = self._levels_to_colors()
-            self._recompute = False
+        if self._need_recompute:
+            self._v, self._c, self._vl, self._li = iso_mesh_line(
+                self._vertices, self._tris, self._data, self._levels)
+            self._levels_to_colors()
+            self._compute_iso_color()
+            LineVisual.set_data(self, pos=self._v, connect=self._c,
+                                color=self._cl)
+            self._need_recompute = False
+
+        if self._need_color_update:
+            self._levels_to_colors()
+            self._compute_iso_color()
+            LineVisual.set_data(self, color=self._cl)
             self._update_color_lev = False
 
-        if self._update_color_lev:
-            self._cl = self._levels_to_colors()
-            self._update_color_lev = False
-
-        LineVisual.set_data(self, pos=self._v, connect=self._c, color=self._cl)
-        LineVisual.draw(self, transforms)
+        return LineVisual._prepare_draw(self, view)

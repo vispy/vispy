@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """
@@ -10,7 +10,7 @@ arcball-style control.
 import sys
 import numpy as np
 
-from vispy import app, gloo
+from vispy import app
 from vispy.visuals import CubeVisual, transforms
 from vispy.util.quaternion import Quaternion
 
@@ -22,21 +22,21 @@ class Canvas(app.Canvas):
 
         self.cube = CubeVisual((1.0, 0.5, 0.25), color='red',
                                edge_color='black')
-        self.quaternion = Quaternion()
+        self.cube.transform = transforms.MatrixTransform()
+        self.cube.transform.scale((100, 100, 0.001))
+        self.cube.transform.translate((200, 200))
 
-        # Create a TransformSystem that will tell the visual how to draw
-        self.cube_transform = transforms.AffineTransform()
-        self.cube_transform.scale((100, 100, 0.001))
-        self.cube_transform.translate((200, 200))
-        self.tr_sys = transforms.TransformSystem(self)
-        self.tr_sys.visual_to_document = self.cube_transform
+        self.quaternion = Quaternion()
         self.show()
 
+    def on_resize(self, event):
+        vp = (0, 0, self.physical_size[0], self.physical_size[1])
+        self.context.set_viewport(*vp)
+        self.cube.transforms.configure(canvas=self, viewport=vp)
+
     def on_draw(self, event):
-        gloo.set_viewport(0, 0, *self.physical_size)
-        gloo.clear('white')
-        self.tr_sys.auto_configure()
-        self.cube.draw(self.tr_sys)
+        self.context.clear('white')
+        self.cube.draw()
 
     def on_mouse_move(self, event):
         if event.button == 1 and event.last_event is not None:
@@ -46,9 +46,9 @@ class Canvas(app.Canvas):
             self.quaternion = (self.quaternion *
                                Quaternion(*_arcball(x0, y0, w, h)) *
                                Quaternion(*_arcball(x1, y1, w, h)))
-            self.cube_transform.matrix = self.quaternion.get_matrix()
-            self.cube_transform.scale((100, 100, 0.001))
-            self.cube_transform.translate((200, 200))
+            self.cube.transform.matrix = self.quaternion.get_matrix()
+            self.cube.transform.scale((100, 100, 0.001))
+            self.cube.transform.translate((200, 200))
             self.update()
 
 

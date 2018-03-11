@@ -4,6 +4,10 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
+from itertools import product
+from string import hexdigits
+
+
 # See <http://www.w3.org/TR/SVG/types.html#ColorKeywords>
 _keyword_colors = {
     "aliceblue":            (240, 248, 255),
@@ -155,12 +159,11 @@ _keyword_colors = {
     "yellowgreen":          (154, 205,  50)}
 
 
-_NUMERALS = '0123456789abcdefABCDEF'
-
-
-_HEXDEC = {v: int(v, 16)
-           for v in (x + y for x in _NUMERALS for y in _NUMERALS)}
-
+_HEXDEC = {}
+for x, y in product(hexdigits, repeat=2):
+    v = x + y
+    _HEXDEC[v] = int(v, 16)
+    
 
 def _rgb(triplet):
     return _HEXDEC[triplet[0:2]], _HEXDEC[triplet[2:4]], _HEXDEC[triplet[4:6]]

@@ -1,51 +1,79 @@
 language: python
 
-# Here we use anaconda for 2.6 and 3.4, since it provides the simplest
-# interface for running different versions of Python. We could also use
-# it for 2.7, but the Ubuntu system has installable 2.7 Qt4-GL, which
-# allows for more complete testing.
+# use container-based infrastructure
+sudo : false
+dist: trusty
+
+# liblgfw2 is not whitelisted by Travis, so we don't try using it here (not usable anyway)
+addons:
+  apt:
+    packages:
+    - &mesa_apt [libgl1-mesa-dri]
+    - &full_apt [libgl1-mesa-dri, libegl1-mesa, cmake, xorg-dev, libglu1-mesa-dev, mercurial, libdbus-1-dev, libgl1-mesa-dev, libglu1-mesa-dev, libpulse-dev, libx11-dev, libxcursor-dev, libxext-dev, libxi-dev, libxinerama-dev, libxrandr-dev, libxss-dev, libxt-dev, libxv-dev, libxxf86vm-dev, libasound2-dev, libts-dev, libudev-dev, libsdl2-2.0-0]
 
 # Size testing can be skipped by adding "[size skip]" within a commit message.
 
-virtualenv:
-    system_site_packages: true
-
-
-env:
-    # Enable python 2 and python 3 builds
-    # Note that the 2.6 build doesn't get flake8, and runs old versions of
-    # Pyglet and GLFW to make sure we deal with those correctly
-    - PYTHON=2.6 DEPS=full TEST=standard  # functionality
-    - PYTHON=2.7 DEPS=full TEST=standard
-    - PYTHON=2.7 DEPS=minimal TEST=standard
-    - PYTHON=3.4 DEPS=full TEST=standard
-
-    - PYTHON=2.7 DEPS=full TEST=examples  # test examples
-    - PYTHON=3.4 DEPS=full TEST=examples
-
-    - PYTHON=3.4 DEPS=minimal TEST=extra  # test file sizes, style, line endings
+matrix:
+  include:
+    - env: PYTHON=3.6 DEPS=minimal TEST=standard
+      os: osx
+      language: generic
+    - env: PYTHON=3.6 DEPS=full TEST=standard
+      os: osx
+      language: generic
+# Travis Examples are extremely slow for OSX (times out)
+#    - env: PYTHON=3.6 DEPS=full TEST=examples
+#      os: osx
+#      language: generic
+    - env: PYTHON=3.6 DEPS=minimal TEST=standard  # also tests file sizes, style, line endings
+      addons:
+        apt:
+          packages:
+    - env: PYTHON=3.6 DEPS=full TEST=standard
+      addons:
+        apt:
+          packages:
+            - *mesa_apt
+            - *full_apt
+    - env: PYTHON=3.6 DEPS=full TEST=examples  # test examples
+      addons:
+        apt:
+          packages:
+            - *mesa_apt
+            - *full_apt
+    - env: PYTHON=2.7 DEPS=full TEST=standard
+      addons:
+        apt:
+          packages:
+            - *mesa_apt
+            - *full_apt
+    # OSMesa requires a specific Travis run because since the system also
+    # has (on-screen) OpenGL installed, we need to setup environment variable
+    # to avoid having the linker load the wrong libglapi.so which would cause
+    # OSMesa to crash
+    - env: PYTHON=2.7 DEPS=full TEST=osmesa
+      addons:
+        apt:
+          packages:
+            - *full_apt
 
 
 before_install:
-    - REDIRECT_TO=/dev/stdout  # change to /dev/null to silence Travis
-    # install a newer cmake since at this time Travis only has version 2.8.7
-    - if [ "${PYTHON}" != "2.6" ] && [ "${DEPS}" == "full" ]; then
-        travis_retry sudo add-apt-repository -y ppa:kalakris/cmake;
-        travis_retry sudo apt-get -y update -qq;
-        travis_retry sudo apt-get -qq -y install cmake;
-      fi;
-    - if [ "${PYTHON}" != "2.7" ]; then
+    - if [ "${TRAVIS_OS_NAME}" == "linux" ]; then
         wget -q http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
-        chmod +x miniconda.sh;
-        ./miniconda.sh -b -p ~/anaconda &> ${REDIRECT_TO};
-        export PATH=~/anaconda/bin:$PATH;
-        conda update --yes --quiet conda &> ${REDIRECT_TO};
-        travis_retry sudo apt-get -qq -y install libgl1-mesa-dri;
+      else
+        wget -q http://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -O miniconda.sh;
       fi;
 
+    - chmod +x miniconda.sh
+    - ./miniconda.sh -b -p ~/anaconda
+    - export PATH=~/anaconda/bin:$PATH
+    - conda config --add channels conda-forge
+    - conda update --yes --quiet conda
+
     - SRC_DIR=$(pwd)
-    # file size checks
-    - if [ "${TEST}" == "extra" ]; then
+    # file size checks run on minimal build for time
+    - if [ "${DEPS}" == "minimal" ]; then
         if [ "${TRAVIS_PULL_REQUEST}" != "false" ]; then
           GIT_TARGET_EXTRA="+refs/heads/${TRAVIS_BRANCH}";
           GIT_SOURCE_EXTRA="+refs/pull/${TRAVIS_PULL_REQUEST}/merge";
@@ -55,14 +83,14 @@ before_install:
         fi;
         cd ~;
         mkdir target-size-clone && cd target-size-clone;
-        git init &> ${REDIRECT_TO} && git remote add -t ${TRAVIS_BRANCH} origin git://github.com/${TRAVIS_REPO_SLUG}.git &>${REDIRECT_TO};
-        git fetch origin ${GIT_TARGET_EXTRA} &> ${REDIRECT_TO} && git checkout -qf FETCH_HEAD &> ${REDIRECT_TO};
-        git tag travis-merge-target &> ${REDIRECT_TO};
-        git gc --aggressive &> ${REDIRECT_TO};
-        TARGET_SIZE=`du -s . | sed -e "s/\t.*//"`;
-        git pull origin ${GIT_SOURCE_EXTRA} &> ${REDIRECT_TO};
-        git gc --aggressive &> ${REDIRECT_TO};
-        MERGE_SIZE=`du -s . | sed -e "s/\t.*//"`;
+        git init && git remote add -t ${TRAVIS_BRANCH} origin git://github.com/${TRAVIS_REPO_SLUG}.git;
+        git fetch origin ${GIT_TARGET_EXTRA} && git checkout -qf FETCH_HEAD;
+        git tag travis-merge-target;
+        git gc --aggressive;
+        TARGET_SIZE=`du -s . | sed -e "s/[[:space:]].*//"`;
+        git pull origin ${GIT_SOURCE_EXTRA};
+        git gc --aggressive;
+        MERGE_SIZE=`du -s . | sed -e "s/[[:space:]].*//"`;
         if [ "${MERGE_SIZE}" != "${TARGET_SIZE}" ]; then
           SIZE_DIFF=`expr \( ${MERGE_SIZE} - ${TARGET_SIZE} \)`;
         else
@@ -73,115 +101,100 @@ before_install:
 
 install:
     # Install numpy, flake
-    - if [ "${PYTHON}" != "2.7" ]; then
-        conda create -n testenv --yes --quiet pip python=$PYTHON > ${REDIRECT_TO};
-        source activate testenv > ${REDIRECT_TO};
-        conda install --yes --quiet numpy nose pytest > ${REDIRECT_TO};
-      else
-        travis_retry sudo apt-get -qq -y install python-numpy python-setuptools > ${REDIRECT_TO};
-        pip install -q pytest > ${REDIRECT_TO};
-      fi;
-    - pip install -q coveralls pytest-cov
-    # Dont install flake8 on 2.6 to make sure tests still run without it
-    - if [ "${PYTHON}" != "2.6" ]; then
-        pip install -q flake8;
-      else
-        pip install -q unittest2;
-      fi
+    - conda create -n testenv --yes --quiet pip python=$PYTHON;
+    - source activate testenv;
+    - conda install --yes --quiet numpy$NUMPY nose pytest;
+    - pip install -q coveralls pytest-cov pytest-sugar flake8
 
-    # Install PyOpenGL
-    - if [ "${DEPS}" == "full" ]; then
-        travis_retry sudo apt-get -qq -y install freeglut3 > ${REDIRECT_TO};
-        if [ "${PYTHON}" == "2.7" ]; then
-          echo "Using OpenGL stable version (repos)";
-          travis_retry sudo apt-get -qq -y install python-opengl > ${REDIRECT_TO};
-        else
-          echo "Using OpenGL stable version (pip)";
-          pip install -q PyOpenGL;
-        fi;
-      fi;
-
-    # Use Pyglet alpha to get Py3.4 support
+    # On Python3, install system-wide copies of bundled libraries instead
     # Also install PyQt4, imaging (PIL or pillow), scipy, mpl, egl
-    # Test old (insufficient) version of Pyglet on 2.6
     # On conda, can't install pyside-pyzo b/c it conflicts with pyqt4,
     # which is required by matplotlib :(
-    # No wx on py3k, wxpython doesn't work there (!)
+    # wxpython available from conda-forge but not for OSX:
+    #     https://github.com/conda-forge/wxpython-feedstock/issues/2
+    # If we only need a single backend (DEPS=backend), then use PyQT4
+    # Don't test Pyglet because it currently segfaults (but AppVeyor checks it)
+    # PyQt5 is currently broken, but will be installed on 3.6 so don't do it
+    # WX requires OSMesa (mesa on conda) which has typically been an
+    # additional test environment. With llvm=3.3 the combination of
+    # EGL and mesa causes segmentation faults. See issue #1401.
     - if [ "${DEPS}" == "full" ]; then
-        if [ "${PYTHON}" == "2.6" ]; then
-          pip install -q pyglet;
-          conda install --yes --quiet wxpython > ${REDIRECT_TO};
+        conda install --yes pyopengl scipy numpy$NUMPY networkx;
+        pip install -q numpydoc PySDL2;
+        if [ "${TRAVIS_OS_NAME}" == "linux" ]; then
+          conda install --yes matplotlib jupyter pyqt=4 pillow decorator six;
+          if [ "${PYTHON}" == "3.6" ]; then
+            pip install -q freetype-py husl pypng cassowary imageio;
+            rm -rf ${SRC_DIR}/vispy/ext/_bundled;
+          else
+            pip install -q mock;
+          fi;
         else
-          pip install -q https://bitbucket.org/pyglet/pyglet/get/tip.zip;
+          conda install --yes matplotlib jupyter pyqt=4;
+          pip install -q mock;
         fi;
-        if [ "${PYTHON}" == "3.4" ]; then
-          conda install --yes --quiet pillow scipy matplotlib > ${REDIRECT_TO};
-        fi;
-        if [ "${PYTHON}" == "2.7" ]; then
-          travis_retry sudo apt-get -qq -y install python-qt4-gl python-imaging python-scipy python-matplotlib python-wxgtk2.8 > ${REDIRECT_TO};
-        fi;
-        travis_retry sudo apt-get -qq -y install libegl1-mesa;
       fi;
 
     # Install vispy
     - cd ${SRC_DIR}
-    - python setup.py install > ${REDIRECT_TO}
+    - python setup.py install
+    - python setup.py develop
     - cd ~
 
-    # GLFW: version 2 shouldn't work (so let's try on Py2.6), version 3 will
-    # We can't use most recent builds because our CMake is too old :(
-    - if [ "${PYTHON}" == "2.6" ] && [ "${DEPS}" == "full" ]; then
-        travis_retry sudo apt-get -qq install libglfw2 > ${REDIRECT_TO};
-      fi
-    - if [ "${PYTHON}" != "2.6" ] && [ "${DEPS}" == "full" ]; then
-        travis_retry sudo apt-get -qq install xorg-dev libglu1-mesa-dev > ${REDIRECT_TO};
-        git clone git://github.com/glfw/glfw.git &> ${REDIRECT_TO};
+    # Install glfw (fails with virtual buffer on OSX)
+    - if [ "${DEPS}" == "full" ] && [ "${TRAVIS_OS_NAME}" == "linux" ]; then
+        git clone git://github.com/glfw/glfw.git;
         cd glfw;
-        git checkout 5b6e671;
-        cmake -DBUILD_SHARED_LIBS=true -DGLFW_BUILD_EXAMPLES=false -DGLFW_BUILD_TESTS=false -DGLFW_BUILD_DOCS=false . > ${REDIRECT_TO};
-        sudo make install > ${REDIRECT_TO};
+        cmake -DCMAKE_INSTALL_PREFIX=$HOME -DBUILD_SHARED_LIBS=true -DGLFW_BUILD_EXAMPLES=false -DGLFW_BUILD_TESTS=false -DGLFW_BUILD_DOCS=false .;
+        make install;
+        cd ~;
+        if [ "${TRAVIS_OS_NAME}" == "linux" ]; then
+          export GLFW_LIBRARY=${HOME}/lib/libglfw.so;
+        else
+          export GLFW_LIBRARY=${HOME}/lib/libglfw.dylib;
+        fi;
       fi
 
-    # Install SDL2 (on 2.6, let's only install sdl2-python to test handling)
-    - if [ "${DEPS}" == "full" ]; then
-        if [ "${PYTHON}" != "2.6" ]; then
-          cd ~;
-          travis_retry sudo apt-get -qq -y install mercurial libdbus-1-dev libgl1-mesa-dev libglu1-mesa-dev libpulse-dev libx11-dev libxcursor-dev libxext-dev libxi-dev libxinerama-dev libxrandr-dev libxss-dev libxt-dev libxv-dev libxxf86vm-dev libasound2-dev libts-dev libudev-dev > ${REDIRECT_TO};
-          wget -q http://www.libsdl.org/release/SDL2-2.0.3.tar.gz;
-          tar xzf SDL2-2.0.3.tar.gz &> ${REDIRECT_TO};
-          cd SDL2-2.0.3;
-          mkdir build;
-          cd build;
-          ../configure --disable-audio --disable-render --disable-joystick --disable-haptic --disable-power --disable-cpuinfo &> ${REDIRECT_TO};
-          make -j 2 &> ${REDIRECT_TO};
-          sudo make install &> ${REDIRECT_TO};
-        fi;
-        pip install -q PySDL2;
+    # Install OSMesa
+    - if [ "${TRAVIS_OS_NAME}" == "linux" ]; then
+        wget https://github.com/vispy/demo-data/raw/master/osmesa/osmesa_11.0.0_12.04.tar.bz2 -O /tmp/osmesa.tar.bz2;
+        mkdir $HOME/osmesa; tar -xvjf /tmp/osmesa.tar.bz2 -C $HOME/osmesa;
       fi;
-
-    # after manual builds we need to update .so search
-    - sudo ldconfig
 
 
 before_script:
     # We need to create a (fake) display on Travis, let's use a funny resolution
-    - export DISPLAY=:99.0
-    - /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1400x900x24 -ac +extension GLX +render
+    # For OSX: https://github.com/travis-ci/travis-ci/issues/7313#issuecomment-279914149
+    - if [ "${TEST}" != "osmesa" ]; then
+        export DISPLAY=:99.0;
+        if [ "${TRAVIS_OS_NAME}" = "osx" ]; then ( sudo Xvfb :99 -ac -screen 0 1400x900x24 +render +iglx; echo ok )& fi;
+        if [ "${TRAVIS_OS_NAME}" = "linux" ]; then
+          /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1400x900x24 -ac +extension GLX +render;
+        fi;
+      fi;
+    - if [ "${TEST}" == "osmesa" ]; then
+        export LD_LIBRARY_PATH=$HOME/osmesa/lib;
+        export LIBRARY_PATH=$HOME/osmesa/lib;
+      fi;
 
 
 script:
     - cd ${SRC_DIR}
+    - python -c "import vispy; print(vispy.sys_info())"
     - if [ "${TEST}" == "standard" ]; then
         make unit;
       fi;
     - if [ "${TEST}" == "examples" ] || [ "${DEPS}" == "minimal" ]; then
         make examples;
       fi;
-    - if [ "${TEST}" == "extra" ]; then
+    - if [ "${DEPS}" == "minimal" ]; then
         make extra;
       fi;
+    - if [ "${TEST}" == "osmesa" ]; then
+        make osmesa;
+      fi;
     # Each line must be run in a separate line to ensure exit code accuracy
-    - if [ "${TEST}" == "extra" ]; then
+    - if [ "${DEPS}" == "minimal" ]; then
         echo "Size difference ${SIZE_DIFF} kB";
         if git log --format=%B -n 2 | grep -q "\[size skip\]"; then
           echo "Skipping size test";
@@ -194,6 +207,7 @@ script:
 after_success:
     # Need to run from source dir to execute appropriate "git" commands
     - if [ "${TEST}" == "standard" ]; then
-        coverage combine;
+        COVERAGE_FILE=.vispy-coverage coverage combine;
+        mv .vispy-coverage .coverage;
         coveralls;
       fi;

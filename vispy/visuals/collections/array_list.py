@@ -356,8 +356,8 @@ class ArrayList(object):
             Z = self._data[dstart:self._size]
             self._data[dstart + size:self._size + size] = Z
             # Update moved items
-            I = self._items[istart:self._count] + size
-            self._items[istart + _count:self._count + _count] = I
+            items = self._items[istart:self._count] + size
+            self._items[istart + _count:self._count + _count] = items
 
         # Appending
         else:

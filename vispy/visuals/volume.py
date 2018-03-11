@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """
@@ -35,7 +35,7 @@ coordinates).
 
 from ..gloo import Texture3D, TextureEmulated3D, VertexBuffer, IndexBuffer
 from . import Visual
-from .shaders import Function, ModularProgram
+from .shaders import Function
 from ..color import get_colormap
 
 import numpy as np
@@ -47,16 +47,16 @@ import numpy as np
 # Vertex shader
 VERT_SHADER = """
 attribute vec3 a_position;
-attribute vec3 a_texcoord;
+// attribute vec3 a_texcoord;
 uniform vec3 u_shape;
 
-varying vec3 v_texcoord;
+// varying vec3 v_texcoord;
 varying vec3 v_position;
 varying vec4 v_nearpos;
 varying vec4 v_farpos;
 
 void main() {
-    v_texcoord = a_texcoord;
+    // v_texcoord = a_texcoord;
     v_position = a_position;
     
     // Project local vertex coordinate to camera position. Then do a step
@@ -84,7 +84,7 @@ uniform float u_threshold;
 uniform float u_relative_step_size;
 
 //varyings
-varying vec3 v_texcoord;
+// varying vec3 v_texcoord;
 varying vec3 v_position;
 varying vec4 v_nearpos;
 varying vec4 v_farpos;
@@ -99,78 +99,6 @@ const float u_shininess = 40.0;
 
 // global holding view direction in local coordinates
 vec3 view_ray;
-
-vec4 calculateColor(vec4, vec3, vec3);
-float rand(vec2 co);
-
-void main() {{
-    vec3 farpos = v_farpos.xyz / v_farpos.w;
-    vec3 nearpos = v_nearpos.xyz / v_nearpos.w;
-    
-    // Calculate unit vector pointing in the view direction through this 
-    // fragment.
-    view_ray = normalize(farpos.xyz - nearpos.xyz);
-    
-    // Compute the distance to the front surface or near clipping plane
-    float distance = dot(nearpos-v_position, view_ray);
-    distance = max(distance, min((-0.5 - v_position.x) / view_ray.x, 
-                            (u_shape.x - 0.5 - v_position.x) / view_ray.x));
-    distance = max(distance, min((-0.5 - v_position.y) / view_ray.y, 
-                            (u_shape.y - 0.5 - v_position.y) / view_ray.y));
-    distance = max(distance, min((-0.5 - v_position.z) / view_ray.z, 
-                            (u_shape.z - 0.5 - v_position.z) / view_ray.z));
-    
-    // Now we have the starting position on the front surface
-    vec3 front = v_position + view_ray * distance;
-    
-    // Decide how many steps to take
-    int nsteps = int(-distance / u_relative_step_size + 0.5);
-    if( nsteps < 1 )
-        discard;
-        
-    // Get starting location and step vector in texture coordinates
-    vec3 step = ((v_position - front) / u_shape) / nsteps;
-    vec3 start_loc = front / u_shape;
-    
-    // For testing: show the number of steps. This helps to establish
-    // whether the rays are correctly oriented
-    //gl_FragColor = vec4(0.0, nsteps / 3.0 / u_shape.x, 1.0, 1.0);
-    //return;
-    
-    {before_loop}
-    
-    // This outer loop seems necessary on some systems for large
-    // datasets. Ugly, but it works ...
-    vec3 loc = start_loc;
-    int iter = 0;
-    while (iter < nsteps) {{
-        for (iter=iter; iter<nsteps; iter++)
-        {{
-            // Get sample color
-            vec4 color = $sample(u_volumetex, loc);
-            float val = color.g;
-            
-            {in_loop}
-            
-            // Advance location deeper into the volume
-            loc += step;
-        }}
-    }}
-    
-    {after_loop}
-    
-    /* Set depth value - from visvis TODO
-    int iter_depth = int(maxi);
-    // Calculate end position in world coordinates
-    vec4 position2 = vertexPosition;
-    position2.xyz += ray*shape*float(iter_depth);
-    // Project to device coordinates and set fragment depth
-    vec4 iproj = gl_ModelViewProjectionMatrix * position2;
-    iproj.z /= iproj.w;
-    gl_FragDepth = (iproj.z+1.0)/2.0;
-    */
-}}
-
 
 float rand(vec2 co)
 {{
@@ -256,6 +184,78 @@ vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
     return final_color;
 }}
 
+// for some reason, this has to be the last function in order for the
+// filters to be inserted in the correct place...
+
+void main() {{
+    vec3 farpos = v_farpos.xyz / v_farpos.w;
+    vec3 nearpos = v_nearpos.xyz / v_nearpos.w;
+
+    // Calculate unit vector pointing in the view direction through this
+    // fragment.
+    view_ray = normalize(farpos.xyz - nearpos.xyz);
+
+    // Compute the distance to the front surface or near clipping plane
+    float distance = dot(nearpos-v_position, view_ray);
+    distance = max(distance, min((-0.5 - v_position.x) / view_ray.x,
+                            (u_shape.x - 0.5 - v_position.x) / view_ray.x));
+    distance = max(distance, min((-0.5 - v_position.y) / view_ray.y,
+                            (u_shape.y - 0.5 - v_position.y) / view_ray.y));
+    distance = max(distance, min((-0.5 - v_position.z) / view_ray.z,
+                            (u_shape.z - 0.5 - v_position.z) / view_ray.z));
+
+    // Now we have the starting position on the front surface
+    vec3 front = v_position + view_ray * distance;
+
+    // Decide how many steps to take
+    int nsteps = int(-distance / u_relative_step_size + 0.5);
+    if( nsteps < 1 )
+        discard;
+
+    // Get starting location and step vector in texture coordinates
+    vec3 step = ((v_position - front) / u_shape) / nsteps;
+    vec3 start_loc = front / u_shape;
+
+    // For testing: show the number of steps. This helps to establish
+    // whether the rays are correctly oriented
+    //gl_FragColor = vec4(0.0, nsteps / 3.0 / u_shape.x, 1.0, 1.0);
+    //return;
+
+    {before_loop}
+
+    // This outer loop seems necessary on some systems for large
+    // datasets. Ugly, but it works ...
+    vec3 loc = start_loc;
+    int iter = 0;
+    while (iter < nsteps) {{
+        for (iter=iter; iter<nsteps; iter++)
+        {{
+            // Get sample color
+            vec4 color = $sample(u_volumetex, loc);
+            float val = color.g;
+
+            {in_loop}
+
+            // Advance location deeper into the volume
+            loc += step;
+        }}
+    }}
+
+    {after_loop}
+
+    /* Set depth value - from visvis TODO
+    int iter_depth = int(maxi);
+    // Calculate end position in world coordinates
+    vec4 position2 = vertexPosition;
+    position2.xyz += ray*shape*float(iter_depth);
+    // Project to device coordinates and set fragment depth
+    vec4 iproj = gl_ModelViewProjectionMatrix * position2;
+    iproj.z /= iproj.w;
+    gl_FragDepth = (iproj.z+1.0)/2.0;
+    */
+}}
+
+
 """  # noqa
 
 
@@ -335,6 +335,7 @@ ISO_SNIPPETS = dict(
     before_loop="""
         vec4 color3 = vec4(0.0);  // final color
         vec3 dstep = 1.5 / u_shape;  // step to sample derivative
+        gl_FragColor = vec4(0.0);
     """,
     in_loop="""
         if (val > u_threshold-0.2) {
@@ -358,9 +359,12 @@ ISO_SNIPPETS = dict(
 
 ISO_FRAG_SHADER = FRAG_SHADER.format(**ISO_SNIPPETS)
 
-frag_dict = {'mip': MIP_FRAG_SHADER, 'iso': ISO_FRAG_SHADER,
-             'translucent': TRANSLUCENT_FRAG_SHADER, 
-             'additive': ADDITIVE_FRAG_SHADER}
+frag_dict = {
+    'mip': MIP_FRAG_SHADER,
+    'iso': ISO_FRAG_SHADER,
+    'translucent': TRANSLUCENT_FRAG_SHADER,
+    'additive': ADDITIVE_FRAG_SHADER,
+}
 
 
 class VolumeVisual(Visual):
@@ -369,7 +373,7 @@ class VolumeVisual(Visual):
     Parameters
     ----------
     vol : ndarray
-        The volume to display. Must be ndim==2.
+        The volume to display. Must be ndim==3.
     clim : tuple of two floats | None
         The contrast limits. The values in the volume are mapped to
         black and white corresponding to these values. Default maps
@@ -378,7 +382,7 @@ class VolumeVisual(Visual):
         The render method to use. See corresponding docs for details.
         Default 'mip'.
     threshold : float
-        The threshold to use for the isosurafce render method. By default
+        The threshold to use for the isosurface render method. By default
         the mean of the given volume is used.
     relative_step_size : float
         The relative step size to step through the volume. Default 0.8.
@@ -394,31 +398,45 @@ class VolumeVisual(Visual):
     def __init__(self, vol, clim=None, method='mip', threshold=None, 
                  relative_step_size=0.8, cmap='grays',
                  emulate_texture=False):
-        Visual.__init__(self)
         
-        # Only show back faces of cuboid. This is required because if we are 
-        # inside the volume, then the front faces are outside of the clipping
-        # box and will not be drawn.
-        self.set_gl_state('translucent', cull_face=False)
         tex_cls = TextureEmulated3D if emulate_texture else Texture3D
 
         # Storage of information of volume
         self._vol_shape = ()
-        self._vertex_cache_id = ()
-        self._clim = None      
+        self._clim = None
+        self._need_vertex_update = True
 
         # Set the colormap
         self._cmap = get_colormap(cmap)
 
         # Create gloo objects
-        self._vbo = None
+        self._vertices = VertexBuffer()
+        self._texcoord = VertexBuffer(
+            np.array([
+                [0, 0, 0],
+                [1, 0, 0],
+                [0, 1, 0],
+                [1, 1, 0],
+                [0, 0, 1],
+                [1, 0, 1],
+                [0, 1, 1],
+                [1, 1, 1],
+            ], dtype=np.float32))
         self._tex = tex_cls((10, 10, 10), interpolation='linear', 
                             wrapping='clamp_to_edge')
 
         # Create program
-        self._program = ModularProgram(VERT_SHADER)
-        self._program['u_volumetex'] = self._tex
-        self._index_buffer = None
+        Visual.__init__(self, vcode=VERT_SHADER, fcode="")
+        self.shared_program['u_volumetex'] = self._tex
+        self.shared_program['a_position'] = self._vertices
+        self.shared_program['a_texcoord'] = self._texcoord
+        self._draw_mode = 'triangle_strip'
+        self._index_buffer = IndexBuffer()
+
+        # Only show back faces of cuboid. This is required because if we are 
+        # inside the volume, then the front faces are outside of the clipping
+        # box and will not be drawn.
+        self.set_gl_state('translucent', cull_face=False)
         
         # Set data
         self.set_data(vol, clim)
@@ -427,6 +445,7 @@ class VolumeVisual(Visual):
         self.method = method
         self.relative_step_size = relative_step_size
         self.threshold = threshold if (threshold is not None) else vol.mean()
+        self.freeze()
     
     def set_data(self, vol, clim=None):
         """ Set the volume data. 
@@ -455,17 +474,26 @@ class VolumeVisual(Visual):
         
         # Apply clim
         vol = np.array(vol, dtype='float32', copy=False)
-        vol -= self._clim[0]
-        vol *= 1.0 / (self._clim[1] - self._clim[0])
+        if self._clim[1] == self._clim[0]:
+            if self._clim[0] != 0.:
+                vol *= 1.0 / self._clim[0]
+        else:
+            vol -= self._clim[0]
+            vol /= self._clim[1] - self._clim[0]
         
         # Apply to texture
         self._tex.set_data(vol)  # will be efficient if vol is same shape
-        self._program['u_shape'] = vol.shape[2], vol.shape[1], vol.shape[0]
-        self._vol_shape = vol.shape[:3]
+        self.shared_program['u_shape'] = (vol.shape[2], vol.shape[1], 
+                                          vol.shape[0])
         
-        # Create vertices?
-        if self._index_buffer is None:
-            self._create_vertex_data()
+        shape = vol.shape[:3]
+        if self._vol_shape != shape:
+            self._vol_shape = shape
+            self._need_vertex_update = True
+        self._vol_shape = shape
+        
+        # Get some stats
+        self._kb_for_texture = np.prod(self._vol_shape) / 1024
     
     @property
     def clim(self):
@@ -481,7 +509,7 @@ class VolumeVisual(Visual):
     @cmap.setter
     def cmap(self, cmap):
         self._cmap = get_colormap(cmap)
-        self._program.frag['cmap'] = Function(self._cmap.glsl_map)
+        self.shared_program.frag['cmap'] = Function(self._cmap.glsl_map)
         self.update()
 
     @property
@@ -511,13 +539,13 @@ class VolumeVisual(Visual):
                              (known_methods, method))
         self._method = method
         # Get rid of specific variables - they may become invalid
-        self._program['u_threshold'] = None
+        if 'u_threshold' in self.shared_program:
+            self.shared_program['u_threshold'] = None
 
-        self._program.frag = frag_dict[method]
-        #self._program.frag['calculate_steps'] = Function(calc_steps)
-        self._program.frag['sampler_type'] = self._tex.glsl_sampler_type
-        self._program.frag['sample'] = self._tex.glsl_sample
-        self._program.frag['cmap'] = Function(self._cmap.glsl_map)
+        self.shared_program.frag = frag_dict[method]
+        self.shared_program.frag['sampler_type'] = self._tex.glsl_sampler_type
+        self.shared_program.frag['sample'] = self._tex.glsl_sample
+        self.shared_program.frag['cmap'] = Function(self._cmap.glsl_map)
         self.update()
     
     @property
@@ -529,6 +557,8 @@ class VolumeVisual(Visual):
     @threshold.setter
     def threshold(self, value):
         self._threshold = float(value)
+        if 'u_threshold' in self.shared_program:
+            self.shared_program['u_threshold'] = self._threshold
         self.update()
     
     @property
@@ -548,6 +578,7 @@ class VolumeVisual(Visual):
         if value < 0.1:
             raise ValueError('relative_step_size cannot be smaller than 0.1')
         self._relative_step_size = value
+        self.shared_program['u_relative_step_size'] = value
     
     def _create_vertex_data(self):
         """ Create and set positions and texture coords from the given shape
@@ -555,14 +586,7 @@ class VolumeVisual(Visual):
         We have six faces with 1 quad (2 triangles) each, resulting in
         6*2*3 = 36 vertices in total.
         """
-        
         shape = self._vol_shape
-        
-        # Do we already have this or not?
-        vertex_cache_id = self._vol_shape
-        if vertex_cache_id == self._vertex_cache_id:
-            return
-        self._vertex_cache_id = None
         
         # Get corner coordinates. The -0.5 offset is to center
         # pixels/voxels. This works correctly for anisotropic data.
@@ -570,12 +594,7 @@ class VolumeVisual(Visual):
         y0, y1 = -0.5, shape[1] - 0.5
         z0, z1 = -0.5, shape[0] - 0.5
 
-        data = np.empty(8, dtype=[
-            ('a_position', np.float32, 3),
-            ('a_texcoord', np.float32, 3)
-        ])
-        
-        data['a_position'] = np.array([
+        pos = np.array([
             [x0, y0, z0],
             [x1, y0, z0],
             [x0, y1, z0],
@@ -584,17 +603,6 @@ class VolumeVisual(Visual):
             [x1, y0, z1],
             [x0, y1, z1],
             [x1, y1, z1],
-        ], dtype=np.float32)
-        
-        data['a_texcoord'] = np.array([
-            [0, 0, 0],
-            [1, 0, 0],
-            [0, 1, 0],
-            [1, 1, 0],
-            [0, 0, 1],
-            [1, 0, 1],
-            [0, 1, 1],
-            [1, 1, 1],
         ], dtype=np.float32)
         
         """
@@ -612,65 +620,22 @@ class VolumeVisual(Visual):
         indices = np.array([2, 6, 0, 4, 5, 6, 7, 2, 3, 0, 1, 5, 3, 7],
                            dtype=np.uint32)
         
-        # Get some stats
-        self._kb_for_texture = np.prod(self._vol_shape) / 1024
-        self._kb_for_vertices = (indices.nbytes + data.nbytes) / 1024
-        
         # Apply
-        if self._vbo is not None:
-            self._vbo.delete()
-            self._index_buffer.delete()
-        self._vbo = VertexBuffer(data)
-        self._program.bind(self._vbo)
-        self._index_buffer = IndexBuffer(indices)
-        self._vertex_cache_id = vertex_cache_id
+        self._vertices.set_data(pos)
+        self._index_buffer.set_data(indices)
 
-    def bounds(self, mode, axis):
-        """Get the visual bounds
+    def _compute_bounds(self, axis, view):
+        return 0, self._vol_shape[axis]
 
-        Parameters
-        ----------
-        mode : str
-            The mode.
-        axis : int
-            The axis number.
+    def _prepare_transforms(self, view):
+        trs = view.transforms
+        view.view_program.vert['transform'] = trs.get_transform()
 
-        Returns
-        -------
-        bounds : tuple
-            The lower and upper bounds.
-        """
-        # Not sure if this is right. Do I need to take the transform if this
-        # node into account?
-        # Also, this method has no docstring, and I don't want to repeat
-        # the docstring here. Maybe Visual implements _bounds that subclasses
-        # can implement?
-        return 0, self._vol_shape[2-axis]
-
-    def draw(self, transforms):
-        """Draw the visual
-
-        Parameters
-        ----------
-        transforms : instance of TransformSystem
-            The transforms to use.
-        """
-        Visual.draw(self, transforms)
-        
-        full_tr = transforms.get_full_transform()
-        self._program.vert['transform'] = full_tr
-        self._program['u_relative_step_size'] = self._relative_step_size
-        
-        # Get and set transforms
-        view_tr_f = transforms.visual_to_document
+        view_tr_f = trs.get_transform('visual', 'document')
         view_tr_i = view_tr_f.inverse
-        self._program.vert['viewtransformf'] = view_tr_f
-        self._program.vert['viewtransformi'] = view_tr_i
-        
-        # Set attributes that are specific to certain methods
-        self._program.build_if_needed()
-        if self._method == 'iso':
-            self._program['u_threshold'] = self._threshold
-        
-        # Draw!
-        self._program.draw('triangle_strip', self._index_buffer)
+        view.view_program.vert['viewtransformf'] = view_tr_f
+        view.view_program.vert['viewtransformi'] = view_tr_i
+
+    def _prepare_draw(self, view):
+        if self._need_vertex_update:
+            self._create_vertex_data()

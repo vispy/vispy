@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
 from ..geometry import create_cube
-from ..gloo import set_state
 from .mesh import MeshVisual
+from .visual import CompoundVisual
 
 
-class CubeVisual(MeshVisual):
+class CubeVisual(CompoundVisual):
     """Visual that displays a cube or cuboid
 
     Parameters
@@ -28,27 +28,42 @@ class CubeVisual(MeshVisual):
         cube edges are drawn.
     """
     def __init__(self, size=1.0, vertex_colors=None, face_colors=None,
-                 color=(0.5, 0.5, 1, 1), edge_color=None):
+                 color=(0.5, 0.5, 1, 1), edge_color=None, **kwargs):
+
         vertices, filled_indices, outline_indices = create_cube()
         vertices['position'] *= size
 
-        MeshVisual.__init__(self, vertices['position'], filled_indices,
-                            vertex_colors, face_colors, color)
+        self._mesh = MeshVisual(vertices=vertices['position'],
+                                faces=filled_indices,
+                                vertex_colors=vertex_colors,
+                                face_colors=face_colors, color=color)
         if edge_color:
-            self._outline = MeshVisual(vertices['position'], outline_indices,
-                                       color=edge_color, mode='lines')
+            self._border = MeshVisual(vertices=vertices['position'],
+                                      faces=outline_indices,
+                                      color=edge_color, mode='lines')
         else:
-            self._outline = None
+            self._border = MeshVisual()
 
-    def draw(self, transforms):
-        """Draw the visual
+        CompoundVisual.__init__(self, [self._mesh, self._border], **kwargs)
+        self.mesh.set_gl_state(polygon_offset_fill=True,
+                               polygon_offset=(1, 1), depth_test=True)
 
-        Parameters
-        ----------
-        transforms : instance of TransformSystem
-            The transforms to use.
+    @property
+    def mesh(self):
+        """The vispy.visuals.MeshVisual that used to fill in.
         """
-        MeshVisual.draw(self, transforms)
-        if self._outline:
-            set_state(polygon_offset=(1, 1), polygon_offset_fill=True)
-            self._outline.draw(transforms)
+        return self._mesh
+
+    @mesh.setter
+    def mesh(self, mesh):
+        self._mesh = mesh
+
+    @property
+    def border(self):
+        """The vispy.visuals.MeshVisual that used to draw the border.
+        """
+        return self._border
+
+    @border.setter
+    def border(self, border):
+        self._border = border

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 """
 This is a very minimal example that opens a window and makes the background
@@ -10,30 +10,23 @@ your machine.
 """
 
 import math
-from vispy import app, gloo
+import time
+
+from vispy import app
 
 
 class Canvas(app.Canvas):
 
     def __init__(self, *args, **kwargs):
         app.Canvas.__init__(self, *args, **kwargs)
-        self._timer = app.Timer('auto', connect=self.on_timer, start=True)
-        self.tick = 0
         self.show()
 
     def on_draw(self, event):
-        gloo.clear(color=True)
-
-    def on_timer(self, event):
-        self.tick += 1 / 60.0
-        c = abs(math.sin(self.tick))
-        gloo.set_clear_color((c, c, c, 1))
+        c = 0.5 + math.sin(math.pi * time.time()) / 2.
+        self.context.clear([c] * 3)
         self.update()
 
-    def show_fps(self, fps):
-        print("FPS - %.2f" % fps)
-
 if __name__ == '__main__':
-    canvas = Canvas(keys='interactive')
-    canvas.measure_fps(1, canvas.show_fps)
+    canvas = Canvas(keys='interactive', vsync=False)
+    canvas.measure_fps()
     app.run()

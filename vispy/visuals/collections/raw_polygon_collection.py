@@ -4,7 +4,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 import numpy as np
-from vispy import glsl
+from ... import glsl
 from . collection import Collection
 from ..transforms import NullTransform
 from ...geometry import triangulate
@@ -74,6 +74,6 @@ class RawPolygonCollection(Collection):
         else:
             U = None
 
-        I = np.array(indices).ravel()
-        Collection.append(self, vertices=V, uniforms=U, indices=I,
+        Collection.append(self, vertices=V, uniforms=U,
+                          indices=np.array(indices).ravel(),
                           itemsize=itemsize)

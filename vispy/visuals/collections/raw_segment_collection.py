@@ -9,7 +9,7 @@ Raw Segment Collection
 This collection provides fast raw (& ugly) line segments.
 """
 import numpy as np
-from vispy import glsl
+from ... import glsl
 from . collection import Collection
 from ..transforms import NullTransform
 

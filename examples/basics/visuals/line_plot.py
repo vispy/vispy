@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # vispy: testskip (KNOWNFAIL)
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """
@@ -23,19 +23,20 @@ class Canvas(app.Canvas):
     def __init__(self):
         app.Canvas.__init__(self, keys='interactive',
                             size=(800, 800))
-
         self.line = visuals.LinePlotVisual(pos, color='w', edge_color='w',
+                                           symbol='o', 
                                            face_color=(0.2, 0.2, 1))
-
-        self.tr_sys = visuals.transforms.TransformSystem(self)
-
         self.show()
 
     def on_draw(self, event):
         gloo.clear('black')
-        gloo.set_viewport(0, 0, *self.physical_size)
-        self.line.draw(self.tr_sys)
+        self.line.draw()
 
+    def on_resize(self, event):
+        # Set canvas viewport and reconfigure visual transforms to match.
+        vp = (0, 0, self.physical_size[0], self.physical_size[1])
+        self.context.set_viewport(*vp)
+        self.line.transforms.configure(canvas=self, viewport=vp)
 
 if __name__ == '__main__':
     win = Canvas()

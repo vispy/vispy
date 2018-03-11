@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division, print_function
@@ -15,6 +15,7 @@ from ..util import config as util_config
 from ..ext.six import string_types
 from . import Application, use_app
 from ..gloo.context import (GLContext, set_current_canvas, forget_canvas)
+from ..gloo import FrameBuffer, RenderBuffer
 
 
 # todo: add functions for asking about current mouse/keyboard state
@@ -107,13 +108,13 @@ class Canvas(object):
     time or using a dedicated double-click button will not be respected.
     """
 
-    def __init__(self, title='Vispy canvas', size=(800, 600), position=None,
+    def __init__(self, title='VisPy canvas', size=(800, 600), position=None,
                  show=False, autoswap=True, app=None, create_native=True,
                  vsync=False, resizable=True, decorate=True, fullscreen=False,
                  config=None, shared=None, keys=None, parent=None, dpi=None,
                  always_on_top=False, px_scale=1):
 
-        size = [int(s) * px_scale for s in size]
+        size = tuple(int(s) * px_scale for s in size)
         if len(size) != 2:
             raise ValueError('size must be a 2-element list')
         title = str(title)
@@ -129,6 +130,7 @@ class Canvas(object):
         self._fps_callback = None
         self._backend = None
         self._closed = False
+        self._fps_window = 0.
         self._px_scale = int(px_scale)
 
         if dpi is None:
@@ -351,12 +353,10 @@ class Canvas(object):
         the physical pixels on the device. In most cases this will be 1.0,
         but on certain backends this will be greater than 1. This should be
         used as a scaling factor when writing your own visualisations
-        with Gloo (make a copy and multiply all your logical pixel values
-        by it) but you should rarely, if ever, need to use this in your own
-        Visuals or SceneGraph visualisations; instead you should apply the
-        canvas_fb_transform in the SceneGraph canvas. """
-
-        return self._px_scale * self.physical_size[0] // self.size[0]
+        with gloo (make a copy and multiply all your logical pixel values
+        by it). When writing Visuals or SceneGraph visualisations, this value
+        is exposed as `TransformSystem.px_scale`."""
+        return self.physical_size[0] // self.size[0]
 
     @property
     def fullscreen(self):
@@ -516,6 +516,29 @@ class Canvas(object):
             self.context.finish()
             self.close()
         sleep(0.1)  # ensure window is really closed/destroyed
+
+    def render(self):
+        """ Render the canvas to an offscreen buffer and return the image
+        array.
+
+        Returns
+        -------
+        image : array
+            Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the 
+            upper-left corner of the rendered region.
+        
+        """
+        self.set_current()
+        size = self.physical_size
+        fbo = FrameBuffer(color=RenderBuffer(size[::-1]),
+                          depth=RenderBuffer(size[::-1]))
+
+        try:
+            fbo.activate()
+            self.events.draw()
+            return fbo.read()
+        finally:
+            fbo.deactivate()
 
 
 # Event subclasses specific to the Canvas

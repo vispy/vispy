@@ -1,7 +1,7 @@
 
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 import re
@@ -31,7 +31,7 @@ def remove_comments(code):
 def merge_includes(code):
     """Merge all includes recursively."""
 
-    pattern = '\#\s*include\s*"(?P<filename>[a-zA-Z0-9\_\-\.\/]+)"'
+    pattern = r'\#\s*include\s*"(?P<filename>[a-zA-Z0-9\_\-\.\/]+)"'
     regex = re.compile(pattern)
     includes = []
 

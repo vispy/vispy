@@ -1,12 +1,15 @@
 # -*- coding: utf-8 -*-
 # vispy: gallery 30
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 """
 Demonstration of various features of Line visual.
 """
+
+from __future__ import division
+
 import sys
 import numpy as np
 
@@ -28,7 +31,7 @@ color[:, 1] = color[::-1, 0]
 connect = np.empty((N-1, 2), np.int32)
 connect[:, 0] = np.arange(N-1)
 connect[:, 1] = connect[:, 0] + 1
-connect[N/2, 1] = N/2  # put a break in the middle
+connect[N//2, 1] = N//2  # put a break in the middle
 
 
 class Canvas(app.Canvas):
@@ -76,20 +79,19 @@ class Canvas(app.Canvas):
         for text in self.texts:
             text.transform = NullTransform()
         self.visuals = self.lines + self.texts
-
-        # create a TransformSystem for each visual.
-        # (these are stored as attributes of each visual for convenience)
-        for visual in self.visuals:
-            visual.tr_sys = visuals.transforms.TransformSystem(self)
-            visual.tr_sys.visual_to_document = visual.transform
-
         self.show()
 
     def on_draw(self, event):
         gloo.clear('black')
-        gloo.set_viewport(0, 0, *self.physical_size)
         for visual in self.visuals:
-            visual.draw(visual.tr_sys)
+            visual.draw()
+
+    def on_resize(self, event):
+        # Set canvas viewport and reconfigure visual transforms to match.
+        vp = (0, 0, self.physical_size[0], self.physical_size[1])
+        self.context.set_viewport(*vp)
+        for visual in self.visuals:
+            visual.transforms.configure(canvas=self, viewport=vp)
 
 
 if __name__ == '__main__':
@@ -102,7 +104,7 @@ if __name__ == '__main__':
 
     timer = app.Timer()
     timer.connect(update)
-    timer.start(0)
+    timer.start(1.0)
 
     if sys.flags.interactive != 1:
         app.run()

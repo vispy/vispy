@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """
@@ -24,7 +24,7 @@ from .wrappers import BaseGlooFunctions
 from .. import config
 
 _default_dict = dict(red_size=8, green_size=8, blue_size=8, alpha_size=8,
-                     depth_size=16, stencil_size=0, double_buffer=True,
+                     depth_size=24, stencil_size=0, double_buffer=True,
                      stereo=False, samples=0)
 
 
@@ -102,6 +102,7 @@ class GLContext(BaseGlooFunctions):
         assert isinstance(self._shared, GLShared)
         self._glir = GlirQueue()
         self._do_CURRENT_command = False  # flag that CURRENT cmd must be given
+        self._last_viewport = None
 
     def __repr__(self):
         return "<GLContext at 0x%x>" % id(self)
@@ -168,6 +169,13 @@ class GLContext(BaseGlooFunctions):
             self._do_CURRENT_command = False
             self.shared.parser.parse([('CURRENT', 0)])
         self.glir.flush(self.shared.parser)
+        
+    def set_viewport(self, *args):
+        BaseGlooFunctions.set_viewport(self, *args)
+        self._last_viewport = args
+        
+    def get_viewport(self):
+        return self._last_viewport
 
 
 class GLShared(object):

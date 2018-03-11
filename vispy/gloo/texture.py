@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
@@ -255,14 +255,16 @@ class BaseTexture(GLObject):
         if format not in self._inv_formats:
             raise ValueError('Invalid texture format: %r.' % format)
         elif shape[-1] != self._inv_formats[format]:
-            raise ValueError('Format does not match with given shape.')
+            raise ValueError('Format does not match with given shape. '
+                             '(format expects %d elements, data has %d)' %
+                             (self._inv_formats[format], shape[-1]))
         
         if internalformat is None:
             pass
         elif internalformat not in self._inv_internalformats:
             raise ValueError(
-                'Invalid texture internalformat: %r.' 
-                % internalformat
+                'Invalid texture internalformat: %r. Allowed formats: %r' 
+                % (internalformat, self._inv_internalformats)
             )
         elif shape[-1] != self._inv_internalformats[internalformat]:
             raise ValueError('Internalformat does not match with given shape.')
@@ -713,8 +715,13 @@ class TextureEmulated3D(Texture2D):
 
     def _update_variables(self):
         self._glsl_sample['shape'] = self.shape[:3][::-1]
-        self._glsl_sample['c'] = self._c
-        self._glsl_sample['r'] = self._r
+        # On Windows with Python 2.7, self._c can end up being a long
+        # integer because Numpy array shapes return long integers. This
+        # causes issues when setting the gloo variables since these are
+        # expected to be native ints, so we cast the integers to ints
+        # to avoid this.
+        self._glsl_sample['c'] = int(self._c)
+        self._glsl_sample['r'] = int(self._r)
 
     def set_data(self, data, offset=None, copy=False):
         """Set texture data

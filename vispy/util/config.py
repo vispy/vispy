@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """Vispy configuration functions
@@ -7,6 +7,7 @@
 
 import os
 from os import path as op
+import inspect
 import json
 import sys
 import platform
@@ -15,6 +16,8 @@ import traceback
 import tempfile
 import atexit
 from shutil import rmtree
+
+import numpy as np
 
 from .event import EmitterGroup, EventEmitter, Event
 from .logs import logger, set_log_level, use_log_level
@@ -94,7 +97,7 @@ def _init():
 VISPY_HELP = """
 VisPy command line arguments:
 
-  --vispy-backend=(qt|pyqt4|pyt5|pyside|glfw|pyglet|sdl2|wx)
+  --vispy-backend=(qt|pyqt4|pyqt5|pyside|pyside2|glfw|pyglet|sdl2|wx)
     Selects the backend system for VisPy to use. This will override the default
     backend selection in your configuration file.
 
@@ -118,7 +121,7 @@ VisPy command line arguments:
     Export glir commands to specified file.
 
   --vispy-profile=locations
-    Measure performance at specific code locations and display results. 
+    Measure performance at specific code locations and display results.
     *locations* may be "all" or a comma-separated list of method names like
     "SceneCanvas.draw_visual".
 
@@ -405,7 +408,9 @@ def sys_info(fname=None, overwrite=False):
     if fname is not None and op.isfile(fname) and not overwrite:
         raise IOError('file exists, use overwrite=True to overwrite')
 
-    out = ''
+    out = 'Platform: %s\n' % platform.platform()
+    out += 'Python:   %s\n' % str(sys.version).replace('\n', ' ')
+    out += 'NumPy:    %s\n' % (np.__version__,)
     try:
         # Nest all imports here to avoid any circular imports
         from ..app import use_app, Canvas
@@ -415,8 +420,6 @@ def sys_info(fname=None, overwrite=False):
         # get default app
         with use_log_level('warning'):
             app = use_app(call_reuse=False)  # suppress messages
-        out += 'Platform: %s\n' % platform.platform()
-        out += 'Python:   %s\n' % str(sys.version).replace('\n', ' ')
         out += 'Backend:  %s\n' % app.backend_name
         for backend in BACKEND_NAMES:
             if backend.startswith('ipynb_'):
@@ -434,7 +437,7 @@ def sys_info(fname=None, overwrite=False):
         out += 'Extensions: %r\n' % (gl.glGetParameter(gl.GL_EXTENSIONS),)
         canvas.close()
     except Exception:  # don't stop printing info
-        out += '\nInfo-gathering error:\n%s' % traceback.format_exc()
+        out += 'App info-gathering error:\n%s' % traceback.format_exc()
         pass
     if fname is not None:
         with open(fname, 'w') as fid:
@@ -465,3 +468,25 @@ class _TempDir(str):
 
 # initialize config options
 _init()
+
+
+if hasattr(inspect, 'signature'):  # py35
+    def _get_args(function, varargs=False):
+        params = inspect.signature(function).parameters
+        args = [key for key, param in params.items()
+                if param.kind not in (param.VAR_POSITIONAL, param.VAR_KEYWORD)]
+        if varargs:
+            varargs = [param.name for param in params.values()
+                       if param.kind == param.VAR_POSITIONAL]
+            if len(varargs) == 0:
+                varargs = None
+            return args, varargs
+        else:
+            return args
+else:
+    def _get_args(function, varargs=False):
+        out = inspect.getargspec(function)  # args, varargs, keywords, defaults
+        if varargs:
+            return out[:2]
+        else:
+            return out[0]

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 import unittest
 import copy
@@ -100,15 +100,17 @@ class TestGroups(unittest.TestCase):
         """EmitterGroup.block_all"""
         grp = EmitterGroup(em1=Event)
         grp.em1.connect(self.error_event)
-        with use_log_level('warning', record=True, print_msg=False) as l:
+        with use_log_level('warning',
+                           record=True, print_msg=False) as emit_list:
             grp.em1()
-        assert_true(len(l) >= 1)
+        assert_true(len(emit_list) >= 1)
         grp.ignore_callback_errors = False
         assert_raises(RuntimeError, grp.em1)
         grp.ignore_callback_errors = True
-        with use_log_level('warning', record=True, print_msg=False) as l:
+        with use_log_level('warning',
+                           record=True, print_msg=False) as emit_list:
             grp.em1()
-        assert_true(len(l) >= 1)
+        assert_true(len(emit_list) >= 1)
 
     def test_group_disconnect(self):
         """EmitterGroup.disconnect"""

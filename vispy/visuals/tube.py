@@ -105,16 +105,6 @@ class TubeVisual(MeshVisual):
                             shading=shading,
                             mode=mode)
 
-    def draw(self, transforms):
-        """Draw the visual
-
-        Parameters
-        ----------
-        transforms : instance of TransformSystem
-            The transforms to use.
-        """
-        MeshVisual.draw(self, transforms)
-
 
 def _frenet_frames(points, closed):
     '''Calculates and returns the tangents, normals and binormals for

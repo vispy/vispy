@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 """
 Testing
@@ -35,16 +35,18 @@ functionality, or drawing things with OpenGL), it's best to look at existing
 examples in the test suite.
 
 The code base gets automatically tested by Travis-CI (Linux) and AppVeyor
-(Windows) on Python 2.6, 2.7, 3.4. There are multiple testing modes that
+(Windows) on Python 2.7 and 3.6. There are multiple testing modes that
 use e.g. full dependencies, minimal dependencies, etc. See ``.travis.yml``
 to determine what automatic tests are run.
 """
 
-from ._testing import (SkipTest, requires_application, requires_img_lib,  # noqa
+from ._testing import (SkipTest, requires_application, requires_ipython,  # noqa
+                      requires_img_lib,  # noqa
                       has_backend, requires_pyopengl,  # noqa
                       requires_scipy, has_matplotlib,  # noqa
                       save_testing_image, TestingCanvas, has_pyopengl,  # noqa
                       run_tests_if_main,
                       assert_is, assert_in, assert_not_in, assert_equal,
-                      assert_not_equal, assert_raises, assert_true)  # noqa
+                      assert_not_equal, assert_raises, assert_true,  # noqa
+                      raises, requires_numpydoc)  # noqa
 from ._runners import test  # noqa

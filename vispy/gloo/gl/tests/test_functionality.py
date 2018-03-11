@@ -23,6 +23,7 @@ from vispy.testing import (requires_application, requires_pyopengl, SkipTest,
                            run_tests_if_main, assert_equal, assert_true)
 
 from vispy.gloo import gl
+import pytest
 
 # All these tests require a working backend.
 
@@ -33,24 +34,30 @@ def teardown_module():
     gl.use_gl()  # Reset to default
 
 
+@pytest.mark.xfail(sys.platform == 'darwin',
+                   reason='functionality fails on OSX (see #1178)')
 @requires_application()
 def test_functionality_desktop():
     """ Test desktop GL backend for full functionality. """
-    _test_functonality('gl2')
+    _test_functionality('gl2')
 
 
+@pytest.mark.xfail(sys.platform == 'darwin',
+                   reason='functionality fails on OSX (see #1178)')
 @requires_application()
 def test_functionality_proxy():
     """ Test GL proxy class for full functionality. """
     # By using debug mode, we are using the proxy class
-    _test_functonality('gl2 debug')
+    _test_functionality('gl2 debug')
 
 
+@pytest.mark.xfail(sys.platform == 'darwin',
+                   reason='functionality fails on OSX (see #1178)')
 @requires_application()
 @requires_pyopengl()
 def test_functionality_pyopengl():
     """ Test pyopengl GL backend for full functionality. """
-    _test_functonality('pyopengl2')
+    _test_functionality('pyopengl2')
 
 
 @requires_application()
@@ -60,7 +67,7 @@ def test_functionality_es2():
         raise SkipTest('Skip es2 functionality test for now.')
     if not sys.platform.startswith('win'):
         raise SkipTest('Can only test es2 functionality on Windows.')
-    _test_functonality('es2')
+    _test_functionality('es2')
 
 
 def _clear_screen():
@@ -68,7 +75,7 @@ def _clear_screen():
     gl.glFinish()
 
 
-def _test_functonality(backend):
+def _test_functionality(backend):
     """ Create app and canvas so we have a context. Then run tests.
     """
     # use the backend
@@ -105,6 +112,8 @@ def _test_functonality(backend):
 # Most variables are nullified however, but we must make sure we do this
 # in a way that the compiler won't optimize out :)
 VERT = """
+#version 120
+
 attribute float a_1;
 attribute vec2 a_2;
 attribute vec3 a_3;
@@ -147,6 +156,7 @@ void main()
 """
 
 FRAG = """
+#version 120
 
 uniform sampler2D s_1;
 uniform int u_i1;
@@ -234,6 +244,15 @@ def _prepare_vis():
     # touch glDetachShader
     gl.glDetachShader(hprog, hvert)
     gl.glAttachShader(hprog, hvert)
+
+    # Bind all attributes - we could let this occur automatically, but some
+    # implementations bind an attribute to index 0, which has the unfortunate
+    # property of being unable to be modified.
+    gl.glBindAttribLocation(hprog, 1, 'a_1')
+    gl.glBindAttribLocation(hprog, 2, 'a_2')
+    gl.glBindAttribLocation(hprog, 3, 'a_3')
+    gl.glBindAttribLocation(hprog, 4, 'a_4')
+
     gl.glLinkProgram(hprog)
     
     # Test that indeed these shaders are attached
@@ -249,9 +268,6 @@ def _prepare_vis():
     # Use it!
     gl.glUseProgram(hprog)
     
-    # Bind one attribute
-    gl.glBindAttribLocation(hprog, 1, 'a_2')
-    
     # Check if all is ok
     assert_equal(gl.glGetError(), 0)
     
@@ -261,7 +277,7 @@ def _prepare_vis():
     
     # --- get information on attributes and uniforms
     
-    # Count attribbutes and uniforms
+    # Count attributes and uniforms
     natt = gl.glGetProgramParameter(hprog, gl.GL_ACTIVE_ATTRIBUTES)
     nuni = gl.glGetProgramParameter(hprog, gl.GL_ACTIVE_UNIFORMS)
     assert_equal(natt, 4)

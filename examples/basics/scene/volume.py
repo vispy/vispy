@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 # vispy: gallery 2
@@ -10,7 +10,8 @@ Example volume rendering
 
 Controls:
 
-* 1  - toggle camera between first person (fly) and regular 3D (turntable)
+* 1  - toggle camera between first person (fly), regular 3D (turntable) and
+       arcball
 * 2  - toggle between volume rendering methods
 * 3  - toggle between stent-CT / brain-MRI image
 * 4  - toggle between colormaps
@@ -31,6 +32,7 @@ import numpy as np
 
 from vispy import app, scene, io
 from vispy.color import get_colormaps, BaseColormap
+from vispy.visuals.transforms import STTransform
 
 # Read volume
 vol1 = np.load(io.load_data_file('volume/stent.npz'))['arr_0']
@@ -55,12 +57,19 @@ volume2 = scene.visuals.Volume(vol2, parent=view.scene, threshold=0.2,
                                emulate_texture=emulate_texture)
 volume2.visible = False
 
-# Create two cameras (1 for firstperson, 3 for 3d person)
+# Create three cameras (Fly, Turntable and Arcball)
 fov = 60.
-cam1 = scene.cameras.FlyCamera(parent=view.scene, fov=fov)
-cam2 = scene.cameras.TurntableCamera(parent=view.scene, fov=fov)
-cam3 = scene.cameras.ArcballCamera(parent=view.scene, fov=fov)
+cam1 = scene.cameras.FlyCamera(parent=view.scene, fov=fov, name='Fly')
+cam2 = scene.cameras.TurntableCamera(parent=view.scene, fov=fov,
+                                     name='Turntable')
+cam3 = scene.cameras.ArcballCamera(parent=view.scene, fov=fov, name='Arcball')
 view.camera = cam2  # Select turntable at first
+
+# Create an XYZAxis visual
+axis = scene.visuals.XYZAxis(parent=view)
+s = STTransform(translate=(50, 50), scale=(50, 50, 50, 1))
+affine = s.as_matrix()
+axis.transform = affine
 
 
 # create colormaps that work well for translucent and additive volume rendering
@@ -86,13 +95,33 @@ opaque_cmap = next(opaque_cmaps)
 translucent_cmap = next(translucent_cmaps)
 
 
+# Implement axis connection with cam2
+@canvas.events.mouse_move.connect
+def on_mouse_move(event):
+    if event.button == 1 and event.is_dragging:
+        axis.transform.reset()
+
+        axis.transform.rotate(cam2.roll, (0, 0, 1))
+        axis.transform.rotate(cam2.elevation, (1, 0, 0))
+        axis.transform.rotate(cam2.azimuth, (0, 1, 0))
+
+        axis.transform.scale((50, 50, 0.001))
+        axis.transform.translate((50., 50.))
+        axis.update()
+
+
 # Implement key presses
 @canvas.events.key_press.connect
 def on_key_press(event):
     global opaque_cmap, translucent_cmap
     if event.text == '1':
         cam_toggle = {cam1: cam2, cam2: cam3, cam3: cam1}
-        view.camera = cam_toggle.get(view.camera, 'fly')
+        view.camera = cam_toggle.get(view.camera, cam2)
+        print(view.camera.name + ' camera')
+        if view.camera is cam2:
+            axis.visible = True
+        else:
+            axis.visible = False
     elif event.text == '2':
         methods = ['mip', 'translucent', 'iso', 'additive']
         method = methods[(methods.index(volume1.method) + 1) % 4]
@@ -122,11 +151,10 @@ def on_key_press(event):
         th = volume1.threshold if volume1.visible else volume2.threshold
         print("Isosurface threshold: %0.3f" % th)
 
-
 # for testing performance
-#@canvas.connect
-#def on_draw(ev):
-    #canvas.update()
+# @canvas.connect
+# def on_draw(ev):
+# canvas.update()
 
 if __name__ == '__main__':
     print(__doc__)

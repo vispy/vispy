@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 from __future__ import division
 
 import numpy as np
 
-from .cameras import PanZoomCamera
+from .panzoom import PanZoomCamera
 from ...visuals.transforms.nonlinear import (MagnifyTransform, 
                                              Magnify1DTransform)
 from ...app import Timer

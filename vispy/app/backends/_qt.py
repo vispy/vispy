@@ -1,22 +1,22 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """
 Base code for the Qt backends. Note that this is *not* (anymore) a
 backend by itself! One has to explicitly use either PySide, PyQt4 or
-PyQt5. Note that the automatic backend selection prefers a GUI toolkit
-that is already imported.
+PySide2, PyQt5. Note that the automatic backend selection prefers
+a GUI toolkit that is already imported.
 
-The _pyside, _pyqt4 and _pyqt5 modules will import * from this module,
-and also keep a ref to the module object. Note that if two of the
-backends are used, this module is actually reloaded. This is a sorts
-of poor mans "subclassing" to get a working version for both backends
-using the same code.
+The _pyside, _pyqt4, _pyside2 and _pyqt5 modules will import * from
+this module, and also keep a ref to the module object. Note that if
+two of the backends are used, this module is actually reloaded. This
+is a sorts of poor mans "subclassing" to get a working version for
+both backends using the same code.
 
-Note that it is strongly discouraged to use the PySide/PyQt4/PyQt5
-backends simultaneously. It is known to cause unpredictable behavior
-and segfaults.
+Note that it is strongly discouraged to use the
+PySide/PyQt4/PySide2/PyQt5 backends simultaneously. It is known to
+cause unpredictable behavior and segfaults.
 """
 
 from __future__ import division
@@ -32,6 +32,7 @@ from ..base import (BaseApplicationBackend, BaseCanvasBackend,
                     BaseTimerBackend)
 from ...util import keys
 from ...ext.six import text_type
+from ...ext.six import string_types
 from ... import config
 from . import qt_lib
 
@@ -54,7 +55,7 @@ elif sys.platform.startswith('win'):
 
 def _check_imports(lib):
     # Make sure no conflicting libraries have been imported.
-    libs = ['PyQt4', 'PyQt5', 'PySide']
+    libs = ['PyQt4', 'PyQt5', 'PySide', 'PySide2']
     libs.remove(lib)
     for lib2 in libs:
         lib2 += '.QtCore'
@@ -69,19 +70,25 @@ if qt_lib == 'pyqt4':
     _check_imports('PyQt4')
     if not USE_EGL:
         from PyQt4.QtOpenGL import QGLWidget, QGLFormat
-    from PyQt4 import QtGui, QtCore
+    from PyQt4 import QtGui, QtCore, QtTest
     QWidget, QApplication = QtGui.QWidget, QtGui.QApplication  # Compat
 elif qt_lib == 'pyqt5':
     _check_imports('PyQt5')
     if not USE_EGL:
         from PyQt5.QtOpenGL import QGLWidget, QGLFormat
-    from PyQt5 import QtGui, QtCore, QtWidgets
+    from PyQt5 import QtGui, QtCore, QtWidgets, QtTest
+    QWidget, QApplication = QtWidgets.QWidget, QtWidgets.QApplication  # Compat
+elif qt_lib == 'pyside2':
+    _check_imports('PySide2')
+    if not USE_EGL:
+        from PySide2.QtOpenGL import QGLWidget, QGLFormat
+    from PySide2 import QtGui, QtCore, QtWidgets, QtTest
     QWidget, QApplication = QtWidgets.QWidget, QtWidgets.QApplication  # Compat
 elif qt_lib == 'pyside':
     _check_imports('PySide')
     if not USE_EGL:
         from PySide.QtOpenGL import QGLWidget, QGLFormat
-    from PySide import QtGui, QtCore
+    from PySide import QtGui, QtCore, QtTest
     QWidget, QApplication = QtGui.QWidget, QtGui.QApplication  # Compat
 elif qt_lib:
     raise RuntimeError("Invalid value for qt_lib %r." % qt_lib)
@@ -138,14 +145,25 @@ BUTTONMAP = {0: 0, 1: 1, 2: 2, 4: 3, 8: 4, 16: 5}
 
 # Properly log Qt messages
 # Also, ignore spam about tablet input
-def message_handler(msg_type, msg):
+def message_handler(*args):
+
+    if qt_lib in ("pyqt4", "pyside"):
+        msg_type, msg = args
+    elif qt_lib in ("pyqt5", "pyside2"):  # Is this correct for pyside2?
+        msg_type, context, msg = args
+    elif qt_lib:
+        raise RuntimeError("Invalid value for qt_lib %r." % qt_lib)
+    else:
+        raise RuntimeError("Module backends._qt ",
+                           "should not be imported directly.")
+
     if msg == ("QCocoaView handleTabletEvent: This tablet device is "
                "unknown (received no proximity event for it). Discarding "
                "event."):
         return
     else:
+        msg = msg.decode() if not isinstance(msg, string_types) else msg
         logger.warning(msg)
-
 try:
     QtCore.qInstallMsgHandler(message_handler)
 except AttributeError:
@@ -230,8 +248,15 @@ class ApplicationBackend(BaseApplicationBackend):
         # Return
         return app
 
+    def _vispy_sleep(self, duration_sec):
+            QtTest.QTest.qWait(duration_sec * 1000)  # in ms
+
 
 # ------------------------------------------------------------------ canvas ---
+
+def _get_qpoint_pos(pos):
+    """Return the coordinates of a QPointF object."""
+    return pos.x(), pos.y()
 
 
 class QtBaseCanvasBackend(BaseCanvasBackend):
@@ -268,6 +293,20 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
         # Qt supports OS double-click events, so we set this here to
         # avoid double events
         self._double_click_supported = True
+        if hasattr(self, 'devicePixelRatio'):
+            # handle high DPI displays in PyQt5
+            ratio = self.devicePixelRatio()
+        else:
+            ratio = 1
+        self._physical_size = (p.size[0] * ratio, p.size[1] * ratio)
+
+        # Activate touch and gesture.
+        # NOTE: we only activate touch on OS X because there seems to be
+        # problems on Ubuntu computers with touchscreen.
+        # See https://github.com/vispy/vispy/pull/1143
+        if sys.platform == 'darwin':
+            self.setAttribute(QtCore.Qt.WA_AcceptTouchEvents)
+            self.grabGesture(QtCore.Qt.PinchGesture)
 
     def _vispy_warmup(self):
         etime = time() + 0.25
@@ -285,6 +324,14 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
     def _vispy_set_size(self, w, h):
         # Set size of the widget or window
         self.resize(w, h)
+
+    def _vispy_set_physical_size(self, w, h):
+        self._physical_size = (w, h)
+
+    def _vispy_get_physical_size(self):
+        if self._vispy_canvas is None:
+            return
+        return self._physical_size
 
     def _vispy_set_position(self, x, y):
         # Set location of the widget or window. May have no effect for widgets
@@ -390,6 +437,40 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
 
     def keyReleaseEvent(self, ev):
         self._keyEvent(self._vispy_canvas.events.key_release, ev)
+
+    def event(self, ev):
+        out = super(QtBaseCanvasBackend, self).event(ev)
+        t = ev.type()
+        # Two-finger pinch.
+        if (t == QtCore.QEvent.TouchBegin):
+            self._vispy_canvas.events.touch(type='begin')
+        if (t == QtCore.QEvent.TouchEnd):
+            self._vispy_canvas.events.touch(type='end')
+        if (t == QtCore.QEvent.Gesture):
+            gesture = ev.gesture(QtCore.Qt.PinchGesture)
+            if gesture:
+                (x, y) = _get_qpoint_pos(gesture.centerPoint())
+                scale = gesture.scaleFactor()
+                last_scale = gesture.lastScaleFactor()
+                rotation = gesture.rotationAngle()
+                self._vispy_canvas.events.touch(type='pinch',
+                                                pos=(x, y),
+                                                last_pos=None,
+                                                scale=scale,
+                                                last_scale=last_scale,
+                                                rotation=rotation,
+                                                )
+        # General touch event.
+        elif (t == QtCore.QEvent.TouchUpdate):
+            points = ev.touchPoints()
+            # These variables are lists of (x, y) coordinates.
+            pos = [_get_qpoint_pos(p.pos()) for p in points]
+            lpos = [_get_qpoint_pos(p.lastPos()) for p in points]
+            self._vispy_canvas.events.touch(type='touch',
+                                            pos=pos,
+                                            last_pos=lpos,
+                                            )
+        return out
 
     def _keyEvent(self, func, ev):
         # evaluates the keycode of qt, and transform to vispy key.
@@ -535,7 +616,7 @@ class CanvasBackendEgl(QtBaseCanvasBackend, QWidget):
             # screenshot and draw that for now ...
             # Further, QImage keeps a ref to the data that we pass, so
             # we need to use a static buffer to prevent memory leakage
-            from vispy import gloo
+            from ... import gloo
             import numpy as np
             if not hasattr(self, '_gl_buffer'):
                 self._gl_buffer = np.ones((3000 * 3000 * 4), np.uint8) * 255
@@ -621,7 +702,9 @@ class CanvasBackendDesktop(QtBaseCanvasBackend, QGLWidget):
     def resizeGL(self, w, h):
         if self._vispy_canvas is None:
             return
-        self._vispy_canvas.events.resize(size=(w, h))
+        self._vispy_set_physical_size(w, h)
+        self._vispy_canvas.events.resize(size=(self.width(), self.height()),
+                                         physical_size=(w, h))
 
     def paintGL(self):
         if self._vispy_canvas is None:
