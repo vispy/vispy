@@ -59,7 +59,7 @@ def get_left_orientation_bar_banded():
     size = 400, 10
 
     colorbar = ColorBarVisual(pos=pos, size=size,
-                              label_str="orientation left banded with 3 band",
+                              label_str="orientation left with 3 band",
                               cmap=colormap, orientation="left",
                               banded=True, nband=3)
 
@@ -71,11 +71,12 @@ def get_right_orientation_bar_banded():
     size = 400, 10
 
     colorbar = ColorBarVisual(pos=pos, size=size,
-                              label_str="orientation right banded with 5 band",
+                              label_str="orientation right with 5 band",
                               cmap=colormap, orientation="right",
                               banded=True, nband=5)
 
     return style_colorbar(colorbar)
+
 
 def get_top_orientation_bar():
     pos = 600, 500
@@ -104,7 +105,7 @@ def get_top_orientation_bar_banded():
     size = 300, 10
 
     colorbar = ColorBarVisual(pos=pos, size=size,
-                              label_str="orientation top banded with 4 band",
+                              label_str="orientation top with 4 band",
                               cmap=colormap, orientation="top",
                               banded=True, nband=4)
 
@@ -116,7 +117,7 @@ def get_bottom_orientation_bar_banded():
     size = 300, 10
 
     colorbar = ColorBarVisual(pos=pos, size=size,
-                              label_str="orientation bottom banded with 6 band",
+                              label_str="orientation bottom with 6 band",
                               cmap=colormap, orientation="bottom",
                               banded=True, nband=6)
 
@@ -154,6 +155,7 @@ class Canvas(app.Canvas):
 
         for bar in self.bars:
             bar.draw()
+
 
 if __name__ == '__main__':
     win = Canvas()

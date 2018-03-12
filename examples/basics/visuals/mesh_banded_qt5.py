@@ -8,48 +8,44 @@ Simple demonstration of Mesh visual with banded capability in Qt5.
 
 # from pyqtgraph.Qt import QtCore, QtGui, QtWidgets
 
-from PyQt5.QtWidgets import (QWidget, QGroupBox, QGridLayout, QLabel, QDoubleSpinBox,
-                             QSpinBox, QSplitter, QMainWindow, QAction, QApplication,
-                             QVBoxLayout, QHBoxLayout, QRadioButton, QCheckBox, qApp,
-                             QComboBox) 
+import numpy as np
+import sys
 
-from PyQt5.QtCore import (pyqtSignal, QLocale, Qt)
+from PyQt5.QtWidgets import (QWidget, QGroupBox, QGridLayout, QLabel,
+                             QSpinBox, QSplitter, QMainWindow, QAction,
+                             QApplication, QVBoxLayout, QHBoxLayout,
+                             qApp, QComboBox)
+
+from PyQt5.QtCore import (pyqtSignal, Qt)
 
 from vispy.color.colormap import get_colormaps
 from vispy import scene
-from vispy import app, gloo, visuals
 from vispy.geometry import create_sphere
 from vispy import use
 
 use("PyQt5")
 
 
-import numpy as np      
-
-import sys 
-
-def xyz_to_gp (xyz):
-
+def xyz_to_gp(xyz):
     """
     Input X, Y, Z, the Cartesian coordinates of a point
     on the unit sphere.
     Output, float gamma and phi coordinates of the point.
 
-    phi is a longitudinal angle and gamma is a latitudinal 
+    phi is a longitudinal angle and gamma is a latitudinal
 
     x = np.sin(gamma)*np.cos(phi)
     y = np.sin(gamma)*np.sin(phi)
     z = np.cos(gamma)
 
     """
-    x = xyz[:,0]
-    y = xyz[:,1]
-    z = xyz[:,2]
-    gamma = np.arccos ( z )
-    fact = np.sqrt ( x * x + y * y )
-    
-    phi = np.where(fact>0.0, np.arccos(x/fact), np.arccos ( x ))
-    phi = np.where(y<0.0, -phi, phi)
+    x = xyz[:, 0]
+    y = xyz[:, 1]
+    z = xyz[:, 2]
+    gamma = np.arccos(z)
+    fact = np.sqrt(x*x+y*y)
+    phi = np.where(fact > 0.0, np.arccos(x/fact), np.arccos(x))
+    phi = np.where(y < 0.0, -phi, phi)
 
     return gamma, phi
 
@@ -57,9 +53,8 @@ def xyz_to_gp (xyz):
 class SphereParam(object):
     """
     Spehre's parameter
-    """               
+    """
     def __init__(self):
-
         self.dict = {}
         self.dict['subdiv'] = 2
         self.dict["banded"] = False
@@ -70,16 +65,16 @@ class SphereParam(object):
 
 
 class SphereWidget(QWidget):
-    """    
+    """
     Widget for editing sphere's parameters
     """
-    
-    signalObjetChanged = pyqtSignal(SphereParam, name='signal_objet_changed')        
-        
+
+    signalObjetChanged = pyqtSignal(SphereParam, name='signal_objet_changed')
+
     def __init__(self, parent=None, param=None):
         super(SphereWidget, self).__init__(parent)
-    
-        if param == None:
+
+        if param is None:
             self.param = SphereParam()
         else:
             self.param = param
@@ -95,8 +90,8 @@ class SphereWidget(QWidget):
         hbox = QHBoxLayout()
         hbox.addWidget(l_cmap)
         hbox.addWidget(self.combo)
-        gbC_lay.addLayout(hbox)        
-        
+        gbC_lay.addLayout(hbox)
+
         self.sp = []
         # subdiv
         lL = QLabel("subdiv")
@@ -104,14 +99,14 @@ class SphereWidget(QWidget):
         self.sp[-1].setMinimum(0)
         self.sp[-1].setMaximum(6)
         self.sp[-1].setValue(self.param.dict["subdiv"])
-        #Layout
+        # Layout
         hbox = QHBoxLayout()
         hbox.addWidget(lL)
         hbox.addWidget(self.sp[-1])
         gbC_lay.addLayout(hbox)
         # signal's
-        self.sp[-1].valueChanged.connect(self.updateParam)    
-        #
+        self.sp[-1].valueChanged.connect(self.updateParam)
+        # Banded
         self.gbBand = QGroupBox(u"Banded")
         self.gbBand.setCheckable(True)
         hbox = QGridLayout()
@@ -119,7 +114,7 @@ class SphereWidget(QWidget):
         self.sp.append(QSpinBox(self.gbBand))
         self.sp[-1].setMinimum(0)
         self.sp[-1].setMaximum(100)
-        #Layout
+        # Layout
         hbox = QHBoxLayout()
         hbox.addWidget(lL)
         hbox.addWidget(self.sp[-1])
@@ -127,13 +122,13 @@ class SphereWidget(QWidget):
         gbC_lay.addWidget(self.gbBand)
         # signal's
         self.sp[-1].valueChanged.connect(self.updateParam)
-        self.gbBand.toggled.connect(self.updateParam)       
-        
+        self.gbBand.toggled.connect(self.updateParam)
+
         gbC_lay.addStretch(1.0)
-        
+
         hbox = QHBoxLayout()
         hbox.addLayout(gbC_lay)
-        
+
         self.setLayout(hbox)
         self.updateMenu()
 
@@ -147,12 +142,12 @@ class SphereWidget(QWidget):
             self.param.dict[name] = self.sp[pos].value()
         self.param.dict["banded"] = self.gbBand.isChecked()
         self.param.dict["colormap"] = self.combo.currentText()
-        # emit signal 
+        # emit signal
         self.signalObjetChanged.emit(self.param)
 
     def updateMenu(self, param=None):
-        """  
-        Update menus 
+        """
+        Update menus
         """
         if param is not None:
             self.param = param
@@ -167,7 +162,7 @@ class SphereWidget(QWidget):
         # unlock signals
         self.blockSignals(False)
         for wid in self.sp:
-            wid.blockSignals(False)        
+            wid.blockSignals(False)
         self.signalObjetChanged.emit(self.param)
 
 
@@ -185,18 +180,22 @@ class SphereCanvas(scene.SceneCanvas):
         cmap = "cool"
         if param is not None:
             subdiv = param.dict['subdiv']
-            self.sph = scene.visuals.Sphere(radius=1, method='ico', parent=self.view.scene,
+            self.sph = scene.visuals.Sphere(radius=1, method='ico',
+                                            parent=self.view.scene,
                                             subdivisions=subdiv)
             cmap = param.dict["colormap"]
 
         # Add a 3D axis to keep us oriented
-        self.cbar_widget = scene.ColorBarWidget(label="ColorBarWidget", clim=(0, 1),
-                                   cmap=cmap, orientation="right", position='right',
-                                   border_width=1, parent=self.view.scene,
-                                   label_color="w")
+        self.cbar_widget = scene.ColorBarWidget(label="ColorBarWidget",
+                                                clim=(0, 1),
+                                                cmap=cmap,
+                                                orientation="right",
+                                                position='right',
+                                                border_width=1,
+                                                parent=self.view.scene,
+                                                label_color="w")
         self.cbar_widget.width_max = 100
-        grid.add_widget(self.cbar_widget, row=0, col=1 )
-
+        grid.add_widget(self.cbar_widget, row=0, col=1)
         self.freeze()
 
     def updateView(self, param):
@@ -210,14 +209,15 @@ class SphereCanvas(scene.SceneCanvas):
             gamma, phi = xyz_to_gp(verts)
             data = np.cos(5*gamma)+np.cos(phi*4)/2.
             param.dict["data"] = data
-            self.sph.mesh.set_data(vertices=verts, faces=faces, vertex_values=data)
+            self.sph.mesh.set_data(vertices=verts, faces=faces,
+                                   vertex_values=data)
             param.dict["subdiv_old"] = param.dict["subdiv"]
 
         self.sph.mesh.cmap = param.dict['colormap']
         self.cbar_widget.cmap = param.dict['colormap']
         self.cbar_widget.nband = param.dict['nbr_band']
         self.cbar_widget.banded = param.dict['banded']
-        
+
         v_min = 0.0
         v_max = 1.0
         if param.dict["data"] is not None:
@@ -227,6 +227,7 @@ class SphereCanvas(scene.SceneCanvas):
 
         self.sph.mesh.nband = param.dict['nbr_band']
         self.sph.mesh.banded = param.dict['banded']
+
 
 class SphereMainWindow(QMainWindow):
 
@@ -240,32 +241,26 @@ class SphereMainWindow(QMainWindow):
         self.initMenus()
 
         # Central Widget
-        splitter1 = QSplitter(Qt.Horizontal) 
+        splitter1 = QSplitter(Qt.Horizontal)
 
         self.propsWidget = SphereWidget()
 
         self.canvas = SphereCanvas(param=self.propsWidget.param)
         self.canvas.create_native()
-        self.canvas.native.setParent(self)        
-
+        self.canvas.native.setParent(self)
 
         self.propsWidget.signalObjetChanged.connect(self.canvas.updateView)
-        splitter1.addWidget(self.propsWidget )
-
-
-
+        splitter1.addWidget(self.propsWidget)
         splitter1.addWidget(self.canvas.native)
 
         self.setCentralWidget(splitter1)
         self.canvas.updateView(self.propsWidget.param)
-
 
     def initActions(self):
         self.exitAction = QAction('Quit', self)
         self.exitAction.setShortcut('Ctrl+Q')
         self.exitAction.setStatusTip('Exit application')
         self.exitAction.triggered.connect(self.close)
-
 
     def initMenus(self):
         menuBar = self.menuBar()
@@ -276,13 +271,10 @@ class SphereMainWindow(QMainWindow):
         qApp.quit()
 
 
-## Start Qt event loop unless running in interactive mode.
+# Start Qt event loop unless running in interactive mode.
 if __name__ == '__main__':
-        
-    app = QApplication(sys.argv)
 
+    app = QApplication(sys.argv)
     win = SphereMainWindow()
     win.show()
-    
     sys.exit(app.exec_())
-        

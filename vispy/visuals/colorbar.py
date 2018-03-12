@@ -47,14 +47,13 @@ void main()
 """  # noqa
 
 
-_clim_not_banded = 'float cmap(float val) { return val;}'
+_clim_not_banded = 'float cmap(float val) {return val;}'
 _clim_banded = """float cmap(float val){
     float y;
     y = floor(val*$nband);
-    if (y == $nband) {
-        y -= 1.0;
-    }
+    if (y == $nband) {y -= 1.0;}
     return y/($nband-1.0);}"""
+
 
 class _CoreColorBarVisual(Visual):
     """
@@ -79,11 +78,11 @@ class _CoreColorBarVisual(Visual):
         The orientation of the colorbar, used for rendering. The
         orientation can be thought of as the position of the label
         relative to the color bar.
-    banded : bool 
+     banded : bool
         If True apply a banded glsl shader for the colormap
-    nband : int
+     nband : int
         the number of band in the glsl banded shader
-    
+
     Note
     ----
     This is purely internal.
@@ -119,14 +118,11 @@ class _CoreColorBarVisual(Visual):
         else:
             raise _CoreColorBarVisual._get_orientation_error(self._orientation)
 
-
         tex_coords = np.array([[0, 0], [1, 0], [1, 1],
                                [0, 0], [1, 1], [0, 1]],
                               dtype=np.float32)
-   
+
         self.shared_program['a_texcoord'] = tex_coords.astype(np.float32)
-
-
         self.shared_program.frag['color_transform'] = self.define_fun()
         self._update()
 
@@ -219,7 +215,7 @@ class _CoreColorBarVisual(Visual):
     def _prepare_draw(self, view):
         self._draw_mode = "triangles"
         return True
-    
+
     @property
     def banded(self):
         return self._banded
@@ -228,18 +224,18 @@ class _CoreColorBarVisual(Visual):
     def banded(self, banded):
         self._banded = banded
         self.shared_program.frag['color_transform'] = self.define_fun()
-        self._update()   
-        
+        self._update()
+
     @property
     def nband(self):
         return self._nband
-    
+
     @nband.setter
     def nband(self, nband):
         self._nband = nband
         self.shared_program.frag['color_transform'] = self.define_fun()
         self._update()
-    
+
     def define_fun(self):
         fun_clim = _clim_not_banded
         fun = Function(fun_clim)
@@ -247,7 +243,8 @@ class _CoreColorBarVisual(Visual):
             fun_clim = _clim_banded
             fun = Function(fun_clim)
             fun['nband'] = self._nband
-        return FunctionChain(None, [fun, Function(self._cmap.glsl_map)])        
+        return FunctionChain(None, [fun, Function(self._cmap.glsl_map)])
+
 
 class ColorBarVisual(CompoundVisual):
     """Visual subclass displaying a colorbar
@@ -313,10 +310,10 @@ class ColorBarVisual(CompoundVisual):
     border_color : str | vispy.color.Color
         The color of the border of the colormap. This can either be a
         str as the color's name or an actual instace of a vipy.color.Color
-    banded : bool 
+    banded : bool
         If True apply a banded glsl shader for the colormap
     nband : int
-        the number of band in the glsl banded shader        
+        the number of band in the glsl banded shader
     """
     # The padding multiplier that's used to place the text
     # next to the Colorbar. Makes sure the text isn't
@@ -362,7 +359,7 @@ class ColorBarVisual(CompoundVisual):
         self._halfdim = (width * 0.5, height * 0.5)
 
         self._colorbar = _CoreColorBarVisual(pos, self._halfdim,
-                                             cmap, orientation, 
+                                             cmap, orientation,
                                              banded=banded, nband=nband)
 
         self._border = _BorderVisual(pos, self._halfdim,
@@ -664,8 +661,7 @@ class ColorBarVisual(CompoundVisual):
 
     @nband.setter
     def nband(self, nband):
-        self._colorbar.nband = nband        
-
+        self._colorbar.nband = nband
 
     @property
     def label(self):
@@ -692,7 +688,7 @@ class ColorBarVisual(CompoundVisual):
         label_str : string label to be displayed with the colorbar
         """
         self._colorbar._label_str = label_str
-        self._update()        
+        self._update()
 
     @property
     def ticks(self):

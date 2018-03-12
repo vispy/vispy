@@ -141,14 +141,12 @@ vec4 vec2to4(vec2 xyz) {
 
 _null_color_transform = 'vec4 pass(vec4 color) { return color; }'
 _clim = 'float cmap(float val) { return (val - $cmin) / ($cmax - $cmin); }'
-#_clim_banded = 'float cmap(float val) { return floor((val - $cmin) / ($cmax - $cmin)*$nband)/$nband; }'
 _clim_banded = """float cmap(float val){
     float y;
     y = floor((val - $cmin) / ($cmax - $cmin)*$nband);
-    if (y == $nband) {
-        y -= 1.0;
-    }
+    if (y == $nband) {y -= 1.0;}
     return y/($nband-1.0);}"""
+
 
 # Eventually this could be de-duplicated with visuals/image.py, which does
 # something similar (but takes a ``color`` instead of ``float``)
@@ -189,7 +187,7 @@ class MeshVisual(Visual):
         Shading to use.
     mode : str
         The drawing mode.
-    banded : bool 
+    banded : bool
         If True apply a banded glsl shader for the colormap
     nband : int
         the number of band in the glsl banded shader
@@ -465,15 +463,18 @@ class MeshVisual(Visual):
         # color, which is then lit with the lighting model
         self.shared_program.frag['fun_color'] = 'v_base_color'
         self.shared_program.vert['color_transform'] = \
-            _build_color_transform(colors, self._cmap, self._clim_values)        
+            _build_color_transform(colors, self._cmap, self._clim_values)
         if colors.ndim == 1:
             self.shared_program.vert['base_color'] = colors
         else:
             self.shared_program.vert['base_color'] = VertexBuffer(colors)
             if self._banded:
-                self.shared_program.frag['fun_color'] = '$color_transform(v_vert_data)'
+                self.shared_program.frag['fun_color'] = \
+                                    '$color_transform(v_vert_data)'
                 self.shared_program.frag['color_transform'] = \
-                    _build_color_transform(colors, self._cmap, self._clim_values, banded=True, nband=self._nband)                 
+                    _build_color_transform(colors,
+                                           self._cmap, self._clim_values,
+                                           banded=True, nband=self._nband)
                 self.shared_program['a_vert_data'] = VertexBuffer(colors)
         if self.shading is not None:
             # Normal data comes via vertex shader

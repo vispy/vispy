@@ -64,15 +64,15 @@ class ColorBarWidget(Widget):
         padding with respect to the major and minor axis
     axis_ratio : float
         ratio of minor axis to major axis
-    banded : bool 
+    banded : bool
         If True apply a banded glsl shader for the colormap
     nband : int
-        the number of band in the glsl banded shader        
+        the number of band in the glsl banded shader
     """
     def __init__(self, cmap, orientation,
                  label="", label_color='black', clim=("", ""),
                  border_width=0.0, border_color="black",
-                 padding=(0.2, 0.2), axis_ratio=0.05, 
+                 padding=(0.2, 0.2), axis_ratio=0.05,
                  banded=False, nband=10, **kwargs):
 
         dummy_size = (1, 1)
@@ -85,7 +85,7 @@ class ColorBarWidget(Widget):
                                         label_str=label, clim=clim,
                                         label_color=label_color,
                                         border_width=border_width,
-                                        border_color=border_color, 
+                                        border_color=border_color,
                                         banded=banded,
                                         nband=nband, **kwargs)
 

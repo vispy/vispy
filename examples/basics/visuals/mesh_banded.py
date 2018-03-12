@@ -12,30 +12,30 @@ from vispy.geometry import create_sphere
 from vispy.visuals.transforms import (STTransform, MatrixTransform,
                                       ChainTransform)
 
-def xyz_to_gp (xyz):
 
+def xyz_to_gp(xyz):
     """
     Input X, Y, Z, the Cartesian coordinates of a point
     on the unit sphere.
     Output, float gamma and phi coordinates of the point.
 
-    phi is a longitudinal angle and gamma is a latitudinal 
+    phi is a longitudinal angle and gamma is a latitudinal
 
     x = np.sin(gamma)*np.cos(phi)
     y = np.sin(gamma)*np.sin(phi)
     z = np.cos(gamma)
 
     """
-    x = xyz[:,0]
-    y = xyz[:,1]
-    z = xyz[:,2]
-    gamma = np.arccos ( z )
-    fact = np.sqrt ( x * x + y * y )
-    
-    phi = np.where(fact>0.0, np.arccos(x/fact), np.arccos ( x ))
-    phi = np.where(y<0.0, -phi, phi)
+    x = xyz[:, 0]
+    y = xyz[:, 1]
+    z = xyz[:, 2]
+    gamma = np.arccos(z)
+    fact = np.sqrt(x*x+y*y)
+    phi = np.where(fact > 0.0, np.arccos(x/fact), np.arccos(x))
+    phi = np.where(y < 0.0, -phi, phi)
 
     return gamma, phi
+
 
 class Canvas(app.Canvas):
     def __init__(self):
@@ -51,7 +51,7 @@ class Canvas(app.Canvas):
         faces = mdata.get_faces()
         gamma, phi = xyz_to_gp(verts)
         data = np.cos(5*gamma)+np.cos(phi*4)/2.
-        mesh = visuals.MeshVisual(vertices=verts, faces=faces, 
+        mesh = visuals.MeshVisual(vertices=verts, faces=faces,
                                   banded=False, nband=8,
                                   vertex_values=data)
         mesh.cmap = 'viridis'
