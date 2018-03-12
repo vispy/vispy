@@ -470,7 +470,7 @@ class MeshVisual(Visual):
             self.shared_program.vert['base_color'] = VertexBuffer(colors)
             if self._banded:
                 self.shared_program.frag['fun_color'] = \
-                                    '$color_transform(v_vert_data)'
+                    '$color_transform(v_vert_data)'
                 self.shared_program.frag['color_transform'] = \
                     _build_color_transform(colors,
                                            self._cmap, self._clim_values,
