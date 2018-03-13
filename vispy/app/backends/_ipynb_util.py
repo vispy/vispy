@@ -30,7 +30,9 @@ def _extract_buffers(commands):
     for i, command in enumerate(commands_modified):
         if command[0] == 'DATA':
             commands_modified[i] = command[:3] + \
-                ({'buffer_index': buffer_index},)
+                ({'buffer_index': buffer_index,
+                  'buffer_shape': buffers[buffer_index].shape,
+                  'buffer_dtype': np.dtype(buffers[buffer_index].dtype).name},)
             buffer_index += 1
     return commands_modified, buffers
 

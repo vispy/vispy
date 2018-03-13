@@ -30,15 +30,24 @@ from ...io import load_spatial_filters
 class TextureFont(object):
     """Gather a set of glyphs relative to a given font name and size
 
+    This currently stores characters in a `TextureAtlas` object which uses
+    a 2D RGB texture to store unsigned 8-bit integer data. In the future this
+    could be changed to a ``GL_R8`` texture instead of RGB when OpenGL ES
+    3.0+ is standard. Since VisPy tries to stay compatible with OpenGL ES 2.0
+    we are using an ``RGB`` texture. Using a single channel texture should
+    improve performance by requiring less data to be sent to the GPU and to
+    remote backends (jupyter notebook).
+
     Parameters
     ----------
     font : dict
         Dict with entries "face", "size", "bold", "italic".
     renderer : instance of SDFRenderer
         SDF renderer to use.
+
     """
     def __init__(self, font, renderer):
-        self._atlas = TextureAtlas()
+        self._atlas = TextureAtlas(dtype=np.uint8)
         self._atlas.wrapping = 'clamp_to_edge'
         self._kernel, _ = load_spatial_filters()
         self._renderer = renderer
@@ -526,7 +535,10 @@ class SDFRendererCPU(object):
         x = (np.arange(tex_h) + 0.5) / float(tex_h)
         bitmap = np.array([np.interp(x, xp, ss) for ss in bitmap.T]).T
         assert bitmap.shape[::-1] == size
-        bitmap = np.tile(bitmap[..., np.newaxis].astype(np.float32),
+        # convert to uint8
+        bitmap = (bitmap * 255).astype(np.uint8)
+        # convert single channel to RGB by repeating
+        bitmap = np.tile(bitmap[..., np.newaxis],
                          (1, 1, 3))
         texture[offset[1]:offset[1] + size[1],
                 offset[0]:offset[0] + size[0], :] = bitmap
