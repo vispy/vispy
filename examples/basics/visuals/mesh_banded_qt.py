@@ -11,19 +11,19 @@ Simple demonstration of Mesh visual with banded capability in Qt5.
 import numpy as np
 import sys
 
-from PyQt5.QtWidgets import (QWidget, QGroupBox, QGridLayout, QLabel,
+from PyQt4.QtGui import (QWidget, QGroupBox, QGridLayout, QLabel,
                              QSpinBox, QSplitter, QMainWindow, QAction,
                              QApplication, QVBoxLayout, QHBoxLayout,
                              qApp, QComboBox)
 
-from PyQt5.QtCore import (pyqtSignal, Qt)
+from PyQt4.QtCore import (pyqtSignal, Qt)
 
 from vispy.color.colormap import get_colormaps
 from vispy import scene
 from vispy.geometry import create_sphere
 from vispy import use
 
-use("PyQt5")
+use("PyQt4")
 
 
 def xyz_to_gp(xyz):
