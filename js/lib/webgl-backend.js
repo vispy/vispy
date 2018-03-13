@@ -10,7 +10,12 @@ function _inline_glir_commands(commands, buffers) {
         var command = commands[i];
         if (command[0] == 'DATA') {
             var buffer_index = command[3]['buffer_index'];
+            var buffer_shape = command[3]['buffer_shape'];
+            var buffer_dtype = command[3]['buffer_dtype'];
             command[3] = buffers[buffer_index];
+            // Add shape and type information to buffer object
+            command[3].shape = buffer_shape;
+            command[3].dtype = buffer_dtype;
         }
     }
     return commands;
