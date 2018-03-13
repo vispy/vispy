@@ -12,9 +12,9 @@ import numpy as np
 import sys
 
 from PyQt4.QtGui import (QWidget, QGroupBox, QGridLayout, QLabel,
-                             QSpinBox, QSplitter, QMainWindow, QAction,
-                             QApplication, QVBoxLayout, QHBoxLayout,
-                             qApp, QComboBox)
+                         QSpinBox, QSplitter, QMainWindow, QAction,
+                         QApplication, QVBoxLayout, QHBoxLayout,
+                         qApp, QComboBox)
 
 from PyQt4.QtCore import (pyqtSignal, Qt)
 
