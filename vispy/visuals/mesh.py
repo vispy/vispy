@@ -18,85 +18,7 @@ from ..geometry import MeshData
 from ..color import Color, get_colormap
 from ..ext.six import string_types
 
-# Shaders for lit rendering (using phong shading)
-shading_vertex_template = """
-varying vec3 v_normal_vec;
-varying vec3 v_light_vec;
-varying vec3 v_eye_vec;
 
-varying vec4 v_ambientk;
-varying vec4 v_light_color;
-varying vec4 v_base_color;
-
-void main() {
-    v_ambientk = $ambientk;
-    v_light_color = $light_color;
-    v_base_color = $color_transform($base_color);
-
-
-    vec4 pos_scene = $visual2scene($to_vec4($position));
-    vec4 normal_scene = $visual2scene(vec4($normal, 1.0));
-    vec4 origin_scene = $visual2scene(vec4(0.0, 0.0, 0.0, 1.0));
-
-    normal_scene /= normal_scene.w;
-    origin_scene /= origin_scene.w;
-
-    vec3 normal = normalize(normal_scene.xyz - origin_scene.xyz);
-    v_normal_vec = normal; //VARYING COPY
-
-    vec4 pos_front = $scene2doc(pos_scene);
-    pos_front.z += 0.01;
-    pos_front = $doc2scene(pos_front);
-    pos_front /= pos_front.w;
-
-    vec4 pos_back = $scene2doc(pos_scene);
-    pos_back.z -= 0.01;
-    pos_back = $doc2scene(pos_back);
-    pos_back /= pos_back.w;
-
-    vec3 eye = normalize(pos_front.xyz - pos_back.xyz);
-    v_eye_vec = eye; //VARYING COPY
-
-    vec3 light = normalize($light_dir.xyz);
-    v_light_vec = light; //VARYING COPY
-
-    gl_Position = $transform($to_vec4($position));
-}
-"""
-
-shading_fragment_template = """
-varying vec3 v_normal_vec;
-varying vec3 v_light_vec;
-varying vec3 v_eye_vec;
-
-varying vec4 v_ambientk;
-varying vec4 v_light_color;
-varying vec4 v_base_color;
-
-void main() {
-    //DIFFUSE
-    float diffusek = dot(v_light_vec, v_normal_vec);
-    // clamp, because 0 < theta < pi/2
-    diffusek  = clamp(diffusek, 0.0, 1.0);
-    vec4 diffuse_color = v_light_color * diffusek;
-
-    //SPECULAR
-    //reflect light wrt normal for the reflected ray, then
-    //find the angle made with the eye
-    float speculark = 0.0;
-    if ($shininess > 0.) {
-        speculark = dot(reflect(v_light_vec, v_normal_vec), v_eye_vec);
-        speculark = clamp(speculark, 0.0, 1.0);
-        //raise to the material's shininess, multiply with a
-        //small factor for spread
-        speculark = 20.0 * pow(speculark, 1.0 / $shininess);
-    }
-    vec4 specular_color = v_light_color * speculark;
-    gl_FragColor = v_base_color * (v_ambientk + diffuse_color) + specular_color;
-}
-"""  # noqa
-
-# Shader code for non lighted rendering
 vertex_template = """
 varying vec4 v_base_color;
 
@@ -166,42 +88,20 @@ class MeshVisual(Visual):
         The values to use for each vertex (for colormapping).
     meshdata : instance of MeshData | None
         The meshdata.
-    shading : str | None
-        Shading to use.
     mode : str
         The drawing mode.
     **kwargs : dict
         Keyword arguments to pass to `Visual`.
     """
     def __init__(self, vertices=None, faces=None, vertex_colors=None,
-                 face_colors=None, color=(0.5, 0.5, 1, 1), vertex_values=None,
-                 meshdata=None, shading=None, mode='triangles', **kwargs):
-
-        # Function for computing phong shading
-        # self._phong = Function(phong_template)
-
-        # Visual.__init__ -> prepare_transforms() -> uses shading
-        self.shading = shading
-
-        if shading is not None:
-            Visual.__init__(self, vcode=shading_vertex_template,
-                            fcode=shading_fragment_template,
-                            **kwargs)
-
-        else:
-            Visual.__init__(self, vcode=vertex_template,
-                            fcode=fragment_template,
-                            **kwargs)
-
-        self.set_gl_state('translucent', depth_test=True,
-                          cull_face=False)
+                 face_colors=None, color=(1, 1, 1, 1), vertex_values=None,
+                 meshdata=None, mode='triangles', **kwargs):
+        Visual.__init__(self, vcode=vertex_template, fcode=fragment_template,
+                        **kwargs)
+        self.set_gl_state('translucent', depth_test=True, cull_face=False)
 
         # Define buffers
         self._vertices = VertexBuffer(np.zeros((0, 3), dtype=np.float32))
-        self._normals = VertexBuffer(np.zeros((0, 3), dtype=np.float32))
-        self._ambient_light_color = Color((0.3, 0.3, 0.3, 1.0))
-        self._light_dir = (10, 5, -5)
-        self._shininess = 1. / 200.
         self._cmap = get_colormap('cubehelix')
         self._clim = 'auto'
 
@@ -388,32 +288,16 @@ class MeshVisual(Visual):
         else:
             raise TypeError("Vertex data must have shape (...,2) or (...,3).")
 
-        # Shading and colors
+        # Set the base color.
         #
-        # If non-lit shading is used, then just pass the colors
-        # Otherwise, the shader uses a base_color to represent the underlying
-        # color, which is then lit with the lighting model
+        # The base color is mixed further by the material filters for texture
+        # or shading effects.
         self.shared_program.vert['color_transform'] = \
             _build_color_transform(colors, self._cmap, self._clim_values)
         if colors.ndim == 1:
             self.shared_program.vert['base_color'] = colors
         else:
             self.shared_program.vert['base_color'] = VertexBuffer(colors)
-        if self.shading is not None:
-            # Normal data comes via vertex shader
-            if self._normals.size > 0:
-                normals = self._normals
-            else:
-                normals = (1., 0., 0.)
-
-            self.shared_program.vert['normal'] = normals
-
-            # Additional phong properties
-            self.shared_program.vert['light_dir'] = self._light_dir
-            self.shared_program.vert['light_color'] = (1.0, 1.0, 1.0, 1.0)
-            self.shared_program.vert['ambientk'] = \
-                self._ambient_light_color.rgba
-            self.shared_program.frag['shininess'] = self._shininess
 
         self._data_changed = False
 
@@ -451,37 +335,6 @@ class MeshVisual(Visual):
         self._ambient_light_color = Color(ambient)
         self.mesh_data_changed()
 
-    @property
-    def light_dir(self):
-        """The light direction"""
-        return self._light_dir
-
-    @light_dir.setter
-    def light_dir(self, direction):
-        """Set the light direction
-
-        Parameters
-        ----------
-        direction : ndarray, shape (3,)
-            The light direction.
-        """
-        direction = np.array(direction, float).ravel()
-        if direction.size != 3 or not np.isfinite(direction).all():
-            raise ValueError('Invalid direction %s' % direction)
-        self._light_dir = tuple(direction)
-        self.mesh_data_changed()
-
-    @property
-    def shading(self):
-        """ The shading method used.
-        """
-        return self._shading
-
-    @shading.setter
-    def shading(self, value):
-        assert value in (None, 'flat', 'smooth')
-        self._shading = value
-
     def _prepare_draw(self, view):
         if self._data_changed:
             if self._update_data() is False:
@@ -494,15 +347,7 @@ class MeshVisual(Visual):
     @staticmethod
     def _prepare_transforms(view):
         tr = view.transforms.get_transform()
-        view.view_program.vert['transform'] = tr  # .simplified
-
-        if view.shading is not None:
-            visual2scene = view.transforms.get_transform('visual', 'scene')
-            scene2doc = view.transforms.get_transform('scene', 'document')
-            doc2scene = view.transforms.get_transform('document', 'scene')
-            view.shared_program.vert['visual2scene'] = visual2scene
-            view.shared_program.vert['scene2doc'] = scene2doc
-            view.shared_program.vert['doc2scene'] = doc2scene
+        view.view_program.vert['transform'] = tr
 
     def _compute_bounds(self, axis, view):
         if self._bounds is None:
