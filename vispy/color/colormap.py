@@ -181,8 +181,8 @@ def _glsl_mix(controls=None, colors=None, texture_map_data=None):
                                        Color(colors[j+1]).rgba, adj_t)
 
         s2 = "uniform sampler2D texture2D_LUT;"
-        s = "{\n return texture2D(texture2D_LUT, "
-        "vec2(0.0, clamp(t, 0.0, 1.0)));\n} "
+        s = "{\n return texture2D(texture2D_LUT, \
+              vec2(0.0, clamp(t, 0.0, 1.0)));\n} "
 
     return "%s\nvec4 colormap(float t) {\n%s\n}" % (s2, s)
 

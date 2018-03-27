@@ -452,9 +452,9 @@ class ImageVisual(Visual):
                 interpolation_mode = 'linear' \
                     if(str(self._cmap.interpolation) == 'linear') \
                     else 'nearest'
-                self._texture_LUT =
-                Texture2D(np.zeros(self._cmap.texture_map_data.shape),
-                          interpolation=interpolation_mode)
+                self._texture_LUT = \
+                    Texture2D(np.zeros(self._cmap.texture_map_data.shape),
+                              interpolation=interpolation_mode)
                 prg['texture2D_LUT'] = self._texture_LUT
                 self._texture_LUT.set_data(self._cmap.texture_map_data,
                                            offset=None, copy=True)
