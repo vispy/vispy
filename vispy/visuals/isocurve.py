@@ -18,7 +18,6 @@ _HAS_SKI = has_skimage()
 if _HAS_SKI:
     try:
         from skimage.measure import find_contours
-        _HAS_SKI = False
     except ImportError:
         _HAS_SKI = False
         find_contours = None
