@@ -133,17 +133,19 @@ def _glsl_mix(controls=None, colors=None, texture_map_data=None):
 
     Parameters
     ----------
-    colors : list of lists, tuples, ndarrays or ColorArrays
-        The control colors used by the colormap (shape = (ncolors, 4)).
+    colors : array-like, shape (n_colors, 4)
+        List of lists, tuples, ndarrays or ColorArrays.
+        The control colors used by the colormap.
 
-    controls : The list of control points for the given colors. It should be
+    controls : list
+        The list of control points for the given colors. It should be
         an increasing list of floating-point number between 0.0 and 1.0.
         The first control point must be 0.0. The last control point must be
         1.0. The number of control points depends on the interpolation scheme.
 
-    texture_map_data : Numpy array of size of 1D texture lookup data for
-        luminance to RGBA conversion.
-        The size of np.float32 array is (LUT_len, 4).
+    texture_map_data : ndarray, shape(LUT_len, 4)
+        Numpy array of size of 1D texture lookup data
+        for luminance to RGBA conversion.
         If texture_map_data is not None,
         the RGBA data for the array is computed.
 
@@ -151,7 +153,8 @@ def _glsl_mix(controls=None, colors=None, texture_map_data=None):
     assert (controls[0], controls[-1]) == (0., 1.)
     ncolors = len(controls)
     assert ncolors >= 2
-    if texture_map_data is None and ncolors == 2:
+    if texture_map_data is None:
+        assert ncolors == 2
         s2 = ""
         s = "    return mix($color_0, $color_1, t);\n"
     else:
@@ -179,16 +182,9 @@ def _glsl_step(controls=None, colors=None, texture_map_data=None):
     assert ncolors >= 2
 
     if texture_map_data is None:
+        assert ncolors == 2
         s2 = ""
         s = ""
-        for i in range(ncolors-1):
-            if i == 0:
-                ifs = 'if (t < %.6f)' % (controls[i+1])
-            elif i == (ncolors-2):
-                ifs = 'else'
-            else:
-                ifs = 'else if (t < %.6f)' % (controls[i+1])
-            s += """%s {\n    return $color_%d;\n} """ % (ifs, i)
     else:
         LUT = texture_map_data
         LUT_len = texture_map_data.shape[0]
@@ -203,8 +199,8 @@ def _glsl_step(controls=None, colors=None, texture_map_data=None):
                 LUT[i, 0, :len(colors[j])] = colors[j]
 
         s2 = "uniform sampler2D texture2D_LUT;"
-        s = "{\n return texture2D(texture2D_LUT, "
-        "vec2(0.0, clamp(t, 0.0, 1.0)));\n} "
+        s = "{\n return texture2D(texture2D_LUT, \
+               vec2(0.0, clamp(t, 0.0, 1.0)));\n} "
 
     return "%s\nvec4 colormap(float t) {\n%s\n}" % (s2, s)
 
