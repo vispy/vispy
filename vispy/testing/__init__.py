@@ -43,7 +43,7 @@ to determine what automatic tests are run.
 from ._testing import (SkipTest, requires_application, requires_ipython,  # noqa
                       requires_img_lib,  # noqa
                       has_backend, requires_pyopengl,  # noqa
-                      requires_scipy, has_matplotlib,  # noqa
+                      requires_scipy, has_matplotlib, has_skimage,  # noqa
                       save_testing_image, TestingCanvas, has_pyopengl,  # noqa
                       run_tests_if_main,
                       assert_is, assert_in, assert_not_in, assert_equal,

@@ -294,6 +294,16 @@ def has_matplotlib(version='1.2'):
     return has_mpl
 
 
+def has_skimage(version='0.11'):
+    """Determine if scikit-image is a usable version"""
+    try:
+        import skimage
+    except ImportError:
+        return False
+    sk_version = LooseVersion(skimage.__version__)
+    return sk_version >= LooseVersion(version)
+
+
 ###############################################################################
 # Visuals stuff
 

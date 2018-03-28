@@ -10,18 +10,16 @@ from .line import LineVisual
 from ..color import ColorArray
 from ..color.colormap import _normalize, get_colormap
 from ..geometry.isocurve import isocurve
-from ..testing import has_matplotlib
+from ..testing import has_skimage
 
-# checking for matplotlib
-_HAS_MPL = has_matplotlib()
-if _HAS_MPL:
+# checking for scikit-image
+_HAS_SKI = has_skimage()
+if _HAS_SKI:
     try:
-        from matplotlib import _cntr as cntr
+        from skimage.measure import find_contours
     except ImportError:
-        import warnings
-        warnings.warn("VisPy is not yet compatible with matplotlib 2.2+")
-        _HAS_MPL = False
-        cntr = None
+        _HAS_SKI = False
+        find_contours = None
 
 
 class IsocurveVisual(LineVisual):
@@ -55,9 +53,6 @@ class IsocurveVisual(LineVisual):
         self._need_color_update = True
         self._need_level_update = True
         self._need_recompute = True
-        self._X = None
-        self._Y = None
-        self._iso = None
         self._level_min = None
         self._data_is_uniform = False
         self._lc = None
@@ -107,14 +102,6 @@ class IsocurveVisual(LineVisual):
         """
         self._data = data
 
-        # if using matplotlib isoline algorithm we have to check for meshgrid
-        # and we can setup the tracer object here
-        if _HAS_MPL:
-            if self._X is None or self._X.shape != data.shape:
-                self._X, self._Y = np.meshgrid(np.arange(data.shape[1]),
-                                               np.arange(data.shape[0]))
-            self._iso = cntr.Cntr(self._X, self._Y, self._data.astype(float))
-
         if self._clim is None:
             self._clim = (data.min(), data.max())
 
@@ -156,13 +143,15 @@ class IsocurveVisual(LineVisual):
         self._level_min = choice[0][0]
 
         for level in levels_to_calc:
-            # if we use matplotlib isoline algorithm we need to add half a
+            # if we use skimage isoline algorithm we need to add half a
             # pixel in both (x,y) dimensions because isolines are aligned to
             # pixel centers
-            if _HAS_MPL:
-                nlist = self._iso.trace(level, level, 0)
-                paths = nlist[:len(nlist)//2]
-                v, c = self._get_verts_and_connect(paths)
+            if _HAS_SKI:
+                contours = find_contours(self._data, level,
+                                         positive_orientation='high')
+                v, c = self._get_verts_and_connect(contours)
+                # swap row, column to column, row (x, y)
+                v[:, [0, 1]] = v[:, [1, 0]]
                 v += np.array([0.5, 0.5])
             else:
                 paths = isocurve(self._data.astype(float).T, level,
