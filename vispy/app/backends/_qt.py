@@ -164,6 +164,8 @@ def message_handler(*args):
     else:
         msg = msg.decode() if not isinstance(msg, string_types) else msg
         logger.warning(msg)
+
+
 try:
     QtCore.qInstallMsgHandler(message_handler)
 except AttributeError:
@@ -283,6 +285,16 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
             self._fullscreen = True
         else:
             self._fullscreen = False
+
+        # must set physical size before setting visible or fullscreen
+        # operations may make the size invalid
+        if hasattr(self, 'devicePixelRatio'):
+            # handle high DPI displays in PyQt5
+            ratio = self.devicePixelRatio()
+        else:
+            ratio = 1
+        self._physical_size = (p.size[0] * ratio, p.size[1] * ratio)
+
         if not p.resizable:
             self.setFixedSize(self.size())
         if p.position is not None:
@@ -293,12 +305,6 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
         # Qt supports OS double-click events, so we set this here to
         # avoid double events
         self._double_click_supported = True
-        if hasattr(self, 'devicePixelRatio'):
-            # handle high DPI displays in PyQt5
-            ratio = self.devicePixelRatio()
-        else:
-            ratio = 1
-        self._physical_size = (p.size[0] * ratio, p.size[1] * ratio)
 
         # Activate touch and gesture.
         # NOTE: we only activate touch on OS X because there seems to be
