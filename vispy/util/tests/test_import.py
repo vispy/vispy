@@ -46,7 +46,7 @@ def loaded_vispy_modules(import_module, depth=None, all_modules=False):
                 parts = m.split('.')
                 m = '.'.join(parts[:depth])
             vispy_modules.add(m)
-    
+
     return vispy_modules
 
 
@@ -80,7 +80,9 @@ def test_import_vispy_app2():
     """ Importing vispy.app should not pull in any backend toolkit. """
     allmodnames = loaded_vispy_modules('vispy.app', 2, True)
     assert_not_in('PySide', allmodnames)
+    assert_not_in('PySide2', allmodnames)
     assert_not_in('PyQt4', allmodnames)
+    assert_not_in('PyQt5', allmodnames)
     assert_not_in('pyglet', allmodnames)
 
 
@@ -97,7 +99,7 @@ def test_import_vispy_no_pyopengl():
     # vispy.gloo desktop backend
     allmodnames = loaded_vispy_modules('vispy.gloo.gl.gl2', 2, True)
     assert_not_in('OpenGL', allmodnames)
-    # vispy.app 
+    # vispy.app
     allmodnames = loaded_vispy_modules('vispy.app', 2, True)
     assert_not_in('OpenGL', allmodnames)
     # vispy.scene
@@ -115,8 +117,8 @@ def test_import_vispy_pyopengl():
 def test_import_vispy_scene():
     """ Importing vispy.gloo.gl.desktop should not import PyOpenGL. """
     modnames = loaded_vispy_modules('vispy.scene', 2)
-    more_modules = ['vispy.app', 'vispy.gloo', 'vispy.glsl', 'vispy.scene', 
-                    'vispy.color', 
+    more_modules = ['vispy.app', 'vispy.gloo', 'vispy.glsl', 'vispy.scene',
+                    'vispy.color',
                     'vispy.io', 'vispy.geometry', 'vispy.visuals']
     assert_equal(modnames, set(_min_modules + more_modules))
 

@@ -122,6 +122,16 @@ class Application(object):
         except (ImportError, AttributeError):
             return False
 
+    def is_notebook(self):
+        """Determine if the user is executing in a Jupyter Notebook"""
+        try:
+            # 'get_ipython' is available in globals when running from
+            # IPython/Jupyter
+            ip = get_ipython()
+            return ip.has_trait('kernel')
+        except NameError:
+            return False
+
     def run(self, allow_interactive=True):
         """ Enter the native GUI event loop.
 
@@ -179,6 +189,8 @@ class Application(object):
         elif test_name is not None:
             backend_name = test_name.lower()
             assert backend_name in BACKENDMAP
+        elif self.is_notebook():
+            backend_name = 'ipynb_webgl'
 
         # Should we try and load any backend, or just this specific one?
         try_others = backend_name is None
