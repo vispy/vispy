@@ -26,7 +26,7 @@ class EditLineVisual(scene.visuals.Line):
 
     def __init__(self, *args, **kwargs):
         scene.visuals.Line.__init__(self, *args, **kwargs)
-	self.unfreeze()
+        self.unfreeze()
         # initialize point markers
         self.markers = scene.visuals.Markers(parent=self)
         self.marker_colors = np.ones((len(self.pos), 4), dtype=np.float32)
@@ -36,7 +36,7 @@ class EditLineVisual(scene.visuals.Line):
         self.selected_index = -1
         # snap grid size
         self.gridsize = 10
-	self.freeze()
+        self.freeze()
 
     def on_draw(self, event):
         # draw line and markers
@@ -63,7 +63,7 @@ class EditLineVisual(scene.visuals.Line):
         """
 
         # project mouse radius from screen coordinates to document coordinates
-	
+
         mouse_radius = 6
         # print("Mouse radius in document units: ", mouse_radius)
 
@@ -94,8 +94,8 @@ class EditLineVisual(scene.visuals.Line):
                               size=size, face_color=self.marker_colors)
 
     def on_mouse_press(self, pos_scene):
-        #self.print_mouse_event(event, 'Mouse press')
-        #pos_scene = event.pos[:3]
+        # self.print_mouse_event(event, 'Mouse press')
+        # pos_scene = event.pos[:3]
 
         # find closest point to mouse and select it
         self.selected_point, self.selected_index = self.select_point(pos_scene)
@@ -118,21 +118,21 @@ class EditLineVisual(scene.visuals.Line):
         self.update_markers()
 
     def on_mouse_move(self, pos_scene):
-	    if self.selected_point is not None:
-		# update selected point to new position given by mouse
-		self.selected_point[0] = round(pos_scene[0] / self.gridsize) \
-		    * self.gridsize
-		self.selected_point[1] = round(pos_scene[1] / self.gridsize) \
-		    * self.gridsize
-		self.set_data(pos=self.pos)
-		self.update_markers(self.selected_index)
+        if self.selected_point is not None:
+            # update selected point to new position given by mouse
+            self.selected_point[0] = round(pos_scene[0] / self.gridsize) \
+                                     * self.gridsize
+            self.selected_point[1] = round(pos_scene[1] / self.gridsize) \
+                                     * self.gridsize
+            self.set_data(pos=self.pos)
+            self.update_markers(self.selected_index)
 
     def highlight_markers(self, pos_scene):
-            #  if no button is pressed, just highlight the marker that would be
-            # selected on click
-            hl_point, hl_index = self.select_point(pos_scene)
-            self.update_markers(hl_index, highlight_color=(0.5, 0.5, 1.0, 1.0))
-            self.update()
+        #  if no button is pressed, just highlight the marker that would be
+        # selected on click
+        hl_point, hl_index = self.select_point(pos_scene)
+        self.update_markers(hl_index, highlight_color=(0.5, 0.5, 1.0, 1.0))
+        self.update()
 
 
 class Canvas(scene.SceneCanvas):
@@ -144,7 +144,7 @@ class Canvas(scene.SceneCanvas):
 
         # Create some initial points
         n = 7
-	self.unfreeze()
+        self.unfreeze()
         self.pos = np.zeros((n, 3), dtype=np.float32)
         self.pos[:, 0] = np.linspace(-50, 50, n)
         self.pos[:, 1] = np.random.normal(size=n, scale=10, loc=0)
@@ -166,19 +166,19 @@ class Canvas(scene.SceneCanvas):
         self.show()
         self.selected_point = None
         scene.visuals.GridLines(parent=self.view.scene)
-	self.freeze()
+        self.freeze()
 
     def on_mouse_press(self, event):
-	tr = self.scene.node_transform(self.line)
+        tr = self.scene.node_transform(self.line)
         pos = tr.map(event.pos)
-	self.line.on_mouse_press(pos)
+        self.line.on_mouse_press(pos)
 
     def on_mouse_move(self, event):
         # left mouse button
-	tr = self.scene.node_transform(self.line)
+        tr = self.scene.node_transform(self.line)
         pos = tr.map(event.pos)
         if event.button == 1:
-	    self.line.on_mouse_move(pos)
+            self.line.on_mouse_move(pos)
         else:
             self.line.highlight_markers(pos)
 
