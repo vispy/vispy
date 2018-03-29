@@ -107,7 +107,8 @@ class EditLineVisual(scene.visuals.Line):
         self.print_mouse_event(event, 'Mouse press')
         pos_scene = event.pos[:3]
         # pos_scene = np.append(pos_scene, [0])
-        pos_scene = self.transforms.get_transform(map_to='canvas').imap(pos_scene)[:3]
+        pos_scene = self.transforms.get_transform(map_to='canvas').imap(
+            pos_scene)[:3]
 
         # find closest point to mouse and select it
         self.selected_point, self.selected_index = self.select_point(event)
@@ -131,7 +132,8 @@ class EditLineVisual(scene.visuals.Line):
     def on_mouse_move(self, event):
         # left mouse button
         if event.button == 1:
-            pos_scene = self.transforms.get_transform(map_to='canvas').imap(event.pos)[:3]
+            pos_scene = self.transforms.get_transform(map_to='canvas').imap(
+                event.pos)[:3]
             # self.print_mouse_event(event, 'Mouse drag')
             if self.selected_point is not None:
                 # update selected point to new position given by mouse
