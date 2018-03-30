@@ -14,6 +14,7 @@ demo works on different zoom levels.
 import numpy as np
 
 from vispy import app, scene
+from vispy.visuals.transforms import STTransform
 
 
 class EditLineVisual(scene.visuals.Line):
@@ -28,19 +29,23 @@ class EditLineVisual(scene.visuals.Line):
         scene.visuals.Line.__init__(self, *args, **kwargs)
 
         # initialize point markers
-        self.markers = scene.visuals.Markers()
+        self.unfreeze()
+        self.markers = scene.visuals.Markers(parent=self)
         self.marker_colors = np.ones((len(self.pos), 4), dtype=np.float32)
         self.markers.set_data(pos=self.pos, symbol="s", edge_color="red",
                               size=6)
+        # markers may appear behind line, bring them to front
+        self.markers.transform = STTransform(translate=(0, 0, -1.))
         self.selected_point = None
         self.selected_index = -1
         # snap grid size
         self.gridsize = 10
+        self.freeze()
 
-    def draw(self, transforms):
+    def draw(self):
         # draw line and markers
-        scene.visuals.Line.draw(self, transforms)
-        self.markers.draw(transforms)
+        scene.visuals.Line.draw(self)
+        self.markers.draw()
 
     def print_mouse_event(self, event, what):
         """ print mouse events for debugging purposes """
@@ -63,11 +68,13 @@ class EditLineVisual(scene.visuals.Line):
 
         # position in scene/document coordinates
         pos_scene = event.pos[:3]
+        tr = self.transforms.get_transform(map_to='canvas')
+        pos_scene = tr.imap(pos_scene)[:3]
 
         # project mouse radius from screen coordinates to document coordinates
         mouse_radius = \
-            (event.visual_to_canvas.imap(np.array([radius, radius, radius])) -
-             event.visual_to_canvas.imap(np.array([0, 0, 0])))[0]
+            (tr.imap(np.array([radius, radius, radius])) -
+             tr.imap(np.array([0, 0, 0])))[0]
         # print("Mouse radius in document units: ", mouse_radius)
 
         # find first point within mouse_radius
@@ -99,15 +106,17 @@ class EditLineVisual(scene.visuals.Line):
     def on_mouse_press(self, event):
         self.print_mouse_event(event, 'Mouse press')
         pos_scene = event.pos[:3]
+        # pos_scene = np.append(pos_scene, [0])
+        pos_scene = self.transforms.get_transform(map_to='canvas').imap(
+            pos_scene)[:3]
 
         # find closest point to mouse and select it
         self.selected_point, self.selected_index = self.select_point(event)
 
         # if no point was clicked add a new one
         if self.selected_point is None:
-            print("adding point", len(self.pos))
-            self._pos = np.append(self.pos, [pos_scene], axis=0)
-            self.set_data(pos=self.pos)
+            # set self.pos
+            self.set_data(pos=np.append(self.pos, [pos_scene], axis=0))
             self.marker_colors = np.ones((len(self.pos), 4), dtype=np.float32)
             self.selected_point = self.pos[-1]
             self.selected_index = len(self.pos) - 1
@@ -123,9 +132,10 @@ class EditLineVisual(scene.visuals.Line):
     def on_mouse_move(self, event):
         # left mouse button
         if event.button == 1:
+            pos_scene = self.transforms.get_transform(map_to='canvas').imap(
+                event.pos)[:3]
             # self.print_mouse_event(event, 'Mouse drag')
             if self.selected_point is not None:
-                pos_scene = event.pos
                 # update selected point to new position given by mouse
                 self.selected_point[0] = round(pos_scene[0] / self.gridsize) \
                     * self.gridsize
@@ -150,6 +160,7 @@ class Canvas(scene.SceneCanvas):
                                    size=(800, 800))
 
         # Create some initial points
+        self.unfreeze()
         n = 7
         self.pos = np.zeros((n, 3), dtype=np.float32)
         self.pos[:, 0] = np.linspace(-50, 50, n)
@@ -169,9 +180,19 @@ class Canvas(scene.SceneCanvas):
             self.view.camera.viewbox_mouse_event)
 
         self.view.add(self.line)
-        self.show()
         self.selected_point = None
+        self.freeze()
+        self.show()
         scene.visuals.GridLines(parent=self.view.scene)
+
+    def on_mouse_press(self, event):
+        self.line.on_mouse_press(event)
+
+    def on_mouse_release(self, event):
+        self.line.on_mouse_release(event)
+
+    def on_mouse_move(self, event):
+        self.line.on_mouse_move(event)
 
 
 if __name__ == '__main__':
