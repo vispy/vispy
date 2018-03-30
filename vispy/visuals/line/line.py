@@ -9,6 +9,7 @@ from __future__ import division
 
 import numpy as np
 
+from ...gloo import Texture2D
 from ... import gloo, glsl
 from ...color import Color, ColorArray, get_colormap
 from ...ext.six import string_types
@@ -103,6 +104,7 @@ class LineVisual(CompoundVisual):
         self._bounds = None
         self._antialias = None
         self._method = 'none'
+        self._texture_LUT = None
 
         CompoundVisual.__init__(self, [])
 
@@ -226,6 +228,7 @@ class LineVisual(CompoundVisual):
 
     def _interpret_color(self, color_in=None):
         color_in = self._color if color_in is None else color_in
+        colormap = None
         if isinstance(color_in, string_types):
             try:
                 colormap = get_colormap(color_in)
@@ -238,7 +241,7 @@ class LineVisual(CompoundVisual):
             color = ColorArray(color_in).rgba
             if len(color) == 1:
                 color = color[0]
-        return color
+        return color, colormap
 
     def _compute_bounds(self, axis, view):
         """Get the bounds
@@ -323,7 +326,7 @@ class _GLLineVisual(Visual):
                                 % (pos.shape,))
 
         if self._parent._changed['color']:
-            color = self._parent._interpret_color()
+            color, cmap = self._parent._interpret_color()
             # If color is not visible, just quit now
             if isinstance(color, Color) and color.is_blank:
                 return False
@@ -337,6 +340,22 @@ class _GLLineVisual(Visual):
                 else:
                     self._color_vbo.set_data(color)
                     self._program.vert['color'] = self._color_vbo
+
+            if (cmap is not None) and (cmap.texture_map_data is not None):
+                # Texture map used by the 'colormap' GLSL function
+                # for luminance to RGBA conversion
+                interpolation_mode = 'linear' \
+                    if(str(cmap.interpolation) == 'linear') \
+                    else 'nearest'
+                self._texture_LUT = \
+                    Texture2D(np.zeros(cmap.texture_map_data.shape),
+                              interpolation=interpolation_mode)
+                self.shared_program['texture2D_LUT'] = self._texture_LUT
+                self._texture_LUT.set_data(cmap.texture_map_data,
+                                           offset=None, copy=True)
+            else:
+                self._texture_LUT = None
+                self.shared_program['texture2D_LUT'] = None
 
         # Do we want to use OpenGL, and can we?
         GL = None
@@ -453,7 +472,7 @@ class _AggLineVisual(Visual):
             self._vbo.set_data(V)
             self._index_buffer.set_data(idxs)
 
-        #self._program.prepare()
+        # self._program.prepare()
         self.shared_program.bind(self._vbo)
         uniforms = dict(closed=False, miter_limit=4.0, dash_phase=0.0,
                         linewidth=self._parent._width)
