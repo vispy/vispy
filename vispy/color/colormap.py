@@ -154,9 +154,22 @@ def _glsl_mix(controls=None, colors=None, texture_map_data=None):
     ncolors = len(controls)
     assert ncolors >= 2
     if texture_map_data is None:
-        assert ncolors == 2
         s2 = ""
-        s = "    return mix($color_0, $color_1, t);\n"
+        if ncolors == 2:
+            s = "    return mix($color_0, $color_1, t);\n"
+        else:
+            s = ""
+            for i in range(ncolors-1):
+                if i == 0:
+                    ifs = 'if (t < %.6f)' % (controls[i+1])
+                elif i == (ncolors-2):
+                    ifs = 'else'
+                else:
+                    ifs = 'else if (t < %.6f)' % (controls[i+1])
+                adj_t = '(t - %s) / %s' % (controls[i],
+                                           controls[i+1] - controls[i])
+                s += ("%s {\n    return mix($color_%d, $color_%d, %s);\n} " %
+                      (ifs, i, i+1, adj_t))
     else:
         LUT = texture_map_data
         LUT_len = texture_map_data.shape[0]
@@ -193,10 +206,7 @@ def _glsl_step(controls=None, colors=None, texture_map_data=None):
         for i in range(LUT_len):
             t = LUT_tex_idx[i]
             j = find_color_index(controls, t, ncolors)
-            if(isinstance(colors, ColorArray)):
-                LUT[i, 0, :] = colors[j].rgba
-            else:
-                LUT[i, 0, :len(colors[j])] = colors[j]
+            LUT[i, 0, :] = Color(colors[j]).rgba
 
         s2 = "uniform sampler2D texture2D_LUT;"
         s = "{\n return texture2D(texture2D_LUT, \
