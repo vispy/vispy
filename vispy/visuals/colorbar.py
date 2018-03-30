@@ -92,6 +92,7 @@ class _CoreColorBarVisual(Visual):
         self._pos = pos
         self._halfdim = halfdim
         self._orientation = orientation
+        self._texture_LUT = None
 
         # setup the right program shader based on color
         if orientation == "top" or orientation == "bottom":
@@ -169,11 +170,10 @@ class _CoreColorBarVisual(Visual):
                           interpolation=interpolation_mode)
             self.shared_program['texture2D_LUT'] = self._texture_LUT
             self._texture_LUT.set_data(self._cmap.texture_map_data,
-                                           offset=None, copy=True)
+                                       offset=None, copy=True)
         else:
             self._texture_LUT = None
             self.shared_program['texture2D_LUT'] = None
-
 
     @staticmethod
     def _get_orientation_error(orientation):

@@ -11,6 +11,7 @@ from __future__ import division
 
 import numpy as np
 
+from ..gloo import Texture2D
 from .visual import Visual
 from .shaders import Function, FunctionChain
 from ..gloo import VertexBuffer, IndexBuffer
@@ -180,6 +181,8 @@ class MeshVisual(Visual):
 
         # Function for computing phong shading
         # self._phong = Function(phong_template)
+
+        self._texture_LUT = None
 
         # Visual.__init__ -> prepare_transforms() -> uses shading
         self.shading = shading
@@ -404,6 +407,22 @@ class MeshVisual(Visual):
             else:
                 colors = self._color.rgba
         self.shared_program.vert['position'] = self._vertices
+
+        if self._cmap.texture_map_data is not None:
+            # Texture map used by the 'colormap' GLSL function
+            # for luminance to RGBA conversion
+            interpolation_mode = 'linear' \
+                if(str(self._cmap.interpolation) == 'linear') \
+                else 'nearest'
+            self._texture_LUT = \
+                Texture2D(np.zeros(self._cmap.texture_map_data.shape),
+                          interpolation=interpolation_mode)
+            self.shared_program['texture2D_LUT'] = self._texture_LUT
+            self._texture_LUT.set_data(self._cmap.texture_map_data,
+                                       offset=None, copy=True)
+        else:
+            self._texture_LUT = None
+            self.shared_program['texture2D_LUT'] = None
 
         # Position input handling
         if v.shape[-1] == 2:
