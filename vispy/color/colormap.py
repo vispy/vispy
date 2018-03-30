@@ -134,8 +134,8 @@ def _glsl_mix(controls=None, colors=None, texture_map_data=None):
     Parameters
     ----------
     colors : array-like, shape (n_colors, 4)
-        List of lists, tuples, ndarrays or ColorArrays.
         The control colors used by the colormap.
+        Elements of colors must be convertible to an instance of Color-class.
 
     controls : list
         The list of control points for the given colors. It should be
@@ -146,45 +146,27 @@ def _glsl_mix(controls=None, colors=None, texture_map_data=None):
     texture_map_data : ndarray, shape(LUT_len, 4)
         Numpy array of size of 1D texture lookup data
         for luminance to RGBA conversion.
-        If texture_map_data is not None,
-        the RGBA data for the array is computed.
 
     """
     assert (controls[0], controls[-1]) == (0., 1.)
     ncolors = len(controls)
     assert ncolors >= 2
-    if texture_map_data is None:
-        s2 = ""
-        if ncolors == 2:
-            s = "    return mix($color_0, $color_1, t);\n"
-        else:
-            s = ""
-            for i in range(ncolors-1):
-                if i == 0:
-                    ifs = 'if (t < %.6f)' % (controls[i+1])
-                elif i == (ncolors-2):
-                    ifs = 'else'
-                else:
-                    ifs = 'else if (t < %.6f)' % (controls[i+1])
-                adj_t = '(t - %s) / %s' % (controls[i],
-                                           controls[i+1] - controls[i])
-                s += ("%s {\n    return mix($color_%d, $color_%d, %s);\n} " %
-                      (ifs, i, i+1, adj_t))
-    else:
-        LUT = texture_map_data
-        LUT_len = texture_map_data.shape[0]
-        LUT_tex_idx = np.linspace(0.0, 1.0, LUT_len)
+    assert (texture_map_data is not None)
 
-        for i in range(LUT_len):
-            t = LUT_tex_idx[i]
-            j = find_color_index(controls, t, ncolors)
-            adj_t = (t - controls[j]) / (controls[j+1] - controls[j])
-            LUT[i, 0, :] = _mix_simple(Color(colors[j]).rgba,
-                                       Color(colors[j+1]).rgba, adj_t)
+    LUT = texture_map_data
+    LUT_len = texture_map_data.shape[0]
+    LUT_tex_idx = np.linspace(0.0, 1.0, LUT_len)
 
-        s2 = "uniform sampler2D texture2D_LUT;"
-        s = "{\n return texture2D(texture2D_LUT, \
-              vec2(0.0, clamp(t, 0.0, 1.0)));\n} "
+    for i in range(LUT_len):
+        t = LUT_tex_idx[i]
+        j = find_color_index(controls, t, ncolors)
+        adj_t = (t - controls[j]) / (controls[j+1] - controls[j])
+        LUT[i, 0, :] = _mix_simple(Color(colors[j]).rgba,
+                                   Color(colors[j+1]).rgba, adj_t)
+
+    s2 = "uniform sampler2D texture2D_LUT;"
+    s = "{\n return texture2D(texture2D_LUT, \
+          vec2(0.0, clamp(t, 0.0, 1.0)));\n} "
 
     return "%s\nvec4 colormap(float t) {\n%s\n}" % (s2, s)
 
@@ -193,24 +175,20 @@ def _glsl_step(controls=None, colors=None, texture_map_data=None):
     assert (controls[0], controls[-1]) == (0., 1.)
     ncolors = len(controls) - 1
     assert ncolors >= 2
+    assert (texture_map_data is not None)
 
-    if texture_map_data is None:
-        assert ncolors == 2
-        s2 = ""
-        s = ""
-    else:
-        LUT = texture_map_data
-        LUT_len = texture_map_data.shape[0]
-        LUT_tex_idx = np.linspace(0.0, 1.0, LUT_len)
+    LUT = texture_map_data
+    LUT_len = texture_map_data.shape[0]
+    LUT_tex_idx = np.linspace(0.0, 1.0, LUT_len)
 
-        for i in range(LUT_len):
-            t = LUT_tex_idx[i]
-            j = find_color_index(controls, t, ncolors)
-            LUT[i, 0, :] = Color(colors[j]).rgba
+    for i in range(LUT_len):
+        t = LUT_tex_idx[i]
+        j = find_color_index(controls, t, ncolors)
+        LUT[i, 0, :] = Color(colors[j]).rgba
 
-        s2 = "uniform sampler2D texture2D_LUT;"
-        s = "{\n return texture2D(texture2D_LUT, \
-               vec2(0.0, clamp(t, 0.0, 1.0)));\n} "
+    s2 = "uniform sampler2D texture2D_LUT;"
+    s = "{\n return texture2D(texture2D_LUT, \
+           vec2(0.0, clamp(t, 0.0, 1.0)));\n} "
 
     return "%s\nvec4 colormap(float t) {\n%s\n}" % (s2, s)
 
@@ -399,8 +377,7 @@ class Colormap(BaseColormap):
         assert len(controls) == ncontrols
         self._controls = np.array(controls, dtype=np.float32)
         # use texture map for luminance to RGBA conversion
-        if(len(controls) > 2):
-            self.texture_map_data = np.zeros((LUT_len, 1, 4), dtype=np.float32)
+        self.texture_map_data = np.zeros((LUT_len, 1, 4), dtype=np.float32)
         self.glsl_map = self._glsl_map_generator(self._controls, colors,
                                                  self.texture_map_data)
         super(Colormap, self).__init__(colors)
