@@ -162,8 +162,8 @@ External links
 
 .. |Build Status| image:: https://travis-ci.org/vispy/vispy.svg?branch=master
    :target: https://travis-ci.org/vispy/vispy
-.. |Appveyor Status| image:: https://ci.appveyor.com/api/projects/status/dsxgkrbfj29xf9ef/branch/master?svg=true
-   :target: https://ci.appveyor.com/project/Eric89GXL/vispy/branch/master
+.. |Appveyor Status| image:: https://ci.appveyor.com/api/projects/status/v09sc8ua4ju2ngyy/branch/master?svg=true
+   :target: https://ci.appveyor.com/project/vispy/vispy/branch/master
 .. |Coverage Status| image:: https://img.shields.io/coveralls/vispy/vispy/master.svg
    :target: https://coveralls.io/r/vispy/vispy?branch=master
 .. |Zenodo Link| image:: https://zenodo.org/badge/5822/vispy/vispy.svg

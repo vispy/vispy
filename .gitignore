@@ -19,4 +19,4 @@ vispy.egg-info
 *.swp
 .ipynb_checkpoints
 .cache/
-
+.pytest_cache/
