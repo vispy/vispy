@@ -459,7 +459,8 @@ class _AggLineVisual(Visual):
             bake = True
 
         if self._parent._changed['color']:
-            self._color = self._parent._interpret_color()
+            color, cmap = self._parent._interpret_color()
+            self._color = color
             bake = True
 
         if self._parent._changed['connect']:
