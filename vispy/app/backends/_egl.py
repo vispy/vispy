@@ -129,7 +129,6 @@ class ApplicationBackend(BaseApplicationBackend):
 # ------------------------------------------------------------------ canvas ---
 
 
-
 class CanvasBackend(BaseCanvasBackend):
 
     """ EGL backend for Canvas abstract class."""
