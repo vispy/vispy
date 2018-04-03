@@ -1,3 +1,5 @@
+import weakref
+
 from ..shaders import Function
 from ...color import Color
 from ...gloo import VertexBuffer
@@ -11,23 +13,16 @@ varying vec3 v_light_vec;
 varying vec3 v_eye_vec;
 varying vec4 v_pos_scene;
 
-varying vec4 v_ambientk;
-varying vec4 v_light_color;
-
 void prepare_shading() {
-    v_ambientk = $ambientk;
-    v_light_color = $light_color;
-
     // TODO: Find a way to get the original position from the main vertex
     //       shader instead of inversing the transformation.
     vec4 pos_scene = $render2scene(gl_Position);
-    v_pos_scene = pos_scene; // Used for flat shading only in the fragment.
+    v_pos_scene = pos_scene; // Used in the fragment for flat shading.
+
     vec4 normal_scene = $visual2scene(vec4($normal, 1.0));
     vec4 origin_scene = $visual2scene(vec4(0.0, 0.0, 0.0, 1.0));
-
     normal_scene /= normal_scene.w;
     origin_scene /= origin_scene.w;
-
     vec3 normal = normalize(normal_scene.xyz - origin_scene.xyz);
     v_normal_vec = normal; //VARYING COPY
 
@@ -55,11 +50,7 @@ varying vec3 v_light_vec;
 varying vec3 v_eye_vec;
 varying vec4 v_pos_scene;
 
-varying vec4 v_ambientk;
-varying vec4 v_light_color;
-
 void shade() {
-    //DIFFUSE
     vec3 normal;
     if ($flat_shading == 1) {
         vec3 u = dFdx(v_pos_scene.xyz);
@@ -68,26 +59,27 @@ void shade() {
     } else {
         normal = v_normal_vec;
     }
-    float diffusek = dot(v_light_vec, normal);
-    // clamp, because 0 < theta < pi/2
-    diffusek  = clamp(diffusek, 0.0, 1.0);
-    vec4 diffuse_color = v_light_color * diffusek;
 
-    //SPECULAR
-    //reflect light wrt normal for the reflected ray, then
-    //find the angle made with the eye
+    vec3 light_vec = v_light_vec;
+
+    // Diffuse light component.
+    float diffusek = dot(light_vec, normal);
+    diffusek  = max(diffusek, 0.0);
+    vec3 diffuse_color = $light_color * $diffuse_color * diffusek;
+
+    // Specular light component.
     float speculark = 0.0;
     if ($shininess > 0) {
-        speculark = dot(reflect(v_light_vec, v_normal_vec), v_eye_vec);
-        speculark = clamp(speculark, 0.0, 1.0);
-        //raise to the material's shininess, multiply with a
-        //small factor for spread
-        speculark = 20.0 * pow(speculark, 1.0 / $shininess);
+        vec3 reflexion = reflect(light_vec, normal);
+        speculark = dot(reflexion, v_eye_vec);
+        speculark = max(speculark, 0.0);
+        speculark = pow(speculark, $shininess);
     }
-    vec4 specular_color = v_light_color * speculark;
+    vec3 specular_color = $light_color * $specular_color * speculark;
+
     if ($shading_enabled == 1) {
-        gl_FragColor *= v_ambientk + diffuse_color;
-        gl_FragColor += specular_color;
+        vec3 color = $ambient_color + diffuse_color + specular_color;
+        gl_FragColor *= vec4(color, 1.0);
     }
 }
 """  # noqa
@@ -96,14 +88,19 @@ void shade() {
 class ShadingFilter(object):
 
     def __init__(self, shading='flat', enabled=True, light_dir=(10, 5, -5),
-                 light_color=(1, 1, 1, 1), ambient_light_color=(.3, .3, .3, 1),
-                 shininess=5e-3):
+                 light_color=(1, 1, 1, 1),
+                 ambient_color=(.3, .3, .3, 1),
+                 diffuse_color=(1, 1, 1, 1),
+                 specular_color=(1, 1, 1, 1),
+                 shininess=100):
         self._attached = False
         self._shading = shading
         self._enabled = True
         self._light_dir = light_dir
         self._light_color = Color(light_color)
-        self._ambient_light_color = Color(ambient_light_color)
+        self._ambient_color = Color(ambient_color)
+        self._diffuse_color = Color(diffuse_color)
+        self._specular_color = Color(specular_color)
         self._shininess = shininess
 
         self.vcode = Function(shading_vertex_template)
@@ -160,13 +157,34 @@ class ShadingFilter(object):
         self._update_data()
 
     @property
-    def ambient_light_color(self):
-        """The ambient light color."""
-        return self._ambient_light_color
+    def diffuse_color(self):
+        """The diffuse light color."""
+        return self._diffuse_color
 
-    @ambient_light_color.setter
-    def ambient_light_color(self, color):
-        self._ambient_light_color = Color(color)
+    @diffuse_color.setter
+    def diffuse_color(self, diffuse_color):
+        self._diffuse_color = Color(diffuse_color)
+        self._update_data()
+
+    @property
+    def specular_color(self):
+        """The specular light color."""
+        return self._specular_color
+
+    @specular_color.setter
+    def specular_color(self, specular_color):
+        self._specular_color = Color(specular_color)
+        self._update_data()
+
+    @property
+    def ambient_color(self):
+        """The ambient color."""
+        return self._ambient_color
+
+    @ambient_color.setter
+    def ambient_color(self, color):
+        self._ambient_color = Color(color)
+        self._update_data()
 
     @property
     def shininess(self):
@@ -182,18 +200,21 @@ class ShadingFilter(object):
         if not self._attached:
             return
         self.vcode['light_dir'] = self._light_dir
-        self.vcode['light_color'] = self._light_color.rgba
-        self.vcode['ambientk'] = self._ambient_light_color.rgba
         self.fcode['shininess'] = self._shininess
+        self.fcode['light_color'] = self._light_color.rgb
+        self.fcode['ambient_color'] = self._ambient_color.rgb
+        self.fcode['diffuse_color'] = self._diffuse_color.rgb
+        self.fcode['specular_color'] = self._specular_color.rgb
         self.fcode['flat_shading'] = 1 if self._shading == 'flat' else 0
         self.fcode['shading_enabled'] = 1 if self._shading is not None else 0
+        indexing = self._visual().indexing
+        normals = self._visual().mesh_data.get_vertex_normals(indexed=indexing)
+        self._normals.set_data(normals, convert=True)
 
     def _attach(self, visual):
         # vertex shader
         vert_post = visual._get_hook('vert', 'post')
         vert_post.add(self.vertex_program)
-        normals = visual.mesh_data.get_vertex_normals()
-        self._normals.set_data(normals, convert=True)
         render2scene = visual.transforms.get_transform('render', 'scene')
         visual2scene = visual.transforms.get_transform('visual', 'scene')
         scene2doc = visual.transforms.get_transform('scene', 'document')
@@ -208,6 +229,7 @@ class ShadingFilter(object):
         frag_post.add(self.fragment_program)
 
         self._attached = True
+        self._visual = weakref.ref(visual)
         self._update_data()
 
     def _detach(self, visual):
