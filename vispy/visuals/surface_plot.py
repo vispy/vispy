@@ -7,6 +7,7 @@ from __future__ import division
 import numpy as np
 
 from .mesh import MeshVisual
+from .filters.mesh import ShadingFilter
 from ..geometry import MeshData
 
 
@@ -45,7 +46,12 @@ class SurfacePlotVisual(MeshVisual):
         self.__vertices = None
         self.__faces = None
         self.__meshdata = MeshData()
-        kwargs.setdefault('shading', 'smooth')
+
+        shading = kwargs.pop('shading', 'smooth')
+        shininess = kwargs.pop('shininess', 10)
+        self._shading_filter = ShadingFilter(shading=shading,
+                                             shininess=shininess)
+
         MeshVisual.__init__(self, **kwargs)
         self.set_data(x, y, z, colors)
 
@@ -133,6 +139,9 @@ class SurfacePlotVisual(MeshVisual):
                 self.__vertices.reshape(self.__vertices.shape[0] *
                                         self.__vertices.shape[1], 3))
             MeshVisual.set_data(self, meshdata=self.__meshdata)
+
+        if not self._shading_filter._attached:
+            self.attach(self._shading_filter)
 
     def generate_faces(self):
         cols = self._z.shape[1]-1

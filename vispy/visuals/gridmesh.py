@@ -1,5 +1,6 @@
 
 from .mesh import MeshVisual
+from .filters.mesh import ShadingFilter
 from ..geometry import create_grid_mesh, MeshData
 
 
@@ -49,8 +50,12 @@ class GridMeshVisual(MeshVisual):
         self.__vertices = None
         self.__meshdata = MeshData()
 
-        MeshVisual.__init__(self, shading=shading, **kwargs)
+        self._shading_filter = ShadingFilter(shading=shading)
+
+        MeshVisual.__init__(self, **kwargs)
         self.set_data(xs, ys, zs, colors)
+
+        self.attach(self._shading_filter)
 
     def set_data(self, xs=None, ys=None, zs=None, colors=None):
         '''Update the mesh data.

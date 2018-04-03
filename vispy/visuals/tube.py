@@ -1,6 +1,7 @@
 from __future__ import division
 
 from .mesh import MeshVisual
+from .filters.mesh import ShadingFilter
 import numpy as np
 from numpy.linalg import norm
 from ..util.transforms import rotate
@@ -110,11 +111,14 @@ class TubeVisual(MeshVisual):
 
         indices = np.array(indices, dtype=np.uint32)
 
+        self._shading_filter = ShadingFilter(shading=shading)
+
         MeshVisual.__init__(self, vertices, indices,
                             vertex_colors=vertex_colors,
                             face_colors=face_colors,
-                            shading=shading,
                             mode=mode)
+
+        self.attach(self._shading_filter)
 
 
 def _frenet_frames(points, closed):
