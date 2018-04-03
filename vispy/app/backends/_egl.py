@@ -135,6 +135,7 @@ COMMON_ATTRIB_LIST = [egl.EGL_RED_SIZE, 8,
                       egl.EGL_COLOR_BUFFER_TYPE, egl.EGL_RGB_BUFFER,
                       egl.EGL_SURFACE_TYPE, egl.EGL_PBUFFER_BIT]
 
+
 class CanvasBackend(BaseCanvasBackend):
 
     """ EGL backend for Canvas abstract class."""
@@ -152,7 +153,8 @@ class CanvasBackend(BaseCanvasBackend):
             attribs = COMMON_ATTRIB_LIST
             api = None
             if 'es' in config['gl_backend']:
-                attribs.extend([egl.EGL_RENDERABLE_TYPE, egl.EGL_OPENGL_ES2_BIT])
+                attribs.extend([egl.EGL_RENDERABLE_TYPE,
+                                egl.EGL_OPENGL_ES2_BIT])
                 api = egl.EGL_OPENGL_ES_API
             else:
                 attribs.extend([egl.EGL_RENDERABLE_TYPE, egl.EGL_OPENGL_BIT])
