@@ -11,6 +11,7 @@ from vispy import app, gloo, visuals
 from vispy.geometry import create_sphere
 from vispy.visuals.transforms import (STTransform, MatrixTransform,
                                       ChainTransform)
+from vispy.visuals.filters import ShadingFilter
 
 
 class Canvas(app.Canvas):
@@ -53,20 +54,23 @@ class Canvas(app.Canvas):
         vcolor[:, 1] = rng.randn(nv)
         vcolor[:, 2] = np.linspace(0, 1, nv)
         self.meshes.append(visuals.MeshVisual(verts, faces, vcolor))
-        self.meshes.append(visuals.MeshVisual(verts, faces, vcolor,
-                                              shading='flat'))
-        self.meshes.append(visuals.MeshVisual(verts, faces, vcolor,
-                                              shading='smooth'))
+        self.meshes.append(visuals.MeshVisual(verts, faces, vcolor))
+        flat_shading = ShadingFilter(shading='flat', shininess=100)
+        self.meshes[-1].attach(flat_shading)
+        self.meshes.append(visuals.MeshVisual(verts, faces, vcolor))
+        smooth_shading = ShadingFilter(shading='smooth', shininess=100)
+        self.meshes[-1].attach(smooth_shading)
 
         # Mesh with color indexed into a colormap
         verts = mdata.get_vertices(None)
         faces = mdata.get_faces()
         values = rng.randn(len(verts))
         mesh = visuals.MeshVisual(vertices=verts, faces=faces,
-                                  vertex_values=values, shading='smooth')
+                                  vertex_values=values)
         mesh.clim = [-1, 1]
         mesh.cmap = 'viridis'
-        mesh.shininess = 0.01
+        smooth_shading = ShadingFilter(shading='smooth', shininess=100)
+        mesh.attach(smooth_shading)
         self.meshes.append(mesh)
 
         # Lay out meshes in a grid
