@@ -13,6 +13,7 @@ from time import sleep
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
                     BaseTimerBackend)
 from ...util.ptime import time
+from ... import config
 
 # -------------------------------------------------------------------- init ---
 
@@ -36,9 +37,9 @@ try:
 except Exception as exp:
     available, testable, why_not, which = False, False, str(exp), None
 else:
-    # XXX restore "testable" and "available" once it works properly, and
+    # XXX restore "testable" once it works properly, and
     # remove from ignore list in .coveragerc
-    available, testable, why_not = False, False, 'Not ready for testing'
+    available, testable, why_not = True, False, ''
     which = 'EGL ' + str(version)
 
 
@@ -118,6 +119,13 @@ class ApplicationBackend(BaseApplicationBackend):
 
 # ------------------------------------------------------------------ canvas ---
 
+COMMON_ATTRIB_LIST = [egl.EGL_RED_SIZE, 8,
+                      egl.EGL_BLUE_SIZE, 8,
+                      egl.EGL_GREEN_SIZE, 8,
+                      egl.EGL_ALPHA_SIZE, 8,
+                      egl.EGL_COLOR_BUFFER_TYPE, egl.EGL_RGB_BUFFER,
+                      egl.EGL_SURFACE_TYPE, egl.EGL_PBUFFER_BIT]
+
 class CanvasBackend(BaseCanvasBackend):
 
     """ EGL backend for Canvas abstract class."""
@@ -132,7 +140,17 @@ class CanvasBackend(BaseCanvasBackend):
         p.context.shared.add_ref('egl', self)
         if p.context.shared.ref is self:
             # Store context information
-            self._native_config = egl.eglChooseConfig(_EGL_DISPLAY)[0]
+            attribs = COMMON_ATTRIB_LIST
+            api = None
+            if 'es' in config['gl_backend']:
+                attribs.extend([egl.EGL_RENDERABLE_TYPE, egl.EGL_OPENGL_ES2_BIT])
+                api = egl.EGL_OPENGL_ES_API
+            else:
+                attribs.extend([egl.EGL_RENDERABLE_TYPE, egl.EGL_OPENGL_BIT])
+                api = egl.EGL_OPENGL_API
+
+            self._native_config = egl.eglChooseConfig(_EGL_DISPLAY, attribs)[0]
+            egl.eglBindAPI(api)
             self._native_context = egl.eglCreateContext(_EGL_DISPLAY,
                                                         self._native_config,
                                                         None)
@@ -178,7 +196,6 @@ class CanvasBackend(BaseCanvasBackend):
         if self._surface is None:
             return
         # Make this the current context
-        self._vispy_canvas.set_current()  # Mark canvs as current
         egl.eglMakeCurrent(_EGL_DISPLAY, self._surface, self._surface,
                            self._native_context)
 

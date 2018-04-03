@@ -218,6 +218,7 @@ _lib.eglCreateWindowSurface.argtypes = (c_void_p, c_void_p,
 _lib.eglCreatePbufferSurface.argtypes = (c_void_p, c_void_p, _POINTER(_c_int))
 _lib.eglCreateContext.argtypes = c_void_p, c_void_p, c_void_p, _POINTER(_c_int)
 _lib.eglMakeCurrent.argtypes = (c_void_p,) * 4
+_lib.eglBindAPI.argtypes = _c_int,
 _lib.eglSwapBuffers.argtypes = (c_void_p,) * 2
 _lib.eglDestroySurface.argtypes = (c_void_p,) * 2
 _lib.eglQueryString.argtypes = (c_void_p, _c_int)
@@ -355,6 +356,15 @@ def eglMakeCurrent(display, draw, read, context):
     res = _lib.eglMakeCurrent(display, draw, read, context)
     if res == EGL_FALSE:
         raise RuntimeError('Could not make the context current.')
+
+
+def eglBindAPI(api):
+    """ Set the current rendering API (OpenGL, OpenGL ES or OpenVG)
+    """
+    res = _lib.eglBindAPI(api)
+    if res == EGL_FALSE:
+        raise RuntimeError('Could not bind API %d' % api)
+    return res
 
 
 def eglSwapBuffers(display, surface):
