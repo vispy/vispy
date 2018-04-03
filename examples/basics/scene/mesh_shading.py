@@ -8,22 +8,24 @@ from vispy.visuals.filters import ShadingFilter
 
 parser = argparse.ArgumentParser()
 parser.add_argument('mesh')
+parser.add_argument('--shininess', default=None)
 args = parser.parse_args()
 
 vertices, faces, normals, texcoords = read_mesh(args.mesh)
 
-canvas = scene.SceneCanvas(keys='interactive', bgcolor='white',
-                           size=(800, 600))
+canvas = scene.SceneCanvas(keys='interactive', bgcolor='white')
 view = canvas.central_widget.add_view()
 
 view.camera = 'arcball'
+view.camera.depth_value = 1e3
 
-mesh = Mesh(vertices, faces)
+mesh = Mesh(vertices, faces, color=(.5, .7, .5, 1))
 mesh.set_gl_state('translucent', depth_test=True, cull_face=True)
 view.add(mesh)
 
 shading_filter = ShadingFilter()
-shading_filter.shininess = 1e-3
+if args.shininess is not None:
+    shading_filter.shininess = args.shininess
 mesh.attach(shading_filter)
 
 shading_filter.light_dir = (0, -1, 0)
