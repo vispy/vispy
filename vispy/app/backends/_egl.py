@@ -128,12 +128,6 @@ class ApplicationBackend(BaseApplicationBackend):
 
 # ------------------------------------------------------------------ canvas ---
 
-COMMON_ATTRIB_LIST = [egl.EGL_RED_SIZE, 8,
-                      egl.EGL_BLUE_SIZE, 8,
-                      egl.EGL_GREEN_SIZE, 8,
-                      egl.EGL_ALPHA_SIZE, 8,
-                      egl.EGL_COLOR_BUFFER_TYPE, egl.EGL_RGB_BUFFER,
-                      egl.EGL_SURFACE_TYPE, egl.EGL_PBUFFER_BIT]
 
 
 class CanvasBackend(BaseCanvasBackend):
@@ -150,7 +144,12 @@ class CanvasBackend(BaseCanvasBackend):
         p.context.shared.add_ref('egl', self)
         if p.context.shared.ref is self:
             # Store context information
-            attribs = COMMON_ATTRIB_LIST
+            attribs = [egl.EGL_RED_SIZE, 8,
+                       egl.EGL_BLUE_SIZE, 8,
+                       egl.EGL_GREEN_SIZE, 8,
+                       egl.EGL_ALPHA_SIZE, 8,
+                       egl.EGL_COLOR_BUFFER_TYPE, egl.EGL_RGB_BUFFER,
+                       egl.EGL_SURFACE_TYPE, egl.EGL_PBUFFER_BIT]
             api = None
             if 'es' in config['gl_backend']:
                 attribs.extend([egl.EGL_RENDERABLE_TYPE,
