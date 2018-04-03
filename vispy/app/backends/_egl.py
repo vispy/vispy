@@ -18,16 +18,25 @@ from ... import config
 # -------------------------------------------------------------------- init ---
 
 try:
-    # Inspired by http://www.mesa3d.org/egl.html
-    # This is likely necessary on Linux since proprietary drivers
-    # (e.g., NVIDIA) are unlikely to provide EGL support for now.
+    import os
     # XXX TODO: Add use_gl('es2') and somehow incorporate here.
     # Also would be good to have us_gl('es3'), since libGLESv2.so on linux
     # seems to support both.
-    from os import environ
-    environ['EGL_SOFTWARE'] = 'true'
+
+    # If running remote X11 (for example via ssh), eglInitialize() below will
+    # fail (with NVIDIA EGL drivers) if the DISPLAY environment variable is
+    # set. Temporarily unset the DISPLAY environment variable while calling
+    # eglGetDisplay() in order to work around this. This should be OK since
+    # only headless rendering is currently supported by this backend anyway.
+    x11_dpy = os.getenv('DISPLAY')
+    if x11_dpy is not None:
+        os.unsetenv('DISPLAY')
     from ...ext import egl
     _EGL_DISPLAY = egl.eglGetDisplay()
+
+    if x11_dpy is not None:
+        os.environ['DISPLAY'] = x11_dpy
+
     egl.eglInitialize(_EGL_DISPLAY)
     version = [egl.eglQueryString(_EGL_DISPLAY, x) for x in
                [egl.EGL_VERSION, egl.EGL_VENDOR, egl.EGL_CLIENT_APIS]]
