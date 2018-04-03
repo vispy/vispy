@@ -1,13 +1,14 @@
 import argparse
 
 from vispy import app, scene
-from vispy.io import read_mesh
+from vispy.io import read_mesh, load_data_file
 from vispy.scene.visuals import Mesh
 from vispy.visuals.filters import ShadingFilter
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('mesh')
+default_mesh = load_data_file('orig/triceratops.obj.gz')
+parser.add_argument('--mesh', default=default_mesh)
 parser.add_argument('--shininess', default=None)
 args = parser.parse_args()
 
