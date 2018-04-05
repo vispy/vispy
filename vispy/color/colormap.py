@@ -163,6 +163,14 @@ def _glsl_mix(controls=None, colors=None, texture_map_data=None):
     return "%s\nvec4 colormap(float t) {\n%s\n}" % (s2, s)
 
 
+# find the first 'controls' value that is smaller than 't'
+def find_color_index(controls=None, t=None, ncolors=None):
+    bn = np.nonzero(controls >= t)
+    j = bn[0][0]-1
+    j = np.clip(j, 0, ncolors-1)
+    return j
+
+
 def _glsl_step(controls=None, colors=None, texture_map_data=None):
     assert (controls[0], controls[-1]) == (0., 1.)
     ncolors = len(controls) - 1
@@ -171,14 +179,12 @@ def _glsl_step(controls=None, colors=None, texture_map_data=None):
 
     LUT = texture_map_data
     LUT_len = texture_map_data.shape[0]
+    LUT_tex_idx = np.linspace(0.0, 1.0, LUT_len)
 
-    # Perform nearest neighbor search for each RGBA color component
-    c_rgba = ColorArray(colors)._rgba
-    x = np.linspace(0.0, 1.0, LUT_len, endpoint=False)
-    LUT[:, 0, 0] = c_rgba[(x*ncolors).astype(int).tolist(), 0]
-    LUT[:, 0, 1] = c_rgba[(x*ncolors).astype(int).tolist(), 1]
-    LUT[:, 0, 2] = c_rgba[(x*ncolors).astype(int).tolist(), 2]
-    LUT[:, 0, 3] = c_rgba[(x*ncolors).astype(int).tolist(), 3]
+    for i in range(LUT_len):
+        t = LUT_tex_idx[i]
+        j = find_color_index(controls, t, ncolors)
+        LUT[i, 0, :] = ColorArray(colors[j])._rgba
 
     s2 = "uniform sampler2D texture2D_LUT;"
     s = "{\n return texture2D(texture2D_LUT, \
