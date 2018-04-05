@@ -118,14 +118,6 @@ def step(colors, x, controls=None):
     return colors[x_step, ...]
 
 
-# find the first 'controls' value that is smaller than 't'
-def find_color_index(controls=None, t=None, ncolors=None):
-    bn = np.nonzero(controls >= t)
-    j = bn[0][0]-1
-    j = np.clip(j, 0, ncolors-1)
-    return j
-
-
 # GLSL interpolation functions.
 def _glsl_mix(controls=None, colors=None, texture_map_data=None):
     """Generate a GLSL template function from a given interpolation patterns
@@ -155,14 +147,14 @@ def _glsl_mix(controls=None, colors=None, texture_map_data=None):
 
     LUT = texture_map_data
     LUT_len = texture_map_data.shape[0]
-    LUT_tex_idx = np.linspace(0.0, 1.0, LUT_len)
 
-    for i in range(LUT_len):
-        t = LUT_tex_idx[i]
-        j = find_color_index(controls, t, ncolors)
-        adj_t = (t - controls[j]) / (controls[j+1] - controls[j])
-        LUT[i, 0, :] = _mix_simple(Color(colors[j]).rgba,
-                                   Color(colors[j+1]).rgba, adj_t)
+    # Perform linear interpolation for each RGBA color component separately
+    c_rgba = ColorArray(colors)._rgba
+    x = np.linspace(0.0, 1.0, LUT_len)
+    LUT[:, 0, 0] = np.interp(x, controls, c_rgba[:, 0])
+    LUT[:, 0, 1] = np.interp(x, controls, c_rgba[:, 1])
+    LUT[:, 0, 2] = np.interp(x, controls, c_rgba[:, 2])
+    LUT[:, 0, 3] = np.interp(x, controls, c_rgba[:, 3])
 
     s2 = "uniform sampler2D texture2D_LUT;"
     s = "{\n return texture2D(texture2D_LUT, \
