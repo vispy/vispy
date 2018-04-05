@@ -163,14 +163,6 @@ def _glsl_mix(controls=None, colors=None, texture_map_data=None):
     return "%s\nvec4 colormap(float t) {\n%s\n}" % (s2, s)
 
 
-# find the first 'controls' value that is smaller than 't'
-def find_color_index(controls=None, t=None, ncolors=None):
-    bn = np.nonzero(controls >= t)
-    j = bn[0][0]-1
-    j = np.clip(j, 0, ncolors-1)
-    return j
-
-
 def _glsl_step(controls=None, colors=None, texture_map_data=None):
     assert (controls[0], controls[-1]) == (0., 1.)
     ncolors = len(controls) - 1
@@ -181,10 +173,16 @@ def _glsl_step(controls=None, colors=None, texture_map_data=None):
     LUT_len = texture_map_data.shape[0]
     LUT_tex_idx = np.linspace(0.0, 1.0, LUT_len)
 
-    for i in range(LUT_len):
-        t = LUT_tex_idx[i]
-        j = find_color_index(controls, t, ncolors)
-        LUT[i, 0, :] = ColorArray(colors[j])._rgba
+# Replicate indices to colormap texture and color control points
+# So that the resulting matrices have size of (LUT_len,len(controls))
+    t2 = np.repeat(LUT_tex_idx[:, np.newaxis], len(controls), 1)
+    controls2 = np.repeat(controls[:, np.newaxis], LUT_len, 1).transpose()
+
+# perform element wise comparison to find a control point for all LUT colors
+    bn = np.sum(controls2 >= t2, axis=1)
+    j = np.clip(bn-1, 0, ncolors-1).astype(int).tolist()
+
+    LUT[:, 0, :] = [ColorArray(colors[i])._rgba for i in j]
 
     s2 = "uniform sampler2D texture2D_LUT;"
     s = "{\n return texture2D(texture2D_LUT, \
