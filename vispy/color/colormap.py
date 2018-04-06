@@ -7,7 +7,7 @@ import inspect
 
 import numpy as np
 
-from .color_array import ColorArray, Color
+from .color_array import ColorArray
 from ..ext.six import string_types
 from ..ext.cubehelix import cubehelix
 from ..ext.husl import husl_to_rgb
