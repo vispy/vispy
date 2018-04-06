@@ -148,7 +148,7 @@ def _glsl_mix(controls=None, colors=None, texture_map_data=None):
     LUT = texture_map_data
     LUT_len = texture_map_data.shape[0]
 
-    # Perform linear interpolation for each RGBA color component
+    # Perform linear interpolation for each RGBA color component.
     c_rgba = ColorArray(colors)._rgba
     x = np.linspace(0.0, 1.0, LUT_len)
     LUT[:, 0, 0] = np.interp(x, controls, c_rgba[:, 0])
@@ -173,16 +173,18 @@ def _glsl_step(controls=None, colors=None, texture_map_data=None):
     LUT_len = texture_map_data.shape[0]
     LUT_tex_idx = np.linspace(0.0, 1.0, LUT_len)
 
-# Replicate indices to colormap texture and color control points
-# So that the resulting matrices have size of (LUT_len,len(controls))
+# Replicate indices to colormap texture and color control points.
+# The resulting matrices have size of (LUT_len,len(controls)).
     t2 = np.repeat(LUT_tex_idx[:, np.newaxis], len(controls), 1)
     controls2 = np.repeat(controls[:, np.newaxis], LUT_len, 1).transpose()
 
-# perform element wise comparison to find a control point for all LUT colors
+# Perform element wise comparison to find a control point for all LUT colors.
     bn = np.sum(controls2 >= t2, axis=1)
     j = np.clip(bn-1, 0, ncolors-1).astype(int).tolist()
 
-    LUT[:, 0, :] = [ColorArray(colors[i])._rgba for i in j]
+# Copying color data from ColorArray to array-like makes LUT assignment faster.
+    colors_rgba = ColorArray(colors[:])._rgba
+    LUT[:, 0, :] = [colors_rgba[i] for i in j]
 
     s2 = "uniform sampler2D texture2D_LUT;"
     s = "{\n return texture2D(texture2D_LUT, \
