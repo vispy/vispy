@@ -210,6 +210,9 @@ def _text_to_vbo(text, font, anchor_x, anchor_y, lowres_size):
 class TextVisual(Visual):
     """Visual that displays text
 
+    Note: SDF GPU is not currently supported in WebGL without additional
+          extensions (see comments in fragment shader below).
+
     Parameters
     ----------
     text : str | list of str
@@ -260,8 +263,8 @@ class TextVisual(Visual):
 
     FRAGMENT_SHADER = """
         // Extensions for WebGL
-        #extension GL_OES_standard_derivatives : enable
-        #extension GL_OES_element_index_uint : enable
+        // #extension GL_OES_standard_derivatives : enable
+        // #extension GL_OES_element_index_uint : enable
         #include "misc/spatial-filters.frag"
         // Adapted from glumpy with permission
         const float M_SQRT1_2 = 0.707106781186547524400844362104849039;

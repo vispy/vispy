@@ -20,9 +20,9 @@ uniform float u_antialias;
 uniform float u_px_scale;
 uniform float u_scale;
 
-attribute vec3  a_position;
-attribute vec4  a_fg_color;
-attribute vec4  a_bg_color;
+attribute vec3 a_position;
+attribute vec4 a_fg_color;
+attribute vec4 a_bg_color;
 attribute float a_edgewidth;
 attribute float a_size;
 
@@ -44,7 +44,7 @@ void main (void) {
 """
 
 
-frag = """
+frag = """#version 120
 varying vec4 v_fg_color;
 varying vec4 v_bg_color;
 varying float v_edgewidth;
