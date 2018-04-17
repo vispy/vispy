@@ -62,7 +62,13 @@ class ShaderObject(object):
         """ The name of this shader object.
         """
         return None
-        
+
+    @property
+    def version_pragma(self):
+        """Return version number and extra qualifiers from pragma if present.
+        """
+        return None
+
     def definition(self, obj_names, version, shader):
         """ Return the GLSL definition for this object. Use *obj_names* to
         determine the names of dependencies, and *version* (number, qualifier)
