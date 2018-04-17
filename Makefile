@@ -74,6 +74,9 @@ pyqt4: clean-test
 pyside: clean-test
 	python make test pyside
 
+pyside2: clean-test
+	python make test pyside2
+
 pyglet: clean-test
 	python make test pyglet
 

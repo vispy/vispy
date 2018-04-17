@@ -136,8 +136,8 @@ class AggPathCollection(Collection):
            Path antialias area
         """
 
-        itemsize = itemsize or len(P)
-        itemcount = len(P) / itemsize
+        itemsize = int(itemsize or len(P))
+        itemcount = len(P) // itemsize
 
         # Computes the adjacency information
         n, p = len(P), P.shape[-1]
@@ -155,7 +155,7 @@ class AggPathCollection(Collection):
                 V[name] = kwargs.get(name, self._defaults[name])
 
         # Extract relevant segments only
-        V = (V.reshape(n / itemsize, itemsize)[:, :-1])
+        V = (V.reshape(n // itemsize, itemsize)[:, :-1])
         if closed:
             V['p0'][:, 0] = V['p2'][:, -1]
             V['p3'][:, -1] = V['p1'][:, 0]
@@ -173,15 +173,15 @@ class AggPathCollection(Collection):
         n = itemsize
         if closed:
             # uint16 for WebGL
-            I = np.resize(
+            idxs = np.resize(
                 np.array([0, 1, 2, 1, 2, 3], dtype=np.uint32), n * 2 * 3)
-            I += np.repeat(4 * np.arange(n, dtype=np.uint32), 6)
-            I[-6:] = 4 * n - 6, 4 * n - 5, 0, 4 * n - 5, 0, 1
+            idxs += np.repeat(4 * np.arange(n, dtype=np.uint32), 6)
+            idxs[-6:] = 4 * n - 6, 4 * n - 5, 0, 4 * n - 5, 0, 1
         else:
-            I = np.resize(
+            idxs = np.resize(
                 np.array([0, 1, 2, 1, 2, 3], dtype=np.uint32), (n - 1) * 2 * 3)
-            I += np.repeat(4 * np.arange(n - 1, dtype=np.uint32), 6)
-        I = I.ravel()
+            idxs += np.repeat(4 * np.arange(n - 1, dtype=np.uint32), 6)
+        idxs = idxs.ravel()
 
         # Uniforms
         if self.utype:
@@ -193,7 +193,7 @@ class AggPathCollection(Collection):
             U = None
 
         Collection.append(self, vertices=V, uniforms=U,
-                          indices=I, itemsize=itemsize * 4 - 4)
+                          indices=idxs, itemsize=itemsize * 4 - 4)
 
     def draw(self, mode="triangles"):
         """ Draw collection """

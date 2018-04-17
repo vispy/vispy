@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 """ Fast and failsafe GL console """
@@ -342,9 +342,9 @@ class ConsoleVisual(Visual):
         self._bytes_012[idx] = 0
         self._bytes_345[idx] = 0
         # Crop text if necessary
-        I = np.array([ord(c) - 32 for c in line[:self._n_cols]])
-        I = np.clip(I, 0, len(__font_6x8__)-1)
-        if len(I) > 0:
-            b = __font_6x8__[I]
-            self._bytes_012[idx, :len(I)] = b[:, :3]
-            self._bytes_345[idx, :len(I)] = b[:, 3:]
+        ord_chars = np.array([ord(c) - 32 for c in line[:self._n_cols]])
+        ord_chars = np.clip(ord_chars, 0, len(__font_6x8__)-1)
+        if len(ord_chars) > 0:
+            b = __font_6x8__[ord_chars]
+            self._bytes_012[idx, :len(ord_chars)] = b[:, :3]
+            self._bytes_345[idx, :len(ord_chars)] = b[:, 3:]

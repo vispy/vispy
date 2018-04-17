@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-# vispy: gallery 30, testskip
+# vispy: gallery 30
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
@@ -25,22 +25,22 @@ def generate_terrain(r_min, r_max, c_min, c_max, disp):
     """Recursively generates terrain using diamond-square algorithm
     and stores the vertices in points
     """
-    a = points[r_min][c_min][2]
-    b = points[r_min][c_max][2]
-    c = points[r_max][c_min][2]
-    d = points[r_max][c_max][2]
+    a = points[r_min, c_min, 2]
+    b = points[r_min, c_max, 2]
+    c = points[r_max, c_min, 2]
+    d = points[r_max, c_max, 2]
 
-    r_mid = (r_min + r_max)/2
-    c_mid = (c_min + c_max)/2
+    r_mid = (r_min + r_max) // 2
+    c_mid = (c_min + c_max) // 2
 
     e = (a+b+c+d)/4 + np.random.uniform(0, disp)
 
-    points[r_mid][c_mid][2] = e
+    points[r_mid, c_mid, 2] = e
 
-    points[r_min][c_mid][2] = (a + b + e)/3 + np.random.uniform(0, disp)
-    points[r_max][c_mid][2] = (c + d + e)/3 + np.random.uniform(0, disp)
-    points[r_mid][c_min][2] = (a + c + e)/3 + np.random.uniform(0, disp)
-    points[r_mid][c_max][2] = (b + d + e)/3 + np.random.uniform(0, disp)
+    points[r_min, c_mid, 2] = (a + b + e)/3 + np.random.uniform(0, disp)
+    points[r_max, c_mid, 2] = (c + d + e)/3 + np.random.uniform(0, disp)
+    points[r_mid, c_min, 2] = (a + c + e)/3 + np.random.uniform(0, disp)
+    points[r_mid, c_max, 2] = (b + d + e)/3 + np.random.uniform(0, disp)
 
     new_disp = disp * (2 ** (-0.5))
 

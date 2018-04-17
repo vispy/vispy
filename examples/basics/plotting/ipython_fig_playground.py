@@ -1,6 +1,6 @@
 #!/usr/bin/env ipython -i ipython_fig_playground.py
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 """
 Bare bones plotting region that can be used with the python

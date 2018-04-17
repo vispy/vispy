@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division
@@ -513,7 +513,7 @@ class SceneCanvas(app.Canvas, Frozen):
         self._vp_stack.append(vp)
         try:
             self.context.set_viewport(*vp)
-        except:
+        except Exception:
             self._vp_stack.pop()
             raise
         

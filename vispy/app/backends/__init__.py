@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """ vispy.app.backends
@@ -16,6 +16,7 @@ CORE_BACKENDS = [
     ('PyQt4', '_pyqt4', 'PyQt4'),
     ('PyQt5', '_pyqt5', 'PyQt5'),
     ('PySide', '_pyside', 'PySide'),
+    ('PySide2', '_pyside2', 'PySide2'),
     ('Pyglet', '_pyglet', 'pyglet'),
     ('Glfw', '_glfw', 'vispy.ext.glfw'),
     ('SDL2', '_sdl2', 'sdl2'),
@@ -46,5 +47,5 @@ BACKENDMAP = dict([(be[0].lower(), be) for be in BACKENDS])
 # List of attempted backends. For logging.
 TRIED_BACKENDS = []
 
-# Flag for _pyside, _pyqt4 and _qt modules to communicate.
+# Flag for _pyside, _pyside2 _pyqt4 and _qt modules to communicate.
 qt_lib = None

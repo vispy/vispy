@@ -1,15 +1,28 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2014, 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 try:
-    from IPython.html.widgets import DOMWidget
-    from IPython.utils.traitlets import Unicode, Int, Bool
+    from ipywidgets.widgets import DOMWidget, register
+    from traitlets import Unicode, Int, Bool
 except Exception as exp:
-    # Init dummy objects needed to import this module withour errors.
+    # Init dummy objects needed to import this module without errors.
     # These are all overwritten with imports from IPython (on success)
     DOMWidget = object
-    Unicode = Int = Float = Bool = lambda *args, **kwargs: None
+
+    def _noop(x):
+        return x
+    
+    register = _noop
+
+    class _MockTraitlet(object):
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def tag(self, *args, **kwargs):
+            pass
+
+    Unicode = Int = Float = Bool = _MockTraitlet
     available, testable, why_not, which = False, False, str(exp), None
 else:
     available, testable, why_not, which = True, False, None, None
@@ -31,16 +44,18 @@ def _stop_timers(canvas):
             attr_obj.stop()
 
 
+@register
 class VispyWidget(DOMWidget):
-    _view_name = Unicode("VispyView", sync=True)
-    _view_module = Unicode('/nbextensions/vispy/webgl-backend.js', sync=True)
+    _view_name = Unicode("VispyView").tag(sync=True)
+    _view_module = Unicode('vispy').tag(sync=True)
+    _view_module_version = Unicode('0.1.0').tag(sync=True)
 
     #height/width of the widget is managed by IPython.
     #it's a string and can be anything valid in CSS.
     #here we only manage the size of the viewport.
-    width = Int(sync=True)
-    height = Int(sync=True)
-    resizable = Bool(value=True, sync=True)
+    width = Int().tag(sync=True)
+    height = Int().tag(sync=True)
+    resizable = Bool(value=True).tag(sync=True)
 
     def __init__(self, **kwargs):
         super(VispyWidget, self).__init__(**kwargs)
@@ -57,35 +72,27 @@ class VispyWidget(DOMWidget):
         self.gen_event = self.canvas_backend._gen_event
         #setup the backend widget then.
 
-    # In IPython < 4, these callbacks are given two arguments; in
-    # IPython/jupyter 4, they take 3. events_received is variadic to
-    # accommodate both cases.
-    def events_received(self, _, msg, *args):
-        if msg['msg_type'] == 'init':
+    def events_received(self, widget, content, buffers):
+        if content['msg_type'] == 'init':
             self.canvas_backend._reinit_widget()
-        elif msg['msg_type'] == 'events':
-            events = msg['contents']
+        elif content['msg_type'] == 'events':
+            events = content['contents']
             for ev in events:
                 self.gen_event(ev)
-        elif msg['msg_type'] == 'status':
-            if msg['contents'] == 'removed':
+        elif content['msg_type'] == 'status':
+            if content['contents'] == 'removed':
                 # Stop all timers associated to the widget.
                 _stop_timers(self.canvas_backend._vispy_canvas)
 
     def send_glir_commands(self, commands):
-        # TODO: check whether binary websocket is available (ipython >= 3)
-        # Until IPython 3.0 is released, use base64.
-        array_serialization = 'base64'
-        # array_serialization = 'binary'
+        # older versions of ipython (<3.0) use base64
+        # array_serialization = 'base64'
+        array_serialization = 'binary'
+        msg = create_glir_message(commands, array_serialization)
+        msg['array_serialization'] = array_serialization
         if array_serialization == 'base64':
-            msg = create_glir_message(commands, 'base64')
-            msg['array_serialization'] = 'base64'
             self.send(msg)
         elif array_serialization == 'binary':
-            msg = create_glir_message(commands, 'binary')
-            msg['array_serialization'] = 'binary'
             # Remove the buffers from the JSON message: they will be sent
             # independently via binary WebSocket.
-            buffers = msg.pop('buffers')
-            self.comm.send({"method": "custom", "content": msg},
-                           buffers=buffers)
+            self.send(msg, buffers=msg.pop('buffers', None))

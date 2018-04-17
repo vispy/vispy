@@ -167,7 +167,25 @@ def test_framebuffer():
     assert F.shape == R.shape 
     assert T.format == 'rgb'
     assert R.format == 'depth'
-    
+
+    # Also with Texture for depth
+    T1 = gloo.Texture2D((20, 30, 3))
+    T2 = gloo.Texture2D((20, 30, 1))
+    assert T1.format == 'rgb'
+    assert T2.format == 'luminance'
+    F = FrameBuffer(T1, T2)
+    assert F.shape == T1.shape[:2]
+    assert F.shape == T2.shape[:2]
+    assert T1.format == 'rgb'
+    assert T2.format == 'luminance'
+    # Resize
+    F.resize((10, 10))
+    assert F.shape == (10, 10)
+    assert T1.shape == (10, 10, 3)
+    assert T2.shape == (10, 10, 1)
+    assert T1.format == 'rgb'
+    assert T2.format == 'luminance'
+
     # Wrong shape in resize
     assert_raises(ValueError, F. resize, (9, 9, 1))
     assert_raises(ValueError, F. resize, (9,))

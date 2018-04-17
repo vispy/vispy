@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # vispy: gallery 10
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 """
@@ -19,11 +19,11 @@ def func(x, y):
 x = np.linspace(-3.0, 3.0, 512).astype(np.float32)
 y = np.linspace(-3.0, 3.0, 512).astype(np.float32)
 X, Y = np.meshgrid(x, y)
-I = func(X, Y)
+idxs = func(X, Y)
 
 # Image normalization
-vmin, vmax = I.min(), I.max()
-I = (I-vmin)/(vmax-vmin)
+vmin, vmax = idxs.min(), idxs.max()
+idxs = (idxs - vmin) / (vmax - vmin)
 
 
 # Colormaps
@@ -108,7 +108,7 @@ class Canvas(app.Canvas):
         self.image['colormaps'].interpolation = 'linear'
         self.image['colormaps_shape'] = colormaps.shape[1], colormaps.shape[0]
 
-        self.image['image'] = I.astype('float32')
+        self.image['image'] = idxs.astype('float32')
         self.image['image'].interpolation = 'linear'
 
         set_clear_color('black')

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
@@ -223,7 +223,7 @@ class FrameBuffer(GLObject):
                 continue
             shape_ = shape
             if isinstance(buf, Texture2D):
-                shape_ = shape + (self.color_buffer.shape[-1], )
+                shape_ = shape + (buf._inv_formats[buf.format], )
             buf.resize(shape_, buf.format)
     
     def read(self, mode='color', alpha=True):

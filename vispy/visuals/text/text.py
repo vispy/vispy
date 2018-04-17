@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
@@ -259,6 +259,9 @@ class TextVisual(Visual):
         """
 
     FRAGMENT_SHADER = """
+        // Extensions for WebGL
+        #extension GL_OES_standard_derivatives : enable
+        #extension GL_OES_element_index_uint : enable
         #include "misc/spatial-filters.frag"
         // Adapted from glumpy with permission
         const float M_SQRT1_2 = 0.707106781186547524400844362104849039;

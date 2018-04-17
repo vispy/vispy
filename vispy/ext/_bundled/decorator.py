@@ -1,6 +1,6 @@
-##########################     LICENCE     ###############################
+# #########################     LICENSE     ############################ #
 
-# Copyright (c) 2005-2012, Michele Simionato
+# Copyright (c) 2005-2017, Michele Simionato
 # All rights reserved.
 
 # Redistribution and use in source and binary forms, with or without
@@ -33,33 +33,52 @@ for the documentation.
 """
 from __future__ import print_function
 
-__version__ = '3.4.0'
+import re
+import sys
+import inspect
+import operator
+import itertools
+import collections
 
-__all__ = ["decorator", "FunctionMaker", "contextmanager"]
+__version__ = '4.1.2'
 
-
-import sys, re, inspect
 if sys.version >= '3':
     from inspect import getfullargspec
+
     def get_init(cls):
         return cls.__init__
 else:
-    class getfullargspec(object):
+    FullArgSpec = collections.namedtuple(
+        'FullArgSpec', 'args varargs varkw defaults '
+        'kwonlyargs kwonlydefaults')
+
+    def getfullargspec(f):
         "A quick and dirty replacement for getfullargspec for Python 2.X"
-        def __init__(self, f):
-            self.args, self.varargs, self.varkw, self.defaults = \
-                inspect.getargspec(f)
-            self.kwonlyargs = []
-            self.kwonlydefaults = None
-        def __iter__(self):
-            yield self.args
-            yield self.varargs
-            yield self.varkw
-            yield self.defaults
+        return FullArgSpec._make(inspect.getargspec(f) + ([], None))
+
     def get_init(cls):
         return cls.__init__.__func__
 
-DEF = re.compile('\s*def\s*([_\w][_\w\d]*)\s*\(')
+try:
+    iscoroutinefunction = inspect.iscoroutinefunction
+except AttributeError:
+    # let's assume there are no coroutine functions in old Python
+    def iscoroutinefunction(f):
+        return False
+
+# getargspec has been deprecated in Python 3.5
+ArgSpec = collections.namedtuple(
+    'ArgSpec', 'args varargs varkw defaults')
+
+
+def getargspec(f):
+    """A replacement for inspect.getargspec"""
+    spec = getfullargspec(f)
+    return ArgSpec(spec.args, spec.varargs, spec.varkw, spec.defaults)
+
+
+DEF = re.compile(r'\s*def\s*([_\w][_\w\d]*)\s*\(')
+
 
 # basic functionality
 class FunctionMaker(object):
@@ -68,13 +87,20 @@ class FunctionMaker(object):
     It has attributes name, doc, module, signature, defaults, dict and
     methods update and make.
     """
+
+    # Atomic get-and-increment provided by the GIL
+    _compile_count = itertools.count()
+
+    # make pylint happy
+    args = varargs = varkw = defaults = kwonlyargs = kwonlydefaults = ()
+
     def __init__(self, func=None, name=None, signature=None,
                  defaults=None, doc=None, module=None, funcdict=None):
         self.shortsignature = signature
         if func:
             # func can be a class or a callable, but not an instance method
             self.name = func.__name__
-            if self.name == '<lambda>': # small hack for lambda functions
+            if self.name == '<lambda>':  # small hack for lambda functions
                 self.name = '_lambda_'
             self.doc = func.__doc__
             self.module = func.__module__
@@ -86,18 +112,18 @@ class FunctionMaker(object):
                     setattr(self, a, getattr(argspec, a))
                 for i, arg in enumerate(self.args):
                     setattr(self, 'arg%d' % i, arg)
-                if sys.version < '3': # easy way
-                    self.shortsignature = self.signature = \
+                if sys.version < '3':  # easy way
+                    self.shortsignature = self.signature = (
                         inspect.formatargspec(
-                        formatvalue=lambda val: "", *argspec)[1:-1]
-                else: # Python 3 way
+                            formatvalue=lambda val: "", *argspec[:-2])[1:-1])
+                else:  # Python 3 way
                     allargs = list(self.args)
                     allshortargs = list(self.args)
                     if self.varargs:
                         allargs.append('*' + self.varargs)
                         allshortargs.append('*' + self.varargs)
                     elif self.kwonlyargs:
-                        allargs.append('*') # single star syntax
+                        allargs.append('*')  # single star syntax
                     for a in self.kwonlyargs:
                         allargs.append('%s=None' % a)
                         allshortargs.append('%s=%s' % (a, a))
@@ -130,31 +156,41 @@ class FunctionMaker(object):
         func.__name__ = self.name
         func.__doc__ = getattr(self, 'doc', None)
         func.__dict__ = getattr(self, 'dict', {})
-        func.__defaults__ = getattr(self, 'defaults', ())
-        func.__kwdefaults__ = getattr(self, 'kwonlydefaults', None)
+        func.__defaults__ = self.defaults
+        func.__kwdefaults__ = self.kwonlydefaults or None
         func.__annotations__ = getattr(self, 'annotations', None)
-        callermodule = sys._getframe(3).f_globals.get('__name__', '?')
+        try:
+            frame = sys._getframe(3)
+        except AttributeError:  # for IronPython and similar implementations
+            callermodule = '?'
+        else:
+            callermodule = frame.f_globals.get('__name__', '?')
         func.__module__ = getattr(self, 'module', callermodule)
         func.__dict__.update(kw)
 
     def make(self, src_templ, evaldict=None, addsource=False, **attrs):
         "Make a new function from a given template and update the signature"
-        src = src_templ % vars(self) # expand name and signature
+        src = src_templ % vars(self)  # expand name and signature
         evaldict = evaldict or {}
-        mo = DEF.match(src)
+        mo = DEF.search(src)
         if mo is None:
             raise SyntaxError('not a valid function template\n%s' % src)
-        name = mo.group(1) # extract the function name
+        name = mo.group(1)  # extract the function name
         names = set([name] + [arg.strip(' *') for arg in
-                             self.shortsignature.split(',')])
+                              self.shortsignature.split(',')])
         for n in names:
             if n in ('_func_', '_call_'):
                 raise NameError('%s is overridden in\n%s' % (n, src))
-        if not src.endswith('\n'): # add a newline just for safety
-            src += '\n' # this is needed in old versions of Python
+
+        if not src.endswith('\n'):  # add a newline for old Pythons
+            src += '\n'
+
+        # Ensure each generated function has a unique filename for profilers
+        # (such as cProfile) that depend on the tuple of (<filename>,
+        # <definition line>, <function name>) being unique.
+        filename = '<decorator-gen-%d>' % (next(self._compile_count),)
         try:
-            code = compile(src, '<string>', 'single')
-            # print >> sys.stderr, 'Compiling %s' % src
+            code = compile(src, filename, 'single')
             exec(code, evaldict)
         except:
             print('Error in generated code:', file=sys.stderr)
@@ -171,83 +207,220 @@ class FunctionMaker(object):
                doc=None, module=None, addsource=True, **attrs):
         """
         Create a function from the strings name, signature and body.
-        evaldict is the evaluation dictionary. If addsource is true an attribute
-        __source__ is added to the result. The attributes attrs are added,
-        if any.
+        evaldict is the evaluation dictionary. If addsource is true an
+        attribute __source__ is added to the result. The attributes attrs
+        are added, if any.
         """
-        if isinstance(obj, str): # "name(signature)"
+        if isinstance(obj, str):  # "name(signature)"
             name, rest = obj.strip().split('(', 1)
-            signature = rest[:-1] #strip a right parens
+            signature = rest[:-1]  # strip a right parens
             func = None
-        else: # a function
+        else:  # a function
             name = None
             signature = None
             func = obj
         self = cls(func, name, signature, defaults, doc, module)
         ibody = '\n'.join('    ' + line for line in body.splitlines())
-        return self.make('def %(name)s(%(signature)s):\n' + ibody,
-                        evaldict, addsource, **attrs)
+        caller = evaldict.get('_call_')  # when called from `decorate`
+        if caller and iscoroutinefunction(caller):
+            body = ('async def %(name)s(%(signature)s):\n' + ibody).replace(
+                'return', 'return await')
+        else:
+            body = 'def %(name)s(%(signature)s):\n' + ibody
+        return self.make(body, evaldict, addsource, **attrs)
 
-def decorator(caller, func=None):
+
+def decorate(func, caller):
     """
-    decorator(caller) converts a caller function into a decorator;
-    decorator(caller, func) decorates a function using a caller.
+    decorate(func, caller) decorates a function using a caller.
     """
-    if func is not None: # returns a decorated function
-        evaldict = func.__globals__.copy()
-        evaldict['_call_'] = caller
-        evaldict['_func_'] = func
-        return FunctionMaker.create(
-            func, "return _call_(_func_, %(shortsignature)s)",
-            evaldict, undecorated=func, __wrapped__=func)
-    else: # returns a decorator
-        if inspect.isclass(caller):
-            name = caller.__name__.lower()
-            callerfunc = get_init(caller)
-            doc = 'decorator(%s) converts functions/generators into ' \
-                'factories of %s objects' % (caller.__name__, caller.__name__)
-            fun = getfullargspec(callerfunc).args[1] # second arg
-        elif inspect.isfunction(caller):
-            name = '_lambda_' if caller.__name__ == '<lambda>' \
-                else caller.__name__
-            callerfunc = caller
-            doc = caller.__doc__
-            fun = getfullargspec(callerfunc).args[0] # first arg
-        else: # assume caller is an object with a __call__ method
-            name = caller.__class__.__name__.lower()
-            callerfunc = caller.__call__.__func__
-            doc = caller.__call__.__doc__
-            fun = getfullargspec(callerfunc).args[1] # second arg
-        evaldict = callerfunc.__globals__.copy()
-        evaldict['_call_'] = caller
-        evaldict['decorator'] = decorator
-        return FunctionMaker.create(
-            '%s(%s)' % (name, fun),
-            'return decorator(_call_, %s)' % fun,
-            evaldict, undecorated=caller, __wrapped__=caller,
-            doc=doc, module=caller.__module__)
+    evaldict = dict(_call_=caller, _func_=func)
+    fun = FunctionMaker.create(
+        func, "return _call_(_func_, %(shortsignature)s)",
+        evaldict, __wrapped__=func)
+    if hasattr(func, '__qualname__'):
+        fun.__qualname__ = func.__qualname__
+    return fun
 
-######################### contextmanager ########################
 
-def __call__(self, func):
-    'Context manager decorator'
+def decorator(caller, _func=None):
+    """decorator(caller) converts a caller function into a decorator"""
+    if _func is not None:  # return a decorated function
+        # this is obsolete behavior; you should use decorate instead
+        return decorate(_func, caller)
+    # else return a decorator function
+    if inspect.isclass(caller):
+        name = caller.__name__.lower()
+        doc = 'decorator(%s) converts functions/generators into ' \
+            'factories of %s objects' % (caller.__name__, caller.__name__)
+    elif inspect.isfunction(caller):
+        if caller.__name__ == '<lambda>':
+            name = '_lambda_'
+        else:
+            name = caller.__name__
+        doc = caller.__doc__
+    else:  # assume caller is an object with a __call__ method
+        name = caller.__class__.__name__.lower()
+        doc = caller.__call__.__doc__
+    evaldict = dict(_call=caller, _decorate_=decorate)
     return FunctionMaker.create(
-        func, "with _self_: return _func_(%(shortsignature)s)",
-        dict(_self_=self, _func_=func), __wrapped__=func)
+        '%s(func)' % name, 'return _decorate_(func, _call)',
+        evaldict, doc=doc, module=caller.__module__,
+        __wrapped__=caller)
 
-try: # Python >= 3.2
 
+# ####################### contextmanager ####################### #
+
+try:  # Python >= 3.2
     from contextlib import _GeneratorContextManager
-    ContextManager = type(
-        'ContextManager', (_GeneratorContextManager,), dict(__call__=__call__))
+except ImportError:  # Python >= 2.5
+    from contextlib import GeneratorContextManager as _GeneratorContextManager
 
-except ImportError: # Python >= 2.5
 
-    from contextlib import GeneratorContextManager
-    def __init__(self, f, *a, **k):
-        return GeneratorContextManager.__init__(self, f(*a, **k))
-    ContextManager = type(
-        'ContextManager', (GeneratorContextManager,),
-        dict(__call__=__call__, __init__=__init__))
+class ContextManager(_GeneratorContextManager):
+    def __call__(self, func):
+        """Context manager decorator"""
+        return FunctionMaker.create(
+            func, "with _self_: return _func_(%(shortsignature)s)",
+            dict(_self_=self, _func_=func), __wrapped__=func)
+
+
+init = getfullargspec(_GeneratorContextManager.__init__)
+n_args = len(init.args)
+if n_args == 2 and not init.varargs:  # (self, genobj) Python 2.7
+    def __init__(self, g, *a, **k):
+        return _GeneratorContextManager.__init__(self, g(*a, **k))
+    ContextManager.__init__ = __init__
+elif n_args == 2 and init.varargs:  # (self, gen, *a, **k) Python 3.4
+    pass
+elif n_args == 4:  # (self, gen, args, kwds) Python 3.5
+    def __init__(self, g, *a, **k):
+        return _GeneratorContextManager.__init__(self, g, a, k)
+    ContextManager.__init__ = __init__
 
 contextmanager = decorator(ContextManager)
+
+
+# ############################ dispatch_on ############################ #
+
+def append(a, vancestors):
+    """
+    Append ``a`` to the list of the virtual ancestors, unless it is already
+    included.
+    """
+    add = True
+    for j, va in enumerate(vancestors):
+        if issubclass(va, a):
+            add = False
+            break
+        if issubclass(a, va):
+            vancestors[j] = a
+            add = False
+    if add:
+        vancestors.append(a)
+
+
+# inspired from simplegeneric by P.J. Eby and functools.singledispatch
+def dispatch_on(*dispatch_args):
+    """
+    Factory of decorators turning a function into a generic function
+    dispatching on the given arguments.
+    """
+    assert dispatch_args, 'No dispatch args passed'
+    dispatch_str = '(%s,)' % ', '.join(dispatch_args)
+
+    def check(arguments, wrong=operator.ne, msg=''):
+        """Make sure one passes the expected number of arguments"""
+        if wrong(len(arguments), len(dispatch_args)):
+            raise TypeError('Expected %d arguments, got %d%s' %
+                            (len(dispatch_args), len(arguments), msg))
+
+    def gen_func_dec(func):
+        """Decorator turning a function into a generic function"""
+
+        # first check the dispatch arguments
+        argset = set(getfullargspec(func).args)
+        if not set(dispatch_args) <= argset:
+            raise NameError('Unknown dispatch arguments %s' % dispatch_str)
+
+        typemap = {}
+
+        def vancestors(*types):
+            """
+            Get a list of sets of virtual ancestors for the given types
+            """
+            check(types)
+            ras = [[] for _ in range(len(dispatch_args))]
+            for types_ in typemap:
+                for t, type_, ra in zip(types, types_, ras):
+                    if issubclass(t, type_) and type_ not in t.mro():
+                        append(type_, ra)
+            return [set(ra) for ra in ras]
+
+        def ancestors(*types):
+            """
+            Get a list of virtual MROs, one for each type
+            """
+            check(types)
+            lists = []
+            for t, vas in zip(types, vancestors(*types)):
+                n_vas = len(vas)
+                if n_vas > 1:
+                    raise RuntimeError(
+                        'Ambiguous dispatch for %s: %s' % (t, vas))
+                elif n_vas == 1:
+                    va, = vas
+                    mro = type('t', (t, va), {}).mro()[1:]
+                else:
+                    mro = t.mro()
+                lists.append(mro[:-1])  # discard t and object
+            return lists
+
+        def register(*types):
+            """
+            Decorator to register an implementation for the given types
+            """
+            check(types)
+
+            def dec(f):
+                check(getfullargspec(f).args, operator.lt, ' in ' + f.__name__)
+                typemap[types] = f
+                return f
+            return dec
+
+        def dispatch_info(*types):
+            """
+            An utility to introspect the dispatch algorithm
+            """
+            check(types)
+            lst = []
+            for anc in itertools.product(*ancestors(*types)):
+                lst.append(tuple(a.__name__ for a in anc))
+            return lst
+
+        def _dispatch(dispatch_args, *args, **kw):
+            types = tuple(type(arg) for arg in dispatch_args)
+            try:  # fast path
+                f = typemap[types]
+            except KeyError:
+                pass
+            else:
+                return f(*args, **kw)
+            combinations = itertools.product(*ancestors(*types))
+            next(combinations)  # the first one has been already tried
+            for types_ in combinations:
+                f = typemap.get(types_)
+                if f is not None:
+                    return f(*args, **kw)
+
+            # else call the default implementation
+            return func(*args, **kw)
+
+        return FunctionMaker.create(
+            func, 'return _f_(%s, %%(shortsignature)s)' % dispatch_str,
+            dict(_f_=_dispatch), register=register, default=func,
+            typemap=typemap, vancestors=vancestors, ancestors=ancestors,
+            dispatch_info=dispatch_info, __wrapped__=func)
+
+    gen_func_dec.__name__ = 'dispatch_on' + dispatch_str
+    return gen_func_dec

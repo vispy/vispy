@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
-# vispy: testskip - Travis can't handle it
+# vispy: gallery 30
 """
 Show 10,000 realtime scrolling plots
 """
@@ -26,7 +26,7 @@ grid.add_widget(xax, 1, 1)
 xax.link_view(view)
 
 
-N = 5000
+N = 4900
 M = 2000
 cols = int(N**0.5)
 view.camera.rect = (0, 0, cols, N/cols)
@@ -39,9 +39,6 @@ lines.transform = scene.STTransform(scale=(1, 1/8.))
 def update(ev):
     m = 50
     data = np.random.normal(size=(N, m), scale=0.3)
-    data[0] = 0
-    data[1] = 1
-    data[100] = 2
     data[data > 1] += 4
     lines.roll_data(data)
 

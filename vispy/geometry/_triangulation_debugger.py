@@ -1,4 +1,4 @@
-# -*- coding: utf8 -*- 
+# -*- coding: utf-8 -*-
 """
 Debugging system for Triangulation class. Displays stepwise visual 
 representation of the algorithm. 
@@ -138,16 +138,16 @@ if __name__ == '__main__':
            (6, 15),
            (15, 12.5),
            (0, 5)]
-    l = len(pts)
-    edges = [(i, (i+1) % l) for i in range(l)]
+    num_pts = len(pts)
+    edges = [(i, (i+1) % num_pts) for i in range(num_pts)]
     pts += [(21, 21),
             (24, 21),
             (24, 24),
             (21, 24)]
-    edges += [(l,   l+1),
-              (l+1, l+2),
-              (l+2, l+3),
-              (l+3, l)]
+    edges += [(num_pts, num_pts + 1),
+              (num_pts + 1, num_pts + 2),
+              (num_pts + 2, num_pts + 3),
+              (num_pts + 3, num_pts)]
 
     pts = np.array(pts, dtype=float)
     edges = np.array(edges, dtype=int)

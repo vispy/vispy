@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 """
 Some wrappers to avoid circular imports, or make certain calls easier.
@@ -17,7 +17,7 @@ them.
 """
 
 import subprocess
-import inspect
+from .config import _get_args
 
 
 def use(app=None, gl=None):
@@ -32,13 +32,16 @@ def use(app=None, gl=None):
             * 'PyQt4': use Qt widget toolkit via PyQt4.
             * 'PyQt5': use Qt widget toolkit via PyQt5.
             * 'PySide': use Qt widget toolkit via PySide.
+            * 'PySide2': use Qt widget toolkit via PySide2.
             * 'PyGlet': use Pyglet backend.
             * 'Glfw': use Glfw backend (successor of Glut). Widely available
               on Linux.
             * 'SDL2': use SDL v2 backend.
             * 'osmesa': Use OSMesa backend
         Additional backends:
-            * 'ipynb_vnc': render in the IPython notebook via a VNC approach
+            * 'ipynb_webgl': run vispy from a Jupyter notebook (not fully
+               functional)
+            * 'ipynb_vnc': render in a Jupyter notebook via a VNC approach
               (experimental)
     gl : str
         The gl backend to use (case insensitive). Options are:
@@ -139,7 +142,7 @@ def run_subprocess(command, return_code=False, **kwargs):
         print(output[0])
         print(output[1])
         err_fun = subprocess.CalledProcessError.__init__
-        if 'output' in inspect.getargspec(err_fun).args:
+        if 'output' in _get_args(err_fun):
             raise subprocess.CalledProcessError(p.returncode, command, output)
         else:
             raise subprocess.CalledProcessError(p.returncode, command)

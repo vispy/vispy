@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from ..import scene
@@ -269,7 +269,7 @@ class PlotWidget(scene.Widget):
                                  'fname is not None')
         else:
             meshdata = MeshData(vertices, faces, vertex_colors=vertex_colors,
-                          face_colors=face_colors)
+                                face_colors=face_colors)
         mesh = scene.Mesh(meshdata=meshdata, vertex_colors=vertex_colors,
                           face_colors=face_colors, color=color,
                           shading=shading)

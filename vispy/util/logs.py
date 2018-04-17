@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 import base64
@@ -337,9 +337,7 @@ def _handle_exception(ignore_callback_errors, print_callback_errors, obj,
 def _serialize_buffer(buffer, array_serialization=None):
     """Serialize a NumPy array."""
     if array_serialization == 'binary':
-        # WARNING: in NumPy 1.9, tostring() has been renamed to tobytes()
-        # but tostring() is still here for now for backward compatibility.
-        return buffer.ravel().tostring()
+        return buffer.ravel().tobytes()
     elif array_serialization == 'base64':
         return {'storage_type': 'base64',
                 'buffer': base64.b64encode(buffer).decode('ascii')
