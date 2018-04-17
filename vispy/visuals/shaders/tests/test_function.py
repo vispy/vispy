@@ -218,7 +218,8 @@ def test_Variable():
     
     # Test injection, definition, dependencies
     assert_equal(var.expression({var: 'xxx'}), 'xxx')
-    assert_equal(var.definition({var: 'xxx'}, ('120', ''), None), 'uniform float xxx;')
+    assert_equal(var.definition({var: 'xxx'}, ('120', ''), None),
+                 'uniform float xxx;')
     assert_in(var, var.dependencies())
     
     # Renaming

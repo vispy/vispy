@@ -62,13 +62,16 @@ class ProgramTest(unittest.TestCase):
         self.assertRaises(ValueError, Program, "", "foo")
     
     def test_setting_shaders(self):
+        from vispy.gloo.program import VertexShader, FragmentShader
         program = Program("A", "B")
-        assert program.shaders[0] == "A"
-        assert program.shaders[1] == "B"
-        
+        assert isinstance(program.shaders[0], VertexShader)
+        assert program.shaders[0].code == 'A'
+        assert isinstance(program.shaders[1], FragmentShader)
+        assert program.shaders[1].code == 'B'
+
         program.set_shaders('C', 'D')
-        assert program.shaders[0] == "C"
-        assert program.shaders[1] == "D"
+        assert program.shaders[0].code == "C"
+        assert program.shaders[1].code == "D"
         
     @requires_application()
     def test_error(self):
