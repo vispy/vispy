@@ -277,5 +277,3 @@ class InVar(Variable):
         
     def expression(self, names):
         return names[self._var]
-
-    

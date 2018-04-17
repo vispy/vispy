@@ -298,7 +298,8 @@ class DataBuffer(Buffer):
         if data.size < stop - start:
             data = np.resize(data, stop - start)
         elif data.size > stop - start:
-            raise ValueError('Data too big to fit GPU data (%d > %d-%d).' % (data.size, stop, start))
+            raise ValueError('Data too big to fit GPU data '
+                             '(%d > %d-%d).' % (data.size, stop, start))
         
         # Set data
         offset = start  # * self.itemsize

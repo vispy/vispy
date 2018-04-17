@@ -1,5 +1,7 @@
 # !/usr/bin/env python
 # -*- coding: utf-8 -*-
+# Copyright (c) Vispy Development Team. All Rights Reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
 """ Minimal example of geometry shader use.
 """
 
@@ -64,11 +66,13 @@ class Canvas(app.Canvas):
     def __init__(self):
         app.Canvas.__init__(self, keys='interactive', size=(400, 400))
         self.program = gloo.Program()
-        self.program.set_shaders(vert=VERT_SHADER, geom=GEOM_SHADER, frag=FRAG_SHADER)
+        self.program.set_shaders(vert=VERT_SHADER, geom=GEOM_SHADER,
+                                 frag=FRAG_SHADER)
         self.program['a_position'] = gloo.VertexBuffer(position)
         gloo.set_viewport(0, 0, self.physical_size[0], self.physical_size[1])
         self.context.set_clear_color('white')
-        self.context.set_state('translucent', cull_face=False, depth_test=False)
+        self.context.set_state('translucent', cull_face=False,
+                               depth_test=False)
         self.show()
 
     def on_resize(self, event):

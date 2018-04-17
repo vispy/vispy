@@ -371,6 +371,15 @@ class Function(ShaderObject):
             self._template_vars = self._parse_template_vars()
         return self._template_vars
 
+    @property
+    def version_pragma(self):
+        """Return version number and extra qualifiers from pragma if present.
+        """
+        m = re.search(parsing.re_version_pragma, self.code)
+        if m is None:
+            return None
+        return int(m.group(1)), m.group(2)
+
     def static_names(self):
         if self._static_vars is None:
             self._static_vars = parsing.find_program_variables(self._code)
@@ -471,7 +480,7 @@ class Function(ShaderObject):
                            v, list(self._expressions.keys()))
 
         return code + '\n'
-    
+
     def definition(self, names, version, shader):
         return self._get_replaced_code(names, version, shader)
 
@@ -519,15 +528,6 @@ class MainFunction(Function):
     @property
     def signature(self):
         return ('main', [], 'void')
-
-    @property
-    def version_pragma(self):
-        """Return version number and extra qualifiers from pragma if present.
-        """
-        m = re.search(parsing.re_version_pragma, self.code)
-        if m is None:
-            return None
-        return int(m.group(1)), m.group(2)
 
     def definition(self, obj_names, version, shader):
         code = Function.definition(self, obj_names, version, shader)

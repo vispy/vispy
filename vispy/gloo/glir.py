@@ -576,7 +576,7 @@ class GlirShader(GlirObject):
             errors = gl.glGetShaderInfoLog(self._handle)
             errormsg = self._get_error(code, errors, 4)
             raise RuntimeError("Shader compilation error in %s:\n%s" %
-                                (self._target, errormsg))
+                               (self._target, errormsg))
 
     def delete(self):
         gl.glDeleteShader(self._handle)
@@ -645,6 +645,7 @@ class GlirGeometryShader(GlirShader):
     # _target assignment must be delayed because GL_GEOMETRY_SHADER does not
     # exist until the user calls use_gl('gl+')
     _target = None
+
     def __init__(self, *args, **kwargs):
         if not hasattr(gl, 'GL_GEOMETRY_SHADER'):
             raise RuntimeError("GL2 backend does not support geometry shaders."

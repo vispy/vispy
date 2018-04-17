@@ -128,7 +128,7 @@ def test_example2():
 def test_TextExpression():
     exp = TextExpression('foo bar')
     assert_equal('foo bar', exp.expression(None))
-    assert_equal(None, exp.definition(None))
+    assert_equal(None, exp.definition(None, ('120', '')))
     assert_raises(TypeError, TextExpression, 4)
 
 
@@ -459,7 +459,7 @@ def test_MainFunction():
     }
     """
     
-    mf = MainFunction(code)
+    mf = MainFunction('vertex', code)
     
     assert mf.name == 'main'
     assert mf.rtype == 'void'

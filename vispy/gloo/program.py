@@ -40,8 +40,6 @@ from .context import get_current_canvas
 from .preprocessor import preprocess
 
 
-
-
 # ------------------------------------------------------------ Shader class ---
 class Shader(GLObject):
     def __init__(self, code=None):
