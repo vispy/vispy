@@ -58,8 +58,8 @@ void main (void) {
     float y2 = y1*cos(phi) - x1*sin(phi);
     float z2 = z1;
 
-    gl_Position = u_projection * u_view * u_model * vec4(x2,y2,z2,1);
-    gl_PointSize = v_size + 2*(v_linewidth + 1.5*v_antialias);
+    gl_Position = u_projection * u_view * u_model * vec4(x2,y2,z2,1.);
+    gl_PointSize = v_size + 2.*(v_linewidth + 1.5*v_antialias);
 }
 """
 

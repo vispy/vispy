@@ -22,7 +22,7 @@ void main() {
     // Also need to map the adjustment direction vector, but this is tricky!
     // We need to adjust separately for each component of the vector:
     vec4 adjusted;
-    if ( a_adjust_dir.x == 0 ) {
+    if ( a_adjust_dir.x == 0. ) {
         // If this is an outer vertex, no adjustment for line weight is needed.
         // (In fact, trying to make the adjustment would result in no
         // triangles being drawn, hence the if/else block)
@@ -32,10 +32,10 @@ void main() {
         // Inner vertexes must be adjusted for line width, but this is
         // surprisingly tricky given that the rectangle may have been scaled
         // and rotated!
-        vec4 doc_x = $visual_to_doc(vec4(a_adjust_dir.x, 0, 0, 0)) -
-                    $visual_to_doc(vec4(0, 0, 0, 0));
-        vec4 doc_y = $visual_to_doc(vec4(0, a_adjust_dir.y, 0, 0)) -
-                    $visual_to_doc(vec4(0, 0, 0, 0));
+        vec4 doc_x = $visual_to_doc(vec4(a_adjust_dir.x, 0., 0., 0.)) -
+                    $visual_to_doc(vec4(0., 0., 0., 0.));
+        vec4 doc_y = $visual_to_doc(vec4(0, a_adjust_dir.y, 0., 0.)) -
+                    $visual_to_doc(vec4(0., 0., 0., 0.));
         doc_x = normalize(doc_x);
         doc_y = normalize(doc_y);
 

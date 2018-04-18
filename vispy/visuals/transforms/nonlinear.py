@@ -115,7 +115,7 @@ class PolarTransform(BaseTransform):
     """
     glsl_map = """
         vec4 polar_transform_map(vec4 pos) {
-            return vec4(pos.y * cos(pos.x), pos.y * sin(pos.x), pos.z, 1);
+            return vec4(pos.y * cos(pos.x), pos.y * sin(pos.x), pos.z, 1.);
         }
         """
 
@@ -124,7 +124,7 @@ class PolarTransform(BaseTransform):
             // TODO: need some modulo math to handle larger theta values..?
             float theta = atan(pos.y, pos.x);
             float r = length(pos.xy);
-            return vec4(theta, r, pos.z, 1);
+            return vec4(theta, r, pos.z, 1.);
         }
         """
 
@@ -199,7 +199,7 @@ class MagnifyTransform(BaseTransform):
         vec4 mag_transform(vec4 pos) {
             vec2 d = vec2(pos.x - $center.x, pos.y - $center.y);
             float dist = length(d);
-            if (dist == 0 || dist > $radii.y || ($mag < 1.01 && $mag > 0.99)) {
+            if (dist == 0. || dist > $radii.y || ($mag < 1.01 && $mag > 0.99)) {
                 return pos;
             }
             vec2 dir = d / dist;
@@ -212,7 +212,7 @@ class MagnifyTransform(BaseTransform):
                 float r1 = $radii.x;
                 float r2 = $radii.y;
                 float x = (dist - r1) / (r2 - r1);
-                float s = texture2D($trans, vec2(0, x)).r * $trans_max;
+                float s = texture2D($trans, vec2(0., x)).r * $trans_max;
                 
                 dist = s;
             }
@@ -379,7 +379,7 @@ class Magnify1DTransform(MagnifyTransform):
     glsl_map = """
         vec4 mag_transform(vec4 pos) {
             float dist = pos.x - $center.x;
-            if (dist == 0 || abs(dist) > $radii.y || $mag == 1) {
+            if (dist == 0. || abs(dist) > $radii.y || $mag == 1) {
                 return pos;
             }
             float dir = dist / abs(dist);
@@ -391,7 +391,7 @@ class Magnify1DTransform(MagnifyTransform):
                 float r1 = $radii.x;
                 float r2 = $radii.y;
                 float x = (abs(dist) - r1) / (r2 - r1);
-                dist = dir * texture2D($trans, vec2(0, x)).r * $trans_max;
+                dist = dir * texture2D($trans, vec2(0., x)).r * $trans_max;
             }
 
             return vec4($center.x + dist, pos.y, pos.z, pos.w);

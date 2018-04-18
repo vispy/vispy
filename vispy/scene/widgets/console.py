@@ -94,6 +94,7 @@ void main (void)
 """
 
 FRAGMENT_SHADER = """
+#version 120
 float segment(float edge0, float edge1, float x)
 {
     return step(edge0,x) * (1.0-step(edge1,x));

@@ -44,6 +44,7 @@ class VectorFieldVisual(visuals.Visual):
         vec2 uv;
         vec2 dir;
         vec2 da;
+        int index_y = int(index.y);
         for( int i=0; i<index.y; i+=1 ) {
             for ( int j=0; j<n_iter; j += 1 ) {
                 uv = local / field_shape;

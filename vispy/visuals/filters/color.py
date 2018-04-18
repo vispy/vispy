@@ -12,7 +12,7 @@ class IsolineFilter(object):
     def __init__(self, level=2., width=2.0, antialias=1.0, color='black'):
         self.fshader = Function("""
             void isoline() {
-                if ($isolevel <= 0 || $isowidth <= 0) {
+                if ($isolevel. <= 0 || $isowidth <= 0.) {
                     return;
                 }
 

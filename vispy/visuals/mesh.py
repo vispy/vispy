@@ -85,7 +85,7 @@ void main() {
     //reflect light wrt normal for the reflected ray, then
     //find the angle made with the eye
     float speculark = 0.0;
-    if ($shininess > 0) {
+    if ($shininess > 0.) {
         speculark = dot(reflect(v_light_vec, v_normal_vec), v_eye_vec);
         speculark = clamp(speculark, 0.0, 1.0);
         //raise to the material's shininess, multiply with a
