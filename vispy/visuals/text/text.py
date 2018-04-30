@@ -254,6 +254,11 @@ class TextVisual(Visual):
         Horizontal text anchor.
     anchor_y : str
         Vertical text anchor.
+    method : str
+        Rendering method for text characters. Either 'cpu' (default) or
+        'gpu'. The 'cpu' method should perform better on remote backends
+        like those based on WebGL. The 'gpu' method should produce higher
+        quality results.
     font_manager : object | None
         Font manager to use (can be shared if the GLContext is shared).
     """
@@ -343,7 +348,7 @@ class TextVisual(Visual):
     def __init__(self, text=None, color='black', bold=False,
                  italic=False, face='OpenSans', font_size=12, pos=[0, 0, 0],
                  rotation=0., anchor_x='center', anchor_y='center',
-                 font_manager=None):
+                 method='cpu', font_manager=None):
         Visual.__init__(self, vcode=self.VERTEX_SHADER,
                         fcode=self.FRAGMENT_SHADER)
         # Check input
@@ -353,7 +358,7 @@ class TextVisual(Visual):
         _check_valid('anchor_x', anchor_x, valid_keys)
         # Init font handling stuff
         # _font_manager is a temporary solution to use global mananger
-        self._font_manager = font_manager or FontManager()
+        self._font_manager = font_manager or FontManager(method=method)
         self._font = self._font_manager.get_font(face, bold, italic)
         self._vertices = None
         self._anchors = (anchor_x, anchor_y)
