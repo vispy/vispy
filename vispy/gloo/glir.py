@@ -326,7 +326,8 @@ class BaseGlirParser(object):
         """
         raise NotImplementedError()
 
-    def convert_shaders(self):
+    @property
+    def shader_compatibility(self):
         """ Whether to convert shading code. Valid values are 'es2' and
         'desktop'. If None, the shaders are not modified.
         """

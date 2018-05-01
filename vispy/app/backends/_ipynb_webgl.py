@@ -108,7 +108,8 @@ class WebGLGlirParser(BaseGlirParser):
     def is_remote(self):
         return True
 
-    def convert_shaders(self):
+    @property
+    def shader_compatibility(self):
         return 'es2'
 
     def parse(self, commands):

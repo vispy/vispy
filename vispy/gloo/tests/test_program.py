@@ -14,8 +14,9 @@ from vispy.gloo.context import set_current_canvas, forget_canvas
 
 
 class DummyParser(gloo.glir.BaseGlirParser):
-    
-    def convert_shaders(self):
+
+    @property
+    def shader_compatibility(self):
         return 'desktop'
     
     def parse(self, commands):
