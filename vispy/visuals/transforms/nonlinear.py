@@ -199,7 +199,7 @@ class MagnifyTransform(BaseTransform):
         vec4 mag_transform(vec4 pos) {
             vec2 d = vec2(pos.x - $center.x, pos.y - $center.y);
             float dist = length(d);
-            if (dist == 0. || dist > $radii.y || ($mag < 1.01 && $mag > 0.99)) {
+            if (dist == 0. || dist > $radii.y || ($mag<1.01 && $mag>0.99)) {
                 return pos;
             }
             vec2 dir = d / dist;
