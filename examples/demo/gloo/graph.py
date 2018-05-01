@@ -101,7 +101,7 @@ void main()
 float marker(vec2 P, float size)
 {
     float r = length((P.xy - vec2(0.5,0.5))*size);
-    r -= v_size/2;
+    r -= v_size/2.;
     return r;
 }
 """

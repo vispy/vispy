@@ -286,8 +286,8 @@ class MagnifyTransform(BaseTransform):
     def shader_map(self):
         fn = super(MagnifyTransform, self).shader_map()
         fn['center'] = self._center  # uniform vec2
-        fn['mag'] = self._mag
-        fn['radii'] = (self._radii[0] / self._mag, self._radii[1])
+        fn['mag'] = float(self._mag)
+        fn['radii'] = (self._radii[0] / float(self._mag), self._radii[1])
         self._get_transition()  # make sure transition texture is up to date
         fn['trans'] = self._trans_tex[0]
         fn['trans_max'] = self._trans_tex_max[0]

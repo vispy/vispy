@@ -12,7 +12,7 @@ class IsolineFilter(object):
     def __init__(self, level=2., width=2.0, antialias=1.0, color='black'):
         self.fshader = Function("""
             void isoline() {
-                if ($isolevel. <= 0 || $isowidth <= 0.) {
+                if ($isolevel <= 0. || $isowidth <= 0.) {
                     return;
                 }
 
@@ -76,7 +76,7 @@ class IsolineFilter(object):
         if lev <= 0:
             lev = 0
         self._level = lev
-        self.fshader['isolevel'] = lev
+        self.fshader['isolevel'] = float(lev)
 
     @property
     def width(self):
@@ -85,7 +85,7 @@ class IsolineFilter(object):
     @width.setter
     def width(self, w):
         self._width = w
-        self.fshader['isowidth'] = w
+        self.fshader['isowidth'] = float(w)
 
     @property
     def color(self):
@@ -103,7 +103,7 @@ class IsolineFilter(object):
     @antialias.setter
     def antialias(self, a):
         self._antialias = a
-        self.fshader['antialias'] = a
+        self.fshader['antialias'] = float(a)
 
     def _attach(self, visual):
         hook = visual._get_hook('frag', 'post')
@@ -126,7 +126,7 @@ class Alpha(object):
     @alpha.setter
     def alpha(self, a):
         self._alpha = a
-        self.shader['alpha'] = a
+        self.shader['alpha'] = float(a)
 
     def _attach(self, visual):
         self._visual = weakref.ref(visual)
@@ -135,7 +135,7 @@ class Alpha(object):
 
 
 class ColorFilter(object):
-    def __init__(self, filter=(1, 1, 1, 1)):
+    def __init__(self, filter=(1., 1., 1., 1.)):
         self.shader = Function("""
             void apply_color_filter() {
                 gl_FragColor = gl_FragColor * $filter;
@@ -159,7 +159,7 @@ class ColorFilter(object):
 
 
 class ZColormapFilter(object):
-    def __init__(self, cmap, zrange=(0, 1)):
+    def __init__(self, cmap, zrange=(0., 1.)):
         self.vshader = Function("""
             void z_colormap_support() {
                 $zval = $position.z;

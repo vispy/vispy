@@ -155,7 +155,7 @@ class _BorderVisual(Visual):
 
         self.shared_program['a_position'] = border_vertices
         self.shared_program['a_adjust_dir'] = adjust_dir
-        self.shared_program.vert['border_width'] = self._border_width
+        self.shared_program.vert['border_width'] = float(self._border_width)
         self.shared_program.frag['border_color'] = self._border_color.rgba
 
     def _prepare_draw(self, view=None):
