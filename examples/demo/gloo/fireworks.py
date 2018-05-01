@@ -66,6 +66,7 @@ void main () {
 
 # Deliberately add precision qualifiers to test automatic GLSL code conversion
 FRAG_SHADER = """
+#version 120
 precision highp float;
 uniform sampler2D texture1;
 uniform vec4 u_color;

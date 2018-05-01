@@ -263,8 +263,8 @@ class TextVisual(Visual):
 
     FRAGMENT_SHADER = """
         // Extensions for WebGL
-        // #extension GL_OES_standard_derivatives : enable
-        // #extension GL_OES_element_index_uint : enable
+        #extension GL_OES_standard_derivatives : enable
+        #extension GL_OES_element_index_uint : enable
         #include "misc/spatial-filters.frag"
         // Adapted from glumpy with permission
         const float M_SQRT1_2 = 0.707106781186547524400844362104849039;

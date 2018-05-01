@@ -152,21 +152,13 @@ class _GlirQueueShare(object):
         resized = set()
         commands2 = []
         for command in reversed(commands):
-            if command[0] == 'SHADERS':
-                convert = parser.convert_shaders()
-                if convert:
-                    shaders = self._convert_shaders(convert, command[2:])
-                    command = command[:2] + shaders
-            elif command[1] in resized:
+            if command[1] in resized:
                 if command[0] in ('SIZE', 'DATA'):
                     continue  # remove this command
             elif command[0] == 'SIZE':
                 resized.add(command[1])
             commands2.append(command)
         return list(reversed(commands2))
-
-    def _convert_shaders(self, convert, shaders):
-        return convert_shaders(convert, shaders)
 
 
 class GlirQueue(object):
@@ -232,84 +224,78 @@ class GlirQueue(object):
         self._shared.flush(parser)
 
 
-def convert_shaders(convert, shaders):
-    """ Modify shading code so that we can write code once
-    and make it run "everywhere".
-    """
+def _convert_es2_shader(shader):
+    has_version = False
+    has_prec_float = False
+    has_prec_int = False
+    lines = []
+    extensions = []
+    # Iterate over lines
+    for line in shader.lstrip().splitlines():
+        line_strip = line.lstrip()
+        if line_strip.startswith('#version'):
+            has_version = True
+            continue
+        if line_strip.startswith('#extension'):
+            extensions.append(line_strip)
+            line = ''
+        if line_strip.startswith('precision '):
+            has_prec_float = has_prec_float or 'float' in line
+            has_prec_int = has_prec_int or 'int' in line
+        lines.append(line.rstrip())
+    # Write
+    # BUG: fails on WebGL (Chrome)
+    # if True:
+    #     lines.insert(has_version, '#line 0')
+    if not has_prec_float:
+        lines.insert(has_version, 'precision highp float;')
+    if not has_prec_int:
+        lines.insert(has_version, 'precision highp int;')
+    # Make sure extensions are at the top before precision
+    # but after version
+    if extensions:
+        for ext_line in extensions:
+            lines.insert(has_version, ext_line)
+    # BUG: fails on WebGL (Chrome)
+    # if not has_version:
+    #     lines.insert(has_version, '#version 100')
+    return '\n'.join(lines)
 
-    # New version of the shaders
-    out = []
 
-    if convert == 'es2':
+def _convert_desktop_shader(shader):
+    has_version = False
+    lines = []
+    extensions = []
+    # Iterate over lines
+    for line in shader.lstrip().splitlines():
+        line_strip = line.lstrip()
+        has_version = has_version or line.startswith('#version')
+        if line_strip.startswith('precision '):
+            line = ''
+        if line_strip.startswith('#extension'):
+            extensions.append(line_strip)
+            line = ''
+        for prec in (' highp ', ' mediump ', ' lowp '):
+            line = line.replace(prec, ' ')
+        lines.append(line.rstrip())
+    # Write
+    # Make sure extensions are at the top, but after version
+    if extensions:
+        for ext_line in extensions:
+            lines.insert(has_version, ext_line)
+    if not has_version:
+        lines.insert(0, '#version 120\n')
+    return '\n'.join(lines)
 
-        for isfragment, shader in enumerate(shaders):
-            has_version = False
-            has_prec_float = False
-            has_prec_int = False
-            lines = []
-            extensions = []
-            # Iterate over lines
-            for line in shader.lstrip().splitlines():
-                line_strip = line.lstrip()
-                if line_strip.startswith('#version'):
-                    has_version = True
-                    continue
-                if line_strip.startswith('#extension'):
-                    extensions.append(line_strip)
-                    line = ''
-                if line_strip.startswith('precision '):
-                    has_prec_float = has_prec_float or 'float' in line
-                    has_prec_int = has_prec_int or 'int' in line
-                lines.append(line.rstrip())
-            # Write
-            # BUG: fails on WebGL (Chrome)
-            # if True:
-            #     lines.insert(has_version, '#line 0')
-            if not has_prec_float:
-                lines.insert(has_version, 'precision highp float;')
-            if not has_prec_int:
-                lines.insert(has_version, 'precision highp int;')
-            # Make sure extensions are at the top before precision
-            # but after version
-            if extensions:
-                for ext_line in extensions:
-                    lines.insert(has_version, ext_line)
-            # BUG: fails on WebGL (Chrome)
-            # if not has_version:
-            #     lines.insert(has_version, '#version 100')
-            out.append('\n'.join(lines))
 
-    elif convert == 'desktop':
-
-        for isfragment, shader in enumerate(shaders):
-            has_version = False
-            lines = []
-            extensions = []
-            # Iterate over lines
-            for line in shader.lstrip().splitlines():
-                line_strip = line.lstrip()
-                has_version = has_version or line.startswith('#version')
-                if line_strip.startswith('precision '):
-                    line = ''
-                if line_strip.startswith('#extension'):
-                    extensions.append(line_strip)
-                    line = ''
-                for prec in (' highp ', ' mediump ', ' lowp '):
-                    line = line.replace(prec, ' ')
-                lines.append(line.rstrip())
-            # Write
-            # Make sure extensions are at the top, but after version
-            if extensions:
-                for ext_line in extensions:
-                    lines.insert(has_version, ext_line)
-            if not has_version:
-                lines.insert(0, '#version 120\n')
-            out.append('\n'.join(lines))
-
+def convert_shader(backend_type, shader):
+    """Modify shader code to be compatible with `backend_type` backend."""
+    if backend_type == 'es2':
+        return _convert_es2_shader(shader)
+    elif backend_type == 'desktop':
+        return _convert_desktop_shader(shader)
     else:
-        raise ValueError('Cannot convert shaders to %r.' % convert)
-
-    return tuple(out)
+        raise ValueError('Cannot backend_type shaders to %r.' % backend_type)
 
 
 def as_es2_command(command):
@@ -319,9 +305,7 @@ def as_es2_command(command):
     if command[0] == 'FUNC':
         return (command[0], re.sub(r'^gl([A-Z])',
                 lambda m: m.group(1).lower(), command[1])) + command[2:]
-    if command[0] == 'SHADERS':
-        return command[:2] + convert_shaders('es2', command[2:])
-    if command[0] == 'UNIFORM':
+    elif command[0] == 'UNIFORM':
         return command[:-1] + (command[-1].tolist(),)
     return command
 
@@ -387,14 +371,16 @@ class GlirParser(BaseGlirParser):
         # when two Canvases share a context.
         self.env = {}
 
-    def is_remote(self):
-        return False
-
-    def convert_shaders(self):
+    @property
+    def shader_compatibility(self):
+        """Type of shader compatibility """
         if '.es' in gl.current_backend.__name__:
             return 'es2'
         else:
             return 'desktop'
+
+    def is_remote(self):
+        return False
 
     def _parse(self, command):
         """ Parse a single command.
@@ -454,8 +440,8 @@ class GlirParser(BaseGlirParser):
                 ob.attach(*args)
             elif cmd == 'FRAMEBUFFER':  # FrameBuffer
                 ob.set_framebuffer(*args)
-            elif cmd == 'SHADERS':  # Program
-                ob.set_shaders(*args)
+            # elif cmd == 'SHADERS':  # Program
+            #     ob.set_shaders(*args)
             elif cmd == 'LINK':  # Program
                 ob.link_program(*args)
             elif cmd == 'WRAPPING':  # Texture1D, Texture2D, Texture3D
@@ -569,6 +555,11 @@ class GlirShader(GlirObject):
         self._handle = gl.glCreateShader(self._target)
 
     def set_data(self, code):
+        # convert shader to be compatible with backend
+        convert = self._parser.shader_compatibility
+        if convert:
+            code = convert_shader(convert, code)
+
         gl.glShaderSource(self._handle, code)
         gl.glCompileShader(self._handle)
         status = gl.glGetShaderParameter(self._handle, gl.GL_COMPILE_STATUS)
