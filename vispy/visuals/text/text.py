@@ -153,7 +153,6 @@ def _text_to_vbo(text, font, anchor_x, anchor_y, lowres_size):
     # trigger SDF rendering, which changes our viewport
     # todo: get rid of call to glGetParameter!
 
-
     # Also analyse chars with large ascender and descender, otherwise the
     # vertical alignment can be very inconsistent
     for char in 'hy':
@@ -170,23 +169,26 @@ def _text_to_vbo(text, font, anchor_x, anchor_y, lowres_size):
     lineheight = height * 1.5
 
     # Added escape sequences characters: {unicode:offset,...}
-    #       ord('\a') = 7
-    #       ord('\b') = 8
-    #       ord('\f') = 12
-    #       ord('\n') = 10  => linebreak
-    #       ord('\r') = 13
-    #       ord('\t') = 9   => tab, set equal 4 whitespaces?
-    #       ord('\v') = 11  => vertical tab, set equal 4 linebreaks?
-    #   If text coordinate offset > 0 -> it applies to x-direction
-    #   If text coordinate offset < 0 -> it applies to y-direction
-    esc_seq = {7:0, 8:0, 9:-4, 10:1, 11:4, 12:0, 13:0}
+    #   ord('\a') = 7
+    #   ord('\b') = 8
+    #   ord('\f') = 12
+    #   ord('\n') = 10  => linebreak
+    #   ord('\r') = 13
+    #   ord('\t') = 9   => tab, set equal 4 whitespaces?
+    #   ord('\v') = 11  => vertical tab, set equal 4 linebreaks?
+    # If text coordinate offset > 0 -> it applies to x-direction
+    # If text coordinate offset < 0 -> it applies to y-direction
+    esc_seq = {7: 0, 8: 0, 9: -4, 10: 1, 11: 4, 12: 0, 13: 0}
 
     # Keep track of y_offset to set lines at right position
     y_offset = 0
 
     # When a line break occur, record the vertices index value
     vi_marker = 0
-    ii_offset = 0 # Offset since certain characters won't be drawn
+    ii_offset = 0  # Offset since certain characters won't be drawn
+
+    # The running tracker of characters vertex index
+    vi = 0
 
     orig_viewport = canvas.context.get_viewport()
     for ii, char in enumerate(text):
