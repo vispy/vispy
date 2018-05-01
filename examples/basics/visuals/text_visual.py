@@ -74,7 +74,7 @@ class Canvas(app.Canvas):
             'Hello (scroll/arrows to change text properties)|\"|how are u',
             'Hello (scroll/arrows to change text properties)|\?|how are u',
             big_test_string,
-                                    ]
+        ]
         self.str_ind = 0
 
         # anchor_x , anchor_y
