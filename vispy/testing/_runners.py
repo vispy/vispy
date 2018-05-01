@@ -259,6 +259,10 @@ def _skip_example(fname):
             'examples/basics/plotting/plot.py',
             'examples/demo/gloo/high_frequency.py',
         ]
+        # OpenGL >2.0 that fail on Travis
+        bad_examples += [
+            'examples/basics/gloo/geometry_shader.py'
+        ]
         for bad_ex in bad_examples:
             if fname.endswith(bad_ex):
                 return True
