@@ -14,7 +14,8 @@ import numpy as np
 from copy import deepcopy
 import sys
 
-from ._sdf import SDFRenderer
+from ._sdf_gpu import SDFRendererGPU
+from ._sdf_cpu import _calc_distance_field
 from ...gloo import (TextureAtlas, IndexBuffer, VertexBuffer)
 from ...gloo import context
 from ...gloo.wrappers import _check_valid
@@ -29,15 +30,24 @@ from ...io import load_spatial_filters
 class TextureFont(object):
     """Gather a set of glyphs relative to a given font name and size
 
+    This currently stores characters in a `TextureAtlas` object which uses
+    a 2D RGB texture to store unsigned 8-bit integer data. In the future this
+    could be changed to a ``GL_R8`` texture instead of RGB when OpenGL ES
+    3.0+ is standard. Since VisPy tries to stay compatible with OpenGL ES 2.0
+    we are using an ``RGB`` texture. Using a single channel texture should
+    improve performance by requiring less data to be sent to the GPU and to
+    remote backends (jupyter notebook).
+
     Parameters
     ----------
     font : dict
         Dict with entries "face", "size", "bold", "italic".
     renderer : instance of SDFRenderer
         SDF renderer to use.
+
     """
     def __init__(self, font, renderer):
-        self._atlas = TextureAtlas()
+        self._atlas = TextureAtlas(dtype=np.uint8)
         self._atlas.wrapping = 'clamp_to_edge'
         self._kernel, _ = load_spatial_filters()
         self._renderer = renderer
@@ -48,6 +58,8 @@ class TextureFont(object):
         # spread/border at the high-res for SDF calculation; must be chosen
         # relative to fragment_insert.glsl multiplication factor to ensure we
         # get to zero at the edges of characters
+        # This is also used in SDFRendererCPU, so changing this needs to
+        # propagate at least 2 other places.
         self._spread = 32
         assert self._spread % self.ratio == 0
         self._glyphs = {}
@@ -110,11 +122,18 @@ class TextureFont(object):
 
 class FontManager(object):
     """Helper to create TextureFont instances and reuse them when possible"""
-    # todo: store a font-manager on each context,
+    # XXX: should store a font-manager on each context,
     # or let TextureFont use a TextureAtlas for each context
-    def __init__(self):
+    def __init__(self, method='cpu'):
         self._fonts = {}
-        self._renderer = SDFRenderer()
+        if not isinstance(method, string_types) or \
+                method not in ('cpu', 'gpu'):
+            raise ValueError('method must be "cpu" or "gpu", got %s (%s)'
+                             % (method, type(method)))
+        if method == 'cpu':
+            self._renderer = SDFRendererCPU()
+        else:  # method == 'gpu':
+            self._renderer = SDFRendererGPU()
 
     def get_font(self, face, bold=False, italic=False):
         """Get a font described by face and size"""
@@ -238,6 +257,11 @@ class TextVisual(Visual):
         Horizontal text anchor.
     anchor_y : str
         Vertical text anchor.
+    method : str
+        Rendering method for text characters. Either 'cpu' (default) or
+        'gpu'. The 'cpu' method should perform better on remote backends
+        like those based on WebGL. The 'gpu' method should produce higher
+        quality results.
     font_manager : object | None
         Font manager to use (can be shared if the GLContext is shared).
     """
@@ -327,7 +351,7 @@ class TextVisual(Visual):
     def __init__(self, text=None, color='black', bold=False,
                  italic=False, face='OpenSans', font_size=12, pos=[0, 0, 0],
                  rotation=0., anchor_x='center', anchor_y='center',
-                 font_manager=None):
+                 method='cpu', font_manager=None):
         Visual.__init__(self, vcode=self.VERTEX_SHADER,
                         fcode=self.FRAGMENT_SHADER)
         # Check input
@@ -337,7 +361,7 @@ class TextVisual(Visual):
         _check_valid('anchor_x', anchor_x, valid_keys)
         # Init font handling stuff
         # _font_manager is a temporary solution to use global mananger
-        self._font_manager = font_manager or FontManager()
+        self._font_manager = font_manager or FontManager(method=method)
         self._font = self._font_manager.get_font(face, bold, italic)
         self._vertices = None
         self._anchors = (anchor_x, anchor_y)
@@ -496,3 +520,33 @@ class TextVisual(Visual):
 
     def _compute_bounds(self, axis, view):
         return self._pos[:, axis].min(), self._pos[:, axis].max()
+
+
+class SDFRendererCPU(object):
+    """Render SDFs using the CPU."""
+    # This should probably live in _sdf_cpu.pyx, but doing so makes
+    # debugging substantially more annoying
+    def render_to_texture(self, data, texture, offset, size):
+        sdf = (data / 255).astype(np.float32)  # from ubyte -> float
+        h, w = sdf.shape
+        tex_w, tex_h = size
+        _calc_distance_field(sdf, w, h, 32)
+        # This tweaking gets us a result more similar to the GPU SDFs,
+        # for which the text rendering code was optimized
+        sdf = 2 * sdf - 1.
+        sdf = np.sign(sdf) * np.abs(sdf) ** 0.75 / 2. + 0.5
+        # Downsample using NumPy (because we can't guarantee SciPy)
+        xp = (np.arange(w) + 0.5) / float(w)
+        x = (np.arange(tex_w) + 0.5) / float(tex_w)
+        bitmap = np.array([np.interp(x, xp, ss) for ss in sdf])
+        xp = (np.arange(h) + 0.5) / float(h)
+        x = (np.arange(tex_h) + 0.5) / float(tex_h)
+        bitmap = np.array([np.interp(x, xp, ss) for ss in bitmap.T]).T
+        assert bitmap.shape[::-1] == size
+        # convert to uint8
+        bitmap = (bitmap * 255).astype(np.uint8)
+        # convert single channel to RGB by repeating
+        bitmap = np.tile(bitmap[..., np.newaxis],
+                         (1, 1, 3))
+        texture[offset[1]:offset[1] + size[1],
+                offset[0]:offset[0] + size[0], :] = bitmap

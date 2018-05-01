@@ -103,7 +103,7 @@ install:
     # Install numpy, flake
     - conda create -n testenv --yes --quiet pip python=$PYTHON;
     - source activate testenv;
-    - conda install --yes --quiet numpy$NUMPY nose pytest;
+    - conda install --yes --quiet numpy$NUMPY nose pytest cython;
     - pip install -q coveralls pytest-cov pytest-sugar flake8
 
     # On Python3, install system-wide copies of bundled libraries instead
