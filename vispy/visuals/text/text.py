@@ -153,9 +153,7 @@ def _text_to_vbo(text, font, anchor_x, anchor_y, lowres_size):
     # trigger SDF rendering, which changes our viewport
     # todo: get rid of call to glGetParameter!
 
-    #NB The section under are new, I also moved the char analysis to before
-    # character iteration to know the fonts line-height and whitespace-width
-    """######################################################################"""
+
     # Also analyse chars with large ascender and descender, otherwise the
     # vertical alignment can be very inconsistent
     for char in 'hy':
@@ -166,7 +164,7 @@ def _text_to_vbo(text, font, anchor_x, anchor_y, lowres_size):
         descender = min(descender, y1 + slop)
         height = max(height, glyph['size'][1] - 2*slop)
 
-    # Get/set the fonts whitespace length and lineheight(size of this ok?)
+    # Get/set the fonts whitespace length and line height (size of this ok?)
     glyph = font[' ']
     spacewidth = glyph['advance'] * ratio
     lineheight = height * 1.5
@@ -186,26 +184,20 @@ def _text_to_vbo(text, font, anchor_x, anchor_y, lowres_size):
     # Keep track of y_offset to set lines at right position
     y_offset = 0
 
-    # When a linebreaks, record the vertices index value
+    # When a line break occur, record the vertices index value
     vi_marker = 0
     ii_offset = 0 # Offset since certain characters won't be drawn
-    """######################################################################"""
 
     orig_viewport = canvas.context.get_viewport()
     for ii, char in enumerate(text):
-
-        #NB If the character is an escape sequence, handle it accordingly
         if ord(char) in esc_seq:
             if esc_seq[ord(char)] < 0:
                 # Add offset in x-direction
                 x_off += abs(esc_seq[ord(char)]) * spacewidth
                 width += abs(esc_seq[ord(char)]) * spacewidth
             elif esc_seq[ord(char)] > 0:
-                # Add offset in y-direction, and reset things in x-direction
+                # Add offset in y-direction and reset things in x-direction
                 dx = dy = 0
-                # First set things correctly in x-direction
-                #width -= glyph['advance'] * ratio - (glyph['size'][0] - 2*slop)
-
                 if anchor_x == 'right':
                     dx = -width
                 elif anchor_x == 'center':
@@ -213,7 +205,7 @@ def _text_to_vbo(text, font, anchor_x, anchor_y, lowres_size):
                 vertices['a_position'][vi_marker:vi+4] += (dx, dy)
                 vi_marker = vi+4
                 ii_offset -= 1
-                # Reset varialbles that affects x-direction positioning
+                # Reset variables that affects x-direction positioning
                 x_off = -slop
                 width = 0
                 # Add offset in y-direction
@@ -223,14 +215,12 @@ def _text_to_vbo(text, font, anchor_x, anchor_y, lowres_size):
             glyph = font[char]
             kerning = glyph['kerning'].get(prev, 0.) * ratio
             x0 = x_off + glyph['offset'][0] * ratio + kerning
-            #NB y0 = glyph['offset'][1] * ratio + slop
             y0 = glyph['offset'][1] * ratio + slop - y_offset
             x1 = x0 + glyph['size'][0]
             y1 = y0 - glyph['size'][1]
             u0, v0, u1, v1 = glyph['texcoords']
             position = [[x0, y0], [x0, y1], [x1, y1], [x1, y0]]
             texcoords = [[u0, v0], [u0, v1], [u1, v1], [u1, v0]]
-            #NB vi = ii * 4
             vi = (ii + ii_offset) * 4
             vertices['a_position'][vi:vi+4] = position
             vertices['a_texcoord'][vi:vi+4] = texcoords
@@ -245,30 +235,20 @@ def _text_to_vbo(text, font, anchor_x, anchor_y, lowres_size):
     if orig_viewport is not None:
         canvas.context.set_viewport(*orig_viewport)
 
-    # Tight bounding box (loose would be width, font.height /.asc / .desc)
-    #width -= glyph['advance'] * ratio - (glyph['size'][0] - 2*slop)
-
-    #NB I changed the dx and dy to what seems reasonable to me
     dx = dy = 0
     if anchor_y == 'top':
         dy = -descender
     elif anchor_y in ('center', 'middle'):
-        #dy = -(height / 2 + descender)
         dy = (-descender - ascender) / 2
     elif anchor_y == 'bottom':
         dy = -ascender
-
-    # Already referenced to baseline
-    # elif anchor_y == 'baseline':
-    #     dy = -descender
     if anchor_x == 'right':
         dx = -width
     elif anchor_x == 'center':
         dx = -width / 2.
 
-    #NB If any linebreaks occured in text, we only want to translate characters
-    #   in the last line in text (those after the vi_marker)
-    #vertices['a_position'] += (dx, dy)
+    # If any linebreaks occured in text, we only want to translate characters
+    # in the last line in text (those after the vi_marker)
     vertices['a_position'][0:vi_marker] += (0, dy)
     vertices['a_position'][vi_marker:] += (dx, dy)
     vertices['a_position'] /= lowres_size
