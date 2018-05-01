@@ -249,23 +249,26 @@ with canvas as c:
         time.sleep(1./60.)
 """
 
+bad_examples = []
+if os.getenv('TRAVIS', 'false') == 'true' and sys.platform == 'darwin':
+    # example scripts that contain non-ascii text
+    # seem to fail on Travis OSX
+    bad_examples = [
+        'examples/basics/plotting/colorbar.py',
+        'examples/basics/plotting/plot.py',
+        'examples/demo/gloo/high_frequency.py',
+    ]
+elif os.getenv('TRAVIS', 'false') == 'true':
+    # OpenGL >2.0 that fail on Travis
+    bad_examples += [
+        'examples/basics/gloo/geometry_shader.py'
+    ]
+
 
 def _skip_example(fname):
-    if os.getenv('TRAVIS', 'false') == 'true' and sys.platform == 'darwin':
-        # example scripts that contain non-ascii text
-        # seem to fail on Travis OSX
-        bad_examples = [
-            'examples/basics/plotting/colorbar.py',
-            'examples/basics/plotting/plot.py',
-            'examples/demo/gloo/high_frequency.py',
-        ]
-        # OpenGL >2.0 that fail on Travis
-        bad_examples += [
-            'examples/basics/gloo/geometry_shader.py'
-        ]
-        for bad_ex in bad_examples:
-            if fname.endswith(bad_ex):
-                return True
+    for bad_ex in bad_examples:
+        if fname.endswith(bad_ex):
+            return True
 
     return False
 
