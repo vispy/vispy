@@ -12,8 +12,8 @@ the quality of the output is worth the cost. Note that no control can be made
 on miter joins which may result in some glitches on screen.
 """
 import numpy as np
-from vispy import glsl
-from vispy.gloo import gl
+from ... import glsl
+from ...gloo import gl
 from . collection import Collection
 from ..transforms import NullTransform
 
@@ -122,8 +122,8 @@ class AggFastPathCollection(Collection):
            Path antialias area
         """
 
-        itemsize = itemsize or len(P)
-        itemcount = len(P) / itemsize
+        itemsize = int(itemsize or len(P))
+        itemcount = len(P) // itemsize
 
         P = P.reshape(itemcount, itemsize, 3)
         if closed:
@@ -155,7 +155,7 @@ class AggFastPathCollection(Collection):
         V[:, -1] = V[:, -2]
         V = V.ravel()
         V = np.repeat(V, 2, axis=0)
-        V['id'] = np.tile([1, -1], len(V) / 2)
+        V['id'] = np.tile([1, -1], len(V) // 2)
         if closed:
             V = V.reshape(itemcount, 2 * (itemsize + 3))
         else:
@@ -196,27 +196,27 @@ class AggFastPathCollection(Collection):
         n = itemsize
 
         if closed:
-            I = np.arange(n + 3)
+            idxs = np.arange(n + 3)
             if key == 'prev':
-                I -= 2
-                I[0], I[1], I[-1] = n - 1, n - 1, n - 1
+                idxs -= 2
+                idxs[0], idxs[1], idxs[-1] = n - 1, n - 1, n - 1
             elif key == 'next':
-                I[0], I[-3], I[-2], I[-1] = 1, 0, 1, 1
+                idxs[0], idxs[-3], idxs[-2], idxs[-1] = 1, 0, 1, 1
             else:
-                I -= 1
-                I[0], I[-1], I[n + 1] = 0, 0, 0
+                idxs -= 1
+                idxs[0], idxs[-1], idxs[n + 1] = 0, 0, 0
         else:
-            I = np.arange(n + 2)
+            idxs = np.arange(n + 2)
             if key == 'prev':
-                I -= 2
-                I[0], I[1], I[-1] = 0, 0, n - 2
+                idxs -= 2
+                idxs[0], idxs[1], idxs[-1] = 0, 0, n - 2
             elif key == 'next':
-                I[0], I[-1], I[-2] = 1, n - 1, n - 1
+                idxs[0], idxs[-1], idxs[-2] = 1, n - 1, n - 1
             else:
-                I -= 1
-                I[0], I[-1] = 0, n - 1
-        I = np.repeat(I, 2)
-        return P[I]
+                idxs -= 1
+                idxs[0], idxs[-1] = 0, n - 1
+        idxs = np.repeat(idxs, 2)
+        return P[idxs]
 
     def draw(self, mode="triangle_strip"):
         """ Draw collection """

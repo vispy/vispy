@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-# vispy: gallery 30
+# vispy: gallery 2
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 """
@@ -16,11 +16,11 @@ canvas.size = 800, 600
 canvas.show()
 grid = canvas.central_widget.add_grid(margin=10)
 
-
-cbar_widget = scene.ColorBarWidget(cmap="cool", orientation="right")
+cbar_widget = scene.ColorBarWidget(label="ColorBarWidget", clim=(0, 99),
+                                   cmap="cool", orientation="right",
+                                   border_width=1)
 grid.add_widget(cbar_widget)
 
-cbar_widget.pos = (300, 100)
 cbar_widget.border_color = "#212121"
 grid.bgcolor = "#ffffff"
 

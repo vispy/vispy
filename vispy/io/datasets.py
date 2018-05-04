@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 import numpy as np
@@ -63,6 +63,12 @@ def pack_ieee(value):
 
 def load_spatial_filters(packed=True):
     """Load spatial-filters kernel
+
+    Parameters
+    ----------
+    packed : bool
+        Whether or not the data should be in "packed" representation
+        for use in GLSL code.
 
     Returns
     -------

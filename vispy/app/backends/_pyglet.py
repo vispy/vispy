@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """
@@ -359,7 +359,7 @@ class CanvasBackend(_Window, BaseCanvasBackend):
             return
         self._vispy_canvas.events.mouse_wheel(
             delta=(float(scroll_x), float(scroll_y)),
-            pos=(x, y),
+            pos=(x, self.get_size()[1] - y),
             modifiers=self._modifiers(),
         )
 

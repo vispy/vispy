@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
@@ -141,7 +141,7 @@ class raises(object):
                                  self.exc.__name__)
         else:
             raise AssertionError("Expected %s, got %s instead (%s)" %
-                                 (self.exc.__name__, type(exc).__name__), exc)
+                                 (self.exc.__name__, type(exc).__name__, exc))
 
 
 ###############################################################################
@@ -270,6 +270,16 @@ def requires_ipython(version='3.0'):
     return np.testing.dec.skipif(not ipython_present, message)
 
 
+def requires_numpydoc():
+    try:
+        import numpydoc  # noqa
+    except Exception:
+        present = False
+    else:
+        present = True
+    return np.testing.dec.skipif(not present, 'numpydoc is required')
+
+
 def has_matplotlib(version='1.2'):
     """Determine if mpl is a usable version"""
     try:
@@ -282,6 +292,16 @@ def has_matplotlib(version='1.2'):
         else:
             has_mpl = False
     return has_mpl
+
+
+def has_skimage(version='0.11'):
+    """Determine if scikit-image is a usable version"""
+    try:
+        import skimage
+    except ImportError:
+        return False
+    sk_version = LooseVersion(skimage.__version__)
+    return sk_version >= LooseVersion(version)
 
 
 ###############################################################################

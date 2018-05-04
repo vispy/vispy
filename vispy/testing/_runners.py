@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # vispy: testskip
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 """Test running functions"""
 
@@ -88,13 +88,12 @@ def _unit(mode, extra_arg_string, coverage=False):
         else:
             extra_args += ['-a', 'vispy_app_test']
     if coverage and use_pytest:
-        extra_args += ['--cov', 'vispy', '--no-cov-on-fail']
+        # Don't actually print the coverage because it's way too long
+        extra_args += ['--cov', 'vispy', '--cov-report=']
     # make a call to "python" so that it inherits whatever the system
     # thinks is "python" (e.g., virtualenvs)
-    extra_arg_string = ' '.join(extra_args)
-    insert = extra_arg_string if use_pytest else extra_args
     extra_args += [import_dir]  # positional argument
-    cmd = [sys.executable, '-c', _unit_script % insert]
+    cmd = [sys.executable, '-c', _unit_script % (extra_args,)]
     env = deepcopy(os.environ)
 
     # We want to set this for all app backends plus "nobackend" to
@@ -102,6 +101,7 @@ def _unit(mode, extra_arg_string, coverage=False):
     env.update(dict(_VISPY_TESTING_APP=mode, VISPY_IGNORE_OLD_VERSION='true'))
     env_str = '_VISPY_TESTING_APP=%s ' % mode
     if len(msg) > 0:
+        extra_arg_string = ' '.join(extra_args)
         msg = ('%s\n%s:\n%s%s'
                % (_line_sep, msg, env_str, extra_arg_string))
         print(msg)
@@ -136,7 +136,7 @@ def _docs():
                       " so that the latest sources are used automatically")
     try:
         # this should always be importable
-        from vispy.util.tests import test_docstring_parameters
+        from ..util.tests import test_docstring_parameters
         print("Running docstring test...")
         test_docstring_parameters.test_docstring_parameters()
     except AssertionError as docstring_violations:
@@ -156,14 +156,18 @@ def _flake():
         sys.argv[1:] = ['vispy', 'examples', 'make']
     else:
         sys.argv[1:] = [op.basename(import_dir)]
-    sys.argv.append('--ignore=E226,E241,E265,E266,W291,W293,W503')
-    sys.argv.append('--exclude=six.py,ordereddict.py,glfw.py,'
+    sys.argv.append('--ignore=E226,E241,E265,E266,W291,W293,W503,F999,E305,'
+                    'F405')
+    sys.argv.append('--exclude=six.py,glfw.py,'
                     '_proxy.py,_es2.py,_gl2.py,_pyopengl2.py,'
                     '_constants.py,png.py,decorator.py,ipy_inputhook.py,'
                     'experimental,wiki,_old,mplexporter.py,cubehelix.py,'
                     'cassowary')
     try:
-        from flake8.main import main
+        try:
+            from flake8.main import main
+        except ImportError:
+            from flake8.main.cli import main
     except ImportError:
         print('Skipping flake8 test, flake8 not installed')
     else:
@@ -246,6 +250,22 @@ with canvas as c:
 """
 
 
+def _skip_example(fname):
+    if os.getenv('TRAVIS', 'false') == 'true' and sys.platform == 'darwin':
+        # example scripts that contain non-ascii text
+        # seem to fail on Travis OSX
+        bad_examples = [
+            'examples/basics/plotting/colorbar.py',
+            'examples/basics/plotting/plot.py',
+            'examples/demo/gloo/high_frequency.py',
+        ]
+        for bad_ex in bad_examples:
+            if fname.endswith(bad_ex):
+                return True
+
+    return False
+
+
 def _examples(fnames_str):
     """Run examples and make sure they work.
 
@@ -295,18 +315,23 @@ def _examples(fnames_str):
         root_name = op.join(op.split(op.split(root_name[0])[0])[1],
                             op.split(root_name[0])[1], root_name[1])
         good = True
-        with open(fname, 'r') as fid:
+        with open(fname, 'rb') as fid:
             for _ in range(10):  # just check the first 10 lines
-                line = fid.readline()
+                line = fid.readline().decode('utf-8')
                 if line == '':
                     break
                 elif line.startswith('# vispy: ') and 'testskip' in line:
                     good = False
                     break
+        if _skip_example(fname):
+            print("Skipping example that fails on " +
+                  "Travis CI OSX: {}".format(fname))
+            good = False
         if not good:
             n_ran -= 1
             n_skipped += 1
             continue
+        print("Running example: {}".format(fname))
         sys.stdout.flush()
         cwd = op.dirname(fname)
         cmd = [sys.executable, '-c', _script.format(op.split(fname)[1][:-3])]
@@ -350,10 +375,10 @@ def test(label='full', extra_arg_string='', coverage=False):
     if label == 'osmesa':
         # Special case for OSMesa, we have to modify the VISPY_GL_LIB envvar
         # before the vispy.gloo package gets imported
-        from vispy.util.osmesa_gl import fix_osmesa_gl_lib
+        from ..util.osmesa_gl import fix_osmesa_gl_lib
         fix_osmesa_gl_lib()
 
-    from vispy.app.backends import BACKEND_NAMES as backend_names
+    from ..app.backends import BACKEND_NAMES as backend_names
     label = label.lower()
     label = 'pytest' if label == 'nose' else label
     known_types = ['full', 'unit', 'lineendings', 'extra', 'flake',

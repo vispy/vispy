@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 # Author: Nicolas P .Rougier
@@ -403,7 +403,7 @@ def _ico(radius, subdivisions):
 
 def _cube(rows, cols, depth, radius):
     # vertices and faces of tessellated cube
-    verts, faces, _ = create_box(1, 1, 1, rows, cols, depth)
+    verts, faces, _ = create_box(1, 1, 1, cols, rows, depth)
     verts = verts['position']
 
     # make each vertex to lie on the sphere
@@ -415,6 +415,7 @@ def _cube(rows, cols, depth, radius):
 def create_sphere(rows=10, cols=10, depth=10, radius=1.0, offset=True,
                   subdivisions=3, method='latitude'):
     """Create a sphere
+
     Parameters
     ----------
     rows : int

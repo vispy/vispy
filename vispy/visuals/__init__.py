@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 """
 This module provides a library of Visual classes, which are drawable objects
@@ -19,10 +19,12 @@ from .gridlines import GridLinesVisual  # noqa
 from .image import ImageVisual  # noqa
 from .gridmesh import GridMeshVisual  # noqa
 from .histogram import HistogramVisual  # noqa
+from .infinite_line import InfiniteLineVisual  # noqa
 from .isocurve import IsocurveVisual  # noqa
 from .isoline import IsolineVisual  # noqa
 from .isosurface import IsosurfaceVisual  # noqa
 from .line import LineVisual, ArrowVisual  # noqa
+from .linear_region import LinearRegionVisual  # noqa
 from .line_plot import LinePlotVisual  # noqa
 from .markers import MarkersVisual, marker_types  # noqa
 from .mesh import MeshVisual  # noqa
@@ -41,3 +43,4 @@ from .volume import VolumeVisual  # noqa
 from .xyz_axis import XYZAxisVisual  # noqa
 from .border import _BorderVisual  # noqa
 from .colorbar import ColorBarVisual  # noqa
+from .graphs import GraphVisual  # noqa

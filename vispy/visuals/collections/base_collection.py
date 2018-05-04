@@ -9,9 +9,12 @@ the same vertex structure (vtype) and same uniforms type (utype). A collection
 allows to manipulate objects individually and each object can have its own set
 of uniforms provided they are a combination of floats.
 """
+
+from __future__ import division
+
 import math
 import numpy as np
-from vispy.gloo import Texture2D, VertexBuffer, IndexBuffer
+from ...gloo import Texture2D, VertexBuffer, IndexBuffer
 from . util import dtype_reduce
 from . array_list import ArrayList
 
@@ -290,13 +293,13 @@ class BaseCollection(object):
             # FIXME: variables indices (list of list or ArrayList)
             else:
                 if itemsize is None:
-                    I = np.array(indices) + vsize
+                    idxs = np.array(indices) + vsize
                 elif isinstance(itemsize, int):
-                    I = vsize + (np.tile(indices, count) +
-                                 itemsize * np.repeat(np.arange(count), len(indices)))  # noqa
+                    idxs = vsize + (np.tile(indices, count) +
+                                    itemsize * np.repeat(np.arange(count), len(indices)))  # noqa
                 else:
                     raise ValueError("Indices not compatible with items")
-                self._indices_list.append(I, len(indices))
+                self._indices_list.append(idxs, len(indices))
 
         # Uniforms
         # -----------------------------
@@ -357,10 +360,10 @@ class BaseCollection(object):
             self._update()
 
         V = self._vertices_buffer
-        I = None
+        idxs = None
         U = None
         if self._indices_list is not None:
-            I = self._indices_buffer
+            idxs = self._indices_buffer
         if self._uniforms_list is not None:
             U = self._uniforms_texture.data.ravel().view(self.utype)
 
@@ -383,9 +386,9 @@ class BaseCollection(object):
             vertices = V[vstart:vend]
             indices = None
             uniforms = None
-            if I is not None:
+            if idxs is not None:
                 istart, iend = self._indices_list._items[key]
-                indices = I[istart:iend]
+                indices = idxs[istart:iend]
 
             if U is not None:
                 ustart, uend = self._uniforms_list._items[key]
@@ -415,10 +418,10 @@ class BaseCollection(object):
             self._update()
 
         V = self._vertices_buffer
-        I = None
+        # I = None
         U = None
-        if self._indices_list is not None:
-            I = self._indices_buffer  # noqa
+        # if self._indices_list is not None:
+        #     I = self._indices_buffer  # noqa
         if self._uniforms_list is not None:
             U = self._uniforms_texture.data.ravel().view(self.utype)
 
@@ -454,9 +457,9 @@ class BaseCollection(object):
         # linesize = gl.glGetInteger(gl.GL_MAX_TEXTURE_SIZE)
         linesize = 1024
         count = self._uniforms_float_count
-        cols = linesize // float(count / 4)
+        cols = 4 * linesize // int(count)
         rows = max(1, int(math.ceil(size / float(cols))))
-        shape = rows, cols * (count / 4), count
+        shape = rows, cols * (count // 4), count
         self._ushape = shape
         return shape
 

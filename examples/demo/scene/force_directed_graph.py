@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 """
 Plot clusters of data points and a graph of connections
@@ -27,7 +27,7 @@ ptr = 0
 typ = 0
 while ptr < npts:
     size = np.random.random() * grpsize + grpsize // 2
-    types[ptr:ptr+size] = typ
+    types[int(ptr):int(ptr+size)] = typ
     typ += 1
     ptr = ptr + size
 

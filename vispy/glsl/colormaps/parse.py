@@ -17,7 +17,7 @@ code = """
 #include "colormap/colormaps.glsl"
 """
 
-re_include = re.compile('\#include\s*"(?P<filename>[a-zA-Z0-9\-\.\/]+)"')
+re_include = re.compile(r'\#include\s*"(?P<filename>[a-zA-Z0-9\-\.\/]+)"')
 
 includes = []
 

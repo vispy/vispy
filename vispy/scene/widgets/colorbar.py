@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
@@ -10,14 +10,6 @@ from ...visuals import ColorBarVisual
 
 
 class ColorBarWidget(Widget):
-    # padding with respect to the major and minor axis
-    # units are normalized [0, 1] with 1 representing occupying
-    # all of the length along the given axis
-    major_axis_padding = 0.1
-    minor_axis_padding = 0.8
-    # ratio of minor axis to major axis
-    minor_axis_ratio = 0.05
-
     """Widget containing a ColorBar
 
     Parameters
@@ -55,6 +47,9 @@ class ColorBarWidget(Widget):
     label : str
         The label that is to be drawn with the colorbar
         that provides information about the colorbar.
+    label_color : str | vispy.color.Color
+        The color of labels. This can either be a
+        str as the color's name or an actual instace of a vipy.color.Color
     clim : tuple (min, max)
         the minimum and maximum values of the data that
         is given to the colorbar. This is used to draw the scale
@@ -65,15 +60,25 @@ class ColorBarWidget(Widget):
     border_color : str | vispy.color.Color
         The color of the border of the colormap. This can either be a
         str as the color's name or an actual instace of a vipy.color.Color
+    padding : tuple (major_axis, minor_axis) [0, 1]
+        padding with respect to the major and minor axis
+    axis_ratio : float
+        ratio of minor axis to major axis
     """
     def __init__(self, cmap, orientation,
-                 label="", clim=("", ""),
-                 border_width=0.0, border_color="black", **kwargs):
+                 label="", label_color='black', clim=("", ""),
+                 border_width=0.0, border_color="black",
+                 padding=(0.2, 0.2), axis_ratio=0.05, **kwargs):
 
         dummy_size = (1, 1)
+        self._major_axis_padding = padding[0]
+        self._minor_axis_padding = padding[1]
+        self._minor_axis_ratio = axis_ratio
+
         self._colorbar = ColorBarVisual(size=dummy_size, cmap=cmap,
                                         orientation=orientation,
-                                        label=label, clim=clim,
+                                        label_str=label, clim=clim,
+                                        label_color=label_color,
                                         border_width=border_width,
                                         border_color=border_color, **kwargs)
 
@@ -94,25 +99,25 @@ class ColorBarWidget(Widget):
 
     def _update_colorbar(self):
         self._colorbar.pos = self.rect.center
-        self._colorbar.size = \
-            ColorBarWidget.calc_size(self.rect, self._colorbar.orientation)
+        self._colorbar.size = self._calc_size()
 
-    @staticmethod
-    def calc_size(rect, orientation):
-        (total_halfx, total_halfy) = rect.center
-        if orientation in ["bottom", "top"]:
+    def _calc_size(self):
+        """Calculate a size
+        """
+        (total_halfx, total_halfy) = (self.rect.right, self.rect.top)
+        if self._colorbar.orientation in ["bottom", "top"]:
             (total_major_axis, total_minor_axis) = (total_halfx, total_halfy)
         else:
             (total_major_axis, total_minor_axis) = (total_halfy, total_halfx)
 
         major_axis = total_major_axis * (1.0 -
-                                         ColorBarWidget.major_axis_padding)
-        minor_axis = major_axis * ColorBarWidget.minor_axis_ratio
+                                         self._major_axis_padding)
+        minor_axis = major_axis * self._minor_axis_ratio
 
         # if the minor axis is "leaking" from the padding, then clamp
         minor_axis = np.minimum(minor_axis,
                                 total_minor_axis *
-                                (1.0 - ColorBarWidget.minor_axis_padding))
+                                (1.0 - self._minor_axis_padding))
 
         return (major_axis, minor_axis)
 
@@ -148,14 +153,14 @@ class ColorBarWidget(Widget):
         """
         self._colorbar._label_str = label_str
         self._update()
-        
+
     def ticks(self):
         return self._colorbar.ticks
 
     @ticks.setter
     def ticks(self, ticks):
         self._colorbar.ticks = ticks
-        
+
     @property
     def clim(self):
         return self._colorbar.clim
@@ -163,6 +168,26 @@ class ColorBarWidget(Widget):
     @clim.setter
     def clim(self, clim):
         self._colorbar.clim = clim
+
+    @property
+    def border_color(self):
+        """ The color of the border around the ColorBar in pixels
+        """
+        return self._colorbar.border_color
+
+    @border_color.setter
+    def border_color(self, border_color):
+        self._colorbar.border_color = border_color
+
+    @property
+    def border_width(self):
+        """ The width of the border around the ColorBar in pixels
+        """
+        return self._colorbar.border_width
+
+    @border_width.setter
+    def border_width(self, border_width):
+        self._colorbar.border_width = border_width
 
     @property
     def orientation(self):

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # vispy: gallery 2000
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 # Author:   Nicolas P .Rougier
@@ -9,6 +9,8 @@
 # Abstract: GPU computing usingthe framebuffer
 # Keywords: framebuffer, GPU computing, reaction-diffusion
 # -----------------------------------------------------------------------------
+
+from __future__ import division
 
 import numpy as np
 from vispy.gloo import (Program, FrameBuffer, RenderBuffer, set_viewport,
@@ -152,10 +154,10 @@ class Canvas(app.Canvas):
         UV = np.zeros((comp_h, comp_w, 4), dtype=np.float32)
         UV[:, :, 0] = 1.0
         r = 32
-        UV[comp_h / 2 - r:comp_h / 2 + r,
-           comp_w / 2 - r:comp_w / 2 + r, 0] = 0.50
-        UV[comp_h / 2 - r:comp_h / 2 + r,
-           comp_w / 2 - r:comp_w / 2 + r, 1] = 0.25
+        UV[comp_h // 2 - r:comp_h // 2 + r,
+           comp_w // 2 - r:comp_w // 2 + r, 0] = 0.50
+        UV[comp_h // 2 - r:comp_h // 2 + r,
+           comp_w // 2 - r:comp_w // 2 + r, 1] = 0.25
         UV += np.random.uniform(0.0, 0.01, (comp_h, comp_w, 4))
         UV[:, :, 2] = UV[:, :, 0]
         UV[:, :, 3] = UV[:, :, 1]

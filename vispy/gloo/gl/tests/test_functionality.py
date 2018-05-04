@@ -23,6 +23,7 @@ from vispy.testing import (requires_application, requires_pyopengl, SkipTest,
                            run_tests_if_main, assert_equal, assert_true)
 
 from vispy.gloo import gl
+import pytest
 
 # All these tests require a working backend.
 
@@ -33,12 +34,16 @@ def teardown_module():
     gl.use_gl()  # Reset to default
 
 
+@pytest.mark.xfail(sys.platform == 'darwin',
+                   reason='functionality fails on OSX (see #1178)')
 @requires_application()
 def test_functionality_desktop():
     """ Test desktop GL backend for full functionality. """
     _test_functionality('gl2')
 
 
+@pytest.mark.xfail(sys.platform == 'darwin',
+                   reason='functionality fails on OSX (see #1178)')
 @requires_application()
 def test_functionality_proxy():
     """ Test GL proxy class for full functionality. """
@@ -46,6 +51,8 @@ def test_functionality_proxy():
     _test_functionality('gl2 debug')
 
 
+@pytest.mark.xfail(sys.platform == 'darwin',
+                   reason='functionality fails on OSX (see #1178)')
 @requires_application()
 @requires_pyopengl()
 def test_functionality_pyopengl():

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division
@@ -26,35 +26,35 @@ vec4 grid_color(vec2 pos) {
     // Pixel length along each axis, rounded to the nearest power of 10
     vec2 px = s * vec2(abs(dx.x) + abs(dy.x), abs(dx.y) + abs(dy.y));
     float log10 = log(10.0);
-    float sx = pow(10.0, floor(log(px.x) / log10)+1) * $scale.x;
-    float sy = pow(10.0, floor(log(px.y) / log10)+1) * $scale.y;
+    float sx = pow(10.0, floor(log(px.x) / log10) + 1.) * $scale.x;
+    float sy = pow(10.0, floor(log(px.y) / log10) + 1.) * $scale.y;
 
     float max_alpha = 0.6;
     float x_alpha = 0.0;
 
-    if (mod(local_pos.x, 1000 * sx) < px.x) {
-        x_alpha = clamp(1 * sx/px.x, 0, max_alpha);
+    if (mod(local_pos.x, 1000. * sx) < px.x) {
+        x_alpha = clamp(1. * sx/px.x, 0., max_alpha);
     }
-    else if (mod(local_pos.x, 100 * sx) < px.x) {
-        x_alpha = clamp(.1 * sx/px.x, 0, max_alpha);
+    else if (mod(local_pos.x, 100. * sx) < px.x) {
+        x_alpha = clamp(.1 * sx/px.x, 0., max_alpha);
     }
-    else if (mod(local_pos.x, 10 * sx) < px.x) {
-        x_alpha = clamp(0.01 * sx/px.x, 0, max_alpha);
+    else if (mod(local_pos.x, 10. * sx) < px.x) {
+        x_alpha = clamp(0.01 * sx/px.x, 0., max_alpha);
     }
 
     float y_alpha = 0.0;
-    if (mod(local_pos.y, 1000 * sy) < px.y) {
-        y_alpha = clamp(1 * sy/px.y, 0, max_alpha);
+    if (mod(local_pos.y, 1000. * sy) < px.y) {
+        y_alpha = clamp(1. * sy/px.y, 0., max_alpha);
     }
-    else if (mod(local_pos.y, 100 * sy) < px.y) {
-        y_alpha = clamp(.1 * sy/px.y, 0, max_alpha);
+    else if (mod(local_pos.y, 100. * sy) < px.y) {
+        y_alpha = clamp(.1 * sy/px.y, 0., max_alpha);
     }
-    else if (mod(local_pos.y, 10 * sy) < px.y) {
-        y_alpha = clamp(0.01 * sy/px.y, 0, max_alpha);
+    else if (mod(local_pos.y, 10. * sy) < px.y) {
+        y_alpha = clamp(0.01 * sy/px.y, 0., max_alpha);
     }
 
-    float alpha = (((log(max(x_alpha, y_alpha))/log(10.))+2) / 3);
-    if (alpha == 0) {
+    float alpha = (((log(max(x_alpha, y_alpha))/log(10.)) + 2.) / 3.);
+    if (alpha == 0.) {
         discard;
     }
     return vec4($color.rgb, $color.a * alpha);

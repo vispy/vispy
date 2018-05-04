@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 """Entry point for vispy's IPython bindings"""
 
@@ -33,7 +33,7 @@ def load_ipython_extension(ipython):
 def _load_webgl_backend(ipython):
     """ Load the webgl backend for the IPython notebook"""
 
-    from vispy import app
+    from .. import app
     app_instance = app.use_app("ipynb_webgl")
 
     if app_instance.backend_name == "ipynb_webgl":

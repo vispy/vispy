@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """
@@ -112,9 +112,24 @@ class Application(object):
         # Then we check the application singleton and determine based on
         # a variable it sets.
         try:
-            from IPython.config.application import Application as App
+            try:
+                # ipython >=3.0
+                from traitlets.config.application import Application as App
+            except ImportError:
+                # ipython <3.0
+                from IPython.config.application import Application as App
             return App.initialized() and App.instance().interact
         except (ImportError, AttributeError):
+            return False
+
+    def is_notebook(self):
+        """Determine if the user is executing in a Jupyter Notebook"""
+        try:
+            # 'get_ipython' is available in globals when running from
+            # IPython/Jupyter
+            ip = get_ipython()
+            return ip.has_trait('kernel')
+        except NameError:
             return False
 
     def run(self, allow_interactive=True):
@@ -174,6 +189,8 @@ class Application(object):
         elif test_name is not None:
             backend_name = test_name.lower()
             assert backend_name in BACKENDMAP
+        elif self.is_notebook():
+            backend_name = 'ipynb_webgl'
 
         # Should we try and load any backend, or just this specific one?
         try_others = backend_name is None
@@ -225,8 +242,9 @@ class Application(object):
                            (native_module_name, name, str(mod.why_not)))
                     logger.warning(msg)
                 else:
-                    # Inform otherwise
-                    logger.info(msg)
+                    if backend_name is not None:
+                        # Inform only if one isn't available
+                        logger.info(msg)
             else:
                 # Success!
                 self._backend_module = mod

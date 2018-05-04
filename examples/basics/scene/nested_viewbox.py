@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 # vispy: gallery 2
@@ -38,6 +38,8 @@ PanZoomCamera is to reverse its internal y-axis relative to its parent.
     +-----------------+-----------------+
 """
 
+from __future__ import division
+
 import numpy as np
 
 from vispy import app
@@ -55,7 +57,7 @@ color[:, 1] = color[::-1, 0]
 pos = np.empty((N, 2), np.float32)
 pos[:, 0] = np.linspace(0., 1., N)
 pos[:, 1] = np.random.normal(loc=0.5, scale=0.03, size=N)
-pos[N/2:N/2+20, 1] = 0.9  # So we can see which side is up
+pos[N//2:N//2+20, 1] = 0.9  # So we can see which side is up
 
 
 # Create canvas

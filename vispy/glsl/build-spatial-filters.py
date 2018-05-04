@@ -97,7 +97,7 @@ class SpatialFilter(object):
     def kernel(self, size=4*512):
         radius = self.radius
         r = int(max(1.0, math.ceil(radius)))
-        samples = size / r
+        samples = int(size / r)
         n = size  # r*samples
         kernel = np.zeros(n)
         X = np.linspace(0, r, n)
@@ -494,8 +494,8 @@ class Bessel(SpatialFilter):
         '''
         Function BESJ calculates Bessel function of first kind of order n
         Arguments:
-            n - an integer (>=0), the order
             x - value at which the Bessel function is required
+            n - an integer (>=0), the order
         --------------------
         C++ Mathematical Library
         Converted from equivalent FORTRAN library
@@ -519,6 +519,7 @@ class Bessel(SpatialFilter):
         '''
         if n < 0:
             return 0.0
+        x = float(x)  # force float type
 
         d = 1e-6
         b = 0
@@ -537,13 +538,13 @@ class Bessel(SpatialFilter):
         if m1 > m2:
             m2 = m1
 
-        # Apply recurrence down from curent max order
+        # Apply recurrence down from current max order
         while True:
             c3 = 0
             c2 = 1e-30
             c4 = 0
             m8 = 1
-            if m2 / 2 * 2 == m2:
+            if m2 // 2 * 2 == m2:
                 m8 = -1
 
             imax = m2 - 2
@@ -672,13 +673,13 @@ code = 'float\n'
 code += 'unpack_ieee(vec4 rgba)\n'
 code += '{\n'
 code += '\t// return rgba.r;  // uncomment this for r32f debugging\n'
-code += '\trgba.rgba = rgba.abgr * 255;\n'
+code += '\trgba.rgba = rgba.abgr * 255.;\n'
 code += '\tfloat sign = 1.0 - step(128.0,rgba[0])*2.0;\n'
 code += '\tfloat exponent = 2.0 * mod(rgba[0],128.0) + ' \
         'step(128.0,rgba[1]) - 127.0;\n'
 code += '\tfloat mantissa = mod(rgba[1],128.0)*65536.0 + rgba[2]*256.0 + ' \
         'rgba[3] + float(0x800000);\n'
-code += '\treturn sign * exp2(exponent) * (mantissa * exp2(-23));\n'
+code += '\treturn sign * exp2(exponent) * (mantissa * exp2(-23.));\n'
 code += '}\n'
 print(code.expandtabs(4))
 
@@ -687,14 +688,14 @@ code += 'unpack_interpolate(sampler2D kernel, vec2 uv)\n'
 code += '{\n'
 code += '\t// return texture2D(kernel, uv).r; ' \
         '//uncomment this for r32f debug without interpolation\n'
-code += '\tfloat kpixel = 1/kernel_size;\n'
+code += '\tfloat kpixel = 1. / kernel_size;\n'
 code += '\tfloat u = uv.x / kpixel;\n'
 code += '\tfloat v = uv.y;\n'
 code += '\tfloat uf = fract(u);\n'
 code += '\tu = (u - uf) * kpixel;\n'
 code += '\n'
 code += '\tfloat d0 = unpack_unit(texture2D(kernel, vec2(u, v)));\n'
-code += '\tfloat d1 = unpack_unit(texture2D(kernel, vec2(u + 1 * kpixel, v)));\n'  # noqa
+code += '\tfloat d1 = unpack_unit(texture2D(kernel, vec2(u + 1. * kpixel, v)));\n'  # noqa
 code += '\treturn mix(d0, d1, uf);\n'
 code += '}\n'
 print(code.expandtabs(4))

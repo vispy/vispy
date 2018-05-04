@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 """
 The classes in scene.visuals are visuals that may be added to a scenegraph
@@ -232,14 +232,17 @@ ColorBar = create_visual_node(visuals.ColorBarVisual)
 Compound = create_visual_node(visuals.CompoundVisual)
 Cube = create_visual_node(visuals.CubeVisual)
 Ellipse = create_visual_node(visuals.EllipseVisual)
+Graph = create_visual_node(visuals.GraphVisual)
 GridLines = create_visual_node(visuals.GridLinesVisual)
 GridMesh = create_visual_node(visuals.GridMeshVisual)
 Histogram = create_visual_node(visuals.HistogramVisual)
 Image = create_visual_node(visuals.ImageVisual)
+InfiniteLine = create_visual_node(visuals.InfiniteLineVisual)
 Isocurve = create_visual_node(visuals.IsocurveVisual)
 Isoline = create_visual_node(visuals.IsolineVisual)
 Isosurface = create_visual_node(visuals.IsosurfaceVisual)
 Line = create_visual_node(visuals.LineVisual)
+LinearRegion = create_visual_node(visuals.LinearRegionVisual)
 LinePlot = create_visual_node(visuals.LinePlotVisual)
 Markers = create_visual_node(visuals.MarkersVisual)
 Mesh = create_visual_node(visuals.MeshVisual)

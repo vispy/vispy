@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 # Author: Siddharth Bhat
@@ -50,6 +50,7 @@ void main()
 class _CoreColorBarVisual(Visual):
     """
     Visual subclass that actually renders the ColorBar.
+
     Parameters
     ----------
      pos : tuple (x, y)
@@ -69,6 +70,7 @@ class _CoreColorBarVisual(Visual):
         The orientation of the colorbar, used for rendering. The
         orientation can be thought of as the position of the label
         relative to the color bar.
+
     Note
     ----
     This is purely internal.
@@ -204,11 +206,6 @@ class _CoreColorBarVisual(Visual):
 
 
 class ColorBarVisual(CompoundVisual):
-    # The padding multiplier that's used to place the text
-    # next to the Colorbar. Makes sure the text isn't
-    # visually "sticking" to the Colorbar
-    text_padding_factor = 1.05
-
     """Visual subclass displaying a colorbar
 
     Parameters
@@ -242,6 +239,7 @@ class ColorBarVisual(CompoundVisual):
 
             * 'right': Same as left, except that the
               label is placed to the right of the colorbar
+
     size : (major_axis_length, minor_axis_length)
         lengths with respect to the major and minor axes.
         The minor axis is the shorter axis, while the major axis is
@@ -258,6 +256,9 @@ class ColorBarVisual(CompoundVisual):
     label_str : str
         The label that is to be drawn with the colorbar
         that provides information about the colorbar.
+    label_color : str | vispy.color.Color
+        The color of the labels. This can either be a
+        str as the color's name or an actual instace of a vipy.color.Color
     clim : tuple (min, max)
         the minimum and maximum values of the data that
         is given to the colorbar. This is used to draw the scale
@@ -269,27 +270,35 @@ class ColorBarVisual(CompoundVisual):
         The color of the border of the colormap. This can either be a
         str as the color's name or an actual instace of a vipy.color.Color
     """
+    # The padding multiplier that's used to place the text
+    # next to the Colorbar. Makes sure the text isn't
+    # visually "sticking" to the Colorbar
+    text_padding_factor = 1.05
 
     def __init__(self, cmap, orientation, size,
                  pos=[0, 0],
                  label_str="",
+                 label_color='black',
                  clim=(0.0, 1.0),
                  border_width=1.0,
                  border_color="black",
                  **kwargs):
 
         self._label_str = label_str
+        self._label_color = label_color
         self._cmap = get_colormap(cmap)
         self._clim = clim
         self._pos = pos
         self._size = size
         self._orientation = orientation
 
-        self._label = TextVisual(text=self._label_str)
+        self._label = TextVisual(self._label_str, color=self._label_color)
 
         self._ticks = []
-        self._ticks.append(TextVisual(str(self._clim[0])))
-        self._ticks.append(TextVisual(str(self._clim[1])))
+        self._ticks.append(TextVisual(str(self._clim[0]),
+                                      color=self._label_color))
+        self._ticks.append(TextVisual(str(self._clim[1]),
+                                      color=self._label_color))
 
         if orientation in ["top", "bottom"]:
             (width, height) = size
@@ -321,7 +330,6 @@ class ColorBarVisual(CompoundVisual):
         self._colorbar.halfdim = self._halfdim
         self._border.halfdim = self._halfdim
 
-        self._label.text = self._label_str
         self._ticks[0].text = str(self._clim[0])
         self._ticks[1].text = str(self._clim[1])
 
@@ -655,6 +663,7 @@ class ColorBarVisual(CompoundVisual):
     @border_color.setter
     def border_color(self, border_color):
         self._border.border_color = border_color
+        self._update()
 
     @property
     def orientation(self):
@@ -702,5 +711,5 @@ class ColorBarVisual(CompoundVisual):
         elif height == 0.:
             raise ValueError("height must be non-zero, not %s" % (height, ))
 
-        self._halfdim = (width, height)
+        self._halfdim = (width / 2., height / 2.)
         self._update()

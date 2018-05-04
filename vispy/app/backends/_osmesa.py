@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # vispy: testskip
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 """
 OSMesa backend for offscreen rendering on Linux/Unix
@@ -9,7 +9,7 @@ from __future__ import division
 from ...util.ptime import time
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
                     BaseTimerBackend)
-from vispy.gloo import gl
+from ...gloo import gl
 from time import sleep
 
 try:

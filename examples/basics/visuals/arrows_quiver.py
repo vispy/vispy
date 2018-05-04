@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """
 This example shows how to use the `ArrowVisual` for a quiver plot
 """
+
+from __future__ import division
 
 import sys
 import itertools
@@ -62,8 +64,8 @@ class Canvas(app.Canvas):
         self.visual.transforms.configure(canvas=self, viewport=vp)
 
     def rotate_arrows(self, point_towards):
-        direction_vectors = (self.grid_coords -
-                             point_towards).astype(np.float32)
+        direction_vectors = (self.grid_coords - point_towards).astype(
+            np.float32)
         norms = np.sqrt(np.sum(direction_vectors**2, axis=-1))
         direction_vectors[:, 0] /= norms
         direction_vectors[:, 1] /= norms
@@ -76,7 +78,7 @@ class Canvas(app.Canvas):
 
         self.visual.set_data(
             pos=vertices,
-            arrows=vertices.reshape((len(vertices)/2, 4)),
+            arrows=vertices.reshape((len(vertices)//2, 4)),
         )
 
     def on_mouse_move(self, event):

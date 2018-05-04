@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
@@ -26,6 +26,7 @@ vb.camera.rect = 0, 0, 1, 1
 def resize(event=None):
     vb.pos = 1, canvas.size[1] // 2 - 1
     vb.size = canvas.size[0] - 2, canvas.size[1] // 2 - 2
+
 
 t1 = Text('Text in root scene (24 pt)', parent=canvas.scene, color='red')
 t1.font_size = 24

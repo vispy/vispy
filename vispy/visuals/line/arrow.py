@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 """
 Arrows are a subclass of line visuals, which adds the ability to put several
@@ -11,6 +11,7 @@ from __future__ import division
 import numpy as np
 
 from ... import glsl, gloo
+from ..transforms._util import as_vec4
 from ..visual import Visual
 from .line import LineVisual
 
@@ -29,11 +30,12 @@ ARROW_TYPES = (
 
 
 class _ArrowHeadVisual(Visual):
-    """
-    ArrowHeadVisual: several shapes to put on the end of a line.
-    This visual differs from MarkersVisual in the sense that this visual
-    calculates the orientation of the visual on the GPU, by calculating the
-    tangent of the line between two given vertices.
+    """Arrow head visual
+
+    Several shapes to put on the end of a line. This visual differs from
+    MarkersVisual in the sense that this visual calculates the orientation of
+    the visual on the GPU, by calculating the tangent of the line between two
+    given vertices.
 
     This is not really a visual you would use on your own,
     use :class:`ArrowVisual` instead.
@@ -48,8 +50,8 @@ class _ArrowHeadVisual(Visual):
     ARROWHEAD_FRAGMENT_SHADER = glsl.get('arrowheads/arrowheads.frag')
 
     _arrow_vtype = np.dtype([
-        ('v1', np.float32, 2),
-        ('v2', np.float32, 2),
+        ('v1', np.float32, 4),
+        ('v2', np.float32, 4),
         ('size', np.float32, 1),
         ('color', np.float32, 4),
         ('linewidth', np.float32, 1)
@@ -62,6 +64,9 @@ class _ArrowHeadVisual(Visual):
         self.set_gl_state(depth_test=False, blend=True,
                           blend_func=('src_alpha', 'one_minus_src_alpha'))
         self._draw_mode = 'points'
+
+        self._arrow_vbo = gloo.VertexBuffer(
+            np.array([], dtype=self._arrow_vtype))
 
     def _prepare_transforms(self, view):
         xform = view.transforms.get_transform()
@@ -77,19 +82,25 @@ class _ArrowHeadVisual(Visual):
 
     def _prepare_vertex_data(self):
         arrows = self._parent.arrows
-        if arrows is None:
-            return np.array([], dtype=self._arrow_vtype)
+
+        if arrows is None or arrows.size == 0:
+            self._arrow_vbo = gloo.VertexBuffer(
+                np.array([], dtype=self._arrow_vtype))
+            return
+
         v = np.zeros(len(arrows), dtype=self._arrow_vtype)
-        v['v1'] = arrows[:, 0:2]
-        v['v2'] = arrows[:, 2:4]
+        # 2d // 3d v1 v2.
+        sh = int(arrows.shape[1] / 2)
+        v['v1'] = as_vec4(arrows[:, 0:sh])
+        v['v2'] = as_vec4(arrows[:, sh:int(2 * sh)])
         v['size'][:] = self._parent.arrow_size
-        v['color'][:] = self._parent._interpret_color()
+        v['color'][:] = self._parent._interpret_color(self._parent.arrow_color)
         v['linewidth'][:] = self._parent.width
         self._arrow_vbo = gloo.VertexBuffer(v)
 
 
 class ArrowVisual(LineVisual):
-    """ArrowVisual
+    """Arrow visual
 
     A special line visual which can also draw optional arrow heads at the
     specified vertices.
@@ -132,10 +143,11 @@ class ArrowVisual(LineVisual):
         For method='gl', this specifies whether to use GL's line smoothing,
         which may be unavailable or inconsistent on some platforms.
     arrows : array
-        A Nx4 matrix where each row contains the x and y coordinate of the
-        first and second vertex of the arrow body. Remember that the second
-        vertex is used as center point for the arrow head, and the first
-        vertex is only used for determining the arrow head orientation.
+        A (N, 4) or (N, 6) matrix where each row contains the (x, y) or the
+        (x, y, z) coordinate of the first and second vertex of the arrow
+        body. Remember that the second vertex is used as center point for
+        the arrow head, and the first vertex is only used for determining
+        the arrow head orientation.
     arrow_type : string
         Specify the arrow head type, the currently available arrow head types
         are:
@@ -151,11 +163,16 @@ class ArrowVisual(LineVisual):
             * inhibitor_round
     arrow_size : float
         Specify the arrow size
+    arrow_color : Color, tuple, or array
+        The arrow head color. If an array is given, it must be of shape
+        (..., 4) and provide one rgba color per arrow head. Can also be a
+        colormap name, or appropriate `Function`.
     """
 
     def __init__(self, pos=None, color=(0.5, 0.5, 0.5, 1), width=1,
                  connect='strip', method='gl', antialias=False, arrows=None,
-                 arrow_type='stealth', arrow_size=None):
+                 arrow_type='stealth', arrow_size=None,
+                 arrow_color=(0.5, 0.5, 0.5, 1)):
 
         # Do not use the self._changed dictionary as it gets overwritten by
         # the LineVisual constructor.
@@ -167,8 +184,8 @@ class ArrowVisual(LineVisual):
 
         self.arrow_type = arrow_type
         self.arrow_size = arrow_size
+        self.arrow_color = arrow_color
 
-        # Add marker visual for the arrow head
         self.arrow_head = _ArrowHeadVisual(self)
 
         # TODO: `LineVisual.__init__` also calls its own `set_data` method,
@@ -179,6 +196,7 @@ class ArrowVisual(LineVisual):
                             antialias)
         ArrowVisual.set_data(self, arrows=arrows)
 
+        # Add marker visual for the arrow head
         self.add_subvisual(self.arrow_head)
 
     def set_data(self, pos=None, color=None, width=None, connect=None,
@@ -206,11 +224,11 @@ class ArrowVisual(LineVisual):
                 * numpy arrays specify the exact set of segment pairs to
                   connect.
         arrows : array
-            A Nx4 matrix where each row contains the x and y coordinate of the
-            first and second vertex of the arrow body. Remember that the second
-            vertex is used as center point for the arrow head, and the first
-            vertex is only used for determining the arrow head orientation.
-
+            A (N, 4) or (N, 6) matrix where each row contains the (x, y) or the
+            (x, y, z) coordinate of the first and second vertex of the arrow
+            body. Remember that the second vertex is used as center point for
+            the arrow head, and the first vertex is only used for determining
+            the arrow head orientation.
         """
 
         if arrows is not None:
@@ -253,6 +271,16 @@ class ArrowVisual(LineVisual):
             self._arrow_size = value
 
         self._arrows_changed = True
+
+    @property
+    def arrow_color(self):
+        return self._arrow_color
+
+    @arrow_color.setter
+    def arrow_color(self, value):
+        if value is not None:
+            self._arrow_color = value
+            self._arrows_changed = True
 
     @property
     def arrows(self):

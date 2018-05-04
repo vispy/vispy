@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
@@ -715,8 +715,13 @@ class TextureEmulated3D(Texture2D):
 
     def _update_variables(self):
         self._glsl_sample['shape'] = self.shape[:3][::-1]
-        self._glsl_sample['c'] = self._c
-        self._glsl_sample['r'] = self._r
+        # On Windows with Python 2.7, self._c can end up being a long
+        # integer because Numpy array shapes return long integers. This
+        # causes issues when setting the gloo variables since these are
+        # expected to be native ints, so we cast the integers to ints
+        # to avoid this.
+        self._glsl_sample['c'] = int(self._c)
+        self._glsl_sample['r'] = int(self._r)
 
     def set_data(self, data, offset=None, copy=False):
         """Set texture data
@@ -812,6 +817,8 @@ class TextureAtlas(Texture2D):
     ----------
     shape : tuple of int
         Texture shape (optional).
+    dtype : numpy.dtype object
+        Texture starting data type (default: float32)
 
     Notes
     -----
@@ -821,13 +828,14 @@ class TextureAtlas(Texture2D):
         >>> atlas = TextureAtlas()
         >>> bounds = atlas.get_free_region(20, 30)
         >>> atlas.set_region(bounds, np.random.rand(20, 30).T)
+
     """
-    def __init__(self, shape=(1024, 1024)):
+    def __init__(self, shape=(1024, 1024), dtype=np.float32):
         shape = np.array(shape, int)
         assert shape.ndim == 1 and shape.size == 2
         shape = tuple(2 ** (np.log2(shape) + 0.5).astype(int)) + (3,)
         self._atlas_nodes = [(0, 0, shape[1])]
-        data = np.zeros(shape, np.float32)
+        data = np.zeros(shape, dtype)
         super(TextureAtlas, self).__init__(data, interpolation='linear',
                                            wrapping='clamp_to_edge')
 

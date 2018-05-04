@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division  # just to be safe...
@@ -168,9 +168,9 @@ def _process_glsl_template(template, colors):
 
 
 class BaseColormap(object):
-    """Class representing a colormap:
+    u"""Class representing a colormap:
 
-        t \in [0, 1] --> rgba_color
+        t in [0, 1] --> rgba_color
 
     Parameters
     ----------
@@ -187,7 +187,6 @@ class BaseColormap(object):
     map(item) : function
         Takes a (N, 1) vector of values in [0, 1], and returns a rgba array
         of size (N, 4).
-
     """
 
     # Control colors used by the colormap.
@@ -673,10 +672,44 @@ class _Diverging(Colormap):
 
         super(_Diverging, self).__init__(colors)
 
-# https://github.com/matplotlib/matplotlib/pull/4707/files#diff-893cf0348279e9f4570488a7a297ab1eR774
+
+class _RedYellowBlueCyan(Colormap):
+    """A colormap which is goes red-yellow positive and blue-cyan negative
+
+    Parameters
+    ---------
+    limits : array-like, optional
+        The limits for the fully transparent, opaque red, and yellow points.
+    """
+
+    def __init__(self, limits=(0.33, 0.66, 1.0)):
+        limits = np.array(limits, float).ravel()
+        if len(limits) != 3:
+            raise ValueError('limits must have 3 values')
+        if (np.diff(limits) < 0).any() or (limits <= 0).any():
+            raise ValueError('limits must be strictly increasing and positive')
+        controls = np.array([-limits[2], -limits[1], -limits[0],
+                             limits[0], limits[1], limits[2]])
+        controls = ((controls / limits[2]) + 1) / 2.
+        colors = [(0., 1., 1., 1.), (0., 0., 1., 1.), (0., 0., 1., 0.),
+                  (1., 0., 0., 0.), (1., 0., 0., 1.), (1., 1., 0., 1.)]
+        colors = ColorArray(colors)
+        super(_RedYellowBlueCyan, self).__init__(
+            colors, controls=controls, interpolation='linear')
+
+
+# https://github.com/matplotlib/matplotlib/pull/4707/files#diff-893cf0348279e9f4570488a7a297ab1eR774  # noqa
 # Taken from original Viridis colormap data in matplotlib implementation
 # Sampled 128 points from the raw data-set of 256 samples.
 # Sub sampled to 128 points since 256 points causes VisPy to freeze.
+#
+# Issue #1331 https://github.com/vispy/vispy/issues/1331 explains that the
+# 128 viridis sample size
+# fails on some GPUs but lowering to 64 samples allows more GPUs to use
+# viridis. The 64 samples are linearly interpolated anyhow and yeild smooth
+# colormaps. To get 64 samples
+# the original Viridis colormap data is sampled with a stride of 4 ie [::4].
+#
 # HACK: Ideally, all 256 points should be included, with VisPy generating
 # a 1D texture lookup for ColorMap, rather than branching code.
 _viridis_data = [[0.267004, 0.004874, 0.329415],
@@ -953,7 +986,7 @@ _colormaps = dict(
     winter=_Winter(),
     light_blues=_SingleHue(),
     orange=_SingleHue(hue=35),
-    viridis=Colormap(ColorArray(_viridis_data[::2])),
+    viridis=Colormap(ColorArray(_viridis_data[::4])),
     # Diverging presets
     coolwarm=Colormap(ColorArray(
         [
@@ -973,7 +1006,8 @@ _colormaps = dict(
     single_hue=_SingleHue,
     hsl=_HSL,
     husl=_HUSL,
-    diverging=_Diverging
+    diverging=_Diverging,
+    RdYeBuCy=_RedYellowBlueCyan,
 )
 
 

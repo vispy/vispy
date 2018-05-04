@@ -8,14 +8,13 @@ implementation is corect.
 
 """
 
-from inspect import getargspec
-
 import vispy
 from vispy import keys
 from vispy.testing import (requires_application, assert_in, run_tests_if_main,
                            assert_raises)
 from vispy.app import use_app, Application
 from vispy.app.backends import _template
+from vispy.util import _get_args
 
 
 class DummyApplication(Application):
@@ -42,7 +41,7 @@ def _test_module_properties(_module=None):
 
     # For Qt backend, we have a common implementation
     alt_modname = ''
-    if module_fname in ('_pyside', '_pyqt4', '_pyqt5'):
+    if module_fname in ('_pyside', '_pyqt4', '_pyqt5', '_pyside2'):
         alt_modname = _module.__name__.rsplit('.', 1)[0] + '._qt'
 
     # Test that all _vispy_x methods are there.
@@ -71,7 +70,7 @@ def _test_module_properties(_module=None):
             method = getattr(Klass, key)
             if key not in exceptions:
                 print(key)
-                args = [None] * (len(getargspec(method).args) - 1)
+                args = [None] * (len(_get_args(method)) - 1)
                 assert_raises(NotImplementedError, getattr(base, key), *args)
                 if hasattr(method, '__module__'):
                     mod_str = method.__module__  # Py3k

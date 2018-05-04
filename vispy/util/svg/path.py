@@ -209,7 +209,8 @@ class Path(Transformable):
             content = content.get("d", "")
 
         commands = re.compile(
-            "(?P<command>[MLVHCSQTAZmlvhcsqtaz])(?P<points>[+\-0-9.e, \n\t]*)")
+            r"(?P<command>[MLVHCSQTAZmlvhcsqtaz])"
+            r"(?P<points>[+\-0-9.e, \n\t]*)")
 
         path = []
         for match in re.finditer(commands, content):

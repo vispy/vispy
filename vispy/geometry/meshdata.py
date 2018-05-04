@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 import numpy as np
@@ -39,6 +39,8 @@ class MeshData(object):
         interpreted as (Nf, 3, 4) array of colors.
     face_colors : ndarray, shape (Nf, 4)
         Face colors.
+    vertex_values : ndarray, shape (Nv,)
+        Vertex values.
 
     Notes
     -----
@@ -63,7 +65,7 @@ class MeshData(object):
     """
 
     def __init__(self, vertices=None, faces=None, edges=None,
-                 vertex_colors=None, face_colors=None):
+                 vertex_colors=None, face_colors=None, vertex_values=None):
         self._vertices = None  # (Nv,3) array of vertex coordinates
         self._vertices_indexed_by_faces = None  # (Nf, 3, 3) vertex coordinates
         self._vertices_indexed_by_edges = None  # (Ne, 2, 3) vertex coordinates
@@ -78,11 +80,14 @@ class MeshData(object):
         self._vertex_edges = None  # maps vertex ID to a list of edge IDs
 
         # Per-vertex data
-        self._vertex_normals = None                # (Nv, 3) normals
+        self._vertex_normals = None                   # (Nv, 3) normals
         self._vertex_normals_indexed_by_faces = None  # (Nf, 3, 3) normals
-        self._vertex_colors = None                 # (Nv, 3) colors
+        self._vertex_colors = None                    # (Nv, 4) colors
         self._vertex_colors_indexed_by_faces = None   # (Nf, 3, 4) colors
         self._vertex_colors_indexed_by_edges = None   # (Nf, 2, 4) colors
+        self._vertex_values = None                    # (Nv,) values
+        self._vertex_values_indexed_by_faces = None   # (Nv, 3) values
+        self._vertex_values_indexed_by_edges = None   # (Nv, 2) values
 
         # Per-face data
         self._face_normals = None                # (Nf, 3) face normals
@@ -94,23 +99,17 @@ class MeshData(object):
         # Per-edge data
         self._edge_colors = None                # (Ne, 4) edge colors
         self._edge_colors_indexed_by_edges = None  # (Ne, 2, 4) edge colors
-        # default color to use if no face/edge/vertex colors are given
-        # self._meshColor = (1, 1, 1, 0.1)
-
         if vertices is not None:
-            if faces is None:
-                self.set_vertices(vertices, indexed='faces')
-                if vertex_colors is not None:
-                    self.set_vertex_colors(vertex_colors, indexed='faces')
-                if face_colors is not None:
-                    self.set_face_colors(face_colors, indexed='faces')
-            else:
-                self.set_vertices(vertices)
+            indexed = 'faces' if faces is None else None
+            self.set_vertices(vertices, indexed=indexed)
+            if faces is not None:
                 self.set_faces(faces)
-                if vertex_colors is not None:
-                    self.set_vertex_colors(vertex_colors)
-                if face_colors is not None:
-                    self.set_face_colors(face_colors)
+            if vertex_colors is not None:
+                self.set_vertex_colors(vertex_colors, indexed=indexed)
+            if face_colors is not None:
+                self.set_face_colors(face_colors, indexed=indexed)
+            if vertex_values is not None:
+                self.set_vertex_values(vertex_values, indexed=indexed)
 
     def get_faces(self):
         """Array (Nf, 3) of vertex indices, three per triangular face.
@@ -121,7 +120,7 @@ class MeshData(object):
 
     def get_edges(self, indexed=None):
         """Edges of the mesh
-        
+
         Parameters
         ----------
         indexed : str | None
@@ -135,7 +134,7 @@ class MeshData(object):
         edges : ndarray
             The edges.
         """
-        
+
         if indexed is None:
             if self._edges is None:
                 self._compute_edges(indexed=None)
@@ -213,7 +212,7 @@ class MeshData(object):
             return None
         bounds = [(v[:, ax].min(), v[:, ax].max()) for ax in range(v.shape[1])]
         return bounds
-        
+
     def set_vertices(self, verts=None, indexed=None, reset_normals=True):
         """Set the mesh vertices
 
@@ -261,6 +260,14 @@ class MeshData(object):
         """Return True if this data set has vertex color information"""
         for v in (self._vertex_colors, self._vertex_colors_indexed_by_faces,
                   self._vertex_colors_indexed_by_edges):
+            if v is not None:
+                return True
+        return False
+
+    def has_vertex_value(self):
+        """Return True if this data set has vertex value information"""
+        for v in (self._vertex_values, self._vertex_values_indexed_by_faces,
+                  self._vertex_values_indexed_by_edges):
             if v is not None:
                 return True
         return False
@@ -370,6 +377,31 @@ class MeshData(object):
         else:
             raise Exception("Invalid indexing mode. Accepts: None, 'faces'")
 
+    def get_vertex_values(self, indexed=None):
+        """Get vertex colors
+
+        Parameters
+        ----------
+        indexed : str | None
+            If None, return an array (Nv,) of vertex values.
+            If indexed=='faces', then instead return an indexed array
+            (Nf, 3).
+
+        Returns
+        -------
+        values : ndarray
+            The vertex values.
+        """
+        if indexed is None:
+            return self._vertex_values
+        elif indexed == 'faces':
+            if self._vertex_values_indexed_by_faces is None:
+                self._vertex_values_indexed_by_faces = \
+                    self._vertex_values[self.get_faces()]
+            return self._vertex_values_indexed_by_faces
+        else:
+            raise Exception("Invalid indexing mode. Accepts: None, 'faces'")
+
     def set_vertex_colors(self, colors, indexed=None):
         """Set the vertex color array
 
@@ -400,6 +432,36 @@ class MeshData(object):
         else:
             raise ValueError('indexed must be None or "faces"')
 
+    def set_vertex_values(self, values, indexed=None):
+        """Set the vertex value array
+
+        Parameters
+        ----------
+        values : array
+            Array of values. Must have shape (Nv,) (indexing by vertex)
+            or shape (Nf, 3) (vertices indexed by face).
+        indexed : str | None
+            Should be 'faces' if colors are indexed by faces.
+        """
+        values = np.asarray(values)
+        if indexed is None:
+            if values.ndim != 1:
+                raise ValueError('values must be 1D if indexed is None')
+            if values.shape[0] != self.n_vertices:
+                raise ValueError('incorrect number of colors %s, expected %s'
+                                 % (values.shape[0], self.n_vertices))
+            self._vertex_values = values
+            self._vertex_values_indexed_by_faces = None
+        elif indexed == 'faces':
+            if values.ndim != 2:
+                raise ValueError('values must be 3D if indexed is "faces"')
+            if values.shape[0] != self.n_faces:
+                raise ValueError('incorrect number of faces')
+            self._vertex_values = None
+            self._vertex_values_indexed_by_faces = values
+        else:
+            raise ValueError('indexed must be None or "faces"')
+
     def get_face_colors(self, indexed=None):
         """Get the face colors
 
@@ -410,7 +472,7 @@ class MeshData(object):
             If indexed=='faces', then instead return an indexed array
             (Nf, 3, 4)  (note this is just the same array with each color
             repeated three times).
-        
+
         Returns
         -------
         colors : ndarray

@@ -15,11 +15,11 @@ def func(x, y):
 x = np.linspace(-3.0, 3.0, 512).astype(np.float32)
 y = np.linspace(-3.0, 3.0, 512).astype(np.float32)
 X, Y = np.meshgrid(x, y)
-I = func(X, Y)
+idxs = func(X, Y)
 
 # Image normalization
-vmin, vmax = I.min(), I.max()
-I = (I-vmin)/(vmax-vmin)
+vmin, vmax = idxs.min(), idxs.max()
+idxs = (idxs - vmin) / (vmax - vmin)
 
 
 # Colormaps
@@ -122,7 +122,7 @@ class Canvas(app.Canvas):
         self.image['cmap'] = 0  # Colormap index to use
         self.image['colormaps'] = colormaps
         self.image['n_colormaps'] = colormaps.shape[0]
-        self.image['image'] = I.astype('float32')
+        self.image['image'] = idxs.astype('float32')
         self.image['image'].interpolation = 'linear'
 
         set_viewport(0, 0, *self.physical_size)
@@ -174,11 +174,11 @@ class Canvas(app.Canvas):
         y_baseline[...] = (xf, -1), (xf, -1), (xf, 1), (xf, 1)
 
         x_profile[1:-1, 0] = np.linspace(-1, 1, 512)
-        x_profile[1:-1, 1] = yf+0.15*I[y_norm, :]
+        x_profile[1:-1, 1] = yf + 0.15 * idxs[y_norm, :]
         x_profile[0] = x_profile[1]
         x_profile[-1] = x_profile[-2]
 
-        y_profile[1:-1, 0] = xf+0.15*I[:, x_norm]
+        y_profile[1:-1, 0] = xf + 0.15 * idxs[:, x_norm]
         y_profile[1:-1, 1] = np.linspace(-1, 1, 512)
         y_profile[0] = y_profile[1]
         y_profile[-1] = y_profile[-2]

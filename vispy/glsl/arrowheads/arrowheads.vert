@@ -50,8 +50,8 @@ uniform float antialias;
 
 // Attributes
 // ------------------------------------
-attribute vec2  v1;
-attribute vec2  v2;
+attribute vec4  v1;
+attribute vec4  v2;
 attribute float size;
 attribute vec4  color;
 attribute float linewidth;
@@ -61,7 +61,7 @@ attribute float linewidth;
 varying float v_size;
 varying float v_point_size;
 varying vec4  v_color;
-varying vec2  v_orientation;
+varying vec3  v_orientation;
 varying float v_antialias;
 varying float v_linewidth;
 
@@ -75,10 +75,9 @@ void main (void)
     v_color       = color;
     v_linewidth   = linewidth;
 
-    vec2 body = v2 - v1;
+    vec3 body = $transform(v2).xyz - $transform(v1).xyz;
     v_orientation = (body / length(body));
-    v_orientation.y = -v_orientation.y;
 
-    gl_Position = $transform(vec4(v2, 0, 1));
+    gl_Position = $transform(v2);
     gl_PointSize = v_point_size;
 }

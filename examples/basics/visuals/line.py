@@ -1,12 +1,15 @@
 # -*- coding: utf-8 -*-
 # vispy: gallery 30
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 """
 Demonstration of various features of Line visual.
 """
+
+from __future__ import division
+
 import sys
 import numpy as np
 
@@ -28,7 +31,7 @@ color[:, 1] = color[::-1, 0]
 connect = np.empty((N-1, 2), np.int32)
 connect[:, 0] = np.arange(N-1)
 connect[:, 1] = connect[:, 0] + 1
-connect[N/2, 1] = N/2  # put a break in the middle
+connect[N//2, 1] = N//2  # put a break in the middle
 
 
 class Canvas(app.Canvas):

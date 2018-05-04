@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division
@@ -18,9 +18,14 @@ class IsosurfaceVisual(MeshVisual):
         3D scalar array.
     level: float | None
         The level at which the isosurface is constructed from *data*.
-
-    Notes
-    -----
+    vertex_colors : ndarray | None
+        The vertex colors to use.
+    face_colors : ndarray | None
+        The face colors to use.
+    color : ndarray | None
+        The color to use.
+    **kwargs : dict
+        Keyword arguments to pass to the mesh construction.
     """
     def __init__(self, data=None, level=None, vertex_colors=None,
                  face_colors=None, color=(0.5, 0.5, 1, 1), **kwargs):

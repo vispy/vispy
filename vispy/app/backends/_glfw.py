@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 """
 vispy backend for glfw.
@@ -189,7 +189,7 @@ class ApplicationBackend(BaseApplicationBackend):
 
     def _vispy_run(self):
         wins = _get_glfw_windows()
-        while all(w._id is not None and not glfw.glfwWindowShouldClose(w._id)
+        while any(w._id is not None and not glfw.glfwWindowShouldClose(w._id)
                   for w in wins):
             self._vispy_process_events()
         self._vispy_quit()  # to clean up

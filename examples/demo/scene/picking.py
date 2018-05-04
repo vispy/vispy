@@ -80,7 +80,7 @@ def update_cursor(pos):
         # get interpolated y coordinate
         x = min(max(pos[0], t[0]), t[-2])
         ind = x / (dt * 1000)
-        i = np.floor(ind)
+        i = int(np.floor(ind))
         s = ind - i
         y = trace[i] * (1 - s) + trace[i + 1] * s 
         

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2014, 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """
@@ -12,8 +12,8 @@ from ..base import (BaseApplicationBackend, BaseCanvasBackend,
                     BaseTimerBackend)
 from ...util import logger, keys
 from ...ext import six
-from vispy.gloo.glir import BaseGlirParser
-from vispy.app.backends.ipython import VispyWidget
+from ...gloo.glir import BaseGlirParser
+from ...app.backends.ipython import VispyWidget
 
 import os.path as op
 import os
@@ -42,8 +42,13 @@ try:
     IPYTHON_MAJOR_VERSION = IPython.version_info[0]
     if IPYTHON_MAJOR_VERSION < 2:
         raise RuntimeError('ipynb_webgl backend requires IPython >= 2.0')
-    from IPython.html.nbextensions import install_nbextension
     from IPython.display import display
+    try:
+        # ipython >=3.0
+        from notebook import install_nbextension
+    except ImportError:
+        # ipython <3.0
+        from IPython.html.nbextensions import install_nbextension
 except Exception as exp:
     # raise ImportError("The WebGL backend requires IPython >= 2.0")
     available, testable, why_not, which = False, False, str(exp), None
@@ -54,7 +59,7 @@ else:
 # ------------------------------------------------------------- application ---
 def _prepare_js(force=False):
     pkgdir = op.dirname(__file__)
-    jsdir = op.join(pkgdir, '../../html/static/js/')
+    jsdir = op.join(pkgdir, '../../static/')
     # Make sure the JS files are installed to user directory (new argument
     # in IPython 3.0).
     if IPYTHON_MAJOR_VERSION >= 3:
@@ -157,7 +162,11 @@ class CanvasBackend(BaseCanvasBackend):
         pass
 
     def _vispy_swap_buffers(self):
-        pass
+        if self._vispy_canvas is None:
+            return
+        # Send frontend a special "you're allowed to swap buffers now" command
+        context = self._vispy_canvas.context
+        context.shared.parser.parse([('SWAP',)])
 
     def _vispy_set_title(self, title):
         raise NotImplementedError()

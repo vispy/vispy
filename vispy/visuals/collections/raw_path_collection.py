@@ -4,7 +4,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 import numpy as np
-from vispy import glsl
+from ... import glsl
 from . collection import Collection
 from ..transforms import NullTransform
 

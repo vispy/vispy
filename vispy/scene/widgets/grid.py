@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division
 import numpy as np
 
+from vispy.geometry import Rect
 from .widget import Widget
+from .viewbox import ViewBox
 
 from ...ext.cassowary import (SimplexSolver, expression,
                               Variable, WEAK, REQUIRED,
@@ -25,7 +27,6 @@ class Grid(Widget):
         Keyword arguments to pass to `Widget`.
     """
     def __init__(self, spacing=6, **kwargs):
-        from .viewbox import ViewBox
         self._next_cell = [0, 0]  # row, col
         self._cells = {}
         self._grid_widgets = {}
@@ -104,6 +105,7 @@ class Grid(Widget):
         **kwargs : dict
             parameters sent to the new Widget that is constructed if
             widget is None
+
         Notes
         -----
         The widget's parent is automatically set to this grid, and all other
@@ -234,7 +236,6 @@ class Grid(Widget):
         **kwargs : dict
             Keyword arguments to pass to `ViewBox`.
         """
-        from .viewbox import ViewBox
         view = ViewBox(**kwargs)
         return self.add_widget(view, row, col, row_span, col_span)
 
@@ -457,22 +458,23 @@ class Grid(Widget):
             self._need_solver_recreate = False
             self._recreate_solver()
 
-        # yes, this little dance is necessary for cassowary
-        # to not screw up :/
-        if self._height_stay:
-            self._solver.remove_constraint(self._height_stay)
+        # we only need to remove and add the height and width constraints of
+        # the solver if they are not the same as the current value
+        if rect.height != self._var_h.value:
+            if self._height_stay:
+                self._solver.remove_constraint(self._height_stay)
 
-        self._var_h.value = rect.height
-        self._height_stay = self._solver.add_stay(self._var_h,
-                                                  strength=STRONG)
+            self._var_h.value = rect.height
+            self._height_stay = self._solver.add_stay(self._var_h,
+                                                      strength=STRONG)
 
-        # self._var_w.value = rect.width
-        if self._width_stay:
-            self._solver.remove_constraint(self._width_stay)
+        if rect.width != self._var_w.value:
+            if self._width_stay:
+                self._solver.remove_constraint(self._width_stay)
 
-        self._var_w.value = rect.width
-        self._width_stay = self._solver.add_stay(self._var_w,
-                                                 strength=STRONG)
+            self._var_w.value = rect.width
+            self._width_stay = self._solver.add_stay(self._var_w,
+                                                     strength=STRONG)
 
         value_vectorized = np.vectorize(lambda x: x.value)
 
@@ -493,8 +495,11 @@ class Grid(Widget):
             else:
                 y = np.sum(value_vectorized(self._height_grid[col][0:row]))
 
-            widget.size = (width, height)
-            widget.pos = (x, y)
+            if isinstance(widget, ViewBox):
+                widget.rect = Rect(x, y, width, height)
+            else:
+                widget.size = (width, height)
+                widget.pos = (x, y)
 
     @property
     def _widget_grid(self):
