@@ -154,6 +154,7 @@ class ColorBarWidget(Widget):
         self._colorbar._label_str = label_str
         self._update()
 
+    @property
     def ticks(self):
         return self._colorbar.ticks
 
