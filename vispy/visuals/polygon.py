@@ -52,14 +52,18 @@ class PolygonVisual(CompoundVisual):
     """
     def __init__(self, pos=None, color='black',
                  border_color=None, border_width=1, border_method='gl',
-                 triangulate=True, **kwargs):
+                 triangulate=True, polygon_data=None, **kwargs):
         self._mesh = MeshVisual()
         self._border = LineVisual(method=border_method)
-        self._pos = pos
+        self._polygon_data = polygon_data
+        self._pos = None
         self._color = Color(color)
         self._border_width = border_width
         self._border_color = Color(border_color)
         self._triangulate = triangulate
+        
+        if pos is not None:
+            self.pos = pos
 
         self._update()
         CompoundVisual.__init__(self, [self._mesh, self._border], **kwargs)
@@ -68,11 +72,10 @@ class PolygonVisual(CompoundVisual):
         self.freeze()
 
     def _update(self):
-        if self._pos is None:
+        if self._polygon_data is None:
             return
         if not self._color.is_blank and self._triangulate:
-            data = PolygonData(vertices=np.array(self._pos, dtype=np.float32))
-            pts, tris = data.triangulate()
+            pts, tris = self._polygon_data.triangulate()
             set_state(polygon_offset_fill=False)
             self._mesh.set_data(vertices=pts, faces=tris.astype(np.uint32),
                                 color=self._color.rgba)
@@ -82,11 +85,9 @@ class PolygonVisual(CompoundVisual):
 
         if not self._border_color.is_blank:
             # Close border if it is not already.
-            border_pos = self._pos
-            if np.any(border_pos[0] != border_pos[-1]):
-                border_pos = np.concatenate([border_pos, border_pos[:1]],
-                                            axis=0)
-            self._border.set_data(pos=border_pos,
+            border_pos = self.polygon_data.vertices
+            border_connect = self.polygon_data.edges
+            self._border.set_data(pos=border_pos, connect=border_connect,
                                   color=self._border_color.rgba,
                                   width=self._border_width)
 
@@ -96,11 +97,22 @@ class PolygonVisual(CompoundVisual):
     def pos(self):
         """ The vertex position of the polygon.
         """
-        return self._pos
+        pdata = self._polygon_data
+        if pdata is None:
+            return None
+        return pdata.vertices
 
     @pos.setter
     def pos(self, pos):
-        self._pos = pos
+        self.polygon_data = PolygonData(vertices=np.array(pos, dtype=np.float32))
+        
+    @property
+    def polygon_data(self):
+        return self._polygon_data
+    
+    @polygon_data.setter
+    def polygon_data(self, polygon_data):
+        self._polygon_data = polygon_data
         self._update()
 
     @property
