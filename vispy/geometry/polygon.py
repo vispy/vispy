@@ -10,65 +10,46 @@ from .triangulation import Triangulation
 
 
 class PolygonData(object):
-    """Polygon class for data handling
-
+    """Class for handling polygon data.
+    
     Parameters
     ----------
-    vertices : (Nv, 3) array
-        Vertex coordinates. If faces is not specified, then this will instead
-        be interpreted as (Nf, 3, 3) array of coordinates.
-    edges : (Nv, 2) array
-        Constraining edges specified by vertex indices.
-    faces : (Nf, 3) array
-        Indexes into the vertex array.
-
-    Notes
-    -----
-    All arguments are optional.
+    vertices : array | None
+        (n_verts, 3) array of vertex coordinates.
+    edges : array | None
+        Optional (n_edges, 2) array of indices into *vertices*. If None,
+        then edges will be automatically generated in a single path 
+        that traverses the vertices in order and loops back to the first
+        veretx.
     """
     def __init__(self, vertices=None, edges=None, faces=None):
         self._vertices = vertices
         self._edges = edges
-        self._faces = faces
-        self._convex_hull = None
+        self.triangulation = None
 
     @property
     def faces(self):
-        """Return an array (Nf, 3) of vertex indexes, three per triangular
-        face in the mesh.
-
-        If faces have not been computed for this mesh, the function
-        computes them.
-        If no vertices or faces are specified, the function returns None.
+        """A tuple of two arrays (vertices, faces) describing the mesh triangles
+        needed to fill this polygon.
+        
+        Faces are generated using vispy.triangulation.
         """
-
-        if self._faces is None:
+        if self.triangulation is None:
             if self._vertices is None:
                 return None
-            self.triangulate()
-        return self._faces
 
-    @faces.setter
-    def faces(self, f):
-        """
-        If vertices and faces are incompatible, this will generate vertices
-        from these faces and set them.
-        """
-        self._faces = f
+            self.triangulation = Triangulation(self.vertices, self.edges)
+            self.triangulation.triangulate()
+        return self.triangulation.pts, self.triangulation.tris
 
     @property
     def vertices(self):
-        """Return an array (Nf, 3) of vertices.
+        """Return an array (Nf, 3) of vertices
 
         If only faces exist, the function computes the vertices and
         returns them.
         If no vertices or faces are specified, the function returns None.
         """
-
-        if self._faces is None:
-            if self._vertices is None:
-                return None
-            self.triangulate()
         return self._vertices
 
     @vertices.setter
@@ -78,14 +59,19 @@ class PolygonData(object):
         from these vertices and set them.
         """
         self._vertices = v
+        self.triangulation = None
 
     @property
     def edges(self):
-        """Return an array (Nv, 2) of vertex indices.
-
-        If no vertices or faces are specified, the function returns None.
+        """An array (n_edges, 2) of indexes into self.vertices specifying
+        the bounding edges of the polygon.
+        
+        If no edges were manually specified, then this property is generated
+        by simply connecting the vertices in order to form a loop.
         """
         if self._edges is None:
+            if self._vertices is None:
+                return None
             npts = self._vertices.shape[0]
             if np.any(self._vertices[0] != self._vertices[1]):
                 # start != end, so edges must wrap around to beginning.
@@ -107,37 +93,4 @@ class PolygonData(object):
         Ensures that all edges are valid.
         """
         self._edges = e
-
-    @property
-    def convex_hull(self):
-        """Return an array of vertex indexes representing the convex hull.
-
-        If faces have not been computed for this mesh, the function
-        computes them.
-        If no vertices or faces are specified, the function returns None.
-        """
-        if self._faces is None:
-            if self._vertices is None:
-                return None
-            self.triangulate()
-        return self._convex_hull
-
-    def triangulate(self):
-        """
-        Triangulates the set of vertices and stores the triangles in faces and
-        the convex hull in convex_hull.
-        """
-        tri = Triangulation(self._vertices, self.edges)
-        tri.triangulate()
-        return tri.pts, tri.tris
-
-    def add_vertex(self, vertex):
-        """
-        Adds given vertex and retriangulates to generate new faces.
-
-        Parameters
-        ----------
-        vertex : array-like
-            The vertex to add.
-        """
-        raise NotImplementedError
+        self.triangulation = None

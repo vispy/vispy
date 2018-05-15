@@ -75,22 +75,21 @@ class PolygonVisual(CompoundVisual):
         if self._polygon_data is None:
             return
         if not self._color.is_blank and self._triangulate:
-            pts, tris = self._polygon_data.triangulate()
+            pts, tris = self._polygon_data.faces
             set_state(polygon_offset_fill=False)
             self._mesh.set_data(vertices=pts, faces=tris.astype(np.uint32),
                                 color=self._color.rgba)
         elif not self._color.is_blank:
-            self.mesh.set_data(vertices=self._pos,
+            self.mesh.set_data(vertices=self.pos,
                                color=self._color.rgba)
 
         if not self._border_color.is_blank:
-            # Close border if it is not already.
-            border_pos = self.polygon_data.vertices
-            border_connect = self.polygon_data.edges
-            self._border.set_data(pos=border_pos, connect=border_connect,
-                                  color=self._border_color.rgba,
-                                  width=self._border_width)
-
+            self._border.set_data(
+                pos=self.polygon_data.vertices, 
+                connect=self.polygon_data.edges,
+                color=self._border_color.rgba,
+                width=self._border_width
+            )
             self._border.update()
 
     @property
