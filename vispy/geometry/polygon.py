@@ -10,7 +10,7 @@ from .triangulation import Triangulation
 
 
 class PolygonData(object):
-    """Class for handling polygon data.
+    """Class for handling 2D polygon data.
     
     Parameters
     ----------
@@ -25,6 +25,7 @@ class PolygonData(object):
     def __init__(self, vertices=None, edges=None, faces=None):
         self._vertices = vertices
         self._edges = edges
+        self._auto_edges = None
         self.triangulation = None
 
     @property
@@ -59,6 +60,7 @@ class PolygonData(object):
         from these vertices and set them.
         """
         self._vertices = v
+        self._auto_edges = None
         self.triangulation = None
 
     @property
@@ -69,7 +71,10 @@ class PolygonData(object):
         If no edges were manually specified, then this property is generated
         by simply connecting the vertices in order to form a loop.
         """
-        if self._edges is None:
+        if self._edges is not None:
+            return self._edges
+        
+        if self._auto_edges is None:
             if self._vertices is None:
                 return None
             npts = self._vertices.shape[0]
@@ -84,13 +89,12 @@ class PolygonData(object):
                 edges = np.empty((npts-1, 2), dtype=np.uint32)
                 edges[:, 0] = np.arange(npts)
                 edges[:, 1] = edges[:, 0] + 1
-            self._edges = edges
-        return self._edges
+            self._auto_edges = edges
+        return self._auto_edges
 
     @edges.setter
-    def edges(self, e):
-        """
-        Ensures that all edges are valid.
-        """
-        self._edges = e
+    def edges(self, edges):
+        self._edges = edges
+        if edges is not None:
+            self._auto_edges = None
         self.triangulation = None
