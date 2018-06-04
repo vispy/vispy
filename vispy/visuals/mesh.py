@@ -17,7 +17,6 @@ from ..gloo import VertexBuffer, IndexBuffer
 from ..geometry import MeshData
 from ..color import Color, get_colormap
 from ..ext.six import string_types
-from ..color import get_cmap_texture_lut
 
 # Shaders for lit rendering (using phong shading)
 shading_vertex_template = """
@@ -180,8 +179,6 @@ class MeshVisual(Visual):
 
         # Function for computing phong shading
         # self._phong = Function(phong_template)
-
-        self._texture_LUT = None
 
         # Visual.__init__ -> prepare_transforms() -> uses shading
         self.shading = shading
@@ -407,8 +404,8 @@ class MeshVisual(Visual):
                 colors = self._color.rgba
         self.shared_program.vert['position'] = self._vertices
 
-        self._texture_LUT = get_cmap_texture_lut(self._cmap)
-        self.shared_program['texture2D_LUT'] = self._texture_LUT
+        self.shared_program['texture2D_LUT'] = \
+            self._cmap.texture_lut()
 
         # Position input handling
         if v.shape[-1] == 2:

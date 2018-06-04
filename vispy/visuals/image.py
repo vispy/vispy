@@ -7,7 +7,7 @@ from __future__ import division
 import numpy as np
 
 from ..gloo import Texture2D, VertexBuffer
-from ..color import get_colormap, get_cmap_texture_lut
+from ..color import get_colormap
 from .shaders import Function, FunctionChain
 from .transforms import NullTransform
 from .visual import Visual
@@ -185,8 +185,6 @@ class ImageVisual(Visual):
                              ', '.join(self._interpolation_names))
 
         self._interpolation = interpolation
-
-        self._texture_LUT = None
 
         # check texture interpolation
         if self._interpolation == 'bilinear':
@@ -446,8 +444,7 @@ class ImageVisual(Visual):
             prg = view.view_program
             self.shared_program.frag['color_transform'] = \
                 _build_color_transform(self._data, self.cmap)
-            self._texture_LUT = get_cmap_texture_lut(self._cmap)
-            prg['texture2D_LUT'] = self._texture_LUT
+            prg['texture2D_LUT'] = self._cmap.texture_lut()
 
         if self._need_vertex_update:
             self._build_vertex_data()
