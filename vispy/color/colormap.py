@@ -209,6 +209,30 @@ def _process_glsl_template(template, colors):
     return template
 
 
+def get_cmap_texture_lut(cmap):
+    """Return a texture2D object for an interpolation mode in cmap.
+
+    Parameters
+    ----------
+    cmap : Colormap
+        A colormap defining several control colors and an interpolation scheme.
+    """
+    if cmap.texture_map_data is not None:
+        # Texture map used by the 'colormap' GLSL function
+        # for luminance to RGBA conversion
+        interpolation_mode = 'linear' \
+            if(str(cmap.interpolation) == 'linear') \
+            else 'nearest'
+        texture_LUT = \
+            vispy.gloo.Texture2D(np.zeros(cmap.texture_map_data.shape),
+                                 interpolation=interpolation_mode)
+        texture_LUT.set_data(cmap.texture_map_data,
+                             offset=None, copy=True)
+    else:
+        texture_LUT = None
+    return texture_LUT
+
+
 class BaseColormap(object):
     u"""Class representing a colormap:
 
@@ -423,21 +447,6 @@ class Colormap(BaseColormap):
             List of rgba colors.
         """
         return self._map_function(self.colors.rgba, x, self._controls)
-
-    def texture_lut(self):
-        """Return a texture2D object for LUT after its value is set."""
-        if self.texture_map_data is not None:
-            interpolation_mode = 'linear' \
-                if(str(self.interpolation) == 'linear') \
-                else 'nearest'
-            texture_LUT = \
-                vispy.gloo.Texture2D(np.zeros(self.texture_map_data.shape),
-                                     interpolation=interpolation_mode)
-            texture_LUT.set_data(self.texture_map_data,
-                                 offset=None, copy=True)
-        else:
-            texture_LUT = None
-        return texture_LUT
 
 
 class CubeHelixColormap(Colormap):

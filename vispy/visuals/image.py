@@ -7,7 +7,7 @@ from __future__ import division
 import numpy as np
 
 from ..gloo import Texture2D, VertexBuffer
-from ..color import get_colormap
+from ..color import get_colormap, get_cmap_texture_lut
 from .shaders import Function, FunctionChain
 from .transforms import NullTransform
 from .visual import Visual
@@ -444,7 +444,7 @@ class ImageVisual(Visual):
             prg = view.view_program
             self.shared_program.frag['color_transform'] = \
                 _build_color_transform(self._data, self.cmap)
-            prg['texture2D_LUT'] = self._cmap.texture_lut()
+            prg['texture2D_LUT'] = get_cmap_texture_lut(self._cmap)
 
         if self._need_vertex_update:
             self._build_vertex_data()
