@@ -9,9 +9,8 @@ from __future__ import division
 
 import numpy as np
 
-from ...gloo import Texture2D
 from ... import gloo, glsl
-from ...color import Color, ColorArray, get_colormap
+from ...color import Color, ColorArray, get_colormap, get_cmap_texture_lut
 from ...ext.six import string_types
 from ..shaders import Function
 from ..visual import Visual, CompoundVisual
@@ -342,20 +341,8 @@ class _GLLineVisual(Visual):
                     self._program.vert['color'] = self._color_vbo
 
             if (cmap is not None) and (cmap.texture_map_data is not None):
-                # Texture map used by the 'colormap' GLSL function
-                # for luminance to RGBA conversion
-                interpolation_mode = 'linear' \
-                    if(str(cmap.interpolation) == 'linear') \
-                    else 'nearest'
-                self._texture_LUT = \
-                    Texture2D(np.zeros(cmap.texture_map_data.shape),
-                              interpolation=interpolation_mode)
+                self._texture_LUT = get_cmap_texture_lut(cmap)
                 self.shared_program['texture2D_LUT'] = self._texture_LUT
-                self._texture_LUT.set_data(cmap.texture_map_data,
-                                           offset=None, copy=True)
-            else:
-                self._texture_LUT = None
-                self.shared_program['texture2D_LUT'] = None
 
         # Do we want to use OpenGL, and can we?
         GL = None

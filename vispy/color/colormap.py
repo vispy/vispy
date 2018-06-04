@@ -11,6 +11,7 @@ from .color_array import ColorArray
 from ..ext.six import string_types
 from ..ext.cubehelix import cubehelix
 from ..ext.husl import husl_to_rgb
+import vispy.gloo
 
 ###############################################################################
 # Color maps
@@ -206,6 +207,30 @@ def _process_glsl_template(template, colors):
         vec4_color = 'vec4(%.3f, %.3f, %.3f, %.3f)' % tuple(color)
         template = template.replace('$color_%d' % i, vec4_color)
     return template
+
+
+def get_cmap_texture_lut(cmap):
+    """Return a texture2D object for an interpolation mode in cmap.
+
+    Parameters
+    ----------
+    cmap : Colormap
+        A colormap defining several control colors and an interpolation scheme.
+    """
+    if cmap.texture_map_data is not None:
+        # Texture map used by the 'colormap' GLSL function
+        # for luminance to RGBA conversion
+        interpolation_mode = 'linear' \
+            if(str(cmap.interpolation) == 'linear') \
+            else 'nearest'
+        texture_LUT = \
+            vispy.gloo.Texture2D(np.zeros(cmap.texture_map_data.shape),
+                                 interpolation=interpolation_mode)
+        texture_LUT.set_data(cmap.texture_map_data,
+                             offset=None, copy=True)
+    else:
+        texture_LUT = None
+    return texture_LUT
 
 
 class BaseColormap(object):

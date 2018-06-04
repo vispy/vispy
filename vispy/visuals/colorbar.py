@@ -8,11 +8,10 @@
 
 import numpy as np
 
-from ..gloo import Texture2D
 from . import Visual, TextVisual, CompoundVisual, _BorderVisual
 # from .border import _BorderVisual
 from .shaders import Function
-from ..color import get_colormap
+from ..color import get_colormap, get_cmap_texture_lut
 
 VERT_SHADER = """
 attribute vec2 a_position;
@@ -159,21 +158,8 @@ class _CoreColorBarVisual(Visual):
 
         self.shared_program['a_position'] = vertices
 
-        if self._cmap.texture_map_data is not None:
-            # Texture map used by the 'colormap' GLSL function
-            # for luminance to RGBA conversion
-            interpolation_mode = 'linear' \
-                if(str(self._cmap.interpolation) == 'linear') \
-                else 'nearest'
-            self._texture_LUT = \
-                Texture2D(np.zeros(self._cmap.texture_map_data.shape),
-                          interpolation=interpolation_mode)
-            self.shared_program['texture2D_LUT'] = self._texture_LUT
-            self._texture_LUT.set_data(self._cmap.texture_map_data,
-                                       offset=None, copy=True)
-        else:
-            self._texture_LUT = None
-            self.shared_program['texture2D_LUT'] = None
+        self._texture_LUT = get_cmap_texture_lut(self._cmap)
+        self.shared_program['texture2D_LUT'] = self._texture_LUT
 
     @staticmethod
     def _get_orientation_error(orientation):
