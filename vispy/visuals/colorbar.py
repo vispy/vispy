@@ -11,7 +11,7 @@ import numpy as np
 from . import Visual, TextVisual, CompoundVisual, _BorderVisual
 # from .border import _BorderVisual
 from .shaders import Function
-from ..color import get_colormap, get_cmap_texture_lut
+from ..color import get_colormap
 
 VERT_SHADER = """
 attribute vec2 a_position;
@@ -157,7 +157,8 @@ class _CoreColorBarVisual(Visual):
 
         self.shared_program['a_position'] = vertices
 
-        self.shared_program['texture2D_LUT'] = get_cmap_texture_lut(self._cmap)
+        self.shared_program['texture2D_LUT'] = self._cmap.texture_lut() \
+            if (hasattr(self._cmap, 'texture_lut')) else None
 
     @staticmethod
     def _get_orientation_error(orientation):

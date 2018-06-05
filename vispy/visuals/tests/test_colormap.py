@@ -2,7 +2,7 @@
 
 """
 Tests for texture-based colormap
-All images are of size (10,10) to keep a small file size
+All images are of size (100,100) to keep a small file size
 """
 
 import numpy as np

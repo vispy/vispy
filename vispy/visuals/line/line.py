@@ -10,7 +10,7 @@ from __future__ import division
 import numpy as np
 
 from ... import gloo, glsl
-from ...color import Color, ColorArray, get_colormap, get_cmap_texture_lut
+from ...color import Color, ColorArray, get_colormap
 from ...ext.six import string_types
 from ..shaders import Function
 from ..visual import Visual, CompoundVisual
@@ -339,9 +339,8 @@ class _GLLineVisual(Visual):
                     self._color_vbo.set_data(color)
                     self._program.vert['color'] = self._color_vbo
 
-            if (cmap is not None) and (cmap.texture_map_data is not None):
-                self.shared_program['texture2D_LUT'] = \
-                    get_cmap_texture_lut(cmap)
+            self.shared_program['texture2D_LUT'] = cmap.texture_lut() \
+                if (hasattr(cmap, 'texture_lut')) else None
 
         # Do we want to use OpenGL, and can we?
         GL = None
