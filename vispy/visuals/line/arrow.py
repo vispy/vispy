@@ -94,7 +94,8 @@ class _ArrowHeadVisual(Visual):
         v['v1'] = as_vec4(arrows[:, 0:sh])
         v['v2'] = as_vec4(arrows[:, sh:int(2 * sh)])
         v['size'][:] = self._parent.arrow_size
-        v['color'][:] = self._parent._interpret_color(self._parent.arrow_color)
+        color, cmap = self._parent._interpret_color(self._parent.arrow_color)
+        v['color'][:] = color
         v['linewidth'][:] = self._parent.width
         self._arrow_vbo = gloo.VertexBuffer(v)
 
