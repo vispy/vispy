@@ -11,7 +11,7 @@ from vispy.gloo import (Texture2D, Texture3D, Program, FrameBuffer,
                         RenderBuffer, set_viewport, clear)
 from vispy.gloo.util import draw_texture, _screenshot
 from vispy.testing import (requires_application, has_pyopengl,
-                           run_tests_if_main, SkipTest,
+                           run_tests_if_main,
                            assert_raises, assert_equal)
 
 
