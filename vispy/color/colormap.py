@@ -11,9 +11,13 @@ from .color_array import ColorArray
 from ..ext.six import string_types
 from ..ext.cubehelix import cubehelix
 from ..ext.husl import husl_to_rgb
+import vispy.gloo
 
 ###############################################################################
 # Color maps
+
+# Length of the texture map used for luminance to RGBA conversion
+LUT_len = 1024
 
 
 # Utility functions for interpolation in NumPy.
@@ -116,44 +120,82 @@ def step(colors, x, controls=None):
 
 
 # GLSL interpolation functions.
-def _glsl_mix(controls=None):
+def _glsl_mix(controls=None, colors=None, texture_map_data=None):
     """Generate a GLSL template function from a given interpolation patterns
-    and control points."""
+    and control points.
+
+    Parameters
+    ----------
+    colors : array-like, shape (n_colors, 4)
+        The control colors used by the colormap.
+        Elements of colors must be convertible to an instance of Color-class.
+
+    controls : list
+        The list of control points for the given colors. It should be
+        an increasing list of floating-point number between 0.0 and 1.0.
+        The first control point must be 0.0. The last control point must be
+        1.0. The number of control points depends on the interpolation scheme.
+
+    texture_map_data : ndarray, shape(texture_len, 4)
+        Numpy array of size of 1D texture lookup data
+        for luminance to RGBA conversion.
+
+    """
     assert (controls[0], controls[-1]) == (0., 1.)
     ncolors = len(controls)
     assert ncolors >= 2
-    if ncolors == 2:
-        s = "    return mix($color_0, $color_1, t);\n"
-    else:
-        s = ""
-        for i in range(ncolors-1):
-            if i == 0:
-                ifs = 'if (t < %.6f)' % (controls[i+1])
-            elif i == (ncolors-2):
-                ifs = 'else'
-            else:
-                ifs = 'else if (t < %.6f)' % (controls[i+1])
-            adj_t = '(t - %s) / %s' % (controls[i],
-                                       controls[i+1] - controls[i])
-            s += ("%s {\n    return mix($color_%d, $color_%d, %s);\n} " %
-                  (ifs, i, i+1, adj_t))
-    return "vec4 colormap(float t) {\n%s\n}" % s
+    assert (texture_map_data is not None)
+
+    LUT = texture_map_data
+    texture_len = texture_map_data.shape[0]
+
+    # Perform linear interpolation for each RGBA color component.
+    c_rgba = ColorArray(colors)._rgba
+    x = np.linspace(0.0, 1.0, texture_len)
+    LUT[:, 0, 0] = np.interp(x, controls, c_rgba[:, 0])
+    LUT[:, 0, 1] = np.interp(x, controls, c_rgba[:, 1])
+    LUT[:, 0, 2] = np.interp(x, controls, c_rgba[:, 2])
+    LUT[:, 0, 3] = np.interp(x, controls, c_rgba[:, 3])
+
+    s2 = "uniform sampler2D texture2D_LUT;"
+    s = "{\n return texture2D(texture2D_LUT, \
+          vec2(0.0, clamp(t, 0.0, 1.0)));\n} "
+
+    return "%s\nvec4 colormap(float t) {\n%s\n}" % (s2, s)
 
 
-def _glsl_step(controls=None):
+def _glsl_step(controls=None, colors=None, texture_map_data=None):
     assert (controls[0], controls[-1]) == (0., 1.)
     ncolors = len(controls) - 1
     assert ncolors >= 2
-    s = ""
-    for i in range(ncolors-1):
-        if i == 0:
-            ifs = 'if (t < %.6f)' % (controls[i+1])
-        elif i == (ncolors-2):
-            ifs = 'else'
-        else:
-            ifs = 'else if (t < %.6f)' % (controls[i+1])
-        s += """%s {\n    return $color_%d;\n} """ % (ifs, i)
-    return """vec4 colormap(float t) {\n%s\n}""" % s
+    assert (texture_map_data is not None)
+
+    LUT = texture_map_data
+    texture_len = texture_map_data.shape[0]
+    LUT_tex_idx = np.linspace(0.0, 1.0, texture_len)
+
+    # Replicate indices to colormap texture.
+    # The resulting matrix has size of (texture_len,len(controls)).
+    # It is used to perform piecewise constant interpolation
+    # for each RGBA color component.
+    t2 = np.repeat(LUT_tex_idx[:, np.newaxis], len(controls), 1)
+
+    # Perform element-wise comparison to find
+    # control points for all LUT colors.
+    bn = np.sum(controls.transpose() >= t2, axis=1)
+
+    j = np.clip(bn-1, 0, ncolors-1)
+
+    # Copying color data from ColorArray to array-like
+    # makes data assignment to LUT faster.
+    colors_rgba = ColorArray(colors[:])._rgba
+    LUT[:, 0, :] = colors_rgba[j]
+
+    s2 = "uniform sampler2D texture2D_LUT;"
+    s = "{\n return texture2D(texture2D_LUT, \
+           vec2(0.0, clamp(t, 0.0, 1.0)));\n} "
+
+    return "%s\nvec4 colormap(float t) {\n%s\n}" % (s2, s)
 
 
 # Mini GLSL template system for colors.
@@ -194,6 +236,10 @@ class BaseColormap(object):
 
     # GLSL string with a function implementing the color map.
     glsl_map = None
+
+    # Texture map data used by the 'colormap' GLSL function
+    # for luminance to RGBA conversion.
+    texture_map_data = None
 
     def __init__(self, colors=None):
         # Ensure the colors are arrays.
@@ -287,7 +333,7 @@ def _default_controls(ncolors):
 _interpolation_info = {
     'linear': {
         'ncontrols': lambda ncolors: ncolors,  # take ncolors as argument
-        'glsl_map': _glsl_mix,  # take 'controls' as argument
+        'glsl_map': _glsl_mix,  # take 'controls' and 'colors' as arguments
         'map': mix,
     },
     'zero': {
@@ -335,7 +381,10 @@ class Colormap(BaseColormap):
             controls = _default_controls(ncontrols)
         assert len(controls) == ncontrols
         self._controls = np.array(controls, dtype=np.float32)
-        self.glsl_map = self._glsl_map_generator(self._controls)
+        # use texture map for luminance to RGBA conversion
+        self.texture_map_data = np.zeros((LUT_len, 1, 4), dtype=np.float32)
+        self.glsl_map = self._glsl_map_generator(self._controls, colors,
+                                                 self.texture_map_data)
         super(Colormap, self).__init__(colors)
 
     @property
@@ -374,6 +423,21 @@ class Colormap(BaseColormap):
             List of rgba colors.
         """
         return self._map_function(self.colors.rgba, x, self._controls)
+
+    def texture_lut(self):
+        """Return a texture2D object for LUT after its value is set."""
+        if self.texture_map_data is not None:
+            interpolation_mode = 'linear' \
+                if(str(self.interpolation) == 'linear') \
+                else 'nearest'
+            texture_LUT = \
+                vispy.gloo.Texture2D(np.zeros(self.texture_map_data.shape),
+                                     interpolation=interpolation_mode)
+            texture_LUT.set_data(self.texture_map_data,
+                                 offset=None, copy=True)
+        else:
+            texture_LUT = None
+        return texture_LUT
 
 
 class CubeHelixColormap(Colormap):
@@ -700,18 +764,13 @@ class _RedYellowBlueCyan(Colormap):
 
 # https://github.com/matplotlib/matplotlib/pull/4707/files#diff-893cf0348279e9f4570488a7a297ab1eR774  # noqa
 # Taken from original Viridis colormap data in matplotlib implementation
-# Sampled 128 points from the raw data-set of 256 samples.
-# Sub sampled to 128 points since 256 points causes VisPy to freeze.
 #
 # Issue #1331 https://github.com/vispy/vispy/issues/1331 explains that the
-# 128 viridis sample size
-# fails on some GPUs but lowering to 64 samples allows more GPUs to use
-# viridis. The 64 samples are linearly interpolated anyhow and yeild smooth
-# colormaps. To get 64 samples
-# the original Viridis colormap data is sampled with a stride of 4 ie [::4].
+# 128 viridis sample size fails on some GPUs
+# but lowering to 64 samples allows more GPUs to use viridis.
 #
-# HACK: Ideally, all 256 points should be included, with VisPy generating
-# a 1D texture lookup for ColorMap, rather than branching code.
+# VisPy has beem updated to use a texture map lookup.
+# Thus, sampling of the Viridis colormap data is no longer necessary.
 _viridis_data = [[0.267004, 0.004874, 0.329415],
                  [0.268510, 0.009605, 0.335427],
                  [0.269944, 0.014625, 0.341379],
@@ -986,7 +1045,7 @@ _colormaps = dict(
     winter=_Winter(),
     light_blues=_SingleHue(),
     orange=_SingleHue(hue=35),
-    viridis=Colormap(ColorArray(_viridis_data[::4])),
+    viridis=Colormap(ColorArray(_viridis_data)),
     # Diverging presets
     coolwarm=Colormap(ColorArray(
         [
