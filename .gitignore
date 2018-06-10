@@ -20,3 +20,4 @@ vispy.egg-info
 .ipynb_checkpoints
 .cache/
 examples/basics/scene/animation.gif
+.pytest_cache/

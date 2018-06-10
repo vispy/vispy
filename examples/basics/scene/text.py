@@ -27,6 +27,7 @@ def resize(event=None):
     vb.pos = 1, canvas.size[1] // 2 - 1
     vb.size = canvas.size[0] - 2, canvas.size[1] // 2 - 2
 
+
 t1 = Text('Text in root scene (24 pt)', parent=canvas.scene, color='red')
 t1.font_size = 24
 t1.pos = canvas.size[0] // 2, canvas.size[1] // 3

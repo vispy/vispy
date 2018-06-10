@@ -30,3 +30,13 @@ __version__ = '-'.join(map(str, version_info)).replace('-', '.').strip('-')
 from .util import config, set_log_level, keys, sys_info  # noqa
 from .util.wrappers import use  # noqa
 from .testing import test  # noqa
+
+
+# Allow for Jupyter extension to be enabled
+def _jupyter_nbextension_paths():
+    return [{
+        'section': 'notebook',
+        'src': 'static',
+        'dest': 'vispy',
+        'require': 'vispy/extension'
+    }]

@@ -97,7 +97,7 @@ def _init():
 VISPY_HELP = """
 VisPy command line arguments:
 
-  --vispy-backend=(qt|pyqt4|pyqt5|pyside|glfw|pyglet|sdl2|wx)
+  --vispy-backend=(qt|pyqt4|pyqt5|pyside|pyside2|glfw|pyglet|sdl2|wx)
     Selects the backend system for VisPy to use. This will override the default
     backend selection in your configuration file.
 

@@ -57,7 +57,7 @@ def test_arrow_transform_draw():
 
     with TestingCanvas() as c:
         if os.getenv('TRAVIS', 'false') == 'true' and \
-                c.app.backend_name == 'pyqt4':
+                c.app.backend_name.lower() == 'pyqt4':
             # TODO: Fix this (issue #1042
             raise SkipTest('Travis fails due to FB stack problem')
         for arrow_type in ARROW_TYPES:

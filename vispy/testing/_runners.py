@@ -92,10 +92,8 @@ def _unit(mode, extra_arg_string, coverage=False):
         extra_args += ['--cov', 'vispy', '--cov-report=']
     # make a call to "python" so that it inherits whatever the system
     # thinks is "python" (e.g., virtualenvs)
-    extra_arg_string = ' '.join(extra_args)
-    insert = extra_arg_string if use_pytest else extra_args
     extra_args += [import_dir]  # positional argument
-    cmd = [sys.executable, '-c', _unit_script % insert]
+    cmd = [sys.executable, '-c', _unit_script % (extra_args,)]
     env = deepcopy(os.environ)
 
     # We want to set this for all app backends plus "nobackend" to
@@ -103,6 +101,7 @@ def _unit(mode, extra_arg_string, coverage=False):
     env.update(dict(_VISPY_TESTING_APP=mode, VISPY_IGNORE_OLD_VERSION='true'))
     env_str = '_VISPY_TESTING_APP=%s ' % mode
     if len(msg) > 0:
+        extra_arg_string = ' '.join(extra_args)
         msg = ('%s\n%s:\n%s%s'
                % (_line_sep, msg, env_str, extra_arg_string))
         print(msg)

@@ -9,10 +9,10 @@ environment:
 
   matrix:
       - PYTHON_VERSION: "2.7"
-        CONDA_DEPENDENCIES: "numpy scipy matplotlib pyqt=5 jupyter setuptools nose pytest coverage pytest-cov"
+        CONDA_DEPENDENCIES: "numpy scipy matplotlib pyqt=5 jupyter setuptools nose pytest coverage pytest-cov cython"
         PIP_DEPENDENCIES: "numpydoc mock coveralls"
       - PYTHON_VERSION: "3.6"
-        CONDA_DEPENDENCIES: "numpy scipy setuptools nose pytest coverage pytest-cov"
+        CONDA_DEPENDENCIES: "numpy scipy setuptools nose pytest coverage pytest-cov cython"
         PIP_DEPENDENCIES: "numpydoc coveralls"
 
 platform:

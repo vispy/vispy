@@ -8,11 +8,9 @@ Adapted to `vispy` by Eric Larson <larson.eric.d@gmail.com>.
 """
 
 import numpy as np
-from os import path as op
-from ...gloo import (Program, FrameBuffer, VertexBuffer, Texture2D, 
-                     set_viewport, set_state)
 
-this_dir = op.dirname(__file__)
+from ...gloo import (Program, FrameBuffer, VertexBuffer, Texture2D,
+                     set_viewport, set_state)
 
 vert_seed = """
 attribute vec2 a_position;
@@ -229,7 +227,7 @@ void main( void )
 """
 
 
-class SDFRenderer(object):
+class SDFRendererGPU(object):
     def __init__(self):
         self.program_seed = Program(vert_seed, frag_seed)
         self.program_flood = Program(vert, frag_flood)
@@ -267,13 +265,13 @@ class SDFRenderer(object):
         set_state(blend=False, depth_test=False)
 
         # calculate the negative half (within object)
-        orig_tex = Texture2D(255 - data, format='luminance', 
+        orig_tex = Texture2D(255 - data, format='luminance',
                              wrapping='clamp_to_edge', interpolation='nearest')
         edf_neg_tex = self._render_edf(orig_tex)
 
         # calculate positive half (outside object)
         orig_tex[:, :, 0] = data
-        
+
         edf_pos_tex = self._render_edf(orig_tex)
 
         # render final product to output texture

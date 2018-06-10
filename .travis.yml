@@ -9,7 +9,7 @@ addons:
   apt:
     packages:
     - &mesa_apt [libgl1-mesa-dri]
-    - &full_apt [libegl1-mesa, cmake, xorg-dev, libglu1-mesa-dev, mercurial, libdbus-1-dev, libgl1-mesa-dev, libglu1-mesa-dev, libpulse-dev, libx11-dev, libxcursor-dev, libxext-dev, libxi-dev, libxinerama-dev, libxrandr-dev, libxss-dev, libxt-dev, libxv-dev, libxxf86vm-dev, libasound2-dev, libts-dev, libudev-dev, libsdl2-2.0-0]
+    - &full_apt [libgl1-mesa-dri, libegl1-mesa, cmake, xorg-dev, libglu1-mesa-dev, mercurial, libdbus-1-dev, libgl1-mesa-dev, libglu1-mesa-dev, libpulse-dev, libx11-dev, libxcursor-dev, libxext-dev, libxi-dev, libxinerama-dev, libxrandr-dev, libxss-dev, libxt-dev, libxv-dev, libxxf86vm-dev, libasound2-dev, libts-dev, libudev-dev, libsdl2-2.0-0]
 
 # Size testing can be skipped by adding "[size skip]" within a commit message.
 
@@ -103,7 +103,7 @@ install:
     # Install numpy, flake
     - conda create -n testenv --yes --quiet pip python=$PYTHON;
     - source activate testenv;
-    - conda install --yes --quiet numpy$NUMPY nose pytest;
+    - conda install --yes --quiet numpy$NUMPY nose pytest cython;
     - pip install -q coveralls pytest-cov pytest-sugar flake8
 
     # On Python3, install system-wide copies of bundled libraries instead
@@ -115,11 +115,14 @@ install:
     # If we only need a single backend (DEPS=backend), then use PyQT4
     # Don't test Pyglet because it currently segfaults (but AppVeyor checks it)
     # PyQt5 is currently broken, but will be installed on 3.6 so don't do it
+    # WX requires OSMesa (mesa on conda) which has typically been an
+    # additional test environment. With llvm=3.3 the combination of
+    # EGL and mesa causes segmentation faults. See issue #1401.
     - if [ "${DEPS}" == "full" ]; then
         conda install --yes pyopengl scipy numpy$NUMPY networkx;
         pip install -q numpydoc PySDL2;
         if [ "${TRAVIS_OS_NAME}" == "linux" ]; then
-          conda install --yes wxpython matplotlib jupyter pyqt=5 pillow decorator six;
+          conda install --yes matplotlib jupyter pyqt=5 pillow decorator six scikit-image;
           if [ "${PYTHON}" == "3.6" ]; then
             pip install -q freetype-py husl pypng cassowary imageio;
             rm -rf ${SRC_DIR}/vispy/ext/_bundled;
@@ -127,7 +130,7 @@ install:
             pip install -q mock;
           fi;
         else
-          conda install --yes matplotlib jupyter pyqt=5;
+          conda install --yes matplotlib jupyter pyqt=5 scikit-image;
           pip install -q mock;
         fi;
       fi;

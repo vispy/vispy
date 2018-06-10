@@ -65,7 +65,9 @@ Installation
 ------------
 
 VisPy runs on Python 2.7+ and Python 3.3+ and depends on NumPy. You also
-need a backend (PyQt4/PySide, glfw, pyglet, SDL, or wx).
+need a backend (PyQt4/PySide, PyQt5/PySide2, glfw, pyglet, SDL, or wx).
+
+PyQt5/PySide2 should be considered more experimental than PyQt4/PySide.
 
 VisPy can be installed either via `pip`:
 
@@ -160,8 +162,8 @@ External links
 
 .. |Build Status| image:: https://travis-ci.org/vispy/vispy.svg?branch=master
    :target: https://travis-ci.org/vispy/vispy
-.. |Appveyor Status| image:: https://ci.appveyor.com/api/projects/status/dsxgkrbfj29xf9ef/branch/master?svg=true
-   :target: https://ci.appveyor.com/project/Eric89GXL/vispy/branch/master
+.. |Appveyor Status| image:: https://ci.appveyor.com/api/projects/status/v09sc8ua4ju2ngyy/branch/master?svg=true
+   :target: https://ci.appveyor.com/project/vispy/vispy/branch/master
 .. |Coverage Status| image:: https://img.shields.io/coveralls/vispy/vispy/master.svg
    :target: https://coveralls.io/r/vispy/vispy?branch=master
 .. |Zenodo Link| image:: https://zenodo.org/badge/5822/vispy/vispy.svg

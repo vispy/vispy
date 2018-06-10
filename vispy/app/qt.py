@@ -16,11 +16,17 @@ except AttributeError:
                        "in use.")
 
 
-if qt_lib in ('pyqt4', 'pyside'):
+if qt_lib in 'pyqt4':
     from PyQt4 import QtGui
+    QWidget, QGridLayout = QtGui.QWidget, QtGui.QGridLayout  # Compat
+elif qt_lib == 'pyside':
+    from PySide import QtGui
     QWidget, QGridLayout = QtGui.QWidget, QtGui.QGridLayout  # Compat
 elif qt_lib == 'pyqt5':
     from PyQt5 import QtWidgets
+    QWidget, QGridLayout = QtWidgets.QWidget, QtWidgets.QGridLayout  # Compat
+elif qt_lib == 'pyside2':
+    from PySide2 import QtWidgets
     QWidget, QGridLayout = QtWidgets.QWidget, QtWidgets.QGridLayout  # Compat
 elif qt_lib:
     raise RuntimeError("Invalid value for qt_lib %r." % qt_lib)
