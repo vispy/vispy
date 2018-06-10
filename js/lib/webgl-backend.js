@@ -9,7 +9,7 @@ function _inline_glir_commands(commands, buffers) {
     for (var i = 0; i < commands.length; i++) {
         var command = commands[i];
         // Shader data commands are 3 elements, everything else 4
-        if (command[0] == 'DATA' && command.length == 4) {
+        if (command[0] == 'DATA') {
             var buffer_index = command[3]['buffer_index'];
             var buffer_shape = command[3]['buffer_shape'];
             var buffer_dtype = command[3]['buffer_dtype'];

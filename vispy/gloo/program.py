@@ -54,7 +54,8 @@ class Shader(GLObject):
     @code.setter
     def code(self, code):
         self._code = preprocess(code)
-        self._glir.command('DATA', self._id, self._code)
+        # use hardcoded offset of 0 to match other GLIR DATA commands
+        self._glir.command('DATA', self._id, 0, self._code)
 
 
 class VertexShader(Shader):

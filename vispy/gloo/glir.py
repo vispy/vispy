@@ -555,7 +555,9 @@ class GlirShader(GlirObject):
     def create(self):
         self._handle = gl.glCreateShader(self._target)
 
-    def set_data(self, code):
+    def set_data(self, offset, code):
+        # NOTE: offset will always be 0 to match other DATA commands
+
         # convert shader to be compatible with backend
         convert = self._parser.shader_compatibility
         if convert:

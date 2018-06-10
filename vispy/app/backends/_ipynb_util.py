@@ -23,18 +23,23 @@ def _extract_buffers(commands):
     # First, filter all DATA commands.
     # Shader DATA commands are 3 elements, others are 4
     data_commands = [command for command in commands
-                     if command[0] == 'DATA' and len(command) == 4]
+                     if command[0] == 'DATA']
     # Extract the arrays.
     buffers = [data_command[3] for data_command in data_commands]
     # Modify the commands by replacing the array buffers with pointers.
     commands_modified = list(commands)
     buffer_index = 0
     for i, command in enumerate(commands_modified):
-        if command[0] == 'DATA' and len(command) == 4:
+        if command[0] == 'DATA':
+            buffer = buffers[buffer_index]
+            # shader code is type str; textures and everything else are numpy
+            if isinstance(buffer, str):
+                buffer = np.array(buffer, np.bytes_)
+                buffers[buffer_index] = buffer
             commands_modified[i] = command[:3] + \
                 ({'buffer_index': buffer_index,
-                  'buffer_shape': buffers[buffer_index].shape,
-                  'buffer_dtype': np.dtype(buffers[buffer_index].dtype).name},)
+                  'buffer_shape': buffer.shape,
+                  'buffer_dtype': buffer.dtype.name},)
             buffer_index += 1
     return commands_modified, buffers
 

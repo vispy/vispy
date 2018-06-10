@@ -116,9 +116,9 @@ class WebGLGlirParser(BaseGlirParser):
         new_commands = []
         # Convert shaders
         for c in commands:
-            if c[0] == 'DATA' and len(c) == 3:
-                # shader command
-                c = c[:2] + (convert_shader('es2', c[2]),)
+            if c[0] == 'DATA' and isinstance(c[3], str):
+                # shader source code
+                c = c[:3] + (convert_shader('es2', c[3]),)
             new_commands.append(c)
         self._widget.send_glir_commands(new_commands)
 
