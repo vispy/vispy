@@ -257,7 +257,7 @@ def test_application():
                 "void main (void) {v_color = a_color;"
                 "gl_Position = u_model * vec4(a_position, 0.0, 1.0);"
                 "v_color = a_color;}")
-        frag = "void main() {gl_FragColor = vec4(0, 0, 0, 1);}"
+        frag = "void main() {gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);}"
         n, p = 250, 50
         T = np.random.uniform(0, 2 * np.pi, n)
         position = np.zeros((n, 2), dtype=np.float32)
