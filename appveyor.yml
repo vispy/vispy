@@ -44,6 +44,10 @@ install:
   # Skip using MESA for now since AppVeyor is unreliable with it
   - "SET VISPY_GL_LIB=%CD%\\opengl32.dll"
 
+  # Update numpy to most recent
+  # (numpy 1.14.3 is bad)
+  - "conda update numpy"
+
   # Install vispy
   - "python setup.py develop"
   - "python -c \"import vispy; print(vispy.sys_info())\""
