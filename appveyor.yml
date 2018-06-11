@@ -46,7 +46,7 @@ install:
 
   # Update numpy to most recent
   # (numpy 1.14.3 is bad)
-  - "conda update numpy"
+  - "conda update --yes numpy"
 
   # Install vispy
   - "python setup.py develop"

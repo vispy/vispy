@@ -137,7 +137,7 @@ install:
 
     # Force newest numpy (some dependencies downgrade for some reason
     # (numpy 1.14.3 is bad)
-    - conda update numpy
+    - conda update --yes numpy
 
     # Install vispy
     - cd ${SRC_DIR}
