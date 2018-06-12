@@ -10,8 +10,7 @@ from copy import deepcopy
 from . import gl
 from ..ext.six import string_types
 from ..color import Color
-
-#from ..util import logger
+from ..util import logger
 
 
 __all__ = ('set_viewport', 'set_depth_range', 'set_front_face',  # noqa
@@ -677,7 +676,12 @@ def get_gl_configuration():
     # XXX eventually maybe we can ask `gl` whether or not we can access these
     gl.check_error('pre-config check')
     config = dict()
-    gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, 0)
+    canvas = get_current_canvas()
+    if canvas and hasattr(canvas, '_backend'):
+        fbo = canvas._backend._vispy_get_fb_bind_location()
+    else:
+        fbo = 0
+    gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, fbo)
     fb_param = gl.glGetFramebufferAttachmentParameter
     # copied since they aren't in ES:
     GL_FRONT_LEFT = 1024
@@ -694,15 +698,35 @@ def get_gl_configuration():
                  depth=(GL_DEPTH, 33302),
                  stencil=(GL_STENCIL, 33303))
     for key, val in sizes.items():
-        config[key + '_size'] = fb_param(gl.GL_FRAMEBUFFER, val[0], val[1])
-    val = fb_param(gl.GL_FRAMEBUFFER, GL_FRONT_LEFT,
-                   GL_FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING)
-    if val not in (gl.GL_LINEAR, GL_SRGB):
-        raise RuntimeError('unknown value for SRGB: %s' % val)
-    config['srgb'] = True if val == GL_SRGB else False  # GL_LINEAR
-    config['stereo'] = True if gl.glGetParameter(GL_STEREO) else False
-    config['double_buffer'] = (True if gl.glGetParameter(GL_DOUBLEBUFFER)
-                               else False)
+        try:
+            param = fb_param(gl.GL_FRAMEBUFFER, val[0], val[1])
+            gl.check_error('post-config check')
+        except RuntimeError as exp:
+            logger.warning('Failed to get size %s: %s' % (key, exp))
+        else:
+            config[key + '_size'] = param
+
+    try:
+        val = fb_param(gl.GL_FRAMEBUFFER, GL_FRONT_LEFT,
+                       GL_FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING)
+        gl.check_error('post-config check')
+    except RuntimeError as exp:
+        logger.warning('Failed to get sRGB: %s' % (exp,))
+    else:
+        if val not in (gl.GL_LINEAR, GL_SRGB):
+            logger.warning('unknown value for SRGB: %s' % val)
+        else:
+            config['srgb'] = (val == GL_SRGB)
+
+    for key, enum in (('stereo', GL_STEREO),
+                      ('double_buffer', GL_DOUBLEBUFFER)):
+        val = gl.glGetParameter(enum)
+        try:
+            gl.check_error('post-config check')
+        except Exception as exp:
+            logger.warning('Failed to get %s: %s' % (key, exp))
+        else:
+            config[key] = bool(val)
     config['samples'] = gl.glGetParameter(gl.GL_SAMPLES)
     gl.check_error('post-config check')
     return config

@@ -21,3 +21,4 @@ vispy.egg-info
 .cache/
 examples/basics/scene/animation.gif
 .pytest_cache/
+js/

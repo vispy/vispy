@@ -712,11 +712,13 @@ class CanvasBackendDesktop(QtBaseCanvasBackend, QGLWidget):
         self.close()
         if QT5_NEW_API:
             self.context().doneCurrent()
-            self.doneCurrent()
+            # self.doneCurrent()
         else:
             self.doneCurrent()
             self.context().reset()
-        self._vispy_canvas.app.process_events()
+        if self._vispy_canvas is not None:
+            self._vispy_canvas.app.process_events()
+            self._vispy_canvas.app.process_events()
 
     def _vispy_set_current(self):
         if self._vispy_canvas is None:
