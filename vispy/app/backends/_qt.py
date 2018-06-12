@@ -710,13 +710,8 @@ class CanvasBackendDesktop(QtBaseCanvasBackend, QGLWidget):
     def _vispy_close(self):
         # Force the window or widget to shut down
         self.close()
-        if QT5_NEW_API:
-            self.doneCurrent()
-            c = self.context()
-            if c is not None:
-                c.doneCurrent()
-        else:
-            self.doneCurrent()
+        self.doneCurrent()
+        if not QT5_NEW_API:
             self.context().reset()
         if self._vispy_canvas is not None:
             self._vispy_canvas.app.process_events()
