@@ -2,7 +2,7 @@ import os
 import sys
 
 from vispy.testing import (requires_application, SkipTest, run_tests_if_main,
-                           assert_equal, assert_raises)
+                           assert_raises)
 from vispy.app import Canvas, use_app
 from vispy.gloo import get_gl_configuration, Program
 from vispy.gloo.gl import check_error
@@ -37,13 +37,13 @@ def test_context_properties():
                 props = config
             else:
                 props = get_gl_configuration()
-            assert_equal(len(config), n_items)
+            assert len(config) == n_items
             for key, val in config.items():
                 # XXX knownfail for windows samples, and wx (all platforms)
                 if key == 'samples':
                     iswx = a.backend_name.lower() == 'wx'
                     if not (sys.platform.startswith('win') or iswx):
-                        assert_equal(val, props[key], key)
+                        assert val == props[key], key
     assert_raises(TypeError, Canvas, config='foo')
     assert_raises(KeyError, Canvas, config=dict(foo=True))
     assert_raises(TypeError, Canvas, config=dict(double_buffer='foo'))

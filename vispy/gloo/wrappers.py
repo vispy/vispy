@@ -33,31 +33,31 @@ _setters = [s[4:] for s in __all__
 # calls, set_preset_state will need to be updated to deal with it.
 _gl_presets = {
     'opaque': dict(
-        depth_test=True, 
-        cull_face=False, 
+        depth_test=True,
+        cull_face=False,
         blend=False),
     'translucent': dict(
-        depth_test=True, 
-        cull_face=False, 
+        depth_test=True,
+        cull_face=False,
         blend=True,
         blend_func=('src_alpha', 'one_minus_src_alpha')),
     'additive': dict(
-        depth_test=False, 
-        cull_face=False, 
+        depth_test=False,
+        cull_face=False,
         blend=True,
         blend_func=('src_alpha', 'one')),
 }
-    
+
 
 def get_current_canvas():
     """ Proxy for context.get_current_canvas to avoud circular import.
-    This function replaces itself with the real function the first 
+    This function replaces itself with the real function the first
     time it is called. (Bah)
     """
     from .context import get_current_canvas
     globals()['get_current_canvas'] = get_current_canvas
     return get_current_canvas()
-    
+
 
 # Helpers that are needed for efficient wrapping
 
@@ -89,19 +89,19 @@ class BaseGlooFunctions(object):
     in the object oriented part of gloo. An instance of this class is
     associated with each canvas.
     """
-    
+
     ##########################################################################
     # PRIMITIVE/VERTEX
-    
+
     #
     # Viewport, DepthRangef, CullFace, FrontFace, LineWidth, PolygonOffset
     #
-    
+
     def set_viewport(self, *args):
         """Set the OpenGL viewport
-    
+
         This is a wrapper for gl.glViewport.
-    
+
         Parameters
         ----------
         *args : tuple
@@ -110,10 +110,10 @@ class BaseGlooFunctions(object):
         """
         x, y, w, h = args[0] if len(args) == 1 else args
         self.glir.command('FUNC', 'glViewport', int(x), int(y), int(w), int(h))
-    
+
     def set_depth_range(self, near=0., far=1.):
         """Set depth values
-    
+
         Parameters
         ----------
         near : float
@@ -122,30 +122,30 @@ class BaseGlooFunctions(object):
             Far clipping plane.
         """
         self.glir.command('FUNC', 'glDepthRange', float(near), float(far))
-    
+
     def set_front_face(self, mode='ccw'):
         """Set which faces are front-facing
-    
+
         Parameters
         ----------
         mode : str
             Can be 'cw' for clockwise or 'ccw' for counter-clockwise.
         """
         self.glir.command('FUNC', 'glFrontFace', mode)
-    
+
     def set_cull_face(self, mode='back'):
         """Set front, back, or both faces to be culled
-    
+
         Parameters
         ----------
         mode : str
             Culling mode. Can be "front", "back", or "front_and_back".
         """
         self.glir.command('FUNC', 'glCullFace', mode)
-    
+
     def set_line_width(self, width=1.):
         """Set line width
-    
+
         Parameters
         ----------
         width : float
@@ -155,10 +155,10 @@ class BaseGlooFunctions(object):
         if width < 0:
             raise RuntimeError('Cannot have width < 0')
         self.glir.command('FUNC', 'glLineWidth', width)
-    
+
     def set_polygon_offset(self, factor=0., units=0.):
         """Set the scale and units used to calculate depth values
-    
+
         Parameters
         ----------
         factor : float
@@ -170,19 +170,19 @@ class BaseGlooFunctions(object):
         """
         self.glir.command('FUNC', 'glPolygonOffset', float(factor),
                           float(units))
-    
+
     ##########################################################################
     # FRAGMENT/SCREEN
-    
+
     #
     # glClear, glClearColor, glClearDepthf, glClearStencil
     #
-    
+
     def clear(self, color=True, depth=True, stencil=True):
         """Clear the screen buffers
-    
+
         This is a wrapper for gl.glClear.
-    
+
         Parameters
         ----------
         color : bool | str | tuple | instance of Color
@@ -235,25 +235,25 @@ class BaseGlooFunctions(object):
             The depth to use.
         """
         self.glir.command('FUNC', 'glClearDepth', float(depth))
-    
+
     def set_clear_stencil(self, index=0):
         """Set the clear value for the stencil buffer
-    
+
         This is a wrapper for gl.glClearStencil.
-    
+
         Parameters
         ----------
         index : int
             The index to use when the stencil buffer is cleared.
         """
         self.glir.command('FUNC', 'glClearStencil', int(index))
-    
+
     # glBlendFunc(Separate), glBlendColor, glBlendEquation(Separate)
-    
+
     def set_blend_func(self, srgb='one', drgb='zero',
                        salpha=None, dalpha=None):
         """Specify pixel arithmetic for RGB and alpha
-    
+
         Parameters
         ----------
         srgb : str
@@ -267,43 +267,43 @@ class BaseGlooFunctions(object):
         """
         salpha = srgb if salpha is None else salpha
         dalpha = drgb if dalpha is None else dalpha
-        self.glir.command('FUNC', 'glBlendFuncSeparate', 
+        self.glir.command('FUNC', 'glBlendFuncSeparate',
                           srgb, drgb, salpha, dalpha)
-    
+
     def set_blend_color(self, color):
         """Set the blend color
-    
+
         Parameters
         ----------
         color : str | tuple | instance of Color
             Color to use. See vispy.color.Color for options.
         """
         self.glir.command('FUNC', 'glBlendColor', *Color(color).rgba)
-    
+
     def set_blend_equation(self, mode_rgb, mode_alpha=None):
         """Specify the equation for RGB and alpha blending
-    
+
         Parameters
         ----------
         mode_rgb : str
             Mode for RGB.
         mode_alpha : str | None
             Mode for Alpha. If None, ``mode_rgb`` is used.
-    
+
         Notes
         -----
         See ``set_blend_equation`` for valid modes.
         """
         mode_alpha = mode_rgb if mode_alpha is None else mode_alpha
-        self.glir.command('FUNC', 'glBlendEquationSeparate', 
+        self.glir.command('FUNC', 'glBlendEquationSeparate',
                           mode_rgb, mode_alpha)
-    
+
     # glScissor, glStencilFunc(Separate), glStencilMask(Separate),
     # glStencilOp(Separate),
-    
+
     def set_scissor(self, x, y, w, h):
         """Define the scissor box
-    
+
         Parameters
         ----------
         x : int
@@ -316,11 +316,11 @@ class BaseGlooFunctions(object):
             The height of the box.
         """
         self.glir.command('FUNC', 'glScissor', int(x), int(y), int(w), int(h))
-    
-    def set_stencil_func(self, func='always', ref=0, mask=8, 
+
+    def set_stencil_func(self, func='always', ref=0, mask=8,
                          face='front_and_back'):
         """Set front or back function and reference value
-    
+
         Parameters
         ----------
         func : str
@@ -332,12 +332,12 @@ class BaseGlooFunctions(object):
         face : str
             Can be 'front', 'back', or 'front_and_back'.
         """
-        self.glir.command('FUNC', 'glStencilFuncSeparate', 
+        self.glir.command('FUNC', 'glStencilFuncSeparate',
                           face, func, int(ref), int(mask))
-    
+
     def set_stencil_mask(self, mask=8, face='front_and_back'):
         """Control the front or back writing of individual bits in the stencil
-    
+
         Parameters
         ----------
         mask : int
@@ -346,11 +346,11 @@ class BaseGlooFunctions(object):
             Can be 'front', 'back', or 'front_and_back'.
         """
         self.glir.command('FUNC', 'glStencilMaskSeparate', face, int(mask))
-    
+
     def set_stencil_op(self, sfail='keep', dpfail='keep', dppass='keep',
                        face='front_and_back'):
         """Set front or back stencil test actions
-    
+
         Parameters
         ----------
         sfail : str
@@ -366,35 +366,35 @@ class BaseGlooFunctions(object):
         face : str
             Can be 'front', 'back', or 'front_and_back'.
         """
-        self.glir.command('FUNC', 'glStencilOpSeparate', 
+        self.glir.command('FUNC', 'glStencilOpSeparate',
                           face, sfail, dpfail, dppass)
-    
+
     # glDepthFunc, glDepthMask, glColorMask, glSampleCoverage
-    
+
     def set_depth_func(self, func='less'):
         """Specify the value used for depth buffer comparisons
-    
+
         Parameters
         ----------
         func : str
-            The depth comparison function. Must be one of 'never', 'less', 
+            The depth comparison function. Must be one of 'never', 'less',
             'equal', 'lequal', 'greater', 'gequal', 'notequal', or 'always'.
         """
         self.glir.command('FUNC', 'glDepthFunc', func)
-    
+
     def set_depth_mask(self, flag):
         """Toggle writing into the depth buffer
-    
+
         Parameters
         ----------
         flag : bool
             Whether depth writing should be enabled.
         """
         self.glir.command('FUNC', 'glDepthMask', bool(flag))
-    
+
     def set_color_mask(self, red, green, blue, alpha):
         """Toggle writing of frame buffer color components
-    
+
         Parameters
         ----------
         red : bool
@@ -406,12 +406,12 @@ class BaseGlooFunctions(object):
         alpha : bool
             Alpha toggle.
         """
-        self.glir.command('FUNC', 'glColorMask', bool(red), bool(green), 
+        self.glir.command('FUNC', 'glColorMask', bool(red), bool(green),
                           bool(blue), bool(alpha))
-    
+
     def set_sample_coverage(self, value=1.0, invert=False):
         """Specify multisample coverage parameters
-    
+
         Parameters
         ----------
         value : float
@@ -419,29 +419,29 @@ class BaseGlooFunctions(object):
         invert : bool
             Specify if the coverage masks should be inverted.
         """
-        self.glir.command('FUNC', 'glSampleCoverage', float(value), 
+        self.glir.command('FUNC', 'glSampleCoverage', float(value),
                           bool(invert))
-    
+
     ##########################################################################
     # STATE
-    
+
     #
     # glEnable/Disable
     #
-    
+
     def get_state_presets(self):
         """The available GL state presets
-    
+
         Returns
         -------
         presets : dict
             The dictionary of presets usable with ``set_options``.
         """
         return deepcopy(_gl_presets)
-    
+
     def set_state(self, preset=None, **kwargs):
         """Set OpenGL rendering state, optionally using a preset
-    
+
         Parameters
         ----------
         preset : str | None
@@ -453,46 +453,46 @@ class BaseGlooFunctions(object):
             (e.g., ``'depth_test=True'``, ``cull_face=False``), non-boolean
             entries will be passed as arguments to ``set_*`` functions (e.g.,
             ``blend_func=('src_alpha', 'one')`` will call ``set_blend_func``).
-    
+
         Notes
         -----
         This serves three purposes:
-    
+
         1. Set GL state using reasonable presets.
         2. Wrapping glEnable/glDisable functionality.
         3. Convienence wrapping of other ``gloo.set_*`` functions.
-    
+
         For example, one could do the following:
-    
+
             >>> from vispy import gloo
             >>> gloo.set_state('translucent', depth_test=False, clear_color=(1, 1, 1, 1))  # noqa, doctest:+SKIP
-    
+
         This would take the preset defaults for 'translucent', turn
         depth testing off (which would normally be on for that preset),
         and additionally set the glClearColor parameter to be white.
-    
+
         Another example to showcase glEnable/glDisable wrapping:
-    
+
             >>> gloo.set_state(blend=True, depth_test=True, polygon_offset_fill=False)  # noqa, doctest:+SKIP
-    
+
         This would be equivalent to calling
-    
+
             >>> from vispy.gloo import gl
             >>> gl.glDisable(gl.GL_BLEND)
             >>> gl.glEnable(gl.GL_DEPTH_TEST)
             >>> gl.glEnable(gl.GL_POLYGON_OFFSET_FILL)
-    
+
         Or here's another example:
-    
+
             >>> gloo.set_state(clear_color=(0, 0, 0, 1), blend=True, blend_func=('src_alpha', 'one'))  # noqa, doctest:+SKIP
-    
+
         Thus arbitrary GL state components can be set directly using
         ``set_state``. Note that individual functions are exposed e.g.,
         as ``set_clear_color``, with some more informative docstrings
         about those particular functions.
         """
         kwargs = deepcopy(kwargs)
-        
+
         # Load preset, if supplied
         if preset is not None:
             _check_valid('preset', preset, tuple(list(_gl_presets.keys())))
@@ -500,7 +500,7 @@ class BaseGlooFunctions(object):
                 # only overwrite user input with preset if user's input is None
                 if key not in kwargs:
                     kwargs[key] = val
-    
+
         # cull_face is an exception because GL_CULL_FACE, glCullFace both exist
         if 'cull_face' in kwargs:
             cull_face = kwargs.pop('cull_face')
@@ -510,7 +510,7 @@ class BaseGlooFunctions(object):
             else:
                 self.glir.command('FUNC', 'glEnable', 'cull_face')
                 self.set_cull_face(*_to_args(cull_face))
-        
+
         # Iterate over kwargs
         for key, val in kwargs.items():
             if key in _setters:
@@ -525,14 +525,14 @@ class BaseGlooFunctions(object):
                 # Enable / disable
                 funcname = 'glEnable' if val else 'glDisable'
                 self.glir.command('FUNC', funcname, key)
-    
+
     #
     # glFinish, glFlush, glReadPixels, glHint
     #
-    
+
     def finish(self):
         """Wait for GL commands to to finish
-        
+
         This creates a GLIR command for glFinish and then processes the
         GLIR commands. If the GLIR interpreter is remote (e.g. WebGL), this
         function will return before GL has finished processing the commands.
@@ -543,10 +543,10 @@ class BaseGlooFunctions(object):
             context = get_current_canvas().context
         context.glir.command('FUNC', 'glFinish')
         context.flush_commands()  # Process GLIR commands
-    
+
     def flush(self):
         """Flush GL commands
-    
+
         This is a wrapper for glFlush(). This also flushes the GLIR
         command queue.
         """
@@ -556,10 +556,10 @@ class BaseGlooFunctions(object):
             context = get_current_canvas().context
         context.glir.command('FUNC', 'glFlush')
         context.flush_commands()  # Process GLIR commands
-    
+
     def set_hint(self, target, mode):
         """Set OpenGL drawing hint
-    
+
         Parameters
         ----------
         target : str
@@ -574,14 +574,14 @@ class BaseGlooFunctions(object):
 
 
 class GlooFunctions(BaseGlooFunctions):
-    
+
     @property
     def glir(self):
         """ The GLIR queue corresponding to the current canvas
         """
         canvas = get_current_canvas()
         if canvas is None:
-            msg = ("If you want to use gloo without vispy.app, " + 
+            msg = ("If you want to use gloo without vispy.app, " +
                    "use a gloo.context.FakeCanvas.")
             raise RuntimeError('Gloo requires a Canvas to run.\n' + msg)
         return canvas.context.glir
@@ -590,7 +590,7 @@ class GlooFunctions(BaseGlooFunctions):
 ## Create global functions object and inject names here
 
 # GlooFunctions without queue: use queue of canvas that is current at call-time
-global_gloo_functions = GlooFunctions() 
+global_gloo_functions = GlooFunctions()
 
 for name in dir(global_gloo_functions):
     if name.startswith('_') or name in ('glir'):
@@ -604,8 +604,8 @@ for name in dir(global_gloo_functions):
 
 
 def read_pixels(viewport=None, alpha=True, out_type='unsigned_byte'):
-    """Read pixels from the currently selected buffer. 
-    
+    """Read pixels from the currently selected buffer.
+
     Under most circumstances, this function reads from the front buffer.
     Unlike all other functions in vispy.gloo, this function directly executes
     an OpenGL command.
@@ -627,15 +627,15 @@ def read_pixels(viewport=None, alpha=True, out_type='unsigned_byte'):
     Returns
     -------
     pixels : array
-        3D array of pixels in np.uint8 or np.float32 format. 
-        The array shape is (h, w, 3) or (h, w, 4), with the top-left corner 
+        3D array of pixels in np.uint8 or np.float32 format.
+        The array shape is (h, w, 3) or (h, w, 4), with the top-left corner
         of the framebuffer at index [0, 0] in the returned array.
     """
     # Check whether the GL context is direct or remote
     context = get_current_canvas().context
     if context.shared.parser.is_remote():
         raise RuntimeError('Cannot use read_pixels() with remote GLIR parser')
-    
+
     finish()  # noqa - finish first, also flushes GLIR commands
     type_dict = {'unsigned_byte': gl.GL_UNSIGNED_BYTE,
                  np.uint8: gl.GL_UNSIGNED_BYTE,
