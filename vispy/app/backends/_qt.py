@@ -711,8 +711,10 @@ class CanvasBackendDesktop(QtBaseCanvasBackend, QGLWidget):
         # Force the window or widget to shut down
         self.close()
         if QT5_NEW_API:
-            self.context().doneCurrent()
-            # self.doneCurrent()
+            self.doneCurrent()
+            c = self.context()
+            if c is not None:
+                c.doneCurrent()
         else:
             self.doneCurrent()
             self.context().reset()
