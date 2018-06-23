@@ -119,6 +119,7 @@ class SceneCanvas(app.Canvas, Frozen):
         self._central_widget = None
         self._draw_order = weakref.WeakKeyDictionary()
         self._drawing = False
+        self._update_pending = False
         self._fb_stack = []
         self._vp_stack = []
         self._mouse_handler = None
@@ -190,7 +191,13 @@ class SceneCanvas(app.Canvas, Frozen):
         # TODO: use node bounds to keep track of minimum drawable area
         if self._drawing:
             return
-        app.Canvas.update(self)
+
+        # Keep things civil in the node update system. Once an update
+        # has been scheduled, there is no need to flood the event queue
+        # of the backend with additional updates.
+        if not self._update_pending:
+            self._update_pending = True
+            super(SceneCanvas, self).update()
 
     def on_draw(self, event):
         """Draw handler
@@ -204,9 +211,12 @@ class SceneCanvas(app.Canvas, Frozen):
             return  # Can happen on initialization
         logger.debug('Canvas draw')
 
+        # Now that a draw event is going to be handled, open up the
+        # scheduling of further updates
+        self._update_pending = False
         self._draw_scene()
 
-    def render(self, region=None, size=None, bgcolor=None):
+    def render(self, region=None, size=None, bgcolor=None, crop=None):
         """Render the scene to an offscreen buffer and return the image array.
         
         Parameters
@@ -222,6 +232,9 @@ class SceneCanvas(app.Canvas, Frozen):
             from the native canvas resolution.
         bgcolor : instance of Color | None
             The background color to use.
+        crop : array-like | None
+            If specified it determines the pixels read from the framebuffer.
+            In the format (x, y, w, h), relative to the region being rendered.
 
         Returns
         -------
@@ -242,7 +255,7 @@ class SceneCanvas(app.Canvas, Frozen):
         self.push_fbo(fbo, offset, csize)
         try:
             self._draw_scene(bgcolor=bgcolor)
-            return fbo.read()
+            return fbo.read(crop=crop)
         finally:
             self.pop_fbo()
 
@@ -381,8 +394,7 @@ class SceneCanvas(app.Canvas, Frozen):
         fbpos = tr.map(pos)[:2]
 
         try:
-            id_ = self._render_picking(region=(fbpos[0], fbpos[1],
-                                               1, 1))
+            id_ = self._render_picking((fbpos[0], fbpos[1], 1, 1))
             vis = VisualNode._visual_ids.get(id_[0, 0], None)
         except RuntimeError:
             # Don't have read_pixels() support for IPython. Fall back to
@@ -437,8 +449,8 @@ class SceneCanvas(app.Canvas, Frozen):
         tr = self.transforms.get_transform('canvas', 'framebuffer')
         pos = tr.map(pos)[:2]
 
-        id = self._render_picking(region=(pos[0]-radius, pos[1]-radius,
-                                          radius * 2 + 1, radius * 2 + 1))
+        id = self._render_picking((pos[0]-radius, pos[1]-radius,
+                                   radius * 2 + 1, radius * 2 + 1))
         ids = []
         seen = set()
         for i in range(radius):
@@ -449,13 +461,21 @@ class SceneCanvas(app.Canvas, Frozen):
         visuals = [VisualNode._visual_ids.get(x, None) for x in ids]
         return [v for v in visuals if v is not None]
 
-    def _render_picking(self, **kwargs):
+    def _render_picking(self, crop):
         """Render the scene in picking mode, returning a 2D array of visual 
-        IDs.
+        IDs in the area specified by crop.
+        
+        Parameters
+        ----------
+        crop : array-like
+            The crop (x, y, w, h) of the framebuffer to read. For picking the
+            full canvas is rendered and cropped on read as it is much faster
+            than triggering transform updates across the scene with every
+            click.
         """
         try:
             self._scene.picking = True
-            img = self.render(bgcolor=(0, 0, 0, 0), **kwargs)
+            img = self.render(bgcolor=(0, 0, 0, 0), crop=crop)
         finally:
             self._scene.picking = False
         img = img.astype('int32') * [2**0, 2**8, 2**16, 2**24]
