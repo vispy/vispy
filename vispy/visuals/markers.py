@@ -572,8 +572,14 @@ class MarkersVisual(Visual):
         data['a_size'] = size
         self.shared_program['u_antialias'] = self.antialias  # XXX make prop
         self._data = data
-        self._vbo.set_data(data)
-        self.shared_program.bind(self._vbo)
+        if self._symbol is not None:
+            # If we have no symbol set, we skip drawing (_prepare_draw
+            # returns False). This causes the GLIR queue to not flush,
+            # and thus the GLIR queue fills with VBO DATA commands, resulting
+            # in a "memory leak". Thus only set the VertexBuffer data if we
+            # are actually going to draw.
+            self._vbo.set_data(data)
+            self.shared_program.bind(self._vbo)
         self.update()
 
     @property
