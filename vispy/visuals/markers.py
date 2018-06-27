@@ -590,16 +590,16 @@ class MarkersVisual(Visual):
     def symbol(self, symbol):
         if symbol == self._symbol:
             return
-        if symbol is not None:
+        if (symbol is not None and self._symbol is None and
+                self._data is not None):
             # Allow user to configure symbol after a set_data call with
             # symbol=None. This can break down if the user does a consecutive
             # marker.symbol = 'disc'
             # marker.symbol = None
             # without drawing. At this point the memory leaking ensues
             # but this case is unlikely/makes no sense.
-            if self._symbol is None and self._data is not None:
-                self._vbo.set_data(self._data)
-                self.shared_program.bind(self._vbo)
+            self._vbo.set_data(self._data)
+            self.shared_program.bind(self._vbo)
         self._symbol = symbol
         if symbol is None:
             self._marker_fun = None
