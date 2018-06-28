@@ -11,6 +11,7 @@ from .color_array import ColorArray
 from ..ext.six import string_types
 from ..ext.cubehelix import cubehelix
 from ..ext.husl import husl_to_rgb
+from ..testing import has_matplotlib
 import vispy.gloo
 
 ###############################################################################
@@ -438,6 +439,23 @@ class Colormap(BaseColormap):
         else:
             texture_LUT = None
         return texture_LUT
+
+
+class MatplotlibColormap(Colormap):
+    """Use matplotlib colormaps if installed.
+
+    Parameters
+    ----------
+    name : string
+        Name of the colormap.
+    """
+
+    def __init__(self, name):
+        assert has_matplotlib()
+        from matplotlib.cm import ScalarMappable
+
+        vec = ScalarMappable(cmap=name).to_rgba(np.arange(LUT_len))
+        Colormap.__init__(self, vec)
 
 
 class CubeHelixColormap(Colormap):
