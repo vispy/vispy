@@ -452,7 +452,10 @@ class MatplotlibColormap(Colormap):
 
     def __init__(self, name):
         assert has_matplotlib()
-        from matplotlib.cm import ScalarMappable
+        from matplotlib.cm import ScalarMappable, cmap_d
+        if name not in sorted(cmap_d):
+            raise KeyError("Possible values for Matplotlib colormaps are"
+                           " %s" % ', '.join(sorted(cmap_d)))
 
         vec = ScalarMappable(cmap=name).to_rgba(np.arange(LUT_len))
         Colormap.__init__(self, vec)
