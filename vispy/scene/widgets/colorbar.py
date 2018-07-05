@@ -77,7 +77,7 @@ class ColorBarWidget(Widget):
 
         self._colorbar = ColorBarVisual(size=dummy_size, cmap=cmap,
                                         orientation=orientation,
-                                        label_str=label, clim=clim,
+                                        label_text=label, clim=clim,
                                         label_color=label_color,
                                         border_width=border_width,
                                         border_color=border_color, **kwargs)
@@ -136,23 +136,6 @@ class ColorBarWidget(Widget):
     @label.setter
     def label(self, label):
         self._colorbar.label = label
-
-    @property
-    def label_str(self):
-        """Get the colorbar string
-        """
-        return self._colorbar._label_str
-
-    @label_str.setter
-    def label_str(self, label_str):
-        """Set the colorbar string
-
-        Parameters
-        ----------
-        label_str : string label to be displayed with the colorbar
-        """
-        self._colorbar._label_str = label_str
-        self._update()
 
     @property
     def ticks(self):
