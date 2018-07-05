@@ -253,7 +253,7 @@ class ColorBarVisual(CompoundVisual):
     pos : tuple (x, y)
         Position where the colorbar is to be placed with
         respect to the center of the colorbar
-    label_str : str
+    label_text : str
         The label that is to be drawn with the colorbar
         that provides information about the colorbar.
     label_color : str | vispy.color.Color
@@ -277,14 +277,13 @@ class ColorBarVisual(CompoundVisual):
 
     def __init__(self, cmap, orientation, size,
                  pos=[0, 0],
-                 label_str="",
+                 label_text="",
                  label_color='black',
                  clim=(0.0, 1.0),
                  border_width=1.0,
                  border_color="black",
                  **kwargs):
 
-        self._label_str = label_str
         self._label_color = label_color
         self._cmap = get_colormap(cmap)
         self._clim = clim
@@ -292,7 +291,7 @@ class ColorBarVisual(CompoundVisual):
         self._size = size
         self._orientation = orientation
 
-        self._label = TextVisual(self._label_str, color=self._label_color)
+        self._label = TextVisual(label_text, color=self._label_color)
 
         self._ticks = []
         self._ticks.append(TextVisual(str(self._clim[0]),
@@ -601,31 +600,11 @@ class ColorBarVisual(CompoundVisual):
 
     @label.setter
     def label(self, label):
-        self._label = label
-        self._update()
-
-    @property
-    def label_str(self):
-        """ Get the string describing the label for the colorbar
-        
-        Returns
-        -------
-        _label_str : str 
-            Label string value
-        """
-        return self._label_str
-
-    @label_str.setter
-    def label_str(self, label_str):
-        """ Set the string that describes the label of the colorbar
-        
-        Parameters
-        ----------
-        label_str : str
-            string describing the colorbar
-        """
-        self._label_str = label_str
-        self._update()
+        if isinstance(label, str):
+            self._label.text = label
+        else:
+            self._label = label
+            self._update()
 
     @property
     def ticks(self):
