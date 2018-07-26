@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """
@@ -128,7 +128,7 @@ class ApplicationBackend(BaseApplicationBackend):
 
     def __init__(self):
         BaseApplicationBackend.__init__(self)
-        self._event_loop = wx.EventLoop()
+        self._event_loop = wx.GUIEventLoop()
         wx.EventLoop.SetActive(self._event_loop)
 
     def _vispy_get_backend_name(self):
@@ -140,7 +140,10 @@ class ApplicationBackend(BaseApplicationBackend):
         for _ in range(3):  # trial-and-error found this to work (!)
             while self._event_loop.Pending():
                 self._event_loop.Dispatch()
-            _wx_app.ProcessIdle()
+            if hasattr(_wx_app, 'ProcessIdle'):
+                _wx_app.ProcessIdle()
+            else:
+                self._event_loop.ProcessIdle()
             sleep(0.01)
 
     def _vispy_run(self):
@@ -155,7 +158,11 @@ class ApplicationBackend(BaseApplicationBackend):
         global _wx_app
         _wx_app = wx.GetApp()  # in case the user already has one
         if _wx_app is None:
-            _wx_app = wx.PySimpleApp()
+            if hasattr(wx, 'App'):
+                _wx_app = wx.App()
+            else:
+                # legacy wx
+                _wx_app = wx.PySimpleApp()
         _wx_app.SetExitOnFrameDelete(True)
         return _wx_app
 
@@ -218,13 +225,19 @@ class CanvasBackend(GLCanvas, BaseCanvasBackend):
         else:
             self._gl_context = p.context.shared.ref._gl_context
 
+        if p.position is None:
+            pos = wx.DefaultPosition
+        else:
+            pos = p.position
+
         if p.parent is None:
             style = (wx.MINIMIZE_BOX | wx.MAXIMIZE_BOX | wx.CLOSE_BOX |
                      wx.SYSTEM_MENU | wx.CAPTION | wx.CLIP_CHILDREN)
             style |= wx.NO_BORDER if not p.decorate else wx.RESIZE_BORDER
             style |= wx.STAY_ON_TOP if p.always_on_top else 0
-            self._frame = wx.Frame(None, wx.ID_ANY, p.title, p.position,
-                                   p.size, style)
+            self._frame = wx.Frame(None, wx.ID_ANY, p.title, pos, p.size,
+                                   style)
+
             if not p.resizable:
                 self._frame.SetSizeHints(p.size[0], p.size[1],
                                          p.size[0], p.size[1])
@@ -245,7 +258,7 @@ class CanvasBackend(GLCanvas, BaseCanvasBackend):
             self._frame = None
             self._fullscreen = False
         self._init = False
-        GLCanvas.__init__(self, parent, wx.ID_ANY, pos=p.position,
+        GLCanvas.__init__(self, parent, wx.ID_ANY, pos=pos,
                           size=p.size, style=0, name='GLCanvas',
                           attribList=self._gl_attribs)
 
@@ -292,7 +305,8 @@ class CanvasBackend(GLCanvas, BaseCanvasBackend):
         self.on_resize(DummySize(self._size_init))
 
     def _vispy_set_current(self):
-        self.SetCurrent(self._gl_context)
+        if self.IsShown():
+            self.SetCurrent(self._gl_context)
 
     def _vispy_warmup(self):
         etime = time() + 0.3
@@ -315,7 +329,12 @@ class CanvasBackend(GLCanvas, BaseCanvasBackend):
         # Set size of the widget or window
         if not self._init:
             self._size_init = (w, h)
-        self.SetSizeWH(w, h)
+        if hasattr(self, 'SetSize'):
+            # phoenix
+            self.SetSize(w, h)
+        else:
+            # legacy
+            self.SetSizeWH(w, h)
 
     def _vispy_set_position(self, x, y):
         # Set positionof the widget or window. May have no effect for widgets

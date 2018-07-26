@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # vispy: gallery 30
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 """
@@ -21,8 +21,8 @@ canvas.show()
 view = canvas.central_widget.add_view()
 
 # Create the image
-img_data = np.empty((100, 100, 3), dtype=np.ubyte)
-noise = np.random.normal(size=(100, 100), loc=50, scale=150)
+img_data = np.empty((200, 100, 3), dtype=np.ubyte)
+noise = np.random.normal(size=(200, 100), loc=50, scale=150)
 noise = gaussian_filter(noise, (4, 4, 0))
 img_data[:] = noise[..., np.newaxis]
 image = scene.visuals.Image(img_data, parent=view.scene)

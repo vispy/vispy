@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # vispy: testskip
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 """
 This is a very minimal example that opens a window and makes the background
@@ -29,10 +29,11 @@ class Canvas(app.Canvas):
         c = abs(math.sin(self.tick))
         gloo.set_clear_color((c, c, c, 1))
         self.update()
-    
-    def stop_timer(self):    
+
+    def stop_timer(self):
         self._timer.stop()
-        
+
+
 class TestFrame(wx.Frame):
     def __init__(self):
         wx.Frame.__init__(self, None, -1, "Vispy Test",
@@ -42,14 +43,20 @@ class TestFrame(wx.Frame):
         file_menu = wx.Menu()
         file_menu.Append(wx.ID_EXIT, "&Quit")
         self.Bind(wx.EVT_MENU, self.on_quit, id=wx.ID_EXIT)
+        self.Bind(wx.EVT_SHOW, self.on_show)
         MenuBar.Append(file_menu, "&File")
         self.SetMenuBar(MenuBar)
-        
-        self.canvas = Canvas(app="wx", parent=self, show=True)
-        
+
+        self.canvas = Canvas(app="wx", parent=self)
+
     def on_quit(self, event):
         self.canvas.stop_timer()
         self.Close(True)
+
+    def on_show(self, event):
+        self.canvas.show()
+        event.Skip()
+
 
 if __name__ == '__main__':
     myapp = wx.App(0)

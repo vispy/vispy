@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division
@@ -8,6 +8,8 @@ from .linear import STTransform, NullTransform
 from .chain import ChainTransform
 from ._util import TransformCache
 from ...util.event import EventEmitter
+
+import numpy as np
 
 
 class TransformSystem(object):
@@ -72,8 +74,6 @@ class TransformSystem(object):
 
     Examples
     --------
-    Use by Visuals
-    ~~~~~~~~~~~~~~
 
     1. To convert local vertex coordinates to normalized device coordinates in
     the vertex shader, we first need a vertex shader that supports configurable
@@ -145,6 +145,7 @@ class TransformSystem(object):
         self.canvas = canvas
         self._cache = TransformCache()
         self._dpi = dpi
+        self._mappings = {'ct0': None, 'ct1': None, 'ft0': None}
 
         # Assign a ChainTransform for each step. This allows us to always
         # return the same transform objects regardless of how the user
@@ -160,6 +161,19 @@ class TransformSystem(object):
                    self._document_transform, self._canvas_transform,
                    self._framebuffer_transform):
             tr.changed.connect(self.changed)
+
+    def _update_if_maps_changed(self, transform, map_key, new_maps):
+        """Helper to store and check current (from, to) maps against new
+        ones being provided. The new mappings are only applied if a change
+        has occurred (and also stored in the current mappings).
+        """
+        if self._mappings[map_key] is None:
+            self._mappings[map_key] = new_maps
+            transform.set_mapping(new_maps[0], new_maps[1])
+        else:
+            if np.any(self._mappings[map_key] != new_maps):
+                self._mappings[map_key] = new_maps
+                transform.set_mapping(new_maps[0], new_maps[1])
 
     def configure(self, viewport=None, fbo_size=None, fbo_rect=None,
                   canvas=None):
@@ -202,8 +216,8 @@ class TransformSystem(object):
         # left, whereas framebuffer origin is in bottom left.
         map_from = [(0, 0), canvas.size]
         map_to = [(0, canvas.physical_size[1]), (canvas.physical_size[0], 0)]
-        self._canvas_transform.transforms[1].set_mapping(map_from, map_to)
-
+        self._update_if_maps_changed(self._canvas_transform.transforms[1],
+                                     'ct1', np.array((map_from, map_to)))
         if fbo_rect is None:
             self._canvas_transform.transforms[0].scale = (1, 1, 1)
             self._canvas_transform.transforms[0].translate = (0, 0, 0)
@@ -212,8 +226,8 @@ class TransformSystem(object):
             map_from = [(fbo_rect[0], fbo_rect[1]),
                         (fbo_rect[0] + fbo_rect[2], fbo_rect[1] + fbo_rect[3])]
             map_to = [(0, 0), fbo_size]
-            self._canvas_transform.transforms[0].set_mapping(map_from,  map_to)
-            
+            self._update_if_maps_changed(self._canvas_transform.transforms[0],
+                                         'ct0', np.array((map_from, map_to)))
         if viewport is None:
             if fbo_size is None:
                 # viewport covers entire canvas
@@ -225,7 +239,8 @@ class TransformSystem(object):
             map_from = [viewport[:2], 
                         (viewport[0] + viewport[2], viewport[1] + viewport[3])]
         map_to = [(-1, -1), (1, 1)]
-        self._framebuffer_transform.transforms[0].set_mapping(map_from, map_to)
+        self._update_if_maps_changed(self._framebuffer_transform.transforms[0],
+                                     'ft0', np.array((map_from, map_to)))
 
     @property
     def canvas(self):

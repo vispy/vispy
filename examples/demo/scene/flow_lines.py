@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
@@ -167,8 +167,8 @@ VectorField = scene.visuals.create_visual_node(VectorFieldVisual)
 def fn(y, x):
     dx = x-50
     dy = y-30
-    l = (dx**2 + dy**2)**0.5 + 0.01
-    return np.array([100 * dy / l**1.7, -100 * dx / l**1.8])
+    hyp = (dx**2 + dy**2)**0.5 + 0.01
+    return np.array([100 * dy / hyp**1.7, -100 * dx / hyp**1.8])
 
 field = np.fromfunction(fn, (100, 100)).transpose(1, 2, 0).astype('float32')
 field[..., 0] += 10 * np.cos(np.linspace(0, 2 * 3.1415, 100))

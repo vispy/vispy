@@ -74,6 +74,6 @@ class RawPolygonCollection(Collection):
         else:
             U = None
 
-        I = np.array(indices).ravel()
-        Collection.append(self, vertices=V, uniforms=U, indices=I,
+        Collection.append(self, vertices=V, uniforms=U,
+                          indices=np.array(indices).ravel(),
                           itemsize=itemsize)

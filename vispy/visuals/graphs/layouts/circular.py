@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 """
 Circular Layout
@@ -37,11 +37,12 @@ def circular(adjacency_mat, directed=False):
 
     num_nodes = adjacency_mat.shape[0]
 
-    t = np.linspace(0, 2 * np.pi, num_nodes, endpoint=False, dtype=np.float32)
+    t = np.linspace(0, 2 * np.pi, num_nodes, endpoint=False)
 
     # Visual coordinate system is between 0 and 1, so generate a circle with
     # radius 0.5 and center it at the point (0.5, 0.5).
     node_coords = (0.5 * np.array([np.cos(t), np.sin(t)]) + 0.5).T
+    node_coords = node_coords.astype(np.float32)
 
     line_vertices, arrows = _straight_line_vertices(adjacency_mat,
                                                     node_coords, directed)

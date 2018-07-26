@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """
@@ -31,11 +31,12 @@ class Canvas(app.Canvas):
         # Because vertices are pre-indexed, we get a different color
         # every time a vertex is visited, resulting in sharp color
         # differences between edges.
+        rng = np.random.RandomState(0)
         verts = mdata.get_vertices(indexed='faces')
         nf = verts.size//9
         fcolor = np.ones((nf, 3, 4), dtype=np.float32)
         fcolor[..., 0] = np.linspace(1, 0, nf)[:, np.newaxis]
-        fcolor[..., 1] = np.random.normal(size=nf)[:, np.newaxis]
+        fcolor[..., 1] = rng.randn(nf, 1)
         fcolor[..., 2] = np.linspace(0, 1, nf)[:, np.newaxis]
         mesh = visuals.MeshVisual(vertices=verts, face_colors=fcolor)
         self.meshes.append(mesh)
@@ -49,13 +50,24 @@ class Canvas(app.Canvas):
         nv = verts.size//3
         vcolor = np.ones((nv, 4), dtype=np.float32)
         vcolor[:, 0] = np.linspace(1, 0, nv)
-        vcolor[:, 1] = np.random.normal(size=nv)
+        vcolor[:, 1] = rng.randn(nv)
         vcolor[:, 2] = np.linspace(0, 1, nv)
         self.meshes.append(visuals.MeshVisual(verts, faces, vcolor))
         self.meshes.append(visuals.MeshVisual(verts, faces, vcolor,
                                               shading='flat'))
         self.meshes.append(visuals.MeshVisual(verts, faces, vcolor,
                                               shading='smooth'))
+
+        # Mesh with color indexed into a colormap
+        verts = mdata.get_vertices(None)
+        faces = mdata.get_faces()
+        values = rng.randn(len(verts))
+        mesh = visuals.MeshVisual(vertices=verts, faces=faces,
+                                  vertex_values=values, shading='smooth')
+        mesh.clim = [-1, 1]
+        mesh.cmap = 'viridis'
+        mesh.shininess = 0.01
+        self.meshes.append(mesh)
 
         # Lay out meshes in a grid
         grid = (3, 3)

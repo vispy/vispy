@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 """
 Line visual implementing Agg- and GL-based drawing modes.
@@ -148,7 +148,7 @@ class LineVisual(CompoundVisual):
             self._changed[k] = True
 
     def set_data(self, pos=None, color=None, width=None, connect=None):
-        """ Set the data used to draw this visual.
+        """Set the data used to draw this visual.
 
         Parameters
         ----------
@@ -162,13 +162,15 @@ class LineVisual(CompoundVisual):
             to 1 px when using the 'gl' method.
         connect : str or array
             Determines which vertices are connected by lines.
-            * "strip" causes the line to be drawn with each vertex
-              connected to the next.
-            * "segments" causes each pair of vertices to draw an
-              independent line segment
-            * int numpy arrays specify the exact set of segment pairs to
-              connect.
-            * bool numpy arrays specify which _adjacent_ pairs to connect.
+
+                * "strip" causes the line to be drawn with each vertex
+                  connected to the next.
+                * "segments" causes each pair of vertices to draw an
+                  independent line segment
+                * int numpy arrays specify the exact set of segment pairs to
+                  connect.
+                * bool numpy arrays specify which _adjacent_ pairs to connect.
+
         """
         if pos is not None:
             self._bounds = None
@@ -222,20 +224,22 @@ class LineVisual(CompoundVisual):
         else:
             return self._connect
 
-    def _interpret_color(self):
-        if isinstance(self._color, string_types):
+    def _interpret_color(self, color_in=None):
+        color_in = self._color if color_in is None else color_in
+        colormap = None
+        if isinstance(color_in, string_types):
             try:
-                colormap = get_colormap(self._color)
+                colormap = get_colormap(color_in)
                 color = Function(colormap.glsl_map)
             except KeyError:
-                color = Color(self._color).rgba
-        elif isinstance(self._color, Function):
-            color = Function(self._color)
+                color = Color(color_in).rgba
+        elif isinstance(color_in, Function):
+            color = Function(color_in)
         else:
-            color = ColorArray(self._color).rgba
+            color = ColorArray(color_in).rgba
             if len(color) == 1:
                 color = color[0]
-        return color
+        return color, colormap
 
     def _compute_bounds(self, axis, view):
         """Get the bounds
@@ -320,7 +324,7 @@ class _GLLineVisual(Visual):
                                 % (pos.shape,))
 
         if self._parent._changed['color']:
-            color = self._parent._interpret_color()
+            color, cmap = self._parent._interpret_color()
             # If color is not visible, just quit now
             if isinstance(color, Color) and color.is_blank:
                 return False
@@ -334,6 +338,9 @@ class _GLLineVisual(Visual):
                 else:
                     self._color_vbo.set_data(color)
                     self._program.vert['color'] = self._color_vbo
+
+            self.shared_program['texture2D_LUT'] = cmap.texture_lut() \
+                if (hasattr(cmap, 'texture_lut')) else None
 
         # Do we want to use OpenGL, and can we?
         GL = None
@@ -437,7 +444,8 @@ class _AggLineVisual(Visual):
             bake = True
 
         if self._parent._changed['color']:
-            self._color = self._parent._interpret_color()
+            color, cmap = self._parent._interpret_color()
+            self._color = color
             bake = True
 
         if self._parent._changed['connect']:
@@ -446,11 +454,11 @@ class _AggLineVisual(Visual):
                                           "allowed for agg-method lines.")
 
         if bake:
-            V, I = self._agg_bake(self._pos, self._color)
+            V, idxs = self._agg_bake(self._pos, self._color)
             self._vbo.set_data(V)
-            self._index_buffer.set_data(I)
+            self._index_buffer.set_data(idxs)
 
-        #self._program.prepare()
+        # self._program.prepare()
         self.shared_program.bind(self._vbo)
         uniforms = dict(closed=False, miter_limit=4.0, dash_phase=0.0,
                         linewidth=self._parent._width)
@@ -522,9 +530,9 @@ class _AggLineVisual(Visual):
         V['a_texcoord'][1::2, 1] = +1
         idx = np.repeat(idx, 2)
 
-        I = np.resize(np.array([0, 1, 2, 1, 2, 3], dtype=np.uint32),
-                      (n-1)*(2*3))
-        I += np.repeat(4*np.arange(n-1, dtype=np.uint32), 6)
+        idxs = np.resize(np.array([0, 1, 2, 1, 2, 3], dtype=np.uint32),
+                         (n-1)*(2*3))
+        idxs += np.repeat(4*np.arange(n-1, dtype=np.uint32), 6)
 
         # Length
         V['alength'] = L[-1] * np.ones(len(V))
@@ -539,4 +547,4 @@ class _AggLineVisual(Visual):
                              'vertices %s' % (len(color), n))
         V['color'] = color
 
-        return V, I
+        return V, idxs

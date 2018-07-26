@@ -131,9 +131,9 @@ def max_chroma_for_LH(L, H):
     hrad = H / 360.0 * math.pi * 2.0
     lengths = []
     for line in get_bounds(L):
-        l = length_of_ray_until_intersect(hrad, line)
-        if l is not None:
-            lengths.append(l)
+        ray_length = length_of_ray_until_intersect(hrad, line)
+        if ray_length is not None:
+            lengths.append(ray_length)
     return min(lengths)
 
 

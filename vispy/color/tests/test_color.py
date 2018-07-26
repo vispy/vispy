@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 import numpy as np
@@ -148,6 +148,7 @@ def test_color_interpretation():
     assert isinstance(_color_dict, dict)
     assert set(_color_dict.keys()) == set(get_color_names())
 
+
 # Taken from known values
 hsv_dict = dict(red=(0, 1, 1),
                 lime=(120, 1, 1),
@@ -211,9 +212,6 @@ def test_colormap_interpolation():
     """Test interpolation routines for colormaps."""
     import vispy.color.colormap as c
     assert_raises(AssertionError, c._glsl_step, [0., 1.],)
-
-    c._glsl_mix(controls=[0., 1.])
-    c._glsl_mix(controls=[0., .25, 1.])
 
     for fun in (c._glsl_step, c._glsl_mix):
         assert_raises(AssertionError, fun, controls=[0.1, 1.],)

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 # Author: Siddharth Bhat
@@ -157,6 +157,9 @@ class _CoreColorBarVisual(Visual):
 
         self.shared_program['a_position'] = vertices
 
+        self.shared_program['texture2D_LUT'] = self._cmap.texture_lut() \
+            if (hasattr(self._cmap, 'texture_lut')) else None
+
     @staticmethod
     def _get_orientation_error(orientation):
             return ValueError("orientation must"
@@ -295,8 +298,10 @@ class ColorBarVisual(CompoundVisual):
         self._label = TextVisual(self._label_str, color=self._label_color)
 
         self._ticks = []
-        self._ticks.append(TextVisual(str(self._clim[0]), color=self._label_color))
-        self._ticks.append(TextVisual(str(self._clim[1]), color=self._label_color))
+        self._ticks.append(TextVisual(str(self._clim[0]),
+                                      color=self._label_color))
+        self._ticks.append(TextVisual(str(self._clim[1]),
+                                      color=self._label_color))
 
         if orientation in ["top", "bottom"]:
             (width, height) = size

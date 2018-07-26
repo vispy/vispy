@@ -49,6 +49,7 @@ import base64
 from subprocess import check_call, CalledProcessError
 import numpy as np
 
+from ..ext.six import string_types
 from ..ext.six.moves import http_client as httplib
 from ..ext.six.moves import urllib_parse as urllib
 from .. import scene, config
@@ -98,7 +99,7 @@ def assert_image_approved(image, standard_file, message=None, **kwargs):
     comparison (see ``assert_image_match()``).
     """
 
-    if image == "screenshot":
+    if isinstance(image, string_types) and image == "screenshot":
         image = _screenshot(alpha=True)
     if message is None:
         code = inspect.currentframe().f_back.f_code
@@ -148,7 +149,8 @@ def assert_image_approved(image, standard_file, message=None, **kwargs):
             if std_image is None:
                 raise Exception("Test standard %s does not exist." % std_file)
             else:
-                if os.getenv('TRAVIS') is not None:
+                if os.getenv('TRAVIS') is not None or \
+                        os.getenv('APPVEYOR') is not None:
                     _save_failed_test(image, std_image, standard_file)
                 raise
 
@@ -374,7 +376,7 @@ def get_test_data_repo():
     # This tag marks the test-data commit that this version of vispy should
     # be tested against. When adding or changing test images, create
     # and push a new tag and update this variable.
-    test_data_tag = 'test-data-6'
+    test_data_tag = 'test-data-8'
 
     data_path = config['test_data_path']
     git_path = 'http://github.com/vispy/test-data'
