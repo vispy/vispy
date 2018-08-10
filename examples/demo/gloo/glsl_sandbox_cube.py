@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 A GLSL sandbox application based on the spinning cube. Requires PySide
-or PyQt4.
+or PyQt5.
 """
 
 import numpy as np
@@ -11,12 +11,15 @@ from vispy.io import read_mesh, load_data_file, load_crate
 from vispy.util.transforms import perspective, translate, rotate
 
 # Force using qt and take QtCore+QtGui from backend module
-try:
-    app_object = app.use_app('pyqt4')
-except Exception:
-    app_object = app.use_app('pyside')
-QtCore = app_object.backend_module.QtCore,
-QtGui = app_object.backend_module.QtGui
+# try:
+#     app_object = app.use_app('pyqt5')
+#     QtCore = app_object.backend_module.QtCore,
+#     QtGui = app_object.backend_module.QtWidgets
+# except Exception:
+#     app_object = app.use_app('pyside')
+#     QtCore = app_object.backend_module.QtCore,
+#     QtGui = app_object.backend_module.QtGui
+from PyQt5 import QtCore, QtWidgets, QtGui
 
 
 VERT_CODE = """
@@ -117,10 +120,10 @@ class Canvas(app.Canvas):
         self.program['u_projection'] = self.projection
 
 
-class TextField(QtGui.QPlainTextEdit):
+class TextField(QtWidgets.QPlainTextEdit):
 
     def __init__(self, parent):
-        QtGui.QPlainTextEdit.__init__(self, parent)
+        QtWidgets.QPlainTextEdit.__init__(self, parent)
         # Set font to monospaced (TypeWriter)
         font = QtGui.QFont('')
         font.setStyleHint(font.TypeWriter, font.PreferDefault)
@@ -128,17 +131,17 @@ class TextField(QtGui.QPlainTextEdit):
         self.setFont(font)
 
 
-class MainWindow(QtGui.QWidget):
+class MainWindow(QtWidgets.QWidget):
 
     def __init__(self):
-        QtGui.QWidget.__init__(self, None)
+        QtWidgets.QWidget.__init__(self, None)
 
         self.setMinimumSize(600, 400)
 
         # Create two labels and a button
-        self.vertLabel = QtGui.QLabel("Vertex code", self)
-        self.fragLabel = QtGui.QLabel("Fragment code", self)
-        self.theButton = QtGui.QPushButton("Compile!", self)
+        self.vertLabel = QtWidgets.QLabel("Vertex code", self)
+        self.fragLabel = QtWidgets.QLabel("Fragment code", self)
+        self.theButton = QtWidgets.QPushButton("Compile!", self)
         self.theButton.clicked.connect(self.on_compile)
 
         # Create two editors
@@ -151,9 +154,9 @@ class MainWindow(QtGui.QWidget):
         self.canvas = Canvas(parent=self)
 
         # Layout
-        hlayout = QtGui.QHBoxLayout(self)
+        hlayout = QtWidgets.QHBoxLayout(self)
         self.setLayout(hlayout)
-        vlayout = QtGui.QVBoxLayout()
+        vlayout = QtWidgets.QVBoxLayout()
         #
         hlayout.addLayout(vlayout, 1)
         hlayout.addWidget(self.canvas.native, 1)

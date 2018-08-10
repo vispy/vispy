@@ -9,7 +9,7 @@ import sys
 from vispy import app
 from vispy.gloo import clear
 
-# app.use_app('pyqt4')  # or pyside, glut, pyglet, sdl2, etc.
+# app.use_app('pyqt5')  # or pyside, glut, pyglet, sdl2, etc.
 
 canvas = app.Canvas(size=(512, 512), title="Do nothing benchmark (vispy)",
                     keys='interactive')

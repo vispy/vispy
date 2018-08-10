@@ -24,10 +24,10 @@ try:
 except ImportError:
     pass
 
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtWidgets, QtCore
 
 
-class ObjectWidget(QtGui.QWidget):
+class ObjectWidget(QtWidgets.QWidget):
     """
     Widget for editing OBJECT parameters
     """
@@ -36,26 +36,26 @@ class ObjectWidget(QtGui.QWidget):
     def __init__(self, parent=None):
         super(ObjectWidget, self).__init__(parent)
 
-        l_nbr_steps = QtGui.QLabel("Nbr Steps ")
-        self.nbr_steps = QtGui.QSpinBox()
+        l_nbr_steps = QtWidgets.QLabel("Nbr Steps ")
+        self.nbr_steps = QtWidgets.QSpinBox()
         self.nbr_steps.setMinimum(3)
         self.nbr_steps.setMaximum(100)
         self.nbr_steps.setValue(6)
         self.nbr_steps.valueChanged.connect(self.update_param)
 
-        l_cmap = QtGui.QLabel("Cmap ")
+        l_cmap = QtWidgets.QLabel("Cmap ")
         self.cmap = list(get_colormaps().keys())
-        self.combo = QtGui.QComboBox(self)
+        self.combo = QtWidgets.QComboBox(self)
         self.combo.addItems(self.cmap)
         self.combo.currentIndexChanged.connect(self.update_param)
 
-        gbox = QtGui.QGridLayout()
+        gbox = QtWidgets.QGridLayout()
         gbox.addWidget(l_cmap, 0, 0)
         gbox.addWidget(self.combo, 0, 1)
         gbox.addWidget(l_nbr_steps, 1, 0)
         gbox.addWidget(self.nbr_steps, 1, 1)
 
-        vbox = QtGui.QVBoxLayout()
+        vbox = QtWidgets.QVBoxLayout()
         vbox.addLayout(gbox)
         vbox.addStretch(1.0)
 
@@ -65,15 +65,15 @@ class ObjectWidget(QtGui.QWidget):
         self.signal_objet_changed.emit()
 
 
-class MainWindow(QtGui.QMainWindow):
+class MainWindow(QtWidgets.QMainWindow):
 
     def __init__(self):
-        QtGui.QMainWindow.__init__(self)
+        QtWidgets.QMainWindow.__init__(self)
 
         self.resize(700, 500)
         self.setWindowTitle('vispy example ...')
 
-        splitter = QtGui.QSplitter(QtCore.Qt.Horizontal)
+        splitter = QtWidgets.QSplitter(QtCore.Qt.Horizontal)
 
         self.canvas = Canvas()
         self.canvas.create_native()
@@ -125,7 +125,7 @@ class Canvas(scene.SceneCanvas):
 
 # -----------------------------------------------------------------------------
 if __name__ == '__main__':
-    appQt = QtGui.QApplication(sys.argv)
+    appQt = QtWidgets.QApplication(sys.argv)
     win = MainWindow()
     win.show()
     appQt.exec_()

@@ -7,8 +7,8 @@
 """
 Sandbox for experimenting with vispy.visuals.shaders
 """
-from PyQt4 import QtCore
-from PyQt4.QtGui import *  # noqa
+from PyQt5 import QtCore
+from PyQt5.QtWidgets import *  # noqa
 import sys
 import traceback
 
