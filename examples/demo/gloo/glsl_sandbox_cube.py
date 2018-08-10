@@ -10,16 +10,14 @@ from vispy import app, gloo
 from vispy.io import read_mesh, load_data_file, load_crate
 from vispy.util.transforms import perspective, translate, rotate
 
-# Force using qt and take QtCore+QtGui from backend module
-# try:
-#     app_object = app.use_app('pyqt5')
-#     QtCore = app_object.backend_module.QtCore,
-#     QtGui = app_object.backend_module.QtWidgets
-# except Exception:
-#     app_object = app.use_app('pyside')
-#     QtCore = app_object.backend_module.QtCore,
-#     QtGui = app_object.backend_module.QtGui
-from PyQt5 import QtCore, QtWidgets, QtGui
+# Force using qt and take relevant modules from backend
+try:
+    app_object = app.use_app('pyqt5')
+except Exception:
+    app_object = app.use_app('pyside2')
+QtCore = app_object.backend_module.QtCore,
+QtWidgets = app_object.backend_module.QtWidgets
+QtGui = app_object.backend_module.QtGui
 
 
 VERT_CODE = """
