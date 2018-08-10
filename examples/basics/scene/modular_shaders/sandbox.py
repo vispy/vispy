@@ -508,7 +508,7 @@ FRAGMENT = program.frag_code
 
 qsci_note = """
 #  [[ NOTE: Install PyQt.QsciScintilla for improved code editing ]]
-#  [[ (Debian packages: python-qscintilla2 or python3-pyqt4.qsci ]]
+#  [[ (Debian packages: python-qscintilla2 or python3-pyqt5.qsci ]]
 
 """
 if not HAVE_QSCI:
