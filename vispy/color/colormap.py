@@ -451,9 +451,7 @@ class MatplotlibColormap(Colormap):
     """
 
     def __init__(self, name):
-        from matplotlib.cm import ScalarMappable, cmap_d
-        assert has_matplotlib()
-        assert name in cmap_d
+        from matplotlib.cm import ScalarMappable
 
         vec = ScalarMappable(cmap=name).to_rgba(np.arange(LUT_len))
         Colormap.__init__(self, vec)
