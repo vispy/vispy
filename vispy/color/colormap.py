@@ -1111,11 +1111,10 @@ def get_colormap(name, *args, **kwargs):
             raise TypeError('colormap must be a Colormap or string name')
         if name in _colormaps:  # vispy cmap
             cmap = _colormaps[name]
-        else:  # matplotlib colormap
-            try:
-                cmap = MatplotlibColormap(name)
-            except:
-                raise KeyError('colormap name %s not found' % name)
+        elif has_matplotlib():  # matplotlib cmap
+            cmap = MatplotlibColormap(name)
+        else:
+            raise KeyError('colormap name %s not found' % name)
 
         if inspect.isclass(cmap):
             cmap = cmap(*args, **kwargs)
