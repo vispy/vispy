@@ -462,14 +462,14 @@ class Grid(Widget):
 
         # we only need to remove and add the height and width constraints of
         # the solver if they are not the same as the current value
-        if rect.height != self._var_h.value():
+        if abs(rect.height - self._var_h.value()) > 1e-4:
             # if self._height_stay:
             #     self._solver.remove_constraint(self._height_stay)
 
             self._solver.suggestValue(self._var_h, rect.height)
             # self._height_stay = self._solver.add_stay(self._var_h | 'strong')
 
-        if rect.width != self._var_w.value():
+        if abs(rect.width - self._var_w.value()) > 1e-4:
             # if self._width_stay:
             #     self._solver.remove_constraint(self._width_stay)
 
