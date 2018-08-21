@@ -173,6 +173,7 @@ class MeshVisual(Visual):
     **kwargs : dict
         Keyword arguments to pass to `Visual`.
     """
+
     def __init__(self, vertices=None, faces=None, vertex_colors=None,
                  face_colors=None, color=(0.5, 0.5, 1, 1), vertex_values=None,
                  meshdata=None, shading=None, mode='triangles', **kwargs):
@@ -212,6 +213,17 @@ class MeshVisual(Visual):
 
         # Init
         self._bounds = None
+
+        # Convert from face triangle indexing to face edge
+        # indexing for line mode
+        if mode == "lines" and faces.ndim == 2 and faces.shape[1] > 2:
+            poly_type = faces.shape[1]  # number of vertices per face
+            new_faces = np.empty(
+                (faces.shape[0]*poly_type, 2), dtype=np.uint32)
+            for i in range(poly_type):
+                new_faces[i::poly_type] = np.roll(faces, i, axis=1)[:, :2]
+            faces = new_faces
+
         # Note we do not call subclass set_data -- often the signatures
         # do no match.
         MeshVisual.set_data(
