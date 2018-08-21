@@ -400,8 +400,9 @@ class ImageVisual(Visual):
             # deal with clim on CPU b/c of texture depth limits :(
             # can eventually do this by simulating 32-bit float... maybe
             clim = self._clim
+            is_num = np.isfinite(data)
             if isinstance(clim, string_types) and clim == 'auto':
-                clim = np.min(data), np.max(data)
+                clim = np.min(data[is_num]), np.max(data[is_num])
             clim = np.asarray(clim, dtype=np.float32)
             data = data - clim[0]  # not inplace so we don't modify orig data
             if clim[1] - clim[0] > 0:
