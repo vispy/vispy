@@ -233,7 +233,7 @@ class ImageVisual(Visual):
         image : array-like
             The image data.
         """
-        data = np.asarray(image)
+        data = image if np.ma.is_masked(image) else np.asarray(image)
         if self._data is None or self._data.shape != data.shape:
             self._need_vertex_update = True
         self._data = data
@@ -400,6 +400,11 @@ class ImageVisual(Visual):
             # deal with clim on CPU b/c of texture depth limits :(
             # can eventually do this by simulating 32-bit float... maybe
             clim = self._clim
+            # deal with masked_array
+            if np.ma.is_masked(data):
+                mask = data.mask
+                data = np.array(data)
+                data[mask] = np.nan
             is_num = np.isfinite(data)
             if isinstance(clim, string_types) and clim == 'auto':
                 clim = np.min(data[is_num]), np.max(data[is_num])
