@@ -36,13 +36,18 @@ class Buffer(GLObject):
         Buffer data.
     nbytes : int | None
         Buffer byte size.
+    cpu_buffer : bool | False
+        If set to True, a local copy of the data is kept on CPU memory. This
+        allows updating non-contiguous chunks of data before uploading to GPU.
     """
 
-    def __init__(self, data=None, nbytes=None):
+    def __init__(self, data=None, nbytes=None, cpu_buffer=False):
         GLObject.__init__(self)
         self._views = []  # Views on this buffer (stored using weakrefs)
         self._valid = True  # To invalidate buffer views
         self._nbytes = 0  # Bytesize in bytes, set in resize_bytes()
+        self._cpu_buffer = cpu_buffer
+        self._local_data = None  # Will be set if cpu_buffer is True
 
         # Set data
         if data is not None:
@@ -57,6 +62,12 @@ class Buffer(GLObject):
         """ Buffer size in bytes """
 
         return self._nbytes
+
+    @property
+    def cpu_buffer(self):
+        """ Whether a local copy of data is kept on CPU memory """
+
+        return self._cpu_buffer
 
     def set_subdata(self, data, offset=0, copy=False):
         """ Set a sub-region of the buffer (deferred operation).
@@ -87,6 +98,10 @@ class Buffer(GLObject):
             self._glir.command('SIZE', self._id, nbytes)
         self._glir.command('DATA', self._id, offset, data)
 
+        # Set local data
+        if self._cpu_buffer:
+            self._local_data[offset:offset+nbytes] = data
+
     def set_data(self, data, copy=False):
         """ Set data in the buffer (deferred operation).
 
@@ -101,6 +116,9 @@ class Buffer(GLObject):
             data is actually uploaded to GPU memory.
             Asking explicitly for a copy will prevent this behavior.
         """
+        if self._cpu_buffer:
+            # data needs to be copied any way
+            copy = True
         data = np.array(data, copy=copy)
         nbytes = data.nbytes
 
@@ -113,6 +131,19 @@ class Buffer(GLObject):
         if nbytes:  # Only set data if there *is* data
             self._glir.command('DATA', self._id, 0, data)
 
+        # Set local data
+        if self._cpu_buffer:
+            self._local_data = data
+
+    def set_from_local(self):
+        """ Upload the local CPU data to GPU (deferred operation). """
+
+        if not self._cpu_buffer:
+            raise RuntimeError("Buffer has no local CPU buffer.")
+
+        # Note that no method exists yet to manipulate the local data, so cu
+        self._glir.command('DATA', self._id, 0, self._local_data)
+
     def resize_bytes(self, size):
         """ Resize this buffer (deferred operation).
 
@@ -122,7 +153,12 @@ class Buffer(GLObject):
             New buffer size in bytes.
         """
         self._nbytes = size
+
+        # Reset local data
+        if self._cpu_buffer:
+            self._local_data = np.empty(size, dtype=np.byte)
         self._glir.command('SIZE', self._id, size)
+
         # Invalidate any view on this buffer
         for view in self._views:
             if view() is not None:
