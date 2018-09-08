@@ -56,7 +56,8 @@ class TubeVisual(MeshVisual):
                  face_colors=None,
                  mode='triangles'):
 
-        points = np.array(points)
+        # make sure we are working with floats
+        points = np.array(points).astype(float)
 
         tangents, normals, binormals = _frenet_frames(points, closed)
 
