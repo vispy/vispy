@@ -26,6 +26,10 @@ points3[:, 2] += 30
 points4 = points1.copy()
 points4[:, 0] += 41.
 
+points5 = points1.copy()
+points5[:, 0] += 20.4
+points5[:, 2] += 15
+
 colors = np.linspace(0, 1, len(points1))
 colors = np.array([hsv_to_rgb(c, 1, 1) for c in colors])
 
@@ -56,10 +60,22 @@ l4 = scene.visuals.Tube(points4,
                         tube_points=8,
                         mode='lines')
 
+# generate sine wave radii
+radii = np.sin(2 * np.pi * 440 * np.arange(points5.shape[0]) / 44000)
+radii = (radii + 1.5) / 2
+
+l5 = scene.visuals.Tube(points5,
+                        radius=radii,
+                        color='white',
+                        shading='smooth',
+                        closed=True,
+                        tube_points=8)
+
 view.add(l1)
 view.add(l2)
 view.add(l3)
 view.add(l4)
+view.add(l5)
 view.camera = scene.TurntableCamera()
 # tube does not expose its limits yet
 view.camera.set_range((-20, 20), (-20, 20), (-20, 20))
