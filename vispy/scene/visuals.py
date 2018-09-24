@@ -17,7 +17,7 @@ import weakref
 
 from .. import visuals
 from .node import Node
-from ..visuals.filters import ColorFilter, PickingFilter
+from ..visuals.filters import Alpha, PickingFilter
 
 
 class VisualNode(Node):
@@ -28,7 +28,7 @@ class VisualNode(Node):
         Node.__init__(self, parent=parent, name=name,
                       transforms=self.transforms)
         self.interactive = False
-        self._opacity_filter = ColorFilter()
+        self._opacity_filter = Alpha()
         self.attach(self._opacity_filter)
 
         self._id = VisualNode._next_id
@@ -38,7 +38,7 @@ class VisualNode(Node):
         self.attach(self._picking_filter)
 
     def _update_opacity(self):
-        self._opacity_filter.filter = (1, 1, 1, self._opacity)
+        self._opacity_filter.alpha = self._opacity
         self.update()
 
     def _set_clipper(self, node, clipper):
