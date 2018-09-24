@@ -38,7 +38,8 @@ class VisualNode(Node):
         self.attach(self._picking_filter)
 
     def _update_opacity(self):
-        self._opacity_filter.color = (1, 1, 1, self._opacity)
+        self._opacity_filter.filter = (1, 1, 1, self._opacity)
+        self.update()
 
     def _set_clipper(self, node, clipper):
         """Assign a clipper that is inherited from a parent node.
