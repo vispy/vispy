@@ -20,3 +20,6 @@ vispy.egg-info
 .ipynb_checkpoints
 .cache/
 .pytest_cache/
+vispy/visuals/text/_sdf_cpu.cp36-win_amd64.pyd
+github_icon.ico
+desktop.ini

@@ -6,24 +6,24 @@
 Example demonstrating the use of two GLCanvases in one QtApp.
 """
 
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtCore, QtWidgets
 import sys
 
 from fireworks import Canvas as FireCanvas
 from rain import Canvas as RainCanvas
 
 
-class MainWindow(QtGui.QMainWindow):
+class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
-        QtGui.QMainWindow.__init__(self)
+        QtWidgets.QMainWindow.__init__(self)
 
         self.resize(1000, 500)
         self.setWindowTitle('vispy example ...')
 
-        self.splitter_h = QtGui.QSplitter(QtCore.Qt.Horizontal)
+        self.splitter_h = QtWidgets.QSplitter(QtCore.Qt.Horizontal)
 
         # Central Widget
-        splitter1 = QtGui.QSplitter(QtCore.Qt.Horizontal)
+        splitter1 = QtWidgets.QSplitter(QtCore.Qt.Horizontal)
 
         self.rain_canvas = RainCanvas()
         self.rain_canvas.create_native()
@@ -39,7 +39,7 @@ class MainWindow(QtGui.QMainWindow):
 
 
 if __name__ == '__main__':
-    appQt = QtGui.QApplication(sys.argv)
+    appQt = QtWidgets.QApplication(sys.argv)
     win = MainWindow()
     win.show()
     appQt.exec_()

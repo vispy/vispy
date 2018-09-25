@@ -7,7 +7,7 @@ You should see information displayed for any event you triggered.
 """
 
 from vispy import gloo, app, use
-use('pyqt4')  # can be another app backend name
+use('pyqt5')  # can be another app backend name
 
 
 class Canvas(app.Canvas):
