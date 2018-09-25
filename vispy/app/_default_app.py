@@ -77,3 +77,19 @@ def process_events():
     """
     use_app(call_reuse=False)
     return default_app.process_events()
+
+
+def sleep(duration_sec):
+    """ Sleep for the given duration in seconds.
+
+    This is used to reduce
+    CPU stress when VisPy is run in interactive mode.
+    see inputhook.py for details
+
+    Parameters
+    ----------
+    duration_sec: float
+        Time to sleep in seconds
+    """
+    use_app(call_reuse=False)
+    return default_app.sleep(duration_sec)
