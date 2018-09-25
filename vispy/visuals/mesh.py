@@ -349,59 +349,35 @@ class MeshVisual(Visual):
 
     def _update_data(self):
         md = self.mesh_data
-        # Update vertex/index buffers
-        if self.shading == 'smooth' and not md.has_face_indexed_data():
-            v = md.get_vertices()
-            if v is None:
-                return False
-            if v.shape[-1] == 2:
-                v = np.concatenate((v, np.zeros((v.shape[:-1] + (1,)))), -1)
-            self._vertices.set_data(v, convert=True)
-            self._normals.set_data(md.get_vertex_normals(), convert=True)
-            self._faces.set_data(md.get_faces(), convert=True)
-            self._index_buffer = self._faces
-            if md.has_vertex_color():
-                colors = md.get_vertex_colors()
-                colors = colors.astype(np.float32)
-            elif md.has_face_color():
-                colors = md.get_face_colors()
-                colors = colors.astype(np.float32)
-            elif md.has_vertex_value():
-                colors = md.get_vertex_values()[:, np.newaxis]
-                colors = colors.astype(np.float32)
-            else:
-                colors = self._color.rgba
+
+        v = md.get_vertices(indexed='faces')
+        if v is None:
+            return False
+        if v.shape[-1] == 2:
+            v = np.concatenate((v, np.zeros((v.shape[:-1] + (1,)))), -1)
+        self._vertices.set_data(v, convert=True)
+        if self.shading == 'smooth':
+            normals = md.get_vertex_normals(indexed='faces')
+            self._normals.set_data(normals, convert=True)
+        elif self.shading == 'flat':
+            normals = md.get_face_normals(indexed='faces')
+            self._normals.set_data(normals, convert=True)
         else:
-            # It might actually be slower to prefer the indexed='faces' mode.
-            # It certainly adds some complexity, and I'm not sure what the
-            # benefits are, or if they justify this additional complexity.
-            v = md.get_vertices(indexed='faces')
-            if v is None:
-                return False
-            if v.shape[-1] == 2:
-                v = np.concatenate((v, np.zeros((v.shape[:-1] + (1,)))), -1)
-            self._vertices.set_data(v, convert=True)
-            if self.shading == 'smooth':
-                normals = md.get_vertex_normals(indexed='faces')
-                self._normals.set_data(normals, convert=True)
-            elif self.shading == 'flat':
-                normals = md.get_face_normals(indexed='faces')
-                self._normals.set_data(normals, convert=True)
-            else:
-                self._normals.set_data(np.zeros((0, 3), dtype=np.float32))
-            self._index_buffer = None
-            if md.has_vertex_color():
-                colors = md.get_vertex_colors(indexed='faces')
-                colors = colors.astype(np.float32)
-            elif md.has_face_color():
-                colors = md.get_face_colors(indexed='faces')
-                colors = colors.astype(np.float32)
-            elif md.has_vertex_value():
-                colors = md.get_vertex_values(indexed='faces')
-                colors = colors.ravel()[:, np.newaxis]
-                colors = colors.astype(np.float32)
-            else:
-                colors = self._color.rgba
+            self._normals.set_data(np.zeros((0, 3), dtype=np.float32))
+        self._index_buffer = None
+        if md.has_vertex_color():
+            colors = md.get_vertex_colors(indexed='faces')
+            colors = colors.astype(np.float32)
+        elif md.has_face_color():
+            colors = md.get_face_colors(indexed='faces')
+            colors = colors.astype(np.float32)
+        elif md.has_vertex_value():
+            colors = md.get_vertex_values(indexed='faces')
+            colors = colors.ravel()[:, np.newaxis]
+            colors = colors.astype(np.float32)
+        else:
+            colors = self._color.rgba
+
         self.shared_program.vert['position'] = self._vertices
 
         self.shared_program['texture2D_LUT'] = self._cmap.texture_lut() \
