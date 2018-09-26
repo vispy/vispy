@@ -8,8 +8,6 @@ from ...color import colormap, Color
 
 
 class IsolineFilter(Filter):
-    __slots__ = ('_level', '_width', '_color', '_antialias')
-
     FRAG_SHADER = """
         void isoline() {
             if ($isolevel <= 0 || $isowidth <= 0) {
@@ -109,8 +107,6 @@ class IsolineFilter(Filter):
 
 
 class Alpha(Filter):
-    __slots__ = ('_alpha',)
-
     FRAG_SHADER = """
         void apply_alpha() {
             gl_FragColor.a = gl_FragColor.a * $alpha;
@@ -132,8 +128,6 @@ class Alpha(Filter):
 
 
 class ColorFilter(Filter):
-    __slots__ = ('_filter',)
-
     FRAG_SHADER = """
         void apply_color_filter() {
             gl_FragColor = gl_FragColor * $filter;
@@ -156,8 +150,6 @@ class ColorFilter(Filter):
 
 
 class ZColormapFilter(Filter):
-    __slots__ = ('cmap',)
-
     FRAG_SHADER = """
         void z_colormap_support() {
             $zval = $position.z;
@@ -185,5 +177,5 @@ class ZColormapFilter(Filter):
         self.fshader['zval'] = self.vshader['zval']
 
     def _attach(self, visual):
-        super(ZColorMapFilter, self)._attach(visual)
+        super(ZColormapFilter, self)._attach(visual)
         self.vshader['position'] = visual.shared_program.vert['position']

@@ -3,7 +3,6 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from .base_filter import Filter
-from ..shaders import Function
 from ..transforms import NullTransform
 from ...geometry import Rect
 
@@ -11,8 +10,6 @@ from ...geometry import Rect
 class Clipper(Filter):
     """Clips visual output to a rectangular region.
     """
-    __slots__ = ('_bounds', '_transform')
-
     FRAG_SHADER = """
         void clip() {
             vec4 pos = $fb_to_clip(gl_FragCoord);

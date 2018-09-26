@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
+
 import struct
-import weakref
 
 from .base_filter import Filter
-from ..shaders import Function
 
 
 class PickingFilter(Filter):
@@ -14,8 +13,6 @@ class PickingFilter(Filter):
     Note that the ID color uses the alpha channel, so this may not be used
     with blending enabled.
     """
-    __slots__ = ('_id', '_id_color', '_enabled')
-
     FRAG_SHADER = """
         void picking_filter() {
             if( $enabled == 0 )
@@ -41,7 +38,7 @@ class PickingFilter(Filter):
         if id < 1:
             raise ValueError('Picking ID must be integer > 0.')
         id_color = struct.unpack('<4B', struct.pack('<I', id))
-        self.shader['id_color'] = [x/255. for x in id_color]
+        self.fshader['id_color'] = [x/255. for x in id_color]
         self._id = id
         self._id_color = id_color
 
