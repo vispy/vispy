@@ -59,9 +59,10 @@ class IsolineFilter(Filter):
 
         }
     """
-    FRAG_HOOK = 'post'
 
     def __init__(self, level=2., width=2.0, antialias=1.0, color='black'):
+        super(IsolineFilter, self).__init__(fcode=self.FRAG_SHADER)
+
         self.level = level
         self.width = width
         self.color = color
@@ -112,9 +113,10 @@ class Alpha(Filter):
             gl_FragColor.a = gl_FragColor.a * $alpha;
         }
     """
-    FRAG_HOOK = 'post'
 
     def __init__(self, alpha=1.0):
+        super(Alpha, self).__init__(fcode=self.FRAG_SHADER)
+
         self.alpha = alpha
 
     @property
@@ -133,10 +135,10 @@ class ColorFilter(Filter):
             gl_FragColor = gl_FragColor * $filter;
         }
     """
-    FRAG_HOOK = 'post'
-    FRAG_POSITION = 8
 
     def __init__(self, filter=(1, 1, 1, 1)):
+        super(ColorFilter, self).__init__(fcode=self.FRAG_SHADER, fpos=8)
+
         self.filter = filter
 
     @property
@@ -155,19 +157,17 @@ class ZColormapFilter(Filter):
             $zval = $position.z;
         }
     """
-    FRAG_HOOK = 'post'
-    FRAG_POSITION = 3
-
     VERT_SHADER = """
         void apply_z_colormap() {
             gl_FragColor = $cmap(($zval - $zrange.x) /
                                  ($zrange.y - $zrange.x));
         }
     """
-    VERT_HOOK = 'post'
-    VERT_POSITION = 9
 
     def __init__(self, cmap, zrange=(0, 1)):
+        super(ZColormapFilter, self).__init__(fcode=self.FRAG_SHADER, fpos=3,
+                                              vcode=self.VERT_SHADER, vpos=9)
+
         if isinstance(cmap, str):
             cmap = colormap.get_colormap(cmap)
         self.cmap = Function(cmap.glsl_map)

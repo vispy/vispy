@@ -19,10 +19,11 @@ class Clipper(Filter):
             }
         }
     """
-    FRAG_HOOK = 'pre'
-    FRAG_POSITION = 1
 
     def __init__(self, bounds=(0, 0, 1, 1), transform=None):
+        super(Clipper, self).__init__(fcode=self.FRAG_SHADER,
+                                      fhook='pre', fpos=1)
+
         self.bounds = bounds  # (x, y, w, h)
         if transform is None:
             transform = NullTransform()

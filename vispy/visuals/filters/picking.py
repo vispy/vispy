@@ -22,10 +22,10 @@ class PickingFilter(Filter):
             gl_FragColor = $id_color;
         }
     """
-    FRAG_HOOK = 'post'
-    FRAG_POSITION = 10
 
     def __init__(self, id_=None):
+        super(PickingFilter, self).__init__(fcode=self.FRAG_SHADER, fpos=10)
+
         self.id = id_
         self.enabled = False
 
