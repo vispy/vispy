@@ -604,7 +604,7 @@ class ColorBarVisual(CompoundVisual):
             self._label.text = label
         else:
             self._label = label
-            self._update()
+        self._update()
 
     @property
     def ticks(self):
