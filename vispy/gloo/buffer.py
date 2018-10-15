@@ -10,6 +10,7 @@ from traceback import extract_stack, format_list
 import weakref
 
 from . globject import GLObject
+from . CPUData import CPUData
 from ..util import logger
 from ..ext.six import string_types
 
@@ -36,13 +37,27 @@ class Buffer(GLObject):
         Buffer data.
     nbytes : int | None
         Buffer byte size.
+    use_cpu : bool | False
+        If set to True, a local copy of the data is kept on CPU memory. This
+        allows updating non-contiguous chunks of data before uploading to GPU.
+    immediate_upload : bool | True
+        If set to False (requires use_cpu), changes to the local CPU memory
+        are not immediately sent to the GPU; rather, explicit calls to
+        upload_from_local method must be made.
     """
 
-    def __init__(self, data=None, nbytes=None):
+    def __init__(self, data=None, nbytes=None, use_cpu=False,
+                 immediate_upload=True):
         GLObject.__init__(self)
         self._views = []  # Views on this buffer (stored using weakrefs)
         self._valid = True  # To invalidate buffer views
         self._nbytes = 0  # Bytesize in bytes, set in resize_bytes()
+        if not use_cpu and not immediate_upload:
+            raise ValueError('Uploads are necessarily immediate without a '
+                             'local CPU buffer.')
+        self._use_cpu = use_cpu
+        self._immediate_upload = immediate_upload
+        self._cpu_data = None  # type: CPUData # Will be set if use_cpu is True
 
         # Set data
         if data is not None:
@@ -58,6 +73,60 @@ class Buffer(GLObject):
 
         return self._nbytes
 
+    @property
+    def use_cpu(self):
+        """ Whether a local copy of data is kept on CPU memory """
+
+        return self._use_cpu
+
+    @property
+    def immediate_upload(self):
+        """ Whether changes to the local CPU memory must be immediately sent to GPU """
+
+        return self._immediate_upload
+
+    @property
+    def cpu_data(self):
+        """ Local copy of data kept on CPU memory (CPUData object) """
+
+        if not self._use_cpu:
+            raise RuntimeError("Buffer has no local CPU buffer.")
+
+        return self._cpu_data
+
+    @cpu_data.setter
+    def cpu_data(self, data):
+        """ Local copy of data kept on CPU memory (CPUData object) """
+
+        if not self._use_cpu:
+            raise RuntimeError("Buffer has no local CPU buffer.")
+
+        self.set_data(data)
+
+    @property
+    def cpu_data_bytes(self):
+        """ Local CPU data, viewed as a mere bytes vector """
+
+        if not self._use_cpu:
+            raise RuntimeError("Buffer has no local CPU buffer.")
+
+        return self._cpu_data.view(np.uint8).ravel()
+
+    def upload_GPU(self):
+        """ Upload changes on the local CPU data to GPU (deferred operation). """
+
+        if not self._use_cpu:
+            raise RuntimeError("Buffer has no local CPU buffer.")
+
+        if self._cpu_data.pending_data is None:
+            # no waiting change
+            return
+
+        start, stop = self._cpu_data.pending_data
+        data = self.cpu_data_bytes[start:stop]
+        self._glir.command('DATA', self._id, start, data)
+        self._cpu_data.reset_pending_data()
+
     def set_subdata(self, data, offset=0, copy=False):
         """ Set a sub-region of the buffer (deferred operation).
 
@@ -68,11 +137,12 @@ class Buffer(GLObject):
             Data to be uploaded
         offset: int
             Offset in buffer where to start copying data (in bytes)
-        copy: bool
+        copy: bool | False
             Since the operation is deferred, data may change before
             data is actually uploaded to GPU memory.
             Asking explicitly for a copy will prevent this behavior.
         """
+
         data = np.array(data, copy=copy)
         nbytes = data.nbytes
 
@@ -85,7 +155,17 @@ class Buffer(GLObject):
         # (because they will be overwritten anyway)
         if nbytes == self._nbytes and offset == 0:
             self._glir.command('SIZE', self._id, nbytes)
-        self._glir.command('DATA', self._id, offset, data)
+
+        # Set local data and/or upload
+        if self._use_cpu:
+            if self._cpu_data is None:
+                raise RuntimeError('Use first set_data to set the local CPU '
+                                   'data.')
+            # copy bytes, this will also trigger immediate upload if
+            # self._immediate_upload is true
+            self.cpu_data_bytes[offset:offset+nbytes] = data.view(np.uint8)
+        else:
+            self._glir.command('DATA', self._id, offset, data)
 
     def set_data(self, data, copy=False):
         """ Set data in the buffer (deferred operation).
@@ -96,11 +176,16 @@ class Buffer(GLObject):
         ----------
         data : ndarray
             Data to be uploaded
-        copy: bool
+        copy: bool | False
             Since the operation is deferred, data may change before
             data is actually uploaded to GPU memory.
             Asking explicitly for a copy will prevent this behavior.
+            If a local CPU buffer is used, this value will be ignored as
+            data will be copied anyway.
         """
+        if self._use_cpu:
+            # data needs to be copied any way
+            copy = True
         data = np.array(data, copy=copy)
         nbytes = data.nbytes
 
@@ -110,8 +195,16 @@ class Buffer(GLObject):
             # Use SIZE to discard any previous data setting
             self._glir.command('SIZE', self._id, nbytes)
 
-        if nbytes:  # Only set data if there *is* data
-            self._glir.command('DATA', self._id, 0, data)
+        # Set local data and/or upload
+        if self._use_cpu:
+            self._cpu_data = data.view(CPUData) # type: CPUData
+            if self._immediate_upload:
+                self.upload_GPU()
+                self._cpu_data.register_action(self.upload_GPU)
+        else:
+            if nbytes:
+                # Only set data if there *is* data
+                self._glir.command('DATA', self._id, 0, data)
 
     def resize_bytes(self, size):
         """ Resize this buffer (deferred operation).
@@ -122,12 +215,18 @@ class Buffer(GLObject):
             New buffer size in bytes.
         """
         self._nbytes = size
+
         self._glir.command('SIZE', self._id, size)
+
         # Invalidate any view on this buffer
         for view in self._views:
             if view() is not None:
                 view()._valid = False
         self._views = []
+
+        # Reset CPU buffer
+        if self._use_cpu:
+            self._cpu_data = None
 
 
 # -------------------------------------------------------- DataBuffer class ---
@@ -140,13 +239,14 @@ class DataBuffer(Buffer):
         Buffer data.
     """
 
-    def __init__(self, data=None):
+    def __init__(self, data=None, use_cpu=False, immediate_upload=True):
         self._size = 0  # number of elements in buffer, set in resize_bytes()
         self._dtype = None
         self._stride = 0
         self._itemsize = 0
         self._last_dim = None
-        Buffer.__init__(self, data)
+        Buffer.__init__(self, data,
+                        use_cpu=use_cpu, immediate_upload=immediate_upload)
 
     def _prepare_data(self, data):
         # Can be overrriden by subclasses
@@ -265,10 +365,17 @@ class DataBuffer(Buffer):
     def __setitem__(self, key, data):
         """ Set data (deferred operation) """
 
+        # If buffer has a local CPU storage, setting new values is
+        # straightforward
+        if self.use_cpu:
+            self.cpu_data.__setitem__(key, data)
+            return
+
         # Setting a whole field of the buffer: only allowed if we have CPU
         # storage. Note this case (key is string) only happen with base buffer
         if isinstance(key, string_types):
-            raise ValueError("Cannot set non-contiguous data on buffer")
+            raise ValueError("Cannot set non-contiguous data on buffer "
+                             "that has no local CPU data.")
 
         # Setting one or several elements
         elif isinstance(key, int):
@@ -288,7 +395,8 @@ class DataBuffer(Buffer):
 
         # Contiguous update?
         if step != 1:
-            raise ValueError("Cannot set non-contiguous data on buffer")
+            raise ValueError("Cannot set non-contiguous data on buffer "
+                             "that has no local CPU data.")
 
         # Make sure data is an array
         if not isinstance(data, np.ndarray):
