@@ -5,3 +5,4 @@
 from .clipper import Clipper  # noqa
 from .color import Alpha, ColorFilter, IsolineFilter, ZColormapFilter  # noqa
 from .picking import PickingFilter  # noqa
+from .mesh import TextureFilter  # noqa
