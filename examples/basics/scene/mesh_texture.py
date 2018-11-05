@@ -2,19 +2,21 @@ import argparse
 
 import numpy as np
 from vispy import app, scene
-from vispy.io import imread, read_mesh
+from vispy.io import imread, load_data_file, read_mesh
 from vispy.scene.visuals import Mesh
 from vispy.visuals.filters import TextureFilter
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('mesh')
 parser.add_argument('--shading', default='smooth',
-                    choices=['none', 'flat', 'smooth'])
+                    choices=['none', 'flat', 'smooth'],
+                    help="shading mode")
 args = parser.parse_args()
 
-vertices, faces, normals, texcoords = read_mesh(args.mesh)
-texture = np.flipud(imread(args.mesh.replace(".obj", ".png")))
+mesh_path = load_data_file('spot/spot.obj.gz')
+texture_path = load_data_file('spot/spot.png')
+vertices, faces, normals, texcoords = read_mesh(mesh_path)
+texture = np.flipud(imread(texture_path))
 
 canvas = scene.SceneCanvas(keys='interactive', bgcolor='white',
                            size=(800, 600))
