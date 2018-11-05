@@ -35,6 +35,13 @@ texture_filter = TextureFilter(texture, texcoords)
 mesh.attach(texture_filter)
 
 
+@canvas.events.key_press.connect
+def on_key_press(event):
+    if event.key == "t":
+        texture_filter.enabled = not texture_filter.enabled
+        mesh.update()
+
+
 def attach_headlight(mesh, view, canvas):
     mesh.light_dir = (0, -1, 0)
     initial_light_dir = view.camera.transform.imap(mesh.light_dir)
