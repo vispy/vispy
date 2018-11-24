@@ -482,7 +482,7 @@ class TextVisual(Visual):
 
     @rotation.setter
     def rotation(self, rotation):
-        self._rotation = rotation * np.pi / 180.
+        self._rotation = np.asarray(rotation) * np.pi / 180.
         self.update()
 
     @property
@@ -543,15 +543,17 @@ class TextVisual(Visual):
             if isinstance(_rot, (int, float)):
                 _rot = np.full((pos.shape[0],), self._rotation)
             _rot = np.asarray(_rot)
-            assert len(_rot) == pos.shape[0]
+            if _rot.shape[0] < n_text:
+                _rep = [1] * (len(_rot) - 1) + [n_text - len(_rot) + 1]
+                _rot = np.repeat(_rot, _rep, axis=0)
             _rot = np.repeat(_rot[:n_text], repeats, axis=0)
             self.shared_program['a_rotation'] = _rot.astype(np.float32)
             # Position
             if pos.shape[0] < n_text:
-                pos = np.repeat(pos, [1]*(len(pos)-1) + [n_text-len(pos)+1],
-                                axis=0)
+                _rep = [1] * (len(pos) - 1) + [n_text - len(pos) + 1]
+                pos = np.repeat(pos, _rep, axis=0)
             pos = np.repeat(pos[:n_text], repeats, axis=0)
-            assert pos.shape[0] == self._vertices.size
+            assert pos.shape[0] == self._vertices.size == len(_rot)
             self.shared_program['a_pos'] = pos
             self._pos_changed = False
         transforms = self.transforms
