@@ -315,7 +315,7 @@ class TextVisual(Visual):
     """
 
     VERTEX_SHADER = """
-        uniform float u_rotation;  // rotation in rad
+        attribute float a_rotation;  // rotation in rad
         attribute vec2 a_position; // in point units
         attribute vec2 a_texcoord;
         attribute vec3 a_pos;  // anchor position
@@ -323,8 +323,8 @@ class TextVisual(Visual):
 
         void main(void) {
             // Eventually "rot" should be handled by SRTTransform or so...
-            mat4 rot = mat4(cos(u_rotation), -sin(u_rotation), 0, 0,
-                            sin(u_rotation), cos(u_rotation), 0, 0,
+            mat4 rot = mat4(cos(a_rotation), -sin(a_rotation), 0, 0,
+                            sin(a_rotation), cos(a_rotation), 0, 0,
                             0, 0, 1, 0, 0, 0, 0, 1);
             vec4 pos = $transform(vec4(a_pos, 1.0)) +
                        $text_scale(rot * vec4(a_position, 0, 0));
@@ -482,7 +482,7 @@ class TextVisual(Visual):
 
     @rotation.setter
     def rotation(self, rotation):
-        self._rotation = float(rotation) * np.pi / 180.
+        self._rotation = rotation * np.pi / 180.
         self.update()
 
     @property
@@ -538,6 +538,15 @@ class TextVisual(Visual):
                 repeats = [4 * len(text)]
             n_text = len(repeats)
             pos = self.pos
+            # Rotation
+            _rot = self._rotation
+            if isinstance(_rot, (int, float)):
+                _rot = np.full((pos.shape[0],), self._rotation)
+            _rot = np.asarray(_rot)
+            assert len(_rot) == pos.shape[0]
+            _rot = np.repeat(_rot[:n_text], repeats, axis=0)
+            self.shared_program['a_rotation'] = _rot.astype(np.float32)
+            # Position
             if pos.shape[0] < n_text:
                 pos = np.repeat(pos, [1]*(len(pos)-1) + [n_text-len(pos)+1],
                                 axis=0)
@@ -545,7 +554,6 @@ class TextVisual(Visual):
             assert pos.shape[0] == self._vertices.size
             self.shared_program['a_pos'] = pos
             self._pos_changed = False
-
         transforms = self.transforms
         n_pix = (self._font_size / 72.) * transforms.dpi  # logical pix
         tr = transforms.get_transform('document', 'render')
@@ -554,7 +562,6 @@ class TextVisual(Visual):
         self.shared_program.vert['text_scale'] = self._text_scale
         self.shared_program['u_npix'] = n_pix
         self.shared_program['u_kernel'] = self._font._kernel
-        self.shared_program['u_rotation'] = self._rotation
         self.shared_program['u_color'] = self._color.rgba
         self.shared_program['u_font_atlas'] = self._font._atlas
         self.shared_program['u_font_atlas_shape'] = self._font._atlas.shape[:2]
