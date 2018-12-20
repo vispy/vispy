@@ -52,8 +52,8 @@ class FlyCamera(PerspectiveCamera):
 
     """
 
-    # Linking this camera likely not to work very well
-    _state_props = PerspectiveCamera._state_props + ('rotation', )
+    # Using _rotation1 and _rotation2 for camera states instead of _rotation
+    _state_props = PerspectiveCamera._state_props + ('rotation1', 'rotation2')
 
     def __init__(self, fov=60, rotation=None, **kwargs):
 
@@ -73,7 +73,7 @@ class FlyCamera(PerspectiveCamera):
         PerspectiveCamera.__init__(self, fov=fov, **kwargs)
 
         # Set camera attributes
-        self.rotation = rotation if (rotation is not None) else Quaternion()
+        self.rotation1 = rotation.normalize() if (rotation is not None) else Quaternion()
 
         # To store data at start of interaction
         self._event_value = None
@@ -112,8 +112,31 @@ class FlyCamera(PerspectiveCamera):
 
     @rotation.setter
     def rotation(self, value):
+        print("rotation.setter called, use rotation1.setter instead")
+
+    @property
+    def rotation1(self):
+        """
+        rotation1 records confirmed camera rotation
+        """
+        return self._rotation1
+    
+    @rotation1.setter
+    def rotation1(self, value):
         assert isinstance(value, Quaternion)
-        self._rotation1 = value
+        self._rotation1 = value.normalize()
+
+    @property
+    def rotation2(self):
+        """
+        rotation2 records on going camera rotation.
+        """
+        return self._rotation2
+    
+    @rotation2.setter
+    def rotation2(self, value):
+        assert isinstance(value, Quaternion)
+        self._rotation2 = value.normalize()
 
     @property
     def auto_roll(self):
