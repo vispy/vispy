@@ -38,7 +38,6 @@ class Canvas(app.Canvas):
         color[:, 1] = color[::-1, 0]
 
         self.colors = color
-        print(self.colors)
 
         self.text = visuals.TextVisual(self.text_parts, bold=True,
                                        pos=self.text_positions,
