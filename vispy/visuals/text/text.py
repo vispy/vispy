@@ -475,7 +475,7 @@ class TextVisual(Visual):
     @color.setter
     def color(self, color):
         if isinstance(color, str):
-            self._color = Color(color)
+            self._color = ColorArray(Color(color))
         else:
             color = np.atleast_2d(color).astype(np.float32)
             if color.shape[1] == 3:
