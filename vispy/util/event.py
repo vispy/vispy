@@ -439,7 +439,7 @@ class EventEmitter(object):
                 return event
 
             rem = []
-            for cb in self._callbacks:
+            for cb in self._callbacks[:]:
                 if isinstance(cb, tuple):
                     obj = cb[0]()
                     if obj is None:

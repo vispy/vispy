@@ -26,7 +26,7 @@ Announcements
 
 - **Release!** Version 0.5, October 24, 2017
 - **Release!** Version 0.4, May 22, 2015
-- `VisPy tutorial in the IPython Cookbook <http://ipython-books.github.io/featured-06/>`__
+- `VisPy tutorial in the IPython Cookbook <https://github.com/ipython-books/cookbook-code/blob/master/featured/06_vispy.ipynb>`__
 - **Release!** Version 0.3, August 29, 2014
 - **EuroSciPy 2014**: talk at Saturday 30, and sprint at Sunday 31, August 2014
 - `Article in Linux Magazine, French Edition <https://github.com/vispy/linuxmag-article>`__, July 2014

@@ -324,7 +324,7 @@ class CanvasBackend(BaseCanvasBackend):
         if self._id is None:
             return
         # Set the window title. Has no effect for widgets
-        glfw.glfwSetWindowTitle(self._id, title)
+        glfw.glfwSetWindowTitle(self._id, title.encode('utf-8'))
 
     def _vispy_set_size(self, w, h):
         if self._id is None:
