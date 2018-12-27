@@ -49,9 +49,9 @@ def test_sdf():
          [0, 118, 137, 143, 143, 143, 137, 118, 0],
          [0, 118, 137, 143, 149, 143, 137, 118, 0],
          [0, 0, 255, 255, 255, 255, 255, 0, 0]])
-    # XXX The GPU and CPU solutions are quite different.
-    # It doesn't seem to have much effect on the visualizations but would be
-    # good to fix eventually.
+    # XXX: The GPU and CPU solutions are quite different.
+    #     It doesn't seem to have much effect on the visualizations but would be
+    #     good to fix eventually.
 
     for Rend, expd in zip((SDFRendererGPU, SDFRendererCPU), (gpu, cpu)):
         with Canvas(size=(100, 100)):
@@ -60,8 +60,6 @@ def test_sdf():
             gloo.set_viewport(0, 0, *data.shape[::-1])
             gloo.util.draw_texture(tex)
             result = gloo.util._screenshot()[:, :, 0].astype(np.int)
-            print(result)
-            print(expd)
             assert_allclose(result, expd, atol=1,
                             err_msg=Rend.__name__)
 
