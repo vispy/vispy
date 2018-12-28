@@ -34,10 +34,7 @@ def _get_import_dir():
 
 
 _unit_script = """
-try:
-    import pytest as tester
-except ImportError:
-    import nose as tester
+import pytest as tester
 try:
     import faulthandler
     faulthandler.enable()
