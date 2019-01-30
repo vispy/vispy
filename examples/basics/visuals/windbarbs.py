@@ -27,7 +27,7 @@ uniform float u_px_scale;
 uniform float u_scale;
 
 attribute vec3  a_position;
-attribute vec3 a_wind;
+attribute vec2  a_wind;
 attribute vec4  a_fg_color;
 attribute vec4  a_bg_color;
 attribute float a_edgewidth;
@@ -36,7 +36,6 @@ attribute float a_size;
 varying vec4 v_fg_color;
 varying vec4 v_bg_color;
 varying vec2 v_wind;
-varying float v_flagdir;
 varying float v_edgewidth;
 varying float v_antialias;
 
@@ -44,7 +43,6 @@ void main (void) {
     $v_size = a_size * u_px_scale * u_scale;
     v_edgewidth = a_edgewidth * float(u_px_scale);
     v_wind = a_wind.xy;
-    v_flagdir = a_wind.z;
     v_antialias = u_antialias;
     v_fg_color  = a_fg_color;
     v_bg_color  = a_bg_color;
