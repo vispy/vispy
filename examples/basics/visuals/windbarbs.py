@@ -57,6 +57,7 @@ void main (void) {
 frag = """
 #include "math/constants.glsl"
 #include "math/signed-segment-distance.glsl"
+#include "antialias/antialias.glsl"
 varying vec4 v_fg_color;
 varying vec4 v_bg_color;
 varying vec2 v_wind;
@@ -82,58 +83,6 @@ float sdf_triangle(vec2 p, vec2 p0, vec2 p1, vec2 p2)
                      vec2( dot( pq2, pq2 ), s*(v2.x*e2.y-v2.y*e2.x) ));
     return -sqrt(d.x)*sign(d.y);
 }
-
-// Segment distance by Ultraviolet
-// adapted from https://www.shadertoy.com/view/XsKyR1
-float segment_distance2(vec2 p, vec2 p0, vec2 p1)
-{
-    vec2 pa = p-p0, ba = p1-p0;
-    float h = clamp( dot(pa,ba)/dot(ba,ba), 0.0, 1.0 );
-    return length( pa - ba*h );
-}
-
-// Triangle by Ultraviolet
-// adapted from https://www.shadertoy.com/view/XsKyR1
-float angle(vec2 p)
-{
-    return atan(p.y, p.x);
-}
-
-float angle(vec2 p0, vec2 p1)
-{
-    return mod(angle(p1) - angle(p0) - M_PI, 2.*M_PI) - M_PI;
-}
-
-float winding(vec2 p, vec2 p0, vec2 p1, vec2 p2)
-{
-    float w = 0.0;
-
-    w += angle(p0-p, p1-p);
-    w += angle(p1-p, p2-p);
-    w += angle(p2-p, p0-p);
-
-    return w;
-}
-
-bool isInside(vec2 p, vec2 p0, vec2 p1, vec2 p2)
-{
-    float w = winding(p, p0, p1, p2);
-    return abs(w)>0.001;
-}
-
-float sdf_triangle2(vec2 p, vec2 p0, vec2 p1, vec2 p2)
-{            
-    float f = 1.0;
-    f = min(f, segment_distance2(p, p0, p1));
-    f = min(f, segment_distance2(p, p1, p2));
-    f = min(f, segment_distance2(p, p2, p0));
-
-    if (isInside(p, p0, p1, p2))
-        f *= -1.;
-
-    return f;
-}
-
 
 void main()
 {
@@ -171,17 +120,17 @@ void main()
     int calm = shortbarb + longbarb + flag;
 
     // starting distance
-    float r = 0.;
+    float r;
     // calm, plot circles
     if (calm == 0)
     {
-        r = max(r, abs(length(O-P)- dx * 0.2));
+        r = abs(length(O-P)- dx * 0.2);
         r = min(r, abs(length(O-P)- dx * 0.1));
     }
     else
     {
         // plot shaft
-        r = max(r, segment_distance(P, O, O-X));
+        r = segment_distance(P, O, O-X);
         float pos = 1.;
 
         // plot flag(s)
@@ -194,7 +143,7 @@ void main()
         // plot longbarb(s)
         while(longbarb >= 1)
         {
-            r = min(r, segment_distance(P, O-X*pos, O-X*pos-X*.3-Y*.3));
+            r = min(r, segment_distance(P, O-X*pos, O-X*pos-X*.4-Y*.4));
             longbarb -= 1;
             pos -= 0.15;
         }
@@ -203,58 +152,25 @@ void main()
         {
             if (pos == 1.0)
                 pos -= 0.15;
-            r = min(r, segment_distance(P, O-X*pos, O-X*pos-X*.15-Y*.15));
+            r = min(r, segment_distance(P, O-X*pos, O-X*pos-X*.2-Y*.2));
             shortbarb -= 1;
             pos -= 0.15;
         }
     }
+    
     // apply correction for size
     r *= size;
-    float t = 0.5*v_edgewidth - v_antialias;
-    float d = abs(r) - t;
+    
     vec4 edgecolor = vec4(v_fg_color.rgb, edgealphafactor*v_fg_color.a);
-    if (r > 0.5*v_edgewidth + v_antialias)
+    
+    if (r > 0.5 * v_edgewidth + v_antialias)
     {
         // out of the marker (beyond the outer edge of the edge
         // including transition zone due to antialiasing)
         discard;
     }
-    else if (d < 0.0)
-    {
-        // inside the width of the edge
-        // (core, out of the transition zone for antialiasing)
-        gl_FragColor = edgecolor;
-    }
-    else
-    {
-        if (v_edgewidth == 0.)
-        {// no edge
-            if (r > -v_antialias)
-            {
-                float alpha = 1.0 + r/v_antialias;
-                alpha = exp(-alpha*alpha);
-                gl_FragColor = vec4(v_bg_color.rgb, alpha*v_bg_color.a);
-            }
-            else
-            {
-                gl_FragColor = v_bg_color;
-            }
-        }
-        else
-        {
-            float alpha = d/v_antialias;
-            alpha = exp(-alpha*alpha);
-            if (r > 0.)
-            {
-                // outer part of the edge: fade out into the background...
-                gl_FragColor = vec4(edgecolor.rgb, alpha*edgecolor.a);
-            }
-            else
-            {
-                gl_FragColor = mix(v_bg_color, edgecolor, alpha);
-            }
-        }
-    }
+    
+    gl_FragColor = filled(r, edgewidth, v_antialias, edgecolor);
 }
 """
 
@@ -268,7 +184,6 @@ class WindbarbVisual(Visual):
         self._v_size_var = Variable('varying float v_size')
         self._marker_fun = None
         self._data = None
-        self.antialias = 1.
         Visual.__init__(self, vcode=vert, fcode=frag)
         self.shared_program.vert['v_size'] = self._v_size_var
         self.shared_program.frag['v_size'] = self._v_size_var
@@ -279,7 +194,7 @@ class WindbarbVisual(Visual):
             self.set_data(**kwargs)
         self.freeze()
 
-    def set_data(self, pos=None, wind=None, size=25.,
+    def set_data(self, pos=None, wind=None, size=25., antialias=1.,
                  edge_width=1., edge_width_rel=None, edge_color='black',
                  face_color='white'):
         """ Set the data used to display this visual.
@@ -292,6 +207,8 @@ class WindbarbVisual(Visual):
             The array of wind vectors to display each windbarb.
         size : float or array
             The windbarb size in px.
+        antialias : float
+            The antialiased area (in pixels).
         edge_width : float | None
             The width of the symbol outline in pixels.
         edge_width_rel : float | None
@@ -340,7 +257,7 @@ class WindbarbVisual(Visual):
         data['a_position'][:, :pos.shape[1]] = pos
         data['a_wind'][:, :wind.shape[1]] = wind
         data['a_size'] = size * 2.
-        self.shared_program['u_antialias'] = self.antialias  # XXX make prop
+        self.shared_program['u_antialias'] = antialias
         self._data = data
         self._vbo.set_data(data)
         self.shared_program.bind(self._vbo)
@@ -369,7 +286,7 @@ pos = np.zeros((n, 2))
 colors = np.ones((n, 4), dtype=np.float32)
 pos = np.random.randint(0, 512, size=(n, 2))
 colors = np.random.uniform(0, 1, (n, 3)).astype(np.float32)
-wind = np.random.randint(10, 50, size=(n,2))
+wind = np.random.randint(10, 125, size=(n,2))
 
 
 class Canvas(app.Canvas):
@@ -380,10 +297,10 @@ class Canvas(app.Canvas):
         self.markers.set_data(pos, wind=wind, edge_color=colors,
                               face_color=colors,
                               size=50.,
-                              edge_width=1.5)
+                              edge_width=2)
         self.markers.transform = STTransform()
 
-        self.timer = app.Timer('auto', connect=self.on_timer, start=True)
+        self.timer = app.Timer('auto', connect=self.on_timer, start=False)
         self.show()
 
     def on_draw(self, event):
