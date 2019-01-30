@@ -148,17 +148,16 @@ void main()
     float size = $v_size + 4.*(edgewidth + 1.5*v_antialias);
     // factor 6 for acute edge angles that need room as for star marker
 
-    const float SQRT_2 = 1.4142135623730951;
-
     // normalized distance
     float dx = 0.5;
     // normalized center point
     vec2 O = vec2(dx);
     // normalized x-component
-    vec2 X = normalize(v_wind) * dx / SQRT_2 / 1.1;
+    vec2 X = normalize(v_wind) * dx / M_SQRT2 / 1.1 * vec2(1, -1);
     // normalized y-component
     // here the barb can be mirrored for southern earth * (vec2(1., -1.)
-    vec2 Y = X.yx * vec2(-1., 1.);
+    //vec2 Y = X.yx * vec2(1., -1.); // southern hemisphere
+    vec2 Y = X.yx * vec2(-1., 1.); // northern hemisphere
     // PointCoordinate
     vec2 P = gl_PointCoord;
 
@@ -173,18 +172,16 @@ void main()
 
     // starting distance
     float r = 0.;
-
     // calm, plot circles
     if (calm == 0)
     {
         r = max(r, abs(length(O-P)- dx * 0.2));
         r = min(r, abs(length(O-P)- dx * 0.1));
-
     }
     else
     {
         // plot shaft
-        r = max(r, segment_distance2(P, O, O-X));
+        r = max(r, segment_distance(P, O, O-X));
         float pos = 1.;
 
         // plot flag(s)
@@ -197,7 +194,7 @@ void main()
         // plot longbarb(s)
         while(longbarb >= 1)
         {
-            r = min(r, segment_distance2(P, O-X*pos, O-X*pos-X*.3-Y*.3));
+            r = min(r, segment_distance(P, O-X*pos, O-X*pos-X*.3-Y*.3));
             longbarb -= 1;
             pos -= 0.15;
         }
@@ -206,14 +203,13 @@ void main()
         {
             if (pos == 1.0)
                 pos -= 0.15;
-            r = min(r, segment_distance2(P, O-X*pos, O-X*pos-X*.15-Y*.15));
+            r = min(r, segment_distance(P, O-X*pos, O-X*pos-X*.15-Y*.15));
             shortbarb -= 1;
             pos -= 0.15;
         }
     }
     // apply correction for size
     r *= size;
-
     float t = 0.5*v_edgewidth - v_antialias;
     float d = abs(r) - t;
     vec4 edgecolor = vec4(v_fg_color.rgb, edgealphafactor*v_fg_color.a);
@@ -273,7 +269,6 @@ class WindbarbVisual(Visual):
         self._marker_fun = None
         self._data = None
         self.antialias = 1.
-        self.scaling = False
         Visual.__init__(self, vcode=vert, fcode=frag)
         self.shared_program.vert['v_size'] = self._v_size_var
         self.shared_program.frag['v_size'] = self._v_size_var
@@ -284,9 +279,9 @@ class WindbarbVisual(Visual):
             self.set_data(**kwargs)
         self.freeze()
 
-    def set_data(self, pos=None, wind=None, size=50.,
-                 edge_width=2., edge_width_rel=None, edge_color='black',
-                 face_color='white', scaling=False):
+    def set_data(self, pos=None, wind=None, size=25.,
+                 edge_width=1., edge_width_rel=None, edge_color='black',
+                 face_color='white'):
         """ Set the data used to display this visual.
 
         Parameters
@@ -296,7 +291,7 @@ class WindbarbVisual(Visual):
         wind : array
             The array of wind vectors to display each windbarb.
         size : float or array
-            The symbol size in px.
+            The windbarb size in px.
         edge_width : float | None
             The width of the symbol outline in pixels.
         edge_width_rel : float | None
@@ -320,7 +315,6 @@ class WindbarbVisual(Visual):
         else:
             if edge_width_rel < 0:
                 raise ValueError('edge_width_rel cannot be negative')
-        self.scaling = scaling
 
         edge_color = ColorArray(edge_color).rgba
         if len(edge_color) == 1:
@@ -342,10 +336,10 @@ class WindbarbVisual(Visual):
         if edge_width is not None:
             data['a_edgewidth'] = edge_width
         else:
-            data['a_edgewidth'] = size * edge_width_rel
+            data['a_edgewidth'] = size * 2. * edge_width_rel
         data['a_position'][:, :pos.shape[1]] = pos
         data['a_wind'][:, :wind.shape[1]] = wind
-        data['a_size'] = size
+        data['a_size'] = size * 2.
         self.shared_program['u_antialias'] = self.antialias  # XXX make prop
         self._data = data
         self._vbo.set_data(data)
@@ -358,12 +352,7 @@ class WindbarbVisual(Visual):
 
     def _prepare_draw(self, view):
         view.view_program['u_px_scale'] = view.transforms.pixel_scale
-        if self.scaling:
-            tr = view.transforms.get_transform('visual', 'document').simplified
-            scale = np.linalg.norm((tr.map([1, 0]) - tr.map([0, 0]))[:2])
-            view.view_program['u_scale'] = scale
-        else:
-            view.view_program['u_scale'] = 1
+        view.view_program['u_scale'] = 1
 
     def _compute_bounds(self, axis, view):
         pos = self._data['a_position']
@@ -380,7 +369,7 @@ pos = np.zeros((n, 2))
 colors = np.ones((n, 4), dtype=np.float32)
 pos = np.random.randint(0, 512, size=(n, 2))
 colors = np.random.uniform(0, 1, (n, 3)).astype(np.float32)
-wind = np.random.randint(-100, 100, size=(n,2))
+wind = np.random.randint(10, 50, size=(n,2))
 
 
 class Canvas(app.Canvas):
@@ -389,8 +378,9 @@ class Canvas(app.Canvas):
                             title="Windbarb demo [use mouse wheel to scroll]")
         self.markers = WindbarbVisual()
         self.markers.set_data(pos, wind=wind, edge_color=colors,
-                              face_color=colors, size=100.,
-                              edge_width=1.)
+                              face_color=colors,
+                              size=50.,
+                              edge_width=1.5)
         self.markers.transform = STTransform()
 
         self.timer = app.Timer('auto', connect=self.on_timer, start=True)
@@ -411,7 +401,7 @@ class Canvas(app.Canvas):
         wind = np.random.randint(-100, 100, size=(n, 2))
         colors = np.random.uniform(0, 1, (n, 3)).astype(np.float32)
         self.markers.set_data(pos, wind=wind, edge_color=colors,
-                              face_color=colors, size=100.,
+                              face_color=colors, size=50.,
                               edge_width=1.)
         self.update()
 
