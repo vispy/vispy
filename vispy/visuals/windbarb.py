@@ -1,20 +1,13 @@
 # -*- coding: utf-8 -*-
-# vispy: gallery 30
 # -----------------------------------------------------------------------------
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
-""" Display Windbarbs.
+"""
+Windbarb Visual and shader definitions.
 """
 
 import numpy as np
-
-from vispy import app
-from vispy.visuals.transforms import STTransform
-
-"""
-WindbarbVisual and shader definitions.
-"""
 
 from vispy.color import ColorArray
 from vispy.gloo import VertexBuffer
@@ -155,26 +148,26 @@ void main()
             pos -= 0.15;
         }
     }
-    
+
     // apply correction for size
     r *= size;
-    
+
     vec4 edgecolor = vec4(v_fg_color.rgb, edgealphafactor*v_fg_color.a);
-    
+
     if (r > 0.5 * v_edgewidth + v_antialias)
     {
         // out of the marker (beyond the outer edge of the edge
         // including transition zone due to antialiasing)
         discard;
     }
-    
+
     gl_FragColor = filled(r, edgewidth, v_antialias, edgecolor);
 }
 """
 
 
 class WindbarbVisual(Visual):
-    """ Visual displaying marker symbols.
+    """ Visual displaying windbarbs.
     """
 
     def __init__(self, **kwargs):
@@ -192,8 +185,8 @@ class WindbarbVisual(Visual):
             self.set_data(**kwargs)
         self.freeze()
 
-    def set_data(self, pos=None, wind=None, size=25., antialias=1.,
-                 edge_width=1., edge_width_rel=None, edge_color='black',
+    def set_data(self, pos=None, wind=None, size=50., antialias=1.,
+                 edge_width=1., edge_color='black',
                  face_color='white'):
         """ Set the data used to display this visual.
 
@@ -202,16 +195,13 @@ class WindbarbVisual(Visual):
         pos : array
             The array of locations to display each windbarb.
         wind : array
-            The array of wind vectors to display each windbarb.
+            The array of wind vectors (u,v) to display each windbarb.
         size : float or array
             The windbarb size in px.
         antialias : float
             The antialiased area (in pixels).
         edge_width : float | None
-            The width of the symbol outline in pixels.
-        edge_width_rel : float | None
-            The width as a fraction of marker size. Exactly one of
-            `edge_width` and `edge_width_rel` must be supplied.
+            The width of the windbarb outline in pixels.
         edge_color : Color | ColorArray
             The color used to draw each symbol outline.
         face_color : Color | ColorArray
@@ -221,15 +211,12 @@ class WindbarbVisual(Visual):
                 pos.ndim == 2 and pos.shape[1] in (2, 3))
         assert (isinstance(wind, np.ndarray) and
                 pos.ndim == 2 and pos.shape[1] == 2)
-        if (edge_width is not None) + (edge_width_rel is not None) != 1:
-            raise ValueError('exactly one of edge_width and edge_width_rel '
-                             'must be non-None')
-        if edge_width is not None:
-            if edge_width < 0:
-                raise ValueError('edge_width cannot be negative')
-        else:
-            if edge_width_rel < 0:
-                raise ValueError('edge_width_rel cannot be negative')
+        if edge_width < 0:
+            raise ValueError('edge_width cannot be negative')
+
+        # since the windbarb starts in the center,
+        # we need to multiply by 2 for correct length
+        size *= 2
 
         edge_color = ColorArray(edge_color).rgba
         if len(edge_color) == 1:
@@ -248,13 +235,10 @@ class WindbarbVisual(Visual):
                                   ('a_edgewidth', np.float32, 1)])
         data['a_fg_color'] = edge_color
         data['a_bg_color'] = face_color
-        if edge_width is not None:
-            data['a_edgewidth'] = edge_width
-        else:
-            data['a_edgewidth'] = size * 2. * edge_width_rel
+        data['a_edgewidth'] = edge_width
         data['a_position'][:, :pos.shape[1]] = pos
         data['a_wind'][:, :wind.shape[1]] = wind
-        data['a_size'] = size * 2.
+        data['a_size'] = size
         self.shared_program['u_antialias'] = antialias
         self._data = data
         self._vbo.set_data(data)
@@ -277,57 +261,3 @@ class WindbarbVisual(Visual):
             return (pos[:, axis].min(), pos[:, axis].max())
         else:
             return (0, 0)
-
-
-n = 50000
-pos = np.zeros((n, 2))
-colors = np.ones((n, 4), dtype=np.float32)
-pos = np.random.randint(0, 512, size=(n, 2))
-colors = np.random.uniform(0, 1, (n, 3)).astype(np.float32)
-wind = np.random.randint(10, 125, size=(n,2))
-
-
-class Canvas(app.Canvas):
-    def __init__(self):
-        app.Canvas.__init__(self, keys='interactive', size=(512, 512),
-                            title="Windbarb demo [use mouse wheel to scroll]")
-        self.markers = WindbarbVisual()
-        self.markers.set_data(pos, wind=wind, edge_color=colors,
-                              face_color=colors,
-                              size=50.,
-                              edge_width=2)
-        self.markers.transform = STTransform()
-
-        self.timer = app.Timer('auto', connect=self.on_timer, start=False)
-        self.show()
-
-    def on_draw(self, event):
-        self.context.clear(color='white')
-        self.markers.draw()
-
-    def on_mouse_wheel(self, event):
-        """Use the mouse wheel to zoom."""
-        self.markers.transform.zoom((1.25**event.delta[1],)*2, 
-                                    center=event.pos)
-        self.update()
-
-    def on_timer(self, event):
-        pos = np.random.randint(0, 512, size=(n, 2))
-        wind = np.random.randint(-100, 100, size=(n, 2))
-        colors = np.random.uniform(0, 1, (n, 3)).astype(np.float32)
-        self.markers.set_data(pos, wind=wind, edge_color=colors,
-                              face_color=colors, size=50.,
-                              edge_width=1.)
-        self.update()
-
-    def on_resize(self, event):
-        # Set canvas viewport and reconfigure visual transforms to match.
-        vp = (0, 0, self.physical_size[0], self.physical_size[1])
-        self.context.set_viewport(*vp)
-        self.markers.transforms.configure(viewport=vp, canvas=self)
-
-
-if __name__ == '__main__':
-    canvas = Canvas()
-    canvas.measure_fps()
-    app.run()
