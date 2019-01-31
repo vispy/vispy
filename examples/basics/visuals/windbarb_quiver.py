@@ -14,6 +14,7 @@ from vispy import app
 from vispy.visuals import WindbarbVisual
 from vispy.visuals.transforms import NullTransform
 
+
 class Canvas(app.Canvas):
     def __init__(self):
         app.Canvas.__init__(self, title="Windbarb plot", keys="interactive",
@@ -31,7 +32,7 @@ class Canvas(app.Canvas):
         direction_vectors = (self.grid_coords - self.last_mouse).astype(
             np.float32)
         direction_vectors[:] /= 5
-        direction_vectors[:,1] *= -1
+        direction_vectors[:, 1] *= -1
 
         self.visual = WindbarbVisual(pos=self.grid_coords,
                                      wind=direction_vectors,
