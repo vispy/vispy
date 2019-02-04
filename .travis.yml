@@ -9,7 +9,7 @@ addons:
     packages:
     - &mesa_apt [libgl1-mesa-dri]
     - &full_apt [libgl1-mesa-dri, libegl1-mesa, cmake, xorg-dev, libglu1-mesa-dev, mercurial, libdbus-1-dev, libgl1-mesa-dev, libglu1-mesa-dev, libpulse-dev, libx11-dev, libxcursor-dev, libxext-dev, libxi-dev, libxinerama-dev, libxrandr-dev, libxss-dev, libxt-dev, libxv-dev, libxxf86vm-dev, libasound2-dev, libts-dev, libudev-dev, libsdl2-2.0-0]
-    - &python_apt [python3-pip, python3-numpy, python3-opengl, python3-scipy, python3-networkx, python3-sdl2, python3-matplotlib, python3-jupyter-client, python3-jupyter-core, python3-jupyter-console, python3-jupyter-notebook, python3-pyqt4, python3-pil, python3-decorator, python3-six, python3-skimage, python3-nose, python3-pytest, cython3, python3-flake8, python3-mock]
+    - &python_apt [python3-pip, python3-numpy, python3-opengl, python3-scipy, python3-networkx, python3-matplotlib, python3-pyqt4, python3-pil, python3-decorator, python3-six, python3-skimage, python3-nose, python3-pytest, cython3, python3-flake8, python3-mock]
 # Size testing can be skipped by adding "[size skip]" within a commit message.
 
 matrix:
@@ -42,7 +42,7 @@ install:
     #- conda create -n testenv --yes --quiet pip python=$PYTHON pyopengl scipy numpy networkx numpydoc pysdl2 matplotlib jupyter pyqt=4 pillow decorator six scikit-image nose pytest cython coveralls pytest-cov pytest-sugar flake8 mock;
     #- source activate testenv;
     - if [ "${TRAVIS_OS_NAME}" == "linux" ]; then
-        pip install numpydoc coveralls pytest-cov pytest-sugar;
+        pip install numpydoc PySDL2 coveralls pytest-cov pytest-sugar;
       fi;
 
     # On Python3, install system-wide copies of bundled libraries instead
