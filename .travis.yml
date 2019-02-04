@@ -93,8 +93,8 @@ before_script:
     - if [ "${TEST}" == "osmesa" ]; then
         export LD_LIBRARY_PATH=$HOME/osmesa/lib;
         export LIBRARY_PATH=$HOME/osmesa/lib;
-        export VISPY_GL_LIB=$HOME/osmesa/lib/libOSMesa.so
-        export OSMESA_LIBRARY=$HOME/osmesa/lib/libOSMesa.so
+        export VISPY_GL_LIB=$HOME/osmesa/lib/libOSMesa.so;
+        export OSMESA_LIBRARY=$HOME/osmesa/lib/libOSMesa.so;
       fi;
 
 script:
