@@ -39,8 +39,7 @@ install:
     # Install numpy, flake
     - conda create -n testenv --yes --quiet pip python=$PYTHON;
     - source activate testenv;
-    - conda install --yes --quiet numpy$NUMPY nose pytest cython;
-    - pip install -q coveralls pytest-cov pytest-sugar flake8
+    - conda install --yes --quiet pyopengl scipy numpy networkx numpydoc pysdl2 matplotlib jupyter pyqt=4 pillow decorator six scikit-image nose pytest cython coveralls pytest-cov pytest-sugar flake8 mock;
 
     # On Python3, install system-wide copies of bundled libraries instead
     # Also install PyQt4, imaging (PIL or pillow), scipy, mpl, egl
@@ -54,17 +53,17 @@ install:
     # WX requires OSMesa (mesa on conda) which has typically been an
     # additional test environment. With llvm=3.3 the combination of
     # EGL and mesa causes segmentation faults. See issue #1401.
-    - if [ "${DEPS}" == "full" ]; then
-        conda install --yes pyopengl scipy numpy$NUMPY networkx;
-        pip install -q numpydoc PySDL2;
-        conda install --yes matplotlib jupyter pyqt=4 pillow decorator six scikit-image;
-        if [ "${PYTHON}" == "3.6" ]; then
-          pip install -q freetype-py husl pypng cassowary imageio;
-          rm -rf ${SRC_DIR}/vispy/ext/_bundled;
-        else
-          pip install -q mock;
-        fi;
-      fi;
+    #- if [ "${DEPS}" == "full" ]; then
+    #    conda install --yes pyopengl scipy numpy$NUMPY networkx;
+    #    pip install -q numpydoc PySDL2;
+    #    conda install --yes matplotlib jupyter pyqt=4 pillow decorator six scikit-image;
+    #    if [ "${PYTHON}" == "3.6" ]; then
+    #      pip install -q freetype-py husl pypng cassowary imageio;
+    #      rm -rf ${SRC_DIR}/vispy/ext/_bundled;
+    #    else
+    #      pip install -q mock;
+    #    fi;
+    #  fi;
 
     # Install vispy
     - cd ${SRC_DIR}
