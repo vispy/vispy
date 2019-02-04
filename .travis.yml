@@ -37,9 +37,8 @@ before_install:
 
 install:
     # Install numpy, flake
-    - conda create -n testenv --yes --quiet pip python=$PYTHON;
+    - conda create -n testenv --yes --quiet pip python=$PYTHON pyopengl scipy numpy networkx numpydoc pysdl2 matplotlib jupyter pyqt=4 pillow decorator six scikit-image nose pytest cython coveralls pytest-cov pytest-sugar flake8 mock;
     - source activate testenv;
-    - conda install --yes --quiet pyopengl scipy numpy networkx numpydoc pysdl2 matplotlib jupyter pyqt=4 pillow decorator six scikit-image nose pytest cython coveralls pytest-cov pytest-sugar flake8 mock;
 
     # On Python3, install system-wide copies of bundled libraries instead
     # Also install PyQt4, imaging (PIL or pillow), scipy, mpl, egl
