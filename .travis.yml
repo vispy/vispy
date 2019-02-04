@@ -1,7 +1,6 @@
 language: python
 
 # use container-based infrastructure
-sudo : false
 dist: trusty
 
 # liblgfw2 is not whitelisted by Travis, so we don't try using it here (not usable anyway)
