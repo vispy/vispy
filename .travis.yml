@@ -19,7 +19,7 @@ matrix:
     # has (on-screen) OpenGL installed, we need to setup environment variable
     # to avoid having the linker load the wrong libglapi.so which would cause
     # OSMesa to crash
-    - env: PYTHON=2.7 DEPS=full TEST=osmesa
+    - env: PYTHON=3.6 DEPS=full TEST=osmesa
       addons:
         apt:
           packages:
