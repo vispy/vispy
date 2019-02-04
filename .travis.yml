@@ -74,10 +74,10 @@ install:
     - if [ "${DEPS}" == "full" ] && [ "${TRAVIS_OS_NAME}" == "linux" ]; then
         git clone git://github.com/glfw/glfw.git;
         cd glfw;
-        cmake -DCMAKE_INSTALL_PREFIX=$HOME -DBUILD_SHARED_LIBS=true -DGLFW_BUILD_EXAMPLES=false -DGLFW_BUILD_TESTS=false -DGLFW_BUILD_DOCS=false .;
+        cmake -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX -DBUILD_SHARED_LIBS=true -DGLFW_BUILD_EXAMPLES=false -DGLFW_BUILD_TESTS=false -DGLFW_BUILD_DOCS=false .;
         make install;
         cd ~;
-        export GLFW_LIBRARY=${HOME}/lib/libglfw.so;
+        export GLFW_LIBRARY=${CONDA_PREFIX}/lib/libglfw.so;
       fi
 
     # Install OSMesa
