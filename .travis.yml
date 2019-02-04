@@ -10,7 +10,7 @@ addons:
     packages:
     - &mesa_apt [libgl1-mesa-dri]
     - &full_apt [libgl1-mesa-dri, libegl1-mesa, cmake, xorg-dev, libglu1-mesa-dev, mercurial, libdbus-1-dev, libgl1-mesa-dev, libglu1-mesa-dev, libpulse-dev, libx11-dev, libxcursor-dev, libxext-dev, libxi-dev, libxinerama-dev, libxrandr-dev, libxss-dev, libxt-dev, libxv-dev, libxxf86vm-dev, libasound2-dev, libts-dev, libudev-dev, libsdl2-2.0-0]
-
+    - &python_apt [python3-pip, python3-numpy, python3-opengl, python3-scipy, python3-networkx, python3-sdl2, python3-matplotlib, python3-jupyter-client, python3-jupyter-core, python3-jupyter-console, python3-jupyter-notebook, python3-pyqt4, python3-pil, python3-decorator, python3-six, python3-skimage, python3-nose, python3-pytest, cython3, python3-flake8, python3-mock]
 # Size testing can be skipped by adding "[size skip]" within a commit message.
 
 matrix:
@@ -19,26 +19,32 @@ matrix:
     # has (on-screen) OpenGL installed, we need to setup environment variable
     # to avoid having the linker load the wrong libglapi.so which would cause
     # OSMesa to crash
-    - env: PYTHON=3.6 DEPS=full TEST=osmesa
-    #  addons:
-    #    apt:
-    #      packages:
-    #        - *full_apt
+    - python: 3.6
+      env:
+        - PYTHON=3.6 DEPS=full TEST=osmesa
+      addons:
+        apt:
+          packages:
+            - *full_apt
+            - *python_apt
 
 
 before_install:
-    - wget -q http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
-    - chmod +x miniconda.sh
-    - ./miniconda.sh -b -p ~/anaconda
-    - export PATH=~/anaconda/bin:$PATH
-    - conda config --add channels conda-forge
-    - conda update --yes --quiet conda
+    #- wget -q http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
+    #- chmod +x miniconda.sh
+    #- ./miniconda.sh -b -p ~/anaconda
+    #- export PATH=~/anaconda/bin:$PATH
+    #- conda config --add channels conda-forge
+    #- conda update --yes --quiet conda
     - SRC_DIR=$(pwd)
 
 install:
     # Install numpy, flake
-    - conda create -n testenv --yes --quiet pip python=$PYTHON pyopengl scipy numpy networkx numpydoc pysdl2 matplotlib jupyter pyqt=4 pillow decorator six scikit-image nose pytest cython coveralls pytest-cov pytest-sugar flake8 mock;
-    - source activate testenv;
+    #- conda create -n testenv --yes --quiet pip python=$PYTHON pyopengl scipy numpy networkx numpydoc pysdl2 matplotlib jupyter pyqt=4 pillow decorator six scikit-image nose pytest cython coveralls pytest-cov pytest-sugar flake8 mock;
+    #- source activate testenv;
+    - if [ "${TRAVIS_OS_NAME}" == "linux" ]; then
+        pip install numpydoc coveralls pytest-cov pytest-sugar;
+      fi;
 
     # On Python3, install system-wide copies of bundled libraries instead
     # Also install PyQt4, imaging (PIL or pillow), scipy, mpl, egl
