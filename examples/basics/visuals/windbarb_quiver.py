@@ -31,11 +31,12 @@ class Canvas(app.Canvas):
 
         direction_vectors = (self.grid_coords - self.last_mouse).astype(
             np.float32)
-        direction_vectors[:] /= 5
+        direction_vectors[:] /= 10
         direction_vectors[:, 1] *= -1
 
         self.visual = WindbarbVisual(pos=self.grid_coords,
                                      wind=direction_vectors,
+                                     trig=False,
                                      edge_color='black',
                                      face_color='black',
                                      size=self.windbarb_length)
@@ -71,7 +72,7 @@ class Canvas(app.Canvas):
     def rotate_arrows(self, point_towards):
         direction_vectors = (self.grid_coords - point_towards).astype(
             np.float32)
-        direction_vectors[:] /= 5
+        direction_vectors[:] /= 10
         direction_vectors[:, 1] *= -1
 
         self.visual.set_data(
