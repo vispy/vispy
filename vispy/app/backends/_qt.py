@@ -251,7 +251,7 @@ class ApplicationBackend(BaseApplicationBackend):
         return app
 
     def _vispy_sleep(self, duration_sec):
-            QtTest.QTest.qWait(duration_sec * 1000)  # in ms
+        QtTest.QTest.qWait(duration_sec * 1000)  # in ms
 
 
 # ------------------------------------------------------------------ canvas ---
