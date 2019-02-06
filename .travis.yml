@@ -51,11 +51,10 @@ matrix:
     # has (on-screen) OpenGL installed, we need to setup environment variable
     # to avoid having the linker load the wrong libglapi.so which would cause
     # OSMesa to crash
-    - env: PYTHON=2.7 DEPS=full TEST=osmesa
+    - env: PYTHON=3.6 DEPS=osmesa TEST=osmesa
       addons:
         apt:
           packages:
-            - *full_apt
 
 
 before_install:
@@ -70,6 +69,9 @@ before_install:
     - export PATH=~/anaconda/bin:$PATH
     - conda config --add channels conda-forge
     - conda update --yes --quiet conda
+    # remove defaults, depend only on conda-forge
+    - conda config --remove channels defaults
+
 
     - SRC_DIR=$(pwd)
     # file size checks run on minimal build for time
@@ -100,11 +102,13 @@ before_install:
 
 
 install:
-    # Install numpy, flake
+    # create basic conda-forge environment
     - conda create -n testenv --yes --quiet pip python=$PYTHON;
     - source activate testenv;
-    - conda install --yes --quiet numpy$NUMPY nose pytest cython;
-    - pip install -q coveralls pytest-cov pytest-sugar flake8
+    # add needed packages common to all backends/tests
+    - conda install --yes --quiet numpy scipy nose pytest cython coveralls pytest-cov flake8;
+    # install pytest-sugar via pip, until 0.9.2 is available at conda-forge
+    - pip install -q pytest-sugar;
 
     # On Python3, install system-wide copies of bundled libraries instead
     # Also install PyQt4, imaging (PIL or pillow), scipy, mpl, egl
@@ -119,51 +123,31 @@ install:
     # additional test environment. With llvm=3.3 the combination of
     # EGL and mesa causes segmentation faults. See issue #1401.
     - if [ "${DEPS}" == "full" ]; then
-        conda install --yes pyopengl scipy numpy$NUMPY networkx;
-        pip install -q numpydoc PySDL2;
+        conda install --yes pyopengl networkx numpydoc pysdl2;
         if [ "${TRAVIS_OS_NAME}" == "linux" ]; then
-          conda install --yes matplotlib jupyter pyqt=5 pillow decorator six scikit-image;
+          conda install --yes matplotlib jupyter pyqt=5 pillow decorator six scikit-image glfw;
           if [ "${PYTHON}" == "3.6" ]; then
-            pip install -q freetype-py husl pypng cassowary imageio;
+            conda install --yes freetype-py imageio;
+            pip install -q husl pypng cassowary;
             rm -rf ${SRC_DIR}/vispy/ext/_bundled;
           else
-            pip install -q mock;
+            conda install --yes mock;
           fi;
         else
-          conda install --yes matplotlib jupyter pyqt=5 scikit-image;
-          pip install -q mock;
+          conda install --yes matplotlib jupyter pyqt=5 scikit-image mock;
         fi;
       fi;
 
-    # Force newest numpy (some dependencies downgrade for some reason
-    # (numpy 1.14.3 is bad)
-    - conda update --yes numpy
+     # Install OSMesa
+    - if [ "${DEPS}" == "osmesa" ]; then
+        conda install --yes mesalib libglu;
+      fi;
 
     # Install vispy
     - cd ${SRC_DIR}
     - python setup.py install
     - python setup.py develop
     - cd ~
-
-    # Install glfw (fails with virtual buffer on OSX)
-    - if [ "${DEPS}" == "full" ] && [ "${TRAVIS_OS_NAME}" == "linux" ]; then
-        git clone git://github.com/glfw/glfw.git;
-        cd glfw;
-        cmake -DCMAKE_INSTALL_PREFIX=$HOME -DBUILD_SHARED_LIBS=true -DGLFW_BUILD_EXAMPLES=false -DGLFW_BUILD_TESTS=false -DGLFW_BUILD_DOCS=false .;
-        make install;
-        cd ~;
-        if [ "${TRAVIS_OS_NAME}" == "linux" ]; then
-          export GLFW_LIBRARY=${HOME}/lib/libglfw.so;
-        else
-          export GLFW_LIBRARY=${HOME}/lib/libglfw.dylib;
-        fi;
-      fi
-
-    # Install OSMesa
-    - if [ "${TRAVIS_OS_NAME}" == "linux" ]; then
-        wget https://github.com/vispy/demo-data/raw/master/osmesa/osmesa_11.0.0_12.04.tar.bz2 -O /tmp/osmesa.tar.bz2;
-        mkdir $HOME/osmesa; tar -xvjf /tmp/osmesa.tar.bz2 -C $HOME/osmesa;
-      fi;
 
 
 before_script:
@@ -177,8 +161,7 @@ before_script:
         fi;
       fi;
     - if [ "${TEST}" == "osmesa" ]; then
-        export LD_LIBRARY_PATH=$HOME/osmesa/lib;
-        export LIBRARY_PATH=$HOME/osmesa/lib;
+        export OSMESA_LIBRARY=$CONDA_PREFIX/lib/libOSMesa32.so;
       fi;
 
 

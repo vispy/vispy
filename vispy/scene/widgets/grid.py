@@ -314,9 +314,9 @@ class Grid(Widget):
 
         for (x, xs) in enumerate(widget_grid):
             for(y, widget) in enumerate(xs):
-                    if widget is None:
-                        stretch_widths[y].append((width_grid[y][x], 1))
-                        stretch_heights[x].append((height_grid[x][y], 1))
+                if widget is None:
+                    stretch_widths[y].append((width_grid[y][x], 1))
+                    stretch_heights[x].append((height_grid[x][y], 1))
 
         for sws in stretch_widths:
             if len(sws) <= 1:
@@ -428,7 +428,7 @@ class Grid(Widget):
             Grid._add_gridding_height_constraints(self._solver,
                                                   self._height_grid)
         except RequiredFailure:
-                self._need_solver_recreate = True
+            self._need_solver_recreate = True
 
         # these are WEAK constraints, so these constraints will never fail
         # with a RequiredFailure.
