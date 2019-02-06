@@ -106,7 +106,7 @@ def _unit(mode, extra_arg_string, coverage=False):
                % (_line_sep, msg, env_str, extra_arg_string))
         print(msg)
     sys.stdout.flush()
-    return_code = run_subprocess(cmd, return_code=True, cwd=cwd,
+    return_code = run_subprocess(cmd, return_code=True, cwd=import_dir,
                                  env=env, stdout=None, stderr=None)[2]
     if return_code:
         raise RuntimeError('unit failure (%s)' % return_code)
@@ -120,7 +120,7 @@ def _unit(mode, extra_arg_string, coverage=False):
         out_name = op.join(cwd, '.vispy-coverage.%s' % mode)
         if op.isfile(out_name):
             os.remove(out_name)
-        os.rename(op.join(cwd, '.coverage'), out_name)
+        os.rename(op.join(import_dir, '.coverage'), op.join(cwd, out_name))
 
 
 def _docs():
