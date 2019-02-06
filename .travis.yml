@@ -52,6 +52,9 @@ matrix:
     # to avoid having the linker load the wrong libglapi.so which would cause
     # OSMesa to crash
     - env: PYTHON=3.6 DEPS=osmesa TEST=osmesa
+      addons:
+        apt:
+          packages:
 
 
 before_install:
