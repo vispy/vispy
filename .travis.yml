@@ -141,7 +141,7 @@ install:
       fi;
 
      # Install OSMesa
-    - if [ "${TRAVIS_OS_NAME}" == "linux" ] && [ "${DEPS}" == "osmesa" ]; then
+    - if [ "${DEPS}" == "osmesa" ]; then
         conda install --yes mesalib libglu;
       fi;
 
