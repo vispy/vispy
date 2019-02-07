@@ -125,7 +125,7 @@ install:
     - if [ "${DEPS}" == "full" ]; then
         conda install --yes pyopengl networkx numpydoc pysdl2;
         if [ "${TRAVIS_OS_NAME}" == "linux" ]; then
-          conda install --yes matplotlib jupyter pyqt=5 pillow decorator six scikit-image glfw;
+          conda install --yes matplotlib jupyter pyqt=5 pyside2 pillow decorator six scikit-image glfw;
           if [ "${PYTHON}" == "3.6" ]; then
             conda install --yes freetype-py imageio;
             pip install -q husl pypng cassowary;
