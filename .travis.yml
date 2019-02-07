@@ -134,7 +134,8 @@ install:
           else
             conda install --yes mock;
           fi;
-        else
+        fi;
+        if [ "${TRAVIS_OS_NAME}" == "darwin" ]; then
           conda install --yes -c defaults pyqt=4;
           conda install --yes matplotlib jupyter scikit-image mock;
         fi;
