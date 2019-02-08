@@ -52,6 +52,6 @@ def surface(func, umin=0, umax=2 * np.pi, ucount=64, urepeat=1.0,
             indices.append(i * (vcount) + j)
     indices = np.array(indices, dtype=itype)
     vertices["normal"] = normals(vertices["position"],
-                                 indices.reshape(len(indices) / 3, 3))
+                                 indices.reshape(len(indices)//3, 3))
 
     return vertices, indices
