@@ -1,3 +1,13 @@
+# -*- coding: utf-8 -*-
+# -----------------------------------------------------------------------------
+# Copyright (c) Vispy Development Team. All Rights Reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+# -----------------------------------------------------------------------------
+"""
+Demonstration of the Klein bottle rendering using Mesh.
+"""
+import sys
+
 from vispy import app, scene
 from vispy.geometry.parametric import surface
 
@@ -17,20 +27,19 @@ def klein(u, v):
 
 # Prepare canvas
 canvas = scene.SceneCanvas(keys='interactive', size=(800, 600), show=True)
-canvas.bgcolor = 'grey'
 
 # Set up a viewbox to display the image with interactive pan/zoom
 view = canvas.central_widget.add_view()
 
+# Add camera
+view.camera = scene.cameras.ArcballCamera(parent=view.scene)
+
+# Add mesh
 vertices, indices = surface(klein, urepeat=3)
 indices = indices.reshape(len(indices)//3, 3)
 mesh = scene.visuals.Mesh(vertices=vertices['position'], faces=indices,
                           color='white', parent=view.scene, shading='smooth')
 
-# Add camera
-cam = scene.cameras.ArcballCamera(fov=60, parent=view.scene)
 
-# Select camera
-view.camera = cam
-
-app.run()
+if __name__ == '__main__' and sys.flags.interactive == 0:
+    app.run()
