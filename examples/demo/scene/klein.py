@@ -6,7 +6,7 @@ def klein(u, v):
     from math import pi, cos, sin
     if u < pi:
         x = 3 * cos(u) * (1 + sin(u)) + \
-                (2 * (1 - cos(u) / 2)) * cos(u) * cos(v)
+            (2 * (1 - cos(u) / 2)) * cos(u) * cos(v)
         z = -8 * sin(u) - 2 * (1 - cos(u) / 2) * sin(u) * cos(v)
     else:
         x = 3 * cos(u) * (1 + sin(u)) + (2 * (1 - cos(u) / 2)) * cos(v + pi)
