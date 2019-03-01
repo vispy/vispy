@@ -6,6 +6,7 @@ environment:
   global:
       PYTHON: "C:\\conda"
       PYTHON_ARCH: "64"
+      CONDA_CHANNELS: "conda-forge"
 
   matrix:
       - PYTHON_VERSION: "2.7"

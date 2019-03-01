@@ -42,7 +42,7 @@ def compact(vertices, indices, tolerance=1e-3):
     I_ = indices.copy().ravel()
     for i in range(len(indices)):
         I_[i] = RI[indices[i]]
-    I_ = I_.reshape(len(indices)/3, 3)
+    I_ = I_.reshape(len(indices)//3, 3)
 
     # Return reduced vertices set, transalted indices and mapping that allows
     # to go from U to V
