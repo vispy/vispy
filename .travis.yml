@@ -111,12 +111,12 @@ install:
     - pip install -q pytest-sugar;
 
     # On Python3, install system-wide copies of bundled libraries instead
-    # Also install PyQt4, imaging (PIL or pillow), scipy, mpl, egl
+    # Also install PyQt5, imaging (PIL or pillow), scipy, mpl, egl
     # On conda, can't install pyside-pyzo b/c it conflicts with pyqt4,
     # which is required by matplotlib :(
     # wxpython available from conda-forge but not for OSX:
     #     https://github.com/conda-forge/wxpython-feedstock/issues/2
-    # If we only need a single backend (DEPS=backend), then use PyQT4
+    # If we only need a single backend (DEPS=backend), then use PyQT5
     # Don't test Pyglet because it currently segfaults (but AppVeyor checks it)
     # PyQt5 is currently broken, but will be installed on 3.6 so don't do it
     # WX requires OSMesa (mesa on conda) which has typically been an

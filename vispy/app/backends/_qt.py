@@ -77,8 +77,8 @@ if qt_lib == 'pyqt4':
 elif qt_lib == 'pyqt5':
     _check_imports('PyQt5')
     if not USE_EGL:
-        from PyQt5.QtCore import PYQT_VERSION_STR
-        if LooseVersion(PYQT_VERSION_STR) >= '5.4.0':
+        from PyQt5.QtCore import QT_VERSION_STR
+        if LooseVersion(QT_VERSION_STR) >= '5.4.0':
             from PyQt5.QtWidgets import QOpenGLWidget as QGLWidget
             from PyQt5.QtGui import QSurfaceFormat as QGLFormat
             QT5_NEW_API = True
@@ -89,7 +89,13 @@ elif qt_lib == 'pyqt5':
 elif qt_lib == 'pyside2':
     _check_imports('PySide2')
     if not USE_EGL:
-        from PySide2.QtOpenGL import QGLWidget, QGLFormat
+        from PySide2.QtCore import __version__ as QT_VERSION_STR
+        if LooseVersion(QT_VERSION_STR) >= '5.4.0':
+            from PySide2.QtWidgets import QOpenGLWidget as QGLWidget
+            from PySide2.QtGui import QSurfaceFormat as QGLFormat
+            QT5_NEW_API = True
+        else:
+            from PySide2.QtOpenGL import QGLWidget, QGLFormat
     from PySide2 import QtGui, QtCore, QtWidgets, QtTest
     QWidget, QApplication = QtWidgets.QWidget, QtWidgets.QApplication  # Compat
 elif qt_lib == 'pyside':
@@ -698,15 +704,15 @@ class CanvasBackendDesktop(QtBaseCanvasBackend, QGLWidget):
             # Need to create an offscreen surface so we can get GL parameters
             # without opening/showing the Widget. PyQt5 >= 5.4 will create the
             # valid context later when the widget is shown.
-            self._secondary_context = QtGui.QOpenGLContext()
-            self._secondary_context.setShareContext(self.context())
-            self._secondary_context.setFormat(glformat)
-            self._secondary_context.create()
+            # self._secondary_context = QtGui.QOpenGLContext()
+            # self._secondary_context.setShareContext(self.context())
+            # self._secondary_context.setFormat(glformat)
+            # self._secondary_context.create()
 
-            self._surface = QtGui.QOffscreenSurface()
-            self._surface.setFormat(glformat)
-            self._surface.create()
-            self._secondary_context.makeCurrent(self._surface)
+            # self._surface = QtGui.QOffscreenSurface()
+            # self._surface.setFormat(glformat)
+            # self._surface.create()
+            # self._secondary_context.makeCurrent(self._surface)
         else:
             # Qt4 and Qt5 < 5.4.0 - sharing is explicitly requested
             QGLWidget.__init__(self, p.parent, widget, hint)
