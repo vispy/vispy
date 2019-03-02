@@ -2,7 +2,7 @@ language: python
 
 # use container-based infrastructure
 sudo : false
-dist: trusty
+dist: xenial
 
 # liblgfw2 is not whitelisted by Travis, so we don't try using it here (not usable anyway)
 addons:
@@ -106,9 +106,7 @@ install:
     - conda create -n testenv --yes --quiet pip python=$PYTHON;
     - source activate testenv;
     # add needed packages common to all backends/tests
-    - conda install --yes --quiet numpy scipy nose pytest cython coveralls pytest-cov flake8;
-    # install pytest-sugar via pip, until 0.9.2 is available at conda-forge
-    - pip install -q pytest-sugar;
+    - conda install --yes --quiet numpy scipy nose pytest cython coveralls pytest-cov pytest-sugar flake8;
 
     # On Python3, install system-wide copies of bundled libraries instead
     # Also install PyQt5, imaging (PIL or pillow), scipy, mpl, egl
