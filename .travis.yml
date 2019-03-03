@@ -107,10 +107,9 @@ install:
 
     # On Python3, install system-wide copies of bundled libraries instead
     # Also install PyQt5, imaging (PIL or pillow), scipy, mpl, egl
-    # On conda, can't install pyside-pyzo b/c it conflicts with pyqt4,
-    # which is required by matplotlib :(
     # wxpython available from conda-forge but not for OSX:
     #     https://github.com/conda-forge/wxpython-feedstock/issues/2
+    # Don't test pyside2 because it seems to segfault on travis
     # If we only need a single backend (DEPS=backend), then use PyQT5
     # Don't test Pyglet because it currently segfaults (but AppVeyor checks it)
     # PyQt5 is currently broken, but will be installed on 3.6 so don't do it
@@ -120,7 +119,7 @@ install:
     - if [ "${DEPS}" == "full" ]; then
         conda install --yes pyopengl networkx numpydoc pysdl2;
         if [ "${TRAVIS_OS_NAME}" == "linux" ]; then
-          conda install --yes matplotlib jupyter pyqt=5 pyside2 pillow decorator six scikit-image glfw;
+          conda install --yes matplotlib jupyter pyqt=5 pillow decorator six scikit-image glfw;
           if [ "${PYTHON}" == "3.6" ]; then
             conda install --yes freetype-py imageio;
             pip install -q husl pypng cassowary;
