@@ -9,7 +9,8 @@ addons:
   apt:
     packages:
     - &mesa_apt [libgl1-mesa-dri]
-    - &full_apt [libgl1-mesa-dri, libegl1-mesa, cmake, xorg-dev, libglu1-mesa-dev, mercurial, libdbus-1-dev, libgl1-mesa-dev, libglu1-mesa-dev, libpulse-dev, libx11-dev, libxcursor-dev, libxext-dev, libxi-dev, libxinerama-dev, libxrandr-dev, libxss-dev, libxt-dev, libxv-dev, libxxf86vm-dev, libasound2-dev, libts-dev, libudev-dev, libsdl2-2.0-0]
+    - &full_apt [libgl1-mesa-dri, libegl1-mesa, cmake, xorg-dev, libglu1-mesa-dev, mercurial, libdbus-1-dev, libgl1-mesa-dev, libglu1-mesa-dev, libpulse-dev, libx11-dev, libxcursor-dev, libxext-dev, libxi-dev, libxinerama-dev, libxrandr-dev, libxss-dev, libxt-dev, libxv-dev, libxxf86vm-dev, libasound2-dev, libudev-dev, libsdl2-2.0-0]
+    # full_apt should also have 'libts-dev' but it is not available on xenial
 
 # Size testing can be skipped by adding "[size skip]" within a commit message.
 
@@ -34,6 +35,7 @@ matrix:
         apt:
           packages:
             - *mesa_apt
+            - *full_apt
     - env: PYTHON=3.6 DEPS=full TEST=examples  # test examples
       addons:
         apt:
