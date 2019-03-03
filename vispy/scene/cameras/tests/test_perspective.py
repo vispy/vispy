@@ -3,15 +3,12 @@
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
-import sys
-import pytest
 from vispy import scene, io
 from vispy.testing import (requires_application, TestingCanvas,
                            run_tests_if_main)
 from vispy.testing.image_tester import assert_image_approved
 
 
-@pytest.mark.xfail('darwin' in sys.platform, reason="Image does not match on some OSX systems")
 @requires_application()
 def test_perspective_render():
     with TestingCanvas(size=(120, 200)) as canvas:
