@@ -115,8 +115,10 @@ install:
     # WX requires OSMesa (mesa on conda) which has typically been an
     # additional test environment. With llvm=3.3 the combination of
     # EGL and mesa causes segmentation faults. See issue #1401.
+    # can remove the github numpydoc install once >0.8.0 is released and get it from conda
     - if [ "${DEPS}" == "full" ]; then
-        conda install --yes pyopengl networkx numpydoc pysdl2;
+        conda install --yes pyopengl networkx pysdl2;
+        pip install git+https://github.com/numpy/numpydoc;
         if [ "${TRAVIS_OS_NAME}" == "linux" ]; then
           conda install --yes matplotlib jupyter pyqt=5 pillow decorator six scikit-image glfw;
           if [ "${PYTHON}" == "3.7" ]; then
