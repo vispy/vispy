@@ -4,10 +4,6 @@ from vispy.gloo import gl
 from vispy.io import read_png
 from vispy.util.transforms import perspective, translate, rotate
 
-# DEPRECATED
-# from glumpy import app, gloo, gl, data
-# from glumpy.transforms import Trackball, Position
-
 vertex_shader = """
 attribute vec3 a_position;
 attribute vec3 a_texcoord;
@@ -24,25 +20,12 @@ void main()
 """
 
 fragment_shader = """
-//uniform sampler3D u_tex1;
-//uniform sampler3D u_tex2;
-//uniform sampler3D u_tex3;
-//uniform sampler3D u_tex4;
-//uniform sampler3D u_tex5;
-//uniform sampler3D u_tex6;
+uniform samplerCube texture;
 varying vec3 v_texcoord;
 
 void main()
 {
-    //vec3 clr1 = texture3D(u_tex1, v_texcoord).rgb;
-    //vec3 clr2 = texture3D(u_tex2, v_texcoord).rgb;
-    //vec3 clr3 = texture3D(u_tex3, v_texcoord).rgb;
-    //vec3 clr4 = texture3D(u_tex4, v_texcoord).rgb;
-    //vec3 clr5 = texture3D(u_tex5, v_texcoord).rgb;
-    //vec3 clr6 = texture3D(u_tex6, v_texcoord).rgb;
-    //gl_FragColor.rgb = clr1 + clr2 + clr3 + clr4 + clr5 + clr6;
-    //gl_FragColor.a = 1.0;
-    gl_FragColor = vec4(v_texcoord, 1.0);
+    gl_FragColor = textureCube(texture, v_texcoord);
 }
 """
 
@@ -54,7 +37,6 @@ faces = np.array([vertices[i] for i in [0, 1, 2, 3, 0, 3, 4, 5, 0, 5, 6, 1,
                                         6, 7, 2, 1, 7, 4, 3, 2, 4, 7, 6, 5]])
 indices = np.resize(np.array([0, 1, 2, 0, 2, 3], dtype=np.uint32), 36)
 indices += np.repeat(4 * np.arange(6, dtype=np.uint32), 6)
-# indices = indices.view(gloo.IndexBuffer)
 
 texture = np.zeros((6, 1024, 1024, 3), dtype=np.float32)
 texture[2] = read_png("sky-left.png")/255.
@@ -63,8 +45,6 @@ texture[0] = read_png("sky-front.png")/255.
 texture[1] = read_png("sky-back.png")/255.
 texture[4] = read_png("sky-up.png")/255.
 texture[5] = read_png("sky-down.png")/255.
-# window.attach(program["transform"])
-print("read is finished.")
 
 
 class Canvas(app.Canvas):
@@ -74,20 +54,14 @@ class Canvas(app.Canvas):
         self.program = gloo.Program(vertex_shader, fragment_shader, count=24)
         self.program['a_position'] = faces*10
         self.program['a_texcoord'] = faces
-        #self.program['u_tex1'] = gloo.Texture3D(texture[2], interpolation='linear')
-        #self.program['u_tex2'] = gloo.Texture3D(texture[3], interpolation='linear')
-        #self.program['u_tex3'] = gloo.Texture3D(texture[0], interpolation='linear')
-        #self.program['u_tex4'] = gloo.Texture3D(texture[1], interpolation='linear')
-        #self.program['u_tex5'] = gloo.Texture3D(texture[4], interpolation='linear')
-        #self.program['u_tex6'] = gloo.Texture3D(texture[5], interpolation='linear')
         self.program.bind(gloo.VertexBuffer(faces))
-        #self.program['texture'] = texture
-        #self.program['transform'] = Trackball(Position(), distance=0)
+        self.program['texture'] = gloo.TextureCube(texture, interpolation='linear')
 
-        self.default_view = np.array([[ 8.00000012e-01, 2.00000003e-01, -4.79999989e-01, 0.00000000e+00],
-            [-5.00000000e-01, 3.00000012e-01, -7.79999971e-01, 0.00000000e+00],
-            [-9.99999978e-03, 8.99999976e-01, -3.00000012e-01, 0.00000000e+00],
-            [-3.00000000e-01, -2.15000000e+01, -4.76000001e+01, 1.00000000e+00]],dtype=np.float32)
+        self.default_view = np.array([[8.00000012e-01, 2.00000003e-01, -4.79999989e-01, 0.00000000e+00],
+                                      [-5.00000000e-01, 3.00000012e-01, -7.79999971e-01, 0.00000000e+00],
+                                      [-9.99999978e-03, 8.99999976e-01, -3.00000012e-01, 0.00000000e+00],
+                                      [-3.00000000e-01, -2.15000000e+01, -4.76000001e+01, 1.00000000e+00]],
+                                     dtype=np.float32)
         self.view = self.default_view
         self.model = np.eye(4, dtype=np.float32)
         self.projection = np.eye(4, dtype=np.float32)

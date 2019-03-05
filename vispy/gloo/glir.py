@@ -374,6 +374,7 @@ class GlirParser(BaseGlirParser):
                           'Texture1D': GlirTexture1D,
                           'Texture2D': GlirTexture2D,
                           'Texture3D': GlirTexture3D,
+                          'TextureCube': GlirTextureCube,
                           'RenderBuffer': GlirRenderBuffer,
                           'FrameBuffer': GlirFrameBuffer,
                           }
@@ -1237,6 +1238,45 @@ class GlirTexture3D(GlirTexture):
         # Set alignment back
         if alignment != 4:
             gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 4)
+
+
+class GlirTextureCube(GlirTexture):
+    _target = gl.GL_TEXTURE_CUBE_MAP
+
+    def set_size(self, shape, format, internalformat):
+        format = as_enum(format)
+        internalformat = format if internalformat is None \
+            else as_enum(internalformat)
+        if (shape, format, internalformat) != self._shape_formats:
+            self._shape_formats = shape, format, internalformat
+            targets = [gl.GL_TEXTURE_CUBE_MAP_POSITIVE_X,
+                       gl.GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
+                       gl.GL_TEXTURE_CUBE_MAP_POSITIVE_Y,
+                       gl.GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
+                       gl.GL_TEXTURE_CUBE_MAP_POSITIVE_Z,
+                       gl.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z]
+            self.activate()
+            for target in targets:
+                gl.glTexImage2D(target, 0, internalformat, format,
+                                gl.GL_UNSIGNED_BYTE, shape[1:3])
+
+    def set_data(self, offset, data):
+        shape, format, internalformat = self._shape_formats
+        # y, x = offset
+        y, x = (0, 0)
+        # Get gtype
+        gtype = self._types.get(np.dtype(data.dtype), None)
+        if gtype is None:
+            raise ValueError("Type %r not allowed for texture" % data.dtype)
+        targets = [gl.GL_TEXTURE_CUBE_MAP_POSITIVE_X,
+                   gl.GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
+                   gl.GL_TEXTURE_CUBE_MAP_POSITIVE_Y,
+                   gl.GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
+                   gl.GL_TEXTURE_CUBE_MAP_POSITIVE_Z,
+                   gl.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z]
+        for i, target in enumerate(targets):
+            face = data[i]
+            gl.glTexSubImage2D(target, 0, x, y, format, gtype, face)
 
 
 class GlirRenderBuffer(GlirObject):
