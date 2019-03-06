@@ -260,7 +260,17 @@ class DataBuffer(Buffer):
 
         view = DataBufferView(self, key)
         self._views.append(weakref.ref(view))
+        self._remove_stale_views()
         return view
+
+    def _remove_stale_views(self):
+        # remove stale weak references to the view os our _views list doesn't
+        # grow without bound
+        # iterate backwards so we can remove while iterating
+        for i in reversed(range(len(self._views))):
+            view = self._views[i]
+            if view() is None:
+                del self._views[i]
 
     def __setitem__(self, key, data):
         """ Set data (deferred operation) """
