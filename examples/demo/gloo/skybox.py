@@ -1,3 +1,11 @@
+# -*- coding: utf-8 -*-
+# -----------------------------------------------------------------------------
+# Copyright (c) Vispy Development Team. All Rights Reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+# -----------------------------------------------------------------------------
+"""
+Demonstration of cube mapping with trackball interaction.
+"""
 import numpy as np
 import math
 from vispy import app, gloo
@@ -6,12 +14,11 @@ from vispy.io import read_png, load_data_file
 from vispy.util.transforms import perspective
 
 
-def lookAt(eye, target):
-    """Computes matrix to put camera looking at look point."""
+def lookAt(eye, target, up=[0, 0, 1]):
+    """Computes matrix to put eye looking at target point."""
     eye = np.asarray(eye).astype(np.float32)
     target = np.asarray(target).astype(np.float32)
-
-    up = np.asarray([0, 0, 1]).astype(np.float32)
+    up = np.asarray(up).astype(np.float32)
 
     vforward = eye - target
     vforward /= np.linalg.norm(vforward)
@@ -27,10 +34,10 @@ def lookAt(eye, target):
     return view
 
 
-def getView(angle, distance):
+def getView(angle, distance, target=[0, 0, 0]):
+    """Computes view matrix based on angle, distance and target."""
     eye = np.array([math.cos(angle), math.sin(angle), 1]) * distance
-    origin = [0, 0, 0]
-    return lookAt(eye, origin)
+    return lookAt(eye, target)
 
 
 vertex_shader = """
@@ -49,12 +56,12 @@ void main()
 """
 
 fragment_shader = """
-uniform samplerCube texture;
+uniform samplerCube a_texture;
 varying vec3 v_texcoord;
 
 void main()
 {
-    gl_FragColor = textureCube(texture, v_texcoord);
+    gl_FragColor = textureCube(a_texture, v_texcoord);
 }
 """
 
@@ -81,11 +88,11 @@ class Canvas(app.Canvas):
         self.program = gloo.Program(vertex_shader, fragment_shader, count=24)
         self.program['a_position'] = faces*10
         self.program['a_texcoord'] = faces
-        self.program.bind(gloo.VertexBuffer(faces))
-        self.program['texture'] = gloo.TextureCube(texture, interpolation='linear')
+        self.program['a_texture'] = gloo.TextureCube(texture, interpolation='linear')
 
         self.angle = 0
         self.distance = 25
+        self.sensitivity = 10.0
         self.view = getView(self.angle, self.distance)
         self.model = np.eye(4, dtype=np.float32)
         self.projection = np.eye(4, dtype=np.float32)
@@ -121,7 +128,7 @@ class Canvas(app.Canvas):
     def on_mouse_release(self, event):
         deltaX = event.pos[0]-self.mousex
         deltaAngle = deltaX * (2*math.pi) / self.size[0]
-        self.angle = (self.angle - deltaAngle/10.0) % (2*math.pi)
+        self.angle = (self.angle - deltaAngle/self.sensitivity) % (2*math.pi)
         self.program['u_view'] = getView(self.angle, self.distance)
         self.update()
 
