@@ -1,8 +1,37 @@
 import numpy as np
+import math
 from vispy import app, gloo
 from vispy.gloo import gl
 from vispy.io import read_png
-from vispy.util.transforms import perspective, translate, rotate
+from vispy.util.transforms import perspective
+
+
+def lookAt(eye, target):
+    """Computes matrix to put camera looking at look point."""
+    eye = np.asarray(eye).astype(np.float32)
+    target = np.asarray(target).astype(np.float32)
+
+    up = np.asarray([0, 0, 1]).astype(np.float32)
+
+    vforward = eye - target
+    vforward /= np.linalg.norm(vforward)
+    vright = np.cross(up, vforward)
+    vright /= np.linalg.norm(vright)
+    vup = np.cross(vforward, vright)
+
+    view = np.r_[vright, -np.dot(vright, eye),
+                 vup, -np.dot(vup, eye),
+                 vforward, -np.dot(vforward, eye),
+                 [0, 0, 0, 1]].reshape(4, 4, order='F')
+
+    return view
+
+
+def getView(angle, distance):
+    eye = np.array([math.cos(angle), math.sin(angle), 1]) * distance
+    origin = [0, 0, 0]
+    return lookAt(eye, origin)
+
 
 vertex_shader = """
 attribute vec3 a_position;
@@ -31,8 +60,6 @@ void main()
 
 vertices = np.array([[+1, +1, +1], [-1, +1, +1], [-1, -1, +1], [+1, -1, +1],
                      [+1, -1, -1], [+1, +1, -1], [-1, +1, -1], [-1, -1, -1]]).astype(np.float32)
-texcoords = np.array([[+1, +1, +1], [-1, +1, +1], [-1, -1, +1], [+1, -1, +1],
-                     [+1, -1, -1], [+1, +1, -1], [-1, +1, -1], [-1, -1, -1]]).astype(np.float32)
 faces = np.array([vertices[i] for i in [0, 1, 2, 3, 0, 3, 4, 5, 0, 5, 6, 1,
                                         6, 7, 2, 1, 7, 4, 3, 2, 4, 7, 6, 5]])
 indices = np.resize(np.array([0, 1, 2, 0, 2, 3], dtype=np.uint32), 36)
@@ -57,86 +84,47 @@ class Canvas(app.Canvas):
         self.program.bind(gloo.VertexBuffer(faces))
         self.program['texture'] = gloo.TextureCube(texture, interpolation='linear')
 
-        self.default_view = np.array([[8.00000012e-01, 2.00000003e-01, -4.79999989e-01, 0.00000000e+00],
-                                      [-5.00000000e-01, 3.00000012e-01, -7.79999971e-01, 0.00000000e+00],
-                                      [-9.99999978e-03, 8.99999976e-01, -3.00000012e-01, 0.00000000e+00],
-                                      [-3.00000000e-01, -2.15000000e+01, -4.76000001e+01, 1.00000000e+00]],
-                                     dtype=np.float32)
-        self.view = self.default_view
+        self.angle = 0
+        self.distance = 25
+        self.view = getView(self.angle, self.distance)
         self.model = np.eye(4, dtype=np.float32)
         self.projection = np.eye(4, dtype=np.float32)
 
-        self.translate = [0, 0, 0]
-        self.rotate = [0, 0, 0]
-
         self.program['u_model'] = self.model
         self.program['u_view'] = self.view
+        gloo.set_viewport(0, 0, *self.physical_size)
+        self.projection = perspective(60.0, self.size[0] /
+                                      float(self.size[1]), 1.0, 100.0)
+        self.program['u_projection'] = self.projection
 
         gl.glEnable(gl.GL_DEPTH_TEST)
         gloo.set_clear_color('black')
         self.show()
-        print("canvas.init()")
 
     def on_draw(self, event):
         gloo.clear(color=True, depth=True)
         self.program.draw(gl.GL_TRIANGLES, gloo.IndexBuffer(indices))
 
-    def on_key_press(self, event):
-        """Controls -
-        q(Q) - move left
-        d(D) - move right
-        z(Z) - move up
-        s(S) - move down
-        j/J - rotate about x-axis cw/anti-cw
-        k/K - rotate about y-axis cw/anti-cw
-        l/L - rotate about z-axis cw/anti-cw
-        space - reset view
-        p(P) - print current view
-        """
-        self.translate = [0, 0, 0]
-        self.rotate = [0, 0, 0]
-
-        if(event.text == 'p' or event.text == 'P'):
-            print(self.view)
-        elif(event.text == 'd' or event.text == 'D'):
-            self.translate[0] = 0.3
-        elif(event.text == 'q' or event.text == 'Q'):
-            self.translate[0] = -0.3
-        elif(event.text == 'z' or event.text == 'Z'):
-            self.translate[1] = 0.3
-        elif(event.text == 's' or event.text == 'S'):
-            self.translate[1] = -0.3
-        elif(event.text == 'j'):
-            self.rotate = [1, 0, 0]
-        elif(event.text == 'J'):
-            self.rotate = [-1, 0, 0]
-        elif(event.text == 'k'):
-            self.rotate = [0, 1, 0]
-        elif(event.text == 'K'):
-            self.rotate = [0, -1, 0]
-        elif(event.text == 'l'):
-            self.rotate = [0, 0, 1]
-        elif(event.text == 'L'):
-            self.rotate = [0, 0, -1]
-        elif(event.text == ' '):
-            self.view = self.default_view
-
-        self.view = self.view.dot(
-            translate(-np.array(self.translate)).dot(
-                rotate(self.rotate[0], (1, 0, 0)).dot(
-                    rotate(self.rotate[1], (0, 1, 0)).dot(
-                        rotate(self.rotate[2], (0, 0, 1))))))
-        self.program['u_view'] = self.view
+    def on_mouse_wheel(self, event):
+        deltaDistance = event.delta[1]
+        self.distance = self.distance - deltaDistance
+        if self.distance < 1.0:
+            self.distance = 1.0
+        if self.distance > 40.0:
+            self.distance = 40.0
+        self.program['u_view'] = getView(self.angle, self.distance)
         self.update()
 
-    def on_resize(self, event):
-        self.activate_zoom()
+    def on_mouse_press(self, event):
+        self.mousex = event.pos[0]
 
-    def activate_zoom(self):
-        gloo.set_viewport(0, 0, *self.physical_size)
-        self.projection = perspective(60.0, self.size[0] /
-                                      float(self.size[1]), 1.0, 100.0)
-        self.program['u_projection'] = self.projection
+    def on_mouse_release(self, event):
+        deltaX = event.pos[0]-self.mousex
+        deltaAngle = deltaX * (2*math.pi) / self.size[0]
+        self.angle = (self.angle - deltaAngle/10.0) % (2*math.pi)
+        self.program['u_view'] = getView(self.angle, self.distance)
+        self.update()
+
 
 if __name__ == '__main__':
     c = Canvas()
