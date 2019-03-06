@@ -38,6 +38,7 @@ from ... import config
 from . import qt_lib
 
 USE_EGL = config['gl_backend'].lower().startswith('es')
+PYQT5_SHARE_ENV = 'VISPY_PYQT5_SHARE_CONTEXT'
 
 # Get platform
 IS_LINUX = IS_OSX = IS_WIN = IS_RPI = False
@@ -197,7 +198,7 @@ capability = dict(  # things that can be set by the backend
     resizable=True,
     decorate=True,
     fullscreen=True,
-    context=True,
+    context=not QT5_NEW_API or os.getenv(PYQT5_SHARE_ENV, False),
     multi_window=True,
     scroll=True,
     parent=True,
@@ -239,7 +240,8 @@ class ApplicationBackend(BaseApplicationBackend):
 
     def __init__(self):
         BaseApplicationBackend.__init__(self)
-        if QT5_NEW_API:
+        # sharing is currently buggy and causes segmentation faults for tests with PyQt 5.6
+        if QT5_NEW_API and os.getenv(PYQT5_SHARE_ENV, False):
             # For Qt5 >= 5.4.0 - Enable sharing of context between windows.
             QApplication.setAttribute(QtCore.Qt.AA_ShareOpenGLContexts, True)
 
@@ -717,7 +719,7 @@ class CanvasBackendDesktop(QtBaseCanvasBackend, QGLWidget):
             # Qt4 and Qt5 < 5.4.0 - sharing is explicitly requested
             QGLWidget.__init__(self, p.parent, widget, hint)
             # unused with this API
-            self._secondary_context = None
+            # self._secondary_context = None
             self._surface = None
 
         self.setFormat(glformat)

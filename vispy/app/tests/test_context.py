@@ -1,6 +1,8 @@
 import os
 import sys
 
+import pytest
+
 from vispy.testing import (requires_application, SkipTest, run_tests_if_main,
                            assert_raises)
 from vispy.app import Canvas, use_app
@@ -74,6 +76,9 @@ def test_context_sharing():
             if 'pyglet' not in c2.app.backend_name.lower():
                 assert_raises(Exception, check)
 
+        # pyqt5 does not currently support context sharing (
+        if 'pyqt5' in c2.app.backend_name.lower():
+            pytest.xfail("Context sharing is not supported in PyQt5 at this time.")
         # Check while c2 is active (with *same* context)
         with Canvas(shared=c1.context) as c2:
             assert c1.context.shared is c2.context.shared  # same object
