@@ -2,7 +2,7 @@ import numpy as np
 import math
 from vispy import app, gloo
 from vispy.gloo import gl
-from vispy.io import read_png
+from vispy.io import read_png, load_data_file
 from vispy.util.transforms import perspective
 
 
@@ -66,12 +66,12 @@ indices = np.resize(np.array([0, 1, 2, 0, 2, 3], dtype=np.uint32), 36)
 indices += np.repeat(4 * np.arange(6, dtype=np.uint32), 6)
 
 texture = np.zeros((6, 1024, 1024, 3), dtype=np.float32)
-texture[2] = read_png("sky-left.png")/255.
-texture[3] = read_png("sky-right.png")/255.
-texture[0] = read_png("sky-front.png")/255.
-texture[1] = read_png("sky-back.png")/255.
-texture[4] = read_png("sky-up.png")/255.
-texture[5] = read_png("sky-down.png")/255.
+texture[2] = read_png(load_data_file("skybox/sky-left.png"))/255.
+texture[3] = read_png(load_data_file("skybox/sky-right.png"))/255.
+texture[0] = read_png(load_data_file("skybox/sky-front.png"))/255.
+texture[1] = read_png(load_data_file("skybox/sky-back.png"))/255.
+texture[4] = read_png(load_data_file("skybox/sky-up.png"))/255.
+texture[5] = read_png(load_data_file("skybox/sky-down.png"))/255.
 
 
 class Canvas(app.Canvas):
