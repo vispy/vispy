@@ -248,6 +248,7 @@ def _skip_example(fname):
             'examples/basics/plotting/colorbar.py',
             'examples/basics/plotting/plot.py',
             'examples/demo/gloo/high_frequency.py',
+            'examples/tutorial/app/shared_context.py',
         ]
         for bad_ex in bad_examples:
             if fname.endswith(bad_ex):
