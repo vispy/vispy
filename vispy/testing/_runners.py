@@ -251,7 +251,7 @@ def _skip_example(fname):
             'examples/demo/gloo/high_frequency.py',
             'examples/basics/scene/shared_context.py',
         ]
-    elif os.getenv('TRAVIS', 'false') == 'true' and 'nix' in sys.platform:
+    elif os.getenv('TRAVIS', 'false') == 'true' and 'linux' in sys.platform:
         # example scripts that contain non-ascii text
         # seem to fail on Travis OSX
         bad_examples = [
