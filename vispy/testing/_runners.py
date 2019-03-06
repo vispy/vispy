@@ -248,13 +248,18 @@ def _skip_example(fname):
             'examples/basics/plotting/colorbar.py',
             'examples/basics/plotting/plot.py',
             'examples/demo/gloo/high_frequency.py',
-            'examples/tutorial/app/shared_context.py',
             'examples/basics/scene/shared_context.py',
         ]
-        for bad_ex in bad_examples:
-            if fname.endswith(bad_ex):
-                return True
+    elif os.getenv('TRAVIS', 'false') == 'true' and 'nix' in sys.platform:
+        # example scripts that contain non-ascii text
+        # seem to fail on Travis OSX
+        bad_examples = [
+            'examples/basics/scene/shared_context.py',
+        ]
 
+    for bad_ex in bad_examples:
+        if fname.endswith(bad_ex):
+            return True
     return False
 
 
@@ -315,8 +320,7 @@ def _examples(fnames_str):
                     good = False
                     break
         if _skip_example(fname):
-            print("Skipping example that fails on " +
-                  "Travis CI OSX: {}".format(fname))
+            print("Skipping example that fails on Travis CI: {}".format(fname))
             good = False
         if not good:
             n_ran -= 1
