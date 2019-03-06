@@ -241,6 +241,7 @@ with canvas as c:
 
 
 def _skip_example(fname):
+    bad_examples = []
     if os.getenv('TRAVIS', 'false') == 'true' and sys.platform == 'darwin':
         # example scripts that contain non-ascii text
         # seem to fail on Travis OSX
