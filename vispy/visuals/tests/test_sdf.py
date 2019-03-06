@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
+import gc
+
 import numpy as np
 from numpy.testing import assert_allclose
 
@@ -54,7 +56,7 @@ def test_sdf():
     #     good to fix eventually.
 
     for Rend, expd in zip((SDFRendererGPU, SDFRendererCPU), (gpu, cpu)):
-        with Canvas(size=(100, 100)):
+        with Canvas(size=(100, 100)) as c:
             tex = gloo.Texture2D(data.shape + (3,), format='rgb')
             Rend().render_to_texture(data, tex, (0, 0), data.shape[::-1])
             gloo.set_viewport(0, 0, *data.shape[::-1])
@@ -62,6 +64,10 @@ def test_sdf():
             result = gloo.util._screenshot()[:, :, 0].astype(np.int)
             assert_allclose(result, expd, atol=1,
                             err_msg=Rend.__name__)
+            del tex, result
+        del c
+        # Do some garbage collection to make sure backend applications (PyQt5) actually clear things out
+        gc.collect()
 
 
 run_tests_if_main()
