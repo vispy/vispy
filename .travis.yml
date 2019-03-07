@@ -103,7 +103,7 @@ install:
     - conda create -n testenv --yes --quiet pip python=$PYTHON;
     - source activate testenv;
     # add needed packages common to all backends/tests
-    - conda install --yes --quiet numpy scipy nose pytest cython coveralls pytest-cov pytest-sugar flake8;
+    - conda install --yes --quiet numpy scipy nose pytest cython coveralls pytest-cov pytest-sugar pytest-faulthandler flake8;
 
     # On Python3, install system-wide copies of bundled libraries instead
     # Also install PyQt5, imaging (PIL or pillow), scipy, mpl, egl
@@ -179,6 +179,8 @@ script:
     - if [ "${DEPS}" == "minimal" ]; then
         echo "Size difference ${SIZE_DIFF} kB";
         if git log --format=%B -n 2 | grep -q "\[size skip\]"; then
+          echo "Skipping size test";
+        elif git log --format=%B -n 2 | grep -q "\[skip size\]"; then
           echo "Skipping size test";
         else
           test ${SIZE_DIFF} -lt 100;
