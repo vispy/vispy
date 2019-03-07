@@ -629,7 +629,8 @@ class TextureCube(BaseTexture):
         BaseTexture.__init__(self, data, format, resizable, interpolation,
                              wrapping, shape, internalformat, resizeable)
         if self._shape[0] != 6:
-            print("Texture cube require arrays first dimension to be 6")
+            raise ValueError("Texture cube require arrays first dimension to be 6 :"
+                             " {} was given.".format(self._shape[0]))
 
     @property
     def height(self):
