@@ -15,9 +15,11 @@ matrix:
     - env: PYTHON=3.7 DEPS=minimal TEST=standard
       os: osx
       language: generic
+      osx_image: xcode10.1
     - env: PYTHON=3.7 DEPS=full TEST=standard
       os: osx
       language: generic
+      osx_image: xcode10.1
 # Travis Examples are extremely slow for OSX (times out)
 #    - env: PYTHON=3.7 DEPS=full TEST=examples
 #      os: osx
