@@ -40,7 +40,7 @@ class Buffer(GLObject):
 
     def __init__(self, data=None, nbytes=None):
         GLObject.__init__(self)
-        self._views = []  # Views on this buffer (stored using weakrefs)
+        self._views = weakref.WeakSet()  # Views on this buffer
         self._valid = True  # To invalidate buffer views
         self._nbytes = 0  # Bytesize in bytes, set in resize_bytes()
 
@@ -125,9 +125,8 @@ class Buffer(GLObject):
         self._glir.command('SIZE', self._id, size)
         # Invalidate any view on this buffer
         for view in self._views:
-            if view() is not None:
-                view()._valid = False
-        self._views = []
+            view._valid = False
+        self._views = weakref.WeakSet()
 
 
 # -------------------------------------------------------- DataBuffer class ---
@@ -259,18 +258,8 @@ class DataBuffer(Buffer):
         """ Create a view on this buffer. """
 
         view = DataBufferView(self, key)
-        self._views.append(weakref.ref(view))
-        self._remove_stale_views()
+        self._views.add(view)
         return view
-
-    def _remove_stale_views(self):
-        # remove stale weak references to the view os our _views list doesn't
-        # grow without bound
-        # iterate backwards so we can remove while iterating
-        for i in reversed(range(len(self._views))):
-            view = self._views[i]
-            if view() is None:
-                del self._views[i]
 
     def __setitem__(self, key, data):
         """ Set data (deferred operation) """
