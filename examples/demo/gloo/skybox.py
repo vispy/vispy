@@ -7,7 +7,7 @@
 Demonstration of cube mapping with trackball interaction.
 """
 import numpy as np
-import math
+from math import cos, sin, pi
 from vispy import app, gloo
 from vispy.gloo import gl
 from vispy.io import read_png, load_data_file
@@ -34,10 +34,12 @@ def lookAt(eye, target, up=[0, 0, 1]):
     return view
 
 
-def getView(angle, distance, target=[0, 0, 0]):
+def getView(azimuth, elevation, distance, target=[0, 0, 0]):
     """Computes view matrix based on angle, distance and target."""
-    eye = np.array([math.cos(angle), math.sin(angle), 1]) * distance
-    return lookAt(eye, target)
+    x = distance * sin(elevation) * sin(azimuth)
+    y = distance * sin(-elevation) * cos(azimuth)
+    z = distance * cos(elevation)
+    return lookAt([x, y, z], target)
 
 
 vertex_shader = """
@@ -90,10 +92,14 @@ class Canvas(app.Canvas):
         self.program['a_texcoord'] = faces
         self.program['a_texture'] = gloo.TextureCube(texture, interpolation='linear')
 
-        self.angle = 0
-        self.distance = 25
-        self.sensitivity = 10.0
-        self.view = getView(self.angle, self.distance)
+        self.pressed = False
+        self.azimuth = pi
+        self.elevation = pi
+        self.distanceMin = 1
+        self.distanceMax = 50
+        self.distance = self.distanceMax / 2.0
+        self.sensitivity = 5.0
+        self.view = getView(self.azimuth, self.elevation, self.distance)
         self.model = np.eye(4, dtype=np.float32)
         self.projection = np.eye(4, dtype=np.float32)
 
@@ -115,22 +121,28 @@ class Canvas(app.Canvas):
     def on_mouse_wheel(self, event):
         deltaDistance = event.delta[1]
         self.distance = self.distance - deltaDistance
-        if self.distance < 1.0:
-            self.distance = 1.0
-        if self.distance > 40.0:
-            self.distance = 40.0
-        self.program['u_view'] = getView(self.angle, self.distance)
+        self.distance = min(max(self.distance, self.distanceMin), self.distanceMax)
+        self.program['u_view'] = getView(self.azimuth, self.elevation, self.distance)
         self.update()
 
     def on_mouse_press(self, event):
+        self.pressed = True
         self.mousex = event.pos[0]
+        self.mousey = event.pos[1]
 
     def on_mouse_release(self, event):
-        deltaX = event.pos[0]-self.mousex
-        deltaAngle = deltaX * (2*math.pi) / self.size[0]
-        self.angle = (self.angle - deltaAngle/self.sensitivity) % (2*math.pi)
-        self.program['u_view'] = getView(self.angle, self.distance)
-        self.update()
+        self.pressed = False
+
+    def on_mouse_move(self, event):
+        if self.pressed:
+            dazimuth = (event.pos[0] - self.mousex) * (2*pi) / self.size[0]
+            delevation = (event.pos[1] - self.mousey) * (2*pi) / self.size[1]
+            self.mousex = event.pos[0]
+            self.mousey = event.pos[1]
+            self.azimuth = (self.azimuth - dazimuth/self.sensitivity)
+            self.elevation = (self.elevation - delevation/self.sensitivity)
+            self.program['u_view'] = getView(self.azimuth, self.elevation, self.distance)
+            self.update()
 
 
 if __name__ == '__main__':
