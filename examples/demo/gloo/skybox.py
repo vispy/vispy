@@ -87,22 +87,23 @@ class Canvas(app.Canvas):
 
     def __init__(self):
         app.Canvas.__init__(self, size=(1024, 1024), keys='interactive')
-        self.program = gloo.Program(vertex_shader, fragment_shader, count=24)
-        self.program['a_position'] = faces*10
-        self.program['a_texcoord'] = faces
-        self.program['a_texture'] = gloo.TextureCube(texture, interpolation='linear')
 
+        self.cubeSize = 10
         self.pressed = False
-        self.azimuth = pi
-        self.elevation = pi
+        self.azimuth = pi / 2.0
+        self.elevation = pi / 2.0
         self.distanceMin = 1
         self.distanceMax = 50
-        self.distance = self.distanceMax / 2.0
+        self.distance = 30
         self.sensitivity = 5.0
         self.view = getView(self.azimuth, self.elevation, self.distance)
         self.model = np.eye(4, dtype=np.float32)
         self.projection = np.eye(4, dtype=np.float32)
 
+        self.program = gloo.Program(vertex_shader, fragment_shader, count=24)
+        self.program['a_position'] = faces*self.cubeSize
+        self.program['a_texcoord'] = faces
+        self.program['a_texture'] = gloo.TextureCube(texture, interpolation='linear')
         self.program['u_model'] = self.model
         self.program['u_view'] = self.view
         gloo.set_viewport(0, 0, *self.physical_size)
@@ -119,8 +120,7 @@ class Canvas(app.Canvas):
         self.program.draw(gl.GL_TRIANGLES, gloo.IndexBuffer(indices))
 
     def on_mouse_wheel(self, event):
-        deltaDistance = event.delta[1]
-        self.distance = self.distance - deltaDistance
+        self.distance = self.distance - event.delta[1]
         self.distance = min(max(self.distance, self.distanceMin), self.distanceMax)
         self.program['u_view'] = getView(self.azimuth, self.elevation, self.distance)
         self.update()
