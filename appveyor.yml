@@ -10,10 +10,10 @@ environment:
 
   matrix:
       - PYTHON_VERSION: "2.7"
-        CONDA_DEPENDENCIES: "numpy scipy matplotlib pyqt=5 jupyter setuptools nose pytest coverage pytest-cov pytest-sugar pytest-faulthandler cython coveralls mock"
+        CONDA_DEPENDENCIES: "numpy scipy setuptools nose pytest coverage pytest-cov pytest-sugar pytest-faulthandler cython coveralls mock"
         PIP_DEPENDENCIES: "git+https://github.com/numpy/numpydoc"
       - PYTHON_VERSION: "3.7"
-        CONDA_DEPENDENCIES: "numpy scipy matplotlib pyqt=5 jupyter setuptools nose pytest coverage pytest-cov pytest-sugar pytest-faulthandler cython coveralls"
+        CONDA_DEPENDENCIES: "numpy scipy setuptools nose pytest coverage pytest-cov pytest-sugar pytest-faulthandler cython coveralls"
         PIP_DEPENDENCIES: "git+https://github.com/numpy/numpydoc"
 # can remove the github numpydoc install once >0.8.0 is released
 
@@ -45,10 +45,6 @@ install:
 
   # Skip using MESA for now since AppVeyor is unreliable with it
   - "SET VISPY_GL_LIB=%CD%\\opengl32.dll"
-
-  # Update numpy to most recent
-  # (numpy 1.14.3 is bad)
-  - "conda update --yes numpy"
 
   # Install vispy
   - "python setup.py develop"

@@ -706,20 +706,20 @@ class CanvasBackendDesktop(QtBaseCanvasBackend, QGLWidget):
             # Need to create an offscreen surface so we can get GL parameters
             # without opening/showing the Widget. PyQt5 >= 5.4 will create the
             # valid context later when the widget is shown.
-            # self._secondary_context = QtGui.QOpenGLContext()
-            # self._secondary_context.setShareContext(self.context())
-            # self._secondary_context.setFormat(glformat)
-            # self._secondary_context.create()
+            self._secondary_context = QtGui.QOpenGLContext()
+            self._secondary_context.setShareContext(self.context())
+            self._secondary_context.setFormat(glformat)
+            self._secondary_context.create()
 
-            # self._surface = QtGui.QOffscreenSurface()
-            # self._surface.setFormat(glformat)
-            # self._surface.create()
-            # self._secondary_context.makeCurrent(self._surface)
+            self._surface = QtGui.QOffscreenSurface()
+            self._surface.setFormat(glformat)
+            self._surface.create()
+            self._secondary_context.makeCurrent(self._surface)
         else:
             # Qt4 and Qt5 < 5.4.0 - sharing is explicitly requested
             QGLWidget.__init__(self, p.parent, widget, hint)
             # unused with this API
-            # self._secondary_context = None
+            self._secondary_context = None
             self._surface = None
 
         self.setFormat(glformat)
