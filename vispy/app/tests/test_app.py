@@ -1,10 +1,12 @@
-import numpy as np
+import os
 import sys
 from collections import namedtuple
 from time import sleep
 import gc
 
+import numpy as np
 from numpy.testing import assert_array_equal
+import pytest
 
 from vispy.app import use_app, Canvas, Timer, MouseEvent, KeyEvent
 from vispy.app.base import BaseApplicationBackend
@@ -347,6 +349,8 @@ def test_close_keys():
     c.app.process_events()
 
 
+@pytest.mark.skipif(os.getenv('TRAVIS', 'false') == 'true' and 'darwin' in sys.platform,
+                    reason='Travis OSX causes segmentation fault on this test for an unknown reason.')
 @requires_application()
 def test_event_order():
     """Test event order"""
