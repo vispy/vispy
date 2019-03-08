@@ -2,6 +2,7 @@ import numpy as np
 import sys
 from collections import namedtuple
 from time import sleep
+import gc
 
 from numpy.testing import assert_array_equal
 
@@ -376,6 +377,8 @@ def test_event_order():
         assert_in('draw size=True', x[1])
         assert_in('draw size=True', x[-2])
         assert_equal(x[-1], 'close')
+        del c
+        gc.collect()
 
 
 def test_abstract():
