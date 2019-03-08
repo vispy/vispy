@@ -3,8 +3,12 @@
 # Copyright (c) 2014, Nicolas P. Rougier. All rights reserved.
 # Distributed under the terms of the new BSD License.
 # -----------------------------------------------------------------------------
+import os
+import sys
+
 import numpy as np
 from numpy.testing import assert_allclose
+import pytest
 
 from vispy.app import Canvas
 from vispy.gloo import (Texture2D, Texture3D, Program, FrameBuffer,
@@ -121,6 +125,8 @@ def test_use_texture3D():
             assert_allclose(out, expected, atol=1./255.)
 
 
+@pytest.mark.xfail(os.getenv('TRAVIS', 'false') == 'true' and 'darwin' in sys.platform,
+                   reason='Travis OSX causes segmentation fault on this test for an unknown reason.')
 @requires_application()
 def test_use_uniforms():
     """Test using uniform arrays"""

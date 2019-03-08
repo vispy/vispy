@@ -1,8 +1,12 @@
 # -*- coding: utf-8 -*-
 
+import os
+import sys
+from time import sleep
+
+import pytest
 import numpy as np
 from numpy.testing import assert_allclose
-from time import sleep
 
 from vispy.app import use_app, Canvas, Timer
 from vispy.testing import requires_application, SkipTest, run_tests_if_main
@@ -39,6 +43,8 @@ def _update_process_check(canvas, val, draw=True):
         raise
 
 
+@pytest.mark.xfail(os.getenv('TRAVIS', 'false') == 'true' and 'darwin' in sys.platform,
+                   reason='Travis OSX causes segmentation fault on this test for an unknown reason.')
 @requires_application()
 def test_multiple_canvases():
     """Testing multiple canvases"""
