@@ -677,10 +677,7 @@ def get_gl_configuration():
     gl.check_error('pre-config check')
     config = dict()
     canvas = get_current_canvas()
-    if canvas and hasattr(canvas, '_backend'):
-        fbo = canvas._backend._vispy_get_fb_bind_location()
-    else:
-        fbo = 0
+    fbo = 0 if canvas is None else canvas._backend._vispy_get_fb_bind_location()
     gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, fbo)
     fb_param = gl.glGetFramebufferAttachmentParameter
     # copied since they aren't in ES:
@@ -723,7 +720,7 @@ def get_gl_configuration():
         val = gl.glGetParameter(enum)
         try:
             gl.check_error('post-config check')
-        except Exception as exp:
+        except RuntimeError as exp:
             logger.warning('Failed to get %s: %s' % (key, exp))
         else:
             config[key] = bool(val)
