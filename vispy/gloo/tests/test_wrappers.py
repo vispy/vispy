@@ -38,9 +38,9 @@ def teardown_module():
 
 def test_wrappers_basic_glir():
     """ Test that basic gloo wrapper functions emit right GLIR command """
-    
+
     glir = install_dummy_glir()
-    
+
     funcs = [('viewport', 0, 0, 10, 10),
              ('depth_range', 0, 1),
              ('front_face', 'ccw'),
@@ -64,12 +64,12 @@ def test_wrappers_basic_glir():
              ('hint', 'foo', 'bar'),
              # not finish and flush, because that would flush the glir queue
              ]
-    
+
     for func in funcs:
         name, args = func[0], func[1:]
         f = getattr(gloo, 'set_' + name)
         f(*args)
-    
+
     cmds = glir.clear()
     assert len(cmds) == len(funcs)
     for i, func in enumerate(funcs):
@@ -81,7 +81,7 @@ def test_wrappers_basic_glir():
             assert cmd[1][:-8] == name
         else:
             assert cmd[1] == name
-    
+
     reset_glir()
 
 
@@ -89,7 +89,7 @@ def test_wrappers_glir():
     """ Test that special wrapper functions do what they must do """
 
     glir = install_dummy_glir()
-    
+
     # Test clear() function
     gloo.clear()
     cmds = glir.clear()
@@ -119,7 +119,7 @@ def test_wrappers_glir():
     assert cmds[1][1] == 'glClearDepth'
     assert cmds[2][1] == 'glClearStencil'
     assert cmds[3][1] == 'glClear'
-    
+
     # Test set_state() function
     gloo.set_state(foo=True, bar=False)
     cmds = set(glir.clear())
@@ -138,7 +138,7 @@ def test_wrappers_glir():
     gloo.set_state(a_preset)
     cmds = sorted(glir.clear())
     assert len(cmds) == len(presets[a_preset])
-    
+
     reset_glir()
 
 
@@ -229,6 +229,7 @@ def test_read_pixels():
     """
 
     with Canvas() as c:
+        c.set_current()
         gloo.set_viewport(0, 0, *c.size)
         c._program = gloo.Program(VERT_SHADER, FRAG_SHADER)
         c._program['a_position'] = gloo.VertexBuffer(vPosition)
