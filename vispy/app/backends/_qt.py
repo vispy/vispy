@@ -38,7 +38,6 @@ from ... import config
 from . import qt_lib
 
 USE_EGL = config['gl_backend'].lower().startswith('es')
-PYQT5_SHARE_ENV = 'VISPY_PYQT5_SHARE_CONTEXT'
 
 # Get platform
 IS_LINUX = IS_OSX = IS_WIN = IS_RPI = False
@@ -181,6 +180,17 @@ def message_handler(*args):
         logger.warning(msg)
 
 
+def use_shared_contexts():
+    """Enable context sharing for PyQt5 5.4+ API applications.
+
+    This is disabled by default for PyQt5 5.4+ due to occasional segmentation
+    faults and other issues when contexts are shared.
+
+    """
+    forced_env_var = os.getenv('VISPY_PYQT5_SHARE_CONTEXT', 'false').lower() == 'true'
+    return not QT5_NEW_API or forced_env_var
+
+
 try:
     QtCore.qInstallMsgHandler(message_handler)
 except AttributeError:
@@ -198,7 +208,7 @@ capability = dict(  # things that can be set by the backend
     resizable=True,
     decorate=True,
     fullscreen=True,
-    context=not QT5_NEW_API or os.getenv(PYQT5_SHARE_ENV, False),
+    context=use_shared_contexts(),
     multi_window=True,
     scroll=True,
     parent=True,
@@ -241,7 +251,7 @@ class ApplicationBackend(BaseApplicationBackend):
     def __init__(self):
         BaseApplicationBackend.__init__(self)
         # sharing is currently buggy and causes segmentation faults for tests with PyQt 5.6
-        if QT5_NEW_API and os.getenv(PYQT5_SHARE_ENV, False):
+        if QT5_NEW_API and use_shared_contexts():
             # For Qt5 >= 5.4.0 - Enable sharing of context between windows.
             QApplication.setAttribute(QtCore.Qt.AA_ShareOpenGLContexts, True)
 
