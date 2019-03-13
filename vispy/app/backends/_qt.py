@@ -315,20 +315,14 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
         self._vispy_set_size(*p.size)
         if p.fullscreen is not False:
             if p.fullscreen is not True:
-                logger.warning('Cannot specify monitor number for Qt '
-                               'fullscreen, using default')
+                logger.warning('Cannot specify monitor number for Qt fullscreen, using default')
             self._fullscreen = True
         else:
             self._fullscreen = False
 
         # must set physical size before setting visible or fullscreen
         # operations may make the size invalid
-        if hasattr(self, 'devicePixelRatio'):
-            # handle high DPI displays in PyQt5
-            ratio = self.devicePixelRatio()
-        else:
-            ratio = 1
-        self._physical_size = (p.size[0] * ratio, p.size[1] * ratio)
+        self._physical_size = p.size
 
         if not p.resizable:
             self.setFixedSize(self.size())
@@ -367,12 +361,21 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
         self.resize(w, h)
 
     def _vispy_set_physical_size(self, w, h):
+        print("Setting physical size to: ", w, h)
         self._physical_size = (w, h)
 
     def _vispy_get_physical_size(self):
         if self._vispy_canvas is None:
             return
-        return self._physical_size
+        pz = self._physical_size
+        if hasattr(self, 'devicePixelRatio'):
+            # We take into account devicePixelRatio, which is non-unity on
+            # e.g HiDPI displays.
+            # we do this here instead of when physical size is set in case the user has
+            # moved the Widget from one display to another with differing resolution
+            ratio = self.devicePixelRatio()
+            pz = (pz[0] * ratio, pz[1] * ratio)
+        return pz
 
     def _vispy_set_position(self, x, y):
         # Set location of the widget or window. May have no effect for widgets
@@ -782,15 +785,9 @@ class CanvasBackendDesktop(QtBaseCanvasBackend, QGLWidget):
     def resizeGL(self, w, h):
         if self._vispy_canvas is None:
             return
-        if qt_lib == 'pyqt5':
-            # We take into account devicePixelRatio, which is non-unity on
-            # e.g HiDPI displays.
-            ratio = self.devicePixelRatio()
-            w = w * ratio
-            h = h * ratio
         self._vispy_set_physical_size(w, h)
-        self._vispy_canvas.events.resize(size=(self.width(), self.height()),
-                                         physical_size=(w, h))
+        w, h = self._vispy_get_physical_size()
+        self._vispy_canvas.events.resize(size=(self.width(), self.height()), physical_size=(w, h))
 
     def paintGL(self):
         if self._vispy_canvas is None:
