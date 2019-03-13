@@ -1242,6 +1242,14 @@ class GlirTexture3D(GlirTexture):
 
 class GlirTextureCube(GlirTexture):
     _target = gl.GL_TEXTURE_CUBE_MAP
+    _cube_targets = [
+        gl.GL_TEXTURE_CUBE_MAP_POSITIVE_X,
+        gl.GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
+        gl.GL_TEXTURE_CUBE_MAP_POSITIVE_Y,
+        gl.GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
+        gl.GL_TEXTURE_CUBE_MAP_POSITIVE_Z,
+        gl.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z,
+    ]
 
     def set_size(self, shape, format, internalformat):
         format = as_enum(format)
@@ -1249,34 +1257,29 @@ class GlirTextureCube(GlirTexture):
             else as_enum(internalformat)
         if (shape, format, internalformat) != self._shape_formats:
             self._shape_formats = shape, format, internalformat
-            targets = [gl.GL_TEXTURE_CUBE_MAP_POSITIVE_X,
-                       gl.GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
-                       gl.GL_TEXTURE_CUBE_MAP_POSITIVE_Y,
-                       gl.GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
-                       gl.GL_TEXTURE_CUBE_MAP_POSITIVE_Z,
-                       gl.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z]
             self.activate()
-            for target in targets:
+            for target in self._cube_targets:
                 gl.glTexImage2D(target, 0, internalformat, format,
                                 gl.GL_UNSIGNED_BYTE, shape[1:3])
 
     def set_data(self, offset, data):
         shape, format, internalformat = self._shape_formats
-        # y, x = offset
-        y, x = (0, 0)
+        y, x = offset[:2]
         # Get gtype
         gtype = self._types.get(np.dtype(data.dtype), None)
         if gtype is None:
             raise ValueError("Type %r not allowed for texture" % data.dtype)
-        targets = [gl.GL_TEXTURE_CUBE_MAP_POSITIVE_X,
-                   gl.GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
-                   gl.GL_TEXTURE_CUBE_MAP_POSITIVE_Y,
-                   gl.GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
-                   gl.GL_TEXTURE_CUBE_MAP_POSITIVE_Z,
-                   gl.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z]
-        for i, target in enumerate(targets):
-            face = data[i]
-            gl.glTexSubImage2D(target, 0, x, y, format, gtype, face)
+        self.activate()
+        # Set alignment (width is nbytes_per_pixel * npixels_per_line)
+        alignment = self._get_alignment(data.shape[-2] * data.shape[-1])
+        if alignment != 4:
+            gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, alignment)
+        # Upload
+        for i, target in enumerate(self._cube_targets):
+            gl.glTexSubImage2D(target, 0, x, y, format, gtype, data[i])
+        # Set alignment back
+        if alignment != 4:
+            gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 4)
 
 
 class GlirRenderBuffer(GlirObject):

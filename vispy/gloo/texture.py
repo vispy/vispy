@@ -591,7 +591,7 @@ class Texture3D(BaseTexture):
 
 # --------------------------------------------------------- TextureCube class ---
 class TextureCube(BaseTexture):
-    """ Cube dimensional texture
+    """ Texture Cube
 
     Parameters
     ----------
@@ -641,6 +641,11 @@ class TextureCube(BaseTexture):
     def width(self):
         """ Texture width """
         return self._shape[2]
+
+    @property
+    def depth(self):
+        """ Texture depth """
+        return self._shape[0]
 
     @property
     def glsl_type(self):
