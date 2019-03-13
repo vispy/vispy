@@ -361,7 +361,6 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
         self.resize(w, h)
 
     def _vispy_set_physical_size(self, w, h):
-        print("Setting physical size to: ", w, h)
         self._physical_size = (w, h)
 
     def _vispy_get_physical_size(self):
