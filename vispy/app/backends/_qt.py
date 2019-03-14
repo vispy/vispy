@@ -341,6 +341,13 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
         # avoid double events
         self._double_click_supported = True
 
+        try:
+            # see screen_changed docstring for more details
+            self.window().windowHandle().screenChanged.connect(self.screen_changed)
+        except AttributeError:
+            # either not PyQt5 backend or no parent window available
+            pass
+
         # Activate touch and gesture.
         # NOTE: we only activate touch on OS X because there seems to be
         # problems on Ubuntu computers with touchscreen.
@@ -348,6 +355,17 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
         if sys.platform == 'darwin':
             self.setAttribute(QtCore.Qt.WA_AcceptTouchEvents)
             self.grabGesture(QtCore.Qt.PinchGesture)
+
+    def screen_changed(self, new_screen):
+        """Window moved from one display to another, resize canvas.
+
+        If display resolutions are the same this is essentially a no-op except for the redraw.
+        If the display resolutions differ (HiDPI versus regular displays) the canvas needs to
+        be redrawn to reset the physical size based on the current `devicePixelRatio()` and
+        redrawn with that new size.
+
+        """
+        self.resizeGL(*self._vispy_get_size())
 
     def _vispy_warmup(self):
         etime = time() + 0.25
@@ -782,7 +800,7 @@ class CanvasBackendDesktop(QtBaseCanvasBackend, QGLWidget):
     def resizeGL(self, w, h):
         if self._vispy_canvas is None:
             return
-        if qt_lib == 'pyqt5':
+        if hasattr(self, 'devicePixelRatio'):
             # We take into account devicePixelRatio, which is non-unity on
             # e.g HiDPI displays.
             ratio = self.devicePixelRatio()
