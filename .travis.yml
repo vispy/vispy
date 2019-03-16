@@ -124,7 +124,7 @@ install:
         if [ "${TRAVIS_OS_NAME}" == "linux" ]; then
           conda install --yes matplotlib jupyter pyqt=5 pillow decorator six scikit-image glfw;
           if [ "${PYTHON}" == "3.7" ]; then
-            conda install --yes freetype-py imageio;
+            conda install --yes freetype-py imageio "freetype<2.10.0";
             pip install -q husl pypng cassowary;
             rm -rf ${SRC_DIR}/vispy/ext/_bundled;
           else
