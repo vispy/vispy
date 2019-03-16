@@ -28,6 +28,8 @@ class AxisWidget(Widget):
         self.axis = AxisVisual(**kwargs)
         self.orientation = orientation
         self._linked_view = None
+        # keep track of the transformation from us to the linked view
+        self._tr = None
         Widget.__init__(self)
         self.add_subvisual(self.axis)
 
@@ -76,13 +78,20 @@ class AxisWidget(Widget):
                 self._view_changed)
         self._linked_view = view
         view.scene.transform.changed.connect(self._view_changed)
+        self._tr = self.node_transform(self._linked_view.scene)
         self._view_changed()
         
     def _view_changed(self, event=None):
         """Linked view transform has changed; update ticks.
         """
-        tr = self.node_transform(self._linked_view.scene)
-        p1, p2 = tr.map(self._axis_ends())
+        if self._tr is None:
+            raise RuntimeError('_view_changed() was called before link_view()')
+        # if the list of transforms has changed, we need to update our current
+        # _tr's list of transforms
+        _transforms = self.node_path_transforms(self._linked_view.scene)
+        if _transforms != self._tr.transforms:
+            self._tr.transforms = _transforms
+        p1, p2 = self._tr.map(self._axis_ends())
         if self.orientation in ('left', 'right'):
             self.axis.domain = (p1[1], p2[1])
         else:
