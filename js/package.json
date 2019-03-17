@@ -25,12 +25,12 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "devDependencies": {
-    "rimraf": "^2.6.1",
-    "webpack": "^4.6.0",
-    "webpack-cli": "^2.1.2"
+    "rimraf": "^2.6.3",
+    "webpack": "^4.29.6",
+    "webpack-cli": "^3.3.0"
   },
   "dependencies": {
-    "@jupyter-widgets/base": "^1.1.10",
-    "lodash": "^4.17.10"
+    "@jupyter-widgets/base": "^1.2.3",
+    "lodash": "^4.17.11"
   }
 }
