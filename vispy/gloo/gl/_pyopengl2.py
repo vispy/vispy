@@ -11,9 +11,6 @@ from OpenGL import GL
 import OpenGL.GL.framebufferobjects as FBO
 
 
-
-
-
 def glBindAttribLocation(program, index, name):
     name = name.encode('utf-8')
     return GL.glBindAttribLocation(program, index, name)
@@ -88,14 +85,8 @@ def glCreateTexture():
 
 def glGetActiveAttrib(program, index):
     bufsize = 256
-    length = (ctypes.c_int*1)()
-    size = (ctypes.c_int*1)()
-    type = (ctypes.c_uint*1)()
-    name = ctypes.create_string_buffer(bufsize)
-    # pyopengl has a bug, this is a patch
-    GL.glGetActiveAttrib(program, index, bufsize, length, size, type, name)
-    name = name[:length[0]].decode('utf-8')
-    return name, size[0], type[0]
+    name, size, type = GL.glGetActiveAttrib(program, index, bufSize=bufsize)
+    return name.decode('utf-8'), size, type
 
 
 def glGetActiveUniform(program, index):

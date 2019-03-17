@@ -392,7 +392,8 @@ class GlirParser(BaseGlirParser):
             # This context is made current
             self.env.clear()
             self._gl_initialize()
-            gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, 0)
+            self.env['fbo'] = args[0]
+            gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, args[0])
         elif cmd == 'FUNC':
             # GL function call
             args = [as_enum(a) for a in args]
@@ -1336,13 +1337,15 @@ class GlirFrameBuffer(GlirObject):
             self.deactivate()
 
     def activate(self):
-        stack = self._parser.env.setdefault('fb_stack', [0])
+        stack = self._parser.env.setdefault('fb_stack',
+                                            [self._parser.env['fbo']])
         if stack[-1] != self._handle:
             stack.append(self._handle)
             gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, self._handle)
 
     def deactivate(self):
-        stack = self._parser.env.setdefault('fb_stack', [0])
+        stack = self._parser.env.setdefault('fb_stack',
+                                            [self._parser.env['fbo']])
         while self._handle in stack:
             stack.remove(self._handle)
         gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, stack[-1])
