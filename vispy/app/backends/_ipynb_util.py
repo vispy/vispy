@@ -50,8 +50,7 @@ def _serialize_item(item):
     if isinstance(item, (list, tuple)):
         return [_serialize_item(subitem) for subitem in item]
     elif isinstance(item, dict):
-        return dict([(key, _serialize_item(value))
-                     for (key, value) in iteritems(item)])
+        return dict([(key, _serialize_item(value)) for (key, value) in iteritems(item)])
 
     # Serialize strings.
     elif isinstance(item, string_types):

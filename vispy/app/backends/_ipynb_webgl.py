@@ -120,7 +120,8 @@ class WebGLGlirParser(BaseGlirParser):
                 # shader source code
                 c = c[:3] + (convert_shader('es2', c[3]),)
             new_commands.append(c)
-        self._widget.send_glir_commands(new_commands)
+        if new_commands:
+            self._widget.send_glir_commands(new_commands)
 
 
 class CanvasBackend(BaseCanvasBackend):
