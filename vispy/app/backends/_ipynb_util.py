@@ -68,8 +68,9 @@ def _serialize_item(item):
     # Serialize numbers.
     else:
         try:
-            return np.asscalar(item)
-        except Exception:
+            # convert to scalar
+            return item.item()
+        except (AttributeError, ValueError):
             return item
 
 
