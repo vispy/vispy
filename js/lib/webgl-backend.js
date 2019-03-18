@@ -145,5 +145,5 @@ var VispyView = widgets.DOMWidgetView.extend({
 
 
 module.exports = {
-    VispyView: VispyView,
+    VispyView: VispyView
 };
