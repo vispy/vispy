@@ -208,15 +208,18 @@ EGL_ALPHA_FORMAT_PRE = EGL_VG_ALPHA_FORMAT_PRE
 ## The functions
 
 _lib.eglGetDisplay.argtypes = _c_int,
-_lib.eglGetDisplay.restype = _c_int
+_lib.eglGetDisplay.restype = c_void_p
 _lib.eglInitialize.argtypes = c_void_p, _POINTER(_c_int), _POINTER(_c_int)
 _lib.eglTerminate.argtypes = c_void_p,
 _lib.eglChooseConfig.argtypes = (c_void_p, _POINTER(_c_int),
                                  _POINTER(c_void_p), _c_int, _POINTER(_c_int))
 _lib.eglCreateWindowSurface.argtypes = (c_void_p, c_void_p,
                                         c_void_p, _POINTER(_c_int))
+_lib.eglCreateWindowSurface.restype = c_void_p
 _lib.eglCreatePbufferSurface.argtypes = (c_void_p, c_void_p, _POINTER(_c_int))
+_lib.eglCreatePbufferSurface.restype = c_void_p
 _lib.eglCreateContext.argtypes = c_void_p, c_void_p, c_void_p, _POINTER(_c_int)
+_lib.eglCreateContext.restype = c_void_p
 _lib.eglMakeCurrent.argtypes = (c_void_p,) * 4
 _lib.eglBindAPI.argtypes = _c_int,
 _lib.eglSwapBuffers.argtypes = (c_void_p,) * 2
@@ -237,7 +240,7 @@ def eglGetDisplay(display=EGL_DEFAULT_DISPLAY):
     res = _lib.eglGetDisplay(display)
     if not res or res == EGL_NO_DISPLAY:
         raise RuntimeError('Could not create display')
-    return res
+    return c_void_p(res)
 
 
 def eglInitialize(display):
@@ -321,16 +324,16 @@ def _check_res(res):
 def eglCreateWindowSurface(display, config, window, attribList=None):
     # Deal with attrib list
     attribList = _convert_attrib_list(attribList)
-    return _check_res(_lib.eglCreateWindowSurface(display, config,
-                                                  window, attribList))
+    surface = c_void_p(_lib.eglCreateWindowSurface(display, config, window, attribList))
+    return _check_res(surface)
 
 
 def eglCreatePbufferSurface(display, config, attribList=None):
     # Deal with attrib list
     attribList = _convert_attrib_list(attribList)
     #
-    return _check_res(_lib.eglCreatePbufferSurface(display, config,
-                                                   attribList))
+    surface = c_void_p(_lib.eglCreatePbufferSurface(display, config, attribList))
+    return _check_res(surface)
 
 
 def eglCreateContext(display, config, shareContext=EGL_NO_CONTEXT,
@@ -340,7 +343,7 @@ def eglCreateContext(display, config, shareContext=EGL_NO_CONTEXT,
     attribList = [a for a in attribList] + [EGL_NONE]
     attribList = (_c_int*len(attribList))(*attribList)
     #
-    res = _lib.eglCreateContext(display, config, shareContext, attribList)
+    res = c_void_p(_lib.eglCreateContext(display, config, shareContext, attribList))
     if res == EGL_NO_CONTEXT:
         e = eglGetError()
         if e == EGL_BAD_CONFIG:
