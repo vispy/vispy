@@ -240,6 +240,14 @@ class ChainTransform(BaseTransform):
         tr = ",\n                 ".join(map(repr, self.transforms))
         return "<ChainTransform [%s] at 0x%x>" % (tr, id(self))
 
+    def __del__(self):
+        # remove all the children transforms from our callback, since we are
+        # being deleted.  (But we do *not* want to remove children from other
+        # callbacks)
+        for t in self._transforms:
+            t.changed.disconnect(self._subtr_changed)
+        self.changed.disconnect()
+
 
 class SimplifiedChainTransform(ChainTransform):
     def __init__(self, chain):

@@ -49,7 +49,7 @@ class Buffer(GLObject):
     def __init__(self, data=None, nbytes=None, use_cpu=False,
                  immediate_upload=True):
         GLObject.__init__(self)
-        self._views = []  # Views on this buffer (stored using weakrefs)
+        self._views = weakref.WeakSet()  # Views on this buffer
         self._valid = True  # To invalidate buffer views
         self._nbytes = 0  # Bytesize in bytes, set in resize_bytes()
         if not use_cpu and not immediate_upload:
@@ -226,9 +226,8 @@ class Buffer(GLObject):
 
         # Invalidate any view on this buffer
         for view in self._views:
-            if view() is not None:
-                view()._valid = False
-        self._views = []
+            view._valid = False
+        self._views = weakref.WeakSet()
 
         # Reset CPU buffer
         if self._use_cpu:
@@ -372,7 +371,7 @@ class DataBuffer(Buffer):
         """ Create a view on this buffer. """
 
         view = DataBufferView(self, key)
-        self._views.append(weakref.ref(view))
+        self._views.add(view)
         return view
 
     def __setitem__(self, key, data):

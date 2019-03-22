@@ -14,9 +14,12 @@ dist
 MANIFEST
 .vispy-coverage*
 .coverage*
+!.coveragerc
 htmlcov
 vispy.egg-info
 *.swp
 .ipynb_checkpoints
 .cache/
+examples/basics/scene/animation.gif
 .pytest_cache/
+js/

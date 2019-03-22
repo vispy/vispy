@@ -55,6 +55,7 @@ def _test_module_properties(_module=None):
         '_vispy_mouse_release',
         '_vispy_mouse_double_click',
         '_vispy_detect_double_click',
+        '_vispy_get_fb_bind_location',
         '_vispy_get_geometry',
         '_vispy_get_physical_size',
         '_vispy_sleep',

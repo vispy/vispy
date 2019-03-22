@@ -92,7 +92,7 @@ class SpatialFilter(object):
             ``x`` : 0 < float < ceil(self.radius)
                 Distance to be used to compute weight.
         '''
-        raise NotImplemented
+        raise NotImplementedError
 
     def kernel(self, size=4*512):
         radius = self.radius

@@ -3,8 +3,12 @@
 # Copyright (c) 2014, Nicolas P. Rougier. All rights reserved.
 # Distributed under the terms of the new BSD License.
 # -----------------------------------------------------------------------------
+import os
+import sys
+
 import numpy as np
 from numpy.testing import assert_allclose
+import pytest
 
 from vispy.app import Canvas
 from vispy.gloo import (Texture2D, Texture3D, Program, FrameBuffer,
@@ -29,18 +33,25 @@ def test_use_framebuffer():
     data = np.random.rand(*shape).astype(np.float32)
     use_shape = shape + (3,)
     with Canvas(size=shape[::-1]) as c:
+        c.app.process_events()
+        c.set_current()
+        if c.app.backend_name.lower() == 'pyqt5':
+            # PyQt5 on OSX for some reason sets this to 1024x768...
+            c.size = shape[::-1]
+        c.app.process_events()
         orig_tex = Texture2D(data)
         fbo_tex = Texture2D(use_shape, format='rgb')
         rbo = RenderBuffer(shape, 'color')
         fbo = FrameBuffer(color=fbo_tex)
         c.context.glir.set_verbose(True)
-        assert_equal(c.size, shape[::-1])
+        assert c.size == shape[::-1]
+        c.set_current()
         set_viewport((0, 0) + c.size)
         with fbo:
             draw_texture(orig_tex)
         draw_texture(fbo_tex)
         out_tex = _screenshot()[::-1, :, 0].astype(np.float32)
-        assert_equal(out_tex.shape, c.size[::-1])
+        assert out_tex.shape == c.size[::-1]
         assert_raises(TypeError, FrameBuffer.color_buffer.fset, fbo, 1.)
         assert_raises(TypeError, FrameBuffer.depth_buffer.fset, fbo, 1.)
         assert_raises(TypeError, FrameBuffer.stencil_buffer.fset, fbo, 1.)
@@ -114,6 +125,8 @@ def test_use_texture3D():
             assert_allclose(out, expected, atol=1./255.)
 
 
+@pytest.mark.xfail(os.getenv('TRAVIS', 'false') == 'true' and 'darwin' in sys.platform,
+                   reason='Travis OSX causes segmentation fault on this test for an unknown reason.')
 @requires_application()
 def test_use_uniforms():
     """Test using uniform arrays"""
@@ -137,8 +150,9 @@ def test_use_uniforms():
         gl_FragColor = vec4((u_color[0] + u_color[1]) / 2., 1.);
     }
     """
-    shape = (300, 300)
+    shape = (500, 500)
     with Canvas(size=shape) as c:
+        c.set_current()
         c.context.glir.set_verbose(True)
         assert_equal(c.size, shape[::-1])
         shape = (3, 3)
@@ -147,6 +161,7 @@ def test_use_uniforms():
         program['a_pos'] = [[-1., -1.], [1., -1.], [-1., 1.], [1., 1.]]
         program['u_color'] = np.ones((2, 3))
         c.context.clear('k')
+        c.set_current()
         program.draw('triangle_strip')
         out = _screenshot()
         assert_allclose(out[:, :, 0] / 255., np.ones(shape), atol=1. / 255.)

@@ -6,14 +6,16 @@ environment:
   global:
       PYTHON: "C:\\conda"
       PYTHON_ARCH: "64"
+      CONDA_CHANNELS: "conda-forge"
 
   matrix:
       - PYTHON_VERSION: "2.7"
-        CONDA_DEPENDENCIES: "numpy scipy pyqt matplotlib pyqt=4 jupyter setuptools nose pytest coverage pytest-cov cython"
-        PIP_DEPENDENCIES: "numpydoc mock coveralls"
-      - PYTHON_VERSION: "3.6"
-        CONDA_DEPENDENCIES: "numpy scipy setuptools nose pytest coverage pytest-cov cython"
-        PIP_DEPENDENCIES: "numpydoc coveralls"
+        CONDA_DEPENDENCIES: "numpy scipy setuptools nose pytest coverage pytest-cov pytest-sugar pytest-faulthandler cython coveralls mock"
+        PIP_DEPENDENCIES: "git+https://github.com/numpy/numpydoc"
+      - PYTHON_VERSION: "3.7"
+        CONDA_DEPENDENCIES: "numpy scipy setuptools nose pytest coverage pytest-cov pytest-sugar pytest-faulthandler cython coveralls"
+        PIP_DEPENDENCIES: "git+https://github.com/numpy/numpydoc"
+# can remove the github numpydoc install once >0.8.0 is released
 
 platform:
     -x64

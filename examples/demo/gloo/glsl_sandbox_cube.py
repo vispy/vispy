@@ -12,12 +12,12 @@ from vispy.util.transforms import perspective, translate, rotate
 
 # Force using qt and take QtCore+QtGui from backend module
 try:
-    app_object = app.use_app('pyqt4')
+    from PyQt4.QtGui import (QWidget, QPlainTextEdit, QFont, QLabel,
+                             QPushButton, QHBoxLayout, QVBoxLayout)
 except Exception:
-    app_object = app.use_app('pyside')
-QtCore = app_object.backend_module.QtCore,
-QtGui = app_object.backend_module.QtGui
-
+    from PyQt5.QtGui import QFont
+    from PyQt5.QtWidgets import (QWidget, QPlainTextEdit, QLabel, QPushButton,
+                                 QHBoxLayout, QVBoxLayout)
 
 VERT_CODE = """
 uniform   mat4 u_model;
@@ -117,28 +117,28 @@ class Canvas(app.Canvas):
         self.program['u_projection'] = self.projection
 
 
-class TextField(QtGui.QPlainTextEdit):
+class TextField(QPlainTextEdit):
 
     def __init__(self, parent):
-        QtGui.QPlainTextEdit.__init__(self, parent)
+        QPlainTextEdit.__init__(self, parent)
         # Set font to monospaced (TypeWriter)
-        font = QtGui.QFont('')
+        font = QFont('')
         font.setStyleHint(font.TypeWriter, font.PreferDefault)
         font.setPointSize(8)
         self.setFont(font)
 
 
-class MainWindow(QtGui.QWidget):
+class MainWindow(QWidget):
 
     def __init__(self):
-        QtGui.QWidget.__init__(self, None)
+        QWidget.__init__(self, None)
 
         self.setMinimumSize(600, 400)
 
         # Create two labels and a button
-        self.vertLabel = QtGui.QLabel("Vertex code", self)
-        self.fragLabel = QtGui.QLabel("Fragment code", self)
-        self.theButton = QtGui.QPushButton("Compile!", self)
+        self.vertLabel = QLabel("Vertex code", self)
+        self.fragLabel = QLabel("Fragment code", self)
+        self.theButton = QPushButton("Compile!", self)
         self.theButton.clicked.connect(self.on_compile)
 
         # Create two editors
@@ -151,9 +151,9 @@ class MainWindow(QtGui.QWidget):
         self.canvas = Canvas(parent=self)
 
         # Layout
-        hlayout = QtGui.QHBoxLayout(self)
+        hlayout = QHBoxLayout(self)
         self.setLayout(hlayout)
-        vlayout = QtGui.QVBoxLayout()
+        vlayout = QVBoxLayout()
         #
         hlayout.addLayout(vlayout, 1)
         hlayout.addWidget(self.canvas.native, 1)

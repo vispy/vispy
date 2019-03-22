@@ -301,7 +301,7 @@ def test_colormap_discrete():
 def test_colormap():
     """Test named colormaps."""
     autumn = get_colormap('autumn')
-    assert autumn.glsl_map is not ""
+    assert autumn.glsl_map != ""
     assert len(autumn[0.]) == 1
     assert len(autumn[0.5]) == 1
     assert len(autumn[1.]) == 1
