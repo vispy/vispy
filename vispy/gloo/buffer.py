@@ -96,7 +96,13 @@ class Buffer(GLObject):
 
     @cpu_data.setter
     def cpu_data(self, data):
-        """ Local copy of data kept on CPU memory (CPUData object) """
+        """ Local copy of data kept on CPU memory (CPUData object)
+
+        Parameters
+        ----------
+        data : ndarray | None
+            Data to be uploaded (and also kept on CPU memory).
+        """
 
         if not self._use_cpu:
             raise RuntimeError("Buffer has no local CPU buffer.")
@@ -197,7 +203,7 @@ class Buffer(GLObject):
 
         # Set local data and/or upload
         if self._use_cpu:
-            self._cpu_data = data.view(CPUData) # type: CPUData
+            self._cpu_data = data.view(CPUData)  # type: CPUData
             if self._immediate_upload:
                 self.upload_GPU()
                 self._cpu_data.register_action(self.upload_GPU)
@@ -237,6 +243,13 @@ class DataBuffer(Buffer):
     ----------
     data : ndarray | None
         Buffer data.
+    use_cpu : bool | False
+        If set to True, a local copy of the data is kept on CPU memory. This
+        allows updating non-contiguous chunks of data before uploading to GPU.
+    immediate_upload : bool | True
+        If set to False (requires use_cpu), changes to the local CPU memory
+        are not immediately sent to the GPU; rather, explicit calls to
+        upload_from_local method must be made.
     """
 
     def __init__(self, data=None, use_cpu=False, immediate_upload=True):
@@ -530,6 +543,13 @@ class VertexBuffer(DataBuffer):
     ----------
     data : ndarray
         Buffer data (optional)
+    use_cpu : bool | False
+        If set to True, a local copy of the data is kept on CPU memory. This
+        allows updating non-contiguous chunks of data before uploading to GPU.
+    immediate_upload : bool | True
+        If set to False (requires use_cpu), changes to the local CPU memory
+        are not immediately sent to the GPU; rather, explicit calls to
+        upload_from_local method must be made.
     """
 
     _GLIR_TYPE = 'VertexBuffer'
