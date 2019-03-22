@@ -50,18 +50,13 @@ class CPUData(np.ndarray):
 
     @property
     def pending_data(self):
-        """ Pending data region as (byte offset, byte size) """
+        """ Pending data region as (start, stop) """
 
         if isinstance(self.base, CPUData):
             return self.base.pending_data
 
         if self._pending_data:
             return self._pending_data
-            # start, stop = self._pending_data
-            # WARN: semantic is offset, nbytes
-            # extents semantic is start, stop
-            # return start, stop-start
-            return start, stop
         else:
             return None
 
