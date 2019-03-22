@@ -69,7 +69,7 @@ before_install:
     - conda config --add channels conda-forge
     - conda update --yes --quiet conda
     # Set strict channel priority
-    conda config --set channel_priority strict
+    - conda config --set channel_priority strict
 
 
     - SRC_DIR=$(pwd)
