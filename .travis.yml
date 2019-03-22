@@ -68,8 +68,8 @@ before_install:
     - export PATH=~/anaconda/bin:$PATH
     - conda config --add channels conda-forge
     - conda update --yes --quiet conda
-    # remove defaults, depend only on conda-forge
-    - conda config --remove channels defaults
+    # Set strict channel priority
+    - conda config --set channel_priority strict
 
 
     - SRC_DIR=$(pwd)
