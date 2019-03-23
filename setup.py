@@ -247,6 +247,7 @@ extensions = [Extension('vispy.visuals.text._sdf_cpu',
                         [op.join('vispy', 'visuals', 'text', '_sdf_cpu.pyx')]),
               ]
 
+readme = open('README.rst', 'r').read()
 setup(
     name=name,
     version=__version__,
@@ -270,7 +271,7 @@ setup(
         'widgets',
     ],
     description=description,
-    long_description=__doc__,
+    long_description=readme,
     platforms='any',
     provides=['vispy'],
     cmdclass={
@@ -292,7 +293,7 @@ setup(
         # 'pyside2': [],  # not yet on PyPI
         'sdl2': ['PySDL2'],
         'wx': ['wxPython'],
-        'doc': ['sphinx_bootstrap_theme'],
+        'doc': ['sphinx_bootstrap_theme', 'numpydoc'],
     },
     packages=find_packages(),
     ext_modules=cythonize(extensions),

@@ -1,6 +1,7 @@
 # Add documentation to the source tarball but not in the installation
 include doc/Makefile doc/.nojekyll doc/conf.py LICENSE.txt
 include doc/*.rst
+include README.rst
 include vispy.json
 recursive-include doc/ext *
 recursive-include doc/_static *
