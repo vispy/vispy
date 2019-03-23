@@ -1,1 +1,2 @@
 cython
+sphinx_bootstrap_theme
