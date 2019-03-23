@@ -41,7 +41,7 @@ The GLIR specification is tied to the version of the vispy python library
 that supports it. The current specification described below was first
 created for::
 
-    VisPy 0.5
+    VisPy 0.6
 
 The shape of a command
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -88,8 +88,9 @@ CREATE
 Applies to: All objects
 
 The create command is used to create a new GL object. It has one string
-argument that can be any of 7 classes: 'Program', 'VertexBuffer',
-'IndexBuffer', 'Texture2D', 'Texture3D', 'RenderBuffer', 'FrameBuffer'.
+argument that can be any of 10 classes: 'Program', 'VertexBuffer',
+'IndexBuffer', 'Texture2D', 'Texture3D', 'RenderBuffer', 'FrameBuffer',
+'VertexShader', 'FragmentShader', 'GeometryShader'
 
 DELETE
 ~~~~~~
@@ -104,21 +105,8 @@ Applies to: All objects
 
 The delete command is used to delete the GL object corresponding to the
 given id. If the id does not exist, this command is ignored. This
-command does not have arguments.
-
-SHADERS
-~~~~~~~
-
-::
-
-   ('SHADERS', <program_id>, <vertex_code:str>, <fragment_code:str>)
-   # Example:
-   ('SHADERS', 4, "void main (){ ...}", "void main (){ ...}")
-
-Applies to: Program
-
-This command is used to set the GLSL source code for a Program object.
-The code for the vertex and fragment shader are given as strings:
+command does not have arguments. When used with Shader objects, the
+shader is freed from GPU memory.
 
 UNIFORM
 ~~~~~~~
@@ -250,11 +238,13 @@ DATA
    # Example:
    ('DATA', 4, 100, <array 200x2>)
 
-Applies to: VertexBuffer, IndexBuffer, Texture2D, Texture3D
+Applies to: VertexBuffer, IndexBuffer, Texture2D, Texture3D, VertexShader,
+FragmentShader, GeometryShader
 
 The data command is used to set the data of the object with the given
 id. For VertexBuffer and IndexBuffer the offset is an integer. For
 textures it is a tuple that matches with the dimension of the texture.
+For shader objects it is always 0 and the data must be a ``str`` object.
 
 WRAPPING
 ~~~~~~~~
@@ -291,14 +281,17 @@ ATTACH
 ::
 
    ('ATTACH', <framebuffer_id>, <attachment:str>, <object>)
+   ('ATTACH', <program_id>, <shader_id>)
    # Example:
    ('ATTACH', 4, 'color', 5)
+   ('ATTACH', 1, 3)
 
-Applies to: FrameBuffer
+Applies to: FrameBuffer, Program
 
 Attach color, depth, or stencil buffer to the framebuffer. The
 attachment argument can be 'color', 'depth' or 'stencil'. The object
 argument must be the id for a RenderBuffer or Texture2D.
+For Program this attaches an existing Shader object to the program.
 
 FRAMEBUFFER
 ~~~~~~~~~~~
@@ -346,6 +339,20 @@ The ``SWAP`` command is a special synchronization command for remote
 rendering. This command tells the renderer that it should swap drawing
 buffers. This is especially important when rendering with WebGL where
 drawing buffers are implicitly swapped.
+
+LINK
+~~~~
+
+::
+
+    ('LINK', <program_id>)
+
+Applies to: Program
+
+Link the current program together (shaders, etc). Additionally this should
+cause shaders to be detached and deleted. See the
+`OpenGL documentation <https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glLinkProgram.xhtml>`_
+for details on program linking.
 
 """
 
