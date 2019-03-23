@@ -22,8 +22,7 @@ def _extract_buffers(commands):
     # of GILR commands and the list of buffers as well."""
     # First, filter all DATA commands.
     # Shader DATA commands are 3 elements, others are 4
-    data_commands = [command for command in commands
-                     if command[0] == 'DATA']
+    data_commands = [command for command in commands if command[0] == 'DATA']
     # Extract the arrays.
     buffers = [data_command[3] for data_command in data_commands]
     # Modify the commands by replacing the array buffers with pointers.
