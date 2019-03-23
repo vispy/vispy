@@ -4,8 +4,349 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
-"""
-Implementation to execute GL Intermediate Representation (GLIR)
+"""GL Intermediate Representation Desktop Implementation
+=====================================================
+
+The glir module holds the desktop implementation of the GL Intermediate
+Representation (GLIR). Parsing and handling of the GLIR for other platforms
+can be found in external libraries (ex. vispy.js for WebGL).
+
+We propose the specification of a simple intermediate representation for
+OpenGL. It provides a means to serialize a visualization, so that the
+high-level API and the part that does the GL commands can be separated,
+and even be in separate processes.
+
+GLIR is a high level representation that consists of commands without
+return values. In effect, the commands can be streamed from one node to
+another without having to wait for a reply. Only in the event of an
+error information needs to go in the other direction, but this can be
+done asynchronously.
+
+The purpose for Vispy is to allow the usage gloo (our high level object
+oriented interface to OpenGL), while executing the visualization in the
+browser (via JS/WebGL). The fact that the stream of commands is
+one-directional is essential to realize reactive visualizations.
+
+The separation between API and implementation also provides a nice
+abstraction leading to cleaner code.
+
+GLIR commands are represented as tuples. As such the overhead for
+"parsing" the commands is minimal. The commands can, however, be
+serialized so they can be send to another process. Further, a series of
+GLIR commands can be stored in a file. This way we can store
+visualizations to disk that can be displayed with any application that
+can interpret GLIR.
+
+The GLIR specification is tied to the version of the vispy python library
+that supports it. The current specification described below was first
+created for::
+
+    VisPy 0.5
+
+The shape of a command
+~~~~~~~~~~~~~~~~~~~~~~
+
+GLIR consists of a sequence of commands that are defined as tuples. Each
+command has the following shape:
+
+::
+
+   (<command>, <ID>, [arg1, [arg2, [arg3]]])
+
+-  ``<command>`` is one of 14 commands: CURRENT, CREATE, DELETE,
+   SHADERS, UNIFORM, ATTRIBUTE, DRAW, SIZE, DATA, WRAPPING,
+   INTERPOLATION, ATTACH, FRAMEBUFFER, FUNC.
+-  In all commands except SET, ``<ID>`` is an integer unique within the
+   current GL context that is used as a reference to a GL object. It is
+   the responsibility of the code that generates the command to keep
+   track of id's and to ensure that they are unique.
+-  The number of arguments and their type differs per command and are
+   explained further below.
+-  Some commands accept GL enums in the form of a string. In these cases
+   the enum can also be given as an int, but a string is recommended for
+   better debugging. The string is case insensitive.
+
+CURRENT
+~~~~~~~
+
+::
+
+   ('CURRENT', 0)
+
+Will be called when the context is made current. The GLIR implementation
+can use this to reset some caches.
+
+CREATE
+~~~~~~
+
+::
+
+   ('CREATE', <id>, <class:str>)
+   # Example:
+   ('CREATE', 4, 'VertexBuffer')
+
+Applies to: All objects
+
+The create command is used to create a new GL object. It has one string
+argument that can be any of 7 classes: 'Program', 'VertexBuffer',
+'IndexBuffer', 'Texture2D', 'Texture3D', 'RenderBuffer', 'FrameBuffer'.
+
+DELETE
+~~~~~~
+
+::
+
+   ('DELETE', <id>)
+   # Example:
+   ('DELETE', 4)
+
+Applies to: All objects
+
+The delete command is used to delete the GL object corresponding to the
+given id. If the id does not exist, this command is ignored. This
+command does not have arguments.
+
+SHADERS
+~~~~~~~
+
+::
+
+   ('SHADERS', <program_id>, <vertex_code:str>, <fragment_code:str>)
+   # Example:
+   ('SHADERS', 4, "void main (){ ...}", "void main (){ ...}")
+
+Applies to: Program
+
+This command is used to set the GLSL source code for a Program object.
+The code for the vertex and fragment shader are given as strings:
+
+UNIFORM
+~~~~~~~
+
+::
+
+   ('UNIFORM', <program_id>, <name:str>, <type:str>, <value>)
+   # Examples:
+   ('UNIFORM', 4, 'u_scale', 'vec3', <array 3>)
+
+Applies to: Program
+
+This command is used to set the uniform of a program object. A uniform
+has a string name, a type, and a value.
+
+The type can be 'float', 'vec2', 'vec3', 'vec4', 'int', 'ivec2',
+'ivec3', 'ivec4', 'bool', 'bvec2', 'bvec3', 'bvec4', 'mat2', 'mat3',
+'mat4'. The value must be tuple or array with number of elements that
+matches with the type.
+
+It is an error to provide this command before the shaders are set. After
+resetting shaders, all uniforms and attributes have to be re-submitted.
+
+Discussion: for the uniform and attribute commands, the type argument
+should not strictly be necessary, but it makes the GLIR implementation
+simpler. Plus in gloo we *have* this information.
+
+TEXTURE
+~~~~~~~
+
+::
+
+   ('TEXTURE', <program_id>, <name:str>, <texture_id>)
+   # Examples:
+   ('TEXTURE', 4, 'u_texture1', 6)
+
+Applies to: Program
+
+This command is used to link a texture to a GLSL uniform sampler.
+
+ATTRIBUTE
+~~~~~~~~~
+
+::
+
+   ('ATTRIBUTE', <program_id>, <name:str>, <type:str>, <vbo_id>, <stride:int>, <offset:int>)
+   # Example: Buffer id 5, stride 4, offset 0
+   ('ATTRIBUTE', 4, 'a_position', 'vec3', 5, 4, 0)
+
+Applies to: Program
+
+This command is used to set the attribute of a program object. An
+attribute has a string name, a type, and a value.
+
+The type can be 'float', 'vec2', 'vec3', 'vec4'. If the first value
+element is zero, the remaining elements represent the data to pass to
+``glVertexAttribNf``.
+
+It is an error to provide this command before the shaders are set. After
+resetting shaders, all uniforms and attributes have to be re-submitted.
+
+DRAW
+~~~~
+
+::
+
+   ('DRAW', <program_id>, <mode:str>, <selection:tuple>)
+   # Example: Draw 100 lines
+   ('DRAW', 4, 'lines', (0, 100))
+   # Example: Draw 100 lines using index buffer with id 5
+   ('DRAW', 4, 'points', (5, 'unsigned_int', 100))
+
+Applies to: Program
+
+This command is used to draw the program. It has a ``mode`` argument
+which can be 'points', 'lines', 'line_strip', 'line_loop', 'triangles',
+'triangle_strip', or 'triangle_fan' (case insensitive).
+
+If the ``selection`` argument has two elements, it contains two integers
+``(start, count)``. If it has three elements, it contains
+``(<index-buffer-id>, gtype, count)``, where ``gtype`` is
+'unsigned_byte','unsigned_short', or 'unsigned_int'.
+
+SIZE
+~~~~
+
+::
+
+   ('SIZE', <id>, <size>, [<format>], [<internalformat>])
+   # Example: resize a buffer
+   ('SIZE', 4, 500)
+   # Example: resize a 2D texture
+   ('SIZE', 4, (500, 300, 3), 'rgb', None)
+   ('SIZE', 4, (500, 300, 3), 'rgb', 'rgb16f')
+
+Applies to: VertexBuffer, IndexBuffer, Texture2D, Texture3D,
+RenderBuffer
+
+This command is used to set the size of the buffer with the given id.
+The GLIR implementation should be such that if the size/format
+corresponds to the current size, it is ignored. The high level
+implementation can use the SIZE command to discard previous DATA
+commands.
+
+For buffers: the size argument is an integer and the format argument is
+not specified.
+
+For textures and render buffer: the size argument is a shape tuple
+(z,y,x). This tuple may contain the dimension for the color channels,
+but this information is ignored. The format *should* be set to
+'luminance', 'alpha', 'luminance_alpha', 'rgb' or 'rgba'. The
+internalformat is a hint for backends that can control the internal GL
+storage format; a value of None is a hint to use the default storage
+format. The internalformat, if specified, *should* be a base channel
+configuration of 'r', 'rg', 'rgb', or 'rgba' with a precision qualifying
+suffix of '8', '16', '16f', or '32f'.
+
+For render buffers: the size argument is a shape tuple (z,y,x). This
+tuple may contain the dimension for the color channels, but this
+information is ignored. The format *should* be set to 'color', 'depth'
+or 'stencil'.
+
+DATA
+~~~~
+
+::
+
+   ('DATA', <id>, <offset>, <data:array>)
+   # Example:
+   ('DATA', 4, 100, <array 200x2>)
+
+Applies to: VertexBuffer, IndexBuffer, Texture2D, Texture3D
+
+The data command is used to set the data of the object with the given
+id. For VertexBuffer and IndexBuffer the offset is an integer. For
+textures it is a tuple that matches with the dimension of the texture.
+
+WRAPPING
+~~~~~~~~
+
+::
+
+   ('WRAPPING', <texture_id>, <wrapping:tuple>)
+   # Example:
+   ('WRAPPING', 4, ('CLAMP_TO_EDGE', 'CLAMP_TO_EDGE'))
+
+Applies to: Texture2D, Texture3D
+
+Set the wrapping mode for each dimension of the texture. Each element
+must be a string: 'repeat', 'clamp_to_edge' or 'mirrored_repeat'.
+
+INTERPOLATION
+~~~~~~~~~~~~~
+
+::
+
+   ('INTERPOLATION', <texture_id>, <min:str>, <mag:str>)
+   # Example:
+   ('INTERPOLATION', 4, True, True)
+
+Applies to: Texture2D, Texture3D
+
+Set the interpolation mode of the texture for minification and
+magnification. The min and mag argument can both be either 'nearest' or
+'linear'.
+
+ATTACH
+~~~~~~
+
+::
+
+   ('ATTACH', <framebuffer_id>, <attachment:str>, <object>)
+   # Example:
+   ('ATTACH', 4, 'color', 5)
+
+Applies to: FrameBuffer
+
+Attach color, depth, or stencil buffer to the framebuffer. The
+attachment argument can be 'color', 'depth' or 'stencil'. The object
+argument must be the id for a RenderBuffer or Texture2D.
+
+FRAMEBUFFER
+~~~~~~~~~~~
+
+::
+
+   ('FRAMEBUFFER', <framebuffer_id>, <use:bool>)
+   # Example:
+   ('FRAMEBUFFER', 4, True)
+
+Applies to: FrameBuffer
+
+Turn the framebuffer on or off. When deactivating a frame buffer, the
+GLIR implementation should activate any previously activated
+framebuffer.
+
+FUNC
+~~~~
+
+::
+
+   ('FUNC', <gl_function_name>, [arg1, [arg2, [arg3]]])
+
+The ``FUNC`` command is a special command that can be applied to call a
+variety of OpenGL calls. Use the documentation OpenGL for the required
+arguments. Any args that are strings are converted to GL enums.
+
+Supported functions are in principle all gl functions that do not have a
+return value or covered by the above commands: glEnable, glDisable,
+glClear, glClearColor, glClearDepth, glClearStencil, glViewport,
+glDepthRange, glFrontFace, glCullFace, glPolygonOffset,
+glBlendFuncSeparate, glBlendEquationSeparate, glBlendColor, glScissor,
+glStencilFuncSeparate, glStencilMaskSeparate, glStencilOpSeparate,
+glDepthFunc, glDepthMask, glColorMask, glSampleCoverage, glFlush,
+glFinish, glHint.
+
+SWAP
+~~~~
+
+::
+
+    ('SWAP',)
+
+The ``SWAP`` command is a special synchronization command for remote
+rendering. This command tells the renderer that it should swap drawing
+buffers. This is especially important when rendering with WebGL where
+drawing buffers are implicitly swapped.
+
 """
 
 import os
