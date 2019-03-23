@@ -304,6 +304,7 @@ setup(
             'vispy/static/index.js',
             'vispy/static/index.js.map',
         ]),
+        ('etc/jupyter/nbconfig/notebook.d', ['vispy.json']),
     ],
     include_package_data=True,
     package_data={
