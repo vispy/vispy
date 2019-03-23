@@ -292,6 +292,7 @@ setup(
         # 'pyside2': [],  # not yet on PyPI
         'sdl2': ['PySDL2'],
         'wx': ['wxPython'],
+        'doc': ['sphinx_bootstrap_theme'],
     },
     packages=find_packages(),
     ext_modules=cythonize(extensions),
@@ -304,6 +305,7 @@ setup(
             'vispy/static/index.js',
             'vispy/static/index.js.map',
         ]),
+        ('etc/jupyter/nbconfig/notebook.d', ['vispy.json']),
     ],
     include_package_data=True,
     package_data={

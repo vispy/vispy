@@ -18,6 +18,7 @@ module.exports = [
      // extension.
      //
         entry: './lib/extension.js',
+        mode: 'production',
         output: {
             filename: 'extension.js',
             path: path.resolve(__dirname, '..', 'vispy', 'static'),
@@ -31,6 +32,7 @@ module.exports = [
      // It must be an amd module
      //
         entry: './lib/index.js',
+        mode: 'production',
         output: {
             filename: 'index.js',
             path: path.resolve(__dirname, '..', 'vispy', 'static'),
@@ -57,6 +59,7 @@ module.exports = [
      // by the custom widget embedder.
      //
         entry: './lib/embed.js',
+        mode: 'production',
         output: {
             filename: 'index.js',
             path: path.resolve(__dirname, 'dist'),

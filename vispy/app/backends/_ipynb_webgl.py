@@ -12,7 +12,7 @@ from ..base import (BaseApplicationBackend, BaseCanvasBackend,
                     BaseTimerBackend)
 from ...util import logger, keys
 from ...ext import six
-from ...gloo.glir import BaseGlirParser
+from ...gloo.glir import BaseGlirParser, convert_shader
 from ...app.backends.ipython import VispyWidget
 
 import os.path as op
@@ -108,11 +108,20 @@ class WebGLGlirParser(BaseGlirParser):
     def is_remote(self):
         return True
 
-    def convert_shaders(self):
+    @property
+    def shader_compatibility(self):
         return 'es2'
 
     def parse(self, commands):
-        self._widget.send_glir_commands(commands)
+        new_commands = []
+        # Convert shaders
+        for c in commands:
+            if c[0] == 'DATA' and isinstance(c[3], str):
+                # shader source code
+                c = c[:3] + (convert_shader('es2', c[3]),)
+            new_commands.append(c)
+        if new_commands:
+            self._widget.send_glir_commands(new_commands)
 
 
 class CanvasBackend(BaseCanvasBackend):

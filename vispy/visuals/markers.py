@@ -20,9 +20,9 @@ uniform float u_antialias;
 uniform float u_px_scale;
 uniform float u_scale;
 
-attribute vec3  a_position;
-attribute vec4  a_fg_color;
-attribute vec4  a_bg_color;
+attribute vec3 a_position;
+attribute vec4 a_fg_color;
+attribute vec4 a_bg_color;
 attribute float a_edgewidth;
 attribute float a_size;
 
@@ -44,7 +44,7 @@ void main (void) {
 """
 
 
-frag = """
+frag = """#version 120
 varying vec4 v_fg_color;
 varying vec4 v_bg_color;
 varying float v_edgewidth;
@@ -149,8 +149,8 @@ float rect(vec2 pointcoord, float size)
 ring = """
 float ring(vec2 pointcoord, float size)
 {
-    float r1 = length((pointcoord.xy - vec2(0.5,0.5))*size) - $v_size/2;
-    float r2 = length((pointcoord.xy - vec2(0.5,0.5))*size) - $v_size/4;
+    float r1 = length((pointcoord.xy - vec2(0.5,0.5))*size) - $v_size/2.;
+    float r2 = length((pointcoord.xy - vec2(0.5,0.5))*size) - $v_size/4.;
     float r = max(r1,-r2);
     return r;
 }
@@ -185,7 +185,7 @@ square = """
 float square(vec2 pointcoord, float size)
 {
     float r = max(abs(pointcoord.x -.5)*size, abs(pointcoord.y -.5)*size);
-    r -= $v_size/2;
+    r -= $v_size/2.;
     return r;
 }
 """
@@ -196,12 +196,12 @@ float x_(vec2 pointcoord, float size)
     vec2 rotcoord = vec2((pointcoord.x + pointcoord.y - 1.) / sqrt(2.),
                          (pointcoord.y - pointcoord.x) / sqrt(2.));
     //vbar
-    float r1 = abs(rotcoord.x)*size - $v_size/6;
-    float r2 = abs(rotcoord.y)*size - $v_size/2;
+    float r1 = abs(rotcoord.x)*size - $v_size/6.;
+    float r2 = abs(rotcoord.y)*size - $v_size/2.;
     float vbar = max(r1,r2);
     //hbar
-    float r3 = abs(rotcoord.y)*size - $v_size/6;
-    float r4 = abs(rotcoord.x)*size - $v_size/2;
+    float r3 = abs(rotcoord.y)*size - $v_size/6.;
+    float r4 = abs(rotcoord.x)*size - $v_size/2.;
     float hbar = max(r3,r4);
     return min(vbar, hbar);
 }
@@ -212,7 +212,7 @@ diamond = """
 float diamond(vec2 pointcoord, float size)
 {
     float r = abs(pointcoord.x -.5)*size + abs(pointcoord.y -.5)*size;
-    r -= $v_size/2;
+    r -= $v_size/2.;
     return r / sqrt(2.);//account for slanted edge and correct for width
 }
 """
@@ -221,8 +221,8 @@ float diamond(vec2 pointcoord, float size)
 vbar = """
 float vbar(vec2 pointcoord, float size)
 {
-    float r1 = abs(pointcoord.x - 0.5)*size - $v_size/6;
-    float r3 = abs(pointcoord.y - 0.5)*size - $v_size/2;
+    float r1 = abs(pointcoord.x - 0.5)*size - $v_size/6.;
+    float r3 = abs(pointcoord.y - 0.5)*size - $v_size/2.;
     float r = max(r1,r3);
     return r;
 }
@@ -231,8 +231,8 @@ float vbar(vec2 pointcoord, float size)
 hbar = """
 float rect(vec2 pointcoord, float size)
 {
-    float r2 = abs(pointcoord.y - 0.5)*size - $v_size/6;
-    float r3 = abs(pointcoord.x - 0.5)*size - $v_size/2;
+    float r2 = abs(pointcoord.y - 0.5)*size - $v_size/6.;
+    float r3 = abs(pointcoord.x - 0.5)*size - $v_size/2.;
     float r = max(r2,r3);
     return r;
 }
@@ -242,12 +242,12 @@ cross = """
 float cross(vec2 pointcoord, float size)
 {
     //vbar
-    float r1 = abs(pointcoord.x - 0.5)*size - $v_size/6;
-    float r2 = abs(pointcoord.y - 0.5)*size - $v_size/2;
+    float r1 = abs(pointcoord.x - 0.5)*size - $v_size/6.;
+    float r2 = abs(pointcoord.y - 0.5)*size - $v_size/2.;
     float vbar = max(r1,r2);
     //hbar
-    float r3 = abs(pointcoord.y - 0.5)*size - $v_size/6;
-    float r4 = abs(pointcoord.x - 0.5)*size - $v_size/2;
+    float r3 = abs(pointcoord.y - 0.5)*size - $v_size/6.;
+    float r4 = abs(pointcoord.x - 0.5)*size - $v_size/2.;
     float hbar = max(r3,r4);
     return min(vbar, hbar);
 }
@@ -327,10 +327,10 @@ float rect(vec2 pointcoord, float size)
     const float PI2_5 = 3.141592653589*2./5.;
     const float PI2_20 = 3.141592653589/10.;  //PI*2/20
     // downwards shift to that the marker center is halfway vertically
-    // between the top of the upward spike (y = -v_size/2)
+    // between the top of the upward spike (y = -v_size/2.)
     // and the bottom of one of two downward spikes
-    // (y = +v_size/2*cos(2*pi/10) approx +v_size/2*0.8)
-    // center is at -v_size/2*0.1
+    // (y = +v_size/2.*cos(2.*pi/10.) approx +v_size/2.*0.8)
+    // center is at -v_size/2.*0.1
     float shift_y = -0.05*$v_size;
     // first spike upwards,
     // rotate spike by 72 deg four times to complete the star
@@ -339,7 +339,7 @@ float rect(vec2 pointcoord, float size)
         //if not the first spike, rotate it upwards
         float x = (pointcoord.x - 0.5)*size;
         float y = (pointcoord.y - 0.5)*size;
-        float spike_rot_angle = i*PI2_5;
+        float spike_rot_angle = float(i) * PI2_5;
         float cosangle = cos(spike_rot_angle);
         float sinangle = sin(spike_rot_angle);
         float spike_x = x;
@@ -354,7 +354,7 @@ float rect(vec2 pointcoord, float size)
         // (point whose coords are -s/2, 0 where s is the size of the marker)
         // compute y coordonates as well because
         // we do a second rotation to put the spike at its final position
-        float rot_center_y = -$v_size/2;
+        float rot_center_y = -$v_size/2.;
         float rot18x = cos(PI2_20) * spike_x
                             - sin(PI2_20) * (spike_y - rot_center_y);
         //rotate -18 deg the zone x > 0 arount the top of the star

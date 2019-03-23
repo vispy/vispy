@@ -338,15 +338,23 @@ def getParameter(pname):
         # GL_BLEND_COLOR GL_COLOR_CLEAR_VALUE GL_DEPTH_CLEAR_VALUE
         # GL_DEPTH_RANGE GL_LINE_WIDTH GL_POLYGON_OFFSET_FACTOR
         # GL_POLYGON_OFFSET_UNITS GL_SAMPLE_COVERAGE_VALUE
+        # --- gl es
         return _glGetFloatv(pname)
+        # --- pyopengl
+        return GL.glGetFloatv(pname)
+        # /---
     elif pname in [7936, 7937, 7938, 35724, 7939]:
         # GL_VENDOR, GL_RENDERER, GL_VERSION, GL_SHADING_LANGUAGE_VERSION, 
         # GL_EXTENSIONS are strings
         pass  # string handled below
     else:
+        # --- gl es
         return _glGetIntegerv(pname)
-    name = pname
+        # --- pyopengl
+        return GL.glGetIntegerv(pname)
+        # /---
     # --- gl es
+    name = pname
     ()
     return ctypes.string_at(res).decode('utf-8') if res else ''
     # --- pyopengl
@@ -601,6 +609,9 @@ class FunctionAnnotation:
         for line in self.lines:
             if line.lstrip().startswith('# ---'):
                 backend_selector = line.strip().split(' ')
+                continue
+            if line.lstrip().startswith('# /---'):
+                backend_selector = backend
                 continue
             if backend in backend_selector:
                 if line.strip() == '()':

@@ -12,9 +12,10 @@ def load_ipython_extension(ipython):
     Parameters
     ----------
 
-    IPython : IPython interpreter
+    ipython : IPython interpreter
         An instance of the IPython interpreter that is handed
         over to the extension
+
     """
     import IPython
 
@@ -31,7 +32,7 @@ def load_ipython_extension(ipython):
 
 
 def _load_webgl_backend(ipython):
-    """ Load the webgl backend for the IPython notebook"""
+    """ Load the webgl backend for the ipython notebook"""
 
     from .. import app
     app_instance = app.use_app("ipynb_webgl")
@@ -44,6 +45,14 @@ def _load_webgl_backend(ipython):
 
 
 def unload_ipython_extension(ipython):
-    """ Unload the IPython extension
+    """ Unload the ipython extension
+
+    Parameters
+    ----------
+
+    ipython : IPython interpreter
+        An instance of the IPython interpreter that is handed
+        over to the extension
+
     """
     pass

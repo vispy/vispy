@@ -58,6 +58,8 @@ class VispyWidget(DOMWidget):
     resizable = Bool(value=True).tag(sync=True)
 
     def __init__(self, **kwargs):
+        if DOMWidget is object:
+            raise ImportError("'ipywidgets' must be installed to use the notebook backend.")
         super(VispyWidget, self).__init__(**kwargs)
         self.on_msg(self.events_received)
         self.canvas = None

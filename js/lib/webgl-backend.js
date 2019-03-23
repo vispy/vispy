@@ -8,6 +8,7 @@ function _inline_glir_commands(commands, buffers) {
     // to the GLIR JavaScript interpretor.
     for (var i = 0; i < commands.length; i++) {
         var command = commands[i];
+        // Shader data commands are 3 elements, everything else 4
         if (command[0] == 'DATA') {
             var buffer_index = command[3]['buffer_index'];
             var buffer_shape = command[3]['buffer_shape'];
@@ -115,10 +116,10 @@ var VispyView = widgets.DOMWidgetView.extend({
 
                 // Make the GLIR commands ready for the JavaScript parser
                 // by inlining the buffers.
-                var commands_inlined = _inline_glir_commands(
-                    commands, buffers_msg);
+                var commands_inlined = _inline_glir_commands(commands, buffers_msg);
                 for (var i = 0; i < commands_inlined.length; i++) {
                     var command = commands[i];
+                    // console.debug(command);
                     this.c.command(command);
                 }
             }
@@ -143,5 +144,5 @@ var VispyView = widgets.DOMWidgetView.extend({
 
 
 module.exports = {
-    VispyView: VispyView,
+    VispyView: VispyView
 };

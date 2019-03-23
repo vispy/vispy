@@ -128,7 +128,7 @@ def test_example2():
 def test_TextExpression():
     exp = TextExpression('foo bar')
     assert_equal('foo bar', exp.expression(None))
-    assert_equal(None, exp.definition(None))
+    assert_equal(None, exp.definition(None, ('120', '')))
     assert_raises(TypeError, TextExpression, 4)
 
 
@@ -218,7 +218,8 @@ def test_Variable():
     
     # Test injection, definition, dependencies
     assert_equal(var.expression({var: 'xxx'}), 'xxx')
-    assert_equal(var.definition({var: 'xxx'}), 'uniform float xxx;')
+    assert_equal(var.definition({var: 'xxx'}, ('120', ''), None),
+                 'uniform float xxx;')
     assert_in(var, var.dependencies())
     
     # Renaming
@@ -459,7 +460,7 @@ def test_MainFunction():
     }
     """
     
-    mf = MainFunction(code)
+    mf = MainFunction('vertex', code)
     
     assert mf.name == 'main'
     assert mf.rtype == 'void'
