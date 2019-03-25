@@ -43,7 +43,7 @@ class Buffer(GLObject):
     immediate_upload : bool | True
         If set to False (requires use_cpu), changes to the local CPU memory
         are not immediately sent to the GPU; rather, explicit calls to
-        upload_from_local method must be made.
+        upload_to_gpu method must be made.
     """
 
     def __init__(self, data=None, nbytes=None, use_cpu=False,
@@ -118,7 +118,7 @@ class Buffer(GLObject):
 
         return self._cpu_data.view(np.uint8).ravel()
 
-    def upload_GPU(self):
+    def upload_to_gpu(self):
         """ Upload changes on the local CPU data to GPU (deferred operation). """
 
         if not self._use_cpu:
