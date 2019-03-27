@@ -9,7 +9,7 @@ Demonstration of Cube
 import sys
 
 from vispy import app, gloo
-from vispy.visuals import CubeVisual, transforms
+from vispy.visuals import BoxVisual, transforms
 
 
 class Canvas(app.Canvas):
@@ -17,8 +17,8 @@ class Canvas(app.Canvas):
         app.Canvas.__init__(self, 'Cube', keys='interactive',
                             size=(400, 400))
 
-        self.cube = CubeVisual((1.0, 0.5, 0.25), color='red',
-                               edge_color="k")
+        self.cube = BoxVisual(1.0, 0.5, 0.25, color='red',
+                              edge_color="k")
         self.theta = 0
         self.phi = 0
 
