@@ -53,9 +53,9 @@ command has the following shape:
 
    (<command>, <ID>, [arg1, [arg2, [arg3]]])
 
--  ``<command>`` is one of 14 commands: CURRENT, CREATE, DELETE,
-   SHADERS, UNIFORM, ATTRIBUTE, DRAW, SIZE, DATA, WRAPPING,
-   INTERPOLATION, ATTACH, FRAMEBUFFER, FUNC.
+-  ``<command>`` is one of 15 commands: CURRENT, CREATE, DELETE,
+   UNIFORM, ATTRIBUTE, DRAW, SIZE, DATA, WRAPPING,
+   INTERPOLATION, ATTACH, FRAMEBUFFER, FUNC, SWAP, LINK.
 -  In all commands except SET, ``<ID>`` is an integer unique within the
    current GL context that is used as a reference to a GL object. It is
    the responsibility of the code that generates the command to keep

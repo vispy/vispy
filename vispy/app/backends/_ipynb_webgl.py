@@ -66,8 +66,8 @@ def _prepare_js(force=False):
         kwargs = {'user': True}
     else:
         kwargs = {}
-    install_nbextension(jsdir, overwrite=force, destination='vispy',
-                        symlink=(os.name != 'nt'), **kwargs)
+    # install_nbextension(jsdir, overwrite=force, destination='vispy',
+    #                     symlink=(os.name != 'nt'), **kwargs)
 
 
 class ApplicationBackend(BaseApplicationBackend):

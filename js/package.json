@@ -1,5 +1,5 @@
 {
-  "name": "vispy",
+  "name": "vispy_jupyter",
   "version": "0.1.0",
   "description": "A Custom Jupyter Widget Library for the VisPy Python Library",
   "author": "Vispy Development Team",
@@ -37,7 +37,10 @@
   },
   "dependencies": {
     "@jupyter-widgets/base": "^1.2.3",
-    "lodash": "^4.17.11"
+    "lodash": "^4.17.11",
+    "jquery": "^3.3.1",
+    "jquery-ui": "^1.12.1",
+    "screenfull": "^4.1.0"
   },
   "jupyterlab": {
     "extension": true

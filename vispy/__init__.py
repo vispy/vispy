@@ -41,6 +41,6 @@ def _jupyter_nbextension_paths():
     return [{
         'section': 'notebook',
         'src': 'static',
-        'dest': 'vispy',
-        'require': 'vispy/extension'
+        'dest': 'vispy_jupyter',
+        'require': 'vispy_jupyter/extension'
     }]

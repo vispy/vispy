@@ -8,6 +8,7 @@
 __webpack_public_path__ = document.querySelector('body').getAttribute('data-base-url') + 'nbextensions/vispy/';
 
 // Export widget models and views, and the npm package version number.
-// module.exports.vispy = require('./vispy.min.js');
-module.exports.VispyView = require('./webgl-backend.js').VispyView;
+// module.exports.VispyView = require('./webgl-backend.js').VispyView;
+// module.exports.VispyModel = require('./webgl-backend.js').VispyModel;
+module.exports = require('./webgl-backend.js');
 module.exports['version'] = require('../package.json').version;
