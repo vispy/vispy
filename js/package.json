@@ -13,7 +13,8 @@
     "jupyter",
     "widgets",
     "ipython",
-    "ipywidgets"
+    "ipywidgets",
+    "jupyterlab-extension"
   ],
   "files": [
     "lib/**/*.js",
@@ -43,6 +44,6 @@
     "screenfull": "^4.1.0"
   },
   "jupyterlab": {
-    "extension": true
+    "extension": "lib/labplugin"
   }
 }
