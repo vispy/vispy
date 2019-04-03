@@ -15,8 +15,6 @@ from ...ext import six
 from ...gloo.glir import BaseGlirParser, convert_shader
 from ...app.backends.ipython import VispyWidget
 
-import os.path as op
-import os
 # -------------------------------------------------------------------- init ---
 
 capability = dict(  # things that can be set by the backend
@@ -38,17 +36,7 @@ capability = dict(  # things that can be set by the backend
 # Try importing IPython
 try:
     import tornado
-    import IPython
-    IPYTHON_MAJOR_VERSION = IPython.version_info[0]
-    if IPYTHON_MAJOR_VERSION < 2:
-        raise RuntimeError('ipynb_webgl backend requires IPython >= 2.0')
     from IPython.display import display
-    try:
-        # ipython >=3.0
-        from notebook import install_nbextension
-    except ImportError:
-        # ipython <3.0
-        from IPython.html.nbextensions import install_nbextension
 except Exception as exp:
     # raise ImportError("The WebGL backend requires IPython >= 2.0")
     available, testable, why_not, which = False, False, str(exp), None
@@ -56,28 +44,13 @@ else:
     available, testable, why_not, which = True, False, None, None
 
 
-# ------------------------------------------------------------- application ---
-def _prepare_js(force=False):
-    pkgdir = op.dirname(__file__)
-    jsdir = op.join(pkgdir, '../../static/')
-    # Make sure the JS files are installed to user directory (new argument
-    # in IPython 3.0).
-    if IPYTHON_MAJOR_VERSION >= 3:
-        kwargs = {'user': True}
-    else:
-        kwargs = {}
-    # install_nbextension(jsdir, overwrite=force, destination='vispy',
-    #                     symlink=(os.name != 'nt'), **kwargs)
-
-
 class ApplicationBackend(BaseApplicationBackend):
 
     def __init__(self):
         BaseApplicationBackend.__init__(self)
-        _prepare_js()
 
     def _vispy_reuse(self):
-        _prepare_js()
+        pass
 
     def _vispy_get_backend_name(self):
         return 'ipynb_webgl'

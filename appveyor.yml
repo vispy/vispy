@@ -22,6 +22,9 @@ platform:
 
 install:
 
+  # Get git submodules (not done by appveyor by default)
+  - "git submodule update --init --recursive"
+
   # Install OpenGL
   - "powershell ./make/install_opengl.ps1"
 
