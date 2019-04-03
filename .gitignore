@@ -24,3 +24,5 @@ examples/basics/scene/animation.gif
 .pytest_cache/
 js/node_modules
 js/dist
+node_modules/
+vispy/static/
