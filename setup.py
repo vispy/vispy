@@ -300,12 +300,12 @@ setup(
     include_dirs=[np.get_include()],
     package_dir={'vispy': 'vispy'},
     data_files=[
-        ('share/jupyter/nbextensions/vispy_jupyter', [
+        ('share/jupyter/nbextensions/vispy', [
             'vispy/static/extension.js',
             'vispy/static/index.js',
             'vispy/static/index.js.map',
         ]),
-        ('etc/jupyter/nbconfig/notebook.d', ['vispy_jupyter.json']),
+        ('etc/jupyter/nbconfig/notebook.d', ['vispy.json']),
     ],
     include_package_data=True,
     package_data={

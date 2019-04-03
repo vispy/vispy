@@ -1,14 +1,14 @@
-var vispy_jupyter = require('./index');
+var vispy = require('./index');
 var base = require('@jupyter-widgets/base');
 
 module.exports = {
-  id: 'vispy_jupyter',
+  id: 'vispy',
   requires: [base.IJupyterWidgetRegistry],
   activate: function(app, widgets) {
       widgets.registerWidget({
-          name: 'vispy_jupyter',
-          version: vispy_jupyter.version,
-          exports: vispy_jupyter
+          name: 'vispy',
+          version: vispy.version,
+          exports: vispy
       });
   },
   autoStart: true

@@ -1,6 +1,6 @@
 {
-  "name": "vispy_jupyter",
-  "version": "0.1.0",
+  "name": "vispy",
+  "version": "0.2.0",
   "description": "A Custom Jupyter Widget Library for the VisPy Python Library",
   "author": "Vispy Development Team",
   "license": "BSD-3-Clause",
