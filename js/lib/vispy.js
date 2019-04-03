@@ -1,3 +1,4 @@
+var $ = require('jquery');
 var VispyCanvas = require('./vispycanvas.js');
 var gloo = require('./gloo.js');
 var events = require('./events.js');

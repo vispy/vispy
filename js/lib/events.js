@@ -1,7 +1,7 @@
 var VispyCanvas = require('./vispycanvas.js');
 var screenfull = require("screenfull");
-var $ = require('jquery');
-require('jquery-ui');
+require('jquery');
+require('jquery-ui/ui/widgets/resizable');
 
 /* Internal functions */
 function get_pos(c, e) {

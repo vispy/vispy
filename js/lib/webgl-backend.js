@@ -2,6 +2,7 @@
 
 var widgets = require('@jupyter-widgets/base');
 var _ = require('lodash');
+var $ = require('jquery');
 var vispy = require('./vispy.js');
 
 function _inline_glir_commands(commands, buffers) {
