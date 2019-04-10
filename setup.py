@@ -298,8 +298,7 @@ setup(
     packages=find_packages(),
     ext_modules=cythonize(extensions),
     include_dirs=[np.get_include()],
-    package_dir={
-        'vispy': 'vispy'},
+    package_dir={'vispy': 'vispy'},
     data_files=[
         ('share/jupyter/nbextensions/vispy', [
             'vispy/static/extension.js',
