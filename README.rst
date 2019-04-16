@@ -100,7 +100,7 @@ to clone the repository and install VisPy with
 
 As a one-liner, assuming `git` is installed ::
 
-    git clone https://github.com/vispy/vispy.git && cd vispy && python setup.py install --user
+    git clone https://github.com/vispy/vispy.git && cd vispy && git submodule update --init --recursive && python setup.py install --user
 
 This will automatically install the latest version of vispy.
 
