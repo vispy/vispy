@@ -26,7 +26,8 @@ install:
   - "git submodule update --init --recursive"
 
   # Install OpenGL
-  - "powershell ./make/install_opengl.ps1"
+  - "git clone --depth 1 git://github.com/vtkiorg/gl-ci-helpers.git"
+  - "powershell gl-ci-helpers/appveyor/install_opengl.ps1"
 
   # Install conda using ci-helpers. More information about ci-helpers can
   # be found here: https://github.com/astropy/ci-helpers
@@ -45,9 +46,6 @@ install:
   # Check that we have the expected version and architecture for Python
   - "python --version"
   - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
-
-  # Skip using MESA for now since AppVeyor is unreliable with it
-  - "SET VISPY_GL_LIB=%CD%\\opengl32.dll"
 
   # Install vispy
   - "python setup.py develop"
