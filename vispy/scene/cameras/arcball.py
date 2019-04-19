@@ -43,12 +43,13 @@ class ArcballCamera(Base3DRotationCamera):
 
     _state_props = Base3DRotationCamera._state_props + ('_quaternion',)
 
-    def __init__(self, fov=0.0, distance=None, **kwargs):
+    def __init__(self, fov=0.0, distance=None, translate_speed=1.0, **kwargs):
         super(ArcballCamera, self).__init__(fov=fov, **kwargs)
 
         # Set camera attributes
         self._quaternion = Quaternion()
         self.distance = distance  # None means auto-distance
+        self.translate_speed = translate_speed
 
     def _update_rotation(self, event):
         """Update rotation parmeters based on mouse movement"""
@@ -73,7 +74,8 @@ class ArcballCamera(Base3DRotationCamera):
         rot, x, y, z = self._quaternion.get_axis_angle()
         tr = MatrixTransform()
         tr.rotate(180 * rot / np.pi, (x, y, z))
-        dx, dz, dy = np.dot(tr.matrix[:3, :3], (dist[0], dist[1], 0.))
+        dx, dz, dy = np.dot(tr.matrix[:3, :3],
+                            (dist[0], dist[1], 0.)) * self.translate_speed
         return dx, dy, dz
 
     def _get_dim_vectors(self):
