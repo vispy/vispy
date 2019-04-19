@@ -27,6 +27,8 @@ class ArcballCamera(Base3DRotationCamera):
         The distance of the camera from the rotation point (only makes sense
         if fov > 0). If None (default) the distance is determined from the
         scale_factor and fov.
+    translate_speed : float
+        Scale factor on translation speed when moving the camera center point.
     **kwargs : dict
         Keyword arguments to pass to `BaseCamera`.
 
