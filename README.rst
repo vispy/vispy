@@ -98,12 +98,17 @@ developers to use the development version on Github (master branch). You need
 to clone the repository and install VisPy with
 ``python setup.py install``.
 
-As a one-liner, assuming `git` is installed ::
+As a one-liner, assuming `git` is installed::
 
-    git clone https://github.com/vispy/vispy.git && cd vispy && python setup.py install --user
+    git clone --recurse-submodules https://github.com/vispy/vispy.git && cd vispy && python setup.py install --user
 
 This will automatically install the latest version of vispy.
 
+If you already have vispy cloned, you may need to update the git submodules
+to make sure you have the newest code::
+
+    git pull
+    git submodule update --init --recursive
 
 Structure of VisPy
 ------------------

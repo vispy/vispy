@@ -159,7 +159,14 @@ def js_prerelease(command, strict=False):
                     log.warn('rebuilding js and css failed')
                     if missing:
                         log.error('missing files: %s' % missing)
-                    raise e
+                    # HACK: Allow users who can't build the JS to still install vispy
+                    if not is_repo:
+                        raise e
+                    log.warn('WARNING: continuing installation WITHOUT nbextension javascript')
+                    # remove JS files from data_files so setuptools doesn't try to copy
+                    # non-existent files
+                    self.distribution.data_files = [x for x in self.distribution.data_files
+                                                    if 'jupyter' not in x[0]]
                 else:
                     log.warn('rebuilding js and css failed (not a problem)')
                     log.warn(str(e))
@@ -284,8 +291,8 @@ setup(
     install_requires=['numpy'],
     extras_require={
         'ipython-static': ['ipython'],
-        'ipython-vnc': ['ipython>=3'],
-        'ipython-webgl': ['ipywidgets>=7.0', 'ipython>=3', 'tornado'],
+        'ipython-vnc': ['ipython>=7'],
+        'ipython-webgl': ['ipywidgets>=7.0', 'ipython>=7', 'tornado'],
         'pyglet': ['pyglet>=1.2'],
         # 'pyqt4': [],  # Why is this on PyPI, but without downloads?
         # 'pyqt5': [],  # Ditto.
