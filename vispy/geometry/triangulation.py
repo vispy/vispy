@@ -848,9 +848,9 @@ def triangulate(vertices):
     vertices_2d = vertices[:, :2]
     segments = np.repeat(np.arange(n + 1), 2)[1:-1]
     segments[-2:] = n - 1, 0
-    
+
     if _TRIANGLE_AVAILABLE:
-        segments_2d= segments.reshape((-1,2))
+        segments_2d = segments.reshape((-1,2))
         vertices_2d, triangles = _triangulate_cpp(vertices_2d, segments_2d)
     else:
         vertices_2d, triangles = _triangulate_python(vertices_2d, segments)
