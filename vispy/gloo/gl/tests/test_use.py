@@ -35,7 +35,7 @@ def test_use_desktop():
     
     # Use gl+ 
     gl.use_gl('gl+')
-    # uses all ES2 names from pyopengl2 backend
+    # uses all ES2 names from gl2 backend
     for name in dir(gl.gl2):
         if name.lower().startswith('gl'):
             val1 = getattr(gl, name)

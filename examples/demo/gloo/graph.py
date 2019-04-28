@@ -45,7 +45,7 @@ void main (void) {
     v_bg_color  = a_bg_color;
     gl_Position = u_projection * u_view * u_model *
         vec4(a_position*u_size,1.0);
-    gl_PointSize = v_size + 2*(v_linewidth + 1.5*v_antialias);
+    gl_PointSize = v_size + 2.*(v_linewidth + 1.5*v_antialias);
 }
 """
 
@@ -101,7 +101,7 @@ void main()
 float marker(vec2 P, float size)
 {
     float r = length((P.xy - vec2(0.5,0.5))*size);
-    r -= v_size/2;
+    r -= v_size/2.;
     return r;
 }
 """

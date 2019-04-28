@@ -21,7 +21,7 @@ VERT_SHADER = """
         }
 
         gl_Position = $transform(pos);
-        gl_PointSize = 10;
+        gl_PointSize = 10.;
         v_color = $color;
     }
     """

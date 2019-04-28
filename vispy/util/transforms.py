@@ -64,6 +64,11 @@ def rotate(angle, axis, dtype=None):
         The angle of rotation, in degrees.
     axis : ndarray
         The x, y, z coordinates of the axis direction vector.
+
+    Returns
+    -------
+    M : ndarray
+        Transformation matrix describing the rotation.
     """
     angle = np.radians(angle)
     assert len(axis) == 3

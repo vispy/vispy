@@ -280,6 +280,9 @@ def _text_to_vbo(text, font, anchor_x, anchor_y, lowres_size):
 class TextVisual(Visual):
     """Visual that displays text
 
+    Note: SDF GPU is not currently supported in WebGL without additional
+          extensions (see comments in fragment shader below).
+
     Parameters
     ----------
     text : str | list of str

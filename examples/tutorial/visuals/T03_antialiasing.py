@@ -50,7 +50,7 @@ void main() {
     vec4 doc_pos = $visual_to_doc(vec4($position, 0, 1));
     
     vec4 adjusted;
-    if ( $adjust_dir.x == 0 ) {
+    if ( $adjust_dir.x == 0. ) {
         adjusted = doc_pos;
         line_pos = $line_width;  // at the outside of the border
     }

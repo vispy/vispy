@@ -19,7 +19,7 @@ def test_renderbuffer():
     # Set both shape and format
     R = RenderBuffer((10, 20), 'color')
     assert R.shape == (10, 20)
-    assert R.format is 'color'
+    assert R.format == 'color'
     #
     glir_cmds = R._glir.clear()
     assert len(glir_cmds) == 2

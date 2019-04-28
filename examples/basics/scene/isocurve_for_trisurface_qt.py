@@ -24,56 +24,65 @@ try:
 except ImportError:
     pass
 
-from PyQt5 import QtWidgets, QtCore
+try:
+    from PyQt4.QtCore import pyqtSignal, Qt
+    from PyQt4.QtGui import (QApplication, QMainWindow, QWidget, QLabel,
+                             QSpinBox, QComboBox, QGridLayout, QVBoxLayout,
+                             QSplitter)
+except Exception:
+    from PyQt5.QtCore import pyqtSignal, Qt
+    from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QLabel,
+                                 QSpinBox, QComboBox, QGridLayout, QVBoxLayout,
+                                 QSplitter)
 
 
-class ObjectWidget(QtWidgets.QWidget):
+class ObjectWidget(QWidget):
     """
     Widget for editing OBJECT parameters
     """
-    signal_objet_changed = QtCore.pyqtSignal(name='objectChanged')
+    signal_object_changed = pyqtSignal(name='objectChanged')
 
     def __init__(self, parent=None):
         super(ObjectWidget, self).__init__(parent)
 
-        l_nbr_steps = QtWidgets.QLabel("Nbr Steps ")
-        self.nbr_steps = QtWidgets.QSpinBox()
+        l_nbr_steps = QLabel("Nbr Steps ")
+        self.nbr_steps = QSpinBox()
         self.nbr_steps.setMinimum(3)
         self.nbr_steps.setMaximum(100)
         self.nbr_steps.setValue(6)
         self.nbr_steps.valueChanged.connect(self.update_param)
 
-        l_cmap = QtWidgets.QLabel("Cmap ")
-        self.cmap = list(get_colormaps().keys())
-        self.combo = QtWidgets.QComboBox(self)
+        l_cmap = QLabel("Cmap ")
+        self.cmap = sorted(get_colormaps().keys())
+        self.combo = QComboBox(self)
         self.combo.addItems(self.cmap)
         self.combo.currentIndexChanged.connect(self.update_param)
 
-        gbox = QtWidgets.QGridLayout()
+        gbox = QGridLayout()
         gbox.addWidget(l_cmap, 0, 0)
         gbox.addWidget(self.combo, 0, 1)
         gbox.addWidget(l_nbr_steps, 1, 0)
         gbox.addWidget(self.nbr_steps, 1, 1)
 
-        vbox = QtWidgets.QVBoxLayout()
+        vbox = QVBoxLayout()
         vbox.addLayout(gbox)
         vbox.addStretch(1.0)
 
         self.setLayout(vbox)
 
     def update_param(self, option):
-        self.signal_objet_changed.emit()
+        self.signal_object_changed.emit()
 
 
-class MainWindow(QtWidgets.QMainWindow):
+class MainWindow(QMainWindow):
 
     def __init__(self):
-        QtWidgets.QMainWindow.__init__(self)
+        QMainWindow.__init__(self)
 
         self.resize(700, 500)
         self.setWindowTitle('vispy example ...')
 
-        splitter = QtWidgets.QSplitter(QtCore.Qt.Horizontal)
+        splitter = QSplitter(Qt.Horizontal)
 
         self.canvas = Canvas()
         self.canvas.create_native()
@@ -84,7 +93,7 @@ class MainWindow(QtWidgets.QMainWindow):
         splitter.addWidget(self.canvas.native)
 
         self.setCentralWidget(splitter)
-        self.props.signal_objet_changed.connect(self.update_view)
+        self.props.signal_object_changed.connect(self.update_view)
         self.update_view()
 
     def update_view(self):
@@ -125,7 +134,7 @@ class Canvas(scene.SceneCanvas):
 
 # -----------------------------------------------------------------------------
 if __name__ == '__main__':
-    appQt = QtWidgets.QApplication(sys.argv)
+    appQt = QApplication(sys.argv)
     win = MainWindow()
     win.show()
     appQt.exec_()

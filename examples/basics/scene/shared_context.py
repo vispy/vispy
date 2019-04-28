@@ -14,6 +14,7 @@ import numpy as np
 from vispy import app, scene
 from vispy.util.filter import gaussian_filter
 
+# NOTE: Does not work with PyQt5 currently
 
 canvas1 = scene.SceneCanvas(keys='interactive', show=True)
 view1 = canvas1.central_widget.add_view()

@@ -71,6 +71,9 @@ nobackend : clean-test
 pyqt4: clean-test
 	python make test pyqt4
 
+pyqt5: clean-test
+	python make test pyqt5
+
 pyside: clean-test
 	python make test pyside
 

@@ -39,13 +39,13 @@ def test_queue():
         precision highp float;uniform mediump vec4 u_foo;uniform vec4 u_bar;
         """.strip().replace(';', ';\n')
     # Convert for desktop
-    shader2 = q._shared._convert_shaders('desktop', ['', shader1])[1]
+    shader2 = glir.convert_shader('desktop', shader1)
     assert 'highp' not in shader2
     assert 'mediump' not in shader2
     assert 'precision' not in shader2
     
     # Convert for es2
-    shader3 = q._shared._convert_shaders('es2', ['', shader2])[1]
+    shader3 = glir.convert_shader('es2', shader2)
     assert 'precision highp float;' in shader3
 
 
@@ -71,8 +71,15 @@ def test_log_parser():
 
     i = 0
 
-    assert lines[i] == json.dumps(['CURRENT', 0])
+    # The FBO argument may be anything based on the backend.
+    expected = json.dumps(['CURRENT', 0, 1])
+    assert len(lines[i]) >= len(expected)
+    expected = expected.split('1')
+    assert lines[i].startswith(expected[0])
+    assert lines[i].endswith(expected[1])
+    assert int(lines[i][len(expected[0]):-len(expected[1])]) is not None
     i += 1
+
     # The 'CURRENT' command may have been called multiple times
     while lines[i] == lines[i - 1]:
         i += 1

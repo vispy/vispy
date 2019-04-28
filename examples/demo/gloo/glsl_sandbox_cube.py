@@ -10,15 +10,13 @@ from vispy import app, gloo
 from vispy.io import read_mesh, load_data_file, load_crate
 from vispy.util.transforms import perspective, translate, rotate
 
-# Force using qt and take relevant modules from backend
 try:
-    app_object = app.use_app('pyqt5')
-except Exception:
-    app_object = app.use_app('pyside2')
-QtCore = app_object.backend_module.QtCore,
-QtWidgets = app_object.backend_module.QtWidgets
-QtGui = app_object.backend_module.QtGui
-
+    from PyQt5.QtGui import QFont
+    from PyQt5.QtWidgets import (QWidget, QPlainTextEdit, QLabel, QPushButton,
+                                 QHBoxLayout, QVBoxLayout)
+except ImportError:
+    from PyQt4.QtGui import (QWidget, QPlainTextEdit, QFont, QLabel,
+                             QPushButton, QHBoxLayout, QVBoxLayout)
 
 VERT_CODE = """
 uniform   mat4 u_model;
@@ -118,28 +116,28 @@ class Canvas(app.Canvas):
         self.program['u_projection'] = self.projection
 
 
-class TextField(QtWidgets.QPlainTextEdit):
+class TextField(QPlainTextEdit):
 
     def __init__(self, parent):
-        QtWidgets.QPlainTextEdit.__init__(self, parent)
+        QPlainTextEdit.__init__(self, parent)
         # Set font to monospaced (TypeWriter)
-        font = QtGui.QFont('')
+        font = QFont('')
         font.setStyleHint(font.TypeWriter, font.PreferDefault)
         font.setPointSize(8)
         self.setFont(font)
 
 
-class MainWindow(QtWidgets.QWidget):
+class MainWindow(QWidget):
 
     def __init__(self):
-        QtWidgets.QWidget.__init__(self, None)
+        QWidget.__init__(self, None)
 
         self.setMinimumSize(600, 400)
 
         # Create two labels and a button
-        self.vertLabel = QtWidgets.QLabel("Vertex code", self)
-        self.fragLabel = QtWidgets.QLabel("Fragment code", self)
-        self.theButton = QtWidgets.QPushButton("Compile!", self)
+        self.vertLabel = QLabel("Vertex code", self)
+        self.fragLabel = QLabel("Fragment code", self)
+        self.theButton = QPushButton("Compile!", self)
         self.theButton.clicked.connect(self.on_compile)
 
         # Create two editors
@@ -152,9 +150,9 @@ class MainWindow(QtWidgets.QWidget):
         self.canvas = Canvas(parent=self)
 
         # Layout
-        hlayout = QtWidgets.QHBoxLayout(self)
+        hlayout = QHBoxLayout(self)
         self.setLayout(hlayout)
-        vlayout = QtWidgets.QVBoxLayout()
+        vlayout = QVBoxLayout()
         #
         hlayout.addLayout(vlayout, 1)
         hlayout.addWidget(self.canvas.native, 1)

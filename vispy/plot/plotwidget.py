@@ -279,7 +279,7 @@ class PlotWidget(scene.Widget):
 
     def plot(self, data, color='k', symbol=None, line_kind='-', width=1.,
              marker_size=10., edge_color='k', face_color='b', edge_width=1.,
-             title=None, xlabel=None, ylabel=None):
+             title=None, xlabel=None, ylabel=None, connect='strip'):
         """Plot a series of data using lines and markers
 
         Parameters
@@ -310,6 +310,8 @@ class PlotWidget(scene.Widget):
             The label to display along the bottom axis
         ylabel : str | None
             The label to display along the left axis.
+        connect : str | array
+            Determines which vertices are connected by lines.
 
         Returns
         -------
@@ -321,7 +323,7 @@ class PlotWidget(scene.Widget):
         marker_types, LinePlot
         """
         self._configure_2d()
-        line = scene.LinePlot(data, connect='strip', color=color,
+        line = scene.LinePlot(data, connect=connect, color=color,
                               symbol=symbol, line_kind=line_kind,
                               width=width, marker_size=marker_size,
                               edge_color=edge_color,

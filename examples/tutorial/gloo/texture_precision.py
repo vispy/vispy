@@ -65,7 +65,7 @@ void main()
 {
    float ndiff;
    // an adjacent texel is 1/W further over in normalized texture coordinates
-   vec2 v_texcoord2 = vec2(clamp(v_texcoord.x + 1.0/%(W)d, 0.0, 1.0),
+   vec2 v_texcoord2 = vec2(clamp(v_texcoord.x + 1.0/%(W)d., 0.0, 1.0),
                            v_texcoord.y);
    vec4 texel1 = texture2D(u_texture, v_texcoord);
    vec4 texel2 = texture2D(u_texture, v_texcoord2);

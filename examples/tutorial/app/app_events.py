@@ -6,8 +6,7 @@ This example shows how to retrieve event information from a callback.
 You should see information displayed for any event you triggered.
 """
 
-from vispy import gloo, app, use
-use('pyqt5')  # can be another app backend name
+from vispy import gloo, app
 
 
 class Canvas(app.Canvas):
