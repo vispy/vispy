@@ -40,9 +40,11 @@ def _unit(mode, extra_arg_string='', coverage=False):
             extra_args = extra_arg_string.split(' ')
         else:
             extra_args = ()
-    assert isinstance(extra_arg_string, (list, tuple))
-    assert all(isinstance(e, str) for e in extra_arg_string)
+    else:
+        extra_args = extra_arg_string
     del extra_arg_string
+    assert isinstance(extra_args, (list, tuple))
+    assert all(isinstance(e, str) for e in extra_args)
 
     import_dir = _get_import_dir()[0]
     cwd = op.abspath(op.join(import_dir, '..'))
