@@ -85,6 +85,8 @@ class PanZoomCamera(BaseCamera):
             The center of the view. If not given or None, use the
             current center.
         """
+        # Init some variables
+        center = center or self.center
         assert len(center) in (2, 3, 4)
         # Get scale factor, take scale ratio into account
         if np.isscalar(factor):
@@ -96,8 +98,6 @@ class PanZoomCamera(BaseCamera):
         if self.aspect is not None:
             scale[0] = scale[1]
 
-        # Init some variables
-        center = center if (center is not None) else self.center
         # Make a new object (copy), so that allocation will
         # trigger view_changed:
         rect = Rect(self.rect)
