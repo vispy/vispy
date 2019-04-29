@@ -44,7 +44,7 @@ else:
             PySide2.QtWidgets.QApplication.processEvents()
             while time.time() < start + msec * 0.001:
                 PySide2.QtWidgets.QApplication.processEvents()
-    QtTest.QTest.qWait = qWait
+        QtTest.QTest.qWait = qWait
 
     which = ('PySide2', PySide2.__version__, QtCore.__version__)
     # Remove _qt module to force an import even if it was already imported

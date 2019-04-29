@@ -412,12 +412,17 @@ class SceneCanvas(app.Canvas, Frozen):
             hit = self._visual_bounds_at(pos, ch)
             if hit is not None:
                 return hit
-        
-        if (not isinstance(node, VisualNode) or not node.visible or 
+
+        if (not isinstance(node, VisualNode) or not node.visible or
                 not node.interactive):
             return None
-        
+
+        # let nodes know we are picking to handle any special cases (picking meshes)
+        # we can't do this before this or child nodes may be considered visible
+        # which would cause the above 'if' statement to pass when it shouldn't
+        node.picking = True
         bounds = [node.bounds(axis=i) for i in range(2)]
+        node.picking = False
         
         if None in bounds:
             return None

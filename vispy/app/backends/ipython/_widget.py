@@ -48,7 +48,10 @@ def _stop_timers(canvas):
 class VispyWidget(DOMWidget):
     _view_name = Unicode("VispyView").tag(sync=True)
     _view_module = Unicode('vispy').tag(sync=True)
-    _view_module_version = Unicode('0.1.0').tag(sync=True)
+    _view_module_version = Unicode('~0.2.0').tag(sync=True)
+    _model_name = Unicode('VispyModel').tag(sync=True)
+    _model_module = Unicode('vispy').tag(sync=True)
+    _model_module_version = Unicode('~0.2.0').tag(sync=True)
 
     #height/width of the widget is managed by IPython.
     #it's a string and can be anything valid in CSS.
@@ -58,6 +61,8 @@ class VispyWidget(DOMWidget):
     resizable = Bool(value=True).tag(sync=True)
 
     def __init__(self, **kwargs):
+        if DOMWidget is object:
+            raise ImportError("'ipywidgets' must be installed to use the notebook backend.")
         super(VispyWidget, self).__init__(**kwargs)
         self.on_msg(self.events_received)
         self.canvas = None

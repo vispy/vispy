@@ -14,14 +14,16 @@ class MultiProgram(object):
     very much like a single ModularProgram, but internally manages many
     programs.
     """
-    def __init__(self, vcode='', fcode=''):
+    def __init__(self, vcode='', fcode='', gcode=None):
         self._vcode = vcode
         self._fcode = fcode
+        self._gcode = gcode
         self._programs = weakref.WeakValueDictionary()
         self._set_items = {}
         self._next_prog_id = 0
         self._vert = MultiShader(self, 'vert')
         self._frag = MultiShader(self, 'frag')
+        self._geom = None if gcode is None else MultiShader(self, 'geom')
 
     def add_program(self, name=None):
         """Create a program and add it to this MultiProgram.
@@ -40,11 +42,13 @@ class MultiProgram(object):
             raise KeyError("Program named '%s' already exists." % name)
         
         # create a program and update it to look like the rest
-        prog = ModularProgram(self._vcode, self._fcode)
+        prog = ModularProgram(self._vcode, self._fcode, self._gcode)
         for key, val in self._set_items.items():
             prog[key] = val
         self.frag._new_program(prog)
         self.vert._new_program(prog)
+        if self._geom is not None:
+            self.geom._new_program(prog)
         
         self._programs[name] = prog
         return prog
@@ -63,7 +67,7 @@ class MultiProgram(object):
 
     @property
     def frag(self):
-        """A wrapper around all fragmet shaders contained in this MultiProgram.
+        """A wrapper around all fragment shaders contained in this MultiProgram.
         """
         return self._frag
 
@@ -72,6 +76,20 @@ class MultiProgram(object):
         self._fcode = code
         for p in self._programs.values():
             p.frag = code
+
+    @property
+    def geom(self):
+        """A wrapper around all geometry shaders contained in this MultiProgram.
+        """
+        return self._geom
+
+    @geom.setter
+    def geom(self, code):
+        self._gcode = code
+        if self._geom is None:
+            self._geom = MultiShader(self, 'geom')
+        for p in self._programs.values():
+            p.geom = code
 
     def __contains__(self, key):
         return any(key in p for p in self._programs.values())

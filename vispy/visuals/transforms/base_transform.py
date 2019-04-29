@@ -194,6 +194,10 @@ class BaseTransform(object):
     def __repr__(self):
         return "<%s at 0x%x>" % (self.__class__.__name__, id(self))
 
+    def __del__(self):
+        # we can remove ourselves from *all* events in this situation.
+        self.changed.disconnect()
+
 
 class InverseTransform(BaseTransform):
     def __init__(self, transform):

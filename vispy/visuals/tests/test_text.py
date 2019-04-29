@@ -19,6 +19,7 @@ def test_text():
         
         text.text = ['foo', 'bar']
         text.pos = [10, 10]  # should auto-replicate
+        text.rotation = [180, 270]
         try:
             text.pos = [10]
         except Exception:

@@ -11,9 +11,9 @@
 float arrow_inhibitor_round(vec2 texcoord, float size,
                             float linewidth, float antialias)
 {
-    vec2 c = vec2(size/2, 0.0);
-    float radius = size/2;
-    float radius_inner = radius - linewidth/6;
+    vec2 c = vec2(size/2.0, 0.0);
+    float radius = size/2.0;
+    float radius_inner = radius - linewidth/6.0;
 
     float d1 = length(texcoord - c) - radius;
     float d2 = length(texcoord - c) - radius_inner;

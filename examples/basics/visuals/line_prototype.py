@@ -28,8 +28,8 @@ class LineVisual(visuals.Visual):
         attribute vec2 a_pos;
         
         void main() {
-            gl_Position = $transform(vec4(a_pos, 0, 1)); 
-            gl_PointSize = 10;
+            gl_Position = $transform(vec4(a_pos, 0., 1.)); 
+            gl_PointSize = 10.;
         }
         """
         
