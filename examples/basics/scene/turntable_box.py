@@ -21,7 +21,7 @@ view.padding = 100
 
 color = Color("#3f51b5")
 
-cube = scene.visuals.Cube(size=1, color=color, edge_color="black",
-                          parent=view.scene)
+cube = scene.visuals.Box(1, 1, 1, color=color, edge_color="black",
+                         parent=view.scene)
 if __name__ == '__main__' and sys.flags.interactive == 0:
     canvas.app.run()

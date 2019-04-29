@@ -1,41 +1,40 @@
 language: python
-
-# use container-based infrastructure
-sudo : false
-dist: trusty
-
-# liblgfw2 is not whitelisted by Travis, so we don't try using it here (not usable anyway)
+dist: xenial
 addons:
   apt:
     packages:
     - &mesa_apt [libgl1-mesa-dri]
-    - &full_apt [libgl1-mesa-dri, libegl1-mesa, cmake, xorg-dev, libglu1-mesa-dev, mercurial, libdbus-1-dev, libgl1-mesa-dev, libglu1-mesa-dev, libpulse-dev, libx11-dev, libxcursor-dev, libxext-dev, libxi-dev, libxinerama-dev, libxrandr-dev, libxss-dev, libxt-dev, libxv-dev, libxxf86vm-dev, libasound2-dev, libts-dev, libudev-dev, libsdl2-2.0-0]
+    - &full_apt [libgl1-mesa-dri, libegl1-mesa, cmake, xorg-dev, libglu1-mesa-dev, mercurial, libdbus-1-dev, libgl1-mesa-dev, libglu1-mesa-dev, libpulse-dev, libx11-dev, libxcursor-dev, libxext-dev, libxi-dev, libxinerama-dev, libxrandr-dev, libxss-dev, libxt-dev, libxv-dev, libxxf86vm-dev, libasound2-dev, libudev-dev, libsdl2-2.0-0]
+    # full_apt should also have 'libts-dev' but it is not available on xenial
+    # liblgfw2 is not whitelisted by Travis, so we don't try using it here (not usable anyway)
 
 # Size testing can be skipped by adding "[size skip]" within a commit message.
 
 matrix:
   include:
-    - env: PYTHON=3.6 DEPS=minimal TEST=standard
+    - env: PYTHON=3.7 DEPS=minimal TEST=standard
       os: osx
       language: generic
-    - env: PYTHON=3.6 DEPS=full TEST=standard
+      osx_image: xcode10.1
+    - env: PYTHON=3.7 DEPS=full TEST=standard
       os: osx
       language: generic
+      osx_image: xcode10.1
 # Travis Examples are extremely slow for OSX (times out)
-#    - env: PYTHON=3.6 DEPS=full TEST=examples
+#    - env: PYTHON=3.7 DEPS=full TEST=examples
 #      os: osx
 #      language: generic
-    - env: PYTHON=3.6 DEPS=minimal TEST=standard  # also tests file sizes, style, line endings
+    - env: PYTHON=3.7 DEPS=minimal TEST=standard  # also tests file sizes, style, line endings
       addons:
         apt:
           packages:
-    - env: PYTHON=3.6 DEPS=full TEST=standard
+    - env: PYTHON=3.7 DEPS=full TEST=standard
       addons:
         apt:
           packages:
             - *mesa_apt
             - *full_apt
-    - env: PYTHON=3.6 DEPS=full TEST=examples  # test examples
+    - env: PYTHON=3.7 DEPS=full TEST=examples  # test examples
       addons:
         apt:
           packages:
@@ -51,11 +50,10 @@ matrix:
     # has (on-screen) OpenGL installed, we need to setup environment variable
     # to avoid having the linker load the wrong libglapi.so which would cause
     # OSMesa to crash
-    - env: PYTHON=2.7 DEPS=full TEST=osmesa
+    - env: PYTHON=3.7 DEPS=osmesa TEST=osmesa
       addons:
         apt:
           packages:
-            - *full_apt
 
 
 before_install:
@@ -70,6 +68,9 @@ before_install:
     - export PATH=~/anaconda/bin:$PATH
     - conda config --add channels conda-forge
     - conda update --yes --quiet conda
+    # Set strict channel priority
+    - conda config --set channel_priority strict
+
 
     - SRC_DIR=$(pwd)
     # file size checks run on minimal build for time
@@ -100,39 +101,43 @@ before_install:
 
 
 install:
-    # Install numpy, flake
+    # create basic conda-forge environment
     - conda create -n testenv --yes --quiet pip python=$PYTHON;
     - source activate testenv;
-    - conda install --yes --quiet numpy$NUMPY nose pytest cython;
-    - pip install -q coveralls pytest-cov pytest-sugar flake8
+    # add needed packages common to all backends/tests
+    - conda install --yes --quiet numpy scipy nose pytest cython coveralls pytest-cov pytest-sugar pytest-faulthandler flake8;
 
     # On Python3, install system-wide copies of bundled libraries instead
-    # Also install PyQt4, imaging (PIL or pillow), scipy, mpl, egl
-    # On conda, can't install pyside-pyzo b/c it conflicts with pyqt4,
-    # which is required by matplotlib :(
+    # Also install PyQt5, imaging (PIL or pillow), scipy, mpl, egl
     # wxpython available from conda-forge but not for OSX:
     #     https://github.com/conda-forge/wxpython-feedstock/issues/2
-    # If we only need a single backend (DEPS=backend), then use PyQT4
+    # Don't test pyside2 because it seems to segfault on travis
+    # If we only need a single backend (DEPS=backend), then use PyQT5
     # Don't test Pyglet because it currently segfaults (but AppVeyor checks it)
-    # PyQt5 is currently broken, but will be installed on 3.6 so don't do it
     # WX requires OSMesa (mesa on conda) which has typically been an
     # additional test environment. With llvm=3.3 the combination of
     # EGL and mesa causes segmentation faults. See issue #1401.
+    # can remove the github numpydoc install once >0.8.0 is released and get it from conda
     - if [ "${DEPS}" == "full" ]; then
-        conda install --yes pyopengl scipy numpy$NUMPY networkx;
-        pip install -q numpydoc PySDL2;
+        conda install --yes pyopengl networkx pysdl2 sdl2=2.0.8;
+        pip install git+https://github.com/numpy/numpydoc;
         if [ "${TRAVIS_OS_NAME}" == "linux" ]; then
-          conda install --yes matplotlib jupyter pyqt=4 pillow decorator six scikit-image;
-          if [ "${PYTHON}" == "3.6" ]; then
-            pip install -q freetype-py husl pypng cassowary imageio;
+          conda install --yes matplotlib jupyter pyqt=5 pillow decorator six scikit-image glfw;
+          if [ "${PYTHON}" == "3.7" ]; then
+            conda install --yes freetype-py imageio "freetype<2.10.0";
+            pip install -q husl pypng cassowary;
             rm -rf ${SRC_DIR}/vispy/ext/_bundled;
           else
-            pip install -q mock;
+            conda install --yes mock;
           fi;
         else
-          conda install --yes matplotlib jupyter pyqt=4 scikit-image;
-          pip install -q mock;
+          conda install --yes matplotlib jupyter pyqt=5 scikit-image mock;
         fi;
+      fi;
+
+     # Install OSMesa
+    - if [ "${DEPS}" == "osmesa" ]; then
+        conda install --yes mesalib libglu;
       fi;
 
     # Install vispy
@@ -140,26 +145,6 @@ install:
     - python setup.py install
     - python setup.py develop
     - cd ~
-
-    # Install glfw (fails with virtual buffer on OSX)
-    - if [ "${DEPS}" == "full" ] && [ "${TRAVIS_OS_NAME}" == "linux" ]; then
-        git clone git://github.com/glfw/glfw.git;
-        cd glfw;
-        cmake -DCMAKE_INSTALL_PREFIX=$HOME -DBUILD_SHARED_LIBS=true -DGLFW_BUILD_EXAMPLES=false -DGLFW_BUILD_TESTS=false -DGLFW_BUILD_DOCS=false .;
-        make install;
-        cd ~;
-        if [ "${TRAVIS_OS_NAME}" == "linux" ]; then
-          export GLFW_LIBRARY=${HOME}/lib/libglfw.so;
-        else
-          export GLFW_LIBRARY=${HOME}/lib/libglfw.dylib;
-        fi;
-      fi
-
-    # Install OSMesa
-    - if [ "${TRAVIS_OS_NAME}" == "linux" ]; then
-        wget https://github.com/vispy/demo-data/raw/master/osmesa/osmesa_11.0.0_12.04.tar.bz2 -O /tmp/osmesa.tar.bz2;
-        mkdir $HOME/osmesa; tar -xvjf /tmp/osmesa.tar.bz2 -C $HOME/osmesa;
-      fi;
 
 
 before_script:
@@ -173,8 +158,7 @@ before_script:
         fi;
       fi;
     - if [ "${TEST}" == "osmesa" ]; then
-        export LD_LIBRARY_PATH=$HOME/osmesa/lib;
-        export LIBRARY_PATH=$HOME/osmesa/lib;
+        export OSMESA_LIBRARY=$CONDA_PREFIX/lib/libOSMesa32.so;
       fi;
 
 
@@ -197,6 +181,8 @@ script:
     - if [ "${DEPS}" == "minimal" ]; then
         echo "Size difference ${SIZE_DIFF} kB";
         if git log --format=%B -n 2 | grep -q "\[size skip\]"; then
+          echo "Skipping size test";
+        elif git log --format=%B -n 2 | grep -q "\[skip size\]"; then
           echo "Skipping size test";
         else
           test ${SIZE_DIFF} -lt 100;

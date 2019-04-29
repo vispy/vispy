@@ -40,7 +40,7 @@ class Buffer(GLObject):
 
     def __init__(self, data=None, nbytes=None):
         GLObject.__init__(self)
-        self._views = []  # Views on this buffer (stored using weakrefs)
+        self._views = weakref.WeakSet()  # Views on this buffer
         self._valid = True  # To invalidate buffer views
         self._nbytes = 0  # Bytesize in bytes, set in resize_bytes()
 
@@ -125,9 +125,8 @@ class Buffer(GLObject):
         self._glir.command('SIZE', self._id, size)
         # Invalidate any view on this buffer
         for view in self._views:
-            if view() is not None:
-                view()._valid = False
-        self._views = []
+            view._valid = False
+        self._views = weakref.WeakSet()
 
 
 # -------------------------------------------------------- DataBuffer class ---
@@ -259,7 +258,7 @@ class DataBuffer(Buffer):
         """ Create a view on this buffer. """
 
         view = DataBufferView(self, key)
-        self._views.append(weakref.ref(view))
+        self._views.add(view)
         return view
 
     def __setitem__(self, key, data):
@@ -298,8 +297,9 @@ class DataBuffer(Buffer):
         if data.size < stop - start:
             data = np.resize(data, stop - start)
         elif data.size > stop - start:
-            raise ValueError('Data too big to fit GPU data.')
-
+            raise ValueError('Data too big to fit GPU data '
+                             '(%d > %d-%d).' % (data.size, stop, start))
+        
         # Set data
         offset = start  # * self.itemsize
         self.set_subdata(data=data, offset=offset, copy=True)

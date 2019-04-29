@@ -159,7 +159,14 @@ def js_prerelease(command, strict=False):
                     log.warn('rebuilding js and css failed')
                     if missing:
                         log.error('missing files: %s' % missing)
-                    raise e
+                    # HACK: Allow users who can't build the JS to still install vispy
+                    if not is_repo:
+                        raise e
+                    log.warn('WARNING: continuing installation WITHOUT nbextension javascript')
+                    # remove JS files from data_files so setuptools doesn't try to copy
+                    # non-existent files
+                    self.distribution.data_files = [x for x in self.distribution.data_files
+                                                    if 'jupyter' not in x[0]]
                 else:
                     log.warn('rebuilding js and css failed (not a problem)')
                     log.warn(str(e))
@@ -247,6 +254,7 @@ extensions = [Extension('vispy.visuals.text._sdf_cpu',
                         [op.join('vispy', 'visuals', 'text', '_sdf_cpu.pyx')]),
               ]
 
+readme = open('README.rst', 'r').read()
 setup(
     name=name,
     version=__version__,
@@ -270,7 +278,7 @@ setup(
         'widgets',
     ],
     description=description,
-    long_description=__doc__,
+    long_description=readme,
     platforms='any',
     provides=['vispy'],
     cmdclass={
@@ -280,11 +288,12 @@ setup(
         'jsdeps': NPM,
         'build_ext': build_ext,
     },
+    python_requires='>=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*',
     install_requires=['numpy'],
     extras_require={
         'ipython-static': ['ipython'],
-        'ipython-vnc': ['ipython>=3'],
-        'ipython-webgl': ['ipywidgets>=7.0', 'ipython>=3', 'tornado'],
+        'ipython-vnc': ['ipython>=7'],
+        'ipython-webgl': ['ipywidgets>=7.0', 'ipython>=7', 'tornado'],
         'pyglet': ['pyglet>=1.2'],
         # 'pyqt4': [],  # Why is this on PyPI, but without downloads?
         # 'pyqt5': [],  # Ditto.
@@ -292,18 +301,19 @@ setup(
         # 'pyside2': [],  # not yet on PyPI
         'sdl2': ['PySDL2'],
         'wx': ['wxPython'],
+        'doc': ['sphinx_bootstrap_theme', 'numpydoc'],
     },
     packages=find_packages(),
     ext_modules=cythonize(extensions),
     include_dirs=[np.get_include()],
-    package_dir={
-        'vispy': 'vispy'},
+    package_dir={'vispy': 'vispy'},
     data_files=[
         ('share/jupyter/nbextensions/vispy', [
             'vispy/static/extension.js',
             'vispy/static/index.js',
             'vispy/static/index.js.map',
         ]),
+        ('etc/jupyter/nbconfig/notebook.d', ['vispy.json']),
     ],
     include_package_data=True,
     package_data={

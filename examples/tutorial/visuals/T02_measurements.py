@@ -83,7 +83,7 @@ void main() {
     // Also need to map the adjustment direction vector, but this is tricky!
     // We need to adjust separately for each component of the vector:
     vec4 adjusted;
-    if ( $adjust_dir.x == 0 ) {
+    if ( $adjust_dir.x == 0. ) {
         // If this is an outer vertex, no adjustment for line weight is needed.
         // (In fact, trying to make the adjustment would result in no
         // triangles being drawn, hence the if/else block)

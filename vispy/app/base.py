@@ -170,6 +170,11 @@ class BaseCanvasBackend(object):
         # Most backends would not need to implement this
         return self
 
+    def _vispy_get_fb_bind_location(self):
+        # Should return the default FrameBuffer bind location
+        # Most backends would not need to implement this
+        return 0
+
     def _vispy_mouse_press(self, **kwargs):
         # default method for delivering mouse press events to the canvas
         kwargs.update(self._vispy_mouse_data)

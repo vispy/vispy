@@ -720,8 +720,10 @@ class TextureEmulated3D(Texture2D):
         # causes issues when setting the gloo variables since these are
         # expected to be native ints, so we cast the integers to ints
         # to avoid this.
-        self._glsl_sample['c'] = int(self._c)
-        self._glsl_sample['r'] = int(self._r)
+        # Newer GLSL compilers do not implicitly cast types so these integers
+        # must be converted to floats lastly
+        self._glsl_sample['c'] = float(int(self._c))
+        self._glsl_sample['r'] = float(int(self._r))
 
     def set_data(self, data, offset=None, copy=False):
         """Set texture data
