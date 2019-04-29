@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 A GLSL sandbox application based on the spinning cube. Requires PySide
-or PyQt4.
+or PyQt5.
 """
 
 import numpy as np
@@ -10,14 +10,13 @@ from vispy import app, gloo
 from vispy.io import read_mesh, load_data_file, load_crate
 from vispy.util.transforms import perspective, translate, rotate
 
-# Force using qt and take QtCore+QtGui from backend module
 try:
-    from PyQt4.QtGui import (QWidget, QPlainTextEdit, QFont, QLabel,
-                             QPushButton, QHBoxLayout, QVBoxLayout)
-except Exception:
     from PyQt5.QtGui import QFont
     from PyQt5.QtWidgets import (QWidget, QPlainTextEdit, QLabel, QPushButton,
                                  QHBoxLayout, QVBoxLayout)
+except ImportError:
+    from PyQt4.QtGui import (QWidget, QPlainTextEdit, QFont, QLabel,
+                             QPushButton, QHBoxLayout, QVBoxLayout)
 
 VERT_CODE = """
 uniform   mat4 u_model;
