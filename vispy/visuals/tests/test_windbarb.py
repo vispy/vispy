@@ -15,7 +15,7 @@ origin = (length, length)
 vectors = (grid - origin).astype(np.float32)
 vectors[:] /= length // 2
 vectors[:, 1] *= -1
-ohist = np.array([135, 0, 156, 96, 24, 24, 798, 695, 251, 30821])
+ohist = np.array([90, 0, 132, 96, 24, 24, 723, 619, 234, 31058])
 
 
 @requires_application()
