@@ -23,11 +23,11 @@ def test_windbarb_draw():
     """Test drawing arrows without transforms"""
     with TestingCanvas(size=(250, 33), bgcolor='white') as c:
 
-        windbarb = Windbarb(pos=grid, wind=vectors,
-                            trig=False,
-                            edge_color='black',
-                            face_color='black',
-                            size=length, parent=c.scene)
+        Windbarb(pos=grid, wind=vectors,
+                 trig=False,
+                 edge_color='black',
+                 face_color='black',
+                 size=length, parent=c.scene)
         img = c.render()
         # use numpy histogram to check for image equality
         hist, _ = np.histogram(img)
