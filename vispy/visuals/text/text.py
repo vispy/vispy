@@ -481,10 +481,7 @@ class TextVisual(Visual):
             self._color = ColorArray(Color(color))
         else:
             color = np.atleast_2d(color).astype(np.float32)
-            if color.shape[1] == 3:
-                color = np.concatenate((color, np.ones((color.shape[0], 1),
-                                                       np.float32)), axis=1)
-            elif color.shape[1] != 4:
+            if color.shape[1] not in [3, 4]:
                 raise ValueError('color must have 3 or 4 elements')
             self._color = ColorArray(color)
         self._color_changed = True
