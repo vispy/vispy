@@ -477,13 +477,7 @@ class TextVisual(Visual):
 
     @color.setter
     def color(self, color):
-        if isinstance(color, str):
-            self._color = ColorArray(Color(color))
-        else:
-            color = np.atleast_2d(color).astype(np.float32)
-            if color.shape[1] not in [3, 4]:
-                raise ValueError('color must have 3 or 4 elements')
-            self._color = ColorArray(color)
+        self._color = ColorArray(color)
         self._color_changed = True
         self.update()
 
