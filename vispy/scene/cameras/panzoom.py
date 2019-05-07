@@ -86,7 +86,7 @@ class PanZoomCamera(BaseCamera):
             current center.
         """
         # Init some variables
-        center = center or self.center
+        center = center if (center is not None) else self.center
         assert len(center) in (2, 3, 4)
         # Get scale factor, take scale ratio into account
         if np.isscalar(factor):
