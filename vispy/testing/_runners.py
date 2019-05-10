@@ -33,27 +33,22 @@ def _get_import_dir():
     return import_dir, dev
 
 
-_unit_script = """
-try:
-    import pytest as tester
-except ImportError:
-    import nose as tester
-try:
-    import faulthandler
-    faulthandler.enable()
-except Exception:
-    pass
-
-raise SystemExit(tester.main(%r))
-"""
-
-
-def _unit(mode, extra_arg_string, coverage=False):
+def _unit(mode, extra_arg_string='', coverage=False):
     """Run unit tests using a particular mode"""
+    if isinstance(extra_arg_string, str):
+        if len(extra_arg_string):
+            extra_args = extra_arg_string.split(' ')
+        else:
+            extra_args = ()
+    else:
+        extra_args = extra_arg_string
+    del extra_arg_string
+    assert isinstance(extra_args, (list, tuple))
+    assert all(isinstance(e, str) for e in extra_args)
+
     import_dir = _get_import_dir()[0]
     cwd = op.abspath(op.join(import_dir, '..'))
-    extra_args = [''] + extra_arg_string.split(' ')
-    del extra_arg_string
+    extra_args = list(extra_args)
     use_pytest = False
     try:
         import pytest  # noqa, analysis:ignore
@@ -93,7 +88,7 @@ def _unit(mode, extra_arg_string, coverage=False):
     # make a call to "python" so that it inherits whatever the system
     # thinks is "python" (e.g., virtualenvs)
     extra_args += [import_dir]  # positional argument
-    cmd = [sys.executable, '-c', _unit_script % (extra_args,)]
+    cmd = [sys.executable, '-m', 'pytest'] + extra_args
     env = deepcopy(os.environ)
 
     # We want to set this for all app backends plus "nobackend" to
@@ -101,9 +96,9 @@ def _unit(mode, extra_arg_string, coverage=False):
     env.update(dict(_VISPY_TESTING_APP=mode, VISPY_IGNORE_OLD_VERSION='true'))
     env_str = '_VISPY_TESTING_APP=%s ' % mode
     if len(msg) > 0:
-        extra_arg_string = ' '.join(extra_args)
+        cmd_string = ' '.join(cmd)
         msg = ('%s\n%s:\n%s%s'
-               % (_line_sep, msg, env_str, extra_arg_string))
+               % (_line_sep, 'msg', env_str, cmd_string))
         print(msg)
     sys.stdout.flush()
     return_code = run_subprocess(cmd, return_code=True, cwd=cwd,
@@ -156,13 +151,6 @@ def _flake():
         sys.argv[1:] = ['vispy', 'examples', 'make']
     else:
         sys.argv[1:] = [op.basename(import_dir)]
-    sys.argv.append('--ignore=E226,E241,E265,E266,W291,W293,W503,F999,E305,'
-                    'F405')
-    sys.argv.append('--exclude=six.py,glfw.py,'
-                    '_proxy.py,_es2.py,_gl2.py,_pyopengl2.py,'
-                    '_constants.py,png.py,decorator.py,ipy_inputhook.py,'
-                    'experimental,wiki,_old,mplexporter.py,cubehelix.py,'
-                    'cassowary')
     try:
         try:
             from flake8.main import main
@@ -249,20 +237,33 @@ with canvas as c:
         time.sleep(1./60.)
 """
 
+bad_examples = []
+if os.getenv('TRAVIS', 'false') == 'true' and sys.platform == 'darwin':
+    # example scripts that contain non-ascii text
+    # seem to fail on Travis OSX
+    bad_examples = [
+        'examples/basics/plotting/colorbar.py',
+        'examples/basics/plotting/plot.py',
+        'examples/demo/gloo/high_frequency.py',
+        'examples/basics/scene/shared_context.py',
+    ]
+elif os.getenv('TRAVIS', 'false') == 'true' and 'linux' in sys.platform:
+    # example scripts that contain non-ascii text
+    # seem to fail on Travis OSX
+    bad_examples = [
+        'examples/basics/scene/shared_context.py',
+    ]
+if os.getenv('TRAVIS', 'false') == 'true':
+    # OpenGL >2.0 that fail on Travis
+    bad_examples += [
+        'examples/basics/gloo/geometry_shader.py'
+    ]
+
 
 def _skip_example(fname):
-    if os.getenv('TRAVIS', 'false') == 'true' and sys.platform == 'darwin':
-        # example scripts that contain non-ascii text
-        # seem to fail on Travis OSX
-        bad_examples = [
-            'examples/basics/plotting/colorbar.py',
-            'examples/basics/plotting/plot.py',
-            'examples/demo/gloo/high_frequency.py',
-        ]
-        for bad_ex in bad_examples:
-            if fname.endswith(bad_ex):
-                return True
-
+    for bad_ex in bad_examples:
+        if fname.endswith(bad_ex):
+            return True
     return False
 
 
@@ -294,26 +295,25 @@ def _examples(fnames_str):
     # otherwise, use the full example paths that have been
     # passed to us
     if fnames_str:
+        examples_dir = ''
         fnames = fnames_str.split(' ')
 
     else:
+        examples_dir = op.join(import_dir, '..', 'examples')
         fnames = [op.join(d[0], fname)
-                  for d in os.walk(op.join(import_dir, '..', 'examples'))
+                  for d in os.walk(examples_dir)
                   for fname in d[2] if fname.endswith('.py')]
 
     fnames = sorted(fnames, key=lambda x: x.lower())
-    print(_line_sep + '\nRunning %s examples using %s backend'
-          % (len(fnames), backend))
+    print(_line_sep + '\nRunning examples using %s backend' % (backend,))
     op.join('tutorial', 'app', 'shared_context.py'),  # non-standard
 
     fails = []
     n_ran = n_skipped = 0
     t0 = time()
-    for fname in fnames:
+    for fi, fname in enumerate(fnames):
         n_ran += 1
-        root_name = op.split(fname)
-        root_name = op.join(op.split(op.split(root_name[0])[0])[1],
-                            op.split(root_name[0])[1], root_name[1])
+        root_name = fname[-len(fname) + len(examples_dir):]
         good = True
         with open(fname, 'rb') as fid:
             for _ in range(10):  # just check the first 10 lines
@@ -324,14 +324,14 @@ def _examples(fnames_str):
                     good = False
                     break
         if _skip_example(fname):
-            print("Skipping example that fails on " +
-                  "Travis CI OSX: {}".format(fname))
+            print("Skipping example that fails on Travis CI: {}".format(fname))
             good = False
         if not good:
             n_ran -= 1
             n_skipped += 1
             continue
-        print("Running example: {}".format(fname))
+        line_str = ('[%3d/%3d] %s' % (fi + 1, len(fnames), root_name))
+        print(line_str.ljust(len(_line_sep) - 1), end='')
         sys.stdout.flush()
         cwd = op.dirname(fname)
         cmd = [sys.executable, '-c', _script.format(op.split(fname)[1][:-3])]
@@ -341,18 +341,18 @@ def _examples(fnames_str):
         if retcode or len(stderr.strip()) > 0:
             # Skipping due to missing dependency is okay
             if "ImportError: " in stderr:
-                print('S', end='')
+                print('S')
             else:
                 ext = '\n' + _line_sep + '\n'
-                fails.append('%sExample %s failed (%s):%s%s%s'
+                fails.append('X%sExample %s failed (%s):%s%s%s'
                              % (ext, root_name, retcode, ext, stderr, ext))
                 print(fails[-1])
         else:
-            print('.', end='')
+            print('✓')
         sys.stdout.flush()
     print('')
     t = (': %s failed, %s succeeded, %s skipped in %s seconds'
-         % (len(fails), n_ran - len(fails), n_skipped, round(time()-t0)))
+         % (len(fails), n_ran - len(fails), n_skipped, round(time() - t0)))
     if len(fails) > 0:
         raise RuntimeError('Failed%s' % t)
     print('Success%s' % t)
@@ -367,8 +367,10 @@ def test(label='full', extra_arg_string='', coverage=False):
     label : str
         Can be one of 'full', 'unit', 'nobackend', 'extra', 'lineendings',
         'flake', 'docs', or any backend name (e.g., 'qt').
-    extra_arg_string : str
+    extra_arg_string : str | list of str
         Extra arguments to sent to ``pytest``.
+        Can also be a list of str to more explicitly provide the
+        arguments.
     coverage : bool
         If True, collect coverage data.
     """

@@ -26,7 +26,7 @@ Announcements
 
 - **Release!** Version 0.5, October 24, 2017
 - **Release!** Version 0.4, May 22, 2015
-- `VisPy tutorial in the IPython Cookbook <http://ipython-books.github.io/featured-06/>`__
+- `VisPy tutorial in the IPython Cookbook <https://github.com/ipython-books/cookbook-code/blob/master/featured/06_vispy.ipynb>`__
 - **Release!** Version 0.3, August 29, 2014
 - **EuroSciPy 2014**: talk at Saturday 30, and sprint at Sunday 31, August 2014
 - `Article in Linux Magazine, French Edition <https://github.com/vispy/linuxmag-article>`__, July 2014
@@ -98,12 +98,17 @@ developers to use the development version on Github (master branch). You need
 to clone the repository and install VisPy with
 ``python setup.py install``.
 
-As a one-liner, assuming `git` is installed ::
+As a one-liner, assuming `git` is installed::
 
-    git clone https://github.com/vispy/vispy.git && cd vispy && python setup.py install --user
+    git clone --recurse-submodules https://github.com/vispy/vispy.git && cd vispy && python setup.py install --user
 
 This will automatically install the latest version of vispy.
 
+If you already have vispy cloned, you may need to update the git submodules
+to make sure you have the newest code::
+
+    git pull
+    git submodule update --init --recursive
 
 Structure of VisPy
 ------------------

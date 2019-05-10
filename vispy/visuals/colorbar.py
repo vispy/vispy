@@ -133,11 +133,11 @@ class _CoreColorBarVisual(Visual):
         # test that the given width and height is consistent
         # with the orientation
         if (self._orientation == "bottom" or self._orientation == "top"):
-                if halfw < halfh:
-                    raise ValueError("half-width(%s) < half-height(%s) for"
-                                     "%s orientation,"
-                                     " expected half-width >= half-height" %
-                                     (halfw, halfh, self._orientation, ))
+            if halfw < halfh:
+                raise ValueError("half-width(%s) < half-height(%s) for"
+                                 "%s orientation,"
+                                 " expected half-width >= half-height" %
+                                 (halfw, halfh, self._orientation, ))
         else:  # orientation == left or orientation == right
             if halfw > halfh:
                 raise ValueError("half-width(%s) > half-height(%s) for"
@@ -157,12 +157,15 @@ class _CoreColorBarVisual(Visual):
 
         self.shared_program['a_position'] = vertices
 
+        self.shared_program['texture2D_LUT'] = self._cmap.texture_lut() \
+            if (hasattr(self._cmap, 'texture_lut')) else None
+
     @staticmethod
     def _get_orientation_error(orientation):
-            return ValueError("orientation must"
-                              " be one of 'top', 'bottom', "
-                              "'left', or 'right', "
-                              "not '%s'" % (orientation, ))
+        return ValueError("orientation must"
+                          " be one of 'top', 'bottom', "
+                          "'left', or 'right', "
+                          "not '%s'" % (orientation, ))
 
     @property
     def pos(self):

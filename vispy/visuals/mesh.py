@@ -18,7 +18,6 @@ from ..geometry import MeshData
 from ..color import Color, get_colormap
 from ..ext.six import string_types
 
-
 # Shaders for lit rendering (using phong shading)
 shading_vertex_template = """
 varying vec3 v_normal_vec;
@@ -85,7 +84,7 @@ void main() {
     //reflect light wrt normal for the reflected ray, then
     //find the angle made with the eye
     float speculark = 0.0;
-    if ($shininess > 0) {
+    if ($shininess > 0.) {
         speculark = dot(reflect(v_light_vec, v_normal_vec), v_eye_vec);
         speculark = clamp(speculark, 0.0, 1.0);
         //raise to the material's shininess, multiply with a
@@ -404,6 +403,9 @@ class MeshVisual(Visual):
             else:
                 colors = self._color.rgba
         self.shared_program.vert['position'] = self._vertices
+
+        self.shared_program['texture2D_LUT'] = self._cmap.texture_lut() \
+            if (hasattr(self._cmap, 'texture_lut')) else None
 
         # Position input handling
         if v.shape[-1] == 2:

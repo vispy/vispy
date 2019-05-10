@@ -43,7 +43,7 @@ import numpy as np
 import string
 import logging
 import traceback
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtCore, QtGui, QtWidgets
 
 logger = logging.getLogger(__name__)
 
@@ -729,7 +729,7 @@ class Paramlist(object):
             self.props[nameV] = iniV
 
 
-class SetupWidget(QtGui.QWidget):
+class SetupWidget(QtWidgets.QWidget):
 
     changed_parameter_sig = QtCore.pyqtSignal(Paramlist)
 
@@ -743,13 +743,13 @@ class SetupWidget(QtGui.QWidget):
         self.param = Paramlist(PARAMETERS)
 
         # Checkbox for whether or not the pivot point is visible
-        self.pivot_chk = QtGui.QCheckBox(u"Show pivot point")
+        self.pivot_chk = QtWidgets.QCheckBox(u"Show pivot point")
         self.pivot_chk.setChecked(self.param.props['pivot'])
         self.pivot_chk.toggled.connect(self.update_parameters)
 
         # A drop-down menu for selecting which method to use for updating
         self.method_list = ['Euler', 'Runge-Kutta']
-        self.method_options = QtGui.QComboBox()
+        self.method_options = QtWidgets.QComboBox()
         self.method_options.addItems(self.method_list)
         self.method_options.setCurrentIndex(
             self.method_list.index((self.param.props['method']))
@@ -760,15 +760,15 @@ class SetupWidget(QtGui.QWidget):
 
         # Separate the different parameters into groupboxes,
         # so there's a clean visual appearance
-        self.parameter_groupbox = QtGui.QGroupBox(u"System Parameters")
-        self.conditions_groupbox = QtGui.QGroupBox(u"Initial Conditions")
-        self.display_groupbox = QtGui.QGroupBox(u"Display Parameters")
+        self.parameter_groupbox = QtWidgets.QGroupBox(u"System Parameters")
+        self.conditions_groupbox = QtWidgets.QGroupBox(u"Initial Conditions")
+        self.display_groupbox = QtWidgets.QGroupBox(u"Display Parameters")
 
         self.groupbox_list = [self.parameter_groupbox,
                               self.conditions_groupbox,
                               self.display_groupbox]
 
-        self.splitter = QtGui.QSplitter(QtCore.Qt.Vertical)
+        self.splitter = QtWidgets.QSplitter(QtCore.Qt.Vertical)
 
         # Get ready to create all the spinboxes with appropriate labels
         plist = []
@@ -776,12 +776,12 @@ class SetupWidget(QtGui.QWidget):
         # important_positions is used to separate the
         # parameters into their appropriate groupboxes
         important_positions = [0, ]
-        param_boxes_layout = [QtGui.QGridLayout(),
-                              QtGui.QGridLayout(),
-                              QtGui.QGridLayout()]
+        param_boxes_layout = [QtWidgets.QGridLayout(),
+                              QtWidgets.QGridLayout(),
+                              QtWidgets.QGridLayout()]
         for nameV, minV, maxV, typeV, iniV in self.param.parameters:
             # Create Labels for each element
-            plist.append(QtGui.QLabel(nameV))
+            plist.append(QtWidgets.QLabel(nameV))
 
             if nameV == 'x' or nameV == 'scale':
                 # 'x' is the start of the 'Initial Conditions' groupbox,
@@ -792,14 +792,14 @@ class SetupWidget(QtGui.QWidget):
             # ints get regular SpinBox.
             # Step sizes are the same for every parameter except font size.
             if typeV == 'double':
-                self.psets.append(QtGui.QDoubleSpinBox())
+                self.psets.append(QtWidgets.QDoubleSpinBox())
                 self.psets[-1].setDecimals(3)
                 if nameV == 'font size':
                     self.psets[-1].setSingleStep(1.0)
                 else:
                     self.psets[-1].setSingleStep(0.01)
             elif typeV == 'int':
-                self.psets.append(QtGui.QSpinBox())
+                self.psets.append(QtWidgets.QSpinBox())
 
             # Set min, max, and initial values
             self.psets[-1].setMaximum(maxV)
@@ -814,7 +814,7 @@ class SetupWidget(QtGui.QWidget):
             param_boxes_layout[pidx].addWidget(self.psets[pos], pos + pidx, 1)
             self.psets[pos].valueChanged.connect(self.update_parameters)
 
-        param_boxes_layout[0].addWidget(QtGui.QLabel('Method: '), 8, 0)
+        param_boxes_layout[0].addWidget(QtWidgets.QLabel('Method: '), 8, 0)
         param_boxes_layout[0].addWidget(self.method_options, 8, 1)
         param_boxes_layout[-1].addWidget(self.pivot_chk, 2, 0, 3, 0)
 
@@ -824,8 +824,8 @@ class SetupWidget(QtGui.QWidget):
         for groupbox in self.groupbox_list:
             self.splitter.addWidget(groupbox)
 
-        vbox = QtGui.QVBoxLayout()
-        hbox = QtGui.QHBoxLayout()
+        vbox = QtWidgets.QVBoxLayout()
+        hbox = QtWidgets.QHBoxLayout()
         hbox.addWidget(self.splitter)
         hbox.addStretch(5.0)
         vbox.addLayout(hbox)
@@ -845,13 +845,13 @@ class SetupWidget(QtGui.QWidget):
         self.changed_parameter_sig.emit(self.param)
 
 
-class MainWindow(QtGui.QMainWindow):
+class MainWindow(QtWidgets.QMainWindow):
 
     def __init__(self, param=None):
         """Main Window for holding the Vispy Canvas and the parameter
         control menu.
         """
-        QtGui.QMainWindow.__init__(self)
+        QtWidgets.QMainWindow.__init__(self)
 
         self.resize(1067, 800)
         icon = load_data_file('wiggly_bar/spring.ico')
@@ -869,7 +869,7 @@ class MainWindow(QtGui.QMainWindow):
         self.view_box.create_native()
         self.view_box.native.setParent(self)
 
-        splitter = QtGui.QSplitter(QtCore.Qt.Horizontal)
+        splitter = QtWidgets.QSplitter(QtCore.Qt.Horizontal)
         splitter.addWidget(self.parameter_object)
         splitter.addWidget(self.view_box.native)
 
@@ -891,7 +891,7 @@ def main():
     sys.excepthook = uncaught_exceptions
     logging.basicConfig(level=logging.INFO)
     logging.getLogger().setLevel(logging.INFO)
-    appQt = QtGui.QApplication(sys.argv)
+    appQt = QtWidgets.QApplication(sys.argv)
     win = MainWindow()
     win.show()
     appQt.exec_()

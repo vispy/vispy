@@ -94,6 +94,7 @@ void main (void)
 """
 
 FRAGMENT_SHADER = """
+#version 120
 float segment(float edge0, float edge1, float x)
 {
     return step(edge0,x) * (1.0-step(edge1,x));
@@ -104,7 +105,7 @@ varying vec3 v_bytes_012, v_bytes_345;
 
 vec4 glyph_color(vec2 uv) {
     if(uv.x > 5.0 || uv.y > 7.0)
-        return vec4(0, 0, 0, 0);
+        return vec4(0., 0., 0., 0.);
     else {
         float index  = floor( (uv.y*6.0+uv.x)/8.0 );
         float offset = floor( mod(uv.y*6.0+uv.x,8.0));
@@ -117,7 +118,7 @@ vec4 glyph_color(vec2 uv) {
         if( floor(mod(byte / (128.0/pow(2.0,offset)), 2.0)) > 0.0 )
             return v_color;
         else
-            return vec4(0, 0, 0, 0);
+            return vec4(0., 0., 0., 0.);
     }
 }
 

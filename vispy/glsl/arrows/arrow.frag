@@ -8,6 +8,7 @@
 //             "angle_30", "angle_60", "angle_90",
 //             "triangle_30", "triangle_60", "triangle_90",
 // ----------------------------------------------------------------------------
+#version 120
 #include "math/constants.glsl"
 #include "arrows/arrows.glsl"
 #include "antialias/antialias.glsl"

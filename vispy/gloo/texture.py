@@ -589,6 +589,83 @@ class Texture3D(BaseTexture):
         return 'texture3D'
 
 
+# --------------------------------------------------------- TextureCube class ---
+class TextureCube(BaseTexture):
+    """ Texture Cube
+
+    Parameters
+    ----------
+    data : ndarray | tuple | None
+        Texture data in the form of a numpy array (or something that
+        can be turned into one). A tuple with the shape of the texture
+        can also be given.
+    format : str | enum | None
+        The format of the texture: 'luminance', 'alpha',
+        'luminance_alpha', 'rgb', or 'rgba'. If not given the format
+        is chosen automatically based on the number of channels.
+        When the data has one channel, 'luminance' is assumed.
+    resizable : bool
+        Indicates whether texture can be resized. Default True.
+    interpolation : str | None
+        Interpolation mode, must be one of: 'nearest', 'linear'.
+        Default 'nearest'.
+    wrapping : str | None
+        Wrapping mode, must be one of: 'repeat', 'clamp_to_edge',
+        'mirrored_repeat'. Default 'clamp_to_edge'.
+    shape : tuple | None
+        Optional. A tuple with the shape of the texture. If ``data``
+        is also a tuple, it will override the value of ``shape``.
+    internalformat : str | None
+        Internal format to use.
+    resizeable : None
+        Deprecated version of `resizable`.
+    """
+    _ndim = 3
+    _GLIR_TYPE = 'TextureCube'
+
+    def __init__(self, data=None, format=None, resizable=True,
+                 interpolation=None, wrapping=None, shape=None,
+                 internalformat=None, resizeable=None):
+        BaseTexture.__init__(self, data, format, resizable, interpolation,
+                             wrapping, shape, internalformat, resizeable)
+        if self._shape[0] != 6:
+            raise ValueError("Texture cube require arrays first dimension to be 6 :"
+                             " {} was given.".format(self._shape[0]))
+
+    @property
+    def height(self):
+        """ Texture height """
+        return self._shape[1]
+
+    @property
+    def width(self):
+        """ Texture width """
+        return self._shape[2]
+
+    @property
+    def depth(self):
+        """ Texture depth """
+        return self._shape[0]
+
+    @property
+    def glsl_type(self):
+        """ GLSL declaration strings required for a variable to hold this data.
+        """
+        return 'uniform', 'samplerCube'
+
+    @property
+    def glsl_sampler_type(self):
+        """ GLSL type of the sampler.
+        """
+        return 'samplerCube'
+
+    @property
+    def glsl_sample(self):
+        """ GLSL function that samples the texture.
+        """
+        return 'textureCube'
+
+
 # ------------------------------------------------- TextureEmulated3D class ---
 class TextureEmulated3D(Texture2D):
     """ Two dimensional texture that is emulating a three dimensional texture
@@ -720,8 +797,10 @@ class TextureEmulated3D(Texture2D):
         # causes issues when setting the gloo variables since these are
         # expected to be native ints, so we cast the integers to ints
         # to avoid this.
-        self._glsl_sample['c'] = int(self._c)
-        self._glsl_sample['r'] = int(self._r)
+        # Newer GLSL compilers do not implicitly cast types so these integers
+        # must be converted to floats lastly
+        self._glsl_sample['c'] = float(int(self._c))
+        self._glsl_sample['r'] = float(int(self._r))
 
     def set_data(self, data, offset=None, copy=False):
         """Set texture data
@@ -817,6 +896,8 @@ class TextureAtlas(Texture2D):
     ----------
     shape : tuple of int
         Texture shape (optional).
+    dtype : numpy.dtype object
+        Texture starting data type (default: float32)
 
     Notes
     -----
@@ -826,13 +907,14 @@ class TextureAtlas(Texture2D):
         >>> atlas = TextureAtlas()
         >>> bounds = atlas.get_free_region(20, 30)
         >>> atlas.set_region(bounds, np.random.rand(20, 30).T)
+
     """
-    def __init__(self, shape=(1024, 1024)):
+    def __init__(self, shape=(1024, 1024), dtype=np.float32):
         shape = np.array(shape, int)
         assert shape.ndim == 1 and shape.size == 2
         shape = tuple(2 ** (np.log2(shape) + 0.5).astype(int)) + (3,)
         self._atlas_nodes = [(0, 0, shape[1])]
-        data = np.zeros(shape, np.float32)
+        data = np.zeros(shape, dtype)
         super(TextureAtlas, self).__init__(data, interpolation='linear',
                                            wrapping='clamp_to_edge')
 

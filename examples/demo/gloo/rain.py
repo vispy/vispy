@@ -38,11 +38,11 @@ void main (void)
     if( a_fg_color.a > 0.0)
     {
         gl_Position = u_projection * u_view * u_model * vec4(a_position,1.0);
-        gl_PointSize = v_size + u_linewidth + 2*1.5*u_antialias;
+        gl_PointSize = v_size + u_linewidth + 2.*1.5*u_antialias;
     }
     else
     {
-        gl_Position = u_projection * u_view * u_model * vec4(-1,-1,0,1);
+        gl_Position = u_projection * u_view * u_model * vec4(-1.,-1.,0.,1.);
         gl_PointSize = 0.0;
     }
 }

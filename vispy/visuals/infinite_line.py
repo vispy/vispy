@@ -9,7 +9,7 @@ VERT_SHADER = """
     varying vec4 v_color;
 
     void main() {
-        vec4 pos = vec4(a_pos, 0, 1);
+        vec4 pos = vec4(a_pos, 0., 1.);
 
         if($is_vertical==1)
         {
@@ -21,7 +21,7 @@ VERT_SHADER = """
         }
 
         gl_Position = $transform(pos);
-        gl_PointSize = 10;
+        gl_PointSize = 10.;
         v_color = $color;
     }
     """

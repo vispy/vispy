@@ -226,6 +226,7 @@ class LineVisual(CompoundVisual):
 
     def _interpret_color(self, color_in=None):
         color_in = self._color if color_in is None else color_in
+        colormap = None
         if isinstance(color_in, string_types):
             try:
                 colormap = get_colormap(color_in)
@@ -238,7 +239,7 @@ class LineVisual(CompoundVisual):
             color = ColorArray(color_in).rgba
             if len(color) == 1:
                 color = color[0]
-        return color
+        return color, colormap
 
     def _compute_bounds(self, axis, view):
         """Get the bounds
@@ -323,7 +324,7 @@ class _GLLineVisual(Visual):
                                 % (pos.shape,))
 
         if self._parent._changed['color']:
-            color = self._parent._interpret_color()
+            color, cmap = self._parent._interpret_color()
             # If color is not visible, just quit now
             if isinstance(color, Color) and color.is_blank:
                 return False
@@ -337,6 +338,9 @@ class _GLLineVisual(Visual):
                 else:
                     self._color_vbo.set_data(color)
                     self._program.vert['color'] = self._color_vbo
+
+            self.shared_program['texture2D_LUT'] = cmap.texture_lut() \
+                if (hasattr(cmap, 'texture_lut')) else None
 
         # Do we want to use OpenGL, and can we?
         GL = None
@@ -440,7 +444,8 @@ class _AggLineVisual(Visual):
             bake = True
 
         if self._parent._changed['color']:
-            self._color = self._parent._interpret_color()
+            color, cmap = self._parent._interpret_color()
+            self._color = color
             bake = True
 
         if self._parent._changed['connect']:
@@ -453,7 +458,7 @@ class _AggLineVisual(Visual):
             self._vbo.set_data(V)
             self._index_buffer.set_data(idxs)
 
-        #self._program.prepare()
+        # self._program.prepare()
         self.shared_program.bind(self._vbo)
         uniforms = dict(closed=False, miter_limit=4.0, dash_phase=0.0,
                         linewidth=self._parent._width)

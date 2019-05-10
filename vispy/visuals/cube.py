@@ -4,12 +4,11 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
-from ..geometry import create_cube
-from .mesh import MeshVisual
-from .visual import CompoundVisual
+import warnings
+from .box import BoxVisual
 
 
-class CubeVisual(CompoundVisual):
+class CubeVisual(BoxVisual):
     """Visual that displays a cube or cuboid
 
     Parameters
@@ -29,41 +28,13 @@ class CubeVisual(CompoundVisual):
     """
     def __init__(self, size=1.0, vertex_colors=None, face_colors=None,
                  color=(0.5, 0.5, 1, 1), edge_color=None, **kwargs):
-
-        vertices, filled_indices, outline_indices = create_cube()
-        vertices['position'] *= size
-
-        self._mesh = MeshVisual(vertices=vertices['position'],
-                                faces=filled_indices,
-                                vertex_colors=vertex_colors,
-                                face_colors=face_colors, color=color)
-        if edge_color:
-            self._border = MeshVisual(vertices=vertices['position'],
-                                      faces=outline_indices,
-                                      color=edge_color, mode='lines')
+        warnings.warn("The CubeVisual is deprecated in favor of BoxVisual",
+                      DeprecationWarning)
+        if isinstance(size, tuple):
+            width, height, depth = size
         else:
-            self._border = MeshVisual()
-
-        CompoundVisual.__init__(self, [self._mesh, self._border], **kwargs)
-        self.mesh.set_gl_state(polygon_offset_fill=True,
-                               polygon_offset=(1, 1), depth_test=True)
-
-    @property
-    def mesh(self):
-        """The vispy.visuals.MeshVisual that used to fill in.
-        """
-        return self._mesh
-
-    @mesh.setter
-    def mesh(self, mesh):
-        self._mesh = mesh
-
-    @property
-    def border(self):
-        """The vispy.visuals.MeshVisual that used to draw the border.
-        """
-        return self._border
-
-    @border.setter
-    def border(self, border):
-        self._border = border
+            width = height = depth = size
+        BoxVisual.__init__(self, width=width, height=height, depth=depth,
+                           vertex_colors=vertex_colors,
+                           face_colors=face_colors, color=color,
+                           edge_color=edge_color, **kwargs)

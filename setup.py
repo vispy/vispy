@@ -36,12 +36,21 @@ import os
 import sys
 import platform
 from os import path as op
-from setuptools import setup, find_packages, Command
+from distutils import log
+from setuptools import setup, find_packages, Command, Extension
 from setuptools.command.sdist import sdist
 from setuptools.command.build_py import build_py
+from setuptools.command.build_ext import build_ext as _build_ext
 from setuptools.command.egg_info import egg_info
 from subprocess import check_call
-from distutils import log
+import numpy as np
+
+
+try:
+    from Cython.Build import cythonize
+except ImportError:
+    cythonize = None
+
 log.set_verbosity(log.DEBUG)
 log.info('setup.py entered')
 log.info('$PATH=%s' % os.environ['PATH'])
@@ -79,6 +88,59 @@ npm_path = os.pathsep.join([
 ])
 
 
+def set_builtin(name, value):
+    if isinstance(__builtins__, dict):
+        __builtins__[name] = value
+    else:
+        setattr(__builtins__, name, value)
+
+
+class build_ext(_build_ext):
+    """Work around to bootstrap numpy includes in to extensions.
+
+    Copied from:
+
+        http://stackoverflow.com/questions/19919905/
+            how-to-bootstrap-numpy-installation-in-setup-py
+
+    """
+
+    def finalize_options(self):
+        _build_ext.finalize_options(self)
+        # Prevent numpy from thinking it is still in its setup process:
+        set_builtin('__NUMPY_SETUP__', False)
+        import numpy
+        self.include_dirs.append(numpy.get_include())
+
+
+if cythonize is None:
+    def cythonize(extensions, **_ignore):
+        """Fake function to compile from C/C++ files.
+
+        Normally compiled from .pyx files with cython. If installed from
+        a source distribution (sdist) this function should be enough to
+        compile extensions for the C/C++ files included in the sdist.
+
+        """
+        for extension in extensions:
+            sources = []
+            for sfile in extension.sources:
+                path, ext = os.path.splitext(sfile)
+                if ext in ('.pyx', '.py'):
+                    if extension.language == 'c++':
+                        ext = '.cpp'
+                    else:
+                        ext = '.c'
+                    sfile = path + ext
+                if not os.path.isfile(sfile):
+                    raise OSError("Missing cython C/C++ source file: "
+                                  "{}. Install 'cython' to compile "
+                                  "them.".format(sfile))
+                sources.append(sfile)
+            extension.sources[:] = sources
+        return extensions
+
+
 def js_prerelease(command, strict=False):
     """decorator for building minified js/css prior to another command"""
     class DecoratedCommand(command):
@@ -97,7 +159,14 @@ def js_prerelease(command, strict=False):
                     log.warn('rebuilding js and css failed')
                     if missing:
                         log.error('missing files: %s' % missing)
-                    raise e
+                    # HACK: Allow users who can't build the JS to still install vispy
+                    if not is_repo:
+                        raise e
+                    log.warn('WARNING: continuing installation WITHOUT nbextension javascript')
+                    # remove JS files from data_files so setuptools doesn't try to copy
+                    # non-existent files
+                    self.distribution.data_files = [x for x in self.distribution.data_files
+                                                    if 'jupyter' not in x[0]]
                 else:
                     log.warn('rebuilding js and css failed (not a problem)')
                     log.warn(str(e))
@@ -155,28 +224,37 @@ class NPM(Command):
     def run(self):
         has_npm = self.has_npm()
         if not has_npm:
-            log.error("`npm` unavailable.  If you're running this command using sudo, make sure `npm` is available to sudo")
+            log.error("`npm` unavailable.  If you're running this command "
+                      "using sudo, make sure `npm` is available to sudo")
 
         env = os.environ.copy()
         env['PATH'] = npm_path
 
         if self.should_run_npm_install():
-            log.info("Installing build dependencies with npm.  This may take a while...")
+            log.info("Installing build dependencies with npm.  This may take "
+                     "a while...")
             npmName = self.get_npm_name();
-            check_call([npmName, 'install'], cwd=node_root, stdout=sys.stdout, stderr=sys.stderr)
+            check_call([npmName, 'install'], cwd=node_root,
+                       stdout=sys.stdout, stderr=sys.stderr)
             os.utime(self.node_modules, None)
 
         for t in self.targets:
             if not os.path.exists(t):
                 msg = 'Missing file: %s' % t
                 if not has_npm:
-                    msg += '\nnpm is required to build a development version of a widget extension'
+                    msg += '\nnpm is required to build a development ' \
+                           'version of a widget extension'
                 raise ValueError(msg)
 
         # update package data in case this created new files
         update_package_data(self.distribution)
 
 
+extensions = [Extension('vispy.visuals.text._sdf_cpu',
+                        [op.join('vispy', 'visuals', 'text', '_sdf_cpu.pyx')]),
+              ]
+
+readme = open('README.rst', 'r').read()
 setup(
     name=name,
     version=__version__,
@@ -200,7 +278,7 @@ setup(
         'widgets',
     ],
     description=description,
-    long_description=__doc__,
+    long_description=readme,
     platforms='any',
     provides=['vispy'],
     cmdclass={
@@ -208,12 +286,14 @@ setup(
         'egg_info': js_prerelease(egg_info),
         'sdist': js_prerelease(sdist, strict=True),
         'jsdeps': NPM,
+        'build_ext': build_ext,
     },
+    python_requires='>=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*',
     install_requires=['numpy'],
     extras_require={
         'ipython-static': ['ipython'],
-        'ipython-vnc': ['ipython>=3'],
-        'ipython-webgl': ['ipywidgets>=7.0', 'ipython>=3', 'tornado'],
+        'ipython-vnc': ['ipython>=7'],
+        'ipython-webgl': ['ipywidgets>=7.0', 'ipython>=7', 'tornado'],
         'pyglet': ['pyglet>=1.2'],
         # 'pyqt4': [],  # Why is this on PyPI, but without downloads?
         # 'pyqt5': [],  # Ditto.
@@ -221,16 +301,19 @@ setup(
         # 'pyside2': [],  # not yet on PyPI
         'sdl2': ['PySDL2'],
         'wx': ['wxPython'],
+        'doc': ['sphinx_bootstrap_theme', 'numpydoc'],
     },
     packages=find_packages(),
-    package_dir={
-        'vispy': 'vispy'},
+    ext_modules=cythonize(extensions),
+    include_dirs=[np.get_include()],
+    package_dir={'vispy': 'vispy'},
     data_files=[
         ('share/jupyter/nbextensions/vispy', [
             'vispy/static/extension.js',
             'vispy/static/index.js',
             'vispy/static/index.js.map',
         ]),
+        ('etc/jupyter/nbconfig/notebook.d', ['vispy.json']),
     ],
     include_package_data=True,
     package_data={

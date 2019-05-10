@@ -37,5 +37,5 @@ void main (void)
     v_rotation = vec2(cos(a_orientation), sin(a_orientation));
 
     gl_Position = u_projection * vec4(a_position, 1.0);
-    gl_PointSize = a_size + 2*(a_linewidth + 1.5*v_antialias);
+    gl_PointSize = a_size + 2.0*(a_linewidth + 1.5*v_antialias);
 }

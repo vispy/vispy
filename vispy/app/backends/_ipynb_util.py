@@ -21,6 +21,7 @@ def _extract_buffers(commands):
     them by buffer pointers {buffer: <buffer_index>}. Return the modified list
     # of GILR commands and the list of buffers as well."""
     # First, filter all DATA commands.
+    # Shader DATA commands are 3 elements, others are 4
     data_commands = [command for command in commands if command[0] == 'DATA']
     # Extract the arrays.
     buffers = [data_command[3] for data_command in data_commands]
@@ -29,8 +30,15 @@ def _extract_buffers(commands):
     buffer_index = 0
     for i, command in enumerate(commands_modified):
         if command[0] == 'DATA':
+            buffer = buffers[buffer_index]
+            # shader code is type str; textures and everything else are numpy
+            if isinstance(buffer, str):
+                buffer = np.array(buffer, np.bytes_)
+                buffers[buffer_index] = buffer
             commands_modified[i] = command[:3] + \
-                ({'buffer_index': buffer_index},)
+                ({'buffer_index': buffer_index,
+                  'buffer_shape': buffer.shape,
+                  'buffer_dtype': buffer.dtype.name},)
             buffer_index += 1
     return commands_modified, buffers
 
@@ -41,8 +49,7 @@ def _serialize_item(item):
     if isinstance(item, (list, tuple)):
         return [_serialize_item(subitem) for subitem in item]
     elif isinstance(item, dict):
-        return dict([(key, _serialize_item(value))
-                     for (key, value) in iteritems(item)])
+        return dict([(key, _serialize_item(value)) for (key, value) in iteritems(item)])
 
     # Serialize strings.
     elif isinstance(item, string_types):
@@ -59,8 +66,9 @@ def _serialize_item(item):
     # Serialize numbers.
     else:
         try:
-            return np.asscalar(item)
-        except Exception:
+            # convert to scalar
+            return item.item()
+        except (AttributeError, ValueError):
             return item
 
 

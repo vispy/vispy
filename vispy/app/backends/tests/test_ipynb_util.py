@@ -22,7 +22,10 @@ def test_extract_buffers():
     # A single DATA command.
     commands = [('DATA', 4, 0, arr)]
     commands_modified, buffers = _extract_buffers(commands)
-    assert_equal(commands_modified, [('DATA', 4, 0, {'buffer_index': 0})])
+    assert_equal(commands_modified, [('DATA', 4, 0,
+                                      {'buffer_index': 0,
+                                       'buffer_shape': (10, 2),
+                                       'buffer_dtype': 'float32'})])
     assert_equal(buffers, [arr])
 
     # Several commands.
@@ -31,9 +34,13 @@ def test_extract_buffers():
                 ('DATA', 2, 20, arr2)
                 ]
     commands_modified_expected = [
-        ('DATA', 0, 10, {'buffer_index': 0}),
+        ('DATA', 0, 10, {'buffer_index': 0,
+                         'buffer_shape': (10, 2),
+                         'buffer_dtype': 'float32'}),
         ('UNIFORM', 4, 'u_scale', 'vec3', (1, 2, 3)),
-        ('DATA', 2, 20, {'buffer_index': 1})]
+        ('DATA', 2, 20, {'buffer_index': 1,
+                         'buffer_shape': (20, 2),
+                         'buffer_dtype': 'int16'})]
     commands_modified, buffers = _extract_buffers(commands)
     assert_equal(commands_modified, commands_modified_expected)
     assert_equal(buffers, [arr, arr2])
@@ -66,9 +73,13 @@ def test_create_glir_message_binary():
     assert_equal(commands_serialized,
                  [['CREATE', 1, 'VertexBuffer'],
                   ['UNIFORM', 2, 'u_scale', 'vec3', [1, 2, 3]],
-                  ['DATA', 3, 0, {'buffer_index': 0}],
+                  ['DATA', 3, 0, {'buffer_index': 0,
+                                  'buffer_shape': [3, 2],
+                                  'buffer_dtype': 'float32'}],
                   ['UNIFORM', 4, 'u_pan', 'vec2', [1, 2, 3]],
-                  ['DATA', 5, 20, {'buffer_index': 1}]])
+                  ['DATA', 5, 20, {'buffer_index': 1,
+                                   'buffer_shape': [4, 5],
+                                   'buffer_dtype': 'int16'}]])
 
     buffers_serialized = msg['buffers']
     buf0 = buffers_serialized[0]
@@ -94,9 +105,13 @@ def test_create_glir_message_base64():
     assert_equal(commands_serialized,
                  [['CREATE', 1, 'VertexBuffer'],
                   ['UNIFORM', 2, 'u_scale', 'vec3', [1, 2, 3]],
-                  ['DATA', 3, 0, {'buffer_index': 0}],
+                  ['DATA', 3, 0, {'buffer_index': 0,
+                                  'buffer_shape': [3, 2],
+                                  'buffer_dtype': 'float32'}],
                   ['UNIFORM', 4, 'u_pan', 'vec2', [1, 2, 3]],
-                  ['DATA', 5, 20, {'buffer_index': 1}]])
+                  ['DATA', 5, 20, {'buffer_index': 1,
+                                   'buffer_shape': [4, 5],
+                                   'buffer_dtype': 'int16'}]])
 
     buffers_serialized = msg['buffers']
     buf0 = buffers_serialized[0]

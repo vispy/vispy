@@ -11,9 +11,6 @@ from OpenGL import GL
 import OpenGL.GL.framebufferobjects as FBO
 
 
-
-
-
 def glBindAttribLocation(program, index, name):
     name = name.encode('utf-8')
     return GL.glBindAttribLocation(program, index, name)
@@ -88,14 +85,8 @@ def glCreateTexture():
 
 def glGetActiveAttrib(program, index):
     bufsize = 256
-    length = (ctypes.c_int*1)()
-    size = (ctypes.c_int*1)()
-    type = (ctypes.c_uint*1)()
-    name = ctypes.create_string_buffer(bufsize)
-    # pyopengl has a bug, this is a patch
-    GL.glGetActiveAttrib(program, index, bufsize, length, size, type, name)
-    name = name[:length[0]].decode('utf-8')
-    return name, size[0], type[0]
+    name, size, type = GL.glGetActiveAttrib(program, index, bufSize=bufsize)
+    return name.decode('utf-8'), size, type
 
 
 def glGetActiveUniform(program, index):
@@ -144,14 +135,13 @@ def glGetParameter(pname):
         # GL_BLEND_COLOR GL_COLOR_CLEAR_VALUE GL_DEPTH_CLEAR_VALUE
         # GL_DEPTH_RANGE GL_LINE_WIDTH GL_POLYGON_OFFSET_FACTOR
         # GL_POLYGON_OFFSET_UNITS GL_SAMPLE_COVERAGE_VALUE
-        return _glGetFloatv(pname)
+        return GL.glGetFloatv(pname)
     elif pname in [7936, 7937, 7938, 35724, 7939]:
         # GL_VENDOR, GL_RENDERER, GL_VERSION, GL_SHADING_LANGUAGE_VERSION,
         # GL_EXTENSIONS are strings
         pass  # string handled below
     else:
-        return _glGetIntegerv(pname)
-    name = pname
+        return GL.glGetIntegerv(pname)
     res = GL.glGetString(pname)
     return res.decode('utf-8')
 
