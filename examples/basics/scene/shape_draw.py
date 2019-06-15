@@ -80,7 +80,7 @@ class ControlPoints(scene.visuals.Compound):
                 if c == obj:
                     self.selected_cp = c
                     self.opposed_cp = \
-                        self.control_points[(i + n_cp / 2) % n_cp]
+                        self.control_points[int((i + n_cp / 2)) % n_cp]
 
     def start_move(self, start):
         None
