@@ -43,7 +43,6 @@ from setuptools.command.build_py import build_py
 from setuptools.command.build_ext import build_ext as _build_ext
 from setuptools.command.egg_info import egg_info
 from subprocess import check_call
-import numpy as np
 
 
 try:
@@ -305,7 +304,6 @@ setup(
     },
     packages=find_packages(),
     ext_modules=cythonize(extensions),
-    include_dirs=[np.get_include()],
     package_dir={'vispy': 'vispy'},
     data_files=[
         ('share/jupyter/nbextensions/vispy', [
