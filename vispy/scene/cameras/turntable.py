@@ -34,6 +34,8 @@ class TurntableCamera(Base3DRotationCamera):
         The distance of the camera from the rotation point (only makes sense
         if fov > 0). If None (default) the distance is determined from the
         scale_factor and fov.
+    translate_speed : float
+        Scale factor on translation speed when moving the camera center point.
     **kwargs : dict
         Keyword arguments to pass to `BaseCamera`.
 
@@ -52,7 +54,7 @@ class TurntableCamera(Base3DRotationCamera):
                                                         'azimuth', 'roll')
 
     def __init__(self, fov=0.0, elevation=30.0, azimuth=30.0, roll=0.0,
-                 distance=None, **kwargs):
+                 distance=None, translate_speed=1.0, **kwargs):
         super(TurntableCamera, self).__init__(fov=fov, **kwargs)
 
         # Set camera attributes
@@ -60,6 +62,7 @@ class TurntableCamera(Base3DRotationCamera):
         self.elevation = elevation
         self.roll = roll  # interaction not implemented yet
         self.distance = distance  # None means auto-distance
+        self.translate_speed = translate_speed
 
     @property
     def elevation(self):
@@ -142,9 +145,10 @@ class TurntableCamera(Base3DRotationCamera):
         rae = np.array([self.roll, self.azimuth, self.elevation]) * np.pi / 180
         sro, saz, sel = np.sin(rae)
         cro, caz, cel = np.cos(rae)
-        dx = (+ dist[0] * (cro * caz + sro * sel * saz)
-              + dist[1] * (sro * caz - cro * sel * saz))
-        dy = (+ dist[0] * (cro * saz - sro * sel * caz)
-              + dist[1] * (sro * saz + cro * sel * caz))
-        dz = (- dist[0] * sro * cel + dist[1] * cro * cel)
+        d0, d1 = dist[0], dist[1]
+        dx = (+ d0 * (cro * caz + sro * sel * saz)
+              + d1 * (sro * caz - cro * sel * saz)) * self.translate_speed
+        dy = (+ d0 * (cro * saz - sro * sel * caz)
+              + d1 * (sro * saz + cro * sel * caz)) * self.translate_speed
+        dz = (- d0 * sro * cel + d1 * cro * cel) * self.translate_speed
         return dx, dy, dz

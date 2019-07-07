@@ -710,6 +710,7 @@ class GlirParser(BaseGlirParser):
                           'Texture1D': GlirTexture1D,
                           'Texture2D': GlirTexture2D,
                           'Texture3D': GlirTexture3D,
+                          'TextureCube': GlirTextureCube,
                           'RenderBuffer': GlirRenderBuffer,
                           'FrameBuffer': GlirFrameBuffer,
                           }
@@ -1630,6 +1631,48 @@ class GlirTexture3D(GlirTexture):
             gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, alignment)
         # Upload
         glTexSubImage3D(self._target, 0, x, y, z, format, gtype, data)
+        # Set alignment back
+        if alignment != 4:
+            gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 4)
+
+
+class GlirTextureCube(GlirTexture):
+    _target = gl.GL_TEXTURE_CUBE_MAP
+    _cube_targets = [
+        gl.GL_TEXTURE_CUBE_MAP_POSITIVE_X,
+        gl.GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
+        gl.GL_TEXTURE_CUBE_MAP_POSITIVE_Y,
+        gl.GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
+        gl.GL_TEXTURE_CUBE_MAP_POSITIVE_Z,
+        gl.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z,
+    ]
+
+    def set_size(self, shape, format, internalformat):
+        format = as_enum(format)
+        internalformat = format if internalformat is None \
+            else as_enum(internalformat)
+        if (shape, format, internalformat) != self._shape_formats:
+            self._shape_formats = shape, format, internalformat
+            self.activate()
+            for target in self._cube_targets:
+                gl.glTexImage2D(target, 0, internalformat, format,
+                                gl.GL_UNSIGNED_BYTE, shape[1:3])
+
+    def set_data(self, offset, data):
+        shape, format, internalformat = self._shape_formats
+        y, x = offset[:2]
+        # Get gtype
+        gtype = self._types.get(np.dtype(data.dtype), None)
+        if gtype is None:
+            raise ValueError("Type %r not allowed for texture" % data.dtype)
+        self.activate()
+        # Set alignment (width is nbytes_per_pixel * npixels_per_line)
+        alignment = self._get_alignment(data.shape[-2] * data.shape[-1])
+        if alignment != 4:
+            gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, alignment)
+        # Upload
+        for i, target in enumerate(self._cube_targets):
+            gl.glTexSubImage2D(target, 0, x, y, format, gtype, data[i])
         # Set alignment back
         if alignment != 4:
             gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 4)

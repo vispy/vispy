@@ -33,24 +33,22 @@ def _get_import_dir():
     return import_dir, dev
 
 
-_unit_script = """
-import pytest as tester
-try:
-    import faulthandler
-    faulthandler.enable()
-except Exception:
-    pass
-
-raise SystemExit(tester.main(%r))
-"""
-
-
-def _unit(mode, extra_arg_string, coverage=False):
+def _unit(mode, extra_arg_string='', coverage=False):
     """Run unit tests using a particular mode"""
+    if isinstance(extra_arg_string, str):
+        if len(extra_arg_string):
+            extra_args = extra_arg_string.split(' ')
+        else:
+            extra_args = ()
+    else:
+        extra_args = extra_arg_string
+    del extra_arg_string
+    assert isinstance(extra_args, (list, tuple))
+    assert all(isinstance(e, str) for e in extra_args)
+
     import_dir = _get_import_dir()[0]
     cwd = op.abspath(op.join(import_dir, '..'))
-    extra_args = [''] + extra_arg_string.split(' ')
-    del extra_arg_string
+    extra_args = list(extra_args)
     use_pytest = False
     try:
         import pytest  # noqa, analysis:ignore
@@ -90,7 +88,7 @@ def _unit(mode, extra_arg_string, coverage=False):
     # make a call to "python" so that it inherits whatever the system
     # thinks is "python" (e.g., virtualenvs)
     extra_args += [import_dir]  # positional argument
-    cmd = [sys.executable, '-c', _unit_script % (extra_args,)]
+    cmd = [sys.executable, '-m', 'pytest'] + extra_args
     env = deepcopy(os.environ)
 
     # We want to set this for all app backends plus "nobackend" to
@@ -98,9 +96,9 @@ def _unit(mode, extra_arg_string, coverage=False):
     env.update(dict(_VISPY_TESTING_APP=mode, VISPY_IGNORE_OLD_VERSION='true'))
     env_str = '_VISPY_TESTING_APP=%s ' % mode
     if len(msg) > 0:
-        extra_arg_string = ' '.join(extra_args)
+        cmd_string = ' '.join(cmd)
         msg = ('%s\n%s:\n%s%s'
-               % (_line_sep, msg, env_str, extra_arg_string))
+               % (_line_sep, 'msg', env_str, cmd_string))
         print(msg)
     sys.stdout.flush()
     return_code = run_subprocess(cmd, return_code=True, cwd=cwd,
@@ -354,7 +352,7 @@ def _examples(fnames_str):
         sys.stdout.flush()
     print('')
     t = (': %s failed, %s succeeded, %s skipped in %s seconds'
-         % (len(fails), n_ran - len(fails), n_skipped, round(time()-t0)))
+         % (len(fails), n_ran - len(fails), n_skipped, round(time() - t0)))
     if len(fails) > 0:
         raise RuntimeError('Failed%s' % t)
     print('Success%s' % t)
@@ -369,8 +367,10 @@ def test(label='full', extra_arg_string='', coverage=False):
     label : str
         Can be one of 'full', 'unit', 'nobackend', 'extra', 'lineendings',
         'flake', 'docs', or any backend name (e.g., 'qt').
-    extra_arg_string : str
+    extra_arg_string : str | list of str
         Extra arguments to sent to ``pytest``.
+        Can also be a list of str to more explicitly provide the
+        arguments.
     coverage : bool
         If True, collect coverage data.
     """
