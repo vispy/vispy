@@ -22,7 +22,7 @@ from ...gloo.wrappers import _check_valid
 from ...ext.six import string_types
 from ...util.fonts import _load_glyph
 from ..transforms import STTransform
-from ...color import Color, ColorArray
+from ...color import ColorArray
 from ..visual import Visual
 from ...io import load_spatial_filters
 
