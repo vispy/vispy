@@ -6,6 +6,7 @@ import numpy as np
 from vispy.scene.visuals import Windbarb
 from vispy.testing import (requires_application, TestingCanvas,
                            run_tests_if_main)
+from vispy.testing.image_tester import assert_image_approved
 
 length = 15.
 gridx = np.arange(length, 376, length * 2, dtype=np.float32)
@@ -15,7 +16,6 @@ origin = (length, length)
 vectors = (grid - origin).astype(np.float32)
 vectors[:] /= length // 2
 vectors[:, 1] *= -1
-ohist = np.array([90, 0, 132, 96, 24, 24, 723, 619, 234, 31058])
 
 
 @requires_application()
@@ -28,9 +28,6 @@ def test_windbarb_draw():
                  edge_color='black',
                  face_color='black',
                  size=length, parent=c.scene)
-        img = c.render()
-        # use numpy histogram to check for image equality
-        hist, _ = np.histogram(img)
-        np.testing.assert_array_equal(hist, ohist)
+        assert_image_approved(c.render(), 'visuals/windbarb.png')
 
 run_tests_if_main()
