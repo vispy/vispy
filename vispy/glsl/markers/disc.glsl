@@ -5,5 +5,5 @@
 
 float marker_disc(vec2 P, float size)
 {
-    return length(P) - size/2;
+    return length(P) - size/2.;
 }

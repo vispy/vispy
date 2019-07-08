@@ -55,7 +55,7 @@ class Canvas(app.Canvas):
         big_test_string += '\t-\t\\n\n'
         big_test_string += '\t-\t\\v\n'
         big_test_string += '\t-\t\\t\n'
-        big_test_string += '\t-\t\etc..\v'
+        big_test_string += '\t-\tetc..\v'
         big_test_string += 'So \bif \fthis \rlooks correct, somebody did a \n'
         big_test_string += 'decent job and deserves a beer '
         big_test_string += 'and a digital salute\a! ;)'
@@ -72,7 +72,7 @@ class Canvas(app.Canvas):
             'Hello (scroll/arrows to change text properties)|\\|how are u',
             'Hello (scroll/arrows to change text properties)|\'|how are u',
             'Hello (scroll/arrows to change text properties)|\"|how are u',
-            'Hello (scroll/arrows to change text properties)|\?|how are u',
+            'Hello (scroll/arrows to change text properties)|?|how are u',
             big_test_string,
         ]
         self.str_ind = 0

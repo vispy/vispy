@@ -103,10 +103,10 @@ class Canvas(app.Canvas):
         app.Canvas.__init__(self, show=False, size=size)
         self._t0 = time()
         # Texture where we render the scene.
-        self._rendertex = gloo.Texture2D(shape=self.size + (4,))
+        self._rendertex = gloo.Texture2D(shape=self.size[::-1] + (4,))
         # FBO.
         self._fbo = gloo.FrameBuffer(self._rendertex,
-                                     gloo.RenderBuffer(self.size))
+                                     gloo.RenderBuffer(self.size[::-1]))
         # Regular program that will be rendered to the FBO.
         self.program = gloo.Program(vertex, fragment)
         self.program["position"] = [(-1, -1), (-1, 1), (1, 1),

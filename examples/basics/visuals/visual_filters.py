@@ -52,14 +52,14 @@ class Canvas(app.Canvas):
                 self.shader = Function("""
                     void screen_filter() {
                         float f = gl_FragCoord.x * 0.4 + gl_FragCoord.y;
-                        f = mod(f, 20);
+                        f = mod(f, 20.0);
                         
                         if( f < 5.0 ) {
                             discard;
                         }
                         
                         if( f < 20.0 ) {
-                            gl_FragColor.g = gl_FragColor.g + 0.05 * (20-f);
+                            gl_FragColor.g = gl_FragColor.g + 0.05 * (20.0-f);
                         }
                     }
                 """)

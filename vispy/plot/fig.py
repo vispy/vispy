@@ -27,7 +27,7 @@ class Fig(SceneCanvas):
         >>> from vispy.plot import Fig
         >>> fig = Fig()
         >>> ax = fig[0, 0]  # this creates a PlotWidget
-        >>> ax.plot([[0, 1], [0, 1]])
+        >>> ax.plot([[0, 1], [1, 0]])
 
     See the gallery for many other examples.
 

@@ -149,7 +149,7 @@ class Canvas(app.Canvas):
 
         # Create new position data for the active block
         pos = np.zeros((blocksize, 3), 'float32')
-        pos[:, :2] = np.random.normal(0.0, SIZE/2, (blocksize, 2))  # x-y
+        pos[:, :2] = np.random.normal(0.0, SIZE/2., (blocksize, 2))  # x-y
         pos[:, 2] = np.random.uniform(0, SIZE, (blocksize,))  # z
         start_index = self._active_block * blocksize
         self.program['a_position'].set_subdata(pos, offset=start_index)

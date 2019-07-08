@@ -16,13 +16,13 @@
 
 import sys
 import re
-from PyQt4.QtCore import *  # noqa
-from PyQt4.QtGui import *  # noqa
+from PyQt5.QtCore import *  # noqa
+from PyQt5.QtWidgets import *  # noqa
 
 
 try:
-    from PyQt4 import Qsci
-    from PyQt4.Qsci import QsciScintilla
+    from PyQt5 import Qsci
+    from PyQt5.Qsci import QsciScintilla
     HAVE_QSCI = True
 except ImportError:
     HAVE_QSCI = False

@@ -50,7 +50,7 @@ from .context import (GLContext, get_default_config,  # noqa
                       get_current_canvas)  # noqa
 from .globject import GLObject  # noqa
 from .buffer import VertexBuffer, IndexBuffer  # noqa
-from .texture import Texture1D, Texture2D, TextureAtlas, Texture3D, TextureEmulated3D  # noqa
+from .texture import Texture1D, Texture2D, TextureAtlas, Texture3D, TextureCube, TextureEmulated3D  # noqa
 from .program import Program  # noqa
 from .framebuffer import FrameBuffer, RenderBuffer  # noqa
 from . import util  # noqa

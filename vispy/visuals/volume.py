@@ -209,16 +209,17 @@ void main() {{
 
     // Decide how many steps to take
     int nsteps = int(-distance / u_relative_step_size + 0.5);
+    float f_nsteps = float(nsteps);
     if( nsteps < 1 )
         discard;
 
     // Get starting location and step vector in texture coordinates
-    vec3 step = ((v_position - front) / u_shape) / nsteps;
+    vec3 step = ((v_position - front) / u_shape) / f_nsteps;
     vec3 start_loc = front / u_shape;
 
     // For testing: show the number of steps. This helps to establish
     // whether the rays are correctly oriented
-    //gl_FragColor = vec4(0.0, nsteps / 3.0 / u_shape.x, 1.0, 1.0);
+    //gl_FragColor = vec4(0.0, f_nsteps / 3.0 / u_shape.x, 1.0, 1.0);
     //return;
 
     {before_loop}

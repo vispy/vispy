@@ -1,9 +1,12 @@
-import numpy as np
+import os
 import sys
 from collections import namedtuple
 from time import sleep
+import gc
 
+import numpy as np
 from numpy.testing import assert_array_equal
+import pytest
 
 from vispy.app import use_app, Canvas, Timer, MouseEvent, KeyEvent
 from vispy.app.base import BaseApplicationBackend
@@ -163,7 +166,7 @@ def test_application():
     app = use_app()
     print(app)  # __repr__ without app
     app.create()
-    wrong = 'glfw' if app.backend_name.lower() != 'glfw' else 'pyqt4'
+    wrong = 'glfw' if app.backend_name.lower() != 'glfw' else 'pyqt5'
     assert_raises(RuntimeError, use_app, wrong)
     app.process_events()
     print(app)  # test __repr__
@@ -229,7 +232,7 @@ def test_application():
         assert_equal(len(canvas._backend._vispy_get_geometry()), 4)
         if sys.platform != 'win32':  # XXX knownfail for windows
             assert_array_equal(canvas.size, size)
-        assert_equal(len(canvas.position), 2)  # XXX knawnfail, doesn't "take"
+        assert_equal(len(canvas.position), 2)  # XXX knownfail, doesn't "take"
 
         # GLOO: should have an OpenGL context already, so these should work
         vert = "void main (void) {gl_Position = pos;}"
@@ -257,7 +260,7 @@ def test_application():
                 "void main (void) {v_color = a_color;"
                 "gl_Position = u_model * vec4(a_position, 0.0, 1.0);"
                 "v_color = a_color;}")
-        frag = "void main() {gl_FragColor = vec4(0, 0, 0, 1);}"
+        frag = "void main() {gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);}"
         n, p = 250, 50
         T = np.random.uniform(0, 2 * np.pi, n)
         position = np.zeros((n, 2), dtype=np.float32)
@@ -346,6 +349,8 @@ def test_close_keys():
     c.app.process_events()
 
 
+@pytest.mark.skipif(os.getenv('TRAVIS', 'false') == 'true' and 'darwin' in sys.platform,
+                    reason='Travis OSX causes segmentation fault on this test for an unknown reason.')
 @requires_application()
 def test_event_order():
     """Test event order"""
@@ -376,6 +381,8 @@ def test_event_order():
         assert_in('draw size=True', x[1])
         assert_in('draw size=True', x[-2])
         assert_equal(x[-1], 'close')
+        del c
+        gc.collect()
 
 
 def test_abstract():

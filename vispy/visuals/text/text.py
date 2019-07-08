@@ -22,7 +22,7 @@ from ...gloo.wrappers import _check_valid
 from ...ext.six import string_types
 from ...util.fonts import _load_glyph
 from ..transforms import STTransform
-from ...color import Color
+from ...color import ColorArray
 from ..visual import Visual
 from ...io import load_spatial_filters
 
@@ -280,6 +280,9 @@ def _text_to_vbo(text, font, anchor_x, anchor_y, lowres_size):
 class TextVisual(Visual):
     """Visual that displays text
 
+    Note: SDF GPU is not currently supported in WebGL without additional
+          extensions (see comments in fragment shader below).
+
     Parameters
     ----------
     text : str | list of str
@@ -315,21 +318,23 @@ class TextVisual(Visual):
     """
 
     VERTEX_SHADER = """
-        uniform float u_rotation;  // rotation in rad
+        attribute float a_rotation;  // rotation in rad
         attribute vec2 a_position; // in point units
         attribute vec2 a_texcoord;
         attribute vec3 a_pos;  // anchor position
         varying vec2 v_texcoord;
+        varying vec4 v_color;
 
         void main(void) {
             // Eventually "rot" should be handled by SRTTransform or so...
-            mat4 rot = mat4(cos(u_rotation), -sin(u_rotation), 0, 0,
-                            sin(u_rotation), cos(u_rotation), 0, 0,
+            mat4 rot = mat4(cos(a_rotation), -sin(a_rotation), 0, 0,
+                            sin(a_rotation), cos(a_rotation), 0, 0,
                             0, 0, 1, 0, 0, 0, 0, 1);
             vec4 pos = $transform(vec4(a_pos, 1.0)) +
                        $text_scale(rot * vec4(a_position, 0, 0));
             gl_Position = pos;
             v_texcoord = a_texcoord;
+            v_color = $color;
         }
         """
 
@@ -343,7 +348,7 @@ class TextVisual(Visual):
 
         uniform sampler2D u_font_atlas;
         uniform vec2 u_font_atlas_shape;
-        uniform vec4 u_color;
+        varying vec4 v_color;
         uniform float u_npix;
 
         varying vec2 v_texcoord;
@@ -360,7 +365,6 @@ class TextVisual(Visual):
         }
 
         void main(void) {
-            vec4 color = u_color;
             vec2 uv = v_texcoord.xy;
             vec4 rgb;
 
@@ -392,7 +396,7 @@ class TextVisual(Visual):
                 alpha = (alpha + 0.5 * asum) / 3.0;
             }
 
-            gl_FragColor = vec4(color.rgb, color.a * alpha);
+            gl_FragColor = vec4(v_color.rgb, v_color.a * alpha);
         }
         """
 
@@ -412,6 +416,7 @@ class TextVisual(Visual):
         self._font_manager = font_manager or FontManager(method=method)
         self._font = self._font_manager.get_font(face, bold, italic)
         self._vertices = None
+        self._color_vbo = None
         self._anchors = (anchor_x, anchor_y)
         # Init text properties
         self.color = color
@@ -439,6 +444,7 @@ class TextVisual(Visual):
         self._text = text
         self._vertices = None
         self._pos_changed = True  # need to update this as well
+        self._color_changed = True
         self.update()
 
     @property
@@ -471,7 +477,8 @@ class TextVisual(Visual):
 
     @color.setter
     def color(self, color):
-        self._color = Color(color)
+        self._color = ColorArray(color)
+        self._color_changed = True
         self.update()
 
     @property
@@ -482,7 +489,7 @@ class TextVisual(Visual):
 
     @rotation.setter
     def rotation(self, rotation):
-        self._rotation = float(rotation) * np.pi / 180.
+        self._rotation = np.asarray(rotation) * np.pi / 180.
         self.update()
 
     @property
@@ -538,13 +545,43 @@ class TextVisual(Visual):
                 repeats = [4 * len(text)]
             n_text = len(repeats)
             pos = self.pos
+            # Rotation
+            _rot = self._rotation
+            if isinstance(_rot, (int, float)):
+                _rot = np.full((pos.shape[0],), self._rotation)
+            _rot = np.asarray(_rot)
+            if _rot.shape[0] < n_text:
+                _rep = [1] * (len(_rot) - 1) + [n_text - len(_rot) + 1]
+                _rot = np.repeat(_rot, _rep, axis=0)
+            _rot = np.repeat(_rot[:n_text], repeats, axis=0)
+            self.shared_program['a_rotation'] = _rot.astype(np.float32)
+            # Position
             if pos.shape[0] < n_text:
-                pos = np.repeat(pos, [1]*(len(pos)-1) + [n_text-len(pos)+1],
-                                axis=0)
+                _rep = [1] * (len(pos) - 1) + [n_text - len(pos) + 1]
+                pos = np.repeat(pos, _rep, axis=0)
             pos = np.repeat(pos[:n_text], repeats, axis=0)
-            assert pos.shape[0] == self._vertices.size
+            assert pos.shape[0] == self._vertices.size == len(_rot)
             self.shared_program['a_pos'] = pos
             self._pos_changed = False
+        if self._color_changed:
+            # now we promote color to the proper shape (varying)
+            text = self.text
+            if not isinstance(text, string_types):
+                repeats = [4 * len(t) for t in text]
+                text = ''.join(text)
+            else:
+                repeats = [4 * len(text)]
+            n_text = len(repeats)
+            color = self.color.rgba
+            if color.shape[0] < n_text:
+                color = np.repeat(color,
+                                  [1]*(len(color)-1) + [n_text-len(color)+1],
+                                  axis=0)
+            color = np.repeat(color[:n_text], repeats, axis=0)
+            assert color.shape[0] == self._vertices.size
+            self._color_vbo = VertexBuffer(color)
+            self.shared_program.vert['color'] = self._color_vbo
+            self._color_changed = False
 
         transforms = self.transforms
         n_pix = (self._font_size / 72.) * transforms.dpi  # logical pix
@@ -554,7 +591,6 @@ class TextVisual(Visual):
         self.shared_program.vert['text_scale'] = self._text_scale
         self.shared_program['u_npix'] = n_pix
         self.shared_program['u_kernel'] = self._font._kernel
-        self.shared_program['u_rotation'] = self._rotation
         self.shared_program['u_color'] = self._color.rgba
         self.shared_program['u_font_atlas'] = self._font._atlas
         self.shared_program['u_font_atlas_shape'] = self._font._atlas.shape[:2]

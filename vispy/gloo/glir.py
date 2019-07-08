@@ -4,8 +4,356 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
-"""
-Implementation to execute GL Intermediate Representation (GLIR)
+"""GL Intermediate Representation Desktop Implementation
+=====================================================
+
+The glir module holds the desktop implementation of the GL Intermediate
+Representation (GLIR). Parsing and handling of the GLIR for other platforms
+can be found in external libraries (ex. vispy.js for WebGL).
+
+We propose the specification of a simple intermediate representation for
+OpenGL. It provides a means to serialize a visualization, so that the
+high-level API and the part that does the GL commands can be separated,
+and even be in separate processes.
+
+GLIR is a high level representation that consists of commands without
+return values. In effect, the commands can be streamed from one node to
+another without having to wait for a reply. Only in the event of an
+error information needs to go in the other direction, but this can be
+done asynchronously.
+
+The purpose for Vispy is to allow the usage gloo (our high level object
+oriented interface to OpenGL), while executing the visualization in the
+browser (via JS/WebGL). The fact that the stream of commands is
+one-directional is essential to realize reactive visualizations.
+
+The separation between API and implementation also provides a nice
+abstraction leading to cleaner code.
+
+GLIR commands are represented as tuples. As such the overhead for
+"parsing" the commands is minimal. The commands can, however, be
+serialized so they can be send to another process. Further, a series of
+GLIR commands can be stored in a file. This way we can store
+visualizations to disk that can be displayed with any application that
+can interpret GLIR.
+
+The GLIR specification is tied to the version of the vispy python library
+that supports it. The current specification described below was first
+created for::
+
+    VisPy 0.6
+
+The shape of a command
+~~~~~~~~~~~~~~~~~~~~~~
+
+GLIR consists of a sequence of commands that are defined as tuples. Each
+command has the following shape:
+
+::
+
+   (<command>, <ID>, [arg1, [arg2, [arg3]]])
+
+-  ``<command>`` is one of 15 commands: CURRENT, CREATE, DELETE,
+   UNIFORM, ATTRIBUTE, DRAW, SIZE, DATA, WRAPPING,
+   INTERPOLATION, ATTACH, FRAMEBUFFER, FUNC, SWAP, LINK.
+-  In all commands except SET, ``<ID>`` is an integer unique within the
+   current GL context that is used as a reference to a GL object. It is
+   the responsibility of the code that generates the command to keep
+   track of id's and to ensure that they are unique.
+-  The number of arguments and their type differs per command and are
+   explained further below.
+-  Some commands accept GL enums in the form of a string. In these cases
+   the enum can also be given as an int, but a string is recommended for
+   better debugging. The string is case insensitive.
+
+CURRENT
+~~~~~~~
+
+::
+
+   ('CURRENT', 0)
+
+Will be called when the context is made current. The GLIR implementation
+can use this to reset some caches.
+
+CREATE
+~~~~~~
+
+::
+
+   ('CREATE', <id>, <class:str>)
+   # Example:
+   ('CREATE', 4, 'VertexBuffer')
+
+Applies to: All objects
+
+The create command is used to create a new GL object. It has one string
+argument that can be any of 10 classes: 'Program', 'VertexBuffer',
+'IndexBuffer', 'Texture2D', 'Texture3D', 'RenderBuffer', 'FrameBuffer',
+'VertexShader', 'FragmentShader', 'GeometryShader'
+
+DELETE
+~~~~~~
+
+::
+
+   ('DELETE', <id>)
+   # Example:
+   ('DELETE', 4)
+
+Applies to: All objects
+
+The delete command is used to delete the GL object corresponding to the
+given id. If the id does not exist, this command is ignored. This
+command does not have arguments. When used with Shader objects, the
+shader is freed from GPU memory.
+
+UNIFORM
+~~~~~~~
+
+::
+
+   ('UNIFORM', <program_id>, <name:str>, <type:str>, <value>)
+   # Examples:
+   ('UNIFORM', 4, 'u_scale', 'vec3', <array 3>)
+
+Applies to: Program
+
+This command is used to set the uniform of a program object. A uniform
+has a string name, a type, and a value.
+
+The type can be 'float', 'vec2', 'vec3', 'vec4', 'int', 'ivec2',
+'ivec3', 'ivec4', 'bool', 'bvec2', 'bvec3', 'bvec4', 'mat2', 'mat3',
+'mat4'. The value must be tuple or array with number of elements that
+matches with the type.
+
+It is an error to provide this command before the shaders are set. After
+resetting shaders, all uniforms and attributes have to be re-submitted.
+
+Discussion: for the uniform and attribute commands, the type argument
+should not strictly be necessary, but it makes the GLIR implementation
+simpler. Plus in gloo we *have* this information.
+
+TEXTURE
+~~~~~~~
+
+::
+
+   ('TEXTURE', <program_id>, <name:str>, <texture_id>)
+   # Examples:
+   ('TEXTURE', 4, 'u_texture1', 6)
+
+Applies to: Program
+
+This command is used to link a texture to a GLSL uniform sampler.
+
+ATTRIBUTE
+~~~~~~~~~
+
+::
+
+   ('ATTRIBUTE', <program_id>, <name:str>, <type:str>, <vbo_id>, <stride:int>, <offset:int>)
+   # Example: Buffer id 5, stride 4, offset 0
+   ('ATTRIBUTE', 4, 'a_position', 'vec3', 5, 4, 0)
+
+Applies to: Program
+
+This command is used to set the attribute of a program object. An
+attribute has a string name, a type, and a value.
+
+The type can be 'float', 'vec2', 'vec3', 'vec4'. If the first value
+element is zero, the remaining elements represent the data to pass to
+``glVertexAttribNf``.
+
+It is an error to provide this command before the shaders are set. After
+resetting shaders, all uniforms and attributes have to be re-submitted.
+
+DRAW
+~~~~
+
+::
+
+   ('DRAW', <program_id>, <mode:str>, <selection:tuple>)
+   # Example: Draw 100 lines
+   ('DRAW', 4, 'lines', (0, 100))
+   # Example: Draw 100 lines using index buffer with id 5
+   ('DRAW', 4, 'points', (5, 'unsigned_int', 100))
+
+Applies to: Program
+
+This command is used to draw the program. It has a ``mode`` argument
+which can be 'points', 'lines', 'line_strip', 'line_loop', 'triangles',
+'triangle_strip', or 'triangle_fan' (case insensitive).
+
+If the ``selection`` argument has two elements, it contains two integers
+``(start, count)``. If it has three elements, it contains
+``(<index-buffer-id>, gtype, count)``, where ``gtype`` is
+'unsigned_byte','unsigned_short', or 'unsigned_int'.
+
+SIZE
+~~~~
+
+::
+
+   ('SIZE', <id>, <size>, [<format>], [<internalformat>])
+   # Example: resize a buffer
+   ('SIZE', 4, 500)
+   # Example: resize a 2D texture
+   ('SIZE', 4, (500, 300, 3), 'rgb', None)
+   ('SIZE', 4, (500, 300, 3), 'rgb', 'rgb16f')
+
+Applies to: VertexBuffer, IndexBuffer, Texture2D, Texture3D,
+RenderBuffer
+
+This command is used to set the size of the buffer with the given id.
+The GLIR implementation should be such that if the size/format
+corresponds to the current size, it is ignored. The high level
+implementation can use the SIZE command to discard previous DATA
+commands.
+
+For buffers: the size argument is an integer and the format argument is
+not specified.
+
+For textures and render buffer: the size argument is a shape tuple
+(z,y,x). This tuple may contain the dimension for the color channels,
+but this information is ignored. The format *should* be set to
+'luminance', 'alpha', 'luminance_alpha', 'rgb' or 'rgba'. The
+internalformat is a hint for backends that can control the internal GL
+storage format; a value of None is a hint to use the default storage
+format. The internalformat, if specified, *should* be a base channel
+configuration of 'r', 'rg', 'rgb', or 'rgba' with a precision qualifying
+suffix of '8', '16', '16f', or '32f'.
+
+For render buffers: the size argument is a shape tuple (z,y,x). This
+tuple may contain the dimension for the color channels, but this
+information is ignored. The format *should* be set to 'color', 'depth'
+or 'stencil'.
+
+DATA
+~~~~
+
+::
+
+   ('DATA', <id>, <offset>, <data:array>)
+   # Example:
+   ('DATA', 4, 100, <array 200x2>)
+
+Applies to: VertexBuffer, IndexBuffer, Texture2D, Texture3D, VertexShader,
+FragmentShader, GeometryShader
+
+The data command is used to set the data of the object with the given
+id. For VertexBuffer and IndexBuffer the offset is an integer. For
+textures it is a tuple that matches with the dimension of the texture.
+For shader objects it is always 0 and the data must be a ``str`` object.
+
+WRAPPING
+~~~~~~~~
+
+::
+
+   ('WRAPPING', <texture_id>, <wrapping:tuple>)
+   # Example:
+   ('WRAPPING', 4, ('CLAMP_TO_EDGE', 'CLAMP_TO_EDGE'))
+
+Applies to: Texture2D, Texture3D
+
+Set the wrapping mode for each dimension of the texture. Each element
+must be a string: 'repeat', 'clamp_to_edge' or 'mirrored_repeat'.
+
+INTERPOLATION
+~~~~~~~~~~~~~
+
+::
+
+   ('INTERPOLATION', <texture_id>, <min:str>, <mag:str>)
+   # Example:
+   ('INTERPOLATION', 4, True, True)
+
+Applies to: Texture2D, Texture3D
+
+Set the interpolation mode of the texture for minification and
+magnification. The min and mag argument can both be either 'nearest' or
+'linear'.
+
+ATTACH
+~~~~~~
+
+::
+
+   ('ATTACH', <framebuffer_id>, <attachment:str>, <object>)
+   ('ATTACH', <program_id>, <shader_id>)
+   # Example:
+   ('ATTACH', 4, 'color', 5)
+   ('ATTACH', 1, 3)
+
+Applies to: FrameBuffer, Program
+
+Attach color, depth, or stencil buffer to the framebuffer. The
+attachment argument can be 'color', 'depth' or 'stencil'. The object
+argument must be the id for a RenderBuffer or Texture2D.
+For Program this attaches an existing Shader object to the program.
+
+FRAMEBUFFER
+~~~~~~~~~~~
+
+::
+
+   ('FRAMEBUFFER', <framebuffer_id>, <use:bool>)
+   # Example:
+   ('FRAMEBUFFER', 4, True)
+
+Applies to: FrameBuffer
+
+Turn the framebuffer on or off. When deactivating a frame buffer, the
+GLIR implementation should activate any previously activated
+framebuffer.
+
+FUNC
+~~~~
+
+::
+
+   ('FUNC', <gl_function_name>, [arg1, [arg2, [arg3]]])
+
+The ``FUNC`` command is a special command that can be applied to call a
+variety of OpenGL calls. Use the documentation OpenGL for the required
+arguments. Any args that are strings are converted to GL enums.
+
+Supported functions are in principle all gl functions that do not have a
+return value or covered by the above commands: glEnable, glDisable,
+glClear, glClearColor, glClearDepth, glClearStencil, glViewport,
+glDepthRange, glFrontFace, glCullFace, glPolygonOffset,
+glBlendFuncSeparate, glBlendEquationSeparate, glBlendColor, glScissor,
+glStencilFuncSeparate, glStencilMaskSeparate, glStencilOpSeparate,
+glDepthFunc, glDepthMask, glColorMask, glSampleCoverage, glFlush,
+glFinish, glHint.
+
+SWAP
+~~~~
+
+::
+
+    ('SWAP',)
+
+The ``SWAP`` command is a special synchronization command for remote
+rendering. This command tells the renderer that it should swap drawing
+buffers. This is especially important when rendering with WebGL where
+drawing buffers are implicitly swapped.
+
+LINK
+~~~~
+
+::
+
+    ('LINK', <program_id>)
+
+Applies to: Program
+
+Link the current program together (shaders, etc). Additionally this should
+cause shaders to be detached and deleted. See the
+`OpenGL documentation <https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glLinkProgram.xhtml>`_
+for details on program linking.
+
 """
 
 import os
@@ -152,21 +500,13 @@ class _GlirQueueShare(object):
         resized = set()
         commands2 = []
         for command in reversed(commands):
-            if command[0] == 'SHADERS':
-                convert = parser.convert_shaders()
-                if convert:
-                    shaders = self._convert_shaders(convert, command[2:])
-                    command = command[:2] + shaders
-            elif command[1] in resized:
+            if command[1] in resized:
                 if command[0] in ('SIZE', 'DATA'):
                     continue  # remove this command
             elif command[0] == 'SIZE':
                 resized.add(command[1])
             commands2.append(command)
         return list(reversed(commands2))
-
-    def _convert_shaders(self, convert, shaders):
-        return convert_shaders(convert, shaders)
 
 
 class GlirQueue(object):
@@ -232,84 +572,78 @@ class GlirQueue(object):
         self._shared.flush(parser)
 
 
-def convert_shaders(convert, shaders):
-    """ Modify shading code so that we can write code once
-    and make it run "everywhere".
-    """
+def _convert_es2_shader(shader):
+    has_version = False
+    has_prec_float = False
+    has_prec_int = False
+    lines = []
+    extensions = []
+    # Iterate over lines
+    for line in shader.lstrip().splitlines():
+        line_strip = line.lstrip()
+        if line_strip.startswith('#version'):
+            has_version = True
+            continue
+        if line_strip.startswith('#extension'):
+            extensions.append(line_strip)
+            line = ''
+        if line_strip.startswith('precision '):
+            has_prec_float = has_prec_float or 'float' in line
+            has_prec_int = has_prec_int or 'int' in line
+        lines.append(line.rstrip())
+    # Write
+    # BUG: fails on WebGL (Chrome)
+    # if True:
+    #     lines.insert(has_version, '#line 0')
+    if not has_prec_float:
+        lines.insert(has_version, 'precision highp float;')
+    if not has_prec_int:
+        lines.insert(has_version, 'precision highp int;')
+    # Make sure extensions are at the top before precision
+    # but after version
+    if extensions:
+        for ext_line in extensions:
+            lines.insert(has_version, ext_line)
+    # BUG: fails on WebGL (Chrome)
+    # if not has_version:
+    #     lines.insert(has_version, '#version 100')
+    return '\n'.join(lines)
 
-    # New version of the shaders
-    out = []
 
-    if convert == 'es2':
+def _convert_desktop_shader(shader):
+    has_version = False
+    lines = []
+    extensions = []
+    # Iterate over lines
+    for line in shader.lstrip().splitlines():
+        line_strip = line.lstrip()
+        has_version = has_version or line.startswith('#version')
+        if line_strip.startswith('precision '):
+            line = ''
+        if line_strip.startswith('#extension'):
+            extensions.append(line_strip)
+            line = ''
+        for prec in (' highp ', ' mediump ', ' lowp '):
+            line = line.replace(prec, ' ')
+        lines.append(line.rstrip())
+    # Write
+    # Make sure extensions are at the top, but after version
+    if extensions:
+        for ext_line in extensions:
+            lines.insert(has_version, ext_line)
+    if not has_version:
+        lines.insert(0, '#version 120\n')
+    return '\n'.join(lines)
 
-        for isfragment, shader in enumerate(shaders):
-            has_version = False
-            has_prec_float = False
-            has_prec_int = False
-            lines = []
-            extensions = []
-            # Iterate over lines
-            for line in shader.lstrip().splitlines():
-                line_strip = line.lstrip()
-                if line_strip.startswith('#version'):
-                    has_version = True
-                    continue
-                if line_strip.startswith('#extension'):
-                    extensions.append(line_strip)
-                    line = ''
-                if line_strip.startswith('precision '):
-                    has_prec_float = has_prec_float or 'float' in line
-                    has_prec_int = has_prec_int or 'int' in line
-                lines.append(line.rstrip())
-            # Write
-            # BUG: fails on WebGL (Chrome)
-            # if True:
-            #     lines.insert(has_version, '#line 0')
-            if not has_prec_float:
-                lines.insert(has_version, 'precision highp float;')
-            if not has_prec_int:
-                lines.insert(has_version, 'precision highp int;')
-            # Make sure extensions are at the top before precision
-            # but after version
-            if extensions:
-                for ext_line in extensions:
-                    lines.insert(has_version, ext_line)
-            # BUG: fails on WebGL (Chrome)
-            # if not has_version:
-            #     lines.insert(has_version, '#version 100')
-            out.append('\n'.join(lines))
 
-    elif convert == 'desktop':
-
-        for isfragment, shader in enumerate(shaders):
-            has_version = False
-            lines = []
-            extensions = []
-            # Iterate over lines
-            for line in shader.lstrip().splitlines():
-                line_strip = line.lstrip()
-                has_version = has_version or line.startswith('#version')
-                if line_strip.startswith('precision '):
-                    line = ''
-                if line_strip.startswith('#extension'):
-                    extensions.append(line_strip)
-                    line = ''
-                for prec in (' highp ', ' mediump ', ' lowp '):
-                    line = line.replace(prec, ' ')
-                lines.append(line.rstrip())
-            # Write
-            # Make sure extensions are at the top, but after version
-            if extensions:
-                for ext_line in extensions:
-                    lines.insert(has_version, ext_line)
-            if not has_version:
-                lines.insert(0, '#version 120\n')
-            out.append('\n'.join(lines))
-
+def convert_shader(backend_type, shader):
+    """Modify shader code to be compatible with `backend_type` backend."""
+    if backend_type == 'es2':
+        return _convert_es2_shader(shader)
+    elif backend_type == 'desktop':
+        return _convert_desktop_shader(shader)
     else:
-        raise ValueError('Cannot convert shaders to %r.' % convert)
-
-    return tuple(out)
+        raise ValueError('Cannot backend_type shaders to %r.' % backend_type)
 
 
 def as_es2_command(command):
@@ -319,9 +653,7 @@ def as_es2_command(command):
     if command[0] == 'FUNC':
         return (command[0], re.sub(r'^gl([A-Z])',
                 lambda m: m.group(1).lower(), command[1])) + command[2:]
-    if command[0] == 'SHADERS':
-        return command[:2] + convert_shaders('es2', command[2:])
-    if command[0] == 'UNIFORM':
+    elif command[0] == 'UNIFORM':
         return command[:-1] + (command[-1].tolist(),)
     return command
 
@@ -342,7 +674,8 @@ class BaseGlirParser(object):
         """
         raise NotImplementedError()
 
-    def convert_shaders(self):
+    @property
+    def shader_compatibility(self):
         """ Whether to convert shading code. Valid values are 'es2' and
         'desktop'. If None, the shaders are not modified.
         """
@@ -368,12 +701,16 @@ class GlirParser(BaseGlirParser):
         self._objects = {}
         self._invalid_objects = set()
 
-        self._classmap = {'Program': GlirProgram,
+        self._classmap = {'VertexShader': GlirVertexShader,
+                          'FragmentShader': GlirFragmentShader,
+                          'GeometryShader': GlirGeometryShader,
+                          'Program': GlirProgram,
                           'VertexBuffer': GlirVertexBuffer,
                           'IndexBuffer': GlirIndexBuffer,
                           'Texture1D': GlirTexture1D,
                           'Texture2D': GlirTexture2D,
                           'Texture3D': GlirTexture3D,
+                          'TextureCube': GlirTextureCube,
                           'RenderBuffer': GlirRenderBuffer,
                           'FrameBuffer': GlirFrameBuffer,
                           }
@@ -384,14 +721,16 @@ class GlirParser(BaseGlirParser):
         # when two Canvases share a context.
         self.env = {}
 
-    def is_remote(self):
-        return False
-
-    def convert_shaders(self):
+    @property
+    def shader_compatibility(self):
+        """Type of shader compatibility """
         if '.es' in gl.current_backend.__name__:
             return 'es2'
         else:
             return 'desktop'
+
+    def is_remote(self):
+        return False
 
     def _parse(self, command):
         """ Parse a single command.
@@ -402,7 +741,8 @@ class GlirParser(BaseGlirParser):
             # This context is made current
             self.env.clear()
             self._gl_initialize()
-            gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, 0)
+            self.env['fbo'] = args[0]
+            gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, args[0])
         elif cmd == 'FUNC':
             # GL function call
             args = [as_enum(a) for a in args]
@@ -443,16 +783,18 @@ class GlirParser(BaseGlirParser):
                 ob.set_uniform(*args)
             elif cmd == 'ATTRIBUTE':  # Program
                 ob.set_attribute(*args)
-            elif cmd == 'DATA':  # VertexBuffer, IndexBuffer, Texture
+            elif cmd == 'DATA':  # VertexBuffer, IndexBuffer, Texture, Shader
                 ob.set_data(*args)
             elif cmd == 'SIZE':  # VertexBuffer, IndexBuffer,
                 ob.set_size(*args)  # Texture[1D, 2D, 3D], RenderBuffer
-            elif cmd == 'ATTACH':  # FrameBuffer
+            elif cmd == 'ATTACH':  # FrameBuffer, Program
                 ob.attach(*args)
             elif cmd == 'FRAMEBUFFER':  # FrameBuffer
                 ob.set_framebuffer(*args)
-            elif cmd == 'SHADERS':  # Program
-                ob.set_shaders(*args)
+            # elif cmd == 'SHADERS':  # Program
+            #     ob.set_shaders(*args)
+            elif cmd == 'LINK':  # Program
+                ob.link_program(*args)
             elif cmd == 'WRAPPING':  # Texture1D, Texture2D, Texture3D
                 ob.set_wrapping(*args)
             elif cmd == 'INTERPOLATION':  # Texture1D, Texture2D, Texture3D
@@ -557,6 +899,105 @@ class GlirObject(object):
         return '<%s %i at 0x%x>' % (self.__class__.__name__, self.id, id(self))
 
 
+class GlirShader(GlirObject):
+    _target = None
+
+    def create(self):
+        self._handle = gl.glCreateShader(self._target)
+
+    def set_data(self, offset, code):
+        # NOTE: offset will always be 0 to match other DATA commands
+
+        # convert shader to be compatible with backend
+        convert = self._parser.shader_compatibility
+        if convert:
+            code = convert_shader(convert, code)
+
+        gl.glShaderSource(self._handle, code)
+        gl.glCompileShader(self._handle)
+        status = gl.glGetShaderParameter(self._handle, gl.GL_COMPILE_STATUS)
+        if not status:
+            errors = gl.glGetShaderInfoLog(self._handle)
+            errormsg = self._get_error(code, errors, 4)
+            raise RuntimeError("Shader compilation error in %s:\n%s" %
+                               (self._target, errormsg))
+
+    def delete(self):
+        gl.glDeleteShader(self._handle)
+
+    def _get_error(self, code, errors, indentation=0):
+        """Get error and show the faulty line + some context
+        Other GLIR implementations may omit this.
+        """
+        # Init
+        results = []
+        lines = None
+        if code is not None:
+            lines = [line.strip() for line in code.split('\n')]
+
+        for error in errors.split('\n'):
+            # Strip; skip empy lines
+            error = error.strip()
+            if not error:
+                continue
+            # Separate line number from description (if we can)
+            linenr, error = self._parse_error(error)
+            if None in (linenr, lines):
+                results.append('%s' % error)
+            else:
+                results.append('on line %i: %s' % (linenr, error))
+                if linenr > 0 and linenr < len(lines):
+                    results.append('  %s' % lines[linenr - 1])
+
+        # Add indentation and return
+        results = [' ' * indentation + r for r in results]
+        return '\n'.join(results)
+
+    def _parse_error(self, error):
+        """ Parses a single GLSL error and extracts the linenr and description
+        Other GLIR implementations may omit this.
+        """
+        error = str(error)
+        # Nvidia
+        # 0(7): error C1008: undefined variable "MV"
+        m = re.match(r'(\d+)\((\d+)\)\s*:\s(.*)', error)
+        if m:
+            return int(m.group(2)), m.group(3)
+        # ATI / Intel
+        # ERROR: 0:131: '{' : syntax error parse error
+        m = re.match(r'ERROR:\s(\d+):(\d+):\s(.*)', error)
+        if m:
+            return int(m.group(2)), m.group(3)
+        # Nouveau
+        # 0:28(16): error: syntax error, unexpected ')', expecting '('
+        m = re.match(r'(\d+):(\d+)\((\d+)\):\s(.*)', error)
+        if m:
+            return int(m.group(2)), m.group(4)
+        # Other ...
+        return None, error
+
+
+class GlirVertexShader(GlirShader):
+    _target = gl.GL_VERTEX_SHADER
+
+
+class GlirFragmentShader(GlirShader):
+    _target = gl.GL_FRAGMENT_SHADER
+
+
+class GlirGeometryShader(GlirShader):
+    # _target assignment must be delayed because GL_GEOMETRY_SHADER does not
+    # exist until the user calls use_gl('gl+')
+    _target = None
+
+    def __init__(self, *args, **kwargs):
+        if not hasattr(gl, 'GL_GEOMETRY_SHADER'):
+            raise RuntimeError("GL2 backend does not support geometry shaders."
+                               " Try gloo.gl.use_gl('gl+').")
+        GlirGeometryShader._target = gl.GL_GEOMETRY_SHADER
+        GlirShader.__init__(self, *args, **kwargs)
+
+
 class GlirProgram(GlirObject):
 
     UTYPEMAP = {
@@ -598,6 +1039,7 @@ class GlirProgram(GlirObject):
 
     def create(self):
         self._handle = gl.glCreateProgram()
+        self._attached_shaders = []
         self._validated = False
         self._linked = False
         # Keeping track of uniforms/attributes
@@ -635,35 +1077,38 @@ class GlirProgram(GlirObject):
         to use.
         """
         self._linked = False
-        # Create temporary shader objects
-        vert_handle = gl.glCreateShader(gl.GL_VERTEX_SHADER)
-        frag_handle = gl.glCreateShader(gl.GL_FRAGMENT_SHADER)
+
         # For both vertex and fragment shader: set source, compile, check
-        for code, handle, type_ in [(vert, vert_handle, 'vertex'),
-                                    (frag, frag_handle, 'fragment')]:
-            gl.glShaderSource(handle, code)
-            gl.glCompileShader(handle)
-            status = gl.glGetShaderParameter(handle, gl.GL_COMPILE_STATUS)
-            if not status:
-                errors = gl.glGetShaderInfoLog(handle)
-                errormsg = self._get_error(code, errors, 4)
-                raise RuntimeError("Shader compilation error in %s:\n%s" %
-                                   (type_ + ' shader', errormsg))
-        # Attach shaders
-        gl.glAttachShader(self._handle, vert_handle)
-        gl.glAttachShader(self._handle, frag_handle)
-        # Link the program and check
+        for code, type_ in [(vert, 'vertex'),
+                            (frag, 'fragment')]:
+            self.attach_shader(code, type_)
+
+        self.link_program()
+
+    def attach(self, id_):
+        """ Attach a shader to this program.
+        """
+        shader = self._parser.get_object(id_)
+        gl.glAttachShader(self._handle, shader.handle)
+        self._attached_shaders.append(shader)
+
+    def link_program(self):
+        """ Link the complete program and check.
+
+        All shaders are detached and deleted if the program was successfully
+        linked.
+        """
         gl.glLinkProgram(self._handle)
         if not gl.glGetProgramParameter(self._handle, gl.GL_LINK_STATUS):
             raise RuntimeError('Program linking error:\n%s'
                                % gl.glGetProgramInfoLog(self._handle))
-        # Now we can remove the shaders. We no longer need them and it
-        # frees up precious GPU memory:
-        # http://gamedev.stackexchange.com/questions/47910
-        gl.glDetachShader(self._handle, vert_handle)
-        gl.glDetachShader(self._handle, frag_handle)
-        gl.glDeleteShader(vert_handle)
-        gl.glDeleteShader(frag_handle)
+
+        # Detach all shaders to prepare them for deletion (they are no longer
+        # needed after linking is complete)
+        for shader in self._attached_shaders:
+            gl.glDetachShader(self._handle, shader.handle)
+        self._attached_shaders = []
+
         # Now we know what variables will be used by the program
         self._unset_variables = self._get_active_attributes_and_uniforms()
         self._handles = {}
@@ -697,57 +1142,6 @@ class GlirProgram(GlirObject):
         #return attributes, uniforms
         return set([v[0] for v in attributes] + [v[0] for v in uniforms])
 
-    def _parse_error(self, error):
-        """ Parses a single GLSL error and extracts the linenr and description
-        Other GLIR implementations may omit this.
-        """
-        error = str(error)
-        # Nvidia
-        # 0(7): error C1008: undefined variable "MV"
-        m = re.match(r'(\d+)\((\d+)\)\s*:\s(.*)', error)
-        if m:
-            return int(m.group(2)), m.group(3)
-        # ATI / Intel
-        # ERROR: 0:131: '{' : syntax error parse error
-        m = re.match(r'ERROR:\s(\d+):(\d+):\s(.*)', error)
-        if m:
-            return int(m.group(2)), m.group(3)
-        # Nouveau
-        # 0:28(16): error: syntax error, unexpected ')', expecting '('
-        m = re.match(r'(\d+):(\d+)\((\d+)\):\s(.*)', error)
-        if m:
-            return int(m.group(2)), m.group(4)
-        # Other ...
-        return None, error
-
-    def _get_error(self, code, errors, indentation=0):
-        """Get error and show the faulty line + some context
-        Other GLIR implementations may omit this.
-        """
-        # Init
-        results = []
-        lines = None
-        if code is not None:
-            lines = [line.strip() for line in code.split('\n')]
-
-        for error in errors.split('\n'):
-            # Strip; skip empy lines
-            error = error.strip()
-            if not error:
-                continue
-            # Separate line number from description (if we can)
-            linenr, error = self._parse_error(error)
-            if None in (linenr, lines):
-                results.append('%s' % error)
-            else:
-                results.append('on line %i: %s' % (linenr, error))
-                if linenr > 0 and linenr < len(lines):
-                    results.append('  %s' % lines[linenr - 1])
-
-        # Add indentation and return
-        results = [' ' * indentation + r for r in results]
-        return '\n'.join(results)
-
     def set_texture(self, name, value):
         """ Set a texture sampler. Value is the id of the texture to link.
         """
@@ -763,7 +1157,8 @@ class GlirProgram(GlirObject):
             self._handles[name] = handle  # Store in cache
             if handle < 0:
                 self._known_invalid.add(name)
-                logger.info('Variable %s is not an active uniform' % name)
+                logger.info('Not setting texture data for variable %s; '
+                            'uniform is not active.' % name)
                 return
         # Program needs to be active in order to set uniforms
         self.activate()
@@ -804,7 +1199,8 @@ class GlirProgram(GlirObject):
             self._handles[name] = handle  # Store in cache
             if handle < 0:
                 self._known_invalid.add(name)
-                logger.info('Variable %s is not an active uniform' % name)
+                logger.info('Not setting value for variable %s %s; '
+                            'uniform is not active.' % (type_, name))
                 return
         # Look up function to call
         funcname = self.UTYPEMAP[type_]
@@ -837,7 +1233,8 @@ class GlirProgram(GlirObject):
                 self._known_invalid.add(name)
                 if value[0] != 0 and value[2] > 0:  # VBO with offset
                     return  # Probably an unused element in a structured VBO
-                logger.info('Variable %s is not an active attribute' % name)
+                logger.info('Not setting data for variable %s %s; '
+                            'attribute is not active.' % (type_, name))
                 return
         # Program needs to be active in order to set uniforms
         self.activate()
@@ -1239,6 +1636,48 @@ class GlirTexture3D(GlirTexture):
             gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 4)
 
 
+class GlirTextureCube(GlirTexture):
+    _target = gl.GL_TEXTURE_CUBE_MAP
+    _cube_targets = [
+        gl.GL_TEXTURE_CUBE_MAP_POSITIVE_X,
+        gl.GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
+        gl.GL_TEXTURE_CUBE_MAP_POSITIVE_Y,
+        gl.GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
+        gl.GL_TEXTURE_CUBE_MAP_POSITIVE_Z,
+        gl.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z,
+    ]
+
+    def set_size(self, shape, format, internalformat):
+        format = as_enum(format)
+        internalformat = format if internalformat is None \
+            else as_enum(internalformat)
+        if (shape, format, internalformat) != self._shape_formats:
+            self._shape_formats = shape, format, internalformat
+            self.activate()
+            for target in self._cube_targets:
+                gl.glTexImage2D(target, 0, internalformat, format,
+                                gl.GL_UNSIGNED_BYTE, shape[1:3])
+
+    def set_data(self, offset, data):
+        shape, format, internalformat = self._shape_formats
+        y, x = offset[:2]
+        # Get gtype
+        gtype = self._types.get(np.dtype(data.dtype), None)
+        if gtype is None:
+            raise ValueError("Type %r not allowed for texture" % data.dtype)
+        self.activate()
+        # Set alignment (width is nbytes_per_pixel * npixels_per_line)
+        alignment = self._get_alignment(data.shape[-2] * data.shape[-1])
+        if alignment != 4:
+            gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, alignment)
+        # Upload
+        for i, target in enumerate(self._cube_targets):
+            gl.glTexSubImage2D(target, 0, x, y, format, gtype, data[i])
+        # Set alignment back
+        if alignment != 4:
+            gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 4)
+
+
 class GlirRenderBuffer(GlirObject):
 
     def create(self):
@@ -1289,13 +1728,15 @@ class GlirFrameBuffer(GlirObject):
             self.deactivate()
 
     def activate(self):
-        stack = self._parser.env.setdefault('fb_stack', [0])
+        stack = self._parser.env.setdefault('fb_stack',
+                                            [self._parser.env['fbo']])
         if stack[-1] != self._handle:
             stack.append(self._handle)
             gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, self._handle)
 
     def deactivate(self):
-        stack = self._parser.env.setdefault('fb_stack', [0])
+        stack = self._parser.env.setdefault('fb_stack',
+                                            [self._parser.env['fbo']])
         while self._handle in stack:
             stack.remove(self._handle)
         gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, stack[-1])

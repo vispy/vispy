@@ -17,7 +17,7 @@ import weakref
 
 from .. import visuals
 from .node import Node
-from ..visuals.filters import ColorFilter, PickingFilter
+from ..visuals.filters import Alpha, PickingFilter
 
 
 class VisualNode(Node):
@@ -28,7 +28,7 @@ class VisualNode(Node):
         Node.__init__(self, parent=parent, name=name,
                       transforms=self.transforms)
         self.interactive = False
-        self._opacity_filter = ColorFilter()
+        self._opacity_filter = Alpha()
         self.attach(self._opacity_filter)
 
         self._id = VisualNode._next_id
@@ -38,7 +38,8 @@ class VisualNode(Node):
         self.attach(self._picking_filter)
 
     def _update_opacity(self):
-        self._opacity_filter.color = (1, 1, 1, self._opacity)
+        self._opacity_filter.alpha = self._opacity
+        self.update()
 
     def _set_clipper(self, node, clipper):
         """Assign a clipper that is inherited from a parent node.
@@ -258,6 +259,7 @@ Text = create_visual_node(visuals.TextVisual)
 Tube = create_visual_node(visuals.TubeVisual)
 # Visual = create_visual_node(visuals.Visual)  # Should not be created
 Volume = create_visual_node(visuals.VolumeVisual)
+Windbarb = create_visual_node(visuals.WindbarbVisual)
 XYZAxis = create_visual_node(visuals.XYZAxisVisual)
 
 __all__ = [name for (name, obj) in globals().items()

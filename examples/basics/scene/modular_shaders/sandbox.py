@@ -7,8 +7,8 @@
 """
 Sandbox for experimenting with vispy.visuals.shaders
 """
-from PyQt4 import QtCore
-from PyQt4.QtGui import *  # noqa
+from PyQt5 import QtCore
+from PyQt5.QtWidgets import *  # noqa
 import sys
 import traceback
 
@@ -508,7 +508,7 @@ FRAGMENT = program.frag_code
 
 qsci_note = """
 #  [[ NOTE: Install PyQt.QsciScintilla for improved code editing ]]
-#  [[ (Debian packages: python-qscintilla2 or python3-pyqt4.qsci ]]
+#  [[ (Debian packages: python-qscintilla2 or python3-pyqt5.qsci ]]
 
 """
 if not HAVE_QSCI:

@@ -44,3 +44,4 @@ from .xyz_axis import XYZAxisVisual  # noqa
 from .border import _BorderVisual  # noqa
 from .colorbar import ColorBarVisual  # noqa
 from .graphs import GraphVisual  # noqa
+from .windbarb import WindbarbVisual  # noqa

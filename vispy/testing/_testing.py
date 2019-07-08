@@ -10,6 +10,7 @@ import numpy as np
 import sys
 import os
 import inspect
+import gc
 
 from distutils.version import LooseVersion
 
@@ -220,7 +221,14 @@ def composed(*decs):
     return deco
 
 
-def requires_application(backend=None, has=(), capable=()):
+def garbage_collect(f):
+    def deco(*args, **kwargs):
+        gc.collect()
+        return f(*args, **kwargs)
+    return deco
+
+
+def requires_application(backend=None, has=(), capable=(), force_gc=True):
     """Return a decorator for tests that require an application"""
     good, msg = has_application(backend, has, capable)
     dec_backend = np.testing.dec.skipif(not good, "Skipping test: %s" % msg)
@@ -229,7 +237,10 @@ def requires_application(backend=None, has=(), capable=()):
     except Exception:
         return dec_backend
     dec_app = pytest.mark.vispy_app_test
-    return composed(dec_app, dec_backend)
+    funcs = [dec_app, dec_backend]
+    if force_gc:
+        funcs.append(garbage_collect)
+    return composed(*funcs)
 
 
 def requires_img_lib():

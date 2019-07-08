@@ -39,10 +39,11 @@ def read_mesh(fname):
     if fmt in ('.obj'):
         return WavefrontReader.read(fname)
     elif fmt in ('.stl'):
-        mesh = load_stl(fname)
-        vertices = mesh.vertices
-        faces = mesh.faces
-        normals = mesh.face_normals
+        file_obj = open(fname, mode='rb')
+        mesh = load_stl(file_obj)
+        vertices = mesh['vertices']
+        faces = mesh['faces']
+        normals = mesh['face_normals']
         texcoords = None
         return vertices, faces, normals, texcoords
     elif not format:
