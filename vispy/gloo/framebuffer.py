@@ -250,8 +250,11 @@ class FrameBuffer(GLObject):
         
         """
         _check_valid('mode', mode, ['color', 'depth', 'stencil'])
+        buffer = getattr(self, mode + '_buffer')
+        if buffer is None:
+            raise ValueError("Can't read pixels for buffer {}, "
+                             "buffer does not exist.".format(mode))
         if crop is None:
-            buffer = getattr(self, mode+'_buffer')
             h, w = buffer.shape[:2]
             crop = (0, 0, w, h)
         
