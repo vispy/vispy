@@ -13,20 +13,30 @@ from time import sleep
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
                     BaseTimerBackend)
 from ...util.ptime import time
+from ... import config
 
 # -------------------------------------------------------------------- init ---
 
 try:
-    # Inspired by http://www.mesa3d.org/egl.html
-    # This is likely necessary on Linux since proprietary drivers
-    # (e.g., NVIDIA) are unlikely to provide EGL support for now.
+    import os
     # XXX TODO: Add use_gl('es2') and somehow incorporate here.
     # Also would be good to have us_gl('es3'), since libGLESv2.so on linux
     # seems to support both.
-    from os import environ
-    environ['EGL_SOFTWARE'] = 'true'
+
+    # If running remote X11 (for example via ssh), eglInitialize() below will
+    # fail (with NVIDIA EGL drivers) if the DISPLAY environment variable is
+    # set. Temporarily unset the DISPLAY environment variable while calling
+    # eglGetDisplay() in order to work around this. This should be OK since
+    # only headless rendering is currently supported by this backend anyway.
+    x11_dpy = os.getenv('DISPLAY')
+    if x11_dpy is not None:
+        os.unsetenv('DISPLAY')
     from ...ext import egl
     _EGL_DISPLAY = egl.eglGetDisplay()
+
+    if x11_dpy is not None:
+        os.environ['DISPLAY'] = x11_dpy
+
     egl.eglInitialize(_EGL_DISPLAY)
     version = [egl.eglQueryString(_EGL_DISPLAY, x) for x in
                [egl.EGL_VERSION, egl.EGL_VENDOR, egl.EGL_CLIENT_APIS]]
@@ -36,9 +46,9 @@ try:
 except Exception as exp:
     available, testable, why_not, which = False, False, str(exp), None
 else:
-    # XXX restore "testable" and "available" once it works properly, and
+    # XXX restore "testable" once it works properly, and
     # remove from ignore list in .coveragerc
-    available, testable, why_not = False, False, 'Not ready for testing'
+    available, testable, why_not = True, False, ''
     which = 'EGL ' + str(version)
 
 
@@ -118,6 +128,7 @@ class ApplicationBackend(BaseApplicationBackend):
 
 # ------------------------------------------------------------------ canvas ---
 
+
 class CanvasBackend(BaseCanvasBackend):
 
     """ EGL backend for Canvas abstract class."""
@@ -132,7 +143,23 @@ class CanvasBackend(BaseCanvasBackend):
         p.context.shared.add_ref('egl', self)
         if p.context.shared.ref is self:
             # Store context information
-            self._native_config = egl.eglChooseConfig(_EGL_DISPLAY)[0]
+            attribs = [egl.EGL_RED_SIZE, 8,
+                       egl.EGL_BLUE_SIZE, 8,
+                       egl.EGL_GREEN_SIZE, 8,
+                       egl.EGL_ALPHA_SIZE, 8,
+                       egl.EGL_COLOR_BUFFER_TYPE, egl.EGL_RGB_BUFFER,
+                       egl.EGL_SURFACE_TYPE, egl.EGL_PBUFFER_BIT]
+            api = None
+            if 'es' in config['gl_backend']:
+                attribs.extend([egl.EGL_RENDERABLE_TYPE,
+                                egl.EGL_OPENGL_ES2_BIT])
+                api = egl.EGL_OPENGL_ES_API
+            else:
+                attribs.extend([egl.EGL_RENDERABLE_TYPE, egl.EGL_OPENGL_BIT])
+                api = egl.EGL_OPENGL_API
+
+            self._native_config = egl.eglChooseConfig(_EGL_DISPLAY, attribs)[0]
+            egl.eglBindAPI(api)
             self._native_context = egl.eglCreateContext(_EGL_DISPLAY,
                                                         self._native_config,
                                                         None)
@@ -178,7 +205,6 @@ class CanvasBackend(BaseCanvasBackend):
         if self._surface is None:
             return
         # Make this the current context
-        self._vispy_canvas.set_current()  # Mark canvs as current
         egl.eglMakeCurrent(_EGL_DISPLAY, self._surface, self._surface,
                            self._native_context)
 

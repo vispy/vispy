@@ -839,7 +839,14 @@ class GlirParser(BaseGlirParser):
             self.capabilities['gl_version'] = gl.glGetParameter(gl.GL_VERSION)
             self.capabilities['max_texture_size'] = \
                 gl.glGetParameter(gl.GL_MAX_TEXTURE_SIZE)
-            this_version = self.capabilities['gl_version'].split(' ')[0]
+            this_version = self.capabilities['gl_version'].split(' ')
+            if this_version[0] == "OpenGL":
+                # For OpenGL ES, the version string has the format:
+                # "OpenGL ES <version number> <vendor-specific information>"
+                this_version = this_version[2]
+            else:
+                this_version = this_version[0]
+
             this_version = LooseVersion(this_version)
             if this_version < '2.1':
                 if os.getenv('VISPY_IGNORE_OLD_VERSION', '').lower() != 'true':
