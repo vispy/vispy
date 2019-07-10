@@ -616,7 +616,10 @@ def read_pixels(viewport=None, alpha=True, mode='color', out_type='unsigned_byte
         the current GL viewport will be queried and used.
     alpha : bool
         If True (default), the returned array has 4 elements (RGBA).
-        If False, it has 3 (RGB).
+        If False, it has 3 (RGB). This only effects the color mode.
+    mode : str
+        Type of buffer data to read. Can be one of 'colors', 'depth',
+        or 'stencil'. See returns for more information.
     out_type : str | dtype
         Can be 'unsigned_byte' or 'float'. Note that this does not
         use casting, but instead determines how values are read from
@@ -627,8 +630,10 @@ def read_pixels(viewport=None, alpha=True, mode='color', out_type='unsigned_byte
     -------
     pixels : array
         3D array of pixels in np.uint8 or np.float32 format.
-        The array shape is (h, w, 3) or (h, w, 4), with the top-left corner
-        of the framebuffer at index [0, 0] in the returned array.
+        The array shape is (h, w, 3) or (h, w, 4) for colors mode,
+        with the top-left corner of the framebuffer at index [0, 0] in the
+        returned array. If 'mode' is depth or stencil then the last dimension
+        is 1.
     """
     _check_valid('mode', mode, ['color', 'depth', 'stencil'])
 
