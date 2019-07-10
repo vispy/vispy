@@ -50,11 +50,11 @@ class _ArrowHeadVisual(Visual):
     ARROWHEAD_FRAGMENT_SHADER = glsl.get('arrowheads/arrowheads.frag')
 
     _arrow_vtype = np.dtype([
-        ('v1', np.float32, 4),
-        ('v2', np.float32, 4),
-        ('size', np.float32, 1),
-        ('color', np.float32, 4),
-        ('linewidth', np.float32, 1)
+        ('v1', np.float32, (4,)),
+        ('v2', np.float32, (4,)),
+        ('size', np.float32),
+        ('color', np.float32, (4,)),
+        ('linewidth', np.float32)
     ])
 
     def __init__(self, parent):
