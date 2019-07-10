@@ -100,11 +100,11 @@ void main()
     v_linewidth = max(v_linewidth, 1.0);
 
     // If color is fully transparent we just will discard the fragment anyway
-    if( v_color.a <= 0.0 )
-    {
-        gl_Position = vec4(0.0,0.0,0.0,1.0);
-        return;
-    }
+//    if( v_color.a <= 0.0 )
+//    {
+//        gl_Position = vec4(0.0,0.0,0.0,1.0);
+//        return;
+//    }
 
     // This is the actual half width of the line
     // TODO: take care of logical - physical pixel difference here.
