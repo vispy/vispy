@@ -257,7 +257,7 @@ def test_read_pixels():
         # we should have quite a few different depth values
         assert unique_img.shape[0] > 50
         assert unique_img.max() == 255
-        assert unique_img.min() == 128
+        assert unique_img.min() > 0
 
 
 run_tests_if_main()
