@@ -602,7 +602,7 @@ for name in dir(global_gloo_functions):
 ## Functions that do not use the glir queue
 
 
-def read_pixels(viewport=None, alpha=True, out_type='unsigned_byte'):
+def read_pixels(viewport=None, alpha=True, mode='color', out_type='unsigned_byte'):
     """Read pixels from the currently selected buffer.
 
     Under most circumstances, this function reads from the front buffer.
@@ -616,7 +616,10 @@ def read_pixels(viewport=None, alpha=True, out_type='unsigned_byte'):
         the current GL viewport will be queried and used.
     alpha : bool
         If True (default), the returned array has 4 elements (RGBA).
-        If False, it has 3 (RGB).
+        If False, it has 3 (RGB). This only effects the color mode.
+    mode : str
+        Type of buffer data to read. Can be one of 'colors', 'depth',
+        or 'stencil'. See returns for more information.
     out_type : str | dtype
         Can be 'unsigned_byte' or 'float'. Note that this does not
         use casting, but instead determines how values are read from
@@ -627,9 +630,13 @@ def read_pixels(viewport=None, alpha=True, out_type='unsigned_byte'):
     -------
     pixels : array
         3D array of pixels in np.uint8 or np.float32 format.
-        The array shape is (h, w, 3) or (h, w, 4), with the top-left corner
-        of the framebuffer at index [0, 0] in the returned array.
+        The array shape is (h, w, 3) or (h, w, 4) for colors mode,
+        with the top-left corner of the framebuffer at index [0, 0] in the
+        returned array. If 'mode' is depth or stencil then the last dimension
+        is 1.
     """
+    _check_valid('mode', mode, ['color', 'depth', 'stencil'])
+
     # Check whether the GL context is direct or remote
     context = get_current_canvas().context
     if context.shared.parser.is_remote():
@@ -649,7 +656,18 @@ def read_pixels(viewport=None, alpha=True, out_type='unsigned_byte'):
                          % (viewport,))
     x, y, w, h = viewport
     gl.glPixelStorei(gl.GL_PACK_ALIGNMENT, 1)  # PACK, not UNPACK
-    fmt = gl.GL_RGBA if alpha else gl.GL_RGB
+    if mode == 'depth':
+        fmt = gl.GL_DEPTH_COMPONENT
+        shape = (h, w, 1)
+    elif mode == 'stencil':
+        fmt = gl.GL_STENCIL_INDEX8
+        shape = (h, w, 1)
+    elif alpha:
+        fmt = gl.GL_RGBA
+        shape = (h, w, 4)
+    else:
+        fmt = gl.GL_RGB
+        shape = (h, w, 3)
     im = gl.glReadPixels(x, y, w, h, fmt, type_)
     gl.glPixelStorei(gl.GL_PACK_ALIGNMENT, 4)
     # reshape, flip, and return
@@ -657,8 +675,8 @@ def read_pixels(viewport=None, alpha=True, out_type='unsigned_byte'):
         np_dtype = np.uint8 if type_ == gl.GL_UNSIGNED_BYTE else np.float32
         im = np.frombuffer(im, np_dtype)
 
-    im.shape = h, w, (4 if alpha else 3)  # RGBA vs RGB
-    im = im[::-1, :, :]  # flip the image
+    im.shape = shape
+    im = im[::-1, ...]  # flip the image
     return im
 
 
