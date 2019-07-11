@@ -120,7 +120,7 @@ install:
     # can remove the github numpydoc install once >0.8.0 is released and get it from conda
     - if [ "${DEPS}" == "full" ]; then
         conda install --yes pyopengl networkx pysdl2;
-        pip install git+https://github.com/numpy/numpydoc;
+        pip install numpydoc;
         if [ "${TRAVIS_OS_NAME}" == "linux" ]; then
           conda install --yes matplotlib jupyter pyqt=5 pillow decorator six scikit-image glfw;
           if [ "${PYTHON}" == "3.7" ]; then

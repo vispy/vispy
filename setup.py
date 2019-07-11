@@ -287,17 +287,16 @@ setup(
         'jsdeps': NPM,
         'build_ext': build_ext,
     },
-    python_requires='>=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*',
-    install_requires=['numpy'],
+    python_requires='>=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*',
+    install_requires=['numpy', 'freetype-py'],
     extras_require={
         'ipython-static': ['ipython'],
         'ipython-vnc': ['ipython>=7'],
         'ipython-webgl': ['ipywidgets>=7.0', 'ipython>=7', 'tornado'],
         'pyglet': ['pyglet>=1.2'],
-        # 'pyqt4': [],  # Why is this on PyPI, but without downloads?
-        # 'pyqt5': [],  # Ditto.
+        'pyqt5': ['pyqt5'],
         'pyside': ['PySide'],
-        # 'pyside2': [],  # not yet on PyPI
+        'pyside2': ['PySide2'],  # not yet on PyPI
         'sdl2': ['PySDL2'],
         'wx': ['wxPython'],
         'doc': ['sphinx_bootstrap_theme', 'numpydoc'],
