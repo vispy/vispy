@@ -1,19 +1,42 @@
-# Starter pipeline
-# Start with a minimal pipeline that you can customize to build and deploy your code.
-# Add steps that build, run tests, deploy, and more:
-# https://aka.ms/yaml
-
-trigger:
-- master
-
-pool:
-  vmImage: 'ubuntu-latest'
-
-steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
-
-- script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
+variables:
+  CIBW_SKIP: "cp27-* cp34-*"
+  CIBW_TEST_REQUIRES: "pytest pytest-sugar pyglet nose"
+  CIBW_TEST_COMMAND: "python -c \"import vispy; vispy.test()\""
+  CIBW_BEFORE_BUILD_LINUX: "yum install -y fontconfig xvfb; pip install freetype-py; /usr/bin/Xvfb -- :99 -screen 0 1400x900x24 -ac +extension GLX +render &"
+  CIBW_BEFORE_BUILD_WINDOWS: "git clone --depth 1 git://github.com/vtkiorg/gl-ci-helpers.git && powershell gl-ci-helpers/appveyor/install_opengl.ps1"
+jobs:
+- job: linux
+  pool: {vmImage: 'Ubuntu-16.04'}
+  steps:
+    - task: UsePythonVersion@0
+    - bash: |
+        python -m pip install --upgrade pip
+        pip install "cibuildwheel==0.11.1"
+        cibuildwheel --output-dir wheelhouse .
+    - task: PublishBuildArtifacts@1
+      inputs: {pathtoPublish: 'wheelhouse'}
+- job: macos
+  pool: {vmImage: 'macOS-10.13'}
+  steps:
+    - task: UsePythonVersion@0
+    - bash: |
+        python -m pip install --upgrade pip
+        pip install "https://github.com/joerick/cibuildwheel/archive/ab86b8cd93d38786bcf59d279936c98ae1f4d23a.zip"
+        cibuildwheel --output-dir wheelhouse .
+    - task: PublishBuildArtifacts@1
+      inputs: {pathtoPublish: 'wheelhouse'}
+- job: windows
+  pool: {vmImage: 'vs2017-win2016'}
+  steps:
+    - {task: UsePythonVersion@0, inputs: {versionSpec: '3.5', architecture: x86}}
+    - {task: UsePythonVersion@0, inputs: {versionSpec: '3.5', architecture: x64}}
+    - {task: UsePythonVersion@0, inputs: {versionSpec: '3.6', architecture: x86}}
+    - {task: UsePythonVersion@0, inputs: {versionSpec: '3.6', architecture: x64}}
+    - {task: UsePythonVersion@0, inputs: {versionSpec: '3.7', architecture: x86}}
+    - {task: UsePythonVersion@0, inputs: {versionSpec: '3.7', architecture: x64}}
+    - bash: |
+        python -m pip install --upgrade pip
+        pip install cibuildwheel==0.11.1
+        cibuildwheel --output-dir wheelhouse .
+    - task: PublishBuildArtifacts@1
+      inputs: {pathtoPublish: 'wheelhouse'}
