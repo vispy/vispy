@@ -6,6 +6,7 @@
 
 from __future__ import print_function
 
+import platform
 import numpy as np
 import sys
 import os
@@ -159,6 +160,12 @@ def has_pyopengl():
 
 def requires_pyopengl():
     return np.testing.dec.skipif(not has_pyopengl(), 'Requires PyOpenGL')
+
+
+def requires_ssl():
+    bad = (sys.platform == 'darwin' and
+            LooseVersion(platform.mac_ver()[0]) < LooseVersion('10.7'))
+    return np.testing.dec.skipif(bad, 'Requires proper SSL support')
 
 
 ###############################################################################
