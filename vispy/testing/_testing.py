@@ -6,7 +6,6 @@
 
 from __future__ import print_function
 
-import platform
 import numpy as np
 import sys
 import os
