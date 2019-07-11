@@ -47,6 +47,9 @@ install:
   - "python --version"
   - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
 
+  # Check PEP425 supported wheel tags
+  - "python -c \"import wheel.pep425tags as w; print(w.get_supported())\""
+
   # Install vispy
   - "python setup.py develop"
   - "python -c \"import vispy; print(vispy.sys_info())\""
