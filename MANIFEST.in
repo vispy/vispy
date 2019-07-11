@@ -37,3 +37,4 @@ exclude rtd_requirements.txt
 exclude stdeb.cfg
 exclude .spyderproject
 recursive-exclude vispy *.c
+recursive-exclude js *
