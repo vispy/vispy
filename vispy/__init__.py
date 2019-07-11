@@ -22,7 +22,7 @@ from __future__ import division
 __all__ = ['use', 'sys_info', 'set_log_level', 'test']
 
 # Definition of the version number
-version_info = 0, 6, 0, 'dev0'  # major, minor, patch, extra
+version_info = 0, 6, 0  # 'dev0'  # major, minor, patch, extra
 
 # Nice string for the version (mimic how IPython composes its version str)
 __version__ = '-'.join(map(str, version_info)).replace('-', '.').strip('-')
