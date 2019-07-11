@@ -13,8 +13,6 @@ recursive-include vispy *.glsl
 recursive-include vispy *.frag
 recursive-include vispy *.vert
 
-recursive-include js *.*
-
 include vispy/app/tests/qt-designer.ui
 include vispy/io/_data/spatial-filters.npy
 include vispy/util/fonts/data/*.ttf
@@ -38,5 +36,4 @@ exclude azure-pipelines.yml
 exclude rtd_requirements.txt
 exclude stdeb.cfg
 exclude .spyderproject
-include .gitmodules
 recursive-exclude vispy *.c
