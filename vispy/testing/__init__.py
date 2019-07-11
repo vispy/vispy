@@ -45,7 +45,7 @@ from ._testing import (SkipTest, requires_application, requires_ipython,  # noqa
                       has_backend, requires_pyopengl,  # noqa
                       requires_scipy, has_matplotlib, has_skimage,  # noqa
                       save_testing_image, TestingCanvas, has_pyopengl,  # noqa
-                      run_tests_if_main,
+                      run_tests_if_main, requires_ssl,  # noqa
                       assert_is, assert_in, assert_not_in, assert_equal,
                       assert_not_equal, assert_raises, assert_true,  # noqa
                       raises, requires_numpydoc)  # noqa

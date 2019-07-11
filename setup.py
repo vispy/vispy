@@ -40,15 +40,11 @@ from distutils import log
 from setuptools import setup, find_packages, Command, Extension
 from setuptools.command.sdist import sdist
 from setuptools.command.build_py import build_py
-from setuptools.command.build_ext import build_ext as _build_ext
 from setuptools.command.egg_info import egg_info
 from subprocess import check_call
 
-
-try:
-    from Cython.Build import cythonize
-except ImportError:
-    cythonize = None
+import numpy as np
+from Cython.Build import cythonize
 
 log.set_verbosity(log.DEBUG)
 log.info('setup.py entered')
@@ -92,52 +88,6 @@ def set_builtin(name, value):
         __builtins__[name] = value
     else:
         setattr(__builtins__, name, value)
-
-
-class build_ext(_build_ext):
-    """Work around to bootstrap numpy includes in to extensions.
-
-    Copied from:
-
-        http://stackoverflow.com/questions/19919905/
-            how-to-bootstrap-numpy-installation-in-setup-py
-
-    """
-
-    def finalize_options(self):
-        _build_ext.finalize_options(self)
-        # Prevent numpy from thinking it is still in its setup process:
-        set_builtin('__NUMPY_SETUP__', False)
-        import numpy
-        self.include_dirs.append(numpy.get_include())
-
-
-if cythonize is None:
-    def cythonize(extensions, **_ignore):
-        """Fake function to compile from C/C++ files.
-
-        Normally compiled from .pyx files with cython. If installed from
-        a source distribution (sdist) this function should be enough to
-        compile extensions for the C/C++ files included in the sdist.
-
-        """
-        for extension in extensions:
-            sources = []
-            for sfile in extension.sources:
-                path, ext = os.path.splitext(sfile)
-                if ext in ('.pyx', '.py'):
-                    if extension.language == 'c++':
-                        ext = '.cpp'
-                    else:
-                        ext = '.c'
-                    sfile = path + ext
-                if not os.path.isfile(sfile):
-                    raise OSError("Missing cython C/C++ source file: "
-                                  "{}. Install 'cython' to compile "
-                                  "them.".format(sfile))
-                sources.append(sfile)
-            extension.sources[:] = sources
-        return extensions
 
 
 def js_prerelease(command, strict=False):
@@ -250,7 +200,8 @@ class NPM(Command):
 
 
 extensions = [Extension('vispy.visuals.text._sdf_cpu',
-                        [op.join('vispy', 'visuals', 'text', '_sdf_cpu.pyx')]),
+                        [op.join('vispy', 'visuals', 'text', '_sdf_cpu.pyx')],
+                        include_dirs=[np.get_include()]),
               ]
 
 readme = open('README.rst', 'r').read()
@@ -285,10 +236,10 @@ setup(
         'egg_info': js_prerelease(egg_info),
         'sdist': js_prerelease(sdist, strict=True),
         'jsdeps': NPM,
-        'build_ext': build_ext,
     },
     python_requires='>=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*',
     install_requires=['numpy', 'freetype-py'],
+    build_requires=['numpy', 'cython'],
     extras_require={
         'ipython-static': ['ipython'],
         'ipython-vnc': ['ipython>=7'],
@@ -296,7 +247,7 @@ setup(
         'pyglet': ['pyglet>=1.2'],
         'pyqt5': ['pyqt5'],
         'pyside': ['PySide'],
-        'pyside2': ['PySide2'],  # not yet on PyPI
+        'pyside2': ['PySide2'],
         'sdl2': ['PySDL2'],
         'wx': ['wxPython'],
         'doc': ['sphinx_bootstrap_theme', 'numpydoc'],
@@ -317,6 +268,7 @@ setup(
         'vispy': [op.join('io', '_data', '*'),
                   op.join('html', 'static', 'js', '*'),
                   op.join('app', 'tests', 'qt-designer.ui'),
+                  op.join('util', 'fonts', 'data', '*.ttf'),
                   ],
 
         'vispy.glsl': ['*.vert','*.frag', "*.glsl"],
@@ -345,10 +297,9 @@ setup(
         'Operating System :: POSIX',
         'Programming Language :: Python',
         'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3.3',
-        'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
         'Framework :: IPython'
     ],
 )

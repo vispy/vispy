@@ -24,7 +24,7 @@ def test_font_glyph():
     """Test loading glyphs"""
     # try both a vispy and system font
     sys_fonts = set(list_fonts()) - set(_vispy_fonts)
-    assert_true(len(sys_fonts) > 0)
+    # assert_true(len(sys_fonts) > 0) not always the case!
     for face in ['OpenSans'] + sorted(list(sys_fonts)):
         print(face)  # useful for debugging
         font_dict = dict(face=face, size=12, bold=False, italic=False)

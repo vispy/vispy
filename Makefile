@@ -100,3 +100,6 @@ osmesa: clean-test
 
 ipynb_vnc: clean-test
 	python make test ipynb_vnc
+
+check-manifest:
+	check-manifest

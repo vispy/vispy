@@ -161,6 +161,11 @@ def requires_pyopengl():
     return np.testing.dec.skipif(not has_pyopengl(), 'Requires PyOpenGL')
 
 
+def requires_ssl():
+    bad = os.getenv('CIBW_BUILDING', 'false') == 'true'
+    return np.testing.dec.skipif(bad, 'Requires proper SSL support')
+
+
 ###############################################################################
 # App stuff
 
