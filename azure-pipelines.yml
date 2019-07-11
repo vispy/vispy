@@ -1,9 +1,8 @@
 variables:
   CIBW_SKIP: "cp27-* cp34-*"
-  CIBW_TEST_REQUIRES: "pytest pytest-sugar pyglet nose"
+  CIBW_TEST_REQUIRES: "pytest pytest-sugar nose"
   CIBW_TEST_COMMAND: "python -c \"import vispy; vispy.test()\""
-  CIBW_BEFORE_BUILD_LINUX: "yum install -y fontconfig xvfb; pip install freetype-py; /usr/bin/Xvfb -- :99 -screen 0 1400x900x24 -ac +extension GLX +render &"
-  CIBW_BEFORE_BUILD_WINDOWS: "git clone --depth 1 git://github.com/vtkiorg/gl-ci-helpers.git && powershell gl-ci-helpers/appveyor/install_opengl.ps1"
+  CIBW_BEFORE_BUILD_LINUX: "yum install -y fontconfig xvfb; pip install https://files.pythonhosted.org/packages/f2/00/6f332e63b33d24dc3761916e6d51402a7a82dd43c6ca8a96e24dda32c6b5/freetype_py-2.1.0.post1-py2.py3-none-manylinux1_x86_64.whl"
 jobs:
 - job: linux
   pool: {vmImage: 'Ubuntu-16.04'}
