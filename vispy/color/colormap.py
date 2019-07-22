@@ -183,7 +183,7 @@ def _glsl_step(controls=None, colors=None, texture_map_data=None):
 
     # Perform element-wise comparison to find
     # control points for all LUT colors.
-    bn = np.sum(controls.transpose() >= t2, axis=1)
+    bn = np.sum(controls.transpose() <= t2, axis=1)
 
     j = np.clip(bn-1, 0, ncolors-1)
 
