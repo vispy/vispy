@@ -54,3 +54,102 @@ class SpectrogramVisual(ImageVisual):
     def freqs(self):
         """The spectrogram frequencies"""
         return fft_freqs(self._n_fft, self._fs)
+
+    @property
+    def data(self):
+        """The data property of parent ImageVisual"""
+        return self._data
+
+    @property
+    def x(self):
+        """The original signal"""
+        return self._x
+
+    @x.setter
+    def x(self, x):
+        nan_mean = np.nanmean(x)
+        idx = np.isnan(x)
+        x[idx] = nan_mean
+        self._x = x
+        self._update_image()
+
+    @property
+    def n_fft(self):
+        """The length of fft window"""
+        return self._n_fft
+
+    @n_fft.setter
+    def n_fft(self, n_fft):
+        self._n_fft = int(n_fft)
+        self._update_image()
+
+    @property
+    def step(self):
+        """The step of fft window"""
+        if self._step is None:
+            return self._n_fft // 2
+        else:
+            return self._step
+
+    @step.setter
+    def step(self, step):
+        self._step = step
+        self._update_image()
+
+    @property
+    def fs(self):
+        """The sampling frequency"""
+        return self._fs
+
+    @fs.setter
+    def fs(self, fs):
+        self._fs = fs
+        self._update_image()
+
+    @property
+    def window(self):
+        """The used window function"""
+        return self._window
+
+    @window.setter
+    def window(self, window):
+        self._window = window
+        self._update_image()
+
+    @property
+    def color_scale(self):
+        """The color scale"""
+        return self._color_scale
+
+    @color_scale.setter
+    def color_scale(self, color_scale):
+        if not isinstance(color_scale, string_types) or \
+                color_scale not in ('log', 'linear'):
+            raise ValueError('color_scale must be "linear" or "log"')
+        self._color_scale = color_scale
+        self._update_image()
+
+    @property
+    def normalize(self):
+        """The normalization setting"""
+        return self._normalize
+
+    @normalize.setter
+    def normalize(self, normalize):
+        self._normalize = normalize
+        self._update_image()
+
+    def _update_image(self):
+        if self._x is not None:
+            data = stft(self._x, self._n_fft, self._step, self._fs,
+                        self._window)
+            data = np.abs(data)
+            data = 20 * np.log10(data) if self._color_scale == 'log' else data
+            if self._normalize:
+                for i in range(data.shape[0]):
+                    data[i, :] -= np.mean(data[i, :])
+                    data[i, :] /= np.std(data[i, :])
+            self.set_data(data)
+            self.update()
+            if self._clim_auto:
+                self.clim = 'auto'
