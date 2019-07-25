@@ -315,7 +315,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # FPS message in statusbar:
         self.status = self.statusBar()
-        self.status.showMessage("...")
+        self.status_label = QtWidgets.QLabel('...')
+        self.status.addWidget(self.status_label)
 
         self.mesh = MyMeshData()
         self.update_view(self.props_widget.param)
@@ -333,7 +334,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def show_fps(self, fps):
         nbr_tri = self.mesh.n_faces
-        self.status.showMessage("FPS - %.2f and nbr Tri %s " % (fps, nbr_tri))
+        msg = "FPS - %0.2f and nbr Tri %s " % (float(fps), int(nbr_tri))
+        # NOTE: We can't use showMessage in PyQt5 because it causes
+        #       a draw event loop (show_fps for every drawing event,
+        #       showMessage causes a drawing event, and so on).
+        self.status_label.setText(msg)
 
     def update_view(self, param):
         cols = param.props['cols']
