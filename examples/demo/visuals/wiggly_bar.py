@@ -263,7 +263,8 @@ class WigglyBar(app.Canvas):
 
         """
 
-        app.Canvas.__init__(self, title='Wiggly Bar', size=(800, 800))
+        app.Canvas.__init__(self, title='Wiggly Bar', size=(800, 800),
+                            create_native=False)
 
         # Some initialization constants that won't change
         self.standard_length = 0.97 + 0.55
@@ -288,10 +289,10 @@ class WigglyBar(app.Canvas):
 
         # Put up a text visual to display time info
         self.font_size = 24. if font_size is None else font_size
-        self.text = visuals.TextVisual('0:00.00', 
-                                       color='white', 
+        self.text = visuals.TextVisual('0:00.00',
+                                       color='white',
                                        pos=[50, 250, 0],
-                                       anchor_x='left', 
+                                       anchor_x='left',
                                        anchor_y='bottom')
         self.text.font_size = self.font_size
 
@@ -299,17 +300,17 @@ class WigglyBar(app.Canvas):
         # update this
         self.method_text = visuals.TextVisual(
             'Method: {}'.format(self.method),
-            color='white', 
-            pos=[50, 250 + 2/3*font_size, 0],
-            anchor_x='left', 
+            color='white',
+            pos=[50, 250, 0],
+            anchor_x='left',
             anchor_y='top'
         )
         self.method_text.font_size = 2/3 * self.font_size
 
         # Get the pivoting bar ready
-        self.rod = visuals.BoxVisual(width=self.px_len/40, 
-                                     height=self.px_len/40, 
-                                     depth=self.px_len, 
+        self.rod = visuals.BoxVisual(width=self.px_len/40,
+                                     height=self.px_len/40,
+                                     depth=self.px_len,
                                      color='white')
         self.rod.transform = transforms.MatrixTransform()
         self.rod.transform.scale(
@@ -371,7 +372,6 @@ class WigglyBar(app.Canvas):
 
         # Set up a timer to update the image and give a real-time rendering
         self._timer = app.Timer('auto', connect=self.on_timer, start=True)
-        self.show()
 
     def on_draw(self, ev):
         # Stolen from previous - just clears the screen and redraws stuff
@@ -379,7 +379,7 @@ class WigglyBar(app.Canvas):
         self.context.set_viewport(0, 0, *self.physical_size)
         self.context.clear()
         for vis in self.visuals:
-            if vis == self.center_point and not self.show_pivot:
+            if vis is self.center_point and not self.show_pivot:
                 continue
             else:
                 vis.draw()
@@ -453,7 +453,7 @@ class WigglyBar(app.Canvas):
                                           self.s2_loc +
                                           np.asarray([delta_x, 0]))
 
-        # Redraw and rescale the lower spring 
+        # Redraw and rescale the lower spring
         # (the hardest part to get, mathematically)
         self.spring_1.transform.reset()
         self.spring_1.transform.rotate(90, (0, 1, 0))
@@ -469,8 +469,8 @@ class WigglyBar(app.Canvas):
         self.mass.transform.translate(self.center + self.mass_loc)
 
         # Update the timer with how long it's been
-        self.text.text = '{:0>2d}:{:0>2d}.{:0>2d}'.format(min_passed, 
-                                                          sec_passed, 
+        self.text.text = '{:0>2d}:{:0>2d}.{:0>2d}'.format(min_passed,
+                                                          sec_passed,
                                                           millis_passed)
 
         # Trigger all of the drawing and updating
