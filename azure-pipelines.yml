@@ -11,11 +11,13 @@ jobs:
     - task: UsePythonVersion@0
     - bash: |
         python -m pip install --upgrade pip
-        pip install cibuildwheel twine numpy
+        pip install cibuildwheel twine numpy Cython
         cibuildwheel --output-dir wheelhouse .
         python setup.py sdist -d wheelhouse
-    - task: PublishBuildArtifacts@1
-      inputs: {pathtoPublish: 'wheelhouse'}
+    - task: PublishPipelineArtifact@1
+      inputs:
+        path: $(System.DefaultWorkingDirectory)/wheelhouse
+        artifact: vispyDeploy
 - job: macos
   pool: {vmImage: 'macOS-10.13'}
   steps:
@@ -24,8 +26,10 @@ jobs:
         python -m pip install --upgrade pip
         pip install cibuildwheel
         cibuildwheel --output-dir wheelhouse .
-    - task: PublishBuildArtifacts@1
-      inputs: {pathtoPublish: 'wheelhouse'}
+    - task: PublishPipelineArtifact@1
+      inputs:
+        path: $(System.DefaultWorkingDirectory)/wheelhouse
+        artifact: vispyDeploy
 - job: windows
   pool: {vmImage: 'vs2017-win2016'}
   steps:
@@ -39,8 +43,10 @@ jobs:
         python -m pip install --upgrade pip
         pip install cibuildwheel
         cibuildwheel --output-dir wheelhouse .
-    - task: PublishBuildArtifacts@1
-      inputs: {pathtoPublish: 'wheelhouse'}
+    - task: PublishPipelineArtifact@1
+      inputs:
+        path: $(System.DefaultWorkingDirectory)/wheelhouse
+        artifact: vispyDeploy
 - job: deploy
   pool: {vmImage: 'Ubuntu-16.04'}
   condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/*'))
@@ -50,9 +56,12 @@ jobs:
     - windows
   steps:
     - task: UsePythonVersion@0
+    - task: DownloadPipelineArtifact@2
+        inputs:
+          artifact: vispyDeploy
     - bash: |
         python -m pip install --upgrade pip
         pip install twine
-        twine upload -u "@token" --skip-existing wheelhouse/*
+        twine upload -u "@token" --skip-existing vispyDeploy/*
       env:
         TWINE_PASSWORD: $(pypiToken)
