@@ -58,10 +58,10 @@ jobs:
     - task: UsePythonVersion@0
     - task: DownloadPipelineArtifact@2
       inputs:
-        patterns:
-          - vispyDeployLinux/*
-          - vispyDeployMacOS/*.whl
-          - vispyDeployWindows/*.whl
+        patterns: |
+          vispyDeployLinux/*
+          vispyDeployMacOS/*.whl
+          vispyDeployWindows/*.whl
     - bash: |
         python -m pip install --upgrade pip
         pip install twine
