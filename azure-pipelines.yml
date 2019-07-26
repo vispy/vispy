@@ -57,8 +57,8 @@ jobs:
   steps:
     - task: UsePythonVersion@0
     - task: DownloadPipelineArtifact@2
-        inputs:
-          artifact: vispyDeploy
+      inputs:
+        artifact: vispyDeploy
     - bash: |
         python -m pip install --upgrade pip
         pip install twine
