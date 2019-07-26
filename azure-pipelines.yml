@@ -17,7 +17,7 @@ jobs:
     - task: PublishPipelineArtifact@1
       inputs:
         path: $(System.DefaultWorkingDirectory)/wheelhouse
-        artifact: vispyDeploy
+        artifact: vispyDeployLinux
 - job: macos
   pool: {vmImage: 'macOS-10.13'}
   steps:
@@ -29,7 +29,7 @@ jobs:
     - task: PublishPipelineArtifact@1
       inputs:
         path: $(System.DefaultWorkingDirectory)/wheelhouse
-        artifact: vispyDeploy
+        artifact: vispyDeployMacOS
 - job: windows
   pool: {vmImage: 'vs2017-win2016'}
   steps:
@@ -46,22 +46,23 @@ jobs:
     - task: PublishPipelineArtifact@1
       inputs:
         path: $(System.DefaultWorkingDirectory)/wheelhouse
-        artifact: vispyDeploy
-- job: deploy
+        artifact: vispyDeployWindows
+- deployment: DeployPyPI
+  displayName: Deploy PyPI
   pool: {vmImage: 'Ubuntu-16.04'}
   condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/*'))
   dependsOn:
     - linux
     - macos
     - windows
-  steps:
-    - task: UsePythonVersion@0
-    - task: DownloadPipelineArtifact@2
-      inputs:
-        artifact: vispyDeploy
-    - bash: |
-        python -m pip install --upgrade pip
-        pip install twine
-        twine upload -u "@token" --skip-existing vispyDeploy/*
-      env:
-        TWINE_PASSWORD: $(pypiToken)
+  strategy:
+    runOnce:
+      deploy:
+        steps:
+          - task: UsePythonVersion@0
+          - bash: |
+              python -m pip install --upgrade pip
+              pip install twine
+              twine upload -u "@token" --skip-existing vispyDeployLinux/* vispyDeployMacOS/* vispyDeployWindows/*
+            env:
+              TWINE_PASSWORD: $(pypiToken)
