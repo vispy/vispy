@@ -48,9 +48,9 @@ jobs:
     - windows
   steps:
     - task: UsePythonVersion@0
-    - env:
-        TWINE_PASSWORD: $(pypiToken)
     - bash: |
         python -m pip install --upgrade pip
         pip install twine
         twine upload -u "@token" --skip-existing wheelhouse/*
+      env:
+        TWINE_PASSWORD: $(pypiToken)
