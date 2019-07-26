@@ -22,6 +22,7 @@ jobs:
     - task: UsePythonVersion@0
     - bash: |
         python -m pip install --upgrade pip
+        pip install cibuildwheel
         cibuildwheel --output-dir wheelhouse .
     - task: PublishBuildArtifacts@1
       inputs: {pathtoPublish: 'wheelhouse'}
@@ -36,6 +37,7 @@ jobs:
     - {task: UsePythonVersion@0, inputs: {versionSpec: '3.7', architecture: x64}}
     - bash: |
         python -m pip install --upgrade pip
+        pip install cibuildwheel
         cibuildwheel --output-dir wheelhouse .
     - task: PublishBuildArtifacts@1
       inputs: {pathtoPublish: 'wheelhouse'}
