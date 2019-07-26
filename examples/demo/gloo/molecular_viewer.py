@@ -87,8 +87,8 @@ void main()
     // GPU drivers...
     float specular = clamp(pow(abs(dot(normal, K)), 40.), 0.0, 1.0);
     vec3 v_light = vec3(1., 1., 1.);
-    gl_FragColor.rgb = (.15*v_color + .55*diffuse * v_color
-                        + .35*specular * v_light);
+    gl_FragColor.rgba = vec4(.15*v_color + .55*diffuse * v_color
+                        + .35*specular * v_light, 1.0);
 }
 """
 
