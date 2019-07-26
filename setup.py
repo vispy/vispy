@@ -239,7 +239,7 @@ setup(
     },
     python_requires='>=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*',
     install_requires=['numpy', 'freetype-py'],
-    build_requires=['numpy', 'cython'],
+    setup_requires=['numpy', 'cython'],
     extras_require={
         'ipython-static': ['ipython'],
         'ipython-vnc': ['ipython>=7'],
