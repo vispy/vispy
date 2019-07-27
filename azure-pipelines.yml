@@ -78,6 +78,6 @@ jobs:
     - bash: |
         python -m pip install --upgrade pip
         pip install twine
-        twine upload -u "@token" --skip-existing vispyDeployLinux/* vispyDeployMacOS/* vispyDeployWindows/*
+        twine upload -u "@token" --skip-existing vispy*.tar.gz vispy*.whl
       env:
         TWINE_PASSWORD: $(pypiToken)
