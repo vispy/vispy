@@ -6,7 +6,7 @@ variables:
   CIBW_BUILD_VERBOSITY: "2"
   CIBW_BEFORE_BUILD: "pip install -U numpy Cython jupyter ipywidgets"
   CIBW_BEFORE_BUILD_MACOS: "npm install npm@latest -g; pip install -U pip setuptools"
-  CIBW_BEFORE_BUILD_LINUX: "curl -sL https://rpm.nodesource.com/setup_8.x | bash -; yum install -y fontconfig xvfb nodejs; pip install -U pip setuptools; if [ `getconf LONG_BIT` == '64' ]; then pip install https://files.pythonhosted.org/packages/f2/00/6f332e63b33d24dc3761916e6d51402a7a82dd43c6ca8a96e24dda32c6b5/freetype_py-2.1.0.post1-py2.py3-none-manylinux1_x86_64.whl; else pip install https://files.pythonhosted.org/packages/b8/ea/adfbeb3762a03c1d1c1ff751101efb1fddb7aadffa991d39bdb486d0557e/freetype_py-2.1.0.post1-py2.py3-none-manylinux1_i686.whl; fi"
+  CIBW_BEFORE_BUILD_LINUX: "yum install -y fontconfig xvfb; pip install -U pip setuptools; if [ `getconf LONG_BIT` == '64' ]; then pip install https://files.pythonhosted.org/packages/f2/00/6f332e63b33d24dc3761916e6d51402a7a82dd43c6ca8a96e24dda32c6b5/freetype_py-2.1.0.post1-py2.py3-none-manylinux1_x86_64.whl; else pip install https://files.pythonhosted.org/packages/b8/ea/adfbeb3762a03c1d1c1ff751101efb1fddb7aadffa991d39bdb486d0557e/freetype_py-2.1.0.post1-py2.py3-none-manylinux1_i686.whl; fi"
 jobs:
 - job: linux
   pool: {vmImage: 'Ubuntu-16.04'}
@@ -16,8 +16,8 @@ jobs:
         git submodule update --init --recursive
         python -m pip install --upgrade pip
         pip install cibuildwheel twine numpy Cython jupyter ipywidgets
-        cibuildwheel --output-dir wheelhouse .
         python setup.py sdist -d wheelhouse
+        cibuildwheel --output-dir wheelhouse .
     - task: PublishPipelineArtifact@1
       inputs:
         path: $(System.DefaultWorkingDirectory)/wheelhouse
