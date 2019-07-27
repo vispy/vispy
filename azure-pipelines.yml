@@ -62,7 +62,7 @@ jobs:
         artifact: vispyDeployWindows
 - job: deployPyPI
   pool: {vmImage: 'Ubuntu-16.04'}
-  condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/*'))
+  condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
   dependsOn:
     - linux
     - macos
