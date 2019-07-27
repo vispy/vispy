@@ -183,7 +183,7 @@ class NPM(Command):
             log.info("Installing build dependencies with npm.  This may take "
                      "a while...")
             npmName = self.get_npm_name();
-            check_call([npmName, 'install'], cwd=node_root,
+            check_call([npmName, 'install', '--verbose'], cwd=node_root,
                        stdout=sys.stdout, stderr=sys.stderr)
             os.utime(self.node_modules, None)
 
@@ -239,7 +239,7 @@ setup(
     },
     python_requires='>=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*',
     install_requires=['numpy', 'freetype-py'],
-    build_requires=['numpy', 'cython'],
+    setup_requires=['numpy', 'cython'],
     extras_require={
         'ipython-static': ['ipython'],
         'ipython-vnc': ['ipython>=7'],

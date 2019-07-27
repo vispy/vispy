@@ -3,28 +3,38 @@ variables:
   CIBW_SKIP: "cp27-* cp34-*"
   CIBW_TEST_REQUIRES: "pytest pytest-sugar nose"
   CIBW_TEST_COMMAND: "python -c \"import vispy; vispy.test()\""
-  CIBW_BEFORE_BUILD_LINUX: "yum install -y fontconfig xvfb; if [ `getconf LONG_BIT` == '64' ]; then pip install https://files.pythonhosted.org/packages/f2/00/6f332e63b33d24dc3761916e6d51402a7a82dd43c6ca8a96e24dda32c6b5/freetype_py-2.1.0.post1-py2.py3-none-manylinux1_x86_64.whl; else pip install https://files.pythonhosted.org/packages/b8/ea/adfbeb3762a03c1d1c1ff751101efb1fddb7aadffa991d39bdb486d0557e/freetype_py-2.1.0.post1-py2.py3-none-manylinux1_i686.whl; fi"
+  CIBW_BUILD_VERBOSITY: "2"
+  CIBW_BEFORE_BUILD: "pip install -U numpy Cython jupyter ipywidgets"
+  CIBW_BEFORE_BUILD_MACOS: "npm install npm@latest -g; pip install -U pip setuptools"
+  CIBW_BEFORE_BUILD_LINUX: "yum install -y fontconfig xvfb; pip install -U pip setuptools; if [ `getconf LONG_BIT` == '64' ]; then pip install https://files.pythonhosted.org/packages/f2/00/6f332e63b33d24dc3761916e6d51402a7a82dd43c6ca8a96e24dda32c6b5/freetype_py-2.1.0.post1-py2.py3-none-manylinux1_x86_64.whl; else pip install https://files.pythonhosted.org/packages/b8/ea/adfbeb3762a03c1d1c1ff751101efb1fddb7aadffa991d39bdb486d0557e/freetype_py-2.1.0.post1-py2.py3-none-manylinux1_i686.whl; fi"
 jobs:
 - job: linux
   pool: {vmImage: 'Ubuntu-16.04'}
   steps:
     - task: UsePythonVersion@0
     - bash: |
+        git submodule update --init --recursive
         python -m pip install --upgrade pip
-        pip install cibuildwheel
+        pip install cibuildwheel twine numpy Cython jupyter ipywidgets
+        python setup.py sdist -d wheelhouse
         cibuildwheel --output-dir wheelhouse .
-    - task: PublishBuildArtifacts@1
-      inputs: {pathtoPublish: 'wheelhouse'}
+    - task: PublishPipelineArtifact@1
+      inputs:
+        path: $(System.DefaultWorkingDirectory)/wheelhouse
+        artifact: vispyDeployLinux
 - job: macos
   pool: {vmImage: 'macOS-10.13'}
   steps:
     - task: UsePythonVersion@0
     - bash: |
+        git submodule update --init --recursive
         python -m pip install --upgrade pip
         pip install cibuildwheel
         cibuildwheel --output-dir wheelhouse .
-    - task: PublishBuildArtifacts@1
-      inputs: {pathtoPublish: 'wheelhouse'}
+    - task: PublishPipelineArtifact@1
+      inputs:
+        path: $(System.DefaultWorkingDirectory)/wheelhouse
+        artifact: vispyDeployMacOS
 - job: windows
   pool: {vmImage: 'vs2017-win2016'}
   steps:
@@ -35,8 +45,32 @@ jobs:
     - {task: UsePythonVersion@0, inputs: {versionSpec: '3.7', architecture: x86}}
     - {task: UsePythonVersion@0, inputs: {versionSpec: '3.7', architecture: x64}}
     - bash: |
+        git submodule update --init --recursive
         python -m pip install --upgrade pip
         pip install cibuildwheel
         cibuildwheel --output-dir wheelhouse .
-    - task: PublishBuildArtifacts@1
-      inputs: {pathtoPublish: 'wheelhouse'}
+    - task: PublishPipelineArtifact@1
+      inputs:
+        path: $(System.DefaultWorkingDirectory)/wheelhouse
+        artifact: vispyDeployWindows
+- job: deployPyPI
+  pool: {vmImage: 'Ubuntu-16.04'}
+  condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/*'))
+  dependsOn:
+    - linux
+    - macos
+    - windows
+  steps:
+    - task: UsePythonVersion@0
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        patterns: |
+          vispyDeployLinux/*
+          vispyDeployMacOS/*.whl
+          vispyDeployWindows/*.whl
+    - bash: |
+        python -m pip install --upgrade pip
+        pip install twine
+        twine upload -u "@token" --skip-existing vispyDeployLinux/* vispyDeployMacOS/* vispyDeployWindows/*
+      env:
+        TWINE_PASSWORD: $(pypiToken)
