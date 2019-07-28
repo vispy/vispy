@@ -76,6 +76,7 @@ jobs:
           vispyDeployMacOS/*.whl
           vispyDeployWindows/*.whl
     - bash: |
+        cd $(Pipeline.Workspace)
         python -m pip install --upgrade pip
         pip install twine
         ls
