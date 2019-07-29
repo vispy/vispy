@@ -49,6 +49,7 @@ class PanZoomCamera(BaseCamera):
         super(PanZoomCamera, self).__init__(**kwargs)
 
         self.transform = STTransform()
+        self.tf_mat = MatrixTransform()
 
         # Set camera attributes
         self.aspect = aspect
@@ -151,7 +152,8 @@ class PanZoomCamera(BaseCamera):
     @property
     def center(self):
         rect = self._rect
-        return 0.5 * (rect.left+rect.right), 0.5 * (rect.top+rect.bottom), 0
+        return 0.5 * (rect.left + rect.right), 0.5 * (
+            rect.top + rect.bottom), 0
 
     @center.setter
     def center(self, center):
@@ -206,7 +208,7 @@ class PanZoomCamera(BaseCamera):
 
         if event.type == 'mouse_wheel':
             center = self._scene_transform.imap(event.pos)
-            self.zoom((1 + self.zoom_factor) ** (-event.delta[1] * 30), center)
+            self.zoom((1 + self.zoom_factor)**(-event.delta[1] * 30), center)
             event.handled = True
 
         elif event.type == 'mouse_move':
@@ -223,14 +225,14 @@ class PanZoomCamera(BaseCamera):
                 p2 = np.array(event.pos)[:2]
                 p1s = self._transform.imap(p1)
                 p2s = self._transform.imap(p2)
-                self.pan(p1s-p2s)
+                self.pan(p1s - p2s)
                 event.handled = True
             elif 2 in event.buttons and not modifiers:
                 # Zoom
                 p1c = np.array(event.last_event.pos)[:2]
                 p2c = np.array(event.pos)[:2]
-                scale = ((1 + self.zoom_factor) **
-                         ((p1c-p2c) * np.array([1, -1])))
+                scale = ((1 + self.zoom_factor)**
+                         ((p1c - p2c) * np.array([1, -1])))
                 center = self._transform.imap(event.press_event.pos[:2])
                 self.zoom(scale, center)
                 event.handled = True
@@ -273,7 +275,7 @@ class PanZoomCamera(BaseCamera):
         # Apply mapping between viewbox and cam view
         self.transform.set_mapping(self._real_rect, vbr, update=False)
         # Scale z, so that the clipping planes are between -alot and +alot
-        self.transform.zoom((1, 1, 1/d))
+        self.transform.zoom((1, 1, 1 / d))
 
         # We've now set self.transform, which represents our 2D
         # transform When up is +z this is all. In other cases,
@@ -281,28 +283,24 @@ class PanZoomCamera(BaseCamera):
         # for the scene we need a different (3D) mapping. When there
         # is a minus in up, we simply look at the scene from the other
         # side (as if z was flipped).
+        rr = self._real_rect
+        d = d if (self.up[0] == '+') else -d
+        pp1 = [(vbr.left, vbr.bottom, 0), (vbr.left, vbr.top, 0),
+               (vbr.right, vbr.bottom, 0), (vbr.left, vbr.bottom, 1)]
+        # Get Mapping
+        if self.up[1] == 'z':
+            pp2 = [(rr.left, rr.bottom, 0), (rr.left, rr.top, 0),
+                   (rr.right, rr.bottom, 0), (rr.left, rr.bottom, d)]
+        elif self.up[1] == 'y':
+            pp2 = [(rr.left, 0, rr.bottom), (rr.left, 0, rr.top),
+                   (rr.right, 0, rr.bottom), (rr.left, d, rr.bottom)]
+        elif self.up[1] == 'x':
+            pp2 = [(0, rr.left, rr.bottom), (0, rr.left, rr.top),
+                   (0, rr.right, rr.bottom), (d, rr.left, rr.bottom)]
 
-        if self.up == '+z':
-            thetransform = self.transform
-        else:
-            rr = self._real_rect
-            tr = MatrixTransform()
-            d = d if (self.up[0] == '+') else -d
-            pp1 = [(vbr.left, vbr.bottom, 0), (vbr.left, vbr.top, 0),
-                   (vbr.right, vbr.bottom, 0), (vbr.left, vbr.bottom, 1)]
-            # Get Mapping
-            if self.up[1] == 'z':
-                pp2 = [(rr.left, rr.bottom, 0), (rr.left, rr.top, 0),
-                       (rr.right, rr.bottom, 0), (rr.left, rr.bottom, d)]
-            elif self.up[1] == 'y':
-                pp2 = [(rr.left, 0, rr.bottom), (rr.left, 0, rr.top),
-                       (rr.right, 0, rr.bottom), (rr.left, d, rr.bottom)]
-            elif self.up[1] == 'x':
-                pp2 = [(0, rr.left, rr.bottom), (0, rr.left, rr.top),
-                       (0, rr.right, rr.bottom), (d, rr.left, rr.bottom)]
-            # Apply
-            tr.set_mapping(np.array(pp2), np.array(pp1))
-            thetransform = tr
+        # Apply
+        self.tf_mat.reset()
+        self.tf_mat.set_mapping(np.array(pp2), np.array(pp1))
 
         # Set on viewbox
-        self._set_scene_transform(thetransform)
+        self._set_scene_transform(self.tf_mat)
