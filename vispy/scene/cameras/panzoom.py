@@ -152,8 +152,8 @@ class PanZoomCamera(BaseCamera):
     @property
     def center(self):
         rect = self._rect
-        return 0.5 * (rect.left + rect.right), 0.5 * (
-            rect.top + rect.bottom), 0
+        return 0.5 * (rect.left + rect.right), 0.5 * (rect.top +
+                                                      rect.bottom), 0
 
     @center.setter
     def center(self, center):
@@ -231,8 +231,8 @@ class PanZoomCamera(BaseCamera):
                 # Zoom
                 p1c = np.array(event.last_event.pos)[:2]
                 p2c = np.array(event.pos)[:2]
-                scale = ((1 + self.zoom_factor)**
-                         ((p1c - p2c) * np.array([1, -1])))
+                scale = ((1 + self.zoom_factor)**((p1c - p2c) *
+                                                  np.array([1, -1])))
                 center = self._transform.imap(event.press_event.pos[:2])
                 self.zoom(scale, center)
                 event.handled = True
@@ -254,8 +254,8 @@ class PanZoomCamera(BaseCamera):
         # apply scale ratio constraint
         if self._aspect is not None:
             # Aspect ratio of the requested range
-            requested_aspect = (rect.width / rect.height
-                                if rect.height != 0 else 1)
+            requested_aspect = (rect.width /
+                                rect.height if rect.height != 0 else 1)
             # Aspect ratio of the viewbox
             view_aspect = vbr.width / vbr.height if vbr.height != 0 else 1
             # View aspect ratio needed to obey the scale constraint
@@ -299,7 +299,6 @@ class PanZoomCamera(BaseCamera):
                    (0, rr.right, rr.bottom), (d, rr.left, rr.bottom)]
 
         # Apply
-        self.tf_mat.reset()
         self.tf_mat.set_mapping(np.array(pp2), np.array(pp1))
 
         # Set on viewbox
