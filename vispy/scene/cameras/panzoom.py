@@ -283,23 +283,26 @@ class PanZoomCamera(BaseCamera):
         # for the scene we need a different (3D) mapping. When there
         # is a minus in up, we simply look at the scene from the other
         # side (as if z was flipped).
-        rr = self._real_rect
-        d = d if (self.up[0] == '+') else -d
-        pp1 = [(vbr.left, vbr.bottom, 0), (vbr.left, vbr.top, 0),
-               (vbr.right, vbr.bottom, 0), (vbr.left, vbr.bottom, 1)]
-        # Get Mapping
-        if self.up[1] == 'z':
-            pp2 = [(rr.left, rr.bottom, 0), (rr.left, rr.top, 0),
-                   (rr.right, rr.bottom, 0), (rr.left, rr.bottom, d)]
-        elif self.up[1] == 'y':
-            pp2 = [(rr.left, 0, rr.bottom), (rr.left, 0, rr.top),
-                   (rr.right, 0, rr.bottom), (rr.left, d, rr.bottom)]
-        elif self.up[1] == 'x':
-            pp2 = [(0, rr.left, rr.bottom), (0, rr.left, rr.top),
-                   (0, rr.right, rr.bottom), (d, rr.left, rr.bottom)]
+        if self.up == '+z':
+            self.tf_mat.matrix = self.transform.as_matrix().matrix
+        else:
+            rr = self._real_rect
+            d = d if (self.up[0] == '+') else -d
+            pp1 = [(vbr.left, vbr.bottom, 0), (vbr.left, vbr.top, 0),
+                   (vbr.right, vbr.bottom, 0), (vbr.left, vbr.bottom, 1)]
+            # Get Mapping
+            if self.up[1] == 'z':
+                pp2 = [(rr.left, rr.bottom, 0), (rr.left, rr.top, 0),
+                       (rr.right, rr.bottom, 0), (rr.left, rr.bottom, d)]
+            elif self.up[1] == 'y':
+                pp2 = [(rr.left, 0, rr.bottom), (rr.left, 0, rr.top),
+                       (rr.right, 0, rr.bottom), (rr.left, d, rr.bottom)]
+            elif self.up[1] == 'x':
+                pp2 = [(0, rr.left, rr.bottom), (0, rr.left, rr.top),
+                       (0, rr.right, rr.bottom), (d, rr.left, rr.bottom)]
 
-        # Apply
-        self.tf_mat.set_mapping(np.array(pp2), np.array(pp1))
+            # Apply
+            self.tf_mat.set_mapping(np.array(pp2), np.array(pp1))
 
         # Set on viewbox
         self._set_scene_transform(self.tf_mat)
