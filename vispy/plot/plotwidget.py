@@ -343,7 +343,8 @@ class PlotWidget(scene.Widget):
         return line
 
     def spectrogram(self, x, n_fft=256, step=None, fs=1., window='hann',
-                    color_scale='log', cmap='cubehelix', clim='auto'):
+                    normalize=False, color_scale='log', cmap='cubehelix',
+                    clim='auto'):
         """Calculate and show a spectrogram
 
         Parameters
@@ -361,6 +362,8 @@ class PlotWidget(scene.Widget):
         window : str | None
             Window function to use. Can be ``'hann'`` for Hann window, or None
             for no windowing.
+        normalize : bool
+            Normalization of spectrogram values across frequencies.
         color_scale : {'linear', 'log'}
             Scale to apply to the result of the STFT.
             ``'log'`` will use ``10 * log10(power)``.
@@ -382,7 +385,7 @@ class PlotWidget(scene.Widget):
         self._configure_2d()
         # XXX once we have axes, we should use "fft_freqs", too
         spec = scene.Spectrogram(x, n_fft, step, fs, window,
-                                 color_scale, cmap, clim)
+                                 normalize, color_scale, cmap, clim)
         self.view.add(spec)
         self.view.camera.set_range()
         return spec

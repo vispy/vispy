@@ -162,8 +162,8 @@ class SpectrogramVisual(ImageVisual):
             return None
 
     def _update_image(self):
-            data = self._calculate_spectrogram()
-            self.set_data(data)
-            self.update()
-            if self._clim_auto:
-                self.clim = 'auto'
+        data = self._calculate_spectrogram()
+        self.set_data(data)
+        self.update()
+        if self._clim_auto:
+            self.clim = 'auto'
