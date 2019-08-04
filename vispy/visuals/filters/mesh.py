@@ -318,3 +318,4 @@ class WireframeFilter(object):
     def _detach(self, visual):
         visual._get_hook('vert', 'post').remove(self.vertex_program)
         visual._get_hook('frag', 'post').remove(self.fragment_program)
+        self._attached = False
