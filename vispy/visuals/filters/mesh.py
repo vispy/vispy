@@ -249,9 +249,11 @@ wireframe_fragment_template = """
 varying vec3 v_bc;
 
 void draw_wireframe() {
-    if (any(lessThan(v_bc, vec3(0.02)))) {
-        gl_FragColor = $color;
-    }
+    vec3 d = fwidth(v_bc);
+    vec3 a3 = smoothstep(vec3(0.0), 1.5 * d, v_bc);
+    float factor = min(min(a3.x, a3.y), a3.z);
+    gl_FragColor.rgb = mix($color, gl_FragColor.rgb, factor);
+//    gl_FragColor = vec4(0.0, 0.0, 0.0, 0.95 * (1.0 - factor));
 }
 """  # noqa
 
@@ -295,7 +297,7 @@ class WireframeFilter(object):
     def _update_data(self):
         if not self._attached:
             return
-        self.fcode['color'] = self._color.rgba
+        self.fcode['color'] = self._color.rgb
         faces = self._visual().mesh_data.get_faces()
         n_faces = len(faces)
         bc = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]], dtype='float')
