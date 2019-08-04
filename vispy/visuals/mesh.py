@@ -254,14 +254,6 @@ class MeshVisual(Visual):
         if v.shape[-1] == 2:
             v = np.concatenate((v, np.zeros((v.shape[:-1] + (1,)))), -1)
         self._vertices.set_data(v, convert=True)
-        if self.shading == 'smooth':
-            normals = md.get_vertex_normals(indexed='faces')
-            self._normals.set_data(normals, convert=True)
-        elif self.shading == 'flat':
-            normals = md.get_face_normals(indexed='faces')
-            self._normals.set_data(normals, convert=True)
-        else:
-            self._normals.set_data(np.zeros((0, 3), dtype=np.float32))
         if md.has_vertex_color():
             colors = md.get_vertex_colors(indexed='faces')
             colors = colors.astype(np.float32)
