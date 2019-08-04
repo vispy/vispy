@@ -234,3 +234,87 @@ class ShadingFilter(object):
     def _detach(self, visual):
         visual._get_hook('vert', 'post').remove(self.vertex_program)
         visual._get_hook('frag', 'post').remove(self.fragment_program)
+
+
+wireframe_vertex_template = """
+varying vec3 v_bc;
+
+void preprare_wireframe() {
+    v_bc = $bc;
+}
+"""  # noqa
+
+
+wireframe_fragment_template = """
+varying vec3 v_bc;
+
+void draw_wireframe() {
+    if (any(lessThan(v_bc, vec3(0.02)))) {
+        gl_FragColor = $color;
+    }
+}
+"""  # noqa
+
+
+class WireframeFilter(object):
+
+    def __init__(self, enabled=True, color='black'):
+        self._attached = False
+        self._enabled = True
+        self._color = Color(color)
+
+        self.vcode = Function(wireframe_vertex_template)
+        self._bc = VertexBuffer(np.zeros((0, 3), dtype=np.float32))
+        self.vcode['bc'] = self._bc
+
+        self.fcode = Function(wireframe_fragment_template)
+
+        self.vertex_program = self.vcode()
+        self.fragment_program = self.fcode()
+
+    @property
+    def enabled(self):
+        """True to enable shading."""
+        return self._enabled
+
+    @enabled.setter
+    def enabled(self, enabled):
+        self._enabled = enabled
+        self._update_data()
+
+    @property
+    def color(self):
+        """The wireframe color."""
+        return self._color
+
+    @color.setter
+    def color(self, color):
+        self._color = Color(color)
+        self._update_data()
+
+    def _update_data(self):
+        if not self._attached:
+            return
+        self.fcode['color'] = self._color.rgba
+        faces = self._visual().mesh_data.get_faces()
+        n_faces = len(faces)
+        bc = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]], dtype='float')
+        bc = np.tile(bc[None, ...], (n_faces, 1, 1))
+        self._bc.set_data(bc, convert=True)
+
+    def _attach(self, visual):
+        # vertex shader
+        vert_post = visual._get_hook('vert', 'post')
+        vert_post.add(self.vertex_program)
+
+        # fragment shader
+        frag_post = visual._get_hook('frag', 'post')
+        frag_post.add(self.fragment_program)
+
+        self._attached = True
+        self._visual = weakref.ref(visual)
+        self._update_data()
+
+    def _detach(self, visual):
+        visual._get_hook('vert', 'post').remove(self.vertex_program)
+        visual._get_hook('frag', 'post').remove(self.fragment_program)
