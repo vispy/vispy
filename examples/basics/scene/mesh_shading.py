@@ -42,8 +42,8 @@ def on_mouse_move(event):
     mesh.update()
 
 
-shading_index = 0
 shadings = [None, 'flat', 'smooth']
+shading_index = shadings.index(shading_filter.shading)
 
 
 @canvas.events.key_press.connect
