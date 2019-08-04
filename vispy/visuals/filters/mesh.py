@@ -207,8 +207,7 @@ class ShadingFilter(object):
         self.fcode['specular_color'] = self._specular_color.rgb
         self.fcode['flat_shading'] = 1 if self._shading == 'flat' else 0
         self.fcode['shading_enabled'] = 1 if self._shading is not None else 0
-        indexing = self._visual().indexing
-        normals = self._visual().mesh_data.get_vertex_normals(indexed=indexing)
+        normals = self._visual().mesh_data.get_vertex_normals(indexed='faces')
         self._normals.set_data(normals, convert=True)
 
     def _attach(self, visual):
