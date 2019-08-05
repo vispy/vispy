@@ -239,7 +239,7 @@ class ShadingFilter(object):
 wireframe_vertex_template = """
 varying vec3 v_bc;
 
-void preprare_wireframe() {
+void prepare_wireframe() {
     v_bc = $bc;
 }
 """  # noqa
