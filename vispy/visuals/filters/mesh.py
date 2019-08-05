@@ -250,7 +250,7 @@ varying vec3 v_bc;
 
 void draw_wireframe() {
     vec3 d = fwidth(v_bc);
-    vec3 a3 = smoothstep(vec3(0.0), 1.5 * d, v_bc);
+    vec3 a3 = smoothstep(vec3(0.0), $width * d, v_bc);
     float factor = min(min(a3.x, a3.y), a3.z);
     gl_FragColor.rgb = mix($color, gl_FragColor.rgb, factor);
 //    gl_FragColor = vec4(0.0, 0.0, 0.0, 0.95 * (1.0 - factor));
@@ -260,10 +260,11 @@ void draw_wireframe() {
 
 class WireframeFilter(object):
 
-    def __init__(self, enabled=True, color='black'):
+    def __init__(self, enabled=True, color='black', width=1):
         self._attached = False
         self._enabled = True
         self._color = Color(color)
+        self._width = width
 
         self.vcode = Function(wireframe_vertex_template)
         self._bc = VertexBuffer(np.zeros((0, 3), dtype=np.float32))
@@ -294,10 +295,23 @@ class WireframeFilter(object):
         self._color = Color(color)
         self._update_data()
 
+    @property
+    def width(self):
+        """The wireframe width."""
+        return self._width
+
+    @width.setter
+    def width(self, width):
+        if width < 0:
+            raise ValueError("width must be greater than zero")
+        self._width = width
+        self._update_data()
+
     def _update_data(self):
         if not self._attached:
             return
         self.fcode['color'] = self._color.rgb
+        self.fcode['width'] = self._width
         faces = self._visual().mesh_data.get_faces()
         n_faces = len(faces)
         bc = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]], dtype='float')
