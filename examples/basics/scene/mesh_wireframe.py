@@ -10,6 +10,7 @@ parser = argparse.ArgumentParser()
 default_mesh = load_data_file('orig/triceratops.obj.gz')
 parser.add_argument('--mesh', default=default_mesh)
 parser.add_argument('--shininess', default=None)
+parser.add_argument('--width', default=1)
 args = parser.parse_args()
 
 vertices, faces, normals, texcoords = read_mesh(args.mesh)
@@ -24,7 +25,7 @@ mesh = Mesh(vertices, faces, color=(.5, .7, .5, 1))
 mesh.set_gl_state('translucent', depth_test=True, cull_face=True)
 view.add(mesh)
 
-w = WireframeFilter()
+w = WireframeFilter(width=args.width)
 mesh.attach(w)
 
 shading_filter = ShadingFilter()
