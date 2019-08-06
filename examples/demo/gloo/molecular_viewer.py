@@ -138,7 +138,7 @@ class Canvas(app.Canvas):
 
         data = np.zeros(n, [('a_position', np.float32, 3),
                             ('a_color', np.float32, 3),
-                            ('a_radius', np.float32, 1)])
+                            ('a_radius', np.float32)])
 
         data['a_position'] = self.coords
         data['a_color'] = self.atomsColours

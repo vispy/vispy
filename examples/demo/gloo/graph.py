@@ -139,8 +139,8 @@ class Canvas(app.Canvas):
         data = np.zeros(n, dtype=[('a_position', np.float32, 3),
                                   ('a_fg_color', np.float32, 4),
                                   ('a_bg_color', np.float32, 4),
-                                  ('a_size', np.float32, 1),
-                                  ('a_linewidth', np.float32, 1),
+                                  ('a_size', np.float32),
+                                  ('a_linewidth', np.float32),
                                   ])
         edges = np.random.randint(size=(ne, 2), low=0,
                                   high=n).astype(np.uint32)

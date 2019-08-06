@@ -451,7 +451,11 @@ class VertexBuffer(DataBuffer):
             if self._last_dim and c != self._last_dim:
                 raise ValueError('Last dimension should be %s not %s'
                                  % (self._last_dim, c))
-            data = data.view(dtype=[('f0', data.dtype.base, c)])
+            dtype_def = ('f0', data.dtype.base)
+            if c > 1:
+                # numpy dtypes with size 1 are ambiguous, only add size if it is greater than 1
+                dtype_def += (c,)
+            data = data.view(dtype=[dtype_def])
             self._last_dim = c
         return data
 
