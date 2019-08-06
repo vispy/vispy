@@ -155,11 +155,11 @@ class Canvas(app.Canvas):
 
     def __create_galaxy_vertex_data(self):
         data = np.zeros(len(galaxy),
-                        dtype=[('a_size', np.float32, 1),
+                        dtype=[('a_size', np.float32),
                                ('a_position', np.float32, 2),
-                               ('a_color_index', np.float32, 1),
-                               ('a_brightness', np.float32, 1),
-                               ('a_type', np.float32, 1)])
+                               ('a_color_index', np.float32),
+                               ('a_brightness', np.float32),
+                               ('a_type', np.float32)])
 
         # see shader for parameter explanations
         pw, ph = self.physical_size

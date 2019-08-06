@@ -223,7 +223,7 @@ class Canvas(app.Canvas):
         data = np.zeros(n, [('a_position', np.float32, 3),
                             ('a_bg_color', np.float32, 4),
                             ('a_fg_color', np.float32, 4),
-                            ('a_size', np.float32, 1)])
+                            ('a_size', np.float32)])
         data['a_position'] = 0.45 * np.random.randn(n, 3)
         data['a_bg_color'] = np.random.uniform(0.85, 1.00, (n, 4))
         data['a_fg_color'] = 0, 0, 0, 1

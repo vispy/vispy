@@ -54,12 +54,13 @@ class Canvas(app.Canvas):
 
         # Create boids
         n = 1000
+        size_type = ('size', 'f4', 1*ps) if ps > 1 else ('size', 'f4')
         self.particles = np.zeros(2 + n, [('position', 'f4', 3),
                                           ('position_1', 'f4', 3),
                                           ('position_2', 'f4', 3),
                                           ('velocity', 'f4', 3),
                                           ('color', 'f4', 4),
-                                          ('size', 'f4', 1*ps)])
+                                          size_type])
         self.boids = self.particles[2:]
         self.target = self.particles[0]
         self.predator = self.particles[1]

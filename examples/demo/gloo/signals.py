@@ -22,7 +22,7 @@ y += np.arange(m).reshape((-1, 1))
 data = np.zeros(n*m, dtype=[
     ('a_position', np.float32, 2),
     ('a_color', np.float32, 3),
-    ('a_index', np.float32, 1),
+    ('a_index', np.float32),
 ])
 
 data['a_position'] = np.zeros((n*m, 2), dtype=np.float32)
