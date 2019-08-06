@@ -3,8 +3,9 @@ import numpy as np
 
 from vispy.scene.visuals import Spectrogram
 from vispy.testing import (requires_application, TestingCanvas,
-                           run_tests_if_main)
+                           run_tests_if_main, raises)
 from vispy.testing.image_tester import assert_image_approved
+from vispy.testing import assert_raises
 
 
 @requires_application()
@@ -26,5 +27,17 @@ def test_spectrogram():
         assert len(freqs) == n_freqs
         assert freqs[0] == 0
         assert freqs[-1] == 0.5
+
+        # Try changing all properties
+        spec.n_fft = 128
+        spec.step = 128
+        spec.fs = 2
+        spec.window = 'hann'
+        spec.normalize = True
+        spec.color_scale = 'log'
+
+        # Check color scale can be only 'log' or 'linear'
+        with raises(ValueError):
+            spec.color_scale = 'line_log'
 
 run_tests_if_main()
