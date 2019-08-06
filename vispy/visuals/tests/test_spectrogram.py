@@ -5,7 +5,6 @@ from vispy.scene.visuals import Spectrogram
 from vispy.testing import (requires_application, TestingCanvas,
                            run_tests_if_main, raises)
 from vispy.testing.image_tester import assert_image_approved
-from vispy.testing import assert_raises
 
 
 @requires_application()
