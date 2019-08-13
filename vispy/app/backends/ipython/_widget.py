@@ -4,7 +4,7 @@
 
 try:
     from ipywidgets.widgets import DOMWidget, register
-    from traitlets import Unicode, Int, Bool
+    from traitlets import Unicode, Int, Bool, Dict
 except Exception as exp:
     # Init dummy objects needed to import this module without errors.
     # These are all overwritten with imports from IPython (on success)
@@ -59,6 +59,7 @@ class VispyWidget(DOMWidget):
     width = Int().tag(sync=True)
     height = Int().tag(sync=True)
     resizable = Bool(value=True).tag(sync=True)
+    webgl_config = Dict(value={}).tag(sync=True)
 
     def __init__(self, **kwargs):
         if DOMWidget is object:

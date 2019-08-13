@@ -103,6 +103,8 @@ class CanvasBackend(BaseCanvasBackend):
         BaseCanvasBackend.__init__(self, *args)
         self._widget = None
 
+        self.webgl_config = {}
+
         p = self._process_backend_kwargs(kwargs)
         self._context = p.context
 
@@ -188,6 +190,7 @@ class CanvasBackend(BaseCanvasBackend):
             return
         if self._widget is None:
             self._widget = VispyWidget()
+            self._widget.webgl_config = self.webgl_config
             self._widget.set_canvas(self._vispy_canvas)
         display(self._widget)
 
