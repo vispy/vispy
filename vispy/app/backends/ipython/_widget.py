@@ -22,7 +22,7 @@ except Exception as exp:
         def tag(self, *args, **kwargs):
             pass
 
-    Unicode = Int = Float = Bool = _MockTraitlet
+    Unicode = Int = Float = Bool = Dict = _MockTraitlet
     available, testable, why_not, which = False, False, str(exp), None
 else:
     available, testable, why_not, which = True, False, None, None
