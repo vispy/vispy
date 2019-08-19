@@ -638,7 +638,10 @@ def read_pixels(viewport=None, alpha=True, mode='color', out_type='unsigned_byte
     _check_valid('mode', mode, ['color', 'depth', 'stencil'])
 
     # Check whether the GL context is direct or remote
-    context = get_current_canvas().context
+    canvas = get_current_canvas()
+    context = canvas.context
+    # Need to set current canvas so context is current
+    canvas.set_current()
     if context.shared.parser.is_remote():
         raise RuntimeError('Cannot use read_pixels() with remote GLIR parser')
 
