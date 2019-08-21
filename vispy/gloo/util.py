@@ -5,7 +5,7 @@
 # -----------------------------------------------------------------------------
 
 from ..ext.six import string_types
-from .wrappers import read_pixels
+from .wrappers import read_pixels, get_current_canvas
 
 
 def _screenshot(viewport=None, alpha=True):
@@ -27,6 +27,8 @@ def _screenshot(viewport=None, alpha=True):
         3D array of pixels in np.uint8 format
     """
     # gl.glReadBuffer(gl.GL_BACK)  Not avaliable in ES 2.0
+    # Need to set current canvas so context is current
+    get_current_canvas().set_current()
     return read_pixels(viewport, alpha)
 
 
