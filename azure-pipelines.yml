@@ -79,6 +79,6 @@ jobs:
         cd $(Pipeline.Workspace)
         python -m pip install --upgrade pip
         pip install twine
-        twine upload -u "@token" --skip-existing vispyDeployLinux/* vispyDeployMacOS/* vispyDeployWindows/*
+        twine upload -u "__token__" --skip-existing vispyDeployLinux/* vispyDeployMacOS/* vispyDeployWindows/*
       env:
-        TWINE_PASSWORD: $(pypiToken)
+        TWINE_PASSWORD: $(pypiToken2)
