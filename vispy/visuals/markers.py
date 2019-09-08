@@ -534,8 +534,6 @@ class MarkersVisual(Visual):
         vbar, hbar, cross, tailed_arrow, x, triangle_up, triangle_down,
         and star.
         """
-        assert (isinstance(pos, np.ndarray) and
-                pos.ndim == 2 and pos.shape[1] in (2, 3))
         if (edge_width is not None) + (edge_width_rel is not None) != 1:
             raise ValueError('exactly one of edge_width and edge_width_rel '
                              'must be non-None')
@@ -556,30 +554,35 @@ class MarkersVisual(Visual):
         if len(face_color) == 1:
             face_color = face_color[0]
 
-        n = len(pos)
-        data = np.zeros(n, dtype=[('a_position', np.float32, 3),
-                                  ('a_fg_color', np.float32, 4),
-                                  ('a_bg_color', np.float32, 4),
-                                  ('a_size', np.float32),
-                                  ('a_edgewidth', np.float32)])
-        data['a_fg_color'] = edge_color
-        data['a_bg_color'] = face_color
-        if edge_width is not None:
-            data['a_edgewidth'] = edge_width
-        else:
-            data['a_edgewidth'] = size*edge_width_rel
-        data['a_position'][:, :pos.shape[1]] = pos
-        data['a_size'] = size
-        self.shared_program['u_antialias'] = self.antialias  # XXX make prop
-        self._data = data
-        if self._symbol is not None:
-            # If we have no symbol set, we skip drawing (_prepare_draw
-            # returns False). This causes the GLIR queue to not flush,
-            # and thus the GLIR queue fills with VBO DATA commands, resulting
-            # in a "memory leak". Thus only set the VertexBuffer data if we
-            # are actually going to draw.
-            self._vbo.set_data(data)
-            self.shared_program.bind(self._vbo)
+        if pos is not None:
+            assert (isinstance(pos, np.ndarray) and
+                    pos.ndim == 2 and pos.shape[1] in (2, 3))
+
+            n = len(pos)
+            data = np.zeros(n, dtype=[('a_position', np.float32, 3),
+                                      ('a_fg_color', np.float32, 4),
+                                      ('a_bg_color', np.float32, 4),
+                                      ('a_size', np.float32),
+                                      ('a_edgewidth', np.float32)])
+            data['a_fg_color'] = edge_color
+            data['a_bg_color'] = face_color
+            if edge_width is not None:
+                data['a_edgewidth'] = edge_width
+            else:
+                data['a_edgewidth'] = size*edge_width_rel
+            data['a_position'][:, :pos.shape[1]] = pos
+            data['a_size'] = size
+            self.shared_program['u_antialias'] = self.antialias  # XXX make prop
+            self._data = data
+            if self._symbol is not None:
+                # If we have no symbol set, we skip drawing (_prepare_draw
+                # returns False). This causes the GLIR queue to not flush,
+                # and thus the GLIR queue fills with VBO DATA commands, resulting
+                # in a "memory leak". Thus only set the VertexBuffer data if we
+                # are actually going to draw.
+                self._vbo.set_data(data)
+                self.shared_program.bind(self._vbo)
+
         self.update()
 
     @property
