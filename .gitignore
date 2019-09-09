@@ -20,6 +20,7 @@ vispy.egg-info
 *.swp
 .ipynb_checkpoints
 .cache/
+.eggs/
 examples/basics/scene/animation.gif
 .pytest_cache/
 js/node_modules
