@@ -1,7 +1,9 @@
 [build-system]
 requires = [
     "wheel",
-    "setuptools",
+    "setuptools>=30.3.0",
+    "setuptools_scm",
+    "setuptools_scm_git_archive",
     "Cython>=0.29.2",
     "numpy; python_version=='2.7'",
     "numpy==1.13.3; python_version=='3.5'",
