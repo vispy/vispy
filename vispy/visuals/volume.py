@@ -547,6 +547,8 @@ class VolumeVisual(Visual):
         self.shared_program.frag['sampler_type'] = self._tex.glsl_sampler_type
         self.shared_program.frag['sample'] = self._tex.glsl_sample
         self.shared_program.frag['cmap'] = Function(self._cmap.glsl_map)
+        self.shared_program['texture2D_LUT'] = self.cmap.texture_lut() \
+            if (hasattr(self.cmap, 'texture_lut')) else None
         self.update()
     
     @property
