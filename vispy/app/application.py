@@ -128,7 +128,16 @@ class Application(object):
             # 'get_ipython' is available in globals when running from
             # IPython/Jupyter
             ip = get_ipython()
-            return ip.has_trait('kernel')
+            if ip.has_trait('kernel'):
+                # There doesn't seem to be an easy way to detect the frontend
+                # That said, if using a kernel, the user can choose to have an
+                # event loop, we therefore make sure the event loop isn't
+                # specified before assuming it is a notebook
+                # https://github.com/vispy/vispy/issues/1708
+                return get_ipython().active_eventloop is None
+            else:
+                # `jupyter console` is used
+                return False
         except NameError:
             return False
 
