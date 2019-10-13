@@ -148,7 +148,8 @@ class ImageVisual(Visual):
     """
     def __init__(self, data=None, method='auto', grid=(1, 1),
                  cmap='viridis', clim='auto',
-                 interpolation='nearest', **kwargs):
+                 interpolation='nearest',
+                 _vcode=VERT_SHADER, _fcode=FRAG_SHADER, **kwargs):
         self._data = None
 
         # load 'float packed rgba8' interpolation kernel
@@ -211,7 +212,7 @@ class ImageVisual(Visual):
         self._null_tr = NullTransform()
 
         self._init_view(self)
-        super(ImageVisual, self).__init__(vcode=VERT_SHADER, fcode=FRAG_SHADER)
+        super(ImageVisual, self).__init__(vcode=_vcode, fcode=_fcode)
         self.set_gl_state('translucent', cull_face=False)
         self._draw_mode = 'triangles'
 
