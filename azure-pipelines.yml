@@ -8,12 +8,13 @@ trigger:
 variables:
   CIBW_BUILDING: "true"
   CIBW_SKIP: "cp27-* cp34-*"
-  CIBW_TEST_REQUIRES: "'pytest<5.2' pytest-sugar nose"
+  CIBW_TEST_REQUIRES: "pytest pytest-sugar nose"
   CIBW_TEST_COMMAND: "python -c \"import vispy; vispy.test()\""
   CIBW_BUILD_VERBOSITY: "2"
   CIBW_BEFORE_BUILD: "pip install -U numpy Cython jupyterlab ipywidgets"
   CIBW_BEFORE_BUILD_MACOS: "npm install npm@latest -g; pip install -U pip setuptools"
   CIBW_BEFORE_BUILD_LINUX: "yum install -y fontconfig xvfb; pip install -U pip setuptools; if [ `getconf LONG_BIT` == '64' ]; then pip install https://files.pythonhosted.org/packages/f2/00/6f332e63b33d24dc3761916e6d51402a7a82dd43c6ca8a96e24dda32c6b5/freetype_py-2.1.0.post1-py2.py3-none-manylinux1_x86_64.whl; else pip install https://files.pythonhosted.org/packages/b8/ea/adfbeb3762a03c1d1c1ff751101efb1fddb7aadffa991d39bdb486d0557e/freetype_py-2.1.0.post1-py2.py3-none-manylinux1_i686.whl; fi"
+  CIBW_MANYLINUX1_X86_64_IMAGE: "quay.io/pypa/manylinux1_x86_64@sha256:fa5e2e059ccfd296cdaa12cea534fa3130c695dbf3dc7c9e4b5f6000f719713d"
 jobs:
 - job: linux
   pool: {vmImage: 'Ubuntu-16.04'}
