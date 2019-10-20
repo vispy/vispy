@@ -22,7 +22,7 @@ jobs:
     - bash: |
         git submodule update --init --recursive
         python -m pip install --upgrade pip
-        pip install cibuildwheel twine numpy Cython jupyter ipywidgets
+        pip install 'cibuildwheel<0.12' twine numpy Cython jupyter ipywidgets
         python setup.py sdist -d wheelhouse
         cibuildwheel --output-dir wheelhouse .
     - task: PublishPipelineArtifact@1
