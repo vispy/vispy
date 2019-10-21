@@ -18,7 +18,6 @@ For more information, see http://vispy.org.
 """
 
 from __future__ import division
-from typing import Optional
 from pkg_resources import get_distribution, DistributionNotFound
 
 __all__ = ['use', 'sys_info', 'set_log_level', 'test']
