@@ -17,6 +17,7 @@ For more information, see http://vispy.org.
 
 """
 
+from typing import Optional
 from __future__ import division
 from pkg_resources import get_distribution, DistributionNotFound
 
