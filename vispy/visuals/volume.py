@@ -448,7 +448,7 @@ class VolumeVisual(Visual):
         self.threshold = threshold if (threshold is not None) else vol.mean()
         self.freeze()
     
-    def set_data(self, vol, clim=None):
+    def set_data(self, vol, clim=None, copy=True):
         """ Set the volume data. 
 
         Parameters
@@ -473,8 +473,8 @@ class VolumeVisual(Visual):
         if self._clim is None:
             self._clim = vol.min(), vol.max()
         
-        # Apply clim
-        vol = np.array(vol, dtype='float32', copy=False)
+        # Apply clim (copy data by default... see issue #1727)
+        vol = np.array(vol, dtype='float32', copy=copy)
         if self._clim[1] == self._clim[0]:
             if self._clim[0] != 0.:
                 vol *= 1.0 / self._clim[0]
