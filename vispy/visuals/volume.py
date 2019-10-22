@@ -457,6 +457,8 @@ class VolumeVisual(Visual):
             The 3D volume.
         clim : tuple | None
             Colormap limits to use. None will use the min and max values.
+        copy : bool | True
+            Whether to copy the input volume prior to applying clim normalization.
         """
         # Check volume
         if not isinstance(vol, np.ndarray):
