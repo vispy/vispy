@@ -57,4 +57,25 @@ def test_volume_draw():
         assert_image_approved(c.render(), 'visuals/volume.png')
 
 
+@requires_pyopengl()
+def test_set_data_does_not_change_input():
+    # Create volume
+    V = scene.visuals.Volume(np.zeros((20, 20, 20)))
+
+    # calling Volume.set_data() should NOT alter the values of the input array
+    # regardless of data type
+    vol = np.random.randint(0, 200, (20, 20, 20))
+    for dtype in ['uint8', 'int16', 'uint16', 'float32', 'float64']:
+        vol_copy = np.array(vol, dtype=dtype, copy=True)
+        # setting clim so that normalization would otherwise change the data
+        V.set_data(vol_copy, clim=(0, 200))
+        assert np.allclose(vol, vol_copy)
+
+    # for those using float32 who want to avoid the copy operation,
+    # using set_data() with `copy=False` should be expected to alter the data.
+    vol2 = np.array(vol, dtype='float32', copy=True)
+    assert np.allclose(vol, vol2)
+    V.set_data(vol2, clim=(0, 200), copy=False)
+    assert not np.allclose(vol, vol2)
+
 run_tests_if_main()
