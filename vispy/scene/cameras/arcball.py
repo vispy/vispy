@@ -45,7 +45,7 @@ class ArcballCamera(Base3DRotationCamera):
 
     _state_props = Base3DRotationCamera._state_props + ('_quaternion',)
 
-    def __init__(self, fov=0.0, distance=None, translate_speed=1.0, **kwargs):
+    def __init__(self, fov=45.0, distance=None, translate_speed=1.0, **kwargs):
         super(ArcballCamera, self).__init__(fov=fov, **kwargs)
 
         # Set camera attributes

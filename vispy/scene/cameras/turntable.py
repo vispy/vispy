@@ -53,7 +53,7 @@ class TurntableCamera(Base3DRotationCamera):
     _state_props = Base3DRotationCamera._state_props + ('elevation',
                                                         'azimuth', 'roll')
 
-    def __init__(self, fov=0.0, elevation=30.0, azimuth=30.0, roll=0.0,
+    def __init__(self, fov=45.0, elevation=30.0, azimuth=30.0, roll=0.0,
                  distance=None, translate_speed=1.0, **kwargs):
         super(TurntableCamera, self).__init__(fov=fov, **kwargs)
 

@@ -166,13 +166,10 @@ class PerspectiveCamera(BaseCamera):
 
     def _update_projection_transform(self, fx, fy):
         d = self.depth_value
-        if self._fov == 0:
-            self._projection.set_ortho(-0.5*fx, 0.5*fx, -0.5*fy, 0.5*fy, 0, d)
-        else:
-            fov = max(0.01, self._fov)
-            dist = fy / (2 * math.tan(math.radians(fov)/2))
-            val = math.sqrt(d)
-            self._projection.set_perspective(fov, fx/fy, dist/val, dist*val)
+        fov = max(0.01, self._fov)
+        dist = fy / (2 * math.tan(math.radians(fov)/2))
+        val = math.sqrt(d)
+        self._projection.set_perspective(fov, fx/fy, dist/val, dist*val)
 
 
 class Base3DRotationCamera(PerspectiveCamera):
