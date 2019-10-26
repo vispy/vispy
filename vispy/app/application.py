@@ -16,6 +16,7 @@ from . import backends, inputhook
 from .backends import CORE_BACKENDS, BACKEND_NAMES, BACKENDMAP, TRIED_BACKENDS
 from .. import config
 from .base import BaseApplicationBackend as ApplicationBackend  # noqa
+from ._detect_eventloop import _get_running_interactive_framework
 from ..util import logger
 from ..ext import six
 
@@ -166,9 +167,10 @@ s.show()
                 # event loop, we therefore make sure the event loop isn't
                 # specified before assuming it is a notebook
                 # https://github.com/vispy/vispy/issues/1708
-                return ip.active_eventloop is None
+                # https://github.com/ipython/ipython/issues/11920
+                return _get_running_interactive_framework() is None
             else:
-                # `jupyter console` is used <---- I'm not sure this is true anymore
+                # `jupyter console` is used
                 return False
         except NameError:
             return False
