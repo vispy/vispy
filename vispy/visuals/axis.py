@@ -171,7 +171,9 @@ class AxisVisual(CompoundVisual):
             # TODO: make sure we only call get_transform if the transform for
             # the line is updated
             tr = self._line.get_transform(map_from='visual', map_to='canvas')
-            x1, y1, x2, y2 = tr.map(self.pos)[:, :2].ravel()
+            trpos = tr.map(self.pos)
+            trpos /= trpos[:, 3:]
+            x1, y1, x2, y2 = trpos[:, :2].ravel()
             if x1 > x2:
                 x1, y1, x2, y2 = x2, y2, x1, y1
             self._axis_label.rotation = math.degrees(math.atan2(y2-y1, x2-x1))
