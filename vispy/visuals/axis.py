@@ -505,6 +505,10 @@ def _get_ticks_talbot(dmin, dmax, n_inches, density=1.):
     # the density function converts this back to a density in data units
     # (not inches)
     n_inches = max(n_inches, 2.0)  # Set minimum otherwise code can crash :(
+
+    if dmin == dmax:
+        return np.array([dmin, dmax])
+
     m = density * n_inches + 1.0
     only_inside = False  # we cull values outside ourselves
     Q = [1, 5, 2, 2.5, 4, 3]
