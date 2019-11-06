@@ -4,7 +4,6 @@
 Tests for AxisVisual
 """
 
-from vispy import scene
 from vispy.scene import visuals
 from vispy.testing import (requires_application, TestingCanvas,
                            run_tests_if_main)
