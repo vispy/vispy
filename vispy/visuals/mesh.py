@@ -534,4 +534,7 @@ class MeshVisual(Visual):
     def _compute_bounds(self, axis, view):
         if self._bounds is None:
             return None
-        return self._bounds[axis]
+        if axis >= len(self._bounds):
+            return (np.inf, -np.inf)
+        else:
+            return self._bounds[axis]
