@@ -535,6 +535,6 @@ class MeshVisual(Visual):
         if self._bounds is None:
             return None
         if axis >= len(self._bounds):
-            return (np.inf, -np.inf)
+            return (0, 0)
         else:
             return self._bounds[axis]
