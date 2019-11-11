@@ -168,17 +168,25 @@ class AxisVisual(CompoundVisual):
         if self._pos is None:
             return False
         if self.axis_label is not None:
-            # TODO: make sure we only call get_transform if the transform for
-            # the line is updated
-            tr = self._line.get_transform(map_from='visual', map_to='canvas')
-            trpos = tr.map(self.pos)
-            trpos /= trpos[:, 3:]
-            x1, y1, x2, y2 = trpos[:, :2].ravel()
-            if x1 > x2:
-                x1, y1, x2, y2 = x2, y2, x1, y1
-            self._axis_label.rotation = math.degrees(math.atan2(y2-y1, x2-x1))
+            self._axis_label.rotation = self._rotation_angle
         if self._need_update:
             self._update_subvisuals()
+
+    @property
+    def _rotation_angle(self):
+        """
+        Determine the rotation angle of the axis as projected onto the canvas.
+        """
+        # TODO: make sure we only call get_transform if the transform for
+        # the line is updated
+        tr = self._line.get_transform(map_from='visual', map_to='canvas')
+        trpos = tr.map(self.pos)
+        # Normalize homogeneous coordinates
+        # trpos /= trpos[:, 3:]
+        x1, y1, x2, y2 = trpos[:, :2].ravel()
+        if x1 > x2:
+            x1, y1, x2, y2 = x2, y2, x1, y1
+        return math.degrees(math.atan2(y2-y1, x2-x1))
 
     def _compute_bounds(self, axis, view):
         if axis == 2:
