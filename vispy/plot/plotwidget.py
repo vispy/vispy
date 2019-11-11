@@ -124,16 +124,10 @@ class PlotWidget(scene.Widget):
 
         # row 3
         # xaxis - column 4
-        # This needs to be added to the grid before the viewbox (to fix #1743)
         self.xaxis = scene.AxisWidget(orientation='bottom', text_color=fg,
                                       axis_color=fg, tick_color=fg)
         xaxis_widget = self.grid.add_widget(self.xaxis, row=3, col=4)
         xaxis_widget.height_max = 40
-
-        self.view = self.grid.add_view(row=2, col=4,
-                                       border_color='grey', bgcolor="#efefef")
-        self.view.camera = 'panzoom'
-        self.camera = self.view.camera
 
         self.cbar_right = self.grid.add_widget(None, row=2, col=5)
         self.cbar_right.width_max = 1
@@ -147,6 +141,12 @@ class PlotWidget(scene.Widget):
         # row 5
         self.cbar_bottom = self.grid.add_widget(None, row=5, col=4)
         self.cbar_bottom.height_max = 1
+
+        # This needs to be added to the grid last (to fix #1743)
+        self.view = self.grid.add_view(row=2, col=4,
+                                       border_color='grey', bgcolor="#efefef")
+        self.view.camera = 'panzoom'
+        self.camera = self.view.camera
 
         self._configured = True
         self.xaxis.link_view(self.view)
