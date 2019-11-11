@@ -623,7 +623,8 @@ class MarkersVisual(Visual):
         view.view_program['u_px_scale'] = view.transforms.pixel_scale
         if self.scaling:
             tr = view.transforms.get_transform('visual', 'document').simplified
-            scale = np.linalg.norm((tr.map([1, 0]) - tr.map([0, 0]))[:2])
+            mat = tr.map(np.eye(3)) - tr.map(np.zeros((3, 3)))
+            scale = np.linalg.norm(mat[:, :3])
             view.view_program['u_scale'] = scale
         else:
             view.view_program['u_scale'] = 1
