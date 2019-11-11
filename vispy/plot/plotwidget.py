@@ -142,7 +142,7 @@ class PlotWidget(scene.Widget):
         self.cbar_bottom = self.grid.add_widget(None, row=5, col=4)
         self.cbar_bottom.height_max = 1
 
-        # This needs to be added to the grid last (to fix #1743)
+        # This needs to be added to the grid last (to fix #1742)
         self.view = self.grid.add_view(row=2, col=4,
                                        border_color='grey', bgcolor="#efefef")
         self.view.camera = 'panzoom'
