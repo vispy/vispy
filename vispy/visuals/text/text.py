@@ -414,7 +414,8 @@ class TextVisual(Visual):
         # Init font handling stuff
         # _font_manager is a temporary solution to use global mananger
         self._font_manager = font_manager or FontManager(method=method)
-        self._font = self._font_manager.get_font(face, bold, italic)
+        self._font_spec = [face, bold, italic]
+        self._font = self._font_manager.get_font(*self._font_spec)
         self._vertices = None
         self._color_vbo = None
         self._anchors = (anchor_x, anchor_y)
@@ -467,6 +468,42 @@ class TextVisual(Visual):
     @font_size.setter
     def font_size(self, size):
         self._font_size = max(0.0, float(size))
+        self.update()
+
+    @property
+    def face(self):
+        """ The font name
+        """
+        return self._font_spec[0]
+
+    @face.setter
+    def face(self, face):
+        self._font_spec[0] = face
+        self._font = self._font_manager.get_font(*self._font_spec)
+        self.update()
+
+    @property
+    def bold(self):
+        """ Whether the font is bold
+        """
+        return self._font_spec[1]
+
+    @bold.setter
+    def bold(self, bold):
+        self._font_spec[1] = bold
+        self._font = self._font_manager.get_font(*self._font_spec)
+        self.update()
+
+    @property
+    def italic(self):
+        """ Whether the font is italic
+        """
+        return self._font_spec[2]
+
+    @italic.setter
+    def italic(self, italic):
+        self._font_spec[2] = italic
+        self._font = self._font_manager.get_font(*self._font_spec)
         self.update()
 
     @property
