@@ -292,7 +292,7 @@ class BaseTexture(GLObject):
 
         Notes
         -----
-        This operation implicitely resizes the texture to the shape of
+        This operation implicitly resizes the texture to the shape of
         the data if given offset is None.
         """
         return self._set_data(data, offset, copy)
