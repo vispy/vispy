@@ -46,7 +46,21 @@ def test_queue():
     
     # Convert for es2
     shader3 = glir.convert_shader('es2', shader2)
+    # make sure precision float is still in the shader
+    # it may not be the first (precision int might be there)
     assert 'precision highp float;' in shader3
+    # precisions must come before code
+    assert shader3.startswith('precision')
+
+    # Define shader with version number
+    shader4 = """
+        #version 100; precision highp float;uniform mediump vec4 u_foo;uniform vec4 u_bar;
+        """.strip().replace(';', ';\n')
+    shader5 = glir.convert_shader('es2', shader4)
+    assert 'precision highp float;' in shader5
+    # make sure that precision is first (version is removed)
+    # precisions must come before code
+    assert shader3.startswith('precision')
 
 
 @requires_application()

@@ -582,7 +582,7 @@ def _convert_es2_shader(shader):
     for line in shader.lstrip().splitlines():
         line_strip = line.lstrip()
         if line_strip.startswith('#version'):
-            has_version = True
+            # has_version = True
             continue
         if line_strip.startswith('#extension'):
             extensions.append(line_strip)
