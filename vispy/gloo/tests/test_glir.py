@@ -214,6 +214,7 @@ def test_texture2d_alignment(gl, check3d):
     ])
     gl.glPixelStorei.reset_mock()
 
+
 @requires_pyopengl()
 @mock.patch('vispy.gloo.glir._check_pyopengl_3D')
 @mock.patch('vispy.gloo.glir.gl')
@@ -263,15 +264,15 @@ def test_texture3d_alignment(gl, check3d):
 @requires_pyopengl()
 @mock.patch('vispy.gloo.glir._check_pyopengl_3D')
 @mock.patch('vispy.gloo.glir.gl')
-def test_texture3d_alignment(gl, check3d):
+def test_texture_cube_alignment(gl, check3d):
     """Test that textures set unpack alignment properly.
 
     See https://github.com/vispy/vispy/pull/1758
 
     """
-    from ..glir import GlirTexture3D
+    from ..glir import GlirTextureCube
     check3d.return_value = gl
-    t = GlirTexture3D(mock.MagicMock(), 3)
+    t = GlirTextureCube(mock.MagicMock(), 3)
 
     shape = (68, 296, 393, 1)
     t.set_size(shape, 'luminance', 'luminance')
