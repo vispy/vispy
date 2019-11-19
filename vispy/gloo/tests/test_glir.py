@@ -6,7 +6,14 @@ import tempfile
 from vispy import config
 from vispy.app import Canvas
 from vispy.gloo import glir
-from vispy.testing import requires_application, run_tests_if_main
+from vispy.testing import requires_application, requires_pyopengl, run_tests_if_main
+
+import numpy as np
+
+try:
+    from unittest import mock
+except ImportError:
+    import mock
 
 
 def test_queue():
@@ -117,6 +124,186 @@ def test_capabilities():
         assert capabilities['max_texture_size'] is not None
         assert capabilities['gl_version'] != 'unknown'
 
+
+@requires_pyopengl()
+@mock.patch('vispy.gloo.glir._check_pyopengl_3D')
+@mock.patch('vispy.gloo.glir.gl')
+def test_texture1d_alignment(gl, check3d):
+    """Test that textures set unpack alignment properly.
+
+    See https://github.com/vispy/vispy/pull/1758
+
+    """
+    from ..glir import GlirTexture1D
+    check3d.return_value = check3d
+    t = GlirTexture1D(mock.MagicMock(), 3)
+
+    shape = (393, 1)
+    t.set_size(shape, 'luminance', 'luminance')
+    t.set_data((0,), np.zeros(shape, np.float32))
+    # number of elements doesn't matter, only data type
+    gl.glPixelStorei.assert_not_called()
+    gl.glPixelStorei.reset_mock()
+
+    # now with bytes
+    t.set_data((0,), np.zeros(shape, np.uint8))
+    gl.glPixelStorei.assert_has_calls([
+        mock.call(gl.GL_UNPACK_ALIGNMENT, 1),
+        mock.call(gl.GL_UNPACK_ALIGNMENT, 4),
+    ])
+    gl.glPixelStorei.reset_mock()
+
+    # different shape
+    shape = (394, 1)
+    t.set_size(shape, 'luminance', 'luminance')
+    t.set_data((0,), np.zeros(shape, np.float32))
+    # number of elements doesn't matter, only data type
+    gl.glPixelStorei.assert_not_called()
+    gl.glPixelStorei.reset_mock()
+
+    t.set_data((0,), np.zeros(shape, np.uint8))
+    gl.glPixelStorei.assert_has_calls([
+        mock.call(gl.GL_UNPACK_ALIGNMENT, 1),
+        mock.call(gl.GL_UNPACK_ALIGNMENT, 4),
+    ])
+    gl.glPixelStorei.reset_mock()
+
+
+@requires_pyopengl()
+@mock.patch('vispy.gloo.glir._check_pyopengl_3D')
+@mock.patch('vispy.gloo.glir.gl')
+def test_texture2d_alignment(gl, check3d):
+    """Test that textures set unpack alignment properly.
+
+    See https://github.com/vispy/vispy/pull/1758
+
+    """
+    from ..glir import GlirTexture2D
+    check3d.return_value = gl
+    t = GlirTexture2D(mock.MagicMock(), 3)
+
+    shape = (296, 393, 1)
+    t.set_size(shape, 'luminance', 'luminance')
+    t.set_data((0, 0), np.zeros(shape, np.float32))
+    # alignment should have been 4 which is the default
+    gl.glPixelStorei.assert_not_called()
+    gl.glPixelStorei.reset_mock()
+
+    # now with bytes
+    t.set_data((0, 0), np.zeros(shape, np.uint8))
+    gl.glPixelStorei.assert_has_calls([
+        mock.call(gl.GL_UNPACK_ALIGNMENT, 1),
+        mock.call(gl.GL_UNPACK_ALIGNMENT, 4),
+    ])
+    gl.glPixelStorei.reset_mock()
+
+    # different shape
+    shape = (296, 394, 1)
+    t.set_size(shape, 'luminance', 'luminance')
+    t.set_data((0, 0), np.zeros(shape, np.float32))
+    gl.glPixelStorei.assert_has_calls([
+        mock.call(gl.GL_UNPACK_ALIGNMENT, 8),
+        mock.call(gl.GL_UNPACK_ALIGNMENT, 4),
+    ])
+    gl.glPixelStorei.reset_mock()
+
+    t.set_data((0, 0), np.zeros(shape, np.uint8))
+    gl.glPixelStorei.assert_has_calls([
+        mock.call(gl.GL_UNPACK_ALIGNMENT, 2),
+        mock.call(gl.GL_UNPACK_ALIGNMENT, 4),
+    ])
+    gl.glPixelStorei.reset_mock()
+
+@requires_pyopengl()
+@mock.patch('vispy.gloo.glir._check_pyopengl_3D')
+@mock.patch('vispy.gloo.glir.gl')
+def test_texture3d_alignment(gl, check3d):
+    """Test that textures set unpack alignment properly.
+
+    See https://github.com/vispy/vispy/pull/1758
+
+    """
+    from ..glir import GlirTexture3D
+    check3d.return_value = gl
+    t = GlirTexture3D(mock.MagicMock(), 3)
+
+    shape = (68, 296, 393, 1)
+    t.set_size(shape, 'luminance', 'luminance')
+    t.set_data((0, 0, 0), np.zeros(shape, np.float32))
+    # alignment should have been 4 which is the default
+    gl.glPixelStorei.assert_not_called()
+    gl.glPixelStorei.reset_mock()
+
+    # now with bytes
+    t.set_data((0, 0, 0), np.zeros(shape, np.uint8))
+    gl.glPixelStorei.assert_has_calls([
+        mock.call(gl.GL_UNPACK_ALIGNMENT, 1),
+        mock.call(gl.GL_UNPACK_ALIGNMENT, 4),
+    ])
+    gl.glPixelStorei.reset_mock()
+
+    # different shape
+    shape = (68, 296, 394, 1)
+    t.set_size(shape, 'luminance', 'luminance')
+    t.set_data((0, 0, 0), np.zeros(shape, np.float32))
+    gl.glPixelStorei.assert_has_calls([
+        mock.call(gl.GL_UNPACK_ALIGNMENT, 8),
+        mock.call(gl.GL_UNPACK_ALIGNMENT, 4),
+    ])
+    gl.glPixelStorei.reset_mock()
+
+    t.set_data((0, 0, 0), np.zeros(shape, np.uint8))
+    gl.glPixelStorei.assert_has_calls([
+        mock.call(gl.GL_UNPACK_ALIGNMENT, 2),
+        mock.call(gl.GL_UNPACK_ALIGNMENT, 4),
+    ])
+    gl.glPixelStorei.reset_mock()
+
+
+@requires_pyopengl()
+@mock.patch('vispy.gloo.glir._check_pyopengl_3D')
+@mock.patch('vispy.gloo.glir.gl')
+def test_texture3d_alignment(gl, check3d):
+    """Test that textures set unpack alignment properly.
+
+    See https://github.com/vispy/vispy/pull/1758
+
+    """
+    from ..glir import GlirTexture3D
+    check3d.return_value = gl
+    t = GlirTexture3D(mock.MagicMock(), 3)
+
+    shape = (68, 296, 393, 1)
+    t.set_size(shape, 'luminance', 'luminance')
+    t.set_data((0, 0, 0), np.zeros(shape, np.float32))
+    # alignment should have been 4 which is the default
+    gl.glPixelStorei.assert_not_called()
+    gl.glPixelStorei.reset_mock()
+
+    # now with bytes
+    t.set_data((0, 0, 0), np.zeros(shape, np.uint8))
+    gl.glPixelStorei.assert_has_calls([
+        mock.call(gl.GL_UNPACK_ALIGNMENT, 1),
+        mock.call(gl.GL_UNPACK_ALIGNMENT, 4),
+    ])
+    gl.glPixelStorei.reset_mock()
+
+    # different shape
+    shape = (68, 296, 394, 1)
+    t.set_size(shape, 'luminance', 'luminance')
+    t.set_data((0, 0, 0), np.zeros(shape, np.float32))
+    gl.glPixelStorei.assert_has_calls([
+        mock.call(gl.GL_UNPACK_ALIGNMENT, 8),
+        mock.call(gl.GL_UNPACK_ALIGNMENT, 4),
+    ])
+    gl.glPixelStorei.reset_mock()
+
+    t.set_data((0, 0, 0), np.zeros(shape, np.uint8))
+    gl.glPixelStorei.assert_has_calls([
+        mock.call(gl.GL_UNPACK_ALIGNMENT, 2),
+        mock.call(gl.GL_UNPACK_ALIGNMENT, 4),
+    ])
+    gl.glPixelStorei.reset_mock()
 # The rest is basically tested via our examples
 
 run_tests_if_main()
