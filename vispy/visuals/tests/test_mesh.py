@@ -26,4 +26,27 @@ def test_mesh_color():
     np.testing.assert_allclose(vertices['position'], new_vertices)
 
 
+@requires_pyopengl()
+def test_mesh_bounds():
+
+    # Create 3D visual
+    vertices, filled_indices, outline_indices = create_cube()
+    axis = scene.visuals.Mesh(vertices['position'], outline_indices,
+                              color='black', mode='lines')
+
+    # Test bounds for all 3 axes
+    for i in range(3):
+        np.testing.assert_allclose(axis.bounds(i), (-1.0, 1.0))
+
+    # Create 2D visual using projection of cube
+    axis = scene.visuals.Mesh(vertices['position'][:, :2], outline_indices,
+                              color='black', mode='lines')
+
+    # Test bounds for first 2 axes
+    for i in range(2):
+        np.testing.assert_allclose(axis.bounds(i), (-1.0, 1.0))
+    # Test bounds for 3rd axis
+    np.testing.assert_allclose(axis.bounds(2), (0.0, 0.0))
+
+
 run_tests_if_main()
