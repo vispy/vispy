@@ -26,7 +26,6 @@ def test_mesh_color():
     np.testing.assert_allclose(vertices['position'], new_vertices)
 
 
-
 @requires_pyopengl()
 def test_mesh_bounds():
 
