@@ -168,15 +168,25 @@ class AxisVisual(CompoundVisual):
         if self._pos is None:
             return False
         if self.axis_label is not None:
-            # TODO: make sure we only call get_transform if the transform for
-            # the line is updated
-            tr = self._line.get_transform(map_from='visual', map_to='canvas')
-            x1, y1, x2, y2 = tr.map(self.pos)[:, :2].ravel()
-            if x1 > x2:
-                x1, y1, x2, y2 = x2, y2, x1, y1
-            self._axis_label.rotation = math.degrees(math.atan2(y2-y1, x2-x1))
+            self._axis_label.rotation = self._rotation_angle
         if self._need_update:
             self._update_subvisuals()
+
+    @property
+    def _rotation_angle(self):
+        """
+        Determine the rotation angle of the axis as projected onto the canvas.
+        """
+        # TODO: make sure we only call get_transform if the transform for
+        # the line is updated
+        tr = self._line.get_transform(map_from='visual', map_to='canvas')
+        trpos = tr.map(self.pos)
+        # Normalize homogeneous coordinates
+        # trpos /= trpos[:, 3:]
+        x1, y1, x2, y2 = trpos[:, :2].ravel()
+        if x1 > x2:
+            x1, y1, x2, y2 = x2, y2, x1, y1
+        return math.degrees(math.atan2(y2-y1, x2-x1))
 
     def _compute_bounds(self, axis, view):
         if axis == 2:
@@ -503,6 +513,10 @@ def _get_ticks_talbot(dmin, dmax, n_inches, density=1.):
     # the density function converts this back to a density in data units
     # (not inches)
     n_inches = max(n_inches, 2.0)  # Set minimum otherwise code can crash :(
+
+    if dmin == dmax:
+        return np.array([dmin, dmax])
+
     m = density * n_inches + 1.0
     only_inside = False  # we cull values outside ourselves
     Q = [1, 5, 2, 2.5, 4, 3]

@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+
+import numpy as np
+from numpy.testing import assert_allclose
+
 from vispy.scene.visuals import Text
 from vispy.testing import (requires_application, TestingCanvas,
                            run_tests_if_main)
@@ -16,7 +20,7 @@ def test_text():
                     parent=c.scene)
         # Test image created in Illustrator CS5, 1"x1" output @ 92 DPI
         assert_image_approved(c.render(), 'visuals/text1.png')
-        
+
         text.text = ['foo', 'bar']
         text.pos = [10, 10]  # should auto-replicate
         text.rotation = [180, 270]
@@ -32,6 +36,23 @@ def test_text():
         text.text = 'foobar'
         c.update()
         c.app.process_events()
+
+
+@requires_application()
+def test_text_rotation_update():
+
+    # Regression test for a bug that caused text labels to not be redrawn
+    # if the rotation angle was updated
+
+    with TestingCanvas() as c:
+        text = Text('testing', pos=(100, 100), parent=c.scene)
+        c.update()
+        c.app.process_events()
+        assert_allclose(text.shared_program['a_rotation'], 0.)
+        text.rotation = 30.
+        c.update()
+        c.app.process_events()
+        assert_allclose(text.shared_program['a_rotation'], np.radians(30.))
 
 
 run_tests_if_main()
