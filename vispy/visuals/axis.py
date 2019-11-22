@@ -100,21 +100,22 @@ class AxisVisual(CompoundVisual):
         self.tick_direction = np.array(tick_direction, float)
         self.tick_direction = self.tick_direction
         self.scale_type = scale_type
-        self.axis_color = axis_color
-        self.tick_color = tick_color
 
         self.minor_tick_length = minor_tick_length  # px
         self.major_tick_length = major_tick_length  # px
         self.tick_label_margin = tick_label_margin  # px
         self.axis_label_margin = axis_label_margin  # px
 
-        self.axis_label = axis_label
+        self._axis_label_text = axis_label
 
         self._need_update = True
 
-        self._line = LineVisual(method='gl', width=axis_width)
+        self._line = LineVisual(method='gl', width=axis_width, antialias=True,
+                                color=axis_color)
         self._ticks = LineVisual(method='gl', width=tick_width,
-                                 connect='segments')
+                                 connect='segments', antialias=True,
+                                 color=tick_color)
+
         self._text = TextVisual(font_size=tick_font_size, color=text_color)
         self._axis_label = TextVisual(font_size=axis_font_size,
                                       color=text_color)
@@ -123,6 +124,57 @@ class AxisVisual(CompoundVisual):
         if pos is not None:
             self.pos = pos
         self.domain = domain
+
+    @property
+    def label_color(self):
+        return self._text.color
+
+    @label_color.setter
+    def label_color(self, value):
+        self._text.color = value
+        self._axis_label.color = value
+
+    @property
+    def axis_color(self):
+        return self._line.color
+
+    @axis_color.setter
+    def axis_color(self, value):
+        self._line.set_data(color=value)
+
+    @property
+    def tick_color(self):
+        return self._ticks.color
+
+    @tick_color.setter
+    def tick_color(self, value):
+        self._ticks.set_data(color=value)
+
+    @property
+    def tick_font_size(self):
+        return self._text.font_size
+
+    @tick_font_size.setter
+    def tick_font_size(self, value):
+        self._text.font_size = value
+
+    @property
+    def axis_font_size(self):
+        return self._axis_label.font_size
+
+    @axis_font_size.setter
+    def axis_font_size(self, value):
+        self._axis_label.font_size = value
+
+    @property
+    def axis_label(self):
+        return self._axis_label_text
+
+    @axis_label.setter
+    def axis_label(self, axis_label):
+        self._axis_label_text = axis_label
+        self._need_update = True
+        self.update()
 
     @property
     def pos(self):
