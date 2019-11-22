@@ -490,6 +490,7 @@ class TextVisual(Visual):
     @rotation.setter
     def rotation(self, rotation):
         self._rotation = np.asarray(rotation) * np.pi / 180.
+        self._pos_changed = True
         self.update()
 
     @property
