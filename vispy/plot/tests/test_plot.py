@@ -40,11 +40,11 @@ def test_plot_widget_axes():
         # note: fig.show() must be called for this test to work... otherwise
         # Grid._update_child_widget_dim is not triggered and the axes aren't updated
         fig.show(run=False)
+        # currently, the AxisWidget adds a buffer of 5% of the 
+        # full range to either end of the axis domain
         buffer = (point[1] - point[0]) * 0.05
         expectation = [point[0] - buffer, point[1] + buffer]
         for call in domain_setter.call_args_list:
-            # currently, the AxisWidget adds a buffer of 5% of the 
-            # full range to either end of the axis domain
             assert [round(x, 2) for x in call[0][1]] == expectation
 
 
