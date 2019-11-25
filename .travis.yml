@@ -105,7 +105,7 @@ install:
     - conda create -n testenv --yes --quiet pip python=$PYTHON;
     - source activate testenv;
     # add needed packages common to all backends/tests
-    - conda install --yes --quiet numpy scipy nose "pytest<5.3" cython coveralls pytest-cov pytest-sugar pytest-faulthandler flake8;
+    - conda install --yes --quiet numpy scipy nose pytest "pluggy>=0.13" cython coveralls pytest-cov pytest-sugar pytest-faulthandler flake8;
 
     # On Python3, install system-wide copies of bundled libraries instead
     # Also install PyQt5, imaging (PIL or pillow), scipy, mpl, egl
