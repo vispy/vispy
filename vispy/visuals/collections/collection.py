@@ -90,11 +90,13 @@ class Collection(BaseCollection):
             defaults[name] = default
             gtype = Collection._gtypes[(basetype, count)]
             if scope == "local":
-                vtype.append((name, basetype, count))
+                # numpy dtypes with size 1 are ambiguous, only add size if it is greater than 1
+                vtype.append((name, basetype, count) if count != 1 else (name, basetype))
                 declarations[
                     "attributes"] += "attribute %s %s;\n" % (gtype, name)
             elif scope == "shared":
-                utype.append((name, basetype, count))
+                # numpy dtypes with size 1 are ambiguous, only add size if it is greater than 1
+                utype.append((name, basetype, count) if count != 1 else (name, basetype))
                 declarations["varyings"] += "varying %s %s;\n" % (gtype, name)
             else:
                 declarations["uniforms"] += "uniform %s %s;\n" % (gtype, name)
