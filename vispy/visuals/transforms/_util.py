@@ -78,7 +78,7 @@ def as_vec4(obj, default=(0, 0, 0, 1)):
         obj = new
     elif obj.shape[-1] > 4:
         raise TypeError("Array shape %s cannot be converted to vec4"
-                        % obj.shape)
+                        % (obj.shape, ))
     return obj
 
 
