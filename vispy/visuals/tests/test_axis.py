@@ -62,7 +62,8 @@ def test_rotation_angle():
     view.camera.fov = 20.
 
     assert_allclose(axis1._rotation_angle, 0)
-    assert_allclose(axis2._rotation_angle, -17.056795)
+    # OSX Travis has some small differences...sometimes
+    assert_allclose(axis2._rotation_angle, -17.056795, rtol=0.05)
 
 
 run_tests_if_main()
