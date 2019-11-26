@@ -401,7 +401,8 @@ class ImageVisual(Visual):
             # can eventually do this by simulating 32-bit float... maybe
             clim = self._clim
             if isinstance(clim, string_types) and clim == 'auto':
-                clim = np.min(data), np.max(data)
+                finite_data = data[np.isfinite(data)]
+                clim = np.min(finite_data), np.max(finite_data)
             clim = np.asarray(clim, dtype=np.float32)
             data = data - clim[0]  # not inplace so we don't modify orig data
             if clim[1] - clim[0] > 0:
