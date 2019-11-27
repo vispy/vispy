@@ -1,5 +1,27 @@
 # Release Notes
 
+## [v0.6.3](https://github.com/vispy/vispy/tree/v0.6.3) (2019-11-27)
+
+**Enhancements:**
+
+- Improve AxisVisual visual by providing property getters and setters [\#1744](https://github.com/vispy/vispy/pull/1744) ([astrofrog](https://github.com/astrofrog))
+- Fix MarkerVisual scaling when rotating in 3D space [\#1702](https://github.com/vispy/vispy/pull/1702) ([sofroniewn](https://github.com/sofroniewn))
+
+**Fixed bugs:**
+
+- Fix string formatting of array shape [\#1768](https://github.com/vispy/vispy/pull/1768) ([cgohlke](https://github.com/cgohlke))
+- Fix texture alignment to use data itemsize [\#1758](https://github.com/vispy/vispy/pull/1758) ([djhoese](https://github.com/djhoese))
+- Fix shader version handling in webgl backend [\#1756](https://github.com/vispy/vispy/pull/1756) ([djhoese](https://github.com/djhoese))
+- Fix 2D mesh bounds IndexError when viewed in 3D [\#1749](https://github.com/vispy/vispy/pull/1749) ([sofroniewn](https://github.com/sofroniewn))
+- Fix xaxis labels being wrong initially in PlotWidget [\#1748](https://github.com/vispy/vispy/pull/1748) ([tlambert03](https://github.com/tlambert03))
+- Various bug fixes related to AxisVisual [\#1743](https://github.com/vispy/vispy/pull/1743) ([astrofrog](https://github.com/astrofrog))
+- Fixed a bug in linking two flycameras [\#1557](https://github.com/vispy/vispy/pull/1557) ([SuyiWang](https://github.com/SuyiWang))
+
+**Merged pull requests:**
+
+- Fix additional numpy warnings when dealing with dtypes of size 1 [\#1766](https://github.com/vispy/vispy/pull/1766) ([djhoese](https://github.com/djhoese))
+
+
 ## [v0.6.2](https://github.com/vispy/vispy/tree/v0.6.2) (2019-11-04)
 
 **Enhancements:**
