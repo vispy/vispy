@@ -2,6 +2,8 @@ import numpy as np
 from .image import ImageVisual
 
 VERT_SHADER = """
+#version 130
+
 attribute vec2 a_position;
 attribute vec2 a_texcoord;
 varying vec2 v_texcoord;
@@ -14,13 +16,13 @@ uniform vec2            first_red;
 
 /** .xy = Pixel being sampled in the fragment shader on the range [0, 1]
     .zw = ...on the range [0, image_size], offset by first_red */
-varying vec4            center;
+out vec4            center;
 
 /** center.x + (-2/w, -1/w, 1/w, 2/w); These are the x-positions of the adjacent pixels.*/
-varying vec4            xCoord;
+out vec4            xCoord;
 
 /** center.y + (-2/h, -1/h, 1/h, 2/h); These are the y-positions of the adjacent pixels.*/
-varying vec4            yCoord;
+out vec4            yCoord;
 
 void main(void) {
     v_texcoord = a_texcoord;
@@ -40,11 +42,13 @@ void main(void) {
 """
 
 FRAG_SHADER = """
+#version 130
+
 uniform sampler2D       u_texture;
 
-varying vec4            center;
-varying vec4            yCoord;
-varying vec4            xCoord;
+in vec4            center;
+in vec4            yCoord;
+in vec4            xCoord;
 
 void main(void) {
 
@@ -127,6 +131,7 @@ void main(void) {
             vec4(PATTERN.yx, C, 1));
 }
 """
+
 
 class BayerImageVisual(ImageVisual):
     def __init__(self, *args,
