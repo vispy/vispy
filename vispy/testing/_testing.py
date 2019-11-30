@@ -150,7 +150,6 @@ def has_pyopengl():
 
 def requires_pyopengl():
     skip = not has_pyopengl()
-    print(f"We should skip this test: {skip}")
     return skipif(skip, reason='Requires PyOpenGL')
 
 
