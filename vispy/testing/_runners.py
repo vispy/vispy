@@ -49,23 +49,14 @@ def _unit(mode, extra_arg_string='', coverage=False):
     import_dir = _get_import_dir()[0]
     cwd = op.abspath(op.join(import_dir, '..'))
     extra_args = list(extra_args)
-    use_pytest = False
     try:
-        import pytest  # noqa, analysis:ignore
-        use_pytest = True
+        import pytest
     except ImportError:
-        try:
-            import nose  # noqa, analysis:ignore
-        except ImportError:
-            raise SkipTest('Skipping unit tests, neither pytest nor nose '
-                           'installed')
+        raise SkipTest('Skipping unit tests, because pytest is not installed')
 
     if mode == 'nobackend':
         msg = 'Running tests with no backend'
-        if use_pytest:
-            extra_args += ['-m', '"not vispy_app_test"']
-        else:
-            extra_args += ['-a', '"!vispy_app_test"']
+        extra_args += ['-m', '"not vispy_app_test"']
     else:
         # check to make sure we actually have the backend of interest
         stdout, stderr, invalid = run_subprocess(
@@ -80,11 +71,8 @@ def _unit(mode, extra_arg_string='', coverage=False):
                                   % (mode, stdout), _line_sep))
             raise SkipTest()
         msg = 'Running tests with %s backend' % mode
-        if use_pytest:
-            extra_args += ['-m', 'vispy_app_test']
-        else:
-            extra_args += ['-a', 'vispy_app_test']
-    if coverage and use_pytest:
+        extra_args += ['-m', 'vispy_app_test']
+    if coverage:
         # Don't actually print the coverage because it's way too long
         extra_args += ['--cov', 'vispy', '--cov-report=']
     # make a call to "python" so that it inherits whatever the system

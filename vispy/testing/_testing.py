@@ -11,6 +11,7 @@ import sys
 import os
 import inspect
 import gc
+import pytest
 import functools
 
 from distutils.version import LooseVersion
@@ -18,19 +19,8 @@ from distutils.version import LooseVersion
 from ..ext.six import string_types
 from ..util import use_log_level
 
-###############################################################################
-# Adapted from Python's unittest2
-# http://docs.python.org/2/license.html
-
-try:
-    from unittest.case import SkipTest
-except ImportError:
-    try:
-        from unittest2.case import SkipTest
-    except ImportError:
-        class SkipTest(Exception):
-            pass
-
+from unittest.case import SkipTest  # [noqa]
+skipif = pytest.mark.skipif
 
 def _safe_rep(obj, short=False):
     """Helper for assert_* ports"""
@@ -152,19 +142,21 @@ class raises(object):
 def has_pyopengl():
     try:
         from OpenGL import GL  # noqa, analysis:ignore
-    except Exception:
+    except ImportError:
         return False
     else:
         return True
 
 
 def requires_pyopengl():
-    return np.testing.dec.skipif(not has_pyopengl(), 'Requires PyOpenGL')
+    skip = not has_pyopengl()
+    print(f"We should skip this test: {skip}")
+    return skipif(skip, reason='Requires PyOpenGL')
 
 
 def requires_ssl():
     bad = os.getenv('CIBW_BUILDING', 'false') == 'true'
-    return np.testing.dec.skipif(bad, 'Requires proper SSL support')
+    return skipif(bad, reason='Requires proper SSL support')
 
 
 ###############################################################################
@@ -240,11 +232,7 @@ def garbage_collect(f):
 def requires_application(backend=None, has=(), capable=(), force_gc=True):
     """Return a decorator for tests that require an application"""
     good, msg = has_application(backend, has, capable)
-    dec_backend = np.testing.dec.skipif(not good, "Skipping test: %s" % msg)
-    try:
-        import pytest
-    except Exception:
-        return dec_backend
+    dec_backend = skipif(not good, reason="Skipping test: %s" % msg)
     dec_app = pytest.mark.vispy_app_test
     funcs = [dec_app, dec_backend]
     if force_gc:
@@ -259,7 +247,7 @@ def requires_img_lib():
         has_img_lib = False  # PIL breaks tests on windows (!)
     else:
         has_img_lib = not all(c is None for c in _check_img_lib())
-    return np.testing.dec.skipif(not has_img_lib, 'imageio or PIL required')
+    return skipif(not has_img_lib, reason='imageio or PIL required')
 
 
 def has_ipython(version='3.0'):
@@ -287,7 +275,7 @@ def has_ipython(version='3.0'):
 def requires_ipython(version='3.0'):
     ipython_present, message = has_ipython(version)
 
-    return np.testing.dec.skipif(not ipython_present, message)
+    return skipif(not ipython_present, reason=message)
 
 
 def requires_numpydoc():
@@ -297,7 +285,7 @@ def requires_numpydoc():
         present = False
     else:
         present = True
-    return np.testing.dec.skipif(not present, 'numpydoc is required')
+    return skipif(not present, reason='numpydoc is required')
 
 
 def has_matplotlib(version='1.2'):
@@ -342,8 +330,8 @@ def _has_scipy(min_version):
 
 
 def requires_scipy(min_version='0.13'):
-    return np.testing.dec.skipif(not _has_scipy(min_version),
-                                 'Requires Scipy version >= %s' % min_version)
+    return skipif(not _has_scipy(min_version),
+                  reason='Requires Scipy version >= %s' % min_version)
 
 
 @nottest
