@@ -13,15 +13,23 @@ import imageio
 def test_image():
     """Test image visual"""
     astronaut = imageio.imread('imageio:astronaut.png')
-    size = (512, 512)
-    with TestingCanvas(size=size, bgcolor='w') as c:
-        image = Image(parent=c.scene)
-        image.set_data(astronaut)
 
+    size = tuple(astronaut.shape[:2])
+
+    with TestingCanvas(size=size, bgcolor='w') as c:
+        Image(parent=c.scene, data=astronaut)
         expected_render = c.render()
+
+    # Quick check that the rendered Image visual is close enough to the actual
+    # image
+    astronaut_rgba = expected_render.copy()
+    astronaut_rgba[..., :3] = astronaut
+    assert_image_match(astronaut_rgba, expected_render)
+
     for bayer_pattern in ['rggb', 'bggr', 'gbrg', 'grbg']:
         do_test_image(bayer_pattern,
-                      size=size, image=astronaut, expected_render=expected_render)
+                      size=size, image=astronaut,
+                      expected_render=expected_render)
 
 
 def do_test_image(bayer_pattern, size, image, expected_render):
