@@ -14,12 +14,6 @@ known_bad_fonts = set([
     'Noto Color Emoji',  # https://github.com/vispy/vispy/issues/1771
 ])
 
-@pytest.fixture(scope='module')
-def setup():
-    with warnings.catch_warnings():
-        warnings.simplefilter('always')
-        yield
-
 # try both a vispy and system font   <--- what does this mean???
 sys_fonts = set(list_fonts()) - set(_vispy_fonts)
 
@@ -31,7 +25,7 @@ def test_font_list():
         assert_in(font, f)
 
 @pytest.mark.parametrize('face', ['OpenSans'] + sorted(sys_fonts))
-def test_font_glyph(setup, face):
+def test_font_glyph(face):
     """Test loading glyphs"""
     if face in known_bad_fonts:
         pytest.skip()
