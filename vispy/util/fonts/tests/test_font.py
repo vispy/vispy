@@ -16,12 +16,14 @@ known_bad_fonts = set([
 # try both a vispy and system font   <--- what does this mean???
 sys_fonts = set(list_fonts()) - set(_vispy_fonts)
 
+
 def test_font_list():
     """Test font listing"""
     f = list_fonts()
     assert len(f) > 0
     for font in _vispy_fonts:
         assert_in(font, f)
+
 
 @pytest.mark.parametrize('face', ['OpenSans'] + sorted(sys_fonts))
 def test_font_glyph(face):
