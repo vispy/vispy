@@ -29,7 +29,7 @@ def test_font_list():
 def test_font_glyph(face):
     """Test loading glyphs"""
     if face in known_bad_fonts:
-        pytest.skip()
+        pytest.xfail()
     font_dict = dict(face=face, size=12, bold=False, italic=False)
     glyphs_dict = dict()
     chars = 'foobar^C&#'
