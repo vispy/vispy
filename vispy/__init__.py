@@ -23,8 +23,8 @@ from pkg_resources import get_distribution, DistributionNotFound
 __all__ = ['use', 'sys_info', 'set_log_level', 'test']
 
 try:
-    __version__ = get_distribution(__name__).version
-except DistributionNotFound:
+    from .version import version as __version__  # noqa
+except ImportError:
     # package is not installed
     pass
 
