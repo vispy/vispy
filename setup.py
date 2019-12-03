@@ -223,7 +223,7 @@ setup(
         'wx': ['wxPython'],
         'doc': ['sphinx_bootstrap_theme', 'numpydoc'],
     },
-    packages=find_packages(),
+    packages=find_packages(exclude=['make']),
     ext_modules=cythonize(extensions),
     package_dir={'vispy': 'vispy'},
     data_files=[
