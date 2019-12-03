@@ -7,12 +7,6 @@ import numpy as np
 
 from collections import OrderedDict
 
-try:
-    import triangle
-    _TRIANGLE_AVAILABLE = True
-except (ImportError, AssertionError):
-    _TRIANGLE_AVAILABLE = False
-
 
 class Triangulation(object):
     """Constrained delaunay triangulation
@@ -820,6 +814,7 @@ def _triangulate_python(vertices_2d, segments):
 
 
 def _triangulate_cpp(vertices_2d, segments):
+    import triangle
     T = triangle.triangulate({'vertices': vertices_2d,
                               'segments': segments}, "p")
     vertices_2d = T["vertices"]
@@ -849,11 +844,13 @@ def triangulate(vertices):
     segments = np.repeat(np.arange(n + 1), 2)[1:-1]
     segments[-2:] = n - 1, 0
 
-    if _TRIANGLE_AVAILABLE:
+    try:
+        import triangle  # noqa: F401
+    except (ImportError, AssertionError):
+        vertices_2d, triangles = _triangulate_python(vertices_2d, segments)
+    else:
         segments_2d = segments.reshape((-1, 2))
         vertices_2d, triangles = _triangulate_cpp(vertices_2d, segments_2d)
-    else:
-        vertices_2d, triangles = _triangulate_python(vertices_2d, segments)
 
     vertices = np.empty((len(vertices_2d), 3))
     vertices[:, :2] = vertices_2d
