@@ -178,7 +178,7 @@ extensions = [Extension('vispy.visuals.text._sdf_cpu',
 readme = open('README.rst', 'r').read()
 setup(
     name=name,
-    use_scm_version=True,
+    use_scm_version={'write_to': 'vispy/version.py'},
     author='Vispy contributors',
     author_email='vispy@googlegroups.com',
     license='(new) BSD',
@@ -209,7 +209,7 @@ setup(
         'jsdeps': NPM,
     },
     python_requires='>=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*',
-    install_requires=['numpy', 'freetype-py', 'setuptools'],
+    install_requires=['numpy', 'freetype-py'],
     setup_requires=['numpy', 'cython', 'setuptools_scm', 'setuptools_scm_git_archive'],
     extras_require={
         'ipython-static': ['ipython'],
@@ -223,7 +223,7 @@ setup(
         'wx': ['wxPython'],
         'doc': ['sphinx_bootstrap_theme', 'numpydoc'],
     },
-    packages=find_packages(),
+    packages=find_packages(exclude=['make']),
     ext_modules=cythonize(extensions),
     package_dir={'vispy': 'vispy'},
     data_files=[
