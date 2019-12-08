@@ -6,7 +6,7 @@
 # -----------------------------------------------------------------------------
 # Author:   Nicolas P .Rougier
 # Date:     06/03/2014
-# Abstract: GPU computing usingthe framebuffer
+# Abstract: GPU computing using the framebuffer
 # Keywords: framebuffer, GPU computing, reaction-diffusion
 # -----------------------------------------------------------------------------
 
