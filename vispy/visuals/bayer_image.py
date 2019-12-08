@@ -167,8 +167,10 @@ class BayerImageVisual(ImageVisual):
         valid_bayer_patterns = ['bggr', 'rggb', 'gbrg', 'grbg']
         if bayer_pattern not in valid_bayer_patterns:
             raise ValueError(
-                f"Invalid bayer_pattern received ({bayer_pattern}). "
-                f"bayer_pattern must be in {valid_bayer_patterns}")
+                "Invalid bayer_pattern received ({bayer_pattern}). "
+                "bayer_pattern must be in {valid_bayer_patterns}"
+                "".format(bayer_pattern=bayer_pattern,
+                          valid_bayer_patterns=valid_bayer_patterns))
 
         self.bayer_pattern = bayer_pattern
         self._first_red = np.unravel_index(
