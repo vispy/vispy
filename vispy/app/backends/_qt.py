@@ -158,7 +158,6 @@ BUTTONMAP = {0: 0, 1: 1, 2: 2, 4: 3, 8: 4, 16: 5}
 
 
 # Properly log Qt messages
-# Also, ignore spam about tablet input
 def message_handler(*args):
 
     if qt_lib in ("pyqt4", "pyside"):
@@ -171,13 +170,21 @@ def message_handler(*args):
         raise RuntimeError("Module backends._qt ",
                            "should not be imported directly.")
 
-    if msg == ("QCocoaView handleTabletEvent: This tablet device is "
-               "unknown (received no proximity event for it). Discarding "
-               "event."):
-        return
-    else:
-        msg = msg.decode() if not isinstance(msg, string_types) else msg
-        logger.warning(msg)
+    BLACKLIST = [
+        # Ignore spam about tablet input
+        'QCocoaView handleTabletEvent: This tablet device is unknown',
+        # Not too sure why this warning is emitted when using
+        #   Spyder + PyQt5 + Vispy
+        #   https://github.com/vispy/vispy/issues/1787
+        # In either case, it is really annoying. We should filter it away
+        'QSocketNotifier: Multiple socket notifiers for same',
+    ]
+    for item in BLACKLIST:
+        if msg.startswith(item):
+            return
+
+    msg = msg.decode() if not isinstance(msg, string_types) else msg
+    logger.warning(msg)
 
 
 def use_shared_contexts():
