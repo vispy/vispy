@@ -1,5 +1,18 @@
 # Release Notes
 
+## [v0.6.4](https://github.com/vispy/vispy/tree/v0.6.4) (2019-12-13)
+
+**Enhancements:**
+
+- Filter unnecessary QSocketNotifier warning when using QtConsole [\#1789](https://github.com/vispy/vispy/pull/1789) ([hmaarrfk](https://github.com/hmaarrfk))
+- FIX: Nest triangle and skimage imports [\#1781](https://github.com/vispy/vispy/pull/1781) ([larsoner](https://github.com/larsoner))
+- Switch to setuptools\_scm version.py usage to avoid import overhead [\#1780](https://github.com/vispy/vispy/pull/1780) ([djhoese](https://github.com/djhoese))
+
+**Fixed bugs:**
+
+- Skip bad font in test\_font [\#1772](https://github.com/vispy/vispy/pull/1772) ([hmaarrfk](https://github.com/hmaarrfk))
+
+
 ## [v0.6.3](https://github.com/vispy/vispy/tree/v0.6.3) (2019-11-27)
 
 **Enhancements:**
