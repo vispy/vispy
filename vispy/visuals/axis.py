@@ -194,7 +194,7 @@ class AxisVisual(CompoundVisual):
                 "tick_direction",
                 "axis_label",
                 "pos",
-                "scale_type", 
+                "scale_type",
             ):
                 self._need_update = True
                 self.update()
