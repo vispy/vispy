@@ -75,7 +75,7 @@ class AxisVisual(CompoundVisual):
                  scale_type="linear", axis_color=(1, 1, 1),
                  tick_color=(0.7, 0.7, 0.7), text_color='w',
                  minor_tick_length=5, major_tick_length=10,
-                 tick_width=2, tick_label_margin=5, tick_font_size=8,
+                 tick_width=2, tick_label_margin=12, tick_font_size=8,
                  axis_width=3,  axis_label=None,
                  axis_label_margin=35, axis_font_size=10,
                  font_size=None, anchors=None):
@@ -88,6 +88,7 @@ class AxisVisual(CompoundVisual):
             tick_font_size = font_size
             axis_font_size = font_size
 
+        self._initialized = False
         self._pos = None
         self._domain = None
 
@@ -97,8 +98,7 @@ class AxisVisual(CompoundVisual):
         self._stop_at_major = (False, False)
 
         self.ticker = Ticker(self, anchors=anchors)
-        self.tick_direction = np.array(tick_direction, float)
-        self.tick_direction = self.tick_direction
+        self.tick_direction = tick_direction
         self.scale_type = scale_type
 
         self.minor_tick_length = minor_tick_length  # px
@@ -124,13 +124,14 @@ class AxisVisual(CompoundVisual):
         if pos is not None:
             self.pos = pos
         self.domain = domain
+        self._initialized = True
 
     @property
-    def label_color(self):
+    def text_color(self):
         return self._text.color
 
-    @label_color.setter
-    def label_color(self, value):
+    @text_color.setter
+    def text_color(self, value):
         self._text.color = value
         self._axis_label.color = value
 
@@ -143,6 +144,14 @@ class AxisVisual(CompoundVisual):
         self._line.set_data(color=value)
 
     @property
+    def axis_width(self):
+        return self._line.width
+
+    @axis_width.setter
+    def axis_width(self, value):
+        self._line.set_data(width=value)
+
+    @property
     def tick_color(self):
         return self._ticks.color
 
@@ -151,12 +160,44 @@ class AxisVisual(CompoundVisual):
         self._ticks.set_data(color=value)
 
     @property
+    def tick_width(self):
+        return self._ticks.width
+
+    @tick_width.setter
+    def tick_width(self, value):
+        self._ticks.set_data(width=value)
+
+    @property
     def tick_font_size(self):
         return self._text.font_size
 
     @tick_font_size.setter
     def tick_font_size(self, value):
         self._text.font_size = value
+
+    @property
+    def tick_direction(self):
+        return self._tick_direction
+
+    @tick_direction.setter
+    def tick_direction(self, value):
+        self._tick_direction = np.array(value, float)
+
+    def __setattr__(self, name, val):
+        super().__setattr__(name, val)
+        if self._initialized:
+            if name in (
+                "minor_tick_length",
+                "major_tick_length",
+                "tick_label_margin",
+                "axis_label_margin",
+                "tick_direction",
+                "axis_label",
+                "pos",
+                "scale_type", 
+            ):
+                self._need_update = True
+                self.update()
 
     @property
     def axis_font_size(self):
@@ -173,8 +214,6 @@ class AxisVisual(CompoundVisual):
     @axis_label.setter
     def axis_label(self, axis_label):
         self._axis_label_text = axis_label
-        self._need_update = True
-        self.update()
 
     @property
     def pos(self):
@@ -183,8 +222,6 @@ class AxisVisual(CompoundVisual):
     @pos.setter
     def pos(self, pos):
         self._pos = np.array(pos, float)
-        self._need_update = True
-        self.update()
 
     @property
     def domain(self):
