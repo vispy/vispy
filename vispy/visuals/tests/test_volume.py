@@ -18,7 +18,8 @@ def test_volume():
     V = scene.visuals.Volume(vol)
     assert V.clim == (0, 1)
     assert V.method == 'mip'
-    
+    assert V.interpolation == 'linear'
+
     # Set wrong data
     with raises(ValueError):
         V.set_data(np.zeros((20, 20), 'float32'))
@@ -32,7 +33,11 @@ def test_volume():
     # Method
     V.method = 'iso'
     assert V.method == 'iso'
-    
+
+    # Interpolation
+    V.method = 'nearest'
+    assert V.method == 'nearest'
+        
     # Step size
     V.relative_step_size = 1.1
     assert V.relative_step_size == 1.1
