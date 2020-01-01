@@ -35,8 +35,8 @@ def test_volume():
     assert V.method == 'iso'
 
     # Interpolation
-    V.method = 'nearest'
-    assert V.method == 'nearest'
+    V.interpolation = 'nearest'
+    assert V.interpolation == 'nearest'
         
     # Step size
     V.relative_step_size = 1.1
