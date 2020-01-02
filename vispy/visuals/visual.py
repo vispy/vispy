@@ -86,6 +86,7 @@ will appear to behave as a single visual.
 
 from __future__ import division
 import weakref
+import numpy as np
 
 from .. import gloo
 from ..util.event import EmitterGroup, Event
@@ -678,3 +679,76 @@ class CompoundVisualView(BaseVisualView, CompoundVisual):
         for filt in self._vshare.filters:
             for v in self._subvisuals:
                 filt._attach(v)
+
+
+class updating_property:
+    """A property descriptor that autoupdates the Visual during attribute setting.
+
+    Use this as a decorator in place of the @property when you want the attribute to trigger
+    an immediate update to the visual upon change.
+    For example, the following code examples are equivalent:
+
+    class SomeVisual1:
+        def __init__(self, someprop=None):
+            self._someprop = someprop
+
+            @property
+            def someprop(self):
+                return self._someprop
+
+            @someprop.setter
+            def someprop(self, value):
+                previous = self._someprop
+                if (previous is None) or np.any(value != previous):
+                    self._someprop = value
+                    self._need_update = True
+                    if hasattr(self, 'events'):
+                        self.update()
+
+    class SomeVisual2:
+        def __init__(self, someprop=None):
+            self._someprop = someprop
+
+            @updating_property
+            def someprop(self):
+                pass
+
+    """
+
+    def __init__(self, fget=None, fset=None, doc=None):
+        self.fget = fget
+        self.fset = fset
+        if self.fget is not None:
+            self.attr_name = f'_{self.fget.__name__}'
+            self.__doc__ = doc or self.fget.__doc__
+
+    def __get__(self, obj, objtype=None):
+        if obj is None:
+            return self
+        # if the @updating_property getter returns a value, use that
+        val = self.fget(obj)
+        if val is not None:
+            return val
+        # otherwise get the private attribute by the same name
+        return getattr(obj, self.attr_name, None)
+
+    def __set__(self, obj, value):
+        previous = getattr(obj, self.attr_name, None)
+        if (previous is None) or np.any(value != previous):
+            setattr(obj, self.attr_name, value)
+            # if a @.setter method has been declared, run that as well
+            # (overriding the standard setter behavior)
+            if self.fset is not None:
+                self.fset(obj, value)
+            obj._need_update = True
+            # prevent update during obj.__init__
+            if hasattr(obj, 'events'):
+                obj.update()
+
+    def __delete__(self, obj):
+        raise AttributeError("can't delete attribute")
+
+    def setter(self, fset):
+        return type(self)(self.fget, fset, self.__doc__)
+
+

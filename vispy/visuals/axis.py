@@ -8,7 +8,7 @@ import math
 
 import numpy as np
 
-from .visual import CompoundVisual
+from .visual import CompoundVisual, updating_property
 from .line import LineVisual
 from .text import TextVisual
 
@@ -88,7 +88,6 @@ class AxisVisual(CompoundVisual):
             tick_font_size = font_size
             axis_font_size = font_size
 
-        self._initialized = False
         self._pos = None
         self._domain = None
 
@@ -98,15 +97,15 @@ class AxisVisual(CompoundVisual):
         self._stop_at_major = (False, False)
 
         self.ticker = Ticker(self, anchors=anchors)
-        self.tick_direction = tick_direction
+        self.tick_direction = np.array(tick_direction, float)
         self.scale_type = scale_type
 
-        self.minor_tick_length = minor_tick_length  # px
-        self.major_tick_length = major_tick_length  # px
-        self.tick_label_margin = tick_label_margin  # px
-        self.axis_label_margin = axis_label_margin  # px
+        self._minor_tick_length = minor_tick_length  # px
+        self._major_tick_length = major_tick_length  # px
+        self._tick_label_margin = tick_label_margin  # px
+        self._axis_label_margin = axis_label_margin  # px
 
-        self._axis_label_text = axis_label
+        self._axis_label = axis_label
 
         self._need_update = True
 
@@ -117,14 +116,13 @@ class AxisVisual(CompoundVisual):
                                  color=tick_color)
 
         self._text = TextVisual(font_size=tick_font_size, color=text_color)
-        self._axis_label = TextVisual(font_size=axis_font_size,
-                                      color=text_color)
+        self._axis_label_vis = TextVisual(font_size=axis_font_size,
+                                          color=text_color)
         CompoundVisual.__init__(self, [self._line, self._text, self._ticks,
-                                       self._axis_label])
+                                       self._axis_label_vis])
         if pos is not None:
             self.pos = pos
         self.domain = domain
-        self._initialized = True
 
     @property
     def text_color(self):
@@ -133,7 +131,7 @@ class AxisVisual(CompoundVisual):
     @text_color.setter
     def text_color(self, value):
         self._text.color = value
-        self._axis_label.color = value
+        self._axis_label_vis.color = value
 
     @property
     def axis_color(self):
@@ -175,64 +173,53 @@ class AxisVisual(CompoundVisual):
     def tick_font_size(self, value):
         self._text.font_size = value
 
-    @property
+    @updating_property
     def tick_direction(self):
-        return self._tick_direction
+        """The tick direction to use (in document coordinates)."""
 
     @tick_direction.setter
-    def tick_direction(self, value):
-        self._tick_direction = np.array(value, float)
-
-    def __setattr__(self, name, val):
-        super().__setattr__(name, val)
-        if self._initialized:
-            if name in (
-                "minor_tick_length",
-                "major_tick_length",
-                "tick_label_margin",
-                "axis_label_margin",
-                "tick_direction",
-                "axis_label",
-                "pos",
-                "scale_type",
-            ):
-                self._need_update = True
-                self.update()
+    def tick_direction(self, tick_direction):
+        self._tick_direction = np.array(tick_direction, float)
 
     @property
     def axis_font_size(self):
-        return self._axis_label.font_size
+        return self._axis_label_vis.font_size
 
     @axis_font_size.setter
     def axis_font_size(self, value):
-        self._axis_label.font_size = value
+        self._axis_label_vis.font_size = value
 
-    @property
+    @updating_property
+    def domain(self):
+        """The data values at the beginning and end of the axis, used for tick labels."""
+
+    @updating_property
     def axis_label(self):
-        return self._axis_label_text
+        """Text to use for the axis label."""
 
-    @axis_label.setter
-    def axis_label(self, axis_label):
-        self._axis_label_text = axis_label
-
-    @property
+    @updating_property
     def pos(self):
-        return self._pos
+        """Co-ordinates of start and end of the axis."""
 
     @pos.setter
     def pos(self, pos):
         self._pos = np.array(pos, float)
 
-    @property
-    def domain(self):
-        return self._domain
+    @updating_property
+    def minor_tick_length(self):
+        """The length of minor ticks, in pixels"""
 
-    @domain.setter
-    def domain(self, d):
-        if self._domain is None or d != self._domain:
-            self._domain = d
-            self._need_update = True
-            self.update()
+    @updating_property
+    def major_tick_length(self):
+        """The length of major ticks, in pixels"""
+
+    @updating_property
+    def tick_label_margin(self):
+        """Margin between ticks and tick labels"""
+
+    @updating_property
+    def axis_label_margin(self):
+        """Margin between ticks and axis labels"""
 
     @property
     def _vec(self):
@@ -249,15 +236,15 @@ class AxisVisual(CompoundVisual):
         self._text.pos = tick_label_pos
         self._text.anchors = anchors
         if self.axis_label is not None:
-            self._axis_label.text = self.axis_label
-            self._axis_label.pos = axis_label_pos
+            self._axis_label_vis.text = self.axis_label
+            self._axis_label_vis.pos = axis_label_pos
         self._need_update = False
 
     def _prepare_draw(self, view):
         if self._pos is None:
             return False
         if self.axis_label is not None:
-            self._axis_label.rotation = self._rotation_angle
+            self._axis_label_vis.rotation = self._rotation_angle
         if self._need_update:
             self._update_subvisuals()
 
