@@ -685,10 +685,13 @@ class updating_property:
     """A property descriptor that autoupdates the Visual during attribute setting.
 
     Use this as a decorator in place of the @property when you want the attribute to trigger
-    an immediate update to the visual upon change.
+    an immediate update to the visual upon change.  You may additionally declare an @setter,
+    and if you do, it will be called in addition to the standard logic:
+    `self._attr_name = value`.
+
     For example, the following code examples are equivalent:
 
-    class SomeVisual1:
+    class SomeVisual1(Visual):
         def __init__(self, someprop=None):
             self._someprop = someprop
 
@@ -705,7 +708,7 @@ class updating_property:
                     if hasattr(self, 'events'):
                         self.update()
 
-    class SomeVisual2:
+    class SomeVisual2(Visual):
         def __init__(self, someprop=None):
             self._someprop = someprop
 
