@@ -538,7 +538,7 @@ class VolumeVisual(Visual):
 
     @interpolation.setter
     def interpolation(self, interp):
-        if i not in self._interpolation_names:
+        if interp not in self._interpolation_names:
             raise ValueError(
                 "interpolation must be one of %s"
                 % ', '.join(self._interpolation_names)
