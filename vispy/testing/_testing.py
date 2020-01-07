@@ -18,19 +18,16 @@ from distutils.version import LooseVersion
 from ..ext.six import string_types
 from ..util import use_log_level
 
+
+def SkipTest(*args, **kwargs):
+    __tracebackhide__ = True
+    import pytest
+    return pytest.skip(*args, **kwargs)
+
+
 ###############################################################################
 # Adapted from Python's unittest2
 # http://docs.python.org/2/license.html
-
-try:
-    from unittest.case import SkipTest
-except ImportError:
-    try:
-        from unittest2.case import SkipTest
-    except ImportError:
-        class SkipTest(Exception):
-            pass
-
 
 def _safe_rep(obj, short=False):
     """Helper for assert_* ports"""
@@ -364,12 +361,11 @@ def TestingCanvas(bgcolor='black', size=(100, 100), dpi=None, **kwargs):
     from ..scene import SceneCanvas
 
     class TestingCanvas(SceneCanvas):
-        def __init__(self, bgcolor, size, dpi, decorate, **kwargs):
+        def __init__(self, bgcolor, size, dpi, **kwargs):
             self._entered = False
             self._wanted_vp = None
             SceneCanvas.__init__(self, bgcolor=bgcolor, size=size,
-                                 dpi=dpi, decorate=decorate,
-                                 **kwargs)
+                                 dpi=dpi, **kwargs)
 
         def __enter__(self):
             SceneCanvas.__enter__(self)
@@ -390,8 +386,7 @@ def TestingCanvas(bgcolor='black', size=(100, 100), dpi=None, **kwargs):
             SceneCanvas.draw_visual(self, visual, event)
             self.context.finish()
 
-    # XXX need decorate=True for GLFW 3.3.1 for some reason
-    return TestingCanvas(bgcolor, size, dpi, decorate=True, **kwargs)
+    return TestingCanvas(bgcolor, size, dpi, **kwargs)
 
 
 @nottest
