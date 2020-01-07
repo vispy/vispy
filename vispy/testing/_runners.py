@@ -15,10 +15,19 @@ from functools import partial
 
 from ..util import use_log_level, run_subprocess
 from ..util.ptime import time
-from ._testing import SkipTest, has_application, nottest
+from ._testing import has_application, nottest
 
 
 _line_sep = '-' * 70
+
+
+class VispySkipSuite(Exception):
+    """Class we use to internally signal skipping a test suite."""
+
+    def __init__(self, msg=''):
+        if msg:
+            print(msg)
+        super(VispySkipSuite, self).__init__(msg)
 
 
 def _get_import_dir():
@@ -52,7 +61,7 @@ def _unit(mode, extra_arg_string='', coverage=False):
     try:
         import pytest  # noqa, analysis:ignore
     except ImportError:
-        raise SkipTest('Skipping unit tests, pytest not installed')
+        raise VispySkipSuite('Skipping unit tests, pytest not installed')
 
     if mode == 'nobackend':
         msg = 'Running tests with no backend'
@@ -66,10 +75,9 @@ def _unit(mode, extra_arg_string='', coverage=False):
         if invalid:
             stdout = stdout + '\n' + stderr
             stdout = '\n'.join('    ' + x for x in stdout.split('\n'))
-            print('%s\n%s\n%s' % (_line_sep, 'Skipping backend %s, not '
-                                  'installed or working properly:\n%s'
-                                  % (mode, stdout), _line_sep))
-            raise SkipTest()
+            VispySkipSuite('\s%s\n%s\n%s' % (_line_sep, 'Skipping backend %s, '
+                           'not installed or working properly:\n%s'
+                           % (mode, stdout), _line_sep))
         msg = 'Running tests with %s backend' % mode
         extra_args += ['-m', 'vispy_app_test']
     if coverage:
@@ -278,9 +286,7 @@ def _examples(fnames_str):
         if not good:
             reason = 'Must have suitable app backend'
     if reason is not None:
-        msg = 'Skipping example test: %s' % reason
-        print(msg)
-        raise SkipTest(msg)
+        raise VispySkipSuite('Skipping example test: %s' % reason)
 
     # if we're given individual file paths as a string in fnames_str,
     # then just use them as the fnames
@@ -418,7 +424,7 @@ def test(label='full', extra_arg_string='', coverage=False):
         except RuntimeError as exp:
             print('Failed: %s' % str(exp))
             fail += [run[1]]
-        except SkipTest:
+        except VispySkipSuite:
             skip += [run[1]]
         except Exception as exp:
             # this should only happen if we've screwed up the test setup

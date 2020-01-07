@@ -20,6 +20,7 @@ from ..util import use_log_level
 
 
 def SkipTest(*args, **kwargs):
+    """Backport for raising SkipTest that gives a better traceback."""
     __tracebackhide__ = True
     import pytest
     return pytest.skip(*args, **kwargs)
