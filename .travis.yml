@@ -26,7 +26,7 @@ matrix:
 
     # also tests file sizes, style, line endings
     - env: PYTHON_VERSION=3.7 DEPS=minimal TEST=standard
-           CONDA_DEPENDENCIES=numpy scipy pytest cython coveralls pytest-cov pytest-sugar pytest-faulthandler flake8
+           CONDA_DEPENDENCIES="numpy scipy pytest cython coveralls pytest-cov pytest-sugar pytest-faulthandler flake8"
            CONDA_CHANNEL_PRIORITY=strict
            PIP_DEPENDENCIES="numpydoc"
       addons:
