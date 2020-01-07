@@ -151,6 +151,9 @@ def test_capability():
                 else:
                     bad_kwargs[key] = non_default_vals[key]
     # ensure all settable values can be set
+    if c.app.backend_name == 'Glfw' and \
+            c.app.backend_module.glfw.__version__ >= (3, 3, 0):
+        good_kwargs.pop('decorate')  # bug on 3.3.1?
     with Canvas(**good_kwargs):
         # some of these are hard to test, and the ones that are easy are
         # tested elsewhere, so let's just make sure it runs here

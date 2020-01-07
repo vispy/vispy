@@ -158,12 +158,14 @@ def has_pyopengl():
 
 
 def requires_pyopengl():
-    return np.testing.dec.skipif(not has_pyopengl(), 'Requires PyOpenGL')
+    import pytest
+    pytest.mark.skipif(not has_pyopengl(), reason='Requires PyOpenGL')
 
 
 def requires_ssl():
+    import pytest
     bad = os.getenv('CIBW_BUILDING', 'false') == 'true'
-    return np.testing.dec.skipif(bad, 'Requires proper SSL support')
+    return pytest.mark.skipif(bad, reason='Requires proper SSL support')
 
 
 ###############################################################################
@@ -235,8 +237,9 @@ def garbage_collect(f):
 
 def requires_application(backend=None, has=(), capable=(), force_gc=True):
     """Return a decorator for tests that require an application"""
+    import pytest
     good, msg = has_application(backend, has, capable)
-    dec_backend = np.testing.dec.skipif(not good, "Skipping test: %s" % msg)
+    dec_backend = pytest.mark.skipif(not good, reason="Skipping test: %s" % msg)
     try:
         import pytest
     except Exception:
@@ -250,12 +253,14 @@ def requires_application(backend=None, has=(), capable=(), force_gc=True):
 
 def requires_img_lib():
     """Decorator for tests that require an image library"""
+    import pytest
     from ..io import _check_img_lib
     if sys.platform.startswith('win'):
         has_img_lib = False  # PIL breaks tests on windows (!)
     else:
         has_img_lib = not all(c is None for c in _check_img_lib())
-    return np.testing.dec.skipif(not has_img_lib, 'imageio or PIL required')
+    return pytest.mark.skipif(
+        not has_img_lib, reason='imageio or PIL required')
 
 
 def has_ipython(version='3.0'):
@@ -281,19 +286,20 @@ def has_ipython(version='3.0'):
 
 
 def requires_ipython(version='3.0'):
+    import pytest
     ipython_present, message = has_ipython(version)
-
-    return np.testing.dec.skipif(not ipython_present, message)
+    return pytest.mark.skipif(not ipython_present, reason=message)
 
 
 def requires_numpydoc():
+    import pytest
     try:
         import numpydoc  # noqa
     except Exception:
         present = False
     else:
         present = True
-    return np.testing.dec.skipif(not present, 'numpydoc is required')
+    return pytest.mark.skipif(not present, reason='numpydoc is required')
 
 
 def has_matplotlib(version='1.2'):
@@ -338,8 +344,10 @@ def _has_scipy(min_version):
 
 
 def requires_scipy(min_version='0.13'):
-    return np.testing.dec.skipif(not _has_scipy(min_version),
-                                 'Requires Scipy version >= %s' % min_version)
+    import pytest
+    return pytest.mark.skipif(
+        not _has_scipy(min_version),
+        reason='Requires Scipy version >= %s' % min_version)
 
 
 @nottest
@@ -387,7 +395,7 @@ def save_testing_image(image, location):
     from ..util import make_png
     if image == "screenshot":
         image = _screenshot(alpha=False)
-    with open(location+'.png', 'wb') as fid:
+    with open(location + '.png', 'wb') as fid:
         fid.write(make_png(image))
 
 
