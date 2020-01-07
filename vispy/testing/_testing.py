@@ -159,7 +159,7 @@ def has_pyopengl():
 
 def requires_pyopengl():
     import pytest
-    pytest.mark.skipif(not has_pyopengl(), reason='Requires PyOpenGL')
+    return pytest.mark.skipif(not has_pyopengl(), reason='Requires PyOpenGL')
 
 
 def requires_ssl():
