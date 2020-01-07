@@ -2,7 +2,7 @@
 # vispy: testskip
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
-"""Test running functions"""
+"""Test running functions."""
 
 from __future__ import print_function
 
@@ -75,9 +75,10 @@ def _unit(mode, extra_arg_string='', coverage=False):
         if invalid:
             stdout = stdout + '\n' + stderr
             stdout = '\n'.join('    ' + x for x in stdout.split('\n'))
-            VispySkipSuite('\s%s\n%s\n%s' % (_line_sep, 'Skipping backend %s, '
-                           'not installed or working properly:\n%s'
-                           % (mode, stdout), _line_sep))
+            raise VispySkipSuite(
+                '\n%s\n%s\n%s' % (_line_sep, 'Skipping backend %s, not '
+                                  'installed or working properly:\n%s'
+                                  % (mode, stdout), _line_sep))
         msg = 'Running tests with %s backend' % mode
         extra_args += ['-m', 'vispy_app_test']
     if coverage:
