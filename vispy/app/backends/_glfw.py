@@ -294,7 +294,7 @@ class CanvasBackend(BaseCanvasBackend):
         self._vispy_canvas.events.initialize()
 
     def _vispy_warmup(self):
-        etime = time() + 0.5
+        etime = time() + 0.25
         while time() < etime:
             sleep(0.01)
             self._vispy_canvas.set_current()

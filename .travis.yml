@@ -77,7 +77,7 @@ matrix:
     # to avoid having the linker load the wrong libglapi.so which would cause
     # OSMesa to crash
     - env: PYTHON_VERSION=3.7 DEPS=osmesa TEST=osmesa
-           CONDA_DEPENDENCIES="numpy scipy pytest cython coveralls pytest-cov pytest-sugar mesalib libglu"
+           CONDA_DEPENDENCIES="numpy scipy pytest cython coveralls pytest-cov pytest-sugar pyopengl mesalib libglu"
            CONDA_CHANNELS=conda-forge
            CONDA_CHANNEL_PRIORITY=strict
       addons:
@@ -157,7 +157,7 @@ script:
     - cd ${SRC_DIR}
     - python -c "import vispy; print(vispy.sys_info())"
     - if [ "${TEST}" == "standard" ]; then
-        make unit;
+        python make test unit --tb=short;
       fi;
     - if [ "${TEST}" == "examples" ] || [ "${DEPS}" == "minimal" ]; then
         make examples;

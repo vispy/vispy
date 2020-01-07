@@ -49,19 +49,14 @@ def _unit(mode, extra_arg_string='', coverage=False):
     import_dir = _get_import_dir()[0]
     cwd = op.abspath(op.join(import_dir, '..'))
     extra_args = list(extra_args)
-    use_pytest = False
     try:
         import pytest  # noqa, analysis:ignore
-        use_pytest = True
     except ImportError:
         raise SkipTest('Skipping unit tests, pytest not installed')
 
     if mode == 'nobackend':
         msg = 'Running tests with no backend'
-        if use_pytest:
-            extra_args += ['-m', '"not vispy_app_test"']
-        else:
-            extra_args += ['-a', '"!vispy_app_test"']
+        extra_args += ['-m', '"not vispy_app_test"']
     else:
         # check to make sure we actually have the backend of interest
         stdout, stderr, invalid = run_subprocess(
@@ -76,13 +71,12 @@ def _unit(mode, extra_arg_string='', coverage=False):
                                   % (mode, stdout), _line_sep))
             raise SkipTest()
         msg = 'Running tests with %s backend' % mode
-        if use_pytest:
-            extra_args += ['-m', 'vispy_app_test']
-        else:
-            extra_args += ['-a', 'vispy_app_test']
-    if coverage and use_pytest:
+        extra_args += ['-m', 'vispy_app_test']
+    if coverage:
         # Don't actually print the coverage because it's way too long
         extra_args += ['--cov', 'vispy', '--cov-report=']
+    if not any(e.startswith('-r') for e in extra_args):
+        extra_args.append('-ra')
     # make a call to "python" so that it inherits whatever the system
     # thinks is "python" (e.g., virtualenvs)
     extra_args += [import_dir]  # positional argument

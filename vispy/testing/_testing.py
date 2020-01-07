@@ -7,6 +7,7 @@
 from __future__ import print_function
 
 import numpy as np
+from functools import wraps
 import sys
 import os
 import inspect
@@ -229,9 +230,13 @@ def composed(*decs):
 
 
 def garbage_collect(f):
+    @wraps(f)
     def deco(*args, **kwargs):
         gc.collect()
-        return f(*args, **kwargs)
+        try:
+            return f(*args, **kwargs)
+        finally:
+            gc.collect()
     return deco
 
 
@@ -351,8 +356,7 @@ def requires_scipy(min_version='0.13'):
 
 
 @nottest
-def TestingCanvas(bgcolor='black', size=(100, 100), dpi=None, decorate=False,
-                  **kwargs):
+def TestingCanvas(bgcolor='black', size=(100, 100), dpi=None, **kwargs):
     """Class wrapper to avoid importing scene until necessary"""
     # On Windows decorations can force windows to be an incorrect size
     # (e.g., instead of 100x100 they will be 100x248), having no
@@ -386,7 +390,8 @@ def TestingCanvas(bgcolor='black', size=(100, 100), dpi=None, decorate=False,
             SceneCanvas.draw_visual(self, visual, event)
             self.context.finish()
 
-    return TestingCanvas(bgcolor, size, dpi, decorate, **kwargs)
+    # XXX need decorate=True for GLFW 3.3.1 for some reason
+    return TestingCanvas(bgcolor, size, dpi, decorate=True, **kwargs)
 
 
 @nottest

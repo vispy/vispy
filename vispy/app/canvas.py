@@ -11,7 +11,7 @@ from time import sleep
 from ..util.event import EmitterGroup, Event, WarningEmitter
 from ..util.ptime import time
 from ..util.dpi import get_dpi
-from ..util import config as util_config
+from ..util import config as util_config, logger
 from ..ext.six import string_types
 from . import Application, use_app
 from ..gloo.context import (GLContext, set_current_canvas, forget_canvas)
@@ -452,6 +452,7 @@ class Canvas(object):
         behavior), consider making the widget a sub-widget.
         """
         if self._backend is not None and not self._closed:
+            logger.debug('Closing canvas %s' % (self,))
             self._closed = True
             self.events.close()
             self._backend._vispy_close()
@@ -505,17 +506,20 @@ class Canvas(object):
                    self.app.backend_name, hex(id(self))))
 
     def __enter__(self):
+        logger.debug('Context manager enter starting for %s' % (self,))
         self.show()
         self._backend._vispy_warmup()
         return self
 
     def __exit__(self, type, value, traceback):
         # ensure all GL calls are complete
+        logger.debug('Context manager exit starting for %s' % (self,))
         if not self._closed:
             self._backend._vispy_set_current()
             self.context.finish()
             self.close()
-        sleep(0.2)  # ensure window is really closed/destroyed
+        sleep(0.1)  # ensure window is really closed/destroyed
+        logger.debug('Context manager exit complete for %s' % (self,))
 
     def render(self):
         """ Render the canvas to an offscreen buffer and return the image
