@@ -17,6 +17,7 @@ matrix:
            CONDA_DEPENDENCIES="numpy scipy pytest cython coveralls pytest-cov pytest-sugar"
            CONDA_CHANNELS=conda-forge
            CONDA_CHANNEL_PRIORITY=strict
+           PIP_DEPENDENCIES="numpydoc"
       os: osx
       osx_image: xcode10.1
 

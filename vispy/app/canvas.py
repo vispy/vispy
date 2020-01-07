@@ -515,7 +515,7 @@ class Canvas(object):
             self._backend._vispy_set_current()
             self.context.finish()
             self.close()
-        sleep(0.1)  # ensure window is really closed/destroyed
+        sleep(0.2)  # ensure window is really closed/destroyed
 
     def render(self):
         """ Render the canvas to an offscreen buffer and return the image
