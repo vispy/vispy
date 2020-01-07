@@ -54,11 +54,7 @@ def _unit(mode, extra_arg_string='', coverage=False):
         import pytest  # noqa, analysis:ignore
         use_pytest = True
     except ImportError:
-        try:
-            import nose  # noqa, analysis:ignore
-        except ImportError:
-            raise SkipTest('Skipping unit tests, neither pytest nor nose '
-                           'installed')
+        raise SkipTest('Skipping unit tests, pytest not installed')
 
     if mode == 'nobackend':
         msg = 'Running tests with no backend'

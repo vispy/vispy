@@ -1,4 +1,4 @@
-language: python
+language: generic
 dist: xenial
 addons:
   apt:
@@ -12,66 +12,64 @@ addons:
 
 matrix:
   include:
-    - env: PYTHON=3.7 DEPS=minimal TEST=standard
+    - env: PYTHON_VERSION=3.7 DEPS=minimal TEST=standard
+           CONDA_DEPENDENCIES=numpy scipy pytest cython coveralls pytest-cov pytest-sugar pytest-faulthandler flake8
       os: osx
-      language: generic
       osx_image: xcode10.1
-    - env: PYTHON=3.7 DEPS=full TEST=standard
+
+    - env: PYTHON_VERSION=3.7 DEPS=full TEST=standard
+           CONDA_DEPENDENCIES=numpy scipy pytest cython coveralls pytest-cov pytest-sugar pytest-faulthandler flake8 pyopengl networkx pysdl2 matplotlib jupyter pyqt=5 scikit-image mock
       os: osx
-      language: generic
       osx_image: xcode10.1
-# Travis Examples are extremely slow for OSX (times out)
-#    - env: PYTHON=3.7 DEPS=full TEST=examples
-#      os: osx
-#      language: generic
-    - env: PYTHON=3.7 DEPS=minimal TEST=standard  # also tests file sizes, style, line endings
+
+    - env: PYTHON_VERSION=3.7 DEPS=minimal TEST=standard  # also tests file sizes, style, line endings
+           CONDA_DEPENDENCIES=numpy scipy pytest cython coveralls pytest-cov pytest-sugar pytest-faulthandler flake8
+           PIP_DEPENDENCIES=numpydoc
       addons:
         apt:
           packages:
-    - env: PYTHON=3.7 DEPS=full TEST=standard
-      addons:
-        apt:
-          packages:
-            - *mesa_apt
-            - *full_apt
-    - env: PYTHON=3.7 DEPS=full TEST=examples  # test examples
+
+    - env: PYTHON_VERSION=3.7 DEPS=full TEST=standard
+           CONDA_DEPENDENCIES=numpy scipy pytest cython coveralls pytest-cov pytest-sugar pytest-faulthandler flake8 pyopengl networkx pysdl2 matplotlib jupyter pyqt=5 pillow decorator six scikit-image glfw freetype-py imageio "freetype<2.10.0"
+           PIP_DEPENDENCIES=husl pypng cassowary
       addons:
         apt:
           packages:
             - *mesa_apt
             - *full_apt
-    - env: PYTHON=2.7 DEPS=full TEST=standard
+
+    - env: PYTHON_VERSION=3.7 DEPS=full TEST=examples  # test examples
+           CONDA_DEPENDENCIES=numpy scipy pytest cython coveralls pytest-cov pytest-sugar pytest-faulthandler flake8 pyopengl networkx pysdl2 matplotlib jupyter pyqt=5 pillow decorator six scikit-image glfw freetype-py imageio "freetype<2.10.0"
+           PIP_DEPENDENCIES=husl pypng cassowary
       addons:
         apt:
           packages:
             - *mesa_apt
             - *full_apt
+
+    - env: PYTHON_VERSION=2.7 DEPS=full TEST=standard
+           CONDA_DEPENDENCIES=numpy scipy pytest cython coveralls pytest-cov pytest-sugar pytest-faulthandler flake8 pyopengl networkx pysdl2 matplotlib jupyter pyqt=5 pillow decorator six scikit-image glfw mock
+           PIP_DEPENDENCIES=husl pypng cassowary
+      addons:
+        apt:
+          packages:
+            - *mesa_apt
+            - *full_apt
+
     # OSMesa requires a specific Travis run because since the system also
     # has (on-screen) OpenGL installed, we need to setup environment variable
     # to avoid having the linker load the wrong libglapi.so which would cause
     # OSMesa to crash
-    - env: PYTHON=3.7 DEPS=osmesa TEST=osmesa
+    - env: PYTHON_VERSION=3.7 DEPS=osmesa TEST=osmesa
+           CONDA_DEPENDENCIES=numpy scipy pytest cython coveralls pytest-cov pytest-sugar pytest-faulthandler flake8 mesalib libglu
       addons:
         apt:
           packages:
 
 
 before_install:
-    - if [ "${TRAVIS_OS_NAME}" == "linux" ]; then
-        wget -q http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
-      else
-        wget -q http://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -O miniconda.sh;
-      fi;
-
-    - chmod +x miniconda.sh
-    - ./miniconda.sh -b -p ~/anaconda
-    - export PATH=~/anaconda/bin:$PATH
-    - conda config --add channels conda-forge
-    - conda update --yes --quiet conda
-    # Set strict channel priority
-    - conda config --set channel_priority strict
-
-
+    - git clone https://github.com/astropy/ci-helpers.git
+    - source ci-helpers/travis/setup_conda.sh
     - SRC_DIR=$(pwd)
     # file size checks run on minimal build for time
     - if [ "${DEPS}" == "minimal" ]; then
@@ -101,12 +99,6 @@ before_install:
 
 
 install:
-    # create basic conda-forge environment
-    - conda create -n testenv --yes --quiet pip python=$PYTHON;
-    - source activate testenv;
-    # add needed packages common to all backends/tests
-    - conda install --yes --quiet numpy scipy nose pytest cython coveralls pytest-cov pytest-sugar pytest-faulthandler flake8;
-
     # On Python3, install system-wide copies of bundled libraries instead
     # Also install PyQt5, imaging (PIL or pillow), scipy, mpl, egl
     # wxpython available from conda-forge but not for OSX:
@@ -117,27 +109,8 @@ install:
     # WX requires OSMesa (mesa on conda) which has typically been an
     # additional test environment. With llvm=3.3 the combination of
     # EGL and mesa causes segmentation faults. See issue #1401.
-    # can remove the github numpydoc install once >0.8.0 is released and get it from conda
-    - if [ "${DEPS}" == "full" ]; then
-        conda install --yes pyopengl networkx pysdl2;
-        pip install numpydoc;
-        if [ "${TRAVIS_OS_NAME}" == "linux" ]; then
-          conda install --yes matplotlib jupyter pyqt=5 pillow decorator six scikit-image glfw;
-          if [ "${PYTHON}" == "3.7" ]; then
-            conda install --yes freetype-py imageio "freetype<2.10.0";
-            pip install -q husl pypng cassowary;
-            rm -rf ${SRC_DIR}/vispy/ext/_bundled;
-          else
-            conda install --yes mock;
-          fi;
-        else
-          conda install --yes matplotlib jupyter pyqt=5 scikit-image mock;
-        fi;
-      fi;
-
-     # Install OSMesa
-    - if [ "${DEPS}" == "osmesa" ]; then
-        conda install --yes mesalib libglu;
+    - if [ "${DEPS}" == "full" ] && [ "${TRAVIS_OS_NAME}" == "linux" ] &&  [ "${PYTHON_VERSION}" == "3.7" ]; then
+        rm -rf ${SRC_DIR}/vispy/ext/_bundled;
       fi;
 
     # Install vispy
