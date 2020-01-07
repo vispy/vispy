@@ -13,13 +13,13 @@ addons:
 matrix:
   include:
     - env: PYTHON_VERSION=3.7 DEPS=minimal TEST=standard
-           CONDA_DEPENDENCIES=numpy scipy pytest cython coveralls pytest-cov pytest-sugar pytest-faulthandler flake8
+           CONDA_DEPENDENCIES="numpy scipy pytest cython coveralls pytest-cov pytest-sugar pytest-faulthandler flake8"
            CONDA_CHANNEL_PRIORITY=strict
       os: osx
       osx_image: xcode10.1
 
     - env: PYTHON_VERSION=3.7 DEPS=full TEST=standard
-           CONDA_DEPENDENCIES=numpy scipy pytest cython coveralls pytest-cov pytest-sugar pytest-faulthandler flake8 pyopengl networkx pysdl2 matplotlib jupyter pyqt=5 scikit-image mock
+           CONDA_DEPENDENCIES="numpy scipy pytest cython coveralls pytest-cov pytest-sugar pytest-faulthandler flake8 pyopengl networkx pysdl2 matplotlib jupyter pyqt=5 scikit-image mock"
            CONDA_CHANNEL_PRIORITY=strict
       os: osx
       osx_image: xcode10.1
@@ -28,15 +28,15 @@ matrix:
     - env: PYTHON_VERSION=3.7 DEPS=minimal TEST=standard
            CONDA_DEPENDENCIES=numpy scipy pytest cython coveralls pytest-cov pytest-sugar pytest-faulthandler flake8
            CONDA_CHANNEL_PRIORITY=strict
-           PIP_DEPENDENCIES=numpydoc
+           PIP_DEPENDENCIES="numpydoc"
       addons:
         apt:
           packages:
 
     - env: PYTHON_VERSION=3.7 DEPS=full TEST=standard
-           CONDA_DEPENDENCIES=numpy scipy pytest cython coveralls pytest-cov pytest-sugar pytest-faulthandler flake8 pyopengl networkx pysdl2 matplotlib jupyter pyqt=5 pillow decorator six scikit-image glfw freetype-py imageio "freetype<2.10.0"
+           CONDA_DEPENDENCIES="numpy scipy pytest cython coveralls pytest-cov pytest-sugar pytest-faulthandler flake8 pyopengl networkx pysdl2 matplotlib jupyter pyqt=5 pillow decorator six scikit-image glfw freetype-py imageio freetype<2.10.0"
            CONDA_CHANNEL_PRIORITY=strict
-           PIP_DEPENDENCIES=husl pypng cassowary
+           PIP_DEPENDENCIES="husl pypng cassowary"
       addons:
         apt:
           packages:
@@ -45,9 +45,9 @@ matrix:
 
     # test examples
     - env: PYTHON_VERSION=3.7 DEPS=full TEST=examples
-           CONDA_DEPENDENCIES=numpy scipy pytest cython coveralls pytest-cov pytest-sugar pytest-faulthandler flake8 pyopengl networkx pysdl2 matplotlib jupyter pyqt=5 pillow decorator six scikit-image glfw freetype-py imageio "freetype<2.10.0"
+           CONDA_DEPENDENCIES="numpy scipy pytest cython coveralls pytest-cov pytest-sugar pytest-faulthandler flake8 pyopengl networkx pysdl2 matplotlib jupyter pyqt=5 pillow decorator six scikit-image glfw freetype-py imageio freetype<2.10.0"
            CONDA_CHANNEL_PRIORITY=strict
-           PIP_DEPENDENCIES=husl pypng cassowary
+           PIP_DEPENDENCIES="husl pypng cassowary"
       addons:
         apt:
           packages:
@@ -55,9 +55,9 @@ matrix:
             - *full_apt
 
     - env: PYTHON_VERSION=2.7 DEPS=full TEST=standard
-           CONDA_DEPENDENCIES=numpy scipy pytest cython coveralls pytest-cov pytest-sugar pytest-faulthandler flake8 pyopengl networkx pysdl2 matplotlib jupyter pyqt=5 pillow decorator six scikit-image glfw mock
+           CONDA_DEPENDENCIES="numpy scipy pytest cython coveralls pytest-cov pytest-sugar pytest-faulthandler flake8 pyopengl networkx pysdl2 matplotlib jupyter pyqt=5 pillow decorator six scikit-image glfw mock"
            CONDA_CHANNEL_PRIORITY=strict
-           PIP_DEPENDENCIES=husl pypng cassowary
+           PIP_DEPENDENCIES="husl pypng cassowary"
       addons:
         apt:
           packages:
@@ -69,7 +69,7 @@ matrix:
     # to avoid having the linker load the wrong libglapi.so which would cause
     # OSMesa to crash
     - env: PYTHON_VERSION=3.7 DEPS=osmesa TEST=osmesa
-           CONDA_DEPENDENCIES=numpy scipy pytest cython coveralls pytest-cov pytest-sugar pytest-faulthandler flake8 mesalib libglu
+           CONDA_DEPENDENCIES="numpy scipy pytest cython coveralls pytest-cov pytest-sugar pytest-faulthandler flake8 mesalib libglu"
            CONDA_CHANNEL_PRIORITY=strict
       addons:
         apt:
