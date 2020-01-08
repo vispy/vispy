@@ -353,20 +353,35 @@ def requires_scipy(min_version='0.13'):
         reason='Requires Scipy version >= %s' % min_version)
 
 
+def _bad_glfw_decorate(app):
+    return app.backend_name == 'Glfw' and \
+        app.backend_module.glfw.__version__ == (3, 3, 1)
+
+
 @nottest
-def TestingCanvas(bgcolor='black', size=(100, 100), dpi=None, **kwargs):
-    """Class wrapper to avoid importing scene until necessary"""
+def TestingCanvas(bgcolor='black', size=(100, 100), dpi=None, decorate=None,
+                  **kwargs):
+    """Avoid importing scene until necessary."""
     # On Windows decorations can force windows to be an incorrect size
     # (e.g., instead of 100x100 they will be 100x248), having no
     # decorations works around this
     from ..scene import SceneCanvas
 
     class TestingCanvas(SceneCanvas):
-        def __init__(self, bgcolor, size, dpi, **kwargs):
+        def __init__(self, bgcolor, size, dpi, decorate, **kwargs):
             self._entered = False
             self._wanted_vp = None
+            if decorate is None:
+                # deal with GLFW's problems
+                from vispy.app import use_app
+                app = use_app()
+                if _bad_glfw_decorate(app):
+                    decorate = True
+                else:
+                    decorate = False
             SceneCanvas.__init__(self, bgcolor=bgcolor, size=size,
-                                 dpi=dpi, **kwargs)
+                                 dpi=dpi, decorate=decorate,
+                                 **kwargs)
 
         def __enter__(self):
             SceneCanvas.__enter__(self)
@@ -387,7 +402,7 @@ def TestingCanvas(bgcolor='black', size=(100, 100), dpi=None, **kwargs):
             SceneCanvas.draw_visual(self, visual, event)
             self.context.finish()
 
-    return TestingCanvas(bgcolor, size, dpi, **kwargs)
+    return TestingCanvas(bgcolor, size, dpi, decorate, **kwargs)
 
 
 @nottest
