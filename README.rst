@@ -77,26 +77,21 @@ need a backend (PyQt4/PySide, PyQt5/PySide2, glfw, pyglet, SDL, or wx).
 
 PyQt5/PySide2 should be considered more experimental than PyQt4/PySide.
 
-VisPy can be installed either via `pip`:
+VisPy can be installed either via `pip`::
 
-```
-pip install vispy
-```
+    pip install vispy
 
 or within the `Anaconda <https://www.anaconda.com/download/>`_ Python
 distribution. Anaconda provides a convenient package management system.
 Installing VisPy can then easily be achieved by adding `conda-forge` to the
-channels with:
+channels with::
 
-```
-conda config --add channels conda-forge
-```
+    conda config --add channels conda-forge
 
-Once the `conda-forge` channel has been enabled, `vispy` can be installed with:
+Once the `conda-forge` channel has been enabled, `vispy` can be installed
+with::
 
-```
-conda install vispy
-```
+    conda install vispy
 
 Development Installation
 ------------------------
