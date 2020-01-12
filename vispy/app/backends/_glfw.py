@@ -5,15 +5,7 @@
 vispy backend for glfw.
 """
 
-# Note: to install GLFW on Ubuntu:
-# $ git clone git://github.com/glfw/glfw.git
-# $ cd glfw
-# $ cmake -DBUILD_SHARED_LIBS=true -DGLFW_BUILD_EXAMPLES=false \
-#         -DGLFW_BUILD_TESTS=false -DGLFW_BUILD_DOCS=false .
-# $ make
-# $ sudo make install
-# $ sudo apt-get -qq install libx11-dev
-
+# To install GLFW on Ubuntu, use sudo apt-get install libglfw3.
 # On OSX, consider using brew.
 
 from __future__ import division
@@ -450,7 +442,7 @@ class CanvasBackend(BaseCanvasBackend):
         else:
             return
         self._process_mod(key, down=down)
-        
+
         # NOTE: GLFW only provides localized characters via _on_key_char, so if
         # this event contains a character we store all other data and dispatch
         # it once the final unicode character is sent shortly after.
