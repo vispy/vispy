@@ -63,6 +63,7 @@ class LinePlotVisual(CompoundVisual):
             raise ValueError('Only solid lines currently supported')
         self._line = LineVisual(method='gl', antialias=False)
         self._markers = MarkersVisual()
+        self._kwargs = {}
         CompoundVisual.__init__(self, [self._line, self._markers])
         self.set_data(data, color=color, symbol=symbol,
                       width=width, marker_size=marker_size,
@@ -79,6 +80,9 @@ class LinePlotVisual(CompoundVisual):
         **kwargs : dict
             Keywoard arguments to pass to MarkerVisual and LineVisal.
         """
+        # remember these kwargs for future updates
+        self._kwargs.update(kwargs)
+        kwargs = self._kwargs.copy()
         if data is None:
             pos = None
         else:
@@ -125,4 +129,6 @@ class LinePlotVisual(CompoundVisual):
         if pos is not None or len(marker_kwargs) > 0:
             self._markers.set_data(pos=pos, **marker_kwargs)
         if len(kwargs) > 0:
+            for k in kwargs:
+                self._kwargs.pop(k, None)
             raise TypeError("Invalid keyword arguments: %s" % kwargs.keys())
