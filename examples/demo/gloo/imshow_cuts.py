@@ -160,8 +160,8 @@ class Canvas(app.Canvas):
         yf = 1 - y/(h/2.)
         xf = x/(w/2.) - 1
 
-        x_norm = (x*512)//w
-        y_norm = (y*512)//h
+        x_norm = int((x*512)//w)
+        y_norm = int((y*512)//h)
 
         P = np.zeros((4+4+514+514, 2), np.float32)
 

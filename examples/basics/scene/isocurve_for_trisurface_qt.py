@@ -66,7 +66,7 @@ class ObjectWidget(QWidget):
 
         vbox = QVBoxLayout()
         vbox.addLayout(gbox)
-        vbox.addStretch(1.0)
+        vbox.addStretch(1)
 
         self.setLayout(vbox)
 
