@@ -182,9 +182,9 @@ class ObjectWidget(QtWidgets.QWidget):
         vbox = QtWidgets.QVBoxLayout()
         hbox = QtWidgets.QHBoxLayout()
         hbox.addWidget(self.gb_c)
-        hbox.addStretch(1.0)
+        hbox.addStretch(1)
         vbox.addLayout(hbox)
-        vbox.addStretch(1.0)
+        vbox.addStretch(1)
 
         self.setLayout(vbox)
 
