@@ -198,8 +198,6 @@ class MeshVisual(Visual):
 
         # Define buffers
         self._vertices = VertexBuffer(np.zeros((0, 3), dtype=np.float32))
-        self._normals = None
-        self._faces = IndexBuffer()
         self._normals = VertexBuffer(np.zeros((0, 3), dtype=np.float32))
         self._ambient_light_color = Color((0.3, 0.3, 0.3, 1.0))
         self._light_dir = (10, 5, -5)
@@ -364,7 +362,6 @@ class MeshVisual(Visual):
             self._normals.set_data(normals, convert=True)
         else:
             self._normals.set_data(np.zeros((0, 3), dtype=np.float32))
-        self._index_buffer = None
         if md.has_vertex_color():
             colors = md.get_vertex_colors(indexed='faces')
             colors = colors.astype(np.float32)
