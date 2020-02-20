@@ -46,10 +46,22 @@ def read_mesh(fname):
         normals = mesh['face_normals']
         texcoords = None
         return vertices, faces, normals, texcoords
-    elif not format:
-        raise ValueError('read_mesh needs could not determine format.')
     else:
-        raise ValueError('read_mesh does not understand format %s.' % fmt)
+        try:
+            import meshio
+        except ImportError:
+            raise ValueError('read_mesh does not understand format %s.' % fmt)
+
+        try:
+            mesh = meshio.read(fname)
+        except meshio.ReadError:
+            raise ValueError('read_mesh does not understand format %s.' % fmt)
+
+        triangles = mesh.get_cells_type("triangle")
+        if len(triangles) == 0:
+            raise ValueError('mesh file does not contain triangles.')
+
+        return mesh.points, triangles, None, None
 
 
 def write_mesh(fname, vertices, faces, normals, texcoords, name='',
