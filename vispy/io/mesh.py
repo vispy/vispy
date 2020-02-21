@@ -5,6 +5,7 @@
 """ Reading and writing of data like images and meshes.
 """
 
+import os
 from os import path as op
 
 from .wavefront import WavefrontReader, WavefrontWriter
@@ -65,7 +66,7 @@ def read_mesh(fname):
 
 
 def write_mesh(fname, vertices, faces, normals, texcoords, name='',
-               format='obj', overwrite=False, reshape_faces=True):
+               format=None, overwrite=False, reshape_faces=True):
     """ Write mesh data to file.
 
     Parameters
@@ -94,8 +95,29 @@ def write_mesh(fname, vertices, faces, normals, texcoords, name='',
     if op.isfile(fname) and not overwrite:
         raise IOError('file "%s" exists, use overwrite=True' % fname)
 
+    if format is None:
+        format = os.path.splitext(fname)[1][1:]
+
     # Check format
-    if format not in ('obj'):
-        raise ValueError('Only "obj" format writing currently supported')
-    WavefrontWriter.write(fname, vertices, faces,
-                          normals, texcoords, name, reshape_faces)
+    if format == 'obj':
+        WavefrontWriter.write(fname, vertices, faces,
+                              normals, texcoords, name, reshape_faces)
+        return
+
+    try:
+        import meshio
+    except ImportError:
+        raise ValueError('write_mesh does not understand format %s.' % format)
+
+    cell_data = {}
+    if normals is not None:
+        cell_data["normals"] = [normals]
+    if texcoords is not None:
+        cell_data["texcoords"] = [texcoords]
+
+    mesh = meshio.Mesh(vertices, [("triangle", faces)], cell_data=cell_data)
+
+    try:
+        mesh.write(fname, file_format=format)
+    except meshio.WriteError:
+        raise ValueError('write_mesh does not understand format %s.' % format)
