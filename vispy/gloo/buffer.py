@@ -299,9 +299,9 @@ class DataBuffer(Buffer):
         elif data.size > stop - start:
             raise ValueError('Data too big to fit GPU data '
                              '(%d > %d-%d).' % (data.size, stop, start))
-        
+
         # Set data
-        offset = start  # * self.itemsize
+        offset = start
         self.set_subdata(data=data, offset=offset, copy=True)
 
     def __repr__(self):
