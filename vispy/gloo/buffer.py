@@ -162,7 +162,8 @@ class DataBuffer(Buffer):
         data : ndarray
             Data to be uploaded
         offset: int
-            Offset in buffer where to start copying data
+            Offset in buffer where to start copying data (i.e. index of
+            starting element).
         copy: bool
             Since the operation is deferred, data may change before
             data is actually uploaded to GPU memory.
