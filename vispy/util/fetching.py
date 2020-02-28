@@ -236,6 +236,11 @@ def _fetch_file(url, file_name, print_destination=True):
     n_try = 3
     for ii in range(n_try):
         try:
+            # https://github.com/scikit-learn/scikit-learn/issues/10201#issuecomment-365734582
+            import os, ssl
+            if (not os.environ.get('PYTHONHTTPSVERIFY', '') and
+                    getattr(ssl, '_create_unverified_context', None)):
+                ssl._create_default_https_context = ssl._create_unverified_context
             data = urllib.request.urlopen(url, timeout=15.)
         except Exception as e:
             if ii == n_try - 1:
