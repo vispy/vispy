@@ -19,7 +19,12 @@ try:
 except ImportError:
     pass
 
+
+# To switch between PyQt5 and PySide2 bindings just change the from import
 from PyQt5 import QtCore, QtWidgets
+# Provide automatic signal function selection for PyQt5/PySide2
+pyqtsignal = QtCore.pyqtSignal if hasattr(QtCore, 'pyqtSignal') else QtCore.Signal
+
 import sys
 
 import numpy as np
@@ -139,7 +144,7 @@ class ObjectWidget(QtWidgets.QWidget):
     """
     Widget for editing OBJECT parameters
     """
-    signal_objet_changed = QtCore.pyqtSignal(ObjectParam, name='objectChanged')
+    signal_objet_changed = pyqtsignal(ObjectParam, name='objectChanged')
 
     def __init__(self, parent=None, param=None):
         super(ObjectWidget, self).__init__(parent)
