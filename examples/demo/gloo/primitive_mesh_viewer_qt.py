@@ -22,8 +22,6 @@ except ImportError:
 
 # To switch between PyQt5 and PySide2 bindings just change the from import
 from PyQt5 import QtCore, QtWidgets
-# Provide automatic signal function selection for PyQt5/PySide2
-pyqtsignal = QtCore.pyqtSignal if hasattr(QtCore, 'pyqtSignal') else QtCore.Signal
 
 import sys
 
@@ -32,6 +30,10 @@ from vispy import app, gloo
 from vispy.util.transforms import perspective, translate, rotate
 from vispy.geometry import meshdata as md
 from vispy.geometry import generation as gen
+
+# Provide automatic signal function selection for PyQt5/PySide2
+pyqtsignal = QtCore.pyqtSignal if hasattr(QtCore, 'pyqtSignal') else QtCore.Signal
+
 
 OBJECT = {'sphere': [('rows', 3, 1000, 'int', 3),
                      ('cols', 3, 1000, 'int', 3),
