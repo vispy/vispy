@@ -24,6 +24,7 @@ large datasets. Applications of VisPy include:
 Announcements
 -------------
 
+- **Release!** Version 0.6.4, December 13, 2019
 - **Release!** Version 0.6.3, November 27, 2019
 - **Release!** Version 0.6.2, November 4, 2019
 - **Release!** Version 0.6.1, July 28, 2019
@@ -71,51 +72,9 @@ and experimental OpenGL backend for matplotlib.
 Installation
 ------------
 
-VisPy runs on Python 2.7+ and Python 3.3+ and depends on NumPy. You also
-need a backend (PyQt4/PySide, PyQt5/PySide2, glfw, pyglet, SDL, or wx).
-
-PyQt5/PySide2 should be considered more experimental than PyQt4/PySide.
-
-VisPy can be installed either via `pip`:
-
-```
-pip install vispy
-```
-
-or within the `Anaconda <https://www.anaconda.com/download/>`_ Python
-distribution. Anaconda provides a convenient package management system.
-Installing VisPy can then easily be achieved by adding `conda-forge` to the
-channels with:
-
-```
-conda config --add channels conda-forge
-```
-
-Once the `conda-forge` channel has been enabled, `vispy` can be installed with:
-
-```
-conda install vispy
-```
-
-Development Installation
-------------------------
-
-As VisPy is under heavy development at this time, we highly recommend
-developers to use the development version on Github (master branch). You need
-to clone the repository and install VisPy with
-``python setup.py install``.
-
-As a one-liner, assuming `git` is installed::
-
-    git clone --recurse-submodules https://github.com/vispy/vispy.git && cd vispy && python setup.py install --user
-
-This will automatically install the latest version of vispy.
-
-If you already have vispy cloned, you may need to update the git submodules
-to make sure you have the newest code::
-
-    git pull
-    git submodule update --init --recursive
+Please follow the detailed
+`installation instructions <http://vispy.org/installation.html>`_
+on the VisPy website.
 
 Structure of VisPy
 ------------------

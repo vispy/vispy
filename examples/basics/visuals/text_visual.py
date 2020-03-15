@@ -134,6 +134,10 @@ class Canvas(app.Canvas):
                 self.anchor_ind = 0
             else:
                 self.anchor_ind += 1
+        if event.key == 'b':
+            self.text.bold = not self.text.bold
+        if event.key == 'i':
+            self.text.italic = not self.text.italic
         self.update_text()
 
     def update_text(self):

@@ -3,6 +3,8 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 import numpy as np
+from numpy.testing import assert_allclose
+import pytest
 
 import vispy.visuals.transforms as tr
 from vispy.geometry import Rect
@@ -160,17 +162,17 @@ def test_map_rect():
 def test_st_transform():
     # Check that STTransform maps exactly like MatrixTransform
     pts = np.random.normal(size=(10, 4))
-    
+
     scale = (1, 7.5, -4e-8)
     translate = (1e6, 0.2, 0)
     st = tr.STTransform(scale=scale, translate=translate)
     at = tr.MatrixTransform()
     at.scale(scale)
     at.translate(translate)
-    
+
     assert np.allclose(st.map(pts), at.map(pts))
-    assert np.allclose(st.inverse.map(pts), at.inverse.map(pts))    
-    
+    assert np.allclose(st.inverse.map(pts), at.inverse.map(pts))
+
 
 def test_st_mapping():
     p1 = [[5., 7.], [23., 8.]]
@@ -213,23 +215,24 @@ def test_affine_mapping():
     assert np.allclose(t.map(p1)[:, :p2.shape[1]], p2)
 
 
-def test_inverse():
-    m = np.random.normal(size=(4, 4))
-    transforms = [
-        NT(),
-        ST(scale=(1e-4, 2e5), translate=(10, -6e9)),
-        AT(m),
-        RT(m),
-    ]
+m = np.random.RandomState(0).normal(size=(4, 4))
+transforms = [
+    NT(),
+    ST(scale=(1e-4, 2e5), translate=(10, -6e9)),
+    AT(m),
+    RT(m),
+]
 
-    np.random.seed(0)
+
+@pytest.mark.parametrize('trn', transforms)
+def test_inverse(trn):
+    rng = np.random.RandomState(0)
     N = 20
-    x = np.random.normal(size=(N, 3))
-    pw = np.random.normal(size=(N, 3), scale=3)
+    x = rng.normal(size=(N, 3))
+    pw = rng.normal(size=(N, 3), scale=3)
     pos = x * 10 ** pw
 
-    for trn in transforms:
-        assert np.allclose(pos, trn.inverse.map(trn.map(pos))[:, :3])
+    assert_allclose(pos, trn.inverse.map(trn.map(pos))[:, :3], atol=1e-7)
 
     # log transform only works on positive values
     #abs_pos = np.abs(pos)

@@ -10,16 +10,6 @@ from .line import LineVisual
 from ..color import ColorArray
 from ..color.colormap import _normalize, get_colormap
 from ..geometry.isocurve import isocurve
-from ..testing import has_skimage
-
-# checking for scikit-image
-_HAS_SKI = has_skimage()
-if _HAS_SKI:
-    try:
-        from skimage.measure import find_contours
-    except ImportError:
-        _HAS_SKI = False
-        find_contours = None
 
 
 class IsocurveVisual(LineVisual):
@@ -142,11 +132,16 @@ class IsocurveVisual(LineVisual):
         # save minimum level index
         self._level_min = choice[0][0]
 
+        try:
+            from skimage.measure import find_contours
+        except ImportError:
+            find_contours = None
+
         for level in levels_to_calc:
             # if we use skimage isoline algorithm we need to add half a
             # pixel in both (x,y) dimensions because isolines are aligned to
             # pixel centers
-            if _HAS_SKI:
+            if find_contours is not None:
                 contours = find_contours(self._data, level,
                                          positive_orientation='high')
                 v, c = self._get_verts_and_connect(contours)

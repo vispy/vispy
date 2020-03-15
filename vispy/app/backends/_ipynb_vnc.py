@@ -52,7 +52,7 @@ def _set_config(c):
     _app.backend_module._set_config(c)
 
 
-# Init dummy objects needed to import this module withour errors.
+# Init dummy objects needed to import this module without errors.
 # These are all overwritten with imports from IPython (on success)
 DOMWidget = object
 Unicode = Int = Float = Bool = lambda *args, **kwargs: None
