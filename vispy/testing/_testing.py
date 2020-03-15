@@ -19,6 +19,8 @@ from distutils.version import LooseVersion
 from ..ext.six import string_types
 from ..util import use_log_level
 
+skipif = pytest.mark.skipif
+
 
 def SkipTest(*args, **kwargs):
     """Backport for raising SkipTest that gives a better traceback."""
@@ -26,12 +28,6 @@ def SkipTest(*args, **kwargs):
     import pytest
     return pytest.skip(*args, **kwargs)
 
-
-###############################################################################
-# Adapted from Python's unittest2
-# http://docs.python.org/2/license.html
-
-skipif = pytest.mark.skipif
 
 def _safe_rep(obj, short=False):
     """Helper for assert_* ports"""
