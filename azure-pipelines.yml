@@ -30,7 +30,7 @@ jobs:
         path: $(System.DefaultWorkingDirectory)/wheelhouse
         artifact: vispyDeployLinux
 - job: macos
-  pool: {vmImage: 'macOS-10.13'}
+  pool: {vmImage: 'macOS-10.14'}
   steps:
     - task: UsePythonVersion@0
     - bash: |
