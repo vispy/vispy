@@ -9,9 +9,6 @@ environment:
       CONDA_CHANNELS: "conda-forge"
 
   matrix:
-      - PYTHON_VERSION: "2.7"
-        CONDA_DEPENDENCIES: "numpy scipy setuptools pytest coverage pytest-cov pytest-sugar pytest-faulthandler cython coveralls mock freetype-py numpydoc"
-        PIP_DEPENDENCIES: ""
       - PYTHON_VERSION: "3.7"
         CONDA_DEPENDENCIES: "numpy scipy setuptools pytest coverage pytest-cov pytest-sugar pytest-faulthandler cython coveralls freetype-py numpydoc"
         PIP_DEPENDENCIES: ""
@@ -45,9 +42,6 @@ install:
   # Check that we have the expected version and architecture for Python
   - "python --version"
   - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
-
-  # Check PEP425 supported wheel tags
-  - "python -c \"import wheel.pep425tags as w; print(w.get_supported())\""
 
   # Install vispy
   - "python setup.py develop"

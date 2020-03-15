@@ -827,9 +827,9 @@ class SetupWidget(QtWidgets.QWidget):
         vbox = QtWidgets.QVBoxLayout()
         hbox = QtWidgets.QHBoxLayout()
         hbox.addWidget(self.splitter)
-        hbox.addStretch(5.0)
+        hbox.addStretch(5)
         vbox.addLayout(hbox)
-        vbox.addStretch(1.0)
+        vbox.addStretch(1)
 
         self.setLayout(vbox)
 

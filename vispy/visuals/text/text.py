@@ -414,7 +414,10 @@ class TextVisual(Visual):
         # Init font handling stuff
         # _font_manager is a temporary solution to use global mananger
         self._font_manager = font_manager or FontManager(method=method)
-        self._font = self._font_manager.get_font(face, bold, italic)
+        self._face = face
+        self._bold = bold
+        self._italic = italic
+        self._update_font()
         self._vertices = None
         self._color_vbo = None
         self._anchors = (anchor_x, anchor_y)
@@ -605,6 +608,37 @@ class TextVisual(Visual):
 
     def _compute_bounds(self, axis, view):
         return self._pos[:, axis].min(), self._pos[:, axis].max()
+
+    @property
+    def face(self):
+        return self._face
+
+    @face.setter
+    def face(self, value):
+        self._face = value
+        self._update_font()
+
+    @property
+    def bold(self):
+        return self._bold
+
+    @bold.setter
+    def bold(self, value):
+        self._bold = value
+        self._update_font()
+
+    @property
+    def italic(self):
+        return self._italic
+
+    @italic.setter
+    def italic(self, value):
+        self._italic = value
+        self._update_font()
+
+    def _update_font(self):
+        self._font = self._font_manager.get_font(self._face, self._bold, self._italic)
+        self.update()
 
 
 class SDFRendererCPU(object):

@@ -63,7 +63,7 @@ except ImportError:
     class MicrophoneRecorder(object):
         def __init__(self):
             self.chunksize = 1024
-            self.rate = rate = 44100.
+            self.rate = rate = 44100
             t = np.linspace(0, 10, rate*10)
             self.data = (np.sin(t * 10.) * 0.3).astype('float32')
             self.data += np.sin((t + 0.3) * 20.) * 0.15
