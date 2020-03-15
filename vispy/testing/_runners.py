@@ -59,9 +59,9 @@ def _unit(mode, extra_arg_string='', coverage=False):
     cwd = op.abspath(op.join(import_dir, '..'))
     extra_args = list(extra_args)
     try:
-        import pytest
+        import pytest  # noqa, analysis:ignore
     except ImportError:
-        raise SkipTest('Skipping unit tests, because pytest is not installed')
+        raise VispySkipSuite('Skipping unit tests, pytest not installed')
 
     if mode == 'nobackend':
         msg = 'Running tests with no backend'
@@ -75,10 +75,10 @@ def _unit(mode, extra_arg_string='', coverage=False):
         if invalid:
             stdout = stdout + '\n' + stderr
             stdout = '\n'.join('    ' + x for x in stdout.split('\n'))
-            print('\n%s\n%s\n%s' % (_line_sep, 'Skipping backend %s, not '
+            raise VispySkipSuite(
+                '\n%s\n%s\n%s' % (_line_sep, 'Skipping backend %s, not '
                                   'installed or working properly:\n%s'
                                   % (mode, stdout), _line_sep))
-            raise SkipTest()
         msg = 'Running tests with %s backend' % mode
         extra_args += ['-m', 'vispy_app_test']
     if coverage:
@@ -287,9 +287,7 @@ def _examples(fnames_str):
         if not good:
             reason = 'Must have suitable app backend'
     if reason is not None:
-        msg = 'Skipping example test: %s' % reason
-        print(msg)
-        raise SkipTest(msg)
+        raise VispySkipSuite('Skipping example test: %s' % reason)
 
     # if we're given individual file paths as a string in fnames_str,
     # then just use them as the fnames
@@ -427,7 +425,7 @@ def test(label='full', extra_arg_string='', coverage=False):
         except RuntimeError as exp:
             print('Failed: %s' % str(exp))
             fail += [run[1]]
-        except SkipTest:
+        except VispySkipSuite:
             skip += [run[1]]
         except Exception as exp:
             # this should only happen if we've screwed up the test setup
