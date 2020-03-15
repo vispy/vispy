@@ -2,6 +2,7 @@
 
 import json
 import tempfile
+from unittest import mock
 
 from vispy import config
 from vispy.app import Canvas
@@ -9,11 +10,6 @@ from vispy.gloo import glir
 from vispy.testing import requires_application, requires_pyopengl, run_tests_if_main
 
 import numpy as np
-
-try:
-    from unittest import mock
-except ImportError:
-    import mock
 
 
 def test_queue():

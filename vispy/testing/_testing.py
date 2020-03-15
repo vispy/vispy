@@ -7,11 +7,11 @@
 from __future__ import print_function
 
 import numpy as np
-from functools import wraps
 import sys
 import os
 import inspect
 import gc
+import functools
 
 from distutils.version import LooseVersion
 
@@ -228,7 +228,9 @@ def composed(*decs):
 
 
 def garbage_collect(f):
-    @wraps(f)
+    # Pytest expects things like the name of the functions not to change
+    # Therefore, we must use the functools.wraps decorator on our deco
+    @functools.wraps(f)
     def deco(*args, **kwargs):
         gc.collect()
         try:

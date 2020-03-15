@@ -7,7 +7,7 @@ trigger:
       - v*
 variables:
   CIBW_BUILDING: "true"
-  CIBW_SKIP: "cp27-* cp34-* cp38-*"
+  CIBW_SKIP: "cp27-* cp34-* pp27-* pp36-*"
   CIBW_TEST_REQUIRES: "pytest pytest-sugar"
   CIBW_TEST_COMMAND: "python -c \"import vispy; vispy.test()\""
   CIBW_BUILD_VERBOSITY: "2"
@@ -30,7 +30,7 @@ jobs:
         path: $(System.DefaultWorkingDirectory)/wheelhouse
         artifact: vispyDeployLinux
 - job: macos
-  pool: {vmImage: 'macOS-10.13'}
+  pool: {vmImage: 'macOS-10.14'}
   steps:
     - task: UsePythonVersion@0
     - bash: |
