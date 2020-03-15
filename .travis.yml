@@ -22,7 +22,7 @@ matrix:
       osx_image: xcode10.1
 
     - env: PYTHON_VERSION=3.7 DEPS=full TEST=standard
-           CONDA_DEPENDENCIES="numpy scipy pytest cython coveralls pytest-cov pytest-sugar pyopengl networkx pysdl2 matplotlib jupyter pyqt=5 scikit-image mock"
+           CONDA_DEPENDENCIES="numpy scipy pytest cython coveralls pytest-cov pytest-sugar pyopengl networkx pysdl2 matplotlib jupyter pyqt=5 scikit-image"
            CONDA_CHANNELS=conda-forge
            CONDA_CHANNEL_PRIORITY=strict
       os: osx
