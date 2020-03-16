@@ -4,10 +4,14 @@ trigger:
       - '*'
   tags:
     include:
-      - v*
+      - 'v*'
+pr:
+  branches:
+    include:
+      - '*'  # must quote since "*" is a YAML reserved character; we want a string
 variables:
   CIBW_BUILDING: "true"
-  CIBW_SKIP: "cp27-* cp34-* pp27-* pp36-*"
+  CIBW_SKIP: "cp27-* cp34-* cp35-* pp27-* pp36-*"
   CIBW_TEST_REQUIRES: "pytest pytest-sugar"
   CIBW_TEST_COMMAND: "python -c \"import vispy; vispy.test()\""
   CIBW_BUILD_VERBOSITY: "2"
@@ -45,8 +49,6 @@ jobs:
 - job: windows
   pool: {vmImage: 'vs2017-win2016'}
   steps:
-    - {task: UsePythonVersion@0, inputs: {versionSpec: '3.5', architecture: x86}}
-    - {task: UsePythonVersion@0, inputs: {versionSpec: '3.5', architecture: x64}}
     - {task: UsePythonVersion@0, inputs: {versionSpec: '3.6', architecture: x86}}
     - {task: UsePythonVersion@0, inputs: {versionSpec: '3.6', architecture: x64}}
     - {task: UsePythonVersion@0, inputs: {versionSpec: '3.7', architecture: x86}}
