@@ -179,6 +179,9 @@ class ColorArray(object):
 
     def __eq__(self, other):
         return np.array_equal(self._rgba, other._rgba)
+    
+    def __ne__(self, other):
+        return not (self == other)
 
     ###########################################################################
     def __getitem__(self, item):
