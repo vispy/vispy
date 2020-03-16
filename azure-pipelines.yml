@@ -5,10 +5,10 @@ trigger:
   tags:
     include:
       - 'v*'
-  pr:
-    branches:
-      include:
-        - '*'  # must quote since "*" is a YAML reserved character; we want a string
+pr:
+  branches:
+    include:
+      - '*'  # must quote since "*" is a YAML reserved character; we want a string
 variables:
   CIBW_BUILDING: "true"
   CIBW_SKIP: "cp27-* cp34-* pp27-* pp36-*"
