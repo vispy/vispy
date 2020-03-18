@@ -34,6 +34,7 @@ The ray is expressed in coordinates local to the volume (i.e. texture
 coordinates).
 
 """
+import warnings
 
 from ..gloo import Texture3D, TextureEmulated3D, VertexBuffer, IndexBuffer
 from . import Visual
@@ -82,6 +83,8 @@ FRAG_SHADER = """
 // uniforms
 uniform $sampler_type u_volumetex;
 uniform vec3 u_shape;
+uniform vec2 clim;
+uniform float gamma;
 uniform float u_threshold;
 uniform float u_relative_step_size;
 
@@ -280,7 +283,9 @@ MIP_SNIPPETS = dict(
             maxval = max(maxval, $sample(u_volumetex, loc).g);
             loc += step * 0.1;
         }
-        gl_FragColor = $cmap(maxval);
+        maxval = max(maxval - clim.x, 0);
+        maxval = maxval / (clim.y - clim.x);
+        gl_FragColor = $cmap(pow(maxval, gamma));
         """,
 )
 MIP_FRAG_SHADER = FRAG_SHADER.format(**MIP_SNIPPETS)
@@ -291,7 +296,9 @@ TRANSLUCENT_SNIPPETS = dict(
         vec4 integrated_color = vec4(0., 0., 0., 0.);
         """,
     in_loop="""
-            color = $cmap(val);
+            val = max(val - clim.x, 0);
+            val = val / (clim.y - clim.x);
+            color = $cmap(pow(val, gamma));
             float a1 = integrated_color.a;
             float a2 = color.a * (1 - a1);
             float alpha = max(a1 + a2, 0.001);
@@ -323,7 +330,9 @@ ADDITIVE_SNIPPETS = dict(
         vec4 integrated_color = vec4(0., 0., 0., 0.);
         """,
     in_loop="""
-        color = $cmap(val);
+        val = max(val - clim.x, 0);
+        val = val / (clim.y - clim.x);
+        color = $cmap(pow(val, gamma));
         
         integrated_color = 1.0 - (1.0 - integrated_color) * (1.0 - color);
         """,
@@ -348,7 +357,9 @@ ISO_SNIPPETS = dict(
                 color = $sample(u_volumetex, iloc);
                 if (color.g > u_threshold) {
                     color = calculateColor(color, iloc, dstep);
-                    gl_FragColor = $cmap(color.g);
+                    val = max(color.g - clim.x, 0);
+                    val = val / (clim.y - clim.x);
+                    gl_FragColor = $cmap(pow(val, gamma));
                     iter = nsteps;
                     break;
                 }
@@ -378,9 +389,14 @@ class VolumeVisual(Visual):
     vol : ndarray
         The volume to display. Must be ndim==3.
     clim : tuple of two floats | None
-        The contrast limits. The values in the volume are mapped to
+        The current contrast limits. The values in the volume are mapped to
         black and white corresponding to these values. Default maps
         between min and max.
+    clim_range : tuple of two floats | None
+        The maximum range contrast limits. This value is used to normalize
+        ``vol`` to 0-1 prior to transfer to the GPU.  It determines the
+        minimum and maximum possible values that can be used for clim.  
+        Default maps between min and max.
     method : {'mip', 'translucent', 'additive', 'iso'}
         The render method to use. See corresponding docs for details.
         Default 'mip'.
@@ -402,8 +418,8 @@ class VolumeVisual(Visual):
 
     _interpolation_names = ['linear', 'nearest']
 
-    def __init__(self, vol, clim=None, method='mip', threshold=None, 
-                 relative_step_size=0.8, cmap='grays',
+    def __init__(self, vol, clim=None, clim_range=None, method='mip', threshold=None, 
+                 relative_step_size=0.8, cmap='grays', gamma=1,
                  emulate_texture=False, interpolation='linear'):
         
         tex_cls = TextureEmulated3D if emulate_texture else Texture3D
@@ -411,6 +427,8 @@ class VolumeVisual(Visual):
         # Storage of information of volume
         self._vol_shape = ()
         self._clim = None
+        self._clim_range = None
+        self._gamma = gamma
         self._need_vertex_update = True
 
         # Set the colormap
@@ -439,6 +457,7 @@ class VolumeVisual(Visual):
         self.shared_program['u_volumetex'] = self._tex
         self.shared_program['a_position'] = self._vertices
         self.shared_program['a_texcoord'] = self._texcoord
+        self.shared_program['gamma'] = self._gamma
         self._draw_mode = 'triangle_strip'
         self._index_buffer = IndexBuffer()
 
@@ -448,7 +467,8 @@ class VolumeVisual(Visual):
         self.set_gl_state('translucent', cull_face=False)
         
         # Set data
-        self.set_data(vol, clim)
+        self.set_data(vol, clim_range)
+        self.clim = clim or self.clim_range
         
         # Set params
         self.method = method
@@ -456,41 +476,57 @@ class VolumeVisual(Visual):
         self.threshold = threshold if (threshold is not None) else vol.mean()
         self.freeze()
     
-    def set_data(self, vol, clim=None, copy=True):
+    def set_data(self, vol, clim_range=None, copy=True, **kwargs):
         """ Set the volume data. 
 
         Parameters
         ----------
         vol : ndarray
             The 3D volume.
-        clim : tuple | None
+        clim_range : tuple | None
             Colormap limits to use. None will use the min and max values.
         copy : bool | True
-            Whether to copy the input volume prior to applying clim normalization.
+            Whether to copy the input volume prior to applying clim_range normalization.
         """
+        if "clim" in kwargs:
+            if clim_range is None:
+                clim_range = kwargs.pop("clim")
+            warnings.warn(
+                (
+                    "The 'clim' argument in Volume.set_data() has been renamed to"
+                    "'clim_range', and will be removed in a future version."
+                ),
+                DeprecationWarning,
+            )
+        if kwargs:
+            raise TypeError(
+                'Volume.set_data() got an unexpected keyword argument: '
+                f'{", ".join(kwargs)}'
+            )
+
         # Check volume
         if not isinstance(vol, np.ndarray):
             raise ValueError('Volume visual needs a numpy array.')
         if not ((vol.ndim == 3) or (vol.ndim == 4 and vol.shape[-1] <= 4)):
             raise ValueError('Volume visual needs a 3D image.')
         
-        # Handle clim
-        if clim is not None:
-            clim = np.array(clim, float)
-            if not (clim.ndim == 1 and clim.size == 2):
-                raise ValueError('clim must be a 2-element array-like')
-            self._clim = tuple(clim)
-        if self._clim is None:
-            self._clim = vol.min(), vol.max()
+        # Handle clim_range
+        if clim_range is not None:
+            clim_range = np.array(clim_range, float)
+            if not (clim_range.ndim == 1 and clim_range.size == 2):
+                raise ValueError('clim_range must be a 2-element array-like')
+            self._clim_range = tuple(clim_range)
+        if self._clim_range is None:
+            self._clim_range = vol.min(), vol.max()
         
-        # Apply clim (copy data by default... see issue #1727)
+        # Apply clim_range (copy data by default... see issue #1727)
         vol = np.array(vol, dtype='float32', copy=copy)
-        if self._clim[1] == self._clim[0]:
-            if self._clim[0] != 0.:
-                vol *= 1.0 / self._clim[0]
+        if self._clim_range[1] == self._clim_range[0]:
+            if self._clim_range[0] != 0.:
+                vol *= 1.0 / self._clim_range[0]
         else:
-            vol -= self._clim[0]
-            vol /= self._clim[1] - self._clim[0]
+            vol -= self._clim_range[0]
+            vol /= self._clim_range[1] - self._clim_range[0]
         
         # Apply to texture
         self._tex.set_data(vol)  # will be efficient if vol is same shape
@@ -507,12 +543,65 @@ class VolumeVisual(Visual):
         self._kb_for_texture = np.prod(self._vol_shape) / 1024
     
     @property
+    def clim_range(self):
+        """The data range that was used to normalize volume data prior to texture upload.
+
+        This determines the maximum possible values for self.clim. Settable via set_data().
+        """
+        return self._clim_range
+    
+    @property
     def clim(self):
-        """ The contrast limits that were applied to the volume data.
-        Settable via set_data().
+        """The contrast limits used when rendering the image.
         """
         return self._clim
-    
+
+    @clim.setter
+    def clim(self, value):
+        """Set contrast limits used when rendering the image.
+
+        ``value`` should be a 2-tuple of floats (min_clim, max_clim), where each value is
+        within the range set by self.clim_range. 
+        """
+        clim = np.array(value, float)
+        if not (clim.ndim == 1 and clim.size == 2):
+            raise ValueError('clim must be a 2-element array-like')
+        if clim[0] < self.clim_range[0]:
+            raise ValueError('min clim outside of current clim_range')
+        if clim[1] > self.clim_range[1]:
+            raise ValueError('max clim outside of current clim_range')
+        self._clim = tuple(clim)
+        self.shared_program['clim'] = self.clim_normalized
+        self.update()
+
+    @property
+    def clim_normalized(self):
+        """Normalize current clims between 0-1 based on current clim_range.
+
+        In set_data(), the data is normalized (on the CPU) to 0-1 using ``clim_range``.
+        During rendering, the frag shader will apply the final contrast adjustment based on
+        the current ``clim``.
+        """
+        range_min, range_max = self.clim_range
+        clim_min, clim_max = self.clim
+        clim_min = (clim_min - range_min) / (range_max - range_min)
+        clim_max = (clim_max - range_min) / (range_max - range_min)
+        return clim_min, clim_max
+
+    @property
+    def gamma(self):
+        """The gamma used when rendering the image."""
+        return self._gamma
+
+    @gamma.setter
+    def gamma(self, value):
+        """Set gamma used when rendering the image."""
+        if value <= 0:
+            raise ValueError("gamma must be > 0")
+        self._gamma = float(value)
+        self.shared_program['gamma'] = self._gamma
+        self.update()
+
     @property
     def cmap(self):
         return self._cmap

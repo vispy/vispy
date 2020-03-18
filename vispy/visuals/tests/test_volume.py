@@ -26,7 +26,7 @@ def test_volume():
     
     # Clim
     V.set_data(vol, (0.5, 0.8))
-    assert V.clim == (0.5, 0.8)
+    assert V.clim_range == (0.5, 0.8)
     with raises(ValueError):
         V.set_data((0.5, 0.8, 1.0))
     
@@ -73,14 +73,14 @@ def test_set_data_does_not_change_input():
     for dtype in ['uint8', 'int16', 'uint16', 'float32', 'float64']:
         vol_copy = np.array(vol, dtype=dtype, copy=True)
         # setting clim so that normalization would otherwise change the data
-        V.set_data(vol_copy, clim=(0, 200))
+        V.set_data(vol_copy, clim_range=(0, 200))
         assert np.allclose(vol, vol_copy)
 
     # for those using float32 who want to avoid the copy operation,
     # using set_data() with `copy=False` should be expected to alter the data.
     vol2 = np.array(vol, dtype='float32', copy=True)
     assert np.allclose(vol, vol2)
-    V.set_data(vol2, clim=(0, 200), copy=False)
+    V.set_data(vol2, clim_range=(0, 200), copy=False)
     assert not np.allclose(vol, vol2)
 
 
