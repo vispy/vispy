@@ -34,7 +34,6 @@ The ray is expressed in coordinates local to the volume (i.e. texture
 coordinates).
 
 """
-import warnings
 
 from ..gloo import Texture3D, TextureEmulated3D, VertexBuffer, IndexBuffer
 from . import Visual
@@ -511,7 +510,6 @@ class VolumeVisual(Visual):
         else:
             vol -= self._clim[0]
             vol /= self._clim[1] - self._clim[0]
-
         # Apply to texture
         self._tex.set_data(vol)  # will be efficient if vol is same shape
         self.shared_program['u_shape'] = (vol.shape[2], vol.shape[1], 
@@ -528,9 +526,8 @@ class VolumeVisual(Visual):
     
     @property
     def clim(self):
-        """The data range that was used to normalize volume data prior to texture upload.
-
-        This determines the maximum possible values for self.clim. Settable via set_data().
+        """Contrast Limits. Volume display is mapped from black to white with these values.
+        Settable via set_data() as well as @clim.setter.
         """
         return self._clim
 
@@ -539,7 +536,9 @@ class VolumeVisual(Visual):
         """Set contrast limits used when rendering the image.
 
         ``value`` should be a 2-tuple of floats (min_clim, max_clim), where each value is
-        within the range set by self.clim. 
+        within the range set by self.clim. If the new value is outside of the (min, max)
+        range of the clims previously used to normalize the texture data, then data will
+        be renormalized using set_data.
         """
         clim = np.array(value, float)
         if not (clim.ndim == 1 and clim.size == 2):
@@ -553,7 +552,7 @@ class VolumeVisual(Visual):
 
     @property
     def clim_normalized(self):
-        """Normalize current clims between 0-1 based on current clim.
+        """Normalize current clims between 0-1 based on last-used texture data range.
 
         In set_data(), the data is normalized (on the CPU) to 0-1 using ``clim``.
         During rendering, the frag shader will apply the final contrast adjustment based on
