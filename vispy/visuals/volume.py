@@ -389,14 +389,9 @@ class VolumeVisual(Visual):
     vol : ndarray
         The volume to display. Must be ndim==3.
     clim : tuple of two floats | None
-        The current contrast limits. The values in the volume are mapped to
+        The contrast limits. The values in the volume are mapped to
         black and white corresponding to these values. Default maps
         between min and max.
-    clim_range : tuple of two floats | None
-        The maximum range contrast limits. This value is used to normalize
-        ``vol`` to 0-1 prior to transfer to the GPU.  It determines the
-        minimum and maximum possible values that can be used for clim.  
-        Default maps between min and max.
     method : {'mip', 'translucent', 'additive', 'iso'}
         The render method to use. See corresponding docs for details.
         Default 'mip'.
@@ -418,7 +413,7 @@ class VolumeVisual(Visual):
 
     _interpolation_names = ['linear', 'nearest']
 
-    def __init__(self, vol, clim=None, clim_range=None, method='mip', threshold=None, 
+    def __init__(self, vol, clim=None, method='mip', threshold=None, 
                  relative_step_size=0.8, cmap='grays', gamma=1,
                  emulate_texture=False, interpolation='linear'):
         
@@ -427,7 +422,7 @@ class VolumeVisual(Visual):
         # Storage of information of volume
         self._vol_shape = ()
         self._clim = None
-        self._clim_range = None
+        self._texture_limits = None
         self._gamma = gamma
         self._need_vertex_update = True
 
@@ -467,8 +462,7 @@ class VolumeVisual(Visual):
         self.set_gl_state('translucent', cull_face=False)
         
         # Set data
-        self.set_data(vol, clim_range)
-        self.clim = clim or self.clim_range
+        self.set_data(vol, clim)
         
         # Set params
         self.method = method
@@ -476,58 +470,48 @@ class VolumeVisual(Visual):
         self.threshold = threshold if (threshold is not None) else vol.mean()
         self.freeze()
     
-    def set_data(self, vol, clim_range=None, copy=True, **kwargs):
+    def set_data(self, vol, clim=None, copy=True):
         """ Set the volume data. 
 
         Parameters
         ----------
         vol : ndarray
             The 3D volume.
-        clim_range : tuple | None
+        clim : tuple | None
             Colormap limits to use. None will use the min and max values.
         copy : bool | True
-            Whether to copy the input volume prior to applying clim_range normalization.
+            Whether to copy the input volume prior to applying clim normalization.
         """
-        if "clim" in kwargs:
-            if clim_range is None:
-                clim_range = kwargs.pop("clim")
-            warnings.warn(
-                (
-                    "The 'clim' argument in Volume.set_data() has been renamed to"
-                    "'clim_range', and will be removed in a future version."
-                ),
-                DeprecationWarning,
-            )
-        if kwargs:
-            raise TypeError(
-                'Volume.set_data() got an unexpected keyword argument: '
-                f'{", ".join(kwargs)}'
-            )
-
         # Check volume
         if not isinstance(vol, np.ndarray):
             raise ValueError('Volume visual needs a numpy array.')
         if not ((vol.ndim == 3) or (vol.ndim == 4 and vol.shape[-1] <= 4)):
             raise ValueError('Volume visual needs a 3D image.')
         
-        # Handle clim_range
-        if clim_range is not None:
-            clim_range = np.array(clim_range, float)
-            if not (clim_range.ndim == 1 and clim_range.size == 2):
-                raise ValueError('clim_range must be a 2-element array-like')
-            self._clim_range = tuple(clim_range)
-        if self._clim_range is None:
-            self._clim_range = vol.min(), vol.max()
+        # Handle clim
+        if clim is not None:
+            clim = np.array(clim, float)
+            if not (clim.ndim == 1 and clim.size == 2):
+                raise ValueError('clim must be a 2-element array-like')
+            self._clim = tuple(clim)
+        if self._clim is None:
+            self._clim = vol.min(), vol.max()
         
-        # Apply clim_range (copy data by default... see issue #1727)
+        # store clims used to normalize _tex data for use in clim_normalized
+        self._texture_limits = self._clim
+        # store volume in case it needs to be renormalized by clim.setter
+        self._last_data = vol
+        self.shared_program['clim'] = self.clim_normalized
+
+        # Apply clim (copy data by default... see issue #1727)
         vol = np.array(vol, dtype='float32', copy=copy)
-        if self._clim_range[1] == self._clim_range[0]:
-            if self._clim_range[0] != 0.:
-                vol *= 1.0 / self._clim_range[0]
+        if self._clim[1] == self._clim[0]:
+            if self._clim[0] != 0.:
+                vol *= 1.0 / self._clim[0]
         else:
-            vol -= self._clim_range[0]
-            vol /= self._clim_range[1] - self._clim_range[0]
-        
+            vol -= self._clim[0]
+            vol /= self._clim[1] - self._clim[0]
+
         # Apply to texture
         self._tex.set_data(vol)  # will be efficient if vol is same shape
         self.shared_program['u_shape'] = (vol.shape[2], vol.shape[1], 
@@ -543,16 +527,10 @@ class VolumeVisual(Visual):
         self._kb_for_texture = np.prod(self._vol_shape) / 1024
     
     @property
-    def clim_range(self):
+    def clim(self):
         """The data range that was used to normalize volume data prior to texture upload.
 
         This determines the maximum possible values for self.clim. Settable via set_data().
-        """
-        return self._clim_range
-    
-    @property
-    def clim(self):
-        """The contrast limits used when rendering the image.
         """
         return self._clim
 
@@ -561,28 +539,27 @@ class VolumeVisual(Visual):
         """Set contrast limits used when rendering the image.
 
         ``value`` should be a 2-tuple of floats (min_clim, max_clim), where each value is
-        within the range set by self.clim_range. 
+        within the range set by self.clim. 
         """
         clim = np.array(value, float)
         if not (clim.ndim == 1 and clim.size == 2):
             raise ValueError('clim must be a 2-element array-like')
-        if clim[0] < self.clim_range[0]:
-            raise ValueError('min clim outside of current clim_range')
-        if clim[1] > self.clim_range[1]:
-            raise ValueError('max clim outside of current clim_range')
-        self._clim = tuple(clim)
-        self.shared_program['clim'] = self.clim_normalized
-        self.update()
+        if (clim[0] < self._texture_limits[0]) or (clim[1] > self._texture_limits[1]):
+            self.set_data(self._last_data, clim=clim)
+        else:
+            self._clim = tuple(clim)
+            self.shared_program['clim'] = self.clim_normalized
+            self.update()
 
     @property
     def clim_normalized(self):
-        """Normalize current clims between 0-1 based on current clim_range.
+        """Normalize current clims between 0-1 based on current clim.
 
-        In set_data(), the data is normalized (on the CPU) to 0-1 using ``clim_range``.
+        In set_data(), the data is normalized (on the CPU) to 0-1 using ``clim``.
         During rendering, the frag shader will apply the final contrast adjustment based on
         the current ``clim``.
         """
-        range_min, range_max = self.clim_range
+        range_min, range_max = self._texture_limits
         clim_min, clim_max = self.clim
         clim_min = (clim_min - range_min) / (range_max - range_min)
         clim_max = (clim_max - range_min) / (range_max - range_min)
