@@ -50,22 +50,6 @@ vec4 map_local_to_tex(vec4 x) {
     return vec4(p3.xy / image_size, 0, 1);
 }
 
-vec4 apply_clim_gamma(vec4 color) {
-    color.x = max(color.x - clim.x, 0);
-    color.x = color.x / clim.y - clim.x;
-    color.x = pow(color.x, gamma);
-
-    color.y = max(color.y - clim.x, 0);
-    color.y = color.y / clim.y - clim.x;
-    color.y = pow(color.y, gamma);
-
-    color.z = max(color.z - clim.x, 0);
-    color.z = color.z / clim.y - clim.x;
-    color.z = pow(color.z, gamma);
-
-    return color;
-}
-
 void main()
 {
     vec2 texcoord;
@@ -78,8 +62,12 @@ void main()
         texcoord = map_local_to_tex(vec4(v_texcoord, 0, 1)).xy;
     }
 
-    gl_FragColor = $color_transform($get_data(texcoord));
-    gl_FragColor = apply_clim_gamma(gl_FragColor);
+    vec4 color = $get_data(texcoord);
+    color.rgb = color.rgb - clim.x;
+    color.rgb = color.rgb / (clim.y - clim.x);
+    color = max(color, 0);
+    color.rgb = pow(color.rgb, vec3(gamma));
+    gl_FragColor = $color_transform(color);
 }
 """  # noqa
 
@@ -449,9 +437,9 @@ class ImageVisual(Visual):
             else:
                 data[:] = 1 if data[0, 0] != 0 else 0
             self._clim = np.array(clim)
-            self._texture_limits = np.array(clim)
-            self.shared_program['clim'] = self.clim_normalized
 
+        self._texture_limits = np.array(self._clim)
+        self.shared_program['clim'] = self.clim_normalized
         self._texture.set_data(data)
         self._need_texture_upload = False
 
