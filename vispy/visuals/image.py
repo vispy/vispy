@@ -30,6 +30,8 @@ FRAG_SHADER = """
 uniform vec2 image_size;
 uniform int method;  // 0=subdivide, 1=impostor
 uniform sampler2D u_texture;
+uniform vec2 clim;
+uniform float gamma;
 varying vec2 v_texcoord;
 
 vec4 map_local_to_tex(vec4 x) {
@@ -48,6 +50,21 @@ vec4 map_local_to_tex(vec4 x) {
     return vec4(p3.xy / image_size, 0, 1);
 }
 
+vec4 apply_clim_gamma(vec4 color) {
+    color.x = max(color.x - clim.x, 0);
+    color.x = color.x / clim.y - clim.x;
+    color.x = pow(color.x, gamma);
+
+    color.y = max(color.y - clim.x, 0);
+    color.y = color.y / clim.y - clim.x;
+    color.y = pow(color.y, gamma);
+
+    color.z = max(color.z - clim.x, 0);
+    color.z = color.z / clim.y - clim.x;
+    color.z = pow(color.z, gamma);
+
+    return color;
+}
 
 void main()
 {
@@ -62,6 +79,7 @@ void main()
     }
 
     gl_FragColor = $color_transform($get_data(texcoord));
+    gl_FragColor = apply_clim_gamma(gl_FragColor);
 }
 """  # noqa
 
@@ -74,7 +92,6 @@ _interpolation_template = """
         }
         return %s($texture, $shape, texcoord);
     }"""
-
 _texture_lookup = """
     vec4 texture_lookup(vec2 texcoord) {
         if(texcoord.x < 0.0 || texcoord.x > 1.0 ||
@@ -147,9 +164,10 @@ class ImageVisual(Visual):
     if the data are 2D.
     """
     def __init__(self, data=None, method='auto', grid=(1, 1),
-                 cmap='viridis', clim='auto',
+                 cmap='viridis', clim='auto', gamma=1,
                  interpolation='nearest', **kwargs):
         self._data = None
+        self._gamma = gamma
 
         # load 'float packed rgba8' interpolation kernel
         # to load float interpolation kernel use
@@ -194,6 +212,7 @@ class ImageVisual(Visual):
 
         self._method = method
         self._grid = grid
+        self._texture_limits = None
         self._need_texture_upload = True
         self._need_vertex_update = True
         self._need_colortransform_update = True
@@ -214,6 +233,7 @@ class ImageVisual(Visual):
         super(ImageVisual, self).__init__(vcode=VERT_SHADER, fcode=FRAG_SHADER)
         self.set_gl_state('translucent', cull_face=False)
         self._draw_mode = 'triangles'
+        self.shared_program['gamma'] = self._gamma
 
         # define _data_lookup_fn as None, will be setup in
         # self._build_interpolation()
@@ -259,13 +279,33 @@ class ImageVisual(Visual):
         if isinstance(clim, string_types):
             if clim != 'auto':
                 raise ValueError('clim must be "auto" if a string')
+            self._need_texture_upload = True
         else:
             clim = np.array(clim, float)
             if clim.shape != (2,):
                 raise ValueError('clim must have two elements')
+            if self._texture_limits is not None and (
+                (clim[0] < self._texture_limits[0])
+                or (clim[1] > self._texture_limits[1])
+            ):
+                self._need_texture_upload = True
         self._clim = clim
-        self._need_texture_upload = True
+        if self._texture_limits is not None:
+            self.shared_program['clim'] = self.clim_normalized
         self.update()
+
+    @property
+    def clim_normalized(self):
+        """Normalize current clims between 0-1 based on last-used texture data range.
+        In set_data(), the data is normalized (on the CPU) to 0-1 using ``clim``.
+        During rendering, the frag shader will apply the final contrast adjustment based on
+        the current ``clim``.
+        """
+        range_min, range_max = self._texture_limits
+        clim_min, clim_max = self.clim
+        clim_min = (clim_min - range_min) / (range_max - range_min)
+        clim_max = (clim_max - range_min) / (range_max - range_min)
+        return clim_min, clim_max
 
     @property
     def cmap(self):
@@ -409,6 +449,8 @@ class ImageVisual(Visual):
             else:
                 data[:] = 1 if data[0, 0] != 0 else 0
             self._clim = np.array(clim)
+            self._texture_limits = np.array(clim)
+            self.shared_program['clim'] = self.clim_normalized
 
         self._texture.set_data(data)
         self._need_texture_upload = False
@@ -453,3 +495,17 @@ class ImageVisual(Visual):
 
         if view._need_method_update:
             self._update_method(view)
+
+    @property
+    def gamma(self):
+        """The gamma used when rendering the image."""
+        return self._gamma
+
+    @gamma.setter
+    def gamma(self, value):
+        """Set gamma used when rendering the image."""
+        if value <= 0:
+            raise ValueError("gamma must be > 0")
+        self._gamma = float(value)
+        self.shared_program['gamma'] = self._gamma
+        self.update()
