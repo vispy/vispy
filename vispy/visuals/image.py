@@ -287,7 +287,7 @@ class ImageVisual(Visual):
     @property
     def clim_normalized(self):
         """Normalize current clims between 0-1 based on last-used texture data range.
-        In set_data(), the data is normalized (on the CPU) to 0-1 using ``clim``.
+        In _build_texture(), the data is normalized (on the CPU) to 0-1 using ``clim``.
         During rendering, the frag shader will apply the final contrast adjustment based on
         the current ``clim``.
         """
