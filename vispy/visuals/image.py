@@ -80,6 +80,7 @@ _interpolation_template = """
         }
         return %s($texture, $shape, texcoord);
     }"""
+    
 _texture_lookup = """
     vec4 texture_lookup(vec2 texcoord) {
         if(texcoord.x < 0.0 || texcoord.x > 1.0 ||
