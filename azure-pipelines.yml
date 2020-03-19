@@ -18,6 +18,8 @@ variables:
   CIBW_BEFORE_BUILD: "pip install -U numpy Cython jupyter ipywidgets"
   CIBW_BEFORE_BUILD_MACOS: "npm install npm@latest -g; pip install -U pip setuptools"
   CIBW_BEFORE_BUILD_LINUX: "yum install -y fontconfig; pip install -U pip setuptools; pip install freetype-py"
+  CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
+  CIBW_MANYLINUX_I686_IMAGE: manylinux2014
 jobs:
 - job: linux
   pool: {vmImage: 'Ubuntu-16.04'}
@@ -33,22 +35,6 @@ jobs:
       inputs:
         path: $(System.DefaultWorkingDirectory)/wheelhouse
         artifact: vispyDeployLinux
-- job: manylinux2014
-  pool: {vmImage: 'Ubuntu-16.04'}
-  variables:
-    CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
-    CIBW_MANYLINUX_I686_IMAGE: manylinux2014
-  steps:
-    - task: UsePythonVersion@0
-    - bash: |
-        git submodule update --init --recursive
-        python -m pip install --upgrade pip
-        pip install cibuildwheel
-        cibuildwheel --output-dir wheelhouse .
-    - task: PublishPipelineArtifact@1
-      inputs:
-        path: $(System.DefaultWorkingDirectory)/wheelhouse
-        artifact: vispyDeployLinux2014
 - job: macos
   pool: {vmImage: 'macOS-10.14'}
   steps:
@@ -98,7 +84,6 @@ jobs:
   condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
   dependsOn:
     - linux
-    - manylinux2014
     - macos
     - macos_10_14
     - windows
@@ -108,7 +93,6 @@ jobs:
       inputs:
         patterns: |
           vispyDeployLinux/*
-          vispyDeployLinux2014/*2014*.whl
           vispyDeployMacOS/*.whl
           vispyDeployWindows/*.whl
           vispyDeployMacOS_10_14/*.whl
