@@ -45,7 +45,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install cibuildwheel
         cibuildwheel --output-dir wheelhouse .
-    - bash: rm wheelhouse/*manylinux1* || true
     - task: PublishPipelineArtifact@1
       inputs:
         path: $(System.DefaultWorkingDirectory)/wheelhouse
@@ -109,7 +108,7 @@ jobs:
       inputs:
         patterns: |
           vispyDeployLinux/*
-          vispyDeployLinux2014/*2014*
+          vispyDeployLinux2014/*2014*.whl
           vispyDeployMacOS/*.whl
           vispyDeployWindows/*.whl
           vispyDeployMacOS_10_14/*.whl
