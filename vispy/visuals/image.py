@@ -50,6 +50,7 @@ vec4 map_local_to_tex(vec4 x) {
     return vec4(p3.xy / image_size, 0, 1);
 }
 
+
 void main()
 {
     vec2 texcoord;
@@ -80,7 +81,7 @@ _interpolation_template = """
         }
         return %s($texture, $shape, texcoord);
     }"""
-    
+
 _texture_lookup = """
     vec4 texture_lookup(vec2 texcoord) {
         if(texcoord.x < 0.0 || texcoord.x > 1.0 ||
