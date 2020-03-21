@@ -43,7 +43,11 @@ import numpy as np
 import string
 import logging
 import traceback
+
+# To switch between PyQt5 and PySide2 bindings just change the from import
 from PyQt5 import QtCore, QtGui, QtWidgets
+# Provide automatic signal function selection for PyQt5/PySide2
+pyqtsignal = QtCore.pyqtSignal if hasattr(QtCore, 'pyqtSignal') else QtCore.Signal
 
 logger = logging.getLogger(__name__)
 
@@ -731,7 +735,7 @@ class Paramlist(object):
 
 class SetupWidget(QtWidgets.QWidget):
 
-    changed_parameter_sig = QtCore.pyqtSignal(Paramlist)
+    changed_parameter_sig = pyqtsignal(Paramlist)
 
     def __init__(self, parent=None):
         """Widget for holding all the parameter options in neat lists.
@@ -827,9 +831,9 @@ class SetupWidget(QtWidgets.QWidget):
         vbox = QtWidgets.QVBoxLayout()
         hbox = QtWidgets.QHBoxLayout()
         hbox.addWidget(self.splitter)
-        hbox.addStretch(5.0)
+        hbox.addStretch(5)
         vbox.addLayout(hbox)
-        vbox.addStretch(1.0)
+        vbox.addStretch(1)
 
         self.setLayout(vbox)
 

@@ -25,22 +25,28 @@ except ImportError:
     pass
 
 try:
-    from PyQt4.QtCore import pyqtSignal, Qt
+    from PyQt4 import QtCore
+    from PyQt4.QtCore import Qt
     from PyQt4.QtGui import (QApplication, QMainWindow, QWidget, QLabel,
                              QSpinBox, QComboBox, QGridLayout, QVBoxLayout,
                              QSplitter)
 except Exception:
-    from PyQt5.QtCore import pyqtSignal, Qt
+    # To switch between PyQt5 and PySide2 bindings just change the from import
+    from PyQt5 import QtCore
+    from PyQt5.QtCore import Qt
     from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QLabel,
                                  QSpinBox, QComboBox, QGridLayout, QVBoxLayout,
                                  QSplitter)
+
+# Provide automatic signal function selection for PyQtX/PySide2
+pyqtsignal = QtCore.pyqtSignal if hasattr(QtCore, 'pyqtSignal') else QtCore.Signal
 
 
 class ObjectWidget(QWidget):
     """
     Widget for editing OBJECT parameters
     """
-    signal_object_changed = pyqtSignal(name='objectChanged')
+    signal_object_changed = pyqtsignal(name='objectChanged')
 
     def __init__(self, parent=None):
         super(ObjectWidget, self).__init__(parent)
@@ -66,7 +72,7 @@ class ObjectWidget(QWidget):
 
         vbox = QVBoxLayout()
         vbox.addLayout(gbox)
-        vbox.addStretch(1.0)
+        vbox.addStretch(1)
 
         self.setLayout(vbox)
 

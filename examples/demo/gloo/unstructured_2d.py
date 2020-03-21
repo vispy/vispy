@@ -104,8 +104,8 @@ class Canvas(app.Canvas):
                 x.astype('f4'),
                 y.astype('f4')
             ] + uv
-        ).view(dtype=[('position', 'f4', 2),
-                      ('texcoord', 'f4', 2 if v is not None else 1),
+        ).view(dtype=[('position', 'f4', (2,)),
+                      ('texcoord', 'f4', (2 if v is not None else 1,)),
                       ])
         self.vbo = gloo.VertexBuffer(data)
         self.index = gloo.IndexBuffer(edges)

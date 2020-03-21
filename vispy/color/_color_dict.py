@@ -190,4 +190,5 @@ _color_dict = {
     "tomato": "#ff6347",
     "white": "#ffffff",
     "yellow": "#ffff00",
+    "transparent": "#00000000",
 }
