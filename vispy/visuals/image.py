@@ -134,6 +134,9 @@ class ImageVisual(Visual):
     clim : str | tuple
         Limits to use for the colormap. Can be 'auto' to auto-set bounds to
         the min and max of the data.
+    gamma : float
+        Gamma to use during colormap lookup.  Final color will be cmap(val**gamma).
+        by default: 1.
     interpolation : str
         Selects method of image interpolation. Makes use of the two Texture2D
         interpolation methods and the available interpolation methods defined
@@ -305,6 +308,20 @@ class ImageVisual(Visual):
     def cmap(self, cmap):
         self._cmap = get_colormap(cmap)
         self._need_colortransform_update = True
+        self.update()
+
+    @property
+    def gamma(self):
+        """The gamma used when rendering the image."""
+        return self._gamma
+
+    @gamma.setter
+    def gamma(self, value):
+        """Set gamma used when rendering the image."""
+        if value <= 0:
+            raise ValueError("gamma must be > 0")
+        self._gamma = float(value)
+        self.shared_program['gamma'] = self._gamma
         self.update()
 
     @property
@@ -486,16 +503,3 @@ class ImageVisual(Visual):
         if view._need_method_update:
             self._update_method(view)
 
-    @property
-    def gamma(self):
-        """The gamma used when rendering the image."""
-        return self._gamma
-
-    @gamma.setter
-    def gamma(self, value):
-        """Set gamma used when rendering the image."""
-        if value <= 0:
-            raise ValueError("gamma must be > 0")
-        self._gamma = float(value)
-        self.shared_program['gamma'] = self._gamma
-        self.update()
