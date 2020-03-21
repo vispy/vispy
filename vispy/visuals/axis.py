@@ -399,8 +399,11 @@ class Ticker(object):
                 minor.extend(np.linspace(maj + minstep,
                                          maj + majstep - minstep,
                                          minor_num))
-            major_frac = (major - offset) / scale
-            minor_frac = (np.array(minor) - offset) / scale
+            major_frac = major - offset
+            minor_frac = np.array(minor) - offset
+            if scale != 0:  # maybe something better to do here?
+                major_frac /= scale
+                minor_frac /= scale
             major_frac = major_frac[::-1] if flip else major_frac
             use_mask = (major_frac > -0.0001) & (major_frac < 1.0001)
             major_frac = major_frac[use_mask]

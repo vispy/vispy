@@ -55,4 +55,31 @@ def test_text_rotation_update():
         assert_allclose(text.shared_program['a_rotation'], np.radians(30.))
 
 
+@requires_application()
+def test_face_bold_italic():
+
+    with TestingCanvas() as c:
+
+        # Check defaults
+        text = Text('testing', pos=(100, 100), parent=c.scene)
+        assert not text.bold and not text.italic
+
+        # Check getter properties
+        text = Text('testing', pos=(100, 100), bold=True, italic=True, parent=c.scene)
+        assert text.bold and text.italic
+
+        # Check that changing a property changes the font object
+        font1 = text._font
+        text.bold = False
+        font2 = text._font
+        assert font1 is not font2
+        text.italic = False
+        font3 = text._font
+        assert font2 is not font3
+        text.bold = True
+        text.italic = True
+        font4 = text._font
+        assert font1 is font4
+
+
 run_tests_if_main()

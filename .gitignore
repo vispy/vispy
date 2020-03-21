@@ -28,3 +28,4 @@ js/dist
 node_modules/
 vispy/static/
 vispy/version.py
+.vscode

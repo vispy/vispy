@@ -22,9 +22,11 @@ to the back surface and iterate over these positions in a for-loop.
 At each iteration, the fragment color or other voxel information is 
 updated depending on the selected rendering method.
 
-It is important for the texture interpolation is 'linear', since with
-nearest the result look very ugly. The wrapping should be clamp_to_edge
-to avoid artifacts when the ray takes a small step outside the volume.
+It is important for the texture interpolation is 'linear' for most volumes,
+since with 'nearest' the result can look very ugly; however for volumes with
+discrete data 'nearest' is sometimes appropriate. The wrapping should be
+clamp_to_edge to avoid artifacts when the ray takes a small step outside the
+volume.
 
 The ray direction is established by mapping the vertex to the document
 coordinate frame, adjusting z to +/-1, and mapping the coordinate back.
@@ -90,7 +92,7 @@ varying vec4 v_nearpos;
 varying vec4 v_farpos;
 
 // uniforms for lighting. Hard coded until we figure out how to do lights
-const vec4 u_ambient = vec4(0.2, 0.4, 0.2, 1.0);
+const vec4 u_ambient = vec4(0.2, 0.2, 0.2, 1.0);
 const vec4 u_diffuse = vec4(0.8, 0.2, 0.2, 1.0);
 const vec4 u_specular = vec4(1.0, 1.0, 1.0, 1.0);
 const float u_shininess = 40.0;
@@ -343,10 +345,10 @@ ISO_SNIPPETS = dict(
             // Take the last interval in smaller steps
             vec3 iloc = loc - step;
             for (int i=0; i<10; i++) {
-                val = $sample(u_volumetex, iloc).g;
-                if (val > u_threshold) {
-                    color = $cmap(val);
-                    gl_FragColor = calculateColor(color, iloc, dstep);
+                color = $sample(u_volumetex, iloc);
+                if (color.g > u_threshold) {
+                    color = calculateColor(color, iloc, dstep);
+                    gl_FragColor = $cmap(color.g);
                     iter = nsteps;
                     break;
                 }
@@ -394,11 +396,15 @@ class VolumeVisual(Visual):
     emulate_texture : bool
         Use 2D textures to emulate a 3D texture. OpenGL ES 2.0 compatible,
         but has lower performance on desktop platforms.
+    interpolation : {'linear', 'nearest'}
+        Selects method of image interpolation. 
     """
+
+    _interpolation_names = ['linear', 'nearest']
 
     def __init__(self, vol, clim=None, method='mip', threshold=None, 
                  relative_step_size=0.8, cmap='grays',
-                 emulate_texture=False):
+                 emulate_texture=False, interpolation='linear'):
         
         tex_cls = TextureEmulated3D if emulate_texture else Texture3D
 
@@ -423,7 +429,9 @@ class VolumeVisual(Visual):
                 [0, 1, 1],
                 [1, 1, 1],
             ], dtype=np.float32))
-        self._tex = tex_cls((10, 10, 10), interpolation='linear', 
+        
+        self._interpolation = interpolation
+        self._tex = tex_cls((10, 10, 10), interpolation=self._interpolation, 
                             wrapping='clamp_to_edge')
 
         # Create program
@@ -515,6 +523,31 @@ class VolumeVisual(Visual):
         self.shared_program.frag['cmap'] = Function(self._cmap.glsl_map)
         self.update()
 
+    @property
+    def interpolation(self):
+        """The interpolation method to use
+
+        Current options are:
+        
+            * linear: this method is appropriate for most volumes as it creates
+              nice looking visuals.
+            * nearest: this method is appropriate for volumes with discrete
+              data where additional interpolation does not make sense.
+        """
+        return self._interpolation
+
+    @interpolation.setter
+    def interpolation(self, interp):
+        if interp not in self._interpolation_names:
+            raise ValueError(
+                "interpolation must be one of %s"
+                % ', '.join(self._interpolation_names)
+            )
+        if self._interpolation != interp:
+            self._interpolation = interp
+            self._tex.interpolation = self._interpolation
+            self.update()
+            
     @property
     def method(self):
         """The render method to use
