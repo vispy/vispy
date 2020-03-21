@@ -716,6 +716,19 @@ class updating_property:
             def someprop(self):
                 pass
 
+    NOTE: by default the __get__ method here will look for the conventional `_attr_name`
+    property on the object.  The result of this is that you don't actually have to put
+    anything in the body of a method decorated with @updating_property if you don't want to
+    do anything other than retrieve the property.  So you may see this slightly strange
+    pattern being used:
+
+    class SomeVisual2(Visual):
+    def __init__(self, someprop=None):
+        self._someprop = someprop
+
+        @updating_property
+        def someprop(self):
+            '''the docstring (or pass) is all that is needed'''
     """
 
     def __init__(self, fget=None, fset=None, doc=None):
