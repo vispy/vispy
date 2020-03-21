@@ -81,8 +81,14 @@ class LinePlotVisual(CompoundVisual):
             Keywoard arguments to pass to MarkerVisual and LineVisal.
         """
         # remember these kwargs for future updates
+        bad_keys = []
+        for key in kwargs:
+            if (key not in self._line_kwargs) and (key not in self._marker_kwargs):
+                bad_keys.append(key)
+        if bad_keys:
+            raise TypeError("Invalid keyword arguments: {}".format(",".join(bad_keys)))
+
         self._kwargs.update(kwargs)
-        kwargs = self._kwargs.copy()
         if data is None:
             pos = None
         else:
@@ -101,7 +107,7 @@ class LinePlotVisual(CompoundVisual):
 
                 # if both args and keywords are zero, then there is no
                 # point in calling this function.
-                if len(kwargs) == 0:
+                if len(self._kwargs) == 0:
                     raise TypeError("neither line points nor line properties"
                                     "are provided")
             elif pos.shape[1] == 1:
@@ -115,20 +121,16 @@ class LinePlotVisual(CompoundVisual):
         # todo: have both sub-visuals share the same buffers.
         line_kwargs = {}
         for k in self._line_kwargs:
-            if k in kwargs:
+            if k in self._kwargs:
                 k_ = self._kw_trans[k] if k in self._kw_trans else k
-                line_kwargs[k] = kwargs.pop(k_)
+                line_kwargs[k] = self._kwargs.get(k_)
         if pos is not None or len(line_kwargs) > 0:
             self._line.set_data(pos=pos, **line_kwargs)
 
         marker_kwargs = {}
         for k in self._marker_kwargs:
-            if k in kwargs:
+            if k in self._kwargs:
                 k_ = self._kw_trans[k] if k in self._kw_trans else k
-                marker_kwargs[k_] = kwargs.pop(k)
+                marker_kwargs[k_] = self._kwargs.get(k)
         if pos is not None or len(marker_kwargs) > 0:
             self._markers.set_data(pos=pos, **marker_kwargs)
-        if len(kwargs) > 0:
-            for k in kwargs:
-                self._kwargs.pop(k, None)
-            raise TypeError("Invalid keyword arguments: %s" % kwargs.keys())
