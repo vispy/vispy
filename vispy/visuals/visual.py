@@ -753,5 +753,3 @@ class updating_property:
 
     def setter(self, fset):
         return type(self)(self.fget, fset, self.__doc__)
-
-
