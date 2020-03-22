@@ -64,12 +64,7 @@ jobs:
 - job: windows
   pool: {vmImage: 'vs2017-win2016'}
   steps:
-    - {task: UsePythonVersion@0, inputs: {versionSpec: '3.6', architecture: x86}}
-    - {task: UsePythonVersion@0, inputs: {versionSpec: '3.6', architecture: x64}}
-    - {task: UsePythonVersion@0, inputs: {versionSpec: '3.7', architecture: x86}}
-    - {task: UsePythonVersion@0, inputs: {versionSpec: '3.7', architecture: x64}}
-    - {task: UsePythonVersion@0, inputs: {versionSpec: '3.8', architecture: x86}}
-    - {task: UsePythonVersion@0, inputs: {versionSpec: '3.8', architecture: x64}}
+    - task: UsePythonVersion@0
     - bash: |
         git submodule update --init --recursive
         python -m pip install --upgrade pip
