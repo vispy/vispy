@@ -456,6 +456,8 @@ class ImageVisual(Visual):
             else:
                 data[:] = 1 if data[0, 0] != 0 else 0
             self._clim = np.array(clim)
+        else:
+            self._clim = (0, 1)
 
         self._texture_limits = np.array(self._clim)
         self.shared_program['clim'] = self.clim_normalized
