@@ -54,6 +54,7 @@ class LinePlotVisual(CompoundVisual):
     _line_kwargs = ('color', 'width', 'connect')
     _marker_kwargs = ('edge_color', 'face_color', 'edge_width',
                       'marker_size', 'symbol')
+    _valid_kwargs = set(_line_kwargs).union(set(_marker_kwargs))
     _kw_trans = dict(marker_size='size')
 
     def __init__(self, data=None, color='k', symbol=None, line_kind='-',
@@ -80,14 +81,11 @@ class LinePlotVisual(CompoundVisual):
         **kwargs : dict
             Keywoard arguments to pass to MarkerVisual and LineVisal.
         """
-        # remember these kwargs for future updates
-        bad_keys = []
-        for key in kwargs:
-            if (key not in self._line_kwargs) and (key not in self._marker_kwargs):
-                bad_keys.append(key)
+        bad_keys = set(kwargs) - self._valid_kwargs
         if bad_keys:
-            raise TypeError("Invalid keyword arguments: {}".format(",".join(bad_keys)))
+            raise TypeError("Invalid keyword arguments: {}".format(", ".join(bad_keys)))
 
+        # remember these kwargs for future updates
         self._kwargs.update(kwargs)
         if data is None:
             pos = None
