@@ -30,7 +30,7 @@ def test_image_clims_and_gamma():
         for three_d in (True,):
             shape = size + ((3,) if three_d else ())
             np.random.seed(0)
-            image = Image(cmap="grays", clim=[0, 1], parent=c.scene)
+            image = Image(cmap='grays', clim=[0, 1], parent=c.scene)
             data = np.random.rand(*shape)
             image.set_data(data)
             rendered = c.render()

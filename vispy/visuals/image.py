@@ -109,8 +109,8 @@ _apply_gamma = """
     }
 """
 
-_null_color_transform = "vec4 pass(vec4 color) { return color; }"
-_c2l = "float cmap(vec4 color) { return (color.r + color.g + color.b) / 3.; }"
+_null_color_transform = 'vec4 pass(vec4 color) { return color; }'
+_c2l = 'float cmap(vec4 color) { return (color.r + color.g + color.b) / 3.; }'
 
 
 def _build_color_transform(data, clim, gamma, cmap):
@@ -124,8 +124,8 @@ def _build_color_transform(data, clim, gamma, cmap):
         fclim = Function(_apply_clim)
         fgamma = Function(_apply_gamma)
         fun = FunctionChain(None, [Function(_null_color_transform), fclim, fgamma])
-    fclim["clim"] = clim
-    fgamma["gamma"] = gamma
+    fclim['clim'] = clim
+    fgamma['gamma'] = gamma
     return fun
 
 
@@ -182,7 +182,7 @@ class ImageVisual(Visual):
     if the data are 2D.
     """
     def __init__(self, data=None, method='auto', grid=(1, 1),
-                 cmap='viridis', clim='auto', gamma=1,
+                 cmap='viridis', clim='auto', gamma=1.0,
                  interpolation='nearest', **kwargs):
         self._data = None
         self._gamma = gamma
@@ -308,7 +308,7 @@ class ImageVisual(Visual):
                 self._need_texture_upload = True
         self._clim = clim
         if self._texture_limits is not None:
-            self.shared_program.frag["color_transform"][1]["clim"] = self.clim_normalized
+            self.shared_program.frag['color_transform'][1]['clim'] = self.clim_normalized
         self.update()
 
     @property
@@ -345,7 +345,7 @@ class ImageVisual(Visual):
         if value <= 0:
             raise ValueError("gamma must be > 0")
         self._gamma = float(value)
-        self.shared_program.frag["color_transform"][2]["gamma"] = self._gamma
+        self.shared_program.frag['color_transform'][2]['gamma'] = self._gamma
         self.update()
 
     @property
@@ -482,7 +482,7 @@ class ImageVisual(Visual):
             self._clim = np.array(clim)
         else:
             # assume that RGB data is already scaled (0, 1)
-            if isinstance(self._clim, string_types) and self._clim == "auto":
+            if isinstance(self._clim, string_types) and self._clim == 'auto':
                 self._clim = (0, 1)
 
         self._texture_limits = np.array(self._clim)
@@ -518,7 +518,7 @@ class ImageVisual(Visual):
 
         if self._need_colortransform_update:
             prg = view.view_program
-            self.shared_program.frag["color_transform"] = _build_color_transform(
+            self.shared_program.frag['color_transform'] = _build_color_transform(
                 self._data, self.clim_normalized, self.gamma, self.cmap
             )
             self._need_colortransform_update = False
