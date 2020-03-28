@@ -10,9 +10,8 @@ environment:
 
   matrix:
       - PYTHON_VERSION: "3.7"
-        CONDA_DEPENDENCIES: "numpy scipy setuptools pytest coverage pytest-cov pytest-sugar cython coveralls meshio"
-        PIP_DEPENDENCIES: "numpydoc https://files.pythonhosted.org/packages/71/5f/07aad120ca6e4339a5c127631341787bc6bc74add39a1f41223bda949721/freetype_py-2.1.0.post1-py2.py3-none-win_amd64.whl"
-# can remove the github numpydoc install once >0.8.0 is released
+        CONDA_DEPENDENCIES: "numpy scipy setuptools pytest coverage pytest-cov pytest-sugar pytest-faulthandler cython coveralls freetype-py numpydoc meshio"
+        PIP_DEPENDENCIES: ""
 
 platform:
     -x64
