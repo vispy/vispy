@@ -6,7 +6,7 @@ from vispy import scene
 from vispy.testing import (TestingCanvas, requires_application,
                            run_tests_if_main, requires_pyopengl,
                            raises)
-from vispy.testing.image_tester import assert_image_approved
+from vispy.testing.image_tester import assert_image_approved, downsample
 
 
 @requires_pyopengl()
@@ -60,6 +60,53 @@ def test_volume_draw():
         scene.visuals.Volume(vol, parent=v.scene)  # noqa
         v.camera.set_range()
         assert_image_approved(c.render(), 'visuals/volume.png')
+
+
+@requires_application()
+def test_volume_clims_and_gamma():
+    """Test volume visual with clims and gamma on shader.
+    
+    currently just using np.ones since the angle of view made more complicated samples
+    challenging, but this confirms gamma and clims works in the shader.
+    """
+
+    with TestingCanvas(size=(40, 40), bgcolor="k") as c:
+        v = c.central_widget.add_view(border_width=0, size=(40, 40))
+        data = np.ones((40, 40, 40)) / 2.5
+        volume = scene.visuals.Volume(
+            data,
+            clim=(0, 1),
+            interpolation='nearest',
+            parent=v.scene,
+            method='mip',
+        )
+        v.camera = 'arcball'
+        v.camera.fov = 0
+        v.camera.scale_factor = 40
+        v.camera.center = (19.5, 19.5, 19.5)
+
+        rendered = c.render()[..., 0]
+        _dtype = rendered.dtype
+        shape_ratio = rendered.shape[0] // data.shape[0]
+        rendered1 = downsample(rendered, shape_ratio, axis=(0, 1)).astype(_dtype)
+        predicted = np.round(data.max(0) * 255).astype(np.uint8)
+        assert np.allclose(predicted, rendered1, atol=1)
+
+        # adjust contrast limits
+        new_clim = (0.3, 0.8)
+        volume.clim = new_clim
+        rendered2 = downsample(c.render()[..., 0], shape_ratio, axis=(0, 1)).astype(_dtype)
+        scaled_data = np.clip((data - new_clim[0]) / np.diff(new_clim)[0], 0, 1)
+        predicted = np.round(scaled_data.max(0) * 255).astype(np.uint8)
+        assert np.allclose(predicted, rendered2)
+        assert not np.allclose(rendered1, rendered2, atol=10)
+
+        # adjust gamma
+        volume.gamma = 1.5
+        rendered3 = downsample(c.render()[..., 0], shape_ratio, axis=(0, 1)).astype(_dtype)
+        predicted = np.round((scaled_data ** volume.gamma).max(0) * 255).astype(np.uint8)
+        assert np.allclose(predicted, rendered3)
+        assert not np.allclose(rendered2, rendered3, atol=10)
 
 
 @requires_pyopengl()

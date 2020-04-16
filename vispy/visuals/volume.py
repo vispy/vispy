@@ -116,6 +116,11 @@ float colorToVal(vec4 color1)
     return color1.g; // todo: why did I have this abstraction in visvis?
 }}
 
+vec4 applyColormap(float data) {{
+    float val = max(data - clim.x, 0) / (clim.y - clim.x);
+    return $cmap(pow(val, gamma));
+}}
+
 vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
 {{   
     // Calculate color by incorporating lighting
@@ -282,9 +287,7 @@ MIP_SNIPPETS = dict(
             maxval = max(maxval, $sample(u_volumetex, loc).g);
             loc += step * 0.1;
         }
-        maxval = max(maxval - clim.x, 0);
-        maxval = maxval / (clim.y - clim.x);
-        gl_FragColor = $cmap(pow(maxval, gamma));
+        gl_FragColor = applyColormap(maxval);
         """,
 )
 MIP_FRAG_SHADER = FRAG_SHADER.format(**MIP_SNIPPETS)
@@ -295,9 +298,7 @@ TRANSLUCENT_SNIPPETS = dict(
         vec4 integrated_color = vec4(0., 0., 0., 0.);
         """,
     in_loop="""
-            val = max(val - clim.x, 0);
-            val = val / (clim.y - clim.x);
-            color = $cmap(pow(val, gamma));
+            color = applyColormap(val);
             float a1 = integrated_color.a;
             float a2 = color.a * (1 - a1);
             float alpha = max(a1 + a2, 0.001);
@@ -329,9 +330,7 @@ ADDITIVE_SNIPPETS = dict(
         vec4 integrated_color = vec4(0., 0., 0., 0.);
         """,
     in_loop="""
-        val = max(val - clim.x, 0);
-        val = val / (clim.y - clim.x);
-        color = $cmap(pow(val, gamma));
+        color = applyColormap(val);
         
         integrated_color = 1.0 - (1.0 - integrated_color) * (1.0 - color);
         """,
@@ -356,9 +355,7 @@ ISO_SNIPPETS = dict(
                 color = $sample(u_volumetex, iloc);
                 if (color.g > u_threshold) {
                     color = calculateColor(color, iloc, dstep);
-                    val = max(color.g - clim.x, 0);
-                    val = val / (clim.y - clim.x);
-                    gl_FragColor = $cmap(pow(val, gamma));
+                    gl_FragColor = applyColormap(color.g);
                     iter = nsteps;
                     break;
                 }
@@ -413,7 +410,7 @@ class VolumeVisual(Visual):
     _interpolation_names = ['linear', 'nearest']
 
     def __init__(self, vol, clim=None, method='mip', threshold=None, 
-                 relative_step_size=0.8, cmap='grays', gamma=1,
+                 relative_step_size=0.8, cmap='grays', gamma=1.0,
                  emulate_texture=False, interpolation='linear'):
         
         tex_cls = TextureEmulated3D if emulate_texture else Texture3D
@@ -510,6 +507,7 @@ class VolumeVisual(Visual):
         else:
             vol -= self._clim[0]
             vol /= self._clim[1] - self._clim[0]
+        
         # Apply to texture
         self._tex.set_data(vol)  # will be efficient if vol is same shape
         self.shared_program['u_shape'] = (vol.shape[2], vol.shape[1], 
@@ -524,6 +522,20 @@ class VolumeVisual(Visual):
         # Get some stats
         self._kb_for_texture = np.prod(self._vol_shape) / 1024
     
+    def rescale_data(self):
+        """Force rescaling of data to the current contrast limits and texture upload.
+
+        Because Textures are currently 8-bits, and contrast adjustment is done during
+        rendering by scaling the values retrieved from the texture on the GPU (provided that
+        the new contrast limits settings are within the range of the clims used when the
+        last texture was uploaded), posterization may become visible if the contrast limits
+        become *too* small of a fraction of the clims used to normalize the texture.
+        This function is a convenience to "force" rescaling of the Texture data to the
+        current contrast limits range.
+        """
+        self.set_data(self._last_data, clim=self._clim)
+        self.update()
+
     @property
     def clim(self):
         """Contrast Limits. Volume display is mapped from black to white with these values.
@@ -543,10 +555,10 @@ class VolumeVisual(Visual):
         clim = np.array(value, float)
         if not (clim.ndim == 1 and clim.size == 2):
             raise ValueError('clim must be a 2-element array-like')
+        self._clim = tuple(clim)
         if (clim[0] < self._texture_limits[0]) or (clim[1] > self._texture_limits[1]):
-            self.set_data(self._last_data, clim=clim)
+            self.rescale_data()
         else:
-            self._clim = tuple(clim)
             self.shared_program['clim'] = self.clim_normalized
             self.update()
 
@@ -560,8 +572,9 @@ class VolumeVisual(Visual):
         """
         range_min, range_max = self._texture_limits
         clim_min, clim_max = self.clim
-        clim_min = (clim_min - range_min) / (range_max - range_min)
-        clim_max = (clim_max - range_min) / (range_max - range_min)
+        tex_range = (range_max - range_min)
+        clim_min = (clim_min - range_min) / tex_range
+        clim_max = (clim_max - range_min) / tex_range
         return clim_min, clim_max
 
     @property
