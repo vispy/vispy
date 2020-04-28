@@ -48,8 +48,8 @@ def attach_headlight(mesh, view, canvas):
     initial_light_dir = view.camera.transform.imap(light_dir)
     initial_light_dir[3] = 0
 
-    @canvas.events.mouse_move.connect
-    def on_mouse_move(event):
+    @view.scene.transform.changed.connect
+    def on_transform_change(event):
         transform = view.camera.transform
         mesh.light_dir = transform.map(initial_light_dir)[:3]
 
