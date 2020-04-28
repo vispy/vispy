@@ -618,13 +618,9 @@ def _convert_desktop_shader(shader):
     for line in shader.lstrip().splitlines():
         line_strip = line.lstrip()
         has_version = has_version or line.startswith('#version')
-        if line_strip.startswith('precision '):
-            line = ''
         if line_strip.startswith('#extension'):
             extensions.append(line_strip)
             line = ''
-        for prec in (' highp ', ' mediump ', ' lowp '):
-            line = line.replace(prec, ' ')
         lines.append(line.rstrip())
     # Write
     # Make sure extensions are at the top, but after version
