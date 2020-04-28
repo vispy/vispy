@@ -162,7 +162,8 @@ class DataBuffer(Buffer):
         data : ndarray
             Data to be uploaded
         offset: int
-            Offset in buffer where to start copying data (in bytes)
+            Offset in buffer where to start copying data (i.e. index of
+            starting element).
         copy: bool
             Since the operation is deferred, data may change before
             data is actually uploaded to GPU memory.
@@ -299,9 +300,9 @@ class DataBuffer(Buffer):
         elif data.size > stop - start:
             raise ValueError('Data too big to fit GPU data '
                              '(%d > %d-%d).' % (data.size, stop, start))
-        
+
         # Set data
-        offset = start  # * self.itemsize
+        offset = start
         self.set_subdata(data=data, offset=offset, copy=True)
 
     def __repr__(self):
@@ -451,7 +452,11 @@ class VertexBuffer(DataBuffer):
             if self._last_dim and c != self._last_dim:
                 raise ValueError('Last dimension should be %s not %s'
                                  % (self._last_dim, c))
-            data = data.view(dtype=[('f0', data.dtype.base, c)])
+            dtype_def = ('f0', data.dtype.base)
+            if c != 1:
+                # numpy dtypes with size 1 are ambiguous, only add size if it is greater than 1
+                dtype_def += (c,)
+            data = data.view(dtype=[dtype_def])
             self._last_dim = c
         return data
 

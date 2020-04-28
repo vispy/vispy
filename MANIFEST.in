@@ -16,6 +16,7 @@ recursive-include vispy *.vert
 include vispy/app/tests/qt-designer.ui
 include vispy/io/_data/spatial-filters.npy
 include vispy/util/fonts/data/*.ttf
+include vispy/version.py
 
 recursive-include examples *.py
 recursive-include examples *.ipynb

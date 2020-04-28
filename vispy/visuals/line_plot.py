@@ -54,6 +54,7 @@ class LinePlotVisual(CompoundVisual):
     _line_kwargs = ('color', 'width', 'connect')
     _marker_kwargs = ('edge_color', 'face_color', 'edge_width',
                       'marker_size', 'symbol')
+    _valid_kwargs = set(_line_kwargs).union(set(_marker_kwargs))
     _kw_trans = dict(marker_size='size')
 
     def __init__(self, data=None, color='k', symbol=None, line_kind='-',
@@ -63,6 +64,7 @@ class LinePlotVisual(CompoundVisual):
             raise ValueError('Only solid lines currently supported')
         self._line = LineVisual(method='gl', antialias=False)
         self._markers = MarkersVisual()
+        self._kwargs = {}
         CompoundVisual.__init__(self, [self._line, self._markers])
         self.set_data(data, color=color, symbol=symbol,
                       width=width, marker_size=marker_size,
@@ -79,6 +81,12 @@ class LinePlotVisual(CompoundVisual):
         **kwargs : dict
             Keywoard arguments to pass to MarkerVisual and LineVisal.
         """
+        bad_keys = set(kwargs) - self._valid_kwargs
+        if bad_keys:
+            raise TypeError("Invalid keyword arguments: {}".format(", ".join(bad_keys)))
+
+        # remember these kwargs for future updates
+        self._kwargs.update(kwargs)
         if data is None:
             pos = None
         else:
@@ -97,7 +105,7 @@ class LinePlotVisual(CompoundVisual):
 
                 # if both args and keywords are zero, then there is no
                 # point in calling this function.
-                if len(kwargs) == 0:
+                if len(self._kwargs) == 0:
                     raise TypeError("neither line points nor line properties"
                                     "are provided")
             elif pos.shape[1] == 1:
@@ -111,18 +119,16 @@ class LinePlotVisual(CompoundVisual):
         # todo: have both sub-visuals share the same buffers.
         line_kwargs = {}
         for k in self._line_kwargs:
-            if k in kwargs:
+            if k in self._kwargs:
                 k_ = self._kw_trans[k] if k in self._kw_trans else k
-                line_kwargs[k] = kwargs.pop(k_)
+                line_kwargs[k] = self._kwargs.get(k_)
         if pos is not None or len(line_kwargs) > 0:
             self._line.set_data(pos=pos, **line_kwargs)
 
         marker_kwargs = {}
         for k in self._marker_kwargs:
-            if k in kwargs:
+            if k in self._kwargs:
                 k_ = self._kw_trans[k] if k in self._kw_trans else k
-                marker_kwargs[k_] = kwargs.pop(k)
+                marker_kwargs[k_] = self._kwargs.get(k)
         if pos is not None or len(marker_kwargs) > 0:
             self._markers.set_data(pos=pos, **marker_kwargs)
-        if len(kwargs) > 0:
-            raise TypeError("Invalid keyword arguments: %s" % kwargs.keys())

@@ -19,7 +19,10 @@ try:
 except ImportError:
     pass
 
+
+# To switch between PyQt5 and PySide2 bindings just change the from import
 from PyQt5 import QtCore, QtWidgets
+
 import sys
 
 import numpy as np
@@ -27,6 +30,10 @@ from vispy import app, gloo
 from vispy.util.transforms import perspective, translate, rotate
 from vispy.geometry import meshdata as md
 from vispy.geometry import generation as gen
+
+# Provide automatic signal function selection for PyQt5/PySide2
+pyqtsignal = QtCore.pyqtSignal if hasattr(QtCore, 'pyqtSignal') else QtCore.Signal
+
 
 OBJECT = {'sphere': [('rows', 3, 1000, 'int', 3),
                      ('cols', 3, 1000, 'int', 3),
@@ -139,7 +146,7 @@ class ObjectWidget(QtWidgets.QWidget):
     """
     Widget for editing OBJECT parameters
     """
-    signal_objet_changed = QtCore.pyqtSignal(ObjectParam, name='objectChanged')
+    signal_objet_changed = pyqtsignal(ObjectParam, name='objectChanged')
 
     def __init__(self, parent=None, param=None):
         super(ObjectWidget, self).__init__(parent)
@@ -182,9 +189,9 @@ class ObjectWidget(QtWidgets.QWidget):
         vbox = QtWidgets.QVBoxLayout()
         hbox = QtWidgets.QHBoxLayout()
         hbox.addWidget(self.gb_c)
-        hbox.addStretch(1.0)
+        hbox.addStretch(1)
         vbox.addLayout(hbox)
-        vbox.addStretch(1.0)
+        vbox.addStretch(1)
 
         self.setLayout(vbox)
 

@@ -34,7 +34,7 @@ im1 *= np.array((X ** 2 + Y ** 2) <= radius * radius, dtype='float32')
 N = 10000
 
 # Create vertex data container
-data = np.zeros(N, [('a_lifetime', np.float32, 1),
+data = np.zeros(N, [('a_lifetime', np.float32),
                     ('a_startPosition', np.float32, 3),
                     ('a_endPosition', np.float32, 3)])
 

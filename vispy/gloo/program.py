@@ -158,7 +158,7 @@ class Program(GLObject):
             for kind, type_, name, size in self._code_variables.values():
                 if kind == 'attribute':
                     dt, numel = self._gtypes[type_]
-                    dtype.append((name, dt, numel))
+                    dtype.append((name, dt, numel) if numel != 1 else (name, dt))
             self._buffer = np.zeros(self._count, dtype=dtype)
             self.bind(VertexBuffer(self._buffer))
 

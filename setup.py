@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
-
-""" Vispy setup script.
+"""Vispy setup script.
 
 Steps to do a new release:
 
@@ -10,25 +9,16 @@ Preparations:
   * Test on Windows, Linux, Mac
   * Make release notes
   * Update API documentation and other docs that need updating.
-  * Install 'twine' package for uploading to PyPI
 
-Define the version:
-  * update __version__ in __init__.py
-  * tag the tip changeset as version x.x.x; `git tag -a 'vX.Y.Z'`
-
-Test installation:
-  * clear the build and dist dir (if they exist)
-  * python setup.py sdist
-  * twine upload --repository-url https://test.pypi.org/legacy/ dist/*
-  * pip install -i https://testpypi.python.org/pypi vispy
-
-Generate and upload package
-  * python setup.py sdist
-  * twine upload dist/*
+Define the version and release:
+  * tag the tip changeset as version x.x.x; `git tag -a 'vX.Y.Z' -m "Version X.Y.Z"`
+  * push tag to github
+  * verify that azure pipelines complete
+  * verify that `.tar.gz` sdist and binary wheels are available on PyPI
 
 Announcing:
   * It can be worth waiting a day for eager users to report critical bugs
-  * Announce in scipy-user, vispy mailing list, G+
+  * Announce in scipy-user, vispy mailing list, twitter (@vispyproject)
 
 """
 
@@ -52,25 +42,6 @@ log.info('$PATH=%s' % os.environ['PATH'])
 
 name = 'vispy'
 description = 'Interactive visualization in Python'
-
-
-# Get version and docstring
-__version__ = None
-__doc__ = ''
-docStatus = 0  # Not started, in progress, done
-initFile = os.path.join(os.path.dirname(__file__), 'vispy', '__init__.py')
-for line in open(initFile).readlines():
-    if line.startswith('version_info') or line.startswith('__version__'):
-        exec(line.strip())
-    elif line.startswith('"""'):
-        if docStatus == 0:
-            docStatus = 1
-            line = line.lstrip('"')
-        elif docStatus == 1:
-            docStatus = 2
-    if docStatus == 1:
-        __doc__ += line
-
 
 # Special commands for building jupyter notebook extension
 here = os.path.dirname(os.path.abspath(__file__))
@@ -207,7 +178,7 @@ extensions = [Extension('vispy.visuals.text._sdf_cpu',
 readme = open('README.rst', 'r').read()
 setup(
     name=name,
-    version=__version__,
+    use_scm_version={'write_to': 'vispy/version.py'},
     author='Vispy contributors',
     author_email='vispy@googlegroups.com',
     license='(new) BSD',
@@ -237,9 +208,9 @@ setup(
         'sdist': js_prerelease(sdist, strict=True),
         'jsdeps': NPM,
     },
-    python_requires='>=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*',
+    python_requires='>=3.6',
     install_requires=['numpy', 'freetype-py'],
-    setup_requires=['numpy', 'cython'],
+    setup_requires=['numpy', 'cython', 'setuptools_scm', 'setuptools_scm_git_archive'],
     extras_require={
         'ipython-static': ['ipython'],
         'ipython-vnc': ['ipython>=7'],
@@ -251,8 +222,9 @@ setup(
         'sdl2': ['PySDL2'],
         'wx': ['wxPython'],
         'doc': ['sphinx_bootstrap_theme', 'numpydoc'],
+        'io': ['meshio'],
     },
-    packages=find_packages(),
+    packages=find_packages(exclude=['make']),
     ext_modules=cythonize(extensions),
     package_dir={'vispy': 'vispy'},
     data_files=[
@@ -296,10 +268,9 @@ setup(
         'Operating System :: Microsoft :: Windows',
         'Operating System :: POSIX',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
         'Framework :: IPython'
     ],
 )

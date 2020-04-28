@@ -582,7 +582,7 @@ def _convert_es2_shader(shader):
     for line in shader.lstrip().splitlines():
         line_strip = line.lstrip()
         if line_strip.startswith('#version'):
-            has_version = True
+            # has_version = True
             continue
         if line_strip.startswith('#extension'):
             extensions.append(line_strip)
@@ -1503,7 +1503,7 @@ class GlirTexture1D(GlirTexture):
         if gtype is None:
             raise ValueError("Type %r not allowed for texture" % data.dtype)
         # Set alignment (width is nbytes_per_pixel * npixels_per_line)
-        alignment = self._get_alignment(data.shape[-1])
+        alignment = self._get_alignment(data.shape[-1] * data.itemsize)
         if alignment != 4:
             gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, alignment)
         # Upload
@@ -1536,7 +1536,7 @@ class GlirTexture2D(GlirTexture):
         if gtype is None:
             raise ValueError("Type %r not allowed for texture" % data.dtype)
         # Set alignment (width is nbytes_per_pixel * npixels_per_line)
-        alignment = self._get_alignment(data.shape[-2]*data.shape[-1])
+        alignment = self._get_alignment(data.shape[-2] * data.shape[-1] * data.itemsize)
         if alignment != 4:
             gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, alignment)
         # Upload
@@ -1632,8 +1632,7 @@ class GlirTexture3D(GlirTexture):
         if gtype is None:
             raise ValueError("Type not allowed for texture")
         # Set alignment (width is nbytes_per_pixel * npixels_per_line)
-        alignment = self._get_alignment(data.shape[-3] *
-                                        data.shape[-2] * data.shape[-1])
+        alignment = self._get_alignment(data.shape[-2] * data.shape[-1] * data.itemsize)
         if alignment != 4:
             gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, alignment)
         # Upload
@@ -1674,7 +1673,7 @@ class GlirTextureCube(GlirTexture):
             raise ValueError("Type %r not allowed for texture" % data.dtype)
         self.activate()
         # Set alignment (width is nbytes_per_pixel * npixels_per_line)
-        alignment = self._get_alignment(data.shape[-2] * data.shape[-1])
+        alignment = self._get_alignment(data.shape[-2] * data.shape[-1] * data.itemsize)
         if alignment != 4:
             gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, alignment)
         # Upload

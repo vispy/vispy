@@ -16,7 +16,7 @@ import vispy
 
 
 # minimum that will be imported when importing vispy
-_min_modules = ['vispy', 'vispy.util', 'vispy.ext', 'vispy.ipython', 'vispy.testing']
+_min_modules = ['vispy', 'vispy.util', 'vispy.ext', 'vispy.ipython', 'vispy.testing', 'vispy.version']
 
 
 def loaded_vispy_modules(import_module, depth=None, all_modules=False):
@@ -41,7 +41,8 @@ def loaded_vispy_modules(import_module, depth=None, all_modules=False):
     # Get only vispy modules at the given depth
     vispy_modules = set()
     for m in loaded_modules:
-        if m.startswith('vispy') and '__future__' not in m:
+        # pkg_resources from vispy/__init__.py shows up as vispy.pkg_resources in python 2.7
+        if m.startswith('vispy') and '__future__' not in m and 'pkg_resources' not in m:
             if depth:
                 parts = m.split('.')
                 m = '.'.join(parts[:depth])

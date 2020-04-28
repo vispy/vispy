@@ -95,7 +95,7 @@ class Canvas(app.Canvas):
         n = 500
         self.data = np.zeros(n, [('a_position', np.float32, 2),
                                  ('a_fg_color', np.float32, 4),
-                                 ('a_size',     np.float32, 1)])
+                                 ('a_size',     np.float32)])
         self.index = 0
         self.program = Program(vertex, fragment)
         self.vdata = VertexBuffer(self.data)

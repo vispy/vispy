@@ -18,7 +18,8 @@ def test_volume():
     V = scene.visuals.Volume(vol)
     assert V.clim == (0, 1)
     assert V.method == 'mip'
-    
+    assert V.interpolation == 'linear'
+
     # Set wrong data
     with raises(ValueError):
         V.set_data(np.zeros((20, 20), 'float32'))
@@ -32,7 +33,11 @@ def test_volume():
     # Method
     V.method = 'iso'
     assert V.method == 'iso'
-    
+
+    # Interpolation
+    V.interpolation = 'nearest'
+    assert V.interpolation == 'nearest'
+        
     # Step size
     V.relative_step_size = 1.1
     assert V.relative_step_size == 1.1
@@ -55,6 +60,28 @@ def test_volume_draw():
         scene.visuals.Volume(vol, parent=v.scene)  # noqa
         v.camera.set_range()
         assert_image_approved(c.render(), 'visuals/volume.png')
+
+
+@requires_pyopengl()
+def test_set_data_does_not_change_input():
+    # Create volume
+    V = scene.visuals.Volume(np.zeros((20, 20, 20)))
+
+    # calling Volume.set_data() should NOT alter the values of the input array
+    # regardless of data type
+    vol = np.random.randint(0, 200, (20, 20, 20))
+    for dtype in ['uint8', 'int16', 'uint16', 'float32', 'float64']:
+        vol_copy = np.array(vol, dtype=dtype, copy=True)
+        # setting clim so that normalization would otherwise change the data
+        V.set_data(vol_copy, clim=(0, 200))
+        assert np.allclose(vol, vol_copy)
+
+    # for those using float32 who want to avoid the copy operation,
+    # using set_data() with `copy=False` should be expected to alter the data.
+    vol2 = np.array(vol, dtype='float32', copy=True)
+    assert np.allclose(vol, vol2)
+    V.set_data(vol2, clim=(0, 200), copy=False)
+    assert not np.allclose(vol, vol2)
 
 
 run_tests_if_main()

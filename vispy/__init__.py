@@ -21,11 +21,11 @@ from __future__ import division
 
 __all__ = ['use', 'sys_info', 'set_log_level', 'test']
 
-# Definition of the version number
-version_info = 0, 6, 2, 'dev0'  # major, minor, patch, extra
-
-# Nice string for the version (mimic how IPython composes its version str)
-__version__ = '-'.join(map(str, version_info)).replace('-', '.').strip('-')
+try:
+    from .version import version as __version__  # noqa
+except ImportError:
+    # package is not installed
+    pass
 
 from .util import config, set_log_level, keys, sys_info  # noqa
 from .util.wrappers import use  # noqa

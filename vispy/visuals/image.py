@@ -84,16 +84,48 @@ _texture_lookup = """
         return texture2D($texture, texcoord);
     }"""
 
+_apply_clim_float = """
+    float apply_clim(float data) {
+        data = data - $clim.x;
+        data = data / ($clim.y - $clim.x);
+        return max(data, 0);
+    }"""
+_apply_clim = """
+    vec4 apply_clim(vec4 color) {
+        color.rgb = color.rgb - $clim.x;
+        color.rgb = color.rgb / ($clim.y - $clim.x);
+        return max(color, 0);
+    }
+"""
+
+_apply_gamma_float = """
+    float apply_gamma(float data) {
+        return pow(data, $gamma);
+    }"""
+_apply_gamma = """
+    vec4 apply_gamma(vec4 color) {
+        color.rgb = pow(color.rgb, vec3($gamma));
+        return color;
+    }
+"""
 
 _null_color_transform = 'vec4 pass(vec4 color) { return color; }'
 _c2l = 'float cmap(vec4 color) { return (color.r + color.g + color.b) / 3.; }'
 
 
-def _build_color_transform(data, cmap):
+def _build_color_transform(data, clim, gamma, cmap):
     if data.ndim == 2 or data.shape[2] == 1:
-        fun = FunctionChain(None, [Function(_c2l), Function(cmap.glsl_map)])
+        fclim = Function(_apply_clim_float)
+        fgamma = Function(_apply_gamma_float)
+        fun = FunctionChain(
+            None, [Function(_c2l), fclim, fgamma, Function(cmap.glsl_map)]
+        )
     else:
-        fun = Function(_null_color_transform)
+        fclim = Function(_apply_clim)
+        fgamma = Function(_apply_gamma)
+        fun = FunctionChain(None, [Function(_null_color_transform), fclim, fgamma])
+    fclim['clim'] = clim
+    fgamma['gamma'] = gamma
     return fun
 
 
@@ -127,6 +159,9 @@ class ImageVisual(Visual):
     clim : str | tuple
         Limits to use for the colormap. Can be 'auto' to auto-set bounds to
         the min and max of the data.
+    gamma : float
+        Gamma to use during colormap lookup.  Final color will be cmap(val**gamma).
+        by default: 1.
     interpolation : str
         Selects method of image interpolation. Makes use of the two Texture2D
         interpolation methods and the available interpolation methods defined
@@ -147,9 +182,10 @@ class ImageVisual(Visual):
     if the data are 2D.
     """
     def __init__(self, data=None, method='auto', grid=(1, 1),
-                 cmap='viridis', clim='auto',
+                 cmap='viridis', clim='auto', gamma=1.0,
                  interpolation='nearest', **kwargs):
         self._data = None
+        self._gamma = gamma
 
         # load 'float packed rgba8' interpolation kernel
         # to load float interpolation kernel use
@@ -194,6 +230,7 @@ class ImageVisual(Visual):
 
         self._method = method
         self._grid = grid
+        self._texture_limits = None
         self._need_texture_upload = True
         self._need_vertex_update = True
         self._need_colortransform_update = True
@@ -259,13 +296,33 @@ class ImageVisual(Visual):
         if isinstance(clim, string_types):
             if clim != 'auto':
                 raise ValueError('clim must be "auto" if a string')
+            self._need_texture_upload = True
         else:
             clim = np.array(clim, float)
             if clim.shape != (2,):
                 raise ValueError('clim must have two elements')
+            if self._texture_limits is not None and (
+                (clim[0] < self._texture_limits[0])
+                or (clim[1] > self._texture_limits[1])
+            ):
+                self._need_texture_upload = True
         self._clim = clim
-        self._need_texture_upload = True
+        if self._texture_limits is not None:
+            self.shared_program.frag['color_transform'][1]['clim'] = self.clim_normalized
         self.update()
+
+    @property
+    def clim_normalized(self):
+        """Normalize current clims between 0-1 based on last-used texture data range.
+        In _build_texture(), the data is normalized (on the CPU) to 0-1 using ``clim``.
+        During rendering, the frag shader will apply the final contrast adjustment based on
+        the current ``clim``.
+        """
+        range_min, range_max = self._texture_limits
+        clim_min, clim_max = self.clim
+        clim_min = (clim_min - range_min) / (range_max - range_min)
+        clim_max = (clim_max - range_min) / (range_max - range_min)
+        return clim_min, clim_max
 
     @property
     def cmap(self):
@@ -275,6 +332,20 @@ class ImageVisual(Visual):
     def cmap(self, cmap):
         self._cmap = get_colormap(cmap)
         self._need_colortransform_update = True
+        self.update()
+
+    @property
+    def gamma(self):
+        """The gamma used when rendering the image."""
+        return self._gamma
+
+    @gamma.setter
+    def gamma(self, value):
+        """Set gamma used when rendering the image."""
+        if value <= 0:
+            raise ValueError("gamma must be > 0")
+        self._gamma = float(value)
+        self.shared_program.frag['color_transform'][2]['gamma'] = self._gamma
         self.update()
 
     @property
@@ -409,7 +480,12 @@ class ImageVisual(Visual):
             else:
                 data[:] = 1 if data[0, 0] != 0 else 0
             self._clim = np.array(clim)
+        else:
+            # assume that RGB data is already scaled (0, 1)
+            if isinstance(self._clim, string_types) and self._clim == 'auto':
+                self._clim = (0, 1)
 
+        self._texture_limits = np.array(self._clim)
         self._texture.set_data(data)
         self._need_texture_upload = False
 
@@ -442,8 +518,9 @@ class ImageVisual(Visual):
 
         if self._need_colortransform_update:
             prg = view.view_program
-            self.shared_program.frag['color_transform'] = \
-                _build_color_transform(self._data, self.cmap)
+            self.shared_program.frag['color_transform'] = _build_color_transform(
+                self._data, self.clim_normalized, self.gamma, self.cmap
+            )
             self._need_colortransform_update = False
             prg['texture2D_LUT'] = self.cmap.texture_lut() \
                 if (hasattr(self.cmap, 'texture_lut')) else None

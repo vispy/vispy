@@ -112,7 +112,7 @@ class Canvas(app.Canvas):
         data = np.zeros(p * n, [('a_position', np.float32, 2),
                                 ('a_bg_color', np.float32, 4),
                                 ('a_fg_color', np.float32, 4),
-                                ('a_size',     np.float32, 1)])
+                                ('a_size',     np.float32)])
         data['a_position'][:, 0] = np.resize(np.linspace(
                                              0, 2 * np.pi, n), p * n)
         data['a_position'][:, 1] = np.repeat(np.linspace(0, 2 * np.pi, p), n)
