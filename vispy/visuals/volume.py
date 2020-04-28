@@ -400,6 +400,9 @@ class VolumeVisual(Visual):
         quality.
     cmap : str
         Colormap to use.
+    gamma : float
+        Gamma to use during colormap lookup.  Final color will be cmap(val**gamma).
+        by default: 1.
     emulate_texture : bool
         Use 2D textures to emulate a 3D texture. OpenGL ES 2.0 compatible,
         but has lower performance on desktop platforms.
@@ -538,7 +541,9 @@ class VolumeVisual(Visual):
 
     @property
     def clim(self):
-        """Contrast Limits. Volume display is mapped from black to white with these values.
+        """The contrast limits that were applied to the volume data.
+
+        Volume display is mapped from black to white with these values.
         Settable via set_data() as well as @clim.setter.
         """
         return self._clim
