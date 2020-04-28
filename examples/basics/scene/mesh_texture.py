@@ -43,8 +43,9 @@ def on_key_press(event):
 
 
 def attach_headlight(mesh, view, canvas):
-    mesh.light_dir = (0, -1, 0)
-    initial_light_dir = view.camera.transform.imap(mesh.light_dir)
+    light_dir = (0, -1, 0, 0)
+    mesh.light_dir = light_dir[:3]
+    initial_light_dir = view.camera.transform.imap(light_dir)
     initial_light_dir[3] = 0
 
     @canvas.events.mouse_move.connect
