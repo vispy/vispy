@@ -13,6 +13,7 @@ import numpy as np
 
 
 def test_queue():
+    """Test GlirQueue and shader conversions."""
     q = glir.GlirQueue()
     parser = glir.GlirParser()
     
@@ -43,9 +44,9 @@ def test_queue():
         """.strip().replace(';', ';\n')
     # Convert for desktop
     shader2 = glir.convert_shader('desktop', shader1)
-    assert 'highp' not in shader2
-    assert 'mediump' not in shader2
-    assert 'precision' not in shader2
+    assert 'highp' in shader2
+    assert 'mediump' in shader2
+    assert 'precision' in shader2
     
     # Convert for es2
     shader3 = glir.convert_shader('es2', shader2)
