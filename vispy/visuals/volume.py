@@ -403,6 +403,13 @@ class VolumeVisual(Visual):
     gamma : float
         Gamma to use during colormap lookup.  Final color will be cmap(val**gamma).
         by default: 1.
+    clim_range_threshold : float
+        When changing the clims, if the new clim range is smaller than this fraction of the
+        last-used texture data range, then it will trigger a rescaling of the texture data.
+        For instance: if the texture data was last scaled from 0-1, and the clims are set to
+        0.4-0.5, then a texture rescale will be triggered if ``clim_range_threshold < 0.1``.
+        To prevent rescaling, set this value to 0.  To *always* rescale, set the value to
+        >= 1.
     emulate_texture : bool
         Use 2D textures to emulate a 3D texture. OpenGL ES 2.0 compatible,
         but has lower performance on desktop platforms.
@@ -414,7 +421,7 @@ class VolumeVisual(Visual):
 
     def __init__(self, vol, clim=None, method='mip', threshold=None, 
                  relative_step_size=0.8, cmap='grays', gamma=1.0,
-                 clim_range_threshold=0.1,
+                 clim_range_threshold=1,
                  emulate_texture=False, interpolation='linear'):
         
         tex_cls = TextureEmulated3D if emulate_texture else Texture3D
