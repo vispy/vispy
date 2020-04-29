@@ -414,6 +414,7 @@ class VolumeVisual(Visual):
 
     def __init__(self, vol, clim=None, method='mip', threshold=None, 
                  relative_step_size=0.8, cmap='grays', gamma=1.0,
+                 clim_range_threshold=0.1,
                  emulate_texture=False, interpolation='linear'):
         
         tex_cls = TextureEmulated3D if emulate_texture else Texture3D
@@ -424,7 +425,7 @@ class VolumeVisual(Visual):
         self._texture_limits = None
         self._gamma = gamma
         self._need_vertex_update = True
-
+        self._clim_range_threshold = clim_range_threshold
         # Set the colormap
         self._cmap = get_colormap(cmap)
 
@@ -524,20 +525,6 @@ class VolumeVisual(Visual):
         
         # Get some stats
         self._kb_for_texture = np.prod(self._vol_shape) / 1024
-    
-    def rescale_data(self):
-        """Force rescaling of data to the current contrast limits and texture upload.
-
-        Because Textures are currently 8-bits, and contrast adjustment is done during
-        rendering by scaling the values retrieved from the texture on the GPU (provided that
-        the new contrast limits settings are within the range of the clims used when the
-        last texture was uploaded), posterization may become visible if the contrast limits
-        become *too* small of a fraction of the clims used to normalize the texture.
-        This function is a convenience to "force" rescaling of the Texture data to the
-        current contrast limits range.
-        """
-        self.set_data(self._last_data, clim=self._clim)
-        self.update()
 
     @property
     def clim(self):
@@ -561,9 +548,35 @@ class VolumeVisual(Visual):
         if not (clim.ndim == 1 and clim.size == 2):
             raise ValueError('clim must be a 2-element array-like')
         self._clim = tuple(clim)
-        if (clim[0] < self._texture_limits[0]) or (clim[1] > self._texture_limits[1]):
-            self.rescale_data()
+
+        # If the new clim range is outside of the range that was last used to set the
+        # texture data, update the texture.
+        min_exceeded = clim[0] < self._texture_limits[0]
+        max_exceeded = clim[1] > self._texture_limits[1]
+        if min_exceeded or max_exceeded:
+            tex_range = abs(np.subtract(*self._texture_limits))
+            # make the new texture range slightly larger than the current clims, in the
+            # direction of change.  i.e. if the clim max is increasing, make the texture
+            # max 40% higher than it currently is
+            new_range = (
+                clim[0] - (tex_range * 0.4 if min_exceeded else 0),
+                clim[1] + (tex_range * 0.4 if max_exceeded else 0)
+            )
+            # rescale the data ... note this will also temporarily update the clims...
+            self.set_data(self._last_data, new_range)
+            # so we re-call this setter, which will peg the clims to the current setter
+            # and trigger the update() method at the end of this method.
+            self.clim = clim
+            return
+
+        # if the clim range is too small of a percentage of the last-used texture range,
+        # posterization may occur, so downscale the texture range.
+        range_ratio = np.subtract(*clim) / abs(np.subtract(*self._texture_limits))
+        if np.abs(range_ratio) < self._clim_range_threshold:
+            self.set_data(self._last_data, clim=self._clim)
+            self.update()
         else:
+            #  new clims are within reasonable range of the texture data, just call shader
             self.shared_program['clim'] = self.clim_normalized
             self.update()
 
