@@ -62,6 +62,7 @@ def test_volume_draw():
         assert_image_approved(c.render(), 'visuals/volume.png')
 
 
+@requires_pyopengl()
 @requires_application()
 def test_volume_clims_and_gamma():
     """Test volume visual with clims and gamma on shader.
