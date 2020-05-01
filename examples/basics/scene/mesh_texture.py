@@ -27,7 +27,7 @@ view.camera = 'arcball'
 view.camera.depth_value = 10 * (vertices.max() - vertices.min())
 
 shading = None if args.shading == 'none' else args.shading
-mesh = Mesh(vertices, faces, shading=shading, color='lightgreen')
+mesh = Mesh(vertices, faces, shading=shading, color='white')
 mesh.shininess = 1e-3
 view.add(mesh)
 
