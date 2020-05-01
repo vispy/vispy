@@ -1,9 +1,14 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) Vispy Development Team. All Rights Reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
 import numpy as np
 from vispy.gloo import Texture2D, VertexBuffer
 from vispy.visuals.shaders import Function, Varying
+from vispy.visuals.filters import Filter
 
 
-class TextureFilter(object):
+class TextureFilter(Filter):
+    """Filter to apply a texture to a mesh."""
 
     def __init__(self, texture, texcoords, enabled=True):
         """Apply a texture on a mesh.
@@ -17,12 +22,12 @@ class TextureFilter(object):
         enabled : bool
             Whether the display of the texture is enabled.
         """
-        self.pass_coords = Function("""
+        vfunc = Function("""
             void pass_coords() {
                 $v_texcoords = $texcoords;
             }
         """)
-        self.apply_texture = Function("""
+        ffunc = Function("""
             void apply_texture() {
                 if ($enabled == 1) {
                     gl_FragColor *= texture2D($u_texture, $texcoords);
@@ -30,17 +35,13 @@ class TextureFilter(object):
             }
         """)
         self._texcoord_varying = Varying('v_texcoord', 'vec2')
-        self.pass_coords['v_texcoords'] = self._texcoord_varying
-        self.apply_texture['texcoords'] = self._texcoord_varying
+        vfunc['v_texcoords'] = self._texcoord_varying
+        ffunc['texcoords'] = self._texcoord_varying
         self._texcoords_buffer = VertexBuffer(
             np.zeros((0, 2), dtype=np.float32)
         )
-        self.pass_coords['texcoords'] = self._texcoords_buffer
-        self.coords_expr = self.pass_coords()
-        self.texture_expr = self.apply_texture()
-
-        self._attached = False
-        self._visual = None
+        vfunc['texcoords'] = self._texcoords_buffer
+        super().__init__(vcode=vfunc, vhook='pre', fcode=ffunc)
 
         self.enabled = enabled
         self.texture = texture
@@ -54,7 +55,7 @@ class TextureFilter(object):
     @enabled.setter
     def enabled(self, enabled):
         self._enabled = enabled
-        self.apply_texture['enabled'] = 1 if enabled else 0
+        self.fshader['enabled'] = 1 if enabled else 0
 
     @property
     def texture(self):
@@ -64,7 +65,7 @@ class TextureFilter(object):
     @texture.setter
     def texture(self, texture):
         self._texture = texture
-        self.apply_texture['u_texture'] = Texture2D(texture)
+        self.fshader['u_texture'] = Texture2D(texture)
 
     @property
     def texcoords(self):
@@ -94,19 +95,5 @@ class TextureFilter(object):
         self._texcoords_buffer.set_data(tc, convert=True)
 
     def _attach(self, visual):
-        vert_pre = visual._get_hook('vert', 'pre')
-        vert_pre.add(self.coords_expr)
-
-        frag_post = visual._get_hook('frag', 'post')
-        frag_post.add(self.texture_expr)
-
-        self._attached = True
-        self._visual = visual
-
+        super()._attach(visual)
         self._update_texcoords_buffer(self._texcoords)
-
-    def _detach(self, visual):
-        visual._get_hook('vert', 'pre').remove(self.coords_expr)
-        visual._get_hook('frag', 'post').remove(self.texture_expr)
-        self._attached = False
-        self._visual = None
