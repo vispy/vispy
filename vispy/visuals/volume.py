@@ -92,7 +92,7 @@ varying vec4 v_nearpos;
 varying vec4 v_farpos;
 
 // uniforms for lighting. Hard coded until we figure out how to do lights
-const vec4 u_ambient = vec4(0.2, 0.4, 0.2, 1.0);
+const vec4 u_ambient = vec4(0.2, 0.2, 0.2, 1.0);
 const vec4 u_diffuse = vec4(0.8, 0.2, 0.2, 1.0);
 const vec4 u_specular = vec4(1.0, 1.0, 1.0, 1.0);
 const float u_shininess = 40.0;
@@ -345,10 +345,10 @@ ISO_SNIPPETS = dict(
             // Take the last interval in smaller steps
             vec3 iloc = loc - step;
             for (int i=0; i<10; i++) {
-                val = $sample(u_volumetex, iloc).g;
-                if (val > u_threshold) {
-                    color = $cmap(val);
-                    gl_FragColor = calculateColor(color, iloc, dstep);
+                color = $sample(u_volumetex, iloc);
+                if (color.g > u_threshold) {
+                    color = calculateColor(color, iloc, dstep);
+                    gl_FragColor = $cmap(color.g);
                     iter = nsteps;
                     break;
                 }
