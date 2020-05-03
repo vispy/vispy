@@ -8,7 +8,15 @@ from vispy.visuals.filters import Filter
 
 
 class TextureFilter(Filter):
-    """Filter to apply a texture to a mesh."""
+    """Filter to apply a texture to a mesh.
+
+    Note the texture is applied by multiplying the texture color by the
+    Visual's produced color. By specifying `color="white"` when creating
+    a `MeshVisual` the result will be the unaltered texture value. Any
+    other color, including the default, will result in a blending of that
+    color and the color of the texture.
+
+    """
 
     def __init__(self, texture, texcoords, enabled=True):
         """Apply a texture on a mesh.
