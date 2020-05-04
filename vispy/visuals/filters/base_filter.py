@@ -34,14 +34,14 @@ class Filter(BaseFilter):
 
     Parameters
     ----------
-    vcode : str | None
+    vcode : str | Function | None
         Vertex shader code. If None, ``vhook`` and ``vpos`` will
         be ignored.
     vhook : {'pre', 'post'}
         Hook name to attach the vertex shader to.
     vpos : int
         Position in the hook to attach the vertex shader.
-    fcode : str | None
+    fcode : str | Function | None
         Fragment shader code. If None, ``fhook`` and ``fpos`` will
         be ignored.
     fhook : {'pre', 'post'}
@@ -61,7 +61,7 @@ class Filter(BaseFilter):
         super(Filter, self).__init__()
 
         if vcode is not None:
-            self.vshader = Function(vcode)
+            self.vshader = Function(vcode) if isinstance(vcode, str) else vcode
             self._vexpr = self.vshader()
             self._vhook = vhook
             self._vpos = vpos
@@ -69,12 +69,14 @@ class Filter(BaseFilter):
             self.vshader = None
 
         if fcode is not None:
-            self.fshader = Function(fcode)
+            self.fshader = Function(fcode) if isinstance(fcode, str) else fcode
             self._fexpr = self.fshader()
             self._fhook = fhook
             self._fpos = fpos
         else:
             self.fshader = None
+
+        self._attached = False
 
     def _attach(self, visual):
         """Called when a filter should be attached to a visual.
@@ -92,6 +94,9 @@ class Filter(BaseFilter):
             hook = visual._get_hook('frag', self._fhook)
             hook.add(self._fexpr, position=self._fpos)
 
+        self._attached = True
+        self._visual = visual
+
     def _detach(self, visual):
         """Called when a filter should be detached from a visual.
 
@@ -107,3 +112,6 @@ class Filter(BaseFilter):
         if self.fshader:
             hook = visual._get_hook('frag', self._fhook)
             hook.remove(self._fexpr)
+
+        self._attached = False
+        self._visual = None
