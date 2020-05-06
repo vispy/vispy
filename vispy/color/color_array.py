@@ -47,7 +47,7 @@ def _user_to_rgba(color, expand=True, clip=False):
         color = color.rgba
     # We have to treat this specially
     elif isinstance(color, (list, tuple)):
-        if any(isinstance(c, string_types) for c in color):
+        if any(isinstance(c, (string_types, ColorArray)) for c in color):
             color = [_user_to_rgba(c, expand=expand, clip=clip) for c in color]
             if any(len(c) > 1 for c in color):
                 raise RuntimeError('could not parse colors, are they nested?')
