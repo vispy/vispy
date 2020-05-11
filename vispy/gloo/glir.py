@@ -182,8 +182,9 @@ DRAW
 Applies to: Program
 
 This command is used to draw the program. It has a ``mode`` argument
-which can be 'points', 'lines', 'line_strip', 'line_loop', 'triangles',
-'triangle_strip', or 'triangle_fan' (case insensitive).
+which can be 'points', 'lines', 'line_strip', 'line_loop', 'lines_adjacency',
+'line_strip_adjacency', 'triangles', 'triangle_strip', or 'triangle_fan'
+(case insensitive).
 
 If the ``selection`` argument has two elements, it contains two integers
 ``(start, count)``. If it has three elements, it contains
@@ -999,7 +1000,8 @@ class GlirGeometryShader(GlirShader):
 
     def __init__(self, *args, **kwargs):
         if not hasattr(gl, 'GL_GEOMETRY_SHADER'):
-            raise RuntimeError("GL2 backend does not support geometry shaders."
+            raise RuntimeError(gl.current_backend.__name__ +
+                               " backend does not support geometry shaders."
                                " Try gloo.gl.use_gl('gl+').")
         GlirGeometryShader._target = gl.GL_GEOMETRY_SHADER
         GlirShader.__init__(self, *args, **kwargs)
@@ -1320,7 +1322,16 @@ class GlirProgram(GlirObject):
             raise RuntimeError('Cannot draw program if code has not been set')
         # Init
         gl.check_error('Check before draw')
-        mode = as_enum(mode)
+        try:
+            mode = as_enum(mode)
+        except ValueError:
+            if mode == 'lines_adjacency' or mode == 'line_strip_adjacency':
+                raise RuntimeError(gl.current_backend.__name__ +
+                                   " backend does not support lines_adjacency"
+                                   " and line_strip_adjacency primitives."
+                                   " Try gloo.gl.use_gl('gl+').")
+            raise
+
         # Draw
         if len(selection) == 3:
             # Selection based on indices

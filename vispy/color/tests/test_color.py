@@ -61,6 +61,11 @@ def test_color_array():
     x = ColorArray(color_space="hsv")
     assert_array_equal(x.rgba[0], [0, 0, 0, 1])
 
+    x = ColorArray([Color((0, 0, 0)), Color((1, 1, 1))])
+    assert len(x.rgb) == 2
+    x = ColorArray([ColorArray((0, 0, 0)), ColorArray((1, 1, 1))])
+    assert len(x.rgb) == 2
+
 
 def test_color_interpretation():
     """Test basic color interpretation API"""

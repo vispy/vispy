@@ -162,7 +162,8 @@ class DataBuffer(Buffer):
         data : ndarray
             Data to be uploaded
         offset: int
-            Offset in buffer where to start copying data (in bytes)
+            Offset in buffer where to start copying data (i.e. index of
+            starting element).
         copy: bool
             Since the operation is deferred, data may change before
             data is actually uploaded to GPU memory.
@@ -299,9 +300,9 @@ class DataBuffer(Buffer):
         elif data.size > stop - start:
             raise ValueError('Data too big to fit GPU data '
                              '(%d > %d-%d).' % (data.size, stop, start))
-        
+
         # Set data
-        offset = start  # * self.itemsize
+        offset = start
         self.set_subdata(data=data, offset=offset, copy=True)
 
     def __repr__(self):

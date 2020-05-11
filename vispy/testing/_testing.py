@@ -7,16 +7,19 @@
 from __future__ import print_function
 
 import numpy as np
-from functools import wraps
 import sys
 import os
 import inspect
 import gc
+import pytest
+import functools
 
 from distutils.version import LooseVersion
 
 from ..ext.six import string_types
 from ..util import use_log_level
+
+skipif = pytest.mark.skipif
 
 
 def SkipTest(*args, **kwargs):
@@ -25,10 +28,6 @@ def SkipTest(*args, **kwargs):
     import pytest
     return pytest.skip(*args, **kwargs)
 
-
-###############################################################################
-# Adapted from Python's unittest2
-# http://docs.python.org/2/license.html
 
 def _safe_rep(obj, short=False):
     """Helper for assert_* ports"""
@@ -150,21 +149,20 @@ class raises(object):
 def has_pyopengl():
     try:
         from OpenGL import GL  # noqa, analysis:ignore
-    except Exception:
+    except ImportError:
         return False
     else:
         return True
 
 
 def requires_pyopengl():
-    import pytest
-    return pytest.mark.skipif(not has_pyopengl(), reason='Requires PyOpenGL')
+    skip = not has_pyopengl()
+    return skipif(skip, reason='Requires PyOpenGL')
 
 
 def requires_ssl():
-    import pytest
     bad = os.getenv('CIBW_BUILDING', 'false') == 'true'
-    return pytest.mark.skipif(bad, reason='Requires proper SSL support')
+    return skipif(bad, reason='Requires proper SSL support')
 
 
 ###############################################################################
@@ -228,7 +226,9 @@ def composed(*decs):
 
 
 def garbage_collect(f):
-    @wraps(f)
+    # Pytest expects things like the name of the functions not to change
+    # Therefore, we must use the functools.wraps decorator on our deco
+    @functools.wraps(f)
     def deco(*args, **kwargs):
         gc.collect()
         try:
@@ -240,9 +240,8 @@ def garbage_collect(f):
 
 def requires_application(backend=None, has=(), capable=(), force_gc=True):
     """Return a decorator for tests that require an application"""
-    import pytest
     good, msg = has_application(backend, has, capable)
-    dec_backend = pytest.mark.skipif(not good, reason="Skipping test: %s" % msg)
+    dec_backend = skipif(not good, reason="Skipping test: %s" % msg)
     try:
         import pytest
     except Exception:
@@ -256,14 +255,12 @@ def requires_application(backend=None, has=(), capable=(), force_gc=True):
 
 def requires_img_lib():
     """Decorator for tests that require an image library"""
-    import pytest
     from ..io import _check_img_lib
     if sys.platform.startswith('win'):
         has_img_lib = False  # PIL breaks tests on windows (!)
     else:
         has_img_lib = not all(c is None for c in _check_img_lib())
-    return pytest.mark.skipif(
-        not has_img_lib, reason='imageio or PIL required')
+    return skipif(not has_img_lib, reason='imageio or PIL required')
 
 
 def has_ipython(version='3.0'):
@@ -289,20 +286,18 @@ def has_ipython(version='3.0'):
 
 
 def requires_ipython(version='3.0'):
-    import pytest
     ipython_present, message = has_ipython(version)
-    return pytest.mark.skipif(not ipython_present, reason=message)
+    return skipif(not ipython_present, reason=message)
 
 
 def requires_numpydoc():
-    import pytest
     try:
         import numpydoc  # noqa
     except Exception:
         present = False
     else:
         present = True
-    return pytest.mark.skipif(not present, reason='numpydoc is required')
+    return skipif(not present, reason='numpydoc is required')
 
 
 def has_matplotlib(version='1.2'):
@@ -347,10 +342,8 @@ def _has_scipy(min_version):
 
 
 def requires_scipy(min_version='0.13'):
-    import pytest
-    return pytest.mark.skipif(
-        not _has_scipy(min_version),
-        reason='Requires Scipy version >= %s' % min_version)
+    return skipif(not _has_scipy(min_version),
+                  reason='Requires Scipy version >= %s' % min_version)
 
 
 def _bad_glfw_decorate(app):

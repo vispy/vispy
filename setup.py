@@ -208,7 +208,7 @@ setup(
         'sdist': js_prerelease(sdist, strict=True),
         'jsdeps': NPM,
     },
-    python_requires='>=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*',
+    python_requires='>=3.6',
     install_requires=['numpy', 'freetype-py'],
     setup_requires=['numpy', 'cython', 'setuptools_scm', 'setuptools_scm_git_archive'],
     extras_require={
@@ -222,6 +222,7 @@ setup(
         'sdl2': ['PySDL2'],
         'wx': ['wxPython'],
         'doc': ['sphinx_bootstrap_theme', 'numpydoc'],
+        'io': ['meshio'],
     },
     packages=find_packages(exclude=['make']),
     ext_modules=cythonize(extensions),
@@ -267,10 +268,9 @@ setup(
         'Operating System :: Microsoft :: Windows',
         'Operating System :: POSIX',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
         'Framework :: IPython'
     ],
 )
