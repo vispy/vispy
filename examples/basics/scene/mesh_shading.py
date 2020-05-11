@@ -21,7 +21,6 @@ view.camera = 'arcball'
 view.camera.depth_value = 1e3
 
 mesh = Mesh(vertices, faces, color=(.5, .7, .5, 1))
-mesh.set_gl_state('translucent', depth_test=True, cull_face=True)
 view.add(mesh)
 
 shading_filter = ShadingFilter()
