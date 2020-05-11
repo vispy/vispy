@@ -103,6 +103,7 @@ class CanvasBackend(BaseCanvasBackend):
         BaseCanvasBackend.__init__(self, *args)
         self._widget = None
 
+        self._webgl_config = {}
         p = self._process_backend_kwargs(kwargs)
         self._context = p.context
 
@@ -127,6 +128,11 @@ class CanvasBackend(BaseCanvasBackend):
     def _init_glir(self):
         context = self._vispy_canvas.context
         context.shared.parser = WebGLGlirParser()
+
+    def _process_backend_kwargs(self, kwargs):
+        if 'webgl' in kwargs:
+            self._webgl_config = kwargs.pop('webgl')
+        return super()._process_backend_kwargs(kwargs)
 
     def _reinit_widget(self):
         self._vispy_canvas.set_current()
@@ -188,6 +194,7 @@ class CanvasBackend(BaseCanvasBackend):
             return
         if self._widget is None:
             self._widget = VispyWidget()
+            self._widget.webgl_config = self._webgl_config
             self._widget.set_canvas(self._vispy_canvas)
         display(self._widget)
 
