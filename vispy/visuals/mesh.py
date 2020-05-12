@@ -88,14 +88,27 @@ class MeshVisual(Visual):
         The values to use for each vertex (for colormapping).
     meshdata : instance of MeshData | None
         The meshdata.
+    shading : str | None
+        Shading to use. This uses the
+        :class:`ShadingFilter <vispy.visuals.filters.mesh.ShadingFilter>`
+        filter introduced in VisPy 0.7. This class provides additional
+        features that are available when the filter is attached manually.
+        See 'examples/basics/scene/mesh_shading.py' for an example.
     mode : str
         The drawing mode.
     **kwargs : dict
         Keyword arguments to pass to `Visual`.
+
+    Notes
+    -----
+
+    Additional functionality is available through filters. Mesh-specific
+    filters can be found in the :mod:`vispy.visuals.filters.mesh` module.
+
     """
     def __init__(self, vertices=None, faces=None, vertex_colors=None,
-                 face_colors=None, color=(1, 1, 1, 1), vertex_values=None,
-                 meshdata=None, mode='triangles', **kwargs):
+                 face_colors=None, color=(0.5, 0.5, 1, 1), vertex_values=None,
+                 meshdata=None, shading=None, mode='triangles', **kwargs):
         Visual.__init__(self, vcode=vertex_template, fcode=fragment_template,
                         **kwargs)
         self.set_gl_state('translucent', depth_test=True, cull_face=False)
@@ -119,6 +132,14 @@ class MeshVisual(Visual):
 
         # primitive mode
         self._draw_mode = mode
+
+        # add filters for various modifiers
+        self.shading_filter = None
+        if shading is not None:
+            from vispy.visuals.filters import ShadingFilter
+            self.shading_filter = ShadingFilter(shading=shading)
+            self.attach(self.shading_filter)
+
         self.freeze()
 
     def set_data(self, vertices=None, faces=None, vertex_colors=None,

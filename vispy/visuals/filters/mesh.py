@@ -197,7 +197,7 @@ class ShadingFilter(object):
                  shininess=100):
         self._attached = False
         self._shading = shading
-        self._enabled = True
+        self._enabled = enabled
         self._light_dir = light_dir
         self._light_color = Color(light_color)
         self._ambient_color = Color(ambient_color)
