@@ -107,16 +107,24 @@ class SurfacePlotVisual(MeshVisual):
                     x = np.arange(self._z.shape[0])
                 else:
                     x = self._x
-            self.__vertices[:, :, 0] = x.reshape(len(x), 1)
+            if x.ndim == 1:
+                self.__vertices[:, :, 0] = x.reshape(len(x), 1)
+
+            if x.ndim == 2:
+                self.__vertices[:, :, 0] = x  # Copy the 2D data into the appropriate slice
             update_mesh = True
 
-        if new_vertices or y is not None:
-            if y is None:
-                if self._y is None:
-                    y = np.arange(self._z.shape[1])
-                else:
-                    y = self._y
-            self.__vertices[:, :, 1] = y.reshape(1, len(y))
+            if new_vertices or y is not None:
+                if y is None:
+                    if self._y is None:
+                        y = np.arange(self._z.shape[1])
+                    else:
+                        y = self._y
+    
+                if y.ndim == 1:
+                    self.__vertices[:, :, 1] = y.reshape(1, len(y))
+                elif y.ndim == 2:
+                    self.__vertices[:, :, 1] = y  # Copy the 2D data into the appropriate slice
             update_mesh = True
 
         if new_vertices or z is not None:
