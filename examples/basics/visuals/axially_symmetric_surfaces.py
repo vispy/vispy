@@ -1,14 +1,23 @@
-import numpy as np
+# -*- coding: utf-8 -*-
+# Copyright (c) Vispy Development Team. All Rights Reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-from vispy import scene
-
+"""
+   * Demonstrates the usage of SurfacePlot() using meshes created in spherical
+     and cylindrical coordinates to generate surfaces with rotational symmetry.
+   * Meshes can be generated in xy, yz or zx axes. See create_cylinder().
+   * Also this example demonstrates the creation of surfaces with discontinuity
+     See create_circular_hole()
+"""
 import sys
 
+import numpy as np
+from vispy import scene
+from vispy.scene.visuals import SurfacePlot
 from vispy.scene.visuals import XYZAxis
 
-from vispy.scene.visuals import SurfacePlot
 
-def create_cylinder(center, radius, length):
+def create_cylinder(radius, length, center=(0.0, 0.0, 0.0)):
     """ Creates the data of a cylinder oriented along z axis whose center, radius and length are given as inputs
         Based on the example given at: https://stackoverflow.com/a/49311446/2602319
     """
@@ -20,7 +29,8 @@ def create_cylinder(center, radius, length):
     z_grid = z_grid + center[2]
     return x_grid, y_grid, z_grid
 
-def create_paraboloid(center, radius, a, b, c):
+
+def create_paraboloid(a, b, c, radius=1.0, center=(0.0, 0.0, 0.0)):
     """
     Creates the data of a paraboloid whose center, radius and a, b, c parameters are given as inputs
     """
@@ -34,10 +44,10 @@ def create_paraboloid(center, radius, a, b, c):
     
     z_grid = c * ((x_grid / a) ** 2 + (y_grid / b) ** 2)  # Elliptic paraboloid
     
-    
     return x_grid + center[0], y_grid + center[1], z_grid + center[2]
-    
-def create_sphere(center, radius):
+
+
+def create_sphere(radius=1.0, center=(0.0, 0.0, 0.0)):
     """
     Creates the data of a sphere whose center, and radius are given as inputs
     """
@@ -56,26 +66,35 @@ def create_sphere(center, radius):
     return x_grid, y_grid, z_grid
 
 
+def create_circular_hole(x_grid, y_grid, hole_radius=0.5, center=(0.0, 0.0)):
+    X = np.where((x_grid - center[0]) ** 2 + (y_grid - center[1]) ** 2 <= hole_radius ** 2, np.NAN, x_grid)
+    Y = np.where((x_grid - center[0]) ** 2 + (y_grid - center[1]) ** 2 <= hole_radius ** 2, np.NAN, y_grid)
+    
+    return X, Y
+
+
 # Prepare canvas
 canvas = scene.SceneCanvas(keys='interactive', size=(800, 600), show=True)
 
 view = canvas.central_widget.add_view()
 
-camera = scene.cameras.TurntableCamera(fov=60, parent=view.scene)
+camera = scene.cameras.TurntableCamera(fov=60, elevation=30, azimuth=50, parent=view.scene)
+camera.set_range((-4, 4), (-4, 4), (-4, 4))
+
 view.camera = camera
 
 # Add a 3D axis
 XYZAxis(parent=view.scene)
 
-x_grid, y_grid, z_grid = create_paraboloid((0, 0, 3), 2, 6, 3, 3)
+x_grid, y_grid, z_grid = create_paraboloid(6, 3, 3, radius=2, center=(0, 0, 3))
+x_grid, y_grid = create_circular_hole(x_grid, y_grid, hole_radius=0.5, center=(0.0, 0.0))
 SurfacePlot(x_grid, y_grid, z_grid, color="aquamarine", parent=view.scene)
 
-x_grid, y_grid, z_grid = create_cylinder((0, 0, 0), 1, 3)
+x_grid, y_grid, z_grid = create_cylinder(1, 3, center=(0, 0, 0))
 SurfacePlot(x_grid, y_grid, z_grid, color="lightgreen", parent=view.scene)
 
-x_grid, y_grid, z_grid = create_sphere((0, 0, 4), 0.5)
+x_grid, y_grid, z_grid = create_sphere(0.5, center=(0, 0, 4))
 SurfacePlot(x_grid, y_grid, z_grid, color='lightseagreen', parent=view.scene)
-
 
 if __name__ == '__main__' and sys.flags.interactive == 0:
     canvas.app.run()
