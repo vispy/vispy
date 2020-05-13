@@ -117,7 +117,6 @@ class SurfacePlotVisual(MeshVisual):
                 else:
                     x = self._x
             if x.ndim == 1:
-                print("1DX")
                 x = x.reshape(len(x), 1)
             # Copy the 2D data into the appropriate slice
             self.__vertices[:, :, 0] = x
@@ -131,7 +130,6 @@ class SurfacePlotVisual(MeshVisual):
                     y = self._y
 
             if y.ndim == 1:
-                print("2DX")
                 y = y.reshape(1, len(y))
 
             # Copy the 2D data into the appropriate slice
