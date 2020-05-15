@@ -5,7 +5,6 @@
 from __future__ import division
 
 from .mesh import MeshVisual
-from .filters import ShadingFilter
 from ..geometry.isosurface import isosurface
 from ..color import Color
 
@@ -42,9 +41,6 @@ class IsosurfaceVisual(MeshVisual):
         self._faces_cache = None
         self._recompute = True
         self._update_meshvisual = True
-
-        shading = kwargs.pop('shading', None)
-        self._shading_filter = ShadingFilter(shading=shading)
 
         MeshVisual.__init__(self, **kwargs)
         if data is not None:
@@ -114,8 +110,5 @@ class IsosurfaceVisual(MeshVisual):
                                 face_colors=self._face_colors,
                                 color=self._color)
             self._update_meshvisual = False
-
-        if not self._shading_filter._attached:
-            self.attach(self._shading_filter)
 
         return MeshVisual._prepare_draw(self, view)
