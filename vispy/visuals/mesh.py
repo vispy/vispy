@@ -17,6 +17,7 @@ from ..gloo import VertexBuffer
 from ..geometry import MeshData
 from ..color import Color, get_colormap
 from ..ext.six import string_types
+from ..util.event import Event
 
 
 vertex_template = """
@@ -99,6 +100,11 @@ class MeshVisual(Visual):
     **kwargs : dict
         Keyword arguments to pass to `Visual`.
 
+    Events
+    ------
+    data_updated
+        Emitted when the mesh data is updated.
+
     Notes
     -----
 
@@ -112,6 +118,8 @@ class MeshVisual(Visual):
         Visual.__init__(self, vcode=vertex_template, fcode=fragment_template,
                         **kwargs)
         self.set_gl_state('translucent', depth_test=True, cull_face=False)
+
+        self.events.add(data_updated=Event)
 
         # Define buffers
         self._vertices = VertexBuffer(np.zeros((0, 3), dtype=np.float32))
@@ -329,6 +337,8 @@ class MeshVisual(Visual):
             self.shared_program.vert['base_color'] = VertexBuffer(colors)
 
         self._data_changed = False
+
+        self.events.data_updated()
 
     @property
     def shininess(self):
