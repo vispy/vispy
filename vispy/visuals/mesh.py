@@ -121,6 +121,10 @@ class MeshVisual(Visual):
         # Uniform color
         self._color = Color(color)
 
+        # add filters for various modifiers
+        self.shading_filter = None
+        self.shading = shading
+
         # Init
         self._bounds = None
         # Note we do not call subclass set_data -- often the signatures
@@ -133,14 +137,26 @@ class MeshVisual(Visual):
         # primitive mode
         self._draw_mode = mode
 
-        # add filters for various modifiers
-        self.shading_filter = None
-        if shading is not None:
+        self.freeze()
+
+    @property
+    def shading(self):
+        """The shading method."""
+        return self._shading
+
+    @shading.setter
+    def shading(self, shading):
+        assert shading in (None, 'flat', 'smooth')
+        self._shading = shading
+        if shading is None and self.shading_filter is None:
+            # Delay creation of filter until necessary.
+            return
+        if self.shading_filter is None:
             from vispy.visuals.filters import ShadingFilter
             self.shading_filter = ShadingFilter(shading=shading)
-            self.attach(self.shading_filter)
-
-        self.freeze()
+        else:
+            self.shading_filter.shading = shading
+        self.attach(self.shading_filter)
 
     def set_data(self, vertices=None, faces=None, vertex_colors=None,
                  face_colors=None, color=None, vertex_values=None,
