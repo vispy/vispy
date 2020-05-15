@@ -312,6 +312,9 @@ class ShadingFilter(object):
         normals = self._visual().mesh_data.get_vertex_normals(indexed='faces')
         self._normals.set_data(normals, convert=True)
 
+    def on_mesh_data_updated(self, event):
+        self._update_data()
+
     def _attach(self, visual):
         # vertex shader
         vert_post = visual._get_hook('vert', 'post')
@@ -331,7 +334,8 @@ class ShadingFilter(object):
 
         self._attached = True
         self._visual = weakref.ref(visual)
-        self._update_data()
+
+        visual.events.data_updated.connect(self.on_mesh_data_updated)
 
     def _detach(self, visual):
         visual._get_hook('vert', 'post').remove(self.vertex_program)
