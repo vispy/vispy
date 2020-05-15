@@ -187,7 +187,8 @@ void shade() {
 """  # noqa
 
 
-class ShadingFilter(object):
+class ShadingFilter(Filter):
+    """Filter to apply shading to a mesh."""
 
     def __init__(self, shading='flat', enabled=True, light_dir=(10, 5, -5),
                  light_color=(1, 1, 1, 1),
@@ -195,7 +196,6 @@ class ShadingFilter(object):
                  diffuse_color=(1, 1, 1, 1),
                  specular_color=(1, 1, 1, 1),
                  shininess=100):
-        self._attached = False
         self._shading = shading
         self._enabled = enabled
         self._light_dir = light_dir
@@ -205,14 +205,13 @@ class ShadingFilter(object):
         self._specular_color = Color(specular_color)
         self._shininess = shininess
 
-        self.vcode = Function(shading_vertex_template)
+        vfunc = Function(shading_vertex_template)
+        ffunc = Function(shading_fragment_template)
+
         self._normals = VertexBuffer(np.zeros((0, 3), dtype=np.float32))
-        self.vcode['normal'] = self._normals
+        vfunc['normal'] = self._normals
 
-        self.fcode = Function(shading_fragment_template)
-
-        self.vertex_program = self.vcode()
-        self.fragment_program = self.fcode()
+        super().__init__(vcode=vfunc, fcode=ffunc)
 
     @property
     def shading(self):
@@ -301,42 +300,34 @@ class ShadingFilter(object):
     def _update_data(self):
         if not self._attached:
             return
-        self.vcode['light_dir'] = self._light_dir
-        self.fcode['shininess'] = self._shininess
-        self.fcode['light_color'] = self._light_color.rgb
-        self.fcode['ambient_color'] = self._ambient_color.rgb
-        self.fcode['diffuse_color'] = self._diffuse_color.rgb
-        self.fcode['specular_color'] = self._specular_color.rgb
-        self.fcode['flat_shading'] = 1 if self._shading == 'flat' else 0
-        self.fcode['shading_enabled'] = 1 if self._shading is not None else 0
-        normals = self._visual().mesh_data.get_vertex_normals(indexed='faces')
+        self.vshader['light_dir'] = self._light_dir
+        self.fshader['shininess'] = self._shininess
+        self.fshader['light_color'] = self._light_color.rgb
+        self.fshader['ambient_color'] = self._ambient_color.rgb
+        self.fshader['diffuse_color'] = self._diffuse_color.rgb
+        self.fshader['specular_color'] = self._specular_color.rgb
+        self.fshader['flat_shading'] = 1 if self._shading == 'flat' else 0
+        self.fshader['shading_enabled'] = 1 if self._shading is not None else 0
+        normals = self._visual.mesh_data.get_vertex_normals(indexed='faces')
         self._normals.set_data(normals, convert=True)
 
     def on_mesh_data_updated(self, event):
         self._update_data()
 
     def _attach(self, visual):
-        # vertex shader
-        vert_post = visual._get_hook('vert', 'post')
-        vert_post.add(self.vertex_program)
+        super()._attach(visual)
+
         render2scene = visual.transforms.get_transform('render', 'scene')
         visual2scene = visual.transforms.get_transform('visual', 'scene')
         scene2doc = visual.transforms.get_transform('scene', 'document')
         doc2scene = visual.transforms.get_transform('document', 'scene')
-        self.vcode['render2scene'] = render2scene
-        self.vcode['visual2scene'] = visual2scene
-        self.vcode['scene2doc'] = scene2doc
-        self.vcode['doc2scene'] = doc2scene
-
-        # fragment shader
-        frag_post = visual._get_hook('frag', 'post')
-        frag_post.add(self.fragment_program)
-
-        self._attached = True
-        self._visual = weakref.ref(visual)
+        self.vshader['render2scene'] = render2scene
+        self.vshader['visual2scene'] = visual2scene
+        self.vshader['scene2doc'] = scene2doc
+        self.vshader['doc2scene'] = doc2scene
 
         visual.events.data_updated.connect(self.on_mesh_data_updated)
 
     def _detach(self, visual):
-        visual._get_hook('vert', 'post').remove(self.vertex_program)
-        visual._get_hook('frag', 'post').remove(self.fragment_program)
+        visual.events.data_updated.disconnect(self.on_mesh_data_updated)
+        super()._detach(visual)
