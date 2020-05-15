@@ -293,7 +293,7 @@ class ShadingFilter(Filter):
 
     @shininess.setter
     def shininess(self, shininess):
-        self._shininess = shininess
+        self._shininess = float(shininess)
         self._update_data()
 
     def _update_data(self):
