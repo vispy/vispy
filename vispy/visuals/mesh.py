@@ -337,40 +337,6 @@ class MeshVisual(Visual):
 
         self.events.data_updated()
 
-    @property
-    def shininess(self):
-        """The shininess"""
-        return self._shininess
-
-    @shininess.setter
-    def shininess(self, shine):
-        """Set the shininess
-
-        Parameters
-        ----------
-        shine : float
-            The shininess to use.
-        """
-        self._shininess = float(shine)
-        self.mesh_data_changed()
-
-    @property
-    def ambient_light_color(self):
-        """The ambient light color"""
-        return self._ambient_light_color
-
-    @ambient_light_color.setter
-    def ambient_light_color(self, ambient):
-        """Set the ambient light
-
-        Parameters
-        ----------
-        color : instance of Color
-            The color to use.
-        """
-        self._ambient_light_color = Color(ambient)
-        self.mesh_data_changed()
-
     def _prepare_draw(self, view):
         if self._data_changed:
             if self._update_data() is False:
