@@ -28,7 +28,7 @@ view.camera.depth_value = 10 * (vertices.max() - vertices.min())
 
 shading = None if args.shading == 'none' else args.shading
 mesh = Mesh(vertices, faces, shading=shading, color='white')
-mesh.shininess = 1e-3
+mesh.shading_filter.shininess = 1e+1
 view.add(mesh)
 
 texture_filter = TextureFilter(texture, texcoords)
@@ -44,13 +44,13 @@ def on_key_press(event):
 
 def attach_headlight(mesh, view, canvas):
     light_dir = (0, -1, 0, 0)
-    mesh.light_dir = light_dir[:3]
+    mesh.shading_filter.light_dir = light_dir[:3]
     initial_light_dir = view.camera.transform.imap(light_dir)
 
     @view.scene.transform.changed.connect
     def on_transform_change(event):
         transform = view.camera.transform
-        mesh.light_dir = transform.map(initial_light_dir)[:3]
+        mesh.shading_filter.light_dir = transform.map(initial_light_dir)[:3]
 
 
 attach_headlight(mesh, view, canvas)
