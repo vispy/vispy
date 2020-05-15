@@ -100,16 +100,13 @@ class MeshVisual(Visual):
     **kwargs : dict
         Keyword arguments to pass to `Visual`.
 
-    Events
-    ------
-    data_updated
-        Emitted when the mesh data is updated.
-
     Notes
     -----
-
     Additional functionality is available through filters. Mesh-specific
     filters can be found in the :mod:`vispy.visuals.filters.mesh` module.
+
+    This class emits a `data_updated` event when the mesh data is updated. This
+    is used for example by filters for synchronization.
 
     """
     def __init__(self, vertices=None, faces=None, vertex_colors=None,
