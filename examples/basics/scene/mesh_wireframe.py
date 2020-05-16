@@ -3,7 +3,7 @@ import argparse
 from vispy import app, scene
 from vispy.io import read_mesh, load_data_file
 from vispy.scene.visuals import Mesh
-from vispy.visuals.filters import ShadingFilter, WireframeFilter
+from vispy.visuals.filters import WireframeFilter
 
 
 parser = argparse.ArgumentParser()
@@ -21,20 +21,18 @@ view = canvas.central_widget.add_view()
 view.camera = 'arcball'
 view.camera.depth_value = 1e3
 
-mesh = Mesh(vertices, faces, color=(.5, .7, .5, 1))
+mesh = Mesh(vertices, faces, shading="smooth", color=(.5, .7, .5, 1))
+if args.shininess is not None:
+    mesh.shading_filter.shininess = args.shininess
 mesh.set_gl_state('translucent', depth_test=True, cull_face=True)
 view.add(mesh)
 
 w = WireframeFilter(width=args.width)
 mesh.attach(w)
 
-shading_filter = ShadingFilter()
-if args.shininess is not None:
-    shading_filter.shininess = args.shininess
-mesh.attach(shading_filter)
 
-shading_filter.light_dir = (0, -1, 0)
-initial_light_dir = view.camera.transform.imap(shading_filter.light_dir)[:3]
+mesh.shading_filter.light_dir = (0, -1, 0)
+initial_light_dir = view.camera.transform.imap(mesh.shading_filter.light_dir)[:3]
 mesh.update()
 
 
@@ -42,12 +40,12 @@ mesh.update()
 @canvas.events.mouse_move.connect
 def on_mouse_move(event):
     transform = view.camera.transform
-    shading_filter.light_dir = transform.map(initial_light_dir)[:3]
+    mesh.shading_filter.light_dir = transform.map(initial_light_dir)[:3]
     mesh.update()
 
 
 shadings = [None, 'flat', 'smooth']
-shading_index = shadings.index(shading_filter.shading)
+shading_index = shadings.index(mesh.shading_filter.shading)
 
 
 @canvas.events.key_press.connect
@@ -56,8 +54,8 @@ def on_key_press(event):
     if event.key == 's':
         shading_index = (shading_index + 1) % len(shadings)
         shading = shadings[shading_index]
-        shading_filter.shading = shading
-        shading_filter.enabled = shading is not None
+        mesh.shading_filter.shading = shading
+        # mesh.shading_filter.enabled = shading is not None
         mesh.update()
     elif event.key == 'w':
         if w._attached:
