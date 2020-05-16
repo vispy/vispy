@@ -59,10 +59,9 @@ def on_key_press(event):
     elif event.key == 'w':
         if w._attached:
             mesh.detach(w)
-            mesh.update()
         else:
             mesh.attach(w)
-            mesh.update()
+        mesh.update()
 
 
 canvas.show()
