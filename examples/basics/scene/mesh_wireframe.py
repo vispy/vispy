@@ -24,7 +24,6 @@ view.camera.depth_value = 1e3
 mesh = Mesh(vertices, faces, shading="smooth", color=(.5, .7, .5, 1))
 if args.shininess is not None:
     mesh.shading_filter.shininess = args.shininess
-mesh.set_gl_state('translucent', depth_test=True, cull_face=True)
 view.add(mesh)
 
 w = WireframeFilter(width=args.width)
@@ -56,7 +55,6 @@ def on_key_press(event):
         shading_index = (shading_index + 1) % len(shadings)
         shading = shadings[shading_index]
         mesh.shading_filter.shading = shading
-        # mesh.shading_filter.enabled = shading is not None
         mesh.update()
     elif event.key == 'w':
         if w._attached:
