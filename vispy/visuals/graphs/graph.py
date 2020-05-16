@@ -214,7 +214,7 @@ class GraphVisual(CompoundVisual):
                 node_kwargs[translated] = kwargs.pop(k)
 
         if len(kwargs) > 0:
-            raise TypeError("%s.set_data() got invalid keyword arguments: %S"
+            raise TypeError("%s.set_data() got invalid keyword arguments: %s"
                             % (self.__class__.__name__, list(kwargs.keys())))
 
         # The actual data is set in GraphVisual.animate_layout or
