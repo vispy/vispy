@@ -31,17 +31,18 @@ w = WireframeFilter(width=args.width)
 mesh.attach(w)
 
 
-mesh.shading_filter.light_dir = (0, -1, 0)
-initial_light_dir = view.camera.transform.imap(mesh.shading_filter.light_dir)[:3]
-mesh.update()
+def attach_headlight(mesh, view, canvas):
+    light_dir = (0, -1, 0, 0)
+    mesh.shading_filter.light_dir = light_dir[:3]
+    initial_light_dir = view.camera.transform.imap(light_dir)
+
+    @view.scene.transform.changed.connect
+    def on_transform_change(event):
+        transform = view.camera.transform
+        mesh.shading_filter.light_dir = transform.map(initial_light_dir)[:3]
 
 
-# Make the mesh light follow the direction of the camera.
-@canvas.events.mouse_move.connect
-def on_mouse_move(event):
-    transform = view.camera.transform
-    mesh.shading_filter.light_dir = transform.map(initial_light_dir)[:3]
-    mesh.update()
+attach_headlight(mesh, view, canvas)
 
 
 shadings = [None, 'flat', 'smooth']
