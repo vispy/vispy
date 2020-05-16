@@ -28,17 +28,19 @@ if args.shininess is not None:
     shading_filter.shininess = args.shininess
 mesh.attach(shading_filter)
 
-shading_filter.light_dir = (0, -1, 0)
-initial_light_dir = view.camera.transform.imap(shading_filter.light_dir)[:3]
-mesh.update()
+
+def attach_headlight(mesh, view, canvas):
+    light_dir = (0, -1, 0, 0)
+    shading_filter.light_dir = light_dir[:3]
+    initial_light_dir = view.camera.transform.imap(light_dir)
+
+    @view.scene.transform.changed.connect
+    def on_transform_change(event):
+        transform = view.camera.transform
+        shading_filter.light_dir = transform.map(initial_light_dir)[:3]
 
 
-# Make the mesh light follow the direction of the camera.
-@canvas.events.mouse_move.connect
-def on_mouse_move(event):
-    transform = view.camera.transform
-    shading_filter.light_dir = transform.map(initial_light_dir)[:3]
-    mesh.update()
+attach_headlight(mesh, view, canvas)
 
 
 shadings = [None, 'flat', 'smooth']
