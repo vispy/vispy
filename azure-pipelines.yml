@@ -4,16 +4,22 @@ trigger:
       - '*'
   tags:
     include:
-      - v*
+      - 'v*'
+pr:
+  branches:
+    include:
+      - '*'  # must quote since "*" is a YAML reserved character; we want a string
 variables:
   CIBW_BUILDING: "true"
-  CIBW_SKIP: "cp27-* cp34-* cp38-*"
-  CIBW_TEST_REQUIRES: "pytest pytest-sugar"
+  CIBW_SKIP: "cp27-* cp34-* cp35-* pp27-* pp36-*"
+  CIBW_TEST_REQUIRES: "pytest pytest-sugar meshio"
   CIBW_TEST_COMMAND: "python -c \"import vispy; vispy.test()\""
   CIBW_BUILD_VERBOSITY: "2"
   CIBW_BEFORE_BUILD: "pip install -U numpy Cython jupyter ipywidgets"
   CIBW_BEFORE_BUILD_MACOS: "npm install npm@latest -g; pip install -U pip setuptools"
-  CIBW_BEFORE_BUILD_LINUX: "yum install -y fontconfig xvfb; pip install -U pip setuptools; if [ `getconf LONG_BIT` == '64' ]; then pip install https://files.pythonhosted.org/packages/f2/00/6f332e63b33d24dc3761916e6d51402a7a82dd43c6ca8a96e24dda32c6b5/freetype_py-2.1.0.post1-py2.py3-none-manylinux1_x86_64.whl; else pip install https://files.pythonhosted.org/packages/b8/ea/adfbeb3762a03c1d1c1ff751101efb1fddb7aadffa991d39bdb486d0557e/freetype_py-2.1.0.post1-py2.py3-none-manylinux1_i686.whl; fi"
+  CIBW_BEFORE_BUILD_LINUX: "yum install -y fontconfig; pip install -U pip setuptools; pip install freetype-py"
+  CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
+  CIBW_MANYLINUX_I686_IMAGE: manylinux2014
 jobs:
 - job: linux
   pool: {vmImage: 'Ubuntu-16.04'}
@@ -30,7 +36,7 @@ jobs:
         path: $(System.DefaultWorkingDirectory)/wheelhouse
         artifact: vispyDeployLinux
 - job: macos
-  pool: {vmImage: 'macOS-10.13'}
+  pool: {vmImage: 'macOS-10.14'}
   steps:
     - task: UsePythonVersion@0
     - bash: |
@@ -42,15 +48,23 @@ jobs:
       inputs:
         path: $(System.DefaultWorkingDirectory)/wheelhouse
         artifact: vispyDeployMacOS
+- job: macos_10_14
+  pool: {vmImage: 'macOS-10.14'}
+  steps:
+    - task: UsePythonVersion@0
+    - bash: |
+        git submodule update --init --recursive
+        python -m pip install --upgrade pip
+        pip install cibuildwheel
+        MACOSX_DEPLOYMENT_TARGET="10.14" cibuildwheel --output-dir wheelhouse .
+    - task: PublishPipelineArtifact@1
+      inputs:
+        path: $(System.DefaultWorkingDirectory)/wheelhouse
+        artifact: vispyDeployMacOS_10_14
 - job: windows
   pool: {vmImage: 'vs2017-win2016'}
   steps:
-    - {task: UsePythonVersion@0, inputs: {versionSpec: '3.5', architecture: x86}}
-    - {task: UsePythonVersion@0, inputs: {versionSpec: '3.5', architecture: x64}}
-    - {task: UsePythonVersion@0, inputs: {versionSpec: '3.6', architecture: x86}}
-    - {task: UsePythonVersion@0, inputs: {versionSpec: '3.6', architecture: x64}}
-    - {task: UsePythonVersion@0, inputs: {versionSpec: '3.7', architecture: x86}}
-    - {task: UsePythonVersion@0, inputs: {versionSpec: '3.7', architecture: x64}}
+    - task: UsePythonVersion@0
     - bash: |
         git submodule update --init --recursive
         python -m pip install --upgrade pip
@@ -66,6 +80,7 @@ jobs:
   dependsOn:
     - linux
     - macos
+    - macos_10_14
     - windows
   steps:
     - task: UsePythonVersion@0
@@ -75,6 +90,7 @@ jobs:
           vispyDeployLinux/*
           vispyDeployMacOS/*.whl
           vispyDeployWindows/*.whl
+          vispyDeployMacOS_10_14/*.whl
     - bash: |
         cd $(Pipeline.Workspace)
         python -m pip install --upgrade pip

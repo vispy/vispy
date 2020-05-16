@@ -1,10 +1,111 @@
-import weakref
-
-from ..shaders import Function
-from ...color import Color
-from ...gloo import VertexBuffer
-
+# -*- coding: utf-8 -*-
+# Copyright (c) Vispy Development Team. All Rights Reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
 import numpy as np
+from vispy.gloo import Texture2D, VertexBuffer
+from vispy.visuals.shaders import Function, Varying
+from vispy.visuals.filters import Filter
+from ...color import Color
+
+
+class TextureFilter(Filter):
+    """Filter to apply a texture to a mesh.
+
+    Note the texture is applied by multiplying the texture color by the
+    Visual's produced color. By specifying `color="white"` when creating
+    a `MeshVisual` the result will be the unaltered texture value. Any
+    other color, including the default, will result in a blending of that
+    color and the color of the texture.
+
+    """
+
+    def __init__(self, texture, texcoords, enabled=True):
+        """Apply a texture on a mesh.
+
+        Parameters
+        ----------
+        texture : (M, N) or (M, N, C) array
+            The 2D texture image.
+        texcoords : (N, 2) array
+            The texture coordinates.
+        enabled : bool
+            Whether the display of the texture is enabled.
+        """
+        vfunc = Function("""
+            void pass_coords() {
+                $v_texcoords = $texcoords;
+            }
+        """)
+        ffunc = Function("""
+            void apply_texture() {
+                if ($enabled == 1) {
+                    gl_FragColor *= texture2D($u_texture, $texcoords);
+                }
+            }
+        """)
+        self._texcoord_varying = Varying('v_texcoord', 'vec2')
+        vfunc['v_texcoords'] = self._texcoord_varying
+        ffunc['texcoords'] = self._texcoord_varying
+        self._texcoords_buffer = VertexBuffer(
+            np.zeros((0, 2), dtype=np.float32)
+        )
+        vfunc['texcoords'] = self._texcoords_buffer
+        super().__init__(vcode=vfunc, vhook='pre', fcode=ffunc)
+
+        self.enabled = enabled
+        self.texture = texture
+        self.texcoords = texcoords
+
+    @property
+    def enabled(self):
+        """True to display the texture, False to disable."""
+        return self._enabled
+
+    @enabled.setter
+    def enabled(self, enabled):
+        self._enabled = enabled
+        self.fshader['enabled'] = 1 if enabled else 0
+
+    @property
+    def texture(self):
+        """The texture image."""
+        return self._texture
+
+    @texture.setter
+    def texture(self, texture):
+        self._texture = texture
+        self.fshader['u_texture'] = Texture2D(texture)
+
+    @property
+    def texcoords(self):
+        """The texture coordinates as an (N, 2) array of floats."""
+        return self._texcoords
+
+    @texcoords.setter
+    def texcoords(self, texcoords):
+        self._texcoords = texcoords
+        self._update_texcoords_buffer(texcoords)
+
+    def _update_texcoords_buffer(self, texcoords):
+        if not self._attached or self._visual is None:
+            return
+
+        # FIXME: Indices for texture coordinates might be different than face
+        # indices, although in some cases they are the same. Currently,
+        # vispy.io.read_mesh assumes face indices and texture coordinates are
+        # the same.
+        # TODO:
+        # 1. Add reading and returning of texture coordinate indices in
+        #    read_mesh.
+        # 2. Add texture coordinate indices in MeshData from
+        #    vispy.geometry.meshdata
+        # 3. Use mesh_data.get_texcoords_indices() here below.
+        tc = texcoords[self._visual.mesh_data.get_faces()]
+        self._texcoords_buffer.set_data(tc, convert=True)
+
+    def _attach(self, visual):
+        super()._attach(visual)
+        self._update_texcoords_buffer(self._texcoords)
 
 
 shading_vertex_template = """
@@ -85,7 +186,8 @@ void shade() {
 """  # noqa
 
 
-class ShadingFilter(object):
+class ShadingFilter(Filter):
+    """Filter to apply shading to a mesh."""
 
     def __init__(self, shading='flat', enabled=True, light_dir=(10, 5, -5),
                  light_color=(1, 1, 1, 1),
@@ -93,9 +195,8 @@ class ShadingFilter(object):
                  diffuse_color=(1, 1, 1, 1),
                  specular_color=(1, 1, 1, 1),
                  shininess=100):
-        self._attached = False
         self._shading = shading
-        self._enabled = True
+        self._enabled = enabled
         self._light_dir = light_dir
         self._light_color = Color(light_color)
         self._ambient_color = Color(ambient_color)
@@ -103,14 +204,13 @@ class ShadingFilter(object):
         self._specular_color = Color(specular_color)
         self._shininess = shininess
 
-        self.vcode = Function(shading_vertex_template)
+        vfunc = Function(shading_vertex_template)
+        ffunc = Function(shading_fragment_template)
+
         self._normals = VertexBuffer(np.zeros((0, 3), dtype=np.float32))
-        self.vcode['normal'] = self._normals
+        vfunc['normal'] = self._normals
 
-        self.fcode = Function(shading_fragment_template)
-
-        self.vertex_program = self.vcode()
-        self.fragment_program = self.fcode()
+        super().__init__(vcode=vfunc, fcode=ffunc)
 
     @property
     def shading(self):
@@ -193,47 +293,43 @@ class ShadingFilter(object):
 
     @shininess.setter
     def shininess(self, shininess):
-        self._shininess = shininess
+        self._shininess = float(shininess)
         self._update_data()
 
     def _update_data(self):
         if not self._attached:
             return
-        self.vcode['light_dir'] = self._light_dir
-        self.fcode['shininess'] = self._shininess
-        self.fcode['light_color'] = self._light_color.rgb
-        self.fcode['ambient_color'] = self._ambient_color.rgb
-        self.fcode['diffuse_color'] = self._diffuse_color.rgb
-        self.fcode['specular_color'] = self._specular_color.rgb
-        self.fcode['flat_shading'] = 1 if self._shading == 'flat' else 0
-        self.fcode['shading_enabled'] = 1 if self._shading is not None else 0
-        normals = self._visual().mesh_data.get_vertex_normals(indexed='faces')
+        self.vshader['light_dir'] = self._light_dir
+        self.fshader['shininess'] = self._shininess
+        self.fshader['light_color'] = self._light_color.rgb
+        self.fshader['ambient_color'] = self._ambient_color.rgb
+        self.fshader['diffuse_color'] = self._diffuse_color.rgb
+        self.fshader['specular_color'] = self._specular_color.rgb
+        self.fshader['flat_shading'] = 1 if self._shading == 'flat' else 0
+        self.fshader['shading_enabled'] = 1 if self._shading is not None else 0
+        normals = self._visual.mesh_data.get_vertex_normals(indexed='faces')
         self._normals.set_data(normals, convert=True)
 
+    def on_mesh_data_updated(self, event):
+        self._update_data()
+
     def _attach(self, visual):
-        # vertex shader
-        vert_post = visual._get_hook('vert', 'post')
-        vert_post.add(self.vertex_program)
+        super()._attach(visual)
+
         render2scene = visual.transforms.get_transform('render', 'scene')
         visual2scene = visual.transforms.get_transform('visual', 'scene')
         scene2doc = visual.transforms.get_transform('scene', 'document')
         doc2scene = visual.transforms.get_transform('document', 'scene')
-        self.vcode['render2scene'] = render2scene
-        self.vcode['visual2scene'] = visual2scene
-        self.vcode['scene2doc'] = scene2doc
-        self.vcode['doc2scene'] = doc2scene
+        self.vshader['render2scene'] = render2scene
+        self.vshader['visual2scene'] = visual2scene
+        self.vshader['scene2doc'] = scene2doc
+        self.vshader['doc2scene'] = doc2scene
 
-        # fragment shader
-        frag_post = visual._get_hook('frag', 'post')
-        frag_post.add(self.fragment_program)
-
-        self._attached = True
-        self._visual = weakref.ref(visual)
-        self._update_data()
+        visual.events.data_updated.connect(self.on_mesh_data_updated)
 
     def _detach(self, visual):
-        visual._get_hook('vert', 'post').remove(self.vertex_program)
-        visual._get_hook('frag', 'post').remove(self.fragment_program)
+        visual.events.data_updated.disconnect(self.on_mesh_data_updated)
+        super()._detach(visual)
 
 
 wireframe_vertex_template = """
@@ -328,6 +424,7 @@ class WireframeFilter(object):
         frag_post.add(self.fragment_program)
 
         self._attached = True
+        import weakref
         self._visual = weakref.ref(visual)
         self._update_data()
 

@@ -6,11 +6,7 @@ import vispy.plot as vp
 from vispy.testing import (assert_raises, requires_application,
                            run_tests_if_main)
 from vispy.visuals.axis import AxisVisual
-
-try:
-    from unittest import mock
-except ImportError:
-    import mock
+from unittest import mock
 
 
 @requires_application()

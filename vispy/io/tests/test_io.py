@@ -64,6 +64,26 @@ def test_wavefront_non_triangular():
     assert lines[-2].startswith('f 2 1 8 7 6 4')
 
 
+def test_meshio():
+    '''Test meshio i/o'''
+    vertices = np.array([[0.0, 0.0, 0.0],
+                         [1.0, 0.0, 0.],
+                         [-.0, 1.0, 0.],
+                         [1.0, 1.0, 0.]])
+
+    faces = np.array([[0, 1, 3],
+                      [1, 2, 3]])
+    fname_out = op.join(temp_dir, 'temp.vtk')
+    write_mesh(fname_out, vertices=vertices,
+               faces=faces, normals=None,
+               texcoords=None, overwrite=True,
+               reshape_faces=False)
+    out_vertices, out_faces, _, _ = read_mesh(fname_out)
+
+    assert np.all(np.abs(out_vertices - vertices) < 1.0e-14)
+    assert np.all(out_faces == faces)
+
+
 def _slow_calculate_normals(rr, tris):
     """Efficiently compute vertex normals for triangulated surface"""
     # first, compute triangle normals

@@ -13,10 +13,11 @@ import numpy as np
 
 from .visual import Visual
 from .shaders import Function, FunctionChain
-from ..gloo import VertexBuffer, IndexBuffer
+from ..gloo import VertexBuffer
 from ..geometry import MeshData
 from ..color import Color, get_colormap
 from ..ext.six import string_types
+from ..util.event import Event
 
 
 vertex_template = """
@@ -88,17 +89,34 @@ class MeshVisual(Visual):
         The values to use for each vertex (for colormapping).
     meshdata : instance of MeshData | None
         The meshdata.
+    shading : str | None
+        Shading to use. This uses the
+        :class:`ShadingFilter <vispy.visuals.filters.mesh.ShadingFilter>`
+        filter introduced in VisPy 0.7. This class provides additional
+        features that are available when the filter is attached manually.
+        See 'examples/basics/scene/mesh_shading.py' for an example.
     mode : str
         The drawing mode.
     **kwargs : dict
         Keyword arguments to pass to `Visual`.
+
+    Notes
+    -----
+    Additional functionality is available through filters. Mesh-specific
+    filters can be found in the :mod:`vispy.visuals.filters.mesh` module.
+
+    This class emits a `data_updated` event when the mesh data is updated. This
+    is used for example by filters for synchronization.
+
     """
     def __init__(self, vertices=None, faces=None, vertex_colors=None,
-                 face_colors=None, color=(1, 1, 1, 1), vertex_values=None,
-                 meshdata=None, mode='triangles', **kwargs):
+                 face_colors=None, color=(0.5, 0.5, 1, 1), vertex_values=None,
+                 meshdata=None, shading=None, mode='triangles', **kwargs):
         Visual.__init__(self, vcode=vertex_template, fcode=fragment_template,
                         **kwargs)
         self.set_gl_state('translucent', depth_test=True, cull_face=False)
+
+        self.events.add(data_updated=Event)
 
         # Define buffers
         self._vertices = VertexBuffer(np.zeros((0, 3), dtype=np.float32))
@@ -107,6 +125,10 @@ class MeshVisual(Visual):
 
         # Uniform color
         self._color = Color(color)
+
+        # add filters for various modifiers
+        self.shading_filter = None
+        self.shading = shading
 
         # Init
         self._bounds = None
@@ -119,7 +141,27 @@ class MeshVisual(Visual):
 
         # primitive mode
         self._draw_mode = mode
+
         self.freeze()
+
+    @property
+    def shading(self):
+        """The shading method."""
+        return self._shading
+
+    @shading.setter
+    def shading(self, shading):
+        assert shading in (None, 'flat', 'smooth')
+        self._shading = shading
+        if shading is None and self.shading_filter is None:
+            # Delay creation of filter until necessary.
+            return
+        if self.shading_filter is None:
+            from vispy.visuals.filters import ShadingFilter
+            self.shading_filter = ShadingFilter(shading=shading)
+        else:
+            self.shading_filter.shading = shading
+        self.attach(self.shading_filter)
 
     def set_data(self, vertices=None, faces=None, vertex_colors=None,
                  face_colors=None, color=None, vertex_values=None,
@@ -293,39 +335,7 @@ class MeshVisual(Visual):
 
         self._data_changed = False
 
-    @property
-    def shininess(self):
-        """The shininess"""
-        return self._shininess
-
-    @shininess.setter
-    def shininess(self, shine):
-        """Set the shininess
-
-        Parameters
-        ----------
-        shine : float
-            The shininess to use.
-        """
-        self._shininess = float(shine)
-        self.mesh_data_changed()
-
-    @property
-    def ambient_light_color(self):
-        """The ambient light color"""
-        return self._ambient_light_color
-
-    @ambient_light_color.setter
-    def ambient_light_color(self, ambient):
-        """Set the ambient light
-
-        Parameters
-        ----------
-        color : instance of Color
-            The color to use.
-        """
-        self._ambient_light_color = Color(ambient)
-        self.mesh_data_changed()
+        self.events.data_updated()
 
     def _prepare_draw(self, view):
         if self._data_changed:

@@ -128,7 +128,7 @@ class Program(GLObject):
 
         # Init source code for vertex and fragment shader
         self._shaders = None, None
-        
+
         # Init description of variables obtained from source code
         self._code_variables = {}  # name -> (kind, type_, name)
         # Init user-defined data for attributes and uniforms
@@ -188,7 +188,7 @@ class Program(GLObject):
         for shader in shaders:
             self.glir.associate(shader.glir)
             self._glir.command('ATTACH', self._id, shader.id)
-        
+
         # Store source code, send it to glir, parse the code for variables
         self._shaders = shaders
 
@@ -207,7 +207,7 @@ class Program(GLObject):
         self._user_variables = {}
         # Parse code (and process pending variables)
         self._parse_variables_from_code(update_variables=update_variables)
-    
+
     @property
     def shaders(self):
         """ All currently attached shaders
@@ -230,7 +230,7 @@ class Program(GLObject):
         # Note that internally the variables are stored as a dict
         # that maps names -> tuples, for easy looking up by name.
         return [x[:3] for x in self._code_variables.values()]
-   
+
     def _parse_variables_from_code(self, update_variables=True):
         """ Parse uniforms, attributes and varyings from the source code.
         """
@@ -238,7 +238,7 @@ class Program(GLObject):
         # Get one string of code with comments removed
         code = '\n\n'.join([sh.code for sh in self._shaders])
         code = re.sub(r'(.*)(//.*)', r'\1', code, re.M)
-        
+
         # Regexp to look for variable names
         var_regexp = (r"\s*VARIABLE\s+"  # kind of variable
                       r"((highp|mediump|lowp)\s+)?"  # Precision (optional)
@@ -469,8 +469,9 @@ class Program(GLObject):
         Parameters
         ----------
         mode : str | GL_ENUM
-            'points', 'lines', 'line_strip', 'line_loop', 'triangles',
-            'triangle_strip', or 'triangle_fan'.
+            'points', 'lines', 'line_strip', 'line_loop', 'lines_adjacency',
+            'line_strip_adjacency', 'triangles', 'triangle_strip', or
+            'triangle_fan'.
         indices : array
             Array of indices to draw.
         check_error:
@@ -484,7 +485,8 @@ class Program(GLObject):
         # Check if mode is valid
         mode = check_enum(mode)
         if mode not in ['points', 'lines', 'line_strip', 'line_loop',
-                        'triangles', 'triangle_strip', 'triangle_fan']:
+                        'lines_adjacency', 'line_strip_adjacency', 'triangles',
+                        'triangle_strip', 'triangle_fan']:
             raise ValueError('Invalid draw mode: %r' % mode)
 
         # Check leftover variables, warn, discard them
