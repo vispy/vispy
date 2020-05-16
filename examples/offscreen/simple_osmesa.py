@@ -13,12 +13,11 @@ something like the following to pickup the OSMesa libraries::
     OSMESA_LIBRARY=/opt/osmesa_llvmpipe/lib/libOSMesa.so \
     python examples/offscreen/simple_osmesa.py
 """
-import vispy
-vispy.use(app='osmesa')  # noqa
-
 import numpy as np
+import vispy
 import vispy.plot as vp
 import vispy.io as io
+vispy.use(app='osmesa')  # noqa
 
 # Check the application correctly picked up osmesa
 assert vispy.app.use_app().backend_name == 'osmesa', 'Not using OSMesa'
