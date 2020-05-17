@@ -134,7 +134,7 @@ class SurfacePlotVisual(MeshVisual):
 
             # Copy the 2D data into the appropriate slice
             self.__vertices[:, :, 1] = y
-        update_mesh = True
+            update_mesh = True
 
         if new_vertices or z is not None:
             self.__vertices[..., 2] = self._z
