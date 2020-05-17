@@ -354,7 +354,7 @@ void draw_wireframe() {
 """  # noqa
 
 
-class WireframeFilter(object):
+class WireframeFilter(Filter):
 
     def __init__(self, enabled=True, color='black', width=1):
         self._attached = False
@@ -362,14 +362,13 @@ class WireframeFilter(object):
         self._color = Color(color)
         self._width = width
 
-        self.vcode = Function(wireframe_vertex_template)
+        vfunc = Function(wireframe_vertex_template)
+        ffunc = Function(wireframe_fragment_template)
+
         self._bc = VertexBuffer(np.zeros((0, 3), dtype=np.float32))
-        self.vcode['bc'] = self._bc
+        vfunc['bc'] = self._bc
 
-        self.fcode = Function(wireframe_fragment_template)
-
-        self.vertex_program = self.vcode()
-        self.fragment_program = self.fcode()
+        super().__init__(vcode=vfunc, fcode=ffunc)
 
     @property
     def enabled(self):
@@ -406,29 +405,22 @@ class WireframeFilter(object):
     def _update_data(self):
         if not self._attached:
             return
-        self.fcode['color'] = self._color.rgba
-        self.fcode['width'] = self._width
-        faces = self._visual().mesh_data.get_faces()
+        self.fshader['color'] = self._color.rgba
+        self.fshader['width'] = self._width
+        faces = self._visual.mesh_data.get_faces()
         n_faces = len(faces)
         bc = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]], dtype='float')
         bc = np.tile(bc[None, ...], (n_faces, 1, 1))
         self._bc.set_data(bc, convert=True)
 
-    def _attach(self, visual):
-        # vertex shader
-        vert_post = visual._get_hook('vert', 'post')
-        vert_post.add(self.vertex_program)
-
-        # fragment shader
-        frag_post = visual._get_hook('frag', 'post')
-        frag_post.add(self.fragment_program)
-
-        self._attached = True
-        import weakref
-        self._visual = weakref.ref(visual)
+    def on_mesh_data_updated(self, event):
         self._update_data()
 
+    def _attach(self, visual):
+        super()._attach(visual)
+
+        visual.events.data_updated.connect(self.on_mesh_data_updated)
+
     def _detach(self, visual):
-        visual._get_hook('vert', 'post').remove(self.vertex_program)
-        visual._get_hook('frag', 'post').remove(self.fragment_program)
-        self._attached = False
+        visual.events.data_updated.disconnect(self.on_mesh_data_updated)
+        super()._detach(visual)
