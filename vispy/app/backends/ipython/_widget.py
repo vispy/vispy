@@ -48,10 +48,10 @@ def _stop_timers(canvas):
 class VispyWidget(DOMWidget):
     _view_name = Unicode("VispyView").tag(sync=True)
     _view_module = Unicode('vispy').tag(sync=True)
-    _view_module_version = Unicode('~0.2.0').tag(sync=True)
+    _view_module_version = Unicode('~0.3.0').tag(sync=True)
     _model_name = Unicode('VispyModel').tag(sync=True)
     _model_module = Unicode('vispy').tag(sync=True)
-    _model_module_version = Unicode('~0.2.0').tag(sync=True)
+    _model_module_version = Unicode('~0.3.0').tag(sync=True)
 
     #height/width of the widget is managed by IPython.
     #it's a string and can be anything valid in CSS.
