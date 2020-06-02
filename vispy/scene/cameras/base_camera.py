@@ -378,6 +378,7 @@ class BaseCamera(Node):
                 self.set_default_state()
             # Do the actual update
             self._update_transform()
+        self.events.transform_change()
 
     @property
     def pre_transform(self):
