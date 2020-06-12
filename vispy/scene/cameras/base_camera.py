@@ -3,12 +3,12 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division
+from collections import namedtuple
 
 from ...util import keys
 from ..node import Node
 from ...visuals.transforms import (STTransform, MatrixTransform,
                                    NullTransform, TransformCache)
-
 
 class BaseCamera(Node):
     """ Base camera class.
@@ -85,6 +85,22 @@ class BaseCamera(Node):
         self.interactive = bool(interactive)
         self.flip = flip if (flip is not None) else (False, False, False)
         self.up = up
+
+        self.last_self_pos = None
+        self.last_cam_pos = None
+
+        self.last_self_left = None
+        self.last_cam_left = None
+
+        self.last_self_right = None
+        self.last_cam_right = None
+
+        self.last_self_top = None
+        self.last_cam_top = None
+
+        self.last_self_bottom = None
+        self.last_cam_bottom = None
+        self.master = False
 
     @property
     def depth_value(self):
@@ -340,7 +356,7 @@ class BaseCamera(Node):
                 raise KeyError('Not a valid camera state property %r' % key)
             setattr(self, key, val)
 
-    def link(self, camera):
+    def link(self, camera, axis=None):
         """ Link this camera with another camera of the same type
 
         Linked camera's keep each-others' state in sync.
@@ -349,16 +365,24 @@ class BaseCamera(Node):
         ----------
         camera : instance of Camera
             The other camera to link.
+        axis : str of aligning axis := "x" / "y"
+            syncs only with one axis between cameras
         """
-        cam1, cam2 = self, camera
-        # Remove if already linked
-        while cam1 in cam2._linked_cameras:
-            cam2._linked_cameras.remove(cam1)
-        while cam2 in cam1._linked_cameras:
-            cam1._linked_cameras.remove(cam2)
-        # Link both ways
-        cam1._linked_cameras.append(cam2)
-        cam2._linked_cameras.append(cam1)
+        if axis is not None:
+            main_cam, sec_cam = self, camera
+            main_cam._linked_cameras.append([sec_cam, axis])
+            sec_cam._linked_cameras.append([main_cam, axis])
+            self.master = True
+        else:
+            cam1, cam2 = self, camera
+            # Remove if already linked
+            while cam1 in cam2._linked_cameras:
+                cam2._linked_cameras.remove(cam1)
+            while cam2 in cam1._linked_cameras:
+                cam1._linked_cameras.remove(cam2)
+            # Link both ways
+            cam1._linked_cameras.append(cam2)
+            cam2._linked_cameras.append(cam1)
 
     ## Event-related methods
 
@@ -465,13 +489,86 @@ class BaseCamera(Node):
         self._viewbox.scene.transform = self._scene_transform
         self._viewbox.update()
 
-        # Apply same state to linked cameras, but prevent that camera
-        # to return the favor
-        for cam in self._linked_cameras:
-            if cam is self._linked_cameras_no_update:
-                continue
-            try:
-                cam._linked_cameras_no_update = self
-                cam.set_state(self.get_state())
-            finally:
-                cam._linked_cameras_no_update = None
+        
+        if len(self._linked_cameras) != 0:
+            if isinstance(self._linked_cameras[0], list):
+                ## link only one axis between to cameras
+                if(self._linked_cameras[0][1] == "x"):
+                    for i in range(len(self._linked_cameras)):
+                        cam = self._linked_cameras[i][0]
+                        self_state = self.get_state()
+                        cam_state = cam.get_state()
+                        s = self_state
+                        for u in range(2):
+                            if(u == 1):
+                                if(self.last_self_pos is not None and self.last_cam_pos is not None and self.last_cam_top is not None and self.last_cam_bottom is not None  and self.last_self_top is not None and self.last_self_bottom is not None):
+                                    self_state["rect"].pos = (self_state["rect"].pos[0], self.last_cam_pos[1])
+                                    self_state["rect"].top = self.last_cam_top
+                                    self_state["rect"].bottom = self.last_cam_bottom
+                                    cam.set_state(self_state)
+                                    self_state["rect"].pos = (self_state["rect"].pos[0], self.last_self_pos[1])
+                                    self_state["rect"].top = self.last_self_top
+                                    self_state["rect"].bottom = self.last_self_bottom
+                                    self.set_state(self_state)
+                                    self.last_self_pos = self.get_state()["rect"].pos
+                                    self.last_cam_pos = cam.get_state()["rect"].pos
+                                else:
+                                    self.last_self_pos = self.get_state()["rect"].pos
+                                    self.cam_self_pos = cam.get_state()["rect"].pos
+                                    self.last_self_top = self.get_state()["rect"].top
+                                    self.last_cam_top = cam.get_state()["rect"].top
+                                    self.last_self_bottom = self.get_state()["rect"].bottom
+                                    self.last_cam_bottom = cam.get_state()["rect"].bottom
+                            else:
+                                self.last_self_pos = self.get_state()["rect"].pos
+                                self.last_cam_pos = cam.get_state()["rect"].pos
+                                self.last_self_top = self.get_state()["rect"].top
+                                self.last_cam_top = cam.get_state()["rect"].top
+                                self.last_self_bottom = self.get_state()["rect"].bottom
+                                self.last_cam_bottom = cam.get_state()["rect"].bottom
+                elif (self._linked_cameras[0][1] == "y"):
+                    for i in range(len(self._linked_cameras)):
+                        cam = self._linked_cameras[i][0]
+                        self_state = self.get_state()
+                        cam_state = cam.get_state()
+                        s = self_state
+                        for u in range(2):
+                            if(u == 1):
+                                if(self.last_self_pos is not None and self.last_cam_pos is not None and self.last_cam_left is not None and self.last_cam_right is not None  and self.last_self_left is not None and self.last_self_right is not None):
+                                    self_state["rect"].pos = (self.last_cam_pos[0], self_state["rect"].pos[1])
+                                    self_state["rect"].left = self.last_cam_left
+                                    self_state["rect"].right = self.last_cam_right
+                                    cam.set_state(self_state)
+                                    self_state["rect"].pos = (self.last_self_pos[0], self_state["rect"].pos[1])
+                                    self_state["rect"].left = self.last_self_left
+                                    self_state["rect"].right = self.last_self_right
+                                    self.set_state(self_state)
+                                    self.last_self_pos = self.get_state()["rect"].pos
+                                    self.last_cam_pos = cam.get_state()["rect"].pos
+                                else:
+                                    self.last_self_pos = self.get_state()["rect"].pos
+                                    self.cam_self_pos = cam.get_state()["rect"].pos
+                                    self.last_self_left = self.get_state()["rect"].left
+                                    self.last_cam_left = cam.get_state()["rect"].left
+                                    self.last_self_right = self.get_state()["rect"].right
+                                    self.last_cam_right = cam.get_state()["rect"].right
+                            else:
+                                self.last_self_pos = self.get_state()["rect"].pos
+                                self.last_cam_pos = cam.get_state()["rect"].pos
+                                self.last_self_left = self.get_state()["rect"].left
+                                self.last_cam_left = cam.get_state()["rect"].left
+                                self.last_self_right = self.get_state()["rect"].right
+                                self.last_cam_right = cam.get_state()["rect"].right
+                else:
+                    raise Exception("Axis align has to be either 'x' or 'y' not " + self._linked_cameras[0][1])
+            else:
+                # Apply same state to linked cameras, but prevent that camera
+                # to return the favor
+                for i in range(len(self._linked_cameras)):
+                    if self._linked_cameras[i] is self._linked_cameras_no_update:
+                        continue
+                    try:
+                        self._linked_cameras[i]._linked_cameras_no_update = self
+                        self._linked_cameras[i].set_state(self.get_state())
+                    finally:
+                        self._linked_cameras[i]._linked_cameras_no_update = None
