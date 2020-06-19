@@ -117,9 +117,16 @@ float colorToVal(vec4 color1)
 }}
 
 vec4 applyColormap(float data) {{
-    float val = max(data - clim.x, 0) / (clim.y - clim.x);
-    return $cmap(pow(val, gamma));
+    if (clim.x < clim.y) {{
+        data = clamp(data, clim.x, clim.y);
+    }} else {{
+        data = clamp(data, clim.y, clim.x);
+    }}
+
+    data = (data - clim.x) / (clim.y - clim.x);
+    return $cmap(pow(data, gamma));
 }}
+
 
 vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
 {{   
