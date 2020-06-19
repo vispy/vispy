@@ -89,8 +89,8 @@ def isocurve(data, level, connected=False, extend_to_edge=False):
     for i in range(index.shape[0]):                 # data x-axis
         for j in range(index.shape[1]):             # data y-axis     
             sides = side_table[index[i, j]]
-            for l in range(0, len(sides), 2):     # faces for this grid cell
-                edges = sides[l:l+2]
+            for side_idx in range(0, len(sides), 2):  # faces for this grid cell
+                edges = sides[side_idx:side_idx+2]
                 pts = []
                 for m in [0, 1]:      # points in this face
                     # p1, p2 are points at either side of an edge

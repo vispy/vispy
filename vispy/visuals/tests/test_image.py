@@ -5,6 +5,7 @@ from vispy.scene.visuals import Image
 from vispy.testing import (requires_application, TestingCanvas,
                            run_tests_if_main)
 from vispy.testing.image_tester import assert_image_approved, downsample
+from unittest import mock
 
 
 @requires_application()
@@ -59,6 +60,40 @@ def test_image_clims_and_gamma():
             assert not np.allclose(
                 rendered2.astype(np.float), rendered3.astype(np.float), atol=10
             )
+
+
+@requires_application()
+def test_image_vertex_updates():
+    """Test image visual coordinates are only built when needed."""
+    size = (40, 40)
+    with TestingCanvas(size=size, bgcolor="w") as c:
+        shape = size + (3,)
+        np.random.seed(0)
+        image = Image(cmap='grays', clim=[0, 1], parent=c.scene)
+        with mock.patch.object(
+                image, '_build_vertex_data',
+                wraps=image._build_vertex_data) as build_vertex_mock:
+            data = np.random.rand(*shape)
+            image.set_data(data)
+            c.render()
+            build_vertex_mock.assert_called_once()
+            build_vertex_mock.reset_mock()  # reset the count to 0
+
+            # rendering again shouldn't cause vertex coordinates to be built
+            c.render()
+            build_vertex_mock.assert_not_called()
+
+            # changing to data of the same shape shouldn't cause it
+            data = np.zeros_like(data)
+            image.set_data(data)
+            c.render()
+            build_vertex_mock.assert_not_called()
+
+            # changing to another shape should
+            data = data[:-5, :-5]
+            image.set_data(data)
+            c.render()
+            build_vertex_mock.assert_called_once()
 
 
 def _make_rgba(array):

@@ -56,7 +56,7 @@ void main()
         texcoord = v_texcoord;
     }
     else {
-        // vertex shader ouptuts clip coordinates;
+        // vertex shader outputs clip coordinates;
         // fragment shader maps to texture coordinates
         texcoord = map_local_to_tex(vec4(v_texcoord, 0, 1)).xy;
     }
@@ -435,6 +435,7 @@ class ImageVisual(Visual):
 
         self._subdiv_position.set_data(vertices.astype('float32'))
         self._subdiv_texcoord.set_data(tex_coords.astype('float32'))
+        self._need_vertex_update = False
 
     def _update_method(self, view):
         """Decide which method to use for *view* and configure it accordingly.

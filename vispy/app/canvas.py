@@ -81,6 +81,8 @@ class Canvas(object):
         A scale factor to apply between logical and physical pixels in addition
         to the actual scale factor determined by the backend. This option
         allows the scale factor to be adjusted for testing.
+    backend_kwargs : dict
+        Keyword arguments to be supplied to the backend canvas object.
 
     Notes
     -----
@@ -106,13 +108,19 @@ class Canvas(object):
     backends, they are detected manually with a fixed time delay.
     This can cause problems with accessibility, as increasing the OS detection
     time or using a dedicated double-click button will not be respected.
+
+    Backend-specific arguments can be given through the `backend_kwargs`
+    argument. Currently this can be used to control the webGL context
+    requested by the `ipynb_webgl` backend, for example::
+
+        canvas = Canvas(backend_kwargs={'webgl': dict(preserveDrawingBuffer=True)})
     """
 
     def __init__(self, title='VisPy canvas', size=(800, 600), position=None,
                  show=False, autoswap=True, app=None, create_native=True,
                  vsync=False, resizable=True, decorate=True, fullscreen=False,
                  config=None, shared=None, keys=None, parent=None, dpi=None,
-                 always_on_top=False, px_scale=1):
+                 always_on_top=False, px_scale=1, backend_kwargs=None):
 
         size = tuple(int(s) * px_scale for s in size)
         if len(size) != 2:
@@ -194,11 +202,13 @@ class Canvas(object):
         self._set_keys(keys)
 
         # store arguments that get set on Canvas init
-        kwargs = dict(title=title, size=size, position=position, show=show,
-                      vsync=vsync, resizable=resizable, decorate=decorate,
-                      fullscreen=fullscreen, context=self._context,
-                      parent=parent, always_on_top=always_on_top)
-        self._backend_kwargs = kwargs
+        self._backend_kwargs = dict(
+            title=title, size=size, position=position, show=show,
+            vsync=vsync, resizable=resizable, decorate=decorate,
+            fullscreen=fullscreen, context=self._context,
+            parent=parent, always_on_top=always_on_top)
+        if backend_kwargs is not None:
+            self._backend_kwargs.update(**backend_kwargs)
 
         # Create widget now (always do this *last*, after all err checks)
         if create_native:
