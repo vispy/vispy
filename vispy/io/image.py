@@ -156,7 +156,7 @@ def write_png(filename, data):
         f.write(_make_png(data))  # Save array with make_png
 
 
-def imread(filename, format=None):
+def imread(filename, format=None, flipVertically=False, flipHorizontally=False):
     """Read image data from disk
 
     Requires imageio or PIL.
@@ -167,6 +167,10 @@ def imread(filename, format=None):
         Filename to read.
     format : str | None
         Format of the file. If None, it will be inferred from the filename.
+    flipVertically : bool | False
+        Flip the image vertically, default is false
+    flipHorizontally : bool | False
+        Flip the image horizontally, default is false
 
     Returns
     -------
@@ -179,7 +183,12 @@ def imread(filename, format=None):
     """
     imageio, PIL = _check_img_lib()
     if imageio is not None:
-        return imageio.imread(filename, format)
+        img = imageio.imread(filename, format)
+        if flipHorizontally:
+            img = np.flip(img, 1)
+        if flipVertically:
+            img = np.flip(img, 0)
+        return img
     elif PIL is not None:
         im = PIL.Image.open(filename)
         if im.mode == 'P':
@@ -189,6 +198,10 @@ def imread(filename, format=None):
         if len(a.shape) == 0:
             raise MemoryError("Too little memory to convert PIL image to "
                               "array")
+        if flipHorizontally:
+            a = np.flip(a, 1)
+        if flipVertically:
+            a = np.flip(a, 0)
         return a
     else:
         raise RuntimeError("imread requires the imageio or PIL package.")
