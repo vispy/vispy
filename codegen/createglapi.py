@@ -202,7 +202,7 @@ EASY_TYPES = {  'void': (type(None), 'c_voidp'),  # only for output
                 'GLuint': (int, 'c_uint'),
                 'GLint': (int, 'c_int'),
                 'GLbitfield': (int, 'c_uint'),
-                'GLsizei': (int, 'c_int'),
+                'GLsizei': (int, 'c_uint'),
                 'GLfloat': (float, 'c_float'),
                 'GLclampf': (float, 'c_float'),
              }
@@ -222,8 +222,8 @@ HARDER_TYPES = {
                 'GLchar**':('', 'POINTER(ctypes.c_char_p)'),
                 'GLvoid*':('', 'c_void_p'),  # or c_voidp?
                 'GLvoid**':('', 'POINTER(ctypes.c_void_p)'),
-                'GLintptr':('', 'c_int'), 
-                'GLsizeiptr':('', 'c_int'),
+                'GLintptr':('', 'c_ssize_t'), 
+                'GLsizeiptr':('', 'c_size_t'),
                 }
 
 # Together the EASY_TYPES and HARDER_TYPES should cover all types that
