@@ -49,7 +49,7 @@ class BaseCamera(Node):
         self._viewbox = None
 
         # Linked cameras
-        self._linked_cameras = []
+        self._linked_cameras = {}
         self._linked_cameras_no_update = None
 
         # Variables related to transforms
@@ -340,7 +340,7 @@ class BaseCamera(Node):
                 raise KeyError('Not a valid camera state property %r' % key)
             setattr(self, key, val)
 
-    def link(self, camera):
+    def link(self, camera, props=None):
         """ Link this camera with another camera of the same type
 
         Linked camera's keep each-others' state in sync.
@@ -349,16 +349,25 @@ class BaseCamera(Node):
         ----------
         camera : instance of Camera
             The other camera to link.
+        props : list of strings | tuple of strings | None
+            List of camera state properties to keep in sync between
+            the two cameras. If None, all of camera state is kept in sync.
         """
+        if props is None:
+            props = self._state_props
         cam1, cam2 = self, camera
+        # Check both cameras have props
+        available_props = set(cam1._state_props).intersection(set(cam2._state_props))
+        if not set(props).issubset(available_props):
+            raise KeyError('Not a state property of both cameras: %s' % (set(props) - available_props))
         # Remove if already linked
         while cam1 in cam2._linked_cameras:
-            cam2._linked_cameras.remove(cam1)
+            del cam2._linked_cameras[cam1]
         while cam2 in cam1._linked_cameras:
-            cam1._linked_cameras.remove(cam2)
+            del cam1._linked_cameras[cam2]
         # Link both ways
-        cam1._linked_cameras.append(cam2)
-        cam2._linked_cameras.append(cam1)
+        cam1._linked_cameras[cam2] = props
+        cam2._linked_cameras[cam1] = props
 
     ## Event-related methods
 
@@ -472,6 +481,10 @@ class BaseCamera(Node):
                 continue
             try:
                 cam._linked_cameras_no_update = self
-                cam.set_state(self.get_state())
+                state = self.get_state()
+                # Only apply state props we were asked to link
+                linked_props = self._linked_cameras[cam]
+                state_filt = { prop: state[prop] for prop in linked_props }
+                cam.set_state(state_filt)
             finally:
                 cam._linked_cameras_no_update = None
