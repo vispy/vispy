@@ -202,7 +202,7 @@ EASY_TYPES = {  'void': (type(None), 'c_voidp'),  # only for output
                 'GLuint': (int, 'c_uint'),
                 'GLint': (int, 'c_int'),
                 'GLbitfield': (int, 'c_uint'),
-                'GLsizei': (int, 'c_uint'),
+                'GLsizei': (int, 'c_int'),
                 'GLfloat': (float, 'c_float'),
                 'GLclampf': (float, 'c_float'),
              }
