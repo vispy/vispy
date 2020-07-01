@@ -8,7 +8,7 @@ import math
 import numpy as np
 
 from .base_camera import BaseCamera
-from ...util import keys
+from ...util import keys, transforms
 from ...visuals.transforms import MatrixTransform
 
 
@@ -270,20 +270,21 @@ class Base3DRotationCamera(PerspectiveCamera):
         # transform until we are done.
         ch_em = self.events.transform_change
         with ch_em.blocker(self._update_transform):
-            tr = self.transform
-            tr.reset()
-
             up, forward, right = self._get_dim_vectors()
 
             # Create mapping so correct dim is up
             pp1 = np.array([(0, 0, 0), (0, 0, -1), (1, 0, 0), (0, 1, 0)])
             pp2 = np.array([(0, 0, 0), forward, right, up])
-            tr.set_mapping(pp1, pp2)
+            pos = -self._actual_distance * forward
+            scale = [1.0/a for a in self._flip_factors]
 
-            tr.translate(-self._actual_distance * forward)
-            self._rotate_tr()
-            tr.scale([1.0/a for a in self._flip_factors])
-            tr.translate(np.array(self.center))
+            self.transform.matrix = np.linalg.multi_dot((
+                transforms.affine_map(pp1, pp2).T,
+                transforms.translate(pos),
+                self._get_rotation_tr(),
+                transforms.scale(scale),
+                transforms.translate(self.center)
+            ))
 
     def _get_dim_vectors(self):
         # Specify up and forward vector
