@@ -416,7 +416,7 @@ def sys_info(fname=None, overwrite=False):
         from ..app import use_app, Canvas
         from ..app.backends import BACKEND_NAMES
         from ..gloo import gl
-        from ..testing import has_backend
+        from .check_environment import has_backend
         # get default app
         with use_log_level('warning'):
             app = use_app(call_reuse=False)  # suppress messages

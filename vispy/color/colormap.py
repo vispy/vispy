@@ -11,7 +11,7 @@ from .color_array import ColorArray
 from ..ext.six import string_types
 from ..ext.cubehelix import cubehelix
 from ..ext.husl import husl_to_rgb
-from ..testing import has_matplotlib
+from ..util.check_environment import has_matplotlib
 import vispy.gloo
 
 ###############################################################################
