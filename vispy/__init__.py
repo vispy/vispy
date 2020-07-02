@@ -28,19 +28,11 @@ except ImportError:
     pass
 
 from .util import config, set_log_level, keys, sys_info  # noqa
-from .util.wrappers import use  # noqa
+from .util.wrappers import use, test  # noqa
 # load the two functions that IPython uses to instantiate an extension
 # that way, the user only needs to run %load_ext vispy.ipython rather that
 # %load_ext vispy.ipython.ipython
 from .ipython import load_ipython_extension, unload_ipython_extension  # noqa
-
-
-def test(*args, **kwargs):
-    """Proxy function to delay `.testing` import"""
-    from .testing import test as _test # noqa
-    return _test(*args, **kwargs)
-
-test.__test__ = False # no discover test function as test
 
 
 # Allow for Jupyter extension to be enabled
