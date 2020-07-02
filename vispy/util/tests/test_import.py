@@ -16,7 +16,7 @@ import vispy
 
 
 # minimum that will be imported when importing vispy
-_min_modules = ['vispy', 'vispy.util', 'vispy.ext', 'vispy.ipython', 'vispy.testing', 'vispy.version']
+_min_modules = ['vispy', 'vispy.util', 'vispy.ext', 'vispy.ipython', 'vispy.version']
 
 
 def loaded_vispy_modules(import_module, depth=None, all_modules=False):
