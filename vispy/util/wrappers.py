@@ -156,4 +156,4 @@ def test(*args, **kwargs):
     from vispy.testing import test as _test # noqa
     return _test(*args, **kwargs)
 
-test.__test__ = False # no discover test function as test
+test.__test__ = False  # no discover test function as test
