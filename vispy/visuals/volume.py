@@ -522,6 +522,10 @@ class VolumeVisual(Visual):
         if self._clim[1] == self._clim[0]:
             if self._clim[0] != 0.:
                 vol *= 1.0 / self._clim[0]
+        elif self._clim[0] > self._clim[1]:
+            vol *= -1
+            vol += self._clim[1]
+            vol /= self._clim[1] - self._clim[0]
         else:
             vol -= self._clim[0]
             vol /= self._clim[1] - self._clim[0]
@@ -563,6 +567,11 @@ class VolumeVisual(Visual):
         """
         return self._clim
 
+    @property
+    def texture_is_inverted(self):
+        if self._texture_limits is not None:
+            return self._texture_limits[1] < self._texture_limits[0]
+
     @clim.setter
     def clim(self, value):
         """Set contrast limits used when rendering the image.
@@ -576,9 +585,14 @@ class VolumeVisual(Visual):
         if not (clim.ndim == 1 and clim.size == 2):
             raise ValueError('clim must be a 2-element array-like')
         self._clim = tuple(clim)
-        if (clim[0] < self._texture_limits[0]) or (clim[1] > self._texture_limits[1]):
-            self.rescale_data()
-            return
+        if self.texture_is_inverted:
+            if (clim[0] > self._texture_limits[0]) or (clim[1] < self._texture_limits[1]):
+                self.rescale_data()
+                return
+        else:
+            if (clim[0] < self._texture_limits[0]) or (clim[1] > self._texture_limits[1]):
+                self.rescale_data()
+                return
         # if the clim range is too small of a percentage of the last-used texture range,
         # posterization may be visible, so downscale the texture range.
         range_ratio = np.subtract(*clim) / abs(np.subtract(*self._texture_limits))
@@ -598,11 +612,16 @@ class VolumeVisual(Visual):
         the current ``clim``.
         """
         range_min, range_max = self._texture_limits
-        clim_min, clim_max = self.clim
-        tex_range = (range_max - range_min)
-        clim_min = (clim_min - range_min) / tex_range
-        clim_max = (clim_max - range_min) / tex_range
-        return clim_min, clim_max
+        clim0, clim1 = self.clim
+        if self.texture_is_inverted:
+            tex_range = range_min - range_max
+            clim0 = (clim0 - range_max) / tex_range
+            clim1 = (clim1 - range_max) / tex_range
+        else:
+            tex_range = range_max - range_min
+            clim0 = (clim0 - range_min) / tex_range
+            clim1 = (clim1 - range_min) / tex_range
+        return clim0, clim1
 
     @property
     def gamma(self):
