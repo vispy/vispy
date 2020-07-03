@@ -10,6 +10,17 @@ from ...visuals.transforms import (STTransform, MatrixTransform,
                                    NullTransform, TransformCache)
 
 
+def nested_getattr(obj, names):
+    for name in names:
+        obj = getattr(obj, name)
+    return obj
+
+
+def nested_setattr(obj, names, val):
+    target = nested_getattr(obj, names[:-1])
+    setattr(target, names[-1], val)
+
+
 class BaseCamera(Node):
     """ Base camera class.
 
@@ -307,16 +318,28 @@ class BaseCamera(Node):
         """
         self._default_state = self.get_state()
 
-    def get_state(self):
+    def get_state(self, props=None):
         """ Get the current view state of the camera
 
         Returns a dict of key-value pairs. The exact keys depend on the
         camera. Can be passed to set_state() (of this or another camera
         of the same type) to reproduce the state.
+
+        Parameters
+        ----------
+        props : list of strings | None
+            List of properties to include in the returned dict. If None,
+            all of camera state is returned.
         """
+        if props is None:
+            props = self._state_props
         D = {}
-        for key in self._state_props:
-            D[key] = getattr(self, key)
+        for key in props:
+            # We support tuple keys to accomodate camera linking.
+            if isinstance(key, tuple):
+                D[key] = nested_getattr(self, key)
+            else:
+                D[key] = getattr(self, key)
         return D
 
     def set_state(self, state=None, **kwargs):
@@ -333,14 +356,38 @@ class BaseCamera(Node):
         **kwargs : dict
             Unused keyword arguments.
         """
+
         D = state or {}
         D.update(kwargs)
+  
+        # In first pass, process tuple keys which select subproperties. This
+        # is an undocumented feature used for selective linking of camera state.
+        #
+        # Subproperties are handled by first copying old value of the root
+        # property, then setting the subproperty on this copy, and finally
+        # assigning the copied object back to the camera property. There needs
+        # to be an assignment of the root property so setters are called and
+        # update is triggered.
+        for key in list(D.keys()):
+            if isinstance(key, tuple):
+                key1 = key[0]
+                if key1 not in D:
+                    root_prop = getattr(self, key1)
+                    # We make copies by passing the old object to the type's
+                    # constructor. This needs to be supported as is the case in
+                    # e.g. the geometry.Rect class.
+                    D[key1] = root_prop.__class__(root_prop)
+                nested_setattr(D[key1], key[1:], D[key])
+
+        # In second pass, assign the new root properties.
         for key, val in D.items():
+            if isinstance(key, tuple):
+                continue
             if key not in self._state_props:
                 raise KeyError('Not a valid camera state property %r' % key)
             setattr(self, key, val)
 
-    def link(self, camera, props=None):
+    def link(self, camera, props=None, axis=None):
         """ Link this camera with another camera of the same type
 
         Linked camera's keep each-others' state in sync.
@@ -352,15 +399,23 @@ class BaseCamera(Node):
         props : list of strings | tuple of strings | None
             List of camera state properties to keep in sync between
             the two cameras. If None, all of camera state is kept in sync.
+        axis : "x" | "y" | None
+            An axis to link between two PanZoomCamera instances. If not None,
+            view limits in the selected axis only will be kept in sync between
+            the cameras.
         """
+        if axis is not None:
+            props = props or []
+            if axis == "x":
+                props += [("rect", "left"), ("rect", "right")]
+            elif axis == "y":
+                props += [("rect", "bottom"), ("rect", "top")]
+            else:
+                raise ValueError("Axis can be 'x' or 'y', not %r" % axis)
         if props is None:
             props = self._state_props
+
         cam1, cam2 = self, camera
-        # Check both cameras have props
-        available_props = set(cam1._state_props).intersection(set(cam2._state_props))
-        if not set(props).issubset(available_props):
-            raise KeyError('Not a state property of both cameras: %s' % (set(props) - available_props))
-        # Remove if already linked
         while cam1 in cam2._linked_cameras:
             del cam2._linked_cameras[cam1]
         while cam2 in cam1._linked_cameras:
@@ -481,10 +536,7 @@ class BaseCamera(Node):
                 continue
             try:
                 cam._linked_cameras_no_update = self
-                state = self.get_state()
-                # Only apply state props we were asked to link
                 linked_props = self._linked_cameras[cam]
-                state_filt = { prop: state[prop] for prop in linked_props }
-                cam.set_state(state_filt)
+                cam.set_state(self.get_state(linked_props))
             finally:
                 cam._linked_cameras_no_update = None
