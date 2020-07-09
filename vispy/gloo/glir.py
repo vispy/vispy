@@ -660,7 +660,7 @@ def as_es2_command(command):
 
 
 class BaseGlirParser(object):
-    """ Base clas for GLIR parsers that can be attached to a GLIR queue.
+    """ Base class for GLIR parsers that can be attached to a GLIR queue.
     """
 
     def __init__(self):
