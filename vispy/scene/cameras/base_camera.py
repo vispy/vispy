@@ -333,14 +333,14 @@ class BaseCamera(Node):
         """
         if props is None:
             props = self._state_props
-        D = {}
+        state = {}
         for key in props:
             # We support tuple keys to accomodate camera linking.
             if isinstance(key, tuple):
-                D[key] = nested_getattr(self, key)
+                state[key] = nested_getattr(self, key)
             else:
-                D[key] = getattr(self, key)
-        return D
+                state[key] = getattr(self, key)
+        return state
 
     def set_state(self, state=None, **kwargs):
         """ Set the view state of the camera
@@ -357,8 +357,8 @@ class BaseCamera(Node):
             Unused keyword arguments.
         """
 
-        D = state or {}
-        D.update(kwargs)
+        state = state or {}
+        state.update(kwargs)
   
         # In first pass, process tuple keys which select subproperties. This
         # is an undocumented feature used for selective linking of camera state.
@@ -368,19 +368,19 @@ class BaseCamera(Node):
         # assigning the copied object back to the camera property. There needs
         # to be an assignment of the root property so setters are called and
         # update is triggered.
-        for key in list(D.keys()):
+        for key in list(state.keys()):
             if isinstance(key, tuple):
                 key1 = key[0]
-                if key1 not in D:
+                if key1 not in state:
                     root_prop = getattr(self, key1)
                     # We make copies by passing the old object to the type's
                     # constructor. This needs to be supported as is the case in
                     # e.g. the geometry.Rect class.
-                    D[key1] = root_prop.__class__(root_prop)
-                nested_setattr(D[key1], key[1:], D[key])
+                    state[key1] = root_prop.__class__(root_prop)
+                nested_setattr(state[key1], key[1:], state[key])
 
         # In second pass, assign the new root properties.
-        for key, val in D.items():
+        for key, val in state.items():
             if isinstance(key, tuple):
                 continue
             if key not in self._state_props:
