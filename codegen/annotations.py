@@ -427,6 +427,7 @@ def getTexParameter(target, pname):
 def getActiveAttrib(program, index):
     # --- gl es pyopengl
     bufsize = 256
+    # --- gl es
     length = (ctypes.c_int*1)()
     size = (ctypes.c_int*1)()
     type = (ctypes.c_uint*1)()
@@ -436,10 +437,8 @@ def getActiveAttrib(program, index):
     name = name[:length[0]].decode('utf-8')
     return name, size[0], type[0]
     # --- pyopengl
-    # pyopengl has a bug, this is a patch
-    GL.glGetActiveAttrib(program, index, bufsize, length, size, type, name)
-    name = name[:length[0]].decode('utf-8')
-    return name, size[0], type[0]
+    name, size, type = GL.glGetActiveAttrib(program, index, bufSize=bufsize)
+    return name.decode('utf-8'), size, type
     # --- mock
     return 'mock_val', 1, 5126
 
