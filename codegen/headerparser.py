@@ -348,7 +348,7 @@ class Argument:
 
 if __name__ == '__main__':
     THISDIR = os.path.abspath(os.path.dirname(__file__))
-    print(THISDIR)
+
     # Some tests ...
     gl2 = Parser(os.path.join(THISDIR, 'headers', 'gl2.h'))
     import OpenGL.GL
