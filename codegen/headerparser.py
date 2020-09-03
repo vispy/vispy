@@ -79,7 +79,10 @@ class Parser:
     def _get_lines(self):
         # Easy iterator
         while True:
-            yield self._get_line()
+            try:
+                yield self._get_line()
+            except StopIteration:
+                return
 
     def parse(self):
         """ Parse the header file!
@@ -345,7 +348,7 @@ class Argument:
 
 if __name__ == '__main__':
     THISDIR = os.path.abspath(os.path.dirname(__file__))
-
+    print(THISDIR)
     # Some tests ...
     gl2 = Parser(os.path.join(THISDIR, 'headers', 'gl2.h'))
     import OpenGL.GL
