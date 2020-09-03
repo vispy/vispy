@@ -134,9 +134,13 @@ def texSubImage2D(target, level, xoffset, yoffset, format, type, pixels):
 
 
 def readPixels(x, y, width, height, format, type):
-    # --- gl es mock
+    # --- es
     # GL_ALPHA, GL_RGB, GL_RGBA
     t = {6406:1, 6407:3, 6408:4}[format]
+    # --- gl mock
+    # GL_ALPHA, GL_RGB, GL_RGBA, GL_DEPTH_COMPONENT
+    t = {6406:1, 6407:3, 6408:4, 6402:1}[format]
+    # --- gl es mock
     # GL_UNSIGNED_BYTE, GL_FLOAT
     nb = {5121:1, 5126:4}[type]
     size = int(width*height*t*nb)
@@ -423,6 +427,7 @@ def getTexParameter(target, pname):
 def getActiveAttrib(program, index):
     # --- gl es pyopengl
     bufsize = 256
+    # --- gl es
     length = (ctypes.c_int*1)()
     size = (ctypes.c_int*1)()
     type = (ctypes.c_uint*1)()
@@ -432,10 +437,8 @@ def getActiveAttrib(program, index):
     name = name[:length[0]].decode('utf-8')
     return name, size[0], type[0]
     # --- pyopengl
-    # pyopengl has a bug, this is a patch
-    GL.glGetActiveAttrib(program, index, bufsize, length, size, type, name)
-    name = name[:length[0]].decode('utf-8')
-    return name, size[0], type[0]
+    name, size, type = GL.glGetActiveAttrib(program, index, bufSize=bufsize)
+    return name.decode('utf-8'), size, type
     # --- mock
     return 'mock_val', 1, 5126
 
@@ -604,6 +607,8 @@ class FunctionAnnotation:
         """ Get the lines for this function based on the given backend. 
         The given API call is inserted at the correct location.
         """
+        if backend is None:
+            raise RuntimeError("Backend must be specified!")
         backend_selector = (backend, )  # first lines are for all backends
         lines = []
         for line in self.lines:
