@@ -65,7 +65,7 @@ def _unit(mode, extra_arg_string='', coverage=False):
 
     if mode == 'nobackend':
         msg = 'Running tests with no backend'
-        extra_args += ['-m', '"not vispy_app_test"']
+        extra_args += ['-m', 'not vispy_app_test']
     else:
         # check to make sure we actually have the backend of interest
         stdout, stderr, invalid = run_subprocess(
