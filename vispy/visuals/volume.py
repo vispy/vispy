@@ -82,6 +82,8 @@ FRAG_SHADER = """
 // uniforms
 uniform $sampler_type u_volumetex;
 uniform vec3 u_shape;
+uniform vec2 clim;
+uniform float gamma;
 uniform float u_threshold;
 uniform float u_relative_step_size;
 
@@ -113,6 +115,18 @@ float colorToVal(vec4 color1)
 {{
     return color1.g; // todo: why did I have this abstraction in visvis?
 }}
+
+vec4 applyColormap(float data) {{
+    if (clim.x < clim.y) {{
+        data = clamp(data, clim.x, clim.y);
+    }} else {{
+        data = clamp(data, clim.y, clim.x);
+    }}
+
+    data = (data - clim.x) / (clim.y - clim.x);
+    return $cmap(pow(data, gamma));
+}}
+
 
 vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
 {{   
@@ -280,7 +294,7 @@ MIP_SNIPPETS = dict(
             maxval = max(maxval, $sample(u_volumetex, loc).g);
             loc += step * 0.1;
         }
-        gl_FragColor = $cmap(maxval);
+        gl_FragColor = applyColormap(maxval);
         """,
 )
 MIP_FRAG_SHADER = FRAG_SHADER.format(**MIP_SNIPPETS)
@@ -291,7 +305,7 @@ TRANSLUCENT_SNIPPETS = dict(
         vec4 integrated_color = vec4(0., 0., 0., 0.);
         """,
     in_loop="""
-            color = $cmap(val);
+            color = applyColormap(val);
             float a1 = integrated_color.a;
             float a2 = color.a * (1 - a1);
             float alpha = max(a1 + a2, 0.001);
@@ -323,7 +337,7 @@ ADDITIVE_SNIPPETS = dict(
         vec4 integrated_color = vec4(0., 0., 0., 0.);
         """,
     in_loop="""
-        color = $cmap(val);
+        color = applyColormap(val);
         
         integrated_color = 1.0 - (1.0 - integrated_color) * (1.0 - color);
         """,
@@ -348,7 +362,7 @@ ISO_SNIPPETS = dict(
                 color = $sample(u_volumetex, iloc);
                 if (color.g > u_threshold) {
                     color = calculateColor(color, iloc, dstep);
-                    gl_FragColor = $cmap(color.g);
+                    gl_FragColor = applyColormap(color.g);
                     iter = nsteps;
                     break;
                 }
@@ -393,6 +407,16 @@ class VolumeVisual(Visual):
         quality.
     cmap : str
         Colormap to use.
+    gamma : float
+        Gamma to use during colormap lookup.  Final color will be cmap(val**gamma).
+        by default: 1.
+    clim_range_threshold : float
+        When changing the clims, if the new clim range is smaller than this fraction of the
+        last-used texture data range, then it will trigger a rescaling of the texture data.
+        For instance: if the texture data was last scaled from 0-1, and the clims are set to
+        0.4-0.5, then a texture rescale will be triggered if ``clim_range_threshold < 0.1``.
+        To prevent rescaling, set this value to 0.  To *always* rescale, set the value to
+        >= 1.  By default, 0.2
     emulate_texture : bool
         Use 2D textures to emulate a 3D texture. OpenGL ES 2.0 compatible,
         but has lower performance on desktop platforms.
@@ -403,7 +427,8 @@ class VolumeVisual(Visual):
     _interpolation_names = ['linear', 'nearest']
 
     def __init__(self, vol, clim=None, method='mip', threshold=None, 
-                 relative_step_size=0.8, cmap='grays',
+                 relative_step_size=0.8, cmap='grays', gamma=1.0,
+                 clim_range_threshold=0.2,
                  emulate_texture=False, interpolation='linear'):
         
         tex_cls = TextureEmulated3D if emulate_texture else Texture3D
@@ -411,8 +436,10 @@ class VolumeVisual(Visual):
         # Storage of information of volume
         self._vol_shape = ()
         self._clim = None
+        self._texture_limits = None
+        self._gamma = gamma
         self._need_vertex_update = True
-
+        self._clim_range_threshold = clim_range_threshold
         # Set the colormap
         self._cmap = get_colormap(cmap)
 
@@ -439,6 +466,7 @@ class VolumeVisual(Visual):
         self.shared_program['u_volumetex'] = self._tex
         self.shared_program['a_position'] = self._vertices
         self.shared_program['a_texcoord'] = self._texcoord
+        self.shared_program['gamma'] = self._gamma
         self._draw_mode = 'triangle_strip'
         self._index_buffer = IndexBuffer()
 
@@ -483,11 +511,21 @@ class VolumeVisual(Visual):
         if self._clim is None:
             self._clim = vol.min(), vol.max()
         
+        # store clims used to normalize _tex data for use in clim_normalized
+        self._texture_limits = self._clim
+        # store volume in case it needs to be renormalized by clim.setter
+        self._last_data = vol
+        self.shared_program['clim'] = self.clim_normalized
+
         # Apply clim (copy data by default... see issue #1727)
         vol = np.array(vol, dtype='float32', copy=copy)
         if self._clim[1] == self._clim[0]:
             if self._clim[0] != 0.:
                 vol *= 1.0 / self._clim[0]
+        elif self._clim[0] > self._clim[1]:
+            vol *= -1
+            vol += self._clim[1]
+            vol /= self._clim[1] - self._clim[0]
         else:
             vol -= self._clim[0]
             vol /= self._clim[1] - self._clim[0]
@@ -505,14 +543,100 @@ class VolumeVisual(Visual):
         
         # Get some stats
         self._kb_for_texture = np.prod(self._vol_shape) / 1024
-    
+
+    def rescale_data(self):
+        """Force rescaling of data to the current contrast limits and texture upload.
+
+        Because Textures are currently 8-bits, and contrast adjustment is done during
+        rendering by scaling the values retrieved from the texture on the GPU (provided that
+        the new contrast limits settings are within the range of the clims used when the
+        last texture was uploaded), posterization may become visible if the contrast limits
+        become *too* small of a fraction of the clims used to normalize the texture.
+        This function is a convenience to "force" rescaling of the Texture data to the
+        current contrast limits range.
+        """
+        self.set_data(self._last_data, clim=self._clim)
+        self.update()
+
     @property
     def clim(self):
-        """ The contrast limits that were applied to the volume data.
-        Settable via set_data().
+        """The contrast limits that were applied to the volume data.
+
+        Volume display is mapped from black to white with these values.
+        Settable via set_data() as well as @clim.setter.
         """
         return self._clim
-    
+
+    @property
+    def texture_is_inverted(self):
+        if self._texture_limits is not None:
+            return self._texture_limits[1] < self._texture_limits[0]
+
+    @clim.setter
+    def clim(self, value):
+        """Set contrast limits used when rendering the image.
+
+        ``value`` should be a 2-tuple of floats (min_clim, max_clim), where each value is
+        within the range set by self.clim. If the new value is outside of the (min, max)
+        range of the clims previously used to normalize the texture data, then data will
+        be renormalized using set_data.
+        """
+        clim = np.array(value, float)
+        if not (clim.ndim == 1 and clim.size == 2):
+            raise ValueError('clim must be a 2-element array-like')
+        self._clim = tuple(clim)
+        if self.texture_is_inverted:
+            if (clim[0] > self._texture_limits[0]) or (clim[1] < self._texture_limits[1]):
+                self.rescale_data()
+                return
+        else:
+            if (clim[0] < self._texture_limits[0]) or (clim[1] > self._texture_limits[1]):
+                self.rescale_data()
+                return
+        # if the clim range is too small of a percentage of the last-used texture range,
+        # posterization may be visible, so downscale the texture range.
+        range_ratio = np.subtract(*clim) / abs(np.subtract(*self._texture_limits))
+        if np.abs(range_ratio) < self._clim_range_threshold:
+            self.rescale_data()
+        else:
+            #  new clims are within reasonable range of the texture data, just call shader
+            self.shared_program['clim'] = self.clim_normalized
+            self.update()
+
+    @property
+    def clim_normalized(self):
+        """Normalize current clims between 0-1 based on last-used texture data range.
+
+        In set_data(), the data is normalized (on the CPU) to 0-1 using ``clim``.
+        During rendering, the frag shader will apply the final contrast adjustment based on
+        the current ``clim``.
+        """
+        range_min, range_max = self._texture_limits
+        clim0, clim1 = self.clim
+        if self.texture_is_inverted:
+            tex_range = range_min - range_max
+            clim0 = (clim0 - range_max) / tex_range
+            clim1 = (clim1 - range_max) / tex_range
+        else:
+            tex_range = range_max - range_min
+            clim0 = (clim0 - range_min) / tex_range
+            clim1 = (clim1 - range_min) / tex_range
+        return clim0, clim1
+
+    @property
+    def gamma(self):
+        """The gamma used when rendering the image."""
+        return self._gamma
+
+    @gamma.setter
+    def gamma(self, value):
+        """Set gamma used when rendering the image."""
+        if value <= 0:
+            raise ValueError("gamma must be > 0")
+        self._gamma = float(value)
+        self.shared_program['gamma'] = self._gamma
+        self.update()
+
     @property
     def cmap(self):
         return self._cmap
