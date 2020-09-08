@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import pytest
 import numpy as np
 from vispy import scene
 
@@ -64,11 +65,16 @@ def test_volume_draw():
 
 @requires_pyopengl()
 @requires_application()
-def test_volume_clims_and_gamma():
+@pytest.mark.parametrize('texture_float', [(False,), (True,)])
+def test_volume_clims_and_gamma(texture_float):
     """Test volume visual with clims and gamma on shader.
+
+    Test is parameterized based on ``texture_float`` and should produce
+    relatively the same results.
     
-    currently just using np.ones since the angle of view made more complicated samples
+    Currently just using np.ones since the angle of view made more complicated samples
     challenging, but this confirms gamma and clims works in the shader.
+
     """
 
     with TestingCanvas(size=(40, 40), bgcolor="k") as c:
@@ -80,6 +86,7 @@ def test_volume_clims_and_gamma():
             interpolation='nearest',
             parent=v.scene,
             method='mip',
+            texture_float=texture_float,
         )
         v.camera = 'arcball'
         v.camera.fov = 0
