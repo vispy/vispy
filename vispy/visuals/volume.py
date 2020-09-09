@@ -428,7 +428,8 @@ class VolumeVisual(Visual):
         of OpenGL or with older GPUs. Default is ``False`` to scale data on the
         CPU and store the result in the GPU. If True, data is scaled on the
         GPU which allows for faster color limit changes. Additionally, when
-        32-bit float data is provided it won't be copied.
+        32-bit float data is provided it won't be copied before being
+        transferred to the GPU.
     """
 
     _interpolation_names = ['linear', 'nearest']
