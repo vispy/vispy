@@ -57,7 +57,7 @@ def pack_ieee(value):
     pack: array
         packed interpolation kernel
     """
-    return np.fromstring(value.tostring(),
+    return np.fromstring(value.tobytes(),
                          np.ubyte).reshape((value.shape + (4,)))
 
 
