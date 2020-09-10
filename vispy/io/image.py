@@ -45,13 +45,13 @@ def _make_png(data, level=6):
         else:
             size = len(data)
         chunk = np.empty(size + 12, dtype=np.ubyte)
-        chunk.data[0:4] = np.array(size, '>u4').tostring()
+        chunk.data[0:4] = np.array(size, '>u4').tobytes()
         chunk.data[4:8] = name.encode('ASCII')
         chunk.data[8:8 + size] = data
         # and-ing may not be necessary, but is done for safety:
         # https://docs.python.org/3/library/zlib.html#zlib.crc32
         chunk.data[-4:] = np.array(zlib.crc32(chunk[4:-4]) & 0xffffffff,
-                                   '>u4').tostring()
+                                   '>u4').tobytes()
         return chunk
 
     if data.dtype != np.ubyte:
