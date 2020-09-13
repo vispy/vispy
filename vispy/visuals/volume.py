@@ -450,12 +450,12 @@ class VolumeVisual(Visual):
     _texture_dtype_format = {
         np.float32: 'r32f',
         np.float64: 'r32f',
-        np.uint8: 'r8ui',
-        np.uint16: 'r16ui',
-        np.uint32: 'r32ui',
-        np.int8: 'r8i',
-        np.int16: 'r16i',
-        np.int32: 'r32i',
+        np.uint8: 'r8',
+        np.uint16: 'r16',
+        np.uint32: 'r32',
+        np.int8: 'r8',
+        np.int16: 'r16',
+        np.int32: 'r32',
     }
 
     def __init__(self, vol, clim=None, method='mip', threshold=None,

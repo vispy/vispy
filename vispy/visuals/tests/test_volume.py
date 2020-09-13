@@ -65,11 +65,11 @@ def test_volume_draw():
 
 @requires_pyopengl()
 @requires_application()
-@pytest.mark.parametrize('texture_float', [(False,), (True,)])
-def test_volume_clims_and_gamma(texture_float):
+@pytest.mark.parametrize('texture_format', [None, np.float32, np.uint8])
+def test_volume_clims_and_gamma(texture_format):
     """Test volume visual with clims and gamma on shader.
 
-    Test is parameterized based on ``texture_float`` and should produce
+    Test is parameterized based on ``texture_format`` and should produce
     relatively the same results.
     
     Currently just using np.ones since the angle of view made more complicated samples
@@ -86,7 +86,7 @@ def test_volume_clims_and_gamma(texture_float):
             interpolation='nearest',
             parent=v.scene,
             method='mip',
-            texture_float=texture_float,
+            texture_format=texture_format,
         )
         v.camera = 'arcball'
         v.camera.fov = 0
