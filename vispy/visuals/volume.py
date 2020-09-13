@@ -607,15 +607,6 @@ class VolumeVisual(Visual):
         self.update()
 
     @property
-    def clim(self):
-        """The contrast limits that were applied to the volume data.
-
-        Volume display is mapped from black to white with these values.
-        Settable via set_data() as well as @clim.setter.
-        """
-        return self._clim
-
-    @property
     def texture_is_inverted(self):
         if self._texture_limits is not None:
             return self._texture_limits[1] < self._texture_limits[0]
@@ -639,6 +630,15 @@ class VolumeVisual(Visual):
         if self._check_clims_in_threshold_range(clim):
             return True
         return False
+
+    @property
+    def clim(self):
+        """The contrast limits that were applied to the volume data.
+
+        Volume display is mapped from black to white with these values.
+        Settable via set_data() as well as @clim.setter.
+        """
+        return self._clim
 
     @clim.setter
     def clim(self, value):
