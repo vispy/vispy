@@ -416,28 +416,52 @@ class VolumeVisual(Visual):
         For instance: if the texture data was last scaled from 0-1, and the clims are set to
         0.4-0.5, then a texture rescale will be triggered if ``clim_range_threshold < 0.1``.
         To prevent rescaling, set this value to 0.  To *always* rescale, set the value to
-        >= 1.  By default, 0.2 This has no effect if ``texture_float`` is ``True``.
+        >= 1.  By default, 0.2 This has no effect if ``texture_format`` is not ``None``.
     emulate_texture : bool
         Use 2D textures to emulate a 3D texture. OpenGL ES 2.0 compatible,
         but has lower performance on desktop platforms.
     interpolation : {'linear', 'nearest'}
         Selects method of image interpolation.
-    texture_float : bool
-        Whether to store data on the GPU as floating point data or as scaled
-        integers. Floating point data may not be supported on older versions
-        of OpenGL or with older GPUs. Default is ``False`` to scale data on the
-        CPU and store the result in the GPU. If True, data is scaled on the
+    texture_format: numpy.dtype | str | None
+        How to store data on the GPU. OpenGL allows for many different storage
+        formats and schemes for the low-level texture data stored in the GPU.
+        Most common is unsigned integers or floating point numbers.
+        Unsigned integers are the most widely support while other formats
+        may not be supported on older versions of OpenGL, WebGL
+        (without enabling some extensions), or with older GPUs.
+        Default value is ``None`` which means data will be scaled on the
+        CPU and the result stored in the GPU as an unsigned integer. If a
+        numpy dtype object, a internal texture format will be chosen to
+        support that dtype and data will *not* be scaled. Not all dtypes are
+        supported. If a string, then
+        it must be one of the OpenGL internalformat strings described in the
+        table on this page: https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glTexImage2D.xhtml
+        The name should have `GL_` removed and be lowercase (ex.
+        `GL_R32F` becomes ``'r32f'``).
+        When this is specified (not ``None``) data is scaled on the
         GPU which allows for faster color limit changes. Additionally, when
         32-bit float data is provided it won't be copied before being
-        transferred to the GPU.
+        transferred to the GPU. Note this visual is limited to "luminance"
+        formatted data (single band). This is equivalent to `GL_RED` format
+        in OpenGL 4.0.
     """
 
     _interpolation_names = ['linear', 'nearest']
+    _texture_dtype_format = {
+        np.float32: 'r32f',
+        np.float64: 'r32f',
+        np.uint8: 'r8ui',
+        np.uint16: 'r16ui',
+        np.uint32: 'r32ui',
+        np.int8: 'r8i',
+        np.int16: 'r16i',
+        np.int32: 'r32i',
+    }
 
-    def __init__(self, vol, clim=None, method='mip', threshold=None, 
+    def __init__(self, vol, clim=None, method='mip', threshold=None,
                  relative_step_size=0.8, cmap='grays', gamma=1.0,
                  clim_range_threshold=0.2,
-                 emulate_texture=False, interpolation='linear', texture_float=False):
+                 emulate_texture=False, interpolation='linear', texture_format=None):
         
         tex_cls = TextureEmulated3D if emulate_texture else Texture3D
 
@@ -450,7 +474,7 @@ class VolumeVisual(Visual):
         self._clim_range_threshold = clim_range_threshold
         # Set the colormap
         self._cmap = get_colormap(cmap)
-        self._texture_float = texture_float
+        self._scale_texture_gpu = texture_format is not None
 
         # Create gloo objects
         self._vertices = VertexBuffer()
@@ -468,8 +492,12 @@ class VolumeVisual(Visual):
         
         self._interpolation = interpolation
         tex_kwargs = {}
-        if self._texture_float:
-            tex_kwargs['internalformat'] = 'r32f'
+        if texture_format and not isinstance(texture_format, str):
+            if texture_format not in self._texture_dtype_format:
+                raise ValueError("Can't determine internal texture format for '{}'".format(texture_format))
+            texture_format = self._texture_dtype_format[texture_format]
+        if isinstance(texture_format, str):
+            tex_kwargs['internalformat'] = texture_format
             tex_kwargs['format'] = 'luminance'
         self._tex = tex_cls((10, 10, 10), interpolation=self._interpolation,
                             wrapping='clamp_to_edge', **tex_kwargs)
@@ -544,9 +572,9 @@ class VolumeVisual(Visual):
         self._last_data = vol
         self.shared_program['clim'] = self.clim_normalized
         # no need to copy data if sending float data
-        copy = copy if not self._texture_float else False
+        copy = copy if not self._scale_texture_gpu else False
         vol = np.array(vol, dtype='float32', copy=copy)
-        if not self._texture_float:
+        if not self._scale_texture_gpu:
             # Apply clim (copy data by default... see issue #1727)
             self._cpu_scale_data(vol)
 
@@ -604,7 +632,7 @@ class VolumeVisual(Visual):
         return np.abs(range_ratio) < self._clim_range_threshold
 
     def _check_clim_requires_rescale(self, clim):
-        if self._texture_float:
+        if self._scale_texture_gpu:
             return False
         if self._check_clims_in_texture_range(clim):
             return True
@@ -641,7 +669,7 @@ class VolumeVisual(Visual):
         During rendering, the frag shader will apply the final contrast adjustment based on
         the current ``clim``.
         """
-        if self._texture_float:
+        if self._scale_texture_gpu:
             return self.clim
 
         range_min, range_max = self._texture_limits
