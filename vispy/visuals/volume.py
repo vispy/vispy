@@ -548,7 +548,7 @@ class VolumeVisual(Visual):
             Colormap limits to use. None will use the min and max values.
         copy : bool | True
             Whether to copy the input volume prior to applying clim normalization.
-            Has no effect if visual was created with 'texture_float' set to True.
+            Has no effect if visual was created with 'texture_format' not equal to None.
         """
         # Check volume
         if not isinstance(vol, np.ndarray):
