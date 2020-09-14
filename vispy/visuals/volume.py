@@ -490,6 +490,9 @@ class VolumeVisual(Visual):
 
         self._interpolation = interpolation
         self._tex = self._create_texture(texture_format, emulate_texture)
+        # used to store current data for later CPU-side scaling if
+        # texture_format is None
+        self._last_data = None
 
         # Create program
         Visual.__init__(self, vcode=VERT_SHADER, fcode="")
@@ -579,13 +582,13 @@ class VolumeVisual(Visual):
         # store clims used to normalize _tex data for use in clim_normalized
         self._texture_limits = self._clim
 
-        # store volume in case it needs to be renormalized by clim.setter
-        self._last_data = vol
         self.shared_program['clim'] = self.clim_normalized
         # no need to copy data if sending float data
         copy = copy if not self._scale_texture_gpu else False
         vol = np.array(vol, dtype='float32', copy=copy)
         if not self._scale_texture_gpu:
+            # store volume in case it needs to be renormalized by clim.setter
+            self._last_data = vol
             # Apply clim (copy data by default... see issue #1727)
             self._cpu_scale_data(vol)
 
@@ -606,9 +609,11 @@ class VolumeVisual(Visual):
     def rescale_data(self):
         """Force rescaling of data to the current contrast limits and texture upload.
 
-        Because Textures are currently 8-bits, and contrast adjustment is done during
-        rendering by scaling the values retrieved from the texture on the GPU (provided that
-        the new contrast limits settings are within the range of the clims used when the
+        If this VolumeVisual was created with ``texture_format`` equal to
+        ``None`` then our texture is limited to 8-bits of resolution and
+        contrast adjustment is done during rendering by scaling the values
+        retrieved from the texture on the GPU (provided that the new contrast
+        limits settings are within the range of the clims used when the
         last texture was uploaded), posterization may become visible if the contrast limits
         become *too* small of a fraction of the clims used to normalize the texture.
         This function is a convenience to "force" rescaling of the Texture data to the
