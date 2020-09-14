@@ -6,6 +6,7 @@ from __future__ import division
 
 import numpy as np
 
+from ...util import transforms
 from .perspective import Base3DRotationCamera
 
 
@@ -134,11 +135,13 @@ class TurntableCamera(Base3DRotationCamera):
         self.azimuth = self._event_value[0] - (p2 - p1)[0] * 0.5
         self.elevation = self._event_value[1] + (p2 - p1)[1] * 0.5
 
-    def _rotate_tr(self):
-        """Rotate the transformation matrix based on camera parameters"""
+    def _get_rotation_tr(self):
+        """Return a rotation matrix based on camera parameters"""
         up, forward, right = self._get_dim_vectors()
-        self.transform.rotate(self.elevation, -right)
-        self.transform.rotate(self.azimuth, up)
+        return np.dot(
+            transforms.rotate(self.elevation, -right),
+            transforms.rotate(self.azimuth, up)
+        )
 
     def _dist_to_trans(self, dist):
         """Convert mouse x, y movement into x, y, z translations"""

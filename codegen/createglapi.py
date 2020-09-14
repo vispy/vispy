@@ -366,10 +366,12 @@ class ApiGenerator:
     """ Base API generator class. We derive several subclasses to implement
     the different backends.
     """
-    
+
+    backend_name = None
+
     DESCRIPTION = "GL API X"
     PREAMBLE = ""
-    
+
     def __init__(self):
         self.lines = []
     
@@ -508,6 +510,7 @@ class Gl2ApiGenerator(ApiGenerator):
     filename = os.path.join(GLDIR, '_gl2.py')
     write_c_sig = True
     define_argtypes_in_module = False
+    backend_name = 'gl'
     
     DESCRIPTION = "Subset of desktop GL API compatible with GL ES 2.0"
     PREAMBLE = """
@@ -606,7 +609,7 @@ class Gl2ApiGenerator(ApiGenerator):
             # Annotation available
             functions_anno.add(des.name)
             callline = self._native_call_line(des.name, es2func, prefix=prefix)
-            lines.extend( des.ann.get_lines(callline, 'gl') )
+            lines.extend( des.ann.get_lines(callline, self.backend_name) )
         
         elif es2func.group:
             # Group?
@@ -698,6 +701,7 @@ class Es2ApiGenrator(Gl2ApiGenerator):
     filename = os.path.join(GLDIR, '_es2.py')
     write_c_sig = True
     define_argtypes_in_module = True
+    backend_name = 'es'
     
     DESCRIPTION = "GL ES 2.0 API (via Angle/DirectX on Windows)"
     PREAMBLE = """
@@ -719,6 +723,8 @@ class PyOpenGL2ApiGenrator(ApiGenerator):
     """
     
     filename = os.path.join(GLDIR, '_pyopengl2.py')
+    backend_name = 'pyopengl'
+
     DESCRIPTION = 'Proxy API for GL ES 2.0 subset, via the PyOpenGL library.'
     PREAMBLE = """
     import ctypes
@@ -742,7 +748,7 @@ class PyOpenGL2ApiGenrator(ApiGenerator):
         # Get annotation lines
         ann_lines = []
         if des.ann is not None:
-            ann_lines = des.ann.get_lines(call_line, 'pyopengl')
+            ann_lines = des.ann.get_lines(call_line, self.backend_name)
         # Use annotation or not
         if ann_lines:
             self.lines.append('def %s(%s):' % (des.apiname, argstr))

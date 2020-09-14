@@ -79,7 +79,10 @@ class Parser:
     def _get_lines(self):
         # Easy iterator
         while True:
-            yield self._get_line()
+            try:
+                yield self._get_line()
+            except StopIteration:
+                return
 
     def parse(self):
         """ Parse the header file!

@@ -487,6 +487,7 @@ class ImageVisual(Visual):
                 self._clim = (0, 1)
 
         self._texture_limits = np.array(self._clim)
+        self._need_colortransform_update = True
         self._texture.set_data(data)
         self._need_texture_upload = False
 

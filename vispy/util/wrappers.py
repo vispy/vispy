@@ -149,3 +149,11 @@ def run_subprocess(command, return_code=False, **kwargs):
     if return_code:
         output = output + (p.returncode,)
     return output
+
+
+def test(*args, **kwargs):
+    """Proxy function to delay `.testing` import"""
+    from vispy.testing import test as _test # noqa
+    return _test(*args, **kwargs)
+
+test.__test__ = False  # no discover test function as test
