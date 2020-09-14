@@ -463,8 +463,6 @@ class VolumeVisual(Visual):
                  clim_range_threshold=0.2,
                  emulate_texture=False, interpolation='linear', texture_format=None):
         
-        tex_cls = TextureEmulated3D if emulate_texture else Texture3D
-
         # Storage of information of volume
         self._vol_shape = ()
         self._clim = None
@@ -489,18 +487,9 @@ class VolumeVisual(Visual):
                 [0, 1, 1],
                 [1, 1, 1],
             ], dtype=np.float32))
-        
+
         self._interpolation = interpolation
-        tex_kwargs = {}
-        if texture_format and not isinstance(texture_format, str):
-            if texture_format not in self._texture_dtype_format:
-                raise ValueError("Can't determine internal texture format for '{}'".format(texture_format))
-            texture_format = self._texture_dtype_format[texture_format]
-        if isinstance(texture_format, str):
-            tex_kwargs['internalformat'] = texture_format
-            tex_kwargs['format'] = 'luminance'
-        self._tex = tex_cls((10, 10, 10), interpolation=self._interpolation,
-                            wrapping='clamp_to_edge', **tex_kwargs)
+        self._tex = self._create_texture(texture_format, emulate_texture)
 
         # Create program
         Visual.__init__(self, vcode=VERT_SHADER, fcode="")
@@ -525,6 +514,25 @@ class VolumeVisual(Visual):
         self.threshold = threshold if (threshold is not None) else vol.mean()
         self.freeze()
 
+    def _create_texture(self, texture_format, emulate_texture):
+        tex_cls = TextureEmulated3D if emulate_texture else Texture3D
+
+        tex_kwargs = {}
+        if texture_format and not isinstance(texture_format, str):
+            if texture_format not in self._texture_dtype_format:
+                raise ValueError("Can't determine internal texture format for '{}'".format(texture_format))
+            texture_format = self._texture_dtype_format[texture_format]
+        if isinstance(texture_format, str):
+            tex_kwargs['internalformat'] = texture_format
+            tex_kwargs['format'] = 'luminance'
+
+        # Use 3D array shape of (10, 10, 10) as placeholder. When data is
+        # set later this will be resized.
+        # clamp_to_edge means any texture coordinates outside of 0-1 should be
+        # clamped to 0 and 1.
+        return tex_cls((10, 10, 10), interpolation=self._interpolation,
+                       wrapping='clamp_to_edge', **tex_kwargs)
+
     def _cpu_scale_data(self, vol):
         if self._clim[1] == self._clim[0]:
             if self._clim[0] != 0.:
@@ -547,8 +555,11 @@ class VolumeVisual(Visual):
         clim : tuple | None
             Colormap limits to use. None will use the min and max values.
         copy : bool | True
-            Whether to copy the input volume prior to applying clim normalization.
-            Has no effect if visual was created with 'texture_format' not equal to None.
+            Whether to copy the input volume prior to applying clim
+            normalization on the CPU. Has no effect if visual was created
+            with 'texture_format' not equal to None as data is not modified
+            on the CPU and data must already be copied to the GPU.
+
         """
         # Check volume
         if not isinstance(vol, np.ndarray):
