@@ -11,6 +11,9 @@ from OpenGL import GL
 import OpenGL.GL.framebufferobjects as FBO
 
 
+
+
+
 def glBindAttribLocation(program, index, name):
     name = name.encode('utf-8')
     return GL.glBindAttribLocation(program, index, name)

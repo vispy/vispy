@@ -222,8 +222,8 @@ HARDER_TYPES = {
                 'GLchar**':('', 'POINTER(ctypes.c_char_p)'),
                 'GLvoid*':('', 'c_void_p'),  # or c_voidp?
                 'GLvoid**':('', 'POINTER(ctypes.c_void_p)'),
-                'GLintptr':('', 'c_int'), 
-                'GLsizeiptr':('', 'c_int'),
+                'GLintptr':('', 'c_ssize_t'), 
+                'GLsizeiptr':('', 'c_ssize_t'),
                 }
 
 # Together the EASY_TYPES and HARDER_TYPES should cover all types that
