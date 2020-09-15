@@ -170,9 +170,12 @@ script:
     - if [ "${TEST}" == "osmesa" ]; then
         make osmesa;
       fi;
-    # TODO: Fail is warnings from generation
+    # TODO: Fail if warnings from generation
+    #       make html SPHINXOPTS="-W" SPHINXBUILD="sphinx-multiversion"
     - if [ "${TEST}" == "website" ]; then
-        python make website html;
+        cd doc;
+        make clean;
+        make html;
       fi;
     # Each line must be run in a separate line to ensure exit code accuracy
     - if [ "${DEPS}" == "minimal" ]; then
