@@ -120,7 +120,7 @@ def _unit(mode, extra_arg_string='', coverage=False):
 
 
 def _docs():
-    """test docstring paramters
+    """test docstring parameters
     using vispy/utils/tests/test_docstring_parameters.py"""
     dev = _get_import_dir()[1]
 
