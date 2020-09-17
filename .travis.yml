@@ -18,7 +18,6 @@ matrix:
            CONDA_CHANNELS=conda-forge
            CONDA_CHANNEL_PRIORITY=strict
            PIP_DEPENDENCIES="numpydoc"
-           MAMBA=True
       os: osx
       osx_image: xcode10.1
 
@@ -26,7 +25,6 @@ matrix:
            CONDA_DEPENDENCIES="numpy scipy pytest<5.4 cython coveralls pytest-cov pytest-sugar!=0.9.3 pyopengl networkx pysdl2 matplotlib jupyter pyqt=5 scikit-image meshio"
            CONDA_CHANNELS=conda-forge
            CONDA_CHANNEL_PRIORITY=strict
-           MAMBA=True
       os: osx
       osx_image: xcode10.1
 
@@ -36,7 +34,6 @@ matrix:
            CONDA_CHANNELS=conda-forge
            CONDA_CHANNEL_PRIORITY=strict
            PIP_DEPENDENCIES="numpydoc"
-           MAMBA=True
       addons:
         apt:
           packages:
@@ -47,7 +44,6 @@ matrix:
            CONDA_CHANNELS=conda-forge
            CONDA_CHANNEL_PRIORITY=strict
            PIP_DEPENDENCIES="husl pypng cassowary"
-           MAMBA=True
       addons:
         apt:
           packages:
@@ -60,7 +56,6 @@ matrix:
            CONDA_CHANNELS=conda-forge
            CONDA_CHANNEL_PRIORITY=strict
            PIP_DEPENDENCIES="husl pypng cassowary"
-           MAMBA=True
       addons:
         apt:
           packages:
@@ -75,7 +70,6 @@ matrix:
            CONDA_DEPENDENCIES="numpy scipy pytest<5.4 cython coveralls pytest-cov pytest-sugar!=0.9.3 mesalib libglu meshio"
            CONDA_CHANNELS=conda-forge
            CONDA_CHANNEL_PRIORITY=strict
-           MAMBA=True
       addons:
         apt:
           packages:
@@ -87,7 +81,6 @@ matrix:
         CONDA_CHANNELS=conda-forge
         CONDA_CHANNEL_PRIORITY=strict
         PIP_DEPENDENCIES="numpydoc"
-        MAMBA=True
       addons:
         apt:
           packages:
