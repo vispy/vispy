@@ -18,6 +18,7 @@ matrix:
            CONDA_CHANNELS=conda-forge
            CONDA_CHANNEL_PRIORITY=strict
            PIP_DEPENDENCIES="numpydoc"
+           MAMBA=True
       os: osx
       osx_image: xcode10.1
 
@@ -25,6 +26,7 @@ matrix:
            CONDA_DEPENDENCIES="numpy scipy pytest<5.4 cython coveralls pytest-cov pytest-sugar!=0.9.3 pyopengl networkx pysdl2 matplotlib jupyter pyqt=5 scikit-image meshio"
            CONDA_CHANNELS=conda-forge
            CONDA_CHANNEL_PRIORITY=strict
+           MAMBA=True
       os: osx
       osx_image: xcode10.1
 
@@ -34,6 +36,7 @@ matrix:
            CONDA_CHANNELS=conda-forge
            CONDA_CHANNEL_PRIORITY=strict
            PIP_DEPENDENCIES="numpydoc"
+           MAMBA=True
       addons:
         apt:
           packages:
@@ -44,6 +47,7 @@ matrix:
            CONDA_CHANNELS=conda-forge
            CONDA_CHANNEL_PRIORITY=strict
            PIP_DEPENDENCIES="husl pypng cassowary"
+           MAMBA=True
       addons:
         apt:
           packages:
@@ -56,6 +60,7 @@ matrix:
            CONDA_CHANNELS=conda-forge
            CONDA_CHANNEL_PRIORITY=strict
            PIP_DEPENDENCIES="husl pypng cassowary"
+           MAMBA=True
       addons:
         apt:
           packages:
@@ -70,6 +75,7 @@ matrix:
            CONDA_DEPENDENCIES="numpy scipy pytest<5.4 cython coveralls pytest-cov pytest-sugar!=0.9.3 mesalib libglu meshio"
            CONDA_CHANNELS=conda-forge
            CONDA_CHANNEL_PRIORITY=strict
+           MAMBA=True
       addons:
         apt:
           packages:
@@ -81,6 +87,7 @@ matrix:
         CONDA_CHANNELS=conda-forge
         CONDA_CHANNEL_PRIORITY=strict
         PIP_DEPENDENCIES="numpydoc"
+        MAMBA=True
       addons:
         apt:
           packages:
@@ -145,15 +152,8 @@ script:
     - if [ "${TEST}" == "osmesa" ]; then
         make osmesa;
       fi;
-    # TODO: Fail if warnings from generation
-    #       make html SPHINXOPTS="-W"
-    # Make "master" the tag so the website gets deployed (see below)
     - if [ "${TEST}" == "website" ]; then
-        TRAVIS_TAG="master";
-        cd doc;
-        make clean;
-        make html;
-        touch _build/html/.nojekyll;
+        source ./ci/build_website.sh;
       fi;
 
 
