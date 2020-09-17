@@ -65,7 +65,7 @@ def test_volume_draw():
 
 @requires_pyopengl()
 @requires_application()
-@pytest.mark.parametrize('texture_format', [None, np.float32, np.uint8])
+@pytest.mark.parametrize('texture_format', [None, np.float32, np.uint8, 'auto'])
 def test_volume_clims_and_gamma(texture_format):
     """Test volume visual with clims and gamma on shader.
 

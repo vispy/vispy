@@ -437,7 +437,9 @@ class VolumeVisual(Visual):
         it must be one of the OpenGL internalformat strings described in the
         table on this page: https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glTexImage2D.xhtml
         The name should have `GL_` removed and be lowercase (ex.
-        `GL_R32F` becomes ``'r32f'``).
+        `GL_R32F` becomes ``'r32f'``). Lastly, this can also be the string
+        ``'auto'`` which will use the data type of the provided volume data
+        to determine the internalformat of the texture.
         When this is specified (not ``None``) data is scaled on the
         GPU which allows for faster color limit changes. Additionally, when
         32-bit float data is provided it won't be copied before being
@@ -489,7 +491,7 @@ class VolumeVisual(Visual):
             ], dtype=np.float32))
 
         self._interpolation = interpolation
-        self._tex = self._create_texture(texture_format, emulate_texture)
+        self._tex = self._create_texture(texture_format, emulate_texture, vol)
         # used to store current data for later CPU-side scaling if
         # texture_format is None
         self._last_data = None
@@ -517,10 +519,12 @@ class VolumeVisual(Visual):
         self.threshold = threshold if (threshold is not None) else vol.mean()
         self.freeze()
 
-    def _create_texture(self, texture_format, emulate_texture):
+    def _create_texture(self, texture_format, emulate_texture, data):
         tex_cls = TextureEmulated3D if emulate_texture else Texture3D
 
         tex_kwargs = {}
+        if isinstance(texture_format, str) and texture_format == 'auto':
+            texture_format = data.dtype.type
         if texture_format and not isinstance(texture_format, str):
             if texture_format not in self._texture_dtype_format:
                 raise ValueError("Can't determine internal texture format for '{}'".format(texture_format))
