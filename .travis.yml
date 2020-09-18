@@ -166,7 +166,7 @@ after_success:
 deploy:
   - provider: pages:git
     repo: vispy/vispy.github.com
-    branch: master
+    target_branch: master
     fqdn: vispy.org
     commit_message: "Deploy %{project_name} website for SHA:%{git_sha} (Tag: %{git_tag})"
     edge: true
