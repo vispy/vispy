@@ -426,14 +426,14 @@ class VolumeVisual(Visual):
         How to store data on the GPU. OpenGL allows for many different storage
         formats and schemes for the low-level texture data stored in the GPU.
         Most common is unsigned integers or floating point numbers.
-        Unsigned integers are the most widely support while other formats
+        Unsigned integers are the most widely supported while other formats
         may not be supported on older versions of OpenGL, WebGL
         (without enabling some extensions), or with older GPUs.
         Default value is ``None`` which means data will be scaled on the
         CPU and the result stored in the GPU as an unsigned integer. If a
-        numpy dtype object, a internal texture format will be chosen to
-        support that dtype and data will *not* be scaled. Not all dtypes are
-        supported. If a string, then
+        numpy dtype object, an internal texture format will be chosen to
+        support that dtype and data will *not* be scaled on the CPU. Not all
+        dtypes are supported. If a string, then
         it must be one of the OpenGL internalformat strings described in the
         table on this page: https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glTexImage2D.xhtml
         The name should have `GL_` removed and be lowercase (ex.
