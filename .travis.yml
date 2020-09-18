@@ -90,6 +90,10 @@ before_install:
     - git clone https://github.com/astropy/ci-helpers.git
     - source ci-helpers/travis/setup_conda.sh
     - SRC_DIR=$(pwd)
+    - if [ "${TEST}" == "website" ]; then
+          openssl aes-256-cbc -K $encrypted_26a3009aece7_key -iv $encrypted_26a3009aece7_iv -in ci/vispy_travis_website_upload.enc -out vispy_travis_website_upload -d;
+          export PAGES_DEPLOY_KEY="${SRC_DIR}/vispy_travis_website_upload";
+      fi;
 
 
 install:
