@@ -7,9 +7,13 @@
 export TRAVIS_TAG="master"
 
 cd doc
+
 make clean
 # TODO: Fail if warnings from generation
 #       make html SPHINXOPTS="-W"
 # TODO: Switch to sphinx-multiversion
 make html
 touch _build/html/.nojekyll
+
+# move back to source directory so we don't mess with future steps
+cd ..
