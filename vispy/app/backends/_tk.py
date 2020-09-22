@@ -263,14 +263,26 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
 
     def initgl(self):
         # For the user code
-        GL.glViewport(0, 0, self.winfo_width(), self.winfo_height())
-        GL.glClearColor(0.0, 1.0, 0.0, 0.0)
-        # self.animate = 1
+        self.update_idletasks()
+
+        # w, h = self.winfo_width(), self.winfo_height()
+        # GL.glViewport(0, 0, w, h)
+        GL.glClearColor(0.0, 1.0, 1.0, 0.0)
+        
+        # GL.glEnable(GL.GL_TEXTURE_2D);	
+        # GL.glClearColor (0.0, 0.0, 0.0, 0.5);	
+        # GL.glClearDepth (1.0);					
+        # GL.glDepthFunc (GL.GL_LEQUAL);			
+        # GL.glEnable (GL.GL_DEPTH_TEST);			
+        # GL.glShadeModel (GL.GL_SMOOTH);			
+        
+        self.animate = 1
 
     def redraw(self):
         # For the user code
-        # GL.glClear(GL.GL_COLOR_BUFFER_BIT)
+        GL.glClear(GL.GL_COLOR_BUFFER_BIT)
         self._on_draw(None)
+
 
     """
     event.state:
@@ -360,11 +372,9 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
             pos=(e.x, e.y), button=btn[e.num], modifiers=self._parse_state(e))
     
     def _on_configure(self, e):
-        print("_on_configure")
+        print("_on_configure", e.width, e.height)
         if self._vispy_canvas is None or not self._init:
             return
-        self.update()
-        self.tkResize(e)
         self._vispy_canvas.events.resize(size=(e.width, e.height))
     
     def _on_draw(self, e):
@@ -405,6 +415,7 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
         etime = time() + 0.3
         while time() < etime:
             sleep(0.01)
+            self.update_idletasks()
             self._vispy_canvas.set_current()
             self._vispy_canvas.app.process_events()
 
@@ -415,7 +426,7 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
     def _vispy_swap_buffers(self):
         # Swap front and back buffer
         self._vispy_canvas.set_current()
-        self.tkSwapBuffers()
+        # self.tkSwapBuffers()
 
     def _vispy_set_title(self, title):
         # Set the window title. Has no effect for widgets
@@ -450,7 +461,7 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
 
     def _vispy_update(self):
         # Invoke a redraw
-        self.tkExpose(None)
+        self.tkMakeCurrent()
 
     def _vispy_close(self):
         # Force the window or widget to shut down
@@ -460,11 +471,11 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
     def _vispy_get_size(self):
         # Should return widget size
         if self.top: self.top.update_idletasks()
-        return self.winfo_reqwidth(), self.winfo_reqheight()
+        return self.winfo_width(), self.winfo_height()
 
     def _vispy_get_position(self):
         # Should return widget position
-        return w.winfo_x(), w.winfo_y()
+        return self.winfo_x(), self.winfo_y()
 
     def _vispy_get_fullscreen(self):
         # Should return the current fullscreen state
@@ -482,16 +493,27 @@ class TimerBackend(BaseTimerBackend):  # Can be mixed with native timer class
 
     def __init__(self, vispy_timer):
         BaseTimerBackend.__init__(self, vispy_timer)
+        global _tk_toplevel
+        if _tk_toplevel is None:
+            raise Exception("TimerBackend: No toplevel?")
+        self._tk = _tk_toplevel
+        self._id = None
+        self.last_interval = 1
 
     def _vispy_start(self, interval):
-        raise NotImplementedError()
+        self._vispy_stop()
+        self.last_interval = int(round(interval * 1000))
+        self._id = self._tk.after(self.last_interval, self._vispy_timeout)
 
     def _vispy_stop(self):
-        raise NotImplementedError()
+        if self._id is not None:
+            self._tk.after_cancel(self._id)
+            self._id = None
 
     def _vispy_timeout(self):
-        raise NotImplementedError()
-
+        self._vispy_timer._timeout()
+        self._id = self._tk.after(self.last_interval, self._vispy_timeout)
+        
     def _vispy_get_native_timer(self):
         # Should return the native widget object.
         # If this is self, this method can be omitted.
