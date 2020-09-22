@@ -23,6 +23,7 @@ CORE_BACKENDS = [
     ('wx', '_wx', 'wx'),
     ('EGL', '_egl', 'vispy.ext.egl'),
     ('osmesa', '_osmesa', 'vispy.ext.osmesa'),
+    ('tkinter', '_tk', 'tkinter'),
 ]
 
 # Whereas core backends really represents libraries that can create a
