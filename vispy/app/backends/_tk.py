@@ -189,7 +189,7 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
         # We use _process_backend_kwargs() to "serialize" the kwargs
         # and to check whether they match this backend's capability
         p = self._process_backend_kwargs(kwargs)
-        
+
         self._double_click_supported = True
 
         # Deal with config
@@ -211,15 +211,15 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
         kwargs.pop("always_on_top")
         kwargs.pop("fullscreen")
         kwargs.pop("context")
-        
+
         if p.parent is None:
             self.top = tk.Tk()
             self.top.withdraw()
-            
+
             if p.title:    self._vispy_set_title(p.title)
             if p.size:     self._vispy_set_size(p.size[0], p.size[1])
             if p.position: self._vispy_set_position(p.position[0], p.position[1])
-            
+
             self.top.update_idletasks()
 
             if not p.resizable:
@@ -229,14 +229,14 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
             if p.always_on_top:
                 self.top.wm_attributes("-topmost", "True")
             self._fullscreen = p.fullscreen
-                
+
             self.top.protocol("WM_DELETE_WINDOW", self._vispy_close)
             parent = self.top
         else:
-            self.top = p.parent.winfo_toplevel()
+            self.top = None
             parent   = p.parent
             self._fullscreen = False
-        
+
         self._init = False
 
         OpenGLFrame.__init__(self, parent, **kwargs)
@@ -245,16 +245,16 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
             # Why can't I access __context?
             # self._native_context = self.__context
             self._native_context = vars(self).get("_CanvasBackend__context", None)
-        
+
         self.bind("<Enter>"            , self._on_mouse_enter)
         self.bind("<Motion>"           , self._on_mouse_move)
         self.bind("<MouseWheel>"       , self._on_mouse_wheel)
         self.bind("<Any-Button>"       , self._on_mouse_button_press)
         self.bind("<Double-Any-Button>", self._on_mouse_double_button_press)
         self.bind("<Any-ButtonRelease>", self._on_mouse_button_release)
-        self.bind("<Configure>"        , self._on_configure)
-        # self.bind("<Expose>"           , self._on_draw)
-        # self.bind("<Map>"              , self._on_draw)
+        self.bind("<Configure>"        , self._on_configure, add='+')
+        # self.bind("<Expose>"           , self.redraw)
+        # self.bind("<Map>"              , self.redraw)
         self.bind("<Any-KeyPress>"     , self._on_key_down)
         self.bind("<Any-KeyRelease>"   , self._on_key_up)
 
@@ -265,50 +265,43 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
         # For the user code
         self.update_idletasks()
 
-        # w, h = self.winfo_width(), self.winfo_height()
-        # GL.glViewport(0, 0, w, h)
-        GL.glClearColor(0.0, 1.0, 1.0, 0.0)
-        
-        # GL.glEnable(GL.GL_TEXTURE_2D);	
-        # GL.glClearColor (0.0, 0.0, 0.0, 0.5);	
-        # GL.glClearDepth (1.0);					
-        # GL.glDepthFunc (GL.GL_LEQUAL);			
-        # GL.glEnable (GL.GL_DEPTH_TEST);			
-        # GL.glShadeModel (GL.GL_SMOOTH);			
-        
-        self.animate = 1
+        GL.glClear(GL.GL_COLOR_BUFFER_BIT)  
+        GL.glClearColor(0.0, 0.0, 0.0, 0.0)
 
-    def redraw(self):
+        # self.set_update_interval(16)  # Auto start rendering at ~60 FPS?
+
+    def redraw(self, *args):
         # For the user code
-        GL.glClear(GL.GL_COLOR_BUFFER_BIT)
-        self._on_draw(None)
+        if self._vispy_canvas is None:
+            return
+        if not self._init:
+            self._initialize()
+        self._vispy_canvas.set_current()
+        self._vispy_canvas.events.draw(region=None)
+
+    def set_update_interval(self, interval_ms=17):
+        self.animate = interval_ms
+        self.tkExpose(None)
 
 
-    """
-    event.state:
-        0x0001	Shift.
-        0x0002	Caps Lock.
-        0x0004	Control.
-        0x0008	Left-hand Alt.
-        0x0010	Num Lock.
-        0x0080	Right-hand Alt.
-        0x0100	Mouse button 1.
-        0x0200	Mouse button 2.
-        0x0400	Mouse button 3.
-    """
+    STATE_LUT = {
+        0x0001: keys.SHIFT,
+        # 0x0002: CAPSLOCK,
+        0x0004: keys.CONTROL,
+        # 0x0008: keys.ALT,  # LEFT_ALT: Seems always pressed?
+        # 0x0010: NUMLOCK,
+        # 0x0020: SCROLLLOCK,
+        0x0080: keys.ALT,
+        # 0x0100: ?,  # Mouse button 1.
+        # 0x0200: ?,  # Mouse button 2.
+        # 0x0400: ?,  # Mouse button 3.
+        0x20000: keys.ALT  # LEFT_ALT ?
+    }
+
     def _parse_state(self, e):
-        mods = []
-        if e.state & 0x0001: mods.append(keys.SHIFT)
-        # if e.state & 0x0002: mods.append(keys.?)
-        if e.state & 0x0004: mods.append(keys.CONTROL)
-        if e.state & 0x0008: mods.append(keys.ALT)
-        # if e.state & 0x0010: mods.append(keys.?)
-        if e.state & 0x0080: mods.append(keys.ALT)
-        # if e.state & 0x0100: mods.append(keys.?)
-        # if e.state & 0x0200: mods.append(keys.?)
-        # if e.state & 0x0400: mods.append(keys.?)
-        return mods
-        
+        return [ key for mask, key in self.STATE_LUT.items() \
+                    if e.state & mask]
+
     def _parse_keys(self, e):
         if e.keysym_num in KEYMAP:
             return KEYMAP[e.keysym_num], ""
@@ -326,23 +319,23 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
             return
         self._vispy_mouse_move(
             pos=(e.x, e.y), modifiers=self._parse_state(e))
-        
+
     def _on_mouse_move(self, e):
         if self._vispy_canvas is None:
             return
         self._vispy_mouse_move(
             pos=(e.x, e.y), modifiers=self._parse_state(e))
-        
+
     def _on_mouse_wheel(self, e):
         if self._vispy_canvas is None:
             return
-        # e.num: 4 when up, 5 when down
-        # Scroll up: e.delta > 0
+        # e.num: 4 when up, 5 when down (only on *nix?)
+        # Scroll up  : e.delta > 0
         # Scroll down: e.delta < 0
         self._vispy_canvas.events.mouse_wheel(
-            delta=(0.0, float(e.delta)), 
+            delta=(0.0, float(e.delta / 120)),
             pos=(e.x, e.y), modifiers=self._parse_state(e))
-        
+
     def _on_mouse_button_press(self, e):
         if self._vispy_canvas is None:
             return
@@ -350,18 +343,14 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
         btn = { 1:1, 2:3, 3:2}
         self._vispy_mouse_press(
             pos=(e.x, e.y), button=btn[e.num], modifiers=self._parse_state(e))
-        
+
     def _on_mouse_double_button_press(self, e):
         if self._vispy_canvas is None:
             return
         # [ left=1, middle, right]
         btn = { 1:1, 2:3, 3:2}
-        pos, button, modifiers = \
-            (e.x, e.y), btn[e.num], self._parse_state(e)
-        self._vispy_mouse_press(
-            pos=pos, button=button, modifiers=modifiers)
         self._vispy_mouse_double_click(
-            pos=pos, button=button, modifiers=modifiers)
+            pos=(e.x, e.y), button=btn[e.num], modifiers=self._parse_state(e))
 
     def _on_mouse_button_release(self, e):
         if self._vispy_canvas is None:
@@ -370,54 +359,37 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
         btn = { 1:1, 2:3, 3:2}
         self._vispy_mouse_release(
             pos=(e.x, e.y), button=btn[e.num], modifiers=self._parse_state(e))
-    
+
     def _on_configure(self, e):
-        print("_on_configure", e.width, e.height)
         if self._vispy_canvas is None or not self._init:
             return
         self._vispy_canvas.events.resize(size=(e.width, e.height))
-    
-    def _on_draw(self, e):
-        if self._vispy_canvas is None:
-            return
-        if not self._init:
-            self._initialize()
-        self._vispy_canvas.set_current()
-        self._vispy_canvas.events.draw(region=None)
-    
+
     def _initialize(self):
         print("_initialize")
         self.initgl()
-        
+
         if self._vispy_canvas is None:
             return
         self._init = True
         self._vispy_canvas.set_current()
         self._vispy_canvas.events.initialize()
-        if self.top: self.top.update_idletasks()
+        self.update_idletasks()
         self._on_configure(Coord(self._vispy_get_size()))
-    
+
     def _on_key_down(self, e):
         if self._vispy_canvas is None:
             return
         key, text = self._parse_keys(e)
         self._vispy_canvas.events.key_press(
             key=key, text=text, modifiers=self._parse_state(e))
-        
+
     def _on_key_up(self, e):
         if self._vispy_canvas is None:
             return
         key, text = self._parse_keys(e)
         self._vispy_canvas.events.key_release(
             key=key, text=text, modifiers=self._parse_state(e))
-
-    def _vispy_warmup(self):
-        etime = time() + 0.3
-        while time() < etime:
-            sleep(0.01)
-            self.update_idletasks()
-            self._vispy_canvas.set_current()
-            self._vispy_canvas.app.process_events()
 
     def _vispy_set_current(self):
         # Make this the current context
@@ -461,12 +433,14 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
 
     def _vispy_update(self):
         # Invoke a redraw
-        self.tkMakeCurrent()
+        self.animate = 0
+        self.tkExpose(None)
 
     def _vispy_close(self):
         # Force the window or widget to shut down
-        self._vispy_canvas.close()
-        self.destroy()
+        if self.top:
+            self._vispy_canvas.close()
+            self.destroy()
 
     def _vispy_get_size(self):
         # Should return widget size
@@ -513,7 +487,7 @@ class TimerBackend(BaseTimerBackend):  # Can be mixed with native timer class
     def _vispy_timeout(self):
         self._vispy_timer._timeout()
         self._id = self._tk.after(self.last_interval, self._vispy_timeout)
-        
+
     def _vispy_get_native_timer(self):
         # Should return the native widget object.
         # If this is self, this method can be omitted.
