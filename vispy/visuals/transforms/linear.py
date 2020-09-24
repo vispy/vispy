@@ -473,7 +473,7 @@ class MatrixTransform(BaseTransform):
         # of standard linear algebra order.
         self.matrix = transforms.affine_map(points1, points2).T
 
-    def set_ortho(self, l, r, b, t, n, f):
+    def set_ortho(self, l, r, b, t, n, f):  # noqa
         """Set ortho transform
 
         Parameters
@@ -529,7 +529,7 @@ class MatrixTransform(BaseTransform):
         """
         self.matrix = transforms.perspective(fov, aspect, near, far)
 
-    def set_frustum(self, l, r, b, t, n, f):
+    def set_frustum(self, l, r, b, t, n, f):  # noqa
         """Set the frustum
 
         Parameters

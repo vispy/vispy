@@ -76,7 +76,7 @@ class ArrayList(object):
         if data is not None:
             if isinstance(data, (list, tuple)):
                 if isinstance(data[0], (list, tuple)):
-                    itemsize = [len(l) for l in data]
+                    itemsize = [len(sublist) for sublist in data]
                     data = [item for sublist in data for item in sublist]
             self._data = np.array(data, copy=False)
             self._size = self._data.size
@@ -310,7 +310,7 @@ class ArrayList(object):
             raise AttributeError("List is not sizeable")
 
         if isinstance(data, (list, tuple)) and isinstance(data[0], (list, tuple)):  # noqa
-            itemsize = [len(l) for l in data]
+            itemsize = [len(sublist) for sublist in data]
             data = [item for sublist in data for item in sublist]
 
         data = np.array(data, copy=False).ravel()
