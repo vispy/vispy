@@ -11,24 +11,22 @@ import sys
 import os
 import inspect
 import gc
+import pytest
+import functools
 
 from distutils.version import LooseVersion
 
 from ..ext.six import string_types
-from ..util import use_log_level
+from ..util.check_environment import has_backend
 
-###############################################################################
-# Adapted from Python's unittest2
-# http://docs.python.org/2/license.html
+skipif = pytest.mark.skipif
 
-try:
-    from unittest.case import SkipTest
-except ImportError:
-    try:
-        from unittest2.case import SkipTest
-    except ImportError:
-        class SkipTest(Exception):
-            pass
+
+def SkipTest(*args, **kwargs):
+    """Backport for raising SkipTest that gives a better traceback."""
+    __tracebackhide__ = True
+    import pytest
+    return pytest.skip(*args, **kwargs)
 
 
 def _safe_rep(obj, short=False):
@@ -151,48 +149,24 @@ class raises(object):
 def has_pyopengl():
     try:
         from OpenGL import GL  # noqa, analysis:ignore
-    except Exception:
+    except ImportError:
         return False
     else:
         return True
 
 
 def requires_pyopengl():
-    return np.testing.dec.skipif(not has_pyopengl(), 'Requires PyOpenGL')
+    skip = not has_pyopengl()
+    return skipif(skip, reason='Requires PyOpenGL')
 
 
 def requires_ssl():
     bad = os.getenv('CIBW_BUILDING', 'false') == 'true'
-    return np.testing.dec.skipif(bad, 'Requires proper SSL support')
+    return skipif(bad, reason='Requires proper SSL support')
 
 
 ###############################################################################
 # App stuff
-
-def has_backend(backend, has=(), capable=(), out=()):
-    from ..app.backends import BACKENDMAP
-    using = os.getenv('_VISPY_TESTING_APP', None)
-    if using is not None and using != backend:
-        # e.g., we are on  a 'pyglet' run but the test requires PyQt4
-        ret = (False,) if len(out) > 0 else False
-        for o in out:
-            ret += (None,)
-        return ret
-
-    # let's follow the standard code path
-    module_name = BACKENDMAP[backend.lower()][1]
-    with use_log_level('warning', print_msg=False):
-        mod = __import__('app.backends.%s' % module_name, globals(), level=2)
-    mod = getattr(mod.backends, module_name)
-    good = mod.testable
-    for h in has:
-        good = (good and getattr(mod, 'has_%s' % h))
-    for cap in capable:
-        good = (good and mod.capability[cap])
-    ret = (good,) if len(out) > 0 else good
-    for o in out:
-        ret += (getattr(mod, o),)
-    return ret
 
 
 def has_application(backend=None, has=(), capable=()):
@@ -227,16 +201,22 @@ def composed(*decs):
 
 
 def garbage_collect(f):
+    # Pytest expects things like the name of the functions not to change
+    # Therefore, we must use the functools.wraps decorator on our deco
+    @functools.wraps(f)
     def deco(*args, **kwargs):
         gc.collect()
-        return f(*args, **kwargs)
+        try:
+            return f(*args, **kwargs)
+        finally:
+            gc.collect()
     return deco
 
 
 def requires_application(backend=None, has=(), capable=(), force_gc=True):
     """Return a decorator for tests that require an application"""
     good, msg = has_application(backend, has, capable)
-    dec_backend = np.testing.dec.skipif(not good, "Skipping test: %s" % msg)
+    dec_backend = skipif(not good, reason="Skipping test: %s" % msg)
     try:
         import pytest
     except Exception:
@@ -255,7 +235,7 @@ def requires_img_lib():
         has_img_lib = False  # PIL breaks tests on windows (!)
     else:
         has_img_lib = not all(c is None for c in _check_img_lib())
-    return np.testing.dec.skipif(not has_img_lib, 'imageio or PIL required')
+    return skipif(not has_img_lib, reason='imageio or PIL required')
 
 
 def has_ipython(version='3.0'):
@@ -282,8 +262,7 @@ def has_ipython(version='3.0'):
 
 def requires_ipython(version='3.0'):
     ipython_present, message = has_ipython(version)
-
-    return np.testing.dec.skipif(not ipython_present, message)
+    return skipif(not ipython_present, reason=message)
 
 
 def requires_numpydoc():
@@ -293,31 +272,7 @@ def requires_numpydoc():
         present = False
     else:
         present = True
-    return np.testing.dec.skipif(not present, 'numpydoc is required')
-
-
-def has_matplotlib(version='1.2'):
-    """Determine if mpl is a usable version"""
-    try:
-        import matplotlib
-    except Exception:
-        has_mpl = False
-    else:
-        if LooseVersion(matplotlib.__version__) >= LooseVersion(version):
-            has_mpl = True
-        else:
-            has_mpl = False
-    return has_mpl
-
-
-def has_skimage(version='0.11'):
-    """Determine if scikit-image is a usable version"""
-    try:
-        import skimage
-    except ImportError:
-        return False
-    sk_version = LooseVersion(skimage.__version__)
-    return sk_version >= LooseVersion(version)
+    return skipif(not present, reason='numpydoc is required')
 
 
 ###############################################################################
@@ -338,14 +293,19 @@ def _has_scipy(min_version):
 
 
 def requires_scipy(min_version='0.13'):
-    return np.testing.dec.skipif(not _has_scipy(min_version),
-                                 'Requires Scipy version >= %s' % min_version)
+    return skipif(not _has_scipy(min_version),
+                  reason='Requires Scipy version >= %s' % min_version)
+
+
+def _bad_glfw_decorate(app):
+    return app.backend_name == 'Glfw' and \
+        app.backend_module.glfw.__version__ == (3, 3, 1)
 
 
 @nottest
-def TestingCanvas(bgcolor='black', size=(100, 100), dpi=None, decorate=False,
+def TestingCanvas(bgcolor='black', size=(100, 100), dpi=None, decorate=None,
                   **kwargs):
-    """Class wrapper to avoid importing scene until necessary"""
+    """Avoid importing scene until necessary."""
     # On Windows decorations can force windows to be an incorrect size
     # (e.g., instead of 100x100 they will be 100x248), having no
     # decorations works around this
@@ -355,6 +315,14 @@ def TestingCanvas(bgcolor='black', size=(100, 100), dpi=None, decorate=False,
         def __init__(self, bgcolor, size, dpi, decorate, **kwargs):
             self._entered = False
             self._wanted_vp = None
+            if decorate is None:
+                # deal with GLFW's problems
+                from vispy.app import use_app
+                app = use_app()
+                if _bad_glfw_decorate(app):
+                    decorate = True
+                else:
+                    decorate = False
             SceneCanvas.__init__(self, bgcolor=bgcolor, size=size,
                                  dpi=dpi, decorate=decorate,
                                  **kwargs)
@@ -387,7 +355,7 @@ def save_testing_image(image, location):
     from ..util import make_png
     if image == "screenshot":
         image = _screenshot(alpha=False)
-    with open(location+'.png', 'wb') as fid:
+    with open(location + '.png', 'wb') as fid:
         fid.write(make_png(image))
 
 

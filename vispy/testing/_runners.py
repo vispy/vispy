@@ -2,7 +2,7 @@
 # vispy: testskip
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
-"""Test running functions"""
+"""Test running functions."""
 
 from __future__ import print_function
 
@@ -15,10 +15,19 @@ from functools import partial
 
 from ..util import use_log_level, run_subprocess
 from ..util.ptime import time
-from ._testing import SkipTest, has_application, nottest
+from ._testing import has_application, nottest
 
 
 _line_sep = '-' * 70
+
+
+class VispySkipSuite(Exception):
+    """Class we use to internally signal skipping a test suite."""
+
+    def __init__(self, msg=''):
+        if msg:
+            print(msg)
+        super(VispySkipSuite, self).__init__(msg)
 
 
 def _get_import_dir():
@@ -49,23 +58,14 @@ def _unit(mode, extra_arg_string='', coverage=False):
     import_dir = _get_import_dir()[0]
     cwd = op.abspath(op.join(import_dir, '..'))
     extra_args = list(extra_args)
-    use_pytest = False
     try:
         import pytest  # noqa, analysis:ignore
-        use_pytest = True
     except ImportError:
-        try:
-            import nose  # noqa, analysis:ignore
-        except ImportError:
-            raise SkipTest('Skipping unit tests, neither pytest nor nose '
-                           'installed')
+        raise VispySkipSuite('Skipping unit tests, pytest not installed')
 
     if mode == 'nobackend':
         msg = 'Running tests with no backend'
-        if use_pytest:
-            extra_args += ['-m', '"not vispy_app_test"']
-        else:
-            extra_args += ['-a', '"!vispy_app_test"']
+        extra_args += ['-m', 'not vispy_app_test']
     else:
         # check to make sure we actually have the backend of interest
         stdout, stderr, invalid = run_subprocess(
@@ -75,18 +75,17 @@ def _unit(mode, extra_arg_string='', coverage=False):
         if invalid:
             stdout = stdout + '\n' + stderr
             stdout = '\n'.join('    ' + x for x in stdout.split('\n'))
-            print('%s\n%s\n%s' % (_line_sep, 'Skipping backend %s, not '
+            raise VispySkipSuite(
+                '\n%s\n%s\n%s' % (_line_sep, 'Skipping backend %s, not '
                                   'installed or working properly:\n%s'
                                   % (mode, stdout), _line_sep))
-            raise SkipTest()
         msg = 'Running tests with %s backend' % mode
-        if use_pytest:
-            extra_args += ['-m', 'vispy_app_test']
-        else:
-            extra_args += ['-a', 'vispy_app_test']
-    if coverage and use_pytest:
+        extra_args += ['-m', 'vispy_app_test']
+    if coverage:
         # Don't actually print the coverage because it's way too long
         extra_args += ['--cov', 'vispy', '--cov-report=']
+    if not any(e.startswith('-r') for e in extra_args):
+        extra_args.append('-ra')
     # make a call to "python" so that it inherits whatever the system
     # thinks is "python" (e.g., virtualenvs)
     extra_args += [import_dir]  # positional argument
@@ -121,7 +120,7 @@ def _unit(mode, extra_arg_string='', coverage=False):
 
 
 def _docs():
-    """test docstring paramters
+    """test docstring parameters
     using vispy/utils/tests/test_docstring_parameters.py"""
     dev = _get_import_dir()[1]
 
@@ -288,9 +287,7 @@ def _examples(fnames_str):
         if not good:
             reason = 'Must have suitable app backend'
     if reason is not None:
-        msg = 'Skipping example test: %s' % reason
-        print(msg)
-        raise SkipTest(msg)
+        raise VispySkipSuite('Skipping example test: %s' % reason)
 
     # if we're given individual file paths as a string in fnames_str,
     # then just use them as the fnames
@@ -428,7 +425,7 @@ def test(label='full', extra_arg_string='', coverage=False):
         except RuntimeError as exp:
             print('Failed: %s' % str(exp))
             fail += [run[1]]
-        except SkipTest:
+        except VispySkipSuite:
             skip += [run[1]]
         except Exception as exp:
             # this should only happen if we've screwed up the test setup
