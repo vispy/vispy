@@ -28,8 +28,7 @@ except ImportError:
     pass
 
 from .util import config, set_log_level, keys, sys_info  # noqa
-from .util.wrappers import use  # noqa
-from .testing import test  # noqa
+from .util.wrappers import use, test  # noqa
 # load the two functions that IPython uses to instantiate an extension
 # that way, the user only needs to run %load_ext vispy.ipython rather that
 # %load_ext vispy.ipython.ipython
