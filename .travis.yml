@@ -74,26 +74,11 @@ matrix:
         apt:
           packages:
 
-    # Generate HTML website
-    # also tests file sizes, style, line endings
-    - env: PYTHON_VERSION=3.7 DEPS=minimal TEST=website
-        CONDA_DEPENDENCIES="numpy scipy pytest cython coveralls pytest-cov pytest-sugar flake8 meshio sphinx sphinx_bootstrap_theme"
-        CONDA_CHANNELS=conda-forge
-        CONDA_CHANNEL_PRIORITY=strict
-        PIP_DEPENDENCIES="numpydoc"
-      addons:
-        apt:
-          packages:
-
 
 before_install:
     - git clone https://github.com/astropy/ci-helpers.git
     - source ci-helpers/travis/setup_conda.sh
     - SRC_DIR=$(pwd)
-    - if [ "${TEST}" == "website" ]; then
-          openssl aes-256-cbc -K $encrypted_26a3009aece7_key -iv $encrypted_26a3009aece7_iv -in ci/vispy_travis_website_upload.enc -out vispy_travis_website_upload -d;
-          export PAGES_DEPLOY_KEY="${SRC_DIR}/vispy_travis_website_upload";
-      fi;
 
 
 install:
@@ -149,9 +134,6 @@ script:
     - if [ "${TEST}" == "osmesa" ]; then
         make osmesa;
       fi;
-    - if [ "${TEST}" == "website" ]; then
-        source ./ci/build_website.sh;
-      fi;
 
 
 after_success:
@@ -161,19 +143,3 @@ after_success:
         mv .vispy-coverage .coverage;
         coveralls;
       fi;
-
-
-deploy:
-  - provider: pages:git
-    repo: vispy/vispy.github.com
-    target_branch: master
-    fqdn: vispy.org
-    commit_message: "Deploy %{project_name} website for SHA:%{git_sha} (Tag: %{git_tag})"
-    edge: true
-    keep_history: true
-    cleanup: false
-    local_dir: doc/_build/html
-    on:
-      repo: vispy/vispy
-      tags: true
-      condition: $TEST == website
