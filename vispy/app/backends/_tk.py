@@ -242,7 +242,7 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
         OpenGLFrame.__init__(self, parent, **kwargs)
         if not hasattr(self, "_native_context") or self._native_context is None:
             self.tkCreateContext()
-            # Why can't I access __context?
+            # Why can't I access __context from OpenGLFrame?
             # self._native_context = self.__context
             self._native_context = vars(self).get("_CanvasBackend__context", None)
 
@@ -265,7 +265,7 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
         # For the user code
         self.update_idletasks()
 
-        GL.glClear(GL.GL_COLOR_BUFFER_BIT)  
+        GL.glClear(GL.GL_COLOR_BUFFER_BIT)
         GL.glClearColor(0.0, 0.0, 0.0, 0.0)
 
         # self.set_update_interval(16)  # Auto start rendering at ~60 FPS?
@@ -283,6 +283,22 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
         self.animate = interval_ms
         self.tkExpose(None)
 
+    def _on_configure(self, e):
+        if self._vispy_canvas is None or not self._init:
+            return
+        self._vispy_canvas.events.resize(size=(e.width, e.height))
+
+    def _initialize(self):
+        print("_initialize")
+        self.initgl()
+
+        if self._vispy_canvas is None:
+            return
+        self._init = True
+        self._vispy_canvas.set_current()
+        self._vispy_canvas.events.initialize()
+        self.update_idletasks()
+        self._on_configure(Coord(self._vispy_get_size()))
 
     STATE_LUT = {
         0x0001: keys.SHIFT,
@@ -344,6 +360,11 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
         self._vispy_mouse_press(
             pos=(e.x, e.y), button=btn[e.num], modifiers=self._parse_state(e))
 
+    def _vispy_detect_double_click(self, e):
+        # Override base class function
+        # since double click handling is native in Tk.
+        pass
+
     def _on_mouse_double_button_press(self, e):
         if self._vispy_canvas is None:
             return
@@ -359,23 +380,6 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
         btn = { 1:1, 2:3, 3:2}
         self._vispy_mouse_release(
             pos=(e.x, e.y), button=btn[e.num], modifiers=self._parse_state(e))
-
-    def _on_configure(self, e):
-        if self._vispy_canvas is None or not self._init:
-            return
-        self._vispy_canvas.events.resize(size=(e.width, e.height))
-
-    def _initialize(self):
-        print("_initialize")
-        self.initgl()
-
-        if self._vispy_canvas is None:
-            return
-        self._init = True
-        self._vispy_canvas.set_current()
-        self._vispy_canvas.events.initialize()
-        self.update_idletasks()
-        self._on_configure(Coord(self._vispy_get_size()))
 
     def _on_key_down(self, e):
         if self._vispy_canvas is None:
@@ -433,8 +437,7 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
 
     def _vispy_update(self):
         # Invoke a redraw
-        self.animate = 0
-        self.tkExpose(None)
+        self.set_update_interval(0)
 
     def _vispy_close(self):
         # Force the window or widget to shut down
