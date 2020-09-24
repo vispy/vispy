@@ -4,7 +4,7 @@
 
 try:
     from ipywidgets.widgets import DOMWidget, register
-    from traitlets import Unicode, Int, Bool
+    from traitlets import Unicode, Int, Bool, Dict
 except Exception as exp:
     # Init dummy objects needed to import this module without errors.
     # These are all overwritten with imports from IPython (on success)
@@ -22,7 +22,7 @@ except Exception as exp:
         def tag(self, *args, **kwargs):
             pass
 
-    Unicode = Int = Float = Bool = _MockTraitlet
+    Unicode = Int = Float = Bool = Dict = _MockTraitlet
     available, testable, why_not, which = False, False, str(exp), None
 else:
     available, testable, why_not, which = True, False, None, None
@@ -48,10 +48,10 @@ def _stop_timers(canvas):
 class VispyWidget(DOMWidget):
     _view_name = Unicode("VispyView").tag(sync=True)
     _view_module = Unicode('vispy').tag(sync=True)
-    _view_module_version = Unicode('~0.2.0').tag(sync=True)
+    _view_module_version = Unicode('~0.3.0').tag(sync=True)
     _model_name = Unicode('VispyModel').tag(sync=True)
     _model_module = Unicode('vispy').tag(sync=True)
-    _model_module_version = Unicode('~0.2.0').tag(sync=True)
+    _model_module_version = Unicode('~0.3.0').tag(sync=True)
 
     #height/width of the widget is managed by IPython.
     #it's a string and can be anything valid in CSS.
@@ -59,6 +59,7 @@ class VispyWidget(DOMWidget):
     width = Int().tag(sync=True)
     height = Int().tag(sync=True)
     resizable = Bool(value=True).tag(sync=True)
+    webgl_config = Dict(value={}).tag(sync=True)
 
     def __init__(self, **kwargs):
         if DOMWidget is object:
