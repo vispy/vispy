@@ -1,5 +1,9 @@
 # Release Notes
 
+## [v0.6.5](https://github.com/vispy/vispy/tree/v0.6.5) (2020-09-23)
+
+- Patch release to create Python 3.8 wheels and future proof pyproject.toml
+
 ## [v0.6.4](https://github.com/vispy/vispy/tree/v0.6.4) (2019-12-13)
 
 **Enhancements:**
