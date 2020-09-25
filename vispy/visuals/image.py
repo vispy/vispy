@@ -3,6 +3,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division
+import warnings
 
 import numpy as np
 
@@ -86,6 +87,13 @@ _texture_lookup = """
 
 _apply_clim_float = """
     float apply_clim(float data) {
+        if ($clim.x < $clim.y) {{
+            data = clamp(data, $clim.x, $clim.y);
+            data = clamp(data, $clim.x, $clim.y);
+        }} else {{
+            data = clamp(data, $clim.y, $clim.x);
+            data = clamp(data, $clim.y, $clim.x);
+        }}
         data = data - $clim.x;
         data = data / ($clim.y - $clim.x);
         return max(data, 0);
@@ -110,17 +118,21 @@ _apply_gamma = """
 """
 
 _null_color_transform = 'vec4 pass(vec4 color) { return color; }'
+# FIXME: Is this bad for single band internalformats? ex. R8?
 _c2l = 'float cmap(vec4 color) { return (color.r + color.g + color.b) / 3.; }'
 
 
 def _build_color_transform(data, clim, gamma, cmap):
+    # FIXME: This should probably be decided based on the texture internalformat
     if data.ndim == 2 or data.shape[2] == 1:
+        # luminance data
         fclim = Function(_apply_clim_float)
         fgamma = Function(_apply_gamma_float)
         fun = FunctionChain(
             None, [Function(_c2l), fclim, fgamma, Function(cmap.glsl_map)]
         )
     else:
+        # RGB/A image data (no colormap)
         fclim = Function(_apply_clim)
         fgamma = Function(_apply_gamma)
         fun = FunctionChain(None, [Function(_null_color_transform), fclim, fgamma])
@@ -172,7 +184,28 @@ class ImageVisual(Visual):
             * 'hanning', 'hamming', 'hermite', 'kaiser', 'quadric', 'bicubic',
                 'catrom', 'mitchell', 'spline16', 'spline36', 'gaussian',
                 'bessel', 'sinc', 'lanczos', 'blackman'
-
+    texture_format: numpy.dtype | str | None
+        How to store data on the GPU. OpenGL allows for many different storage
+        formats and schemes for the low-level texture data stored in the GPU.
+        Most common is unsigned integers or floating point numbers.
+        Unsigned integers are the most widely supported while other formats
+        may not be supported on older versions of OpenGL, WebGL
+        (without enabling some extensions), or with older GPUs.
+        Default value is ``None`` which means data will be scaled on the
+        CPU and the result stored in the GPU as an unsigned integer. If a
+        numpy dtype object, an internal texture format will be chosen to
+        support that dtype and data will *not* be scaled on the CPU. Not all
+        dtypes are supported. If a string, then
+        it must be one of the OpenGL internalformat strings described in the
+        table on this page: https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glTexImage2D.xhtml
+        The name should have `GL_` removed and be lowercase (ex.
+        `GL_R32F` becomes ``'r32f'``). Lastly, this can also be the string
+        ``'auto'`` which will use the data type of the provided image data
+        to determine the internalformat of the texture.
+        When this is specified (not ``None``) data is scaled on the
+        GPU which allows for faster color limit changes. Additionally, when
+        32-bit float data is provided it won't be copied before being
+        transferred to the GPU.
     **kwargs : dict
         Keyword arguments to pass to `Visual`.
 
@@ -181,11 +214,26 @@ class ImageVisual(Visual):
     The colormap functionality through ``cmap`` and ``clim`` are only used
     if the data are 2D.
     """
+
+    # dtype -> internalformat
+    # 'r' will be replaced (if needed) with rgb or rgba depending on number of bands
+    _texture_dtype_format = {
+        np.float32: 'r32f',
+        np.float64: 'r32f',
+        np.uint8: 'r8',
+        np.uint16: 'r16',
+        np.uint32: 'r32',
+        np.int8: 'r8',
+        np.int16: 'r16',
+        np.int32: 'r32',
+    }
+
     def __init__(self, data=None, method='auto', grid=(1, 1),
                  cmap='viridis', clim='auto', gamma=1.0,
-                 interpolation='nearest', **kwargs):
+                 interpolation='nearest', texture_format=None, **kwargs):
         self._data = None
         self._gamma = gamma
+        self._scale_texture_gpu = texture_format is not None
 
         # load 'float packed rgba8' interpolation kernel
         # to load float interpolation kernel use
@@ -235,8 +283,9 @@ class ImageVisual(Visual):
         self._need_vertex_update = True
         self._need_colortransform_update = True
         self._need_interpolation_update = True
-        self._texture = Texture2D(np.zeros((1, 1, 4)),
-                                  interpolation=texture_interpolation)
+        self._texture = self._create_texture(texture_format,
+                                             texture_interpolation,
+                                             data)
         self._subdiv_position = VertexBuffer()
         self._subdiv_texcoord = VertexBuffer()
 
@@ -262,6 +311,38 @@ class ImageVisual(Visual):
             self.set_data(data)
         self.freeze()
 
+    def _create_texture(self, texture_format, texture_interpolation, data):
+        # get a representative initial shape, we'll fill in data later
+        if data is not None:
+            num_channels = data.shape[-1] if data.ndim == 3 else 1
+        else:
+            num_channels = 4
+        shape_arr = np.zeros((1, 1, num_channels))
+
+        tex_kwargs = {}
+        if isinstance(texture_format, str) and texture_format == 'auto':
+            if data is None:
+                warnings.warn("'texture_format' set to 'auto' but no data "
+                              "provided. Falling back to CPU scaling.")
+                texture_format = None
+            else:
+                texture_format = data.dtype.type
+        if texture_format and not isinstance(texture_format, str):
+            if texture_format not in self._texture_dtype_format:
+                raise ValueError("Can't determine internal texture format for '{}'".format(texture_format))
+            texture_format = self._texture_dtype_format[texture_format]
+            # adjust internalformat for format of data (RGBA vs L)
+            texture_format = texture_format.replace('r', 'rgba'[:num_channels])
+        if isinstance(texture_format, str):
+            tex_kwargs['internalformat'] = texture_format
+
+        # Use 3D array shape of (1, 1, 4) as placeholder for RGBA image.
+        # When data is set later this will be resized.
+        # clamp_to_edge means any texture coordinates outside of 0-1 should be
+        # clamped to 0 and 1.
+        return Texture2D(shape_arr, interpolation=texture_interpolation,
+                         **tex_kwargs)
+
     def set_data(self, image):
         """Set the data
 
@@ -271,6 +352,12 @@ class ImageVisual(Visual):
             The image data.
         """
         data = np.asarray(image)
+
+        is_floating = np.issubdtype(data.dtype, np.floating)
+        gt_float32 = data.dtype.itemsize > 4
+        if is_floating and gt_float32:
+            # OpenGL can't support floating point numbers greater than 32-bits
+            data = data.astype(np.float32)
         if self._data is None or self._data.shape != data.shape:
             self._need_vertex_update = True
         self._data = data
@@ -301,23 +388,39 @@ class ImageVisual(Visual):
             clim = np.array(clim, float)
             if clim.shape != (2,):
                 raise ValueError('clim must have two elements')
+            # texture_limits will always be None for in-GPU scaling
             if self._texture_limits is not None and (
                 (clim[0] < self._texture_limits[0])
                 or (clim[1] > self._texture_limits[1])
             ):
                 self._need_texture_upload = True
         self._clim = clim
-        if self._texture_limits is not None:
+        # shortcut so we don't have to rebuild the whole color transform
+        if not self._need_colortransform_update:
             self.shared_program.frag['color_transform'][1]['clim'] = self.clim_normalized
         self.update()
 
     @property
     def clim_normalized(self):
-        """Normalize current clims between 0-1 based on last-used texture data range.
-        In _build_texture(), the data is normalized (on the CPU) to 0-1 using ``clim``.
-        During rendering, the frag shader will apply the final contrast adjustment based on
-        the current ``clim``.
+        """Normalize current clims to match texture data inside the shader.
+
+        If data is scaled on the CPU then the texture data will be in the range
+        0-1 in the _build_texture() method. Inside the fragment shader the
+        final contrast adjustment will be applied based on this normalized
+        ``clim``.  If data is scaled only on the GPU then we only normalize
+        the color limits when needed (for unsigned normalized integer
+        internal formats). Otherwise, for internal formats that are not
+        normalized such as floating point (ex. r32f) we can leave the ``clim``
+        as is.
+
         """
+        if self._scale_texture_gpu:
+            # if the internalformat of the texture is normalized we need to
+            # also normalize the clims so they match in-shader
+            clim_min = self._texture.normalize_value(self.clim[0], self._data.dtype)
+            clim_max = self._texture.normalize_value(self.clim[1], self._data.dtype)
+            return clim_min, clim_max
+
         range_min, range_max = self._texture_limits
         clim_min, clim_max = self.clim
         clim_min = (clim_min - range_min) / (range_max - range_min)
@@ -345,7 +448,9 @@ class ImageVisual(Visual):
         if value <= 0:
             raise ValueError("gamma must be > 0")
         self._gamma = float(value)
-        self.shared_program.frag['color_transform'][2]['gamma'] = self._gamma
+        # shortcut so we don't have to rebuild the color transform
+        if not self._need_colortransform_update:
+            self.shared_program.frag['color_transform'][2]['gamma'] = self._gamma
         self.update()
 
     @property
@@ -463,30 +568,33 @@ class ImageVisual(Visual):
         view._need_method_update = False
         self._prepare_transforms(view)
 
-    def _build_texture(self):
-        data = self._data
+    def _scale_data_on_cpu(self, data, clim):
         if data.dtype == np.float64:
             data = data.astype(np.float32)
+        data = data - clim[0]  # not inplace so we don't modify orig data
+        if clim[1] - clim[0] > 0:
+            data /= clim[1] - clim[0]
+        else:
+            data[:] = 1 if data[0, 0] != 0 else 0
+        return data
 
+    def _build_texture(self):
+        data = self._data
         if data.ndim == 2 or data.shape[2] == 1:
-            # deal with clim on CPU b/c of texture depth limits :(
-            # can eventually do this by simulating 32-bit float... maybe
+            # deal with clim
             clim = self._clim
             if isinstance(clim, string_types) and clim == 'auto':
                 clim = np.min(data), np.max(data)
             clim = np.asarray(clim, dtype=np.float32)
-            data = data - clim[0]  # not inplace so we don't modify orig data
-            if clim[1] - clim[0] > 0:
-                data /= clim[1] - clim[0]
-            else:
-                data[:] = 1 if data[0, 0] != 0 else 0
-            self._clim = np.array(clim)
-        else:
+            if not self._scale_texture_gpu:
+                data = self._scale_data_on_cpu(data, clim)
+        elif isinstance(self._clim, string_types) and self._clim == 'auto':
             # assume that RGB data is already scaled (0, 1)
-            if isinstance(self._clim, string_types) and self._clim == 'auto':
-                self._clim = (0, 1)
+            clim = np.array([0, 1])
 
-        self._texture_limits = np.array(self._clim)
+        # XXX: Does this *always* need a colortransform update?
+        self._clim = clim
+        self._texture_limits = None if self._scale_texture_gpu else clim
         self._need_colortransform_update = True
         self._texture.set_data(data)
         self._need_texture_upload = False
