@@ -87,7 +87,7 @@ def _fix_tcl_lib():
             # Ignore leading \\?\
             if s.startswith("\\\\?\\"):
                 s = s[4:]
-            if s.startswith(b"UNC"):
+            if s.startswith("UNC"):
                 s = "\\" + s[3:]
             return s
 
