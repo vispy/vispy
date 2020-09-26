@@ -29,6 +29,9 @@ try:
     from pyopengltk import OpenGLFrame
 except:
     available, testable, why_not, which = False, False, "Import error", None
+    
+    class OpenGLFrame(object):
+        pass
 else:
     available, testable, why_not = True, True, None
     which = "Tkinter " + str(tk.TkVersion)
@@ -62,7 +65,7 @@ def _fix_tcl_lib():
     else:
         def convert_path(s):
             assert isinstance(s, str)   # sys.prefix contains only bytes
-            udir = s.decode("mbcs")
+            udir = s.decode("mbcs") if hasattr(s, "decode") else s
             hdir = ctypes.windll.kernel32.\
                 CreateFileW(udir, 0x80, # FILE_READ_ATTRIBUTES
                             1,          # FILE_SHARE_READ
