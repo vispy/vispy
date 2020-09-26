@@ -13,8 +13,6 @@ from ..base import (BaseApplicationBackend, BaseCanvasBackend,
 from ...util import keys
 from ... import config
 
-USE_EGL = config['gl_backend'].lower().startswith('es')
-
 
 # -------------------------------------------------------------------- init ---
 
@@ -30,7 +28,7 @@ else:
 
 
 # Map native keys to vispy keys
-# keysym_num -> vispy
+# e.keysym_num -> vispy
 KEYMAP = {
     65505: keys.SHIFT,
     65506: keys.SHIFT,
@@ -74,6 +72,27 @@ KEYMAP = {
     65481: keys.F12,
 }
 
+# e.state -> vispy
+KEY_STATE_MAP = {
+    0x0001: keys.SHIFT,
+    # 0x0002: CAPSLOCK,
+    0x0004: keys.CONTROL,
+    # 0x0008: keys.ALT,  # LEFT_ALT: Seems always pressed?
+    # 0x0010: NUMLOCK,
+    # 0x0020: SCROLLLOCK,
+    0x0080: keys.ALT,
+    # 0x0100: ?,  # Mouse button 1.
+    # 0x0200: ?,  # Mouse button 2.
+    # 0x0400: ?,  # Mouse button 3.
+    0x20000: keys.ALT  # LEFT_ALT ?
+}
+
+# e.num -> vispy
+MOUSE_BUTTON_MAP = {
+    1:1, # Mouse Left   == 1 -> Mouse Left
+    2:3, # Mouse Middle == 2 -> Mouse Middle
+    3:2, # Mouse Right  == 3 -> Mouse Right
+}
 
 # -------------------------------------------------------------- capability ---
 
@@ -105,10 +124,41 @@ def _set_config(c):
 
 # ------------------------------------------------------------- application ---
 
-_tk_toplevel = None
+_tk_inst = None         # Reference to tk.Tk instance
+_tk_inst_owned = False  # Whether we created the Tk instance or not
+_tk_toplevels = []      # References to created CanvasBackend Toplevels
+
+
+def _new_toplevel(*args, **kwargs):
+    """Create and return a new withdrawn Toplevel."""
+    global _tk_inst, _tk_toplevels
+    tl = tk.Toplevel(_tk_inst, *args, **kwargs)
+    tl.withdraw()
+    _tk_toplevels.append(tl)
+    return tl
+
+
+def _del_toplevel(tl=None):
+    """
+    Destroy the given Toplevel, and if it was the last one,
+    also destroy the global Tk instance if we created it.
+    """
+    global _tk_inst, _tk_inst_owned, _tk_toplevels
+
+    if tl:
+        try:
+            tl.destroy()
+            _tk_toplevels.remove(tl)
+        except: pass
+
+    # If there are no Toplevels left, quit the mainloop.
+    if _tk_inst and not _tk_toplevels and _tk_inst_owned:
+        _tk_inst.quit()
+        _tk_inst.destroy()
+        _tk_inst = None
+
 
 class ApplicationBackend(BaseApplicationBackend):
-
     def __init__(self):
         BaseApplicationBackend.__init__(self)
 
@@ -116,25 +166,30 @@ class ApplicationBackend(BaseApplicationBackend):
         return tk.__name__
 
     def _vispy_process_events(self):
-        app = self._vispy_get_native_app()
-        app.update_idletasks()
+        self._vispy_get_native_app().update_idletasks()
 
     def _vispy_run(self):
         self._vispy_get_native_app().mainloop()
 
     def _vispy_quit(self):
-        global _tk_toplevel
-        self._vispy_get_native_app().quit()
-        self._vispy_get_native_app().destroy()
-        _tk_toplevel = None
+        global _tk_inst_windows
+        for c in _tk_toplevels:
+            c._vispy_close()
+        _del_toplevel()
 
     def _vispy_get_native_app(self):
-        global _tk_toplevel
-        if _tk_toplevel is None:
-            fr = tk.Frame(None)
-            _tk_toplevel = fr.master
-            fr.destroy()
-        return _tk_toplevel
+        global _tk_inst, _tk_inst_owned
+        if _tk_inst is None:
+            if tk._default_root:
+                # There already is a tk.Tk() instance available
+                _tk_inst = tk._default_root
+                _tk_inst_owned = False
+            else:
+                # Create our own top level Tk instance
+                _tk_inst = tk.Tk()
+                _tk_inst.withdraw()
+                _tk_inst_owned = True
+        return _tk_inst
 
 
 # ------------------------------------------------------------------ canvas ---
@@ -145,49 +200,12 @@ class Coord:
         self.width, self.height = tup
 
 
-# You can mix this class with the native widget
 class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
-    """Template backend
-
-    Events to emit are shown below. Most backends will probably
-    have one method for each event:
-
-        self._vispy_canvas.events.initialize()
-        self._vispy_canvas.events.resize(size=(w, h))
-        self._vispy_canvas.events.draw(region=None)
-        self._vispy_canvas.close()
-        self._vispy_canvas.events.mouse_press(pos=(x, y), button=1,
-                                              modifiers=())
-        self._vispy_canvas.events.mouse_release(pos=(x, y), button=1,
-                                                modifiers=())
-        self._vispy_canvas.events.mouse_double_click(pos=(x, y), button=1,
-                                                     modifiers=())
-        self._vispy_canvas.events.mouse_move(pos=(x, y), modifiers=())
-        self._vispy_canvas.events.mouse_wheel(pos=(x, y), delta=(0, 0),
-                                              modifiers=())
-        self._vispy_canvas.events.key_press(key=key, text=text, modifiers=())
-        self._vispy_canvas.events.key_release(key=key, text=text, modifiers=())
-
-    In most cases, if the window-cross is clicked, a native close-event is
-    generated, which should then call canvas.close(). The Canvas class is
-    responsible for firing the close event and calling
-    backend_canvas._vispy_close, which closes the native widget.
-    If this happens to result in a second close event, canvas.close() gets
-    called again, but Canvas knows it is closing so it stops there.
-
-    If canvas.close() is called (by the user), it calls
-    backend_canvas._vispy_close, which closes the native widget,
-    and we get the same stream of actions as above. This deviation from
-    having events come from the CanvasBackend is necessitated by how
-    different backends handle close events, and the various ways such
-    events can be triggered.
-    """
+    """ Tkinter backend for Canvas abstract class."""
 
     # args are for BaseCanvasBackend, kwargs are for us.
     def __init__(self, *args, **kwargs):
         BaseCanvasBackend.__init__(self, *args)
-        # We use _process_backend_kwargs() to "serialize" the kwargs
-        # and to check whether they match this backend's capability
         p = self._process_backend_kwargs(kwargs)
 
         self._double_click_supported = True
@@ -197,13 +215,15 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
         # Deal with context
         p.context.shared.add_ref('tkinter', self)
         if p.context.shared.ref is self:
-            self._native_context = None  # ...
+            self._native_context = None
         else:
             self._native_context = p.context.shared.ref._native_context
 
+        # Pop args unrecognised by OpenGLFrame
         kwargs.pop("parent")
         kwargs.pop("title")
         kwargs.pop("size")
+        kwargs.pop("position")
         kwargs.pop("show")
         kwargs.pop("vsync")
         kwargs.pop("resizable")
@@ -212,9 +232,9 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
         kwargs.pop("fullscreen")
         kwargs.pop("context")
 
-        if p.parent is None:
-            self.top = tk.Tk()
-            self.top.withdraw()
+        if p.parent is None:    
+            # Create native window and master
+            self.top = _new_toplevel()
 
             if p.title:    self._vispy_set_title(p.title)
             if p.size:     self._vispy_set_size(p.size[0], p.size[1])
@@ -233,11 +253,13 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
             self.top.protocol("WM_DELETE_WINDOW", self._vispy_close)
             parent = self.top
         else:
+            # Use given parent as master
             self.top = None
             parent   = p.parent
             self._fullscreen = False
 
         self._init = False
+        self.is_destroyed = False
 
         OpenGLFrame.__init__(self, parent, **kwargs)
         if not hasattr(self, "_native_context") or self._native_context is None:
@@ -246,6 +268,10 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
             # self._native_context = self.__context
             self._native_context = vars(self).get("_CanvasBackend__context", None)
 
+        if self.top:
+            self.top.configure(bg="black")
+            self.pack(fill=tk.BOTH, expand=True)
+
         self.bind("<Enter>"            , self._on_mouse_enter)
         self.bind("<Motion>"           , self._on_mouse_move)
         self.bind("<MouseWheel>"       , self._on_mouse_wheel)
@@ -253,25 +279,21 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
         self.bind("<Double-Any-Button>", self._on_mouse_double_button_press)
         self.bind("<Any-ButtonRelease>", self._on_mouse_button_release)
         self.bind("<Configure>"        , self._on_configure, add='+')
-        # self.bind("<Expose>"           , self.redraw)
-        # self.bind("<Map>"              , self.redraw)
         self.bind("<Any-KeyPress>"     , self._on_key_down)
         self.bind("<Any-KeyRelease>"   , self._on_key_up)
 
         self._vispy_set_visible(p.show)
         self.focus_force()
 
-    def initgl(self):
-        # For the user code
-        self.update_idletasks()
 
+    def initgl(self):
+        # Overridden from OpenGLFrame
+        self.update_idletasks()
         GL.glClear(GL.GL_COLOR_BUFFER_BIT)
         GL.glClearColor(0.0, 0.0, 0.0, 0.0)
 
-        # self.set_update_interval(16)  # Auto start rendering at ~60 FPS?
-
     def redraw(self, *args):
-        # For the user code
+        # Overridden from OpenGLFrame
         if self._vispy_canvas is None:
             return
         if not self._init:
@@ -279,8 +301,14 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
         self._vispy_canvas.set_current()
         self._vispy_canvas.events.draw(region=None)
 
-    def set_update_interval(self, interval_ms=17):
-        self.animate = interval_ms
+    def _delayed_update(self):
+        """
+        Expose a new frame to the canvas. This will call self.redraw() internally.
+        The self.animate sets the refresh rate in milliseconds. Using this is not
+        necessary because VisPy will use the TimerBackend to periodically call
+        self._vispy_update, resulting in the exact same behaviour.
+        """
+        self.animate = 0
         self.tkExpose(None)
 
     def _on_configure(self, e):
@@ -289,9 +317,7 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
         self._vispy_canvas.events.resize(size=(e.width, e.height))
 
     def _initialize(self):
-        print("_initialize")
         self.initgl()
-
         if self._vispy_canvas is None:
             return
         self._init = True
@@ -300,22 +326,8 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
         self.update_idletasks()
         self._on_configure(Coord(self._vispy_get_size()))
 
-    STATE_LUT = {
-        0x0001: keys.SHIFT,
-        # 0x0002: CAPSLOCK,
-        0x0004: keys.CONTROL,
-        # 0x0008: keys.ALT,  # LEFT_ALT: Seems always pressed?
-        # 0x0010: NUMLOCK,
-        # 0x0020: SCROLLLOCK,
-        0x0080: keys.ALT,
-        # 0x0100: ?,  # Mouse button 1.
-        # 0x0200: ?,  # Mouse button 2.
-        # 0x0400: ?,  # Mouse button 3.
-        0x20000: keys.ALT  # LEFT_ALT ?
-    }
-
     def _parse_state(self, e):
-        return [ key for mask, key in self.STATE_LUT.items() \
+        return [ key for mask, key in KEY_STATE_MAP.items() \
                     if e.state & mask]
 
     def _parse_keys(self, e):
@@ -355,10 +367,8 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
     def _on_mouse_button_press(self, e):
         if self._vispy_canvas is None:
             return
-        # [ left=1, middle, right]
-        btn = { 1:1, 2:3, 3:2}
         self._vispy_mouse_press(
-            pos=(e.x, e.y), button=btn[e.num], modifiers=self._parse_state(e))
+            pos=(e.x, e.y), button=MOUSE_BUTTON_MAP[e.num], modifiers=self._parse_state(e))
 
     def _vispy_detect_double_click(self, e):
         # Override base class function
@@ -368,18 +378,14 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
     def _on_mouse_double_button_press(self, e):
         if self._vispy_canvas is None:
             return
-        # [ left=1, middle, right]
-        btn = { 1:1, 2:3, 3:2}
         self._vispy_mouse_double_click(
-            pos=(e.x, e.y), button=btn[e.num], modifiers=self._parse_state(e))
+            pos=(e.x, e.y), button=MOUSE_BUTTON_MAP[e.num], modifiers=self._parse_state(e))
 
     def _on_mouse_button_release(self, e):
         if self._vispy_canvas is None:
             return
-        # [ left=1, middle, right]
-        btn = { 1:1, 2:3, 3:2}
         self._vispy_mouse_release(
-            pos=(e.x, e.y), button=btn[e.num], modifiers=self._parse_state(e))
+            pos=(e.x, e.y), button=MOUSE_BUTTON_MAP[e.num], modifiers=self._parse_state(e))
 
     def _on_key_down(self, e):
         if self._vispy_canvas is None:
@@ -402,7 +408,6 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
     def _vispy_swap_buffers(self):
         # Swap front and back buffer
         self._vispy_canvas.set_current()
-        # self.tkSwapBuffers()
 
     def _vispy_set_title(self, title):
         # Set the window title. Has no effect for widgets
@@ -437,13 +442,22 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
 
     def _vispy_update(self):
         # Invoke a redraw
-        self.set_update_interval(0)
+        if self.is_destroyed:
+            return
+        # Delay this by letting Tk call it later, even a delay of 0 will do.
+        # Doing this, prevents EventEmitter loops that are caused 
+        # by wanting to draw too fast.
+        self.after(0, self._delayed_update)
 
     def _vispy_close(self):
         # Force the window or widget to shut down
-        if self.top:
+        if self.top and not self.is_destroyed:
+            self.is_destroyed = True
             self._vispy_canvas.close()
-            self.destroy()
+            _del_toplevel(self.top)
+
+    def destroy(self):
+        self._vispy_canvas.close()
 
     def _vispy_get_size(self):
         # Should return widget size
@@ -458,28 +472,22 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
         # Should return the current fullscreen state
         return self._fullscreen
 
-    def _vispy_get_native_canvas(self):
-        # Should return the native widget object.
-        # If this is self, this method can be omitted.
-        return self
-
 
 # ------------------------------------------------------------------- timer ---
 
-class TimerBackend(BaseTimerBackend):  # Can be mixed with native timer class
-
+class TimerBackend(BaseTimerBackend):
     def __init__(self, vispy_timer):
         BaseTimerBackend.__init__(self, vispy_timer)
-        global _tk_toplevel
-        if _tk_toplevel is None:
+        global _tk_inst
+        if _tk_inst is None:
             raise Exception("TimerBackend: No toplevel?")
-        self._tk = _tk_toplevel
+        self._tk = _tk_inst
         self._id = None
         self.last_interval = 1
 
     def _vispy_start(self, interval):
         self._vispy_stop()
-        self.last_interval = int(round(interval * 1000))
+        self.last_interval = max(0, int(round(interval * 1000)))
         self._id = self._tk.after(self.last_interval, self._vispy_timeout)
 
     def _vispy_stop(self):
@@ -490,8 +498,3 @@ class TimerBackend(BaseTimerBackend):  # Can be mixed with native timer class
     def _vispy_timeout(self):
         self._vispy_timer._timeout()
         self._id = self._tk.after(self.last_interval, self._vispy_timeout)
-
-    def _vispy_get_native_timer(self):
-        # Should return the native widget object.
-        # If this is self, this method can be omitted.
-        return self
