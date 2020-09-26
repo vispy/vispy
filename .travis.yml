@@ -22,7 +22,7 @@ matrix:
       osx_image: xcode10.1
 
     - env: PYTHON_VERSION=3.7 DEPS=full TEST=standard
-           CONDA_DEPENDENCIES="numpy scipy pytest cython coveralls pytest-cov pytest-sugar pyopengl networkx pysdl2 matplotlib jupyter pyqt=5 scikit-image meshio"
+           CONDA_DEPENDENCIES="numpy scipy pytest cython coveralls pytest-cov pytest-sugar pyopengl networkx pysdl2 matplotlib jupyter pyqt=5 scikit-image meshio pyopengltk"
            CONDA_CHANNELS=conda-forge
            CONDA_CHANNEL_PRIORITY=strict
       os: osx
@@ -40,7 +40,7 @@ matrix:
 
     # XXX eventually we need to support GLFW 3.3.1...
     - env: PYTHON_VERSION=3.7 DEPS=full TEST=standard
-           CONDA_DEPENDENCIES="numpy scipy pytest cython coveralls pytest-cov pytest-sugar pyopengl networkx pysdl2 matplotlib jupyter pyqt=5 pillow decorator six scikit-image glfw!=3.3.1 freetype-py imageio freetype<2.10.0 meshio"
+           CONDA_DEPENDENCIES="numpy scipy pytest cython coveralls pytest-cov pytest-sugar pyopengl networkx pysdl2 matplotlib jupyter pyqt=5 pillow decorator six scikit-image glfw!=3.3.1 freetype-py imageio freetype<2.10.0 meshio pyopengltk"
            CONDA_CHANNELS=conda-forge
            CONDA_CHANNEL_PRIORITY=strict
            PIP_DEPENDENCIES="husl pypng cassowary"
@@ -52,7 +52,7 @@ matrix:
 
     # test examples
     - env: PYTHON_VERSION=3.7 DEPS=full TEST=examples
-           CONDA_DEPENDENCIES="numpy scipy pytest cython coveralls pytest-cov pytest-sugar pyopengl networkx pysdl2 matplotlib jupyter pyqt=5 pillow decorator six scikit-image glfw!=3.3.1 freetype-py imageio freetype<2.10.0 meshio"
+           CONDA_DEPENDENCIES="numpy scipy pytest cython coveralls pytest-cov pytest-sugar pyopengl networkx pysdl2 matplotlib jupyter pyqt=5 pillow decorator six scikit-image glfw!=3.3.1 freetype-py imageio freetype<2.10.0 meshio pyopengltk"
            CONDA_CHANNELS=conda-forge
            CONDA_CHANNEL_PRIORITY=strict
            PIP_DEPENDENCIES="husl pypng cassowary"

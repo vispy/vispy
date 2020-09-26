@@ -232,7 +232,7 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
         kwargs.pop("fullscreen")
         kwargs.pop("context")
 
-        if p.parent is None:    
+        if p.parent is None:
             # Create native window and master
             self.top = _new_toplevel()
 
@@ -264,13 +264,22 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
         OpenGLFrame.__init__(self, parent, **kwargs)
         if not hasattr(self, "_native_context") or self._native_context is None:
             self.tkCreateContext()
-            # Why can't I access __context from OpenGLFrame?
-            # self._native_context = self.__context
+            # Workaround to get OpenGLFrame.__context for reference here
+            # if access would ever be needed from self._native_context.
             self._native_context = vars(self).get("_CanvasBackend__context", None)
 
         if self.top:
+            # Embed canvas in top (new window) if this was created
             self.top.configure(bg="black")
             self.pack(fill=tk.BOTH, expand=True)
+
+            # Also bind the key events to the top window instead.
+            self.top.bind("<Any-KeyPress>"  , self._on_key_down)
+            self.top.bind("<Any-KeyRelease>", self._on_key_up)
+        else:
+            # If no top, bind key events to the canvas itself.
+            self.bind("<Any-KeyPress>"  , self._on_key_down)
+            self.bind("<Any-KeyRelease>", self._on_key_up)
 
         self.bind("<Enter>"            , self._on_mouse_enter)
         self.bind("<Motion>"           , self._on_mouse_move)
@@ -279,8 +288,6 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
         self.bind("<Double-Any-Button>", self._on_mouse_double_button_press)
         self.bind("<Any-ButtonRelease>", self._on_mouse_button_release)
         self.bind("<Configure>"        , self._on_configure, add='+')
-        self.bind("<Any-KeyPress>"     , self._on_key_down)
-        self.bind("<Any-KeyRelease>"   , self._on_key_up)
 
         self._vispy_set_visible(p.show)
         self.focus_force()
@@ -308,6 +315,8 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
         necessary because VisPy will use the TimerBackend to periodically call
         self._vispy_update, resulting in the exact same behaviour.
         """
+        if self.is_destroyed:
+            return
         self.animate = 0
         self.tkExpose(None)
 
@@ -357,9 +366,6 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
     def _on_mouse_wheel(self, e):
         if self._vispy_canvas is None:
             return
-        # e.num: 4 when up, 5 when down (only on *nix?)
-        # Scroll up  : e.delta > 0
-        # Scroll down: e.delta < 0
         self._vispy_canvas.events.mouse_wheel(
             delta=(0.0, float(e.delta / 120)),
             pos=(e.x, e.y), modifiers=self._parse_state(e))
@@ -388,16 +394,28 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
             pos=(e.x, e.y), button=MOUSE_BUTTON_MAP[e.num], modifiers=self._parse_state(e))
 
     def _on_key_down(self, e):
+        """Handle key press events.
+        Ignore keys.ESCAPE if this is an embedded canvas,
+        as this would make it unresponsive, while still being updateable.
+        """
         if self._vispy_canvas is None:
             return
         key, text = self._parse_keys(e)
+        if not self.top and key == keys.ESCAPE:
+            return
         self._vispy_canvas.events.key_press(
             key=key, text=text, modifiers=self._parse_state(e))
 
     def _on_key_up(self, e):
+        """Handle release events.
+        Ignore keys.ESCAPE if this is an embedded canvas,
+        as this would make it unresponsive, while still being updateable.
+        """
         if self._vispy_canvas is None:
             return
         key, text = self._parse_keys(e)
+        if not self.top and key == keys.ESCAPE:
+            return
         self._vispy_canvas.events.key_release(
             key=key, text=text, modifiers=self._parse_state(e))
 
@@ -415,17 +433,17 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
             self.top.title(title)
 
     def _vispy_set_size(self, w, h):
-        # Set size of the widget or window
+        # Set size of the window. Has no effect for widgets
         if self.top:
             self.top.geometry(f"{w}x{h}")
 
     def _vispy_set_position(self, x, y):
-        # Set location of the widget or window. May have no effect for widgets
+        # Set location of the window. Has no effect for widgets
         if self.top:
             self.top.geometry(f"+{x}+{y}")
 
     def _vispy_set_visible(self, visible):
-        # Show or hide the window or widget
+        # Show or hide the window. Has no effect for widgets
         if self.top:
             if visible:
                 self.top.wm_deiconify()
@@ -435,22 +453,28 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
                 self.top.withdraw()
 
     def _vispy_set_fullscreen(self, fullscreen):
-        # Set the current fullscreen state
-        self._fullscreen = bool(fullscreen)
+        # Set the current fullscreen state.
+        # Has no effect for widgets. If you want it to become fullscreen,
+        # while embedded in another Toplevel window, you should make that
+        # window fullscreen instead.
         if self.top:
+            self._fullscreen = bool(fullscreen)
             self._vispy_set_visible(True)
 
     def _vispy_update(self):
         # Invoke a redraw
-        if self.is_destroyed:
-            return
         # Delay this by letting Tk call it later, even a delay of 0 will do.
-        # Doing this, prevents EventEmitter loops that are caused 
+        # Doing this, prevents EventEmitter loops that are caused
         # by wanting to draw too fast.
         self.after(0, self._delayed_update)
 
     def _vispy_close(self):
-        # Force the window or widget to shut down
+        """
+        Force the window to close, destroying the canvas in the process.
+        When this was the last VisPy window, also quit the global Tk instance.
+        This will not interfere if there is already another user window,
+        unrelated top VisPy open.
+        """
         if self.top and not self.is_destroyed:
             self.is_destroyed = True
             self._vispy_canvas.close()
@@ -486,11 +510,13 @@ class TimerBackend(BaseTimerBackend):
         self.last_interval = 1
 
     def _vispy_start(self, interval):
+        """Use Tk.after to schedule timer events."""
         self._vispy_stop()
         self.last_interval = max(0, int(round(interval * 1000)))
         self._id = self._tk.after(self.last_interval, self._vispy_timeout)
 
     def _vispy_stop(self):
+        """Unschedule the previous callback if it exists."""
         if self._id is not None:
             self._tk.after_cancel(self._id)
             self._id = None
