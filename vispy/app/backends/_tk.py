@@ -8,9 +8,12 @@ vispy backend for Tkinter.
 
 from __future__ import division
 
+from time import sleep
+
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
                     BaseTimerBackend)
 from ...util import keys
+from ...util.ptime import time
 from ... import config
 
 
@@ -18,13 +21,103 @@ from ... import config
 
 # Import
 try:
-    import tkinter as tk
+    try:
+        import tkinter as tk  # Python >= 3
+    except:
+        import Tkinter as tk  # Python < 3
     from OpenGL import GL
     from pyopengltk import OpenGLFrame
 except:
-    available, testable, why_not = False, False, "Import error"
+    available, testable, why_not, which = False, False, "Import error", None
 else:
     available, testable, why_not = True, True, None
+    which = "Tkinter " + str(tk.TkVersion)
+
+
+def _fix_tcl_lib():
+    """
+    It is possible that the Tcl library cannot be found when the Python environment
+    does not have the proper variables, so we force them here (mostly when running tests).
+    From: https://github.com/enthought/Python-2.7.3/blob/master/Lib/lib-tk/FixTk.py
+    """
+    import sys, os
+
+    # Delay import _tkinter until we have set TCL_LIBRARY,
+    # so that Tcl_FindExecutable has a chance to locate its
+    # encoding directory.
+
+    # Unfortunately, we cannot know the TCL_LIBRARY directory
+    # if we don't know the tcl version, which we cannot find out
+    # without import Tcl. Fortunately, Tcl will itself look in
+    # <TCL_LIBRARY>\..\tcl<TCL_VERSION>, so anything close to
+    # the real Tcl library will do.
+
+    # Expand symbolic links on Vista
+    try:
+        import ctypes
+        ctypes.windll.kernel32.GetFinalPathNameByHandleW
+    except (ImportError, AttributeError):
+        def convert_path(s):
+            return s
+    else:
+        def convert_path(s):
+            assert isinstance(s, str)   # sys.prefix contains only bytes
+            udir = s.decode("mbcs")
+            hdir = ctypes.windll.kernel32.\
+                CreateFileW(udir, 0x80, # FILE_READ_ATTRIBUTES
+                            1,          # FILE_SHARE_READ
+                            None, 3,    # OPEN_EXISTING
+                            0x02000000, # FILE_FLAG_BACKUP_SEMANTICS
+                            None)
+            if hdir == -1:
+                # Cannot open directory, give up
+                return s
+            buf = ctypes.create_unicode_buffer(u"", 32768)
+            res = ctypes.windll.kernel32.\
+                GetFinalPathNameByHandleW(hdir, buf, len(buf),
+                                          0) # VOLUME_NAME_DOS
+            ctypes.windll.kernel32.CloseHandle(hdir)
+            if res == 0:
+                # Conversion failed (e.g. network location)
+                return s
+            s = buf[:res].encode("mbcs")
+            # Ignore leading \\?\
+            if s.startswith("\\\\?\\"):
+                s = s[4:]
+            if s.startswith("UNC"):
+                s = "\\" + s[3:]
+            return s
+
+    prefix = os.path.join(sys.prefix,"tcl")
+    if not os.path.exists(prefix):
+        # devdir/../tcltk/lib
+        prefix = os.path.join(sys.prefix, os.path.pardir, "tcltk", "lib")
+        prefix = os.path.abspath(prefix)
+    # if this does not exist, no further search is needed
+    if os.path.exists(prefix):
+        prefix = convert_path(prefix)
+        if "TCL_LIBRARY" not in os.environ:
+            for name in os.listdir(prefix):
+                if name.startswith("tcl"):
+                    tcldir = os.path.join(prefix,name)
+                    if os.path.isdir(tcldir):
+                        os.environ["TCL_LIBRARY"] = tcldir
+        # Compute TK_LIBRARY, knowing that it has the same version
+        # as Tcl
+        import _tkinter
+        ver = str(_tkinter.TCL_VERSION)
+        if "TK_LIBRARY" not in os.environ:
+            v = os.path.join(prefix, 'tk'+ver)
+            if os.path.exists(os.path.join(v, "tclIndex")):
+                os.environ['TK_LIBRARY'] = v
+        # We don't know the Tix version, so we must search the entire
+        # directory
+        if "TIX_LIBRARY" not in os.environ:
+            for name in os.listdir(prefix):
+                if name.startswith("tix"):
+                    tixdir = os.path.join(prefix,name)
+                    if os.path.isdir(tixdir):
+                        os.environ["TIX_LIBRARY"] = tixdir
 
 
 # Map native keys to vispy keys
@@ -108,7 +201,7 @@ capability = dict(
     resizable=True,       # can toggle resizability (e.g., no user resizing)
     decorate=True,        # can toggle decorations
     fullscreen=True,      # fullscreen window support
-    context=True,         # can share contexts between windows
+    context=False,        # can share contexts between windows
     multi_window=True,    # can use multiple windows at once
     scroll=True,          # scroll-wheel events are supported
     parent=True,          # can pass native widget backend parent
@@ -119,7 +212,7 @@ capability = dict(
 # ------------------------------------------------------- set_configuration ---
 def _set_config(c):
     """Set gl configuration for template"""
-    raise NotImplementedError
+    return []
 
 
 # ------------------------------------------------------------- application ---
@@ -129,12 +222,12 @@ _tk_inst_owned = False  # Whether we created the Tk instance or not
 _tk_toplevels = []      # References to created CanvasBackend Toplevels
 
 
-def _new_toplevel(*args, **kwargs):
+def _new_toplevel(self, *args, **kwargs):
     """Create and return a new withdrawn Toplevel."""
     global _tk_inst, _tk_toplevels
     tl = tk.Toplevel(_tk_inst, *args, **kwargs)
     tl.withdraw()
-    _tk_toplevels.append(tl)
+    _tk_toplevels.append(self)
     return tl
 
 
@@ -166,7 +259,18 @@ class ApplicationBackend(BaseApplicationBackend):
         return tk.__name__
 
     def _vispy_process_events(self):
-        self._vispy_get_native_app().update_idletasks()
+        # Update idle tasks first (probably not required)
+        app = self._vispy_get_native_app()
+        app.update_idletasks()
+
+        # Update every active Canvas window
+        for c in _tk_toplevels:
+            c._delayed_update()
+
+        # Process some events in the main Tkinter event loop
+        # And quit so we can continue elsewhere (call blocks normally)
+        app.after(0, lambda: app.quit())
+        app.mainloop()
 
     def _vispy_run(self):
         self._vispy_get_native_app().mainloop()
@@ -186,6 +290,7 @@ class ApplicationBackend(BaseApplicationBackend):
                 _tk_inst_owned = False
             else:
                 # Create our own top level Tk instance
+                _fix_tcl_lib()
                 _tk_inst = tk.Tk()
                 _tk_inst.withdraw()
                 _tk_inst_owned = True
@@ -213,7 +318,7 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
         # Deal with config
         # ... use context.config
         # Deal with context
-        p.context.shared.add_ref('tkinter', self)
+        p.context.shared.add_ref('tk', self)
         if p.context.shared.ref is self:
             self._native_context = None
         else:
@@ -234,7 +339,7 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
 
         if p.parent is None:
             # Create native window and master
-            self.top = _new_toplevel()
+            self.top = _new_toplevel(self)
 
             if p.title:    self._vispy_set_title(p.title)
             if p.size:     self._vispy_set_size(p.size[0], p.size[1])
@@ -248,7 +353,7 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
                 self.top.overrideredirect(True)
             if p.always_on_top:
                 self.top.wm_attributes("-topmost", "True")
-            self._fullscreen = p.fullscreen
+            self._fullscreen = bool(p.fullscreen)
 
             self.top.protocol("WM_DELETE_WINDOW", self._vispy_close)
             parent = self.top
@@ -261,11 +366,12 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
         self._init = False
         self.is_destroyed = False
 
-        OpenGLFrame.__init__(self, parent, **kwargs)
+        c = OpenGLFrame.__init__(self, parent, **kwargs)
         if not hasattr(self, "_native_context") or self._native_context is None:
             self.tkMap(None)
             # Workaround to get OpenGLFrame.__context for reference here
             # if access would ever be needed from self._native_context.
+            # ERROR: Context sharing this way seems unsupported.
             self._native_context = vars(self).get("_CanvasBackend__context", None)
 
         if self.top:
@@ -334,6 +440,13 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
         self._vispy_canvas.events.initialize()
         self.update_idletasks()
         self._on_configure(Coord(self._vispy_get_size()))
+
+    def _vispy_warmup(self):
+        etime = time() + 0.3
+        while time() < etime:
+            sleep(0.01)
+            self._vispy_canvas.set_current()
+            self._vispy_canvas.app.process_events()
 
     def _parse_state(self, e):
         return [ key for mask, key in KEY_STATE_MAP.items() \
@@ -421,7 +534,8 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
 
     def _vispy_set_current(self):
         # Make this the current context
-        self.tkMakeCurrent()
+        if not self.is_destroyed:
+            self.tkMakeCurrent()
 
     def _vispy_swap_buffers(self):
         # Swap front and back buffer
@@ -457,8 +571,8 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
         # Has no effect for widgets. If you want it to become fullscreen,
         # while embedded in another Toplevel window, you should make that
         # window fullscreen instead.
+        self._fullscreen = bool(fullscreen)
         if self.top:
-            self._fullscreen = bool(fullscreen)
             self._vispy_set_visible(True)
 
     def _vispy_update(self):
@@ -478,7 +592,7 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
         if self.top and not self.is_destroyed:
             self.is_destroyed = True
             self._vispy_canvas.close()
-            _del_toplevel(self.top)
+            _del_toplevel(self)
 
     def destroy(self):
         self._vispy_canvas.close()

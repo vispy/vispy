@@ -74,6 +74,10 @@ def test_context_sharing():
         if 'pyqt5' in c1.app.backend_name.lower():
             pytest.xfail("Context sharing is not supported in PyQt5 at this time.")
 
+        # Tkinter does not currently support context sharing
+        if 'tk' in c1.app.backend_name.lower():
+            pytest.xfail("Context sharing is not supported in Tkinter at this time.")
+
         # Check while c2 is active (with different context)
         with Canvas() as c2:
             # pyglet always shares
