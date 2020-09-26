@@ -263,7 +263,7 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
 
         OpenGLFrame.__init__(self, parent, **kwargs)
         if not hasattr(self, "_native_context") or self._native_context is None:
-            self.tkCreateContext()
+            self.tkMap(None)
             # Workaround to get OpenGLFrame.__context for reference here
             # if access would ever be needed from self._native_context.
             self._native_context = vars(self).get("_CanvasBackend__context", None)
