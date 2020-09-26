@@ -221,7 +221,7 @@ setup(
         'pyside2': ['PySide2'],
         'sdl2': ['PySDL2'],
         'wx': ['wxPython'],
-        'tk': ['pyopengltk']
+        'tk': ['pyopengltk'],
         'doc': ['sphinx_bootstrap_theme', 'numpydoc'],
         'io': ['meshio'],
     },
