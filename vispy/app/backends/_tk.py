@@ -64,8 +64,8 @@ def _fix_tcl_lib():
             return s
     else:
         def convert_path(s):
-            assert isinstance(s, str)   # sys.prefix contains only bytes
-            udir = s.decode("mbcs") if hasattr(s, "decode") else s
+            use_dec = hasattr(s, "decode")
+            udir = s.decode("mbcs") if use_dec else s
             hdir = ctypes.windll.kernel32.\
                 CreateFileW(udir, 0x80, # FILE_READ_ATTRIBUTES
                             1,          # FILE_SHARE_READ
@@ -83,11 +83,11 @@ def _fix_tcl_lib():
             if res == 0:
                 # Conversion failed (e.g. network location)
                 return s
-            s = buf[:res].encode("mbcs")
+            s = buf[:res].encode("mbcs") if use_dec else buf[:res]
             # Ignore leading \\?\
             if s.startswith("\\\\?\\"):
                 s = s[4:]
-            if s.startswith("UNC"):
+            if s.startswith(b"UNC"):
                 s = "\\" + s[3:]
             return s
 
