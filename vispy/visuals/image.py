@@ -580,9 +580,8 @@ class ImageVisual(Visual):
 
     def _build_texture(self):
         data = self._data
+        clim = self._clim
         if data.ndim == 2 or data.shape[2] == 1:
-            # deal with clim
-            clim = self._clim
             if isinstance(clim, string_types) and clim == 'auto':
                 clim = np.min(data), np.max(data)
             clim = np.asarray(clim, dtype=np.float32)
