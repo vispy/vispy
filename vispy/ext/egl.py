@@ -255,7 +255,7 @@ def eglInitialize(display):
 
 
 def eglTerminate(display):
-    """ Initialize EGL and return EGL version tuple.
+    """ Terminate an EGL display connection.
     """
     _lib.eglTerminate(display)
 
