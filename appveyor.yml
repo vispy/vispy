@@ -11,7 +11,7 @@ environment:
   matrix:
       - PYTHON_VERSION: "3.7"
         CONDA_DEPENDENCIES: "numpy scipy setuptools pytest coverage pytest-cov pytest-sugar pytest-faulthandler cython coveralls freetype-py numpydoc meshio"
-        PIP_DEPENDENCIES: "pyopengltk"
+        PIP_DEPENDENCIES: ""
 
 platform:
     -x64

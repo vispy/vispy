@@ -140,7 +140,7 @@ def _test_callbacks(canvas):
         event.delta = 120
         backend._on_mouse_wheel(event)
         
-        event.keysym_num, event.keycode, event.state = 65362, 0, 0x0001 # SHIFT+UP
+        event.keysym_num, event.keycode, event.state = 65362, 0, 0x0001  # SHIFT+UP
         backend._on_key_down(event)
         backend._on_key_up(event)
     else:
