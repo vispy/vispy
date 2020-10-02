@@ -20,6 +20,13 @@ from ...util.ptime import time
 
 # Import
 try:
+    import sys
+    import os
+
+    _tk_on_linux = sys.platform.startswith('linux')
+    _tk_on_darwin = sys.platform == 'darwin'
+    _tk_on_windows = sys.platform.startswith('win')
+
     try:
         import tkinter as tk  # Python >= 3
     except ModuleNotFoundError:
@@ -27,7 +34,7 @@ try:
     from OpenGL import GL
     import pyopengltk
     OpenGLFrame = pyopengltk.OpenGLFrame
-except ModuleNotFoundError:
+except (ModuleNotFoundError, ImportError):
     available, testable, why_not, which = \
         False, False, "Could not import Tkinter or pyopengltk, module(s) not found.", None
 
@@ -45,9 +52,6 @@ def _fix_tcl_lib():
     does not have the proper variables, so we force them here (mostly when running tests).
     From: https://github.com/enthought/Python-2.7.3/blob/master/Lib/lib-tk/FixTk.py
     """
-    import sys
-    import os
-
     # Delay import _tkinter until we have set TCL_LIBRARY,
     # so that Tcl_FindExecutable has a chance to locate its
     # encoding directory.
@@ -193,6 +197,10 @@ MOUSE_BUTTON_MAP = {
     1: 1,  # Mouse Left   == 1 -> Mouse Left
     2: 3,  # Mouse Middle == 2 -> Mouse Middle
     3: 2,  # Mouse Right  == 3 -> Mouse Right
+
+    # TODO: If other mouse buttons are needed
+    # and they differ from the Tkinter numbering, add them here.
+    # e.g. BACK/FORWARD buttons or other custom mouse buttons
 }
 
 # -------------------------------------------------------------- capability ---
@@ -247,19 +255,21 @@ def _new_toplevel(self, *args, **kwargs):
     return tl
 
 
-def _del_toplevel(tl=None):
+def _del_toplevel(fr=None):
     """
     Destroy the given Toplevel, and if it was the last one,
     also destroy the global Tk instance if we created it.
 
-    :param tl: The Toplevel to destroy, defaults to None
+    :param fr: The CanvasBackend to destroy, defaults to None
     """
     global _tk_inst, _tk_inst_owned, _tk_toplevels
 
-    if tl:
+    if fr:
         try:
-            tl.destroy()
-            _tk_toplevels.remove(tl)
+            fr.destroy()
+            if fr.top:
+                fr.top.destroy()
+            _tk_toplevels.remove(fr)
         except Exception:
             pass
 
@@ -408,12 +418,6 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
         self.is_destroyed = False
 
         OpenGLFrame.__init__(self, parent, **kwargs)
-        if not hasattr(self, "_native_context") or self._native_context is None:
-            self.tkMap(None)
-            # Workaround to get OpenGLFrame.__context for reference here
-            # if access would ever be needed from self._native_context.
-            # WARNING: Context sharing this way seems unsupported.
-            self._native_context = vars(self).get("_CanvasBackend__context", None)
 
         if self.top:
             # Embed canvas in top (new window) if this was created
@@ -429,9 +433,9 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
             self.bind("<Any-KeyRelease>", self._on_key_up)
 
         # Bind the other events to our internal methods.
-        self.bind("<Enter>",             self._on_mouse_enter)
+        self.bind("<Enter>",             self._on_mouse_enter)  # This also binds MouseWheel
+        self.bind("<Leave>",             self._on_mouse_leave)  # This also unbinds MouseWheel
         self.bind("<Motion>",            self._on_mouse_move)
-        self.bind("<MouseWheel>",        self._on_mouse_wheel)
         self.bind("<Any-Button>",        self._on_mouse_button_press)
         self.bind("<Double-Any-Button>", self._on_mouse_double_button_press)
         self.bind("<Any-ButtonRelease>", self._on_mouse_button_release)
@@ -444,6 +448,12 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
         """Overridden from OpenGLFrame
         Gets called on init or when the frame is remapped into its container.
         """
+        if not hasattr(self, "_native_context") or self._native_context is None:
+            # Workaround to get OpenGLFrame.__context for reference here
+            # if access would ever be needed from self._native_context.
+            # FIXME: Context sharing this way seems unsupported
+            self._native_context = vars(self).get("_CanvasBackend__context", None)
+
         self.update_idletasks()
         GL.glClear(GL.GL_COLOR_BUFFER_BIT)
         GL.glClearColor(0.0, 0.0, 0.0, 0.0)
@@ -538,8 +548,28 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
         """Event callback when the mouse enters the canvas."""
         if self._vispy_canvas is None:
             return
+        if _tk_on_linux:
+            # On Linux, bind wheel as buttons instead
+            self.bind_all("<Button-4>",   self._on_mouse_wheel)
+            self.bind_all("<Button-5>",   self._on_mouse_wheel)
+        else:
+            # Other platforms, bind wheel event
+            # FIXME: What to do on Darwin?
+            self.bind_all("<MouseWheel>", self._on_mouse_wheel)
+
         self._vispy_mouse_move(
             pos=(e.x, e.y), modifiers=self._parse_state(e))
+
+    def _on_mouse_leave(self, e):
+        """Event callback when the mouse leaves the canvas."""
+        if self._vispy_canvas is None:
+            return
+        # Unbind mouse wheel events when not over the canvas any more.
+        if _tk_on_linux:
+            self.unbind_all("<Button-4>")
+            self.unbind_all("<Button-5>")
+        else:
+            self.unbind_all("<MouseWheel>")
 
     def _on_mouse_move(self, e):
         """Event callback when the mouse is moved within the canvas."""
@@ -552,6 +582,9 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
         """Event callback when the mouse wheel changes within the canvas."""
         if self._vispy_canvas is None:
             return
+        if _tk_on_linux:
+            # Fix mouse wheel delta
+            e.delta = {4: 120, 5: -120}.get(e.num, 0)
         self._vispy_canvas.events.mouse_wheel(
             delta=(0.0, float(e.delta / 120)),
             pos=(e.x, e.y), modifiers=self._parse_state(e))
@@ -560,8 +593,11 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
         """Event callback when a mouse button is pressed within the canvas."""
         if self._vispy_canvas is None:
             return
+        # Ignore MouseWheel on linux
+        if _tk_on_linux and e.num in (4, 5):
+            return
         self._vispy_mouse_press(
-            pos=(e.x, e.y), button=MOUSE_BUTTON_MAP[e.num], modifiers=self._parse_state(e))
+            pos=(e.x, e.y), button=MOUSE_BUTTON_MAP.get(e.num, e.num), modifiers=self._parse_state(e))
 
     def _vispy_detect_double_click(self, e):
         """Override base class function
@@ -572,15 +608,21 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
         """Event callback when a mouse button is double clicked within the canvas."""
         if self._vispy_canvas is None:
             return
+        # Ignore MouseWheel on linux
+        if _tk_on_linux and e.num in (4, 5):
+            return
         self._vispy_mouse_double_click(
-            pos=(e.x, e.y), button=MOUSE_BUTTON_MAP[e.num], modifiers=self._parse_state(e))
+            pos=(e.x, e.y), button=MOUSE_BUTTON_MAP.get(e.num, e.num), modifiers=self._parse_state(e))
 
     def _on_mouse_button_release(self, e):
         """Event callback when a mouse button is released within the canvas."""
         if self._vispy_canvas is None:
             return
+        # Ignore MouseWheel on linux
+        if _tk_on_linux and e.num in (4, 5):
+            return
         self._vispy_mouse_release(
-            pos=(e.x, e.y), button=MOUSE_BUTTON_MAP[e.num], modifiers=self._parse_state(e))
+            pos=(e.x, e.y), button=MOUSE_BUTTON_MAP.get(e.num, e.num), modifiers=self._parse_state(e))
 
     def _on_key_down(self, e):
         """Event callback when a key is pressed within the canvas or window.

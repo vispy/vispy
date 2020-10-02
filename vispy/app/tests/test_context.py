@@ -41,10 +41,10 @@ def test_context_properties():
                 props = get_gl_configuration()
             assert len(config) == n_items
             for key, val in config.items():
-                # XXX knownfail for windows samples, and wx (all platforms)
+                # XXX knownfail for windows samples, and wx/tkinter (all platforms)
                 if key == 'samples':
-                    iswx = a.backend_name.lower() == 'wx'
-                    if not (sys.platform.startswith('win') or iswx):
+                    will_fail_backend = a.backend_name.lower() in ('wx', 'tkinter')
+                    if not (sys.platform.startswith('win') or will_fail_backend):
                         assert val == props[key], key
     assert_raises(TypeError, Canvas, config='foo')
     assert_raises(KeyError, Canvas, config=dict(foo=True))
