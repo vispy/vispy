@@ -1,6 +1,7 @@
 import os
 import sys
 from collections import namedtuple
+from io import StringIO
 from time import sleep
 import gc
 
@@ -18,7 +19,7 @@ from vispy.util import keys, use_log_level
 from vispy.gloo.program import (Program, VertexBuffer, IndexBuffer)
 from vispy.gloo.util import _screenshot
 from vispy.gloo import gl
-from vispy.ext.six.moves import StringIO
+
 
 gl.use_gl('gl2 debug')
 
