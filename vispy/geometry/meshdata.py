@@ -4,8 +4,6 @@
 
 import numpy as np
 
-from ..ext.six.moves import xrange
-
 
 def _fix_colors(colors):
     colors = np.asarray(colors)
@@ -333,7 +331,7 @@ class MeshData(object):
             vertFaces = self.get_vertex_faces()
             self._vertex_normals = np.empty(self._vertices.shape,
                                             dtype=np.float32)
-            for vindex in xrange(self._vertices.shape[0]):
+            for vindex in range(self._vertices.shape[0]):
                 faces = vertFaces[vindex]
                 if len(faces) == 0:
                     self._vertex_normals[vindex] = (0, 0, 0)
@@ -552,7 +550,7 @@ class MeshData(object):
         self._vertex_faces = []
         self._face_normals = None
         self._vertex_normals = None
-        for i in xrange(faces.shape[0]):
+        for i in range(faces.shape[0]):
             face = faces[i]
             for j in range(face.shape[0]):
                 pt = face[j]
@@ -574,8 +572,8 @@ class MeshData(object):
         List mapping each vertex index to a list of face indices that use it.
         """
         if self._vertex_faces is None:
-            self._vertex_faces = [[] for i in xrange(len(self.get_vertices()))]
-            for i in xrange(self._faces.shape[0]):
+            self._vertex_faces = [[] for i in range(len(self.get_vertices()))]
+            for i in range(self._faces.shape[0]):
                 face = self._faces[i]
                 for ind in face:
                     self._vertex_faces[ind].append(i)
