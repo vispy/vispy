@@ -20,7 +20,6 @@ import traceback
 import weakref
 
 from .logs import logger, _handle_exception
-from ..ext.six import string_types
 
 
 class Event(object):
@@ -331,7 +330,7 @@ class EventEmitter(object):
                     ref = callback.__class__.__name__
             else:
                 ref = None
-        elif not isinstance(ref, string_types):
+        elif not isinstance(ref, str):
             raise TypeError('ref must be a bool or string')
         if ref is not None and ref in self._callback_refs:
             raise ValueError('ref "%s" is not unique' % ref)

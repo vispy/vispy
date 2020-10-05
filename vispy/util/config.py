@@ -5,6 +5,7 @@
 """Vispy configuration functions
 """
 
+import io
 import os
 from os import path as op
 import inspect
@@ -21,9 +22,8 @@ import numpy as np
 
 from .event import EmitterGroup, EventEmitter, Event
 from .logs import logger, set_log_level, use_log_level
-from ..ext.six import string_types, file_types
 
-file_types = list(file_types)
+file_types = [io.TextIOWrapper, io.BufferedRandom]
 try:
     file_types += [tempfile._TemporaryFileWrapper]  # Py3k Windows this happens
 except Exception:
@@ -49,18 +49,18 @@ def _init():
 
     # All allowed config keys and the types they may have
     _allowed_config_keys = {
-        'data_path': string_types,
-        'default_backend': string_types,
-        'gl_backend': string_types,
+        'data_path': (str,),
+        'default_backend': (str,),
+        'gl_backend': (str,),
         'gl_debug': (bool,),
-        'glir_file': string_types+file_types,
+        'glir_file': (str,) + file_types,
         'include_path': list,
-        'logging_level': string_types,
-        'qt_lib': string_types,
+        'logging_level': (str,),
+        'qt_lib': (str,),
         'dpi': (int, type(None)),
-        'profile': string_types + (type(None),),
+        'profile': (str, type(None),),
         'audit_tests': (bool,),
-        'test_data_path': string_types + (type(None),),
+        'test_data_path': (str, type(None),),
     }
 
     # Default values for all config options
