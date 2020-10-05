@@ -6,7 +6,6 @@ from __future__ import division
 
 from ..util.event import Event, EmitterGroup
 from ..util.ptime import time as precision_time
-from ..ext.six import string_types
 from .base import BaseTimerBackend as TimerBackend  # noqa
 from . import use_app, Application
 
@@ -45,7 +44,7 @@ class Timer(object):
             self._app = use_app(call_reuse=False)
         elif isinstance(app, Application):
             self._app = app
-        elif isinstance(app, string_types):
+        elif isinstance(app, str):
             self._app = Application(app)
         else:
             raise ValueError('Invalid value for app %r' % app)
