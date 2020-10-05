@@ -45,8 +45,6 @@ import struct
 import zlib
 # http://www.python.org/doc/2.4.4/lib/module-warnings.html
 import warnings
-from ..six.moves import map as imap
-from ..six import string_types
 import itertools
 
 
@@ -513,7 +511,7 @@ class Writer:
 
         Most users are expected to find the :meth:`write` or
         :meth:`write_array` method more convenient.
-        
+
         The rows should be given to this method in the order that
         they appear in the output file.  For straightlaced images,
         this is the usual top to bottom ordering, but for interlaced
@@ -547,7 +545,7 @@ class Writer:
             write_chunk(outfile, 'sBIT',
                 struct.pack('%dB' % self.planes,
                             *[self.rescale[0]]*self.planes))
-        
+
         # :chunk:order: Without a palette (PLTE chunk), ordering is
         # relatively relaxed.  With one, gAMA chunk must precede PLTE
         # chunk which must precede tRNS and bKGD.
@@ -940,7 +938,7 @@ def from_array(a, mode=None, info={}):
       only.  It doesn't actually work.  Please bear with us.  Meanwhile
       enjoy the complimentary snacks (on request) and please use a
       2-dimensional array.
-    
+
     Unless they are specified using the *info* parameter, the PNG's
     height and width are taken from the array size.  For a 3 dimensional
     array the first axis is the height; the second axis is the width;
@@ -995,7 +993,7 @@ def from_array(a, mode=None, info={}):
     metadata (in the same style as the arguments to the
     :class:``png.Writer`` class).  For this function the keys that are
     useful are:
-    
+
     height
       overrides the height derived from the array dimensions and allows
       *a* to be an iterable.
@@ -1147,10 +1145,10 @@ class Image:
     def __init__(self, rows, info):
         """
         .. note ::
-        
+
           The constructor is not public.  Please do not call it.
         """
-        
+
         self.rows = rows
         self.info = info
 
@@ -1233,7 +1231,7 @@ class Reader:
         if _guess is not None:
             if isarray(_guess):
                 kw["bytes"] = _guess
-            elif isinstance(_guess, string_types):
+            elif isinstance(_guess, str):
                 kw["filename"] = _guess
             elif hasattr(_guess, 'read'):
                 kw["file"] = _guess
@@ -1499,7 +1497,7 @@ class Reader:
                 out.extend(map(lambda i: mask&(o>>i), shifts))
             return out[:width]
 
-        return imap(asvalues, rows)
+        return map(asvalues, rows)
 
     def serialtoflat(self, bytes, width=None):
         """Convert serial format (byte stream) pixel data to flat row
@@ -1788,7 +1786,7 @@ class Reader:
             arraycode = 'BH'[self.bitdepth>8]
             # Like :meth:`group` but producing an array.array object for
             # each row.
-            pixels = imap(lambda *row: array(arraycode, row),
+            pixels = map(lambda *row: array(arraycode, row),
                        *[iter(self.deinterlace(raw))]*self.width*self.planes)
         else:
             pixels = self.iterboxed(self.iterstraight(raw))
@@ -1998,7 +1996,7 @@ class Reader:
         (*width*, *height*, *pixels*, *metadata*).
         *width*, *height*, *metadata* are as per the
         :meth:`read` method.
-        
+
         *pixels* is the pixel data in boxed row flat pixel format.
         """
 
