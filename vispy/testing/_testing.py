@@ -16,7 +16,6 @@ import functools
 
 from distutils.version import LooseVersion
 
-from ..ext.six import string_types
 from ..util.check_environment import has_backend
 
 skipif = pytest.mark.skipif
@@ -280,7 +279,7 @@ def requires_numpydoc():
 
 def _has_scipy(min_version):
     try:
-        assert isinstance(min_version, string_types)
+        assert isinstance(min_version, str)
         import scipy  # noqa, analysis:ignore
         from distutils.version import LooseVersion
         this_version = LooseVersion(scipy.__version__)
