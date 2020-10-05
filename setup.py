@@ -221,7 +221,7 @@ setup(
         'pyside2': ['PySide2'],
         'sdl2': ['PySDL2'],
         'wx': ['wxPython'],
-        'doc': ['sphinx_bootstrap_theme', 'numpydoc'],
+        'doc': ['sphinx_bootstrap_theme', 'numpydoc', 'sphinxcontrib-apidoc'],
         'io': ['meshio'],
     },
     packages=find_packages(exclude=['make']),

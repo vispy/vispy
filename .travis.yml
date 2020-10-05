@@ -113,8 +113,10 @@ install:
 
     # Install vispy
     - cd ${SRC_DIR}
-    - python setup.py install
-    - python setup.py develop
+    - if [ "${TEST}" == "website" ]; then
+          EXTRAS="[doc]"
+      fi
+    - pip install -e ".${EXTRAS}"
     - cd ~
 
 
