@@ -37,40 +37,24 @@ _ignores = [
     'vispy.scene.visuals',  # not parsed properly by this func, copies anyway
 ]
 
-
-def check_parameters_match(func, doc=None):
-    """Helper to check docstring, returns list of incorrect results"""
-    from numpydoc import docscrape
-    incorrect = []
-    name_ = get_name(func)
-    if not name_.startswith('vispy.'):
-        return incorrect
-    if inspect.isdatadescriptor(func):
-        return incorrect
-    args = _get_args(func)
-    # drop self
-    if len(args) > 0 and args[0] in ('self', 'cls'):
-        args = args[1:]
-
-    if doc is None:
-        with warnings.catch_warnings(record=True) as w:
-            doc = docscrape.FunctionDoc(func)
-        if len(w):
-            raise RuntimeError('Error for %s:\n%s' % (name_, w[0]))
-    # check set
-    param_names = [name for name, _, _ in doc['Parameters']]
-    # clean up some docscrape output:
-    param_names = [name.split(':')[0].strip('` ') for name in param_names]
-    param_names = [name for name in param_names if '*' not in name]
-    if len(param_names) != len(args):
-        bad = str(sorted(list(set(param_names) - set(args)) +
-                         list(set(args) - set(param_names))))
-        if not any(d in name_ for d in _ignores):
-            incorrect += [name_ + ' arg mismatch: ' + bad]
-    else:
-        for n1, n2 in zip(param_names, args):
-            if n1 != n2:
-                incorrect += [name_ + ' ' + n1 + ' != ' + n2]
+def check_parameters_match(func, cls=None):
+    """Check docstring, return list of incorrect results."""
+    from numpydoc.validate import validate
+    name = _func_name(func, cls)
+    skip = (not name.startswith('vispy.') or
+            any(re.match(d, name) for d in docstring_ignores) or
+            'deprecation_wrapped' in getattr(
+                getattr(func, '__code__', None), 'co_name', ''))
+    if skip:
+        return list()
+    if cls is not None:
+        for subclass, ignores in subclass_name_ignores:
+            if issubclass(cls, subclass) and name.split('.')[-1] in ignores:
+                return list()
+    incorrect = ['%s : %s : %s' % (name, err[0], err[1])
+                 for err in validate(name)['errors']
+                 if err[0] not in error_ignores and
+                 (name.split('.')[-1], err[0]) not in error_ignores_specific]
     return incorrect
 
 
