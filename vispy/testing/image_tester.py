@@ -49,9 +49,9 @@ import base64
 from subprocess import check_call, CalledProcessError
 import numpy as np
 
-from ..ext.six import string_types
-from ..ext.six.moves import http_client as httplib
-from ..ext.six.moves import urllib_parse as urllib
+import http.client as httplib
+import urllib.parse as urllib
+
 from .. import scene, config
 from ..io import read_png, write_png
 from ..gloo.util import _screenshot
@@ -99,7 +99,7 @@ def assert_image_approved(image, standard_file, message=None, **kwargs):
     comparison (see ``assert_image_match()``).
     """
 
-    if isinstance(image, string_types) and image == "screenshot":
+    if isinstance(image, str) and image == "screenshot":
         image = _screenshot(alpha=True)
     if message is None:
         code = inspect.currentframe().f_back.f_code
