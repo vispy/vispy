@@ -116,8 +116,7 @@ def read_png(filename):
     --------
     write_png, imread, imsave
     """
-    PIL=None
-    import PIL.Image
+    imageio, PIL = _check_img_lib()
     if PIL is not None:
         x = PIL.Image.open(filename)
         try:
