@@ -11,8 +11,6 @@ import struct
 import zlib
 import numpy as np
 
-
-
 def _make_png(data, level=6):
     """Convert numpy array to PNG byte array.
 
@@ -120,10 +118,6 @@ def read_png(filename):
         from PIL import Image
         x = Image.open(filename)
         try:
-            if x.mode == 'RGBA' :
-                n = 4
-            else:
-                n = 3
             y = np.asarray(x)
             y = np.array([yy for yy in y], np.uint8)
         finally:
@@ -132,8 +126,7 @@ def read_png(filename):
     except ImportError:
         raise RuntimeError("read_png requires the Pillow package.")
         
-    
-
+        
 def write_png(filename, data):
     """Write a PNG file
 
