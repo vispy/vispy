@@ -12,7 +12,7 @@ import sys
 import shutil
 import time
 
-import urllib
+import urllib.request
 
 from ..util.config import config
 
