@@ -128,7 +128,6 @@ def read_png(filename):
             y = np.array([yy for yy in y], np.uint8)
         finally:
             x.close()
-        y.shape = (y.shape[0], y.shape[1] // n, n)
         return y
     except ImportError:
         raise RuntimeError("read_png requires the Pillow package.")
