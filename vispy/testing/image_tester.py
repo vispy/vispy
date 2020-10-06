@@ -49,8 +49,8 @@ import base64
 from subprocess import check_call, CalledProcessError
 import numpy as np
 
-import http.client as httplib
-import urllib.parse as urllib
+from http.client import HTTPConnection
+from urllib.parse import urlencode
 
 from .. import scene, config
 from ..io import read_png, write_png
@@ -233,9 +233,9 @@ def _save_failed_test(data, expect, filename):
     img[2:2+diff.shape[0], -diff.shape[1]-2:-2] = diff
 
     png = _make_png(img)
-    conn = httplib.HTTPConnection(host)
-    req = urllib.urlencode({'name': filename,
-                            'data': base64.b64encode(png)})
+    conn = HTTPConnection(host)
+    req = urlencode({'name': filename,
+                     'data': base64.b64encode(png)})
     conn.request('POST', '/upload.py', req)
     response = conn.getresponse().read()
     conn.close()
