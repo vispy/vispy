@@ -222,7 +222,7 @@ setup(
         'sdl2': ['PySDL2'],
         'wx': ['wxPython'],
         'doc': ['sphinx_bootstrap_theme', 'numpydoc'],
-        'io': ['meshio','PIL'],
+        'io': ['meshio','Pillow'],
     },
     packages=find_packages(exclude=['make']),
     ext_modules=cythonize(extensions),
