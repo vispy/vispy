@@ -11,6 +11,7 @@ import struct
 import zlib
 import numpy as np
 
+
 def _make_png(data, level=6):
     """Convert numpy array to PNG byte array.
 
