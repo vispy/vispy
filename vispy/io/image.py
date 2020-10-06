@@ -100,7 +100,7 @@ def _make_png(data, level=6):
 def read_png(filename):
     """Read a PNG file to RGB8 or RGBA8
 
-   Requires PIL.
+   Requires Pillow.
 
     Parameters
     ----------
@@ -116,9 +116,9 @@ def read_png(filename):
     --------
     write_png, imread, imsave
     """
-    imageio, PIL = _check_img_lib()
-    if PIL is not None:
-        x = PIL.Image.open(filename)
+    try:
+        from PIL import Image
+        x = Image.open(filename)
         try:
             alpha = x.asDirect()[3]['alpha']
             if alpha:
@@ -132,8 +132,8 @@ def read_png(filename):
             x.file.close()
         y.shape = (y.shape[0], y.shape[1] // n, n)
         return y
-    else:
-        raise RuntimeError("read_png requires the PIL package.")
+    except ImportError:
+        raise RuntimeError("read_png requires the Pillow package.")
         
     
 
