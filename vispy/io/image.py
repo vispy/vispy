@@ -129,7 +129,7 @@ def read_png(filename):
                 n = 3
             y = np.array([yy for yy in y], np.uint8)
         finally:
-            x.file.close()
+            x.close()
         y.shape = (y.shape[0], y.shape[1] // n, n)
         return y
     except ImportError:
