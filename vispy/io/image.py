@@ -120,13 +120,11 @@ def read_png(filename):
         from PIL import Image
         x = Image.open(filename)
         try:
-            alpha = x.asDirect()[3]['alpha']
-            if alpha:
-                y = x.asRGBA8()[2]
+            if x.mode == 'RGBA' :
                 n = 4
             else:
-                y = x.asRGB8()[2]
                 n = 3
+            y = np.asarray(x)
             y = np.array([yy for yy in y], np.uint8)
         finally:
             x.close()
