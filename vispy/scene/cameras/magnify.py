@@ -13,7 +13,7 @@ from ...app import Timer
 
 class MagnifyCamera(PanZoomCamera):
     """Camera implementing a MagnifyTransform combined with PanZoomCamera.
-    
+
     Parameters
     ----------
     size_factor : float

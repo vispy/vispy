@@ -1,8 +1,12 @@
 # TODO inspect for Cython (see sagenb.misc.sageinspect)
-from __future__ import print_function
 
+import re
 import inspect
 import warnings
+import pytest
+
+import vispy
+import vispy.scene.cameras.magnify
 from vispy.testing import run_tests_if_main, requires_numpydoc
 from vispy.util import _get_args
 
@@ -21,21 +25,43 @@ public_modules = [
 ]
 
 
-def get_name(func):
+def _func_name(func, cls=None):
+    """Get the name."""
     parts = []
-    module = inspect.getmodule(func)
+    if cls is not None:
+        module = inspect.getmodule(cls)
+    else:
+        module = inspect.getmodule(func)
     if module:
         parts.append(module.__name__)
-    if hasattr(func, 'im_class'):
-        parts.append(func.im_class.__name__)
+    if cls is not None:
+        parts.append(cls.__name__)
     parts.append(func.__name__)
     return '.'.join(parts)
 
 
 # functions to ignore
-_ignores = [
+docstring_ignores = [
     'vispy.scene.visuals',  # not parsed properly by this func, copies anyway
 ]
+error_ignores = {
+    # These we do not live by:
+    'GL01',  # Docstring should start in the line immediately after the quotes
+    'EX01', 'EX02',  # examples failed (we test them separately)
+    'ES01',  # no extended summary
+    'SA01',  # no see also
+    'YD01',  # no yields section
+    'SA04',  # no description in See Also
+    'PR04',  # Parameter "shape (n_channels" has no type
+    'RT02',  # The first line of the Returns section should contain only the type, unless multiple values are being returned  # noqa
+    # XXX should also verify that | is used rather than , to separate params
+    # XXX should maybe also restore the parameter-desc-length < 800 char check
+}
+error_ignores_specific = {}
+subclass_name_ignores = (
+    (vispy.scene.cameras.magnify.MagnifyCamera, {'MagnifyTransform', 'Magnify1DTransform'}),
+)
+
 
 def check_parameters_match(func, cls=None):
     """Check docstring, return list of incorrect results."""
@@ -60,39 +86,39 @@ def check_parameters_match(func, cls=None):
 
 @requires_numpydoc()
 def test_docstring_parameters():
-    """Test module docsting formatting"""
+    """Test module docstring formatting."""
     from numpydoc import docscrape
     incorrect = []
     for name in public_modules:
-        module = __import__(name, globals())
+        # Assert that by default we import all public names with `import vispy`
+        #if name not in ('vispy'):
+        #    extra = name.split('.')[1]
+        #    assert hasattr(vispy, extra)
+        with pytest.warns(None):  # traits warnings
+            module = __import__(name, globals())
         for submod in name.split('.')[1:]:
             module = getattr(module, submod)
         classes = inspect.getmembers(module, inspect.isclass)
         for cname, cls in classes:
             if cname.startswith('_'):
                 continue
-            with warnings.catch_warnings(record=True) as w:
-                cdoc = docscrape.ClassDoc(cls)
-            if len(w):
-                raise RuntimeError('Error for __init__ of %s in %s:\n%s'
-                                   % (cls, name, w[0]))
-            if hasattr(cls, '__init__'):
-                incorrect += check_parameters_match(cls.__init__, cdoc)
+            incorrect += check_parameters_match(cls)
+            cdoc = docscrape.ClassDoc(cls)
             for method_name in cdoc.methods:
                 method = getattr(cls, method_name)
-                # skip classes that are added as attributes of classes
-                if (inspect.ismethod(method) or inspect.isfunction(method)):
-                    incorrect += check_parameters_match(method)
-            if hasattr(cls, '__call__'):
-                incorrect += check_parameters_match(cls.__call__)
+                incorrect += check_parameters_match(method, cls=cls)
+            if hasattr(cls, '__call__') and \
+                    'of type object' not in str(cls.__call__):
+                incorrect += check_parameters_match(cls.__call__, cls)
         functions = inspect.getmembers(module, inspect.isfunction)
         for fname, func in functions:
             if fname.startswith('_'):
                 continue
             incorrect += check_parameters_match(func)
-    msg = '\n' + '\n'.join(sorted(list(set(incorrect))))
+    incorrect = sorted(list(set(incorrect)))
+    msg = '\n' + '\n'.join(incorrect)
+    msg += '\n%d error%s' % (len(incorrect), 's' if len(incorrect) == 1 else '')
     if len(incorrect) > 0:
-        msg += '\n\n%s docstring violations found' % msg.count('\n')
         raise AssertionError(msg)
 
 
