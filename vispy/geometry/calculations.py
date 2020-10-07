@@ -7,8 +7,6 @@
 
 import numpy as np
 
-from ..ext.six import string_types
-
 
 ###############################################################################
 # These fast normal calculation routines are adapted from mne-python
@@ -106,7 +104,7 @@ def resize(image, shape, kind='linear'):
         raise ValueError('shape must have two elements')
     if image.ndim < 2:
         raise ValueError('image must have two dimensions')
-    if not isinstance(kind, string_types) or kind not in ('nearest', 'linear'):
+    if not isinstance(kind, str) or kind not in ('nearest', 'linear'):
         raise ValueError('mode must be "nearest" or "linear"')
 
     r = np.linspace(0, image.shape[0] - 1, shape[0])

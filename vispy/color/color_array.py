@@ -7,7 +7,6 @@ from __future__ import division  # just to be safe...
 import numpy as np
 from copy import deepcopy
 
-from ..ext.six import string_types
 from ..util import logger
 from ._color_dict import _color_dict
 from .color_space import (_hex_to_rgba, _rgb_to_hex, _rgb_to_hsv,  # noqa
@@ -41,13 +40,13 @@ def _user_to_rgba(color, expand=True, clip=False):
     """Convert color(s) from any set of fmts (str/hex/arr) to RGB(A) array"""
     if color is None:
         color = np.zeros(4, np.float32)
-    if isinstance(color, string_types):
+    if isinstance(color, str):
         color = _string_to_rgb(color)
     elif isinstance(color, ColorArray):
         color = color.rgba
     # We have to treat this specially
     elif isinstance(color, (list, tuple)):
-        if any(isinstance(c, (string_types, ColorArray)) for c in color):
+        if any(isinstance(c, (str, ColorArray)) for c in color):
             color = [_user_to_rgba(c, expand=expand, clip=clip) for c in color]
             if any(len(c) > 1 for c in color):
                 raise RuntimeError('could not parse colors, are they nested?')

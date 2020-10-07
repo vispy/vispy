@@ -12,8 +12,8 @@ import sys
 import shutil
 import time
 
-from ..ext.six.moves import urllib
-from ..ext.six import string_types
+import urllib.request
+
 from ..util.config import config
 
 
@@ -55,7 +55,7 @@ def load_data_file(fname, directory=None, force_download=False):
     if op.isfile(fname):
         if not force_download:  # we're done
             return fname
-        if isinstance(force_download, string_types):
+        if isinstance(force_download, str):
             ntime = time.strptime(force_download, '%Y-%m-%d')
             ftime = time.gmtime(op.getctime(fname))
             if ftime >= ntime:

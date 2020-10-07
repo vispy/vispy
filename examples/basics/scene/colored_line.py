@@ -13,7 +13,6 @@ import numpy as np
 from vispy import app, scene
 from vispy.color import get_colormaps
 from vispy.visuals.transforms import STTransform
-from vispy.ext.six import next
 
 colormaps = itertools.cycle(get_colormaps())
 

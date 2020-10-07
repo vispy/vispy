@@ -7,7 +7,6 @@
 import numpy as np
 
 from .mesh import MeshVisual
-from ..ext.six import string_types
 
 
 class HistogramVisual(MeshVisual):
@@ -33,7 +32,7 @@ class HistogramVisual(MeshVisual):
         data = np.asarray(data)
         if data.ndim != 1:
             raise ValueError('Only 1D data currently supported')
-        if not isinstance(orientation, string_types) or \
+        if not isinstance(orientation, str) or \
                 orientation not in ('h', 'v'):
             raise ValueError('orientation must be "h" or "v", not %s'
                              % (orientation,))

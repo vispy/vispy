@@ -16,7 +16,6 @@ from .shaders import Function, FunctionChain
 from ..gloo import VertexBuffer
 from ..geometry import MeshData
 from ..color import Color, get_colormap
-from ..ext.six import string_types
 
 # Shaders for lit rendering (using phong shading)
 shading_vertex_template = """
@@ -257,12 +256,12 @@ class MeshVisual(Visual):
 
     @property
     def clim(self):
-        return (self._clim if isinstance(self._clim, string_types) else
+        return (self._clim if isinstance(self._clim, str) else
                 tuple(self._clim))
 
     @clim.setter
     def clim(self, clim):
-        if isinstance(clim, string_types):
+        if isinstance(clim, str):
             if clim != 'auto':
                 raise ValueError('clim must be "auto" if a string')
         else:
@@ -274,7 +273,7 @@ class MeshVisual(Visual):
 
     @property
     def _clim_values(self):
-        if isinstance(self._clim, string_types):  # == 'auto'
+        if isinstance(self._clim, str):  # == 'auto'
             if self._meshdata.has_vertex_value():
                 clim = self._meshdata.get_vertex_values()
                 clim = (np.min(clim), np.max(clim))

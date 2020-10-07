@@ -22,7 +22,6 @@ from itertools import cycle
 import numpy as np
 
 from vispy import app, scene, io
-from vispy.ext.six import next
 
 # Read volume
 vol1 = np.load(io.load_data_file('volume/stent.npz'))['arr_0']

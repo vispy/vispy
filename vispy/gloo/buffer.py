@@ -11,7 +11,6 @@ import weakref
 
 from . globject import GLObject
 from ..util import logger
-from ..ext.six import string_types
 
 
 # ------------------------------------------------------------ Buffer class ---
@@ -267,7 +266,7 @@ class DataBuffer(Buffer):
 
         # Setting a whole field of the buffer: only allowed if we have CPU
         # storage. Note this case (key is string) only happen with base buffer
-        if isinstance(key, string_types):
+        if isinstance(key, str):
             raise ValueError("Cannot set non-contiguous data on buffer")
 
         # Setting one or several elements
@@ -340,7 +339,7 @@ class DataBufferView(DataBuffer):
         self._key = key
         self._stride = base.stride
 
-        if isinstance(key, string_types):
+        if isinstance(key, str):
             self._dtype = base.dtype[key]
             self._offset = base.dtype.fields[key][1]
             self._nbytes = base.size * self._dtype.itemsize

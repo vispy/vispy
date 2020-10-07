@@ -12,7 +12,6 @@ from ..visual import CompoundVisual
 from ..line import ArrowVisual
 from ..markers import MarkersVisual
 from . import layouts
-from ...ext.six import string_types
 
 
 class GraphVisual(CompoundVisual):
@@ -107,7 +106,7 @@ class GraphVisual(CompoundVisual):
 
     @layout.setter
     def layout(self, value):
-        if isinstance(value, string_types):
+        if isinstance(value, str):
             self._layout = layouts.get_layout(value)
         else:
             assert callable(value)
