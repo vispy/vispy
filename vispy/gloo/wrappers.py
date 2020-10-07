@@ -8,7 +8,6 @@ import numpy as np
 from copy import deepcopy
 
 from . import gl
-from ..ext.six import string_types
 from ..color import Color
 from ..util import logger
 
@@ -78,7 +77,7 @@ def _check_conversion(key, valid_dict):
     """Check for existence of key in dict, return value or raise error"""
     if key not in valid_dict and key not in valid_dict.values():
         # Only show users the nice string values
-        keys = [v for v in valid_dict.keys() if isinstance(v, string_types)]
+        keys = [v for v in valid_dict.keys() if isinstance(v, str)]
         raise ValueError('value must be one of %s, not %s' % (keys, key))
     return valid_dict[key] if key in valid_dict else key
 
@@ -517,7 +516,7 @@ class BaseGlooFunctions(object):
                 args = _to_args(val)
                 # these actually need tuples
                 if key in ('blend_color', 'clear_color') and \
-                        not isinstance(args[0], string_types):
+                        not isinstance(args[0], str):
                     args = [args]
                 getattr(self, 'set_' + key)(*args)
             else:
@@ -567,7 +566,7 @@ class BaseGlooFunctions(object):
         mode : str
             The mode to set (e.g., 'fastest', 'nicest', 'dont_care').
         """
-        if not all(isinstance(tm, string_types) for tm in (target, mode)):
+        if not all(isinstance(tm, str) for tm in (target, mode)):
             raise TypeError('target and mode must both be strings')
         self.glir.command('FUNC', 'glHint', target, mode)
 

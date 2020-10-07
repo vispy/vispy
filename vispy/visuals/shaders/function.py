@@ -25,7 +25,6 @@ import numpy as np
 
 from ...util.eq import eq
 from ...util import logger
-from ...ext.six import string_types
 from . import parsing
 from .shader_object import ShaderObject
 from .variable import Variable, Varying
@@ -200,7 +199,7 @@ class Function(ShaderObject):
                 raise TypeError("Variable assignment only allowed for "
                                 "varyings, not %s (in %s)"
                                 % (key.vtype, self.name))
-        elif isinstance(key, string_types):
+        elif isinstance(key, str):
             if any(map(key.startswith,
                        ('gl_PointSize', 'gl_Position', 'gl_FragColor'))):
                 storage = self._assignments
@@ -350,7 +349,7 @@ class Function(ShaderObject):
         # Get and strip code
         if isinstance(code, Function):
             code = code._code
-        elif not isinstance(code, string_types):
+        elif not isinstance(code, str):
             raise ValueError('Function needs a string or Function; got %s.' %
                              type(code))
         self._code = self._clean_code(code)
@@ -411,7 +410,7 @@ class Function(ShaderObject):
                                  var)
             template_vars.add(var)
         return template_vars
-    
+
     def _get_replaced_code(self, names, version, shader):
         """ Return code, with new name, expressions, and replacements applied.
         """
@@ -620,7 +619,7 @@ class FunctionChain(Function):
     def __init__(self, name=None, funcs=()):
         # bypass Function.__init__ completely.
         ShaderObject.__init__(self)
-        if not (name is None or isinstance(name, string_types)):
+        if not (name is None or isinstance(name, str)):
             raise TypeError("Name argument must be string or None.")
         self._funcs = []
         self._code = None

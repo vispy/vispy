@@ -11,7 +11,6 @@ from vispy.app import Canvas
 from numpy.testing import assert_almost_equal
 from vispy.testing import (requires_application, requires_pyopengl, SkipTest,
                            run_tests_if_main, assert_equal, assert_true)
-from vispy.ext.six import string_types
 from vispy.util import use_log_level
 from vispy.gloo import gl
 
@@ -122,7 +121,7 @@ def _test_enabling_disabling():
 
 def _test_setting_stuff():
     # Set stuff to touch functions
-    
+
     gl.glClear(gl.GL_COLOR_BUFFER_BIT)
     #
     gl.glBlendColor(1.0, 1.0, 1.0, 1.0)
@@ -150,7 +149,7 @@ def _test_setting_stuff():
     gl.glLineWidth(2.0)
     gl.glPolygonOffset(0.0, 0.0)
     gl.glSampleCoverage(1.0, False)
-    
+
     # And getting stuff
     try:
         with use_log_level('error', print_msg=False):
@@ -163,10 +162,10 @@ def _test_setting_stuff():
         # but PyOpenGL may not be available.
         # On Travis this function was not there on one machine according
         # to PyOpenGL, but our desktop backend worked fine ...
-        
+
     #
     v = gl.glGetParameter(gl.GL_VERSION)
-    assert_true(isinstance(v, string_types))
+    assert_true(isinstance(v, str))
     assert_true(len(v) > 0)
     gl.check_error()
 
@@ -174,11 +173,11 @@ def _test_setting_stuff():
 def _test_object_creation_and_deletion():
 
     # Stuff that is originally glGenX
-    
+
     # Note that if we test glIsTexture(x), we cannot assume x to be a
     # nonexisting texture; we might have created a texture in another
     # test and failed to clean it up.
-    
+
     # Create/delete texture
     #assert_equal(gl.glIsTexture(12), False)
     handle = gl.glCreateTexture()
@@ -226,59 +225,59 @@ def _test_object_creation_and_deletion():
     assert_equal(gl.glIsShader(handle), True)
     gl.glDeleteShader(handle)
     assert_equal(gl.glIsShader(handle), False)
-    
+
     gl.check_error()
 
 
 def _test_fbo():
-    
+
     w, h = 120, 130
-    
+
     # Create frame buffer
     hframebuf = gl.glCreateFramebuffer()
     gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, hframebuf)
-    
+
     #Create render buffer (for depth)
     hrenderbuf = gl.glCreateRenderbuffer()
     gl.glBindRenderbuffer(gl.GL_RENDERBUFFER, hrenderbuf)
     gl.glRenderbufferStorage(gl.GL_RENDERBUFFER, gl.GL_DEPTH_COMPONENT16, w, h)
     gl.glFramebufferRenderbuffer(gl.GL_FRAMEBUFFER, gl.GL_DEPTH_ATTACHMENT,
                                  gl.GL_RENDERBUFFER, hrenderbuf)
-    
+
     # Create texture (for color)
     htex = gl.glCreateTexture()
     gl.glBindTexture(gl.GL_TEXTURE_2D, htex)
-    gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_RGB, gl.GL_RGB, 
+    gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_RGB, gl.GL_RGB,
                     gl.GL_UNSIGNED_BYTE, (h, w))
     gl.glFramebufferTexture2D(gl.GL_FRAMEBUFFER, gl.GL_COLOR_ATTACHMENT0,
                               gl.GL_TEXTURE_2D, htex, 0)
-    
+
     # Check framebuffer status
     status = gl.glCheckFramebufferStatus(gl.GL_FRAMEBUFFER)
     assert_equal(status, gl.GL_FRAMEBUFFER_COMPLETE)
-    
+
     # Tests renderbuffer params
     name = gl.glGetFramebufferAttachmentParameter(
-        gl.GL_FRAMEBUFFER, gl.GL_DEPTH_ATTACHMENT, 
+        gl.GL_FRAMEBUFFER, gl.GL_DEPTH_ATTACHMENT,
         gl.GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME)
     assert_equal(name, hrenderbuf)
     #
     width = gl.glGetRenderbufferParameter(gl.GL_RENDERBUFFER,
                                           gl.GL_RENDERBUFFER_WIDTH)
     assert_equal(width, w)
-    
+
     # Touch copy tex functions
     gl.glBindTexture(gl.GL_TEXTURE_2D, htex)
     gl.glCopyTexSubImage2D(gl.GL_TEXTURE_2D, 0, 5, 5, 5, 5, 20, 20)
     gl.glCopyTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_RGB, 0, 0, 30, 30,  0)
-    
+
     gl.check_error()
-    
+
     # Clean up
     gl.glDeleteTexture(htex)
     gl.glDeleteRenderbuffer(hrenderbuf)
     gl.glDeleteFramebuffer(hframebuf)
-    
+
     gl.check_error()
 
 

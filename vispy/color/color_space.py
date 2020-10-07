@@ -6,8 +6,6 @@ from __future__ import division  # just to be safe...
 
 import numpy as np
 
-from ..ext.six import string_types
-
 
 ###############################################################################
 # Utility functions
@@ -27,7 +25,7 @@ def _hex_to_rgba(hexs):
     hexs = np.atleast_1d(np.array(hexs, '|U9'))
     out = np.ones((len(hexs), 4), np.float32)
     for hi, h in enumerate(hexs):
-        assert isinstance(h, string_types)
+        assert isinstance(h, str)
         off = 1 if h[0] == '#' else 0
         assert len(h) in (6+off, 8+off)
         e = (len(h)-off) // 2
