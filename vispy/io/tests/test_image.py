@@ -37,7 +37,7 @@ def test_make_png():
 
 
 @requires_img_lib()
-@pytest.mark.xfail(sys.version_info < (3, 7) and 'darwin' in sys.platform,
+@pytest.mark.xfail(sys.version_info > (3, 6) and 'darwin' in sys.platform,
                    reason="Python 3.6 on OSX sometimes fails to download from HTTPS.")
 def test_read_write_image():
     """Test reading and writing of images"""
