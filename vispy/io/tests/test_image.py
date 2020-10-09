@@ -5,8 +5,6 @@ import numpy as np
 from numpy.testing import assert_array_equal, assert_allclose
 from os import path as op
 import warnings
-import sys
-import pytest
 
 from vispy.io import load_crate, imsave, imread, read_png, write_png
 from vispy.testing import requires_img_lib, run_tests_if_main
@@ -37,8 +35,6 @@ def test_make_png():
 
 
 @requires_img_lib()
-@pytest.mark.xfail(sys.version_info > (3, 6) and 'darwin' in sys.platform,
-                   reason="Python 3.6 on OSX sometimes fails to download from HTTPS.")
 def test_read_write_image():
     """Test reading and writing of images"""
     fname = op.join(temp_dir, 'out.png')
