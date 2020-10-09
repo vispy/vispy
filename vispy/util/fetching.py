@@ -12,6 +12,7 @@ import sys
 import shutil
 import time
 
+import ssl
 import urllib.request
 
 from ..util.config import config
@@ -236,7 +237,8 @@ def _fetch_file(url, file_name, print_destination=True):
     n_try = 3
     for ii in range(n_try):
         try:
-            data = urllib.request.urlopen(url, timeout=15.)
+            context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+            data = urllib.request.urlopen(url, timeout=15., context=context)
         except Exception as e:
             if ii == n_try - 1:
                 raise RuntimeError('Error while fetching file %s.\n'
