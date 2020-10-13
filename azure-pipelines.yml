@@ -44,7 +44,7 @@ jobs:
     - bash: |
         git submodule update --init --recursive
         python -m pip install --upgrade pip
-        pip install git+https://github.com/Czaki/cibuildwheel.git@macos_certif
+        pip install cibuildwheel
         cibuildwheel --output-dir wheelhouse .
     - task: PublishPipelineArtifact@1
       inputs:
@@ -57,7 +57,7 @@ jobs:
     - bash: |
         git submodule update --init --recursive
         python -m pip install --upgrade pip
-        pip install git+https://github.com/Czaki/cibuildwheel.git@macos_certif
+        pip install cibuildwheel
         MACOSX_DEPLOYMENT_TARGET="10.14" cibuildwheel --output-dir wheelhouse .
     - task: PublishPipelineArtifact@1
       inputs:
