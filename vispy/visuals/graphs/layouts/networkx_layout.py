@@ -2,7 +2,6 @@
 from ..util import _straight_line_vertices, issparse
 import numpy as np, importlib
 
-USE_NETWORKX = True if importlib.util.find_spec("networkx") else False
 
 class NetworkxCoordinates:
     def __init__(self, graph, layout = None, *args, **kwargs):
@@ -14,7 +13,7 @@ class NetworkxCoordinates:
 
         # check for networkx
         elif isinstance(layout, str):
-            if USE_NETWORKX:
+            if USE_NETWORKX := importlib.util.find_spec("networkx"):
                 import networkx as nx
                 layout += "_layout" # append for nx
                 if f := getattr(nx, layout):
