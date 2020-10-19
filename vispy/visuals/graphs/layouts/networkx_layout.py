@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 from ..util import _straight_line_vertices, issparse
-import numpy as np, networkx as nx
+import numpy as np, importlib
+
+USE_NETWORKX = True if importlib.util.find_spec("networkx") else False
 
 class NetworkxCoordinates:
     def __init__(self, graph, layout = None, *args, **kwargs):
@@ -12,11 +14,15 @@ class NetworkxCoordinates:
 
         # check for networkx
         elif isinstance(layout, str):
-            layout += "_layout" # append for nx
-            if f := getattr(nx, layout):
-                self.positions = np.asarray([i for i in dict(f(graph, **kwargs)).values()])
+            if USE_NETWORKX:
+                import networkx as nx
+                layout += "_layout" # append for nx
+                if f := getattr(nx, layout):
+                    self.positions = np.asarray([i for i in dict(f(graph, **kwargs)).values()])
+                else:
+                    raise ValueError("Check networkx for layouts")
             else:
-                raise ValueError("Check networkx for layouts")
+                raise ValueError("networkx not found")
         # assume dict from networkx; values are 2-array
         elif isinstance(layout, dict):
             self.positions = np.asarray([i for i in layout.values()])
