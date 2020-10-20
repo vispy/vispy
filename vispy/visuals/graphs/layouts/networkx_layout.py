@@ -11,11 +11,22 @@ except:
 class NetworkxCoordinates:
     def __init__(self, graph, layout=None, *args, **kwargs):
         """
-        :graph: a networkx graph.
-        :layout: the requested input.
+        Converts :graph: into a layout. Can be used in conjunction with networkx layouts or using raw 2D-numpy arrays.
+
+        Parameters
+        ----------
+        graph : a networkx graph.
+        layout : the requested input.
         - When :layout: is s string, a lookup will be performed in the networkx avaiable layouts.
         - When :layout: is a dict, it will be assumed that it takes the shape (key, value) = (node_id, 2D-coordinate).
         - When :layout: is numpy array it is assumed it takes the shape (number_of_nodes, 2).
+
+
+        Yields
+        ------
+        (node_vertices, line_vertices, arrow_vertices) : tuple
+        Yields the node and line vertices in a tuple. This layout only yields a
+        single time, and has no builtin animation
         """
         self.graph = graph
         self.positions = np.zeros((len(graph), 2), dtype = np.float32)
@@ -53,8 +64,8 @@ class NetworkxCoordinates:
 
     def __call__(self, adjacency_mat, directed = False):
         """
-        :adjacency_mat: sparse adjacency matrix.
-        :directed: bool for assertig whether the graph is directed.
+        adjacency_mat : sparse adjacency matrix.
+        directed : bool for assertig whether the graph is directed.
         """
         if issparse(adjacency_mat):
             adjacency_mat = adjacency_mat.tocoo()
