@@ -16,7 +16,7 @@ class NetworkxCoordinates:
         Parameters
         ----------
         graph : a networkx graph.
-        layout : the requested input.
+        layout : str or dict or iterable-object of float32, optional
         - When :layout: is s string, a lookup will be performed in the networkx avaiable layouts.
         - When :layout: is a dict, it will be assumed that it takes the shape (key, value) = (node_id, 2D-coordinate).
         - When :layout: is numpy array it is assumed it takes the shape (number_of_nodes, 2).
