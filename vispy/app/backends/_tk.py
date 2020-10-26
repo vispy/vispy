@@ -23,27 +23,35 @@ try:
     import sys
     import os
 
-    _tk_on_linux = sys.platform.startswith('linux')
-    _tk_on_darwin = sys.platform == 'darwin'
-    _tk_on_windows = sys.platform.startswith('win')
+    _tk_on_linux, _tk_on_darwin, _tk_on_windows = \
+        map(sys.platform.startswith, ("linux", "darwin", "win"))
+    _tk_pyopengltk_imported = False
 
-    try:
-        import tkinter as tk  # Python >= 3
-    except ModuleNotFoundError:
-        import Tkinter as tk  # Python < 3
+    import tkinter as tk
     from OpenGL import GL
     import pyopengltk
-    OpenGLFrame = pyopengltk.OpenGLFrame
 except (ModuleNotFoundError, ImportError):
     available, testable, why_not, which = \
         False, False, "Could not import Tkinter or pyopengltk, module(s) not found.", None
+else:
+    which_pyopengltk = getattr(pyopengltk, "__version__", "???")
+    which = f"Tkinter {tk.TkVersion} (with pyopengltk {which_pyopengltk})"
 
+    if hasattr(pyopengltk, "OpenGLFrame"):
+        _tk_pyopengltk_imported = True
+        available, testable, why_not = True, True, None
+    else:
+        # pyopengltk does not provide an implementation for this platform
+        available, testable, why_not = \
+            False, False, f"pyopengltk {which_pyopengltk} is not supported on this platform ({sys.platform})!"
+
+if _tk_pyopengltk_imported:
+    # Put OpenGLFrame class in global namespace
+    OpenGLFrame = pyopengltk.OpenGLFrame
+else:
+    # Create empty placeholder class
     class OpenGLFrame(object):
         pass
-else:
-    available, testable, why_not = True, True, None
-    which_pyopengltk = getattr(pyopengltk, "__version__", "???")
-    which = "Tkinter " + str(tk.TkVersion) + " (with pyopengltk " + which_pyopengltk + ")"
 
 
 def _fix_tcl_lib():
@@ -51,6 +59,7 @@ def _fix_tcl_lib():
     It is possible that the Tcl library cannot be found when the Python environment
     does not have the proper variables, so we force them here (mostly when running tests).
     From: https://github.com/enthought/Python-2.7.3/blob/master/Lib/lib-tk/FixTk.py
+    (This is rarely encountered in conjunction with PyInstaller.)
     """
     # Delay import _tkinter until we have set TCL_LIBRARY,
     # so that Tcl_FindExecutable has a chance to locate its
