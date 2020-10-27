@@ -11,7 +11,7 @@ except:
     nx = None
 
 class NetworkxCoordinates:
-    def __init__(self, graph, layout=None, **kwargs):
+    def __init__(self, graph = None, layout=None, **kwargs):
         """
         Converts :graph: into a layout. Can be used in conjunction with networkx layouts or using raw 2D-numpy arrays.
 
@@ -26,7 +26,8 @@ class NetworkxCoordinates:
         when layout is :str: :kwargs: will act as a setting dictionary for the layout function of networkx
         """
 
-
+        if isinstance(graph, type(None)):
+            raise ValueError("Requires networkx input")
         self.graph = graph
         self.positions = np.zeros((len(graph), 2), dtype = np.float32)
         # default random positions
