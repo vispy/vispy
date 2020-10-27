@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) Vispy Development Team. All Rights Reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
 from vispy import app, scene
 from vispy.visuals.graphs import layouts
 import networkx as nx
