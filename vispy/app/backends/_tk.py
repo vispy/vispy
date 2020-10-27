@@ -27,6 +27,8 @@ try:
     _tk_pyopengltk_imported = False
 
     import tkinter as tk
+
+    # Explicitely use OpenGL here instead of gloo since pyopengltk will import it anyway.
     from OpenGL import GL
     import pyopengltk
 except (ModuleNotFoundError, ImportError):
