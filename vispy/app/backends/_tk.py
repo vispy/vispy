@@ -21,7 +21,6 @@ from ...util.ptime import time
 # Import
 try:
     import sys
-    import os
 
     _tk_on_linux, _tk_on_darwin, _tk_on_windows = \
         map(sys.platform.startswith, ("linux", "darwin", "win"))
@@ -156,61 +155,108 @@ def _set_config(c):
 
 # ------------------------------------------------------------- application ---
 
-_tk_inst = None         # Reference to tk.Tk instance
-_tk_inst_owned = False  # Whether we created the Tk instance or not
-_tk_toplevels = []      # References to created CanvasBackend Toplevels
+class _TkInstanceManager:
+    _tk_inst = None         # Reference to tk.Tk instance
+    _tk_inst_owned = False  # Whether we created the Tk instance or not
+    _canvasses = []         # References to created CanvasBackends
 
+    @classmethod
+    def get_tk_instance(cls):
+        """Return the Tk instance.
 
-def _new_toplevel(self, *args, **kwargs):
-    """
-    Create and return a new withdrawn Toplevel.
-    Create a tk.Toplevel with the given args and kwargs,
-    minimize it and add it to the global list before returning.
+        Returns
+        -------
+        tk.Tk
+            The tk.Tk instance.
+        """
+        if cls._tk_inst is None:
+            if tk._default_root:
+                # There already is a tk.Tk() instance available
+                cls._tk_inst = tk._default_root
+                cls._tk_inst_owned = False
+            else:
+                # Create our own top level Tk instance
+                cls._tk_inst = tk.Tk()
+                cls._tk_inst.withdraw()
+                cls._tk_inst_owned = True
+        return cls._tk_inst
 
-    :return: Return the created tk.Toplevel
-    """
-    global _tk_inst, _tk_toplevels
-    tl = tk.Toplevel(_tk_inst, *args, **kwargs)
-    tl.withdraw()
-    _tk_toplevels.append(self)
-    return tl
+    @classmethod
+    def get_canvasses(cls):
+        """Return a list of CanvasBackends.
 
+        Returns
+        -------
+        list
+            A list with CanvasBackends.
+        """
+        return cls._canvasses
 
-def _del_toplevel(fr=None):
-    """
-    Destroy the given Toplevel, and if it was the last one,
-    also destroy the global Tk instance if we created it.
+    @classmethod
+    def new_toplevel(cls, canvas, *args, **kwargs):
+        """Create and return a new withdrawn Toplevel.
+        Create a tk.Toplevel with the given args and kwargs,
+        minimize it and add it to the list before returning
 
-    :param fr: The CanvasBackend to destroy, defaults to None
-    """
-    global _tk_inst, _tk_inst_owned, _tk_toplevels
+        Parameters
+        ----------
+        canvas : CanvasBackend
+            The CanvasBackend instance that wants a new Toplevel.
+        *args
+            Variable length argument list.
+        **kwargs
+            Arbitrary keyword arguments.
 
-    if fr:
-        try:
-            fr.destroy()
-            if fr.top:
-                fr.top.destroy()
-            _tk_toplevels.remove(fr)
-        except Exception:
-            pass
+        Returns
+        -------
+        tk.Toplevel
+            Return the created tk.Toplevel
+        """
+        tl = tk.Toplevel(cls._tk_inst, *args, **kwargs)
+        tl.withdraw()
+        cls._canvasses.append(canvas)
+        return tl
 
-    # If there are no Toplevels left, quit the mainloop.
-    if _tk_inst and not _tk_toplevels and _tk_inst_owned:
-        _tk_inst.quit()
-        _tk_inst.destroy()
-        _tk_inst = None
+    @classmethod
+    def del_toplevel(cls, canvas=None):
+        """
+        Destroy the given Toplevel, and if it was the last one,
+        also destroy the Tk instance if we created it.
+
+        Parameters
+        ----------
+        canvas : CanvasBackend
+            The CanvasBackend to destroy, defaults to None.
+        """
+        if canvas:
+            try:
+                canvas.destroy()
+                if canvas.top:
+                    canvas.top.destroy()
+                cls._canvasses.remove(canvas)
+            except Exception:
+                pass
+
+        # If there are no Toplevels left, quit the mainloop.
+        if cls._tk_inst and not cls._canvasses and cls._tk_inst_owned:
+            cls._tk_inst.quit()
+            cls._tk_inst.destroy()
+            cls._tk_inst = None
 
 
 class ApplicationBackend(BaseApplicationBackend):
-    def __init__(self):
-        BaseApplicationBackend.__init__(self)
-
     def _vispy_get_backend_name(self):
+        """
+        Returns
+        -------
+        str
+            The name of the backend.
+        """
         return tk.__name__
 
     def _vispy_process_events(self):
         """Process events related to the spawned Tk application window.
-        First, update the global tk.Tk() instance, then call `_delayed_update`
+        First, update the Tk instance, then call `_delayed_update`
         on every created Toplevel (to force a redraw), and process some Tkinter
         GUI events by calling the Tk.mainloop and immediately exiting.
         """
@@ -219,7 +265,7 @@ class ApplicationBackend(BaseApplicationBackend):
         app.update_idletasks()
 
         # Update every active Canvas window
-        for c in _tk_toplevels:
+        for c in _TkInstanceManager.get_canvasses():
             c._delayed_update()
 
         # Process some events in the main Tkinter event loop
@@ -233,39 +279,24 @@ class ApplicationBackend(BaseApplicationBackend):
 
     def _vispy_quit(self):
         """Destroy each created Toplevel by calling _vispy_close on it.
-        If there are no Toplevels left, also destroy the global Tk instance.
+        If there are no Toplevels left, also destroy the Tk instance.
         """
-        global _tk_toplevels
-        for c in _tk_toplevels:
+        for c in _TkInstanceManager.get_canvasses():
             c._vispy_close()
-        _del_toplevel()
+        _TkInstanceManager.del_toplevel()
 
     def _vispy_get_native_app(self):
-        """Get or create the global Tk instance.
+        """Get or create the Tk instance.
 
-        :return: Returns the instance.
+        Returns
+        -------
+        tk.Tk
+            The tk.Tk instance.
         """
-        global _tk_inst, _tk_inst_owned
-        if _tk_inst is None:
-            if tk._default_root:
-                # There already is a tk.Tk() instance available
-                _tk_inst = tk._default_root
-                _tk_inst_owned = False
-            else:
-                # Create our own top level Tk instance
-                _tk_inst = tk.Tk()
-                _tk_inst.withdraw()
-                _tk_inst_owned = True
-        return _tk_inst
+        return _TkInstanceManager.get_tk_instance()
 
 
 # ------------------------------------------------------------------ canvas ---
-
-class Coord:
-    """Helper to provide x, y, width, height subscripting on the same tuple."""
-    def __init__(self, tup):
-        self.x, self.y = tup
-        self.width, self.height = tup
 
 
 class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
@@ -306,7 +337,7 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
 
         if p.parent is None:
             # Create native window and master
-            self.top = _new_toplevel(self)
+            self.top = _TkInstanceManager.new_toplevel(self)
 
             # Check input args and call appropriate set-up functions.
             if p.title:
@@ -409,7 +440,8 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
         """Called when the frame get configured or resized."""
         if self._vispy_canvas is None or not self._init:
             return
-        self._vispy_canvas.events.resize(size=(e.width, e.height))
+        size_tup = e if isinstance(e, tuple) else (e.width, e.height)
+        self._vispy_canvas.events.resize(size=size_tup)
 
     def _initialize(self):
         """Initialise the Canvas for drawing."""
@@ -420,13 +452,13 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
         self._vispy_canvas.set_current()
         self._vispy_canvas.events.initialize()
         self.update_idletasks()
-        self._on_configure(Coord(self._vispy_get_size()))
+        self._on_configure(self._vispy_get_size())
 
     def _vispy_warmup(self):
         """Provided for VisPy tests, so they can 'warm the canvas up'.
         Mostly taken from the wxWidgets backend.
         """
-        global _tk_inst
+        tk_inst = _TkInstanceManager.get_tk_instance()
 
         etime = time() + 0.3
         while time() < etime:
@@ -434,24 +466,37 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
             self._vispy_canvas.set_current()
             self._vispy_canvas.app.process_events()
 
-            _tk_inst.after(0, lambda: _tk_inst.quit())
-            _tk_inst.mainloop()
+            tk_inst.after(0, lambda: tk_inst.quit())
+            tk_inst.mainloop()
 
     def _parse_state(self, e):
         """Helper to parse event.state into modifier keys.
 
-        :param e:   A Tk.Event instance.
-        :return:    Returns a list of modifier keys that are active (from vispy's keys)
+        Parameters
+        ----------
+        e : tk.Event
+            The passed in Event.
+
+        Returns
+        -------
+        list
+            A list of modifier keys that are active (from vispy's keys)
         """
         return [key for mask, key in KEY_STATE_MAP.items() if e.state & mask]
 
     def _parse_keys(self, e):
         """Helper to parse key states into Vispy keys.
 
-        :param e:   A Tk.Event instance.
-        :return:    Return a tuple (key.Key(), chr(key)),
-                    which has the vispy key object and the
-                    character representation if available.
+        Parameters
+        ----------
+        e : tk.Event
+            The passed in Event.
+
+        Returns
+        -------
+        tuple
+            A tuple (key.Key(), chr(key)), which has the vispy key object and
+            the character representation if available.
         """
         if e.keysym_num in KEYMAP:
             return KEYMAP[e.keysym_num], ""
@@ -465,7 +510,13 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
             return None, None
 
     def _on_mouse_enter(self, e):
-        """Event callback when the mouse enters the canvas."""
+        """Event callback when the mouse enters the canvas.
+
+        Parameters
+        ----------
+        e : tk.Event
+            The passed in Event.
+        """
         if self._vispy_canvas is None:
             return
         if _tk_on_linux:
@@ -481,7 +532,13 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
             pos=(e.x, e.y), modifiers=self._parse_state(e))
 
     def _on_mouse_leave(self, e):
-        """Event callback when the mouse leaves the canvas."""
+        """Event callback when the mouse leaves the canvas.
+
+        Parameters
+        ----------
+        e : tk.Event
+            The passed in Event.
+        """
         if self._vispy_canvas is None:
             return
         # Unbind mouse wheel events when not over the canvas any more.
@@ -492,14 +549,26 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
             self.unbind_all("<MouseWheel>")
 
     def _on_mouse_move(self, e):
-        """Event callback when the mouse is moved within the canvas."""
+        """Event callback when the mouse is moved within the canvas.
+
+        Parameters
+        ----------
+        e : tk.Event
+            The passed in Event.
+        """
         if self._vispy_canvas is None:
             return
         self._vispy_mouse_move(
             pos=(e.x, e.y), modifiers=self._parse_state(e))
 
     def _on_mouse_wheel(self, e):
-        """Event callback when the mouse wheel changes within the canvas."""
+        """Event callback when the mouse wheel changes within the canvas.
+
+        Parameters
+        ----------
+        e : tk.Event
+            The passed in Event.
+        """
         if self._vispy_canvas is None:
             return
         if _tk_on_linux:
@@ -510,7 +579,13 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
             pos=(e.x, e.y), modifiers=self._parse_state(e))
 
     def _on_mouse_button_press(self, e):
-        """Event callback when a mouse button is pressed within the canvas."""
+        """Event callback when a mouse button is pressed within the canvas.
+
+        Parameters
+        ----------
+        e : tk.Event
+            The passed in Event.
+        """
         if self._vispy_canvas is None:
             return
         # Ignore MouseWheel on linux
@@ -525,7 +600,13 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
         pass
 
     def _on_mouse_double_button_press(self, e):
-        """Event callback when a mouse button is double clicked within the canvas."""
+        """Event callback when a mouse button is double clicked within the canvas.
+
+        Parameters
+        ----------
+        e : tk.Event
+            The passed in Event.
+        """
         if self._vispy_canvas is None:
             return
         # Ignore MouseWheel on linux
@@ -535,7 +616,13 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
             pos=(e.x, e.y), button=MOUSE_BUTTON_MAP.get(e.num, e.num), modifiers=self._parse_state(e))
 
     def _on_mouse_button_release(self, e):
-        """Event callback when a mouse button is released within the canvas."""
+        """Event callback when a mouse button is released within the canvas.
+
+        Parameters
+        ----------
+        e : tk.Event
+            The passed in Event.
+        """
         if self._vispy_canvas is None:
             return
         # Ignore MouseWheel on linux
@@ -550,6 +637,11 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
         Ignore keys.ESCAPE if this is an embedded canvas,
         as this would make it unresponsive (because it won't close the entire window),
         while still being updateable.
+
+        Parameters
+        ----------
+        e : tk.Event
+            The passed in Event.
         """
         if self._vispy_canvas is None:
             return
@@ -565,6 +657,11 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
         Ignore keys.ESCAPE if this is an embedded canvas,
         as this would make it unresponsive (because it won't close the entire window),
         while still being updateable.
+
+        Parameters
+        ----------
+        e : tk.Event
+            The passed in Event.
         """
         if self._vispy_canvas is None:
             return
@@ -631,14 +728,14 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
     def _vispy_close(self):
         """Force the window to close, destroying the canvas in the process.
 
-        When this was the last VisPy window, also quit the global Tk instance.
+        When this was the last VisPy window, also quit the Tk instance.
         This will not interfere if there is already another user window,
         unrelated top VisPy open.
         """
         if self.top and not self.is_destroyed:
             self.is_destroyed = True
             self._vispy_canvas.close()
-            _del_toplevel(self)
+            _TkInstanceManager.del_toplevel(self)
 
     def destroy(self):
         """Callback when the window gets closed.
@@ -670,10 +767,9 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
 class TimerBackend(BaseTimerBackend):
     def __init__(self, vispy_timer):
         BaseTimerBackend.__init__(self, vispy_timer)
-        global _tk_inst
-        if _tk_inst is None:
+        self._tk = _TkInstanceManager.get_tk_instance()
+        if self._tk is None:
             raise Exception("TimerBackend: No toplevel?")
-        self._tk = _tk_inst
         self._id = None
         self.last_interval = 1
 
