@@ -9,7 +9,7 @@ import numpy as np
 # conditional import
 try:
     import networkx as nx
-except:
+except ModuleNotFoundError:
     nx = None
 
 

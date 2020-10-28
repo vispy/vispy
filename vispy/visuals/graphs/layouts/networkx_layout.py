@@ -5,7 +5,7 @@ from ..util import _straight_line_vertices, issparse
 import numpy as np
 try:
     import networkx as nx
-except:
+except ModuleNotFoundError:
     import warnings
     warnings.warn(
         "Networkx not found, please install network to use its layouts")
@@ -33,7 +33,7 @@ class NetworkxCoordinates:
         self.graph = graph
         self.positions = np.zeros((len(graph), 2), dtype=np.float32)
         # default random positions
-        if type(layout) is type(None):
+        if isinstance(layout, type(None)):
             self.positions = np.random.rand(*self.positions.shape)
 
         # check for networkx
