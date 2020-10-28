@@ -7,11 +7,13 @@ try:
     import networkx as nx
 except:
     import warnings
-    warnings.warn("Networkx not found, please install network to use its layouts")
+    warnings.warn(
+        "Networkx not found, please install network to use its layouts")
     nx = None
 
+
 class NetworkxCoordinates:
-    def __init__(self, graph = None, layout=None, **kwargs):
+    def __init__(self, graph=None, layout=None, **kwargs):
         """
         Converts :graph: into a layout. Can be used in conjunction with networkx layouts or using raw 2D-numpy arrays.
 
@@ -29,7 +31,7 @@ class NetworkxCoordinates:
         if isinstance(graph, type(None)):
             raise ValueError("Requires networkx input")
         self.graph = graph
-        self.positions = np.zeros((len(graph), 2), dtype = np.float32)
+        self.positions = np.zeros((len(graph), 2), dtype=np.float32)
         # default random positions
         if type(layout) is type(None):
             self.positions = np.random.rand(*self.positions.shape)
@@ -38,10 +40,11 @@ class NetworkxCoordinates:
         elif isinstance(layout, str):
             if nx:
                 if not layout.endswith("_layout"):
-                    layout += "_layout" # append for nx
+                    layout += "_layout"  # append for nx
                 layout_function = getattr(nx, layout)
                 if layout_function:
-                    self.positions = np.asarray([i for i in dict(layout_function(graph, **kwargs)).values()])
+                    self.positions = np.asarray(
+                        [i for i in dict(layout_function(graph, **kwargs)).values()])
                 else:
                     raise ValueError("Check networkx for layouts")
             else:
@@ -59,10 +62,11 @@ class NetworkxCoordinates:
             raise ValueError("Input not understood")
 
         # normalize coordinates
-        self.positions = (self.positions - self.positions.min()) / (self.positions.max() - self.positions.min())
+        self.positions = (self.positions - self.positions.min()) / \
+            (self.positions.max() - self.positions.min())
         self.positions = self.positions.astype(np.float32)
 
-    def __call__(self, adjacency_mat, directed = False):
+    def __call__(self, adjacency_mat, directed=False):
         """
         Parameters
         ----------
@@ -77,7 +81,8 @@ class NetworkxCoordinates:
         """
         if issparse(adjacency_mat):
             adjacency_mat = adjacency_mat.tocoo()
-        line_vertices, arrows = _straight_line_vertices(adjacency_mat, self.positions, directed)
+        line_vertices, arrows = _straight_line_vertices(
+            adjacency_mat, self.positions, directed)
 
         yield self.positions, line_vertices, arrows
 
