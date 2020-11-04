@@ -41,10 +41,10 @@ def test_context_properties():
                 props = get_gl_configuration()
             assert len(config) == n_items
             for key, val in config.items():
-                # XXX knownfail for windows samples, and wx (all platforms)
+                # XXX knownfail for windows samples, and wx/tkinter (all platforms)
                 if key == 'samples':
-                    iswx = a.backend_name.lower() == 'wx'
-                    if not (sys.platform.startswith('win') or iswx):
+                    will_fail_backend = a.backend_name.lower() in ('wx', 'tkinter')
+                    if not (sys.platform.startswith('win') or will_fail_backend):
                         assert val == props[key], key
     assert_raises(TypeError, Canvas, config='foo')
     assert_raises(KeyError, Canvas, config=dict(foo=True))
@@ -73,6 +73,10 @@ def test_context_sharing():
         # pyqt5 does not currently support context sharing
         if 'pyqt5' in c1.app.backend_name.lower():
             pytest.xfail("Context sharing is not supported in PyQt5 at this time.")
+
+        # Tkinter does not currently support context sharing
+        if 'tk' in c1.app.backend_name.lower():
+            pytest.xfail("Context sharing is not supported in Tkinter at this time.")
 
         # Check while c2 is active (with different context)
         with Canvas() as c2:
