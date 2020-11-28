@@ -11,7 +11,7 @@ pr:
       - '*'  # must quote since "*" is a YAML reserved character; we want a string
 variables:
   CIBW_BUILDING: "true"
-  CIBW_SKIP: "cp27-* cp34-* cp35-* cp39-* pp27-* pp36-*"
+  CIBW_SKIP: "cp27-* cp34-* cp35-* pp*"
   CIBW_TEST_REQUIRES: "pytest pytest-sugar meshio"
   CIBW_TEST_COMMAND: "python -c \"import vispy; vispy.test()\""
   CIBW_BUILD_VERBOSITY: "2"
