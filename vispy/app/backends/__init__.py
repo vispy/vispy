@@ -24,6 +24,7 @@ CORE_BACKENDS = [
     ('EGL', '_egl', 'vispy.ext.egl'),
     ('osmesa', '_osmesa', 'vispy.ext.osmesa'),
     ('tkinter', '_tk', 'tkinter'),
+    ('Gtk3', '_gtk3', 'Gtk3'),
 ]
 
 # Whereas core backends really represents libraries that can create a
@@ -50,3 +51,4 @@ TRIED_BACKENDS = []
 
 # Flag for _pyside, _pyside2 _pyqt4 and _qt modules to communicate.
 qt_lib = None
+
