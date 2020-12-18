@@ -1,11 +1,11 @@
 from __future__ import division
-from gi.repository import Gtk, Gio, Gdk, GObject
 import gi
+gi.require_version('Gtk', '3.0')
+from gi.repository import Gtk, Gio, Gdk, GObject
 from ... import config
 from ...util import keys
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
                     BaseTimerBackend)
-gi.require_version('Gtk', '3.0')
 
 
 USE_EGL = config['gl_backend'].lower().startswith('es')
