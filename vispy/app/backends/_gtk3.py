@@ -1,7 +1,5 @@
 from __future__ import division
-import gi
-gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk, Gio, Gdk, GObject
+
 from ... import config
 from ...util import keys
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
@@ -10,49 +8,64 @@ from ..base import (BaseApplicationBackend, BaseCanvasBackend,
 
 USE_EGL = config['gl_backend'].lower().startswith('es')
 
-KEYMAP = {
-    Gdk.KEY_Shift_L: keys.SHIFT,
-    Gdk.KEY_Shift_R: keys.SHIFT,
-    Gdk.KEY_Control_R: keys.CONTROL,
-    Gdk.KEY_Control_L: keys.CONTROL,
-    Gdk.KEY_Alt_L: keys.ALT,
-    Gdk.KEY_Alt_R: keys.ALT,
-    Gdk.KEY_Meta_L: keys.META,
-    Gdk.KEY_R: keys.META,
+try:
+    import gi
+    gi.require_version('Gtk', '3.0')
+    from gi.repository import Gtk, Gio, Gdk, GObject
 
-    -5: keys.LEFT,
-    -6: keys.UP,
-    -7: keys.RIGHT,
-    -8: keys.DOWN,
-    -9: keys.PAGEUP,
-    -10: keys.PAGEDOWN,
+    KEYMAP = {
+        Gdk.KEY_Shift_L: keys.SHIFT,
+        Gdk.KEY_Shift_R: keys.SHIFT,
+        Gdk.KEY_Control_R: keys.CONTROL,
+        Gdk.KEY_Control_L: keys.CONTROL,
+        Gdk.KEY_Alt_L: keys.ALT,
+        Gdk.KEY_Alt_R: keys.ALT,
+        Gdk.KEY_Meta_L: keys.META,
+        Gdk.KEY_R: keys.META,
 
-    -11: keys.INSERT,
-    -12: keys.DELETE,
-    -13: keys.HOME,
-    -14: keys.END,
+        -5: keys.LEFT,
+        -6: keys.UP,
+        -7: keys.RIGHT,
+        -8: keys.DOWN,
+        -9: keys.PAGEUP,
+        -10: keys.PAGEDOWN,
 
-    -15: keys.ESCAPE,
-    -16: keys.BACKSPACE,
+        -11: keys.INSERT,
+        -12: keys.DELETE,
+        -13: keys.HOME,
+        -14: keys.END,
 
-    -17: keys.SPACE,
-    -18: keys.ENTER,
-    -19: keys.TAB,
+        -15: keys.ESCAPE,
+        -16: keys.BACKSPACE,
 
-    -20: keys.F1,
-    -21: keys.F2,
-    -22: keys.F3,
-    -23: keys.F4,
-    -24: keys.F5,
-    -25: keys.F6,
-    -26: keys.F7,
-    -27: keys.F8,
-    -28: keys.F9,
-    -29: keys.F10,
-    -30: keys.F11,
-    -31: keys.F12,
-}
+        -17: keys.SPACE,
+        -18: keys.ENTER,
+        -19: keys.TAB,
 
+        -20: keys.F1,
+        -21: keys.F2,
+        -22: keys.F3,
+        -23: keys.F4,
+        -24: keys.F5,
+        -25: keys.F6,
+        -26: keys.F7,
+        -27: keys.F8,
+        -28: keys.F9,
+        -29: keys.F10,
+        -30: keys.F11,
+        -31: keys.F12,
+    }
+except Exception as exp:
+    available, testable, why_not, which = False, False, str(exp), None
+else:
+# Success
+    available, testable, why_not = True, True, None
+    which = (
+        f'Gtk '
+        f'{Gtk.get_major_version()}.'
+        f'{Gtk.get_minor_version()}.'
+        f'{Gtk.get_micro_version()}'
+    )
 # These are all booleans. Note that they mirror many of the kwargs to
 # the initialization of the Canvas class.
 capability = dict(
