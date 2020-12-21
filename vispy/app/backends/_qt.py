@@ -517,13 +517,16 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
                 scale = gesture.scaleFactor()
                 last_scale = gesture.lastScaleFactor()
                 rotation = gesture.rotationAngle()
-                self._vispy_canvas.events.touch(type='pinch',
-                                                pos=(x, y),
-                                                last_pos=None,
-                                                scale=scale,
-                                                last_scale=last_scale,
-                                                rotation=rotation,
-                                                )
+                self._vispy_canvas.events.touch(
+                    type="pinch",
+                    pos=(x, y),
+                    last_pos=None,
+                    scale=scale,
+                    last_scale=last_scale,
+                    rotation=rotation,
+                    total_rotation_angle=gesture.totalRotationAngle(),
+                    total_scale_factor=gesture.totalScaleFactor(),
+                )
         # General touch event.
         elif (t == QtCore.QEvent.TouchUpdate):
             points = ev.touchPoints()
