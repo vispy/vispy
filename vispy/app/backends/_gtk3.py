@@ -70,19 +70,19 @@ else:
 # the initialization of the Canvas class.
 capability = dict(
     # if True they mean:
-    title=False,          # can set title on the fly
-    size=False,           # can set size on the fly
-    position=False,       # can set position on the fly
-    show=False,           # can show/hide window XXX ?
-    vsync=False,          # can set window to sync to blank
-    resizable=False,      # can toggle resizability (e.g., no user resizing)
-    decorate=False,       # can toggle decorations
-    fullscreen=False,     # fullscreen window support
-    context=False,        # can share contexts between windows
-    multi_window=False,   # can use multiple windows at once
-    scroll=False,         # scroll-wheel events are supported
-    parent=False,         # can pass native widget backend parent
-    always_on_top=False,  # can be made always-on-top
+    title=True,          # can set title on the fly
+    size=True,           # can set size on the fly
+    position=True,       # can set position on the fly
+    show=True,           # can show/hide window XXX ?
+    vsync=True,          # can set window to sync to blank
+    resizable=True,      # can toggle resizability (e.g., no user resizing)
+    decorate=True,       # can toggle decorations
+    fullscreen=True,     # fullscreen window support
+    context=True,        # can share contexts between windows
+    multi_window=True,   # can use multiple windows at once
+    scroll=True,         # scroll-wheel events are supported
+    parent=True,         # can pass native widget backend parent
+    always_on_top=True,  # can be made always-on-top
 )
 
 
@@ -113,7 +113,7 @@ class ApplicationBackend(BaseApplicationBackend):
 
 
 # You can mix this class with the native widget
-class CanvasBackend(BaseCanvasBackend):
+class CanvasBackend(BaseCanvasBackend, Gtk.Window):
     """Template backend
 
     Events to emit are shown below. Most backends will probably
@@ -160,25 +160,38 @@ class CanvasBackend(BaseCanvasBackend):
         # Deal with config
         # ... use context.config
         # Deal with context
-        p.context.shared.add_ref('backend-name', self)
+        p.context.shared.add_ref('Gtk3', self)
         if p.context.shared.ref is self:
             self._native_context = None  # ...
         else:
             self._native_context = p.context.shared.ref._native_context
 
         # NativeWidgetClass.__init__(self, foo, bar)
+        Gtk.Window.__init__(self)
+
+        self.gl_area = Gtk.GLArea()
+        self.gl_area.connect("realize", self.on_initialize)
+        self.add(self.gl_area)
+
+    def on_initialize(self, area):
+        opengl_context = self.gl_area.get_context() # Retrieves the Gdk.GLContext used by gl_area
+        opengl_context.make_current() # Makes the Gdk.GLContext current to the drawing surfaced used by Gtk.GLArea
+        major, minor = opengl_context.get_version()     # Gets the version of OpenGL currently used by the opengl_context
+        print("OpenGL context created successfully.\n-- Using OpenGL Version " + str(major) + "." + str(minor))
+
+        if self.gl_area.get_error() != None:
+            print(area.get_error())
 
     def _vispy_set_current(self):
-        # Make this the current context
-        raise NotImplementedError()
+        self.gl_area.realize()
 
     def _vispy_swap_buffers(self):
         # Swap front and back buffer
         raise NotImplementedError()
 
     def _vispy_set_title(self, title):
-        # Set the window title. Has no effect for widgets
-        raise NotImplementedError()
+        self.set_title(title)
+
 
     def _vispy_set_size(self, w, h):
         # Set size of the widget or window
@@ -190,7 +203,7 @@ class CanvasBackend(BaseCanvasBackend):
 
     def _vispy_set_visible(self, visible):
         # Show or hide the window or widget
-        raise NotImplementedError()
+        self.show_all()
 
     def _vispy_set_fullscreen(self, fullscreen):
         # Set the current fullscreen state
