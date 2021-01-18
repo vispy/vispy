@@ -132,8 +132,8 @@ External links
 -  `Gallery <http://vispy.org/gallery.html>`__
 -  `Documentation <http://vispy.readthedocs.org>`__
 
-.. |Build Status| image:: https://travis-ci.com/vispy/vispy.svg?branch=master
-   :target: https://travis-ci.com/vispy/vispy
+.. |Build Status| image:: https://github.com/vispy/vispy/workflows/CI/badge.svg
+   :target: https://github.com/vispy/vispy/actions
 .. |Appveyor Status| image:: https://ci.appveyor.com/api/projects/status/v09sc8ua4ju2ngyy/branch/master?svg=true
    :target: https://ci.appveyor.com/project/vispy/vispy/branch/master
 .. |Coverage Status| image:: https://img.shields.io/coveralls/vispy/vispy/master.svg
