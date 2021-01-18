@@ -92,7 +92,7 @@ jobs:
       if: github.event_name == 'push'
       uses: peaceiris/actions-gh-pages@v3
       with:
-        github_token: ${{ secrets.VISPY_WEBSITE_TOKEN }}
+        personal_token: ${{ secrets.VISPY_WEBSITE_TOKEN }}
         publish_dir: doc/_build/html
         publish_branch: master
         cname: vispy.org
