@@ -28,13 +28,15 @@ def test_context_properties():
     else:
         assert_raises(RuntimeError, Canvas, app=a,
                       config=dict(double_buffer=False))
-    if a.backend_name.lower() == 'sdl2' and os.getenv('TRAVIS') == 'true':
+    if a.backend_name.lower() == 'sdl2' and 'true' in (os.getenv('TRAVIS', ''),
+                                                       os.getenv('GITHUB_ACTIONS', '')):
         raise SkipTest('Travis SDL cannot set context')
     for config in configs:
         n_items = len(config)
         with Canvas(config=config):
             if 'true' in (os.getenv('TRAVIS', ''),
-                          os.getenv('APPVEYOR', '').lower()):
+                          os.getenv('APPVEYOR', '').lower(),
+                          os.getenv('GITHUB_ACTIONS', '')):
                 # Travis and Appveyor cannot handle obtaining these values
                 props = config
             else:
