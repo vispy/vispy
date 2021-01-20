@@ -106,7 +106,7 @@ if sizeof(c_void_p) == 4:
 elif sizeof(c_void_p) == 8:
     c_ptrdiff_t = c_int64
 
-objc = cdll.LoadLibrary(util.find_library('objc'))
+objc = cdll.LoadLibrary(util.find_library('objc') or 'libobjc.dylib')
 
 objc.class_addIvar.restype = c_bool
 objc.class_addIvar.argtypes = [c_void_p, c_char_p, c_size_t, c_uint8, c_char_p]
@@ -920,7 +920,7 @@ class ObjCSubclass(object):
 ##############################################################################
 # cocoalibs.py
 
-cf = cdll.LoadLibrary(util.find_library('CoreFoundation'))
+cf = cdll.LoadLibrary(util.find_library('CoreFoundation') or 'CoreFoundation.framework/CoreFoundation')
 
 kCFStringEncodingUTF8 = 0x08000100
 
@@ -1120,7 +1120,7 @@ cf.CFShow.argtypes = [c_void_p]
 
 # Even though we don't use this directly, it must be loaded so that
 # we can find the NSApplication, NSWindow, and NSView classes.
-appkit = cdll.LoadLibrary(util.find_library('AppKit'))
+appkit = cdll.LoadLibrary(util.find_library('AppKit') or 'AppKit.framework/AppKit')
 
 NSDefaultRunLoopMode = c_void_p.in_dll(appkit, 'NSDefaultRunLoopMode')
 NSEventTrackingRunLoopMode = c_void_p.in_dll(
@@ -1261,7 +1261,7 @@ NSApplicationActivationPolicyProhibited = 2
 
 # QUARTZ / COREGRAPHICS
 
-quartz = cdll.LoadLibrary(util.find_library('quartz'))
+quartz = cdll.LoadLibrary(util.find_library('quartz') or 'Quartz.framework/Quartz')
 
 CGDirectDisplayID = c_uint32     # CGDirectDisplay.h
 CGError = c_int32                # CGError.h
@@ -1431,7 +1431,7 @@ quartz.CGDisplayBounds.restype = CGRect
 ######################################################################
 
 # CORETEXT
-ct = cdll.LoadLibrary(util.find_library('CoreText'))
+ct = cdll.LoadLibrary(util.find_library('CoreText') or 'CoreText.framework/CoreText')
 
 # Types
 CTFontOrientation = c_uint32      # CTFontDescriptor.h
