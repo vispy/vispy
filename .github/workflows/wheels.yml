@@ -21,11 +21,13 @@ jobs:
     - uses: actions/setup-python@v2
       name: Install Python
     - name: Install cibuildwheel
-      run: python -m pip install cibuildwheel==1.7.4
+      run: |
+        python -m pip install --upgrade pip
+        pip install cibuildwheel
     - name: Build wheels
       run: python -m cibuildwheel --output-dir wheelhouse
       env:
-        CIBW_SKIP: "cp27-* cp34-* cp35-* cp36-* pp*"
+        CIBW_SKIP: "cp27-* cp34-* cp35-* cp36-* pp* *-win32"
         CIBW_TEST_REQUIRES: "pytest pytest-sugar meshio pillow"
         CIBW_TEST_COMMAND: "python -c \"import vispy; vispy.test()\""
         CIBW_BUILD_VERBOSITY: "2"
