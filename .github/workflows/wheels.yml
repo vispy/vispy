@@ -15,6 +15,9 @@ jobs:
       with:
         fetch-depth: 0
         submodules: 'recursive'
+    - name: Use MSBuild (Windows)
+      uses: microsoft/setup-msbuild@v1.0.2
+      if: matrix.os == 'windows-2019'
     - uses: actions/setup-python@v2
       name: Install Python
     - name: Install cibuildwheel
