@@ -23,6 +23,8 @@ sphere1 = scene.visuals.Sphere(radius=1, method='latitude', parent=view.scene,
                                edge_color='black')
 
 sphere2 = scene.visuals.Sphere(radius=1, method='ico', parent=view.scene,
+                               color=(0.5, 0.5, 0.5, 0.5),
+                               face_colors=(0.5, 0.5, 0.5, 0.5),
                                edge_color='black')
 
 sphere3 = scene.visuals.Sphere(radius=1, rows=10, cols=10, depth=10,
