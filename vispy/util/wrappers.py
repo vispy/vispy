@@ -33,6 +33,7 @@ def use(app=None, gl=None):
             * 'PyQt5': use Qt widget toolkit via PyQt5.
             * 'PySide': use Qt widget toolkit via PySide.
             * 'PySide2': use Qt widget toolkit via PySide2.
+            * 'PySide6': use Qt widget toolkit via PySide6.
             * 'PyGlet': use Pyglet backend.
             * 'Glfw': use Glfw backend (successor of Glut). Widely available
               on Linux.

@@ -28,6 +28,9 @@ elif qt_lib == 'pyqt5':
 elif qt_lib == 'pyside2':
     from PySide2 import QtWidgets
     QWidget, QGridLayout = QtWidgets.QWidget, QtWidgets.QGridLayout  # Compat
+elif qt_lib == 'pyside6':
+    from PySide6 import QtWidgets
+    QWidget, QGridLayout = QtWidgets.QWidget, QtWidgets.QGridLayout  # Compat
 elif qt_lib:
     raise RuntimeError("Invalid value for qt_lib %r." % qt_lib)
 else:

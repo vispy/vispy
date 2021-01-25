@@ -219,6 +219,7 @@ setup(
         'pyqt5': ['pyqt5'],
         'pyside': ['PySide'],
         'pyside2': ['PySide2'],
+        'pyside6': ['PySide6'],
         'sdl2': ['PySDL2'],
         'wx': ['wxPython'],
         'tk': ['pyopengltk'],
