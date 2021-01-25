@@ -279,7 +279,9 @@ class ApplicationBackend(BaseApplicationBackend):
 
     def _vispy_process_events(self):
         app = self._vispy_get_native_app()
-        app.flush()
+        # sendPostedEvents replaces flush which has been removed from Qt6.0+
+        # This should be compatible with Qt4.x and Qt5.x
+        app.sendPostedEvents()
         app.processEvents()
 
     def _vispy_run(self):
