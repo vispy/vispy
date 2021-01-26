@@ -43,7 +43,7 @@ varying float v_id;
 void main()
 {
     float f = fract(v_id);
-    // The second useless test is needed on OSX 10.8 (fuck)
+    // The second useless test is needed on OSX 10.8
     if( (f > 0.0001) && (f < .9999) )
         discard;
     else

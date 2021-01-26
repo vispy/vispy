@@ -8,6 +8,7 @@ import functools
 
 import numpy as np
 from ...util import logger
+from functools import wraps
 
 
 def arg_to_array(func):
@@ -24,6 +25,7 @@ def arg_to_array(func):
     func : function
         The decorated function.
     """
+    @wraps(func)
     def fn(self, arg, *args, **kwargs):
         """Function
 
