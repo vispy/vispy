@@ -52,8 +52,7 @@ jobs:
         pip install flake8 numpy cython pytest numpydoc
     - name: Install vispy
       run: |
-        python setup.py install
-        python setup.py develop
+        pip install -e .
     - name: Check line endings
       run: |
         python make test lineendings
@@ -83,8 +82,7 @@ jobs:
         pip install -r ci/requirements/linux_website_deps_pip.txt
     - name: Install vispy
       run: |
-        python setup.py install
-        python setup.py develop
+        pip install -e .[doc]
     - name: build website
       run: |
         source ./ci/build_website.sh
@@ -166,8 +164,7 @@ jobs:
         fi
     - name: Install vispy
       run: |
-        python setup.py install
-        python setup.py develop
+        pip install -e .
     - name: Version Info
       run: |
         if [ "${{ matrix.test }}" != 'osmesa' ]; then
