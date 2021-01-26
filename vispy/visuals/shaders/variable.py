@@ -2,7 +2,6 @@
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 import numpy as np
-from ...ext.six import string_types
 from .shader_object import ShaderObject
 
 VARIABLE_TYPES = ('const', 'uniform', 'attribute', 'varying', 'inout')
@@ -10,7 +9,7 @@ VARIABLE_TYPES = ('const', 'uniform', 'attribute', 'varying', 'inout')
 
 class Variable(ShaderObject):
     """ Representation of global shader variable
-    
+
     Parameters
     ----------
     name : str
@@ -25,15 +24,15 @@ class Variable(ShaderObject):
         The type of variable.
     dtype : str
         The data type of the variable, e.g. 'float', 'vec4', 'mat', etc.
-    
+
     """
-    
+
     _vtype_32_conversion = {'in': 'attribute', 'out': 'varying'}
     _vtype_23_conversion = {'attribute': 'in', 'varying': 'out'}
-    
+
     def __init__(self, name, value=None, vtype=None, dtype=None):
         super(Variable, self).__init__()
-        
+
         # allow full definition in first argument
         if ' ' in name:
             fields = name.split(' ')
@@ -45,60 +44,60 @@ class Variable(ShaderObject):
                 raise ValueError('Variable specifications given by string must'
                                  ' be of the form "vtype dtype name" or '
                                  '"const dtype name value".')
-            
-        if not (isinstance(name, string_types) or name is None):
+
+        if not (isinstance(name, str) or name is None):
             raise TypeError("Variable name must be string or None.")
-        
+
         self._state_counter = 0
         self._name = name
         self._vtype = self._vtype_32_conversion.get(vtype, vtype)
         self._dtype = dtype
         self._value = None
-        
+
         # If vtype/dtype were given at init, then we will never
         # try to set these values automatically.
         self._type_locked = self._vtype is not None and self._dtype is not None
-            
+
         if value is not None:
             self.value = value
-        
+
         if self._vtype and self._vtype not in VARIABLE_TYPES:
             raise ValueError('Not a valid vtype: %r' % self._vtype)
-    
+
     @property
     def name(self):
         """ The name of this variable.
         """
         return self._name
-    
+
     @name.setter
     def name(self, n):
-        # Settable mostly to allow automatic setting of varying names 
+        # Settable mostly to allow automatic setting of varying names
         # See ShaderObject.create()
         if self._name != n:
             self._name = n
             self.changed(code_changed=True)
-    
+
     @property
     def vtype(self):
         """ The type of variable (const, uniform, attribute, or varying).
-        
+
         For in/out variables (GLSL 150+), vtype is 'varying'.
         """
         return self._vtype
-    
+
     @property
     def dtype(self):
         """ The type of data (float, int, vec, mat, ...).
         """
         return self._dtype
-    
+
     @property
     def value(self):
         """ The value associated with this variable.
         """
         return self._value
-    
+
     @value.setter
     def value(self, value):
         if isinstance(value, (tuple, list)) and 1 < len(value) < 5:
@@ -110,7 +109,7 @@ class Variable(ShaderObject):
                 dtype = 'vec%d' % len(value)
             elif value.ndim == 2 and value.shape in ((2, 2), (3, 3), (4, 4)):
                 vtype = 'uniform'
-                dtype = 'mat%d' % value.shape[0]                
+                dtype = 'mat%d' % value.shape[0]
             else:
                 raise ValueError("Cannot make uniform value for %s from array "
                                  "of shape %s." % (self.name, value.shape))
@@ -121,24 +120,24 @@ class Variable(ShaderObject):
             elif isinstance(value, (int, np.integer)):
                 dtype = 'int'
             else:
-                raise TypeError("Unknown data type %r for variable %r" % 
+                raise TypeError("Unknown data type %r for variable %r" %
                                 (type(value), self))
         elif getattr(value, 'glsl_type', None) is not None:
             # Note: hasattr() is broken by design--swallows all exceptions!
             vtype, dtype = value.glsl_type
         else:
-            raise TypeError("Unknown data type %r for variable %r" % 
+            raise TypeError("Unknown data type %r for variable %r" %
                             (type(value), self))
 
         self._value = value
         self._state_counter += 1
-        
+
         if self._type_locked:
             if dtype != self._dtype or vtype != self._vtype:
                 raise TypeError('Variable is type "%s"; cannot assign value '
                                 '%r.' % (self.dtype, value))
             return
-            
+
         # update vtype/dtype and emit changed event if necessary
         changed = False
         if self._dtype != dtype:
@@ -149,7 +148,7 @@ class Variable(ShaderObject):
             changed = True
         if changed:
             self.changed(code_changed=True, value_changed=True)
-    
+
     @property
     def state_id(self):
         """Return a unique ID that changes whenever the state of the Variable
@@ -159,9 +158,9 @@ class Variable(ShaderObject):
 
     def __repr__(self):
         return ("<%s \"%s %s %s\" at 0x%x>" % (self.__class__.__name__,
-                                               self._vtype, self._dtype, 
+                                               self._vtype, self._dtype,
                                                self.name, id(self)))
-    
+
     def expression(self, names):
         return names[self]
 
@@ -171,16 +170,16 @@ class Variable(ShaderObject):
         """
         vtype = self.vtype
         if version is None or version[0] == 120:
-            return self._vtype_32_conversion.get(vtype, vtype) 
+            return self._vtype_32_conversion.get(vtype, vtype)
         else:
-            return self._vtype_23_conversion.get(vtype, vtype) 
+            return self._vtype_23_conversion.get(vtype, vtype)
 
     def definition(self, names, version, shader):
         if self.vtype is None:
             raise RuntimeError("Variable has no vtype: %r" % self)
         if self.dtype is None:
             raise RuntimeError("Variable has no dtype: %r" % self)
-        
+
         name = names[self]
         vtype = self._vtype_for_version(version)
         if vtype == 'const':
@@ -192,7 +191,7 @@ class Variable(ShaderObject):
 class Varying(Variable):
     """ Representation of a varying (variables passed from one shader to the
     next).
-    
+
     Varyings can inherit their dtype from another Variable, allowing for
     more flexibility in composing shaders.
     """
@@ -201,18 +200,18 @@ class Varying(Variable):
         self._src_func = None
         self._dst_func = None
         Variable.__init__(self, name, vtype='varying', dtype=dtype)
-        
+
     @property
     def value(self):
         """ The value associated with this variable.
         """
         return self._value
-    
+
     @value.setter
     def value(self, value):
         if value is not None:
             raise TypeError("Cannot assign value directly to varying.")
-    
+
     @property
     def dtype(self):
         if self._dtype is None:
@@ -225,8 +224,8 @@ class Varying(Variable):
 
     def link(self, var):
         """ Link this Varying to another object from which it will derive its
-        dtype. 
-        
+        dtype.
+
         This method is used internally when assigning an attribute to
         a varying using syntax ``function[varying] = attr``.
         """
@@ -239,8 +238,8 @@ class Varying(Variable):
         but as an `in` variable instead of `out`.
         """
         return InVar(self, array=array)
-    
-    
+
+
 class InVar(Variable):
     def __init__(self, var, array=False):
         self._var = var
@@ -252,12 +251,12 @@ class InVar(Variable):
         """ The value associated with this variable.
         """
         return self._var.value
-    
+
     @value.setter
     def value(self, value):
         if value is not None:
             raise TypeError("Cannot assign value directly to varying.")
-    
+
     @property
     def dtype(self):
         return self._var.dtype
@@ -266,7 +265,7 @@ class InVar(Variable):
         # inherit name from source variable
         name = names[self._var]
         dtype = self._var.dtype
-        
+
         if version[0] <= 120:
             return "varying %s %s;" % (dtype, name)
         else:
@@ -274,6 +273,6 @@ class InVar(Variable):
                 return "in %s %s[];" % (dtype, name)
             else:
                 return "in %s %s;" % (dtype, name)
-        
+
     def expression(self, names):
         return names[self._var]

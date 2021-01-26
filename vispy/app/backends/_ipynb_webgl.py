@@ -11,7 +11,6 @@ from __future__ import division
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
                     BaseTimerBackend)
 from ...util import logger, keys
-from ...ext import six
 from ...gloo.glir import BaseGlirParser, convert_shader
 from ...app.backends.ipython import VispyWidget
 
@@ -247,7 +246,7 @@ class CanvasBackend(BaseCanvasBackend):
             if key_code == 'SPACE':
                 key_text = ' '
             else:
-                key_text = six.text_type(key_code)
+                key_text = str(key_code)
         # Process modifiers.
         modifiers = ev.get('modifiers', None)
         if modifiers:

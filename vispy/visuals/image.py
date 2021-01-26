@@ -11,7 +11,6 @@ from ..color import get_colormap
 from .shaders import Function, FunctionChain
 from .transforms import NullTransform
 from .visual import Visual
-from ..ext.six import string_types
 from ..io import load_spatial_filters
 
 VERT_SHADER = """
@@ -288,12 +287,12 @@ class ImageVisual(Visual):
 
     @property
     def clim(self):
-        return (self._clim if isinstance(self._clim, string_types) else
+        return (self._clim if isinstance(self._clim, str) else
                 tuple(self._clim))
 
     @clim.setter
     def clim(self, clim):
-        if isinstance(clim, string_types):
+        if isinstance(clim, str):
             if clim != 'auto':
                 raise ValueError('clim must be "auto" if a string')
             self._need_texture_upload = True
@@ -472,7 +471,7 @@ class ImageVisual(Visual):
             # deal with clim on CPU b/c of texture depth limits :(
             # can eventually do this by simulating 32-bit float... maybe
             clim = self._clim
-            if isinstance(clim, string_types) and clim == 'auto':
+            if isinstance(clim, str) and clim == 'auto':
                 clim = np.min(data), np.max(data)
             clim = np.asarray(clim, dtype=np.float32)
             data = data - clim[0]  # not inplace so we don't modify orig data
@@ -483,7 +482,7 @@ class ImageVisual(Visual):
             self._clim = np.array(clim)
         else:
             # assume that RGB data is already scaled (0, 1)
-            if isinstance(self._clim, string_types) and self._clim == 'auto':
+            if isinstance(self._clim, str) and self._clim == 'auto':
                 self._clim = (0, 1)
 
         self._texture_limits = np.array(self._clim)

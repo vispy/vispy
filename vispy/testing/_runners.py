@@ -248,13 +248,14 @@ if os.getenv('TRAVIS', 'false') == 'true' and sys.platform == 'darwin':
         'examples/demo/gloo/high_frequency.py',
         'examples/basics/scene/shared_context.py',
     ]
-elif os.getenv('TRAVIS', 'false') == 'true' and 'linux' in sys.platform:
+elif 'true' in (os.getenv('TRAVIS', ''),
+                os.getenv('GITHUB_ACTIONS', '')) and 'linux' in sys.platform:
     # example scripts that contain non-ascii text
     # seem to fail on Travis OSX
     bad_examples = [
         'examples/basics/scene/shared_context.py',
     ]
-if os.getenv('TRAVIS', 'false') == 'true':
+if 'true' in (os.getenv('TRAVIS', ''), os.getenv('GITHUB_ACTIONS', '')):
     # OpenGL >2.0 that fail on Travis
     bad_examples += [
         'examples/basics/gloo/geometry_shader.py'

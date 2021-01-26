@@ -4,7 +4,6 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
-from ..ext.six import string_types
 from .wrappers import read_pixels
 
 
@@ -65,7 +64,7 @@ def check_variable(name):
 def check_identifier(name):
     if '__' in name:
         return "Identifiers may not contain double-underscores."
-    
+
     if name[:3] == 'gl_' or name[:3] == 'GL_':
         return "Identifiers may not begin with gl_ or GL_."
 
@@ -82,14 +81,14 @@ def check_enum(enum, name=None, valid=None):
     if isinstance(enum, int):
         if hasattr(enum, 'name') and enum.name.startswith('GL_'):
             res = enum.name[3:].lower()
-    elif isinstance(enum, string_types):
+    elif isinstance(enum, str):
         res = enum.lower()
     # Check
     if res is None:
         raise ValueError('Could not determine string represenatation for'
                          'enum %r' % enum)
     elif valid and res not in valid:
-        raise ValueError('Value of %s must be one of %r, not %r' % 
+        raise ValueError('Value of %s must be one of %r, not %r' %
                          (name, valid, enum))
     return res
 

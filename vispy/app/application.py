@@ -9,6 +9,7 @@ Implements the global singleton app object.
 
 from __future__ import division
 
+import builtins
 import os
 import sys
 
@@ -17,7 +18,6 @@ from .backends import CORE_BACKENDS, BACKEND_NAMES, BACKENDMAP, TRIED_BACKENDS
 from .. import config
 from .base import BaseApplicationBackend as ApplicationBackend  # noqa
 from ..util import logger
-from ..ext import six
 
 
 class Application(object):
@@ -106,7 +106,7 @@ class Application(object):
 
         # IPython does not set sys.flags when -i is specified, so first
         # check it if it is already imported.
-        if '__IPYTHON__' not in dir(six.moves.builtins):
+        if not hasattr(builtins, '__IPYTHON__'):
             return False
 
         # Then we check the application singleton and determine based on

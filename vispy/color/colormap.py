@@ -8,7 +8,6 @@ import inspect
 import numpy as np
 
 from .color_array import ColorArray
-from ..ext.six import string_types
 from ..ext.cubehelix import cubehelix
 from ..ext.husl import husl_to_rgb
 from ..util.check_environment import has_matplotlib
@@ -1107,7 +1106,7 @@ def get_colormap(name, *args, **kwargs):
     if isinstance(name, BaseColormap):
         cmap = name
     else:
-        if not isinstance(name, string_types):
+        if not isinstance(name, str):
             raise TypeError('colormap must be a Colormap or string name')
         if name in _colormaps:  # vispy cmap
             cmap = _colormaps[name]

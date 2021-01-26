@@ -367,7 +367,6 @@ from distutils.version import LooseVersion
 import numpy as np
 
 from . import gl
-from ..ext.six import string_types
 from ..util import logger
 
 # TODO: expose these via an extension space in .gl?
@@ -407,7 +406,7 @@ JUST_DELETED = 'JUST_DELETED'
 def as_enum(enum):
     """ Turn a possibly string enum into an integer enum.
     """
-    if isinstance(enum, string_types):
+    if isinstance(enum, str):
         try:
             enum = getattr(gl, 'GL_' + enum.upper())
         except AttributeError:
@@ -863,7 +862,7 @@ def glir_logger(parser_cls, file_or_filename):
         def __init__(self, *args, **kwargs):
             parser_cls.__init__(self, *args, **kwargs)
 
-            if isinstance(file_or_filename, string_types):
+            if isinstance(file_or_filename, str):
                 self._file = open(file_or_filename, 'w')
             else:
                 self._file = file_or_filename
@@ -1711,7 +1710,7 @@ class GlirRenderBuffer(GlirObject):
         gl.glBindRenderbuffer(gl.GL_RENDERBUFFER, 0)
 
     def set_size(self, shape, format):
-        if isinstance(format, string_types):
+        if isinstance(format, str):
             format = GlirFrameBuffer._formats[format][1]
         if (shape, format) != self._shape_format:
             self._shape_format = shape, format

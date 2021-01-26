@@ -32,8 +32,6 @@ from ...util import logger
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
                     BaseTimerBackend)
 from ...util import keys
-from ...ext.six import text_type
-from ...ext.six import string_types
 from ... import config
 from . import qt_lib
 
@@ -183,7 +181,7 @@ def message_handler(*args):
         if msg.startswith(item):
             return
 
-    msg = msg.decode() if not isinstance(msg, string_types) else msg
+    msg = msg.decode() if not isinstance(msg, str) else msg
     logger.warning(msg)
 
 
@@ -548,7 +546,7 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
         else:
             key = None
         mod = self._modifiers(ev)
-        func(native=ev, key=key, text=text_type(ev.text()), modifiers=mod)
+        func(native=ev, key=key, text=str(ev.text()), modifiers=mod)
 
     def _modifiers(self, event):
         # Convert the QT modifier state into a tuple of active modifier keys.

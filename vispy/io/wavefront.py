@@ -20,9 +20,9 @@ The classes are written with compatibility of Python3 in mind.
 
 import numpy as np
 import time
+from gzip import GzipFile
 from os import path as op
 
-from ..ext.gzip_open import gzip_open
 from ..geometry import _calculate_normals
 from ..util import logger
 
@@ -67,7 +67,7 @@ class WavefrontReader(object):
         # Open file
         fmt = op.splitext(fname)[1].lower()
         assert fmt in ('.obj', '.gz')
-        opener = open if fmt == '.obj' else gzip_open
+        opener = open if fmt == '.obj' else GzipFile
         with opener(fname, 'rb') as f:
             try:
                 reader = WavefrontReader(f)
@@ -251,7 +251,7 @@ class WavefrontWriter(object):
         if fmt not in ('.obj', '.gz'):
             raise ValueError('Filename must end with .obj or .gz, not "%s"'
                              % (fmt,))
-        opener = open if fmt == '.obj' else gzip_open
+        opener = open if fmt == '.obj' else GzipFile
         f = opener(fname, 'wb')
         try:
             writer = WavefrontWriter(f)

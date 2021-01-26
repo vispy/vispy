@@ -4,8 +4,9 @@
 
 from __future__ import division
 
+import functools
+
 import numpy as np
-from ...ext.decorator import decorator
 from ...util import logger
 from functools import wraps
 
@@ -84,8 +85,7 @@ def as_vec4(obj, default=(0, 0, 0, 1)):
     return obj
 
 
-@decorator
-def arg_to_vec4(func, self_, arg, *args, **kwargs):
+def arg_to_vec4(func):
     """
     Decorator for converting argument to vec4 format suitable for 4x4 matrix
     multiplication.
@@ -107,21 +107,26 @@ def arg_to_vec4(func, self_, arg, *args, **kwargs):
     and returns a new (mapped) object.
 
     """
-    if isinstance(arg, (tuple, list, np.ndarray)):
-        arg = np.array(arg)
-        flatten = arg.ndim == 1
-        arg = as_vec4(arg)
 
-        ret = func(self_, arg, *args, **kwargs)
-        if flatten and ret is not None:
-            return ret.flatten()
-        return ret
-    elif hasattr(arg, '_transform_in'):
-        arr = arg._transform_in()
-        ret = func(self_, arr, *args, **kwargs)
-        return arg._transform_out(ret)
-    else:
-        raise TypeError("Cannot convert argument to 4D vector: %s" % arg)
+    @functools.wraps(func)
+    def wrapper(self_, arg, *args, **kwargs):
+        if isinstance(arg, (tuple, list, np.ndarray)):
+            arg = np.array(arg)
+            flatten = arg.ndim == 1
+            arg = as_vec4(arg)
+
+            ret = func(self_, arg, *args, **kwargs)
+            if flatten and ret is not None:
+                return ret.flatten()
+            return ret
+        elif hasattr(arg, '_transform_in'):
+            arr = arg._transform_in()
+            ret = func(self_, arr, *args, **kwargs)
+            return arg._transform_out(ret)
+        else:
+            raise TypeError("Cannot convert argument to 4D vector: %s" % arg)
+
+    return wrapper
 
 
 class TransformCache(object):

@@ -11,8 +11,6 @@ import struct
 import zlib
 import numpy as np
 
-from ..ext.png import Reader
-
 
 def _make_png(data, level=6):
     """Convert numpy array to PNG byte array.
@@ -101,7 +99,7 @@ def _make_png(data, level=6):
 def read_png(filename):
     """Read a PNG file to RGB8 or RGBA8
 
-    Unlike imread, this requires no external dependencies.
+   Requires Pillow.
 
     Parameters
     ----------
@@ -117,22 +115,19 @@ def read_png(filename):
     --------
     write_png, imread, imsave
     """
-    x = Reader(filename)
     try:
-        alpha = x.asDirect()[3]['alpha']
-        if alpha:
-            y = x.asRGBA8()[2]
-            n = 4
-        else:
-            y = x.asRGB8()[2]
-            n = 3
-        y = np.array([yy for yy in y], np.uint8)
-    finally:
-        x.file.close()
-    y.shape = (y.shape[0], y.shape[1] // n, n)
-    return y
-
-
+        from PIL import Image
+        x = Image.open(filename)
+        try:
+            y = np.asarray(x)
+            y = np.array([yy for yy in y], np.uint8)
+        finally:
+            x.close()
+        return y
+    except ImportError:
+        raise RuntimeError("read_png requires the Pillow package.")
+        
+        
 def write_png(filename, data):
     """Write a PNG file
 
