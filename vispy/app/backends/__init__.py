@@ -17,6 +17,7 @@ CORE_BACKENDS = [
     ('PyQt5', '_pyqt5', 'PyQt5'),
     ('PySide', '_pyside', 'PySide'),
     ('PySide2', '_pyside2', 'PySide2'),
+    ('PySide6', '_pyside6', 'PySide6'),
     ('Pyglet', '_pyglet', 'pyglet'),
     ('Glfw', '_glfw', 'vispy.ext.glfw'),
     ('SDL2', '_sdl2', 'sdl2'),
