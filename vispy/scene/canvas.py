@@ -125,6 +125,7 @@ class SceneCanvas(app.Canvas, Frozen):
         self._mouse_handler = None
         self.transforms = TransformSystem(canvas=self)
         self._bgcolor = Color(bgcolor).rgba
+        self._deliver_types = ['mouse_press', 'mouse_wheel']
         
         # Set to True to enable sending mouse events even when no button is
         # pressed. Disabled by default because it is very expensive. Also
@@ -334,7 +335,7 @@ class SceneCanvas(app.Canvas, Frozen):
 
     def _process_mouse_event(self, event):
         prof = Profiler()  # noqa
-        deliver_types = ['mouse_press', 'mouse_wheel']
+        deliver_types = self._deliver_types
         if self._send_hover_events:
             deliver_types += ['mouse_move']
 
@@ -356,12 +357,12 @@ class SceneCanvas(app.Canvas, Frozen):
             # receive the event
             if event.type == 'mouse_release':
                 self._mouse_handler = None
-            getattr(picked.events, event.type)(scene_event)
+            getattr(picked.events, event.type, lambda _:None)(scene_event)
         else:
             # If we don't have a mouse handler, then pass the event through
             # the chain of parents until a node accepts the event.
             while picked is not None:
-                getattr(picked.events, event.type)(scene_event)
+                getattr(picked.events, event.type, lambda _:None)(scene_event)
                 if scene_event.handled:
                     if event.type == 'mouse_press':
                         self._mouse_handler = picked
