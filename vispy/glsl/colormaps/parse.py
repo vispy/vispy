@@ -33,6 +33,8 @@ def replace(match):
         return text
     return ''
 
-while re.search(re_include, code):
-    code = re.sub(re_include, replace, code)
-print(code)
+
+if __name__ == "__main__":
+    while re.search(re_include, code):
+        code = re.sub(re_include, replace, code)
+    print(code)

@@ -1,0 +1,8 @@
+libglu1-mesa-dev
+libgl1-mesa-dev
+libxi-dev
+libglfw3-dev
+libgles2-mesa-dev
+libsdl2-2.0-0
+mesa-utils
+

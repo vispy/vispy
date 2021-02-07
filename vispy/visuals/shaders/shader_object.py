@@ -4,7 +4,6 @@
 from collections import OrderedDict
 from weakref import WeakKeyDictionary
 
-from ...ext.six import string_types
 from .compiler import Compiler
 
 
@@ -27,7 +26,7 @@ class ShaderObject(object):
         """
         if isinstance(ref, Variable):
             ref = ref.name
-        elif isinstance(ref, string_types) and ref.startswith('gl_'):
+        elif isinstance(ref, str) and ref.startswith('gl_'):
             # gl_ names not allowed for variables
             ref = ref[3:].lower()
 
@@ -39,7 +38,7 @@ class ShaderObject(object):
         if isinstance(obj, ShaderObject):
             if isinstance(obj, Variable) and obj.name is None:
                 obj.name = ref
-        elif isinstance(obj, string_types):
+        elif isinstance(obj, str):
             obj = TextExpression(obj)
         else:
             obj = Variable(ref, obj)

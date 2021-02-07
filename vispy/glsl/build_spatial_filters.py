@@ -634,85 +634,91 @@ class Blackman(SpatialFilter):
         return (math.sin(x) / x) * (0.42 + 0.5*math.cos(xr) + 0.08*math.cos(2*xr))  # noqa
 
 
-# Generate kernels texture (16 x 1024)
-filters = [Bilinear(), Hanning(),  Hamming(),  Hermite(),
-           Kaiser(),   Quadric(),  Bicubic(),  CatRom(),
-           Mitchell(), Spline16(), Spline36(), Gaussian(),
-           Bessel(),   Sinc(),     Lanczos(),  Blackman()]
+def main():
+    # Generate kernels texture (16 x 1024)
+    filters = [Bilinear(), Hanning(),  Hamming(),  Hermite(),
+               Kaiser(),   Quadric(),  Bicubic(),  CatRom(),
+               Mitchell(), Spline16(), Spline36(), Gaussian(),
+               Bessel(),   Sinc(),     Lanczos(),  Blackman()]
 
-n = 1024
-K = np.zeros((16, n))
-for i, f in enumerate(filters):
-    K[i] = f.kernel(n)
+    n = 1024
+    K = np.zeros((16, n))
+    for i, f in enumerate(filters):
+        K[i] = f.kernel(n)
 
-bias = K.min()
-scale = K.max()-K.min()
-K = (K-bias)/scale
-np.save("spatial-filters.npy", K.astype(np.float32))
+    bias = K.min()
+    scale = K.max()-K.min()
+    K = (K-bias)/scale
+    np.save("spatial-filters.npy", K.astype(np.float32))
 
-print("// ------------------------------------")
-print("// Automatically generated, do not edit")
-print("// ------------------------------------")
-print("")
-print("const float kernel_bias  = %f;" % bias)
-print("const float kernel_scale = %f;" % scale)
-print("const float kernel_size = %f;" % n)
-print("const vec4 bits = vec4(1.0, 1.0/256.0, 1.0/(256.0*256.0), 1.0/(256.0*256.0*256.0));")  # noqa
-print("uniform sampler2D u_kernel;")
-print("")
+    print("// ------------------------------------")
+    print("// Automatically generated, do not edit")
+    print("// ------------------------------------")
+    print("")
+    print("const float kernel_bias  = %f;" % bias)
+    print("const float kernel_scale = %f;" % scale)
+    print("const float kernel_size = %f;" % n)
+    print("const vec4 bits = vec4(1.0, 1.0/256.0, 1.0/(256.0*256.0), 1.0/(256.0*256.0*256.0));")  # noqa
+    print("uniform sampler2D u_kernel;")
+    print("")
 
-code = 'float\n'
-code += 'unpack_unit(vec4 rgba)\n'
-code += '{\n'
-code += '\t// return rgba.r;  // uncomment this for r32f debugging\n'
-code += '\treturn dot(rgba, bits);\n'
-code += '}\n'
-print(code.expandtabs(4))
+    code = 'float\n'
+    code += 'unpack_unit(vec4 rgba)\n'
+    code += '{\n'
+    code += '\t// return rgba.r;  // uncomment this for r32f debugging\n'
+    code += '\treturn dot(rgba, bits);\n'
+    code += '}\n'
+    print(code.expandtabs(4))
 
-code = 'float\n'
-code += 'unpack_ieee(vec4 rgba)\n'
-code += '{\n'
-code += '\t// return rgba.r;  // uncomment this for r32f debugging\n'
-code += '\trgba.rgba = rgba.abgr * 255.;\n'
-code += '\tfloat sign = 1.0 - step(128.0,rgba[0])*2.0;\n'
-code += '\tfloat exponent = 2.0 * mod(rgba[0],128.0) + ' \
-        'step(128.0,rgba[1]) - 127.0;\n'
-code += '\tfloat mantissa = mod(rgba[1],128.0)*65536.0 + rgba[2]*256.0 + ' \
-        'rgba[3] + float(0x800000);\n'
-code += '\treturn sign * exp2(exponent) * (mantissa * exp2(-23.));\n'
-code += '}\n'
-print(code.expandtabs(4))
+    code = 'float\n'
+    code += 'unpack_ieee(vec4 rgba)\n'
+    code += '{\n'
+    code += '\t// return rgba.r;  // uncomment this for r32f debugging\n'
+    code += '\trgba.rgba = rgba.abgr * 255.;\n'
+    code += '\tfloat sign = 1.0 - step(128.0,rgba[0])*2.0;\n'
+    code += '\tfloat exponent = 2.0 * mod(rgba[0],128.0) + ' \
+            'step(128.0,rgba[1]) - 127.0;\n'
+    code += '\tfloat mantissa = mod(rgba[1],128.0)*65536.0 + rgba[2]*256.0 + ' \
+            'rgba[3] + float(0x800000);\n'
+    code += '\treturn sign * exp2(exponent) * (mantissa * exp2(-23.));\n'
+    code += '}\n'
+    print(code.expandtabs(4))
 
-code = 'float\n'
-code += 'unpack_interpolate(sampler2D kernel, vec2 uv)\n'
-code += '{\n'
-code += '\t// return texture2D(kernel, uv).r; ' \
-        '//uncomment this for r32f debug without interpolation\n'
-code += '\tfloat kpixel = 1. / kernel_size;\n'
-code += '\tfloat u = uv.x / kpixel;\n'
-code += '\tfloat v = uv.y;\n'
-code += '\tfloat uf = fract(u);\n'
-code += '\tu = (u - uf) * kpixel;\n'
-code += '\n'
-code += '\tfloat d0 = unpack_unit(texture2D(kernel, vec2(u, v)));\n'
-code += '\tfloat d1 = unpack_unit(texture2D(kernel, vec2(u + 1. * kpixel, v)));\n'  # noqa
-code += '\treturn mix(d0, d1, uf);\n'
-code += '}\n'
-print(code.expandtabs(4))
+    code = 'float\n'
+    code += 'unpack_interpolate(sampler2D kernel, vec2 uv)\n'
+    code += '{\n'
+    code += '\t// return texture2D(kernel, uv).r; ' \
+            '//uncomment this for r32f debug without interpolation\n'
+    code += '\tfloat kpixel = 1. / kernel_size;\n'
+    code += '\tfloat u = uv.x / kpixel;\n'
+    code += '\tfloat v = uv.y;\n'
+    code += '\tfloat uf = fract(u);\n'
+    code += '\tu = (u - uf) * kpixel;\n'
+    code += '\n'
+    code += '\tfloat d0 = unpack_unit(texture2D(kernel, vec2(u, v)));\n'
+    code += '\tfloat d1 = unpack_unit(texture2D(kernel, vec2(u + 1. * kpixel, v)));\n'  # noqa
+    code += '\treturn mix(d0, d1, uf);\n'
+    code += '}\n'
+    print(code.expandtabs(4))
 
-F = SpatialFilter(1.0)
-print(F.filter_code())
-F = SpatialFilter(2.0)
-print(F.filter_code())
-F = SpatialFilter(3.0)
-print(F.filter_code())
-F = SpatialFilter(4.0)
-print(F.filter_code())
+    F = SpatialFilter(1.0)
+    print(F.filter_code())
+    F = SpatialFilter(2.0)
+    print(F.filter_code())
+    F = SpatialFilter(3.0)
+    print(F.filter_code())
+    F = SpatialFilter(4.0)
+    print(F.filter_code())
 
-# Generate filter functions
-# Special case for nearest
-print("""vec4 Nearest(sampler2D texture, vec2 shape, vec2 uv)""")
-print("""{ return texture2D(texture,uv); }\n""")
+    # Generate filter functions
+    # Special case for nearest
+    print("""vec4 Nearest(sampler2D texture, vec2 shape, vec2 uv)""")
+    print("""{ return texture2D(texture,uv); }\n""")
 
-for i, f in enumerate(filters):
-    print(f.call_code((i+0.5)/16.0))
+    for i, f in enumerate(filters):
+        print(f.call_code((i+0.5)/16.0))
+
+
+if __name__ == "__main__":
+    import sys
+    sys.exit(main())

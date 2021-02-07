@@ -28,23 +28,25 @@ def test_context_properties():
     else:
         assert_raises(RuntimeError, Canvas, app=a,
                       config=dict(double_buffer=False))
-    if a.backend_name.lower() == 'sdl2' and os.getenv('TRAVIS') == 'true':
+    if a.backend_name.lower() == 'sdl2' and 'true' in (os.getenv('TRAVIS', ''),
+                                                       os.getenv('GITHUB_ACTIONS', '')):
         raise SkipTest('Travis SDL cannot set context')
     for config in configs:
         n_items = len(config)
         with Canvas(config=config):
             if 'true' in (os.getenv('TRAVIS', ''),
-                          os.getenv('APPVEYOR', '').lower()):
+                          os.getenv('APPVEYOR', '').lower(),
+                          os.getenv('GITHUB_ACTIONS', '')):
                 # Travis and Appveyor cannot handle obtaining these values
                 props = config
             else:
                 props = get_gl_configuration()
             assert len(config) == n_items
             for key, val in config.items():
-                # XXX knownfail for windows samples, and wx (all platforms)
+                # XXX knownfail for windows samples, and wx/tkinter (all platforms)
                 if key == 'samples':
-                    iswx = a.backend_name.lower() == 'wx'
-                    if not (sys.platform.startswith('win') or iswx):
+                    will_fail_backend = a.backend_name.lower() in ('wx', 'tkinter')
+                    if not (sys.platform.startswith('win') or will_fail_backend):
                         assert val == props[key], key
     assert_raises(TypeError, Canvas, config='foo')
     assert_raises(KeyError, Canvas, config=dict(foo=True))
@@ -73,6 +75,10 @@ def test_context_sharing():
         # pyqt5 does not currently support context sharing
         if 'pyqt5' in c1.app.backend_name.lower():
             pytest.xfail("Context sharing is not supported in PyQt5 at this time.")
+
+        # Tkinter does not currently support context sharing
+        if 'tk' in c1.app.backend_name.lower():
+            pytest.xfail("Context sharing is not supported in Tkinter at this time.")
 
         # Check while c2 is active (with different context)
         with Canvas() as c2:

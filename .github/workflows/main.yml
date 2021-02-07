@@ -1,0 +1,214 @@
+name: CI
+
+# Controls when the action will run. 
+on:
+  # Triggers the workflow on push or pull request events but only for the master branch
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # Open GL Check
+  opengl:
+    name: OpenGL checks
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -l {0}
+    steps:
+    - name: Install OpenGL
+      run: |
+        sudo apt-get update
+        sudo apt-get -y install libglu1-mesa-dev libgl1-mesa-dev libxi-dev libglfw3-dev libgles2-mesa-dev libsdl2-2.0-0 mesa-utils
+    - name: Start xvfb daemon
+      run: |
+        export DISPLAY=:99.0
+        /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1400x900x24 -ac +extension GLX +render
+        sleep 5
+    - name: Check OpenGL
+      run: |
+        export DISPLAY=:99.0
+        glxinfo
+  # linter, style checks, etc
+  lint:
+    name: lint and style checks
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: "recursive"
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.9
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 numpy cython pytest numpydoc
+    - name: Install vispy
+      run: |
+        pip install -e .
+    - name: Check line endings
+      run: |
+        python make test lineendings
+    - name: Lint with flake8
+      run: |
+        python make test flake
+# FIXME: Re-enable this when all docstrings are fixed
+#    - name: Test docstring parameters
+#      run: |
+#        python make test docs
+
+  # build website
+  website:
+    name: build website
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+        submodules: "recursive"
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.9
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r ci/requirements/linux_website_deps_pip.txt
+    - name: Install vispy
+      run: |
+        pip install -e .[doc]
+    - name: build website
+      run: |
+        source ./ci/build_website.sh
+    - name: deploy website
+      if: github.event_name == 'push'
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        personal_token: ${{ secrets.VISPY_WEBSITE_TOKEN }}
+        publish_dir: doc/_build/html
+        publish_branch: master
+        cname: vispy.org
+        allow_empty_commit: true
+        external_repository: vispy/vispy.github.com
+        full_commit_message: "Deploy vispy.org website for SHA:$GITHUB_SHA (Tag: $GITHUB_REF)"
+
+  # linux runs
+  build_0:
+    name: vispy tests - linux
+    runs-on: ubuntu-latest
+    needs: [lint]
+    defaults:
+      # use login shell to make use of .bash_profile /.bashrc
+      run:
+        shell: bash -l {0}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - test_number: 1
+            python_version: "3.7"
+            deps: "min"
+            test: "standard"
+          - test_number: 2
+            python_version: "3.7"
+            deps: "full"
+            test: "standard"
+          - test_number: 3
+            python_version: "3.7"
+            deps: "full"
+            test: "examples"
+          - test_number: 4
+            python_version: "3.7"
+            deps: "osmesa"
+            test: "osmesa"
+    steps:
+    - name: Cancel Previous Runs
+      uses: styfle/cancel-workflow-action@0.6.0
+      with:
+        access_token: ${{ github.token }}
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+        submodules: "recursive"
+    - name: Prepare System Environment
+      id: vars
+      run: |
+        # opengl system libraries
+        if [ "${{ matrix.deps }}" == 'full' ]; then
+          cat ci/requirements/linux_full_deps_apt.txt | xargs sudo apt-get -y install
+        fi
+        # Start xvfb daemon
+        export DISPLAY=:99.0
+        /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1400x900x24 -ac +extension GLX +render
+        sleep 5
+        # export python_version
+        PY_VER=${{ matrix.python_version }}
+        echo ::set-output name=python_version::${PY_VER//.}
+    - uses: mamba-org/provision-with-micromamba@v7
+      with:
+        environment-file: ./ci/requirements/py${{ steps.vars.outputs.python_version }}.yml
+    - name: Install conda-dependencies
+      run: |
+        micromamba install -y python=${{ matrix.python_version }} -f ci/requirements/linux_${{ matrix.deps }}_deps_conda.txt -c conda-forge
+    - name: Install pip-dependencies
+      run: |
+        if [ "${{ matrix.deps }}" == 'full' ]; then
+          pip install -r ci/requirements/linux_full_deps_pip.txt
+          rm -rf vispy/ext/_bundled
+        fi
+    - name: Install vispy
+      run: |
+        pip install -e .
+    - name: Version Info
+      run: |
+        if [ "${{ matrix.test }}" != 'osmesa' ]; then
+          export DISPLAY=:99.0
+        fi
+        if [ "${{ matrix.test }}" == 'osmesa' ]; then
+          export OSMESA_LIBRARY=~/micromamba/envs/vispy-tests/lib/libOSMesa32.so;
+          export VISPY_GL_LIB=$OSMESA_LIBRARY
+        fi
+        micromamba list
+        python -c "import vispy; print(vispy.version.version)"
+        python -c "import vispy; print(vispy.sys_info())"
+    - name: Run tests
+      run: |
+        if [ "${{ matrix.test }}" == 'standard' ]; then
+          export DISPLAY=:99.0
+          python make test unit --tb=short
+        fi
+        if [ "${{ matrix.test }}" == 'examples' ]; then
+          export DISPLAY=:99.0
+          export XDG_RUNTIME_DIR=/tmp/runtime-runner
+          make examples
+        fi
+        if [ "${{ matrix.test }}" == 'osmesa' ]; then
+          export OSMESA_LIBRARY=~/micromamba/envs/vispy-tests/lib/libOSMesa32.so
+          export VISPY_GL_LIB=$OSMESA_LIBRARY
+          make osmesa
+        fi
+        if [ "${{ matrix.test }}" != "examples" ]; then
+          COVERAGE_FILE=.vispy-coverage coverage combine
+          mv .vispy-coverage .coverage
+        fi
+    - name: Coveralls Parallel
+      uses: AndreMiras/coveralls-python-action@develop
+      with:
+        flag-name: run-${{ matrix.test_number }}
+        parallel: true
+
+  coveralls:
+    needs: [build_0]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Coveralls Finished
+        uses: AndreMiras/coveralls-python-action@develop
+        with:
+          parallel-finished: true

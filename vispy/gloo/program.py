@@ -35,7 +35,6 @@ from .buffer import VertexBuffer, IndexBuffer, DataBuffer
 from .texture import BaseTexture, Texture2D, Texture3D, Texture1D, TextureCube
 from ..util import logger
 from .util import check_enum
-from ..ext.six import string_types
 from .context import get_current_canvas
 from .preprocessor import preprocess
 
@@ -141,7 +140,7 @@ class Program(GLObject):
         # unncessary
 
         # Check and set shaders
-        if isinstance(vert, string_types) and isinstance(frag, string_types):
+        if isinstance(vert, str) and isinstance(frag, str):
             self.set_shaders(vert, frag)
         elif not (vert is None and frag is None):
             raise ValueError('Vert and frag must either both be str or None')

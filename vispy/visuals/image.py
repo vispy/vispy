@@ -12,7 +12,6 @@ from ..color import get_colormap
 from .shaders import Function, FunctionChain
 from .transforms import NullTransform
 from .visual import Visual
-from ..ext.six import string_types
 from ..io import load_spatial_filters
 
 VERT_SHADER = """
@@ -375,12 +374,12 @@ class ImageVisual(Visual):
 
     @property
     def clim(self):
-        return (self._clim if isinstance(self._clim, string_types) else
+        return (self._clim if isinstance(self._clim, str) else
                 tuple(self._clim))
 
     @clim.setter
     def clim(self, clim):
-        if isinstance(clim, string_types):
+        if isinstance(clim, str):
             if clim != 'auto':
                 raise ValueError('clim must be "auto" if a string')
             self._need_texture_upload = True
@@ -582,12 +581,12 @@ class ImageVisual(Visual):
         data = self._data
         clim = self._clim
         if data.ndim == 2 or data.shape[2] == 1:
-            if isinstance(clim, string_types) and clim == 'auto':
+            if isinstance(clim, str) and clim == 'auto':
                 clim = np.min(data), np.max(data)
             clim = np.asarray(clim, dtype=np.float32)
             if not self._scale_texture_gpu:
                 data = self._scale_data_on_cpu(data, clim)
-        elif isinstance(self._clim, string_types) and self._clim == 'auto':
+        elif isinstance(self._clim, str) and self._clim == 'auto':
             # assume that RGB data is already scaled (0, 1)
             clim = np.array([0, 1])
 

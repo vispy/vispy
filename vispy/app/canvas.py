@@ -12,7 +12,6 @@ from ..util.event import EmitterGroup, Event, WarningEmitter
 from ..util.ptime import time
 from ..util.dpi import get_dpi
 from ..util import config as util_config, logger
-from ..ext.six import string_types
 from . import Application, use_app
 from ..gloo.context import (GLContext, set_current_canvas, forget_canvas)
 from ..gloo import FrameBuffer, RenderBuffer
@@ -177,7 +176,7 @@ class Canvas(object):
             self._app = use_app(call_reuse=False)
         elif isinstance(app, Application):
             self._app = app
-        elif isinstance(app, string_types):
+        elif isinstance(app, str):
             self._app = Application(app)
         else:
             raise ValueError('Invalid value for app %r' % app)
@@ -242,7 +241,7 @@ class Canvas(object):
 
     def _set_keys(self, keys):
         if keys is not None:
-            if isinstance(keys, string_types):
+            if isinstance(keys, str):
                 if keys != 'interactive':
                     raise ValueError('keys, if string, must be "interactive", '
                                      'not %s' % (keys,))
@@ -258,7 +257,7 @@ class Canvas(object):
             lower_keys = {}
             # ensure all are callable
             for key, val in keys.items():
-                if isinstance(val, string_types):
+                if isinstance(val, str):
                     new_val = getattr(self, val, None)
                     if new_val is None:
                         raise ValueError('value %s is not an attribute of '
@@ -497,7 +496,7 @@ class Canvas(object):
         # Connect update_fps function to draw
         self.events.draw.disconnect(self._update_fps)
         if callback:
-            if isinstance(callback, string_types):
+            if isinstance(callback, str):
                 callback_str = callback  # because callback gets overwritten
 
                 def callback(x):
