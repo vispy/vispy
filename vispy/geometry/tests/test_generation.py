@@ -27,13 +27,13 @@ def test_sphere():
     """Test sphere function"""
     md = create_sphere(rows=10, cols=20, radius=10, method='latitude')
     radii = np.sqrt((md.get_vertices() ** 2).sum(axis=1))
-    assert_allclose(radii, np.ones_like(radii) * 10)
+    assert_allclose(radii, np.ones_like(radii) * 10, atol=1e-06)
     md = create_sphere(subdivisions=5, radius=10, method='ico')
     radii = np.sqrt((md.get_vertices() ** 2).sum(axis=1))
-    assert_allclose(radii, np.ones_like(radii) * 10)
+    assert_allclose(radii, np.ones_like(radii) * 10, atol=1e-06)
     md = create_sphere(rows=20, cols=20, depth=20, radius=10, method='cube')
     radii = np.sqrt((md.get_vertices() ** 2).sum(axis=1))
-    assert_allclose(radii, np.ones_like(radii) * 10)
+    assert_allclose(radii, np.ones_like(radii) * 10, atol=1e-06)
 
 
 def test_cylinder():
