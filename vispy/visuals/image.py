@@ -341,8 +341,9 @@ class ImageVisual(Visual):
             num_channels = 4
         shape_arr = np.zeros((1, 1, num_channels))
 
-        texture_format = self._handle_auto_texture_format(texture_format, data)
-        texture_format = self._get_gl_tex_format(texture_format, num_channels)
+        if texture_format is not None:
+            texture_format = self._handle_auto_texture_format(texture_format, data)
+            texture_format = self._get_gl_tex_format(texture_format, num_channels)
 
         return Texture2D(shape_arr, interpolation=texture_interpolation,
                          internalformat=texture_format)
