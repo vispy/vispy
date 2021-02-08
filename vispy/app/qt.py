@@ -85,6 +85,7 @@ class QtSceneCanvas(QtCanvas):
 
     See QtCanvas.
     """
+
     def __init__(self, parent=None, **kwargs):
         from ..scene.canvas import SceneCanvas
         QtCanvas.__init__(self, parent, canvas=SceneCanvas, **kwargs)

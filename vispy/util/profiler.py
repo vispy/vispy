@@ -40,34 +40,34 @@ class Profiler(object):
 
     _profilers = (config['profile'].split(",") if config['profile'] is not None
                   else [])
-    
+
     _depth = 0
     _msgs = []
     # set this flag to disable all or individual profilers at runtime
     disable = False
-    
+
     class DisabledProfiler(object):
         def __init__(self, *args, **kwds):
             pass
-        
+
         def __call__(self, *args):
             pass
-        
+
         def finish(self):
             pass
-        
+
         def mark(self, msg=None):
             pass
-        
+
     _disabled_profiler = DisabledProfiler()
-        
+
     def __new__(cls, msg=None, disabled='env', delayed=True):
         """Optionally create a new profiler based on caller's qualname.
         """
         if (disabled is True or 
                 (disabled == 'env' and len(cls._profilers) == 0)):
             return cls._disabled_profiler
-                        
+
         # determine the qualified name of the caller function
         caller_frame = sys._getframe(1)
         try:
@@ -103,7 +103,7 @@ class Profiler(object):
         elapsed = (new_time - self._last_time) * 1000
         self._new_msg("  " + msg + ": %0.4f ms", *(args + (elapsed,)))
         self._last_time = new_time
-        
+
     def mark(self, msg=None):
         self(msg)
 
@@ -117,7 +117,7 @@ class Profiler(object):
 
     def __del__(self):
         self.finish()
-    
+
     def finish(self, msg=None):
         """Add a final message; flush the message list if no parent profiler.
         """
@@ -131,7 +131,7 @@ class Profiler(object):
         type(self)._depth -= 1
         if self._depth < 1:
             self.flush()
-        
+
     def flush(self):
         if self._msgs:
             print("\n".join([m[0] % m[1] for m in self._msgs]))

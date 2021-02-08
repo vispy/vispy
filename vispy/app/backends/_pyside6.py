@@ -37,7 +37,7 @@ else:
 
     # PySide6 doesn't have qWait as well, redefines it
     from PySide6 import QtTest
-    
+
     @staticmethod
     def qWait(msec):
         import time

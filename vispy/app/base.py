@@ -258,9 +258,9 @@ class BaseCanvasBackend(object):
         # the position should be the same, and the two mouse-presses should
         # be within dt_max.
         if ((ev.time - lastev.time <= dt_max) &
-           (lastev.pos[0] - ev.pos[0] == 0) &
-           (lastev.pos[1] - ev.pos[1] == 0) &
-           (lastev.button == ev.button)):
+            (lastev.pos[0] - ev.pos[0] == 0) &
+            (lastev.pos[1] - ev.pos[1] == 0) &
+                (lastev.button == ev.button)):
             self._vispy_mouse_double_click(**kwargs)
 
         self._vispy_mouse_data['last_mouse_press'] = ev

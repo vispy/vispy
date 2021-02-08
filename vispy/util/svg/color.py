@@ -163,7 +163,7 @@ _HEXDEC = {}
 for x, y in product(hexdigits, repeat=2):
     v = x + y
     _HEXDEC[v] = int(v, 16)
-    
+
 
 def _rgb(triplet):
     return _HEXDEC[triplet[0:2]], _HEXDEC[triplet[2:4]], _HEXDEC[triplet[4:6]]

@@ -249,6 +249,7 @@ class Config(object):
     Config.events.changed - Emits ConfigEvent whenever the configuration
     changes.
     """
+
     def __init__(self, **kwargs):
         self.events = EmitterGroup(source=self)
         self.events['changed'] = EventEmitter(
@@ -454,6 +455,7 @@ class _TempDir(str):
     function may be cleaned up before this object, so we use the atexit module
     instead.
     """
+
     def __new__(self):
         new = str.__new__(self, tempfile.mkdtemp())
         return new

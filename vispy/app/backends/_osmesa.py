@@ -92,6 +92,7 @@ class OSMesaContext(object):
     A wrapper around an OSMesa context that destroy the context when
     garbage collected
     """
+
     def __init__(self):
         self.context = osmesa.OSMesaCreateContext()
 

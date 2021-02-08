@@ -30,9 +30,9 @@ def translate(offset, dtype=None):
     assert len(offset) == 3
     x, y, z = offset
     M = np.array([[1., 0., 0., 0.],
-                 [0., 1., 0., 0.],
-                 [0., 0., 1., 0.],
-                 [x, y, z, 1.0]], dtype)
+                  [0., 1., 0., 0.],
+                  [0., 0., 1., 0.],
+                  [x, y, z, 1.0]], dtype)
     return M
 
 

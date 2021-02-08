@@ -12,7 +12,7 @@ from . import use_app, Application
 
 class Timer(object):
 
-    """Timer used to schedule events in the future or on a repeating schedule
+    """Timer used to schedule events in the future or on a repeating schedule.
 
     Parameters
     ----------
@@ -36,8 +36,8 @@ class Timer(object):
                                    start=Event,
                                    stop=Event,
                                    timeout=Event)
-        #self.connect = self.events.timeout.connect
-        #self.disconnect = self.events.timeout.disconnect
+        # self.connect = self.events.timeout.connect
+        # self.disconnect = self.events.timeout.disconnect
 
         # Get app instance
         if app is None:
@@ -130,18 +130,18 @@ class Timer(object):
 
     # use timer.app.run() and .quit() instead.
     # def run_event_loop(self):
-        #"""Execute the event loop for this Timer's backend.
-        #"""
+        # """Execute the event loop for this Timer's backend.
+        # """
         # return self._backend._vispy_run()
 
     # def quit_event_loop(self):
-        #"""Exit the event loop for this Timer's backend.
-        #"""
+        # """Exit the event loop for this Timer's backend.
+        # """
         # return self._backend._vispy_quit()
 
     @property
     def native(self):
-        """ The native timer on which this Timer is based.
+        """The native timer on which this Timer is based.
         """
         return self._backend._vispy_get_native_timer()
 
@@ -168,9 +168,9 @@ class Timer(object):
         self.iter_count += 1
 
     def connect(self, callback):
-        """ Alias for self.events.timeout.connect() """
+        """Alias for self.events.timeout.connect()."""
         return self.events.timeout.connect(callback)
 
     def disconnect(self, callback=None):
-        """ Alias for self.events.timeout.disconnect() """
+        """Alias for self.events.timeout.disconnect()."""
         return self.events.timeout.disconnect(callback)

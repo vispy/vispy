@@ -126,7 +126,7 @@ class CanvasBackend(BaseCanvasBackend):
         # Connect to events of canvas to keep up to date with size and draw
         canvas.events.draw.connect(self._on_draw)
         canvas.events.resize.connect(self._on_resize)
-        
+
         # Show the widget
         canvas.show()
         # todo: hide that canvas

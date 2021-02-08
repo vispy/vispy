@@ -27,6 +27,7 @@ class PlotWidget(scene.Widget):
     See Also
     --------
     """
+
     def __init__(self, *args, **kwargs):
         self._fg = kwargs.pop('fg_color', 'k')
         self.grid = None

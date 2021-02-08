@@ -541,6 +541,7 @@ class WarningEmitter(EventEmitter):
     EventEmitter subclass used to allow deprecated events to be used with a
     warning message.
     """
+
     def __init__(self, message, *args, **kwargs):
         self._message = message
         self._warned = False
@@ -770,6 +771,7 @@ class EventBlocker(object):
     """ Represents a block for an EventEmitter to be used in a context
     manager (i.e. 'with' statement).
     """
+
     def __init__(self, target, callback=None):
         self.target = target
         self.callback = callback

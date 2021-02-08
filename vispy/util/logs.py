@@ -43,6 +43,7 @@ def _get_vispy_caller():
 
 class _VispyFormatter(logging.Formatter):
     """Formatter that optionally prepends caller"""
+
     def __init__(self):
         logging.Formatter.__init__(self, '%(levelname)s: %(message)s')
         self._vispy_prepend_caller = False
@@ -67,6 +68,7 @@ class _VispyStreamHandler(logging.StreamHandler):
 
     Prepending of traceback information is done in _VispyFormatter.
     """
+
     def __init__(self):
         logging.StreamHandler.__init__(self, sys.stderr)
         self._vispy_formatter = _lf
@@ -207,6 +209,7 @@ class use_log_level(object):
     """
     # This method mostly wraps to set_log_level, but also takes
     # care of enabling/disabling message recording in the formatter.
+
     def __init__(self, level, match=None, record=False, print_msg=True):
         self._new_level = level
         self._new_match = match

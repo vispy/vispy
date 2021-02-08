@@ -12,7 +12,7 @@ except Exception as exp:
 
     def _noop(x):
         return x
-    
+
     register = _noop
 
     class _MockTraitlet(object):
