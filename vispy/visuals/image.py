@@ -310,6 +310,29 @@ class ImageVisual(Visual):
             self.set_data(data)
         self.freeze()
 
+    def _handle_auto_texture_format(self, texture_format, data):
+        if isinstance(texture_format, str) and texture_format == 'auto':
+            if data is None:
+                warnings.warn("'texture_format' set to 'auto' but no data "
+                              "provided. Falling back to CPU scaling.")
+                texture_format = None
+            else:
+                texture_format = data.dtype.type
+        return texture_format
+
+    def _get_gl_tex_format(self, texture_format, num_channels):
+        if texture_format and not isinstance(texture_format, str):
+            if texture_format not in self._texture_dtype_format:
+                raise ValueError("Can't determine internal texture format for '{}'".format(texture_format))
+            if texture_format == np.float64:
+                warnings.warn("GPU can't support 64-bit floating point data, "
+                              "precision will be lost due to downcasting to "
+                              "32-bit float.")
+            texture_format = self._texture_dtype_format[texture_format]
+        # adjust internalformat for format of data (RGBA vs L)
+        texture_format = texture_format.replace('r', 'rgba'[:num_channels])
+        return texture_format
+
     def _create_texture(self, texture_format, texture_interpolation, data):
         # get a representative initial shape, we'll fill in data later
         if data is not None:
@@ -318,29 +341,11 @@ class ImageVisual(Visual):
             num_channels = 4
         shape_arr = np.zeros((1, 1, num_channels))
 
-        tex_kwargs = {}
-        if isinstance(texture_format, str) and texture_format == 'auto':
-            if data is None:
-                warnings.warn("'texture_format' set to 'auto' but no data "
-                              "provided. Falling back to CPU scaling.")
-                texture_format = None
-            else:
-                texture_format = data.dtype.type
-        if texture_format and not isinstance(texture_format, str):
-            if texture_format not in self._texture_dtype_format:
-                raise ValueError("Can't determine internal texture format for '{}'".format(texture_format))
-            texture_format = self._texture_dtype_format[texture_format]
-            # adjust internalformat for format of data (RGBA vs L)
-            texture_format = texture_format.replace('r', 'rgba'[:num_channels])
-        if isinstance(texture_format, str):
-            tex_kwargs['internalformat'] = texture_format
+        texture_format = self._handle_auto_texture_format(texture_format, data)
+        texture_format = self._get_gl_tex_format(texture_format, num_channels)
 
-        # Use 3D array shape of (1, 1, 4) as placeholder for RGBA image.
-        # When data is set later this will be resized.
-        # clamp_to_edge means any texture coordinates outside of 0-1 should be
-        # clamped to 0 and 1.
         return Texture2D(shape_arr, interpolation=texture_interpolation,
-                         **tex_kwargs)
+                         internalformat=texture_format)
 
     def set_data(self, image):
         """Set the data
@@ -383,17 +388,19 @@ class ImageVisual(Visual):
             if clim != 'auto':
                 raise ValueError('clim must be "auto" if a string')
             self._need_texture_upload = True
+            self._clim = clim
         else:
-            clim = np.array(clim, float)
-            if clim.shape != (2,):
+            try:
+                cmin, cmax = clim
+            except (ValueError, TypeError):
                 raise ValueError('clim must have two elements')
             # texture_limits will always be None for in-GPU scaling
             if self._texture_limits is not None and (
-                (clim[0] < self._texture_limits[0])
-                or (clim[1] > self._texture_limits[1])
+                (cmin < self._texture_limits[0])
+                or (cmax > self._texture_limits[1])
             ):
                 self._need_texture_upload = True
-        self._clim = clim
+            self._clim = (cmin, cmax)
         # shortcut so we don't have to rebuild the whole color transform
         if not self._need_colortransform_update:
             self.shared_program.frag['color_transform'][1]['clim'] = self.clim_normalized
