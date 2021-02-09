@@ -293,7 +293,6 @@ class BaseTexture(GLObject):
                self._inv_internalformats[self._internalformat] == shape[-1]:
                 internalformat = self._internalformat
         else:
-
             internalformat = check_enum(internalformat)
 
         # Check
