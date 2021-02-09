@@ -14,6 +14,227 @@ from .transforms import NullTransform
 from .visual import Visual
 from ..io import load_spatial_filters
 
+
+F64_PRECISION_WARNING = ("GPUs can't support floating point data with more "
+                         "than 32-bits, precision will be lost due to "
+                         "downcasting to 32-bit float.")
+
+
+def _should_cast_to_f32(data_dtype):
+    is_floating = np.issubdtype(data_dtype, np.floating)
+    gt_float32 = data_dtype.itemsize > 4
+    if is_floating and gt_float32:
+        # OpenGL can't support floating point numbers greater than 32-bits
+        warnings.warn(F64_PRECISION_WARNING)
+        return True
+    return False
+
+
+class ScalableTexture2D(Texture2D):
+    """Texture class for smarter scaling and internalformat decisions."""
+
+    # dtype -> internalformat
+    # 'r' will be replaced (if needed) with rgb or rgba depending on number of bands
+    _texture_dtype_format = {
+        np.float32: 'r32f',
+        np.float64: 'r32f',
+        np.uint8: 'r8',
+        np.uint16: 'r16',
+        np.uint32: 'r32',
+        np.int8: 'r8',
+        np.int16: 'r16',
+        np.int32: 'r32',
+    }
+
+    def __init__(self, data=None, internalformat=None, allow_reformat=False,
+                 **texture_kwargs):
+        self._allow_reformat = allow_reformat
+        self._auto_texture_format = False
+        self._clim = None
+        self._data_dtype = getattr(data, 'dtype', None)
+        self._data_limits = None
+
+        data = self._create_rep_array(data)
+        internalformat = self._get_texture_format_for_data(data, internalformat)
+        self._scale_texture_gpu = internalformat is not None
+        super().__init__(data, internalformat=internalformat, **texture_kwargs)
+
+    @property
+    def clim(self):
+        """Color limits of the texture's data."""
+        return self._clim
+
+    def set_clim(self, clim):
+        """Set clim and return if a texture update is needed."""
+        need_texture_upload = False
+        if isinstance(clim, str):
+            if clim != 'auto':
+                raise ValueError('clim must be "auto" if a string')
+            need_texture_upload = True
+            self._clim = clim
+        else:
+            try:
+                cmin, cmax = clim
+            except (ValueError, TypeError):
+                raise ValueError('clim must have two elements')
+            # texture_limits will always be None for in-GPU scaling
+            if self._data_limits is not None and (
+                    (cmin < self._data_limits[0])
+                    or (cmax > self._data_limits[1])
+            ):
+                need_texture_upload = True
+            self._clim = (cmin, cmax)
+        return need_texture_upload
+
+    @property
+    def clim_normalized(self):
+        """Normalize current clims to match texture data inside the shader.
+
+        If data is scaled on the CPU then the texture data will be in the range
+        0-1 in the _build_texture() method. Inside the fragment shader the
+        final contrast adjustment will be applied based on this normalized
+        ``clim``.  If data is scaled only on the GPU then we only normalize
+        the color limits when needed (for unsigned normalized integer
+        internal formats). Otherwise, for internal formats that are not
+        normalized such as floating point (ex. r32f) we can leave the ``clim``
+        as is.
+
+        """
+        if self._scale_texture_gpu:
+            # if the internalformat of the texture is normalized we need to
+            # also normalize the clims so they match in-shader
+            clim_min = self.normalize_value(self.clim[0], self._data_dtype)
+            clim_max = self.normalize_value(self.clim[1], self._data_dtype)
+            return clim_min, clim_max
+
+        range_min, range_max = self._data_limits
+        clim_min, clim_max = self.clim
+        clim_min = (clim_min - range_min) / (range_max - range_min)
+        clim_max = (clim_max - range_min) / (range_max - range_min)
+        return clim_min, clim_max
+
+    @property
+    def is_normalized(self):
+        """Whether the in-shader representation of this texture is normalized or not.
+
+        Formats ending in 'f' (float), 'ui' (unsigned integral), or 'i'
+        (integral) are not normalized in the GPU. Formats ending in "_snorm"
+        are normalized on the range [-1, 1] based on the data type of the
+        input data (ex. 0-255 for uint8). Formats with no data type suffix are
+        normalized on the range [0, 1]. See
+        https://www.khronos.org/opengl/wiki/Image_Format for more information.
+
+        This property can be used to determine if input shader variables
+        (uniforms, template variables) need to also be normalized. See
+        :meth:`~BaseTexture.normalize_value` below.
+
+        """
+        if self.internalformat is None:
+            return True
+        return self.internalformat[-1] not in ('f', 'i')
+
+    def normalize_value(self, val, input_data_dtype):
+        """Normalize values to match in-shader representation of this shader.
+
+        Parameters
+        ----------
+        val : int | float | ndarray
+            Value(s) to normalize.
+        input_data_dtype : numpy.dtype
+            Data type of input data. The assumption is that the provided
+            values to be normalized are in the same range as the input
+            texture data and must be normalized in the same way.
+
+        """
+        if not self.is_normalized:
+            return val
+        dtype_info = np.iinfo(input_data_dtype)
+        dmin = dtype_info.min
+        dmax = dtype_info.max
+        val = (val - dmin) / (dmax - dmin)
+        # XXX: Do we need to handle _snorm differently?
+        #  Not currently supported in vispy.
+        return val
+
+    @staticmethod
+    def _data_num_channels(data):
+        if data is not None:
+            num_channels = data.shape[-1] if data.ndim == 3 else 1
+        else:
+            num_channels = 4
+        return num_channels
+
+    def _create_rep_array(self, data):
+        """Get a representative array with an initial shape.
+
+        Data will be filled in and the texture resized later.
+
+        """
+        num_channels = self._data_num_channels(data)
+        return np.zeros((1, 1, num_channels))
+
+    def _handle_auto_texture_format(self, texture_format, data):
+        if isinstance(texture_format, str) and texture_format == 'auto':
+            if data is None:
+                warnings.warn("'texture_format' set to 'auto' but no data "
+                              "provided. Falling back to CPU scaling.")
+                texture_format = None
+            else:
+                texture_format = data.dtype.type
+                self._auto_texture_format = True
+        return texture_format
+
+    def _get_gl_tex_format(self, texture_format, num_channels):
+        if texture_format and not isinstance(texture_format, str):
+            if texture_format not in self._texture_dtype_format:
+                raise ValueError("Can't determine internal texture format for '{}'".format(texture_format))
+            _should_cast_to_f32(texture_format)
+            texture_format = self._texture_dtype_format[texture_format]
+        # adjust internalformat for format of data (RGBA vs L)
+        texture_format = texture_format.replace('r', 'rgba'[:num_channels])
+        return texture_format
+
+    def _get_texture_format_for_data(self, data, texture_format):
+        if texture_format is not None:
+            num_channels = self._data_num_channels(data)
+            texture_format = self._handle_auto_texture_format(texture_format, data)
+            texture_format = self._get_gl_tex_format(texture_format, num_channels)
+        return texture_format
+
+    @staticmethod
+    def _scale_data_on_cpu(data, clim):
+        if data.dtype == np.float64:
+            data = data.astype(np.float32)
+        data = data - clim[0]  # not inplace so we don't modify orig data
+        if clim[1] - clim[0] > 0:
+            data /= clim[1] - clim[0]
+        else:
+            data[:] = 1 if data[0, 0] != 0 else 0
+        return data
+
+    def set_data(self, data, offset=None, copy=False):
+        """Upload new data to the GPU, scaling if necessary."""
+        self._data_dtype = data.dtype
+
+        clim = self._clim
+        is_auto = isinstance(clim, str) and clim == 'auto'
+        if data.ndim == 2 or data.shape[2] == 1:
+            if is_auto:
+                clim = np.min(data), np.max(data)
+            clim = (np.float32(clim[0]), np.float32(clim[1]))
+            if not self._scale_texture_gpu:
+                data = self._scale_data_on_cpu(data, clim)
+        elif is_auto:
+            # assume that RGB data is already scaled (0, 1)
+            clim = (0, 1)
+
+        # XXX: Does this *always* need a colortransform update?
+        self._clim = clim
+        self._data_limits = None if self._scale_texture_gpu else clim
+        ret = super().set_data(data, offset=offset, copy=copy)
+        return ret
+
+
 VERT_SHADER = """
 uniform int method;  // 0=subdivide, 1=impostor
 attribute vec2 a_position;
@@ -214,25 +435,11 @@ class ImageVisual(Visual):
     if the data are 2D.
     """
 
-    # dtype -> internalformat
-    # 'r' will be replaced (if needed) with rgb or rgba depending on number of bands
-    _texture_dtype_format = {
-        np.float32: 'r32f',
-        np.float64: 'r32f',
-        np.uint8: 'r8',
-        np.uint16: 'r16',
-        np.uint32: 'r32',
-        np.int8: 'r8',
-        np.int16: 'r16',
-        np.int32: 'r32',
-    }
-
     def __init__(self, data=None, method='auto', grid=(1, 1),
                  cmap='viridis', clim='auto', gamma=1.0,
                  interpolation='nearest', texture_format=None, **kwargs):
         self._data = None
         self._gamma = gamma
-        self._scale_texture_gpu = texture_format is not None
 
         # load 'float packed rgba8' interpolation kernel
         # to load float interpolation kernel use
@@ -277,14 +484,12 @@ class ImageVisual(Visual):
 
         self._method = method
         self._grid = grid
-        self._texture_limits = None
         self._need_texture_upload = True
         self._need_vertex_update = True
         self._need_colortransform_update = True
         self._need_interpolation_update = True
-        self._texture = self._create_texture(texture_format,
-                                             texture_interpolation,
-                                             data)
+        self._texture = ScalableTexture2D(data, internalformat=texture_format,
+                                          interpolation=texture_interpolation)
         self._subdiv_position = VertexBuffer()
         self._subdiv_texcoord = VertexBuffer()
 
@@ -310,44 +515,6 @@ class ImageVisual(Visual):
             self.set_data(data)
         self.freeze()
 
-    def _handle_auto_texture_format(self, texture_format, data):
-        if isinstance(texture_format, str) and texture_format == 'auto':
-            if data is None:
-                warnings.warn("'texture_format' set to 'auto' but no data "
-                              "provided. Falling back to CPU scaling.")
-                texture_format = None
-            else:
-                texture_format = data.dtype.type
-        return texture_format
-
-    def _get_gl_tex_format(self, texture_format, num_channels):
-        if texture_format and not isinstance(texture_format, str):
-            if texture_format not in self._texture_dtype_format:
-                raise ValueError("Can't determine internal texture format for '{}'".format(texture_format))
-            if texture_format == np.float64:
-                warnings.warn("GPU can't support 64-bit floating point data, "
-                              "precision will be lost due to downcasting to "
-                              "32-bit float.")
-            texture_format = self._texture_dtype_format[texture_format]
-        # adjust internalformat for format of data (RGBA vs L)
-        texture_format = texture_format.replace('r', 'rgba'[:num_channels])
-        return texture_format
-
-    def _create_texture(self, texture_format, texture_interpolation, data):
-        # get a representative initial shape, we'll fill in data later
-        if data is not None:
-            num_channels = data.shape[-1] if data.ndim == 3 else 1
-        else:
-            num_channels = 4
-        shape_arr = np.zeros((1, 1, num_channels))
-
-        if texture_format is not None:
-            texture_format = self._handle_auto_texture_format(texture_format, data)
-            texture_format = self._get_gl_tex_format(texture_format, num_channels)
-
-        return Texture2D(shape_arr, interpolation=texture_interpolation,
-                         internalformat=texture_format)
-
     def set_data(self, image):
         """Set the data
 
@@ -355,13 +522,11 @@ class ImageVisual(Visual):
         ----------
         image : array-like
             The image data.
+        texture_format : str or None
+
         """
         data = np.asarray(image)
-
-        is_floating = np.issubdtype(data.dtype, np.floating)
-        gt_float32 = data.dtype.itemsize > 4
-        if is_floating and gt_float32:
-            # OpenGL can't support floating point numbers greater than 32-bits
+        if _should_cast_to_f32(data.dtype):
             data = data.astype(np.float32)
         if self._data is None or self._data.shape != data.shape:
             self._need_vertex_update = True
@@ -380,59 +545,16 @@ class ImageVisual(Visual):
 
     @property
     def clim(self):
-        return (self._clim if isinstance(self._clim, str) else
-                tuple(self._clim))
+        return self._texture.clim
 
     @clim.setter
     def clim(self, clim):
-        if isinstance(clim, str):
-            if clim != 'auto':
-                raise ValueError('clim must be "auto" if a string')
+        if self._texture.set_clim(clim):
             self._need_texture_upload = True
-            self._clim = clim
-        else:
-            try:
-                cmin, cmax = clim
-            except (ValueError, TypeError):
-                raise ValueError('clim must have two elements')
-            # texture_limits will always be None for in-GPU scaling
-            if self._texture_limits is not None and (
-                (cmin < self._texture_limits[0])
-                or (cmax > self._texture_limits[1])
-            ):
-                self._need_texture_upload = True
-            self._clim = (cmin, cmax)
         # shortcut so we don't have to rebuild the whole color transform
         if not self._need_colortransform_update:
-            self.shared_program.frag['color_transform'][1]['clim'] = self.clim_normalized
+            self.shared_program.frag['color_transform'][1]['clim'] = self._texture.clim_normalized
         self.update()
-
-    @property
-    def clim_normalized(self):
-        """Normalize current clims to match texture data inside the shader.
-
-        If data is scaled on the CPU then the texture data will be in the range
-        0-1 in the _build_texture() method. Inside the fragment shader the
-        final contrast adjustment will be applied based on this normalized
-        ``clim``.  If data is scaled only on the GPU then we only normalize
-        the color limits when needed (for unsigned normalized integer
-        internal formats). Otherwise, for internal formats that are not
-        normalized such as floating point (ex. r32f) we can leave the ``clim``
-        as is.
-
-        """
-        if self._scale_texture_gpu:
-            # if the internalformat of the texture is normalized we need to
-            # also normalize the clims so they match in-shader
-            clim_min = self._texture.normalize_value(self.clim[0], self._data.dtype)
-            clim_max = self._texture.normalize_value(self.clim[1], self._data.dtype)
-            return clim_min, clim_max
-
-        range_min, range_max = self._texture_limits
-        clim_min, clim_max = self.clim
-        clim_min = (clim_min - range_min) / (range_max - range_min)
-        clim_max = (clim_max - range_min) / (range_max - range_min)
-        return clim_min, clim_max
 
     @property
     def cmap(self):
@@ -496,9 +618,7 @@ class ImageVisual(Visual):
     # The interpolation code could be transferred to a dedicated filter
     # function in visuals/filters as discussed in #1051
     def _build_interpolation(self):
-        """Rebuild the _data_lookup_fn using different interpolations within
-        the shader
-        """
+        """Rebuild the _data_lookup_fn for different interpolations."""
         interpolation = self._interpolation
         self._data_lookup_fn = self._interpolation_fun[interpolation]
         self.shared_program.frag['get_data'] = self._data_lookup_fn
@@ -522,9 +642,7 @@ class ImageVisual(Visual):
         self._need_interpolation_update = False
 
     def _build_vertex_data(self):
-        """Rebuild the vertex buffers used for rendering the image when using
-        the subdivide method.
-        """
+        """Rebuild the vertex buffers for the subdivide method."""
         grid = self._grid
         w = 1.0 / grid[1]
         h = 1.0 / grid[0]
@@ -575,34 +693,10 @@ class ImageVisual(Visual):
         view._need_method_update = False
         self._prepare_transforms(view)
 
-    def _scale_data_on_cpu(self, data, clim):
-        if data.dtype == np.float64:
-            data = data.astype(np.float32)
-        data = data - clim[0]  # not inplace so we don't modify orig data
-        if clim[1] - clim[0] > 0:
-            data /= clim[1] - clim[0]
-        else:
-            data[:] = 1 if data[0, 0] != 0 else 0
-        return data
-
     def _build_texture(self):
-        data = self._data
-        clim = self._clim
-        if data.ndim == 2 or data.shape[2] == 1:
-            if isinstance(clim, str) and clim == 'auto':
-                clim = np.min(data), np.max(data)
-            clim = np.asarray(clim, dtype=np.float32)
-            if not self._scale_texture_gpu:
-                data = self._scale_data_on_cpu(data, clim)
-        elif isinstance(self._clim, str) and self._clim == 'auto':
-            # assume that RGB data is already scaled (0, 1)
-            clim = np.array([0, 1])
-
+        self._texture.set_data(self._data)
         # XXX: Does this *always* need a colortransform update?
-        self._clim = clim
-        self._texture_limits = None if self._scale_texture_gpu else clim
         self._need_colortransform_update = True
-        self._texture.set_data(data)
         self._need_texture_upload = False
 
     def _compute_bounds(self, axis, view):
@@ -635,7 +729,7 @@ class ImageVisual(Visual):
         if self._need_colortransform_update:
             prg = view.view_program
             self.shared_program.frag['color_transform'] = _build_color_transform(
-                self._data, self.clim_normalized, self.gamma, self.cmap
+                self._data, self._texture.clim_normalized, self.gamma, self.cmap
             )
             self._need_colortransform_update = False
             prg['texture2D_LUT'] = self.cmap.texture_lut() \

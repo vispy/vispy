@@ -156,48 +156,6 @@ class BaseTexture(GLObject):
         return self._internalformat
 
     @property
-    def is_normalized(self):
-        """Whether the in-shader representation of this texture is normalized or not.
-
-        Formats ending in 'f' (float), 'ui' (unsigned integral), or 'i'
-        (integral) are not normalized in the GPU. Formats ending in "_snorm"
-        are normalized on the range [-1, 1] based on the data type of the
-        input data (ex. 0-255 for uint8). Formats with no data type suffix are
-        normalized on the range [0, 1]. See
-        https://www.khronos.org/opengl/wiki/Image_Format for more information.
-
-        This property can be used to determine if input shader variables
-        (uniforms, template variables) need to also be normalized. See
-        :meth:`~BaseTexture.normalize_value` below.
-
-        """
-        return self.internalformat[-1] not in ('f', 'i')
-
-    def normalize_value(self, val, input_data_dtype):
-        """Normalize values to match in-shader representation of this shader.
-
-        Parameters
-        ----------
-        val : int | float | ndarray
-            Value(s) to normalize.
-        input_data_dtype : numpy.dtype
-            Data type of input data. The assumption is that the provided
-            values to be normalized are in the same range as the input
-            texture data and must be normalized in the same way.
-
-        """
-        if not self.is_normalized:
-            return val
-        dtype_info = np.iinfo(input_data_dtype)
-        dmin = dtype_info.min
-        dmax = dtype_info.max
-        print(dmin, dmax, val)
-        val = (val - dmin) / (dmax - dmin)
-        # XXX: Do we need to handle _snorm differently?
-        #  Not currently supported in vispy.
-        return val
-
-    @property
     def wrapping(self):
         """ Texture wrapping mode """
         value = self._wrapping
