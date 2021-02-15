@@ -63,7 +63,7 @@ def _get_orig_and_new_clims(input_dtype):
 @requires_application()
 @pytest.mark.parametrize('data_on_init', [False, True])
 @pytest.mark.parametrize('clim_on_init', [False, True])
-@pytest.mark.parametrize('num_channels', [0, 3, 4])
+@pytest.mark.parametrize('num_channels', [0, 1, 3, 4])
 @pytest.mark.parametrize('texture_format', [None, '__dtype__', 'auto'])
 @pytest.mark.parametrize('input_dtype', [np.uint8, np.float32, np.float64])
 def test_image_clims_and_gamma(input_dtype, texture_format, num_channels,
@@ -148,6 +148,9 @@ def test_image_vertex_updates():
 
 def _make_rgba(data_in):
     max_val = 255 if data_in.dtype == np.uint8 else 1
+    if data_in.ndim == 3 and data_in.shape[-1] == 1:
+        data_in = data_in.squeeze()
+
     if data_in.ndim == 2:
         out = np.stack([data_in] * 4, axis=2)
         out[:, :, 3] = max_val
