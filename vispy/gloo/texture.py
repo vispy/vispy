@@ -226,40 +226,33 @@ class BaseTexture(GLObject):
         """
         return self._resize(shape, format, internalformat)
 
-    def _resize(self, shape, format=None, internalformat=None):
-        """Internal method for resize.
-        """
-        shape = self._normalize_shape(shape)
-
-        # Check
-        if not self._resizable:
-            raise RuntimeError("Texture is not resizable")
-
+    def _check_format_change(self, format, num_channels):
         # Determine format
         if format is None:
-            format = self._formats[shape[-1]]
+            format = self._formats[num_channels]
             # Keep current format if channels match
             if self._format and \
-               self._inv_formats[self._format] == self._inv_formats[format]:
+                    self._inv_formats[self._format] == self._inv_formats[format]:
                 format = self._format
         else:
             format = check_enum(format)
 
+        if format not in self._inv_formats:
+            raise ValueError('Invalid texture format: %r.' % format)
+        elif num_channels != self._inv_formats[format]:
+            raise ValueError('Format does not match with given shape. '
+                             '(format expects %d elements, data has %d)' %
+                             (self._inv_formats[format], num_channels))
+        return format
+
+    def _check_internalformat_change(self, internalformat, num_channels):
         if internalformat is None:
             # Keep current internalformat if channels match
             if self._internalformat and \
-               self._inv_internalformats[self._internalformat] == shape[-1]:
+               self._inv_internalformats[self._internalformat] == num_channels:
                 internalformat = self._internalformat
         else:
             internalformat = check_enum(internalformat)
-
-        # Check
-        if format not in self._inv_formats:
-            raise ValueError('Invalid texture format: %r.' % format)
-        elif shape[-1] != self._inv_formats[format]:
-            raise ValueError('Format does not match with given shape. '
-                             '(format expects %d elements, data has %d)' %
-                             (self._inv_formats[format], shape[-1]))
 
         if internalformat is None:
             pass
@@ -268,8 +261,20 @@ class BaseTexture(GLObject):
                 'Invalid texture internalformat: %r. Allowed formats: %r'
                 % (internalformat, self._inv_internalformats)
             )
-        elif shape[-1] != self._inv_internalformats[internalformat]:
+        elif num_channels != self._inv_internalformats[internalformat]:
             raise ValueError('Internalformat does not match with given shape.')
+        return internalformat
+
+    def _resize(self, shape, format=None, internalformat=None):
+        """Internal method for resize."""
+        shape = self._normalize_shape(shape)
+
+        # Check
+        if not self._resizable:
+            raise RuntimeError("Texture is not resizable")
+
+        format = self._check_format_change(format, shape[-1])
+        internalformat = self._check_internalformat_change(internalformat, shape[-1])
 
         # Store and send GLIR command
         self._shape = shape
