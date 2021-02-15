@@ -192,7 +192,6 @@ class CPUScaledTexture2D(Texture2D):
             if is_auto:
                 clim = data_limits
 
-        # XXX: Does this *always* need a colortransform update?
         self._clim = clim
         self._data_limits = data_limits
         ret = super().set_data(data, offset=offset, copy=copy)
@@ -329,7 +328,6 @@ class GPUScaledTexture2D(CPUScaledTexture2D):
         """Upload new data to the GPU, scaling if necessary."""
         self._reformat_if_necessary(data)
         self._data_dtype = np.dtype(data.dtype)
-        # XXX: Does this *always* need a colortransform update?
         self._clim = self._compute_clim(data)
         ret = super(CPUScaledTexture2D, self).set_data(data, offset=offset, copy=copy)
         return ret
@@ -640,10 +638,10 @@ class ImageVisual(Visual):
         data = np.asarray(image)
         if _should_cast_to_f32(data.dtype):
             data = data.astype(np.float32)
-        # FIXME: Is a vertex update needed if we only changed from L <-> RGB <-> RGBA
         # can the texture handle this data?
         self._texture.check_data_format(data)
-        if self._data is None or self._data.shape != data.shape:
+        if self._data is None or self._data.shape[:2] != data.shape[:2]:
+            # Only rebuild if the size of the image changed
             self._need_vertex_update = True
         self._data = data
         self._need_texture_upload = True
@@ -809,9 +807,22 @@ class ImageVisual(Visual):
         self._prepare_transforms(view)
 
     def _build_texture(self):
+        pre_clims = self._texture.clim
+        pre_internalformat = self._texture.internalformat
         self._texture.set_data(self._data)
-        # XXX: Does this *always* need a colortransform update?
-        self._need_colortransform_update = True
+        post_clims = self._texture.clim
+        post_internalformat = self._texture.internalformat
+        # color transform needs rebuilding if the internalformat was changed
+        # new color limits need to be assigned if the normalized clims changed
+        # otherwise, the original color transform should be fine
+        # Note that this assumes that if clim changed, clim_normalized changed
+        new_if = post_internalformat != pre_internalformat
+        new_cl = post_clims != pre_clims
+        if not new_if and new_cl and not self._need_colortransform_update:
+            # shortcut so we don't have to rebuild the whole color transform
+            self.shared_program.frag['color_transform'][1]['clim'] = self._texture.clim_normalized
+        elif new_if:
+            self._need_colortransform_update = True
         self._need_texture_upload = False
 
     def _compute_bounds(self, axis, view):
