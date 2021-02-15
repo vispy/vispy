@@ -302,28 +302,33 @@ class GPUScaledTexture2D(CPUScaledTexture2D):
             clim = self._get_auto_rgb_minmax(data)
         return clim
 
-    def _internalformat_will_change(self, shape):
-        shape = self._normalize_shape(shape)
-        internalformat = self._check_internalformat_change(None, shape[-1])
-        return internalformat != self.internalformat
+    def _internalformat_will_change(self, data):
+        shape_repr = self._create_rep_array(data)
+        new_if = self._get_gl_tex_format(data.dtype, shape_repr.shape[-1])
+        return new_if != self.internalformat
 
     def check_data_format(self, data):
         """Check if provided data will cause issues if set later."""
-        if self._internalformat_will_change(data.shape) and not self._auto_texture_format:
+        if self._internalformat_will_change(data) and not self._auto_texture_format:
             raise ValueError("Data being set would cause a format change "
                              "in the texture. This is only allowed when "
                              "'texture_format' is set to 'auto'.")
 
     def _reformat_if_necessary(self, data):
-        if self._internalformat_will_change(data.shape) and self._auto_texture_format:
+        if not self._internalformat_will_change(data):
+            return
+        if self._auto_texture_format:
             shape_repr = self._create_rep_array(data)
-            internalformat = self._get_gl_tex_format(self._data_dtype, shape_repr.shape[-1])
+            internalformat = self._get_gl_tex_format(data.dtype, shape_repr.shape[-1])
             self._resize(data.shape, internalformat=internalformat)
+        else:
+            raise RuntimeError("'internalformat' needs to change but "
+                               "'texture_format' was not 'auto'.")
 
     def set_data(self, data, offset=None, copy=False):
         """Upload new data to the GPU, scaling if necessary."""
-        self._data_dtype = np.dtype(data.dtype)
         self._reformat_if_necessary(data)
+        self._data_dtype = np.dtype(data.dtype)
         # XXX: Does this *always* need a colortransform update?
         self._clim = self._compute_clim(data)
         ret = super(CPUScaledTexture2D, self).set_data(data, offset=offset, copy=copy)

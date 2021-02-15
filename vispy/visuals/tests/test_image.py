@@ -52,52 +52,34 @@ def _set_image_data(image, data, should_fail):
     image.set_data(data)
 
 
+def _get_orig_and_new_clims(input_dtype):
+    new_clim = (0.3, 0.8)
+    max_val = 255 if input_dtype == np.uint8 else 1.0
+    if input_dtype == np.uint8:
+        new_clim = (int(new_clim[0] * max_val), int(new_clim[1] * max_val))
+    return (0, max_val), new_clim
+
+
 @requires_application()
 @pytest.mark.parametrize('data_on_init', [False, True])
 @pytest.mark.parametrize('clim_on_init', [False, True])
-@pytest.mark.parametrize(
-    ('input_dtype', 'texture_format', 'num_channels', 'new_clim'),
-    [
-        (np.uint8, None, 3, (77, 204)),
-        (np.uint8, None, 4, (77, 204)),
-        (np.uint8, None, 0, (77, 204)),
-        (np.uint8, np.uint8, 3, (77, 204)),
-        (np.uint8, np.uint8, 4, (77, 204)),
-        (np.uint8, np.uint8, 0, (77, 204)),
-        (np.uint8, 'auto', 3, (77, 204)),
-        (np.uint8, 'auto', 0, (77, 204)),
-
-        (np.float32, None, 3, (0.3, 0.8)),
-        (np.float32, None, 4, (0.3, 0.8)),
-        (np.float32, None, 0, (0.3, 0.8)),
-        (np.float32, np.float32, 3, (0.3, 0.8)),
-        (np.float32, np.float32, 4, (0.3, 0.8)),
-        (np.float32, np.float32, 0, (0.3, 0.8)),
-        (np.float32, 'auto', 0, (0.3, 0.8)),
-        (np.float32, 'auto', 3, (0.3, 0.8)),
-
-        (np.float64, None, 3, (0.3, 0.8)),
-        (np.float64, None, 4, (0.3, 0.8)),
-        (np.float64, None, 0, (0.3, 0.8)),
-        (np.float64, np.float64, 3, (0.3, 0.8)),
-        (np.float64, np.float64, 4, (0.3, 0.8)),
-        (np.float64, np.float64, 0, (0.3, 0.8)),
-        (np.float64, 'auto', 0, (0.3, 0.8)),
-        (np.float64, 'auto', 3, (0.3, 0.8)),
-    ]
-)
-def test_image_clims_and_gamma(input_dtype, texture_format, num_channels, new_clim,
+@pytest.mark.parametrize('num_channels', [0, 3, 4])
+@pytest.mark.parametrize('texture_format', [None, '__dtype__', 'auto'])
+@pytest.mark.parametrize('input_dtype', [np.uint8, np.float32, np.float64])
+def test_image_clims_and_gamma(input_dtype, texture_format, num_channels,
                                clim_on_init, data_on_init):
     """Test image visual with clims and gamma on shader."""
     size = (40, 40)
+    if texture_format == '__dtype__':
+        texture_format = input_dtype
     shape = size + (num_channels,) if num_channels > 0 else size
-    max_val = 255 if input_dtype == np.uint8 else 1.0
     np.random.seed(0)
     data = _make_test_data(shape, input_dtype)
+    orig_clim, new_clim = _get_orig_and_new_clims(input_dtype)
 
     kwargs = {}
     if clim_on_init:
-        kwargs['clim'] = (0, max_val)
+        kwargs['clim'] = orig_clim
     if data_on_init:
         kwargs['data'] = data
     # default is RGBA, anything except auto requires reformat
