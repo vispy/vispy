@@ -540,6 +540,9 @@ class ImageVisual(Visual):
     if the data are 2D.
     """
 
+    VERTEX_SHADER = VERT_SHADER
+    FRAGMENT_SHADER = FRAG_SHADER
+
     def __init__(self, data=None, method='auto', grid=(1, 1),
                  cmap='viridis', clim='auto', gamma=1.0,
                  interpolation='nearest', texture_format=None, **kwargs):
@@ -611,7 +614,7 @@ class ImageVisual(Visual):
         self._null_tr = NullTransform()
 
         self._init_view(self)
-        super(ImageVisual, self).__init__(vcode=VERT_SHADER, fcode=FRAG_SHADER)
+        super(ImageVisual, self).__init__(vcode=self.VERTEX_SHADER, fcode=self.FRAGMENT_SHADER)
         self.set_gl_state('translucent', cull_face=False)
         self._draw_mode = 'triangles'
 
