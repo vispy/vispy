@@ -30,15 +30,16 @@ def _make_test_data(shape, input_dtype):
     if data.ndim == 3 and data.shape[-1] == 4:
         # RGBA - make alpha fully opaque
         data[..., -1] = 1.0
-    if input_dtype == np.uint8:
-        data *= 255.0
+    max_val = _max_for_dtype(input_dtype)
+    if max_val != 1:
+        data *= max_val
     data = data.astype(input_dtype)
     return data
 
 
 def _compare_render(orig_data, rendered_data, previous_render=None, atol=1):
     predicted = _make_rgba(orig_data)
-    np.testing.assert_allclose(rendered_data, predicted, atol=atol)
+    np.testing.assert_allclose(rendered_data.astype(float), predicted.astype(float), atol=atol)
     if previous_render is not None:
         # assert not allclose
         pytest.raises(AssertionError, np.testing.assert_allclose,
@@ -52,10 +53,18 @@ def _set_image_data(image, data, should_fail):
     image.set_data(data)
 
 
+def _max_for_dtype(input_dtype):
+    if np.issubdtype(input_dtype, np.integer):
+        max_val = np.iinfo(input_dtype).max
+    else:
+        max_val = 1.0
+    return max_val
+
+
 def _get_orig_and_new_clims(input_dtype):
     new_clim = (0.3, 0.8)
-    max_val = 255 if input_dtype == np.uint8 else 1.0
-    if input_dtype == np.uint8:
+    max_val = _max_for_dtype(input_dtype)
+    if np.issubdtype(input_dtype, np.integer):
         new_clim = (int(new_clim[0] * max_val), int(new_clim[1] * max_val))
     return (0, max_val), new_clim
 
@@ -65,7 +74,7 @@ def _get_orig_and_new_clims(input_dtype):
 @pytest.mark.parametrize('clim_on_init', [False, True])
 @pytest.mark.parametrize('num_channels', [0, 1, 3, 4])
 @pytest.mark.parametrize('texture_format', [None, '__dtype__', 'auto'])
-@pytest.mark.parametrize('input_dtype', [np.uint8, np.float32, np.float64])
+@pytest.mark.parametrize('input_dtype', [np.uint8, np.uint16, np.float32, np.float64])
 def test_image_clims_and_gamma(input_dtype, texture_format, num_channels,
                                clim_on_init, data_on_init):
     """Test image visual with clims and gamma on shader."""
@@ -76,6 +85,12 @@ def test_image_clims_and_gamma(input_dtype, texture_format, num_channels,
     np.random.seed(0)
     data = _make_test_data(shape, input_dtype)
     orig_clim, new_clim = _get_orig_and_new_clims(input_dtype)
+    # 16-bit integers and above seem to have precision loss when scaled on the CPU
+    is_16int_cpu_scaled = (np.dtype(input_dtype).itemsize >= 2 and
+                           np.issubdtype(input_dtype, np.integer) and
+                           texture_format is None)
+    clim_atol = 2 if is_16int_cpu_scaled else 1
+    gamma_atol = 3 if is_16int_cpu_scaled else 2
 
     kwargs = {}
     if clim_on_init:
@@ -87,7 +102,7 @@ def test_image_clims_and_gamma(input_dtype, texture_format, num_channels,
                       texture_format is not None and
                       texture_format != 'auto')
 
-    with TestingCanvas(size=size, bgcolor="w") as c:
+    with TestingCanvas(size=size[::-1], bgcolor="w") as c:
         image = Image(cmap='grays', texture_format=texture_format,
                       parent=c.scene, **kwargs)
         if not data_on_init:
@@ -104,12 +119,12 @@ def test_image_clims_and_gamma(input_dtype, texture_format, num_channels,
         image.clim = new_clim
         rendered2 = downsample(c.render(), shape_ratio, axis=(0, 1)).astype(_dtype)
         scaled_data = (np.clip(data, new_clim[0], new_clim[1]) - new_clim[0]) / (new_clim[1] - new_clim[0])
-        _compare_render(scaled_data, rendered2, rendered1)
+        _compare_render(scaled_data, rendered2, rendered1, atol=clim_atol)
 
         # adjust gamma
         image.gamma = 2
         rendered3 = downsample(c.render(), shape_ratio, axis=(0, 1)).astype(_dtype)
-        _compare_render(scaled_data ** 2, rendered3, rendered2, atol=2)
+        _compare_render(scaled_data ** 2, rendered3, rendered2, atol=gamma_atol)
 
 
 @requires_application()
@@ -147,7 +162,7 @@ def test_image_vertex_updates():
 
 
 def _make_rgba(data_in):
-    max_val = 255 if data_in.dtype == np.uint8 else 1
+    max_val = _max_for_dtype(data_in.dtype)
     if data_in.ndim == 3 and data_in.shape[-1] == 1:
         data_in = data_in.squeeze()
 

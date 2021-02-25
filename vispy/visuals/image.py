@@ -151,13 +151,13 @@ class CPUScaledTexture2D(Texture2D):
 
     @staticmethod
     def _scale_data_on_cpu(data, clim):
-        if data.dtype == np.float64:
-            data = data.astype(np.float32)
         data = data - clim[0]  # not inplace so we don't modify orig data
         if clim[1] - clim[0] > 0:
             data /= clim[1] - clim[0]
         else:
             data[:] = 1 if data[0, 0] != 0 else 0
+        if data.dtype == np.float64:
+            data = data.astype(np.float32)
         return data
 
     def check_data_format(self, data):
@@ -207,10 +207,10 @@ class GPUScaledTexture2D(CPUScaledTexture2D):
         np.float64: 'r32f',
         np.uint8: 'r8',
         np.uint16: 'r16',
-        np.uint32: 'r32',
+        # np.uint32: 'r32',
         np.int8: 'r8',
         np.int16: 'r16',
-        np.int32: 'r32',
+        # np.int32: 'r32',
     }
 
     def __init__(self, data=None, internalformat=None, **texture_kwargs):
@@ -407,9 +407,7 @@ _apply_clim_float = """
     float apply_clim(float data) {
         if ($clim.x < $clim.y) {{
             data = clamp(data, $clim.x, $clim.y);
-            data = clamp(data, $clim.x, $clim.y);
         }} else {{
-            data = clamp(data, $clim.y, $clim.x);
             data = clamp(data, $clim.y, $clim.x);
         }}
         data = data - $clim.x;
@@ -420,9 +418,7 @@ _apply_clim = """
     vec4 apply_clim(vec4 color) {
         if ($clim.x < $clim.y) {{
             color.rgb = clamp(color.rgb, $clim.x, $clim.y);
-            color.rgb = clamp(color.rgb, $clim.x, $clim.y);
         }} else {{
-            color.rgb = clamp(color.rgb, $clim.y, $clim.x);
             color.rgb = clamp(color.rgb, $clim.y, $clim.x);
         }}
         color.rgb = color.rgb - $clim.x;
