@@ -67,7 +67,7 @@ class BaseTexture(GLObject):
     _inv_internalformats = dict([
         (base + suffix, channels)
         for base, channels in [('r', 1), ('rg', 2), ('rgb', 3), ('rgba', 4)]
-        for suffix in ['8', '16', '16f', '32f']
+        for suffix in ['8', '16', '16f', '32f']  # , '8i', '8ui', '32i', '32ui']
     ] + [
         ('luminance', 1),
         ('alpha', 1),

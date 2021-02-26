@@ -207,10 +207,10 @@ class GPUScaledTexture2D(CPUScaledTexture2D):
         np.float64: 'r32f',
         np.uint8: 'r8',
         np.uint16: 'r16',
-        # np.uint32: 'r32',
+        # np.uint32: 'r32ui',  # not supported texture format in vispy
         np.int8: 'r8',
         np.int16: 'r16',
-        # np.int32: 'r32',
+        # np.int32: 'r32i',  # not supported texture format in vispy
     }
 
     def __init__(self, data=None, internalformat=None, **texture_kwargs):
