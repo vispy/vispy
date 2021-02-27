@@ -574,7 +574,7 @@ class ImageVisual(Visual):
 
     VERTEX_SHADER = VERT_SHADER
     FRAGMENT_SHADER = FRAG_SHADER
-    COMPLEX_MODES = list(COMPLEX_TRANSFORMS)
+    COMPLEX_MODES = set(COMPLEX_TRANSFORMS)
 
     def __init__(self, data=None, method='auto', grid=(1, 1),
                  cmap='viridis', clim='auto', gamma=1.0,
