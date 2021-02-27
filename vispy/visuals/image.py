@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
+"""Primitive 2D image visual class."""
 
 from __future__ import division
 import warnings
@@ -31,11 +32,26 @@ def _should_cast_to_f32(data_dtype):
     return False
 
 
-class CPUScaledTexture2D(Texture2D):
-    """Texture class for smarter scaling and internalformat decisions."""
+class _CPUScaledTexture2D(Texture2D):
+    """Texture class for smarter scaling decisions.
 
-    def __init__(self, data=None,
-                 **texture_kwargs):
+    This class wraps the logic to normalize data on the CPU before sending
+    it to the GPU (the texture). Pre-scaling on the CPU can be helpful in
+    cases where OpenGL 2/ES requirements limit the texture storage to an
+    8-bit normalized integer internally.
+
+    This class includes optimizations where image data is not re-normalized
+    if the previous normalization can still be used to visualize the data
+    with the new color limits.
+
+    This class should only be used internally. For similar features where
+    scaling occurs on the GPU see
+    :class:`vispy.visuals.image._GPU_ScaledTexture2D`.
+
+    """
+
+    def __init__(self, data=None, **texture_kwargs):
+        """Initialize texture and normalization limit properties."""
         self._clim = None
         self._data_dtype = getattr(data, 'dtype', None)
         self._data_limits = None
@@ -198,7 +214,24 @@ class CPUScaledTexture2D(Texture2D):
         return ret
 
 
-class GPUScaledTexture2D(CPUScaledTexture2D):
+class _GPUScaledTexture2D(_CPUScaledTexture2D):
+    """Texture class for smarter scaling and internalformat decisions.
+
+    This texture class uses internal formats that are not supported by
+    strict OpenGL 2/ES drivers without additional extensions. By using
+    this texture we upload data to the GPU in a format as close to
+    the original data type as possible (32-bit floats on the CPU are 32-bit
+    floats on the GPU). No normalization/scaling happens on the CPU and
+    all of it happens on the GPU. This should avoid unnecessary data copies
+    as well as provide the highest precision for the final visualization.
+
+    The texture format may either be a GL enum string (ex. 'r32f'), a numpy
+    dtype object (ex. np.float32), or 'auto' which means the texture will
+    try to pick the best format for the provided data. By using 'auto' you
+    also give the texture permission to change formats in the future if
+    new data is provided with a different data type.
+
+    """
 
     # dtype -> internalformat
     # 'r' will be replaced (if needed) with rgb or rgba depending on number of bands
@@ -329,7 +362,7 @@ class GPUScaledTexture2D(CPUScaledTexture2D):
         self._reformat_if_necessary(data)
         self._data_dtype = np.dtype(data.dtype)
         self._clim = self._compute_clim(data)
-        ret = super(CPUScaledTexture2D, self).set_data(data, offset=offset, copy=copy)
+        ret = super(_CPUScaledTexture2D, self).set_data(data, offset=offset, copy=copy)
         return ret
 
 
@@ -542,6 +575,7 @@ class ImageVisual(Visual):
     def __init__(self, data=None, method='auto', grid=(1, 1),
                  cmap='viridis', clim='auto', gamma=1.0,
                  interpolation='nearest', texture_format=None, **kwargs):
+        """Initialize image properties, texture storage, and interpolation methods."""
         self._data = None
         self._gamma = gamma
 
@@ -593,10 +627,10 @@ class ImageVisual(Visual):
         self._need_colortransform_update = True
         self._need_interpolation_update = True
         if texture_format is None:
-            self._texture = CPUScaledTexture2D(
+            self._texture = _CPUScaledTexture2D(
                 data, interpolation=texture_interpolation)
         else:
-            self._texture = GPUScaledTexture2D(
+            self._texture = _GPUScaledTexture2D(
                 data, internalformat=texture_format,
                 interpolation=texture_interpolation)
         self._subdiv_position = VertexBuffer()
@@ -625,7 +659,7 @@ class ImageVisual(Visual):
         self.freeze()
 
     def set_data(self, image):
-        """Set the data
+        """Set the image data.
 
         Parameters
         ----------
@@ -646,6 +680,7 @@ class ImageVisual(Visual):
         self._need_texture_upload = True
 
     def view(self):
+        """Get the :class:`vispy.visuals.visual.VisualView` for this visual."""
         v = Visual.view(self)
         self._init_view(v)
         return v
@@ -657,6 +692,7 @@ class ImageVisual(Visual):
 
     @property
     def clim(self):
+        """Get color limits used when rendering the image (cmin, cmax)."""
         return self._texture.clim
 
     @clim.setter
@@ -670,6 +706,7 @@ class ImageVisual(Visual):
 
     @property
     def cmap(self):
+        """Get the colormap object applied to luminance (single band) data."""
         return self._cmap
 
     @cmap.setter
@@ -680,7 +717,7 @@ class ImageVisual(Visual):
 
     @property
     def gamma(self):
-        """The gamma used when rendering the image."""
+        """Get the gamma used when rendering the image."""
         return self._gamma
 
     @gamma.setter
@@ -696,6 +733,7 @@ class ImageVisual(Visual):
 
     @property
     def method(self):
+        """Get rendering method name."""
         return self._method
 
     @method.setter
@@ -707,10 +745,12 @@ class ImageVisual(Visual):
 
     @property
     def size(self):
+        """Get size of the image (width, height)."""
         return self._data.shape[:2][::-1]
 
     @property
     def interpolation(self):
+        """Get interpolation algorithm name."""
         return self._interpolation
 
     @interpolation.setter
@@ -725,6 +765,7 @@ class ImageVisual(Visual):
 
     @property
     def interpolation_functions(self):
+        """Get names of possible interpolation methods."""
         return self._interpolation_names
 
     # The interpolation code could be transferred to a dedicated filter
@@ -780,8 +821,7 @@ class ImageVisual(Visual):
         self._need_vertex_update = False
 
     def _update_method(self, view):
-        """Decide which method to use for *view* and configure it accordingly.
-        """
+        """Decide which method to use for *view* and configure it accordingly."""
         method = self._method
         if method == 'auto':
             if view.transforms.get_transform().Linear:
