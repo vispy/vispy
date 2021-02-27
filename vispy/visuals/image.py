@@ -461,6 +461,12 @@ _complex_imaginary = """
         return data.g;
     }"""
 
+COMPLEX_TRANSFORMS = {
+    "magnitude": _complex_mag,
+    "phase": _complex_angle,
+    "real": _complex_real,
+    "imaginary": _complex_imaginary,
+}
 
 def _build_color_transform(data, clim, gamma, cmap, complex_mode=None):
     if data.ndim == 2 or data.shape[2] == 1:
@@ -475,14 +481,8 @@ def _build_color_transform(data, clim, gamma, cmap, complex_mode=None):
     elif data.shape[2] == 2 and complex_mode:
         fclim = Function(_apply_clim_float)
         fgamma = Function(_apply_gamma_float)
-        mode_funcs = {
-            "magnitude": _complex_mag,
-            "phase": _complex_angle,
-            "real": _complex_real,
-            "imaginary": _complex_imaginary,
-        }
         chain = [
-            Function(mode_funcs["magnitude"]),
+            Function(COMPLEX_TRANSFORMS["magnitude"]),
             fclim,
             fgamma,
             Function(cmap.glsl_map),
@@ -574,7 +574,7 @@ class ImageVisual(Visual):
 
     VERTEX_SHADER = VERT_SHADER
     FRAGMENT_SHADER = FRAG_SHADER
-    COMPLEX_MODES = {"magnitude", "phase", "real", "imaginary"}
+    COMPLEX_MODES = list(COMPLEX_TRANSFORMS)
 
     def __init__(self, data=None, method='auto', grid=(1, 1),
                  cmap='viridis', clim='auto', gamma=1.0,
