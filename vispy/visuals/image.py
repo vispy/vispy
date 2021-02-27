@@ -210,6 +210,9 @@ class GPUScaledTexture2D(CPUScaledTexture2D):
         # np.uint32: 'r32ui',  # not supported texture format in vispy
         np.int8: 'r8',
         np.int16: 'r16',
+        np.complex64: 'r32f',
+        np.complex128: 'r32f',
+        np.complex256: 'r32f',
         # np.int32: 'r32i',  # not supported texture format in vispy
     }
 
@@ -441,8 +444,25 @@ _apply_gamma = """
 _null_color_transform = 'vec4 pass(vec4 color) { return color; }'
 _c2l_red = 'float cmap(vec4 color) { return color.r; }'
 
+_complex_mag = """
+    float comp2float(vec4 data) {
+        return sqrt(data.r * data.r + data.g * data.g);
+    }"""
+_complex_angle = """
+    float comp2float(vec4 data) {
+        return atan(data.g, data.r);
+    }"""
+_complex_real = """
+    float comp2float(vec4 data) {
+        return data.r;
+    }"""
+_complex_imaginary = """
+    float comp2float(vec4 data) {
+        return data.g;
+    }"""
 
-def _build_color_transform(data, clim, gamma, cmap):
+
+def _build_color_transform(data, clim, gamma, cmap, complex_mode=None):
     if data.ndim == 2 or data.shape[2] == 1:
         # luminance data
         fclim = Function(_apply_clim_float)
@@ -452,6 +472,22 @@ def _build_color_transform(data, clim, gamma, cmap):
         fun = FunctionChain(
             None, [Function(_c2l_red), fclim, fgamma, Function(cmap.glsl_map)]
         )
+    elif data.shape[2] == 2 and complex_mode:
+        fclim = Function(_apply_clim_float)
+        fgamma = Function(_apply_gamma_float)
+        mode_funcs = {
+            "magnitude": _complex_mag,
+            "phase": _complex_angle,
+            "real": _complex_real,
+            "imaginary": _complex_imaginary,
+        }
+        chain = [
+            Function(mode_funcs["magnitude"]),
+            fclim,
+            fgamma,
+            Function(cmap.glsl_map),
+        ]
+        fun = FunctionChain(None, chain)
     else:
         # RGB/A image data (no colormap)
         fclim = Function(_apply_clim)
@@ -538,11 +574,15 @@ class ImageVisual(Visual):
 
     VERTEX_SHADER = VERT_SHADER
     FRAGMENT_SHADER = FRAG_SHADER
+    COMPLEX_MODES = {"magnitude", "phase", "real", "imaginary"}
 
     def __init__(self, data=None, method='auto', grid=(1, 1),
                  cmap='viridis', clim='auto', gamma=1.0,
-                 interpolation='nearest', texture_format=None, **kwargs):
+                 interpolation='nearest', texture_format=None, complex_mode="magnitude",
+                 **kwargs):
         self._data = None
+        self._data_is_complex = False
+        self._complex_mode = complex_mode
         self._gamma = gamma
 
         # load 'float packed rgba8' interpolation kernel
@@ -635,6 +675,11 @@ class ImageVisual(Visual):
 
         """
         data = np.asarray(image)
+        if np.iscomplexobj(data):
+            self._data_is_complex = True
+            data = np.stack([data.real, data.imag], axis=-1)
+        else:
+            self._data_is_complex = False
         if _should_cast_to_f32(data.dtype):
             data = data.astype(np.float32)
         # can the texture handle this data?
@@ -726,6 +771,21 @@ class ImageVisual(Visual):
     @property
     def interpolation_functions(self):
         return self._interpolation_names
+
+    @property
+    def complex_mode(self):
+        return self._data_is_complex and self._complex_mode
+
+    @complex_mode.setter
+    def complex_mode(self, value):
+        if value not in self.COMPLEX_MODES:
+            raise ValueError(
+                "complex_mode must be one of %s" % ", ".join(self.COMPLEX_MODES)
+            )
+        if self._complex_mode != value:
+            self._complex_mode = value
+            self._need_colortransform_update = True
+            self.update()
 
     # The interpolation code could be transferred to a dedicated filter
     # function in visuals/filters as discussed in #1051
@@ -854,7 +914,11 @@ class ImageVisual(Visual):
         if self._need_colortransform_update:
             prg = view.view_program
             self.shared_program.frag['color_transform'] = _build_color_transform(
-                self._data, self._texture.clim_normalized, self.gamma, self.cmap
+                self._data,
+                self._texture.clim_normalized,
+                self.gamma,
+                self.cmap,
+                self.complex_mode,
             )
             self._need_colortransform_update = False
             prg['texture2D_LUT'] = self.cmap.texture_lut() \
