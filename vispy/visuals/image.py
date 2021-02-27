@@ -475,26 +475,6 @@ _null_color_transform = 'vec4 pass(vec4 color) { return color; }'
 _c2l_red = 'float cmap(vec4 color) { return color.r; }'
 
 
-def _build_color_transform(data, clim, gamma, cmap):
-    if data.ndim == 2 or data.shape[2] == 1:
-        # luminance data
-        fclim = Function(_apply_clim_float)
-        fgamma = Function(_apply_gamma_float)
-        # NOTE: _c2l_red only uses the red component, fancy internalformats
-        #   may need to use the other components or a different function chain
-        fun = FunctionChain(
-            None, [Function(_c2l_red), fclim, fgamma, Function(cmap.glsl_map)]
-        )
-    else:
-        # RGB/A image data (no colormap)
-        fclim = Function(_apply_clim)
-        fgamma = Function(_apply_gamma)
-        fun = FunctionChain(None, [Function(_null_color_transform), fclim, fgamma])
-    fclim['clim'] = clim
-    fgamma['gamma'] = gamma
-    return fun
-
-
 class ImageVisual(Visual):
     """Visual subclass displaying an image.
 
@@ -870,9 +850,28 @@ class ImageVisual(Visual):
 
     def _compute_bounds(self, axis, view):
         if axis > 1:
-            return (0, 0)
+            return 0, 0
         else:
-            return (0, self.size[axis])
+            return 0, self.size[axis]
+
+    def _build_color_transform(self):
+        if self._data.ndim == 2 or self._data.shape[2] == 1:
+            # luminance data
+            fclim = Function(_apply_clim_float)
+            fgamma = Function(_apply_gamma_float)
+            # NOTE: _c2l_red only uses the red component, fancy internalformats
+            #   may need to use the other components or a different function chain
+            fun = FunctionChain(
+                None, [Function(_c2l_red), fclim, fgamma, Function(self.cmap.glsl_map)]
+            )
+        else:
+            # RGB/A image data (no colormap)
+            fclim = Function(_apply_clim)
+            fgamma = Function(_apply_gamma)
+            fun = FunctionChain(None, [Function(_null_color_transform), fclim, fgamma])
+        fclim['clim'] = self._texture.clim_normalized
+        fgamma['gamma'] = self.gamma
+        return fun
 
     def _prepare_transforms(self, view):
         trs = view.transforms
@@ -897,9 +896,7 @@ class ImageVisual(Visual):
 
         if self._need_colortransform_update:
             prg = view.view_program
-            self.shared_program.frag['color_transform'] = _build_color_transform(
-                self._data, self._texture.clim_normalized, self.gamma, self.cmap
-            )
+            self.shared_program.frag['color_transform'] = self._build_color_transform()
             self._need_colortransform_update = False
             prg['texture2D_LUT'] = self.cmap.texture_lut() \
                 if (hasattr(self.cmap, 'texture_lut')) else None
