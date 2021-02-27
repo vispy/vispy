@@ -582,7 +582,7 @@ class ImageVisual(Visual):
         # load 'float packed rgba8' interpolation kernel
         # to load float interpolation kernel use
         # `load_spatial_filters(packed=False)`
-        kernel, self._interpolation_names = load_spatial_filters()
+        kernel, interpolation_names = load_spatial_filters()
 
         self._kerneltex = Texture2D(kernel, interpolation='nearest')
         # The unpacking can be debugged by changing "spatial-filters.frag"
@@ -592,27 +592,14 @@ class ImageVisual(Visual):
         # self._kerneltex = Texture2D(kernel, interpolation='linear',
         #                             internalformat='r32f')
 
-        # create interpolation shader functions for available
-        # interpolations
-        fun = [Function(_interpolation_template % n)
-               for n in self._interpolation_names]
-        self._interpolation_names = [n.lower()
-                                     for n in self._interpolation_names]
-
-        self._interpolation_fun = dict(zip(self._interpolation_names, fun))
-        self._interpolation_names.sort()
-        self._interpolation_names = tuple(self._interpolation_names)
-
-        # overwrite "nearest" and "bilinear" spatial-filters
-        # with  "hardware" interpolation _data_lookup_fn
-        self._interpolation_fun['nearest'] = Function(_texture_lookup)
-        self._interpolation_fun['bilinear'] = Function(_texture_lookup)
-
-        if interpolation not in self._interpolation_names:
+        interpolation_names, interpolation_fun = self._init_interpolation(
+            interpolation_names)
+        self._interpolation_names = interpolation_names
+        self._interpolation_fun = interpolation_fun
+        self._interpolation = interpolation
+        if self._interpolation not in self._interpolation_names:
             raise ValueError("interpolation must be one of %s" %
                              ', '.join(self._interpolation_names))
-
-        self._interpolation = interpolation
 
         # check texture interpolation
         if self._interpolation == 'bilinear':
@@ -657,6 +644,23 @@ class ImageVisual(Visual):
         if data is not None:
             self.set_data(data)
         self.freeze()
+
+    @staticmethod
+    def _init_interpolation(interpolation_names):
+        # create interpolation shader functions for available
+        # interpolations
+        fun = [Function(_interpolation_template % n)
+               for n in interpolation_names]
+        interpolation_names = [n.lower() for n in interpolation_names]
+
+        interpolation_fun = dict(zip(interpolation_names, fun))
+        interpolation_names = tuple(sorted(interpolation_names))
+
+        # overwrite "nearest" and "bilinear" spatial-filters
+        # with  "hardware" interpolation _data_lookup_fn
+        interpolation_fun['nearest'] = Function(_texture_lookup)
+        interpolation_fun['bilinear'] = Function(_texture_lookup)
+        return interpolation_names, interpolation_fun
 
     def set_data(self, image):
         """Set the image data.
