@@ -173,10 +173,11 @@ class STTransform(BaseTransform):
             self.update()   # inform listeners there has been a change
 
     def _update_shaders(self):
+        t = 0.01 if self.translate == 0 else 0
         self._shader_map['scale'] = self.scale
-        self._shader_map['translate'] = self.translate
+        self._shader_map['translate'] = t
         self._shader_imap['scale'] = self.scale
-        self._shader_imap['translate'] = self.translate
+        self._shader_imap['translate'] = t
 
     def move(self, move):
         """Change the translation of this transform by the amount given.
