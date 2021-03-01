@@ -173,10 +173,13 @@ class STTransform(BaseTransform):
             self.update()   # inform listeners there has been a change
 
     def _update_shaders(self):
+        t = self._translate.copy()
+        if (t[:3] == 0).any():
+            t = 1.1 * np.ones_like(t)
         self._shader_map['scale'] = self.scale
-        self._shader_map['translatetest'] = self._translate
+        self._shader_map['translatetest'] = t
         self._shader_imap['scale'] = self.scale
-        self._shader_imap['translatetest'] = self._translate
+        self._shader_imap['translatetest'] = t
 
     def move(self, move):
         """Change the translation of this transform by the amount given.
