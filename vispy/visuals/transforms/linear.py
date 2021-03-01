@@ -173,7 +173,8 @@ class STTransform(BaseTransform):
             self.update()   # inform listeners there has been a change
 
     def _update_shaders(self):
-        t = 0.01 if self.translate == 0 else 0
+        t = self.translate.copy()
+        t += 0.01 if (self.translate[:3] == 0).all() else 0
         self._shader_map['scale'] = self.scale
         self._shader_map['translate'] = t
         self._shader_imap['scale'] = self.scale
