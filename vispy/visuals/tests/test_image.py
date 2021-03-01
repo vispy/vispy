@@ -80,7 +80,7 @@ def test_image_clims_and_gamma(input_dtype, texture_format, num_channels,
                                clim_on_init, data_on_init):
     """Test image visual with clims and gamma on shader."""
     app = use_app()
-    if app.backend_name.lower() == 'tk':
+    if app.backend_name.lower() == 'tkinter':
         raise SkipTest('Tk backend fails complex format tests')
     size = (40, 40)
     if texture_format == '__dtype__':
@@ -136,7 +136,7 @@ def test_image_vertex_updates():
     """Test image visual coordinates are only built when needed."""
     size = (40, 40)
     app = use_app()
-    if app.backend_name.lower() == 'tk':
+    if app.backend_name.lower() == 'tkinter':
         raise SkipTest('Tk backend fails complex format tests')
     with TestingCanvas(size=size, bgcolor="w") as c:
         shape = size + (3,)
