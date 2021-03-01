@@ -63,13 +63,13 @@ class STTransform(BaseTransform):
     """
     glsl_map = """
         vec4 st_transform_map(vec4 pos) {
-            return vec4(pos.xyz * $scale.xyz + $translate.xyz * pos.w, pos.w);
+            return vec4(pos.xyz * $scale.xyz + $translatetest.xyz * pos.w, pos.w);
         }
     """
 
     glsl_imap = """
         vec4 st_transform_imap(vec4 pos) {
-            return vec4((pos.xyz - $translate.xyz * pos.w) / $scale.xyz,
+            return vec4((pos.xyz - $translatetest.xyz * pos.w) / $scale.xyz,
                         pos.w);
         }
     """
@@ -174,11 +174,10 @@ class STTransform(BaseTransform):
 
     def _update_shaders(self):
         t = self.translate.copy()
-        t += 0.01 if (self.translate[:3] == 0).all() else 0
         self._shader_map['scale'] = self.scale
-        self._shader_map['translate'] = t
+        self._shader_map['translatetest'] = self._translate
         self._shader_imap['scale'] = self.scale
-        self._shader_imap['translate'] = t
+        self._shader_imap['translatetest'] = self._translate
 
     def move(self, move):
         """Change the translation of this transform by the amount given.
