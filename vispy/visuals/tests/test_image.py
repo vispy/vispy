@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 from unittest import mock
 
+from vispy.app import use_app
 from vispy.scene.visuals import Image
 from vispy.testing import (requires_application, TestingCanvas,
-                           run_tests_if_main)
+                           run_tests_if_main, SkipTest)
 from vispy.testing.image_tester import assert_image_approved, downsample
 
 import numpy as np
@@ -78,6 +79,9 @@ def _get_orig_and_new_clims(input_dtype):
 def test_image_clims_and_gamma(input_dtype, texture_format, num_channels,
                                clim_on_init, data_on_init):
     """Test image visual with clims and gamma on shader."""
+    app = use_app()
+    if app.backend_name.lower() == 'tk':
+        raise SkipTest('Tk backend fails complex format tests')
     size = (40, 40)
     if texture_format == '__dtype__':
         texture_format = input_dtype
@@ -131,6 +135,9 @@ def test_image_clims_and_gamma(input_dtype, texture_format, num_channels,
 def test_image_vertex_updates():
     """Test image visual coordinates are only built when needed."""
     size = (40, 40)
+    app = use_app()
+    if app.backend_name.lower() == 'tk':
+        raise SkipTest('Tk backend fails complex format tests')
     with TestingCanvas(size=size, bgcolor="w") as c:
         shape = size + (3,)
         np.random.seed(0)
