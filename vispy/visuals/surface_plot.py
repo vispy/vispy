@@ -86,7 +86,7 @@ class SurfacePlotVisual(MeshVisual):
         if self.__vertices is None:
             self.__vertices = np.empty((self._z.shape[0], self._z.shape[1], 3),
                                        dtype=np.float32)
-            self.generate_faces()
+            self.__faces = self._generate_faces()
             new_vertices = True
             update_faces = True
 
@@ -117,6 +117,17 @@ class SurfacePlotVisual(MeshVisual):
             self.__vertices[..., 2] = self._z
             update_vertices = True
         return update_faces, update_vertices
+
+    def _prepare_mesh_colors(self, colors):
+        if colors is None:
+            return
+        colors = np.asarray(colors)
+        if colors.ndim == 3:
+            # convert (width, height, 4) to (num_verts, 4)
+            vert_shape = self.__vertices.shape
+            num_vertices = vert_shape[0] * vert_shape[1]
+            colors = colors.reshape(num_vertices, 3)
+        return colors
 
     def set_data(self, x=None, y=None, z=None, colors=None):
         """Update the data in this surface plot.
@@ -152,6 +163,7 @@ class SurfacePlotVisual(MeshVisual):
             z is not None
         )
 
+        colors = self._prepare_mesh_colors(colors)
         update_colors = colors is not None
         if update_colors:
             self.__meshdata.set_vertex_colors(colors)
@@ -164,7 +176,7 @@ class SurfacePlotVisual(MeshVisual):
         if update_faces or update_vertices or update_colors:
             MeshVisual.set_data(self, meshdata=self.__meshdata)
 
-    def generate_faces(self):
+    def _generate_faces(self):
         cols = self._z.shape[1] - 1
         rows = self._z.shape[0] - 1
         faces = np.empty((cols * rows * 2, 3), dtype=np.uint)
@@ -177,4 +189,4 @@ class SurfacePlotVisual(MeshVisual):
             faces[start:start + cols] = rowtemplate1 + row * (cols + 1)
             faces[start + cols:start + (cols * 2)] =\
                 rowtemplate2 + row * (cols + 1)
-        self.__faces = faces
+        return faces
