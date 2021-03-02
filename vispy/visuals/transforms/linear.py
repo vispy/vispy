@@ -158,15 +158,14 @@ class STTransform(BaseTransform):
         self._set_st(translate=t)
 
     def _set_st(self, scale=None, translate=None, update=True):
-        need_update = False
-
+        # need_update = False
         if scale is not None and not np.all(scale == self._scale):
             self._scale[:] = scale
-            need_update = True
+            # need_update = True
 
-        if translate is not None and not np.all(translate == self._translate):
-            self._translate[:] = translate
-            need_update = True
+        # if translate is not None and not np.all(translate == self._translate):
+        self._translate[:] = translate
+        need_update = True
 
         if update and need_update:
             self._update_shaders()
