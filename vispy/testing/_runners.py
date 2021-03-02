@@ -389,6 +389,9 @@ def test(label='full', extra_arg_string='', coverage=False):
     if label not in known_types + backend_names:
         raise ValueError('label must be one of %s, or a backend name %s, '
                          'not \'%s\'' % (known_types, backend_names, label))
+    # remove troublesome backends
+    backend_names.remove('tkinter')
+
     # figure out what we actually need to run
     runs = []
     if label in ('full', 'unit'):
