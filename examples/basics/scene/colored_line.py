@@ -41,7 +41,7 @@ def on_timer(event):
     line.set_data(pos=pos, color=color)
     text.text = color
 
-timer = app.Timer(.5, connect=on_timer, start=True)
+# timer = app.Timer(.5, connect=on_timer, start=True)
 
 
 if __name__ == '__main__':

@@ -158,27 +158,24 @@ class STTransform(BaseTransform):
         self._set_st(translate=t)
 
     def _set_st(self, scale=None, translate=None, update=True):
-        # need_update = False
+        need_update = False
         if scale is not None and not np.all(scale == self._scale):
             self._scale[:] = scale
-            # need_update = True
+            need_update = True
 
-        # if translate is not None and not np.all(translate == self._translate):
-        self._translate[:] = translate
-        need_update = True
+        if translate is not None and not np.all(translate == self._translate):
+            self._translate[:] = translate
+            need_update = True
 
         if update and need_update:
             self._update_shaders()
             self.update()   # inform listeners there has been a change
 
     def _update_shaders(self):
-        t = self._translate.copy()
-        if (t[:3] == 0).any():
-            t = 1.1 * np.ones_like(t)
         self._shader_map['scale'] = self.scale
-        self._shader_map['translatetest'] = t
+        self._shader_map['translatetest'] = self.translate
         self._shader_imap['scale'] = self.scale
-        self._shader_imap['translatetest'] = t
+        self._shader_imap['translatetest'] = self.translate
 
     def move(self, move):
         """Change the translation of this transform by the amount given.
