@@ -10,7 +10,7 @@ Demonstration of various features of Line visual.
 import itertools
 import numpy as np
 
-from vispy import app, scene
+from vispy import scene
 from vispy.color import get_colormaps
 from vispy.visuals.transforms import STTransform
 
