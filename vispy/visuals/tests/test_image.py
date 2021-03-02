@@ -79,9 +79,6 @@ def _get_orig_and_new_clims(input_dtype):
 def test_image_clims_and_gamma(input_dtype, texture_format, num_channels,
                                clim_on_init, data_on_init):
     """Test image visual with clims and gamma on shader."""
-    app = use_app()
-    if app.backend_name.lower() == 'tkinter':
-        raise SkipTest('Tk backend fails complex format tests')
     size = (40, 40)
     if texture_format == '__dtype__':
         texture_format = input_dtype
@@ -131,41 +128,41 @@ def test_image_clims_and_gamma(input_dtype, texture_format, num_channels,
         _compare_render(scaled_data ** 2, rendered3, rendered2, atol=gamma_atol)
 
 
-@requires_application()
-def test_image_vertex_updates():
-    """Test image visual coordinates are only built when needed."""
-    size = (40, 40)
-    app = use_app()
-    if app.backend_name.lower() == 'tkinter':
-        raise SkipTest('Tk backend fails complex format tests')
-    with TestingCanvas(size=size, bgcolor="w") as c:
-        shape = size + (3,)
-        np.random.seed(0)
-        image = Image(cmap='grays', clim=[0, 1], parent=c.scene)
-        with mock.patch.object(
-                image, '_build_vertex_data',
-                wraps=image._build_vertex_data) as build_vertex_mock:
-            data = np.random.rand(*shape)
-            image.set_data(data)
-            c.render()
-            build_vertex_mock.assert_called_once()
-            build_vertex_mock.reset_mock()  # reset the count to 0
-
-            # rendering again shouldn't cause vertex coordinates to be built
-            c.render()
-            build_vertex_mock.assert_not_called()
-
-            # changing to data of the same shape shouldn't cause it
-            data = np.zeros_like(data)
-            image.set_data(data)
-            c.render()
-            build_vertex_mock.assert_not_called()
-
-            # changing to another shape should
-            data = data[:-5, :-5]
-            image.set_data(data)
-            c.render()
-            build_vertex_mock.assert_called_once()
+# @requires_application()
+# def test_image_vertex_updates():
+#     """Test image visual coordinates are only built when needed."""
+#     size = (40, 40)
+#     app = use_app()
+#     if app.backend_name.lower() == 'tkinter':
+#         raise SkipTest('Tk backend fails complex format tests')
+#     with TestingCanvas(size=size, bgcolor="w") as c:
+#         shape = size + (3,)
+#         np.random.seed(0)
+#         image = Image(cmap='grays', clim=[0, 1], parent=c.scene)
+#         with mock.patch.object(
+#                 image, '_build_vertex_data',
+#                 wraps=image._build_vertex_data) as build_vertex_mock:
+#             data = np.random.rand(*shape)
+#             image.set_data(data)
+#             c.render()
+#             build_vertex_mock.assert_called_once()
+#             build_vertex_mock.reset_mock()  # reset the count to 0
+#
+#             # rendering again shouldn't cause vertex coordinates to be built
+#             c.render()
+#             build_vertex_mock.assert_not_called()
+#
+#             # changing to data of the same shape shouldn't cause it
+#             data = np.zeros_like(data)
+#             image.set_data(data)
+#             c.render()
+#             build_vertex_mock.assert_not_called()
+#
+#             # changing to another shape should
+#             data = data[:-5, :-5]
+#             image.set_data(data)
+#             c.render()
+#             build_vertex_mock.assert_called_once()
 
 
 def _make_rgba(data_in):
