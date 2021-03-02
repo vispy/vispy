@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-from unittest import mock
+# from unittest import mock
 
-from vispy.app import use_app
+# from vispy.app import use_app
 from vispy.scene.visuals import Image
 from vispy.testing import (requires_application, TestingCanvas,
-                           run_tests_if_main, SkipTest)
+                           run_tests_if_main)
 from vispy.testing.image_tester import assert_image_approved, downsample
 
 import numpy as np
