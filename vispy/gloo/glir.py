@@ -1168,7 +1168,6 @@ class GlirProgram(GlirObject):
                 self._known_invalid.add(name)
                 logger.info('Not setting texture data for variable %s; '
                             'uniform is not active.' % name)
-                logger.info('Handle: %s\nName: %s', str(handle), name)
                 return
         # Program needs to be active in order to set uniforms
         self.activate()
@@ -1211,6 +1210,7 @@ class GlirProgram(GlirObject):
                 self._known_invalid.add(name)
                 logger.info('Not setting value for variable %s %s; '
                             'uniform is not active.' % (type_, name))
+                logger.info('Program handle: %s\nUniform Handle: %s\nName: %s', str(self._handle), str(handle), name)
                 return
         # Look up function to call
         funcname = self.UTYPEMAP[type_]
