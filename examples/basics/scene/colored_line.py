@@ -33,6 +33,7 @@ color = next(colormaps)
 
 text = scene.Text(color, bold=True, font_size=24, color='w',
                   method='gpu',
+                  rotation=5,
                   pos=(200, 40), parent=canvas.central_widget)
 
 

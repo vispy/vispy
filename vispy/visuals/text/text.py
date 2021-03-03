@@ -591,6 +591,7 @@ class TextVisual(Visual):
         tr = transforms.get_transform('document', 'render')
         px_scale = (tr.map((1, 0)) - tr.map((0, 1)))[:2]
         self._text_scale.scale = px_scale * n_pix
+        self._text_scale.translate = px_scale * n_pix
         self.shared_program.vert['text_scale'] = self._text_scale
         self.shared_program['u_npix'] = n_pix
         self.shared_program['u_kernel'] = self._font._kernel
