@@ -920,7 +920,6 @@ class GlirShader(GlirObject):
         if convert:
             code = convert_shader(convert, code)
 
-        print("#### Shader: ", self.__class__.__name__, "\n", code)
         gl.glShaderSource(self._handle, code)
         gl.glCompileShader(self._handle)
         status = gl.glGetShaderParameter(self._handle, gl.GL_COMPILE_STATUS)
@@ -1210,7 +1209,6 @@ class GlirProgram(GlirObject):
                 self._known_invalid.add(name)
                 logger.info('Not setting value for variable %s %s; '
                             'uniform is not active.' % (type_, name))
-                logger.info('Program handle: %s\nUniform Handle: %s\nName: %s', str(self._handle), str(handle), name)
                 return
         # Look up function to call
         funcname = self.UTYPEMAP[type_]
