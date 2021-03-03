@@ -920,7 +920,7 @@ class GlirShader(GlirObject):
         if convert:
             code = convert_shader(convert, code)
 
-        print(code)
+        print("#### Shader: ", self.__class__.__name__, "\n", code)
         gl.glShaderSource(self._handle, code)
         gl.glCompileShader(self._handle)
         status = gl.glGetShaderParameter(self._handle, gl.GL_COMPILE_STATUS)
