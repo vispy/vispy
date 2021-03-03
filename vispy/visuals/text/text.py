@@ -330,7 +330,7 @@ class TextVisual(Visual):
                             sin(a_rotation), cos(a_rotation), 0, 0,
                             0, 0, 1, 0, 0, 0, 0, 1);
             vec4 pos = $transform(vec4(a_pos, 1.0)) +
-                       $text_scale(rot * vec4(a_position, 0, 0));
+                       $text_scale(rot * vec4(a_position, 0, 0.1));
             gl_Position = pos;
             v_texcoord = a_texcoord;
             v_color = $color;
@@ -591,7 +591,7 @@ class TextVisual(Visual):
         tr = transforms.get_transform('document', 'render')
         px_scale = (tr.map((1, 0)) - tr.map((0, 1)))[:2]
         self._text_scale.scale = px_scale * n_pix
-        self._text_scale.translate = px_scale * n_pix
+        # self._text_scale.translate = px_scale * n_pix
         self.shared_program.vert['text_scale'] = self._text_scale
         self.shared_program['u_npix'] = n_pix
         self.shared_program['u_kernel'] = self._font._kernel
