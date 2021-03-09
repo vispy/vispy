@@ -392,8 +392,8 @@ def _ico(radius, subdivisions):
             faces.append([ij, j, jk])
             faces.append([ki, jk, k])
             faces[idx] = [jk, ki, ij]
-    verts = np.array(verts)
-    faces = np.array(faces)
+    verts = np.array(verts, dtype=np.float32)
+    faces = np.array(faces, dtype=np.uint32)
 
     # make each vertex to lie on the sphere
     lengths = np.sqrt((verts*verts).sum(axis=1))
