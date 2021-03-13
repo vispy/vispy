@@ -35,6 +35,7 @@ from .regular_polygon import RegularPolygonVisual  # noqa
 from .scrolling_lines import ScrollingLinesVisual  # noqa
 from .spectrogram import SpectrogramVisual  # noqa
 from .sphere import SphereVisual  # noqa
+from .spheres import SpheresVisual  # noqa
 from .surface_plot import SurfacePlotVisual  # noqa
 from .text import TextVisual  # noqa
 from .tube import TubeVisual  # noqa
