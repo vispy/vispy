@@ -340,6 +340,7 @@ class MeshData(object):
                 norm = norms.sum(axis=0)  # sum normals
                 renorm = (norm**2).sum()**0.5
                 if renorm > 0:
+                    norm = norm.astype(renorm.dtype)
                     norm /= renorm
                 self._vertex_normals[vindex] = norm
 
