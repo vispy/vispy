@@ -4,6 +4,8 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
+# Contains code Copyright (c) 2018, Aldar Cabrelles. Distributed under the BSD-3 License 
+
 """
 Speheres Visual and shader definitions.
 """
@@ -19,7 +21,6 @@ vertex = """
 #version 120
 
 uniform vec3 u_light_position;
-uniform vec3 u_light_spec_position;
 
 attribute vec3  a_position;
 attribute vec3  a_color;
@@ -123,18 +124,18 @@ class SpheresVisual(Visual):
     size: array
         Array of the radius for each sphere.
     """
-    def __init__(self, pos=None, color='black', size=10):
+    def __init__(self, pos=None, color='white', size=10):
         Visual.__init__(self, vertex, fragment)
         self._data = None
+
         self.shared_program['u_light_position'] = 5., -5., 5.        
-        
         #Loading data and type
         self._draw_mode = 'points'
         self.set_gl_state('translucent', depth_test=True, cull_face=False)        
     
         self.set_data(pos=pos, color=color, size=size)
 
-    def set_data(self, pos=None, color='black', size=10):
+    def set_data(self, pos=None, color='white', size=10):
         """Set spheres data.
         
         Parameters
@@ -153,7 +154,7 @@ class SpheresVisual(Visual):
             nspheres = len(pos)
             data = np.zeros(nspheres, [('a_position', np.float32, 3),
                                 ('a_color', np.float32, 4),
-                                ('a_radius', np.float32, 1)])
+                                ('a_radius', np.float32)])
 
             color = ColorArray(color).rgba
             if len(color) == 1:
