@@ -80,7 +80,7 @@ def get_mandlebrot_escape_values(width, height):
     grid = np.meshgrid(x_vals, y_vals)
 
     v_get_num_escape_turns = np.vectorize(get_num_escape_turns)
-    return v_get_num_escape_turns(*grid).astype(np.float)
+    return v_get_num_escape_turns(*grid).astype(np.float32)
 
 
 def get_vertical_bar(pos, size):
