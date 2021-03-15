@@ -64,6 +64,10 @@ class BaseTexture(GLObject):
         'rgba': 4
     }
 
+    # NOTE: non-normalized formats ending with 'i' and 'ui' are currently
+    #   disabled as they don't work with the current VisPy implementation.
+    #   Attempting to use them along with the additional enums defined in
+    #   vispy/gloo/glir.py produces an invalid operation from OpenGL.
     _inv_internalformats = dict([
         (base + suffix, channels)
         for base, channels in [('r', 1), ('rg', 2), ('rgb', 3), ('rgba', 4)]
