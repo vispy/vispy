@@ -3,7 +3,7 @@ VisPy: interactive scientific visualization in Python
 
 Main website: http://vispy.org
 
-|Build Status| |Appveyor Status| |Coverage Status| |Zenodo Link|
+|Build Status| |Coverage Status| |Zenodo Link|
 
 ----
 
@@ -24,6 +24,7 @@ large datasets. Applications of VisPy include:
 Announcements
 -------------
 
+- **Release!** Version 0.6.5, September 24, 2020
 - **Release!** Version 0.6.4, December 13, 2019
 - **Release!** Version 0.6.3, November 27, 2019
 - **Release!** Version 0.6.2, November 4, 2019
@@ -131,10 +132,8 @@ External links
 -  `Gallery <http://vispy.org/gallery.html>`__
 -  `Documentation <http://vispy.readthedocs.org>`__
 
-.. |Build Status| image:: https://travis-ci.com/vispy/vispy.svg?branch=master
-   :target: https://travis-ci.com/vispy/vispy
-.. |Appveyor Status| image:: https://ci.appveyor.com/api/projects/status/v09sc8ua4ju2ngyy/branch/master?svg=true
-   :target: https://ci.appveyor.com/project/vispy/vispy/branch/master
+.. |Build Status| image:: https://github.com/vispy/vispy/workflows/CI/badge.svg
+   :target: https://github.com/vispy/vispy/actions
 .. |Coverage Status| image:: https://img.shields.io/coveralls/vispy/vispy/master.svg
    :target: https://coveralls.io/r/vispy/vispy?branch=master
 .. |Zenodo Link| image:: https://zenodo.org/badge/5822/vispy/vispy.svg

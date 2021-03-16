@@ -13,8 +13,6 @@ from functools import partial
 
 import numpy as np
 
-from ..ext.six import string_types
-
 
 ###############################################################################
 # LOGGING (some adapted from mne-python)
@@ -162,7 +160,7 @@ def set_log_level(verbose, match=None, return_old=False):
     # done by the context handler itself.
     if isinstance(verbose, bool):
         verbose = 'info' if verbose else 'warning'
-    if isinstance(verbose, string_types):
+    if isinstance(verbose, str):
         verbose = verbose.lower()
         if verbose not in logging_types:
             raise ValueError('Invalid argument "%s"' % verbose)
@@ -214,7 +212,7 @@ class use_log_level(object):
         self._new_match = match
         self._print_msg = print_msg
         self._record = record
-        if match is not None and not isinstance(match, string_types):
+        if match is not None and not isinstance(match, str):
             raise TypeError('match must be None or str')
 
     def __enter__(self):

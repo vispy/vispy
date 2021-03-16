@@ -12,7 +12,7 @@ from vispy import gloo
 from vispy import app
 import numpy as np
 
-# Create vetices
+# Create vertices
 vPosition = np.array([[-0.8, -0.8, 0.0], [+0.7, -0.7, 0.0],
                       [-0.7, +0.7, 0.0], [+0.8, +0.8, 0.0, ]], np.float32)
 vPosition_full = np.array([[-1.0, -1.0, 0.0], [+1.0, -1.0, 0.0],

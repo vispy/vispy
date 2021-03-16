@@ -25,7 +25,7 @@ def gen_image(width, height):
     grid = np.meshgrid(x_vals, y_vals)
     v_fn = np.vectorize(exp_z_inv)
 
-    return v_fn(*grid).astype(np.float)
+    return v_fn(*grid).astype(np.float32)
 
 fig = vp.Fig(size=(800, 600), show=False)
 plot = fig[0, 0]

@@ -63,7 +63,7 @@ class Rect(object):
 
     @width.setter
     def width(self, w):
-        self.size[0] = w
+        self.size = (w, self.size[1])
 
     @property
     def height(self):
@@ -71,7 +71,7 @@ class Rect(object):
 
     @height.setter
     def height(self, h):
-        self.size[1] = h
+        self.size = (self.size[0], h)
 
     @property
     def left(self):

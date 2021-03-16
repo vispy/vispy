@@ -8,7 +8,6 @@ import numpy as np
 
 from .image import ImageVisual
 from ..util.fourier import stft, fft_freqs
-from ..ext.six import string_types
 
 
 class SpectrogramVisual(ImageVisual):
@@ -56,10 +55,10 @@ class SpectrogramVisual(ImageVisual):
         else:
             self._clim_auto = False
 
-        if not isinstance(self._color_scale, string_types) or \
+        if not isinstance(self._color_scale, str) or \
                 self._color_scale not in ('log', 'linear'):
             raise ValueError('color_scale must be "linear" or "log"')
-        
+
         data = self._calculate_spectrogram()
         super(SpectrogramVisual, self).__init__(data, clim=clim, cmap=cmap)
 
@@ -128,7 +127,7 @@ class SpectrogramVisual(ImageVisual):
 
     @color_scale.setter
     def color_scale(self, color_scale):
-        if not isinstance(color_scale, string_types) or \
+        if not isinstance(color_scale, str) or \
                 color_scale not in ('log', 'linear'):
             raise ValueError('color_scale must be "linear" or "log"')
         self._color_scale = color_scale
@@ -157,7 +156,7 @@ class SpectrogramVisual(ImageVisual):
                 for i in range(data.shape[0]):
                     data[i, :] -= np.mean(data[i, :])
                     data[i, :] /= np.std(data[i, :])
-            return data
+            return data.astype(np.float32)  # ImageVisual will warn if 64-bit
         else:
             return None
 

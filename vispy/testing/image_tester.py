@@ -49,9 +49,9 @@ import base64
 from subprocess import check_call, CalledProcessError
 import numpy as np
 
-from ..ext.six import string_types
-from ..ext.six.moves import http_client as httplib
-from ..ext.six.moves import urllib_parse as urllib
+from http.client import HTTPConnection
+from urllib.parse import urlencode
+
 from .. import scene, config
 from ..io import read_png, write_png
 from ..gloo.util import _screenshot
@@ -99,7 +99,7 @@ def assert_image_approved(image, standard_file, message=None, **kwargs):
     comparison (see ``assert_image_match()``).
     """
 
-    if isinstance(image, string_types) and image == "screenshot":
+    if isinstance(image, str) and image == "screenshot":
         image = _screenshot(alpha=True)
     if message is None:
         code = inspect.currentframe().f_back.f_code
@@ -233,9 +233,9 @@ def _save_failed_test(data, expect, filename):
     img[2:2+diff.shape[0], -diff.shape[1]-2:-2] = diff
 
     png = _make_png(img)
-    conn = httplib.HTTPConnection(host)
-    req = urllib.urlencode({'name': filename,
-                            'data': base64.b64encode(png)})
+    conn = HTTPConnection(host)
+    req = urlencode({'name': filename,
+                     'data': base64.b64encode(png)})
     conn.request('POST', '/upload.py', req)
     response = conn.getresponse().read()
     conn.close()

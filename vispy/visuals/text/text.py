@@ -19,7 +19,6 @@ from ._sdf_cpu import _calc_distance_field
 from ...gloo import (TextureAtlas, IndexBuffer, VertexBuffer)
 from ...gloo import context
 from ...gloo.wrappers import _check_valid
-from ...ext.six import string_types
 from ...util.fonts import _load_glyph
 from ..transforms import STTransform
 from ...color import ColorArray
@@ -75,7 +74,7 @@ class TextureFont(object):
         return self._spread // self.ratio
 
     def __getitem__(self, char):
-        if not (isinstance(char, string_types) and len(char) == 1):
+        if not (isinstance(char, str) and len(char) == 1):
             raise TypeError('index must be a 1-character string')
         if char not in self._glyphs:
             self._load_char(char)
@@ -89,7 +88,7 @@ class TextureFont(object):
         char : str
             A single character to be represented.
         """
-        assert isinstance(char, string_types) and len(char) == 1
+        assert isinstance(char, str) and len(char) == 1
         assert char not in self._glyphs
         # load new glyph data from font
         _load_glyph(self._font, char, self._glyphs)
@@ -126,7 +125,7 @@ class FontManager(object):
     # or let TextureFont use a TextureAtlas for each context
     def __init__(self, method='cpu'):
         self._fonts = {}
-        if not isinstance(method, string_types) or \
+        if not isinstance(method, str) or \
                 method not in ('cpu', 'gpu'):
             raise ValueError('method must be "cpu" or "gpu", got %s (%s)'
                              % (method, type(method)))
@@ -331,7 +330,7 @@ class TextVisual(Visual):
                             sin(a_rotation), cos(a_rotation), 0, 0,
                             0, 0, 1, 0, 0, 0, 0, 1);
             vec4 pos = $transform(vec4(a_pos, 1.0)) +
-                       $text_scale(rot * vec4(a_position, 0, 0));
+                       vec4($text_scale(rot * vec4(a_position, 0.0, 1.0)).xyz, 0.0);
             gl_Position = pos;
             v_texcoord = a_texcoord;
             v_color = $color;
@@ -441,7 +440,7 @@ class TextVisual(Visual):
     @text.setter
     def text(self, text):
         if isinstance(text, list):
-            assert all(isinstance(t, string_types) for t in text)
+            assert all(isinstance(t, str) for t in text)
         if text is None:
             text = []
         self._text = text
@@ -522,7 +521,7 @@ class TextVisual(Visual):
             return False
         if self._vertices is None:
             text = self.text
-            if isinstance(text, string_types):
+            if isinstance(text, str):
                 text = [text]
             n_char = sum(len(t) for t in text)
             # we delay creating vertices because it requires a context,
@@ -542,7 +541,7 @@ class TextVisual(Visual):
         if self._pos_changed:
             # now we promote pos to the proper shape (attribute)
             text = self.text
-            if not isinstance(text, string_types):
+            if not isinstance(text, str):
                 repeats = [4 * len(t) for t in text]
                 text = ''.join(text)
             else:
@@ -570,7 +569,7 @@ class TextVisual(Visual):
         if self._color_changed:
             # now we promote color to the proper shape (varying)
             text = self.text
-            if not isinstance(text, string_types):
+            if not isinstance(text, str):
                 repeats = [4 * len(t) for t in text]
                 text = ''.join(text)
             else:

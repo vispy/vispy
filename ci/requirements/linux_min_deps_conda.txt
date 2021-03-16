@@ -1,0 +1,11 @@
+coveralls
+cython
+meshio
+numpy
+numpydoc
+pillow
+pytest
+pytest-cov
+pytest-sugar
+scipy
+networkx

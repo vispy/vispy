@@ -14,7 +14,7 @@ USE_EGL = config['gl_backend'].lower().startswith('es')
 
 try:
     # Make sure no conflicting libraries have been imported.
-    for lib in ['PySide', 'PyQt4', 'PySide2']:
+    for lib in ['PySide', 'PyQt4', 'PySide2', 'PySide6']:
         lib += '.QtCore'
         if lib in sys.modules:
             raise RuntimeError("Refusing to import PyQt5 because %s is "

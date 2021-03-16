@@ -10,7 +10,6 @@ import numpy as np
 import warnings
 
 from .globject import GLObject
-from ..ext.six import string_types
 from .util import check_enum
 
 
@@ -65,10 +64,14 @@ class BaseTexture(GLObject):
         'rgba': 4
     }
 
+    # NOTE: non-normalized formats ending with 'i' and 'ui' are currently
+    #   disabled as they don't work with the current VisPy implementation.
+    #   Attempting to use them along with the additional enums defined in
+    #   vispy/gloo/glir.py produces an invalid operation from OpenGL.
     _inv_internalformats = dict([
         (base + suffix, channels)
         for base, channels in [('r', 1), ('rg', 2), ('rgb', 3), ('rgba', 4)]
-        for suffix in ['8', '16', '16f', '32f']
+        for suffix in ['8', '16', '16f', '32f']  # , '8i', '8ui', '32i', '32ui']
     ] + [
         ('luminance', 1),
         ('alpha', 1),
@@ -148,9 +151,13 @@ class BaseTexture(GLObject):
 
     @property
     def format(self):
-        """ The texture format (color channels).
-        """
+        """The texture format (color channels)."""
         return self._format
+
+    @property
+    def internalformat(self):
+        """The texture internalformat."""
+        return self._internalformat
 
     @property
     def wrapping(self):
@@ -161,7 +168,7 @@ class BaseTexture(GLObject):
     @wrapping.setter
     def wrapping(self, value):
         # Convert
-        if isinstance(value, int) or isinstance(value, string_types):
+        if isinstance(value, int) or isinstance(value, str):
             value = (value,) * self._ndim
         elif isinstance(value, (tuple, list)):
             if len(value) != self._ndim:
@@ -185,7 +192,7 @@ class BaseTexture(GLObject):
     @interpolation.setter
     def interpolation(self, value):
         # Convert
-        if isinstance(value, int) or isinstance(value, string_types):
+        if isinstance(value, int) or isinstance(value, str):
             value = (value,) * 2
         elif isinstance(value, (tuple, list)):
             if len(value) != 2:
@@ -223,57 +230,61 @@ class BaseTexture(GLObject):
         """
         return self._resize(shape, format, internalformat)
 
+    def _check_format_change(self, format, num_channels):
+        # Determine format
+        if format is None:
+            format = self._formats[num_channels]
+            # Keep current format if channels match
+            if self._format and \
+                    self._inv_formats[self._format] == self._inv_formats[format]:
+                format = self._format
+        else:
+            format = check_enum(format)
+
+        if format not in self._inv_formats:
+            raise ValueError('Invalid texture format: %r.' % format)
+        elif num_channels != self._inv_formats[format]:
+            raise ValueError('Format does not match with given shape. '
+                             '(format expects %d elements, data has %d)' %
+                             (self._inv_formats[format], num_channels))
+        return format
+
+    def _check_internalformat_change(self, internalformat, num_channels):
+        if internalformat is None:
+            # Keep current internalformat if channels match
+            if self._internalformat and \
+               self._inv_internalformats[self._internalformat] == num_channels:
+                internalformat = self._internalformat
+        else:
+            internalformat = check_enum(internalformat)
+
+        if internalformat is None:
+            pass
+        elif internalformat not in self._inv_internalformats:
+            raise ValueError(
+                'Invalid texture internalformat: %r. Allowed formats: %r'
+                % (internalformat, self._inv_internalformats)
+            )
+        elif num_channels != self._inv_internalformats[internalformat]:
+            raise ValueError('Internalformat does not match with given shape.')
+        return internalformat
+
     def _resize(self, shape, format=None, internalformat=None):
-        """Internal method for resize.
-        """
+        """Internal method for resize."""
         shape = self._normalize_shape(shape)
 
         # Check
         if not self._resizable:
             raise RuntimeError("Texture is not resizable")
 
-        # Determine format
-        if format is None:
-            format = self._formats[shape[-1]]
-            # Keep current format if channels match
-            if self._format and \
-               self._inv_formats[self._format] == self._inv_formats[format]:
-                format = self._format
-        else:
-            format = check_enum(format)
-
-        if internalformat is None:
-            # Keep current internalformat if channels match
-            if self._internalformat and \
-               self._inv_internalformats[self._internalformat] == shape[-1]:
-                internalformat = self._internalformat
-        else:
-
-            internalformat = check_enum(internalformat)
-
-        # Check
-        if format not in self._inv_formats:
-            raise ValueError('Invalid texture format: %r.' % format)
-        elif shape[-1] != self._inv_formats[format]:
-            raise ValueError('Format does not match with given shape. '
-                             '(format expects %d elements, data has %d)' %
-                             (self._inv_formats[format], shape[-1]))
-        
-        if internalformat is None:
-            pass
-        elif internalformat not in self._inv_internalformats:
-            raise ValueError(
-                'Invalid texture internalformat: %r. Allowed formats: %r' 
-                % (internalformat, self._inv_internalformats)
-            )
-        elif shape[-1] != self._inv_internalformats[internalformat]:
-            raise ValueError('Internalformat does not match with given shape.')
+        format = self._check_format_change(format, shape[-1])
+        internalformat = self._check_internalformat_change(internalformat, shape[-1])
 
         # Store and send GLIR command
         self._shape = shape
         self._format = format
         self._internalformat = internalformat
-        self._glir.command('SIZE', self._id, self._shape, self._format, 
+        self._glir.command('SIZE', self._id, self._shape, self._format,
                            self._internalformat)
 
     def set_data(self, data, offset=None, copy=False):
@@ -300,32 +311,32 @@ class BaseTexture(GLObject):
     def _set_data(self, data, offset=None, copy=False):
         """Internal method for set_data.
         """
-        
+
         # Copy if needed, check/normalize shape
         data = np.array(data, copy=copy)
         data = self._normalize_shape(data)
-        
+
         # Maybe resize to purge DATA commands?
         if offset is None:
             self._resize(data.shape)
         elif all([i == 0 for i in offset]) and data.shape == self._shape:
             self._resize(data.shape)
-        
+
         # Convert offset to something usable
         offset = offset or tuple([0 for i in range(self._ndim)])
         assert len(offset) == self._ndim
-        
+
         # Check if data fits
         for i in range(len(data.shape)-1):
             if offset[i] + data.shape[i] > self._shape[i]:
                 raise ValueError("Data is too large")
-        
+
         # Send GLIR command
         self._glir.command('DATA', self._id, offset, data)
-    
+
     def __setitem__(self, key, data):
         """ x.__getitem__(y) <==> x[y] """
-        
+
         # Make sure key is a tuple
         if isinstance(key, (int, slice)) or key == Ellipsis:
             key = (key,)
@@ -367,7 +378,7 @@ class BaseTexture(GLObject):
         offset = tuple([s.start for s in slices])[:self._ndim]
         shape = tuple([s.stop - s.start for s in slices])
         size = np.prod(shape) if len(shape) > 0 else 1
-        
+
         # Make sure data is an array
         if not isinstance(data, np.ndarray):
             data = np.array(data, copy=False)
@@ -377,7 +388,7 @@ class BaseTexture(GLObject):
 
         # Set data (deferred)
         self._set_data(data=data, offset=offset, copy=False)
-    
+
     def __repr__(self):
         return "<%s shape=%r format=%r at 0x%x>" % (
             self.__class__.__name__, self._shape, self._format, id(self))

@@ -51,7 +51,7 @@ def test_wavefront_non_triangular():
                          [2., 1.625, 0.]])
 
     faces = np.array([[1, 0, 7, 6, 5, 3],
-                      [4, 5, 6, 8, 2]])
+                      [4, 5, 6, 8, 2]], dtype=object)
     fname_out = op.join(temp_dir, 'temp.obj')
     write_mesh(fname_out, vertices=vertices,
                faces=faces, normals=None,
