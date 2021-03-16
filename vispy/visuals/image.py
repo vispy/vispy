@@ -587,6 +587,10 @@ class ImageVisual(Visual):
         """Initialize image properties, texture storage, and interpolation methods."""
         self._data = None
         self._data_is_complex = False
+        if complex_mode not in self.COMPLEX_MODES:
+            raise ValueError(
+                "complex_mode must be one of %s" % ", ".join(self.COMPLEX_MODES)
+            )
         self._complex_mode = complex_mode
         self._gamma = gamma
 
@@ -919,7 +923,7 @@ class ImageVisual(Visual):
             fclim = Function(_apply_clim_float)
             fgamma = Function(_apply_gamma_float)
             chain = [
-                Function(COMPLEX_TRANSFORMS["magnitude"]),
+                Function(COMPLEX_TRANSFORMS[self.complex_mode]),
                 fclim,
                 fgamma,
                 Function(self.cmap.glsl_map),
