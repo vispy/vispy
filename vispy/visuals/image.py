@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
+"""Primitive 2D image visual class."""
 
 from __future__ import division
 import warnings
@@ -31,11 +32,26 @@ def _should_cast_to_f32(data_dtype):
     return False
 
 
-class CPUScaledTexture2D(Texture2D):
-    """Texture class for smarter scaling and internalformat decisions."""
+class _CPUScaledTexture2D(Texture2D):
+    """Texture class for smarter scaling decisions.
 
-    def __init__(self, data=None,
-                 **texture_kwargs):
+    This class wraps the logic to normalize data on the CPU before sending
+    it to the GPU (the texture). Pre-scaling on the CPU can be helpful in
+    cases where OpenGL 2/ES requirements limit the texture storage to an
+    8-bit normalized integer internally.
+
+    This class includes optimizations where image data is not re-normalized
+    if the previous normalization can still be used to visualize the data
+    with the new color limits.
+
+    This class should only be used internally. For similar features where
+    scaling occurs on the GPU see
+    :class:`vispy.visuals.image._GPU_ScaledTexture2D`.
+
+    """
+
+    def __init__(self, data=None, **texture_kwargs):
+        """Initialize texture and normalization limit properties."""
         self._clim = None
         self._data_dtype = getattr(data, 'dtype', None)
         self._data_limits = None
@@ -198,7 +214,24 @@ class CPUScaledTexture2D(Texture2D):
         return ret
 
 
-class GPUScaledTexture2D(CPUScaledTexture2D):
+class _GPUScaledTexture2D(_CPUScaledTexture2D):
+    """Texture class for smarter scaling and internalformat decisions.
+
+    This texture class uses internal formats that are not supported by
+    strict OpenGL 2/ES drivers without additional extensions. By using
+    this texture we upload data to the GPU in a format as close to
+    the original data type as possible (32-bit floats on the CPU are 32-bit
+    floats on the GPU). No normalization/scaling happens on the CPU and
+    all of it happens on the GPU. This should avoid unnecessary data copies
+    as well as provide the highest precision for the final visualization.
+
+    The texture format may either be a GL enum string (ex. 'r32f'), a numpy
+    dtype object (ex. np.float32), or 'auto' which means the texture will
+    try to pick the best format for the provided data. By using 'auto' you
+    also give the texture permission to change formats in the future if
+    new data is provided with a different data type.
+
+    """
 
     # dtype -> internalformat
     # 'r' will be replaced (if needed) with rgb or rgba depending on number of bands
@@ -332,7 +365,7 @@ class GPUScaledTexture2D(CPUScaledTexture2D):
         self._reformat_if_necessary(data)
         self._data_dtype = np.dtype(data.dtype)
         self._clim = self._compute_clim(data)
-        ret = super(CPUScaledTexture2D, self).set_data(data, offset=offset, copy=copy)
+        ret = super(_CPUScaledTexture2D, self).set_data(data, offset=offset, copy=copy)
         return ret
 
 
@@ -468,35 +501,6 @@ COMPLEX_TRANSFORMS = {
     "imaginary": _complex_imaginary,
 }
 
-def _build_color_transform(data, clim, gamma, cmap, complex_mode=None):
-    if data.ndim == 2 or data.shape[2] == 1:
-        # luminance data
-        fclim = Function(_apply_clim_float)
-        fgamma = Function(_apply_gamma_float)
-        # NOTE: _c2l_red only uses the red component, fancy internalformats
-        #   may need to use the other components or a different function chain
-        fun = FunctionChain(
-            None, [Function(_c2l_red), fclim, fgamma, Function(cmap.glsl_map)]
-        )
-    elif data.shape[2] == 2 and complex_mode:
-        fclim = Function(_apply_clim_float)
-        fgamma = Function(_apply_gamma_float)
-        chain = [
-            Function(COMPLEX_TRANSFORMS["magnitude"]),
-            fclim,
-            fgamma,
-            Function(cmap.glsl_map),
-        ]
-        fun = FunctionChain(None, chain)
-    else:
-        # RGB/A image data (no colormap)
-        fclim = Function(_apply_clim)
-        fgamma = Function(_apply_gamma)
-        fun = FunctionChain(None, [Function(_null_color_transform), fclim, fgamma])
-    fclim['clim'] = clim
-    fgamma['gamma'] = gamma
-    return fun
-
 
 class ImageVisual(Visual):
     """Visual subclass displaying an image.
@@ -580,6 +584,7 @@ class ImageVisual(Visual):
                  cmap='viridis', clim='auto', gamma=1.0,
                  interpolation='nearest', texture_format=None, complex_mode="magnitude",
                  **kwargs):
+        """Initialize image properties, texture storage, and interpolation methods."""
         self._data = None
         self._data_is_complex = False
         self._complex_mode = complex_mode
@@ -588,7 +593,7 @@ class ImageVisual(Visual):
         # load 'float packed rgba8' interpolation kernel
         # to load float interpolation kernel use
         # `load_spatial_filters(packed=False)`
-        kernel, self._interpolation_names = load_spatial_filters()
+        kernel, interpolation_names = load_spatial_filters()
 
         self._kerneltex = Texture2D(kernel, interpolation='nearest')
         # The unpacking can be debugged by changing "spatial-filters.frag"
@@ -598,27 +603,14 @@ class ImageVisual(Visual):
         # self._kerneltex = Texture2D(kernel, interpolation='linear',
         #                             internalformat='r32f')
 
-        # create interpolation shader functions for available
-        # interpolations
-        fun = [Function(_interpolation_template % n)
-               for n in self._interpolation_names]
-        self._interpolation_names = [n.lower()
-                                     for n in self._interpolation_names]
-
-        self._interpolation_fun = dict(zip(self._interpolation_names, fun))
-        self._interpolation_names.sort()
-        self._interpolation_names = tuple(self._interpolation_names)
-
-        # overwrite "nearest" and "bilinear" spatial-filters
-        # with  "hardware" interpolation _data_lookup_fn
-        self._interpolation_fun['nearest'] = Function(_texture_lookup)
-        self._interpolation_fun['bilinear'] = Function(_texture_lookup)
-
-        if interpolation not in self._interpolation_names:
+        interpolation_names, interpolation_fun = self._init_interpolation(
+            interpolation_names)
+        self._interpolation_names = interpolation_names
+        self._interpolation_fun = interpolation_fun
+        self._interpolation = interpolation
+        if self._interpolation not in self._interpolation_names:
             raise ValueError("interpolation must be one of %s" %
                              ', '.join(self._interpolation_names))
-
-        self._interpolation = interpolation
 
         # check texture interpolation
         if self._interpolation == 'bilinear':
@@ -633,10 +625,10 @@ class ImageVisual(Visual):
         self._need_colortransform_update = True
         self._need_interpolation_update = True
         if texture_format is None:
-            self._texture = CPUScaledTexture2D(
+            self._texture = _CPUScaledTexture2D(
                 data, interpolation=texture_interpolation)
         else:
-            self._texture = GPUScaledTexture2D(
+            self._texture = _GPUScaledTexture2D(
                 data, internalformat=texture_format,
                 interpolation=texture_interpolation)
         self._subdiv_position = VertexBuffer()
@@ -664,8 +656,25 @@ class ImageVisual(Visual):
             self.set_data(data)
         self.freeze()
 
+    @staticmethod
+    def _init_interpolation(interpolation_names):
+        # create interpolation shader functions for available
+        # interpolations
+        fun = [Function(_interpolation_template % n)
+               for n in interpolation_names]
+        interpolation_names = [n.lower() for n in interpolation_names]
+
+        interpolation_fun = dict(zip(interpolation_names, fun))
+        interpolation_names = tuple(sorted(interpolation_names))
+
+        # overwrite "nearest" and "bilinear" spatial-filters
+        # with  "hardware" interpolation _data_lookup_fn
+        interpolation_fun['nearest'] = Function(_texture_lookup)
+        interpolation_fun['bilinear'] = Function(_texture_lookup)
+        return interpolation_names, interpolation_fun
+
     def set_data(self, image):
-        """Set the data
+        """Set the image data.
 
         Parameters
         ----------
@@ -691,6 +700,7 @@ class ImageVisual(Visual):
         self._need_texture_upload = True
 
     def view(self):
+        """Get the :class:`vispy.visuals.visual.VisualView` for this visual."""
         v = Visual.view(self)
         self._init_view(v)
         return v
@@ -702,6 +712,7 @@ class ImageVisual(Visual):
 
     @property
     def clim(self):
+        """Get color limits used when rendering the image (cmin, cmax)."""
         return self._texture.clim
 
     @clim.setter
@@ -715,6 +726,7 @@ class ImageVisual(Visual):
 
     @property
     def cmap(self):
+        """Get the colormap object applied to luminance (single band) data."""
         return self._cmap
 
     @cmap.setter
@@ -725,7 +737,7 @@ class ImageVisual(Visual):
 
     @property
     def gamma(self):
-        """The gamma used when rendering the image."""
+        """Get the gamma used when rendering the image."""
         return self._gamma
 
     @gamma.setter
@@ -741,6 +753,7 @@ class ImageVisual(Visual):
 
     @property
     def method(self):
+        """Get rendering method name."""
         return self._method
 
     @method.setter
@@ -752,10 +765,12 @@ class ImageVisual(Visual):
 
     @property
     def size(self):
+        """Get size of the image (width, height)."""
         return self._data.shape[:2][::-1]
 
     @property
     def interpolation(self):
+        """Get interpolation algorithm name."""
         return self._interpolation
 
     @interpolation.setter
@@ -770,6 +785,7 @@ class ImageVisual(Visual):
 
     @property
     def interpolation_functions(self):
+        """Get names of possible interpolation methods."""
         return self._interpolation_names
 
     @property
@@ -840,8 +856,7 @@ class ImageVisual(Visual):
         self._need_vertex_update = False
 
     def _update_method(self, view):
-        """Decide which method to use for *view* and configure it accordingly.
-        """
+        """Decide which method to use for *view* and configure it accordingly."""
         method = self._method
         if method == 'auto':
             if view.transforms.get_transform().Linear:
@@ -886,9 +901,38 @@ class ImageVisual(Visual):
 
     def _compute_bounds(self, axis, view):
         if axis > 1:
-            return (0, 0)
+            return 0, 0
         else:
-            return (0, self.size[axis])
+            return 0, self.size[axis]
+
+    def _build_color_transform(self):
+        if self._data.ndim == 2 or self._data.shape[2] == 1:
+            # luminance data
+            fclim = Function(_apply_clim_float)
+            fgamma = Function(_apply_gamma_float)
+            # NOTE: _c2l_red only uses the red component, fancy internalformats
+            #   may need to use the other components or a different function chain
+            fun = FunctionChain(
+                None, [Function(_c2l_red), fclim, fgamma, Function(self.cmap.glsl_map)]
+            )
+        elif self._data.shape[2] == 2 and self.complex_mode:
+            fclim = Function(_apply_clim_float)
+            fgamma = Function(_apply_gamma_float)
+            chain = [
+                Function(COMPLEX_TRANSFORMS["magnitude"]),
+                fclim,
+                fgamma,
+                Function(self.cmap.glsl_map),
+            ]
+            fun = FunctionChain(None, chain)
+        else:
+            # RGB/A image data (no colormap)
+            fclim = Function(_apply_clim)
+            fgamma = Function(_apply_gamma)
+            fun = FunctionChain(None, [Function(_null_color_transform), fclim, fgamma])
+        fclim['clim'] = self._texture.clim_normalized
+        fgamma['gamma'] = self.gamma
+        return fun
 
     def _prepare_transforms(self, view):
         trs = view.transforms
@@ -913,13 +957,7 @@ class ImageVisual(Visual):
 
         if self._need_colortransform_update:
             prg = view.view_program
-            self.shared_program.frag['color_transform'] = _build_color_transform(
-                self._data,
-                self._texture.clim_normalized,
-                self.gamma,
-                self.cmap,
-                self.complex_mode,
-            )
+            self.shared_program.frag['color_transform'] = self._build_color_transform()
             self._need_colortransform_update = False
             prg['texture2D_LUT'] = self.cmap.texture_lut() \
                 if (hasattr(self.cmap, 'texture_lut')) else None

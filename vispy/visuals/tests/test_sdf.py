@@ -61,7 +61,7 @@ def test_sdf():
             Rend().render_to_texture(data, tex, (0, 0), data.shape[::-1])
             gloo.set_viewport(0, 0, *data.shape[::-1])
             gloo.util.draw_texture(tex)
-            result = gloo.util._screenshot()[:, :, 0].astype(np.int)
+            result = gloo.util._screenshot()[:, :, 0].astype(np.int64)
             assert_allclose(result, expd, atol=1,
                             err_msg=Rend.__name__)
             del tex, result
