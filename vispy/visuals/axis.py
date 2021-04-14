@@ -70,6 +70,10 @@ class AxisVisual(CompoundVisual):
         of 'left', 'center', or 'right', and the second element should be one
         of 'bottom', 'middle', or 'top'. If this is not specified, it is
         determined automatically.
+    tick_fmt_func : Callable
+        callable function that accepts single parameter (tick value) and
+        returns tick label (str). If one is not provided, the default
+        formatter is used.
     """
     def __init__(self, pos=None, domain=(0., 1.), tick_direction=(-1., 0.),
                  scale_type="linear", axis_color=(1, 1, 1),
@@ -78,7 +82,8 @@ class AxisVisual(CompoundVisual):
                  tick_width=2, tick_label_margin=12, tick_font_size=8,
                  axis_width=3,  axis_label=None,
                  axis_label_margin=35, axis_font_size=10,
-                 font_size=None, anchors=None):
+                 font_size=None, anchors=None,
+                 tick_fmt_func=None):
 
         if scale_type != 'linear':
             raise NotImplementedError('only linear scaling is currently '
@@ -96,7 +101,7 @@ class AxisVisual(CompoundVisual):
         # (private until we come up with a better name for this)
         self._stop_at_major = (False, False)
 
-        self.ticker = Ticker(self, anchors=anchors)
+        self.ticker = Ticker(self, anchors=anchors, tick_fmt_func=tick_fmt_func)
         self.tick_direction = np.array(tick_direction, float)
         self.scale_type = scale_type
 
@@ -278,11 +283,17 @@ class Ticker(object):
     ----------
     axis : instance of AxisVisual
         The AxisVisual to generate ticks for.
+    tick_fmt_func : Callable
+        callable function that accepts single parameter (tick value) and
+        returns tick label (str)
     """
 
-    def __init__(self, axis, anchors=None):
+    def __init__(self, axis, anchors=None, tick_fmt_func=None):
         self.axis = axis
         self._anchors = anchors
+        if tick_fmt_func is None:
+            tick_fmt_func = tick_formatter
+        self.tick_fmt_func = tick_fmt_func
 
     def get_update(self):
         major_tick_fractions, minor_tick_fractions, tick_labels = \
@@ -388,7 +399,7 @@ class Ticker(object):
             # major = MaxNLocator(10).tick_values(*domain)
             major = _get_ticks_talbot(domain[0], domain[1], n_inches, 2)
 
-            labels = ['%g' % x for x in major]
+            labels = [self.tick_fmt_func(x) for x in major]
             majstep = major[1] - major[0]
             minor = []
             minstep = majstep / (minor_num + 1)
@@ -535,6 +546,11 @@ def scale_range(vmin, vmax, n=1, threshold=100):
     ex = divmod(np.log10(dv / n), 1)[0]
     scale = 10 ** ex
     return scale, offset
+
+
+def tick_formatter(x):
+    """Format tick value"""
+    return "%g" % x
 
 
 # #############################################################################
