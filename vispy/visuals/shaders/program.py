@@ -23,6 +23,7 @@ class ModularProgram(Program):
     Automatically rebuilds program when functions have changed and uploads
     program variables.
     """
+    
     def __init__(self, vcode='', fcode='', gcode=None):
         Program.__init__(self)
 
@@ -101,8 +102,7 @@ class ModularProgram(Program):
         Program.draw(self, *args, **kwargs)
 
     def build_if_needed(self):
-        """ Reset shader source if necesssary.
-        """
+        """Reset shader source if necesssary."""
         if self._need_build:
             self._build()
             

@@ -13,7 +13,7 @@ from ..visuals.transforms import (NullTransform, BaseTransform,
 
 
 class Node(object):
-    """ Base class representing an object in a scene.
+    """Base class representing an object in a scene.
 
     A group of nodes connected through parent-child relationships define a 
     scenegraph. Nodes may have any number of children.
@@ -81,7 +81,7 @@ class Node(object):
     
     @property
     def visible(self):
-        """ Whether this node should be drawn or not. Only applicable to
+        """Whether this node should be drawn or not. Only applicable to
         nodes that can be drawn.
         """
         return self._visible
@@ -157,7 +157,7 @@ class Node(object):
         
     @property
     def children(self):
-        """ A copy of the list of children of this node. Do not add
+        """A copy of the list of children of this node. Do not add
         items to this list, but use ``x.parent = y`` instead.
         """
         return list(self._children)
@@ -253,8 +253,7 @@ class Node(object):
 
     @property
     def canvas(self):
-        """The canvas in which this node's scenegraph is being drawn.
-        """
+        """The canvas in which this node's scenegraph is being drawn."""
         if self._canvas is None:
             return None
         else:
@@ -334,7 +333,7 @@ class Node(object):
 
     @property
     def document(self):
-        """ The document is an optional property that is an node representing
+        """The document is an optional property that is an node representing
         the coordinate system from which this node should make physical 
         measurements such as px, mm, pt, in, etc. This coordinate system 
         should be used when determining line widths, font sizes, and any
@@ -354,7 +353,7 @@ class Node(object):
 
     @property
     def transform(self):
-        """ The transform that maps the local coordinate frame to the
+        """The transform that maps the local coordinate frame to the
         coordinate frame of the parent.
         """
         return self._transform
@@ -369,7 +368,7 @@ class Node(object):
             self._update_trsys(None)
 
     def set_transform(self, type_, *args, **kwargs):
-        """ Create a new transform of *type* and assign it to this node.
+        """Create a new transform of *type* and assign it to this node.
 
         All extra arguments are used in the construction of the transform.
 

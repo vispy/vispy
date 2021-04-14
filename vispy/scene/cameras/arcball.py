@@ -14,7 +14,7 @@ from .perspective import Base3DRotationCamera
 
 
 class ArcballCamera(Base3DRotationCamera):
-    """ 3D camera class that orbits around a center point while
+    """3D camera class that orbits around a center point while
     maintaining a view on a center point.
 
     For this camera, the ``scale_factor`` indicates the zoom level, and

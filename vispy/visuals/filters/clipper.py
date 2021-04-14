@@ -8,8 +8,8 @@ from ...geometry import Rect
 
 
 class Clipper(Filter):
-    """Clips visual output to a rectangular region.
-    """
+    """Clips visual output to a rectangular region."""
+    
     FRAG_SHADER = """
         void clip() {
             vec4 pos = $fb_to_clip(gl_FragCoord);

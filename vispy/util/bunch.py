@@ -6,8 +6,8 @@
 # Class adapted from mne-python
 
 class SimpleBunch(dict):
-    """ Container object for datasets: dictionnary-like object that
-        exposes its keys as attributes.
+    """Container object for datasets: dictionnary-like object that
+    exposes its keys as attributes.
     """
 
     def __init__(self, **kwargs):

@@ -20,6 +20,7 @@ class Label(Widget):
     **kwargs : dict
         Keyword arguments to pass to TextVisual.
     """
+    
     def __init__(self, text, rotation=0., **kwargs):
         self._text_visual = TextVisual(text=text, rotation=rotation, **kwargs)
         self.rotation = rotation

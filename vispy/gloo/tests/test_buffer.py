@@ -17,8 +17,7 @@ class BufferTest(unittest.TestCase):
     # Default init
     # ------------
     def test_init_default(self):
-        """ Test buffer init"""
-        
+        """Test buffer init"""
         # No data
         B = Buffer()
         assert B.nbytes == 0

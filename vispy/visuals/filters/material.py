@@ -17,9 +17,7 @@ from ..shaders import Varying
 
 
 class GridContourComponent(VisualComponent):
-    """
-    Draw grid lines across a surface.
-    """
+    """Draw grid lines across a surface."""
 
     SHADERS = dict(
         frag_color="""
@@ -63,9 +61,7 @@ class GridContourComponent(VisualComponent):
 
 
 class ShadingComponent(VisualComponent):
-    """
-    Phong reflection and shading material.
-    """
+    """Phong reflection and shading material."""
 
     SHADERS = dict(
         frag_color="""

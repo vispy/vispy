@@ -3,9 +3,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 
-"""
-Simple polygon visual based on MeshVisual and LineVisual
-"""
+"""Simple polygon visual based on MeshVisual and LineVisual"""
 
 from __future__ import division
 
@@ -25,7 +23,6 @@ class PolygonVisual(CompoundVisual):
 
     Parameters
     ----------
-
     pos : array
         Set of vertices defining the polygon.
     color : str | tuple | list of colors
@@ -50,6 +47,7 @@ class PolygonVisual(CompoundVisual):
     **kwargs : dict
         Keyword arguments to pass to `CompoundVisual`.
     """
+    
     def __init__(self, pos=None, color='black',
                  border_color=None, border_width=1, border_method='gl',
                  triangulate=True, **kwargs):
@@ -94,8 +92,7 @@ class PolygonVisual(CompoundVisual):
 
     @property
     def pos(self):
-        """ The vertex position of the polygon.
-        """
+        """The vertex position of the polygon."""
         return self._pos
 
     @pos.setter
@@ -105,8 +102,7 @@ class PolygonVisual(CompoundVisual):
 
     @property
     def color(self):
-        """ The color of the polygon.
-        """
+        """The color of the polygon."""
         return self._color
 
     @color.setter
@@ -116,8 +112,7 @@ class PolygonVisual(CompoundVisual):
 
     @property
     def border_color(self):
-        """ The border color of the polygon.
-        """
+        """The border color of the polygon."""
         return self._border_color
 
     @border_color.setter
@@ -128,7 +123,7 @@ class PolygonVisual(CompoundVisual):
     @property
     def mesh(self):
         """The vispy.visuals.MeshVisual that is owned by the PolygonVisual.
-           It is used to fill in the polygon
+        It is used to fill in the polygon
         """
         return self._mesh
 
@@ -140,7 +135,7 @@ class PolygonVisual(CompoundVisual):
     @property
     def border(self):
         """The vispy.visuals.LineVisual that is owned by the PolygonVisual.
-           It is used to draw the border of the polygon
+        It is used to draw the border of the polygon
         """
         return self._border
 

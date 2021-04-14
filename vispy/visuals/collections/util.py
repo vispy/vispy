@@ -88,7 +88,6 @@ def fetchcode(utype, prefix=""):
         Attribute giving the index of the uniforms to be fetched. This index
        relates to the index in the uniform array from python side.
     """
-
     utype = np.dtype(utype)
     _utype = dtype_reduce(utype, level=1)
 

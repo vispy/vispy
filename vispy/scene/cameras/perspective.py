@@ -13,7 +13,7 @@ from ...visuals.transforms import MatrixTransform
 
 
 class PerspectiveCamera(BaseCamera):
-    """ Base class for 3D cameras supporting orthographic and
+    """Base class for 3D cameras supporting orthographic and
     perspective projections.
 
     Parameters
@@ -46,7 +46,7 @@ class PerspectiveCamera(BaseCamera):
             self.center = center
 
     def viewbox_mouse_event(self, event):
-        """ The ViewBox received a mouse event; update transform
+        """The ViewBox received a mouse event; update transform
         accordingly.
         Default implementation adjusts scale factor when scolling.
 
@@ -65,7 +65,7 @@ class PerspectiveCamera(BaseCamera):
 
     @property
     def scale_factor(self):
-        """ The measure for the scale or range that the camera should cover
+        """The measure for the scale or range that the camera should cover
 
         For the PanZoomCamera and TurnTableCamera this translates to
         zooming: set to smaller values to zoom in.
@@ -79,14 +79,11 @@ class PerspectiveCamera(BaseCamera):
 
     @property
     def near_clip_distance(self):
-        """ The distance of the near clipping plane from the camera's position.
-        """
+        """The distance of the near clipping plane from the camera's position."""
         return self._near_clip_distance
 
     def _set_range(self, init):
-        """ Reset the camera view using the known limits.
-        """
-
+        """Reset the camera view using the known limits."""
         if init and (self._scale_factor is not None):
             return  # We don't have to set our scale factor
 
@@ -182,7 +179,7 @@ class Base3DRotationCamera(PerspectiveCamera):
 
     @property
     def distance(self):
-        """ The user-set distance. If None (default), the distance is
+        """The user-set distance. If None (default), the distance is
         internally calculated from the scale factor and fov.
         """
         return self._distance
@@ -264,8 +261,7 @@ class Base3DRotationCamera(PerspectiveCamera):
                 self.fov = min(180.0, max(0.0, fov))
 
     def _update_camera_pos(self):
-        """ Set the camera position and orientation"""
-
+        """Set the camera position and orientation"""
         # transform will be updated several times; do not update camera
         # transform until we are done.
         ch_em = self.events.transform_change

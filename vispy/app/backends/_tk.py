@@ -2,9 +2,7 @@
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-"""
-vispy backend for Tkinter.
-"""
+"""vispy backend for Tkinter."""
 
 from __future__ import division
 
@@ -302,7 +300,7 @@ class ApplicationBackend(BaseApplicationBackend):
 
 
 class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
-    """ Tkinter backend for Canvas abstract class.
+    """Tkinter backend for Canvas abstract class.
     Uses pyopengltk.OpenGLFrame as the internal tk.Frame instance that
     is able to receive OpenGL draw commands and display the results,
     while also being placeable in another Toplevel window.
@@ -598,7 +596,8 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
 
     def _vispy_detect_double_click(self, e):
         """Override base class function
-        since double click handling is native in Tk."""
+        since double click handling is native in Tk.
+        """
         pass
 
     def _on_mouse_double_button_press(self, e):

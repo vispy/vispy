@@ -1,5 +1,4 @@
-""" Test the use function.
-"""
+"""Test the use function."""
 
 from vispy.testing import assert_is, requires_pyopengl
 
@@ -13,8 +12,7 @@ def teardown_module():
 
 @requires_pyopengl()
 def test_use_desktop():
-    """ Testing that gl.use injects all names in gl namespace """
-
+    """Testing that gl.use injects all names in gl namespace"""
     # Use desktop
     gl.use_gl('gl2')
     #

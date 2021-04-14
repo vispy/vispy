@@ -14,6 +14,7 @@ class MultiProgram(object):
     very much like a single ModularProgram, but internally manages many
     programs.
     """
+    
     def __init__(self, vcode='', fcode='', gcode=None):
         self._vcode = vcode
         self._fcode = fcode
@@ -55,8 +56,7 @@ class MultiProgram(object):
 
     @property
     def vert(self):
-        """A wrapper around all vertex shaders contained in this MultiProgram.
-        """
+        """A wrapper around all vertex shaders contained in this MultiProgram."""
         return self._vert
 
     @vert.setter
@@ -67,8 +67,7 @@ class MultiProgram(object):
 
     @property
     def frag(self):
-        """A wrapper around all fragment shaders contained in this MultiProgram.
-        """
+        """A wrapper around all fragment shaders contained in this MultiProgram."""
         return self._frag
 
     @frag.setter
@@ -79,8 +78,7 @@ class MultiProgram(object):
 
     @property
     def geom(self):
-        """A wrapper around all geometry shaders contained in this MultiProgram.
-        """
+        """A wrapper around all geometry shaders contained in this MultiProgram."""
         return self._geom
 
     @geom.setter
@@ -127,6 +125,7 @@ class MultiShader(object):
         # applies to one program
         mp.get_program('p1').frag['u_color'] = (1, 1, 1, 1)  
     """
+    
     def __init__(self, program, shader):
         self._program = program
         self._shader = shader
@@ -141,8 +140,6 @@ class MultiShader(object):
             getattr(p, self._shader)[key] = value
 
     def _new_program(self, p):
-        """New program was added to the multiprogram; update items in the
-        shader.
-        """
+        """New program was added to the multiprogram; update items in the shader."""
         for k, v in self._set_items.items():
             getattr(p, self._shader)[k] = v

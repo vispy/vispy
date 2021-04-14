@@ -38,7 +38,6 @@ def iso_mesh_line(vertices, tris, vertex_data, levels):
     -----
     Uses a marching squares algorithm to generate the isolines.
     """
-
     lines = None
     connects = None
     vertex_level = None
@@ -110,6 +109,7 @@ class IsolineVisual(LineVisual):
     **kwargs : dict
         Keyword arguments to pass to `LineVisual`.
     """
+    
     def __init__(self, vertices=None, tris=None, data=None,
                  levels=None, color_lev=None, **kwargs):
         self._data = None
@@ -132,8 +132,7 @@ class IsolineVisual(LineVisual):
 
     @property
     def levels(self):
-        """ The threshold at which the isocurves are constructed from the data.
-        """
+        """The threshold at which the isocurves are constructed from the data."""
         return self._levels
 
     @levels.setter
@@ -212,9 +211,7 @@ class IsolineVisual(LineVisual):
         self._lc = colors
 
     def _compute_iso_color(self):
-        """ compute LineVisual color from level index and corresponding level
-        color
-        """
+        """Compute LineVisual color from level index and corresponding level color"""
         level_color = []
         colors = self._lc
         for i, index in enumerate(self._li):

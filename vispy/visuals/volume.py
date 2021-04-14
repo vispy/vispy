@@ -385,7 +385,7 @@ frag_dict = {
 
 
 class VolumeVisual(Visual):
-    """ Displays a 3D Volume
+    """Displays a 3D Volume
     
     Parameters
     ----------
@@ -485,7 +485,7 @@ class VolumeVisual(Visual):
         self.freeze()
     
     def set_data(self, vol, clim=None, copy=True):
-        """ Set the volume data. 
+        """Set the volume data. 
 
         Parameters
         ----------
@@ -712,8 +712,7 @@ class VolumeVisual(Visual):
     
     @property
     def threshold(self):
-        """ The threshold value to apply for the isosurface render method.
-        """
+        """The threshold value to apply for the isosurface render method."""
         return self._threshold
     
     @threshold.setter
@@ -725,7 +724,7 @@ class VolumeVisual(Visual):
     
     @property
     def relative_step_size(self):
-        """ The relative step size used during raycasting.
+        """The relative step size used during raycasting.
         
         Larger values yield higher performance at reduced quality. If
         set > 2.0 the ray skips entire voxels. Recommended values are
@@ -743,7 +742,7 @@ class VolumeVisual(Visual):
         self.shared_program['u_relative_step_size'] = value
     
     def _create_vertex_data(self):
-        """ Create and set positions and texture coords from the given shape
+        """Create and set positions and texture coords from the given shape
         
         We have six faces with 1 quad (2 triangles) each, resulting in
         6*2*3 = 36 vertices in total.

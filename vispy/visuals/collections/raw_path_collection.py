@@ -21,7 +21,6 @@ class RawPathCollection(Collection):
 
         Parameters
         ----------
-
         user_dtype: list
             The base dtype can be completed (appended) by the used_dtype. It
             only make sense if user also provide vertex and/or fragment shaders
@@ -38,7 +37,6 @@ class RawPathCollection(Collection):
         color : string
             'local', 'shared' or 'global'
         """
-
         base_dtype = [('position', (np.float32, 3), '!local', (0, 0, 0)),
                       ('id',       (np.float32, 1), '!local', 0),
                       ('color',    (np.float32, 4), 'local', (0, 0, 0, 1)),
@@ -72,7 +70,6 @@ class RawPathCollection(Collection):
 
         Parameters
         ----------
-
         P : np.array
             Vertices positions of the path(s) to be added
 
@@ -85,7 +82,6 @@ class RawPathCollection(Collection):
         color : list, array or 4-tuple
            Path color
         """
-
         itemsize = itemsize or len(P)
         itemcount = len(P) / itemsize
         P = P.reshape(itemcount, itemsize, 3)

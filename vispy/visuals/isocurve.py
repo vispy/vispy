@@ -30,10 +30,8 @@ class IsocurveVisual(LineVisual):
         colormap.
     **kwargs : dict
         Keyword arguments to pass to `LineVisual`.
-
-    Notes
-    -----
     """
+    
     def __init__(self, data=None, levels=None, color_lev=None, clim=None,
                  **kwargs):
         self._data = None
@@ -58,7 +56,7 @@ class IsocurveVisual(LineVisual):
 
     @property
     def levels(self):
-        """ The threshold at which the isocurve is constructed from the
+        """The threshold at which the isocurve is constructed from the
         2D data.
         """
         return self._levels
@@ -82,7 +80,7 @@ class IsocurveVisual(LineVisual):
         self.update()
 
     def set_data(self, data):
-        """ Set the scalar array data
+        """Set the scalar array data
 
         Parameters
         ----------
@@ -107,8 +105,7 @@ class IsocurveVisual(LineVisual):
         self.update()
 
     def _get_verts_and_connect(self, paths):
-        """ retrieve vertices and connects from given paths-list
-        """
+        """Retrieve vertices and connects from given paths-list"""
         verts = np.vstack(paths)
         gaps = np.add.accumulate(np.array([len(x) for x in paths])) - 1
         connect = np.ones(gaps[-1], dtype=bool)
@@ -116,8 +113,7 @@ class IsocurveVisual(LineVisual):
         return verts, connect
 
     def _compute_iso_line(self):
-        """ compute LineVisual vertices, connects and color-index
-        """
+        """Compute LineVisual vertices, connects and color-index"""
         level_index = []
         connects = []
         verts = []
@@ -162,8 +158,7 @@ class IsocurveVisual(LineVisual):
         self._verts = np.vstack(verts)
 
     def _compute_iso_color(self):
-        """ compute LineVisual color from level index and corresponding color
-        """
+        """Compute LineVisual color from level index and corresponding color"""
         level_color = []
         colors = self._lc
         for i, index in enumerate(self._li):

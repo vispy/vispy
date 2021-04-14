@@ -70,7 +70,6 @@ def test_volume_clims_and_gamma():
     currently just using np.ones since the angle of view made more complicated samples
     challenging, but this confirms gamma and clims works in the shader.
     """
-
     with TestingCanvas(size=(40, 40), bgcolor="k") as c:
         v = c.central_widget.add_view(border_width=0, size=(40, 40))
         data = np.ones((40, 40, 40)) / 2.5

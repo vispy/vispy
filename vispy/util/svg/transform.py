@@ -45,12 +45,11 @@ class Identity(Matrix):
 
 # --------------------------------------------------------------- Translate ---
 class Translate(Matrix):
-
     """
     Translation is equivalent to the matrix [1 0 0 1 tx ty], where tx and ty
     are the distances to translate coordinates in X and Y, respectively.
     """
-
+    
     def __init__(self, x, y=0):
         Matrix.__init__(self)
         self._x, self._y = x, y
@@ -64,13 +63,12 @@ class Translate(Matrix):
 
 # ------------------------------------------------------------------- Scale ---
 class Scale(Matrix):
-
     """
     Scaling is equivalent to the matrix [sx 0 0 sy 0 0]. One unit in the X and
     Y directions in the new coordinate system equals sx and sy units in the
     previous coordinate system, respectively.
     """
-
+    
     def __init__(self, x, y=0):
         Matrix.__init__(self)
         self._x = x
@@ -85,13 +83,12 @@ class Scale(Matrix):
 
 # ------------------------------------------------------------------- Scale ---
 class Rotate(Matrix):
-
     """
     Rotation about the origin is equivalent to the matrix [cos(a) sin(a)
     -sin(a) cos(a) 0 0], which has the effect of rotating the coordinate system
     axes by angle a.
     """
-
+    
     def __init__(self, angle, x=0, y=0):
         Matrix.__init__(self)
         self._angle = angle
@@ -116,12 +113,11 @@ class Rotate(Matrix):
 
 # ------------------------------------------------------------------- SkewX ---
 class SkewX(Matrix):
-
     """
     A skew transformation along the x-axis is equivalent to the matrix [1 0
     tan(a) 1 0 0], which has the effect of skewing X coordinates by angle a.
     """
-
+    
     def __init__(self, angle):
         Matrix.__init__(self)
         self._angle = angle
@@ -136,12 +132,11 @@ class SkewX(Matrix):
 
 # ------------------------------------------------------------------- SkewY ---
 class SkewY(Matrix):
-
     """
     A skew transformation along the y-axis is equivalent to the matrix [1
     tan(a) 0 1 0 0], which has the effect of skewing Y coordinates by angle a.
     """
-
+    
     def __init__(self, angle):
         Matrix.__init__(self)
         self._angle = angle
@@ -156,13 +151,12 @@ class SkewY(Matrix):
 
 # --------------------------------------------------------------- Transform ---
 class Transform(object):
-
     """
     A Transform is defined as a list of transform definitions, which are
     applied in the order provided. The individual transform definitions are
     separated by whitespace and/or a comma.
     """
-
+    
     def __init__(self, content=""):
         self._transforms = []
         if not content:

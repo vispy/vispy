@@ -14,8 +14,7 @@ temp_dir = _TempDir()
 
 
 def test_make_png():
-    """ Test to ensure that make_png functions correctly.
-    """
+    """Test to ensure that make_png functions correctly."""
     # Save random RGBA and RGB arrays onto disk as PNGs using make_png.
     # Read them back with an image library and check whether the array
     # saved is equal to the array read.

@@ -14,7 +14,7 @@ import numpy as np
 
 def _make_png(data, level=6):
     """Convert numpy array to PNG byte array.
-
+    
     Parameters
     ----------
     data : numpy.ndarray
@@ -98,8 +98,7 @@ def _make_png(data, level=6):
 
 def read_png(filename):
     """Read a PNG file to RGB8 or RGBA8
-
-   Requires Pillow.
+    Requires Pillow.
 
     Parameters
     ----------

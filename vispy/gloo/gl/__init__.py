@@ -2,7 +2,7 @@
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-""" This module provides a (functional) API to OpenGL ES 2.0.
+"""This module provides a (functional) API to OpenGL ES 2.0.
 
 There are multiple backend implementations of this API, available as
 submodules of this module. One can use one of the backends directly,
@@ -41,7 +41,7 @@ current_backend = None
 
 
 class MainProxy(BaseGLProxy):
-    """ Main proxy for the GL ES 2.0 API. 
+    """Main proxy for the GL ES 2.0 API. 
     
     The functions in this namespace always call into the correct GL
     backend. Therefore these function objects can be safely stored for
@@ -59,7 +59,7 @@ proxy = MainProxy()
 
 
 def use_gl(target='gl2'):
-    """ Let Vispy use the target OpenGL ES 2.0 implementation
+    """Let Vispy use the target OpenGL ES 2.0 implementation
     
     Also see ``vispy.use()``.
     
@@ -108,8 +108,7 @@ def use_gl(target='gl2'):
 
 
 def _clear_namespace():
-    """ Clear names that are not part of the strict ES API
-    """
+    """Clear names that are not part of the strict ES API"""
     ok_names = set(default_backend.__dict__)
     ok_names.update(['gl2', 'glplus'])  # don't remove the module
     NS = globals()
@@ -120,7 +119,7 @@ def _clear_namespace():
 
 
 def _copy_gl_functions(source, dest, constants=False, debug=False):
-    """ Inject all objects that start with 'gl' from the source
+    """Inject all objects that start with 'gl' from the source
     into the dest. source and dest can be dicts, modules or BaseGLProxy's.
     """
     # Get dicts
@@ -148,8 +147,7 @@ def _copy_gl_functions(source, dest, constants=False, debug=False):
 
 
 def _arg_repr(arg):
-    """ Get a useful (and not too large) represetation of an argument.
-    """
+    """Get a useful (and not too large) represetation of an argument."""
     r = repr(arg)
     max = 40
     if len(r) > max:
@@ -184,7 +182,7 @@ def make_debug_wrapper(fn):
 
 
 def check_error(when='periodic check'):
-    """ Check this from time to time to detect GL errors.
+    """Check this from time to time to detect GL errors.
 
     Parameters
     ----------
@@ -192,7 +190,6 @@ def check_error(when='periodic check'):
         Shown in the exception to help the developer determine when
         this check was done.
     """
-
     errors = []
     while True:
         err = glGetError()

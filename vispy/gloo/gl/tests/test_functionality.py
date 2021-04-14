@@ -1,4 +1,4 @@
-""" Test to verify the functionality of the OpenGL backends. This test
+"""Test to verify the functionality of the OpenGL backends. This test
 sets up a real visualization with shaders and all. This tests setting
 source code, setting texture and buffer data, and we touch many other
 functions of the API too. The end result is an image with four colored
@@ -40,7 +40,7 @@ def teardown_module():
                    reason='functionality fails on OSX (see #1178)')
 @requires_application()
 def test_functionality_desktop():
-    """ Test desktop GL backend for full functionality. """
+    """Test desktop GL backend for full functionality."""
     _test_functionality('gl2')
 
 
@@ -48,23 +48,22 @@ def test_functionality_desktop():
                    reason='functionality fails on OSX (see #1178)')
 @requires_application()
 def test_functionality_proxy():
-    """ Test GL proxy class for full functionality. """
+    """Test GL proxy class for full functionality."""
     # By using debug mode, we are using the proxy class
     _test_functionality('gl2 debug')
-
 
 @pytest.mark.xfail(sys.platform == 'darwin',
                    reason='functionality fails on OSX (see #1178)')
 @requires_application()
 @requires_pyopengl()
 def test_functionality_pyopengl():
-    """ Test pyopengl GL backend for full functionality. """
+    """Test pyopengl GL backend for full functionality."""
     _test_functionality('pyopengl2')
 
 
 @requires_application()
 def test_functionality_es2():
-    """ Test es2 GL backend for full functionality. """
+    """Test es2 GL backend for full functionality."""
     if True:
         raise SkipTest('Skip es2 functionality test for now.')
     if not sys.platform.startswith('win'):
@@ -78,8 +77,7 @@ def _clear_screen():
 
 
 def _test_functionality(backend):
-    """ Create app and canvas so we have a context. Then run tests.
-    """
+    """Create app and canvas so we have a context. Then run tests."""
     # use the backend
     gl.use_gl(backend)
 
@@ -540,10 +538,9 @@ def _draw3():
 
 
 def _check_result(assert_result=True):
-    """ Test the color of each quadrant by picking the center pixel
+    """Test the color of each quadrant by picking the center pixel
     of each quadrant and comparing it with the reference color.
     """
-
     # Take screenshot
     x, y, w, h = gl.glGetParameter(gl.GL_VIEWPORT)
     data = gl.glReadPixels(x, y, w, h, gl.GL_RGB, gl.GL_UNSIGNED_BYTE)

@@ -2,9 +2,7 @@
 # vispy: testskip
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
-"""
-OSMesa backend for offscreen rendering on Linux/Unix
-"""
+"""OSMesa backend for offscreen rendering on Linux/Unix."""
 from __future__ import division
 from ...util.ptime import time
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,

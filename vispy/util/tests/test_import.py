@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
-"""
-Test that importing vispy subpackages do not pull
-in any more vispy submodules than strictly necessary.
-"""
+"""Test that importing vispy subpackages do not pull
+in any more vispy submodules than strictly necessary."""
 
 import sys
 import os
@@ -20,14 +18,14 @@ _min_modules = ['vispy', 'vispy.util', 'vispy.ext', 'vispy.ipython', 'vispy.vers
 
 
 def loaded_vispy_modules(import_module, depth=None, all_modules=False):
-    """ Import the given module in subprocess and return loaded modules
+    """Import the given module in subprocess and return loaded modules
 
     Import a certain module in a clean subprocess and return the
     vispy modules that are subsequently loaded. The given depth
     indicates the module level (i.e. depth=1 will only yield 'vispy.app'
     but not 'vispy.app.backends').
-    """
-
+    """"
+    
     vispy_dir = os.path.dirname(os.path.dirname(vispy.__file__))
 
     # Get the loaded modules in a clean interpreter
@@ -52,25 +50,26 @@ def loaded_vispy_modules(import_module, depth=None, all_modules=False):
 
 
 def test_import_nothing():
-    """ Not importing vispy should not import any vispy modules. """
+    """Not importing vispy should not import any vispy modules.
+    """
     modnames = loaded_vispy_modules('os', 2)
     assert_equal(modnames, set())
 
 
 def test_import_vispy():
-    """ Importing vispy should only pull in other vispy.util submodule. """
+    """Importing vispy should only pull in other vispy.util submodule."""
     modnames = loaded_vispy_modules('vispy', 2)
     assert_equal(modnames, set(_min_modules))
 
 
 def test_import_vispy_util():
-    """ Importing vispy.util should not pull in other vispy submodules. """
+    """Importing vispy.util should not pull in other vispy submodules."""
     modnames = loaded_vispy_modules('vispy.util', 2)
     assert_equal(modnames, set(_min_modules))
 
 
 def test_import_vispy_app1():
-    """ Importing vispy.app should not pull in other vispy submodules. """
+    """Importing vispy.app should not pull in other vispy submodules."""
     # Since the introduction of the GLContext to gloo, app depends on gloo
     modnames = loaded_vispy_modules('vispy.app', 2)
     assert_equal(modnames, set(_min_modules + ['vispy.app', 'vispy.gloo',
@@ -78,7 +77,7 @@ def test_import_vispy_app1():
 
 
 def test_import_vispy_app2():
-    """ Importing vispy.app should not pull in any backend toolkit. """
+    """Importing vispy.app should not pull in any backend toolkit."""
     allmodnames = loaded_vispy_modules('vispy.app', 2, True)
     assert_not_in('PySide', allmodnames)
     assert_not_in('PySide2', allmodnames)
@@ -89,7 +88,7 @@ def test_import_vispy_app2():
 
 
 def test_import_vispy_gloo():
-    """ Importing vispy.gloo should not pull in other vispy submodules. """
+    """Importing vispy.gloo should not pull in other vispy submodules."""
     modnames = loaded_vispy_modules('vispy.gloo', 2)
     assert_equal(modnames, set(_min_modules + ['vispy.gloo',
                                                'vispy.glsl',
@@ -97,7 +96,8 @@ def test_import_vispy_gloo():
 
 
 def test_import_vispy_no_pyopengl():
-    """ Importing vispy.gloo.gl.gl2 should not import PyOpenGL. """
+    """Importing vispy.gloo.gl.gl2 should not import PyOpenGL.
+    """
     # vispy.gloo desktop backend
     allmodnames = loaded_vispy_modules('vispy.gloo.gl.gl2', 2, True)
     assert_not_in('OpenGL', allmodnames)
@@ -111,13 +111,14 @@ def test_import_vispy_no_pyopengl():
 
 @requires_pyopengl()
 def test_import_vispy_pyopengl():
-    """ Importing vispy.gloo.gl.pyopengl2 should import PyOpenGL. """
+    """Importing vispy.gloo.gl.pyopengl2 should import PyOpenGL.
+    """
     allmodnames = loaded_vispy_modules('vispy.gloo.gl.pyopengl2', 2, True)
     assert_in('OpenGL', allmodnames)
 
 
 def test_import_vispy_scene():
-    """ Importing vispy.gloo.gl.desktop should not import PyOpenGL. """
+    """Importing vispy.gloo.gl.desktop should not import PyOpenGL."""
     modnames = loaded_vispy_modules('vispy.scene', 2)
     more_modules = ['vispy.app', 'vispy.gloo', 'vispy.glsl', 'vispy.scene',
                     'vispy.color',

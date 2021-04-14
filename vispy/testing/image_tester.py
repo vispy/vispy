@@ -98,7 +98,6 @@ def assert_image_approved(image, standard_file, message=None, **kwargs):
     Extra keyword arguments are used to set the thresholds for automatic image
     comparison (see ``assert_image_match()``).
     """
-
     if isinstance(image, str) and image == "screenshot":
         image = _screenshot(alpha=True)
     if message is None:
@@ -291,8 +290,8 @@ def downsample(data, n, axis=0):
 
 
 class ImageTester(scene.SceneCanvas):
-    """Graphical interface for auditing image comparison tests.
-    """
+    """Graphical interface for auditing image comparison tests."""
+    
     def __init__(self):
         self.grid = None
         self.views = None
@@ -372,7 +371,6 @@ def get_test_data_repo():
     https://github.com/vispy/test-data. If the repository already exists
     then the required commit is checked out.
     """
-
     # This tag marks the test-data commit that this version of vispy should
     # be tested against. When adding or changing test images, create
     # and push a new tag and update this variable.
@@ -460,8 +458,7 @@ def git_status(path):
 
 
 def git_commit_id(path, ref):
-    """Return the commit id of *ref* in the git repository at *path*.
-    """
+    """Return the commit id of *ref* in the git repository at *path*."""
     cmd = git_cmd_base(path) + ['show', ref]
     try:
         output = run_subprocess(cmd, stderr=None, universal_newlines=True)[0]

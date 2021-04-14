@@ -20,7 +20,7 @@ from . array_list import ArrayList
 
 
 def next_power_of_2(n):
-    """ Return next power of 2 greater than or equal to n """
+    """Return next power of 2 greater than or equal to n"""
     n -= 1  # greater than OR EQUAL TO n
     shift = 1
     while (n + 1) & n:  # n+1 is not a power of 2 yet
@@ -30,7 +30,6 @@ def next_power_of_2(n):
 
 
 class Item(object):
-
     """
     An item represent an object within a collection and is created on demand
     when accessing a specific object of the collection.
@@ -42,7 +41,6 @@ class Item(object):
 
         Parameters
         ----------
-
         parent : Collection
             Collection this item belongs to
 
@@ -58,7 +56,6 @@ class Item(object):
         uniforms: array-like
             Uniform parameters of the item
         """
-
         self._parent = parent
         self._key = key
         self._vertices = vertices
@@ -95,8 +92,7 @@ class Item(object):
         self._uniforms[...] = data
 
     def __getitem__(self, key):
-        """ Get a specific uniforms value """
-
+        """Get a specific uniforms value"""
         if key in self._vertices.dtype.names:
             return self._vertices[key]
         elif key in self._uniforms.dtype.names:
@@ -105,8 +101,7 @@ class Item(object):
             raise IndexError("Unknown key ('%s')" % key)
 
     def __setitem__(self, key, value):
-        """ Set a specific uniforms value """
-
+        """Set a specific uniforms value"""
         if key in self._vertices.dtype.names:
             self._vertices[key] = value
         elif key in self._uniforms.dtype.names:
@@ -204,33 +199,28 @@ class BaseCollection(object):
         self._utype = np.dtype(utype) if utype is not None else None
 
     def __len__(self):
-        """ x.__len__() <==> len(x) """
-
+        """x.__len__() <==> len(x)"""
         return len(self._vertices_list)
 
     @property
     def vtype(self):
-        """ Vertices dtype """
-
+        """Vertices dtype"""
         return self._vtype
 
     @property
     def itype(self):
-        """ Indices dtype """
-
+        """Indices dtype"""
         return self._itype
 
     @property
     def utype(self):
-        """ Uniforms dtype """
-
+        """Uniforms dtype"""
         return self._utype
 
     def append(self, vertices, uniforms=None, indices=None, itemsize=None):
         """
         Parameters
         ----------
-
         vertices : numpy array
             An array whose dtype is compatible with self.vdtype
 
@@ -251,7 +241,6 @@ class BaseCollection(object):
             If the sum of itemsize values is different from array size,
             an error is raised.
         """
-
         # Vertices
         # -----------------------------
         vertices = np.array(vertices).astype(self.vtype).ravel()
@@ -313,8 +302,7 @@ class BaseCollection(object):
         self._need_update = True
 
     def __delitem__(self, index):
-        """ x.__delitem__(y) <==> del x[y] """
-
+        """x.__delitem__(y) <==> del x[y]"""
         # Deleting one item
         if isinstance(index, int):
             if index < 0:
@@ -352,7 +340,6 @@ class BaseCollection(object):
 
     def __getitem__(self, key):
         """ """
-
         # WARNING
         # Here we want to make sure to use buffers and texture (instead of
         # lists) since only them are aware of any external modification.
@@ -401,8 +388,7 @@ class BaseCollection(object):
             raise IndexError("Cannot get more than one item at once")
 
     def __setitem__(self, key, data):
-        """ x.__setitem__(i, y) <==> x[i]=y """
-
+        """x.__setitem__(i, y) <==> x[i]=y"""
         # if len(self._programs):
         # found = False
         # for program in self._programs:
@@ -451,8 +437,7 @@ class BaseCollection(object):
             raise IndexError("Cannot set more than one item")
 
     def _compute_texture_shape(self, size=1):
-        """ Compute uniform texture shape """
-
+        """Compute uniform texture shape"""
         # We should use this line but we may not have a GL context yet
         # linesize = gl.glGetInteger(gl.GL_MAX_TEXTURE_SIZE)
         linesize = 1024
@@ -464,8 +449,7 @@ class BaseCollection(object):
         return shape
 
     def _update(self):
-        """ Update vertex buffers & texture """
-
+        """Update vertex buffers & texture"""
         if self._vertices_buffer is not None:
             self._vertices_buffer.delete()
         self._vertices_buffer = VertexBuffer(self._vertices_list.data)

@@ -9,8 +9,7 @@ from vispy.gloo.globject import GLObject
 
 
 def test_globject():
-    """ Test gl object uinique id and GLIR CREATE command """
-    
+    """Test gl object uinique id and GLIR CREATE command"""
     objects = [GLObject() for i in range(10)]
     ids = [ob.id for ob in objects]
     

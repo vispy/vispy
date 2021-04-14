@@ -2,15 +2,14 @@
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-""" A dummy backend.
-"""
+"""A dummy backend."""
 
 from . import BaseGLProxy, _copy_gl_functions
 from ._constants import *  # noqa
 
 
 class DummyProxy(BaseGLProxy):
-    """ A dummy backend that can be activated when the GL is not
+    """A dummy backend that can be activated when the GL is not
     processed in this process. Each GL function call will raise an
     error.
     """

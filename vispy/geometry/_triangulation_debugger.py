@@ -14,8 +14,7 @@ from ..util.geometry.triangulation import Triangulation
 
 
 class DebugTriangulation(Triangulation):
-    """ 
-    Visualize triangulation process stepwise to aid in debugging.
+    """Visualize triangulation process stepwise to aid in debugging.
     
     *interval* specifies the diration to wait before drawing each update in
     the triangulation procedure. Negative values cause the display to wait
@@ -24,6 +23,7 @@ class DebugTriangulation(Triangulation):
     *skip* causes the display to immediately process the first N events
     before pausing.
     """
+    
     def __init__(self, pts, edges, interval=0.01, skip=0):
         self.interval = interval
         self.iteration = 0

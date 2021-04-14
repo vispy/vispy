@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
-""" Tests to ensure that base vispy namespace functions correctly,
+"""Tests to ensure that base vispy namespace functions correctly,
 including configuration options.
 """
 

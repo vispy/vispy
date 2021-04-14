@@ -13,6 +13,7 @@ class PickingFilter(Filter):
     Note that the ID color uses the alpha channel, so this may not be used
     with blending enabled.
     """
+    
     FRAG_SHADER = """
         void picking_filter() {
             if( $enabled == 0 )
@@ -53,7 +54,7 @@ class PickingFilter(Filter):
 
     @property
     def color(self):
-        """ The RGBA color that will be drawn to the framebuffer for visuals
+        """The RGBA color that will be drawn to the framebuffer for visuals
         that use this filter.
         """
         return self._id_color

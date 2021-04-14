@@ -35,8 +35,8 @@ class MagnifyCamera(PanZoomCamera):
     
     The camera also adjusts the size of its "lens" area when the view is
     resized.
-
     """
+    
     transform_class = MagnifyTransform
     
     def __init__(self, size_factor=0.25, radius_ratio=0.9, **kwargs):
@@ -81,7 +81,7 @@ class MagnifyCamera(PanZoomCamera):
         self.timer.stop()
     
     def viewbox_mouse_event(self, event):
-        """ViewBox mouse event handler
+        """The ViewBox mouse event handler
 
         Parameters
         ----------
@@ -137,7 +137,7 @@ class MagnifyCamera(PanZoomCamera):
         self._update_transform()
 
     def viewbox_resize_event(self, event):
-        """ViewBox resize event handler
+        """The ViewBox resize event handler
 
         Parameters
         ----------

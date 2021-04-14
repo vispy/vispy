@@ -19,6 +19,7 @@ class PanZoomTransform(STTransform):
     **kwargs : dict
         Keyword arguments to pass to the underlying `STTransform`.
     """
+    
     def __init__(self, canvas=None, aspect=None, **kwargs):
         self._aspect = aspect
         self.attach(canvas)

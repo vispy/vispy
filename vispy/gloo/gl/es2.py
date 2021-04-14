@@ -2,7 +2,7 @@
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-""" GL ES 2.0 API. 
+"""GL ES 2.0 API. 
 On Windows implemented via Angle (i.e translated to DirectX).
 """
 

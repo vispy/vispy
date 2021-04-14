@@ -22,7 +22,7 @@ def nested_setattr(obj, names, val):
 
 
 class BaseCamera(Node):
-    """ Base camera class.
+    """Base camera class.
 
     The Camera describes the perspective from which a ViewBox views its
     subscene, and the way that user interaction affects that perspective.
@@ -121,14 +121,12 @@ class BaseCamera(Node):
         self.view_changed()
 
     def _depth_to_z(self, depth):
-        """ Get the z-coord, given the depth value.
-        """
+        """Get the z-coord, given the depth value."""
         val = self.depth_value
         return val - depth * 2 * val
 
     def _viewbox_set(self, viewbox):
-        """ Friend method of viewbox to register itself.
-        """
+        """Friend method of viewbox to register itself."""
         self._viewbox = viewbox
         # Connect
         viewbox.events.mouse_press.connect(self.viewbox_mouse_event)
@@ -139,8 +137,7 @@ class BaseCamera(Node):
         # todo: also add key events! (and also on viewbox (they're missing)
 
     def _viewbox_unset(self, viewbox):
-        """ Friend method of viewbox to unregister itself.
-        """
+        """Friend method of viewbox to unregister itself."""
         self._viewbox = None
         # Disconnect
         viewbox.events.mouse_press.disconnect(self.viewbox_mouse_event)
@@ -151,15 +148,14 @@ class BaseCamera(Node):
 
     @property
     def viewbox(self):
-        """ The viewbox that this camera applies to.
-        """
+        """The viewbox that this camera applies to."""
         return self._viewbox
 
     ## Camera attributes
 
     @property
     def interactive(self):
-        """ Boolean describing whether the camera should enable or disable
+        """Boolean describing whether the camera should enable or disable
         user interaction.
         """
         return self._interactive
@@ -187,8 +183,7 @@ class BaseCamera(Node):
 
     @property
     def up(self):
-        """ The dimension that is considered up.
-        """
+        """The dimension that is considered up."""
         return self._up
 
     @up.setter
@@ -202,7 +197,7 @@ class BaseCamera(Node):
 
     @property
     def center(self):
-        """ The center location for this camera
+        """The center location for this camera
 
         The exact meaning of this value differs per type of camera, but
         generally means the point of interest or the rotation point.
@@ -221,7 +216,7 @@ class BaseCamera(Node):
 
     @property
     def fov(self):
-        """ Field-of-view angle of the camera. If 0, the camera is in
+        """Field-of-view angle of the camera. If 0, the camera is in
         orthographic mode.
         """
         return self._fov
@@ -237,7 +232,7 @@ class BaseCamera(Node):
     ## Camera methods
 
     def set_range(self, x=None, y=None, z=None, margin=0.05):
-        """ Set the range of the view region for the camera
+        """Set the range of the view region for the camera
 
         Parameters
         ----------
@@ -308,18 +303,17 @@ class BaseCamera(Node):
         pass
 
     def reset(self):
-        """ Reset the view to the default state.
-        """
+        """Reset the view to the default state."""
         self.set_state(self._default_state)
 
     def set_default_state(self):
-        """ Set the current state to be the default state to be applied
+        """Set the current state to be the default state to be applied
         when calling reset().
         """
         self._default_state = self.get_state()
 
     def get_state(self, props=None):
-        """ Get the current view state of the camera
+        """Get the current view state of the camera
 
         Returns a dict of key-value pairs. The exact keys depend on the
         camera. Can be passed to set_state() (of this or another camera
@@ -343,7 +337,7 @@ class BaseCamera(Node):
         return state
 
     def set_state(self, state=None, **kwargs):
-        """ Set the view state of the camera
+        """Set the view state of the camera
 
         Should be a dict (or kwargs) as returned by get_state. It can
         be an incomlete dict, in which case only the specified
@@ -356,7 +350,6 @@ class BaseCamera(Node):
         **kwargs : dict
             Unused keyword arguments.
         """
-
         state = state or {}
         state.update(kwargs)
   
@@ -388,7 +381,7 @@ class BaseCamera(Node):
             setattr(self, key, val)
 
     def link(self, camera, props=None, axis=None):
-        """ Link this camera with another camera of the same type
+        """Link this camera with another camera of the same type
 
         Linked camera's keep each-others' state in sync.
 
@@ -427,7 +420,7 @@ class BaseCamera(Node):
     ## Event-related methods
 
     def view_changed(self):
-        """ Called when this camera is changes its view. Also called
+        """Called when this camera is changes its view. Also called
         when its associated with a viewbox.
         """
         if self._resetting:
@@ -445,7 +438,7 @@ class BaseCamera(Node):
 
     @property
     def pre_transform(self):
-        """ A transform to apply to the beginning of the scene transform, in
+        """A transform to apply to the beginning of the scene transform, in
         addition to anything else provided by this Camera.
         """
         return self._pre_transform
@@ -483,7 +476,7 @@ class BaseCamera(Node):
             event.new.events.key_release.connect(self.viewbox_key_event)
 
     def viewbox_key_event(self, event):
-        """ViewBox key event handler
+        """The ViewBox key event handler
 
         Parameters
         ----------
@@ -504,14 +497,13 @@ class BaseCamera(Node):
         pass
 
     def _update_transform(self):
-        """ Subclasses should reimplement this method to update the scene
+        """Subclasses should reimplement this method to update the scene
         transform by calling self._set_scene_transform.
         """
         self._set_scene_transform(self.transform)
 
     def _set_scene_transform(self, tr):
-        """ Called by subclasses to configure the viewbox scene transform.
-        """
+        """Called by subclasses to configure the viewbox scene transform."""
         # todo: check whether transform has changed, connect to
         # transform.changed event
         pre_tr = self.pre_transform

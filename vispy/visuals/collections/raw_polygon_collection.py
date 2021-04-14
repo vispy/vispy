@@ -47,14 +47,12 @@ class RawPolygonCollection(Collection):
 
         Parameters
         ----------
-
         points : np.array
             Vertices composing the triangles
 
         color : list, array or 4-tuple
            Path color
         """
-
         vertices, indices = triangulate(points)
         itemsize = len(vertices)
         itemcount = 1

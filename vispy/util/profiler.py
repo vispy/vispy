@@ -62,8 +62,7 @@ class Profiler(object):
     _disabled_profiler = DisabledProfiler()
 
     def __new__(cls, msg=None, disabled='env', delayed=True):
-        """Optionally create a new profiler based on caller's qualname.
-        """
+        """Optionally create a new profiler based on caller's qualname."""
         if (disabled is True or 
                 (disabled == 'env' and len(cls._profilers) == 0)):
             return cls._disabled_profiler
@@ -92,8 +91,7 @@ class Profiler(object):
         return obj
 
     def __call__(self, msg=None, *args):
-        """Register or print a new message with timing information.
-        """
+        """Register or print a new message with timing information."""
         if self.disable:
             return
         if msg is None:
@@ -119,8 +117,7 @@ class Profiler(object):
         self.finish()
 
     def finish(self, msg=None):
-        """Add a final message; flush the message list if no parent profiler.
-        """
+        """Add a final message; flush the message list if no parent profiler."""
         if self._finished or self.disable:
             return        
         self._finished = True

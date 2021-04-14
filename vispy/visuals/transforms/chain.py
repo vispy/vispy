@@ -16,10 +16,10 @@ class ChainTransform(BaseTransform):
     its glsl_map and glsl_imap functions.
 
     Arguments:
-
     transforms : list of BaseTransform instances
         See ``transforms`` property.
     """
+    
     glsl_map = None
     glsl_imap = None
 
@@ -50,7 +50,7 @@ class ChainTransform(BaseTransform):
 
     @property
     def transforms(self):
-        """ The list of transform that make up the transform chain.
+        """The list of transform that make up the transform chain.
         
         The order of transforms is given such that the last transform in the 
         list is the first to be invoked when mapping coordinates through 
@@ -66,7 +66,6 @@ class ChainTransform(BaseTransform):
             # Equivalent mapping through chain:
             chain = ChainTransform([trans1, trans2])
             mapped = chain.map(coords)
-            
         """
         return self._transforms
 
@@ -97,8 +96,7 @@ class ChainTransform(BaseTransform):
 
     @property
     def simplified(self):
-        """A simplified representation of the same transformation.
-        """
+        """A simplified representation of the same transformation."""
         if self._simplified is None:
             self._simplified = SimplifiedChainTransform(self)
         return self._simplified
@@ -207,8 +205,7 @@ class ChainTransform(BaseTransform):
         self.update()
 
     def _subtr_changed(self, ev):
-        """One of the internal transforms changed; propagate the signal. 
-        """
+        """One of the internal transforms changed; propagate the signal."""
         self.update(ev)
 
     def __setitem__(self, index, tr):
@@ -257,8 +254,7 @@ class SimplifiedChainTransform(ChainTransform):
         self.source_changed(None)
 
     def source_changed(self, event):
-        """Generate a simplified chain by joining adjacent transforms.
-        """
+        """Generate a simplified chain by joining adjacent transforms."""
         # bail out early if the chain is empty
         transforms = self._chain.transforms[:]
         if len(transforms) == 0:

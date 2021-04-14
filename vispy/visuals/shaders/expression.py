@@ -5,7 +5,7 @@ from .shader_object import ShaderObject
 
 
 class Expression(ShaderObject):
-    """ Base class for expressions (ShaderObjects that do not have a
+    """Base class for expressions (ShaderObjects that do not have a
     definition nor dependencies)
     """
 
@@ -15,8 +15,7 @@ class Expression(ShaderObject):
 
 
 class TextExpression(Expression):
-    """ Plain GLSL text to insert inline
-    """
+    """Plain GLSL text to insert inline"""
 
     def __init__(self, text):
         super(TextExpression, self).__init__()
@@ -52,10 +51,11 @@ class TextExpression(Expression):
 
 
 class FunctionCall(Expression):
-    """ Representation of a call to a function
+    """Representation of a call to a function
 
     Essentially this is container for a Function along with its signature.
     """
+    
     def __init__(self, function, args):
         from .function import Function
         super(FunctionCall, self).__init__()

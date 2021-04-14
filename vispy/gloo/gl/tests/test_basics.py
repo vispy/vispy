@@ -1,4 +1,4 @@
-""" Test to verify some basic functionality of our OpenGL API. We cover
+"""Test to verify some basic functionality of our OpenGL API. We cover
 much more in the test_functionality. Together, these two tests should
 touch *all* ES 2.0 API calls.
 
@@ -21,7 +21,7 @@ def teardown_module():
 
 @requires_application()
 def test_basics_desktop():
-    """ Test desktop GL backend for basic functionality. """
+    """Test desktop GL backend for basic functionality."""
     _test_basics('gl2')
     with Canvas():
         _test_setting_parameters()
@@ -40,7 +40,7 @@ def test_basics_desktop():
 
 @requires_application()
 def test_functionality_proxy():
-    """ Test GL proxy class for basic functionality. """
+    """Test GL proxy class for basic functionality."""
     # By using debug mode, we are using the proxy class
     _test_basics('gl2 debug')
 
@@ -48,13 +48,13 @@ def test_functionality_proxy():
 @requires_application()
 @requires_pyopengl()
 def test_basics_pypengl():
-    """ Test pyopengl GL backend for basic functionality. """
+    """Test pyopengl GL backend for basic functionality."""
     _test_basics('pyopengl2')
 
 
 @requires_application()
 def test_functionality_es2():
-    """ Test es2 GL backend for basic functionality. """
+    """Test es2 GL backend for basic functionality."""
     if True:
         raise SkipTest('Skip es2 functionality test for now.')
     if sys.platform.startswith('win'):
@@ -63,9 +63,7 @@ def test_functionality_es2():
 
 
 def _test_basics(backend):
-    """ Create app and canvas so we have a context. Then run tests.
-    """
-
+    """Create app and canvas so we have a context. Then run tests."""
     # use the backend
     with use_log_level('error', print_msg=False):
         gl.use_gl(backend)  # pyopengl throws warning on injection

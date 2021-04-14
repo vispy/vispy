@@ -180,6 +180,7 @@ class ImageVisual(Visual):
     The colormap functionality through ``cmap`` and ``clim`` are only used
     if the data are 2D.
     """
+    
     def __init__(self, data=None, method='auto', grid=(1, 1),
                  cmap='viridis', clim='auto', gamma=1.0,
                  interpolation='nearest', **kwargs):
@@ -437,8 +438,7 @@ class ImageVisual(Visual):
         self._need_vertex_update = False
 
     def _update_method(self, view):
-        """Decide which method to use for *view* and configure it accordingly.
-        """
+        """Decide which method to use for *view* and configure it accordingly."""
         method = self._method
         if method == 'auto':
             if view.transforms.get_transform().Linear:

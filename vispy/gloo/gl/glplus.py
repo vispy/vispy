@@ -2,7 +2,7 @@
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-""" This module provides a namespace for additional desktop OpenGL functions.
+"""This module provides a namespace for additional desktop OpenGL functions.
 
 The functions in this module are copied from PyOpenGL, but any deprecated
 functions are omitted, as well as any functions that are in our ES 2.0 API.
@@ -15,10 +15,9 @@ from . import _constants
 
 
 def _inject():
-    """ Inject functions and constants from PyOpenGL but leave out the
+    """Inject functions and constants from PyOpenGL but leave out the
     names that are deprecated or that we provide in our API.
     """
-    
     # Get namespaces
     NS = globals()
     GLNS = _GL.__dict__

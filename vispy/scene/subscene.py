@@ -14,6 +14,7 @@ class SubScene(Node):
     SubScene nodes are used as the top-level node for the internal scenes of
     a canvas and a view box.
     """
+    
     def __init__(self, **kwargs):
         Node.__init__(self, **kwargs)
         self.document = self

@@ -19,7 +19,6 @@ from ..transforms import NullTransform
 
 
 class AggFastPathCollection(Collection):
-
     """
     Antigrain Geometry Fast Path Collection
 
@@ -36,7 +35,6 @@ class AggFastPathCollection(Collection):
 
         Parameters
         ----------
-
         user_dtype: list
             The base dtype can be completed (appended) by the used_dtype. It
             only make sense if user also provide vertex and/or fragment shaders
@@ -62,7 +60,6 @@ class AggFastPathCollection(Collection):
         antialias : string
             'local', 'shared' or 'global'
         """
-
         base_dtype = [('prev',       (np.float32, 3), '!local', (0, 0, 0)),
                       ('curr',       (np.float32, 3), '!local', (0, 0, 0)),
                       ('next',       (np.float32, 3), '!local', (0, 0, 0)),
@@ -99,7 +96,6 @@ class AggFastPathCollection(Collection):
 
         Parameters
         ----------
-
         P : np.array
             Vertices positions of the path(s) to be added
 
@@ -121,7 +117,6 @@ class AggFastPathCollection(Collection):
         antialias : list, array or float
            Path antialias area
         """
-
         itemsize = int(itemsize or len(P))
         itemcount = len(P) // itemsize
 
@@ -183,14 +178,12 @@ class AggFastPathCollection(Collection):
 
         Example:
         --------
-
         paths.append(P)
         P *= 2
         paths['prev'][0] = bake(P,'prev')
         paths['curr'][0] = bake(P,'curr')
         paths['next'][0] = bake(P,'next')
         """
-
         itemsize = itemsize or len(P)
         itemcount = len(P) / itemsize  # noqa
         n = itemsize
@@ -219,8 +212,7 @@ class AggFastPathCollection(Collection):
         return P[idxs]
 
     def draw(self, mode="triangle_strip"):
-        """ Draw collection """
-
+        """Draw collection"""
         gl.glDepthMask(gl.GL_FALSE)
         Collection.draw(self, mode)
         gl.glDepthMask(gl.GL_TRUE)

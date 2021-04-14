@@ -16,7 +16,7 @@ from ...color import Color
 
 
 class Widget(Compound):
-    """ A widget takes up a rectangular space, intended for use in
+    """A widget takes up a rectangular space, intended for use in
     a 2D pixel coordinate frame.
 
     The widget is positioned using the transform attribute (as any
@@ -141,14 +141,12 @@ class Widget(Compound):
     @width_min.setter
     def width_min(self, width_min):
         """Set the minimum height of the widget
-
+        
         Parameters
         ----------
-
         height_min: float
             the minimum height of the widget
         """
-
         if width_min is None:
             self._width_limits[0] = 0
             return
@@ -200,7 +198,6 @@ class Widget(Compound):
 
         Parameters
         ----------
-
         height_min: float
             the minimum height of the widget
         """
@@ -292,8 +289,7 @@ class Widget(Compound):
             self.parent._update_child_widgets()
 
     def _update_clipper(self):
-        """Called whenever the clipper for this widget may need to be updated.
-        """
+        """Called whenever the clipper for this widget may need to be updated."""
         if self.clip_children and self._clipper is None:
             self._clipper = Clipper()
         elif not self.clip_children:
@@ -306,8 +302,7 @@ class Widget(Compound):
 
     @property
     def border_color(self):
-        """ The color of the border.
-        """
+        """The color of the border."""
         return self._border_color
 
     @border_color.setter
@@ -319,8 +314,7 @@ class Widget(Compound):
 
     @property
     def bgcolor(self):
-        """ The background color of the Widget.
-        """
+        """The background color of the Widget."""
         return self._bgcolor
 
     @bgcolor.setter
@@ -353,7 +347,7 @@ class Widget(Compound):
         self.update()
 
     def _update_line(self):
-        """ Update border line to match new shape """
+        """Update border line to match new shape"""
         w = self._border_width
         m = self.margin
         # border is drawn within the boundaries of the widget:

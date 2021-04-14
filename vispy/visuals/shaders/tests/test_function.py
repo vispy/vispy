@@ -55,9 +55,7 @@ data = 'just some dummy variable, Function is agnostic about this'
 ## Examples
 
 def test_example1():
-    """ Just a few simple compositions.
-    """
-    
+    """Just a few simple compositions."""
     # Get function objects. Generate random name for transforms
     code = Function(vert_template)
     t1 = Function(transformScale)
@@ -85,9 +83,7 @@ def test_example1():
 
 
 def test_example2():
-    """ Demonstrate how a transform would work.
-    """
-    
+    """Demonstrate how a transform would work."""
     vert_template = Function("""
     void main(void)
     {

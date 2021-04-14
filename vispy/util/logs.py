@@ -207,6 +207,7 @@ class use_log_level(object):
         As a context manager, an empty list or the list of logging messages
         will be returned (depending on the input ``record``).
     """
+    
     # This method mostly wraps to set_log_level, but also takes
     # care of enabling/disabling message recording in the formatter.
 

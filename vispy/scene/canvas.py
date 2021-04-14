@@ -109,6 +109,7 @@ class SceneCanvas(app.Canvas, Frozen):
     This can cause problems with accessibility, as increasing the OS detection
     time or using a dedicated double-click button will not be respected.
     """
+    
     def __init__(self, title='VisPy canvas', size=(800, 600), position=None,
                  show=False, autoswap=True, app=None, create_native=True,
                  vsync=False, resizable=True, decorate=True, fullscreen=False,
@@ -145,7 +146,7 @@ class SceneCanvas(app.Canvas, Frozen):
         
     @property
     def scene(self):
-        """ The SubScene object that represents the root node of the
+        """The SubScene object that represents the root node of the
         scene graph to be displayed.
         """
         return self._scene
@@ -163,7 +164,7 @@ class SceneCanvas(app.Canvas, Frozen):
 
     @property
     def central_widget(self):
-        """ Returns the default widget that occupies the entire area of the
+        """Returns the default widget that occupies the entire area of the
         canvas. 
         """
         if self._central_widget is None:
@@ -266,7 +267,7 @@ class SceneCanvas(app.Canvas, Frozen):
         self.draw_visual(self.scene)
 
     def draw_visual(self, visual, event=None):
-        """ Draw a visual and its children to the canvas or currently active
+        """Draw a visual and its children to the canvas or currently active
         framebuffer.
         
         Parameters
@@ -327,8 +328,7 @@ class SceneCanvas(app.Canvas, Frozen):
         return order
 
     def _update_scenegraph(self, event):
-        """Called when topology of scenegraph has changed.
-        """
+        """Called when topology of scenegraph has changed."""
         self._draw_order.clear()
         self.update()
 
@@ -403,8 +403,7 @@ class SceneCanvas(app.Canvas, Frozen):
         return vis
 
     def _visual_bounds_at(self, pos, node=None):
-        """Find a visual whose bounding rect encompasses *pos*.
-        """
+        """Find a visual whose bounding rect encompasses *pos*."""
         if node is None:
             node = self.scene
             
@@ -518,7 +517,7 @@ class SceneCanvas(app.Canvas, Frozen):
 
     # -------------------------------------------------- transform handling ---
     def push_viewport(self, viewport):
-        """ Push a viewport (x, y, w, h) on the stack. Values must be integers
+        """Push a viewport (x, y, w, h) on the stack. Values must be integers
         relative to the active framebuffer.
 
         Parameters
@@ -545,8 +544,7 @@ class SceneCanvas(app.Canvas, Frozen):
         self._update_transforms()
 
     def pop_viewport(self):
-        """ Pop a viewport from the stack.
-        """
+        """Pop a viewport from the stack."""
         vp = self._vp_stack.pop()
         # Activate latest
         if len(self._vp_stack) > 0:
@@ -558,7 +556,7 @@ class SceneCanvas(app.Canvas, Frozen):
         return vp
 
     def push_fbo(self, fbo, offset, csize):
-        """ Push an FBO on the stack.
+        """Push an FBO on the stack.
         
         This activates the framebuffer and causes subsequent rendering to be
         written to the framebuffer rather than the canvas's back buffer. This
@@ -588,8 +586,7 @@ class SceneCanvas(app.Canvas, Frozen):
         self._update_transforms()
 
     def pop_fbo(self):
-        """ Pop an FBO from the stack.
-        """
+        """Pop an FBO from the stack."""
         fbo = self._fb_stack.pop()
         fbo[0].deactivate()
         self.pop_viewport()
@@ -601,7 +598,7 @@ class SceneCanvas(app.Canvas, Frozen):
         return fbo
         
     def _current_framebuffer(self):
-        """ Return (fbo, origin, canvas_size) for the current
+        """Return (fbo, origin, canvas_size) for the current
         FBO on the stack, or for the canvas if there is no FBO.
         """
         if len(self._fb_stack) == 0:

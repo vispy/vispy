@@ -14,10 +14,7 @@ except ModuleNotFoundError:
 
 
 def test_networkx_layout_with_graph():
-    """
-    Testing the various inputs to the networkx layout
-    """
-
+    """Testing the various inputs to the networkx layout"""
     settings = dict(name="networkx_layout")
     if nx:
         # empty input

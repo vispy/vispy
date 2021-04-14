@@ -7,7 +7,7 @@ import numpy as np
 
 
 class Quaternion(object):
-    """ Quaternion(w=1, x=0, y=0, z=0, normalize=True)
+    """Quaternion(w=1, x=0, y=0, z=0, normalize=True)
 
     A quaternion is a mathematically convenient way to
     describe rotations.
@@ -26,12 +26,11 @@ class Quaternion(object):
                self.w, self.x, self.y, self.z)
 
     def copy(self):
-        """ Create an exact copy of this quaternion. 
-        """
+        """Create an exact copy of this quaternion."""
         return Quaternion(self.w, self.x, self.y, self.z, False)
 
     def norm(self):
-        """ Returns the norm of the quaternion
+        """Returns the norm of the quaternion
 
         norm = w**2 + x**2 + y**2 + z**2
         """
@@ -39,8 +38,7 @@ class Quaternion(object):
         return tmp**0.5
 
     def _normalize(self):
-        """ Make the quaternion unit length.
-        """
+        """Make the quaternion unit length."""
         # Get length
         L = self.norm()
         if not L:
@@ -52,14 +50,13 @@ class Quaternion(object):
         self.z /= L
 
     def normalize(self):
-        """ Returns a normalized (unit length) version of the quaternion.
-        """
+        """Returns a normalized (unit length) version of the quaternion."""
         new = self.copy()
         new._normalize()
         return new
 
     def conjugate(self):
-        """ Obtain the conjugate of the quaternion.
+        """Obtain the conjugate of the quaternion.
 
         This is simply the same quaternion but with the sign of the
         imaginary (vector) parts reversed.
@@ -71,7 +68,7 @@ class Quaternion(object):
         return new
 
     def inverse(self):
-        """ returns q.conjugate()/q.norm()**2
+        """Returns q.conjugate()/q.norm()**2
 
         So if the quaternion is unit length, it is the same
         as the conjugate.
@@ -85,10 +82,9 @@ class Quaternion(object):
         return new
 
     def exp(self):
-        """ Returns the exponent of the quaternion. 
+        """Returns the exponent of the quaternion. 
         (not tested)
         """
-
         # Init
         vecNorm = self.x**2 + self.y**2 + self.z**2
         wPart = np.exp(self.w)        
@@ -103,10 +99,9 @@ class Quaternion(object):
         return q
 
     def log(self):
-        """ Returns the natural logarithm of the quaternion. 
+        """Returns the natural logarithm of the quaternion. 
         (not tested)
         """
-
         # Init
         norm = self.norm()
         vecNorm = self.x**2 + self.y**2 + self.z**2
@@ -122,7 +117,7 @@ class Quaternion(object):
         return q
 
     def __add__(self, q):
-        """ Add quaternions. """
+        """Add quaternions."""
         new = self.copy()
         new.w += q.w
         new.x += q.x
@@ -131,7 +126,7 @@ class Quaternion(object):
         return new
 
     def __sub__(self, q):
-        """ Subtract quaternions. """
+        """Subtract quaternions."""
         new = self.copy()
         new.w -= q.w
         new.x -= q.x
@@ -140,7 +135,7 @@ class Quaternion(object):
         return new
 
     def __mul__(self, q2):
-        """ Multiply two quaternions. """
+        """Multiply two quaternions."""
         new = Quaternion()
         q1 = self       
         new.w = q1.w*q2.w - q1.x*q2.x - q1.y*q2.y - q1.z*q2.z
@@ -150,8 +145,7 @@ class Quaternion(object):
         return new
 
     def rotate_point(self, p):
-        """ Rotate a Point instance using this quaternion.
-        """
+        """Rotate a Point instance using this quaternion."""
         # Prepare 
         p = Quaternion(0, p[0], p[1], p[2], False)  # Do not normalize!
         q1 = self.normalize()
@@ -162,7 +156,7 @@ class Quaternion(object):
         return r.x, r.y, r.z
 
     def get_matrix(self):
-        """ Create a 4x4 homography matrix that represents the rotation
+        """Create a 4x4 homography matrix that represents the rotation
         of the quaternion.
         """
         # Init matrix (remember, a matrix, not an array)
@@ -191,7 +185,7 @@ class Quaternion(object):
         return a
 
     def get_axis_angle(self):
-        """ Get the axis-angle representation of the quaternion. 
+        """Get the axis-angle representation of the quaternion. 
         (The angle is in radians)
         """
         # Init
@@ -211,7 +205,7 @@ class Quaternion(object):
 
     @classmethod
     def create_from_axis_angle(cls, angle, ax, ay, az, degrees=False):
-        """ Classmethod to create a quaternion from an axis-angle representation. 
+        """Classmethod to create a quaternion from an axis-angle representation. 
         (angle should be in radians).
         """
         if degrees:
@@ -224,8 +218,7 @@ class Quaternion(object):
 
     @classmethod
     def create_from_euler_angles(cls, rx, ry, rz, degrees=False):
-        """ Classmethod to create a quaternion given the euler angles.
-        """
+        """Classmethod to create a quaternion given the euler angles."""
         if degrees:
             rx, ry, rz = np.radians([rx, ry, rz])
         # Obtain quaternions

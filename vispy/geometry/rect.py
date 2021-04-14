@@ -11,6 +11,7 @@ class Rect(object):
         Can be in the form `Rect(x, y, w, h)`, `Rect(pos, size)`, or
         `Rect(Rect)`.
     """
+
     def __init__(self, *args, **kwargs):
         self._pos = (0, 0)
         self._size = (0, 0)
@@ -130,7 +131,8 @@ class Rect(object):
 
     def normalized(self):
         """Return a Rect covering the same area, but with height and width
-        guaranteed to be positive."""
+        guaranteed to be positive.
+        """
         return Rect(pos=(min(self.left, self.right),
                          min(self.top, self.bottom)),
                     size=(abs(self.width), abs(self.height)))
@@ -165,8 +167,7 @@ class Rect(object):
                 np.all(np.equal(r.size, self.size)))
 
     def __add__(self, a):
-        """ Return this Rect translated by *a*.
-        """
+        """Return this Rect translated by *a*."""
         return self._transform_out(self._transform_in()[:, :2] + a[:2])
 
     def contains(self, x, y):
@@ -192,7 +193,8 @@ class Rect(object):
 
     def _transform_in(self):
         """Return array of coordinates that can be mapped by Transform
-        classes."""
+        classes.
+        """
         return np.array([
             [self.left, self.bottom, 0, 1],
             [self.right, self.top, 0, 1]])

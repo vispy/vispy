@@ -53,7 +53,7 @@ class WavefrontReader(object):
 
     @classmethod
     def read(cls, fname):
-        """ read(fname, fmt)
+        """read(fname, fmt)
 
         This classmethod is the entry point for reading OBJ files.
 
@@ -85,9 +85,7 @@ class WavefrontReader(object):
         return mesh
 
     def readLine(self):
-        """ The method that reads a line and processes it.
-        """
-
+        """The method that reads a line and processes it."""
         # Read line
         line = self._f.readline().decode('ascii', 'ignore')
         if not line:
@@ -117,16 +115,14 @@ class WavefrontReader(object):
                            % line.strip())
 
     def readTuple(self, line, n=3):
-        """ Reads a tuple of numbers. e.g. vertices, normals or teture coords.
-        """
+        """Reads a tuple of numbers. e.g. vertices, normals or teture coords."""
         numbers = [num for num in line.split(' ') if num]
         return [float(num) for num in numbers[1:n + 1]]
 
     def readFace(self, line):
-        """ Each face consists of three or more sets of indices. Each set
+        """Each face consists of three or more sets of indices. Each set
         consists of 1, 2 or 3 indices to vertices/normals/texcords.
         """
-
         # Get parts (skip first)
         indexSets = [num for num in line.split(' ') if num][1:]
 
@@ -198,7 +194,7 @@ class WavefrontReader(object):
         return normals
 
     def finish(self):
-        """ Converts gathere lists to numpy arrays and creates
+        """Converts gathere lists to numpy arrays and creates
         BaseMesh instance.
         """
         self._vertices = np.array(self._vertices, 'float32')
@@ -228,7 +224,7 @@ class WavefrontWriter(object):
     @classmethod
     def write(cls, fname, vertices, faces, normals,
               texcoords, name='', reshape_faces=True):
-        """ This classmethod is the entry point for writing mesh data to OBJ.
+        """This classmethod is the entry point for writing mesh data to OBJ.
 
         Parameters
         ----------
@@ -263,15 +259,14 @@ class WavefrontWriter(object):
             f.close()
 
     def writeLine(self, text):
-        """ Simple writeLine function to write a line of code to the file.
+        """Simple writeLine function to write a line of code to the file.
         The encoding is done here, and a newline character is added.
         """
         text += '\n'
         self._f.write(text.encode('ascii'))
 
     def writeTuple(self, val, what):
-        """ Writes a tuple of numbers (on one line).
-        """
+        """Writes a tuple of numbers (on one line)."""
         # Limit to three values. so RGBA data drops the alpha channel
         # Format can handle up to 3 texcords
         val = val[:3]
@@ -281,8 +276,7 @@ class WavefrontWriter(object):
         self.writeLine('%s %s' % (what, val))
 
     def writeFace(self, val, what='f'):
-        """ Write the face info to the net line.
-        """
+        """Write the face info to the net line."""
         # OBJ counts from 1
         val = [v + 1 for v in val]
         # Make string
@@ -299,9 +293,7 @@ class WavefrontWriter(object):
 
     def writeMesh(self, vertices, faces, normals, values,
                   name='', reshape_faces=True):
-        """ Write the given mesh instance.
-        """
-
+        """Write the given mesh instance."""
         # Store properties
         self._hasNormals = normals is not None
         self._hasValues = values is not None

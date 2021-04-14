@@ -30,8 +30,7 @@ class DummyCanvasBackend(object):
 
 
 def test_context_config():
-    """ Test GLContext handling of config dict
-    """
+    """Test GLContext handling of config dict"""
     default_config = get_default_config()
     
     # Pass default config unchanged
@@ -61,8 +60,7 @@ def test_context_config():
 
 
 def test_context_taking():
-    """ Test GLContext ownership and taking
-    """
+    """Test GLContext ownership and taking"""
     def get_canvas(c):
         return c.shared.ref
     
@@ -93,8 +91,7 @@ def test_context_taking():
 
 
 def test_gloo_without_app():
-    """ Test gloo without vispy.app (with FakeCanvas) """
-    
+    """Test gloo without vispy.app (with FakeCanvas)"""
     # Create dummy parser
     class DummyParser(gloo.glir.BaseGlirParser):
         def __init__(self):

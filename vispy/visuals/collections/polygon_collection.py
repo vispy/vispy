@@ -18,7 +18,6 @@ def PolygonCollection(mode="raw", *args, **kwargs):
                  dash)
       - "agg+"  (speed: slow, size: big, output: perfect, no dash)
     """
-
     # if mode == "raw":
     return RawPolygonCollection(*args, **kwargs)
     # elif mode == "agg":

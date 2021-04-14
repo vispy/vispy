@@ -71,6 +71,7 @@ class AxisVisual(CompoundVisual):
         of 'bottom', 'middle', or 'top'. If this is not specified, it is
         determined automatically.
     """
+    
     def __init__(self, pos=None, domain=(0., 1.), tick_direction=(-1., 0.),
                  scale_type="linear", axis_color=(1, 1, 1),
                  tick_color=(0.7, 0.7, 0.7), text_color='w',
@@ -250,9 +251,7 @@ class AxisVisual(CompoundVisual):
 
     @property
     def _rotation_angle(self):
-        """
-        Determine the rotation angle of the axis as projected onto the canvas.
-        """
+        """Determine the rotation angle of the axis as projected onto the canvas."""
         # TODO: make sure we only call get_transform if the transform for
         # the line is updated
         tr = self._line.get_transform(map_from='visual', map_to='canvas')
@@ -421,9 +420,8 @@ class Ticker(object):
 # Translated from matplotlib
 
 class MaxNLocator(object):
-    """
-    Select no more than N intervals at nice locations.
-    """
+    """Select no more than N intervals at nice locations."""
+    
     def __init__(self, nbins=10, steps=None, trim=True, integer=False,
                  symmetric=False, prune=None):
         """

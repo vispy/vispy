@@ -63,7 +63,7 @@ vec4 grid_color(vec2 pos) {
 
 
 class GridLinesVisual(ImageVisual):
-    """ Displays regularly spaced grid lines in any coordinate system and at
+    """Displays regularly spaced grid lines in any coordinate system and at
     any scale.
 
     Parameters
@@ -74,6 +74,7 @@ class GridLinesVisual(ImageVisual):
         The base color for grid lines. The final color may have its alpha
         channel modified.
     """
+    
     def __init__(self, scale=(1, 1), color='w'):
         # todo: PlaneVisual should support subdivide/impostor methods from
         # image and gridlines should inherit from plane instead.

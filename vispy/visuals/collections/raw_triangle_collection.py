@@ -46,7 +46,6 @@ class RawTriangleCollection(Collection):
 
         Parameters
         ----------
-
         points : np.array
             Vertices composing the triangles
 
@@ -56,7 +55,6 @@ class RawTriangleCollection(Collection):
         color : list, array or 4-tuple
            Path color
         """
-
         itemsize = len(points)
         itemcount = 1
 

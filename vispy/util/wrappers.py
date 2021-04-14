@@ -21,7 +21,7 @@ from .config import _get_args
 
 
 def use(app=None, gl=None):
-    """ Set the usage options for vispy
+    """Set the usage options for vispy
 
     Specify what app backend and GL backend to use.
 

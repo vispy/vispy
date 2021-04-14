@@ -2,8 +2,7 @@
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-"""Vispy configuration functions
-"""
+"""Vispy configuration functions."""
 
 import io
 import os
@@ -36,8 +35,7 @@ _allowed_config_keys = None
 
 
 def _init():
-    """ Create global Config object, parse command flags
-    """
+    """Create global Config object, parse command flags."""
     global config, _data_path, _allowed_config_keys
 
     app_dir = _get_vispy_app_dir()
@@ -139,7 +137,7 @@ VisPy command line arguments:
 
 
 def _parse_command_line_arguments():
-    """ Transform vispy specific command line args to vispy config.
+    """Transform vispy specific command line args to vispy config.
     Put into a function so that any variables dont leak in the vispy namespace.
     """
     global config
@@ -228,8 +226,7 @@ def _get_vispy_app_dir():
 
 
 class ConfigEvent(Event):
-
-    """ Event indicating a configuration change.
+    """Event indicating a configuration change.
 
     This class has a 'changes' attribute which is a dict of all name:value
     pairs that have changed in the configuration.
@@ -241,8 +238,7 @@ class ConfigEvent(Event):
 
 
 class Config(object):
-
-    """ Container for global settings used application-wide in vispy.
+    """Container for global settings used application-wide in vispy.
 
     Events:
     -------
@@ -372,7 +368,7 @@ def set_data_dir(directory=None, create=False, save=False):
 
 
 def _enable_profiling():
-    """ Start profiling and register callback to print stats when the program
+    """Start profiling and register callback to print stats when the program
     exits.
     """
     import cProfile

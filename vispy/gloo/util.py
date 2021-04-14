@@ -8,7 +8,7 @@ from .wrappers import read_pixels
 
 
 def _screenshot(viewport=None, alpha=True):
-    """ Take a screenshot using glReadPixels. Not sure where to put this
+    """Take a screenshot using glReadPixels. Not sure where to put this
     yet, so a private function for now. Used in make.py.
 
     Parameters
@@ -73,8 +73,7 @@ def check_identifier(name):
 
 
 def check_enum(enum, name=None, valid=None):
-    """ Get lowercase string representation of enum.
-    """
+    """Get lowercase string representation of enum."""
     name = name or 'enum'
     # Try to convert
     res = None

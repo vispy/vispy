@@ -135,7 +135,7 @@ class TestEmitters(unittest.TestCase):
         assert not hasattr(self.result[0], 'key1')
 
     def test_emitter_subclass(self):
-        """EventEmitter subclassing"""
+        """The EventEmitter subclassing"""
         class MyEmitter(EventEmitter):
 
             def _prepare_event(self, *args, **kwargs):

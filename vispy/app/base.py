@@ -78,7 +78,7 @@ class BaseCanvasBackend(object):
         }
 
     def _process_backend_kwargs(self, kwargs):
-        """ Simple utility to retrieve kwargs in predetermined order.
+        """Simple utility to retrieve kwargs in predetermined order.
         Also checks whether the values of the backend arguments do not
         violate the backend capabilities.
         """

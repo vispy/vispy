@@ -641,8 +641,7 @@ class CanvasBackendEgl(QtBaseCanvasBackend, QWidget):
         self._initialized = True
 
     def get_window_id(self):
-        """ Get the window id of a PySide Widget. Might also work for PyQt4.
-        """
+        """Get the window id of a PySide Widget. Might also work for PyQt4."""
         # Get Qt win id
         winid = self.winId()
 

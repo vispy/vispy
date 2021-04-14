@@ -43,7 +43,7 @@ def get_default_config():
 
 
 def get_current_canvas():
-    """ Get the currently active canvas
+    """Get the currently active canvas
     
     Returns None if there is no canvas available. A canvas is made
     active on initialization and before the draw event is emitted.
@@ -61,8 +61,7 @@ def get_current_canvas():
 
 
 def set_current_canvas(canvas):
-    """ Make a canvas active. Used primarily by the canvas itself.
-    """
+    """Make a canvas active. Used primarily by the canvas itself."""
     # Notify glir 
     canvas.context._do_CURRENT_command = True
     # Try to be quick
@@ -77,8 +76,7 @@ def set_current_canvas(canvas):
 
 
 def forget_canvas(canvas):
-    """ Forget about the given canvas. Used by the canvas when closed.
-    """
+    """Forget about the given canvas. Used by the canvas when closed."""
     cc = [c() for c in canvasses if c() is not None]
     while canvas in cc:
         cc.remove(canvas)
@@ -118,7 +116,7 @@ class GLContext(BaseGlooFunctions):
                 raise TypeError('Context value of %r has invalid type.' % key)
     
     def create_shared(self, name, ref):
-        """ For the app backends to create the GLShared object.
+        """For the app backends to create the GLShared object.
 
         Parameters
         ----------
@@ -133,32 +131,30 @@ class GLContext(BaseGlooFunctions):
     
     @property
     def config(self):
-        """ A dictionary describing the configuration of this GL context.
-        """
+        """A dictionary describing the configuration of this GL context."""
         return self._config
     
     @property
     def glir(self):
-        """ The glir queue for the context. This queue is for objects
+        """The glir queue for the context. This queue is for objects
         that can be shared accross canvases (if they share a contex).
         """
         return self._glir
     
     @property
     def shared(self):
-        """ Get the object that represents the namespace that can
+        """Get the object that represents the namespace that can
         potentially be shared between multiple contexts.
         """
         return self._shared
 
     @property
     def capabilities(self):
-        """ The OpenGL capabilities
-        """
+        """The OpenGL capabilities"""
         return deepcopy(self.shared.parser.capabilities)
 
     def flush_commands(self, event=None):
-        """ Flush
+        """Flush
 
         Parameters
         ----------
@@ -184,7 +180,7 @@ class GLContext(BaseGlooFunctions):
 
 
 class GLShared(object):
-    """ Representation of a "namespace" that can be shared between
+    """Representation of a "namespace" that can be shared between
     different contexts. App backends can associate themselves with this
     object via add_ref().
     
@@ -214,7 +210,7 @@ class GLShared(object):
     
     @property
     def parser(self):
-        """The GLIR parser (shared between contexts) """
+        """The GLIR parser (shared between contexts)"""
         return self._parser
 
     @parser.setter
@@ -223,7 +219,7 @@ class GLShared(object):
         self._parser = parser
     
     def add_ref(self, name, ref):
-        """ Add a reference for the backend object that gives access
+        """Add a reference for the backend object that gives access
         to the low level context. Used in vispy.app.canvas.backends.
         The given name must match with that of previously added
         references.
@@ -237,14 +233,14 @@ class GLShared(object):
     
     @property
     def name(self):
-        """ The name of the canvas backend that this shared namespace is
+        """The name of the canvas backend that this shared namespace is
         associated with. Can be None.
         """
         return self._name
     
     @property
     def ref(self):
-        """ A reference (stored internally via a weakref) to an object
+        """A reference (stored internally via a weakref) to an object
         that the backend system can use to obtain the low-level
         information of the "reference context". In Vispy this will
         typically be the CanvasBackend object.
@@ -260,7 +256,7 @@ class GLShared(object):
 
 
 class FakeCanvas(object):
-    """ Fake canvas to allow using gloo without vispy.app
+    """Fake canvas to allow using gloo without vispy.app
     
     Instantiate this class to collect GLIR commands from gloo
     interactions. Call flush() in your draw event handler to execute
@@ -272,6 +268,5 @@ class FakeCanvas(object):
         set_current_canvas(self)
     
     def flush(self):
-        """ Flush commands. Call this after setting to context to current.
-        """
+        """Flush commands. Call this after setting to context to current."""
         self.context.flush_commands()

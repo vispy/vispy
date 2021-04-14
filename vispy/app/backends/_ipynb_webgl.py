@@ -2,9 +2,7 @@
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-"""
-Vispy backend for the IPython notebook (WebGL approach).
-"""
+"""Vispy backend for the IPython notebook (WebGL approach)."""
 
 from __future__ import division
 

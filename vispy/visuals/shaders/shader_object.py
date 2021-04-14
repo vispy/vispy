@@ -8,7 +8,7 @@ from .compiler import Compiler
 
 
 class ShaderObject(object):
-    """ Base class for all objects that may be included in a GLSL program
+    """Base class for all objects that may be included in a GLSL program
     (Functions, Variables, Expressions).
 
     Shader objects have a *definition* that defines the object in GLSL, an
@@ -21,7 +21,7 @@ class ShaderObject(object):
 
     @classmethod
     def create(self, obj, ref=None):
-        """ Convert *obj* to a new ShaderObject. If the output is a Variable
+        """Convert *obj* to a new ShaderObject. If the output is a Variable
         with no name, then set its name using *ref*.
         """
         if isinstance(ref, Variable):
@@ -58,30 +58,27 @@ class ShaderObject(object):
 
     @property
     def name(self):
-        """ The name of this shader object.
-        """
+        """The name of this shader object."""
         return None
 
     @property
     def version_pragma(self):
-        """Return version number and extra qualifiers from pragma if present.
-        """
+        """Return version number and extra qualifiers from pragma if present."""
         return None
 
     def definition(self, obj_names, version, shader):
-        """ Return the GLSL definition for this object. Use *obj_names* to
+        """Return the GLSL definition for this object. Use *obj_names* to
         determine the names of dependencies, and *version* (number, qualifier)
         to adjust code output.
         """
         return None
 
     def expression(self, obj_names):
-        """ Return the GLSL expression used to reference this object inline.
-        """
+        """Return the GLSL expression used to reference this object inline."""
         return obj_names[self]
 
     def dependencies(self, sort=False):
-        """ Return all dependencies required to use this object. The last item
+        """Return all dependencies required to use this object. The last item
         in the list is *self*.
         """
         alldeps = []
@@ -103,7 +100,7 @@ class ShaderObject(object):
         return alldeps
 
     def static_names(self):
-        """ Return a list of names that are declared in this object's
+        """Return a list of names that are declared in this object's
         definition (not including the name of the object itself).
 
         These names will be reserved by the compiler when automatically
@@ -112,7 +109,7 @@ class ShaderObject(object):
         return []
 
     def _add_dep(self, dep):
-        """ Increment the reference count for *dep*. If this is a new
+        """Increment the reference count for *dep*. If this is a new
         dependency, then connect to its *changed* event.
         """
         if dep in self._deps:
@@ -122,7 +119,7 @@ class ShaderObject(object):
             dep._dependents[self] = None
 
     def _remove_dep(self, dep):
-        """ Decrement the reference count for *dep*. If the reference count
+        """Decrement the reference count for *dep*. If the reference count
         reaches 0, then the dependency is removed and its *changed* event is
         disconnected.
         """
@@ -134,19 +131,17 @@ class ShaderObject(object):
             self._deps[dep] -= 1
 
     def _dep_changed(self, dep, code_changed=False, value_changed=False):
-        """ Called when a dependency's expression has changed.
-        """
+        """Called when a dependency's expression has changed."""
         self.changed(code_changed, value_changed)
 
     def changed(self, code_changed=False, value_changed=False):
-        """Inform dependents that this shaderobject has changed.
-        """
+        """Inform dependents that this shaderobject has changed."""
         for d in self._dependents:
             d._dep_changed(self, code_changed=code_changed,
                            value_changed=value_changed)
 
     def compile(self):
-        """ Return a compilation of this object and its dependencies.
+        """Return a compilation of this object and its dependencies.
 
         Note: this is mainly for debugging purposes; the names in this code
         are not guaranteed to match names in any other compilations. Use

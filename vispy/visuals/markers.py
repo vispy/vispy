@@ -3,9 +3,7 @@
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
-"""
-Marker Visual and shader definitions.
-"""
+"""Marker Visual and shader definitions."""
 
 import numpy as np
 
@@ -483,8 +481,8 @@ marker_types = tuple(sorted(list(_marker_dict.keys())))
 
 
 class MarkersVisual(Visual):
-    """ Visual displaying marker symbols.
-    """
+    """Visual displaying marker symbols."""
+    
     def __init__(self, **kwargs):
         self._vbo = VertexBuffer()
         self._v_size_var = Variable('varying float v_size')
@@ -506,7 +504,7 @@ class MarkersVisual(Visual):
     def set_data(self, pos=None, symbol='o', size=10., edge_width=1.,
                  edge_width_rel=None, edge_color='black', face_color='white',
                  scaling=False):
-        """ Set the data used to display this visual.
+        """Set the data used to display this visual.
 
         Parameters
         ----------

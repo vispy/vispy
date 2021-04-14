@@ -12,7 +12,7 @@ from ... import gloo
 
 
 class LogTransform(BaseTransform):
-    """ Transform perfoming logarithmic transformation on three axes.
+    """Transform perfoming logarithmic transformation on three axes.
 
     Maps (x, y, z) => (log(base.x, x), log(base.y, y), log(base.z, z))
 
@@ -113,6 +113,7 @@ class PolarTransform(BaseTransform):
     Maps (theta, r, z) to (x, y, z), where `x = r*cos(theta)`
     and `y = r*sin(theta)`.
     """
+    
     glsl_map = """
         vec4 polar_transform_map(vec4 pos) {
             return vec4(pos.y * cos(pos.x), pos.y * sin(pos.x), pos.z, 1.);
@@ -164,7 +165,7 @@ class PolarTransform(BaseTransform):
 
 
 class MagnifyTransform(BaseTransform):
-    """ Magnifying lens transform. 
+    """Magnifying lens transform. 
 
     This transform causes a circular region to appear with larger scale around
     its center point. 
@@ -183,7 +184,6 @@ class MagnifyTransform(BaseTransform):
         
     Notes
     -----
-    
     This transform works by segmenting its input coordinates into three
     regions--inner, outer, and transition. Coordinates in the inner region are
     multiplied by a constant scale factor around the center point, and 
@@ -195,6 +195,7 @@ class MagnifyTransform(BaseTransform):
     the function numerically to allow trivial inversion. In OpenGL, the 
     sampling is implemented as a texture holding a lookup table.
     """
+    
     glsl_map = """
         vec4 mag_transform(vec4 pos) {
             vec2 d = vec2(pos.x - $center.x, pos.y - $center.y);
@@ -240,8 +241,7 @@ class MagnifyTransform(BaseTransform):
         
     @property
     def center(self):
-        """ The (x, y) center point of the transform.
-        """
+        """The (x, y) center point of the transform."""
         return self._center
     
     @center.setter
@@ -254,8 +254,7 @@ class MagnifyTransform(BaseTransform):
 
     @property
     def mag(self):
-        """ The scale factor used in the central region of the transform.
-        """
+        """The scale factor used in the central region of the transform."""
         return self._mag
     
     @mag.setter
@@ -269,9 +268,7 @@ class MagnifyTransform(BaseTransform):
 
     @property
     def radii(self):
-        """ The inner and outer radii of the circular area bounding the 
-        transform.
-        """
+        """The inner and outer radii of the circular area bounding the transform."""
         return self._radii
     
     @radii.setter
@@ -373,9 +370,10 @@ class MagnifyTransform(BaseTransform):
 
 
 class Magnify1DTransform(MagnifyTransform):
-    """ A 1-dimensional analog of MagnifyTransform. This transform expands 
+    """A 1-dimensional analog of MagnifyTransform. This transform expands 
     its input along the x-axis, around a center x value.
     """
+    
     glsl_map = """
         vec4 mag_transform(vec4 pos) {
             float dist = pos.x - $center.x;

@@ -65,6 +65,7 @@ class ColorBarWidget(Widget):
     axis_ratio : float
         ratio of minor axis to major axis
     """
+    
     def __init__(self, cmap, orientation,
                  label="", label_color='black', clim=("", ""),
                  border_width=0.0, border_color="black",
@@ -102,8 +103,7 @@ class ColorBarWidget(Widget):
         self._colorbar.size = self._calc_size()
 
     def _calc_size(self):
-        """Calculate a size
-        """
+        """Calculate a size"""
         (total_halfx, total_halfy) = (self.rect.right, self.rect.top)
         if self._colorbar.orientation in ["bottom", "top"]:
             (total_major_axis, total_minor_axis) = (total_halfx, total_halfy)
@@ -155,8 +155,7 @@ class ColorBarWidget(Widget):
 
     @property
     def border_color(self):
-        """ The color of the border around the ColorBar in pixels
-        """
+        """The color of the border around the ColorBar in pixels"""
         return self._colorbar.border_color
 
     @border_color.setter
@@ -165,8 +164,7 @@ class ColorBarWidget(Widget):
 
     @property
     def border_width(self):
-        """ The width of the border around the ColorBar in pixels
-        """
+        """The width of the border around the ColorBar in pixels"""
         return self._colorbar.border_width
 
     @border_width.setter

@@ -11,7 +11,6 @@ from . import use_app, Application
 
 
 class Timer(object):
-
     """Timer used to schedule events in the future or on a repeating schedule.
 
     Parameters
@@ -32,6 +31,7 @@ class Timer(object):
 
     def __init__(self, interval='auto', connect=None, iterations=-1,
                  start=False, app=None):
+        """Initiallize timer method."""
         self.events = EmitterGroup(source=self,
                                    start=Event,
                                    stop=Event,
@@ -70,8 +70,7 @@ class Timer(object):
 
     @property
     def app(self):
-        """ The vispy Application instance on which this Timer is based.
-        """
+        """Timer is based on this vispy Application instance."""
         return self._app
 
     @property
@@ -141,8 +140,7 @@ class Timer(object):
 
     @property
     def native(self):
-        """The native timer on which this Timer is based.
-        """
+        """Timer is based on this native timer"""
         return self._backend._vispy_get_native_timer()
 
     def _timeout(self, *args):

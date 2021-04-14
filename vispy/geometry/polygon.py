@@ -26,6 +26,7 @@ class PolygonData(object):
     -----
     All arguments are optional.
     """
+    
     def __init__(self, vertices=None, edges=None, faces=None):
         self._vertices = vertices
         self._edges = edges
@@ -41,7 +42,6 @@ class PolygonData(object):
         computes them.
         If no vertices or faces are specified, the function returns None.
         """
-
         if self._faces is None:
             if self._vertices is None:
                 return None
@@ -50,8 +50,7 @@ class PolygonData(object):
 
     @faces.setter
     def faces(self, f):
-        """
-        If vertices and faces are incompatible, this will generate vertices
+        """If vertices and faces are incompatible, this will generate vertices
         from these faces and set them.
         """
         self._faces = f
@@ -64,7 +63,6 @@ class PolygonData(object):
         returns them.
         If no vertices or faces are specified, the function returns None.
         """
-
         if self._faces is None:
             if self._vertices is None:
                 return None
@@ -73,8 +71,7 @@ class PolygonData(object):
 
     @vertices.setter
     def vertices(self, v):
-        """
-        If vertices and faces are incompatible, this will generate faces
+        """If vertices and faces are incompatible, this will generate faces
         from these vertices and set them.
         """
         self._vertices = v
@@ -89,9 +86,7 @@ class PolygonData(object):
 
     @edges.setter
     def edges(self, e):
-        """
-        Ensures that all edges are valid.
-        """
+        """Ensures that all edges are valid."""
         self._edges = e
 
     @property
