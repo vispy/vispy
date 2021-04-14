@@ -157,7 +157,7 @@ class SpectrogramVisual(ImageVisual):
                 for i in range(data.shape[0]):
                     data[i, :] -= np.mean(data[i, :])
                     data[i, :] /= np.std(data[i, :])
-            return data
+            return data.astype(np.float32)  # ImageVisual will warn if 64-bit
         else:
             return None
 

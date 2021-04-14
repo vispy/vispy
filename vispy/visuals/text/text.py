@@ -332,7 +332,7 @@ class TextVisual(Visual):
                             sin(a_rotation), cos(a_rotation), 0, 0,
                             0, 0, 1, 0, 0, 0, 0, 1);
             vec4 pos = $transform(vec4(a_pos, 1.0)) +
-                       $text_scale(rot * vec4(a_position, 0, 0));
+                       vec4($text_scale(rot * vec4(a_position, 0.0, 1.0)).xyz, 0.0);
             gl_Position = pos;
             v_texcoord = a_texcoord;
             v_color = $color;

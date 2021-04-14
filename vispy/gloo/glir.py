@@ -391,7 +391,16 @@ _internalformats = [
     gl.Enum('GL_RGBA8', 32856),
     gl.Enum('GL_RGBA16', 32859),
     gl.Enum('GL_RGBA16F', 34842),
-    gl.Enum('GL_RGBA32F', 34836)
+    gl.Enum('GL_RGBA32F', 34836),
+    # extended formats (not currently supported)
+    # gl.Enum('GL_R32I', 33333),
+    # gl.Enum('GL_RG32I', 33339),
+    # gl.Enum('GL_RGB32I', 36227),
+    # gl.Enum('GL_RGBA32I', 36226),
+    # gl.Enum('GL_R32UI', 33334),
+    # gl.Enum('GL_RG32UI', 33340),
+    # gl.Enum('GL_RGB32UI', 36209),
+    # gl.Enum('GL_RGBA32UI', 36208),
 ]
 _internalformats = dict([(enum.name, enum) for enum in _internalformats])
 
