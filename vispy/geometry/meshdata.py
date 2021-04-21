@@ -228,7 +228,7 @@ class MeshData(object):
         """
         if indexed is None:
             if verts is not None:
-                self._vertices = verts
+                self._vertices = verts.astype(np.float32)
             self._vertices_indexed_by_faces = None
         elif indexed == 'faces':
             self._vertices = None
@@ -340,7 +340,6 @@ class MeshData(object):
                 norm = norms.sum(axis=0)  # sum normals
                 renorm = (norm**2).sum()**0.5
                 if renorm > 0:
-                    # norm = norm.astype(renorm.dtype)
                     norm /= renorm
                 self._vertex_normals[vindex] = norm
 
