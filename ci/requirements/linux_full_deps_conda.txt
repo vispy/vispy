@@ -21,3 +21,4 @@ pyopengl
 scikit-image
 scipy
 six
+networkx

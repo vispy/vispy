@@ -73,8 +73,7 @@ def check_identifier(name):
 
 
 def check_enum(enum, name=None, valid=None):
-    """ Get lowercase string representation of enum.
-    """
+    """Get lowercase string representation of enum."""
     name = name or 'enum'
     # Try to convert
     res = None
@@ -85,7 +84,7 @@ def check_enum(enum, name=None, valid=None):
         res = enum.lower()
     # Check
     if res is None:
-        raise ValueError('Could not determine string represenatation for'
+        raise ValueError('Could not determine string representation for'
                          'enum %r' % enum)
     elif valid and res not in valid:
         raise ValueError('Value of %s must be one of %r, not %r' %
