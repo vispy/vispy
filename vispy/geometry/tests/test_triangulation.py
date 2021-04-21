@@ -147,7 +147,7 @@ def test_edge_intersections():
 
     # Test _nearly_ parallel lines.
     pts = np.array([[0., 0.],
-                    [1.62434542,  0.],
+                    [1.62434542, 0.],
                     [1.62434542, -0.61175638],
                     [1.09617364, -0.61175638]])
 
@@ -304,15 +304,15 @@ def test_random():
 
     # much larger test
     # this should pass, but takes forever..
-    #N = 4000
-    #pts = np.random.normal(size=(N, 2))
-    #pts = np.cumsum(pts, axis=0)
-    #edges = np.zeros((N, 2), dtype=int)
-    #edges[:,0] = np.arange(N)
-    #edges[:,1] = np.arange(1,N+1) % N
+    # N = 4000
+    # pts = np.random.normal(size=(N, 2))
+    # pts = np.cumsum(pts, axis=0)
+    # edges = np.zeros((N, 2), dtype=int)
+    # edges[:,0] = np.arange(N)
+    # edges[:,1] = np.arange(1,N+1) % N
 
-    #t = T(pts, edges)
-    #t.triangulate()
+    # t = T(pts, edges)
+    # t.triangulate()
 
 
 def test_orthogonal():

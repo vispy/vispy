@@ -153,12 +153,12 @@ class PolarTransform(BaseTransform):
         return ret
 
 
-#class BilinearTransform(BaseTransform):
+# class BilinearTransform(BaseTransform):
 #    # TODO
 #    pass
 
 
-#class WarpTransform(BaseTransform):
+# class WarpTransform(BaseTransform):
 #    """ Multiple bilinear transforms in a grid arrangement.
 #    """
 #    # TODO

@@ -61,7 +61,7 @@ class DebugTriangulation(Triangulation):
         
         # Auto-advance on timer
         if self.interval < 0:
-            #Advance once per click
+            # Advance once per click
             while True:
                 app.processEvents()
                 time.sleep(0.01)
@@ -118,7 +118,7 @@ if __name__ == '__main__':
     
     app = pg.mkQApp()
     
-    #user input data - points and constraining edges
+    # user input data - points and constraining edges
     
     #
     #  Test 1
@@ -152,8 +152,8 @@ if __name__ == '__main__':
     pts = np.array(pts, dtype=float)
     edges = np.array(edges, dtype=int)
 
-    #t = DebugTriangulation(pts, edges, interval=-1, skip=19570)
-    #t.triangulate()
+    # t = DebugTriangulation(pts, edges, interval=-1, skip=19570)
+    # t.triangulate()
 
     # make lines that are entirely vertical / horizontal
     np.random.seed(1)

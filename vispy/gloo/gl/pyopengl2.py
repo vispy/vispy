@@ -37,7 +37,7 @@ def _patch():
 _patch()
 
 
-## Inject
+# Inject
 
 def _make_unavailable_func(funcname):
     def cb(*args, **kwargs):

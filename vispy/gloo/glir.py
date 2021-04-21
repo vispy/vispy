@@ -882,7 +882,7 @@ def glir_logger(parser_cls, file_or_filename):
     return cls
 
 
-## GLIR objects
+# GLIR objects
 
 class GlirObject(object):
     def __init__(self, parser, id_):
@@ -1143,7 +1143,7 @@ class GlirProgram(GlirObject):
                         container.append(('%s[%d]' % (name, i), gtype))
                 else:
                     container.append((name, gtype))
-        #return attributes, uniforms
+        # return attributes, uniforms
         return set([v[0] for v in attributes] + [v[0] for v in uniforms])
 
     def set_texture(self, name, value):
@@ -1302,9 +1302,9 @@ class GlirProgram(GlirObject):
             gl.glBindTexture(GL_TEXTURE_3D, 0)
             gl.glBindTexture(GL_TEXTURE_1D, 0)
 
-        #Deactivate program - should not be necessary. In single-program
-        #apps it would not even make sense.
-        #self.deactivate()
+        # Deactivate program - should not be necessary. In single-program
+        # apps it would not even make sense.
+        # self.deactivate()
 
     def draw(self, mode, selection):
         """Draw program in given mode, with given selection (IndexBuffer or
@@ -1720,7 +1720,7 @@ class GlirFrameBuffer(GlirObject):
                 'stencil': (gl.GL_STENCIL_ATTACHMENT, gl.GL_STENCIL_INDEX8)}
 
     def create(self):
-        #self._parser._fb_stack = [0]  # To keep track of active FB
+        # self._parser._fb_stack = [0]  # To keep track of active FB
         self._handle = gl.glCreateFramebuffer()
         self._validated = False
 

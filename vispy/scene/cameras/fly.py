@@ -95,7 +95,7 @@ class FlyCamera(PerspectiveCamera):
             'Q': (+1, 6), 'E': (-1, 6),
             #
             keys.SPACE: (0, 1, 2, 3),  # 0 means brake, apply to translation
-            #keys.ALT: (+5, 1),  # Turbo
+            # keys.ALT: (+5, 1),  # Turbo
         }
 
         # Timer. Each tick we calculate new speed and new position
@@ -164,7 +164,7 @@ class FlyCamera(PerspectiveCamera):
 
     def _set_range(self, init):
         """Reset the view."""
-        #PerspectiveCamera._set_range(self, init)
+        # PerspectiveCamera._set_range(self, init)
         # Stop moving
         self._speed *= 0.0
 
@@ -218,7 +218,7 @@ class FlyCamera(PerspectiveCamera):
     def _get_directions(self):
 
         # Get reference points in reference coordinates
-        #p0 = Point(0,0,0)
+        # p0 = Point(0,0,0)
         pf = (0, 0, -1)  # front
         pr = (1, 0, 0)  # right
         pl = (-1, 0, 0)  # left
@@ -314,7 +314,7 @@ class FlyCamera(PerspectiveCamera):
 
             def angle(p1, p2):
                 return np.arccos(p1.dot(p2))
-            #au = angle(pu, (0, 0, 1))
+            # au = angle(pu, (0, 0, 1))
             ar = angle(pr, up)
             al = angle(pl, up)
             af = angle(pf, up)

@@ -551,7 +551,7 @@ class MatrixTransform(BaseTransform):
         self.matrix = transforms.frustum(l, r, b, t, n, f)
 
 
-#class SRTTransform(BaseTransform):
+# class SRTTransform(BaseTransform):
 #    """ Transform performing scale, rotate, and translate, in that order.
 #
 #    This transformation allows objects to be placed arbitrarily in a scene

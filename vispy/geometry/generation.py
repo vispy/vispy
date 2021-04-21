@@ -28,7 +28,7 @@ def create_cube():
     vtype = [('position', np.float32, 3),
              ('texcoord', np.float32, 2),
              ('normal', np.float32, 3),
-             ('color',    np.float32, 4)]
+             ('color', np.float32, 4)]
     itype = np.uint32
 
     # Vertices positions

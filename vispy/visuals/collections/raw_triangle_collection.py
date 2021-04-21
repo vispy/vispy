@@ -18,7 +18,7 @@ class RawTriangleCollection(Collection):
                  vertex=None, fragment=None, **kwargs):
 
         base_dtype = [('position', (np.float32, 3), '!local', (0, 0, 0)),
-                      ('color',    (np.float32, 4), 'local', (0, 0, 0, 1))]
+                      ('color', (np.float32, 4), 'local', (0, 0, 0, 1))]
 
         dtype = base_dtype
         if user_dtype:

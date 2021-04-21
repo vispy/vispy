@@ -148,7 +148,7 @@ class DataBufferTest(unittest.TestCase):
         # Check structured type
         dtype = np.dtype([('position', np.float32, 3),
                           ('texcoord', np.float32, 2),
-                          ('color',    np.float32, 4)])
+                          ('color', np.float32, 4)])
         data = np.zeros(10, dtype=dtype)
         B = DataBuffer(data)
         assert B.nbytes == data.nbytes
@@ -181,7 +181,7 @@ class DataBufferTest(unittest.TestCase):
     def test_getitem_field(self):
         dtype = np.dtype([('position', np.float32, 3),
                           ('texcoord', np.float32, 2),
-                          ('color',    np.float32, 4)])
+                          ('color', np.float32, 4)])
         data = np.zeros(10, dtype=dtype)
         B = DataBuffer(data)
 
@@ -214,7 +214,7 @@ class DataBufferTest(unittest.TestCase):
     def test_getitem_index(self):
         dtype = np.dtype([('position', np.float32, 3),
                           ('texcoord', np.float32, 2),
-                          ('color',    np.float32, 4)])
+                          ('color', np.float32, 4)])
         data = np.zeros(10, dtype=dtype)
         B = DataBuffer(data)
         Z = B[0:1]
@@ -240,7 +240,7 @@ class DataBufferTest(unittest.TestCase):
     def test_invalid_view_after_resize(self):
         dtype = np.dtype([('position', np.float32, 3),
                           ('texcoord', np.float32, 2),
-                          ('color',    np.float32, 4)])
+                          ('color', np.float32, 4)])
         data = np.zeros(10, dtype=dtype)
         B = DataBuffer(data)
         Y = B['position']
@@ -254,7 +254,7 @@ class DataBufferTest(unittest.TestCase):
     def test_invalid_view_after_set_data(self):
         dtype = np.dtype([('position', np.float32, 3),
                           ('texcoord', np.float32, 2),
-                          ('color',    np.float32, 4)])
+                          ('color', np.float32, 4)])
         data = np.zeros(10, dtype=dtype)
         B = DataBuffer(data)
         Z = B[5:]
@@ -266,7 +266,7 @@ class DataBufferTest(unittest.TestCase):
     def test_set_data_base(self):
         dtype = np.dtype([('position', np.float32, 3),
                           ('texcoord', np.float32, 2),
-                          ('color',    np.float32, 4)])
+                          ('color', np.float32, 4)])
         data = np.zeros(10, dtype=dtype)
         B = DataBuffer(data)
         B.set_data(data)
@@ -291,7 +291,7 @@ class DataBufferTest(unittest.TestCase):
     def test_getitem(self):
         dtype = np.dtype([('position', np.float32, 3),
                           ('texcoord', np.float32, 2),
-                          ('color',    np.float32, 4)])
+                          ('color', np.float32, 4)])
         data = np.zeros(10, dtype=dtype)
         B = DataBuffer(data)
         assert B[1].dtype == dtype
@@ -305,7 +305,7 @@ class DataBufferTest(unittest.TestCase):
     def test_setitem(self):
         dtype = np.dtype([('position', np.float32, 3),
                           ('texcoord', np.float32, 2),
-                          ('color',    np.float32, 4)])
+                          ('color', np.float32, 4)])
         data = np.zeros(10, dtype=dtype)
         B = DataBuffer(data)
         B[1] = data[0]
@@ -329,7 +329,7 @@ class DataBufferTest(unittest.TestCase):
     def test_setitem_broadcast(self):
         dtype = np.dtype([('position', np.float32, 3),
                           ('texcoord', np.float32, 2),
-                          ('color',    np.float32, 4)])
+                          ('color', np.float32, 4)])
         data = np.zeros(10, dtype=dtype)
         B = DataBuffer(data)
         self.assertRaises(ValueError, B.__setitem__, 'position', (1, 2, 3))
@@ -339,7 +339,7 @@ class DataBufferTest(unittest.TestCase):
     def test_setitem_strided(self):
         dtype = np.dtype([('position', np.float32, 3),
                           ('texcoord', np.float32, 2),
-                          ('color',    np.float32, 4)])
+                          ('color', np.float32, 4)])
         data1 = np.zeros(10, dtype=dtype)
         data2 = np.ones(10, dtype=dtype)
         B = DataBuffer(data1)
@@ -351,7 +351,7 @@ class DataBufferTest(unittest.TestCase):
     def test_setitem_half(self):
         dtype = np.dtype([('position', np.float32, 3),
                           ('texcoord', np.float32, 2),
-                          ('color',    np.float32, 4)])
+                          ('color', np.float32, 4)])
         data1 = np.zeros(10, dtype=dtype)
         data2 = np.ones(10, dtype=dtype)
         B = DataBuffer(data1)
@@ -369,17 +369,17 @@ class DataBufferTest(unittest.TestCase):
     def test_setitem_field_no_storage(self):
         dtype = np.dtype([('position', np.float32, 3),
                           ('texcoord', np.float32, 2),
-                          ('color',    np.float32, 4)])
+                          ('color', np.float32, 4)])
         data = np.zeros(10, dtype=dtype)
         B = DataBuffer(data)
-        self.assertRaises(ValueError,  B.__setitem__, 'position', (1, 2, 3))
+        self.assertRaises(ValueError, B.__setitem__, 'position', (1, 2, 3))
 
     # Set every 2 item without storage:  error
     # ----------------------------------------
     def test_every_two_item_no_storage(self):
         dtype = np.dtype([('position', np.float32, 3),
                           ('texcoord', np.float32, 2),
-                          ('color',    np.float32, 4)])
+                          ('color', np.float32, 4)])
         data = np.zeros(10, dtype=dtype)
         B = DataBuffer(data)
         # with self.assertRaises(ValueError):
@@ -481,7 +481,7 @@ class VertexBufferTest(unittest.TestCase):
          
         # Not allowed
         self.assertRaises(TypeError, VertexBuffer, dtype=np.float64)
-        #self.assertRaises(TypeError, VertexBuffer, [[1,2,3,4,5],[1,2,3,4,5]])
+        # self.assertRaises(TypeError, VertexBuffer, [[1,2,3,4,5],[1,2,3,4,5]])
 
     # VertexBuffer not allowed base types
     # -----------------------------------

@@ -50,8 +50,8 @@ class RawPointCollection(Collection):
             'local', 'shared' or 'global'
         """
         base_dtype = [('position', (np.float32, 3), "!local", (0, 0, 0)),
-                      ('size',     (np.float32, 1), "global", 3.0),
-                      ('color',    (np.float32, 4), "global", (0, 0, 0, 1))]
+                      ('size', (np.float32, 1), "global", 3.0),
+                      ('color', (np.float32, 4), "global", (0, 0, 0, 1))]
 
         dtype = base_dtype
         if user_dtype:

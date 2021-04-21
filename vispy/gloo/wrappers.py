@@ -584,7 +584,7 @@ class GlooFunctions(BaseGlooFunctions):
         return canvas.context.glir
 
 
-## Create global functions object and inject names here
+# Create global functions object and inject names here
 
 # GlooFunctions without queue: use queue of canvas that is current at call-time
 global_gloo_functions = GlooFunctions()
@@ -597,7 +597,7 @@ for name in dir(global_gloo_functions):
         globals()[name] = fun
 
 
-## Functions that do not use the glir queue
+# Functions that do not use the glir queue
 
 
 def read_pixels(viewport=None, alpha=True, mode='color', out_type='unsigned_byte'):

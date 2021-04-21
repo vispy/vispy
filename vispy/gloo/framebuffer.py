@@ -253,5 +253,5 @@ class FrameBuffer(GLObject):
             crop = (0, 0, w, h)
 
         # todo: this is ostensibly required, but not available in gloo.gl
-        #gl.glReadBuffer(buffer._target)
+        # gl.glReadBuffer(buffer._target)
         return read_pixels(crop, alpha=alpha, mode=mode)

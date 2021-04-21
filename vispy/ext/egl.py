@@ -25,7 +25,7 @@ if _egl_file is None:
 _lib = ctypes.CDLL(_egl_file)
 
 
-## Constants
+# Constants
 
 EGL_FALSE = 0
 EGL_TRUE = 1
@@ -204,7 +204,7 @@ EGL_ALPHA_FORMAT_NONPRE = EGL_VG_ALPHA_FORMAT_NONPRE
 EGL_ALPHA_FORMAT_PRE = EGL_VG_ALPHA_FORMAT_PRE
 
 
-## The functions
+# The functions
 
 _lib.eglGetDisplay.argtypes = _c_int,
 _lib.eglGetDisplay.restype = c_void_p

@@ -14,7 +14,7 @@ from . import _copy_gl_functions
 from ._constants import *  # noqa
 
 
-## Ctypes stuff
+# Ctypes stuff
 
 if hasattr(ctypes, 'TEST_DLL'):
     # Load dummy lib 
@@ -56,7 +56,7 @@ else:
     raise RuntimeError('Unknown platform: %s' % sys.platform)
 
 
-## Inject
+# Inject
 
 from . import _es2  # noqa
 _copy_gl_functions(_es2, globals())

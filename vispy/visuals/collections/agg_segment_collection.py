@@ -57,10 +57,10 @@ class AggSegmentCollection(Collection):
         antialias : string
             'local', 'shared' or 'global'
         """
-        base_dtype = [('P0',        (np.float32, 3), '!local', (0, 0, 0)),
-                      ('P1',        (np.float32, 3), '!local', (0, 0, 0)),
-                      ('index',     (np.float32, 1), '!local', 0),
-                      ('color',     (np.float32, 4), 'shared', (0, 0, 0, 1)),
+        base_dtype = [('P0', (np.float32, 3), '!local', (0, 0, 0)),
+                      ('P1', (np.float32, 3), '!local', (0, 0, 0)),
+                      ('index', (np.float32, 1), '!local', 0),
+                      ('color', (np.float32, 4), 'shared', (0, 0, 0, 1)),
                       ('linewidth', (np.float32, 1), 'shared', 1),
                       ('antialias', (np.float32, 1), 'shared', 1),
                       ('viewport',  (np.float32, 4), 'global', (0, 0, 512, 512))]  # noqa

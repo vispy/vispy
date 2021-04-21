@@ -79,7 +79,7 @@ KEYMAP = {
     65307: keys.ESCAPE,
     65288: keys.BACKSPACE,
 
-    32:    keys.SPACE,
+    32: keys.SPACE,
     65293: keys.ENTER,
     65289: keys.TAB,
 
@@ -376,21 +376,21 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
             self.pack(fill=tk.BOTH, expand=True)
 
             # Also bind the key events to the top window instead.
-            self.top.bind("<Any-KeyPress>",   self._on_key_down)
+            self.top.bind("<Any-KeyPress>", self._on_key_down)
             self.top.bind("<Any-KeyRelease>", self._on_key_up)
         else:
             # If no top, bind key events to the canvas itself.
-            self.bind("<Any-KeyPress>",   self._on_key_down)
+            self.bind("<Any-KeyPress>", self._on_key_down)
             self.bind("<Any-KeyRelease>", self._on_key_up)
 
         # Bind the other events to our internal methods.
-        self.bind("<Enter>",             self._on_mouse_enter)  # This also binds MouseWheel
-        self.bind("<Leave>",             self._on_mouse_leave)  # This also unbinds MouseWheel
-        self.bind("<Motion>",            self._on_mouse_move)
-        self.bind("<Any-Button>",        self._on_mouse_button_press)
+        self.bind("<Enter>", self._on_mouse_enter)  # This also binds MouseWheel
+        self.bind("<Leave>", self._on_mouse_leave)  # This also unbinds MouseWheel
+        self.bind("<Motion>", self._on_mouse_move)
+        self.bind("<Any-Button>", self._on_mouse_button_press)
         self.bind("<Double-Any-Button>", self._on_mouse_double_button_press)
         self.bind("<Any-ButtonRelease>", self._on_mouse_button_release)
-        self.bind("<Configure>",         self._on_configure, add='+')
+        self.bind("<Configure>", self._on_configure, add='+')
 
         self._vispy_set_visible(p.show)
         self.focus_force()
@@ -521,8 +521,8 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
             return
         if _tk_on_linux:
             # On Linux, bind wheel as buttons instead
-            self.bind_all("<Button-4>",   self._on_mouse_wheel)
-            self.bind_all("<Button-5>",   self._on_mouse_wheel)
+            self.bind_all("<Button-4>", self._on_mouse_wheel)
+            self.bind_all("<Button-5>", self._on_mouse_wheel)
         else:
             # Other platforms, bind wheel event
             # FIXME: What to do on Darwin?

@@ -97,7 +97,7 @@ class Rotate(Matrix):
 
         angle = math.pi * angle / 180.0
         rotate = np.array([[math.cos(angle), -math.sin(angle), 0],
-                           [math.sin(angle),  math.cos(angle), 0],
+                           [math.sin(angle), math.cos(angle), 0],
                            [0, 0, 1]], dtype=float)
         forward = np.array([[1, 0, x],
                             [0, 1, y],
@@ -162,12 +162,12 @@ class Transform(object):
         if not content:
             return
 
-        converters = {"matrix":    Matrix,
-                      "scale":     Scale,
-                      "rotate":    Rotate,
+        converters = {"matrix": Matrix,
+                      "scale": Scale,
+                      "rotate": Rotate,
                       "translate": Translate,
-                      "skewx":     SkewX,
-                      "skewy":     SkewY}
+                      "skewx": SkewX,
+                      "skewy": SkewY}
         keys = "|".join(converters.keys())
         pattern = r"(?P<name>%s)\s*\((?P<args>[^)]*)\)" % keys
 

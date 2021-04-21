@@ -151,7 +151,7 @@ class BaseCamera(Node):
         """The viewbox that this camera applies to."""
         return self._viewbox
 
-    ## Camera attributes
+    # Camera attributes
 
     @property
     def interactive(self):
@@ -229,7 +229,7 @@ class BaseCamera(Node):
         self._fov = fov
         self.view_changed()
 
-    ## Camera methods
+    # Camera methods
 
     def set_range(self, x=None, y=None, z=None, margin=0.05):
         """Set the range of the view region for the camera
@@ -417,7 +417,7 @@ class BaseCamera(Node):
         cam1._linked_cameras[cam2] = props
         cam2._linked_cameras[cam1] = props
 
-    ## Event-related methods
+    # Event-related methods
 
     def view_changed(self):
         """Called when this camera is changes its view. Also called

@@ -164,8 +164,8 @@ class TransformCache(object):
         item[0] = 0  # reset age for this item
 
         # make sure the chain is up to date
-        #tr = item[1]
-        #for i, node in enumerate(path[1:]):
+        # tr = item[1]
+        # for i, node in enumerate(path[1:]):
         #    if tr.transforms[i] is not node.transform:
         #        tr[i] = node.transform
 

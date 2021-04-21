@@ -60,14 +60,14 @@ class AggFastPathCollection(Collection):
         antialias : string
             'local', 'shared' or 'global'
         """
-        base_dtype = [('prev',       (np.float32, 3), '!local', (0, 0, 0)),
-                      ('curr',       (np.float32, 3), '!local', (0, 0, 0)),
-                      ('next',       (np.float32, 3), '!local', (0, 0, 0)),
-                      ('id',         (np.float32, 1), '!local', 0),
-                      ('color',      (np.float32, 4), 'global', (0, 0, 0, 1)),
-                      ('linewidth',  (np.float32, 1), 'global', 1),
-                      ('antialias',  (np.float32, 1), 'global', 1),
-                      ("viewport",   (np.float32, 4), 'global', (0, 0, 512, 512))]  # noqa
+        base_dtype = [('prev', (np.float32, 3), '!local', (0, 0, 0)),
+                      ('curr', (np.float32, 3), '!local', (0, 0, 0)),
+                      ('next', (np.float32, 3), '!local', (0, 0, 0)),
+                      ('id', (np.float32, 1), '!local', 0),
+                      ('color', (np.float32, 4), 'global', (0, 0, 0, 1)),
+                      ('linewidth', (np.float32, 1), 'global', 1),
+                      ('antialias', (np.float32, 1), 'global', 1),
+                      ("viewport", (np.float32, 4), 'global', (0, 0, 512, 512))]  # noqa
         dtype = base_dtype
         if user_dtype:
             dtype.extend(user_dtype)

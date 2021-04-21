@@ -89,7 +89,7 @@ def test_docstring_parameters():
     incorrect = []
     for name in public_modules:
         # Assert that by default we import all public names with `import vispy`
-        #if name not in ('vispy'):
+        # if name not in ('vispy'):
         #    extra = name.split('.')[1]
         #    assert hasattr(vispy, extra)
         with pytest.warns(None):  # traits warnings

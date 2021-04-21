@@ -80,7 +80,7 @@ def test_context_taking():
     # Now we can take it again
     c.shared.add_ref('test-foo', cb)
     assert len(c.shared._refs) == 2
-    #assert_raises(RuntimeError, c.take, 'test', cb)
+    # assert_raises(RuntimeError, c.take, 'test', cb)
     
     # Canvas backend can delete (we use a weak ref)
     cb = DummyCanvasBackend()  # overwrite old object

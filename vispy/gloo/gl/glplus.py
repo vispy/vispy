@@ -51,7 +51,7 @@ def _inject():
                 NS[name] = GLNS[name]
                 injected_functions += 1
     
-    #print('injected %i constants and %i functions in glplus' % 
+    # print('injected %i constants and %i functions in glplus' % 
     #      (injected_constants, injected_functions))
 
 

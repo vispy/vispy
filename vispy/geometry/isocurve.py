@@ -75,7 +75,7 @@ def isocurve(data, level, connected=False, extend_to_edge=False):
     # mark everything below the isosurface level
     mask = data < level
     
-    ## make four sub-fields and compute indexes for grid cells
+    # make four sub-fields and compute indexes for grid cells
     index = np.zeros([x-1 for x in data.shape], dtype=np.ubyte)
     fields = np.empty((2, 2), dtype=object)
     slices = [slice(0, -1), slice(1, None)]

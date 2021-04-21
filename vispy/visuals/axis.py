@@ -72,14 +72,23 @@ class AxisVisual(CompoundVisual):
         determined automatically.
     """
     
-    def __init__(self, pos=None, domain=(0., 1.), tick_direction=(-1., 0.),
-                 scale_type="linear", axis_color=(1, 1, 1),
-                 tick_color=(0.7, 0.7, 0.7), text_color='w',
-                 minor_tick_length=5, major_tick_length=10,
-                 tick_width=2, tick_label_margin=12, tick_font_size=8,
-                 axis_width=3,  axis_label=None,
-                 axis_label_margin=35, axis_font_size=10,
-                 font_size=None, anchors=None):
+    def __init__(self, pos=None, domain=(0., 1.), 
+                 tick_direction=(-1., 0.), 
+                 scale_type="linear", 
+                 axis_color=(1, 1, 1), 
+                 tick_color=(0.7, 0.7, 0.7), 
+                 text_color='w', 
+                 minor_tick_length=5, 
+                 major_tick_length=10, 
+                 tick_width=2, 
+                 tick_label_margin=12, 
+                 tick_font_size=8, 
+                 axis_width=3, 
+                 axis_label=None, 
+                 axis_label_margin=35, 
+                 axis_font_size=10, 
+                 font_size=None, 
+                 anchors=None):
 
         if scale_type != 'linear':
             raise NotImplementedError('only linear scaling is currently '

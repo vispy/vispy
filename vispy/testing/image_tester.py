@@ -210,7 +210,7 @@ def assert_image_match(im1, im2, min_corr=0.9, px_threshold=50.,
 
 def _save_failed_test(data, expect, filename):
     from ..io import _make_png
-    commit, error = run_subprocess(['git', 'rev-parse',  'HEAD'])
+    commit, error = run_subprocess(['git', 'rev-parse', 'HEAD'])
     name = filename.split('/')
     name.insert(-1, commit.strip())
     filename = '/'.join(name)

@@ -338,7 +338,7 @@ class CanvasBackend(_Window, BaseCanvasBackend):
                 button=BUTTONMAP.get(button, 0),
                 modifiers=self._modifiers(),
             )
-            #self._buttons_accepted &= ~button
+            # self._buttons_accepted &= ~button
 
     def on_mouse_motion(self, x, y, dx, dy):
         if self._vispy_canvas is None:

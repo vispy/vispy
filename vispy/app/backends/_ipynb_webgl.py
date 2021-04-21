@@ -112,9 +112,9 @@ class CanvasBackend(BaseCanvasBackend):
         else:
             raise RuntimeError("WebGL doesn't yet support context sharing.")
 
-        #store a default size before the widget is available.
-        #then we set the default size on the widget and only use the
-        #widget size
+        # store a default size before the widget is available.
+        # then we set the default size on the widget and only use the
+        # widget size
         self._default_size = p.size
         self._init_glir()
 

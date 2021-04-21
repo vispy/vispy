@@ -632,10 +632,9 @@ class Blackman(SpatialFilter):
 
 def main():
     # Generate kernels texture (16 x 1024)
-    filters = [Bilinear(), Hanning(),  Hamming(),  Hermite(),
-               Kaiser(),   Quadric(),  Bicubic(),  CatRom(),
-               Mitchell(), Spline16(), Spline36(), Gaussian(),
-               Bessel(),   Sinc(),     Lanczos(),  Blackman()]
+    filters = [Bilinear(), Hanning(), Hamming(), Hermite(), Kaiser(), Quadric(), 
+               Bicubic(), CatRom(), Mitchell(), Spline16(), Spline36(), Gaussian(), 
+               Bessel(), Sinc(), Lanczos(), Blackman()]
 
     n = 1024
     K = np.zeros((16, n))

@@ -302,7 +302,7 @@ class Function(ShaderObject):
         """
         return FunctionCall(self, args)
 
-    ## Public API methods
+    # Public API methods
 
     @property
     def signature(self):
@@ -386,9 +386,9 @@ class Function(ShaderObject):
         if str2 != self._replacements.get(str1, None):
             self._replacements[str1] = str2
             self.changed(code_changed=True)
-            #self._last_changed = time.time()
+            # self._last_changed = time.time()
 
-    ## Private methods
+    # Private methods
 
     def _parse_template_vars(self):
         """Find all template variables in self._code, excluding the function name."""

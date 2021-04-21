@@ -38,8 +38,8 @@ class RawPathCollection(Collection):
             'local', 'shared' or 'global'
         """
         base_dtype = [('position', (np.float32, 3), '!local', (0, 0, 0)),
-                      ('id',       (np.float32, 1), '!local', 0),
-                      ('color',    (np.float32, 4), 'local', (0, 0, 0, 1)),
+                      ('id', (np.float32, 1), '!local', 0),
+                      ('color', (np.float32, 4), 'local', (0, 0, 0, 1)),
                       ("linewidth", (np.float32, 1), 'global', 1),
                       ("viewport", (np.float32, 4), 'global', (0, 0, 512, 512))
                       ]
@@ -92,7 +92,7 @@ class RawPathCollection(Collection):
                 if name not in ['collection_index', 'position']:
                     V[name][1:-2] = kwargs.get(name, self._defaults[name])
             V["position"][:, 1:-2] = P
-            V["position"][:,  -2] = V["position"][:, 1]
+            V["position"][:, -2] = V["position"][:, 1]
         else:
             V = np.empty((itemcount, itemsize + 2), dtype=self.vtype)
             # Apply default values on vertices

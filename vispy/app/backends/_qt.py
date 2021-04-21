@@ -657,9 +657,9 @@ class CanvasBackendEgl(QtBaseCanvasBackend, QWidget):
 
         # Get window id from stupid capsule thingy
         # http://translate.google.com/translate?hl=en&sl=zh-CN&u=http://www.cnb
-        #logs.com/Shiren-Y/archive/2011/04/06/2007288.html&prev=/search%3Fq%3Dp
+        # logs.com/Shiren-Y/archive/2011/04/06/2007288.html&prev=/search%3Fq%3Dp
         # yside%2Bdirectx%26client%3Dfirefox-a%26hs%3DIsJ%26rls%3Dorg.mozilla:n
-        #l:official%26channel%3Dfflb%26biw%3D1366%26bih%3D614
+        # l:official%26channel%3Dfflb%26biw%3D1366%26bih%3D614
         # Prepare
         ctypes.pythonapi.PyCapsule_GetName.restype = ctypes.c_char_p
         ctypes.pythonapi.PyCapsule_GetName.argtypes = [ctypes.py_object]

@@ -19,8 +19,8 @@ def test_spectrogram():
         spec = Spectrogram(data, n_fft=n_fft, step=n_fft, window=None,
                            color_scale='linear', cmap='grays')
         c.draw_visual(spec)
-        #expected = np.zeros(size[::-1] + (3,))
-        #expected[0] = 1.
+        # expected = np.zeros(size[::-1] + (3,))
+        # expected[0] = 1.
         assert_image_approved("screenshot", "visuals/spectrogram.png")
         freqs = spec.freqs
         assert len(freqs) == n_freqs

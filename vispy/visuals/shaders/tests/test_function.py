@@ -12,7 +12,7 @@ from vispy.testing import (assert_in, assert_not_in, assert_is,
                            run_tests_if_main, assert_raises, assert_equal)
 
 
-## Define some snippets
+# Define some snippets
 
 transformScale = Function("""
 vec4 transform_scale(vec4 pos)
@@ -52,7 +52,7 @@ void main(void)
 data = 'just some dummy variable, Function is agnostic about this'
 
 
-## Examples
+# Examples
 
 def test_example1():
     """Just a few simple compositions."""
@@ -104,7 +104,7 @@ def test_example2():
             # Equivalent methods to create new function object
             self.func = Function(transformScale)
             self.func['scale'] = 'uniform float'
-            #self.func = Function(transformScale)
+            # self.func = Function(transformScale)
         
         def set_scale(self, scale):
             self.func['scale'].value = scale
@@ -118,7 +118,7 @@ def test_example2():
     code['position'] = ob
     print(code)
 
-## Tests
+# Tests
 
 
 def test_TextExpression():
@@ -203,10 +203,10 @@ def test_Variable():
     assert_equal(var.value, (1, 2, 3))
     
     # Test value
-    #var = Variable('uniform float bla', data)  # Also valid
-    #assert_equal(var.value, data)
-    #var.value = 3
-    #assert_equal(var.value, 3)
+    # var = Variable('uniform float bla', data)  # Also valid
+    # assert_equal(var.value, data)
+    # var.value = 3
+    # assert_equal(var.value, 3)
     
     # Test repr
     var = Variable('uniform float bla')
@@ -354,7 +354,7 @@ def test_function_changed():
     fun1['var1'] = Variable('var1', 7)
     var2 = fun1['var1']
     var2._dependents[ch_obj] = None
-    #assert_changed(fun1)
+    # assert_changed(fun1)
     # var2 is now connected
     var2.value = (1, 2, 3, 4)
     assert_changed(fun1, var2)

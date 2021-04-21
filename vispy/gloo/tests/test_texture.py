@@ -288,7 +288,7 @@ class Texture2DTest(unittest.TestCase):
         # Invalid format
         self.assertRaises(ValueError, T.resize, shape3, 'foo')
         self.assertRaises(ValueError, T.resize, shape3, 'alpha')
-        #self.assertRaises(ValueError, T.resize, shape3, 4)
+        # self.assertRaises(ValueError, T.resize, shape3, 4)
     
     # Test set data with different shape and type
     # -------------------------------------------
