@@ -9,27 +9,12 @@ import warnings
 import numpy as np
 
 from ..gloo import Texture2D, VertexBuffer
+from ..gloo.texture import should_cast_to_f32
 from ..color import get_colormap
 from .shaders import Function, FunctionChain
 from .transforms import NullTransform
 from .visual import Visual
 from ..io import load_spatial_filters
-
-
-F64_PRECISION_WARNING = ("GPUs can't support floating point data with more "
-                         "than 32-bits, precision will be lost due to "
-                         "downcasting to 32-bit float.")
-
-
-def _should_cast_to_f32(data_dtype):
-    data_dtype = np.dtype(data_dtype)
-    is_floating = np.issubdtype(data_dtype, np.floating)
-    gt_float32 = data_dtype.itemsize > 4
-    if is_floating and gt_float32:
-        # OpenGL can't support floating point numbers greater than 32-bits
-        warnings.warn(F64_PRECISION_WARNING)
-        return True
-    return False
 
 
 class _CPUScaledTexture2D(Texture2D):
@@ -271,7 +256,7 @@ class _GPUScaledTexture2D(_CPUScaledTexture2D):
             texture_format = np.dtype(texture_format).type
             if texture_format not in self._texture_dtype_format:
                 raise ValueError("Can't determine internal texture format for '{}'".format(texture_format))
-            _should_cast_to_f32(texture_format)
+            should_cast_to_f32(texture_format)
             texture_format = self._texture_dtype_format[texture_format]
         # adjust internalformat for format of data (RGBA vs L)
         texture_format = texture_format.replace('r', 'rgba'[:num_channels])
@@ -653,7 +638,7 @@ class ImageVisual(Visual):
 
         """
         data = np.asarray(image)
-        if _should_cast_to_f32(data.dtype):
+        if should_cast_to_f32(data.dtype):
             data = data.astype(np.float32)
         # can the texture handle this data?
         self._texture.check_data_format(data)

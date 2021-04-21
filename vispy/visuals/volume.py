@@ -36,11 +36,15 @@ coordinates).
 """
 
 from ..gloo import Texture3D, TextureEmulated3D, VertexBuffer, IndexBuffer
+from ..gloo.texture import should_cast_to_f32
 from . import Visual
 from .shaders import Function
 from ..color import get_colormap
 
 import numpy as np
+
+
+
 
 # todo: implement more render methods (port from visvis)
 # todo: allow anisotropic data
@@ -454,10 +458,10 @@ class VolumeVisual(Visual):
         np.float64: 'r32f',
         np.uint8: 'r8',
         np.uint16: 'r16',
-        np.uint32: 'r32',
+        # np.uint32: 'r32ui',  # not supported texture format in vispy
         np.int8: 'r8',
         np.int16: 'r16',
-        np.int32: 'r32',
+        # np.int32: 'r32i',  # not supported texture format in vispy
     }
 
     def __init__(self, vol, clim=None, method='mip', threshold=None,
@@ -522,13 +526,11 @@ class VolumeVisual(Visual):
     def _create_texture(self, texture_format, emulate_texture, data):
         tex_cls = TextureEmulated3D if emulate_texture else Texture3D
 
-        tex_kwargs = {}
         if isinstance(texture_format, str) and texture_format == 'auto':
             texture_format = data.dtype.type
-        if texture_format and not isinstance(texture_format, str):
-            if texture_format not in self._texture_dtype_format:
-                raise ValueError("Can't determine internal texture format for '{}'".format(texture_format))
-            texture_format = self._texture_dtype_format[texture_format]
+        texture_format = self._get_gl_tex_format(texture_format)
+
+        tex_kwargs = {}
         if isinstance(texture_format, str):
             tex_kwargs['internalformat'] = texture_format
             tex_kwargs['format'] = 'luminance'
@@ -539,6 +541,15 @@ class VolumeVisual(Visual):
         # clamped to 0 and 1.
         return tex_cls((10, 10, 10), interpolation=self._interpolation,
                        wrapping='clamp_to_edge', **tex_kwargs)
+
+    def _get_gl_tex_format(self, texture_format):
+        if texture_format and not isinstance(texture_format, str):
+            texture_format = np.dtype(texture_format).type
+            if texture_format not in self._texture_dtype_format:
+                raise ValueError("Can't determine internal texture format for '{}'".format(texture_format))
+            should_cast_to_f32(texture_format)
+            texture_format = self._texture_dtype_format[texture_format]
+        return texture_format
 
     def _cpu_scale_data(self, vol):
         if self._clim[1] == self._clim[0]:
