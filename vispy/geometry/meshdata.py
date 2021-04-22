@@ -411,7 +411,7 @@ class MeshData(object):
         indexed : str | None
             Should be 'faces' if colors are indexed by faces.
         """
-        colors = _fix_colors(np.asarray(colors))
+        colors = _fix_colors(colors)
         if indexed is None:
             if colors.ndim != 2:
                 raise ValueError('colors must be 2D if indexed is None')
