@@ -89,7 +89,7 @@ class MeshVisual(Visual):
         The meshdata.
     shading : str | None
         Shading to use. This uses the
-        :class:`ShadingFilter <vispy.visuals.filters.mesh.ShadingFilter>`
+        :class:`~vispy.visuals.filters.mesh.ShadingFilter`
         filter introduced in VisPy 0.7. This class provides additional
         features that are available when the filter is attached manually.
         See 'examples/basics/scene/mesh_shading.py' for an example.
