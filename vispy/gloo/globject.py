@@ -40,30 +40,30 @@ from .glir import GlirQueue
 
 class GLObject(object):
     """Generic GL object that represents an object on the GPU.
-    
+
     When a GLObject is instantiated, it is associated with the currently
     active Canvas, or with the next Canvas to be created if there is no current Canvas
     """
-    
+
     # Type of GLIR object, reset in subclasses
     _GLIR_TYPE = 'DummyGlirType'
-    
+
     # Internal id counter to keep track of GPU objects
     _idcount = 0
-    
+
     def __init__(self):
         """Initialize the object in the default state"""
         # Give this object an id
         GLObject._idcount += 1
         self._id = GLObject._idcount
-        
+
         # Create the GLIR queue in which we queue our commands. 
         # See docs above for details.
         self._glir = GlirQueue()
-        
+
         # Give glir command to create GL representation of this object
         self._glir.command('CREATE', self._id, self._GLIR_TYPE)
-    
+
     def __del__(self):
         # You never know when this is goint to happen. The window might
         # already be closed and no OpenGL context might be available.
@@ -94,7 +94,7 @@ class GLObject(object):
     def id(self):
         """The id of this GL object used to reference the GL object in GLIR. id's are unique within a process."""
         return self._id
-    
+
     @property
     def glir(self):
         """The glir queue for this object."""

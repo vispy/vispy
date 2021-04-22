@@ -31,7 +31,7 @@ class IsocurveVisual(LineVisual):
     **kwargs : dict
         Keyword arguments to pass to `LineVisual`.
     """
-    
+
     def __init__(self, data=None, levels=None, color_lev=None, clim=None,
                  **kwargs):
         self._data = None

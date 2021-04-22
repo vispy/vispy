@@ -42,13 +42,13 @@ current_backend = None
 
 class MainProxy(BaseGLProxy):
     """Main proxy for the GL ES 2.0 API. 
-    
+
     The functions in this namespace always call into the correct GL
     backend. Therefore these function objects can be safely stored for
     reuse. However, for efficienty it would probably be better to store the
     function name and then do ``func = getattr(gloo.gl, funcname)``.
     """
-    
+
     def __call__(self, funcname, returns, *args):
         func = getattr(current_backend, funcname)
         return func(*args)
@@ -60,9 +60,9 @@ proxy = MainProxy()
 
 def use_gl(target='gl2'):
     """Let Vispy use the target OpenGL ES 2.0 implementation
-    
+
     Also see ``vispy.use()``.
-    
+
     Parameters
     ----------
     target : str
@@ -75,7 +75,7 @@ def use_gl(target='gl2'):
     * es2 - Use the ES2 library (Angle/DirectX on Windows)
     * pyopengl2 - Use ES 2.0 subset of pyopengl (for fallback and testing)
     * dummy - Prevent usage of gloo.gl (for when rendering occurs elsewhere)
-    
+
     You can use vispy's config option "gl_debug" to check for errors
     on each API call. Or, one can specify it as the target, e.g. "gl2
     debug". (Debug does not apply to 'gl+', since PyOpenGL has its own
@@ -83,11 +83,11 @@ def use_gl(target='gl2'):
     """
     target = target or 'gl2'
     target = target.replace('+', 'plus')
-    
+
     # Get options
     target, _, options = target.partition(' ')
     debug = config['gl_debug'] or 'debug' in options
-    
+
     # Select modules to import names from
     try:
         mod = __import__(target, globals(), level=1)

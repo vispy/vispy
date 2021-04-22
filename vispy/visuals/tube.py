@@ -47,7 +47,7 @@ class TubeVisual(MeshVisual):
         Same as for the `MeshVisual` class. Defaults to 'triangles'.
 
     """
-    
+
     def __init__(self, points, radius=1.0,
                  closed=False,
                  color='purple',

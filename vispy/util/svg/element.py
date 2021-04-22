@@ -11,7 +11,7 @@ namespace = '{http://www.w3.org/2000/svg}'
 
 class Element(object):
     """Generic SVG element"""
-    
+
     def __init__(self, content=None, parent=None):
         self._parent = parent
         self._id = hex(id(self))

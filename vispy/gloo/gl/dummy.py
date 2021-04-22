@@ -13,7 +13,7 @@ class DummyProxy(BaseGLProxy):
     processed in this process. Each GL function call will raise an
     error.
     """
-    
+
     def __call__(self, funcname, returns, *args):
         raise RuntimeError('Cannot call %r (or any other GL function), '
                            'since GL is disabled.' % funcname)

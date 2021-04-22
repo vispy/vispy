@@ -183,7 +183,7 @@ def perspective(fovy, aspect, znear, zfar):
 
 def affine_map(points1, points2):
     """Find a 3D transformation matrix that maps points1 onto points2.
-    
+
     Arguments are specified as arrays of four 3D coordinates, shape (4, 3).
     """
     A = np.ones((4, 4))

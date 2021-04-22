@@ -43,7 +43,7 @@ class AxisWidget(Widget):
 
     def _update_axis(self):
         self.axis.pos = self._axis_ends()
-        
+
     def _axis_ends(self):
         r = self.rect
         if self.orientation == 'left':
@@ -57,7 +57,7 @@ class AxisWidget(Widget):
         else:
             raise RuntimeError(
                 'Orientation %s not supported.' % self.orientation)
-        
+
     def link_view(self, view):
         """Link this axis to a ViewBox
 
@@ -77,7 +77,7 @@ class AxisWidget(Widget):
         self._linked_view = view
         view.scene.transform.changed.connect(self._view_changed)
         self._view_changed()
-        
+
     def _view_changed(self, event=None):
         """Linked view transform has changed; update ticks."""
         tr = self.node_transform(self._linked_view.scene)

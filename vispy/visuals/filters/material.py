@@ -41,7 +41,7 @@ class GridContourComponent(VisualComponent):
     def __init__(self, spacing):
         super(GridContourComponent, self).__init__()
         self.spacing = spacing
-        
+
         # Create Varying to connect vertex / fragment shaders
         var = Varying('pos', dtype='vec4')
         self._funcs['frag_color']['pos'] = var

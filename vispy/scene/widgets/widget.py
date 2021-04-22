@@ -141,7 +141,7 @@ class Widget(Compound):
     @width_min.setter
     def width_min(self, width_min):
         """Set the minimum height of the widget
-        
+
         Parameters
         ----------
         height_min: float

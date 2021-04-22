@@ -42,7 +42,7 @@ class EllipseVisual(PolygonVisual):
     **kwargs : dict
         Keyword arguments to pass to `PolygonVisual`.
     """
-    
+
     def __init__(self, center=None, color='black', border_color=None,
                  border_width=1, radius=(0.1, 0.1), start_angle=0.,
                  span_angle=360., num_segments=100, **kwargs):

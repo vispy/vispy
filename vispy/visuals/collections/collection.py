@@ -38,7 +38,7 @@ class Collection(BaseCollection):
     mode : GL_ENUM
         GL_POINTS, GL_LINES, GL_LINE_STRIP, GL_LINE_LOOP,
         GL_TRIANGLES, GL_TRIANGLE_STRIP, GL_TRIANGLE_FAN
-        
+
     vertex: str or tuple of str
        Vertex shader to use to draw this collection
 
@@ -70,7 +70,7 @@ class Collection(BaseCollection):
         self._mode = mode
         vtype = []
         utype = []
-        
+
         self.update = EventEmitter(source=self, type='collection_update')
 
         # Build vtype and utype according to parameters
@@ -103,7 +103,7 @@ class Collection(BaseCollection):
         if len(kwargs) > 0:
             raise NameError("Invalid keyword argument(s): %s" % 
                             list(kwargs.keys()))
-        
+
         vtype = np.dtype(vtype)
         itype = np.dtype(itype) if itype else None
         utype = np.dtype(utype) if utype else None

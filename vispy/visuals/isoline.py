@@ -43,7 +43,7 @@ def iso_mesh_line(vertices, tris, vertex_data, levels):
     vertex_level = None
     level_index = None
     if not all([isinstance(x, np.ndarray) for x in (vertices, tris,
-                vertex_data, levels)]):
+                                                    vertex_data, levels)]):
         raise ValueError('all inputs must be numpy arrays')
     if vertices.shape[1] <= 3:
         verts = vertices
@@ -109,7 +109,7 @@ class IsolineVisual(LineVisual):
     **kwargs : dict
         Keyword arguments to pass to `LineVisual`.
     """
-    
+
     def __init__(self, vertices=None, tris=None, data=None,
                  levels=None, color_lev=None, **kwargs):
         self._data = None
@@ -220,7 +220,7 @@ class IsolineVisual(LineVisual):
 
     def _prepare_draw(self, view):
         if (self._data is None or self._levels is None or self._tris is None or
-           self._vertices is None or self._color_lev is None):
+                self._vertices is None or self._color_lev is None):
             return False
 
         if self._need_recompute:

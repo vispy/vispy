@@ -29,7 +29,7 @@ def isocurve(data, level, connected=False, extend_to_edge=False):
         the data. 
     """    
     # This function is SLOW; plenty of room for optimization here.
-    
+
     if extend_to_edge:
         d2 = np.empty((data.shape[0]+2, data.shape[1]+2), dtype=data.dtype)
         d2[1:-1, 1:-1] = data
@@ -42,7 +42,7 @@ def isocurve(data, level, connected=False, extend_to_edge=False):
         d2[-1, 0] = d2[-1, 1]
         d2[-1, -1] = d2[-1, -2]
         data = d2
-    
+
     side_table = [
         [],
         [0, 1],
@@ -61,20 +61,20 @@ def isocurve(data, level, connected=False, extend_to_edge=False):
         [0, 1],
         []
     ]
-    
+
     edge_key = [
         [(0, 1), (0, 0)],
         [(0, 0), (1, 0)],
         [(1, 0), (1, 1)],
         [(1, 1), (0, 1)]
     ]
-    
+
     level = float(level)
     lines = []
-    
+
     # mark everything below the isosurface level
     mask = data < level
-    
+
     # make four sub-fields and compute indexes for grid cells
     index = np.zeros([x-1 for x in data.shape], dtype=np.ubyte)
     fields = np.empty((2, 2), dtype=object)
@@ -84,7 +84,7 @@ def isocurve(data, level, connected=False, extend_to_edge=False):
             fields[i, j] = mask[slices[i], slices[j]]
             vertIndex = i+2*j
             index += (fields[i, j] * 2**vertIndex).astype(np.ubyte)
-    
+
     # add lines
     for i in range(index.shape[0]):                 # data x-axis
         for j in range(index.shape[1]):             # data y-axis     
@@ -117,12 +117,12 @@ def isocurve(data, level, connected=False, extend_to_edge=False):
                         pts.append((p, gridKey))
                     else:
                         pts.append(p)
-                
+
                 lines.append(pts)
 
     if not connected:
         return lines
-                
+
     # turn disjoint list of segments into continuous lines
 
     points = {}  # maps each point to its connections
@@ -145,7 +145,7 @@ def isocurve(data, level, connected=False, extend_to_edge=False):
             while True:
                 if x == chain[-1][1]:
                     break  # nothing left to do on this chain
-                    
+
                 x = chain[-1][1]
                 if x == k:
                     # chain has looped; we're done and can ignore the opposite
@@ -161,7 +161,7 @@ def isocurve(data, level, connected=False, extend_to_edge=False):
                 # looped chain; no need to continue the other direction
                 chains.pop()
                 break
-                
+
     # extract point locations 
     lines = []
     for chain in points.values():
@@ -171,5 +171,5 @@ def isocurve(data, level, connected=False, extend_to_edge=False):
         else:
             chain = chain[0]
         lines.append([pt[0] for pt in chain])
-    
+
     return lines  # a list of pairs of points

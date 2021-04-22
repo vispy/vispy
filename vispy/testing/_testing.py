@@ -124,7 +124,7 @@ def assert_is(expr1, expr2, msg=None):
 
 class raises(object):
     """Helper class to test exception raising"""
-    
+
     def __init__(self, exc):
         self.exc = exc
 

@@ -27,7 +27,7 @@ class IsosurfaceVisual(MeshVisual):
     **kwargs : dict
         Keyword arguments to pass to the mesh construction.
     """
-    
+
     def __init__(self, data=None, level=None, vertex_colors=None,
                  face_colors=None, color=(0.5, 0.5, 1, 1), **kwargs):
         self._data = None

@@ -19,17 +19,17 @@ from ._constants import *  # noqa
 if hasattr(ctypes, 'TEST_DLL'):
     # Load dummy lib 
     _lib = ctypes.TEST_DLL.LoadLibrary('')
-    
+
 elif sys.platform.startswith('win'):
     raise RuntimeError('ES 2.0 is not available on Windows yet')
-    
+
     # todo: were are we going to put our libs?
     dirname = r'C:\Users\Almar\AppData\Local\Chromium\Application\34.0.1790.0'
-    
+
     # Load dependency (so that libGLESv2 can find it
     fname = dirname + r'\d3dcompiler_46.dll'
     _libdum = ctypes.windll.LoadLibrary(fname)
-    
+
     # Load GL ES 2.0 lib (Angle)
     fname = dirname + r'\libGLESv2.dll'
     _lib = ctypes.windll.LoadLibrary(fname)
@@ -48,7 +48,7 @@ elif sys.platform.startswith('linux'):
         raise OSError('GL ES 2.0 library not found')
     # Load it
     _lib = ctypes.CDLL(es2_file)
-    
+
 elif sys.platform.startswith('darwin'):
     raise RuntimeError('ES 2.0 is not available on OSX yet')
 

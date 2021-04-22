@@ -45,7 +45,7 @@ class TextureFont(object):
         SDF renderer to use.
 
     """
-    
+
     def __init__(self, font, renderer):
         self._atlas = TextureAtlas(dtype=np.uint8)
         self._atlas.wrapping = 'clamp_to_edge'
@@ -122,7 +122,7 @@ class TextureFont(object):
 
 class FontManager(object):
     """Helper to create TextureFont instances and reuse them when possible"""
-    
+
     # XXX: should store a font-manager on each context,
     # or let TextureFont use a TextureAtlas for each context
     def __init__(self, method='cpu'):
@@ -640,7 +640,7 @@ class TextVisual(Visual):
 
 class SDFRendererCPU(object):
     """Render SDFs using the CPU."""
-    
+
     # This should probably live in _sdf_cpu.pyx, but doing so makes
     # debugging substantially more annoying
     def render_to_texture(self, data, texture, offset, size):

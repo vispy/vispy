@@ -410,7 +410,7 @@ def test(label='full', extra_arg_string='', coverage=False):
     if label == "examples":
         # take the extra arguments so that specific examples can be run
         runs.append([partial(_examples, extra_arg_string),
-                    'examples'])
+                     'examples'])
     elif label == 'full':
         # run all the examples
         runs.append([partial(_examples, ""), 'examples'])

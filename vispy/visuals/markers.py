@@ -482,7 +482,7 @@ marker_types = tuple(sorted(list(_marker_dict.keys())))
 
 class MarkersVisual(Visual):
     """Visual displaying marker symbols."""
-    
+
     def __init__(self, **kwargs):
         self._vbo = VertexBuffer()
         self._v_size_var = Variable('varying float v_size')

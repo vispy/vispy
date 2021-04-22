@@ -171,7 +171,7 @@ class MeshVisual(Visual):
     **kwargs : dict
         Keyword arguments to pass to `Visual`.
     """
-    
+
     def __init__(self, vertices=None, faces=None, vertex_colors=None,
                  face_colors=None, color=(0.5, 0.5, 1, 1), vertex_values=None,
                  meshdata=None, shading=None, mode='triangles', **kwargs):

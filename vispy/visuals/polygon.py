@@ -47,7 +47,7 @@ class PolygonVisual(CompoundVisual):
     **kwargs : dict
         Keyword arguments to pass to `CompoundVisual`.
     """
-    
+
     def __init__(self, pos=None, color='black',
                  border_color=None, border_width=1, border_method='gl',
                  triangulate=True, **kwargs):

@@ -30,7 +30,7 @@ class Compiler(object):
         name = compiler[obj]
 
     """
-    
+
     def __init__(self, namespace=None, **shaders):
         # cache of compilation results for each function and variable
         if namespace is None:
@@ -98,10 +98,10 @@ class Compiler(object):
                 dep_code = dep.definition(obj_names, version, shader)
                 if dep_code is not None:
                     code.append(dep_code)
-                  
+
             if version is not None:
                 code.insert(0, '#version %s %s' % version)
-            
+
             compiled[shader_name] = '\n'.join(code)
 
         self.code = compiled

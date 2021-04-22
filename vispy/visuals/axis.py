@@ -71,7 +71,7 @@ class AxisVisual(CompoundVisual):
         of 'bottom', 'middle', or 'top'. If this is not specified, it is
         determined automatically.
     """
-    
+
     def __init__(self, pos=None, domain=(0., 1.), 
                  tick_direction=(-1., 0.), 
                  scale_type="linear", 
@@ -430,7 +430,7 @@ class Ticker(object):
 
 class MaxNLocator(object):
     """Select no more than N intervals at nice locations."""
-    
+
     def __init__(self, nbins=10, steps=None, trim=True, integer=False,
                  symmetric=False, prune=None):
         """

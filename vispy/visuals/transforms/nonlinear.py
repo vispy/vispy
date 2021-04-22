@@ -113,7 +113,7 @@ class PolarTransform(BaseTransform):
     Maps (theta, r, z) to (x, y, z), where `x = r*cos(theta)`
     and `y = r*sin(theta)`.
     """
-    
+
     glsl_map = """
         vec4 polar_transform_map(vec4 pos) {
             return vec4(pos.y * cos(pos.x), pos.y * sin(pos.x), pos.z, 1.);
@@ -169,7 +169,7 @@ class MagnifyTransform(BaseTransform):
 
     This transform causes a circular region to appear with larger scale around
     its center point. 
-    
+
     Parameters
     ----------
     mag : float
@@ -181,7 +181,7 @@ class MagnifyTransform(BaseTransform):
         and the scale factor transitions smoothly between the two radii.
     center: (float, float)
         The center (x, y) point of the "lens".
-        
+
     Notes
     -----
     This transform works by segmenting its input coordinates into three
@@ -189,13 +189,13 @@ class MagnifyTransform(BaseTransform):
     multiplied by a constant scale factor around the center point, and 
     coordinates in the transition region are scaled by a factor that 
     transitions smoothly from the inner radius to the outer radius. 
-    
+
     Smooth functions that are appropriate for the transition region also tend 
     to be difficult to invert analytically, so this transform instead samples
     the function numerically to allow trivial inversion. In OpenGL, the 
     sampling is implemented as a texture holding a lookup table.
     """
-    
+
     glsl_map = """
         vec4 mag_transform(vec4 pos) {
             vec2 d = vec2(pos.x - $center.x, pos.y - $center.y);
@@ -221,13 +221,13 @@ class MagnifyTransform(BaseTransform):
             d = $center + dir * dist;
             return vec4(d, pos.z, pos.w);
         }"""
-    
+
     glsl_imap = glsl_map
-    
+
     Linear = False
-    
+
     _trans_resolution = 1000
-    
+
     def __init__(self, mag=3, radii=(7, 10), center=(0, 0)):
         self._center = center
         self._mag = mag
@@ -238,12 +238,12 @@ class MagnifyTransform(BaseTransform):
                            gloo.Texture2D((res, 1, 1), interpolation='linear'))
         self._trans_tex_max = None
         super(MagnifyTransform, self).__init__()
-        
+
     @property
     def center(self):
         """The (x, y) center point of the transform."""
         return self._center
-    
+
     @center.setter
     def center(self, center):
         if np.allclose(self._center, center):
@@ -256,7 +256,7 @@ class MagnifyTransform(BaseTransform):
     def mag(self):
         """The scale factor used in the central region of the transform."""
         return self._mag
-    
+
     @mag.setter
     def mag(self, mag):
         if self._mag == mag:
@@ -270,7 +270,7 @@ class MagnifyTransform(BaseTransform):
     def radii(self):
         """The inner and outer radii of the circular area bounding the transform."""
         return self._radii
-    
+
     @radii.setter
     def radii(self, radii):
         if np.allclose(self._radii, radii):
@@ -305,9 +305,9 @@ class MagnifyTransform(BaseTransform):
         c = as_vec4(self.center)[0]
         m = self.mag
         r1, r2 = self.radii
-        
+
         xm = np.empty(x.shape, dtype=x.dtype)
-        
+
         dx = (x - c)
         dist = (((dx**2).sum(axis=-1)) ** 0.5)[..., np.newaxis]
         dist[np.isnan(dist)] = 0
@@ -320,11 +320,11 @@ class MagnifyTransform(BaseTransform):
             inner = (dist < (r1 / m))[:, 0]
             s = dist * m
         xm[inner] = c + unit[inner] * s[inner]
-        
+
         # unmagnified outer region
         outer = (dist > r2)[:, 0]  
         xm[outer] = x[outer]
-        
+
         # smooth transition region, interpolated from trans
         trans = ~(inner | outer)
 
@@ -348,24 +348,24 @@ class MagnifyTransform(BaseTransform):
         # Generate forward/reverse transition templates.
         # We would prefer to express this with an invertible function, but that
         # turns out to be tricky. The templates make any function invertible.
-        
+
         if self._trans is None:
             m, r1, r2 = self.mag, self.radii[0], self.radii[1]
             res = self._trans_resolution
-            
+
             xi = np.linspace(r1, r2, res)
             t = 0.5 * (1 + np.cos((xi - r2) * np.pi / (r2 - r1)))
             yi = (xi * t + xi * (1-t) / m).astype(np.float32)
             x = np.linspace(r1 / m, r2, res)
             y = np.interp(x, yi, xi).astype(np.float32)
-            
+
             self._trans = (y, yi)
             # scale to 0.0-1.0 to prevent clipping (is this necessary?)
             mx = y.max(), yi.max()
             self._trans_tex_max = mx
             self._trans_tex[0].set_data((y/mx[0])[:, np.newaxis, np.newaxis])
             self._trans_tex[1].set_data((yi/mx[1])[:, np.newaxis, np.newaxis])
-            
+
         return self._trans
 
 
@@ -373,7 +373,7 @@ class Magnify1DTransform(MagnifyTransform):
     """A 1-dimensional analog of MagnifyTransform. This transform expands 
     its input along the x-axis, around a center x value.
     """
-    
+
     glsl_map = """
         vec4 mag_transform(vec4 pos) {
             float dist = pos.x - $center.x;
@@ -394,5 +394,5 @@ class Magnify1DTransform(MagnifyTransform):
 
             return vec4($center.x + dist, pos.y, pos.z, pos.w);
         }"""
-    
+
     glsl_imap = glsl_map

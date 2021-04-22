@@ -14,7 +14,7 @@ import numpy as np
 
 def _make_png(data, level=6):
     """Convert numpy array to PNG byte array.
-    
+
     Parameters
     ----------
     data : numpy.ndarray
@@ -125,8 +125,8 @@ def read_png(filename):
         return y
     except ImportError:
         raise RuntimeError("read_png requires the Pillow package.")
-        
-        
+
+
 def write_png(filename, data):
     """Write a PNG file
 

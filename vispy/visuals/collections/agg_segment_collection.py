@@ -63,7 +63,7 @@ class AggSegmentCollection(Collection):
                       ('color', (np.float32, 4), 'shared', (0, 0, 0, 1)),
                       ('linewidth', (np.float32, 1), 'shared', 1),
                       ('antialias', (np.float32, 1), 'shared', 1),
-                      ('viewport',  (np.float32, 4), 'global', (0, 0, 512, 512))]  # noqa
+                      ('viewport', (np.float32, 4), 'global', (0, 0, 512, 512))]  # noqa
 
         dtype = base_dtype
         if user_dtype:

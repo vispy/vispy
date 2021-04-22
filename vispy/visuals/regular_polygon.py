@@ -30,7 +30,7 @@ class RegularPolygonVisual(EllipseVisual):
     sides : int
         Number of sides of the regular polygon
     """
-    
+
     def __init__(self, center=None, color='black', border_color=None,
                  border_width=1, radius=0.1, sides=4, **kwargs):
         EllipseVisual.__init__(self, center=center,

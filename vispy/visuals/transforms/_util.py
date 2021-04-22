@@ -143,7 +143,7 @@ class TransformCache(object):
     roll() on each cache before drawing, which removes from the cache any
     transforms that were not accessed during the last draw cycle.
     """
-    
+
     def __init__(self, max_age=1):
         self._cache = {}  # maps {key: [age, transform]}
         self.max_age = max_age

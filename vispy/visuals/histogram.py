@@ -23,7 +23,7 @@ class HistogramVisual(MeshVisual):
     orientation : {'h', 'v'}
         Orientation of the histogram.
     """
-    
+
     def __init__(self, data, bins=10, color='w', orientation='h'):
         #   4-5
         #   | |

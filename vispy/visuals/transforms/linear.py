@@ -14,7 +14,7 @@ from .base_transform import BaseTransform
 
 class NullTransform(BaseTransform):
     """Transform having no effect on coordinates (identity transform)."""
-    
+
     glsl_map = "vec4 null_transform_map(vec4 pos) {return pos;}"
     glsl_imap = "vec4 null_transform_imap(vec4 pos) {return pos;}"
 
@@ -61,7 +61,7 @@ class STTransform(BaseTransform):
     translate : array-like
         Scale factors for X, Y, Z axes.
     """
-    
+
     glsl_map = """
         vec4 st_transform_map(vec4 pos) {
             return vec4(pos.xyz * $scale.xyz + $translate.xyz * pos.w, pos.w);
@@ -321,13 +321,13 @@ class MatrixTransform(BaseTransform):
     matrix : array-like | None
         4x4 array to use for the transform.
     """
-    
+
     glsl_map = """
         vec4 affine_transform_map(vec4 pos) {
             return $matrix * pos;
         }
     """
-    
+
     glsl_imap = """
         vec4 affine_transform_imap(vec4 pos) {
             return $inv_matrix * pos;

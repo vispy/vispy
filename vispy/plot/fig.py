@@ -36,7 +36,7 @@ class Fig(SceneCanvas):
     PlotWidget : the axis widget for plotting
     SceneCanvas : the super class
     """
-    
+
     def __init__(self, bgcolor='w', size=(800, 600), show=True,
                  keys='interactive', **kwargs):
         self._plot_widgets = []

@@ -499,7 +499,7 @@ class MainFunction(Function):
     be defined in a single code string. The code must contain a main() function
     definition.
     """
-    
+
     def __init__(self, shader_type, *args, **kwargs):
         self.shader_type = shader_type
         self._chains = {}
@@ -603,7 +603,7 @@ class FunctionChain(Function):
             return my_func_2(my_func_1(input));
         }
     """
-    
+
     def __init__(self, name=None, funcs=()):
         # bypass Function.__init__ completely.
         ShaderObject.__init__(self)
@@ -741,7 +741,7 @@ class FunctionChain(Function):
 
 class StatementList(ShaderObject):
     """Represents a list of statements."""
-    
+
     def __init__(self):
         self.items = {}
         self.order = []

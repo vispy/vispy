@@ -25,7 +25,7 @@ def _patch():
             buffersubdatafunc = buffersubdatafunc.wrapperFunction
         _m = sys.modules[buffersubdatafunc.__module__]
         _m.long = int
-    
+
     # Fix missing enum
     try:
         from OpenGL.GL.VERSION import GL_2_0
@@ -51,7 +51,7 @@ def _get_function_from_pyopengl(funcname):
     could not be found.
     """
     func = None
-    
+
     # Get function from GL
     try:
         func = getattr(_GL, funcname)
@@ -61,7 +61,7 @@ def _get_function_from_pyopengl(funcname):
             func = getattr(_FBO, funcname)
         except AttributeError:
             func = None
-    
+
     # Try using "alias"
     if not bool(func):
         # Some functions are known by a slightly different name

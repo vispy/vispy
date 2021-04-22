@@ -190,7 +190,7 @@ class Varying(Variable):
     Varyings can inherit their dtype from another Variable, allowing for
     more flexibility in composing shaders.
     """
-    
+
     def __init__(self, name, dtype=None):
         self._link = None
         self._src_func = None

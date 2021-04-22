@@ -95,7 +95,7 @@ class ProgressBar(object):
         increment the progress bar very often.  This provides the user with
         feedback that the progress has not stalled.
     """
-    
+
     spinner_symbols = ['|', '/', '-', '\\']
     template = '\r[{0}{1}] {2:.05f} {3} {4}   '
 

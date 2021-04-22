@@ -374,7 +374,7 @@ class Colormap(BaseColormap):
         >>> cm[0.], cm[0.5], cm[np.linspace(0., 1., 100)]
 
     """
-    
+
     def __init__(self, colors, controls=None, interpolation='linear'):
         self.interpolation = interpolation
         ncontrols = self._ncontrols(len(colors))

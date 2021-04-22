@@ -16,7 +16,7 @@ class _DummyObject:
     """To be able to import es2 even in Linux, so that we can test the
     names defined inside.
     """
-    
+
     def LoadLibrary(self, fname):
         return _DummyObject()
 

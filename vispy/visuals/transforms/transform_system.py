@@ -153,7 +153,7 @@ class TransformSystem(object):
         self._canvas_transform = ChainTransform([STTransform(),
                                                  STTransform()])
         self._framebuffer_transform = ChainTransform([STTransform()])
-        
+
         for tr in (self._visual_transform, self._scene_transform, 
                    self._document_transform, self._canvas_transform,
                    self._framebuffer_transform):
@@ -182,8 +182,8 @@ class TransformSystem(object):
           position, and y-axis inversion.
         * framebuffer_transform maps from the current GL viewport on the
           framebuffer coordinate system to clip coordinates (-1 to 1). 
-          
-          
+
+
         Parameters
         ==========
         viewport : tuple or None
@@ -208,7 +208,7 @@ class TransformSystem(object):
         canvas = self._canvas
         if canvas is None:
             raise RuntimeError("No canvas assigned to this TransformSystem.")
-       
+
         # By default, this should invert the y axis--canvas origin is in top
         # left, whereas framebuffer origin is in bottom left.
         map_from = [(0, 0), canvas.size]
@@ -243,7 +243,7 @@ class TransformSystem(object):
     def canvas(self):
         """The Canvas being drawn to."""
         return self._canvas
-    
+
     @canvas.setter
     def canvas(self, canvas):
         self._canvas = canvas
@@ -311,7 +311,7 @@ class TransformSystem(object):
 
     def get_transform(self, map_from='visual', map_to='render'):
         """Return a transform mapping between any two coordinate systems.
-        
+
         Parameters
         ----------
         map_from : str
@@ -324,7 +324,7 @@ class TransformSystem(object):
         tr = ['visual', 'scene', 'document', 'canvas', 'framebuffer', 'render']
         ifrom = tr.index(map_from)
         ito = tr.index(map_to)
-        
+
         if ifrom < ito:
             trs = [getattr(self, '_' + t + '_transform')
                    for t in tr[ifrom:ito]][::-1]
@@ -332,7 +332,7 @@ class TransformSystem(object):
             trs = [getattr(self, '_' + t + '_transform').inverse
                    for t in tr[ito:ifrom]]
         return self._cache.get(trs)
-    
+
     @property
     def pixel_scale(self):
         tr = self._canvas_transform

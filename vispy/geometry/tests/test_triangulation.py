@@ -293,7 +293,7 @@ def test_random():
 
     theta = np.linspace(0, 2*np.pi, 11)[:-1]
     pts = np.hstack([np.cos(theta)[:, np.newaxis],
-                    np.sin(theta)[:, np.newaxis]])
+                     np.sin(theta)[:, np.newaxis]])
     pts[::2] *= 0.4
     edges = np.empty((pts.shape[0], 2), dtype=np.uint)
     edges[:, 0] = np.arange(pts.shape[0])

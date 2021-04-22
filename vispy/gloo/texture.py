@@ -45,7 +45,7 @@ class BaseTexture(GLObject):
     resizeable : None
         Deprecated version of `resizable`.
     """
-    
+
     _ndim = 2
 
     _formats = {
@@ -422,7 +422,7 @@ class Texture1D(BaseTexture):
     resizeable : None
         Deprecated version of `resizable`.
     """
-    
+
     _ndim = 1
     _GLIR_TYPE = 'Texture1D'
 
@@ -483,7 +483,7 @@ class Texture2D(BaseTexture):
     resizeable : None
         Deprecated version of `resizable`.
     """
-    
+
     _ndim = 2
     _GLIR_TYPE = 'Texture2D'
 
@@ -550,7 +550,7 @@ class Texture3D(BaseTexture):
     resizeable : None
         Deprecated version of `resizable`.
     """
-    
+
     _ndim = 3
     _GLIR_TYPE = 'Texture3D'
 
@@ -622,7 +622,7 @@ class TextureCube(BaseTexture):
     resizeable : None
         Deprecated version of `resizable`.
     """
-    
+
     _ndim = 3
     _GLIR_TYPE = 'TextureCube'
 
@@ -905,7 +905,7 @@ class TextureAtlas(Texture2D):
         >>> bounds = atlas.get_free_region(20, 30)
         >>> atlas.set_region(bounds, np.random.rand(20, 30).T)
     """
-    
+
     def __init__(self, shape=(1024, 1024), dtype=np.float32):
         shape = np.array(shape, int)
         assert shape.ndim == 1 and shape.size == 2

@@ -100,7 +100,7 @@ class FrameBuffer(GLObject):
     stencil : RenderBuffer (optional)
         The stencil buffer to attach to this frame buffer
     """
-    
+
     _GLIR_TYPE = 'FrameBuffer'
 
     def __init__(self, color=None, depth=None, stencil=None):

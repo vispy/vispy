@@ -444,7 +444,7 @@ class _GlirQueueShare(object):
     of GL objects, when some queues may only be joined at the last possible
     moment.
     """
-    
+
     def __init__(self, queue):
         self._commands = []  # local commands
         self._verbose = False
@@ -529,7 +529,7 @@ class GlirQueue(object):
     context.shared. The parser can interpret the commands in Python,
     send them to a browser, etc.
     """
-    
+
     def __init__(self):
         # We do not actually queue any commands here, but on a shared queue
         # object that may be joined with others as queues are associated.
@@ -657,7 +657,7 @@ def as_es2_command(command):
     """Modify a desktop command so it works on es2."""
     if command[0] == 'FUNC':
         return (command[0], re.sub(r'^gl([A-Z])',
-                lambda m: m.group(1).lower(), command[1])) + command[2:]
+                                   lambda m: m.group(1).lower(), command[1])) + command[2:]
     elif command[0] == 'UNIFORM':
         return command[:-1] + (command[-1].tolist(),)
     return command

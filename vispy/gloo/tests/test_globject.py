@@ -12,10 +12,10 @@ def test_globject():
     """Test gl object uinique id and GLIR CREATE command"""
     objects = [GLObject() for i in range(10)]
     ids = [ob.id for ob in objects]
-    
+
     # Verify that each id is unique (test should not care how)
     assert len(set(ids)) == len(objects)
-    
+
     # Verify that glir commands have been created
     commands = []
     for ob in objects:
@@ -23,7 +23,7 @@ def test_globject():
     assert len(commands) == len(objects)
     for cmd in commands:
         assert cmd[0] == 'CREATE'
-    
+
     # Delete
     ob = objects[-1]
     q = ob._glir  # get it now, because its gone after we delete it

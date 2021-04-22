@@ -36,7 +36,7 @@ class ViewBox(Widget):
     **kwargs : dict
         Extra keyword arguments to pass to `Widget`.
     """
-    
+
     def __init__(self, camera=None, **kwargs):
         self._camera = None
         self._scene = None

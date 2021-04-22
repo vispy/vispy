@@ -188,7 +188,7 @@ class Nearest(SpatialFilter):
 
       w(x) = 1
     """
-    
+
     def __init__(self):
         SpatialFilter.__init__(self, radius=.5)
 
@@ -474,7 +474,7 @@ class Gaussian(SpatialFilter):
         z should be 1 everywhere but it is not the case and it produces "grid
         effects".
     """
-    
+
     def __init__(self):
         SpatialFilter.__init__(self, radius=2.0)
 

@@ -65,7 +65,7 @@ class ColorBarWidget(Widget):
     axis_ratio : float
         ratio of minor axis to major axis
     """
-    
+
     def __init__(self, cmap, orientation,
                  label="", label_color='black', clim=("", ""),
                  border_width=0.0, border_color="black",

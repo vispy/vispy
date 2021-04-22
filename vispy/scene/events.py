@@ -11,7 +11,7 @@ class SceneMouseEvent(Event):
     """Represents a mouse event that occurred on a SceneCanvas. This event is
     delivered to all entities whose mouse interaction area is under the event.
     """
-    
+
     def __init__(self, event, visual):
         self.mouse_event = event
         self.visual = visual
@@ -20,7 +20,7 @@ class SceneMouseEvent(Event):
     @property
     def visual(self):
         return self._visual
-    
+
     @visual.setter
     def visual(self, v):
         self._visual = v

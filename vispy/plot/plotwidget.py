@@ -24,7 +24,7 @@ class PlotWidget(scene.Widget):
     This class is typically instantiated implicitly by a `Figure`
     instance, e.g., by doing ``fig[0, 0]``.
     """
-    
+
     def __init__(self, *args, **kwargs):
         self._fg = kwargs.pop('fg_color', 'k')
         self.grid = None

@@ -83,7 +83,7 @@ def _init():
         config.update(**_load_config())
     except Exception as err:
         raise Exception('Error while reading vispy config file "%s":\n  %s' %
-                        (_get_config_fname(), err.message))
+                        (_get_config_fname(), str(err)))
     set_log_level(config['logging_level'])
 
     _parse_command_line_arguments()

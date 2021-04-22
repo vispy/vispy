@@ -118,7 +118,7 @@ class FlyCamera(PerspectiveCamera):
     def rotation1(self):
         """rotation1 records confirmed camera rotation"""
         return self._rotation1
-    
+
     @rotation1.setter
     def rotation1(self, value):
         assert isinstance(value, Quaternion)
@@ -128,7 +128,7 @@ class FlyCamera(PerspectiveCamera):
     def rotation2(self):
         """rotation2 records on going camera rotation."""
         return self._rotation2
-    
+
     @rotation2.setter
     def rotation2(self, value):
         assert isinstance(value, Quaternion)

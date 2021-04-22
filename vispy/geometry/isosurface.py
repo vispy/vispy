@@ -8,10 +8,10 @@ def isosurface(data, level):
     Generate isosurface from volumetric data using marching cubes algorithm.
     See Paul Bourke, "Polygonising a Scalar Field"  
     (http://paulbourke.net/geometry/polygonise/)
-    
+
     *data*   3D numpy array of scalar values
     *level*  The level at which to generate an isosurface
-    
+
     Returns an array of vertex coordinates (Nv, 3) and an array of 
     per-face vertex indexes (Nf, 3)    
     """
@@ -24,7 +24,7 @@ def isosurface(data, level):
 
     (face_shift_tables, edge_shifts, 
      edge_table, n_table_faces) = _get_data_cache()
-    
+
     # mark everything below the isosurface level
     mask = data < level
 
@@ -45,7 +45,7 @@ def isosurface(data, level):
                 # this is just to match Bourk's vertex numbering scheme:
                 vertIndex = i - 2*j*i + 3*j + 4*k
                 index += (fields[i, j, k] * 2**vertIndex).astype(np.ubyte)
-    
+
     # Generate table of edges that have been cut
     cut_edges = np.zeros([x+1 for x in index.shape]+[3], dtype=np.uint32)
     edges = edge_table[index]
@@ -53,20 +53,20 @@ def isosurface(data, level):
         slices = [slice(shift[j], cut_edges.shape[j]+(shift[j]-1)) 
                   for j in range(3)]
         cut_edges[slices[0], slices[1], slices[2], shift[3]] += edges & 2**i
-    
+
     # for each cut edge, interpolate to see where exactly the edge is cut and 
     # generate vertex positions
     m = cut_edges > 0
     vertex_inds = np.argwhere(m)  # argwhere is slow!
     vertexes = vertex_inds[:, :3].astype(np.float32).copy()
     dataFlat = data.reshape(data.shape[0]*data.shape[1]*data.shape[2])
-    
+
     # re-use the cut_edges array as a lookup table for vertex IDs
     cut_edges[vertex_inds[:, 0], 
               vertex_inds[:, 1], 
               vertex_inds[:, 2], 
               vertex_inds[:, 3]] = np.arange(vertex_inds.shape[0])
-    
+
     for i in [0, 1, 2]:
         vim = vertex_inds[:, 3] == i
         vi = vertex_inds[vim, :3]
@@ -75,9 +75,9 @@ def isosurface(data, level):
         v1 = dataFlat[vi_flat]
         v2 = dataFlat[vi_flat + data.strides[i]//data.itemsize]
         vertexes[vim, i] += (level-v1) / (v2-v1)
-    
+
     # compute the set of vertex indexes for each face. 
-    
+
     # This works, but runs a bit slower.
     # all cells with at least one face:
     # cells = np.argwhere((index != 0) & (index != 255))  
@@ -90,17 +90,17 @@ def isosurface(data, level):
     # and these are the vertex indexes we want:
     # faces = cut_edges[verts[..., 0], verts[..., 1], verts[..., 2], 
     #                  verts[..., 3]]  
-    
+
     # To allow this to be vectorized efficiently, we count the number of faces 
     # in each grid cell and handle each group of cells with the same number 
     # together.
-    
+
     # determine how many faces to assign to each grid cell
     n_faces = n_table_faces[index]
     tot_faces = n_faces.sum()
     faces = np.empty((tot_faces, 3), dtype=np.uint32)
     ptr = 0
-    
+
     # this helps speed up an indexing operation later on
     cs = np.array(cut_edges.strides)//cut_edges.itemsize
     cut_edges = cut_edges.flatten()
@@ -117,29 +117,29 @@ def isosurface(data, level):
             continue
         # index values of cells to process for this round:
         cellInds = index[cells[:, 0], cells[:, 1], cells[:, 2]]
-        
+
         # expensive:
         verts = face_shift_tables[i][cellInds]
         # we now have indexes into cut_edges:
         verts[..., :3] += (cells[:, np.newaxis,
                                  np.newaxis, :]).astype(np.uint16)
         verts = verts.reshape((verts.shape[0]*i,)+verts.shape[2:])
-        
+
         # expensive:
         verts = (verts * cs[np.newaxis, np.newaxis, :]).sum(axis=2)
         vert_inds = cut_edges[verts]
         nv = vert_inds.shape[0]
         faces[ptr:ptr+nv] = vert_inds  # .reshape((nv, 3))
         ptr += nv
-        
+
     return vertexes, faces
 
 
 def _get_data_cache():
     # Precompute lookup tables on the first run
-    
+
     global _data_cache
-    
+
     if _data_cache is None:
         # map from grid cell index to edge index.
         # grid cell index tells us which corners are below the isosurface,
@@ -166,7 +166,7 @@ def _get_data_cache():
             0x33, 0x339, 0x230, 0xe90, 0xf99, 0xc93, 0xd9a, 0xa96, 0xb9f, 0x895, 0x99c, 0x69c, 0x795, 
             0x49f, 0x596, 0x29a, 0x393, 0x99, 0x190, 0xf00, 0xe09, 0xd03, 0xc0a, 0xb06, 0xa0f, 0x905, 
             0x80c, 0x70c, 0x605, 0x50f, 0x406, 0x30a, 0x203, 0x109, 0x0], dtype=np.uint16)
-        
+
         # Table of triangles to use for filling each grid cell.
         # Each set of three integers tells us which three edges to
         # draw a triangle between.
@@ -429,7 +429,7 @@ def _get_data_cache():
             [0, 3, 8],
             []
         ]
-        
+
         # maps edge ID (0-11) to (x, y, z) cell offset and edge ID (0-2)
         edge_shifts = np.array([
             [0, 0, 0, 0],   
@@ -455,11 +455,11 @@ def _get_data_cache():
             faceTableI = np.zeros((len(triTable), i*3), dtype=np.ubyte)
             faceTableInds = np.argwhere(n_table_faces == i)[:, 0]
             faceTableI[faceTableInds] = np.array([triTable[j] for j in
-                                                 faceTableInds])
+                                                  faceTableInds])
             faceTableI = faceTableI.reshape((len(triTable), i, 3))
             face_shift_tables.append(edge_shifts[faceTableI])
-            
+
         _data_cache = (face_shift_tables, edge_shifts, edge_table, 
                        n_table_faces)
-        
+
     return _data_cache

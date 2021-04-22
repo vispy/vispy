@@ -13,7 +13,7 @@ def test_markers():
     # work for people
     np.random.seed(57983)
     data = np.random.normal(size=(30, 2), loc=50, scale=10)
-    
+
     with TestingCanvas() as c:
         marker = Markers(parent=c.scene)
         marker.set_data(data)

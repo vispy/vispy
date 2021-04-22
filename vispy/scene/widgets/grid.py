@@ -26,7 +26,7 @@ class Grid(Widget):
     **kwargs : dict
         Keyword arguments to pass to `Widget`.
     """
-    
+
     def __init__(self, spacing=6, **kwargs):
         self._next_cell = [0, 0]  # row, col
         self._cells = {}

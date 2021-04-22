@@ -52,6 +52,7 @@ def test_functionality_proxy():
     # By using debug mode, we are using the proxy class
     _test_functionality('gl2 debug')
 
+
 @pytest.mark.xfail(sys.platform == 'darwin',
                    reason='functionality fails on OSX (see #1178)')
 @requires_application()

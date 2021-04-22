@@ -26,7 +26,7 @@ class PolygonData(object):
     -----
     All arguments are optional.
     """
-    
+
     def __init__(self, vertices=None, edges=None, faces=None):
         self._vertices = vertices
         self._edges = edges

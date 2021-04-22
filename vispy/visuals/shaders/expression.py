@@ -55,7 +55,7 @@ class FunctionCall(Expression):
 
     Essentially this is container for a Function along with its signature.
     """
-    
+
     def __init__(self, function, args):
         from .function import Function
         super(FunctionCall, self).__init__()

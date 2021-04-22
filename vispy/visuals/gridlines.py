@@ -74,7 +74,7 @@ class GridLinesVisual(ImageVisual):
         The base color for grid lines. The final color may have its alpha
         channel modified.
     """
-    
+
     def __init__(self, scale=(1, 1), color='w'):
         # todo: PlaneVisual should support subdivide/impostor methods from
         # image and gridlines should inherit from plane instead.
@@ -100,6 +100,6 @@ class GridLinesVisual(ImageVisual):
     def _prepare_draw(self, view):
         if self._need_vertex_update:
             self._build_vertex_data()
-            
+
         if view._need_method_update:
             self._update_method(view)

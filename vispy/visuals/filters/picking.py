@@ -13,7 +13,7 @@ class PickingFilter(Filter):
     Note that the ID color uses the alpha channel, so this may not be used
     with blending enabled.
     """
-    
+
     FRAG_SHADER = """
         void picking_filter() {
             if( $enabled == 0 )

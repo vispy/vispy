@@ -171,7 +171,7 @@ class BaseCollection(object):
             # Check utype is made of float32 only
             utype = eval(str(np.dtype(utype)))
             r_utype = dtype_reduce(utype)
-            if type(r_utype[0]) is not str or r_utype[2] != 'float32':
+            if not isinstance(r_utype[0], str) or r_utype[2] != 'float32':
                 raise RuntimeError("utype cannot be reduced to float32 only")
 
             # Make utype divisible by 4

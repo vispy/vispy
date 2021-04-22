@@ -90,10 +90,10 @@ class PerspectiveCamera(BaseCamera):
         # Get window size (and store factor now to sync with resizing)
         w, h = self._viewbox.size
         w, h = float(w), float(h)
-        
+
         if (w == 0) or (h == 0):
             return
-                
+
         # Get range and translation for x and y
         x1, y1, z1 = self._xlim[0], self._ylim[0], self._zlim[0]
         x2, y2, z2 = self._xlim[1], self._ylim[1], self._zlim[1]
@@ -137,10 +137,10 @@ class PerspectiveCamera(BaseCamera):
 
         # Correct for window size
         w, h = self._viewbox.size
-        
+
         if (w == 0) or (h == 0):
             return
-                
+
         if w / h > 1:
             fx *= w / h
         else:
@@ -229,7 +229,7 @@ class Base3DRotationCamera(PerspectiveCamera):
                 if self._event_value is None:
                     self._event_value = (self._scale_factor, self._distance)
                 zoomy = (1 + self.zoom_factor) ** d[1]
-                
+
                 self.scale_factor = self._event_value[0] * zoomy
                 # Modify distance if its given
                 if self._distance is not None:

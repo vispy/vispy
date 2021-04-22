@@ -40,7 +40,7 @@ class RectangleVisual(PolygonVisual):
     **kwargs : dict
         Keyword arguments to pass to `PolygonVisual`.
     """
-    
+
     def __init__(self, center=None, color='black', border_color=None,
                  border_width=1, height=1.0, width=1.0,
                  radius=[0., 0., 0., 0.], **kwargs):

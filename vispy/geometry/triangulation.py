@@ -32,7 +32,7 @@ class Triangulation(object):
     .. [1] Domiter, V. and Žalik, B. Sweep‐line algorithm for constrained
        Delaunay triangulation
     """
-    
+
     def __init__(self, pts, edges):
         self.pts = pts[:, :2].astype(np.float32)
         self.edges = edges

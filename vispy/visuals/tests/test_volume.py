@@ -13,7 +13,7 @@ from vispy.testing.image_tester import assert_image_approved, downsample
 def test_volume():
     vol = np.zeros((20, 20, 20), 'float32')
     vol[8:16, 8:16, :] = 1.0
-    
+
     # Create
     V = scene.visuals.Volume(vol)
     assert V.clim == (0, 1)
@@ -23,13 +23,13 @@ def test_volume():
     # Set wrong data
     with raises(ValueError):
         V.set_data(np.zeros((20, 20), 'float32'))
-    
+
     # Clim
     V.set_data(vol, (0.5, 0.8))
     assert V.clim == (0.5, 0.8)
     with raises(ValueError):
         V.set_data((0.5, 0.8, 1.0))
-    
+
     # Method
     V.method = 'iso'
     assert V.method == 'iso'
@@ -37,7 +37,7 @@ def test_volume():
     # Interpolation
     V.interpolation = 'nearest'
     assert V.interpolation == 'nearest'
-        
+
     # Step size
     V.relative_step_size = 1.1
     assert V.relative_step_size == 1.1
@@ -66,7 +66,7 @@ def test_volume_draw():
 @requires_application()
 def test_volume_clims_and_gamma():
     """Test volume visual with clims and gamma on shader.
-    
+
     currently just using np.ones since the angle of view made more complicated samples
     challenging, but this confirms gamma and clims works in the shader.
     """

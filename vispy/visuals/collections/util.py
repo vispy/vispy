@@ -45,7 +45,7 @@ def dtype_reduce(dtype, level=0, depth=0):
         # Get reduced fields
         for key, value in fields.items():
             dtype_list = dtype_reduce(value[0], level, depth + 1)
-            if type(dtype_list[0]) is str:
+            if isinstance(dtype_list[0], str):
                 items.append([key, dtype_list[1], dtype_list[2]])
             else:
                 items.append(dtype_list)
@@ -56,7 +56,7 @@ def dtype_reduce(dtype, level=0, depth=0):
         count = 0
         for i, item in enumerate(items):
             # One item is a list, we cannot reduce
-            if type(item[0]) is not str:
+            if not isinstance(item[0], str):
                 return items
             else:
                 if i == 0:

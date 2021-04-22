@@ -114,7 +114,7 @@ class Canvas(object):
 
         canvas = Canvas(backend_kwargs={'webgl': dict(preserveDrawingBuffer=True)})
     """
-    
+
     def __init__(self, title='VisPy canvas', size=(800, 600), position=None,
                  show=False, autoswap=True, app=None, create_native=True,
                  vsync=False, resizable=True, decorate=True, fullscreen=False,
@@ -591,7 +591,7 @@ class MouseEvent(Event):
     **kwargs : keyword arguments
         All extra keyword arguments become attributes of the event object.
     """
-    
+
     def __init__(self, type, pos=None, button=None, buttons=None,
                  modifiers=None, delta=None, last_event=None, press_event=None,
                  **kwargs):
@@ -704,7 +704,7 @@ class KeyEvent(Event):
     **kwargs : keyword arguments
         All extra keyword arguments become attributes of the event object.
     """
-    
+
     def __init__(self, type, key=None, text='', modifiers=None, **kwargs):
         Event.__init__(self, type, **kwargs)
         self._key = key
@@ -743,7 +743,7 @@ class ResizeEvent(Event):
     **kwargs : extra keyword arguments
         All extra keyword arguments become attributes of the event object.
     """
-    
+
     def __init__(self, type, size=None, physical_size=None, **kwargs):
         Event.__init__(self, type, **kwargs)
         self._size = tuple(size)
@@ -782,7 +782,7 @@ class DrawEvent(Event):
     **kwargs : extra keyword arguments
         All extra keyword arguments become attributes of the event object.
     """
-    
+
     def __init__(self, type, region=None, **kwargs):
         Event.__init__(self, type, **kwargs)
         self._region = region

@@ -123,7 +123,7 @@ def assert_image_approved(image, standard_file, message=None, **kwargs):
             ims2 = np.array(std_image.shape).astype(float)
             sr = ims1 / ims2
             if (sr[0] != sr[1] or not np.allclose(sr, np.round(sr)) or
-               sr[0] < 1):
+                    sr[0] < 1):
                 raise TypeError("Test result shape %s is not an integer factor"
                                 " larger than standard image shape %s." %
                                 (ims1, ims2))
@@ -291,7 +291,7 @@ def downsample(data, n, axis=0):
 
 class ImageTester(scene.SceneCanvas):
     """Graphical interface for auditing image comparison tests."""
-    
+
     def __init__(self):
         self.grid = None
         self.views = None

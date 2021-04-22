@@ -131,7 +131,7 @@ class ColorArray(object):
     Under the hood, this class stores data in RGBA format suitable for use
     on the GPU.
     """
-    
+
     def __init__(self, color=(0., 0., 0.), alpha=None,
                  clip=False, color_space='rgb'):
 
@@ -381,7 +381,7 @@ class Color(ColorArray):
     clip : bool
         If True, clip the color values.
     """
-    
+
     def __init__(self, color='black', alpha=None, clip=False):
         """Parse input type, and set attribute"""
         if isinstance(color, (list, tuple)):

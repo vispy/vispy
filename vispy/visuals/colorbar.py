@@ -82,7 +82,7 @@ class _CoreColorBarVisual(Visual):
     --------
     vispy.visuals.ColorBarVisual
     """
-    
+
     def __init__(self, pos, halfdim,
                  cmap,
                  orientation,
@@ -272,7 +272,7 @@ class ColorBarVisual(CompoundVisual):
         The color of the border of the colormap. This can either be a
         str as the color's name or an actual instace of a vipy.color.Color
     """
-    
+
     # The padding multiplier that's used to place the text
     # next to the Colorbar. Makes sure the text isn't
     # visually "sticking" to the Colorbar

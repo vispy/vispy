@@ -406,7 +406,7 @@ class VertexBuffer(DataBuffer):
     data : ndarray
         Buffer data (optional)
     """
-    
+
     _GLIR_TYPE = 'VertexBuffer'
 
     def _prepare_data(self, data, convert=False):
@@ -461,7 +461,7 @@ class IndexBuffer(DataBuffer):
     data : ndarray | None
         Buffer data.
     """
-    
+
     _GLIR_TYPE = 'IndexBuffer'
 
     def __init__(self, data=None):

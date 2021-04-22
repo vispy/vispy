@@ -45,7 +45,7 @@ class SphereVisual(CompoundVisual):
     shading : str | None
         Shading to use.
     """
-    
+
     def __init__(self, radius=1.0, cols=30, rows=30, depth=30, subdivisions=3,
                  method='latitude', vertex_colors=None, face_colors=None,
                  color=(0.5, 0.5, 1, 1), edge_color=None, shading=None, **kwargs):

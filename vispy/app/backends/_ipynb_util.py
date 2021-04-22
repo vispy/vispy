@@ -71,11 +71,13 @@ def _serialize_item(item):
         except (AttributeError, ValueError):
             return item
 
+
 def _serialize_command(command_modified):
     """Serialize a single GLIR (modified) command. The modification relates
     to the fact that buffers are replaced by pointers.
     """
     return _serialize_item(command_modified)
+
 
 def create_glir_message(commands, array_serialization=None):
     """Create a JSON-serializable message of GLIR commands. NumPy arrays
