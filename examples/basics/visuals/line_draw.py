@@ -49,7 +49,6 @@ class EditLineVisual(scene.visuals.Line):
               (what, event.pos, event.button, event.delta))
 
     def select_point(self, pos_scene, radius=5):
-
         """
         Get line point close to mouse pointer and its index
 

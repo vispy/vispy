@@ -66,7 +66,7 @@ class VectorFieldVisual(visuals.Visual):
         gl_Position = $transform(vec4(local, 0, 1));
     }
     """
-    
+
     fragment = """
     uniform float time;
     uniform float speed;
@@ -93,7 +93,7 @@ class VectorFieldVisual(visuals.Visual):
         gl_FragColor = vec4(base_color.rgb, base_color.a * alpha);
     }
     """
-    
+
     def __init__(self, field, spacing=10, segments=3, seg_len=0.5,
                  color=(1, 1, 1, 0.3)):
         self._time = 0.0
@@ -101,7 +101,7 @@ class VectorFieldVisual(visuals.Visual):
         rows = int(field.shape[0] / spacing)
         cols = int(field.shape[1] / spacing)
         index = np.empty((rows * cols, int(segments) * 2, 2), dtype=np.float32)
-        
+
         # encodes starting position within vector field
         index[:, :, 0] = np.arange(rows * cols)[:, np.newaxis]
         # encodes distance along length of line
@@ -111,19 +111,19 @@ class VectorFieldVisual(visuals.Visual):
         if not isinstance(color, np.ndarray):
             color = np.array([[list(color)]], dtype='float32')
         self._color = gloo.Texture2D(color)
-        
+
         offset = np.random.uniform(256, size=(rows, cols, 3)).astype(np.ubyte)
         self._offset = gloo.Texture2D(offset, format='rgb')
         self._field = gloo.Texture2D(field, format='rg',
                                      internalformat='rg32f',
                                      interpolation='linear')
         self._field_shape = field.shape[:2]
-        
+
         visuals.Visual.__init__(self, vcode=self.vertex, fcode=self.fragment)
         self.timer = app.Timer(interval='auto', connect=self.update_time,
                                start=False)
         self.freeze()
-        
+
         self.shared_program['field'] = self._field
         self.shared_program['field_shape'] = self._field.shape[:2]
         self.shared_program['shape'] = (rows, cols)
@@ -140,15 +140,15 @@ class VectorFieldVisual(visuals.Visual):
         self.shared_program['time'] = 0
         self._draw_mode = 'lines'
         self.set_gl_state('translucent', depth_test=False)
-        
+
         self.timer.start()
-        
+
     def _prepare_transforms(self, view):
         view.view_program.vert['transform'] = view.get_transform()
-        
+
     def _prepare_draw(self, view):
         pass
-    
+
     def _compute_bounds(self, axis, view):
         if axis > 1:
             return (0, 0)

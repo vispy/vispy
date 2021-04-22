@@ -33,7 +33,7 @@ poly_coords = [(cx - halfx, cy - halfy),
                (cx + halfx, cy + halfy),
                (cx - halfx, cy + halfy)]
 poly = Polygon(poly_coords, color=red, border_color=white,
-               border_width=3,  parent=v.scene)
+               border_width=3, parent=v.scene)
 
 ellipse = Ellipse(center=(0.4, 0.2), radius=(0.1, 0.05),
                   color=blue, border_width=2, border_color=white,

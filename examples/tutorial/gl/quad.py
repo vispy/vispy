@@ -38,7 +38,7 @@ class Canvas(app.Canvas):
     def on_initialize(self, event):
         # Build data
         self.data = np.zeros(4, [("position", np.float32, 2),
-                                 ("color",    np.float32, 4)])
+                                 ("color", np.float32, 4)])
         self.data['color'] = [(1, 0, 0, 1), (0, 1, 0, 1),
                               (0, 0, 1, 1), (1, 1, 0, 1)]
         self.data['position'] = [(-1, -1), (-1, +1),

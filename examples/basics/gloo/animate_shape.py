@@ -77,8 +77,8 @@ class Canvas(app.Canvas):
         # and create two views from it for the attributes.
         self._program['texture1'] = gloo.Texture2D(im1)
         self._program.bind(self._vbo)  # This does:
-        #self._program['a_position'] = self._vbo['a_position']
-        #self._program['a_texcoords'] = self._vbo['a_texcoords']
+        # self._program['a_position'] = self._vbo['a_position']
+        # self._program['a_texcoords'] = self._vbo['a_texcoords']
 
         gloo.set_clear_color('white')
 
