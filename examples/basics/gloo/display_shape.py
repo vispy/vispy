@@ -35,7 +35,7 @@ void main()
 class Canvas(app.Canvas):
 
     def __init__(self):
-        app.Canvas.__init__(self, keys='interactive')
+        super().__init__(keys='interactive')
 
         # Create program
         self._program = gloo.Program(VERT_SHADER, FRAG_SHADER)

@@ -26,11 +26,15 @@ def set_interactive(enabled=True, app=None):
 
 @inputhook_manager.register('vispy')
 class VisPyInputHook(InputHookBase):
-    """Implementation of an IPython 3.x InputHook for VisPy.  This is loaded
+    """Implementation of an IPython 3.x InputHook for VisPy.
+
+    This is loaded
     by default when you call vispy.app.run() in a console-based interactive
     session, but you can also trigger it manually by importing this module
     then typing:
+
         >>> %enable_gui vispy
+
     """
 
     def enable(self, app=None):
@@ -48,7 +52,6 @@ class VisPyInputHook(InputHookBase):
         which allows Vispy to integrate with terminal-based applications
         running in interactive mode (Python or IPython).
         """
-
         from .. import app as _app
 
         self.app = app or _app.use_app()

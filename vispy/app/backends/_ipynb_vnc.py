@@ -18,7 +18,7 @@ from ..base import (BaseApplicationBackend, BaseCanvasBackend,
                     BaseTimerBackend)
 from .. import Application, Canvas
 from ...util import logger
-#from ...util.event import Event  # For timer
+# from ...util.event import Event  # For timer
 
 # Imports for screenshot
 # Perhaps we should refactor these to have just one import
@@ -105,7 +105,7 @@ class ApplicationBackend(BaseApplicationBackend):
 
     def _vispy_run(self):
         pass  # We run in IPython, so we don't run!
-        #return self._backend2._vispy_run()
+        # return self._backend2._vispy_run()
 
     def _vispy_quit(self):
         return self._backend2._vispy_quit()
@@ -165,10 +165,10 @@ class CanvasBackend(BaseCanvasBackend):
 
     def _vispy_set_title(self, title):
         return self._backend2._vispy_set_title(title)
-        #logger.warning('IPython notebook canvas has not title.')
+        # logger.warning('IPython notebook canvas has not title.')
 
     def _vispy_set_size(self, w, h):
-        #logger.warn('IPython notebook canvas cannot be resized.')
+        # logger.warn('IPython notebook canvas cannot be resized.')
         res = self._backend2._vispy_set_size(w, h)
         self._backend2._vispy_set_visible(True)
         return res
@@ -177,7 +177,7 @@ class CanvasBackend(BaseCanvasBackend):
         logger.warning('IPython notebook canvas cannot be repositioned.')
 
     def _vispy_set_visible(self, visible):
-        #self._backend2._vispy_set_visible(visible)
+        # self._backend2._vispy_set_visible(visible)
         if not visible:
             logger.warning('IPython notebook canvas cannot be hidden.')
         else:
@@ -213,7 +213,7 @@ class CanvasBackend(BaseCanvasBackend):
         # Handle initialization
         if not self._initialized:
             self._initialized = True
-            #self._vispy_canvas.events.add(timer=Event)
+            # self._vispy_canvas.events.add(timer=Event)
             self._vispy_canvas.events.initialize()
             self._on_resize()
 
@@ -300,7 +300,7 @@ class CanvasBackend(BaseCanvasBackend):
                 self._on_draw()
             # Generate a timer event on every poll from JS
             # AK: no, just use app.Timer as usual!
-            #self._vispy_canvas.events.timer(type="timer")
+            # self._vispy_canvas.events.timer(type="timer")
 
     def _prepare_js(self):
         pkgdir = op.dirname(__file__)

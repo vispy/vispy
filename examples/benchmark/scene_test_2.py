@@ -42,7 +42,7 @@ class GridCanvas(app.Canvas):
                           (dx / (np.array(self.size) / [m, n])) *  
                           (2 / np.array(cell.scale)))
                 cell.set_transform(offset, cell.scale)
-                
+
             else:
                 cell.set_transform(cell.offset, cell.scale * 1.05 ** dx)
             self.update()
@@ -82,13 +82,13 @@ class Line(object):
         self.program = gloo.Program(vert, frag)
         self.program['pos'] = self.data
         self.set_transform(offset, scale)
-        
+
     def set_transform(self, offset, scale):
         self.offset = offset
         self.scale = scale
         self.program['offset'] = self.offset
         self.program['scale'] = self.scale
-    
+
     def draw(self):
         self.program.draw('line_strip')
 
@@ -170,7 +170,7 @@ if __name__ == '__main__':
     # Scenegraph version
     scanvas = scene.SceneCanvas(show=True, keys='interactive', 
                                 title="SceneCanvas")
-    
+
     scanvas.size = 800, 600
     grid = scanvas.central_widget.add_grid(margin=0)
 

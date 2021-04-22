@@ -22,7 +22,6 @@ from itertools import cycle
 import numpy as np
 
 from vispy import app, scene, io
-from vispy.ext.six import next
 
 # Read volume
 vol1 = np.load(io.load_data_file('volume/stent.npz'))['arr_0']
@@ -36,7 +35,7 @@ view = canvas.central_widget.add_view()
 
 # Create the volume visuals, only one is visible
 volume1 = scene.visuals.Volume(vol1, parent=view.scene, threshold=0.5)
-#volume1.method = 'iso'
+# volume1.method = 'iso'
 volume1.threshold = 0.1
 
 # Plot a line that shows where positive x is, with at the end a small

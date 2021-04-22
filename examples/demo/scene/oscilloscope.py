@@ -111,6 +111,7 @@ class Oscilloscope(scene.ScrollingLines):
     parent : Node
         An optional parent scenegraph node.
     """
+
     def __init__(self, n_lines=100, line_size=1024, dx=1e-4,
                  color=(20, 255, 50), trigger=(0, 0.002, 1e-4), parent=None):
 

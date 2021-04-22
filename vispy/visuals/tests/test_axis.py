@@ -4,9 +4,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
-"""
-Tests for AxisVisual
-"""
+"""Tests for AxisVisual"""
 
 from numpy.testing import assert_allclose
 

@@ -46,12 +46,13 @@ for box in vb:
 # Create random image
 img_data1 = np.empty((200, 100, 3), dtype=np.ubyte)
 noise = np.random.normal(size=(200, 100), loc=50, scale=150)
-noise = gaussian_filter(noise, (4, 4, 0))
+noise = gaussian_filter(noise, (4, 4, 0)).astype(np.float32)
 img_data1[:] = noise[..., np.newaxis]
 
 # create 2d array with some function
 x, y = np.mgrid[0:2*np.pi:201j, 0:2*np.pi:101j]
 myfunc = np.cos(2*x[:-1, :-1]) + np.sin(2*y[:-1, :-1])
+myfunc = myfunc.astype(np.float32)
 
 # add image to viewbox1
 image1 = scene.visuals.Image(noise, parent=vb1.scene, cmap='cubehelix')

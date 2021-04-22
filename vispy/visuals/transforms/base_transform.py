@@ -40,8 +40,8 @@ class BaseTransform(object):
     Note that although all classes should define both map() and imap(), it
     is not necessarily the case that imap(map(x)) == x; there may be instances
     where the inverse mapping is ambiguous or otherwise meaningless.
-
     """
+
     glsl_map = None  # Must be GLSL code
     glsl_imap = None
 
@@ -97,8 +97,7 @@ class BaseTransform(object):
 
     @property
     def inverse(self):
-        """ The inverse of this transform. 
-        """
+        """The inverse of this transform."""
         if self._inverse is None:
             self._inverse = InverseTransform(self)
         return self._inverse
@@ -107,7 +106,7 @@ class BaseTransform(object):
     def dynamic(self):
         """Boolean flag that indicates whether this transform is expected to 
         change frequently.
-        
+
         Transforms that are flagged as dynamic will not be collapsed in 
         ``ChainTransform.simplified``. This allows changes to the transform
         to propagate through the chain without requiring the chain to be
@@ -128,17 +127,15 @@ class BaseTransform(object):
         return self._shader_map
 
     def shader_imap(self):
-        """
-        see shader_map.
-        """
+        """See shader_map."""
         return self._shader_imap
 
     def _shader_object(self):
-        """ This method allows transforms to be assigned directly to shader
+        """This method allows transforms to be assigned directly to shader
         template variables. 
-        
+
         Example::
-        
+
             code = 'void main() { gl_Position = $transform($position); }'
             func = shaders.Function(code)
             tr = STTransform()
@@ -147,9 +144,7 @@ class BaseTransform(object):
         return self.shader_map()
 
     def update(self, *args):
-        """
-        Called to inform any listeners that this transform has changed.
-        """
+        """Called to inform any listeners that this transform has changed."""
         self.changed(*args)
 
     def __mul__(self, tr):
@@ -205,7 +200,7 @@ class InverseTransform(BaseTransform):
         self._inverse = transform
         self.map = transform.imap
         self.imap = transform.map
-    
+
     @property
     def Linear(self):
         return self._inverse.Linear
@@ -221,18 +216,18 @@ class InverseTransform(BaseTransform):
     @property
     def Isometric(self):
         return self._inverse.Isometric
-    
+
     @property
     def shader_map(self):
         return self._inverse.shader_imap
-    
+
     @property
     def shader_imap(self):
         return self._inverse.shader_map
-    
+
     def __repr__(self):
         return ("<Inverse of %r>" % repr(self._inverse))
-        
+
 
 # import here to avoid import cycle; needed for BaseTransform.__mul__.
 from .chain import ChainTransform  # noqa

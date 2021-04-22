@@ -62,8 +62,7 @@ class BoxVisual(CompoundVisual):
 
     @property
     def mesh(self):
-        """The vispy.visuals.MeshVisual that used to fill in.
-        """
+        """The vispy.visuals.MeshVisual that used to fill in."""
         return self._mesh
 
     @mesh.setter
@@ -72,8 +71,7 @@ class BoxVisual(CompoundVisual):
 
     @property
     def border(self):
-        """The vispy.visuals.MeshVisual that used to draw the border.
-        """
+        """The vispy.visuals.MeshVisual that used to draw the border."""
         return self._border
 
     @border.setter

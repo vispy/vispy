@@ -112,9 +112,9 @@ class Canvas(app.Canvas):
         self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
         # Sets the view to an appropriate position over the terrain
         self.default_view = np.array([[0.8, 0.2, -0.48, 0],
-                                     [-0.5, 0.3, -0.78, 0],
-                                     [-0.01, 0.9, -0.3, 0],
-                                     [-4.5, -21.5, -7.4, 1]],
+                                      [-0.5, 0.3, -0.78, 0],
+                                      [-0.01, 0.9, -0.3, 0],
+                                      [-4.5, -21.5, -7.4, 1]],
                                      dtype=np.float32)
         self.view = self.default_view
         self.model = np.eye(4, dtype=np.float32)

@@ -88,7 +88,7 @@ class ApplicationBackend(BaseApplicationBackend):
 
     def _vispy_run(self):
         pass  # We run in IPython, so we don't run!
-        #return self._backend2._vispy_run()
+        # return self._backend2._vispy_run()
 
     def _vispy_quit(self):
         return self._backend2._vispy_quit()
@@ -126,7 +126,7 @@ class CanvasBackend(BaseCanvasBackend):
         # Connect to events of canvas to keep up to date with size and draw
         canvas.events.draw.connect(self._on_draw)
         canvas.events.resize.connect(self._on_resize)
-        
+
         # Show the widget
         canvas.show()
         # todo: hide that canvas
@@ -145,7 +145,7 @@ class CanvasBackend(BaseCanvasBackend):
 
     def _vispy_set_title(self, title):
         return self._backend2._vispy_set_title(title)
-        #logger.warn('IPython notebook canvas has not title.')
+        # logger.warn('IPython notebook canvas has not title.')
 
     def _vispy_set_size(self, w, h):
         return self._backend2._vispy_set_size(w, h)
@@ -154,7 +154,7 @@ class CanvasBackend(BaseCanvasBackend):
         logger.warn('IPython notebook canvas cannot be repositioned.')
 
     def _vispy_set_visible(self, visible):
-        #self._backend2._vispy_set_visible(visible)
+        # self._backend2._vispy_set_visible(visible)
         if not visible:
             logger.warn('IPython notebook canvas cannot be hidden.')
         else:

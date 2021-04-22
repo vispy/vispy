@@ -54,7 +54,6 @@ def test_arrow_draw():
 @requires_application()
 def test_arrow_transform_draw():
     """Tests the ArrowVisual when a transform is applied"""
-
     with TestingCanvas() as c:
         if os.getenv('TRAVIS', 'false') == 'true' and \
                 c.app.backend_name.lower() == 'pyqt4':

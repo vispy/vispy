@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
-"""
-Line visual implementing Agg- and GL-based drawing modes.
-"""
+"""Line visual implementing Agg- and GL-based drawing modes."""
 
 from __future__ import division
 
@@ -11,7 +9,6 @@ import numpy as np
 
 from ... import gloo, glsl
 from ...color import Color, ColorArray, get_colormap
-from ...ext.six import string_types
 from ..shaders import Function
 from ..visual import Visual, CompoundVisual
 from ...util.profiler import Profiler
@@ -89,6 +86,7 @@ class LineVisual(CompoundVisual):
         For method='gl', this specifies whether to use GL's line smoothing,
         which may be unavailable or inconsistent on some platforms.
     """
+
     def __init__(self, pos=None, color=(0.5, 0.5, 0.5, 1), width=1,
                  connect='strip', method='gl', antialias=False):
         self._line_visual = None
@@ -227,7 +225,7 @@ class LineVisual(CompoundVisual):
     def _interpret_color(self, color_in=None):
         color_in = self._color if color_in is None else color_in
         colormap = None
-        if isinstance(color_in, string_types):
+        if isinstance(color_in, str):
             try:
                 colormap = get_colormap(color_in)
                 color = Function(colormap.glsl_map)
@@ -372,11 +370,11 @@ class _GLLineVisual(Visual):
         prof('prepare')
 
         # Draw
-        if isinstance(self._connect, string_types) and \
+        if isinstance(self._connect, str) and \
                 self._connect == 'strip':
             self._draw_mode = 'line_strip'
             self._index_buffer = None
-        elif isinstance(self._connect, string_types) and \
+        elif isinstance(self._connect, str) and \
                 self._connect == 'segments':
             self._draw_mode = 'lines'
             self._index_buffer = None
@@ -475,7 +473,6 @@ class _AggLineVisual(Visual):
         segment must have its own vertices because of antialias (this means no
         vertex sharing between two adjacent line segments).
         """
-
         n = len(vertices)
         P = np.array(vertices).reshape(n, 2).astype(float)
         idx = np.arange(n)  # used to eventually tile the color array

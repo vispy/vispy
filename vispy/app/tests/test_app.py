@@ -1,6 +1,7 @@
 import os
 import sys
 from collections import namedtuple
+from io import StringIO
 from time import sleep
 import gc
 
@@ -18,7 +19,7 @@ from vispy.util import keys, use_log_level
 from vispy.gloo.program import (Program, VertexBuffer, IndexBuffer)
 from vispy.gloo.util import _screenshot
 from vispy.gloo import gl
-from vispy.ext.six.moves import StringIO
+
 
 gl.use_gl('gl2 debug')
 
@@ -117,6 +118,32 @@ def _test_callbacks(canvas):
     elif 'osmesa' in backend_name.lower():
         # No events for osmesa backend
         pass
+    elif 'tk' in backend_name.lower():
+        event = namedtuple("event", [
+            "serial", "time", "type", "widget", 
+            "width", "height", 
+            "char", "keycode", "keysym", "keysym_num", "state",
+            "x", "y", "x_root", "y_root", "num", "delta"
+        ])
+
+        event.width, event.height = 10, 20
+        backend._on_configure(event)        # RESIZE
+
+        event.x, event.y, event.state = 1, 1, 0x0
+        backend._on_mouse_enter(event)
+        backend._on_mouse_move(event)
+
+        event.x, event.y, event.num = 1, 1, 1
+        backend._on_mouse_button_press(event)
+        backend._on_mouse_button_release(event)
+        backend._on_mouse_double_button_press(event)
+
+        event.delta = 120
+        backend._on_mouse_wheel(event)
+
+        event.keysym_num, event.keycode, event.state = 65362, 0, 0x0001  # SHIFT+UP
+        backend._on_key_down(event)
+        backend._on_key_up(event)
     else:
         raise ValueError
 
@@ -336,7 +363,7 @@ def test_fs():
     assert_equal(len(emit_list), 0)
     with use_log_level('warning', record=True, print_msg=False):
         # some backends print a warning b/c fullscreen can't be specified
-        with Canvas(fullscreen=0) as c:
+        with Canvas(fullscreen=True) as c:
             assert_equal(c.fullscreen, True)
 
 

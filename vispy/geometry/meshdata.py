@@ -4,8 +4,6 @@
 
 import numpy as np
 
-from ..ext.six.moves import xrange
-
 
 def _fix_colors(colors):
     colors = np.asarray(colors)
@@ -134,7 +132,6 @@ class MeshData(object):
         edges : ndarray
             The edges.
         """
-
         if indexed is None:
             if self._edges is None:
                 self._compute_edges(indexed=None)
@@ -250,7 +247,8 @@ class MeshData(object):
 
     def has_face_indexed_data(self):
         """Return True if this object already has vertex positions indexed
-        by face"""
+        by face
+        """
         return self._vertices_indexed_by_faces is not None
 
     def has_edge_indexed_data(self):
@@ -333,7 +331,7 @@ class MeshData(object):
             vertFaces = self.get_vertex_faces()
             self._vertex_normals = np.empty(self._vertices.shape,
                                             dtype=np.float32)
-            for vindex in xrange(self._vertices.shape[0]):
+            for vindex in range(self._vertices.shape[0]):
                 faces = vertFaces[vindex]
                 if len(faces) == 0:
                     self._vertex_normals[vindex] = (0, 0, 0)
@@ -413,7 +411,7 @@ class MeshData(object):
         indexed : str | None
             Should be 'faces' if colors are indexed by faces.
         """
-        colors = _fix_colors(np.asarray(colors))
+        colors = _fix_colors(colors)
         if indexed is None:
             if colors.ndim != 2:
                 raise ValueError('colors must be 2D if indexed is None')
@@ -552,7 +550,7 @@ class MeshData(object):
         self._vertex_faces = []
         self._face_normals = None
         self._vertex_normals = None
-        for i in xrange(faces.shape[0]):
+        for i in range(faces.shape[0]):
             face = faces[i]
             for j in range(face.shape[0]):
                 pt = face[j]
@@ -570,12 +568,10 @@ class MeshData(object):
         self._vertices = np.array(self._vertices, dtype=np.float32)
 
     def get_vertex_faces(self):
-        """
-        List mapping each vertex index to a list of face indices that use it.
-        """
+        """List mapping each vertex index to a list of face indices that use it."""
         if self._vertex_faces is None:
-            self._vertex_faces = [[] for i in xrange(len(self.get_vertices()))]
-            for i in xrange(self._faces.shape[0]):
+            self._vertex_faces = [[] for i in range(len(self.get_vertices()))]
+            for i in range(self._faces.shape[0]):
                 face = self._faces[i]
                 for ind in face:
                     self._vertex_faces[ind].append(i)

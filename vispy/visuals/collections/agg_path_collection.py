@@ -18,7 +18,6 @@ from ..transforms import NullTransform
 
 
 class AggPathCollection(Collection):
-
     """
     Antigrain Geometry Path Collection
 
@@ -34,7 +33,6 @@ class AggPathCollection(Collection):
 
         Parameters
         ----------
-
         user_dtype: list
             The base dtype can be completed (appended) by the used_dtype. It
             only make sense if user also provide vertex and/or fragment shaders
@@ -66,20 +64,19 @@ class AggPathCollection(Collection):
         antialias : string
             'local', 'shared' or 'global'
         """
+        base_dtype = [('p0', (np.float32, 3), '!local', (0, 0, 0)),
+                      ('p1', (np.float32, 3), '!local', (0, 0, 0)),
+                      ('p2', (np.float32, 3), '!local', (0, 0, 0)),
+                      ('p3', (np.float32, 3), '!local', (0, 0, 0)),
+                      ('uv', (np.float32, 2), '!local', (0, 0)),
 
-        base_dtype = [('p0',         (np.float32, 3), '!local', (0, 0, 0)),
-                      ('p1',         (np.float32, 3), '!local', (0, 0, 0)),
-                      ('p2',         (np.float32, 3), '!local', (0, 0, 0)),
-                      ('p3',         (np.float32, 3), '!local', (0, 0, 0)),
-                      ('uv',         (np.float32, 2), '!local', (0, 0)),
-
-                      ('caps',       (np.float32, 2), 'global', (0, 0)),
-                      ('join',       (np.float32, 1), 'global', 0),
-                      ('color',      (np.float32, 4), 'global', (0, 0, 0, 1)),
+                      ('caps', (np.float32, 2), 'global', (0, 0)),
+                      ('join', (np.float32, 1), 'global', 0),
+                      ('color', (np.float32, 4), 'global', (0, 0, 0, 1)),
                       ('miter_limit', (np.float32, 1), 'global', 4),
-                      ('linewidth',  (np.float32, 1), 'global', 1),
-                      ('antialias',  (np.float32, 1), 'global', 1),
-                      ('viewport',   (np.float32, 4), 'global', (0, 0, 512, 512))]  # noqa
+                      ('linewidth', (np.float32, 1), 'global', 1),
+                      ('antialias', (np.float32, 1), 'global', 1),
+                      ('viewport', (np.float32, 4), 'global', (0, 0, 512, 512))]  # noqa
 
         dtype = base_dtype
         if user_dtype:
@@ -107,7 +104,6 @@ class AggPathCollection(Collection):
 
         Parameters
         ----------
-
         P : np.array
             Vertices positions of the path(s) to be added
 
@@ -135,7 +131,6 @@ class AggPathCollection(Collection):
         antialias : list, array or float
            Path antialias area
         """
-
         itemsize = int(itemsize or len(P))
         itemcount = len(P) // itemsize
 
@@ -196,8 +191,7 @@ class AggPathCollection(Collection):
                           indices=idxs, itemsize=itemsize * 4 - 4)
 
     def draw(self, mode="triangles"):
-        """ Draw collection """
-
+        """Draw collection"""
         gl.glDepthMask(0)
         Collection.draw(self, mode)
         gl.glDepthMask(1)

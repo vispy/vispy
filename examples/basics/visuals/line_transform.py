@@ -74,7 +74,7 @@ class Canvas(app.Canvas):
         gloo.clear('black', depth=True)
         for line in self.lines:
             line.draw()
-            
+
     def on_resize(self, event):
         # Set canvas viewport and reconfigure visual transforms to match.
         vp = (0, 0, self.physical_size[0], self.physical_size[1])

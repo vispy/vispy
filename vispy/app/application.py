@@ -2,13 +2,11 @@
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-"""
-Implements the global singleton app object.
-
-"""
+"""Implements the global singleton app object."""
 
 from __future__ import division
 
+import builtins
 import os
 import sys
 
@@ -17,7 +15,6 @@ from .backends import CORE_BACKENDS, BACKEND_NAMES, BACKENDMAP, TRIED_BACKENDS
 from .. import config
 from .base import BaseApplicationBackend as ApplicationBackend  # noqa
 from ..util import logger
-from ..ext import six
 
 
 class Application(object):
@@ -57,8 +54,7 @@ class Application(object):
 
     @property
     def backend_name(self):
-        """ The name of the GUI backend that this app wraps.
-        """
+        """The name of the GUI backend that this app wraps."""
         if self._backend is not None:
             return self._backend._vispy_get_backend_name()
         else:
@@ -66,19 +62,18 @@ class Application(object):
 
     @property
     def backend_module(self):
-        """ The module object that defines the backend.
-        """
+        """The module object that defines the backend."""
         return self._backend_module
 
     def process_events(self):
-        """ Process all pending GUI events. If the mainloop is not
+        """Process all pending GUI events. If the mainloop is not
         running, this should be done regularly to keep the visualization
         interactive and to keep the event system going.
         """
         return self._backend._vispy_process_events()
 
     def sleep(self, duration_sec):
-        """ Sleep for the given duration in seconds.
+        """Sleep for the given duration in seconds.
 
         This is used to reduce
         CPU stress when VisPy is run in interactive mode.
@@ -92,21 +87,19 @@ class Application(object):
         self._backend._vispy_sleep(duration_sec)
 
     def create(self):
-        """ Create the native application.
-        """
+        """Create the native application."""
         # Ensure that the native app exists
         self.native
 
     def is_interactive(self):
-        """ Determine if the user requested interactive mode.
-        """
+        """Determine if the user requested interactive mode."""
         # The Python interpreter sets sys.flags correctly, so use them!
         if sys.flags.interactive:
             return True
 
         # IPython does not set sys.flags when -i is specified, so first
         # check it if it is already imported.
-        if '__IPYTHON__' not in dir(six.moves.builtins):
+        if not hasattr(builtins, '__IPYTHON__'):
             return False
 
         # Then we check the application singleton and determine based on
@@ -133,7 +126,7 @@ class Application(object):
             return False
 
     def run(self, allow_interactive=True):
-        """ Enter the native GUI event loop.
+        """Enter the native GUI event loop.
 
         Parameters
         ----------
@@ -145,14 +138,13 @@ class Application(object):
             immediately and rely on the interpreter's input loop to be run
             after script execution.
         """
-
         if allow_interactive and self.is_interactive():
             inputhook.set_interactive(enabled=True, app=self)
         else:
             return self._backend._vispy_run()
 
     def reuse(self):
-        """ Called when the application is reused in an interactive session.
+        """Called when the application is reused in an interactive session.
         This allow the backend to do stuff in the client when `use_app()` is
         called multiple times by the user. For example, the notebook backends
         need to inject JavaScript code as soon as `use_app()` is called.
@@ -160,19 +152,16 @@ class Application(object):
         return self._backend._vispy_reuse()
 
     def quit(self):
-        """ Quit the native GUI event loop.
-        """
+        """Quit the native GUI event loop."""
         return self._backend._vispy_quit()
 
     @property
     def native(self):
-        """ The native GUI application instance.
-        """
+        """The native GUI application instance."""
         return self._backend._vispy_get_native_app()
 
     def _use(self, backend_name=None):
-        """Select a backend by name. See class docstring for details.
-        """
+        """Select a backend by name. See class docstring for details."""
         # See if we're in a specific testing mode, if so DONT check to see
         # if it's a valid backend. If it isn't, it's a good thing we
         # get an error later because we should have decorated our test

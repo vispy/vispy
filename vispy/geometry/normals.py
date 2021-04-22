@@ -8,8 +8,7 @@ import numpy as np
 
 
 def compact(vertices, indices, tolerance=1e-3):
-    """ Compact vertices and indices within given tolerance """
-
+    """Compact vertices and indices within given tolerance"""
     # Transform vertices into a structured array for np.unique to work
     n = len(vertices)
     V = np.zeros(n, dtype=[("pos", np.float32, 3)])
@@ -50,19 +49,16 @@ def compact(vertices, indices, tolerance=1e-3):
 
 
 def normals(vertices, indices):
-    """
-    Compute normals over a triangulated surface
+    """Compute normals over a triangulated surface
 
     Parameters
     ----------
-
     vertices : ndarray (n,3)
         triangles vertices
 
     indices : ndarray (p,3)
         triangles indices
     """
-
     # Compact similar vertices
     vertices, indices, mapping = compact(vertices, indices)
 

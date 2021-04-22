@@ -231,7 +231,6 @@ class ArrowVisual(LineVisual):
             the arrow head, and the first vertex is only used for determining
             the arrow head orientation.
         """
-
         if arrows is not None:
             self._arrows = arrows
             self._arrows_changed = True

@@ -13,7 +13,7 @@ from ..visuals.transforms import (NullTransform, BaseTransform,
 
 
 class Node(object):
-    """ Base class representing an object in a scene.
+    """Base class representing an object in a scene.
 
     A group of nodes connected through parent-child relationships define a 
     scenegraph. Nodes may have any number of children.
@@ -22,11 +22,11 @@ class Node(object):
     orientation, scale, etc. of the Node relative to its parent. The Node's
     children inherit this property, and then further apply their own
     transformations on top of that. 
-    
+
     With the ``transform`` property, each Node implicitly defines a "local" 
     coordinate system, and the Nodes and edges in the scenegraph can be thought
     of as coordinate systems connected by transformation functions.
-    
+
     Parameters
     ----------
     parent : Node
@@ -36,7 +36,7 @@ class Node(object):
     transforms : instance of TransformSystem | None
         The associated transforms.
     """
-    
+
     # Needed to allow subclasses to repr() themselves before Node.__init__()
     _name = None
 
@@ -49,14 +49,14 @@ class Node(object):
         self._opacity = 1.0
         self._order = 0
         self._picking = False
-        
+
         # clippers inherited from parents
         self._clippers = weakref.WeakKeyDictionary()  # {node: clipper}
 
         # whether this widget should clip its children
         self._clip_children = False
         self._clipper = None
-        
+
         self.transforms = (TransformSystem() if transforms is None else 
                            transforms)
 
@@ -70,27 +70,27 @@ class Node(object):
             self.events = EmitterGroup(source=self, auto_connect=True,
                                        update=Event)
         self.events.add(**dict([(ev, Event) for ev in events]))
-        
+
         self._children = []
         self._transform = NullTransform()
         self._parent = None
         if parent is not None:
             self.parent = parent
-            
+
         self._document = None
-    
+
     @property
     def visible(self):
-        """ Whether this node should be drawn or not. Only applicable to
+        """Whether this node should be drawn or not. Only applicable to
         nodes that can be drawn.
         """
         return self._visible
-    
+
     @visible.setter
     def visible(self, val):
         self._visible = bool(val)
         self.update()
-    
+
     @property
     def name(self):
         return self._name
@@ -102,18 +102,18 @@ class Node(object):
     @property
     def opacity(self):
         return self._opacity
-    
+
     @opacity.setter
     def opacity(self, o):
         self._opacity = o
         self._update_opacity()
-        
+
     def _update_opacity(self):
         pass
-        
+
     def _set_clipper(self, node, clipper):
         """Assign a clipper that is inherited from a parent node.
-        
+
         If *clipper* is None, then remove any clippers for *node*.
         """
         pass
@@ -124,13 +124,13 @@ class Node(object):
         clipper.
         """
         return self._clip_children
-    
+
     @clip_children.setter
     def clip_children(self, clip):
         if self._clip_children == clip:
             return
         self._clip_children = clip
-        
+
         for ch in self.children:
             ch._set_clipper(self, self.clipper) 
 
@@ -140,24 +140,24 @@ class Node(object):
         of this node.
         """
         return self._clipper
-        
+
     @property
     def order(self):
         """A value used to determine the order in which nodes are drawn.
-        
+
         Greater values are drawn later. Children are always drawn after their
         parent.
         """
         return self._order
-    
+
     @order.setter
     def order(self, o):
         self._order = o
         self.update()
-        
+
     @property
     def children(self):
-        """ A copy of the list of children of this node. Do not add
+        """A copy of the list of children of this node. Do not add
         items to this list, but use ``x.parent = y`` instead.
         """
         return list(self._children)
@@ -165,11 +165,11 @@ class Node(object):
     @property
     def parent(self):
         """The parent of this node in the scenegraph.
-        
+
         Nodes inherit coordinate transformations and some filters (opacity and
         clipping by default) from their parents. Setting this property assigns
         a new parent, changing the topology of the scenegraph.
-        
+
         May be set to None to remove this node (and its children) from a
         scenegraph.
         """
@@ -204,7 +204,7 @@ class Node(object):
                 if p.clip_children:
                     self._set_clipper(p, p.clipper)
                 p = p.parent
-        
+
         self.events.parent_change(new=parent, old=prev)
         self._update_trsys(None)
         self.update()
@@ -253,8 +253,7 @@ class Node(object):
 
     @property
     def canvas(self):
-        """The canvas in which this node's scenegraph is being drawn.
-        """
+        """The canvas in which this node's scenegraph is being drawn."""
         if self._canvas is None:
             return None
         else:
@@ -263,7 +262,7 @@ class Node(object):
     @property
     def document_node(self):
         """The node to be used as the document coordinate system.
-        
+
         By default, the document node is `self.root_node`.
         """
         if self._document_node is None:
@@ -305,7 +304,7 @@ class Node(object):
         old = self.canvas
         if old is c:
             return
-        
+
         # Use canvas/framebuffer transforms from canvas
         self.transforms.canvas = c
         if c is None:
@@ -315,7 +314,7 @@ class Node(object):
             tr = c.transforms
             self.transforms.canvas_transform = tr.canvas_transform
             self.transforms.framebuffer_transform = tr.framebuffer_transform
-        
+
         # update all children
         for ch in self.children:
             ch._set_canvas(c)
@@ -334,17 +333,17 @@ class Node(object):
 
     @property
     def document(self):
-        """ The document is an optional property that is an node representing
+        """The document is an optional property that is an node representing
         the coordinate system from which this node should make physical 
         measurements such as px, mm, pt, in, etc. This coordinate system 
         should be used when determining line widths, font sizes, and any
         other lengths specified in physical units.
-        
+
         The default is None; in this case, a default document is used during
         drawing (usually this is supplied by the SceneCanvas).
         """
         return self._document
-    
+
     @document.setter
     def document(self, doc):
         if doc is not None and not isinstance(doc, Node):
@@ -354,7 +353,7 @@ class Node(object):
 
     @property
     def transform(self):
-        """ The transform that maps the local coordinate frame to the
+        """The transform that maps the local coordinate frame to the
         coordinate frame of the parent.
         """
         return self._transform
@@ -369,7 +368,7 @@ class Node(object):
             self._update_trsys(None)
 
     def set_transform(self, type_, *args, **kwargs):
-        """ Create a new transform of *type* and assign it to this node.
+        """Create a new transform of *type* and assign it to this node.
 
         All extra arguments are used in the construction of the transform.
 
@@ -386,10 +385,10 @@ class Node(object):
 
     def _update_trsys(self, event):
         """Called when  has changed.
-        
+
         This allows the node and its children to react (notably, VisualNode
         uses this to update its TransformSystem).
-        
+
         Note that this method is only called when one transform is replaced by
         another; it is not called if an existing transform internally changes
         its state.
@@ -498,11 +497,11 @@ class Node(object):
             # Early exit
             if child is self:
                 return list(reversed(path1))
-        
+
         # Verify that we're not cut off
         if path1[-1].parent is None:
             raise RuntimeError('%r is not a child of %r' % (node, self))
-        
+
         def _is_child(path, parent, child):
             path.append(parent)
             if child in parent.children:
@@ -542,17 +541,17 @@ class Node(object):
         The first list starts with this node and ends with the common parent
         between the endpoint nodes. The second list contains the remainder of
         the path from the common parent to the specified ending node.
-        
+
         For example, consider the following scenegraph::
-        
+
             A --- B --- C --- D
                    \
                     --- E --- F
-        
+
         Calling `D.node_path(F)` will return::
-        
+
             ([D, C, B], [E, F])
-        
+
         """
         p1 = self.parent_chain()
         p2 = node.parent_chain()
@@ -564,14 +563,14 @@ class Node(object):
         if cp is None:
             raise RuntimeError("No single-path common parent between nodes %s "
                                "and %s." % (self, node))
-        
+
         p1 = p1[:p1.index(cp)+1]
         p2 = p2[:p2.index(cp)][::-1]
         return p1, p2
-        
+
     def node_path_transforms(self, node):
         """Return the list of transforms along the path to another node.
-        
+
         The transforms are listed in reverse order, such that the last 
         transform should be applied first when mapping from this node to 
         the other.
@@ -620,7 +619,7 @@ class Node(object):
         drawn in picking mode.
         """
         return self._picking
-    
+
     @picking.setter
     def picking(self, p):
         for c in self.children:

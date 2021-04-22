@@ -24,7 +24,7 @@ _stl_dtype_header = np.dtype([('header', np.void, 80),
 
 
 def load_stl(file_obj, file_type=None):
-    '''
+    """
     Load an STL file from a file object.
 
     Parameters
@@ -38,7 +38,7 @@ def load_stl(file_obj, file_type=None):
               vertices:     (n,3) float, vertices
               faces:        (m,3) int, indexes of vertices
               face_normals: (m,3) float, normal vector of each face
-    '''
+    """
     # save start of file obj
     file_pos = file_obj.tell()
     try:
@@ -57,7 +57,7 @@ def load_stl(file_obj, file_type=None):
 
 
 def load_stl_binary(file_obj):
-    '''
+    """
     Load a binary STL file from a file object.
 
     Parameters
@@ -70,7 +70,7 @@ def load_stl_binary(file_obj):
               vertices:     (n,3) float, vertices
               faces:        (m,3) int, indexes of vertices
               face_normals: (m,3) float, normal vector of each face
-    '''
+    """
     # the header is always 84 bytes long, we just reference the dtype.itemsize
     # to be explicit about where that magical number comes from
     header_length = _stl_dtype_header.itemsize
@@ -116,7 +116,7 @@ def load_stl_binary(file_obj):
 
 
 def load_stl_ascii(file_obj):
-    '''
+    """
     Load an ASCII STL file from a file object.
 
     Parameters
@@ -129,7 +129,7 @@ def load_stl_ascii(file_obj):
               vertices:     (n,3) float, vertices
               faces:        (m,3) int, indexes of vertices
               face_normals: (m,3) float, normal vector of each face
-    '''
+    """
     # header (not used by this function)
     file_obj.readline()
 

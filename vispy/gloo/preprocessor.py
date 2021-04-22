@@ -11,7 +11,6 @@ from ..util import logger
 
 def remove_comments(code):
     """Remove C-style comment from GLSL code string."""
-
     pattern = r"(\".*?\"|\'.*?\')|(/\*.*?\*/|//[^\r\n]*\n)"
     # first group captures quoted strings (double or single)
     # second group captures comments (//single-line or /* multi-line */)
@@ -30,7 +29,6 @@ def remove_comments(code):
 
 def merge_includes(code):
     """Merge all includes recursively."""
-
     pattern = r'\#\s*include\s*"(?P<filename>[a-zA-Z0-9\_\-\.\/]+)"'
     regex = re.compile(pattern)
     includes = []
@@ -63,8 +61,7 @@ def merge_includes(code):
 
 def preprocess(code):
     """Preprocess a code by removing comments, version and merging includes."""
-
     if code:
-        #code = remove_comments(code)
+        # code = remove_comments(code)
         code = merge_includes(code)
     return code

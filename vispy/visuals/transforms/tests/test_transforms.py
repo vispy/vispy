@@ -134,7 +134,7 @@ def test_transform_chain():
     m12_ = chain1.map((1, 1)).tolist()
     m21_ = chain2.map((1, 1)).tolist()
     #
-    #print(m12, m21, m12_, m21_)
+    # print(m12, m21, m12_, m21_)
     assert m12 != m21
     assert m12 == m12_
     assert m21 == m21_
@@ -235,9 +235,9 @@ def test_inverse(trn):
     assert_allclose(pos, trn.inverse.map(trn.map(pos))[:, :3], atol=1e-7)
 
     # log transform only works on positive values
-    #abs_pos = np.abs(pos)
-    #tr = LT(base=(2, 4.5, 0))
-    #assert np.allclose(abs_pos, tr.inverse.map(tr.map(abs_pos))[:,:3])
+    # abs_pos = np.abs(pos)
+    # tr = LT(base=(2, 4.5, 0))
+    # assert np.allclose(abs_pos, tr.inverse.map(tr.map(abs_pos))[:,:3])
 
 
 run_tests_if_main()

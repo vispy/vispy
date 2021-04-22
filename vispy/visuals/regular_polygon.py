@@ -3,9 +3,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 
-"""
-RegularPolygonVisual visual based on EllipseVisual
-"""
+"""RegularPolygonVisual visual based on EllipseVisual"""
 
 from __future__ import division
 
@@ -18,7 +16,6 @@ class RegularPolygonVisual(EllipseVisual):
 
     Parameters
     ----------
-
     center : array-like (x, y)
         Center of the regular polygon
     color : str | tuple | list of colors
@@ -33,6 +30,7 @@ class RegularPolygonVisual(EllipseVisual):
     sides : int
         Number of sides of the regular polygon
     """
+
     def __init__(self, center=None, color='black', border_color=None,
                  border_width=1, radius=0.1, sides=4, **kwargs):
         EllipseVisual.__init__(self, center=center,
@@ -44,8 +42,7 @@ class RegularPolygonVisual(EllipseVisual):
 
     @property
     def sides(self):
-        """ The number of sides in the regular polygon.
-        """
+        """The number of sides in the regular polygon."""
         # return using the property accessor for num_segments
         return self.num_segments
 

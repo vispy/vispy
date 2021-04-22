@@ -18,9 +18,9 @@ shape = thetas.shape
 linear_shape = thetas.shape[0] * thetas.shape[1]
 cm = get_colormap('hot')
 
-for l in range(3):
-    for m in range(l+1):
-        harmonic_values = sph_harm(m, l, phis, thetas).real
+for harm_degree in range(3):
+    for harm_order in range(harm_degree + 1):
+        harmonic_values = sph_harm(harm_order, harm_degree, phis, thetas).real
         rs = 1. + 0.4*harmonic_values
 
         xs = rs * np.sin(thetas) * np.cos(phis)
@@ -29,8 +29,8 @@ for l in range(3):
 
         xs -= 4.5
         zs -= 4.5
-        xs += 2.5 * l
-        zs += 2.5 * m
+        xs += 2.5 * harm_degree
+        zs += 2.5 * harm_order
 
         v_min = np.min(harmonic_values)
         v_max = np.max(harmonic_values)

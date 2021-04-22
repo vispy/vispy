@@ -8,7 +8,6 @@ import re
 
 import numpy as np
 
-from ...ext.six import string_types, iteritems
 from ...util.logs import _serialize_buffer
 
 
@@ -19,7 +18,8 @@ from ...util.logs import _serialize_buffer
 def _extract_buffers(commands):
     """Extract all data buffers from the list of GLIR commands, and replace
     them by buffer pointers {buffer: <buffer_index>}. Return the modified list
-    # of GILR commands and the list of buffers as well."""
+    # of GILR commands and the list of buffers as well.
+    """
     # First, filter all DATA commands.
     # Shader DATA commands are 3 elements, others are 4
     data_commands = [command for command in commands if command[0] == 'DATA']
@@ -49,10 +49,10 @@ def _serialize_item(item):
     if isinstance(item, (list, tuple)):
         return [_serialize_item(subitem) for subitem in item]
     elif isinstance(item, dict):
-        return dict([(key, _serialize_item(value)) for (key, value) in iteritems(item)])
+        return dict([(key, _serialize_item(value)) for (key, value) in item.items()])
 
     # Serialize strings.
-    elif isinstance(item, string_types):
+    elif isinstance(item, str):
         # Replace glSomething by something (needed for WebGL commands).
         if item.startswith('gl'):
             return re.sub(r'^gl([A-Z])', lambda m: m.group(1).lower(), item)
@@ -74,24 +74,22 @@ def _serialize_item(item):
 
 def _serialize_command(command_modified):
     """Serialize a single GLIR (modified) command. The modification relates
-    to the fact that buffers are replaced by pointers."""
+    to the fact that buffers are replaced by pointers.
+    """
     return _serialize_item(command_modified)
 
 
 def create_glir_message(commands, array_serialization=None):
     """Create a JSON-serializable message of GLIR commands. NumPy arrays
     are serialized according to the specified method.
-
     Arguments
     ---------
-
     commands : list
         List of GLIR commands.
     array_serialization : string or None
         Serialization method for NumPy arrays. Possible values are:
             'binary' (default) : use a binary string
             'base64' : base64 encoded string of the array
-
     """
     # Default serialization method for NumPy arrays.
     if array_serialization is None:

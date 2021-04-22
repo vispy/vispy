@@ -62,7 +62,7 @@ def set_builtin(name, value):
 
 
 def js_prerelease(command, strict=False):
-    """decorator for building minified js/css prior to another command"""
+    """Decorator for building minified js/css prior to another command."""
     class DecoratedCommand(command):
         def run(self):
             jsdeps = self.distribution.get_command_obj('jsdeps')
@@ -96,7 +96,7 @@ def js_prerelease(command, strict=False):
 
 
 def update_package_data(distribution):
-    """update package_data to catch changes during setup"""
+    """Update package_data to catch changes during setup."""
     build_py = distribution.get_command_obj('build_py')
     # distribution.package_data = find_package_data()
     # re-init build_py options which load package_data
@@ -122,23 +122,23 @@ class NPM(Command):
         pass
 
     def get_npm_name(self):
-        npmName = 'npm';
+        npmName = 'npm'
         if platform.system() == 'Windows':
-            npmName = 'npm.cmd';
+            npmName = 'npm.cmd'
 
-        return npmName;
+        return npmName
 
     def has_npm(self):
-        npmName = self.get_npm_name();
+        npmName = self.get_npm_name()
         try:
             check_call([npmName, '--version'])
             return True
-        except:
+        except BaseException:
             return False
 
     def should_run_npm_install(self):
-        package_json = os.path.join(node_root, 'package.json')
-        node_modules_exists = os.path.exists(self.node_modules)
+        # package_json = os.path.join(node_root, 'package.json')
+        # node_modules_exists = os.path.exists(self.node_modules)
         return self.has_npm()
 
     def run(self):
@@ -153,7 +153,7 @@ class NPM(Command):
         if self.should_run_npm_install():
             log.info("Installing build dependencies with npm.  This may take "
                      "a while...")
-            npmName = self.get_npm_name();
+            npmName = self.get_npm_name()
             check_call([npmName, 'install', '--verbose'], cwd=node_root,
                        stdout=sys.stdout, stderr=sys.stderr)
             os.utime(self.node_modules, None)
@@ -219,10 +219,12 @@ setup(
         'pyqt5': ['pyqt5'],
         'pyside': ['PySide'],
         'pyside2': ['PySide2'],
+        'pyside6': ['PySide6'],
         'sdl2': ['PySDL2'],
         'wx': ['wxPython'],
-        'doc': ['sphinx_bootstrap_theme', 'numpydoc'],
-        'io': ['meshio'],
+        'tk': ['pyopengltk'],
+        'doc': ['pydata-sphinx-theme', 'numpydoc', 'sphinxcontrib-apidoc'],
+        'io': ['meshio', 'Pillow'],
     },
     packages=find_packages(exclude=['make']),
     ext_modules=cythonize(extensions),
@@ -243,19 +245,19 @@ setup(
                   op.join('util', 'fonts', 'data', '*.ttf'),
                   ],
 
-        'vispy.glsl': ['*.vert','*.frag', "*.glsl"],
-        'vispy.glsl.antialias': ['*.vert','*.frag', "*.glsl"],
-        'vispy.glsl.arrowheads': ['*.vert','*.frag', "*.glsl"],
-        'vispy.glsl.arrows': ['*.vert','*.frag', "*.glsl"],
-        'vispy.glsl.collections': ['*.vert','*.frag', "*.glsl"],
-        'vispy.glsl.colormaps': ['*.vert','*.frag', "*.glsl"],
-        'vispy.glsl.lines': ['*.vert','*.frag', "*.glsl"],
-        'vispy.glsl.markers': ['*.vert','*.frag', "*.glsl"],
-        'vispy.glsl.math': ['*.vert','*.frag', "*.glsl"],
-        'vispy.glsl.misc': ['*.vert','*.frag', "*.glsl"],
-        'vispy.glsl.transforms': ['*.vert','*.frag', "*.glsl"],
+        'vispy.glsl': ['*.vert', '*.frag', "*.glsl"],
+        'vispy.glsl.antialias': ['*.vert', '*.frag', "*.glsl"],
+        'vispy.glsl.arrowheads': ['*.vert', '*.frag', "*.glsl"],
+        'vispy.glsl.arrows': ['*.vert', '*.frag', "*.glsl"],
+        'vispy.glsl.collections': ['*.vert', '*.frag', "*.glsl"],
+        'vispy.glsl.colormaps': ['*.vert', '*.frag', "*.glsl"],
+        'vispy.glsl.lines': ['*.vert', '*.frag', "*.glsl"],
+        'vispy.glsl.markers': ['*.vert', '*.frag', "*.glsl"],
+        'vispy.glsl.math': ['*.vert', '*.frag', "*.glsl"],
+        'vispy.glsl.misc': ['*.vert', '*.frag', "*.glsl"],
+        'vispy.glsl.transforms': ['*.vert', '*.frag', "*.glsl"],
 
-                  },
+    },
     zip_safe=False,
     classifiers=[
         'Development Status :: 3 - Alpha',

@@ -6,11 +6,12 @@ from __future__ import division
 
 import numpy as np
 
+from ...util import transforms
 from .perspective import Base3DRotationCamera
 
 
 class TurntableCamera(Base3DRotationCamera):
-    """ 3D camera class that orbits around a center point while
+    """3D camera class that orbits around a center point while
     maintaining a view on a center point.
 
     For this camera, the ``scale_factor`` indicates the zoom level, and
@@ -66,7 +67,7 @@ class TurntableCamera(Base3DRotationCamera):
 
     @property
     def elevation(self):
-        """ The angle of the camera in degrees above the horizontal (x, z)
+        """The angle of the camera in degrees above the horizontal (x, z)
         plane.
         """
         return self._elevation
@@ -79,7 +80,7 @@ class TurntableCamera(Base3DRotationCamera):
 
     @property
     def azimuth(self):
-        """ The angle of the camera in degrees around the y axis. An angle of
+        """The angle of the camera in degrees around the y axis. An angle of
         0 places the camera within the (y, z) plane.
         """
         return self._azimuth
@@ -96,7 +97,7 @@ class TurntableCamera(Base3DRotationCamera):
 
     @property
     def roll(self):
-        """ The angle of the camera in degrees around the z axis. An angle of
+        """The angle of the camera in degrees around the z axis. An angle of
         0 places puts the camera upright.
         """
         return self._roll
@@ -112,7 +113,7 @@ class TurntableCamera(Base3DRotationCamera):
         self.view_changed()
 
     def orbit(self, azim, elev):
-        """ Orbits the camera around the center position.
+        """Orbits the camera around the center position.
 
         Parameters
         ----------
@@ -134,11 +135,13 @@ class TurntableCamera(Base3DRotationCamera):
         self.azimuth = self._event_value[0] - (p2 - p1)[0] * 0.5
         self.elevation = self._event_value[1] + (p2 - p1)[1] * 0.5
 
-    def _rotate_tr(self):
-        """Rotate the transformation matrix based on camera parameters"""
+    def _get_rotation_tr(self):
+        """Return a rotation matrix based on camera parameters"""
         up, forward, right = self._get_dim_vectors()
-        self.transform.rotate(self.elevation, -right)
-        self.transform.rotate(self.azimuth, up)
+        return np.dot(
+            transforms.rotate(self.elevation, -right),
+            transforms.rotate(self.azimuth, up)
+        )
 
     def _dist_to_trans(self, dist):
         """Convert mouse x, y movement into x, y, z translations"""

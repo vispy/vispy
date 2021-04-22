@@ -3,7 +3,7 @@ from numpy import ndarray, bool_
 
 
 def eq(a, b):
-    """ The great missing equivalence function: Guaranteed evaluation
+    """The great missing equivalence function: Guaranteed evaluation
     to a single bool value.
     """
     if a is b:

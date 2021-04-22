@@ -6,8 +6,7 @@ from vispy.testing import run_tests_if_main, assert_raises
 
 
 def test_run():
-    """Test running subprocesses
-    """
+    """Test running subprocesses"""
     bad_name = 'foo_nonexist_test'
     assert_raises(Exception, run_subprocess, [bad_name])
 

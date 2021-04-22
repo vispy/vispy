@@ -367,7 +367,6 @@ from distutils.version import LooseVersion
 import numpy as np
 
 from . import gl
-from ..ext.six import string_types
 from ..util import logger
 
 # TODO: expose these via an extension space in .gl?
@@ -392,7 +391,16 @@ _internalformats = [
     gl.Enum('GL_RGBA8', 32856),
     gl.Enum('GL_RGBA16', 32859),
     gl.Enum('GL_RGBA16F', 34842),
-    gl.Enum('GL_RGBA32F', 34836)
+    gl.Enum('GL_RGBA32F', 34836),
+    # extended formats (not currently supported)
+    # gl.Enum('GL_R32I', 33333),
+    # gl.Enum('GL_RG32I', 33339),
+    # gl.Enum('GL_RGB32I', 36227),
+    # gl.Enum('GL_RGBA32I', 36226),
+    # gl.Enum('GL_R32UI', 33334),
+    # gl.Enum('GL_RG32UI', 33340),
+    # gl.Enum('GL_RGB32UI', 36209),
+    # gl.Enum('GL_RGBA32UI', 36208),
 ]
 _internalformats = dict([(enum.name, enum) for enum in _internalformats])
 
@@ -405,9 +413,8 @@ JUST_DELETED = 'JUST_DELETED'
 
 
 def as_enum(enum):
-    """ Turn a possibly string enum into an integer enum.
-    """
-    if isinstance(enum, string_types):
+    """Turn a possibly string enum into an integer enum."""
+    if isinstance(enum, str):
         try:
             enum = getattr(gl, 'GL_' + enum.upper())
         except AttributeError:
@@ -437,6 +444,7 @@ class _GlirQueueShare(object):
     of GL objects, when some queues may only be joined at the last possible
     moment.
     """
+
     def __init__(self, queue):
         self._commands = []  # local commands
         self._verbose = False
@@ -444,20 +452,19 @@ class _GlirQueueShare(object):
         self._associations = weakref.WeakKeyDictionary({queue: None})
 
     def command(self, *args):
-        """ Send a command. See the command spec at:
+        """Send a command. See the command spec at:
         https://github.com/vispy/vispy/wiki/Spec.-Gloo-IR
         """
         self._commands.append(args)
 
     def set_verbose(self, verbose):
-        """ Set verbose or not. If True, the GLIR commands are printed
-        right before they get parsed. If a string is given, use it as
-        a filter.
+        """Set verbose or not. If True, the GLIR commands are printed right before they get parsed. 
+        If a string is given, use it as a filter.
         """
         self._verbose = verbose
 
     def show(self, filter=None):
-        """ Print the list of commands currently in the queue. If filter is
+        """Print the list of commands currently in the queue. If filter is
         given, print only commands that match the filter.
         """
         for command in self._commands:
@@ -479,7 +486,7 @@ class _GlirQueueShare(object):
             print(tuple(t))
 
     def clear(self):
-        """ Pop the whole queue (and associated queues) and return a
+        """Pop the whole queue (and associated queues) and return a
         list of commands.
         """
         commands = self._commands
@@ -487,15 +494,14 @@ class _GlirQueueShare(object):
         return commands
 
     def flush(self, parser):
-        """ Flush all current commands to the GLIR interpreter.
-        """
+        """Flush all current commands to the GLIR interpreter."""
         if self._verbose:
             show = self._verbose if isinstance(self._verbose, str) else None
             self.show(show)
         parser.parse(self._filter(self.clear(), parser))
 
     def _filter(self, commands, parser):
-        """ Filter DATA/SIZE commands that are overridden by a
+        """Filter DATA/SIZE commands that are overridden by a
         SIZE command.
         """
         resized = set()
@@ -511,7 +517,7 @@ class _GlirQueueShare(object):
 
 
 class GlirQueue(object):
-    """ Representation of a queue of GLIR commands
+    """Representation of a queue of GLIR commands
 
     One instance of this class is attached to each context object, and
     to each gloo object. Internally, commands are stored in a shared queue
@@ -523,26 +529,27 @@ class GlirQueue(object):
     context.shared. The parser can interpret the commands in Python,
     send them to a browser, etc.
     """
+
     def __init__(self):
         # We do not actually queue any commands here, but on a shared queue
         # object that may be joined with others as queues are associated.
         self._shared = _GlirQueueShare(self)
 
     def command(self, *args):
-        """ Send a command. See the command spec at:
+        """Send a command. See the command spec at:
         https://github.com/vispy/vispy/wiki/Spec.-GLIR
         """
         self._shared.command(*args)
 
     def set_verbose(self, verbose):
-        """ Set verbose or not. If True, the GLIR commands are printed
+        """Set verbose or not. If True, the GLIR commands are printed
         right before they get parsed. If a string is given, use it as
         a filter.
         """
         self._shared.set_verbose(verbose)
 
     def clear(self):
-        """ Pop the whole queue (and associated queues) and return a
+        """Pop the whole queue (and associated queues) and return a
         list of commands.
         """
         return self._shared.clear()
@@ -568,8 +575,7 @@ class GlirQueue(object):
         queue._shared = self._shared
 
     def flush(self, parser):
-        """ Flush all current commands to the GLIR interpreter.
-        """
+        """Flush all current commands to the GLIR interpreter."""
         self._shared.flush(parser)
 
 
@@ -648,20 +654,17 @@ def convert_shader(backend_type, shader):
 
 
 def as_es2_command(command):
-    """ Modify a desktop command so it works on es2.
-    """
-
+    """Modify a desktop command so it works on es2."""
     if command[0] == 'FUNC':
         return (command[0], re.sub(r'^gl([A-Z])',
-                lambda m: m.group(1).lower(), command[1])) + command[2:]
+                                   lambda m: m.group(1).lower(), command[1])) + command[2:]
     elif command[0] == 'UNIFORM':
         return command[:-1] + (command[-1].tolist(),)
     return command
 
 
 class BaseGlirParser(object):
-    """ Base clas for GLIR parsers that can be attached to a GLIR queue.
-    """
+    """Base class for GLIR parsers that can be attached to a GLIR queue."""
 
     def __init__(self):
         self.capabilities = dict(
@@ -670,26 +673,25 @@ class BaseGlirParser(object):
         )
 
     def is_remote(self):
-        """ Whether the code is executed remotely. i.e. gloo.gl cannot
+        """Whether the code is executed remotely. i.e. gloo.gl cannot
         be used.
         """
         raise NotImplementedError()
 
     @property
     def shader_compatibility(self):
-        """ Whether to convert shading code. Valid values are 'es2' and
+        """Whether to convert shading code. Valid values are 'es2' and
         'desktop'. If None, the shaders are not modified.
         """
         raise NotImplementedError()
 
     def parse(self, commands):
-        """ Parse the GLIR commands. Or sent them away.
-        """
+        """Parse the GLIR commands. Or sent them away."""
         raise NotImplementedError()
 
 
 class GlirParser(BaseGlirParser):
-    """ A class for interpreting GLIR commands using gloo.gl
+    """A class for interpreting GLIR commands using gloo.gl
 
     We make use of relatively light GLIR objects that are instantiated
     on CREATE commands. These objects are stored by their id in a
@@ -724,7 +726,7 @@ class GlirParser(BaseGlirParser):
 
     @property
     def shader_compatibility(self):
-        """Type of shader compatibility """
+        """Type of shader compatibility"""
         if '.es' in gl.current_backend.__name__:
             return 'es2'
         else:
@@ -734,8 +736,7 @@ class GlirParser(BaseGlirParser):
         return False
 
     def _parse(self, command):
-        """ Parse a single command.
-        """
+        """Parse a single command."""
         cmd, id_, args = command[0], command[1], command[2:]
 
         if cmd == 'CURRENT':
@@ -804,9 +805,7 @@ class GlirParser(BaseGlirParser):
                 logger.warning('Invalid GLIR command %r' % cmd)
 
     def parse(self, commands):
-        """ Parse a list of commands.
-        """
-
+        """Parse a list of commands."""
         # Get rid of dummy objects that represented deleted objects in
         # the last parsing round.
         to_delete = []
@@ -820,14 +819,11 @@ class GlirParser(BaseGlirParser):
             self._parse(command)
 
     def get_object(self, id_):
-        """ Get the object with the given id or None if it does not exist.
-        """
+        """Get the object with the given id or None if it does not exist."""
         return self._objects.get(id_, None)
 
     def _gl_initialize(self):
-        """ Deal with compatibility; desktop does not have sprites
-        enabled by default. ES has.
-        """
+        """Deal with compatibility; desktop does not have sprites enabled by default. ES has."""
         if '.es' in gl.current_backend.__name__:
             pass  # ES2: no action required
         else:
@@ -863,7 +859,7 @@ def glir_logger(parser_cls, file_or_filename):
         def __init__(self, *args, **kwargs):
             parser_cls.__init__(self, *args, **kwargs)
 
-            if isinstance(file_or_filename, string_types):
+            if isinstance(file_or_filename, str):
                 self._file = open(file_or_filename, 'w')
             else:
                 self._file = file_or_filename
@@ -886,7 +882,7 @@ def glir_logger(parser_cls, file_or_filename):
     return cls
 
 
-## GLIR objects
+# GLIR objects
 
 class GlirObject(object):
     def __init__(self, parser, id_):
@@ -962,7 +958,7 @@ class GlirShader(GlirObject):
         return '\n'.join(results)
 
     def _parse_error(self, error):
-        """ Parses a single GLSL error and extracts the linenr and description
+        """Parses a single GLSL error and extracts the linenr and description
         Other GLIR implementations may omit this.
         """
         error = str(error)
@@ -1063,7 +1059,7 @@ class GlirProgram(GlirObject):
         gl.glDeleteProgram(self._handle)
 
     def activate(self):
-        """ Avoid overhead in calling glUseProgram with same arg.
+        """Avoid overhead in calling glUseProgram with same arg.
         Warning: this will break if glUseProgram is used somewhere else.
         Per context we keep track of one current program.
         """
@@ -1072,7 +1068,7 @@ class GlirProgram(GlirObject):
             gl.glUseProgram(self._handle)
 
     def deactivate(self):
-        """ Avoid overhead in calling glUseProgram with same arg.
+        """Avoid overhead in calling glUseProgram with same arg.
         Warning: this will break if glUseProgram is used somewhere else.
         Per context we keep track of one current program.
         """
@@ -1081,7 +1077,7 @@ class GlirProgram(GlirObject):
             gl.glUseProgram(0)
 
     def set_shaders(self, vert, frag):
-        """ This function takes care of setting the shading code and
+        """This function takes care of setting the shading code and
         compiling+linking it into a working program object that is ready
         to use.
         """
@@ -1095,14 +1091,13 @@ class GlirProgram(GlirObject):
         self.link_program()
 
     def attach(self, id_):
-        """ Attach a shader to this program.
-        """
+        """Attach a shader to this program."""
         shader = self._parser.get_object(id_)
         gl.glAttachShader(self._handle, shader.handle)
         self._attached_shaders.append(shader)
 
     def link_program(self):
-        """ Link the complete program and check.
+        """Link the complete program and check.
 
         All shaders are detached and deleted if the program was successfully
         linked.
@@ -1125,7 +1120,7 @@ class GlirProgram(GlirObject):
         self._linked = True
 
     def _get_active_attributes_and_uniforms(self):
-        """ Retrieve active attributes and uniforms to be able to check that
+        """Retrieve active attributes and uniforms to be able to check that
         all uniforms/attributes are set by the user.
         Other GLIR implementations may omit this.
         """
@@ -1148,12 +1143,11 @@ class GlirProgram(GlirObject):
                         container.append(('%s[%d]' % (name, i), gtype))
                 else:
                     container.append((name, gtype))
-        #return attributes, uniforms
+        # return attributes, uniforms
         return set([v[0] for v in attributes] + [v[0] for v in uniforms])
 
     def set_texture(self, name, value):
-        """ Set a texture sampler. Value is the id of the texture to link.
-        """
+        """Set a texture sampler. Value is the id of the texture to link."""
         if not self._linked:
             raise RuntimeError('Cannot set uniform when program has no code')
         # Get handle for the uniform, first try cache
@@ -1185,8 +1179,7 @@ class GlirProgram(GlirObject):
             gl.glUniform1i(handle, unit)
 
     def set_uniform(self, name, type_, value):
-        """ Set a uniform value. Value is assumed to have been checked.
-        """
+        """Set a uniform value. Value is assumed to have been checked."""
         if not self._linked:
             raise RuntimeError('Cannot set uniform when program has no code')
         # Get handle for the uniform, first try cache
@@ -1226,8 +1219,7 @@ class GlirProgram(GlirObject):
             func(handle, count, value)
 
     def set_attribute(self, name, type_, value):
-        """ Set an attribute value. Value is assumed to have been checked.
-        """
+        """Set an attribute value. Value is assumed to have been checked."""
         if not self._linked:
             raise RuntimeError('Cannot set attribute when program has no code')
         # Get handle for the attribute, first try cache
@@ -1310,12 +1302,12 @@ class GlirProgram(GlirObject):
             gl.glBindTexture(GL_TEXTURE_3D, 0)
             gl.glBindTexture(GL_TEXTURE_1D, 0)
 
-        #Deactivate program - should not be necessary. In single-program
-        #apps it would not even make sense.
-        #self.deactivate()
+        # Deactivate program - should not be necessary. In single-program
+        # apps it would not even make sense.
+        # self.deactivate()
 
     def draw(self, mode, selection):
-        """ Draw program in given mode, with given selection (IndexBuffer or
+        """Draw program in given mode, with given selection (IndexBuffer or
         first, count).
         """
         if not self._linked:
@@ -1711,7 +1703,7 @@ class GlirRenderBuffer(GlirObject):
         gl.glBindRenderbuffer(gl.GL_RENDERBUFFER, 0)
 
     def set_size(self, shape, format):
-        if isinstance(format, string_types):
+        if isinstance(format, str):
             format = GlirFrameBuffer._formats[format][1]
         if (shape, format) != self._shape_format:
             self._shape_format = shape, format
@@ -1728,7 +1720,7 @@ class GlirFrameBuffer(GlirObject):
                 'stencil': (gl.GL_STENCIL_ATTACHMENT, gl.GL_STENCIL_INDEX8)}
 
     def create(self):
-        #self._parser._fb_stack = [0]  # To keep track of active FB
+        # self._parser._fb_stack = [0]  # To keep track of active FB
         self._handle = gl.glCreateFramebuffer()
         self._validated = False
 

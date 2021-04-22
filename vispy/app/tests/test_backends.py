@@ -1,4 +1,4 @@
-""" Tests to quickly see if the backends look good.
+"""Tests to quickly see if the backends look good.
 This tests only to see if all the necessary methods are implemented,
 whether all the right events are mentioned, and whether the keymap
 contains all keys that should be supported.
@@ -41,7 +41,7 @@ def _test_module_properties(_module=None):
 
     # For Qt backend, we have a common implementation
     alt_modname = ''
-    if module_fname in ('_pyside', '_pyqt4', '_pyqt5', '_pyside2'):
+    if module_fname in ('_pyside', '_pyqt4', '_pyqt5', '_pyside2', '_pyside6'):
         alt_modname = _module.__name__.rsplit('.', 1)[0] + '._qt'
 
     # Test that all _vispy_x methods are there.

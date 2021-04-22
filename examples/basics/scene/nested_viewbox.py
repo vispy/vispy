@@ -45,7 +45,7 @@ import numpy as np
 from vispy import app
 from vispy import scene
 
-#gloo.gl.use('desktop debug')
+# gloo.gl.use('desktop debug')
 
 
 # Create lines for use in ndc and pixel coordinates

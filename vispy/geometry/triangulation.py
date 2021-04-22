@@ -31,9 +31,8 @@ class Triangulation(object):
     ----------
     .. [1] Domiter, V. and Žalik, B. Sweep‐line algorithm for constrained
        Delaunay triangulation
-
-
     """
+
     def __init__(self, pts, edges):
         self.pts = pts[:, :2].astype(np.float32)
         self.edges = edges
@@ -517,7 +516,7 @@ class Triangulation(object):
                 np.any(mask2[:, 0] & mask1[:, 1]))
 
     def _intersected_edge(self, edges, cut_edge):
-        """ Given a list of *edges*, return the first that is intersected by
+        """Given a list of *edges*, return the first that is intersected by
         *cut_edge*.
         """
         for edge in edges:
@@ -680,9 +679,7 @@ class Triangulation(object):
         return np.cross(B-A, C-B) > 0
 
     def _edges_intersect(self, edge1, edge2):
-        """
-        Return 1 if edges intersect completely (endpoints excluded)
-        """
+        """Return 1 if edges intersect completely (endpoints excluded)"""
         h12 = self._intersect_edge_arrays(self.pts[np.array(edge1)],
                                           self.pts[np.array(edge2)])
         h21 = self._intersect_edge_arrays(self.pts[np.array(edge2)],
@@ -737,7 +734,7 @@ class Triangulation(object):
         return h
 
     def _orientation(self, edge, point):
-        """ Returns +1 if edge[0]->point is clockwise from edge[0]->edge[1],
+        """Returns +1 if edge[0]->point is clockwise from edge[0]->edge[1],
         -1 if counterclockwise, and 0 if parallel.
         """
         v1 = self.pts[point] - self.pts[edge[0]]

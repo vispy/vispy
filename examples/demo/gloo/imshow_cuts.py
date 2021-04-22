@@ -30,21 +30,21 @@ values = np.linspace(0, 1, 512)[1:-1]
 colormaps[0, 0] = 0, 0, 1, 1  # Low values  (< vmin)
 colormaps[0, -1] = 0, 1, 0, 1  # High values (> vmax)
 colormaps[0, 1:-1, 0] = np.interp(values, [0.00, 0.33, 0.66, 1.00],
-                                          [0.00, 1.00, 1.00, 1.00])
+                                  [0.00, 1.00, 1.00, 1.00])
 colormaps[0, 1:-1, 1] = np.interp(values, [0.00, 0.33, 0.66, 1.00],
-                                          [0.00, 0.00, 1.00, 1.00])
+                                  [0.00, 0.00, 1.00, 1.00])
 colormaps[0, 1:-1, 2] = np.interp(values, [0.00, 0.33, 0.66, 1.00],
-                                          [0.00, 0.00, 0.00, 1.00])
+                                  [0.00, 0.00, 0.00, 1.00])
 
 # Grey colormap
 colormaps[1, 0] = 0, 0, 1, 1  # Low values (< vmin)
 colormaps[1, -1] = 0, 1, 0, 1  # High values (> vmax)
 colormaps[1, 1:-1, 0] = np.interp(values, [0.00, 1.00],
-                                          [0.00, 1.00])
+                                  [0.00, 1.00])
 colormaps[1, 1:-1, 1] = np.interp(values, [0.00, 1.00],
-                                          [0.00, 1.00])
+                                  [0.00, 1.00])
 colormaps[1, 1:-1, 2] = np.interp(values, [0.00, 1.00],
-                                          [0.00, 1.00])
+                                  [0.00, 1.00])
 # Jet colormap
 # ...
 

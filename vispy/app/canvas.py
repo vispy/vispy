@@ -12,7 +12,6 @@ from ..util.event import EmitterGroup, Event, WarningEmitter
 from ..util.ptime import time
 from ..util.dpi import get_dpi
 from ..util import config as util_config, logger
-from ..ext.six import string_types
 from . import Application, use_app
 from ..gloo.context import (GLContext, set_current_canvas, forget_canvas)
 from ..gloo import FrameBuffer, RenderBuffer
@@ -177,7 +176,7 @@ class Canvas(object):
             self._app = use_app(call_reuse=False)
         elif isinstance(app, Application):
             self._app = app
-        elif isinstance(app, string_types):
+        elif isinstance(app, str):
             self._app = Application(app)
         else:
             raise ValueError('Invalid value for app %r' % app)
@@ -221,7 +220,7 @@ class Canvas(object):
             self.measure_fps()
 
     def create_native(self):
-        """ Create the native widget if not already done so. If the widget
+        """Create the native widget if not already done so. If the widget
         is already created, this function does nothing.
         """
         if self._backend is not None:
@@ -242,7 +241,7 @@ class Canvas(object):
 
     def _set_keys(self, keys):
         if keys is not None:
-            if isinstance(keys, string_types):
+            if isinstance(keys, str):
                 if keys != 'interactive':
                     raise ValueError('keys, if string, must be "interactive", '
                                      'not %s' % (keys,))
@@ -258,7 +257,7 @@ class Canvas(object):
             lower_keys = {}
             # ensure all are callable
             for key, val in keys.items():
-                if isinstance(val, string_types):
+                if isinstance(val, str):
                     new_val = getattr(self, val, None)
                     if new_val is None:
                         raise ValueError('value %s is not an attribute of '
@@ -279,7 +278,7 @@ class Canvas(object):
 
     @property
     def context(self):
-        """ The OpenGL context of the native widget
+        """The OpenGL context of the native widget
 
         It gives access to OpenGL functions to call on this canvas object,
         and to the shared context namespace.
@@ -288,20 +287,17 @@ class Canvas(object):
 
     @property
     def app(self):
-        """ The vispy Application instance on which this Canvas is based.
-        """
+        """The vispy Application instance on which this Canvas is based."""
         return self._app
 
     @property
     def native(self):
-        """ The native widget object on which this Canvas is based.
-        """
+        """The native widget object on which this Canvas is based."""
         return self._backend._vispy_get_native_canvas()
 
     @property
     def dpi(self):
-        """ The physical resolution of the canvas in dots per inch.
-        """
+        """The physical resolution of the canvas in dots per inch."""
         return self._dpi
 
     @dpi.setter
@@ -310,7 +306,7 @@ class Canvas(object):
         self.update()
 
     def connect(self, fun):
-        """ Connect a function to an event
+        """Connect a function to an event
 
         The name of the function
         should be on_X, with X the name of the event (e.g. 'on_draw').
@@ -342,7 +338,7 @@ class Canvas(object):
     # ---------------------------------------------------------------- size ---
     @property
     def size(self):
-        """ The size of canvas/window """
+        """The size of canvas/window."""
         size = self._backend._vispy_get_size()
         return (size[0] // self._px_scale, size[1] // self._px_scale)
 
@@ -353,19 +349,21 @@ class Canvas(object):
 
     @property
     def physical_size(self):
-        """ The physical size of the canvas/window, which may differ from the
-        size property on backends that expose HiDPI """
+        """The physical size of the canvas/window, which may differ from the
+        size property on backends that expose HiDPI.
+        """
         return self._backend._vispy_get_physical_size()
 
     @property
     def pixel_scale(self):
-        """ The ratio between the number of logical pixels, or 'points', and
+        """The ratio between the number of logical pixels, or 'points', and
         the physical pixels on the device. In most cases this will be 1.0,
         but on certain backends this will be greater than 1. This should be
         used as a scaling factor when writing your own visualisations
         with gloo (make a copy and multiply all your logical pixel values
         by it). When writing Visuals or SceneGraph visualisations, this value
-        is exposed as `TransformSystem.px_scale`."""
+        is exposed as `TransformSystem.px_scale`.
+        """
         return self.physical_size[0] // self.size[0]
 
     @property
@@ -379,7 +377,7 @@ class Canvas(object):
     # ------------------------------------------------------------ position ---
     @property
     def position(self):
-        """ The position of canvas/window relative to screen """
+        """The position of canvas/window relative to screen."""
         return self._backend._vispy_get_position()
 
     @position.setter
@@ -390,7 +388,7 @@ class Canvas(object):
     # --------------------------------------------------------------- title ---
     @property
     def title(self):
-        """ The title of canvas/window """
+        """The title of canvas/window."""
         return self._title
 
     @title.setter
@@ -401,8 +399,7 @@ class Canvas(object):
     # ----------------------------------------------------------------- fps ---
     @property
     def fps(self):
-        """The fps of canvas/window, as the rate that events.draw is emitted
-        """
+        """The fps of canvas/window, as the rate that events.draw is emitted."""
         return self._fps
 
     def set_current(self, event=None):
@@ -497,7 +494,7 @@ class Canvas(object):
         # Connect update_fps function to draw
         self.events.draw.disconnect(self._update_fps)
         if callback:
-            if isinstance(callback, string_types):
+            if isinstance(callback, str):
                 callback_str = callback  # because callback gets overwritten
 
                 def callback(x):
@@ -532,7 +529,7 @@ class Canvas(object):
         logger.debug('Context manager exit complete for %s' % (self,))
 
     def render(self):
-        """ Render the canvas to an offscreen buffer and return the image
+        """Render the canvas to an offscreen buffer and return the image
         array.
 
         Returns
@@ -646,12 +643,11 @@ class MouseEvent(Event):
 
     @property
     def is_dragging(self):
-        """ Indicates whether this event is part of a mouse drag operation.
-        """
+        """Indicates whether this event is part of a mouse drag operation."""
         return self.press_event is not None
 
     def drag_events(self):
-        """ Return a list of all mouse events in the current drag operation.
+        """Return a list of all mouse events in the current drag operation.
 
         Returns None if there is no current drag operation.
         """
@@ -670,7 +666,7 @@ class MouseEvent(Event):
         return events[::-1]
 
     def trail(self):
-        """ Return an (N, 2) array of mouse coordinates for every event in the
+        """Return an (N, 2) array of mouse coordinates for every event in the
         current mouse drag operation.
 
         Returns None if there is no current drag operation.

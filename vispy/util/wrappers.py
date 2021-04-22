@@ -21,7 +21,7 @@ from .config import _get_args
 
 
 def use(app=None, gl=None):
-    """ Set the usage options for vispy
+    """Set the usage options for vispy
 
     Specify what app backend and GL backend to use.
 
@@ -33,6 +33,7 @@ def use(app=None, gl=None):
             * 'PyQt5': use Qt widget toolkit via PyQt5.
             * 'PySide': use Qt widget toolkit via PySide.
             * 'PySide2': use Qt widget toolkit via PySide2.
+            * 'PySide6': use Qt widget toolkit via PySide6.
             * 'PyGlet': use Pyglet backend.
             * 'Glfw': use Glfw backend (successor of Glut). Widely available
               on Linux.
@@ -149,3 +150,11 @@ def run_subprocess(command, return_code=False, **kwargs):
     if return_code:
         output = output + (p.returncode,)
     return output
+
+
+def test(*args, **kwargs):
+    """Proxy function to delay `.testing` import"""
+    from vispy.testing import test as _test  # noqa
+    return _test(*args, **kwargs)
+
+test.__test__ = False  # no discover test function as test

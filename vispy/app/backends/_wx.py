@@ -2,9 +2,7 @@
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-"""
-vispy backend for wxPython.
-"""
+"""vispy backend for wxPython."""
 
 from __future__ import division
 
@@ -204,8 +202,7 @@ class DummySize(object):
 
 
 class CanvasBackend(GLCanvas, BaseCanvasBackend):
-
-    """ wxPython backend for Canvas abstract class."""
+    """wxPython backend for Canvas abstract class."""
 
     # args are for BaseCanvasBackend, kwargs are for us.
     def __init__(self, *args, **kwargs):

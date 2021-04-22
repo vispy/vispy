@@ -47,6 +47,7 @@ class TubeVisual(MeshVisual):
         Same as for the `MeshVisual` class. Defaults to 'triangles'.
 
     """
+
     def __init__(self, points, radius=1.0,
                  closed=False,
                  color='purple',
@@ -118,8 +119,9 @@ class TubeVisual(MeshVisual):
 
 
 def _frenet_frames(points, closed):
-    '''Calculates and returns the tangents, normals and binormals for
-    the tube.'''
+    """Calculates and returns the tangents, normals and binormals for
+    the tube.
+    """
     tangents = np.zeros((len(points), 3))
     normals = np.zeros((len(points), 3))
 
