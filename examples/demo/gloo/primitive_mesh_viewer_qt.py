@@ -96,6 +96,7 @@ DEFAULT_COLOR = (0, 1, 1, 1)
 
 class MyMeshData(md.MeshData):
     """ Add to Meshdata class the capability to export good data for gloo """
+
     def __init__(self, vertices=None, faces=None, edges=None,
                  vertex_colors=None, face_colors=None):
         md.MeshData.__init__(self, vertices=None, faces=None, edges=None,
@@ -132,6 +133,7 @@ class ObjectParam(object):
     """
     OBJECT parameter test
     """
+
     def __init__(self, name, list_param):
         self.name = name
         self.list_param = list_param
@@ -334,7 +336,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if row != -1:
             self.props_widget.deleteLater()
             self.props_widget = ObjectWidget(self, param=ObjectParam(name,
-                                             OBJECT[name]))
+                                                                     OBJECT[name]))
             self.splitter_v.addWidget(self.props_widget)
             self.props_widget.signal_objet_changed.connect(self.update_view)
             self.update_view(self.props_widget.param)

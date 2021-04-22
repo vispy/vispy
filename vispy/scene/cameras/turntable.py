@@ -11,7 +11,7 @@ from .perspective import Base3DRotationCamera
 
 
 class TurntableCamera(Base3DRotationCamera):
-    """ 3D camera class that orbits around a center point while
+    """3D camera class that orbits around a center point while
     maintaining a view on a center point.
 
     For this camera, the ``scale_factor`` indicates the zoom level, and
@@ -67,7 +67,7 @@ class TurntableCamera(Base3DRotationCamera):
 
     @property
     def elevation(self):
-        """ The angle of the camera in degrees above the horizontal (x, z)
+        """The angle of the camera in degrees above the horizontal (x, z)
         plane.
         """
         return self._elevation
@@ -80,7 +80,7 @@ class TurntableCamera(Base3DRotationCamera):
 
     @property
     def azimuth(self):
-        """ The angle of the camera in degrees around the y axis. An angle of
+        """The angle of the camera in degrees around the y axis. An angle of
         0 places the camera within the (y, z) plane.
         """
         return self._azimuth
@@ -97,7 +97,7 @@ class TurntableCamera(Base3DRotationCamera):
 
     @property
     def roll(self):
-        """ The angle of the camera in degrees around the z axis. An angle of
+        """The angle of the camera in degrees around the z axis. An angle of
         0 places puts the camera upright.
         """
         return self._roll
@@ -113,7 +113,7 @@ class TurntableCamera(Base3DRotationCamera):
         self.view_changed()
 
     def orbit(self, azim, elev):
-        """ Orbits the camera around the center position.
+        """Orbits the camera around the center position.
 
         Parameters
         ----------

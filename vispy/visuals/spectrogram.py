@@ -39,6 +39,7 @@ class SpectrogramVisual(ImageVisual):
         Colormap limits. Should be ``'auto'`` or a two-element tuple of
         min and max values.
     """
+
     def __init__(self, x=None, n_fft=256, step=None, fs=1., window='hann',
                  normalize=False, color_scale='log', cmap='cubehelix',
                  clim='auto'):

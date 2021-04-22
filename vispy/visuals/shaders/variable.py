@@ -8,7 +8,7 @@ VARIABLE_TYPES = ('const', 'uniform', 'attribute', 'varying', 'inout')
 
 
 class Variable(ShaderObject):
-    """ Representation of global shader variable
+    """Representation of global shader variable
 
     Parameters
     ----------
@@ -24,7 +24,6 @@ class Variable(ShaderObject):
         The type of variable.
     dtype : str
         The data type of the variable, e.g. 'float', 'vec4', 'mat', etc.
-
     """
 
     _vtype_32_conversion = {'in': 'attribute', 'out': 'varying'}
@@ -66,8 +65,7 @@ class Variable(ShaderObject):
 
     @property
     def name(self):
-        """ The name of this variable.
-        """
+        """The name of this variable."""
         return self._name
 
     @name.setter
@@ -80,7 +78,7 @@ class Variable(ShaderObject):
 
     @property
     def vtype(self):
-        """ The type of variable (const, uniform, attribute, or varying).
+        """The type of variable (const, uniform, attribute, or varying).
 
         For in/out variables (GLSL 150+), vtype is 'varying'.
         """
@@ -88,14 +86,12 @@ class Variable(ShaderObject):
 
     @property
     def dtype(self):
-        """ The type of data (float, int, vec, mat, ...).
-        """
+        """The type of data (float, int, vec, mat, ...)."""
         return self._dtype
 
     @property
     def value(self):
-        """ The value associated with this variable.
-        """
+        """The value associated with this variable."""
         return self._value
 
     @value.setter
@@ -153,7 +149,8 @@ class Variable(ShaderObject):
     def state_id(self):
         """Return a unique ID that changes whenever the state of the Variable
         has changed. This allows ModularProgram to quickly determine whether
-        the value has changed since it was last used."""
+        the value has changed since it was last used.
+        """
         return id(self), self._state_counter
 
     def __repr__(self):
@@ -165,9 +162,7 @@ class Variable(ShaderObject):
         return names[self]
 
     def _vtype_for_version(self, version):
-        """Return the vtype for this variable, converted based on the GLSL
-        version.
-        """
+        """Return the vtype for this variable, converted based on the GLSL version."""
         vtype = self.vtype
         if version is None or version[0] == 120:
             return self._vtype_32_conversion.get(vtype, vtype)
@@ -189,12 +184,13 @@ class Variable(ShaderObject):
 
 
 class Varying(Variable):
-    """ Representation of a varying (variables passed from one shader to the
+    """Representation of a varying (variables passed from one shader to the
     next).
 
     Varyings can inherit their dtype from another Variable, allowing for
     more flexibility in composing shaders.
     """
+
     def __init__(self, name, dtype=None):
         self._link = None
         self._src_func = None
@@ -203,8 +199,7 @@ class Varying(Variable):
 
     @property
     def value(self):
-        """ The value associated with this variable.
-        """
+        """The value associated with this variable."""
         return self._value
 
     @value.setter
@@ -223,7 +218,7 @@ class Varying(Variable):
             return self._dtype
 
     def link(self, var):
-        """ Link this Varying to another object from which it will derive its
+        """Link this Varying to another object from which it will derive its
         dtype.
 
         This method is used internally when assigning an attribute to
@@ -248,8 +243,7 @@ class InVar(Variable):
 
     @property
     def value(self):
-        """ The value associated with this variable.
-        """
+        """The value associated with this variable."""
         return self._var.value
 
     @value.setter

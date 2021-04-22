@@ -60,8 +60,7 @@ def _format_msg(msg, std_msg):
 
 
 def nottest(func):
-    """Decorator to mark a function or method as *not* a test
-    """
+    """Decorator to mark a function or method as *not* a test"""
     func.__test__ = False
     return func
 
@@ -125,6 +124,7 @@ def assert_is(expr1, expr2, msg=None):
 
 class raises(object):
     """Helper class to test exception raising"""
+
     def __init__(self, exc):
         self.exc = exc
 
@@ -238,8 +238,7 @@ def requires_img_lib():
 
 
 def has_ipython(version='3.0'):
-    """function that checks the presence of IPython"""
-
+    """Function that checks the presence of IPython"""
     # typecast version to a string, in case an integer is given
     version = str(version)
 

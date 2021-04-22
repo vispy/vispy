@@ -23,7 +23,7 @@ class TypedEvent(Event):
 class TestGroups(unittest.TestCase):
 
     def test_group_construction(self):
-        """EmitterGroup basic construction"""
+        """The EmitterGroup basic construction"""
         grp = EmitterGroup(em1=Event,
                            em2=BasicEvent,
                            em3=TypedEvent)
@@ -43,7 +43,7 @@ class TestGroups(unittest.TestCase):
             event_class=TypedEvent)
 
     def test_group_add_emitter(self):
-        """EmitterGroup.add"""
+        """The EmitterGroup.add"""
         grp = EmitterGroup(em1=Event)
         grp.em1.connect(self.record_event)
         self.result = None
@@ -126,7 +126,7 @@ class TestGroups(unittest.TestCase):
         assert len(grp.em2.callbacks) == 0
 
     def test_group_autoconnect(self):
-        """EmitterGroup auto-connect"""
+        """The EmitterGroup auto-connect"""
         class Source:
 
             def on_em1(self, ev):

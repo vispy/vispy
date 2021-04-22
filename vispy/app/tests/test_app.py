@@ -128,19 +128,19 @@ def _test_callbacks(canvas):
 
         event.width, event.height = 10, 20
         backend._on_configure(event)        # RESIZE
-        
+
         event.x, event.y, event.state = 1, 1, 0x0
         backend._on_mouse_enter(event)
         backend._on_mouse_move(event)
-        
+
         event.x, event.y, event.num = 1, 1, 1
         backend._on_mouse_button_press(event)
         backend._on_mouse_button_release(event)
         backend._on_mouse_double_button_press(event)
-        
+
         event.delta = 120
         backend._on_mouse_wheel(event)
-        
+
         event.keysym_num, event.keycode, event.state = 65362, 0, 0x0001  # SHIFT+UP
         backend._on_key_down(event)
         backend._on_key_up(event)

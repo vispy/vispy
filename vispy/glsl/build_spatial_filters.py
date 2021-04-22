@@ -29,7 +29,7 @@
 # those of the authors and should not be interpreted as representing official
 # policies, either expressed or implied, of Nicolas P. Rougier.
 # -----------------------------------------------------------------------------
-'''
+"""
 A filter is a shader that transform the current displayed texture. Since
 shaders cannot be easily serialized within the GPU, they have to be well
 structured on the python side such that we can possibly merge them into a
@@ -71,7 +71,7 @@ Note::
 
   Weights code has been translated from the antigrain geometry library
   available at http://www.antigrain.com/
-'''
+"""
 
 
 import math
@@ -85,13 +85,13 @@ class SpatialFilter(object):
         self.radius = radius
 
     def weight(self, x):
-        '''
+        """
         Return filter weight for a distance x.
 
         :Parameters:
             ``x`` : 0 < float < ceil(self.radius)
                 Distance to be used to compute weight.
-        '''
+        """
         raise NotImplementedError
 
     def kernel(self, size=4*512):
@@ -181,14 +181,13 @@ class SpatialFilter(object):
 
 
 class Nearest(SpatialFilter):
-    '''
+    """
     Nearest (=None) filter (radius = 0.5).
 
     Weight function::
 
       w(x) = 1
-
-    '''
+    """
 
     def __init__(self):
         SpatialFilter.__init__(self, radius=.5)
@@ -206,14 +205,14 @@ class Nearest(SpatialFilter):
 
 
 class Bilinear(SpatialFilter):
-    '''
+    """
     Bilinear filter (radius = 1.0).
 
     Weight function::
 
       w(x) = 1 - x
 
-    '''
+    """
 
     def __init__(self):
         SpatialFilter.__init__(self, radius=1.0)
@@ -223,14 +222,14 @@ class Bilinear(SpatialFilter):
 
 
 class Hanning(SpatialFilter):
-    '''
+    """
     Hanning filter (radius = 1.0).
 
     Weight function::
 
       w(x) = 0.5 + 0.5 * cos(pi * x)
 
-    '''
+    """
 
     def __init__(self):
         SpatialFilter.__init__(self, radius=1.0)
@@ -240,14 +239,14 @@ class Hanning(SpatialFilter):
 
 
 class Hamming(SpatialFilter):
-    '''
+    """
     Hamming filter (radius = 1.0).
 
     Weight function::
 
       w(x) = 0.54 + 0.46 * cos(pi * x)
 
-    '''
+    """
 
     def __init__(self):
         SpatialFilter.__init__(self, radius=1.0)
@@ -257,13 +256,13 @@ class Hamming(SpatialFilter):
 
 
 class Hermite(SpatialFilter):
-    ''' Hermite filter (radius = 1.0).
+    """Hermite filter (radius = 1.0).
 
     Weight function::
 
       w(x) = (2*x-3)*x^2 + 1
 
-    '''
+    """
 
     def __init__(self):
         SpatialFilter.__init__(self, radius=1.0)
@@ -273,7 +272,7 @@ class Hermite(SpatialFilter):
 
 
 class Quadric(SpatialFilter):
-    '''
+    """
     Quadric filter (radius = 1.5).
 
     Weight function::
@@ -282,7 +281,7 @@ class Quadric(SpatialFilter):
       w(x) = |  0.5 ≤ x < 1.5: 0.5 - (x-1.5)^2
              |  1.5 ≤ x      : 0
 
-    '''
+    """
 
     def __init__(self):
         SpatialFilter.__init__(self, radius=1.5)
@@ -298,13 +297,13 @@ class Quadric(SpatialFilter):
 
 
 class Bicubic(SpatialFilter):
-    '''
+    """
     Bicubic filter (radius = 2.0).
 
     Weight function::
 
       w(x) = 1/6((x+2)^3 - 4*(x+1)^3 + 6*x^3 -4*(x-1)^3)
-    '''
+    """
 
     def __init__(self):
         SpatialFilter.__init__(self, radius=2.0)
@@ -323,7 +322,7 @@ class Bicubic(SpatialFilter):
 
 
 class Kaiser(SpatialFilter):
-    '''
+    """
     Kaiser filter (radius = 1.0).
 
 
@@ -331,7 +330,7 @@ class Kaiser(SpatialFilter):
 
       w(x) = bessel_i0(a sqrt(1-x^2)* 1/bessel_i0(b)
 
-    '''
+    """
 
     def __init__(self, b=6.33):
         self.a = b
@@ -357,7 +356,7 @@ class Kaiser(SpatialFilter):
 
 
 class CatRom(SpatialFilter):
-    '''
+    """
     Catmull-Rom filter (radius = 2.0).
 
     Weight function::
@@ -366,7 +365,7 @@ class CatRom(SpatialFilter):
       w(x) = |  1 ≤ x < 2: 0.5*(4 + x*(-8+x*(5-x)))
              |  2 ≤ x    : 0
 
-    '''
+    """
 
     def __init__(self, size=256*8):
         SpatialFilter.__init__(self, radius=2.0)
@@ -381,7 +380,7 @@ class CatRom(SpatialFilter):
 
 
 class Mitchell(SpatialFilter):
-    '''
+    """
     Mitchell-Netravali filter (radius = 2.0).
 
     Weight function::
@@ -390,7 +389,7 @@ class Mitchell(SpatialFilter):
       w(x) = |  1 ≤ x < 2: q0 + x*(q1 + x*(q2 + x*q3))
              |  2 ≤ x    : 0
 
-    '''
+    """
 
     def __init__(self, b=1.0/3.0, c=1.0/3.0):
         self.p0 = (6.0 - 2.0 * b) / 6.0
@@ -412,7 +411,7 @@ class Mitchell(SpatialFilter):
 
 
 class Spline16(SpatialFilter):
-    '''
+    """
     Spline16 filter (radius = 2.0).
 
     Weight function::
@@ -421,7 +420,7 @@ class Spline16(SpatialFilter):
       w(x) = |
              |  1 ≤ x < 2: ((-1/3*(x-1) + 4/5)*(x-1) - 7/15 )*(x-1)
 
-    '''
+    """
 
     def __init__(self):
         SpatialFilter.__init__(self, radius=2.0)
@@ -434,7 +433,7 @@ class Spline16(SpatialFilter):
 
 
 class Spline36(SpatialFilter):
-    '''
+    """
     Spline36 filter (radius = 3.0).
 
     Weight function::
@@ -442,7 +441,7 @@ class Spline36(SpatialFilter):
              |  0 ≤ x < 1: ((13/11*x - 453/209)*x -3/209)*x +1
       w(x) = |  1 ≤ x < 2: ((-6/11*(x-1) - 270/209)*(x-1) -156/209)*(x-1)
              |  2 ≤ x < 3: (( 1/11*(x-2) - 45/209)*(x-2) + 26/209)*(x-2)
-    '''
+    """
 
     def __init__(self):
         SpatialFilter.__init__(self, radius=3.0)
@@ -457,7 +456,7 @@ class Spline36(SpatialFilter):
 
 
 class Gaussian(SpatialFilter):
-    '''
+    """
     Gaussian filter (radius = 2.0).
 
     Weight function::
@@ -474,7 +473,8 @@ class Gaussian(SpatialFilter):
 
         z should be 1 everywhere but it is not the case and it produces "grid
         effects".
-    '''
+    """
+
     def __init__(self):
         SpatialFilter.__init__(self, radius=2.0)
 
@@ -483,15 +483,13 @@ class Gaussian(SpatialFilter):
 
 
 class Bessel(SpatialFilter):
-    '''
-    Bessel filter (radius = 3.2383).
-    '''
+    """Bessel filter (radius = 3.2383)."""
 
     def __init__(self):
         SpatialFilter.__init__(self, radius=3.2383)
 
     def besj(self, x, n):
-        '''
+        """
         Function BESJ calculates Bessel function of first kind of order n
         Arguments:
             x - value at which the Bessel function is required
@@ -516,7 +514,7 @@ class Bessel(SpatialFilter):
         Adapted for use in vispy library by
                     Nicolas P. Rougier (Nicolas.Rougier@inria.fr)
         -----------------------------------------------------------------------
-        '''
+        """
         if n < 0:
             return 0.0
         x = float(x)  # force float type
@@ -576,13 +574,13 @@ class Bessel(SpatialFilter):
 
 
 class Sinc(SpatialFilter):
-    '''
+    """
     Sinc filter (radius = 4.0).
 
     Weight function::
 
 
-    '''
+    """
 
     def __init__(self, size=256, radius=4.0):
         SpatialFilter.__init__(self, radius=max(radius, 2.0))
@@ -595,13 +593,13 @@ class Sinc(SpatialFilter):
 
 
 class Lanczos(SpatialFilter):
-    '''
+    """
     Lanczos filter (radius = 4.0).
 
     Weight function::
 
 
-    '''
+    """
 
     def __init__(self, size=256, radius=4.0):
         SpatialFilter.__init__(self, radius=max(radius, 2.0))
@@ -617,9 +615,7 @@ class Lanczos(SpatialFilter):
 
 
 class Blackman(SpatialFilter):
-    '''
-    Blackman filter (radius = 4.0).
-    '''
+    """Blackman filter (radius = 4.0)."""
 
     def __init__(self, size=256, radius=4.0):
         SpatialFilter.__init__(self, radius=max(radius, 2.0))
@@ -636,10 +632,9 @@ class Blackman(SpatialFilter):
 
 def main():
     # Generate kernels texture (16 x 1024)
-    filters = [Bilinear(), Hanning(),  Hamming(),  Hermite(),
-               Kaiser(),   Quadric(),  Bicubic(),  CatRom(),
-               Mitchell(), Spline16(), Spline36(), Gaussian(),
-               Bessel(),   Sinc(),     Lanczos(),  Blackman()]
+    filters = [Bilinear(), Hanning(), Hamming(), Hermite(), Kaiser(), Quadric(), 
+               Bicubic(), CatRom(), Mitchell(), Spline16(), Spline36(), Gaussian(), 
+               Bessel(), Sinc(), Lanczos(), Blackman()]
 
     n = 1024
     K = np.zeros((16, n))

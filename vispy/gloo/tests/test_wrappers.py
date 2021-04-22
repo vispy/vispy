@@ -37,8 +37,7 @@ def teardown_module():
 
 
 def test_wrappers_basic_glir():
-    """ Test that basic gloo wrapper functions emit right GLIR command """
-
+    """Test that basic gloo wrapper functions emit right GLIR command"""
     glir = install_dummy_glir()
 
     funcs = [('viewport', 0, 0, 10, 10),
@@ -86,8 +85,7 @@ def test_wrappers_basic_glir():
 
 
 def test_wrappers_glir():
-    """ Test that special wrapper functions do what they must do """
-
+    """Test that special wrapper functions do what they must do"""
     glir = install_dummy_glir()
 
     # Test clear() function

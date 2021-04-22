@@ -2,8 +2,7 @@
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-"""Data downloading and reading functions
-"""
+"""Data downloading and reading functions"""
 
 from math import log
 import os
@@ -96,6 +95,7 @@ class ProgressBar(object):
         increment the progress bar very often.  This provides the user with
         feedback that the progress has not stalled.
     """
+
     spinner_symbols = ['|', '/', '-', '\\']
     template = '\r[{0}{1}] {2:.05f} {3} {4}   '
 

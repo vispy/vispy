@@ -31,7 +31,6 @@ def circular(adjacency_mat, directed=False):
         Yields the node and line vertices in a tuple. This layout only yields a
         single time, and has no builtin animation
     """
-
     if issparse(adjacency_mat):
         adjacency_mat = adjacency_mat.tocoo()
 

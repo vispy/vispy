@@ -2,9 +2,7 @@
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-"""
-This module implements classes and methods for handling geometric data.
-"""
+"""This module implements classes and methods for handling geometric data."""
 
 from __future__ import division
 

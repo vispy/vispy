@@ -63,16 +63,16 @@ class Galaxy(object):
         self._h2_count = 200
 
         # Particles
-        dtype = [('theta',       np.float32),
-                 ('velocity',    np.float32),
-                 ('angle',       np.float32),
-                 ('m_a',         np.float32),
-                 ('m_b',         np.float32),
-                 ('size',        np.float32),
-                 ('type',        np.float32),
+        dtype = [('theta', np.float32),
+                 ('velocity', np.float32),
+                 ('angle', np.float32),
+                 ('m_a', np.float32),
+                 ('m_b', np.float32),
+                 ('size', np.float32),
+                 ('type', np.float32),
                  ('temperature', np.float32),
-                 ('brightness',  np.float32),
-                 ('position',    np.float32, 2)]
+                 ('brightness', np.float32),
+                 ('position', np.float32, 2)]
         n = self._stars_count + self._dust_count + 2*self._h2_count
         self._particles = np.zeros(n, dtype=dtype)
 
@@ -208,7 +208,7 @@ class Galaxy(object):
         P['position'][:, 1] = a*cos_alpha*sin_beta + b*sin_alpha*cos_beta
 
         D = np.sqrt(((self._h2a['position'] -
-                    self._h2b['position'])**2).sum(axis=1))
+                      self._h2b['position'])**2).sum(axis=1))
         S = np.maximum(1, ((1000-D)/10) - 50)
         self._h2a['size'] = 2.0*S
         self._h2b['size'] = S/6.0

@@ -600,7 +600,7 @@ def update():
         frag = ""
         tb = sys.exc_info()[2]
         while tb is not None:
-            #print(tb.tb_lineno, tb.tb_frame.f_code.co_filename)
+            # print(tb.tb_lineno, tb.tb_frame.f_code.co_filename)
             try:
                 if tb.tb_frame.f_code.co_filename == '<string>':
                     editor.set_marker(tb.tb_lineno-1)

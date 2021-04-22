@@ -4,8 +4,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
-""" A MeshVisual Visual that uses the new shader Function.
-"""
+"""A MeshVisual Visual that uses the new shader Function."""
 
 from __future__ import division
 
@@ -172,6 +171,7 @@ class MeshVisual(Visual):
     **kwargs : dict
         Keyword arguments to pass to `Visual`.
     """
+
     def __init__(self, vertices=None, faces=None, vertex_colors=None,
                  face_colors=None, color=(0.5, 0.5, 1, 1), vertex_values=None,
                  meshdata=None, shading=None, mode='triangles', **kwargs):
@@ -472,8 +472,7 @@ class MeshVisual(Visual):
 
     @property
     def shading(self):
-        """ The shading method used.
-        """
+        """The shading method used."""
         return self._shading
 
     @shading.setter

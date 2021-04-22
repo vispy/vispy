@@ -2,9 +2,7 @@
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-"""
-Vispy backend for the IPython notebook (WebGL approach).
-"""
+"""Vispy backend for the IPython notebook (WebGL approach)."""
 
 from __future__ import division
 
@@ -114,9 +112,9 @@ class CanvasBackend(BaseCanvasBackend):
         else:
             raise RuntimeError("WebGL doesn't yet support context sharing.")
 
-        #store a default size before the widget is available.
-        #then we set the default size on the widget and only use the
-        #widget size
+        # store a default size before the widget is available.
+        # then we set the default size on the widget and only use the
+        # widget size
         self._default_size = p.size
         self._init_glir()
 

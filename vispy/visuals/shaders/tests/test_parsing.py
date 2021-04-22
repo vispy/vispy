@@ -32,7 +32,7 @@ def test_find_variables():
         vec2 float undetectable;
     }
     """
-    
+
     expect = dict(
         x=(None, 'float'),
         y=(None, 'float'),
@@ -50,7 +50,7 @@ def test_find_variables():
     vars = find_program_variables(code)
     for k in expect:
         assert expect[k] == vars.pop(k)
-        
+
     assert len(vars) == 0
 
 

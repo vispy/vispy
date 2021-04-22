@@ -145,7 +145,7 @@ class Canvas(app.Canvas):
         edges = np.random.randint(size=(ne, 2), low=0,
                                   high=n).astype(np.uint32)
         data['a_position'] = np.hstack((.25 * np.random.randn(n, 2),
-                                       np.zeros((n, 1))))
+                                        np.zeros((n, 1))))
         data['a_fg_color'] = 0, 0, 0, 1
         color = np.random.uniform(0.5, 1., (n, 3))
         data['a_bg_color'] = np.hstack((color, np.ones((n, 1))))

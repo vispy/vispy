@@ -48,7 +48,7 @@ _gl_presets = {
 
 
 def get_current_canvas():
-    """ Proxy for context.get_current_canvas to avoud circular import.
+    """Proxy for context.get_current_canvas to avoud circular import.
     This function replaces itself with the real function the first
     time it is called. (Bah)
     """
@@ -83,7 +83,7 @@ def _check_conversion(key, valid_dict):
 
 
 class BaseGlooFunctions(object):
-    """ Class that provides a series of GL functions that do not fit
+    """Class that provides a series of GL functions that do not fit
     in the object oriented part of gloo. An instance of this class is
     associated with each canvas.
     """
@@ -575,8 +575,7 @@ class GlooFunctions(BaseGlooFunctions):
 
     @property
     def glir(self):
-        """ The GLIR queue corresponding to the current canvas
-        """
+        """The GLIR queue corresponding to the current canvas"""
         canvas = get_current_canvas()
         if canvas is None:
             msg = ("If you want to use gloo without vispy.app, " +
@@ -585,7 +584,7 @@ class GlooFunctions(BaseGlooFunctions):
         return canvas.context.glir
 
 
-## Create global functions object and inject names here
+# Create global functions object and inject names here
 
 # GlooFunctions without queue: use queue of canvas that is current at call-time
 global_gloo_functions = GlooFunctions()
@@ -598,7 +597,7 @@ for name in dir(global_gloo_functions):
         globals()[name] = fun
 
 
-## Functions that do not use the glir queue
+# Functions that do not use the glir queue
 
 
 def read_pixels(viewport=None, alpha=True, mode='color', out_type='unsigned_byte'):

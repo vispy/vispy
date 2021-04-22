@@ -108,8 +108,7 @@ class _BorderVisual(Visual):
 
     @property
     def visual_border_width(self):
-        """ The border width in visual coordinates
-        """
+        """The border width in visual coordinates"""
         render_to_doc =  \
             self.transforms.get_transform('document', 'visual')
 
@@ -165,8 +164,7 @@ class _BorderVisual(Visual):
 
     @property
     def border_width(self):
-        """ The width of the border
-        """
+        """The width of the border"""
         return self._border_width
 
     @border_width.setter
@@ -177,8 +175,7 @@ class _BorderVisual(Visual):
 
     @property
     def border_color(self):
-        """ The color of the border in pixels
-        """
+        """The color of the border in pixels"""
         return self._border_color
 
     @border_color.setter
@@ -188,8 +185,7 @@ class _BorderVisual(Visual):
 
     @property
     def pos(self):
-        """ The center of the BorderVisual
-        """
+        """The center of the BorderVisual"""
         return self._pos
 
     @pos.setter
@@ -199,9 +195,7 @@ class _BorderVisual(Visual):
 
     @property
     def halfdim(self):
-        """ The half-dimensions measured from the center of the BorderVisual
-        """
-
+        """The half-dimensions measured from the center of the BorderVisual"""
         return self._halfdim
 
     @halfdim.setter

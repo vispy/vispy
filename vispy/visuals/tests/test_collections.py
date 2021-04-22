@@ -8,8 +8,7 @@ from vispy.testing import requires_application, TestingCanvas
 
 @requires_application()
 def test_init():
-    """Test collection initialization
-    """
+    """Test collection initialization"""
     with TestingCanvas():
         for coll in (PathCollection, PointCollection, PolygonCollection,
                      SegmentCollection, TriangleCollection):

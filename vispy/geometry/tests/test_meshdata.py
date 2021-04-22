@@ -11,7 +11,7 @@ from vispy.geometry.meshdata import MeshData
 
 def test_meshdata():
     """Test meshdata Class
-       It's a unit square cut in two triangular element
+    It's a unit square cut in two triangular element
     """
     square_vertices = np.array([[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0]],
                                dtype=np.float64)

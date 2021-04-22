@@ -2,9 +2,8 @@
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-""" 
-    PySide6 proxy backend for the qt backend.
-    Based on PySide2 backend.
+"""PySide6 proxy backend for the qt backend.
+Based on PySide2 backend.
 """
 
 import sys
@@ -37,7 +36,7 @@ else:
 
     # PySide6 doesn't have qWait as well, redefines it
     from PySide6 import QtTest
-    
+
     @staticmethod
     def qWait(msec):
         import time

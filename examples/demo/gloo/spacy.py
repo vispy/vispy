@@ -154,7 +154,7 @@ class Canvas(app.Canvas):
         start_index = self._active_block * blocksize
         self.program['a_position'].set_subdata(pos, offset=start_index)
 
-        #print(start_index)
+        # print(start_index)
 
         # Set offsets - active block gets offset 0
         for i in range(NBLOCKS):

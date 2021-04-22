@@ -21,7 +21,7 @@ from .config import _get_args
 
 
 def use(app=None, gl=None):
-    """ Set the usage options for vispy
+    """Set the usage options for vispy
 
     Specify what app backend and GL backend to use.
 
@@ -154,7 +154,7 @@ def run_subprocess(command, return_code=False, **kwargs):
 
 def test(*args, **kwargs):
     """Proxy function to delay `.testing` import"""
-    from vispy.testing import test as _test # noqa
+    from vispy.testing import test as _test  # noqa
     return _test(*args, **kwargs)
 
 test.__test__ = False  # no discover test function as test

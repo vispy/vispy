@@ -2,7 +2,7 @@
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-""" vispy.app.backends
+"""vispy.app.backends
 
 The backend modules are dynamically imported when needed. This module
 defines a small description of each supported backend, so that for

@@ -12,7 +12,7 @@ except Exception as exp:
 
     def _noop(x):
         return x
-    
+
     register = _noop
 
     class _MockTraitlet(object):
@@ -53,9 +53,9 @@ class VispyWidget(DOMWidget):
     _model_module = Unicode('vispy').tag(sync=True)
     _model_module_version = Unicode('~0.3.0').tag(sync=True)
 
-    #height/width of the widget is managed by IPython.
-    #it's a string and can be anything valid in CSS.
-    #here we only manage the size of the viewport.
+    # height/width of the widget is managed by IPython.
+    # it's a string and can be anything valid in CSS.
+    # here we only manage the size of the viewport.
     width = Int().tag(sync=True)
     height = Int().tag(sync=True)
     resizable = Bool(value=True).tag(sync=True)
@@ -76,7 +76,7 @@ class VispyWidget(DOMWidget):
         self.canvas_backend = self.canvas._backend
         self.canvas_backend.set_widget(self)
         self.gen_event = self.canvas_backend._gen_event
-        #setup the backend widget then.
+        # setup the backend widget then.
 
     def events_received(self, widget, content, buffers):
         if content['msg_type'] == 'init':

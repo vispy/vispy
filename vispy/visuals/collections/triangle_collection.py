@@ -13,5 +13,4 @@ def TriangleCollection(mode="raw", *args, **kwargs):
       - "raw"  (speed: fastest, size: small,   output: ugly)
       - "agg"  (speed: fast,    size: small,   output: beautiful)
     """
-
     return RawTriangleCollection(*args, **kwargs)
