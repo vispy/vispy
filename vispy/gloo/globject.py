@@ -85,7 +85,7 @@ class GLObject(object):
         if hasattr(self, '_glir'):
             # Send our final command into the queue
             self._glir.command('DELETE', self._id)
-            # Tell master glir queue that this queue is no longer being used
+            # Tell main glir queue that this queue is no longer being used
             self._glir._deletable = True
             # Detach the queue
             del self._glir

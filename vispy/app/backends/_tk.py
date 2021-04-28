@@ -336,7 +336,7 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
         kwargs.pop("context")
 
         if p.parent is None:
-            # Create native window and master
+            # Create native window and top level
             self.top = _TkInstanceManager.new_toplevel(self)
 
             # Check input args and call appropriate set-up functions.
@@ -360,7 +360,7 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
             self.top.protocol("WM_DELETE_WINDOW", self._vispy_close)
             parent = self.top
         else:
-            # Use given parent as master
+            # Use given parent as top level
             self.top = None
             parent = p.parent
             self._fullscreen = False

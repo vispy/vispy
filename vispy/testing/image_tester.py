@@ -29,7 +29,7 @@ Procedure for unit-testing with images:
    and create a new tag in the test-data repository:
 
         $ git tag test-data-NNN
-        $ git push --tags origin master
+        $ git push --tags origin main
 
     This tag is used to ensure that each vispy commit is linked to a specific
     commit in the test-data repository. This makes it possible to push new
@@ -425,7 +425,7 @@ def get_test_data_repo():
                 gitbase + ['remote', 'add', 'origin', git_path],
                 gitbase + ['fetch', '--tags', 'origin', test_data_tag,
                            '--depth=1'],
-                gitbase + ['checkout', '-b', 'master', 'FETCH_HEAD'],
+                gitbase + ['checkout', '-b', 'main', 'FETCH_HEAD'],
             ]
         else:
             # Create a full clone
