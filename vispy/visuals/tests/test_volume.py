@@ -70,10 +70,12 @@ def test_volume_clims_and_gamma(texture_format):
     """Test volume visual with clims and gamma on shader.
 
     Test is parameterized based on ``texture_format`` and should produce
-    relatively the same results.
+    relatively the same results for each format.
     
     Currently just using np.ones since the angle of view made more complicated samples
     challenging, but this confirms gamma and clims works in the shader.
+    The VolumeVisual defaults to the "grays" colormap so although we compare
+    data using RGBA arrays, each R/G/B channel should be the same.
 
     """
 
@@ -93,28 +95,58 @@ def test_volume_clims_and_gamma(texture_format):
         v.camera.scale_factor = 40
         v.camera.center = (19.5, 19.5, 19.5)
 
-        rendered = c.render()[..., 0]
+        rendered = c.render()
         _dtype = rendered.dtype
         shape_ratio = rendered.shape[0] // data.shape[0]
         rendered1 = downsample(rendered, shape_ratio, axis=(0, 1)).astype(_dtype)
-        predicted = np.round(data.max(0) * 255).astype(np.uint8)
-        assert np.allclose(predicted, rendered1, atol=1)
+        predicted = data.max(axis=0)
+        _compare_render(predicted, rendered1)
 
         # adjust contrast limits
         new_clim = (0.3, 0.8)
         volume.clim = new_clim
-        rendered2 = downsample(c.render()[..., 0], shape_ratio, axis=(0, 1)).astype(_dtype)
+        rendered2 = downsample(c.render(), shape_ratio, axis=(0, 1)).astype(_dtype)
         scaled_data = np.clip((data - new_clim[0]) / np.diff(new_clim)[0], 0, 1)
-        predicted = np.round(scaled_data.max(0) * 255).astype(np.uint8)
-        assert np.allclose(predicted, rendered2)
-        assert not np.allclose(rendered1, rendered2, atol=10)
+        predicted = scaled_data.max(axis=0)
+        _compare_render(predicted, rendered2, previous_render=rendered)
 
         # adjust gamma
         volume.gamma = 1.5
-        rendered3 = downsample(c.render()[..., 0], shape_ratio, axis=(0, 1)).astype(_dtype)
-        predicted = np.round((scaled_data ** volume.gamma).max(0) * 255).astype(np.uint8)
-        assert np.allclose(predicted, rendered3)
-        assert not np.allclose(rendered2, rendered3, atol=10)
+        rendered3 = downsample(c.render(), shape_ratio, axis=(0, 1)).astype(_dtype)
+        predicted = (scaled_data ** volume.gamma).max(axis=0)
+        _compare_render(predicted, rendered3, previous_render=rendered2)
+
+
+def _compare_render(orig_data, rendered_data, previous_render=None, atol=1):
+    predicted = _make_rgba(orig_data)
+    np.testing.assert_allclose(rendered_data.astype(float), predicted.astype(float), atol=atol)
+    if previous_render is not None:
+        # assert not allclose
+        pytest.raises(AssertionError, np.testing.assert_allclose,
+                      rendered_data, previous_render, atol=10)
+
+
+def _make_rgba(data_in):
+    max_val = _max_for_dtype(data_in.dtype)
+    if data_in.ndim == 3 and data_in.shape[-1] == 1:
+        data_in = data_in.squeeze()
+
+    if data_in.ndim == 2:
+        out = np.stack([data_in] * 4, axis=2)
+        out[:, :, 3] = max_val
+    elif data_in.shape[-1] == 3:
+        out = np.concatenate((data_in, np.ones((*data_in.shape[:2], 1)) * max_val), axis=2)
+    else:
+        out = data_in
+    return np.round((out.astype(np.float) * 255 / max_val)).astype(np.uint8)
+
+
+def _max_for_dtype(input_dtype):
+    if np.issubdtype(input_dtype, np.integer):
+        max_val = np.iinfo(input_dtype).max
+    else:
+        max_val = 1.0
+    return max_val
 
 
 @requires_pyopengl()
