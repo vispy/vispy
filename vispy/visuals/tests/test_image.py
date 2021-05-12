@@ -9,6 +9,8 @@ from vispy.testing.image_tester import assert_image_approved, downsample
 import numpy as np
 import pytest
 
+from vispy.testing.rendered_array_tester import compare_render, max_for_dtype
+
 
 @requires_application()
 @pytest.mark.parametrize('is_3d', [True, False])
@@ -30,20 +32,11 @@ def _make_test_data(shape, input_dtype):
     if data.ndim == 3 and data.shape[-1] == 4:
         # RGBA - make alpha fully opaque
         data[..., -1] = 1.0
-    max_val = _max_for_dtype(input_dtype)
+    max_val = max_for_dtype(input_dtype)
     if max_val != 1:
         data *= max_val
     data = data.astype(input_dtype)
     return data
-
-
-def _compare_render(orig_data, rendered_data, previous_render=None, atol=1):
-    predicted = _make_rgba(orig_data)
-    np.testing.assert_allclose(rendered_data.astype(float), predicted.astype(float), atol=atol)
-    if previous_render is not None:
-        # assert not allclose
-        pytest.raises(AssertionError, np.testing.assert_allclose,
-                      rendered_data, previous_render, atol=10)
 
 
 def _set_image_data(image, data, should_fail):
@@ -53,17 +46,9 @@ def _set_image_data(image, data, should_fail):
     image.set_data(data)
 
 
-def _max_for_dtype(input_dtype):
-    if np.issubdtype(input_dtype, np.integer):
-        max_val = np.iinfo(input_dtype).max
-    else:
-        max_val = 1.0
-    return max_val
-
-
 def _get_orig_and_new_clims(input_dtype):
     new_clim = (0.3, 0.8)
-    max_val = _max_for_dtype(input_dtype)
+    max_val = max_for_dtype(input_dtype)
     if np.issubdtype(input_dtype, np.integer):
         new_clim = (int(new_clim[0] * max_val), int(new_clim[1] * max_val))
     return (0, max_val), new_clim
@@ -113,18 +98,18 @@ def test_image_clims_and_gamma(input_dtype, texture_format, num_channels,
         _dtype = rendered.dtype
         shape_ratio = rendered.shape[0] // data.shape[0]
         rendered1 = downsample(rendered, shape_ratio, axis=(0, 1)).astype(_dtype)
-        _compare_render(data, rendered1)
+        compare_render(data, rendered1)
 
         # adjust color limits
         image.clim = new_clim
         rendered2 = downsample(c.render(), shape_ratio, axis=(0, 1)).astype(_dtype)
         scaled_data = (np.clip(data, new_clim[0], new_clim[1]) - new_clim[0]) / (new_clim[1] - new_clim[0])
-        _compare_render(scaled_data, rendered2, rendered1, atol=clim_atol)
+        compare_render(scaled_data, rendered2, rendered1, atol=clim_atol)
 
         # adjust gamma
         image.gamma = 2
         rendered3 = downsample(c.render(), shape_ratio, axis=(0, 1)).astype(_dtype)
-        _compare_render(scaled_data ** 2, rendered3, rendered2, atol=gamma_atol)
+        compare_render(scaled_data ** 2, rendered3, rendered2, atol=gamma_atol)
 
 
 @requires_application()
@@ -159,21 +144,6 @@ def test_image_vertex_updates():
             image.set_data(data)
             c.render()
             build_vertex_mock.assert_called_once()
-
-
-def _make_rgba(data_in):
-    max_val = _max_for_dtype(data_in.dtype)
-    if data_in.ndim == 3 and data_in.shape[-1] == 1:
-        data_in = data_in.squeeze()
-
-    if data_in.ndim == 2:
-        out = np.stack([data_in] * 4, axis=2)
-        out[:, :, 3] = max_val
-    elif data_in.shape[-1] == 3:
-        out = np.concatenate((data_in, np.ones((*data_in.shape[:2], 1)) * max_val), axis=2)
-    else:
-        out = data_in
-    return np.round((out.astype(np.float) * 255 / max_val)).astype(np.uint8)
 
 
 run_tests_if_main()
