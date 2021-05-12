@@ -417,8 +417,8 @@ class Ticker(object):
                                     (minor_frac < 1.0001)]
             # Flip ticks coordinates if necessary :
             if flip:
-                major_frac = 1-major_frac
-                minor_frac = 1-minor_frac
+                major_frac = 1 - major_frac
+                minor_frac = 1 - minor_frac
         elif self.axis.scale_type == 'logarithmic':
             return NotImplementedError
         elif self.axis.scale_type == 'power':
