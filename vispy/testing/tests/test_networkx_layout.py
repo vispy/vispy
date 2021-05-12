@@ -14,33 +14,32 @@ except ModuleNotFoundError:
 
 
 def test_networkx_layout_with_graph():
-    """
-    Testing the various inputs to the networkx layout
-    """
-
+    """Testing the various inputs to the networkx layout."""
     settings = dict(name="networkx_layout")
-    if nx:
-        # empty input
-        # testing.assert_raises(ValueError("Requires networkx input"), get_layout(**settings))
+    if nx is None:
+        return testing.SkipTest("'networkx' required")
 
-        # define graph
-        graph = nx.complete_graph(5)
-        # define positions
-        layout = np.random.rand(5, 2)
-        settings['graph'] = graph
-        settings['layout'] = layout
+    # empty input
+    # testing.assert_raises(ValueError("Requires networkx input"), get_layout(**settings))
 
-        # test numpy array input
-        testing.assert_true(isinstance(
-            get_layout(**settings), NetworkxCoordinates))
-        # testing string input
-        settings['layout'] = 'circular'
-        testing.assert_true(isinstance(
-            get_layout(**settings), NetworkxCoordinates))
-        # testing dict input
-        settings['layout'] = nx.circular_layout(graph)
-        testing.assert_true(isinstance(
-            get_layout(**settings), NetworkxCoordinates))
+    # define graph
+    graph = nx.complete_graph(5)
+    # define positions
+    layout = np.random.rand(5, 2)
+    settings['graph'] = graph
+    settings['layout'] = layout
+
+    # test numpy array input
+    testing.assert_true(isinstance(
+        get_layout(**settings), NetworkxCoordinates))
+    # testing string input
+    settings['layout'] = 'circular'
+    testing.assert_true(isinstance(
+        get_layout(**settings), NetworkxCoordinates))
+    # testing dict input
+    settings['layout'] = nx.circular_layout(graph)
+    testing.assert_true(isinstance(
+        get_layout(**settings), NetworkxCoordinates))
 
 
 def test_networkx_layout_no_networkx():
