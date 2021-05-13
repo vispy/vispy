@@ -43,9 +43,6 @@ from ..color import get_colormap
 
 import numpy as np
 
-
-
-
 # todo: implement more render methods (port from visvis)
 # todo: allow anisotropic data
 # todo: what to do about lighting? ambi/diffuse/spec/shinynes on each visual?
@@ -468,8 +465,6 @@ class VolumeVisual(Visual):
                  relative_step_size=0.8, cmap='grays', gamma=1.0,
                  clim_range_threshold=0.2,
                  emulate_texture=False, interpolation='linear', texture_format=None):
-        tex_cls = TextureEmulated3D if emulate_texture else Texture3D
-
         # Storage of information of volume
         self._vol_shape = ()
         self._clim = None
