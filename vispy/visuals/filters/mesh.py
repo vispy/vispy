@@ -26,6 +26,10 @@ class TextureFilter(Filter):
     enabled : bool
         Whether the display of the texture is enabled.
 
+    Examples
+    --------
+    See ``examples/basics/scene/mesh_texture.py`` example script.
+
     """
 
     def __init__(self, texture, texcoords, enabled=True):
@@ -186,16 +190,24 @@ void shade() {
 
 
 class ShadingFilter(Filter):
-    """Filter to apply shading to a mesh."""
+    """Filter to apply shading to a mesh.
 
-    def __init__(self, shading='flat', enabled=True, light_dir=(10, 5, -5),
+    To disable shading, either detach (ex. ``mesh.detach(filter_obj)``) or
+    set the shading type to ``None`` (ex. ``filter_obj.shading = None``).
+
+    Examples
+    --------
+    See ``examples/basics/scene/mesh_shading.py`` example script.
+
+    """
+
+    def __init__(self, shading='flat', light_dir=(10, 5, -5),
                  light_color=(1, 1, 1, 1),
                  ambient_color=(.3, .3, .3, 1),
                  diffuse_color=(1, 1, 1, 1),
                  specular_color=(1, 1, 1, 1),
                  shininess=100):
         self._shading = shading
-        self._enabled = enabled
         self._light_dir = light_dir
         self._light_color = Color(light_color)
         self._ambient_color = Color(ambient_color)
@@ -220,16 +232,6 @@ class ShadingFilter(Filter):
     def shading(self, shading):
         assert shading in (None, 'flat', 'smooth')
         self._shading = shading
-        self._update_data()
-
-    @property
-    def enabled(self):
-        """True to enable shading."""
-        return self._enabled
-
-    @enabled.setter
-    def enabled(self, enabled):
-        self._enabled = enabled
         self._update_data()
 
     @property
@@ -347,29 +349,38 @@ void draw_wireframe() {
     vec3 d = fwidth(v_bc);
     vec3 a3 = smoothstep(vec3(0.0), $width * d, v_bc);
     float factor = min(min(a3.x, a3.y), a3.z);
-    gl_FragColor = mix($color, gl_FragColor, factor);
-//    gl_FragColor = vec4(0.0, 0.0, 0.0, 0.95 * (1.0 - factor));
+    if ($enabled == 1) {
+        gl_FragColor = mix($color, gl_FragColor, factor);
+    } else {
+        gl_FragColor = gl_FragColor;
+    }
 }
 """  # noqa
 
 
 class WireframeFilter(Filter):
-    """Add wire frame to a mesh.
+    """Add wireframe to a mesh.
 
     Parameters
     ----------
     color : str or tuple or Color
-        Line color of the wire frame
-    width: float
-        Line width of the wire frame
+        Line color of the wireframe
+    width : float
+        Line width of the wireframe
+    enabled : bool
+        Whether the wireframe is drawn or not
+
+    Examples
+    --------
+    See ``examples/basics/scene/mesh_shading.py`` example script.
 
     """
 
     def __init__(self, enabled=True, color='black', width=1.0):
         self._attached = False
-        self._enabled = enabled
         self._color = Color(color)
         self._width = width
+        self._enabled = False
 
         vfunc = Function(wireframe_vertex_template)
         ffunc = Function(wireframe_fragment_template)
@@ -378,6 +389,7 @@ class WireframeFilter(Filter):
         vfunc['bc'] = self._bc
 
         super().__init__(vcode=vfunc, fcode=ffunc)
+        self.enabled = enabled
 
     @property
     def enabled(self):
@@ -387,6 +399,7 @@ class WireframeFilter(Filter):
     @enabled.setter
     def enabled(self, enabled):
         self._enabled = enabled
+        self.fshader['enabled'] = 1 if enabled else 0
         self._update_data()
 
     @property
@@ -412,7 +425,7 @@ class WireframeFilter(Filter):
         self._update_data()
 
     def _update_data(self):
-        if not self._attached:
+        if not self.attached:
             return
         self.fshader['color'] = self._color.rgba
         self.fshader['width'] = self._width
