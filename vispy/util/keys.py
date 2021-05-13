@@ -2,7 +2,7 @@
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-""" Define constants for keys.
+"""Define constants for keys.
 
 Each key constant is defined as a Key object, which allows comparison with
 strings (e.g. 'A', 'Escape', 'Shift'). This enables handling of key events
@@ -16,7 +16,7 @@ intended as a compatibility measure.
 
 
 class Key(object):
-    """ Represent the identity of a certain key.
+    """Represent the identity of a certain key.
 
     This represents one or more names that the key in question is known by.
 
@@ -31,8 +31,7 @@ class Key(object):
 
     @property
     def name(self):
-        """ The primary name of the key.
-        """
+        """The primary name of the key."""
         return self._names[0]
 
     def __hash__(self):

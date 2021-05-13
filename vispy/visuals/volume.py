@@ -389,8 +389,8 @@ frag_dict = {
 
 
 class VolumeVisual(Visual):
-    """ Displays a 3D Volume
-    
+    """Displays a 3D Volume
+
     Parameters
     ----------
     vol : ndarray
@@ -468,7 +468,8 @@ class VolumeVisual(Visual):
                  relative_step_size=0.8, cmap='grays', gamma=1.0,
                  clim_range_threshold=0.2,
                  emulate_texture=False, interpolation='linear', texture_format=None):
-        
+        tex_cls = TextureEmulated3D if emulate_texture else Texture3D
+
         # Storage of information of volume
         self._vol_shape = ()
         self._clim = None
@@ -513,10 +514,10 @@ class VolumeVisual(Visual):
         # inside the volume, then the front faces are outside of the clipping
         # box and will not be drawn.
         self.set_gl_state('translucent', cull_face=False)
-        
+
         # Set data
         self.set_data(vol, clim)
-        
+
         # Set params
         self.method = method
         self.relative_step_size = relative_step_size
@@ -564,7 +565,7 @@ class VolumeVisual(Visual):
             vol /= self._clim[1] - self._clim[0]
 
     def set_data(self, vol, clim=None, copy=True):
-        """ Set the volume data. 
+        """Set the volume data.
 
         Parameters
         ----------
@@ -584,7 +585,7 @@ class VolumeVisual(Visual):
             raise ValueError('Volume visual needs a numpy array.')
         if not ((vol.ndim == 3) or (vol.ndim == 4 and vol.shape[-1] <= 4)):
             raise ValueError('Volume visual needs a 3D image.')
-        
+
         # Handle clim
         if clim is not None:
             clim = np.array(clim, float)
@@ -611,13 +612,13 @@ class VolumeVisual(Visual):
         self._tex.set_data(vol)  # will be efficient if vol is same shape
         self.shared_program['u_shape'] = (vol.shape[2], vol.shape[1], 
                                           vol.shape[0])
-        
+
         shape = vol.shape[:3]
         if self._vol_shape != shape:
             self._vol_shape = shape
             self._need_vertex_update = True
         self._vol_shape = shape
-        
+
         # Get some stats
         self._kb_for_texture = np.prod(self._vol_shape) / 1024
 
@@ -744,7 +745,7 @@ class VolumeVisual(Visual):
         """The interpolation method to use
 
         Current options are:
-        
+
             * linear: this method is appropriate for most volumes as it creates
               nice looking visuals.
             * nearest: this method is appropriate for volumes with discrete
@@ -763,13 +764,13 @@ class VolumeVisual(Visual):
             self._interpolation = interp
             self._tex.interpolation = self._interpolation
             self.update()
-            
+
     @property
     def method(self):
         """The render method to use
 
         Current options are:
-        
+
             * translucent: voxel colors are blended along the view ray until
               the result is opaque.
             * mip: maxiumum intensity projection. Cast a ray and display the
@@ -781,7 +782,7 @@ class VolumeVisual(Visual):
               performed to give the visual appearance of a surface.  
         """
         return self._method
-    
+
     @method.setter
     def method(self, method):
         # Check and save
@@ -801,31 +802,30 @@ class VolumeVisual(Visual):
         self.shared_program['texture2D_LUT'] = self.cmap.texture_lut() \
             if (hasattr(self.cmap, 'texture_lut')) else None
         self.update()
-    
+
     @property
     def threshold(self):
-        """ The threshold value to apply for the isosurface render method.
-        """
+        """The threshold value to apply for the isosurface render method."""
         return self._threshold
-    
+
     @threshold.setter
     def threshold(self, value):
         self._threshold = float(value)
         if 'u_threshold' in self.shared_program:
             self.shared_program['u_threshold'] = self._threshold
         self.update()
-    
+
     @property
     def relative_step_size(self):
-        """ The relative step size used during raycasting.
-        
+        """The relative step size used during raycasting.
+
         Larger values yield higher performance at reduced quality. If
         set > 2.0 the ray skips entire voxels. Recommended values are
         between 0.5 and 1.5. The amount of quality degredation depends
         on the render method.
         """
         return self._relative_step_size
-    
+
     @relative_step_size.setter
     def relative_step_size(self, value):
         value = float(value)
@@ -833,15 +833,15 @@ class VolumeVisual(Visual):
             raise ValueError('relative_step_size cannot be smaller than 0.1')
         self._relative_step_size = value
         self.shared_program['u_relative_step_size'] = value
-    
+
     def _create_vertex_data(self):
-        """ Create and set positions and texture coords from the given shape
-        
+        """Create and set positions and texture coords from the given shape
+
         We have six faces with 1 quad (2 triangles) each, resulting in
         6*2*3 = 36 vertices in total.
         """
         shape = self._vol_shape
-        
+
         # Get corner coordinates. The -0.5 offset is to center
         # pixels/voxels. This works correctly for anisotropic data.
         x0, x1 = -0.5, shape[2] - 0.5
@@ -858,7 +858,7 @@ class VolumeVisual(Visual):
             [x0, y1, z1],
             [x1, y1, z1],
         ], dtype=np.float32)
-        
+
         """
           6-------7
          /|      /|
@@ -868,12 +868,12 @@ class VolumeVisual(Visual):
         |/      |/
         0-------1
         """
-        
+
         # Order is chosen such that normals face outward; front faces will be
         # culled.
         indices = np.array([2, 6, 0, 4, 5, 6, 7, 2, 3, 0, 1, 5, 3, 7],
                            dtype=np.uint32)
-        
+
         # Apply
         self._vertices.set_data(pos)
         self._index_buffer.set_data(indices)

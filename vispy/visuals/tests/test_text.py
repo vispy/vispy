@@ -12,7 +12,6 @@ from vispy.testing.image_tester import assert_image_approved
 @requires_application()
 def test_text():
     """Test basic text support"""
-
     with TestingCanvas(bgcolor='w', size=(92, 92), dpi=92) as c:
         pos = [92 // 2] * 2
         text = Text('testing', font_size=20, color='k',

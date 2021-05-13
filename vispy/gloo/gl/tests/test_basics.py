@@ -1,4 +1,4 @@
-""" Test to verify some basic functionality of our OpenGL API. We cover
+"""Test to verify some basic functionality of our OpenGL API. We cover
 much more in the test_functionality. Together, these two tests should
 touch *all* ES 2.0 API calls.
 
@@ -21,7 +21,7 @@ def teardown_module():
 
 @requires_application()
 def test_basics_desktop():
-    """ Test desktop GL backend for basic functionality. """
+    """Test desktop GL backend for basic functionality."""
     _test_basics('gl2')
     with Canvas():
         _test_setting_parameters()
@@ -40,7 +40,7 @@ def test_basics_desktop():
 
 @requires_application()
 def test_functionality_proxy():
-    """ Test GL proxy class for basic functionality. """
+    """Test GL proxy class for basic functionality."""
     # By using debug mode, we are using the proxy class
     _test_basics('gl2 debug')
 
@@ -48,13 +48,13 @@ def test_functionality_proxy():
 @requires_application()
 @requires_pyopengl()
 def test_basics_pypengl():
-    """ Test pyopengl GL backend for basic functionality. """
+    """Test pyopengl GL backend for basic functionality."""
     _test_basics('pyopengl2')
 
 
 @requires_application()
 def test_functionality_es2():
-    """ Test es2 GL backend for basic functionality. """
+    """Test es2 GL backend for basic functionality."""
     if True:
         raise SkipTest('Skip es2 functionality test for now.')
     if sys.platform.startswith('win'):
@@ -63,9 +63,7 @@ def test_functionality_es2():
 
 
 def _test_basics(backend):
-    """ Create app and canvas so we have a context. Then run tests.
-    """
-
+    """Create app and canvas so we have a context. Then run tests."""
     # use the backend
     with use_log_level('error', print_msg=False):
         gl.use_gl(backend)  # pyopengl throws warning on injection
@@ -179,7 +177,7 @@ def _test_object_creation_and_deletion():
     # test and failed to clean it up.
 
     # Create/delete texture
-    #assert_equal(gl.glIsTexture(12), False)
+    # assert_equal(gl.glIsTexture(12), False)
     handle = gl.glCreateTexture()
     gl.glBindTexture(gl.GL_TEXTURE_2D, handle)
     assert_equal(gl.glIsTexture(handle), True)
@@ -187,7 +185,7 @@ def _test_object_creation_and_deletion():
     assert_equal(gl.glIsTexture(handle), False)
 
     # Create/delete buffer
-    #assert_equal(gl.glIsBuffer(12), False)
+    # assert_equal(gl.glIsBuffer(12), False)
     handle = gl.glCreateBuffer()
     gl.glBindBuffer(gl.GL_ARRAY_BUFFER, handle)
     assert_equal(gl.glIsBuffer(handle), True)
@@ -195,7 +193,7 @@ def _test_object_creation_and_deletion():
     assert_equal(gl.glIsBuffer(handle), False)
 
     # Create/delete framebuffer
-    #assert_equal(gl.glIsFramebuffer(12), False)
+    # assert_equal(gl.glIsFramebuffer(12), False)
     handle = gl.glCreateFramebuffer()
     gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, handle)
     assert_equal(gl.glIsFramebuffer(handle), True)
@@ -203,7 +201,7 @@ def _test_object_creation_and_deletion():
     assert_equal(gl.glIsFramebuffer(handle), False)
 
     # Create/delete renderbuffer
-    #assert_equal(gl.glIsRenderbuffer(12), False)
+    # assert_equal(gl.glIsRenderbuffer(12), False)
     handle = gl.glCreateRenderbuffer()
     gl.glBindRenderbuffer(gl.GL_RENDERBUFFER, handle)
     assert_equal(gl.glIsRenderbuffer(handle), True)
@@ -213,14 +211,14 @@ def _test_object_creation_and_deletion():
     # Stuff that is originally called glCreate
 
     # Create/delete program
-    #assert_equal(gl.glIsProgram(12), False)
+    # assert_equal(gl.glIsProgram(12), False)
     handle = gl.glCreateProgram()
     assert_equal(gl.glIsProgram(handle), True)
     gl.glDeleteProgram(handle)
     assert_equal(gl.glIsProgram(handle), False)
 
     # Create/delete shader
-    #assert_equal(gl.glIsShader(12), False)
+    # assert_equal(gl.glIsShader(12), False)
     handle = gl.glCreateShader(gl.GL_VERTEX_SHADER)
     assert_equal(gl.glIsShader(handle), True)
     gl.glDeleteShader(handle)
@@ -237,7 +235,7 @@ def _test_fbo():
     hframebuf = gl.glCreateFramebuffer()
     gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, hframebuf)
 
-    #Create render buffer (for depth)
+    # Create render buffer (for depth)
     hrenderbuf = gl.glCreateRenderbuffer()
     gl.glBindRenderbuffer(gl.GL_RENDERBUFFER, hrenderbuf)
     gl.glRenderbufferStorage(gl.GL_RENDERBUFFER, gl.GL_DEPTH_COMPONENT16, w, h)
@@ -269,7 +267,7 @@ def _test_fbo():
     # Touch copy tex functions
     gl.glBindTexture(gl.GL_TEXTURE_2D, htex)
     gl.glCopyTexSubImage2D(gl.GL_TEXTURE_2D, 0, 5, 5, 5, 5, 20, 20)
-    gl.glCopyTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_RGB, 0, 0, 30, 30,  0)
+    gl.glCopyTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_RGB, 0, 0, 30, 30, 0)
 
     gl.check_error()
 

@@ -3,9 +3,7 @@
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
-"""
-Windbarb Visual and shader definitions.
-"""
+"""Windbarb Visual and shader definitions."""
 
 import numpy as np
 
@@ -183,8 +181,7 @@ void main()
 
 
 class WindbarbVisual(Visual):
-    """ Visual displaying windbarbs.
-    """
+    """Visual displaying windbarbs."""
 
     def __init__(self, **kwargs):
         self._vbo = VertexBuffer()
@@ -204,7 +201,7 @@ class WindbarbVisual(Visual):
     def set_data(self, pos=None, wind=None, trig=True, size=50.,
                  antialias=1., edge_width=1., edge_color='black',
                  face_color='white'):
-        """ Set the data used to display this visual.
+        """Set the data used to display this visual.
 
         Parameters
         ----------

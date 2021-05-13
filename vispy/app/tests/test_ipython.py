@@ -14,8 +14,8 @@ def test_webgl_loading():
     on IPython 3.0 and greater.
 
     Test if it fails to load the webGL backend for IPython versions
-    less that 3.0"""
-
+    less that 3.0
+    """
     import IPython
     from distutils.version import LooseVersion
     from IPython.testing.globalipapp import get_ipython

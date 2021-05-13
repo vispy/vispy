@@ -141,10 +141,10 @@ class Canvas(app.Canvas):
         t = self._t
 
         t += 0.5 * dt
-        #self.target[...] = np.array([np.sin(t),np.sin(2*t),np.cos(3*t)])*.1
+        # self.target[...] = np.array([np.sin(t),np.sin(2*t),np.cos(3*t)])*.1
 
         t += 0.5 * dt
-        #self.predator[...] = np.array([np.sin(t),np.sin(2*t),np.cos(3*t)])*.2
+        # self.predator[...] = np.array([np.sin(t),np.sin(2*t),np.cos(3*t)])*.2
 
         self.boids['position_2'] = self.boids['position_1']
         self.boids['position_1'] = self.boids['position']
@@ -177,7 +177,7 @@ class Canvas(app.Canvas):
         D = np.repeat(D, 3, axis=0).reshape(n, 3)
         dP *= D
 
-        #self.boids['velocity'] += 0.0005*C + 0.01*A + 0.01*R +
+        # self.boids['velocity'] += 0.0005*C + 0.01*A + 0.01*R +
         #                           0.0005*T + 0.0025*dP
         self.boids['velocity'] += 0.0005 * C + 0.01 * \
             A + 0.01 * R + 0.0005 * T + 0.025 * dP

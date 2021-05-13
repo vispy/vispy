@@ -130,7 +130,7 @@ def arg_to_vec4(func):
 
 
 class TransformCache(object):
-    """ Utility class for managing a cache of ChainTransforms.
+    """Utility class for managing a cache of ChainTransforms.
 
     This is an LRU cache; items are removed if they are not accessed after
     *max_age* calls to roll().
@@ -143,12 +143,13 @@ class TransformCache(object):
     roll() on each cache before drawing, which removes from the cache any
     transforms that were not accessed during the last draw cycle.
     """
+
     def __init__(self, max_age=1):
         self._cache = {}  # maps {key: [age, transform]}
         self.max_age = max_age
 
     def get(self, path):
-        """ Get a transform from the cache that maps along *path*, which must
+        """Get a transform from the cache that maps along *path*, which must
         be a list of Transforms to apply in reverse order (last transform is
         applied first).
 
@@ -163,8 +164,8 @@ class TransformCache(object):
         item[0] = 0  # reset age for this item
 
         # make sure the chain is up to date
-        #tr = item[1]
-        #for i, node in enumerate(path[1:]):
+        # tr = item[1]
+        # for i, node in enumerate(path[1:]):
         #    if tr.transforms[i] is not node.transform:
         #        tr[i] = node.transform
 
@@ -176,7 +177,7 @@ class TransformCache(object):
         return ChainTransform(path)
 
     def roll(self):
-        """ Increase the age of all items in the cache by 1. Items whose age
+        """Increase the age of all items in the cache by 1. Items whose age
         is greater than self.max_age will be removed from the cache.
         """
         rem = []

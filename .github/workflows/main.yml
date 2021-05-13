@@ -2,11 +2,11 @@ name: CI
 
 # Controls when the action will run. 
 on:
-  # Triggers the workflow on push or pull request events but only for the master branch
+  # Triggers the workflow on push or pull request events but only for the main branch
   push:
-    branches: [ master ]
+    branches: [ main ]
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -93,7 +93,7 @@ jobs:
       with:
         personal_token: ${{ secrets.VISPY_WEBSITE_TOKEN }}
         publish_dir: doc/_build/html
-        publish_branch: master
+        publish_branch: main
         cname: vispy.org
         allow_empty_commit: true
         external_repository: vispy/vispy.github.com

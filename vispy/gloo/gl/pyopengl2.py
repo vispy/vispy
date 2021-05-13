@@ -2,7 +2,7 @@
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-""" GL ES 2.0 API implemented via pyOpenGL library. Intended as a
+"""GL ES 2.0 API implemented via pyOpenGL library. Intended as a
 fallback and for testing.
 """
 
@@ -16,7 +16,7 @@ from ._constants import *  # noqa
 
 
 def _patch():
-    """ Monkey-patch pyopengl to fix a bug in glBufferSubData. """
+    """Monkey-patch pyopengl to fix a bug in glBufferSubData."""
     import sys
     from OpenGL import GL
     if sys.version_info > (3,):
@@ -25,7 +25,7 @@ def _patch():
             buffersubdatafunc = buffersubdatafunc.wrapperFunction
         _m = sys.modules[buffersubdatafunc.__module__]
         _m.long = int
-    
+
     # Fix missing enum
     try:
         from OpenGL.GL.VERSION import GL_2_0
@@ -37,7 +37,7 @@ def _patch():
 _patch()
 
 
-## Inject
+# Inject
 
 def _make_unavailable_func(funcname):
     def cb(*args, **kwargs):
@@ -46,12 +46,12 @@ def _make_unavailable_func(funcname):
 
 
 def _get_function_from_pyopengl(funcname):
-    """ Try getting the given function from PyOpenGL, return
+    """Try getting the given function from PyOpenGL, return
     a dummy function (that shows a warning when called) if it
     could not be found.
     """
     func = None
-    
+
     # Get function from GL
     try:
         func = getattr(_GL, funcname)
@@ -61,7 +61,7 @@ def _get_function_from_pyopengl(funcname):
             func = getattr(_FBO, funcname)
         except AttributeError:
             func = None
-    
+
     # Try using "alias"
     if not bool(func):
         # Some functions are known by a slightly different name
@@ -80,8 +80,7 @@ def _get_function_from_pyopengl(funcname):
 
 
 def _inject():
-    """ Copy functions from OpenGL.GL into _pyopengl namespace.
-    """
+    """Copy functions from OpenGL.GL into _pyopengl namespace."""
     NS = _pyopengl2.__dict__
     for glname, ourname in _pyopengl2._functions_to_import:
         func = _get_function_from_pyopengl(glname)

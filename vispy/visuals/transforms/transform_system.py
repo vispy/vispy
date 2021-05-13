@@ -13,7 +13,7 @@ import numpy as np
 
 
 class TransformSystem(object):
-    """ TransformSystem encapsulates information about the coordinate
+    """TransformSystem encapsulates information about the coordinate
     systems needed to draw a Visual.
 
     Visual rendering operates in six coordinate systems:
@@ -59,7 +59,6 @@ class TransformSystem(object):
 
     Parameters
     ----------
-
     canvas : Canvas
         The canvas being drawn to.
     dpi : float
@@ -68,13 +67,11 @@ class TransformSystem(object):
 
     Notes
     -----
-
     By default, TransformSystems are configured such that the document
     coordinate system matches the logical pixels of the canvas,
 
     Examples
     --------
-
     1. To convert local vertex coordinates to normalized device coordinates in
     the vertex shader, we first need a vertex shader that supports configurable
     transformations::
@@ -156,7 +153,7 @@ class TransformSystem(object):
         self._canvas_transform = ChainTransform([STTransform(),
                                                  STTransform()])
         self._framebuffer_transform = ChainTransform([STTransform()])
-        
+
         for tr in (self._visual_transform, self._scene_transform, 
                    self._document_transform, self._canvas_transform,
                    self._framebuffer_transform):
@@ -185,8 +182,8 @@ class TransformSystem(object):
           position, and y-axis inversion.
         * framebuffer_transform maps from the current GL viewport on the
           framebuffer coordinate system to clip coordinates (-1 to 1). 
-          
-          
+
+
         Parameters
         ==========
         viewport : tuple or None
@@ -211,7 +208,7 @@ class TransformSystem(object):
         canvas = self._canvas
         if canvas is None:
             raise RuntimeError("No canvas assigned to this TransformSystem.")
-       
+
         # By default, this should invert the y axis--canvas origin is in top
         # left, whereas framebuffer origin is in bottom left.
         map_from = [(0, 0), canvas.size]
@@ -244,19 +241,16 @@ class TransformSystem(object):
 
     @property
     def canvas(self):
-        """ The Canvas being drawn to.
-        """
+        """The Canvas being drawn to."""
         return self._canvas
-    
+
     @canvas.setter
     def canvas(self, canvas):
         self._canvas = canvas
 
     @property
     def dpi(self):
-        """ Physical resolution of the document coordinate system (dots per
-        inch).
-        """
+        """Physical resolution of the document coordinate system (dots per inch)."""
         if self._dpi is None:
             if self._canvas is None:
                 return None
@@ -272,9 +266,7 @@ class TransformSystem(object):
 
     @property
     def visual_transform(self):
-        """ Transform mapping from visual local coordinate frame to scene
-        coordinate frame.
-        """
+        """Transform mapping from visual local coordinate frame to scene coordinate frame."""
         return self._visual_transform
 
     @visual_transform.setter
@@ -283,9 +275,7 @@ class TransformSystem(object):
 
     @property
     def scene_transform(self):
-        """ Transform mapping from scene coordinate frame to document
-        coordinate frame.
-        """
+        """Transform mapping from scene coordinate frame to document coordinate frame."""
         return self._scene_transform
 
     @scene_transform.setter
@@ -294,9 +284,7 @@ class TransformSystem(object):
 
     @property
     def document_transform(self):
-        """ Transform mapping from document coordinate frame to the framebuffer
-        (physical pixel) coordinate frame.
-        """
+        """Transform mapping from document coordinate frame to the framebuffer (physical pixel) coordinate frame."""
         return self._document_transform
 
     @document_transform.setter
@@ -305,9 +293,7 @@ class TransformSystem(object):
 
     @property
     def canvas_transform(self):
-        """ Transform mapping from canvas coordinate frame to framebuffer
-        coordinate frame.
-        """
+        """Transform mapping from canvas coordinate frame to framebuffer coordinate frame."""
         return self._canvas_transform
 
     @canvas_transform.setter
@@ -316,9 +302,7 @@ class TransformSystem(object):
 
     @property
     def framebuffer_transform(self):
-        """ Transform mapping from pixel coordinate frame to rendering
-        coordinate frame.
-        """
+        """Transform mapping from pixel coordinate frame to rendering coordinate frame."""
         return self._framebuffer_transform
 
     @framebuffer_transform.setter
@@ -327,7 +311,7 @@ class TransformSystem(object):
 
     def get_transform(self, map_from='visual', map_to='render'):
         """Return a transform mapping between any two coordinate systems.
-        
+
         Parameters
         ----------
         map_from : str
@@ -340,7 +324,7 @@ class TransformSystem(object):
         tr = ['visual', 'scene', 'document', 'canvas', 'framebuffer', 'render']
         ifrom = tr.index(map_from)
         ito = tr.index(map_to)
-        
+
         if ifrom < ito:
             trs = [getattr(self, '_' + t + '_transform')
                    for t in tr[ifrom:ito]][::-1]
@@ -348,7 +332,7 @@ class TransformSystem(object):
             trs = [getattr(self, '_' + t + '_transform').inverse
                    for t in tr[ito:ifrom]]
         return self._cache.get(trs)
-    
+
     @property
     def pixel_scale(self):
         tr = self._canvas_transform

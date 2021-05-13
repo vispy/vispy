@@ -15,7 +15,7 @@ from vispy.testing.rendered_array_tester import compare_render
 def test_volume():
     vol = np.zeros((20, 20, 20), 'float32')
     vol[8:16, 8:16, :] = 1.0
-    
+
     # Create
     V = scene.visuals.Volume(vol)
     assert V.clim == (0, 1)
@@ -25,13 +25,13 @@ def test_volume():
     # Set wrong data
     with raises(ValueError):
         V.set_data(np.zeros((20, 20), 'float32'))
-    
+
     # Clim
     V.set_data(vol, (0.5, 0.8))
     assert V.clim == (0.5, 0.8)
     with raises(ValueError):
         V.set_data((0.5, 0.8, 1.0))
-    
+
     # Method
     V.method = 'iso'
     assert V.method == 'iso'
@@ -39,7 +39,7 @@ def test_volume():
     # Interpolation
     V.interpolation = 'nearest'
     assert V.interpolation == 'nearest'
-        
+
     # Step size
     V.relative_step_size = 1.1
     assert V.relative_step_size == 1.1
@@ -72,14 +72,13 @@ def test_volume_clims_and_gamma(texture_format):
 
     Test is parameterized based on ``texture_format`` and should produce
     relatively the same results for each format.
-    
+
     Currently just using np.ones since the angle of view made more complicated samples
     challenging, but this confirms gamma and clims works in the shader.
     The VolumeVisual defaults to the "grays" colormap so although we compare
     data using RGBA arrays, each R/G/B channel should be the same.
 
     """
-
     with TestingCanvas(size=(40, 40), bgcolor="k") as c:
         v = c.central_widget.add_view(border_width=0, size=(40, 40))
         data = np.ones((40, 40, 40)) / 2.5

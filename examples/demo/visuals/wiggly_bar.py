@@ -53,20 +53,20 @@ logger = logging.getLogger(__name__)
 
 VALID_METHODS = ['euler', 'runge-kutta']
 
-PARAMETERS = [('d1',        0.0,      10.0,    'double', 0.97),
-              ('d2',        0.0,      10.0,    'double', 0.55),
-              ('m',         0.01,     100.0,   'double', 2.0),
-              ('M',         0.01,     100.0,   'double', 12.5),
-              ('k1',        0.01,     75.0,   'double', 1.35),
-              ('k2',        0.01,     75.0,   'double', 0.50),
-              ('b',         1.0,      1000.0,  'double', 25.75),
-              ('time step', 0.001,    1.0,     'double', 1/60),
-              ('x',         -0.25,    0.25,    'double', -0.01),
-              ('x dot',     -10.0,    10.0,    'double', -0.12),
-              ('theta',     -np.pi/5, np.pi/5, 'double', 0.005),
+PARAMETERS = [('d1', 0.0, 10.0, 'double', 0.97),
+              ('d2', 0.0, 10.0, 'double', 0.55),
+              ('m', 0.01, 100.0, 'double', 2.0),
+              ('M', 0.01, 100.0, 'double', 12.5),
+              ('k1', 0.01, 75.0, 'double', 1.35),
+              ('k2', 0.01, 75.0, 'double', 0.50),
+              ('b', 1.0, 1000.0, 'double', 25.75),
+              ('time step', 0.001, 1.0, 'double', 1/60),
+              ('x', -0.25, 0.25, 'double', -0.01),
+              ('x dot', -10.0, 10.0, 'double', -0.12),
+              ('theta', -np.pi/5, np.pi/5, 'double', 0.005),
               ('theta dot', -np.pi/2, np.pi/2, 'double', 0.0),
-              ('scale',     5,        500,     'int',    50),
-              ('font size', 6.0,      128.0,   'double', 24.0)]
+              ('scale', 5, 500, 'int', 50),
+              ('font size', 6.0, 128.0, 'double', 24.0)]
 
 CONVERSION_DICT = {'d1': 'd1', 'd2': 'd2', 'm': 'little_m', 'M': 'big_m',
                    'k1': 'spring_k1', 'k2': 'spring_k2', 'b': 'b',
@@ -79,7 +79,7 @@ def make_spiral(num_points=100, num_turns=4, height=12, radius=2.0,
                 xnot=None, ynot=None, znot=None):
     """
     Generate a list of points corresponding to a spiral.
-    
+
     Parameters
     ----------
     num_points : int
@@ -98,17 +98,17 @@ def make_spiral(num_points=100, num_turns=4, height=12, radius=2.0,
         Initial y-coordinate for the spiral coordinates to start at.
     znot : float
         Initial z-coordinate for the spiral coordinates to start at.
-    
+
     Returns
     -------
     coord_list: list of tuples
         Coordinate list of (x, y, z) positions for the spiral
-        
+
     Notes
     -----
     Right now, this assumes the center is at x=0, y=0. Later, it might be 
     good to add in stuff to change that.
-    
+
     """
 
     coords_list = []
@@ -133,7 +133,7 @@ def make_spring(num_points=300, num_turns=4, height=12, radius=2.0,
                 xnot=None, ynot=None, znot=None):
     """
         Generate a list of points corresponding to a spring.
-        
+
         Parameters
         ----------
         num_points : int
@@ -153,12 +153,12 @@ def make_spring(num_points=300, num_turns=4, height=12, radius=2.0,
             Initial y-coordinate for the spring coordinates to start at.
         znot : float
             Initial z-coordinate for the spring coordinates to start at.
-        
+
         Returns
         -------
         coord_list: list of tuples
             Coordinate list of (x, y, z) positions for the spring
-            
+
         Notes
         -----
         Right now, this assumes the center is at x=0, y=0. Later, it might be 
@@ -168,7 +168,7 @@ def make_spring(num_points=300, num_turns=4, height=12, radius=2.0,
         well as a small "turn" that is length radius / 2. In the future, maybe 
         there could be a kwarg to set the length of the sides of the spring. 
         For now, 10% looks good.
-        
+
         """
     coords_list = []
     init_pts = num_points // 10
@@ -519,15 +519,15 @@ class WigglyBar(app.Canvas):
         info_vector = np.asarray(
             [self.x_dot, self.theta_dot, self.x, self.theta]
         ).copy()
-        
+
         t1a = -self.b * info_vector[0] * np.abs(info_vector[0])
         t1b = -self.spring_k1*(info_vector[2] + self.d2*info_vector[3])
-        
+
         t2a = -self.spring_k1*self.d2*info_vector[2]
         t2b = -info_vector[3] * (
             self.spring_k1*(self.d2 ** 2) + self.spring_k2*(self.d1 ** 2)
         )
-        
+
         k1 = [
             (t1a + t1b)/self.little_m,
             (t2a + t2b)/self.j_term,

@@ -13,7 +13,7 @@ from .context import get_current_canvas
 
 
 class RenderBuffer(GLObject):
-    """ Base class for render buffer object
+    """Base class for render buffer object
 
     A render buffer can be in color, depth or stencil format. If this
     format is not specified, it is set when attached to the FrameBuffer.
@@ -39,17 +39,16 @@ class RenderBuffer(GLObject):
 
     @property
     def shape(self):
-        """RenderBuffer shape """
+        """Render Buffer shape"""
         return self._shape
 
     @property
     def format(self):
-        """ RenderBuffer format """
-
+        """Render Buffer format"""
         return self._format
 
     def resize(self, shape, format=None):
-        """ Set the render-buffer size and format
+        """Set the render-buffer size and format
 
         Parameters
         ----------
@@ -64,7 +63,6 @@ class RenderBuffer(GLObject):
             GL_RGB565, GL_RGBA4, GL_RGB5_A1, GL_DEPTH_COMPONENT16, or
             GL_STENCIL_INDEX8
         """
-
         if not self._resizeable:
             raise RuntimeError("RenderBuffer is not resizeable")
         # Check shape
@@ -91,11 +89,10 @@ class RenderBuffer(GLObject):
 
 # ------------------------------------------------------- FrameBuffer class ---
 class FrameBuffer(GLObject):
-    """ Frame buffer object
+    """Frame buffer object
 
     Parameters
     ----------
-
     color : RenderBuffer (optional)
         The color buffer to attach to this frame buffer
     depth : RenderBuffer (optional)
@@ -120,8 +117,7 @@ class FrameBuffer(GLObject):
             self.stencil_buffer = stencil
 
     def activate(self):
-        """ Activate/use this frame buffer.
-        """
+        """Activate/use this frame buffer."""
         # Send command
         self._glir.command('FRAMEBUFFER', self._id, True)
         # Associate canvas now
@@ -130,7 +126,7 @@ class FrameBuffer(GLObject):
             canvas.context.glir.associate(self.glir)
 
     def deactivate(self):
-        """ Stop using this frame buffer, the previous framebuffer will be
+        """Stop using this frame buffer, the previous framebuffer will be
         made active.
         """
         self._glir.command('FRAMEBUFFER', self._id, False)
@@ -193,8 +189,7 @@ class FrameBuffer(GLObject):
 
     @property
     def shape(self):
-        """ The shape of the Texture/RenderBuffer attached to this FrameBuffer
-        """
+        """The shape of the Texture/RenderBuffer attached to this FrameBuffer"""
         if self.color_buffer is not None:
             return self.color_buffer.shape[:2]  # in case its a texture
         if self.depth_buffer is not None:
@@ -204,7 +199,7 @@ class FrameBuffer(GLObject):
         raise RuntimeError('FrameBuffer without buffers has undefined shape')
 
     def resize(self, shape):
-        """ Resize all attached buffers with the given shape
+        """Resize all attached buffers with the given shape
 
         Parameters
         ----------
@@ -226,7 +221,7 @@ class FrameBuffer(GLObject):
             buf.resize(shape_, buf.format)
 
     def read(self, mode='color', alpha=True, crop=None):
-        """ Return array of pixel values in an attached buffer
+        """Return array of pixel values in an attached buffer
 
         Parameters
         ----------
@@ -258,5 +253,5 @@ class FrameBuffer(GLObject):
             crop = (0, 0, w, h)
 
         # todo: this is ostensibly required, but not available in gloo.gl
-        #gl.glReadBuffer(buffer._target)
+        # gl.glReadBuffer(buffer._target)
         return read_pixels(crop, alpha=alpha, mode=mode)

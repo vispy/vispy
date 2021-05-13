@@ -18,7 +18,7 @@ canvas = scene.SceneCanvas(keys='interactive')
 view = canvas.central_widget.add_view()
 
 
-## Define a scalar field from which we will generate an isosurface
+# Define a scalar field from which we will generate an isosurface
 def psi(i, j, k, offset=(25, 25, 50)):
     x = i-offset[0]
     y = j-offset[1]

@@ -17,9 +17,7 @@ from ..shaders import Varying
 
 
 class GridContourComponent(VisualComponent):
-    """
-    Draw grid lines across a surface.
-    """
+    """Draw grid lines across a surface."""
 
     SHADERS = dict(
         frag_color="""
@@ -43,7 +41,7 @@ class GridContourComponent(VisualComponent):
     def __init__(self, spacing):
         super(GridContourComponent, self).__init__()
         self.spacing = spacing
-        
+
         # Create Varying to connect vertex / fragment shaders
         var = Varying('pos', dtype='vec4')
         self._funcs['frag_color']['pos'] = var
@@ -63,9 +61,7 @@ class GridContourComponent(VisualComponent):
 
 
 class ShadingComponent(VisualComponent):
-    """
-    Phong reflection and shading material.
-    """
+    """Phong reflection and shading material."""
 
     SHADERS = dict(
         frag_color="""

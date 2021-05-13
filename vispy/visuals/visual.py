@@ -106,6 +106,7 @@ class VisualShare(object):
         * A cache for bounds.
 
     """
+
     def __init__(self):
         # Note: in some cases we will need to compute bounds independently for
         # each view. That will have to be worked out later..
@@ -141,6 +142,7 @@ class BaseVisual(Frozen):
     This subclasses Frozen so that subclasses can easily freeze their
     properties.
     """
+
     def __init__(self, vshare=None):
         self._view_class = getattr(self, '_view_class', VisualView)
 
@@ -203,8 +205,7 @@ class BaseVisual(Frozen):
             self.update()
 
     def view(self):
-        """Return a new view of this visual.
-        """
+        """Return a new view of this visual."""
         return self._view_class(self)
 
     def draw(self):
@@ -273,6 +274,7 @@ class BaseVisualView(object):
     works mainly by forwarding the calls to _prepare_draw, _prepare_transforms,
     and _compute_bounds to the viewed visual.
     """
+
     def __init__(self, visual):
         self._visual = visual
 
@@ -319,6 +321,7 @@ class Visual(BaseVisual):
     vshare : instance of VisualShare | None
         The visual share, if necessary.
     """
+
     def __init__(self, vcode='', fcode='', gcode=None, program=None,
                  vshare=None):
         self._view_class = VisualView
@@ -519,6 +522,7 @@ class VisualView(BaseVisualView, Visual):
     define their own shader program (which is a clone of the viewed visual's
     program), transforms, and filter attachments.
     """
+
     def __init__(self, visual):
         BaseVisualView.__init__(self, visual)
         Visual.__init__(self, vshare=visual._vshare)
@@ -541,6 +545,7 @@ class CompoundVisual(BaseVisual):
     subvisuals : list of BaseVisual instances
         The list of visuals to be combined in this compound visual.
     """
+
     def __init__(self, subvisuals):
         self._view_class = CompoundVisualView
         self._subvisuals = []
@@ -584,8 +589,7 @@ class CompoundVisual(BaseVisual):
         BaseVisual._transform_changed(self)
 
     def draw(self):
-        """Draw the visual
-        """
+        """Draw the visual"""
         if not self.visible:
             return
         if self._prepare_draw(view=self) is False:

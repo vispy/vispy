@@ -10,7 +10,7 @@ from .fly import FlyCamera
 
 
 def make_camera(cam_type, *args, **kwargs):
-    """ Factory function for creating new cameras using a string name.
+    """Factory function for creating new cameras using a string name.
 
     Parameters
     ----------

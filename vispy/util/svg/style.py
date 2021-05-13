@@ -9,12 +9,12 @@ from . number import Number
 from . length import Length
 
 _converters = {
-    "fill":              Color,
-    "fill-opacity":      Number,
-    "stroke":            Color,
-    "stroke-opacity":    Number,
-    "opacity":           Number,
-    "stroke-width":      Length,
+    "fill": Color,
+    "fill-opacity": Number,
+    "stroke": Color,
+    "stroke-opacity": Number,
+    "opacity": Number,
+    "stroke-width": Length,
     #    "stroke-miterlimit": Number,
     #    "stroke-dasharray":  Lengths,
     #    "stroke-dashoffset": Length,

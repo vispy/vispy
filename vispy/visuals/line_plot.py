@@ -51,6 +51,7 @@ class LinePlotVisual(CompoundVisual):
     --------
     LineVisual, MarkersVisual, marker_types
     """
+
     _line_kwargs = ('color', 'width', 'connect')
     _marker_kwargs = ('edge_color', 'face_color', 'edge_width',
                       'marker_size', 'symbol')

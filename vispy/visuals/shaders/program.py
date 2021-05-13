@@ -23,6 +23,7 @@ class ModularProgram(Program):
     Automatically rebuilds program when functions have changed and uploads
     program variables.
     """
+
     def __init__(self, vcode='', fcode='', gcode=None):
         Program.__init__(self)
 
@@ -30,7 +31,7 @@ class ModularProgram(Program):
 
         # Cache state of Variables so we know which ones require update
         self._variable_cache = WeakKeyDictionary()
-        
+
         # List of settable variables to be checked for value changes
         self._variables = []
 
@@ -89,27 +90,26 @@ class ModularProgram(Program):
                          self, code_changed, value_changed)
             import traceback
             traceback.print_stack()
-            
+
         if code_changed:
             self._need_build = True
         self.changed(code_changed=code_changed, 
                      value_changed=value_changed)
-    
+
     def draw(self, *args, **kwargs):
         self.build_if_needed()
         self.update_variables()
         Program.draw(self, *args, **kwargs)
 
     def build_if_needed(self):
-        """ Reset shader source if necesssary.
-        """
+        """Reset shader source if necesssary."""
         if self._need_build:
             self._build()
-            
+
             # after recompile, we need to upload all variables again
             # (some variables may have changed name)
             self._variable_cache.clear()
-            
+
             # Collect a list of all settable variables
             settable_vars = 'attribute', 'uniform', 'in'
             deps = [d for d in self.vert.dependencies() if (
@@ -130,16 +130,16 @@ class ModularProgram(Program):
             shaders['geom'] = self.geom
         self.compiler = Compiler(**shaders)
         code = self.compiler.compile()
-        
+
         # Update shader code, but don't let the program update variables yet 
         code['update_variables'] = False
         self.set_shaders(**code)
-        
+
         logger.debug('==== Vertex Shader ====\n\n%s\n', code['vert'])
         if 'geom' in code:
             logger.debug('==== Geometry shader ====\n\n%s\n', code['geom'])
         logger.debug('==== Fragment shader ====\n\n%s\n', code['frag'])
-        
+
     def update_variables(self):
         # Set any variables that have a new value
         logger.debug("Apply variables:")

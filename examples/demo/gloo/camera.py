@@ -69,10 +69,10 @@ class Canvas(app.Canvas):
         _, im = self.cap.read()
         self.program['texture'][...] = im
         self.program.draw('triangle_strip')
-        
+
     def on_timer(self, event):
         self.update()
-        
+
 c = Canvas()
 app.run()
 c.cap.release()

@@ -52,7 +52,6 @@ class VisPyInputHook(InputHookBase):
         which allows Vispy to integrate with terminal-based applications
         running in interactive mode (Python or IPython).
         """
-
         from .. import app as _app
 
         self.app = app or _app.use_app()

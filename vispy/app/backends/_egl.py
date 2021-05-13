@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
-"""
-vispy headless backend for egl.
-"""
+"""vispy headless backend for egl."""
 
 from __future__ import division
 
@@ -130,8 +128,7 @@ class ApplicationBackend(BaseApplicationBackend):
 
 
 class CanvasBackend(BaseCanvasBackend):
-
-    """ EGL backend for Canvas abstract class."""
+    """EGL backend for Canvas abstract class."""
 
     # args are for BaseCanvasBackend, kwargs are for us.
     def __init__(self, *args, **kwargs):

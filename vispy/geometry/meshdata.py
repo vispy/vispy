@@ -132,7 +132,6 @@ class MeshData(object):
         edges : ndarray
             The edges.
         """
-
         if indexed is None:
             if self._edges is None:
                 self._compute_edges(indexed=None)
@@ -248,7 +247,8 @@ class MeshData(object):
 
     def has_face_indexed_data(self):
         """Return True if this object already has vertex positions indexed
-        by face"""
+        by face
+        """
         return self._vertices_indexed_by_faces is not None
 
     def has_edge_indexed_data(self):
@@ -411,7 +411,7 @@ class MeshData(object):
         indexed : str | None
             Should be 'faces' if colors are indexed by faces.
         """
-        colors = _fix_colors(np.asarray(colors))
+        colors = _fix_colors(colors)
         if indexed is None:
             if colors.ndim != 2:
                 raise ValueError('colors must be 2D if indexed is None')
@@ -568,9 +568,7 @@ class MeshData(object):
         self._vertices = np.array(self._vertices, dtype=np.float32)
 
     def get_vertex_faces(self):
-        """
-        List mapping each vertex index to a list of face indices that use it.
-        """
+        """List mapping each vertex index to a list of face indices that use it."""
         if self._vertex_faces is None:
             self._vertex_faces = [[] for i in range(len(self.get_vertices()))]
             for i in range(self._faces.shape[0]):

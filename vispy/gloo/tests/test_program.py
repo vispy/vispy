@@ -73,7 +73,7 @@ class ProgramTest(unittest.TestCase):
         program.set_shaders('C', 'D')
         assert program.shaders[0].code == "C"
         assert program.shaders[1].code == "D"
-        
+
     @requires_application()
     def test_error(self):
         vert = '''

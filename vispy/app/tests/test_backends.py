@@ -1,4 +1,4 @@
-""" Tests to quickly see if the backends look good.
+"""Tests to quickly see if the backends look good.
 This tests only to see if all the necessary methods are implemented,
 whether all the right events are mentioned, and whether the keymap
 contains all keys that should be supported.

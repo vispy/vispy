@@ -13,8 +13,8 @@ from .base_transform import BaseTransform
 
 
 class NullTransform(BaseTransform):
-    """ Transform having no effect on coordinates (identity transform).
-    """
+    """Transform having no effect on coordinates (identity transform)."""
+
     glsl_map = "vec4 null_transform_map(vec4 pos) {return pos;}"
     glsl_imap = "vec4 null_transform_imap(vec4 pos) {return pos;}"
 
@@ -52,7 +52,7 @@ class NullTransform(BaseTransform):
 
 
 class STTransform(BaseTransform):
-    """ Transform performing only scale and translate, in that order.
+    """Transform performing only scale and translate, in that order.
 
     Parameters
     ----------
@@ -61,6 +61,7 @@ class STTransform(BaseTransform):
     translate : array-like
         Scale factors for X, Y, Z axes.
     """
+
     glsl_map = """
         vec4 st_transform_map(vec4 pos) {
             return vec4(pos.xyz * $scale.xyz + $translate.xyz * pos.w, pos.w);
@@ -221,7 +222,7 @@ class STTransform(BaseTransform):
 
     @classmethod
     def from_mapping(cls, x0, x1):
-        """ Create an STTransform from the given mapping
+        """Create an STTransform from the given mapping
 
         See `set_mapping` for details.
 
@@ -268,7 +269,6 @@ class STTransform(BaseTransform):
             >>> tr = STTransform()
             >>> tr.set_mapping(p1, p2)
             >>> assert tr.map(p1)[:,:2] == p2  # test
-
         """
         # if args are Rect, convert to array first
         if isinstance(x0, Rect):
@@ -321,6 +321,7 @@ class MatrixTransform(BaseTransform):
     matrix : array-like | None
         4x4 array to use for the transform.
     """
+
     glsl_map = """
         vec4 affine_transform_map(vec4 pos) {
             return $matrix * pos;
@@ -460,7 +461,7 @@ class MatrixTransform(BaseTransform):
         self.matrix = np.dot(self.matrix, transforms.rotate(angle, axis))
 
     def set_mapping(self, points1, points2):
-        """ Set to a 3D transformation matrix that maps points1 onto points2.
+        """Set to a 3D transformation matrix that maps points1 onto points2.
 
         Parameters
         ----------
@@ -550,7 +551,7 @@ class MatrixTransform(BaseTransform):
         self.matrix = transforms.frustum(l, r, b, t, n, f)
 
 
-#class SRTTransform(BaseTransform):
+# class SRTTransform(BaseTransform):
 #    """ Transform performing scale, rotate, and translate, in that order.
 #
 #    This transformation allows objects to be placed arbitrarily in a scene

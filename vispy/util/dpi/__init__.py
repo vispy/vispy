@@ -3,9 +3,7 @@
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
-"""
-The dpi module enables querying the OS for the screen DPI.
-"""
+"""The dpi module enables querying the OS for the screen DPI."""
 
 import sys
 

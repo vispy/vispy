@@ -3,9 +3,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 
-"""
-Simple ellipse visual based on PolygonVisual
-"""
+"""Simple ellipse visual based on PolygonVisual"""
 
 from __future__ import division
 
@@ -44,6 +42,7 @@ class EllipseVisual(PolygonVisual):
     **kwargs : dict
         Keyword arguments to pass to `PolygonVisual`.
     """
+
     def __init__(self, center=None, color='black', border_color=None,
                  border_width=1, radius=(0.1, 0.1), start_angle=0.,
                  span_angle=360., num_segments=100, **kwargs):
@@ -96,22 +95,19 @@ class EllipseVisual(PolygonVisual):
 
     @property
     def center(self):
-        """ The center of the ellipse
-        """
+        """The center of the ellipse"""
         return self._center
 
     @center.setter
     def center(self, center):
-        """ The center of the ellipse
-        """
+        """The center of the ellipse"""
         self._center = center
         self._regen_pos()
         self._update()
 
     @property
     def radius(self):
-        """ The start radii of the ellipse.
-        """
+        """The start radii of the ellipse."""
         return self._radius
 
     @radius.setter
@@ -122,8 +118,7 @@ class EllipseVisual(PolygonVisual):
 
     @property
     def start_angle(self):
-        """ The start start_angle of the ellipse.
-        """
+        """The start start_angle of the ellipse."""
         return self._start_angle
 
     @start_angle.setter
@@ -134,8 +129,7 @@ class EllipseVisual(PolygonVisual):
 
     @property
     def span_angle(self):
-        """ The angular span of the ellipse.
-        """
+        """The angular span of the ellipse."""
         return self._span_angle
 
     @span_angle.setter
@@ -146,8 +140,7 @@ class EllipseVisual(PolygonVisual):
 
     @property
     def num_segments(self):
-        """ The number of segments in the ellipse.
-        """
+        """The number of segments in the ellipse."""
         return self._num_segments
 
     @num_segments.setter

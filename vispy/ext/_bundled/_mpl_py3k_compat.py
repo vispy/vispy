@@ -1,6 +1,4 @@
-"""
-Simple fixes for Python 2/3 compatibility
-"""
+"""Simple fixes for Python 2/3 compatibility"""
 import sys
 PY3K = sys.version_info[0] >= 3
 

@@ -2,9 +2,7 @@
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-"""
-vispy backend for pyglet.
-"""
+"""vispy backend for pyglet."""
 
 from __future__ import division
 
@@ -168,8 +166,7 @@ class ApplicationBackend(BaseApplicationBackend):
 # ------------------------------------------------------------------ canvas ---
 
 class CanvasBackend(_Window, BaseCanvasBackend):
-
-    """ Pyglet backend for Canvas abstract class."""
+    """Pyglet backend for Canvas abstract class."""
 
     # args are for BaseCanvasBackend, kwargs are for us.
     def __init__(self, *args, **kwargs):
@@ -341,7 +338,7 @@ class CanvasBackend(_Window, BaseCanvasBackend):
                 button=BUTTONMAP.get(button, 0),
                 modifiers=self._modifiers(),
             )
-            #self._buttons_accepted &= ~button
+            # self._buttons_accepted &= ~button
 
     def on_mouse_motion(self, x, y, dx, dy):
         if self._vispy_canvas is None:

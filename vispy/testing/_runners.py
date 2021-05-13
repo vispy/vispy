@@ -120,8 +120,9 @@ def _unit(mode, extra_arg_string='', coverage=False):
 
 
 def _docs():
-    """test docstring parameters
-    using vispy/utils/tests/test_docstring_parameters.py"""
+    """Test docstring parameters
+    using vispy/utils/tests/test_docstring_parameters.py
+    """
     dev = _get_import_dir()[1]
 
     if not dev:
@@ -409,7 +410,7 @@ def test(label='full', extra_arg_string='', coverage=False):
     if label == "examples":
         # take the extra arguments so that specific examples can be run
         runs.append([partial(_examples, extra_arg_string),
-                    'examples'])
+                     'examples'])
     elif label == 'full':
         # run all the examples
         runs.append([partial(_examples, ""), 'examples'])

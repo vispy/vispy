@@ -31,7 +31,7 @@ else:
 
 
 class QtCanvas(QWidget):
-    """ Qt widget containing a vispy Canvas.
+    """Qt widget containing a vispy Canvas.
 
     This is a convenience class that allows a vispy canvas to be embedded
     directly into a Qt application.
@@ -74,17 +74,16 @@ class QtCanvas(QWidget):
             raise AttributeError(attr)
 
     def update(self):
-        """Call update() on both this widget and the internal canvas.
-        """
+        """Call update() on both this widget and the internal canvas."""
         QWidget.update(self)
         self._canvas.update()
 
 
 class QtSceneCanvas(QtCanvas):
-    """ Convenience class embedding a vispy SceneCanvas inside a QWidget.
-
+    """Convenience class embedding a vispy SceneCanvas inside a QWidget.
     See QtCanvas.
     """
+
     def __init__(self, parent=None, **kwargs):
         from ..scene.canvas import SceneCanvas
         QtCanvas.__init__(self, parent, canvas=SceneCanvas, **kwargs)
