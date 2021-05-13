@@ -80,7 +80,7 @@ def get_mandlebrot_escape_values(width, height):
     grid = np.meshgrid(x_vals, y_vals)
 
     v_get_num_escape_turns = np.vectorize(get_num_escape_turns)
-    return v_get_num_escape_turns(*grid).astype(np.float)
+    return v_get_num_escape_turns(*grid).astype(np.float32)
 
 
 def get_vertical_bar(pos, size):
@@ -128,7 +128,7 @@ class Canvas(app.Canvas):
         app.Canvas.__init__(self, size=(800, 600), keys="interactive")
 
         img_data = get_mandlebrot_escape_values(img_dim[0], img_dim[1])
-        self.image = ImageVisual(img_data,  cmap=colormap)
+        self.image = ImageVisual(img_data, cmap=colormap)
 
         self.image.transform = \
             STTransform(scale=1.1,

@@ -15,7 +15,7 @@ import numpy as np
 def test_queue():
     q = glir.GlirQueue()
     parser = glir.GlirParser()
-    
+
     # Test adding commands and clear
     N = 5
     for i in range(N):
@@ -23,13 +23,13 @@ def test_queue():
     cmds = q.clear()
     for i in range(N):
         assert cmds[i] == ('FOO', 'BAR', i)
-    
+
     # Test filter 1
     cmds1 = [('DATA', 1), ('SIZE', 1), ('FOO', 1), ('SIZE', 1), ('FOO', 1), 
              ('DATA', 1), ('DATA', 1)]
     cmds2 = [c[0] for c in q._shared._filter(cmds1, parser)]
     assert cmds2 == ['FOO', 'SIZE', 'FOO', 'DATA', 'DATA']
-    
+
     # Test filter 2
     cmds1 = [('DATA', 1), ('SIZE', 1), ('FOO', 1), ('SIZE', 2), ('SIZE', 2), 
              ('DATA', 2), ('SIZE', 1), ('FOO', 1), ('DATA', 1), ('DATA', 1)]
@@ -46,7 +46,7 @@ def test_queue():
     assert 'highp' not in shader2
     assert 'mediump' not in shader2
     assert 'precision' not in shader2
-    
+
     # Convert for es2
     shader3 = glir.convert_shader('es2', shader2)
     # make sure precision float is still in the shader
@@ -68,8 +68,7 @@ def test_queue():
 
 @requires_application()
 def test_log_parser():
-    """Test GLIR log parsing
-    """
+    """Test GLIR log parsing"""
     glir_file = tempfile.TemporaryFile(mode='r+')
 
     config.update(glir_file=glir_file)
@@ -113,8 +112,7 @@ def test_log_parser():
 
 @requires_application()
 def test_capabilities():
-    """Test GLIR capability reporting
-    """
+    """Test GLIR capability reporting"""
     with Canvas() as c:
         capabilities = c.context.shared.parser.capabilities
         assert capabilities['max_texture_size'] is not None

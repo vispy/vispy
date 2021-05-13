@@ -318,7 +318,7 @@ class Path(Transformable):
                 closed = True
                 if len(vertices) > 2:
                     d = geometry.calc_sq_distance(vertices[-1][0], vertices[-1][1],  # noqa
-                                                  vertices[0][0],  vertices[0][1])  # noqa
+                                                  vertices[0][0], vertices[0][1])  # noqa
                     if d < epsilon:
                         vertices = vertices[:-1]
 

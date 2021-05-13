@@ -3,9 +3,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 
-"""
-Simple ellipse visual based on PolygonVisual
-"""
+"""Simple ellipse visual based on PolygonVisual"""
 
 from __future__ import division
 
@@ -42,6 +40,7 @@ class RectangleVisual(PolygonVisual):
     **kwargs : dict
         Keyword arguments to pass to `PolygonVisual`.
     """
+
     def __init__(self, center=None, color='black', border_color=None,
                  border_width=1, height=1.0, width=1.0,
                  radius=[0., 0., 0., 0.], **kwargs):
@@ -140,22 +139,19 @@ class RectangleVisual(PolygonVisual):
 
     @property
     def center(self):
-        """ The center of the ellipse
-        """
+        """The center of the ellipse"""
         return self._center
 
     @center.setter
     def center(self, center):
-        """ The center of the ellipse
-        """
+        """The center of the ellipse"""
         self._center = center
         self._regen_pos()
         self._update()
 
     @property
     def height(self):
-        """ The height of the rectangle.
-        """
+        """The height of the rectangle."""
         return self._height
 
     @height.setter
@@ -168,8 +164,7 @@ class RectangleVisual(PolygonVisual):
 
     @property
     def width(self):
-        """ The width of the rectangle.
-        """
+        """The width of the rectangle."""
         return self._width
 
     @width.setter
@@ -182,8 +177,7 @@ class RectangleVisual(PolygonVisual):
 
     @property
     def radius(self):
-        """ The radius of curvature of rounded corners.
-        """
+        """The radius of curvature of rounded corners."""
         return self._radius
 
     @radius.setter

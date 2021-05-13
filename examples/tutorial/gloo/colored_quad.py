@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# vispy: gallery 1
 # -----------------------------------------------------------------------------
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
@@ -30,11 +31,13 @@ fragment = """
 
 class Canvas(app.Canvas):
     def __init__(self):
-        app.Canvas.__init__(self, size=(512, 512), title='Colored quad',
-                            keys='interactive')
+        super().__init__(size=(512, 512), title='Colored quad',
+                         keys='interactive')
 
-        # Build program & data
+        # Build program
         self.program = Program(vertex, fragment, count=4)
+
+        # Set uniforms and attributes
         self.program['color'] = [(1, 0, 0, 1), (0, 1, 0, 1),
                                  (0, 0, 1, 1), (1, 1, 0, 1)]
         self.program['position'] = [(-1, -1), (-1, +1),
@@ -45,12 +48,14 @@ class Canvas(app.Canvas):
         self.show()
 
     def on_draw(self, event):
-        gloo.clear(color='white')
+        gloo.clear()
         self.program.draw('triangle_strip')
 
     def on_resize(self, event):
         gloo.set_viewport(0, 0, *event.physical_size)
 
+
+c = Canvas()
+
 if __name__ == '__main__':
-    c = Canvas()
     app.run()

@@ -8,10 +8,9 @@ import inspect
 import numpy as np
 
 from .color_array import ColorArray
-from ..ext.six import string_types
 from ..ext.cubehelix import cubehelix
 from ..ext.husl import husl_to_rgb
-from ..testing import has_matplotlib
+from ..util.check_environment import has_matplotlib
 import vispy.gloo
 
 ###############################################################################
@@ -53,7 +52,8 @@ def _find_controls(x, controls=None, clip=None):
 # Normalization
 def _normalize(x, cmin=None, cmax=None, clip=True):
     """Normalize an array from the range [cmin, cmax] to [0,1],
-    with optional clipping."""
+    with optional clipping.
+    """
     if not isinstance(x, np.ndarray):
         x = np.array(x)
     if cmin is None:
@@ -101,8 +101,9 @@ def mix(colors, x, controls=None):
 
 
 def smoothstep(edge0, edge1, x):
-    """ performs smooth Hermite interpolation
-        between 0 and 1 when edge0 < x < edge1.  """
+    """Performs smooth Hermite interpolation
+    between 0 and 1 when edge0 < x < edge1.
+    """
     # Scale, bias and saturate x to 0..1 range
     x = np.clip((x - edge0)/(edge1 - edge0), 0.0, 1.0)
     # Evaluate polynomial
@@ -140,7 +141,6 @@ def _glsl_mix(controls=None, colors=None, texture_map_data=None):
     texture_map_data : ndarray, shape(texture_len, 4)
         Numpy array of size of 1D texture lookup data
         for luminance to RGBA conversion.
-
     """
     assert (controls[0], controls[-1]) == (0., 1.)
     ncolors = len(controls)
@@ -374,6 +374,7 @@ class Colormap(BaseColormap):
         >>> cm[0.], cm[0.5], cm[np.linspace(0., 1., 100)]
 
     """
+
     def __init__(self, colors, controls=None, interpolation='linear'):
         self.interpolation = interpolation
         ncontrols = self._ncontrols(len(colors))
@@ -1089,25 +1090,21 @@ _colormaps = dict(
 
 def get_colormap(name, *args, **kwargs):
     """Obtain a colormap
-
     Some colormaps can have additional configuration parameters. Refer to
     their corresponding documentation for more information.
-
     Parameters
     ----------
     name : str | Colormap
         Colormap name. Can also be a Colormap for pass-through.
-
     Examples
     --------
-
         >>> get_colormap('autumn')
         >>> get_colormap('single_hue', hue=10)
     """
     if isinstance(name, BaseColormap):
         cmap = name
     else:
-        if not isinstance(name, string_types):
+        if not isinstance(name, str):
             raise TypeError('colormap must be a Colormap or string name')
         if name in _colormaps:  # vispy cmap
             cmap = _colormaps[name]

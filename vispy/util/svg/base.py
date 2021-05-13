@@ -16,5 +16,5 @@ units = {
     'mm': dpi / 25.4,   # 1 mm = 1/25.4 in
     'pt': dpi / 72.0,   # 1 pt = 1/72 in
     'pc': dpi / 6.0,    # 1 pc = 1/6 in
-    '%':   1 / 100.0   # 1 percent
+    '%': 1 / 100.0   # 1 percent
 }

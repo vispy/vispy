@@ -426,7 +426,7 @@ def sphinx_copy_pages(html_dir, pages_dir, pages_repo):
         sh("git clone %s %s" % (pages_repo, pages_dir))
     # Ensure that its up to date
     os.chdir(pages_dir)
-    sh('git checkout master -q')
+    sh('git checkout main -q')
     sh('git pull -q')
     os.chdir('..')
     # This is pretty unforgiving: we unconditionally nuke the destination
@@ -458,9 +458,9 @@ def sphinx_upload(repo_dir):
     os.chdir(repo_dir)
     status = sh2('git status | head -1')
     branch = re.match('On branch (.*)$', status).group(1)
-    if branch != 'master':
-        e = 'On %r, git branch is %r, MUST be "master"' % (repo_dir,
-                                                           branch)
+    if branch != 'main':
+        e = 'On %r, git branch is %r, MUST be "main"' % (repo_dir,
+                                                         branch)
         raise RuntimeError(e)
     # Show repo and ask confirmation
     print()

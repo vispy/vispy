@@ -6,13 +6,15 @@ from __future__ import division
 
 import numpy as np
 
+
+from ...util import transforms
 from ...util.quaternion import Quaternion
 from ...visuals.transforms import MatrixTransform
 from .perspective import Base3DRotationCamera
 
 
 class ArcballCamera(Base3DRotationCamera):
-    """ 3D camera class that orbits around a center point while
+    """3D camera class that orbits around a center point while
     maintaining a view on a center point.
 
     For this camera, the ``scale_factor`` indicates the zoom level, and
@@ -65,11 +67,10 @@ class ArcballCamera(Base3DRotationCamera):
         self._event_value = p2
         self.view_changed()
 
-    def _rotate_tr(self):
-        """Rotate the transformation matrix based on camera parameters"""
+    def _get_rotation_tr(self):
+        """Return a rotation matrix based on camera parameters"""
         rot, x, y, z = self._quaternion.get_axis_angle()
-        up, forward, right = self._get_dim_vectors()
-        self.transform.rotate(180 * rot / np.pi, (x, z, y))
+        return transforms.rotate(180 * rot / np.pi, (x, z, y))
 
     def _dist_to_trans(self, dist):
         """Convert mouse x, y movement into x, y, z translations"""

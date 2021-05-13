@@ -4,8 +4,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
-""" A MeshVisual Visual that uses the new shader Function.
-"""
+"""A MeshVisual Visual that uses the new shader Function."""
 
 from __future__ import division
 
@@ -16,7 +15,6 @@ from .shaders import Function, FunctionChain
 from ..gloo import VertexBuffer
 from ..geometry import MeshData
 from ..color import Color, get_colormap
-from ..ext.six import string_types
 from ..util.event import Event
 
 
@@ -91,7 +89,7 @@ class MeshVisual(Visual):
         The meshdata.
     shading : str | None
         Shading to use. This uses the
-        :class:`ShadingFilter <vispy.visuals.filters.mesh.ShadingFilter>`
+        :class:`~vispy.visuals.filters.mesh.ShadingFilter`
         filter introduced in VisPy 0.7. This class provides additional
         features that are available when the filter is attached manually.
         See 'examples/basics/scene/mesh_shading.py' for an example.
@@ -109,6 +107,7 @@ class MeshVisual(Visual):
     is used for example by filters for synchronization.
 
     """
+
     def __init__(self, vertices=None, faces=None, vertex_colors=None,
                  face_colors=None, color=(0.5, 0.5, 1, 1), vertex_values=None,
                  meshdata=None, shading=None, mode='triangles', **kwargs):
@@ -199,12 +198,12 @@ class MeshVisual(Visual):
 
     @property
     def clim(self):
-        return (self._clim if isinstance(self._clim, string_types) else
+        return (self._clim if isinstance(self._clim, str) else
                 tuple(self._clim))
 
     @clim.setter
     def clim(self, clim):
-        if isinstance(clim, string_types):
+        if isinstance(clim, str):
             if clim != 'auto':
                 raise ValueError('clim must be "auto" if a string')
         else:
@@ -216,7 +215,7 @@ class MeshVisual(Visual):
 
     @property
     def _clim_values(self):
-        if isinstance(self._clim, string_types):  # == 'auto'
+        if isinstance(self._clim, str):  # == 'auto'
             if self._meshdata.has_vertex_value():
                 clim = self._meshdata.get_vertex_values()
                 clim = (np.min(clim), np.max(clim))

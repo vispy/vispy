@@ -12,7 +12,7 @@ from ...visuals.transforms import STTransform, MatrixTransform
 
 
 class PanZoomCamera(BaseCamera):
-    """ Camera implementing 2D pan/zoom mouse interaction.
+    """Camera implementing 2D pan/zoom mouse interaction.
 
     For this camera, the ``scale_factor`` indicates the zoom level, and
     the ``center`` indicates the center position of the view.
@@ -58,7 +58,7 @@ class PanZoomCamera(BaseCamera):
 
     @property
     def aspect(self):
-        """ The ratio between the x and y dimension. E.g. to show a
+        """The ratio between the x and y dimension. E.g. to show a
         square image as square, the aspect should be 1. If None, the
         dimensions are scaled automatically, dependening on the
         available space. Otherwise the ratio between the dimensions
@@ -75,7 +75,7 @@ class PanZoomCamera(BaseCamera):
         self.view_changed()
 
     def zoom(self, factor, center=None):
-        """ Zoom in (or out) at the given center
+        """Zoom in (or out) at the given center
 
         Parameters
         ----------
@@ -129,7 +129,7 @@ class PanZoomCamera(BaseCamera):
 
     @property
     def rect(self):
-        """ The rectangular border of the ViewBox visible area, expressed in
+        """The rectangular border of the ViewBox visible area, expressed in
         the coordinate system of the scene.
 
         Note that the rectangle can have negative width or height, in
@@ -180,7 +180,7 @@ class PanZoomCamera(BaseCamera):
         self.rect = self._xlim[0], self._ylim[0], w, h
 
     def viewbox_resize_event(self, event):
-        """ Modify the data aspect and scale factor, to adjust to
+        """Modify the data aspect and scale factor, to adjust to
         the new window size.
 
         Parameters

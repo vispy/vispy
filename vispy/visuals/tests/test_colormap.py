@@ -23,7 +23,7 @@ def test_colormap():
         idata = np.linspace(255, 0, size[0]*size[1]).astype(np.ubyte)
         data = idata.reshape((size[0], size[1]))
         image = Image(cmap=Colormap(colors=['k', 'w', 'r'],
-                      controls=[0.0, 0.1, 1.0]),
+                                    controls=[0.0, 0.1, 1.0]),
                       clim='auto', parent=c.scene)
         image.set_data(data)
         assert_image_approved(c.render(), "visuals/colormap_kwr.png")
@@ -36,7 +36,7 @@ def test_colormap_discrete():
         idata = np.linspace(255, 0, size[0]*size[1]).astype(np.ubyte)
         data = idata.reshape((size[0], size[1]))
         image = Image(cmap=Colormap(colors=['r', 'g', 'b'],
-                      interpolation='zero'),
+                                    interpolation='zero'),
                       clim='auto', parent=c.scene)
         image.set_data(data)
         assert_image_approved(c.render(), "visuals/colormap_rgb.png")
@@ -49,7 +49,7 @@ def test_colormap_discrete_nu():
         idata = np.linspace(255, 0, size[0]*size[1]).astype(np.ubyte)
         data = idata.reshape((size[0], size[1]))
         image = Image(cmap=Colormap(np.array([[0, .75, 0], [.75, .25, .5]]),
-                      [0., .25, 1.], interpolation='zero'),
+                                    [0., .25, 1.], interpolation='zero'),
                       clim='auto', parent=c.scene)
         image.set_data(data)
         assert_image_approved(c.render(), "visuals/colormap_nu.png")

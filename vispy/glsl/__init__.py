@@ -11,7 +11,6 @@ from .. import config
 
 def find(name):
     """Locate a filename into the shader library."""
-
     if op.exists(name):
         return name
 
@@ -36,7 +35,6 @@ def find(name):
 
 def get(name):
     """Retrieve code from the given filename."""
-
     filename = find(name)
     if filename is None:
         raise RuntimeError('Could not find %s' % name)

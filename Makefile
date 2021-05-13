@@ -80,6 +80,9 @@ pyside: clean-test
 pyside2: clean-test
 	python make test pyside2
 
+pyside6: clean-test
+	python make test pyside6
+
 pyglet: clean-test
 	python make test pyglet
 

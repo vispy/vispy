@@ -24,7 +24,6 @@ def test_figure_creation():
 @requires_application()
 def test_plot_widget_axes():
     """Test that the axes domains are updated correctly when a figure is first drawn"""
-
     fig = vp.Fig(size=(800, 800), show=False)
     point = (0, 100)
     fig[0, 0].plot((point, point))

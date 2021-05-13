@@ -16,7 +16,6 @@ def PathCollection(mode="agg", *args, **kwargs):
       - "agg"   (speed: medium, size: medium output: nice, some flaws, no dash)
       - "agg+"  (speed: slow, size: big, output: perfect, no dash)
     """
-
     if mode == "raw":
         return RawPathCollection(*args, **kwargs)
     elif mode == "agg+":

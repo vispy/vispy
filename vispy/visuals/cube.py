@@ -26,6 +26,7 @@ class CubeVisual(BoxVisual):
         The `Color` to use when drawing the cube edges. If `None`, then no
         cube edges are drawn.
     """
+
     def __init__(self, size=1.0, vertex_colors=None, face_colors=None,
                  color=(0.5, 0.5, 1, 1), edge_color=None, **kwargs):
         warnings.warn("The CubeVisual is deprecated in favor of BoxVisual",

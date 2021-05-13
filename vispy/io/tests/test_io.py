@@ -39,7 +39,7 @@ def test_wavefront():
 
 
 def test_wavefront_non_triangular():
-    '''Test wavefront writing with non-triangular faces'''
+    """Test wavefront writing with non-triangular faces"""
     vertices = np.array([[0.5, 1.375, 0.],
                          [0.5, 0.625, 0.],
                          [3.25, 1., 0.],
@@ -51,7 +51,7 @@ def test_wavefront_non_triangular():
                          [2., 1.625, 0.]])
 
     faces = np.array([[1, 0, 7, 6, 5, 3],
-                      [4, 5, 6, 8, 2]])
+                      [4, 5, 6, 8, 2]], dtype=object)
     fname_out = op.join(temp_dir, 'temp.obj')
     write_mesh(fname_out, vertices=vertices,
                faces=faces, normals=None,
@@ -65,7 +65,7 @@ def test_wavefront_non_triangular():
 
 
 def test_meshio():
-    '''Test meshio i/o'''
+    """Test meshio i/o"""
     vertices = np.array([[0.0, 0.0, 0.0],
                          [1.0, 0.0, 0.],
                          [-.0, 1.0, 0.],
@@ -110,8 +110,7 @@ def _slow_calculate_normals(rr, tris):
 
 
 def test_huge_cross():
-    """Test cross product with lots of elements
-    """
+    """Test cross product with lots of elements"""
     x = np.random.rand(100000, 3)
     y = np.random.rand(1, 3)
     z = np.cross(x, y)

@@ -1,7 +1,7 @@
 from __future__ import division
 
 import numpy as np
-from fractions import gcd
+from math import gcd
 
 
 class TorusKnot(object):
@@ -71,28 +71,27 @@ class TorusKnot(object):
 
     @property
     def first_component(self):
-        '''The vertices of the first component line of the torus knot or link.
-        '''
+        """The vertices of the first component line of the torus knot or link."""
         return self._components[0]
 
     @property
     def components(self):
-        '''A list of the vertices in each line of the torus knot or link.
+        """A list of the vertices in each line of the torus knot or link.
         Even if p and q are coprime, this is a list with just one
         entry.
-        '''
+        """
         return self._components
 
     @property
     def num_components(self):
-        '''The number of component lines in the torus link. This is equal
+        """The number of component lines in the torus link. This is equal
         to the greatest common divisor of p and q.
-        '''
+        """
         return gcd(self._p, self._q)
 
     @property
     def q(self):
-        '''The q parameter of the torus knot or link.'''
+        """The q parameter of the torus knot or link."""
         return self._q
 
     @q.setter
@@ -102,7 +101,7 @@ class TorusKnot(object):
 
     @property
     def p(self):
-        '''The p parameter of the torus knot or link.'''
+        """The p parameter of the torus knot or link."""
         return self._p
 
     @p.setter
@@ -112,7 +111,7 @@ class TorusKnot(object):
 
     @property
     def minor_radius(self):
-        '''The minor radius of the torus.'''
+        """The minor radius of the torus."""
         return self._minor_radius
 
     @minor_radius.setter
@@ -122,7 +121,7 @@ class TorusKnot(object):
 
     @property
     def major_radius(self):
-        '''The major radius of the torus.'''
+        """The major radius of the torus."""
         return self._major_radius
 
     @major_radius.setter
@@ -132,8 +131,9 @@ class TorusKnot(object):
 
     @property
     def num_points(self):
-        '''The number of points in the vertices returned for each knot/link
-        component'''
+        """The number of points in the vertices returned for each knot/link
+        component
+        """
         return self._num_points
 
     @num_points.setter

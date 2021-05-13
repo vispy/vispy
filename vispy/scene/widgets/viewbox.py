@@ -9,12 +9,11 @@ import numpy as np
 from .widget import Widget
 from ..subscene import SubScene
 from ..cameras import make_camera, BaseCamera
-from ...ext.six import string_types
 from ...visuals.filters import Clipper
 
 
 class ViewBox(Widget):
-    """ Provides a rectangular widget to which its subscene is rendered.
+    """Provides a rectangular widget to which its subscene is rendered.
 
     Three classes work together when using a ViewBox:
     * The :class:`SubScene` class describes a "world" coordinate system and the
@@ -37,6 +36,7 @@ class ViewBox(Widget):
     **kwargs : dict
         Extra keyword arguments to pass to `Widget`.
     """
+
     def __init__(self, camera=None, **kwargs):
         self._camera = None
         self._scene = None
@@ -49,17 +49,17 @@ class ViewBox(Widget):
             name = str(self.name) + "_Scene"
         else:
             name = None
-            
+
         self._scene = SubScene(name=name, parent=self)
         self._scene._clipper = Clipper()
         self._scene.clip_children = True
         self.transforms.changed.connect(self._update_scene_clipper)
-        
+
         # Camera is a helper object that handles scene transformation
         # and user interaction.
         if camera is None:
             camera = 'base'
-        if isinstance(camera, string_types):
+        if isinstance(camera, str):
             self.camera = make_camera(camera, parent=self.scene)
         elif isinstance(camera, BaseCamera):
             self.camera = camera
@@ -68,7 +68,7 @@ class ViewBox(Widget):
 
     @property
     def camera(self):
-        """ Get/set the Camera in use by this ViewBox
+        """Get/set the Camera in use by this ViewBox
 
         If a string is given (e.g. 'panzoom', 'turntable', 'fly'). A
         corresponding camera is selected if it already exists in the
@@ -85,7 +85,7 @@ class ViewBox(Widget):
 
     @camera.setter
     def camera(self, cam):
-        if isinstance(cam, string_types):
+        if isinstance(cam, str):
             # Try to select an existing camera
             for child in self.scene.children:
                 if isinstance(child, BaseCamera):
@@ -96,7 +96,7 @@ class ViewBox(Widget):
             else:
                 # No such camera yet, create it then
                 self.camera = make_camera(cam)
-            
+
         elif isinstance(cam, BaseCamera):
             # Ensure that the camera is in the scene
             if not self.is_in_scene(cam):
@@ -109,7 +109,7 @@ class ViewBox(Widget):
                 self._camera._viewbox_set(self)
             # Update view
             cam.view_changed()
-        
+
         else:
             raise ValueError('Not a camera object.')
 
@@ -122,7 +122,7 @@ class ViewBox(Widget):
             The node.
         """
         return self.scene.is_child(node)
-    
+
     def get_scene_bounds(self, dim=None):
         """Get the total bounds based on the visuals present in the scene
 
@@ -150,26 +150,25 @@ class ViewBox(Widget):
                     b = ob.bounds(axis)
                     if b is not None:
                         b = min(b), max(b)  # Ensure correct order
-                        bounds[axis] = (min(bounds[axis][0], b[0]), 
+                        bounds[axis] = (min(bounds[axis][0], b[0]),
                                         max(bounds[axis][1], b[1]))
         # Set defaults
         for axis in (0, 1, 2):
             if any(np.isinf(bounds[axis])):
                 bounds[axis] = -1, 1
-        
+
         if dim is not None:
             return bounds[dim]
         else:
             return bounds
-    
+
     @property
     def scene(self):
-        """ The root node of the scene viewed by this ViewBox.
-        """
+        """The root node of the scene viewed by this ViewBox."""
         return self._scene
 
     def add(self, node):
-        """ Add an Node to the scene for this ViewBox.
+        """Add an Node to the scene for this ViewBox.
 
         This is a convenience method equivalent to
         `node.parent = viewbox.scene`
@@ -193,7 +192,7 @@ class ViewBox(Widget):
             # happens during init
             return
         self._update_scene_clipper()
-        
+
     def _update_scene_clipper(self, event=None):
         tr = self.get_transform('visual', 'framebuffer')
         self._scene._clipper.bounds = tr.map(self.inner_rect)

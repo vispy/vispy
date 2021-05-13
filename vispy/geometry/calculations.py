@@ -2,12 +2,9 @@
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-"""Miscellaneous functions
-"""
+"""Miscellaneous functions"""
 
 import numpy as np
-
-from ..ext.six import string_types
 
 
 ###############################################################################
@@ -106,7 +103,7 @@ def resize(image, shape, kind='linear'):
         raise ValueError('shape must have two elements')
     if image.ndim < 2:
         raise ValueError('image must have two dimensions')
-    if not isinstance(kind, string_types) or kind not in ('nearest', 'linear'):
+    if not isinstance(kind, str) or kind not in ('nearest', 'linear'):
         raise ValueError('mode must be "nearest" or "linear"')
 
     r = np.linspace(0, image.shape[0] - 1, shape[0])

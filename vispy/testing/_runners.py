@@ -65,7 +65,7 @@ def _unit(mode, extra_arg_string='', coverage=False):
 
     if mode == 'nobackend':
         msg = 'Running tests with no backend'
-        extra_args += ['-m', '"not vispy_app_test"']
+        extra_args += ['-m', 'not vispy_app_test']
     else:
         # check to make sure we actually have the backend of interest
         stdout, stderr, invalid = run_subprocess(
@@ -120,8 +120,9 @@ def _unit(mode, extra_arg_string='', coverage=False):
 
 
 def _docs():
-    """test docstring paramters
-    using vispy/utils/tests/test_docstring_parameters.py"""
+    """Test docstring parameters
+    using vispy/utils/tests/test_docstring_parameters.py
+    """
     dev = _get_import_dir()[1]
 
     if not dev:
@@ -248,13 +249,14 @@ if os.getenv('TRAVIS', 'false') == 'true' and sys.platform == 'darwin':
         'examples/demo/gloo/high_frequency.py',
         'examples/basics/scene/shared_context.py',
     ]
-elif os.getenv('TRAVIS', 'false') == 'true' and 'linux' in sys.platform:
+elif 'true' in (os.getenv('TRAVIS', ''),
+                os.getenv('GITHUB_ACTIONS', '')) and 'linux' in sys.platform:
     # example scripts that contain non-ascii text
     # seem to fail on Travis OSX
     bad_examples = [
         'examples/basics/scene/shared_context.py',
     ]
-if os.getenv('TRAVIS', 'false') == 'true':
+if 'true' in (os.getenv('TRAVIS', ''), os.getenv('GITHUB_ACTIONS', '')):
     # OpenGL >2.0 that fail on Travis
     bad_examples += [
         'examples/basics/gloo/geometry_shader.py'
@@ -388,6 +390,10 @@ def test(label='full', extra_arg_string='', coverage=False):
     if label not in known_types + backend_names:
         raise ValueError('label must be one of %s, or a backend name %s, '
                          'not \'%s\'' % (known_types, backend_names, label))
+    # remove troublesome backends
+    # see https://github.com/vispy/vispy/issues/2009
+    backend_names.remove('tkinter')
+
     # figure out what we actually need to run
     runs = []
     if label in ('full', 'unit'):
@@ -404,7 +410,7 @@ def test(label='full', extra_arg_string='', coverage=False):
     if label == "examples":
         # take the extra arguments so that specific examples can be run
         runs.append([partial(_examples, extra_arg_string),
-                    'examples'])
+                     'examples'])
     elif label == 'full':
         # run all the examples
         runs.append([partial(_examples, ""), 'examples'])

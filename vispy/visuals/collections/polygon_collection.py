@@ -5,8 +5,8 @@
 # -----------------------------------------------------------------------------
 """ """
 from . raw_polygon_collection import RawPolygonCollection
-#from . agg_polygon_collection import AggPolygonCollection
-#from . agg_fast_polygon_collection import AggPolygonCollection
+# from . agg_polygon_collection import AggPolygonCollection
+# from . agg_fast_polygon_collection import AggPolygonCollection
 
 
 def PolygonCollection(mode="raw", *args, **kwargs):
@@ -18,7 +18,6 @@ def PolygonCollection(mode="raw", *args, **kwargs):
                  dash)
       - "agg+"  (speed: slow, size: big, output: perfect, no dash)
     """
-
     # if mode == "raw":
     return RawPolygonCollection(*args, **kwargs)
     # elif mode == "agg":

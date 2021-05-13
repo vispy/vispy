@@ -182,7 +182,6 @@ class LinearRegionVisual(Visual):
 
         The *view* argument indicates which view is about to be drawn.
         """
-
         if self._changed['pos']:
             self.pos_buf.set_data(self._pos)
             self._changed['pos'] = False

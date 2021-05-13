@@ -101,7 +101,6 @@ def find_prototypes(code):
     Return a list of signatures for each function prototype declared in *code*.
     Format is [(name, [args], rtype), ...].
     """
-
     prots = []
     lines = code.split('\n')
     for line in lines:
@@ -137,8 +136,5 @@ def find_program_variables(code):
 
 
 def find_template_variables(code):
-    """
-    Return a list of template variables found in *code*.
-
-    """
+    """Return a list of template variables found in *code*."""
     return re.findall(re_template_var, code)

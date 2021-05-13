@@ -35,7 +35,6 @@ from .buffer import VertexBuffer, IndexBuffer, DataBuffer
 from .texture import BaseTexture, Texture2D, Texture3D, Texture1D, TextureCube
 from ..util import logger
 from .util import check_enum
-from ..ext.six import string_types
 from .context import get_current_canvas
 from .preprocessor import preprocess
 
@@ -72,7 +71,7 @@ class GeometryShader(Shader):
 
 # ----------------------------------------------------------- Program class ---
 class Program(GLObject):
-    """ Shader program object
+    """Shader program object
 
     A Program is an object to which shaders can be attached and linked to
     create the final program.
@@ -101,25 +100,25 @@ class Program(GLObject):
     _GLIR_TYPE = 'Program'
 
     _gtypes = {  # DTYPE, NUMEL
-        'float':        (np.float32, 1),
-        'vec2':         (np.float32, 2),
-        'vec3':         (np.float32, 3),
-        'vec4':         (np.float32, 4),
-        'int':          (np.int32,   1),
-        'ivec2':        (np.int32,   2),
-        'ivec3':        (np.int32,   3),
-        'ivec4':        (np.int32,   4),
-        'bool':         (np.int32,   1),
-        'bvec2':        (np.bool,    2),
-        'bvec3':        (np.bool,    3),
-        'bvec4':        (np.bool,    4),
-        'mat2':         (np.float32, 4),
-        'mat3':         (np.float32, 9),
-        'mat4':         (np.float32, 16),
-        'sampler1D':    (np.uint32, 1),
-        'sampler2D':    (np.uint32, 1),
-        'sampler3D':    (np.uint32, 1),
-        'samplerCube':  (np.uint32, 1),
+        'float': (np.float32, 1),
+        'vec2': (np.float32, 2),
+        'vec3': (np.float32, 3),
+        'vec4': (np.float32, 4),
+        'int': (np.int32, 1),
+        'ivec2': (np.int32, 2),
+        'ivec3': (np.int32, 3),
+        'ivec4': (np.int32, 4),
+        'bool': (np.int32, 1),
+        'bvec2': (bool, 2),
+        'bvec3': (bool, 3),
+        'bvec4': (bool, 4),
+        'mat2': (np.float32, 4),
+        'mat3': (np.float32, 9), 
+        'mat4': (np.float32, 16),
+        'sampler1D': (np.uint32, 1),
+        'sampler2D': (np.uint32, 1),
+        'sampler3D': (np.uint32, 1),
+        'samplerCube': (np.uint32, 1),
     }
 
     # ---------------------------------
@@ -141,7 +140,7 @@ class Program(GLObject):
         # unncessary
 
         # Check and set shaders
-        if isinstance(vert, string_types) and isinstance(frag, string_types):
+        if isinstance(vert, str) and isinstance(frag, str):
             self.set_shaders(vert, frag)
         elif not (vert is None and frag is None):
             raise ValueError('Vert and frag must either both be str or None')
@@ -163,7 +162,7 @@ class Program(GLObject):
             self.bind(VertexBuffer(self._buffer))
 
     def set_shaders(self, vert, frag, geom=None, update_variables=True):
-        """ Set the vertex and fragment shaders.
+        """Set the vertex and fragment shaders.
 
         Parameters
         ----------
@@ -210,13 +209,12 @@ class Program(GLObject):
 
     @property
     def shaders(self):
-        """ All currently attached shaders
-        """
+        """All currently attached shaders"""
         return self._shaders
 
     @property
     def variables(self):
-        """ A list of the variables in use by the current program
+        """A list of the variables in use by the current program
 
         The list is obtained by parsing the GLSL source code.
 
@@ -232,9 +230,7 @@ class Program(GLObject):
         return [x[:3] for x in self._code_variables.values()]
 
     def _parse_variables_from_code(self, update_variables=True):
-        """ Parse uniforms, attributes and varyings from the source code.
-        """
-
+        """Parse uniforms, attributes and varyings from the source code."""
         # Get one string of code with comments removed
         code = '\n\n'.join([sh.code for sh in self._shaders])
         code = re.sub(r'(.*)(//.*)', r'\1', code, re.M)
@@ -280,7 +276,7 @@ class Program(GLObject):
             self._process_pending_variables()
 
     def bind(self, data):
-        """ Bind a VertexBuffer that has structured data
+        """Bind a VertexBuffer that has structured data
 
         Parameters
         ----------
@@ -296,8 +292,7 @@ class Program(GLObject):
             self[name] = data[name]
 
     def _process_pending_variables(self):
-        """ Try to apply the variables that were set but not known yet.
-        """
+        """Try to apply the variables that were set but not known yet."""
         # Clear our list of pending variables
         self._pending_variables, pending = {}, self._pending_variables
         # Try to apply it. On failure, it will be added again
@@ -305,7 +300,7 @@ class Program(GLObject):
             self[name] = data
 
     def __setitem__(self, name, data):
-        """ Setting uniform or attribute data
+        """Setting uniform or attribute data
 
         This method requires the information about the variable that we
         know from parsing the source code. If this information is not
@@ -328,7 +323,6 @@ class Program(GLObject):
         are no longer present or active in the new source code that is
         about to be set.
         """
-
         # Deal with local buffer storage (see count argument in __init__)
         if (self._buffer is not None) and not isinstance(data, DataBuffer):
             if name in self._buffer.dtype.names:
@@ -454,8 +448,7 @@ class Program(GLObject):
         return key in self._code_variables
 
     def __getitem__(self, name):
-        """ Get user-defined data for attributes and uniforms.
-        """
+        """Get user-defined data for attributes and uniforms."""
         if name in self._user_variables:
             return self._user_variables[name]
         elif name in self._pending_variables:
@@ -464,7 +457,7 @@ class Program(GLObject):
             raise KeyError("Unknown uniform or attribute %s" % name)
 
     def draw(self, mode='triangles', indices=None, check_error=True):
-        """ Draw the attribute arrays in the specified mode.
+        """Draw the attribute arrays in the specified mode.
 
         Parameters
         ----------
@@ -476,9 +469,7 @@ class Program(GLObject):
             Array of indices to draw.
         check_error:
             Check error after draw.
-
         """
-
         # Invalidate buffer (data has already been sent)
         self._buffer = None
 

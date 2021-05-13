@@ -8,7 +8,6 @@ import numpy as np
 from copy import deepcopy
 
 from . import gl
-from ..ext.six import string_types
 from ..color import Color
 from ..util import logger
 
@@ -49,7 +48,7 @@ _gl_presets = {
 
 
 def get_current_canvas():
-    """ Proxy for context.get_current_canvas to avoud circular import.
+    """Proxy for context.get_current_canvas to avoud circular import.
     This function replaces itself with the real function the first
     time it is called. (Bah)
     """
@@ -78,13 +77,13 @@ def _check_conversion(key, valid_dict):
     """Check for existence of key in dict, return value or raise error"""
     if key not in valid_dict and key not in valid_dict.values():
         # Only show users the nice string values
-        keys = [v for v in valid_dict.keys() if isinstance(v, string_types)]
+        keys = [v for v in valid_dict.keys() if isinstance(v, str)]
         raise ValueError('value must be one of %s, not %s' % (keys, key))
     return valid_dict[key] if key in valid_dict else key
 
 
 class BaseGlooFunctions(object):
-    """ Class that provides a series of GL functions that do not fit
+    """Class that provides a series of GL functions that do not fit
     in the object oriented part of gloo. An instance of this class is
     associated with each canvas.
     """
@@ -517,7 +516,7 @@ class BaseGlooFunctions(object):
                 args = _to_args(val)
                 # these actually need tuples
                 if key in ('blend_color', 'clear_color') and \
-                        not isinstance(args[0], string_types):
+                        not isinstance(args[0], str):
                     args = [args]
                 getattr(self, 'set_' + key)(*args)
             else:
@@ -567,7 +566,7 @@ class BaseGlooFunctions(object):
         mode : str
             The mode to set (e.g., 'fastest', 'nicest', 'dont_care').
         """
-        if not all(isinstance(tm, string_types) for tm in (target, mode)):
+        if not all(isinstance(tm, str) for tm in (target, mode)):
             raise TypeError('target and mode must both be strings')
         self.glir.command('FUNC', 'glHint', target, mode)
 
@@ -576,8 +575,7 @@ class GlooFunctions(BaseGlooFunctions):
 
     @property
     def glir(self):
-        """ The GLIR queue corresponding to the current canvas
-        """
+        """The GLIR queue corresponding to the current canvas"""
         canvas = get_current_canvas()
         if canvas is None:
             msg = ("If you want to use gloo without vispy.app, " +
@@ -586,7 +584,7 @@ class GlooFunctions(BaseGlooFunctions):
         return canvas.context.glir
 
 
-## Create global functions object and inject names here
+# Create global functions object and inject names here
 
 # GlooFunctions without queue: use queue of canvas that is current at call-time
 global_gloo_functions = GlooFunctions()
@@ -599,7 +597,7 @@ for name in dir(global_gloo_functions):
         globals()[name] = fun
 
 
-## Functions that do not use the glir queue
+# Functions that do not use the glir queue
 
 
 def read_pixels(viewport=None, alpha=True, mode='color', out_type='unsigned_byte'):

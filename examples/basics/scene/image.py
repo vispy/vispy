@@ -37,8 +37,7 @@ view.camera.zoom(0.1, (250, 200))
 
 # get interpolation functions from Image
 names = image.interpolation_functions
-names = list(names)
-names.sort()
+names = sorted(names)
 act = 17
 
 

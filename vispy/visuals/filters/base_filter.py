@@ -6,8 +6,8 @@ from ..shaders import Function
 
 
 class BaseFilter(object):
-    """Superclass for all filters.
-    """
+    """Superclass for all filters."""
+
     def _attach(self, visual):
         """Called when a filter should be attached to a visual.
 
@@ -56,6 +56,7 @@ class Filter(BaseFilter):
     fshader : Function | None
         Fragment shader.
     """
+
     def __init__(self, vcode=None, vhook='post', vpos=5,
                  fcode=None, fhook='post', fpos=5):
         super(Filter, self).__init__()

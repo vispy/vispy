@@ -65,9 +65,9 @@ box1 = scene.visuals.Line(pos=box, color=(0.7, 0, 0, 1), method='gl',
 box2 = scene.visuals.Line(pos=box, color=(0.7, 0, 0, 1), method='gl',
                           name='unit box', parent=vb2.scene)
 
-box2 = scene.visuals.Line(pos=(box * 2 - 1),  color=(0, 0.7, 0, 1),
+box2 = scene.visuals.Line(pos=(box * 2 - 1), color=(0, 0.7, 0, 1),
                           method='gl', name='nd box', parent=vb1.scene)
-box3 = scene.visuals.Line(pos=(box * 2 - 1),  color=(0, 0.7, 0, 1),
+box3 = scene.visuals.Line(pos=(box * 2 - 1), color=(0, 0.7, 0, 1),
                           method='gl', name='nd box', parent=vb2.scene)
 
 # These boxes are only added to the 3D view.

@@ -53,7 +53,7 @@ def test_color_array():
 
     # test hsv color space colors
     x = ColorArray(color_space="hsv", color=[(0, 0, 1),
-                   (0, 0, 0.5), (0, 0, 0)])
+                                             (0, 0, 0.5), (0, 0, 0)])
     assert_array_equal(x.rgba[0], [1, 1, 1, 1])
     assert_array_equal(x.rgba[1], [0.5, 0.5, 0.5, 1])
     assert_array_equal(x.rgba[2], [0, 0, 0, 1])

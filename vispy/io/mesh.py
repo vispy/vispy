@@ -2,8 +2,7 @@
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-""" Reading and writing of data like images and meshes.
-"""
+"""Reading and writing of data like images and meshes."""
 
 import os
 from os import path as op
@@ -67,7 +66,7 @@ def read_mesh(fname):
 
 def write_mesh(fname, vertices, faces, normals, texcoords, name='',
                format=None, overwrite=False, reshape_faces=True):
-    """ Write mesh data to file.
+    """Write mesh data to file.
 
     Parameters
     ----------

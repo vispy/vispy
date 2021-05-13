@@ -10,8 +10,19 @@ from ...visuals.transforms import (STTransform, MatrixTransform,
                                    NullTransform, TransformCache)
 
 
+def nested_getattr(obj, names):
+    for name in names:
+        obj = getattr(obj, name)
+    return obj
+
+
+def nested_setattr(obj, names, val):
+    target = nested_getattr(obj, names[:-1])
+    setattr(target, names[-1], val)
+
+
 class BaseCamera(Node):
-    """ Base camera class.
+    """Base camera class.
 
     The Camera describes the perspective from which a ViewBox views its
     subscene, and the way that user interaction affects that perspective.
@@ -49,7 +60,7 @@ class BaseCamera(Node):
         self._viewbox = None
 
         # Linked cameras
-        self._linked_cameras = []
+        self._linked_cameras = {}
         self._linked_cameras_no_update = None
 
         # Variables related to transforms
@@ -110,14 +121,12 @@ class BaseCamera(Node):
         self.view_changed()
 
     def _depth_to_z(self, depth):
-        """ Get the z-coord, given the depth value.
-        """
+        """Get the z-coord, given the depth value."""
         val = self.depth_value
         return val - depth * 2 * val
 
     def _viewbox_set(self, viewbox):
-        """ Friend method of viewbox to register itself.
-        """
+        """Friend method of viewbox to register itself."""
         self._viewbox = viewbox
         # Connect
         viewbox.events.mouse_press.connect(self.viewbox_mouse_event)
@@ -128,8 +137,7 @@ class BaseCamera(Node):
         # todo: also add key events! (and also on viewbox (they're missing)
 
     def _viewbox_unset(self, viewbox):
-        """ Friend method of viewbox to unregister itself.
-        """
+        """Friend method of viewbox to unregister itself."""
         self._viewbox = None
         # Disconnect
         viewbox.events.mouse_press.disconnect(self.viewbox_mouse_event)
@@ -140,15 +148,14 @@ class BaseCamera(Node):
 
     @property
     def viewbox(self):
-        """ The viewbox that this camera applies to.
-        """
+        """The viewbox that this camera applies to."""
         return self._viewbox
 
-    ## Camera attributes
+    # Camera attributes
 
     @property
     def interactive(self):
-        """ Boolean describing whether the camera should enable or disable
+        """Boolean describing whether the camera should enable or disable
         user interaction.
         """
         return self._interactive
@@ -176,8 +183,7 @@ class BaseCamera(Node):
 
     @property
     def up(self):
-        """ The dimension that is considered up.
-        """
+        """The dimension that is considered up."""
         return self._up
 
     @up.setter
@@ -191,7 +197,7 @@ class BaseCamera(Node):
 
     @property
     def center(self):
-        """ The center location for this camera
+        """The center location for this camera
 
         The exact meaning of this value differs per type of camera, but
         generally means the point of interest or the rotation point.
@@ -210,7 +216,7 @@ class BaseCamera(Node):
 
     @property
     def fov(self):
-        """ Field-of-view angle of the camera. If 0, the camera is in
+        """Field-of-view angle of the camera. If 0, the camera is in
         orthographic mode.
         """
         return self._fov
@@ -223,10 +229,10 @@ class BaseCamera(Node):
         self._fov = fov
         self.view_changed()
 
-    ## Camera methods
+    # Camera methods
 
     def set_range(self, x=None, y=None, z=None, margin=0.05):
-        """ Set the range of the view region for the camera
+        """Set the range of the view region for the camera
 
         Parameters
         ----------
@@ -275,7 +281,7 @@ class BaseCamera(Node):
             for i in range(3):
                 if bounds[i] is None:
                     bounds[i] = self._viewbox.get_scene_bounds(i)
-        
+
         # Calculate ranges and margins
         ranges = [b[1] - b[0] for b in bounds]
         margins = [(r*margin or 0.1) for r in ranges]
@@ -297,30 +303,41 @@ class BaseCamera(Node):
         pass
 
     def reset(self):
-        """ Reset the view to the default state.
-        """
+        """Reset the view to the default state."""
         self.set_state(self._default_state)
 
     def set_default_state(self):
-        """ Set the current state to be the default state to be applied
+        """Set the current state to be the default state to be applied
         when calling reset().
         """
         self._default_state = self.get_state()
 
-    def get_state(self):
-        """ Get the current view state of the camera
+    def get_state(self, props=None):
+        """Get the current view state of the camera
 
         Returns a dict of key-value pairs. The exact keys depend on the
         camera. Can be passed to set_state() (of this or another camera
         of the same type) to reproduce the state.
+
+        Parameters
+        ----------
+        props : list of strings | None
+            List of properties to include in the returned dict. If None,
+            all of camera state is returned.
         """
-        D = {}
-        for key in self._state_props:
-            D[key] = getattr(self, key)
-        return D
+        if props is None:
+            props = self._state_props
+        state = {}
+        for key in props:
+            # We support tuple keys to accomodate camera linking.
+            if isinstance(key, tuple):
+                state[key] = nested_getattr(self, key)
+            else:
+                state[key] = getattr(self, key)
+        return state
 
     def set_state(self, state=None, **kwargs):
-        """ Set the view state of the camera
+        """Set the view state of the camera
 
         Should be a dict (or kwargs) as returned by get_state. It can
         be an incomlete dict, in which case only the specified
@@ -333,15 +350,38 @@ class BaseCamera(Node):
         **kwargs : dict
             Unused keyword arguments.
         """
-        D = state or {}
-        D.update(kwargs)
-        for key, val in D.items():
+        state = state or {}
+        state.update(kwargs)
+
+        # In first pass, process tuple keys which select subproperties. This
+        # is an undocumented feature used for selective linking of camera state.
+        #
+        # Subproperties are handled by first copying old value of the root
+        # property, then setting the subproperty on this copy, and finally
+        # assigning the copied object back to the camera property. There needs
+        # to be an assignment of the root property so setters are called and
+        # update is triggered.
+        for key in list(state.keys()):
+            if isinstance(key, tuple):
+                key1 = key[0]
+                if key1 not in state:
+                    root_prop = getattr(self, key1)
+                    # We make copies by passing the old object to the type's
+                    # constructor. This needs to be supported as is the case in
+                    # e.g. the geometry.Rect class.
+                    state[key1] = root_prop.__class__(root_prop)
+                nested_setattr(state[key1], key[1:], state[key])
+
+        # In second pass, assign the new root properties.
+        for key, val in state.items():
+            if isinstance(key, tuple):
+                continue
             if key not in self._state_props:
                 raise KeyError('Not a valid camera state property %r' % key)
             setattr(self, key, val)
 
-    def link(self, camera):
-        """ Link this camera with another camera of the same type
+    def link(self, camera, props=None, axis=None):
+        """Link this camera with another camera of the same type
 
         Linked camera's keep each-others' state in sync.
 
@@ -349,21 +389,38 @@ class BaseCamera(Node):
         ----------
         camera : instance of Camera
             The other camera to link.
+        props : list of strings | tuple of strings | None
+            List of camera state properties to keep in sync between
+            the two cameras. If None, all of camera state is kept in sync.
+        axis : "x" | "y" | None
+            An axis to link between two PanZoomCamera instances. If not None,
+            view limits in the selected axis only will be kept in sync between
+            the cameras.
         """
-        cam1, cam2 = self, camera
-        # Remove if already linked
-        while cam1 in cam2._linked_cameras:
-            cam2._linked_cameras.remove(cam1)
-        while cam2 in cam1._linked_cameras:
-            cam1._linked_cameras.remove(cam2)
-        # Link both ways
-        cam1._linked_cameras.append(cam2)
-        cam2._linked_cameras.append(cam1)
+        if axis is not None:
+            props = props or []
+            if axis == "x":
+                props += [("rect", "left"), ("rect", "right")]
+            elif axis == "y":
+                props += [("rect", "bottom"), ("rect", "top")]
+            else:
+                raise ValueError("Axis can be 'x' or 'y', not %r" % axis)
+        if props is None:
+            props = self._state_props
 
-    ## Event-related methods
+        cam1, cam2 = self, camera
+        while cam1 in cam2._linked_cameras:
+            del cam2._linked_cameras[cam1]
+        while cam2 in cam1._linked_cameras:
+            del cam1._linked_cameras[cam2]
+        # Link both ways
+        cam1._linked_cameras[cam2] = props
+        cam2._linked_cameras[cam1] = props
+
+    # Event-related methods
 
     def view_changed(self):
-        """ Called when this camera is changes its view. Also called
+        """Called when this camera is changes its view. Also called
         when its associated with a viewbox.
         """
         if self._resetting:
@@ -381,7 +438,7 @@ class BaseCamera(Node):
 
     @property
     def pre_transform(self):
-        """ A transform to apply to the beginning of the scene transform, in
+        """A transform to apply to the beginning of the scene transform, in
         addition to anything else provided by this Camera.
         """
         return self._pre_transform
@@ -419,7 +476,7 @@ class BaseCamera(Node):
             event.new.events.key_release.connect(self.viewbox_key_event)
 
     def viewbox_key_event(self, event):
-        """ViewBox key event handler
+        """The ViewBox key event handler
 
         Parameters
         ----------
@@ -440,14 +497,13 @@ class BaseCamera(Node):
         pass
 
     def _update_transform(self):
-        """ Subclasses should reimplement this method to update the scene
+        """Subclasses should reimplement this method to update the scene
         transform by calling self._set_scene_transform.
         """
         self._set_scene_transform(self.transform)
 
     def _set_scene_transform(self, tr):
-        """ Called by subclasses to configure the viewbox scene transform.
-        """
+        """Called by subclasses to configure the viewbox scene transform."""
         # todo: check whether transform has changed, connect to
         # transform.changed event
         pre_tr = self.pre_transform
@@ -460,7 +516,7 @@ class BaseCamera(Node):
         # Mark the transform dynamic so that it will not be collapsed with
         # others 
         self._scene_transform.dynamic = True
-        
+
         # Update scene
         self._viewbox.scene.transform = self._scene_transform
         self._viewbox.update()
@@ -472,6 +528,7 @@ class BaseCamera(Node):
                 continue
             try:
                 cam._linked_cameras_no_update = self
-                cam.set_state(self.get_state())
+                linked_props = self._linked_cameras[cam]
+                cam.set_state(self.get_state(linked_props))
             finally:
                 cam._linked_cameras_no_update = None

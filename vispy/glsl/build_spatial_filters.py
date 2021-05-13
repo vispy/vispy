@@ -29,7 +29,7 @@
 # those of the authors and should not be interpreted as representing official
 # policies, either expressed or implied, of Nicolas P. Rougier.
 # -----------------------------------------------------------------------------
-'''
+"""
 A filter is a shader that transform the current displayed texture. Since
 shaders cannot be easily serialized within the GPU, they have to be well
 structured on the python side such that we can possibly merge them into a
@@ -71,7 +71,7 @@ Note::
 
   Weights code has been translated from the antigrain geometry library
   available at http://www.antigrain.com/
-'''
+"""
 
 
 import math
@@ -85,13 +85,13 @@ class SpatialFilter(object):
         self.radius = radius
 
     def weight(self, x):
-        '''
+        """
         Return filter weight for a distance x.
 
         :Parameters:
             ``x`` : 0 < float < ceil(self.radius)
                 Distance to be used to compute weight.
-        '''
+        """
         raise NotImplementedError
 
     def kernel(self, size=4*512):
@@ -181,14 +181,13 @@ class SpatialFilter(object):
 
 
 class Nearest(SpatialFilter):
-    '''
+    """
     Nearest (=None) filter (radius = 0.5).
 
     Weight function::
 
       w(x) = 1
-
-    '''
+    """
 
     def __init__(self):
         SpatialFilter.__init__(self, radius=.5)
@@ -206,14 +205,14 @@ class Nearest(SpatialFilter):
 
 
 class Bilinear(SpatialFilter):
-    '''
+    """
     Bilinear filter (radius = 1.0).
 
     Weight function::
 
       w(x) = 1 - x
 
-    '''
+    """
 
     def __init__(self):
         SpatialFilter.__init__(self, radius=1.0)
@@ -223,14 +222,14 @@ class Bilinear(SpatialFilter):
 
 
 class Hanning(SpatialFilter):
-    '''
+    """
     Hanning filter (radius = 1.0).
 
     Weight function::
 
       w(x) = 0.5 + 0.5 * cos(pi * x)
 
-    '''
+    """
 
     def __init__(self):
         SpatialFilter.__init__(self, radius=1.0)
@@ -240,14 +239,14 @@ class Hanning(SpatialFilter):
 
 
 class Hamming(SpatialFilter):
-    '''
+    """
     Hamming filter (radius = 1.0).
 
     Weight function::
 
       w(x) = 0.54 + 0.46 * cos(pi * x)
 
-    '''
+    """
 
     def __init__(self):
         SpatialFilter.__init__(self, radius=1.0)
@@ -257,13 +256,13 @@ class Hamming(SpatialFilter):
 
 
 class Hermite(SpatialFilter):
-    ''' Hermite filter (radius = 1.0).
+    """Hermite filter (radius = 1.0).
 
     Weight function::
 
       w(x) = (2*x-3)*x^2 + 1
 
-    '''
+    """
 
     def __init__(self):
         SpatialFilter.__init__(self, radius=1.0)
@@ -273,7 +272,7 @@ class Hermite(SpatialFilter):
 
 
 class Quadric(SpatialFilter):
-    '''
+    """
     Quadric filter (radius = 1.5).
 
     Weight function::
@@ -282,7 +281,7 @@ class Quadric(SpatialFilter):
       w(x) = |  0.5 ≤ x < 1.5: 0.5 - (x-1.5)^2
              |  1.5 ≤ x      : 0
 
-    '''
+    """
 
     def __init__(self):
         SpatialFilter.__init__(self, radius=1.5)
@@ -298,13 +297,13 @@ class Quadric(SpatialFilter):
 
 
 class Bicubic(SpatialFilter):
-    '''
+    """
     Bicubic filter (radius = 2.0).
 
     Weight function::
 
       w(x) = 1/6((x+2)^3 - 4*(x+1)^3 + 6*x^3 -4*(x-1)^3)
-    '''
+    """
 
     def __init__(self):
         SpatialFilter.__init__(self, radius=2.0)
@@ -323,7 +322,7 @@ class Bicubic(SpatialFilter):
 
 
 class Kaiser(SpatialFilter):
-    '''
+    """
     Kaiser filter (radius = 1.0).
 
 
@@ -331,7 +330,7 @@ class Kaiser(SpatialFilter):
 
       w(x) = bessel_i0(a sqrt(1-x^2)* 1/bessel_i0(b)
 
-    '''
+    """
 
     def __init__(self, b=6.33):
         self.a = b
@@ -357,7 +356,7 @@ class Kaiser(SpatialFilter):
 
 
 class CatRom(SpatialFilter):
-    '''
+    """
     Catmull-Rom filter (radius = 2.0).
 
     Weight function::
@@ -366,7 +365,7 @@ class CatRom(SpatialFilter):
       w(x) = |  1 ≤ x < 2: 0.5*(4 + x*(-8+x*(5-x)))
              |  2 ≤ x    : 0
 
-    '''
+    """
 
     def __init__(self, size=256*8):
         SpatialFilter.__init__(self, radius=2.0)
@@ -381,7 +380,7 @@ class CatRom(SpatialFilter):
 
 
 class Mitchell(SpatialFilter):
-    '''
+    """
     Mitchell-Netravali filter (radius = 2.0).
 
     Weight function::
@@ -390,7 +389,7 @@ class Mitchell(SpatialFilter):
       w(x) = |  1 ≤ x < 2: q0 + x*(q1 + x*(q2 + x*q3))
              |  2 ≤ x    : 0
 
-    '''
+    """
 
     def __init__(self, b=1.0/3.0, c=1.0/3.0):
         self.p0 = (6.0 - 2.0 * b) / 6.0
@@ -412,7 +411,7 @@ class Mitchell(SpatialFilter):
 
 
 class Spline16(SpatialFilter):
-    '''
+    """
     Spline16 filter (radius = 2.0).
 
     Weight function::
@@ -421,7 +420,7 @@ class Spline16(SpatialFilter):
       w(x) = |
              |  1 ≤ x < 2: ((-1/3*(x-1) + 4/5)*(x-1) - 7/15 )*(x-1)
 
-    '''
+    """
 
     def __init__(self):
         SpatialFilter.__init__(self, radius=2.0)
@@ -434,7 +433,7 @@ class Spline16(SpatialFilter):
 
 
 class Spline36(SpatialFilter):
-    '''
+    """
     Spline36 filter (radius = 3.0).
 
     Weight function::
@@ -442,7 +441,7 @@ class Spline36(SpatialFilter):
              |  0 ≤ x < 1: ((13/11*x - 453/209)*x -3/209)*x +1
       w(x) = |  1 ≤ x < 2: ((-6/11*(x-1) - 270/209)*(x-1) -156/209)*(x-1)
              |  2 ≤ x < 3: (( 1/11*(x-2) - 45/209)*(x-2) + 26/209)*(x-2)
-    '''
+    """
 
     def __init__(self):
         SpatialFilter.__init__(self, radius=3.0)
@@ -457,7 +456,7 @@ class Spline36(SpatialFilter):
 
 
 class Gaussian(SpatialFilter):
-    '''
+    """
     Gaussian filter (radius = 2.0).
 
     Weight function::
@@ -474,7 +473,8 @@ class Gaussian(SpatialFilter):
 
         z should be 1 everywhere but it is not the case and it produces "grid
         effects".
-    '''
+    """
+
     def __init__(self):
         SpatialFilter.__init__(self, radius=2.0)
 
@@ -483,15 +483,13 @@ class Gaussian(SpatialFilter):
 
 
 class Bessel(SpatialFilter):
-    '''
-    Bessel filter (radius = 3.2383).
-    '''
+    """Bessel filter (radius = 3.2383)."""
 
     def __init__(self):
         SpatialFilter.__init__(self, radius=3.2383)
 
     def besj(self, x, n):
-        '''
+        """
         Function BESJ calculates Bessel function of first kind of order n
         Arguments:
             x - value at which the Bessel function is required
@@ -516,7 +514,7 @@ class Bessel(SpatialFilter):
         Adapted for use in vispy library by
                     Nicolas P. Rougier (Nicolas.Rougier@inria.fr)
         -----------------------------------------------------------------------
-        '''
+        """
         if n < 0:
             return 0.0
         x = float(x)  # force float type
@@ -576,13 +574,13 @@ class Bessel(SpatialFilter):
 
 
 class Sinc(SpatialFilter):
-    '''
+    """
     Sinc filter (radius = 4.0).
 
     Weight function::
 
 
-    '''
+    """
 
     def __init__(self, size=256, radius=4.0):
         SpatialFilter.__init__(self, radius=max(radius, 2.0))
@@ -595,13 +593,13 @@ class Sinc(SpatialFilter):
 
 
 class Lanczos(SpatialFilter):
-    '''
+    """
     Lanczos filter (radius = 4.0).
 
     Weight function::
 
 
-    '''
+    """
 
     def __init__(self, size=256, radius=4.0):
         SpatialFilter.__init__(self, radius=max(radius, 2.0))
@@ -617,9 +615,7 @@ class Lanczos(SpatialFilter):
 
 
 class Blackman(SpatialFilter):
-    '''
-    Blackman filter (radius = 4.0).
-    '''
+    """Blackman filter (radius = 4.0)."""
 
     def __init__(self, size=256, radius=4.0):
         SpatialFilter.__init__(self, radius=max(radius, 2.0))
@@ -634,85 +630,90 @@ class Blackman(SpatialFilter):
         return (math.sin(x) / x) * (0.42 + 0.5*math.cos(xr) + 0.08*math.cos(2*xr))  # noqa
 
 
-# Generate kernels texture (16 x 1024)
-filters = [Bilinear(), Hanning(),  Hamming(),  Hermite(),
-           Kaiser(),   Quadric(),  Bicubic(),  CatRom(),
-           Mitchell(), Spline16(), Spline36(), Gaussian(),
-           Bessel(),   Sinc(),     Lanczos(),  Blackman()]
+def main():
+    # Generate kernels texture (16 x 1024)
+    filters = [Bilinear(), Hanning(), Hamming(), Hermite(), Kaiser(), Quadric(), 
+               Bicubic(), CatRom(), Mitchell(), Spline16(), Spline36(), Gaussian(), 
+               Bessel(), Sinc(), Lanczos(), Blackman()]
 
-n = 1024
-K = np.zeros((16, n))
-for i, f in enumerate(filters):
-    K[i] = f.kernel(n)
+    n = 1024
+    K = np.zeros((16, n))
+    for i, f in enumerate(filters):
+        K[i] = f.kernel(n)
 
-bias = K.min()
-scale = K.max()-K.min()
-K = (K-bias)/scale
-np.save("spatial-filters.npy", K.astype(np.float32))
+    bias = K.min()
+    scale = K.max()-K.min()
+    K = (K-bias)/scale
+    np.save("spatial-filters.npy", K.astype(np.float32))
 
-print("// ------------------------------------")
-print("// Automatically generated, do not edit")
-print("// ------------------------------------")
-print("")
-print("const float kernel_bias  = %f;" % bias)
-print("const float kernel_scale = %f;" % scale)
-print("const float kernel_size = %f;" % n)
-print("const vec4 bits = vec4(1.0, 1.0/256.0, 1.0/(256.0*256.0), 1.0/(256.0*256.0*256.0));")  # noqa
-print("uniform sampler2D u_kernel;")
-print("")
+    print("// ------------------------------------")
+    print("// Automatically generated, do not edit")
+    print("// ------------------------------------")
+    print("")
+    print("const float kernel_bias  = %f;" % bias)
+    print("const float kernel_scale = %f;" % scale)
+    print("const float kernel_size = %f;" % n)
+    print("const vec4 bits = vec4(1.0, 1.0/256.0, 1.0/(256.0*256.0), 1.0/(256.0*256.0*256.0));")  # noqa
+    print("uniform sampler2D u_kernel;")
+    print("")
 
-code = 'float\n'
-code += 'unpack_unit(vec4 rgba)\n'
-code += '{\n'
-code += '\t// return rgba.r;  // uncomment this for r32f debugging\n'
-code += '\treturn dot(rgba, bits);\n'
-code += '}\n'
-print(code.expandtabs(4))
+    code = 'float\n'
+    code += 'unpack_unit(vec4 rgba)\n'
+    code += '{\n'
+    code += '\t// return rgba.r;  // uncomment this for r32f debugging\n'
+    code += '\treturn dot(rgba, bits);\n'
+    code += '}\n'
+    print(code.expandtabs(4))
 
-code = 'float\n'
-code += 'unpack_ieee(vec4 rgba)\n'
-code += '{\n'
-code += '\t// return rgba.r;  // uncomment this for r32f debugging\n'
-code += '\trgba.rgba = rgba.abgr * 255.;\n'
-code += '\tfloat sign = 1.0 - step(128.0,rgba[0])*2.0;\n'
-code += '\tfloat exponent = 2.0 * mod(rgba[0],128.0) + ' \
-        'step(128.0,rgba[1]) - 127.0;\n'
-code += '\tfloat mantissa = mod(rgba[1],128.0)*65536.0 + rgba[2]*256.0 + ' \
-        'rgba[3] + float(0x800000);\n'
-code += '\treturn sign * exp2(exponent) * (mantissa * exp2(-23.));\n'
-code += '}\n'
-print(code.expandtabs(4))
+    code = 'float\n'
+    code += 'unpack_ieee(vec4 rgba)\n'
+    code += '{\n'
+    code += '\t// return rgba.r;  // uncomment this for r32f debugging\n'
+    code += '\trgba.rgba = rgba.abgr * 255.;\n'
+    code += '\tfloat sign = 1.0 - step(128.0,rgba[0])*2.0;\n'
+    code += '\tfloat exponent = 2.0 * mod(rgba[0],128.0) + ' \
+            'step(128.0,rgba[1]) - 127.0;\n'
+    code += '\tfloat mantissa = mod(rgba[1],128.0)*65536.0 + rgba[2]*256.0 + ' \
+            'rgba[3] + float(0x800000);\n'
+    code += '\treturn sign * exp2(exponent) * (mantissa * exp2(-23.));\n'
+    code += '}\n'
+    print(code.expandtabs(4))
 
-code = 'float\n'
-code += 'unpack_interpolate(sampler2D kernel, vec2 uv)\n'
-code += '{\n'
-code += '\t// return texture2D(kernel, uv).r; ' \
-        '//uncomment this for r32f debug without interpolation\n'
-code += '\tfloat kpixel = 1. / kernel_size;\n'
-code += '\tfloat u = uv.x / kpixel;\n'
-code += '\tfloat v = uv.y;\n'
-code += '\tfloat uf = fract(u);\n'
-code += '\tu = (u - uf) * kpixel;\n'
-code += '\n'
-code += '\tfloat d0 = unpack_unit(texture2D(kernel, vec2(u, v)));\n'
-code += '\tfloat d1 = unpack_unit(texture2D(kernel, vec2(u + 1. * kpixel, v)));\n'  # noqa
-code += '\treturn mix(d0, d1, uf);\n'
-code += '}\n'
-print(code.expandtabs(4))
+    code = 'float\n'
+    code += 'unpack_interpolate(sampler2D kernel, vec2 uv)\n'
+    code += '{\n'
+    code += '\t// return texture2D(kernel, uv).r; ' \
+            '//uncomment this for r32f debug without interpolation\n'
+    code += '\tfloat kpixel = 1. / kernel_size;\n'
+    code += '\tfloat u = uv.x / kpixel;\n'
+    code += '\tfloat v = uv.y;\n'
+    code += '\tfloat uf = fract(u);\n'
+    code += '\tu = (u - uf) * kpixel;\n'
+    code += '\n'
+    code += '\tfloat d0 = unpack_unit(texture2D(kernel, vec2(u, v)));\n'
+    code += '\tfloat d1 = unpack_unit(texture2D(kernel, vec2(u + 1. * kpixel, v)));\n'  # noqa
+    code += '\treturn mix(d0, d1, uf);\n'
+    code += '}\n'
+    print(code.expandtabs(4))
 
-F = SpatialFilter(1.0)
-print(F.filter_code())
-F = SpatialFilter(2.0)
-print(F.filter_code())
-F = SpatialFilter(3.0)
-print(F.filter_code())
-F = SpatialFilter(4.0)
-print(F.filter_code())
+    F = SpatialFilter(1.0)
+    print(F.filter_code())
+    F = SpatialFilter(2.0)
+    print(F.filter_code())
+    F = SpatialFilter(3.0)
+    print(F.filter_code())
+    F = SpatialFilter(4.0)
+    print(F.filter_code())
 
-# Generate filter functions
-# Special case for nearest
-print("""vec4 Nearest(sampler2D texture, vec2 shape, vec2 uv)""")
-print("""{ return texture2D(texture,uv); }\n""")
+    # Generate filter functions
+    # Special case for nearest
+    print("""vec4 Nearest(sampler2D texture, vec2 shape, vec2 uv)""")
+    print("""{ return texture2D(texture,uv); }\n""")
 
-for i, f in enumerate(filters):
-    print(f.call_code((i+0.5)/16.0))
+    for i, f in enumerate(filters):
+        print(f.call_code((i+0.5)/16.0))
+
+
+if __name__ == "__main__":
+    import sys
+    sys.exit(main())

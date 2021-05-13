@@ -8,8 +8,7 @@ from . transform import Transform
 
 
 class Transformable(Element):
-
-    """ Transformable SVG element """
+    """Transformable SVG element"""
 
     def __init__(self, content=None, parent=None):
         Element.__init__(self, content, parent)
