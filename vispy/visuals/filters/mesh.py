@@ -17,20 +17,19 @@ class TextureFilter(Filter):
     other color, including the default, will result in a blending of that
     color and the color of the texture.
 
+    Parameters
+    ----------
+    texture : (M, N) or (M, N, C) array
+        The 2D texture image.
+    texcoords : (N, 2) array
+        The texture coordinates.
+    enabled : bool
+        Whether the display of the texture is enabled.
+
     """
 
     def __init__(self, texture, texcoords, enabled=True):
-        """Apply a texture on a mesh.
-
-        Parameters
-        ----------
-        texture : (M, N) or (M, N, C) array
-            The 2D texture image.
-        texcoords : (N, 2) array
-            The texture coordinates.
-        enabled : bool
-            Whether the display of the texture is enabled.
-        """
+        """Apply a texture on a mesh."""
         vfunc = Function("""
             void pass_coords() {
                 $v_texcoords = $texcoords;
@@ -355,10 +354,20 @@ void draw_wireframe() {
 
 
 class WireframeFilter(Filter):
+    """Add wire frame to a mesh.
 
-    def __init__(self, enabled=True, color='black', width=1):
+    Parameters
+    ----------
+    color : str or tuple or Color
+        Line color of the wire frame
+    width: float
+        Line width of the wire frame
+
+    """
+
+    def __init__(self, enabled=True, color='black', width=1.0):
         self._attached = False
-        self._enabled = True
+        self._enabled = enabled
         self._color = Color(color)
         self._width = width
 
@@ -418,7 +427,6 @@ class WireframeFilter(Filter):
 
     def _attach(self, visual):
         super()._attach(visual)
-
         visual.events.data_updated.connect(self.on_mesh_data_updated)
 
     def _detach(self, visual):
