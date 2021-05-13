@@ -28,7 +28,10 @@ class TextureFilter(Filter):
 
     Examples
     --------
-    See ``examples/basics/scene/mesh_texture.py`` example script.
+    See
+    `examples/basics/scene/mesh_texture.py
+    <https://github.com/vispy/vispy/blob/main/examples/basics/scene/mesh_texture.py>`_
+    example script.
 
     """
 
@@ -197,7 +200,10 @@ class ShadingFilter(Filter):
 
     Examples
     --------
-    See ``examples/basics/scene/mesh_shading.py`` example script.
+    See
+    `examples/basics/scene/mesh_shading.py
+    <https://github.com/vispy/vispy/blob/main/examples/basics/scene/mesh_shading.py>`_
+    example script.
 
     """
 
@@ -372,7 +378,10 @@ class WireframeFilter(Filter):
 
     Examples
     --------
-    See ``examples/basics/scene/mesh_shading.py`` example script.
+    See
+    `examples/basics/scene/mesh_shading.py
+    <https://github.com/vispy/vispy/blob/main/examples/basics/scene/mesh_shading.py>`_
+    example script.
 
     """
 
