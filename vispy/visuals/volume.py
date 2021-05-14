@@ -467,6 +467,7 @@ class VolumeVisual(Visual):
                  emulate_texture=False, interpolation='linear', texture_format=None):
         # Storage of information of volume
         self._vol_shape = ()
+        self._data_dtype = vol.dtype
         self._clim = None
         self._texture_limits = None
         self._gamma = gamma
@@ -516,6 +517,7 @@ class VolumeVisual(Visual):
         # Set params
         self.method = method
         self.relative_step_size = relative_step_size
+        # FIXME: Don't do this (.mean) if GPU scaling
         self.threshold = threshold if (threshold is not None) else vol.mean()
         self.freeze()
 
@@ -583,6 +585,7 @@ class VolumeVisual(Visual):
 
         # Handle clim
         if clim is not None:
+            # FIXME: This conversion to an array is wasteful
             clim = np.array(clim, float)
             if not (clim.ndim == 1 and clim.size == 2):
                 raise ValueError('clim must be a 2-element array-like')
@@ -593,15 +596,22 @@ class VolumeVisual(Visual):
         # store clims used to normalize _tex data for use in clim_normalized
         self._texture_limits = self._clim
 
-        self.shared_program['clim'] = self.clim_normalized
-        # no need to copy data if sending float data
-        copy = copy if not self._scale_texture_gpu else False
-        vol = np.array(vol, dtype='float32', copy=copy)
+        if self._scale_texture_gpu:
+            if should_cast_to_f32(vol.dtype):
+                vol = vol.astype(np.float32)
+            self._data_dtype = vol.dtype
         if not self._scale_texture_gpu:
+            # no need to copy data if sending float data
+            copy = copy if not self._scale_texture_gpu else False
+            # TODO: This is going to always make 32-bit float data on a not floating point texture
+            vol = np.array(vol, dtype=np.float32, copy=copy)
+            self._data_dtype = vol.dtype  # FIXME: not used except for GPU scaling, but consistency
+
             # store volume in case it needs to be renormalized by clim.setter
             self._last_data = vol
             # Apply clim (copy data by default... see issue #1727)
             self._cpu_scale_data(vol)
+        self.shared_program['clim'] = self.clim_normalized
 
         # Apply to texture
         self._tex.set_data(vol)  # will be efficient if vol is same shape
@@ -616,6 +626,16 @@ class VolumeVisual(Visual):
 
         # Get some stats
         self._kb_for_texture = np.prod(self._vol_shape) / 1024
+
+    def _normalize_val(self, val, input_data_dtype):
+        is_normalized = self._tex.internalformat is not None and self._tex.internalformat[-1] not in ('f', 'i')
+        if not is_normalized:
+            return val
+        dtype_info = np.iinfo(input_data_dtype)
+        dmin = dtype_info.min
+        dmax = dtype_info.max
+        val = (val - dmin) / (dmax - dmin)
+        return val
 
     def rescale_data(self):
         """Force rescaling of data to the current contrast limits and texture upload.
@@ -697,7 +717,10 @@ class VolumeVisual(Visual):
         the current ``clim``.
         """
         if self._scale_texture_gpu:
-            return self.clim
+            norm_clim_min = self._normalize_val(self.clim[0], self._data_dtype)
+            norm_clim_max = self._normalize_val(self.clim[1], self._data_dtype)
+            norm_clim = (norm_clim_min, norm_clim_max)
+            return norm_clim
 
         range_min, range_max = self._texture_limits
         clim0, clim1 = self.clim
