@@ -68,11 +68,9 @@ def test_volume_draw():
 @requires_application()
 # @pytest.mark.parametrize('data_on_init', [False, True])
 # @pytest.mark.parametrize('clim_on_init', [False, True])
-# @pytest.mark.parametrize('num_channels', [0, 1, 3, 4])
 @pytest.mark.parametrize('texture_format', [None, '__dtype__', 'auto'])
-# @pytest.mark.parametrize('input_dtype', [np.uint8, np.uint16, np.float32, np.float64])
-# @pytest.mark.parametrize('texture_format', [None, np.float32, np.uint8, 'auto'])
-def test_volume_clims_and_gamma(texture_format):
+@pytest.mark.parametrize('input_dtype', [np.uint8, np.uint16, np.float32, np.float64])
+def test_volume_clims_and_gamma(texture_format, input_dtype):
     """Test volume visual with clims and gamma on shader.
 
     Test is parameterized based on ``texture_format`` and should produce
@@ -85,16 +83,21 @@ def test_volume_clims_and_gamma(texture_format):
 
     """
     size = (40, 40)
-    input_dtype = np.float64
     if texture_format == '__dtype__':
         texture_format = input_dtype
     np.random.seed(0)  # make tests the same every time
     data = _make_test_data(size[:1] * 3, input_dtype)
+    clim = (0, 1)
+    new_clim = (0.3, 0.8)
+    max = max_for_dtype(input_dtype)
+    if max != 1:
+        clim = (clim[0] * max, clim[1] * max)
+        new_clim = (new_clim[0] * max, new_clim[1] * max)
     with TestingCanvas(size=size, bgcolor="k") as c:
         v = c.central_widget.add_view(border_width=0)
         volume = scene.visuals.Volume(
             data,
-            clim=(0, 1),
+            clim=clim,
             interpolation='nearest',
             parent=v.scene,
             method='mip',
@@ -115,17 +118,16 @@ def test_volume_clims_and_gamma(texture_format):
         compare_render(predicted, rendered1)
 
         # adjust contrast limits
-        new_clim = (0.3, 0.8)
         volume.clim = new_clim
         rendered2 = downsample(c.render(), shape_ratio, axis=(0, 1)).astype(_dtype)
-        scaled_data = np.clip((data - new_clim[0]) / np.diff(new_clim)[0], 0, 1)
+        scaled_data = (np.clip(data, new_clim[0], new_clim[1]) - new_clim[0]) / (new_clim[1] - new_clim[0])
         predicted = scaled_data.max(axis=1)
         compare_render(predicted, rendered2, previous_render=rendered)
 
         # adjust gamma
-        volume.gamma = 1.5
+        volume.gamma = 2
         rendered3 = downsample(c.render(), shape_ratio, axis=(0, 1)).astype(_dtype)
-        predicted = (scaled_data ** volume.gamma).max(axis=1)
+        predicted = (scaled_data ** 2).max(axis=1)
         compare_render(predicted, rendered3, previous_render=rendered2)
 
 
