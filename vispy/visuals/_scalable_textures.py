@@ -233,17 +233,24 @@ class CPUScaledTextureMixIn(_ScaledTextureMixin):
         return clim_min, clim_max
 
     @staticmethod
-    def _scale_data_on_cpu(data, clim):
-        data = data - clim[0]  # not inplace so we don't modify orig data
-        if clim[1] - clim[0] > 0:
-            data /= clim[1] - clim[0]
+    def _scale_data_on_cpu(data, clim, copy=True):
+        if copy:
+            should_cast_to_f32(data.dtype)
+            data = np.array(data, dtype=np.float32, copy=copy)
+        elif not copy and not np.issubdtype(data.dtype, np.floating):
+            raise ValueError("Data must be of floating type for no copying to occur.")
+
+        if clim[0] == clim[1]:
+            if clim[0] != 0:
+                data /= clim[0]
         else:
-            data[:] = 1 if data[0, 0] != 0 else 0
-        if data.dtype == np.float64:
+            data -= clim[0]
+            data /= clim[1] - clim[0]
+        if should_cast_to_f32(data.dtype):
             data = data.astype(np.float32)
         return data
 
-    def scale_and_set_data(self, data, offset=None, copy=False):
+    def scale_and_set_data(self, data, offset=None, copy=True):
         """Upload new data to the GPU, scaling if necessary."""
         self._data_dtype = data.dtype
 
@@ -253,7 +260,7 @@ class CPUScaledTextureMixIn(_ScaledTextureMixin):
             if is_auto:
                 clim = np.min(data), np.max(data)
             clim = (np.float32(clim[0]), np.float32(clim[1]))
-            data = self._scale_data_on_cpu(data, clim)
+            data = self._scale_data_on_cpu(data, clim, copy=copy)
             data_limits = clim
         else:
             data_limits = self._get_default_clims(data)
