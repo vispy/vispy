@@ -561,6 +561,8 @@ class VolumeVisual(Visual):
             normalization on the CPU. Has no effect if visual was created
             with 'texture_format' not equal to None as data is not modified
             on the CPU and data must already be copied to the GPU.
+            Data must be 32-bit floating point data to completely avoid any
+            data copying when scaling on the CPU.
 
         """
         # Check volume
