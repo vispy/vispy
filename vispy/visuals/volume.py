@@ -35,7 +35,7 @@ coordinates).
 
 """
 from ._scalable_textures import CPUScaledTexture3D, GPUScaledTextured3D
-from ..gloo import TextureEmulated3D, VertexBuffer, IndexBuffer
+from ..gloo import VertexBuffer, IndexBuffer
 from ..gloo.texture import should_cast_to_f32
 from . import Visual
 from .shaders import Function
