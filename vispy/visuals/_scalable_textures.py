@@ -10,28 +10,25 @@ from vispy.gloo.texture import should_cast_to_f32
 
 
 class _ScaledTextureMixin:
-    """Mixin class to make a texture aware of color limits and gamma.
+    """Mixin class to make a texture aware of color limits.
 
-    TODO
+    This class contains the shared functionality for the CPU and GPU mixin
+    classes below. In some cases this class provides a "generic"
+    implementation of a specific method and is then overridden by one of the
+    subclasses.
 
     """
-    # initial values (since we don't have an __init__)
-    _clim = None
-    _data_dtype = None
-    _data_limits = None
 
     def __init__(self, data=None, **texture_kwargs):
+        self._clim = None
+        self._data_dtype = None
         data, texture_kwargs = self.init_scaling_texture(data, **texture_kwargs)
         # Call the __init__ of the TextureXD class
         super().__init__(data, **texture_kwargs)
 
     def init_scaling_texture(self, data=None, format=None, internalformat=None, **texture_kwargs):
         """Initialize scaling properties and create a representative array."""
-        self._clim = None
         self._data_dtype = getattr(data, 'dtype', None)
-        self._data_limits = None
-        # TODO: Move data_limits stuff to CPU-specific class
-
         data = self._create_rep_array(data, format)
         internalformat = self._get_texture_format_for_data(
             data,
@@ -190,31 +187,15 @@ class CPUScaledTextureMixIn(_ScaledTextureMixin):
 
     """
 
+    def __init__(self, data=None, **texture_kwargs):
+        self._data_limits = None
+        # Call the __init__ of the mixin base class
+        super().__init__(data, **texture_kwargs)
+
     def _clim_outside_data_limits(self, cmin, cmax):
         if self._data_limits is None:
             return False
         return cmin < self._data_limits[0] or cmax > self._data_limits[1]
-
-    # TODO: Figure out what to do with these calculations from the VolumeVisual
-    # def _check_clims_in_texture_range(self, clim):
-    #     inv_tex_outside_limits = (clim[0] > self._texture_limits[0]) or (clim[1] < self._texture_limits[1])
-    #     tex_outside_limits = (clim[0] < self._texture_limits[0]) or (clim[1] > self._texture_limits[1])
-    #     return self.texture_is_inverted and inv_tex_outside_limits or tex_outside_limits
-    #
-    # def _check_clims_in_threshold_range(self, clim):
-    #     # if the clim range is too small of a percentage of the last-used texture range,
-    #     # posterization may be visible, so downscale the texture range.
-    #     range_ratio = np.subtract(*clim) / abs(np.subtract(*self._texture_limits))
-    #     return np.abs(range_ratio) < self._clim_range_threshold
-    #
-    # def _check_clim_requires_rescale(self, clim):
-    #     if self._scale_texture_gpu:
-    #         return False
-    #     if self._check_clims_in_texture_range(clim):
-    #         return True
-    #     if self._check_clims_in_threshold_range(clim):
-    #         return True
-    #     return False
 
     def set_clim(self, clim):
         """Set clim and return if a texture update is needed."""
@@ -250,19 +231,6 @@ class CPUScaledTextureMixIn(_ScaledTextureMixin):
         clim_min = (clim_min - range_min) / (range_max - range_min)
         clim_max = (clim_max - range_min) / (range_max - range_min)
         return clim_min, clim_max
-        # TODO: Update for the volume fancy stuff
-        #   Can we get rid of the texture_is_inverted stuff?
-        # range_min, range_max = self._texture_limits
-        # clim0, clim1 = self.clim
-        # if self.texture_is_inverted:
-        #     tex_range = range_min - range_max
-        #     clim0 = (clim0 - range_max) / tex_range
-        #     clim1 = (clim1 - range_max) / tex_range
-        # else:
-        #     tex_range = range_max - range_min
-        #     clim0 = (clim0 - range_min) / tex_range
-        #     clim1 = (clim1 - range_min) / tex_range
-        # return clim0, clim1
 
     @staticmethod
     def _scale_data_on_cpu(data, clim):
@@ -400,7 +368,6 @@ class GPUScaledTextureMixin(_ScaledTextureMixin):
             return
         if self._auto_texture_format:
             shape_repr = self._create_rep_array(data)
-            # FIXME: This assumes RGB format
             internalformat = self._get_gl_tex_format(data.dtype, shape_repr.shape[-1])
             self._resize(data.shape, internalformat=internalformat)
         else:
