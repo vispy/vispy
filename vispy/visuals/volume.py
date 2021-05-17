@@ -412,9 +412,6 @@ class VolumeVisual(Visual):
     gamma : float
         Gamma to use during colormap lookup.  Final color will be cmap(val**gamma).
         by default: 1.
-    emulate_texture : bool
-        Use 2D textures to emulate a 3D texture. OpenGL ES 2.0 compatible,
-        but has lower performance on desktop platforms.
     interpolation : {'linear', 'nearest'}
         Selects method of image interpolation.
     texture_format: numpy.dtype | str | None
@@ -441,6 +438,11 @@ class VolumeVisual(Visual):
         transferred to the GPU. Note this visual is limited to "luminance"
         formatted data (single band). This is equivalent to `GL_RED` format
         in OpenGL 4.0.
+
+    .. versionchanged: 0.7
+
+        Deprecate 'emulate_texture' keyword argument.
+
     """
 
     _interpolation_names = ['linear', 'nearest']
@@ -457,7 +459,7 @@ class VolumeVisual(Visual):
 
     def __init__(self, vol, clim=None, method='mip', threshold=None,
                  relative_step_size=0.8, cmap='grays', gamma=1.0,
-                 emulate_texture=False, interpolation='linear', texture_format=None):
+                 interpolation='linear', texture_format=None):
         # Storage of information of volume
         self._vol_shape = ()
         self._texture_limits = None
@@ -481,7 +483,7 @@ class VolumeVisual(Visual):
             ], dtype=np.float32))
 
         self._interpolation = interpolation
-        self._texture = self._create_texture(texture_format, emulate_texture, vol)
+        self._texture = self._create_texture(texture_format, vol)
         # used to store current data for later CPU-side scaling if
         # texture_format is None
         self._last_data = None
@@ -509,9 +511,7 @@ class VolumeVisual(Visual):
         self.threshold = threshold if threshold is not None else vol.mean()
         self.freeze()
 
-    def _create_texture(self, texture_format, emulate_texture, data):
-        # TODO: Handle emulated textures
-        #    tex_cls = TextureEmulated3D if emulate_texture else Texture3D
+    def _create_texture(self, texture_format, data):
         if texture_format is not None:
             tex_cls = GPUScaledTextured3D
         else:
