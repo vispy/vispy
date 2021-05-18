@@ -352,14 +352,13 @@ wireframe_fragment_template = """
 varying vec3 v_bc;
 
 void draw_wireframe() {
+    if ($enabled != 1) {
+        return;
+    }
     vec3 d = fwidth(v_bc);
     vec3 a3 = smoothstep(vec3(0.0), $width * d, v_bc);
     float factor = min(min(a3.x, a3.y), a3.z);
-    if ($enabled == 1) {
-        gl_FragColor = mix($color, gl_FragColor, factor);
-    } else {
-        gl_FragColor = gl_FragColor;
-    }
+    gl_FragColor = mix($color, gl_FragColor, factor);
 }
 """  # noqa
 
