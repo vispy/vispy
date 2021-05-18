@@ -109,5 +109,13 @@ def test_mesh_wireframe_filter():
         pytest.raises(AssertionError, np.testing.assert_allclose,
                       rendered_with_wf, rendered_wo_wf)
 
+        wireframe_filter.wireframe_only = True
+        rendered_with_wf_only = c.render()
+        # the result should be different from the two cases above
+        pytest.raises(AssertionError, np.testing.assert_allclose,
+                      rendered_with_wf_only, rendered_with_wf)
+        pytest.raises(AssertionError, np.testing.assert_allclose,
+                      rendered_with_wf_only, rendered_wo_wf)
+
 
 run_tests_if_main()
