@@ -17,20 +17,26 @@ class TextureFilter(Filter):
     other color, including the default, will result in a blending of that
     color and the color of the texture.
 
+    Parameters
+    ----------
+    texture : (M, N) or (M, N, C) array
+        The 2D texture image.
+    texcoords : (N, 2) array
+        The texture coordinates.
+    enabled : bool
+        Whether the display of the texture is enabled.
+
+    Examples
+    --------
+    See
+    `examples/basics/scene/mesh_texture.py
+    <https://github.com/vispy/vispy/blob/main/examples/basics/scene/mesh_texture.py>`_
+    example script.
+
     """
 
     def __init__(self, texture, texcoords, enabled=True):
-        """Apply a texture on a mesh.
-
-        Parameters
-        ----------
-        texture : (M, N) or (M, N, C) array
-            The 2D texture image.
-        texcoords : (N, 2) array
-            The texture coordinates.
-        enabled : bool
-            Whether the display of the texture is enabled.
-        """
+        """Apply a texture on a mesh."""
         vfunc = Function("""
             void pass_coords() {
                 $v_texcoords = $texcoords;
@@ -187,16 +193,27 @@ void shade() {
 
 
 class ShadingFilter(Filter):
-    """Filter to apply shading to a mesh."""
+    """Filter to apply shading to a mesh.
 
-    def __init__(self, shading='flat', enabled=True, light_dir=(10, 5, -5),
+    To disable shading, either detach (ex. ``mesh.detach(filter_obj)``) or
+    set the shading type to ``None`` (ex. ``filter_obj.shading = None``).
+
+    Examples
+    --------
+    See
+    `examples/basics/scene/mesh_shading.py
+    <https://github.com/vispy/vispy/blob/main/examples/basics/scene/mesh_shading.py>`_
+    example script.
+
+    """
+
+    def __init__(self, shading='flat', light_dir=(10, 5, -5),
                  light_color=(1, 1, 1, 1),
                  ambient_color=(.3, .3, .3, 1),
                  diffuse_color=(1, 1, 1, 1),
                  specular_color=(1, 1, 1, 1),
                  shininess=100):
         self._shading = shading
-        self._enabled = enabled
         self._light_dir = light_dir
         self._light_color = Color(light_color)
         self._ambient_color = Color(ambient_color)
@@ -221,16 +238,6 @@ class ShadingFilter(Filter):
     def shading(self, shading):
         assert shading in (None, 'flat', 'smooth')
         self._shading = shading
-        self._update_data()
-
-    @property
-    def enabled(self):
-        """True to enable shading."""
-        return self._enabled
-
-    @enabled.setter
-    def enabled(self, enabled):
-        self._enabled = enabled
         self._update_data()
 
     @property
@@ -325,6 +332,148 @@ class ShadingFilter(Filter):
         self.vshader['scene2doc'] = scene2doc
         self.vshader['doc2scene'] = doc2scene
 
+        visual.events.data_updated.connect(self.on_mesh_data_updated)
+
+    def _detach(self, visual):
+        visual.events.data_updated.disconnect(self.on_mesh_data_updated)
+        super()._detach(visual)
+
+
+wireframe_vertex_template = """
+varying vec3 v_bc;
+
+void prepare_wireframe() {
+    v_bc = $bc;
+}
+"""  # noqa
+
+
+wireframe_fragment_template = """
+varying vec3 v_bc;
+
+void draw_wireframe() {
+    if ($enabled != 1) {
+        return;
+    }
+
+    vec3 d = fwidth(v_bc);  // relative distance to edge
+    vec3 fading3 = smoothstep(vec3(0.0), $width * d, v_bc);
+    float opacity = 1.0 - min(min(fading3.x, fading3.y), fading3.z);
+
+    if ($wireframe_only == 1) {
+        if (opacity == 0.0) {
+            // Inside a triangle.
+            discard;
+        }
+        // On the edge.
+        gl_FragColor = $color;
+        gl_FragColor.a = opacity;
+    } else {
+        gl_FragColor = mix(gl_FragColor, $color, opacity);
+    }
+
+}
+"""  # noqa
+
+
+class WireframeFilter(Filter):
+    """Add wireframe to a mesh.
+
+    Parameters
+    ----------
+    color : str or tuple or Color
+        Line color of the wireframe
+    width : float
+        Line width of the wireframe
+    enabled : bool
+        Whether the wireframe is drawn or not
+
+    Examples
+    --------
+    See
+    `examples/basics/scene/mesh_shading.py
+    <https://github.com/vispy/vispy/blob/main/examples/basics/scene/mesh_shading.py>`_
+    example script.
+
+    """
+
+    def __init__(self, enabled=True, color='black', width=1.0,
+                 wireframe_only=False):
+        self._attached = False
+        self._color = Color(color)
+        self._width = width
+        self._enabled = enabled
+        self._wireframe_only = wireframe_only
+
+        vfunc = Function(wireframe_vertex_template)
+        ffunc = Function(wireframe_fragment_template)
+
+        self._bc = VertexBuffer(np.zeros((0, 3), dtype=np.float32))
+        vfunc['bc'] = self._bc
+
+        super().__init__(vcode=vfunc, fcode=ffunc)
+        self.enabled = enabled
+
+    @property
+    def enabled(self):
+        """True to enable shading."""
+        return self._enabled
+
+    @enabled.setter
+    def enabled(self, enabled):
+        self._enabled = enabled
+        self.fshader['enabled'] = 1 if enabled else 0
+        self._update_data()
+
+    @property
+    def color(self):
+        """The wireframe color."""
+        return self._color
+
+    @color.setter
+    def color(self, color):
+        self._color = Color(color)
+        self._update_data()
+
+    @property
+    def width(self):
+        """The wireframe width."""
+        return self._width
+
+    @width.setter
+    def width(self, width):
+        if width < 0:
+            raise ValueError("width must be greater than zero")
+        self._width = width
+        self._update_data()
+
+    @property
+    def wireframe_only(self):
+        """Draw only the wireframe and discard the interior of the faces."""
+        return self._wireframe_only
+
+    @wireframe_only.setter
+    def wireframe_only(self, wireframe_only):
+        self._wireframe_only = wireframe_only
+        self._update_data()
+
+    def _update_data(self):
+        if not self.attached:
+            return
+        self.fshader['color'] = self._color.rgba
+        self.fshader['width'] = self._width
+        self.fshader['wireframe_only'] = 1 if self._wireframe_only else 0
+        faces = self._visual.mesh_data.get_faces()
+        n_faces = len(faces)
+        bc = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]], dtype='float')
+        bc = np.tile(bc[None, ...], (n_faces, 1, 1))
+        self._bc.set_data(bc, convert=True)
+
+    def on_mesh_data_updated(self, event):
+        self._update_data()
+
+    def _attach(self, visual):
+        super()._attach(visual)
         visual.events.data_updated.connect(self.on_mesh_data_updated)
 
     def _detach(self, visual):

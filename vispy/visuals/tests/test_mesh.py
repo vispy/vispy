@@ -6,6 +6,7 @@ from vispy import scene
 from vispy.geometry import create_cube, create_sphere
 from vispy.testing import (TestingCanvas, requires_application,
                            run_tests_if_main, requires_pyopengl)
+from vispy.visuals.filters import WireframeFilter
 
 import pytest
 
@@ -36,15 +37,14 @@ def test_mesh_shading_filter(shading):
     with TestingCanvas(size=size, bgcolor="k") as c:
         v = c.central_widget.add_view(border_width=0)
         # Create visual
-        # vertices, filled_indices, outline_indices = create_cube()
         mdata = create_sphere(20, 40, radius=20)
-        axis = scene.visuals.Mesh(meshdata=mdata,
+        mesh = scene.visuals.Mesh(meshdata=mdata,
                                   shading=shading,
                                   color=(0.1, 0.3, 0.7, 0.9))
-        v.add(axis)
+        v.add(mesh)
         from vispy.visuals.transforms import STTransform
-        axis.transform = STTransform(translate=(20, 20))
-        axis.transforms.scene_transform = STTransform(scale=(1, 1, 0.01))
+        mesh.transform = STTransform(translate=(20, 20))
+        mesh.transforms.scene_transform = STTransform(scale=(1, 1, 0.01))
 
         rendered = c.render()[..., 0]  # R channel only
         if shading in ("flat", "smooth"):
@@ -79,6 +79,44 @@ def test_mesh_bounds():
         np.testing.assert_allclose(axis.bounds(i), (-1.0, 1.0))
     # Test bounds for 3rd axis
     np.testing.assert_allclose(axis.bounds(2), (0.0, 0.0))
+
+
+@requires_pyopengl()
+@requires_application()
+def test_mesh_wireframe_filter():
+    size = (45, 40)
+    with TestingCanvas(size=size, bgcolor="k") as c:
+        v = c.central_widget.add_view(border_width=0)
+        # Create visual
+        mdata = create_sphere(20, 40, radius=20)
+        mesh = scene.visuals.Mesh(meshdata=mdata,
+                                  shading=None,
+                                  color=(0.1, 0.3, 0.7, 0.9))
+        wireframe_filter = WireframeFilter(color='red')
+        mesh.attach(wireframe_filter)
+        v.add(mesh)
+        from vispy.visuals.transforms import STTransform
+        mesh.transform = STTransform(translate=(20, 20))
+        mesh.transforms.scene_transform = STTransform(scale=(1, 1, 0.01))
+
+        rendered_with_wf = c.render()
+        assert np.unique(rendered_with_wf[..., 0]).size >= 50
+
+        wireframe_filter.enabled = False
+        rendered_wo_wf = c.render()
+        # the result should be completely different
+        # assert not allclose
+        pytest.raises(AssertionError, np.testing.assert_allclose,
+                      rendered_with_wf, rendered_wo_wf)
+
+        wireframe_filter.enabled = True
+        wireframe_filter.wireframe_only = True
+        rendered_with_wf_only = c.render()
+        # the result should be different from the two cases above
+        pytest.raises(AssertionError, np.testing.assert_allclose,
+                      rendered_with_wf_only, rendered_with_wf)
+        pytest.raises(AssertionError, np.testing.assert_allclose,
+                      rendered_with_wf_only, rendered_wo_wf)
 
 
 run_tests_if_main()
