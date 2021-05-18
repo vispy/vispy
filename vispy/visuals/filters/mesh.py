@@ -355,10 +355,23 @@ void draw_wireframe() {
     if ($enabled != 1) {
         return;
     }
-    vec3 d = fwidth(v_bc);
-    vec3 a3 = smoothstep(vec3(0.0), $width * d, v_bc);
-    float factor = min(min(a3.x, a3.y), a3.z);
-    gl_FragColor = mix($color, gl_FragColor, factor);
+
+    vec3 d = fwidth(v_bc);  // relative distance to edge
+    vec3 fading3 = smoothstep(vec3(0.0), $width * d, v_bc);
+    float opacity = 1.0 - min(min(fading3.x, fading3.y), fading3.z);
+
+    if ($wireframe_only == 1) {
+        if (opacity == 0.0) {
+            // Inside a triangle.
+            discard;
+        }
+        // On the edge.
+        gl_FragColor = $color;
+        gl_FragColor.a = opacity;
+    } else {
+        gl_FragColor = mix(gl_FragColor, $color, opacity);
+    }
+
 }
 """  # noqa
 
@@ -384,11 +397,13 @@ class WireframeFilter(Filter):
 
     """
 
-    def __init__(self, enabled=True, color='black', width=1.0):
+    def __init__(self, enabled=True, color='black', width=1.0,
+                 wireframe_only=False):
         self._attached = False
         self._color = Color(color)
         self._width = width
-        self._enabled = False
+        self._enabled = enabled
+        self._wireframe_only = wireframe_only
 
         vfunc = Function(wireframe_vertex_template)
         ffunc = Function(wireframe_fragment_template)
@@ -432,11 +447,22 @@ class WireframeFilter(Filter):
         self._width = width
         self._update_data()
 
+    @property
+    def wireframe_only(self):
+        """Draw only the wireframe and discard the interior of the faces."""
+        return self._wireframe_only
+
+    @wireframe_only.setter
+    def wireframe_only(self, wireframe_only):
+        self._wireframe_only = wireframe_only
+        self._update_data()
+
     def _update_data(self):
         if not self.attached:
             return
         self.fshader['color'] = self._color.rgba
         self.fshader['width'] = self._width
+        self.fshader['wireframe_only'] = 1 if self._wireframe_only else 0
         faces = self._visual.mesh_data.get_faces()
         n_faces = len(faces)
         bc = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]], dtype='float')

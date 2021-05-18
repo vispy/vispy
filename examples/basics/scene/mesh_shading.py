@@ -57,6 +57,9 @@ def on_key_press(event):
     elif event.key == 'w':
         wireframe_filter.enabled = not wireframe_filter.enabled
         mesh.update()
+    elif event.key == 'f':
+        wireframe_filter.wireframe_only = not wireframe_filter.wireframe_only
+        mesh.update()
 
 
 canvas.show()
