@@ -368,6 +368,13 @@ void draw_wireframe() {
         // On the edge.
         gl_FragColor = $color;
         gl_FragColor.a = opacity;
+    } else if ($faces_only == 1) {
+        if (opacity == 1.0) {
+            // Inside an edge.
+            discard;
+        }
+        // Inside a triangle.
+        gl_FragColor.a = 1.0 - opacity;
     } else {
         gl_FragColor = mix(gl_FragColor, $color, opacity);
     }
@@ -398,12 +405,13 @@ class WireframeFilter(Filter):
     """
 
     def __init__(self, enabled=True, color='black', width=1.0,
-                 wireframe_only=False):
+                 wireframe_only=False, faces_only=False):
         self._attached = False
         self._color = Color(color)
         self._width = width
         self._enabled = enabled
         self._wireframe_only = wireframe_only
+        self._faces_only = faces_only
 
         vfunc = Function(wireframe_vertex_template)
         ffunc = Function(wireframe_fragment_template)
@@ -457,12 +465,26 @@ class WireframeFilter(Filter):
         self._wireframe_only = wireframe_only
         self._update_data()
 
+    @property
+    def faces_only(self):
+        """Make the wireframe transparent.
+
+        Draw only the interior of the faces.
+        """
+        return self._faces_only
+
+    @faces_only.setter
+    def faces_only(self, faces_only):
+        self._faces_only = faces_only
+        self._update_data()
+
     def _update_data(self):
         if not self.attached:
             return
         self.fshader['color'] = self._color.rgba
         self.fshader['width'] = self._width
         self.fshader['wireframe_only'] = 1 if self._wireframe_only else 0
+        self.fshader['faces_only'] = 1 if self._faces_only else 0
         faces = self._visual.mesh_data.get_faces()
         n_faces = len(faces)
         bc = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]], dtype='float')
