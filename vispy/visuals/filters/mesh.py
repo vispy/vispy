@@ -184,7 +184,7 @@ void shade() {
 
     // Specular light component.
     float speculark = 0.0;
-    if ($shininess > 0) {
+    if (diffusek > 0.0 && $shininess > 0.0) {
         vec3 reflexion = reflect(light_vec, normal);
         speculark = dot(reflexion, v_eye_vec);
         speculark = max(speculark, 0.0);
