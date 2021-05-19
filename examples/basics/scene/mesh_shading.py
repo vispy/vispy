@@ -42,23 +42,49 @@ def attach_headlight(view):
 
 
 attach_headlight(view)
-shadings = [None, 'flat', 'smooth']
-shading_index = shadings.index(shading_filter.shading)
+
+shading_states = (
+    dict(shading=None),
+    dict(shading='flat'),
+    dict(shading='smooth'),
+)
+shading_state_index = shading_states.index(
+    dict(shading=shading_filter.shading))
+
+wireframe_states = (
+    dict(wireframe_only=False, faces_only=False,),
+    dict(wireframe_only=True, faces_only=False,),
+    dict(wireframe_only=False, faces_only=True,),
+)
+wireframe_state_index = wireframe_states.index(dict(
+    wireframe_only=wireframe_filter.wireframe_only,
+    faces_only=wireframe_filter.faces_only,
+))
+
+
+def cycle_state(states, index):
+    new_index = (index + 1) % len(states)
+    return states[new_index], new_index
 
 
 @canvas.events.key_press.connect
 def on_key_press(event):
-    global shading_index
+    global shading_state_index
+    global wireframe_state_index
     if event.key == 's':
-        shading_index = (shading_index + 1) % len(shadings)
-        shading = shadings[shading_index]
-        shading_filter.shading = shading
+        state, shading_state_index = cycle_state(shading_states,
+                                                 shading_state_index)
+        for attr, value in state.items():
+            setattr(shading_filter, attr, value)
         mesh.update()
     elif event.key == 'w':
         wireframe_filter.enabled = not wireframe_filter.enabled
         mesh.update()
     elif event.key == 'f':
-        wireframe_filter.wireframe_only = not wireframe_filter.wireframe_only
+        state, wireframe_state_index = cycle_state(wireframe_states,
+                                                   wireframe_state_index)
+        for attr, value in state.items():
+            setattr(wireframe_filter, attr, value)
         mesh.update()
 
 
