@@ -118,5 +118,17 @@ def test_mesh_wireframe_filter():
         pytest.raises(AssertionError, np.testing.assert_allclose,
                       rendered_with_wf_only, rendered_wo_wf)
 
+        wireframe_filter.enabled = True
+        wireframe_filter.wireframe_only = False
+        wireframe_filter.faces_only = True
+        rendered_with_faces_only = c.render()
+        # the result should be different from the cases above
+        pytest.raises(AssertionError, np.testing.assert_allclose,
+                      rendered_with_faces_only, rendered_with_wf)
+        pytest.raises(AssertionError, np.testing.assert_allclose,
+                      rendered_with_faces_only, rendered_wo_wf)
+        pytest.raises(AssertionError, np.testing.assert_allclose,
+                      rendered_with_faces_only, rendered_with_wf_only)
+
 
 run_tests_if_main()
