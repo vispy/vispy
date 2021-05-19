@@ -162,13 +162,17 @@ void shade() {
         return;
     }
 
-    vec3 normal;
+    vec3 normal = v_normal_vec;
     if ($flat_shading == 1) {
         vec3 u = dFdx(v_pos_scene.xyz);
         vec3 v = dFdy(v_pos_scene.xyz);
         normal = normalize(cross(u, v));
-    } else {
-        normal = v_normal_vec;
+        // Note(asnt): The normal calculated above always points in the
+        // direction of the camera. Reintroduce the original orientation of the
+        // face.
+        if (!gl_FrontFacing) {
+            normal = -normal;
+        }
     }
 
     vec3 light_vec = v_light_vec;
