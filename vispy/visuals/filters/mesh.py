@@ -158,6 +158,10 @@ varying vec3 v_eye_vec;
 varying vec4 v_pos_scene;
 
 void shade() {
+    if ($shading_enabled != 1) {
+        return;
+    }
+
     vec3 normal;
     if ($flat_shading == 1) {
         vec3 u = dFdx(v_pos_scene.xyz);
@@ -184,10 +188,8 @@ void shade() {
     }
     vec3 specular_color = $light_color * $specular_color * speculark;
 
-    if ($shading_enabled == 1) {
-        vec3 color = $ambient_color + diffuse_color + specular_color;
-        gl_FragColor *= vec4(color, 1.0);
-    }
+    vec3 color = $ambient_color + diffuse_color + specular_color;
+    gl_FragColor *= vec4(color, 1.0);
 }
 """  # noqa
 
