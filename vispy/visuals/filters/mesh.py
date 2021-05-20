@@ -134,12 +134,12 @@ void prepare_shading() {
     v_normal_vec = normal; //VARYING COPY
 
     vec4 pos_front = $scene2doc(pos_scene);
-    pos_front.z += 0.01;
+    pos_front.z += 1e-6;
     pos_front = $doc2scene(pos_front);
     pos_front /= pos_front.w;
 
     vec4 pos_back = $scene2doc(pos_scene);
-    pos_back.z -= 0.01;
+    pos_back.z -= 1e-6;
     pos_back = $doc2scene(pos_back);
     pos_back /= pos_back.w;
 
