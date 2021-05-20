@@ -332,7 +332,7 @@ class ShadingFilter(Filter):
 
     @property
     def specular_coefficient(self):
-        """The specular light coefficient."""
+        """The specular reflection coefficient."""
         return self._specular_coefficient
 
     @specular_coefficient.setter
