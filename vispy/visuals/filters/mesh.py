@@ -205,7 +205,10 @@ void shade() {
     }
     vec3 specular = specular_factor * specular_coeff * specular_light_intensity;
 
+    // XXX(asnt): Not sure if there is a physically more correct way of
+    // blending the base color with the lighting.
     vec3 color = base_color * (ambient + diffuse) + specular;
+    //vec3 color = base_color * (ambient + diffuse + specular);
     gl_FragColor.rgb = color;
 }
 """  # noqa
