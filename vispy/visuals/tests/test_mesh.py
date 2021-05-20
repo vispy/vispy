@@ -40,7 +40,7 @@ def test_mesh_shading_filter(shading):
         mdata = create_sphere(20, 40, radius=20)
         mesh = scene.visuals.Mesh(meshdata=mdata,
                                   shading=shading,
-                                  color=(0.1, 0.3, 0.7, 0.9))
+                                  color=(0.2, 0.3, 0.7, 0.9))
         v.add(mesh)
         from vispy.visuals.transforms import STTransform
         mesh.transform = STTransform(translate=(20, 20))

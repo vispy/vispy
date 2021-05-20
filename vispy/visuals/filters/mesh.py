@@ -231,7 +231,7 @@ class ShadingFilter(Filter):
     """
 
     def __init__(self, shading='flat', light_dir=(10, 5, -5),
-                 ambient_light=(1, 1, 1, .7),
+                 ambient_light=(1, 1, 1, .5),
                  diffuse_light=(1, 1, 1, .5),
                  specular_light=(1, 1, 1, .5),
                  ambient_coefficient=(1, 1, 1),
