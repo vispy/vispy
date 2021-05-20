@@ -167,9 +167,9 @@ void shade() {
     vec3 ambient_coeff = $ambient_coefficient;
     vec3 diffuse_coeff = $diffuse_coefficient;
     vec3 specular_coeff = $specular_coefficient;
-    vec3 ambient_light_intensity = $ambient_light;
-    vec3 diffuse_light_intensity = $diffuse_light;
-    vec3 specular_light_intensity = $specular_light;
+    vec4 ambient_light = $ambient_light;
+    vec4 diffuse_light = $diffuse_light;
+    vec4 specular_light = $specular_light;
     float shininess = $shininess;
 
     vec3 normal = v_normal_vec;
@@ -189,11 +189,12 @@ void shade() {
     vec3 light_vec = normalize(v_light_vec);
     vec3 eye_vec = normalize(v_eye_vec);
 
-    vec3 ambient = ambient_coeff * ambient_light_intensity;
+    vec3 ambient = ambient_coeff * ambient_light.rgb * ambient_light.a;
 
     float diffuse_factor = dot(light_vec, normal);
     diffuse_factor = max(diffuse_factor, 0.0);
-    vec3 diffuse = diffuse_factor * diffuse_coeff * diffuse_light_intensity;
+    vec3 diffuse = diffuse_factor * diffuse_coeff * diffuse_light.rgb
+                   * diffuse_light.a;
 
     float specular_factor = 0.0;
     bool is_illuminated = diffuse_factor > 0.0;
@@ -203,7 +204,8 @@ void shade() {
         specular_factor = max(specular_factor, 0.0);
         specular_factor = pow(specular_factor, shininess);
     }
-    vec3 specular = specular_factor * specular_coeff * specular_light_intensity;
+    vec3 specular = specular_factor * specular_coeff * specular_light.rgb
+                   * specular_light.a;
 
     // XXX(asnt): Not sure if there is a physically more correct way of
     // blending the base color with the lighting.
@@ -355,22 +357,21 @@ class ShadingFilter(Filter):
     def _update_data(self):
         if not self._attached:
             return
-        self.vshader['light_dir'] = self._light_dir
-        self.fshader['shininess'] = self._shininess
 
-        def apply_intensity(light_color):
-            color = light_color.rgb
-            intensity = light_color.alpha
-            return intensity * color
-        self.fshader['ambient_light'] = apply_intensity(self._ambient_light)
-        self.fshader['diffuse_light'] = apply_intensity(self._diffuse_light)
-        self.fshader['specular_light'] = apply_intensity(self._specular_light)
+        self.vshader['light_dir'] = self._light_dir
+
+        self.fshader['ambient_light'] = self._ambient_light.rgba
+        self.fshader['diffuse_light'] = self._diffuse_light.rgba
+        self.fshader['specular_light'] = self._specular_light.rgba
 
         self.fshader['ambient_coefficient'] = self._ambient_coefficient.rgb
         self.fshader['diffuse_coefficient'] = self._diffuse_coefficient.rgb
         self.fshader['specular_coefficient'] = self._specular_coefficient.rgb
+        self.fshader['shininess'] = self._shininess
+
         self.fshader['flat_shading'] = 1 if self._shading == 'flat' else 0
         self.fshader['shading_enabled'] = 1 if self._shading is not None else 0
+
         normals = self._visual.mesh_data.get_vertex_normals(indexed='faces')
         self._normals.set_data(normals, convert=True)
 
