@@ -219,7 +219,7 @@ void shade() {
 
 
 class ShadingFilter(Filter):
-    """Filter to apply shading to a mesh.
+    """Apply lighting to a mesh with the Phong reflection model.
 
     To disable shading, either detach (ex. ``mesh.detach(filter_obj)``) or
     set the shading type to ``None`` (ex. ``filter_obj.shading = None``).
@@ -227,6 +227,33 @@ class ShadingFilter(Filter):
     The shading filter should be attached after the other filters that modify
     the colors to be shaded. For example, to include the wireframe in the
     shading, the shading filter must come before the wireframe filter.
+
+    The light and reflection parameters are defined as RGBA colors with the
+    alpha channel controlling the intensity of the light or reflection. The
+    default intensity is 1.
+
+    Parameters
+    ----------
+    mode : str
+        Lighting mode: None, 'flat' or 'smooth'. If None, the lighting is
+        disabled.
+    light_dir : array-like
+        Direction of the light. Assuming a directional light.
+    ambient_light : str or tuple or Color
+        Color and intensity of the ambient light
+    diffuse_light : str or tuple or Color
+        Color and intensity of the diffuse light
+    specular_light : str or tuple or Color
+        Color and intensity of the specular light
+    ambient_coefficient : str or tuple or Color
+        Color and intensity of the ambient reflection coefficient (Ka)
+    diffuse_coefficient : str or tuple or Color
+        Color and intensity of the diffuse reflection coefficient (Kd)
+    specular_coefficient : str or tuple or Color
+        Color and intensity of the specular reflection coefficient (Ks)
+    shininess : float
+        The higher the shininess, the more localized the specular highlight.
+        Must be greater of equal to zero.
 
     Examples
     --------
