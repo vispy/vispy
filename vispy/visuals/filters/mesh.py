@@ -322,11 +322,7 @@ class ShadingFilter(Filter):
 
     @property
     def diffuse_coefficient(self):
-        """The diffuse reflection coefficient.
-
-        The diffuse reflection coefficient is multiplied with the mesh color.
-        With the defualt value (1, 1, 1), the mesh color is not modified.
-        """
+        """The diffuse reflection coefficient."""
         return self._diffuse_coefficient
 
     @diffuse_coefficient.setter
