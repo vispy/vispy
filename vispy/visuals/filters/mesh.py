@@ -151,6 +151,7 @@ void prepare_shading() {
 }
 """
 
+
 shading_fragment_template = """
 varying vec3 v_normal_vec;
 varying vec3 v_light_vec;
@@ -162,11 +163,19 @@ void shade() {
         return;
     }
 
+    vec3 ambient_coeff = $ambient_coefficient;
+    vec3 diffuse_coeff = $diffuse_coefficient;
+    vec3 specular_coeff = $specular_coefficient;
+    vec3 ambient_light_intensity = $ambient_light;
+    vec3 diffuse_light_intensity = $diffuse_light;
+    vec3 specular_light_intensity = $specular_light;
+    float shininess = $shininess;
+
     vec3 normal = v_normal_vec;
     if ($flat_shading == 1) {
         vec3 u = dFdx(v_pos_scene.xyz);
         vec3 v = dFdy(v_pos_scene.xyz);
-        normal = normalize(cross(u, v));
+        normal = cross(u, v);
         // Note(asnt): The normal calculated above always points in the
         // direction of the camera. Reintroduce the original orientation of the
         // face.
@@ -174,26 +183,30 @@ void shade() {
             normal = -normal;
         }
     }
+    normal = normalize(normal);
 
-    vec3 light_vec = v_light_vec;
+    vec3 light_vec = normalize(v_light_vec);
+    vec3 eye_vec = normalize(v_eye_vec);
 
-    // Diffuse light component.
-    float diffusek = dot(light_vec, normal);
-    diffusek  = max(diffusek, 0.0);
-    vec3 diffuse_color = $light_color * $diffuse_color * diffusek;
+    vec3 ambient = ambient_coeff * ambient_light_intensity;
 
-    // Specular light component.
-    float speculark = 0.0;
-    if (diffusek > 0.0 && $shininess > 0.0) {
-        vec3 reflexion = reflect(light_vec, normal);
-        speculark = dot(reflexion, v_eye_vec);
-        speculark = max(speculark, 0.0);
-        speculark = pow(speculark, $shininess);
+    float diffuse_factor = dot(light_vec, normal);
+    diffuse_factor = max(diffuse_factor, 0.0);
+    vec3 diffuse = diffuse_factor * diffuse_coeff * diffuse_light_intensity;
+
+    float specular_factor = 0.0;
+    bool is_illuminated = diffuse_factor > 0.0;
+    if (is_illuminated && shininess > 0.0) {
+        vec3 reflection = reflect(light_vec, normal);
+        specular_factor = dot(reflection, eye_vec);
+        specular_factor = max(specular_factor, 0.0);
+        specular_factor = pow(specular_factor, shininess);
     }
-    vec3 specular_color = $light_color * $specular_color * speculark;
+    vec3 specular = specular_factor * specular_coeff * specular_light_intensity;
 
-    vec3 color = $ambient_color + diffuse_color + specular_color;
-    gl_FragColor *= vec4(color, 1.0);
+    vec3 color = ambient + diffuse + specular;
+    gl_FragColor.rgb = color;
+
 }
 """  # noqa
 
@@ -214,17 +227,21 @@ class ShadingFilter(Filter):
     """
 
     def __init__(self, shading='flat', light_dir=(10, 5, -5),
-                 light_color=(1, 1, 1, 1),
-                 ambient_color=(.3, .3, .3, 1),
-                 diffuse_color=(1, 1, 1, 1),
-                 specular_color=(1, 1, 1, 1),
+                 ambient_light=(1, 1, 1, .7),
+                 diffuse_light=(1, 1, 1, .5),
+                 specular_light=(1, 1, 1, .5),
+                 ambient_coefficient=(1, 1, 1),
+                 diffuse_coefficient=(1, 1, 1),
+                 specular_coefficient=(1, 1, 1),
                  shininess=100):
         self._shading = shading
         self._light_dir = light_dir
-        self._light_color = Color(light_color)
-        self._ambient_color = Color(ambient_color)
-        self._diffuse_color = Color(diffuse_color)
-        self._specular_color = Color(specular_color)
+        self._ambient_light = Color(ambient_light)
+        self._diffuse_light = Color(diffuse_light)
+        self._specular_light = Color(specular_light)
+        self._ambient_coefficient = Color(ambient_coefficient)
+        self._diffuse_coefficient = Color(diffuse_coefficient)
+        self._specular_coefficient = Color(specular_coefficient)
         self._shininess = shininess
 
         vfunc = Function(shading_vertex_template)
@@ -260,43 +277,67 @@ class ShadingFilter(Filter):
         self._update_data()
 
     @property
-    def light_color(self):
-        """The light color."""
-        return self._light_color
+    def ambient_light(self):
+        """The color and intensity of the ambient light."""
+        return self._ambient_light
 
-    @light_color.setter
-    def light_color(self, light_color):
-        self._light_color = Color(light_color)
+    @ambient_light.setter
+    def ambient_light(self, light_color):
+        self._ambient_light = Color(light_color)
         self._update_data()
 
     @property
-    def diffuse_color(self):
-        """The diffuse light color."""
-        return self._diffuse_color
+    def diffuse_light(self):
+        """The color and intensity of the diffuse light."""
+        return self._diffuse_light
 
-    @diffuse_color.setter
-    def diffuse_color(self, diffuse_color):
-        self._diffuse_color = Color(diffuse_color)
+    @diffuse_light.setter
+    def diffuse_light(self, light_color):
+        self._diffuse_light = Color(light_color)
         self._update_data()
 
     @property
-    def specular_color(self):
-        """The specular light color."""
-        return self._specular_color
+    def specular_light(self):
+        """The color and intensity of the specular light."""
+        return self._specular_light
 
-    @specular_color.setter
-    def specular_color(self, specular_color):
-        self._specular_color = Color(specular_color)
+    @specular_light.setter
+    def specular_light(self, light_color):
+        self._specular_light = Color(light_color)
         self._update_data()
 
     @property
-    def ambient_color(self):
-        """The ambient color."""
-        return self._ambient_color
+    def ambient_coefficient(self):
+        """The ambient reflection coefficient."""
+        return self._ambient_coefficient
 
-    @ambient_color.setter
-    def ambient_color(self, color):
-        self._ambient_color = Color(color)
+    @ambient_coefficient.setter
+    def ambient_coefficient(self, color):
+        self._ambient_coefficient = Color(color)
+        self._update_data()
+
+    @property
+    def diffuse_coefficient(self):
+        """The diffuse reflection coefficient.
+
+        The diffuse reflection coefficient is multiplied with the mesh color.
+        With the defualt value (1, 1, 1), the mesh color is not modified.
+        """
+        return self._diffuse_coefficient
+
+    @diffuse_coefficient.setter
+    def diffuse_coefficient(self, diffuse_coefficient):
+        self._diffuse_coefficient = Color(diffuse_coefficient)
+        self._update_data()
+
+    @property
+    def specular_coefficient(self):
+        """The specular light coefficient."""
+        return self._specular_coefficient
+
+    @specular_coefficient.setter
+    def specular_coefficient(self, specular_coefficient):
+        self._specular_coefficient = Color(specular_coefficient)
         self._update_data()
 
     @property
@@ -314,10 +355,18 @@ class ShadingFilter(Filter):
             return
         self.vshader['light_dir'] = self._light_dir
         self.fshader['shininess'] = self._shininess
-        self.fshader['light_color'] = self._light_color.rgb
-        self.fshader['ambient_color'] = self._ambient_color.rgb
-        self.fshader['diffuse_color'] = self._diffuse_color.rgb
-        self.fshader['specular_color'] = self._specular_color.rgb
+
+        def apply_intensity(light_color):
+            color = light_color.rgb
+            intensity = light_color.alpha
+            return intensity * color
+        self.fshader['ambient_light'] = apply_intensity(self._ambient_light)
+        self.fshader['diffuse_light'] = apply_intensity(self._diffuse_light)
+        self.fshader['specular_light'] = apply_intensity(self._specular_light)
+
+        self.fshader['ambient_coefficient'] = self._ambient_coefficient.rgb
+        self.fshader['diffuse_coefficient'] = self._diffuse_coefficient.rgb
+        self.fshader['specular_coefficient'] = self._specular_coefficient.rgb
         self.fshader['flat_shading'] = 1 if self._shading == 'flat' else 0
         self.fshader['shading_enabled'] = 1 if self._shading is not None else 0
         normals = self._visual.mesh_data.get_vertex_normals(indexed='faces')
