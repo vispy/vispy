@@ -205,7 +205,7 @@ void shade() {
         specular_factor = pow(specular_factor, shininess);
     }
     vec3 specular = specular_factor * specular_coeff * specular_light.rgb
-                   * specular_light.a;
+                    * specular_light.a;
 
     // XXX(asnt): Not sure if there is a physically more correct way of
     // blending the base color with the lighting.
