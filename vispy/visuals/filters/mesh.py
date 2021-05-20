@@ -164,9 +164,9 @@ void shade() {
     }
 
     vec3 base_color = gl_FragColor.rgb;
-    vec3 ambient_coeff = $ambient_coefficient;
-    vec3 diffuse_coeff = $diffuse_coefficient;
-    vec3 specular_coeff = $specular_coefficient;
+    vec4 ambient_coeff = $ambient_coefficient;
+    vec4 diffuse_coeff = $diffuse_coefficient;
+    vec4 specular_coeff = $specular_coefficient;
     vec4 ambient_light = $ambient_light;
     vec4 diffuse_light = $diffuse_light;
     vec4 specular_light = $specular_light;
@@ -189,12 +189,14 @@ void shade() {
     vec3 light_vec = normalize(v_light_vec);
     vec3 eye_vec = normalize(v_eye_vec);
 
-    vec3 ambient = ambient_coeff * ambient_light.rgb * ambient_light.a;
+    vec3 ambient = ambient_coeff.rgb * ambient_coeff.a
+                   * ambient_light.rgb * ambient_light.a;
 
     float diffuse_factor = dot(light_vec, normal);
     diffuse_factor = max(diffuse_factor, 0.0);
-    vec3 diffuse = diffuse_factor * diffuse_coeff * diffuse_light.rgb
-                   * diffuse_light.a;
+    vec3 diffuse = diffuse_factor
+                   * diffuse_coeff.rgb * diffuse_coeff.a
+                   * diffuse_light.rgb * diffuse_light.a;
 
     float specular_factor = 0.0;
     bool is_illuminated = diffuse_factor > 0.0;
@@ -204,8 +206,9 @@ void shade() {
         specular_factor = max(specular_factor, 0.0);
         specular_factor = pow(specular_factor, shininess);
     }
-    vec3 specular = specular_factor * specular_coeff * specular_light.rgb
-                    * specular_light.a;
+    vec3 specular = specular_factor
+                    * specular_coeff.rgb * specular_coeff.a
+                    * specular_light.rgb * specular_light.a;
 
     // XXX(asnt): Not sure if there is a physically more correct way of
     // blending the base color with the lighting.
@@ -234,9 +237,9 @@ class ShadingFilter(Filter):
                  ambient_light=(1, 1, 1, .5),
                  diffuse_light=(1, 1, 1, .5),
                  specular_light=(1, 1, 1, .5),
-                 ambient_coefficient=(1, 1, 1),
-                 diffuse_coefficient=(1, 1, 1),
-                 specular_coefficient=(1, 1, 1),
+                 ambient_coefficient=(1, 1, 1, 1),
+                 diffuse_coefficient=(1, 1, 1, 1),
+                 specular_coefficient=(1, 1, 1, 1),
                  shininess=100):
         self._shading = shading
         self._light_dir = light_dir
@@ -360,9 +363,9 @@ class ShadingFilter(Filter):
         self.fshader['diffuse_light'] = self._diffuse_light.rgba
         self.fshader['specular_light'] = self._specular_light.rgba
 
-        self.fshader['ambient_coefficient'] = self._ambient_coefficient.rgb
-        self.fshader['diffuse_coefficient'] = self._diffuse_coefficient.rgb
-        self.fshader['specular_coefficient'] = self._specular_coefficient.rgb
+        self.fshader['ambient_coefficient'] = self._ambient_coefficient.rgba
+        self.fshader['diffuse_coefficient'] = self._diffuse_coefficient.rgba
+        self.fshader['specular_coefficient'] = self._specular_coefficient.rgba
         self.fshader['shininess'] = self._shininess
 
         self.fshader['flat_shading'] = 1 if self._shading == 'flat' else 0
