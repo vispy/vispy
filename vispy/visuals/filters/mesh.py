@@ -163,6 +163,7 @@ void shade() {
         return;
     }
 
+    vec3 base_color = gl_FragColor.rgb;
     vec3 ambient_coeff = $ambient_coefficient;
     vec3 diffuse_coeff = $diffuse_coefficient;
     vec3 specular_coeff = $specular_coefficient;
@@ -204,9 +205,8 @@ void shade() {
     }
     vec3 specular = specular_factor * specular_coeff * specular_light_intensity;
 
-    vec3 color = ambient + diffuse + specular;
+    vec3 color = base_color * (ambient + diffuse) + specular;
     gl_FragColor.rgb = color;
-
 }
 """  # noqa
 
