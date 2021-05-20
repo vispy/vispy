@@ -224,6 +224,10 @@ class ShadingFilter(Filter):
     To disable shading, either detach (ex. ``mesh.detach(filter_obj)``) or
     set the shading type to ``None`` (ex. ``filter_obj.shading = None``).
 
+    The shading filter should be attached after the other filters that modify
+    the colors to be shaded. For example, to include the wireframe in the
+    shading, the shading filter must come before the wireframe filter.
+
     Examples
     --------
     See
@@ -442,6 +446,9 @@ void draw_wireframe() {
 
 class WireframeFilter(Filter):
     """Add wireframe to a mesh.
+
+    The wireframe filter should be attached before the shading filter for the
+    wireframe to be shaded.
 
     Parameters
     ----------

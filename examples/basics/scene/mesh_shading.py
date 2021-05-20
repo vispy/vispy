@@ -21,7 +21,10 @@ view = canvas.central_widget.add_view()
 view.camera = 'arcball'
 view.camera.depth_value = 1e3
 
-mesh = Mesh(vertices, faces, color=(.5, .7, .5, 1))
+# Keep the shading off here to manually manage the shading filter below for
+# demonstration purposes. Otherwise, with `shading=flat` or `shading=smooth`,
+# the Mesh class would take care of managing the filter.
+mesh = Mesh(vertices, faces, color=(.5, .7, .5, 1), shading=None)
 view.add(mesh)
 
 wireframe_filter = WireframeFilter(width=args.wireframe_width)
