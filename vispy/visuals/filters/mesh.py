@@ -121,17 +121,15 @@ varying vec3 v_eye_vec;
 varying vec4 v_pos_scene;
 
 void prepare_shading() {
-    // TODO: Find a way to get the original position from the main vertex
-    //       shader instead of inversing the transformation.
     vec4 pos_scene = $render2scene(gl_Position);
-    v_pos_scene = pos_scene; // Used in the fragment for flat shading.
+    v_pos_scene = pos_scene;
 
     vec4 normal_scene = $visual2scene(vec4($normal, 1.0));
     vec4 origin_scene = $visual2scene(vec4(0.0, 0.0, 0.0, 1.0));
     normal_scene /= normal_scene.w;
     origin_scene /= origin_scene.w;
     vec3 normal = normalize(normal_scene.xyz - origin_scene.xyz);
-    v_normal_vec = normal; //VARYING COPY
+    v_normal_vec = normal;
 
     vec4 pos_front = $scene2doc(pos_scene);
     pos_front.z += 1e-6;
@@ -144,10 +142,10 @@ void prepare_shading() {
     pos_back /= pos_back.w;
 
     vec3 eye = normalize(pos_front.xyz - pos_back.xyz);
-    v_eye_vec = eye; //VARYING COPY
+    v_eye_vec = eye;
 
     vec3 light = normalize($light_dir.xyz);
-    v_light_vec = light; //VARYING COPY
+    v_light_vec = light;
 }
 """
 
