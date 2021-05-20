@@ -210,7 +210,8 @@ void shade() {
 
     // XXX(asnt): Not sure if there is a physically more correct way of
     // blending the base color with the lighting.
-    vec3 color = base_color * (ambient + diffuse + specular);
+    //vec3 color = base_color * (ambient + diffuse + specular);
+    vec3 color = ambient + base_color * diffuse + specular;
     gl_FragColor.rgb = color;
 }
 """  # noqa
@@ -263,9 +264,9 @@ class ShadingFilter(Filter):
     """
 
     def __init__(self, shading='flat', light_dir=(10, 5, -5),
-                 ambient_light=(1, 1, 1, .5),
-                 diffuse_light=(1, 1, 1, .5),
-                 specular_light=(1, 1, 1, .5),
+                 ambient_light=(1, 1, 1, 0),
+                 diffuse_light=(1, 1, 1, 1),
+                 specular_light=(1, 1, 1, .25),
                  ambient_coefficient=(1, 1, 1, 1),
                  diffuse_coefficient=(1, 1, 1, 1),
                  specular_coefficient=(1, 1, 1, 1),
