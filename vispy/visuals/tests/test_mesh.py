@@ -132,7 +132,7 @@ def test_mesh_wireframe_filter():
 
 
 @requires_pyopengl()
-#@requires_application()
+@requires_application()
 def test_mesh_normals():
     size = (45, 40)
     with TestingCanvas(size=size, bgcolor="k") as c:
