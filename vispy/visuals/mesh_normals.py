@@ -53,7 +53,7 @@ class MeshNormalsVisual(LineVisual):
         if primitive == 'face':
             origins = meshdata.get_vertices(indexed='faces')
             origins = origins.mean(axis=1)
-        else:
+        elif primitive == 'vertex':
             origins = meshdata.get_vertices()
         ends = origins + length * unit_normals
         segments = np.hstack((origins, ends)).reshape(-1, 3)
