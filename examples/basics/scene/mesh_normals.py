@@ -20,9 +20,9 @@ vertex_normals = MeshNormals(meshdata, primitive='vertex', color='orange',
 canvas = scene.SceneCanvas(keys='interactive', bgcolor='white')
 view = canvas.central_widget.add_view()
 view.camera = 'arcball'
-view.add(face_normals)
-view.add(vertex_normals)
 view.add(mesh)
+face_normals.parent = mesh
+vertex_normals.parent = mesh
 
 
 @canvas.events.key_press.connect
