@@ -38,7 +38,7 @@ class MeshNormalsVisual(LineVisual):
         elif primitive == 'vertex':
             normals = meshdata.get_vertex_normals()
         norms = np.sqrt((normals ** 2).sum(axis=-1, keepdims=True))
-        normals /= norms
+        unit_normals = normals / norms
 
         if length is None:
             face_corners = meshdata.get_vertices(indexed='faces')
@@ -55,7 +55,7 @@ class MeshNormalsVisual(LineVisual):
             origins = origins.mean(axis=1)
         else:
             origins = meshdata.get_vertices()
-        ends = origins + length * normals
+        ends = origins + length * unit_normals
         segments = np.hstack((origins, ends)).reshape(-1, 3)
 
         LineVisual.__init__(self, pos=segments, connect='segments', **kwargs)
