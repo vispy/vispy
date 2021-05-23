@@ -3,7 +3,6 @@
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
-
 """A visual for displaying mesh normals as lines."""
 
 import numpy as np
