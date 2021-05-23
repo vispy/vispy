@@ -1,3 +1,11 @@
+# -*- coding: utf-8 -*-
+# vispy: gallery 30
+# -----------------------------------------------------------------------------
+# Copyright (c) Vispy Development Team. All Rights Reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+# -----------------------------------------------------------------------------
+"""Show how to display mesh normals on a mesh."""
+
 from vispy import app, scene
 from vispy.io import read_mesh, load_data_file
 from vispy.scene.visuals import Mesh, MeshNormals
