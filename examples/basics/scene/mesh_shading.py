@@ -19,7 +19,7 @@ default_mesh = load_data_file('orig/triceratops.obj.gz')
 parser.add_argument('--mesh', default=default_mesh)
 parser.add_argument('--shininess', default=100)
 parser.add_argument('--wireframe-width', default=1)
-args = parser.parse_args()
+args, _ = parser.parse_known_args()
 
 vertices, faces, normals, texcoords = read_mesh(args.mesh)
 
@@ -97,6 +97,7 @@ def on_key_press(event):
 
 
 canvas.show()
+
 
 if __name__ == "__main__":
     app.run()
