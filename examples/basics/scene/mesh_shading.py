@@ -4,9 +4,7 @@
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
-"""Show how to use mesh filters for shading (lighting) a mesh and displaying a
-wireframe.
-"""
+"""Show mesh filter usage for shading (lighting) a mesh and displaying a wireframe."""
 
 import argparse
 
