@@ -64,27 +64,27 @@ void main(void)
 }
 """
 
-# vert_blit = """
-# attribute vec2 a_position;
-# varying vec2 v_texcoord;
+vert_copy = """
+attribute vec2 a_position;
+varying vec2 v_texcoord;
 
-# void main(void)
-# {
-#     gl_Position = vec4(a_position, 0, 1);
-#     v_texcoord = (a_position + 1.0) / 2.0;
-# }
-# """
+void main(void)
+{
+    gl_Position = vec4(a_position, 0, 1);
+    v_texcoord = (a_position + 1.0) / 2.0;
+}
+"""
 
-# frag_blit = """
-# uniform sampler2D tex_color;
+frag_copy = """
+uniform sampler2D tex_color;
 
-# varying vec2 v_texcoord;
+varying vec2 v_texcoord;
 
-# void main(void)
-# {
-#     gl_FragColor = texture2D(tex_color, v_texcoord);
-# }
-# """
+void main(void)
+{
+    gl_FragColor = texture2D(tex_color, v_texcoord);
+}
+"""
 
 
 class WeightedTransparencyRenderer:
@@ -94,40 +94,25 @@ class WeightedTransparencyRenderer:
         width, height = canvas.size
         # XXX: Not sure if buffer formats need to be specified explicitly
         # and/or matched to the format of the default frame buffer.
-        # self.color_buffer = gloo.RenderBuffer((height, width), 'color')
-        # self.color_buffer = gloo.Texture2D((height, width, 4), format='rgba')
-        # self.depth_buffer = gloo.RenderBuffer((height, width), 'depth')
-        # self.stencil_buffer = gloo.RenderBuffer((height, width), 'stencil')
-        # self.stencil_buffer = None
-        # self.framebuffer = gloo.FrameBuffer(depth=self.depth_buffer,
-        #                                     stencil=self.stencil_buffer)
-        # self.framebuffer = gloo.FrameBuffer()
+        self.color_buffer = gloo.Texture2D((height, width, 4), format='rgba')
+        self.depth_buffer = gloo.RenderBuffer((height, width), 'depth')
         # An RGBA32F float texture for accumulating the weighted colors.
-        accumulation = np.zeros((height, width, 4), np.float32)
         self.accumulation_buffer = gloo.Texture2D(
-            accumulation,
-            # (height, width, 4),
+            (height, width, 4),
             format='rgba',
-            # Note: Must pass the format explicitly as gloo chooses a
-            # lower-precision one by default.
             internalformat='rgba32f',
         )
         # A single-channel float texture (R32F) for the revealage.
         # The revelage is the amount of background revealed per fragment, as
         # opposed to coverage used in related blended order-independent
         # transparency methods.
-        revealage = np.zeros((height, width), np.float32)
         self.revealage_buffer = gloo.Texture2D(
-            revealage,
-            # (height, width),
+            (height, width),
             format='red',
-            # Note: Must pass the format explicitly as gloo chooses a
-            # lower-precision one by default.
             internalformat='r32f',
         )
 
-        self.framebuffer = gloo.FrameBuffer()
-        # self.framebuffer.depth_buffer = self.depth_buffer
+        self.framebuffer = gloo.FrameBuffer(depth=self.depth_buffer)
 
         def iter_tree(node):
             yield node
@@ -148,19 +133,13 @@ class WeightedTransparencyRenderer:
 
             visual_to_scene = visual.get_transform('visual', 'scene')
             vert_func['visual_to_scene'] = visual_to_scene
-            # vert_func['position'] = visual.shared_program.vert['position']
-            # print(visual.shared_program.vert['position'])
-            # print(visual.view_program.vert['position'])
-            # vert_func['position'] = visual.view_program.vert['position']
-            # vert_func['position'] = visual._vertices
             vert_func['depth'] = Varying('depth', 'float')
             frag_func['depth'] = vert_func['depth']
             vert_func['position'] = visual.view_program.vert['position']
-            # vert_func['position'] = visual.shared_program.vert['position']
 
             hook_vert = visual._get_hook('vert', 'post')
             hook_frag = visual._get_hook('frag', 'post')
-            # Place this hook in last position.
+            # Hook this function in last position.
             # XXX: No guarantee that there is no hook with a higher position
             # index, but unlikely. (If needed, list all hook positions and
             # choose an higher index.)
@@ -182,16 +161,17 @@ class WeightedTransparencyRenderer:
         prog_compose['a_position'] = quad_corners
         self.prog_compose = prog_compose
 
-        # Blit the rendered scen onto the default frame buffer.
-        # prog_blit = gloo.Program(vert_blit, frag_blit)
-        # prog_blit['tex_color'] = self.color_buffer
-        # prog_blit['a_position'] = quad_corners
-        # self.prog_blit = prog_blit
+        # Copy the rendered scene onto the default frame buffer.
+        prog_copy = gloo.Program(vert_copy, frag_copy)
+        prog_copy['tex_color'] = self.color_buffer
+        prog_copy['a_position'] = quad_corners
+        self.prog_copy = prog_copy
 
     def resize(self, size):
         height_width = size[::-1]
-        # self.color_buffer.resize(height_width)
-        # self.depth_buffer.resize(height_width)
+        channels = self.color_buffer.shape[2:]
+        self.color_buffer.resize(height_width + channels)
+        self.depth_buffer.resize(height_width)
         # XXX: resize doesn't preserve channel dimensions if not passed (reset
         # to 1 channel). Bug or feature?
         channels = self.accumulation_buffer.shape[2:]
@@ -201,36 +181,31 @@ class WeightedTransparencyRenderer:
     def render(self, bgcolor=None):
         if bgcolor is None:
             bgcolor = (1, 1, 1, 1)
-            # bgcolor = (.5, .5, .5, 1)
-            # bgcolor = (0, 0, 0, 1)
         canvas = self.canvas
-
-        # canvas.set_current()
 
         offset = 0, 0
         canvas_size = self.canvas.size
 
-        # def push_fbo(fbo):
-        #     canvas.push_fbo(fbo, offset, canvas_size)
+        def push_fbo():
+            canvas.push_fbo(self.framebuffer, offset, canvas_size)
 
-        # def pop_fbo():
-        #     canvas.pop_fbo()
+        def pop_fbo():
+            canvas.pop_fbo()
 
         # 1. Draw opaque objects.
 
-        # canvas.context.set_state(preset=None)
-        # canvas.context.set_state(
-        #     cull_face=True,
-        #     depth_test=True,
-        #     blend=False,
-        #     depth_mask=True,
-        # )
-        # # self.framebuffer.color_buffer = self.color_buffer
-        # push_fbo()
+        canvas.context.set_state(
+            cull_face=True,
+            depth_test=True,
+            blend=False,
+            depth_mask=True,
+        )
+        self.framebuffer.color_buffer = self.color_buffer
+        push_fbo()
         canvas.context.clear(color=bgcolor, depth=True)
         # # TODO: Identify and draw opaque objects only.
         # # canvas.draw_visual(canvas.scene_with_opaque_only)
-        # pop_fbo()
+        pop_fbo()
 
         # 2. Draw transparent objects.
 
@@ -239,7 +214,6 @@ class WeightedTransparencyRenderer:
             cull_face=False,
             blend=True,
             depth_test=True,   # Read the depth for opaque objects.
-            # depth_test=False,   # XXX: Rendering opaque objects correctly.
             depth_mask=False,  # Do not overwrite the depth.
         )
 
@@ -253,8 +227,7 @@ class WeightedTransparencyRenderer:
         for prog in self.prog_visuals:
             prog['frag']['u_pass'] = float(pass_)
         self.framebuffer.color_buffer = self.accumulation_buffer
-        # push_fbo(self.framebuffer)
-        canvas.push_fbo(self.framebuffer, offset, canvas_size)
+        push_fbo()
         canvas.context.clear(
             color=(0, 0, 0, 0),
             depth=False,
@@ -265,15 +238,13 @@ class WeightedTransparencyRenderer:
         # TODO: Only draw transparent objects.
         # canvas.draw_visual(canvas.scene_with_transparent_only)
         canvas.draw_visual(canvas.scene)
-        # pop_fbo()
-        canvas.pop_fbo()
+        pop_fbo()
 
         pass_ = 1
         for prog in self.prog_visuals:
             prog['frag']['u_pass'] = float(pass_)
         self.framebuffer.color_buffer = self.revealage_buffer
-        # push_fbo(self.framebuffer)
-        canvas.push_fbo(self.framebuffer, offset, canvas_size)
+        push_fbo()
         canvas.context.clear(
             color=(1, 1, 1, 1),
             depth=False,
@@ -283,8 +254,7 @@ class WeightedTransparencyRenderer:
         # TODO: Only draw transparent objects.
         # canvas.draw_visual(canvas.scene_with_transparent_only)
         canvas.draw_visual(canvas.scene)
-        # pop_fbo()
-        canvas.pop_fbo()
+        pop_fbo()
 
         # 2.2 Composite accumulations.
 
@@ -295,24 +265,24 @@ class WeightedTransparencyRenderer:
             blend=True,
             depth_mask=False,
         )
-        # self.framebuffer.color_buffer = self.color_buffer
-        # push_fbo()
+        # DEBUG: Render directly to the default frame buffer.
         # canvas.context.clear(color=bgcolor)
         # canvas.context.set_blend_func('one_minus_src_alpha', 'src_alpha')
         # self.prog_compose.draw('triangles', self.indices)
-        # pop_fbo()
-        # canvas.set_current()
+        # GOAL: Render to frame buffer object.
+        self.framebuffer.color_buffer = self.color_buffer
+        push_fbo()
         canvas.context.clear(color=bgcolor)
         canvas.context.set_blend_func('one_minus_src_alpha', 'src_alpha')
         self.prog_compose.draw('triangles', self.indices)
+        pop_fbo()
 
         # 3. Copy result to default frame buffer.
-        # TODO
-        # canvas.context.set_state(
-        #     depth_test=False,
-        #     blend=False,
-        #     depth_mask=False,
-        # )
-        # canvas.context.clear(color=bgcolor)
-        # # canvas.context.clear(color=(0, 0, 0, 1), depth=True, stencil=True)
-        # self.prog_blit.draw('triangles', self.indices)
+        # TODO: Use glBlitFramebuffer instead. Should be faster?
+        canvas.context.set_state(
+            depth_test=False,
+            blend=False,
+            depth_mask=False,
+        )
+        canvas.context.clear(color=bgcolor)
+        self.prog_copy.draw('triangles', self.indices)
