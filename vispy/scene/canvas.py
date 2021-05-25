@@ -215,7 +215,8 @@ class SceneCanvas(app.Canvas, Frozen):
         # Now that a draw event is going to be handled, open up the
         # scheduling of further updates
         self._update_pending = False
-        self._draw_scene()
+        # self._draw_scene()
+        self._draw_scene_with_transparency()
 
     def render(self, region=None, size=None, bgcolor=None, crop=None):
         """Render the scene to an offscreen buffer and return the image array.
@@ -265,6 +266,14 @@ class SceneCanvas(app.Canvas, Frozen):
             bgcolor = self._bgcolor
         self.context.clear(color=bgcolor, depth=True)
         self.draw_visual(self.scene)
+
+    def _draw_scene_with_transparency(self, bgcolor=None):
+        if not hasattr(self, '_renderer'):
+            from .renderer import WeightedTransparencyRenderer
+            self.unfreeze()
+            self._renderer = WeightedTransparencyRenderer(self)
+            self.freeze()
+        self._renderer.render(bgcolor=bgcolor)
 
     def draw_visual(self, visual, event=None):
         """Draw a visual and its children to the canvas or currently active
@@ -501,6 +510,9 @@ class SceneCanvas(app.Canvas, Frozen):
 
         if len(self._vp_stack) == 0:
             self.context.set_viewport(0, 0, *self.physical_size)
+
+        if hasattr(self, '_renderer'):
+            self._renderer.resize(self.physical_size)
 
     def on_close(self, event):
         """Close event handler
