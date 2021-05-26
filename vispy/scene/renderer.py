@@ -1,3 +1,11 @@
+"""A renderer supporting weighted blended order-independent transparency.
+
+Notes
+-----
+.. [1] McGuire, Morgan, and Louis Bavoil. "Weighted blended order-independent
+   transparency." Journal of Computer Graphics Techniques 2.4 (2013).
+"""
+
 import numpy as np
 
 from vispy import gloo
@@ -92,11 +100,10 @@ class WeightedTransparencyRenderer:
         self.canvas = canvas
 
         width, height = canvas.size
-        # XXX: Not sure if buffer formats need to be specified explicitly
-        # and/or matched to the format of the default frame buffer.
         self.color_buffer = gloo.Texture2D((height, width, 4), format='rgba')
         self.depth_buffer = gloo.RenderBuffer((height, width), 'depth')
         # An RGBA32F float texture for accumulating the weighted colors.
+        # Note: The 32bit float precision seems important to avoid artefacts.
         self.accumulation_buffer = gloo.Texture2D(
             (height, width, 4),
             format='rgba',
@@ -166,7 +173,7 @@ class WeightedTransparencyRenderer:
             mesh = properties['mesh']
             # XXX: This is a heuristic.
             # TODO: Define more formally how to distinguish opaque from
-            #       transparent visuals.
+            # transparent visuals.
             properties['transparent'] = mesh.color.alpha < 1
 
         self.nodes = nodes
@@ -180,7 +187,13 @@ class WeightedTransparencyRenderer:
             visual = properties['visual']
             mesh = properties['mesh']
 
+            # XXX: Without this the `view_program.vert['position']` is not
+            # defined.
             mesh._prepare_draw(None)
+            # The default state of visuals is not compatible with the state for
+            # transparent rendering.
+            # XXX: Save the state and restore later instead? Or overide the
+            # state locally when redering?
             mesh.set_gl_state(preset=None)
 
             vert_func = Function(vert_accumulate)
@@ -218,6 +231,7 @@ class WeightedTransparencyRenderer:
         self.prog_compose = prog_compose
 
         # Copy the rendered scene onto the default frame buffer.
+        # TODO: Use blitting?
         prog_copy = gloo.Program(vert_copy, frag_copy)
         prog_copy['tex_color'] = self.color_buffer
         prog_copy['a_position'] = quad_corners
@@ -323,8 +337,6 @@ class WeightedTransparencyRenderer:
         self.framebuffer.color_buffer = self.color_buffer
         push_fbo()
         canvas.context.clear(color=bgcolor, depth=True)
-        # # TODO: Identify and draw opaque objects only.
-        # # canvas.draw_visual(canvas.scene_with_opaque_only)
         self.draw_visual(canvas.scene, subset='opaque')
         pop_fbo()
 
@@ -338,9 +350,9 @@ class WeightedTransparencyRenderer:
             depth_mask=False,  # Do not overwrite the depth.
         )
 
-        # TODO: Add support for multiple render targets to gloo.
         # TODO: Merge the two render passes into a single render pass with two
         # render targets.
+        # TODO: Add support for multiple render targets to gloo.
 
         # 2.1 Accumulate contributions from all objects.
 
@@ -377,7 +389,8 @@ class WeightedTransparencyRenderer:
         canvas.draw_visual(canvas.scene)
         pop_fbo()
 
-        # 2.2 Composite accumulations.
+        # 2.2 Do the compositing of the accumulation of the transparent with
+        # the opaque.
 
         # XXX: Check the settings for when rendering with opaque objects.
         canvas.context.set_state(
