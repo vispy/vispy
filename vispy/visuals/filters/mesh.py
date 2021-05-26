@@ -252,7 +252,6 @@ class ShadingFilter(Filter):
 
     Notes
     -----
-
     Under the Phong reflection model, the illumination `I` is computed as
 
         `I = I_ambient + mesh_color * I_diffuse + I_specular`
