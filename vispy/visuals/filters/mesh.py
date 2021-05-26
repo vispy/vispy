@@ -236,23 +236,23 @@ class ShadingFilter(Filter):
     mode : str
         Lighting mode: None, 'flat' or 'smooth'. If None, the lighting is
         disabled.
-    light_dir : array-like
+    ambient_coefficient : str or tuple or Color
+        Color and intensity of the ambient reflection coefficient (Ka).
+    diffuse_coefficient : str or tuple or Color
+        Color and intensity of the diffuse reflection coefficient (Kd).
+    specular_coefficient : str or tuple or Color
+        Color and intensity of the specular reflection coefficient (Ks).
+    shininess : float
+        The shininess controls the size of specular highlight. The higher, the
+        more localized.  Must be greater than or equal to zero.
+    light_dir : array_like
         Direction of the light. Assuming a directional light.
     ambient_light : str or tuple or Color
-        Color and intensity of the ambient light
+        Color and intensity of the ambient light.
     diffuse_light : str or tuple or Color
-        Color and intensity of the diffuse light
+        Color and intensity of the diffuse light.
     specular_light : str or tuple or Color
-        Color and intensity of the specular light
-    ambient_coefficient : str or tuple or Color
-        Color and intensity of the ambient reflection coefficient (Ka)
-    diffuse_coefficient : str or tuple or Color
-        Color and intensity of the diffuse reflection coefficient (Kd)
-    specular_coefficient : str or tuple or Color
-        Color and intensity of the specular reflection coefficient (Ks)
-    shininess : float
-        The higher the shininess, the more localized the specular highlight.
-        Must be greater of equal to zero.
+        Color and intensity of the specular light.
 
     Notes
     -----
