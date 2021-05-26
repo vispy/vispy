@@ -24,16 +24,33 @@ frag_accumulate = """
 void accumulate()
 {
     float v_depth = $depth;
-    float z = abs(v_depth);
+    float abs_z = abs(v_depth);
     float alpha = gl_FragColor.a;
 
     float weight;
-    weight = 3e-2 / (1e-5 + pow(z / 200.0, 4.0));
-    weight = alpha * clamp(weight, 1e-2, 3e-3);
-    //weight = 3e3 * (1 - pow(gl_FragCoord.z, 3.0));
-    //weight = alpha * max(1e-2, weight);
-    // XXX: Fix this weight.
+
+    // Variant 0: No depth weighting.
     //weight = 1.0;
+
+    // Variants 1-4 are equations (7-10) in [1].
+
+    // Variant 1
+    // XXX: Does not give order-independent results on three parallel RGB
+    // planes.
+    //weight = 10.0 / (1e-5 + pow(abs_z / 5.0, 2.0) + pow(abs_z / 200.0, 6.0));
+    //weight = alpha * clamp(weight, 1e-2, 3e3);
+
+    // Variant 2
+    //weight = 10.0 / (1e-5 + pow(abs_z / 10.0, 3.0) + pow(abs_z / 200.0, 6.0));
+    //weight = alpha * clamp(weight, 1e-2, 3e3);
+
+    // Variant 3
+    //weight = 3e-2 / (1e-5 + pow(abs_z / 200.0, 4.0));
+    //weight = alpha * clamp(weight, 1e-2, 3e3);
+
+    // Variant 4
+    weight = 3e3 * pow(1 - gl_FragCoord.z, 3.0);
+    weight = alpha * max(weight, 1e-2);
 
     float u_pass = $u_pass;
     if(u_pass == 0.0) {
@@ -66,8 +83,6 @@ void main(void)
     vec4 accum = texture2D(tex_accumulation, v_texcoord);
     float r = texture2D(tex_revealage, v_texcoord).r;
     float a = clamp(accum.a, 1e-4, 5e4);
-    // XXX: Fix the weight. See accumulation shader.
-    //a = 1.0;
     gl_FragColor = vec4(accum.rgb / a, r);
 }
 """
