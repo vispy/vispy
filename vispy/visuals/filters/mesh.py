@@ -309,6 +309,9 @@ class ShadingFilter(Filter):
                  shininess=100):
         self._shading = shading
         self._light_dir = light_dir
+        # TODO: Accept a single float in [0, 1] instead of a full color for
+        # convenience. Set the color to (1, 1, 1) and the alpha channel to the
+        # float value.
         self._ambient_light = Color(ambient_light)
         self._diffuse_light = Color(diffuse_light)
         self._specular_light = Color(specular_light)
