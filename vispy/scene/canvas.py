@@ -215,8 +215,11 @@ class SceneCanvas(app.Canvas, Frozen):
         # Now that a draw event is going to be handled, open up the
         # scheduling of further updates
         self._update_pending = False
-        # self._draw_scene()
-        self._draw_scene_with_transparency()
+        import sys
+        if "--vispy-transparent" in sys.argv:
+            self._draw_scene_with_transparency(bgcolor=self._bgcolor)
+        else:
+            self._draw_scene()
 
     def render(self, region=None, size=None, bgcolor=None, crop=None):
         """Render the scene to an offscreen buffer and return the image array.
