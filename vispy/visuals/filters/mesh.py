@@ -411,7 +411,7 @@ class ShadingFilter(Filter):
 
     @property
     def shininess(self):
-        """The shininess."""
+        """The shininess controlling the spread of the specular highlight."""
         return self._shininess
 
     @shininess.setter
