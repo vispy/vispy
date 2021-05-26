@@ -97,7 +97,7 @@ jobs:
         cname: vispy.org
         allow_empty_commit: true
         external_repository: vispy/vispy.github.com
-        full_commit_message: "Deploy vispy.org website for SHA:$GITHUB_SHA (Tag: $GITHUB_REF)"
+        full_commit_message: "Deploy vispy.org website for  SHA:${{ github.sha }} (Ref: ${{ github.ref }})"
 
   # linux runs
   build_0:
