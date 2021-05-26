@@ -254,6 +254,47 @@ class ShadingFilter(Filter):
         The higher the shininess, the more localized the specular highlight.
         Must be greater of equal to zero.
 
+    Notes
+    -----
+
+    Under the Phong reflection model, the illumination `I` is computed as
+
+        `I = I_ambient + mesh_color * I_diffuse + I_specular`
+
+    for each color channel independently.
+    The mesh color is the base color of the mesh, possibly modified by the
+    filters applied before this one.
+    The ambient, diffuse and specular terms are defined as
+
+        `I_ambient = Ka * Ia`
+
+        `I_diffuse = Kd * Id * dot(L, N)`
+
+        `I_specular = Ks * Is * dot(R, V) ** s`
+
+    with
+
+    `L`
+        the light direction, assuming a directional light.
+    `N`
+        the normal to the surface at the reflection point,
+    `R`
+        the direction of the reflection,
+    `V`
+        the direction to the viewer,
+    `s`
+        the shininess factor s.
+
+    The `Ka`, `Kd` and `Ks` coefficients are defined as an RGBA color. The RGB
+    components define the color that the surface reflects, and the alpha
+    component (A) defines the intensity/attenuation of the reflection. When
+    applied in the per-channel illumation formulas above, the color component
+    is multiplied by the intensity to obtain the final coefficient, e.g.
+    `Kd = R * A` for the red channel.
+
+    Similarly, the light intensities, `Ia`, `Id` and `Is`, are defined by RGBA
+    colors, corresponding to the color of the light and its intensity.
+
     Examples
     --------
     See
