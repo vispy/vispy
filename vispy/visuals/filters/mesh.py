@@ -275,7 +275,7 @@ class ShadingFilter(Filter):
     with
 
     `L`
-        the light direction, assuming a directional light.
+        the light direction, assuming a directional light,
     `N`
         the normal to the surface at the reflection point,
     `R`
