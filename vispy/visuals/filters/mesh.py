@@ -227,10 +227,6 @@ class ShadingFilter(Filter):
     the colors to be shaded. For example, to include the wireframe in the
     shading, the shading filter must come before the wireframe filter.
 
-    The light and reflection parameters are defined as RGBA colors with the
-    alpha channel controlling the intensity of the light or reflection. The
-    default intensity is 1.
-
     Parameters
     ----------
     mode : str
