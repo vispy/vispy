@@ -119,13 +119,69 @@ class WeightedTransparencyRenderer:
             for child in node.children:
                 yield from iter_tree(child)
 
+        import vispy
         from vispy.scene.visuals import Mesh
-        visuals = [node for node in iter_tree(self.canvas.scene)
-                   if isinstance(node, Mesh)]
+
+        def is_drawable(node):
+            return hasattr(node, 'draw')
+
+        def is_meshlike(node):
+            return (
+                isinstance(node, Mesh)
+                # Compound visuals with a Mesh. Not sure they are defined
+                # consistently.
+                or hasattr(node, "mesh")
+                or hasattr(node, "_mesh")
+                # XXX: Check if there are other visuals to catch.
+                # TODO: Standardise the structure of drawable (compound)
+                #       visuals for consistent identification?
+            )
+
+        def get_sub_mesh_or_visual(visual):
+            return (
+                visual._mesh
+                if isinstance(visual, vispy.visuals.CompoundVisual)
+                else visual
+            )
+
+        # Classify the nodes of the scene graph into transparent/opaque,
+        # drawable, and mesh-like, to:
+        # - modify the shader programs of the transparent nodes,
+        # - later draw the opaque and transparent subsets separately.
+        # XXX: Restrict transparency to mesh-like visuals for now. Should be
+        #      extended to lines...
+        nodes = {
+            node: dict(
+                drawable=is_drawable(node),
+                meshlike=is_meshlike(node),
+                visual=node,
+                mesh=get_sub_mesh_or_visual(node),
+                transparent=None,   # Set in a second pass below.
+            )
+            for node in iter_tree(self.canvas.scene)
+        }
+        for node, properties in nodes.items():
+            if not properties['meshlike']:
+                continue
+            mesh = properties['mesh']
+            # XXX: This is a heuristic.
+            # TODO: Define more formally how to distinguish opaque from
+            #       transparent visuals.
+            properties['transparent'] = mesh.color.alpha < 1
+
+        self.nodes = nodes
+
+        # Add the glsl program for transparency at the end of the programs of
+        # the transparent visuals.
         prog_visuals = []
-        for visual in visuals:
-            visual._prepare_draw(None)
-            visual.set_gl_state(preset=None)
+        for node, properties in nodes.items():
+            if not (properties['meshlike'] and properties['transparent']):
+                continue
+            visual = properties['visual']
+            mesh = properties['mesh']
+
+            mesh._prepare_draw(None)
+            mesh.set_gl_state(preset=None)
 
             vert_func = Function(vert_accumulate)
             frag_func = Function(frag_accumulate)
@@ -135,14 +191,14 @@ class WeightedTransparencyRenderer:
             vert_func['visual_to_scene'] = visual_to_scene
             vert_func['depth'] = Varying('depth', 'float')
             frag_func['depth'] = vert_func['depth']
-            vert_func['position'] = visual.view_program.vert['position']
+            vert_func['position'] = mesh.view_program.vert['position']
 
-            hook_vert = visual._get_hook('vert', 'post')
-            hook_frag = visual._get_hook('frag', 'post')
-            # Hook this function in last position.
+            hook_vert = mesh._get_hook('vert', 'post')
+            hook_frag = mesh._get_hook('frag', 'post')
+            # Add in last position.
             # XXX: No guarantee that there is no hook with a higher position
             # index, but unlikely. (If needed, list all hook positions and
-            # choose an higher index.)
+            # choose a higher index.)
             position = 1000
             hook_vert.add(vert_func(), position=position)
             hook_frag.add(frag_func(), position=position)
@@ -167,20 +223,84 @@ class WeightedTransparencyRenderer:
         prog_copy['a_position'] = quad_corners
         self.prog_copy = prog_copy
 
+        self._draw_order = {}
+
     def resize(self, size):
         height_width = size[::-1]
         channels = self.color_buffer.shape[2:]
         self.color_buffer.resize(height_width + channels)
         self.depth_buffer.resize(height_width)
-        # XXX: resize doesn't preserve channel dimensions if not passed (reset
-        # to 1 channel). Bug or feature?
         channels = self.accumulation_buffer.shape[2:]
         self.accumulation_buffer.resize(height_width + channels)
         self.revealage_buffer.resize(height_width)
 
-    def render(self, bgcolor=None):
-        if bgcolor is None:
-            bgcolor = (1, 1, 1, 1)
+    def draw_visual(self, visual, subset=None):
+        """Draw a visual and its children to the currently active framebuffer.
+
+        Parameters
+        ----------
+        visual : Visual
+            The root visual.
+        subset : {None, 'opaque', 'transparent'}, optional
+            Select the subset of visuals to draw: 'opaque' only, 'transparent'
+            only, or all (None).
+        """
+        assert subset in (None, 'opaque', 'transparent')
+
+        canvas = self.canvas
+
+        # prof = self.Profiler()
+
+        # make sure this canvas's context is active
+        canvas.set_current()
+
+        if subset is None:
+            in_subset = {node: True for node in self.nodes}
+        elif subset == 'opaque':
+            in_subset = {
+                node: prop['drawable'] and not prop['transparent']
+                for node, prop in self.nodes.items()
+            }
+        elif subset == 'transparent':
+            in_subset = {
+                node: prop['drawable'] and prop['transparent']
+                for node, prop in self.nodes.items()
+            }
+
+        try:
+            canvas._drawing = True
+            # get order to draw visuals
+            if visual not in self._draw_order:
+                self._draw_order[visual] = canvas._generate_draw_order(visual)
+            order = self._draw_order[visual]
+
+            # Draw and
+            # - avoid branches with visible=False,
+            # - skip visuals not in the selected subset (opaque or
+            #   transparent).
+            stack = []
+            invisible_node = None
+            for node, start in order:
+                if start:
+                    stack.append(node)
+                    if invisible_node is None:
+                        if not node.visible:
+                            # disable drawing until we exit this node's subtree
+                            invisible_node = node
+                        else:
+                            if not in_subset[node]:
+                                continue
+                            if hasattr(node, 'draw'):
+                                node.draw()
+                                # prof.mark(str(node))
+                else:
+                    if node is invisible_node:
+                        invisible_node = None
+                    stack.pop()
+        finally:
+            canvas._drawing = False
+
+    def render(self, bgcolor):
         canvas = self.canvas
 
         offset = 0, 0
@@ -205,6 +325,7 @@ class WeightedTransparencyRenderer:
         canvas.context.clear(color=bgcolor, depth=True)
         # # TODO: Identify and draw opaque objects only.
         # # canvas.draw_visual(canvas.scene_with_opaque_only)
+        self.draw_visual(canvas.scene, subset='opaque')
         pop_fbo()
 
         # 2. Draw transparent objects.
@@ -236,8 +357,8 @@ class WeightedTransparencyRenderer:
         canvas.context.set_blend_equation('func_add')
         canvas.context.set_blend_func('one', 'one')
         # TODO: Only draw transparent objects.
-        # canvas.draw_visual(canvas.scene_with_transparent_only)
-        canvas.draw_visual(canvas.scene)
+        self.draw_visual(canvas.scene, subset='transparent')
+        # canvas.draw_visual(canvas.scene)
         pop_fbo()
 
         pass_ = 1
@@ -252,7 +373,7 @@ class WeightedTransparencyRenderer:
         )
         canvas.context.set_blend_func('zero', 'one_minus_src_alpha')
         # TODO: Only draw transparent objects.
-        # canvas.draw_visual(canvas.scene_with_transparent_only)
+        self.draw_visual(canvas.scene, subset='transparent')
         canvas.draw_visual(canvas.scene)
         pop_fbo()
 
@@ -272,7 +393,6 @@ class WeightedTransparencyRenderer:
         # GOAL: Render to frame buffer object.
         self.framebuffer.color_buffer = self.color_buffer
         push_fbo()
-        canvas.context.clear(color=bgcolor)
         canvas.context.set_blend_func('one_minus_src_alpha', 'src_alpha')
         self.prog_compose.draw('triangles', self.indices)
         pop_fbo()

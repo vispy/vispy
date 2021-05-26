@@ -276,7 +276,7 @@ class SceneCanvas(app.Canvas, Frozen):
             self.unfreeze()
             self._renderer = WeightedTransparencyRenderer(self)
             self.freeze()
-        self._renderer.render(bgcolor=bgcolor)
+        self._renderer.render(bgcolor)
 
     def draw_visual(self, visual, event=None):
         """Draw a visual and its children to the canvas or currently active
