@@ -118,6 +118,108 @@ void main(void)
 """
 
 
+def _classify_nodes(scene):
+    import vispy
+    from vispy.scene.visuals import Mesh
+
+    def is_drawable(node):
+        return hasattr(node, 'draw')
+
+    def is_meshlike(node):
+        return (
+            isinstance(node, Mesh)
+            # Compound visuals with a Mesh. Not sure they are defined
+            # consistently.
+            or hasattr(node, "mesh")
+            or hasattr(node, "_mesh")
+            # XXX: Check if there are other visuals to catch.
+            # TODO: Standardise the structure of drawable (compound)
+            #       visuals for consistent identification?
+        )
+
+    def get_sub_mesh_or_visual(visual):
+        return (
+            visual._mesh
+            if isinstance(visual, vispy.visuals.CompoundVisual)
+            else visual
+        )
+
+    # Classify the nodes of the scene graph into transparent/opaque,
+    # drawable, and mesh-like, to:
+    # - modify the shader programs of the transparent nodes,
+    # - later draw the opaque and transparent subsets separately.
+    # XXX: Restrict transparency to mesh-like visuals for now. Should be
+    #      extended to lines...
+    def iter_node_tree(node):
+        yield node
+        for child in node.children:
+            yield from iter_node_tree(child)
+
+    nodes = {
+        node: dict(
+            drawable=is_drawable(node),
+            meshlike=is_meshlike(node),
+            visual=node,
+            mesh=get_sub_mesh_or_visual(node),
+            transparent=None,   # Set in a second pass below.
+        )
+        for node in iter_node_tree(scene)
+    }
+    for node, properties in nodes.items():
+        if not properties['meshlike']:
+            continue
+        mesh = properties['mesh']
+        # XXX: This is a heuristic.
+        # TODO: Define more formally how to distinguish opaque from
+        # transparent visuals.
+        properties['transparent'] = mesh.color.alpha < 1
+
+    return nodes
+
+
+def _extend_programs(node_properties):
+    """Add the glsl program for transparency at the end of the programs of the
+    transparent visuals.
+    """
+    programs = []
+    for node, properties in node_properties.items():
+        if not (properties['meshlike'] and properties['transparent']):
+            continue
+        visual = properties['visual']
+        mesh = properties['mesh']
+
+        # XXX: Without this the `view_program.vert['position']` is not
+        # defined.
+        mesh._prepare_draw(None)
+        # The default state of visuals is not compatible with the state for
+        # transparent rendering.
+        # XXX: Save the state and restore later instead? Or overide the
+        # state locally when redering?
+        mesh.set_gl_state(preset=None)
+
+        vert_func = Function(vert_accumulate)
+        frag_func = Function(frag_accumulate)
+        programs.append(dict(vert=vert_func, frag=frag_func))
+
+        visual_to_scene = visual.get_transform('visual', 'scene')
+        vert_func['visual_to_scene'] = visual_to_scene
+        vert_func['depth'] = Varying('depth', 'float')
+        frag_func['depth'] = vert_func['depth']
+        vert_func['position'] = mesh.view_program.vert['position']
+
+        hook_vert = mesh._get_hook('vert', 'post')
+        hook_frag = mesh._get_hook('frag', 'post')
+        # Add in last position.
+        # XXX: No guarantee that there is no hook with a higher position
+        # index, but unlikely. (If needed, list all hook positions and
+        # choose a higher index.)
+        position = 1000
+        hook_vert.add(vert_func(), position=position)
+        hook_frag.add(frag_func(), position=position)
+
+    return programs
+
+
 class WeightedTransparencyRenderer:
     def __init__(self, canvas):
         self.canvas = canvas
@@ -144,102 +246,8 @@ class WeightedTransparencyRenderer:
 
         self.framebuffer = gloo.FrameBuffer(depth=self.depth_buffer)
 
-        def iter_tree(node):
-            yield node
-            for child in node.children:
-                yield from iter_tree(child)
-
-        import vispy
-        from vispy.scene.visuals import Mesh
-
-        def is_drawable(node):
-            return hasattr(node, 'draw')
-
-        def is_meshlike(node):
-            return (
-                isinstance(node, Mesh)
-                # Compound visuals with a Mesh. Not sure they are defined
-                # consistently.
-                or hasattr(node, "mesh")
-                or hasattr(node, "_mesh")
-                # XXX: Check if there are other visuals to catch.
-                # TODO: Standardise the structure of drawable (compound)
-                #       visuals for consistent identification?
-            )
-
-        def get_sub_mesh_or_visual(visual):
-            return (
-                visual._mesh
-                if isinstance(visual, vispy.visuals.CompoundVisual)
-                else visual
-            )
-
-        # Classify the nodes of the scene graph into transparent/opaque,
-        # drawable, and mesh-like, to:
-        # - modify the shader programs of the transparent nodes,
-        # - later draw the opaque and transparent subsets separately.
-        # XXX: Restrict transparency to mesh-like visuals for now. Should be
-        #      extended to lines...
-        nodes = {
-            node: dict(
-                drawable=is_drawable(node),
-                meshlike=is_meshlike(node),
-                visual=node,
-                mesh=get_sub_mesh_or_visual(node),
-                transparent=None,   # Set in a second pass below.
-            )
-            for node in iter_tree(self.canvas.scene)
-        }
-        for node, properties in nodes.items():
-            if not properties['meshlike']:
-                continue
-            mesh = properties['mesh']
-            # XXX: This is a heuristic.
-            # TODO: Define more formally how to distinguish opaque from
-            # transparent visuals.
-            properties['transparent'] = mesh.color.alpha < 1
-
-        self.nodes = nodes
-
-        # Add the glsl program for transparency at the end of the programs of
-        # the transparent visuals.
-        prog_visuals = []
-        for node, properties in nodes.items():
-            if not (properties['meshlike'] and properties['transparent']):
-                continue
-            visual = properties['visual']
-            mesh = properties['mesh']
-
-            # XXX: Without this the `view_program.vert['position']` is not
-            # defined.
-            mesh._prepare_draw(None)
-            # The default state of visuals is not compatible with the state for
-            # transparent rendering.
-            # XXX: Save the state and restore later instead? Or overide the
-            # state locally when redering?
-            mesh.set_gl_state(preset=None)
-
-            vert_func = Function(vert_accumulate)
-            frag_func = Function(frag_accumulate)
-            prog_visuals.append(dict(vert=vert_func, frag=frag_func))
-
-            visual_to_scene = visual.get_transform('visual', 'scene')
-            vert_func['visual_to_scene'] = visual_to_scene
-            vert_func['depth'] = Varying('depth', 'float')
-            frag_func['depth'] = vert_func['depth']
-            vert_func['position'] = mesh.view_program.vert['position']
-
-            hook_vert = mesh._get_hook('vert', 'post')
-            hook_frag = mesh._get_hook('frag', 'post')
-            # Add in last position.
-            # XXX: No guarantee that there is no hook with a higher position
-            # index, but unlikely. (If needed, list all hook positions and
-            # choose a higher index.)
-            position = 1000
-            hook_vert.add(vert_func(), position=position)
-            hook_frag.add(frag_func(), position=position)
-
-        self.prog_visuals = prog_visuals
+        self.nodes = _classify_nodes(self.canvas.scene)
+        self.prog_visuals = _extend_programs(self.nodes)
 
         # Post composition.
         # A quad (two triangles) spanning the framebuffer area.
