@@ -255,11 +255,11 @@ class WeightedTransparencyRenderer:
         indices = np.array([0, 1, 2, 0, 2, 3], dtype=np.uint32)
         indices = gloo.IndexBuffer(indices)
         self.indices = indices
-        prog_compose = gloo.Program(vert_compose, frag_compose)
-        prog_compose['tex_accumulation'] = self.accumulation_buffer
-        prog_compose['tex_revealage'] = self.revealage_buffer
-        prog_compose['a_position'] = quad_corners
-        self.prog_compose = prog_compose
+        prog_composite = gloo.Program(vert_compose, frag_compose)
+        prog_composite['tex_accumulation'] = self.accumulation_buffer
+        prog_composite['tex_revealage'] = self.revealage_buffer
+        prog_composite['a_position'] = quad_corners
+        self.prog_composite = prog_composite
 
         # Copy the rendered scene onto the default frame buffer.
         # TODO: Use blitting?
@@ -430,7 +430,7 @@ class WeightedTransparencyRenderer:
         self.framebuffer.color_buffer = self.color_buffer
         push_fbo()
         canvas.context.set_blend_func('one_minus_src_alpha', 'src_alpha')
-        self.prog_compose.draw('triangles', self.indices)
+        self.prog_composite.draw('triangles', self.indices)
         pop_fbo()
 
         # 3. Copy result to default frame buffer.
