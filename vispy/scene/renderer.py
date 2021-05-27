@@ -420,7 +420,6 @@ class WeightedTransparencyRenderer:
         # 2.2 Do the compositing of the accumulation of the transparent with
         # the opaque.
 
-        # XXX: Check the settings for when rendering with opaque objects.
         canvas.context.set_state(
             preset=None,
             depth_test=False,
