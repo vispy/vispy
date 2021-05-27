@@ -1,5 +1,10 @@
 """A renderer supporting weighted blended order-independent transparency.
 
+The accumulation of transparency through several objects is approximate and
+works best for highly transparent objects, i.e. opacity between `0` and `0.25`.
+Artefacts appear for higher opacities. Fully-opaque objects are rendered
+correctly.
+
 Notes
 -----
 .. [1] McGuire, Morgan, and Louis Bavoil. "Weighted blended order-independent
