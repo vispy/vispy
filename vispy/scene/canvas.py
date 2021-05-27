@@ -79,6 +79,8 @@ class SceneCanvas(app.Canvas, Frozen):
         allows the scale factor to be adjusted for testing.
     bgcolor : Color
         The background color to use.
+    transparency : {None, 'weighted'}, optional
+        Whether to render with transparency.
 
     See also
     --------
@@ -114,7 +116,10 @@ class SceneCanvas(app.Canvas, Frozen):
                  show=False, autoswap=True, app=None, create_native=True,
                  vsync=False, resizable=True, decorate=True, fullscreen=False,
                  config=None, shared=None, keys=None, parent=None, dpi=None,
-                 always_on_top=False, px_scale=1, bgcolor='black'):
+                 always_on_top=False, px_scale=1, bgcolor='black',
+                 transparency=None):
+        assert transparency in (None, 'weighted')
+
         self._scene = None
         # A default widget that follows the shape of the canvas
         self._central_widget = None
@@ -126,6 +131,7 @@ class SceneCanvas(app.Canvas, Frozen):
         self._mouse_handler = None
         self.transforms = TransformSystem(canvas=self)
         self._bgcolor = Color(bgcolor).rgba
+        self._transparency = transparency
 
         # Set to True to enable sending mouse events even when no button is
         # pressed. Disabled by default because it is very expensive. Also
@@ -215,8 +221,7 @@ class SceneCanvas(app.Canvas, Frozen):
         # Now that a draw event is going to be handled, open up the
         # scheduling of further updates
         self._update_pending = False
-        import sys
-        if "--vispy-transparent" in sys.argv:
+        if self._transparency == "weighted":
             self._draw_scene_with_transparency(bgcolor=self._bgcolor)
         else:
             self._draw_scene()

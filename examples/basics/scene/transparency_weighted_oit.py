@@ -64,7 +64,8 @@ for plane, position in zip(planes, positions):
 meshes += planes
 
 bgcolor = 'white'
-canvas = scene.SceneCanvas(keys='interactive', bgcolor=bgcolor)
+canvas = scene.SceneCanvas(keys='interactive', bgcolor=bgcolor,
+                           transparency='weighted')
 view = canvas.central_widget.add_view()
 view.camera = 'arcball'
 view.camera.depth_value = 1e3
