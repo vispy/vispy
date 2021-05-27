@@ -383,9 +383,7 @@ class WeightedTransparencyRenderer:
         )
         canvas.context.set_blend_equation('func_add')
         canvas.context.set_blend_func('one', 'one')
-        # TODO: Only draw transparent objects.
         self.draw_visual(canvas.scene, subset='transparent')
-        # canvas.draw_visual(canvas.scene)
         pop_fbo()
 
         pass_ = 1
@@ -399,7 +397,6 @@ class WeightedTransparencyRenderer:
             stencil=False,
         )
         canvas.context.set_blend_func('zero', 'one_minus_src_alpha')
-        # TODO: Only draw transparent objects.
         self.draw_visual(canvas.scene, subset='transparent')
         canvas.draw_visual(canvas.scene)
         pop_fbo()
@@ -414,11 +411,6 @@ class WeightedTransparencyRenderer:
             blend=True,
             depth_mask=False,
         )
-        # DEBUG: Render directly to the default frame buffer.
-        # canvas.context.clear(color=bgcolor)
-        # canvas.context.set_blend_func('one_minus_src_alpha', 'src_alpha')
-        # self.prog_compose.draw('triangles', self.indices)
-        # GOAL: Render to frame buffer object.
         self.framebuffer.color_buffer = self.color_buffer
         push_fbo()
         canvas.context.set_blend_func('one_minus_src_alpha', 'src_alpha')
