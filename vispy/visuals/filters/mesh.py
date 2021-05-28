@@ -332,6 +332,9 @@ class ShadingFilter(Filter):
         self.vshader['scene2doc'] = scene2doc
         self.vshader['doc2scene'] = doc2scene
 
+        if self._visual.mesh_data is not None:
+            self._update_data()
+
         visual.events.data_updated.connect(self.on_mesh_data_updated)
 
     def _detach(self, visual):

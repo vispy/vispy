@@ -117,6 +117,8 @@ class MeshVisual(Visual):
 
         self.events.add(data_updated=Event)
 
+        self._meshdata = None
+
         # Define buffers
         self._vertices = VertexBuffer(np.zeros((0, 3), dtype=np.float32))
         self._cmap = get_colormap('cubehelix')
@@ -158,9 +160,9 @@ class MeshVisual(Visual):
         if self.shading_filter is None:
             from vispy.visuals.filters import ShadingFilter
             self.shading_filter = ShadingFilter(shading=shading)
+            self.attach(self.shading_filter)
         else:
             self.shading_filter.shading = shading
-        self.attach(self.shading_filter)
 
     def set_data(self, vertices=None, faces=None, vertex_colors=None,
                  face_colors=None, color=None, vertex_values=None,
