@@ -30,6 +30,25 @@ def test_mesh_color():
 
 
 @requires_pyopengl()
+@pytest.mark.parametrize('shading', [None, 'flat', 'smooth'])
+def test_mesh_shading_change(shading):
+    # Regression test for #2041: exception raised when changing the shading
+    # mode with shading=None initially.
+    # The code below should not raise.
+    # FIXME(asnt): I would expect this to raise with the buggy code but it does
+    # not. See example in #2041.
+    size = (45, 40)
+    with TestingCanvas(size=size, bgcolor="k") as c:
+        v = c.central_widget.add_view(border_width=0)
+        vertices = np.array([(0, 0, 0), (0, 0, 1), (1, 0, 0)], dtype=float)
+        faces = np.array([(0, 1, 2)])
+        mesh = scene.visuals.Mesh(vertices=vertices, faces=faces, shading=None)
+        v.add(mesh)
+        c.show()
+        mesh.shading = shading
+
+
+@requires_pyopengl()
 @requires_application()
 @pytest.mark.parametrize('shading', [None, 'flat', 'smooth'])
 def test_mesh_shading_filter(shading):
