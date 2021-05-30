@@ -119,11 +119,10 @@ void main(void)
 
 
 def _classify_nodes(scene):
-    import vispy
-    from vispy.scene.visuals import Mesh
-
     def is_drawable(node):
         return hasattr(node, 'draw')
+
+    from vispy.scene.visuals import Mesh
 
     def is_meshlike(node):
         return (
@@ -138,11 +137,15 @@ def _classify_nodes(scene):
         )
 
     def get_sub_mesh_or_visual(visual):
-        return (
-            visual._mesh
-            if isinstance(visual, vispy.visuals.CompoundVisual)
-            else visual
-        )
+        """Return the mesh visual of this visual.
+
+        The mesh is either the visual itself or a subvisual, as for compound
+        visuals like Box and Sphere.
+        """
+        # XXX: Assuming all mesh-based visuals are either a Mesh visual or a
+        # compound visual with a `_mesh` attribute to a Mesh visual.
+        # TODO: Verify this assumption.
+        return visual._mesh if hasattr(visual, "_mesh") else visual
 
     # Classify the nodes of the scene graph into transparent/opaque,
     # drawable, and mesh-like, to:
