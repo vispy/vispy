@@ -20,14 +20,21 @@ class MeshNormalsVisual(LineVisual):
     primitive : {'face', 'vertex'}
         The primitive type on which to compute and display the normals.
     length : None or float or array-like, optional
-        The length(s) of the normals. If None, the length is set to the median
-        length of the edges of the mesh.
+        The length(s) of the normals. If None, the length is computed with
+        `length_method`.
+    length_method : {'median_edge', 'max_extent'}, default='median_edge'
+        The method to compute the length of the normals (when `length=None`).
+        Methods: 'median_edge', the median edge length; 'max_extent', the
+        maximum side length of the bounding box of the mesh.
+    length_scale : float, default=1.0
+        A scale factor applied to the length computed with `length_method`.
     **kwargs : dict, optional
         Extra arguments to define the appearance of lines. Refer to
         :class:`~vispy.visuals.line.LineVisual`.
     """
 
-    def __init__(self, meshdata, primitive='face', length=None, **kwargs):
+    def __init__(self, meshdata, primitive='face', length=None,
+                 length_method='median_edge', length_scale=1.0, **kwargs):
         if primitive not in ('face', 'vertex'):
             raise ValueError('primitive must be "face" or "vertex", got %s'
                              % primitive)
@@ -39,7 +46,7 @@ class MeshNormalsVisual(LineVisual):
         norms = np.sqrt((normals ** 2).sum(axis=-1, keepdims=True))
         unit_normals = normals / norms
 
-        if length is None:
+        if length is None and length_method == 'median_edge':
             face_corners = meshdata.get_vertices(indexed='faces')
             edges = np.stack((
                 face_corners[:, 1, :] - face_corners[:, 0, :],
@@ -48,6 +55,11 @@ class MeshNormalsVisual(LineVisual):
             ))
             edge_lengths = np.sqrt((edges ** 2).sum(axis=-1))
             length = np.median(edge_lengths)
+        elif length is None and length_method == 'max_extent':
+            vertices = meshdata.get_vertices()
+            max_extent = np.max(vertices.max(axis=0) - vertices.min(axis=0))
+            length = max_extent
+        length *= length_scale
 
         if primitive == 'face':
             origins = meshdata.get_vertices(indexed='faces')
