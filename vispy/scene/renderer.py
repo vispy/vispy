@@ -122,11 +122,11 @@ def _classify_nodes(scene):
     def is_drawable(node):
         return hasattr(node, 'draw')
 
-    from vispy.scene.visuals import Mesh
+    from vispy.visuals import MeshVisual
 
     def is_meshlike(node):
         return (
-            isinstance(node, Mesh)
+            isinstance(node, MeshVisual)
             # Compound visuals with a Mesh. Not sure they are defined
             # consistently.
             or hasattr(node, "mesh")
