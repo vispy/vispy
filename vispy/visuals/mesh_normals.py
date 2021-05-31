@@ -30,7 +30,7 @@ class MeshNormalsVisual(LineVisual):
         A scale factor applied to the length computed with `length_method`.
     **kwargs : dict, optional
         Extra arguments to define the appearance of lines. Refer to
-        :class:`~vispy.visuals.line.LineVisual`.
+        :class:`~vispy.visuals.line.line.LineVisual`.
 
     Examples
     --------
