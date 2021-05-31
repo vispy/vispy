@@ -30,6 +30,7 @@ def test_mesh_color():
 
 
 @requires_pyopengl()
+@requires_application()
 @pytest.mark.parametrize('shading', [None, 'flat', 'smooth'])
 def test_mesh_shading_change_from_none(shading):
     # Regression test for #2041: exception raised when changing the shading
