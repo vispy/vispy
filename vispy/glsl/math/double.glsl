@@ -46,7 +46,7 @@ vec2 double_add(double value_a, double value_b)
     t2 = ((value_b.x - e) + (value_a.x - (t1 - e))) + value_a.y + value_b.y;
     result.x = t1 + t2;
     result.y = t2 - (result.x - t1);
-    return dsc;
+    return result;
 }
 
 
