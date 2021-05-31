@@ -15,8 +15,8 @@ class MeshNormalsVisual(LineVisual):
 
     Parameters
     ----------
-    meshdata : instance of MeshData | None
-        The meshdata.
+    meshdata : instance of :class:`~vispy.geometry.meshdata.MeshData`
+        The mesh data.
     primitive : {'face', 'vertex'}
         The primitive type on which to compute and display the normals.
     length : None or float or array-like, optional
