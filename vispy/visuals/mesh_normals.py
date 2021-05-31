@@ -31,6 +31,37 @@ class MeshNormalsVisual(LineVisual):
     **kwargs : dict, optional
         Extra arguments to define the appearance of lines. Refer to
         :class:`~vispy.visuals.line.LineVisual`.
+
+    Examples
+    --------
+    Display the face normals:
+
+    >>> MeshNormals(..., primitive='face')
+    >>> MeshNormals(...)  # equivalent (default values)
+
+    Display the vertex normals:
+
+    >>> MeshNormals(..., primitive='vertex')
+
+    Fixed length for all normals:
+
+    >>> MeshNormals(..., length=0.25)
+
+    Individual length per normal:
+
+    >>> lengths = np.array([0.5, 0.2, 0.7, ..., 0.7], dtype=float)
+    >>> MeshNormals(..., length=lengths)
+    >>> assert len(lengths) == len(faces)  # for face normals
+    >>> assert len(lengths) == len(vertices)  # for vertex normals
+
+    Normals at about the length of a triangle:
+
+    >>> MeshNormals(..., length_method='median_edge', length_scale=1.0)
+    >>> MeshNormals(...)  # equivalent (default values)
+
+    Normals at about 10% the size of the mesh:
+
+    >>> MeshNormals(..., length_method='max_extent', length_scale=0.1)
     """
 
     def __init__(self, meshdata, primitive='face', length=None,
