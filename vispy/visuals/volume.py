@@ -446,23 +446,12 @@ class VolumeVisual(Visual):
     """
 
     _interpolation_names = ['linear', 'nearest']
-    _texture_dtype_format = {
-        np.float32: 'r32f',
-        np.float64: 'r32f',
-        np.uint8: 'r8',
-        np.uint16: 'r16',
-        # np.uint32: 'r32ui',  # not supported texture format in vispy
-        np.int8: 'r8',
-        np.int16: 'r16',
-        # np.int32: 'r32i',  # not supported texture format in vispy
-    }
 
     def __init__(self, vol, clim=None, method='mip', threshold=None,
                  relative_step_size=0.8, cmap='grays', gamma=1.0,
                  interpolation='linear', texture_format=None):
         # Storage of information of volume
         self._vol_shape = ()
-        self._texture_limits = None
         self._gamma = gamma
         self._need_vertex_update = True
         # Set the colormap
@@ -517,15 +506,6 @@ class VolumeVisual(Visual):
         else:
             tex_cls = CPUScaledTexture3D
 
-        # if isinstance(texture_format, str) and texture_format == 'auto':
-        #     texture_format = data.dtype.type
-        # texture_format = self._get_gl_tex_format(texture_format)
-
-        # tex_kwargs = {}
-        # if isinstance(texture_format, str):
-        #     tex_kwargs['internalformat'] = texture_format
-        #     tex_kwargs['format'] = 'luminance'
-
         # Use 3D array shape of (10, 10, 10) as placeholder. When data is
         # set later this will be resized.
         # clamp_to_edge means any texture coordinates outside of 0-1 should be
@@ -534,18 +514,6 @@ class VolumeVisual(Visual):
                        internalformat=texture_format,
                        format='luminance',
                        wrapping='clamp_to_edge')
-
-    def _cpu_scale_data(self, vol):
-        if self._clim[1] == self._clim[0]:
-            if self._clim[0] != 0.:
-                vol *= 1.0 / self._clim[0]
-        elif self._clim[0] > self._clim[1]:
-            vol *= -1
-            vol += self._clim[1]
-            vol /= self._clim[1] - self._clim[0]
-        else:
-            vol -= self._clim[0]
-            vol /= self._clim[1] - self._clim[0]
 
     def set_data(self, vol, clim=None, copy=True):
         """Set the volume data.
@@ -575,9 +543,6 @@ class VolumeVisual(Visual):
             self._texture.set_clim(clim)
         if self._texture.clim is None:
             self._texture.set_clim((vol.min(), vol.max()))
-
-        # store clims used to normalize _texture data for use in clim_normalized
-        # self._texture_limits = self._clim
 
         # Apply to texture
         if should_cast_to_f32(vol.dtype):
