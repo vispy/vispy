@@ -172,4 +172,38 @@ def test_mesh_normals():
                       rendered_with_face_normals, rendered_with_vertex_normals)
 
 
+@requires_pyopengl()
+@requires_application()
+def test_mesh_normals_length():
+    size = (45, 40)
+    with TestingCanvas(size=size, bgcolor="k") as c:
+        v = c.central_widget.add_view(border_width=0)
+        v.camera = 'arcball'
+        # Create visual.
+        mdata = create_sphere(radius=1.0)
+        mesh = scene.visuals.Mesh(meshdata=mdata,
+                                  shading=None,
+                                  color=(0.1, 0.1, 0.1, 1.0))
+        v.add(mesh)
+
+        length = 0.5
+        normals_0_5 = scene.visuals.MeshNormals(mdata, color=(1, 0, 0),
+                                                length=0.5)
+        normals_0_5.parent = mesh
+        rendered_length_0_5 = c.render()
+        normals_0_5.parent = None
+
+        length = 1.0
+        normals_1_0 = scene.visuals.MeshNormals(mdata, color=(1, 0, 0),
+                                                length=length)
+        normals_1_0.parent = mesh
+        rendered_length_1_0 = c.render()
+        normals_1_0.parent = None
+
+        # There should be more red pixels with the longer normals.
+        n_pixels_0_5 = np.sum(rendered_length_0_5[..., 0] > 128)
+        n_pixels_1_0 = np.sum(rendered_length_1_0[..., 0] > 128)
+        assert n_pixels_1_0 > n_pixels_0_5
+
+
 run_tests_if_main()
