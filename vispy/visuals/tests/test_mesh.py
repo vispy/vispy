@@ -181,22 +181,18 @@ def test_mesh_normals_length_scalar():
         v.camera = 'arcball'
         # Create visual.
         mdata = create_sphere(radius=1.0)
-        mesh = scene.visuals.Mesh(meshdata=mdata,
-                                  shading=None,
-                                  color=(0.1, 0.1, 0.1, 1.0))
-        v.add(mesh)
 
         length = 0.5
         normals_0_5 = scene.visuals.MeshNormals(mdata, color=(1, 0, 0),
                                                 length=0.5)
-        normals_0_5.parent = mesh
+        normals_0_5.parent = v
         rendered_length_0_5 = c.render()
         normals_0_5.parent = None
 
         length = 1.0
         normals_1_0 = scene.visuals.MeshNormals(mdata, color=(1, 0, 0),
                                                 length=length)
-        normals_1_0.parent = mesh
+        normals_1_0.parent = v
         rendered_length_1_0 = c.render()
         normals_1_0.parent = None
 
