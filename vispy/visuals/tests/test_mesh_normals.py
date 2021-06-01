@@ -187,4 +187,27 @@ def test_mesh_normals_length_scale():
         assert n_pixels_scaled_down < n_pixels_default < n_pixels_scaled_up
 
 
+@requires_pyopengl()
+@requires_application()
+@pytest.mark.parametrize('length_method', ['median_edge', 'max_extent'])
+def test_mesh_normals_length_method(length_method):
+    size = (45, 40)
+    with TestingCanvas(size=size, bgcolor="k") as c:
+        v = c.central_widget.add_view(border_width=0)
+        v.camera = 'arcball'
+        # Create visual.
+        meshdata = create_sphere(radius=1.0)
+        mesh = scene.visuals.Mesh(meshdata=meshdata,
+                                  shading=None,
+                                  color=(0.1, 0.1, 0.1, 1.0))
+        v.add(mesh)
+
+        # The code below should not raise.
+        # XXX(asnt): Not sure how to better test `length_method`.
+        normals = scene.visuals.MeshNormals(meshdata, color=(1, 0, 0),
+                                            length_method=length_method)
+        normals.parent = mesh
+        _ = c.render()
+
+
 run_tests_if_main()
