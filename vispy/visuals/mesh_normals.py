@@ -34,34 +34,45 @@ class MeshNormalsVisual(LineVisual):
 
     Examples
     --------
+    Create a :class:`~vispy.visuals.mesh.MeshVisual` on which to display
+    the normals and get the :class:`~vispy.geometry.meshdata.MeshData`:
+
+    >>> mesh = MeshVisual(vertices=vertices, faces=faces, ...)
+    >>> meshdata = mesh.mesh_data
+
+    Create a visual for the mesh normals:
+
+    >>> normals = MeshNormalsVisual(meshdata)
+    >>> normals.parent = mesh
+
     Display the face normals:
 
-    >>> MeshNormals(..., primitive='face')
-    >>> MeshNormals(...)  # equivalent (default values)
+    >>> MeshNormalsVisual(..., primitive='face')
+    >>> MeshNormalsVisual(...)  # equivalent (default values)
 
     Display the vertex normals:
 
-    >>> MeshNormals(..., primitive='vertex')
+    >>> MeshNormalsVisual(..., primitive='vertex')
 
     Fixed length for all normals:
 
-    >>> MeshNormals(..., length=0.25)
+    >>> MeshNormalsVisual(..., length=0.25)
 
     Individual length per normal:
 
     >>> lengths = np.array([0.5, 0.2, 0.7, ..., 0.7], dtype=float)
-    >>> MeshNormals(..., length=lengths)
+    >>> MeshNormalsVisual(..., length=lengths)
     >>> assert len(lengths) == len(faces)  # for face normals
     >>> assert len(lengths) == len(vertices)  # for vertex normals
 
     Normals at about the length of a triangle:
 
-    >>> MeshNormals(..., length_method='median_edge', length_scale=1.0)
-    >>> MeshNormals(...)  # equivalent (default values)
+    >>> MeshNormalsVisual(..., length_method='median_edge', length_scale=1.0)
+    >>> MeshNormalsVisual(...)  # equivalent (default values)
 
     Normals at about 10% the size of the mesh:
 
-    >>> MeshNormals(..., length_method='max_extent', length_scale=0.1)
+    >>> MeshNormalsVisual(..., length_method='max_extent', length_scale=0.1)
     """
 
     def __init__(self, meshdata, primitive='face', length=None,

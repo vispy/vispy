@@ -106,6 +106,20 @@ class MeshVisual(Visual):
     This class emits a `data_updated` event when the mesh data is updated. This
     is used for example by filters for synchronization.
 
+    Examples
+    --------
+    Create a primitive shape from a helper function:
+
+    >>> from vispy.geometry import create_sphere
+    >>> meshdata = create_sphere()
+    >>> mesh = MeshVisual(meshdata=meshdata)
+
+    Create a custom shape:
+
+    >>> # A rectangle made out of two triangles.
+    >>> vertices = [(0, 0, 0), (1, 0, 1), (1, 1, 1), (0, 1, 0)]
+    >>> faces = [(0, 1, 2), (0, 2, 3)]
+    >>> mesh = MeshVisual(vertices=vertices, faces=faces)
     """
 
     def __init__(self, vertices=None, faces=None, vertex_colors=None,
