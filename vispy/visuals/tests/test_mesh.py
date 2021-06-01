@@ -137,18 +137,13 @@ def test_mesh_normals():
     size = (45, 40)
     with TestingCanvas(size=size, bgcolor="k") as c:
         v = c.central_widget.add_view(border_width=0)
-        # Create visual
-        mdata = create_sphere(20, 40, radius=20)
+        v.camera = 'arcball'
+        # Create visual.
+        mdata = create_sphere(radius=1.0)
         mesh = scene.visuals.Mesh(meshdata=mdata,
                                   shading=None,
                                   color=(0.1, 0.1, 0.1, 1.0))
         v.add(mesh)
-
-        from vispy.visuals.transforms import STTransform
-        local_transform = STTransform(translate=(20, 20))
-        scene_transform = STTransform(scale=(1, 1, 0.01))
-        mesh.transform = local_transform
-        mesh.transforms.scene_transform = scene_transform
 
         rendered_without_normals = c.render()
         # The color should be of low intensity.
@@ -157,8 +152,6 @@ def test_mesh_normals():
         face_normals = scene.visuals.MeshNormals(mdata, primitive="face",
                                                  color=(1, 0, 0))
         face_normals.parent = mesh
-        # XXX: This seems to be repeated. Could this be set on a higher level?
-        face_normals.transforms.scene_transform = scene_transform
         rendered_with_face_normals = c.render()
         face_normals.parent = None
         # There should be some pixels with brighter red.
@@ -169,8 +162,6 @@ def test_mesh_normals():
         vertex_normals = scene.visuals.MeshNormals(mdata, primitive="vertex",
                                                    color=(0, 1, 0))
         vertex_normals.parent = mesh
-        # XXX: Same as above.
-        vertex_normals.transforms.scene_transform = scene_transform
         rendered_with_vertex_normals = c.render()
         vertex_normals.parent = None
         # There should be some pixels with brighter green.
