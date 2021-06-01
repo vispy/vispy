@@ -402,7 +402,7 @@ ISO_FRAG_SHADER = FRAG_SHADER.format(**ISO_SNIPPETS)
 
 frag_dict = {
     'mip': MIP_FRAG_SHADER,
-    'minip' : MINIP_FRAG_SHADER,
+    'minip': MINIP_FRAG_SHADER,
     'iso': ISO_FRAG_SHADER,
     'translucent': TRANSLUCENT_FRAG_SHADER,
     'additive': ADDITIVE_FRAG_SHADER,
