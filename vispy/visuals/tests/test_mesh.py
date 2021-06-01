@@ -241,5 +241,19 @@ def test_mesh_normals_length_array(primitive):
         n_pixels_1_0 = np.sum(rendered_lengths_1_0[..., 0] > 128)
         assert n_pixels_1_0 > n_pixels_0_5
 
+        lengths_ramp = np.linspace(0.5, 1.0, n_normals, dtype=float)
+        normals_ramp = scene.visuals.MeshNormals(meshdata, primitive=primitive,
+                                                 color=(1, 0, 0),
+                                                 length=lengths_ramp)
+        normals_ramp.parent = v
+        rendered_lengths_ramp = c.render()
+        normals_ramp.parent = None
+
+        # With the normals lengths from a ramp in [0.5, 1.0], there should be
+        # more red pixels than with all normals of length 0.5 and less than
+        # with all normals of length 1.0.
+        n_pixels_ramp = np.sum(rendered_lengths_ramp[..., 0] > 128)
+        assert n_pixels_0_5 < n_pixels_ramp < n_pixels_1_0
+
 
 run_tests_if_main()
