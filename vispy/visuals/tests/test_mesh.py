@@ -265,4 +265,50 @@ def test_mesh_normals_length_array(primitive):
         assert n_pixels_0_5 < n_pixels_ramp < n_pixels_1_0
 
 
+@requires_pyopengl()
+@requires_application()
+def test_mesh_normals_length_scale():
+    size = (45, 40)
+    with TestingCanvas(size=size, bgcolor="k") as c:
+        v = c.central_widget.add_view(border_width=0)
+        v.camera = 'arcball'
+        # Create visual.
+        meshdata = create_sphere(radius=1.0)
+        mesh = scene.visuals.Mesh(meshdata=meshdata,
+                                  shading=None,
+                                  color=(0.1, 0.1, 0.1, 1.0))
+        v.add(mesh)
+
+        length = 1.0
+        length_scale_up = 2.0
+        length_scale_down = 0.5
+
+        normals = scene.visuals.MeshNormals(meshdata, color=(1, 0, 0),
+                                            length=length)
+        normals.parent = mesh
+        rendered_length_default = c.render()
+        normals.parent = None
+
+        normals_scaled_up = scene.visuals.MeshNormals(
+            meshdata, color=(1, 0, 0), length=length_scale_up,
+            length_scale=length_scale_up)
+        normals_scaled_up.parent = mesh
+        rendered_length_scaled_up = c.render()
+        normals_scaled_up.parent = None
+
+        normals_scaled_down = scene.visuals.MeshNormals(
+            meshdata, color=(1, 0, 0), length=length_scale_down,
+            length_scale=length_scale_down)
+        normals_scaled_down.parent = mesh
+        rendered_length_scaled_down = c.render()
+        normals_scaled_down.parent = None
+
+        # There should be more red pixels with the scaled-up normals and less
+        # with the ones scaled down.
+        n_pixels_default = np.sum(rendered_length_default[..., 0] > 128)
+        n_pixels_scaled_up = np.sum(rendered_length_scaled_up[..., 0] > 128)
+        n_pixels_scaled_down = np.sum(rendered_length_scaled_down[..., 0] > 128)
+        assert n_pixels_scaled_down < n_pixels_default < n_pixels_scaled_up
+
+
 run_tests_if_main()
