@@ -541,7 +541,8 @@ class VolumeVisual(Visual):
 
         if clim is not None:
             self._texture.set_clim(clim)
-        if self._texture.clim is None:
+        elif vol is not self._last_data:
+            # recompute limits if we have new data and clim is None
             self._texture.set_clim((vol.min(), vol.max()))
 
         # Apply to texture
@@ -559,32 +560,6 @@ class VolumeVisual(Visual):
             self._vol_shape = shape
             self._need_vertex_update = True
         self._vol_shape = shape
-
-    def _normalize_val(self, val, input_data_dtype):
-        is_normalized = self._texture.internalformat is not None and self._texture.internalformat[-1] not in ('f', 'i')
-        if not is_normalized:
-            return val
-        dtype_info = np.iinfo(input_data_dtype)
-        dmin = dtype_info.min
-        dmax = dtype_info.max
-        val = (val - dmin) / (dmax - dmin)
-        return val
-
-    def rescale_data(self):
-        """Force rescaling of data to the current contrast limits and texture upload.
-
-        If this VolumeVisual was created with ``texture_format`` equal to
-        ``None`` then our texture is limited to 8-bits of resolution and
-        contrast adjustment is done during rendering by scaling the values
-        retrieved from the texture on the GPU (provided that the new contrast
-        limits settings are within the range of the clims used when the
-        last texture was uploaded), posterization may become visible if the contrast limits
-        become *too* small of a fraction of the clims used to normalize the texture.
-        This function is a convenience to "force" rescaling of the Texture data to the
-        current contrast limits range.
-        """
-        self.set_data(self._last_data, clim=self._clim)
-        self.update()
 
     @property
     def clim(self):
@@ -604,9 +579,8 @@ class VolumeVisual(Visual):
         range of the clims previously used to normalize the texture data, then data will
         be renormalized using set_data.
         """
-        # TODO: Handle rescaling data if outside of previous range and
         if self._texture.set_clim(value):
-            self._need_texture_upload = True
+            self.set_data(self._last_data)
         self.shared_program['clim'] = self._texture.clim_normalized
         self.update()
 

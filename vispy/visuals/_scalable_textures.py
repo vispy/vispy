@@ -46,12 +46,17 @@ class _ScaledTextureMixin:
         return self._clim
 
     def set_clim(self, clim):
-        """Set clim and return if a texture update is needed."""
+        """Set clim and return if a texture update is needed.
+
+        In this default implementation, it is assumed changing the color limit
+        never requires re-uploading the data to the texture (always return
+        ``False``).
+
+        """
         need_texture_upload = False
         if isinstance(clim, str):
             if clim != 'auto':
                 raise ValueError('clim must be "auto" if a string')
-            need_texture_upload = True
             self._clim = clim
         else:
             try:
