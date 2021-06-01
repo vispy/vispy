@@ -214,8 +214,13 @@ def test_mesh_normals_length_array(primitive):
     with TestingCanvas(size=size, bgcolor="k") as c:
         v = c.central_widget.add_view(border_width=0)
         v.camera = 'arcball'
+        v.camera.fov = 90
         # Create visual.
         meshdata = create_sphere(radius=1.0)
+        mesh = scene.visuals.Mesh(meshdata=meshdata,
+                                  shading=None,
+                                  color=(0.1, 0.1, 0.1, 1.0))
+        v.add(mesh)
 
         if primitive == 'face':
             n_normals = len(meshdata.get_faces())
@@ -228,7 +233,7 @@ def test_mesh_normals_length_array(primitive):
         normals_0_5 = scene.visuals.MeshNormals(meshdata, primitive=primitive,
                                                 color=(1, 0, 0),
                                                 length=lengths_0_5)
-        normals_0_5.parent = v
+        normals_0_5.parent = mesh
         rendered_lengths_0_5 = c.render()
         normals_0_5.parent = None
 
@@ -236,7 +241,7 @@ def test_mesh_normals_length_array(primitive):
         normals_1_0 = scene.visuals.MeshNormals(meshdata, primitive=primitive,
                                                 color=(1, 0, 0),
                                                 length=lengths_1_0)
-        normals_1_0.parent = v
+        normals_1_0.parent = mesh
         rendered_lengths_1_0 = c.render()
         normals_1_0.parent = None
 
@@ -249,7 +254,7 @@ def test_mesh_normals_length_array(primitive):
         normals_ramp = scene.visuals.MeshNormals(meshdata, primitive=primitive,
                                                  color=(1, 0, 0),
                                                  length=lengths_ramp)
-        normals_ramp.parent = v
+        normals_ramp.parent = mesh
         rendered_lengths_ramp = c.render()
         normals_ramp.parent = None
 
