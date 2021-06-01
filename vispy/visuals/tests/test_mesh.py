@@ -202,4 +202,44 @@ def test_mesh_normals_length_scalar():
         assert n_pixels_1_0 > n_pixels_0_5
 
 
+@requires_pyopengl()
+@requires_application()
+@pytest.mark.parametrize('primitive', ['face', 'vertex'])
+def test_mesh_normals_length_array(primitive):
+    size = (45, 40)
+    with TestingCanvas(size=size, bgcolor="k") as c:
+        v = c.central_widget.add_view(border_width=0)
+        v.camera = 'arcball'
+        # Create visual.
+        meshdata = create_sphere(radius=1.0)
+
+        if primitive == 'face':
+            n_normals = len(meshdata.get_faces())
+        elif primitive == 'vertex':
+            n_normals = len(meshdata.get_vertices())
+        else:
+            raise
+
+        lengths_0_5 = np.full(n_normals, 0.5, dtype=float)
+        normals_0_5 = scene.visuals.MeshNormals(meshdata, primitive=primitive,
+                                                color=(1, 0, 0),
+                                                length=lengths_0_5)
+        normals_0_5.parent = v
+        rendered_lengths_0_5 = c.render()
+        normals_0_5.parent = None
+
+        lengths_1_0 = np.full(n_normals, 1.0, dtype=float)
+        normals_1_0 = scene.visuals.MeshNormals(meshdata, primitive=primitive,
+                                                color=(1, 0, 0),
+                                                length=lengths_1_0)
+        normals_1_0.parent = v
+        rendered_lengths_1_0 = c.render()
+        normals_1_0.parent = None
+
+        # There should be more red pixels with the longer normals.
+        n_pixels_0_5 = np.sum(rendered_lengths_0_5[..., 0] > 128)
+        n_pixels_1_0 = np.sum(rendered_lengths_1_0[..., 0] > 128)
+        assert n_pixels_1_0 > n_pixels_0_5
+
+
 run_tests_if_main()
