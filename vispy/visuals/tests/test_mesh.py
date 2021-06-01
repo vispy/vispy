@@ -174,7 +174,7 @@ def test_mesh_normals():
 
 @requires_pyopengl()
 @requires_application()
-def test_mesh_normals_length():
+def test_mesh_normals_length_scalar():
     size = (45, 40)
     with TestingCanvas(size=size, bgcolor="k") as c:
         v = c.central_widget.add_view(border_width=0)
