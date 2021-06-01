@@ -43,7 +43,6 @@ class MeshNormalsVisual(LineVisual):
     Create a visual for the mesh normals:
 
     >>> normals = MeshNormalsVisual(meshdata)
-    >>> normals.parent = mesh
 
     Display the face normals:
 
