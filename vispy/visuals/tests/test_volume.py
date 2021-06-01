@@ -66,11 +66,10 @@ def test_volume_draw():
 
 @requires_pyopengl()
 @requires_application()
-# @pytest.mark.parametrize('data_on_init', [False, True])
-# @pytest.mark.parametrize('clim_on_init', [False, True])
+@pytest.mark.parametrize('clim_on_init', [False, True])
 @pytest.mark.parametrize('texture_format', [None, '__dtype__', 'auto'])
 @pytest.mark.parametrize('input_dtype', [np.uint8, np.uint16, np.float32, np.float64])
-def test_volume_clims_and_gamma(texture_format, input_dtype):
+def test_volume_clims_and_gamma(texture_format, input_dtype, clim_on_init):
     """Test volume visual with clims and gamma on shader.
 
     Test is parameterized based on ``texture_format`` and should produce
@@ -93,15 +92,19 @@ def test_volume_clims_and_gamma(texture_format, input_dtype):
     if max != 1:
         clim = (clim[0] * max, clim[1] * max)
         new_clim = (new_clim[0] * max, new_clim[1] * max)
+
+    kwargs = {}
+    if clim_on_init:
+        kwargs['clim'] = clim
     with TestingCanvas(size=size, bgcolor="k") as c:
         v = c.central_widget.add_view(border_width=0)
         volume = scene.visuals.Volume(
             data,
-            clim=clim,
             interpolation='nearest',
             parent=v.scene,
             method='mip',
             texture_format=texture_format,
+            **kwargs
         )
         v.camera = 'arcball'
         v.camera.fov = 0
