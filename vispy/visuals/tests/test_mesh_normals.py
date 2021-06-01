@@ -66,7 +66,7 @@ def test_mesh_normals_length_scalar():
 
         length = 0.5
         normals_0_5 = scene.visuals.MeshNormals(mdata, color=(1, 0, 0),
-                                                length=0.5)
+                                                length=length)
         normals_0_5.parent = mesh
         rendered_length_0_5 = c.render()
         normals_0_5.parent = None
