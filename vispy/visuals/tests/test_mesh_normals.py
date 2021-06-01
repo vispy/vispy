@@ -166,14 +166,14 @@ def test_mesh_normals_length_scale():
         normals.parent = None
 
         normals_scaled_up = scene.visuals.MeshNormals(
-            meshdata, color=(1, 0, 0), length=length_scale_up,
+            meshdata, color=(1, 0, 0), length=length,
             length_scale=length_scale_up)
         normals_scaled_up.parent = mesh
         rendered_length_scaled_up = c.render()
         normals_scaled_up.parent = None
 
         normals_scaled_down = scene.visuals.MeshNormals(
-            meshdata, color=(1, 0, 0), length=length_scale_down,
+            meshdata, color=(1, 0, 0), length=length,
             length_scale=length_scale_down)
         normals_scaled_down.parent = mesh
         rendered_length_scaled_down = c.render()
