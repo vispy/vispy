@@ -97,6 +97,11 @@ class MeshNormalsVisual(LineVisual):
             origins = origins.mean(axis=1)
         elif primitive == 'vertex':
             origins = meshdata.get_vertices()
+
+        # Ensure the broadcasting if the input is an `(n,)` array.
+        length = np.atleast_1d(length)
+        length = length[:, None]
+
         ends = origins + length * unit_normals
         segments = np.hstack((origins, ends)).reshape(-1, 3)
 
