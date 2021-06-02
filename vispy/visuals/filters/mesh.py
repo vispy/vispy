@@ -278,7 +278,7 @@ class ShadingFilter(Filter):
     `V`
         the direction to the viewer,
     `s`
-        the shininess factor s.
+        the shininess factor.
 
     The `Ka`, `Kd` and `Ks` coefficients are defined as an RGBA color. The RGB
     components define the color that the surface reflects, and the alpha
