@@ -167,7 +167,7 @@ def test_all_render_methods(method_name):
         # not all black
         assert rendered.sum() != 0
         # not all white
-        assert rendered.sum() != 1
+        assert rendered.sum() != 255 * rendered.size
 
 
 def _make_test_data(shape, input_dtype):
