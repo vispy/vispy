@@ -491,7 +491,7 @@ class VolumeVisual(Visual):
         # box and will not be drawn.
         self.set_gl_state('translucent', cull_face=False)
 
-        # Set data
+        # Apply clim and set data at the same time
         self.set_data(vol, clim)
 
         # Set params
@@ -506,11 +506,11 @@ class VolumeVisual(Visual):
         else:
             tex_cls = CPUScaledTexture3D
 
-        # Use 3D array shape of (10, 10, 10) as placeholder. When data is
-        # set later this will be resized.
         # clamp_to_edge means any texture coordinates outside of 0-1 should be
         # clamped to 0 and 1.
-        return tex_cls((10, 10, 10), interpolation=self._interpolation,
+        # NOTE: This doesn't actually set the data in the texture. Only
+        # creates a placeholder texture that will be resized later on.
+        return tex_cls(data, interpolation=self._interpolation,
                        internalformat=texture_format,
                        format='luminance',
                        wrapping='clamp_to_edge')
@@ -522,28 +522,31 @@ class VolumeVisual(Visual):
         ----------
         vol : ndarray
             The 3D volume.
-        clim : tuple | None
-            Colormap limits to use. None will use the min and max values.
-        copy : bool | True
+        clim : tuple
+            Colormap limits to use (min, max). None will use the min and max
+            values. Defaults to ``None``.
+        copy : bool
             Whether to copy the input volume prior to applying clim
             normalization on the CPU. Has no effect if visual was created
             with 'texture_format' not equal to None as data is not modified
             on the CPU and data must already be copied to the GPU.
             Data must be 32-bit floating point data to completely avoid any
-            data copying when scaling on the CPU.
+            data copying when scaling on the CPU. Defaults to ``True`` for
+            CPU scaled data. It is forced to ``False`` for GPU scaled data.
 
         """
         # Check volume
         if not isinstance(vol, np.ndarray):
             raise ValueError('Volume visual needs a numpy array.')
         if not ((vol.ndim == 3) or (vol.ndim == 4 and vol.shape[-1] > 1)):
-            raise ValueError('Volume visual needs a 3D image.')
+            raise ValueError('Volume visual needs a 3D array.')
+        if isinstance(self._texture, GPUScaledTextured3D):
+            copy = False
 
-        if clim is not None:
+        if clim is None and self._texture.clim is None:
+            clim = (vol.min(), vol.max())
+        if clim is not None and clim != self._texture.clim:
             self._texture.set_clim(clim)
-        elif vol is not self._last_data:
-            # recompute limits if we have new data and clim is None
-            self._texture.set_clim((vol.min(), vol.max()))
 
         # Apply to texture
         if should_cast_to_f32(vol.dtype):
@@ -580,7 +583,7 @@ class VolumeVisual(Visual):
         be renormalized using set_data.
         """
         if self._texture.set_clim(value):
-            self.set_data(self._last_data)
+            self.set_data(self._last_data, clim=value)
         self.shared_program['clim'] = self._texture.clim_normalized
         self.update()
 
