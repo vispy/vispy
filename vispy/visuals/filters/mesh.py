@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
+import numbers
+
 import numpy as np
+
 from vispy.gloo import Texture2D, VertexBuffer
 from vispy.visuals.shaders import Function, Varying
 from vispy.visuals.filters import Filter
@@ -309,15 +312,20 @@ class ShadingFilter(Filter):
                  shininess=100):
         self._shading = shading
         self._light_dir = light_dir
-        # TODO: Accept a single float in [0, 1] instead of a full color for
-        # convenience. Set the color to (1, 1, 1) and the alpha channel to the
-        # float value.
-        self._ambient_light = Color(ambient_light)
-        self._diffuse_light = Color(diffuse_light)
-        self._specular_light = Color(specular_light)
-        self._ambient_coefficient = Color(ambient_coefficient)
-        self._diffuse_coefficient = Color(diffuse_coefficient)
-        self._specular_coefficient = Color(specular_coefficient)
+
+        def _as_rgba(intensity_or_color):
+            if isinstance(intensity_or_color, numbers.Number):
+                intensity = intensity_or_color
+                return Color((1, 1, 1, intensity))
+            color = intensity_or_color
+            return Color(color)
+
+        self._ambient_light = _as_rgba(ambient_light)
+        self._diffuse_light = _as_rgba(diffuse_light)
+        self._specular_light = _as_rgba(specular_light)
+        self._ambient_coefficient = _as_rgba(ambient_coefficient)
+        self._diffuse_coefficient = _as_rgba(diffuse_coefficient)
+        self._specular_coefficient = _as_rgba(specular_coefficient)
         self._shininess = shininess
 
         vfunc = Function(shading_vertex_template)
