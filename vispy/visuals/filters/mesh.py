@@ -295,11 +295,46 @@ class ShadingFilter(Filter):
 
     Examples
     --------
-    See
+    The :class:`vispy.visuals.mesh.MeshVisual` creates and embeds a shading
+    filter when constructed with an explicit `shading` parameter, e.g.
+    `shading='smooth'`. The filter is accessible through the property
+    `shading_filter` for further configuration:
+
+    >>> # A triangle.
+    >>> vertices = np.array([(0, 0, 0), (1, 1, 1), (0, 1, 0)], dtype=float)
+    >>> faces = np.array([(0, 1, 2)], dtype=int)
+    >>> # Request explicitly to create a filter with smooth shading:
+    >>> mesh = MeshVisual(vertices, faces, shading='smooth')
+    >>> # Configure the filter afterwards.
+    >>> mesh.shading_filter.shininess = 64
+    >>> mesh.shading_filter.specular_coefficient = 0.3
+
+    Create the shading filter manually and attach it to a
+    :class:`vispy.visuals.mesh.MeshVisual`:
+
+    >>> # With the default shading parameters.
+    >>> shading_filter = ShadingFilter()
+    >>> # Or, with some custom parameters:
+    >>> shading_filter = ShadingFilter(
+    ...     # A shiny surface (small specular highlight).
+    ...     shininess=250,
+    ...     # A blue higlight, at half intensity.
+    ...     specular_coefficient=(0, 0, 1, 0.5),
+    ...     # Equivalent to `(0.7, 0.7, 0.7, 1.0)`.
+    ...     diffuse_coefficient=0.7,
+    ...     # Same as `(0.2, 0.3, 0.3, 1.0)`.
+    ...     ambient_coefficient=(0.2, 0.3, 0.3),
+    ... )
+    >>> mesh = MeshVisual(vertices, faces)
+    >>> mesh.attach(shading_filter)
+    >>> # Further configure the filter through the custom instance:
+    >>> shading_filter.shininess = 64
+    >>> shading_filter.specular_coefficient = 0.3
+
+    See also
     `examples/basics/scene/mesh_shading.py
     <https://github.com/vispy/vispy/blob/main/examples/basics/scene/mesh_shading.py>`_
     example script.
-
     """
 
     def __init__(self, shading='flat', light_dir=(10, 5, -5),
