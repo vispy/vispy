@@ -17,6 +17,16 @@ class _ScaledTextureMixin:
     implementation of a specific method and is then overridden by one of the
     subclasses.
 
+    Parameters
+    ----------
+    data : ndarray | tuple | None
+        Texture data in the form of a numpy array. A tuple of the shape of the
+        texture can also be given. However, some subclasses may benefit from
+        or even require a numpy array to make decisions based on shape **and**
+        dtype.
+    **texture_kwargs
+        Any other keyword arguments to pass to the parent TextureXD class.
+
     """
 
     def __init__(self, data=None, **texture_kwargs):
@@ -26,18 +36,17 @@ class _ScaledTextureMixin:
         # Call the __init__ of the TextureXD class
         super().__init__(data, **texture_kwargs)
 
-    def init_scaling_texture(self, data=None, format=None, internalformat=None, **texture_kwargs):
+    def init_scaling_texture(self, data=None, internalformat=None, **texture_kwargs):
         """Initialize scaling properties and create a representative array."""
         self._data_dtype = getattr(data, 'dtype', None)
-        data = self._create_rep_array(data, format)
+        data = self._create_rep_array(data)
         internalformat = self._get_texture_format_for_data(
             data,
-            format,
             internalformat)
         texture_kwargs['internalformat'] = internalformat
         return data, texture_kwargs
 
-    def _get_texture_format_for_data(self, data, format, internalformat):
+    def _get_texture_format_for_data(self, data, internalformat):
         return internalformat
 
     @property
@@ -126,24 +135,26 @@ class _ScaledTextureMixin:
         #  Not currently supported in vispy.
         return val
 
-    def _data_num_channels(self, data, format=None):
-        if format == 'luminance':
-            num_channels = 1
-        elif data is not None:
+    def _data_num_channels(self, data):
+        # if format == 'luminance':
+        #     num_channels = 1
+        if data is not None:
+            # array or shape tuple
+            ndim = getattr(data, 'ndim', len(data))
             # Ex. (M, N, 3) in Texture2D (ndim=2) -> 3 channels
-            num_channels = data.shape[-1] if data.ndim == self._ndim + 1 else 1
+            num_channels = data.shape[-1] if ndim == self._ndim + 1 else 1
         else:
             num_channels = 4
         return num_channels
 
-    def _create_rep_array(self, data, format=None):
+    def _create_rep_array(self, data):
         """Get a representative array with an initial shape.
 
         Data will be filled in and the texture resized later.
 
         """
         dtype = getattr(data, 'dtype', np.float32)
-        num_channels = self._data_num_channels(data, format)
+        num_channels = self._data_num_channels(data)
         init_shape = (10,) * self._ndim + (num_channels,)
         return np.zeros(init_shape).astype(dtype)
 
@@ -344,9 +355,9 @@ class GPUScaledTextureMixin(_ScaledTextureMixin):
         texture_format = texture_format.replace('r', 'rgba'[:num_channels])
         return texture_format
 
-    def _get_texture_format_for_data(self, data, format, internalformat):
+    def _get_texture_format_for_data(self, data, internalformat):
         if internalformat is not None:
-            num_channels = self._data_num_channels(data, format)
+            num_channels = self._data_num_channels(data)
             texture_format = self._handle_auto_texture_format(internalformat, data)
             texture_format = self._get_gl_tex_format(texture_format, num_channels)
         return texture_format
