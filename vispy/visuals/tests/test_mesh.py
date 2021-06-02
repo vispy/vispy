@@ -36,15 +36,12 @@ def test_mesh_shading_filter(shading):
     size = (45, 40)
     with TestingCanvas(size=size, bgcolor="k") as c:
         v = c.central_widget.add_view(border_width=0)
-        # Create visual
-        mdata = create_sphere(20, 40, radius=20)
+        v.camera = 'arcball'
+        mdata = create_sphere(20, 30, radius=1)
         mesh = scene.visuals.Mesh(meshdata=mdata,
                                   shading=shading,
-                                  color=(0.2, 0.3, 0.7, 0.9))
+                                  color=(0.2, 0.3, 0.7, 1.0))
         v.add(mesh)
-        from vispy.visuals.transforms import STTransform
-        mesh.transform = STTransform(translate=(20, 20))
-        mesh.transforms.scene_transform = STTransform(scale=(1, 1, 0.01))
 
         rendered = c.render()[..., 0]  # R channel only
         if shading in ("flat", "smooth"):
