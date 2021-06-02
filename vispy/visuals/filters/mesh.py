@@ -427,7 +427,7 @@ class WireframeFilter(Filter):
 
     @property
     def enabled(self):
-        """True to enable shading."""
+        """True to enable the display of the wireframe, False to disable."""
         return self._enabled
 
     @enabled.setter
