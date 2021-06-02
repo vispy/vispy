@@ -9,6 +9,7 @@ from vispy.testing import (TestingCanvas, requires_application,
                            raises)
 from vispy.testing.image_tester import assert_image_approved, downsample
 from vispy.testing.rendered_array_tester import compare_render, max_for_dtype
+from vispy.visuals.volume import frag_dict as volume_render_methods
 
 
 @requires_pyopengl()
@@ -132,6 +133,41 @@ def test_volume_clims_and_gamma(texture_format, input_dtype, clim_on_init):
         rendered3 = downsample(c.render(), shape_ratio, axis=(0, 1)).astype(_dtype)
         predicted = (scaled_data ** 2).max(axis=1)
         compare_render(predicted, rendered3, previous_render=rendered2)
+
+
+@requires_pyopengl()
+@requires_application()
+@pytest.mark.parametrize('method_name', volume_render_methods.keys())
+def test_all_render_methods(method_name):
+    """Test that render methods don't produce any errors."""
+    size = (40, 40)
+    np.random.seed(0)  # make tests the same every time
+    data = _make_test_data(size[:1] * 3, np.float32)
+    clim = (0, 1)
+    kwargs = {}
+    with TestingCanvas(size=size, bgcolor="k") as c:
+        v = c.central_widget.add_view(border_width=0)
+        volume = scene.visuals.Volume(
+            data,
+            interpolation='nearest',
+            clim=clim,
+            parent=v.scene,
+            method=method_name,
+            **kwargs
+        )
+        v.camera = 'arcball'
+        v.camera.fov = 0
+        v.camera.scale_factor = 40.0
+        # for some reason the x dimension has to be a little bit off center
+        # or else the render doesn't match the data
+        v.camera.center = (19.6, 19.5, 19.5)
+
+        assert volume.method == method_name
+        rendered = c.render()[..., :3]
+        # not all black
+        assert rendered.sum() != 0
+        # not all white
+        assert rendered.sum() != 1
 
 
 def _make_test_data(shape, input_dtype):
