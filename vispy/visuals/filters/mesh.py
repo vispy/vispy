@@ -220,6 +220,28 @@ void shade() {
 """  # noqa
 
 
+def _as_rgba(intensity_or_color, default_rgb=(1.0, 1.0, 1.0)):
+    """Create an RGBA color from a color or a scalar intensity.
+
+    Examples
+    --------
+    >>> # Specify the full RGBA color.
+    >>> _as_rgba((0.2, 0.3, 0.4, 0.25))
+    ... <Color: (0.2, 0.3, 0.4, 0.25)>
+    >>> # Specify an RGB color. (Default intensity `1.0` is used.)
+    >>> _as_rgba((0.2, 0.3, 0.4))
+    ... <Color: (0.2, 0.3, 0.4, 1.0)>
+    >>> # Specify an intensity only. (Default color `(1.0, 1.0, 1.0)` is used.)
+    >>> _as_rgba(0.25)
+    ... <Color: (1.0, 1.0, 1.0, 0.25)>
+    """
+    if isinstance(intensity_or_color, numbers.Number):
+        intensity = intensity_or_color
+        return Color(default_rgb, alpha=intensity)
+    color = intensity_or_color
+    return Color(color)
+
+
 class ShadingFilter(Filter):
     """Apply shading to a mesh with the Phong reflection model.
 
@@ -348,13 +370,6 @@ class ShadingFilter(Filter):
         self._shading = shading
         self._light_dir = light_dir
 
-        def _as_rgba(intensity_or_color):
-            if isinstance(intensity_or_color, numbers.Number):
-                intensity = intensity_or_color
-                return Color((1, 1, 1, intensity))
-            color = intensity_or_color
-            return Color(color)
-
         self._ambient_light = _as_rgba(ambient_light)
         self._diffuse_light = _as_rgba(diffuse_light)
         self._specular_light = _as_rgba(specular_light)
@@ -402,7 +417,7 @@ class ShadingFilter(Filter):
 
     @ambient_light.setter
     def ambient_light(self, light_color):
-        self._ambient_light = Color(light_color)
+        self._ambient_light = _as_rgba(light_color)
         self._update_data()
 
     @property
@@ -412,7 +427,7 @@ class ShadingFilter(Filter):
 
     @diffuse_light.setter
     def diffuse_light(self, light_color):
-        self._diffuse_light = Color(light_color)
+        self._diffuse_light = _as_rgba(light_color)
         self._update_data()
 
     @property
@@ -422,7 +437,7 @@ class ShadingFilter(Filter):
 
     @specular_light.setter
     def specular_light(self, light_color):
-        self._specular_light = Color(light_color)
+        self._specular_light = _as_rgba(light_color)
         self._update_data()
 
     @property
@@ -432,7 +447,7 @@ class ShadingFilter(Filter):
 
     @ambient_coefficient.setter
     def ambient_coefficient(self, color):
-        self._ambient_coefficient = Color(color)
+        self._ambient_coefficient = _as_rgba(color)
         self._update_data()
 
     @property
@@ -442,7 +457,7 @@ class ShadingFilter(Filter):
 
     @diffuse_coefficient.setter
     def diffuse_coefficient(self, diffuse_coefficient):
-        self._diffuse_coefficient = Color(diffuse_coefficient)
+        self._diffuse_coefficient = _as_rgba(diffuse_coefficient)
         self._update_data()
 
     @property
@@ -452,7 +467,7 @@ class ShadingFilter(Filter):
 
     @specular_coefficient.setter
     def specular_coefficient(self, specular_coefficient):
-        self._specular_coefficient = Color(specular_coefficient)
+        self._specular_coefficient = _as_rgba(specular_coefficient)
         self._update_data()
 
     @property

@@ -3,10 +3,12 @@
 import numpy as np
 from vispy import scene
 
+from vispy.color import Color
 from vispy.geometry import create_cube, create_sphere
 from vispy.testing import (TestingCanvas, requires_application,
                            run_tests_if_main, requires_pyopengl)
 from vispy.visuals.filters import WireframeFilter
+from vispy.visuals.filters.mesh import _as_rgba
 
 import pytest
 
@@ -54,6 +56,12 @@ def test_mesh_shading_filter(shading):
             assert (np.diff(invest_row[:29]) >= -1).all()
         else:
             assert np.unique(rendered).size == 2
+
+
+def test_intensity_or_color_as_rgba():
+    assert _as_rgba(0.3) == Color((1.0, 1.0, 1.0, 0.3))
+    assert _as_rgba((0.3, 0.2, 0.1)) == Color((0.3, 0.2, 0.1, 1.0))
+    assert _as_rgba((0.3, 0.2, 0.1, 0.5)) == Color((0.3, 0.2, 0.1, 0.5))
 
 
 @requires_pyopengl()
