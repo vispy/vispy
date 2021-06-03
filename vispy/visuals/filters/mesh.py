@@ -221,7 +221,7 @@ void shade() {
 
 
 class ShadingFilter(Filter):
-    """Apply lighting to a mesh with the Phong reflection model.
+    """Apply shading to a mesh with the Phong reflection model.
 
     To disable shading, either detach (ex. ``mesh.detach(filter_obj)``) or
     set the shading type to ``None`` (ex. ``filter_obj.shading = None``).
@@ -232,8 +232,8 @@ class ShadingFilter(Filter):
 
     Parameters
     ----------
-    mode : str
-        Lighting mode: None, 'flat' or 'smooth'. If None, the lighting is
+    shading : str
+        Shading mode: None, 'flat' or 'smooth'. If None, the shading is
         disabled.
     ambient_coefficient : str or tuple or Color
         Color and intensity of the ambient reflection coefficient (Ka).
