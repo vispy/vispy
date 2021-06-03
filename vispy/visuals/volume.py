@@ -300,6 +300,30 @@ MIP_SNIPPETS = dict(
 MIP_FRAG_SHADER = FRAG_SHADER.format(**MIP_SNIPPETS)
 
 
+MINIP_SNIPPETS = dict(
+    before_loop="""
+        float minval = 99999.0; // The minimum encountered value
+        int mini = 0;  // Where the minimum value was encountered
+        """,
+    in_loop="""
+        if( val < minval ) {
+            minval = val;
+            mini = iter;
+        }
+        """,
+    after_loop="""
+        // Refine search for min value
+        loc = start_loc + step * (float(mini) - 0.5);
+        for (int i=0; i<10; i++) {
+            minval = min(minval, $sample(u_volumetex, loc).g);
+            loc += step * 0.1;
+        }
+        gl_FragColor = applyColormap(minval);
+        """,
+)
+MINIP_FRAG_SHADER = FRAG_SHADER.format(**MINIP_SNIPPETS)
+
+
 TRANSLUCENT_SNIPPETS = dict(
     before_loop="""
         vec4 integrated_color = vec4(0., 0., 0., 0.);
@@ -378,6 +402,7 @@ ISO_FRAG_SHADER = FRAG_SHADER.format(**ISO_SNIPPETS)
 
 frag_dict = {
     'mip': MIP_FRAG_SHADER,
+    'minip': MINIP_FRAG_SHADER,
     'iso': ISO_FRAG_SHADER,
     'translucent': TRANSLUCENT_FRAG_SHADER,
     'additive': ADDITIVE_FRAG_SHADER,
@@ -395,7 +420,7 @@ class VolumeVisual(Visual):
         The contrast limits. The values in the volume are mapped to
         black and white corresponding to these values. Default maps
         between min and max.
-    method : {'mip', 'translucent', 'additive', 'iso'}
+    method : {'mip', 'minip', 'translucent', 'additive', 'iso'}
         The render method to use. See corresponding docs for details.
         Default 'mip'.
     threshold : float
@@ -682,6 +707,8 @@ class VolumeVisual(Visual):
               the result is opaque.
             * mip: maxiumum intensity projection. Cast a ray and display the
               maximum value that was encountered.
+            * minip: minimum intensity projection. Cast a ray and display the
+              minimum value that was encountered.
             * additive: voxel colors are added along the view ray until
               the result is saturated.
             * iso: isosurface. Cast a ray until a certain threshold is
