@@ -243,14 +243,17 @@ def _as_rgba(intensity_or_color, default_rgb=(1.0, 1.0, 1.0)):
 
 
 class ShadingFilter(Filter):
-    """Apply shading to a mesh with the Phong reflection model.
+    """Apply shading to a :class:`~vispy.visuals.mesh.MeshVisual` using the
+    Phong reflection model.
 
-    To disable shading, either detach (ex. ``mesh.detach(filter_obj)``) or
-    set the shading type to ``None`` (ex. ``filter_obj.shading = None``).
+    For convenience, a :class:`~vispy.visuals.mesh.MeshVisual` creates and
+    embeds a shading filter when constructed with an explicit `shading`
+    parameter, e.g. `mesh = MeshVisual(..., shading='smooth')`. The filter is
+    then accessible as `mesh.shading_filter`.
 
-    The shading filter should be attached after the other filters that modify
-    the colors to be shaded. For example, to include the wireframe in the
-    shading, the shading filter must come before the wireframe filter.
+    When attached manually to a :class:`~vispy.visuals.mesh.MeshVisual`, the
+    shading filter should come after any other filter that modifies the base
+    color to be shaded. See the examples below.
 
     Parameters
     ----------
@@ -280,20 +283,18 @@ class ShadingFilter(Filter):
 
     Notes
     -----
-    Under the Phong reflection model, the illumination `I` is computed as
+    Under the Phong reflection model, the illumination `I` is computed as::
 
-        `I = I_ambient + mesh_color * I_diffuse + I_specular`
+        I = I_ambient + mesh_color * I_diffuse + I_specular
 
     for each color channel independently.
-    The mesh color is the base color of the mesh, possibly modified by the
-    filters applied before this one.
-    The ambient, diffuse and specular terms are defined as
+    `mesh_color` is the color of the :class:`~vispy.visuals.mesh.MeshVisual`,
+    possibly modified by the filters applied before this one.
+    The ambient, diffuse and specular terms are defined as::
 
-        `I_ambient = Ka * Ia`
-
-        `I_diffuse = Kd * Id * dot(L, N)`
-
-        `I_specular = Ks * Is * dot(R, V) ** s`
+        I_ambient = Ka * Ia
+        I_diffuse = Kd * Id * dot(L, N)
+        I_specular = Ks * Is * dot(R, V) ** s
 
     with
 
@@ -320,15 +321,15 @@ class ShadingFilter(Filter):
 
     Examples
     --------
-    The :class:`vispy.visuals.mesh.MeshVisual` creates and embeds a shading
-    filter when constructed with an explicit `shading` parameter, e.g.
-    `shading='smooth'`. The filter is accessible through the property
-    `shading_filter` for further configuration:
+    Define the mesh data for a :class:`vispy.visuals.mesh.MeshVisual`:
 
     >>> # A triangle.
     >>> vertices = np.array([(0, 0, 0), (1, 1, 1), (0, 1, 0)], dtype=float)
     >>> faces = np.array([(0, 1, 2)], dtype=int)
-    >>> # Request explicitly to create a filter with smooth shading:
+
+    Let the :class:`vispy.visuals.mesh.MeshVisual` create and embed a shading
+    filter:
+
     >>> mesh = MeshVisual(vertices, faces, shading='smooth')
     >>> # Configure the filter afterwards.
     >>> mesh.shading_filter.shininess = 64
@@ -339,7 +340,12 @@ class ShadingFilter(Filter):
 
     >>> # With the default shading parameters.
     >>> shading_filter = ShadingFilter()
-    >>> # Or, with some custom parameters:
+    >>> mesh = MeshVisual(vertices, faces)
+    >>> mesh.attach(shading_filter)
+
+    The filter can be configured at creation time and at run time:
+
+    >>> # Configure at creation time.
     >>> shading_filter = ShadingFilter(
     ...     # A shiny surface (small specular highlight).
     ...     shininess=250,
@@ -350,11 +356,31 @@ class ShadingFilter(Filter):
     ...     # Same as `(0.2, 0.3, 0.3, 1.0)`.
     ...     ambient_coefficient=(0.2, 0.3, 0.3),
     ... )
-    >>> mesh = MeshVisual(vertices, faces)
-    >>> mesh.attach(shading_filter)
-    >>> # Further configure the filter through the custom instance:
+    >>> # Change the configuration at run time.
     >>> shading_filter.shininess = 64
     >>> shading_filter.specular_coefficient = 0.3
+
+    Disable the filter temporarily:
+
+    >>> # Turn off the shading.
+    >>> shading_filter.enabled = False
+    ... # Some time passes...
+    >>> # Turn on the shading again.
+    >>> shading_filter.enabled = True
+
+    When using the :class:`WireframeFilter`, the wireframe is shaded only if
+    the wireframe filter is attached before the shading filter:
+
+    >>> shading_filter = ShadingFilter()
+    >>> wireframe_filter = WireframeFilter()
+    >>> # Option 1: Shade the wireframe.
+    >>> mesh1 = MeshVisual(vertices, faces)
+    >>> mesh1.attached(wireframe_filter)
+    >>> mesh1.attached(shading_filter)
+    >>> # Option 2: Do not shade the wireframe.
+    >>> mesh2 = MeshVisual(vertices, faces)
+    >>> mesh2.attached(shading_filter)
+    >>> mesh2.attached(wireframe_filter)
 
     See also
     `examples/basics/scene/mesh_shading.py
