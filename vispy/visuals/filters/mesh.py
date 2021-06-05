@@ -362,24 +362,27 @@ class ShadingFilter(Filter):
     example script.
     """
 
-    def __init__(self, shading='flat', light_dir=(10, 5, -5),
-                 ambient_light=(1, 1, 1, 0),
-                 diffuse_light=(1, 1, 1, 1),
-                 specular_light=(1, 1, 1, .25),
+    def __init__(self, shading='flat',
                  ambient_coefficient=(1, 1, 1, 1),
                  diffuse_coefficient=(1, 1, 1, 1),
                  specular_coefficient=(1, 1, 1, 1),
-                 shininess=100, enabled=True):
+                 shininess=100,
+                 light_dir=(10, 5, -5),
+                 ambient_light=(1, 1, 1, 0),
+                 diffuse_light=(1, 1, 1, 1),
+                 specular_light=(1, 1, 1, .25),
+                 enabled=True):
         self._shading = shading
-        self._light_dir = light_dir
 
-        self._ambient_light = _as_rgba(ambient_light)
-        self._diffuse_light = _as_rgba(diffuse_light)
-        self._specular_light = _as_rgba(specular_light)
         self._ambient_coefficient = _as_rgba(ambient_coefficient)
         self._diffuse_coefficient = _as_rgba(diffuse_coefficient)
         self._specular_coefficient = _as_rgba(specular_coefficient)
         self._shininess = shininess
+
+        self._light_dir = light_dir
+        self._ambient_light = _as_rgba(ambient_light)
+        self._diffuse_light = _as_rgba(diffuse_light)
+        self._specular_light = _as_rgba(specular_light)
 
         self._enabled = enabled
 
