@@ -87,7 +87,8 @@ def test_mesh_shading_filter_enabled(shading):
         rendered_with_shading = c.render()
 
         if shading is None:
-            # No shading applied, regardless of the value of `enabled`.
+            # There should be no shading applied, regardless of the value of
+            # `enabled`.
             assert np.allclose(rendered_without_shading, rendered_with_shading)
         else:
             # The result should be different with shading applied.
