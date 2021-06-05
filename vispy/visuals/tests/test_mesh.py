@@ -7,7 +7,7 @@ from vispy.color import Color
 from vispy.geometry import create_cube, create_sphere
 from vispy.testing import (TestingCanvas, requires_application,
                            run_tests_if_main, requires_pyopengl)
-from vispy.visuals.filters import WireframeFilter
+from vispy.visuals.filters import ShadingFilter, WireframeFilter
 from vispy.visuals.filters.mesh import _as_rgba
 
 import pytest
@@ -62,6 +62,37 @@ def test_intensity_or_color_as_rgba():
     assert _as_rgba(0.3) == Color((1.0, 1.0, 1.0, 0.3))
     assert _as_rgba((0.3, 0.2, 0.1)) == Color((0.3, 0.2, 0.1, 1.0))
     assert _as_rgba((0.3, 0.2, 0.1, 0.5)) == Color((0.3, 0.2, 0.1, 0.5))
+
+
+@requires_pyopengl()
+@requires_application()
+@pytest.mark.parametrize('shading', [None, 'flat', 'smooth'])
+def test_mesh_shading_filter_enabled(shading):
+    size = (45, 40)
+    with TestingCanvas(size=size, bgcolor="k") as c:
+        v = c.central_widget.add_view(border_width=0)
+        v.camera = 'arcball'
+        mdata = create_sphere(20, 30, radius=1)
+        mesh = scene.visuals.Mesh(meshdata=mdata,
+                                  shading=None,
+                                  color=(0.2, 0.3, 0.7, 1.0))
+        shading_filter = ShadingFilter(shading=shading)
+        mesh.attach(shading_filter)
+        v.add(mesh)
+
+        shading_filter.enabled = False
+        rendered_without_shading = c.render()
+
+        shading_filter.enabled = True
+        rendered_with_shading = c.render()
+
+        if shading is None:
+            # No shading applied, regardless of the value of `enabled`.
+            assert np.allclose(rendered_without_shading, rendered_with_shading)
+        else:
+            # The result should be different with shading applied.
+            assert not np.allclose(rendered_without_shading,
+                                   rendered_with_shading)
 
 
 @requires_pyopengl()

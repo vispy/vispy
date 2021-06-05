@@ -274,6 +274,9 @@ class ShadingFilter(Filter):
         Color and intensity of the diffuse light.
     specular_light : str or tuple or Color
         Color and intensity of the specular light.
+    enabled : bool, default=True
+        Whether the filter is enabled at creation time. This can be changed at
+        run time with :obj:`~enabled`.
 
     Notes
     -----
@@ -366,7 +369,7 @@ class ShadingFilter(Filter):
                  ambient_coefficient=(1, 1, 1, 1),
                  diffuse_coefficient=(1, 1, 1, 1),
                  specular_coefficient=(1, 1, 1, 1),
-                 shininess=100):
+                 shininess=100, enabled=True):
         self._shading = shading
         self._light_dir = light_dir
 
@@ -378,6 +381,8 @@ class ShadingFilter(Filter):
         self._specular_coefficient = _as_rgba(specular_coefficient)
         self._shininess = shininess
 
+        self._enabled = enabled
+
         vfunc = Function(shading_vertex_template)
         ffunc = Function(shading_fragment_template)
 
@@ -385,6 +390,16 @@ class ShadingFilter(Filter):
         vfunc['normal'] = self._normals
 
         super().__init__(vcode=vfunc, fcode=ffunc)
+
+    @property
+    def enabled(self):
+        """True to enable the filter, False to disable."""
+        return self._enabled
+
+    @enabled.setter
+    def enabled(self, enabled):
+        self._enabled = enabled
+        self._update_data()
 
     @property
     def shading(self):
@@ -496,7 +511,9 @@ class ShadingFilter(Filter):
         self.fshader['shininess'] = self._shininess
 
         self.fshader['flat_shading'] = 1 if self._shading == 'flat' else 0
-        self.fshader['shading_enabled'] = 1 if self._shading is not None else 0
+        self.fshader['shading_enabled'] = (
+            1 if self._enabled and self._shading is not None else 0
+        )
 
         normals = self._visual.mesh_data.get_vertex_normals(indexed='faces')
         self._normals.set_data(normals, convert=True)
