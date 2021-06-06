@@ -63,6 +63,7 @@ def test_rotation_angle():
     # OSX Travis has some small differences...sometimes
     assert_allclose(axis2._rotation_angle, -17.056795, rtol=0.05)
 
+
 @requires_application()
 def test_text_position():
 
@@ -73,18 +74,21 @@ def test_text_position():
     view.camera = scene.cameras.PanZoomCamera(parent=view.scene)
 
     # tick length and label margin to 0 for nice values
-    axis1 = visuals.Axis(pos=[[-1.0, 0], [1.0, 0]], domain=(0., 1.25), major_tick_length=0, tick_label_margin=0, parent=view.scene)
+    axis1 = visuals.Axis(pos=[[-1.0, 0], [1.0, 0]], domain=(0., 1.25), 
+                         major_tick_length=0, tick_label_margin=0, 
+                         parent=view.scene)
 
     canvas.draw_visual(axis1)
-    assert_allclose(axis1._text.pos[:,0], (-1, -0.2, 0.6))
+    assert_allclose(axis1._text.pos[:, 0], (-1, -0.2, 0.6))
     assert_array_equal(axis1._text.text, ('0', '0.5', '1'))
 
     # Flip the axis domain
     axis1.domain = (1.25, 0.)
     canvas.draw_visual(axis1)
     # Text should be unchanged and positions mirrored
-    assert_allclose(axis1._text.pos[:,0], (1, 0.2, -0.6))
+    assert_allclose(axis1._text.pos[:, 0], (1, 0.2, -0.6))
     assert_array_equal(axis1._text.text, ('0', '0.5', '1'))
+
 
 @requires_application()
 def test_tick_position():
@@ -99,7 +103,7 @@ def test_tick_position():
 
     canvas.draw_visual(axis1)
     # Get a nice array of x ticks positions
-    x_ticks_positions = axis1._ticks.pos[:,::2][::2].flatten()
+    x_ticks_positions = axis1._ticks.pos[::2, ::2].flatten()
     # Compare major ticks first
     assert_allclose(x_ticks_positions[:3], (-1, -0.2, 0.6))
     # Then minor ticks
@@ -108,7 +112,7 @@ def test_tick_position():
     # Flip the axis domain
     axis1.domain = (1.25, 0.)
     canvas.draw_visual(axis1)
-    x_ticks_positions = axis1._ticks.pos[:,::2][::2].flatten()
+    x_ticks_positions = axis1._ticks.pos[::2, ::2].flatten()
     # Positions should be mirrored
     assert_allclose(x_ticks_positions[:3], (1, 0.2, -0.6))
     assert_allclose(x_ticks_positions[3:], (0.84, 0.68, 0.52, 0.36, 0.04, -0.12, -0.28, -0.44, -0.76, -0.92))
