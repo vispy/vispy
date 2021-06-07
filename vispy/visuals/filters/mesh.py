@@ -211,9 +211,6 @@ void shade() {
                     * specular_coeff.rgb * specular_coeff.a
                     * specular_light.rgb * specular_light.a;
 
-    // XXX(asnt): Not sure if there is a physically more correct way of
-    // blending the base color with the lighting.
-    //vec3 color = base_color * (ambient + diffuse + specular);
     vec3 color = ambient + base_color * diffuse + specular;
     gl_FragColor.rgb = color;
 }
