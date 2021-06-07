@@ -190,18 +190,18 @@ void shade() {
     vec3 light_vec = normalize(v_light_vec);
     vec3 eye_vec = normalize(v_eye_vec);
 
-    # Ambient illumination.
+    // Ambient illumination.
     vec3 ambient = ambient_coeff.rgb * ambient_coeff.a
                    * ambient_light.rgb * ambient_light.a;
 
-    # Diffuse illumination.
+    // Diffuse illumination.
     float diffuse_factor = dot(light_vec, normal);
     diffuse_factor = max(diffuse_factor, 0.0);
     vec3 diffuse = diffuse_factor
                    * diffuse_coeff.rgb * diffuse_coeff.a
                    * diffuse_light.rgb * diffuse_light.a;
 
-    # Specular illumination.
+    // Specular illumination.
     float specular_factor = 0.0;
     bool is_illuminated = diffuse_factor > 0.0;
     if (is_illuminated && shininess > 0.0) {
@@ -214,7 +214,7 @@ void shade() {
                     * specular_coeff.rgb * specular_coeff.a
                     * specular_light.rgb * specular_light.a;
 
-    # Blend the base color and combine the illuminations.
+    // Blend the base color and combine the illuminations.
     vec3 color = ambient + base_color * diffuse + specular;
 
     gl_FragColor.rgb = color;
