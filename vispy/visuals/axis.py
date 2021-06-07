@@ -392,8 +392,6 @@ class Ticker(object):
             length = self.axis.pos[1] - self.axis.pos[0]  # in logical coords
             n_inches = np.sqrt(np.sum(length ** 2)) / transforms.dpi
 
-            # major = np.linspace(domain[0], domain[1], num=11)
-            # major = MaxNLocator(10).tick_values(*domain)
             major = _get_ticks_talbot(domain[0], domain[1], n_inches, 2)
 
             labels = ['%g' % x for x in major]
@@ -412,12 +410,15 @@ class Ticker(object):
             if scale != 0:  # maybe something better to do here?
                 major_frac /= scale
                 minor_frac /= scale
-            major_frac = major_frac[::-1] if flip else major_frac
             use_mask = (major_frac > -0.0001) & (major_frac < 1.0001)
             major_frac = major_frac[use_mask]
             labels = [l for li, l in enumerate(labels) if use_mask[li]]
             minor_frac = minor_frac[(minor_frac > -0.0001) &
                                     (minor_frac < 1.0001)]
+            # Flip ticks coordinates if necessary :
+            if flip:
+                major_frac = 1 - major_frac
+                minor_frac = 1 - minor_frac
         elif self.axis.scale_type == 'logarithmic':
             return NotImplementedError
         elif self.axis.scale_type == 'power':
