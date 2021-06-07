@@ -3,10 +3,12 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 """A renderer supporting weighted blended order-independent transparency.
 
-The accumulation of transparency through several objects is approximate and
-works best for highly transparent objects, i.e. opacity between `0` and `0.25`.
-Artefacts appear for higher opacities. Fully-opaque objects are rendered
-correctly.
+The computed transparency is approximate but emulates transparency well in most
+cases.
+
+One artefact that might arise is that a transparent object very close to the
+camera might appear opaque and occlude the background. The solution is to
+ensure some distance between the camera and the object.
 
 Notes
 -----
