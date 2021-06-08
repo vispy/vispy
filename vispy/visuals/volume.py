@@ -221,7 +221,7 @@ vec3 intersectLinePlane(vec3 linePosition,
                         dot(lineVector, planeNormal);
 
     // calculate intersection
-    return lineStart + ( scaleFactor * lineVector );
+    return linePosition + ( scaleFactor * lineVector );
 }}
 
 // for some reason, this has to be the last function in order for the
@@ -786,7 +786,7 @@ class VolumeVisual(Visual):
     @method.setter
     def method(self, method):
         # Check and save
-        known_methods = list(FRAG_DICT_VOLUME.keys())
+        known_methods = list(RENDERING_MODE_SNIPPETS.keys())
         if method not in known_methods:
             raise ValueError('Volume render method should be in %r, not %r' %
                              (known_methods, method))
@@ -795,7 +795,7 @@ class VolumeVisual(Visual):
         if 'u_threshold' in self.shared_program:
             self.shared_program['u_threshold'] = None
 
-        self.shared_program.frag = FRAG_DICT_VOLUME[method]
+        self.shared_program.frag = FRAG_DICT_PLANE[method]
         self.shared_program.frag['sampler_type'] = self._tex.glsl_sampler_type
         self.shared_program.frag['sample'] = self._tex.glsl_sample
         self.shared_program.frag['cmap'] = Function(self._cmap.glsl_map)
