@@ -207,6 +207,23 @@ vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
     return final_color;
 }}
 
+vec3 intersectLinePlane(vec3 linePosition, 
+                        vec3 lineVector, 
+                        vec3 planePosition, 
+                        vec3 planeNormal) {{
+    // function to find the intersection between a line and a plane
+    // line is defined by position and vector
+    // plane is defined by position and normal vector
+    // https://en.wikipedia.org/wiki/Line%E2%80%93plane_intersection
+
+    // find scale factor for line vector
+    float scaleFactor = dot(planePosition - linePosition, planeNormal) / 
+                        dot(lineVector, planeNormal);
+
+    // calculate intersection
+    return lineStart + ( scaleFactor * lineVector );
+}}
+
 // for some reason, this has to be the last function in order for the
 // filters to be inserted in the correct place...
 
