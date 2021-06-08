@@ -400,12 +400,34 @@ ISO_SNIPPETS = dict(
 
 ISO_FRAG_SHADER = FRAG_SHADER.format(**ISO_SNIPPETS)
 
+
+AVG_SNIPPETS = dict(
+    before_loop="""
+        float n = 0; // Counter for encountered values
+        float meanval = 0.0; // The mean of encountered values
+        float prev_mean = 0.0; // Variable to store the previous incremental mean
+        """,
+    in_loop="""
+        // Incremental mean value used for numerical stability
+        n += 1; // Increment the counter
+        prev_mean = meanval; // Update the mean for previous iteration
+        meanval = prev_mean + (val - prev_mean) / n; // Calculate the mean
+        """,
+    after_loop="""
+        // Apply colormap on mean value
+        gl_FragColor = applyColormap(meanval);
+        """,
+)
+AVG_FRAG_SHADER = FRAG_SHADER.format(**AVG_SNIPPETS)
+
+
 frag_dict = {
     'mip': MIP_FRAG_SHADER,
     'minip': MINIP_FRAG_SHADER,
     'iso': ISO_FRAG_SHADER,
     'translucent': TRANSLUCENT_FRAG_SHADER,
     'additive': ADDITIVE_FRAG_SHADER,
+    'average': AVG_FRAG_SHADER
 }
 
 
@@ -420,7 +442,7 @@ class VolumeVisual(Visual):
         The contrast limits. The values in the volume are mapped to
         black and white corresponding to these values. Default maps
         between min and max.
-    method : {'mip', 'minip', 'translucent', 'additive', 'iso'}
+    method : {'mip', 'minip', 'translucent', 'additive', 'iso', 'average'}
         The render method to use. See corresponding docs for details.
         Default 'mip'.
     threshold : float
@@ -713,7 +735,9 @@ class VolumeVisual(Visual):
               the result is saturated.
             * iso: isosurface. Cast a ray until a certain threshold is
               encountered. At that location, lighning calculations are
-              performed to give the visual appearance of a surface.  
+              performed to give the visual appearance of a surface.
+            * average: average intensity projection. Cast a ray and display the
+              average of values that were encountered.
         """
         return self._method
 
