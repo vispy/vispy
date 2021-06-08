@@ -520,7 +520,8 @@ class VolumeVisual(Visual):
     def __init__(self, vol, clim=None, method='mip', threshold=None,
                  relative_step_size=0.8, cmap='grays', gamma=1.0,
                  clim_range_threshold=0.2,
-                 emulate_texture=False, interpolation='linear'):
+                 emulate_texture=False, interpolation='linear',
+                 plane_thickness=1, plane_position=None, plane_normal=None):
 
         tex_cls = TextureEmulated3D if emulate_texture else Texture3D
 
@@ -569,10 +570,26 @@ class VolumeVisual(Visual):
         # Set data
         self.set_data(vol, clim)
 
-        # Set params
+        # Set general rendering parameters
         self.method = method
         self.relative_step_size = relative_step_size
+
+        # Set isosurface specific parameters
         self.threshold = threshold if (threshold is not None) else vol.mean()
+
+        # Set plane mode specific parameters
+        self.plane_thickness = plane_thickness
+
+        if plane_position is not None:
+            self.plane_position = plane_position
+        else:
+            self.plane_position = vol.shape / 2
+
+        if plane_normal is not None:
+            self.plane_normal = plane_normal
+        else:
+            self.plane_normal = [0, 0, 1]
+
         self.freeze()
 
     def set_data(self, vol, clim=None, copy=True):
