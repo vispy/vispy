@@ -234,28 +234,15 @@ void main() {{
     // Calculate unit vector pointing in the view direction through this
     // fragment.
     view_ray = normalize(farpos.xyz - nearpos.xyz);
+    
+    // Set up the ray casting
+    // This snippet must define three variables:
+    // vec3 start_loc - the starting location of the ray in texture coordinates
+    // vec3 step - the step vector in texture coordinates
+    // int nsteps - 
+    
+    {raycasting_setup}
 
-    // Compute the distance to the front surface or near clipping plane
-    float distance = dot(nearpos-v_position, view_ray);
-    distance = max(distance, min((-0.5 - v_position.x) / view_ray.x,
-                            (u_shape.x - 0.5 - v_position.x) / view_ray.x));
-    distance = max(distance, min((-0.5 - v_position.y) / view_ray.y,
-                            (u_shape.y - 0.5 - v_position.y) / view_ray.y));
-    distance = max(distance, min((-0.5 - v_position.z) / view_ray.z,
-                            (u_shape.z - 0.5 - v_position.z) / view_ray.z));
-
-    // Now we have the starting position on the front surface
-    vec3 front = v_position + view_ray * distance;
-
-    // Decide how many steps to take
-    int nsteps = int(-distance / u_relative_step_size + 0.5);
-    float f_nsteps = float(nsteps);
-    if( nsteps < 1 )
-        discard;
-
-    // Get starting location and step vector in texture coordinates
-    vec3 step = ((v_position - front) / u_shape) / f_nsteps;
-    vec3 start_loc = front / u_shape;
 
     // For testing: show the number of steps. This helps to establish
     // whether the rays are correctly oriented
@@ -298,6 +285,65 @@ void main() {{
 
 
 """  # noqa
+
+
+RAYCASTING_SETUP_VOLUME = """
+    // Compute the distance to the front surface or near clipping plane
+    float distance = dot(nearpos-v_position, view_ray);
+    distance = max(distance, min((-0.5 - v_position.x) / view_ray.x,
+                            (u_shape.x - 0.5 - v_position.x) / view_ray.x));
+    distance = max(distance, min((-0.5 - v_position.y) / view_ray.y,
+                            (u_shape.y - 0.5 - v_position.y) / view_ray.y));
+    distance = max(distance, min((-0.5 - v_position.z) / view_ray.z,
+                            (u_shape.z - 0.5 - v_position.z) / view_ray.z));
+
+    // Now we have the starting position on the front surface
+    vec3 front = v_position + view_ray * distance;
+
+    // Decide how many steps to take
+    int nsteps = int(-distance / u_relative_step_size + 0.5);
+    float f_nsteps = float(nsteps);
+    if( nsteps < 1 )
+        discard;
+
+    // Get starting location and step vector in texture coordinates
+    vec3 step = ((v_position - front) / u_shape) / f_nsteps;
+    vec3 start_loc = front / u_shape;
+"""
+
+RAYCASTING_SETUP_PLANE = """
+    // find intersection of view ray with plane in data coordinates
+    vec3 intersection = intersectLinePlane(v_position.xyz, view_ray, 
+                                           u_plane_position, u_plane_normal);
+    // and texture coordinates
+    vec3 intersection_tex = intersection / u_shape;
+    
+    // discard if intersection not in texture
+    if (intersection_tex.x > 1.0 )
+        discard;
+    if (intersection_tex.y > 1.0 )
+        discard;
+    if (intersection_tex.z > 1.0 )
+        discard;
+    if (intersection_tex.x < 0.0 )
+        discard;
+    if (intersection_tex.y < 0.0 )
+        discard;
+    if (intersection_tex.z < 0.0 )
+        discard;
+
+    // Decide how many steps to take
+    int nsteps = int(u_plane_thickness / u_relative_step_size + 0.5);
+    float f_nsteps = float(nsteps);
+    if( nsteps < 1 )
+        discard;
+
+    // Get step vector and starting location in texture coordinates
+    // step vector is along plane normal
+    vec3 N = normalize(u_plane_normal);
+    vec3 step = N / u_shape;
+    vec3 start_loc = intersection_tex - ((step * f_nsteps) / 2);
+"""
 
 
 MIP_SNIPPETS = dict(
@@ -744,7 +790,7 @@ class VolumeVisual(Visual):
     @method.setter
     def method(self, method):
         # Check and save
-        known_methods = list(frag_dict.keys())
+        known_methods = list(FRAG_DICT_VOLUME.keys())
         if method not in known_methods:
             raise ValueError('Volume render method should be in %r, not %r' %
                              (known_methods, method))
@@ -753,7 +799,7 @@ class VolumeVisual(Visual):
         if 'u_threshold' in self.shared_program:
             self.shared_program['u_threshold'] = None
 
-        self.shared_program.frag = frag_dict[method]
+        self.shared_program.frag = FRAG_DICT_VOLUME[method]
         self.shared_program.frag['sampler_type'] = self._tex.glsl_sampler_type
         self.shared_program.frag['sample'] = self._tex.glsl_sample
         self.shared_program.frag['cmap'] = Function(self._cmap.glsl_map)
