@@ -35,12 +35,12 @@ coordinates).
 
 """
 
-from ..gloo import Texture3D, TextureEmulated3D, VertexBuffer, IndexBuffer
+import numpy as np
+
 from . import Visual
 from .shaders import Function
 from ..color import get_colormap
-
-import numpy as np
+from ..gloo import Texture3D, TextureEmulated3D, VertexBuffer, IndexBuffer
 
 # todo: implement more render methods (port from visvis)
 # todo: allow anisotropic data
@@ -240,9 +240,7 @@ void main() {{
     // vec3 start_loc - the starting location of the ray in texture coordinates
     // vec3 step - the step vector in texture coordinates
     // int nsteps - 
-    
     {raycasting_setup}
-
 
     // For testing: show the number of steps. This helps to establish
     // whether the rays are correctly oriented
@@ -285,7 +283,6 @@ void main() {{
 
 
 """  # noqa
-
 
 RAYCASTING_SETUP_VOLUME = """
     // Compute the distance to the front surface or near clipping plane
@@ -345,7 +342,6 @@ RAYCASTING_SETUP_PLANE = """
     vec3 start_loc = intersection_tex - ((step * f_nsteps) / 2);
 """
 
-
 MIP_SNIPPETS = dict(
     before_loop="""
         float maxval = -99999.0; // The maximum encountered value
@@ -367,8 +363,6 @@ MIP_SNIPPETS = dict(
         gl_FragColor = applyColormap(maxval);
         """,
 )
-MIP_FRAG_SHADER = FRAG_SHADER.format(**MIP_SNIPPETS)
-
 
 MINIP_SNIPPETS = dict(
     before_loop="""
@@ -391,8 +385,6 @@ MINIP_SNIPPETS = dict(
         gl_FragColor = applyColormap(minval);
         """,
 )
-MINIP_FRAG_SHADER = FRAG_SHADER.format(**MINIP_SNIPPETS)
-
 
 TRANSLUCENT_SNIPPETS = dict(
     before_loop="""
@@ -423,8 +415,6 @@ TRANSLUCENT_SNIPPETS = dict(
         gl_FragColor = integrated_color;
         """,
 )
-TRANSLUCENT_FRAG_SHADER = FRAG_SHADER.format(**TRANSLUCENT_SNIPPETS)
-
 
 ADDITIVE_SNIPPETS = dict(
     before_loop="""
@@ -439,8 +429,6 @@ ADDITIVE_SNIPPETS = dict(
         gl_FragColor = integrated_color;
         """,
 )
-ADDITIVE_FRAG_SHADER = FRAG_SHADER.format(**ADDITIVE_SNIPPETS)
-
 
 ISO_SNIPPETS = dict(
     before_loop="""
@@ -468,14 +456,22 @@ ISO_SNIPPETS = dict(
         """,
 )
 
-ISO_FRAG_SHADER = FRAG_SHADER.format(**ISO_SNIPPETS)
+RENDERING_MODE_SNIPPETS = {
+    'mip': MIP_SNIPPETS,
+    'minip': MINIP_SNIPPETS,
+    'iso': ISO_SNIPPETS,
+    'translucent': TRANSLUCENT_SNIPPETS,
+    'additive': ADDITIVE_SNIPPETS
+}
 
-frag_dict = {
-    'mip': MIP_FRAG_SHADER,
-    'minip': MINIP_FRAG_SHADER,
-    'iso': ISO_FRAG_SHADER,
-    'translucent': TRANSLUCENT_FRAG_SHADER,
-    'additive': ADDITIVE_FRAG_SHADER,
+FRAG_DICT_VOLUME = {
+    k: FRAG_SHADER.format(raycasting_setup=RAYCASTING_SETUP_VOLUME, **snippets)
+    for k, snippets in RENDERING_MODE_SNIPPETS.items()
+}
+
+FRAG_DICT_PLANE = {
+    k: FRAG_SHADER.format(raycasting_setup=RAYCASTING_SETUP_PLANE, **snippets)
+    for k, snippets in RENDERING_MODE_SNIPPETS.items()
 }
 
 
@@ -521,7 +517,7 @@ class VolumeVisual(Visual):
 
     _interpolation_names = ['linear', 'nearest']
 
-    def __init__(self, vol, clim=None, method='mip', threshold=None, 
+    def __init__(self, vol, clim=None, method='mip', threshold=None,
                  relative_step_size=0.8, cmap='grays', gamma=1.0,
                  clim_range_threshold=0.2,
                  emulate_texture=False, interpolation='linear'):
@@ -553,7 +549,7 @@ class VolumeVisual(Visual):
             ], dtype=np.float32))
 
         self._interpolation = interpolation
-        self._tex = tex_cls((10, 10, 10), interpolation=self._interpolation, 
+        self._tex = tex_cls((10, 10, 10), interpolation=self._interpolation,
                             wrapping='clamp_to_edge')
 
         # Create program
@@ -627,7 +623,7 @@ class VolumeVisual(Visual):
 
         # Apply to texture
         self._tex.set_data(vol)  # will be efficient if vol is same shape
-        self.shared_program['u_shape'] = (vol.shape[2], vol.shape[1], 
+        self.shared_program['u_shape'] = (vol.shape[2], vol.shape[1],
                                           vol.shape[0])
 
         shape = vol.shape[:3]
