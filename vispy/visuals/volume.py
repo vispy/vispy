@@ -34,13 +34,14 @@ The ray is expressed in coordinates local to the volume (i.e. texture
 coordinates).
 
 """
-
 import numpy as np
+from numpy.typing import ArrayLike
 
 from . import Visual
 from .shaders import Function
 from ..color import get_colormap
 from ..gloo import Texture3D, TextureEmulated3D, VertexBuffer, IndexBuffer
+
 
 # todo: implement more render methods (port from visvis)
 # todo: allow anisotropic data
@@ -99,12 +100,11 @@ const vec4 u_diffuse = vec4(0.8, 0.2, 0.2, 1.0);
 const vec4 u_specular = vec4(1.0, 1.0, 1.0, 1.0);
 const float u_shininess = 40.0;
 
-// uniforms for plane definition. 
-// Hard coded until we figure out the plane shader.
+// uniforms for plane definition.
 // defined in data coordinates.
-uniform vec3 u_plane_normal = vec3(1.0, 1.0, 1.0);
-uniform vec3 u_plane_position = vec3(64.0, 64.0, 64.0);
-uniform float u_plane_thickness = 10.0;
+uniform vec3 u_plane_normal;
+uniform vec3 u_plane_position;
+uniform float u_plane_thickness;
 
 //varying vec3 lightDirs[1];
 
@@ -583,7 +583,7 @@ class VolumeVisual(Visual):
         if plane_position is not None:
             self.plane_position = plane_position
         else:
-            self.plane_position = vol.shape / 2
+            self.plane_position = np.array(vol.shape) / 2
 
         if plane_normal is not None:
             self.plane_normal = plane_normal
@@ -850,6 +850,45 @@ class VolumeVisual(Visual):
             raise ValueError('relative_step_size cannot be smaller than 0.1')
         self._relative_step_size = value
         self.shared_program['u_relative_step_size'] = value
+
+    @property
+    def plane_thickness(self):
+        return self._plane_thickness
+
+    @plane_thickness.setter
+    def plane_thickness(self, value: float):
+        value = float(value)
+        if value < 1:
+            raise ValueError('plane_thickness should be at least 1.0')
+        self._plane_thickness = value
+        self.shared_program['u_plane_thickness'] = value
+        self.update()
+
+    @property
+    def plane_position(self):
+        return self._plane_position
+
+    @plane_position.setter
+    def plane_position(self, value: ArrayLike):
+        value = np.array(value, dtype=np.float32).ravel()
+        if value.shape != (3, ):
+            raise ValueError('plane_position must be a 3 element array-like object')
+        self._plane_position = value
+        self.shared_program['u_plane_position'] = value
+        self.update()
+
+    @property
+    def plane_normal(self):
+        return self._plane_normal
+
+    @plane_normal.setter
+    def plane_normal(self, value: ArrayLike):
+        value = np.array(value, dtype=np.float32).ravel()
+        if value.shape != (3, ):
+            raise ValueError('plane_normal must be a 3 element array-like object')
+        self._plane_normal = value
+        self.shared_program['u_plane_normal'] = value
+        self.update()
 
     def _create_vertex_data(self):
         """Create and set positions and texture coords from the given shape
