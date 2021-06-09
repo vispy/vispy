@@ -762,6 +762,11 @@ class VolumeVisual(Visual):
               maximum value that was encountered.
             * minip: minimum intensity projection. Cast a ray and display the
               minimum value that was encountered.
+            * attenuated_mip: attenuated maximum intensity projection. Cast a
+              ray and display the maximum value encountered. Values are
+              attenuated as the ray moves deeper into the volume.
+            * minip: minimum intensity projection. Cast a ray and display the
+              minimum value that was encountered.
             * additive: voxel colors are added along the view ray until
               the result is saturated.
             * iso: isosurface. Cast a ray until a certain threshold is
