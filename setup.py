@@ -209,7 +209,7 @@ setup(
         'jsdeps': NPM,
     },
     python_requires='>=3.6',
-    install_requires=['numpy', 'freetype-py'],
+    install_requires=['numpy', 'freetype-py', 'kiwisolver'],
     setup_requires=['numpy', 'cython', 'setuptools_scm', 'setuptools_scm_git_archive'],
     extras_require={
         'ipython-static': ['ipython'],
