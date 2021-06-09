@@ -134,12 +134,12 @@ void prepare_shading() {
     v_normal_vec = normal; //VARYING COPY
 
     vec4 pos_front = $scene2doc(pos_scene);
-    pos_front.z += 0.01;
+    pos_front.z += 1e-6;
     pos_front = $doc2scene(pos_front);
     pos_front /= pos_front.w;
 
     vec4 pos_back = $scene2doc(pos_scene);
-    pos_back.z -= 0.01;
+    pos_back.z -= 1e-6;
     pos_back = $doc2scene(pos_back);
     pos_back /= pos_back.w;
 
@@ -158,13 +158,21 @@ varying vec3 v_eye_vec;
 varying vec4 v_pos_scene;
 
 void shade() {
-    vec3 normal;
+    if ($shading_enabled != 1) {
+        return;
+    }
+
+    vec3 normal = v_normal_vec;
     if ($flat_shading == 1) {
         vec3 u = dFdx(v_pos_scene.xyz);
         vec3 v = dFdy(v_pos_scene.xyz);
         normal = normalize(cross(u, v));
-    } else {
-        normal = v_normal_vec;
+        // Note(asnt): The normal calculated above always points in the
+        // direction of the camera. Reintroduce the original orientation of the
+        // face.
+        if (!gl_FrontFacing) {
+            normal = -normal;
+        }
     }
 
     vec3 light_vec = v_light_vec;
@@ -176,7 +184,7 @@ void shade() {
 
     // Specular light component.
     float speculark = 0.0;
-    if ($shininess > 0) {
+    if (diffusek > 0.0 && $shininess > 0.0) {
         vec3 reflexion = reflect(light_vec, normal);
         speculark = dot(reflexion, v_eye_vec);
         speculark = max(speculark, 0.0);
@@ -184,10 +192,8 @@ void shade() {
     }
     vec3 specular_color = $light_color * $specular_color * speculark;
 
-    if ($shading_enabled == 1) {
-        vec3 color = $ambient_color + diffuse_color + specular_color;
-        gl_FragColor *= vec4(color, 1.0);
-    }
+    vec3 color = $ambient_color + diffuse_color + specular_color;
+    gl_FragColor *= vec4(color, 1.0);
 }
 """  # noqa
 

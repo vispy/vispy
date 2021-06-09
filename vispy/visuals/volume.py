@@ -37,6 +37,7 @@ coordinates).
 import numpy as np
 from numpy.typing import ArrayLike
 
+from ..gloo import Texture3D, TextureEmulated3D, VertexBuffer, IndexBuffer
 from . import Visual
 from .shaders import Function
 from ..color import get_colormap
@@ -239,7 +240,7 @@ void main() {{
     // This snippet must define three variables:
     // vec3 start_loc - the starting location of the ray in texture coordinates
     // vec3 step - the step vector in texture coordinates
-    // int nsteps - 
+    // int nsteps - the number of steps to make through the texture
     {raycasting_setup}
 
     // For testing: show the number of steps. This helps to establish
@@ -364,6 +365,29 @@ MIP_SNIPPETS = dict(
         """,
 )
 
+ATTENUATED_MIP_SNIPPETS = dict(
+    before_loop="""
+        float maxval = -99999.0; // The maximum encountered value
+        float sumval = 0.0; // The sum of the encountered values
+        float scaled = 0.0; // The scaled value
+        int maxi = 0;  // Where the maximum value was encountered
+        vec3 maxloc = vec3(0.0);  // Location where the maximum value was encountered
+        """,
+    in_loop="""
+        sumval = sumval + val;
+        scaled = val * exp(-u_attenuation * (sumval - 1) / u_relative_step_size);
+        if( scaled > maxval ) {
+            maxval = scaled;
+            maxi = iter;
+            maxloc = loc;
+        }
+        """,
+    after_loop="""
+        gl_FragColor = applyColormap(maxval);
+        """,
+)
+
+
 MINIP_SNIPPETS = dict(
     before_loop="""
         float minval = 99999.0; // The minimum encountered value
@@ -456,14 +480,37 @@ ISO_SNIPPETS = dict(
         """,
 )
 
+
+AVG_SNIPPETS = dict(
+    before_loop="""
+        float n = 0; // Counter for encountered values
+        float meanval = 0.0; // The mean of encountered values
+        float prev_mean = 0.0; // Variable to store the previous incremental mean
+        """,
+    in_loop="""
+        // Incremental mean value used for numerical stability
+        n += 1; // Increment the counter
+        prev_mean = meanval; // Update the mean for previous iteration
+        meanval = prev_mean + (val - prev_mean) / n; // Calculate the mean
+        """,
+    after_loop="""
+        // Apply colormap on mean value
+        gl_FragColor = applyColormap(meanval);
+        """,
+)
+
+
+
 RENDERING_MODES = ('plane', 'volume')
 
 RENDERING_METHOD_SNIPPETS = {
     'mip': MIP_SNIPPETS,
+    'attenuated_mip': ATTENUATED_MIP_SNIPPETS,
     'minip': MINIP_SNIPPETS,
     'iso': ISO_SNIPPETS,
     'translucent': TRANSLUCENT_SNIPPETS,
-    'additive': ADDITIVE_SNIPPETS
+    'additive': ADDITIVE_SNIPPETS,
+    'average': AVG_SNIPPETS,
 }
 
 FRAG_DICT_VOLUME = {
@@ -474,7 +521,9 @@ FRAG_DICT_VOLUME = {
 FRAG_DICT_PLANE = {
     k: FRAG_SHADER.format(raycasting_setup=RAYCASTING_SETUP_PLANE, **snippets)
     for k, snippets in RENDERING_METHOD_SNIPPETS.items()
-}
+
+
+
 
 
 class VolumeVisual(Visual):
@@ -488,12 +537,16 @@ class VolumeVisual(Visual):
         The contrast limits. The values in the volume are mapped to
         black and white corresponding to these values. Default maps
         between min and max.
-    method : {'mip', 'minip', 'translucent', 'additive', 'iso'}
+    method : {'mip', 'attenuated_mip', 'minip', 'translucent', 'additive',
+        'iso', 'average'}
         The render method to use. See corresponding docs for details.
         Default 'mip'.
     threshold : float
         The threshold to use for the isosurface render method. By default
         the mean of the given volume is used.
+    attenuation: float
+        The attenuation rate to apply for the attenuated mip render method.
+        Default: 1.0.
     relative_step_size : float
         The relative step size to step through the volume. Default 0.8.
         Increase to e.g. 1.5 to increase performance, at the cost of
@@ -520,8 +573,8 @@ class VolumeVisual(Visual):
     _interpolation_names = ['linear', 'nearest']
 
     def __init__(self, vol, clim=None, method='mip', threshold=None,
-                 relative_step_size=0.8, cmap='grays', gamma=1.0,
-                 clim_range_threshold=0.2,
+                 attenuation=1.0, relative_step_size=0.8, cmap='grays',
+                 gamma=1.0, clim_range_threshold=0.2,
                  emulate_texture=False, interpolation='linear', mode='plane',
                  plane_thickness=1, plane_position=None, plane_normal=None):
 
@@ -552,7 +605,7 @@ class VolumeVisual(Visual):
             ], dtype=np.float32))
 
         self._interpolation = interpolation
-        self._tex = tex_cls((10, 10, 10), interpolation=self._interpolation,
+        self._tex = tex_cls((10, 10, 10), interpolation=self._interpolation, 
                             wrapping='clamp_to_edge')
 
         # Create program
@@ -580,6 +633,9 @@ class VolumeVisual(Visual):
 
         # Set isosurface specific parameters
         self.threshold = threshold if (threshold is not None) else vol.mean()
+
+        # Set attenuated_mip specific parameters
+        self.attenuation = attenuation
 
         # Set plane mode specific parameters
         self.plane_thickness = plane_thickness
@@ -644,7 +700,7 @@ class VolumeVisual(Visual):
 
         # Apply to texture
         self._tex.set_data(vol)  # will be efficient if vol is same shape
-        self.shared_program['u_shape'] = (vol.shape[2], vol.shape[1],
+        self.shared_program['u_shape'] = (vol.shape[2], vol.shape[1], 
                                           vol.shape[0])
 
         shape = vol.shape[:3]
@@ -796,11 +852,16 @@ class VolumeVisual(Visual):
               maximum value that was encountered.
             * minip: minimum intensity projection. Cast a ray and display the
               minimum value that was encountered.
+            * attenuated_mip: attenuated maximum intensity projection. Cast a
+              ray and display the maximum value encountered. Values are
+              attenuated as the ray moves deeper into the volume.
             * additive: voxel colors are added along the view ray until
               the result is saturated.
             * iso: isosurface. Cast a ray until a certain threshold is
               encountered. At that location, lighning calculations are
-              performed to give the visual appearance of a surface.  
+              performed to give the visual appearance of a surface.
+            * average: average intensity projection. Cast a ray and display the
+              average of values that were encountered.
         """
         return self._method
 
@@ -831,6 +892,8 @@ class VolumeVisual(Visual):
         # Get rid of specific variables - they may become invalid
         if 'u_threshold' in self.shared_program:
             self.shared_program['u_threshold'] = None
+        if 'u_attenuation' in self.shared_program:
+            self.shared_program['u_attenuation'] = None
 
         self.shared_program.frag = self.frag_dict[self.method]
         self.shared_program.frag['sampler_type'] = self._tex.glsl_sampler_type
@@ -861,6 +924,18 @@ class VolumeVisual(Visual):
         self.update()
 
     @property
+    def attenuation(self):
+        """The attenuation rate to apply for the attenuated mip render method."""
+        return self._attenuation
+
+    @attenuation.setter
+    def attenuation(self, value):
+        self._attenuation = float(value)
+        if 'u_attenuation' in self.shared_program:
+            self.shared_program['u_attenuation'] = self._attenuation
+        self.update()
+
+    @property
     def relative_step_size(self):
         """The relative step size used during raycasting.
 
@@ -878,45 +953,6 @@ class VolumeVisual(Visual):
             raise ValueError('relative_step_size cannot be smaller than 0.1')
         self._relative_step_size = value
         self.shared_program['u_relative_step_size'] = value
-
-    @property
-    def plane_thickness(self):
-        return self._plane_thickness
-
-    @plane_thickness.setter
-    def plane_thickness(self, value: float):
-        value = float(value)
-        if value < 1:
-            raise ValueError('plane_thickness should be at least 1.0')
-        self._plane_thickness = value
-        self.shared_program['u_plane_thickness'] = value
-        self.update()
-
-    @property
-    def plane_position(self):
-        return self._plane_position
-
-    @plane_position.setter
-    def plane_position(self, value: ArrayLike):
-        value = np.array(value, dtype=np.float32).ravel()
-        if value.shape != (3, ):
-            raise ValueError('plane_position must be a 3 element array-like object')
-        self._plane_position = value
-        self.shared_program['u_plane_position'] = value[::-1]
-        self.update()
-
-    @property
-    def plane_normal(self):
-        return self._plane_normal
-
-    @plane_normal.setter
-    def plane_normal(self, value: ArrayLike):
-        value = np.array(value, dtype=np.float32).ravel()
-        if value.shape != (3, ):
-            raise ValueError('plane_normal must be a 3 element array-like object')
-        self._plane_normal = value
-        self.shared_program['u_plane_normal'] = value[::-1]
-        self.update()
 
     def _create_vertex_data(self):
         """Create and set positions and texture coords from the given shape

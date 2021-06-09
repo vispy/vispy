@@ -32,10 +32,12 @@ view.camera.depth_value = 1e3
 mesh = Mesh(vertices, faces, color=(.5, .7, .5, 1))
 view.add(mesh)
 
-shading_filter = ShadingFilter(shininess=args.shininess)
-mesh.attach(shading_filter)
 wireframe_filter = WireframeFilter(width=args.wireframe_width)
+shading_filter = ShadingFilter(shininess=args.shininess)
+# Note: The wireframe filter is attached before the shading filter otherwise
+# the wireframe is not shaded.
 mesh.attach(wireframe_filter)
+mesh.attach(shading_filter)
 
 
 def attach_headlight(view):
