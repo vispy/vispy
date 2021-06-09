@@ -730,7 +730,7 @@ class _HSLuv(Colormap):
         value *= 99
 
         colors = ColorArray(
-            [hsluv_to_rgb(hue, saturation, value) for hue in hues],
+            [hsluv_to_rgb([hue, saturation, value]) for hue in hues],
         )
 
         super(_HSLuv, self).__init__(colors, controls=controls,
@@ -752,10 +752,10 @@ class _Diverging(Colormap):
         saturation *= 99
         value *= 99
 
-        start = hsluv_to_rgb(h_neg, saturation, value)
+        start = hsluv_to_rgb([h_neg, saturation, value])
         mid = ((0.133, 0.133, 0.133) if center == "dark" else
                (0.92, 0.92, 0.92))
-        end = hsluv_to_rgb(h_pos, saturation, value)
+        end = hsluv_to_rgb([h_pos, saturation, value])
 
         colors = ColorArray([start, mid, end])
 
