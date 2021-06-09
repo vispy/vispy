@@ -35,6 +35,7 @@ coordinates).
 
 """
 import numpy as np
+from numpy.typing import ArrayLike
 
 from . import Visual
 from .shaders import Function
@@ -567,7 +568,7 @@ class VolumeVisual(Visual):
                  attenuation=1.0, relative_step_size=0.8, cmap='grays',
                  gamma=1.0, clim_range_threshold=0.2,
                  emulate_texture=False, interpolation='linear', mode='plane',
-                 plane_thickness=1, plane_position=None, plane_normal=None):
+                 plane_thickness=10, plane_position=None, plane_normal=None):
 
         tex_cls = TextureEmulated3D if emulate_texture else Texture3D
 
@@ -942,6 +943,45 @@ class VolumeVisual(Visual):
             raise ValueError('relative_step_size cannot be smaller than 0.1')
         self._relative_step_size = value
         self.shared_program['u_relative_step_size'] = value
+
+    @property
+    def plane_thickness(self):
+        return self._plane_thickness
+
+    @plane_thickness.setter
+    def plane_thickness(self, value: float):
+        value = float(value)
+        if value < 1:
+            raise ValueError('plane_thickness should be at least 1.0')
+        self._plane_thickness = value
+        self.shared_program['u_plane_thickness'] = value
+        self.update()
+
+    @property
+    def plane_position(self):
+        return self._plane_position
+
+    @plane_position.setter
+    def plane_position(self, value: ArrayLike):
+        value = np.array(value, dtype=np.float32).ravel()
+        if value.shape != (3,):
+            raise ValueError('plane_position must be a 3 element array-like object')
+        self._plane_position = value
+        self.shared_program['u_plane_position'] = value[::-1]
+        self.update()
+
+    @property
+    def plane_normal(self):
+        return self._plane_normal
+
+    @plane_normal.setter
+    def plane_normal(self, value: ArrayLike):
+        value = np.array(value, dtype=np.float32).ravel()
+        if value.shape != (3,):
+            raise ValueError('plane_normal must be a 3 element array-like object')
+        self._plane_normal = value
+        self.shared_program['u_plane_normal'] = value[::-1]
+        self.update()
 
     def _create_vertex_data(self):
         """Create and set positions and texture coords from the given shape
