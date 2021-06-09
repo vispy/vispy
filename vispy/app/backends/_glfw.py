@@ -289,6 +289,7 @@ class CanvasBackend(BaseCanvasBackend):
         self._next_key_text = {}
         self._vispy_canvas.set_current()
         self._vispy_canvas.events.initialize()
+        self._on_resize(self._id, size[0], size[1])
 
     def _vispy_warmup(self):
         etime = time() + 0.25
