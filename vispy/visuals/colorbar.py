@@ -253,7 +253,7 @@ class ColorBarVisual(CompoundVisual):
     pos : tuple (x, y)
         Position where the colorbar is to be placed with
         respect to the center of the colorbar
-    label_text : str
+    label : str
         The label that is to be drawn with the colorbar
         that provides information about the colorbar.
     label_color : str | vispy.color.Color
@@ -269,6 +269,11 @@ class ColorBarVisual(CompoundVisual):
     border_color : str | vispy.color.Color
         The color of the border of the colormap. This can either be a
         str as the color's name or an actual instace of a vipy.color.Color
+
+    .. versionchanged:: 0.7
+
+        Keyword argument ``label_str`` renamed to `label`.
+
     """
 
     # The padding multiplier that's used to place the text
@@ -278,7 +283,7 @@ class ColorBarVisual(CompoundVisual):
 
     def __init__(self, cmap, orientation, size,
                  pos=[0, 0],
-                 label_text="",
+                 label="",
                  label_color='black',
                  clim=(0.0, 1.0),
                  border_width=1.0,
@@ -292,7 +297,7 @@ class ColorBarVisual(CompoundVisual):
         self._size = size
         self._orientation = orientation
 
-        self._label = TextVisual(label_text, color=self._label_color)
+        self._label = TextVisual(label, color=self._label_color)
 
         self._ticks = []
         self._ticks.append(TextVisual(str(self._clim[0]),
