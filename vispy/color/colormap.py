@@ -9,7 +9,7 @@ import numpy as np
 
 from .color_array import ColorArray
 from ..ext.cubehelix import cubehelix
-from ..ext.husl import husl_to_rgb
+from hsluv import hsluv_to_rgb
 from ..util.check_environment import has_matplotlib
 import vispy.gloo
 
@@ -731,7 +731,7 @@ class _HUSL(Colormap):
         value *= 99
 
         colors = ColorArray(
-            [husl_to_rgb(hue, saturation, value) for hue in hues],
+            [hsluv_to_rgb(hue, saturation, value) for hue in hues],
         )
 
         super(_HUSL, self).__init__(colors, controls=controls,
@@ -745,10 +745,10 @@ class _Diverging(Colormap):
         saturation *= 99
         value *= 99
 
-        start = husl_to_rgb(h_neg, saturation, value)
+        start = hsluv_to_rgb(h_neg, saturation, value)
         mid = ((0.133, 0.133, 0.133) if center == "dark" else
                (0.92, 0.92, 0.92))
-        end = husl_to_rgb(h_pos, saturation, value)
+        end = hsluv_to_rgb(h_pos, saturation, value)
 
         colors = ColorArray([start, mid, end])
 
