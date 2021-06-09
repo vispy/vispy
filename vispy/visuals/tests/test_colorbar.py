@@ -146,6 +146,7 @@ def test_attributes():
                             orientation='top-invalid')
 
 
+@requires_application()
 def test_colorbar_label_change():
     with TestingCanvas() as c:
         colorbar = create_colorbar(pos=(50, 50),
