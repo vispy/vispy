@@ -82,6 +82,7 @@ class _CoreColorBarVisual(Visual):
     --------
     vispy.visuals.ColorBarVisual
     """
+
     def __init__(self, pos, halfdim,
                  cmap,
                  orientation,
@@ -115,10 +116,7 @@ class _CoreColorBarVisual(Visual):
         self._update()
 
     def _update(self):
-        """Rebuilds the shaders, and repositions the objects
-           that are used internally by the ColorBarVisual
-        """
-
+        """Rebuilds the shaders, and repositions the objects that are used internally by the ColorBarVisual"""
         x, y = self._pos
         halfw, halfh = self._halfdim
 
@@ -133,11 +131,11 @@ class _CoreColorBarVisual(Visual):
         # test that the given width and height is consistent
         # with the orientation
         if (self._orientation == "bottom" or self._orientation == "top"):
-                if halfw < halfh:
-                    raise ValueError("half-width(%s) < half-height(%s) for"
-                                     "%s orientation,"
-                                     " expected half-width >= half-height" %
-                                     (halfw, halfh, self._orientation, ))
+            if halfw < halfh:
+                raise ValueError("half-width(%s) < half-height(%s) for"
+                                 "%s orientation,"
+                                 " expected half-width >= half-height" %
+                                 (halfw, halfh, self._orientation, ))
         else:  # orientation == left or orientation == right
             if halfw > halfh:
                 raise ValueError("half-width(%s) > half-height(%s) for"
@@ -157,12 +155,15 @@ class _CoreColorBarVisual(Visual):
 
         self.shared_program['a_position'] = vertices
 
+        self.shared_program['texture2D_LUT'] = self._cmap.texture_lut() \
+            if (hasattr(self._cmap, 'texture_lut')) else None
+
     @staticmethod
     def _get_orientation_error(orientation):
-            return ValueError("orientation must"
-                              " be one of 'top', 'bottom', "
-                              "'left', or 'right', "
-                              "not '%s'" % (orientation, ))
+        return ValueError("orientation must"
+                          " be one of 'top', 'bottom', "
+                          "'left', or 'right', "
+                          "not '%s'" % (orientation, ))
 
     @property
     def pos(self):
@@ -183,8 +184,7 @@ class _CoreColorBarVisual(Visual):
 
     @property
     def cmap(self):
-        """ The colormap of the Colorbar
-        """
+        """The colormap of the Colorbar"""
         return self._cmap
 
     @cmap.setter
@@ -270,6 +270,7 @@ class ColorBarVisual(CompoundVisual):
         The color of the border of the colormap. This can either be a
         str as the color's name or an actual instace of a vipy.color.Color
     """
+
     # The padding multiplier that's used to place the text
     # next to the Colorbar. Makes sure the text isn't
     # visually "sticking" to the Colorbar
@@ -323,9 +324,7 @@ class ColorBarVisual(CompoundVisual):
         self._update()
 
     def _update(self):
-        """Rebuilds the shaders, and repositions the objects
-           that are used internally by the ColorBarVisual
-        """
+        """Rebuilds the shaders, and repositions the objects that are used internally by the ColorBarVisual"""
         self._colorbar.halfdim = self._halfdim
         self._border.halfdim = self._halfdim
 
@@ -338,10 +337,7 @@ class ColorBarVisual(CompoundVisual):
         self._border._update()
 
     def _update_positions(self):
-        """
-        updates the positions of the colorbars and labels
-
-        """
+        """Updates the positions of the colorbars and labels"""
         self._colorbar.pos = self._pos
         self._border.pos = self._pos
 
@@ -557,8 +553,7 @@ class ColorBarVisual(CompoundVisual):
 
     @property
     def pos(self):
-        """ The position of the text anchor in the local coordinate frame
-        """
+        """The position of the text anchor in the local coordinate frame"""
         return self._pos
 
     @pos.setter
@@ -568,8 +563,7 @@ class ColorBarVisual(CompoundVisual):
 
     @property
     def cmap(self):
-        """ The colormap of the Colorbar
-        """
+        """The colormap of the Colorbar"""
         return self._colorbar._cmap
 
     @cmap.setter
@@ -578,13 +572,12 @@ class ColorBarVisual(CompoundVisual):
 
     @property
     def clim(self):
-        """ The data limits of the Colorbar
+        """The data limits of the Colorbar
 
         Returns
         -------
         clim: tuple(min, max)
         """
-
         return self._clim
 
     @clim.setter
@@ -594,8 +587,7 @@ class ColorBarVisual(CompoundVisual):
 
     @property
     def label(self):
-        """ The vispy.visuals.TextVisual associated with the label
-        """
+        """The vispy.visuals.TextVisual associated with the label"""
         return self._label
 
     @label.setter
@@ -608,7 +600,7 @@ class ColorBarVisual(CompoundVisual):
 
     @property
     def ticks(self):
-        """ The vispy.visuals.TextVisual associated with the ticks
+        """The vispy.visuals.TextVisual associated with the ticks
 
         Returns
         -------
@@ -624,8 +616,7 @@ class ColorBarVisual(CompoundVisual):
 
     @property
     def border_width(self):
-        """ The width of the border around the ColorBar in pixels
-        """
+        """The width of the border around the ColorBar in pixels"""
         return self._border.border_width
 
     @border_width.setter
@@ -635,8 +626,7 @@ class ColorBarVisual(CompoundVisual):
 
     @property
     def border_color(self):
-        """ The color of the border around the ColorBar in pixels
-        """
+        """The color of the border around the ColorBar in pixels"""
         return self._border.border_color
 
     @border_color.setter
@@ -646,13 +636,12 @@ class ColorBarVisual(CompoundVisual):
 
     @property
     def orientation(self):
-        """ The orientation of the ColorBar
-        """
+        """The orientation of the ColorBar"""
         return self._orientation
 
     @property
     def size(self):
-        """ The size of the ColorBar
+        """The size of the ColorBar
 
         Returns
         -------
