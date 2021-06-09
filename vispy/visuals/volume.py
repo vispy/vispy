@@ -35,14 +35,11 @@ coordinates).
 
 """
 import numpy as np
-from numpy.typing import ArrayLike
 
-from ..gloo import Texture3D, TextureEmulated3D, VertexBuffer, IndexBuffer
 from . import Visual
 from .shaders import Function
 from ..color import get_colormap
 from ..gloo import Texture3D, TextureEmulated3D, VertexBuffer, IndexBuffer
-
 
 # todo: implement more render methods (port from visvis)
 # todo: allow anisotropic data
@@ -387,7 +384,6 @@ ATTENUATED_MIP_SNIPPETS = dict(
         """,
 )
 
-
 MINIP_SNIPPETS = dict(
     before_loop="""
         float minval = 99999.0; // The minimum encountered value
@@ -480,7 +476,6 @@ ISO_SNIPPETS = dict(
         """,
 )
 
-
 AVG_SNIPPETS = dict(
     before_loop="""
         float n = 0; // Counter for encountered values
@@ -498,8 +493,6 @@ AVG_SNIPPETS = dict(
         gl_FragColor = applyColormap(meanval);
         """,
 )
-
-
 
 RENDERING_MODES = ('plane', 'volume')
 
@@ -521,9 +514,7 @@ FRAG_DICT_VOLUME = {
 FRAG_DICT_PLANE = {
     k: FRAG_SHADER.format(raycasting_setup=RAYCASTING_SETUP_PLANE, **snippets)
     for k, snippets in RENDERING_METHOD_SNIPPETS.items()
-
-
-
+}
 
 
 class VolumeVisual(Visual):
@@ -605,7 +596,7 @@ class VolumeVisual(Visual):
             ], dtype=np.float32))
 
         self._interpolation = interpolation
-        self._tex = tex_cls((10, 10, 10), interpolation=self._interpolation, 
+        self._tex = tex_cls((10, 10, 10), interpolation=self._interpolation,
                             wrapping='clamp_to_edge')
 
         # Create program
@@ -700,7 +691,7 @@ class VolumeVisual(Visual):
 
         # Apply to texture
         self._tex.set_data(vol)  # will be efficient if vol is same shape
-        self.shared_program['u_shape'] = (vol.shape[2], vol.shape[1], 
+        self.shared_program['u_shape'] = (vol.shape[2], vol.shape[1],
                                           vol.shape[0])
 
         shape = vol.shape[:3]
@@ -875,7 +866,6 @@ class VolumeVisual(Visual):
         self._method = method
         self.update_frag_shader_on_gpu()
 
-
     @property
     def mode(self):
         """The render mode to use {'volume', 'plane'}"""
@@ -902,7 +892,6 @@ class VolumeVisual(Visual):
         self.shared_program['texture2D_LUT'] = self.cmap.texture_lut() \
             if (hasattr(self.cmap, 'texture_lut')) else None
         self.update()
-
 
     @property
     def frag_dict(self):
