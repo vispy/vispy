@@ -11,7 +11,7 @@ visualizations using Angle, WebGL, or other forms of remote rendering.
 This is in part possible by the widespread availability of OpenGL ES 2.0.
 
 All functions that this API provides accept and return Python arguments
-(no ctypes is required); strings are real strings and you can pass 
+(no ctypes is required); strings are real strings and you can pass
 data as numpy arrays. In general the input arguments are not checked
 (for performance reasons). Each function results in exactly one OpenGL
 API call, except when using the pyopengl backend.
@@ -41,7 +41,7 @@ current_backend = None
 
 
 class MainProxy(BaseGLProxy):
-    """Main proxy for the GL ES 2.0 API. 
+    """Main proxy for the GL ES 2.0 API.
 
     The functions in this namespace always call into the correct GL
     backend. Therefore these function objects can be safely stored for
@@ -58,7 +58,7 @@ class MainProxy(BaseGLProxy):
 proxy = MainProxy()
 
 
-def use_gl(target='gl2'):
+def use_gl(target=None):
     """Let Vispy use the target OpenGL ES 2.0 implementation
 
     Also see ``vispy.use()``.
@@ -66,7 +66,7 @@ def use_gl(target='gl2'):
     Parameters
     ----------
     target : str
-        The target GL backend to use.
+        The target GL backend to use. Default gl2 or es2, depending on the platform.
 
     Available backends:
     * gl2 - Use ES 2.0 subset of desktop (i.e. normal) OpenGL
@@ -81,7 +81,7 @@ def use_gl(target='gl2'):
     debug". (Debug does not apply to 'gl+', since PyOpenGL has its own
     debug mechanism)
     """
-    target = target or 'gl2'
+    target = target or default_backend.__name__.split(".")[-1]
     target = target.replace('+', 'plus')
 
     # Get options
@@ -168,7 +168,7 @@ def make_debug_wrapper(fn):
         # Log return value
         if ret is not None:
             if fn.__name__ == 'glReadPixels':
-                logger.debug(" <= %s[%s]" % (type(ret), len(ret)))                
+                logger.debug(" <= %s[%s]" % (type(ret), len(ret)))
             else:
                 logger.debug(" <= %s" % repr(ret))
         # Check for errors (raises if an error occured)
@@ -226,6 +226,9 @@ _fix_osmesa_gl_lib_if_testing()
 
 # Load default gl backend
 from . import gl2 as default_backend  # noqa
+if default_backend._lib is None:  # Probably Android or RPi
+    from . import es2 as default_backend  # noqa
+
 
 # Call use to start using our default backend
 use_gl()

@@ -458,7 +458,7 @@ class _GlirQueueShare(object):
         self._commands.append(args)
 
     def set_verbose(self, verbose):
-        """Set verbose or not. If True, the GLIR commands are printed right before they get parsed. 
+        """Set verbose or not. If True, the GLIR commands are printed right before they get parsed.
         If a string is given, use it as a filter.
         """
         self._verbose = verbose
@@ -1375,7 +1375,7 @@ class GlirBuffer(GlirObject):
 
         # Determine whether to check errors to try handling the ATI bug
         check_ati_bug = ((not self._bufferSubDataOk) and
-                         (gl.current_backend is gl.gl2) and
+                         (gl.current_backend.__name__.split(".")[-1] == "gl2") and
                          sys.platform.startswith('win'))
 
         # flush any pending errors
