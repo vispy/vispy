@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
+"""Grid widget for providing a gridded layout to child widgets."""
 
 from __future__ import division
 import numpy as np
@@ -10,15 +11,13 @@ from .widget import Widget
 from .viewbox import ViewBox
 
 from kiwisolver import Solver, Variable, UnsatisfiableConstraint
-# from ...ext.cassowary import (SimplexSolver, expression,
-#                               Variable, WEAK, REQUIRED,
-#                               STRONG, RequiredFailure)
 
 
 class Grid(Widget):
-    """
-    Widget that automatically sets the position and size of child Widgets to
-    proportionally divide its internal area into a grid.
+    """Widget for proportionally dividing its internal area into a grid.
+
+    This widget will automatically set the position and size of child widgets
+    according to provided constraints.
 
     Parameters
     ----------
@@ -29,6 +28,7 @@ class Grid(Widget):
     """
 
     def __init__(self, spacing=6, **kwargs):
+        """Create solver and basic grid parameters."""
         self._next_cell = [0, 0]  # row, col
         self._cells = {}
         self._grid_widgets = {}
@@ -51,7 +51,7 @@ class Grid(Widget):
         Widget.__init__(self, **kwargs)
 
     def __getitem__(self, idxs):
-        """Return an item or create it if the location is available"""
+        """Return an item or create it if the location is available."""
         if not isinstance(idxs, tuple):
             idxs = (idxs,)
         if len(idxs) == 1:
@@ -87,10 +87,10 @@ class Grid(Widget):
 
     def add_widget(self, widget=None, row=None, col=None, row_span=1,
                    col_span=1, **kwargs):
-        """
-        Add a new widget to this grid. This will cause other widgets in the
-        grid to be resized to make room for the new widget. Can be used
-        to replace a widget as well
+        """Add a new widget to this grid.
+
+        This will cause other widgets in the grid to be resized to make room
+        for the new widget. Can be used to replace a widget as well.
 
         Parameters
         ----------
@@ -151,7 +151,7 @@ class Grid(Widget):
         return widget
 
     def remove_widget(self, widget):
-        """Remove a widget from this grid
+        """Remove a widget from this grid.
 
         Parameters
         ----------
@@ -179,7 +179,7 @@ class Grid(Widget):
         row = None
         col = None
 
-        for (r, c, rspan, cspan, w) in self._grid_widgets.values():
+        for (r, c, _rspan, _cspan, w) in self._grid_widgets.values():
             if w == widget:
                 row = r
                 col = c
@@ -326,7 +326,7 @@ class Grid(Widget):
 
             for (stretch_term, stretch_val) in sws[1:]:
                 solver.addConstraint((comparator == stretch_term/stretch_val) |
-                                      'weak')
+                                     'weak')
 
         for sws in stretch_heights:
             if len(sws) <= 1:
@@ -336,7 +336,7 @@ class Grid(Widget):
 
             for (stretch_term, stretch_val) in sws[1:]:
                 solver.addConstraint((comparator == stretch_term/stretch_val) |
-                                      'weak')
+                                     'weak')
 
     @staticmethod
     def _add_widget_dim_constraints(solver, width_grid, height_grid,
