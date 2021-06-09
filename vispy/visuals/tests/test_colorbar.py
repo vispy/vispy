@@ -15,7 +15,7 @@ def create_colorbar(pos, size, orientation):
     colorbar = visuals.ColorBar(pos=pos,
                                 size=size,
                                 orientation=orientation,
-                                label_str='label string here',
+                                label='label string here',
                                 cmap='autumn',
                                 border_color='white',
                                 border_width=2)
@@ -144,5 +144,20 @@ def test_attributes():
             create_colorbar(pos=(50, 50),
                             size=(60, 4),
                             orientation='top-invalid')
+
+
+def test_colorbar_label_change():
+    with TestingCanvas() as c:
+        colorbar = create_colorbar(pos=(50, 50),
+                                   size=(60, 4),
+                                   orientation='top')
+        colorbar.cmap = "ice"
+        orig_text_vis = colorbar.label
+        colorbar.label = "New Label"
+        assert colorbar.label.text == "New Label"
+        assert colorbar.label is orig_text_vis
+
+        c.draw_visual(colorbar)
+
 
 run_tests_if_main()
