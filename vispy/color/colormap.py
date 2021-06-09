@@ -4,12 +4,13 @@
 
 from __future__ import division  # just to be safe...
 import inspect
+import warnings
 
 import numpy as np
 
 from .color_array import ColorArray
 from ..ext.cubehelix import cubehelix
-from ..ext.husl import husl_to_rgb
+from hsluv import hsluv_to_rgb
 from ..util.check_environment import has_matplotlib
 import vispy.gloo
 
@@ -646,8 +647,7 @@ class _SingleHue(Colormap):
 
 
 class _HSL(Colormap):
-    """A colormap which is defined by n evenly spaced points in
-    a circular color space.
+    """A colormap which is defined by n evenly spaced points in a circular color space.
 
     This means that we change the hue value while keeping the
     saturation and value constant.
@@ -689,9 +689,8 @@ class _HSL(Colormap):
                                    interpolation=interpolation)
 
 
-class _HUSL(Colormap):
-    """A colormap which is defined by n evenly spaced points in
-    the HUSL hue space.
+class _HSLuv(Colormap):
+    """A colormap which is defined by n evenly spaced points in the HSLuv space.
 
     Parameters
     ---------
@@ -718,7 +717,7 @@ class _HUSL(Colormap):
 
     Notes
     -----
-    For more information about HUSL colors see http://husl-colors.org
+    For more information about HSLuv colors see https://www.hsluv.org/
     """
 
     def __init__(self, ncolors=6, hue_start=0, saturation=1.0, value=0.7,
@@ -731,11 +730,19 @@ class _HUSL(Colormap):
         value *= 99
 
         colors = ColorArray(
-            [husl_to_rgb(hue, saturation, value) for hue in hues],
+            [hsluv_to_rgb([hue, saturation, value]) for hue in hues],
         )
 
-        super(_HUSL, self).__init__(colors, controls=controls,
-                                    interpolation=interpolation)
+        super(_HSLuv, self).__init__(colors, controls=controls,
+                                     interpolation=interpolation)
+
+
+class _HUSL(_HSLuv):
+    """Deprecated."""
+
+    def __init__(self, *args, **kwargs):
+        warnings.warn("_HUSL Colormap is deprecated. Please use '_HSLuv' instead.")
+        super().__init__(*args, **kwargs)
 
 
 class _Diverging(Colormap):
@@ -745,10 +752,10 @@ class _Diverging(Colormap):
         saturation *= 99
         value *= 99
 
-        start = husl_to_rgb(h_neg, saturation, value)
+        start = hsluv_to_rgb([h_neg, saturation, value])
         mid = ((0.133, 0.133, 0.133) if center == "dark" else
                (0.92, 0.92, 0.92))
-        end = husl_to_rgb(h_pos, saturation, value)
+        end = hsluv_to_rgb([h_pos, saturation, value])
 
         colors = ColorArray([start, mid, end])
 
@@ -1083,6 +1090,7 @@ _colormaps = dict(
     single_hue=_SingleHue,
     hsl=_HSL,
     husl=_HUSL,
+    hsluv=_HSLuv,
     diverging=_Diverging,
     RdYeBuCy=_RedYellowBlueCyan,
 )
