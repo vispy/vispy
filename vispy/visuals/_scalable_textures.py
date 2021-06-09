@@ -323,12 +323,12 @@ class GPUScaledTextureMixin(_ScaledTextureMixin):
     _texture_dtype_format = {
         np.float32: 'r32f',
         np.float64: 'r32f',
-        np.uint8: 'r8',
-        np.uint16: 'r16',
-        # np.uint32: 'r32ui',  # not supported texture format in vispy
-        np.int8: 'r8',
-        np.int16: 'r16',
-        # np.int32: 'r32i',  # not supported texture format in vispy
+        np.uint8: 'r8',  # uint8 normalized
+        np.uint16: 'r16',  # uint16 normalized
+        # np.int8: 'r8',  # not supported, there are no signed-integer norm formats
+        # np.int16: 'r16',
+        # np.uint32: 'r32ui',  # not supported, no normal formats for 32bit ints
+        # np.int32: 'r32i',
     }
     # instance variable that will be used later on
     _auto_texture_format = False
