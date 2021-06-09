@@ -456,7 +456,9 @@ ISO_SNIPPETS = dict(
         """,
 )
 
-RENDERING_MODE_SNIPPETS = {
+RENDERING_MODES = ('plane', 'volume')
+
+RENDERING_METHOD_SNIPPETS = {
     'mip': MIP_SNIPPETS,
     'minip': MINIP_SNIPPETS,
     'iso': ISO_SNIPPETS,
@@ -466,12 +468,12 @@ RENDERING_MODE_SNIPPETS = {
 
 FRAG_DICT_VOLUME = {
     k: FRAG_SHADER.format(raycasting_setup=RAYCASTING_SETUP_VOLUME, **snippets)
-    for k, snippets in RENDERING_MODE_SNIPPETS.items()
+    for k, snippets in RENDERING_METHOD_SNIPPETS.items()
 }
 
 FRAG_DICT_PLANE = {
     k: FRAG_SHADER.format(raycasting_setup=RAYCASTING_SETUP_PLANE, **snippets)
-    for k, snippets in RENDERING_MODE_SNIPPETS.items()
+    for k, snippets in RENDERING_METHOD_SNIPPETS.items()
 }
 
 
@@ -520,7 +522,7 @@ class VolumeVisual(Visual):
     def __init__(self, vol, clim=None, method='mip', threshold=None,
                  relative_step_size=0.8, cmap='grays', gamma=1.0,
                  clim_range_threshold=0.2,
-                 emulate_texture=False, interpolation='linear',
+                 emulate_texture=False, interpolation='linear', mode='plane',
                  plane_thickness=1, plane_position=None, plane_normal=None):
 
         tex_cls = TextureEmulated3D if emulate_texture else Texture3D
@@ -571,7 +573,9 @@ class VolumeVisual(Visual):
         self.set_data(vol, clim)
 
         # Set general rendering parameters
+        self._mode = 'plane'
         self.method = method
+        self.mode = mode
         self.relative_step_size = relative_step_size
 
         # Set isosurface specific parameters
@@ -588,7 +592,7 @@ class VolumeVisual(Visual):
         if plane_normal is not None:
             self.plane_normal = plane_normal
         else:
-            self.plane_normal = [0, 0, 1]
+            self.plane_normal = [1, 0, 0]
 
         self.freeze()
 
@@ -803,22 +807,46 @@ class VolumeVisual(Visual):
     @method.setter
     def method(self, method):
         # Check and save
-        known_methods = list(RENDERING_MODE_SNIPPETS.keys())
+        known_methods = list(RENDERING_METHOD_SNIPPETS.keys())
         if method not in known_methods:
             raise ValueError('Volume render method should be in %r, not %r' %
                              (known_methods, method))
         self._method = method
+        self.update_frag_shader_on_gpu()
+
+
+    @property
+    def mode(self):
+        """The render mode to use {'volume', 'plane'}"""
+        return self._mode
+
+    @mode.setter
+    def mode(self, mode):
+        if mode not in RENDERING_MODES:
+            raise ValueError(f"Volume render mode should be in {RENDERING_MODES}, not {mode}")
+        self._mode = mode
+        self.update_frag_shader_on_gpu()
+
+    def update_frag_shader_on_gpu(self):
         # Get rid of specific variables - they may become invalid
         if 'u_threshold' in self.shared_program:
             self.shared_program['u_threshold'] = None
 
-        self.shared_program.frag = FRAG_DICT_PLANE[method]
+        self.shared_program.frag = self.frag_dict[self.method]
         self.shared_program.frag['sampler_type'] = self._tex.glsl_sampler_type
         self.shared_program.frag['sample'] = self._tex.glsl_sample
         self.shared_program.frag['cmap'] = Function(self._cmap.glsl_map)
         self.shared_program['texture2D_LUT'] = self.cmap.texture_lut() \
             if (hasattr(self.cmap, 'texture_lut')) else None
         self.update()
+
+
+    @property
+    def frag_dict(self):
+        if self.mode == 'volume':
+            return FRAG_DICT_VOLUME
+        if self.mode == 'plane':
+            return FRAG_DICT_PLANE
 
     @property
     def threshold(self):
@@ -874,7 +902,7 @@ class VolumeVisual(Visual):
         if value.shape != (3, ):
             raise ValueError('plane_position must be a 3 element array-like object')
         self._plane_position = value
-        self.shared_program['u_plane_position'] = value
+        self.shared_program['u_plane_position'] = value[::-1]
         self.update()
 
     @property
@@ -887,7 +915,7 @@ class VolumeVisual(Visual):
         if value.shape != (3, ):
             raise ValueError('plane_normal must be a 3 element array-like object')
         self._plane_normal = value
-        self.shared_program['u_plane_normal'] = value
+        self.shared_program['u_plane_normal'] = value[::-1]
         self.update()
 
     def _create_vertex_data(self):
