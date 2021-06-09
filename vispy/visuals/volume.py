@@ -783,7 +783,7 @@ class VolumeVisual(Visual):
         # Get rid of specific variables - they may become invalid
         if 'u_threshold' in self.shared_program:
             self.shared_program['u_threshold'] = None
-        elif 'u_attenuation' in self.shared_program:
+        if 'u_attenuation' in self.shared_program:
             self.shared_program['u_attenuation'] = None
 
         self.shared_program.frag = frag_dict[method]
