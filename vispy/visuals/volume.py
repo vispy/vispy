@@ -85,6 +85,7 @@ uniform vec3 u_shape;
 uniform vec2 clim;
 uniform float gamma;
 uniform float u_threshold;
+uniform float u_attenuation;
 uniform float u_relative_step_size;
 
 //varyings
@@ -300,6 +301,30 @@ MIP_SNIPPETS = dict(
 MIP_FRAG_SHADER = FRAG_SHADER.format(**MIP_SNIPPETS)
 
 
+ATTENUATED_MIP_SNIPPETS = dict(
+    before_loop="""
+        float maxval = -99999.0; // The maximum encountered value
+        float sumval = 0.0; // The sum of the encountered values
+        float scaled = 0.0; // The scaled value
+        int maxi = 0;  // Where the maximum value was encountered
+        vec3 maxloc = vec3(0.0);  // Location where the maximum value was encountered
+        """,
+    in_loop="""
+        sumval = sumval + val;
+        scaled = val * exp(-u_attenuation * (sumval - 1) / u_relative_step_size);
+        if( scaled > maxval ) {
+            maxval = scaled;
+            maxi = iter;
+            maxloc = loc;
+        }
+        """,
+    after_loop="""
+        gl_FragColor = applyColormap(maxval);
+        """,
+)
+ATTENUATED_MIP_FRAG_SHADER = FRAG_SHADER.format(**ATTENUATED_MIP_SNIPPETS)
+
+
 MINIP_SNIPPETS = dict(
     before_loop="""
         float minval = 99999.0; // The minimum encountered value
@@ -424,6 +449,7 @@ AVG_FRAG_SHADER = FRAG_SHADER.format(**AVG_SNIPPETS)
 frag_dict = {
     'mip': MIP_FRAG_SHADER,
     'minip': MINIP_FRAG_SHADER,
+    'attenuated_mip': ATTENUATED_MIP_FRAG_SHADER,
     'iso': ISO_FRAG_SHADER,
     'translucent': TRANSLUCENT_FRAG_SHADER,
     'additive': ADDITIVE_FRAG_SHADER,
@@ -442,12 +468,16 @@ class VolumeVisual(Visual):
         The contrast limits. The values in the volume are mapped to
         black and white corresponding to these values. Default maps
         between min and max.
-    method : {'mip', 'minip', 'translucent', 'additive', 'iso', 'average'}
+    method : {'mip', 'attenuated_mip', 'minip', 'translucent', 'additive',
+        'iso', 'average'}
         The render method to use. See corresponding docs for details.
         Default 'mip'.
     threshold : float
         The threshold to use for the isosurface render method. By default
         the mean of the given volume is used.
+    attenuation: float
+        The attenuation rate to apply for the attenuated mip render method.
+        Default: 1.0.
     relative_step_size : float
         The relative step size to step through the volume. Default 0.8.
         Increase to e.g. 1.5 to increase performance, at the cost of
@@ -473,10 +503,10 @@ class VolumeVisual(Visual):
 
     _interpolation_names = ['linear', 'nearest']
 
-    def __init__(self, vol, clim=None, method='mip', threshold=None, 
-                 relative_step_size=0.8, cmap='grays', gamma=1.0,
-                 clim_range_threshold=0.2,
-                 emulate_texture=False, interpolation='linear'):
+    def __init__(self, vol, clim=None, method='mip', threshold=None,
+                 attenuation=1.0, relative_step_size=0.8, cmap='grays',
+                 gamma=1.0, clim_range_threshold=0.2, emulate_texture=False,
+                 interpolation='linear'):
 
         tex_cls = TextureEmulated3D if emulate_texture else Texture3D
 
@@ -529,6 +559,7 @@ class VolumeVisual(Visual):
         self.method = method
         self.relative_step_size = relative_step_size
         self.threshold = threshold if (threshold is not None) else vol.mean()
+        self.attenuation = attenuation
         self.freeze()
 
     def set_data(self, vol, clim=None, copy=True):
@@ -731,6 +762,9 @@ class VolumeVisual(Visual):
               maximum value that was encountered.
             * minip: minimum intensity projection. Cast a ray and display the
               minimum value that was encountered.
+            * attenuated_mip: attenuated maximum intensity projection. Cast a
+              ray and display the maximum value encountered. Values are
+              attenuated as the ray moves deeper into the volume.
             * additive: voxel colors are added along the view ray until
               the result is saturated.
             * iso: isosurface. Cast a ray until a certain threshold is
@@ -752,6 +786,8 @@ class VolumeVisual(Visual):
         # Get rid of specific variables - they may become invalid
         if 'u_threshold' in self.shared_program:
             self.shared_program['u_threshold'] = None
+        if 'u_attenuation' in self.shared_program:
+            self.shared_program['u_attenuation'] = None
 
         self.shared_program.frag = frag_dict[method]
         self.shared_program.frag['sampler_type'] = self._tex.glsl_sampler_type
@@ -771,6 +807,18 @@ class VolumeVisual(Visual):
         self._threshold = float(value)
         if 'u_threshold' in self.shared_program:
             self.shared_program['u_threshold'] = self._threshold
+        self.update()
+
+    @property
+    def attenuation(self):
+        """The attenuation rate to apply for the attenuated mip render method."""
+        return self._attenuation
+
+    @attenuation.setter
+    def attenuation(self, value):
+        self._attenuation = float(value)
+        if 'u_attenuation' in self.shared_program:
+            self.shared_program['u_attenuation'] = self._attenuation
         self.update()
 
     @property
