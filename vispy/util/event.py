@@ -449,7 +449,7 @@ class EventEmitter(object):
 
                 if blocked.get(cb, 0) > 0:
                     continue
-                
+
                 if self._emitting > 1:
                     raise RuntimeError('EventEmitter loop detected!')
 
