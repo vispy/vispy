@@ -418,6 +418,8 @@ class _AggLineVisual(Visual):
         Visual.__init__(self, vcode=self.VERTEX_SHADER,
                         fcode=self.FRAGMENT_SHADER)
         self._index_buffer = gloo.IndexBuffer()
+        # The depth_test being disabled prevents z-ordering, but if
+        # we turn it on the blending of the aa edges produces artifacts.
         self.set_gl_state('translucent', depth_test=False)
         self._draw_mode = 'triangles'
 
@@ -425,7 +427,6 @@ class _AggLineVisual(Visual):
         data_doc = view.get_transform('visual', 'document')
         doc_px = view.get_transform('document', 'framebuffer')
         px_ndc = view.get_transform('framebuffer', 'render')
-
         vert = view.view_program.vert
         vert['transform'] = data_doc
         vert['doc_px_transform'] = doc_px
