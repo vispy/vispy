@@ -15,9 +15,10 @@ Controls:
 * 2  - toggle between volume rendering methods
 * 3  - toggle between stent-CT / brain-MRI image
 * 4  - toggle between colormaps
+* 5 -  toggle between volume rendering modes
 * 0  - reset cameras
 * [] - decrease/increase isosurface threshold
-
+* () - decrease/increase plane thickness
 With fly camera:
 
 * WASD or arrow keys - move around
@@ -123,8 +124,8 @@ def on_key_press(event):
         else:
             axis.visible = False
     elif event.text == '2':
-        methods = ['mip', 'translucent', 'iso', 'additive']
-        method = methods[(methods.index(volume1.method) + 1) % 4]
+        methods = ['mip', 'minip', 'attenuated_mip', 'average', 'translucent', 'iso', 'additive']
+        method = methods[(methods.index(volume1.method) + 1) % 7]
         print("Volume render method: %s" % method)
         cmap = opaque_cmap if method in ['mip', 'iso'] else translucent_cmap
         volume1.method = method
@@ -141,6 +142,14 @@ def on_key_press(event):
             cmap = translucent_cmap = next(translucent_cmaps)
         volume1.cmap = cmap
         volume2.cmap = cmap
+    elif event.text == '5':
+        modes = ['volume', 'plane']
+        if volume1.mode == modes[0]:
+            volume1.mode = modes[1]
+            print(modes[1])
+        else:
+            volume1.mode = modes[0]
+            print(modes[1])
     elif event.text == '0':
         cam1.set_range()
         cam3.set_range()
@@ -150,6 +159,13 @@ def on_key_press(event):
         volume2.threshold += s
         th = volume1.threshold if volume1.visible else volume2.threshold
         print("Isosurface threshold: %0.3f" % th)
+    elif event.text != '' and event.text in '()':
+        if event.text == ')':
+            t = 1
+        else:
+            t = -1
+        volume1.plane_thickness += t
+
 
 # for testing performance
 # @canvas.connect

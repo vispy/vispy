@@ -33,7 +33,7 @@ from vispy.visuals.transforms import STTransform
 # vol = np.load(io.load_data_file('volume/stent.npz'))['arr_0']
 HIV = '/Users/aburt/Playground/visualise_particles/TS_01.mrc_10.00Apx.mrc'
 CELL = '/Users/aburt/Playground/visualise_particles/Liang_denoised_mycoplasma/00287_10.00Apx_denoised.mrc'
-vol = mrcfile.open(CELL).data
+vol = mrcfile.open(HIV).data * -1
 
 # Prepare canvas
 canvas = scene.SceneCanvas(keys='interactive', size=(800, 600), show=True)
@@ -47,7 +47,7 @@ emulate_texture = False
 
 # Create the volume visuals, only one is visible
 volume = scene.visuals.Volume(vol, parent=view.scene, threshold=0.225,
-                               emulate_texture=emulate_texture)
+                               emulate_texture=emulate_texture, mode='plane')
 volume.transform = scene.STTransform(translate=(64, 64, 0))
 
 # Create three cameras (Fly, Turntable and Arcball)
@@ -106,8 +106,8 @@ def on_mouse_move(event):
 @canvas.events.key_press.connect
 def on_key_press(event):
     if event.text == '1':
-        methods = ['mip', 'average']
-        method = methods[(methods.index(volume.method) + 1) % 2]
+        methods = ['mip', 'average', 'minip']
+        method = methods[(methods.index(volume.method) + 1) % 3]
         print("Volume render method: %s" % method)
         volume.method = method
     elif event.text == '2':

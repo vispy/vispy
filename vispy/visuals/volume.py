@@ -567,7 +567,7 @@ class VolumeVisual(Visual):
     def __init__(self, vol, clim=None, method='mip', threshold=None,
                  attenuation=1.0, relative_step_size=0.8, cmap='grays',
                  gamma=1.0, clim_range_threshold=0.2,
-                 emulate_texture=False, interpolation='linear', mode='plane',
+                 emulate_texture=False, interpolation='linear', mode='volume',
                  plane_thickness=10, plane_position=None, plane_normal=None):
 
         tex_cls = TextureEmulated3D if emulate_texture else Texture3D
@@ -618,7 +618,7 @@ class VolumeVisual(Visual):
         self.set_data(vol, clim)
 
         # Set general rendering parameters
-        self._mode = 'plane'
+        self._mode = 'volume'
         self.method = method
         self.mode = mode
         self.relative_step_size = relative_step_size
