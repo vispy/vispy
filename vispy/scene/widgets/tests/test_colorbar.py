@@ -8,7 +8,7 @@ All images are of size (100,100) to keep a small file size
 
 from vispy.scene.widgets import ColorBarWidget
 from vispy.testing import (requires_application, TestingCanvas,
-                           run_tests_if_main, raises)
+                           run_tests_if_main)
 from vispy.testing.image_tester import assert_image_approved
 
 
@@ -43,3 +43,5 @@ def test_colorbar_widget():
         assert_image_approved(c.render(), 'visuals/colorbar/top.png')
         assert colorbar_top.label.text == "my label"
 
+
+run_tests_if_main()
