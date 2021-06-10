@@ -99,19 +99,13 @@ void main()
     v_color.a = min(v_linewidth, v_color.a);
     v_linewidth = max(v_linewidth, 1.0);
 
-    // If color is fully transparent we just will discard the fragment anyway
-//    if( v_color.a <= 0.0 )
-//    {
-//        gl_Position = vec4(0.0,0.0,0.0,1.0);
-//        return;
-//    }
-
     // This is the actual half width of the line
     // TODO: take care of logical - physical pixel difference here.
     float w = ceil(1.25*v_antialias+v_linewidth)/2.0;
 
-    //vec2 position = $transform(vec4(a_position,0.,1.)).xy*u_scale;
-    vec2 position = $transform(vec4(a_position,0.,1.)).xy;
+    vec4 doc_pos = $transform(vec4(a_position,0.,1.));
+    //vec2 position = doc_pos.xy * u_scale;
+    vec2 position = doc_pos.xy;
     // At this point, position must be in _doc_ coordinates because the line
     // width will be added to it.
 
@@ -242,6 +236,6 @@ void main()
     }
 
     v_texcoord = vec2( u, v*w );
-    gl_Position = $px_ndc_transform($doc_px_transform(vec4(position,
-                                                           0.0, 1.0)));
+
+    gl_Position = $px_ndc_transform($doc_px_transform(vec4(position, doc_pos.z, 1.0)));
 }
