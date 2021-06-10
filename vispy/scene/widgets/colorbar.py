@@ -78,7 +78,7 @@ class ColorBarWidget(Widget):
 
         self._colorbar = ColorBarVisual(size=dummy_size, cmap=cmap,
                                         orientation=orientation,
-                                        label_text=label, clim=clim,
+                                        label=label, clim=clim,
                                         label_color=label_color,
                                         border_width=border_width,
                                         border_color=border_color, **kwargs)
