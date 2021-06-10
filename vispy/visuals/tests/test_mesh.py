@@ -97,6 +97,60 @@ def test_mesh_shading_filter_enabled(shading):
 
 
 @requires_pyopengl()
+@requires_application()
+@pytest.mark.parametrize('attribute', ['ambient_coefficient',
+                                       'diffuse_coefficient',
+                                       'specular_coefficient',
+                                       'ambient_light',
+                                       'diffuse_light',
+                                       'specular_light'])
+def test_mesh_shading_filter_colors(attribute):
+    size = (45, 40)
+    with TestingCanvas(size=size, bgcolor="k") as c:
+        base_color_white = (1.0, 1.0, 1.0, 1.0)
+        overlay_color_red = (1.0, 0.0, 0.0, 1.0)
+
+        v = c.central_widget.add_view(border_width=0)
+        v.camera = 'arcball'
+        mdata = create_sphere(20, 30, radius=1)
+        mesh = scene.visuals.Mesh(meshdata=mdata, color=base_color_white)
+        v.add(mesh)
+
+        shading_filter = ShadingFilter(shading='smooth',
+                                       # Set the light source on the side of
+                                       # and around the camera to get a clearly
+                                       # visible reflection.
+                                       light_dir=(-5, -5, 5),
+                                       # Activate all illumination types as
+                                       # white light but reduce the intensity
+                                       # to prevent saturation.
+                                       ambient_light=0.3,
+                                       diffuse_light=0.3,
+                                       specular_light=0.3,
+                                       # Get a wide highlight.
+                                       shininess=4)
+        mesh.attach(shading_filter)
+
+        rendered_white = c.render()
+
+        setattr(shading_filter, attribute, overlay_color_red)
+        rendered_red = c.render()
+
+        # The results should be different.
+        assert not np.allclose(rendered_white, rendered_red)
+
+        # There should be an equal amount of all colors in the white rendering.
+        color_count_white = rendered_white.sum(axis=(0, 1))
+        r, g, b, _ = color_count_white
+        assert r == g and r == b
+
+        color_count_red = rendered_red.sum(axis=(0, 1))
+        # There should be more red in the red-colored rendering.
+        r, g, b, _ = color_count_red
+        assert r > g and r > b
+
+
+@requires_pyopengl()
 def test_mesh_bounds():
     # Create 3D visual
     vertices, filled_indices, outline_indices = create_cube()
