@@ -11,11 +11,11 @@ from vispy.testing import (requires_application, TestingCanvas,
 from vispy.testing.image_tester import assert_image_approved
 
 
-def create_colorbar(pos, size, orientation):
+def create_colorbar(pos, size, orientation, label='label string here'):
     colorbar = visuals.ColorBar(pos=pos,
                                 size=size,
                                 orientation=orientation,
-                                label='label string here',
+                                label=label,
                                 cmap='autumn',
                                 border_color='white',
                                 border_width=2)
@@ -157,6 +157,21 @@ def test_colorbar_label_change():
         colorbar.label = "New Label"
         assert colorbar.label.text == "New Label"
         assert colorbar.label is orig_text_vis
+
+        c.draw_visual(colorbar)
+
+
+@requires_application()
+def test_colorbar_label_as_textvisual():
+    with TestingCanvas() as c:
+        label = visuals.Text("my label")
+        colorbar = create_colorbar(pos=(50, 50),
+                                   size=(60, 4),
+                                   orientation='top',
+                                   label=label)
+        colorbar.cmap = "ice"
+        assert colorbar.label.text == "my label"
+        assert colorbar.label is label
 
         c.draw_visual(colorbar)
 
