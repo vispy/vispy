@@ -598,10 +598,10 @@ class ColorBarVisual(CompoundVisual):
 
     @label.setter
     def label(self, label):
-        if isinstance(label, str):
-            self._label.text = label
-        else:
+        if isinstance(label, TextVisual):
             self._label = label
+        else:
+            self._label.text = label
         self._update()
 
     @property
