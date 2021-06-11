@@ -852,8 +852,8 @@ class CanvasBackendDesktop(QtBaseCanvasBackend, QGLWidget):
             context = self._vispy_canvas.context
             context.set_color_mask(False, False, False, True)
             context.clear(color=True, depth=False, stencil=False)
-            context.flush()
             context.set_color_mask(True, True, True, True)
+            context.flush()
 
 
 # Select CanvasBackend
