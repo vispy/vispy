@@ -258,7 +258,7 @@ class ColorBarVisual(CompoundVisual):
         that provides information about the colorbar.
         If a TextVisual object then 'label_color' is ignored.
     label_color : str | vispy.color.Color
-        The color of the labels. This can either be a
+        The color of the label and tick labels. This can either be a
         str as the color's name or an actual instace of a vipy.color.Color
     clim : tuple (min, max)
         the minimum and maximum values of the data that
