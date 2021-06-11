@@ -115,7 +115,7 @@ def test_image_clims_and_gamma(input_dtype, texture_format, num_channels,
 @requires_application()
 @pytest.mark.parametrize('num_channels', [0, 1, 3, 4])
 @pytest.mark.parametrize('texture_format', [None, 'auto'])
-def test_image_clims_and_gamma(texture_format, num_channels):
+def test_image_equal_clims(texture_format, num_channels):
     """Test image visual with equal clims."""
     size = (40, 40)
     input_dtype = np.uint8
