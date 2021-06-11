@@ -79,6 +79,10 @@ class Filter(BaseFilter):
 
         self._attached = False
 
+    @property
+    def attached(self):
+        return self._attached
+
     def _attach(self, visual):
         """Called when a filter should be attached to a visual.
 

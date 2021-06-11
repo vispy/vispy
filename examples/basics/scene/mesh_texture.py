@@ -1,3 +1,11 @@
+# -*- coding: utf-8 -*-
+# vispy: gallery 30
+# -----------------------------------------------------------------------------
+# Copyright (c) Vispy Development Team. All Rights Reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+# -----------------------------------------------------------------------------
+"""Show how to use the texture filter on meshes."""
+
 import argparse
 
 import numpy as np
@@ -11,7 +19,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--shading', default='smooth',
                     choices=['none', 'flat', 'smooth'],
                     help="shading mode")
-args = parser.parse_args()
+args, _ = parser.parse_known_args()
 
 mesh_path = load_data_file('spot/spot.obj.gz')
 texture_path = load_data_file('spot/spot.png')
@@ -57,6 +65,7 @@ attach_headlight(mesh, view, canvas)
 
 
 canvas.show()
+
 
 if __name__ == "__main__":
     app.run()
