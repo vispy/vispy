@@ -125,38 +125,6 @@ class Application(object):
 
     def is_notebook(self):
         """Determine if the user is executing in a Jupyter Notebook"""
-        
-        """I'm not too sure how to test this on a CI. The testing procedure
-        I came up with was:
-        1. Start `jupyter notebook`
-        2. Paste the following code
-```
-import numpy as np
-image = np.linspace(0, 1, 32 * 32).reshape(32, 32)
-from vispy import scene
-
-s = scene.SceneCanvas(size=(512, 512), keys='interactive')
-view = s.central_widget.add_view()
-
-scene.visuals.Image(image, parent=view.scene, method='subdivide')
-s.show()
-```
-        3. Verify that it runs in the jupyter notebook
-        4. Restart the kernel
-        5. Add the line `%gui qt` at the very top.
-        6. Now run again.
-        7. Verify that it launches in a seperate QT window.
-        8. Open Spyder.
-        9. Open Spyder's settings->IPython console->Graphics
-        10. Select the Qt5 backend.
-        11. Restart the kernel.
-        12. Run the same code as above (without specifying `%gui qt`)
-        13. Verify that it should run in a seperate window
-        14. Open a `jupyter qtconsole`
-        15. Try running the same code (Failing for now).
-        16. Open a `jupyter console`
-        17. Try running the same code (Failing for now).
-        """
         try:
             # 'get_ipython' is available in globals when running from
             # IPython/Jupyter
