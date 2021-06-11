@@ -763,7 +763,7 @@ class _Diverging(Colormap):
 
 
 class _RedYellowBlueCyan(Colormap):
-    """A colormap which is goes red-yellow positive and blue-cyan negative
+    """A colormap which goes red-yellow positive and blue-cyan negative
 
     Parameters
     ---------
@@ -1085,48 +1085,56 @@ _colormaps = dict(
     GrBu_d=_Diverging(255, 133, 0.75, 0.6, "dark"),
     RdBu=_Diverging(220, 20, 0.75, 0.5),
 
-    # Configurable colormaps
-    cubehelix=CubeHelixColormap,
-    single_hue=_SingleHue,
-    hsl=_HSL,
-    husl=_HUSL,
-    hsluv=_HSLuv,
-    diverging=_Diverging,
-    RdYeBuCy=_RedYellowBlueCyan,
+    cubehelix=CubeHelixColormap(),
+    single_hue=_SingleHue(),
+    hsl=_HSL(),
+    husl=_HSLuv(),
+    hsluv=_HSLuv(),
+    diverging=_Diverging(),
+    RdYeBuCy=_RedYellowBlueCyan(),
 )
 
 
-def get_colormap(name, *args, **kwargs):
-    """Obtain a colormap
-    Some colormaps can have additional configuration parameters. Refer to
-    their corresponding documentation for more information.
+def get_colormap(name):
+    """Obtain a colormap.
+
     Parameters
     ----------
     name : str | Colormap
         Colormap name. Can also be a Colormap for pass-through.
+
     Examples
     --------
         >>> get_colormap('autumn')
-        >>> get_colormap('single_hue', hue=10)
+        >>> get_colormap('single_hue')
+
+    .. versionchanged: 0.7
+
+        Additional args/kwargs are no longer accepted. Colormap classes are
+        no longer created on the fly.
+
     """
+    if name == "single_hue":
+        warnings.warn("Colormap 'single_hue' has been deprecated. "
+                      "Please use 'light_blues' instead.", DeprecationWarning)
+    if name == "husl":
+        warnings.warn("Colormap 'husl' has been deprecated. "
+                      "Please use 'hsluv' instead.", DeprecationWarning)
+
     if isinstance(name, BaseColormap):
-        cmap = name
-    else:
-        if not isinstance(name, str):
-            raise TypeError('colormap must be a Colormap or string name')
-        if name in _colormaps:  # vispy cmap
-            cmap = _colormaps[name]
-        elif has_matplotlib():  # matplotlib cmap
-            try:
-                cmap = MatplotlibColormap(name)
-            except ValueError:
-                raise KeyError('colormap name %s not found' % name)
-        else:
+        return name
+
+    if not isinstance(name, str):
+        raise TypeError('colormap must be a Colormap or string name')
+    if name in _colormaps:  # vispy cmap
+        cmap = _colormaps[name]
+    elif has_matplotlib():  # matplotlib cmap
+        try:
+            cmap = MatplotlibColormap(name)
+        except ValueError:
             raise KeyError('colormap name %s not found' % name)
-
-        if inspect.isclass(cmap):
-            cmap = cmap(*args, **kwargs)
-
+    else:
+        raise KeyError('colormap name %s not found' % name)
     return cmap
 
 
