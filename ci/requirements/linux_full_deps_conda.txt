@@ -22,4 +22,5 @@ scikit-image
 scipy
 six
 networkx
+hsluv
 kiwisolver

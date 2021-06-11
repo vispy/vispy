@@ -14,6 +14,7 @@ from . import backends, inputhook
 from .backends import CORE_BACKENDS, BACKEND_NAMES, BACKENDMAP, TRIED_BACKENDS
 from .. import config
 from .base import BaseApplicationBackend as ApplicationBackend  # noqa
+from ._detect_eventloop import _get_running_interactive_framework
 from ..util import logger
 
 
@@ -121,7 +122,17 @@ class Application(object):
             # 'get_ipython' is available in globals when running from
             # IPython/Jupyter
             ip = get_ipython()
-            return ip.has_trait('kernel')
+            if ip.has_trait('kernel'):
+                # There doesn't seem to be an easy way to detect the frontend
+                # That said, if using a kernel, the user can choose to have an
+                # event loop, we therefore make sure the event loop isn't
+                # specified before assuming it is a notebook
+                # https://github.com/vispy/vispy/issues/1708
+                # https://github.com/ipython/ipython/issues/11920
+                return _get_running_interactive_framework() is None
+            else:
+                # `jupyter console` is used
+                return False
         except NameError:
             return False
 

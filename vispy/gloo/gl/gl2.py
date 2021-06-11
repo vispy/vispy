@@ -14,7 +14,6 @@ from ...util import logger
 
 # Ctypes stuff
 
-
 # Load the OpenGL library. We more or less follow the same approach
 # as PyOpenGL does internally
 

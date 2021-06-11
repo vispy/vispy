@@ -95,7 +95,7 @@ def get_vertical_bar(pos, size):
     """
     vertical = ColorBarVisual(pos=pos,
                               size=size,
-                              label_str="iterations to escape",
+                              label="iterations to escape",
                               cmap=colormap, orientation="left")
 
     vertical.label.font_size = 15

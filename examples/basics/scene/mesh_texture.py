@@ -1,3 +1,11 @@
+# -*- coding: utf-8 -*-
+# vispy: gallery 30
+# -----------------------------------------------------------------------------
+# Copyright (c) Vispy Development Team. All Rights Reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+# -----------------------------------------------------------------------------
+"""Show how to use the texture filter on meshes."""
+
 import argparse
 
 import numpy as np
@@ -11,7 +19,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--shading', default='smooth',
                     choices=['none', 'flat', 'smooth'],
                     help="shading mode")
-args = parser.parse_args()
+args, _ = parser.parse_known_args()
 
 mesh_path = load_data_file('spot/spot.obj.gz')
 texture_path = load_data_file('spot/spot.png')
@@ -28,7 +36,7 @@ view.camera.depth_value = 10 * (vertices.max() - vertices.min())
 
 shading = None if args.shading == 'none' else args.shading
 mesh = Mesh(vertices, faces, shading=shading, color='white')
-mesh.shininess = 1e-3
+mesh.shading_filter.shininess = 1e+1
 view.add(mesh)
 
 texture_filter = TextureFilter(texture, texcoords)
@@ -44,19 +52,20 @@ def on_key_press(event):
 
 def attach_headlight(mesh, view, canvas):
     light_dir = (0, -1, 0, 0)
-    mesh.light_dir = light_dir[:3]
+    mesh.shading_filter.light_dir = light_dir[:3]
     initial_light_dir = view.camera.transform.imap(light_dir)
 
     @view.scene.transform.changed.connect
     def on_transform_change(event):
         transform = view.camera.transform
-        mesh.light_dir = transform.map(initial_light_dir)[:3]
+        mesh.shading_filter.light_dir = transform.map(initial_light_dir)[:3]
 
 
 attach_headlight(mesh, view, canvas)
 
 
 canvas.show()
+
 
 if __name__ == "__main__":
     app.run()

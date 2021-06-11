@@ -56,7 +56,7 @@ l3 = scene.visuals.Tube(points3,
 
 l4 = scene.visuals.Tube(points4,
                         color=colors,
-                        shading='flat',
+                        shading='smooth',
                         tube_points=8,
                         mode='lines')
 
