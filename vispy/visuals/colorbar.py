@@ -116,9 +116,7 @@ class _CoreColorBarVisual(Visual):
         self._update()
 
     def _update(self):
-        """Rebuilds the shaders, and repositions the objects
-        that are used internally by the ColorBarVisual
-        """
+        """Rebuilds the shaders, and repositions the objects that are used internally by the ColorBarVisual"""
         x, y = self._pos
         halfw, halfh = self._halfdim
 
@@ -255,11 +253,12 @@ class ColorBarVisual(CompoundVisual):
     pos : tuple (x, y)
         Position where the colorbar is to be placed with
         respect to the center of the colorbar
-    label_str : str
+    label : str | vispy.visuals.TextVisual
         The label that is to be drawn with the colorbar
         that provides information about the colorbar.
+        If a TextVisual object then 'label_color' is ignored.
     label_color : str | vispy.color.Color
-        The color of the labels. This can either be a
+        The color of the label and tick labels. This can either be a
         str as the color's name or an actual instace of a vipy.color.Color
     clim : tuple (min, max)
         the minimum and maximum values of the data that
@@ -271,6 +270,11 @@ class ColorBarVisual(CompoundVisual):
     border_color : str | vispy.color.Color
         The color of the border of the colormap. This can either be a
         str as the color's name or an actual instace of a vipy.color.Color
+
+    .. versionchanged:: 0.7
+
+        Keyword argument ``label_str`` renamed to `label`.
+
     """
 
     # The padding multiplier that's used to place the text
@@ -280,28 +284,27 @@ class ColorBarVisual(CompoundVisual):
 
     def __init__(self, cmap, orientation, size,
                  pos=[0, 0],
-                 label_str="",
+                 label="",
                  label_color='black',
                  clim=(0.0, 1.0),
                  border_width=1.0,
-                 border_color="black",
-                 **kwargs):
+                 border_color="black"):
 
-        self._label_str = label_str
-        self._label_color = label_color
         self._cmap = get_colormap(cmap)
         self._clim = clim
         self._pos = pos
         self._size = size
         self._orientation = orientation
 
-        self._label = TextVisual(self._label_str, color=self._label_color)
+        if not isinstance(label, TextVisual):
+            label = TextVisual(label, color=label_color)
+        self._label = label
 
         self._ticks = []
         self._ticks.append(TextVisual(str(self._clim[0]),
-                                      color=self._label_color))
+                                      color=label_color))
         self._ticks.append(TextVisual(str(self._clim[1]),
-                                      color=self._label_color))
+                                      color=label_color))
 
         if orientation in ["top", "bottom"]:
             (width, height) = size
@@ -327,9 +330,7 @@ class ColorBarVisual(CompoundVisual):
         self._update()
 
     def _update(self):
-        """Rebuilds the shaders, and repositions the objects
-        that are used internally by the ColorBarVisual
-        """
+        """Rebuilds the shaders, and repositions the objects that are used internally by the ColorBarVisual"""
         self._colorbar.halfdim = self._halfdim
         self._border.halfdim = self._halfdim
 
@@ -597,7 +598,10 @@ class ColorBarVisual(CompoundVisual):
 
     @label.setter
     def label(self, label):
-        self._label = label
+        if isinstance(label, TextVisual):
+            self._label = label
+        else:
+            self._label.text = label
         self._update()
 
     @property
