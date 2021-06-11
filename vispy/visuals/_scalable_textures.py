@@ -96,8 +96,8 @@ class _ScaledTextureMixin:
     def is_normalized(self):
         """Whether the in-shader representation of this texture is normalized or not.
 
-        Formats ending in 'f' (float), 'ui' (unsigned integral), or 'i'
-        (integral) are not normalized in the GPU. Formats ending in "_snorm"
+        Formats ending in 'f' (float), 'ui' (unsigned integer), or 'i'
+        (signed integer) are not normalized in the GPU. Formats ending in "_snorm"
         are normalized on the range [-1, 1] based on the data type of the
         input data (ex. 0-255 for uint8). Formats with no data type suffix are
         normalized on the range [0, 1]. See
