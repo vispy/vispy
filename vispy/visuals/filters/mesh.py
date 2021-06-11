@@ -245,8 +245,7 @@ def _as_rgba(intensity_or_color, default_rgb=(1.0, 1.0, 1.0)):
 
 
 class ShadingFilter(Filter):
-    """Apply shading to a :class:`~vispy.visuals.mesh.MeshVisual` using the
-    Phong reflection model.
+    """Apply shading to a :class:`~vispy.visuals.mesh.MeshVisual` using the Phong reflection model.
 
     For convenience, a :class:`~vispy.visuals.mesh.MeshVisual` creates and
     embeds a shading filter when constructed with an explicit `shading`
