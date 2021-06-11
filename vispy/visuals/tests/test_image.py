@@ -113,6 +113,41 @@ def test_image_clims_and_gamma(input_dtype, texture_format, num_channels,
 
 
 @requires_application()
+@pytest.mark.parametrize('num_channels', [0, 1, 3, 4])
+@pytest.mark.parametrize('texture_format', [None, 'auto'])
+def test_image_clims_and_gamma(texture_format, num_channels):
+    """Test image visual with equal clims."""
+    size = (40, 40)
+    input_dtype = np.uint8
+    shape = size + (num_channels,) if num_channels > 0 else size
+    np.random.seed(0)
+    data = _make_test_data(shape, input_dtype)
+    with TestingCanvas(size=size[::-1], bgcolor="w") as c:
+        Image(data, cmap='viridis',
+              texture_format=texture_format,
+              clim=(128.0, 128.0),
+              parent=c.scene)
+        rendered = c.render()[..., :3]
+
+        if num_channels >= 3:
+            # RGBs don't have colormaps
+            assert rendered.sum() == 0
+            return
+
+        # not all black
+        assert rendered.sum() != 0
+        # not all white
+        assert rendered.sum() != 255 * rendered.size
+        # should be all the same value
+        r_unique = np.unique(rendered[..., 0])
+        g_unique = np.unique(rendered[..., 1])
+        b_unique = np.unique(rendered[..., 2])
+        assert r_unique.size == 1
+        assert g_unique.size == 1
+        assert b_unique.size == 1
+
+
+@requires_application()
 def test_image_vertex_updates():
     """Test image visual coordinates are only built when needed."""
     size = (40, 40)

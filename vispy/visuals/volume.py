@@ -122,8 +122,10 @@ float colorToVal(vec4 color1)
 vec4 applyColormap(float data) {{
     if (clim.x < clim.y) {{
         data = clamp(data, clim.x, clim.y);
-    }} else {{
+    }} else if (clim.x > clim.y) {{
         data = clamp(data, clim.y, clim.x);
+    }} else {{
+        return $cmap(0.0);
     }}
 
     data = (data - clim.x) / (clim.y - clim.x);
@@ -342,7 +344,7 @@ MINIP_SNIPPETS = dict(
         // Refine search for min value
         loc = start_loc + step * (float(mini) - 0.5);
         for (int i=0; i<10; i++) {
-            minval = min(minval, $sample(u_volumetex, loc).g);
+            minval = min(minval, $sample(u_volumetex, loc).r);
             loc += step * 0.1;
         }
         gl_FragColor = applyColormap(minval);

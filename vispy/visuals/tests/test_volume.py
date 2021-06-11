@@ -143,6 +143,9 @@ def test_all_render_methods(method_name):
     size = (40, 40)
     np.random.seed(0)  # make tests the same every time
     data = _make_test_data(size[:1] * 3, np.float32)
+    # modify the data for 'minip' method so that there is at least one segment
+    # of the volume with no 'empty'/zero space
+    data[:, :, 40 // 3: 2 * 40 // 3] = 1.0
     clim = (0, 1)
     kwargs = {}
     with TestingCanvas(size=size, bgcolor="k") as c:
@@ -168,6 +171,46 @@ def test_all_render_methods(method_name):
         assert rendered.sum() != 0
         # not all white
         assert rendered.sum() != 255 * rendered.size
+
+
+@requires_pyopengl()
+@requires_application()
+@pytest.mark.parametrize('texture_format', [None, 'auto'])
+def test_equal_clims(texture_format):
+    """Test that equal clims produce a min cmap value."""
+    size = (40, 40)
+    np.random.seed(0)  # make tests the same every time
+    data = _make_test_data(size[:1] * 3, np.float32)
+    with TestingCanvas(size=size, bgcolor="k") as c:
+        v = c.central_widget.add_view(border_width=0)
+        scene.visuals.Volume(
+            data,
+            interpolation='nearest',
+            clim=(128.0, 128.0),  # equal clims
+            cmap='viridis',  # something with a non-black min value
+            parent=v.scene,
+            method='mip',
+            texture_format=texture_format,
+        )
+        v.camera = 'arcball'
+        v.camera.fov = 0
+        v.camera.scale_factor = 40.0
+        # for some reason the x dimension has to be a little bit off center
+        # or else the render doesn't match the data
+        v.camera.center = (19.6, 19.5, 19.5)
+
+        rendered = c.render()[..., :3]
+        # not all black
+        assert rendered.sum() != 0
+        # not all white
+        assert rendered.sum() != 255 * rendered.size
+        # should be all the same value
+        r_unique = np.unique(rendered[..., 0])
+        g_unique = np.unique(rendered[..., 1])
+        b_unique = np.unique(rendered[..., 2])
+        assert r_unique.size == 1
+        assert g_unique.size == 1
+        assert b_unique.size == 1
 
 
 def _make_test_data(shape, input_dtype):

@@ -244,6 +244,8 @@ class CPUScaledTextureMixIn(_ScaledTextureMixin):
         """
         range_min, range_max = self._data_limits
         clim_min, clim_max = self.clim
+        if clim_min == clim_max:
+            return 0.0, 0.0
         clim_min = (clim_min - range_min) / (range_max - range_min)
         clim_max = (clim_max - range_min) / (range_max - range_min)
         return clim_min, clim_max
@@ -256,10 +258,7 @@ class CPUScaledTextureMixIn(_ScaledTextureMixin):
         elif not copy and not np.issubdtype(data.dtype, np.floating):
             raise ValueError("Data must be of floating type for no copying to occur.")
 
-        if clim[0] == clim[1]:
-            if clim[0] != 0:
-                data /= clim[0]
-        else:
+        if clim[0] != clim[1]:
             data -= clim[0]
             data /= clim[1] - clim[0]
         if should_cast_to_f32(data.dtype):

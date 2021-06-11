@@ -91,8 +91,11 @@ _apply_clim_float = """
     float apply_clim(float data) {
         if ($clim.x < $clim.y) {{
             data = clamp(data, $clim.x, $clim.y);
-        }} else {{
+        }} else if ($clim.x > $clim.y) {{
             data = clamp(data, $clim.y, $clim.x);
+        }} else {{
+            // clims are the same, show minimum colormap value
+            return 0.0;
         }}
         data = data - $clim.x;
         data = data / ($clim.y - $clim.x);
@@ -102,8 +105,11 @@ _apply_clim = """
     vec4 apply_clim(vec4 color) {
         if ($clim.x < $clim.y) {{
             color.rgb = clamp(color.rgb, $clim.x, $clim.y);
-        }} else {{
+        }} else if ($clim.x > $clim.y) {{
             color.rgb = clamp(color.rgb, $clim.y, $clim.x);
+        }} else {{
+            // clims are the same, show minimum colormap value
+            return vec4(0.0, 0.0, 0.0, 1.0);
         }}
         color.rgb = color.rgb - $clim.x;
         color.rgb = color.rgb / ($clim.y - $clim.x);
