@@ -3,10 +3,12 @@
 import numpy as np
 from vispy import scene
 
+from vispy.color import Color
 from vispy.geometry import create_cube, create_sphere
 from vispy.testing import (TestingCanvas, requires_application,
                            run_tests_if_main, requires_pyopengl)
-from vispy.visuals.filters import WireframeFilter
+from vispy.visuals.filters import ShadingFilter, WireframeFilter
+from vispy.visuals.filters.mesh import _as_rgba
 
 import pytest
 
@@ -55,15 +57,12 @@ def test_mesh_shading_filter(shading):
     size = (45, 40)
     with TestingCanvas(size=size, bgcolor="k") as c:
         v = c.central_widget.add_view(border_width=0)
-        # Create visual
-        mdata = create_sphere(20, 40, radius=20)
+        v.camera = 'arcball'
+        mdata = create_sphere(20, 30, radius=1)
         mesh = scene.visuals.Mesh(meshdata=mdata,
                                   shading=shading,
-                                  color=(0.1, 0.3, 0.7, 0.9))
+                                  color=(0.2, 0.3, 0.7, 1.0))
         v.add(mesh)
-        from vispy.visuals.transforms import STTransform
-        mesh.transform = STTransform(translate=(20, 20))
-        mesh.transforms.scene_transform = STTransform(scale=(1, 1, 0.01))
 
         rendered = c.render()[..., 0]  # R channel only
         if shading in ("flat", "smooth"):
@@ -76,6 +75,98 @@ def test_mesh_shading_filter(shading):
             assert (np.diff(invest_row[:29]) >= -1).all()
         else:
             assert np.unique(rendered).size == 2
+
+
+def test_intensity_or_color_as_rgba():
+    assert _as_rgba(0.3) == Color((1.0, 1.0, 1.0, 0.3))
+    assert _as_rgba((0.3, 0.2, 0.1)) == Color((0.3, 0.2, 0.1, 1.0))
+    assert _as_rgba((0.3, 0.2, 0.1, 0.5)) == Color((0.3, 0.2, 0.1, 0.5))
+
+
+@requires_pyopengl()
+@requires_application()
+@pytest.mark.parametrize('shading', [None, 'flat', 'smooth'])
+def test_mesh_shading_filter_enabled(shading):
+    size = (45, 40)
+    with TestingCanvas(size=size, bgcolor="k") as c:
+        v = c.central_widget.add_view(border_width=0)
+        v.camera = 'arcball'
+        mdata = create_sphere(20, 30, radius=1)
+        mesh = scene.visuals.Mesh(meshdata=mdata,
+                                  shading=None,
+                                  color=(0.2, 0.3, 0.7, 1.0))
+        shading_filter = ShadingFilter(shading=shading)
+        mesh.attach(shading_filter)
+        v.add(mesh)
+
+        shading_filter.enabled = False
+        rendered_without_shading = c.render()
+
+        shading_filter.enabled = True
+        rendered_with_shading = c.render()
+
+        if shading is None:
+            # There should be no shading applied, regardless of the value of
+            # `enabled`.
+            assert np.allclose(rendered_without_shading, rendered_with_shading)
+        else:
+            # The result should be different with shading applied.
+            assert not np.allclose(rendered_without_shading,
+                                   rendered_with_shading)
+
+
+@requires_pyopengl()
+@requires_application()
+@pytest.mark.parametrize('attribute', ['ambient_coefficient',
+                                       'diffuse_coefficient',
+                                       'specular_coefficient',
+                                       'ambient_light',
+                                       'diffuse_light',
+                                       'specular_light'])
+def test_mesh_shading_filter_colors(attribute):
+    size = (45, 40)
+    with TestingCanvas(size=size, bgcolor="k") as c:
+        base_color_white = (1.0, 1.0, 1.0, 1.0)
+        overlay_color_red = (1.0, 0.0, 0.0, 1.0)
+
+        v = c.central_widget.add_view(border_width=0)
+        v.camera = 'arcball'
+        mdata = create_sphere(20, 30, radius=1)
+        mesh = scene.visuals.Mesh(meshdata=mdata, color=base_color_white)
+        v.add(mesh)
+
+        shading_filter = ShadingFilter(shading='smooth',
+                                       # Set the light source on the side of
+                                       # and around the camera to get a clearly
+                                       # visible reflection.
+                                       light_dir=(-5, -5, 5),
+                                       # Activate all illumination types as
+                                       # white light but reduce the intensity
+                                       # to prevent saturation.
+                                       ambient_light=0.3,
+                                       diffuse_light=0.3,
+                                       specular_light=0.3,
+                                       # Get a wide highlight.
+                                       shininess=4)
+        mesh.attach(shading_filter)
+
+        rendered_white = c.render()
+
+        setattr(shading_filter, attribute, overlay_color_red)
+        rendered_red = c.render()
+
+        # The results should be different.
+        assert not np.allclose(rendered_white, rendered_red)
+
+        # There should be an equal amount of all colors in the white rendering.
+        color_count_white = rendered_white.sum(axis=(0, 1))
+        r, g, b, _ = color_count_white
+        assert r == g and r == b
+
+        color_count_red = rendered_red.sum(axis=(0, 1))
+        # There should be more red in the red-colored rendering.
+        r, g, b, _ = color_count_red
+        assert r > g and r > b
 
 
 @requires_pyopengl()

@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
+import numbers
+
 import numpy as np
+
 from vispy.gloo import Texture2D, VertexBuffer
 from vispy.visuals.shaders import Function, Varying
 from vispy.visuals.filters import Filter
@@ -121,17 +124,15 @@ varying vec3 v_eye_vec;
 varying vec4 v_pos_scene;
 
 void prepare_shading() {
-    // TODO: Find a way to get the original position from the main vertex
-    //       shader instead of inversing the transformation.
     vec4 pos_scene = $render2scene(gl_Position);
-    v_pos_scene = pos_scene; // Used in the fragment for flat shading.
+    v_pos_scene = pos_scene;
 
     vec4 normal_scene = $visual2scene(vec4($normal, 1.0));
     vec4 origin_scene = $visual2scene(vec4(0.0, 0.0, 0.0, 1.0));
     normal_scene /= normal_scene.w;
     origin_scene /= origin_scene.w;
     vec3 normal = normalize(normal_scene.xyz - origin_scene.xyz);
-    v_normal_vec = normal; //VARYING COPY
+    v_normal_vec = normal;
 
     vec4 pos_front = $scene2doc(pos_scene);
     pos_front.z += 1e-6;
@@ -144,12 +145,13 @@ void prepare_shading() {
     pos_back /= pos_back.w;
 
     vec3 eye = normalize(pos_front.xyz - pos_back.xyz);
-    v_eye_vec = eye; //VARYING COPY
+    v_eye_vec = eye;
 
     vec3 light = normalize($light_dir.xyz);
-    v_light_vec = light; //VARYING COPY
+    v_light_vec = light;
 }
 """
+
 
 shading_fragment_template = """
 varying vec3 v_normal_vec;
@@ -162,11 +164,20 @@ void shade() {
         return;
     }
 
+    vec3 base_color = gl_FragColor.rgb;
+    vec4 ambient_coeff = $ambient_coefficient;
+    vec4 diffuse_coeff = $diffuse_coefficient;
+    vec4 specular_coeff = $specular_coefficient;
+    vec4 ambient_light = $ambient_light;
+    vec4 diffuse_light = $diffuse_light;
+    vec4 specular_light = $specular_light;
+    float shininess = $shininess;
+
     vec3 normal = v_normal_vec;
     if ($flat_shading == 1) {
         vec3 u = dFdx(v_pos_scene.xyz);
         vec3 v = dFdy(v_pos_scene.xyz);
-        normal = normalize(cross(u, v));
+        normal = cross(u, v);
         // Note(asnt): The normal calculated above always points in the
         // direction of the camera. Reintroduce the original orientation of the
         // face.
@@ -174,58 +185,233 @@ void shade() {
             normal = -normal;
         }
     }
+    normal = normalize(normal);
 
-    vec3 light_vec = v_light_vec;
+    vec3 light_vec = normalize(v_light_vec);
+    vec3 eye_vec = normalize(v_eye_vec);
 
-    // Diffuse light component.
-    float diffusek = dot(light_vec, normal);
-    diffusek  = max(diffusek, 0.0);
-    vec3 diffuse_color = $light_color * $diffuse_color * diffusek;
+    // Ambient illumination.
+    vec3 ambient = ambient_coeff.rgb * ambient_coeff.a
+                   * ambient_light.rgb * ambient_light.a;
 
-    // Specular light component.
-    float speculark = 0.0;
-    if (diffusek > 0.0 && $shininess > 0.0) {
-        vec3 reflexion = reflect(light_vec, normal);
-        speculark = dot(reflexion, v_eye_vec);
-        speculark = max(speculark, 0.0);
-        speculark = pow(speculark, $shininess);
+    // Diffuse illumination.
+    float diffuse_factor = dot(light_vec, normal);
+    diffuse_factor = max(diffuse_factor, 0.0);
+    vec3 diffuse = diffuse_factor
+                   * diffuse_coeff.rgb * diffuse_coeff.a
+                   * diffuse_light.rgb * diffuse_light.a;
+
+    // Specular illumination.
+    float specular_factor = 0.0;
+    bool is_illuminated = diffuse_factor > 0.0;
+    if (is_illuminated && shininess > 0.0) {
+        vec3 reflection = reflect(light_vec, normal);
+        specular_factor = dot(reflection, eye_vec);
+        specular_factor = max(specular_factor, 0.0);
+        specular_factor = pow(specular_factor, shininess);
     }
-    vec3 specular_color = $light_color * $specular_color * speculark;
+    vec3 specular = specular_factor
+                    * specular_coeff.rgb * specular_coeff.a
+                    * specular_light.rgb * specular_light.a;
 
-    vec3 color = $ambient_color + diffuse_color + specular_color;
-    gl_FragColor *= vec4(color, 1.0);
+    // Blend the base color and combine the illuminations.
+    vec3 color = ambient + base_color * diffuse + specular;
+
+    gl_FragColor.rgb = color;
 }
 """  # noqa
 
 
-class ShadingFilter(Filter):
-    """Filter to apply shading to a mesh.
-
-    To disable shading, either detach (ex. ``mesh.detach(filter_obj)``) or
-    set the shading type to ``None`` (ex. ``filter_obj.shading = None``).
+def _as_rgba(intensity_or_color, default_rgb=(1.0, 1.0, 1.0)):
+    """Create an RGBA color from a color or a scalar intensity.
 
     Examples
     --------
-    See
+    >>> # Specify the full RGBA color.
+    >>> _as_rgba((0.2, 0.3, 0.4, 0.25))
+    ... <Color: (0.2, 0.3, 0.4, 0.25)>
+    >>> # Specify an RGB color. (Default intensity `1.0` is used.)
+    >>> _as_rgba((0.2, 0.3, 0.4))
+    ... <Color: (0.2, 0.3, 0.4, 1.0)>
+    >>> # Specify an intensity only. (Default color `(1.0, 1.0, 1.0)` is used.)
+    >>> _as_rgba(0.25)
+    ... <Color: (1.0, 1.0, 1.0, 0.25)>
+    """
+    if isinstance(intensity_or_color, numbers.Number):
+        intensity = intensity_or_color
+        return Color(default_rgb, alpha=intensity)
+    color = intensity_or_color
+    return Color(color)
+
+
+class ShadingFilter(Filter):
+    """Apply shading to a :class:`~vispy.visuals.mesh.MeshVisual` using the Phong reflection model.
+
+    For convenience, a :class:`~vispy.visuals.mesh.MeshVisual` creates and
+    embeds a shading filter when constructed with an explicit `shading`
+    parameter, e.g. `mesh = MeshVisual(..., shading='smooth')`. The filter is
+    then accessible as `mesh.shading_filter`.
+
+    When attached manually to a :class:`~vispy.visuals.mesh.MeshVisual`, the
+    shading filter should come after any other filter that modifies the base
+    color to be shaded. See the examples below.
+
+    Parameters
+    ----------
+    shading : str
+        Shading mode: None, 'flat' or 'smooth'. If None, the shading is
+        disabled.
+    ambient_coefficient : str or tuple or Color
+        Color and intensity of the ambient reflection coefficient (Ka).
+    diffuse_coefficient : str or tuple or Color
+        Color and intensity of the diffuse reflection coefficient (Kd).
+    specular_coefficient : str or tuple or Color
+        Color and intensity of the specular reflection coefficient (Ks).
+    shininess : float
+        The shininess controls the size of specular highlight. The higher, the
+        more localized.  Must be greater than or equal to zero.
+    light_dir : array_like
+        Direction of the light. Assuming a directional light.
+    ambient_light : str or tuple or Color
+        Color and intensity of the ambient light.
+    diffuse_light : str or tuple or Color
+        Color and intensity of the diffuse light.
+    specular_light : str or tuple or Color
+        Color and intensity of the specular light.
+    enabled : bool, default=True
+        Whether the filter is enabled at creation time. This can be changed at
+        run time with :obj:`~enabled`.
+
+    Notes
+    -----
+    Under the Phong reflection model, the illumination `I` is computed as::
+
+        I = I_ambient + mesh_color * I_diffuse + I_specular
+
+    for each color channel independently.
+    `mesh_color` is the color of the :class:`~vispy.visuals.mesh.MeshVisual`,
+    possibly modified by the filters applied before this one.
+    The ambient, diffuse and specular terms are defined as::
+
+        I_ambient = Ka * Ia
+        I_diffuse = Kd * Id * dot(L, N)
+        I_specular = Ks * Is * dot(R, V) ** s
+
+    with
+
+    `L`
+        the light direction, assuming a directional light,
+    `N`
+        the normal to the surface at the reflection point,
+    `R`
+        the direction of the reflection,
+    `V`
+        the direction to the viewer,
+    `s`
+        the shininess factor.
+
+    The `Ka`, `Kd` and `Ks` coefficients are defined as an RGBA color. The RGB
+    components define the color that the surface reflects, and the alpha
+    component (A) defines the intensity/attenuation of the reflection. When
+    applied in the per-channel illumation formulas above, the color component
+    is multiplied by the intensity to obtain the final coefficient, e.g.
+    `Kd = R * A` for the red channel.
+
+    Similarly, the light intensities, `Ia`, `Id` and `Is`, are defined by RGBA
+    colors, corresponding to the color of the light and its intensity.
+
+    Examples
+    --------
+    Define the mesh data for a :class:`vispy.visuals.mesh.MeshVisual`:
+
+    >>> # A triangle.
+    >>> vertices = np.array([(0, 0, 0), (1, 1, 1), (0, 1, 0)], dtype=float)
+    >>> faces = np.array([(0, 1, 2)], dtype=int)
+
+    Let the :class:`vispy.visuals.mesh.MeshVisual` create and embed a shading
+    filter:
+
+    >>> mesh = MeshVisual(vertices, faces, shading='smooth')
+    >>> # Configure the filter afterwards.
+    >>> mesh.shading_filter.shininess = 64
+    >>> mesh.shading_filter.specular_coefficient = 0.3
+
+    Create the shading filter manually and attach it to a
+    :class:`vispy.visuals.mesh.MeshVisual`:
+
+    >>> # With the default shading parameters.
+    >>> shading_filter = ShadingFilter()
+    >>> mesh = MeshVisual(vertices, faces)
+    >>> mesh.attach(shading_filter)
+
+    The filter can be configured at creation time and at run time:
+
+    >>> # Configure at creation time.
+    >>> shading_filter = ShadingFilter(
+    ...     # A shiny surface (small specular highlight).
+    ...     shininess=250,
+    ...     # A blue higlight, at half intensity.
+    ...     specular_coefficient=(0, 0, 1, 0.5),
+    ...     # Equivalent to `(0.7, 0.7, 0.7, 1.0)`.
+    ...     diffuse_coefficient=0.7,
+    ...     # Same as `(0.2, 0.3, 0.3, 1.0)`.
+    ...     ambient_coefficient=(0.2, 0.3, 0.3),
+    ... )
+    >>> # Change the configuration at run time.
+    >>> shading_filter.shininess = 64
+    >>> shading_filter.specular_coefficient = 0.3
+
+    Disable the filter temporarily:
+
+    >>> # Turn off the shading.
+    >>> shading_filter.enabled = False
+    ... # Some time passes...
+    >>> # Turn on the shading again.
+    >>> shading_filter.enabled = True
+
+    When using the :class:`WireframeFilter`, the wireframe is shaded only if
+    the wireframe filter is attached before the shading filter:
+
+    >>> shading_filter = ShadingFilter()
+    >>> wireframe_filter = WireframeFilter()
+    >>> # Option 1: Shade the wireframe.
+    >>> mesh1 = MeshVisual(vertices, faces)
+    >>> mesh1.attached(wireframe_filter)
+    >>> mesh1.attached(shading_filter)
+    >>> # Option 2: Do not shade the wireframe.
+    >>> mesh2 = MeshVisual(vertices, faces)
+    >>> mesh2.attached(shading_filter)
+    >>> mesh2.attached(wireframe_filter)
+
+    See also
     `examples/basics/scene/mesh_shading.py
     <https://github.com/vispy/vispy/blob/main/examples/basics/scene/mesh_shading.py>`_
     example script.
-
     """
 
-    def __init__(self, shading='flat', light_dir=(10, 5, -5),
-                 light_color=(1, 1, 1, 1),
-                 ambient_color=(.3, .3, .3, 1),
-                 diffuse_color=(1, 1, 1, 1),
-                 specular_color=(1, 1, 1, 1),
-                 shininess=100):
+    def __init__(self, shading='flat',
+                 ambient_coefficient=(1, 1, 1, 1),
+                 diffuse_coefficient=(1, 1, 1, 1),
+                 specular_coefficient=(1, 1, 1, 1),
+                 shininess=100,
+                 light_dir=(10, 5, -5),
+                 ambient_light=(1, 1, 1, 0),
+                 diffuse_light=(1, 1, 1, 1),
+                 specular_light=(1, 1, 1, .25),
+                 enabled=True):
         self._shading = shading
-        self._light_dir = light_dir
-        self._light_color = Color(light_color)
-        self._ambient_color = Color(ambient_color)
-        self._diffuse_color = Color(diffuse_color)
-        self._specular_color = Color(specular_color)
+
+        self._ambient_coefficient = _as_rgba(ambient_coefficient)
+        self._diffuse_coefficient = _as_rgba(diffuse_coefficient)
+        self._specular_coefficient = _as_rgba(specular_coefficient)
         self._shininess = shininess
+
+        self._light_dir = light_dir
+        self._ambient_light = _as_rgba(ambient_light)
+        self._diffuse_light = _as_rgba(diffuse_light)
+        self._specular_light = _as_rgba(specular_light)
+
+        self._enabled = enabled
 
         vfunc = Function(shading_vertex_template)
         ffunc = Function(shading_fragment_template)
@@ -234,6 +420,16 @@ class ShadingFilter(Filter):
         vfunc['normal'] = self._normals
 
         super().__init__(vcode=vfunc, fcode=ffunc)
+
+    @property
+    def enabled(self):
+        """True to enable the filter, False to disable."""
+        return self._enabled
+
+    @enabled.setter
+    def enabled(self, enabled):
+        self._enabled = enabled
+        self._update_data()
 
     @property
     def shading(self):
@@ -260,48 +456,68 @@ class ShadingFilter(Filter):
         self._update_data()
 
     @property
-    def light_color(self):
-        """The light color."""
-        return self._light_color
+    def ambient_light(self):
+        """The color and intensity of the ambient light."""
+        return self._ambient_light
 
-    @light_color.setter
-    def light_color(self, light_color):
-        self._light_color = Color(light_color)
+    @ambient_light.setter
+    def ambient_light(self, light_color):
+        self._ambient_light = _as_rgba(light_color)
         self._update_data()
 
     @property
-    def diffuse_color(self):
-        """The diffuse light color."""
-        return self._diffuse_color
+    def diffuse_light(self):
+        """The color and intensity of the diffuse light."""
+        return self._diffuse_light
 
-    @diffuse_color.setter
-    def diffuse_color(self, diffuse_color):
-        self._diffuse_color = Color(diffuse_color)
+    @diffuse_light.setter
+    def diffuse_light(self, light_color):
+        self._diffuse_light = _as_rgba(light_color)
         self._update_data()
 
     @property
-    def specular_color(self):
-        """The specular light color."""
-        return self._specular_color
+    def specular_light(self):
+        """The color and intensity of the specular light."""
+        return self._specular_light
 
-    @specular_color.setter
-    def specular_color(self, specular_color):
-        self._specular_color = Color(specular_color)
+    @specular_light.setter
+    def specular_light(self, light_color):
+        self._specular_light = _as_rgba(light_color)
         self._update_data()
 
     @property
-    def ambient_color(self):
-        """The ambient color."""
-        return self._ambient_color
+    def ambient_coefficient(self):
+        """The ambient reflection coefficient."""
+        return self._ambient_coefficient
 
-    @ambient_color.setter
-    def ambient_color(self, color):
-        self._ambient_color = Color(color)
+    @ambient_coefficient.setter
+    def ambient_coefficient(self, color):
+        self._ambient_coefficient = _as_rgba(color)
+        self._update_data()
+
+    @property
+    def diffuse_coefficient(self):
+        """The diffuse reflection coefficient."""
+        return self._diffuse_coefficient
+
+    @diffuse_coefficient.setter
+    def diffuse_coefficient(self, diffuse_coefficient):
+        self._diffuse_coefficient = _as_rgba(diffuse_coefficient)
+        self._update_data()
+
+    @property
+    def specular_coefficient(self):
+        """The specular reflection coefficient."""
+        return self._specular_coefficient
+
+    @specular_coefficient.setter
+    def specular_coefficient(self, specular_coefficient):
+        self._specular_coefficient = _as_rgba(specular_coefficient)
         self._update_data()
 
     @property
     def shininess(self):
-        """The shininess."""
+        """The shininess controlling the spread of the specular highlight."""
         return self._shininess
 
     @shininess.setter
@@ -312,14 +528,23 @@ class ShadingFilter(Filter):
     def _update_data(self):
         if not self._attached:
             return
+
         self.vshader['light_dir'] = self._light_dir
+
+        self.fshader['ambient_light'] = self._ambient_light.rgba
+        self.fshader['diffuse_light'] = self._diffuse_light.rgba
+        self.fshader['specular_light'] = self._specular_light.rgba
+
+        self.fshader['ambient_coefficient'] = self._ambient_coefficient.rgba
+        self.fshader['diffuse_coefficient'] = self._diffuse_coefficient.rgba
+        self.fshader['specular_coefficient'] = self._specular_coefficient.rgba
         self.fshader['shininess'] = self._shininess
-        self.fshader['light_color'] = self._light_color.rgb
-        self.fshader['ambient_color'] = self._ambient_color.rgb
-        self.fshader['diffuse_color'] = self._diffuse_color.rgb
-        self.fshader['specular_color'] = self._specular_color.rgb
+
         self.fshader['flat_shading'] = 1 if self._shading == 'flat' else 0
-        self.fshader['shading_enabled'] = 1 if self._shading is not None else 0
+        self.fshader['shading_enabled'] = (
+            1 if self._enabled and self._shading is not None else 0
+        )
+
         normals = self._visual.mesh_data.get_vertex_normals(indexed='faces')
         self._normals.set_data(normals, convert=True)
 
@@ -394,6 +619,9 @@ void draw_wireframe() {
 
 class WireframeFilter(Filter):
     """Add wireframe to a mesh.
+
+    The wireframe filter should be attached before the shading filter for the
+    wireframe to be shaded.
 
     Parameters
     ----------
