@@ -426,7 +426,7 @@ def sys_info(fname=None, overwrite=False):
             out += '{0:<9} {1}\n'.format(backend + ':', which)
         out += '\n'
         # We need an OpenGL context to get GL info
-        canvas = Canvas('Test', (10, 10), show=False, app=app)
+        canvas = Canvas('Test', (10, 10), show=True, app=app)
         canvas._backend._vispy_set_current()
         out += 'GL version:  %r\n' % (gl.glGetParameter(gl.GL_VERSION),)
         x_ = gl.GL_MAX_TEXTURE_SIZE
