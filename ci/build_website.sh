@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Build sphinx documentation
 
-# Make "master" the tag so the website gets deployed
+# Make "main" the tag so the website gets deployed
 # The website deployment checks for any tags by checking
 # this variable.
-export TRAVIS_TAG="master"
+export TRAVIS_TAG="main"
 
 cd doc
 

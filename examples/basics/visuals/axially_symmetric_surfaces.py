@@ -38,12 +38,12 @@ def create_paraboloid(a, b, c, radius=1.0, center=(0.0, 0.0, 0.0)):
     r = np.linspace(0, radius, 100)
     theta = np.linspace(0, 2 * np.pi, 100)
     R, THETA = np.meshgrid(r, theta)
-    
+
     # Convert to rectangular coordinates
     x_grid, y_grid = R * np.cos(THETA), R * np.sin(THETA)
-    
+
     z_grid = c * ((x_grid / a) ** 2 + (y_grid / b) ** 2)  # Elliptic paraboloid
-    
+
     return x_grid + center[0], y_grid + center[1], z_grid + center[2]
 
 
@@ -57,19 +57,19 @@ def create_sphere(radius=1.0, center=(0.0, 0.0, 0.0)):
     phi = np.linspace(0, 2 * np.pi, 50)
     PHI, THETA = np.meshgrid(phi, theta)
     RHO = radius  # Size of the sphere
-    
+
     # Convert to cartesian coordinates
     x_grid = (RHO * np.sin(THETA) * np.cos(PHI)) + center[0]
     y_grid = (RHO * np.sin(THETA) * np.sin(PHI)) + center[1]
     z_grid = (RHO * np.cos(THETA)) + center[2]
-    
+
     return x_grid, y_grid, z_grid
 
 
 def create_circular_hole(x_grid, y_grid, hole_radius=0.5, center=(0.0, 0.0)):
     X = np.where((x_grid - center[0]) ** 2 + (y_grid - center[1]) ** 2 <= hole_radius ** 2, np.NAN, x_grid)
     Y = np.where((x_grid - center[0]) ** 2 + (y_grid - center[1]) ** 2 <= hole_radius ** 2, np.NAN, y_grid)
-    
+
     return X, Y
 
 

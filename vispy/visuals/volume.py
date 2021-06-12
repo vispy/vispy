@@ -85,6 +85,7 @@ uniform vec3 u_shape;
 uniform vec2 clim;
 uniform float gamma;
 uniform float u_threshold;
+uniform float u_attenuation;
 uniform float u_relative_step_size;
 
 //varyings
@@ -300,6 +301,54 @@ MIP_SNIPPETS = dict(
 MIP_FRAG_SHADER = FRAG_SHADER.format(**MIP_SNIPPETS)
 
 
+ATTENUATED_MIP_SNIPPETS = dict(
+    before_loop="""
+        float maxval = -99999.0; // The maximum encountered value
+        float sumval = 0.0; // The sum of the encountered values
+        float scaled = 0.0; // The scaled value
+        int maxi = 0;  // Where the maximum value was encountered
+        vec3 maxloc = vec3(0.0);  // Location where the maximum value was encountered
+        """,
+    in_loop="""
+        sumval = sumval + val;
+        scaled = val * exp(-u_attenuation * (sumval - 1) / u_relative_step_size);
+        if( scaled > maxval ) {
+            maxval = scaled;
+            maxi = iter;
+            maxloc = loc;
+        }
+        """,
+    after_loop="""
+        gl_FragColor = applyColormap(maxval);
+        """,
+)
+ATTENUATED_MIP_FRAG_SHADER = FRAG_SHADER.format(**ATTENUATED_MIP_SNIPPETS)
+
+
+MINIP_SNIPPETS = dict(
+    before_loop="""
+        float minval = 99999.0; // The minimum encountered value
+        int mini = 0;  // Where the minimum value was encountered
+        """,
+    in_loop="""
+        if( val < minval ) {
+            minval = val;
+            mini = iter;
+        }
+        """,
+    after_loop="""
+        // Refine search for min value
+        loc = start_loc + step * (float(mini) - 0.5);
+        for (int i=0; i<10; i++) {
+            minval = min(minval, $sample(u_volumetex, loc).g);
+            loc += step * 0.1;
+        }
+        gl_FragColor = applyColormap(minval);
+        """,
+)
+MINIP_FRAG_SHADER = FRAG_SHADER.format(**MINIP_SNIPPETS)
+
+
 TRANSLUCENT_SNIPPETS = dict(
     before_loop="""
         vec4 integrated_color = vec4(0., 0., 0., 0.);
@@ -376,17 +425,41 @@ ISO_SNIPPETS = dict(
 
 ISO_FRAG_SHADER = FRAG_SHADER.format(**ISO_SNIPPETS)
 
+
+AVG_SNIPPETS = dict(
+    before_loop="""
+        float n = 0; // Counter for encountered values
+        float meanval = 0.0; // The mean of encountered values
+        float prev_mean = 0.0; // Variable to store the previous incremental mean
+        """,
+    in_loop="""
+        // Incremental mean value used for numerical stability
+        n += 1; // Increment the counter
+        prev_mean = meanval; // Update the mean for previous iteration
+        meanval = prev_mean + (val - prev_mean) / n; // Calculate the mean
+        """,
+    after_loop="""
+        // Apply colormap on mean value
+        gl_FragColor = applyColormap(meanval);
+        """,
+)
+AVG_FRAG_SHADER = FRAG_SHADER.format(**AVG_SNIPPETS)
+
+
 frag_dict = {
     'mip': MIP_FRAG_SHADER,
+    'minip': MINIP_FRAG_SHADER,
+    'attenuated_mip': ATTENUATED_MIP_FRAG_SHADER,
     'iso': ISO_FRAG_SHADER,
     'translucent': TRANSLUCENT_FRAG_SHADER,
     'additive': ADDITIVE_FRAG_SHADER,
+    'average': AVG_FRAG_SHADER
 }
 
 
 class VolumeVisual(Visual):
-    """ Displays a 3D Volume
-    
+    """Displays a 3D Volume
+
     Parameters
     ----------
     vol : ndarray
@@ -395,12 +468,16 @@ class VolumeVisual(Visual):
         The contrast limits. The values in the volume are mapped to
         black and white corresponding to these values. Default maps
         between min and max.
-    method : {'mip', 'translucent', 'additive', 'iso'}
+    method : {'mip', 'attenuated_mip', 'minip', 'translucent', 'additive',
+        'iso', 'average'}
         The render method to use. See corresponding docs for details.
         Default 'mip'.
     threshold : float
         The threshold to use for the isosurface render method. By default
         the mean of the given volume is used.
+    attenuation: float
+        The attenuation rate to apply for the attenuated mip render method.
+        Default: 1.0.
     relative_step_size : float
         The relative step size to step through the volume. Default 0.8.
         Increase to e.g. 1.5 to increase performance, at the cost of
@@ -426,11 +503,11 @@ class VolumeVisual(Visual):
 
     _interpolation_names = ['linear', 'nearest']
 
-    def __init__(self, vol, clim=None, method='mip', threshold=None, 
-                 relative_step_size=0.8, cmap='grays', gamma=1.0,
-                 clim_range_threshold=0.2,
-                 emulate_texture=False, interpolation='linear'):
-        
+    def __init__(self, vol, clim=None, method='mip', threshold=None,
+                 attenuation=1.0, relative_step_size=0.8, cmap='grays',
+                 gamma=1.0, clim_range_threshold=0.2, emulate_texture=False,
+                 interpolation='linear'):
+
         tex_cls = TextureEmulated3D if emulate_texture else Texture3D
 
         # Storage of information of volume
@@ -456,7 +533,7 @@ class VolumeVisual(Visual):
                 [0, 1, 1],
                 [1, 1, 1],
             ], dtype=np.float32))
-        
+
         self._interpolation = interpolation
         self._tex = tex_cls((10, 10, 10), interpolation=self._interpolation, 
                             wrapping='clamp_to_edge')
@@ -474,18 +551,19 @@ class VolumeVisual(Visual):
         # inside the volume, then the front faces are outside of the clipping
         # box and will not be drawn.
         self.set_gl_state('translucent', cull_face=False)
-        
+
         # Set data
         self.set_data(vol, clim)
-        
+
         # Set params
         self.method = method
         self.relative_step_size = relative_step_size
         self.threshold = threshold if (threshold is not None) else vol.mean()
+        self.attenuation = attenuation
         self.freeze()
-    
+
     def set_data(self, vol, clim=None, copy=True):
-        """ Set the volume data. 
+        """Set the volume data. 
 
         Parameters
         ----------
@@ -501,7 +579,7 @@ class VolumeVisual(Visual):
             raise ValueError('Volume visual needs a numpy array.')
         if not ((vol.ndim == 3) or (vol.ndim == 4 and vol.shape[-1] <= 4)):
             raise ValueError('Volume visual needs a 3D image.')
-        
+
         # Handle clim
         if clim is not None:
             clim = np.array(clim, float)
@@ -510,7 +588,7 @@ class VolumeVisual(Visual):
             self._clim = tuple(clim)
         if self._clim is None:
             self._clim = vol.min(), vol.max()
-        
+
         # store clims used to normalize _tex data for use in clim_normalized
         self._texture_limits = self._clim
         # store volume in case it needs to be renormalized by clim.setter
@@ -529,18 +607,18 @@ class VolumeVisual(Visual):
         else:
             vol -= self._clim[0]
             vol /= self._clim[1] - self._clim[0]
-        
+
         # Apply to texture
         self._tex.set_data(vol)  # will be efficient if vol is same shape
         self.shared_program['u_shape'] = (vol.shape[2], vol.shape[1], 
                                           vol.shape[0])
-        
+
         shape = vol.shape[:3]
         if self._vol_shape != shape:
             self._vol_shape = shape
             self._need_vertex_update = True
         self._vol_shape = shape
-        
+
         # Get some stats
         self._kb_for_texture = np.prod(self._vol_shape) / 1024
 
@@ -652,7 +730,7 @@ class VolumeVisual(Visual):
         """The interpolation method to use
 
         Current options are:
-        
+
             * linear: this method is appropriate for most volumes as it creates
               nice looking visuals.
             * nearest: this method is appropriate for volumes with discrete
@@ -671,25 +749,32 @@ class VolumeVisual(Visual):
             self._interpolation = interp
             self._tex.interpolation = self._interpolation
             self.update()
-            
+
     @property
     def method(self):
         """The render method to use
 
         Current options are:
-        
+
             * translucent: voxel colors are blended along the view ray until
               the result is opaque.
             * mip: maxiumum intensity projection. Cast a ray and display the
               maximum value that was encountered.
+            * minip: minimum intensity projection. Cast a ray and display the
+              minimum value that was encountered.
+            * attenuated_mip: attenuated maximum intensity projection. Cast a
+              ray and display the maximum value encountered. Values are
+              attenuated as the ray moves deeper into the volume.
             * additive: voxel colors are added along the view ray until
               the result is saturated.
             * iso: isosurface. Cast a ray until a certain threshold is
               encountered. At that location, lighning calculations are
-              performed to give the visual appearance of a surface.  
+              performed to give the visual appearance of a surface.
+            * average: average intensity projection. Cast a ray and display the
+              average of values that were encountered.
         """
         return self._method
-    
+
     @method.setter
     def method(self, method):
         # Check and save
@@ -701,6 +786,8 @@ class VolumeVisual(Visual):
         # Get rid of specific variables - they may become invalid
         if 'u_threshold' in self.shared_program:
             self.shared_program['u_threshold'] = None
+        if 'u_attenuation' in self.shared_program:
+            self.shared_program['u_attenuation'] = None
 
         self.shared_program.frag = frag_dict[method]
         self.shared_program.frag['sampler_type'] = self._tex.glsl_sampler_type
@@ -709,31 +796,42 @@ class VolumeVisual(Visual):
         self.shared_program['texture2D_LUT'] = self.cmap.texture_lut() \
             if (hasattr(self.cmap, 'texture_lut')) else None
         self.update()
-    
+
     @property
     def threshold(self):
-        """ The threshold value to apply for the isosurface render method.
-        """
+        """The threshold value to apply for the isosurface render method."""
         return self._threshold
-    
+
     @threshold.setter
     def threshold(self, value):
         self._threshold = float(value)
         if 'u_threshold' in self.shared_program:
             self.shared_program['u_threshold'] = self._threshold
         self.update()
-    
+
+    @property
+    def attenuation(self):
+        """The attenuation rate to apply for the attenuated mip render method."""
+        return self._attenuation
+
+    @attenuation.setter
+    def attenuation(self, value):
+        self._attenuation = float(value)
+        if 'u_attenuation' in self.shared_program:
+            self.shared_program['u_attenuation'] = self._attenuation
+        self.update()
+
     @property
     def relative_step_size(self):
-        """ The relative step size used during raycasting.
-        
+        """The relative step size used during raycasting.
+
         Larger values yield higher performance at reduced quality. If
         set > 2.0 the ray skips entire voxels. Recommended values are
         between 0.5 and 1.5. The amount of quality degredation depends
         on the render method.
         """
         return self._relative_step_size
-    
+
     @relative_step_size.setter
     def relative_step_size(self, value):
         value = float(value)
@@ -741,15 +839,15 @@ class VolumeVisual(Visual):
             raise ValueError('relative_step_size cannot be smaller than 0.1')
         self._relative_step_size = value
         self.shared_program['u_relative_step_size'] = value
-    
+
     def _create_vertex_data(self):
-        """ Create and set positions and texture coords from the given shape
-        
+        """Create and set positions and texture coords from the given shape
+
         We have six faces with 1 quad (2 triangles) each, resulting in
         6*2*3 = 36 vertices in total.
         """
         shape = self._vol_shape
-        
+
         # Get corner coordinates. The -0.5 offset is to center
         # pixels/voxels. This works correctly for anisotropic data.
         x0, x1 = -0.5, shape[2] - 0.5
@@ -766,7 +864,7 @@ class VolumeVisual(Visual):
             [x0, y1, z1],
             [x1, y1, z1],
         ], dtype=np.float32)
-        
+
         """
           6-------7
          /|      /|
@@ -776,12 +874,12 @@ class VolumeVisual(Visual):
         |/      |/
         0-------1
         """
-        
+
         # Order is chosen such that normals face outward; front faces will be
         # culled.
         indices = np.array([2, 6, 0, 4, 5, 6, 7, 2, 3, 0, 1, 5, 3, 7],
                            dtype=np.uint32)
-        
+
         # Apply
         self._vertices.set_data(pos)
         self._index_buffer.set_data(indices)

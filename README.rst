@@ -134,7 +134,7 @@ External links
 
 .. |Build Status| image:: https://github.com/vispy/vispy/workflows/CI/badge.svg
    :target: https://github.com/vispy/vispy/actions
-.. |Coverage Status| image:: https://img.shields.io/coveralls/vispy/vispy/master.svg
-   :target: https://coveralls.io/r/vispy/vispy?branch=master
+.. |Coverage Status| image:: https://img.shields.io/coveralls/vispy/vispy/main.svg
+   :target: https://coveralls.io/r/vispy/vispy?branch=main
 .. |Zenodo Link| image:: https://zenodo.org/badge/5822/vispy/vispy.svg
    :target: http://dx.doi.org/10.5281/zenodo.17869

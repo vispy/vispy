@@ -20,7 +20,6 @@ from ...util.event import EventEmitter
 
 
 class Collection(BaseCollection):
-
     """
     A collection is a container for several items having the same data
     structure (dtype). Each data type can be declared as local (it is specific
@@ -30,7 +29,6 @@ class Collection(BaseCollection):
 
     Parameters
     ----------
-
     dtype: list
         Data individual types as (name, dtype, scope, default)
 
@@ -72,7 +70,7 @@ class Collection(BaseCollection):
         self._mode = mode
         vtype = []
         utype = []
-        
+
         self.update = EventEmitter(source=self, type='collection_update')
 
         # Build vtype and utype according to parameters
@@ -105,7 +103,7 @@ class Collection(BaseCollection):
         if len(kwargs) > 0:
             raise NameError("Invalid keyword argument(s): %s" % 
                             list(kwargs.keys()))
-        
+
         vtype = np.dtype(vtype)
         itype = np.dtype(itype) if itype else None
         utype = np.dtype(utype) if utype else None
@@ -144,8 +142,7 @@ class Collection(BaseCollection):
             program[name] = self._uniforms[name]
 
     def view(self, transform, viewport=None):
-        """ Return a view on the collection using provided transform """
-
+        """Return a view on the collection using provided transform"""
         return CollectionView(self, transform, viewport)
 
         # program = gloo.Program(self._vertex, self._fragment)
@@ -197,8 +194,7 @@ class Collection(BaseCollection):
                 program[key] = value
 
     def draw(self, mode=None):
-        """ Draw collection """
-
+        """Draw collection"""
         if self._need_update:
             self._update()
 

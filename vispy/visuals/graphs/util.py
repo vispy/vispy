@@ -74,7 +74,6 @@ def _straight_line_vertices(adjacency_mat, node_coords, directed=False):
         Returns a tuple containing containing (`line_vertices`,
         `arrow_vertices`)
     """
-
     if not issparse(adjacency_mat):
         adjacency_mat = np.asarray(adjacency_mat, float)
 
@@ -115,7 +114,6 @@ def _rescale_layout(pos, scale=1):
     -----
     Changes `pos` in place.
     """
-
     pos -= pos.min(axis=0)
     pos *= scale / pos.max()
 

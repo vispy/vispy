@@ -2,7 +2,7 @@
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-""" This module provides a (functional) API to OpenGL ES 2.0.
+"""This module provides a (functional) API to OpenGL ES 2.0.
 
 There are multiple backend implementations of this API, available as
 submodules of this module. One can use one of the backends directly,
@@ -11,7 +11,7 @@ visualizations using Angle, WebGL, or other forms of remote rendering.
 This is in part possible by the widespread availability of OpenGL ES 2.0.
 
 All functions that this API provides accept and return Python arguments
-(no ctypes is required); strings are real strings and you can pass 
+(no ctypes is required); strings are real strings and you can pass
 data as numpy arrays. In general the input arguments are not checked
 (for performance reasons). Each function results in exactly one OpenGL
 API call, except when using the pyopengl backend.
@@ -41,14 +41,14 @@ current_backend = None
 
 
 class MainProxy(BaseGLProxy):
-    """ Main proxy for the GL ES 2.0 API. 
-    
+    """Main proxy for the GL ES 2.0 API.
+
     The functions in this namespace always call into the correct GL
     backend. Therefore these function objects can be safely stored for
     reuse. However, for efficienty it would probably be better to store the
     function name and then do ``func = getattr(gloo.gl, funcname)``.
     """
-    
+
     def __call__(self, funcname, returns, *args):
         func = getattr(current_backend, funcname)
         return func(*args)
@@ -58,15 +58,15 @@ class MainProxy(BaseGLProxy):
 proxy = MainProxy()
 
 
-def use_gl(target='gl2'):
-    """ Let Vispy use the target OpenGL ES 2.0 implementation
-    
+def use_gl(target=None):
+    """Let Vispy use the target OpenGL ES 2.0 implementation
+
     Also see ``vispy.use()``.
-    
+
     Parameters
     ----------
     target : str
-        The target GL backend to use.
+        The target GL backend to use. Default gl2 or es2, depending on the platform.
 
     Available backends:
     * gl2 - Use ES 2.0 subset of desktop (i.e. normal) OpenGL
@@ -75,19 +75,19 @@ def use_gl(target='gl2'):
     * es2 - Use the ES2 library (Angle/DirectX on Windows)
     * pyopengl2 - Use ES 2.0 subset of pyopengl (for fallback and testing)
     * dummy - Prevent usage of gloo.gl (for when rendering occurs elsewhere)
-    
+
     You can use vispy's config option "gl_debug" to check for errors
     on each API call. Or, one can specify it as the target, e.g. "gl2
     debug". (Debug does not apply to 'gl+', since PyOpenGL has its own
     debug mechanism)
     """
-    target = target or 'gl2'
+    target = target or default_backend.__name__.split(".")[-1]
     target = target.replace('+', 'plus')
-    
+
     # Get options
     target, _, options = target.partition(' ')
     debug = config['gl_debug'] or 'debug' in options
-    
+
     # Select modules to import names from
     try:
         mod = __import__(target, globals(), level=1)
@@ -108,8 +108,7 @@ def use_gl(target='gl2'):
 
 
 def _clear_namespace():
-    """ Clear names that are not part of the strict ES API
-    """
+    """Clear names that are not part of the strict ES API"""
     ok_names = set(default_backend.__dict__)
     ok_names.update(['gl2', 'glplus'])  # don't remove the module
     NS = globals()
@@ -120,7 +119,7 @@ def _clear_namespace():
 
 
 def _copy_gl_functions(source, dest, constants=False, debug=False):
-    """ Inject all objects that start with 'gl' from the source
+    """Inject all objects that start with 'gl' from the source
     into the dest. source and dest can be dicts, modules or BaseGLProxy's.
     """
     # Get dicts
@@ -148,8 +147,7 @@ def _copy_gl_functions(source, dest, constants=False, debug=False):
 
 
 def _arg_repr(arg):
-    """ Get a useful (and not too large) represetation of an argument.
-    """
+    """Get a useful (and not too large) represetation of an argument."""
     r = repr(arg)
     max = 40
     if len(r) > max:
@@ -170,7 +168,7 @@ def make_debug_wrapper(fn):
         # Log return value
         if ret is not None:
             if fn.__name__ == 'glReadPixels':
-                logger.debug(" <= %s[%s]" % (type(ret), len(ret)))                
+                logger.debug(" <= %s[%s]" % (type(ret), len(ret)))
             else:
                 logger.debug(" <= %s" % repr(ret))
         # Check for errors (raises if an error occured)
@@ -184,7 +182,7 @@ def make_debug_wrapper(fn):
 
 
 def check_error(when='periodic check'):
-    """ Check this from time to time to detect GL errors.
+    """Check this from time to time to detect GL errors.
 
     Parameters
     ----------
@@ -192,7 +190,6 @@ def check_error(when='periodic check'):
         Shown in the exception to help the developer determine when
         this check was done.
     """
-
     errors = []
     while True:
         err = glGetError()
@@ -229,6 +226,9 @@ _fix_osmesa_gl_lib_if_testing()
 
 # Load default gl backend
 from . import gl2 as default_backend  # noqa
+if default_backend._lib is None:  # Probably Android or RPi
+    from . import es2 as default_backend  # noqa
+
 
 # Call use to start using our default backend
 use_gl()

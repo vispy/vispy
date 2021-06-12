@@ -13,7 +13,7 @@ from ...visuals.filters import Clipper
 
 
 class ViewBox(Widget):
-    """ Provides a rectangular widget to which its subscene is rendered.
+    """Provides a rectangular widget to which its subscene is rendered.
 
     Three classes work together when using a ViewBox:
     * The :class:`SubScene` class describes a "world" coordinate system and the
@@ -36,6 +36,7 @@ class ViewBox(Widget):
     **kwargs : dict
         Extra keyword arguments to pass to `Widget`.
     """
+
     def __init__(self, camera=None, **kwargs):
         self._camera = None
         self._scene = None
@@ -67,7 +68,7 @@ class ViewBox(Widget):
 
     @property
     def camera(self):
-        """ Get/set the Camera in use by this ViewBox
+        """Get/set the Camera in use by this ViewBox
 
         If a string is given (e.g. 'panzoom', 'turntable', 'fly'). A
         corresponding camera is selected if it already exists in the
@@ -163,12 +164,11 @@ class ViewBox(Widget):
 
     @property
     def scene(self):
-        """ The root node of the scene viewed by this ViewBox.
-        """
+        """The root node of the scene viewed by this ViewBox."""
         return self._scene
 
     def add(self, node):
-        """ Add an Node to the scene for this ViewBox.
+        """Add an Node to the scene for this ViewBox.
 
         This is a convenience method equivalent to
         `node.parent = viewbox.scene`

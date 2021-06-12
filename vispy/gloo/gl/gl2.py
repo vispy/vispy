@@ -2,8 +2,7 @@
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-""" GL ES 2.0 API implemented via desktop GL (i.e subset of normal OpenGL).
-"""
+"""GL ES 2.0 API implemented via desktop GL (i.e subset of normal OpenGL)."""
 
 import os
 import sys
@@ -14,7 +13,6 @@ from ._constants import *  # noqa
 from ...util import logger
 
 # Ctypes stuff
-
 
 # Load the OpenGL library. We more or less follow the same approach
 # as PyOpenGL does internally

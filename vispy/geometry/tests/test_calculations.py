@@ -9,8 +9,7 @@ from vispy.geometry import resize
 
 
 def test_resize():
-    """Test image resizing algorithms
-    """
+    """Test image resizing algorithms"""
     assert_raises(ValueError, resize, np.zeros(3), (3, 3))
     assert_raises(ValueError, resize, np.zeros((3, 3)), (3,))
     assert_raises(ValueError, resize, np.zeros((3, 3)), (4, 4), kind='foo')

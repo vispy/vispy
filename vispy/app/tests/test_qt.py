@@ -15,7 +15,7 @@ def test_qt_designer():
     app = QtGui.QApplication.instance()
     if app is None:
         app = QtGui.QApplication([])
-    
+
     fname = op.join(op.dirname(__file__), 'qt-designer.ui')
     with warnings.catch_warnings(record=True):  # pyqt4 deprecation warning
         WindowTemplate, TemplateBaseClass = uic.loadUiType(fname)
@@ -23,12 +23,12 @@ def test_qt_designer():
     class MainWindow(TemplateBaseClass):
         def __init__(self):
             TemplateBaseClass.__init__(self)
-            
+
             self.ui = WindowTemplate()
             self.ui.setupUi(self)
 
     win = MainWindow()
-    
+
     try:
         canvas = win.ui.canvas
         # test we can access properties of the internal canvas:
@@ -37,7 +37,7 @@ def test_qt_designer():
         app.processEvents()
     finally:
         win.close()
-    
+
     return win
 
 

@@ -2,7 +2,7 @@
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-""" This module provides an template for creating backends for vispy.
+"""This module provides an template for creating backends for vispy.
 It clearly indicates what methods should be implemented and what events
 should be emitted.
 """

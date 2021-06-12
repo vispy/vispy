@@ -8,7 +8,7 @@ from .wrappers import read_pixels
 
 
 def _screenshot(viewport=None, alpha=True):
-    """ Take a screenshot using glReadPixels. Not sure where to put this
+    """Take a screenshot using glReadPixels. Not sure where to put this
     yet, so a private function for now. Used in make.py.
 
     Parameters

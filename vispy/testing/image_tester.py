@@ -29,7 +29,7 @@ Procedure for unit-testing with images:
    and create a new tag in the test-data repository:
 
         $ git tag test-data-NNN
-        $ git push --tags origin master
+        $ git push --tags origin main
 
     This tag is used to ensure that each vispy commit is linked to a specific
     commit in the test-data repository. This makes it possible to push new
@@ -98,7 +98,6 @@ def assert_image_approved(image, standard_file, message=None, **kwargs):
     Extra keyword arguments are used to set the thresholds for automatic image
     comparison (see ``assert_image_match()``).
     """
-
     if isinstance(image, str) and image == "screenshot":
         image = _screenshot(alpha=True)
     if message is None:
@@ -124,7 +123,7 @@ def assert_image_approved(image, standard_file, message=None, **kwargs):
             ims2 = np.array(std_image.shape).astype(float)
             sr = ims1 / ims2
             if (sr[0] != sr[1] or not np.allclose(sr, np.round(sr)) or
-               sr[0] < 1):
+                    sr[0] < 1):
                 raise TypeError("Test result shape %s is not an integer factor"
                                 " larger than standard image shape %s." %
                                 (ims1, ims2))
@@ -211,7 +210,7 @@ def assert_image_match(im1, im2, min_corr=0.9, px_threshold=50.,
 
 def _save_failed_test(data, expect, filename):
     from ..io import _make_png
-    commit, error = run_subprocess(['git', 'rev-parse',  'HEAD'])
+    commit, error = run_subprocess(['git', 'rev-parse', 'HEAD'])
     name = filename.split('/')
     name.insert(-1, commit.strip())
     filename = '/'.join(name)
@@ -291,8 +290,8 @@ def downsample(data, n, axis=0):
 
 
 class ImageTester(scene.SceneCanvas):
-    """Graphical interface for auditing image comparison tests.
-    """
+    """Graphical interface for auditing image comparison tests."""
+
     def __init__(self):
         self.grid = None
         self.views = None
@@ -372,7 +371,6 @@ def get_test_data_repo():
     https://github.com/vispy/test-data. If the repository already exists
     then the required commit is checked out.
     """
-
     # This tag marks the test-data commit that this version of vispy should
     # be tested against. When adding or changing test images, create
     # and push a new tag and update this variable.
@@ -427,7 +425,7 @@ def get_test_data_repo():
                 gitbase + ['remote', 'add', 'origin', git_path],
                 gitbase + ['fetch', '--tags', 'origin', test_data_tag,
                            '--depth=1'],
-                gitbase + ['checkout', '-b', 'master', 'FETCH_HEAD'],
+                gitbase + ['checkout', '-b', 'main', 'FETCH_HEAD'],
             ]
         else:
             # Create a full clone
@@ -460,8 +458,7 @@ def git_status(path):
 
 
 def git_commit_id(path, ref):
-    """Return the commit id of *ref* in the git repository at *path*.
-    """
+    """Return the commit id of *ref* in the git repository at *path*."""
     cmd = git_cmd_base(path) + ['show', ref]
     try:
         output = run_subprocess(cmd, stderr=None, universal_newlines=True)[0]

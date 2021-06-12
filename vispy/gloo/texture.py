@@ -45,6 +45,7 @@ class BaseTexture(GLObject):
     resizeable : None
         Deprecated version of `resizable`.
     """
+
     _ndim = 2
 
     _formats = {
@@ -145,8 +146,7 @@ class BaseTexture(GLObject):
 
     @property
     def shape(self):
-        """ Data shape (last dimension indicates number of color channels)
-        """
+        """Data shape (last dimension indicates number of color channels)"""
         return self._shape
 
     @property
@@ -161,7 +161,7 @@ class BaseTexture(GLObject):
 
     @property
     def wrapping(self):
-        """ Texture wrapping mode """
+        """Texture wrapping mode"""
         value = self._wrapping
         return value[0] if all([v == value[0] for v in value]) else value
 
@@ -185,7 +185,7 @@ class BaseTexture(GLObject):
 
     @property
     def interpolation(self):
-        """ Texture interpolation for minification and magnification. """
+        """Texture interpolation for minification and magnification."""
         value = self._interpolation
         return value[0] if value[0] == value[1] else value
 
@@ -309,9 +309,7 @@ class BaseTexture(GLObject):
         return self._set_data(data, offset, copy)
 
     def _set_data(self, data, offset=None, copy=False):
-        """Internal method for set_data.
-        """
-
+        """Internal method for set_data."""
         # Copy if needed, check/normalize shape
         data = np.array(data, copy=copy)
         data = self._normalize_shape(data)
@@ -335,8 +333,7 @@ class BaseTexture(GLObject):
         self._glir.command('DATA', self._id, offset, data)
 
     def __setitem__(self, key, data):
-        """ x.__getitem__(y) <==> x[y] """
-
+        """x.__getitem__(y) <==> x[y]"""
         # Make sure key is a tuple
         if isinstance(key, (int, slice)) or key == Ellipsis:
             key = (key,)
@@ -396,7 +393,7 @@ class BaseTexture(GLObject):
 
 # --------------------------------------------------------- Texture1D class ---
 class Texture1D(BaseTexture):
-    """ One dimensional texture
+    """One dimensional texture
 
     Parameters
     ----------
@@ -425,6 +422,7 @@ class Texture1D(BaseTexture):
     resizeable : None
         Deprecated version of `resizable`.
     """
+
     _ndim = 1
     _GLIR_TYPE = 'Texture1D'
 
@@ -436,31 +434,28 @@ class Texture1D(BaseTexture):
 
     @property
     def width(self):
-        """ Texture width """
+        """Texture width"""
         return self._shape[0]
 
     @property
     def glsl_type(self):
-        """ GLSL declaration strings required for a variable to hold this data.
-        """
+        """GLSL declaration strings required for a variable to hold this data."""
         return 'uniform', 'sampler1D'
 
     @property
     def glsl_sampler_type(self):
-        """ GLSL type of the sampler.
-        """
+        """GLSL type of the sampler."""
         return 'sampler1D'
 
     @property
     def glsl_sample(self):
-        """ GLSL function that samples the texture.
-        """
+        """GLSL function that samples the texture."""
         return 'texture1D'
 
 
 # --------------------------------------------------------- Texture2D class ---
 class Texture2D(BaseTexture):
-    """ Two dimensional texture
+    """Two dimensional texture
 
     Parameters
     ----------
@@ -488,6 +483,7 @@ class Texture2D(BaseTexture):
     resizeable : None
         Deprecated version of `resizable`.
     """
+
     _ndim = 2
     _GLIR_TYPE = 'Texture2D'
 
@@ -499,36 +495,33 @@ class Texture2D(BaseTexture):
 
     @property
     def height(self):
-        """ Texture height """
+        """Texture height"""
         return self._shape[0]
 
     @property
     def width(self):
-        """ Texture width """
+        """Texture width"""
         return self._shape[1]
 
     @property
     def glsl_type(self):
-        """ GLSL declaration strings required for a variable to hold this data.
-        """
+        """GLSL declaration strings required for a variable to hold this data."""
         return 'uniform', 'sampler2D'
 
     @property
     def glsl_sampler_type(self):
-        """ GLSL type of the sampler.
-        """
+        """GLSL type of the sampler."""
         return 'sampler2D'
 
     @property
     def glsl_sample(self):
-        """ GLSL function that samples the texture.
-        """
+        """GLSL function that samples the texture."""
         return 'texture2D'
 
 
 # --------------------------------------------------------- Texture3D class ---
 class Texture3D(BaseTexture):
-    """ Three dimensional texture
+    """Three dimensional texture
 
     Parameters
     ----------
@@ -557,6 +550,7 @@ class Texture3D(BaseTexture):
     resizeable : None
         Deprecated version of `resizable`.
     """
+
     _ndim = 3
     _GLIR_TYPE = 'Texture3D'
 
@@ -568,41 +562,38 @@ class Texture3D(BaseTexture):
 
     @property
     def width(self):
-        """ Texture width """
+        """Texture width"""
         return self._shape[2]
 
     @property
     def height(self):
-        """ Texture height """
+        """Texture height"""
         return self._shape[1]
 
     @property
     def depth(self):
-        """ Texture depth """
+        """Texture depth"""
         return self._shape[0]
 
     @property
     def glsl_type(self):
-        """ GLSL declaration strings required for a variable to hold this data.
-        """
+        """GLSL declaration strings required for a variable to hold this data."""
         return 'uniform', 'sampler3D'
 
     @property
     def glsl_sampler_type(self):
-        """ GLSL type of the sampler.
-        """
+        """GLSL type of the sampler."""
         return 'sampler3D'
 
     @property
     def glsl_sample(self):
-        """ GLSL function that samples the texture.
-        """
+        """GLSL function that samples the texture."""
         return 'texture3D'
 
 
 # --------------------------------------------------------- TextureCube class ---
 class TextureCube(BaseTexture):
-    """ Texture Cube
+    """Texture Cube
 
     Parameters
     ----------
@@ -631,6 +622,7 @@ class TextureCube(BaseTexture):
     resizeable : None
         Deprecated version of `resizable`.
     """
+
     _ndim = 3
     _GLIR_TYPE = 'TextureCube'
 
@@ -645,41 +637,38 @@ class TextureCube(BaseTexture):
 
     @property
     def height(self):
-        """ Texture height """
+        """Texture height"""
         return self._shape[1]
 
     @property
     def width(self):
-        """ Texture width """
+        """Texture width"""
         return self._shape[2]
 
     @property
     def depth(self):
-        """ Texture depth """
+        """Texture depth"""
         return self._shape[0]
 
     @property
     def glsl_type(self):
-        """ GLSL declaration strings required for a variable to hold this data.
-        """
+        """GLSL declaration strings required for a variable to hold this data."""
         return 'uniform', 'samplerCube'
 
     @property
     def glsl_sampler_type(self):
-        """ GLSL type of the sampler.
-        """
+        """GLSL type of the sampler."""
         return 'samplerCube'
 
     @property
     def glsl_sample(self):
-        """ GLSL function that samples the texture.
-        """
+        """GLSL function that samples the texture."""
         return 'textureCube'
 
 
 # ------------------------------------------------- TextureEmulated3D class ---
 class TextureEmulated3D(Texture2D):
-    """ Two dimensional texture that is emulating a three dimensional texture
+    """Two dimensional texture that is emulating a three dimensional texture
 
     Parameters
     ----------
@@ -866,30 +855,27 @@ class TextureEmulated3D(Texture2D):
 
     @property
     def shape(self):
-        """ Data shape (last dimension indicates number of color channels)
-        """
+        """Data shape (last dimension indicates number of color channels)"""
         return self._emulated_shape
 
     @property
     def width(self):
-        """ Texture width """
+        """Texture width"""
         return self._emulated_shape[2]
 
     @property
     def height(self):
-        """ Texture height """
+        """Texture height"""
         return self._emulated_shape[1]
 
     @property
     def depth(self):
-        """ Texture depth """
+        """Texture depth"""
         return self._emulated_shape[0]
 
     @property
     def glsl_sample(self):
-        """ GLSL function that samples the texture.
-        """
-
+        """GLSL function that samples the texture."""
         return self._glsl_sample
 
 
@@ -918,8 +904,8 @@ class TextureAtlas(Texture2D):
         >>> atlas = TextureAtlas()
         >>> bounds = atlas.get_free_region(20, 30)
         >>> atlas.set_region(bounds, np.random.rand(20, 30).T)
-
     """
+
     def __init__(self, shape=(1024, 1024), dtype=np.float32):
         shape = np.array(shape, int)
         assert shape.ndim == 1 and shape.size == 2

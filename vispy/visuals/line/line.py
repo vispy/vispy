@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
-"""
-Line visual implementing Agg- and GL-based drawing modes.
-"""
+"""Line visual implementing Agg- and GL-based drawing modes."""
 
 from __future__ import division
 
@@ -88,6 +86,7 @@ class LineVisual(CompoundVisual):
         For method='gl', this specifies whether to use GL's line smoothing,
         which may be unavailable or inconsistent on some platforms.
     """
+
     def __init__(self, pos=None, color=(0.5, 0.5, 0.5, 1), width=1,
                  connect='strip', method='gl', antialias=False):
         self._line_visual = None
@@ -419,6 +418,8 @@ class _AggLineVisual(Visual):
         Visual.__init__(self, vcode=self.VERTEX_SHADER,
                         fcode=self.FRAGMENT_SHADER)
         self._index_buffer = gloo.IndexBuffer()
+        # The depth_test being disabled prevents z-ordering, but if
+        # we turn it on the blending of the aa edges produces artifacts.
         self.set_gl_state('translucent', depth_test=False)
         self._draw_mode = 'triangles'
 
@@ -426,7 +427,6 @@ class _AggLineVisual(Visual):
         data_doc = view.get_transform('visual', 'document')
         doc_px = view.get_transform('document', 'framebuffer')
         px_ndc = view.get_transform('framebuffer', 'render')
-
         vert = view.view_program.vert
         vert['transform'] = data_doc
         vert['doc_px_transform'] = doc_px
@@ -474,7 +474,6 @@ class _AggLineVisual(Visual):
         segment must have its own vertices because of antialias (this means no
         vertex sharing between two adjacent line segments).
         """
-
         n = len(vertices)
         P = np.array(vertices).reshape(n, 2).astype(float)
         idx = np.arange(n)  # used to eventually tile the color array

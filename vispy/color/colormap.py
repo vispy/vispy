@@ -4,12 +4,13 @@
 
 from __future__ import division  # just to be safe...
 import inspect
+import warnings
 
 import numpy as np
 
 from .color_array import ColorArray
 from ..ext.cubehelix import cubehelix
-from ..ext.husl import husl_to_rgb
+from hsluv import hsluv_to_rgb
 from ..util.check_environment import has_matplotlib
 import vispy.gloo
 
@@ -52,7 +53,8 @@ def _find_controls(x, controls=None, clip=None):
 # Normalization
 def _normalize(x, cmin=None, cmax=None, clip=True):
     """Normalize an array from the range [cmin, cmax] to [0,1],
-    with optional clipping."""
+    with optional clipping.
+    """
     if not isinstance(x, np.ndarray):
         x = np.array(x)
     if cmin is None:
@@ -100,8 +102,9 @@ def mix(colors, x, controls=None):
 
 
 def smoothstep(edge0, edge1, x):
-    """ performs smooth Hermite interpolation
-        between 0 and 1 when edge0 < x < edge1.  """
+    """Performs smooth Hermite interpolation
+    between 0 and 1 when edge0 < x < edge1.
+    """
     # Scale, bias and saturate x to 0..1 range
     x = np.clip((x - edge0)/(edge1 - edge0), 0.0, 1.0)
     # Evaluate polynomial
@@ -139,7 +142,6 @@ def _glsl_mix(controls=None, colors=None, texture_map_data=None):
     texture_map_data : ndarray, shape(texture_len, 4)
         Numpy array of size of 1D texture lookup data
         for luminance to RGBA conversion.
-
     """
     assert (controls[0], controls[-1]) == (0., 1.)
     ncolors = len(controls)
@@ -373,6 +375,7 @@ class Colormap(BaseColormap):
         >>> cm[0.], cm[0.5], cm[np.linspace(0., 1., 100)]
 
     """
+
     def __init__(self, colors, controls=None, interpolation='linear'):
         self.interpolation = interpolation
         ncontrols = self._ncontrols(len(colors))
@@ -644,8 +647,7 @@ class _SingleHue(Colormap):
 
 
 class _HSL(Colormap):
-    """A colormap which is defined by n evenly spaced points in
-    a circular color space.
+    """A colormap which is defined by n evenly spaced points in a circular color space.
 
     This means that we change the hue value while keeping the
     saturation and value constant.
@@ -687,9 +689,8 @@ class _HSL(Colormap):
                                    interpolation=interpolation)
 
 
-class _HUSL(Colormap):
-    """A colormap which is defined by n evenly spaced points in
-    the HUSL hue space.
+class _HSLuv(Colormap):
+    """A colormap which is defined by n evenly spaced points in the HSLuv space.
 
     Parameters
     ---------
@@ -716,7 +717,7 @@ class _HUSL(Colormap):
 
     Notes
     -----
-    For more information about HUSL colors see http://husl-colors.org
+    For more information about HSLuv colors see https://www.hsluv.org/
     """
 
     def __init__(self, ncolors=6, hue_start=0, saturation=1.0, value=0.7,
@@ -729,11 +730,19 @@ class _HUSL(Colormap):
         value *= 99
 
         colors = ColorArray(
-            [husl_to_rgb(hue, saturation, value) for hue in hues],
+            [hsluv_to_rgb([hue, saturation, value]) for hue in hues],
         )
 
-        super(_HUSL, self).__init__(colors, controls=controls,
-                                    interpolation=interpolation)
+        super(_HSLuv, self).__init__(colors, controls=controls,
+                                     interpolation=interpolation)
+
+
+class _HUSL(_HSLuv):
+    """Deprecated."""
+
+    def __init__(self, *args, **kwargs):
+        warnings.warn("_HUSL Colormap is deprecated. Please use '_HSLuv' instead.")
+        super().__init__(*args, **kwargs)
 
 
 class _Diverging(Colormap):
@@ -743,10 +752,10 @@ class _Diverging(Colormap):
         saturation *= 99
         value *= 99
 
-        start = husl_to_rgb(h_neg, saturation, value)
+        start = hsluv_to_rgb([h_neg, saturation, value])
         mid = ((0.133, 0.133, 0.133) if center == "dark" else
                (0.92, 0.92, 0.92))
-        end = husl_to_rgb(h_pos, saturation, value)
+        end = hsluv_to_rgb([h_pos, saturation, value])
 
         colors = ColorArray([start, mid, end])
 
@@ -1081,6 +1090,7 @@ _colormaps = dict(
     single_hue=_SingleHue,
     hsl=_HSL,
     husl=_HUSL,
+    hsluv=_HSLuv,
     diverging=_Diverging,
     RdYeBuCy=_RedYellowBlueCyan,
 )
@@ -1088,18 +1098,14 @@ _colormaps = dict(
 
 def get_colormap(name, *args, **kwargs):
     """Obtain a colormap
-
     Some colormaps can have additional configuration parameters. Refer to
     their corresponding documentation for more information.
-
     Parameters
     ----------
     name : str | Colormap
         Colormap name. Can also be a Colormap for pass-through.
-
     Examples
     --------
-
         >>> get_colormap('autumn')
         >>> get_colormap('single_hue', hue=10)
     """

@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
-"""
-vispy backend for sdl2.
-"""
+"""vispy backend for sdl2."""
 
 from __future__ import division
 
@@ -192,8 +190,7 @@ class ApplicationBackend(BaseApplicationBackend):
 # ------------------------------------------------------------------ canvas ---
 
 class CanvasBackend(BaseCanvasBackend):
-
-    """ SDL2 backend for Canvas abstract class."""
+    """SDL2 backend for Canvas abstract class."""
 
     # args are for BaseCanvasBackend, kwargs are for us.
     def __init__(self, *args, **kwargs):

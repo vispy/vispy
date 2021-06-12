@@ -40,7 +40,7 @@ void main() {
 class MyRectVisual(visuals.Visual):
     """
     """
-    
+
     def __init__(self):
         visuals.Visual.__init__(self, vertex_shader, fragment_shader)
         self.vbo = gloo.VertexBuffer(np.array([

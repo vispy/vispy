@@ -82,6 +82,7 @@ class _CoreColorBarVisual(Visual):
     --------
     vispy.visuals.ColorBarVisual
     """
+
     def __init__(self, pos, halfdim,
                  cmap,
                  orientation,
@@ -115,10 +116,7 @@ class _CoreColorBarVisual(Visual):
         self._update()
 
     def _update(self):
-        """Rebuilds the shaders, and repositions the objects
-           that are used internally by the ColorBarVisual
-        """
-
+        """Rebuilds the shaders, and repositions the objects that are used internally by the ColorBarVisual"""
         x, y = self._pos
         halfw, halfh = self._halfdim
 
@@ -186,8 +184,7 @@ class _CoreColorBarVisual(Visual):
 
     @property
     def cmap(self):
-        """ The colormap of the Colorbar
-        """
+        """The colormap of the Colorbar"""
         return self._cmap
 
     @cmap.setter
@@ -256,11 +253,12 @@ class ColorBarVisual(CompoundVisual):
     pos : tuple (x, y)
         Position where the colorbar is to be placed with
         respect to the center of the colorbar
-    label_str : str
+    label : str | vispy.visuals.TextVisual
         The label that is to be drawn with the colorbar
         that provides information about the colorbar.
+        If a TextVisual object then 'label_color' is ignored.
     label_color : str | vispy.color.Color
-        The color of the labels. This can either be a
+        The color of the label and tick labels. This can either be a
         str as the color's name or an actual instace of a vipy.color.Color
     clim : tuple (min, max)
         the minimum and maximum values of the data that
@@ -272,7 +270,13 @@ class ColorBarVisual(CompoundVisual):
     border_color : str | vispy.color.Color
         The color of the border of the colormap. This can either be a
         str as the color's name or an actual instace of a vipy.color.Color
+
+    .. versionchanged:: 0.7
+
+        Keyword argument ``label_str`` renamed to `label`.
+
     """
+
     # The padding multiplier that's used to place the text
     # next to the Colorbar. Makes sure the text isn't
     # visually "sticking" to the Colorbar
@@ -280,28 +284,27 @@ class ColorBarVisual(CompoundVisual):
 
     def __init__(self, cmap, orientation, size,
                  pos=[0, 0],
-                 label_str="",
+                 label="",
                  label_color='black',
                  clim=(0.0, 1.0),
                  border_width=1.0,
-                 border_color="black",
-                 **kwargs):
+                 border_color="black"):
 
-        self._label_str = label_str
-        self._label_color = label_color
         self._cmap = get_colormap(cmap)
         self._clim = clim
         self._pos = pos
         self._size = size
         self._orientation = orientation
 
-        self._label = TextVisual(self._label_str, color=self._label_color)
+        if not isinstance(label, TextVisual):
+            label = TextVisual(label, color=label_color)
+        self._label = label
 
         self._ticks = []
         self._ticks.append(TextVisual(str(self._clim[0]),
-                                      color=self._label_color))
+                                      color=label_color))
         self._ticks.append(TextVisual(str(self._clim[1]),
-                                      color=self._label_color))
+                                      color=label_color))
 
         if orientation in ["top", "bottom"]:
             (width, height) = size
@@ -327,9 +330,7 @@ class ColorBarVisual(CompoundVisual):
         self._update()
 
     def _update(self):
-        """Rebuilds the shaders, and repositions the objects
-           that are used internally by the ColorBarVisual
-        """
+        """Rebuilds the shaders, and repositions the objects that are used internally by the ColorBarVisual"""
         self._colorbar.halfdim = self._halfdim
         self._border.halfdim = self._halfdim
 
@@ -342,10 +343,7 @@ class ColorBarVisual(CompoundVisual):
         self._border._update()
 
     def _update_positions(self):
-        """
-        updates the positions of the colorbars and labels
-
-        """
+        """Updates the positions of the colorbars and labels"""
         self._colorbar.pos = self._pos
         self._border.pos = self._pos
 
@@ -561,8 +559,7 @@ class ColorBarVisual(CompoundVisual):
 
     @property
     def pos(self):
-        """ The position of the text anchor in the local coordinate frame
-        """
+        """The position of the text anchor in the local coordinate frame"""
         return self._pos
 
     @pos.setter
@@ -572,8 +569,7 @@ class ColorBarVisual(CompoundVisual):
 
     @property
     def cmap(self):
-        """ The colormap of the Colorbar
-        """
+        """The colormap of the Colorbar"""
         return self._colorbar._cmap
 
     @cmap.setter
@@ -582,13 +578,12 @@ class ColorBarVisual(CompoundVisual):
 
     @property
     def clim(self):
-        """ The data limits of the Colorbar
+        """The data limits of the Colorbar
 
         Returns
         -------
         clim: tuple(min, max)
         """
-
         return self._clim
 
     @clim.setter
@@ -598,18 +593,20 @@ class ColorBarVisual(CompoundVisual):
 
     @property
     def label(self):
-        """ The vispy.visuals.TextVisual associated with the label
-        """
+        """The vispy.visuals.TextVisual associated with the label"""
         return self._label
 
     @label.setter
     def label(self, label):
-        self._label = label
+        if isinstance(label, TextVisual):
+            self._label = label
+        else:
+            self._label.text = label
         self._update()
 
     @property
     def ticks(self):
-        """ The vispy.visuals.TextVisual associated with the ticks
+        """The vispy.visuals.TextVisual associated with the ticks
 
         Returns
         -------
@@ -625,8 +622,7 @@ class ColorBarVisual(CompoundVisual):
 
     @property
     def border_width(self):
-        """ The width of the border around the ColorBar in pixels
-        """
+        """The width of the border around the ColorBar in pixels"""
         return self._border.border_width
 
     @border_width.setter
@@ -636,8 +632,7 @@ class ColorBarVisual(CompoundVisual):
 
     @property
     def border_color(self):
-        """ The color of the border around the ColorBar in pixels
-        """
+        """The color of the border around the ColorBar in pixels"""
         return self._border.border_color
 
     @border_color.setter
@@ -647,13 +642,12 @@ class ColorBarVisual(CompoundVisual):
 
     @property
     def orientation(self):
-        """ The orientation of the ColorBar
-        """
+        """The orientation of the ColorBar"""
         return self._orientation
 
     @property
     def size(self):
-        """ The size of the ColorBar
+        """The size of the ColorBar
 
         Returns
         -------

@@ -10,3 +10,4 @@ pytest-cov
 pytest-sugar
 scipy
 networkx
+hsluv

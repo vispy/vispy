@@ -3,7 +3,7 @@
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
-""" Fast and failsafe GL console """
+"""Fast and failsafe GL console"""
 
 # Code translated from glumpy
 
@@ -148,6 +148,7 @@ class Console(Widget):
     font_size : float
         Point size to use.
     """
+
     def __init__(self, text_color='black', font_size=12., **kwargs):
         self._visual = ConsoleVisual(text_color, font_size)
         Widget.__init__(self, **kwargs)

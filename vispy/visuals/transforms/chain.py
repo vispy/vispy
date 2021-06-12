@@ -16,10 +16,10 @@ class ChainTransform(BaseTransform):
     its glsl_map and glsl_imap functions.
 
     Arguments:
-
     transforms : list of BaseTransform instances
         See ``transforms`` property.
     """
+
     glsl_map = None
     glsl_imap = None
 
@@ -34,11 +34,11 @@ class ChainTransform(BaseTransform):
         self._simplified = None
         self._null_transform = NullTransform()
         nmap = self._null_transform.shader_map()
-        
+
         # ChainTransform does not have shader maps
         self._shader_map = FunctionChain("transform_map_chain", [nmap])
         self._shader_imap = FunctionChain("transform_imap_chain", [nmap])
-        
+
         # Set input transforms
         trs = []
         for tr in transforms:
@@ -50,23 +50,22 @@ class ChainTransform(BaseTransform):
 
     @property
     def transforms(self):
-        """ The list of transform that make up the transform chain.
-        
+        """The list of transform that make up the transform chain.
+
         The order of transforms is given such that the last transform in the 
         list is the first to be invoked when mapping coordinates through 
         the chain. 
-        
+
         For example, the following two mappings are equivalent::
-        
+
             # Map coordinates through individual transforms:
             trans1 = STTransform(scale=(2, 3), translate=(0, 1))
             trans2 = PolarTransform()
             mapped = trans1.map(trans2.map(coords))
-            
+
             # Equivalent mapping through chain:
             chain = ChainTransform([trans1, trans2])
             mapped = chain.map(coords)
-            
         """
         return self._transforms
 
@@ -76,7 +75,7 @@ class ChainTransform(BaseTransform):
             tr = [tr]
         if not isinstance(tr, list):
             raise TypeError("Transform chain must be a list")
-        
+
         # Avoid extra effort if we already have the correct chain
         if len(tr) == len(self._transforms):
             changed = False
@@ -86,7 +85,7 @@ class ChainTransform(BaseTransform):
                     break
             if not changed:
                 return
-        
+
         for t in self._transforms:
             t.changed.disconnect(self._subtr_changed)
         self._transforms = tr
@@ -97,8 +96,7 @@ class ChainTransform(BaseTransform):
 
     @property
     def simplified(self):
-        """A simplified representation of the same transformation.
-        """
+        """A simplified representation of the same transformation."""
         if self._simplified is None:
             self._simplified = SimplifiedChainTransform(self)
         return self._simplified
@@ -170,7 +168,7 @@ class ChainTransform(BaseTransform):
 
     def shader_imap(self):
         return self._shader_imap
-    
+
     def _rebuild_shaders(self):
         trs = self.transforms
         if len(trs) == 0:
@@ -207,8 +205,7 @@ class ChainTransform(BaseTransform):
         self.update()
 
     def _subtr_changed(self, ev):
-        """One of the internal transforms changed; propagate the signal. 
-        """
+        """One of the internal transforms changed; propagate the signal."""
         self.update(ev)
 
     def __setitem__(self, index, tr):
@@ -235,7 +232,7 @@ class ChainTransform(BaseTransform):
     def __str__(self):
         names = [tr.__class__.__name__ for tr in self.transforms]
         return "<ChainTransform [%s] at 0x%x>" % (", ".join(names), id(self))
-    
+
     def __repr__(self):
         tr = ",\n                 ".join(map(repr, self.transforms))
         return "<ChainTransform [%s] at 0x%x>" % (tr, id(self))
@@ -257,14 +254,13 @@ class SimplifiedChainTransform(ChainTransform):
         self.source_changed(None)
 
     def source_changed(self, event):
-        """Generate a simplified chain by joining adjacent transforms.
-        """
+        """Generate a simplified chain by joining adjacent transforms."""
         # bail out early if the chain is empty
         transforms = self._chain.transforms[:]
         if len(transforms) == 0:
             self.transforms = []
             return
-        
+
         # If the change signal comes from a transform that already appears in
         # our simplified transform list, then there is no need to re-simplify.
         if event is not None:
@@ -272,7 +268,7 @@ class SimplifiedChainTransform(ChainTransform):
                 if source in self.transforms:
                     self.update(event)
                     return
-        
+
         # First flatten the chain by expanding all nested chains
         new_chain = []
         while len(transforms) > 0:
@@ -281,7 +277,7 @@ class SimplifiedChainTransform(ChainTransform):
                 transforms = tr.transforms[:] + transforms
             else:
                 new_chain.append(tr)
-        
+
         # Now combine together all compatible adjacent transforms
         cont = True
         tr = new_chain
@@ -292,7 +288,7 @@ class SimplifiedChainTransform(ChainTransform):
                 t1 = new_tr[-1]
                 pr = t1 * t2
                 if (not t1.dynamic and not t2.dynamic and not 
-                   isinstance(pr, ChainTransform)):
+                        isinstance(pr, ChainTransform)):
                     cont = True
                     new_tr.pop()
                     new_tr.append(pr)

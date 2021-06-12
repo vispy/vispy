@@ -71,14 +71,24 @@ class AxisVisual(CompoundVisual):
         of 'bottom', 'middle', or 'top'. If this is not specified, it is
         determined automatically.
     """
-    def __init__(self, pos=None, domain=(0., 1.), tick_direction=(-1., 0.),
-                 scale_type="linear", axis_color=(1, 1, 1),
-                 tick_color=(0.7, 0.7, 0.7), text_color='w',
-                 minor_tick_length=5, major_tick_length=10,
-                 tick_width=2, tick_label_margin=12, tick_font_size=8,
-                 axis_width=3,  axis_label=None,
-                 axis_label_margin=35, axis_font_size=10,
-                 font_size=None, anchors=None):
+
+    def __init__(self, pos=None, domain=(0., 1.), 
+                 tick_direction=(-1., 0.), 
+                 scale_type="linear", 
+                 axis_color=(1, 1, 1), 
+                 tick_color=(0.7, 0.7, 0.7), 
+                 text_color='w', 
+                 minor_tick_length=5, 
+                 major_tick_length=10, 
+                 tick_width=2, 
+                 tick_label_margin=12, 
+                 tick_font_size=8, 
+                 axis_width=3, 
+                 axis_label=None, 
+                 axis_label_margin=35, 
+                 axis_font_size=10, 
+                 font_size=None, 
+                 anchors=None):
 
         if scale_type != 'linear':
             raise NotImplementedError('only linear scaling is currently '
@@ -250,9 +260,7 @@ class AxisVisual(CompoundVisual):
 
     @property
     def _rotation_angle(self):
-        """
-        Determine the rotation angle of the axis as projected onto the canvas.
-        """
+        """Determine the rotation angle of the axis as projected onto the canvas."""
         # TODO: make sure we only call get_transform if the transform for
         # the line is updated
         tr = self._line.get_transform(map_from='visual', map_to='canvas')
@@ -384,8 +392,6 @@ class Ticker(object):
             length = self.axis.pos[1] - self.axis.pos[0]  # in logical coords
             n_inches = np.sqrt(np.sum(length ** 2)) / transforms.dpi
 
-            # major = np.linspace(domain[0], domain[1], num=11)
-            # major = MaxNLocator(10).tick_values(*domain)
             major = _get_ticks_talbot(domain[0], domain[1], n_inches, 2)
 
             labels = ['%g' % x for x in major]
@@ -404,12 +410,15 @@ class Ticker(object):
             if scale != 0:  # maybe something better to do here?
                 major_frac /= scale
                 minor_frac /= scale
-            major_frac = major_frac[::-1] if flip else major_frac
             use_mask = (major_frac > -0.0001) & (major_frac < 1.0001)
             major_frac = major_frac[use_mask]
             labels = [l for li, l in enumerate(labels) if use_mask[li]]
             minor_frac = minor_frac[(minor_frac > -0.0001) &
                                     (minor_frac < 1.0001)]
+            # Flip ticks coordinates if necessary :
+            if flip:
+                major_frac = 1 - major_frac
+                minor_frac = 1 - minor_frac
         elif self.axis.scale_type == 'logarithmic':
             return NotImplementedError
         elif self.axis.scale_type == 'power':
@@ -421,9 +430,8 @@ class Ticker(object):
 # Translated from matplotlib
 
 class MaxNLocator(object):
-    """
-    Select no more than N intervals at nice locations.
-    """
+    """Select no more than N intervals at nice locations."""
+
     def __init__(self, nbins=10, steps=None, trim=True, integer=False,
                  symmetric=False, prune=None):
         """

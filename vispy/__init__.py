@@ -2,9 +2,7 @@
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-"""
-
-=====
+"""=====
 Vispy
 =====
 
@@ -14,7 +12,6 @@ Processing Units (GPUs)** through the **OpenGL** library to display very
 large datasets.
 
 For more information, see http://vispy.org.
-
 """
 
 from __future__ import division

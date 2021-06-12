@@ -27,7 +27,6 @@ class NetworkxCoordinates:
         kwargs: dict, optional
         when layout is :str: :kwargs: will act as a setting dictionary for the layout function of networkx
         """
-
         if isinstance(graph, type(None)):
             raise ValueError("Requires networkx input")
         self.graph = graph
@@ -88,7 +87,5 @@ class NetworkxCoordinates:
 
     @property
     def adj(self):
-        """
-        Convenient storage and holder of the adjacency matrix for the :scene.visuals.Graph: function.
-        """
+        """Convenient storage and holder of the adjacency matrix for the :scene.visuals.Graph: function."""
         return nx.adjacency_matrix(self.graph)

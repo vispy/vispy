@@ -2,9 +2,7 @@
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-"""
-vispy backend for Tkinter.
-"""
+"""vispy backend for Tkinter."""
 
 from __future__ import division
 
@@ -81,7 +79,7 @@ KEYMAP = {
     65307: keys.ESCAPE,
     65288: keys.BACKSPACE,
 
-    32:    keys.SPACE,
+    32: keys.SPACE,
     65293: keys.ENTER,
     65289: keys.TAB,
 
@@ -302,7 +300,7 @@ class ApplicationBackend(BaseApplicationBackend):
 
 
 class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
-    """ Tkinter backend for Canvas abstract class.
+    """Tkinter backend for Canvas abstract class.
     Uses pyopengltk.OpenGLFrame as the internal tk.Frame instance that
     is able to receive OpenGL draw commands and display the results,
     while also being placeable in another Toplevel window.
@@ -338,7 +336,7 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
         kwargs.pop("context")
 
         if p.parent is None:
-            # Create native window and master
+            # Create native window and top level
             self.top = _TkInstanceManager.new_toplevel(self)
 
             # Check input args and call appropriate set-up functions.
@@ -362,7 +360,7 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
             self.top.protocol("WM_DELETE_WINDOW", self._vispy_close)
             parent = self.top
         else:
-            # Use given parent as master
+            # Use given parent as top level
             self.top = None
             parent = p.parent
             self._fullscreen = False
@@ -378,21 +376,21 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
             self.pack(fill=tk.BOTH, expand=True)
 
             # Also bind the key events to the top window instead.
-            self.top.bind("<Any-KeyPress>",   self._on_key_down)
+            self.top.bind("<Any-KeyPress>", self._on_key_down)
             self.top.bind("<Any-KeyRelease>", self._on_key_up)
         else:
             # If no top, bind key events to the canvas itself.
-            self.bind("<Any-KeyPress>",   self._on_key_down)
+            self.bind("<Any-KeyPress>", self._on_key_down)
             self.bind("<Any-KeyRelease>", self._on_key_up)
 
         # Bind the other events to our internal methods.
-        self.bind("<Enter>",             self._on_mouse_enter)  # This also binds MouseWheel
-        self.bind("<Leave>",             self._on_mouse_leave)  # This also unbinds MouseWheel
-        self.bind("<Motion>",            self._on_mouse_move)
-        self.bind("<Any-Button>",        self._on_mouse_button_press)
+        self.bind("<Enter>", self._on_mouse_enter)  # This also binds MouseWheel
+        self.bind("<Leave>", self._on_mouse_leave)  # This also unbinds MouseWheel
+        self.bind("<Motion>", self._on_mouse_move)
+        self.bind("<Any-Button>", self._on_mouse_button_press)
         self.bind("<Double-Any-Button>", self._on_mouse_double_button_press)
         self.bind("<Any-ButtonRelease>", self._on_mouse_button_release)
-        self.bind("<Configure>",         self._on_configure, add='+')
+        self.bind("<Configure>", self._on_configure, add='+')
 
         self._vispy_set_visible(p.show)
         self.focus_force()
@@ -523,8 +521,8 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
             return
         if _tk_on_linux:
             # On Linux, bind wheel as buttons instead
-            self.bind_all("<Button-4>",   self._on_mouse_wheel)
-            self.bind_all("<Button-5>",   self._on_mouse_wheel)
+            self.bind_all("<Button-4>", self._on_mouse_wheel)
+            self.bind_all("<Button-5>", self._on_mouse_wheel)
         else:
             # Other platforms, bind wheel event
             # FIXME: What to do on Darwin?
@@ -598,7 +596,8 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
 
     def _vispy_detect_double_click(self, e):
         """Override base class function
-        since double click handling is native in Tk."""
+        since double click handling is native in Tk.
+        """
         pass
 
     def _on_mouse_double_button_press(self, e):

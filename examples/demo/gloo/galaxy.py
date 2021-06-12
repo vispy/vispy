@@ -120,8 +120,8 @@ class Canvas(app.Canvas):
         self.title = "A very fake galaxy [mouse scroll to zoom]"
 
         data = np.zeros(n, [('a_position', np.float32, 3),
-                        ('a_size', np.float32),
-                        ('a_dist', np.float32)])
+                            ('a_size', np.float32),
+                            ('a_dist', np.float32)])
 
         for i in range(3):
             P, S, D = make_arm(p, i * 2 * np.pi / 3)

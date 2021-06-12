@@ -15,7 +15,7 @@ from ..util import logger
 
 # ------------------------------------------------------------ Buffer class ---
 class Buffer(GLObject):
-    """ Generic GPU buffer.
+    """Generic GPU buffer.
 
     A generic buffer is an interface used to upload data to a GPU array buffer
     (ARRAY_BUFFER or ELEMENT_ARRAY_BUFFER). It keeps track of
@@ -53,16 +53,13 @@ class Buffer(GLObject):
 
     @property
     def nbytes(self):
-        """ Buffer size in bytes """
-
+        """Buffer size in bytes"""
         return self._nbytes
 
     def set_subdata(self, data, offset=0, copy=False):
-        """ Set a sub-region of the buffer (deferred operation).
-
+        """Set a sub-region of the buffer (deferred operation).
         Parameters
         ----------
-
         data : ndarray
             Data to be uploaded
         offset: int
@@ -87,7 +84,7 @@ class Buffer(GLObject):
         self._glir.command('DATA', self._id, offset, data)
 
     def set_data(self, data, copy=False):
-        """ Set data in the buffer (deferred operation).
+        """Set data in the buffer (deferred operation).
 
         This completely resets the size and contents of the buffer.
 
@@ -113,7 +110,7 @@ class Buffer(GLObject):
             self._glir.command('DATA', self._id, 0, data)
 
     def resize_bytes(self, size):
-        """ Resize this buffer (deferred operation).
+        """Resize this buffer (deferred operation).
 
         Parameters
         ----------
@@ -130,7 +127,7 @@ class Buffer(GLObject):
 
 # -------------------------------------------------------- DataBuffer class ---
 class DataBuffer(Buffer):
-    """ GPU data buffer that is aware of data type and elements size
+    """GPU data buffer that is aware of data type and elements size
 
     Parameters
     ----------
@@ -153,11 +150,9 @@ class DataBuffer(Buffer):
         return data
 
     def set_subdata(self, data, offset=0, copy=False, **kwargs):
-        """ Set a sub-region of the buffer (deferred operation).
-
+        """Set a sub-region of the buffer (deferred operation).
         Parameters
         ----------
-
         data : ndarray
             Data to be uploaded
         offset: int
@@ -175,7 +170,7 @@ class DataBuffer(Buffer):
         Buffer.set_subdata(self, data=data, offset=offset, copy=copy)
 
     def set_data(self, data, copy=False, **kwargs):
-        """ Set data (deferred operation)
+        """Set data (deferred operation)
 
         Parameters
         ----------
@@ -199,36 +194,32 @@ class DataBuffer(Buffer):
 
     @property
     def dtype(self):
-        """ Buffer dtype """
-
+        """Buffer dtype"""
         return self._dtype
 
     @property
     def offset(self):
-        """ Buffer offset (in bytes) relative to base """
-
+        """Buffer offset (in bytes) relative to base"""
         return 0
 
     @property
     def stride(self):
-        """ Stride of data in memory """
+        """Stride of data in memory"""
         return self._stride
 
     @property
     def size(self):
-        """ Number of elements in the buffer """
+        """Number of elements in the buffer"""
         return self._size
 
     @property
     def itemsize(self):
-        """ The total number of bytes required to store the array data """
-
+        """The total number of bytes required to store the array data"""
         return self._itemsize
 
     @property
     def glsl_type(self):
-        """ GLSL declaration strings required for a variable to hold this data.
-        """
+        """GLSL declaration strings required for a variable to hold this data."""
         if self.dtype is None:
             return None
         dtshape = self.dtype[0].shape
@@ -240,13 +231,11 @@ class DataBuffer(Buffer):
         return 'attribute', dtype
 
     def resize_bytes(self, size):
-        """ Resize the buffer (in-place, deferred operation)
-
+        """Resize the buffer (in-place, deferred operation)
         Parameters
         ----------
         size : integer
             New buffer size in bytes
-
         Notes
         -----
         This clears any pending operations.
@@ -255,15 +244,13 @@ class DataBuffer(Buffer):
         self._size = size // self.itemsize
 
     def __getitem__(self, key):
-        """ Create a view on this buffer. """
-
+        """Create a view on this buffer."""
         view = DataBufferView(self, key)
         self._views.add(view)
         return view
 
     def __setitem__(self, key, data):
-        """ Set data (deferred operation) """
-
+        """Set data (deferred operation)"""
         # Setting a whole field of the buffer: only allowed if we have CPU
         # storage. Note this case (key is string) only happen with base buffer
         if isinstance(key, str):
@@ -310,8 +297,7 @@ class DataBuffer(Buffer):
 
 
 class DataBufferView(DataBuffer):
-    """ View on a sub-region of a DataBuffer.
-
+    """View on a sub-region of a DataBuffer.
     Parameters
     ----------
     base : DataBuffer
@@ -320,10 +306,8 @@ class DataBufferView(DataBuffer):
         The index into the base buffer that defines a sub-region of the buffer
         to view. String arguments select a single field from multi-field
         dtypes, and other allowed types select a subset of rows.
-
     Notes
     -----
-
     It is generally not necessary to instantiate this class manually; use
     ``base_buffer[key]`` instead.
     """
@@ -391,13 +375,12 @@ class DataBufferView(DataBuffer):
 
     @property
     def offset(self):
-        """ Buffer offset (in bytes) relative to base """
-
+        """Buffer offset (in bytes) relative to base"""
         return self._offset
 
     @property
     def base(self):
-        """Buffer base if this buffer is a view on another buffer. """
+        """Buffer base if this buffer is a view on another buffer."""
         return self._base
 
     def resize_bytes(self, size):
@@ -416,7 +399,7 @@ class DataBufferView(DataBuffer):
 
 # ------------------------------------------------------ VertexBuffer class ---
 class VertexBuffer(DataBuffer):
-    """ Buffer for vertex attribute data
+    """Buffer for vertex attribute data
 
     Parameters
     ----------
@@ -471,11 +454,10 @@ def _last_stack_str():
 
 # ------------------------------------------------------- IndexBuffer class ---
 class IndexBuffer(DataBuffer):
-    """ Buffer for index data
+    """Buffer for index data
 
     Parameters
     ----------
-
     data : ndarray | None
         Buffer data.
     """

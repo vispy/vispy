@@ -26,6 +26,7 @@ class Grid(Widget):
     **kwargs : dict
         Keyword arguments to pass to `Widget`.
     """
+
     def __init__(self, spacing=6, **kwargs):
         self._next_cell = [0, 0]  # row, col
         self._cells = {}
@@ -156,7 +157,6 @@ class Grid(Widget):
         widget : Widget
             The Widget to remove
         """
-
         self._grid_widgets = dict((key, val)
                                   for (key, val) in self._grid_widgets.items()
                                   if val[-1] != widget)
@@ -175,7 +175,6 @@ class Grid(Widget):
         col_span : int
             The number of columns to be occupied by this widget.
         """
-
         row = None
         col = None
 

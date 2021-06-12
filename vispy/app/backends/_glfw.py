@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
-"""
-vispy backend for glfw.
-"""
+"""vispy backend for glfw."""
 
 # To install GLFW on Ubuntu, use sudo apt-get install libglfw3.
 # On OSX, consider using brew.
@@ -123,7 +121,7 @@ capability = dict(  # things that can be set by the backend
 # ------------------------------------------------------- set_configuration ---
 
 def _set_config(c):
-    """Set gl configuration for GLFW """
+    """Set gl configuration for GLFW."""
     glfw.glfwWindowHint(glfw.GLFW_RED_BITS, c['red_size'])
     glfw.glfwWindowHint(glfw.GLFW_GREEN_BITS, c['green_size'])
     glfw.glfwWindowHint(glfw.GLFW_BLUE_BITS, c['blue_size'])
@@ -216,8 +214,7 @@ class ApplicationBackend(BaseApplicationBackend):
 # ------------------------------------------------------------------ canvas ---
 
 class CanvasBackend(BaseCanvasBackend):
-
-    """ Glfw backend for Canvas abstract class."""
+    """Glfw backend for Canvas abstract class."""
 
     # args are for BaseCanvasBackend, kwargs are for us.
     def __init__(self, *args, **kwargs):
@@ -292,6 +289,7 @@ class CanvasBackend(BaseCanvasBackend):
         self._next_key_text = {}
         self._vispy_canvas.set_current()
         self._vispy_canvas.events.initialize()
+        self._on_resize(self._id, size[0], size[1])
 
     def _vispy_warmup(self):
         etime = time() + 0.25

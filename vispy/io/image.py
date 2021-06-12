@@ -98,8 +98,7 @@ def _make_png(data, level=6):
 
 def read_png(filename):
     """Read a PNG file to RGB8 or RGBA8
-
-   Requires Pillow.
+    Requires Pillow.
 
     Parameters
     ----------
@@ -126,8 +125,8 @@ def read_png(filename):
         return y
     except ImportError:
         raise RuntimeError("read_png requires the Pillow package.")
-        
-        
+
+
 def write_png(filename, data):
     """Write a PNG file
 

@@ -19,7 +19,6 @@ from vispy.testing import assert_raises
 @requires_application()
 def test_set_data():
     """Test InfiniteLineVisual"""
-
     pos = 5.0
     color = [1.0, 1.0, 0.5, 0.5]
     expected_color = np.array(color, dtype=np.float32)
