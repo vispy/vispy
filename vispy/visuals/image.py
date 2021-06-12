@@ -692,9 +692,11 @@ class ImageVisual(Visual):
         data = np.asarray(image)
         if np.iscomplexobj(data):
             self._data_is_complex = True
+            # even though we're only ever using the first and/or second channels,
+            # without the third empty "channel", it doesn't render correctly.
+            # could be a bug in rg32f rendering?
             data = np.stack(
-                [data.real, data.imag, np.empty_like(data, np.float32)],
-                axis=-1,
+                [data.real, data.imag, np.empty_like(data, np.float32)], axis=-1
             )
         else:
             self._data_is_complex = False
