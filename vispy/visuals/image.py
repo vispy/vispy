@@ -161,7 +161,9 @@ class _CPUScaledTexture2D(Texture2D):
         Data will be filled in and the texture resized later.
 
         """
-        dtype = getattr(data, 'dtype', np.float32)
+        if np.iscomplexobj(data):
+            return np.zeros((1, 1, 2)).astype(np.float32)
+        dtype = getattr(data, "dtype", np.float32)
         num_channels = self._data_num_channels(data)
         return np.zeros((1, 1, num_channels)).astype(dtype)
 
@@ -690,7 +692,10 @@ class ImageVisual(Visual):
         data = np.asarray(image)
         if np.iscomplexobj(data):
             self._data_is_complex = True
-            data = np.stack([data.real, data.imag], axis=-1)
+            data = np.stack(
+                [data.real, data.imag, np.empty_like(data, np.float32)],
+                axis=-1,
+            )
         else:
             self._data_is_complex = False
         if _should_cast_to_f32(data.dtype):
@@ -919,7 +924,7 @@ class ImageVisual(Visual):
             fun = FunctionChain(
                 None, [Function(_c2l_red), fclim, fgamma, Function(self.cmap.glsl_map)]
             )
-        elif self._data.shape[2] == 2 and self.complex_mode:
+        elif self.complex_mode:
             fclim = Function(_apply_clim_float)
             fgamma = Function(_apply_gamma_float)
             chain = [

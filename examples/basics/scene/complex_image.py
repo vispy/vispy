@@ -34,18 +34,13 @@ view = canvas.central_widget.add_view()
 img_data = complex_ramp().astype(np.complex64)
 interpolation = "nearest"
 
-import matplotlib.pyplot as plt
-
-# plt.imshow(img_data.imag)
-# plt.show(block=False)
-
 image = scene.visuals.Image(
     img_data,
     interpolation=interpolation,
     texture_format="auto",
     clim=(0, 10),
     parent=view.scene,
-    complex_mode="imaginary",
+    complex_mode="magnitude",
 )
 
 # Set 2D camera (the camera will scale to the contents in the scene)
