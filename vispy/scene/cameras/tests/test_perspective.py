@@ -19,8 +19,6 @@ def test_perspective_render():
     with TestingCanvas(size=(120, 200)) as canvas:
 
         grid = canvas.central_widget.add_grid()
-        grid.padding = 20
-
         imdata = io.load_crate().astype('float32') / 255
 
         views = []
