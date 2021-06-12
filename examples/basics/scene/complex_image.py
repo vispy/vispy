@@ -32,15 +32,14 @@ view = canvas.central_widget.add_view()
 
 # Create the image
 img_data = complex_ramp().astype(np.complex64)
-interpolation = "nearest"
 
+# View it with "complex_mode=imaginary" 
 image = scene.visuals.Image(
     img_data,
-    interpolation=interpolation,
     texture_format="auto",
-    clim=(0, 10),
+    clim=(-10, 10),
     parent=view.scene,
-    complex_mode="magnitude",
+    complex_mode="imaginary",
 )
 
 # Set 2D camera (the camera will scale to the contents in the scene)
@@ -51,4 +50,3 @@ view.camera.zoom(1)
 
 if __name__ == "__main__" and sys.flags.interactive == 0:
     app.run()
-    
