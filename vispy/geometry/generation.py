@@ -89,8 +89,7 @@ def create_cube():
     return vertices, filled, outline
 
 
-def create_plane(width=1, height=1, width_segments=1, height_segments=1,
-                 direction='+z'):
+def create_plane(width=1, height=1, width_segments=1, height_segments=1, direction='+z'):
     """Generate vertices & indices for a filled and outlined plane.
 
     Parameters
@@ -121,80 +120,29 @@ def create_plane(width=1, height=1, width_segments=1, height_segments=1,
     .. [1] Cabello, R. (n.d.). PlaneBufferGeometry.js. Retrieved May 12, 2015,
         from http://git.io/vU1Fh
     """
-    x_grid = width_segments
-    y_grid = height_segments
+    w, h = width_segments + 1, height_segments + 1
+    vts = np.mgrid[-0.5:0.5:h*1j, -0.5:0.5:w*1j, :1]
+    vts = vts.T.reshape(-1,3).astype(np.float32)
+    normals = np.repeat([np.array([0,0,1], np.float32)], len(vts), axis=0)
+    texture = vts[:,:2] + 0.5
 
-    x_grid1 = x_grid + 1
-    y_grid1 = y_grid + 1
+    k = np.array([width, height, 1], dtype=np.float32)
+    o = np.array([0.5, 0.5, 0], dtype=np.float32)
+    lut = np.array({'x':[2,0,1], 'y':[1,2,0], 'z':[0,1,2]}[direction[1]])
+    vts[:] = vts[:,lut];  normals[:] = normals[:,lut]
+    if direction[0]=='-':  vts[:,lut>0] *= -1; normals[:,lut>0] *= 1
+    colors = np.hstack([vts+o[lut], np.ones((len(vts), 1), dtype=np.float32)])
+    
+    face_cell = np.array([[0, 1, 1+w, 0, 1+w, w]], dtype=np.uint32)
+    line_cell = np.array([[0, 1, 1, 1+w, 1+w, w, w, 0]], dtype=np.uint32)
+    dif_idx = np.arange(0,w*h-w,w)[:,None] + np.arange(0,w-1,1)
+    faces = dif_idx.reshape(-1,1) + face_cell
+    lines = dif_idx.reshape(-1,1) + line_cell
 
-    # Positions, normals and texcoords.
-    positions = np.zeros(x_grid1 * y_grid1 * 3)
-    normals = np.zeros(x_grid1 * y_grid1 * 3)
-    texcoords = np.zeros(x_grid1 * y_grid1 * 2)
-
-    y = np.arange(y_grid1) * height / y_grid - height / 2
-    x = np.arange(x_grid1) * width / x_grid - width / 2
-
-    positions[::3] = np.tile(x, y_grid1)
-    positions[1::3] = -np.repeat(y, x_grid1)
-
-    normals[2::3] = 1
-
-    texcoords[::2] = np.tile(np.arange(x_grid1) / x_grid, y_grid1)
-    texcoords[1::2] = np.repeat(1 - np.arange(y_grid1) / y_grid, x_grid1)
-
-    # Faces and outline.
-    faces, outline = [], []
-    for i_y in range(y_grid):
-        for i_x in range(x_grid):
-            a = i_x + x_grid1 * i_y
-            b = i_x + x_grid1 * (i_y + 1)
-            c = (i_x + 1) + x_grid1 * (i_y + 1)
-            d = (i_x + 1) + x_grid1 * i_y
-
-            faces.extend(((a, b, d), (b, c, d)))
-            outline.extend(((a, b), (b, c), (c, d), (d, a)))
-
-    positions = np.reshape(positions, (-1, 3))
-    texcoords = np.reshape(texcoords, (-1, 2))
-    normals = np.reshape(normals, (-1, 3))
-
-    faces = np.reshape(faces, (-1, 3)).astype(np.uint32)
-    outline = np.reshape(outline, (-1, 2)).astype(np.uint32)
-
-    direction = direction.lower()
-    if direction in ('-x', '+x'):
-        shift, neutral_axis = 1, 0
-    elif direction in ('-y', '+y'):
-        shift, neutral_axis = -1, 1
-    elif direction in ('-z', '+z'):
-        shift, neutral_axis = 0, 2
-
-    sign = -1 if '-' in direction else 1
-
-    positions = np.roll(positions, shift, -1)
-    normals = np.roll(normals, shift, -1) * sign
-    colors = np.ravel(positions)
-    colors = np.hstack((np.reshape(np.interp(colors,
-                                             (np.min(colors),
-                                              np.max(colors)),
-                                             (0, 1)),
-                                   positions.shape),
-                        np.ones((positions.shape[0], 1))))
-    colors[..., neutral_axis] = 0
-
-    vertices = np.zeros(positions.shape[0],
-                        [('position', np.float32, 3),
-                         ('texcoord', np.float32, 2),
-                         ('normal', np.float32, 3),
-                         ('color', np.float32, 4)])
-
-    vertices['position'] = positions
-    vertices['texcoord'] = texcoords
-    vertices['normal'] = normals
-    vertices['color'] = colors
-
-    return vertices, faces, outline
+    mesh = np.hstack([np.multiply(vts, k[lut], out=vts), texture, normals, colors])
+    mesh.dtype = np.dtype([('position', np.float32, 3), ('texcoord', np.float32, 2), 
+                           ('normal', np.float32, 3), ('color', np.float32, 4)])
+    return mesh.ravel(), faces.reshape(-1,3), lines.reshape(-1,2)
 
 
 def create_box(width=1, height=1, depth=1, width_segments=1, height_segments=1,
@@ -592,7 +540,6 @@ def create_arrow(rows, cols, radius=0.1, length=1.0,
 
     return MeshData(vertices=verts, faces=faces)
 
-
 def create_grid_mesh(xs, ys, zs):
     """Generate vertices and indices for an implicitly connected mesh.
 
@@ -618,26 +565,9 @@ def create_grid_mesh(xs, ys, zs):
     indices : ndarray
         The array of indices for the mesh.
     """
-    shape = xs.shape
-    length = shape[0] * shape[1]
-
-    vertices = np.zeros((length, 3))
-
-    vertices[:, 0] = xs.reshape(length)
-    vertices[:, 1] = ys.reshape(length)
-    vertices[:, 2] = zs.reshape(length)
-
-    basic_indices = np.array([0, 1, 1 + shape[1], 0,
-                              0 + shape[1], 1 + shape[1]],
-                             dtype=np.uint32)
-
-    inner_grid_length = (shape[0] - 1) * (shape[1] - 1)
-
-    offsets = np.arange(inner_grid_length)
-    offsets += np.repeat(np.arange(shape[0] - 1), shape[1] - 1)
-    offsets = np.repeat(offsets, 6)
-    indices = np.resize(basic_indices, len(offsets)) + offsets
-
-    indices = indices.reshape((len(indices) // 3, 3))
-
-    return vertices, indices
+    h, w = xs.shape
+    vts = np.array([xs, ys, zs], dtype=np.float32)
+    face_cell = np.array([[0, 1, 1+w, 0, 1+w, w]], dtype=np.uint32)
+    fase_index = np.arange(0,w*h-w,w)[:,None] + np.arange(0,w-1,1)
+    faces = fase_index.reshape(-1,1) + face_cell
+    return vts.reshape(3,-1).T, faces.reshape(-1,3)
