@@ -1130,6 +1130,7 @@ def get_colormap(name, *args, **kwargs):
         warnings.warn(f"Colormap '{name}' has been deprecated. "
                       f"Please import and create 'vispy.color.colormap.{cls.__name__}' "
                       "directly instead.", DeprecationWarning)
+        return cls()
 
     if isinstance(name, BaseColormap):
         return name
