@@ -607,7 +607,7 @@ class _Winter(BaseColormap):
                            np.sqrt(t))
 
 
-class _SingleHue(Colormap):
+class SingleHue(Colormap):
     """A colormap which is solely defined by the given hue and value.
 
     Given the color hue and value, this color map increases the saturation
@@ -643,10 +643,10 @@ class _SingleHue(Colormap):
             (hue, saturation_range[0], value),
             (hue, saturation_range[1], value)
         ], color_space='hsv')
-        super(_SingleHue, self).__init__(colors)
+        super(SingleHue, self).__init__(colors)
 
 
-class _HSL(Colormap):
+class HSL(Colormap):
     """A colormap which is defined by n evenly spaced points in a circular color space.
 
     This means that we change the hue value while keeping the
@@ -685,11 +685,11 @@ class _HSL(Colormap):
         colors = ColorArray([(hue, saturation, value) for hue in hues],
                             color_space='hsv')
 
-        super(_HSL, self).__init__(colors, controls=controls,
-                                   interpolation=interpolation)
+        super(HSL, self).__init__(colors, controls=controls,
+                                  interpolation=interpolation)
 
 
-class _HSLuv(Colormap):
+class HSLuv(Colormap):
     """A colormap which is defined by n evenly spaced points in the HSLuv space.
 
     Parameters
@@ -733,19 +733,19 @@ class _HSLuv(Colormap):
             [hsluv_to_rgb([hue, saturation, value]) for hue in hues],
         )
 
-        super(_HSLuv, self).__init__(colors, controls=controls,
-                                     interpolation=interpolation)
+        super(HSLuv, self).__init__(colors, controls=controls,
+                                    interpolation=interpolation)
 
 
-class _HUSL(_HSLuv):
+class _HUSL(HSLuv):
     """Deprecated."""
 
     def __init__(self, *args, **kwargs):
-        warnings.warn("_HUSL Colormap is deprecated. Please use '_HSLuv' instead.")
+        warnings.warn("_HUSL Colormap is deprecated. Please use 'HSLuv' instead.")
         super().__init__(*args, **kwargs)
 
 
-class _Diverging(Colormap):
+class Diverging(Colormap):
 
     def __init__(self, h_pos=20, h_neg=250, saturation=1.0, value=0.7,
                  center="light"):
@@ -759,10 +759,10 @@ class _Diverging(Colormap):
 
         colors = ColorArray([start, mid, end])
 
-        super(_Diverging, self).__init__(colors)
+        super(Diverging, self).__init__(colors)
 
 
-class _RedYellowBlueCyan(Colormap):
+class RedYellowBlueCyan(Colormap):
     """A colormap which goes red-yellow positive and blue-cyan negative
 
     Parameters
@@ -783,7 +783,7 @@ class _RedYellowBlueCyan(Colormap):
         colors = [(0., 1., 1., 1.), (0., 0., 1., 1.), (0., 0., 1., 0.),
                   (1., 0., 0., 0.), (1., 0., 0., 1.), (1., 1., 0., 1.)]
         colors = ColorArray(colors)
-        super(_RedYellowBlueCyan, self).__init__(
+        super(RedYellowBlueCyan, self).__init__(
             colors, controls=controls, interpolation='linear')
 
 
@@ -1068,8 +1068,8 @@ _colormaps = dict(
     hot=_Hot(),
     ice=_Ice(),
     winter=_Winter(),
-    light_blues=_SingleHue(),
-    orange=_SingleHue(hue=35),
+    light_blues=SingleHue(),
+    orange=SingleHue(hue=35),
     viridis=Colormap(ColorArray(_viridis_data)),
     # Diverging presets
     coolwarm=Colormap(ColorArray(
@@ -1080,28 +1080,31 @@ _colormaps = dict(
         ],
         color_space="hsv"
     )),
-    PuGr=_Diverging(145, 280, 0.85, 0.30),
-    GrBu=_Diverging(255, 133, 0.75, 0.6),
-    GrBu_d=_Diverging(255, 133, 0.75, 0.6, "dark"),
-    RdBu=_Diverging(220, 20, 0.75, 0.5),
+    PuGr=Diverging(145, 280, 0.85, 0.30),
+    GrBu=Diverging(255, 133, 0.75, 0.6),
+    GrBu_d=Diverging(255, 133, 0.75, 0.6, "dark"),
+    RdBu=Diverging(220, 20, 0.75, 0.5),
 
-    cubehelix=CubeHelixColormap(),
-    single_hue=_SingleHue(),
-    hsl=_HSL(),
-    husl=_HSLuv(),
-    hsluv=_HSLuv(),
-    diverging=_Diverging(),
-    RdYeBuCy=_RedYellowBlueCyan(),
+    cubehelix=CubeHelixColormap,
+    single_hue=SingleHue,
+    hsl=HSL,
+    husl=HSLuv,
+    diverging=Diverging,
+    RdYeBuCy=RedYellowBlueCyan,
 )
 
 
-def get_colormap(name):
+def get_colormap(name, *args, **kwargs):
     """Obtain a colormap.
 
     Parameters
     ----------
     name : str | Colormap
         Colormap name. Can also be a Colormap for pass-through.
+    *args:
+        Deprecated.
+    **kwargs
+        Deprecated.
 
     Examples
     --------
@@ -1111,15 +1114,22 @@ def get_colormap(name):
     .. versionchanged: 0.7
 
         Additional args/kwargs are no longer accepted. Colormap classes are
-        no longer created on the fly.
+        no longer created on the fly. To create a ``cubehelix``
+        (``CubeHelixColormap``), ``single_hue`` (``SingleHue``), ``hsl``
+        (``HSL``), ``husl`` (``HSLuv``), ``diverging`` (``Diverging``), or
+        ``RdYeBuCy`` (``RedYellowBlueCyan``) colormap you must import and
+        instantiate it directly from the ``vispy.color.colormap`` module.
 
     """
-    if name == "single_hue":
-        warnings.warn("Colormap 'single_hue' has been deprecated. "
-                      "Please use 'light_blues' instead.", DeprecationWarning)
-    if name == "husl":
-        warnings.warn("Colormap 'husl' has been deprecated. "
-                      "Please use 'hsluv' instead.", DeprecationWarning)
+    if args or kwargs:
+        warnings.warn("Creating a Colormap instance with 'get_colormap' is "
+                      "no longer supported. No additional arguments or "
+                      "keyword arguments should be passed.", DeprecationWarning)
+    if name in ("cubehelix", "single_hue", "hsl", "husl", "diverging", "RdYeBuCy"):
+        cls = _colormaps.get(name, "<deprecated>")
+        warnings.warn(f"Colormap '{name}' has been deprecated. "
+                      f"Please import and create 'vispy.color.colormap.{cls.__name__}' "
+                      "directly instead.", DeprecationWarning)
 
     if isinstance(name, BaseColormap):
         return name
