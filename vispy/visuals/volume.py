@@ -888,7 +888,8 @@ class VolumeVisual(Visual):
     def _compute_bounds(self, axis, view):
         if self._is_zyx:
             # axis=(x, y, z) -> shape(..., z, y, x)
-            return 0, self._vol_shape[-(axis + 1)]
+            ndim = len(self._vol_shape)
+            return 0, self._vol_shape[ndim - 1 - axis]
         else:
             # axis=(x, y, z) -> shape(x, y, z)
             return 0, self._vol_shape[axis]
