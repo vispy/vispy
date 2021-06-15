@@ -1084,12 +1084,12 @@ _colormaps = dict(
     GrBu_d=Diverging(255, 133, 0.75, 0.6, "dark"),
     RdBu=Diverging(220, 20, 0.75, 0.5),
 
-    cubehelix=CubeHelixColormap,
-    single_hue=SingleHue,
-    hsl=HSL,
-    husl=HSLuv,
-    diverging=Diverging,
-    RdYeBuCy=RedYellowBlueCyan,
+    cubehelix=CubeHelixColormap(),
+    single_hue=SingleHue(),
+    hsl=HSL(),
+    husl=HSLuv(),
+    diverging=Diverging(),
+    RdYeBuCy=RedYellowBlueCyan(),
 )
 
 
@@ -1129,7 +1129,6 @@ def get_colormap(name, *args, **kwargs):
         warnings.warn(f"Colormap '{name}' has been deprecated. "
                       f"Please import and create 'vispy.color.colormap.{cls.__name__}' "
                       "directly instead.", DeprecationWarning)
-        return cls()
 
     if isinstance(name, BaseColormap):
         return name
