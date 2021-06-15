@@ -25,16 +25,16 @@ def test_queue():
         assert cmds[i] == ('FOO', 'BAR', i)
 
     # Test filter 1
-    cmds1 = [('DATA', 1), ('SIZE', 1), ('FOO', 1), ('SIZE', 1), ('FOO', 1), 
+    cmds1 = [('DATA', 1), ('SIZE', 1), ('FOO', 1), ('SIZE', 1), ('FOO', 1),
              ('DATA', 1), ('DATA', 1)]
     cmds2 = [c[0] for c in q._shared._filter(cmds1, parser)]
     assert cmds2 == ['FOO', 'SIZE', 'FOO', 'DATA', 'DATA']
 
     # Test filter 2
-    cmds1 = [('DATA', 1), ('SIZE', 1), ('FOO', 1), ('SIZE', 2), ('SIZE', 2), 
+    cmds1 = [('DATA', 1), ('SIZE', 1), ('FOO', 1), ('SIZE', 2), ('SIZE', 2),
              ('DATA', 2), ('SIZE', 1), ('FOO', 1), ('DATA', 1), ('DATA', 1)]
     cmds2 = q._shared._filter(cmds1, parser)
-    assert cmds2 == [('FOO', 1), ('SIZE', 2), ('DATA', 2), ('SIZE', 1), 
+    assert cmds2 == [('FOO', 1), ('SIZE', 2), ('DATA', 2), ('SIZE', 1),
                      ('FOO', 1), ('DATA', 1), ('DATA', 1)]
 
     # Define shader
@@ -94,11 +94,14 @@ def test_log_parser():
     assert lines[i].startswith(expected[0])
     assert lines[i].endswith(expected[1])
     assert int(lines[i][len(expected[0]):-len(expected[1])]) is not None
-    i += 1
 
     # The 'CURRENT' command may have been called multiple times
-    while lines[i] == lines[i - 1]:
+    while lines[i].startswith('["CURRENT",'):
         i += 1
+        if lines[i] == json.dumps(['FUNC', 'colorMask', False, False, False, True]):
+            # Qt workaround, see #2040
+            i += 4
+
     assert lines[i] == json.dumps(['FUNC', 'clearColor', 1.0, 1.0, 1.0, 1.0])
     i += 1
     assert lines[i] == json.dumps(['FUNC', 'clear', 17664])
