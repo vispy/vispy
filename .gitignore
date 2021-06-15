@@ -29,3 +29,4 @@ node_modules/
 vispy/static/
 vispy/version.py
 .vscode
+vispy/visuals/text/_sdf_cpu*.pyd
