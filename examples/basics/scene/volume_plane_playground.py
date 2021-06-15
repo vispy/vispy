@@ -4,7 +4,6 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 # vispy: gallery 2
-import mrcfile
 """
 Example volume rendering
 
@@ -13,12 +12,8 @@ Controls:
 * 2 -  toggle between volume rendering modes
 * [] - shift along plane normal
 * {} - decrease/increase plane thickness
-With fly camera:
 
-* WASD or arrow keys - move around
-* SPACE - brake
-* FC - move up-down
-* IJKL or mouse - look around
+* x/y/z/o - set plane normal along x/y/z or [1,1,1] oblique axis
 """
 
 from itertools import cycle
@@ -30,14 +25,10 @@ from vispy.color import get_colormaps, BaseColormap
 from vispy.visuals.transforms import STTransform
 
 # Read volume
-# vol = np.load(io.load_data_file('volume/stent.npz'))['arr_0']
-HIV = '/Users/aburt/Playground/visualise_particles/TS_01.mrc_10.00Apx.mrc'
-CELL = '/Users/aburt/Playground/visualise_particles/Liang_denoised_mycoplasma/00287_10.00Apx_denoised.mrc'
-vol = mrcfile.open(HIV).data * -1
+vol = np.load(io.load_data_file('volume/stent.npz'))['arr_0']
 
 # Prepare canvas
 canvas = scene.SceneCanvas(keys='interactive', size=(800, 600), show=True)
-canvas.measure_fps()
 
 # Set up a viewbox to display the image with interactive pan/zoom
 view = canvas.central_widget.add_view()
@@ -106,8 +97,8 @@ def on_mouse_move(event):
 @canvas.events.key_press.connect
 def on_key_press(event):
     if event.text == '1':
-        methods = ['mip', 'average', 'minip']
-        method = methods[(methods.index(volume.method) + 1) % 3]
+        methods = ['mip', 'average']
+        method = methods[(methods.index(volume.method) + 1) % 2]
         print("Volume render method: %s" % method)
         volume.method = method
     elif event.text == '2':
