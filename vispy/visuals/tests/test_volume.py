@@ -47,6 +47,18 @@ def test_volume():
 
 
 @requires_pyopengl()
+def test_volume_bounds():
+    vol = np.zeros((20, 30, 40), 'float32')
+    vol[8:16, 8:16, :] = 1.0
+
+    # Create
+    V = scene.visuals.Volume(vol)
+    assert V._compute_bounds(0, V) == (0, 40)  # x
+    assert V._compute_bounds(1, V) == (0, 30)  # y
+    assert V._compute_bounds(2, V) == (0, 20)  # z
+
+
+@requires_pyopengl()
 @requires_application()
 def test_volume_draw():
     with TestingCanvas(bgcolor='k', size=(100, 100)) as c:
