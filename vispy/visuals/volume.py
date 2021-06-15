@@ -85,6 +85,7 @@ uniform vec3 u_shape;
 uniform vec2 clim;
 uniform float gamma;
 uniform float u_threshold;
+uniform float u_attenuation;
 uniform float u_relative_step_size;
 
 //varyings
@@ -188,7 +189,7 @@ vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
         float lambertTerm = clamp( dot(N,L), 0.0, 1.0 );
         vec3 H = normalize(L+V); // Halfway vector
         float specularTerm = pow( max(dot(H,N),0.0), u_shininess);
-        
+
         // Calculate mask
         float mask1 = lightEnabled;
         
@@ -313,8 +314,8 @@ RAYCASTING_SETUP_PLANE = """
                                            u_plane_position, u_plane_normal);
     // and texture coordinates
     vec3 intersection_tex = intersection / u_shape;
-    
-    // discard if intersection not in texture
+
+    // discard fragment if intersection not in texture
     if (intersection_tex.x > 1.0 )
         discard;
     if (intersection_tex.y > 1.0 )
@@ -443,7 +444,7 @@ ADDITIVE_SNIPPETS = dict(
         """,
     in_loop="""
         color = applyColormap(val);
-        
+
         integrated_color = 1.0 - (1.0 - integrated_color) * (1.0 - color);
         """,
     after_loop="""
@@ -495,7 +496,10 @@ AVG_SNIPPETS = dict(
         """,
 )
 
-RENDERING_MODES = ('plane', 'volume')
+RAYCASTING_MODE_SNIPPETS = {
+    'volume': RAYCASTING_SETUP_VOLUME,
+    'plane': RAYCASTING_SETUP_PLANE,
+}
 
 RENDERING_METHOD_SNIPPETS = {
     'mip': MIP_SNIPPETS,
@@ -507,15 +511,8 @@ RENDERING_METHOD_SNIPPETS = {
     'average': AVG_SNIPPETS,
 }
 
-FRAG_DICT_VOLUME = {
-    k: FRAG_SHADER.format(raycasting_setup=RAYCASTING_SETUP_VOLUME, **snippets)
-    for k, snippets in RENDERING_METHOD_SNIPPETS.items()
-}
-
-FRAG_DICT_PLANE = {
-    k: FRAG_SHADER.format(raycasting_setup=RAYCASTING_SETUP_PLANE, **snippets)
-    for k, snippets in RENDERING_METHOD_SNIPPETS.items()
-}
+RAYCASTING_MODES = RAYCASTING_MODE_SNIPPETS.keys()
+RENDERING_METHODS = RENDERING_METHOD_SNIPPETS.keys()
 
 
 class VolumeVisual(Visual):
@@ -860,10 +857,9 @@ class VolumeVisual(Visual):
     @method.setter
     def method(self, method):
         # Check and save
-        known_methods = list(RENDERING_METHOD_SNIPPETS.keys())
-        if method not in known_methods:
+        if method not in RENDERING_METHODS:
             raise ValueError('Volume render method should be in %r, not %r' %
-                             (known_methods, method))
+                             (RENDERING_METHODS, method))
         self._method = method
         self.update_frag_shader_on_gpu()
 
@@ -874,8 +870,9 @@ class VolumeVisual(Visual):
 
     @mode.setter
     def mode(self, mode):
-        if mode not in RENDERING_MODES:
-            raise ValueError(f"Volume render mode should be in {RENDERING_MODES}, not {mode}")
+        if mode not in RAYCASTING_MODES:
+            raise ValueError(
+                f"Volume render mode should be in {RAYCASTING_MODES}, not {mode}")
         self._mode = mode
         self.update_frag_shader_on_gpu()
 
@@ -886,7 +883,7 @@ class VolumeVisual(Visual):
         if 'u_attenuation' in self.shared_program:
             self.shared_program['u_attenuation'] = None
 
-        self.shared_program.frag = self.frag_dict[self.method]
+        self.shared_program.frag = self.fragment_shaders[(self.mode, self.method)]
         self.shared_program.frag['sampler_type'] = self._tex.glsl_sampler_type
         self.shared_program.frag['sample'] = self._tex.glsl_sample
         self.shared_program.frag['cmap'] = Function(self._cmap.glsl_map)
@@ -895,11 +892,18 @@ class VolumeVisual(Visual):
         self.update()
 
     @property
-    def frag_dict(self):
-        if self.mode == 'volume':
-            return FRAG_DICT_VOLUME
-        if self.mode == 'plane':
-            return FRAG_DICT_PLANE
+    def fragment_shaders(self):
+        """a dict of available fragment shaders:
+        { (raycasting_mode, rendering method): fragment_shader }
+        """
+        fragment_shaders = {
+            (mode_name, method_name): FRAG_SHADER.format(
+                raycasting_setup=mode_snippet, **method_snippets
+            )
+            for mode_name, mode_snippet in RAYCASTING_MODE_SNIPPETS.items()
+            for method_name, method_snippets in RENDERING_METHOD_SNIPPETS.items()
+        }
+        return fragment_shaders
 
     @property
     def threshold(self):
