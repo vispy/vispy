@@ -5,11 +5,11 @@
 # -----------------------------------------------------------------------------
 # vispy: gallery 2
 """
-Example volume rendering
+Example volume rendering with plane rendering
 
 Controls:
 * 1  - toggle between volume rendering methods
-* 2 -  toggle between volume rendering modes
+* 2 -  toggle between volume rendering modes ('volume', 'plane')
 * [] - shift along plane normal
 * {} - decrease/increase plane thickness
 
