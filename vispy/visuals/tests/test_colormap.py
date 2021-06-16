@@ -11,7 +11,7 @@ from vispy.scene.visuals import Image
 from vispy.testing import (requires_application, TestingCanvas,
                            run_tests_if_main)
 from vispy.testing.image_tester import assert_image_approved
-from vispy.color import (get_colormap, Colormap)
+from vispy.color import Colormap
 
 size = (100, 100)
 
@@ -58,10 +58,12 @@ def test_colormap_discrete_nu():
 @requires_application()
 def test_colormap_single_hue():
     """Test colormap support using a single hue()"""
+    from vispy.color.colormap import SingleHue
     with TestingCanvas(size=size, bgcolor='w') as c:
         idata = np.linspace(255, 0, size[0]*size[1]).astype(np.ubyte)
         data = idata.reshape((size[0], size[1]))
-        image = Image(cmap=get_colormap('single_hue', 255),
+        cmap = SingleHue(255)
+        image = Image(cmap=cmap,
                       clim='auto', parent=c.scene)
         image.set_data(data)
         assert_image_approved(c.render(), "visuals/colormap_hue.png")
@@ -81,10 +83,12 @@ def test_colormap_coolwarm():
 @requires_application()
 def test_colormap_CubeHelix():
     """Test colormap support using cubehelix colormap in only blues"""
+    from vispy.color.colormap import CubeHelixColormap
     with TestingCanvas(size=size, bgcolor='w') as c:
         idata = np.linspace(255, 0, size[0]*size[1]).astype(np.ubyte)
         data = idata.reshape((size[0], size[1]))
-        image = Image(cmap=get_colormap('cubehelix', rot=0, start=0),
+        cmap = CubeHelixColormap(rot=0, start=0)
+        image = Image(cmap=cmap,
                       clim='auto', parent=c.scene)
         image.set_data(data)
         assert_image_approved(c.render(), "visuals/colormap_cubehelix.png")
