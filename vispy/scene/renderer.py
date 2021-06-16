@@ -229,6 +229,10 @@ class WeightedTransparencyRenderer:
     def __init__(self, canvas):
         self.canvas = canvas
 
+        # TODO: Observe when a new scene is set in the canvas, and update the
+        # callback.
+        canvas.scene.events.children_change.connect(self.on_scene_changed)
+
         width, height = canvas.size
         self.color_buffer = gloo.Texture2D((height, width, 4), format='rgba')
         self.depth_buffer = gloo.RenderBuffer((height, width), 'depth')
@@ -251,9 +255,6 @@ class WeightedTransparencyRenderer:
 
         self.framebuffer = gloo.FrameBuffer(depth=self.depth_buffer)
 
-        self.nodes = _classify_nodes(self.canvas.scene)
-        self.prog_visuals = _extend_programs(self.nodes)
-
         # Post composition.
         # A quad (two triangles) spanning the framebuffer area.
         quad_corners = [(-1, -1), (1, -1), (1, 1), (-1, 1)]
@@ -273,7 +274,11 @@ class WeightedTransparencyRenderer:
         prog_copy['a_position'] = quad_corners
         self.prog_copy = prog_copy
 
+        self._scene_changed = True
         self._draw_order = {}
+
+    def on_scene_changed(self, event):
+        self._scene_changed = True
 
     def resize(self, size):
         height_width = size[::-1]
@@ -304,21 +309,28 @@ class WeightedTransparencyRenderer:
         # make sure this canvas's context is active
         canvas.set_current()
 
-        if subset is None:
-            in_subset = {node: True for node in self.nodes}
-        elif subset == 'opaque':
-            in_subset = {
-                node: prop['drawable'] and not prop['transparent']
-                for node, prop in self.nodes.items()
-            }
-        elif subset == 'transparent':
-            in_subset = {
-                node: prop['drawable'] and prop['transparent']
-                for node, prop in self.nodes.items()
-            }
-
         try:
             canvas._drawing = True
+
+            if self._scene_changed:
+                self.nodes = _classify_nodes(self.canvas.scene)
+                self.prog_visuals = _extend_programs(self.nodes)
+                self._draw_order = {}
+                self._scene_changed = False
+
+            if subset is None:
+                in_subset = {node: True for node in self.nodes}
+            elif subset == 'opaque':
+                in_subset = {
+                    node: prop['drawable'] and not prop['transparent']
+                    for node, prop in self.nodes.items()
+                }
+            elif subset == 'transparent':
+                in_subset = {
+                    node: prop['drawable'] and prop['transparent']
+                    for node, prop in self.nodes.items()
+                }
+
             # get order to draw visuals
             if visual not in self._draw_order:
                 self._draw_order[visual] = canvas._generate_draw_order(visual)

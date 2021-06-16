@@ -7,6 +7,7 @@ from __future__ import division
 import weakref
 import numpy as np
 
+from . import renderer
 from .. import gloo
 from .. import app
 from .visuals import VisualNode
@@ -132,6 +133,7 @@ class SceneCanvas(app.Canvas, Frozen):
         self.transforms = TransformSystem(canvas=self)
         self._bgcolor = Color(bgcolor).rgba
         self._transparency = transparency
+        self._renderer = None
 
         # Set to True to enable sending mouse events even when no button is
         # pressed. Disabled by default because it is very expensive. Also
@@ -148,6 +150,10 @@ class SceneCanvas(app.Canvas, Frozen):
         self.events.mouse_wheel.connect(self._process_mouse_event)
 
         self.scene = SubScene()
+
+        if transparency == 'weighted':
+            self._renderer = renderer.WeightedTransparencyRenderer(self)
+
         self.freeze()
 
     @property
@@ -221,10 +227,7 @@ class SceneCanvas(app.Canvas, Frozen):
         # Now that a draw event is going to be handled, open up the
         # scheduling of further updates
         self._update_pending = False
-        if self._transparency == "weighted":
-            self._draw_scene_with_transparency(bgcolor=self._bgcolor)
-        else:
-            self._draw_scene()
+        self._draw_scene()
 
     def render(self, region=None, size=None, bgcolor=None, crop=None):
         """Render the scene to an offscreen buffer and return the image array.
@@ -273,15 +276,11 @@ class SceneCanvas(app.Canvas, Frozen):
         if bgcolor is None:
             bgcolor = self._bgcolor
         self.context.clear(color=bgcolor, depth=True)
-        self.draw_visual(self.scene)
 
-    def _draw_scene_with_transparency(self, bgcolor=None):
-        if not hasattr(self, '_renderer'):
-            from .renderer import WeightedTransparencyRenderer
-            self.unfreeze()
-            self._renderer = WeightedTransparencyRenderer(self)
-            self.freeze()
-        self._renderer.render(bgcolor)
+        if self._renderer is not None:
+            self._renderer.render(bgcolor)
+        else:
+            self.draw_visual(self.scene)
 
     def draw_visual(self, visual, event=None):
         """Draw a visual and its children to the canvas or currently active
