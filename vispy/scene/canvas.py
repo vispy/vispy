@@ -518,7 +518,7 @@ class SceneCanvas(app.Canvas, Frozen):
         if len(self._vp_stack) == 0:
             self.context.set_viewport(0, 0, *self.physical_size)
 
-        if hasattr(self, '_renderer'):
+        if self._renderer is not None:
             self._renderer.resize(self.physical_size)
 
     def on_close(self, event):
