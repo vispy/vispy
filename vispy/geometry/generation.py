@@ -121,28 +121,33 @@ def create_plane(width=1, height=1, width_segments=1, height_segments=1, directi
         from http://git.io/vU1Fh
     """
     w, h = width_segments + 1, height_segments + 1
-    vts = np.mgrid[-0.5:0.5:h*1j, -0.5:0.5:w*1j, :1]
-    vts = vts.T.reshape(-1,3).astype(np.float32)
-    normals = np.repeat([np.array([0,0,1], np.float32)], len(vts), axis=0)
-    texture = vts[:,:2] + 0.5
+    vts = np.mgrid[-0.5:0.5:w*1j, -0.5:0.5:h*1j, :1]
+    vts = vts.T.reshape(-1, 3).astype(np.float32)
 
-    k = np.array([width, height, 1], dtype=np.float32)
-    o = np.array([0.5, 0.5, 0], dtype=np.float32)
-    lut = np.array({'x':[2,0,1], 'y':[1,2,0], 'z':[0,1,2]}[direction[1]])
-    vts[:] = vts[:,lut];  normals[:] = normals[:,lut]
-    if direction[0]=='-':  vts[:,lut>0] *= -1; normals[:,lut>0] *= 1
-    colors = np.hstack([vts+o[lut], np.ones((len(vts), 1), dtype=np.float32)])
+    normals = np.repeat([np.array([0, 0, 1], np.float32)], len(vts), axis=0)
+    texture = vts[:, :2] + 0.5
+
+    scale = np.array([width, height, 1], dtype=np.float32)
+    offset = np.array([0.5, 0.5, 0], dtype=np.float32)
+
+    lut = np.array({'x': [2, 0, 1], 'y': [1, 2, 0], 'z': [0, 1, 2]}[direction[1]])
+    vts[:], normals[:] = vts[:, lut], normals[:, lut]
+    if direction[0]=='-': vts[:, lut>0] *= -1
+    if direction[0]=='-': normals[:, lut>0] *= -1
+    colors = np.hstack([vts+offset[lut], np.ones((len(vts), 1), dtype=np.float32)])
     
     face_cell = np.array([[0, 1, 1+w, 0, 1+w, w]], dtype=np.uint32)
     line_cell = np.array([[0, 1, 1, 1+w, 1+w, w, w, 0]], dtype=np.uint32)
-    dif_idx = np.arange(0,w*h-w,w)[:,None] + np.arange(0,w-1,1)
-    faces = dif_idx.reshape(-1,1) + face_cell
-    lines = dif_idx.reshape(-1,1) + line_cell
+    dif_idx = np.arange(0, w*h-w, w)[:, None] + np.arange(0, w-1, 1)
 
-    mesh = np.hstack([np.multiply(vts, k[lut], out=vts), texture, normals, colors])
+    faces = dif_idx.reshape(-1, 1) + face_cell
+    lines = dif_idx.reshape(-1, 1) + line_cell
+
+    mesh = np.hstack([np.multiply(vts, scale[lut], out=vts), texture, normals, colors])
     mesh.dtype = np.dtype([('position', np.float32, 3), ('texcoord', np.float32, 2), 
                            ('normal', np.float32, 3), ('color', np.float32, 4)])
-    return mesh.ravel(), faces.reshape(-1,3), lines.reshape(-1,2)
+
+    return mesh.ravel(), faces.reshape(-1, 3), lines.reshape(-1, 2)
 
 
 def create_box(width=1, height=1, depth=1, width_segments=1, height_segments=1,
@@ -540,6 +545,7 @@ def create_arrow(rows, cols, radius=0.1, length=1.0,
 
     return MeshData(vertices=verts, faces=faces)
 
+
 def create_grid_mesh(xs, ys, zs):
     """Generate vertices and indices for an implicitly connected mesh.
 
@@ -568,6 +574,6 @@ def create_grid_mesh(xs, ys, zs):
     h, w = xs.shape
     vts = np.array([xs, ys, zs], dtype=np.float32)
     face_cell = np.array([[0, 1, 1+w, 0, 1+w, w]], dtype=np.uint32)
-    fase_index = np.arange(0,w*h-w,w)[:,None] + np.arange(0,w-1,1)
-    faces = fase_index.reshape(-1,1) + face_cell
-    return vts.reshape(3,-1).T, faces.reshape(-1,3)
+    fase_index = np.arange(0, w*h-w, w)[:,None] + np.arange(0, w-1, 1)
+    faces = fase_index.reshape(-1, 1) + face_cell
+    return vts.reshape(3, -1).T, faces.reshape(-1, 3)

@@ -331,8 +331,8 @@ class MeshData(object):
             # vertFaces = self.get_vertex_faces()
             self._vertex_normals = np.zeros(self._vertices.shape, dtype=np.float32)
             # fn /= np.linalg.norm(fn, axis=1)[:,None]
-            np.add.at(self._vertex_normals, self._faces.T, faceNorms[None,:,:])
-            v = np.linalg.norm(self._vertex_normals, axis=1)[:,None]
+            np.add.at(self._vertex_normals, self._faces.T, faceNorms[None, :, :])
+            v = np.linalg.norm(self._vertex_normals, axis=1)[:, None]
             self._vertex_normals /= np.clip(v, 1e-5, 1e5, out=v)
         if indexed is None:
             return self._vertex_normals
