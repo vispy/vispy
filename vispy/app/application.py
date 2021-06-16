@@ -241,14 +241,13 @@ class Application(object):
                            'side effects.' %
                            (native_module_name, name, str(mod.why_not)))
                     logger.warning(msg)
-                else:
-                    if backend_name is not None:
-                        # Inform only if one isn't available
-                        logger.info(msg)
+                elif backend_name is not None:
+                    # Inform only if one isn't available
+                    logger.warning(msg)
             else:
                 # Success!
                 self._backend_module = mod
-                logger.debug('Selected backend %s' % module_name)
+                logger.info('Selected backend %s' % module_name)
                 break
         else:
             raise RuntimeError('Could not import any of the backends. '

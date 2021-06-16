@@ -69,7 +69,7 @@ def _init():
         'gl_debug': False,
         'glir_file': '',
         'include_path': [],
-        'logging_level': 'info',
+        'logging_level': 'warning',
         'qt_lib': 'any',
         'dpi': None,
         'profile': None,

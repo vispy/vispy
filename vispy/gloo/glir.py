@@ -1285,8 +1285,8 @@ class GlirProgram(GlirObject):
     def _validate(self):
         # Validate ourselves
         if self._unset_variables:
-            logger.info('Program has unset variables: %r' %
-                        self._unset_variables)
+            logger.warning('Program has unset variables: %r' %
+                           self._unset_variables)
         # Validate via OpenGL
         gl.glValidateProgram(self._handle)
         if not gl.glGetProgramParameter(self._handle,
