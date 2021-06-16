@@ -104,6 +104,14 @@ Currently, the main subpackages are:
 The API of all public interfaces are subject to change in the future,
 although **app** and **gloo** are *relatively* stable at this point.
 
+Code of Conduct
+---------------
+
+The VisPy community requires its members to abide by the
+`Code of Conduct <./CODE_OF_CONDUCT>`_. In this CoC you will find the
+expectations of members, the penalties for violating these expectations, and
+how violations can be reported to the members of the community in charge of
+enforcing this Code of Conduct.
 
 Genesis
 -------
@@ -127,7 +135,8 @@ External links
    list <https://groups.google.com/forum/#!forum/vispy>`__
 -  `Dev mailing
    list <https://groups.google.com/forum/#!forum/vispy-dev>`__
--  `Dev chat room <https://gitter.im/vispy/vispy>`__
+-  `Chat room <https://gitter.im/vispy/vispy>`__
+-  `Developer chat room <https://gitter.im/vispy/vispy-dev>`__
 -  `Wiki <http://github.com/vispy/vispy/wiki>`__
 -  `Gallery <http://vispy.org/gallery.html>`__
 -  `Documentation <http://vispy.readthedocs.org>`__
