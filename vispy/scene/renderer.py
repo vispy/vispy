@@ -438,7 +438,6 @@ class WeightedTransparencyRenderer:
         # the opaque.
 
         canvas.context.set_state(
-            preset=None,
             depth_test=False,
             blend=True,
             depth_mask=False,
