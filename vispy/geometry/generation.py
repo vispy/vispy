@@ -132,8 +132,8 @@ def create_plane(width=1, height=1, width_segments=1, height_segments=1, directi
 
     lut = np.array({'x': [2, 0, 1], 'y': [1, 2, 0], 'z': [0, 1, 2]}[direction[1]])
     vts[:], normals[:] = vts[:, lut], normals[:, lut]
-    if direction[0]=='-': vts[:, lut>0] *= -1
-    if direction[0]=='-': normals[:, lut>0] *= -1
+    vts[:, lut>0] *= {'+': 1, '-': -1}[direction[0]]
+    normals[:, lut>0] *= {'+': 1, '-': -1}[direction[0]]
     colors = np.hstack([vts+offset[lut], np.ones((len(vts), 1), dtype=np.float32)])
     
     face_cell = np.array([[0, 1, 1+w, 0, 1+w, w]], dtype=np.uint32)
@@ -574,6 +574,6 @@ def create_grid_mesh(xs, ys, zs):
     h, w = xs.shape
     vts = np.array([xs, ys, zs], dtype=np.float32)
     face_cell = np.array([[0, 1, 1+w, 0, 1+w, w]], dtype=np.uint32)
-    fase_index = np.arange(0, w*h-w, w)[:,None] + np.arange(0, w-1, 1)
+    fase_index = np.arange(0, w*h-w, w)[:, None] + np.arange(0, w-1, 1)
     faces = fase_index.reshape(-1, 1) + face_cell
     return vts.reshape(3, -1).T, faces.reshape(-1, 3)
