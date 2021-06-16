@@ -38,5 +38,5 @@ else:
         from . import _qt  # noqa
         from ._qt import *  # noqa
     else:
-        logger.info('%s already imported, cannot switch to %s'
-                    % (backends.qt_lib, 'pyqt4'))
+        logger.warning('%s already imported, cannot switch to %s'
+                       % (backends.qt_lib, 'pyqt4'))
