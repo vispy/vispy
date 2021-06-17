@@ -314,6 +314,9 @@ class WeightedTransparencyRenderer:
 
             if self._scene_changed:
                 self.nodes = _classify_nodes(self.canvas.scene)
+                # XXX(asnt): Check if we need to delete the old program hooks
+                # before adding the new ones or if they get deleted
+                # automatically.
                 self.prog_visuals = _extend_programs(self.nodes)
                 self._draw_order = {}
                 self._scene_changed = False
