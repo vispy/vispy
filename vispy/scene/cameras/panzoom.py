@@ -11,6 +11,9 @@ from ...geometry import Rect
 from ...visuals.transforms import STTransform, MatrixTransform
 
 
+DEFAULT_RECT_TUPLE = (0, 0, 1, 1)
+
+
 class PanZoomCamera(BaseCamera):
     """Camera implementing 2D pan/zoom mouse interaction.
 
@@ -42,8 +45,6 @@ class PanZoomCamera(BaseCamera):
         * RMB or scroll: zooms the view
 
     """
-
-    DEFAULT_RECT_TUPLE = (0, 0, 1, 1)
 
     _state_props = BaseCamera._state_props + ('rect', )
 
