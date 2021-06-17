@@ -17,6 +17,7 @@ from .cube import CubeVisual  # noqa
 from .ellipse import EllipseVisual  # noqa
 from .gridlines import GridLinesVisual  # noqa
 from .image import ImageVisual  # noqa
+from .image_complex import ComplexImageVisual  # noqa
 from .gridmesh import GridMeshVisual  # noqa
 from .histogram import HistogramVisual  # noqa
 from .infinite_line import InfiniteLineVisual  # noqa

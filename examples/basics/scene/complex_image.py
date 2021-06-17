@@ -34,7 +34,7 @@ view = canvas.central_widget.add_view()
 img_data = complex_ramp().astype(np.complex64)
 
 # View it with "complex_mode=imaginary" 
-image = scene.visuals.Image(
+image = scene.visuals.ComplexImage(
     img_data,
     texture_format="auto",
     clim=(-10, 10),
