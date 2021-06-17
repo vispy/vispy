@@ -495,7 +495,12 @@ class SceneCanvas(app.Canvas, Frozen):
         """
         try:
             self._scene.picking = True
+            # Picking requires the default renderer. Temporarily disable any
+            # other activated renderer.
+            renderer = self._renderer
+            self._renderer = None
             img = self.render(bgcolor=(0, 0, 0, 0), crop=crop)
+            self._renderer = renderer
         finally:
             self._scene.picking = False
         img = img.astype('int32') * [2**0, 2**8, 2**16, 2**24]
