@@ -20,7 +20,7 @@ def complex_ramp(size=512, phase_range=(-np.pi, np.pi), mag_range=(0, 10)):
     m0, m1 = mag_range
     mag_ramp = np.linspace(m1, m0 + 1 / size, size)
     phase_ramp, mag_ramp = np.meshgrid(phase_ramp, mag_ramp)
-    return mag_ramp * np.exp(1j * phase_ramp)
+    return (mag_ramp * np.exp(1j * phase_ramp)).astype(np.complex64)
 
 
 canvas = scene.SceneCanvas(keys="interactive")
@@ -31,16 +31,10 @@ canvas.show()
 view = canvas.central_widget.add_view()
 
 # Create the image
-img_data = complex_ramp().astype(np.complex64)
+img_data = complex_ramp()
 
-# View it with "complex_mode=imaginary" 
-image = scene.visuals.ComplexImage(
-    img_data,
-    texture_format="auto",
-    clim=(-10, 10),
-    parent=view.scene,
-    complex_mode="imaginary",
-)
+# View it with "complex_mode=imaginary"
+image = scene.visuals.ComplexImage(img_data, parent=view.scene, complex_mode="phase")
 
 # Set 2D camera (the camera will scale to the contents in the scene)
 view.camera = scene.PanZoomCamera(aspect=1)
