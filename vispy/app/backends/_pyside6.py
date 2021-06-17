@@ -55,5 +55,5 @@ else:
         from . import _qt  # noqa
         from ._qt import *  # noqa
     else:
-        logger.info('%s already imported, cannot switch to %s'
-                    % (backends.qt_lib, 'pyside6'))
+        logger.warning('%s already imported, cannot switch to %s'
+                       % (backends.qt_lib, 'pyside6'))

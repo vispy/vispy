@@ -10,3 +10,4 @@ pytest-sugar
 scipy
 networkx
 hsluv
+kiwisolver

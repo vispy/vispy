@@ -845,6 +845,16 @@ class CanvasBackendDesktop(QtBaseCanvasBackend, QGLWidget):
         self._vispy_canvas.set_current()
         self._vispy_canvas.events.draw(region=None)
 
+        # Clear the alpha channel with QOpenGLWidget (Qt >= 5.4), otherwise the
+        # window is translucent behind non-opaque objects.
+        # Reference:  MRtrix3/mrtrix3#266
+        if QT5_NEW_API or QT6_NEW_API:
+            context = self._vispy_canvas.context
+            context.set_color_mask(False, False, False, True)
+            context.clear(color=True, depth=False, stencil=False)
+            context.set_color_mask(True, True, True, True)
+            context.flush()
+
 
 # Select CanvasBackend
 if USE_EGL:
