@@ -310,6 +310,10 @@ class ImageVisual(Visual):
 
         """
         data = np.asarray(image)
+        if np.iscomplexobj(data):
+            raise TypeError(
+                "Complex data types not supported. Please use 'ComplexImage' instead"
+            )
         if should_cast_to_f32(data.dtype):
             data = data.astype(np.float32)
         # can the texture handle this data?
