@@ -326,7 +326,6 @@ class GPUScaledTextureMixin(_ScaledTextureMixin):
         np.uint16: 'r16',  # uint16 normalized
         np.complex64: 'r32f',
         np.complex128: 'r32f',
-        np.complex256: 'r32f',
         # np.int8: 'r8',  # not supported, there are no signed-integer norm formats
         # np.int16: 'r16',
         # np.uint32: 'r32ui',  # not supported, no normal formats for 32bit ints
