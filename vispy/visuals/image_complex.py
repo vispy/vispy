@@ -100,10 +100,11 @@ class ComplexImageVisual(ImageVisual):
     def _calc_complex_clim(self, data=None):
         # it would be nice if this could be done in the scalable texture mixin,
         # but that would require the mixin knowing about the complex mode.
-        _rendered = {
+        func = {
             "magnitude": np.abs,
             "phase": np.angle,
             "real": np.real,
             "imaginary": np.imag,
-        }[self.complex_mode](self._data if data is None else data)
+        }[self.complex_mode]
+        _rendered = func(self._data if data is None else data)
         return (_rendered.min(), _rendered.max())
