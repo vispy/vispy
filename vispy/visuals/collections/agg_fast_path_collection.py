@@ -76,7 +76,7 @@ class AggFastPathCollection(Collection):
             vertex = glsl.get('collections/agg-fast-path.vert')
         if transform is None:
             transform = NullTransform()
-        self.transform = transform        
+        self.transform = transform
         if fragment is None:
             fragment = glsl.get('collections/agg-fast-path.frag')
 
@@ -213,6 +213,7 @@ class AggFastPathCollection(Collection):
 
     def draw(self, mode="triangle_strip"):
         """Draw collection"""
-        gl.glDepthMask(gl.GL_FALSE)
+        # Would call context.set_depth_mask() here, but we have no access
+        gl.glDepthMask(0)
         Collection.draw(self, mode)
-        gl.glDepthMask(gl.GL_TRUE)
+        gl.glDepthMask(1)

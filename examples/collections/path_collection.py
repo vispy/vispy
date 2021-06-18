@@ -28,7 +28,7 @@ P[:, :, :2] += np.random.uniform(0, 800, (n, 2))[:, np.newaxis, :]
 P = P.reshape(n * len(S), 3)
 P = 2 * (P / (800, 800, 1)) - 1
 
-paths = PathCollection(mode="agg")
+paths = PathCollection(mode="agg+")
 paths.append(P, closed=True, itemsize=len(S))
 paths["linewidth"] = 1.0
 paths['viewport'] = 0, 0, 800, 800

@@ -86,7 +86,7 @@ class AggPathCollection(Collection):
             vertex = glsl.get('collections/agg-path.vert')
         if transform is None:
             transform = NullTransform()
-        self.transform = transform        
+        self.transform = transform
         if fragment is None:
             fragment = glsl.get('collections/agg-path.frag')
 
@@ -192,6 +192,7 @@ class AggPathCollection(Collection):
 
     def draw(self, mode="triangles"):
         """Draw collection"""
+        # Would call context.set_depth_mask() here, but we have no access
         gl.glDepthMask(0)
         Collection.draw(self, mode)
         gl.glDepthMask(1)
