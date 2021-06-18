@@ -12,7 +12,7 @@ from ..base import (BaseApplicationBackend, BaseCanvasBackend,
                     BaseTimerBackend)
 from ...util import keys
 from ...util.ptime import time
-
+from ...gloo import gl
 
 # -------------------------------------------------------------------- init ---
 
@@ -25,9 +25,6 @@ try:
     _tk_pyopengltk_imported = False
 
     import tkinter as tk
-
-    # Explicitely use OpenGL here instead of gloo since pyopengltk will import it anyway.
-    from OpenGL import GL
     import pyopengltk
 except (ModuleNotFoundError, ImportError):
     available, testable, why_not, which = \
@@ -406,8 +403,8 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
             self._native_context = vars(self).get("_CanvasBackend__context", None)
 
         self.update_idletasks()
-        GL.glClear(GL.GL_COLOR_BUFFER_BIT)
-        GL.glClearColor(0.0, 0.0, 0.0, 0.0)
+        gl.glClear(gl.GL_COLOR_BUFFER_BIT)
+        gl.glClearColor(0.0, 0.0, 0.0, 0.0)
 
     def redraw(self, *args):
         """Overridden from OpenGLFrame
