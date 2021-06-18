@@ -3,32 +3,18 @@ import numpy as np
 from .shaders import Function, FunctionChain
 
 # In a complex Image, the texture will be rg32f, where:
-# data.r represents "real"
-# data.g represents "imaginary"
-
-_complex_mag = """
-    float comp2float(vec4 data) {
-        return length(data);
-    }"""
-_complex_angle = """
-    float comp2float(vec4 data) {
-        return atan(data.g, data.r);
-    }"""
-_complex_real = """
-    float comp2float(vec4 data) {
-        return data.r;
-    }"""
-_complex_imaginary = """
-    float comp2float(vec4 data) {
-        return data.g;
-    }"""
-
+# data.r contains the real component
+# data.g contains the imaginary component
 COMPLEX_TRANSFORMS = {
-    "magnitude": _complex_mag,
-    "phase": _complex_angle,
-    "real": _complex_real,
-    "imaginary": _complex_imaginary,
+    "real": "float cplx2float(vec4 data) { return data.r; }",
+    "imaginary": "float cplx2float(vec4 data) { return data.g; }",
+    "magnitude": "float cplx2float(vec4 data) { return length(data); }",
+    "phase": "float cplx2float(vec4 data) { return atan(data.g, data.r); }",
 }
+# aliases
+COMPLEX_TRANSFORMS["angle"] = COMPLEX_TRANSFORMS["phase"]
+COMPLEX_TRANSFORMS["abs"] = COMPLEX_TRANSFORMS["magnitude"]
+COMPLEX_TRANSFORMS["imag"] = COMPLEX_TRANSFORMS["imaginary"]
 
 
 class ComplexImageVisual(ImageVisual):
