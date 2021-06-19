@@ -440,6 +440,12 @@ class BaseGlooFunctions(object):
     def set_state(self, preset=None, **kwargs):
         """Set OpenGL rendering state, optionally using a preset
 
+        The presets define these values:
+
+        * ``'opaque'``: ``depth_test=True, cull_face=False, blend=False``
+        * ``'translucent'``: ``depth_test=True, cull_face=False, blend=True, blend_func=('src_alpha', 'one_minus_src_alpha')``
+        * ``'additive'``: ``depth_test=False, cull_face=False, blend=True, blend_func=('src_alpha', 'one'))``
+
         Parameters
         ----------
         preset : str | None
