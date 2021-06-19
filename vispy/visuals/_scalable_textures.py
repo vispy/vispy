@@ -9,7 +9,7 @@ from vispy.gloo import Texture2D, Texture3D
 from vispy.gloo.texture import should_cast_to_f32
 
 
-def get_default_clim_from_dtype( dtype):
+def get_default_clim_from_dtype(dtype):
     """Get min and max color limits based on the rsange of the dtype."""
     # assume floating point data is pre-normalized to 0 and 1
     if np.issubdtype(dtype, np.floating):
@@ -41,8 +41,6 @@ def get_default_clim_from_data(data):
 
     return min_value, max_value
 
-
-##
 
 class _ScaledTextureMixin:
     """Mixin class to make a texture aware of color limits.
@@ -368,7 +366,6 @@ class GPUScaledTextureMixin(_ScaledTextureMixin):
         clim_min = self.normalize_value(self.clim[0], self._data_dtype)
         clim_max = self.normalize_value(self.clim[1], self._data_dtype)
         return clim_min, clim_max
-
 
     def _handle_auto_texture_format(self, texture_format, data):
         if isinstance(texture_format, str) and texture_format == 'auto':

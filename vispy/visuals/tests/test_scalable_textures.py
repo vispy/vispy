@@ -1,9 +1,8 @@
 import numpy as np
-import pytest
 
 from vispy.testing import run_tests_if_main
 
-from vispy.visuals._scalable_textures import(
+from vispy.visuals._scalable_textures import (
     get_default_clim_from_dtype,
     get_default_clim_from_data,
     CPUScaledTextureMixin,
@@ -17,7 +16,6 @@ class Stub:
     def __init__(self, data, **kwargs):
         pass
 
-
     def set_data(self, data, *args, **kwargs):
         self._data = data
 
@@ -27,7 +25,9 @@ class CPUScaledStub(CPUScaledTextureMixin, Stub):
 
 
 class GPUScaledStub(GPUScaledTextureMixin, Stub):
+
     internalformat = "r32f"
+
     def _get_texture_format_for_data(self, data, internalformat=None):
         return None
 
@@ -60,7 +60,7 @@ def test_default_clim():
 
 def test_default_clim_non_finite():
 
-    data =  np.array([10, np.nan, 5, 15, 25, 15]).astype(np.float32)
+    data = np.array([10, np.nan, 5, 15, 25, 15]).astype(np.float32)
     clim = get_default_clim_from_dtype(data.dtype)
     assert clim == (0, 1)
     clim = get_default_clim_from_data(data)
@@ -72,7 +72,7 @@ def test_default_clim_non_finite():
     clim = get_default_clim_from_data(data)
     assert clim == (5, 25)
 
-    data =  np.array([10, -np.inf, 5, 15, 25, 15]).astype(np.float32)
+    data = np.array([10, -np.inf, 5, 15, 25, 15]).astype(np.float32)
     clim = get_default_clim_from_dtype(data.dtype)
     assert clim == (0, 1)
     clim = get_default_clim_from_data(data)

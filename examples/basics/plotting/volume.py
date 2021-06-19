@@ -20,12 +20,10 @@ clim = [32, 192]
 texture_format = "auto"  # None for CPUScaled, "auto" for GPUScaled
 
 vol_pw = fig[0, 0]
-v=vol_pw.volume(vol_data, clim=clim, texture_format=texture_format)
+v = vol_pw.volume(vol_data, clim=clim, texture_format=texture_format)
 vol_pw.view.camera.elevation = 30
 vol_pw.view.camera.azimuth = 30
 vol_pw.view.camera.scale_factor /= 1.5
-
-
 
 shape = vol_data.shape
 fig[1, 0].image(vol_data[:, :, shape[2] // 2], cmap='grays', clim=clim,
