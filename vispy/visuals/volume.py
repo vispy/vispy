@@ -120,16 +120,10 @@ float colorToVal(vec4 color1)
 }}
 
 vec4 applyColormap(float data) {{
-    if (clim.x < clim.y) {{
-        data = clamp(data, clim.x, clim.y);
-    }} else if (clim.x > clim.y) {{
-        data = clamp(data, clim.y, clim.x);
-    }} else {{
-        return $cmap(0.0);
-    }}
-
+    data = clamp(data, clim.x, clim.y);
     data = (data - clim.x) / (clim.y - clim.x);
-    return $cmap(pow(data, gamma));
+    vec4 color = $cmap(pow(data, gamma));
+    return color;
 }}
 
 
@@ -573,7 +567,7 @@ class VolumeVisual(Visual):
         self.set_gl_state('translucent', cull_face=False)
 
         # Apply clim and set data at the same time
-        self.set_data(vol, clim)
+        self.set_data(vol, clim or "auto")
 
         # Set params
         self.method = method
@@ -624,9 +618,7 @@ class VolumeVisual(Visual):
             raise ValueError('Volume visual needs a 3D array.')
         if isinstance(self._texture, GPUScaledTextured3D):
             copy = False
-
-        if clim is None and self._texture.clim is None:
-            clim = (vol.min(), vol.max())
+        
         if clim is not None and clim != self._texture.clim:
             self._texture.set_clim(clim)
 

@@ -89,17 +89,10 @@ _texture_lookup = """
 
 _apply_clim_float = """
     float apply_clim(float data) {
-        if ($clim.x < $clim.y) {{
-            data = clamp(data, $clim.x, $clim.y);
-        }} else if ($clim.x > $clim.y) {{
-            data = clamp(data, $clim.y, $clim.x);
-        }} else {{
-            // clims are the same, show minimum colormap value
-            return 0.0;
-        }}
-        data = data - $clim.x;
-        data = data / ($clim.y - $clim.x);
-        return max(data, 0);
+
+        data = clamp(data, $clim.x, $clim.y);
+        data = (data - $clim.x) / ($clim.y - $clim.x);
+        return data;
     }"""
 _apply_clim = """
     vec4 apply_clim(vec4 color) {
@@ -276,7 +269,7 @@ class ImageVisual(Visual):
         # self._build_interpolation()
         self._data_lookup_fn = None
 
-        self.clim = clim
+        self.clim = clim or "auto"  # None -> "auto"
         self.cmap = cmap
         if data is not None:
             self.set_data(data)
