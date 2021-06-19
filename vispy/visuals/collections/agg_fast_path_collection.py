@@ -14,7 +14,6 @@ on miter joins which may result in some glitches on screen.
 import numpy as np
 from ... import glsl
 from ... import gloo
-from ...gloo import gl
 from . collection import Collection
 from ..transforms import NullTransform
 

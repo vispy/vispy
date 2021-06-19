@@ -13,7 +13,6 @@ thick paths where quality is critical.
 import numpy as np
 from ... import glsl
 from ... import gloo
-from ...gloo import gl
 from . collection import Collection
 from ..transforms import NullTransform
 
