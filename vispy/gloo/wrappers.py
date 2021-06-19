@@ -438,7 +438,7 @@ class BaseGlooFunctions(object):
         return deepcopy(_gl_presets)
 
     def set_state(self, preset=None, **kwargs):
-        """Set OpenGL rendering state, optionally using a preset
+        """Set OpenGL rendering state, optionally using a preset.
 
         The presets define these values:
 
