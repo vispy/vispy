@@ -12,6 +12,7 @@ thick paths where quality is critical.
 """
 import numpy as np
 from ... import glsl
+from ... import gloo
 from ...gloo import gl
 from . collection import Collection
 from ..transforms import NullTransform
@@ -192,7 +193,6 @@ class AggPathCollection(Collection):
 
     def draw(self, mode="triangles"):
         """Draw collection"""
-        # Would call context.set_depth_mask() here, but we have no access
-        gl.glDepthMask(0)
+        gloo.set_depth_mask(0)
         Collection.draw(self, mode)
-        gl.glDepthMask(1)
+        gloo.set_depth_mask(1)
