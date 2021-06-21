@@ -447,7 +447,7 @@ class BaseGlooFunctions(object):
 
         Parameters
         ----------
-        preset : {None, 'opaque', 'translucent', 'additive'}
+        preset : {'opaque', 'translucent', 'additive'}, optional
             A named state :data:`preset <.GL_PRESETS>` for typical use cases.
 
         **kwargs : keyword arguments
