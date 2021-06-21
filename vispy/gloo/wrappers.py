@@ -433,7 +433,7 @@ class BaseGlooFunctions(object):
         Returns
         -------
         presets : dict
-            The dictionary of presets usable with :func:`set_state`.
+            The dictionary of presets usable with :func:`.set_state`.
         """
         return deepcopy(_gl_presets)
 
