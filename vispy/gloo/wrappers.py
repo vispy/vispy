@@ -454,7 +454,7 @@ class BaseGlooFunctions(object):
             Options to be enabled or disabled should be supplied as booleans
             (e.g., ``'depth_test=True'``, ``cull_face=False``), non-boolean
             entries will be passed as arguments to ``set_*`` functions (e.g.,
-            ``blend_func=('src_alpha', 'one')`` will call ``set_blend_func``).
+            ``blend_func=('src_alpha', 'one')`` will call :func:`.set_blend_func`).
 
         Notes
         -----
