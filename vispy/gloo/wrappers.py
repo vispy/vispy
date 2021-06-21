@@ -442,11 +442,11 @@ class BaseGlooFunctions(object):
         return deepcopy(GL_PRESETS)
 
     def set_state(self, preset=None, **kwargs):
-        """Set OpenGL rendering state, optionally using a preset.
+        """Set the OpenGL rendering state, optionally using a preset.
 
         Parameters
         ----------
-        preset : str | None
+        preset : {None, 'opaque', 'translucent', 'additive'}
             A named state :data:`preset <.GL_PRESETS>` for typical use cases.
 
         **kwargs : keyword arguments
