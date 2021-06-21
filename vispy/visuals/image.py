@@ -89,8 +89,9 @@ _texture_lookup = """
 
 _apply_clim_float = """
     float apply_clim(float data) {
+        data = clamp(data, min($clim.x, $clim.y), max($clim.x, $clim.y));
         data = (data - $clim.x) / ($clim.y - $clim.x);
-        return clamp(data, 0.0, 1.0);
+        return data;
     }"""
 _apply_clim = """
     vec4 apply_clim(vec4 color) {

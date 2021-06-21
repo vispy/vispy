@@ -120,8 +120,8 @@ float colorToVal(vec4 color1)
 }}
 
 vec4 applyColormap(float data) {{
+    data = clamp(data, min(clim.x, clim.y), max(clim.x, clim.y));
     data = (data - clim.x) / (clim.y - clim.x);
-    data = clamp(data, 0.0, 1.0);
     vec4 color = $cmap(pow(data, gamma));
     return color;
 }}
