@@ -388,7 +388,8 @@ class GPUScaledTextureMixin(_ScaledTextureMixin):
         return texture_format
 
     def _get_texture_format_for_data(self, data, internalformat):
-        assert internalformat is not None
+        if internalformat is None:
+            raise ValueError("'internalformat' must be provided for GPU scaled textures.")
         num_channels = self._data_num_channels(data)
         texture_format = self._handle_auto_texture_format(internalformat, data)
         texture_format = self._get_gl_tex_format(texture_format, num_channels)
