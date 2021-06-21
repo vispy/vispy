@@ -33,7 +33,6 @@ class GPUScaledStub(GPUScaledTextureMixin, Stub):
 
 
 def test_default_clim():
-
     ref_data = np.array([10, 5, 15, 25, 15])
 
     # f32
@@ -115,7 +114,6 @@ def test_clim_handling_cpu():
 
 
 def test_clim_handling_gpu():
-    return
     ref_data = np.array([[10, 10, 5], [15, 25, 15]])
 
     # f32 - auto clim
