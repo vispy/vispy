@@ -10,7 +10,7 @@ from vispy.gloo.texture import should_cast_to_f32
 
 
 def get_default_clim_from_dtype(dtype):
-    """Get min and max color limits based on the rsange of the dtype."""
+    """Get min and max color limits based on the range of the dtype."""
     # assume floating point data is pre-normalized to 0 and 1
     if np.issubdtype(dtype, np.floating):
         return 0, 1
@@ -22,11 +22,11 @@ def get_default_clim_from_dtype(dtype):
 
 
 def get_default_clim_from_data(data):
-    """ Compute a reasonable clim from the min and max, taking nans into account.
+    """Compute a reasonable clim from the min and max, taking nans into account.
+    
     If there are no non-finite values (nan, inf, -inf) this is as fast as it can be.
     Otherwise, this functions is about 3x slower.
     """
-
     # Fast
     min_value = data.min()
     max_value = data.max()
