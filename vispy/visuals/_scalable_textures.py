@@ -296,7 +296,7 @@ class CPUScaledTextureMixin(_ScaledTextureMixin):
             if is_auto:
                 clim = data_limits
 
-        self._clim = clim
+        self._clim = float(clim[0]), float(clim[1])
         self._data_limits = data_limits
         return super().scale_and_set_data(data, offset=offset, copy=copy)
 
@@ -400,11 +400,10 @@ class GPUScaledTextureMixin(_ScaledTextureMixin):
         if data.ndim == self._ndim or data.shape[2] == 1:
             if is_auto:
                 clim = get_default_clim_from_data(data)
-            # clim = (np.float32(clim[0]), np.float32(clim[1]))
         elif is_auto:
             # assume that RGB data is already scaled (0, 1)
             clim = get_default_clim_from_dtype(data.dtype)
-        return clim
+        return float(clim[0]), float(clim[1])
 
     def _internalformat_will_change(self, data):
         shape_repr = self._create_rep_array(data)
