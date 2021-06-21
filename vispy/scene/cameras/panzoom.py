@@ -11,6 +11,9 @@ from ...geometry import Rect
 from ...visuals.transforms import STTransform, MatrixTransform
 
 
+DEFAULT_RECT_TUPLE = (0, 0, 1, 1)
+
+
 class PanZoomCamera(BaseCamera):
     """Camera implementing 2D pan/zoom mouse interaction.
 
@@ -45,7 +48,7 @@ class PanZoomCamera(BaseCamera):
 
     _state_props = BaseCamera._state_props + ('rect', )
 
-    def __init__(self, rect=(0, 0, 1, 1), aspect=None, **kwargs):
+    def __init__(self, rect=DEFAULT_RECT_TUPLE, aspect=None, **kwargs):
         super(PanZoomCamera, self).__init__(**kwargs)
 
         self.transform = STTransform()
@@ -152,22 +155,23 @@ class PanZoomCamera(BaseCamera):
     @property
     def center(self):
         rect = self._rect
-        return 0.5 * (rect.left + rect.right), 0.5 * (rect.top +
-                                                      rect.bottom), 0
+        return (*rect.center, 0)
 
     @center.setter
     def center(self, center):
         if not (isinstance(center, (tuple, list)) and len(center) in (2, 3)):
             raise ValueError('center must be a 2 or 3 element tuple')
-        rect = self.rect or Rect(0, 0, 1, 1)
+        rect = Rect(self.rect) or Rect(*DEFAULT_RECT_TUPLE)
         # Get half-ranges
-        x2 = 0.5 * (rect.right - rect.left)
-        y2 = 0.5 * (rect.top - rect.bottom)
+        x2 = rect.center[0]
+        y2 = rect.center[1]
         # Apply new ranges
-        rect.left = center[0] - x2
-        rect.right = center[0] + x2
-        rect.bottom = center[1] - y2
-        rect.top = center[1] + y2
+        x1 = center[0]
+        y1 = center[1]
+        rect.left = x1 - x2
+        rect.right = x1 + x2
+        rect.bottom = y1 - y2
+        rect.top = y1 + y2
         #
         self.rect = rect
 
