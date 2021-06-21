@@ -8,6 +8,7 @@ from __future__ import division
 import numpy as np
 
 from ... import gloo, glsl
+from ...app import _default_app as default_app_module
 from ...color import Color, ColorArray, get_colormap
 from ..shaders import Function
 from ..visual import Visual, CompoundVisual
@@ -340,25 +341,11 @@ class _GLLineVisual(Visual):
             self.shared_program['texture2D_LUT'] = cmap.texture_lut() \
                 if (hasattr(cmap, 'texture_lut')) else None
 
-        # Do we want to use OpenGL, and can we?
-        GL = None
-        from ...app._default_app import default_app
-        if default_app is not None and \
-                default_app.backend_name != 'ipynb_webgl':
-            try:
-                import OpenGL.GL as GL
-            except Exception:  # can be other than ImportError sometimes
-                pass
-
-        # Turn on line smooth and/or line width
-        if GL:
-            if self._parent._antialias:
-                GL.glEnable(GL.GL_LINE_SMOOTH)
-            else:
-                GL.glDisable(GL.GL_LINE_SMOOTH)
+        if "webgl" not in default_app_module.default_app.backend_name:
+            self.update_gl_state(line_smooth=bool(self._parent._antialias))
             px_scale = self.transforms.pixel_scale
             width = px_scale * self._parent._width
-            GL.glLineWidth(max(width, 1.))
+            self.update_gl_state(line_width=max(width, 1.0))
 
         if self._parent._changed['connect']:
             self._connect = self._parent._interpret_connect()

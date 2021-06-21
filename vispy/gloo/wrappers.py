@@ -509,6 +509,16 @@ class BaseGlooFunctions(object):
                 self.glir.command('FUNC', 'glEnable', 'cull_face')
                 self.set_cull_face(*_to_args(cull_face))
 
+        # Line width needs some special care ...
+        if 'line_width' in kwargs:
+            line_width = kwargs.pop('line_width')
+            self.glir.command('FUNC', 'glLineWidth', line_width)
+        if 'line_smooth' in kwargs:
+            line_smooth = kwargs.pop('line_smooth')
+            funcname = 'glEnable' if line_smooth else 'glDisable'
+            line_smooth_enum_value = 2848  # int(GL.GL_LINE_SMOOTH)
+            self.glir.command('FUNC', funcname, line_smooth_enum_value)
+
         # Iterate over kwargs
         for key, val in kwargs.items():
             if key in _setters:
