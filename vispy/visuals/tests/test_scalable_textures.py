@@ -143,7 +143,7 @@ def test_clim_handling_gpu():
     st.set_clim((10, 10))
     st.scale_and_set_data(ref_data.astype(np.float32))
     assert st.clim == (10, 10)
-    assert st.clim_normalized == (0, np.inf)
+    assert st.clim_normalized == (10, np.inf)
     # assert np.min(st._data) == 0 - does not matter
 
 
