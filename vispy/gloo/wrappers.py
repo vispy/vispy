@@ -30,7 +30,8 @@ _setters = [s[4:] for s in __all__
 
 # NOTE: If these are updated to have things beyond glEnable/glBlendFunc
 # calls, set_state will need to be updated to deal with it.
-#: Some OpenGL state presets for common use cases.
+#: Some OpenGL state presets for common use cases: 'opaque', 'translucent',
+#: 'additive'.
 #:
 #: To be used in :func:`.set_state`.
 GL_PRESETS = {
