@@ -127,28 +127,27 @@ void prepare_shading() {
     vec4 pos_scene = $render2scene(gl_Position);
     v_pos_scene = pos_scene;
 
+    // Calculate normal
     vec4 normal_scene = $visual2scene(vec4($normal, 1.0));
     vec4 origin_scene = $visual2scene(vec4(0.0, 0.0, 0.0, 1.0));
     normal_scene /= normal_scene.w;
     origin_scene /= origin_scene.w;
-    vec3 normal = normalize(normal_scene.xyz - origin_scene.xyz);
-    v_normal_vec = normal;
+    v_normal_vec = normalize(normal_scene.xyz - origin_scene.xyz);
 
-    vec4 pos_front = $scene2doc(pos_scene);
-    pos_front.z += 1e-6;
+    // Calculate eye vector per-vertex (to account for perspective)
+    vec4 pos_doc = $scene2doc(pos_scene);
+    pos_doc /= pos_doc.w;
+    vec4 pos_front = pos_doc;
+    vec4 pos_back = pos_doc;
+    pos_front.z -= 1e-5;
+    pos_back.z += 1e-5;
     pos_front = $doc2scene(pos_front);
-    pos_front /= pos_front.w;
-
-    vec4 pos_back = $scene2doc(pos_scene);
-    pos_back.z -= 1e-6;
     pos_back = $doc2scene(pos_back);
-    pos_back /= pos_back.w;
+    // The eye vec eminates from the eye, pointing towards what is being viewed
+    v_eye_vec = normalize(pos_back.xyz / pos_back.w - pos_front.xyz / pos_front.w);
 
-    vec3 eye = normalize(pos_front.xyz - pos_back.xyz);
-    v_eye_vec = eye;
-
-    vec3 light = normalize($light_dir.xyz);
-    v_light_vec = light;
+    // Pass on light direction (the direction that the "photons" travel)
+    v_light_vec = normalize($light_dir.xyz);
 }
 """
 
@@ -181,9 +180,7 @@ void shade() {
         // Note(asnt): The normal calculated above always points in the
         // direction of the camera. Reintroduce the original orientation of the
         // face.
-        if (!gl_FrontFacing) {
-            normal = -normal;
-        }
+        normal = gl_FrontFacing ? normal : -normal;
     }
     normal = normalize(normal);
 
@@ -194,21 +191,24 @@ void shade() {
     vec3 ambient = ambient_coeff.rgb * ambient_coeff.a
                    * ambient_light.rgb * ambient_light.a;
 
-    // Diffuse illumination.
-    float diffuse_factor = dot(light_vec, normal);
+    // Diffuse illumination (light vec points towards the surface)
+    float diffuse_factor = dot(-light_vec, normal);
     diffuse_factor = max(diffuse_factor, 0.0);
     vec3 diffuse = diffuse_factor
                    * diffuse_coeff.rgb * diffuse_coeff.a
                    * diffuse_light.rgb * diffuse_light.a;
 
-    // Specular illumination.
+    // Specular illumination. Both light_vec and eye_vec point towards the surface.
     float specular_factor = 0.0;
     bool is_illuminated = diffuse_factor > 0.0;
     if (is_illuminated && shininess > 0.0) {
-        vec3 reflection = reflect(light_vec, normal);
-        specular_factor = dot(reflection, eye_vec);
-        specular_factor = max(specular_factor, 0.0);
-        specular_factor = pow(specular_factor, shininess);
+        // Phong reflection
+        vec3 reflection = reflect(-light_vec, normal);
+        float reflection_factor = max(dot(reflection, eye_vec), 0.0);
+        // Blinn-Phong reflection
+        //vec3 halfway = -normalize(light_vec + eye_vec);
+        //float reflection_factor clamp(dot(halfway, normal), 0.0, 1.0);
+        specular_factor = pow(reflection_factor, shininess);
     }
     vec3 specular = specular_factor
                     * specular_coeff.rgb * specular_coeff.a
@@ -216,7 +216,6 @@ void shade() {
 
     // Blend the base color and combine the illuminations.
     vec3 color = base_color * (ambient + diffuse) + specular;
-
     gl_FragColor.rgb = color;
 }
 """  # noqa
@@ -395,8 +394,8 @@ class ShadingFilter(Filter):
                  specular_coefficient=(1, 1, 1, 1),
                  shininess=100,
                  light_dir=(10, 5, -5),
-                 ambient_light=(1, 1, 1, .3),
-                 diffuse_light=(1, 1, 1, 1),
+                 ambient_light=(1, 1, 1, .25),
+                 diffuse_light=(1, 1, 1, 0.7),
                  specular_light=(1, 1, 1, .25),
                  enabled=True):
         self._shading = shading
