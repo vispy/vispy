@@ -23,7 +23,7 @@ def get_default_clim_from_dtype(dtype):
 
 def get_default_clim_from_data(data):
     """Compute a reasonable clim from the min and max, taking nans into account.
-    
+
     If there are no non-finite values (nan, inf, -inf) this is as fast as it can be.
     Otherwise, this functions is about 3x slower.
     """
@@ -273,9 +273,7 @@ class CPUScaledTextureMixin(_ScaledTextureMixin):
         elif not copy and not np.issubdtype(data.dtype, np.floating):
             raise ValueError("Data must be of floating type for no copying to occur.")
 
-        if clim[0] == clim[1]:
-            pass  # Does not matter - clim range will be inf
-        else:
+        if clim[0] != clim[1]:
             data -= clim[0]
             data *= 1.0 / (clim[1] - clim[0])
         if should_cast_to_f32(data.dtype):
@@ -390,12 +388,10 @@ class GPUScaledTextureMixin(_ScaledTextureMixin):
         return texture_format
 
     def _get_texture_format_for_data(self, data, internalformat):
-        if internalformat is not None:
-            num_channels = self._data_num_channels(data)
-            texture_format = self._handle_auto_texture_format(internalformat, data)
-            texture_format = self._get_gl_tex_format(texture_format, num_channels)
-        else:
-            raise NotImplementedError("wut?")
+        assert internalformat is not None
+        num_channels = self._data_num_channels(data)
+        texture_format = self._handle_auto_texture_format(internalformat, data)
+        texture_format = self._get_gl_tex_format(texture_format, num_channels)
         return texture_format
 
     def _compute_clim(self, data):

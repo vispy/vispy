@@ -153,8 +153,9 @@ class ImageVisual(Visual):
     cmap : str | ColorMap
         Colormap to use for luminance images.
     clim : str | tuple
-        Limits to use for the colormap. Can be 'auto' to auto-set bounds to
-        the min and max of the data.
+        Limits to use for the colormap. I.e. the values that map to black and white
+        in a gray colormap. Can be 'auto' to auto-set bounds to
+        the min and max of the data. If not given or None, 'auto' is used.
     gamma : float
         Gamma to use during colormap lookup.  Final color will be cmap(val**gamma).
         by default: 1.

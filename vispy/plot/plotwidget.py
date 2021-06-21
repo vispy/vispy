@@ -202,7 +202,7 @@ class PlotWidget(scene.Widget):
         fg_color : Color or None
             Sets the plot foreground color if specified.
         kwargs : keyword arguments.
-            More args to pass to visual.Volume.
+            More args to pass to :class:`~vispy.visuals.image.Image`.
 
         Returns
         -------
@@ -412,7 +412,7 @@ class PlotWidget(scene.Widget):
         cmap : str
             The colormap to use.
         kwargs : keyword arguments.
-            More args to pass to visual.Volume.
+            More args to pass to :class:`~vispy.visuals.volume.Volume`.
 
         Returns
         -------

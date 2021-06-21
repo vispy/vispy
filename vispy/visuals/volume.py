@@ -463,10 +463,10 @@ class VolumeVisual(Visual):
     vol : ndarray
         The volume to display. Must be ndim==3. Array is assumed to be stored
         as ``(z, y, x)``.
-    clim : tuple of two floats | None
-        The contrast limits. The values in the volume are mapped to
-        black and white corresponding to these values. Default maps
-        between min and max.
+    clim : str | tuple
+        Limits to use for the colormap. I.e. the values that map to black and white
+        in a gray colormap. Can be 'auto' to auto-set bounds to
+        the min and max of the data. If not given or None, 'auto' is used.
     method : {'mip', 'attenuated_mip', 'minip', 'translucent', 'additive',
         'iso', 'average'}
         The render method to use. See corresponding docs for details.
@@ -521,7 +521,7 @@ class VolumeVisual(Visual):
 
     _interpolation_names = ['linear', 'nearest']
 
-    def __init__(self, vol, clim=None, method='mip', threshold=None,
+    def __init__(self, vol, clim="auto", method='mip', threshold=None,
                  attenuation=1.0, relative_step_size=0.8, cmap='grays',
                  gamma=1.0, interpolation='linear', texture_format=None):
         # Storage of information of volume
