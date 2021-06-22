@@ -343,20 +343,24 @@ class Visual(BaseVisual):
         self._hooks = {}
 
     def set_gl_state(self, preset=None, **kwargs):
-        """Define the set of GL state parameters to use when drawing
+        """Define the set of GL state parameters to use when drawing.
+
+        The arguments are forwarded to :func:`vispy.gloo.wrappers.set_state`.
 
         Parameters
         ----------
         preset : str
             Preset to use.
         **kwargs : dict
-            Keyword arguments to `gloo.set_state`.
+            Keyword arguments.
         """
         self._vshare.gl_state = kwargs
         self._vshare.gl_state['preset'] = preset
 
     def update_gl_state(self, *args, **kwargs):
-        """Modify the set of GL state parameters to use when drawing
+        """Modify the set of GL state parameters to use when drawing.
+
+        The arguments are forwarded to :func:`vispy.gloo.wrappers.set_state`.
 
         Parameters
         ----------
@@ -607,20 +611,24 @@ class CompoundVisual(BaseVisual):
             v._prepare_transforms(v)
 
     def set_gl_state(self, preset=None, **kwargs):
-        """Define the set of GL state parameters to use when drawing
+        """Define the set of GL state parameters to use when drawing.
+
+        The arguments are forwarded to :func:`vispy.gloo.wrappers.set_state`.
 
         Parameters
         ----------
         preset : str
             Preset to use.
         **kwargs : dict
-            Keyword arguments to `gloo.set_state`.
+            Keyword arguments.
         """
         for v in self._subvisuals:
             v.set_gl_state(preset=preset, **kwargs)
 
     def update_gl_state(self, *args, **kwargs):
-        """Modify the set of GL state parameters to use when drawing
+        """Modify the set of GL state parameters to use when drawing.
+
+        The arguments are forwarded to :func:`vispy.gloo.wrappers.set_state`.
 
         Parameters
         ----------
