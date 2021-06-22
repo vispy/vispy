@@ -148,4 +148,4 @@ External links
 .. |Zenodo Link| image:: https://zenodo.org/badge/5822/vispy/vispy.svg
    :target: http://dx.doi.org/10.5281/zenodo.17869
 .. |Contributor Covenant| image:: https://img.shields.io/badge/Contributor%20Covenant-2.0-4baaaa.svg
-   :target: code_of_conduct.md
+   :target: CODE_OF_CONDUCT.md
