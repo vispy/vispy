@@ -89,17 +89,9 @@ _texture_lookup = """
 
 _apply_clim_float = """
     float apply_clim(float data) {
-        if ($clim.x < $clim.y) {{
-            data = clamp(data, $clim.x, $clim.y);
-        }} else if ($clim.x > $clim.y) {{
-            data = clamp(data, $clim.y, $clim.x);
-        }} else {{
-            // clims are the same, show minimum colormap value
-            return 0.0;
-        }}
-        data = data - $clim.x;
-        data = data / ($clim.y - $clim.x);
-        return max(data, 0);
+        data = clamp(data, min($clim.x, $clim.y), max($clim.x, $clim.y));
+        data = (data - $clim.x) / ($clim.y - $clim.x);
+        return data;
     }"""
 _apply_clim = """
     vec4 apply_clim(vec4 color) {
@@ -160,8 +152,9 @@ class ImageVisual(Visual):
     cmap : str | ColorMap
         Colormap to use for luminance images.
     clim : str | tuple
-        Limits to use for the colormap. Can be 'auto' to auto-set bounds to
-        the min and max of the data.
+        Limits to use for the colormap. I.e. the values that map to black and white
+        in a gray colormap. Can be 'auto' to auto-set bounds to
+        the min and max of the data. If not given or None, 'auto' is used.
     gamma : float
         Gamma to use during colormap lookup.  Final color will be cmap(val**gamma).
         by default: 1.
@@ -276,7 +269,7 @@ class ImageVisual(Visual):
         # self._build_interpolation()
         self._data_lookup_fn = None
 
-        self.clim = clim
+        self.clim = clim or "auto"  # None -> "auto"
         self.cmap = cmap
         if data is not None:
             self.set_data(data)
