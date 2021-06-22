@@ -41,6 +41,7 @@ def update(ev):
     data = np.random.normal(size=(N, m), scale=0.3)
     data[data > 1] += 4
     lines.roll_data(data)
+    canvas.context.flush()  # prevent memory leak when minimized
 
 timer = app.Timer(connect=update, interval=0)
 timer.start()
