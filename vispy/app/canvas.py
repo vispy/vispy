@@ -528,17 +528,27 @@ class Canvas(object):
         sleep(0.1)  # ensure window is really closed/destroyed
         logger.debug('Context manager exit complete for %s' % (self,))
 
-    def render(self):
+    def render(self, alpha=True):
         """Render the canvas to an offscreen buffer and return the image array.
-
-        This method may not return the expected result in some cases when it
-        comes to transparency or more complex visualizations.
 
         Returns
         -------
         image : array
             Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
             upper-left corner of the rendered region.
+        alpha : bool
+            If True (default) produce an RGBA array (M, N, 4). If False,
+            remove the Alpha channel and return the RGB array (M, N, 3).
+            This may be useful if blending of various elements requires a
+            solid background to produce the expected visualization.
+
+        Returns
+        -------
+        image : array
+            Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
+            upper-left corner of the rendered region. If ``alpha`` is ``False``,
+            then only 3 channels will be returned (RGB).
+
 
         """
         self.set_current()
@@ -549,34 +559,13 @@ class Canvas(object):
         try:
             fbo.activate()
             self.events.draw()
-            return fbo.read()
+            result = fbo.read()
         finally:
             fbo.deactivate()
 
-    def screenshot(self, viewport=None, alpha=True):
-        """Read the current rendered buffer from the GPU and return as an array.
-
-        This function will capture whatever was last drawn.
-        Note this uses the low-level ``glReadPixels`` and does not run using
-        the gloo GLIR queue.
-
-        Parameters
-        ----------
-        viewport : array-like | None
-            4-element list of x, y, w, h parameters. If None (default),
-            the current GL viewport will be queried and used.
-        alpha : bool
-            If True (default), the returned array has 4 elements (RGBA).
-            Otherwise, it has 3 (RGB)
-
-        Returns
-        -------
-        pixels : array
-            3D array of pixels in np.uint8 format
-
-        """
-        from vispy.gloo.wrappers import read_pixels
-        return read_pixels(viewport=viewport, alpha=alpha)
+        if not alpha:
+            result = result[..., :3]
+        return result
 
 
 # Event subclasses specific to the Canvas
