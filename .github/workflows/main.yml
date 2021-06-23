@@ -1,6 +1,6 @@
 name: CI
 
-# Controls when the action will run. 
+# Controls when the action will run.
 on:
   # Triggers the workflow on push or pull request events but only for the main branch
   push:
@@ -168,6 +168,7 @@ jobs:
         pip install -e .
     - name: Version Info
       run: |
+        export LD_DEBUG=libs
         if [ "${{ matrix.test }}" != 'osmesa' ]; then
           export DISPLAY=:99.0
         fi
