@@ -34,4 +34,4 @@ def test_canvas_render():
         # the results should be the same except for alpha
         np.testing.assert_allclose(rgba_result[..., :3], rgb_result)
         # the alpha should have some transparency
-        assert (rgba_result[..., 3] != 1).any()
+        assert (rgba_result[..., 3] != 255).any()
