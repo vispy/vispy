@@ -346,11 +346,11 @@ class Grid(Widget):
 
         for ws in width_grid:
             for w in ws:
-                solver.addConstraint(w >= 0)
+                solver.addConstraint(w >= 1)
 
         for hs in height_grid:
             for h in hs:
-                solver.addConstraint(h >= 0)
+                solver.addConstraint(h >= 1)
 
         for (_, val) in grid_widgets.items():
             (y, x, ys, xs, widget) = val
