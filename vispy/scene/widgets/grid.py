@@ -346,7 +346,7 @@ class Grid(Widget):
 
         for ws in width_grid:
             for w in ws:
-                solver.addConstraint(w >= 0,)
+                solver.addConstraint(w >= 0)
 
         for hs in height_grid:
             for h in hs:
@@ -463,18 +463,10 @@ class Grid(Widget):
         # we only need to remove and add the height and width constraints of
         # the solver if they are not the same as the current value
         if abs(rect.height - self._var_h.value()) > 1e-4:
-            # if self._height_stay:
-            #     self._solver.remove_constraint(self._height_stay)
-
             self._solver.suggestValue(self._var_h, rect.height)
-            # self._height_stay = self._solver.add_stay(self._var_h | 'strong')
 
         if abs(rect.width - self._var_w.value()) > 1e-4:
-            # if self._width_stay:
-            #     self._solver.remove_constraint(self._width_stay)
-
             self._solver.suggestValue(self._var_w, rect.width)
-            # self._width_stay = self._solver.add_stay(self._var_w | 'strong')
 
         value_vectorized = np.vectorize(lambda x: x.value())
 
