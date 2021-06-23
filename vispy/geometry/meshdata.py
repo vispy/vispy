@@ -63,11 +63,13 @@ def _compute_vertex_normals(face_normals, vertex_faces):
         An array defining a normal for each vertex.
     """
     n_vertices = len(vertex_faces)
-    vertex_normals = np.zeros((n_vertices, 3), dtype=np.float32)
+    dtype_float = face_normals.dtype
+    vertex_normals = np.zeros((n_vertices, 3), dtype=dtype_float)
     for vertex_index in range(n_vertices):
         faces = vertex_faces[vertex_index]
         if len(faces) == 0:
             continue
+        faces = list(faces)  # Require a list for indexing.
         adjacent_normals = face_normals[faces]
         vertex_normal = adjacent_normals.sum(axis=0)
         norm = (vertex_normal ** 2).sum() ** 0.5
