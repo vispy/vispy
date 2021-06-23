@@ -387,8 +387,8 @@ class Grid(Widget):
         self._solver.suggestValue(self._var_w, rect.width)
         self._solver.suggestValue(self._var_h, rect.height)
 
-        self._solver.addConstraint(self._var_w >= 0)
-        self._solver.addConstraint(self._var_h >= 0)
+        self._solver.addConstraint(self._var_w > 0)
+        self._solver.addConstraint(self._var_h > 0)
 
         # self._height_stay = None
         # self._width_stay = None
