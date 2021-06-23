@@ -28,6 +28,22 @@ def _compute_face_normals(vertices, faces=None):
     return np.cross(edges1, edges2)
 
 
+def _compute_vertex_normals(face_normals, vertex_faces):
+    n_vertices = len(vertex_faces)
+    vertex_normals = np.zeros((n_vertices, 3), dtype=np.float32)
+    for vertex_index in range(n_vertices):
+        faces = vertex_faces[vertex_index]
+        if len(faces) == 0:
+            continue
+        adjacent_normals = face_normals[faces]
+        vertex_normal = adjacent_normals.sum(axis=0)
+        norm = (vertex_normal ** 2).sum() ** 0.5
+        if norm > 0:
+            vertex_normal /= norm
+        vertex_normals[vertex_index] = vertex_normal
+    return vertex_normals
+
+
 class MeshData(object):
     """
     Class for storing and operating on 3D mesh data.
@@ -335,21 +351,10 @@ class MeshData(object):
             The normals.
         """
         if self._vertex_normals is None:
-            faceNorms = self.get_face_normals()
-            vertFaces = self.get_vertex_faces()
-            self._vertex_normals = np.empty(self._vertices.shape,
-                                            dtype=np.float32)
-            for vindex in range(self._vertices.shape[0]):
-                faces = vertFaces[vindex]
-                if len(faces) == 0:
-                    self._vertex_normals[vindex] = (0, 0, 0)
-                    continue
-                norms = faceNorms[faces]  # get all face normals
-                norm = norms.sum(axis=0)  # sum normals
-                renorm = (norm**2).sum()**0.5
-                if renorm > 0:
-                    norm /= renorm
-                self._vertex_normals[vindex] = norm
+            face_normals = self.get_face_normals()
+            vertex_faces = self.get_vertex_faces()
+            self._vertex_normals = _compute_vertex_normals(face_normals,
+                                                           vertex_faces)
 
         if indexed is None:
             return self._vertex_normals
