@@ -142,6 +142,7 @@ jobs:
       run: |
         # opengl system libraries
         if [ "${{ matrix.deps }}" == 'full' ]; then
+          sudo apt-get update;
           cat ci/requirements/linux_full_deps_apt.txt | xargs sudo apt-get -y install
         fi
         # Start xvfb daemon
