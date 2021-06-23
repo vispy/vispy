@@ -38,7 +38,7 @@ _gl_presets = {
         depth_test=True,
         cull_face=False,
         blend=True,
-        blend_func=('src_alpha', 'one_minus_src_alpha')),
+        blend_func=('src_alpha', 'one_minus_src_alpha', 'one', 'one_minus_src_alpha')),
     'additive': dict(
         depth_test=False,
         cull_face=False,
@@ -444,7 +444,7 @@ class BaseGlooFunctions(object):
         ----------
         preset : str | None
             Can be one of ('opaque', 'translucent', 'additive') to use
-            use reasonable defaults for these typical use cases.
+            reasonable defaults for these typical use cases.
         **kwargs : keyword arguments
             Other supplied keyword arguments will override any preset defaults.
             Options to be enabled or disabled should be supplied as booleans
