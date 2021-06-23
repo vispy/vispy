@@ -19,6 +19,15 @@ def _fix_colors(colors):
     return colors
 
 
+def _compute_face_normals(vertices, faces=None):
+    if faces is not None:
+        assert vertices.shape[1:] == (3,)
+        vertices = vertices[faces]
+    edges1 = vertices[:, 1] - vertices[:, 0]
+    edges2 = vertices[:, 2] - vertices[:, 0]
+    return np.cross(edges1, edges2)
+
+
 class MeshData(object):
     """
     Class for storing and operating on 3D mesh data.
@@ -294,9 +303,8 @@ class MeshData(object):
             The normals.
         """
         if self._face_normals is None:
-            v = self.get_vertices(indexed='faces')
-            self._face_normals = np.cross(v[:, 1] - v[:, 0],
-                                          v[:, 2] - v[:, 0])
+            vertices = self.get_vertices(indexed='faces')
+            self._face_normals = _compute_face_normals(vertices)
 
         if indexed is None:
             return self._face_normals
