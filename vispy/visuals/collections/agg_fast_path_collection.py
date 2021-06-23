@@ -13,7 +13,7 @@ on miter joins which may result in some glitches on screen.
 """
 import numpy as np
 from ... import glsl
-from ...gloo import gl
+from ... import gloo
 from . collection import Collection
 from ..transforms import NullTransform
 
@@ -76,7 +76,7 @@ class AggFastPathCollection(Collection):
             vertex = glsl.get('collections/agg-fast-path.vert')
         if transform is None:
             transform = NullTransform()
-        self.transform = transform        
+        self.transform = transform
         if fragment is None:
             fragment = glsl.get('collections/agg-fast-path.frag')
 
@@ -213,6 +213,6 @@ class AggFastPathCollection(Collection):
 
     def draw(self, mode="triangle_strip"):
         """Draw collection"""
-        gl.glDepthMask(gl.GL_FALSE)
+        gloo.set_depth_mask(0)
         Collection.draw(self, mode)
-        gl.glDepthMask(gl.GL_TRUE)
+        gloo.set_depth_mask(1)

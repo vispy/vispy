@@ -29,7 +29,7 @@ def test_volume():
 
     # Clim
     V.set_data(vol, (0.5, 0.8))
-    assert V.clim == (np.float32(0.5), np.float32(0.8))
+    assert V.clim == (0.5, 0.8)
     with raises(ValueError):
         V.set_data((0.5, 0.8, 1.0))
 

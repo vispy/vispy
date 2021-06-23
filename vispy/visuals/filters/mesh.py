@@ -215,7 +215,7 @@ void shade() {
                     * specular_light.rgb * specular_light.a;
 
     // Blend the base color and combine the illuminations.
-    vec3 color = ambient + base_color * diffuse + specular;
+    vec3 color = base_color * (ambient + diffuse) + specular;
 
     gl_FragColor.rgb = color;
 }
@@ -395,7 +395,7 @@ class ShadingFilter(Filter):
                  specular_coefficient=(1, 1, 1, 1),
                  shininess=100,
                  light_dir=(10, 5, -5),
-                 ambient_light=(1, 1, 1, 0),
+                 ambient_light=(1, 1, 1, .3),
                  diffuse_light=(1, 1, 1, 1),
                  specular_light=(1, 1, 1, .25),
                  enabled=True):

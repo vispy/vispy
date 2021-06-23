@@ -187,7 +187,7 @@ class PlotWidget(scene.Widget):
         self.view.camera.set_range()
         return hist
 
-    def image(self, data, cmap='cubehelix', clim='auto', fg_color=None):
+    def image(self, data, cmap='cubehelix', clim='auto', fg_color=None, **kwargs):
         """Show an image
 
         Parameters
@@ -201,6 +201,8 @@ class PlotWidget(scene.Widget):
             min and max values.
         fg_color : Color or None
             Sets the plot foreground color if specified.
+        kwargs : keyword arguments.
+            More args to pass to :class:`~vispy.visuals.image.Image`.
 
         Returns
         -------
@@ -212,7 +214,7 @@ class PlotWidget(scene.Widget):
         The colormap is only used if the image pixels are scalars.
         """
         self._configure_2d(fg_color)
-        image = scene.Image(data, cmap=cmap, clim=clim)
+        image = scene.Image(data, cmap=cmap, clim=clim, **kwargs)
         self.view.add(image)
         self.view.camera.aspect = 1
         self.view.camera.set_range()
@@ -390,7 +392,7 @@ class PlotWidget(scene.Widget):
         return spec
 
     def volume(self, vol, clim=None, method='mip', threshold=None,
-               cmap='grays'):
+               cmap='grays', **kwargs):
         """Show a 3D volume
 
         Parameters
@@ -409,6 +411,8 @@ class PlotWidget(scene.Widget):
             the mean of the given volume is used.
         cmap : str
             The colormap to use.
+        kwargs : keyword arguments.
+            More args to pass to :class:`~vispy.visuals.volume.Volume`.
 
         Returns
         -------
@@ -420,7 +424,7 @@ class PlotWidget(scene.Widget):
         Volume
         """
         self._configure_3d()
-        volume = scene.Volume(vol, clim, method, threshold, cmap=cmap)
+        volume = scene.Volume(vol, clim, method, threshold, cmap=cmap, **kwargs)
         self.view.add(volume)
         self.view.camera.set_range()
         return volume

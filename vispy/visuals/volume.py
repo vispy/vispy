@@ -120,16 +120,10 @@ float colorToVal(vec4 color1)
 }}
 
 vec4 applyColormap(float data) {{
-    if (clim.x < clim.y) {{
-        data = clamp(data, clim.x, clim.y);
-    }} else if (clim.x > clim.y) {{
-        data = clamp(data, clim.y, clim.x);
-    }} else {{
-        return $cmap(0.0);
-    }}
-
+    data = clamp(data, min(clim.x, clim.y), max(clim.x, clim.y));
     data = (data - clim.x) / (clim.y - clim.x);
-    return $cmap(pow(data, gamma));
+    vec4 color = $cmap(pow(data, gamma));
+    return color;
 }}
 
 
@@ -469,10 +463,10 @@ class VolumeVisual(Visual):
     vol : ndarray
         The volume to display. Must be ndim==3. Array is assumed to be stored
         as ``(z, y, x)``.
-    clim : tuple of two floats | None
-        The contrast limits. The values in the volume are mapped to
-        black and white corresponding to these values. Default maps
-        between min and max.
+    clim : str | tuple
+        Limits to use for the colormap. I.e. the values that map to black and white
+        in a gray colormap. Can be 'auto' to auto-set bounds to
+        the min and max of the data. If not given or None, 'auto' is used.
     method : {'mip', 'attenuated_mip', 'minip', 'translucent', 'additive',
         'iso', 'average'}
         The render method to use. See corresponding docs for details.
@@ -527,7 +521,7 @@ class VolumeVisual(Visual):
 
     _interpolation_names = ['linear', 'nearest']
 
-    def __init__(self, vol, clim=None, method='mip', threshold=None,
+    def __init__(self, vol, clim="auto", method='mip', threshold=None,
                  attenuation=1.0, relative_step_size=0.8, cmap='grays',
                  gamma=1.0, interpolation='linear', texture_format=None):
         # Storage of information of volume
@@ -573,7 +567,7 @@ class VolumeVisual(Visual):
         self.set_gl_state('translucent', cull_face=False)
 
         # Apply clim and set data at the same time
-        self.set_data(vol, clim)
+        self.set_data(vol, clim or "auto")
 
         # Set params
         self.method = method
@@ -624,9 +618,7 @@ class VolumeVisual(Visual):
             raise ValueError('Volume visual needs a 3D array.')
         if isinstance(self._texture, GPUScaledTextured3D):
             copy = False
-
-        if clim is None and self._texture.clim is None:
-            clim = (vol.min(), vol.max())
+        
         if clim is not None and clim != self._texture.clim:
             self._texture.set_clim(clim)
 
