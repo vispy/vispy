@@ -9,6 +9,7 @@ from vispy.visuals.transforms import STTransform
 import numpy as np
 import pytest
 
+
 @requires_application()
 @pytest.mark.parametrize(
     'blend_func',
