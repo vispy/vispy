@@ -492,7 +492,6 @@ class Grid(Widget):
                 y = np.sum(value_vectorized(self._height_grid[col][0:row]))
 
             if isinstance(widget, ViewBox):
-                print("####", val, x, y, width, height)
                 widget.rect = Rect(x, y, width, height)
             else:
                 widget.size = (width, height)
