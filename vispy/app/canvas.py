@@ -528,15 +528,27 @@ class Canvas(object):
         sleep(0.1)  # ensure window is really closed/destroyed
         logger.debug('Context manager exit complete for %s' % (self,))
 
-    def render(self):
-        """Render the canvas to an offscreen buffer and return the image
-        array.
+    def render(self, alpha=True):
+        """Render the canvas to an offscreen buffer and return the image array.
 
         Returns
         -------
         image : array
             Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
             upper-left corner of the rendered region.
+        alpha : bool
+            If True (default) produce an RGBA array (M, N, 4). If False,
+            remove the Alpha channel and return the RGB array (M, N, 3).
+            This may be useful if blending of various elements requires a
+            solid background to produce the expected visualization.
+
+        Returns
+        -------
+        image : array
+            Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
+            upper-left corner of the rendered region. If ``alpha`` is ``False``,
+            then only 3 channels will be returned (RGB).
+
 
         """
         self.set_current()
@@ -547,9 +559,13 @@ class Canvas(object):
         try:
             fbo.activate()
             self.events.draw()
-            return fbo.read()
+            result = fbo.read()
         finally:
             fbo.deactivate()
+
+        if not alpha:
+            result = result[..., :3]
+        return result
 
 
 # Event subclasses specific to the Canvas

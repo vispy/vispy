@@ -217,7 +217,7 @@ class SceneCanvas(app.Canvas, Frozen):
         self._update_pending = False
         self._draw_scene()
 
-    def render(self, region=None, size=None, bgcolor=None, crop=None):
+    def render(self, region=None, size=None, bgcolor=None, crop=None, alpha=True):
         """Render the scene to an offscreen buffer and return the image array.
 
         Parameters
@@ -236,12 +236,18 @@ class SceneCanvas(app.Canvas, Frozen):
         crop : array-like | None
             If specified it determines the pixels read from the framebuffer.
             In the format (x, y, w, h), relative to the region being rendered.
+        alpha : bool
+            If True (default) produce an RGBA array (h, w, 4). If False,
+            remove the Alpha channel and return the RGB array (h, w, 3).
+            This may be useful if blending of various elements requires a
+            solid background to produce the expected visualization.
 
         Returns
         -------
         image : array
             Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the 
-            upper-left corner of the rendered region.
+            upper-left corner of the rendered region. If ``alpha`` is ``False``,
+            then only 3 channels will be returned (RGB).
 
         """
         self.set_current()
@@ -256,9 +262,13 @@ class SceneCanvas(app.Canvas, Frozen):
         self.push_fbo(fbo, offset, csize)
         try:
             self._draw_scene(bgcolor=bgcolor)
-            return fbo.read(crop=crop)
+            result = fbo.read(crop=crop)
         finally:
             self.pop_fbo()
+
+        if not alpha:
+            result = result[..., :3]
+        return result
 
     def _draw_scene(self, bgcolor=None):
         if bgcolor is None:
