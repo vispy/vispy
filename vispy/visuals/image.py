@@ -89,12 +89,26 @@ _texture_lookup = """
 
 _apply_clim_float = """
     float apply_clim(float data) {
+        if (!(color.r <= 0.0 || 0.0 <= color.r)) {
+            discard;
+        }
         data = clamp(data, min($clim.x, $clim.y), max($clim.x, $clim.y));
         data = (data - $clim.x) / ($clim.y - $clim.x);
         return data;
     }"""
 _apply_clim = """
     vec4 apply_clim(vec4 color) {
+        // If all the pixels are NaN make it completely transparent
+        // http://stackoverflow.com/questions/11810158/how-to-deal-with-nan-or-inf-in-opengl-es-2-0-shaders
+        if (
+            !(color.r <= 0.0 || 0.0 <= color.r) &&
+            !(color.g <= 0.0 || 0.0 <= color.g) &&
+            !(color.b <= 0.0 || 0.0 <= color.b)) {
+            color.a = 0;
+        }
+        color.r = !(color.r <= 0.0 || 0.0 <= color.r) ? min($clim.x, $clim.y) : color.r;
+        color.g = !(color.g <= 0.0 || 0.0 <= color.g) ? min($clim.x, $clim.y) : color.g;
+        color.b = !(color.b <= 0.0 || 0.0 <= color.b) ? min($clim.x, $clim.y) : color.b;
         color.rgb = clamp(color.rgb, min($clim.x, $clim.y), max($clim.x, $clim.y));
         color.rgb = (color.rgb - $clim.x) / ($clim.y - $clim.x);
         return max(color, 0.0);
