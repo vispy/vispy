@@ -68,11 +68,11 @@ def test_mesh_shading_filter(shading):
         if shading in ("flat", "smooth"):
             # there should be a gradient, not solid colors
             assert np.unique(rendered).size >= 28
-            # sphere/circle starts "dark" on the left and gets brighter
-            # then hits a bright spot and decreases after
-            invest_row = rendered[23].astype(np.float64)
+            # sphere/circle is "dark" on the right and gets brighter as you
+            # move to the left, then hits a bright spot and decreases after
+            invest_row = rendered[34].astype(np.float64)
             # overall, we should be increasing brightness up to a "bright spot"
-            assert (np.diff(invest_row[:29]) >= -1).all()
+            assert (np.diff(invest_row[34:60]) <= 0).all()
         else:
             assert np.unique(rendered).size == 2
 
