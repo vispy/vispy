@@ -223,25 +223,12 @@ class ImageVisual(Visual):
             raise ValueError("interpolation must be one of %s" %
                              ', '.join(self._interpolation_names))
 
-        # check texture interpolation
-        if self._interpolation == 'bilinear':
-            texture_interpolation = 'linear'
-        else:
-            texture_interpolation = 'nearest'
-
         self._method = method
         self._grid = grid
         self._need_texture_upload = True
         self._need_vertex_update = True
         self._need_colortransform_update = True
         self._need_interpolation_update = True
-        if texture_format is None:
-            self._texture = CPUScaledTexture2D(
-                data, interpolation=texture_interpolation)
-        else:
-            self._texture = GPUScaledTexture2D(
-                data, internalformat=texture_format,
-                interpolation=texture_interpolation)
         self._subdiv_position = VertexBuffer()
         self._subdiv_texcoord = VertexBuffer()
 
@@ -283,6 +270,21 @@ class ImageVisual(Visual):
         interpolation_fun['nearest'] = Function(_texture_lookup)
         interpolation_fun['bilinear'] = Function(_texture_lookup)
         return interpolation_names, interpolation_fun
+
+    def _init_texture(self, data, texture_format):
+        if self._interpolation == 'bilinear':
+            texture_interpolation = 'linear'
+        else:
+            texture_interpolation = 'nearest'
+
+        if texture_format is None:
+            tex = CPUScaledTexture2D(
+                data, interpolation=texture_interpolation)
+        else:
+            tex = GPUScaledTexture2D(
+                data, internalformat=texture_format,
+                interpolation=texture_interpolation)
+        return tex
 
     def set_data(self, image):
         """Set the image data.
