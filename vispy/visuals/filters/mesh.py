@@ -203,11 +203,11 @@ void shade() {
     bool is_illuminated = diffuse_factor > 0.0;
     if (is_illuminated && shininess > 0.0) {
         // Phong reflection
-        vec3 reflection = reflect(-light_vec, normal);
-        float reflection_factor = max(dot(reflection, eye_vec), 0.0);
+        //vec3 reflection = reflect(-light_vec, normal);
+        //float reflection_factor = max(dot(reflection, eye_vec), 0.0);
         // Blinn-Phong reflection
-        //vec3 halfway = -normalize(light_vec + eye_vec);
-        //float reflection_factor clamp(dot(halfway, normal), 0.0, 1.0);
+        vec3 halfway = -normalize(light_vec + eye_vec);
+        float reflection_factor = clamp(dot(halfway, normal), 0.0, 1.0);
         specular_factor = pow(reflection_factor, shininess);
     }
     vec3 specular = specular_factor
