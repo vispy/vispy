@@ -229,6 +229,7 @@ class ImageVisual(Visual):
         self._need_vertex_update = True
         self._need_colortransform_update = True
         self._need_interpolation_update = True
+        self._texture = self._init_texture(data, texture_format)
         self._subdiv_position = VertexBuffer()
         self._subdiv_texcoord = VertexBuffer()
 
