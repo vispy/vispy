@@ -358,9 +358,6 @@ class MeshVisual(Visual):
                 return False
             self._data_changed = False
 
-    def draw(self, *args, **kwds):
-        Visual.draw(self, *args, **kwds)
-
     @staticmethod
     def _prepare_transforms(view):
         tr = view.transforms.get_transform()

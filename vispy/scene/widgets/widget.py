@@ -50,7 +50,7 @@ class Widget(Compound):
         self._mesh.set_gl_state('translucent', depth_test=False,
                                 cull_face=False)
         self._picking_mesh = MeshVisual(mode='triangle_fan')
-        self._picking_mesh.set_gl_state(cull_face=False)
+        self._picking_mesh.set_gl_state(cull_face=False, depth_test=False)
         self._picking_mesh.visible = False
 
         # reserved space inside border
