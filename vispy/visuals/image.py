@@ -199,7 +199,6 @@ class ImageVisual(Visual):
                  interpolation='nearest', texture_format=None, **kwargs):
         """Initialize image properties, texture storage, and interpolation methods."""
         self._data = None
-        self._gamma = gamma
 
         # load 'float packed rgba8' interpolation kernel
         # to load float interpolation kernel use
@@ -251,6 +250,7 @@ class ImageVisual(Visual):
 
         self.clim = clim or "auto"  # None -> "auto"
         self.cmap = cmap
+        self.gamma = gamma
         if data is not None:
             self.set_data(data)
         self.freeze()
