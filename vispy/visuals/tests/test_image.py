@@ -27,6 +27,7 @@ def test_image(is_3d):
                               ("_rgb" if is_3d else "_mono"))
 
 
+@requires_application()
 @pytest.mark.parametrize('gamma', [None, -0.5, "0.5"])
 def test_bad_init_gamma(gamma):
     """Test creating an Image with a bad gamma value."""
