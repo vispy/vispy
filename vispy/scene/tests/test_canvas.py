@@ -75,7 +75,7 @@ def test_picking_basic():
         view.camera = 'panzoom'
 
         x = np.linspace(0, 400, 100)
-        y = np.linspace(-144.1, -9.44, 100)
+        y = np.linspace(0, 200, 100)
         line = scene.Line(np.array((x, y)).T.astype(np.float32))
         line.interactive = True
         view.add(line)
@@ -83,6 +83,7 @@ def test_picking_basic():
 
         c.render()  # initial basic draw
         for _ in range(2):  # run picking twice to make sure it is repeatable
+            # get Visuals on a Canvas point that Line is drawn on
             picked_visuals = c.visuals_at((100, 25))
             assert len(picked_visuals) == 2
             assert any(isinstance(vis, scene.ViewBox) for vis in picked_visuals)
