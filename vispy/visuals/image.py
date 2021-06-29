@@ -89,7 +89,7 @@ _texture_lookup = """
 
 _apply_clim_float = """
     float apply_clim(float data) {
-        if (!(color.r <= 0.0 || 0.0 <= color.r)) {
+        if (!(data <= 0.0 || 0.0 <= data)) {
             discard;
         }
         data = clamp(data, min($clim.x, $clim.y), max($clim.x, $clim.y));
