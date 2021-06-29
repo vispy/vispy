@@ -134,6 +134,10 @@ class ImageVisual(Visual):
     ----------
     data : ndarray
         ImageVisual data. Can be shape (M, N), (M, N, 3), or (M, N, 4).
+        If floating point data is provided and contains NaNs, they will
+        be made transparent (discarded) for the single band data case.
+        For RGB data, NaNs will be mapped to the lowest ``clim`` value.
+        If the Alpha band is NaN it will be mapped to 0 (transparent).
     method : str
         Selects method of rendering image in case of non-linear transforms.
         Each method produces similar results, but may trade efficiency
