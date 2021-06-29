@@ -105,7 +105,7 @@ _apply_clim = """
         color.r = !(color.r <= 0.0 || 0.0 <= color.r) ? min($clim.x, $clim.y) : color.r;
         color.g = !(color.g <= 0.0 || 0.0 <= color.g) ? min($clim.x, $clim.y) : color.g;
         color.b = !(color.b <= 0.0 || 0.0 <= color.b) ? min($clim.x, $clim.y) : color.b;
-        color.a = !(color.b <= 0.0 || 0.0 <= color.b) ? 0 : color.b;
+        color.a = !(color.a <= 0.0 || 0.0 <= color.a) ? 0 : color.a;
         color.rgb = clamp(color.rgb, min($clim.x, $clim.y), max($clim.x, $clim.y));
         color.rgb = (color.rgb - $clim.x) / ($clim.y - $clim.x);
         return max(color, 0.0);
