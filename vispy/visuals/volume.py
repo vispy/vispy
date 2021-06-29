@@ -724,7 +724,8 @@ class VolumeVisual(Visual):
             uniform vec3 u_clipping_plane_norm{idx};
             '''
         clip_template = '''
-            vec3 relative_vec{idx} = loc - u_clipping_plane_pos{idx};
+            vec3 clipping_plane{idx}_tex = u_clipping_plane_pos{idx} / u_shape;
+            vec3 relative_vec{idx} = loc - clipping_plane{idx}_tex;
             float is_shown{idx} = dot(relative_vec{idx}, u_clipping_plane_norm{idx});
             is_shown = min(is_shown{idx}, is_shown);
             '''
