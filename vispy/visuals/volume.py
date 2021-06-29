@@ -62,7 +62,7 @@ varying vec4 v_farpos;
 void main() {
     // v_texcoord = a_texcoord;
     v_position = a_position;
-    
+
     // Project local vertex coordinate to camera position. Then do a step
     // backward (in cam coords) and project back. Voila, we get our ray vector.
     vec4 pos_in_cam = $viewtransformf(vec4(v_position, 1));
@@ -70,11 +70,11 @@ void main() {
     // intersection of ray and near clipping plane (z = -1 in clip coords)
     pos_in_cam.z = -pos_in_cam.w;
     v_nearpos = $viewtransformi(pos_in_cam);
-    
+
     // intersection of ray and far clipping plane (z = +1 in clip coords)
     pos_in_cam.z = pos_in_cam.w;
     v_farpos = $viewtransformi(pos_in_cam);
-    
+
     gl_Position = $transform(vec4(v_position, 1.0));
 }
 """  # noqa
@@ -132,10 +132,10 @@ vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
     // Calculate color by incorporating lighting
     vec4 color1;
     vec4 color2;
-    
+
     // View direction
     vec3 V = normalize(view_ray);
-    
+
     // calculate normal vector from gradient
     vec3 N; // normal
     color1 = $sample( u_volumetex, loc+vec3(-step[0],0.0,0.0) );
@@ -152,22 +152,22 @@ vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
     betterColor = max(max(color1, color2),betterColor);
     float gm = length(N); // gradient magnitude
     N = normalize(N);
-    
+
     // Flip normal so it points towards viewer
     float Nselect = float(dot(N,V) > 0.0);
     N = (2.0*Nselect - 1.0) * N;  // ==  Nselect * N - (1.0-Nselect)*N;
-    
+
     // Get color of the texture (albeido)
     color1 = betterColor;
     color2 = color1;
     // todo: parametrise color1_to_color2
-    
+
     // Init colors
     vec4 ambient_color = vec4(0.0, 0.0, 0.0, 0.0);
     vec4 diffuse_color = vec4(0.0, 0.0, 0.0, 0.0);
     vec4 specular_color = vec4(0.0, 0.0, 0.0, 0.0);
     vec4 final_color;
-    
+
     // todo: allow multiple light, define lights on viewvox or subscene
     int nlights = 1; 
     for (int i=0; i<nlights; i++)
@@ -176,25 +176,25 @@ vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
         vec3 L = normalize(view_ray);  //lightDirs[i]; 
         float lightEnabled = float( length(L) > 0.0 );
         L = normalize(L+(1.0-lightEnabled));
-        
+
         // Calculate lighting properties
         float lambertTerm = clamp( dot(N,L), 0.0, 1.0 );
         vec3 H = normalize(L+V); // Halfway vector
         float specularTerm = pow( max(dot(H,N),0.0), u_shininess);
-        
+
         // Calculate mask
         float mask1 = lightEnabled;
-        
+
         // Calculate colors
         ambient_color +=  mask1 * u_ambient;  // * gl_LightSource[i].ambient;
         diffuse_color +=  mask1 * lambertTerm;
         specular_color += mask1 * specularTerm * u_specular;
     }
-    
+
     // Calculate final color by componing different components
     final_color = color2 * ( ambient_color + diffuse_color) + specular_color;
     final_color.a = color2.a;
-    
+
     // Done
     return final_color;
 }
@@ -247,7 +247,7 @@ void main() {
         for (iter=iter; iter<nsteps; iter++)
         {
             // Ignore this step if clipped out by the clipping planes
-            float is_shown = $clip_by_planes(loc);
+            float is_shown = $clip_by_planes(loc, u_shape);
             if (is_shown >= 0)
             {
                 // Get sample color
@@ -278,7 +278,6 @@ void main() {
 
 """  # noqa
 
-
 MIP_SNIPPETS = dict(
     before_loop="""
         float maxval = -99999.0; // The maximum encountered value
@@ -303,7 +302,6 @@ MIP_SNIPPETS = dict(
         """,
 )
 
-
 ATTENUATED_MIP_SNIPPETS = dict(
     before_loop="""
         float maxval = -99999.0; // The maximum encountered value
@@ -325,7 +323,6 @@ ATTENUATED_MIP_SNIPPETS = dict(
         gl_FragColor = applyColormap(maxval);
         """,
 )
-
 
 MINIP_SNIPPETS = dict(
     before_loop="""
@@ -350,7 +347,6 @@ MINIP_SNIPPETS = dict(
         }
         """,
 )
-
 
 TRANSLUCENT_SNIPPETS = dict(
     before_loop="""
@@ -381,7 +377,6 @@ TRANSLUCENT_SNIPPETS = dict(
         """,
 )
 
-
 ADDITIVE_SNIPPETS = dict(
     before_loop="""
         vec4 integrated_color = vec4(0., 0., 0., 0.);
@@ -395,7 +390,6 @@ ADDITIVE_SNIPPETS = dict(
         gl_FragColor = integrated_color;
         """,
 )
-
 
 ISO_SNIPPETS = dict(
     before_loop="""
@@ -441,7 +435,6 @@ AVG_SNIPPETS = dict(
         gl_FragColor = applyColormap(meanval);
         """,
 )
-
 
 frag_dict = {
     'mip': MIP_SNIPPETS,
@@ -561,7 +554,7 @@ class VolumeVisual(Visual):
         self._draw_mode = 'triangle_strip'
         self._index_buffer = IndexBuffer()
 
-        # Only show back faces of cuboid. This is required because if we are 
+        # Only show back faces of cuboid. This is required because if we are
         # inside the volume, then the front faces are outside of the clipping
         # box and will not be drawn.
         self.set_gl_state('translucent', cull_face=False)
@@ -716,7 +709,8 @@ class VolumeVisual(Visual):
         """
         build the code snippet used to clip the volume based on self.clipping_planes
         """
-        func = Function('$vars\nfloat clip_planes(vec3 loc) { float is_shown = 1.0; $clips; return is_shown; }')
+        func = Function(
+            '$vars\nfloat clip_planes(vec3 loc, vec3 vol_shape) { float is_shown = 1.0; $clips; return is_shown; }')
         # each plane is defined by a position and a normal vector
         # the fragment is considered clipped if on the "negative" side of the plane
         vars_template = '''
@@ -724,8 +718,7 @@ class VolumeVisual(Visual):
             uniform vec3 u_clipping_plane_norm{idx};
             '''
         clip_template = '''
-            vec3 clipping_plane{idx}_tex = u_clipping_plane_pos{idx} / u_shape;
-            vec3 relative_vec{idx} = loc - clipping_plane{idx}_tex;
+            vec3 relative_vec{idx} = loc - ( u_clipping_plane_pos{idx} / vol_shape );
             float is_shown{idx} = dot(relative_vec{idx}, u_clipping_plane_norm{idx});
             is_shown = min(is_shown{idx}, is_shown);
             '''
