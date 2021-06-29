@@ -37,7 +37,7 @@ volume.transform = scene.STTransform(translate=(64, 64, 0))
 # Create three cameras (Fly, Turntable and Arcball)
 fov = 60.
 cam = scene.cameras.TurntableCamera(parent=view.scene, fov=fov,
-                                     name='Turntable')
+                                    name='Turntable')
 
 view.camera = cam  # Select turntable at first
 
@@ -64,6 +64,7 @@ class TransGrays(BaseColormap):
     }
     """
 
+
 # Setup colormap iterators
 opaque_cmaps = cycle(get_colormaps())
 translucent_cmaps = cycle([TransFire(), TransGrays()])
@@ -85,12 +86,14 @@ def on_mouse_move(event):
         axis.transform.translate((50., 50.))
         axis.update()
 
+
 clip_modes = {
     'x': np.array([[[0.5, 0.5, 0.5], [1, 0, 0]]]),
     'y': np.array([[[0.5, 0.5, 0.5], [0, 1, 0]]]),
     'z': np.array([[[0.5, 0.5, 0.5], [0, 0, 1]]]),
     'o': np.array([[[0.5, 0.5, 0.5], [1, 1, 1]]]),
 }
+
 
 def add_clip(vol, mode):
     new_plane = clip_modes[mode]
@@ -99,9 +102,11 @@ def add_clip(vol, mode):
     else:
         vol.clipping_planes = np.concatenate([vol.clipping_planes, new_plane])
 
+
 def remove_clip(vol):
     if vol.clipping_planes is not None:
         vol.clipping_planes = vol.clipping_planes[:-1]
+
 
 # Implement key presses
 @canvas.events.key_press.connect
