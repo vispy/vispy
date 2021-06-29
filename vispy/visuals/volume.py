@@ -716,28 +716,29 @@ class VolumeVisual(Visual):
         """
         build the code snippet used to clip the volume based on self.clipping_planes
         """
-        if self._clipping_planes is None:
-            func = Function('float noop_clip_planes(vec3 loc) { return 1; }')
+        func = Function('$vars\nfloat clip_planes(vec3 loc) { float is_shown = 1.0; $clips; return is_shown; }')
+        # each plane is defined by a position and a normal vector
+        # the fragment is considered clipped if on the "negative" side of the plane
+        vars_template = '''
+            uniform vec3 u_clipping_plane_pos{idx};
+            uniform vec3 u_clipping_plane_norm{idx};
+            '''
+        clip_template = '''
+            vec3 relative_vec{idx} = loc - u_clipping_plane_pos{idx};
+            float is_shown{idx} = dot(relative_vec{idx}, u_clipping_plane_norm{idx});
+            is_shown = min(is_shown{idx}, is_shown);
+            '''
+        all_vars = []
+        all_clips = []
+        if self.clipping_planes is None:
+            cl_planes = []
         else:
-            func = Function('$vars\nfloat clip_planes(vec3 loc) { float is_shown = 1.0; $clips ; return is_shown; }')
-            # each plane is defined by a position and a normal vector
-            # the fragment is considered clipped if on the "negative" side of the plane
-            vars_template = '''
-                uniform vec3 u_clipping_plane_pos{idx};
-                uniform vec3 u_clipping_plane_norm{idx};
-                '''
-            clip_template = '''
-                vec3 relative_vec{idx} = loc - u_clipping_plane_pos{idx};
-                float is_shown{idx} = dot(relative_vec{idx}, u_clipping_plane_norm{idx});
-                is_shown = min(is_shown{idx}, is_shown);
-                '''
-            all_vars = []
-            all_clips = []
-            for idx in range(len(self._clipping_planes)):
-                all_vars.append(vars_template.format(idx=idx))
-                all_clips.append(clip_template.format(idx=idx))
-            func['vars'] = ''.join(all_vars)
-            func['clips'] = ''.join(all_clips)
+            cl_planes = self.clipping_planes
+        for idx in range(len(cl_planes)):
+            all_vars.append(vars_template.format(idx=idx))
+            all_clips.append(clip_template.format(idx=idx))
+        func['vars'] = ''.join(all_vars)
+        func['clips'] = ''.join(all_clips)
         return func
 
     @property
