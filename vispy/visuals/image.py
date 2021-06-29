@@ -135,7 +135,10 @@ class ImageVisual(Visual):
     data : ndarray
         ImageVisual data. Can be shape (M, N), (M, N, 3), or (M, N, 4).
         If floating point data is provided and contains NaNs, they will
-        be made transparent (discarded) for the single band data case.
+        be made transparent (discarded) for the single band data case when
+        scaling is done on the GPU (see ``texture_format``). On the CPU,
+        single band NaNs are mapped to 0 as they are sent to the GPU which
+        result in them using the lowest ``clim`` value in the GPU.
         For RGB data, NaNs will be mapped to the lowest ``clim`` value.
         If the Alpha band is NaN it will be mapped to 0 (transparent).
     method : str
