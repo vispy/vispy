@@ -7,19 +7,19 @@ About this technique
 --------------------
 
 In Python, we define the six faces of a cuboid to draw, as well as
-texture cooridnates corresponding with the vertices of the cuboid. 
+texture cooridnates corresponding with the vertices of the cuboid.
 The back faces of the cuboid are drawn (and front faces are culled)
-because only the back faces are visible when the camera is inside the 
+because only the back faces are visible when the camera is inside the
 volume.
 
-In the vertex shader, we intersect the view ray with the near and far 
+In the vertex shader, we intersect the view ray with the near and far
 clipping planes. In the fragment shader, we use these two points to
 compute the ray direction and then compute the position of the front
 cuboid surface (or near clipping plane) along the view ray.
 
 Next we calculate the number of steps to walk from the front surface
 to the back surface and iterate over these positions in a for-loop.
-At each iteration, the fragment color or other voxel information is 
+At each iteration, the fragment color or other voxel information is
 updated depending on the selected rendering method.
 
 It is important for the texture interpolation is 'linear' for most volumes,
@@ -246,12 +246,16 @@ void main() {
     while (iter < nsteps) {
         for (iter=iter; iter<nsteps; iter++)
         {
-            // Get sample color
-            vec4 color = $sample(u_volumetex, loc);
-            float val = color.r;
+            // Ignore this step if clipped out by the clipping planes
+            float is_shown = $clip_by_planes(loc);
+            if (is_shown >= 0)
+            {
+                // Get sample color
+                vec4 color = $sample(u_volumetex, loc);
+                float val = color.r;
 
-            $in_loop
-
+                {in_loop}
+            }
             // Advance location deeper into the volume
             loc += step;
         }
@@ -519,7 +523,8 @@ class VolumeVisual(Visual):
 
     def __init__(self, vol, clim="auto", method='mip', threshold=None,
                  attenuation=1.0, relative_step_size=0.8, cmap='grays',
-                 gamma=1.0, interpolation='linear', texture_format=None):
+                 gamma=1.0, interpolation='linear', texture_format=None,
+                 clipping_planes=None):
         # Storage of information of volume
         self._vol_shape = ()
         self._gamma = gamma
@@ -706,6 +711,47 @@ class VolumeVisual(Visual):
             self._interpolation = interp
             self._texture.interpolation = self._interpolation
             self.update()
+
+    def _build_clipping_planes_func(self, clipping_planes):
+        """
+        build the function used to clip the volume based on self.clipping_planes
+        """
+        if clipping_planes is None:
+            func = Function('float noop_clip_planes(loc) { return 1; }')
+        else:
+            base_func = 'float clip_planes(loc) {{\nfloat is_shown = 1.0;\n{};\nreturn is_shown;\n}}'
+            # each plane is defined by a position and a normal vector
+            # the fragment is considered clipped if on the "negative" side of the plane
+            clip_template = '''
+                uniform vec3 u_clipping_plane_pos{idx};
+                uniform vec3 u_clipping_plane_norm{idx};
+                vec3 relative_vec{idx} = loc - u_clipping_plane_pos{idx};
+                float is_shown{idx} = dot(relative_vec{idx}, u_clipping_plane_norm{idx});
+                is_shown = min(is_shown{idx}, is_shown);
+                '''
+            all_clips = []
+            for idx in range(len(clipping_planes)):
+                all_clips.append(clip_template.format(idx))
+            func = Function(base_func.format(''.join(all_clips)))
+            for idx, plane in enumerate(clipping_planes):
+                func[f'u_clipping_plane_pos{idx}'] = tuple(plane[0])
+                func[f'u_clipping_plane_norm{idx}'] = tuple(plane[1])
+        return func
+
+    @property
+    def clipping_planes(self):
+        """
+        a set of planes used to clip the volume. Each plane is defined by a position and
+        a normal vector (magnitude is irrelevant). Shape: (n_planes, 2, 3)
+        """
+        return self._clipping_planes
+
+    @clipping_planes.setter
+    def clipping_planes(self, value):
+        clipping_func = self._build_clipping_planes_func(value)
+        self.shared_program.frag['clip_by_planes'] = clipping_func
+        self._clipping_planes = value
+        self.update()
 
     @property
     def method(self):
