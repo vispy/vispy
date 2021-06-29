@@ -727,7 +727,7 @@ class VolumeVisual(Visual):
         if self.clipping_planes is None:
             cl_planes = []
         else:
-            cl_planes = self.clipping_planes
+            cl_planes = self._clipping_planes
         for idx in range(len(cl_planes)):
             all_vars.append(vars_template.format(idx=idx))
             all_clips.append(clip_template.format(idx=idx))
@@ -741,10 +741,14 @@ class VolumeVisual(Visual):
         a set of planes used to clip the volume. Each plane is defined by a position and
         a normal vector (magnitude is irrelevant). Shape: (n_planes, 2, 3)
         """
-        return self._clipping_planes
+        if self._clipping_planes is None:
+            return self._clipping_planes
+        return self._clipping_planes[:, :, ::-1]
 
     @clipping_planes.setter
     def clipping_planes(self, value):
+        if value is not None:
+            value = value[:, :, ::-1]
         self._clipping_planes = value
         self.shared_program.frag['clip_by_planes'] = self._build_clipping_planes_func()
         if value is not None:

@@ -86,12 +86,13 @@ def on_mouse_move(event):
         axis.transform.translate((50., 50.))
         axis.update()
 
+volume_center = (np.array(vol.shape) / 2)
 
 clip_modes = {
-    'x': np.array([[[0.5, 0.5, 0.5], [1, 0, 0]]]),
-    'y': np.array([[[0.5, 0.5, 0.5], [0, 1, 0]]]),
-    'z': np.array([[[0.5, 0.5, 0.5], [0, 0, 1]]]),
-    'o': np.array([[[0.5, 0.5, 0.5], [1, 1, 1]]]),
+    'x': np.array([[volume_center, [0, 0, 1]]]),
+    'y': np.array([[volume_center, [0, 1, 0]]]),
+    'z': np.array([[volume_center, [1, 0, 0]]]),
+    'o': np.array([[volume_center, [1, 1, 1]]]),
 }
 
 
