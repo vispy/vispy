@@ -338,7 +338,7 @@ MINIP_SNIPPETS = dict(
         """,
     after_loop="""
         // Refine search for min value, but only if anything was found
-        if ( maxi > -1 ) {{
+        if ( mini > -1 ) {{
             loc = start_loc + step * (float(mini) - 0.5);
             for (int i=0; i<10; i++) {
                 minval = min(minval, $sample(u_volumetex, loc).r);
