@@ -361,21 +361,20 @@ TRANSLUCENT_SNIPPETS = dict(
             float a1 = integrated_color.a;
             float a2 = color.a * (1 - a1);
             float alpha = max(a1 + a2, 0.001);
-            
+
             // Doesn't work.. GLSL optimizer bug?
-            //integrated_color = (integrated_color * a1 / alpha) + 
-            //                   (color * a2 / alpha); 
+            //integrated_color = (integrated_color * a1 / alpha) +
+            //                   (color * a2 / alpha);
             // This should be identical but does work correctly:
             integrated_color *= a1 / alpha;
             integrated_color += color * a2 / alpha;
-            
+
             integrated_color.a = alpha;
-            
+
             if( alpha > 0.99 ){
                 // stop integrating if the fragment becomes opaque
                 iter = nsteps;
             }
-        
         """,
     after_loop="""
         gl_FragColor = integrated_color;
@@ -389,7 +388,7 @@ ADDITIVE_SNIPPETS = dict(
         """,
     in_loop="""
         color = applyColormap(val);
-        
+
         integrated_color = 1.0 - (1.0 - integrated_color) * (1.0 - color);
         """,
     after_loop="""
@@ -575,6 +574,7 @@ class VolumeVisual(Visual):
         self.relative_step_size = relative_step_size
         self.threshold = threshold if threshold is not None else vol.mean()
         self.attenuation = attenuation
+        self.clipping_planes = clipping_planes
         self.freeze()
 
     def _create_texture(self, texture_format, data):
@@ -712,30 +712,32 @@ class VolumeVisual(Visual):
             self._texture.interpolation = self._interpolation
             self.update()
 
-    def _build_clipping_planes_func(self, clipping_planes):
+    def _build_clipping_planes_func(self):
         """
-        build the function used to clip the volume based on self.clipping_planes
+        build the code snippet used to clip the volume based on self.clipping_planes
         """
-        if clipping_planes is None:
-            func = Function('float noop_clip_planes(loc) { return 1; }')
+        if self._clipping_planes is None:
+            func = Function('float noop_clip_planes(vec3 loc) { return 1; }')
         else:
-            base_func = 'float clip_planes(loc) {{\nfloat is_shown = 1.0;\n{};\nreturn is_shown;\n}}'
+            func = Function('$vars\nfloat clip_planes(vec3 loc) { float is_shown = 1.0; $clips ; return is_shown; }')
             # each plane is defined by a position and a normal vector
             # the fragment is considered clipped if on the "negative" side of the plane
-            clip_template = '''
+            vars_template = '''
                 uniform vec3 u_clipping_plane_pos{idx};
                 uniform vec3 u_clipping_plane_norm{idx};
+                '''
+            clip_template = '''
                 vec3 relative_vec{idx} = loc - u_clipping_plane_pos{idx};
                 float is_shown{idx} = dot(relative_vec{idx}, u_clipping_plane_norm{idx});
                 is_shown = min(is_shown{idx}, is_shown);
                 '''
+            all_vars = []
             all_clips = []
-            for idx in range(len(clipping_planes)):
-                all_clips.append(clip_template.format(idx))
-            func = Function(base_func.format(''.join(all_clips)))
-            for idx, plane in enumerate(clipping_planes):
-                func[f'u_clipping_plane_pos{idx}'] = tuple(plane[0])
-                func[f'u_clipping_plane_norm{idx}'] = tuple(plane[1])
+            for idx in range(len(self._clipping_planes)):
+                all_vars.append(vars_template.format(idx=idx))
+                all_clips.append(clip_template.format(idx=idx))
+            func['vars'] = ''.join(all_vars)
+            func['clips'] = ''.join(all_clips)
         return func
 
     @property
@@ -748,9 +750,12 @@ class VolumeVisual(Visual):
 
     @clipping_planes.setter
     def clipping_planes(self, value):
-        clipping_func = self._build_clipping_planes_func(value)
-        self.shared_program.frag['clip_by_planes'] = clipping_func
         self._clipping_planes = value
+        self.shared_program.frag['clip_by_planes'] = self._build_clipping_planes_func()
+        if value is not None:
+            for idx, plane in enumerate(value):
+                self.shared_program[f'u_clipping_plane_pos{idx}'] = tuple(plane[0])
+                self.shared_program[f'u_clipping_plane_norm{idx}'] = tuple(plane[1])
         self.update()
 
     @property
