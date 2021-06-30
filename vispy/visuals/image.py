@@ -217,7 +217,6 @@ class ImageVisual(Visual):
                  interpolation='nearest', texture_format=None, **kwargs):
         """Initialize image properties, texture storage, and interpolation methods."""
         self._data = None
-        self._gamma = gamma
 
         # load 'float packed rgba8' interpolation kernel
         # to load float interpolation kernel use
@@ -241,25 +240,13 @@ class ImageVisual(Visual):
             raise ValueError("interpolation must be one of %s" %
                              ', '.join(self._interpolation_names))
 
-        # check texture interpolation
-        if self._interpolation == 'bilinear':
-            texture_interpolation = 'linear'
-        else:
-            texture_interpolation = 'nearest'
-
         self._method = method
         self._grid = grid
         self._need_texture_upload = True
         self._need_vertex_update = True
         self._need_colortransform_update = True
         self._need_interpolation_update = True
-        if texture_format is None:
-            self._texture = CPUScaledTexture2D(
-                data, interpolation=texture_interpolation)
-        else:
-            self._texture = GPUScaledTexture2D(
-                data, internalformat=texture_format,
-                interpolation=texture_interpolation)
+        self._texture = self._init_texture(data, texture_format)
         self._subdiv_position = VertexBuffer()
         self._subdiv_texcoord = VertexBuffer()
 
@@ -281,6 +268,7 @@ class ImageVisual(Visual):
 
         self.clim = clim or "auto"  # None -> "auto"
         self.cmap = cmap
+        self.gamma = gamma
         if data is not None:
             self.set_data(data)
         self.freeze()
@@ -301,6 +289,21 @@ class ImageVisual(Visual):
         interpolation_fun['nearest'] = Function(_texture_lookup)
         interpolation_fun['bilinear'] = Function(_texture_lookup)
         return interpolation_names, interpolation_fun
+
+    def _init_texture(self, data, texture_format):
+        if self._interpolation == 'bilinear':
+            texture_interpolation = 'linear'
+        else:
+            texture_interpolation = 'nearest'
+
+        if texture_format is None:
+            tex = CPUScaledTexture2D(
+                data, interpolation=texture_interpolation)
+        else:
+            tex = GPUScaledTexture2D(
+                data, internalformat=texture_format,
+                interpolation=texture_interpolation)
+        return tex
 
     def set_data(self, image):
         """Set the image data.

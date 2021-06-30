@@ -60,3 +60,31 @@ def test_canvas_render(blend_func):
         else:
             # the alpha should have some transparency
             assert (rgba_result[..., 3] != 255).any()
+
+
+@requires_application()
+def test_picking_basic():
+    """Test basic picking behavior.
+
+    Based on https://github.com/vispy/vispy/issues/2107.
+
+    """
+    with TestingCanvas(size=(125, 125), show=True, title='run') as c:
+        view = c.central_widget.add_view()
+        view.margin = 5  # add empty space where there are no visuals
+        view.camera = 'panzoom'
+
+        x = np.linspace(0, 400, 100)
+        y = np.linspace(0, 200, 100)
+        line = scene.Line(np.array((x, y)).T.astype(np.float32))
+        line.interactive = True
+        view.add(line)
+        view.camera.set_range()
+
+        c.render()  # initial basic draw
+        for _ in range(2):  # run picking twice to make sure it is repeatable
+            # get Visuals on a Canvas point that Line is drawn on
+            picked_visuals = c.visuals_at((100, 25))
+            assert len(picked_visuals) == 2
+            assert any(isinstance(vis, scene.ViewBox) for vis in picked_visuals)
+            assert any(isinstance(vis, scene.Line) for vis in picked_visuals)

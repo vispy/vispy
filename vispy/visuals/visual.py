@@ -439,13 +439,14 @@ class Visual(BaseVisual):
     def draw(self):
         if not self.visible:
             return
-        self._configure_gl_state()
         if self._prepare_draw(view=self) is False:
             return
 
         if self._vshare.draw_mode is None:
             raise ValueError("_draw_mode has not been set for visual %r" %
                              self)
+
+        self._configure_gl_state()
         try:
             self._program.draw(self._vshare.draw_mode,
                                self._vshare.index_buffer)
