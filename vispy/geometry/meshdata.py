@@ -20,6 +20,23 @@ def _fix_colors(colors):
 
 
 def _compute_face_normals(vertices, faces=None):
+    """Compute the face normals of a triangle mesh.
+
+    Parameters
+    ----------
+    vertices : array_like of shape (n, 3) or (f, 3, 3)
+        A float array of vertex positions. With shape `(n, 3)`, `n` is the
+        number of vertices. With shape `(f, 3, 3)`, `f` is the number of faces,
+        with 3 vertex positions per face, and `faces` is not used.
+    faces : array_like of shape (f, 3), optional
+        An integer array defining each face by 3 indices into the `vertices`
+        array. If set, `vertices` must have dimensions (n, 3).
+
+    Returns
+    -------
+    face_normals : array_like of shape (f, 3)
+        An array defining a normal for each face.
+    """
     if faces is not None:
         assert vertices.shape[1:] == (3,)
         vertices = vertices[faces]
@@ -29,6 +46,22 @@ def _compute_face_normals(vertices, faces=None):
 
 
 def _compute_vertex_normals(face_normals, vertex_faces):
+    """Compute the vertex normals of a triangle mesh.
+
+    Parameters
+    ----------
+    face_normals : array_like of shape (f, 3)
+        A float array defining a normal for each face.
+    vertex_faces : iterable of iterable
+        A iterable sequence of length `n`, with `n` the number of vertices,
+        where each element contains the indices to the adjacent faces of the
+        vertex.
+
+    Returns
+    -------
+    vertex_normals : array_like of shape (n, 3)
+        An array defining a normal for each vertex.
+    """
     n_vertices = len(vertex_faces)
     vertex_normals = np.zeros((n_vertices, 3), dtype=np.float32)
     for vertex_index in range(n_vertices):
