@@ -218,7 +218,7 @@ class BaseCamera(Node):
     @fov.setter
     def fov(self, fov):
         fov = float(fov)
-        if fov < 0 or fov >= 180:
+        if fov < 0 or fov > 180:
             raise ValueError("fov must be between 0 and 180.")
         self._fov = fov
         self.view_changed()
