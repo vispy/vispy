@@ -4,7 +4,7 @@ import sys
 import pytest
 
 from vispy.testing import (requires_application, SkipTest, run_tests_if_main,
-                           assert_raises)
+                           assert_raises, IS_CI)
 from vispy.app import Canvas, use_app
 from vispy.gloo import get_gl_configuration, Program
 from vispy.gloo.gl import check_error
@@ -28,15 +28,12 @@ def test_context_properties():
     else:
         assert_raises(RuntimeError, Canvas, app=a,
                       config=dict(double_buffer=False))
-    if a.backend_name.lower() == 'sdl2' and 'true' in (os.getenv('TRAVIS', ''),
-                                                       os.getenv('GITHUB_ACTIONS', '')):
+    if a.backend_name.lower() == 'sdl2' and IS_CI:
         raise SkipTest('Travis SDL cannot set context')
     for config in configs:
         n_items = len(config)
         with Canvas(config=config):
-            if 'true' in (os.getenv('TRAVIS', ''),
-                          os.getenv('APPVEYOR', '').lower(),
-                          os.getenv('GITHUB_ACTIONS', '')):
+            if 'true' in IS_CI:
                 # Travis and Appveyor cannot handle obtaining these values
                 props = config
             else:

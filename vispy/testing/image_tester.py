@@ -60,6 +60,7 @@ from .. import scene, config
 from ..io import read_png, write_png
 from ..gloo.util import _screenshot
 from ..util import run_subprocess
+from . import IS_CI
 
 
 tester = None
@@ -152,8 +153,7 @@ def assert_image_approved(image, standard_file, message=None, **kwargs):
             if std_image is None:
                 raise Exception("Test standard %s does not exist." % std_file)
             else:
-                if os.getenv('TRAVIS') is not None or \
-                        os.getenv('APPVEYOR') is not None:
+                if IS_CI:
                     _save_failed_test(image, std_image, standard_file)
                 raise
 
@@ -420,7 +420,7 @@ def get_test_data_repo():
         if not os.path.isdir(parent_path):
             os.makedirs(parent_path)
 
-        if os.getenv('TRAVIS') is not None:
+        if IS_CI:
             # Create a shallow clone of the test-data repository (to avoid
             # downloading more data than is necessary)
             os.makedirs(data_path)

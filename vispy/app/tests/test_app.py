@@ -13,7 +13,7 @@ from vispy.app import use_app, Canvas, Timer, MouseEvent, KeyEvent
 from vispy.app.base import BaseApplicationBackend
 from vispy.testing import (requires_application, SkipTest, assert_is,
                            assert_in, run_tests_if_main,
-                           assert_equal, assert_true, assert_raises)
+                           assert_equal, assert_true, assert_raises, IS_TRAVIS_CI)
 from vispy.util import keys, use_log_level
 
 from vispy.gloo.program import (Program, VertexBuffer, IndexBuffer)
@@ -381,7 +381,7 @@ def test_close_keys():
     c.app.process_events()
 
 
-@pytest.mark.skipif(os.getenv('TRAVIS', 'false') == 'true' and 'darwin' in sys.platform,
+@pytest.mark.skipif(IS_TRAVIS_CI and 'darwin' in sys.platform,
                     reason='Travis OSX causes segmentation fault on this test for an unknown reason.')
 @requires_application()
 def test_event_order():
