@@ -63,6 +63,22 @@ jobs:
       with:
         path: dist/*.tar.gz
 
+  upload_test_pypi:
+    needs: [build_wheels, build_sdist]
+    runs-on: ubuntu-latest
+    # upload to Test PyPI for every commit on main branch
+    if: github.event_name == 'push' && github.event.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/download-artifact@v2
+        with:
+          name: artifact
+          path: dist
+      - uses: pypa/gh-action-pypi-publish@master
+        with:
+          user: __token__
+          password: ${{ secrets.VISPY_TEST_PYPI_TOKEN }}
+          repository_url: https://test.pypi.org/legacy/
+
   upload_pypi:
     needs: [build_wheels, build_sdist]
     runs-on: ubuntu-latest
@@ -79,4 +95,3 @@ jobs:
       with:
         user: __token__
         password: ${{ secrets.VISPY_PYPI_TOKEN }}
-        # To test: repository_url: https://test.pypi.org/legacy/
