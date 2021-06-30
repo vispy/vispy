@@ -141,6 +141,8 @@ class ImageVisual(Visual):
         result in them using the lowest ``clim`` value in the GPU.
         For RGB data, NaNs will be mapped to the lowest ``clim`` value.
         If the Alpha band is NaN it will be mapped to 0 (transparent).
+        Note that NaN handling is not required by some OpenGL implementations
+        and NaNs may be treated differently on some systems (ex. as 0s).
     method : str
         Selects method of rendering image in case of non-linear transforms.
         Each method produces similar results, but may trade efficiency

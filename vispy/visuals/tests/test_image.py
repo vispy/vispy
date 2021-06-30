@@ -3,7 +3,7 @@ from unittest import mock
 
 from vispy.scene.visuals import Image
 from vispy.testing import (requires_application, TestingCanvas,
-                           run_tests_if_main)
+                           run_tests_if_main, IS_CI)
 from vispy.testing.image_tester import assert_image_approved, downsample
 
 import numpy as np
@@ -120,6 +120,7 @@ def test_image_clims_and_gamma(input_dtype, texture_format, num_channels,
         compare_render(scaled_data ** 2, rendered3, rendered2, atol=gamma_atol)
 
 
+@pytest.mark.xfail(IS_CI, reason="CI environments sometimes treat NaN as 0")
 @requires_application()
 @pytest.mark.parametrize('texture_format', [None, 'auto'])
 def test_image_nan_single_band(texture_format):
