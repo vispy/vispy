@@ -40,6 +40,8 @@ def _compute_face_normals(vertices, faces=None):
     if faces is not None:
         assert vertices.shape[1:] == (3,)
         vertices = vertices[faces]
+    else:
+        assert vertices.shape[1:] == (3, 3)
     edges1 = vertices[:, 1] - vertices[:, 0]
     edges2 = vertices[:, 2] - vertices[:, 0]
     return np.cross(edges1, edges2)
