@@ -2,8 +2,6 @@
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-import os
-
 import numpy as np
 
 from vispy.visuals.line.arrow import ARROW_TYPES

@@ -1,4 +1,3 @@
-import os
 import sys
 from collections import namedtuple
 from io import StringIO

@@ -1,4 +1,3 @@
-import os
 import sys
 
 import pytest
@@ -33,7 +32,7 @@ def test_context_properties():
     for config in configs:
         n_items = len(config)
         with Canvas(config=config):
-            if 'true' in IS_CI:
+            if IS_CI:
                 # Travis and Appveyor cannot handle obtaining these values
                 props = config
             else:
