@@ -440,7 +440,7 @@ AVG_SNIPPETS = dict(
 )
 
 
-methods_dict = {
+frag_dict = {
     'mip': MIP_SNIPPETS,
     'minip': MINIP_SNIPPETS,
     'attenuated_mip': ATTENUATED_MIP_SNIPPETS,
@@ -734,7 +734,7 @@ class VolumeVisual(Visual):
     @method.setter
     def method(self, method):
         # Check and save
-        known_methods = list(methods_dict.keys())
+        known_methods = list(frag_dict.keys())
         if method not in known_methods:
             raise ValueError('Volume render method should be in %r, not %r' %
                              (known_methods, method))
@@ -745,10 +745,10 @@ class VolumeVisual(Visual):
         if 'u_attenuation' in self.shared_program:
             self.shared_program['u_attenuation'] = None
 
-        # TODO: $sample needs to be unset and re-set, since it's present inside the snippets
-        # program should probably be able to do this automatically
+        # TODO: $sample needs to be unset and re-set, since it's present inside the snippets.
+        #       Program should probably be able to do this automatically
         self.shared_program.frag['sample'] = None
-        for snippet_position, snippet in methods_dict[method].items():
+        for snippet_position, snippet in frag_dict[method].items():
             self.shared_program.frag[snippet_position] = snippet
         self.shared_program.frag['sampler_type'] = self._texture.glsl_sampler_type
         self.shared_program.frag['sample'] = self._texture.glsl_sample
