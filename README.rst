@@ -20,32 +20,15 @@ large datasets. Applications of VisPy include:
 -  Scientific GUIs with fast, scalable visualization widgets (`Qt <http://www.qt.io>`__ or
    `IPython notebook <http://ipython.org/notebook.html>`__ with WebGL).
 
+Releases
+--------
+
+See [CHANGELOG.md](./CHANGELOG.md).
 
 Announcements
 -------------
 
-- **Release!** Version 0.6.5, September 24, 2020
-- **Release!** Version 0.6.4, December 13, 2019
-- **Release!** Version 0.6.3, November 27, 2019
-- **Release!** Version 0.6.2, November 4, 2019
-- **Release!** Version 0.6.1, July 28, 2019
-- **Release!** Version 0.6.0, July 11, 2019
-- **Release!** Version 0.5.3, March 28, 2018
-- **Release!** Version 0.5.2, December 11, 2017
-- **Release!** Version 0.5.1, November 4, 2017
-- **Release!** Version 0.5, October 24, 2017
-- **Release!** Version 0.4, May 22, 2015
-- `VisPy tutorial in the IPython Cookbook <https://github.com/ipython-books/cookbook-code/blob/master/featured/06_vispy.ipynb>`__
-- **Release!** Version 0.3, August 29, 2014
-- **EuroSciPy 2014**: talk at Saturday 30, and sprint at Sunday 31, August 2014
-- `Article in Linux Magazine, French Edition <https://github.com/vispy/linuxmag-article>`__, July 2014
-- **GSoC 2014**: `two GSoC students are currently working on VisPy under the PSF umbrella <https://github.com/vispy/vispy/wiki/Project.%20GSoC-2014>`__
-- **Release!**, Version 0.2.1 04-11-2013
-- **Presentation at BI forum**, Budapest, 6 November 2013
-- **Presentation at Euroscipy**, Belgium, August 2013
-- **EuroSciPy Sprint**, Belgium, August 2013
-- **Release!** Version 0.1.0 14-08-2013
-
+See the `VisPy Website <https://vispy.org/news.html>`_.
 
 Using VisPy
 -----------
