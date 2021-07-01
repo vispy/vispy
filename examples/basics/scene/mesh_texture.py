@@ -12,6 +12,7 @@ import numpy as np
 from vispy import app, scene
 from vispy.io import imread, load_data_file, read_mesh
 from vispy.scene.visuals import Mesh
+from vispy.scene import transforms
 from vispy.visuals.filters import TextureFilter
 
 
@@ -36,6 +37,9 @@ view.camera.depth_value = 10 * (vertices.max() - vertices.min())
 
 shading = None if args.shading == 'none' else args.shading
 mesh = Mesh(vertices, faces, shading=shading, color='white')
+mesh.transform = transforms.MatrixTransform()
+mesh.transform.rotate(90, (1, 0, 0))
+mesh.transform.rotate(135, (0, 0, 1))
 mesh.shading_filter.shininess = 1e+1
 view.add(mesh)
 
