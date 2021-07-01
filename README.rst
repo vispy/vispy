@@ -91,7 +91,7 @@ Code of Conduct
 ---------------
 
 The VisPy community requires its members to abide by the
-`Code of Conduct <./CODE_OF_CONDUCT>`_. In this CoC you will find the
+`Code of Conduct <./CODE_OF_CONDUCT.md>`_. In this CoC you will find the
 expectations of members, the penalties for violating these expectations, and
 how violations can be reported to the members of the community in charge of
 enforcing this Code of Conduct.
