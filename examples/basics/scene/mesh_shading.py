@@ -46,7 +46,7 @@ mesh.attach(shading_filter)
 
 
 def attach_headlight(view):
-    light_dir = (0, -1, 0, 0)
+    light_dir = (0, 1, 0, 0)
     shading_filter.light_dir = light_dir[:3]
     initial_light_dir = view.camera.transform.imap(light_dir)
 
