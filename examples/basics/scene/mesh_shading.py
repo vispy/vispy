@@ -11,6 +11,7 @@ import argparse
 from vispy import app, scene
 from vispy.io import read_mesh, load_data_file
 from vispy.scene.visuals import Mesh
+from vispy.scene import transforms
 from vispy.visuals.filters import ShadingFilter, WireframeFilter
 
 
@@ -31,6 +32,9 @@ view.camera.depth_value = 1e3
 
 # Create a colored `MeshVisual`.
 mesh = Mesh(vertices, faces, color=(.5, .7, .5, 1))
+mesh.transform = transforms.MatrixTransform()
+mesh.transform.rotate(90, (1, 0, 0))
+mesh.transform.rotate(-45, (0, 0, 1))
 view.add(mesh)
 
 # Use filters to affect the rendering of the mesh.
