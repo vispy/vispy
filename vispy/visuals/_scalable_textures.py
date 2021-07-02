@@ -36,8 +36,11 @@ def get_default_clim_from_data(data):
     max_finite = np.isfinite(max_value)
     if not (min_finite and max_finite):
         finite_data = data[np.isfinite(data)]
-        min_value = finite_data.min()
-        max_value = finite_data.max()
+        if finite_data.size:
+            min_value = finite_data.min()
+            max_value = finite_data.max()
+        else:
+            min_value = max_value = 0  # no finite values in the data
 
     return min_value, max_value
 

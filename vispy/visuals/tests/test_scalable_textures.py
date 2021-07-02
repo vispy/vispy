@@ -77,6 +77,18 @@ def test_default_clim_non_finite():
     clim = get_default_clim_from_data(data)
     assert clim == (5, 25)
 
+    data = np.array([np.nan, np.nan, np.nan]).astype(np.float32)
+    clim = get_default_clim_from_dtype(data.dtype)
+    assert clim == (0, 1)
+    clim = get_default_clim_from_data(data)
+    assert clim == (0, 0)
+
+    data = np.array([np.nan, np.inf, -np.inf]).astype(np.float32)
+    clim = get_default_clim_from_dtype(data.dtype)
+    assert clim == (0, 1)
+    clim = get_default_clim_from_data(data)
+    assert clim == (0, 0)
+
 
 def test_clim_handling_cpu():
 
