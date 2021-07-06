@@ -39,8 +39,8 @@ vec4 map_local_to_tex(vec4 x) {
     // Cast ray from 3D viewport to surface of image
     // (if $transform does not affect z values, then this
     // can be optimized as simply $transform.map(x) )
-    vec4 p1 = $transform(x);
-    vec4 p2 = $transform(x + vec4(0, 0, 0.5, 0));
+    vec4 p1 = $polar_transform($transform(x));
+    vec4 p2 = (p1 + vec4(0, 0, 0.5, 0));
     p1 /= p1.w;
     p2 /= p2.w;
     vec4 d = p2 - p1;
@@ -126,6 +126,40 @@ _apply_gamma = """
 _null_color_transform = 'vec4 pass(vec4 color) { return color; }'
 _c2l_red = 'float cmap(vec4 color) { return color.r; }'
 
+_polar_transform = """
+    vec4 polar_transform_map(vec4 pos) {
+        float PI = 3.14159265358979323846;
+        float PI2 = PI * 2;
+        
+        float theta = atan(pos.y, pos.x);
+        theta += $theta_loc + (PI / 2);
+        // theta -> [0, 2 * PI]
+        if (theta >= PI2) {
+            theta -= PI2; 
+        }
+        if (theta < 0) {
+            theta += PI2; 
+        }
+        // counter - clockwise
+        if ($theta_dir != -1) {
+            theta = PI2 - theta;
+        }
+        // texture coordinate
+        theta = degrees(theta);
+        theta *= $angle_res;
+        float r = length(pos.xy);
+        // 1 - UR, 2 - LL
+        if ($source_loc == 1 || $source_loc == 2)  {
+            r = $range - r;
+        }
+        vec4 res = vec4(theta, r, pos.z, 1);
+        // 1 - UR, 3 - LR
+        if (mod($source_loc, 2) == 1) {
+            res = res.yxzw;
+        }
+        return res;
+    }"""
+
 
 class ImageVisual(Visual):
     """Visual subclass displaying an image.
@@ -157,10 +191,17 @@ class ImageVisual(Visual):
               entire view, with texture coordinates determined by the
               transform. This produces the best transformation results, but may
               be slow.
-
     grid: tuple (rows, cols)
         If method='subdivide', this tuple determines the number of rows and
         columns in the image grid.
+    polar: tuple (dir, loc, ori)
+        If given a polar representation of the image will be created, with:
+
+            * dir -  'cw' or 'ccw' (clockwise, counterclockwise)
+            * loc - 'N', 'NW', 'W', 'SW', 'S', 'SE', 'E' or 'NE'
+            * ori - 'UL', "UR", "LR", "LL"
+
+        Sets method='impostor'.
     cmap : str | ColorMap
         Colormap to use for luminance images.
     clim : str | tuple
@@ -216,7 +257,7 @@ class ImageVisual(Visual):
 
     def __init__(self, data=None, method='auto', grid=(1, 1),
                  cmap='viridis', clim='auto', gamma=1.0,
-                 interpolation='nearest', texture_format=None, **kwargs):
+                 interpolation='nearest', texture_format=None, polar=False, **kwargs):
         """Initialize image properties, texture storage, and interpolation methods."""
         self._data = None
 
@@ -243,6 +284,9 @@ class ImageVisual(Visual):
                              ', '.join(self._interpolation_names))
 
         self._method = method
+        self._polar = polar
+        if self._polar:
+            self._method = "impostor"
         self._grid = grid
         self._need_texture_upload = True
         self._need_vertex_update = True
@@ -338,6 +382,17 @@ class ImageVisual(Visual):
         # Store some extra variables per-view
         view._need_method_update = True
         view._method_used = None
+
+    @property
+    def polar(self):
+        """Get polar theta direction and zero location if polar image."""
+        return self._polar
+
+    @polar.setter
+    def polar(self, value):
+        self._polar = value
+        self._need_vertex_update = True
+        self.update()
 
     @property
     def clim(self):
@@ -469,6 +524,7 @@ class ImageVisual(Visual):
         self._subdiv_texcoord.set_data(tex_coords.astype('float32'))
         self._need_vertex_update = False
 
+
     def _update_method(self, view):
         """Decide which method to use for *view* and configure it accordingly."""
         method = self._method
@@ -538,6 +594,37 @@ class ImageVisual(Visual):
         fgamma['gamma'] = self.gamma
         return fun
 
+    def _build_polar_transform(self):
+        if self._polar:
+            locmap = {
+                'N': 0,
+                'NW': np.pi * 0.25,
+                'W': np.pi * 0.5,
+                'SW': np.pi * 0.75,
+                'S': np.pi,
+                'SE': np.pi * 1.25,
+                'E': np.pi * 1.5,
+                'NE': np.pi * 1.75}
+            srcmap = {
+                "UL": 0,
+                "UR": 1,
+                "LR": 2,
+                "LL": 3,
+            }
+            src = srcmap[self._polar[2]]
+            self.shared_program.frag["polar_transform"] = Function(_polar_transform)
+            self.shared_program.frag["polar_transform"]["angle_res"] = self.size[
+                                                                           src % 2] / 360.
+            self.shared_program.frag["polar_transform"]["range"] = self.size[
+                1 - src % 2]
+            self.shared_program.frag["polar_transform"]["theta_dir"] = (-1 if self.polar[0] == 'cw' else 1)
+            self.shared_program.frag["polar_transform"]["theta_loc"] = locmap[
+                self._polar[1]]
+            self.shared_program.frag["polar_transform"]["source_loc"] = src
+        else:
+            self.shared_program.frag["polar_transform"] = Function(
+                    'vec4 pass(vec4 pos) { return pos; }')
+
     def _prepare_transforms(self, view):
         trs = view.transforms
         prg = view.view_program
@@ -568,6 +655,7 @@ class ImageVisual(Visual):
 
         if self._need_vertex_update:
             self._build_vertex_data()
+            self._build_polar_transform()
 
         if view._need_method_update:
             self._update_method(view)
