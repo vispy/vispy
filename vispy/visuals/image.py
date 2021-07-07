@@ -171,8 +171,8 @@ _polar_transform = """
         }
         return res;
     }"""
+_polar_null_transform = "vec4 pass(vec4 pos) { return pos; }"
 
-_polar_null_transform = 'vec4 pass(vec4 pos) { return pos; }'
 
 class ImageVisual(Visual):
     """Visual subclass displaying an image.
