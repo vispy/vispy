@@ -1132,9 +1132,13 @@ def get_colormap(name, *args, **kwargs):
     if name in _colormaps:  # vispy cmap
         cmap = _colormaps[name]
         if name in ("cubehelix", "single_hue", "hsl", "husl", "diverging", "RdYeBuCy"):
-            warnings.warn(f"Colormap '{name}' has been deprecated. "
-                          f"Please import and create 'vispy.color.colormap.{cmap.__class__.__name__}' "
-                          "directly instead.", DeprecationWarning)
+            warnings.warn(
+                f"Colormap '{name}' has been deprecated since vispy 0.7 . "
+                f"Please import and create 'vispy.color.colormap.{cmap.__class__.__name__}' "
+                "directly instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
 
     elif has_matplotlib():  # matplotlib cmap
         try:
