@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
-# vispy: gallery 30
 # -----------------------------------------------------------------------------
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 """Displays PolarImage.
 
-   Use keys "d" - direction, "o" - origin, "l" - location and "p" - on/off
+   Use keys "d" - direction, "o" - origin, "l" - location and "p" - polar on/off
 """
 
 
@@ -38,12 +37,11 @@ def cycle_state(states, index):
 class Canvas(vispy.app.Canvas):
     def __init__(self):
         csize = 1000
-        print(csize)
 
         vispy.app.Canvas.__init__(self, keys='interactive', size=(csize, csize))
 
         # Create image
-        xmax = 500
+        xmax = 250
         xres = xmax / 360
         ymax = 500
         yres = ymax / 100
@@ -70,11 +68,15 @@ class Canvas(vispy.app.Canvas):
                                          method='impostor')
         self.image2 = visuals.ImageVisual(image2, method='impostor')
 
-        tr1 = (STTransform(scale=(1.0, 1.0, 1), translate=(csize/2, csize/2, 0))
-        )
+        tr1 = (STTransform(scale=(1.0, 1.0, 1), translate=(csize/2, csize/2, 0)))
         self.image.transform = tr1
 
         self.visuals = [self.image, self.image2]
+        self.title = (f"Direction (d): {directions[dir_index]} - "
+                      f"Location (l): {locations[loc_index]} - "
+                      f"Origin (o): {origins[ori_index]} - "
+                      f"Polar (p): {polar[pol_index]}"
+                      )
         self.show()
 
     def on_draw(self, ev):
@@ -105,6 +107,10 @@ class Canvas(vispy.app.Canvas):
             self.visuals[0].polar = (directions[dir_index], locations[loc_index], origins[ori_index])
         else:
             self.visuals[0].polar = False
+        self.title = (f"Direction (d): {directions[dir_index]} - "
+                      f"Location (l): {locations[loc_index]} - "
+                      f"Origin (o): {origins[ori_index]} - "
+                      f"Polar (p): {polar[pol_index]}")
         self.update()
 
 

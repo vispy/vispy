@@ -130,9 +130,22 @@ _polar_transform = """
     vec4 polar_transform_map(vec4 pos) {
         float PI = 3.14159265358979323846;
         float PI2 = PI * 2;
+        float polar_dir = $polar_dir;
         
+        // get angle
         float theta = atan(pos.y, pos.x);
-        theta += $theta_loc + (PI / 2);
+        
+        // 2 - LR and 3 - LL are inverted -> invert polar_dir
+        if ($polar_ori >= 2) {
+            polar_dir *= -1;
+        }
+        
+        // shift to zero location
+        theta += $polar_loc * PI + (PI / 2);
+        
+        // clockwise/counterclockwise direction
+        theta *= -polar_dir;
+        
         // theta -> [0, 2 * PI]
         if (theta >= PI2) {
             theta -= PI2; 
@@ -140,21 +153,20 @@ _polar_transform = """
         if (theta < 0) {
             theta += PI2; 
         }
-        // counter - clockwise
-        if ($theta_dir != -1) {
-            theta = PI2 - theta;
-        }
+        
         // texture coordinate
-        theta = degrees(theta);
-        theta *= $angle_res;
+        theta = degrees(theta) * $angle_res;
         float r = length(pos.xy);
-        // 1 - UR, 2 - LL
-        if ($source_loc == 1 || $source_loc == 2)  {
+
+        // 1 - UR, 2 - LR invert ranges
+        if ($polar_ori == 1 || $polar_ori == 2)  {
             r = $range - r;
         }
+
         vec4 res = vec4(theta, r, pos.z, 1);
-        // 1 - UR, 3 - LR
-        if (mod($source_loc, 2) == 1) {
+
+        // 1 - UR, 3 - LL, swap theta, range
+        if (mod($polar_ori, 2) == 1) {
             res = res.yxzw;
         }
         return res;
@@ -195,11 +207,13 @@ class ImageVisual(Visual):
         If method='subdivide', this tuple determines the number of rows and
         columns in the image grid.
     polar: tuple (dir, loc, ori)
-        If given a polar representation of the image will be created, with:
+        If given, a polar representation of the image will be created with:
 
             * dir -  'cw' or 'ccw' (clockwise, counterclockwise)
-            * loc - 'N', 'NW', 'W', 'SW', 'S', 'SE', 'E' or 'NE'
-            * ori - 'UL', "UR", "LR", "LL"
+            * loc - 'N', 'NW', 'W', 'SW', 'S', 'SE', 'E' or 'NE', or any number
+              between 0 and 2*PI
+            * ori - 'UL', "UR", "LR", "LL", denotes the source point from which
+              theta is spread in clockwise direction
 
         Sets method='impostor'.
     cmap : str | ColorMap
@@ -524,7 +538,6 @@ class ImageVisual(Visual):
         self._subdiv_texcoord.set_data(tex_coords.astype('float32'))
         self._need_vertex_update = False
 
-
     def _update_method(self, view):
         """Decide which method to use for *view* and configure it accordingly."""
         method = self._method
@@ -596,34 +609,36 @@ class ImageVisual(Visual):
 
     def _build_polar_transform(self):
         if self._polar:
+            dir, loc, ori = self._polar
             locmap = {
-                'N': 0,
-                'NW': np.pi * 0.25,
-                'W': np.pi * 0.5,
-                'SW': np.pi * 0.75,
-                'S': np.pi,
-                'SE': np.pi * 1.25,
-                'E': np.pi * 1.5,
-                'NE': np.pi * 1.75}
+                'N': 0.0,
+                'NW': 0.25,
+                'W': 0.5,
+                'SW': 0.75,
+                'S': 1.0,
+                'SE': 1.25,
+                'E': 1.5,
+                'NE': 1.75}
+            if isinstance(loc, str):
+                loc = locmap[loc]
             srcmap = {
                 "UL": 0,
                 "UR": 1,
                 "LR": 2,
                 "LL": 3,
             }
-            src = srcmap[self._polar[2]]
-            self.shared_program.frag["polar_transform"] = Function(_polar_transform)
-            self.shared_program.frag["polar_transform"]["angle_res"] = self.size[
-                                                                           src % 2] / 360.
-            self.shared_program.frag["polar_transform"]["range"] = self.size[
-                1 - src % 2]
-            self.shared_program.frag["polar_transform"]["theta_dir"] = (-1 if self.polar[0] == 'cw' else 1)
-            self.shared_program.frag["polar_transform"]["theta_loc"] = locmap[
-                self._polar[1]]
-            self.shared_program.frag["polar_transform"]["source_loc"] = src
+            ori = srcmap[ori]
+
+            polar_frag = Function(_polar_transform)
+            polar_frag["angle_res"] = self.size[ori % 2] / 360.
+            polar_frag["range"] = self.size[1 - ori % 2]
+            polar_frag["polar_dir"] = (-1 if dir == 'cw' else 1)
+            polar_frag["polar_loc"] = loc
+            polar_frag["polar_ori"] = ori
         else:
-            self.shared_program.frag["polar_transform"] = Function(
-                    'vec4 pass(vec4 pos) { return pos; }')
+            polar_frag = Function('vec4 pass(vec4 pos) { return pos; }')
+
+        self.shared_program.frag["polar_transform"] = polar_frag
 
     def _prepare_transforms(self, view):
         trs = view.transforms
