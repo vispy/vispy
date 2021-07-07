@@ -86,6 +86,7 @@ class GridLinesVisual(ImageVisual):
         self.shared_program.frag['get_data'] = self._grid_color_fn
         cfun = Function('vec4 null(vec4 x) { return x; }')
         self.shared_program.frag['color_transform'] = cfun
+        self.shared_program.frag['polar_transform'] = cfun
 
     @property
     def size(self):

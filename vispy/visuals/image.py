@@ -172,6 +172,7 @@ _polar_transform = """
         return res;
     }"""
 
+_polar_null_transform = 'vec4 pass(vec4 pos) { return pos; }'
 
 class ImageVisual(Visual):
     """Visual subclass displaying an image.
@@ -298,8 +299,7 @@ class ImageVisual(Visual):
                              ', '.join(self._interpolation_names))
 
         self._method = method
-        self._polar = polar
-        if self._polar:
+        if polar:
             self._method = "impostor"
         self._grid = grid
         self._need_texture_upload = True
@@ -329,6 +329,7 @@ class ImageVisual(Visual):
         self.clim = clim or "auto"  # None -> "auto"
         self.cmap = cmap
         self.gamma = gamma
+        self.polar = polar
         if data is not None:
             self.set_data(data)
         self.freeze()
@@ -636,7 +637,7 @@ class ImageVisual(Visual):
             polar_frag["polar_loc"] = loc
             polar_frag["polar_ori"] = ori
         else:
-            polar_frag = Function('vec4 pass(vec4 pos) { return pos; }')
+            polar_frag = Function(_polar_null_transform)
 
         self.shared_program.frag["polar_transform"] = polar_frag
 
