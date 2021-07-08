@@ -6,9 +6,6 @@ import numpy as np
 try:
     import networkx as nx
 except ModuleNotFoundError:
-    import warnings
-    warnings.warn(
-        "Networkx not found, please install network to use its layouts")
     nx = None
 
 
@@ -47,7 +44,7 @@ class NetworkxCoordinates:
                 else:
                     raise ValueError("Check networkx for layouts")
             else:
-                raise ValueError("networkx not found")
+                raise ValueError("networkx not found, please install networkx to use its layouts")
         # assume dict from networkx; values are 2-array
         elif isinstance(layout, dict):
             self.positions = np.asarray([i for i in layout.values()])
