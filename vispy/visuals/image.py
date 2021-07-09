@@ -134,17 +134,20 @@ _polar_transform = """
         float PI2 = PI * 2.;
         float polar_dir = $polar_dir;
         float polar_loc = $polar_loc;
+        float polar_ori = $polar_ori;
         
+        // get angle and range
+        float theta = atan(pos.y, pos.x);
+        float r = length(pos.xy);
+        
+        // pre-shift location
         polar_loc = polar_loc - PI / 2.;
         if (polar_loc < 0) {
             polar_loc += PI2;
         }
         
-        // get angle
-        float theta = atan(pos.y, pos.x);
-        
-        // 2 - LR and 3 - LL are inverted -> invert polar_dir
-        if ($polar_ori <= 1) {
+        // 0 - UL and 1 - UR need inversion
+        if (polar_ori <= 1.) {
             polar_dir *= -1.;
         }
         
@@ -152,7 +155,8 @@ _polar_transform = """
         theta *= polar_dir;
         
         // shift to zero location
-        theta += (polar_loc * polar_dir - polar_dir * PI) ;
+        //theta += (polar_loc * polar_dir - polar_dir * PI) ;
+        theta += polar_dir * (polar_loc - PI);
         
         // theta -> [0, 2 * PI]
         if (theta >= PI2) {
@@ -162,19 +166,18 @@ _polar_transform = """
             theta += PI2; 
         }
         
-        // texture coordinate
+        // bring theta into texture coordinate
         theta = degrees(theta) * $angle_res;
-        float r = length(pos.xy);
 
         // 1 - UR, 2 - LR invert ranges
-        if ($polar_ori == 1 || $polar_ori == 2)  {
+        if (polar_ori == 1 || polar_ori == 2)  {
             r = $range - r;
         }
 
         vec4 res = vec4(theta, r, pos.z, 1);
 
         // 1 - UR, 3 - LL, swap theta, range
-        if (mod($polar_ori, 2) == 1) {
+        if (mod(polar_ori, 2) == 1) {
             res = res.yxzw;
         }
         return res;
