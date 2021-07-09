@@ -63,7 +63,7 @@ class Canvas(vispy.app.Canvas):
         image2 = image
 
         self.image = visuals.ImageVisual(image,
-                                         polar=("cw", "N", "UL"),
+                                         polar=dict(dir="cw", loc="N", ori="UL"),
                                          interpolation="nearest",
                                          method='impostor')
         self.image2 = visuals.ImageVisual(image2, method='impostor')
@@ -104,7 +104,9 @@ class Canvas(vispy.app.Canvas):
         else:
             pass
         if polar[pol_index]:
-            self.visuals[0].polar = (directions[dir_index], locations[loc_index], origins[ori_index])
+            self.visuals[0].polar = dict(dir=directions[dir_index],
+                                         loc=locations[loc_index],
+                                         ori=origins[ori_index])
         else:
             self.visuals[0].polar = False
         self.title = (f"Direction (d): {directions[dir_index]} - "

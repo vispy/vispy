@@ -39,13 +39,15 @@ vec4 map_local_to_tex(vec4 x) {
     // Cast ray from 3D viewport to surface of image
     // (if $transform does not affect z values, then this
     // can be optimized as simply $transform.map(x) )
-    vec4 p1 = $polar_transform($transform(x));
-    vec4 p2 = (p1 + vec4(0, 0, 0.5, 0));
+    vec4 p1 = $transform(x);
+    vec4 p2 = $transform(x + vec4(0, 0, 0.5, 0));
     p1 /= p1.w;
     p2 /= p2.w;
     vec4 d = p2 - p1;
     float f = p2.z / d.z;
     vec4 p3 = p2 - d * f;
+    
+    p3 = $polar_transform(p3);
 
     // finally map local to texture coords
     return vec4(p3.xy / image_size, 0, 1);
@@ -129,22 +131,28 @@ _c2l_red = 'float cmap(vec4 color) { return color.r; }'
 _polar_transform = """
     vec4 polar_transform_map(vec4 pos) {
         float PI = 3.14159265358979323846;
-        float PI2 = PI * 2;
+        float PI2 = PI * 2.;
         float polar_dir = $polar_dir;
+        float polar_loc = $polar_loc;
+        
+        polar_loc = polar_loc - PI / 2.;
+        if (polar_loc < 0) {
+            polar_loc += PI2;
+        }
         
         // get angle
         float theta = atan(pos.y, pos.x);
         
         // 2 - LR and 3 - LL are inverted -> invert polar_dir
-        if ($polar_ori >= 2) {
-            polar_dir *= -1;
+        if ($polar_ori <= 1) {
+            polar_dir *= -1.;
         }
         
-        // shift to zero location
-        theta += $polar_loc * PI + (PI / 2);
-        
         // clockwise/counterclockwise direction
-        theta *= -polar_dir;
+        theta *= polar_dir;
+        
+        // shift to zero location
+        theta += (polar_loc * polar_dir - polar_dir * PI) ;
         
         // theta -> [0, 2 * PI]
         if (theta >= PI2) {
@@ -207,13 +215,13 @@ class ImageVisual(Visual):
     grid: tuple (rows, cols)
         If method='subdivide', this tuple determines the number of rows and
         columns in the image grid.
-    polar: tuple (dir, loc, ori)
-        If given, a polar representation of the image will be created with:
+    polar: dict
+        If given, a polar representation of the image will be created with keys:
 
-            * dir -  'cw' or 'ccw' (clockwise, counterclockwise)
-            * loc - 'N', 'NW', 'W', 'SW', 'S', 'SE', 'E' or 'NE', or any number
+            * "dir" -  'cw' or 'ccw' (clockwise, counterclockwise)
+            * "loc" - 'N', 'NW', 'W', 'SW', 'S', 'SE', 'E' or 'NE', or any number
               between 0 and 2*PI
-            * ori - 'UL', "UR", "LR", "LL", denotes the source point from which
+            * "ori" - 'UL', "UR", "LR", "LL", denotes the source point from which
               theta is spread in clockwise direction
 
         Sets method='impostor'.
@@ -610,16 +618,18 @@ class ImageVisual(Visual):
 
     def _build_polar_transform(self):
         if self._polar:
-            dir, loc, ori = self._polar
+            dir = self._polar["dir"]
+            loc = self._polar["loc"]
+            ori = self._polar["ori"]
             locmap = {
-                'N': 0.0,
-                'NW': 0.25,
-                'W': 0.5,
-                'SW': 0.75,
-                'S': 1.0,
-                'SE': 1.25,
-                'E': 1.5,
-                'NE': 1.75}
+                'N': np.pi * 0.0,
+                'NW': np.pi * 0.25,
+                'W': np.pi * 0.5,
+                'SW': np.pi * 0.75,
+                'S': np.pi * 1.0,
+                'SE': np.pi * 1.25,
+                'E': np.pi * 1.5,
+                'NE': np.pi * 1.75}
             if isinstance(loc, str):
                 loc = locmap[loc]
             srcmap = {
@@ -633,7 +643,7 @@ class ImageVisual(Visual):
             polar_frag = Function(_polar_transform)
             polar_frag["angle_res"] = self.size[ori % 2] / 360.
             polar_frag["range"] = self.size[1 - ori % 2]
-            polar_frag["polar_dir"] = (-1 if dir == 'cw' else 1)
+            polar_frag["polar_dir"] = (-1. if dir == 'cw' else 1.)
             polar_frag["polar_loc"] = loc
             polar_frag["polar_ori"] = ori
         else:
