@@ -151,12 +151,11 @@ _polar_transform = """
             polar_dir *= -1.;
         }
         
+        // shift to zero location
+        theta += (polar_loc - PI);
+        
         // clockwise/counterclockwise direction
         theta *= polar_dir;
-        
-        // shift to zero location
-        //theta += (polar_loc * polar_dir - polar_dir * PI) ;
-        theta += polar_dir * (polar_loc - PI);
         
         // theta -> [0, 2 * PI]
         if (theta >= PI2) {
