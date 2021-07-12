@@ -24,6 +24,8 @@ class NetworkxCoordinates:
         kwargs: dict, optional
         when layout is :str: :kwargs: will act as a setting dictionary for the layout function of networkx
         """
+        if nx is None:
+            raise ValueError("networkx not found, please install networkx to use its layouts")
         if isinstance(graph, type(None)):
             raise ValueError("Requires networkx input")
         self.graph = graph
@@ -34,8 +36,6 @@ class NetworkxCoordinates:
 
         # check for networkx
         elif isinstance(layout, str):
-            if nx is None:
-                raise ValueError("networkx not found, please install networkx to use its layouts")
             if not layout.endswith("_layout"):
                 layout += "_layout"  # append for nx
             layout_function = getattr(nx, layout)
