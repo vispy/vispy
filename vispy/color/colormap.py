@@ -1133,7 +1133,7 @@ def get_colormap(name, *args, **kwargs):
         cmap = _colormaps[name]
         if name in ("cubehelix", "single_hue", "hsl", "husl", "diverging", "RdYeBuCy"):
             warnings.warn(
-                f"Colormap '{name}' has been deprecated since vispy 0.7 . "
+                f"Colormap '{name}' has been deprecated since vispy 0.7. "
                 f"Please import and create 'vispy.color.colormap.{cmap.__class__.__name__}' "
                 "directly instead.",
                 DeprecationWarning,
