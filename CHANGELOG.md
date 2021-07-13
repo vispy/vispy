@@ -1,5 +1,17 @@
 # Release Notes
 
+## [v0.7.1](https://github.com/vispy/vispy/tree/v0.7.1) (2021-07-13)
+
+**Fixed bugs:**
+
+- Fix auto clim calculation if all data is non-finite [\#2131](https://github.com/vispy/vispy/pull/2131) ([almarklein](https://github.com/almarklein))
+- Update light direction in mesh shading examples [\#2125](https://github.com/vispy/vispy/pull/2125) ([asnt](https://github.com/asnt))
+
+**Merged pull requests:**
+
+- Set stacklevel for colormap deprecation. [\#2134](https://github.com/vispy/vispy/pull/2134) ([Carreau](https://github.com/Carreau))
+- Make meshes upright and face the camera in mesh examples [\#2126](https://github.com/vispy/vispy/pull/2126) ([asnt](https://github.com/asnt))
+
 ## [v0.7.0](https://github.com/vispy/vispy/tree/v0.7.0) (2021-06-30)
 
 **Enhancements:**
