@@ -26,6 +26,11 @@ def test_image(is_3d):
         assert_image_approved(c.render(), "visuals/image%s.png" %
                               ("_rgb" if is_3d else "_mono"))
 
+        # change to auto clims after first draw
+        image.clim = "auto"
+        assert_image_approved(c.render(), "visuals/image%s.png" %
+                              ("_rgb" if is_3d else "_mono"))
+
 
 @requires_application()
 @pytest.mark.parametrize('gamma', [None, -0.5, "0.5"])
