@@ -844,8 +844,7 @@ class GlirParser(BaseGlirParser):
             else:
                 this_version = this_version[0]
 
-            this_version = LooseVersion(this_version)
-            if this_version < '2.1':
+            if this_version and LooseVersion(this_version) < '2.1':
                 if os.getenv('VISPY_IGNORE_OLD_VERSION', '').lower() != 'true':
                     logger.warning('OpenGL version 2.1 or higher recommended, '
                                    'got %s. Some functionality may fail.'

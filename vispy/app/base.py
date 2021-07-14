@@ -48,7 +48,7 @@ class BaseCanvasBackend(object):
 
     Abstract class that provides an interface between backends and Canvas.
     Each backend must implement a subclass of CanvasBackend, and
-    implement all its _vispy_xxx methods. Also, also a backend must
+    implement all its _vispy_xxx methods. Also, a backend must
     make sure to generate the following events: 'initialize', 'resize',
     'draw', 'mouse_press', 'mouse_release', 'mouse_move',
     'mouse_wheel', 'key_press', 'key_release'. When a backend detects
@@ -58,6 +58,7 @@ class BaseCanvasBackend(object):
     """
 
     def __init__(self, vispy_canvas):
+        super().__init__()
         from .canvas import Canvas  # Avoid circular import
         assert isinstance(vispy_canvas, Canvas)
         self._vispy_canvas = vispy_canvas

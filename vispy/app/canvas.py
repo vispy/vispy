@@ -512,6 +512,16 @@ class Canvas(object):
                 % (self.__class__.__name__,
                    self.app.backend_name, hex(id(self))))
 
+    def _ipython_display_(self):
+        """If the backend implements _ipython_display_, we proxy it here.
+        """
+        f = getattr(self._backend, "_ipython_display_", None)
+        if f is not None:
+            return f()
+        else:
+            # Let Jupyter know this failed - otherwise the standard repr is not shown
+            raise NotImplementedError()
+
     def __enter__(self):
         logger.debug('Context manager enter starting for %s' % (self,))
         self.show()
