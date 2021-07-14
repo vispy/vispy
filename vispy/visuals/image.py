@@ -352,12 +352,16 @@ class ImageVisual(Visual):
         self.update()
 
     def _update_colortransform_clim(self):
-        # shortcut so we don't have to rebuild the whole color transform
+        if self._need_colortransform_update:
+            # we are going to rebuild anyway so just do it later
+            return
         try:
-            if not self._need_colortransform_update:
-                self.shared_program.frag['color_transform'][1]['clim'] = self._texture.clim_normalized
+            norm_clims = self._texture.clim_normalized
         except RuntimeError:
             return
+        else:
+            # shortcut so we don't have to rebuild the whole color transform
+            self.shared_program.frag['color_transform'][1]['clim'] = norm_clims
 
     @property
     def cmap(self):
