@@ -339,6 +339,8 @@ class Canvas(object):
     @property
     def size(self):
         """The size of canvas/window."""
+        # Note that _px_scale is an additional factor applied in addition to
+        # the scale factor imposed by the backend.
         size = self._backend._vispy_get_size()
         return (size[0] // self._px_scale, size[1] // self._px_scale)
 
@@ -364,7 +366,7 @@ class Canvas(object):
         by it). When writing Visuals or SceneGraph visualisations, this value
         is exposed as `TransformSystem.px_scale`.
         """
-        return self.physical_size[0] // self.size[0]
+        return self.physical_size[0] / self.size[0]
 
     @property
     def fullscreen(self):

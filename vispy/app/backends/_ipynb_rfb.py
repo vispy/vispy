@@ -99,31 +99,36 @@ class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args)
-        # todo: take stuff from kwargs, such as size
-        # Get helper object to get a GL context and a FBO to render to
+        # Init
         self._helper = OffscreenCanvasHelper()
-        self._helper.set_physical_size(640, 480)
-
         self._loop = asyncio.get_event_loop()
         self._draw_pending = False
-        self._logical_size = 640, 480
-        self._vispy_set_size(640, 480)
+        self._logical_size = 1, 1
+        self._physical_size = 1, 1
         self._initialized = False
+        # Init more based on kwargs (could maybe handle, title, show, context)
+        self._vispy_set_size(*kwargs["size"])
+        self.resizable = kwargs["resizable"]
+        # Need a first update
         self._vispy_update()
 
-    def receive_events(self, widget, content, buffers):
-        return
+    def receive_event(self, event):
+        type = event["event_type"]
+        if type == "resize":
+            # Note that jupyter_rfb already throttles this event
+            w, h, r = event["width"], event["height"], event["pixel_ratio"]
+            self._logical_size = w, h
+            self._physical_size = int(w * r), int(h * r)
+            self._loop.call_soon(self._emit_resize_event)
+        else:
+            print(type)
 
-        if content['msg_type'] == 'init':
-            self.canvas_backend._reinit_widget()
-        elif content['msg_type'] == 'events':
-            events = content['contents']
-            for ev in events:
-                self.gen_event(ev)
-        elif content['msg_type'] == 'status':
-            if content['contents'] == 'removed':
-                # Stop all timers associated to the widget.
-                _stop_timers(self.canvas_backend._vispy_canvas)
+    def _emit_resize_event(self):
+        self._helper.set_physical_size(*self._physical_size)
+        self._vispy_canvas.events.resize(
+            size=self._logical_size,
+            physical_size=self._physical_size,
+            )
 
     def on_draw(self):
         self._draw_pending = False
@@ -131,11 +136,7 @@ class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
         if not self._initialized:
             self._initialized = True
             self._vispy_canvas.events.initialize()
-            physical_size = self._logical_size  # todo: physical != logical
-            self._vispy_canvas.events.resize(
-                size=self._logical_size,
-                physical_size=physical_size,
-             )
+            self._emit_resize_event()
 
         # Normal behavior
         self._vispy_canvas.set_current()
@@ -161,7 +162,7 @@ class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
 
     def _vispy_set_size(self, w, h):
         self.css_width = f"{w}px"
-        self.css_width = f"{h}px"
+        self.css_height = f"{h}px"
 
     def _vispy_set_position(self, x, y):
         pass

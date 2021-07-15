@@ -48,8 +48,8 @@ class OffscreenCanvasHelper:
 
     def _create_fbo(self):
         w, h = self._size
-        color_buffer = gloo.Texture2D((w, h, 4))
-        depth_buffer = gloo.RenderBuffer((w, h))
+        color_buffer = gloo.Texture2D((h, w, 4))
+        depth_buffer = gloo.RenderBuffer((h, w))
         self._fbo = gloo.FrameBuffer(color_buffer, depth_buffer)
 
     def set_physical_size(self, w, h):
