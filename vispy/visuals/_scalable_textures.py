@@ -114,7 +114,19 @@ class _ScaledTextureMixin:
     @property
     def clim_normalized(self):
         """Normalize current clims to match texture data inside the shader.
+
+        If data is scaled on the CPU then the texture data will be in the range
+        0-1 in the _build_texture() method. Inside the fragment shader the
+        final contrast adjustment will be applied based on this normalized
+        ``clim``.
+
         """
+        if isinstance(self.clim, str) and self.clim == "auto":
+            raise RuntimeError("Can't return 'auto' normalized color limits "
+                               "until data has been set. Call "
+                               "'scale_and_set_data' first.")
+        if self.clim[0] == self.clim[1]:
+            return self.clim[0], np.inf
         # if the internalformat of the texture is normalized we need to
         # also normalize the clims so they match in-shader
         clim_min = self.normalize_value(self.clim[0], self._data_dtype)
@@ -260,6 +272,11 @@ class CPUScaledTextureMixin(_ScaledTextureMixin):
         ``clim``.
 
         """
+        if isinstance(self.clim, str) and self.clim == "auto":
+            raise RuntimeError("Can't return 'auto' normalized color limits "
+                               "until data has been set. Call "
+                               "'scale_and_set_data' first.")
+
         range_min, range_max = self._data_limits
         clim_min, clim_max = self.clim
         if clim_min == clim_max:
@@ -348,25 +365,6 @@ class GPUScaledTextureMixin(_ScaledTextureMixin):
     }
     # instance variable that will be used later on
     _auto_texture_format = False
-
-    @property
-    def clim_normalized(self):
-        """Normalize current clims to match texture data inside the shader.
-
-        If data is scaled on the CPU then the texture data will be in the range
-        0-1 in the _build_texture() method. Inside the fragment shader the
-        final contrast adjustment will be applied based on this normalized
-        ``clim``.
-
-        """
-        if self.clim[0] == self.clim[1]:
-            return self.clim[0], np.inf
-
-        # if the internalformat of the texture is normalized we need to
-        # also normalize the clims so they match in-shader
-        clim_min = self.normalize_value(self.clim[0], self._data_dtype)
-        clim_max = self.normalize_value(self.clim[1], self._data_dtype)
-        return clim_min, clim_max
 
     def _handle_auto_texture_format(self, texture_format, data):
         if isinstance(texture_format, str) and texture_format == 'auto':
