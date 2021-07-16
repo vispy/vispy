@@ -3,6 +3,7 @@ import asyncio
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
                     BaseTimerBackend)
 from ...app import Timer
+from ...util import keys
 from ._offscreen_util import OffscreenCanvasHelper
 
 
@@ -97,6 +98,8 @@ class ApplicationBackend(BaseApplicationBackend):
 
 class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
 
+    _double_click_supported = True
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args)
         # Init
@@ -112,16 +115,70 @@ class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
         # Need a first update
         self._vispy_update()
 
-    def receive_event(self, event):
-        type = event["event_type"]
+    def receive_event(self, ev):
+        type = ev["event_type"]
         if type == "resize":
             # Note that jupyter_rfb already throttles this event
-            w, h, r = event["width"], event["height"], event["pixel_ratio"]
+            w, h, r = ev["width"], ev["height"], ev["pixel_ratio"]
             self._logical_size = w, h
             self._physical_size = int(w * r), int(h * r)
             self._loop.call_soon(self._emit_resize_event)
+        elif type == "pointer_down":
+            with self._helper:
+                self._vispy_mouse_press(
+                    native=ev,
+                    pos=(ev["x"], ev["y"]),
+                    button=ev["button"],
+                    modifiers=self._modifiers(ev),
+                )
+        elif type == "pointer_up":
+            self._vispy_mouse_release(
+                native=ev,
+                pos=(ev["x"], ev["y"]),
+                button=ev["button"],
+                modifiers=self._modifiers(ev),
+            )
+        elif type == "pointer_move":
+            self._vispy_mouse_move(
+                native=ev,
+                pos=(ev["x"], ev["y"]),
+                button=ev["button"],
+                modifiers=self._modifiers(ev),
+            )
+        elif type == "double_click":
+            self._vispy_mouse_double_click(
+                native=ev,
+                pos=(ev["x"], ev["y"]),
+                button=ev["button"],
+                modifiers=self._modifiers(ev),
+            )
+        elif type == "wheel":
+            self._vispy_canvas.events.mouse_wheel(native=ev,
+                pos=(ev["x"], ev["y"]),
+                delta=(ev["dx"] / 100, - ev["dy"] / 100),
+                modifiers=self._modifiers(ev),
+            )
+        elif type == "key_down":
+            # The special key names are all (most?) the same
+            # But the key is actually more like tex, e.g. shift + 3 becomes "#"
+            self._vispy_canvas.events.key_press(
+                native=ev,
+                key=keys.Key(ev["key"]),
+                modifiers=self._modifiers(ev),
+                text=ev["key"],
+            )
+        elif type == "key_up":
+            self._vispy_canvas.events.key_release(
+                native=ev,
+                key=keys.Key(ev["key"]),
+                modifiers=self._modifiers(ev),
+                text=ev["key"],
+            )
         else:
-            print(type)
+            pass  # event ignored / unknown
+
+    def _modifiers(self, ev):
+        return tuple(getattr(keys, m.upper()) for m in ev["modifiers"])
 
     def _emit_resize_event(self):
         self._helper.set_physical_size(*self._physical_size)
@@ -184,6 +241,9 @@ class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
 
     def _vispy_get_size(self):
         return self._logical_size
+
+    def _vispy_get_physical_size(self):
+        return self._physical_size
 
     def _vispy_get_position(self):
         return 0, 0
