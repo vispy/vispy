@@ -60,8 +60,8 @@ class IsolineFilter(Filter):
         }
     """
 
-    def __init__(self, level=2., width=2.0, antialias=1.0, color='black'):
-        super(IsolineFilter, self).__init__(fcode=self.FRAG_SHADER)
+    def __init__(self, level=2., width=2.0, antialias=1.0, color='black', **kwargs):
+        super(IsolineFilter, self).__init__(fcode=self.FRAG_SHADER, **kwargs)
 
         self.level = level
         self.width = width
@@ -114,8 +114,8 @@ class Alpha(Filter):
         }
     """
 
-    def __init__(self, alpha=1.0):
-        super(Alpha, self).__init__(fcode=self.FRAG_SHADER)
+    def __init__(self, alpha=1.0, **kwargs):
+        super(Alpha, self).__init__(fcode=self.FRAG_SHADER, **kwargs)
 
         self.alpha = alpha
 
