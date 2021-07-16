@@ -136,8 +136,8 @@ class ColorFilter(Filter):
         }
     """
 
-    def __init__(self, filter=(1., 1., 1., 1.)):
-        super(ColorFilter, self).__init__(fcode=self.FRAG_SHADER, fpos=8)
+    def __init__(self, filter=(1., 1., 1., 1.), **kwargs):
+        super(ColorFilter, self).__init__(fcode=self.FRAG_SHADER, **kwargs)
 
         self.filter = filter
 
@@ -164,9 +164,9 @@ class ZColormapFilter(Filter):
         }
     """
 
-    def __init__(self, cmap, zrange=(0., 1.)):
-        super(ZColormapFilter, self).__init__(fcode=self.FRAG_SHADER, fpos=3,
-                                              vcode=self.VERT_SHADER, vpos=9)
+    def __init__(self, cmap, zrange=(0., 1.), **kwargs):
+        super(ZColormapFilter, self).__init__(fcode=self.FRAG_SHADER, vcode=self.VERT_SHADER,
+                                              **kwargs)
 
         if isinstance(cmap, str):
             cmap = colormap.get_colormap(cmap)
