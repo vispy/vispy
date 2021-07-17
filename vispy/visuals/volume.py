@@ -876,6 +876,7 @@ class VolumeVisual(Visual):
             raise ValueError(f"Raycasting mode should be in {valid_raycasting_modes}, not {value}")
         self._raycasting_mode = value
         self.shared_program.frag['raycasting_setup'] = self._raycasting_setup_snippet
+        self.update()
 
     @property
     def threshold(self):
