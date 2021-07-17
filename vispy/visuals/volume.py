@@ -199,6 +199,23 @@ vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
     return final_color;
 }
 
+vec3 intersectLinePlane(vec3 linePosition, 
+                        vec3 lineVector, 
+                        vec3 planePosition, 
+                        vec3 planeNormal) {
+    // function to find the intersection between a line and a plane
+    // line is defined by position and vector
+    // plane is defined by position and normal vector
+    // https://en.wikipedia.org/wiki/Line%E2%80%93plane_intersection
+
+    // find scale factor for line vector
+    float scaleFactor = dot(planePosition - linePosition, planeNormal) / 
+                        dot(lineVector, planeNormal);
+
+    // calculate intersection
+    return linePosition + ( scaleFactor * lineVector );
+}
+
 // for some reason, this has to be the last function in order for the
 // filters to be inserted in the correct place...
 
@@ -209,28 +226,13 @@ void main() {
     // Calculate unit vector pointing in the view direction through this
     // fragment.
     view_ray = normalize(farpos.xyz - nearpos.xyz);
-
-    // Compute the distance to the front surface or near clipping plane
-    float distance = dot(nearpos-v_position, view_ray);
-    distance = max(distance, min((-0.5 - v_position.x) / view_ray.x,
-                            (u_shape.x - 0.5 - v_position.x) / view_ray.x));
-    distance = max(distance, min((-0.5 - v_position.y) / view_ray.y,
-                            (u_shape.y - 0.5 - v_position.y) / view_ray.y));
-    distance = max(distance, min((-0.5 - v_position.z) / view_ray.z,
-                            (u_shape.z - 0.5 - v_position.z) / view_ray.z));
-
-    // Now we have the starting position on the front surface
-    vec3 front = v_position + view_ray * distance;
-
-    // Decide how many steps to take
-    int nsteps = int(-distance / u_relative_step_size + 0.5);
-    float f_nsteps = float(nsteps);
-    if( nsteps < 1 )
-        discard;
-
-    // Get starting location and step vector in texture coordinates
-    vec3 step = ((v_position - front) / u_shape) / f_nsteps;
-    vec3 start_loc = front / u_shape;
+    
+    // Set up the ray casting
+    // This snippet must define three variables:
+    // vec3 start_loc - the starting location of the ray in texture coordinates
+    // vec3 step - the step vector in texture coordinates
+    // int nsteps - the number of steps to make through the texture
+    $raycasting_setup
 
     // For testing: show the number of steps. This helps to establish
     // whether the rays are correctly oriented
@@ -273,6 +275,65 @@ void main() {
 
 
 """  # noqa
+
+
+RAYCASTING_SETUP_VOLUME = """
+    // Compute the distance to the front surface or near clipping plane
+    float distance = dot(nearpos-v_position, view_ray);
+    distance = max(distance, min((-0.5 - v_position.x) / view_ray.x,
+                            (u_shape.x - 0.5 - v_position.x) / view_ray.x));
+    distance = max(distance, min((-0.5 - v_position.y) / view_ray.y,
+                            (u_shape.y - 0.5 - v_position.y) / view_ray.y));
+    distance = max(distance, min((-0.5 - v_position.z) / view_ray.z,
+                            (u_shape.z - 0.5 - v_position.z) / view_ray.z));
+
+    // Now we have the starting position on the front surface
+    vec3 front = v_position + view_ray * distance;
+
+    // Decide how many steps to take
+    int nsteps = int(-distance / u_relative_step_size + 0.5);
+    float f_nsteps = float(nsteps);
+    if( nsteps < 1 )
+        discard;
+
+    // Get starting location and step vector in texture coordinates
+    vec3 step = ((v_position - front) / u_shape) / f_nsteps;
+    vec3 start_loc = front / u_shape;
+"""
+
+RAYCASTING_SETUP_PLANE = """
+    // find intersection of view ray with plane in data coordinates
+    vec3 intersection = intersectLinePlane(v_position.xyz, view_ray, 
+                                           u_plane_position, u_plane_normal);
+    // and texture coordinates
+    vec3 intersection_tex = intersection / u_shape;
+    
+    // discard if intersection not in texture
+    if (intersection_tex.x > 1.0 )
+        discard;
+    if (intersection_tex.y > 1.0 )
+        discard;
+    if (intersection_tex.z > 1.0 )
+        discard;
+    if (intersection_tex.x < 0.0 )
+        discard;
+    if (intersection_tex.y < 0.0 )
+        discard;
+    if (intersection_tex.z < 0.0 )
+        discard;
+
+    // Decide how many steps to take
+    int nsteps = int(u_plane_thickness / u_relative_step_size + 0.5);
+    float f_nsteps = float(nsteps);
+    if( nsteps < 1 )
+        discard;
+
+    // Get step vector and starting location in texture coordinates
+    // step vector is along plane normal
+    vec3 N = normalize(u_plane_normal);
+    vec3 step = N / u_shape;
+    vec3 start_loc = intersection_tex - ((step * f_nsteps) / 2);
+"""
 
 
 MIP_SNIPPETS = dict(
@@ -450,6 +511,11 @@ frag_dict = {
     'average': AVG_SNIPPETS
 }
 
+RAYCASTING_MODE_DICT = {
+    'volume': RAYCASTING_SETUP_VOLUME,
+    'plane': RAYCASTING_SETUP_PLANE
+}
+
 
 class VolumeVisual(Visual):
     """Displays a 3D Volume
@@ -519,10 +585,12 @@ class VolumeVisual(Visual):
 
     def __init__(self, vol, clim="auto", method='mip', threshold=None,
                  attenuation=1.0, relative_step_size=0.8, cmap='grays',
-                 gamma=1.0, interpolation='linear', texture_format=None):
+                 gamma=1.0, interpolation='linear', texture_format=None,
+                 raycasting_mode='volume'):
         # Storage of information of volume
         self._vol_shape = ()
         self._gamma = gamma
+        self._raycasting_mode = raycasting_mode
         self._need_vertex_update = True
         # Set the colormap
         self._cmap = get_colormap(cmap)
@@ -760,6 +828,7 @@ class VolumeVisual(Visual):
         # TODO: $sample needs to be unset and re-set, since it's present inside the snippets.
         #       Program should probably be able to do this automatically
         self.shared_program.frag['sample'] = None
+        self.shared_program.frag['raycasting_setup'] = self._raycasting_setup_snippet
         self.shared_program.frag['before_loop'] = self._before_loop_snippet
         self.shared_program.frag['in_loop'] = self._in_loop_snippet
         self.shared_program.frag['after_loop'] = self._after_loop_snippet
@@ -769,6 +838,21 @@ class VolumeVisual(Visual):
         self.shared_program['texture2D_LUT'] = self.cmap.texture_lut() \
             if (hasattr(self.cmap, 'texture_lut')) else None
         self.update()
+
+    @property
+    def _raycasting_setup_snippet(self):
+        return RAYCASTING_MODE_DICT[self.raycasting_mode]
+
+    @property
+    def raycasting_mode(self):
+        return self._raycasting_mode
+
+    @raycasting_mode.setter
+    def raycasting_mode(self, value: str):
+        valid_raycasting_modes = RAYCASTING_MODE_DICT.keys()
+        if value not in valid_raycasting_modes:
+            raise ValueError(f"Raycasting mode should be in {valid_raycasting_modes}, not {value}")
+        self._raycasting_mode = value
 
     @property
     def threshold(self):
