@@ -34,6 +34,8 @@ The ray is expressed in coordinates local to the volume (i.e. texture
 coordinates).
 
 """
+from numpy.typing import ArrayLike
+
 from ._scalable_textures import CPUScaledTexture3D, GPUScaledTextured3D
 from ..gloo import VertexBuffer, IndexBuffer
 from ..gloo.texture import should_cast_to_f32
@@ -101,6 +103,11 @@ const vec4 u_ambient = vec4(0.2, 0.2, 0.2, 1.0);
 const vec4 u_diffuse = vec4(0.8, 0.2, 0.2, 1.0);
 const vec4 u_specular = vec4(1.0, 1.0, 1.0, 1.0);
 const float u_shininess = 40.0;
+
+// uniforms for plane definition. Defined in data coordinates.
+uniform vec3 u_plane_normal;
+uniform vec3 u_plane_position;
+uniform float u_plane_thickness;
 
 //varying vec3 lightDirs[1];
 
@@ -232,6 +239,7 @@ void main() {
     // vec3 start_loc - the starting location of the ray in texture coordinates
     // vec3 step - the step vector in texture coordinates
     // int nsteps - the number of steps to make through the texture
+    
     $raycasting_setup
 
     // For testing: show the number of steps. This helps to establish
@@ -586,7 +594,8 @@ class VolumeVisual(Visual):
     def __init__(self, vol, clim="auto", method='mip', threshold=None,
                  attenuation=1.0, relative_step_size=0.8, cmap='grays',
                  gamma=1.0, interpolation='linear', texture_format=None,
-                 raycasting_mode='volume'):
+                 raycasting_mode='volume', plane_position=None,
+                 plane_normal=None, plane_thickness=1.0):
         # Storage of information of volume
         self._vol_shape = ()
         self._gamma = gamma
@@ -634,10 +643,23 @@ class VolumeVisual(Visual):
         self.set_data(vol, clim or "auto")
 
         # Set params
+        self.raycasting_mode = raycasting_mode
         self.method = method
         self.relative_step_size = relative_step_size
         self.threshold = threshold if threshold is not None else vol.mean()
         self.attenuation = attenuation
+
+        # Set plane params
+        if plane_position is None:
+            self.plane_position = np.array(vol.shape) / 2
+        else:
+            self.plane_position = plane_position
+        if plane_normal is None:
+            self.plane_normal = [1, 0, 0]
+        else:
+            self.plane_normal = plane_normal
+        self.plane_thickness = plane_thickness
+
         self.freeze()
 
     def _create_texture(self, texture_format, data):
@@ -853,6 +875,7 @@ class VolumeVisual(Visual):
         if value not in valid_raycasting_modes:
             raise ValueError(f"Raycasting mode should be in {valid_raycasting_modes}, not {value}")
         self._raycasting_mode = value
+        self.shared_program.frag['raycasting_setup'] = self._raycasting_setup_snippet
 
     @property
     def threshold(self):
@@ -896,6 +919,45 @@ class VolumeVisual(Visual):
             raise ValueError('relative_step_size cannot be smaller than 0.1')
         self._relative_step_size = value
         self.shared_program['u_relative_step_size'] = value
+
+    @property
+    def plane_thickness(self):
+        return self._plane_thickness
+
+    @plane_thickness.setter
+    def plane_thickness(self, value: float):
+        value = float(value)
+        if value < 1:
+            raise ValueError('plane_thickness should be at least 1.0')
+        self._plane_thickness = value
+        self.shared_program['u_plane_thickness'] = value
+        self.update()
+
+    @property
+    def plane_position(self):
+        return self._plane_position
+
+    @plane_position.setter
+    def plane_position(self, value: ArrayLike):
+        value = np.array(value, dtype=np.float32).ravel()
+        if value.shape != (3, ):
+            raise ValueError('plane_position must be a 3 element array-like object')
+        self._plane_position = value
+        self.shared_program['u_plane_position'] = value[::-1]
+        self.update()
+
+    @property
+    def plane_normal(self):
+        return self._plane_normal
+
+    @plane_normal.setter
+    def plane_normal(self, value: ArrayLike):
+        value = np.array(value, dtype=np.float32).ravel()
+        if value.shape != (3, ):
+            raise ValueError('plane_normal must be a 3 element array-like object')
+        self._plane_normal = value
+        self.shared_program['u_plane_normal'] = value[::-1]
+        self.update()
 
     def _create_vertex_data(self):
         """Create and set positions and texture coords from the given shape
