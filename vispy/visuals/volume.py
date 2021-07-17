@@ -558,7 +558,7 @@ class VolumeVisual(Visual):
         by default: 1.
     interpolation : {'linear', 'nearest'}
         Selects method of image interpolation.
-    texture_format: numpy.dtype | str | None
+    texture_format : numpy.dtype | str | None
         How to store data on the GPU. OpenGL allows for many different storage
         formats and schemes for the low-level texture data stored in the GPU.
         Most common is unsigned integers or floating point numbers.
@@ -582,6 +582,22 @@ class VolumeVisual(Visual):
         transferred to the GPU. Note this visual is limited to "luminance"
         formatted data (single band). This is equivalent to `GL_RED` format
         in OpenGL 4.0.
+    raycasting_mode : {'volume', 'plane'}
+        Whether to cast a ray through the whole volume or perpendicular to a
+        plane through the volume defined.
+    plane_position : ArrayLike
+        A (3,) array containing a position on a plane of interest in the volume.
+        The position is defined in data coordinates. Only relevant in
+        raycasting_mode = 'plane'.
+    plane_normal : ArrayLike
+        A (3,) array containing a vector normal to the plane of interest in the
+        volume. The normal vector is defined in data coordinates. Only relevant
+        in raycasting_mode = 'plane'.
+    plane_thickness : float
+        A value defining the total length of the ray perpendicular to the
+        plane interrogated during rendering. Only relevant in
+        raycasting_mode = 'plane'.
+
 
     .. versionchanged: 0.7
 
@@ -922,19 +938,6 @@ class VolumeVisual(Visual):
         self.shared_program['u_relative_step_size'] = value
 
     @property
-    def plane_thickness(self):
-        return self._plane_thickness
-
-    @plane_thickness.setter
-    def plane_thickness(self, value: float):
-        value = float(value)
-        if value < 1:
-            raise ValueError('plane_thickness should be at least 1.0')
-        self._plane_thickness = value
-        self.shared_program['u_plane_thickness'] = value
-        self.update()
-
-    @property
     def plane_position(self):
         return self._plane_position
 
@@ -958,6 +961,19 @@ class VolumeVisual(Visual):
             raise ValueError('plane_normal must be a 3 element array-like object')
         self._plane_normal = value
         self.shared_program['u_plane_normal'] = value[::-1]
+        self.update()
+
+    @property
+    def plane_thickness(self):
+        return self._plane_thickness
+
+    @plane_thickness.setter
+    def plane_thickness(self, value: float):
+        value = float(value)
+        if value < 1:
+            raise ValueError('plane_thickness should be at least 1.0')
+        self._plane_thickness = value
+        self.shared_program['u_plane_thickness'] = value
         self.update()
 
     def _create_vertex_data(self):
