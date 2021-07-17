@@ -707,6 +707,18 @@ class VolumeVisual(Visual):
             self.update()
 
     @property
+    def _before_loop_snippet(self):
+        return frag_dict[self.method]['before_loop']
+
+    @property
+    def _in_loop_snippet(self):
+        return frag_dict[self.method]['in_loop']
+
+    @property
+    def _after_loop_snippet(self):
+        return frag_dict[self.method]['after_loop']
+
+    @property
     def method(self):
         """The render method to use
 
@@ -748,8 +760,9 @@ class VolumeVisual(Visual):
         # TODO: $sample needs to be unset and re-set, since it's present inside the snippets.
         #       Program should probably be able to do this automatically
         self.shared_program.frag['sample'] = None
-        for snippet_position, snippet in frag_dict[method].items():
-            self.shared_program.frag[snippet_position] = snippet
+        self.shared_program.frag['before_loop'] = self._before_loop_snippet
+        self.shared_program.frag['in_loop'] = self._in_loop_snippet
+        self.shared_program.frag['after_loop'] = self._after_loop_snippet
         self.shared_program.frag['sampler_type'] = self._texture.glsl_sampler_type
         self.shared_program.frag['sample'] = self._texture.glsl_sample
         self.shared_program.frag['cmap'] = Function(self._cmap.glsl_map)
