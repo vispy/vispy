@@ -5,8 +5,10 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 """
+Display a ColorBar
+==================
+
 Simple use of SceneCanvas and ColorBarWidget to display a ColorBar
-==================================================================
 """
 import sys
 from vispy import scene

@@ -5,8 +5,9 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 """
-Test automatic layout of multiple viewboxes using Grid
-======================================================
+Simple Line with Axis 
+=====================
+
 """
 import sys
 import numpy as np

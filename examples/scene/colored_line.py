@@ -5,8 +5,8 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 """
-Demonstration of various features of Line visual
-================================================
+Changing Line Colors
+====================
 """
 import itertools
 import numpy as np
