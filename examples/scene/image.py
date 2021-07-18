@@ -10,10 +10,6 @@ Display an Image
 
 Simple use of SceneCanvas to display an Image.
 
-This is more example text.
-
-This is even more example text.
-
 """
 
 import sys
