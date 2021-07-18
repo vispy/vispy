@@ -174,6 +174,8 @@ class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
                 modifiers=self._modifiers(ev),
                 text=ev["key"],
             )
+        elif type == "close-todo":
+            _stop_timers(self._vispy_canvas)
         else:
             pass  # event ignored / unknown
 
@@ -254,34 +256,39 @@ class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
 
 # ------------------------------------------------------------------- timer ---
 
-# todo: test this
+# note (AK): in ipython/widget.py there is a function that sop
 class TimerBackend(BaseTimerBackend):
 
     def __init__(self, vispy_timer):
         super().__init__(vispy_timer)
-        self._proxy_timer_backend = _app.backend_module.TimerBackend(vispy_timer)
+        self._loop = asyncio.get_event_loop()
+        self._task = None
+
+    async def _timer_coro(self, interval):
+        while True:
+            await asyncio.sleep(interval)
+            self._vispy_timeout()
 
     def _vispy_start(self, interval):
-        return self._proxy_timer_backend._vispy_start(interval)
+        if self._task is not None:
+            self._task.cancel()
+        self._task = asyncio.create_task(self._timer_coro(interval))
 
     def _vispy_stop(self):
-        return self._proxy_timer_backend._vispy_stop()
+        self._task.cancel()
+        self._task = None
 
     def _vispy_timeout(self):
-        return self._proxy_timer_backend._vispy_timeout()
-
-    def _vispy_get_native_timer(self):
-        return self._proxy_timer_backend._vispy_get_native_timer()
+        self._loop.call_soon(self._vispy_timer._timeout)
 
 
-# todo: Taken from ipython/_widget.py, but it seems a bit weird to me
 def _stop_timers(canvas):
-    """Stop all timers in a canvas."""
+    """Stop all timers associated with a canvas."""
     for attr in dir(canvas):
         try:
             attr_obj = getattr(canvas, attr)
         except NotImplementedError:
-            continue  # not everything is implemented in this backend
-        if isinstance(attr_obj, Timer):
-            attr_obj.stop()
-
+            continue  # prevent error due to props that we don't implement
+        else:
+            if isinstance(attr_obj, Timer):
+                attr_obj.stop()
