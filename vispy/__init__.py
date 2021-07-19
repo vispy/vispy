@@ -26,6 +26,7 @@ except ImportError:
 
 from .util import config, set_log_level, keys, sys_info  # noqa
 from .util.wrappers import use, test  # noqa
+from .util.gallery_scraper import _get_sg_image_scraper  # noqa
 # load the two functions that IPython uses to instantiate an extension
 # that way, the user only needs to run %load_ext vispy.ipython rather that
 # %load_ext vispy.ipython.ipython
