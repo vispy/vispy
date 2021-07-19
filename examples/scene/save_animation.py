@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
+# vispy: gallery-exports animation.gif
 # -----------------------------------------------------------------------------
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
-
 """
 Create and Save Animation
 =========================
@@ -44,7 +44,7 @@ view.camera.set_range(x=[-3, 3])
 
 writer = imageio.get_writer('animation.gif')
 for i in range(n_steps * 2):
-    im = canvas.render()
+    im = canvas.render(alpha=True)
     writer.append_data(im)
     if i >= n_steps:
         view.camera.transform.rotate(step_angle, axis)
