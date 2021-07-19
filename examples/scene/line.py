@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# vispy: gallery 10:50:5
+# vispy: gallery 5:20:2
 # -----------------------------------------------------------------------------
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
