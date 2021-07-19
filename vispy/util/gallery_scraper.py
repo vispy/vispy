@@ -66,6 +66,7 @@ class VisPyGalleryScraper:
             # example produces an image/animation as output
             image_paths = []
             for frame_image, image_path in zip(frame_num_list, image_path_iterator):
+                image_path = os.path.splitext(image_path)[0] + os.path.splitext(frame_image)[1]
                 shutil.move(frame_image, image_path)
                 image_paths.append(image_path)
         else:
@@ -124,7 +125,7 @@ class VisPyGalleryScraper:
         frame_paths = []
         for frame_fn in frames:
             # existing image file created by the example
-            if not os.path.isfile(frame_specifier):
+            if not os.path.isfile(frame_fn):
                 raise FileNotFoundError(
                     "Example gallery frame specifier must be a frame number, "
                     "frame range, or relative filename produced by the example.")
