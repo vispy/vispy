@@ -24,8 +24,14 @@ from __future__ import annotations
 import os
 import time
 import shutil
-from sphinx_gallery.scrapers import optipng, figure_rst
 from vispy.io import imsave
+
+try:
+    from sphinx_gallery.scrapers import optipng, figure_rst
+except ImportError:
+    # ... only needed if we're actually using this
+    pass
+    optipng = figure_rst = None
 
 
 def _get_sg_image_scraper():
@@ -34,6 +40,10 @@ def _get_sg_image_scraper():
 
 class VisPyGalleryScraper:
     """Custom sphinx-gallery scraper to save the current Canvas to an image."""
+
+    def __init__(self):
+        if figure_rst:
+            raise ImportError("'sphinx_gallery' is required to use custom VisPy scraper.")
 
     def __repr__(self):
         return self.__class__.__name__
