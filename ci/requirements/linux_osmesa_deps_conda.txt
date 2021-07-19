@@ -11,4 +11,4 @@ pytest-sugar
 scipy
 networkx
 hsluv
-sphinx_gallery
+sphinx-gallery

@@ -11,4 +11,4 @@ scipy
 networkx
 hsluv
 kiwisolver
-sphinx_gallery
+sphinx-gallery
