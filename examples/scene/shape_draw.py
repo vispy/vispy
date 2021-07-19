@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2018, Felix Schill.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
-
 """
 Draw and Edit Shapes with Mouse
 ===============================
@@ -349,5 +348,5 @@ class Canvas(scene.SceneCanvas):
 
 
 if __name__ == '__main__':
-    win = Canvas()
+    canvas = Canvas()
     app.run()

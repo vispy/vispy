@@ -1,12 +1,15 @@
 # -*- coding: utf-8 -*-
+# vispy: gallery 5
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """
-Draw an InfiniteLine
+Draw an LinearRegion
 ====================
 
-Demonstration of InfiniteLine visual.
+Demonstration of LinearRegion visual. Allows drawing of infinite horizontal or
+vertical region for 2D plots.
+
 """
 
 import sys
