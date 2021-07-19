@@ -254,5 +254,3 @@ class FrameGrabber:
     def save_animation(self, filename):
         import imageio  # multiple gif not properly supported yet
         imageio.mimsave(filename, self._collected_images)
-
-

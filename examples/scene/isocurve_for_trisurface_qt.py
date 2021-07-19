@@ -12,7 +12,6 @@ qt interface.
 
 """
 
-import sys
 import numpy as np
 
 from vispy import scene, app
@@ -30,14 +29,14 @@ except ImportError:
 try:
     from PyQt4 import QtCore
     from PyQt4.QtCore import Qt
-    from PyQt4.QtGui import (QApplication, QMainWindow, QWidget, QLabel,
+    from PyQt4.QtGui import (QMainWindow, QWidget, QLabel,
                              QSpinBox, QComboBox, QGridLayout, QVBoxLayout,
                              QSplitter)
 except Exception:
     # To switch between PyQt5 and PySide2 bindings just change the from import
     from PyQt5 import QtCore
     from PyQt5.QtCore import Qt
-    from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QLabel,
+    from PyQt5.QtWidgets import (QMainWindow, QWidget, QLabel,
                                  QSpinBox, QComboBox, QGridLayout, QVBoxLayout,
                                  QSplitter)
 
