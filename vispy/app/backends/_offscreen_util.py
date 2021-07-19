@@ -41,7 +41,13 @@ class GlobalOffscreenContext:
             self.glfw.window_hint(self.glfw.VISIBLE, 0)
             self._canvas = self.glfw.create_window(1, 1, "dummy window", None, None)
         else:
-            _app = Application('default')
+            try:
+                _app = Application('default')
+            except Exception:
+                raise RuntimeError(
+                    "Cannot find a backend to create an OpenGL context. "
+                    "Install e.g. PyQt5, PySide2, or `pip install glfw`."
+                )
             self._canvas = Canvas(app=_app)
             self._canvas.show(False)
 

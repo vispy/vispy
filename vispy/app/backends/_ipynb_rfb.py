@@ -18,24 +18,6 @@ else:
     which = "jupyter_rfb"
 
 
-# try:
-#     # Explicitly use default (avoid using test-app)
-#     _app = Application('default')
-# except Exception:
-#     _msg = 'ipynb_rf backend relies on a proxy backend'
-#     available, testable, why_not, which = False, False, _msg, None
-# else:
-#     # Try importing jupyter_rfb
-#     # todo: give good error message if jupyter_rfb is not available
-#     try:
-#         from jupyter_rfb import RemoteFrameBuffer
-#     except Exception as exp:
-#         available, testable, why_not, which = False, False, str(exp), None
-#     else:
-#         available, testable, why_not = True, False, None
-#         which = _app.backend_module.which
-
-
 # -------------------------------------------------------------- capability ---
 
 capability = dict(
