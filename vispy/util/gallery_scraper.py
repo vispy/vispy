@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import os
 import time
+import shutil
 from sphinx_gallery.scrapers import optipng, figure_rst
 from vispy.io import imsave
 
@@ -61,7 +62,21 @@ class VisPyGalleryScraper:
         frame_num_list = self._get_frame_list_from_source(example_fn)
         image_path_iterator = block_vars['image_path_iterator']
         canvas_or_widget = self._get_canvaslike_from_globals(block_vars["example_globals"])
+        if isinstance(frame_num_list[0], str):
+            # example produces an image/animation as output
+            image_paths = []
+            for frame_image, image_path in zip(frame_num_list, image_path_iterator):
+                shutil.move(frame_image, image_path)
+                image_paths.append(image_path)
+        else:
+            image_paths = self._save_example_to_files(
+                canvas_or_widget, frame_num_list, gallery_conf, image_path_iterator)
 
+        fig_titles = ""  # alt text
+        # FUTURE: Handle non-images (ex. MP4s) with raw HTML
+        return figure_rst(image_paths, gallery_conf['src_dir'], fig_titles)
+
+    def _save_example_to_files(self, canvas_or_widget, frame_num_list, gallery_conf, image_path_iterator):
         image_path = next(image_path_iterator)
         frame_grabber = FrameGrabber(canvas_or_widget, frame_num_list)
         frame_grabber.collect_frames()
@@ -74,28 +89,47 @@ class VisPyGalleryScraper:
             frame_grabber.save_frame(image_path)
         if 'images' in gallery_conf['compress_images']:
             optipng(image_path, gallery_conf['compress_images_args'])
-        fig_titles = ""  # alt text
-        # FUTURE: Handle non-images (ex. MP4s) with raw HTML
-        return figure_rst([image_path], gallery_conf['src_dir'], fig_titles)
+        return [image_path]
 
-    @staticmethod
-    def _get_frame_list_from_source(filename):
+    def _get_frame_list_from_source(self, filename):
         lines = open(filename, 'rb').read().decode('utf-8').splitlines()
         for line in lines[:10]:
-            if line.startswith('# vispy:') and 'gallery' in line:
+            if not line.startswith("# vispy:"):
+                continue
+            if "gallery-exports" in line:
+                _frames = line.split('gallery-exports')[1].split(',')[0].strip()
+                frames = self._frame_exports_to_list(_frames)
+                break
+            if "gallery " in line:
                 # Get what frames to grab
                 _frames = line.split('gallery')[1].split(',')[0].strip()
-                _frames = _frames or '0'
-                frames = [int(i) for i in _frames.split(':')]
-                if not frames:
-                    frames = [5]
-                if len(frames) > 1:
-                    frames = list(range(*frames))
+                frames = self._frame_specifier_to_list(_frames)
                 break
         else:
             # no frame number hint
             frames = [5]
         return frames
+
+    def _frame_specifier_to_list(self, frame_specifier):
+        _frames = frame_specifier or '0'
+        frames = [int(i) for i in _frames.split(':')]
+        if not frames:
+            frames = [5]
+        if len(frames) > 1:
+            frames = list(range(*frames))
+        return frames
+
+    def _frame_exports_to_list(self, frame_specifier):
+        frames = frame_specifier.split(" ")
+        frame_paths = []
+        for frame_fn in frames:
+            # existing image file created by the example
+            if not os.path.isfile(frame_specifier):
+                raise FileNotFoundError(
+                    "Example gallery frame specifier must be a frame number, "
+                    "frame range, or relative filename produced by the example.")
+            frame_paths.append(frame_fn)
+        return frame_paths
 
     def _get_canvaslike_from_globals(self, globals_dict):
         qt_widget = self._get_qt_top_parent(globals_dict)
