@@ -68,6 +68,10 @@ jobs:
   website:
     name: build website
     runs-on: ubuntu-latest
+    defaults:
+      # use login shell to make use of .bash_profile /.bashrc
+      run:
+        shell: bash -l {0}
     steps:
     - name: Cancel Previous Runs
       uses: styfle/cancel-workflow-action@0.6.0
