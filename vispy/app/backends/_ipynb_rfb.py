@@ -4,10 +4,8 @@ from ..base import (BaseApplicationBackend, BaseCanvasBackend,
                     BaseTimerBackend)
 from ...app import Timer
 from ...util import keys
-from ._offscreen_util import OffscreenCanvasHelper
+from ._offscreen_util import GlobalOffscreenContext, FrameBufferHelper
 
-
-# todo: can create a global GL context helper here too
 
 try:
     from jupyter_rfb import RemoteFrameBuffer
@@ -41,27 +39,26 @@ else:
 # -------------------------------------------------------------- capability ---
 
 capability = dict(
-    title=True,  # But it only applies to the dummy window :P
+    title=False,
     size=True,
     position=False,
-    show=True, # todo: can show/hide window?? -> should probably be false
+    show=False,
     vsync=False,
     resizable=True,
     decorate=False,
     fullscreen=False,
-    context=True,  # via the proxy backend
-    multi_window=True,  # todo: right?
+    context=True,  # the offscreen global context
+    multi_window=True,
     scroll=True,
-    parent=False,
+    parent=False,  # todo: we can make this work
     always_on_top=False,
 )
 
 
 # ------------------------------------------------------- set_configuration ---
 
-# todo: call this?
-def _set_config(c):
-    _app.backend_module._set_config(c)
+# The configuration mostly applies to the framebuffer. So if we'd want
+# to implement some of that, we'd probably have to apply it to the FBO.
 
 
 # ------------------------------------------------------------- application ---
@@ -71,26 +68,20 @@ class ApplicationBackend(BaseApplicationBackend):
 
     def __init__(self):
         super().__init__()
-        # self._proxy_app_backend = _app._backend
 
     def _vispy_get_backend_name(self):
-        # proxyname = self._proxy_app_backend._vispy_get_backend_name()
-        # return f'ipynb_rfb (via {proxyname})'
-        return f'ipynb_rfb'
+        return 'ipynb_rfb'
 
     def _vispy_process_events(self):
-        # return self._proxy_app_backend._vispy_process_events()
         raise RuntimeError("Cannot process events while asyncio event-loop is running.")
 
     def _vispy_run(self):
         pass  # We're in IPython; don't enter a mainloop or we'll block!
 
     def _vispy_quit(self):
-        # return self._proxy_app_backend._vispy_quit()
         pass
 
     def _vispy_get_native_app(self):
-        # return self._proxy_app_backend._vispy_get_native_app()
         return asyncio
 
 
@@ -103,7 +94,8 @@ class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args)
         # Init
-        self._helper = OffscreenCanvasHelper()
+        self._context = GlobalOffscreenContext()
+        self._helper = FrameBufferHelper()
         self._loop = asyncio.get_event_loop()
         self._draw_pending = False
         self._logical_size = 1, 1
@@ -124,13 +116,12 @@ class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
             self._physical_size = int(w * r), int(h * r)
             self._loop.call_soon(self._emit_resize_event)
         elif type == "pointer_down":
-            with self._helper:
-                self._vispy_mouse_press(
-                    native=ev,
-                    pos=(ev["x"], ev["y"]),
-                    button=ev["button"],
-                    modifiers=self._modifiers(ev),
-                )
+            self._vispy_mouse_press(
+                native=ev,
+                pos=(ev["x"], ev["y"]),
+                button=ev["button"],
+                modifiers=self._modifiers(ev),
+            )
         elif type == "pointer_up":
             self._vispy_mouse_release(
                 native=ev,
@@ -153,7 +144,8 @@ class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
                 modifiers=self._modifiers(ev),
             )
         elif type == "wheel":
-            self._vispy_canvas.events.mouse_wheel(native=ev,
+            self._vispy_canvas.events.mouse_wheel(
+                native=ev,
                 pos=(ev["x"], ev["y"]),
                 delta=(ev["dx"] / 100, - ev["dy"] / 100),
                 modifiers=self._modifiers(ev),
@@ -187,31 +179,35 @@ class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
         self._vispy_canvas.events.resize(
             size=self._logical_size,
             physical_size=self._physical_size,
-            )
+        )
 
     def on_draw(self):
         self._draw_pending = False
+
         # Handle initialization
         if not self._initialized:
             self._initialized = True
             self._vispy_canvas.events.initialize()
             self._emit_resize_event()
 
-        # Normal behavior
+        # Draw and obtain result
         self._vispy_canvas.set_current()
         with self._helper:
             self._vispy_canvas.events.draw(region=None)
+            array = self._helper.get_frame()
+
+        # Flush commands here to clean up - otherwise we get errors related to
+        # framebuffers not existin.
+        self._vispy_canvas.context.flush_commands()
 
         # Present
-        array = self._helper.get_frame()
-        self._ndraws = getattr(self, "_ndraws", 0) + 1
         self.send_frame(array)
 
     def _vispy_warmup(self):
         self._vispy_canvas.set_current()
 
     def _vispy_set_current(self):
-        self._helper.set_current()
+        self._context.make_current()
 
     def _vispy_swap_buffers(self):
         pass
@@ -227,7 +223,6 @@ class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
         pass
 
     def _vispy_set_visible(self, visible):
-        pass  # todo: could implement this by minimizing it, I guess?
         raise NotImplementedError()
 
     def _vispy_set_fullscreen(self, fullscreen):
@@ -256,7 +251,6 @@ class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
 
 # ------------------------------------------------------------------- timer ---
 
-# note (AK): in ipython/widget.py there is a function that sop
 class TimerBackend(BaseTimerBackend):
 
     def __init__(self, vispy_timer):
