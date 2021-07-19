@@ -3,19 +3,19 @@
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
-
 """
 Isocurve for Triangular Mesh with Qt Interface
 ==============================================
 
 This example demonstrates isocurve for triangular mesh with vertex data and a
- qt interface.
+qt interface.
+
 """
 
 import sys
 import numpy as np
 
-from vispy import scene
+from vispy import scene, app
 
 from vispy.geometry.generation import create_sphere
 from vispy.color.colormap import get_colormaps
@@ -143,7 +143,6 @@ class Canvas(scene.SceneCanvas):
 
 # -----------------------------------------------------------------------------
 if __name__ == '__main__':
-    appQt = QApplication(sys.argv)
     win = MainWindow()
     win.show()
-    appQt.exec_()
+    app.run()
