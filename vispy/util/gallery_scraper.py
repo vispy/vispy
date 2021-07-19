@@ -42,7 +42,7 @@ class VisPyGalleryScraper:
     """Custom sphinx-gallery scraper to save the current Canvas to an image."""
 
     def __init__(self):
-        if figure_rst:
+        if figure_rst is None:
             raise ImportError("'sphinx_gallery' is required to use custom VisPy scraper.")
 
     def __repr__(self):
