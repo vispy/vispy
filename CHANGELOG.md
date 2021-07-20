@@ -1,5 +1,12 @@
 # Release Notes
 
+## [v0.7.2](https://github.com/vispy/vispy/tree/v0.7.2) (2021-07-20)
+
+**Fixed bugs:**
+
+- Add filter keyword arguments to subclassed filters [\#2144](https://github.com/vispy/vispy/pull/2144) ([clarebcook](https://github.com/clarebcook))
+- Fix scalable textures clim\_normalized when auto clims are used [\#2140](https://github.com/vispy/vispy/pull/2140) ([djhoese](https://github.com/djhoese))
+
 ## [v0.7.1](https://github.com/vispy/vispy/tree/v0.7.1) (2021-07-13)
 
 **Fixed bugs:**
