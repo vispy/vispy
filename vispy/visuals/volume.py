@@ -622,7 +622,7 @@ class VolumeVisual(Visual):
             raise ValueError('Volume visual needs a 3D array.')
         if isinstance(self._texture, GPUScaledTextured3D):
             copy = False
-        
+
         if clim is not None and clim != self._texture.clim:
             self._texture.set_clim(clim)
 
@@ -687,6 +687,11 @@ class VolumeVisual(Visual):
     def cmap(self, cmap):
         self._cmap = get_colormap(cmap)
         self.shared_program.frag['cmap'] = Function(self._cmap.glsl_map)
+        self.shared_program['texture2D_LUT'] = (
+            self.cmap.texture_lut()
+            if (hasattr(self.cmap, 'texture_lut'))
+            else None
+        )
         self.update()
 
     @property
