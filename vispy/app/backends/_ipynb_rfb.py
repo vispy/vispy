@@ -1,10 +1,10 @@
 import asyncio
 
-from ..base import (BaseApplicationBackend, BaseCanvasBackend,
-                    BaseTimerBackend)
+from ..base import BaseApplicationBackend, BaseCanvasBackend, BaseTimerBackend
+# from ...gloo.context import set_current_canvas
 from ...app import Timer
 from ...util import keys
-from ._offscreen_util import GlobalOffscreenContext, FrameBufferHelper
+from ._offscreen_util import OffscreenContext, FrameBufferHelper
 
 
 try:
@@ -32,7 +32,7 @@ capability = dict(
     context=True,  # the offscreen global context
     multi_window=True,
     scroll=True,
-    parent=False,  # todo: we can make this work
+    parent=False,  # ipywidgets has layouts, but has no concept of parents
     always_on_top=False,
 )
 
@@ -76,13 +76,15 @@ class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args)
         # Init
-        self._context = GlobalOffscreenContext()
+        # Use a context per canvas, because we seem to make assumptions
+        # about OpenGL state being local to the canvas.
+        self._context = OffscreenContext()  # OffscreenContext.get_global_instance()
         self._helper = FrameBufferHelper()
         self._loop = asyncio.get_event_loop()
         self._draw_pending = False
         self._logical_size = 1, 1
         self._physical_size = 1, 1
-        self._initialized = False
+        self._lifecycle = 0  # 0: not initialized, 1: initialized, 2: closed
         # Init more based on kwargs (could maybe handle, title, show, context)
         self._vispy_set_size(*kwargs["size"])
         self.resizable = kwargs["resizable"]
@@ -148,7 +150,9 @@ class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
                 modifiers=self._modifiers(ev),
                 text=ev["key"],
             )
-        elif type == "close-todo":
+        elif type == "close":
+            self._lifecycle = 2
+            self._context.close()
             _stop_timers(self._vispy_canvas)
         else:
             pass  # event ignored / unknown
@@ -167,10 +171,15 @@ class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
         self._draw_pending = False
 
         # Handle initialization
-        if not self._initialized:
-            self._initialized = True
+        if not self._lifecycle:
+            self._lifecycle = 1
+            self._vispy_canvas.set_current()
             self._vispy_canvas.events.initialize()
             self._emit_resize_event()
+
+        # If not alive, don't bother drawing
+        if self._lifecycle != 1:
+            return
 
         # Draw and obtain result
         self._vispy_canvas.set_current()
@@ -216,7 +225,8 @@ class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
             self._loop.call_later(0.01, self.on_draw)
 
     def _vispy_close(self):
-        raise NotImplementedError()
+        # ipywidget.Widget.close()  ->  closes the comm and removes all views
+        self.close()
 
     def _vispy_get_size(self):
         return self._logical_size
@@ -260,6 +270,7 @@ class TimerBackend(BaseTimerBackend):
 
 def _stop_timers(canvas):
     """Stop all timers associated with a canvas."""
+    # This is nice and all, but the Canvas object is frozen, so this is never actually used
     for attr in dir(canvas):
         try:
             attr_obj = getattr(canvas, attr)

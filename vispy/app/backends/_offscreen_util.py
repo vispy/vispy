@@ -6,23 +6,24 @@ from .. import Application, Canvas
 from ... import gloo
 
 
-class GlobalOffscreenContext:
+class OffscreenContext:
     """ A helper class to provide an OpenGL context. This context is global
     to the application.
     """
 
-    _instance = None
+    _global_instance = None
     _canvas = None
 
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = object.__new__(cls)
-            print("new!")
-        return cls._instance
+    def get_global_instance(cls):
+        if cls._global_instance is None:
+            cls._global_instance = cls()
+        return cls._global_instance
 
     def __init__(self):
         if self._canvas is not None:
             return  # already initialized
+
+        self._is_closed = False
 
         # Glfw is probably the most lightweight approach, so let's try that.
         # But there are two incompatible packages providing glfw :/
@@ -60,7 +61,24 @@ class GlobalOffscreenContext:
         if self.glfw:
             self.glfw.make_context_current(self._canvas)
         else:
-            self._canvas._vispy_set_current()
+            self._canvas.set_current()
+
+    def close(self):
+        """ Close the context. """
+        # Cannot close the global instance
+        if self is OffscreenContext._global_instance:
+            return
+        elif not self._is_closed:
+            self._is_closed = True
+            if self.glfw:
+                self.glfw.destroy_window(self._canvas)
+                print("glfw destroy!")
+            else:
+                print("native destroy!")
+                self._canvas.close()
+
+    def __del__(self):
+        self.close()
 
 
 class FrameBufferHelper:
