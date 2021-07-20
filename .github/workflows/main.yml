@@ -89,7 +89,9 @@ jobs:
         path: |
           ~/.vispy/data
           ~/.vispy/test_data
-        key: ${{ runner.os }}-data-${{ env.cache-name }}
+        key: ${{ runner.os }}-data-${{ env.cache-name }}-${{ hashFiles('vispy/testing/image_tester.py') }}-${{ hashFiles('vispy/util/fetching.py') }}
+        restore-keys: |
+          ${{ runner.os }}-build-${{ env.cache-name }}-
 # We run "make clean" so this won't do anything right now
 #    - name: Cache Website Gallery
 #      uses: actions/cache@v2
@@ -201,7 +203,9 @@ jobs:
         path: |
           ~/.vispy/data
           ~/.vispy/test_data
-        key: ${{ runner.os }}-data-${{ env.cache-name }}
+        key: ${{ runner.os }}-data-${{ env.cache-name }}-${{ hashFiles('vispy/testing/image_tester.py') }}-${{ hashFiles('vispy/util/fetching.py') }}
+        restore-keys: |
+          ${{ runner.os }}-build-${{ env.cache-name }}-
     - name: Prepare System Environment
       id: vars
       run: |
