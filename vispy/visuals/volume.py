@@ -745,7 +745,7 @@ class VolumeVisual(Visual):
         if 'u_attenuation' in self.shared_program:
             self.shared_program['u_attenuation'] = None
 
-        # TODO: $sample needs to be unset and re-set, since it's present inside the snippets.
+        # $sample needs to be unset and re-set, since it's present inside the snippets.
         #       Program should probably be able to do this automatically
         self.shared_program.frag['sample'] = None
         for snippet_position, snippet in frag_dict[method].items():
