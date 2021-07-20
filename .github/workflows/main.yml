@@ -89,7 +89,7 @@ jobs:
         path: |
           ~/.vispy/data
           ~/.vispy/test_data
-        key: ${{ runner.os }}-data-${{ env.cache-name }}-${{ hashFiles('vispy/testing/image_tester.py') }}-${{ hashFiles('vispy/util/fetching.py') }}
+        key: ${{ runner.os }}-data-${{ env.cache-name }}-${{ hashFiles('~/.vispy/data') }}-${{ hashFiles('~/.vispy/test_data') }}
         restore-keys: |
           ${{ runner.os }}-build-${{ env.cache-name }}-
 # We run "make clean" so this won't do anything right now
@@ -203,7 +203,7 @@ jobs:
         path: |
           ~/.vispy/data
           ~/.vispy/test_data
-        key: ${{ runner.os }}-data-${{ env.cache-name }}-${{ hashFiles('vispy/testing/image_tester.py') }}-${{ hashFiles('vispy/util/fetching.py') }}
+        key: ${{ runner.os }}-data-${{ env.cache-name }}-${{ hashFiles('~/.vispy/data') }}-${{ hashFiles('~/.vispy/test_data') }}
         restore-keys: |
           ${{ runner.os }}-build-${{ env.cache-name }}-
     - name: Prepare System Environment
