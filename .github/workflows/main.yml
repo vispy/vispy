@@ -136,12 +136,12 @@ jobs:
         export DISPLAY=:99.0
         export XDG_RUNTIME_DIR=/tmp/runtime-runner
         source ./ci/build_website.sh
-    - name: Upload website artifact
+    - name: Upload website HTML artifact
       uses: actions/upload-artifact@v2
       with:
         name: Sphinx Website
         path: |
-          doc/build/html/*
+          doc/build/html
         retention-days: 1
     - name: deploy website
       if: github.event_name == 'push'
