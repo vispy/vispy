@@ -141,7 +141,7 @@ jobs:
       with:
         name: Sphinx Website
         path: |
-          doc/build/html
+          doc/_build/html
         retention-days: 1
     - name: deploy website
       if: github.event_name == 'push'
