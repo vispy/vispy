@@ -91,8 +91,8 @@ jobs:
         cache-name: cache-vispy-data
       with:
         path: |
-          ~/.vispy/data
-          ~/.vispy/test_data
+          vispy_data/data
+          vispy_data/test_data
         key: ${{ runner.os }}-data-${{ env.cache-name }}-${{ hashFiles('vispy_data/data') }}-${{ hashFiles('vispy_data/test_data') }}
         restore-keys: |
           ${{ runner.os }}-build-${{ env.cache-name }}-
@@ -209,8 +209,8 @@ jobs:
         cache-name: cache-vispy-data
       with:
         path: |
-          ~/.vispy/data
-          ~/.vispy/test_data
+          vispy_data/data
+          vispy_data/test_data
         key: ${{ runner.os }}-data-${{ env.cache-name }}-${{ hashFiles('vispy_data/data') }}-${{ hashFiles('vispy_data/test_data') }}
         restore-keys: |
           ${{ runner.os }}-build-${{ env.cache-name }}-
