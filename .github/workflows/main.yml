@@ -93,7 +93,7 @@ jobs:
       with:
         path: |
           vispy_data/data
-        key: ${{ runner.os }}-demo-data-${{ env.cache-name }}-${{ hashFiles('vispy_data/data') }}
+        key: ${{ runner.os }}-demo-data-${{ env.cache-name }}-${{ hashFiles('vispy_data/data/**/*.*') }}
         restore-keys: |
           ${{ runner.os }}-build-${{ env.cache-name }}-
     - name: Cache VisPy Test Data
@@ -103,7 +103,7 @@ jobs:
       with:
         path: |
           vispy_data/test_data
-        key: ${{ runner.os }}-data-${{ env.cache-name }}-${{ hashFiles('vispy_data/test_data') }}
+        key: ${{ runner.os }}-data-${{ env.cache-name }}-${{ hashFiles('vispy_data/test_data/**/*.*') }}
         restore-keys: |
           ${{ runner.os }}-test-data-${{ env.cache-name }}-
 # We run "make clean" so this won't do anything right now
@@ -221,7 +221,7 @@ jobs:
       with:
         path: |
           vispy_data/data
-        key: ${{ runner.os }}-demo-data-${{ env.cache-name }}-${{ hashFiles('vispy_data/data') }}
+        key: ${{ runner.os }}-demo-data-${{ env.cache-name }}-${{ hashFiles('vispy_data/data/**/*.*') }}
         restore-keys: |
           ${{ runner.os }}-build-${{ env.cache-name }}-
     - name: Cache VisPy Test Data
@@ -231,7 +231,7 @@ jobs:
       with:
         path: |
           vispy_data/test_data
-        key: ${{ runner.os }}-data-${{ env.cache-name }}-${{ hashFiles('vispy_data/test_data') }}
+        key: ${{ runner.os }}-data-${{ env.cache-name }}-${{ hashFiles('vispy_data/test_data/**/*.*') }}
         restore-keys: |
           ${{ runner.os }}-test-data-${{ env.cache-name }}-
     - name: Prepare System Environment
