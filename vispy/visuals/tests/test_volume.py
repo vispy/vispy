@@ -289,17 +289,15 @@ def test_changing_cmap():
         v.camera.fov = 0
         v.camera.scale_factor = 40.0
 
-        # render with grays colormap, sample center
-        rendered = c.render()
-        center = np.array(rendered.shape)[:2] // 2
-        center_sample = rendered[center[0], center[1], :]
+        # render with grays colormap
+        grays = c.render()
 
-        # update cmap, compare rendered value at center
+        # update cmap, compare rendered array with the grays cmap render
         for cmap in test_cmaps:
             volume.cmap = cmap
-            current_cmap_center = c.render()[center[0], center[1], :]
+            current_cmap = c.render()
             with pytest.raises(AssertionError):
-                np.testing.assert_allclose(center_sample, current_cmap_center)
+                np.testing.assert_allclose(grays, current_cmap)
 
 
 run_tests_if_main()
