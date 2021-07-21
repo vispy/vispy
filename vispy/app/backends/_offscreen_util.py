@@ -14,7 +14,11 @@ class OffscreenContext:
     _global_instance = None
     _canvas = None
 
+    @classmethod
     def get_global_instance(cls):
+        """ Get a global context. Note that any assumptions about OpenGL state
+        being local will not hold.
+        """
         if cls._global_instance is None:
             cls._global_instance = cls()
         return cls._global_instance
@@ -72,9 +76,7 @@ class OffscreenContext:
             self._is_closed = True
             if self.glfw:
                 self.glfw.destroy_window(self._canvas)
-                print("glfw destroy!")
             else:
-                print("native destroy!")
                 self._canvas.close()
 
     def __del__(self):
