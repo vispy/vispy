@@ -152,14 +152,6 @@ jobs:
         export DISPLAY=:99.0
         export XDG_RUNTIME_DIR=/tmp/runtime-runner
         source ./ci/build_website.sh
-    - name: Debug cache data dirs
-      run: |
-        echo "Listing vispy_data"
-        ls -l vispy_data
-        echo "Listing vispy_data/data"
-        ls -l vispy_data/data
-        echo "Listing vispy_data/test_data"
-        ls -l vispy_data/test_data
     - name: Upload website HTML artifact
       uses: actions/upload-artifact@v2
       with:
@@ -235,7 +227,7 @@ jobs:
     - name: Cache VisPy Test Data
       uses: actions/cache@v2
       env:
-        cache-name: cache-vispy-test-data-${ matrix.test }}
+        cache-name: cache-vispy-test-data-${{ matrix.test }}
       with:
         path: |
           vispy_data/test_data
@@ -304,14 +296,6 @@ jobs:
           COVERAGE_FILE=.vispy-coverage coverage combine
           mv .vispy-coverage .coverage
         fi
-    - name: Debug cache data dirs
-      run: |
-        echo "Listing vispy_data"
-        ls -l vispy_data
-        echo "Listing vispy_data/data"
-        ls -l vispy_data/data
-        echo "Listing vispy_data/test_data"
-        ls -l vispy_data/test_data
     - name: Coveralls Parallel
       uses: AndreMiras/coveralls-python-action@develop
       with:
