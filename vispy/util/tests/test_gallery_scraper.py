@@ -9,7 +9,11 @@ from vispy.testing import TestingCanvas, requires_application
 from ..gallery_scraper import VisPyGalleryScraper
 
 import pytest
-from sphinx_gallery.gen_gallery import DEFAULT_GALLERY_CONF
+
+try:
+    from sphinx_gallery.gen_gallery import DEFAULT_GALLERY_CONF
+except ImportError:
+    pytest.skip("Skipping sphinx-gallery tests", allow_module_level=True)
 
 
 def _create_fake_block_vars(canvas):

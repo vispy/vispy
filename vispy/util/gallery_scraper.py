@@ -29,13 +29,8 @@ from vispy.io import imsave
 try:
     from sphinx_gallery.scrapers import optipng, figure_rst
 except ImportError:
-    # ... only needed if we're actually using this
-    pass
+    # only needed if we're actually using this
     optipng = figure_rst = None
-
-
-def _get_sg_image_scraper():
-    return VisPyGalleryScraper()
 
 
 class VisPyGalleryScraper:
