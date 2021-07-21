@@ -264,4 +264,40 @@ def test_set_data_does_not_change_input():
     assert not np.allclose(vol, vol2)
 
 
+@requires_pyopengl()
+@requires_application()
+def test_changing_cmap():
+    """Test that changing colormaps updates the display."""
+    size = (40, 40)
+    np.random.seed(0)  # make tests the same every time
+    data = _make_test_data(size[:1] * 3, np.float32)
+    cmap = 'grays'
+    test_cmaps = ('reds', 'greens', 'blues')
+    clim = (0, 1)
+    kwargs = {}
+    with TestingCanvas(size=size, bgcolor="k") as c:
+        v = c.central_widget.add_view(border_width=0)
+        volume = scene.visuals.Volume(
+            data,
+            interpolation='nearest',
+            clim=clim,
+            cmap=cmap,
+            parent=v.scene,
+            **kwargs
+        )
+        v.camera = 'arcball'
+        v.camera.fov = 0
+        v.camera.scale_factor = 40.0
+
+        # render with grays colormap
+        grays = c.render()
+
+        # update cmap, compare rendered array with the grays cmap render
+        for cmap in test_cmaps:
+            volume.cmap = cmap
+            current_cmap = c.render()
+            with pytest.raises(AssertionError):
+                np.testing.assert_allclose(grays, current_cmap)
+
+
 run_tests_if_main()
