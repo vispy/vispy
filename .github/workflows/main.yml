@@ -84,7 +84,7 @@ jobs:
     - name: Create CI config for VisPy
       run: |
         mkdir -p ~/.vispy
-        cat "{\"data_path\": \"$PWD/vispy_data\"}" > ~/.vispy/vispy.json
+        echo "{\"data_path\": \"$PWD/vispy_data\"}" > ~/.vispy/vispy.json
     - name: Cache VisPy Demo and Test Data
       uses: actions/cache@v2
       env:
@@ -202,7 +202,7 @@ jobs:
     - name: Create CI config for VisPy
       run: |
         mkdir -p ~/.vispy
-        cat "{\"data_path\": \"$PWD/vispy_data\"}" > ~/.vispy/vispy.json
+        echo "{\"data_path\": \"$PWD/vispy_data\"}" > ~/.vispy/vispy.json
     - name: Cache VisPy Demo and Test Data
       uses: actions/cache@v2
       env:
