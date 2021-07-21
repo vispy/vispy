@@ -82,7 +82,6 @@ jobs:
         fetch-depth: 0
         submodules: "recursive"
     - name: Create CI config for VisPy
-      id: vars
       run: |
         mkdir -p ~/.vispy
         cat "{\"data_path\": \"$PWD/vispy_data\"}" > ~/.vispy/vispy.json
@@ -201,7 +200,6 @@ jobs:
         fetch-depth: 0
         submodules: "recursive"
     - name: Create CI config for VisPy
-      id: vars
       run: |
         mkdir -p ~/.vispy
         cat "{\"data_path\": \"$PWD/vispy_data\"}" > ~/.vispy/vispy.json
