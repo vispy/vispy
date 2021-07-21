@@ -81,8 +81,8 @@ class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
         self._helper = FrameBufferHelper()
         self._loop = asyncio.get_event_loop()
         self._draw_pending = False
-        self._logical_size = 1, 1
-        self._physical_size = 1, 1
+        self._logical_size = 0, 0
+        self._physical_size = 0, 0
         self._lifecycle = 0  # 0: not initialized, 1: initialized, 2: closed
         # Init more based on kwargs (could maybe handle, title, show, context)
         self._vispy_set_size(*kwargs["size"])
@@ -169,6 +169,10 @@ class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
     def on_draw(self):
         self._draw_pending = False
 
+        # Only draw if the draw region is not null
+        if 0 in self._physical_size:
+            return
+
         # Handle initialization
         if not self._lifecycle:
             self._lifecycle = 1
@@ -213,7 +217,8 @@ class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
         pass
 
     def _vispy_set_visible(self, visible):
-        raise NotImplementedError()
+        if not visible:
+            raise NotImplementedError("Cannot hide the RFB widget")
 
     def _vispy_set_fullscreen(self, fullscreen):
         raise NotImplementedError()
