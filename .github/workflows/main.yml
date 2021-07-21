@@ -89,21 +89,21 @@ jobs:
     - name: Cache VisPy Demo Data
       uses: actions/cache@v2
       env:
-        cache-name: cache-vispy-demo-data-website3
+        cache-name: cache-vispy-demo-data-website2
       with:
         path: |
           vispy_data/data
-        key: ${{ runner.os }}-demo-data-${{ env.cache-name }}-${{ hashFiles("vispy_data/data/**/*.*") }}
+        key: ${{ runner.os }}-demo-data-${{ env.cache-name }}-${{ hashFiles('vispy_data/data/**/*.*') }}
         restore-keys: |
           ${{ runner.os }}-build-${{ env.cache-name }}-
     - name: Cache VisPy Test Data
       uses: actions/cache@v2
       env:
-        cache-name: cache-vispy-test-data-website3
+        cache-name: cache-vispy-test-data-website2
       with:
         path: |
           vispy_data/test_data
-        key: ${{ runner.os }}-data-${{ env.cache-name }}-${{ hashFiles("vispy_data/test_data/**/*.*") }}
+        key: ${{ runner.os }}-data-${{ env.cache-name }}-${{ hashFiles('vispy_data/test_data/**/*.*') }}
         restore-keys: |
           ${{ runner.os }}-test-data-${{ env.cache-name }}-
 # We run "make clean" so this won't do anything right now
@@ -217,21 +217,21 @@ jobs:
     - name: Cache VisPy Demo Data
       uses: actions/cache@v2
       env:
-        cache-name: cache-vispy-demo-data-${{ matrix.test }}3
+        cache-name: cache-vispy-demo-data-${{ matrix.test }}2
       with:
         path: |
           vispy_data/data
-        key: ${{ runner.os }}-demo-data-${{ env.cache-name }}-${{ hashFiles("vispy_data/data/**/*.*") }}
+        key: ${{ runner.os }}-demo-data-${{ env.cache-name }}-${{ hashFiles('vispy_data/data/**/*.*') }}
         restore-keys: |
           ${{ runner.os }}-build-${{ env.cache-name }}-
     - name: Cache VisPy Test Data
       uses: actions/cache@v2
       env:
-        cache-name: cache-vispy-test-data-${{ matrix.test }}3
+        cache-name: cache-vispy-test-data-${{ matrix.test }}2
       with:
         path: |
           vispy_data/test_data
-        key: ${{ runner.os }}-data-${{ env.cache-name }}-${{ hashFiles("vispy_data/test_data/**/*.*") }}
+        key: ${{ runner.os }}-data-${{ env.cache-name }}-${{ hashFiles('vispy_data/test_data/**/*.*') }}
         restore-keys: |
           ${{ runner.os }}-test-data-${{ env.cache-name }}-
     - name: Prepare System Environment
