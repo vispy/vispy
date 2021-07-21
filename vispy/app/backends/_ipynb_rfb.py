@@ -73,7 +73,8 @@ class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
     _double_click_supported = True
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args)
+        RemoteFrameBuffer.__init__(self)
+        BaseCanvasBackend.__init__(self, *args)
         # Init
         # Use a context per canvas, because we seem to make assumptions
         # about OpenGL state being local to the canvas.

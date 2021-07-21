@@ -58,7 +58,9 @@ class BaseCanvasBackend(object):
     """
 
     def __init__(self, vispy_canvas):
-        super().__init__()
+        # Note: it is the responsibility of the subclass to call
+        # the __init__ of the mro - we don't call super().__init__() here.
+
         from .canvas import Canvas  # Avoid circular import
         assert isinstance(vispy_canvas, Canvas)
         self._vispy_canvas = vispy_canvas
