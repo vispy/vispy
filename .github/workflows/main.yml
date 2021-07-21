@@ -81,6 +81,11 @@ jobs:
       with:
         fetch-depth: 0
         submodules: "recursive"
+    - name: Create CI config for VisPy
+      id: vars
+      run: |
+        mkdir -p ~/.vispy
+        cat "{\"data_path\": \"$PWD/vispy_data\"}" > ~/.vispy/vispy.json
     - name: Cache VisPy Demo and Test Data
       uses: actions/cache@v2
       env:
@@ -89,7 +94,7 @@ jobs:
         path: |
           ~/.vispy/data
           ~/.vispy/test_data
-        key: ${{ runner.os }}-data-${{ env.cache-name }}-${{ hashFiles('~/.vispy/data') }}-${{ hashFiles('~/.vispy/test_data') }}
+        key: ${{ runner.os }}-data-${{ env.cache-name }}-${{ hashFiles('vispy_data/data') }}-${{ hashFiles('vispy_data/test_data') }}
         restore-keys: |
           ${{ runner.os }}-build-${{ env.cache-name }}-
 # We run "make clean" so this won't do anything right now
@@ -195,6 +200,11 @@ jobs:
       with:
         fetch-depth: 0
         submodules: "recursive"
+    - name: Create CI config for VisPy
+      id: vars
+      run: |
+        mkdir -p ~/.vispy
+        cat "{\"data_path\": \"$PWD/vispy_data\"}" > ~/.vispy/vispy.json
     - name: Cache VisPy Demo and Test Data
       uses: actions/cache@v2
       env:
@@ -203,7 +213,7 @@ jobs:
         path: |
           ~/.vispy/data
           ~/.vispy/test_data
-        key: ${{ runner.os }}-data-${{ env.cache-name }}-${{ hashFiles('~/.vispy/data') }}-${{ hashFiles('~/.vispy/test_data') }}
+        key: ${{ runner.os }}-data-${{ env.cache-name }}-${{ hashFiles('vispy_data/data') }}-${{ hashFiles('vispy_data/test_data') }}
         restore-keys: |
           ${{ runner.os }}-build-${{ env.cache-name }}-
     - name: Prepare System Environment
