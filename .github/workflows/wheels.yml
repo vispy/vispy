@@ -1,4 +1,9 @@
 name: cibuildwheel
+# https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#concurrency
+# https://docs.github.com/en/developers/webhooks-and-events/events/github-event-types#pullrequestevent
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number }}
+  cancel-in-progress: true
 
 on: [push, pull_request]
 

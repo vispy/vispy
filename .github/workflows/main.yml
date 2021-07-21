@@ -1,4 +1,9 @@
 name: CI
+# https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#concurrency
+# https://docs.github.com/en/developers/webhooks-and-events/events/github-event-types#pullrequestevent
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number }}
+  cancel-in-progress: true
 
 # Controls when the action will run. 
 on:
@@ -73,10 +78,6 @@ jobs:
       run:
         shell: bash -l {0}
     steps:
-    - name: Cancel Previous Runs
-      uses: styfle/cancel-workflow-action@0.6.0
-      with:
-        access_token: ${{ github.token }}
     - uses: actions/checkout@v2
       with:
         fetch-depth: 0
@@ -188,10 +189,6 @@ jobs:
             deps: "osmesa"
             test: "osmesa"
     steps:
-    - name: Cancel Previous Runs
-      uses: styfle/cancel-workflow-action@0.6.0
-      with:
-        access_token: ${{ github.token }}
     - uses: actions/checkout@v2
       with:
         fetch-depth: 0
