@@ -196,16 +196,11 @@ jobs:
       with:
         fetch-depth: 0
         submodules: "recursive"
-    - name: Create CI config for VisPy
-      run: |
-        mkdir -p ~/.vispy
-        echo "{\"data_path\": \"$PWD/vispy_data/data\", \"test_data_path\": \"$PWD/vispy_data/test_data\"}" > ~/.vispy/vispy.json
-        cat ~/.vispy/vispy.json
     - name: Cache VisPy Demo and Test Data
       uses: actions/cache@v2
       env:
         cache-name: cache-vispy-data-${{ matrix.test }}
-        test-version: 1
+        test-version: 2
       with:
         path: |
           ~/.vispy/data
