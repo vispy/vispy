@@ -1,7 +1,6 @@
 import asyncio
 
 from ..base import BaseApplicationBackend, BaseCanvasBackend, BaseTimerBackend
-# from ...gloo.context import set_current_canvas
 from ...app import Timer
 from ...util import keys
 from ._offscreen_util import OffscreenContext, FrameBufferHelper
