@@ -89,7 +89,7 @@ jobs:
     - name: Cache VisPy Demo Data
       uses: actions/cache@v2
       env:
-        cache-name: cache-vispy-demo-data-website
+        cache-name: cache-vispy-demo-data-website2
       with:
         path: |
           vispy_data/data
@@ -99,7 +99,7 @@ jobs:
     - name: Cache VisPy Test Data
       uses: actions/cache@v2
       env:
-        cache-name: cache-vispy-test-data-website
+        cache-name: cache-vispy-test-data-website2
       with:
         path: |
           vispy_data/test_data
@@ -217,7 +217,7 @@ jobs:
     - name: Cache VisPy Demo Data
       uses: actions/cache@v2
       env:
-        cache-name: cache-vispy-demo-data-${{ matrix.test }}
+        cache-name: cache-vispy-demo-data-${{ matrix.test }}2
       with:
         path: |
           vispy_data/data
@@ -227,7 +227,7 @@ jobs:
     - name: Cache VisPy Test Data
       uses: actions/cache@v2
       env:
-        cache-name: cache-vispy-test-data-${{ matrix.test }}
+        cache-name: cache-vispy-test-data-${{ matrix.test }}2
       with:
         path: |
           vispy_data/test_data
