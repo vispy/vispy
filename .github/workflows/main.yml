@@ -86,17 +86,26 @@ jobs:
         mkdir -p ~/.vispy
         echo "{\"data_path\": \"$PWD/vispy_data/data\", \"test_data_path\": \"$PWD/vispy_data/test_data\"}" > ~/.vispy/vispy.json
         cat ~/.vispy/vispy.json
-    - name: Cache VisPy Demo and Test Data
+    - name: Cache VisPy Demo Data
       uses: actions/cache@v2
       env:
-        cache-name: cache-vispy-data2
+        cache-name: cache-vispy-demo-data-website
       with:
         path: |
           vispy_data/data
-          vispy_data/test_data
-        key: ${{ runner.os }}-data-${{ env.cache-name }}-${{ hashFiles('vispy_data/data') }}-${{ hashFiles('vispy_data/test_data') }}
+        key: ${{ runner.os }}-demo-data-${{ env.cache-name }}-${{ hashFiles('vispy_data/data') }}
         restore-keys: |
           ${{ runner.os }}-build-${{ env.cache-name }}-
+    - name: Cache VisPy Test Data
+      uses: actions/cache@v2
+      env:
+        cache-name: cache-vispy-test-data-website
+      with:
+        path: |
+          vispy_data/test_data
+        key: ${{ runner.os }}-data-${{ env.cache-name }}-${{ hashFiles('vispy_data/test_data') }}
+        restore-keys: |
+          ${{ runner.os }}-test-data-${{ env.cache-name }}-
 # We run "make clean" so this won't do anything right now
 #    - name: Cache Website Gallery
 #      uses: actions/cache@v2
@@ -213,17 +222,26 @@ jobs:
         mkdir -p ~/.vispy
         echo "{\"data_path\": \"$PWD/vispy_data/data\", \"test_data_path\": \"$PWD/vispy_data/test_data\"}" > ~/.vispy/vispy.json
         cat ~/.vispy/vispy.json
-    - name: Cache VisPy Demo and Test Data
+    - name: Cache VisPy Demo Data
       uses: actions/cache@v2
       env:
-        cache-name: cache-vispy-data2
+        cache-name: cache-vispy-demo-data-${{ matrix.test }}
       with:
         path: |
           vispy_data/data
-          vispy_data/test_data
-        key: ${{ runner.os }}-data-${{ env.cache-name }}-${{ hashFiles('vispy_data/data') }}-${{ hashFiles('vispy_data/test_data') }}
+        key: ${{ runner.os }}-demo-data-${{ env.cache-name }}-${{ hashFiles('vispy_data/data') }}
         restore-keys: |
           ${{ runner.os }}-build-${{ env.cache-name }}-
+    - name: Cache VisPy Test Data
+      uses: actions/cache@v2
+      env:
+        cache-name: cache-vispy-test-data-${ matrix.test }}
+      with:
+        path: |
+          vispy_data/test_data
+        key: ${{ runner.os }}-data-${{ env.cache-name }}-${{ hashFiles('vispy_data/test_data') }}
+        restore-keys: |
+          ${{ runner.os }}-test-data-${{ env.cache-name }}-
     - name: Prepare System Environment
       id: vars
       run: |
