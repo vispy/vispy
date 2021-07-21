@@ -81,8 +81,8 @@ class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
         self._helper = FrameBufferHelper()
         self._loop = asyncio.get_event_loop()
         self._draw_pending = False
-        self._logical_size = 0, 0
-        self._physical_size = 0, 0
+        self._logical_size = 1, 1
+        self._physical_size = 1, 1
         self._lifecycle = 0  # 0: not initialized, 1: initialized, 2: closed
         # Init more based on kwargs (could maybe handle, title, show, context)
         self._vispy_set_size(*kwargs["size"])
@@ -98,6 +98,7 @@ class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
             self._logical_size = w, h
             self._physical_size = int(w * r), int(h * r)
             self._loop.call_soon(self._emit_resize_event)
+            self._vispy_update()  # make sure to schedule a new draw
         elif type == "pointer_down":
             self._vispy_mouse_press(
                 native=ev,
@@ -170,7 +171,7 @@ class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
         self._draw_pending = False
 
         # Only draw if the draw region is not null
-        if 0 in self._physical_size:
+        if self._physical_size[0] <= 1 or self._physical_size[1] <= 1:
             return
 
         # Handle initialization
