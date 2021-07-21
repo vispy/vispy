@@ -94,15 +94,6 @@ jobs:
         key: ${{ runner.os }}-data-${{ env.cache-name }}-${{ env.test-version }}
         restore-keys: |
           ${{ runner.os }}-data-${{ env.cache-name }}-
-# We run "make clean" so this won't do anything right now
-#    - name: Cache Website Gallery
-#      uses: actions/cache@v2
-#      env:
-#        cache-name: cache-vispy-data
-#      with:
-#        path: |
-#          doc/gallery
-#        key: ${{ runner.os }}-data-${{ env.cache-name }}
     - name: Prepare System Environment
       id: vars
       run: |
