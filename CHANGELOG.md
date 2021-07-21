@@ -1,5 +1,11 @@
 # Release Notes
 
+## [v0.7.3](https://github.com/vispy/vispy/tree/v0.7.3) (2021-07-21)
+
+**Fixed bugs:**
+
+- Fix `VolumeVisual.cmap` setter not working for most colormaps [\#2150](https://github.com/vispy/vispy/pull/2150) ([alisterburt](https://github.com/alisterburt))
+
 ## [v0.7.2](https://github.com/vispy/vispy/tree/v0.7.2) (2021-07-20)
 
 **Fixed bugs:**
