@@ -1,8 +1,10 @@
 from vispy.app.backends._offscreen_util import OffscreenContext, FrameBufferHelper
+from vispy.testing import requires_application
 from vispy import gloo
 import numpy as np
 
 
+@requires_application()
 def test_offscreen_context():
     c1 = OffscreenContext()
     c2 = OffscreenContext.get_global_instance()
@@ -27,6 +29,7 @@ class FakeCanvas(object):
         self.context.flush_commands()
 
 
+@requires_application()
 def test_frame_buffer_helper():
     canvas = FakeCanvas()
     gl_context = OffscreenContext()
