@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# vispy: gallery 2:10:1
+# vispy: gallery 2:20:2
 """
 Animate a Shape
 ===============

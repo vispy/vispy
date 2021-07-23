@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # author: Irwin Zaid
-# vispy: gallery 2:10:1
+# vispy: gallery 2:40:4
 """
 Animate an Image
 ================

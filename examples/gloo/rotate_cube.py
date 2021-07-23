@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# vispy: gallery 5:85:5
+# vispy: gallery 5:105:5
 """
 Draw 3D rotating Cube
 =====================
