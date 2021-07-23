@@ -25,6 +25,8 @@ import os
 import time
 import shutil
 from vispy.io import imsave
+from vispy.gloo.util import _screenshot
+from vispy.scene import SceneCanvas
 
 from sphinx_gallery.scrapers import optipng, figure_rst
 
@@ -176,7 +178,11 @@ class FrameGrabber:
         self._current_frame += 1
         if self._current_frame in self._frames_to_grab:
             self._frames_to_grab.remove(self._current_frame)
-            im = self._canvas.render(alpha=True)
+            if isinstance(self._canvas, SceneCanvas):
+                im = self._canvas.render(alpha=True)
+            else:
+                # self._canvas.set_current()
+                im = _screenshot()
             self._collected_images.append(im)
         if not self._frames_to_grab:
             self._done = True
@@ -222,7 +228,7 @@ class FrameGrabber:
 
     def _grab_vispy_screenshots(self):
         os.environ['VISPY_IGNORE_OLD_VERSION'] = 'true'
-        self._canvas.events.draw.connect(self.on_draw)
+        self._canvas.events.draw.connect(self.on_draw, position='last')
         with self._canvas as c:
             self._collect_frames(c)
 
