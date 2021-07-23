@@ -1,4 +1,9 @@
 name: cibuildwheel
+# https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#concurrency
+# https://docs.github.com/en/developers/webhooks-and-events/events/github-event-types#pullrequestevent
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number }}-${{ github.event.type }}
+  cancel-in-progress: true
 
 on: [push, pull_request]
 
@@ -28,7 +33,7 @@ jobs:
       run: python -m cibuildwheel --output-dir wheelhouse
       env:
         CIBW_SKIP: "cp27-* cp34-* cp35-* cp36-* pp* *-win32"
-        CIBW_TEST_REQUIRES: "pytest pytest-sugar meshio pillow"
+        CIBW_TEST_REQUIRES: "pytest pytest-sugar meshio pillow sphinx_gallery imageio"
         CIBW_TEST_COMMAND: "python -c \"import vispy; vispy.test()\""
         CIBW_BUILD_VERBOSITY: "2"
         CIBW_BEFORE_BUILD: "pip install -U numpy Cython jupyter ipywidgets"

@@ -329,7 +329,7 @@ class Maker:
             else:
                 print('Ignore: %s, no canvas' % name)
                 continue
-            c.events.draw.connect(grabscreenshot)
+            c.events.draw.connect(grabscreenshot, position="last")
             # Show it and draw as many frames as needed
             with c:
                 n = 0
@@ -344,7 +344,7 @@ class Maker:
             imsave(imagefilename, m.images[0])  # Alwats show one image
             if len(m.images) > 1:
                 import imageio  # multiple gif not properly supported yet
-                imageio.mimsave(imagefilename[:-3] + '.gif', m.images)
+                imageio.mimsave(os.path.splitext(imagefilename)[0] + '.gif', m.images)
 
     def _images_thumbnails(self):
         from vispy.io import imsave, imread

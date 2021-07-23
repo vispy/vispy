@@ -40,3 +40,8 @@ def _jupyter_nbextension_paths():
         'dest': 'vispy',
         'require': 'vispy/extension'
     }]
+
+
+def _get_sg_image_scraper():
+    from .util.gallery_scraper import VisPyGalleryScraper
+    return VisPyGalleryScraper()

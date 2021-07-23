@@ -258,7 +258,8 @@ elif IS_CI and 'linux' in sys.platform:
 if IS_CI:
     # OpenGL >2.0 that fail on Travis
     bad_examples += [
-        'examples/basics/gloo/geometry_shader.py'
+        'examples/basics/gloo/geometry_shader.py',
+        'examples/gloo/geometry_shader.py',
     ]
 
 
