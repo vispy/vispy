@@ -61,7 +61,9 @@ class VisPyGalleryScraper:
         frame_num_list = self._get_frame_list_from_source(example_fn)
         image_path_iterator = block_vars['image_path_iterator']
         canvas_or_widget = self._get_canvaslike_from_globals(block_vars["example_globals"])
-        if isinstance(frame_num_list[0], str):
+        if not frame_num_list:
+            image_paths = []
+        elif isinstance(frame_num_list[0], str):
             # example produces an image/animation as output
             image_paths = []
             for frame_image, image_path in zip(frame_num_list, image_path_iterator):
@@ -106,8 +108,8 @@ class VisPyGalleryScraper:
                 frames = self._frame_specifier_to_list(_frames)
                 break
         else:
-            # no frame number hint
-            frames = [5]
+            # no frame number hint - don't grab any frames
+            frames = []
         return frames
 
     def _frame_specifier_to_list(self, frame_specifier):
@@ -181,10 +183,9 @@ class FrameGrabber:
             if isinstance(self._canvas, SceneCanvas):
                 im = self._canvas.render(alpha=True)
             else:
-                # self._canvas.set_current()
                 im = _screenshot()
             self._collected_images.append(im)
-        if not self._frames_to_grab:
+        if not self._frames_to_grab or self._current_frame > self._frames_to_grab[0]:
             self._done = True
 
     def collect_frames(self):
