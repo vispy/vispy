@@ -52,8 +52,12 @@ def test_single_frame(include_gallery_comment, tmpdir):
             example_file.write(script)
         scraper = VisPyGalleryScraper()
         rst = scraper(None, block_vars, gallery_conf)
-        assert "0.png" in rst
-        assert os.path.isfile("0.png")
+        if include_gallery_comment:
+            assert "0.png" in rst
+            assert os.path.isfile("0.png")
+        else:
+            assert "0.png" not in rst
+            assert not os.path.isfile("0.png")
         assert not os.path.isfile("1.png")  # only one file created
 
 
