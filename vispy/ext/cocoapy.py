@@ -176,8 +176,9 @@ objc.class_getIvarLayout.argtypes = [c_void_p]
 objc.class_getMethodImplementation.restype = c_void_p
 objc.class_getMethodImplementation.argtypes = [c_void_p, c_void_p]
 
-objc.class_getMethodImplementation_stret.restype = c_void_p
-objc.class_getMethodImplementation_stret.argtypes = [c_void_p, c_void_p]
+if platform.machine() != "arm64":
+    objc.class_getMethodImplementation_stret.restype = c_void_p
+    objc.class_getMethodImplementation_stret.argtypes = [c_void_p, c_void_p]
 
 objc.class_getName.restype = c_char_p
 objc.class_getName.argtypes = [c_void_p]
@@ -275,9 +276,9 @@ objc.objc_getMetaClass.argtypes = [c_char_p]
 objc.objc_getProtocol.restype = c_void_p
 objc.objc_getProtocol.argtypes = [c_char_p]
 
-objc.objc_msgSendSuper_stret.restype = None
-
-objc.objc_msgSend_stret.restype = None
+if platform.machine() != "arm64":
+    objc.objc_msgSendSuper_stret.restype = None
+    objc.objc_msgSend_stret.restype = None
 
 objc.objc_registerClassPair.restype = None
 objc.objc_registerClassPair.argtypes = [c_void_p]

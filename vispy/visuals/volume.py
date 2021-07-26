@@ -206,6 +206,7 @@ vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
     return final_color;
 }
 
+
 vec3 intersectLinePlane(vec3 linePosition, 
                         vec3 lineVector, 
                         vec3 planePosition, 
@@ -720,7 +721,7 @@ class VolumeVisual(Visual):
             raise ValueError('Volume visual needs a 3D array.')
         if isinstance(self._texture, GPUScaledTextured3D):
             copy = False
-        
+
         if clim is not None and clim != self._texture.clim:
             self._texture.set_clim(clim)
 
@@ -785,6 +786,11 @@ class VolumeVisual(Visual):
     def cmap(self, cmap):
         self._cmap = get_colormap(cmap)
         self.shared_program.frag['cmap'] = Function(self._cmap.glsl_map)
+        self.shared_program['texture2D_LUT'] = (
+            self.cmap.texture_lut()
+            if (hasattr(self.cmap, 'texture_lut'))
+            else None
+        )
         self.update()
 
     @property
@@ -863,7 +869,7 @@ class VolumeVisual(Visual):
         if 'u_attenuation' in self.shared_program:
             self.shared_program['u_attenuation'] = None
 
-        # TODO: $sample needs to be unset and re-set, since it's present inside the snippets.
+        # $sample needs to be unset and re-set, since it's present inside the snippets.
         #       Program should probably be able to do this automatically
         self.shared_program.frag['sample'] = None
         self.shared_program.frag['raycasting_setup'] = self._raycasting_setup_snippet

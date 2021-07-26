@@ -11,3 +11,4 @@ pytest-sugar
 scipy
 networkx
 hsluv
+imageio

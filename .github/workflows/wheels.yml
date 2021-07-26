@@ -1,4 +1,9 @@
 name: cibuildwheel
+# https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#concurrency
+# https://docs.github.com/en/developers/webhooks-and-events/events/github-event-types#pullrequestevent
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number }}-${{ github.event.type }}
+  cancel-in-progress: true
 
 on: [push, pull_request]
 
@@ -28,7 +33,7 @@ jobs:
       run: python -m cibuildwheel --output-dir wheelhouse
       env:
         CIBW_SKIP: "cp27-* cp34-* cp35-* cp36-* pp* *-win32"
-        CIBW_TEST_REQUIRES: "pytest pytest-sugar meshio pillow"
+        CIBW_TEST_REQUIRES: "pytest pytest-sugar meshio pillow sphinx_gallery imageio"
         CIBW_TEST_COMMAND: "python -c \"import vispy; vispy.test()\""
         CIBW_BUILD_VERBOSITY: "2"
         CIBW_BEFORE_BUILD: "pip install -U numpy Cython jupyter ipywidgets"
@@ -63,6 +68,22 @@ jobs:
       with:
         path: dist/*.tar.gz
 
+  upload_test_pypi:
+    needs: [build_wheels, build_sdist]
+    runs-on: ubuntu-latest
+    # upload to Test PyPI for every commit on main branch
+    if: github.event_name == 'push' && github.event.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/download-artifact@v2
+        with:
+          name: artifact
+          path: dist
+      - uses: pypa/gh-action-pypi-publish@master
+        with:
+          user: __token__
+          password: ${{ secrets.VISPY_TEST_PYPI_TOKEN }}
+          repository_url: https://test.pypi.org/legacy/
+
   upload_pypi:
     needs: [build_wheels, build_sdist]
     runs-on: ubuntu-latest
@@ -79,4 +100,3 @@ jobs:
       with:
         user: __token__
         password: ${{ secrets.VISPY_PYPI_TOKEN }}
-        # To test: repository_url: https://test.pypi.org/legacy/

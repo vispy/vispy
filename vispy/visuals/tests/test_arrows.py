@@ -2,14 +2,12 @@
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-import os
-
 import numpy as np
 
 from vispy.visuals.line.arrow import ARROW_TYPES
 from vispy.scene import visuals, transforms
 from vispy.testing import (requires_application, TestingCanvas,
-                           run_tests_if_main, assert_raises, SkipTest)
+                           run_tests_if_main, assert_raises, SkipTest, IS_TRAVIS_CI)
 from vispy.testing.image_tester import assert_image_approved
 
 
@@ -36,8 +34,7 @@ arrows = np.array([
 def test_arrow_draw():
     """Test drawing arrows without transforms"""
     with TestingCanvas() as c:
-        if os.getenv('TRAVIS', 'false') == 'true' and \
-                c.app.backend_name.lower() == 'pyqt4':
+        if IS_TRAVIS_CI and c.app.backend_name.lower() == 'pyqt4':
             # TODO: Fix this (issue #1042
             raise SkipTest('Travis fails due to FB stack problem')
         for arrow_type in ARROW_TYPES:
@@ -55,8 +52,7 @@ def test_arrow_draw():
 def test_arrow_transform_draw():
     """Tests the ArrowVisual when a transform is applied"""
     with TestingCanvas() as c:
-        if os.getenv('TRAVIS', 'false') == 'true' and \
-                c.app.backend_name.lower() == 'pyqt4':
+        if IS_TRAVIS_CI and c.app.backend_name.lower() == 'pyqt4':
             # TODO: Fix this (issue #1042
             raise SkipTest('Travis fails due to FB stack problem')
         for arrow_type in ARROW_TYPES:

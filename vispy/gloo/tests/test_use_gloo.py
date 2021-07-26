@@ -3,7 +3,6 @@
 # Copyright (c) 2014, Nicolas P. Rougier. All rights reserved.
 # Distributed under the terms of the new BSD License.
 # -----------------------------------------------------------------------------
-import os
 import sys
 
 import numpy as np
@@ -16,7 +15,7 @@ from vispy.gloo import (Texture2D, Texture3D, Program, FrameBuffer,
 from vispy.gloo.util import draw_texture, _screenshot
 from vispy.testing import (requires_application, has_pyopengl,
                            run_tests_if_main,
-                           assert_raises, assert_equal)
+                           assert_raises, assert_equal, IS_TRAVIS_CI)
 
 
 @requires_application()
@@ -125,7 +124,7 @@ def test_use_texture3D():
             assert_allclose(out, expected, atol=1./255.)
 
 
-@pytest.mark.xfail(os.getenv('TRAVIS', 'false') == 'true' and 'darwin' in sys.platform,
+@pytest.mark.xfail(IS_TRAVIS_CI and 'darwin' in sys.platform,
                    reason='Travis OSX causes segmentation fault on this test for an unknown reason.')
 @requires_application()
 def test_use_uniforms():

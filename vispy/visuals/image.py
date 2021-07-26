@@ -89,12 +89,23 @@ _texture_lookup = """
 
 _apply_clim_float = """
     float apply_clim(float data) {
+        // If data is NaN, don't draw it at all
+        // http://stackoverflow.com/questions/11810158/how-to-deal-with-nan-or-inf-in-opengl-es-2-0-shaders
+        if (!(data <= 0.0 || 0.0 <= data)) {
+            discard;
+        }
         data = clamp(data, min($clim.x, $clim.y), max($clim.x, $clim.y));
         data = (data - $clim.x) / ($clim.y - $clim.x);
         return data;
     }"""
 _apply_clim = """
     vec4 apply_clim(vec4 color) {
+        // Handle NaN values
+        // http://stackoverflow.com/questions/11810158/how-to-deal-with-nan-or-inf-in-opengl-es-2-0-shaders
+        color.r = !(color.r <= 0.0 || 0.0 <= color.r) ? min($clim.x, $clim.y) : color.r;
+        color.g = !(color.g <= 0.0 || 0.0 <= color.g) ? min($clim.x, $clim.y) : color.g;
+        color.b = !(color.b <= 0.0 || 0.0 <= color.b) ? min($clim.x, $clim.y) : color.b;
+        color.a = !(color.a <= 0.0 || 0.0 <= color.a) ? 0 : color.a;
         color.rgb = clamp(color.rgb, min($clim.x, $clim.y), max($clim.x, $clim.y));
         color.rgb = (color.rgb - $clim.x) / ($clim.y - $clim.x);
         return max(color, 0.0);
@@ -123,6 +134,15 @@ class ImageVisual(Visual):
     ----------
     data : ndarray
         ImageVisual data. Can be shape (M, N), (M, N, 3), or (M, N, 4).
+        If floating point data is provided and contains NaNs, they will
+        be made transparent (discarded) for the single band data case when
+        scaling is done on the GPU (see ``texture_format``). On the CPU,
+        single band NaNs are mapped to 0 as they are sent to the GPU which
+        result in them using the lowest ``clim`` value in the GPU.
+        For RGB data, NaNs will be mapped to the lowest ``clim`` value.
+        If the Alpha band is NaN it will be mapped to 0 (transparent).
+        Note that NaN handling is not required by some OpenGL implementations
+        and NaNs may be treated differently on some systems (ex. as 0s).
     method : str
         Selects method of rendering image in case of non-linear transforms.
         Each method produces similar results, but may trade efficiency
@@ -328,10 +348,20 @@ class ImageVisual(Visual):
     def clim(self, clim):
         if self._texture.set_clim(clim):
             self._need_texture_upload = True
-        # shortcut so we don't have to rebuild the whole color transform
-        if not self._need_colortransform_update:
-            self.shared_program.frag['color_transform'][1]['clim'] = self._texture.clim_normalized
+        self._update_colortransform_clim()
         self.update()
+
+    def _update_colortransform_clim(self):
+        if self._need_colortransform_update:
+            # we are going to rebuild anyway so just do it later
+            return
+        try:
+            norm_clims = self._texture.clim_normalized
+        except RuntimeError:
+            return
+        else:
+            # shortcut so we don't have to rebuild the whole color transform
+            self.shared_program.frag['color_transform'][1]['clim'] = norm_clims
 
     @property
     def cmap(self):
