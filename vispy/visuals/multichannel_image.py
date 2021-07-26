@@ -48,15 +48,15 @@ class MultiChannelGPUScaledTexture2D:
         """Get color limits used when rendering the image (cmin, cmax)."""
         return tuple(t.clim for t in self._textures)
 
-    def set_clim(self, clim):
-        if isinstance(clim, str) or len(clim) == 2:
-            clim = [clim] * self.num_channels
+    def set_clim(self, clims):
+        if isinstance(clims, str) or len(clims) == 2:
+            clims = [clims] * self.num_channels
 
         need_tex_upload = False
-        for tex, single_clim in zip(self._textures, clim):
-            if single_clim is None or single_clim[0] is None:
-                single_clim = (0, 0)  # let VisPy decide what to do with unusable clims
-            if tex.set_clim(single_clim):
+        for tex, clim in zip(self._textures, clims):
+            if clim is None or clim[0] is None:
+                clim = (0, 0)  # let VisPy decide what to do with unusable clims
+            if tex.set_clim(clim):
                 need_tex_upload = True
         return need_tex_upload
 
