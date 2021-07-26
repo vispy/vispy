@@ -5,12 +5,13 @@
 # -----------------------------------------------------------------------------
 # vispy: gallery 2
 """
-Example volume rendering with plane rendering
+Rendering Planes through 3D Data
+================================
 
 Controls:
 * 1  - toggle between volume rendering methods
 * 2 -  toggle between volume rendering modes ('volume', 'plane')
-* [] - shift along plane normal
+* [] - shift plane along plane normal
 * {} - decrease/increase plane thickness
 
 * x/y/z/o - set plane normal along x/y/z or [1,1,1] oblique axis
@@ -24,19 +25,23 @@ from vispy.visuals.transforms import STTransform
 vol = np.load(io.load_data_file('volume/stent.npz'))['arr_0']
 
 # Prepare canvas
-canvas = scene.SceneCanvas(keys='interactive', size=(800, 600), show=True)
-
-# Set up a viewbox to display the image with interactive pan/zoom
+canvas = scene.SceneCanvas(keys='interactive', show=True)
 view = canvas.central_widget.add_view()
 
-# Create the volume visual
-volume = scene.visuals.Volume(vol, parent=view.scene, raycasting_mode='plane')
-volume.transform = scene.STTransform(translate=(64, 64, 0))
+# Create the volume visual for plane rendering
+plane = scene.visuals.Volume(
+    vol,
+    parent=view.scene,
+    raycasting_mode='plane',
+    plane_thickness=20.0,
+    plane_position=(128, 60, 64),
+    plane_normal=(0, 1, 0),
+)
 
 # Create a camera
-fov = 60.
-cam = scene.cameras.TurntableCamera(parent=view.scene, fov=fov, name='Turntable')
-
+cam = scene.cameras.TurntableCamera(
+    parent=view.scene, fov=60.0, azimuth=-42.0, elevation=30.0
+)
 view.camera = cam
 
 # Create an XYZAxis visual
@@ -66,38 +71,38 @@ def on_mouse_move(event):
 def on_key_press(event):
     if event.text == '1':
         methods = ['mip', 'average']
-        method = methods[(methods.index(volume.method) + 1) % 2]
+        method = methods[(methods.index(plane.method) + 1) % 2]
         print("Volume render method: %s" % method)
-        volume.method = method
+        plane.method = method
     elif event.text == '2':
         modes = ['volume', 'plane']
-        if volume.raycasting_mode == modes[0]:
-            volume.raycasting_mode = modes[1]
+        if plane.raycasting_mode == modes[0]:
+            plane.raycasting_mode = modes[1]
             print(modes[1])
         else:
-            volume.raycasting_mode = modes[0]
+            plane.raycasting_mode = modes[0]
             print(modes[0])
     elif event.text != '' and event.text in '{}':
         t = -1 if event.text == '{' else 1
-        volume.plane_thickness += t
-        volume.plane_thickness += t
-        print(f"plane thickness: {volume.plane_thickness}")
+        plane.plane_thickness += t
+        plane.plane_thickness += t
+        print(f"plane thickness: {plane.plane_thickness}")
     elif event.text != '' and event.text in '[]':
-        shift = volume.plane_normal / np.linalg.norm(volume.plane_normal)
+        shift = plane.plane_normal / np.linalg.norm(plane.plane_normal)
         if event.text == '[':
-            volume.plane_position -= 2 * shift
+            plane.plane_position -= 2 * shift
         elif event.text == ']':
-            volume.plane_position += 2 * shift
-        print(f"plane position: {volume.plane_position}")
+            plane.plane_position += 2 * shift
+        print(f"plane position: {plane.plane_position}")
 
     elif event.text == 'x':
-        volume.plane_normal = [0, 0, 1]
+        plane.plane_normal = [0, 0, 1]
     elif event.text == 'y':
-        volume.plane_normal = [0, 1, 0]
+        plane.plane_normal = [0, 1, 0]
     elif event.text == 'z':
-        volume.plane_normal = [1, 0, 0]
+        plane.plane_normal = [1, 0, 0]
     elif event.text == 'o':
-        volume.plane_normal = [1, 1, 1]
+        plane.plane_normal = [1, 1, 1]
 
 
 if __name__ == '__main__':
