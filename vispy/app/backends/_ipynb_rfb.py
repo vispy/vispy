@@ -81,7 +81,6 @@ class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
         self._context = OffscreenContext()  # OffscreenContext.get_global_instance()
         self._helper = FrameBufferHelper()
         self._loop = asyncio.get_event_loop()
-        self._draw_pending = False
         self._logical_size = 1, 1
         self._physical_size = 1, 1
         self._lifecycle = 0  # 0: not initialized, 1: initialized, 2: closed
@@ -91,7 +90,7 @@ class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
         # Need a first update
         self._vispy_update()
 
-    def receive_event(self, ev):
+    def handle_event(self, ev):
         type = ev["event_type"]
         if type == "resize":
             # Note that jupyter_rfb already throttles this event
@@ -168,12 +167,12 @@ class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
             physical_size=self._physical_size,
         )
 
-    def on_draw(self):
-        self._draw_pending = False
+    def get_frame(self):
+        # This gets automatically called by the RFB widget
 
         # Only draw if the draw region is not null
         if self._physical_size[0] <= 1 or self._physical_size[1] <= 1:
-            return
+            return None
 
         # Handle initialization
         if not self._lifecycle:
@@ -181,10 +180,6 @@ class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
             self._vispy_canvas.set_current()
             self._vispy_canvas.events.initialize()
             self._emit_resize_event()
-
-        # If not alive, don't bother drawing
-        if self._lifecycle != 1:
-            return
 
         # Draw and obtain result
         self._vispy_canvas.set_current()
@@ -196,8 +191,7 @@ class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
         # framebuffers not existin.
         self._vispy_canvas.context.flush_commands()
 
-        # Present
-        self.send_frame(array)
+        return array
 
     def _vispy_warmup(self):
         self._vispy_canvas.set_current()
@@ -226,9 +220,7 @@ class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
         raise NotImplementedError()
 
     def _vispy_update(self):
-        if not self._draw_pending:
-            self._draw_pending = True
-            self._loop.call_later(0.01, self.on_draw)
+        self.request_draw()
 
     def _vispy_close(self):
         # ipywidget.Widget.close()  ->  closes the comm and removes all views
