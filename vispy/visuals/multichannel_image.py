@@ -19,6 +19,7 @@ class MultiChannelGPUScaledTexture2D:
     represent individual R, G, and B channels of an image.
 
     """
+
     _singular_texture_class = GPUScaledTexture2D
     _ndim = 2
 
@@ -79,7 +80,7 @@ class MultiChannelGPUScaledTexture2D:
     @interpolation.setter
     def interpolation(self, value):
         for tex in self._textures:
-            self._texture.interpolation = value
+            tex.interpolation = value
 
     def check_data_format(self, data_arrays):
         if len(data_arrays) != self.num_channels:
@@ -365,7 +366,7 @@ class MultiChannelImageVisual(ImageVisual):
         return fun
 
     def set_data(self, data_arrays):
-        """Set the data
+        """Set the data.
 
         Parameters
         ----------
@@ -410,4 +411,3 @@ class MultiChannelImageVisual(ImageVisual):
         if new_if or new_cl:
             self._need_colortransform_update = True
         self._need_texture_upload = False
-
