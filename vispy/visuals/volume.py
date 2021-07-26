@@ -108,27 +108,27 @@ const float u_shininess = 40.0;
 vec3 view_ray;
 
 float rand(vec2 co)
-{{
+{
     // Create a pseudo-random number between 0 and 1.
     // http://stackoverflow.com/questions/4200224
     return fract(sin(dot(co.xy ,vec2(12.9898, 78.233))) * 43758.5453);
-}}
+}
 
 float colorToVal(vec4 color1)
-{{
+{
     return color1.r; // todo: why did I have this abstraction in visvis?
-}}
+}
 
-vec4 applyColormap(float data) {{
+vec4 applyColormap(float data) {
     data = clamp(data, min(clim.x, clim.y), max(clim.x, clim.y));
     data = (data - clim.x) / (clim.y - clim.x);
     vec4 color = $cmap(pow(data, gamma));
     return color;
-}}
+}
 
 
 vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
-{{   
+{   
     // Calculate color by incorporating lighting
     vec4 color1;
     vec4 color2;
@@ -171,7 +171,7 @@ vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
     // todo: allow multiple light, define lights on viewvox or subscene
     int nlights = 1; 
     for (int i=0; i<nlights; i++)
-    {{ 
+    { 
         // Get light direction (make sure to prevent zero devision)
         vec3 L = normalize(view_ray);  //lightDirs[i]; 
         float lightEnabled = float( length(L) > 0.0 );
@@ -189,7 +189,7 @@ vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
         ambient_color +=  mask1 * u_ambient;  // * gl_LightSource[i].ambient;
         diffuse_color +=  mask1 * lambertTerm;
         specular_color += mask1 * specularTerm * u_specular;
-    }}
+    }
     
     // Calculate final color by componing different components
     final_color = color2 * ( ambient_color + diffuse_color) + specular_color;
@@ -197,12 +197,12 @@ vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
     
     // Done
     return final_color;
-}}
+}
 
 // for some reason, this has to be the last function in order for the
 // filters to be inserted in the correct place...
 
-void main() {{
+void main() {
     vec3 farpos = v_farpos.xyz / v_farpos.w;
     vec3 nearpos = v_nearpos.xyz / v_nearpos.w;
 
@@ -237,27 +237,27 @@ void main() {{
     //gl_FragColor = vec4(0.0, f_nsteps / 3.0 / u_shape.x, 1.0, 1.0);
     //return;
 
-    {before_loop}
+    $before_loop
 
     // This outer loop seems necessary on some systems for large
     // datasets. Ugly, but it works ...
     vec3 loc = start_loc;
     int iter = 0;
-    while (iter < nsteps) {{
+    while (iter < nsteps) {
         for (iter=iter; iter<nsteps; iter++)
-        {{
+        {
             // Get sample color
             vec4 color = $sample(u_volumetex, loc);
             float val = color.r;
 
-            {in_loop}
+            $in_loop
 
             // Advance location deeper into the volume
             loc += step;
-        }}
-    }}
+        }
+    }
 
-    {after_loop}
+    $after_loop
 
     /* Set depth value - from visvis TODO
     int iter_depth = int(maxi);
@@ -269,7 +269,7 @@ void main() {{
     iproj.z /= iproj.w;
     gl_FragDepth = (iproj.z+1.0)/2.0;
     */
-}}
+}
 
 
 """  # noqa
@@ -288,17 +288,16 @@ MIP_SNIPPETS = dict(
         """,
     after_loop="""
         // Refine search for max value, but only if anything was found
-        if ( maxi > -1 ) {{
+        if ( maxi > -1 ) {
             loc = start_loc + step * (float(maxi) - 0.5);
             for (int i=0; i<10; i++) {
                 maxval = max(maxval, $sample(u_volumetex, loc).r);
                 loc += step * 0.1;
             }
             gl_FragColor = applyColormap(maxval);
-        }}
+        }
         """,
 )
-MIP_FRAG_SHADER = FRAG_SHADER.format(**MIP_SNIPPETS)
 
 
 ATTENUATED_MIP_SNIPPETS = dict(
@@ -322,7 +321,6 @@ ATTENUATED_MIP_SNIPPETS = dict(
         gl_FragColor = applyColormap(maxval);
         """,
 )
-ATTENUATED_MIP_FRAG_SHADER = FRAG_SHADER.format(**ATTENUATED_MIP_SNIPPETS)
 
 
 MINIP_SNIPPETS = dict(
@@ -338,17 +336,16 @@ MINIP_SNIPPETS = dict(
         """,
     after_loop="""
         // Refine search for min value, but only if anything was found
-        if ( mini > -1 ) {{
+        if ( mini > -1 ) {
             loc = start_loc + step * (float(mini) - 0.5);
             for (int i=0; i<10; i++) {
                 minval = min(minval, $sample(u_volumetex, loc).r);
                 loc += step * 0.1;
             }
             gl_FragColor = applyColormap(minval);
-        }}
+        }
         """,
 )
-MINIP_FRAG_SHADER = FRAG_SHADER.format(**MINIP_SNIPPETS)
 
 
 TRANSLUCENT_SNIPPETS = dict(
@@ -380,7 +377,6 @@ TRANSLUCENT_SNIPPETS = dict(
         gl_FragColor = integrated_color;
         """,
 )
-TRANSLUCENT_FRAG_SHADER = FRAG_SHADER.format(**TRANSLUCENT_SNIPPETS)
 
 
 ADDITIVE_SNIPPETS = dict(
@@ -396,7 +392,6 @@ ADDITIVE_SNIPPETS = dict(
         gl_FragColor = integrated_color;
         """,
 )
-ADDITIVE_FRAG_SHADER = FRAG_SHADER.format(**ADDITIVE_SNIPPETS)
 
 
 ISO_SNIPPETS = dict(
@@ -425,8 +420,6 @@ ISO_SNIPPETS = dict(
         """,
 )
 
-ISO_FRAG_SHADER = FRAG_SHADER.format(**ISO_SNIPPETS)
-
 
 AVG_SNIPPETS = dict(
     before_loop="""
@@ -445,17 +438,16 @@ AVG_SNIPPETS = dict(
         gl_FragColor = applyColormap(meanval);
         """,
 )
-AVG_FRAG_SHADER = FRAG_SHADER.format(**AVG_SNIPPETS)
 
 
 frag_dict = {
-    'mip': MIP_FRAG_SHADER,
-    'minip': MINIP_FRAG_SHADER,
-    'attenuated_mip': ATTENUATED_MIP_FRAG_SHADER,
-    'iso': ISO_FRAG_SHADER,
-    'translucent': TRANSLUCENT_FRAG_SHADER,
-    'additive': ADDITIVE_FRAG_SHADER,
-    'average': AVG_FRAG_SHADER
+    'mip': MIP_SNIPPETS,
+    'minip': MINIP_SNIPPETS,
+    'attenuated_mip': ATTENUATED_MIP_SNIPPETS,
+    'iso': ISO_SNIPPETS,
+    'translucent': TRANSLUCENT_SNIPPETS,
+    'additive': ADDITIVE_SNIPPETS,
+    'average': AVG_SNIPPETS
 }
 
 
@@ -557,7 +549,7 @@ class VolumeVisual(Visual):
         self._last_data = None
 
         # Create program
-        Visual.__init__(self, vcode=VERT_SHADER, fcode="")
+        Visual.__init__(self, vcode=VERT_SHADER, fcode=FRAG_SHADER)
         self.shared_program['u_volumetex'] = self._texture
         self.shared_program['a_position'] = self._vertices
         self.shared_program['a_texcoord'] = self._texcoord
@@ -758,7 +750,11 @@ class VolumeVisual(Visual):
         if 'u_attenuation' in self.shared_program:
             self.shared_program['u_attenuation'] = None
 
-        self.shared_program.frag = frag_dict[method]
+        # $sample needs to be unset and re-set, since it's present inside the snippets.
+        #       Program should probably be able to do this automatically
+        self.shared_program.frag['sample'] = None
+        for snippet_position, snippet in frag_dict[method].items():
+            self.shared_program.frag[snippet_position] = snippet
         self.shared_program.frag['sampler_type'] = self._texture.glsl_sampler_type
         self.shared_program.frag['sample'] = self._texture.glsl_sample
         self.shared_program.frag['cmap'] = Function(self._cmap.glsl_map)
