@@ -594,8 +594,8 @@ class VolumeVisual(Visual):
         in raycasting_mode = 'plane'.
     plane_thickness : float
         A value defining the total length of the ray perpendicular to the
-        plane interrogated during rendering. Only relevant in
-        raycasting_mode = 'plane'.
+        plane interrogated during rendering. Defined in data coordinates.
+        Only relevant in raycasting_mode = 'plane'.
 
 
     .. versionchanged: 0.7
@@ -943,6 +943,12 @@ class VolumeVisual(Visual):
 
     @property
     def plane_position(self):
+        """Position on a plane through the volume.
+
+        A (3,) array containing a position on a plane of interest in the volume.
+        The position is defined in data coordinates. Only relevant in
+        raycasting_mode = 'plane'.
+        """
         return self._plane_position
 
     @plane_position.setter
@@ -956,6 +962,12 @@ class VolumeVisual(Visual):
 
     @property
     def plane_normal(self):
+        """Direction normal to a plane through the volume.
+
+        A (3,) array containing a vector normal to the plane of interest in the
+        volume. The normal vector is defined in data coordinates. Only relevant
+        in raycasting_mode = 'plane'.
+        """
         return self._plane_normal
 
     @plane_normal.setter
@@ -969,6 +981,12 @@ class VolumeVisual(Visual):
 
     @property
     def plane_thickness(self):
+        """Thickness of a plane through the volume.
+
+        A value defining the total length of the ray perpendicular to the
+        plane interrogated during rendering. Defined in data coordinates.
+        Only relevant in raycasting_mode = 'plane'.
+        """
         return self._plane_thickness
 
     @plane_thickness.setter
