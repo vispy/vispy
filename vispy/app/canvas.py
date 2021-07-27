@@ -514,9 +514,21 @@ class Canvas(object):
                 % (self.__class__.__name__,
                    self.app.backend_name, hex(id(self))))
 
+    def _repr_mimebundle_(self, *args, **kwargs):
+        """If the backend implements _repr_mimebundle_, we proxy it here.
+        """
+        # See https://ipython.readthedocs.io/en/stable/config/integrating.html
+        f = getattr(self._backend, "_repr_mimebundle_", None)
+        if f is not None:
+            return f(*args, **kwargs)
+        else:
+            # Let Jupyter know this failed - otherwise the standard repr is not shown
+            raise NotImplementedError()
+
     def _ipython_display_(self):
         """If the backend implements _ipython_display_, we proxy it here.
         """
+        # See https://ipython.readthedocs.io/en/stable/config/integrating.html
         f = getattr(self._backend, "_ipython_display_", None)
         if f is not None:
             return f()
