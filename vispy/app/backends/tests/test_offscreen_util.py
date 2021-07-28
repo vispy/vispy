@@ -1,5 +1,5 @@
 from vispy.app.backends._offscreen_util import OffscreenContext, FrameBufferHelper
-from vispy.testing import requires_application
+from vispy.testing import run_tests_if_main, requires_application
 from vispy import gloo
 import numpy as np
 
@@ -49,6 +49,4 @@ def test_frame_buffer_helper():
     assert np.all(array[:, :, 2] == 255)
 
 
-if __name__ == "__main__":
-    test_offscreen_context()
-    test_frame_buffer_helper()
+run_tests_if_main()

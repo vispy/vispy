@@ -4,7 +4,13 @@ import numpy as np
 from vispy import gloo
 from vispy.app import Application, Canvas
 from vispy.app.backends import _jupyter_rfb
-from vispy.testing import requires_application
+from vispy.testing import run_tests_if_main, requires_application
+import pytest
+
+try:
+    import jupyter_rfb
+except ImportError:
+    jupyter_rfb = None
 
 
 def test_rfb_app():
@@ -24,13 +30,9 @@ class MyCanvas(Canvas):
         gloo.clear()
 
 
+@pytest.mark.skipif(jupyter_rfb is None, reason='jupyter_rfb is not installed')
 @requires_application()
 def test_rfb_canvas():
-
-    try:
-        import jupyter_rfb
-    except ImportError:
-        return  # only the "all deps" build have jupyter_rfb
 
     app = Application("jupyter_rfb")
     canvas = MyCanvas(app=app)
@@ -72,6 +74,4 @@ def test_rfb_canvas():
     assert tuple(events[0].pos) == (11, 12)
 
 
-if __name__ == "__main__":
-    test_rfb_app()
-    test_rfb_canvas()
+run_tests_if_main()
