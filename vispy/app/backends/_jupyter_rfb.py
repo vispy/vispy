@@ -10,7 +10,7 @@ try:
     from jupyter_rfb import RemoteFrameBuffer
 except Exception:
     RemoteFrameBuffer = object
-    _msg = 'ipynb_rfb backend relies on a the jupyter_rfb library: ``pip install jupyter_rfb``'
+    _msg = 'The jupyter_rfb backend relies on a the jupyter_rfb library: ``pip install jupyter_rfb``'
     available, testable, why_not, which = False, False, _msg, None
 else:
     available, testable, why_not = True, False, None
@@ -51,7 +51,7 @@ class ApplicationBackend(BaseApplicationBackend):
         super().__init__()
 
     def _vispy_get_backend_name(self):
-        return 'ipynb_rfb'
+        return 'jupyter_rfb'
 
     def _vispy_process_events(self):
         raise RuntimeError("Cannot process events while asyncio event-loop is running.")
