@@ -27,6 +27,11 @@ class MyCanvas(Canvas):
 @requires_application()
 def test_rfb_canvas():
 
+    try:
+        import jupyter_rfb
+    except ImportError:
+        return  # only the "all deps" build have jupyter_rfb
+
     app = Application("jupyter_rfb")
     canvas = MyCanvas(app=app)
     canvas_backend = canvas.native
