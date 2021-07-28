@@ -412,7 +412,7 @@ class MultiChannelImageVisual(ImageVisual):
         if self.num_channels == 2:
             r_lookup = g_lookup = b_lookup = "texture2D($texture_1, texcoord).r"
             a_lookup = "texture2D($texture_2, texcoord).r"
-        elif self.num_channels == 3:
+        elif self.num_channels >= 3:
             r_lookup = "texture2D($texture_1, texcoord).r"
             g_lookup = "texture2D($texture_2, texcoord).r"
             b_lookup = "texture2D($texture_3, texcoord).r"

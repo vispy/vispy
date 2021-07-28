@@ -59,8 +59,6 @@ def test_la_multiband_visual():
         a_data = np.random.rand(*size).astype(np.float32)
         image = MultiChannelImage(
             [l_data, None],
-            # [l_data, a_data],
-            clim=((0.0, 1.0), (0.0, 1.0)),
             parent=c.scene)
 
         # Assign only L
@@ -86,7 +84,6 @@ def test_la_multiband_visual():
         assert not np.allclose(r_result, 0)
         np.testing.assert_allclose(g_result, r_result)
         np.testing.assert_allclose(b_result, r_result)
-        assert not np.allclose(a_result, 0)
         # the rendered result should always have full alpha
         # we need to compare the end result to the old result
         np.testing.assert_allclose(a_result, 255)
@@ -95,6 +92,79 @@ def test_la_multiband_visual():
         # Unset L and A - fully transparent
         image.set_data([None, None])
         image.clim = ("auto", "auto")
+        result = c.render()
+        r_result = result[..., 0]
+        g_result = result[..., 1]
+        b_result = result[..., 2]
+        a_result = result[..., 3]
+        # the rendered result will always have full alpha
+        np.testing.assert_allclose(r_result, 0)
+        np.testing.assert_allclose(g_result, 0)
+        np.testing.assert_allclose(b_result, 0)
+        np.testing.assert_allclose(a_result, 255)
+
+
+@requires_application()
+def test_rgba_multiband_visual():
+    size = (400, 600)
+    with TestingCanvas(size=size[::-1]) as c:
+        r_data = np.random.rand(*size).astype(np.float32)
+        g_data = np.random.rand(*size).astype(np.float32)
+        b_data = np.random.rand(*size).astype(np.float32)
+        a_data = np.random.rand(*size).astype(np.float32)
+        image = MultiChannelImage(
+            [r_data, None, None, None],
+            parent=c.scene)
+
+        # Assign only R
+        result = c.render()
+        r_result = result[..., 0]
+        g_result = result[..., 1]
+        b_result = result[..., 2]
+        a_result = result[..., 3]
+        assert not np.allclose(r_result, 0)
+        np.testing.assert_allclose(g_result, 0)
+        np.testing.assert_allclose(b_result, 0)
+        np.testing.assert_allclose(a_result, 255)
+
+        # Add A
+        image.set_data([r_data, None, None, a_data])
+        image.clim = ("auto", "auto", "auto", "auto")
+        result = c.render()
+        old_r_result = r_result
+        r_result = result[..., 0]
+        g_result = result[..., 1]
+        b_result = result[..., 2]
+        a_result = result[..., 3]
+        assert not np.allclose(r_result, 0)
+        np.testing.assert_allclose(g_result, 0)
+        np.testing.assert_allclose(b_result, 0)
+        # the rendered result should always have full alpha
+        # we need to compare the end result to the old result
+        np.testing.assert_allclose(a_result, 255)
+        assert not np.allclose(r_result, old_r_result)
+
+        # Add G and B
+        image.set_data([r_data, g_data, b_data, a_data])
+        image.clim = ("auto", "auto", "auto", "auto")
+        result = c.render()
+        old_r_result = r_result
+        r_result = result[..., 0]
+        g_result = result[..., 1]
+        b_result = result[..., 2]
+        a_result = result[..., 3]
+        assert not np.allclose(r_result, 0)
+        assert not np.allclose(g_result, 0)
+        assert not np.allclose(b_result, 0)
+        # the rendered result should always have full alpha
+        # we need to compare the end result to the old result
+        np.testing.assert_allclose(a_result, 255)
+        # the R and A shouldn't have changed so the last result should be the same
+        np.testing.assert_allclose(r_result, old_r_result)
+
+        # Unset L and A - fully transparent
+        image.set_data([None, None, None, None])
+        image.clim = ("auto", "auto", "auto", "auto")
         result = c.render()
         r_result = result[..., 0]
         g_result = result[..., 1]
