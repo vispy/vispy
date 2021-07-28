@@ -5,7 +5,8 @@
 from vispy.scene.visuals import MultiChannelImage
 
 import numpy as np
-from vispy.testing import TestingCanvas, run_tests_if_main, requires_application
+import pytest
+from vispy.testing import TestingCanvas, run_tests_if_main, requires_application, IS_CI
 
 
 @requires_application()
@@ -51,6 +52,7 @@ def test_rgb_multiband_visual():
         assert not np.allclose(b_result, 0)
 
 
+@pytest.mark.xfail(IS_CI, reason="CI environments sometimes treat NaN as 0")
 @requires_application()
 def test_la_multiband_visual():
     size = (400, 600)
@@ -104,6 +106,7 @@ def test_la_multiband_visual():
         np.testing.assert_allclose(a_result, 255)
 
 
+@pytest.mark.xfail(IS_CI, reason="CI environments sometimes treat NaN as 0")
 @requires_application()
 def test_rgba_multiband_visual():
     size = (400, 600)
