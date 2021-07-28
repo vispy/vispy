@@ -201,7 +201,7 @@ _clim_noop = """
             !(color.r <= 0.0 || 0.0 <= color.r) &&
             !(color.g <= 0.0 || 0.0 <= color.g) &&
             !(color.b <= 0.0 || 0.0 <= color.b)) {
-            return 0;
+            return 0.0;
         }
         return color.a;
     }
