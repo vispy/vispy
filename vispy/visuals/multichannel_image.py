@@ -49,7 +49,7 @@ class MultiChannelGPUScaledTexture2D:
         return tuple(t.clim for t in self._textures)
 
     def set_clim(self, clims):
-        if isinstance(clims, str) or len(clims) == 2:
+        if isinstance(clims, str) or (len(clims) == 2 and not isinstance(clims[0], (tuple, list, str))):
             clims = [clims] * self.num_channels
 
         need_tex_upload = False
@@ -242,6 +242,7 @@ class MultiChannelImageVisual(ImageVisual):
                              "'MultiChannelImageVisual'.")
         kwargs["cmap"] = None
         self.num_channels = len(data_arrays)
+        self._verify_num_channels()
         super().__init__(data_arrays, clim=clim, gamma=gamma, **kwargs)
 
     def _init_texture(self, data_arrays, texture_format):
@@ -257,6 +258,12 @@ class MultiChannelImageVisual(ImageVisual):
             interpolation=texture_interpolation,
         )
         return tex
+
+    def _verify_num_channels(self):
+        if self.num_channels < 2:
+            raise ValueError("You must provide 2 or more channels as input.")
+        if self.num_channels > 4:
+            raise ValueError("Can not handle more than 4 elements.")
 
     def _get_shapes(self, data_arrays):
         shapes = [x.shape for x in data_arrays if x is not None]
@@ -274,7 +281,7 @@ class MultiChannelImageVisual(ImageVisual):
     @property
     def size(self):
         """Get size of the image (width, height)."""
-        return self._get_max_shape(self._data)
+        return self._get_max_shape(self._data)[::-1]
 
     @property
     def clim(self):
@@ -311,19 +318,22 @@ class MultiChannelImageVisual(ImageVisual):
         return self._gamma
 
     @gamma.setter
-    def gamma(self, value):
+    def gamma(self, gammas):
         """Set gamma used when rendering the image."""
-        if not isinstance(value, (list, tuple)):
-            value = [value] * self.num_channels
-        if any(val <= 0 for val in value):
+        if not isinstance(gammas, (list, tuple)):
+            gammas = [gammas] * self.num_channels
+        if len(gammas) != self.num_channels:
+            raise ValueError("List of color limits must have the same number "
+                             f"of elements as creation: {self.num_channels}")
+        if any(val <= 0 for val in gammas):
             raise ValueError("gamma must be > 0")
-        self._gamma = tuple(float(x) for x in value)
+        self._gamma = tuple(float(gamma) for gamma in gammas)
 
-        gamma_names = ('gamma_r', 'gamma_g', 'gamma_b')
-        for gamma_name, gam in zip(gamma_names, self._gamma):
+        gamma_names = ('gamma_r', 'gamma_g', 'gamma_b', 'gamma_a')
+        for gamma_name, gamma in zip(gamma_names, self._gamma):
             # shortcut so we don't have to rebuild the color transform
             if not self._need_colortransform_update:
-                self.shared_program.frag['color_transform'][2][gamma_name] = gam
+                self.shared_program.frag['color_transform'][2][gamma_name] = gamma
         self.update()
 
     @ImageVisual.cmap.setter
@@ -373,6 +383,9 @@ class MultiChannelImageVisual(ImageVisual):
         image : array-like
             The image data.
         """
+        if len(data_arrays) != self.num_channels:
+            raise ValueError("List of data arrays must have the same number "
+                             f"of elements as creation: {self.num_channels}")
         if self._data is not None and any(self._shape_differs(x1, x2) for x1, x2 in zip(self._data, data_arrays)):
             self._need_vertex_update = True
         data_arrays = list(self._cast_arrays_if_needed(data_arrays))
