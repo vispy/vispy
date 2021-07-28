@@ -97,6 +97,7 @@ class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
             w, h, r = ev["width"], ev["height"], ev["pixel_ratio"]
             self._logical_size = w, h
             self._physical_size = int(w * r), int(h * r)
+            self._helper.set_physical_size(*self._physical_size)
             self._loop.call_soon(self._emit_resize_event)
             self._vispy_update()  # make sure to schedule a new draw
         elif type == "pointer_down":
@@ -161,7 +162,6 @@ class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
         return tuple(getattr(keys, m.upper()) for m in ev["modifiers"])
 
     def _emit_resize_event(self):
-        self._helper.set_physical_size(*self._physical_size)
         self._vispy_canvas.events.resize(
             size=self._logical_size,
             physical_size=self._physical_size,
