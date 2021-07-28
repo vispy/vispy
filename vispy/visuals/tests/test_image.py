@@ -76,7 +76,7 @@ def _get_orig_and_new_clims(input_dtype):
 def test_image_clims_and_gamma(input_dtype, texture_format, num_channels,
                                clim_on_init, data_on_init):
     """Test image visual with clims and gamma on shader."""
-    size = (40, 40)
+    size = (40, 60)
     if texture_format == '__dtype__':
         texture_format = input_dtype
     shape = size + (num_channels,) if num_channels > 0 else size
@@ -199,7 +199,7 @@ def test_image_nan_rgb(texture_format, num_bands):
 @pytest.mark.parametrize('texture_format', [None, 'auto'])
 def test_image_equal_clims(texture_format, num_channels):
     """Test image visual with equal clims."""
-    size = (40, 40)
+    size = (40, 60)
     input_dtype = np.uint8
     shape = size + (num_channels,) if num_channels > 0 else size
     np.random.seed(0)
