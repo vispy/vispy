@@ -22,10 +22,11 @@ class MultiChannelGPUScaledTexture2D:
 
     _singular_texture_class = GPUScaledTexture2D
     _ndim = 2
+    default_shape = (10, 10)  # if no data is provided, create a texture of NaNs
 
     def __init__(self, data, **texture_kwargs):
         # data to send to texture when not being used
-        self._fill_arr = np.full((10, 10), np.float32(np.nan),
+        self._fill_arr = np.full(self.default_shape, np.float32(np.nan),
                                  dtype=np.float32)
 
         self.num_channels = len(data)
@@ -138,52 +139,90 @@ class MultiChannelGPUScaledTexture2D:
             self._textures[tex_idx].scale_and_set_data(_data, offset=offset, copy=copy)
 
 
-_rgb_texture_lookup = """
-    vec4 texture_lookup(vec2 texcoord) {
+_texture_lookup_template = """
+    vec4 texture_lookup(vec2 texcoord) {{
         if(texcoord.x < 0.0 || texcoord.x > 1.0 ||
-        texcoord.y < 0.0 || texcoord.y > 1.0) {
+        texcoord.y < 0.0 || texcoord.y > 1.0) {{
             discard;
-        }
+        }}
         vec4 val;
-        val.r = texture2D($texture_r, texcoord).r;
-        val.g = texture2D($texture_g, texcoord).r;
-        val.b = texture2D($texture_b, texcoord).r;
-        val.a = 1.0;
+        val.r = {r_lookup};
+        val.g = {g_lookup};
+        val.b = {b_lookup};
+        val.a = {a_lookup};
         return val;
-    }"""
+    }}"""
 
 _apply_clim = """
     vec4 apply_clim(vec4 color) {
+        color.r = $clim_channel_r(color.r);
+        color.g = $clim_channel_g(color.g);
+        color.b = $clim_channel_b(color.b);
+        color.a = $clim_channel_a(color);
+        return color;
+    }
+"""
+_clim_channel = """
+    float clim_channel(float color) {
+        // If NaN, set to minimum clim value
+        // http://stackoverflow.com/questions/11810158/how-to-deal-with-nan-or-inf-in-opengl-es-2-0-shaders
+        color = !(color <= 0.0 || 0.0 <= color) ? min($clim.x, $clim.y) : color;
+        color = clamp(color , min($clim.x, $clim.y), max($clim.x, $clim.y));
+        color = (color - $clim.x) / ($clim.y - $clim.x);
+        return max(color, 0.0);
+    }
+"""
+# Special handling of alpha channel so that NaN values map to max value (fully opaque)
+_clim_channel_alpha = """
+    float clim_channel_alpha(vec4 color) {
+        float alpha;
         // If all the pixels are NaN make it completely transparent
         // http://stackoverflow.com/questions/11810158/how-to-deal-with-nan-or-inf-in-opengl-es-2-0-shaders
         if (
             !(color.r <= 0.0 || 0.0 <= color.r) &&
             !(color.g <= 0.0 || 0.0 <= color.g) &&
             !(color.b <= 0.0 || 0.0 <= color.b)) {
-            color.a = 0;
+            return 0.0;
         }
         
-        // if color is NaN, set to minimum possible value
-        color.r = !(color.r <= 0.0 || 0.0 <= color.r) ? min($clim_r.x, $clim_r.y) : color.r;
-        color.g = !(color.g <= 0.0 || 0.0 <= color.g) ? min($clim_g.x, $clim_g.y) : color.g;
-        color.b = !(color.b <= 0.0 || 0.0 <= color.b) ? min($clim_b.x, $clim_b.y) : color.b;
-        // clamp data to minimum and maximum of clims
-        color.r = clamp(color.r, min($clim_r.x, $clim_r.y), max($clim_r.x, $clim_r.y));
-        color.g = clamp(color.g, min($clim_g.x, $clim_g.y), max($clim_g.x, $clim_g.y));
-        color.b = clamp(color.b, min($clim_b.x, $clim_b.y), max($clim_b.x, $clim_b.y));
-        // linearly scale data between clims
-        color.r = (color.r - $clim_r.x) / ($clim_r.y - $clim_r.x);
-        color.g = (color.g - $clim_g.x) / ($clim_g.y - $clim_g.x);
-        color.b = (color.b - $clim_b.x) / ($clim_b.y - $clim_b.x);
-        return max(color, 0);
+        if (!(color.a <= 0.0 || 0.0 <= color.a)) {
+            return 1.0;
+        }
+        alpha = clamp(color.a , min($clim.x, $clim.y), max($clim.x, $clim.y));
+        alpha = (alpha - $clim.x) / ($clim.y - $clim.x);
+        return max(alpha, 0.0);
+    }
+"""
+_clim_noop = """
+    float clim_channel_alpha(vec4 color) {
+        // If all the pixels are NaN make it completely transparent
+        // http://stackoverflow.com/questions/11810158/how-to-deal-with-nan-or-inf-in-opengl-es-2-0-shaders
+        if (
+            !(color.r <= 0.0 || 0.0 <= color.r) &&
+            !(color.g <= 0.0 || 0.0 <= color.g) &&
+            !(color.b <= 0.0 || 0.0 <= color.b)) {
+            return 0;
+        }
+        return color.a;
     }
 """
 
 _apply_gamma = """
     vec4 apply_gamma(vec4 color) {
-        color.r = pow(color.r, $gamma_r);
-        color.g = pow(color.g, $gamma_g);
-        color.b = pow(color.b, $gamma_b);
+        color.r = $gamma_channel_r(color.r);
+        color.g = $gamma_channel_g(color.g);
+        color.b = $gamma_channel_b(color.b);
+        color.a = $gamma_channel_a(color.a);
+        return color;
+    }
+"""
+_gamma_channel = """
+    float gamma_channel(float color) {
+        return pow(color, $gamma);
+    }
+"""
+_gamma_noop = """
+    float gamma_channel_alpha(float color) {
         return color;
     }
 """
@@ -200,13 +239,18 @@ class MultiChannelImageVisual(ImageVisual):
     Parameters
     ----------
     data : list
-        A 3-element list of numpy arrays with 2 dimensons where the
-        arrays are sorted by (R, G, B) order. These will be put together
-        to make an RGB image. The list can contain ``None`` meaning there
+        A 2, 3, or 4 element list of numpy arrays with 2 dimensions where the
+        arrays are sorted by (R, G, B, A) order. In the case of 2 elements,
+        the default behavior is to use the inputs as Luminance (grayscale)
+        and Alpha (transparency control) bands. In the case of 3 and 4
+        elements the inputs represent R, G, B, and A (if provided). The
+        inputs will be stored separately on the GPU and then put together
+        to make a single image. The list can contain ``None`` meaning there
         is no value for this channel currently, but it may be filled in
         later. In this case the underlying GPU storage is still allocated,
         but pre-filled with NaNs. Note that each channel may have different
-        shapes.
+        shapes. Also note that the number of channels can not change after
+        creation (ex. providing 2 arrays then later providing 3).
     cmap : str | Colormap
         Unused by this Visual, but is still provided to the ImageVisual base
         class.
@@ -268,8 +312,7 @@ class MultiChannelImageVisual(ImageVisual):
     def _get_shapes(self, data_arrays):
         shapes = [x.shape for x in data_arrays if x is not None]
         if not shapes:
-            raise ValueError("List of data arrays must contain at least one "
-                             "numpy array.")
+            return [self._texture.default_shape]
         return shapes
 
     def _get_min_shape(self, data_arrays):
@@ -290,8 +333,11 @@ class MultiChannelImageVisual(ImageVisual):
 
     @clim.setter
     def clim(self, clims):
-        if isinstance(clims, str) or len(clims) == 2:
+        if isinstance(clims, str) or (len(clims) == 2 and not isinstance(clims[0], (tuple, list, str))):
             clims = [clims] * self.num_channels
+        if len(clims) != self.num_channels:
+            raise ValueError("List of color limits must have the same number "
+                             f"of elements as creation: {self.num_channels}")
         if self._texture.set_clim(clims):
             self._need_texture_upload = True
         self._update_colortransform_clim()
@@ -306,7 +352,7 @@ class MultiChannelImageVisual(ImageVisual):
         except RuntimeError:
             return
         else:
-            clim_names = ('clim_r', 'clim_g', 'clim_b')
+            clim_names = ('clim_r', 'clim_g', 'clim_b', 'clim_a')
             # shortcut so we don't have to rebuild the whole color transform
             for clim_name, clim in zip(clim_names, norm_clims):
                 # shortcut so we don't have to rebuild the whole color transform
@@ -349,30 +395,65 @@ class MultiChannelImageVisual(ImageVisual):
             raise NotImplementedError("MultiChannelImageVisual only supports 'nearest' interpolation.")
         texture_interpolation = 'nearest'
 
-        self._data_lookup_fn = Function(_rgb_texture_lookup)
+        texture_lookup_str = self._format_texture_lookup_shader()
+        self._data_lookup_fn = Function(texture_lookup_str)
         self.shared_program.frag['get_data'] = self._data_lookup_fn
         if self._texture.interpolation != texture_interpolation:
             self._texture.interpolation = texture_interpolation
-        self._data_lookup_fn['texture_r'] = self._texture.textures[0]
-        self._data_lookup_fn['texture_g'] = self._texture.textures[1]
-        self._data_lookup_fn['texture_b'] = self._texture.textures[2]
 
+        self._assign_lookup_textures()
         self._need_interpolation_update = False
 
+    def _format_texture_lookup_shader(self):
+        lookup_funcs = {}
+        func_names = [f"{chan}_lookup" for chan in "rgba"]
+        for num_chan, func_name in zip(range(self.num_channels), func_names):
+            lookup_funcs[func_name] = f"texture2D($texture_{num_chan}, texcoord).r"
+        if self.num_channels == 2:
+            r_lookup = g_lookup = b_lookup = "texture2D($texture_1, texcoord).r"
+            a_lookup = "texture2D($texture_2, texcoord).r"
+        elif self.num_channels == 3:
+            r_lookup = "texture2D($texture_1, texcoord).r"
+            g_lookup = "texture2D($texture_2, texcoord).r"
+            b_lookup = "texture2D($texture_3, texcoord).r"
+            a_lookup = "1.0"
+        if self.num_channels == 4:
+            a_lookup = "texture2D($texture_4, texcoord).r"
+        texture_lookup_str = _texture_lookup_template.format(
+            r_lookup=r_lookup,
+            g_lookup=g_lookup,
+            b_lookup=b_lookup,
+            a_lookup=a_lookup,
+        )
+        return texture_lookup_str
+
+    def _assign_lookup_textures(self):
+        texture_names = [f"texture_{chan_num}" for chan_num in range(1, 5)]
+        for tex_name, tex in zip(texture_names, self._texture.textures):
+            self._data_lookup_fn[tex_name] = tex
+
     def _build_color_transform(self):
-        if self.num_channels != 3:
-            raise NotImplementedError("MultiChannelimageVisuals only support 3 channels.")
-        else:
-            # RGB/A image data (no colormap)
-            fclim = Function(_apply_clim)
-            fgamma = Function(_apply_gamma)
-            fun = FunctionChain(None, [Function(_null_color_transform), fclim, fgamma])
-        fclim['clim_r'] = self._texture.textures[0].clim_normalized
-        fclim['clim_g'] = self._texture.textures[1].clim_normalized
-        fclim['clim_b'] = self._texture.textures[2].clim_normalized
-        fgamma['gamma_r'] = self.gamma[0]
-        fgamma['gamma_g'] = self.gamma[1]
-        fgamma['gamma_b'] = self.gamma[2]
+        # LA/RGB/RGBA image data (no colormap)
+        fclim = Function(_apply_clim)
+        fgamma = Function(_apply_gamma)
+        fun = FunctionChain(None, [Function(_null_color_transform), fclim, fgamma])
+        textures = self._texture.textures
+        gammas = self.gamma
+        if self.num_channels == 2:
+            textures = [textures[0], textures[0], textures[0], textures[1]]
+            gammas = [gammas[0], gammas[0], gammas[0], gammas[1]]
+        for chan, gamma, tex in zip("rgba", gammas, textures):
+            clim_fun = Function(_clim_channel if chan != "a" else _clim_channel_alpha)
+            clim_fun['clim'] = tex.clim_normalized
+            fclim[f"clim_channel_{chan}"] = clim_fun
+            gamma_fun = Function(_gamma_channel)
+            gamma_fun['gamma'] = gamma
+            fgamma[f"gamma_channel_{chan}"] = gamma_fun
+        if self.num_channels not in [2, 4]:
+            clim_fun = Function(_clim_noop)
+            fclim['clim_channel_a'] = clim_fun
+            gamma_fun = Function(_gamma_noop)
+            fgamma['gamma_channel_a'] = gamma_fun
         return fun
 
     def set_data(self, data_arrays):
