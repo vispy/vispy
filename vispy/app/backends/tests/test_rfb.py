@@ -45,8 +45,8 @@ def test_rfb_canvas():
     # Mimic a draw
     frame = canvas_backend.get_frame()
     assert frame.shape[:2] == (100, 100)
-    assert np.all(frame[:,:,0] == 0)
-    assert np.all(frame[:,:,1] == 255)
+    assert np.all(frame[:, :, 0] == 0)
+    assert np.all(frame[:, :, 1] == 255)
 
     # Pretend that the user resized in the browser
     canvas_backend.handle_event({"event_type": "resize", "width": 60, "height": 60, "pixel_ratio": 1.0})
@@ -56,8 +56,8 @@ def test_rfb_canvas():
     # Mimic another draw
     frame = canvas_backend.get_frame()
     assert frame.shape[:2] == (60, 60)
-    assert np.all(frame[:,:,0] == 0)
-    assert np.all(frame[:,:,1] == 255)
+    assert np.all(frame[:, :, 0] == 0)
+    assert np.all(frame[:, :, 1] == 255)
 
     # Test mouse event
     events = []
