@@ -338,8 +338,7 @@ class _GLLineVisual(Visual):
                     self._color_vbo.set_data(color)
                     self._program.vert['color'] = self._color_vbo
 
-            self.shared_program['texture2D_LUT'] = cmap.texture_lut() \
-                if (hasattr(cmap, 'texture_lut')) else None
+            self.shared_program['texture2D_LUT'] = cmap and cmap.texture_lut()
 
         if "webgl" not in default_app_module.default_app.backend_name:
             self.update_gl_state(line_smooth=bool(self._parent._antialias))
