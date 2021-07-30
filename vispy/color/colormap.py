@@ -434,7 +434,7 @@ class Colormap(BaseColormap):
         """Return a texture2D object for LUT after its value is set. Can be None."""
         if self.texture_map_data is None:
             return None
-        interp = 'linear' if (str(self.interpolation) == 'linear') else 'nearest'
+        interp = 'linear' if self.interpolation == 'linear' else 'nearest'
         texture_LUT = vispy.gloo.Texture2D(np.zeros(self.texture_map_data.shape),
                                            interpolation=interp)
         texture_LUT.set_data(self.texture_map_data, offset=None, copy=True)
