@@ -339,6 +339,8 @@ class Canvas(object):
     @property
     def size(self):
         """The size of canvas/window."""
+        # Note that _px_scale is an additional factor applied in addition to
+        # the scale factor imposed by the backend.
         size = self._backend._vispy_get_size()
         return (size[0] // self._px_scale, size[1] // self._px_scale)
 
@@ -364,7 +366,7 @@ class Canvas(object):
         by it). When writing Visuals or SceneGraph visualisations, this value
         is exposed as `TransformSystem.px_scale`.
         """
-        return self.physical_size[0] // self.size[0]
+        return self.physical_size[0] / self.size[0]
 
     @property
     def fullscreen(self):
@@ -511,6 +513,28 @@ class Canvas(object):
         return ('<%s (%s) at %s>'
                 % (self.__class__.__name__,
                    self.app.backend_name, hex(id(self))))
+
+    def _repr_mimebundle_(self, *args, **kwargs):
+        """If the backend implements _repr_mimebundle_, we proxy it here.
+        """
+        # See https://ipython.readthedocs.io/en/stable/config/integrating.html
+        f = getattr(self._backend, "_repr_mimebundle_", None)
+        if f is not None:
+            return f(*args, **kwargs)
+        else:
+            # Let Jupyter know this failed - otherwise the standard repr is not shown
+            raise NotImplementedError()
+
+    def _ipython_display_(self):
+        """If the backend implements _ipython_display_, we proxy it here.
+        """
+        # See https://ipython.readthedocs.io/en/stable/config/integrating.html
+        f = getattr(self._backend, "_ipython_display_", None)
+        if f is not None:
+            return f()
+        else:
+            # Let Jupyter know this failed - otherwise the standard repr is not shown
+            raise NotImplementedError()
 
     def __enter__(self):
         logger.debug('Context manager enter starting for %s' % (self,))
