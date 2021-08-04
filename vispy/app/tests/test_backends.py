@@ -41,7 +41,7 @@ def _test_module_properties(_module=None):
 
     # For Qt backend, we have a common implementation
     alt_modname = ''
-    if module_fname in ('_pyside', '_pyqt4', '_pyqt5', '_pyside2', '_pyside6'):
+    if module_fname in ('_pyside', '_pyqt4', '_pyqt5', '_pyqt6','_pyside2', '_pyside6'):
         alt_modname = _module.__name__.rsplit('.', 1)[0] + '._qt'
 
     # Test that all _vispy_x methods are there.

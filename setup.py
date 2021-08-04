@@ -221,6 +221,7 @@ setup(
         'ipython-webgl': ['ipywidgets>=7.0', 'ipython>=7', 'tornado'],
         'pyglet': ['pyglet>=1.2'],
         'pyqt5': ['pyqt5'],
+        'pyqt6': ['pyqt6'],
         'pyside': ['PySide'],
         'pyside2': ['PySide2'],
         'pyside6': ['PySide6'],
