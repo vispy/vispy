@@ -745,7 +745,11 @@ class CanvasBackendEgl(QtBaseCanvasBackend, QWidget):
                 hint |= 0 if p.decorate else QtCore.Qt.FramelessWindowHint
                 hint |= QtCore.Qt.WindowStaysOnTopHint if p.always_on_top else 0
         else:
-            hint = QtCore.Qt.Widget  # can also be a window type
+            if PYQT6_API:
+                hint = QtCore.Qt.WindowType.Widget  # can also be a window type
+            else:
+                hint = QtCore.Qt.Widget  # can also be a window type
+
         QWidget.__init__(self, p.parent, hint)
 
         if 0:  # IS_LINUX or IS_RPI:
