@@ -220,7 +220,17 @@ else:
         QtCore.Qt.Key_Return: keys.ENTER,
         QtCore.Qt.Key_Tab: keys.TAB,
     }
-BUTTONMAP = {0: 0, 1: 1, 2: 2, 4: 3, 8: 4, 16: 5}
+if PYQT6_API:
+    BUTTONMAP = {
+        QtCore.Qt.MouseButton.NoButton: 0,
+        QtCore.Qt.MouseButton.LeftButton: 1,
+        QtCore.Qt.MouseButton.RightButton: 2,
+        QtCore.Qt.MouseButton.MiddleButton: 3,
+        QtCore.Qt.MouseButton.BackButton: 4,
+        QtCore.Qt.MouseButton.ForwardButton: 5
+    }
+else:
+    BUTTONMAP = {0: 0, 1: 1, 2: 2, 4: 3, 8: 4, 16: 5}
 
 
 # Properly log Qt messages
