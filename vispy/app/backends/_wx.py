@@ -204,9 +204,8 @@ class DummySize(object):
 class CanvasBackend(GLCanvas, BaseCanvasBackend):
     """wxPython backend for Canvas abstract class."""
 
-    # args are for BaseCanvasBackend, kwargs are for us.
-    def __init__(self, *args, **kwargs):
-        BaseCanvasBackend.__init__(self, *args)
+    def __init__(self, vispy_canvas, **kwargs):
+        BaseCanvasBackend.__init__(self, vispy_canvas)
         p = self._process_backend_kwargs(kwargs)
 
         # WX supports OS double-click events, so we set this here to

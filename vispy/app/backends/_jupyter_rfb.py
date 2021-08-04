@@ -72,10 +72,11 @@ class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
 
     _double_click_supported = True
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, vispy_canvas, **kwargs):
+        BaseCanvasBackend.__init__(self, vispy_canvas)
         RemoteFrameBuffer.__init__(self)
-        BaseCanvasBackend.__init__(self, *args)
         # Init
+        p = self._process_backend_kwargs(kwargs)
         # Use a context per canvas, because we seem to make assumptions
         # about OpenGL state being local to the canvas.
         self._context = OffscreenContext()  # OffscreenContext.get_global_instance()
@@ -85,8 +86,8 @@ class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
         self._physical_size = 1, 1
         self._lifecycle = 0  # 0: not initialized, 1: initialized, 2: closed
         # Init more based on kwargs (could maybe handle, title, show, context)
-        self._vispy_set_size(*kwargs["size"])
-        self.resizable = kwargs["resizable"]
+        self._vispy_set_size(*p.size)
+        self.resizable = p.resizable
         # Need a first update
         self._vispy_update()
 
