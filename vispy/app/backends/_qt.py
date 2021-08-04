@@ -89,7 +89,7 @@ elif qt_lib == 'pyqt5':
 elif qt_lib == 'pyqt6':
     _check_imports('PyQt6')
     if not USE_EGL:
-        from PyQt6.QtCore import __version__ as QT_VERSION_STR
+        from PyQt6.QtCore import QT_VERSION_STR
         if LooseVersion(QT_VERSION_STR) >= '6.0.0':
             from PyQt6.QtOpenGLWidgets import QOpenGLWidget as QGLWidget
             from PyQt6.QtGui import QSurfaceFormat as QGLFormat
