@@ -28,7 +28,7 @@ capability = dict(
     resizable=True,
     decorate=False,
     fullscreen=False,
-    context=True,  # the offscreen global context
+    context=True,  # Could work, but not implemented
     multi_window=True,
     scroll=True,
     parent=False,  # ipywidgets has layouts, but has no concept of parents
@@ -75,8 +75,6 @@ class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
     def __init__(self, vispy_canvas, **kwargs):
         BaseCanvasBackend.__init__(self, vispy_canvas)
         RemoteFrameBuffer.__init__(self)
-        # Init
-        p = self._process_backend_kwargs(kwargs)
         # Use a context per canvas, because we seem to make assumptions
         # about OpenGL state being local to the canvas.
         self._context = OffscreenContext()  # OffscreenContext.get_global_instance()
@@ -86,8 +84,8 @@ class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
         self._physical_size = 1, 1
         self._lifecycle = 0  # 0: not initialized, 1: initialized, 2: closed
         # Init more based on kwargs (could maybe handle, title, show, context)
-        self._vispy_set_size(*p.size)
-        self.resizable = p.resizable
+        self._vispy_set_size(*kwargs["size"])
+        self.resizable = kwargs["resizable"]
         # Need a first update
         self._vispy_update()
 
