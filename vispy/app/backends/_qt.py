@@ -517,9 +517,14 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
     def mousePressEvent(self, ev):
         if self._vispy_canvas is None:
             return
+        if hasattr(ev, 'pos'):
+            posx, posy = ev.pos().x(), ev.pos().y()
+        else:
+            # Compatibility for PySide6 / PyQt6
+            posx, posy = ev.position().x(), ev.position().y()
         self._vispy_mouse_press(
             native=ev,
-            pos=(ev.pos().x(), ev.pos().y()),
+            pos=(posx, posy),
             button=BUTTONMAP.get(ev.button(), 0),
             modifiers=self._modifiers(ev),
         )
@@ -527,9 +532,14 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
     def mouseReleaseEvent(self, ev):
         if self._vispy_canvas is None:
             return
+        if hasattr(ev, 'pos'):
+            posx, posy = ev.pos().x(), ev.pos().y()
+        else:
+            # Compatibility for PySide6 / PyQt6
+            posx, posy = ev.position().x(), ev.position().y()
         self._vispy_mouse_release(
             native=ev,
-            pos=(ev.pos().x(), ev.pos().y()),
+            pos=(posx, posy),
             button=BUTTONMAP[ev.button()],
             modifiers=self._modifiers(ev),
         )
@@ -537,9 +547,14 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
     def mouseDoubleClickEvent(self, ev):
         if self._vispy_canvas is None:
             return
+        if hasattr(ev, 'pos'):
+            posx, posy = ev.pos().x(), ev.pos().y()
+        else:
+            # Compatibility for PySide6 / PyQt6
+            posx, posy = ev.position().x(), ev.position().y()
         self._vispy_mouse_double_click(
             native=ev,
-            pos=(ev.pos().x(), ev.pos().y()),
+            pos=(posx, posy),
             button=BUTTONMAP.get(ev.button(), 0),
             modifiers=self._modifiers(ev),
         )
@@ -547,9 +562,14 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
     def mouseMoveEvent(self, ev):
         if self._vispy_canvas is None:
             return
+        if hasattr(ev, 'pos'):
+            posx, posy = ev.pos().x(), ev.pos().y()
+        else:
+            # Compatibility for PySide6 / PyQt6
+            posx, posy = ev.position().x(), ev.position().y()
         self._vispy_mouse_move(
             native=ev,
-            pos=(ev.pos().x(), ev.pos().y()),
+            pos=(posx, posy),
             modifiers=self._modifiers(ev),
         )
 
