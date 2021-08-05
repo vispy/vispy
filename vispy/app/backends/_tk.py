@@ -296,16 +296,15 @@ class ApplicationBackend(BaseApplicationBackend):
 # ------------------------------------------------------------------ canvas ---
 
 
-class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
+class CanvasBackend(BaseCanvasBackend, OpenGLFrame):
     """Tkinter backend for Canvas abstract class.
     Uses pyopengltk.OpenGLFrame as the internal tk.Frame instance that
     is able to receive OpenGL draw commands and display the results,
     while also being placeable in another Toplevel window.
     """
 
-    # args are for BaseCanvasBackend, kwargs are for us.
-    def __init__(self, *args, **kwargs):
-        BaseCanvasBackend.__init__(self, *args)
+    def __init__(self, vispy_canvas, **kwargs):
+        BaseCanvasBackend.__init__(self, vispy_canvas)
         p = self._process_backend_kwargs(kwargs)
 
         self._double_click_supported = True
