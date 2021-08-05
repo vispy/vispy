@@ -40,7 +40,8 @@ def use(app=None, gl=None):
             * 'SDL2': use SDL v2 backend.
             * 'osmesa': Use OSMesa backend
         Additional backends:
-            * 'jupyter_rfb': show vispy canvases in Jupyter lab/notebook.
+            * 'jupyter_rfb': show vispy canvases in Jupyter lab/notebook
+              (depends on the jupyter_rfb library).
 
     gl : str
         The gl backend to use (case insensitive). Options are:
