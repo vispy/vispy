@@ -11,6 +11,5 @@ from __future__ import division
 from .application import Application  # noqa
 from ._default_app import use_app, create, run, quit, process_events  # noqa
 from .canvas import Canvas, MouseEvent, KeyEvent  # noqa
-from .inputhook import set_interactive  # noqa
 from .timer import Timer  # noqa
 from . import base  # noqa
