@@ -32,7 +32,6 @@ CORE_BACKENDS = [
 PSEUDO_BACKENDS = [
     # ('ipynb_static', '_ipynb_static', None),
     ('jupyter_rfb', '_jupyter_rfb', None),
-    ('ipynb_webgl', '_ipynb_webgl', None),
     ('_test', '_test', 'vispy.app.backends._test'),  # add one that will fail
 ]
 

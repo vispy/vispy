@@ -1,6 +1,3 @@
 [submodule "docs"]
 	path = doc
 	url = https://github.com/vispy/vispy-website
-[submodule "js"]
-	path = js
-	url = https://github.com/vispy/vispy.js
