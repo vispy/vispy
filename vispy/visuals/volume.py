@@ -316,18 +316,20 @@ RAYCASTING_SETUP_PLANE = """
     vec3 intersection_tex = intersection / u_shape;
     
     // discard if intersection not in texture
-    if (intersection_tex.x > 1.0 )
+    
+    float out_of_bounds = 0;
+
+    out_of_bounds += float(intersection_tex.x > 1);
+    out_of_bounds += float(intersection_tex.x < 0);
+    out_of_bounds += float(intersection_tex.y > 1);
+    out_of_bounds += float(intersection_tex.y < 0);
+    out_of_bounds += float(intersection_tex.z > 1);
+    out_of_bounds += float(intersection_tex.z < 0);
+    
+    if (out_of_bounds > 0) {
         discard;
-    if (intersection_tex.y > 1.0 )
-        discard;
-    if (intersection_tex.z > 1.0 )
-        discard;
-    if (intersection_tex.x < 0.0 )
-        discard;
-    if (intersection_tex.y < 0.0 )
-        discard;
-    if (intersection_tex.z < 0.0 )
-        discard;
+    }
+
 
     // Decide how many steps to take
     int nsteps = int(u_plane_thickness / u_relative_step_size + 0.5);
