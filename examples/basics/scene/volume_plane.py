@@ -66,6 +66,7 @@ def update_axis_visual():
 
 update_axis_visual()
 
+
 @canvas.events.mouse_move.connect
 def on_mouse_move(event):
     if event.button == 1 and event.is_dragging:
