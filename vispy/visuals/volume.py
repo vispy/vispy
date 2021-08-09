@@ -749,12 +749,14 @@ class VolumeVisual(Visual):
     def clipping_planes(self, value):
         if value is not None:
             value = value[:, :, ::-1]
-        self._clipping_planes = value
-        self.shared_program.frag['clip_by_planes'] = self._build_clipping_planes_func()
+        # only remake the code if number of planes changed
+        if len(value) != len(self._clipping_planes):
+            self.shared_program.frag['clip_by_planes'] = self._build_clipping_planes_func()
         if value is not None:
             for idx, plane in enumerate(value):
                 self.shared_program[f'u_clipping_plane_pos{idx}'] = tuple(plane[0])
                 self.shared_program[f'u_clipping_plane_norm{idx}'] = tuple(plane[1])
+        self._clipping_planes = value
         self.update()
 
     @property
