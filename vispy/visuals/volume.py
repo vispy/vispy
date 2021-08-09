@@ -889,6 +889,12 @@ class VolumeVisual(Visual):
 
     @property
     def raycasting_mode(self):
+        """The raycasting mode to use.
+
+        This defines whether to cast a ray through the whole volume or
+        perpendicular to a plane through the volume.
+        must be in {'volume', 'plane'}
+        """
         return self._raycasting_mode
 
     @raycasting_mode.setter
