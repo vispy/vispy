@@ -3,7 +3,7 @@
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
-# vispy: gallery 2
+# vispy: gallery 10:200:5
 """
 Rendering Planes through 3D Data
 ================================
@@ -16,6 +16,8 @@ Controls:
 
 * x/y/z/o - set plane normal along x/y/z or [1,1,1] oblique axis
 """
+import sys
+
 import numpy as np
 
 from vispy import app, scene, io
@@ -33,10 +35,20 @@ plane = scene.visuals.Volume(
     vol,
     parent=view.scene,
     raycasting_mode='plane',
-    plane_thickness=20.0,
+    method='mip',
+    plane_thickness=3.0,
     plane_position=(128, 60, 64),
-    plane_normal=(0, 1, 0),
+    plane_normal=(1, 0, 0),
 )
+
+volume = scene.visuals.Volume(
+    vol,
+    parent=view.scene,
+    raycasting_mode='volume',
+    method='mip',
+)
+volume.set_gl_state('additive')
+volume.opacity = 0.25
 
 # Create a camera
 cam = scene.cameras.TurntableCamera(
@@ -112,6 +124,21 @@ def on_key_press(event):
         plane.plane_normal = [1, 1, 1]
 
 
+def move_plane(event):
+    z_pos = plane.plane_position[0]
+    if z_pos < 32:
+        plane.plane_position = plane.plane_position + [1, 0, 0]
+    elif 32 < z_pos <= 220:
+        plane.plane_position = plane.plane_position - [1, 0, 0]
+    else:
+        plane.plane_position = (220, 64, 64)
+
+
+timer = app.Timer('auto', connect=move_plane, start=True)
+
 if __name__ == '__main__':
+    canvas.show()
     print(__doc__)
-    app.run()
+    if sys.flags.interactive == 0:
+        plane.plane_position = (220, 64, 64)
+        app.run()
