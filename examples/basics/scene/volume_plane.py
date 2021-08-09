@@ -51,19 +51,25 @@ affine = s.as_matrix()
 axis.transform = affine
 
 
-# Implement axis connection with cam2
+def update_axis_visual():
+    """Sync XYZAxis visual with camera angles"""
+    axis.transform.reset()
+
+    axis.transform.rotate(cam.roll, (0, 0, 1))
+    axis.transform.rotate(cam.elevation, (1, 0, 0))
+    axis.transform.rotate(cam.azimuth, (0, 1, 0))
+    axis.transform.scale((50, 50, 0.001))
+    axis.transform.translate((50., 50.))
+
+    axis.update()
+
+
+update_axis_visual()
+
 @canvas.events.mouse_move.connect
 def on_mouse_move(event):
     if event.button == 1 and event.is_dragging:
-        axis.transform.reset()
-
-        axis.transform.rotate(cam.roll, (0, 0, 1))
-        axis.transform.rotate(cam.elevation, (1, 0, 0))
-        axis.transform.rotate(cam.azimuth, (0, 1, 0))
-
-        axis.transform.scale((50, 50, 0.001))
-        axis.transform.translate((50., 50.))
-        axis.update()
+        update_axis_visual()
 
 
 # Implement key presses
