@@ -198,7 +198,7 @@ class Application(object):
             backend_name = test_name.lower()
             assert backend_name in BACKENDMAP
         elif self.is_notebook():
-            backend_name = 'ipynb_webgl'
+            backend_name = 'jupyter_rfb'
 
         # Should we try and load any backend, or just this specific one?
         try_others = backend_name is None

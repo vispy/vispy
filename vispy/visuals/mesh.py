@@ -327,8 +327,7 @@ class MeshVisual(Visual):
 
         self.shared_program.vert['position'] = self._vertices
 
-        self.shared_program['texture2D_LUT'] = self._cmap.texture_lut() \
-            if (hasattr(self._cmap, 'texture_lut')) else None
+        self.shared_program['texture2D_LUT'] = self._cmap.texture_lut()
 
         # Position input handling
         if v.shape[-1] == 2:

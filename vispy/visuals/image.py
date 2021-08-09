@@ -573,8 +573,7 @@ class ImageVisual(Visual):
             prg = view.view_program
             self.shared_program.frag['color_transform'] = self._build_color_transform()
             self._need_colortransform_update = False
-            prg['texture2D_LUT'] = self.cmap.texture_lut() \
-                if (hasattr(self.cmap, 'texture_lut')) else None
+            prg['texture2D_LUT'] = self.cmap.texture_lut()
 
         if self._need_vertex_update:
             self._build_vertex_data()

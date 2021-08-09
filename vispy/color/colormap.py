@@ -281,6 +281,10 @@ class BaseColormap(object):
         """
         raise NotImplementedError()
 
+    def texture_lut(self):
+        """Return a texture2D object for LUT after its value is set. Can be None."""
+        return None
+
     def __getitem__(self, item):
         if isinstance(item, tuple):
             raise ValueError('ColorArray indexing is only allowed along '
@@ -427,18 +431,13 @@ class Colormap(BaseColormap):
         return self._map_function(self.colors.rgba, x, self._controls)
 
     def texture_lut(self):
-        """Return a texture2D object for LUT after its value is set."""
-        if self.texture_map_data is not None:
-            interpolation_mode = 'linear' \
-                if(str(self.interpolation) == 'linear') \
-                else 'nearest'
-            texture_LUT = \
-                vispy.gloo.Texture2D(np.zeros(self.texture_map_data.shape),
-                                     interpolation=interpolation_mode)
-            texture_LUT.set_data(self.texture_map_data,
-                                 offset=None, copy=True)
-        else:
-            texture_LUT = None
+        """Return a texture2D object for LUT after its value is set. Can be None."""
+        if self.texture_map_data is None:
+            return None
+        interp = 'linear' if self.interpolation == 'linear' else 'nearest'
+        texture_LUT = vispy.gloo.Texture2D(np.zeros(self.texture_map_data.shape),
+                                           interpolation=interp)
+        texture_LUT.set_data(self.texture_map_data, offset=None, copy=True)
         return texture_LUT
 
 
