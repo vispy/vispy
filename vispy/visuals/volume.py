@@ -34,6 +34,8 @@ The ray is expressed in coordinates local to the volume (i.e. texture
 coordinates).
 
 """
+from functools import lru_cache
+
 from ._scalable_textures import CPUScaledTexture3D, GPUScaledTextured3D
 from ..gloo import VertexBuffer, IndexBuffer
 from ..gloo.texture import should_cast_to_f32
@@ -705,7 +707,9 @@ class VolumeVisual(Visual):
             self._texture.interpolation = self._interpolation
             self.update()
 
-    def _build_clipping_planes_func(self):
+    @staticmethod
+    @lru_cache
+    def _build_clipping_planes_func(n_planes):
         """
         build the code snippet used to clip the volume based on self.clipping_planes
         """
@@ -724,11 +728,7 @@ class VolumeVisual(Visual):
             '''
         all_vars = []
         all_clips = []
-        if self.clipping_planes is None:
-            cl_planes = []
-        else:
-            cl_planes = self._clipping_planes
-        for idx in range(len(cl_planes)):
+        for idx in range(n_planes):
             all_vars.append(vars_template.format(idx=idx))
             all_clips.append(clip_template.format(idx=idx))
         func['vars'] = ''.join(all_vars)
@@ -741,22 +741,20 @@ class VolumeVisual(Visual):
         a set of planes used to clip the volume. Each plane is defined by a position and
         a normal vector (magnitude is irrelevant). Shape: (n_planes, 2, 3)
         """
-        if self._clipping_planes is None:
-            return self._clipping_planes
         return self._clipping_planes[:, :, ::-1]
 
     @clipping_planes.setter
     def clipping_planes(self, value):
-        if value is not None:
-            value = value[:, :, ::-1]
-        # only remake the code if number of planes changed
-        if len(value) != len(self._clipping_planes):
-            self.shared_program.frag['clip_by_planes'] = self._build_clipping_planes_func()
-        if value is not None:
-            for idx, plane in enumerate(value):
-                self.shared_program[f'u_clipping_plane_pos{idx}'] = tuple(plane[0])
-                self.shared_program[f'u_clipping_plane_norm{idx}'] = tuple(plane[1])
+        if value is None:
+            value = np.empty([0, 2, 3])
+        value = value[:, :, ::-1]
         self._clipping_planes = value
+
+        self.shared_program.frag['clip_by_planes'] = self._build_clipping_planes_func(len(value))
+
+        for idx, plane in enumerate(value):
+            self.shared_program[f'u_clipping_plane_pos{idx}'] = tuple(plane[0])
+            self.shared_program[f'u_clipping_plane_norm{idx}'] = tuple(plane[1])
         self.update()
 
     @property
