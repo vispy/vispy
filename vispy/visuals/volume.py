@@ -254,7 +254,7 @@ void main() {
                 vec4 color = $sample(u_volumetex, loc);
                 float val = color.r;
 
-                {in_loop}
+                $in_loop
             }
             // Advance location deeper into the volume
             loc += step;
