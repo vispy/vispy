@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
+# vispy: gallery 5
 # -----------------------------------------------------------------------------
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 """
 Example of volume rendering with clipping planes
+================================================
 Controls:
 - x/y/z/o - add new clipping plane with normal along x/y/z or [1,1,1] oblique axis
 - r - remove a clipping plane

@@ -710,9 +710,7 @@ class VolumeVisual(Visual):
     @staticmethod
     @lru_cache(maxsize=10)
     def _build_clipping_planes_func(n_planes):
-        """
-        build the code snippet used to clip the volume based on self.clipping_planes
-        """
+        """Build the code snippet used to clip the volume based on self.clipping_planes."""
         func = Function(
             '$vars\nfloat clip_planes(vec3 loc, vec3 vol_shape) { float is_shown = 1.0; $clips; return is_shown; }')
         # each plane is defined by a position and a normal vector
@@ -737,9 +735,9 @@ class VolumeVisual(Visual):
 
     @property
     def clipping_planes(self):
-        """
-        a set of planes used to clip the volume. Each plane is defined by a position and
-        a normal vector (magnitude is irrelevant). Shape: (n_planes, 2, 3)
+        """Get the set of planes used to clip the volume.
+
+        Each plane is defined by a position and a normal vector (magnitude is irrelevant). Shape: (n_planes, 2, 3)
         """
         return self._clipping_planes[:, :, ::-1]
 
