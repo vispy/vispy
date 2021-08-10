@@ -708,7 +708,7 @@ class VolumeVisual(Visual):
             self.update()
 
     @staticmethod
-    @lru_cache
+    @lru_cache(maxsize=None)
     def _build_clipping_planes_func(n_planes):
         """
         build the code snippet used to clip the volume based on self.clipping_planes
