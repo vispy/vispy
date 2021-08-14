@@ -14,6 +14,12 @@ from ... import config
 USE_EGL = config['gl_backend'].lower().startswith('es')
 
 try:
+    # Make sure no conflicting libraries have been imported.
+    for lib in ['PySide', 'PySide2', 'PySide6', 'PyQt4', 'PyQt5']:
+        lib += '.QtCore'
+        if lib in sys.modules:
+            raise RuntimeError("Refusing to import PyQt6 because %s is "
+                               "already imported." % lib)
     # Try importing (QtOpenGL first to fail without import QtCore)
     if not USE_EGL:
         from PyQt6 import QtOpenGL  # noqa
@@ -26,6 +32,19 @@ else:
     available, testable, why_not = True, True, None
     # What is this for? PyQt5 sets this to true, PySide sets this to false
     has_uic = False
+    import PyQt6
+
+    # PySide6/PyQt6 doesn't have qWait as well, redefines it
+    from PyQt6 import QtTest, QtWidgets
+
+    @staticmethod
+    def qWait(msec):
+        import time
+        start = time.time()
+        PyQt6.QtWidgets.QApplication.processEvents()
+        while time.time() < start + msec * 0.001:
+            PyQt6.QtWidgets.QApplication.processEvents()
+    QtTest.QTest.qWait = qWait
 
     which = ('PyQt6', QtCore.PYQT_VERSION_STR, QtCore.PYQT_VERSION_STR)
     # Remove _qt module to force an import even if it was already imported
