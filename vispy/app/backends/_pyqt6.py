@@ -32,7 +32,6 @@ else:
     available, testable, why_not = True, True, None
     # What is this for? PyQt5 sets this to true, PySide sets this to false
     has_uic = False
-    import PyQt6
 
     which = ('PyQt6', QtCore.PYQT_VERSION_STR, QtCore.PYQT_VERSION_STR)
     # Remove _qt module to force an import even if it was already imported
