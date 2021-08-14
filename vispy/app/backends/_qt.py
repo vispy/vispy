@@ -801,7 +801,7 @@ class CanvasBackendDesktop(QtBaseCanvasBackend, QGLWidget):
             hint |= 0 if p.decorate else qt_window_types.FramelessWindowHint
             hint |= qt_window_types.WindowStaysOnTopHint if p.always_on_top else 0
         else:
-            hint = qt_window_types.WindowType.Widget  # can also be a window type
+            hint = qt_window_types.Widget  # can also be a window type
 
         if QT5_NEW_API or PYSIDE6_API or PYQT6_API:
             # Qt5 >= 5.4.0 - sharing is automatic
