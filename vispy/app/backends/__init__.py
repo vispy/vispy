@@ -31,7 +31,6 @@ CORE_BACKENDS = [
 # Whereas core backends really represents libraries that can create a
 # canvas, the pseudo backends act more like a proxy.
 PSEUDO_BACKENDS = [
-    # ('ipynb_vnc', '_ipynb_vnc', None),
     # ('ipynb_static', '_ipynb_static', None),
     ('jupyter_rfb', '_jupyter_rfb', None),
     ('ipynb_webgl', '_ipynb_webgl', None),

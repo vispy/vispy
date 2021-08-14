@@ -8,14 +8,14 @@ backend by itself! One has to explicitly use either PySide, PyQt4 or
 PySide2, PyQt5. Note that the automatic backend selection prefers
 a GUI toolkit that is already imported.
 
-The _pyside, _pyqt4, _pyside2, _pyqt5 and _pyside6 modules will 
-import * from this module, and also keep a ref to the module object. 
-Note that if two of the backends are used, this module is actually 
-reloaded. This is a sorts of poor mans "subclassing" to get a working 
+The _pyside, _pyqt4, _pyside2, _pyqt5 and _pyside6 modules will
+import * from this module, and also keep a ref to the module object.
+Note that if two of the backends are used, this module is actually
+reloaded. This is a sorts of poor mans "subclassing" to get a working
 version for both backends using the same code.
 
 Note that it is strongly discouraged to use the
-PySide/PyQt4/PySide2/PyQt5/PyQt6/PySide6 backends simultaneously. It is
+PySide/PyQt4/PySide2/PyQt5/PySide6 backends simultaneously. It is
 known to cause unpredictable behavior and segfaults.
 """
 
@@ -389,9 +389,8 @@ def _get_qpoint_pos(pos):
 class QtBaseCanvasBackend(BaseCanvasBackend):
     """Base functionality of Qt backend. No OpenGL Stuff."""
 
-    # args are for BaseCanvasBackend, kwargs are for us.
-    def __init__(self, *args, **kwargs):
-        BaseCanvasBackend.__init__(self, *args)
+    def __init__(self, vispy_canvas, **kwargs):
+        BaseCanvasBackend.__init__(self, vispy_canvas)
         # Maybe to ensure that exactly all arguments are passed?
         p = self._process_backend_kwargs(kwargs)
         self._initialized = False

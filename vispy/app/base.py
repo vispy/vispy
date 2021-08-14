@@ -278,6 +278,8 @@ class BaseTimerBackend(object):
     """
 
     def __init__(self, vispy_timer):
+        # Note: it is the responsibility of the subclass to call
+        # the __init__ of the mro - we don't call super().__init__() here.
         self._vispy_timer = vispy_timer
 
     def _vispy_start(self, interval):
