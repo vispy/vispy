@@ -34,7 +34,7 @@ else:
     has_uic = False
     import PyQt6
 
-    # PySide6 doesn't have qWait as well, redefines it
+    # PySide6/PyQt6 doesn't have qWait as well, redefines it
     from PyQt6 import QtTest, QtWidgets
 
     @staticmethod
