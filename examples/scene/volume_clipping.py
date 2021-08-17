@@ -6,7 +6,7 @@
 # -----------------------------------------------------------------------------
 """
 Volume rendering with clipping planes
-================================================
+=====================================
 Controls:
 - x/y/z/o - add new clipping plane with normal along x/y/z or [1,1,1] oblique axis
 - r - remove a clipping plane
