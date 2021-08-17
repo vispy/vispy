@@ -494,10 +494,9 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
     def mousePressEvent(self, ev):
         if self._vispy_canvas is None:
             return
-        posx, posy = _get_event_xy(ev)
         self._vispy_mouse_press(
             native=ev,
-            pos=(posx, posy),
+            pos=_get_event_xy(ev),
             button=BUTTONMAP.get(ev.button(), 0),
             modifiers=self._modifiers(ev),
         )
@@ -505,10 +504,9 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
     def mouseReleaseEvent(self, ev):
         if self._vispy_canvas is None:
             return
-        posx, posy = _get_event_xy(ev)
         self._vispy_mouse_release(
             native=ev,
-            pos=(posx, posy),
+            pos=_get_event_xy(ev),
             button=BUTTONMAP[ev.button()],
             modifiers=self._modifiers(ev),
         )
@@ -516,10 +514,9 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
     def mouseDoubleClickEvent(self, ev):
         if self._vispy_canvas is None:
             return
-        posx, posy = _get_event_xy(ev)
         self._vispy_mouse_double_click(
             native=ev,
-            pos=(posx, posy),
+            pos=_get_event_xy(ev),
             button=BUTTONMAP.get(ev.button(), 0),
             modifiers=self._modifiers(ev),
         )
@@ -527,10 +524,9 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
     def mouseMoveEvent(self, ev):
         if self._vispy_canvas is None:
             return
-        posx, posy = _get_event_xy(ev)
         self._vispy_mouse_move(
             native=ev,
-            pos=(posx, posy),
+            pos=_get_event_xy(ev),
             modifiers=self._modifiers(ev),
         )
 
@@ -548,12 +544,11 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
             # PyQt5 / PyQt6
             delta = ev.angleDelta()
             deltax, deltay = delta.x() / 120.0, delta.y() / 120.0
-        posx, posy = _get_event_xy(ev)
         # Emit event
         self._vispy_canvas.events.mouse_wheel(
             native=ev,
             delta=(deltax, deltay),
-            pos=(posx, posy),
+            pos=_get_event_xy(ev),
             modifiers=self._modifiers(ev),
         )
 
