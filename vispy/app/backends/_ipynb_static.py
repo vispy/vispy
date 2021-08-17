@@ -5,11 +5,6 @@
 """
 vispy backend for the IPython notebook (static approach).
 
-We aim to have:
-* ipynb_static - export visualization to a static notebook
-* ipynb_vnc - vnc-approach: render in Python, send result to JS as png
-* ipynb_webgl - send gl commands to JS and execute in webgl context
-
 """
 
 from __future__ import division

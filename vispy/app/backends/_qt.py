@@ -8,14 +8,14 @@ backend by itself! One has to explicitly use either PySide, PyQt4 or
 PySide2, PyQt5. Note that the automatic backend selection prefers
 a GUI toolkit that is already imported.
 
-The _pyside, _pyqt4, _pyside2, _pyqt5 and _pyside6 modules will 
-import * from this module, and also keep a ref to the module object. 
-Note that if two of the backends are used, this module is actually 
-reloaded. This is a sorts of poor mans "subclassing" to get a working 
+The _pyside, _pyqt4, _pyside2, _pyqt5 and _pyside6 modules will
+import * from this module, and also keep a ref to the module object.
+Note that if two of the backends are used, this module is actually
+reloaded. This is a sorts of poor mans "subclassing" to get a working
 version for both backends using the same code.
 
 Note that it is strongly discouraged to use the
-PySide/PyQt4/PySide2/PyQt5/PyQt6/PySide6 backends simultaneously. It is
+PySide/PyQt4/PySide2/PyQt5/PySide6 backends simultaneously. It is
 known to cause unpredictable behavior and segfaults.
 """
 
@@ -54,7 +54,7 @@ elif sys.platform.startswith('win'):
 
 def _check_imports(lib):
     # Make sure no conflicting libraries have been imported.
-    libs = ['PyQt4', 'PyQt5', 'PyQt6', 'PySide', 'PySide2', 'PySide6']
+    libs = ['PyQt4', 'PyQt5', 'PySide', 'PySide2', 'PySide6']
     libs.remove(lib)
     for lib2 in libs:
         lib2 += '.QtCore'
@@ -66,8 +66,7 @@ def _check_imports(lib):
 # via _pyside or _pyqt4 or _pyqt5
 QGLWidget = object
 QT5_NEW_API = False
-PYSIDE6_API = False
-PYQT6_API = False
+QT6_NEW_API = False
 if qt_lib == 'pyqt4':
     _check_imports('PyQt4')
     if not USE_EGL:
@@ -85,18 +84,6 @@ elif qt_lib == 'pyqt5':
         else:
             from PyQt5.QtOpenGL import QGLWidget, QGLFormat
     from PyQt5 import QtGui, QtCore, QtWidgets, QtTest
-    QWidget, QApplication = QtWidgets.QWidget, QtWidgets.QApplication  # 
-elif qt_lib == 'pyqt6':
-    _check_imports('PyQt6')
-    if not USE_EGL:
-        from PyQt6.QtCore import QT_VERSION_STR
-        if LooseVersion(QT_VERSION_STR) >= '6.0.0':
-            from PyQt6.QtOpenGLWidgets import QOpenGLWidget as QGLWidget
-            from PyQt6.QtGui import QSurfaceFormat as QGLFormat
-            PYQT6_API = True
-        else:
-            from PyQt6.QtOpenGL import QGLWidget, QGLFormat
-    from PyQt6 import QtGui, QtCore, QtWidgets, QtTest
     QWidget, QApplication = QtWidgets.QWidget, QtWidgets.QApplication  # Compat
 elif qt_lib == 'pyside6':
     _check_imports('PySide6')
@@ -105,7 +92,7 @@ elif qt_lib == 'pyside6':
         if LooseVersion(QT_VERSION_STR) >= '6.0.0':
             from PySide6.QtOpenGLWidgets import QOpenGLWidget as QGLWidget
             from PySide6.QtGui import QSurfaceFormat as QGLFormat
-            PYSIDE6_API = True
+            QT6_NEW_API = True
         else:
             from PySide6.QtOpenGL import QGLWidget, QGLFormat
     from PySide6 import QtGui, QtCore, QtWidgets, QtTest
@@ -138,99 +125,47 @@ else:
 #   Shift  50, 62
 #   Ctrl   37, 105
 #   Alt    64, 108
-if qt_lib == 'pyqt6':
-    KEYMAP = {
-        QtCore.Qt.Key.Key_Shift: keys.SHIFT,
-        QtCore.Qt.Key.Key_Control: keys.CONTROL,
-        QtCore.Qt.Key.Key_Alt: keys.ALT,
-        QtCore.Qt.Key.Key_AltGr: keys.ALT,
-        QtCore.Qt.Key.Key_Meta: keys.META,
+KEYMAP = {
+    QtCore.Qt.Key_Shift: keys.SHIFT,
+    QtCore.Qt.Key_Control: keys.CONTROL,
+    QtCore.Qt.Key_Alt: keys.ALT,
+    QtCore.Qt.Key_AltGr: keys.ALT,
+    QtCore.Qt.Key_Meta: keys.META,
 
-        QtCore.Qt.Key.Key_Left: keys.LEFT,
-        QtCore.Qt.Key.Key_Up: keys.UP,
-        QtCore.Qt.Key.Key_Right: keys.RIGHT,
-        QtCore.Qt.Key.Key_Down: keys.DOWN,
-        QtCore.Qt.Key.Key_PageUp: keys.PAGEUP,
-        QtCore.Qt.Key.Key_PageDown: keys.PAGEDOWN,
+    QtCore.Qt.Key_Left: keys.LEFT,
+    QtCore.Qt.Key_Up: keys.UP,
+    QtCore.Qt.Key_Right: keys.RIGHT,
+    QtCore.Qt.Key_Down: keys.DOWN,
+    QtCore.Qt.Key_PageUp: keys.PAGEUP,
+    QtCore.Qt.Key_PageDown: keys.PAGEDOWN,
 
-        QtCore.Qt.Key.Key_Insert: keys.INSERT,
-        QtCore.Qt.Key.Key_Delete: keys.DELETE,
-        QtCore.Qt.Key.Key_Home: keys.HOME,
-        QtCore.Qt.Key.Key_End: keys.END,
+    QtCore.Qt.Key_Insert: keys.INSERT,
+    QtCore.Qt.Key_Delete: keys.DELETE,
+    QtCore.Qt.Key_Home: keys.HOME,
+    QtCore.Qt.Key_End: keys.END,
 
-        QtCore.Qt.Key.Key_Escape: keys.ESCAPE,
-        QtCore.Qt.Key.Key_Backspace: keys.BACKSPACE,
+    QtCore.Qt.Key_Escape: keys.ESCAPE,
+    QtCore.Qt.Key_Backspace: keys.BACKSPACE,
 
-        QtCore.Qt.Key.Key_F1: keys.F1,
-        QtCore.Qt.Key.Key_F2: keys.F2,
-        QtCore.Qt.Key.Key_F3: keys.F3,
-        QtCore.Qt.Key.Key_F4: keys.F4,
-        QtCore.Qt.Key.Key_F5: keys.F5,
-        QtCore.Qt.Key.Key_F6: keys.F6,
-        QtCore.Qt.Key.Key_F7: keys.F7,
-        QtCore.Qt.Key.Key_F8: keys.F8,
-        QtCore.Qt.Key.Key_F9: keys.F9,
-        QtCore.Qt.Key.Key_F10: keys.F10,
-        QtCore.Qt.Key.Key_F11: keys.F11,
-        QtCore.Qt.Key.Key_F12: keys.F12,
+    QtCore.Qt.Key_F1: keys.F1,
+    QtCore.Qt.Key_F2: keys.F2,
+    QtCore.Qt.Key_F3: keys.F3,
+    QtCore.Qt.Key_F4: keys.F4,
+    QtCore.Qt.Key_F5: keys.F5,
+    QtCore.Qt.Key_F6: keys.F6,
+    QtCore.Qt.Key_F7: keys.F7,
+    QtCore.Qt.Key_F8: keys.F8,
+    QtCore.Qt.Key_F9: keys.F9,
+    QtCore.Qt.Key_F10: keys.F10,
+    QtCore.Qt.Key_F11: keys.F11,
+    QtCore.Qt.Key_F12: keys.F12,
 
-        QtCore.Qt.Key.Key_Space: keys.SPACE,
-        QtCore.Qt.Key.Key_Enter: keys.ENTER,
-        QtCore.Qt.Key.Key_Return: keys.ENTER,
-        QtCore.Qt.Key.Key_Tab: keys.TAB,
-    }
-else:
-    KEYMAP = {
-        QtCore.Qt.Key_Shift: keys.SHIFT,
-        QtCore.Qt.Key_Control: keys.CONTROL,
-        QtCore.Qt.Key_Alt: keys.ALT,
-        QtCore.Qt.Key_AltGr: keys.ALT,
-        QtCore.Qt.Key_Meta: keys.META,
-
-        QtCore.Qt.Key_Left: keys.LEFT,
-        QtCore.Qt.Key_Up: keys.UP,
-        QtCore.Qt.Key_Right: keys.RIGHT,
-        QtCore.Qt.Key_Down: keys.DOWN,
-        QtCore.Qt.Key_PageUp: keys.PAGEUP,
-        QtCore.Qt.Key_PageDown: keys.PAGEDOWN,
-
-        QtCore.Qt.Key_Insert: keys.INSERT,
-        QtCore.Qt.Key_Delete: keys.DELETE,
-        QtCore.Qt.Key_Home: keys.HOME,
-        QtCore.Qt.Key_End: keys.END,
-
-        QtCore.Qt.Key_Escape: keys.ESCAPE,
-        QtCore.Qt.Key_Backspace: keys.BACKSPACE,
-
-        QtCore.Qt.Key_F1: keys.F1,
-        QtCore.Qt.Key_F2: keys.F2,
-        QtCore.Qt.Key_F3: keys.F3,
-        QtCore.Qt.Key_F4: keys.F4,
-        QtCore.Qt.Key_F5: keys.F5,
-        QtCore.Qt.Key_F6: keys.F6,
-        QtCore.Qt.Key_F7: keys.F7,
-        QtCore.Qt.Key_F8: keys.F8,
-        QtCore.Qt.Key_F9: keys.F9,
-        QtCore.Qt.Key_F10: keys.F10,
-        QtCore.Qt.Key_F11: keys.F11,
-        QtCore.Qt.Key_F12: keys.F12,
-
-        QtCore.Qt.Key_Space: keys.SPACE,
-        QtCore.Qt.Key_Enter: keys.ENTER,
-        QtCore.Qt.Key_Return: keys.ENTER,
-        QtCore.Qt.Key_Tab: keys.TAB,
-    }
-if PYQT6_API:
-    BUTTONMAP = {
-        QtCore.Qt.MouseButton.NoButton: 0,
-        QtCore.Qt.MouseButton.LeftButton: 1,
-        QtCore.Qt.MouseButton.RightButton: 2,
-        QtCore.Qt.MouseButton.MiddleButton: 3,
-        QtCore.Qt.MouseButton.BackButton: 4,
-        QtCore.Qt.MouseButton.ForwardButton: 5
-    }
-else:
-    BUTTONMAP = {0: 0, 1: 1, 2: 2, 4: 3, 8: 4, 16: 5}
+    QtCore.Qt.Key_Space: keys.SPACE,
+    QtCore.Qt.Key_Enter: keys.ENTER,
+    QtCore.Qt.Key_Return: keys.ENTER,
+    QtCore.Qt.Key_Tab: keys.TAB,
+}
+BUTTONMAP = {0: 0, 1: 1, 2: 2, 4: 3, 8: 4, 16: 5}
 
 
 # Properly log Qt messages
@@ -238,7 +173,7 @@ def message_handler(*args):
 
     if qt_lib in ("pyqt4", "pyside"):
         msg_type, msg = args
-    elif qt_lib in ("pyqt5", "pyqt6", "pyside2", "pyside6"):  # Is this correct for pyside2?
+    elif qt_lib in ("pyqt5", "pyside2", "pyside6"):  # Is this correct for pyside2?
         msg_type, context, msg = args
     elif qt_lib:
         raise RuntimeError("Invalid value for qt_lib %r." % qt_lib)
@@ -271,13 +206,13 @@ def use_shared_contexts():
 
     """
     forced_env_var = os.getenv('VISPY_PYQT5_SHARE_CONTEXT', 'false').lower() == 'true'
-    return not (QT5_NEW_API or PYSIDE6_API or PYQT6_API) or forced_env_var
+    return not (QT5_NEW_API or QT6_NEW_API) or forced_env_var
 
 
 try:
     QtCore.qInstallMsgHandler(message_handler)
 except AttributeError:
-    QtCore.qInstallMessageHandler(message_handler)  # PyQt5, PyQt6
+    QtCore.qInstallMessageHandler(message_handler)  # PyQt5
 
 
 # -------------------------------------------------------------- capability ---
@@ -307,13 +242,10 @@ def _set_config(c):
     glformat.setGreenBufferSize(c['green_size'])
     glformat.setBlueBufferSize(c['blue_size'])
     glformat.setAlphaBufferSize(c['alpha_size'])
-    if QT5_NEW_API or PYSIDE6_API:
+    if QT5_NEW_API or QT6_NEW_API:
         # Qt5 >= 5.4.0 - below options automatically enabled if nonzero.
         glformat.setSwapBehavior(glformat.DoubleBuffer if c['double_buffer']
                                  else glformat.SingleBuffer)
-    elif PYQT6_API:
-        glformat.setSwapBehavior(
-            glformat.SwapBehavior.DoubleBuffer if c['double_buffer'] else glformat.SwapBehavior.SingleBuffer)
     else:
         # Qt4 and Qt5 < 5.4.0 - buffers must be explicitly requested.
         glformat.setAccum(False)
@@ -337,11 +269,9 @@ class ApplicationBackend(BaseApplicationBackend):
     def __init__(self):
         BaseApplicationBackend.__init__(self)
         # sharing is currently buggy and causes segmentation faults for tests with PyQt 5.6
-        if (QT5_NEW_API or PYSIDE6_API) and use_shared_contexts():
+        if (QT5_NEW_API or QT6_NEW_API) and use_shared_contexts():
             # For Qt5 >= 5.4.0 - Enable sharing of context between windows.
             QApplication.setAttribute(QtCore.Qt.AA_ShareOpenGLContexts, True)
-        elif PYQT6_API and use_shared_contexts():
-            QApplication.setAttribute(QtCore.Qt.ApplicationAttribute.AA_ShareOpenGLContexts, True)
 
     def _vispy_get_backend_name(self):
         name = QtCore.__name__.split('.')[0]
@@ -389,9 +319,8 @@ def _get_qpoint_pos(pos):
 class QtBaseCanvasBackend(BaseCanvasBackend):
     """Base functionality of Qt backend. No OpenGL Stuff."""
 
-    # args are for BaseCanvasBackend, kwargs are for us.
-    def __init__(self, *args, **kwargs):
-        BaseCanvasBackend.__init__(self, *args)
+    def __init__(self, vispy_canvas, **kwargs):
+        BaseCanvasBackend.__init__(self, vispy_canvas)
         # Maybe to ensure that exactly all arguments are passed?
         p = self._process_backend_kwargs(kwargs)
         self._initialized = False
@@ -443,12 +372,8 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
         # problems on Ubuntu computers with touchscreen.
         # See https://github.com/vispy/vispy/pull/1143
         if sys.platform == 'darwin':
-            if PYQT6_API:
-                self.setAttribute(QtCore.Qt.WidgetAttribute.WA_AcceptTouchEvents)
-                self.grabGesture(QtCore.Qt.GestureType.PinchGesture)
-            else:
-                self.setAttribute(QtCore.Qt.WA_AcceptTouchEvents)
-                self.grabGesture(QtCore.Qt.PinchGesture)
+            self.setAttribute(QtCore.Qt.WA_AcceptTouchEvents)
+            self.grabGesture(QtCore.Qt.PinchGesture)
 
     def screen_changed(self, new_screen):
         """Window moved from one display to another, resize canvas.
@@ -527,14 +452,9 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
     def mousePressEvent(self, ev):
         if self._vispy_canvas is None:
             return
-        if hasattr(ev, 'pos'):
-            posx, posy = ev.pos().x(), ev.pos().y()
-        else:
-            # Compatibility for PySide6 / PyQt6
-            posx, posy = ev.position().x(), ev.position().y()
         self._vispy_mouse_press(
             native=ev,
-            pos=(posx, posy),
+            pos=(ev.pos().x(), ev.pos().y()),
             button=BUTTONMAP.get(ev.button(), 0),
             modifiers=self._modifiers(ev),
         )
@@ -542,14 +462,9 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
     def mouseReleaseEvent(self, ev):
         if self._vispy_canvas is None:
             return
-        if hasattr(ev, 'pos'):
-            posx, posy = ev.pos().x(), ev.pos().y()
-        else:
-            # Compatibility for PySide6 / PyQt6
-            posx, posy = ev.position().x(), ev.position().y()
         self._vispy_mouse_release(
             native=ev,
-            pos=(posx, posy),
+            pos=(ev.pos().x(), ev.pos().y()),
             button=BUTTONMAP[ev.button()],
             modifiers=self._modifiers(ev),
         )
@@ -557,14 +472,9 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
     def mouseDoubleClickEvent(self, ev):
         if self._vispy_canvas is None:
             return
-        if hasattr(ev, 'pos'):
-            posx, posy = ev.pos().x(), ev.pos().y()
-        else:
-            # Compatibility for PySide6 / PyQt6
-            posx, posy = ev.position().x(), ev.position().y()
         self._vispy_mouse_double_click(
             native=ev,
-            pos=(posx, posy),
+            pos=(ev.pos().x(), ev.pos().y()),
             button=BUTTONMAP.get(ev.button(), 0),
             modifiers=self._modifiers(ev),
         )
@@ -572,14 +482,9 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
     def mouseMoveEvent(self, ev):
         if self._vispy_canvas is None:
             return
-        if hasattr(ev, 'pos'):
-            posx, posy = ev.pos().x(), ev.pos().y()
-        else:
-            # Compatibility for PySide6 / PyQt6
-            posx, posy = ev.position().x(), ev.position().y()
         self._vispy_mouse_move(
             native=ev,
-            pos=(posx, posy),
+            pos=(ev.pos().x(), ev.pos().y()),
             modifiers=self._modifiers(ev),
         )
 
@@ -594,13 +499,13 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
             else:
                 deltay = ev.delta() / 120.0
         else:
-            # PyQt5 / PyQt6
+            # PyQt5
             delta = ev.angleDelta()
             deltax, deltay = delta.x() / 120.0, delta.y() / 120.0
         if hasattr(ev, 'pos'):
             posx, posy = ev.pos().x(), ev.pos().y()
         else:
-            # Compatibility for PySide6 / PyQt6
+            # Compatibility for PySide6
             posx, posy = ev.position().x(), ev.position().y()
         # Emit event
         self._vispy_canvas.events.mouse_wheel(
@@ -619,26 +524,13 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
     def event(self, ev):
         out = super(QtBaseCanvasBackend, self).event(ev)
         t = ev.type()
-        if PYQT6_API:
-            touch_begin = QtCore.QEvent.Type.TouchBegin
-            touch_end = QtCore.QEvent.Type.TouchEnd
-            touch_update = QtCore.QEvent.Type.TouchUpdate
-            gesture = QtCore.QEvent.Type.Gesture
-            pinch_gesture = QtCore.Qt.GestureType.PinchGesture
-        else:
-            touch_begin = QtCore.QEvent.TouchBegin
-            touch_end = QtCore.QEvent.TouchEnd
-            touch_update = QtCore.QEvent.TouchUpdate
-            gesture = QtCore.QEvent.Gesture
-            pinch_gesture = QtCore.Qt.PinchGesture
-
         # Two-finger pinch.
-        if t == touch_begin:
+        if (t == QtCore.QEvent.TouchBegin):
             self._vispy_canvas.events.touch(type='begin')
-        if t == touch_end:
+        if (t == QtCore.QEvent.TouchEnd):
             self._vispy_canvas.events.touch(type='end')
-        if t == gesture:
-            gesture = ev.gesture(pinch_gesture)
+        if (t == QtCore.QEvent.Gesture):
+            gesture = ev.gesture(QtCore.Qt.PinchGesture)
             if gesture:
                 (x, y) = _get_qpoint_pos(gesture.centerPoint())
                 scale = gesture.scaleFactor()
@@ -655,7 +547,7 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
                     total_scale_factor=gesture.totalScaleFactor(),
                 )
         # General touch event.
-        elif t == touch_update:
+        elif (t == QtCore.QEvent.TouchUpdate):
             points = ev.touchPoints()
             # These variables are lists of (x, y) coordinates.
             pos = [_get_qpoint_pos(p.pos()) for p in points]
@@ -682,20 +574,12 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
         # Convert the QT modifier state into a tuple of active modifier keys.
         mod = ()
         qtmod = event.modifiers()
-        if PYQT6_API:
-            for q, v in ([QtCore.Qt.KeyboardModifier.ShiftModifier, keys.SHIFT],
-                         [QtCore.Qt.KeyboardModifier.ControlModifier, keys.CONTROL],
-                         [QtCore.Qt.KeyboardModifier.AltModifier, keys.ALT],
-                         [QtCore.Qt.KeyboardModifier.MetaModifier, keys.META]):
-                if q & qtmod:
-                    mod += (v,)
-        else:
-            for q, v in ([QtCore.Qt.ShiftModifier, keys.SHIFT],
-                         [QtCore.Qt.ControlModifier, keys.CONTROL],
-                         [QtCore.Qt.AltModifier, keys.ALT],
-                         [QtCore.Qt.MetaModifier, keys.META]):
-                if q & qtmod:
-                    mod += (v,)
+        for q, v in ([QtCore.Qt.ShiftModifier, keys.SHIFT],
+                     [QtCore.Qt.ControlModifier, keys.CONTROL],
+                     [QtCore.Qt.AltModifier, keys.ALT],
+                     [QtCore.Qt.MetaModifier, keys.META]):
+            if q & qtmod:
+                mod += (v,)
         return mod
 
 
@@ -738,33 +622,18 @@ class CanvasBackendEgl(QtBaseCanvasBackend, QWidget):
         # Init widget
         if p.always_on_top or not p.decorate:
             hint = 0
-            if PYQT6_API:
-                hint |= 0 if p.decorate else QtCore.Qt.WindowType.FramelessWindowHint
-                hint |= QtCore.Qt.WindowType.WindowStaysOnTopHint if p.always_on_top else 0
-            else:
-                hint |= 0 if p.decorate else QtCore.Qt.FramelessWindowHint
-                hint |= QtCore.Qt.WindowStaysOnTopHint if p.always_on_top else 0
+            hint |= 0 if p.decorate else QtCore.Qt.FramelessWindowHint
+            hint |= QtCore.Qt.WindowStaysOnTopHint if p.always_on_top else 0
         else:
-            if PYQT6_API:
-                hint = QtCore.Qt.WindowType.Widget  # can also be a window type
-            else:
-                hint = QtCore.Qt.Widget  # can also be a window type
-
+            hint = QtCore.Qt.Widget  # can also be a window type
         QWidget.__init__(self, p.parent, hint)
 
         if 0:  # IS_LINUX or IS_RPI:
             self.setAutoFillBackground(False)
-            if PYQT6_API:
-                self.setAttribute(QtCore.Qt.WidgetAttribute.WA_NoSystemBackground, True)
-                self.setAttribute(QtCore.Qt.WidgetAttribute.WA_OpaquePaintEvent, True)
-            else:
-                self.setAttribute(QtCore.Qt.WA_NoSystemBackground, True)
-                self.setAttribute(QtCore.Qt.WA_OpaquePaintEvent, True)
+            self.setAttribute(QtCore.Qt.WA_NoSystemBackground, True)
+            self.setAttribute(QtCore.Qt.WA_OpaquePaintEvent, True)
         elif IS_WIN:
-            if PYQT6_API:
-                self.setAttribute(QtCore.Qt.WidgetAttribute.WA_PaintOnScreen, True)
-            else:
-                self.setAttribute(QtCore.Qt.WA_PaintOnScreen, True)
+            self.setAttribute(QtCore.Qt.WA_PaintOnScreen, True)
             self.setAutoFillBackground(False)
 
         # Init surface
@@ -880,18 +749,11 @@ class CanvasBackendDesktop(QtBaseCanvasBackend, QGLWidget):
 
         if p.always_on_top or not p.decorate:
             hint = 0
-            if PYQT6_API:
-                hint |= 0 if p.decorate else QtCore.Qt.WindowType.FramelessWindowHint
-                hint |= QtCore.Qt.WindowType.WindowStaysOnTopHint if p.always_on_top else 0
-            else:
-                hint |= 0 if p.decorate else QtCore.Qt.FramelessWindowHint
-                hint |= QtCore.Qt.WindowStaysOnTopHint if p.always_on_top else 0
+            hint |= 0 if p.decorate else QtCore.Qt.FramelessWindowHint
+            hint |= QtCore.Qt.WindowStaysOnTopHint if p.always_on_top else 0
         else:
-            if PYQT6_API:
-                hint = QtCore.Qt.WindowType.Widget  # can also be a window type
-            else:
-                hint = QtCore.Qt.Widget  # can also be a window type
-        if QT5_NEW_API or PYSIDE6_API or PYQT6_API:
+            hint = QtCore.Qt.Widget  # can also be a window type
+        if QT5_NEW_API or QT6_NEW_API:
             # Qt5 >= 5.4.0 - sharing is automatic
             QGLWidget.__init__(self, p.parent, hint)
 
@@ -916,22 +778,19 @@ class CanvasBackendDesktop(QtBaseCanvasBackend, QGLWidget):
 
         self.setFormat(glformat)
         self._initialized = True
-        if not QT5_NEW_API and not PYSIDE6_API and not PYQT6_API and not self.isValid():
+        if not QT5_NEW_API and not QT6_NEW_API and not self.isValid():
             # On Qt5 >= 5.4.0, isValid is only true once the widget is shown
             raise RuntimeError('context could not be created')
-        if not QT5_NEW_API and not PYSIDE6_API and not PYQT6_API:
+        if not QT5_NEW_API and not QT6_NEW_API:
             # to make consistent with other backends
             self.setAutoBufferSwap(False)
-        if PYQT6_API:
-            self.setFocusPolicy(QtCore.Qt.FocusPolicy.WheelFocus)
-        else:
-            self.setFocusPolicy(QtCore.Qt.WheelFocus)
+        self.setFocusPolicy(QtCore.Qt.WheelFocus)
 
     def _vispy_close(self):
         # Force the window or widget to shut down
         self.close()
         self.doneCurrent()
-        if not QT5_NEW_API and not PYSIDE6_API and not PYQT6_API:
+        if not QT5_NEW_API and not QT6_NEW_API:
             self.context().reset()
         if self._vispy_canvas is not None:
             self._vispy_canvas.app.process_events()
@@ -947,14 +806,14 @@ class CanvasBackendDesktop(QtBaseCanvasBackend, QGLWidget):
         # Swap front and back buffer
         if self._vispy_canvas is None:
             return
-        if QT5_NEW_API or PYSIDE6_API or PYQT6_API:
+        if QT5_NEW_API or QT6_NEW_API:
             ctx = self.context()
             ctx.swapBuffers(ctx.surface())
         else:
             self.swapBuffers()
 
     def _vispy_get_fb_bind_location(self):
-        if QT5_NEW_API or PYSIDE6_API or PYQT6_API:
+        if QT5_NEW_API or QT6_NEW_API:
             return self.defaultFramebufferObject()
         else:
             return QtBaseCanvasBackend._vispy_get_fb_bind_location(self)
@@ -988,7 +847,7 @@ class CanvasBackendDesktop(QtBaseCanvasBackend, QGLWidget):
         # Clear the alpha channel with QOpenGLWidget (Qt >= 5.4), otherwise the
         # window is translucent behind non-opaque objects.
         # Reference:  MRtrix3/mrtrix3#266
-        if QT5_NEW_API or PYSIDE6_API or PYQT6_API:
+        if QT5_NEW_API or QT6_NEW_API:
             context = self._vispy_canvas.context
             context.set_color_mask(False, False, False, True)
             context.clear(color=True, depth=False, stencil=False)
