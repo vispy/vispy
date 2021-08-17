@@ -7,19 +7,19 @@ About this technique
 --------------------
 
 In Python, we define the six faces of a cuboid to draw, as well as
-texture cooridnates corresponding with the vertices of the cuboid. 
+texture cooridnates corresponding with the vertices of the cuboid.
 The back faces of the cuboid are drawn (and front faces are culled)
-because only the back faces are visible when the camera is inside the 
+because only the back faces are visible when the camera is inside the
 volume.
 
-In the vertex shader, we intersect the view ray with the near and far 
+In the vertex shader, we intersect the view ray with the near and far
 clipping planes. In the fragment shader, we use these two points to
 compute the ray direction and then compute the position of the front
 cuboid surface (or near clipping plane) along the view ray.
 
 Next we calculate the number of steps to walk from the front surface
 to the back surface and iterate over these positions in a for-loop.
-At each iteration, the fragment color or other voxel information is 
+At each iteration, the fragment color or other voxel information is
 updated depending on the selected rendering method.
 
 It is important for the texture interpolation is 'linear' for most volumes,
@@ -34,6 +34,8 @@ The ray is expressed in coordinates local to the volume (i.e. texture
 coordinates).
 
 """
+from functools import lru_cache
+
 from ._scalable_textures import CPUScaledTexture3D, GPUScaledTextured3D
 from ..gloo import VertexBuffer, IndexBuffer
 from ..gloo.texture import should_cast_to_f32
@@ -62,7 +64,7 @@ varying vec4 v_farpos;
 void main() {
     // v_texcoord = a_texcoord;
     v_position = a_position;
-    
+
     // Project local vertex coordinate to camera position. Then do a step
     // backward (in cam coords) and project back. Voila, we get our ray vector.
     vec4 pos_in_cam = $viewtransformf(vec4(v_position, 1));
@@ -70,11 +72,11 @@ void main() {
     // intersection of ray and near clipping plane (z = -1 in clip coords)
     pos_in_cam.z = -pos_in_cam.w;
     v_nearpos = $viewtransformi(pos_in_cam);
-    
+
     // intersection of ray and far clipping plane (z = +1 in clip coords)
     pos_in_cam.z = pos_in_cam.w;
     v_farpos = $viewtransformi(pos_in_cam);
-    
+
     gl_Position = $transform(vec4(v_position, 1.0));
 }
 """  # noqa
@@ -137,10 +139,10 @@ vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
     // Calculate color by incorporating lighting
     vec4 color1;
     vec4 color2;
-    
+
     // View direction
     vec3 V = normalize(view_ray);
-    
+
     // calculate normal vector from gradient
     vec3 N; // normal
     color1 = $sample( u_volumetex, loc+vec3(-step[0],0.0,0.0) );
@@ -157,22 +159,22 @@ vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
     betterColor = max(max(color1, color2),betterColor);
     float gm = length(N); // gradient magnitude
     N = normalize(N);
-    
+
     // Flip normal so it points towards viewer
     float Nselect = float(dot(N,V) > 0.0);
     N = (2.0*Nselect - 1.0) * N;  // ==  Nselect * N - (1.0-Nselect)*N;
-    
+
     // Get color of the texture (albeido)
     color1 = betterColor;
     color2 = color1;
     // todo: parametrise color1_to_color2
-    
+
     // Init colors
     vec4 ambient_color = vec4(0.0, 0.0, 0.0, 0.0);
     vec4 diffuse_color = vec4(0.0, 0.0, 0.0, 0.0);
     vec4 specular_color = vec4(0.0, 0.0, 0.0, 0.0);
     vec4 final_color;
-    
+
     // todo: allow multiple light, define lights on viewvox or subscene
     int nlights = 1; 
     for (int i=0; i<nlights; i++)
@@ -181,25 +183,25 @@ vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
         vec3 L = normalize(view_ray);  //lightDirs[i]; 
         float lightEnabled = float( length(L) > 0.0 );
         L = normalize(L+(1.0-lightEnabled));
-        
+
         // Calculate lighting properties
         float lambertTerm = clamp( dot(N,L), 0.0, 1.0 );
         vec3 H = normalize(L+V); // Halfway vector
         float specularTerm = pow( max(dot(H,N),0.0), u_shininess);
-        
+
         // Calculate mask
         float mask1 = lightEnabled;
-        
+
         // Calculate colors
         ambient_color +=  mask1 * u_ambient;  // * gl_LightSource[i].ambient;
         diffuse_color +=  mask1 * lambertTerm;
         specular_color += mask1 * specularTerm * u_specular;
     }
-    
+
     // Calculate final color by componing different components
     final_color = color2 * ( ambient_color + diffuse_color) + specular_color;
     final_color.a = color2.a;
-    
+
     // Done
     return final_color;
 }
@@ -252,20 +254,34 @@ void main() {
     // datasets. Ugly, but it works ...
     vec3 loc = start_loc;
     int iter = 0;
+    
+    // Keep track of whether texture has been sampled
+    int texture_sampled = 0;
+    
     while (iter < nsteps) {
         for (iter=iter; iter<nsteps; iter++)
         {
-            // Get sample color
-            vec4 color = $sample(u_volumetex, loc);
-            float val = color.r;
+            // Only sample volume if loc is not clipped by clipping planes
+            float is_shown = $clip_by_planes(loc, u_shape);
+            if (is_shown >= 0)
+            {
+                // Get sample color
+                vec4 color = $sample(u_volumetex, loc);
+                float val = color.r;
+                texture_sampled = 1;
 
-            $in_loop
-
+                $in_loop
+            }
             // Advance location deeper into the volume
             loc += step;
         }
     }
-
+    
+    // discard fragment if texture not sampled
+    if ( texture_sampled != 1 ) {
+        discard;
+    }
+    
     $after_loop
 
     /* Set depth value - from visvis TODO
@@ -282,7 +298,6 @@ void main() {
 
 
 """  # noqa
-
 
 RAYCASTING_SETUP_VOLUME = """
     // Compute the distance to the front surface or near clipping plane
@@ -369,7 +384,6 @@ MIP_SNIPPETS = dict(
         """,
 )
 
-
 ATTENUATED_MIP_SNIPPETS = dict(
     before_loop="""
         float maxval = -99999.0; // The maximum encountered value
@@ -391,7 +405,6 @@ ATTENUATED_MIP_SNIPPETS = dict(
         gl_FragColor = applyColormap(maxval);
         """,
 )
-
 
 MINIP_SNIPPETS = dict(
     before_loop="""
@@ -417,7 +430,6 @@ MINIP_SNIPPETS = dict(
         """,
 )
 
-
 TRANSLUCENT_SNIPPETS = dict(
     before_loop="""
         vec4 integrated_color = vec4(0., 0., 0., 0.);
@@ -427,27 +439,25 @@ TRANSLUCENT_SNIPPETS = dict(
             float a1 = integrated_color.a;
             float a2 = color.a * (1 - a1);
             float alpha = max(a1 + a2, 0.001);
-            
+
             // Doesn't work.. GLSL optimizer bug?
-            //integrated_color = (integrated_color * a1 / alpha) + 
-            //                   (color * a2 / alpha); 
+            //integrated_color = (integrated_color * a1 / alpha) +
+            //                   (color * a2 / alpha);
             // This should be identical but does work correctly:
             integrated_color *= a1 / alpha;
             integrated_color += color * a2 / alpha;
-            
+
             integrated_color.a = alpha;
-            
+
             if( alpha > 0.99 ){
                 // stop integrating if the fragment becomes opaque
                 iter = nsteps;
             }
-        
         """,
     after_loop="""
         gl_FragColor = integrated_color;
         """,
 )
-
 
 ADDITIVE_SNIPPETS = dict(
     before_loop="""
@@ -455,14 +465,13 @@ ADDITIVE_SNIPPETS = dict(
         """,
     in_loop="""
         color = applyColormap(val);
-        
+
         integrated_color = 1.0 - (1.0 - integrated_color) * (1.0 - color);
         """,
     after_loop="""
         gl_FragColor = integrated_color;
         """,
 )
-
 
 ISO_SNIPPETS = dict(
     before_loop="""
@@ -508,7 +517,6 @@ AVG_SNIPPETS = dict(
         gl_FragColor = applyColormap(meanval);
         """,
 )
-
 
 frag_dict = {
     'mip': MIP_SNIPPETS,
@@ -612,7 +620,7 @@ class VolumeVisual(Visual):
                  attenuation=1.0, relative_step_size=0.8, cmap='grays',
                  gamma=1.0, interpolation='linear', texture_format=None,
                  raycasting_mode='volume', plane_position=None,
-                 plane_normal=None, plane_thickness=1.0):
+                 plane_normal=None, plane_thickness=1.0, clipping_planes=None):
         # Storage of information of volume
         self._vol_shape = ()
         self._gamma = gamma
@@ -651,7 +659,7 @@ class VolumeVisual(Visual):
         self._draw_mode = 'triangle_strip'
         self._index_buffer = IndexBuffer()
 
-        # Only show back faces of cuboid. This is required because if we are 
+        # Only show back faces of cuboid. This is required because if we are
         # inside the volume, then the front faces are outside of the clipping
         # box and will not be drawn.
         self.set_gl_state('translucent', cull_face=False)
@@ -676,6 +684,8 @@ class VolumeVisual(Visual):
         else:
             self.plane_normal = plane_normal
         self.plane_thickness = plane_thickness
+
+        self.clipping_planes = clipping_planes
 
         self.freeze()
 
@@ -813,6 +823,54 @@ class VolumeVisual(Visual):
             self._interpolation = interp
             self._texture.interpolation = self._interpolation
             self.update()
+
+    @staticmethod
+    @lru_cache(maxsize=10)
+    def _build_clipping_planes_func(n_planes):
+        """Build the code snippet used to clip the volume based on self.clipping_planes."""
+        func = Function(
+            '$vars\nfloat clip_planes(vec3 loc, vec3 vol_shape) { float is_shown = 1.0; $clips; return is_shown; }')
+        # each plane is defined by a position and a normal vector
+        # the fragment is considered clipped if on the "negative" side of the plane
+        vars_template = '''
+            uniform vec3 u_clipping_plane_pos{idx};
+            uniform vec3 u_clipping_plane_norm{idx};
+            '''
+        clip_template = '''
+            vec3 relative_vec{idx} = loc - ( u_clipping_plane_pos{idx} / vol_shape );
+            float is_shown{idx} = dot(relative_vec{idx}, u_clipping_plane_norm{idx});
+            is_shown = min(is_shown{idx}, is_shown);
+            '''
+        all_vars = []
+        all_clips = []
+        for idx in range(n_planes):
+            all_vars.append(vars_template.format(idx=idx))
+            all_clips.append(clip_template.format(idx=idx))
+        func['vars'] = ''.join(all_vars)
+        func['clips'] = ''.join(all_clips)
+        return func
+
+    @property
+    def clipping_planes(self):
+        """Get the set of planes used to clip the volume.
+
+        Each plane is defined by a position and a normal vector (magnitude is irrelevant). Shape: (n_planes, 2, 3)
+        """
+        return self._clipping_planes[:, :, ::-1]
+
+    @clipping_planes.setter
+    def clipping_planes(self, value):
+        if value is None:
+            value = np.empty([0, 2, 3])
+        value = value[:, :, ::-1]
+        self._clipping_planes = value
+
+        self.shared_program.frag['clip_by_planes'] = self._build_clipping_planes_func(len(value))
+
+        for idx, plane in enumerate(value):
+            self.shared_program[f'u_clipping_plane_pos{idx}'] = tuple(plane[0])
+            self.shared_program[f'u_clipping_plane_norm{idx}'] = tuple(plane[1])
+        self.update()
 
     @property
     def _before_loop_snippet(self):
