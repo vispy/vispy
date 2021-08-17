@@ -151,9 +151,8 @@ class CanvasBackend(BaseCanvasBackend):
     events can be triggered.
     """
 
-    # args are for BaseCanvasBackend, kwargs are for us.
-    def __init__(self, *args, **kwargs):
-        BaseCanvasBackend.__init__(self, *args)
+    def __init__(self, vispy_canvas, **kwargs):
+        BaseCanvasBackend.__init__(self, vispy_canvas)
         # We use _process_backend_kwargs() to "serialize" the kwargs
         # and to check whether they match this backend's capability
         p = self._process_backend_kwargs(kwargs)

@@ -165,12 +165,11 @@ class ApplicationBackend(BaseApplicationBackend):
 
 # ------------------------------------------------------------------ canvas ---
 
-class CanvasBackend(_Window, BaseCanvasBackend):
+class CanvasBackend(BaseCanvasBackend, _Window):
     """Pyglet backend for Canvas abstract class."""
 
-    # args are for BaseCanvasBackend, kwargs are for us.
-    def __init__(self, *args, **kwargs):
-        BaseCanvasBackend.__init__(self, *args)
+    def __init__(self, vispy_canvas, **kwargs):
+        BaseCanvasBackend.__init__(self, vispy_canvas)
         p = self._process_backend_kwargs(kwargs)
 
         # Deal with config
