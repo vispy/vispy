@@ -5,7 +5,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 """
-Example of volume rendering with clipping planes
+Volume rendering with clipping planes
 ================================================
 Controls:
 - x/y/z/o - add new clipping plane with normal along x/y/z or [1,1,1] oblique axis
