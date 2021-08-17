@@ -676,7 +676,7 @@ class VolumeVisual(Visual):
 
         # Set plane params
         if plane_position is None:
-            self.plane_position = np.array(vol.shape) / 2
+            self.plane_position = [x / 2 for x in vol.shape]
         else:
             self.plane_position = plane_position
         if plane_normal is None:
