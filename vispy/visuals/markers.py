@@ -63,6 +63,13 @@ void main()
     // The marker function needs to be linked with this shader
     float r = $marker(gl_PointCoord, size);
 
+    if (r > 0.5*v_edgewidth + v_antialias)
+    {
+        // out of the marker (beyond the outer edge of the edge
+        // including transition zone due to antialiasing)
+        discard;
+    }
+
     // it takes into account an antialising layer
     // of size v_antialias inside the edge
     // r:
@@ -74,13 +81,7 @@ void main()
 
     vec4 edgecolor = vec4(v_fg_color.rgb, edgealphafactor*v_fg_color.a);
 
-    if (r > 0.5*v_edgewidth + v_antialias)
-    {
-        // out of the marker (beyond the outer edge of the edge
-        // including transition zone due to antialiasing)
-        discard;
-    }
-    else if (d < 0.0)
+    if (d < 0.0)
     {
         // inside the width of the edge
         // (core, out of the transition zone for antialiasing)
