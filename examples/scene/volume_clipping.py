@@ -12,12 +12,9 @@ Controls:
 - r - remove a clipping plane
 """
 
-from itertools import cycle
-
 import numpy as np
 
 from vispy import app, scene, io
-from vispy.color import get_colormaps, BaseColormap
 from vispy.visuals.transforms import STTransform
 
 # Read volume
@@ -29,49 +26,24 @@ canvas = scene.SceneCanvas(keys='interactive', size=(800, 600), show=True)
 # Set up a viewbox to display the image with interactive pan/zoom
 view = canvas.central_widget.add_view()
 
-# Set whether we are emulating a 3D texture
-emulate_texture = False
-
-# Create the volume visuals, only one is visible
+# Create the volume visual
 volume = scene.visuals.Volume(vol, parent=view.scene, threshold=0.225)
 volume.transform = scene.STTransform(translate=(64, 64, 0))
 
-# Create three cameras (Fly, Turntable and Arcball)
+# Create and set the camera
 fov = 60.
-cam = scene.cameras.TurntableCamera(parent=view.scene, fov=fov,
-                                    name='Turntable')
-
-view.camera = cam  # Select turntable at first
+cam = scene.cameras.TurntableCamera(
+    parent=view.scene,
+    fov=fov,
+    name='Turntable'
+)
+view.camera = cam
 
 # Create an XYZAxis visual
 axis = scene.visuals.XYZAxis(parent=view)
 s = STTransform(translate=(50, 50), scale=(50, 50, 50, 1))
 affine = s.as_matrix()
 axis.transform = affine
-
-
-# create colormaps that work well for translucent and additive volume rendering
-class TransFire(BaseColormap):
-    glsl_map = """
-    vec4 translucent_fire(float t) {
-        return vec4(pow(t, 0.5), t, t*t, max(0, t*1.05 - 0.05));
-    }
-    """
-
-
-class TransGrays(BaseColormap):
-    glsl_map = """
-    vec4 translucent_grays(float t) {
-        return vec4(t, t, t, t*0.05);
-    }
-    """
-
-
-# Setup colormap iterators
-opaque_cmaps = cycle(get_colormaps())
-translucent_cmaps = cycle([TransFire(), TransGrays()])
-opaque_cmap = next(opaque_cmaps)
-translucent_cmap = next(translucent_cmaps)
 
 
 # Implement axis connection with cam2
@@ -99,6 +71,8 @@ clip_modes = {
 
 
 def add_clip(vol, mode):
+    if mode not in clip_modes:
+        return
     new_plane = clip_modes[mode]
     if vol.clipping_planes is None:
         vol.clipping_planes = new_plane
