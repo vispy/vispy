@@ -71,12 +71,13 @@ clip_modes = {
 
 
 def add_clip(vol, mode):
-    if mode in clip_modes:
-        new_plane = clip_modes[mode]
-        if vol.clipping_planes is None:
-            vol.clipping_planes = new_plane
-        else:
-            vol.clipping_planes = np.concatenate([vol.clipping_planes, new_plane])
+    if mode not in clip_modes:
+        return
+    new_plane = clip_modes[mode]
+    if vol.clipping_planes is None:
+        vol.clipping_planes = new_plane
+    else:
+        vol.clipping_planes = np.concatenate([vol.clipping_planes, new_plane])
 
 
 def remove_clip(vol):
