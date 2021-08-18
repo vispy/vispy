@@ -14,12 +14,6 @@ from ... import config
 USE_EGL = config['gl_backend'].lower().startswith('es')
 
 try:
-    # Make sure no conflicting libraries have been imported.
-    for lib in ['PySide', 'PySide2', 'PySide6', 'PyQt4', 'PyQt5']:
-        lib += '.QtCore'
-        if lib in sys.modules:
-            raise RuntimeError("Refusing to import PyQt6 because %s is "
-                               "already imported." % lib)
     # Try importing (QtOpenGL first to fail without import QtCore)
     if not USE_EGL:
         from PyQt6 import QtOpenGL  # noqa
