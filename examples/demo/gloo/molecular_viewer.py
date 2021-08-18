@@ -116,7 +116,7 @@ class Canvas(app.Canvas):
         self.phi = 0
 
         gloo.set_state(depth_test=True, clear_color='black')
-        self._timer = app.Timer('auto', connect=self.on_timer, start=True)
+        self.timer = app.Timer('auto', connect=self.on_timer, start=True)
 
         self.show()
 
@@ -157,8 +157,6 @@ class Canvas(app.Canvas):
                 self.timer.stop()
             else:
                 self.timer.start()
-        # if event.text == 'A':
-            # self.
 
     def on_timer(self, event):
         self.theta += .25
@@ -169,7 +167,10 @@ class Canvas(app.Canvas):
         self.update()
 
     def on_resize(self, event):
-        width, height = event.size
+        width, height = event.physical_size
+        gloo.set_viewport(0, 0, width, height)
+        self.projection = perspective(25.0, width / float(height), 2.0, 100.0)
+        self.program['u_projection'] = self.projection
 
     def apply_zoom(self):
         width, height = self.physical_size
