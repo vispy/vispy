@@ -5,6 +5,8 @@
 # -----------------------------------------------------------------------------
 """Marker Visual and shader definitions."""
 
+from functools import lru_cache
+
 import numpy as np
 
 from ..color import ColorArray
@@ -28,8 +30,10 @@ varying vec4 v_fg_color;
 varying vec4 v_bg_color;
 varying float v_edgewidth;
 varying float v_antialias;
+varying float v_is_shown;
 
 void main (void) {
+    v_is_shown = $clip_by_planes(a_position);
     $v_size = a_size * u_px_scale * u_scale;
     v_edgewidth = a_edgewidth * float(u_px_scale);
     v_antialias = u_antialias;
@@ -47,9 +51,13 @@ varying vec4 v_fg_color;
 varying vec4 v_bg_color;
 varying float v_edgewidth;
 varying float v_antialias;
+varying float v_is_shown;
 
 void main()
 {
+    // Discard if clipped by clipping planes
+    if (v_is_shown < 0.)
+        discard;
     // Discard plotting marker body and edge if zero-size
     if ($v_size <= 0.)
         discard;
@@ -484,7 +492,7 @@ marker_types = tuple(sorted(list(_marker_dict.keys())))
 class MarkersVisual(Visual):
     """Visual displaying marker symbols."""
 
-    def __init__(self, **kwargs):
+    def __init__(self, clipping_planes=None, **kwargs):
         self._vbo = VertexBuffer()
         self._v_size_var = Variable('varying float v_size')
         self._symbol = None
@@ -500,11 +508,12 @@ class MarkersVisual(Visual):
         self._draw_mode = 'points'
         if len(kwargs) > 0:
             self.set_data(**kwargs)
+        self.clipping_planes = clipping_planes
         self.freeze()
 
     def set_data(self, pos=None, symbol='o', size=10., edge_width=1.,
                  edge_width_rel=None, edge_color='black', face_color='white',
-                 scaling=False):
+                 scaling=False, clipping_planes=None):
         """Set the data used to display this visual.
 
         Parameters
@@ -544,6 +553,7 @@ class MarkersVisual(Visual):
                 raise ValueError('edge_width_rel cannot be negative')
         self.symbol = symbol
         self.scaling = scaling
+        self.clipping_planes = clipping_planes
 
         edge_color = ColorArray(edge_color).rgba
         if len(edge_color) == 1:
@@ -582,6 +592,54 @@ class MarkersVisual(Visual):
                 self._vbo.set_data(data)
                 self.shared_program.bind(self._vbo)
 
+        self.update()
+
+    @staticmethod
+    @lru_cache(maxsize=10)
+    def _build_clipping_planes_func(n_planes):
+        """Build the code snippet used to clip the markers based on self.clipping_planes."""
+        func = Function(
+            '$vars\nfloat clip_planes(vec3 loc) { float is_shown = 1.0; $clips; return is_shown; }')
+        # each plane is defined by a position and a normal vector
+        # the marker is considered clipped if on the "negative" side of the plane
+        vars_template = '''
+            uniform vec3 u_clipping_plane_pos{idx};
+            uniform vec3 u_clipping_plane_norm{idx};
+            '''
+        clip_template = '''
+            vec3 relative_vec{idx} = loc - ( u_clipping_plane_pos{idx} );
+            float is_shown{idx} = dot(relative_vec{idx}, u_clipping_plane_norm{idx});
+            is_shown = min(is_shown{idx}, is_shown);
+            '''
+        all_vars = []
+        all_clips = []
+        for idx in range(n_planes):
+            all_vars.append(vars_template.format(idx=idx))
+            all_clips.append(clip_template.format(idx=idx))
+        func['vars'] = ''.join(all_vars)
+        func['clips'] = ''.join(all_clips)
+        return func
+
+    @property
+    def clipping_planes(self):
+        """Get the set of planes used to clip the markers.
+
+        Each plane is defined by a position and a normal vector (magnitude is irrelevant). Shape: (n_planes, 2, 3)
+        """
+        return self._clipping_planes[:, :, ::-1]
+
+    @clipping_planes.setter
+    def clipping_planes(self, value):
+        if value is None:
+            value = np.empty([0, 2, 3])
+        value = value[:, :, ::-1]
+        self._clipping_planes = value
+
+        self.shared_program.vert['clip_by_planes'] = self._build_clipping_planes_func(len(value))
+
+        for idx, plane in enumerate(value):
+            self.shared_program[f'u_clipping_plane_pos{idx}'] = tuple(plane[0])
+            self.shared_program[f'u_clipping_plane_norm{idx}'] = tuple(plane[1])
         self.update()
 
     @property
