@@ -15,7 +15,7 @@ from functools import partial
 
 from ..util import use_log_level, run_subprocess
 from ..util.ptime import time
-from ._testing import has_application, nottest
+from ._testing import has_application, nottest, IS_CI, IS_TRAVIS_CI
 
 
 _line_sep = '-' * 70
@@ -240,7 +240,7 @@ with canvas as c:
 """
 
 bad_examples = []
-if os.getenv('TRAVIS', 'false') == 'true' and sys.platform == 'darwin':
+if IS_TRAVIS_CI and sys.platform == 'darwin':
     # example scripts that contain non-ascii text
     # seem to fail on Travis OSX
     bad_examples = [
@@ -249,17 +249,17 @@ if os.getenv('TRAVIS', 'false') == 'true' and sys.platform == 'darwin':
         'examples/demo/gloo/high_frequency.py',
         'examples/basics/scene/shared_context.py',
     ]
-elif 'true' in (os.getenv('TRAVIS', ''),
-                os.getenv('GITHUB_ACTIONS', '')) and 'linux' in sys.platform:
+elif IS_CI and 'linux' in sys.platform:
     # example scripts that contain non-ascii text
     # seem to fail on Travis OSX
     bad_examples = [
         'examples/basics/scene/shared_context.py',
     ]
-if 'true' in (os.getenv('TRAVIS', ''), os.getenv('GITHUB_ACTIONS', '')):
+if IS_CI:
     # OpenGL >2.0 that fail on Travis
     bad_examples += [
-        'examples/basics/gloo/geometry_shader.py'
+        'examples/basics/gloo/geometry_shader.py',
+        'examples/gloo/geometry_shader.py',
     ]
 
 

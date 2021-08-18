@@ -165,7 +165,7 @@ class SceneCanvas(app.Canvas, Frozen):
     @property
     def central_widget(self):
         """Returns the default widget that occupies the entire area of the
-        canvas. 
+        canvas.
         """
         if self._central_widget is None:
             self._central_widget = Widget(size=self.size, parent=self.scene)
@@ -223,11 +223,11 @@ class SceneCanvas(app.Canvas, Frozen):
         Parameters
         ----------
         region : tuple | None
-            Specifies the region of the canvas to render. Format is 
+            Specifies the region of the canvas to render. Format is
             (x, y, w, h). By default, the entire canvas is rendered.
         size : tuple | None
-            Specifies the size of the image array to return. If no size is 
-            given, then the size of the *region* is used, multiplied by the 
+            Specifies the size of the image array to return. If no size is
+            given, then the size of the *region* is used, multiplied by the
             pixel scaling factor of the canvas (see `pixel_scale`). This
             argument allows the scene to be rendered at resolutions different
             from the native canvas resolution.
@@ -245,7 +245,7 @@ class SceneCanvas(app.Canvas, Frozen):
         Returns
         -------
         image : array
-            Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the 
+            Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
             upper-left corner of the rendered region. If ``alpha`` is ``False``,
             then only 3 channels will be returned (RGB).
 
@@ -255,7 +255,7 @@ class SceneCanvas(app.Canvas, Frozen):
         offset = (0, 0) if region is None else region[:2]
         csize = self.size if region is None else region[2:]
         s = self.pixel_scale
-        size = tuple([x * s for x in csize]) if size is None else size
+        size = tuple([int(x * s) for x in csize]) if size is None else size
         fbo = gloo.FrameBuffer(color=gloo.RenderBuffer(size[::-1]),
                                depth=gloo.RenderBuffer(size[::-1]))
 
@@ -476,7 +476,7 @@ class SceneCanvas(app.Canvas, Frozen):
         return [v for v in visuals if v is not None]
 
     def _render_picking(self, crop):
-        """Render the scene in picking mode, returning a 2D array of visual 
+        """Render the scene in picking mode, returning a 2D array of visual
         IDs in the area specified by crop.
 
         Parameters
@@ -570,7 +570,7 @@ class SceneCanvas(app.Canvas, Frozen):
 
         This activates the framebuffer and causes subsequent rendering to be
         written to the framebuffer rather than the canvas's back buffer. This
-        will also set the canvas viewport to cover the boundaries of the 
+        will also set the canvas viewport to cover the boundaries of the
         framebuffer.
 
         Parameters
@@ -581,7 +581,7 @@ class SceneCanvas(app.Canvas, Frozen):
             The location of the fbo origin relative to the canvas's framebuffer
             origin.
         csize : tuple
-            The size of the region in the canvas's framebuffer that should be 
+            The size of the region in the canvas's framebuffer that should be
             covered by this framebuffer object.
         """
         self._fb_stack.append((fbo, offset, csize))
@@ -617,7 +617,7 @@ class SceneCanvas(app.Canvas, Frozen):
             return self._fb_stack[-1]
 
     def _update_transforms(self):
-        """Update the canvas's TransformSystem to correct for the current 
+        """Update the canvas's TransformSystem to correct for the current
         canvas size, framebuffer, and viewport.
         """
         if len(self._fb_stack) == 0:

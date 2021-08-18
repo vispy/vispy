@@ -178,7 +178,11 @@ extensions = [Extension('vispy.visuals.text._sdf_cpu',
 readme = open('README.rst', 'r').read()
 setup(
     name=name,
-    use_scm_version={'write_to': 'vispy/version.py'},
+    use_scm_version={
+        'write_to': 'vispy/version.py',
+        # uses setuptools_scm.version.get_local_dirty_tag (+dirty or empty string)
+        'local_scheme': 'dirty-tag',
+    },
     author='Vispy contributors',
     author_email='vispy@googlegroups.com',
     license='(new) BSD',

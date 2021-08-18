@@ -20,6 +20,10 @@ from ..util.check_environment import has_backend
 
 skipif = pytest.mark.skipif
 
+IS_TRAVIS_CI = "true" in os.getenv("TRAVIS", "")
+IS_GITHUB_ACTIONS = "true" in os.getenv("GITHUB_ACTIONS", "")
+IS_CI = IS_TRAVIS_CI or IS_GITHUB_ACTIONS
+
 
 def SkipTest(*args, **kwargs):
     """Backport for raising SkipTest that gives a better traceback."""

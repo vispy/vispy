@@ -155,8 +155,7 @@ class _CoreColorBarVisual(Visual):
 
         self.shared_program['a_position'] = vertices
 
-        self.shared_program['texture2D_LUT'] = self._cmap.texture_lut() \
-            if (hasattr(self._cmap, 'texture_lut')) else None
+        self.shared_program['texture2D_LUT'] = self._cmap.texture_lut()
 
     @staticmethod
     def _get_orientation_error(orientation):

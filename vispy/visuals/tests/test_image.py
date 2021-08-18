@@ -3,7 +3,7 @@ from unittest import mock
 
 from vispy.scene.visuals import Image
 from vispy.testing import (requires_application, TestingCanvas,
-                           run_tests_if_main)
+                           run_tests_if_main, IS_CI)
 from vispy.testing.image_tester import assert_image_approved, downsample
 
 import numpy as np
@@ -23,6 +23,11 @@ def test_image(is_3d):
         np.random.seed(379823)
         data = np.random.rand(*shape)
         image.set_data(data)
+        assert_image_approved(c.render(), "visuals/image%s.png" %
+                              ("_rgb" if is_3d else "_mono"))
+
+        # change to auto clims after first draw
+        image.clim = "auto"
         assert_image_approved(c.render(), "visuals/image%s.png" %
                               ("_rgb" if is_3d else "_mono"))
 
@@ -118,6 +123,75 @@ def test_image_clims_and_gamma(input_dtype, texture_format, num_channels,
         image.gamma = 2
         rendered3 = downsample(c.render(), shape_ratio, axis=(0, 1)).astype(_dtype)
         compare_render(scaled_data ** 2, rendered3, rendered2, atol=gamma_atol)
+
+
+@pytest.mark.xfail(IS_CI, reason="CI environments sometimes treat NaN as 0")
+@requires_application()
+@pytest.mark.parametrize('texture_format', [None, 'auto'])
+def test_image_nan_single_band(texture_format):
+    size = (40, 40)
+    data = np.ones((40, 40))
+    data[:5, :5] = np.nan
+    data[:5, -5:] = 0
+
+    expected = (np.ones((40, 40, 4)) * 255).astype(np.uint8)
+    # black square
+    expected[:5, -5:, :3] = 0
+    if texture_format is None:
+        # CPU scaling's NaNs get converted to 0s
+        expected[:5, :5, :3] = 0
+    else:
+        # GPU receives NaNs
+        # nan - transparent square
+        expected[:5, :5, 0] = 0
+        expected[:5, :5, 1] = 255  # match the 'green' background
+        expected[:5, :5, 2] = 0
+
+    with TestingCanvas(size=size[::-1], bgcolor=(0, 1, 0)) as c:
+        Image(data, cmap='grays',
+              texture_format=texture_format, parent=c.scene)
+        rendered = c.render()
+        np.testing.assert_allclose(rendered, expected)
+
+
+@requires_application()
+@pytest.mark.parametrize('num_bands', [3, 4])
+@pytest.mark.parametrize('texture_format', [None, 'auto'])
+def test_image_nan_rgb(texture_format, num_bands):
+    size = (40, 40)
+    data = np.ones((40, 40, num_bands))
+    data[:5, :5, :3] = np.nan  # upper left - RGB all NaN
+    data[:5, 20:25, 0] = np.nan  # upper middle - R NaN
+    data[:5, -5:, :3] = 0  # upper right - opaque RGB black square
+    data[-5:, -5:, :] = np.nan  # lower right RGBA all NaN
+    if num_bands == 4:
+        data[-5:, :5, 3] = np.nan  # lower left - Alpha NaN
+
+    expected = (np.ones((40, 40, 4)) * 255).astype(np.uint8)
+    # upper left - NaN goes to opaque black
+    expected[:5, :5, :3] = 0
+    # upper middle -> NaN R goes to 0
+    expected[:5, 20:25, 0] = 0
+    # upper right - opaque RGB black square
+    expected[:5, -5:, :3] = 0
+    # lower right - NaN RGB/A goes to 0
+    # RGBA case - we see the green background behind the image
+    expected[-5:, -5:, 0] = 0
+    expected[-5:, -5:, 2] = 0
+    if num_bands == 3:
+        # RGB case - opaque black because Alpha defaults 1
+        expected[-5:, -5:, 1] = 0
+    # lower left - NaN Alpha goes to 0
+    if num_bands == 4:
+        # see the green background behind the image
+        expected[-5:, :5, 0] = 0
+        expected[-5:, :5, 2] = 0
+
+    with TestingCanvas(size=size[::-1], bgcolor=(0, 1, 0)) as c:
+        Image(data, cmap='grays',
+              texture_format=texture_format, parent=c.scene)
+        rendered = c.render()
+        np.testing.assert_allclose(rendered, expected)
 
 
 @requires_application()

@@ -15,6 +15,7 @@ from .shaders import Function, FunctionChain
 from ..gloo import VertexBuffer
 from ..geometry import MeshData
 from ..color import Color, get_colormap
+from ..color.colormap import CubeHelixColormap
 from ..util.event import Event
 
 
@@ -135,7 +136,7 @@ class MeshVisual(Visual):
 
         # Define buffers
         self._vertices = VertexBuffer(np.zeros((0, 3), dtype=np.float32))
-        self._cmap = get_colormap('cubehelix')
+        self._cmap = CubeHelixColormap()
         self._clim = 'auto'
 
         # Uniform color
@@ -326,8 +327,7 @@ class MeshVisual(Visual):
 
         self.shared_program.vert['position'] = self._vertices
 
-        self.shared_program['texture2D_LUT'] = self._cmap.texture_lut() \
-            if (hasattr(self._cmap, 'texture_lut')) else None
+        self.shared_program['texture2D_LUT'] = self._cmap.texture_lut()
 
         # Position input handling
         if v.shape[-1] == 2:

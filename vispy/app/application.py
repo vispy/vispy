@@ -149,7 +149,15 @@ class Application(object):
             immediately and rely on the interpreter's input loop to be run
             after script execution.
         """
-        if allow_interactive and self.is_interactive():
+        if os.getenv("_VISPY_RUNNING_GALLERY_EXAMPLES"):
+            # Custom sphinx-gallery scraper in doc/conf.py will handle
+            # rendering/running the application. To make example scripts look
+            # like what a user actually has to run to view the window, we let
+            # them run "app.run()" but immediately return here.
+            # Without this the application would block until someone closed the
+            # window that opens.
+            return 0
+        elif allow_interactive and self.is_interactive():
             inputhook.set_interactive(enabled=True, app=self)
         else:
             return self._backend._vispy_run()
@@ -190,7 +198,7 @@ class Application(object):
             backend_name = test_name.lower()
             assert backend_name in BACKENDMAP
         elif self.is_notebook():
-            backend_name = 'ipynb_webgl'
+            backend_name = 'jupyter_rfb'
 
         # Should we try and load any backend, or just this specific one?
         try_others = backend_name is None
