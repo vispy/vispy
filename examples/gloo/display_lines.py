@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# vispy: gallery 2
+# vispy: gallery 2:50:5
 """
 Draw a bunch of lines
 =====================
@@ -88,7 +88,7 @@ class Canvas(app.Canvas):
         self.context.set_clear_color('white')
         self.context.set_state('translucent')
 
-        self.timer = app.Timer('auto', connect=self.on_timer)
+        self.timer = app.Timer('auto', connect=self.on_timer, start=True)
 
         self.show()
 

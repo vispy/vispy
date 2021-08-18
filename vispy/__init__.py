@@ -26,20 +26,6 @@ except ImportError:
 
 from .util import config, set_log_level, keys, sys_info  # noqa
 from .util.wrappers import use, test  # noqa
-# load the two functions that IPython uses to instantiate an extension
-# that way, the user only needs to run %load_ext vispy.ipython rather that
-# %load_ext vispy.ipython.ipython
-from .ipython import load_ipython_extension, unload_ipython_extension  # noqa
-
-
-# Allow for Jupyter extension to be enabled
-def _jupyter_nbextension_paths():
-    return [{
-        'section': 'notebook',
-        'src': 'static',
-        'dest': 'vispy',
-        'require': 'vispy/extension'
-    }]
 
 
 def _get_sg_image_scraper():

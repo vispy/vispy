@@ -66,8 +66,8 @@ Structure of VisPy
 Currently, the main subpackages are:
 
 -  **app**: integrates an event system and offers a unified interface on
-   top of many window backends (Qt4, wx, glfw, IPython notebook
-   with/without WebGL, and others). Relatively stable API.
+   top of many window backends (Qt4, wx, glfw, jupyter notebook,
+   and others). Relatively stable API.
 -  **gloo**: a Pythonic, object-oriented interface to OpenGL. Relatively
    stable API.
 -  **scene**: this is the system underlying our upcoming high level

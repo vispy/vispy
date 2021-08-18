@@ -10,7 +10,7 @@ import builtins
 import os
 import sys
 
-from . import backends, inputhook
+from . import backends
 from .backends import CORE_BACKENDS, BACKEND_NAMES, BACKENDMAP, TRIED_BACKENDS
 from .. import config
 from .base import BaseApplicationBackend as ApplicationBackend  # noqa
@@ -78,7 +78,6 @@ class Application(object):
 
         This is used to reduce
         CPU stress when VisPy is run in interactive mode.
-        see inputhook.py for details
 
         Parameters
         ----------
@@ -157,9 +156,7 @@ class Application(object):
             # Without this the application would block until someone closed the
             # window that opens.
             return 0
-        elif allow_interactive and self.is_interactive():
-            inputhook.set_interactive(enabled=True, app=self)
-        else:
+        elif not allow_interactive or not self.is_interactive():
             return self._backend._vispy_run()
 
     def reuse(self):
