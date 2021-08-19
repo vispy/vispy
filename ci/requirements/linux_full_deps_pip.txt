@@ -1,2 +1,2 @@
 pyopengltk
-jupyter-rfb
+jupyter_rfb
