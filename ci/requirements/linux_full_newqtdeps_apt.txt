@@ -10,6 +10,8 @@ libxkbcommon-x11-dev
 libxcb1
 libxcb1-dev
 libxcb-randr0
+libxcb-render-util0
+libxcb-xinerama0
 libxcb-icccm4-dev
 libxcb-image0-dev
 libxcb-keysyms1
