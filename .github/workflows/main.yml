@@ -225,7 +225,7 @@ jobs:
         environment-file: ./ci/requirements/py${{ steps.vars.outputs.python_version }}.yml
     - name: Install conda-dependencies
       run: |
-        if [ "${{ matrix.new_qt }}" == 'true' ]
+        if [ "${{ matrix.new_qt }}" == 'true' ]; then
           micromamba install -y python=${{ matrix.python_version }} -f ci/requirements/linux_${{ matrix.deps }}_newqtdeps_conda.txt -c conda-forge
         else
           micromamba install -y python=${{ matrix.python_version }} -f ci/requirements/linux_${{ matrix.deps }}_deps_conda.txt -c conda-forge
