@@ -167,18 +167,27 @@ jobs:
             python_version: "3.7"
             deps: "min"
             test: "standard"
+            new_qt: false
           - test_number: 2
             python_version: "3.7"
             deps: "full"
             test: "standard"
+            new_qt: false
           - test_number: 3
             python_version: "3.7"
             deps: "full"
             test: "examples"
+            new_qt: false
           - test_number: 4
             python_version: "3.7"
             deps: "osmesa"
             test: "osmesa"
+            new_qt: false
+          - test_number: 5
+            python_version: "3.9"
+            deps: "full"
+            test: "standard"
+            new_qt: true
     steps:
     - uses: actions/checkout@v2
       with:
@@ -216,11 +225,19 @@ jobs:
         environment-file: ./ci/requirements/py${{ steps.vars.outputs.python_version }}.yml
     - name: Install conda-dependencies
       run: |
-        micromamba install -y python=${{ matrix.python_version }} -f ci/requirements/linux_${{ matrix.deps }}_deps_conda.txt -c conda-forge
+        if [ "${{ matrix.new_qt }}" == 'true' ]
+          micromamba install -y python=${{ matrix.python_version }} -f ci/requirements/linux_${{ matrix.deps }}_newqtdeps_conda.txt -c conda-forge
+        else
+          micromamba install -y python=${{ matrix.python_version }} -f ci/requirements/linux_${{ matrix.deps }}_deps_conda.txt -c conda-forge
+        fi
     - name: Install pip-dependencies
       run: |
         if [ "${{ matrix.deps }}" == 'full' ]; then
-          pip install -r ci/requirements/linux_full_deps_pip.txt
+          if [ "${{ matrix.new_qt }}" == 'true' ]; then
+            pip install -r ci/requirements/linux_full_newqtdeps_pip.txt
+          else
+            pip install -r ci/requirements/linux_full_deps_pip.txt
+          fi
           rm -rf vispy/ext/_bundled
         fi
     - name: Install vispy
