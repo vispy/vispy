@@ -256,7 +256,6 @@ jobs:
           export OSMESA_LIBRARY=~/micromamba/envs/vispy-tests/lib/libOSMesa32.so;
           export VISPY_GL_LIB=$OSMESA_LIBRARY
         fi
-        export QT_DEBUG_PLUGINS=1
         micromamba list
         python -c "import vispy; print(vispy.version.version)"
         python -c "import vispy; print(vispy.sys_info())"

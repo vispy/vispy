@@ -5,10 +5,8 @@ libglfw3-dev
 libgles2-mesa-dev
 libsdl2-2.0-0
 mesa-utils
-libxkbcommon
-libxkbcommon-x11
-libxcb-icccm4
-libxcb-image0
-libegl1
-libegl-dev
+libxkbcommon-dev
+libxkbcommon-x11-dev
+libxcb-icccm4-dev
+libxcb-image0-dev
 libegl1-mesa
