@@ -20,8 +20,8 @@ pytest-sugar
 pyopengl
 scikit-image
 scipy
-six
 networkx
 hsluv
 kiwisolver
 sphinx-gallery
+jupyter-rfb

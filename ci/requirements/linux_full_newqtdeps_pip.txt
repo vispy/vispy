@@ -1,6 +1,2 @@
-husl
-pypng
-cassowary
 pyopengltk
-jupyter_rfb
 pyqt6
