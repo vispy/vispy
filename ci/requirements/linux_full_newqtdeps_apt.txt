@@ -11,3 +11,4 @@ libxcb-icccm4
 libxcb-image0
 libegl1
 libegl-dev
+libegl1-mesa
