@@ -24,4 +24,3 @@ networkx
 hsluv
 kiwisolver
 sphinx-gallery
-jupyter-rfb
