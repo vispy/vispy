@@ -330,7 +330,9 @@ class ApplicationBackend(BaseApplicationBackend):
         if hasattr(app, '_in_event_loop') and app._in_event_loop:
             pass  # Already in event loop
         else:
-            return app.exec_()
+            # app.exec_() for PyQt <=5 and app.exec() for PyQt >=5
+            exec_func = app.exec if hasattr(app, "exec") else app.exec_
+            return exec_func()
 
     def _vispy_quit(self):
         return self._vispy_get_native_app().quit()
