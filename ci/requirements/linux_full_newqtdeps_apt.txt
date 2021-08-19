@@ -10,3 +10,4 @@ libxkbcommon-x11
 libxcb-icccm4
 libxcb-image0
 libegl1
+libegl-dev
