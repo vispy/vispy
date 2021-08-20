@@ -924,7 +924,7 @@ class TimerBackend(BaseTimerBackend, QtCore.QTimer):
         self.timeout.connect(self._vispy_timeout)
 
     def _vispy_start(self, interval):
-        self.start(interval * 1000.)
+        self.start(int(interval * 1000))
 
     def _vispy_stop(self):
         self.stop()

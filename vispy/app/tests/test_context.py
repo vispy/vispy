@@ -69,7 +69,7 @@ def test_context_sharing():
         check()
 
         # pyqt5 does not currently support context sharing
-        if 'pyqt5' in c1.app.backend_name.lower():
+        if 'pyqt5' in c1.app.backend_name.lower() or 'pyqt6' in c1.app.backend_name.lower():
             pytest.xfail("Context sharing is not supported in PyQt5 at this time.")
 
         # Tkinter does not currently support context sharing
