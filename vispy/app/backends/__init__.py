@@ -31,7 +31,6 @@ CORE_BACKENDS = [
 # Whereas core backends really represents libraries that can create a
 # canvas, the pseudo backends act more like a proxy.
 PSEUDO_BACKENDS = [
-    # ('ipynb_static', '_ipynb_static', None),
     ('jupyter_rfb', '_jupyter_rfb', None),
     ('_test', '_test', 'vispy.app.backends._test'),  # add one that will fail
 ]
