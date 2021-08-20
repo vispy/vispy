@@ -224,6 +224,15 @@ vec3 intersectLinePlane(vec3 linePosition,
     return linePosition + ( scaleFactor * lineVector );
 }
 
+
+float calculate_depth_from_point(vec3 point, vec3 nearpos, vec3 farpos) {
+    float clip_distance = length(farpos - nearpos);
+    float point_dist = length(point - nearpos);
+    float depth = point_dist / clip_distance;
+    return depth;
+
+}
+
 // for some reason, this has to be the last function in order for the
 // filters to be inserted in the correct place...
 
@@ -254,7 +263,7 @@ void main() {
     // datasets. Ugly, but it works ...
     vec3 loc = start_loc;
     int iter = 0;
-    
+    vec3 surface_point;
     // Keep track of whether texture has been sampled
     int texture_sampled = 0;
     
@@ -283,7 +292,14 @@ void main() {
     }
     
     $after_loop
-
+    
+    if (surface_found == 1) {
+        // if a surface was found, use it to set the depth buffer
+        vec4 position2 = vec4(surface_point, 1);
+        vec4 iproj = $viewtransformf(position2);
+        iproj.z /= iproj.w;
+        gl_FragDepth = (iproj.z+1.0)/2.0;
+    }
     /* Set depth value - from visvis TODO
     int iter_depth = int(maxi);
     // Calculate end position in world coordinates
@@ -311,7 +327,7 @@ RAYCASTING_SETUP_VOLUME = """
 
     // Now we have the starting position on the front surface
     vec3 front = v_position + view_ray * distance;
-
+    
     // Decide how many steps to take
     int nsteps = int(-distance / u_relative_step_size + 0.5);
     float f_nsteps = float(nsteps);
@@ -478,6 +494,7 @@ ISO_SNIPPETS = dict(
         vec4 color3 = vec4(0.0);  // final color
         vec3 dstep = 1.5 / u_shape;  // step to sample derivative
         gl_FragColor = vec4(0.0);
+        int surface_found = 0;
     """,
     in_loop="""
         if (val > u_threshold-0.2) {
@@ -488,6 +505,11 @@ ISO_SNIPPETS = dict(
                 if (color.r > u_threshold) {
                     color = calculateColor(color, iloc, dstep);
                     gl_FragColor = applyColormap(color.r);
+
+                    // set the variables for the depth buffer                            
+                    surface_point = iloc * u_shape;
+                    surface_found = 1;
+
                     iter = nsteps;
                     break;
                 }
@@ -496,6 +518,11 @@ ISO_SNIPPETS = dict(
         }
         """,
     after_loop="""
+
+        if (surface_found < 1) {
+            discard;
+        }
+
         """,
 )
 
@@ -1120,6 +1147,9 @@ class VolumeVisual(Visual):
         view_tr_i = view_tr_f.inverse
         view.view_program.vert['viewtransformf'] = view_tr_f
         view.view_program.vert['viewtransformi'] = view_tr_i
+        view.view_program.frag['viewtransformf'] = view_tr_f
+
+
 
     def _prepare_draw(self, view):
         if self._need_vertex_update:
