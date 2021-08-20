@@ -1,5 +1,23 @@
 # Release Notes
 
+## [v0.8.0](https://github.com/vispy/vispy/tree/v0.8.0) (2021-08-20)
+
+**Enhancements:**
+
+- Add PyQt6 backend [\#2172](https://github.com/vispy/vispy/pull/2172) ([mars0001](https://github.com/mars0001))
+- Remove 'VNC' backend [\#2164](https://github.com/vispy/vispy/pull/2164) ([almarklein](https://github.com/almarklein))
+- Refactor texture\_lut\(\) Colormap method to BaseColormap for cleaner usage [\#2160](https://github.com/vispy/vispy/pull/2160) ([almarklein](https://github.com/almarklein))
+- Rendering arbitrary planes in the `VolumeVisual` [\#2149](https://github.com/vispy/vispy/pull/2149) ([alisterburt](https://github.com/alisterburt))
+- Switch examples and website gallery to sphinx-gallery [\#2148](https://github.com/vispy/vispy/pull/2148) ([djhoese](https://github.com/djhoese))
+- Add "jupyter\_rfb" backend for inline Jupyter Notebook/Lab display [\#2142](https://github.com/vispy/vispy/pull/2142) ([almarklein](https://github.com/almarklein))
+- Migrate from string formatting to template \($\) variables in VolumeVisual shaders [\#2117](https://github.com/vispy/vispy/pull/2117) ([brisvag](https://github.com/brisvag))
+- Add clipping planes to `VolumeVisual` [\#2116](https://github.com/vispy/vispy/pull/2116) ([brisvag](https://github.com/brisvag))
+
+**Fixed bugs:**
+
+- Fix volume\_plane.py example not having a toggle for the animation [\#2179](https://github.com/vispy/vispy/pull/2179) ([djhoese](https://github.com/djhoese))
+- Fix minor bug in volume\_clipping.py example [\#2175](https://github.com/vispy/vispy/pull/2175) ([kevinyamauchi](https://github.com/kevinyamauchi))
+
 ## [v0.7.3](https://github.com/vispy/vispy/tree/v0.7.3) (2021-07-21)
 
 **Fixed bugs:**
