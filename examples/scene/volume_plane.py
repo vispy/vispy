@@ -13,6 +13,7 @@ Controls:
 * 2 -  toggle between volume rendering modes ('volume', 'plane')
 * [] - shift plane along plane normal
 * {} - decrease/increase plane thickness
+* Spacebar - stop/start animation
 
 * x/y/z/o - set plane normal along x/y/z or [1,1,1] oblique axis
 """
@@ -113,7 +114,6 @@ def on_key_press(event):
         elif event.text == ']':
             plane.plane_position += 2 * shift
         print(f"plane position: {plane.plane_position}")
-
     elif event.text == 'x':
         plane.plane_normal = [0, 0, 1]
     elif event.text == 'y':
@@ -122,6 +122,11 @@ def on_key_press(event):
         plane.plane_normal = [1, 0, 0]
     elif event.text == 'o':
         plane.plane_normal = [1, 1, 1]
+    elif event.text == ' ':
+        if timer.running:
+            timer.stop()
+        else:
+            timer.start()
 
 
 def move_plane(event):
