@@ -1,1 +1,0 @@
-../../scene/isocurve_updates.py

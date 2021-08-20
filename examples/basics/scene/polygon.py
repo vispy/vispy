@@ -1,1 +1,0 @@
-../../scene/polygon.py

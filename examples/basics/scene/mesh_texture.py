@@ -1,1 +1,0 @@
-../../scene/mesh_texture.py

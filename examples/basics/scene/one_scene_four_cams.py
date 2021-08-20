@@ -1,1 +1,0 @@
-../../scene/one_scene_four_cams.py

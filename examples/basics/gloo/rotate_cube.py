@@ -1,1 +1,0 @@
-../../gloo/rotate_cube.py
