@@ -98,6 +98,7 @@ setup(
         'ipython-static': ['ipython'],
         'pyglet': ['pyglet>=1.2'],
         'pyqt5': ['pyqt5'],
+        'pyqt6': ['pyqt6'],
         'pyside': ['PySide'],
         'pyside2': ['PySide2'],
         'pyside6': ['PySide6'],

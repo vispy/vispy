@@ -15,6 +15,7 @@ imported. This stuff is mostly used in the Application.use method.
 CORE_BACKENDS = [
     ('PyQt4', '_pyqt4', 'PyQt4'),
     ('PyQt5', '_pyqt5', 'PyQt5'),
+    ('PyQt6', '_pyqt6', 'PyQt6'),
     ('PySide', '_pyside', 'PySide'),
     ('PySide2', '_pyside2', 'PySide2'),
     ('PySide6', '_pyside6', 'PySide6'),

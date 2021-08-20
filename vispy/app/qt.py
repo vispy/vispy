@@ -18,6 +18,9 @@ elif qt_lib == 'pyside':
 elif qt_lib == 'pyqt5':
     from PyQt5 import QtWidgets
     QWidget, QGridLayout = QtWidgets.QWidget, QtWidgets.QGridLayout  # Compat
+elif qt_lib == 'pyqt6':
+    from PyQt6 import QtWidgets
+    QWidget, QGridLayout = QtWidgets.QWidget, QtWidgets.QGridLayout  # Compat
 elif qt_lib == 'pyside2':
     from PySide2 import QtWidgets
     QWidget, QGridLayout = QtWidgets.QWidget, QtWidgets.QGridLayout  # Compat

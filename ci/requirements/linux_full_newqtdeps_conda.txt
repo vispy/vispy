@@ -4,16 +4,14 @@ coveralls
 decorator
 freetype<2.10.0
 freetype-py
-glfw!=3.3.1
 imageio
-jupyter
-matplotlib
+# Do NOT include jupyter as it depends on qtconsole which pulls in PyQt5
+# Do NOT depend on 'matplotlib' as it currently depends on PyQt5
+matplotlib-base
 meshio
 networkx
 numpy
 pillow
-pyqt=5
-pysdl2
 pytest
 pytest-cov
 pytest-sugar
@@ -24,4 +22,3 @@ networkx
 hsluv
 kiwisolver
 sphinx-gallery
-jupyter-rfb
