@@ -1,1 +1,0 @@
-../../gloo/multi_texture.py

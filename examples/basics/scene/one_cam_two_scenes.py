@@ -1,1 +1,0 @@
-../../scene/one_cam_two_scenes.py

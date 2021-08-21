@@ -1,1 +1,0 @@
-../../scene/isosurface.py

@@ -1,1 +1,0 @@
-../../scene/isocurve_for_trisurface.py

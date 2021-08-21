@@ -1,1 +1,0 @@
-../../scene/colorbar_widget.py

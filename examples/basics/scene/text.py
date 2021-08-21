@@ -1,1 +1,0 @@
-../../scene/text.py

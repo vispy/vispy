@@ -1,1 +1,0 @@
-../../gloo/hello_fbo.py
