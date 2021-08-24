@@ -136,10 +136,9 @@ html_theme = 'pydata_sphinx_theme'
 # Tell the theme where the code lives
 html_context = {
     "github_user": "vispy",
-    # "github_repo": "vispy",
-    "github_repo": "vispy-website",
+    "github_repo": "vispy",
     "github_version": "main",
-    "doc_path": "",
+    "doc_path": "doc",
 }
 
 # Theme options are theme-specific and customize the look and feel of a theme

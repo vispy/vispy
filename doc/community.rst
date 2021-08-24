@@ -30,7 +30,7 @@ Community
    .. container:: col-md-4
 
       If you find a problem related to this website, please submit an issue to
-      the `website repository <https://github.com/vispy/vispy-website/issues>`_.
+      the `vispy repository <https://github.com/vispy/vispy/issues>`_.
 
       .. raw:: html
 
