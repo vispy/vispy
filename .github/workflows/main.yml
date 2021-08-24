@@ -109,6 +109,7 @@ jobs:
     - name: Install conda-dependencies
       run: |
         micromamba install -y python=3.9 -f ci/requirements/linux_full_deps_conda.txt -c conda-forge
+        micromamba install -c conda-forge texlive-core
     - name: Install pip dependencies
       run: |
         python -m pip install --upgrade pip
