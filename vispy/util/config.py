@@ -241,9 +241,9 @@ class Config(object):
     """Container for global settings used application-wide in vispy.
 
     Events:
-    -------
-    Config.events.changed - Emits ConfigEvent whenever the configuration
-    changes.
+
+    - Config.events.changed - Emits ConfigEvent whenever the configuration changes.
+
     """
 
     def __init__(self, **kwargs):
