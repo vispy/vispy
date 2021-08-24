@@ -90,7 +90,7 @@ updates to latest ``main``:
 
 .. code-block:: console
 
-   $ git clone --recurse-submodules git://github.com/vispy/vispy.git  # creates "vispy" folder
+   $ git clone git://github.com/vispy/vispy.git  # creates "vispy" folder
    $ cd vispy
    $ python3 setup.py develop
 

@@ -242,25 +242,43 @@ Which will attempt to run all example scripts.
 Sphinx Documentation and Jupyter Widget
 ---------------------------------------
 
-Any contributors wishing to modify the Sphinx Documentation from the VisPy
-repository's "doc" directory or the Jupyter Widget in the "js" directory
-should note that these directories are actually special "git submodules".
-Git submodules are special directories in a git repository that point to
-external git repositories. In the case of "doc", this points to:
+VisPy's documentation website is a `Sphinx <https://www.sphinx-doc.org/>`_
+project stored in the "doc" directory of the repository. To generate the
+documentation run:
 
-https://github.com/vispy/vispy-website
+.. code-block:: bash
 
-In the case of "js", this points to:
+    cd doc
+    make html
 
-https://github.com/vispy/vispy.js/
+Repeated execution of ``make html`` will reuse information from previous runs
+which may be faster, but may also produce incorrect output in specific cases.
+To make sure, you can clean out the build directory by running ``make clean``.
 
-Any modifications that you wish to make to either of these directories
-**MUST** be submitted to their respective repositories first. After they
-are merged in those repositories then you or the VisPy maintainers can
-update the git submodules in the main VisPy repository to point to these
-new versions. Of course, if you have any questions, feel free to ask the
-VisPy maintainers.
+To view the output you can view the build folder in a browser:
 
+.. code-block::
+
+    firefox _build/html/index.html
+
+As part of the documentation generation, the sphinx-gallery project will run
+all of the examples to generate screenshots for the gallery pages. This can
+take a long time and is unnecessary if you aren't modifying the gallery or
+examples. To build the site without generating the gallery run:
+
+.. code-block::
+
+    make html SPHINXOPTS="-D plot_gallery=0"
+
+Jupyter Widget
+--------------
+
+VisPy no longer has a jupyter widget as part of the main VisPy Python
+package. Instead the "jupyter_rfb" package is used through the "jupyter_rfb"
+backend of VisPy. Major changes to this backend will likely need changes to
+the jupyter_rfb library which can be found here:
+
+https://github.com/vispy/jupyter_rfb/
 
 Updating my fork's branch to "main"
 -----------------------------------

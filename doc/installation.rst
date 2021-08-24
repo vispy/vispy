@@ -96,15 +96,10 @@ available in the python environment:
 .. code-block:: console
 
     # creates "vispy" folder
-    git clone --recurse-submodules git://github.com/vispy/vispy.git
+    git clone git://github.com/vispy/vispy.git
     cd vispy
-    # optionally create/initialize 'doc' directories
-    git submodule update --init --recursive
     # install the vispy package in editable/development mode
     pip install -e .
-
-If you have cloned the repository in the past you may need to run the
-submodule command above to initialize any git submodules.
 
 To run the latest development version without cloning the repository, you
 can also use this line:
