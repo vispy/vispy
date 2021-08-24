@@ -651,7 +651,7 @@ class HSL(Colormap):
     saturation and value constant.
 
     Parameters
-    ---------
+    ----------
     n_colors : int, optional
         The number of colors to generate.
     hue_start : int, optional
@@ -691,7 +691,7 @@ class HSLuv(Colormap):
     """A colormap which is defined by n evenly spaced points in the HSLuv space.
 
     Parameters
-    ---------
+    ----------
     n_colors : int, optional
         The number of colors to generate.
     hue_start : int, optional
@@ -764,7 +764,7 @@ class RedYellowBlueCyan(Colormap):
     """A colormap which goes red-yellow positive and blue-cyan negative
 
     Parameters
-    ---------
+    ----------
     limits : array-like, optional
         The limits for the fully transparent, opaque red, and yellow points.
     """
@@ -1106,8 +1106,8 @@ def get_colormap(name, *args, **kwargs):
 
     Examples
     --------
-        >>> get_colormap('autumn')
-        >>> get_colormap('single_hue')
+    >>> get_colormap('autumn')
+    >>> get_colormap('single_hue')
 
     .. versionchanged: 0.7
 

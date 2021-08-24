@@ -555,11 +555,8 @@ class Canvas(object):
     def render(self, alpha=True):
         """Render the canvas to an offscreen buffer and return the image array.
 
-        Returns
-        -------
-        image : array
-            Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
-            upper-left corner of the rendered region.
+        Parameters
+        ----------
         alpha : bool
             If True (default) produce an RGBA array (M, N, 4). If False,
             remove the Alpha channel and return the RGB array (M, N, 3).

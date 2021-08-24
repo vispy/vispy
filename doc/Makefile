@@ -32,6 +32,7 @@ help:
 clean:
 	rm -rf $(BUILDDIR)/*
 	-rm -f *~
+	rm -f api/*.rst
 	rm -rf gallery/gloo
 	rm -rf gallery/scene
 	rm -rf gallery/plotting

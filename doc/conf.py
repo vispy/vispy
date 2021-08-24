@@ -319,8 +319,6 @@ intersphinx_mapping = {
 
 def setup(app):
     # Add custom CSS
-    app.add_css_file('css/font-mfizz.css')
-    app.add_css_file('css/font-awesome.css')
     app.add_css_file('style.css')
 
 # -----------------------------------------------------------------------------

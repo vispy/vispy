@@ -878,9 +878,9 @@ class CanvasBackendDesktop(QtBaseCanvasBackend, QGLWidget):
             # We take into account devicePixelRatio, which is non-unity on
             # e.g HiDPI displays.
             # self.devicePixelRatio() is a float and should have been in Qt5 according to the documentation
-            ratio = int(self.devicePixelRatio())
-            w = w * ratio
-            h = h * ratio
+            ratio = self.devicePixelRatio()
+            w = int(w * ratio)
+            h = int(h * ratio)
         self._vispy_set_physical_size(w, h)
         self._vispy_canvas.events.resize(size=(self.width(), self.height()),
                                          physical_size=(w, h))
