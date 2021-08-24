@@ -32,7 +32,7 @@ def unixTime():
     return systime.time()
 
 
-if sys.platform.startswith('win') and sys.version < '3.3':
+if sys.platform.startswith('win') and (3 > sys.version_info[0] or (3 == sys.version_info[0] and 3 > sys.version_info[1])):
     cstart = systime.clock()  # Required to start the clock in windows
     START_TIME = systime.time() - cstart
 
