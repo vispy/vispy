@@ -10,7 +10,7 @@ cd doc
 
 make clean
 # TODO: Switch to sphinx-multiversion
-make html SPHINXOPTS="-W"
+make html SPHINXOPTS="-W --keep-going"
 touch _build/html/.nojekyll
 
 # move back to source directory so we don't mess with future steps
