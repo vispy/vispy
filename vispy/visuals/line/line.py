@@ -190,6 +190,15 @@ class LineVisual(CompoundVisual):
 
         self.update()
 
+    def clear_data(self):
+        """Clear the data in this visual
+
+        """
+        self._bounds = None
+        self._pos = None
+        self._changed['pos'] = True
+        self.update()
+
     @property
     def color(self):
         return self._color
