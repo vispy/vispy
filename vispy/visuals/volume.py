@@ -255,6 +255,7 @@ void main() {
     vec3 loc = start_loc;
     int iter = 0;
     vec3 surface_point;
+    bool surface_found = false;
     // Keep track of whether texture has been sampled
     int texture_sampled = 0;
     
@@ -284,23 +285,13 @@ void main() {
     
     $after_loop
     
-    if (surface_found == 1) {
+    if (surface_found) {
         // if a surface was found, use it to set the depth buffer
         vec4 position2 = vec4(surface_point, 1);
         vec4 iproj = $viewtransformf(position2);
         iproj.z /= iproj.w;
         gl_FragDepth = (iproj.z+1.0)/2.0;
     }
-    /* Set depth value - from visvis TODO
-    int iter_depth = int(maxi);
-    // Calculate end position in world coordinates
-    vec4 position2 = vertexPosition;
-    position2.xyz += ray*shape*float(iter_depth);
-    // Project to device coordinates and set fragment depth
-    vec4 iproj = gl_ModelViewProjectionMatrix * position2;
-    iproj.z /= iproj.w;
-    gl_FragDepth = (iproj.z+1.0)/2.0;
-    */
 }
 
 
@@ -485,7 +476,6 @@ ISO_SNIPPETS = dict(
         vec4 color3 = vec4(0.0);  // final color
         vec3 dstep = 1.5 / u_shape;  // step to sample derivative
         gl_FragColor = vec4(0.0);
-        int surface_found = 0;
     """,
     in_loop="""
         if (val > u_threshold-0.2) {
@@ -499,7 +489,7 @@ ISO_SNIPPETS = dict(
 
                     // set the variables for the depth buffer                            
                     surface_point = iloc * u_shape;
-                    surface_found = 1;
+                    surface_found = true;
 
                     iter = nsteps;
                     break;
@@ -510,7 +500,7 @@ ISO_SNIPPETS = dict(
         """,
     after_loop="""
 
-        if (surface_found < 1) {
+        if (!surface_found) {
             discard;
         }
 
