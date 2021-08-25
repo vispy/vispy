@@ -12,7 +12,6 @@ from ..gloo import VertexBuffer, _check_valid
 from .shaders import Function, Variable
 from .visual import Visual
 
-
 vert = """
 uniform float u_antialias;
 uniform float u_px_scale;
@@ -30,8 +29,23 @@ varying float v_edgewidth;
 varying float v_antialias;
 
 void main (void) {
-    $v_size = a_size * u_px_scale * u_scale;
-    v_edgewidth = a_edgewidth * float(u_px_scale);
+    // left-right vector in the canvas
+    vec4 vert_on_doc = $viewtransformf(vec4(a_position, 1.0));
+    vec4 shifted_vert_on_doc = vert_on_doc + vec4(100, 0, 0, 0);
+
+    vec4 shifted_vert = $viewtransformi(shifted_vert_on_doc);
+    shifted_vert = (shifted_vert / shifted_vert.w);
+    
+    vec4 shifted_vert_dir = (shifted_vert - vec4(a_position, 1.0)) / 100;
+
+    vec4 lr_vec = normalize(shifted_vert_dir);
+
+    vec4 radius = $viewtransformf(vec4(a_position, 1.0) + lr_vec * a_size);
+    radius = radius/radius.w - vert_on_doc/vert_on_doc.w;
+    float radius_px = length(radius);
+    float size_scale = radius_px / a_size;
+    $v_size = size_scale * a_size;
+    v_edgewidth = size_scale * a_edgewidth;
     v_antialias = u_antialias;
     v_fg_color  = a_fg_color;
     v_bg_color  = a_bg_color;
@@ -40,7 +54,6 @@ void main (void) {
     gl_PointSize = ($v_size) + 4.*(edgewidth + 1.5*v_antialias);
 }
 """
-
 
 frag = """#version 120
 varying vec4 v_fg_color;
@@ -128,7 +141,6 @@ float disc(vec2 pointcoord, float size)
 }
 """
 
-
 arrow = """
 const float sqrt2 = sqrt(2.);
 float rect(vec2 pointcoord, float size)
@@ -142,7 +154,6 @@ float rect(vec2 pointcoord, float size)
     return r/sqrt2;//account for slanted edge and correct for width
 }
 """
-
 
 ring = """
 float ring(vec2 pointcoord, float size)
@@ -178,7 +189,6 @@ float clobber(vec2 pointcoord, float size)
 }
 """
 
-
 square = """
 float square(vec2 pointcoord, float size)
 {
@@ -205,7 +215,6 @@ float x_(vec2 pointcoord, float size)
 }
 """
 
-
 diamond = """
 float diamond(vec2 pointcoord, float size)
 {
@@ -214,7 +223,6 @@ float diamond(vec2 pointcoord, float size)
     return r / sqrt(2.);//account for slanted edge and correct for width
 }
 """
-
 
 vbar = """
 float vbar(vec2 pointcoord, float size)
@@ -251,7 +259,6 @@ float cross(vec2 pointcoord, float size)
 }
 """
 
-
 tailed_arrow = """
 const float sqrt2 = sqrt(2.);
 float rect(vec2 pointcoord, float size)
@@ -284,7 +291,6 @@ float rect(vec2 pointcoord, float size)
 }
 """
 
-
 triangle_up = """
 float rect(vec2 pointcoord, float size)
 {
@@ -316,7 +322,6 @@ float rect(vec2 pointcoord, float size)
     return max(slanted_edges, bottom);
 }
 """
-
 
 star = """
 float rect(vec2 pointcoord, float size)
@@ -567,7 +572,7 @@ class MarkersVisual(Visual):
             if edge_width is not None:
                 data['a_edgewidth'] = edge_width
             else:
-                data['a_edgewidth'] = size*edge_width_rel
+                data['a_edgewidth'] = size * edge_width_rel
             data['a_position'][:, :pos.shape[1]] = pos
             data['a_size'] = size
             self.shared_program['u_antialias'] = self.antialias  # XXX make prop
@@ -614,6 +619,13 @@ class MarkersVisual(Visual):
     def _prepare_transforms(self, view):
         xform = view.transforms.get_transform()
         view.view_program.vert['transform'] = xform
+
+        # add document transforms
+        trs = view.transforms
+        view_tr_f = trs.get_transform('visual', 'framebuffer')
+        view_tr_i = view_tr_f.inverse
+        view.view_program.vert['viewtransformf'] = view_tr_f
+        view.view_program.vert['viewtransformi'] = view_tr_i
 
     def _prepare_draw(self, view):
         if self._symbol is None:
