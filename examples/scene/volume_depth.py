@@ -11,14 +11,10 @@ Render volumes with depth_test
 Controls:
 * p  - toggle camera fov (perspective) between 0 and 60
 """
-
-import sys
-
 import numpy as np
 
 from vispy import app, scene
 from vispy.color import get_colormap
-from vispy.visuals.transforms import STTransform
 
 
 # Prepare canvas
