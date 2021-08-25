@@ -224,15 +224,6 @@ vec3 intersectLinePlane(vec3 linePosition,
     return linePosition + ( scaleFactor * lineVector );
 }
 
-
-float calculate_depth_from_point(vec3 point, vec3 nearpos, vec3 farpos) {
-    float clip_distance = length(farpos - nearpos);
-    float point_dist = length(point - nearpos);
-    float depth = point_dist / clip_distance;
-    return depth;
-
-}
-
 // for some reason, this has to be the last function in order for the
 // filters to be inserted in the correct place...
 
