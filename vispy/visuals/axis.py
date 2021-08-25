@@ -112,7 +112,7 @@ class AxisVisual(CompoundVisual):
         self._stop_at_major = (False, False)
 
         self._anchors = anchors
-        self.ticker = Ticker(self, anchors=self._anchors, label_density=self._tick_density)
+        self.ticker = Ticker(self, anchors=self._anchors, tick_density=self._tick_density)
         self.tick_direction = np.array(tick_direction, float)
         self.scale_type = scale_type
 
@@ -220,7 +220,7 @@ class AxisVisual(CompoundVisual):
     @tick_density.setter
     def tick_density(self, val: bool):
         self._tick_density = val
-        self.ticker = Ticker(self, anchors=self._anchors, label_density=self._tick_density)
+        self.ticker = Ticker(self, anchors=self._anchors, tick_density=self._tick_density)
 
     @updating_property
     def pos(self):
