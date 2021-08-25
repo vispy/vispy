@@ -60,8 +60,8 @@ class AxisVisual(CompoundVisual):
         Text to use for the axis label
     axis_label_margin : float
         Margin between ticks and axis labels
-    labels_density: int
-        Higher number than 1 means less labels
+    tick_density: int
+        Higher number than 1 means more ticks/labels
     axis_font_size : float
         The font size to use for rendering axis labels.
     font_size : float
@@ -89,7 +89,7 @@ class AxisVisual(CompoundVisual):
                  axis_width=3,
                  axis_label=None,
                  axis_label_margin=35,
-                 labels_density=1,
+                 tick_density=1,
                  axis_font_size=10,
                  font_size=None,
                  anchors=None):
@@ -104,7 +104,7 @@ class AxisVisual(CompoundVisual):
 
         self._pos = None
         self._domain = None
-        self._labels_density = labels_density
+        self._tick_density = tick_density
 
         # If True, then axis stops at the first / last major tick.
         # If False, then axis extends to edge of *pos*
@@ -112,7 +112,7 @@ class AxisVisual(CompoundVisual):
         self._stop_at_major = (False, False)
 
         self._anchors = anchors
-        self.ticker = Ticker(self, anchors=self._anchors, label_density=self._labels_density)
+        self.ticker = Ticker(self, anchors=self._anchors, label_density=self._tick_density)
         self.tick_direction = np.array(tick_direction, float)
         self.scale_type = scale_type
 
@@ -214,13 +214,13 @@ class AxisVisual(CompoundVisual):
         """Text to use for the axis label."""
 
     @property
-    def labels_density(self):
-        return self._labels_density
+    def tick_density(self):
+        return self._tick_density
 
-    @labels_density.setter
-    def labels_density(self, val: bool):
-        self._labels_density = val
-        self.ticker = Ticker(self, anchors=self._anchors, label_density=self._labels_density)
+    @tick_density.setter
+    def tick_density(self, val: bool):
+        self._tick_density = val
+        self.ticker = Ticker(self, anchors=self._anchors, label_density=self._tick_density)
 
     @updating_property
     def pos(self):
@@ -301,13 +301,13 @@ class Ticker(object):
     ----------
     axis : instance of AxisVisual
         The AxisVisual to generate ticks for.
-    label_density: int, higher number less labels
+    tick_density: int, higher number more ticks/labels
     """
 
-    def __init__(self, axis, anchors=None, label_density=1):
+    def __init__(self, axis, anchors=None, tick_density=1):
         self.axis = axis
         self._anchors = anchors
-        self._label_density = label_density
+        self._tick_density = tick_density
 
     def get_update(self):
         major_tick_fractions, minor_tick_fractions, tick_labels = \
@@ -409,7 +409,7 @@ class Ticker(object):
             length = self.axis.pos[1] - self.axis.pos[0]  # in logical coords
             n_inches = np.sqrt(np.sum(length ** 2)) / transforms.dpi
 
-            major = _get_ticks_talbot(domain[0], domain[1], n_inches, self._label_density)
+            major = _get_ticks_talbot(domain[0], domain[1], n_inches, self._tick_density)
 
             labels = ['%g' % x for x in major]
             majstep = major[1] - major[0]
