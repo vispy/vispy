@@ -12,6 +12,7 @@ from .visual import CompoundVisual, updating_property
 from .line import LineVisual
 from .text import TextVisual
 
+
 # XXX TODO list (see code, plus):
 # 1. Automated tick direction?
 # 2. Expand to 3D (only 2D supported currently)
@@ -59,6 +60,8 @@ class AxisVisual(CompoundVisual):
         Text to use for the axis label
     axis_label_margin : float
         Margin between ticks and axis labels
+    labels_density: int
+        Higher number than 1 means less labels
     axis_font_size : float
         The font size to use for rendering axis labels.
     font_size : float
@@ -72,22 +75,23 @@ class AxisVisual(CompoundVisual):
         determined automatically.
     """
 
-    def __init__(self, pos=None, domain=(0., 1.), 
-                 tick_direction=(-1., 0.), 
-                 scale_type="linear", 
-                 axis_color=(1, 1, 1), 
-                 tick_color=(0.7, 0.7, 0.7), 
-                 text_color='w', 
-                 minor_tick_length=5, 
-                 major_tick_length=10, 
-                 tick_width=2, 
-                 tick_label_margin=12, 
-                 tick_font_size=8, 
-                 axis_width=3, 
-                 axis_label=None, 
-                 axis_label_margin=35, 
-                 axis_font_size=10, 
-                 font_size=None, 
+    def __init__(self, pos=None, domain=(0., 1.),
+                 tick_direction=(-1., 0.),
+                 scale_type="linear",
+                 axis_color=(1, 1, 1),
+                 tick_color=(0.7, 0.7, 0.7),
+                 text_color='w',
+                 minor_tick_length=5,
+                 major_tick_length=10,
+                 tick_width=2,
+                 tick_label_margin=12,
+                 tick_font_size=8,
+                 axis_width=3,
+                 axis_label=None,
+                 axis_label_margin=35,
+                 labels_density=1,
+                 axis_font_size=10,
+                 font_size=None,
                  anchors=None):
 
         if scale_type != 'linear':
@@ -100,13 +104,15 @@ class AxisVisual(CompoundVisual):
 
         self._pos = None
         self._domain = None
+        self._labels_density = labels_density
 
         # If True, then axis stops at the first / last major tick.
         # If False, then axis extends to edge of *pos*
         # (private until we come up with a better name for this)
         self._stop_at_major = (False, False)
 
-        self.ticker = Ticker(self, anchors=anchors)
+        self._anchors = anchors
+        self.ticker = Ticker(self, anchors=self._anchors, label_density=self._labels_density)
         self.tick_direction = np.array(tick_direction, float)
         self.scale_type = scale_type
 
@@ -207,6 +213,15 @@ class AxisVisual(CompoundVisual):
     def axis_label(self):
         """Text to use for the axis label."""
 
+    @property
+    def labels_density(self):
+        return self._labels_density
+
+    @labels_density.setter
+    def labels_density(self, val: bool):
+        self._labels_density = val
+        self.ticker = Ticker(self, anchors=self._anchors, label_density=self._labels_density)
+
     @updating_property
     def pos(self):
         """Co-ordinates of start and end of the axis."""
@@ -270,7 +285,7 @@ class AxisVisual(CompoundVisual):
         x1, y1, x2, y2 = trpos[:, :2].ravel()
         if x1 > x2:
             x1, y1, x2, y2 = x2, y2, x1, y1
-        return math.degrees(math.atan2(y2-y1, x2-x1))
+        return math.degrees(math.atan2(y2 - y1, x2 - x1))
 
     def _compute_bounds(self, axis, view):
         if axis == 2:
@@ -286,11 +301,13 @@ class Ticker(object):
     ----------
     axis : instance of AxisVisual
         The AxisVisual to generate ticks for.
+    label_density: int, higher number less labels
     """
 
-    def __init__(self, axis, anchors=None):
+    def __init__(self, axis, anchors=None, label_density=1):
         self.axis = axis
         self._anchors = anchors
+        self._label_density = label_density
 
     def get_update(self):
         major_tick_fractions, minor_tick_fractions, tick_labels = \
@@ -361,24 +378,24 @@ class Ticker(object):
 
         c = np.empty([(num_major + num_minor) * 2, 2])
 
-        c[0:(num_major-1)*2+1:2] = major_origins
-        c[1:(num_major-1)*2+2:2] = major_endpoints
-        c[(num_major-1)*2+2::2] = minor_origins
-        c[(num_major-1)*2+3::2] = minor_endpoints
+        c[0:(num_major - 1) * 2 + 1:2] = major_origins
+        c[1:(num_major - 1) * 2 + 2:2] = major_endpoints
+        c[(num_major - 1) * 2 + 2::2] = minor_origins
+        c[(num_major - 1) * 2 + 3::2] = minor_endpoints
 
         return c, tick_label_pos, axis_label_pos, anchors
 
     def _tile_ticks(self, frac, tickvec):
         """Tiles tick marks along the axis."""
         origins = np.tile(self.axis._vec, (len(frac), 1))
-        origins = self.axis.pos[0].T + (origins.T*frac).T
+        origins = self.axis.pos[0].T + (origins.T * frac).T
         endpoints = tickvec + origins
         return origins, endpoints
 
     def _get_tick_frac_labels(self):
         """Get the major ticks, minor ticks, and major labels"""
         minor_num = 4  # number of minor ticks per major division
-        if (self.axis.scale_type == 'linear'):
+        if self.axis.scale_type == 'linear':
             domain = self.axis.domain
             if domain[1] < domain[0]:
                 flip = True
@@ -392,7 +409,7 @@ class Ticker(object):
             length = self.axis.pos[1] - self.axis.pos[0]  # in logical coords
             n_inches = np.sqrt(np.sum(length ** 2)) / transforms.dpi
 
-            major = _get_ticks_talbot(domain[0], domain[1], n_inches, 2)
+            major = _get_ticks_talbot(domain[0], domain[1], n_inches, self._label_density)
 
             labels = ['%g' % x for x in major]
             majstep = major[1] - major[0]
@@ -526,7 +543,7 @@ class MaxNLocator(object):
 
 def scale_range(vmin, vmax, n=1, threshold=100):
     dv = abs(vmax - vmin)
-    if dv == 0:     # maxabsv == 0 is a special case of this.
+    if dv == 0:  # maxabsv == 0 is a special case of this.
         return 1.0, 0.0
         # Note: this should never occur because
         # vmin, vmax should have been checked by nonsingular(),
@@ -567,13 +584,13 @@ def _coverage_max(dmin, dmax, span):
 
 
 def _density(k, m, dmin, dmax, lmin, lmax):
-    r = (k-1.0) / (lmax-lmin)
-    rt = (m-1.0) / (max(lmax, dmax) - min(lmin, dmin))
+    r = (k - 1.0) / (lmax - lmin)
+    rt = (m - 1.0) / (max(lmax, dmax) - min(lmin, dmin))
     return 2 - max(r / rt, rt / r)
 
 
 def _density_max(k, m):
-    return 2 - (k-1.0) / (m-1.0) if k >= m else 1.
+    return 2 - (k - 1.0) / (m - 1.0) if k >= m else 1.
 
 
 def _simplicity(q, Q, j, lmin, lmax, lstep):
@@ -581,7 +598,7 @@ def _simplicity(q, Q, j, lmin, lmax, lstep):
     n = len(Q)
     i = Q.index(q) + 1
     if ((lmin % lstep) < eps or
-            (lstep - lmin % lstep) < eps) and lmin <= 0 and lmax >= 0:
+        (lstep - lmin % lstep) < eps) and lmin <= 0 and lmax >= 0:
         v = 1
     else:
         v = 0
@@ -591,7 +608,7 @@ def _simplicity(q, Q, j, lmin, lmax, lstep):
 def _simplicity_max(q, Q, j):
     n = len(Q)
     i = Q.index(q) + 1
-    return (n - i)/(n - 1.0) + 1. - j
+    return (n - i) / (n - 1.0) + 1. - j
 
 
 def _get_ticks_talbot(dmin, dmax, n_inches, density=1.):
@@ -628,12 +645,12 @@ def _get_ticks_talbot(dmin, dmax, n_inches, density=1.):
                 if w[0] * sm + w[1] + w[2] * dm + w[3] < best_score:
                     break
 
-                delta = (dmax-dmin)/(k+1.0)/j/q
+                delta = (dmax - dmin) / (k + 1.0) / j / q
                 z = np.ceil(np.log10(delta))
 
                 while z < float('infinity'):
                     step = j * q * 10 ** z
-                    cm = _coverage_max(dmin, dmax, step*(k-1.0))
+                    cm = _coverage_max(dmin, dmax, step * (k - 1.0))
 
                     if (w[0] * sm +
                             w[1] * cm +
@@ -641,16 +658,16 @@ def _get_ticks_talbot(dmin, dmax, n_inches, density=1.):
                             w[3] < best_score):
                         break
 
-                    min_start = np.floor(dmax/step)*j - (k-1.0)*j
-                    max_start = np.ceil(dmin/step)*j
+                    min_start = np.floor(dmax / step) * j - (k - 1.0) * j
+                    max_start = np.ceil(dmin / step) * j
 
                     if min_start > max_start:
-                        z = z+1
+                        z = z + 1
                         break
 
-                    for start in range(int(min_start), int(max_start)+1):
-                        lmin = start * (step/j)
-                        lmax = lmin + step*(k-1.0)
+                    for start in range(int(min_start), int(max_start) + 1):
+                        lmin = start * (step / j)
+                        lmax = lmin + step * (k - 1.0)
                         lstep = step
 
                         s = _simplicity(q, Q, j, lmin, lmax, lstep)
