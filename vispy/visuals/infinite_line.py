@@ -47,11 +47,13 @@ class InfiniteLineVisual(Visual):
         must be of shape (1, 4) and provide one rgba color per vertex.
     line_width: float
         The width of the Infinite line, in pixels
+    antialias: bool
+        If the line is drawn with antialiasing
     vertical:
         True for drawing a vertical line, False for an horizontal line
     """
 
-    def __init__(self, pos=None, color=(1.0, 1.0, 1.0, 1.0), line_width=1.0,
+    def __init__(self, pos=None, color=(1.0, 1.0, 1.0, 1.0), line_width=1.0, antialias=False,
                  vertical=True, **kwargs):
         """
 
@@ -77,6 +79,7 @@ class InfiniteLineVisual(Visual):
         self._pos = np.zeros((2, 2), dtype=np.float32)
         self._color = np.ones(4, dtype=np.float32)
         self._line_width = line_width
+        self._antialias = antialias
 
         # Visual keeps track of draw mode, index buffer, and GL state. These
         # are shared between all views.
@@ -138,6 +141,14 @@ class InfiniteLineVisual(Visual):
     def line_width(self, val: float):
         self._line_width = val
 
+    @property
+    def antialias(self):
+        return self._antialias
+
+    @antialias.setter
+    def antialias(self, val: float):
+        self._antialias = val
+
     def _compute_bounds(self, axis, view):
         """Return the (min, max) bounding values of this visual along *axis*
         in the local coordinate system.
@@ -169,19 +180,10 @@ class InfiniteLineVisual(Visual):
         The *view* argument indicates which view is about to be drawn.
         """
 
-        GL = None
-        from vispy.app._default_app import default_app
-
-        if default_app is not None and \
-                default_app.backend_name != 'ipynb_webgl':
-            try:
-                import OpenGL.GL as GL
-            except Exception:  # can be other than ImportError sometimes
-                pass
-
-        if GL:
-            GL.glDisable(GL.GL_LINE_SMOOTH)
-            GL.glLineWidth(self._line_width)
+        self.update_gl_state(line_smooth=self._antialias)
+        px_scale = self.transforms.pixel_scale
+        width = px_scale * self._line_width
+        self.update_gl_state(line_width=max(width, 1.0))
 
         if self._changed['pos']:
             self.pos_buf.set_data(self._pos)
