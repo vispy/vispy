@@ -289,7 +289,7 @@ class AxisVisual(CompoundVisual):
 
     def _compute_bounds(self, axis, view):
         if axis == 2:
-            return (0., 0.)
+            return 0., 0.
         # now axis in (0, 1)
         return self.pos[:, axis].min(), self.pos[:, axis].max()
 
@@ -511,12 +511,12 @@ class MaxNLocator(object):
             step *= scale
             best_vmin = step * divmod(vmin, step)[0]
             best_vmax = best_vmin + step * nbins
-            if (best_vmax >= vmax):
+            if best_vmax >= vmax:
                 break
         if self._trim:
             extra_bins = int(divmod((best_vmax - vmax), step)[0])
             nbins -= extra_bins
-        return (np.arange(nbins + 1) * step + best_vmin + offset)
+        return np.arange(nbins + 1) * step + best_vmin + offset
 
     def __call__(self):
         vmin, vmax = self.axis.get_view_interval()
@@ -597,8 +597,7 @@ def _simplicity(q, Q, j, lmin, lmax, lstep):
     eps = 1e-10
     n = len(Q)
     i = Q.index(q) + 1
-    if ((lmin % lstep) < eps or
-        (lstep - lmin % lstep) < eps) and lmin <= 0 and lmax >= 0:
+    if ((lmin % lstep) < eps or (lstep - lmin % lstep) < eps) and lmin <= 0 and lmax >= 0:
         v = 1
     else:
         v = 0
