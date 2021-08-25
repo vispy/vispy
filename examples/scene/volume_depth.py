@@ -8,6 +8,8 @@
 Render volumes with depth_test
 ================================
 
+Controls:
+* p  - toggle camera fov (perspective) between 0 and 60
 """
 
 import sys
@@ -67,6 +69,16 @@ cam = scene.cameras.ArcballCamera(
     name='Arcball'
 )
 view.camera = cam
+
+
+@canvas.events.key_press.connect
+def on_key_press(event):
+    if event.text == 'p':
+        if cam.fov == 0:
+            cam.fov = 60
+        else:
+            cam.fov = 0
+        print(cam.fov)
 
 
 if __name__ == '__main__':
