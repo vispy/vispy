@@ -45,11 +45,13 @@ class InfiniteLineVisual(Visual):
     color : list, tuple, or array
         The color to use when drawing the line. If an array is given, it
         must be of shape (1, 4) and provide one rgba color per vertex.
+    line_width: float
+        The width of the Infinite line, in pixels
     vertical:
         True for drawing a vertical line, False for an horizontal line
     """
 
-    def __init__(self, pos=None, color=(1.0, 1.0, 1.0, 1.0),
+    def __init__(self, pos=None, color=(1.0, 1.0, 1.0, 1.0), line_width=1.0,
                  vertical=True, **kwargs):
         """
 
@@ -74,6 +76,7 @@ class InfiniteLineVisual(Visual):
         self._is_vertical = bool(vertical)
         self._pos = np.zeros((2, 2), dtype=np.float32)
         self._color = np.ones(4, dtype=np.float32)
+        self._line_width = line_width
 
         # Visual keeps track of draw mode, index buffer, and GL state. These
         # are shared between all views.
@@ -127,6 +130,14 @@ class InfiniteLineVisual(Visual):
         else:
             return self._pos[0, 1]
 
+    @property
+    def line_width(self):
+        return self._line_width
+
+    @line_width.setter
+    def line_width(self, val: float):
+        self._line_width = val
+
     def _compute_bounds(self, axis, view):
         """Return the (min, max) bounding values of this visual along *axis*
         in the local coordinate system.
@@ -157,6 +168,21 @@ class InfiniteLineVisual(Visual):
 
         The *view* argument indicates which view is about to be drawn.
         """
+
+        GL = None
+        from vispy.app._default_app import default_app
+
+        if default_app is not None and \
+                default_app.backend_name != 'ipynb_webgl':
+            try:
+                import OpenGL.GL as GL
+            except Exception:  # can be other than ImportError sometimes
+                pass
+
+        if GL:
+            GL.glDisable(GL.GL_LINE_SMOOTH)
+            GL.glLineWidth(self._line_width)
+
         if self._changed['pos']:
             self.pos_buf.set_data(self._pos)
             self._changed['pos'] = False
