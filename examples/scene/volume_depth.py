@@ -24,16 +24,16 @@ canvas = scene.SceneCanvas(keys='interactive', size=(800, 600), show=True)
 view = canvas.central_widget.add_view()
 
 # Create the volume visual
-im_data = np.zeros((30, 30, 30))
+im_data = np.zeros((30, 30, 30), dtype=np.float32)
 im_data[5:25, 5:25, 5:25] = 1
 blue_cmap = get_colormap('blues')
 volume_1 = scene.visuals.Volume(
     im_data,
     cmap=blue_cmap,
     parent=view.scene,
-    threshold=0.5,
     method='iso'
 )
+volume_1.threshold=0.5
 volume_1.transform = scene.STTransform(translate=(0, -10, -10))
 
 vertices = np.array(
