@@ -1140,8 +1140,6 @@ class VolumeVisual(Visual):
         view.view_program.vert['viewtransformi'] = view_tr_i
         view.view_program.frag['viewtransformf'] = view_tr_f
 
-
-
     def _prepare_draw(self, view):
         if self._need_vertex_update:
             self._create_vertex_data()
