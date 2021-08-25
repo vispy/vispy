@@ -1,1 +1,0 @@
-../../gloo/animate_images_slice.py

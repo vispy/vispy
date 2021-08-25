@@ -1,1 +1,0 @@
-../../scene/shape_draw.py

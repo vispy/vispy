@@ -1,1 +1,0 @@
-../../scene/grid_layout/grid_holed.py

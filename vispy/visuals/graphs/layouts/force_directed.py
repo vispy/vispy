@@ -29,8 +29,8 @@ class fruchterman_reingold(object):
     collection of particles, it runs a simplified particle simulation to
     find a nice layout for the graph.
 
-    Paramters
-    ---------
+    Parameters
+    ----------
     optimal : number
         Optimal distance between nodes. Defaults to :math:`1/\\sqrt{N}` where
         N is the number of nodes.

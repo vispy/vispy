@@ -11,18 +11,25 @@ from operator import mul
 
 
 def dtype_reduce(dtype, level=0, depth=0):
-    """
-    Try to reduce dtype up to a given level when it is possible
+    """Try to reduce dtype up to a given level when it is possible.
 
-    dtype =  [ ('vertex',  [('x', 'f4'), ('y', 'f4'), ('z', 'f4')]),
-               ('normal',  [('x', 'f4'), ('y', 'f4'), ('z', 'f4')]),
-               ('color',   [('r', 'f4'), ('g', 'f4'), ('b', 'f4'),
-                            ('a', 'f4')])]
+    Examples
+    --------
+    >>> dtype =  [ ('vertex',  [('x', 'f4'), ('y', 'f4'), ('z', 'f4')]),
+    ...            ('normal',  [('x', 'f4'), ('y', 'f4'), ('z', 'f4')]),
+    ...            ('color',   [('r', 'f4'), ('g', 'f4'), ('b', 'f4'),
+    ...                         ('a', 'f4')])]
 
-    level 0: ['color,vertex,normal,', 10, 'float32']
-    level 1: [['color', 4, 'float32']
-              ['normal', 3, 'float32']
-              ['vertex', 3, 'float32']]
+    level 0 result::
+
+        ['color,vertex,normal,', 10, 'float32']
+
+    level 1 result::
+
+        [['color', 4, 'float32']
+         ['normal', 3, 'float32']
+         ['vertex', 3, 'float32']]
+
     """
     dtype = np.dtype(dtype)
     fields = dtype.fields
@@ -73,20 +80,19 @@ def dtype_reduce(dtype, level=0, depth=0):
 
 
 def fetchcode(utype, prefix=""):
-    """
-    Generate the GLSL code needed to retrieve fake uniform values from a
-    texture.
+    """Generate the GLSL code needed to retrieve fake uniform values from a texture.
 
+    Parameters
+    ----------
     uniforms : sampler2D
         Texture to fetch uniforms from
-
     uniforms_shape: vec3
         Size of texture (width,height,count) where count is the number of float
         to be fetched.
-
     collection_index: float
         Attribute giving the index of the uniforms to be fetched. This index
-       relates to the index in the uniform array from python side.
+        relates to the index in the uniform array from python side.
+
     """
     utype = np.dtype(utype)
     _utype = dtype_reduce(utype, level=1)

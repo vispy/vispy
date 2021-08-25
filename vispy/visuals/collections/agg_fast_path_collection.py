@@ -176,13 +176,14 @@ class AggFastPathCollection(Collection):
         Given a path P, return the baked vertices as they should be copied in
         the collection if the path has already been appended.
 
-        Example:
+        Examples
         --------
-        paths.append(P)
-        P *= 2
-        paths['prev'][0] = bake(P,'prev')
-        paths['curr'][0] = bake(P,'curr')
-        paths['next'][0] = bake(P,'next')
+        >>> paths.append(P)
+        >>> P *= 2
+        >>> paths['prev'][0] = bake(P,'prev')
+        >>> paths['curr'][0] = bake(P,'curr')
+        >>> paths['next'][0] = bake(P,'next')
+
         """
         itemsize = itemsize or len(P)
         itemcount = len(P) / itemsize  # noqa

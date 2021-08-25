@@ -1,1 +1,0 @@
-../../gloo/spatial_filters.py
