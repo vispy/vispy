@@ -15,7 +15,8 @@ class ChainTransform(BaseTransform):
     order. Internally, this class uses shaders.FunctionChain to generate
     its glsl_map and glsl_imap functions.
 
-    Arguments:
+    Parameters
+    ----------
     transforms : list of BaseTransform instances
         See ``transforms`` property.
     """

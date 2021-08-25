@@ -58,6 +58,7 @@ class Buffer(GLObject):
 
     def set_subdata(self, data, offset=0, copy=False):
         """Set a sub-region of the buffer (deferred operation).
+
         Parameters
         ----------
         data : ndarray
@@ -151,6 +152,7 @@ class DataBuffer(Buffer):
 
     def set_subdata(self, data, offset=0, copy=False, **kwargs):
         """Set a sub-region of the buffer (deferred operation).
+
         Parameters
         ----------
         data : ndarray
@@ -164,6 +166,7 @@ class DataBuffer(Buffer):
             Asking explicitly for a copy will prevent this behavior.
         **kwargs : dict
             Additional keyword arguments.
+
         """
         data = self._prepare_data(data, **kwargs)
         offset = offset * self.itemsize
@@ -232,10 +235,12 @@ class DataBuffer(Buffer):
 
     def resize_bytes(self, size):
         """Resize the buffer (in-place, deferred operation)
+
         Parameters
         ----------
         size : integer
             New buffer size in bytes
+
         Notes
         -----
         This clears any pending operations.
@@ -298,6 +303,7 @@ class DataBuffer(Buffer):
 
 class DataBufferView(DataBuffer):
     """View on a sub-region of a DataBuffer.
+
     Parameters
     ----------
     base : DataBuffer
@@ -306,6 +312,7 @@ class DataBufferView(DataBuffer):
         The index into the base buffer that defines a sub-region of the buffer
         to view. String arguments select a single field from multi-field
         dtypes, and other allowed types select a subset of rows.
+
     Notes
     -----
     It is generally not necessary to instantiate this class manually; use

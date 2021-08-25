@@ -10,26 +10,21 @@
 
 """Compute antialiased fragment color for a stroke line.
 
-Inputs
-------
+Inputs:
 
-distance (float): Signed distance to border (in pixels).
-
-
-Template variables
-------------------
-
-linewidth (float): Stroke line width (in pixels).
-
-antialias (float): Stroke antialiased area (in pixels).
-
-stroke (vec4): Stroke color.
+- distance (float): Signed distance to border (in pixels).
 
 
-Outputs
--------
-color (vec4): The final color.
+Template variables:
 
+- linewidth (float): Stroke line width (in pixels).
+- antialias (float): Stroke antialiased area (in pixels).
+- stroke (vec4): Stroke color.
+
+
+Outputs:
+
+- color (vec4): The final color.
 
 """
 ANTIALIAS_STROKE = """
@@ -58,28 +53,20 @@ vec4 stroke(float distance)
 
 """Compute antialiased fragment color for an outlined shape.
 
-Inputs
-------
+Inputs:
 
-distance (float): Signed distance to border (in pixels).
+- distance (float): Signed distance to border (in pixels).
 
+Template variables:
 
-Template variables
-------------------
+- linewidth (float): Stroke line width (in pixels).
+- antialias (float): Stroke antialiased area (in pixels).
+- stroke (vec4): Stroke color.
+- fill (vec4): Fill color.
 
-linewidth (float): Stroke line width (in pixels).
+Outputs:
 
-antialias (float): Stroke antialiased area (in pixels).
-
-stroke (vec4): Stroke color.
-
-fill (vec4): Fill color.
-
-
-Outputs
--------
-color (vec4): The final color.
-
+- color (vec4): The final color.
 
 """
 ANTIALIAS_OUTLINE = """
@@ -109,26 +96,19 @@ vec4 outline(float distance)
 
 """Compute antialiased fragment color for a filled shape.
 
-Inputs
-------
+Inputs:
 
-distance (float): Signed distance to border (in pixels).
+- distance (float): Signed distance to border (in pixels).
 
+Template variables:
 
-Template variables
-------------------
+- linewidth (float): Stroke line width (in pixels).
+- antialias (float): Stroke antialiased area (in pixels).
+- fill (vec4): Fill color.
 
-linewidth (float): Stroke line width (in pixels).
+Outputs:
 
-antialias (float): Stroke antialiased area (in pixels).
-
-fill (vec4): Fill color.
-
-
-Outputs
--------
-color (vec4): The final color.
-
+- color (vec4): The final color.
 
 """
 ANTIALIAS_FILLED = """

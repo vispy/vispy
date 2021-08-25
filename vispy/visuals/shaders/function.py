@@ -122,14 +122,18 @@ class Function(ShaderObject):
     Note how the two scale function resulted in two different functions
     and two uniforms for the scale factors.
 
-    Function calls
-    --------------
+    Notes
+    -----
+
+    Function calls:
 
     As can be seen above, the arguments with which a function is to be
     called must be specified by calling the Function object. The
     arguments can be any of the expressions mentioned earlier. If the
     signature is already specified in the template code, that function
     itself must be given.
+
+    ::
 
         code = Function('''
             void main() {
@@ -144,11 +148,13 @@ class Function(ShaderObject):
         # For scale, the sigfnature is already specified
         code['scale'] = scale_func  # Must not specify args
 
-    Data for uniform and attribute variables
-    ----------------------------------------
+    Data for uniform and attribute variables:
+
     To each variable a value can be associated. In fact, in most cases
     the Function class is smart enough to be able to create a Variable
     object if only the data is given.
+
+    ::
 
         code['offset'] = Variable('uniform float offset')  # No data
         code['offset'] = Variable('uniform float offset', 3.0)  # With data
@@ -158,6 +164,7 @@ class Function(ShaderObject):
         # Updating variables
         code['offset'].value = 4.0
         position['position'].value.set_data(...)
+
     """
 
     def __init__(self, code, dependencies=None):
@@ -571,14 +578,14 @@ class FunctionChain(Function):
 
     Examples
     --------
-    This creates a function chain:
+    This creates a function chain::
 
         >>> func1 = Function('void my_func_1() {}')
         >>> func2 = Function('void my_func_2() {}')
         >>> chain = FunctionChain('my_func_chain', [func1, func2])
 
     If *chain* is included in a ModularProgram, it will generate the following
-    output:
+    output::
 
         void my_func_1() {}
         void my_func_2() {}
@@ -594,7 +601,7 @@ class FunctionChain(Function):
 
     If the return type is not 'void', then the return value of each function
     will be used to supply the first input argument of the next function in
-    the chain. For example:
+    the chain. For example::
 
         vec3 my_func_1(vec3 input) {return input + vec3(1, 0, 0);}
         void my_func_2(vec3 input) {return input + vec3(0, 1, 0);}

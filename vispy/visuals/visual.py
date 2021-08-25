@@ -23,21 +23,21 @@ Class Structure
   This class lays out the basic API for all visuals: ``draw()``, ``bounds()``,
   ``view()``, and ``attach()`` methods, as well as a `TransformSystem` instance
   that determines where the visual will be drawn.
-    * `Visual` - defines a shader program to draw.
-      Subclasses are responsible for supplying the shader code and configuring
-      program variables, including transforms.
-        * `VisualView` - clones the shader program from a Visual instance.
-          Instances of `VisualView` contain their own shader program,
-          transforms and filter attachments, and generally behave like a normal
-          instance of `Visual`.
-    * `CompoundVisual` - wraps multiple Visual instances.
-      These visuals provide no program of their own, but instead rely on one or
-      more internally generated `Visual` instances to do their drawing. For
-      example, a PolygonVisual consists of an internal LineVisual and
-      MeshVisual.
-        * `CompoundVisualView` - wraps multiple VisualView instances.
-          This allows a `CompoundVisual` to be viewed with a different set of
-          transforms and filters.
+* `Visual` - defines a shader program to draw.
+  Subclasses are responsible for supplying the shader code and configuring
+  program variables, including transforms.
+* `VisualView` - clones the shader program from a Visual instance.
+  Instances of `VisualView` contain their own shader program,
+  transforms and filter attachments, and generally behave like a normal
+  instance of `Visual`.
+* `CompoundVisual` - wraps multiple Visual instances.
+  These visuals provide no program of their own, but instead rely on one or
+  more internally generated `Visual` instances to do their drawing. For
+  example, a PolygonVisual consists of an internal LineVisual and
+  MeshVisual.
+* `CompoundVisualView` - wraps multiple VisualView instances.
+  This allows a `CompoundVisual` to be viewed with a different set of
+  transforms and filters.
 
 
 Making Visual Subclasses
@@ -702,11 +702,11 @@ class updating_property:
     and if you do, it will be called in addition to the standard logic:
     `self._attr_name = value`.
 
-    For example, the following code examples are equivalent:
+    For example, the following code examples are equivalent::
 
-    class SomeVisual1(Visual):
-        def __init__(self, someprop=None):
-            self._someprop = someprop
+        class SomeVisual1(Visual):
+            def __init__(self, someprop=None):
+                self._someprop = someprop
 
             @property
             def someprop(self):
@@ -721,9 +721,9 @@ class updating_property:
                     if hasattr(self, 'events'):
                         self.update()
 
-    class SomeVisual2(Visual):
-        def __init__(self, someprop=None):
-            self._someprop = someprop
+        class SomeVisual2(Visual):
+            def __init__(self, someprop=None):
+                self._someprop = someprop
 
             @updating_property
             def someprop(self):
@@ -733,15 +733,16 @@ class updating_property:
     property on the object.  The result of this is that you don't actually have to put
     anything in the body of a method decorated with @updating_property if you don't want to
     do anything other than retrieve the property.  So you may see this slightly strange
-    pattern being used:
+    pattern being used::
 
-    class SomeVisual2(Visual):
-    def __init__(self, someprop=None):
-        self._someprop = someprop
+        class SomeVisual2(Visual):
+            def __init__(self, someprop=None):
+                self._someprop = someprop
 
-        @updating_property
-        def someprop(self):
-            '''the docstring (or pass) is all that is needed'''
+            @updating_property
+            def someprop(self):
+                '''the docstring (or pass) is all that is needed'''
+
     """
 
     def __init__(self, fget=None, fset=None, doc=None):
