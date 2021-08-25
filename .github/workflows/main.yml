@@ -99,7 +99,7 @@ jobs:
         cat ci/requirements/linux_full_deps_apt.txt | xargs sudo apt-get -y install
         # Additional latex dependencies
         sudo apt-get -y install texlive-latex-base texlive-fonts-recommended texlive-fonts-extra texlive-latex-extra
-        sudo apt-get -y dvipng
+        sudo apt-get -y install dvipng
         # Start xvfb daemon
         export DISPLAY=:99.0
         /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1400x900x24 -ac +extension GLX +render
