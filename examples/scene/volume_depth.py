@@ -33,7 +33,6 @@ volume_1 = scene.visuals.Volume(
     parent=view.scene,
     method='iso'
 )
-volume_1.threshold=0.5
 volume_1.transform = scene.STTransform(translate=(0, -10, -10))
 
 vertices = np.array(
