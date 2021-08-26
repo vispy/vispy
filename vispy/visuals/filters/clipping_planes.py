@@ -53,7 +53,7 @@ class PlanesClipper(Filter):
     @staticmethod
     @lru_cache(maxsize=10)
     def _build_clipping_planes_func(n_planes):
-        """Build the code snippet used to clip the mesh based on self.clipping_planes."""
+        """Build the code snippet used to clip the volume based on self.clipping_planes."""
         func_template = '''
             float clip_planes(vec3 loc) {{
                 float is_shown = 1.0;
