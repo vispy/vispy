@@ -56,7 +56,7 @@ class PlanesClipper(Filter):
         """Build the code snippet used to clip the volume based on self.clipping_planes."""
         func_template = '''
             float clip_planes(vec3 loc) {{
-                float is_shown = 1.0;
+                float is_shown = 3.4e38; // max float
                 {clips};
                 return is_shown;
             }}
