@@ -15,10 +15,8 @@ class PlanesClipper(Filter):
 
     VERT_CODE = """
     void clip() {
-        // this is here to allow to set v_is_shown
-        $v_is_shown;
         // Transform back to visual coordinates and clip based on that
-        $clip_with_planes($itransform(gl_Position).xyz);
+        $v_is_shown = $clip_with_planes($itransform(gl_Position).xyz);
     }
     """
 
@@ -35,9 +33,9 @@ class PlanesClipper(Filter):
             fcode=Function(self.FRAG_CODE), fhook='pre', fpos=1,
         )
 
-        self.v_is_shown = Varying('v_is_shown', 'float')
-        self.vshader['v_is_shown'] = self.v_is_shown
-        self.fshader['v_is_shown'] = self.v_is_shown
+        v_is_shown = Varying('v_is_shown', 'float')
+        self.vshader['v_is_shown'] = v_is_shown
+        self.fshader['v_is_shown'] = v_is_shown
 
         self.clipping_planes = clipping_planes
 
@@ -52,38 +50,28 @@ class PlanesClipper(Filter):
         super()._attach(visual)
         self.vshader['itransform'] = self._get_itransform(visual)
 
+    @staticmethod
     @lru_cache(maxsize=10)
-    def _build_clipping_planes_func(self, n_planes):
-        """Build the function used to clip, based on the number of clipping planes.
-
-        Each plane is defined by a position and a normal vector; the vertex is considered
-        clipped if on the "negative" side of the plane
-        """
-
-        NOOP = """
-        vec3 clip_noop(vec3 position) {
-            return position;
-        }
-        """
-
-        CLIP_CODE = """
-        vec3 clip_with_plane(vec3 position) {
-            vec3 relative_vec = position - $clipping_plane_pos;
-            float is_shown = dot(relative_vec, $clipping_plane_norm);
-            $v_is_shown = min(is_shown, $v_is_shown);
-            // this return statement lets us construct a FunctionChain easily
-            return position;
-        }
-        """
-
-        clips = [Function(NOOP)]
-        for _ in range(n_planes):
-            clip = Function(CLIP_CODE)
-            clip['v_is_shown'] = self.v_is_shown
-            clips.append(clip)
-
-        func = FunctionChain('clip_with_planes', clips)
-        return func
+    def _build_clipping_planes_func(n_planes):
+        """Build the code snippet used to clip the mesh based on self.clipping_planes."""
+        func_template = '''
+            float clip_planes(vec3 loc) {{
+                float is_shown = 1.0;
+                {clips};
+                return is_shown;
+            }}
+        '''
+        # the vertex is considered clipped if on the "negative" side of the plane
+        clip_template = '''
+            vec3 relative_vec{idx} = loc - ( $clipping_plane_pos{idx} );
+            float is_shown{idx} = dot(relative_vec{idx}, $clipping_plane_norm{idx});
+            is_shown = min(is_shown{idx}, is_shown);
+            '''
+        all_clips = []
+        for idx in range(n_planes):
+            all_clips.append(clip_template.format(idx=idx))
+        formatted_code = func_template.format(clips=''.join(all_clips))
+        return Function(formatted_code)
 
     @property
     def clipping_planes(self):
@@ -99,10 +87,9 @@ class PlanesClipper(Filter):
         value = value[:, :, ::-1]
         self._clipping_planes = value
 
-        clipping_func = self._build_clipping_planes_func(len(value))
+        clip_func = self._build_clipping_planes_func(len(value))
+        self.vshader['clip_with_planes'] = clip_func
 
-        for func, plane in zip(clipping_func[1:], value):  # skip noop func
-            func['clipping_plane_pos'] = tuple(plane[0])
-            func['clipping_plane_norm'] = tuple(plane[1])
-
-        self.vshader['clip_with_planes'] = clipping_func
+        for idx, plane in enumerate(value):
+            clip_func[f'clipping_plane_pos{idx}'] = tuple(plane[0])
+            clip_func[f'clipping_plane_norm{idx}'] = tuple(plane[1])

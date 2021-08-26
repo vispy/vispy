@@ -262,7 +262,7 @@ void main() {
         for (iter=iter; iter<nsteps; iter++)
         {
             // Only sample volume if loc is not clipped by clipping planes
-            float is_shown = $clip_by_planes(loc, u_shape);
+            float is_shown = $clip_with_planes(loc, u_shape);
             if (is_shown >= 0)
             {
                 // Get sample color
@@ -827,28 +827,25 @@ class VolumeVisual(Visual):
     @staticmethod
     @lru_cache(maxsize=10)
     def _build_clipping_planes_func(n_planes):
-        """Build the code snippet used to clip the volume based on self.clipping_planes."""
-        func = Function(
-            '$vars\nfloat clip_planes(vec3 loc, vec3 vol_shape) { float is_shown = 1.0; $clips; return is_shown; }')
-        # each plane is defined by a position and a normal vector
-        # the fragment is considered clipped if on the "negative" side of the plane
-        vars_template = '''
-            uniform vec3 u_clipping_plane_pos{idx};
-            uniform vec3 u_clipping_plane_norm{idx};
-            '''
+        """Build the code snippet used to clip the mesh based on self.clipping_planes."""
+        func_template = '''
+            float clip_planes(vec3 loc, vec3 vol_shape) {{
+                float is_shown = 1.0;
+                {clips};
+                return is_shown;
+            }}
+        '''
+        # the vertex is considered clipped if on the "negative" side of the plane
         clip_template = '''
-            vec3 relative_vec{idx} = loc - ( u_clipping_plane_pos{idx} / vol_shape );
-            float is_shown{idx} = dot(relative_vec{idx}, u_clipping_plane_norm{idx});
+            vec3 relative_vec{idx} = loc - ( $clipping_plane_pos{idx} / vol_shape );
+            float is_shown{idx} = dot(relative_vec{idx}, $clipping_plane_norm{idx});
             is_shown = min(is_shown{idx}, is_shown);
             '''
-        all_vars = []
         all_clips = []
         for idx in range(n_planes):
-            all_vars.append(vars_template.format(idx=idx))
             all_clips.append(clip_template.format(idx=idx))
-        func['vars'] = ''.join(all_vars)
-        func['clips'] = ''.join(all_clips)
-        return func
+        formatted_code = func_template.format(clips=''.join(all_clips))
+        return Function(formatted_code)
 
     @property
     def clipping_planes(self):
@@ -865,11 +862,11 @@ class VolumeVisual(Visual):
         value = value[:, :, ::-1]
         self._clipping_planes = value
 
-        self.shared_program.frag['clip_by_planes'] = self._build_clipping_planes_func(len(value))
-
+        clip_func = self._build_clipping_planes_func(len(value))
+        self.shared_program.frag['clip_with_planes'] = clip_func
         for idx, plane in enumerate(value):
-            self.shared_program[f'u_clipping_plane_pos{idx}'] = tuple(plane[0])
-            self.shared_program[f'u_clipping_plane_norm{idx}'] = tuple(plane[1])
+            clip_func[f'clipping_plane_pos{idx}'] = tuple(plane[0])
+            clip_func[f'clipping_plane_norm{idx}'] = tuple(plane[1])
         self.update()
 
     @property
