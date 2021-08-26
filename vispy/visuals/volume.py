@@ -284,14 +284,18 @@ void main() {
     }
     
     $after_loop
-    
-    if (surface_found) {
+
+    if (surface_found == true) {
         // if a surface was found, use it to set the depth buffer
         vec4 position2 = vec4(surface_point, 1);
         vec4 iproj = $viewtransformf(position2);
         iproj.z /= iproj.w;
         gl_FragDepth = (iproj.z+1.0)/2.0;
     }
+    else {
+        gl_FragDepth = gl_FragCoord.z;
+    }
+
 }
 
 
