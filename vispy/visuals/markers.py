@@ -29,23 +29,31 @@ varying float v_edgewidth;
 varying float v_antialias;
 
 void main (void) {
-    // left-right vector in the canvas
-    vec4 vert_on_doc = $viewtransformf(vec4(a_position, 1.0));
-    vec4 shifted_vert_on_doc = vert_on_doc + vec4(100, 0, 0, 0);
 
-    vec4 shifted_vert = $viewtransformi(shifted_vert_on_doc);
-    shifted_vert = (shifted_vert / shifted_vert.w);
+    if (u_scale < 0) {
+        // left-right vector in the canvas
+        vec4 vert_on_doc = $viewtransformf(vec4(a_position, 1.0));
+        vec4 shifted_vert_on_doc = vert_on_doc + vec4(100, 0, 0, 0);
     
-    vec4 shifted_vert_dir = (shifted_vert - vec4(a_position, 1.0)) / 100;
+        vec4 shifted_vert = $viewtransformi(shifted_vert_on_doc);
+        shifted_vert = (shifted_vert / shifted_vert.w);
+        
+        vec4 shifted_vert_dir = (shifted_vert - vec4(a_position, 1.0)) / 100;
+    
+        vec4 lr_vec = normalize(shifted_vert_dir);
+    
+        vec4 radius = $viewtransformf(vec4(a_position, 1.0) + lr_vec * a_size);
+        radius = radius/radius.w - vert_on_doc/vert_on_doc.w;
+        float radius_px = length(radius);
+        float size_scale = radius_px / a_size;
+        $v_size = size_scale * a_size;
+        v_edgewidth = size_scale * a_edgewidth;
+    }
+    else {
+        $v_size = a_size * u_px_scale;
+        v_edgewidth = a_edgewidth * float(u_px_scale);
 
-    vec4 lr_vec = normalize(shifted_vert_dir);
-
-    vec4 radius = $viewtransformf(vec4(a_position, 1.0) + lr_vec * a_size);
-    radius = radius/radius.w - vert_on_doc/vert_on_doc.w;
-    float radius_px = length(radius);
-    float size_scale = radius_px / a_size;
-    $v_size = size_scale * a_size;
-    v_edgewidth = size_scale * a_edgewidth;
+    }
     v_antialias = u_antialias;
     v_fg_color  = a_fg_color;
     v_bg_color  = a_bg_color;
@@ -631,13 +639,10 @@ class MarkersVisual(Visual):
         if self._symbol is None:
             return False
         view.view_program['u_px_scale'] = view.transforms.pixel_scale
-        if self.scaling:
-            tr = view.transforms.get_transform('visual', 'document').simplified
-            mat = tr.map(np.eye(3)) - tr.map(np.zeros((3, 3)))
-            scale = np.linalg.norm(mat[:, :3])
-            view.view_program['u_scale'] = scale
-        else:
+        if self.scaling is False:
             view.view_program['u_scale'] = 1
+        else:
+            view.view_program['u_scale'] = -1
 
     def _compute_bounds(self, axis, view):
         pos = self._data['a_position']
