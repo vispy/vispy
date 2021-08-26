@@ -60,8 +60,8 @@ class AxisVisual(CompoundVisual):
         Text to use for the axis label
     axis_label_margin : float
         Margin between ticks and axis labels
-    tick_density: int
-        Higher number than 1 means more ticks/labels
+    tick_density: float
+        Higher number mean more ticks/labels
     axis_font_size : float
         The font size to use for rendering axis labels.
     font_size : float
@@ -89,7 +89,7 @@ class AxisVisual(CompoundVisual):
                  axis_width=3,
                  axis_label=None,
                  axis_label_margin=35,
-                 tick_density=1,
+                 tick_density=2.0,
                  axis_font_size=10,
                  font_size=None,
                  anchors=None):
@@ -215,10 +215,11 @@ class AxisVisual(CompoundVisual):
 
     @property
     def tick_density(self):
+        """Report the tick density"""
         return self._tick_density
 
     @tick_density.setter
-    def tick_density(self, val: bool):
+    def tick_density(self, val: float):
         self._tick_density = val
         self.ticker = Ticker(self, anchors=self._anchors, tick_density=self._tick_density)
 
@@ -301,10 +302,10 @@ class Ticker(object):
     ----------
     axis : instance of AxisVisual
         The AxisVisual to generate ticks for.
-    tick_density: int, higher number more ticks/labels
+    tick_density: float, higher number more ticks/labels
     """
 
-    def __init__(self, axis, anchors=None, tick_density=1):
+    def __init__(self, axis, anchors=None, tick_density=2.0):
         self.axis = axis
         self._anchors = anchors
         self._tick_density = tick_density
