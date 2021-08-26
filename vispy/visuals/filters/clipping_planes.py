@@ -3,16 +3,14 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from functools import lru_cache
-from abc import ABC, abstractstaticmethod
 
 import numpy as np
 
-from ..shaders import Function, FunctionChain, Varying, Variable
-from ...gloo import DataBuffer
+from ..shaders import Function, FunctionChain, Varying
 from .base_filter import Filter
 
 
-class PlanesClipper(ABC, Filter):
+class PlanesClipper(Filter):
     """Clips visual output based on arbitrary clipping planes."""
 
     VERT_CODE = """
@@ -43,7 +41,6 @@ class PlanesClipper(ABC, Filter):
 
         self.clipping_planes = clipping_planes
 
-    # @abstractstaticmethod
     @staticmethod
     def _get_itransform(visual):
         """
@@ -109,13 +106,3 @@ class PlanesClipper(ABC, Filter):
             func['clipping_plane_norm'] = tuple(plane[1])
 
         self.vshader['clip_with_planes'] = clipping_func
-
-
-class MarkersPlanesClipper(PlanesClipper):
-    def _get_itransform(self, visual):
-        return visual.get_transform('render', 'visual')
-
-
-class MeshPlanesClipper(PlanesClipper):
-    def _get_itransform(self, visual):
-        return visual.get_transform('render', 'visual')
