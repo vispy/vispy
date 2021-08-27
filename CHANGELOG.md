@@ -1,5 +1,17 @@
 # Release Notes
 
+## [v0.8.1](https://github.com/vispy/vispy/tree/v0.8.1) (2021-08-27)
+
+**Fixed bugs:**
+
+- Fix PyQt5 backend gesture event handling [\#2202](https://github.com/vispy/vispy/pull/2202) ([djhoese](https://github.com/djhoese))
+- Fix PinchGesture attribute error on pyqt6 [\#2200](https://github.com/vispy/vispy/pull/2200) ([tlambert03](https://github.com/tlambert03))
+- Fix PyQt scaling issue [\#2189](https://github.com/vispy/vispy/pull/2189) ([mars0001](https://github.com/mars0001))
+
+**Merged pull requests:**
+
+- Ditch example symlinks [\#2181](https://github.com/vispy/vispy/pull/2181) ([almarklein](https://github.com/almarklein))
+
 ## [v0.8.0](https://github.com/vispy/vispy/tree/v0.8.0) (2021-08-20)
 
 **Enhancements:**
