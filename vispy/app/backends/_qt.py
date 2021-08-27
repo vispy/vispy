@@ -415,9 +415,12 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
         # problems on Ubuntu computers with touchscreen.
         # See https://github.com/vispy/vispy/pull/1143
         if sys.platform == 'darwin':
-            qt_widget_attributes = QtCore.Qt.WidgetAttribute if PYQT6_API else QtCore.Qt
-            self.setAttribute(qt_widget_attributes.WA_AcceptTouchEvents)
-            self.grabGesture(qt_widget_attributes.PinchGesture)
+            if PYQT6_API:
+                self.setAttribute(QtCore.Qt.WidgetAttribute.WA_AcceptTouchEvents)
+                self.grabGesture(QtCore.Qt.GestureType.PinchGesture)
+            else:
+                self.setAttribute(QtCore.Qt.WA_AcceptTouchEvents)
+                self.grabGesture(QtCore.Qt.PinchGesture)
 
     def screen_changed(self, new_screen):
         """Window moved from one display to another, resize canvas.
