@@ -63,7 +63,7 @@ class PlanesClipper(Filter):
         '''
         # the vertex is considered clipped if on the "negative" side of the plane
         clip_template = '''
-            vec3 relative_vec{idx} = loc - ( $clipping_plane_pos{idx} );
+            vec3 relative_vec{idx} = loc - $clipping_plane_pos{idx};
             float is_shown{idx} = dot(relative_vec{idx}, $clipping_plane_norm{idx});
             is_shown = min(is_shown{idx}, is_shown);
             '''

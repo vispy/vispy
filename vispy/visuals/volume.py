@@ -838,7 +838,7 @@ class VolumeVisual(Visual):
         # the vertex is considered clipped if on the "negative" side of the plane
         clip_template = '''
             vec3 relative_vec{idx} = loc - ( $clipping_plane_pos{idx} / vol_shape );
-            float is_shown{idx} = dot(relative_vec{idx}, $clipping_plane_norm{idx});
+            float is_shown{idx} = dot(relative_vec{idx}, ($clipping_plane_norm{idx} * vol_shape));
             is_shown = min(is_shown{idx}, is_shown);
             '''
         all_clips = []
