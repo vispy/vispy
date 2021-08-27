@@ -574,7 +574,8 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
         if t == qt_event_types.TouchEnd:
             self._vispy_canvas.events.touch(type='end')
         if t == qt_event_types.Gesture:
-            gesture = ev.gesture(qt_event_types.PinchGesture)
+            pinch_gesture = QtCore.Qt.GestureType.PinchGesture if PYQT6_API else QtCore.Qt.PinchGesture
+            gesture = ev.gesture(pinch_gesture)
             if gesture:
                 (x, y) = _get_qpoint_pos(gesture.centerPoint())
                 scale = gesture.scaleFactor()
