@@ -31,6 +31,7 @@ from .mesh import MeshVisual  # noqa
 from .mesh_normals import MeshNormalsVisual  # noqa
 from .plane import PlaneVisual  # noqa
 from .polygon import PolygonVisual  # noqa
+from .pseudo_spheres import PseudoSpheresVisual  # noqa
 from .rectangle import RectangleVisual  # noqa
 from .regular_polygon import RegularPolygonVisual  # noqa
 from .scrolling_lines import ScrollingLinesVisual  # noqa
