@@ -21,45 +21,41 @@ uniform float u_px_scale;
 
 attribute vec3 a_position;
 attribute vec4 a_color;
-attribute float a_size;
+attribute float a_radius;
 
 varying vec4 v_color;
-varying float v_size;
+varying float v_radius;
 varying vec3 v_light_direction;
 varying float v_antialias;
 varying float v_depth;
-varying float v_depth_size;
+varying float v_depth_radius;
 
 void main (void) {
     v_antialias = u_antialias;
     v_color = a_color;
-    v_size = a_size * u_scale * u_px_scale;
+    v_radius = a_radius * u_scale * u_px_scale;
 
     vec4 pos = vec4(a_position, 1.0);
     vec4 fb_pos = $visual_to_framebuffer(pos);
     gl_Position = $framebuffer_to_render(fb_pos);
 
-
-    // Measure the orientation of the framebuffer coordinate system relative
-    // to the atom
-    vec4 x = $framebuffer_to_visual(fb_pos + vec4(100, 0, 0, 0));
-    x = (x/x.w - pos) / 100;
+    // Get the framebuffer z direction relative to this sphere in visual coords
     vec4 z = $framebuffer_to_visual(fb_pos + vec4(0, 0, -100, 0));
     z = (z/z.w - pos) / 100;
 
-    v_depth = gl_Position.z / gl_Position.w;
-    vec4 depth_z = $framebuffer_to_render($visual_to_framebuffer(pos + normalize(z) * a_size));
-    v_depth_size = v_depth - depth_z.z / depth_z.w;
+    // TODO: This is probably the issue! this should happen on the fragment, with pos and radius based on the fragment on the sphere in that particular sport
+    vec4 depth_z = $framebuffer_to_render($visual_to_framebuffer(pos + normalize(z) * a_radius));
+    v_depth_radius = gl_Position.z / gl_Position.w - depth_z.z / depth_z.w;
 
     v_light_direction = normalize(u_light_position);
-    gl_PointSize = v_size + (6 * v_antialias);
+    gl_PointSize = v_radius + (6 * v_antialias);
 }
 """
 
 
 frag = """
 varying vec4 v_color;
-varying float v_size;
+varying float v_radius;
 varying vec3 v_light_direction;
 varying float v_antialias;
 varying float v_depth;
@@ -67,32 +63,39 @@ varying float v_depth_radius;
 
 void main()
 {
-    // discard size 0 spheres
-    if (v_size <= 0.)
+    // discard radius 0 spheres
+    if (v_radius <= 0.)
         discard;
 
-    float frag_dist = length(gl_PointCoord.xy - vec2(0.5, 0.5));
-
-    float aliased_size = v_size + (6 * v_antialias);
-    float scaled_antialias = v_antialias / aliased_size;
-
-    if (frag_dist > 0.5 + scaled_antialias/2)
+    vec2 texcoord = gl_PointCoord * 2.0 - vec2(1.0);
+    float x = texcoord.x;
+    float y = texcoord.y;
+    float d = 1.0 - x*x - y*y;
+    float z = sqrt(d);
+    if (d <= 0)
         discard;
+    vec3 normal = vec3(x,y,z);
+    // Diffuse color
+    float ambient = 0.3;
+    float diffuse = dot(v_light_direction, normal);
+    // clamp, because 0 < theta < pi/2
+    diffuse = clamp(diffuse, 0.0, 1.0);
+    vec3 light_color = vec3(1, 1, 1);
+    vec3 diffuse_color = ambient + light_color * diffuse;
 
-    float alpha = 1.0;
-    if (frag_dist >= 0.5 - scaled_antialias/2) {
-        float alias_amount = (frag_dist - 0.5 + scaled_antialias/2) / scaled_antialias;
-        alpha = exp(-alias_amount*alias_amount);
-    }
+    // Specular color
+    //   reflect light wrt normal for the reflected ray, then
+    //   find the angle made with the eye
+    vec3 eye = vec3(0, 0, -1);
+    float specular = dot(reflect(v_light_direction, normal), eye);
+    specular = clamp(specular, 0.0, 1.0);
+    // raise to the material's shininess, multiply with a
+    // small factor for spread
+    specular = pow(specular, 80);
+    vec3 specular_color = light_color * specular;
 
-//    vec3 normal = normalize(vec3(p.xy, z));
-//    vec3 direction = normalize(vec3(1.0, 1.0, 1.0));
-//    float diffuse = max(0.0, dot(direction, normal));
-//    float specular = pow(diffuse, 24.0);
-//    gl_FragColor = vec4(max(diffuse*v_color.xyz, specular*vec3(1.0)), 1.0);
-
-    gl_FragColor = vec4(v_color.rgb, v_color.a * alpha);
-    gl_FragDepth = v_depth - .5 * (1 - ) * v_depth_radius;
+    gl_FragColor = vec4(v_color.rgb * diffuse_color + specular_color, v_color.a);
+    gl_FragDepth = gl_FragCoord.z - .5 * z * v_depth_radius;
 }
 """
 
@@ -115,7 +118,7 @@ class PseudoSpheresVisual(Visual):
 
         self.freeze()
 
-    def set_data(self, pos=None, size=10., color='white'):
+    def set_data(self, pos=None, radius=10., color='white'):
         """Set the data used to display this visual.
 
         Parameters
@@ -124,8 +127,8 @@ class PseudoSpheresVisual(Visual):
             The array of locations to display each symbol.
         symbol : str
             The style of symbol to draw (see Notes).
-        size : float or array
-            The symbol size in px.
+        radius : float or array
+            The symbol radius in px.
         color : Color | ColorArray
             The color used to draw each symbol outline.
 
@@ -142,14 +145,15 @@ class PseudoSpheresVisual(Visual):
             n = len(pos)
             data = np.zeros(n, dtype=[('a_position', np.float32, 3),
                                       ('a_color', np.float32, 4),
-                                      ('a_size', np.float32)])
+                                      ('a_radius', np.float32)])
 
             data['a_position'][:, :pos.shape[1]] = pos
             if len(color) == 1:
                 color = color[0]
             data['a_color'] = ColorArray(color).rgba
-            data['a_size'] = size
+            data['a_radius'] = radius
             self.shared_program['u_antialias'] = self.antialias
+            self.shared_program['u_light_position'] = (1, -1, 1)
             self._data = data
             self._vbo.set_data(data)
             self.shared_program.bind(self._vbo)

@@ -13,17 +13,26 @@ view.camera.scale_factor = 70
 # Prepare data
 np.random.seed(57983)
 data = np.random.normal(size=(40, 3), loc=0, scale=10)
-size = len(data) * [3]
+size = np.random.rand(40) * 5
 
 data = np.concatenate([data, [[0, 0, 0]]], axis=0)
-size.append(6)
+size = np.concatenate([size, [10]], axis=0)
 
 colors = np.random.rand(41, 3)
 
 # Create and show visual
-vis = scene.visuals.PseudoSpheres(pos=data, size=size, color=colors)
+vis = scene.visuals.PseudoSpheres(pos=data, radius=size, color=colors)
 vis.parent = view.scene
-vis2 = scene.visuals.Markers(pos=data, size=size, face_color=colors)
+
+lines = np.array([[data[i], data[-1]]
+                  for i in range(len(data) - 1)])
+line_vis = []
+
+for line in lines:
+    vis2 = scene.visuals.Tube(line, radius=.4)
+    vis2.parent = view.scene
+    line_vis.append(vis2)
+
 
 # Run example
 app.run()
