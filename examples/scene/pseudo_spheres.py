@@ -14,11 +14,12 @@ view.camera.scale_factor = 70
 np.random.seed(57983)
 data = np.random.normal(size=(40, 3), loc=0, scale=10)
 size = np.random.rand(40) * 5
+colors = np.random.rand(40, 3)
 
 data = np.concatenate([data, [[0, 0, 0]]], axis=0)
 size = np.concatenate([size, [10]], axis=0)
+colors = np.concatenate([colors, [[1, 0, 0]]], axis=0)
 
-colors = np.random.rand(41, 3)
 
 # Create and show visual
 vis = scene.visuals.PseudoSpheres(pos=data, radius=size, color=colors)

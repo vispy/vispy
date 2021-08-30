@@ -8,16 +8,15 @@
 import numpy as np
 
 from ..color import ColorArray
-from ..gloo import VertexBuffer, _check_valid
+from ..gloo import VertexBuffer
 from .shaders import Function, Variable
 from .visual import Visual
 
 
 vert = """
-uniform float u_antialias;
-uniform vec3 u_light_position;
-uniform float u_scale;
 uniform float u_px_scale;
+uniform float u_scale;
+uniform vec3 u_light_position;
 
 attribute vec3 a_position;
 attribute vec4 a_color;
@@ -26,14 +25,13 @@ attribute float a_radius;
 varying vec4 v_color;
 varying float v_radius;
 varying vec3 v_light_direction;
-varying float v_antialias;
 varying float v_depth;
-varying float v_depth_radius;
+varying float v_depth_middle;
 
 void main (void) {
-    v_antialias = u_antialias;
     v_color = a_color;
     v_radius = a_radius * u_scale * u_px_scale;
+    v_light_direction = normalize(u_light_position);
 
     vec4 pos = vec4(a_position, 1.0);
     vec4 fb_pos = $visual_to_framebuffer(pos);
@@ -43,23 +41,24 @@ void main (void) {
     vec4 z = $framebuffer_to_visual(fb_pos + vec4(0, 0, -100, 0));
     z = (z/z.w - pos) / 100;
 
-    // TODO: This is probably the issue! this should happen on the fragment, with pos and radius based on the fragment on the sphere in that particular sport
+    // Get the depth of the sphere in its middle (+ radius)
     vec4 depth_z = $framebuffer_to_render($visual_to_framebuffer(pos + normalize(z) * a_radius));
-    v_depth_radius = gl_Position.z / gl_Position.w - depth_z.z / depth_z.w;
+    v_depth_middle = gl_Position.z / gl_Position.w - depth_z.z / depth_z.w;
 
-    v_light_direction = normalize(u_light_position);
-    gl_PointSize = v_radius + (6 * v_antialias);
+    gl_PointSize = v_radius;
 }
 """
 
 
 frag = """
+uniform vec3 u_light_color;
+uniform float u_light_ambient;
+
 varying vec4 v_color;
 varying float v_radius;
 varying vec3 v_light_direction;
-varying float v_antialias;
 varying float v_depth;
-varying float v_depth_radius;
+varying float v_depth_middle;
 
 void main()
 {
@@ -67,21 +66,22 @@ void main()
     if (v_radius <= 0.)
         discard;
 
+    // discard fragments outside of disc
     vec2 texcoord = gl_PointCoord * 2.0 - vec2(1.0);
     float x = texcoord.x;
     float y = texcoord.y;
     float d = 1.0 - x*x - y*y;
-    float z = sqrt(d);
     if (d <= 0)
         discard;
+
+    float z = sqrt(d);
     vec3 normal = vec3(x,y,z);
+
     // Diffuse color
-    float ambient = 0.3;
     float diffuse = dot(v_light_direction, normal);
     // clamp, because 0 < theta < pi/2
     diffuse = clamp(diffuse, 0.0, 1.0);
-    vec3 light_color = vec3(1, 1, 1);
-    vec3 diffuse_color = ambient + light_color * diffuse;
+    vec3 diffuse_color = u_light_ambient + u_light_color * diffuse;
 
     // Specular color
     //   reflect light wrt normal for the reflected ray, then
@@ -92,10 +92,12 @@ void main()
     // raise to the material's shininess, multiply with a
     // small factor for spread
     specular = pow(specular, 80);
-    vec3 specular_color = light_color * specular;
+    vec3 specular_color = u_light_color * specular;
 
     gl_FragColor = vec4(v_color.rgb * diffuse_color + specular_color, v_color.a);
-    gl_FragDepth = gl_FragCoord.z - .5 * z * v_depth_radius;
+
+    // TODO: why was it 0.5? And why is 0.36 better?
+    gl_FragDepth = gl_FragCoord.z - 0.36 * z * v_depth_middle;
 }
 """
 
@@ -103,12 +105,16 @@ void main()
 class PseudoSpheresVisual(Visual):
     """Visual displaying marker symbols."""
 
-    def __init__(self, **kwargs):
+    def __init__(self, light_color='white', light_position=(1, -1, 1),
+                 light_ambient=0.3, **kwargs):
         self._vbo = VertexBuffer()
         self._data = None
-        self.antialias = 1
 
         Visual.__init__(self, vcode=vert, fcode=frag)
+
+        self.light_color = light_color
+        self.light_position = light_position
+        self.light_ambient = light_ambient
 
         self._draw_mode = 'points'
         self.set_gl_state('translucent', depth_test=True, cull_face=True)
@@ -118,25 +124,17 @@ class PseudoSpheresVisual(Visual):
 
         self.freeze()
 
-    def set_data(self, pos=None, radius=10., color='white'):
+    def set_data(self, pos=None, radius=10, color='white'):
         """Set the data used to display this visual.
 
         Parameters
         ----------
         pos : array
-            The array of locations to display each symbol.
-        symbol : str
-            The style of symbol to draw (see Notes).
+            The array of locations to display each sphere.
         radius : float or array
-            The symbol radius in px.
+            The sphere radii in px.
         color : Color | ColorArray
-            The color used to draw each symbol outline.
-
-        Notes
-        -----
-        Allowed style strings are: disc, arrow, ring, clobber, square, diamond,
-        vbar, hbar, cross, tailed_arrow, x, triangle_up, triangle_down,
-        and star.
+            The color used to draw each sphere.
         """
         if pos is not None:
             assert (isinstance(pos, np.ndarray) and
@@ -152,7 +150,6 @@ class PseudoSpheresVisual(Visual):
                 color = color[0]
             data['a_color'] = ColorArray(color).rgba
             data['a_radius'] = radius
-            self.shared_program['u_antialias'] = self.antialias
             self.shared_program['u_light_position'] = (1, -1, 1)
             self._data = data
             self._vbo.set_data(data)
@@ -160,8 +157,33 @@ class PseudoSpheresVisual(Visual):
 
         self.update()
 
+    @property
+    def light_position(self):
+        return self._light_position
+
+    @light_position.setter
+    def light_position(self, value):
+        self.shared_program['u_light_position'] = value
+
+    @property
+    def light_ambient(self):
+        return self._light_ambient
+
+    @light_ambient.setter
+    def light_ambient(self, value):
+        self.shared_program['u_light_ambient'] = value
+
+    @property
+    def light_color(self):
+        return self._light_color
+
+    @light_color.setter
+    def light_color(self, value):
+        self.shared_program['u_light_color'] = ColorArray(value).rgb
+
     def _prepare_draw(self, view):
         view.view_program['u_px_scale'] = view.transforms.pixel_scale
+
         tr = view.transforms.get_transform('visual', 'document').simplified
         mat = tr.map(np.eye(3)) - tr.map(np.zeros((3, 3)))
         scale = np.linalg.norm(mat[:, :3])
