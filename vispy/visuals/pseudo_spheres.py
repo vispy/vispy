@@ -9,13 +9,10 @@ import numpy as np
 
 from ..color import ColorArray
 from ..gloo import VertexBuffer
-from .shaders import Function, Variable
 from .visual import Visual
 
 
 vert = """
-uniform float u_px_scale;
-uniform float u_scale;
 uniform vec3 u_light_position;
 
 attribute vec3 a_position;
@@ -23,29 +20,33 @@ attribute vec4 a_color;
 attribute float a_radius;
 
 varying vec4 v_color;
-varying float v_radius;
 varying vec3 v_light_direction;
-varying float v_depth;
 varying float v_depth_middle;
 
 void main (void) {
     v_color = a_color;
-    v_radius = a_radius * u_scale * u_px_scale;
     v_light_direction = normalize(u_light_position);
 
     vec4 pos = vec4(a_position, 1.0);
     vec4 fb_pos = $visual_to_framebuffer(pos);
     gl_Position = $framebuffer_to_render(fb_pos);
 
+    // NOTE: gl_stuff uses framebuffer coords!
+
+    // calculate point size from visual to framebuffer coords to determine radius
+    vec4 x = $framebuffer_to_visual(fb_pos + vec4(100, 0, 0, 0));
+    x = (x/x.w - pos) / 100;
+    vec4 radius = $visual_to_framebuffer(pos + normalize(x) * a_radius);
+    radius = radius/radius.w - fb_pos/fb_pos.w;
+    // gl_PointSize is the diameter
+    gl_PointSize = length(radius) * 2;
+
     // Get the framebuffer z direction relative to this sphere in visual coords
     vec4 z = $framebuffer_to_visual(fb_pos + vec4(0, 0, -100, 0));
     z = (z/z.w - pos) / 100;
-
-    // Get the depth of the sphere in its middle (+ radius)
-    vec4 depth_z = $framebuffer_to_render($visual_to_framebuffer(pos + normalize(z) * a_radius));
+    // Get the depth of the sphere in its middle point on the screen (+ radius)
+    vec4 depth_z = $visual_to_framebuffer(pos + normalize(z) * a_radius);
     v_depth_middle = gl_Position.z / gl_Position.w - depth_z.z / depth_z.w;
-
-    gl_PointSize = v_radius;
 }
 """
 
@@ -55,17 +56,11 @@ uniform vec3 u_light_color;
 uniform float u_light_ambient;
 
 varying vec4 v_color;
-varying float v_radius;
 varying vec3 v_light_direction;
-varying float v_depth;
 varying float v_depth_middle;
 
 void main()
 {
-    // discard radius 0 spheres
-    if (v_radius <= 0.)
-        discard;
-
     // discard fragments outside of disc
     vec2 texcoord = gl_PointCoord * 2.0 - vec2(1.0);
     float x = texcoord.x;
@@ -96,8 +91,7 @@ void main()
 
     gl_FragColor = vec4(v_color.rgb * diffuse_color + specular_color, v_color.a);
 
-    // TODO: why was it 0.5? And why is 0.36 better?
-    gl_FragDepth = gl_FragCoord.z - 0.36 * z * v_depth_middle;
+    gl_FragDepth = gl_FragCoord.z - 0.5 * z * v_depth_middle;
 }
 """
 
@@ -180,14 +174,6 @@ class PseudoSpheresVisual(Visual):
     @light_color.setter
     def light_color(self, value):
         self.shared_program['u_light_color'] = ColorArray(value).rgb
-
-    def _prepare_draw(self, view):
-        view.view_program['u_px_scale'] = view.transforms.pixel_scale
-
-        tr = view.transforms.get_transform('visual', 'document').simplified
-        mat = tr.map(np.eye(3)) - tr.map(np.zeros((3, 3)))
-        scale = np.linalg.norm(mat[:, :3])
-        view.view_program['u_scale'] = scale
 
     def _prepare_transforms(self, view):
         view.view_program.vert['visual_to_framebuffer'] = view.get_transform('visual', 'framebuffer')
