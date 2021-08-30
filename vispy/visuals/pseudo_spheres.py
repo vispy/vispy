@@ -36,17 +36,17 @@ void main (void) {
     // calculate point size from visual to framebuffer coords to determine radius
     vec4 x = $framebuffer_to_visual(fb_pos + vec4(100, 0, 0, 0));
     x = (x/x.w - pos) / 100;
-    vec4 radius = $visual_to_framebuffer(pos + normalize(x) * a_radius);
-    radius = radius/radius.w - fb_pos/fb_pos.w;
+    vec4 radius_vec = $visual_to_framebuffer(pos + normalize(x) * a_radius);
+    float radius = radius_vec.x/radius_vec.w - fb_pos.x/fb_pos.w;
     // gl_PointSize is the diameter
-    gl_PointSize = length(radius) * 2;
+    gl_PointSize = radius * 2;
 
     // Get the framebuffer z direction relative to this sphere in visual coords
-    vec4 z = $framebuffer_to_visual(fb_pos + vec4(0, 0, -100, 0));
+    vec4 z = $framebuffer_to_visual(fb_pos + vec4(0, 0, 100, 0));
     z = (z/z.w - pos) / 100;
     // Get the depth of the sphere in its middle point on the screen (+ radius)
-    vec4 depth_z = $visual_to_framebuffer(pos + normalize(z) * a_radius);
-    v_depth_middle = gl_Position.z / gl_Position.w - depth_z.z / depth_z.w;
+    vec4 depth_z_vec = $visual_to_framebuffer(pos + normalize(z) * a_radius);
+    v_depth_middle = depth_z_vec.z / depth_z_vec.w - fb_pos.z / fb_pos.w;
 }
 """
 
