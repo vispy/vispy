@@ -254,11 +254,14 @@ void main() {
     // datasets. Ugly, but it works ...
     vec3 loc = start_loc;
     int iter = 0;
-    vec3 surface_point;
-    bool surface_found = false;
+
     // Keep track of whether texture has been sampled
     int texture_sampled = 0;
-    
+
+    // Keep track of wheter a surface was found (used for depth)
+    vec3 surface_point;
+    bool surface_found = false;
+
     while (iter < nsteps) {
         for (iter=iter; iter<nsteps; iter++)
         {
