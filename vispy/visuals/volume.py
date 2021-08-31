@@ -856,10 +856,11 @@ class VolumeVisual(Visual):
         Example: one plane in position (0, 0, 0) and with normal (0, 0, 1),
         and a plane in position (1, 1, 1) with normal (0, 1, 0):
 
-            volume.clipping_planes = np.array([
-                [[0, 0, 0], [0, 0, 1]],
-                [[1, 1, 1], [0, 1, 0]],
-            ])
+        >>> volume.clipping_planes = np.array([
+        >>>     [[0, 0, 0], [0, 0, 1]],
+        >>>     [[1, 1, 1], [0, 1, 0]],
+        >>> ])
+
         """
         return self._clipping_planes[:, :, ::-1]
 
