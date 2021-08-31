@@ -57,6 +57,7 @@ void main (void) {
 frag = """
 uniform vec3 u_light_color;
 uniform float u_light_ambient;
+uniform float u_alpha;
 
 varying vec4 v_color;
 varying vec3 v_light_direction;
@@ -92,7 +93,7 @@ void main()
     specular = pow(specular, 80);
     vec3 specular_color = u_light_color * specular;
 
-    gl_FragColor = vec4(v_color.rgb * diffuse_color + specular_color, v_color.a);
+    gl_FragColor = vec4(v_color.rgb * diffuse_color + specular_color, v_color.a * u_alpha);
 
     gl_FragDepth = gl_FragCoord.z - 0.5 * z * v_depth_middle;
 }
@@ -103,7 +104,7 @@ class PseudoSpheresVisual(Visual):
     """Visual displaying marker symbols."""
 
     def __init__(self, light_color='white', light_position=(1, -1, 1),
-                 light_ambient=0.3, **kwargs):
+                 light_ambient=0.3, alpha=1, **kwargs):
         self._vbo = VertexBuffer()
         self._data = None
 
@@ -112,6 +113,7 @@ class PseudoSpheresVisual(Visual):
         self.light_color = light_color
         self.light_position = light_position
         self.light_ambient = light_ambient
+        self.alpha = alpha
 
         self._draw_mode = 'points'
         self.set_gl_state('translucent', depth_test=True, cull_face=True)
@@ -182,6 +184,16 @@ class PseudoSpheresVisual(Visual):
     def light_color(self, value):
         self.shared_program['u_light_color'] = ColorArray(value).rgb
         self._light_color = value
+        self.update()
+
+    @property
+    def alpha(self):
+        return self._alpha
+
+    @alpha.setter
+    def alpha(self, value):
+        self.shared_program['u_alpha'] = value
+        self._alpha = value
         self.update()
 
     def _prepare_transforms(self, view):

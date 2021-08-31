@@ -23,7 +23,7 @@ colors = np.concatenate([colors, [[1, 0, 0]]], axis=0)
 
 
 # Create and show visual
-vis = scene.visuals.PseudoSpheres(pos=data, radius=size, color=colors)
+vis = scene.visuals.PseudoSpheres(pos=data, radius=size, color=colors, alpha=0.8)
 vis.parent = view.scene
 
 lines = np.array([[data[i], data[-1]]
