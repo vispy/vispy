@@ -1,5 +1,6 @@
 """
 Create a PseudoSpheres Visual
+=============================
 """
 import numpy as np
 from vispy import app, scene
