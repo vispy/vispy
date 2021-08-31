@@ -497,6 +497,8 @@ class CanvasBackend(BaseCanvasBackend, OpenGLFrame):
         if e.keysym_num in KEYMAP:
             return KEYMAP[e.keysym_num], ""
         # e.char, e.keycode, e.keysym, e.keysym_num
+        if e.char != "":
+            return keys.Key(e.char), e.char
         key = e.keycode
         if 97 <= key <= 122:
             key -= 32
