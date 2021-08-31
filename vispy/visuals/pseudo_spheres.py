@@ -23,13 +23,13 @@ varying vec4 v_color;
 varying vec3 v_light_direction;
 varying float v_depth_middle;
 
-float big_float = 1e10; // prevents wobbling of radii
+float big_float = 1e10; // prevents numerical imprecision
 
 void main (void) {
     v_color = a_color;
     v_light_direction = normalize(u_light_position);
 
-    vec4 pos = vec4(a_position, 1.0);
+    vec4 pos = vec4(a_position, 1);
     vec4 fb_pos = $visual_to_framebuffer(pos);
     gl_Position = $framebuffer_to_render(fb_pos);
 
@@ -37,16 +37,16 @@ void main (void) {
 
     // calculate point size from visual to framebuffer coords to determine radius
     vec4 x = $framebuffer_to_visual(fb_pos + vec4(big_float, 0, 0, 0));
-    x = (x/x.w - pos) / big_float;
+    x = (x - pos);
     vec4 radius_vec = $visual_to_framebuffer(pos + normalize(x) * a_radius);
-    float radius = radius_vec.x/radius_vec.w - fb_pos.x/fb_pos.w;
+    float radius_px = radius_vec.x / radius_vec.w - fb_pos.x / fb_pos.w;
 
     // gl_PointSize is the diameter
-    gl_PointSize = radius * 2;
+    gl_PointSize = radius_px * 2;
 
     // Get the framebuffer z direction relative to this sphere in visual coords
     vec4 z = $framebuffer_to_visual(fb_pos + vec4(0, 0, big_float, 0));
-    z = (z/z.w - pos) / big_float;
+    z = (z - pos);
     // Get the depth of the sphere in its middle point on the screen (+ radius)
     vec4 depth_z_vec = $visual_to_framebuffer(pos + normalize(z) * a_radius);
     v_depth_middle = depth_z_vec.z / depth_z_vec.w - fb_pos.z / fb_pos.w;
@@ -65,20 +65,20 @@ varying float v_depth_middle;
 void main()
 {
     // discard fragments outside of disc
-    vec2 texcoord = gl_PointCoord * 2.0 - vec2(1.0);
+    vec2 texcoord = gl_PointCoord * 2 - 1;
     float x = texcoord.x;
     float y = texcoord.y;
-    float d = 1.0 - x*x - y*y;
+    float d = 1 - x*x - y*y;
     if (d <= 0)
         discard;
 
     float z = sqrt(d);
-    vec3 normal = vec3(x,y,z);
+    vec3 normal = vec3(x, y, z);
 
     // Diffuse color
     float diffuse = dot(v_light_direction, normal);
     // clamp, because 0 < theta < pi/2
-    diffuse = clamp(diffuse, 0.0, 1.0);
+    diffuse = clamp(diffuse, 0, 1);
     vec3 diffuse_color = u_light_ambient + u_light_color * diffuse;
 
     // Specular color
@@ -86,7 +86,7 @@ void main()
     //   find the angle made with the eye
     vec3 eye = vec3(0, 0, -1);
     float specular = dot(reflect(v_light_direction, normal), eye);
-    specular = clamp(specular, 0.0, 1.0);
+    specular = clamp(specular, 0, 1);
     // raise to the material's shininess, multiply with a
     // small factor for spread
     specular = pow(specular, 80);
@@ -147,7 +147,7 @@ class PseudoSpheresVisual(Visual):
                 color = color[0]
             data['a_color'] = ColorArray(color).rgba
             data['a_radius'] = radius
-            self.shared_program['u_light_position'] = (1, -1, 1)
+
             self._data = data
             self._vbo.set_data(data)
             self.shared_program.bind(self._vbo)
@@ -161,6 +161,8 @@ class PseudoSpheresVisual(Visual):
     @light_position.setter
     def light_position(self, value):
         self.shared_program['u_light_position'] = value
+        self._light_position = value
+        self.update()
 
     @property
     def light_ambient(self):
@@ -169,6 +171,8 @@ class PseudoSpheresVisual(Visual):
     @light_ambient.setter
     def light_ambient(self, value):
         self.shared_program['u_light_ambient'] = value
+        self._light_ambient = value
+        self.update()
 
     @property
     def light_color(self):
@@ -177,6 +181,8 @@ class PseudoSpheresVisual(Visual):
     @light_color.setter
     def light_color(self, value):
         self.shared_program['u_light_color'] = ColorArray(value).rgb
+        self._light_color = value
+        self.update()
 
     def _prepare_transforms(self, view):
         view.view_program.vert['visual_to_framebuffer'] = view.get_transform('visual', 'framebuffer')
