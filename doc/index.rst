@@ -19,7 +19,7 @@
 
               <h1>Spiral galaxy simulation</h1>
               <p> Simulation of a spiral galaxy using the density wave theory.</p>
-              <p><a class="btn btn-primary" href="gallery.html" role="button">Check it out</a></p>
+              <p><a class="btn btn-primary" href="gallery/index.html" role="button">Check it out</a></p>
             </div>
           </div>
         </div>
@@ -30,7 +30,7 @@
             <div class="carousel-caption">
               <h1>High frequency signals</h1>
               <p>GPU multisampled high-frequency signal</p>
-              <p><a class="btn btn-primary" href="gallery.html" role="button">Browse gallery</a></p>
+              <p><a class="btn btn-primary" href="gallery/index.html" role="button">Browse gallery</a></p>
             </div>
           </div>
         </div>
@@ -41,7 +41,7 @@
             <div class="carousel-caption">
               <h1>Mandelbrot set</h1>
               <p>GPU computed fractals</p>
-              <p><a class="btn btn-primary" href="gallery.html" role="button">Show me more</a></p>
+              <p><a class="btn btn-primary" href="gallery/index.html" role="button">Show me more</a></p>
             </div>
           </div>
         </div>
@@ -52,7 +52,7 @@
             <div class="carousel-caption">
               <h1>Realtime signals</h1>
               <p>320 signals with 10 000 points each</p>
-              <p><a class="btn btn-primary" href="gallery.html" role="button">Wow!</a></p>
+              <p><a class="btn btn-primary" href="gallery/index.html" role="button">Wow!</a></p>
             </div>
           </div>
         </div>
