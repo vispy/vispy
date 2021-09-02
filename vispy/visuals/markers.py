@@ -235,9 +235,9 @@ float clobber(vec2 pointcoord, float size)
 {
     const float PI = 3.14159265358979323846264;
     const float t1 = -PI/2;
-    float circle_size = 0.32 * $v_size;
+    float circle_radius = 0.32 * $v_size;
     float center_shift = 0.36/sqrt3 * $v_size;
-    //total size (horizontal) = 2*circle_size + sqrt3*center_shirt = $v_size
+    //total size (horizontal) = 2*circle_radius + sqrt3*center_shirt = $v_size
     vec2  c1 = vec2(cos(t1),sin(t1))*center_shift;
     const float t2 = t1+2*PI/3;
     vec2  c2 = vec2(cos(t2),sin(t2))*center_shift;
@@ -245,9 +245,9 @@ float clobber(vec2 pointcoord, float size)
     vec2  c3 = vec2(cos(t3),sin(t3))*center_shift;
     //xy is shift to center marker vertically
     vec2 xy = (pointcoord.xy-vec2(0.5,0.5))*size + vec2(0.,-0.25*center_shift);
-    float r1 = length(xy - c1) - circle_size;
-    float r2 = length(xy - c2) - circle_size;
-    float r3 = length(xy - c3) - circle_size;
+    float r1 = length(xy - c1) - circle_radius;
+    float r2 = length(xy - c2) - circle_radius;
+    float r3 = length(xy - c3) - circle_radius;
     float r = min(min(r1,r2),r3);
     return r;
 }
@@ -552,6 +552,7 @@ _marker_dict = {
     '^': triangle_up,
     'v': triangle_down,
     '*': star,
+    'oo': disc,
 }
 marker_types = tuple(sorted(list(_marker_dict.keys())))
 
