@@ -601,9 +601,9 @@ class MarkersVisual(Visual):
         symbol : str
             The style of symbol to draw (see Notes).
         size : float or array
-            The symbol size in px.
+            The symbol size in screen (or data, if scaling is on) px.
         edge_width : float | None
-            The width of the symbol outline in pixels.
+            The width of the symbol outline in screen (or data, if scaling is on) px.
         edge_width_rel : float | None
             The width as a fraction of marker size. Exactly one of
             `edge_width` and `edge_width_rel` must be supplied.
