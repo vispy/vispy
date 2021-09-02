@@ -108,6 +108,7 @@ void main()
     // [-e/2-a, -e/2+a] antialising face-edge
     // [-e/2+a, e/2-a] core edge (center 0, diameter e-2a = 2t)
     // [e/2-a, e/2+a] antialising edge-background
+    // use max because we don't want negative transition zone
     float t = max(0.5*v_edgewidth - u_antialias, 0);
     float d = abs(r) - t;
 
