@@ -26,12 +26,12 @@ colors = np.concatenate([colors, [[1, 0, 0]]], axis=0)
 vis = scene.visuals.Markers(
     pos=data,
     size=100,
-    symbol='sphere',
     antialias=0,
     face_color=colors,
     edge_color='white',
     edge_width=0,
     scaling=True,
+    spherical=True,
 )
 vis.parent = view.scene
 

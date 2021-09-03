@@ -17,7 +17,7 @@ vert = """
 uniform float u_antialias;
 uniform float u_px_scale;
 uniform bool u_scaling;
-uniform bool u_sphere;
+uniform bool u_spherical;
 
 attribute vec3 a_position;
 attribute vec4 a_fg_color;
@@ -59,7 +59,7 @@ void main (void) {
     // gl_PointSize is the diameter
     gl_PointSize = $v_size + 4. * (v_edgewidth + 1.5 * u_antialias);
 
-    if (u_sphere == true) {
+    if (u_spherical == true) {
         // Get the framebuffer z direction relative to this sphere in visual coords
         vec4 z = $framebuffer_to_visual(fb_pos + vec4(0, 0, big_float, 0));
         z = (z - pos);
@@ -80,7 +80,7 @@ uniform vec3 u_light_color;
 uniform float u_light_ambient;
 uniform float u_alpha;
 uniform float u_antialias;
-uniform bool u_sphere;
+uniform bool u_spherical;
 
 varying vec4 v_fg_color;
 varying vec4 v_bg_color;
@@ -123,8 +123,8 @@ void main()
     vec4 edgecolor = vec4(v_fg_color.rgb, edgealphafactor*v_fg_color.a);
     float depth_change = 0;
 
-    // change color and depth if sphere mode is active
-    if (u_sphere == true) {
+    // change color and depth if spherical mode is active
+    if (u_spherical == true) {
         // multiply by alias_ratio and then clamp, so we're back to non-alias coordinates
         // and the aliasing ring has the same coordinates as the point just inside,
         // which is important for lighting
@@ -541,7 +541,6 @@ _marker_dict = {
     'triangle_up': triangle_up,
     'triangle_down': triangle_down,
     'star': star,
-    'sphere': disc,
     # aliases
     'o': disc,
     '+': cross,
@@ -553,32 +552,38 @@ _marker_dict = {
     '^': triangle_up,
     'v': triangle_down,
     '*': star,
-    'oo': disc,
 }
 marker_types = tuple(sorted(list(_marker_dict.keys())))
 
 
 class MarkersVisual(Visual):
-    """Visual displaying marker symbols."""
+    """Visual displaying marker symbols.
 
-    def __init__(self, **kwargs):
+    Parameters
+    ----------
+    symbol : str
+        The style of symbol to draw (see Notes).
+    scaling : bool
+        If set to True, marker scales when rezooming.
+    ...
+
+    Notes
+    -----
+    Allowed style strings are: disc, arrow, ring, clobber, square, diamond,
+    vbar, hbar, cross, tailed_arrow, x, triangle_up, triangle_down,
+    and star.
+    """
+    def __init__(self, symbol='o', scaling=False, light_color='white', light_position=(1, -1, 1),
+                 light_ambient=0.3, alpha=1, antialias=1, spherical=False, **kwargs):
         self._vbo = VertexBuffer()
-        self._symbol = None
         self._marker_fun = None
+        self._symbol = None
         self._data = None
-        self._scaling = None
-        self._antialias = None
-        self._light_color = None
-        self._light_ambient = None
-        self._light_position = None
-        self._alpha = None
-        self._v_size_var = Variable('varying float v_size')
 
         Visual.__init__(self, vcode=vert, fcode=frag)
-
+        self._v_size_var = Variable('varying float v_size')
         self.shared_program.vert['v_size'] = self._v_size_var
         self.shared_program.frag['v_size'] = self._v_size_var
-        self.shared_program['u_sphere'] = False
 
         self.set_gl_state(depth_test=True, blend=True,
                           blend_func=('src_alpha', 'one_minus_src_alpha'))
@@ -587,20 +592,25 @@ class MarkersVisual(Visual):
         if len(kwargs) > 0:
             self.set_data(**kwargs)
 
+        self.symbol = symbol
+        self.scaling = scaling
+        self.antialias = antialias
+        self.light_color = light_color
+        self.light_position = light_position
+        self.light_ambient = light_ambient
+        self.alpha = alpha
+        self.spherical = spherical
+
         self.freeze()
 
-    def set_data(self, pos=None, symbol='o', size=10., edge_width=1.,
-                 edge_width_rel=None, edge_color='black', face_color='white',
-                 scaling=False, light_color='white', light_position=(1, -1, 1),
-                 light_ambient=0.3, alpha=1, antialias=1):
+    def set_data(self, pos=None, size=10., edge_width=1., edge_width_rel=None,
+                 edge_color='black', face_color='white'):
         """Set the data used to display this visual.
 
         Parameters
         ----------
         pos : array
             The array of locations to display each symbol.
-        symbol : str
-            The style of symbol to draw (see Notes).
         size : float or array
             The symbol size in screen (or data, if scaling is on) px.
         edge_width : float | None
@@ -612,14 +622,6 @@ class MarkersVisual(Visual):
             The color used to draw each symbol outline.
         face_color : Color | ColorArray
             The color used to draw each symbol interior.
-        scaling : bool
-            If set to True, marker scales when rezooming.
-
-        Notes
-        -----
-        Allowed style strings are: disc, arrow, ring, clobber, square, diamond,
-        vbar, hbar, cross, tailed_arrow, x, triangle_up, triangle_down,
-        and star.
         """
         if (edge_width is not None) + (edge_width_rel is not None) != 1:
             raise ValueError('exactly one of edge_width and edge_width_rel '
@@ -630,14 +632,6 @@ class MarkersVisual(Visual):
         else:
             if edge_width_rel < 0:
                 raise ValueError('edge_width_rel cannot be negative')
-
-        self.symbol = symbol
-        self.scaling = scaling
-        self.antialias = antialias
-        self.light_color = light_color
-        self.light_position = light_position
-        self.light_ambient = light_ambient
-        self.alpha = alpha
 
         edge_color = ColorArray(edge_color).rgba
         if len(edge_color) == 1:
@@ -703,10 +697,6 @@ class MarkersVisual(Visual):
             self._marker_fun = Function(_marker_dict[symbol])
             self._marker_fun['v_size'] = self._v_size_var
             self.shared_program.frag['marker'] = self._marker_fun
-            if symbol == 'sphere':
-                self.shared_program['u_sphere'] = True
-            else:
-                self.shared_program['u_sphere'] = False
         self.update()
 
     @property
@@ -768,6 +758,16 @@ class MarkersVisual(Visual):
     def alpha(self, value):
         self.shared_program['u_alpha'] = value
         self._alpha = value
+        self.update()
+
+    @property
+    def spherical(self):
+        return self._spherical
+
+    @spherical.setter
+    def spherical(self, value):
+        self.shared_program['u_spherical'] = value
+        self._spherical = value
         self.update()
 
     def _prepare_transforms(self, view):
