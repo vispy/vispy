@@ -561,11 +561,35 @@ class MarkersVisual(Visual):
 
     Parameters
     ----------
+    pos : array
+        The array of locations to display each symbol.
+    size : float or array
+        The symbol size in screen (or data, if scaling is on) px.
+    edge_width : float or array or None
+        The width of the symbol outline in screen (or data, if scaling is on) px.
+    edge_width_rel : float or array or None
+        The width as a fraction of marker size. Exactly one of
+        `edge_width` and `edge_width_rel` must be supplied.
+    edge_color : Color | ColorArray
+        The color used to draw each symbol outline.
+    face_color : Color | ColorArray
+        The color used to draw each symbol interior.
     symbol : str
         The style of symbol to draw (see Notes).
     scaling : bool
         If set to True, marker scales when rezooming.
-    ...
+    alpha : float
+        The opacity level of the visual.
+    antialias : float
+        Antialiasing amount (in px).
+    spherical : bool
+        Whether to add a spherical effect on the marker using lighting.
+    light_color : Color | ColorArray
+        The color of the light used to create the spherical effect.
+    light_position : array
+        The coordinates of the light used to create the spherical effect.
+    light_ambient : float
+        The amount of ambient light used to create the spherical effect.
 
     Notes
     -----
@@ -573,8 +597,8 @@ class MarkersVisual(Visual):
     vbar, hbar, cross, tailed_arrow, x, triangle_up, triangle_down,
     and star.
     """
-    def __init__(self, symbol='o', scaling=False, light_color='white', light_position=(1, -1, 1),
-                 light_ambient=0.3, alpha=1, antialias=1, spherical=False, **kwargs):
+    def __init__(self, symbol='o', scaling=False, alpha=1, antialias=1, spherical=False,
+                 light_color='white', light_position=(1, -1, 1), light_ambient=0.3, **kwargs):
         self._vbo = VertexBuffer()
         self._marker_fun = None
         self._symbol = None
@@ -613,9 +637,9 @@ class MarkersVisual(Visual):
             The array of locations to display each symbol.
         size : float or array
             The symbol size in screen (or data, if scaling is on) px.
-        edge_width : float | None
+        edge_width : float or array or None
             The width of the symbol outline in screen (or data, if scaling is on) px.
-        edge_width_rel : float | None
+        edge_width_rel : float or array or None
             The width as a fraction of marker size. Exactly one of
             `edge_width` and `edge_width_rel` must be supplied.
         edge_color : Color | ColorArray
