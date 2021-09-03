@@ -1,6 +1,6 @@
 """
-Show some spheres and sticks
-============================
+Spheres and Sticks
+==================
 """
 import numpy as np
 from vispy import app, scene
@@ -30,7 +30,7 @@ vis = scene.visuals.Markers(
     antialias=0,
     face_color=colors,
     edge_color='white',
-    edge_width=30,
+    edge_width=0,
     scaling=True,
 )
 vis.parent = view.scene
