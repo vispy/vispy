@@ -670,7 +670,6 @@ class MarkersVisual(Visual):
                           DeprecationWarning)
             self.symbol = symbol
 
-
         edge_color = ColorArray(edge_color).rgba
         if len(edge_color) == 1:
             edge_color = edge_color[0]
