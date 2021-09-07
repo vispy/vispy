@@ -5,6 +5,8 @@
 # -----------------------------------------------------------------------------
 """Marker Visual and shader definitions."""
 
+import warnings
+
 import numpy as np
 
 from ..color import ColorArray
@@ -628,7 +630,8 @@ class MarkersVisual(Visual):
         self.freeze()
 
     def set_data(self, pos=None, size=10., edge_width=1., edge_width_rel=None,
-                 edge_color='black', face_color='white'):
+                 edge_color='black', face_color='white',
+                 symbol=None, scaling=None):
         """Set the data used to display this visual.
 
         Parameters
@@ -656,6 +659,17 @@ class MarkersVisual(Visual):
         else:
             if edge_width_rel < 0:
                 raise ValueError('edge_width_rel cannot be negative')
+
+        if scaling is not None:
+            warnings.warn('The scaling parameter is deprecated. Use MarkersVisual.scaling instead',
+                          DeprecationWarning)
+            self.scaling = scaling
+
+        if symbol is not None:
+            warnings.warn('The symbol parameter is deprecated. Use MarkersVisual.symbol instead',
+                          DeprecationWarning)
+            self.symbol = symbol
+
 
         edge_color = ColorArray(edge_color).rgba
         if len(edge_color) == 1:
