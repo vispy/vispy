@@ -364,6 +364,7 @@ class CanvasBackend(BaseCanvasBackend, OpenGLFrame):
 
         self._init = False
         self.is_destroyed = False
+        self._dynamic_keymap = {}
 
         OpenGLFrame.__init__(self, parent, **kwargs)
 
@@ -499,8 +500,13 @@ class CanvasBackend(BaseCanvasBackend, OpenGLFrame):
             return KEYMAP[e.keysym_num], ""
         # e.char, e.keycode, e.keysym, e.keysym_num
         if e.char:
+            self._dynamic_keymap[e.keycode] = e.char
             return keys.Key(e.char), e.char
-          
+
+        if e.keycode in self._dynamic_keymap:
+            char = self._dynamic_keymap[e.keycode]
+            return keys.Key(char), char
+
         warnings.warn("The key you typed is not supported by the tkinter backend."
                       "Please map your functionality to a different key")
         return None, None
