@@ -27,7 +27,12 @@ class PlanesClipper(Filter):
     }
     """
 
-    def __init__(self, clipping_planes=None):
+    def __init__(self, clipping_planes=None, coord_system='scene'):
+        tr = ['visual', 'scene', 'document', 'canvas', 'framebuffer', 'render']
+        if coord_system not in tr:
+            raise ValueError(f'Invalid coordinate system {coord_system}. Must be one of {tr}.')
+        self._coord_system = coord_system
+
         super().__init__(
             vcode=Function(self.VERT_CODE), vhook='post', vpos=1,
             fcode=Function(self.FRAG_CODE), fhook='pre', fpos=1,
@@ -39,16 +44,14 @@ class PlanesClipper(Filter):
 
         self.clipping_planes = clipping_planes
 
-    @staticmethod
-    def _get_itransform(visual):
-        """
-        get the transform from gl_Position to visual coordinates
-        """
-        return visual.get_transform('render', 'visual')
+    @property
+    def coord_system(self):
+        # unsettable cause we can't update the transform after being attached
+        return self._coord_system
 
     def _attach(self, visual):
         super()._attach(visual)
-        self.vshader['itransform'] = self._get_itransform(visual)
+        self.vshader['itransform'] = visual.get_transform('render', self._coord_system)
 
     @staticmethod
     @lru_cache(maxsize=10)

@@ -620,7 +620,14 @@ class VolumeVisual(Visual):
                  attenuation=1.0, relative_step_size=0.8, cmap='grays',
                  gamma=1.0, interpolation='linear', texture_format=None,
                  raycasting_mode='volume', plane_position=None,
-                 plane_normal=None, plane_thickness=1.0, clipping_planes=None):
+                 plane_normal=None, plane_thickness=1.0, clipping_planes=None,
+                 clipping_planes_coord_system='scene'):
+
+        tr = ['visual', 'scene', 'document', 'canvas', 'framebuffer', 'render']
+        if clipping_planes_coord_system not in tr:
+            raise ValueError(f'Invalid coordinate system {clipping_planes_coord_system}. Must be one of {tr}.')
+        self._clipping_planes_coord_system = clipping_planes_coord_system
+        self._clip_transform = None
         # Storage of information of volume
         self._vol_shape = ()
         self._gamma = gamma
@@ -830,6 +837,7 @@ class VolumeVisual(Visual):
         """Build the code snippet used to clip the volume based on self.clipping_planes."""
         func_template = '''
             float clip_planes(vec3 loc, vec3 vol_shape) {{
+                vec3 loc_transf = $clip_transform(vec4(loc, 1)).xyz;
                 float is_shown = 1.0;
                 {clips};
                 return is_shown;
@@ -837,7 +845,7 @@ class VolumeVisual(Visual):
         '''
         # the vertex is considered clipped if on the "negative" side of the plane
         clip_template = '''
-            vec3 relative_vec{idx} = loc - ( $clipping_plane_pos{idx} / vol_shape );
+            vec3 relative_vec{idx} = loc_transf - ( $clipping_plane_pos{idx} / vol_shape );
             float is_shown{idx} = dot(relative_vec{idx}, ($clipping_plane_norm{idx} * vol_shape));
             is_shown = min(is_shown{idx}, is_shown);
             '''
@@ -871,12 +879,18 @@ class VolumeVisual(Visual):
         value = value[:, :, ::-1]
         self._clipping_planes = value
 
-        clip_func = self._build_clipping_planes_func(len(value))
-        self.shared_program.frag['clip_with_planes'] = clip_func
+        self._clip_func = self._build_clipping_planes_func(len(value))
+        self.shared_program.frag['clip_with_planes'] = self._clip_func
+
+        self._clip_func['clip_transform'] = self._clip_transform
         for idx, plane in enumerate(value):
-            clip_func[f'clipping_plane_pos{idx}'] = tuple(plane[0])
-            clip_func[f'clipping_plane_norm{idx}'] = tuple(plane[1])
+            self._clip_func[f'clipping_plane_pos{idx}'] = tuple(plane[0])
+            self._clip_func[f'clipping_plane_norm{idx}'] = tuple(plane[1])
         self.update()
+
+    @property
+    def clipping_planes_coord_system(self):
+        return self._clipping_planes_coord_system
 
     @property
     def _before_loop_snippet(self):
@@ -1126,6 +1140,8 @@ class VolumeVisual(Visual):
         view_tr_i = view_tr_f.inverse
         view.view_program.vert['viewtransformf'] = view_tr_f
         view.view_program.vert['viewtransformi'] = view_tr_i
+
+        self._clip_transform = trs.get_transform('visual', self._clipping_planes_coord_system)
 
     def _prepare_draw(self, view):
         if self._need_vertex_update:

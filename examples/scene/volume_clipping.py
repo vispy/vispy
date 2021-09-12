@@ -27,7 +27,7 @@ canvas = scene.SceneCanvas(keys='interactive', size=(800, 600), show=True)
 view = canvas.central_widget.add_view()
 
 # Create the volume visual
-volume = scene.visuals.Volume(vol, parent=view.scene, threshold=0.225)
+volume = scene.visuals.Volume(vol, parent=view.scene, threshold=0.225, clipping_planes_coord_system='visual')
 volume.transform = scene.STTransform(translate=(64, 64, 0))
 
 # Create and set the camera
