@@ -7,6 +7,7 @@
 from __future__ import division
 
 from time import sleep
+import warnings
 
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
                     BaseTimerBackend)
@@ -363,6 +364,7 @@ class CanvasBackend(BaseCanvasBackend, OpenGLFrame):
 
         self._init = False
         self.is_destroyed = False
+        self._dynamic_keymap = {}
 
         OpenGLFrame.__init__(self, parent, **kwargs)
 
@@ -497,13 +499,17 @@ class CanvasBackend(BaseCanvasBackend, OpenGLFrame):
         if e.keysym_num in KEYMAP:
             return KEYMAP[e.keysym_num], ""
         # e.char, e.keycode, e.keysym, e.keysym_num
-        key = e.keycode
-        if 97 <= key <= 122:
-            key -= 32
-        if key >= 32 and key <= 127:
-            return keys.Key(chr(key)), chr(key)
-        else:
-            return None, None
+        if e.char:
+            self._dynamic_keymap[e.keycode] = e.char
+            return keys.Key(e.char), e.char
+
+        if e.keycode in self._dynamic_keymap:
+            char = self._dynamic_keymap[e.keycode]
+            return keys.Key(char), char
+
+        warnings.warn("The key you typed is not supported by the tkinter backend."
+                      "Please map your functionality to a different key")
+        return None, None
 
     def _on_mouse_enter(self, e):
         """Event callback when the mouse enters the canvas.
