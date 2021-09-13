@@ -63,6 +63,7 @@ class GraphVisual(CompoundVisual):
     _arrow_kw_trans = dict(line_color='color', line_width='width')
     _node_kw_trans = dict(node_symbol='symbol', node_size='size',
                           border_color='edge_color', border_width='edge_width')
+    _node_properties = ('symbol',)
 
     def __init__(self, adjacency_mat=None, directed=False, layout=None,
                  animate=False, line_color=None, line_width=None,
@@ -75,6 +76,7 @@ class GraphVisual(CompoundVisual):
 
         self._arrow_data = {}
         self._node_data = {}
+        self._node_properties = {}
 
         self._adjacency_mat = None
 
@@ -145,6 +147,9 @@ class GraphVisual(CompoundVisual):
             return True
 
         self._nodes.set_data(pos=node_vertices, **self._node_data)
+        for k, v in self._node_properties.items():
+            setattr(self._nodes, k, v)
+
         self._edges.set_data(pos=line_vertices, arrows=arrows,
                              **self._arrow_data)
 
@@ -167,6 +172,9 @@ class GraphVisual(CompoundVisual):
             pass
 
         self._nodes.set_data(pos=node_vertices, **self._node_data)
+        for k, v in self._node_properties.items():
+            setattr(self._nodes, k, v)
+
         self._edges.set_data(pos=line_vertices, arrows=arrows,
                              **self._arrow_data)
 
@@ -216,10 +224,17 @@ class GraphVisual(CompoundVisual):
             raise TypeError("%s.set_data() got invalid keyword arguments: %s"
                             % (self.__class__.__name__, list(kwargs.keys())))
 
+        # some attributes should be set as properties
+        node_properties = {}
+        for k, v in list(node_kwargs.items()):
+            if k in (self._node_properties):
+                node_properties[k] = node_kwargs.pop(k)
+
         # The actual data is set in GraphVisual.animate_layout or
         # GraphVisual.set_final_layout
         self._arrow_data = arrow_kwargs
         self._node_data = node_kwargs
+        self._node_properties = node_properties
 
         if not self._animate:
             self.set_final_layout()
