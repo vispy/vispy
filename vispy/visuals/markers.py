@@ -813,7 +813,7 @@ class MarkersVisual(Visual):
         view.view_program.vert['framebuffer_to_render'] = view.get_transform('framebuffer', 'render')
 
     def _prepare_draw(self, view):
-        if self._symbol is None:
+        if self._data is None or self._symbol is None:
             return False
         view.view_program['u_px_scale'] = view.transforms.pixel_scale
         view.view_program['u_scaling'] = self.scaling
