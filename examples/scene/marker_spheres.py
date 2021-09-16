@@ -44,6 +44,5 @@ for line in lines:
     vis2.parent = view.scene
     line_vis.append(vis2)
 
-
-# Run example
-app.run()
+if __name__ == "__main__":
+    app.run()
