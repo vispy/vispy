@@ -254,10 +254,14 @@ void main() {
     // datasets. Ugly, but it works ...
     vec3 loc = start_loc;
     int iter = 0;
-    
+
     // Keep track of whether texture has been sampled
     int texture_sampled = 0;
-    
+
+    // Keep track of wheter a surface was found (used for depth)
+    vec3 surface_point;
+    bool surface_found = false;
+
     while (iter < nsteps) {
         for (iter=iter; iter<nsteps; iter++)
         {
@@ -284,16 +288,17 @@ void main() {
     
     $after_loop
 
-    /* Set depth value - from visvis TODO
-    int iter_depth = int(maxi);
-    // Calculate end position in world coordinates
-    vec4 position2 = vertexPosition;
-    position2.xyz += ray*shape*float(iter_depth);
-    // Project to device coordinates and set fragment depth
-    vec4 iproj = gl_ModelViewProjectionMatrix * position2;
-    iproj.z /= iproj.w;
-    gl_FragDepth = (iproj.z+1.0)/2.0;
-    */
+    if (surface_found == true) {
+        // if a surface was found, use it to set the depth buffer
+        vec4 position2 = vec4(surface_point, 1);
+        vec4 iproj = $viewtransformf(position2);
+        iproj.z /= iproj.w;
+        gl_FragDepth = (iproj.z+1.0)/2.0;
+    }
+    else {
+        gl_FragDepth = gl_FragCoord.z;
+    }
+
 }
 
 
@@ -311,7 +316,7 @@ RAYCASTING_SETUP_VOLUME = """
 
     // Now we have the starting position on the front surface
     vec3 front = v_position + view_ray * distance;
-
+    
     // Decide how many steps to take
     int nsteps = int(-distance / u_relative_step_size + 0.5);
     float f_nsteps = float(nsteps);
@@ -488,6 +493,11 @@ ISO_SNIPPETS = dict(
                 if (color.r > u_threshold) {
                     color = calculateColor(color, iloc, dstep);
                     gl_FragColor = applyColormap(color.r);
+
+                    // set the variables for the depth buffer                            
+                    surface_point = iloc * u_shape;
+                    surface_found = true;
+
                     iter = nsteps;
                     break;
                 }
@@ -496,6 +506,11 @@ ISO_SNIPPETS = dict(
         }
         """,
     after_loop="""
+
+        if (!surface_found) {
+            discard;
+        }
+
         """,
 )
 
@@ -1120,6 +1135,7 @@ class VolumeVisual(Visual):
         view_tr_i = view_tr_f.inverse
         view.view_program.vert['viewtransformf'] = view_tr_f
         view.view_program.vert['viewtransformi'] = view_tr_i
+        view.view_program.frag['viewtransformf'] = view_tr_f
 
     def _prepare_draw(self, view):
         if self._need_vertex_update:
