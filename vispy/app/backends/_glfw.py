@@ -26,7 +26,7 @@ USE_EGL = config['gl_backend'].lower().startswith('es')
 glfw = None
 try:
     import glfw
-except ImportError as err:
+except ImportError:
     why_not = "Could not import glwf, you may need to `pip install glfw` first."
     available, testable, why_not, which = False, False, why_not, None
 except Exception as err:
@@ -261,8 +261,8 @@ class CanvasBackend(BaseCanvasBackend):
             size = p.size
 
         self._id = glfw.create_window(width=size[0], height=size[1],
-                                         title=p.title, monitor=monitor,
-                                         share=share)
+                                      title=p.title, monitor=monitor,
+                                      share=share)
         if not self._id:
             raise RuntimeError('Could not create window')
 
