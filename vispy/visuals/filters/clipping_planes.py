@@ -25,13 +25,13 @@ class PlanesClipper(Filter):
     VERT_CODE = """
     void clip() {
         // Transform back to visual coordinates and clip based on that
-        $v_is_shown = $clip_with_planes($itransform(gl_Position).xyz);
+        $v_distance_from_clip = $clip_with_planes($itransform(gl_Position).xyz);
     }
     """
 
     FRAG_CODE = """
     void clip() {
-        if ($v_is_shown < 0.)
+        if ($v_distance_from_clip < 0.)
             discard;
     }
     """
@@ -47,9 +47,9 @@ class PlanesClipper(Filter):
             fcode=Function(self.FRAG_CODE), fhook='pre', fpos=1,
         )
 
-        v_is_shown = Varying('v_is_shown', 'float')
-        self.vshader['v_is_shown'] = v_is_shown
-        self.fshader['v_is_shown'] = v_is_shown
+        v_distance_from_clip = Varying('v_distance_from_clip', 'float')
+        self.vshader['v_distance_from_clip'] = v_distance_from_clip
+        self.fshader['v_distance_from_clip'] = v_distance_from_clip
 
         self.clipping_planes = clipping_planes
 
@@ -71,16 +71,16 @@ class PlanesClipper(Filter):
         """Build the code snippet used to clip the volume based on self.clipping_planes."""
         func_template = '''
             float clip_planes(vec3 loc) {{
-                float is_shown = 3.4e38; // max float
+                float distance_from_clip = 3.4e38; // max float
                 {clips};
-                return is_shown;
+                return distance_from_clip;
             }}
         '''
         # the vertex is considered clipped if on the "negative" side of the plane
         clip_template = '''
             vec3 relative_vec{idx} = loc - $clipping_plane_pos{idx};
-            float is_shown{idx} = dot(relative_vec{idx}, $clipping_plane_norm{idx});
-            is_shown = min(is_shown{idx}, is_shown);
+            float distance_from_clip{idx} = dot(relative_vec{idx}, $clipping_plane_norm{idx});
+            distance_from_clip = min(distance_from_clip{idx}, distance_from_clip);
             '''
         all_clips = []
         for idx in range(n_planes):
