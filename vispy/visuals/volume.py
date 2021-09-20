@@ -890,6 +890,9 @@ class VolumeVisual(Visual):
 
     @property
     def clipping_planes_coord_system(self):
+        """
+        Coordinate system used by the clipping planes (see visuals.transforms.transform_system.py)
+        """
         return self._clipping_planes_coord_system
 
     @property

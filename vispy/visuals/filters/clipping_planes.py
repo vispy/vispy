@@ -11,7 +11,16 @@ from .base_filter import Filter
 
 
 class PlanesClipper(Filter):
-    """Clips visual output based on arbitrary clipping planes."""
+    """Clips visual output based on arbitrary clipping planes.
+
+    Parameters
+    ----------
+    cliping_planes : ArrayLike
+        Each plane is defined by a position and a normal vector (magnitude is irrelevant). Shape: (n_planes, 2, 3)
+    coord_system : str
+        Coordinate system used by the clipping planes (see visuals.transforms.transform_system.py)
+
+    """
 
     VERT_CODE = """
     void clip() {
@@ -46,6 +55,9 @@ class PlanesClipper(Filter):
 
     @property
     def coord_system(self):
+        """
+        Coordinate system used by the clipping planes (see visuals.transforms.transform_system.py)
+        """
         # unsettable cause we can't update the transform after being attached
         return self._coord_system
 
