@@ -877,7 +877,6 @@ class VolumeVisual(Visual):
     def clipping_planes(self, value):
         if value is None:
             value = np.empty([0, 2, 3])
-        value = value
         self._clipping_planes = value
 
         self._clip_func = self._build_clipping_planes_func(len(value))
