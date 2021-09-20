@@ -857,9 +857,10 @@ class VolumeVisual(Visual):
 
     @property
     def clipping_planes(self):
-        """Get the set of planes used to clip the volume. Values on the negative side of the normal are discarded.
+        """The set of planes used to clip the volume. Values on the negative side of the normal are discarded.
 
-        Each plane is defined by a position and a normal vector (magnitude is irrelevant). Shape: (n_planes, 2, 3)
+        Each plane is defined by a position and a normal vector (magnitude is irrelevant). Shape: (n_planes, 2, 3).
+        The order is xyz, as opposed to data's zyx (for consistency with the rest of vispy)
 
         Example: one plane in position (0, 0, 0) and with normal (0, 0, 1),
         and a plane in position (1, 1, 1) with normal (0, 1, 0):
@@ -870,13 +871,13 @@ class VolumeVisual(Visual):
         >>> ])
 
         """
-        return self._clipping_planes[:, :, ::-1]
+        return self._clipping_planes
 
     @clipping_planes.setter
     def clipping_planes(self, value):
         if value is None:
             value = np.empty([0, 2, 3])
-        value = value[:, :, ::-1]
+        value = value
         self._clipping_planes = value
 
         self._clip_func = self._build_clipping_planes_func(len(value))

@@ -93,13 +93,13 @@ class PlanesClipper(Filter):
         """Get the set of planes used to clip the mesh.
         Each plane is defined by a position and a normal vector (magnitude is irrelevant). Shape: (n_planes, 2, 3)
         """
-        return self._clipping_planes[:, :, ::-1]
+        return self._clipping_planes
 
     @clipping_planes.setter
     def clipping_planes(self, value):
         if value is None:
             value = np.empty([0, 2, 3])
-        value = value[:, :, ::-1]
+        value = value
         self._clipping_planes = value
 
         clip_func = self._build_clipping_planes_func(len(value))

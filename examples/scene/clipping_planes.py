@@ -49,13 +49,15 @@ cam = scene.cameras.TurntableCamera(
 view.camera = cam
 
 
-volume_center = (np.array(vol.shape) / 2)
+# since volume data is in 'zyx' coordinates, we have to reverse the coordinates
+# we use as a center
+volume_center = (np.array(vol.shape) / 2)[::-1]
 
 # clipping planes around the origin
 clip_modes = {
-    'x': np.array([[volume_center, [0, 0, 1]]]),
+    'x': np.array([[volume_center, [1, 0, 0]]]),
     'y': np.array([[volume_center, [0, 1, 0]]]),
-    'z': np.array([[volume_center, [1, 0, 0]]]),
+    'z': np.array([[volume_center, [0, 0, 1]]]),
     'o': np.array([[volume_center, [1, 1, 1]]]),
 }
 
@@ -63,17 +65,13 @@ clip_modes = {
 def add_clip(mode):
     if mode not in clip_modes:
         return
-    new_plane = clip_modes[mode]
-    if volume.clipping_planes is None:
-        clipping_planes = new_plane
-    else:
-        clipping_planes = np.concatenate([volume.clipping_planes, new_plane])
+    clipping_planes = np.concatenate([volume.clipping_planes, clip_modes[mode]])
     volume.clipping_planes = clipping_planes
     clipper.clipping_planes = clipping_planes
 
 
 def remove_clip():
-    if volume.clipping_planes is not None:
+    if volume.clipping_planes.shape[0] > 0:
         volume.clipping_planes = volume.clipping_planes[:-1]
         clipper.clipping_planes = clipper.clipping_planes[:-1]
 
