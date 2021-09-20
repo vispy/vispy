@@ -15,7 +15,6 @@ Controls:
 import numpy as np
 
 from vispy import app, scene, io
-from vispy.visuals.transforms import STTransform
 from vispy.visuals.filters.clipping_planes import PlanesClipper
 
 # Prepare canvas
