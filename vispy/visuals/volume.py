@@ -800,3 +800,14 @@ class VolumeVisual(Visual):
     def _prepare_draw(self, view):
         if self._need_vertex_update:
             self._create_vertex_data()
+
+    def is_transparent(self):
+        # TODO: this is probably very wrong
+        if self._data.ndim == 4:
+            if self._data.shape[3] == 4:
+                # alpha channel, check if they're all 1
+                return not np.allclose(self._data[..., -1], 1)
+            else:
+                return False
+        # luminance, so it's based on colormap? How?
+        return True

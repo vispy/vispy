@@ -284,3 +284,11 @@ class WindbarbVisual(Visual):
             return (pos[:, axis].min(), pos[:, axis].max())
         else:
             return (0, 0)
+
+    def is_transparent(self):
+        if self.shared_program['u_antialias'] != 0:
+            return True
+        for col in ('a_bg_color', 'a_fg_color'):
+            if not np.allclose(self._data[col][..., -1], 1):
+                return True
+        return False

@@ -195,3 +195,6 @@ class ScrollingLinesVisual(Visual):
         """
         self._pos_tex[index, :] = data
         self.update()
+
+    def is_transparent(self):
+        return not np.allclose(self._color_tex[..., -1], 1)

@@ -202,3 +202,6 @@ class _BorderVisual(Visual):
     def halfdim(self, halfdim):
         self._halfdim = halfdim
         self._update()
+
+    def is_transparent(self):
+        return not np.allclose(self.border_color.alpha, 1)

@@ -164,3 +164,6 @@ class InfiniteLineVisual(Visual):
         if self._changed['color']:
             self._program.vert['color'] = self._color
             self._changed['color'] = False
+
+    def is_transparent(self):
+        return not np.allclose(self._color[-1], 1)

@@ -192,3 +192,6 @@ class LinearRegionVisual(Visual):
             self._changed['color'] = False
 
         return True
+
+    def is_transparent(self):
+        return not np.allclose(self._color[..., -1], 1)
