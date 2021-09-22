@@ -8,7 +8,6 @@ from __future__ import division
 import numpy as np
 
 from ... import gloo, glsl
-from ...app import _default_app as default_app_module
 from ...color import Color, ColorArray, get_colormap
 from ..shaders import Function
 from ..visual import Visual, CompoundVisual
