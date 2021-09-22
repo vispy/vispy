@@ -14,6 +14,7 @@ defined in vispy.scene.
 from .axis import AxisVisual  # noqa
 from .box import BoxVisual  # noqa
 from .cube import CubeVisual  # noqa
+from .cylinders import CylindersVisual  # noqa
 from .ellipse import EllipseVisual  # noqa
 from .gridlines import GridLinesVisual  # noqa
 from .image import ImageVisual  # noqa
