@@ -37,7 +37,6 @@ void main (void) {
 }
 """
 
-
 geom = """
 #version 450
 layout (lines) in;
@@ -49,21 +48,22 @@ in float v_width[];
 out vec4 v_color_out;
 
 void main(void) {
+    // start and end position of the cylinder
     vec4 start = gl_in[0].gl_Position;
     vec4 end = gl_in[1].gl_Position;
-    vec4 direction = normalize(start - end);
-    vec4 perp1 = vec4(vec2(direction.y, -direction.x), 0, 0);
-    vec4 perp2 = vec4(vec2(-direction.y, direction.x), 0, 0);
-    gl_Position = start + perp1 * v_width[0];
+    // get the perpendicular
+    vec2 direction = normalize(end.xy - start.xy);
+    vec2 perp = vec2(direction.y, -direction.x);
+    gl_Position = vec4(start.xy + perp * v_width[0], start.zw);
     v_color_out = v_color[0];
     EmitVertex();
-    gl_Position = start + perp2 * v_width[0];
+    gl_Position = vec4(start.xy - perp * v_width[0], start.zw);
     v_color_out = v_color[0];
     EmitVertex();
-    gl_Position = end + perp1 * v_width[1];
+    gl_Position = vec4(end.xy + perp * v_width[1], end.zw);
     v_color_out = v_color[1];
     EmitVertex();
-    gl_Position = end + perp2 * v_width[1];
+    gl_Position = vec4(end.xy - perp * v_width[1], end.zw);
     v_color_out = v_color[1];
     EmitVertex();
     EndPrimitive();
@@ -79,47 +79,8 @@ void main()
 }
 """
 
+
 class CylindersVisual(Visual):
-    """Visual displaying marker symbols.
-
-    Parameters
-    ----------
-    pos : array
-        The array of locations to display each symbol.
-    size : float or array
-        The symbol size in screen (or data, if scaling is on) px.
-    edge_width : float or array or None
-        The width of the symbol outline in screen (or data, if scaling is on) px.
-    edge_width_rel : float or array or None
-        The width as a fraction of marker size. Exactly one of
-        `edge_width` and `edge_width_rel` must be supplied.
-    edge_color : Color | ColorArray
-        The color used to draw each symbol outline.
-    face_color : Color | ColorArray
-        The color used to draw each symbol interior.
-    symbol : str
-        The style of symbol to draw (see Notes).
-    scaling : bool
-        If set to True, marker scales when rezooming.
-    alpha : float
-        The opacity level of the visual.
-    antialias : float
-        Antialiasing amount (in px).
-    spherical : bool
-        Whether to add a spherical effect on the marker using lighting.
-    light_color : Color | ColorArray
-        The color of the light used to create the spherical effect.
-    light_position : array
-        The coordinates of the light used to create the spherical effect.
-    light_ambient : float
-        The amount of ambient light used to create the spherical effect.
-
-    Notes
-    -----
-    Allowed style strings are: disc, arrow, ring, clobber, square, diamond,
-    vbar, hbar, cross, tailed_arrow, x, triangle_up, triangle_down,
-    and star.
-    """
     def __init__(self, **kwargs):
         self._vbo = VertexBuffer()
         self._data = None
@@ -162,5 +123,3 @@ class CylindersVisual(Visual):
         view.view_program.vert['visual_to_framebuffer'] = view.get_transform('visual', 'framebuffer')
         view.view_program.vert['framebuffer_to_render'] = view.get_transform('framebuffer', 'render')
         view.view_program.vert['framebuffer_to_visual'] = view.get_transform('framebuffer', 'visual')
-        # view.view_program.geom['render_to_framebuffer'] = view.get_transform('render', 'visual')
-        # view.view_program.geom['visual_to_framebuffer'] = view.get_transform('visual', 'framebuffer')
