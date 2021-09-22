@@ -340,11 +340,10 @@ class _GLLineVisual(Visual):
 
             self.shared_program['texture2D_LUT'] = cmap and cmap.texture_lut()
 
-        if "webgl" not in default_app_module.default_app.backend_name:
-            self.update_gl_state(line_smooth=bool(self._parent._antialias))
-            px_scale = self.transforms.pixel_scale
-            width = px_scale * self._parent._width
-            self.update_gl_state(line_width=max(width, 1.0))
+        self.update_gl_state(line_smooth=bool(self._parent._antialias))
+        px_scale = self.transforms.pixel_scale
+        width = px_scale * self._parent._width
+        self.update_gl_state(line_width=max(width, 1.0))
 
         if self._parent._changed['connect']:
             self._connect = self._parent._interpret_connect()

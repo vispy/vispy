@@ -77,11 +77,6 @@ def use(app=None, gl=None):
     if app is None and gl is None:
         raise TypeError('Must specify at least one of "app" or "gl".')
 
-    # Example for future. This wont work (yet).
-    if app == 'ipynb_webgl':
-        app = 'headless'
-        gl = 'webgl'
-
     if app == 'osmesa':
         from ..util.osmesa_gl import fix_osmesa_gl_lib
         fix_osmesa_gl_lib()

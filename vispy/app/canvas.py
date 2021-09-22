@@ -109,10 +109,7 @@ class Canvas(object):
     time or using a dedicated double-click button will not be respected.
 
     Backend-specific arguments can be given through the `backend_kwargs`
-    argument. Currently this can be used to control the webGL context
-    requested by the `ipynb_webgl` backend, for example::
-
-        canvas = Canvas(backend_kwargs={'webgl': dict(preserveDrawingBuffer=True)})
+    argument.
     """
 
     def __init__(self, title='VisPy canvas', size=(800, 600), position=None,

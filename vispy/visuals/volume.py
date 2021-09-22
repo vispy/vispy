@@ -587,8 +587,7 @@ class VolumeVisual(Visual):
         formats and schemes for the low-level texture data stored in the GPU.
         Most common is unsigned integers or floating point numbers.
         Unsigned integers are the most widely supported while other formats
-        may not be supported on older versions of OpenGL, WebGL
-        (without enabling some extensions), or with older GPUs.
+        may not be supported on older versions of OpenGL or with older GPUs.
         Default value is ``None`` which means data will be scaled on the
         CPU and the result stored in the GPU as an unsigned integer. If a
         numpy dtype object, an internal texture format will be chosen to
