@@ -26,15 +26,22 @@ canvas = vispy.scene.SceneCanvas(keys='interactive', show=True)
 view = canvas.central_widget.add_view()
 
 # generate data
-pos = np.random.normal(size=(100, 3), scale=0.2) * 50
+np.random.seed(1)
+pos = np.random.normal(size=(6, 3), scale=0.2) * 20
+color = np.random.rand(6, 4)
 
 # create scatter object and fill in the data
-scatter = visuals.Cylinders()
-scatter.set_data(pos, color=np.random.rand(100, 4))
+scatter = visuals.Markers()
+scatter.set_data(pos, face_color=color)
+
+cyl = visuals.Cylinders()
+cyl.set_data(pos, color=color)
 
 view.add(scatter)
+view.add(cyl)
 
 view.camera = 'arcball'  # or try 'arcball'
+view.camera.fov = 0
 
 # add a colored 3D axis for orientation
 axis = visuals.XYZAxis(parent=view.scene)

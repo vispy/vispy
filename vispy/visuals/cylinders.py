@@ -33,37 +33,49 @@ void main (void) {
     vec4 x = $framebuffer_to_visual(fb_pos + vec4(big_float, 0, 0, 0));
     x = (x - pos);
     vec4 size_vec = $visual_to_framebuffer(pos + normalize(x) * a_width);
-    v_width = size_vec.x / size_vec.w - fb_pos.x / fb_pos.w;
+    v_width = (size_vec.x / size_vec.w - fb_pos.x / fb_pos.w) / 2;
 }
 """
 
 geom = """
 #version 450
 layout (lines) in;
-layout (triangle_strip, max_vertices=4) out;
+layout (triangle_strip, max_vertices=6) out;
 
 in vec4 v_color[];
 in float v_width[];
 
 out vec4 v_color_out;
 
+
 void main(void) {
     // start and end position of the cylinder
     vec4 start = gl_in[0].gl_Position;
     vec4 end = gl_in[1].gl_Position;
-    // get the perpendicular
-    vec2 direction = normalize(end.xy - start.xy);
-    vec2 perp = vec2(direction.y, -direction.x);
-    gl_Position = vec4(start.xy + perp * v_width[0], start.zw);
+
+    // calculcations need to happen in framebuffer coords or clipping messes up
+    vec4 start_fb = $render_to_framebuffer(start);
+    vec4 end_fb = $render_to_framebuffer(end);
+
+    // find the vector perpendicular to the cylinder direction projected on the screen
+    vec2 direction = normalize(end_fb - start_fb).xy;
+    vec4 perp_screen = vec4(direction.y, -direction.x, 0, 0);
+    
+    vec2 shift_start = ($framebuffer_to_render(perp_screen * v_width[0])).xy;
+    gl_Position = vec4(start.xy + shift_start, start.zw);
     v_color_out = v_color[0];
     EmitVertex();
-    gl_Position = vec4(start.xy - perp * v_width[0], start.zw);
+
+    gl_Position = vec4(start.xy - shift_start, start.zw);
     v_color_out = v_color[0];
     EmitVertex();
-    gl_Position = vec4(end.xy + perp * v_width[1], end.zw);
+
+    vec2 shift_end = ($framebuffer_to_render(perp_screen * v_width[1])).xy;
+    gl_Position = vec4(end.xy + shift_end, end.zw);
     v_color_out = v_color[1];
     EmitVertex();
-    gl_Position = vec4(end.xy - perp * v_width[1], end.zw);
+
+    gl_Position = vec4(end.xy - shift_end, end.zw);
     v_color_out = v_color[1];
     EmitVertex();
     EndPrimitive();
@@ -120,6 +132,9 @@ class CylindersVisual(Visual):
         self.update()
 
     def _prepare_transforms(self, view):
+        # view.view_program.vert['visual_to_render'] = view.get_transform('visual', 'render')
+        view.view_program.vert['framebuffer_to_visual'] = view.get_transform('framebuffer', 'visual')
         view.view_program.vert['visual_to_framebuffer'] = view.get_transform('visual', 'framebuffer')
         view.view_program.vert['framebuffer_to_render'] = view.get_transform('framebuffer', 'render')
-        view.view_program.vert['framebuffer_to_visual'] = view.get_transform('framebuffer', 'visual')
+        view.view_program.geom['render_to_framebuffer'] = view.get_transform('render', 'framebuffer')
+        view.view_program.geom['framebuffer_to_render'] = view.get_transform('framebuffer', 'render')
