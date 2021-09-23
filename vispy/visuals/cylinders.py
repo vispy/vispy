@@ -46,7 +46,7 @@ in vec4 v_color[];
 in float v_width[];
 
 out vec4 v_color_out;
-
+out vec2 v_texcoord;
 
 void main(void) {
     // start and end position of the cylinder
@@ -58,36 +58,43 @@ void main(void) {
     vec4 end_fb = $render_to_framebuffer(end);
 
     // find the vector perpendicular to the cylinder direction projected on the screen
-    vec2 direction = normalize(end_fb / end_fb.w - start_fb / start_fb.w).xy;
-    vec4 perp_screen = vec4(direction.y, -direction.x, 0, 0);
-    
-    vec2 shift_start = ($framebuffer_to_render(perp_screen * v_width[0])).xy;
-    gl_Position = vec4(start.xy + shift_start, start.zw);
+    vec4 direction = end_fb / end_fb.w - start_fb / start_fb.w;
+    vec4 perp_screen = normalize(vec4(direction.y, -direction.x, 0, 0));
+
+    vec4 shift_start = $framebuffer_to_render(perp_screen * v_width[0]);
+    gl_Position = start + shift_start;
     v_color_out = v_color[0];
+    v_texcoord = vec2(-1, 1);
     EmitVertex();
 
-    gl_Position = vec4(start.xy - shift_start, start.zw);
+    gl_Position = start - shift_start;
     v_color_out = v_color[0];
+    v_texcoord = vec2(1, 1);
     EmitVertex();
 
-    vec2 shift_end = ($framebuffer_to_render(perp_screen * v_width[1])).xy;
-    gl_Position = vec4(end.xy + shift_end, end.zw);
+    vec4 shift_end = $framebuffer_to_render(perp_screen * v_width[1]);
+    gl_Position = end + shift_end;
     v_color_out = v_color[1];
+    v_texcoord = vec2(-1, -1);
     EmitVertex();
 
-    gl_Position = vec4(end.xy - shift_end, end.zw);
+    gl_Position = end - shift_end;
     v_color_out = v_color[1];
+    v_texcoord = vec2(1, -1);
     EmitVertex();
+
     EndPrimitive();
 }
 """
 
 frag = """
 varying vec4 v_color_out;
+varying vec2 v_texcoord;
 
 void main()
 {
-    gl_FragColor = vec4(v_color_out);
+    float dist = 1 - abs(v_texcoord.x);
+    gl_FragColor = vec4(v_color_out.rgb * dist, v_color_out.a);
 }
 """
 
