@@ -281,9 +281,6 @@ def _text_to_vbo(text, font, anchor_x, anchor_y, lowres_size):
 class TextVisual(Visual):
     """Visual that displays text
 
-    Note: SDF GPU is not currently supported in WebGL without additional
-          extensions (see comments in fragment shader below).
-
     Parameters
     ----------
     text : str | list of str
@@ -311,9 +308,8 @@ class TextVisual(Visual):
         Vertical text anchor.
     method : str
         Rendering method for text characters. Either 'cpu' (default) or
-        'gpu'. The 'cpu' method should perform better on remote backends
-        like those based on WebGL. The 'gpu' method should produce higher
-        quality results.
+        'gpu'. The 'cpu' method should perform better on remote backends.
+        The 'gpu' method should produce higher quality results.
     font_manager : object | None
         Font manager to use (can be shared if the GLContext is shared).
     """
