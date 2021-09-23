@@ -33,7 +33,7 @@ void main (void) {
     vec4 x = $framebuffer_to_visual(fb_pos + vec4(big_float, 0, 0, 0));
     x = (x - pos);
     vec4 size_vec = $visual_to_framebuffer(pos + normalize(x) * a_width);
-    v_width = len(size_vec - fb_pos);
+    v_width = (size_vec.x - fb_pos.x) / 2;
 }
 """
 
@@ -58,7 +58,7 @@ void main(void) {
     vec4 end_fb = $render_to_framebuffer(end);
 
     // find the vector perpendicular to the cylinder direction projected on the screen
-    vec2 direction = normalize(end_fb - start_fb).xy;
+    vec2 direction = normalize(end_fb / end_fb.w - start_fb / start_fb.w).xy;
     vec4 perp_screen = vec4(direction.y, -direction.x, 0, 0);
     
     vec2 shift_start = ($framebuffer_to_render(perp_screen * v_width[0])).xy;
