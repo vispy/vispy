@@ -27,15 +27,16 @@ view = canvas.central_widget.add_view()
 
 # generate data
 np.random.seed(1)
-pos = np.random.normal(size=(6, 3), scale=0.2) * 20
-color = np.random.rand(6, 4)
+pos = np.random.normal(size=(100, 3), scale=0.2) * 100
+color = np.random.rand(100, 3)
+size = np.random.rand(100) * 5
 
 # create scatter object and fill in the data
 scatter = visuals.Markers()
 scatter.set_data(pos, face_color=color)
 
 cyl = visuals.Cylinders()
-cyl.set_data(pos, color=color)
+cyl.set_data(pos, color=color, width=size)
 
 view.add(scatter)
 view.add(cyl)
