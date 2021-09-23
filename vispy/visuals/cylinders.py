@@ -33,7 +33,7 @@ void main (void) {
     vec4 x = $framebuffer_to_visual(fb_pos + vec4(big_float, 0, 0, 0));
     x = (x - pos);
     vec4 size_vec = $visual_to_framebuffer(pos + normalize(x) * a_width);
-    v_width = (size_vec.x / size_vec.w - fb_pos.x / fb_pos.w) / 2;
+    v_width = len(size_vec - fb_pos);
 }
 """
 
