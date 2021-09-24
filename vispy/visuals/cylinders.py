@@ -41,7 +41,7 @@ void main (void) {
 geom = """
 #version 450
 layout (lines) in;
-layout (triangle_strip, max_vertices=6) out;
+layout (triangle_strip, max_vertices=4) out;
 
 in vec4 v_color[];
 in float v_width[];
@@ -149,10 +149,40 @@ class CylindersVisual(Visual):
         self._width = value
         self.update()
 
+    @property
+    def light_position(self):
+        return self._light_position
+
+    @light_position.setter
+    def light_position(self, value):
+        value = np.array(value)
+        self.shared_program['u_light_position'] = value / np.linalg.norm(value)
+        self._light_position = value
+        self.update()
+
+    @property
+    def light_ambient(self):
+        return self._light_ambient
+
+    @light_ambient.setter
+    def light_ambient(self, value):
+        self.shared_program['u_light_ambient'] = value
+        self._light_ambient = value
+        self.update()
+
+    @property
+    def light_color(self):
+        return self._light_color
+
+    @light_color.setter
+    def light_color(self, value):
+        self.shared_program['u_light_color'] = ColorArray(value).rgb
+        self._light_color = value
+        self.update()
+
     def _prepare_transforms(self, view):
-        # view.view_program.vert['visual_to_render'] = view.get_transform('visual', 'render')
-        view.view_program.vert['framebuffer_to_visual'] = view.get_transform('framebuffer', 'visual')
         view.view_program.vert['visual_to_framebuffer'] = view.get_transform('visual', 'framebuffer')
         view.view_program.vert['framebuffer_to_render'] = view.get_transform('framebuffer', 'render')
+        view.view_program.vert['framebuffer_to_visual'] = view.get_transform('framebuffer', 'visual')
         view.view_program.geom['render_to_framebuffer'] = view.get_transform('render', 'framebuffer')
         view.view_program.geom['framebuffer_to_render'] = view.get_transform('framebuffer', 'render')
