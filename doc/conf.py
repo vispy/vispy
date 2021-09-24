@@ -159,6 +159,7 @@ def _custom_edit_url(github_user, github_repo, github_version, doc_path, file_na
                                                  doc_path=doc_path,
                                                  file_name=file_name)
 
+
 html_context = {
     "github_user": "vispy",
     "github_repo": "vispy",
