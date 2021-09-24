@@ -20,6 +20,7 @@ attribute vec4 a_color;
 
 varying vec4 v_color;
 varying float v_width;
+varying float v_depth_middle;
 
 float big_float = 1e10; // prevents numerical imprecision
 
@@ -35,6 +36,14 @@ void main (void) {
     x = (x - pos);
     vec4 size_vec = $visual_to_framebuffer(pos + normalize(x) * u_width);
     v_width = (size_vec.x - fb_pos.x) / 2;
+
+    // Get the framebuffer z direction relative to this vertex in visual coords
+    vec4 z = $framebuffer_to_visual(fb_pos + vec4(0, 0, big_float, 0));
+    z = (z - pos);
+    // Get the depth of the cylinder in its middle point on the screen
+    // size/2 because we need the radius, not the diameter
+    vec4 depth_z_vec = $visual_to_framebuffer(pos + normalize(z) * u_width / 2);
+    v_depth_middle = depth_z_vec.z / depth_z_vec.w - fb_pos.z / fb_pos.w;
 }
 """
 
@@ -45,9 +54,11 @@ layout (triangle_strip, max_vertices=4) out;
 
 in vec4 v_color[];
 in float v_width[];
+in float v_depth_middle[];
 
 out vec4 v_color_out;
 out vec2 v_texcoord;
+out float v_depth_middle_out;
 
 void main(void) {
     // start and end position of the cylinder
@@ -66,22 +77,26 @@ void main(void) {
     gl_Position = start + shift_start;
     v_color_out = v_color[0];
     v_texcoord = vec2(-1, 1);
+    v_depth_middle_out = v_depth_middle[0];
     EmitVertex();
 
     gl_Position = start - shift_start;
     v_color_out = v_color[0];
     v_texcoord = vec2(1, 1);
+    v_depth_middle_out = v_depth_middle[0];
     EmitVertex();
 
     vec4 shift_end = $framebuffer_to_render(perp_screen * v_width[1]);
     gl_Position = end + shift_end;
     v_color_out = v_color[1];
     v_texcoord = vec2(-1, -1);
+    v_depth_middle_out = v_depth_middle[1];
     EmitVertex();
 
     gl_Position = end - shift_end;
     v_color_out = v_color[1];
     v_texcoord = vec2(1, -1);
+    v_depth_middle_out = v_depth_middle[1];
     EmitVertex();
 
     EndPrimitive();
@@ -89,19 +104,49 @@ void main(void) {
 """
 
 frag = """
+uniform vec3 u_light_position;
+uniform vec3 u_light_color;
+uniform float u_light_ambient;
+
 varying vec4 v_color_out;
 varying vec2 v_texcoord;
+varying float v_depth_middle_out;
 
 void main()
 {
-    float dist = 1 - abs(v_texcoord.x);
-    gl_FragColor = vec4(v_color_out.rgb * dist, v_color_out.a);
+    float z = sqrt(1 - v_texcoord.x*v_texcoord.x);
+    float y = sqrt(1 - v_texcoord.y*v_texcoord.y);
+    if (z + y < 1)
+        discard;
+
+    vec3 normal = vec3(0, 0, z);
+    // Diffuse color
+    float diffuse = dot(u_light_position, normal);
+    // clamp, because 0 < theta < pi/2
+    diffuse = clamp(diffuse, 0, 1);
+    vec3 diffuse_color = u_light_ambient + u_light_color * diffuse;
+
+    // Specular color
+    //   reflect light wrt normal for the reflected ray, then
+    //   find the angle made with the eye
+    vec3 eye = vec3(0, 0, -1);
+    float specular = dot(reflect(u_light_position, normal), eye);
+    specular = clamp(specular, 0, 1);
+    // raise to the material's shininess, multiply with a
+    // small factor for spread
+    specular = pow(specular, 80);
+    vec3 specular_color = u_light_color * specular;
+
+    gl_FragColor = vec4(v_color_out.rgb * diffuse_color + specular_color, v_color_out.a);
+
+    gl_FragDepth = gl_FragCoord.z - 0.5 * z * v_depth_middle_out;
 }
 """
 
 
 class CylindersVisual(Visual):
-    def __init__(self, width=5, **kwargs):
+    def __init__(self, width=5, light_color='white', light_position=(1, -1, 1),
+                 light_ambient=0.3, **kwargs):
         self._vbo = VertexBuffer()
         self._data = None
 
@@ -115,6 +160,9 @@ class CylindersVisual(Visual):
             self.set_data(**kwargs)
 
         self.width = width
+        self.light_color = light_color
+        self.light_position = light_position
+        self.light_ambient = light_ambient
 
         self.freeze()
 
