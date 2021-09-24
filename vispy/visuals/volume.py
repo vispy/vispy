@@ -266,8 +266,8 @@ void main() {
         for (iter=iter; iter<nsteps; iter++)
         {
             // Only sample volume if loc is not clipped by clipping planes
-            float is_shown = $clip_by_planes(loc, u_shape);
-            if (is_shown >= 0)
+            float distance_from_clip = $clip_with_planes(loc, u_shape);
+            if (distance_from_clip >= 0)
             {
                 // Get sample color
                 vec4 color = $sample(u_volumetex, loc);
@@ -634,7 +634,14 @@ class VolumeVisual(Visual):
                  attenuation=1.0, relative_step_size=0.8, cmap='grays',
                  gamma=1.0, interpolation='linear', texture_format=None,
                  raycasting_mode='volume', plane_position=None,
-                 plane_normal=None, plane_thickness=1.0, clipping_planes=None):
+                 plane_normal=None, plane_thickness=1.0, clipping_planes=None,
+                 clipping_planes_coord_system='scene'):
+
+        tr = ['visual', 'scene', 'document', 'canvas', 'framebuffer', 'render']
+        if clipping_planes_coord_system not in tr:
+            raise ValueError(f'Invalid coordinate system {clipping_planes_coord_system}. Must be one of {tr}.')
+        self._clipping_planes_coord_system = clipping_planes_coord_system
+        self._clip_transform = None
         # Storage of information of volume
         self._vol_shape = ()
         self._gamma = gamma
@@ -842,49 +849,65 @@ class VolumeVisual(Visual):
     @lru_cache(maxsize=10)
     def _build_clipping_planes_func(n_planes):
         """Build the code snippet used to clip the volume based on self.clipping_planes."""
-        func = Function(
-            '$vars\nfloat clip_planes(vec3 loc, vec3 vol_shape) { float is_shown = 1.0; $clips; return is_shown; }')
-        # each plane is defined by a position and a normal vector
-        # the fragment is considered clipped if on the "negative" side of the plane
-        vars_template = '''
-            uniform vec3 u_clipping_plane_pos{idx};
-            uniform vec3 u_clipping_plane_norm{idx};
-            '''
+        func_template = '''
+            float clip_planes(vec3 loc, vec3 vol_shape) {{
+                vec3 loc_transf = $clip_transform(vec4(loc, 1)).xyz;
+                float distance_from_clip = 1.0;
+                {clips};
+                return distance_from_clip;
+            }}
+        '''
+        # the vertex is considered clipped if on the "negative" side of the plane
         clip_template = '''
-            vec3 relative_vec{idx} = loc - ( u_clipping_plane_pos{idx} / vol_shape );
-            float is_shown{idx} = dot(relative_vec{idx}, u_clipping_plane_norm{idx});
-            is_shown = min(is_shown{idx}, is_shown);
+            vec3 relative_vec{idx} = loc_transf - ( $clipping_plane_pos{idx} / vol_shape );
+            float distance_from_clip{idx} = dot(relative_vec{idx}, ($clipping_plane_norm{idx} * vol_shape));
+            distance_from_clip = min(distance_from_clip{idx}, distance_from_clip);
             '''
-        all_vars = []
         all_clips = []
         for idx in range(n_planes):
-            all_vars.append(vars_template.format(idx=idx))
             all_clips.append(clip_template.format(idx=idx))
-        func['vars'] = ''.join(all_vars)
-        func['clips'] = ''.join(all_clips)
-        return func
+        formatted_code = func_template.format(clips=''.join(all_clips))
+        return Function(formatted_code)
 
     @property
     def clipping_planes(self):
-        """Get the set of planes used to clip the volume.
+        """The set of planes used to clip the volume. Values on the negative side of the normal are discarded.
 
-        Each plane is defined by a position and a normal vector (magnitude is irrelevant). Shape: (n_planes, 2, 3)
+        Each plane is defined by a position and a normal vector (magnitude is irrelevant). Shape: (n_planes, 2, 3).
+        The order is xyz, as opposed to data's zyx (for consistency with the rest of vispy)
+
+        Example: one plane in position (0, 0, 0) and with normal (0, 0, 1),
+        and a plane in position (1, 1, 1) with normal (0, 1, 0):
+
+        >>> volume.clipping_planes = np.array([
+        >>>     [[0, 0, 0], [0, 0, 1]],
+        >>>     [[1, 1, 1], [0, 1, 0]],
+        >>> ])
+
         """
-        return self._clipping_planes[:, :, ::-1]
+        return self._clipping_planes
 
     @clipping_planes.setter
     def clipping_planes(self, value):
         if value is None:
             value = np.empty([0, 2, 3])
-        value = value[:, :, ::-1]
         self._clipping_planes = value
 
-        self.shared_program.frag['clip_by_planes'] = self._build_clipping_planes_func(len(value))
+        self._clip_func = self._build_clipping_planes_func(len(value))
+        self.shared_program.frag['clip_with_planes'] = self._clip_func
 
+        self._clip_func['clip_transform'] = self._clip_transform
         for idx, plane in enumerate(value):
-            self.shared_program[f'u_clipping_plane_pos{idx}'] = tuple(plane[0])
-            self.shared_program[f'u_clipping_plane_norm{idx}'] = tuple(plane[1])
+            self._clip_func[f'clipping_plane_pos{idx}'] = tuple(plane[0])
+            self._clip_func[f'clipping_plane_norm{idx}'] = tuple(plane[1])
         self.update()
+
+    @property
+    def clipping_planes_coord_system(self):
+        """
+        Coordinate system used by the clipping planes (see visuals.transforms.transform_system.py)
+        """
+        return self._clipping_planes_coord_system
 
     @property
     def _before_loop_snippet(self):
@@ -1135,6 +1158,8 @@ class VolumeVisual(Visual):
         view.view_program.vert['viewtransformf'] = view_tr_f
         view.view_program.vert['viewtransformi'] = view_tr_i
         view.view_program.frag['viewtransformf'] = view_tr_f
+
+        self._clip_transform = trs.get_transform('visual', self._clipping_planes_coord_system)
 
     def _prepare_draw(self, view):
         if self._need_vertex_update:
