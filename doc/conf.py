@@ -15,6 +15,7 @@ from datetime import date
 import sys
 import os
 import re
+import warnings
 import vispy
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -35,7 +36,6 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.imgmath',
               'sphinx.ext.autosummary',
               'sphinx.ext.intersphinx',
-              'sphinx.ext.linkcode',
               'numpydoc',
               'sphinxcontrib.apidoc',
               'sphinx_gallery.gen_gallery',
@@ -134,11 +134,39 @@ pygments_style = 'sphinx'
 html_theme = 'pydata_sphinx_theme'
 
 # Tell the theme where the code lives
+
+
+def _custom_edit_url(github_user, github_repo, github_version, doc_path, file_name, default_edit_page_url_template):
+    """Create custom 'edit' URLs for API modules since they are dynamically generated."""
+    if file_name.startswith("api/"):
+        # this is a dynamically generated API page, link to actual Python source
+        modpath = os.sep.join(os.path.splitext(file_name[4:])[0].split("."))
+        if modpath == "modules":
+            # main package listing
+            modpath = "vispy"
+        rel_modpath = os.path.join("..", modpath)
+        if os.path.isdir(rel_modpath):
+            doc_path = modpath + "/"
+            file_name = "__init__.py"
+        elif os.path.isfile(rel_modpath + ".py"):
+            doc_path = os.path.dirname(modpath)
+            file_name = os.path.basename(modpath) + ".py"
+        else:
+            warnings.warn(f"Not sure how to generate the API URL for: {file_name}")
+    return default_edit_page_url_template.format(github_user=github_user,
+                                                 github_repo=github_repo,
+                                                 github_version=github_version,
+                                                 doc_path=doc_path,
+                                                 file_name=file_name)
+
 html_context = {
     "github_user": "vispy",
     "github_repo": "vispy",
     "github_version": "main",
     "doc_path": "doc",
+    "edit_page_url_template": "{{ vispy_custom_edit_url(github_user, github_repo, github_version, doc_path, file_name, default_edit_page_url_template) }}",
+    "default_edit_page_url_template": "https://github.com/{github_user}/{github_repo}/edit/{github_version}/{doc_path}{file_name}",
+    "vispy_custom_edit_url": _custom_edit_url,
 }
 
 # Theme options are theme-specific and customize the look and feel of a theme
@@ -308,78 +336,14 @@ numpydoc_show_class_members = False
 # -----------------------------------------------------------------------------
 # intersphinx
 # -----------------------------------------------------------------------------
-_python_doc_base = 'https://docs.python.org/3.6'
+_python_doc_base = 'https://docs.python.org/3.9'
 intersphinx_mapping = {
     _python_doc_base: None,
     'https://docs.scipy.org/doc/numpy': None,
     'https://docs.scipy.org/doc/scipy/reference': None,
-    'https://vispy.github.io': None
 }
 
 
 def setup(app):
     # Add custom CSS
     app.add_css_file('style.css')
-
-# -----------------------------------------------------------------------------
-# Source code links
-# -----------------------------------------------------------------------------
-
-import inspect
-from os.path import relpath, dirname
-
-
-def linkcode_resolve(domain, info):
-    """Determine the URL corresponding to Python object."""
-    if domain != 'py':
-        return None
-
-    modname = info['module']
-    fullname = info['fullname']
-
-    submod = sys.modules.get(modname)
-    if submod is None:
-        return None
-
-    obj = submod
-    for part in fullname.split('.'):
-        try:
-            obj = getattr(obj, part)
-        except AttributeError:
-            return None
-
-    # should be `None` if not found
-    try:
-        fn = inspect.getsourcefile(obj)
-    except TypeError:
-        fn = None
-    if not fn:
-        # should be `None` if not found
-        try:
-            fn = inspect.getsourcefile(sys.modules[obj.__module__])
-        except AttributeError:
-            fn = None
-    if not fn:
-        return None
-
-    try:
-        source, lineno = inspect.getsourcelines(obj)
-    except TypeError:
-        # getting thrown on updating-property decorator
-        return None
-    except OSError:
-        source = ""
-        lineno = None
-
-    if lineno:
-        linespec = "#L%d-L%d" % (lineno, lineno + len(source) - 1)
-    else:
-        linespec = ""
-
-    fn = relpath(fn, start=dirname(vispy.__file__))
-    if 'dev' in release:
-        kind = 'main'
-    else:
-        kind = 'v%s' % (vispy.__version__,)
-    return "https://github.com/vispy/vispy/blob/%s/vispy/%s%s" % (  # noqa
-       kind, fn, linespec)
