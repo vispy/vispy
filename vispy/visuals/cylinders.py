@@ -13,8 +13,9 @@ from .visual import Visual
 
 
 vert = """
+uniform float u_width;
+
 attribute vec3 a_position;
-attribute float a_width;
 attribute vec4 a_color;
 
 varying vec4 v_color;
@@ -32,7 +33,7 @@ void main (void) {
     // calculate point size from visual to framebuffer coords to determine size
     vec4 x = $framebuffer_to_visual(fb_pos + vec4(big_float, 0, 0, 0));
     x = (x - pos);
-    vec4 size_vec = $visual_to_framebuffer(pos + normalize(x) * a_width);
+    vec4 size_vec = $visual_to_framebuffer(pos + normalize(x) * u_width);
     v_width = (size_vec.x - fb_pos.x) / 2;
 }
 """
@@ -100,7 +101,7 @@ void main()
 
 
 class CylindersVisual(Visual):
-    def __init__(self, **kwargs):
+    def __init__(self, width=5, **kwargs):
         self._vbo = VertexBuffer()
         self._data = None
 
@@ -113,9 +114,11 @@ class CylindersVisual(Visual):
         if len(kwargs) > 0:
             self.set_data(**kwargs)
 
+        self.width = width
+
         self.freeze()
 
-    def set_data(self, pos=None, width=1, color='white'):
+    def set_data(self, pos=None, color='white'):
         color = ColorArray(color).rgba
         if len(color) == 1:
             color = color[0]
@@ -124,18 +127,26 @@ class CylindersVisual(Visual):
             assert (isinstance(pos, np.ndarray) and
                     pos.ndim == 2 and pos.shape[1] in (2, 3))
 
-            n = len(pos)
-            data = np.zeros(n, dtype=[('a_position', np.float32, 3),
-                                      ('a_color', np.float32, 4),
-                                      ('a_width', np.float32),
-                                      ])
+            data = np.zeros(len(pos), dtype=[
+                ('a_position', np.float32, 3),
+                ('a_color', np.float32, 4),
+            ])
             data['a_color'] = color
-            data['a_width'] = width
             data['a_position'] = pos
             self._data = data
             self._vbo.set_data(data)
             self.shared_program.bind(self._vbo)
 
+        self.update()
+
+    @property
+    def width(self):
+        return self._width
+
+    @width.setter
+    def width(self, value):
+        self.shared_program['u_width'] = value
+        self._width = value
         self.update()
 
     def _prepare_transforms(self, view):

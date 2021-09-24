@@ -4,11 +4,8 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """
-Create a Point Cloud
-====================
-
-Demonstrates use of visual.Markers to create a point cloud with a
-standard turntable camera to fly around with and a centered 3D Axis.
+Create a bunch of Cylinders
+===========================
 """
 
 import numpy as np
@@ -16,12 +13,8 @@ import vispy.scene
 from vispy import gloo
 from vispy.scene import visuals
 
-
 gloo.gl.use_gl('gl+')
 
-#
-# Make a canvas and add simple view
-#
 canvas = vispy.scene.SceneCanvas(keys='interactive', show=True)
 view = canvas.central_widget.add_view()
 
@@ -29,14 +22,13 @@ view = canvas.central_widget.add_view()
 np.random.seed(1)
 pos = np.random.normal(size=(100, 3), scale=0.2) * 100
 color = np.random.rand(100, 3)
-size = np.random.rand(100) * 5
+width = 5
 
-# create scatter object and fill in the data
-scatter = visuals.Markers()
-scatter.set_data(pos, face_color=color)
+# create markers for visual aid
+scatter = visuals.Markers(pos=pos, face_color=color)
 
-cyl = visuals.Cylinders()
-cyl.set_data(pos, color=color, width=size)
+# create cylinders
+cyl = visuals.Cylinders(pos=pos, color=color, width=width)
 
 view.add(scatter)
 view.add(cyl)
