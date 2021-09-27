@@ -105,7 +105,7 @@ setup(
         'sdl2': ['PySDL2'],
         'wx': ['wxPython'],
         'tk': ['pyopengltk'],
-        'doc': ['pydata-sphinx-theme', 'numpydoc', 'sphinxcontrib-apidoc'],
+        'doc': ['pydata-sphinx-theme', 'numpydoc', 'sphinxcontrib-apidoc', 'sphinx-gallery'],
         'io': ['meshio', 'Pillow'],
     },
     packages=find_packages(exclude=['make']),
