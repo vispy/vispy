@@ -89,7 +89,7 @@ def _straight_line_vertices(adjacency_mat, node_coords, directed=False):
     if directed:
         arrows = np.array(list(_get_directed_edges(adjacency_mat)))
         arrow_vertices = node_coords[arrows.ravel()]
-        arrow_vertices = arrow_vertices.reshape((len(arrow_vertices)/2, 4))
+        arrow_vertices = arrow_vertices.reshape((len(arrow_vertices)//2, 4))
 
     return line_vertices, arrow_vertices
 
