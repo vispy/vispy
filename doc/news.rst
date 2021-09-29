@@ -10,6 +10,7 @@ See the `Release Notes <https://github.com/vispy/vispy/blob/main/CHANGELOG.md>`_
 Announcements
 -------------
 
+- Chan Zuckerberg Initiative - Essential Open Source Software for Science (Cycle 4) Grant Awarded, Sept 2021
 - **SciPy 2021 Sprint**, July 2021
 - Chan Zuckerberg Initiative - Essential Open Source Software for Science (Cycle 2) Grant Awarded, May 2020
 - `VisPy tutorial in the IPython Cookbook <https://github.com/ipython-books/cookbook-code/blob/master/featured/06_vispy.ipynb>`__

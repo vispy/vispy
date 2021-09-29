@@ -1,5 +1,24 @@
 # Release Notes
 
+## [v0.9.0](https://github.com/vispy/vispy/tree/v0.9.0) (2021-09-29)
+
+**Enhancements:**
+
+- Spherical \(3D-looking\) `Markers` symbols [\#2209](https://github.com/vispy/vispy/pull/2209) ([brisvag](https://github.com/brisvag))
+- Add PlanesClipper filter for visually clipping visuals by a 2D plane [\#2197](https://github.com/vispy/vispy/pull/2197) ([brisvag](https://github.com/brisvag))
+- Add skinny cross marker \(++\) to MarkersVisual [\#2193](https://github.com/vispy/vispy/pull/2193) ([mars0001](https://github.com/mars0001))
+- Improve depth handling for VolumeVisual iso rendering [\#2190](https://github.com/vispy/vispy/pull/2190) ([kevinyamauchi](https://github.com/kevinyamauchi))
+
+**Fixed bugs:**
+
+- Fix integer division when creating directed graphs [\#2223](https://github.com/vispy/vispy/pull/2223) ([Maks1mS](https://github.com/Maks1mS))
+- Cleanup some refs to webgl [\#2217](https://github.com/vispy/vispy/pull/2217) ([almarklein](https://github.com/almarklein))
+- Fix key event handling in Tk backend [\#2205](https://github.com/vispy/vispy/pull/2205) ([matthiasverstraete](https://github.com/matthiasverstraete))
+
+**Merged pull requests:**
+
+- Fix "Edit this page" links for API docs [\#2220](https://github.com/vispy/vispy/pull/2220) ([djhoese](https://github.com/djhoese))
+
 ## [v0.8.1](https://github.com/vispy/vispy/tree/v0.8.1) (2021-08-27)
 
 **Fixed bugs:**
