@@ -24,14 +24,15 @@ class PlanesClipper(Filter):
 
     VERT_CODE = """
     void clip() {
-        // Transform back to visual coordinates and clip based on that
-        $v_distance_from_clip = $clip_with_planes($itransform(gl_Position).xyz);
+        // pass position as varying for interpolation
+        $v_position = gl_Position;
     }
     """
 
     FRAG_CODE = """
     void clip() {
-        if ($v_distance_from_clip < 0.)
+        float distance_from_clip = $clip_with_planes($itransform($v_position).xyz);
+        if (distance_from_clip < 0.)
             discard;
     }
     """
@@ -47,9 +48,9 @@ class PlanesClipper(Filter):
             fcode=Function(self.FRAG_CODE), fhook='pre', fpos=1,
         )
 
-        v_distance_from_clip = Varying('v_distance_from_clip', 'float')
-        self.vshader['v_distance_from_clip'] = v_distance_from_clip
-        self.fshader['v_distance_from_clip'] = v_distance_from_clip
+        v_position = Varying('v_position', 'vec4')
+        self.vshader['v_position'] = v_position
+        self.fshader['v_position'] = v_position
 
         self.clipping_planes = clipping_planes
 
@@ -63,7 +64,7 @@ class PlanesClipper(Filter):
 
     def _attach(self, visual):
         super()._attach(visual)
-        self.vshader['itransform'] = visual.get_transform('render', self._coord_system)
+        self.fshader['itransform'] = visual.get_transform('render', self._coord_system)
 
     @staticmethod
     @lru_cache(maxsize=10)
@@ -102,7 +103,7 @@ class PlanesClipper(Filter):
         self._clipping_planes = value
 
         clip_func = self._build_clipping_planes_func(len(value))
-        self.vshader['clip_with_planes'] = clip_func
+        self.fshader['clip_with_planes'] = clip_func
 
         for idx, plane in enumerate(value):
             clip_func[f'clipping_plane_pos{idx}'] = tuple(plane[0])
