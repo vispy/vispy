@@ -533,21 +533,6 @@ AVG_SNIPPETS = dict(
         """,
 )
 
-frag_dict = {
-    'mip': MIP_SNIPPETS,
-    'minip': MINIP_SNIPPETS,
-    'attenuated_mip': ATTENUATED_MIP_SNIPPETS,
-    'iso': ISO_SNIPPETS,
-    'translucent': TRANSLUCENT_SNIPPETS,
-    'additive': ADDITIVE_SNIPPETS,
-    'average': AVG_SNIPPETS
-}
-
-RAYCASTING_MODE_DICT = {
-    'volume': RAYCASTING_SETUP_VOLUME,
-    'plane': RAYCASTING_SETUP_PLANE
-}
-
 
 class VolumeVisual(Visual):
     """Displays a 3D Volume
@@ -629,6 +614,21 @@ class VolumeVisual(Visual):
     """
 
     _interpolation_names = ['linear', 'nearest']
+
+    _rendering_methods = {
+        'mip': MIP_SNIPPETS,
+        'minip': MINIP_SNIPPETS,
+        'attenuated_mip': ATTENUATED_MIP_SNIPPETS,
+        'iso': ISO_SNIPPETS,
+        'translucent': TRANSLUCENT_SNIPPETS,
+        'additive': ADDITIVE_SNIPPETS,
+        'average': AVG_SNIPPETS
+    }
+
+    _raycasting_modes = {
+        'volume': RAYCASTING_SETUP_VOLUME,
+        'plane': RAYCASTING_SETUP_PLANE
+    }
 
     def __init__(self, vol, clim="auto", method='mip', threshold=None,
                  attenuation=1.0, relative_step_size=0.8, cmap='grays',
@@ -911,15 +911,15 @@ class VolumeVisual(Visual):
 
     @property
     def _before_loop_snippet(self):
-        return frag_dict[self.method]['before_loop']
+        return self._rendering_methods[self.method]['before_loop']
 
     @property
     def _in_loop_snippet(self):
-        return frag_dict[self.method]['in_loop']
+        return self._rendering_methods[self.method]['in_loop']
 
     @property
     def _after_loop_snippet(self):
-        return frag_dict[self.method]['after_loop']
+        return self._rendering_methods[self.method]['after_loop']
 
     @property
     def method(self):
@@ -949,7 +949,7 @@ class VolumeVisual(Visual):
     @method.setter
     def method(self, method):
         # Check and save
-        known_methods = list(frag_dict.keys())
+        known_methods = list(self._rendering_methods.keys())
         if method not in known_methods:
             raise ValueError('Volume render method should be in %r, not %r' %
                              (known_methods, method))
@@ -975,7 +975,7 @@ class VolumeVisual(Visual):
 
     @property
     def _raycasting_setup_snippet(self):
-        return RAYCASTING_MODE_DICT[self.raycasting_mode]
+        return self._raycasting_modes[self.raycasting_mode]
 
     @property
     def raycasting_mode(self):
@@ -989,7 +989,7 @@ class VolumeVisual(Visual):
 
     @raycasting_mode.setter
     def raycasting_mode(self, value: str):
-        valid_raycasting_modes = RAYCASTING_MODE_DICT.keys()
+        valid_raycasting_modes = self._raycasting_modes.keys()
         if value not in valid_raycasting_modes:
             raise ValueError(f"Raycasting mode should be in {valid_raycasting_modes}, not {value}")
         self._raycasting_mode = value
