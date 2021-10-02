@@ -10,7 +10,6 @@
 import numpy as np
 import vispy.scene as scene
 from vispy.scene import visuals
-import vispy.visuals as impl_visuals
 from vispy import app
 
 n = 500
@@ -39,18 +38,19 @@ class Canvas(scene.SceneCanvas):
         self.unfreeze()
         self.index = 0
         self.markers = visuals.Markers()
+        self.marker_types = list(self.markers._marker_funcs.keys())
         self.markers.set_data(pos, face_color=(0, 1, 0), scaling=False)
-        self.markers.symbol = impl_visuals.marker_types[self.index]
-        self.text = visuals.Text(impl_visuals.marker_types[self.index],
+        self.markers.symbol = self.marker_types[self.index]
+        self.text = visuals.Text(self.marker_types[self.index],
                                  pos=(80, 15), font_size=14,
                                  color='black', parent=self.scene)
         self.freeze()
 
     def on_key_press(self, event):
         if event.text == ' ':
-            self.index = (self.index + 1) % (len(impl_visuals.marker_types))
-            self.markers.symbol = impl_visuals.marker_types[self.index]
-            self.text.text = impl_visuals.marker_types[self.index]
+            self.index = (self.index + 1) % (len(self.marker_types))
+            self.markers.symbol = self.marker_types[self.index]
+            self.text.text = self.marker_types[self.index]
             self.update()
 
 
