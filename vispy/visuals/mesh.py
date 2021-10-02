@@ -52,23 +52,6 @@ vec4 vec2to4(vec2 xyz) {
 """)
 
 
-_null_color_transform = 'vec4 pass(vec4 color) { return color; }'
-_clim = 'float cmap(float val) { return (val - $cmin) / ($cmax - $cmin); }'
-
-
-# Eventually this could be de-duplicated with visuals/image.py, which does
-# something similar (but takes a ``color`` instead of ``float``)
-def _build_color_transform(data, cmap, clim=(0., 1.)):
-    if data.ndim == 2 and data.shape[1] == 1:
-        fun = Function(_clim)
-        fun['cmin'] = clim[0]
-        fun['cmax'] = clim[1]
-        fun = FunctionChain(None, [fun, Function(cmap.glsl_map)])
-    else:
-        fun = Function(_null_color_transform)
-    return fun
-
-
 class MeshVisual(Visual):
     """Mesh visual
 
@@ -303,6 +286,20 @@ class MeshVisual(Visual):
         self._data_changed = True
         self.update()
 
+    def _build_color_transform(self, colors):
+        # Eventually this could be de-duplicated with visuals/image.py, which does
+        # something similar (but takes a ``color`` instead of ``float``)
+        null_color_transform = 'vec4 pass(vec4 color) { return color; }'
+        clim_func = 'float cmap(float val) { return (val - $cmin) / ($cmax - $cmin); }'
+        if colors.ndim == 2 and colors.shape[1] == 1:
+            fun = Function(clim_func)
+            fun['cmin'] = self.clim[0]
+            fun['cmax'] = self.clim[1]
+            fun = FunctionChain(None, [fun, Function(self.cmap.glsl_map)])
+        else:
+            fun = Function(null_color_transform)
+        return fun
+
     def _update_data(self):
         md = self.mesh_data
 
@@ -341,8 +338,7 @@ class MeshVisual(Visual):
         #
         # The base color is mixed further by the material filters for texture
         # or shading effects.
-        self.shared_program.vert['color_transform'] = \
-            _build_color_transform(colors, self._cmap, self._clim_values)
+        self.shared_program.vert['color_transform'] = self._build_color_transform(colors)
         if colors.ndim == 1:
             self.shared_program.vert['base_color'] = colors
         else:
