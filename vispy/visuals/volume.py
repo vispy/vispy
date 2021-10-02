@@ -53,16 +53,13 @@ import numpy as np
 # Vertex shader
 VERT_SHADER = """
 attribute vec3 a_position;
-// attribute vec3 a_texcoord;
 uniform vec3 u_shape;
 
-// varying vec3 v_texcoord;
 varying vec3 v_position;
 varying vec4 v_nearpos;
 varying vec4 v_farpos;
 
 void main() {
-    // v_texcoord = a_texcoord;
     v_position = a_position;
 
     // Project local vertex coordinate to camera position. Then do a step
@@ -93,7 +90,6 @@ uniform float u_attenuation;
 uniform float u_relative_step_size;
 
 //varyings
-// varying vec3 v_texcoord;
 varying vec3 v_position;
 varying vec4 v_nearpos;
 varying vec4 v_farpos;
@@ -653,17 +649,6 @@ class VolumeVisual(Visual):
 
         # Create gloo objects
         self._vertices = VertexBuffer()
-        self._texcoord = VertexBuffer(
-            np.array([
-                [0, 0, 0],
-                [1, 0, 0],
-                [0, 1, 0],
-                [1, 1, 0],
-                [0, 0, 1],
-                [1, 0, 1],
-                [0, 1, 1],
-                [1, 1, 1],
-            ], dtype=np.float32))
 
         self._interpolation = interpolation
         self._texture = self._create_texture(texture_format, vol)
@@ -675,7 +660,6 @@ class VolumeVisual(Visual):
         Visual.__init__(self, vcode=VERT_SHADER, fcode=FRAG_SHADER)
         self.shared_program['u_volumetex'] = self._texture
         self.shared_program['a_position'] = self._vertices
-        self.shared_program['a_texcoord'] = self._texcoord
         self.shared_program['gamma'] = self._gamma
         self._draw_mode = 'triangle_strip'
         self._index_buffer = IndexBuffer()
