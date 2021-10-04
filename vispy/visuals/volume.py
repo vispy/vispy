@@ -51,7 +51,7 @@ import numpy as np
 
 
 # Vertex shader
-VERT_SHADER = """
+VERTEX_SHADER = """
 attribute vec3 a_position;
 uniform vec3 u_shape;
 
@@ -79,7 +79,7 @@ void main() {
 """  # noqa
 
 # Fragment shader
-FRAG_SHADER = """
+FRAGMENT_SHADER = """
 // uniforms
 uniform $sampler_type u_volumetex;
 uniform vec3 u_shape;
@@ -312,7 +312,7 @@ RAYCASTING_SETUP_VOLUME = """
 
     // Now we have the starting position on the front surface
     vec3 front = v_position + view_ray * distance;
-    
+
     // Decide how many steps to take
     int nsteps = int(-distance / u_relative_step_size + 0.5);
     float f_nsteps = float(nsteps);
@@ -326,13 +326,13 @@ RAYCASTING_SETUP_VOLUME = """
 
 RAYCASTING_SETUP_PLANE = """
     // find intersection of view ray with plane in data coordinates
-    vec3 intersection = intersectLinePlane(v_position.xyz, view_ray, 
+    vec3 intersection = intersectLinePlane(v_position.xyz, view_ray,
                                            u_plane_position, u_plane_normal);
     // and texture coordinates
     vec3 intersection_tex = intersection / u_shape;
-    
+
     // discard if intersection not in texture
-    
+
     float out_of_bounds = 0;
 
     out_of_bounds += float(intersection_tex.x > 1);
@@ -341,7 +341,7 @@ RAYCASTING_SETUP_PLANE = """
     out_of_bounds += float(intersection_tex.y < 0);
     out_of_bounds += float(intersection_tex.z > 1);
     out_of_bounds += float(intersection_tex.z < 0);
-    
+
     if (out_of_bounds > 0) {
         discard;
     }
@@ -490,7 +490,7 @@ ISO_SNIPPETS = dict(
                     color = calculateColor(color, iloc, dstep);
                     gl_FragColor = applyColormap(color.r);
 
-                    // set the variables for the depth buffer                            
+                    // set the variables for the depth buffer
                     surface_point = iloc * u_shape;
                     surface_found = true;
 
@@ -586,21 +586,21 @@ class VolumeVisual(Visual):
         transferred to the GPU. Note this visual is limited to "luminance"
         formatted data (single band). This is equivalent to `GL_RED` format
         in OpenGL 4.0.
-    raycasting_mode : {'volume', 'plane'}
+    raycasting_method : {'volume', 'plane'}
         Whether to cast a ray through the whole volume or perpendicular to a
         plane through the volume defined.
     plane_position : ArrayLike
         A (3,) array containing a position on a plane of interest in the volume.
         The position is defined in data coordinates. Only relevant in
-        raycasting_mode = 'plane'.
+        raycasting_method = 'plane'.
     plane_normal : ArrayLike
         A (3,) array containing a vector normal to the plane of interest in the
         volume. The normal vector is defined in data coordinates. Only relevant
-        in raycasting_mode = 'plane'.
+        in raycasting_method = 'plane'.
     plane_thickness : float
         A value defining the total length of the ray perpendicular to the
         plane interrogated during rendering. Defined in data coordinates.
-        Only relevant in raycasting_mode = 'plane'.
+        Only relevant in raycasting_method = 'plane'.
 
 
     .. versionchanged: 0.7
@@ -609,7 +609,7 @@ class VolumeVisual(Visual):
 
     """
 
-    _interpolation_names = ['linear', 'nearest']
+    _interpolation_methods = ['linear', 'nearest']
 
     _rendering_methods = {
         'mip': MIP_SNIPPETS,
@@ -621,15 +621,20 @@ class VolumeVisual(Visual):
         'average': AVG_SNIPPETS
     }
 
-    _raycasting_modes = {
+    _raycasting_methods = {
         'volume': RAYCASTING_SETUP_VOLUME,
         'plane': RAYCASTING_SETUP_PLANE
+    }
+
+    _shaders = {
+        'vertex': VERTEX_SHADER,
+        'fragment': FRAGMENT_SHADER
     }
 
     def __init__(self, vol, clim="auto", method='mip', threshold=None,
                  attenuation=1.0, relative_step_size=0.8, cmap='grays',
                  gamma=1.0, interpolation='linear', texture_format=None,
-                 raycasting_mode='volume', plane_position=None,
+                 raycasting_method='volume', plane_position=None,
                  plane_normal=None, plane_thickness=1.0, clipping_planes=None,
                  clipping_planes_coord_system='scene'):
 
@@ -641,7 +646,7 @@ class VolumeVisual(Visual):
         # Storage of information of volume
         self._vol_shape = ()
         self._gamma = gamma
-        self._raycasting_mode = raycasting_mode
+        self._raycasting_method = raycasting_method
         self._need_vertex_update = True
         # Set the colormap
         self._cmap = get_colormap(cmap)
@@ -657,7 +662,7 @@ class VolumeVisual(Visual):
         self._last_data = None
 
         # Create program
-        Visual.__init__(self, vcode=VERT_SHADER, fcode=FRAG_SHADER)
+        Visual.__init__(self, vcode=self._shaders['vertex'], fcode=self._shaders['fragment'])
         self.shared_program['u_volumetex'] = self._texture
         self.shared_program['a_position'] = self._vertices
         self.shared_program['gamma'] = self._gamma
@@ -673,7 +678,7 @@ class VolumeVisual(Visual):
         self.set_data(vol, clim or "auto")
 
         # Set params
-        self.raycasting_mode = raycasting_mode
+        self.raycasting_method = raycasting_method
         self.method = method
         self.relative_step_size = relative_step_size
         self.threshold = threshold if threshold is not None else vol.mean()
@@ -757,6 +762,22 @@ class VolumeVisual(Visual):
         self._vol_shape = shape
 
     @property
+    def interpolation_methods(self):
+        return self._interpolation_methods
+
+    @property
+    def rendering_methods(self):
+        return list(self._rendering_methods)
+
+    @property
+    def raycasting_methods(self):
+        return list(self._raycasting_methods)
+
+    @property
+    def interpolation(self):
+        return self._interpolation
+
+    @property
     def clim(self):
         """The contrast limits that were applied to the volume data.
 
@@ -819,10 +840,10 @@ class VolumeVisual(Visual):
 
     @interpolation.setter
     def interpolation(self, interp):
-        if interp not in self._interpolation_names:
+        if interp not in self._interpolation_methods:
             raise ValueError(
                 "interpolation must be one of %s"
-                % ', '.join(self._interpolation_names)
+                % ', '.join(self._interpolation_methods)
             )
         if self._interpolation != interp:
             self._interpolation = interp
@@ -959,24 +980,24 @@ class VolumeVisual(Visual):
 
     @property
     def _raycasting_setup_snippet(self):
-        return self._raycasting_modes[self.raycasting_mode]
+        return self._raycasting_methods[self.raycasting_method]
 
     @property
-    def raycasting_mode(self):
-        """The raycasting mode to use.
+    def raycasting_method(self):
+        """The raycasting method to use.
 
         This defines whether to cast a ray through the whole volume or
         perpendicular to a plane through the volume.
         must be in {'volume', 'plane'}
         """
-        return self._raycasting_mode
+        return self._raycasting_method
 
-    @raycasting_mode.setter
-    def raycasting_mode(self, value: str):
-        valid_raycasting_modes = self._raycasting_modes.keys()
-        if value not in valid_raycasting_modes:
-            raise ValueError(f"Raycasting mode should be in {valid_raycasting_modes}, not {value}")
-        self._raycasting_mode = value
+    @raycasting_method.setter
+    def raycasting_method(self, value: str):
+        valid_raycasting_methods = self._raycasting_methods.keys()
+        if value not in valid_raycasting_methods:
+            raise ValueError(f"Raycasting method should be in {valid_raycasting_methods}, not {value}")
+        self._raycasting_method = value
         self.shared_program.frag['raycasting_setup'] = self._raycasting_setup_snippet
         self.update()
 
@@ -1029,7 +1050,7 @@ class VolumeVisual(Visual):
 
         A (3,) array containing a position on a plane of interest in the volume.
         The position is defined in data coordinates. Only relevant in
-        raycasting_mode = 'plane'.
+        raycasting_method = 'plane'.
         """
         return self._plane_position
 
@@ -1048,7 +1069,7 @@ class VolumeVisual(Visual):
 
         A (3,) array containing a vector normal to the plane of interest in the
         volume. The normal vector is defined in data coordinates. Only relevant
-        in raycasting_mode = 'plane'.
+        in raycasting_method = 'plane'.
         """
         return self._plane_normal
 
@@ -1067,7 +1088,7 @@ class VolumeVisual(Visual):
 
         A value defining the total length of the ray perpendicular to the
         plane interrogated during rendering. Defined in data coordinates.
-        Only relevant in raycasting_mode = 'plane'.
+        Only relevant in raycasting_method = 'plane'.
         """
         return self._plane_thickness
 
