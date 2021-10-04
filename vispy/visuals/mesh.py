@@ -296,7 +296,7 @@ class MeshVisual(Visual):
                     return vec4(xyz, 0.0, 1.0);
                 }
             """)
-        elif vert_shape == 3:
+        elif vert_shape[-1] == 3:
             func = Function("""
                 vec4 vec3to4(vec3 xyz) {
                     return vec4(xyz, 1.0);
