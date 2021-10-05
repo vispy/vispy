@@ -50,8 +50,7 @@ import numpy as np
 # todo: what to do about lighting? ambi/diffuse/spec/shinynes on each visual?
 
 
-# Vertex shader
-VERTEX_SHADER = """
+vertex_shader = """
 attribute vec3 a_position;
 uniform vec3 u_shape;
 
@@ -78,8 +77,7 @@ void main() {
 }
 """  # noqa
 
-# Fragment shader
-FRAGMENT_SHADER = """
+fragment_shader = """
 // uniforms
 uniform $sampler_type u_volumetex;
 uniform vec3 u_shape;
@@ -627,8 +625,8 @@ class VolumeVisual(Visual):
     }
 
     _shaders = {
-        'vertex': VERTEX_SHADER,
-        'fragment': FRAGMENT_SHADER
+        'vertex': vertex_shader,
+        'fragment': fragment_shader,
     }
 
     def __init__(self, vol, clim="auto", method='mip', threshold=None,

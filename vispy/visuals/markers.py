@@ -15,7 +15,7 @@ from .shaders import Function, Variable
 from .visual import Visual
 
 
-vert = """
+vertex_shader = """
 uniform float u_antialias;
 uniform float u_px_scale;
 uniform bool u_scaling;
@@ -76,7 +76,7 @@ void main (void) {
 """
 
 
-frag = """#version 120
+fragment_shader = """#version 120
 uniform vec3 u_light_position;
 uniform vec3 u_light_color;
 uniform float u_light_ambient;
@@ -614,6 +614,11 @@ class MarkersVisual(Visual):
         '*': star,
     }
 
+    _shaders = {
+        'vertex': vertex_shader,
+        'fragment': fragment_shader,
+    }
+
     def __init__(self, symbol='o', scaling=False, alpha=1, antialias=1, spherical=False,
                  light_color='white', light_position=(1, -1, 1), light_ambient=0.3, **kwargs):
         self._vbo = VertexBuffer()
@@ -621,7 +626,7 @@ class MarkersVisual(Visual):
         self._symbol = None
         self._data = None
 
-        Visual.__init__(self, vcode=vert, fcode=frag)
+        Visual.__init__(self, vcode=self._shaders['vertex'], fcode=self._shaders['fragment'])
         self._v_size_var = Variable('varying float v_size')
         self.shared_program.vert['v_size'] = self._v_size_var
         self.shared_program.frag['v_size'] = self._v_size_var
@@ -722,6 +727,10 @@ class MarkersVisual(Visual):
                 self.shared_program.bind(self._vbo)
 
         self.update()
+
+    @property
+    def symbols(self):
+        return list(self._marker_funcs)
 
     @property
     def symbol(self):
