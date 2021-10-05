@@ -321,7 +321,7 @@ class PlotWidget(scene.Widget):
 
         See also
         --------
-        inePlot
+        LinePlot
         """
         self._configure_2d()
         line = scene.LinePlot(data, connect=connect, color=color,
