@@ -38,19 +38,18 @@ class Canvas(scene.SceneCanvas):
         self.unfreeze()
         self.index = 0
         self.markers = visuals.Markers()
-        self.marker_types = list(self.markers._marker_funcs.keys())
         self.markers.set_data(pos, face_color=(0, 1, 0), scaling=False)
-        self.markers.symbol = self.marker_types[self.index]
-        self.text = visuals.Text(self.marker_types[self.index],
+        self.markers.symbol = self.markers.symbols[self.index]
+        self.text = visuals.Text(self.markers.symbols[self.index],
                                  pos=(80, 15), font_size=14,
                                  color='black', parent=self.scene)
         self.freeze()
 
     def on_key_press(self, event):
         if event.text == ' ':
-            self.index = (self.index + 1) % (len(self.marker_types))
-            self.markers.symbol = self.marker_types[self.index]
-            self.text.text = self.marker_types[self.index]
+            self.index = (self.index + 1) % (len(self.markers.symbols))
+            self.markers.symbol = self.markers.symbols[self.index]
+            self.text.text = self.markers.symbols[self.index]
             self.update()
 
 
