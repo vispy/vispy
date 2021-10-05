@@ -17,7 +17,7 @@ from ..io import load_spatial_filters
 from ._scalable_textures import CPUScaledTexture2D, GPUScaledTexture2D
 
 
-VERT_SHADER = """
+vertex_shader = """
 uniform int method;  // 0=subdivide, 1=impostor
 attribute vec2 a_position;
 attribute vec2 a_texcoord;
@@ -29,7 +29,7 @@ void main() {
 }
 """
 
-FRAG_SHADER = """
+fragment_shader = """
 uniform vec2 image_size;
 uniform int method;  // 0=subdivide, 1=impostor
 uniform sampler2D u_texture;
@@ -210,8 +210,10 @@ class ImageVisual(Visual):
     if the data are 2D.
     """
 
-    VERTEX_SHADER = VERT_SHADER
-    FRAGMENT_SHADER = FRAG_SHADER
+    _shaders = {
+        'vertex': vertex_shader,
+        'fragment': fragment_shader,
+    }
 
     def __init__(self, data=None, method='auto', grid=(1, 1),
                  cmap='viridis', clim='auto', gamma=1.0,
@@ -259,7 +261,8 @@ class ImageVisual(Visual):
         self._null_tr = NullTransform()
 
         self._init_view(self)
-        super(ImageVisual, self).__init__(vcode=self.VERTEX_SHADER, fcode=self.FRAGMENT_SHADER)
+
+        Visual.__init__(self, vcode=self._shaders['vertex'], fcode=self._shaders['fragment'])
         self.set_gl_state('translucent', cull_face=False)
         self._draw_mode = 'triangles'
 
