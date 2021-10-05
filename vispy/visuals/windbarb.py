@@ -12,7 +12,7 @@ from vispy.gloo import VertexBuffer
 from vispy.visuals.shaders import Variable
 from vispy.visuals.visual import Visual
 
-vert = """
+vertex_shader = """
 uniform float u_antialias;
 uniform float u_px_scale;
 uniform float u_scale;
@@ -46,7 +46,7 @@ void main (void) {
 }
 """
 
-frag = """
+fragment_shader = """
 #include "math/constants.glsl"
 #include "math/signed-segment-distance.glsl"
 #include "antialias/antialias.glsl"
@@ -183,12 +183,17 @@ void main()
 class WindbarbVisual(Visual):
     """Visual displaying windbarbs."""
 
+    _shaders = {
+        'vertex': vertex_shader,
+        'fragment': fragment_shader,
+    }
+
     def __init__(self, **kwargs):
         self._vbo = VertexBuffer()
         self._v_size_var = Variable('varying float v_size')
         self._marker_fun = None
         self._data = None
-        Visual.__init__(self, vcode=vert, fcode=frag)
+        Visual.__init__(self, vcode=self._shaders['vertex'], fcode=self._shaders['fragment'])
         self.shared_program.vert['v_size'] = self._v_size_var
         self.shared_program.frag['v_size'] = self._v_size_var
         self.set_gl_state(depth_test=True, blend=True,

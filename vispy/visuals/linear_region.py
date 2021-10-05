@@ -4,7 +4,7 @@ from .. import gloo
 from .visual import Visual
 
 
-VERT_SHADER = """
+vertex_shader = """
     attribute vec2 a_pos;
     varying vec4 v_color;
 
@@ -26,7 +26,7 @@ VERT_SHADER = """
     }
     """
 
-FRAG_SHADER = """
+fragment_shader = """
     varying vec4 v_color;
 
     void main() {
@@ -50,12 +50,17 @@ class LinearRegionVisual(Visual):
         True for drawing a vertical region, False for an horizontal region
     """
 
+    _shaders = {
+        'vertex': vertex_shader,
+        'fragment': fragment_shader,
+    }
+
     def __init__(self, pos=None, color=[1.0, 1.0, 1.0, 1.0],
                  vertical=True, **kwargs):
         """
 
         """
-        Visual.__init__(self, vcode=VERT_SHADER, fcode=FRAG_SHADER, **kwargs)
+        Visual.__init__(self, vcode=self._shaders['vertex'], fcode=self._shaders['fragment'])
 
         self._changed = {'pos': False, 'color': False}
 
