@@ -772,10 +772,6 @@ class VolumeVisual(Visual):
         return list(self._raycasting_methods)
 
     @property
-    def interpolation(self):
-        return self._interpolation
-
-    @property
     def clim(self):
         """The contrast limits that were applied to the volume data.
 

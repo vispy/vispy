@@ -231,6 +231,7 @@ fragment_shader = """
     }
     """
 
+
 def _text_to_vbo(text, font, anchor_x, anchor_y, lowres_size):
     """Convert text characters to VBO"""
     # Necessary to flush commands before requesting current viewport because
