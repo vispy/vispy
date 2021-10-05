@@ -584,21 +584,21 @@ class VolumeVisual(Visual):
         transferred to the GPU. Note this visual is limited to "luminance"
         formatted data (single band). This is equivalent to `GL_RED` format
         in OpenGL 4.0.
-    raycasting_method : {'volume', 'plane'}
+    raycasting_mode : {'volume', 'plane'}
         Whether to cast a ray through the whole volume or perpendicular to a
         plane through the volume defined.
     plane_position : ArrayLike
         A (3,) array containing a position on a plane of interest in the volume.
         The position is defined in data coordinates. Only relevant in
-        raycasting_method = 'plane'.
+        raycasting_mode = 'plane'.
     plane_normal : ArrayLike
         A (3,) array containing a vector normal to the plane of interest in the
         volume. The normal vector is defined in data coordinates. Only relevant
-        in raycasting_method = 'plane'.
+        in raycasting_mode = 'plane'.
     plane_thickness : float
         A value defining the total length of the ray perpendicular to the
         plane interrogated during rendering. Defined in data coordinates.
-        Only relevant in raycasting_method = 'plane'.
+        Only relevant in raycasting_mode = 'plane'.
 
 
     .. versionchanged: 0.7
@@ -619,7 +619,7 @@ class VolumeVisual(Visual):
         'average': AVG_SNIPPETS
     }
 
-    _raycasting_methods = {
+    _raycasting_modes = {
         'volume': RAYCASTING_SETUP_VOLUME,
         'plane': RAYCASTING_SETUP_PLANE
     }
@@ -632,7 +632,7 @@ class VolumeVisual(Visual):
     def __init__(self, vol, clim="auto", method='mip', threshold=None,
                  attenuation=1.0, relative_step_size=0.8, cmap='grays',
                  gamma=1.0, interpolation='linear', texture_format=None,
-                 raycasting_method='volume', plane_position=None,
+                 raycasting_mode='volume', plane_position=None,
                  plane_normal=None, plane_thickness=1.0, clipping_planes=None,
                  clipping_planes_coord_system='scene'):
 
@@ -644,7 +644,7 @@ class VolumeVisual(Visual):
         # Storage of information of volume
         self._vol_shape = ()
         self._gamma = gamma
-        self._raycasting_method = raycasting_method
+        self._raycasting_mode = raycasting_mode
         self._need_vertex_update = True
         # Set the colormap
         self._cmap = get_colormap(cmap)
@@ -676,7 +676,7 @@ class VolumeVisual(Visual):
         self.set_data(vol, clim or "auto")
 
         # Set params
-        self.raycasting_method = raycasting_method
+        self.raycasting_mode = raycasting_mode
         self.method = method
         self.relative_step_size = relative_step_size
         self.threshold = threshold if threshold is not None else vol.mean()
@@ -768,8 +768,8 @@ class VolumeVisual(Visual):
         return list(self._rendering_methods)
 
     @property
-    def raycasting_methods(self):
-        return list(self._raycasting_methods)
+    def raycasting_modes(self):
+        return list(self._raycasting_modes)
 
     @property
     def clim(self):
@@ -974,24 +974,24 @@ class VolumeVisual(Visual):
 
     @property
     def _raycasting_setup_snippet(self):
-        return self._raycasting_methods[self.raycasting_method]
+        return self._raycasting_modes[self.raycasting_mode]
 
     @property
-    def raycasting_method(self):
-        """The raycasting method to use.
+    def raycasting_mode(self):
+        """The raycasting mode to use.
 
         This defines whether to cast a ray through the whole volume or
         perpendicular to a plane through the volume.
         must be in {'volume', 'plane'}
         """
-        return self._raycasting_method
+        return self._raycasting_mode
 
-    @raycasting_method.setter
-    def raycasting_method(self, value: str):
-        valid_raycasting_methods = self._raycasting_methods.keys()
-        if value not in valid_raycasting_methods:
-            raise ValueError(f"Raycasting method should be in {valid_raycasting_methods}, not {value}")
-        self._raycasting_method = value
+    @raycasting_mode.setter
+    def raycasting_mode(self, value: str):
+        valid_raycasting_modes = self._raycasting_modes.keys()
+        if value not in valid_raycasting_modes:
+            raise ValueError(f"Raycasting mode should be in {valid_raycasting_modes}, not {value}")
+        self._raycasting_mode = value
         self.shared_program.frag['raycasting_setup'] = self._raycasting_setup_snippet
         self.update()
 
@@ -1044,7 +1044,7 @@ class VolumeVisual(Visual):
 
         A (3,) array containing a position on a plane of interest in the volume.
         The position is defined in data coordinates. Only relevant in
-        raycasting_method = 'plane'.
+        raycasting_mode = 'plane'.
         """
         return self._plane_position
 
@@ -1063,7 +1063,7 @@ class VolumeVisual(Visual):
 
         A (3,) array containing a vector normal to the plane of interest in the
         volume. The normal vector is defined in data coordinates. Only relevant
-        in raycasting_method = 'plane'.
+        in raycasting_mode = 'plane'.
         """
         return self._plane_normal
 
@@ -1082,7 +1082,7 @@ class VolumeVisual(Visual):
 
         A value defining the total length of the ray perpendicular to the
         plane interrogated during rendering. Defined in data coordinates.
-        Only relevant in raycasting_method = 'plane'.
+        Only relevant in raycasting_mode = 'plane'.
         """
         return self._plane_thickness
 

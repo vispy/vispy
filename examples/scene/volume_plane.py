@@ -35,7 +35,7 @@ view = canvas.central_widget.add_view()
 plane = scene.visuals.Volume(
     vol,
     parent=view.scene,
-    raycasting_method='plane',
+    raycasting_mode='plane',
     method='mip',
     plane_thickness=3.0,
     plane_position=(128, 60, 64),
@@ -45,7 +45,7 @@ plane = scene.visuals.Volume(
 volume = scene.visuals.Volume(
     vol,
     parent=view.scene,
-    raycasting_method='volume',
+    raycasting_mode='volume',
     method='mip',
 )
 volume.set_gl_state('additive')
@@ -96,11 +96,11 @@ def on_key_press(event):
         plane.method = method
     elif event.text == '2':
         modes = ['volume', 'plane']
-        if plane.raycasting_method == modes[0]:
-            plane.raycasting_method = modes[1]
+        if plane.raycasting_mode == modes[0]:
+            plane.raycasting_mode = modes[1]
             print(modes[1])
         else:
-            plane.raycasting_method = modes[0]
+            plane.raycasting_mode = modes[0]
             print(modes[0])
     elif event.text != '' and event.text in '{}':
         t = -1 if event.text == '{' else 1
