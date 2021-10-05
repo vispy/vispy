@@ -16,19 +16,6 @@ from ...util.profiler import Profiler
 from .dash_atlas import DashAtlas
 
 
-vec2to4 = Function("""
-    vec4 vec2to4(vec2 inp) {
-        return vec4(inp, 0, 1);
-    }
-""")
-
-vec3to4 = Function("""
-    vec4 vec3to4(vec3 inp) {
-        return vec4(inp, 1);
-    }
-""")
-
-
 """
 TODO:
 
@@ -87,6 +74,10 @@ class LineVisual(CompoundVisual):
         which may be unavailable or inconsistent on some platforms.
     """
 
+    _join_types = joins
+
+    _cap_types = caps
+
     def __init__(self, pos=None, color=(0.5, 0.5, 0.5, 1), width=1,
                  connect='strip', method='gl', antialias=False):
         self._line_visual = None
@@ -110,6 +101,14 @@ class LineVisual(CompoundVisual):
                             connect=connect)
         self.antialias = antialias
         self.method = method
+
+    @property
+    def join_types(self):
+        return self._join_types
+
+    @property
+    def cap_types(self):
+        return self._cap_types
 
     @property
     def antialias(self):
@@ -272,21 +271,22 @@ class LineVisual(CompoundVisual):
 
 
 class _GLLineVisual(Visual):
-    VERTEX_SHADER = """
-        varying vec4 v_color;
+    _shaders = {
+        'vertex': """
+            varying vec4 v_color;
 
-        void main(void) {
-            gl_Position = $transform($to_vec4($position));
-            v_color = $color;
-        }
-    """
-
-    FRAGMENT_SHADER = """
-        varying vec4 v_color;
-        void main() {
-            gl_FragColor = v_color;
-        }
-    """
+            void main(void) {
+                gl_Position = $transform($to_vec4($position));
+                v_color = $color;
+            }
+        """,
+        'fragment': """
+            varying vec4 v_color;
+            void main() {
+                gl_FragColor = v_color;
+            }
+        """
+    }
 
     def __init__(self, parent):
         self._parent = parent
@@ -295,9 +295,25 @@ class _GLLineVisual(Visual):
         self._connect_ibo = gloo.IndexBuffer()
         self._connect = None
 
-        Visual.__init__(self, vcode=self.VERTEX_SHADER,
-                        fcode=self.FRAGMENT_SHADER)
+        Visual.__init__(self, vcode=self._shaders['vertex'], fcode=self._shaders['fragment'])
         self.set_gl_state('translucent')
+
+    def _ensure_vec4_func(self, vert_shape):
+        if vert_shape[-1] == 2:
+            func = Function("""
+                vec4 vec2to4(vec2 xyz) {
+                    return vec4(xyz, 0.0, 1.0);
+                }
+            """)
+        elif vert_shape[-1] == 3:
+            func = Function("""
+                vec4 vec3to4(vec3 xyz) {
+                    return vec4(xyz, 1.0);
+                }
+            """)
+        else:
+            raise TypeError("Vertex data must have shape (...,2) or (...,3).")
+        return func
 
     def _prepare_transforms(self, view):
         xform = view.transforms.get_transform()
@@ -313,13 +329,7 @@ class _GLLineVisual(Visual):
             pos = np.ascontiguousarray(self._parent._pos.astype(np.float32))
             self._pos_vbo.set_data(pos)
             self._program.vert['position'] = self._pos_vbo
-            if pos.shape[-1] == 2:
-                self._program.vert['to_vec4'] = vec2to4
-            elif pos.shape[-1] == 3:
-                self._program.vert['to_vec4'] = vec3to4
-            else:
-                raise TypeError("Got bad position array shape: %r"
-                                % (pos.shape,))
+            self._program.vert['to_vec4'] = self._ensure_vec4_func(pos.shape)
 
         if self._parent._changed['color']:
             color, cmap = self._parent._interpret_color()
@@ -380,8 +390,10 @@ class _AggLineVisual(Visual):
                            ('alength', np.float32),
                            ('color', np.float32, (4,))])
 
-    VERTEX_SHADER = glsl.get('lines/agg.vert')
-    FRAGMENT_SHADER = glsl.get('lines/agg.frag')
+    _shaders = {
+        'vertex': glsl.get('lines/agg.vert'),
+        'fragment': glsl.get('lines/agg.frag'),
+    }
 
     def __init__(self, parent):
         self._parent = parent
@@ -399,8 +411,7 @@ class _AggLineVisual(Visual):
                        antialias=1.0)
         self._dash_atlas = gloo.Texture2D(self._da._data)
 
-        Visual.__init__(self, vcode=self.VERTEX_SHADER,
-                        fcode=self.FRAGMENT_SHADER)
+        Visual.__init__(self, vcode=self._shaders['vertex'], fcode=self._shaders['fragment'])
         self._index_buffer = gloo.IndexBuffer()
         # The depth_test being disabled prevents z-ordering, but if
         # we turn it on the blending of the aa edges produces artifacts.
