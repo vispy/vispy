@@ -33,7 +33,7 @@ void main()
     // y component for texcoords
     // (we get the texcoords inverted (with respect to the colormap)
     // so let's invert it to make sure that the colorbar renders correctly)
-    vec4 mapped_color = $color_transform($orient_texcoord(1.0 - v_texcoord.y);
+    vec4 mapped_color = $color_transform($orient_texcoord(v_texcoord));
     gl_FragColor = mapped_color;
 }
 """  # noqa
