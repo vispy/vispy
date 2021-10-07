@@ -20,6 +20,7 @@ import numpy as np
 
 from vispy import gloo
 from vispy.visuals.shaders import Function, Varying
+from vispy.scene.widgets import Widget
 
 
 vert_accumulate = """
@@ -127,18 +128,22 @@ def _iter_node_tree(node):
 
 
 def _is_drawable(node):
-    return hasattr(node, 'draw') and hasattr(node, 'view_program')
+    if isinstance(node, Widget):
+        return False
+    if hasattr(node, 'draw'):
+        if hasattr(node, '_subvisuals'):
+            return all(_is_drawable(sub) for sub in node._subvisuals)
+        else:
+            return hasattr(node, 'view_program')
+    return False
 
 
 def _extend_programs(nodes):
     """Add the glsl program for transparency at the end of the programs of the
     transparent visuals.
     """
-    programs = []
-    for node in nodes:
-        if not (_is_drawable(node) and node.is_transparent()):
-            continue
 
+    def extend_prog(node):
         # XXX: Without this the `view_program.vert['position']` is not
         # defined.
         node._prepare_draw(None)
@@ -167,6 +172,17 @@ def _extend_programs(nodes):
         position = 1000
         hook_vert.add(vert_func(), position=position)
         hook_frag.add(frag_func(), position=position)
+
+    programs = []
+    for node in nodes:
+        if not (_is_drawable(node) and node.is_transparent()):
+            continue
+
+        if hasattr(node, '_subvisuals'):
+            for sub in node._subvisuals:
+                extend_prog(sub)
+        else:
+            extend_prog(node)
 
     return programs
 
