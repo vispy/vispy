@@ -127,7 +127,7 @@ def _iter_node_tree(node):
 
 
 def _is_drawable(node):
-    return hasattr(node, 'draw')
+    return hasattr(node, 'draw') and hasattr(node, 'view_program')
 
 
 def _extend_programs(nodes):
