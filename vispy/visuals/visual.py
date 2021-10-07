@@ -517,6 +517,12 @@ class Visual(BaseVisual):
             view._filters.remove(filt)
             filt._detach(view)
 
+    def is_transparent(self):
+        """
+        determine whether this visual has transparency
+        """
+        return False
+
 
 class VisualView(BaseVisualView, Visual):
     """A view on another Visual instance.
@@ -679,6 +685,9 @@ class CompoundVisual(BaseVisual):
                 elif vb is not None:
                     bounds = [min(bounds[0], vb[0]), max(bounds[1], vb[1])]
         return bounds
+
+    def is_transparent(self):
+        return any(v.is_transparent for v in self._subvisuals)
 
 
 class CompoundVisualView(BaseVisualView, CompoundVisual):

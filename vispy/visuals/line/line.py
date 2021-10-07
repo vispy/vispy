@@ -370,6 +370,10 @@ class _GLLineVisual(Visual):
 
         prof('draw')
 
+    def is_transparent(self):
+        # TODO
+        return False
+
 
 class _AggLineVisual(Visual):
     _agg_vtype = np.dtype([('a_position', np.float32, (2,)),
@@ -530,3 +534,7 @@ class _AggLineVisual(Visual):
         V['color'] = color
 
         return V, idxs
+
+    def is_transparent(self):
+        # TODO
+        return False

@@ -370,3 +370,6 @@ class MeshVisual(Visual):
             return (0, 0)
         else:
             return self._bounds[axis]
+
+    def is_transparent(self):
+        return not np.allclose(self.color.alpha, 1)

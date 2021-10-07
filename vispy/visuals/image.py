@@ -579,3 +579,14 @@ class ImageVisual(Visual):
 
         if view._need_method_update:
             self._update_method(view)
+
+    def is_transparent(self):
+        # TODO: this is probably very wrong
+        if self._data.ndim == 3:
+            if self._data.shape[2] == 4:
+                # alpha channel, check if they're all 1
+                return not np.allclose(self._data[..., -1], 1)
+            else:
+                return False
+        # luminance, so it's based on colormap? How?
+        return True

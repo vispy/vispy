@@ -633,6 +633,9 @@ class TextVisual(Visual):
         self._font = self._font_manager.get_font(self._face, self._bold, self._italic)
         self.update()
 
+    def is_transparent(self):
+        return not np.allclose(self.color[..., -1], 1)
+
 
 class SDFRendererCPU(object):
     """Render SDFs using the CPU."""

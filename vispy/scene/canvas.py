@@ -7,6 +7,7 @@ from __future__ import division
 import weakref
 import numpy as np
 
+from . import renderer
 from .. import gloo
 from .. import app
 from .visuals import VisualNode
@@ -79,6 +80,8 @@ class SceneCanvas(app.Canvas, Frozen):
         allows the scale factor to be adjusted for testing.
     bgcolor : Color
         The background color to use.
+    transparency : {None, 'weighted'}, optional
+        Whether to render with transparency.
 
     See also
     --------
@@ -114,7 +117,10 @@ class SceneCanvas(app.Canvas, Frozen):
                  show=False, autoswap=True, app=None, create_native=True,
                  vsync=False, resizable=True, decorate=True, fullscreen=False,
                  config=None, shared=None, keys=None, parent=None, dpi=None,
-                 always_on_top=False, px_scale=1, bgcolor='black'):
+                 always_on_top=False, px_scale=1, bgcolor='black',
+                 transparency=None):
+        assert transparency in (None, 'weighted')
+
         self._scene = None
         # A default widget that follows the shape of the canvas
         self._central_widget = None
@@ -126,6 +132,8 @@ class SceneCanvas(app.Canvas, Frozen):
         self._mouse_handler = None
         self.transforms = TransformSystem(canvas=self)
         self._bgcolor = Color(bgcolor).rgba
+        self._transparency = transparency
+        self._renderer = None
 
         # Set to True to enable sending mouse events even when no button is
         # pressed. Disabled by default because it is very expensive. Also
@@ -142,6 +150,10 @@ class SceneCanvas(app.Canvas, Frozen):
         self.events.mouse_wheel.connect(self._process_mouse_event)
 
         self.scene = SubScene()
+
+        if transparency == 'weighted':
+            self._renderer = renderer.WeightedTransparencyRenderer(self)
+
         self.freeze()
 
     @property
@@ -274,7 +286,11 @@ class SceneCanvas(app.Canvas, Frozen):
         if bgcolor is None:
             bgcolor = self._bgcolor
         self.context.clear(color=bgcolor, depth=True)
-        self.draw_visual(self.scene)
+
+        if self._renderer is not None:
+            self._renderer.render(bgcolor)
+        else:
+            self.draw_visual(self.scene)
 
     def draw_visual(self, visual, event=None):
         """Draw a visual and its children to the canvas or currently active
@@ -489,7 +505,12 @@ class SceneCanvas(app.Canvas, Frozen):
         """
         try:
             self._scene.picking = True
+            # Picking requires the default renderer. Temporarily disable any
+            # other activated renderer.
+            renderer = self._renderer
+            self._renderer = None
             img = self.render(bgcolor=(0, 0, 0, 0), crop=crop)
+            self._renderer = renderer
         finally:
             self._scene.picking = False
         img = img.astype('int32') * [2**0, 2**8, 2**16, 2**24]
@@ -511,6 +532,9 @@ class SceneCanvas(app.Canvas, Frozen):
 
         if len(self._vp_stack) == 0:
             self.context.set_viewport(0, 0, *self.physical_size)
+
+        if self._renderer is not None:
+            self._renderer.resize(self.physical_size)
 
     def on_close(self, event):
         """Close event handler
