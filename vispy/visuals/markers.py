@@ -18,7 +18,6 @@ uniform float u_antialias;
 uniform float u_px_scale;
 uniform float u_scale;
 
-attribute vec3 a_position;
 attribute vec4 a_fg_color;
 attribute vec4 a_bg_color;
 attribute float a_edgewidth;
@@ -35,7 +34,7 @@ void main (void) {
     v_antialias = u_antialias;
     v_fg_color  = a_fg_color;
     v_bg_color  = a_bg_color;
-    gl_Position = $transform(vec4(a_position,1.0));
+    gl_Position = $transform(vec4($position,1.0));
     float edgewidth = max(v_edgewidth, 1.0);
     gl_PointSize = ($v_size) + 4.*(edgewidth + 1.5*v_antialias);
 }
@@ -492,6 +491,7 @@ class MarkersVisual(Visual):
         self.antialias = 1
         self.scaling = False
         Visual.__init__(self, vcode=vert, fcode=frag)
+        self.pos = Variable('uniform vec3 position')
         self.shared_program.vert['v_size'] = self._v_size_var
         self.shared_program.frag['v_size'] = self._v_size_var
         self.set_gl_state(depth_test=True, blend=True,
@@ -557,8 +557,7 @@ class MarkersVisual(Visual):
                     pos.ndim == 2 and pos.shape[1] in (2, 3))
 
             n = len(pos)
-            data = np.zeros(n, dtype=[('a_position', np.float32, 3),
-                                      ('a_fg_color', np.float32, 4),
+            data = np.zeros(n, dtype=[('a_fg_color', np.float32, 4),
                                       ('a_bg_color', np.float32, 4),
                                       ('a_size', np.float32),
                                       ('a_edgewidth', np.float32)])
@@ -568,7 +567,8 @@ class MarkersVisual(Visual):
                 data['a_edgewidth'] = edge_width
             else:
                 data['a_edgewidth'] = size*edge_width_rel
-            data['a_position'][:, :pos.shape[1]] = pos
+
+            self.shared_program.vert['position'] = VertexBuffer(pos.astype(np.float32))
             data['a_size'] = size
             self.shared_program['u_antialias'] = self.antialias  # XXX make prop
             self._data = data
@@ -637,6 +637,7 @@ class MarkersVisual(Visual):
             return (0, 0)
 
     def is_transparent(self):
+        return True
         if self.antialias != 0:
             return True
         for col in ('a_bg_color', 'a_fg_color'):

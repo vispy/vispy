@@ -72,6 +72,11 @@ view.camera.depth_value = 1e3
 for mesh in meshes:
     view.add(mesh)
 
+import numpy as np
+
+points = scene.visuals.Markers(pos=np.random.rand(100, 3))
+view.add(points)
+
 canvas.show()
 
 

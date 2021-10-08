@@ -144,14 +144,17 @@ def _extend_programs(nodes):
     """
 
     def extend_prog(node):
-        # XXX: Without this the `view_program.vert['position']` is not
-        # defined.
-        node._prepare_draw(None)
-        # The default state of visuals is not compatible with the state for
-        # transparent rendering.
-        # XXX: Save the state and restore later instead? Or overide the
-        # state locally when redering?
-        node.set_gl_state(preset=None)
+        try:
+            # XXX: Without this the `view_program.vert['position']` is not
+            # defined.
+            node._prepare_draw(None)
+            # The default state of visuals is not compatible with the state for
+            # transparent rendering.
+            # XXX: Save the state and restore later instead? Or overide the
+            # state locally when redering?
+            node.set_gl_state(preset=None)
+        except:
+            pass
 
         vert_func = Function(vert_accumulate)
         frag_func = Function(frag_accumulate)
