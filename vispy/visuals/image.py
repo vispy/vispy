@@ -291,11 +291,10 @@ class ImageVisual(Visual):
             self.set_data(data)
         self.freeze()
 
-    @classmethod
-    def _init_interpolation(cls, interpolation_names):
+    def _init_interpolation(self, interpolation_names):
         # create interpolation shader functions for available
         # interpolations
-        fun = [Function(cls._func_templates['texture_lookup_interpolated'] % n)
+        fun = [Function(self._func_templates['texture_lookup_interpolated'] % n)
                for n in interpolation_names]
         interpolation_names = [n.lower() for n in interpolation_names]
 
@@ -304,7 +303,7 @@ class ImageVisual(Visual):
 
         # overwrite "nearest" and "bilinear" spatial-filters
         # with  "hardware" interpolation _data_lookup_fn
-        hardware_lookup = Function(cls._func_templates['texture_lookup'])
+        hardware_lookup = Function(self._func_templates['texture_lookup'])
         interpolation_fun['nearest'] = hardware_lookup
         interpolation_fun['bilinear'] = hardware_lookup
         return interpolation_names, interpolation_fun
