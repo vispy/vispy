@@ -15,7 +15,7 @@ from .shaders import Function, Variable
 from .visual import Visual
 
 
-vertex_shader = """
+_VERTEX_SHADER = """
 uniform float u_antialias;
 uniform float u_px_scale;
 uniform bool u_scaling;
@@ -76,7 +76,7 @@ void main (void) {
 """
 
 
-fragment_shader = """#version 120
+_FRAGMENT_SHADER = """#version 120
 uniform vec3 u_light_position;
 uniform vec3 u_light_color;
 uniform float u_light_ambient;
@@ -615,8 +615,8 @@ class MarkersVisual(Visual):
     }
 
     _shaders = {
-        'vertex': vertex_shader,
-        'fragment': fragment_shader,
+        'vertex': _VERTEX_SHADER,
+        'fragment': _FRAGMENT_SHADER,
     }
 
     def __init__(self, symbol='o', scaling=False, alpha=1, antialias=1, spherical=False,

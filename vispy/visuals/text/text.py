@@ -148,7 +148,7 @@ class FontManager(object):
 ##############################################################################
 # The visual
 
-vertex_shader = """
+_VERTEX_SHADER = """
     attribute float a_rotation;  // rotation in rad
     attribute vec2 a_position; // in point units
     attribute vec2 a_texcoord;
@@ -169,7 +169,7 @@ vertex_shader = """
     }
     """
 
-fragment_shader = """
+_FRAGMENT_SHADER = """
     // Extensions for WebGL
     #extension GL_OES_standard_derivatives : enable
     #extension GL_OES_element_index_uint : enable
@@ -398,8 +398,8 @@ class TextVisual(Visual):
     """
 
     _shaders = {
-        'vertex': vertex_shader,
-        'fragment': fragment_shader,
+        'vertex': _VERTEX_SHADER,
+        'fragment': _FRAGMENT_SHADER,
     }
 
     def __init__(self, text=None, color='black', bold=False,

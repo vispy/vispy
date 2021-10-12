@@ -19,7 +19,7 @@ from ..color.colormap import CubeHelixColormap
 from ..util.event import Event
 
 
-vertex_shader = """
+_VERTEX_SHADER = """
 varying vec4 v_base_color;
 
 void main() {
@@ -28,7 +28,7 @@ void main() {
 }
 """
 
-fragment_shader = """
+_FRAGMENT_SHADER = """
 varying vec4 v_base_color;
 void main() {
     gl_FragColor = v_base_color;
@@ -91,8 +91,8 @@ class MeshVisual(Visual):
     """
 
     _shaders = {
-        'vertex': vertex_shader,
-        'fragment': fragment_shader,
+        'vertex': _VERTEX_SHADER,
+        'fragment': _FRAGMENT_SHADER,
     }
 
     def __init__(self, vertices=None, faces=None, vertex_colors=None,

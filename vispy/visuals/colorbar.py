@@ -13,7 +13,7 @@ from . import Visual, TextVisual, CompoundVisual, _BorderVisual
 from .shaders import Function
 from ..color import get_colormap
 
-vertex_shader = """
+_VERTEX_SHADER = """
 attribute vec2 a_position;
 attribute vec2 a_texcoord;
 varying vec2 v_texcoord;
@@ -24,7 +24,7 @@ void main() {
 }
 """  # noqa
 
-fragment_shader = """
+_FRAGMENT_SHADER = """
 varying vec2 v_texcoord;
 
 void main()
@@ -76,8 +76,8 @@ class _CoreColorBarVisual(Visual):
     """
 
     _shaders = {
-        'vertex': vertex_shader,
-        'fragment': fragment_shader,
+        'vertex': _VERTEX_SHADER,
+        'fragment': _FRAGMENT_SHADER,
     }
 
     def __init__(self, pos, halfdim,

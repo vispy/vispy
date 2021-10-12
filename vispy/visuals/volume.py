@@ -50,7 +50,7 @@ import numpy as np
 # todo: what to do about lighting? ambi/diffuse/spec/shinynes on each visual?
 
 
-vertex_shader = """
+_VERTEX_SHADER = """
 attribute vec3 a_position;
 uniform vec3 u_shape;
 
@@ -77,7 +77,7 @@ void main() {
 }
 """  # noqa
 
-fragment_shader = """
+_FRAGMENT_SHADER = """
 // uniforms
 uniform $sampler_type u_volumetex;
 uniform vec3 u_shape;
@@ -298,7 +298,7 @@ void main() {
 
 """  # noqa
 
-RAYCASTING_SETUP_VOLUME = """
+_RAYCASTING_SETUP_VOLUME = """
     // Compute the distance to the front surface or near clipping plane
     float distance = dot(nearpos-v_position, view_ray);
     distance = max(distance, min((-0.5 - v_position.x) / view_ray.x,
@@ -322,7 +322,7 @@ RAYCASTING_SETUP_VOLUME = """
     vec3 start_loc = front / u_shape;
 """
 
-RAYCASTING_SETUP_PLANE = """
+_RAYCASTING_SETUP_PLANE = """
     // find intersection of view ray with plane in data coordinates
     vec3 intersection = intersectLinePlane(v_position.xyz, view_ray,
                                            u_plane_position, u_plane_normal);
@@ -359,7 +359,7 @@ RAYCASTING_SETUP_PLANE = """
 """
 
 
-MIP_SNIPPETS = dict(
+_MIP_SNIPPETS = dict(
     before_loop="""
         float maxval = -99999.0; // The maximum encountered value
         int maxi = -1;  // Where the maximum value was encountered
@@ -383,7 +383,7 @@ MIP_SNIPPETS = dict(
         """,
 )
 
-ATTENUATED_MIP_SNIPPETS = dict(
+_ATTENUATED_MIP_SNIPPETS = dict(
     before_loop="""
         float maxval = -99999.0; // The maximum encountered value
         float sumval = 0.0; // The sum of the encountered values
@@ -405,7 +405,7 @@ ATTENUATED_MIP_SNIPPETS = dict(
         """,
 )
 
-MINIP_SNIPPETS = dict(
+_MINIP_SNIPPETS = dict(
     before_loop="""
         float minval = 99999.0; // The minimum encountered value
         int mini = -1;  // Where the minimum value was encountered
@@ -429,7 +429,7 @@ MINIP_SNIPPETS = dict(
         """,
 )
 
-TRANSLUCENT_SNIPPETS = dict(
+_TRANSLUCENT_SNIPPETS = dict(
     before_loop="""
         vec4 integrated_color = vec4(0., 0., 0., 0.);
         """,
@@ -458,7 +458,7 @@ TRANSLUCENT_SNIPPETS = dict(
         """,
 )
 
-ADDITIVE_SNIPPETS = dict(
+_ADDITIVE_SNIPPETS = dict(
     before_loop="""
         vec4 integrated_color = vec4(0., 0., 0., 0.);
         """,
@@ -472,7 +472,7 @@ ADDITIVE_SNIPPETS = dict(
         """,
 )
 
-ISO_SNIPPETS = dict(
+_ISO_SNIPPETS = dict(
     before_loop="""
         vec4 color3 = vec4(0.0);  // final color
         vec3 dstep = 1.5 / u_shape;  // step to sample derivative
@@ -509,7 +509,7 @@ ISO_SNIPPETS = dict(
 )
 
 
-AVG_SNIPPETS = dict(
+_AVG_SNIPPETS = dict(
     before_loop="""
         float n = 0; // Counter for encountered values
         float meanval = 0.0; // The mean of encountered values
@@ -610,23 +610,23 @@ class VolumeVisual(Visual):
     _interpolation_methods = ['linear', 'nearest']
 
     _rendering_methods = {
-        'mip': MIP_SNIPPETS,
-        'minip': MINIP_SNIPPETS,
-        'attenuated_mip': ATTENUATED_MIP_SNIPPETS,
-        'iso': ISO_SNIPPETS,
-        'translucent': TRANSLUCENT_SNIPPETS,
-        'additive': ADDITIVE_SNIPPETS,
-        'average': AVG_SNIPPETS
+        'mip': _MIP_SNIPPETS,
+        'minip': _MINIP_SNIPPETS,
+        'attenuated_mip': _ATTENUATED_MIP_SNIPPETS,
+        'iso': _ISO_SNIPPETS,
+        'translucent': _TRANSLUCENT_SNIPPETS,
+        'additive': _ADDITIVE_SNIPPETS,
+        'average': _AVG_SNIPPETS
     }
 
     _raycasting_modes = {
-        'volume': RAYCASTING_SETUP_VOLUME,
-        'plane': RAYCASTING_SETUP_PLANE
+        'volume': _RAYCASTING_SETUP_VOLUME,
+        'plane': _RAYCASTING_SETUP_PLANE
     }
 
     _shaders = {
-        'vertex': vertex_shader,
-        'fragment': fragment_shader,
+        'vertex': _VERTEX_SHADER,
+        'fragment': _FRAGMENT_SHADER,
     }
 
     def __init__(self, vol, clim="auto", method='mip', threshold=None,

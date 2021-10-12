@@ -11,7 +11,7 @@ import numpy as np
 from . import Visual
 from ..color import Color
 
-vertex_shader = """
+_VERTEX_SHADER = """
 attribute vec2 a_position;
 attribute vec2 a_adjust_dir;
 
@@ -55,7 +55,7 @@ void main() {
 }
 """
 
-fragment_shader = """
+_FRAGMENT_SHADER = """
 void main() {
     gl_FragColor = $border_color;
 }
@@ -85,8 +85,8 @@ class _BorderVisual(Visual):
     """
 
     _shaders = {
-        'vertex': vertex_shader,
-        'fragment': fragment_shader,
+        'vertex': _VERTEX_SHADER,
+        'fragment': _FRAGMENT_SHADER,
     }
 
     def __init__(self, pos, halfdim,
