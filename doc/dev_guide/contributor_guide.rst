@@ -239,8 +239,8 @@ Which will attempt to run all example scripts.
   "one truth" for passing tests until tests are made more flexible for
   differences in systems.
 
-Sphinx Documentation and Jupyter Widget
----------------------------------------
+Sphinx Documentation
+--------------------
 
 VisPy's documentation website is a `Sphinx <https://www.sphinx-doc.org/>`_
 project stored in the "doc" directory of the repository. To generate the
