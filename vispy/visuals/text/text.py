@@ -148,6 +148,89 @@ class FontManager(object):
 ##############################################################################
 # The visual
 
+_VERTEX_SHADER = """
+    attribute float a_rotation;  // rotation in rad
+    attribute vec2 a_position; // in point units
+    attribute vec2 a_texcoord;
+    attribute vec3 a_pos;  // anchor position
+    varying vec2 v_texcoord;
+    varying vec4 v_color;
+
+    void main(void) {
+        // Eventually "rot" should be handled by SRTTransform or so...
+        mat4 rot = mat4(cos(a_rotation), -sin(a_rotation), 0, 0,
+                        sin(a_rotation), cos(a_rotation), 0, 0,
+                        0, 0, 1, 0, 0, 0, 0, 1);
+        vec4 pos = $transform(vec4(a_pos, 1.0)) +
+                   vec4($text_scale(rot * vec4(a_position, 0.0, 1.0)).xyz, 0.0);
+        gl_Position = pos;
+        v_texcoord = a_texcoord;
+        v_color = $color;
+    }
+    """
+
+_FRAGMENT_SHADER = """
+    // Extensions for WebGL
+    #extension GL_OES_standard_derivatives : enable
+    #extension GL_OES_element_index_uint : enable
+    #include "misc/spatial-filters.frag"
+    // Adapted from glumpy with permission
+    const float M_SQRT1_2 = 0.707106781186547524400844362104849039;
+
+    uniform sampler2D u_font_atlas;
+    uniform vec2 u_font_atlas_shape;
+    varying vec4 v_color;
+    uniform float u_npix;
+
+    varying vec2 v_texcoord;
+    const float center = 0.5;
+
+    float contour(in float d, in float w)
+    {
+        return smoothstep(center - w, center + w, d);
+    }
+
+    float sample(sampler2D texture, vec2 uv, float w)
+    {
+        return contour(texture2D(texture, uv).r, w);
+    }
+
+    void main(void) {
+        vec2 uv = v_texcoord.xy;
+        vec4 rgb;
+
+        // Use interpolation at high font sizes
+        if(u_npix >= 50.0)
+            rgb = CatRom(u_font_atlas, u_font_atlas_shape, uv);
+        else
+            rgb = texture2D(u_font_atlas, uv);
+        float distance = rgb.r;
+
+        // GLSL's fwidth = abs(dFdx(uv)) + abs(dFdy(uv))
+        float width = 0.5 * fwidth(distance);  // sharpens a bit
+
+        // Regular SDF
+        float alpha = contour(distance, width);
+
+        if (u_npix < 30.) {
+            // Supersample, 4 extra points
+            // Half of 1/sqrt2; you can play with this
+            float dscale = 0.5 * M_SQRT1_2;
+            vec2 duv = dscale * (dFdx(v_texcoord) + dFdy(v_texcoord));
+            vec4 box = vec4(v_texcoord-duv, v_texcoord+duv);
+            float asum = sample(u_font_atlas, box.xy, width)
+                       + sample(u_font_atlas, box.zw, width)
+                       + sample(u_font_atlas, box.xw, width)
+                       + sample(u_font_atlas, box.zy, width);
+            // weighted average, with 4 extra points having 0.5 weight
+            // each, so 1 + 0.5*4 = 3 is the divisor
+            alpha = (alpha + 0.5 * asum) / 3.0;
+        }
+
+        gl_FragColor = vec4(v_color.rgb, v_color.a * alpha);
+    }
+    """
+
 
 def _text_to_vbo(text, font, anchor_x, anchor_y, lowres_size):
     """Convert text characters to VBO"""
@@ -314,95 +397,16 @@ class TextVisual(Visual):
         Font manager to use (can be shared if the GLContext is shared).
     """
 
-    VERTEX_SHADER = """
-        attribute float a_rotation;  // rotation in rad
-        attribute vec2 a_position; // in point units
-        attribute vec2 a_texcoord;
-        attribute vec3 a_pos;  // anchor position
-        varying vec2 v_texcoord;
-        varying vec4 v_color;
-
-        void main(void) {
-            // Eventually "rot" should be handled by SRTTransform or so...
-            mat4 rot = mat4(cos(a_rotation), -sin(a_rotation), 0, 0,
-                            sin(a_rotation), cos(a_rotation), 0, 0,
-                            0, 0, 1, 0, 0, 0, 0, 1);
-            vec4 pos = $transform(vec4(a_pos, 1.0)) +
-                       vec4($text_scale(rot * vec4(a_position, 0.0, 1.0)).xyz, 0.0);
-            gl_Position = pos;
-            v_texcoord = a_texcoord;
-            v_color = $color;
-        }
-        """
-
-    FRAGMENT_SHADER = """
-        // Extensions for WebGL
-        #extension GL_OES_standard_derivatives : enable
-        #extension GL_OES_element_index_uint : enable
-        #include "misc/spatial-filters.frag"
-        // Adapted from glumpy with permission
-        const float M_SQRT1_2 = 0.707106781186547524400844362104849039;
-
-        uniform sampler2D u_font_atlas;
-        uniform vec2 u_font_atlas_shape;
-        varying vec4 v_color;
-        uniform float u_npix;
-
-        varying vec2 v_texcoord;
-        const float center = 0.5;
-
-        float contour(in float d, in float w)
-        {
-            return smoothstep(center - w, center + w, d);
-        }
-
-        float sample(sampler2D texture, vec2 uv, float w)
-        {
-            return contour(texture2D(texture, uv).r, w);
-        }
-
-        void main(void) {
-            vec2 uv = v_texcoord.xy;
-            vec4 rgb;
-
-            // Use interpolation at high font sizes
-            if(u_npix >= 50.0)
-                rgb = CatRom(u_font_atlas, u_font_atlas_shape, uv);
-            else
-                rgb = texture2D(u_font_atlas, uv);
-            float distance = rgb.r;
-
-            // GLSL's fwidth = abs(dFdx(uv)) + abs(dFdy(uv))
-            float width = 0.5 * fwidth(distance);  // sharpens a bit
-
-            // Regular SDF
-            float alpha = contour(distance, width);
-
-            if (u_npix < 30.) {
-                // Supersample, 4 extra points
-                // Half of 1/sqrt2; you can play with this
-                float dscale = 0.5 * M_SQRT1_2;
-                vec2 duv = dscale * (dFdx(v_texcoord) + dFdy(v_texcoord));
-                vec4 box = vec4(v_texcoord-duv, v_texcoord+duv);
-                float asum = sample(u_font_atlas, box.xy, width)
-                           + sample(u_font_atlas, box.zw, width)
-                           + sample(u_font_atlas, box.xw, width)
-                           + sample(u_font_atlas, box.zy, width);
-                // weighted average, with 4 extra points having 0.5 weight
-                // each, so 1 + 0.5*4 = 3 is the divisor
-                alpha = (alpha + 0.5 * asum) / 3.0;
-            }
-
-            gl_FragColor = vec4(v_color.rgb, v_color.a * alpha);
-        }
-        """
+    _shaders = {
+        'vertex': _VERTEX_SHADER,
+        'fragment': _FRAGMENT_SHADER,
+    }
 
     def __init__(self, text=None, color='black', bold=False,
                  italic=False, face='OpenSans', font_size=12, pos=[0, 0, 0],
                  rotation=0., anchor_x='center', anchor_y='center',
                  method='cpu', font_manager=None):
-        Visual.__init__(self, vcode=self.VERTEX_SHADER,
-                        fcode=self.FRAGMENT_SHADER)
+        Visual.__init__(self, vcode=self._shaders['vertex'], fcode=self._shaders['fragment'])
         # Check input
         valid_keys = ('top', 'center', 'middle', 'baseline', 'bottom')
         _check_valid('anchor_y', anchor_y, valid_keys)

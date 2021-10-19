@@ -17,7 +17,7 @@ from ..io import load_spatial_filters
 from ._scalable_textures import CPUScaledTexture2D, GPUScaledTexture2D
 
 
-VERT_SHADER = """
+_VERTEX_SHADER = """
 uniform int method;  // 0=subdivide, 1=impostor
 attribute vec2 a_position;
 attribute vec2 a_texcoord;
@@ -29,7 +29,7 @@ void main() {
 }
 """
 
-FRAG_SHADER = """
+_FRAGMENT_SHADER = """
 uniform vec2 image_size;
 uniform int method;  // 0=subdivide, 1=impostor
 uniform sampler2D u_texture;
@@ -68,7 +68,7 @@ void main()
 }
 """  # noqa
 
-_interpolation_template = """
+_INTERPOLATION_TEMPLATE = """
     #include "misc/spatial-filters.frag"
     vec4 texture_lookup_filtered(vec2 texcoord) {
         if(texcoord.x < 0.0 || texcoord.x > 1.0 ||
@@ -78,7 +78,7 @@ _interpolation_template = """
         return %s($texture, $shape, texcoord);
     }"""
 
-_texture_lookup = """
+_TEXTURE_LOOKUP = """
     vec4 texture_lookup(vec2 texcoord) {
         if(texcoord.x < 0.0 || texcoord.x > 1.0 ||
         texcoord.y < 0.0 || texcoord.y > 1.0) {
@@ -87,7 +87,7 @@ _texture_lookup = """
         return texture2D($texture, texcoord);
     }"""
 
-_apply_clim_float = """
+_APPLY_CLIM_FLOAT = """
     float apply_clim(float data) {
         // If data is NaN, don't draw it at all
         // http://stackoverflow.com/questions/11810158/how-to-deal-with-nan-or-inf-in-opengl-es-2-0-shaders
@@ -98,7 +98,8 @@ _apply_clim_float = """
         data = (data - $clim.x) / ($clim.y - $clim.x);
         return data;
     }"""
-_apply_clim = """
+
+_APPLY_CLIM = """
     vec4 apply_clim(vec4 color) {
         // Handle NaN values
         // http://stackoverflow.com/questions/11810158/how-to-deal-with-nan-or-inf-in-opengl-es-2-0-shaders
@@ -112,19 +113,21 @@ _apply_clim = """
     }
 """
 
-_apply_gamma_float = """
+_APPLY_GAMMA_FLOAT = """
     float apply_gamma(float data) {
         return pow(data, $gamma);
     }"""
-_apply_gamma = """
+
+_APPLY_GAMMA = """
     vec4 apply_gamma(vec4 color) {
         color.rgb = pow(color.rgb, vec3($gamma));
         return color;
     }
 """
 
-_null_color_transform = 'vec4 pass(vec4 color) { return color; }'
-_c2l_red = 'float cmap(vec4 color) { return color.r; }'
+_NULL_COLOR_TRANSFORM = 'vec4 pass(vec4 color) { return color; }'
+
+_C2L_RED = 'float cmap(vec4 color) { return color.r; }'
 
 
 class ImageVisual(Visual):
@@ -210,8 +213,21 @@ class ImageVisual(Visual):
     if the data are 2D.
     """
 
-    VERTEX_SHADER = VERT_SHADER
-    FRAGMENT_SHADER = FRAG_SHADER
+    _shaders = {
+        'vertex': _VERTEX_SHADER,
+        'fragment': _FRAGMENT_SHADER,
+    }
+
+    _func_templates = {
+        'texture_lookup_interpolated': _INTERPOLATION_TEMPLATE,
+        'texture_lookup': _TEXTURE_LOOKUP,
+        'clim_float': _APPLY_CLIM_FLOAT,
+        'clim': _APPLY_CLIM,
+        'gamma_float': _APPLY_GAMMA_FLOAT,
+        'gamma': _APPLY_GAMMA,
+        'null_color_transform': _NULL_COLOR_TRANSFORM,
+        'red_to_luminance': _C2L_RED,
+    }
 
     def __init__(self, data=None, method='auto', grid=(1, 1),
                  cmap='viridis', clim='auto', gamma=1.0,
@@ -259,7 +275,8 @@ class ImageVisual(Visual):
         self._null_tr = NullTransform()
 
         self._init_view(self)
-        super(ImageVisual, self).__init__(vcode=self.VERTEX_SHADER, fcode=self.FRAGMENT_SHADER)
+
+        Visual.__init__(self, vcode=self._shaders['vertex'], fcode=self._shaders['fragment'])
         self.set_gl_state('translucent', cull_face=False)
         self._draw_mode = 'triangles'
 
@@ -274,11 +291,10 @@ class ImageVisual(Visual):
             self.set_data(data)
         self.freeze()
 
-    @staticmethod
-    def _init_interpolation(interpolation_names):
+    def _init_interpolation(self, interpolation_names):
         # create interpolation shader functions for available
         # interpolations
-        fun = [Function(_interpolation_template % n)
+        fun = [Function(self._func_templates['texture_lookup_interpolated'] % n)
                for n in interpolation_names]
         interpolation_names = [n.lower() for n in interpolation_names]
 
@@ -287,8 +303,9 @@ class ImageVisual(Visual):
 
         # overwrite "nearest" and "bilinear" spatial-filters
         # with  "hardware" interpolation _data_lookup_fn
-        interpolation_fun['nearest'] = Function(_texture_lookup)
-        interpolation_fun['bilinear'] = Function(_texture_lookup)
+        hardware_lookup = Function(self._func_templates['texture_lookup'])
+        interpolation_fun['nearest'] = hardware_lookup
+        interpolation_fun['bilinear'] = hardware_lookup
         return interpolation_names, interpolation_fun
 
     def _init_texture(self, data, texture_format):
@@ -531,18 +548,18 @@ class ImageVisual(Visual):
     def _build_color_transform(self):
         if self._data.ndim == 2 or self._data.shape[2] == 1:
             # luminance data
-            fclim = Function(_apply_clim_float)
-            fgamma = Function(_apply_gamma_float)
-            # NOTE: _c2l_red only uses the red component, fancy internalformats
+            fclim = Function(self._func_templates['clim_float'])
+            fgamma = Function(self._func_templates['gamma_float'])
+            # NOTE: red_to_luminance only uses the red component, fancy internalformats
             #   may need to use the other components or a different function chain
             fun = FunctionChain(
-                None, [Function(_c2l_red), fclim, fgamma, Function(self.cmap.glsl_map)]
+                None, [Function(self._func_templates['red_to_luminance']), fclim, fgamma, Function(self.cmap.glsl_map)]
             )
         else:
             # RGB/A image data (no colormap)
-            fclim = Function(_apply_clim)
-            fgamma = Function(_apply_gamma)
-            fun = FunctionChain(None, [Function(_null_color_transform), fclim, fgamma])
+            fclim = Function(self._func_templates['clim'])
+            fgamma = Function(self._func_templates['gamma'])
+            fun = FunctionChain(None, [Function(self._func_templates['null_color_transform']), fclim, fgamma])
         fclim['clim'] = self._texture.clim_normalized
         fgamma['gamma'] = self.gamma
         return fun

@@ -50,19 +50,15 @@ import numpy as np
 # todo: what to do about lighting? ambi/diffuse/spec/shinynes on each visual?
 
 
-# Vertex shader
-VERT_SHADER = """
+_VERTEX_SHADER = """
 attribute vec3 a_position;
-// attribute vec3 a_texcoord;
 uniform vec3 u_shape;
 
-// varying vec3 v_texcoord;
 varying vec3 v_position;
 varying vec4 v_nearpos;
 varying vec4 v_farpos;
 
 void main() {
-    // v_texcoord = a_texcoord;
     v_position = a_position;
 
     // Project local vertex coordinate to camera position. Then do a step
@@ -81,8 +77,7 @@ void main() {
 }
 """  # noqa
 
-# Fragment shader
-FRAG_SHADER = """
+_FRAGMENT_SHADER = """
 // uniforms
 uniform $sampler_type u_volumetex;
 uniform vec3 u_shape;
@@ -93,7 +88,6 @@ uniform float u_attenuation;
 uniform float u_relative_step_size;
 
 //varyings
-// varying vec3 v_texcoord;
 varying vec3 v_position;
 varying vec4 v_nearpos;
 varying vec4 v_farpos;
@@ -304,7 +298,7 @@ void main() {
 
 """  # noqa
 
-RAYCASTING_SETUP_VOLUME = """
+_RAYCASTING_SETUP_VOLUME = """
     // Compute the distance to the front surface or near clipping plane
     float distance = dot(nearpos-v_position, view_ray);
     distance = max(distance, min((-0.5 - v_position.x) / view_ray.x,
@@ -316,7 +310,7 @@ RAYCASTING_SETUP_VOLUME = """
 
     // Now we have the starting position on the front surface
     vec3 front = v_position + view_ray * distance;
-    
+
     // Decide how many steps to take
     int nsteps = int(-distance / u_relative_step_size + 0.5);
     float f_nsteps = float(nsteps);
@@ -328,15 +322,15 @@ RAYCASTING_SETUP_VOLUME = """
     vec3 start_loc = front / u_shape;
 """
 
-RAYCASTING_SETUP_PLANE = """
+_RAYCASTING_SETUP_PLANE = """
     // find intersection of view ray with plane in data coordinates
-    vec3 intersection = intersectLinePlane(v_position.xyz, view_ray, 
+    vec3 intersection = intersectLinePlane(v_position.xyz, view_ray,
                                            u_plane_position, u_plane_normal);
     // and texture coordinates
     vec3 intersection_tex = intersection / u_shape;
-    
+
     // discard if intersection not in texture
-    
+
     float out_of_bounds = 0;
 
     out_of_bounds += float(intersection_tex.x > 1);
@@ -345,7 +339,7 @@ RAYCASTING_SETUP_PLANE = """
     out_of_bounds += float(intersection_tex.y < 0);
     out_of_bounds += float(intersection_tex.z > 1);
     out_of_bounds += float(intersection_tex.z < 0);
-    
+
     if (out_of_bounds > 0) {
         discard;
     }
@@ -365,7 +359,7 @@ RAYCASTING_SETUP_PLANE = """
 """
 
 
-MIP_SNIPPETS = dict(
+_MIP_SNIPPETS = dict(
     before_loop="""
         float maxval = -99999.0; // The maximum encountered value
         int maxi = -1;  // Where the maximum value was encountered
@@ -389,7 +383,7 @@ MIP_SNIPPETS = dict(
         """,
 )
 
-ATTENUATED_MIP_SNIPPETS = dict(
+_ATTENUATED_MIP_SNIPPETS = dict(
     before_loop="""
         float maxval = -99999.0; // The maximum encountered value
         float sumval = 0.0; // The sum of the encountered values
@@ -411,7 +405,7 @@ ATTENUATED_MIP_SNIPPETS = dict(
         """,
 )
 
-MINIP_SNIPPETS = dict(
+_MINIP_SNIPPETS = dict(
     before_loop="""
         float minval = 99999.0; // The minimum encountered value
         int mini = -1;  // Where the minimum value was encountered
@@ -435,7 +429,7 @@ MINIP_SNIPPETS = dict(
         """,
 )
 
-TRANSLUCENT_SNIPPETS = dict(
+_TRANSLUCENT_SNIPPETS = dict(
     before_loop="""
         vec4 integrated_color = vec4(0., 0., 0., 0.);
         """,
@@ -464,7 +458,7 @@ TRANSLUCENT_SNIPPETS = dict(
         """,
 )
 
-ADDITIVE_SNIPPETS = dict(
+_ADDITIVE_SNIPPETS = dict(
     before_loop="""
         vec4 integrated_color = vec4(0., 0., 0., 0.);
         """,
@@ -478,7 +472,7 @@ ADDITIVE_SNIPPETS = dict(
         """,
 )
 
-ISO_SNIPPETS = dict(
+_ISO_SNIPPETS = dict(
     before_loop="""
         vec4 color3 = vec4(0.0);  // final color
         vec3 dstep = 1.5 / u_shape;  // step to sample derivative
@@ -494,7 +488,7 @@ ISO_SNIPPETS = dict(
                     color = calculateColor(color, iloc, dstep);
                     gl_FragColor = applyColormap(color.r);
 
-                    // set the variables for the depth buffer                            
+                    // set the variables for the depth buffer
                     surface_point = iloc * u_shape;
                     surface_found = true;
 
@@ -515,7 +509,7 @@ ISO_SNIPPETS = dict(
 )
 
 
-AVG_SNIPPETS = dict(
+_AVG_SNIPPETS = dict(
     before_loop="""
         float n = 0; // Counter for encountered values
         float meanval = 0.0; // The mean of encountered values
@@ -532,21 +526,6 @@ AVG_SNIPPETS = dict(
         gl_FragColor = applyColormap(meanval);
         """,
 )
-
-frag_dict = {
-    'mip': MIP_SNIPPETS,
-    'minip': MINIP_SNIPPETS,
-    'attenuated_mip': ATTENUATED_MIP_SNIPPETS,
-    'iso': ISO_SNIPPETS,
-    'translucent': TRANSLUCENT_SNIPPETS,
-    'additive': ADDITIVE_SNIPPETS,
-    'average': AVG_SNIPPETS
-}
-
-RAYCASTING_MODE_DICT = {
-    'volume': RAYCASTING_SETUP_VOLUME,
-    'plane': RAYCASTING_SETUP_PLANE
-}
 
 
 class VolumeVisual(Visual):
@@ -628,7 +607,27 @@ class VolumeVisual(Visual):
 
     """
 
-    _interpolation_names = ['linear', 'nearest']
+    _interpolation_methods = ['linear', 'nearest']
+
+    _rendering_methods = {
+        'mip': _MIP_SNIPPETS,
+        'minip': _MINIP_SNIPPETS,
+        'attenuated_mip': _ATTENUATED_MIP_SNIPPETS,
+        'iso': _ISO_SNIPPETS,
+        'translucent': _TRANSLUCENT_SNIPPETS,
+        'additive': _ADDITIVE_SNIPPETS,
+        'average': _AVG_SNIPPETS
+    }
+
+    _raycasting_modes = {
+        'volume': _RAYCASTING_SETUP_VOLUME,
+        'plane': _RAYCASTING_SETUP_PLANE
+    }
+
+    _shaders = {
+        'vertex': _VERTEX_SHADER,
+        'fragment': _FRAGMENT_SHADER,
+    }
 
     def __init__(self, vol, clim="auto", method='mip', threshold=None,
                  attenuation=1.0, relative_step_size=0.8, cmap='grays',
@@ -653,17 +652,6 @@ class VolumeVisual(Visual):
 
         # Create gloo objects
         self._vertices = VertexBuffer()
-        self._texcoord = VertexBuffer(
-            np.array([
-                [0, 0, 0],
-                [1, 0, 0],
-                [0, 1, 0],
-                [1, 1, 0],
-                [0, 0, 1],
-                [1, 0, 1],
-                [0, 1, 1],
-                [1, 1, 1],
-            ], dtype=np.float32))
 
         self._interpolation = interpolation
         self._texture = self._create_texture(texture_format, vol)
@@ -672,10 +660,9 @@ class VolumeVisual(Visual):
         self._last_data = None
 
         # Create program
-        Visual.__init__(self, vcode=VERT_SHADER, fcode=FRAG_SHADER)
+        Visual.__init__(self, vcode=self._shaders['vertex'], fcode=self._shaders['fragment'])
         self.shared_program['u_volumetex'] = self._texture
         self.shared_program['a_position'] = self._vertices
-        self.shared_program['a_texcoord'] = self._texcoord
         self.shared_program['gamma'] = self._gamma
         self._draw_mode = 'triangle_strip'
         self._index_buffer = IndexBuffer()
@@ -773,6 +760,18 @@ class VolumeVisual(Visual):
         self._vol_shape = shape
 
     @property
+    def interpolation_methods(self):
+        return self._interpolation_methods
+
+    @property
+    def rendering_methods(self):
+        return list(self._rendering_methods)
+
+    @property
+    def raycasting_modes(self):
+        return list(self._raycasting_modes)
+
+    @property
     def clim(self):
         """The contrast limits that were applied to the volume data.
 
@@ -835,10 +834,10 @@ class VolumeVisual(Visual):
 
     @interpolation.setter
     def interpolation(self, interp):
-        if interp not in self._interpolation_names:
+        if interp not in self._interpolation_methods:
             raise ValueError(
                 "interpolation must be one of %s"
-                % ', '.join(self._interpolation_names)
+                % ', '.join(self._interpolation_methods)
             )
         if self._interpolation != interp:
             self._interpolation = interp
@@ -911,15 +910,15 @@ class VolumeVisual(Visual):
 
     @property
     def _before_loop_snippet(self):
-        return frag_dict[self.method]['before_loop']
+        return self._rendering_methods[self.method]['before_loop']
 
     @property
     def _in_loop_snippet(self):
-        return frag_dict[self.method]['in_loop']
+        return self._rendering_methods[self.method]['in_loop']
 
     @property
     def _after_loop_snippet(self):
-        return frag_dict[self.method]['after_loop']
+        return self._rendering_methods[self.method]['after_loop']
 
     @property
     def method(self):
@@ -949,7 +948,7 @@ class VolumeVisual(Visual):
     @method.setter
     def method(self, method):
         # Check and save
-        known_methods = list(frag_dict.keys())
+        known_methods = list(self._rendering_methods.keys())
         if method not in known_methods:
             raise ValueError('Volume render method should be in %r, not %r' %
                              (known_methods, method))
@@ -975,7 +974,7 @@ class VolumeVisual(Visual):
 
     @property
     def _raycasting_setup_snippet(self):
-        return RAYCASTING_MODE_DICT[self.raycasting_mode]
+        return self._raycasting_modes[self.raycasting_mode]
 
     @property
     def raycasting_mode(self):
@@ -989,7 +988,7 @@ class VolumeVisual(Visual):
 
     @raycasting_mode.setter
     def raycasting_mode(self, value: str):
-        valid_raycasting_modes = RAYCASTING_MODE_DICT.keys()
+        valid_raycasting_modes = self._raycasting_modes.keys()
         if value not in valid_raycasting_modes:
             raise ValueError(f"Raycasting mode should be in {valid_raycasting_modes}, not {value}")
         self._raycasting_mode = value

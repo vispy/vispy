@@ -4,7 +4,7 @@ from .. import gloo
 from .visual import Visual
 
 
-VERT_SHADER = """
+_VERTEX_SHADER = """
     attribute vec2 a_pos;
     varying vec4 v_color;
 
@@ -26,7 +26,7 @@ VERT_SHADER = """
     }
     """
 
-FRAG_SHADER = """
+_FRAGMENT_SHADER = """
     varying vec4 v_color;
 
     void main() {
@@ -53,12 +53,17 @@ class InfiniteLineVisual(Visual):
         True for drawing a vertical line, False for an horizontal line
     """
 
+    _shaders = {
+        'vertex': _VERTEX_SHADER,
+        'fragment': _FRAGMENT_SHADER,
+    }
+
     def __init__(self, pos=None, color=(1.0, 1.0, 1.0, 1.0), line_width=1.0, antialias=False,
                  vertical=True, **kwargs):
         """
 
         """
-        Visual.__init__(self, vcode=VERT_SHADER, fcode=FRAG_SHADER, **kwargs)
+        Visual.__init__(self, vcode=self._shaders['vertex'], fcode=self._shaders['fragment'])
 
         self._changed = {'pos': False, 'color': False}
 

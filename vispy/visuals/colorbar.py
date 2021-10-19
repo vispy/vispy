@@ -13,7 +13,7 @@ from . import Visual, TextVisual, CompoundVisual, _BorderVisual
 from .shaders import Function
 from ..color import get_colormap
 
-VERT_SHADER = """
+_VERTEX_SHADER = """
 attribute vec2 a_position;
 attribute vec2 a_texcoord;
 varying vec2 v_texcoord;
@@ -24,24 +24,16 @@ void main() {
 }
 """  # noqa
 
-FRAG_SHADER_HORIZONTAL = """
+_FRAGMENT_SHADER = """
 varying vec2 v_texcoord;
 
 void main()
 {
-    vec4 mapped_color = $color_transform(v_texcoord.x);
-    gl_FragColor = mapped_color;
-}
-"""  # noqa
-
-FRAG_SHADER_VERTICAL = """
-varying vec2 v_texcoord;
-
-void main()
-{
-    // we get the texcoords inverted (with respect to the colormap)
-    // so let's invert it to make sure that the colorbar renders correctly
-    vec4 mapped_color = $color_transform(1.0 - v_texcoord.y);
+    // depending on orientation, we either use the x component or the inverted
+    // y component for texcoords
+    // (we get the texcoords inverted (with respect to the colormap)
+    // so let's invert it to make sure that the colorbar renders correctly)
+    vec4 mapped_color = $color_transform($orient_texcoord(v_texcoord));
     gl_FragColor = mapped_color;
 }
 """  # noqa
@@ -83,26 +75,26 @@ class _CoreColorBarVisual(Visual):
     vispy.visuals.ColorBarVisual
     """
 
+    _shaders = {
+        'vertex': _VERTEX_SHADER,
+        'fragment': _FRAGMENT_SHADER,
+    }
+
     def __init__(self, pos, halfdim,
                  cmap,
                  orientation,
                  **kwargs):
 
+        self._check_orientation(orientation)
         self._cmap = get_colormap(cmap)
         self._pos = pos
         self._halfdim = halfdim
         self._orientation = orientation
 
-        # setup the right program shader based on color
-        if orientation == "top" or orientation == "bottom":
-            Visual.__init__(self, vcode=VERT_SHADER,
-                            fcode=FRAG_SHADER_HORIZONTAL, **kwargs)
+        Visual.__init__(self, vcode=self._shaders['vertex'], fcode=self._shaders['fragment'])
 
-        elif orientation == "left" or orientation == "right":
-            Visual.__init__(self, vcode=VERT_SHADER,
-                            fcode=FRAG_SHADER_VERTICAL, **kwargs)
-        else:
-            raise _CoreColorBarVisual._get_orientation_error(self._orientation)
+        texcoord_func = self._get_texcoord_func(orientation)
+        self.shared_program.frag['orient_texcoord'] = texcoord_func
 
         tex_coords = np.array([[0, 0], [1, 0], [1, 1],
                                [0, 0], [1, 1], [0, 1]],
@@ -158,11 +150,28 @@ class _CoreColorBarVisual(Visual):
         self.shared_program['texture2D_LUT'] = self._cmap.texture_lut()
 
     @staticmethod
-    def _get_orientation_error(orientation):
-        return ValueError("orientation must"
-                          " be one of 'top', 'bottom', "
-                          "'left', or 'right', "
-                          "not '%s'" % (orientation, ))
+    def _get_texcoord_func(orientation):
+        if orientation == "top" or orientation == "bottom":
+            func = Function("""
+                float orient_texcoord(vec2 texcoord) {
+                    return 1 - texcoord.y;
+                }
+            """)
+        elif orientation == "left" or orientation == "right":
+            func = Function("""
+                float orient_texcoord(vec2 texcoord) {
+                    return texcoord.x;
+                }
+            """)
+        return func
+
+    @staticmethod
+    def _check_orientation(orientation):
+        if orientation not in ('top', 'bottom', 'left', 'right'):
+            raise ValueError("orientation must"
+                             " be one of 'top', 'bottom', "
+                             "'left', or 'right', "
+                             "not '%s'" % (orientation, ))
 
     @property
     def pos(self):
@@ -289,6 +298,7 @@ class ColorBarVisual(CompoundVisual):
                  border_width=1.0,
                  border_color="black"):
 
+        _CoreColorBarVisual._check_orientation(orientation)
         self._cmap = get_colormap(cmap)
         self._clim = clim
         self._pos = pos
@@ -309,8 +319,6 @@ class ColorBarVisual(CompoundVisual):
             (width, height) = size
         elif orientation in ["left", "right"]:
             (height, width) = size
-        else:
-            raise _CoreColorBarVisual._get_orientation_error(orientation)
 
         self._halfdim = (width * 0.5, height * 0.5)
 

@@ -15,7 +15,7 @@ from .shaders import Function, Variable
 from .visual import Visual
 
 
-vert = """
+_VERTEX_SHADER = """
 uniform float u_antialias;
 uniform float u_px_scale;
 uniform bool u_scaling;
@@ -76,7 +76,7 @@ void main (void) {
 """
 
 
-frag = """#version 120
+_FRAGMENT_SHADER = """#version 120
 uniform vec3 u_light_position;
 uniform vec3 u_light_color;
 uniform float u_light_ambient;
@@ -543,36 +543,6 @@ float cross(vec2 pointcoord, float size)
 }
 """
 
-_marker_dict = {
-    'disc': disc,
-    'arrow': arrow,
-    'ring': ring,
-    'clobber': clobber,
-    'square': square,
-    'diamond': diamond,
-    'vbar': vbar,
-    'hbar': hbar,
-    'cross': cross,
-    'tailed_arrow': tailed_arrow,
-    'x': x_,
-    'triangle_up': triangle_up,
-    'triangle_down': triangle_down,
-    'star': star,
-    # aliases
-    'o': disc,
-    '+': cross,
-    '++': cross_lines,
-    's': square,
-    '-': hbar,
-    '|': vbar,
-    '->': tailed_arrow,
-    '>': arrow,
-    '^': triangle_up,
-    'v': triangle_down,
-    '*': star,
-}
-marker_types = tuple(sorted(list(_marker_dict.keys())))
-
 
 class MarkersVisual(Visual):
     """Visual displaying marker symbols.
@@ -615,6 +585,40 @@ class MarkersVisual(Visual):
     vbar, hbar, cross, tailed_arrow, x, triangle_up, triangle_down,
     and star.
     """
+    _marker_funcs = {
+        'disc': disc,
+        'arrow': arrow,
+        'ring': ring,
+        'clobber': clobber,
+        'square': square,
+        'diamond': diamond,
+        'vbar': vbar,
+        'hbar': hbar,
+        'cross': cross,
+        'tailed_arrow': tailed_arrow,
+        'x': x_,
+        'triangle_up': triangle_up,
+        'triangle_down': triangle_down,
+        'star': star,
+        # aliases
+        'o': disc,
+        '+': cross,
+        '++': cross_lines,
+        's': square,
+        '-': hbar,
+        '|': vbar,
+        '->': tailed_arrow,
+        '>': arrow,
+        '^': triangle_up,
+        'v': triangle_down,
+        '*': star,
+    }
+
+    _shaders = {
+        'vertex': _VERTEX_SHADER,
+        'fragment': _FRAGMENT_SHADER,
+    }
+
     def __init__(self, symbol='o', scaling=False, alpha=1, antialias=1, spherical=False,
                  light_color='white', light_position=(1, -1, 1), light_ambient=0.3, **kwargs):
         self._vbo = VertexBuffer()
@@ -622,7 +626,7 @@ class MarkersVisual(Visual):
         self._symbol = None
         self._data = None
 
-        Visual.__init__(self, vcode=vert, fcode=frag)
+        Visual.__init__(self, vcode=self._shaders['vertex'], fcode=self._shaders['fragment'])
         self._v_size_var = Variable('varying float v_size')
         self.shared_program.vert['v_size'] = self._v_size_var
         self.shared_program.frag['v_size'] = self._v_size_var
@@ -725,6 +729,10 @@ class MarkersVisual(Visual):
         self.update()
 
     @property
+    def symbols(self):
+        return list(self._marker_funcs)
+
+    @property
     def symbol(self):
         return self._symbol
 
@@ -746,8 +754,8 @@ class MarkersVisual(Visual):
         if symbol is None:
             self._marker_fun = None
         else:
-            _check_valid('symbol', symbol, marker_types)
-            self._marker_fun = Function(_marker_dict[symbol])
+            _check_valid('symbol', symbol, self._marker_funcs.keys())
+            self._marker_fun = Function(self._marker_funcs[symbol])
             self._marker_fun['v_size'] = self._v_size_var
             self.shared_program.frag['marker'] = self._marker_fun
         self.update()

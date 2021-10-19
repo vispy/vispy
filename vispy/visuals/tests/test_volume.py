@@ -9,7 +9,6 @@ from vispy.testing import (TestingCanvas, requires_application,
                            raises)
 from vispy.testing.image_tester import assert_image_approved, downsample
 from vispy.testing.rendered_array_tester import compare_render, max_for_dtype
-from vispy.visuals.volume import frag_dict as volume_render_methods
 
 
 @requires_pyopengl()
@@ -149,7 +148,7 @@ def test_volume_clims_and_gamma(texture_format, input_dtype, clim_on_init):
 
 @requires_pyopengl()
 @requires_application()
-@pytest.mark.parametrize('method_name', volume_render_methods.keys())
+@pytest.mark.parametrize('method_name', scene.visuals.Volume._rendering_methods.keys())
 def test_all_render_methods(method_name):
     """Test that render methods don't produce any errors."""
     size = (40, 40)
