@@ -262,7 +262,7 @@ class MultiChannelImageVisual(ImageVisual):
         they represent the color limits of each channel array.
     gamma : float | list
         Gamma to use during colormap lookup.  Final value will be computed
-        ``val**gamma` for each RGB channel array. If provided as a float then
+        ``val**gamma`` for each RGB channel array. If provided as a float then
         it will be used for each channel. If provided as a 3-element tuple
         then each value is used for the separate channel arrays. Default is
         1.0 for each channel.
