@@ -154,13 +154,13 @@ class _CoreColorBarVisual(Visual):
         if orientation == "top" or orientation == "bottom":
             func = Function("""
                 float orient_texcoord(vec2 texcoord) {
-                    return 1 - texcoord.y;
+                    return texcoord.x;
                 }
             """)
         elif orientation == "left" or orientation == "right":
             func = Function("""
                 float orient_texcoord(vec2 texcoord) {
-                    return texcoord.x;
+                    return 1 - texcoord.y;
                 }
             """)
         return func
