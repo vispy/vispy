@@ -1,5 +1,13 @@
 # Release Notes
 
+## [v0.9.1](https://github.com/vispy/vispy/tree/v0.9.1) (2021-10-20)
+
+**Merged pull requests:**
+
+- Documentation for third party projects [\#2235](https://github.com/vispy/vispy/pull/2235) ([Dive576](https://github.com/Dive576))
+- Remove "Jupyter Widget" section part [\#2233](https://github.com/vispy/vispy/pull/2233) ([djhoese](https://github.com/djhoese))
+- Move module globals to class attributes [\#2227](https://github.com/vispy/vispy/pull/2227) ([brisvag](https://github.com/brisvag))
+
 ## [v0.9.0](https://github.com/vispy/vispy/tree/v0.9.0) (2021-09-29)
 
 **Enhancements:**
