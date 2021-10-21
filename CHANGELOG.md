@@ -1,5 +1,11 @@
 # Release Notes
 
+## [v0.9.2](https://github.com/vispy/vispy/tree/v0.9.2) (2021-10-21)
+
+**Fixed bugs:**
+
+- Fix colorbar orientation [\#2238](https://github.com/vispy/vispy/pull/2238) ([Dive576](https://github.com/Dive576))
+
 ## [v0.9.1](https://github.com/vispy/vispy/tree/v0.9.1) (2021-10-20)
 
 **Merged pull requests:**
