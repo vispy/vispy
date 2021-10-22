@@ -177,7 +177,7 @@ or execute itself.
 
 When we run this example we should see something like this:
 
-.. image:: https://github.com/vispy/images/raw/main/gallery/tutorial__gloo__colored_quad.png
+.. image:: /_static/tutorial__gloo__colored_quad.png
    :width: 600
    :alt: Screenshot of examples/tutorial/gloo/colored_quad.py example script.
 
