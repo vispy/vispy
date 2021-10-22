@@ -73,7 +73,7 @@ void main() {
     pos_in_cam.z = pos_in_cam.w;
     v_farpos = $viewtransformi(pos_in_cam);
 
-    gl_Position = $transform(vec4(v_position, 1.0));
+    gl_Position = $transform(vec4(v_position + vec3(0.5), 1.0));
 }
 """  # noqa
 
