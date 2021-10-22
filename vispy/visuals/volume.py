@@ -319,7 +319,7 @@ _RAYCASTING_SETUP_VOLUME = """
 
     // Get starting location and step vector in texture coordinates
     vec3 step = ((v_position - front) / u_shape) / f_nsteps;
-    vec3 start_loc = front / u_shape;
+    vec3 start_loc = (front + vec3(0.5)) / u_shape;
 """
 
 _RAYCASTING_SETUP_PLANE = """
