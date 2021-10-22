@@ -177,9 +177,9 @@ or execute itself.
 
 When we run this example we should see something like this:
 
-.. image:: /_static/tutorial__gloo__colored_quad.png
-   :width: 600
-   :alt: Screenshot of examples/tutorial/gloo/colored_quad.py example script.
+.. image-sg:: /_images/sphx_glr_colored_quad_001.png
+    :alt: Screenshot of examples/gloo/colored_quad.py example script.
+    :class: sphx-glr-single-img
 
 This shape was created by drawing a ``"triangle_strip"`` using the coordinates
 we assigned to the `position` attribute. Colors are interpolated between the

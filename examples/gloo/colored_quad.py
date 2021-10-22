@@ -7,6 +7,13 @@
 # Author: Nicolas P .Rougier
 # Date:   04/03/2014
 # -----------------------------------------------------------------------------
+"""
+Show color quad Image
+=====================
+
+Create a new drawing using triangle_strip
+
+"""
 
 from vispy import app, gloo
 from vispy.gloo import Program
