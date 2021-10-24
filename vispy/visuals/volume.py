@@ -73,7 +73,7 @@ void main() {
     pos_in_cam.z = pos_in_cam.w;
     v_farpos = $viewtransformi(pos_in_cam);
 
-    gl_Position = $transform(vec4(v_position + vec3(0.5), 1.0));
+    gl_Position = $transform(vec4(v_position, 1.0));
 }
 """  # noqa
 
@@ -319,12 +319,14 @@ _RAYCASTING_SETUP_VOLUME = """
 
     // Get starting location and step vector in texture coordinates
     vec3 step = ((v_position - front) / u_shape) / f_nsteps;
-    vec3 start_loc = (front + vec3(0.5)) / u_shape;
+    // 0.5 offset needed to get back to correct texture coordinates (vispy#2239)
+    vec3 start_loc = (front + 0.5) / u_shape;
 """
 
 _RAYCASTING_SETUP_PLANE = """
     // find intersection of view ray with plane in data coordinates
-    vec3 intersection = intersectLinePlane(v_position.xyz, view_ray,
+    // 0.5 offset needed to get back to correct texture coordinates (vispy#2239)
+    vec3 intersection = intersectLinePlane(v_position.xyz + 0.5, view_ray,
                                            u_plane_position, u_plane_normal);
     // and texture coordinates
     vec3 intersection_tex = intersection / u_shape;

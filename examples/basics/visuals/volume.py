@@ -40,6 +40,19 @@ volume = scene.visuals.Volume(
     parent=view.scene,
 )
 
+# add bounding markers
+positions = np.array([
+    [0, 0, 0],
+    [0, 0, 1],
+    [0, 1, 0],
+    [0, 1, 1],
+    [1, 0, 0],
+    [1, 0, 1],
+    [1, 1, 0],
+    [1, 1, 1],
+]) * 5 - 0.5
+points = scene.visuals.Markers(pos=positions, parent=view.scene)
+
 cam = scene.cameras.ArcballCamera(parent=view.scene)
 view.camera = cam
 
