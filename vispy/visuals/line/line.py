@@ -300,14 +300,14 @@ class _GLLineVisual(Visual):
         self.set_gl_state('translucent')
 
     @lru_cache(maxsize=2)
-    def _ensure_vec4_func(self, vert_shape):
-        if vert_shape[-1] == 2:
+    def _ensure_vec4_func(self, dims):
+        if dims == 2:
             func = Function("""
                 vec4 vec2to4(vec2 xyz) {
                     return vec4(xyz, 0.0, 1.0);
                 }
             """)
-        elif vert_shape[-1] == 3:
+        elif dims == 3:
             func = Function("""
                 vec4 vec3to4(vec3 xyz) {
                     return vec4(xyz, 1.0);
@@ -331,7 +331,7 @@ class _GLLineVisual(Visual):
             pos = np.ascontiguousarray(self._parent._pos.astype(np.float32))
             self._pos_vbo.set_data(pos)
             self._program.vert['position'] = self._pos_vbo
-            self._program.vert['to_vec4'] = self._ensure_vec4_func(pos.shape)
+            self._program.vert['to_vec4'] = self._ensure_vec4_func(pos.shape[-1])
 
         if self._parent._changed['color']:
             color, cmap = self._parent._interpret_color()

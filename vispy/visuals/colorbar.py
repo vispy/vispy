@@ -6,6 +6,8 @@
 # Author: Siddharth Bhat
 # -----------------------------------------------------------------------------
 
+from functools import lru_cache
+
 import numpy as np
 
 from . import Visual, TextVisual, CompoundVisual, _BorderVisual
@@ -150,6 +152,7 @@ class _CoreColorBarVisual(Visual):
         self.shared_program['texture2D_LUT'] = self._cmap.texture_lut()
 
     @staticmethod
+    @lru_cache(maxsize=4)
     def _get_texcoord_func(orientation):
         if orientation == "top" or orientation == "bottom":
             func = Function("""
