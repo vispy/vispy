@@ -4,6 +4,7 @@
 """Line visual implementing Agg- and GL-based drawing modes."""
 
 from __future__ import division
+from functools import lru_cache
 
 import numpy as np
 
@@ -298,6 +299,7 @@ class _GLLineVisual(Visual):
         Visual.__init__(self, vcode=self._shaders['vertex'], fcode=self._shaders['fragment'])
         self.set_gl_state('translucent')
 
+    @lru_cache(maxsize=2)
     def _ensure_vec4_func(self, vert_shape):
         if vert_shape[-1] == 2:
             func = Function("""

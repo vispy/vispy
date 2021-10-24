@@ -7,6 +7,7 @@
 """A MeshVisual Visual that uses the new shader Function."""
 
 from __future__ import division
+from functools import lru_cache
 
 import numpy as np
 
@@ -289,6 +290,7 @@ class MeshVisual(Visual):
             fun = Function(null_color_transform)
         return fun
 
+    @lru_cache(maxsize=2)
     def _ensure_vec4_func(self, vert_shape):
         if vert_shape[-1] == 2:
             func = Function("""
