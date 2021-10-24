@@ -36,7 +36,7 @@ volume = scene.visuals.Volume(
     voldata,
     interpolation='nearest',
     clim=(0, 4),
-    plane_normal = (0, 1, 0),
+    plane_normal=(0, 1, 0),
     parent=view.scene,
 )
 
