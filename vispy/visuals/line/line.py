@@ -83,8 +83,7 @@ class LineVisual(CompoundVisual):
                  connect='strip', method='gl', antialias=False):
         self._line_visual = None
 
-        self._changed = {'pos': False, 'color': False, 'width': False,
-                         'connect': False}
+        self._changed = {'pos': False, 'color': False, 'connect': False}
 
         self._pos = None
         self._color = None
@@ -180,8 +179,8 @@ class LineVisual(CompoundVisual):
             self._changed['color'] = True
 
         if width is not None:
+            # width is always updated
             self._width = width
-            self._changed['width'] = True
 
         if connect is not None:
             self._connect = connect
@@ -333,6 +332,7 @@ class _GLLineVisual(Visual):
             self._pos_vbo.set_data(pos)
             self._program.vert['position'] = self._pos_vbo
             self._program.vert['to_vec4'] = self._ensure_vec4_func(pos.shape[-1])
+            self._parent._changed['pos'] = False
 
         if self._parent._changed['color']:
             color, cmap = self._parent._interpret_color()
@@ -349,6 +349,7 @@ class _GLLineVisual(Visual):
                 else:
                     self._color_vbo.set_data(color)
                     self._program.vert['color'] = self._color_vbo
+            self._parent._changed['color'] = False
 
             self.shared_program['texture2D_LUT'] = cmap and cmap.texture_lut()
 
@@ -361,6 +362,7 @@ class _GLLineVisual(Visual):
             self._connect = self._parent._interpret_connect()
             if isinstance(self._connect, np.ndarray):
                 self._connect_ibo.set_data(self._connect)
+            self._parent._changed['connect'] = False
         if self._connect is None:
             return False
 
