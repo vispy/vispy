@@ -202,8 +202,7 @@ also change the drawing method used (ex. 'points' or 'lines' instead of
 .. note::
 
     The above code is also available in the
-    `examples/tutorial/gloo/colored_quad.py <https://github.com/vispy/vispy/blob/main/examples/tutorial/gloo/colored_quad.py>`_
-    script.
+    :ref:`examples/tutorial/gloo/colored_quad.py <sphx_glr_gallery_gloo_colored_quad.py>` script.
 
 Timers
 ------
@@ -336,8 +335,7 @@ The end result is a 2D square that rotates for every timer event.
 .. note::
 
     The above code is also available in the
-    `examples/tutorial/gloo/rotating_quad.py <https://github.com/vispy/vispy/blob/main/examples/tutorial/gloo/rotating_quad.py>`_
-    script.
+    :ref:`examples/tutorial/gloo/rotating_quad.py <sphx_glr_gallery_gloo_rotate_cube.py>` script.
 
 Keyboard Events
 ---------------
