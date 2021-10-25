@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# vispy: gallery 1:35:2
 # -----------------------------------------------------------------------------
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
@@ -6,6 +7,13 @@
 # Author: Nicolas P .Rougier
 # Date:   04/03/2014
 # -----------------------------------------------------------------------------
+"""
+Rotating Quad
+=============
+
+Use a Timer to animate a quad
+
+"""
 
 from vispy import gloo, app
 from vispy.gloo import Program

@@ -202,7 +202,7 @@ also change the drawing method used (ex. 'points' or 'lines' instead of
 .. note::
 
     The above code is also available in the
-    :ref:`examples/tutorial/gloo/colored_quad.py <sphx_glr_gallery_gloo_colored_quad.py>` script.
+    :ref:`examples/gloo/colored_quad.py <sphx_glr_gallery_gloo_colored_quad.py>` script.
 
 Timers
 ------
@@ -332,10 +332,14 @@ Putting it all together our new script looks like this:
 
 The end result is a 2D square that rotates for every timer event.
 
+.. image:: ../gallery/gloo/images/sphx_glr_rotating_quad_001.gif
+    :alt: Screenshot of examples/gloo/colored_quad.py example script.
+    :class: sphx-glr-single-img
+
 .. note::
 
     The above code is also available in the
-    :ref:`examples/tutorial/gloo/rotating_quad.py <sphx_glr_gallery_gloo_rotate_cube.py>` script.
+    :ref:`examples/gloo/rotating_quad.py <sphx_glr_gallery_gloo_rotating_quad.py>` script.
 
 Keyboard Events
 ---------------
