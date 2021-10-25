@@ -177,9 +177,9 @@ or execute itself.
 
 When we run this example we should see something like this:
 
-.. image:: https://github.com/vispy/images/raw/main/gallery/tutorial__gloo__colored_quad.png
-   :width: 600
-   :alt: Screenshot of examples/tutorial/gloo/colored_quad.py example script.
+.. image:: ../gallery/gloo/images/sphx_glr_colored_quad_001.png
+    :alt: Screenshot of examples/gloo/colored_quad.py example script.
+    :class: sphx-glr-single-img
 
 This shape was created by drawing a ``"triangle_strip"`` using the coordinates
 we assigned to the `position` attribute. Colors are interpolated between the
@@ -202,8 +202,7 @@ also change the drawing method used (ex. 'points' or 'lines' instead of
 .. note::
 
     The above code is also available in the
-    `examples/tutorial/gloo/colored_quad.py <https://github.com/vispy/vispy/blob/main/examples/tutorial/gloo/colored_quad.py>`_
-    script.
+    :ref:`examples/gloo/colored_quad.py <sphx_glr_gallery_gloo_colored_quad.py>` script.
 
 Timers
 ------
@@ -333,11 +332,14 @@ Putting it all together our new script looks like this:
 
 The end result is a 2D square that rotates for every timer event.
 
+.. image:: ../gallery/gloo/images/sphx_glr_rotating_quad_001.gif
+    :alt: Screenshot of examples/gloo/colored_quad.py example script.
+    :class: sphx-glr-single-img
+
 .. note::
 
     The above code is also available in the
-    `examples/tutorial/gloo/rotating_quad.py <https://github.com/vispy/vispy/blob/main/examples/tutorial/gloo/rotating_quad.py>`_
-    script.
+    :ref:`examples/gloo/rotating_quad.py <sphx_glr_gallery_gloo_rotating_quad.py>` script.
 
 Keyboard Events
 ---------------
