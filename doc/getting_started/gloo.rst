@@ -177,7 +177,7 @@ or execute itself.
 
 When we run this example we should see something like this:
 
-.. image-sg:: /_images/sphx_glr_colored_quad_001.png
+.. image:: ../gallery/gloo/images/sphx_glr_colored_quad_001.png
     :alt: Screenshot of examples/gloo/colored_quad.py example script.
     :class: sphx-glr-single-img
 
