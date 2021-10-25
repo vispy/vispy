@@ -326,10 +326,10 @@ _RAYCASTING_SETUP_VOLUME = """
 _RAYCASTING_SETUP_PLANE = """
     // find intersection of view ray with plane in data coordinates
     // 0.5 offset needed to get back to correct texture coordinates (vispy#2239)
-    vec3 intersection = intersectLinePlane(v_position.xyz + 0.5, view_ray,
+    vec3 intersection = intersectLinePlane(v_position.xyz, view_ray,
                                            u_plane_position, u_plane_normal);
     // and texture coordinates
-    vec3 intersection_tex = intersection / u_shape;
+    vec3 intersection_tex = (intersection + 0.5) / u_shape;
 
     // discard if intersection not in texture
 
