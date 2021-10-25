@@ -290,6 +290,7 @@ class MeshVisual(Visual):
             fun = Function(null_color_transform)
         return fun
 
+    @staticmethod
     @lru_cache(maxsize=2)
     def _ensure_vec4_func(self, dims):
         if dims == 2:

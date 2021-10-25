@@ -299,6 +299,7 @@ class _GLLineVisual(Visual):
         Visual.__init__(self, vcode=self._shaders['vertex'], fcode=self._shaders['fragment'])
         self.set_gl_state('translucent')
 
+    @staticmethod
     @lru_cache(maxsize=2)
     def _ensure_vec4_func(self, dims):
         if dims == 2:
