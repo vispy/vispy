@@ -301,7 +301,7 @@ class _GLLineVisual(Visual):
 
     @staticmethod
     @lru_cache(maxsize=2)
-    def _ensure_vec4_func(self, dims):
+    def _ensure_vec4_func(dims):
         if dims == 2:
             func = Function("""
                 vec4 vec2to4(vec2 xyz) {
