@@ -953,11 +953,6 @@ class VolumeVisual(Visual):
             raise ValueError('Volume render method should be in %r, not %r' %
                              (known_methods, method))
         self._method = method
-        # Get rid of specific variables - they may become invalid
-        if 'u_threshold' in self.shared_program:
-            self.shared_program['u_threshold'] = None
-        if 'u_attenuation' in self.shared_program:
-            self.shared_program['u_attenuation'] = None
 
         # $sample needs to be unset and re-set, since it's present inside the snippets.
         #       Program should probably be able to do this automatically
@@ -1003,8 +998,7 @@ class VolumeVisual(Visual):
     @threshold.setter
     def threshold(self, value):
         self._threshold = float(value)
-        if 'u_threshold' in self.shared_program:
-            self.shared_program['u_threshold'] = self._threshold
+        self.shared_program['u_threshold'] = self._threshold
         self.update()
 
     @property
@@ -1015,8 +1009,7 @@ class VolumeVisual(Visual):
     @attenuation.setter
     def attenuation(self, value):
         self._attenuation = float(value)
-        if 'u_attenuation' in self.shared_program:
-            self.shared_program['u_attenuation'] = self._attenuation
+        self.shared_program['u_attenuation'] = self._attenuation
         self.update()
 
     @property
