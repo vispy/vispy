@@ -214,6 +214,8 @@ class Base3DRotationCamera(PerspectiveCamera):
         elif event.type == 'mouse_move':
             if event.press_event is None:
                 return
+            if 1 in event.buttons and 2 in event.buttons:
+                return
 
             modifiers = event.mouse_event.modifiers
             p1 = event.mouse_event.press_event.pos
