@@ -22,7 +22,7 @@ jobs:
     - name: Build wheels
       uses: pypa/cibuildwheel@v2.1.1
       env:
-        CIBW_SKIP: "cp27-* cp34-* cp35-* cp36-* cp310-* pp* *-win32"
+        CIBW_SKIP: "cp27-* cp34-* cp35-* cp36-* pp* *-win32 cp310-manylinux_i686"
         CIBW_TEST_REQUIRES: "pytest pytest-sugar meshio pillow sphinx_gallery imageio"
         CIBW_TEST_COMMAND: "python -c \"import vispy; vispy.test()\""
         CIBW_BUILD_VERBOSITY: "2"
