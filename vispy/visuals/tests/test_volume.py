@@ -121,9 +121,7 @@ def test_volume_clims_and_gamma(texture_format, input_dtype, clim_on_init):
         v.camera = 'arcball'
         v.camera.fov = 0
         v.camera.scale_factor = 40.0
-        # for some reason the x dimension has to be a little bit off center
-        # or else the render doesn't match the data
-        v.camera.center = (19.6, 19.5, 19.5)
+        v.camera.center = (19.5, 19.5, 19.5)
 
         rendered = c.render()
         _dtype = rendered.dtype
@@ -172,9 +170,7 @@ def test_all_render_methods(method_name):
         v.camera = 'arcball'
         v.camera.fov = 0
         v.camera.scale_factor = 40.0
-        # for some reason the x dimension has to be a little bit off center
-        # or else the render doesn't match the data
-        v.camera.center = (19.6, 19.5, 19.5)
+        v.camera.center = (19.5, 19.5, 19.5)
 
         assert volume.method == method_name
         rendered = c.render()[..., :3]
@@ -206,9 +202,7 @@ def test_equal_clims(texture_format):
         v.camera = 'arcball'
         v.camera.fov = 0
         v.camera.scale_factor = 40.0
-        # for some reason the x dimension has to be a little bit off center
-        # or else the render doesn't match the data
-        v.camera.center = (19.6, 19.5, 19.5)
+        v.camera.center = (19.5, 19.5, 19.5)
 
         rendered = c.render()[..., :3]
         # not all black
