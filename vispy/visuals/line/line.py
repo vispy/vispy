@@ -4,6 +4,7 @@
 """Line visual implementing Agg- and GL-based drawing modes."""
 
 from __future__ import division
+from functools import lru_cache
 
 import numpy as np
 
@@ -82,8 +83,7 @@ class LineVisual(CompoundVisual):
                  connect='strip', method='gl', antialias=False):
         self._line_visual = None
 
-        self._changed = {'pos': False, 'color': False, 'width': False,
-                         'connect': False}
+        self._changed = {'pos': False, 'color': False, 'connect': False}
 
         self._pos = None
         self._color = None
@@ -179,8 +179,8 @@ class LineVisual(CompoundVisual):
             self._changed['color'] = True
 
         if width is not None:
+            # width is always updated
             self._width = width
-            self._changed['width'] = True
 
         if connect is not None:
             self._connect = connect
@@ -298,14 +298,16 @@ class _GLLineVisual(Visual):
         Visual.__init__(self, vcode=self._shaders['vertex'], fcode=self._shaders['fragment'])
         self.set_gl_state('translucent')
 
-    def _ensure_vec4_func(self, vert_shape):
-        if vert_shape[-1] == 2:
+    @staticmethod
+    @lru_cache(maxsize=2)
+    def _ensure_vec4_func(dims):
+        if dims == 2:
             func = Function("""
                 vec4 vec2to4(vec2 xyz) {
                     return vec4(xyz, 0.0, 1.0);
                 }
             """)
-        elif vert_shape[-1] == 3:
+        elif dims == 3:
             func = Function("""
                 vec4 vec3to4(vec3 xyz) {
                     return vec4(xyz, 1.0);
@@ -329,7 +331,8 @@ class _GLLineVisual(Visual):
             pos = np.ascontiguousarray(self._parent._pos.astype(np.float32))
             self._pos_vbo.set_data(pos)
             self._program.vert['position'] = self._pos_vbo
-            self._program.vert['to_vec4'] = self._ensure_vec4_func(pos.shape)
+            self._program.vert['to_vec4'] = self._ensure_vec4_func(pos.shape[-1])
+            self._parent._changed['pos'] = False
 
         if self._parent._changed['color']:
             color, cmap = self._parent._interpret_color()
@@ -346,6 +349,7 @@ class _GLLineVisual(Visual):
                 else:
                     self._color_vbo.set_data(color)
                     self._program.vert['color'] = self._color_vbo
+            self._parent._changed['color'] = False
 
             self.shared_program['texture2D_LUT'] = cmap and cmap.texture_lut()
 
@@ -358,6 +362,7 @@ class _GLLineVisual(Visual):
             self._connect = self._parent._interpret_connect()
             if isinstance(self._connect, np.ndarray):
                 self._connect_ibo.set_data(self._connect)
+            self._parent._changed['connect'] = False
         if self._connect is None:
             return False
 

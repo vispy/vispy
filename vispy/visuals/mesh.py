@@ -7,6 +7,7 @@
 """A MeshVisual Visual that uses the new shader Function."""
 
 from __future__ import division
+from functools import lru_cache
 
 import numpy as np
 
@@ -289,14 +290,16 @@ class MeshVisual(Visual):
             fun = Function(null_color_transform)
         return fun
 
-    def _ensure_vec4_func(self, vert_shape):
-        if vert_shape[-1] == 2:
+    @staticmethod
+    @lru_cache(maxsize=2)
+    def _ensure_vec4_func(dims):
+        if dims == 2:
             func = Function("""
                 vec4 vec2to4(vec2 xyz) {
                     return vec4(xyz, 0.0, 1.0);
                 }
             """)
-        elif vert_shape[-1] == 3:
+        elif dims == 3:
             func = Function("""
                 vec4 vec3to4(vec3 xyz) {
                     return vec4(xyz, 1.0);
@@ -333,7 +336,7 @@ class MeshVisual(Visual):
         self.shared_program['texture2D_LUT'] = self._cmap.texture_lut()
 
         # Position input handling
-        ensure_vec4 = self._ensure_vec4_func(v.shape)
+        ensure_vec4 = self._ensure_vec4_func(v.shape[-1])
         self.shared_program.vert['to_vec4'] = ensure_vec4
 
         # Set the base color.
