@@ -21,7 +21,7 @@ from vispy import app, scene
 
 
 # create volume
-voldata = np.ones((5, 5, 5))
+voldata = np.ones((5, 5, 5), dtype=np.float32)
 voldata[2:-2, :, :] = 2
 voldata[:, 2:-2, :] = 2
 voldata[:, :, 2:-2] = 2
