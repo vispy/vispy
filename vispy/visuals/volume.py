@@ -319,15 +319,17 @@ _RAYCASTING_SETUP_VOLUME = """
 
     // Get starting location and step vector in texture coordinates
     vec3 step = ((v_position - front) / u_shape) / f_nsteps;
-    vec3 start_loc = front / u_shape;
+    // 0.5 offset needed to get back to correct texture coordinates (vispy#2239)
+    vec3 start_loc = (front + 0.5) / u_shape;
 """
 
 _RAYCASTING_SETUP_PLANE = """
     // find intersection of view ray with plane in data coordinates
+    // 0.5 offset needed to get back to correct texture coordinates (vispy#2239)
     vec3 intersection = intersectLinePlane(v_position.xyz, view_ray,
                                            u_plane_position, u_plane_normal);
     // and texture coordinates
-    vec3 intersection_tex = intersection / u_shape;
+    vec3 intersection_tex = (intersection + 0.5) / u_shape;
 
     // discard if intersection not in texture
 
