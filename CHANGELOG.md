@@ -1,5 +1,19 @@
 # Release Notes
 
+## [v0.9.3](https://github.com/vispy/vispy/tree/v0.9.3) (2021-10-27)
+
+**Fixed bugs:**
+
+- Noop on clicking both mouse buttons [\#2244](https://github.com/vispy/vispy/pull/2244) ([brisvag](https://github.com/brisvag))
+- Fix performance issues with 0.9.1 [\#2243](https://github.com/vispy/vispy/pull/2243) ([brisvag](https://github.com/brisvag))
+- Remove unnecessary if clauses from Volume [\#2242](https://github.com/vispy/vispy/pull/2242) ([brisvag](https://github.com/brisvag))
+- Fix volume rendering's wrong offset [\#2239](https://github.com/vispy/vispy/pull/2239) ([brisvag](https://github.com/brisvag))
+- Update PlanesClipper interpolation to occur in the fragment shader [\#2226](https://github.com/vispy/vispy/pull/2226) ([brisvag](https://github.com/brisvag))
+
+**Merged pull requests:**
+
+- Include tutorial image from vispy/images to remove remote reference [\#2240](https://github.com/vispy/vispy/pull/2240) ([draco2003](https://github.com/draco2003))
+
 ## [v0.9.2](https://github.com/vispy/vispy/tree/v0.9.2) (2021-10-21)
 
 **Fixed bugs:**
