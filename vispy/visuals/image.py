@@ -527,7 +527,7 @@ class ImageVisual(Visual):
         post_lims = getattr(self._texture, '_data_limits', None)
         post_internalformat = self._texture.internalformat
         # color transform needs rebuilding if the internalformat was changed
-        # new color limits need to be assigned if the normalized clims changed
+        # new color limits need to be assigned if the texture data limits changed
         # otherwise, the original color transform should be fine
         # Note that this assumes that if clim changed, clim_normalized changed
         if post_internalformat != pre_internalformat:
