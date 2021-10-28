@@ -526,7 +526,7 @@ class ImageVisual(Visual):
         pre_internalformat = self._texture.internalformat
         self._texture.scale_and_set_data(self._data)
         # color transform needs rebuilding if the internalformat was changed
-        # otherwise just update the whole color transform clims
+        # otherwise just update the color transform clims
         if self._texture.internalformat != pre_internalformat:
             self._need_colortransform_update = True
         else:
