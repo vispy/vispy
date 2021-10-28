@@ -528,7 +528,7 @@ class ImageVisual(Visual):
         # new color limits need to be assigned if the data limits of the texture changed
         # otherwise, the original color transform should be fine
         # Note that this assumes that if clim changed, clim_normalized changed
-        if  self._texture.internalformat != pre_internalformat:
+        if self._texture.internalformat != pre_internalformat:
             self._need_colortransform_update = True
         elif self._texture._data_limits != pre_lims and not self._need_colortransform_update:
             # shortcut so we don't have to rebuild the whole color transform
