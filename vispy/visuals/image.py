@@ -5,6 +5,8 @@
 
 from __future__ import division
 
+import contextlib
+
 import numpy as np
 
 from ..gloo import Texture2D, VertexBuffer
@@ -521,22 +523,15 @@ class ImageVisual(Visual):
         self._prepare_transforms(view)
 
     def _build_texture(self):
-        pre_clims = self._texture.clim
         pre_internalformat = self._texture.internalformat
         self._texture.scale_and_set_data(self._data)
-        post_clims = self._texture.clim
-        post_internalformat = self._texture.internalformat
         # color transform needs rebuilding if the internalformat was changed
-        # new color limits need to be assigned if the normalized clims changed
-        # otherwise, the original color transform should be fine
-        # Note that this assumes that if clim changed, clim_normalized changed
-        new_if = post_internalformat != pre_internalformat
-        new_cl = post_clims != pre_clims
-        if not new_if and new_cl and not self._need_colortransform_update:
-            # shortcut so we don't have to rebuild the whole color transform
-            self.shared_program.frag['color_transform'][1]['clim'] = self._texture.clim_normalized
-        elif new_if:
+        # otherwise just update the whole color transform clims
+        if self._texture.internalformat != pre_internalformat:
             self._need_colortransform_update = True
+        else:
+            with contextlib.suppress(KeyError):  # if the shared_program isn't created yet.
+                self.shared_program.frag['color_transform'][1]['clim'] = self._texture.clim_normalized
         self._need_texture_upload = False
 
     def _compute_bounds(self, axis, view):
