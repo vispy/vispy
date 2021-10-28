@@ -530,13 +530,11 @@ class ImageVisual(Visual):
         # new color limits need to be assigned if the normalized clims changed
         # otherwise, the original color transform should be fine
         # Note that this assumes that if clim changed, clim_normalized changed
-        new_if = post_internalformat != pre_internalformat
-        new_cl = post_lims != pre_lims
-        if not new_if and new_cl and not self._need_colortransform_update:
+        if post_internalformat != pre_internalformat:
+            self._need_colortransform_update = True
+        elif post_lims != pre_lims and not self._need_colortransform_update:
             # shortcut so we don't have to rebuild the whole color transform
             self.shared_program.frag['color_transform'][1]['clim'] = self._texture.clim_normalized
-        elif new_if:
-            self._need_colortransform_update = True
         self._need_texture_upload = False
 
     def _compute_bounds(self, axis, view):
