@@ -21,12 +21,27 @@ context. This can be done using any one of the following.
    * - Package
      - Status
      - Dependencies
-   * - Qt
+   * - pyqt4
      - Stable
-     - 
+     - PyQt4
+   * - pyqt5
+     - Stable
+     - PyQt5
+   * - pyqt6
+     - Stable
+     - PyQt6
+   * - pyside
+     - Stable
+     - PySide
+   * - pyside2
+     - Stable
+     - PySide2
+   * - pyside6
+     - Stable
+     - PySide6
    * - GLFW
      - Stable
-     - 
+     - glfw (python)
    * - SDL2
      - Stable
      - 
