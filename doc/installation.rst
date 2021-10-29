@@ -40,7 +40,7 @@ context. This can be done using any one of the following.
      - Experimental
      - pyopengltk
 
-You can also use a Jupyter notebook with visualizations appearing inline.
+You can also use a Jupyter notebook with visualizations appearing inline with the `jupyter_rfb` backend (requires `jupyter_rfb` package).
 
 .. warning::
 
