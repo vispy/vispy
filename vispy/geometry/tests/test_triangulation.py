@@ -5,7 +5,7 @@ import numpy as np
 from numpy.testing import assert_array_almost_equal
 
 from vispy.testing import run_tests_if_main
-from vispy.geometry.triangulation import Triangulation as T
+from vispy.geometry.triangulation import Triangulation as T, triangulate
 
 
 def assert_array_eq(a, b):
@@ -501,6 +501,91 @@ def test_edge_event():
 
     t = T(pts * [-1, 1], edges)
     t.triangulate()
+
+
+def test_triangulate_triangle():
+    input_vertices = np.array([
+        [4, 4],
+        [1, 4],
+        [1, 2],
+    ])
+    t = _triangulation_from_points(input_vertices)
+
+    t.triangulate()
+
+    assert len(t.tris) == 1
+    _assert_output_vertices_in_input(t.pts, input_vertices)
+
+
+def test_triangulate_square():
+    input_vertices = np.array([
+        [4, 4],
+        [1, 4],
+        [1, 2],
+        [4, 2],
+    ])
+    t = _triangulation_from_points(input_vertices)
+
+    t.triangulate()
+
+    assert len(t.tris) == 2
+    _assert_output_vertices_in_input(t.pts, input_vertices)
+
+
+def test_triangulate_triangle_with_collinear_vertices():
+    input_vertices = np.array([
+        [4, 4],
+        [3, 4],
+        [1, 4],
+        [1, 2],
+    ])
+    t = _triangulation_from_points(input_vertices)
+
+    t.triangulate()
+
+    assert len(t.tris) in (1, 2)
+    _assert_output_vertices_in_input(t.pts, input_vertices)
+
+
+def test_triangulate_collinear_path():
+    input_vertices = np.array([
+        [4, 4],
+        [3, 4],
+        [1, 4],
+    ])
+    t = _triangulation_from_points(input_vertices)
+
+    t.triangulate()
+
+    assert len(t.tris) == 0
+    _assert_output_vertices_in_input(t.pts, input_vertices)
+
+
+def test_triangulate_collinear_path_with_repeat():
+    input_vertices = np.array([
+        [4, 4],
+        [3, 4],
+        [1, 4],
+        [4, 4],
+        [1, 2],
+    ])
+    t = _triangulation_from_points(input_vertices)
+
+    t.triangulate()
+
+    assert len(t.tris) == 0
+    _assert_output_vertices_in_input(t.pts, input_vertices)
+
+
+def _assert_output_vertices_in_input(output_vertices, input_vertices):
+    for output_vertex in output_vertices:
+        assert np.any(np.all(output_vertex == input_vertices, axis=1))
+
+
+def _triangulation_from_points(points):
+    inds = np.arange(points.shape[0])[:, np.newaxis]
+    edges = np.hstack([inds, np.roll(inds, -1)])
+    return T(points, edges)
 
 
 run_tests_if_main()

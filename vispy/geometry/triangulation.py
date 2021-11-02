@@ -201,7 +201,7 @@ class Triangulation(object):
         while k < idx-1:
             # if edges lie in counterclockwise direction, then signed area
             # is positive
-            if self._iscounterclockwise(front[k], front[k+1], front[k+2]):
+            if self._orientation((front[k], front[k+1]), front[k+2]) < 0:
                 self._add_tri(front[k], front[k+1], front[k+2])
                 front.pop(k+1)
                 idx -= 1
@@ -671,13 +671,6 @@ class Triangulation(object):
         d = (a + c - b) / ((4 * a * c)**0.5)
         return d
 
-    def _iscounterclockwise(self, a, b, c):
-        # Check if the points lie in counter-clockwise order or not
-        A = self.pts[a]
-        B = self.pts[b]
-        C = self.pts[c]
-        return np.cross(B-A, C-B) > 0
-
     def _edges_intersect(self, edge1, edge2):
         """Return 1 if edges intersect completely (endpoints excluded)"""
         h12 = self._intersect_edge_arrays(self.pts[np.array(edge1)],
@@ -746,7 +739,7 @@ class Triangulation(object):
         # sanity check
         assert a != b and b != c and c != a
 
-        # ignore flat tris
+        # ignore tris with duplicate points
         pa = self.pts[a]
         pb = self.pts[b]
         pc = self.pts[c]
@@ -759,8 +752,13 @@ class Triangulation(object):
                 raise Exception("Cannot add %s; already have %s" %
                                 ((a, b, c), t))
 
+        # ignore lines
+        orientation = self._orientation((a, b), c)
+        if orientation == 0:
+            return
+
         # TODO: should add to edges_lookup after legalization??
-        if self._iscounterclockwise(a, b, c):
+        if orientation < 0:
             assert (a, b) not in self._edges_lookup
             assert (b, c) not in self._edges_lookup
             assert (c, a) not in self._edges_lookup
@@ -831,7 +829,7 @@ def triangulate(vertices):
     -------
     vertices : array-like
         The vertices.
-    tringles : array-like
+    triangles : array-like
         The triangles.
     """
     n = len(vertices)
