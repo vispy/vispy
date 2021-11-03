@@ -504,83 +504,83 @@ def test_edge_event():
 
 
 def test_triangulate_triangle():
-    input_vertices = np.array([
+    pts = np.array([
         [4, 4],
         [1, 4],
         [1, 2],
     ])
-    t = _triangulation_from_points(input_vertices)
+    t = _triangulation_from_points(pts)
 
     t.triangulate()
 
     assert len(t.tris) == 1
-    _assert_triangle_vertices_in_input(t, input_vertices)
+    _assert_triangle_pts_in_input(t, pts)
 
 
 def test_triangulate_square():
-    input_vertices = np.array([
+    pts = np.array([
         [4, 4],
         [1, 4],
         [1, 2],
         [4, 2],
     ])
-    t = _triangulation_from_points(input_vertices)
+    t = _triangulation_from_points(pts)
 
     t.triangulate()
 
     assert len(t.tris) == 2
-    _assert_triangle_vertices_in_input(t, input_vertices)
+    _assert_triangle_pts_in_input(t, pts)
 
 
-def test_triangulate_triangle_with_collinear_vertices():
-    input_vertices = np.array([
+def test_triangulate_triangle_with_collinear_pts():
+    pts = np.array([
         [4, 4],
         [3, 4],
         [1, 4],
         [1, 2],
     ])
-    t = _triangulation_from_points(input_vertices)
+    t = _triangulation_from_points(pts)
 
     t.triangulate()
 
     assert len(t.tris) in (1, 2)
-    _assert_triangle_vertices_in_input(t, input_vertices)
+    _assert_triangle_pts_in_input(t, pts)
 
 
 def test_triangulate_collinear_path():
-    input_vertices = np.array([
+    pts = np.array([
         [4, 4],
         [3, 4],
         [1, 4],
     ])
-    t = _triangulation_from_points(input_vertices)
+    t = _triangulation_from_points(pts)
 
     t.triangulate()
 
     assert len(t.tris) == 0
-    _assert_triangle_vertices_in_input(t, input_vertices)
+    _assert_triangle_pts_in_input(t, pts)
 
 
 def test_triangulate_collinear_path_with_repeat():
-    input_vertices = np.array([
+    pts = np.array([
         [4, 4],
         [3, 4],
         [1, 4],
         [4, 4],
         [1, 2],
     ])
-    t = _triangulation_from_points(input_vertices)
+    t = _triangulation_from_points(pts)
 
     t.triangulate()
 
     assert len(t.tris) == 0
-    _assert_triangle_vertices_in_input(t, input_vertices)
+    _assert_triangle_pts_in_input(t, pts)
 
 
-def _assert_triangle_vertices_in_input(t, input_vertices):
-    vertex_indices_in_tris = set(v for tri in t.tris for v in tri)
-    for index in vertex_indices_in_tris:
-        assert np.any(np.all(t.pts[index] == input_vertices, axis=1))
+def _assert_triangle_pts_in_input(t, input_pts):
+    pt_indices_in_tris = set(v for tri in t.tris for v in tri)
+    for i in pt_indices_in_tris:
+        assert np.any(np.all(t.pts[i] == input_pts, axis=1))
 
 
 def _triangulation_from_points(points):
