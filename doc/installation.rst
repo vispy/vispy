@@ -19,6 +19,11 @@ use a Jupyter notebook with visualizations appearing inline.
 
    You only need to have one of these packages, no need to install them all!
 
+Optional dependencies
+=====================
+
+VisPy uses Pillow (imported as PIL) to load example image data or as a utility to read image files.
+
 Hardware requirements
 =====================
 
