@@ -22,7 +22,9 @@ use a Jupyter notebook with visualizations appearing inline.
 Optional dependencies
 =====================
 
-VisPy uses Pillow (imported as PIL) to load example image data or as a utility to read image files.
+VisPy has various optional dependencies to support features that may not be relevant for all users. The below is a list of dependencies that you may want to install to use the functionality mentioned.
+
+* **pillow**: Pillow (imported as PIL) is used to read image files. Some VisPy examples will use Pillow to load the image data that will then be shown by VisPy.
 
 Hardware requirements
 =====================
