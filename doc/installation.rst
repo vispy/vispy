@@ -18,37 +18,37 @@ context. This can be done using any one of the following.
    :widths: 25 25 50
    :header-rows: 1
 
-   * - Package
+   * - Backend
      - Status
      - Dependencies
    * - pyqt4
      - Stable
-     - PyQt4
+     - pyqt4
    * - pyqt5
      - Stable
-     - PyQt5
+     - pyqt5
    * - pyqt6
      - Stable
-     - PyQt6
+     - pyqt6
    * - pyside
      - Stable
-     - PySide
+     - pyside
    * - pyside2
      - Stable
-     - PySide2
+     - pyside2
    * - pyside6
      - Stable
-     - PySide6
-   * - GLFW
+     - pyside6
+   * - glfw
      - Stable
      - glfw (python)
    * - SDL2
      - Stable
      - 
-   * - Wx
+   * - wx
      - Stable
      - 
-   * - Pyglet
+   * - pyglet
      - Stable
      - 
    * - tkinter
