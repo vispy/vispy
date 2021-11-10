@@ -42,15 +42,15 @@ context. This can be done using any one of the following.
    * - glfw
      - Stable
      - glfw (python)
-   * - SDL2
+   * - sdl2
      - Stable
-     - 
+     - pysdl2 (pysdl2-dll recommended for MacOS/Windows)
    * - wx
      - Stable
-     - 
+     - wxPython
    * - pyglet
      - Stable
-     - 
+     - pyglet
    * - tkinter
      - Experimental
      - pyopengltk
