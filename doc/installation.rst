@@ -12,8 +12,50 @@ Backend requirements
 ====================
 
 VisPy requires at least one toolkit for opening a window and creates an OpenGL
-context. This can be done using one Qt, GLFW, SDL2, Wx, or Pyglet. You can also
-use a Jupyter notebook with visualizations appearing inline.
+context. This can be done using any one of the following.
+
+.. list-table::
+   :widths: 25 25 50
+   :header-rows: 1
+
+   * - Backend
+     - Status
+     - Dependencies
+   * - pyqt4
+     - Stable
+     - pyqt4
+   * - pyqt5
+     - Stable
+     - pyqt5
+   * - pyqt6
+     - Stable
+     - pyqt6
+   * - pyside
+     - Stable
+     - pyside
+   * - pyside2
+     - Stable
+     - pyside2
+   * - pyside6
+     - Stable
+     - pyside6
+   * - glfw
+     - Stable
+     - glfw (python)
+   * - sdl2
+     - Stable
+     - pysdl2 (pysdl2-dll recommended for MacOS/Windows)
+   * - wx
+     - Stable
+     - wxPython
+   * - pyglet
+     - Stable
+     - pyglet
+   * - tkinter
+     - Experimental
+     - pyopengltk
+
+You can also use a Jupyter notebook with visualizations appearing inline with the ``jupyter_rfb`` backend (requires ``jupyter_rfb`` package).
 
 .. warning::
 
