@@ -14,7 +14,7 @@ Backend requirements
 VisPy requires at least one toolkit for opening a window and creates an OpenGL
 context. This can be done using any one of the following.
 
-.. list-table:: Supported toolkits
+.. list-table::
    :widths: 25 25 50
    :header-rows: 1
 
