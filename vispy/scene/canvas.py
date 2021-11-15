@@ -168,7 +168,7 @@ class SceneCanvas(app.Canvas, Frozen):
         canvas.
         """
         if self._central_widget is None:
-            self._central_widget = Widget(size=self.size, parent=self.scene)
+            self._central_widget = Widget(size=self.size, parent=self.scene, border_width=0)
         return self._central_widget
 
     @property
