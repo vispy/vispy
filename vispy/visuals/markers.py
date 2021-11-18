@@ -681,13 +681,19 @@ class MarkersVisual(Visual):
                 raise ValueError('edge_width_rel cannot be negative')
 
         if scaling is not None:
-            warnings.warn('The scaling parameter is deprecated. Use MarkersVisual.scaling instead',
-                          DeprecationWarning)
+            warnings.warn(
+                "The scaling parameter is deprecated. Use MarkersVisual.scaling instead",
+                DeprecationWarning,
+                stacklevel=2,
+            )
             self.scaling = scaling
 
         if symbol is not None:
-            warnings.warn('The symbol parameter is deprecated. Use MarkersVisual.symbol instead',
-                          DeprecationWarning)
+            warnings.warn(
+                "The symbol parameter is deprecated. Use MarkersVisual.symbol instead",
+                DeprecationWarning,
+                stacklevel=2,
+            )
             self.symbol = symbol
 
         edge_color = ColorArray(edge_color).rgba
