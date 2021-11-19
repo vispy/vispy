@@ -105,9 +105,12 @@ class BaseTexture(GLObject):
         GLObject.__init__(self)
         if resizeable is not None:
             resizable = resizeable
-            warnings.warn('resizeable has been deprecated in favor of '
-                          'resizable and will be removed next release',
-                          DeprecationWarning)
+            warnings.warn(
+                "resizeable has been deprecated in favor of "
+                "resizable and will be removed next release",
+                DeprecationWarning,
+                stacklevel=2,
+            )
 
         # Init shape and format
         self._resizable = True  # at least while we're in init
