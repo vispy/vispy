@@ -271,11 +271,12 @@ def test_change_clim_float():
     see https://github.com/vispy/vispy/pull/2245
     """
     size = (40, 40)
-    np.random.seed(0)
-    data = np.random.rand(*size) * 100
-
     with TestingCanvas(size=size[::-1], bgcolor="w") as c:
-        image = Image(data=data, parent=c.scene)
+        image = Image(cmap='grays', clim=[0, 1], parent=c.scene)
+        np.random.seed(0)
+        data = np.random.rand(*size) * 100
+        image.set_data(data)
+        c.render()
 
         image.clim = 0, 10
         rendered1 = c.render()
