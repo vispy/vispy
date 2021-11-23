@@ -276,6 +276,10 @@ class CPUScaledTextureMixin(_ScaledTextureMixin):
             raise RuntimeError("Can't return 'auto' normalized color limits "
                                "until data has been set. Call "
                                "'scale_and_set_data' first.")
+        if self._data_limits is None:
+            raise RuntimeError("Can't return normalized color limits until "
+                               "data has been set. Call "
+                               "'scale_and_set_data' first.")
 
         range_min, range_max = self._data_limits
         clim_min, clim_max = self.clim
