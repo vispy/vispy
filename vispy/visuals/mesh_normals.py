@@ -103,25 +103,21 @@ class MeshNormalsVisual(LineVisual):
             Extra arguments to define the appearance of lines. Refer to
             :class:`~vispy.visuals.line.line.LineVisual`.
         """
-        if primitive not in ('face', 'vertex'):
-            raise ValueError('primitive must be "face" or "vertex", got %s'
-                             % primitive)
-        # remove connect from kwargs to make sure we don't change it
-        kwargs.pop('connect', None)
-
         if meshdata is None:
             meshdata = self._previous_meshdata
 
-        if primitive == 'face':
-            if meshdata._faces is None:
-                normals = None
-            else:
-                normals = meshdata.get_face_normals()
+        if meshdata.is_empty():
+            normals = None
+        elif primitive == 'face':
+            normals = meshdata.get_face_normals()
         elif primitive == 'vertex':
-            if meshdata._vertices is None:
-                normals = None
-            else:
-                normals = meshdata.get_vertex_normals()
+            normals = meshdata.get_vertex_normals()
+        else:
+            raise ValueError('primitive must be "face" or "vertex", got %s'
+                             % primitive)
+
+        # remove connect from kwargs to make sure we don't change it
+        kwargs.pop('connect', None)
 
         if normals is None:
             super().set_data(pos=np.empty((0, 3), dtype=np.float32), connect='segments', **kwargs)

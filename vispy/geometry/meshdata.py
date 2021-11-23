@@ -654,3 +654,6 @@ class MeshData(object):
             if isinstance(state[k], list):
                 state[k] = np.array(state[k])
             setattr(self, k, state[k])
+
+    def is_empty(self):
+        return self._faces is None
