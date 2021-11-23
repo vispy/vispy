@@ -61,6 +61,13 @@ You can also use a Jupyter notebook with visualizations appearing inline with th
 
    You only need to have one of these packages, no need to install them all!
 
+Optional dependencies
+=====================
+
+VisPy has various optional dependencies to support features that may not be relevant for all users. The below is a list of dependencies that you may want to install to use the functionality mentioned.
+
+* **pillow**: Pillow (imported as PIL) is used to read image files. Some VisPy examples will use Pillow to load the image data that will then be shown by VisPy.
+
 Hardware requirements
 =====================
 
