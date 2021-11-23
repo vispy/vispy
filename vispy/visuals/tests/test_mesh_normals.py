@@ -210,4 +210,14 @@ def test_mesh_normals_length_method(length_method):
         _ = c.render()
 
 
+def test_mesh_normals_empty():
+    size = (45, 40)
+    with TestingCanvas(size=size, bgcolor="k") as c:
+        v = c.central_widget.add_view(border_width=0)
+        # Create visual.
+        mesh = scene.visuals.Mesh()
+        v.add(mesh)
+        scene.visuals.MeshNormals(mesh.mesh_data)
+
+
 run_tests_if_main()
