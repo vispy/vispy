@@ -721,8 +721,10 @@ class WireframeFilter(Filter):
         self.fshader['width'] = self._width
         self.fshader['wireframe_only'] = 1 if self._wireframe_only else 0
         self.fshader['faces_only'] = 1 if self._faces_only else 0
-        faces = self._visual.mesh_data.get_faces()
-        n_faces = len(faces)
+        if self._visual.mesh_data.is_empty():
+            n_faces = 0
+        else:
+            n_faces = len(self._visual.mesh_data.get_faces())
         bc = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]], dtype='float')
         bc = np.tile(bc[None, ...], (n_faces, 1, 1))
         self._bc.set_data(bc, convert=True)
