@@ -74,16 +74,57 @@ class MeshNormalsVisual(LineVisual):
     >>> MeshNormalsVisual(..., length_method='max_extent', length_scale=0.1)
     """
 
-    def __init__(self, meshdata, primitive='face', length=None,
+    def __init__(self, meshdata=None, primitive='face', length=None,
                  length_method='median_edge', length_scale=1.0, **kwargs):
-        if primitive not in ('face', 'vertex'):
-            raise ValueError('primitive must be "face" or "vertex", got %s'
-                             % primitive)
+        self._previous_meshdata = None
+        super().__init__(connect='segments')
+        self.set_data(meshdata, primitive, length, length_method, length_scale, **kwargs)
 
-        if primitive == 'face':
+    def set_data(self, meshdata=None, primitive='face', length=None,
+                 length_method='median_edge', length_scale=1.0, **kwargs):
+        """Set the data used to draw this visual
+
+        Parameters
+        ----------
+        meshdata : instance of :class:`~vispy.geometry.meshdata.MeshData`
+            The mesh data.
+        primitive : {'face', 'vertex'}
+            The primitive type on which to compute and display the normals.
+        length : None or float or array-like, optional
+            The length(s) of the normals. If None, the length is computed with
+            `length_method`.
+        length_method : {'median_edge', 'max_extent'}, default='median_edge'
+            The method to compute the length of the normals (when `length=None`).
+            Methods: 'median_edge', the median edge length; 'max_extent', the
+            maximum side length of the bounding box of the mesh.
+        length_scale : float, default=1.0
+            A scale factor applied to the length computed with `length_method`.
+        **kwargs : dict, optional
+            Extra arguments to define the appearance of lines. Refer to
+            :class:`~vispy.visuals.line.line.LineVisual`.
+        """
+        if meshdata is None:
+            meshdata = self._previous_meshdata
+
+        if meshdata is None or meshdata.is_empty():
+            normals = None
+        elif primitive == 'face':
             normals = meshdata.get_face_normals()
         elif primitive == 'vertex':
             normals = meshdata.get_vertex_normals()
+        else:
+            raise ValueError('primitive must be "face" or "vertex", got %s'
+                             % primitive)
+
+        # remove connect from kwargs to make sure we don't change it
+        kwargs.pop('connect', None)
+
+        if normals is None:
+            super().set_data(pos=np.empty((0, 3), dtype=np.float32), connect='segments', **kwargs)
+            return
+
+        self._previous_meshdata = meshdata
+
         norms = np.sqrt((normals ** 2).sum(axis=-1, keepdims=True))
         unit_normals = normals / norms
 
@@ -115,4 +156,4 @@ class MeshNormalsVisual(LineVisual):
         ends = origins + length * unit_normals
         segments = np.hstack((origins, ends)).reshape(-1, 3)
 
-        LineVisual.__init__(self, pos=segments, connect='segments', **kwargs)
+        super().set_data(pos=segments, connect='segments', **kwargs)

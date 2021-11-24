@@ -654,3 +654,7 @@ class MeshData(object):
             if isinstance(state[k], list):
                 state[k] = np.array(state[k])
             setattr(self, k, state[k])
+
+    def is_empty(self):
+        """Check if any vertices or faces are defined."""
+        return self._faces is None
