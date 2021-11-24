@@ -1,5 +1,19 @@
 # Release Notes
 
+## [v0.9.4](https://github.com/vispy/vispy/tree/v0.9.4) (2021-11-24)
+
+**Fixed bugs:**
+
+- Fix MeshNormals and WireframeFilter with empty MeshData [\#2262](https://github.com/vispy/vispy/pull/2262) ([brisvag](https://github.com/brisvag))
+- Update clims in color transform whenever texture.\_data\_limits changes [\#2245](https://github.com/vispy/vispy/pull/2245) ([tlambert03](https://github.com/tlambert03))
+
+**Merged pull requests:**
+
+- Clarified docstring for ArrowVisual [\#2261](https://github.com/vispy/vispy/pull/2261) ([pauljurczak](https://github.com/pauljurczak))
+- Use stacklevel in DeprecationWarnings. [\#2257](https://github.com/vispy/vispy/pull/2257) ([Carreau](https://github.com/Carreau))
+- Add optional dependencies section to installation instructions [\#2251](https://github.com/vispy/vispy/pull/2251) ([pauljurczak](https://github.com/pauljurczak))
+- Add table for list of backend supported [\#2246](https://github.com/vispy/vispy/pull/2246) ([anirudhbagri](https://github.com/anirudhbagri))
+
 ## [v0.9.3](https://github.com/vispy/vispy/tree/v0.9.3) (2021-10-27)
 
 **Fixed bugs:**
