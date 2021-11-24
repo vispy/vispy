@@ -125,6 +125,10 @@ class _ScaledTextureMixin:
             raise RuntimeError("Can't return 'auto' normalized color limits "
                                "until data has been set. Call "
                                "'scale_and_set_data' first.")
+        if self._data_dtype is None:
+            raise RuntimeError("Can't return normalized color limits until "
+                               "data has been set. Call "
+                               "'scale_and_set_data' first.")
         if self.clim[0] == self.clim[1]:
             return self.clim[0], np.inf
         # if the internalformat of the texture is normalized we need to
@@ -275,6 +279,10 @@ class CPUScaledTextureMixin(_ScaledTextureMixin):
         if isinstance(self.clim, str) and self.clim == "auto":
             raise RuntimeError("Can't return 'auto' normalized color limits "
                                "until data has been set. Call "
+                               "'scale_and_set_data' first.")
+        if self._data_limits is None:
+            raise RuntimeError("Can't return normalized color limits until "
+                               "data has been set. Call "
                                "'scale_and_set_data' first.")
 
         range_min, range_max = self._data_limits

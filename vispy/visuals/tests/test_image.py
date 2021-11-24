@@ -263,4 +263,38 @@ def test_image_vertex_updates():
             build_vertex_mock.assert_called_once()
 
 
+@requires_application()
+@pytest.mark.parametrize(
+    ("dtype", "init_clim"),
+    [
+        (np.float32, "auto"),
+        (np.float32, (0, 5)),
+        (np.uint8, "auto"),
+        (np.uint8, (0, 5)),
+    ]
+)
+def test_change_clim_float(dtype, init_clim):
+    """Test that with an image of floats, clim is correctly set from the first try.
+
+    See https://github.com/vispy/vispy/pull/2245.
+    """
+    size = (40, 40)
+    np.random.seed(0)
+    data = (np.random.rand(*size) * 100).astype(dtype)
+
+    with TestingCanvas(size=size[::-1], bgcolor="w") as c:
+        image = Image(data=data, clim=init_clim, parent=c.scene)
+
+        # needed to properly initialize the canvas
+        c.render()
+
+        image.clim = 0, 10
+        rendered1 = c.render()
+        # set clim to same values
+        image.clim = 0, 10
+        rendered2 = c.render()
+
+        assert np.allclose(rendered1, rendered2)
+
+
 run_tests_if_main()
