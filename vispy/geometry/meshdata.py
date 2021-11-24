@@ -656,4 +656,5 @@ class MeshData(object):
             setattr(self, k, state[k])
 
     def is_empty(self):
+        """Check if any vertices or faces are defined."""
         return self._faces is None
