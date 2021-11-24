@@ -74,7 +74,7 @@ class MeshNormalsVisual(LineVisual):
     >>> MeshNormalsVisual(..., length_method='max_extent', length_scale=0.1)
     """
 
-    def __init__(self, meshdata, primitive='face', length=None,
+    def __init__(self, meshdata=None, primitive='face', length=None,
                  length_method='median_edge', length_scale=1.0, **kwargs):
         self._previous_meshdata = None
         super().__init__(connect='segments')
@@ -106,7 +106,7 @@ class MeshNormalsVisual(LineVisual):
         if meshdata is None:
             meshdata = self._previous_meshdata
 
-        if meshdata.is_empty():
+        if meshdata is None or meshdata.is_empty():
             normals = None
         elif primitive == 'face':
             normals = meshdata.get_face_normals()
