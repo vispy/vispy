@@ -36,12 +36,13 @@ coordinates).
 """
 from functools import lru_cache
 
-from ._scalable_textures import CPUScaledTexture3D, GPUScaledTextured3D
+from ._scalable_textures import CPUScaledTexture3D, GPUScaledTextured3D, Texture2D
 from ..gloo import VertexBuffer, IndexBuffer
 from ..gloo.texture import should_cast_to_f32
 from . import Visual
 from .shaders import Function
 from ..color import get_colormap
+from ..io import load_spatial_filters
 
 import numpy as np
 
@@ -49,6 +50,30 @@ import numpy as np
 # todo: allow anisotropic data
 # todo: what to do about lighting? ambi/diffuse/spec/shinynes on each visual?
 
+
+INTERP = """
+#include "misc/spatial-filters.frag"
+
+vec4 filter3D_radius1(sampler3D texture, sampler3D kernel, float index, vec3 uv, vec3 pixel) {
+    vec3 texel = uv/pixel - vec3(0.5, 0.5, 0.5) ;
+    vec3 f = fract(texel);
+    texel = (texel-fract(texel) + vec3(0.001, 0.001, 0.001)) * pixel;
+    vec4 t0 = filter1D_radius1(kernel, index, f.x,
+        texture3D( texture, texel + vec3(0, 0, 0) * pixel),
+        texture3D( texture, texel + vec3(1, 0, 0) * pixel));
+    vec4 t1 = filter1D_radius1(kernel, index, f.x,
+        texture3D( texture, texel + vec3(0, 1, 0) * pixel),
+        texture3D( texture, texel + vec3(1, 1, 0) * pixel));
+    vec4 t2 = filter1D_radius1(kernel, index, f.x,
+        texture3D( texture, texel + vec3(0, 1, 1) * pixel),
+        texture3D( texture, texel + vec3(1, 1, 1) * pixel));
+    return filter1D_radius1(kernel, index, f.y, t0, t1, t2);
+}
+
+vec4 texture_lookup(sampler3D tex, vec3 texcoord) {
+    return filter3D_radius1(tex, u_kernel, 0.281250, texcoord, 1);
+}
+"""
 
 _VERTEX_SHADER = """
 attribute vec3 a_position;
@@ -964,7 +989,10 @@ class VolumeVisual(Visual):
         self.shared_program.frag['in_loop'] = self._in_loop_snippet
         self.shared_program.frag['after_loop'] = self._after_loop_snippet
         self.shared_program.frag['sampler_type'] = self._texture.glsl_sampler_type
-        self.shared_program.frag['sample'] = self._texture.glsl_sample
+        sample = Function(INTERP)
+        kernel, _ = load_spatial_filters()
+        self.shared_program.frag['sample'] = sample
+        self.shared_program['u_kernel'] = Texture2D(kernel, interpolation='nearest')
         self.shared_program.frag['cmap'] = Function(self._cmap.glsl_map)
         self.shared_program['texture2D_LUT'] = self.cmap.texture_lut()
         self.update()
