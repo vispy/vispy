@@ -18,6 +18,10 @@ import weakref
 from .. import visuals
 from .node import Node
 from ..visuals.filters import Alpha, PickingFilter
+from typing import TypeVar
+
+
+_T = TypeVar("_T")
 
 
 class VisualNode(Node):
@@ -99,7 +103,7 @@ class VisualNode(Node):
         self._visual_superclass.draw(self)
 
 
-def create_visual_node(subclass):
+def create_visual_node(subclass: _T) -> _T:
     # Create a new subclass of Node.
 
     # Decide on new class name
