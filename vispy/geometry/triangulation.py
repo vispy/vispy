@@ -865,10 +865,8 @@ def triangulate(vertices):
     try:
         import triangle  # noqa: F401
     except (ImportError, AssertionError):
-        print("triangulate Python")
         vertices_2d, triangles = _triangulate_python(vertices_2d, segments)
     else:
-        print("triangulate C++")
         segments_2d = segments.reshape((-1, 2))
         vertices_2d, triangles = _triangulate_cpp(vertices_2d, segments_2d)
 
