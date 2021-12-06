@@ -67,6 +67,7 @@ Optional dependencies
 VisPy has various optional dependencies to support features that may not be relevant for all users. The below is a list of dependencies that you may want to install to use the functionality mentioned.
 
 * **pillow**: Pillow (imported as PIL) is used to read image files. Some VisPy examples will use Pillow to load the image data that will then be shown by VisPy.
+* **triangle**: `Triangle <https://www.cs.cmu.edu/~quake/triangle.html>`_ is used via it's Python bindings package `triangle <https://github.com/drufat/triangle>`_. Please acknowledge and adhere to the licensing terms of both packages. Within VisPy `triangle`, if installed, is used to calculate a constrained Delaunay triangulation for `PolygonCollections`.
 
 Hardware requirements
 =====================

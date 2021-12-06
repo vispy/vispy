@@ -820,7 +820,16 @@ def _triangulate_cpp(vertices_2d, segments):
 
 
 def triangulate(vertices):
-    """Triangulate a set of vertices
+    """Triangulate a set of vertices.
+
+    This uses a pure Python implementation based on [1]_.
+
+    If `Triangle` by Jonathan R. Shewchuk [2]_ and the Python bindings `triangle` [3]_
+    are installed, this will be used instead. Users need to acknowledge and adhere to
+    the licensing terms of these packages.
+
+    In the VisPy `PolygonCollection Example` [4]_ a speedup of 97% using
+    `Triangle`/`triangle` can be achieved compared to the pure Python implementation.
 
     Parameters
     ----------
@@ -831,8 +840,20 @@ def triangulate(vertices):
     -------
     vertices : array-like
         The vertices.
-    tringles : array-like
+    triangles : array-like
         The triangles.
+
+    References
+    ----------
+    .. [1] Domiter, V. and Žalik, B. Sweep‐line algorithm for constrained
+       Delaunay triangulation
+    .. [2] Shewchuk J.R. (1996) Triangle: Engineering a 2D quality mesh generator and
+       Delaunay triangulator. In: Lin M.C., Manocha D. (eds) Applied Computational
+       Geometry Towards Geometric Engineering. WACG 1996. Lecture Notes in Computer
+       Science, vol 1148. Springer, Berlin, Heidelberg.
+       https://doi.org/10.1007/BFb0014497
+    .. [3]_ https://rufat.be/triangle/
+    .. [4]_ https://github.com/vispy/vispy/blob/main/examples/collections/polygon_collection.py
     """
     n = len(vertices)
     vertices = np.asarray(vertices)
@@ -844,8 +865,10 @@ def triangulate(vertices):
     try:
         import triangle  # noqa: F401
     except (ImportError, AssertionError):
+        print("triangulate Python")
         vertices_2d, triangles = _triangulate_python(vertices_2d, segments)
     else:
+        print("triangulate C++")
         segments_2d = segments.reshape((-1, 2))
         vertices_2d, triangles = _triangulate_cpp(vertices_2d, segments_2d)
 
