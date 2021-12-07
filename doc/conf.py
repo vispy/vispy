@@ -49,11 +49,19 @@ apidoc_separate_modules = True
 
 # Sphinx Gallery
 from sphinx_gallery.sorting import FileNameSortKey
+
+# the following files are ignored from gallery processing
+ignore_files = ['plotting/export.py',
+                'gloo/geometry_shader.py',
+                ]
+ignore_pattern_regex = [re.escape(os.sep) + f for f in ignore_files]
+ignore_pattern_regex = "|".join(ignore_pattern_regex)
+
 sphinx_gallery_conf = {
     'examples_dirs': ['../examples/gloo', '../examples/scene', '../examples/plotting'],
     'gallery_dirs': ['gallery/gloo', 'gallery/scene', 'gallery/plotting'],
     'filename_pattern': re.escape(os.sep),
-    'ignore_pattern': re.escape(os.sep) + 'plotting/export.py',
+    'ignore_pattern': ignore_pattern_regex,
     'only_warn_on_example_error': True,
     'image_scrapers': ('vispy',),
     'reset_modules': tuple(),  # remove default matplotlib/seaborn resetters

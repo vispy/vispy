@@ -7,6 +7,8 @@
 Use a Geometry Shader
 =====================
 
+NOTE: This example is currently not processed in CI.
+
 """
 
 import numpy as np
