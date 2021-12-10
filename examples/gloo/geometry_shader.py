@@ -7,6 +7,10 @@
 Use a Geometry Shader
 =====================
 
+Simple geometry shader: Takes one point as input emits one triangle as output.
+
+NOTE: This example is currently not processed in CI.
+
 """
 
 import numpy as np
@@ -35,8 +39,6 @@ void main (void) {
 GEOM_SHADER = """
 #version 330
 
-// Simple geometry shader: takes one point as input,
-// emits one triangle as output.
 layout (points) in;
 layout (triangle_strip, max_vertices=3) out;
 
