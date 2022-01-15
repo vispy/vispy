@@ -95,8 +95,6 @@ typedef khronos_ssize_t  GLsizeiptr;
 #define GL_BLEND_EQUATION                 0x8009
 #define GL_BLEND_EQUATION_RGB             0x8009    /* same as BLEND_EQUATION */
 #define GL_BLEND_EQUATION_ALPHA           0x883D
-#define GL_MIN                            0x8007
-#define GL_MAX                            0x8008
 
 /* BlendSubtract */
 #define GL_FUNC_SUBTRACT                  0x800A
