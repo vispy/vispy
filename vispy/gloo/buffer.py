@@ -202,8 +202,8 @@ class Buffer(GLObject):
         if self._use_cpu:
             self._cpu_data = data.view(CPUData)  # type: CPUData
             if self._immediate_upload:
-                self.upload_GPU()
-                self._cpu_data.register_action(self.upload_GPU)
+                self.upload_to_gpu()
+                self._cpu_data.register_action(self.upload_to_gpu)
         else:
             if nbytes:
                 # Only set data if there *is* data
