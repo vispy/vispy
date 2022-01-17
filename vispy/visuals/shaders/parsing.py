@@ -7,12 +7,15 @@ from __future__ import division
 import re
 
 # regular expressions for parsing GLSL
+
+re_version_pragma = r'#version\s+(\d+)(.*)?(//.*)?'
+
 re_type = r'(?:void|int|float|vec2|vec3|vec4|mat2|mat3|mat4|\
             sampler1D|sampler2D|sampler3D)'
 re_identifier = r'(?:[a-zA-Z_][\w_]*)'
 
 # variable qualifiers
-re_qualifier = r'(const|uniform|attribute|varying)'
+re_qualifier = r'(const|uniform|attribute|varying|in|out|inout)'
 
 # template variables like
 #     $func_name
@@ -98,7 +101,6 @@ def find_prototypes(code):
     Return a list of signatures for each function prototype declared in *code*.
     Format is [(name, [args], rtype), ...].
     """
-
     prots = []
     lines = code.split('\n')
     for line in lines:
@@ -134,8 +136,5 @@ def find_program_variables(code):
 
 
 def find_template_variables(code):
-    """
-    Return a list of template variables found in *code*.
-
-    """
+    """Return a list of template variables found in *code*."""
     return re.findall(re_template_var, code)

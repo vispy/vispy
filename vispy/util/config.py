@@ -2,9 +2,9 @@
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-"""Vispy configuration functions
-"""
+"""Vispy configuration functions."""
 
+import io
 import os
 from os import path as op
 import inspect
@@ -21,9 +21,8 @@ import numpy as np
 
 from .event import EmitterGroup, EventEmitter, Event
 from .logs import logger, set_log_level, use_log_level
-from ..ext.six import string_types, file_types
 
-file_types = list(file_types)
+file_types = [io.TextIOWrapper, io.BufferedRandom]
 try:
     file_types += [tempfile._TemporaryFileWrapper]  # Py3k Windows this happens
 except Exception:
@@ -36,8 +35,7 @@ _allowed_config_keys = None
 
 
 def _init():
-    """ Create global Config object, parse command flags
-    """
+    """Create global Config object, parse command flags."""
     global config, _data_path, _allowed_config_keys
 
     app_dir = _get_vispy_app_dir()
@@ -49,18 +47,18 @@ def _init():
 
     # All allowed config keys and the types they may have
     _allowed_config_keys = {
-        'data_path': string_types,
-        'default_backend': string_types,
-        'gl_backend': string_types,
+        'data_path': (str,),
+        'default_backend': (str,),
+        'gl_backend': (str,),
         'gl_debug': (bool,),
-        'glir_file': string_types+file_types,
+        'glir_file': (str,) + file_types,
         'include_path': list,
-        'logging_level': string_types,
-        'qt_lib': string_types,
+        'logging_level': (str,),
+        'qt_lib': (str,),
         'dpi': (int, type(None)),
-        'profile': string_types + (type(None),),
+        'profile': (str, type(None),),
         'audit_tests': (bool,),
-        'test_data_path': string_types + (type(None),),
+        'test_data_path': (str, type(None),),
     }
 
     # Default values for all config options
@@ -71,7 +69,7 @@ def _init():
         'gl_debug': False,
         'glir_file': '',
         'include_path': [],
-        'logging_level': 'info',
+        'logging_level': 'warning',
         'qt_lib': 'any',
         'dpi': None,
         'profile': None,
@@ -85,7 +83,7 @@ def _init():
         config.update(**_load_config())
     except Exception as err:
         raise Exception('Error while reading vispy config file "%s":\n  %s' %
-                        (_get_config_fname(), err.message))
+                        (_get_config_fname(), str(err)))
     set_log_level(config['logging_level'])
 
     _parse_command_line_arguments()
@@ -97,7 +95,7 @@ def _init():
 VISPY_HELP = """
 VisPy command line arguments:
 
-  --vispy-backend=(qt|pyqt4|pyqt5|pyside|pyside2|glfw|pyglet|sdl2|wx)
+  --vispy-backend=(qt|pyqt4|pyqt5|pyqt6|pyside|pyside2|pyside6|glfw|pyglet|sdl2|wx)
     Selects the backend system for VisPy to use. This will override the default
     backend selection in your configuration file.
 
@@ -139,7 +137,7 @@ VisPy command line arguments:
 
 
 def _parse_command_line_arguments():
-    """ Transform vispy specific command line args to vispy config.
+    """Transform vispy specific command line args to vispy config.
     Put into a function so that any variables dont leak in the vispy namespace.
     """
     global config
@@ -228,8 +226,7 @@ def _get_vispy_app_dir():
 
 
 class ConfigEvent(Event):
-
-    """ Event indicating a configuration change.
+    """Event indicating a configuration change.
 
     This class has a 'changes' attribute which is a dict of all name:value
     pairs that have changed in the configuration.
@@ -241,14 +238,14 @@ class ConfigEvent(Event):
 
 
 class Config(object):
-
-    """ Container for global settings used application-wide in vispy.
+    """Container for global settings used application-wide in vispy.
 
     Events:
-    -------
-    Config.events.changed - Emits ConfigEvent whenever the configuration
-    changes.
+
+    - Config.events.changed - Emits ConfigEvent whenever the configuration changes.
+
     """
+
     def __init__(self, **kwargs):
         self.events = EmitterGroup(source=self)
         self.events['changed'] = EventEmitter(
@@ -371,7 +368,7 @@ def set_data_dir(directory=None, create=False, save=False):
 
 
 def _enable_profiling():
-    """ Start profiling and register callback to print stats when the program
+    """Start profiling and register callback to print stats when the program
     exits.
     """
     import cProfile
@@ -416,7 +413,7 @@ def sys_info(fname=None, overwrite=False):
         from ..app import use_app, Canvas
         from ..app.backends import BACKEND_NAMES
         from ..gloo import gl
-        from ..testing import has_backend
+        from .check_environment import has_backend
         # get default app
         with use_log_level('warning'):
             app = use_app(call_reuse=False)  # suppress messages
@@ -454,6 +451,7 @@ class _TempDir(str):
     function may be cleaned up before this object, so we use the atexit module
     instead.
     """
+
     def __new__(self):
         new = str.__new__(self, tempfile.mkdtemp())
         return new

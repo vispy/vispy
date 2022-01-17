@@ -6,13 +6,15 @@ from __future__ import division
 
 import numpy as np
 
+
+from ...util import transforms
 from ...util.quaternion import Quaternion
 from ...visuals.transforms import MatrixTransform
 from .perspective import Base3DRotationCamera
 
 
 class ArcballCamera(Base3DRotationCamera):
-    """ 3D camera class that orbits around a center point while
+    """3D camera class that orbits around a center point while
     maintaining a view on a center point.
 
     For this camera, the ``scale_factor`` indicates the zoom level, and
@@ -27,6 +29,8 @@ class ArcballCamera(Base3DRotationCamera):
         The distance of the camera from the rotation point (only makes sense
         if fov > 0). If None (default) the distance is determined from the
         scale_factor and fov.
+    translate_speed : float
+        Scale factor on translation speed when moving the camera center point.
     **kwargs : dict
         Keyword arguments to pass to `BaseCamera`.
 
@@ -43,12 +47,13 @@ class ArcballCamera(Base3DRotationCamera):
 
     _state_props = Base3DRotationCamera._state_props + ('_quaternion',)
 
-    def __init__(self, fov=0.0, distance=None, **kwargs):
+    def __init__(self, fov=45.0, distance=None, translate_speed=1.0, **kwargs):
         super(ArcballCamera, self).__init__(fov=fov, **kwargs)
 
         # Set camera attributes
         self._quaternion = Quaternion()
         self.distance = distance  # None means auto-distance
+        self.translate_speed = translate_speed
 
     def _update_rotation(self, event):
         """Update rotation parmeters based on mouse movement"""
@@ -62,18 +67,18 @@ class ArcballCamera(Base3DRotationCamera):
         self._event_value = p2
         self.view_changed()
 
-    def _rotate_tr(self):
-        """Rotate the transformation matrix based on camera parameters"""
+    def _get_rotation_tr(self):
+        """Return a rotation matrix based on camera parameters"""
         rot, x, y, z = self._quaternion.get_axis_angle()
-        up, forward, right = self._get_dim_vectors()
-        self.transform.rotate(180 * rot / np.pi, (x, z, y))
+        return transforms.rotate(180 * rot / np.pi, (x, z, y))
 
     def _dist_to_trans(self, dist):
         """Convert mouse x, y movement into x, y, z translations"""
         rot, x, y, z = self._quaternion.get_axis_angle()
         tr = MatrixTransform()
         tr.rotate(180 * rot / np.pi, (x, y, z))
-        dx, dz, dy = np.dot(tr.matrix[:3, :3], (dist[0], dist[1], 0.))
+        dx, dz, dy = np.dot(tr.matrix[:3, :3],
+                            (dist[0], dist[1], 0.)) * self.translate_speed
         return dx, dy, dz
 
     def _get_dim_vectors(self):

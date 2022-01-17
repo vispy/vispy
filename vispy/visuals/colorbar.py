@@ -6,6 +6,8 @@
 # Author: Siddharth Bhat
 # -----------------------------------------------------------------------------
 
+from functools import lru_cache
+
 import numpy as np
 
 from . import Visual, TextVisual, CompoundVisual, _BorderVisual
@@ -13,7 +15,7 @@ from . import Visual, TextVisual, CompoundVisual, _BorderVisual
 from .shaders import Function
 from ..color import get_colormap
 
-VERT_SHADER = """
+_VERTEX_SHADER = """
 attribute vec2 a_position;
 attribute vec2 a_texcoord;
 varying vec2 v_texcoord;
@@ -24,24 +26,16 @@ void main() {
 }
 """  # noqa
 
-FRAG_SHADER_HORIZONTAL = """
+_FRAGMENT_SHADER = """
 varying vec2 v_texcoord;
 
 void main()
 {
-    vec4 mapped_color = $color_transform(v_texcoord.x);
-    gl_FragColor = mapped_color;
-}
-"""  # noqa
-
-FRAG_SHADER_VERTICAL = """
-varying vec2 v_texcoord;
-
-void main()
-{
-    // we get the texcoords inverted (with respect to the colormap)
-    // so let's invert it to make sure that the colorbar renders correctly
-    vec4 mapped_color = $color_transform(1.0 - v_texcoord.y);
+    // depending on orientation, we either use the x component or the inverted
+    // y component for texcoords
+    // (we get the texcoords inverted (with respect to the colormap)
+    // so let's invert it to make sure that the colorbar renders correctly)
+    vec4 mapped_color = $color_transform($orient_texcoord(v_texcoord));
     gl_FragColor = mapped_color;
 }
 """  # noqa
@@ -82,26 +76,27 @@ class _CoreColorBarVisual(Visual):
     --------
     vispy.visuals.ColorBarVisual
     """
+
+    _shaders = {
+        'vertex': _VERTEX_SHADER,
+        'fragment': _FRAGMENT_SHADER,
+    }
+
     def __init__(self, pos, halfdim,
                  cmap,
                  orientation,
                  **kwargs):
 
+        self._check_orientation(orientation)
         self._cmap = get_colormap(cmap)
         self._pos = pos
         self._halfdim = halfdim
         self._orientation = orientation
 
-        # setup the right program shader based on color
-        if orientation == "top" or orientation == "bottom":
-            Visual.__init__(self, vcode=VERT_SHADER,
-                            fcode=FRAG_SHADER_HORIZONTAL, **kwargs)
+        Visual.__init__(self, vcode=self._shaders['vertex'], fcode=self._shaders['fragment'])
 
-        elif orientation == "left" or orientation == "right":
-            Visual.__init__(self, vcode=VERT_SHADER,
-                            fcode=FRAG_SHADER_VERTICAL, **kwargs)
-        else:
-            raise _CoreColorBarVisual._get_orientation_error(self._orientation)
+        texcoord_func = self._get_texcoord_func(orientation)
+        self.shared_program.frag['orient_texcoord'] = texcoord_func
 
         tex_coords = np.array([[0, 0], [1, 0], [1, 1],
                                [0, 0], [1, 1], [0, 1]],
@@ -115,10 +110,7 @@ class _CoreColorBarVisual(Visual):
         self._update()
 
     def _update(self):
-        """Rebuilds the shaders, and repositions the objects
-           that are used internally by the ColorBarVisual
-        """
-
+        """Rebuilds the shaders, and repositions the objects that are used internally by the ColorBarVisual"""
         x, y = self._pos
         halfw, halfh = self._halfdim
 
@@ -157,15 +149,32 @@ class _CoreColorBarVisual(Visual):
 
         self.shared_program['a_position'] = vertices
 
-        self.shared_program['texture2D_LUT'] = self._cmap.texture_lut() \
-            if (hasattr(self._cmap, 'texture_lut')) else None
+        self.shared_program['texture2D_LUT'] = self._cmap.texture_lut()
 
     @staticmethod
-    def _get_orientation_error(orientation):
-        return ValueError("orientation must"
-                          " be one of 'top', 'bottom', "
-                          "'left', or 'right', "
-                          "not '%s'" % (orientation, ))
+    @lru_cache(maxsize=4)
+    def _get_texcoord_func(orientation):
+        if orientation == "top" or orientation == "bottom":
+            func = Function("""
+                float orient_texcoord(vec2 texcoord) {
+                    return texcoord.x;
+                }
+            """)
+        elif orientation == "left" or orientation == "right":
+            func = Function("""
+                float orient_texcoord(vec2 texcoord) {
+                    return 1 - texcoord.y;
+                }
+            """)
+        return func
+
+    @staticmethod
+    def _check_orientation(orientation):
+        if orientation not in ('top', 'bottom', 'left', 'right'):
+            raise ValueError("orientation must"
+                             " be one of 'top', 'bottom', "
+                             "'left', or 'right', "
+                             "not '%s'" % (orientation, ))
 
     @property
     def pos(self):
@@ -186,8 +195,7 @@ class _CoreColorBarVisual(Visual):
 
     @property
     def cmap(self):
-        """ The colormap of the Colorbar
-        """
+        """The colormap of the Colorbar"""
         return self._cmap
 
     @cmap.setter
@@ -256,11 +264,12 @@ class ColorBarVisual(CompoundVisual):
     pos : tuple (x, y)
         Position where the colorbar is to be placed with
         respect to the center of the colorbar
-    label_str : str
+    label : str | vispy.visuals.TextVisual
         The label that is to be drawn with the colorbar
         that provides information about the colorbar.
+        If a TextVisual object then 'label_color' is ignored.
     label_color : str | vispy.color.Color
-        The color of the labels. This can either be a
+        The color of the label and tick labels. This can either be a
         str as the color's name or an actual instace of a vipy.color.Color
     clim : tuple (min, max)
         the minimum and maximum values of the data that
@@ -272,7 +281,13 @@ class ColorBarVisual(CompoundVisual):
     border_color : str | vispy.color.Color
         The color of the border of the colormap. This can either be a
         str as the color's name or an actual instace of a vipy.color.Color
+
+    .. versionchanged:: 0.7
+
+        Keyword argument ``label_str`` renamed to `label`.
+
     """
+
     # The padding multiplier that's used to place the text
     # next to the Colorbar. Makes sure the text isn't
     # visually "sticking" to the Colorbar
@@ -280,35 +295,33 @@ class ColorBarVisual(CompoundVisual):
 
     def __init__(self, cmap, orientation, size,
                  pos=[0, 0],
-                 label_str="",
+                 label="",
                  label_color='black',
                  clim=(0.0, 1.0),
                  border_width=1.0,
-                 border_color="black",
-                 **kwargs):
+                 border_color="black"):
 
-        self._label_str = label_str
-        self._label_color = label_color
+        _CoreColorBarVisual._check_orientation(orientation)
         self._cmap = get_colormap(cmap)
         self._clim = clim
         self._pos = pos
         self._size = size
         self._orientation = orientation
 
-        self._label = TextVisual(self._label_str, color=self._label_color)
+        if not isinstance(label, TextVisual):
+            label = TextVisual(label, color=label_color)
+        self._label = label
 
         self._ticks = []
         self._ticks.append(TextVisual(str(self._clim[0]),
-                                      color=self._label_color))
+                                      color=label_color))
         self._ticks.append(TextVisual(str(self._clim[1]),
-                                      color=self._label_color))
+                                      color=label_color))
 
         if orientation in ["top", "bottom"]:
             (width, height) = size
         elif orientation in ["left", "right"]:
             (height, width) = size
-        else:
-            raise _CoreColorBarVisual._get_orientation_error(orientation)
 
         self._halfdim = (width * 0.5, height * 0.5)
 
@@ -327,9 +340,7 @@ class ColorBarVisual(CompoundVisual):
         self._update()
 
     def _update(self):
-        """Rebuilds the shaders, and repositions the objects
-           that are used internally by the ColorBarVisual
-        """
+        """Rebuilds the shaders, and repositions the objects that are used internally by the ColorBarVisual"""
         self._colorbar.halfdim = self._halfdim
         self._border.halfdim = self._halfdim
 
@@ -342,10 +353,7 @@ class ColorBarVisual(CompoundVisual):
         self._border._update()
 
     def _update_positions(self):
-        """
-        updates the positions of the colorbars and labels
-
-        """
+        """Updates the positions of the colorbars and labels"""
         self._colorbar.pos = self._pos
         self._border.pos = self._pos
 
@@ -561,8 +569,7 @@ class ColorBarVisual(CompoundVisual):
 
     @property
     def pos(self):
-        """ The position of the text anchor in the local coordinate frame
-        """
+        """The position of the text anchor in the local coordinate frame"""
         return self._pos
 
     @pos.setter
@@ -572,8 +579,7 @@ class ColorBarVisual(CompoundVisual):
 
     @property
     def cmap(self):
-        """ The colormap of the Colorbar
-        """
+        """The colormap of the Colorbar"""
         return self._colorbar._cmap
 
     @cmap.setter
@@ -582,13 +588,12 @@ class ColorBarVisual(CompoundVisual):
 
     @property
     def clim(self):
-        """ The data limits of the Colorbar
+        """The data limits of the Colorbar
 
         Returns
         -------
         clim: tuple(min, max)
         """
-
         return self._clim
 
     @clim.setter
@@ -598,18 +603,20 @@ class ColorBarVisual(CompoundVisual):
 
     @property
     def label(self):
-        """ The vispy.visuals.TextVisual associated with the label
-        """
+        """The vispy.visuals.TextVisual associated with the label"""
         return self._label
 
     @label.setter
     def label(self, label):
-        self._label = label
+        if isinstance(label, TextVisual):
+            self._label = label
+        else:
+            self._label.text = label
         self._update()
 
     @property
     def ticks(self):
-        """ The vispy.visuals.TextVisual associated with the ticks
+        """The vispy.visuals.TextVisual associated with the ticks
 
         Returns
         -------
@@ -625,8 +632,7 @@ class ColorBarVisual(CompoundVisual):
 
     @property
     def border_width(self):
-        """ The width of the border around the ColorBar in pixels
-        """
+        """The width of the border around the ColorBar in pixels"""
         return self._border.border_width
 
     @border_width.setter
@@ -636,8 +642,7 @@ class ColorBarVisual(CompoundVisual):
 
     @property
     def border_color(self):
-        """ The color of the border around the ColorBar in pixels
-        """
+        """The color of the border around the ColorBar in pixels"""
         return self._border.border_color
 
     @border_color.setter
@@ -647,13 +652,12 @@ class ColorBarVisual(CompoundVisual):
 
     @property
     def orientation(self):
-        """ The orientation of the ColorBar
-        """
+        """The orientation of the ColorBar"""
         return self._orientation
 
     @property
     def size(self):
-        """ The size of the ColorBar
+        """The size of the ColorBar
 
         Returns
         -------

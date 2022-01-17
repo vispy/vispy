@@ -1,0 +1,6 @@
+ cython
+ numpy
+ numpydoc
+ sphinx
+ sphinx_bootstrap_theme
+ sphinx_gallery

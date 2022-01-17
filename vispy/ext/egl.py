@@ -2,8 +2,7 @@
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-""" A ctypes-based API to EGL.
-"""
+"""A ctypes-based API to EGL."""
 
 import os
 import ctypes
@@ -26,7 +25,7 @@ if _egl_file is None:
 _lib = ctypes.CDLL(_egl_file)
 
 
-## Constants
+# Constants
 
 EGL_FALSE = 0
 EGL_TRUE = 1
@@ -205,19 +204,23 @@ EGL_ALPHA_FORMAT_NONPRE = EGL_VG_ALPHA_FORMAT_NONPRE
 EGL_ALPHA_FORMAT_PRE = EGL_VG_ALPHA_FORMAT_PRE
 
 
-## The functions
+# The functions
 
 _lib.eglGetDisplay.argtypes = _c_int,
-_lib.eglGetDisplay.restype = _c_int
+_lib.eglGetDisplay.restype = c_void_p
 _lib.eglInitialize.argtypes = c_void_p, _POINTER(_c_int), _POINTER(_c_int)
 _lib.eglTerminate.argtypes = c_void_p,
 _lib.eglChooseConfig.argtypes = (c_void_p, _POINTER(_c_int),
                                  _POINTER(c_void_p), _c_int, _POINTER(_c_int))
 _lib.eglCreateWindowSurface.argtypes = (c_void_p, c_void_p,
                                         c_void_p, _POINTER(_c_int))
+_lib.eglCreateWindowSurface.restype = c_void_p
 _lib.eglCreatePbufferSurface.argtypes = (c_void_p, c_void_p, _POINTER(_c_int))
+_lib.eglCreatePbufferSurface.restype = c_void_p
 _lib.eglCreateContext.argtypes = c_void_p, c_void_p, c_void_p, _POINTER(_c_int)
+_lib.eglCreateContext.restype = c_void_p
 _lib.eglMakeCurrent.argtypes = (c_void_p,) * 4
+_lib.eglBindAPI.argtypes = _c_int,
 _lib.eglSwapBuffers.argtypes = (c_void_p,) * 2
 _lib.eglDestroySurface.argtypes = (c_void_p,) * 2
 _lib.eglQueryString.argtypes = (c_void_p, _c_int)
@@ -225,23 +228,20 @@ _lib.eglQueryString.restype = c_char_p
 
 
 def eglGetError():
-    """ Check for errors, returns an enum (int).
-    """
+    """Check for errors, returns an enum (int)."""
     return _lib.eglGetError()
 
 
 def eglGetDisplay(display=EGL_DEFAULT_DISPLAY):
-    """ Connect to the EGL display server.
-    """
+    """Connect to the EGL display server."""
     res = _lib.eglGetDisplay(display)
     if not res or res == EGL_NO_DISPLAY:
         raise RuntimeError('Could not create display')
-    return res
+    return c_void_p(res)
 
 
 def eglInitialize(display):
-    """ Initialize EGL and return EGL version tuple.
-    """
+    """Initialize EGL and return EGL version tuple."""
     majorVersion = (_c_int*1)()
     minorVersion = (_c_int*1)()
     res = _lib.eglInitialize(display, majorVersion, minorVersion)
@@ -251,14 +251,12 @@ def eglInitialize(display):
 
 
 def eglTerminate(display):
-    """ Initialize EGL and return EGL version tuple.
-    """
+    """Terminate an EGL display connection."""
     _lib.eglTerminate(display)
 
 
 def eglQueryString(display, name):
-    """ Query string from display
-    """
+    """Query string from display"""
     out = _lib.eglQueryString(display, name)
     if not out:
         raise RuntimeError('Could not query %s' % name)
@@ -320,16 +318,16 @@ def _check_res(res):
 def eglCreateWindowSurface(display, config, window, attribList=None):
     # Deal with attrib list
     attribList = _convert_attrib_list(attribList)
-    return _check_res(_lib.eglCreateWindowSurface(display, config,
-                                                  window, attribList))
+    surface = c_void_p(_lib.eglCreateWindowSurface(display, config, window, attribList))
+    return _check_res(surface)
 
 
 def eglCreatePbufferSurface(display, config, attribList=None):
     # Deal with attrib list
     attribList = _convert_attrib_list(attribList)
     #
-    return _check_res(_lib.eglCreatePbufferSurface(display, config,
-                                                   attribList))
+    surface = c_void_p(_lib.eglCreatePbufferSurface(display, config, attribList))
+    return _check_res(surface)
 
 
 def eglCreateContext(display, config, shareContext=EGL_NO_CONTEXT,
@@ -339,7 +337,7 @@ def eglCreateContext(display, config, shareContext=EGL_NO_CONTEXT,
     attribList = [a for a in attribList] + [EGL_NONE]
     attribList = (_c_int*len(attribList))(*attribList)
     #
-    res = _lib.eglCreateContext(display, config, shareContext, attribList)
+    res = c_void_p(_lib.eglCreateContext(display, config, shareContext, attribList))
     if res == EGL_NO_CONTEXT:
         e = eglGetError()
         if e == EGL_BAD_CONFIG:
@@ -355,6 +353,14 @@ def eglMakeCurrent(display, draw, read, context):
     res = _lib.eglMakeCurrent(display, draw, read, context)
     if res == EGL_FALSE:
         raise RuntimeError('Could not make the context current.')
+
+
+def eglBindAPI(api):
+    """Set the current rendering API (OpenGL, OpenGL ES or OpenVG)"""
+    res = _lib.eglBindAPI(api)
+    if res == EGL_FALSE:
+        raise RuntimeError('Could not bind API %d' % api)
+    return res
 
 
 def eglSwapBuffers(display, surface):

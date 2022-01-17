@@ -155,6 +155,7 @@ class Canvas(app.Canvas):
 
         self.program['a_position'].set_data(y.ravel().astype(np.float32))
         self.update()
+        self.context.flush()  # prevent memory leak when minimized
 
     def on_draw(self, event):
         gloo.clear()

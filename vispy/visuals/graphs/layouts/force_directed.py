@@ -23,15 +23,14 @@ from ..util import _straight_line_vertices, _rescale_layout
 
 
 class fruchterman_reingold(object):
-    """
-    Fruchterman-Reingold implementation adapted from NetworkX.
+    r"""Fruchterman-Reingold implementation adapted from NetworkX.
 
     In the Fruchterman-Reingold algorithm, the whole graph is modelled as a
     collection of particles, it runs a simplified particle simulation to
     find a nice layout for the graph.
 
-    Paramters
-    ---------
+    Parameters
+    ----------
     optimal : number
         Optimal distance between nodes. Defaults to :math:`1/\\sqrt{N}` where
         N is the number of nodes.

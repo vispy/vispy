@@ -7,8 +7,6 @@ You should see information displayed for any event you triggered.
 """
 
 from vispy import gloo, app
-# from vispy import use
-# use('pyqt4')  # can be used to choose a specific backend
 
 
 class Canvas(app.Canvas):

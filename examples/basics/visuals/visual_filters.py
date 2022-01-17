@@ -32,49 +32,49 @@ class Canvas(app.Canvas):
                       for i in range(6)]
 
         self.lines[0].transform = STTransform(translate=(0, 50))
-        
+
         # Clipping filter (requires update when window is resized) 
         self.lines[1].transform = STTransform(translate=(400, 50))
         self.clipper = Clipper()
         self.lines[1].attach(self.clipper)
-        
+
         # Opacity filter
         self.lines[2].transform = STTransform(translate=(0, 150))
         self.lines[2].attach(Alpha(0.4))
-        
+
         # Color filter (for anaglyph stereo)
         self.lines[3].transform = STTransform(translate=(400, 150))
         self.lines[3].attach(ColorFilter([1, 0, 0, 1]))
-        
+
         # A custom filter
         class Hatching(object):
             def __init__(self):
                 self.shader = Function("""
                     void screen_filter() {
                         float f = gl_FragCoord.x * 0.4 + gl_FragCoord.y;
-                        f = mod(f, 20);
+                        f = mod(f, 20.0);
                         
                         if( f < 5.0 ) {
                             discard;
                         }
                         
                         if( f < 20.0 ) {
-                            gl_FragColor.g = gl_FragColor.g + 0.05 * (20-f);
+                            gl_FragColor.g = gl_FragColor.g + 0.05 * (20.0-f);
                         }
                     }
                 """)
-            
+
             def _attach(self, visual):
                 visual._get_hook('frag', 'post').add(self.shader())
 
         self.lines[4].transform = STTransform(translate=(0, 250))
         self.lines[4].attach(Hatching())
-        
+
         # Mixing filters
         self.lines[5].transform = STTransform(translate=(400, 250))
         self.lines[5].attach(ColorFilter([1, 0, 0, 1]))
         self.lines[5].attach(Hatching())
-        
+
         app.Canvas.__init__(self, keys='interactive', size=(800, 800))
         self.show(True)
 

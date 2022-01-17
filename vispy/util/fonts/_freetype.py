@@ -26,7 +26,7 @@ _font_dict = {}
 # and isn't using fonts (Windows)
 
 def _load_font(face, bold, italic):
-    from ...ext.freetype import Face, FT_FACE_FLAG_SCALABLE
+    from freetype import Face, FT_FACE_FLAG_SCALABLE
     key = '%s-%s-%s' % (face, bold, italic)
     if key in _font_dict:
         return _font_dict[key]
@@ -44,8 +44,8 @@ def _load_font(face, bold, italic):
 
 def _load_glyph(f, char, glyphs_dict):
     """Load glyph from font into dict"""
-    from ...ext.freetype import (FT_LOAD_RENDER, FT_LOAD_NO_HINTING,
-                                 FT_LOAD_NO_AUTOHINT)
+    from freetype import (FT_LOAD_RENDER, FT_LOAD_NO_HINTING,
+                          FT_LOAD_NO_AUTOHINT)
     flags = FT_LOAD_RENDER | FT_LOAD_NO_HINTING | FT_LOAD_NO_AUTOHINT
     face = _load_font(f['face'], f['bold'], f['italic'])
     face.set_char_size(f['size'] * 64)

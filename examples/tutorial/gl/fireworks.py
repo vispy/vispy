@@ -83,9 +83,9 @@ class Canvas(app.Canvas):
 
         # Build vertex buffer
         n = 10000
-        self.data = np.zeros(n, dtype=[('lifetime', np.float32, 1),
-                                       ('start',    np.float32, 3),
-                                       ('end',      np.float32, 3)])
+        self.data = np.zeros(n, dtype=[('lifetime', np.float32),
+                                       ('start', np.float32, 3),
+                                       ('end', np.float32, 3)])
         vbuffer = gl.glCreateBuffer()
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, vbuffer)
         gl.glBufferData(gl.GL_ARRAY_BUFFER, self.data, gl.GL_DYNAMIC_DRAW)

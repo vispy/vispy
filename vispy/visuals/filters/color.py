@@ -10,7 +10,7 @@ from ...color import colormap, Color
 class IsolineFilter(Filter):
     FRAG_SHADER = """
         void isoline() {
-            if ($isolevel <= 0 || $isowidth <= 0) {
+            if ($isolevel <= 0. || $isowidth <= 0.) {
                 return;
             }
 
@@ -60,8 +60,8 @@ class IsolineFilter(Filter):
         }
     """
 
-    def __init__(self, level=2., width=2.0, antialias=1.0, color='black'):
-        super(IsolineFilter, self).__init__(fcode=self.FRAG_SHADER)
+    def __init__(self, level=2., width=2.0, antialias=1.0, color='black', **kwargs):
+        super(IsolineFilter, self).__init__(fcode=self.FRAG_SHADER, **kwargs)
 
         self.level = level
         self.width = width
@@ -77,7 +77,7 @@ class IsolineFilter(Filter):
         if lev <= 0:
             lev = 0
         self._level = lev
-        self.fshader['isolevel'] = lev
+        self.fshader['isolevel'] = float(lev)
 
     @property
     def width(self):
@@ -86,7 +86,7 @@ class IsolineFilter(Filter):
     @width.setter
     def width(self, w):
         self._width = w
-        self.fshader['isowidth'] = w
+        self.fshader['isowidth'] = float(w)
 
     @property
     def color(self):
@@ -104,7 +104,7 @@ class IsolineFilter(Filter):
     @antialias.setter
     def antialias(self, a):
         self._antialias = a
-        self.fshader['antialias'] = a
+        self.fshader['antialias'] = float(a)
 
 
 class Alpha(Filter):
@@ -114,8 +114,8 @@ class Alpha(Filter):
         }
     """
 
-    def __init__(self, alpha=1.0):
-        super(Alpha, self).__init__(fcode=self.FRAG_SHADER)
+    def __init__(self, alpha=1.0, **kwargs):
+        super(Alpha, self).__init__(fcode=self.FRAG_SHADER, **kwargs)
 
         self.alpha = alpha
 
@@ -126,7 +126,7 @@ class Alpha(Filter):
     @alpha.setter
     def alpha(self, a):
         self._alpha = a
-        self.fshader['alpha'] = a
+        self.fshader['alpha'] = float(a)
 
 
 class ColorFilter(Filter):
@@ -136,8 +136,8 @@ class ColorFilter(Filter):
         }
     """
 
-    def __init__(self, filter=(1, 1, 1, 1)):
-        super(ColorFilter, self).__init__(fcode=self.FRAG_SHADER, fpos=8)
+    def __init__(self, filter=(1., 1., 1., 1.), fpos=8, **kwargs):
+        super(ColorFilter, self).__init__(fcode=self.FRAG_SHADER, fpos=fpos, **kwargs)
 
         self.filter = filter
 
@@ -164,9 +164,9 @@ class ZColormapFilter(Filter):
         }
     """
 
-    def __init__(self, cmap, zrange=(0, 1)):
-        super(ZColormapFilter, self).__init__(fcode=self.FRAG_SHADER, fpos=3,
-                                              vcode=self.VERT_SHADER, vpos=9)
+    def __init__(self, cmap, zrange=(0., 1.), fpos=3, vpos=9, **kwargs):
+        super(ZColormapFilter, self).__init__(fcode=self.FRAG_SHADER, fpos=fpos,
+                                              vcode=self.VERT_SHADER, vpos=vpos, **kwargs)
 
         if isinstance(cmap, str):
             cmap = colormap.get_colormap(cmap)

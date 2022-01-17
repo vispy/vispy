@@ -53,7 +53,7 @@ class GridMeshVisual(MeshVisual):
         self.set_data(xs, ys, zs, colors)
 
     def set_data(self, xs=None, ys=None, zs=None, colors=None):
-        '''Update the mesh data.
+        """Update the mesh data.
 
         Parameters
         ----------
@@ -67,8 +67,7 @@ class GridMeshVisual(MeshVisual):
             The color at each point of the mesh. Must have shape
             (width, height, 4) or (width, height, 3) for rgba or rgb
             color definitions respectively.
-        '''
-
+        """
         if xs is None:
             xs = self._xs
             self.__vertices = None

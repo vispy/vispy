@@ -135,7 +135,7 @@ class TestEmitters(unittest.TestCase):
         assert not hasattr(self.result[0], 'key1')
 
     def test_emitter_subclass(self):
-        """EventEmitter subclassing"""
+        """The EventEmitter subclassing"""
         class MyEmitter(EventEmitter):
 
             def _prepare_event(self, *args, **kwargs):
@@ -543,25 +543,25 @@ def test_event_connect_order():
 
 def test_emitter_block():
     state = [False, False]
-    
+
     def a(ev):
         state[0] = True
-        
+
     def b(ev):
         state[1] = True
-        
+
     e = EventEmitter(source=None, type='event')
     e.connect(a)
     e.connect(b)
-    
+
     def assert_state(a, b):
         assert state == [a, b]
         state[0] = False
         state[1] = False
-    
+
     e()
     assert_state(True, True)
-    
+
     # test global blocking
     e.block()
     e()
@@ -569,7 +569,7 @@ def test_emitter_block():
     e.block()
     e()
     assert_state(False, False)
-    
+
     # test global unlock, multiple depth
     e.unblock()
     e()
@@ -577,23 +577,23 @@ def test_emitter_block():
     e.unblock()
     e()
     assert_state(True, True)
-    
+
     # test unblock failure
     try:
         e.unblock()
         raise Exception("Expected RuntimeError")
     except RuntimeError:
         pass
-    
+
     # test single block
     e.block(a)
     e()
     assert_state(False, True)
-    
+
     e.block(b)
     e()
     assert_state(False, False)
-    
+
     e.block(b)
     e()
     assert_state(False, False)
@@ -602,15 +602,15 @@ def test_emitter_block():
     e.unblock(a)
     e()
     assert_state(True, False)
-    
+
     e.unblock(b)
     e()
     assert_state(True, False)
-    
+
     e.unblock(b)
     e()
     assert_state(True, True)
-    
+
     # Test single unblock failure
     try:
         e.unblock(a)
@@ -622,12 +622,12 @@ def test_emitter_block():
     with e.blocker():
         e()
         assert_state(False, False)
-        
+
         # test nested blocker
         with e.blocker():
             e()
             assert_state(False, False)
-        
+
         e()
         assert_state(False, False)
 
@@ -638,7 +638,7 @@ def test_emitter_block():
     with e.blocker(a):
         e()
         assert_state(False, True)
-        
+
         # test nested gloabel blocker
         with e.blocker():
             e()
@@ -661,6 +661,83 @@ def test_emitter_block():
 
     e()
     assert_state(True, True)
+
+
+def test_emitter_reentrance_allowed_when_blocked1():
+    # Minimal re-entrance example
+
+    e = EventEmitter(source=None, type='test')
+    count = 0
+
+    @e.connect
+    def foo(x):
+        nonlocal count
+        count += 1
+        with e.blocker():
+            e()
+
+    e()
+    assert count == 1
+
+
+def test_emitter_reentrance_allowed_when_blocked2():
+    # More realistic re-entrance example
+    # The real world case for this might be a longer chain of events
+    # where event1's callback knows that what it's doing will trigger
+    # the same event so it blocks it:
+    # event1 -> foo -> event2 -> bar -> event1 -> (ignored bc blocked).
+
+    e1 = EventEmitter(source=None, type='test1')
+    e2 = EventEmitter(source=None, type='test2')
+    count = 0
+
+    @e1.connect
+    def foo(x):
+        nonlocal count
+        count += 1
+        with e1.blocker():
+            e2()
+
+    @e2.connect
+    def bar(x):
+        nonlocal count
+        count += 10
+        e1()
+
+    e1()
+    assert count == 11
+
+
+def test_emitter_reentrance_allowed_when_blocked3():
+    # Like the previous, but blocking callbacks instead of the event itself.
+    # Allows more fine-grained control. To some extent anyway - all callbacks
+    # of the event must be blocked to prevent raising the emitter loop error.
+
+    e1 = EventEmitter(source=None, type='test1')
+    e2 = EventEmitter(source=None, type='test2')
+    count = 0
+
+    @e1.connect
+    def foo(x):
+        nonlocal count
+        count += 1
+        with e1.blocker(foo):
+            e2()
+
+    @e2.connect
+    def bar(x):
+        nonlocal count
+        count += 10
+        e1()
+
+    @e2.connect
+    def eggs(x):
+        nonlocal count
+        count += 100
+        e1()
+
+    e1()
+    assert count == 111
 
 
 run_tests_if_main()

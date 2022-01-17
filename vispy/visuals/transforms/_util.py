@@ -4,9 +4,11 @@
 
 from __future__ import division
 
+import functools
+
 import numpy as np
-from ...ext.decorator import decorator
 from ...util import logger
+from functools import wraps
 
 
 def arg_to_array(func):
@@ -23,6 +25,7 @@ def arg_to_array(func):
     func : function
         The decorated function.
     """
+    @wraps(func)
     def fn(self, arg, *args, **kwargs):
         """Function
 
@@ -78,12 +81,11 @@ def as_vec4(obj, default=(0, 0, 0, 1)):
         obj = new
     elif obj.shape[-1] > 4:
         raise TypeError("Array shape %s cannot be converted to vec4"
-                        % obj.shape)
+                        % (obj.shape, ))
     return obj
 
 
-@decorator
-def arg_to_vec4(func, self_, arg, *args, **kwargs):
+def arg_to_vec4(func):
     """
     Decorator for converting argument to vec4 format suitable for 4x4 matrix
     multiplication.
@@ -105,25 +107,30 @@ def arg_to_vec4(func, self_, arg, *args, **kwargs):
     and returns a new (mapped) object.
 
     """
-    if isinstance(arg, (tuple, list, np.ndarray)):
-        arg = np.array(arg)
-        flatten = arg.ndim == 1
-        arg = as_vec4(arg)
 
-        ret = func(self_, arg, *args, **kwargs)
-        if flatten and ret is not None:
-            return ret.flatten()
-        return ret
-    elif hasattr(arg, '_transform_in'):
-        arr = arg._transform_in()
-        ret = func(self_, arr, *args, **kwargs)
-        return arg._transform_out(ret)
-    else:
-        raise TypeError("Cannot convert argument to 4D vector: %s" % arg)
+    @functools.wraps(func)
+    def wrapper(self_, arg, *args, **kwargs):
+        if isinstance(arg, (tuple, list, np.ndarray)):
+            arg = np.array(arg)
+            flatten = arg.ndim == 1
+            arg = as_vec4(arg)
+
+            ret = func(self_, arg, *args, **kwargs)
+            if flatten and ret is not None:
+                return ret.flatten()
+            return ret
+        elif hasattr(arg, '_transform_in'):
+            arr = arg._transform_in()
+            ret = func(self_, arr, *args, **kwargs)
+            return arg._transform_out(ret)
+        else:
+            raise TypeError("Cannot convert argument to 4D vector: %s" % arg)
+
+    return wrapper
 
 
 class TransformCache(object):
-    """ Utility class for managing a cache of ChainTransforms.
+    """Utility class for managing a cache of ChainTransforms.
 
     This is an LRU cache; items are removed if they are not accessed after
     *max_age* calls to roll().
@@ -136,12 +143,13 @@ class TransformCache(object):
     roll() on each cache before drawing, which removes from the cache any
     transforms that were not accessed during the last draw cycle.
     """
+
     def __init__(self, max_age=1):
         self._cache = {}  # maps {key: [age, transform]}
         self.max_age = max_age
 
     def get(self, path):
-        """ Get a transform from the cache that maps along *path*, which must
+        """Get a transform from the cache that maps along *path*, which must
         be a list of Transforms to apply in reverse order (last transform is
         applied first).
 
@@ -156,8 +164,8 @@ class TransformCache(object):
         item[0] = 0  # reset age for this item
 
         # make sure the chain is up to date
-        #tr = item[1]
-        #for i, node in enumerate(path[1:]):
+        # tr = item[1]
+        # for i, node in enumerate(path[1:]):
         #    if tr.transforms[i] is not node.transform:
         #        tr[i] = node.transform
 
@@ -169,7 +177,7 @@ class TransformCache(object):
         return ChainTransform(path)
 
     def roll(self):
-        """ Increase the age of all items in the cache by 1. Items whose age
+        """Increase the age of all items in the cache by 1. Items whose age
         is greater than self.max_age will be removed from the cache.
         """
         rem = []

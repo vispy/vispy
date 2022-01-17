@@ -1,0 +1,14 @@
+coveralls
+cython
+libglu
+mesalib <21.0.0
+meshio
+numpy
+pillow
+pytest
+pytest-cov
+pytest-sugar
+scipy
+networkx
+hsluv
+imageio

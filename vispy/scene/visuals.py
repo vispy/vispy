@@ -18,6 +18,10 @@ import weakref
 from .. import visuals
 from .node import Node
 from ..visuals.filters import Alpha, PickingFilter
+from typing import TypeVar
+
+
+_T = TypeVar("_T")
 
 
 class VisualNode(Node):
@@ -99,7 +103,7 @@ class VisualNode(Node):
         self._visual_superclass.draw(self)
 
 
-def create_visual_node(subclass):
+def create_visual_node(subclass: _T) -> _T:
     # Create a new subclass of Node.
 
     # Decide on new class name
@@ -247,6 +251,7 @@ LinearRegion = create_visual_node(visuals.LinearRegionVisual)
 LinePlot = create_visual_node(visuals.LinePlotVisual)
 Markers = create_visual_node(visuals.MarkersVisual)
 Mesh = create_visual_node(visuals.MeshVisual)
+MeshNormals = create_visual_node(visuals.MeshNormalsVisual)
 Plane = create_visual_node(visuals.PlaneVisual)
 Polygon = create_visual_node(visuals.PolygonVisual)
 Rectangle = create_visual_node(visuals.RectangleVisual)
@@ -259,6 +264,7 @@ Text = create_visual_node(visuals.TextVisual)
 Tube = create_visual_node(visuals.TubeVisual)
 # Visual = create_visual_node(visuals.Visual)  # Should not be created
 Volume = create_visual_node(visuals.VolumeVisual)
+Windbarb = create_visual_node(visuals.WindbarbVisual)
 XYZAxis = create_visual_node(visuals.XYZAxisVisual)
 
 __all__ = [name for (name, obj) in globals().items()

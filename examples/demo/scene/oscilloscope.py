@@ -63,7 +63,7 @@ except ImportError:
     class MicrophoneRecorder(object):
         def __init__(self):
             self.chunksize = 1024
-            self.rate = rate = 44100.
+            self.rate = rate = 44100
             t = np.linspace(0, 10, rate*10)
             self.data = (np.sin(t * 10.) * 0.3).astype('float32')
             self.data += np.sin((t + 0.3) * 20.) * 0.15
@@ -111,6 +111,7 @@ class Oscilloscope(scene.ScrollingLines):
     parent : Node
         An optional parent scenegraph node.
     """
+
     def __init__(self, n_lines=100, line_size=1024, dx=1e-4,
                  color=(20, 255, 50), trigger=(0, 0.002, 1e-4), parent=None):
 

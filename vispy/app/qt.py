@@ -7,16 +7,9 @@
 # backend.
 from .backends import qt_lib
 
-from . import use_app
-app = use_app()
-try:
-    QtGui = app.backend_module.QtGui
-except AttributeError:
-    raise RuntimeError("Cannot import Qt library; non-Qt backend is already "
-                       "in use.")
-
-
-if qt_lib in 'pyqt4':
+if qt_lib is None:
+    raise RuntimeError("Module backends._qt should not be imported directly.")
+elif qt_lib in 'pyqt4':
     from PyQt4 import QtGui
     QWidget, QGridLayout = QtGui.QWidget, QtGui.QGridLayout  # Compat
 elif qt_lib == 'pyside':
@@ -25,8 +18,14 @@ elif qt_lib == 'pyside':
 elif qt_lib == 'pyqt5':
     from PyQt5 import QtWidgets
     QWidget, QGridLayout = QtWidgets.QWidget, QtWidgets.QGridLayout  # Compat
+elif qt_lib == 'pyqt6':
+    from PyQt6 import QtWidgets
+    QWidget, QGridLayout = QtWidgets.QWidget, QtWidgets.QGridLayout  # Compat
 elif qt_lib == 'pyside2':
     from PySide2 import QtWidgets
+    QWidget, QGridLayout = QtWidgets.QWidget, QtWidgets.QGridLayout  # Compat
+elif qt_lib == 'pyside6':
+    from PySide6 import QtWidgets
     QWidget, QGridLayout = QtWidgets.QWidget, QtWidgets.QGridLayout  # Compat
 elif qt_lib:
     raise RuntimeError("Invalid value for qt_lib %r." % qt_lib)
@@ -35,7 +34,7 @@ else:
 
 
 class QtCanvas(QWidget):
-    """ Qt widget containing a vispy Canvas.
+    """Qt widget containing a vispy Canvas.
 
     This is a convenience class that allows a vispy canvas to be embedded
     directly into a Qt application.
@@ -78,17 +77,16 @@ class QtCanvas(QWidget):
             raise AttributeError(attr)
 
     def update(self):
-        """Call update() on both this widget and the internal canvas.
-        """
+        """Call update() on both this widget and the internal canvas."""
         QWidget.update(self)
         self._canvas.update()
 
 
 class QtSceneCanvas(QtCanvas):
-    """ Convenience class embedding a vispy SceneCanvas inside a QWidget.
-
+    """Convenience class embedding a vispy SceneCanvas inside a QWidget.
     See QtCanvas.
     """
+
     def __init__(self, parent=None, **kwargs):
         from ..scene.canvas import SceneCanvas
         QtCanvas.__init__(self, parent, canvas=SceneCanvas, **kwargs)

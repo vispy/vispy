@@ -2,9 +2,7 @@
 # vispy: testskip
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
-"""
-OSMesa backend for offscreen rendering on Linux/Unix
-"""
+"""OSMesa backend for offscreen rendering on Linux/Unix."""
 from __future__ import division
 from ...util.ptime import time
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
@@ -92,6 +90,7 @@ class OSMesaContext(object):
     A wrapper around an OSMesa context that destroy the context when
     garbage collected
     """
+
     def __init__(self):
         self.context = osmesa.OSMesaCreateContext()
 
@@ -106,9 +105,8 @@ class OSMesaContext(object):
 class CanvasBackend(BaseCanvasBackend):
     """OSMesa backend for Canvas"""
 
-    # args are for BaseCanvasBackend, kwargs are for us.
-    def __init__(self, *args, **kwargs):
-        BaseCanvasBackend.__init__(self, *args)
+    def __init__(self, vispy_canvas, **kwargs):
+        BaseCanvasBackend.__init__(self, vispy_canvas)
         # We use _process_backend_kwargs() to "serialize" the kwargs
         # and to check whether they match this backend's capability
         p = self._process_backend_kwargs(kwargs)

@@ -15,7 +15,8 @@ from vispy.gloo.context import set_current_canvas, forget_canvas
 
 class DummyParser(gloo.glir.BaseGlirParser):
 
-    def convert_shaders(self):
+    @property
+    def shader_compatibility(self):
         return 'desktop'
 
     def parse(self, commands):
@@ -33,17 +34,22 @@ class DummyCanvas:
 class ProgramTest(unittest.TestCase):
 
     def test_init(self):
+        from vispy.gloo.program import VertexShader, FragmentShader
 
         # Test ok init, no shaders
         program = Program()
         assert program._user_variables == {}
         assert program._code_variables == {}
         assert program._pending_variables == {}
-        assert program.shaders == ('', '')
+        assert program.shaders[0] is None
+        assert program.shaders[1] is None
 
         # Test ok init, with shader
         program = Program('A', 'B')
-        assert program.shaders == ('A', 'B')
+        assert isinstance(program.shaders[0], VertexShader)
+        assert program.shaders[0].code == 'A'
+        assert isinstance(program.shaders[1], FragmentShader)
+        assert program.shaders[1].code == 'B'
 
         # False inits
         self.assertRaises(ValueError, Program, 'A', None)
@@ -57,13 +63,16 @@ class ProgramTest(unittest.TestCase):
         self.assertRaises(ValueError, Program, "", "foo")
 
     def test_setting_shaders(self):
+        from vispy.gloo.program import VertexShader, FragmentShader
         program = Program("A", "B")
-        assert program.shaders[0] == "A"
-        assert program.shaders[1] == "B"
+        assert isinstance(program.shaders[0], VertexShader)
+        assert program.shaders[0].code == 'A'
+        assert isinstance(program.shaders[1], FragmentShader)
+        assert program.shaders[1].code == 'B'
 
         program.set_shaders('C', 'D')
-        assert program.shaders[0] == "C"
-        assert program.shaders[1] == "D"
+        assert program.shaders[0].code == "C"
+        assert program.shaders[1].code == "D"
 
     @requires_application()
     def test_error(self):

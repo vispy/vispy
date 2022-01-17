@@ -3,7 +3,7 @@
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
-""" Fast and failsafe GL console """
+"""Fast and failsafe GL console"""
 
 # Code translated from glumpy
 
@@ -13,7 +13,6 @@ from .widget import Widget
 from ...visuals import Visual
 from ...gloo import VertexBuffer
 from ...color import Color
-from ...ext.six import string_types
 
 
 # Translated from
@@ -74,7 +73,7 @@ VERTEX_SHADER = """
 uniform vec2 u_logical_scale;
 uniform float u_physical_scale;
 uniform vec4 u_color;
-uniform vec4 u_origin; 
+uniform vec4 u_origin;
 
 attribute vec2 a_position;
 attribute vec3 a_bytes_012;
@@ -94,6 +93,7 @@ void main (void)
 """
 
 FRAGMENT_SHADER = """
+#version 120
 float segment(float edge0, float edge1, float x)
 {
     return step(edge0,x) * (1.0-step(edge1,x));
@@ -148,11 +148,12 @@ class Console(Widget):
     font_size : float
         Point size to use.
     """
+
     def __init__(self, text_color='black', font_size=12., **kwargs):
         self._visual = ConsoleVisual(text_color, font_size)
         Widget.__init__(self, **kwargs)
         self.add_subvisual(self._visual)
-        
+
     def on_resize(self, event):
         """Resize event handler
 
@@ -162,7 +163,7 @@ class Console(Widget):
             The event.
         """
         self._visual.size = self.size
-        
+
     def clear(self):
         """Clear the console"""
         self._visual.clear()
@@ -179,7 +180,7 @@ class Console(Widget):
             If True, long messages will be wrapped to span multiple lines.
         """
         self._visual.write(text)
-        
+
     @property
     def text_color(self):
         """The color of the text"""
@@ -198,7 +199,7 @@ class Console(Widget):
     def font_size(self, font_size):
         self._visual._font_size = float(font_size)
 
-        
+
 class ConsoleVisual(Visual):
     def __init__(self, text_color, font_size, **kwargs):
         # Harcoded because of font above and shader program
@@ -219,7 +220,7 @@ class ConsoleVisual(Visual):
     @property
     def size(self):
         return self._size
-    
+
     @size.setter
     def size(self, s):
         self._size = s
@@ -309,7 +310,7 @@ class ConsoleVisual(Visual):
             If True, long messages will be wrapped to span multiple lines.
         """
         # Clear line
-        if not isinstance(text, string_types):
+        if not isinstance(text, str):
             raise TypeError('text must be a string')
         # ensure we only have ASCII chars
         text = text.encode('utf-8').decode('ascii', errors='replace')

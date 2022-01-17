@@ -19,7 +19,6 @@ from ..transforms import NullTransform
 
 
 class RawPointCollection(Collection):
-
     """
     Raw Point Collection
 
@@ -34,7 +33,6 @@ class RawPointCollection(Collection):
 
         Parameters
         ----------
-
         user_dtype: list
             The base dtype can be completed (appended) by the used_dtype. It
             only make sense if user also provide vertex and/or fragment shaders
@@ -52,8 +50,8 @@ class RawPointCollection(Collection):
             'local', 'shared' or 'global'
         """
         base_dtype = [('position', (np.float32, 3), "!local", (0, 0, 0)),
-                      ('size',     (np.float32, 1), "global", 3.0),
-                      ('color',    (np.float32, 4), "global", (0, 0, 0, 1))]
+                      ('size', (np.float32, 1), "global", 3.0),
+                      ('color', (np.float32, 4), "global", (0, 0, 0, 1))]
 
         dtype = base_dtype
         if user_dtype:
@@ -83,7 +81,6 @@ class RawPointCollection(Collection):
 
         Parameters
         ----------
-
         P : np.array
             Vertices positions of the points(s) to be added
 
@@ -93,7 +90,6 @@ class RawPointCollection(Collection):
         color : list, array or 4-tuple
            Path color
         """
-
         itemsize = itemsize or 1
         itemcount = len(P) // itemsize
 

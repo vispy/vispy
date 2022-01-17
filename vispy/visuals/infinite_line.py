@@ -4,12 +4,12 @@ from .. import gloo
 from .visual import Visual
 
 
-VERT_SHADER = """
+_VERTEX_SHADER = """
     attribute vec2 a_pos;
     varying vec4 v_color;
 
     void main() {
-        vec4 pos = vec4(a_pos, 0, 1);
+        vec4 pos = vec4(a_pos, 0., 1.);
 
         if($is_vertical==1)
         {
@@ -21,12 +21,12 @@ VERT_SHADER = """
         }
 
         gl_Position = $transform(pos);
-        gl_PointSize = 10;
+        gl_PointSize = 10.;
         v_color = $color;
     }
     """
 
-FRAG_SHADER = """
+_FRAGMENT_SHADER = """
     varying vec4 v_color;
 
     void main() {
@@ -45,16 +45,25 @@ class InfiniteLineVisual(Visual):
     color : list, tuple, or array
         The color to use when drawing the line. If an array is given, it
         must be of shape (1, 4) and provide one rgba color per vertex.
+    line_width: float
+        The width of the Infinite line, in pixels
+    antialias: bool
+        If the line is drawn with antialiasing
     vertical:
         True for drawing a vertical line, False for an horizontal line
     """
 
-    def __init__(self, pos=None, color=(1.0, 1.0, 1.0, 1.0),
+    _shaders = {
+        'vertex': _VERTEX_SHADER,
+        'fragment': _FRAGMENT_SHADER,
+    }
+
+    def __init__(self, pos=None, color=(1.0, 1.0, 1.0, 1.0), line_width=1.0, antialias=False,
                  vertical=True, **kwargs):
         """
 
         """
-        Visual.__init__(self, vcode=VERT_SHADER, fcode=FRAG_SHADER, **kwargs)
+        Visual.__init__(self, vcode=self._shaders['vertex'], fcode=self._shaders['fragment'])
 
         self._changed = {'pos': False, 'color': False}
 
@@ -74,6 +83,8 @@ class InfiniteLineVisual(Visual):
         self._is_vertical = bool(vertical)
         self._pos = np.zeros((2, 2), dtype=np.float32)
         self._color = np.ones(4, dtype=np.float32)
+        self._line_width = line_width
+        self._antialias = antialias
 
         # Visual keeps track of draw mode, index buffer, and GL state. These
         # are shared between all views.
@@ -127,6 +138,22 @@ class InfiniteLineVisual(Visual):
         else:
             return self._pos[0, 1]
 
+    @property
+    def line_width(self):
+        return self._line_width
+
+    @line_width.setter
+    def line_width(self, val: float):
+        self._line_width = val
+
+    @property
+    def antialias(self):
+        return self._antialias
+
+    @antialias.setter
+    def antialias(self, val: float):
+        self._antialias = val
+
     def _compute_bounds(self, axis, view):
         """Return the (min, max) bounding values of this visual along *axis*
         in the local coordinate system.
@@ -157,6 +184,11 @@ class InfiniteLineVisual(Visual):
 
         The *view* argument indicates which view is about to be drawn.
         """
+
+        self.update_gl_state(line_smooth=self._antialias)
+        px_scale = self.transforms.pixel_scale
+        width = px_scale * self._line_width
+        self.update_gl_state(line_width=max(width, 1.0))
 
         if self._changed['pos']:
             self.pos_buf.set_data(self._pos)

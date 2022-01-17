@@ -8,7 +8,6 @@ import numpy as np
 from copy import deepcopy
 
 from . import gl
-from ..ext.six import string_types
 from ..color import Color
 from ..util import logger
 
@@ -23,14 +22,19 @@ __all__ = ('set_viewport', 'set_depth_range', 'set_front_face',  # noqa
            'get_state_presets', 'set_state', 'finish', 'flush',  # noqa
            'read_pixels', 'set_hint',  # noqa
            'get_gl_configuration', '_check_valid',
+           'GL_PRESETS',
            'GlooFunctions', 'global_gloo_functions', )
 
 _setters = [s[4:] for s in __all__
             if s.startswith('set_') and s != 'set_state']
 
 # NOTE: If these are updated to have things beyond glEnable/glBlendFunc
-# calls, set_preset_state will need to be updated to deal with it.
-_gl_presets = {
+# calls, set_state will need to be updated to deal with it.
+#: Some OpenGL state presets for common use cases: 'opaque', 'translucent',
+#: 'additive'.
+#:
+#: To be used in :func:`.set_state`.
+GL_PRESETS = {
     'opaque': dict(
         depth_test=True,
         cull_face=False,
@@ -39,7 +43,7 @@ _gl_presets = {
         depth_test=True,
         cull_face=False,
         blend=True,
-        blend_func=('src_alpha', 'one_minus_src_alpha')),
+        blend_func=('src_alpha', 'one_minus_src_alpha', 'zero', 'one')),
     'additive': dict(
         depth_test=False,
         cull_face=False,
@@ -49,7 +53,7 @@ _gl_presets = {
 
 
 def get_current_canvas():
-    """ Proxy for context.get_current_canvas to avoud circular import.
+    """Proxy for context.get_current_canvas to avoud circular import.
     This function replaces itself with the real function the first
     time it is called. (Bah)
     """
@@ -78,13 +82,13 @@ def _check_conversion(key, valid_dict):
     """Check for existence of key in dict, return value or raise error"""
     if key not in valid_dict and key not in valid_dict.values():
         # Only show users the nice string values
-        keys = [v for v in valid_dict.keys() if isinstance(v, string_types)]
+        keys = [v for v in valid_dict.keys() if isinstance(v, str)]
         raise ValueError('value must be one of %s, not %s' % (keys, key))
     return valid_dict[key] if key in valid_dict else key
 
 
 class BaseGlooFunctions(object):
-    """ Class that provides a series of GL functions that do not fit
+    """Class that provides a series of GL functions that do not fit
     in the object oriented part of gloo. An instance of this class is
     associated with each canvas.
     """
@@ -429,29 +433,29 @@ class BaseGlooFunctions(object):
     #
 
     def get_state_presets(self):
-        """The available GL state presets
+        """The available GL state :data:`presets <.GL_PRESETS>`.
 
         Returns
         -------
         presets : dict
-            The dictionary of presets usable with ``set_options``.
+            The dictionary of presets usable with :func:`.set_state`.
         """
-        return deepcopy(_gl_presets)
+        return deepcopy(GL_PRESETS)
 
     def set_state(self, preset=None, **kwargs):
-        """Set OpenGL rendering state, optionally using a preset
+        """Set the OpenGL rendering state, optionally using a preset.
 
         Parameters
         ----------
-        preset : str | None
-            Can be one of ('opaque', 'translucent', 'additive') to use
-            use reasonable defaults for these typical use cases.
+        preset : {'opaque', 'translucent', 'additive'}, optional
+            A named state :data:`preset <.GL_PRESETS>` for typical use cases.
+
         **kwargs : keyword arguments
             Other supplied keyword arguments will override any preset defaults.
             Options to be enabled or disabled should be supplied as booleans
             (e.g., ``'depth_test=True'``, ``cull_face=False``), non-boolean
             entries will be passed as arguments to ``set_*`` functions (e.g.,
-            ``blend_func=('src_alpha', 'one')`` will call ``set_blend_func``).
+            ``blend_func=('src_alpha', 'one')`` will call :func:`.set_blend_func`).
 
         Notes
         -----
@@ -494,8 +498,8 @@ class BaseGlooFunctions(object):
 
         # Load preset, if supplied
         if preset is not None:
-            _check_valid('preset', preset, tuple(list(_gl_presets.keys())))
-            for key, val in _gl_presets[preset].items():
+            _check_valid('preset', preset, tuple(list(GL_PRESETS.keys())))
+            for key, val in GL_PRESETS[preset].items():
                 # only overwrite user input with preset if user's input is None
                 if key not in kwargs:
                     kwargs[key] = val
@@ -510,6 +514,16 @@ class BaseGlooFunctions(object):
                 self.glir.command('FUNC', 'glEnable', 'cull_face')
                 self.set_cull_face(*_to_args(cull_face))
 
+        # Line width needs some special care ...
+        if 'line_width' in kwargs:
+            line_width = kwargs.pop('line_width')
+            self.glir.command('FUNC', 'glLineWidth', line_width)
+        if 'line_smooth' in kwargs:
+            line_smooth = kwargs.pop('line_smooth')
+            funcname = 'glEnable' if line_smooth else 'glDisable'
+            line_smooth_enum_value = 2848  # int(GL.GL_LINE_SMOOTH)
+            self.glir.command('FUNC', funcname, line_smooth_enum_value)
+
         # Iterate over kwargs
         for key, val in kwargs.items():
             if key in _setters:
@@ -517,7 +531,7 @@ class BaseGlooFunctions(object):
                 args = _to_args(val)
                 # these actually need tuples
                 if key in ('blend_color', 'clear_color') and \
-                        not isinstance(args[0], string_types):
+                        not isinstance(args[0], str):
                     args = [args]
                 getattr(self, 'set_' + key)(*args)
             else:
@@ -567,7 +581,7 @@ class BaseGlooFunctions(object):
         mode : str
             The mode to set (e.g., 'fastest', 'nicest', 'dont_care').
         """
-        if not all(isinstance(tm, string_types) for tm in (target, mode)):
+        if not all(isinstance(tm, str) for tm in (target, mode)):
             raise TypeError('target and mode must both be strings')
         self.glir.command('FUNC', 'glHint', target, mode)
 
@@ -576,8 +590,7 @@ class GlooFunctions(BaseGlooFunctions):
 
     @property
     def glir(self):
-        """ The GLIR queue corresponding to the current canvas
-        """
+        """The GLIR queue corresponding to the current canvas"""
         canvas = get_current_canvas()
         if canvas is None:
             msg = ("If you want to use gloo without vispy.app, " +
@@ -586,7 +599,7 @@ class GlooFunctions(BaseGlooFunctions):
         return canvas.context.glir
 
 
-## Create global functions object and inject names here
+# Create global functions object and inject names here
 
 # GlooFunctions without queue: use queue of canvas that is current at call-time
 global_gloo_functions = GlooFunctions()
@@ -599,10 +612,10 @@ for name in dir(global_gloo_functions):
         globals()[name] = fun
 
 
-## Functions that do not use the glir queue
+# Functions that do not use the glir queue
 
 
-def read_pixels(viewport=None, alpha=True, out_type='unsigned_byte'):
+def read_pixels(viewport=None, alpha=True, mode='color', out_type='unsigned_byte'):
     """Read pixels from the currently selected buffer.
 
     Under most circumstances, this function reads from the front buffer.
@@ -616,7 +629,10 @@ def read_pixels(viewport=None, alpha=True, out_type='unsigned_byte'):
         the current GL viewport will be queried and used.
     alpha : bool
         If True (default), the returned array has 4 elements (RGBA).
-        If False, it has 3 (RGB).
+        If False, it has 3 (RGB). This only effects the color mode.
+    mode : str
+        Type of buffer data to read. Can be one of 'colors', 'depth',
+        or 'stencil'. See returns for more information.
     out_type : str | dtype
         Can be 'unsigned_byte' or 'float'. Note that this does not
         use casting, but instead determines how values are read from
@@ -627,9 +643,13 @@ def read_pixels(viewport=None, alpha=True, out_type='unsigned_byte'):
     -------
     pixels : array
         3D array of pixels in np.uint8 or np.float32 format.
-        The array shape is (h, w, 3) or (h, w, 4), with the top-left corner
-        of the framebuffer at index [0, 0] in the returned array.
+        The array shape is (h, w, 3) or (h, w, 4) for colors mode,
+        with the top-left corner of the framebuffer at index [0, 0] in the
+        returned array. If 'mode' is depth or stencil then the last dimension
+        is 1.
     """
+    _check_valid('mode', mode, ['color', 'depth', 'stencil'])
+
     # Check whether the GL context is direct or remote
     context = get_current_canvas().context
     if context.shared.parser.is_remote():
@@ -649,7 +669,18 @@ def read_pixels(viewport=None, alpha=True, out_type='unsigned_byte'):
                          % (viewport,))
     x, y, w, h = viewport
     gl.glPixelStorei(gl.GL_PACK_ALIGNMENT, 1)  # PACK, not UNPACK
-    fmt = gl.GL_RGBA if alpha else gl.GL_RGB
+    if mode == 'depth':
+        fmt = gl.GL_DEPTH_COMPONENT
+        shape = (h, w, 1)
+    elif mode == 'stencil':
+        fmt = gl.GL_STENCIL_INDEX8
+        shape = (h, w, 1)
+    elif alpha:
+        fmt = gl.GL_RGBA
+        shape = (h, w, 4)
+    else:
+        fmt = gl.GL_RGB
+        shape = (h, w, 3)
     im = gl.glReadPixels(x, y, w, h, fmt, type_)
     gl.glPixelStorei(gl.GL_PACK_ALIGNMENT, 4)
     # reshape, flip, and return
@@ -657,8 +688,8 @@ def read_pixels(viewport=None, alpha=True, out_type='unsigned_byte'):
         np_dtype = np.uint8 if type_ == gl.GL_UNSIGNED_BYTE else np.float32
         im = np.frombuffer(im, np_dtype)
 
-    im.shape = h, w, (4 if alpha else 3)  # RGBA vs RGB
-    im = im[::-1, :, :]  # flip the image
+    im.shape = shape
+    im = im[::-1, ...]  # flip the image
     return im
 
 

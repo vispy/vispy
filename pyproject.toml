@@ -1,0 +1,16 @@
+[build-system]
+requires = [
+    "wheel",
+    "setuptools>=30.3.0",
+    "setuptools_scm",
+    # Use these when setuptools>=42 is more widely available
+    # "setuptools>=42",
+    # "setuptools_scm[toml]>=3.4",
+    "setuptools_scm_git_archive",
+    "Cython>=0.29.2",
+    "oldest-supported-numpy"
+]
+
+[tools.setuptools_scm]
+write_to = "vispy/version.py"
+local_scheme = "dirty-tag"

@@ -3,9 +3,9 @@
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
-"""
-Marker Visual and shader definitions.
-"""
+"""Marker Visual and shader definitions."""
+
+import warnings
 
 import numpy as np
 
@@ -15,40 +15,80 @@ from .shaders import Function, Variable
 from .visual import Visual
 
 
-vert = """
+_VERTEX_SHADER = """
 uniform float u_antialias;
 uniform float u_px_scale;
-uniform float u_scale;
+uniform bool u_scaling;
+uniform bool u_spherical;
 
-attribute vec3  a_position;
-attribute vec4  a_fg_color;
-attribute vec4  a_bg_color;
+attribute vec3 a_position;
+attribute vec4 a_fg_color;
+attribute vec4 a_bg_color;
 attribute float a_edgewidth;
 attribute float a_size;
 
 varying vec4 v_fg_color;
 varying vec4 v_bg_color;
 varying float v_edgewidth;
-varying float v_antialias;
+varying float v_depth_middle;
+varying float v_alias_ratio;
+
+float big_float = 1e10; // prevents numerical imprecision
 
 void main (void) {
-    $v_size = a_size * u_px_scale * u_scale;
-    v_edgewidth = a_edgewidth * float(u_px_scale);
-    v_antialias = u_antialias;
     v_fg_color  = a_fg_color;
     v_bg_color  = a_bg_color;
-    gl_Position = $transform(vec4(a_position,1.0));
-    float edgewidth = max(v_edgewidth, 1.0);
-    gl_PointSize = ($v_size) + 4.*(edgewidth + 1.5*v_antialias);
+
+    vec4 pos = vec4(a_position, 1);
+    vec4 fb_pos = $visual_to_framebuffer(pos);
+    gl_Position = $framebuffer_to_render(fb_pos);
+
+    // NOTE: gl_stuff uses framebuffer coords!
+
+    if (u_scaling == true) {
+        // calculate point size from visual to framebuffer coords to determine size
+        vec4 x = $framebuffer_to_visual(fb_pos + vec4(big_float, 0, 0, 0));
+        x = (x - pos);
+        vec4 size_vec = $visual_to_framebuffer(pos + normalize(x) * a_size);
+        $v_size = size_vec.x / size_vec.w - fb_pos.x / fb_pos.w;
+        v_edgewidth = ($v_size / a_size) * a_edgewidth;
+    }
+    else {
+        $v_size = a_size * u_px_scale;
+        v_edgewidth = a_edgewidth * u_px_scale;
+    }
+
+    // gl_PointSize is the diameter
+    gl_PointSize = $v_size + 4. * (v_edgewidth + 1.5 * u_antialias);
+
+    if (u_spherical == true) {
+        // Get the framebuffer z direction relative to this sphere in visual coords
+        vec4 z = $framebuffer_to_visual(fb_pos + vec4(0, 0, big_float, 0));
+        z = (z - pos);
+        // Get the depth of the sphere in its middle point on the screen
+        // size/2 because we need the radius, not the diameter
+        vec4 depth_z_vec = $visual_to_framebuffer(pos + normalize(z) * a_size / 2);
+        v_depth_middle = depth_z_vec.z / depth_z_vec.w - fb_pos.z / fb_pos.w;
+        // size ratio between aliased and non-aliased, needed for correct depth
+        v_alias_ratio = gl_PointSize / $v_size;
+    }
 }
 """
 
 
-frag = """
+_FRAGMENT_SHADER = """#version 120
+uniform vec3 u_light_position;
+uniform vec3 u_light_color;
+uniform float u_light_ambient;
+uniform float u_alpha;
+uniform float u_antialias;
+uniform bool u_spherical;
+
 varying vec4 v_fg_color;
 varying vec4 v_bg_color;
 varying float v_edgewidth;
-varying float v_antialias;
+varying float v_depth_middle;
+varying float v_alias_ratio;
 
 void main()
 {
@@ -56,68 +96,104 @@ void main()
     if ($v_size <= 0.)
         discard;
 
-    float edgewidth = max(v_edgewidth, 1.0);
     float edgealphafactor = min(v_edgewidth, 1.0);
 
-    float size = $v_size + 4.*(edgewidth + 1.5*v_antialias);
+    float size = $v_size + 4.*(v_edgewidth + 1.5*u_antialias);
     // factor 6 for acute edge angles that need room as for star marker
 
     // The marker function needs to be linked with this shader
     float r = $marker(gl_PointCoord, size);
 
     // it takes into account an antialising layer
-    // of size v_antialias inside the edge
+    // of size u_antialias inside the edge
     // r:
     // [-e/2-a, -e/2+a] antialising face-edge
     // [-e/2+a, e/2-a] core edge (center 0, diameter e-2a = 2t)
     // [e/2-a, e/2+a] antialising edge-background
-    float t = 0.5*v_edgewidth - v_antialias;
+    // use max because we don't want negative transition zone
+    float t = max(0.5*v_edgewidth - u_antialias, 0);
     float d = abs(r) - t;
 
-    vec4 edgecolor = vec4(v_fg_color.rgb, edgealphafactor*v_fg_color.a);
-
-    if (r > 0.5*v_edgewidth + v_antialias)
+    if (r > 0.5*v_edgewidth + u_antialias)
     {
         // out of the marker (beyond the outer edge of the edge
         // including transition zone due to antialiasing)
         discard;
     }
-    else if (d < 0.0)
+
+    vec4 facecolor = v_bg_color;
+    vec4 edgecolor = vec4(v_fg_color.rgb, edgealphafactor*v_fg_color.a);
+    float depth_change = 0;
+
+    // change color and depth if spherical mode is active
+    if (u_spherical == true) {
+        // multiply by alias_ratio and then clamp, so we're back to non-alias coordinates
+        // and the aliasing ring has the same coordinates as the point just inside,
+        // which is important for lighting
+        vec2 texcoord = (gl_PointCoord * 2 - 1) * v_alias_ratio;
+        float x = clamp(texcoord.x, -1, 1);
+        float y = clamp(texcoord.y, -1, 1);
+        float z = sqrt(clamp(1 - x*x - y*y, 0, 1));
+        vec3 normal = vec3(x, y, z);
+
+        // Diffuse color
+        float diffuse = dot(u_light_position, normal);
+        // clamp, because 0 < theta < pi/2
+        diffuse = clamp(diffuse, 0, 1);
+        vec3 diffuse_color = u_light_ambient + u_light_color * diffuse;
+
+        // Specular color
+        //   reflect light wrt normal for the reflected ray, then
+        //   find the angle made with the eye
+        vec3 eye = vec3(0, 0, -1);
+        float specular = dot(reflect(u_light_position, normal), eye);
+        specular = clamp(specular, 0, 1);
+        // raise to the material's shininess, multiply with a
+        // small factor for spread
+        specular = pow(specular, 80);
+        vec3 specular_color = u_light_color * specular;
+
+        facecolor = vec4(facecolor.rgb * diffuse_color + specular_color, facecolor.a * u_alpha);
+        edgecolor = vec4(edgecolor.rgb * diffuse_color + specular_color, edgecolor.a * u_alpha);
+        // TODO: figure out why this 0.5 is needed, despite already having the radius, not diameter
+        depth_change = -0.5 * z * v_depth_middle;
+    }
+
+    if (d < 0.0)
     {
         // inside the width of the edge
         // (core, out of the transition zone for antialiasing)
         gl_FragColor = edgecolor;
     }
+    else if (v_edgewidth == 0.)
+    {// no edge
+        if (r > -u_antialias)
+        {// outside
+            float alpha = 1.0 + r/u_antialias;
+            alpha = exp(-alpha*alpha);
+            gl_FragColor = vec4(facecolor.rgb, alpha*facecolor.a);
+        }
+        else
+        {// inside
+            gl_FragColor = facecolor;
+        }
+    }
     else
-    {
-        if (v_edgewidth == 0.)
-        {// no edge
-            if (r > -v_antialias)
-            {
-                float alpha = 1.0 + r/v_antialias;
-                alpha = exp(-alpha*alpha);
-                gl_FragColor = vec4(v_bg_color.rgb, alpha*v_bg_color.a);
-            }
-            else
-            {
-                gl_FragColor = v_bg_color;
-            }
+    {// non-zero edge
+        float alpha = d/u_antialias;
+        alpha = exp(-alpha*alpha);
+        if (r > 0.)
+        {
+            // outer part of the edge: fade out into the background...
+            gl_FragColor = vec4(edgecolor.rgb, alpha*edgecolor.a);
         }
         else
         {
-            float alpha = d/v_antialias;
-            alpha = exp(-alpha*alpha);
-            if (r > 0.)
-            {
-                // outer part of the edge: fade out into the background...
-                gl_FragColor = vec4(edgecolor.rgb, alpha*edgecolor.a);
-            }
-            else
-            {
-                gl_FragColor = mix(v_bg_color, edgecolor, alpha);
-            }
+            // inner part of the edge: fade into the face color
+            gl_FragColor = mix(facecolor, edgecolor, alpha);
         }
     }
+    gl_FragDepth = gl_FragCoord.z + depth_change;
 }
 """
 
@@ -149,8 +225,8 @@ float rect(vec2 pointcoord, float size)
 ring = """
 float ring(vec2 pointcoord, float size)
 {
-    float r1 = length((pointcoord.xy - vec2(0.5,0.5))*size) - $v_size/2;
-    float r2 = length((pointcoord.xy - vec2(0.5,0.5))*size) - $v_size/4;
+    float r1 = length((pointcoord.xy - vec2(0.5,0.5))*size) - $v_size/2.;
+    float r2 = length((pointcoord.xy - vec2(0.5,0.5))*size) - $v_size/4.;
     float r = max(r1,-r2);
     return r;
 }
@@ -185,7 +261,7 @@ square = """
 float square(vec2 pointcoord, float size)
 {
     float r = max(abs(pointcoord.x -.5)*size, abs(pointcoord.y -.5)*size);
-    r -= $v_size/2;
+    r -= $v_size/2.;
     return r;
 }
 """
@@ -196,12 +272,12 @@ float x_(vec2 pointcoord, float size)
     vec2 rotcoord = vec2((pointcoord.x + pointcoord.y - 1.) / sqrt(2.),
                          (pointcoord.y - pointcoord.x) / sqrt(2.));
     //vbar
-    float r1 = abs(rotcoord.x)*size - $v_size/6;
-    float r2 = abs(rotcoord.y)*size - $v_size/2;
+    float r1 = abs(rotcoord.x)*size - $v_size/6.;
+    float r2 = abs(rotcoord.y)*size - $v_size/2.;
     float vbar = max(r1,r2);
     //hbar
-    float r3 = abs(rotcoord.y)*size - $v_size/6;
-    float r4 = abs(rotcoord.x)*size - $v_size/2;
+    float r3 = abs(rotcoord.y)*size - $v_size/6.;
+    float r4 = abs(rotcoord.x)*size - $v_size/2.;
     float hbar = max(r3,r4);
     return min(vbar, hbar);
 }
@@ -212,7 +288,7 @@ diamond = """
 float diamond(vec2 pointcoord, float size)
 {
     float r = abs(pointcoord.x -.5)*size + abs(pointcoord.y -.5)*size;
-    r -= $v_size/2;
+    r -= $v_size/2.;
     return r / sqrt(2.);//account for slanted edge and correct for width
 }
 """
@@ -221,8 +297,8 @@ float diamond(vec2 pointcoord, float size)
 vbar = """
 float vbar(vec2 pointcoord, float size)
 {
-    float r1 = abs(pointcoord.x - 0.5)*size - $v_size/6;
-    float r3 = abs(pointcoord.y - 0.5)*size - $v_size/2;
+    float r1 = abs(pointcoord.x - 0.5)*size - $v_size/6.;
+    float r3 = abs(pointcoord.y - 0.5)*size - $v_size/2.;
     float r = max(r1,r3);
     return r;
 }
@@ -231,8 +307,8 @@ float vbar(vec2 pointcoord, float size)
 hbar = """
 float rect(vec2 pointcoord, float size)
 {
-    float r2 = abs(pointcoord.y - 0.5)*size - $v_size/6;
-    float r3 = abs(pointcoord.x - 0.5)*size - $v_size/2;
+    float r2 = abs(pointcoord.y - 0.5)*size - $v_size/6.;
+    float r3 = abs(pointcoord.x - 0.5)*size - $v_size/2.;
     float r = max(r2,r3);
     return r;
 }
@@ -242,12 +318,12 @@ cross = """
 float cross(vec2 pointcoord, float size)
 {
     //vbar
-    float r1 = abs(pointcoord.x - 0.5)*size - $v_size/6;
-    float r2 = abs(pointcoord.y - 0.5)*size - $v_size/2;
+    float r1 = abs(pointcoord.x - 0.5)*size - $v_size/6.;
+    float r2 = abs(pointcoord.y - 0.5)*size - $v_size/2.;
     float vbar = max(r1,r2);
     //hbar
-    float r3 = abs(pointcoord.y - 0.5)*size - $v_size/6;
-    float r4 = abs(pointcoord.x - 0.5)*size - $v_size/2;
+    float r3 = abs(pointcoord.y - 0.5)*size - $v_size/6.;
+    float r4 = abs(pointcoord.x - 0.5)*size - $v_size/2.;
     float hbar = max(r3,r4);
     return min(vbar, hbar);
 }
@@ -327,10 +403,10 @@ float rect(vec2 pointcoord, float size)
     const float PI2_5 = 3.141592653589*2./5.;
     const float PI2_20 = 3.141592653589/10.;  //PI*2/20
     // downwards shift to that the marker center is halfway vertically
-    // between the top of the upward spike (y = -v_size/2)
+    // between the top of the upward spike (y = -v_size/2.)
     // and the bottom of one of two downward spikes
-    // (y = +v_size/2*cos(2*pi/10) approx +v_size/2*0.8)
-    // center is at -v_size/2*0.1
+    // (y = +v_size/2.*cos(2.*pi/10.) approx +v_size/2.*0.8)
+    // center is at -v_size/2.*0.1
     float shift_y = -0.05*$v_size;
     // first spike upwards,
     // rotate spike by 72 deg four times to complete the star
@@ -339,7 +415,7 @@ float rect(vec2 pointcoord, float size)
         //if not the first spike, rotate it upwards
         float x = (pointcoord.x - 0.5)*size;
         float y = (pointcoord.y - 0.5)*size;
-        float spike_rot_angle = i*PI2_5;
+        float spike_rot_angle = float(i) * PI2_5;
         float cosangle = cos(spike_rot_angle);
         float sinangle = sin(spike_rot_angle);
         float spike_x = x;
@@ -354,7 +430,7 @@ float rect(vec2 pointcoord, float size)
         // (point whose coords are -s/2, 0 where s is the size of the marker)
         // compute y coordonates as well because
         // we do a second rotation to put the spike at its final position
-        float rot_center_y = -$v_size/2;
+        float rot_center_y = -$v_size/2.;
         float rot18x = cos(PI2_20) * spike_x
                             - sin(PI2_20) * (spike_y - rot_center_y);
         //rotate -18 deg the zone x > 0 arount the top of the star
@@ -452,90 +528,148 @@ float rect(vec2 pointcoord, float size)
 }
 """
 
-_marker_dict = {
-    'disc': disc,
-    'arrow': arrow,
-    'ring': ring,
-    'clobber': clobber,
-    'square': square,
-    'diamond': diamond,
-    'vbar': vbar,
-    'hbar': hbar,
-    'cross': cross,
-    'tailed_arrow': tailed_arrow,
-    'x': x_,
-    'triangle_up': triangle_up,
-    'triangle_down': triangle_down,
-    'star': star,
-    # aliases
-    'o': disc,
-    '+': cross,
-    's': square,
-    '-': hbar,
-    '|': vbar,
-    '->': tailed_arrow,
-    '>': arrow,
-    '^': triangle_up,
-    'v': triangle_down,
-    '*': star,
+cross_lines = """
+float cross(vec2 pointcoord, float size)
+{
+    //vbar
+    float r1 = abs(pointcoord.x - 0.5)*size;
+    float r2 = abs(pointcoord.y - 0.5)*size - $v_size/2;
+    float vbar = max(r1,r2);
+    //hbar
+    float r3 = abs(pointcoord.y - 0.5)*size;
+    float r4 = abs(pointcoord.x - 0.5)*size - $v_size/2;
+    float hbar = max(r3,r4);
+    return min(vbar, hbar);
 }
-marker_types = tuple(sorted(list(_marker_dict.keys())))
+"""
 
 
 class MarkersVisual(Visual):
-    """ Visual displaying marker symbols.
+    """Visual displaying marker symbols.
+
+    Parameters
+    ----------
+    pos : array
+        The array of locations to display each symbol.
+    size : float or array
+        The symbol size in screen (or data, if scaling is on) px.
+    edge_width : float or array or None
+        The width of the symbol outline in screen (or data, if scaling is on) px.
+    edge_width_rel : float or array or None
+        The width as a fraction of marker size. Exactly one of
+        `edge_width` and `edge_width_rel` must be supplied.
+    edge_color : Color | ColorArray
+        The color used to draw each symbol outline.
+    face_color : Color | ColorArray
+        The color used to draw each symbol interior.
+    symbol : str
+        The style of symbol to draw (see Notes).
+    scaling : bool
+        If set to True, marker scales when rezooming.
+    alpha : float
+        The opacity level of the visual.
+    antialias : float
+        Antialiasing amount (in px).
+    spherical : bool
+        Whether to add a spherical effect on the marker using lighting.
+    light_color : Color | ColorArray
+        The color of the light used to create the spherical effect.
+    light_position : array
+        The coordinates of the light used to create the spherical effect.
+    light_ambient : float
+        The amount of ambient light used to create the spherical effect.
+
+    Notes
+    -----
+    Allowed style strings are: disc, arrow, ring, clobber, square, diamond,
+    vbar, hbar, cross, tailed_arrow, x, triangle_up, triangle_down,
+    and star.
     """
-    def __init__(self, **kwargs):
+    _marker_funcs = {
+        'disc': disc,
+        'arrow': arrow,
+        'ring': ring,
+        'clobber': clobber,
+        'square': square,
+        'diamond': diamond,
+        'vbar': vbar,
+        'hbar': hbar,
+        'cross': cross,
+        'tailed_arrow': tailed_arrow,
+        'x': x_,
+        'triangle_up': triangle_up,
+        'triangle_down': triangle_down,
+        'star': star,
+        # aliases
+        'o': disc,
+        '+': cross,
+        '++': cross_lines,
+        's': square,
+        '-': hbar,
+        '|': vbar,
+        '->': tailed_arrow,
+        '>': arrow,
+        '^': triangle_up,
+        'v': triangle_down,
+        '*': star,
+    }
+
+    _shaders = {
+        'vertex': _VERTEX_SHADER,
+        'fragment': _FRAGMENT_SHADER,
+    }
+
+    def __init__(self, symbol='o', scaling=False, alpha=1, antialias=1, spherical=False,
+                 light_color='white', light_position=(1, -1, 1), light_ambient=0.3, **kwargs):
         self._vbo = VertexBuffer()
-        self._v_size_var = Variable('varying float v_size')
-        self._symbol = None
         self._marker_fun = None
+        self._symbol = None
         self._data = None
-        self.antialias = 1
-        self.scaling = False
-        Visual.__init__(self, vcode=vert, fcode=frag)
+
+        Visual.__init__(self, vcode=self._shaders['vertex'], fcode=self._shaders['fragment'])
+        self._v_size_var = Variable('varying float v_size')
         self.shared_program.vert['v_size'] = self._v_size_var
         self.shared_program.frag['v_size'] = self._v_size_var
+
         self.set_gl_state(depth_test=True, blend=True,
                           blend_func=('src_alpha', 'one_minus_src_alpha'))
         self._draw_mode = 'points'
+
         if len(kwargs) > 0:
             self.set_data(**kwargs)
+
+        self.symbol = symbol
+        self.scaling = scaling
+        self.antialias = antialias
+        self.light_color = light_color
+        self.light_position = light_position
+        self.light_ambient = light_ambient
+        self.alpha = alpha
+        self.spherical = spherical
+
         self.freeze()
 
-    def set_data(self, pos=None, symbol='o', size=10., edge_width=1.,
-                 edge_width_rel=None, edge_color='black', face_color='white',
-                 scaling=False):
-        """ Set the data used to display this visual.
+    def set_data(self, pos=None, size=10., edge_width=1., edge_width_rel=None,
+                 edge_color='black', face_color='white',
+                 symbol=None, scaling=None):
+        """Set the data used to display this visual.
 
         Parameters
         ----------
         pos : array
             The array of locations to display each symbol.
-        symbol : str
-            The style of symbol to draw (see Notes).
         size : float or array
-            The symbol size in px.
-        edge_width : float | None
-            The width of the symbol outline in pixels.
-        edge_width_rel : float | None
+            The symbol size in screen (or data, if scaling is on) px.
+        edge_width : float or array or None
+            The width of the symbol outline in screen (or data, if scaling is on) px.
+        edge_width_rel : float or array or None
             The width as a fraction of marker size. Exactly one of
             `edge_width` and `edge_width_rel` must be supplied.
         edge_color : Color | ColorArray
             The color used to draw each symbol outline.
         face_color : Color | ColorArray
             The color used to draw each symbol interior.
-        scaling : bool
-            If set to True, marker scales when rezooming.
-
-        Notes
-        -----
-        Allowed style strings are: disc, arrow, ring, clobber, square, diamond,
-        vbar, hbar, cross, tailed_arrow, x, triangle_up, triangle_down,
-        and star.
         """
-        assert (isinstance(pos, np.ndarray) and
-                pos.ndim == 2 and pos.shape[1] in (2, 3))
         if (edge_width is not None) + (edge_width_rel is not None) != 1:
             raise ValueError('exactly one of edge_width and edge_width_rel '
                              'must be non-None')
@@ -545,8 +679,22 @@ class MarkersVisual(Visual):
         else:
             if edge_width_rel < 0:
                 raise ValueError('edge_width_rel cannot be negative')
-        self.symbol = symbol
-        self.scaling = scaling
+
+        if scaling is not None:
+            warnings.warn(
+                "The scaling parameter is deprecated. Use MarkersVisual.scaling instead",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            self.scaling = scaling
+
+        if symbol is not None:
+            warnings.warn(
+                "The symbol parameter is deprecated. Use MarkersVisual.symbol instead",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            self.symbol = symbol
 
         edge_color = ColorArray(edge_color).rgba
         if len(edge_color) == 1:
@@ -556,31 +704,39 @@ class MarkersVisual(Visual):
         if len(face_color) == 1:
             face_color = face_color[0]
 
-        n = len(pos)
-        data = np.zeros(n, dtype=[('a_position', np.float32, 3),
-                                  ('a_fg_color', np.float32, 4),
-                                  ('a_bg_color', np.float32, 4),
-                                  ('a_size', np.float32, 1),
-                                  ('a_edgewidth', np.float32, 1)])
-        data['a_fg_color'] = edge_color
-        data['a_bg_color'] = face_color
-        if edge_width is not None:
-            data['a_edgewidth'] = edge_width
-        else:
-            data['a_edgewidth'] = size*edge_width_rel
-        data['a_position'][:, :pos.shape[1]] = pos
-        data['a_size'] = size
-        self.shared_program['u_antialias'] = self.antialias  # XXX make prop
-        self._data = data
-        if self._symbol is not None:
-            # If we have no symbol set, we skip drawing (_prepare_draw
-            # returns False). This causes the GLIR queue to not flush,
-            # and thus the GLIR queue fills with VBO DATA commands, resulting
-            # in a "memory leak". Thus only set the VertexBuffer data if we
-            # are actually going to draw.
-            self._vbo.set_data(data)
-            self.shared_program.bind(self._vbo)
+        if pos is not None:
+            assert (isinstance(pos, np.ndarray) and
+                    pos.ndim == 2 and pos.shape[1] in (2, 3))
+
+            n = len(pos)
+            data = np.zeros(n, dtype=[('a_position', np.float32, 3),
+                                      ('a_fg_color', np.float32, 4),
+                                      ('a_bg_color', np.float32, 4),
+                                      ('a_size', np.float32),
+                                      ('a_edgewidth', np.float32)])
+            data['a_fg_color'] = edge_color
+            data['a_bg_color'] = face_color
+            if edge_width is not None:
+                data['a_edgewidth'] = edge_width
+            else:
+                data['a_edgewidth'] = size * edge_width_rel
+            data['a_position'][:, :pos.shape[1]] = pos
+            data['a_size'] = size
+            self._data = data
+            if self._symbol is not None:
+                # If we have no symbol set, we skip drawing (_prepare_draw
+                # returns False). This causes the GLIR queue to not flush,
+                # and thus the GLIR queue fills with VBO DATA commands, resulting
+                # in a "memory leak". Thus only set the VertexBuffer data if we
+                # are actually going to draw.
+                self._vbo.set_data(data)
+                self.shared_program.bind(self._vbo)
+
         self.update()
+
+    @property
+    def symbols(self):
+        return list(self._marker_funcs)
 
     @property
     def symbol(self):
@@ -604,26 +760,116 @@ class MarkersVisual(Visual):
         if symbol is None:
             self._marker_fun = None
         else:
-            _check_valid('symbol', symbol, marker_types)
-            self._marker_fun = Function(_marker_dict[symbol])
+            _check_valid('symbol', symbol, self._marker_funcs.keys())
+            self._marker_fun = Function(self._marker_funcs[symbol])
             self._marker_fun['v_size'] = self._v_size_var
             self.shared_program.frag['marker'] = self._marker_fun
         self.update()
 
+    @property
+    def scaling(self):
+        """
+        If set to True, marker scales when rezooming.
+        """
+        return self._scaling
+
+    @scaling.setter
+    def scaling(self, value):
+        value = bool(value)
+        self.shared_program['u_scaling'] = value
+        self._scaling = value
+        self.update()
+
+    @property
+    def antialias(self):
+        """
+        Antialiasing amount (in px).
+        """
+        return self._antialias
+
+    @antialias.setter
+    def antialias(self, value):
+        value = float(value)
+        self.shared_program['u_antialias'] = value
+        self._antialias = value
+        self.update()
+
+    @property
+    def light_position(self):
+        """
+        The coordinates of the light used to create the spherical effect.
+        """
+        return self._light_position
+
+    @light_position.setter
+    def light_position(self, value):
+        value = np.array(value)
+        self.shared_program['u_light_position'] = value / np.linalg.norm(value)
+        self._light_position = value
+        self.update()
+
+    @property
+    def light_ambient(self):
+        """
+        The amount of ambient light used to create the spherical effect.
+        """
+        return self._light_ambient
+
+    @light_ambient.setter
+    def light_ambient(self, value):
+        self.shared_program['u_light_ambient'] = value
+        self._light_ambient = value
+        self.update()
+
+    @property
+    def light_color(self):
+        """
+        The color of the light used to create the spherical effect.
+        """
+        return self._light_color
+
+    @light_color.setter
+    def light_color(self, value):
+        self.shared_program['u_light_color'] = ColorArray(value).rgb
+        self._light_color = value
+        self.update()
+
+    @property
+    def alpha(self):
+        """
+        The opacity level of the visual.
+        """
+        return self._alpha
+
+    @alpha.setter
+    def alpha(self, value):
+        self.shared_program['u_alpha'] = value
+        self._alpha = value
+        self.update()
+
+    @property
+    def spherical(self):
+        """
+        Whether to add a spherical effect on the marker using lighting.
+        """
+        return self._spherical
+
+    @spherical.setter
+    def spherical(self, value):
+        self.shared_program['u_spherical'] = value
+        self._spherical = value
+        self.update()
+
     def _prepare_transforms(self, view):
-        xform = view.transforms.get_transform()
-        view.view_program.vert['transform'] = xform
+        view.view_program.vert['visual_to_framebuffer'] = view.get_transform('visual', 'framebuffer')
+        view.view_program.vert['framebuffer_to_visual'] = view.get_transform('framebuffer', 'visual')
+        view.view_program.vert['framebuffer_to_render'] = view.get_transform('framebuffer', 'render')
 
     def _prepare_draw(self, view):
-        if self._symbol is None:
+        if self._data is None or self._symbol is None:
             return False
         view.view_program['u_px_scale'] = view.transforms.pixel_scale
-        if self.scaling:
-            tr = view.transforms.get_transform('visual', 'document').simplified
-            scale = np.linalg.norm((tr.map([1, 0]) - tr.map([0, 0]))[:2])
-            view.view_program['u_scale'] = scale
-        else:
-            view.view_program['u_scale'] = 1
+        view.view_program['u_scaling'] = self.scaling
 
     def _compute_bounds(self, axis, view):
         pos = self._data['a_position']

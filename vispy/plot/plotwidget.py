@@ -23,10 +23,8 @@ class PlotWidget(scene.Widget):
     -----
     This class is typically instantiated implicitly by a `Figure`
     instance, e.g., by doing ``fig[0, 0]``.
-
-    See Also
-    --------
     """
+
     def __init__(self, *args, **kwargs):
         self._fg = kwargs.pop('fg_color', 'k')
         self.grid = None
@@ -122,20 +120,15 @@ class PlotWidget(scene.Widget):
         yaxis_widget = self.grid.add_widget(self.yaxis, row=2, col=3)
         yaxis_widget.width_max = 40
 
-        self.view = self.grid.add_view(row=2, col=4,
-                                       border_color='grey', bgcolor="#efefef")
-        self.view.camera = 'panzoom'
-        self.camera = self.view.camera
-
-        self.cbar_right = self.grid.add_widget(None, row=2, col=5)
-        self.cbar_right.width_max = 1
-
         # row 3
         # xaxis - column 4
         self.xaxis = scene.AxisWidget(orientation='bottom', text_color=fg,
                                       axis_color=fg, tick_color=fg)
         xaxis_widget = self.grid.add_widget(self.xaxis, row=3, col=4)
         xaxis_widget.height_max = 40
+
+        self.cbar_right = self.grid.add_widget(None, row=2, col=5)
+        self.cbar_right.width_max = 1
 
         # row 4
         # xlabel - column 4
@@ -146,6 +139,12 @@ class PlotWidget(scene.Widget):
         # row 5
         self.cbar_bottom = self.grid.add_widget(None, row=5, col=4)
         self.cbar_bottom.height_max = 1
+
+        # This needs to be added to the grid last (to fix #1742)
+        self.view = self.grid.add_view(row=2, col=4,
+                                       border_color='grey', bgcolor="#efefef")
+        self.view.camera = 'panzoom'
+        self.camera = self.view.camera
 
         self._configured = True
         self.xaxis.link_view(self.view)
@@ -188,7 +187,7 @@ class PlotWidget(scene.Widget):
         self.view.camera.set_range()
         return hist
 
-    def image(self, data, cmap='cubehelix', clim='auto', fg_color=None):
+    def image(self, data, cmap='cubehelix', clim='auto', fg_color=None, **kwargs):
         """Show an image
 
         Parameters
@@ -202,6 +201,8 @@ class PlotWidget(scene.Widget):
             min and max values.
         fg_color : Color or None
             Sets the plot foreground color if specified.
+        kwargs : keyword arguments.
+            More args to pass to :class:`~vispy.visuals.image.Image`.
 
         Returns
         -------
@@ -213,7 +214,7 @@ class PlotWidget(scene.Widget):
         The colormap is only used if the image pixels are scalars.
         """
         self._configure_2d(fg_color)
-        image = scene.Image(data, cmap=cmap, clim=clim)
+        image = scene.Image(data, cmap=cmap, clim=clim, **kwargs)
         self.view.add(image)
         self.view.camera.aspect = 1
         self.view.camera.set_range()
@@ -320,7 +321,7 @@ class PlotWidget(scene.Widget):
 
         See also
         --------
-        marker_types, LinePlot
+        LinePlot
         """
         self._configure_2d()
         line = scene.LinePlot(data, connect=connect, color=color,
@@ -343,7 +344,8 @@ class PlotWidget(scene.Widget):
         return line
 
     def spectrogram(self, x, n_fft=256, step=None, fs=1., window='hann',
-                    color_scale='log', cmap='cubehelix', clim='auto'):
+                    normalize=False, color_scale='log', cmap='cubehelix',
+                    clim='auto'):
         """Calculate and show a spectrogram
 
         Parameters
@@ -361,6 +363,8 @@ class PlotWidget(scene.Widget):
         window : str | None
             Window function to use. Can be ``'hann'`` for Hann window, or None
             for no windowing.
+        normalize : bool
+            Normalization of spectrogram values across frequencies.
         color_scale : {'linear', 'log'}
             Scale to apply to the result of the STFT.
             ``'log'`` will use ``10 * log10(power)``.
@@ -382,13 +386,13 @@ class PlotWidget(scene.Widget):
         self._configure_2d()
         # XXX once we have axes, we should use "fft_freqs", too
         spec = scene.Spectrogram(x, n_fft, step, fs, window,
-                                 color_scale, cmap, clim)
+                                 normalize, color_scale, cmap, clim)
         self.view.add(spec)
         self.view.camera.set_range()
         return spec
 
     def volume(self, vol, clim=None, method='mip', threshold=None,
-               cmap='grays'):
+               cmap='grays', **kwargs):
         """Show a 3D volume
 
         Parameters
@@ -407,6 +411,8 @@ class PlotWidget(scene.Widget):
             the mean of the given volume is used.
         cmap : str
             The colormap to use.
+        kwargs : keyword arguments.
+            More args to pass to :class:`~vispy.visuals.volume.Volume`.
 
         Returns
         -------
@@ -418,7 +424,7 @@ class PlotWidget(scene.Widget):
         Volume
         """
         self._configure_3d()
-        volume = scene.Volume(vol, clim, method, threshold, cmap=cmap)
+        volume = scene.Volume(vol, clim, method, threshold, cmap=cmap, **kwargs)
         self.view.add(volume)
         self.view.camera.set_range()
         return volume
@@ -479,7 +485,6 @@ class PlotWidget(scene.Widget):
         --------
         ColorBarWidget
         """
-
         self._configure_2d()
 
         cbar = scene.ColorBarWidget(orientation=position,

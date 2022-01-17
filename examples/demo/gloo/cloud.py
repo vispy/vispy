@@ -46,7 +46,7 @@ void main (void) {
     v_fg_color  = a_fg_color;
     v_bg_color  = a_bg_color;
     gl_Position = u_projection * u_view * u_model * vec4(a_position,1.0);
-    gl_PointSize = v_size + 2*(v_linewidth + 1.5*v_antialias);
+    gl_PointSize = v_size + 2.*(v_linewidth + 1.5*v_antialias);
 }
 """
 
@@ -72,15 +72,15 @@ varying float v_antialias;
 float disc(vec2 P, float size)
 {
     float r = length((P.xy - vec2(0.5,0.5))*size);
-    r -= v_size/2;
+    r -= v_size/2.;
     return r;
 }
 
 // ----------------
 float arrow_right(vec2 P, float size)
 {
-    float r1 = abs(P.x -.50)*size + abs(P.y -.5)*size - v_size/2;
-    float r2 = abs(P.x -.25)*size + abs(P.y -.5)*size - v_size/2;
+    float r1 = abs(P.x -.50)*size + abs(P.y -.5)*size - v_size/2.;
+    float r2 = abs(P.x -.25)*size + abs(P.y -.5)*size - v_size/2.;
     float r = max(r1,-r2);
     return r;
 }
@@ -88,8 +88,8 @@ float arrow_right(vec2 P, float size)
 // ----------------
 float ring(vec2 P, float size)
 {
-    float r1 = length((P.xy - vec2(0.5,0.5))*size) - v_size/2;
-    float r2 = length((P.xy - vec2(0.5,0.5))*size) - v_size/4;
+    float r1 = length((P.xy - vec2(0.5,0.5))*size) - v_size/2.;
+    float r2 = length((P.xy - vec2(0.5,0.5))*size) - v_size/4.;
     float r = max(r1,-r2);
     return r;
 }
@@ -98,11 +98,11 @@ float ring(vec2 P, float size)
 float clober(vec2 P, float size)
 {
     const float PI = 3.14159265358979323846264;
-    const float t1 = -PI/2;
+    const float t1 = -PI/2.;
     const vec2  c1 = 0.2*vec2(cos(t1),sin(t1));
-    const float t2 = t1+2*PI/3;
+    const float t2 = t1+2.*PI/3.;
     const vec2  c2 = 0.2*vec2(cos(t2),sin(t2));
-    const float t3 = t2+2*PI/3;
+    const float t3 = t2+2.*PI/3.;
     const vec2  c3 = 0.2*vec2(cos(t3),sin(t3));
 
     float r1 = length((P.xy- vec2(0.5,0.5) - c1)*size);
@@ -120,7 +120,7 @@ float square(vec2 P, float size)
 {
     float r = max(abs(P.x -.5)*size,
                   abs(P.y -.5)*size);
-    r -= v_size/2;
+    r -= v_size/2.;
     return r;
 }
 
@@ -128,7 +128,7 @@ float square(vec2 P, float size)
 float diamond(vec2 P, float size)
 {
     float r = abs(P.x -.5)*size + abs(P.y -.5)*size;
-    r -= v_size/2;
+    r -= v_size/2.;
     return r;
 }
 
@@ -140,7 +140,7 @@ float vbar(vec2 P, float size)
     float r3 = max(abs(P.x -.5)*size,
                    abs(P.y -.5)*size);
     float r = max(r1,r3);
-    r -= v_size/2;
+    r -= v_size/2.;
     return r;
 }
 
@@ -152,7 +152,7 @@ float hbar(vec2 P, float size)
     float r3 = max(abs(P.x -.5)*size,
                    abs(P.y -.5)*size);
     float r = max(r2,r3);
-    r -= v_size/2;
+    r -= v_size/2.;
     return r;
 }
 
@@ -166,7 +166,7 @@ float cross(vec2 P, float size)
     float r3 = max(abs(P.x -.5)*size,
                    abs(P.y -.5)*size);
     float r = max(min(r1,r2),r3);
-    r -= v_size/2;
+    r -= v_size/2.;
     return r;
 }
 
@@ -175,7 +175,7 @@ float cross(vec2 P, float size)
 // ------------------------------------
 void main()
 {
-    float size = v_size +2*(v_linewidth + 1.5*v_antialias);
+    float size = v_size +2.0*(v_linewidth + 1.5*v_antialias);
     float t = v_linewidth/2.0-v_antialias;
 
     float r = disc(gl_PointCoord, size);
@@ -202,7 +202,7 @@ void main()
     {
         float alpha = d/v_antialias;
         alpha = exp(-alpha*alpha);
-        if (r > 0)
+        if (r > 0.)
             gl_FragColor = vec4(v_fg_color.rgb, alpha*v_fg_color.a);
         else
             gl_FragColor = mix(v_bg_color, v_fg_color, alpha);
@@ -223,7 +223,7 @@ class Canvas(app.Canvas):
         data = np.zeros(n, [('a_position', np.float32, 3),
                             ('a_bg_color', np.float32, 4),
                             ('a_fg_color', np.float32, 4),
-                            ('a_size', np.float32, 1)])
+                            ('a_size', np.float32)])
         data['a_position'] = 0.45 * np.random.randn(n, 3)
         data['a_bg_color'] = np.random.uniform(0.85, 1.00, (n, 4))
         data['a_fg_color'] = 0, 0, 0, 1

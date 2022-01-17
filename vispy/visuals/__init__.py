@@ -26,8 +26,9 @@ from .isosurface import IsosurfaceVisual  # noqa
 from .line import LineVisual, ArrowVisual  # noqa
 from .linear_region import LinearRegionVisual  # noqa
 from .line_plot import LinePlotVisual  # noqa
-from .markers import MarkersVisual, marker_types  # noqa
+from .markers import MarkersVisual  # noqa
 from .mesh import MeshVisual  # noqa
+from .mesh_normals import MeshNormalsVisual  # noqa
 from .plane import PlaneVisual  # noqa
 from .polygon import PolygonVisual  # noqa
 from .rectangle import RectangleVisual  # noqa
@@ -44,3 +45,4 @@ from .xyz_axis import XYZAxisVisual  # noqa
 from .border import _BorderVisual  # noqa
 from .colorbar import ColorBarVisual  # noqa
 from .graphs import GraphVisual  # noqa
+from .windbarb import WindbarbVisual  # noqa

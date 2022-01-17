@@ -2,7 +2,7 @@
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-""" vispy.app.backends
+"""vispy.app.backends
 
 The backend modules are dynamically imported when needed. This module
 defines a small description of each supported backend, so that for
@@ -15,22 +15,23 @@ imported. This stuff is mostly used in the Application.use method.
 CORE_BACKENDS = [
     ('PyQt4', '_pyqt4', 'PyQt4'),
     ('PyQt5', '_pyqt5', 'PyQt5'),
+    ('PyQt6', '_pyqt6', 'PyQt6'),
     ('PySide', '_pyside', 'PySide'),
     ('PySide2', '_pyside2', 'PySide2'),
+    ('PySide6', '_pyside6', 'PySide6'),
     ('Pyglet', '_pyglet', 'pyglet'),
     ('Glfw', '_glfw', 'vispy.ext.glfw'),
     ('SDL2', '_sdl2', 'sdl2'),
     ('wx', '_wx', 'wx'),
     ('EGL', '_egl', 'vispy.ext.egl'),
     ('osmesa', '_osmesa', 'vispy.ext.osmesa'),
+    ('tkinter', '_tk', 'tkinter'),
 ]
 
 # Whereas core backends really represents libraries that can create a
 # canvas, the pseudo backends act more like a proxy.
 PSEUDO_BACKENDS = [
-    # ('ipynb_vnc', '_ipynb_vnc', None),
-    # ('ipynb_static', '_ipynb_static', None),
-    ('ipynb_webgl', '_ipynb_webgl', None),
+    ('jupyter_rfb', '_jupyter_rfb', None),
     ('_test', '_test', 'vispy.app.backends._test'),  # add one that will fail
 ]
 

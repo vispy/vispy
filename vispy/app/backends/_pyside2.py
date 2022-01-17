@@ -2,8 +2,7 @@
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-""" PySide2 proxy backend for the qt backend.
-"""
+"""PySide2 proxy backend for the qt backend."""
 
 import sys
 from .. import backends
@@ -13,12 +12,6 @@ from ... import config
 USE_EGL = config['gl_backend'].lower().startswith('es')
 
 try:
-    # Make sure no conflicting libraries have been imported.
-    for lib in ['PySide', 'PyQt4', 'PyQt5']:
-        lib += '.QtCore'
-        if lib in sys.modules:
-            raise RuntimeError("Refusing to import PySide2 because %s is "
-                               "already imported." % lib)
     # Try importing (QtOpenGL first to fail without import QtCore)
     if not USE_EGL:
         from PySide2 import QtOpenGL  # noqa
@@ -44,7 +37,7 @@ else:
             PySide2.QtWidgets.QApplication.processEvents()
             while time.time() < start + msec * 0.001:
                 PySide2.QtWidgets.QApplication.processEvents()
-    QtTest.QTest.qWait = qWait
+        QtTest.QTest.qWait = qWait
 
     which = ('PySide2', PySide2.__version__, QtCore.__version__)
     # Remove _qt module to force an import even if it was already imported
@@ -55,5 +48,5 @@ else:
         from . import _qt  # noqa
         from ._qt import *  # noqa
     else:
-        logger.info('%s already imported, cannot switch to %s'
-                    % (backends.qt_lib, 'pyside2'))
+        logger.warning('%s already imported, cannot switch to %s'
+                       % (backends.qt_lib, 'pyside2'))

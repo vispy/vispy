@@ -11,7 +11,7 @@ import sys
 import numpy as np
 
 from vispy import app
-from vispy.visuals import CubeVisual, transforms
+from vispy.visuals import BoxVisual, transforms
 from vispy.util.quaternion import Quaternion
 
 
@@ -20,8 +20,8 @@ class Canvas(app.Canvas):
         app.Canvas.__init__(self, 'Cube', keys='interactive',
                             size=(400, 400))
 
-        self.cube = CubeVisual((1.0, 0.5, 0.25), color='red',
-                               edge_color='black')
+        self.cube = BoxVisual(1.0, 0.5, 0.25, color='red',
+                              edge_color='black')
         self.cube.transform = transforms.MatrixTransform()
         self.cube.transform.scale((100, 100, 0.001))
         self.cube.transform.translate((200, 200))

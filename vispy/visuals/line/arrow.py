@@ -50,11 +50,11 @@ class _ArrowHeadVisual(Visual):
     ARROWHEAD_FRAGMENT_SHADER = glsl.get('arrowheads/arrowheads.frag')
 
     _arrow_vtype = np.dtype([
-        ('v1', np.float32, 4),
-        ('v2', np.float32, 4),
-        ('size', np.float32, 1),
-        ('color', np.float32, 4),
-        ('linewidth', np.float32, 1)
+        ('v1', np.float32, (4,)),
+        ('v2', np.float32, (4,)),
+        ('size', np.float32),
+        ('color', np.float32, (4,)),
+        ('linewidth', np.float32)
     ])
 
     def __init__(self, parent):
@@ -109,12 +109,14 @@ class ArrowVisual(LineVisual):
     You add an arrow head by specifying two vertices `v1` and `v2` which
     represent the arrow body. This visual will draw an arrow head using `v2`
     as center point, and the orientation of the arrow head is automatically
-    determined by calculating the direction vector between `v1` and `v2`.
+    determined by calculating the direction vector between `v1` and `v2`. 
+    The arrow head can be detached from arrow body.
 
     Parameters
     ----------
     pos : array
-        Array of shape (..., 2) or (..., 3) specifying vertex coordinates.
+        Array of shape (..., 2) or (..., 3) specifying vertex coordinates
+        of arrow body.
     color : Color, tuple, or array
         The color to use when drawing the line. If an array is given, it
         must be of shape (..., 4) and provide one rgba color per vertex.
@@ -145,8 +147,8 @@ class ArrowVisual(LineVisual):
         which may be unavailable or inconsistent on some platforms.
     arrows : array
         A (N, 4) or (N, 6) matrix where each row contains the (x, y) or the
-        (x, y, z) coordinate of the first and second vertex of the arrow
-        body. Remember that the second vertex is used as center point for
+        (x, y, z) coordinates of the first and second vertex of the arrow
+        head. Remember that the second vertex is used as center point for
         the arrow head, and the first vertex is only used for determining
         the arrow head orientation.
     arrow_type : string
@@ -231,7 +233,6 @@ class ArrowVisual(LineVisual):
             the arrow head, and the first vertex is only used for determining
             the arrow head orientation.
         """
-
         if arrows is not None:
             self._arrows = arrows
             self._arrows_changed = True

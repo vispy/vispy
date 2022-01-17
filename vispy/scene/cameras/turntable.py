@@ -6,11 +6,12 @@ from __future__ import division
 
 import numpy as np
 
+from ...util import transforms
 from .perspective import Base3DRotationCamera
 
 
 class TurntableCamera(Base3DRotationCamera):
-    """ 3D camera class that orbits around a center point while
+    """3D camera class that orbits around a center point while
     maintaining a view on a center point.
 
     For this camera, the ``scale_factor`` indicates the zoom level, and
@@ -34,6 +35,8 @@ class TurntableCamera(Base3DRotationCamera):
         The distance of the camera from the rotation point (only makes sense
         if fov > 0). If None (default) the distance is determined from the
         scale_factor and fov.
+    translate_speed : float
+        Scale factor on translation speed when moving the camera center point.
     **kwargs : dict
         Keyword arguments to pass to `BaseCamera`.
 
@@ -51,8 +54,8 @@ class TurntableCamera(Base3DRotationCamera):
     _state_props = Base3DRotationCamera._state_props + ('elevation',
                                                         'azimuth', 'roll')
 
-    def __init__(self, fov=0.0, elevation=30.0, azimuth=30.0, roll=0.0,
-                 distance=None, **kwargs):
+    def __init__(self, fov=45.0, elevation=30.0, azimuth=30.0, roll=0.0,
+                 distance=None, translate_speed=1.0, **kwargs):
         super(TurntableCamera, self).__init__(fov=fov, **kwargs)
 
         # Set camera attributes
@@ -60,10 +63,11 @@ class TurntableCamera(Base3DRotationCamera):
         self.elevation = elevation
         self.roll = roll  # interaction not implemented yet
         self.distance = distance  # None means auto-distance
+        self.translate_speed = translate_speed
 
     @property
     def elevation(self):
-        """ The angle of the camera in degrees above the horizontal (x, z)
+        """The angle of the camera in degrees above the horizontal (x, z)
         plane.
         """
         return self._elevation
@@ -76,7 +80,7 @@ class TurntableCamera(Base3DRotationCamera):
 
     @property
     def azimuth(self):
-        """ The angle of the camera in degrees around the y axis. An angle of
+        """The angle of the camera in degrees around the y axis. An angle of
         0 places the camera within the (y, z) plane.
         """
         return self._azimuth
@@ -93,7 +97,7 @@ class TurntableCamera(Base3DRotationCamera):
 
     @property
     def roll(self):
-        """ The angle of the camera in degrees around the z axis. An angle of
+        """The angle of the camera in degrees around the z axis. An angle of
         0 places puts the camera upright.
         """
         return self._roll
@@ -109,7 +113,7 @@ class TurntableCamera(Base3DRotationCamera):
         self.view_changed()
 
     def orbit(self, azim, elev):
-        """ Orbits the camera around the center position.
+        """Orbits the camera around the center position.
 
         Parameters
         ----------
@@ -131,20 +135,23 @@ class TurntableCamera(Base3DRotationCamera):
         self.azimuth = self._event_value[0] - (p2 - p1)[0] * 0.5
         self.elevation = self._event_value[1] + (p2 - p1)[1] * 0.5
 
-    def _rotate_tr(self):
-        """Rotate the transformation matrix based on camera parameters"""
+    def _get_rotation_tr(self):
+        """Return a rotation matrix based on camera parameters"""
         up, forward, right = self._get_dim_vectors()
-        self.transform.rotate(self.elevation, -right)
-        self.transform.rotate(self.azimuth, up)
+        return np.dot(
+            transforms.rotate(self.elevation, -right),
+            transforms.rotate(self.azimuth, up)
+        )
 
     def _dist_to_trans(self, dist):
         """Convert mouse x, y movement into x, y, z translations"""
         rae = np.array([self.roll, self.azimuth, self.elevation]) * np.pi / 180
         sro, saz, sel = np.sin(rae)
         cro, caz, cel = np.cos(rae)
-        dx = (+ dist[0] * (cro * caz + sro * sel * saz)
-              + dist[1] * (sro * caz - cro * sel * saz))
-        dy = (+ dist[0] * (cro * saz - sro * sel * caz)
-              + dist[1] * (sro * saz + cro * sel * caz))
-        dz = (- dist[0] * sro * cel + dist[1] * cro * cel)
+        d0, d1 = dist[0], dist[1]
+        dx = (+ d0 * (cro * caz + sro * sel * saz)
+              + d1 * (sro * caz - cro * sel * saz)) * self.translate_speed
+        dy = (+ d0 * (cro * saz - sro * sel * caz)
+              + d1 * (sro * saz + cro * sel * caz)) * self.translate_speed
+        dz = (- d0 * sro * cel + d1 * cro * cel) * self.translate_speed
         return dx, dy, dz

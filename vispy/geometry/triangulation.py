@@ -7,12 +7,6 @@ import numpy as np
 
 from collections import OrderedDict
 
-try:
-    import triangle
-    _TRIANGLE_AVAILABLE = True
-except (ImportError, AssertionError):
-    _TRIANGLE_AVAILABLE = False
-
 
 class Triangulation(object):
     """Constrained delaunay triangulation
@@ -37,9 +31,8 @@ class Triangulation(object):
     ----------
     .. [1] Domiter, V. and Žalik, B. Sweep‐line algorithm for constrained
        Delaunay triangulation
-
-
     """
+
     def __init__(self, pts, edges):
         self.pts = pts[:, :2].astype(np.float32)
         self.edges = edges
@@ -523,7 +516,7 @@ class Triangulation(object):
                 np.any(mask2[:, 0] & mask1[:, 1]))
 
     def _intersected_edge(self, edges, cut_edge):
-        """ Given a list of *edges*, return the first that is intersected by
+        """Given a list of *edges*, return the first that is intersected by
         *cut_edge*.
         """
         for edge in edges:
@@ -686,9 +679,7 @@ class Triangulation(object):
         return np.cross(B-A, C-B) > 0
 
     def _edges_intersect(self, edge1, edge2):
-        """
-        Return 1 if edges intersect completely (endpoints excluded)
-        """
+        """Return 1 if edges intersect completely (endpoints excluded)"""
         h12 = self._intersect_edge_arrays(self.pts[np.array(edge1)],
                                           self.pts[np.array(edge2)])
         h21 = self._intersect_edge_arrays(self.pts[np.array(edge2)],
@@ -743,7 +734,7 @@ class Triangulation(object):
         return h
 
     def _orientation(self, edge, point):
-        """ Returns +1 if edge[0]->point is clockwise from edge[0]->edge[1],
+        """Returns +1 if edge[0]->point is clockwise from edge[0]->edge[1],
         -1 if counterclockwise, and 0 if parallel.
         """
         v1 = self.pts[point] - self.pts[edge[0]]
@@ -820,6 +811,7 @@ def _triangulate_python(vertices_2d, segments):
 
 
 def _triangulate_cpp(vertices_2d, segments):
+    import triangle
     T = triangle.triangulate({'vertices': vertices_2d,
                               'segments': segments}, "p")
     vertices_2d = T["vertices"]
@@ -828,7 +820,16 @@ def _triangulate_cpp(vertices_2d, segments):
 
 
 def triangulate(vertices):
-    """Triangulate a set of vertices
+    """Triangulate a set of vertices.
+
+    This uses a pure Python implementation based on [1]_.
+
+    If `Triangle` by Jonathan R. Shewchuk [2]_ and the Python bindings `triangle` [3]_
+    are installed, this will be used instead. Users need to acknowledge and adhere to
+    the licensing terms of these packages.
+
+    In the VisPy `PolygonCollection Example` [4]_ a speedup of 97% using
+    `Triangle`/`triangle` can be achieved compared to the pure Python implementation.
 
     Parameters
     ----------
@@ -839,8 +840,20 @@ def triangulate(vertices):
     -------
     vertices : array-like
         The vertices.
-    tringles : array-like
+    triangles : array-like
         The triangles.
+
+    References
+    ----------
+    .. [1] Domiter, V. and Žalik, B. Sweep‐line algorithm for constrained
+       Delaunay triangulation
+    .. [2] Shewchuk J.R. (1996) Triangle: Engineering a 2D quality mesh generator and
+       Delaunay triangulator. In: Lin M.C., Manocha D. (eds) Applied Computational
+       Geometry Towards Geometric Engineering. WACG 1996. Lecture Notes in Computer
+       Science, vol 1148. Springer, Berlin, Heidelberg.
+       https://doi.org/10.1007/BFb0014497
+    .. [3] https://rufat.be/triangle/
+    .. [4] https://github.com/vispy/vispy/blob/main/examples/collections/polygon_collection.py
     """
     n = len(vertices)
     vertices = np.asarray(vertices)
@@ -849,10 +862,13 @@ def triangulate(vertices):
     segments = np.repeat(np.arange(n + 1), 2)[1:-1]
     segments[-2:] = n - 1, 0
 
-    if _TRIANGLE_AVAILABLE:
-        vertices_2d, triangles = _triangulate_cpp(vertices_2d, segments)
-    else:
+    try:
+        import triangle  # noqa: F401
+    except (ImportError, AssertionError):
         vertices_2d, triangles = _triangulate_python(vertices_2d, segments)
+    else:
+        segments_2d = segments.reshape((-1, 2))
+        vertices_2d, triangles = _triangulate_cpp(vertices_2d, segments_2d)
 
     vertices = np.empty((len(vertices_2d), 3))
     vertices[:, :2] = vertices_2d

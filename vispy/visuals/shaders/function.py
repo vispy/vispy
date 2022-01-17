@@ -25,7 +25,6 @@ import numpy as np
 
 from ...util.eq import eq
 from ...util import logger
-from ...ext.six import string_types
 from . import parsing
 from .shader_object import ShaderObject
 from .variable import Variable, Varying
@@ -123,14 +122,18 @@ class Function(ShaderObject):
     Note how the two scale function resulted in two different functions
     and two uniforms for the scale factors.
 
-    Function calls
-    --------------
+    Notes
+    -----
+
+    Function calls:
 
     As can be seen above, the arguments with which a function is to be
     called must be specified by calling the Function object. The
     arguments can be any of the expressions mentioned earlier. If the
     signature is already specified in the template code, that function
     itself must be given.
+
+    ::
 
         code = Function('''
             void main() {
@@ -145,11 +148,13 @@ class Function(ShaderObject):
         # For scale, the sigfnature is already specified
         code['scale'] = scale_func  # Must not specify args
 
-    Data for uniform and attribute variables
-    ----------------------------------------
+    Data for uniform and attribute variables:
+
     To each variable a value can be associated. In fact, in most cases
     the Function class is smart enough to be able to create a Variable
     object if only the data is given.
+
+    ::
 
         code['offset'] = Variable('uniform float offset')  # No data
         code['offset'] = Variable('uniform float offset', 3.0)  # With data
@@ -159,6 +164,7 @@ class Function(ShaderObject):
         # Updating variables
         code['offset'].value = 4.0
         position['position'].value.set_data(...)
+
     """
 
     def __init__(self, code, dependencies=None):
@@ -182,7 +188,7 @@ class Function(ShaderObject):
         self._assignments = OrderedDict()
 
     def __setitem__(self, key, val):
-        """ Setting of replacements through a dict-like syntax.
+        """Setting of replacements through a dict-like syntax.
 
         Each replacement can be:
         * verbatim code: ``fun1['foo'] = '3.14159'``
@@ -200,7 +206,7 @@ class Function(ShaderObject):
                 raise TypeError("Variable assignment only allowed for "
                                 "varyings, not %s (in %s)"
                                 % (key.vtype, self.name))
-        elif isinstance(key, string_types):
+        elif isinstance(key, str):
             if any(map(key.startswith,
                        ('gl_PointSize', 'gl_Position', 'gl_FragColor'))):
                 storage = self._assignments
@@ -268,11 +274,11 @@ class Function(ShaderObject):
             import traceback
             last = traceback.format_list(traceback.extract_stack()[-2:-1])
             logger.debug("Assignment would trigger shader recompile:\n"
-                         "Original:\n%r\nReplacement:\n%r\nSource:\n%s",
+                         "Original: %r\nReplacement: %r\nSource: %s",
                          oldval, val, ''.join(last))
 
     def __getitem__(self, key):
-        """ Return a reference to a program variable from this function.
+        """Return a reference to a program variable from this function.
 
         This allows variables between functions to be linked together::
 
@@ -282,7 +288,6 @@ class Function(ShaderObject):
         same program variable whenever func1 and func2 are attached to the same
         program.
         """
-
         try:
             return self._expressions[key]
         except KeyError:
@@ -299,12 +304,12 @@ class Function(ShaderObject):
             raise KeyError('No value known for key %r' % key)
 
     def __call__(self, *args):
-        """ Set the signature for this function and return an FunctionCall
+        """Set the signature for this function and return an FunctionCall
         object. Each argument can be verbatim code or a FunctionCall object.
         """
         return FunctionCall(self, args)
 
-    ## Public API methods
+    # Public API methods
 
     @property
     def signature(self):
@@ -317,7 +322,7 @@ class Function(ShaderObject):
 
     @property
     def name(self):
-        """ The function name. The name may be mangled in the final code
+        """The function name. The name may be mangled in the final code
         to avoid name clashes.
         """
         return self.signature[0]
@@ -326,23 +331,18 @@ class Function(ShaderObject):
     def args(self):
         """
         List of input arguments in the function signature::
-
             [(arg_name, arg_type), ...]
         """
         return self.signature[1]
 
     @property
     def rtype(self):
-        """
-        The return type of this function.
-        """
+        """The return type of this function."""
         return self.signature[2]
 
     @property
     def code(self):
-        """ The template code used to generate the definition for this
-        function.
-        """
+        """The template code used to generate the definition for this function."""
         return self._code
 
     @code.setter
@@ -350,7 +350,7 @@ class Function(ShaderObject):
         # Get and strip code
         if isinstance(code, Function):
             code = code._code
-        elif not isinstance(code, string_types):
+        elif not isinstance(code, str):
             raise ValueError('Function needs a string or Function; got %s.' %
                              type(code))
         self._code = self._clean_code(code)
@@ -377,7 +377,7 @@ class Function(ShaderObject):
         return list(self._static_vars.keys()) + [arg[0] for arg in self.args]
 
     def replace(self, str1, str2):
-        """ Set verbatim code replacement
+        """Set verbatim code replacement
 
         It is strongly recommended to use function['$foo'] = 'bar' where
         possible because template variables are less likely to changed
@@ -393,14 +393,12 @@ class Function(ShaderObject):
         if str2 != self._replacements.get(str1, None):
             self._replacements[str1] = str2
             self.changed(code_changed=True)
-            #self._last_changed = time.time()
+            # self._last_changed = time.time()
 
-    ## Private methods
+    # Private methods
 
     def _parse_template_vars(self):
-        """ find all template variables in self._code, excluding the
-        function name.
-        """
+        """Find all template variables in self._code, excluding the function name."""
         template_vars = set()
         for var in parsing.find_template_variables(self._code):
             var = var.lstrip('$')
@@ -412,9 +410,8 @@ class Function(ShaderObject):
             template_vars.add(var)
         return template_vars
 
-    def _get_replaced_code(self, names):
-        """ Return code, with new name, expressions, and replacements applied.
-        """
+    def _get_replaced_code(self, names, version, shader):
+        """Return code, with new name, expressions, and replacements applied."""
         code = self._code
 
         # Modify name
@@ -472,16 +469,14 @@ class Function(ShaderObject):
 
         return code + '\n'
 
-    def definition(self, names):
-        return self._get_replaced_code(names)
+    def definition(self, names, version, shader):
+        return self._get_replaced_code(names, version, shader)
 
     def expression(self, names):
         return names[self]
 
     def _clean_code(self, code):
-        """ Return *code* with indentation and leading/trailing blank lines
-        removed.
-        """
+        """Return *code* with indentation and leading/trailing blank lines removed."""
         lines = code.split("\n")
         min_indent = 100
         for line in lines:
@@ -507,17 +502,34 @@ class Function(ShaderObject):
 
 
 class MainFunction(Function):
-    """ Subclass of Function that allows multiple functions and variables to
+    """Subclass of Function that allows multiple functions and variables to
     be defined in a single code string. The code must contain a main() function
     definition.
     """
-    def __init__(self, *args, **kwargs):
+
+    def __init__(self, shader_type, *args, **kwargs):
+        self.shader_type = shader_type
         self._chains = {}
         Function.__init__(self, *args, **kwargs)
 
     @property
     def signature(self):
         return ('main', [], 'void')
+
+    @property
+    def version_pragma(self):
+        """Return version number and extra qualifiers from pragma if present."""
+        m = re.search(parsing.re_version_pragma, self.code)
+        if m is None:
+            return None
+        return int(m.group(1)), m.group(2)
+
+    def definition(self, obj_names, version, shader):
+        code = Function.definition(self, obj_names, version, shader)
+        # strip out version pragma before returning code; this will be
+        # added to the final compiled code later.
+        code = re.sub(parsing.re_version_pragma, '', code)
+        return code
 
     def static_names(self):
         if self._static_vars is not None:
@@ -539,9 +551,7 @@ class MainFunction(Function):
         return names
 
     def add_chain(self, var):
-        """
-        Create a new ChainFunction and attach to $var.
-        """
+        """Create a new ChainFunction and attach to $var."""
         chain = FunctionChain(var, [])
         self._chains[var] = chain
         self[var] = chain
@@ -568,14 +578,14 @@ class FunctionChain(Function):
 
     Examples
     --------
-    This creates a function chain:
+    This creates a function chain::
 
         >>> func1 = Function('void my_func_1() {}')
         >>> func2 = Function('void my_func_2() {}')
         >>> chain = FunctionChain('my_func_chain', [func1, func2])
 
     If *chain* is included in a ModularProgram, it will generate the following
-    output:
+    output::
 
         void my_func_1() {}
         void my_func_2() {}
@@ -591,7 +601,7 @@ class FunctionChain(Function):
 
     If the return type is not 'void', then the return value of each function
     will be used to supply the first input argument of the next function in
-    the chain. For example:
+    the chain. For example::
 
         vec3 my_func_1(vec3 input) {return input + vec3(1, 0, 0);}
         void my_func_2(vec3 input) {return input + vec3(0, 1, 0);}
@@ -600,10 +610,11 @@ class FunctionChain(Function):
             return my_func_2(my_func_1(input));
         }
     """
+
     def __init__(self, name=None, funcs=()):
         # bypass Function.__init__ completely.
         ShaderObject.__init__(self)
-        if not (name is None or isinstance(name, string_types)):
+        if not (name is None or isinstance(name, str)):
             raise TypeError("Name argument must be string or None.")
         self._funcs = []
         self._code = None
@@ -654,8 +665,7 @@ class FunctionChain(Function):
         return {}
 
     def append(self, function, update=True):
-        """ Append a new function to the end of this chain.
-        """
+        """Append a new function to the end of this chain."""
         self._funcs.append(function)
         self._add_dep(function)
         if update:
@@ -672,22 +682,20 @@ class FunctionChain(Function):
         return self.functions[k]
 
     def insert(self, index, function, update=True):
-        """ Insert a new function into the chain at *index*.
-        """
+        """Insert a new function into the chain at *index*."""
         self._funcs.insert(index, function)
         self._add_dep(function)
         if update:
             self._update()
 
     def remove(self, function, update=True):
-        """ Remove a function from the chain.
-        """
+        """Remove a function from the chain."""
         self._funcs.remove(function)
         self._remove_dep(function)
         if update:
             self._update()
 
-    def definition(self, obj_names):
+    def definition(self, obj_names, version, shader):
         name = obj_names[self]
 
         args = ", ".join(["%s %s" % arg for arg in self.args])
@@ -739,8 +747,8 @@ class FunctionChain(Function):
 
 
 class StatementList(ShaderObject):
-    """Represents a list of statements.
-    """
+    """Represents a list of statements."""
+
     def __init__(self):
         self.items = {}
         self.order = []
@@ -760,8 +768,7 @@ class StatementList(ShaderObject):
         self.changed(code_changed=True)
 
     def remove(self, item):
-        """Remove an item from the list.
-        """
+        """Remove an item from the list."""
         self.items.pop(item)
         self._remove_dep(item)
         self.order = None

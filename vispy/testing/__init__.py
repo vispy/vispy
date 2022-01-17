@@ -12,7 +12,7 @@ Tests can be run in a few ways:
     * From the source root, you can do ``make test`` which wraps to
       a call to ``python make test``.
 
-There are various diffrent testing "modes", including:
+There are various different testing "modes", including:
 
     * "full": run all tests.
     * any backend name (e.g., "glfw"): run application/GL tests using a
@@ -34,19 +34,18 @@ For examples on how to test various bits of functionality (e.g., application
 functionality, or drawing things with OpenGL), it's best to look at existing
 examples in the test suite.
 
-The code base gets automatically tested by Travis-CI (Linux) and AppVeyor
-(Windows) on Python 2.7 and 3.6. There are multiple testing modes that
-use e.g. full dependencies, minimal dependencies, etc. See ``.travis.yml``
-to determine what automatic tests are run.
+The code base gets automatically tested by GitHub Actions. There are multiple
+testing modes that use e.g. full dependencies, minimal dependencies, etc.
+See ``.github/workflows/main.yml`` to determine what automatic tests are run.
 """
 
 from ._testing import (SkipTest, requires_application, requires_ipython,  # noqa
-                      requires_img_lib,  # noqa
-                      has_backend, requires_pyopengl,  # noqa
-                      requires_scipy, has_matplotlib, has_skimage,  # noqa
-                      save_testing_image, TestingCanvas, has_pyopengl,  # noqa
-                      run_tests_if_main,
-                      assert_is, assert_in, assert_not_in, assert_equal,
-                      assert_not_equal, assert_raises, assert_true,  # noqa
-                      raises, requires_numpydoc)  # noqa
+                       requires_img_lib,  # noqa
+                       requires_pyopengl,  # noqa
+                       requires_scipy,  # noqa
+                       save_testing_image, TestingCanvas, has_pyopengl,  # noqa
+                       run_tests_if_main, requires_ssl,  # noqa
+                       assert_is, assert_in, assert_not_in, assert_equal,
+                       assert_not_equal, assert_raises, assert_true,  # noqa
+                       raises, requires_numpydoc, IS_TRAVIS_CI, IS_CI)  # noqa
 from ._runners import test  # noqa

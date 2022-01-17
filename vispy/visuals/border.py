@@ -11,7 +11,7 @@ import numpy as np
 from . import Visual
 from ..color import Color
 
-VERT_SHADER_BORDER = """
+_VERTEX_SHADER = """
 attribute vec2 a_position;
 attribute vec2 a_adjust_dir;
 
@@ -22,7 +22,7 @@ void main() {
     // Also need to map the adjustment direction vector, but this is tricky!
     // We need to adjust separately for each component of the vector:
     vec4 adjusted;
-    if ( a_adjust_dir.x == 0 ) {
+    if ( a_adjust_dir.x == 0. ) {
         // If this is an outer vertex, no adjustment for line weight is needed.
         // (In fact, trying to make the adjustment would result in no
         // triangles being drawn, hence the if/else block)
@@ -32,10 +32,10 @@ void main() {
         // Inner vertexes must be adjusted for line width, but this is
         // surprisingly tricky given that the rectangle may have been scaled
         // and rotated!
-        vec4 doc_x = $visual_to_doc(vec4(a_adjust_dir.x, 0, 0, 0)) -
-                    $visual_to_doc(vec4(0, 0, 0, 0));
-        vec4 doc_y = $visual_to_doc(vec4(0, a_adjust_dir.y, 0, 0)) -
-                    $visual_to_doc(vec4(0, 0, 0, 0));
+        vec4 doc_x = $visual_to_doc(vec4(a_adjust_dir.x, 0., 0., 0.)) -
+                    $visual_to_doc(vec4(0., 0., 0., 0.));
+        vec4 doc_y = $visual_to_doc(vec4(0, a_adjust_dir.y, 0., 0.)) -
+                    $visual_to_doc(vec4(0., 0., 0., 0.));
         doc_x = normalize(doc_x);
         doc_y = normalize(doc_y);
 
@@ -55,7 +55,7 @@ void main() {
 }
 """
 
-FRAG_SHADER_BORDER = """
+_FRAGMENT_SHADER = """
 void main() {
     gl_FragColor = $border_color;
 }
@@ -84,6 +84,11 @@ class _BorderVisual(Visual):
         str as the color's name or an actual instace of a vipy.color.Color
     """
 
+    _shaders = {
+        'vertex': _VERTEX_SHADER,
+        'fragment': _FRAGMENT_SHADER,
+    }
+
     def __init__(self, pos, halfdim,
                  border_width=1.0,
                  border_color=None,
@@ -94,8 +99,7 @@ class _BorderVisual(Visual):
         self._border_width = border_width
         self._border_color = Color(border_color)
 
-        Visual.__init__(self, vcode=VERT_SHADER_BORDER,
-                        fcode=FRAG_SHADER_BORDER, **kwargs)
+        Visual.__init__(self, vcode=self._shaders['vertex'], fcode=self._shaders['fragment'])
 
     @staticmethod
     def _prepare_transforms(view):
@@ -108,8 +112,7 @@ class _BorderVisual(Visual):
 
     @property
     def visual_border_width(self):
-        """ The border width in visual coordinates
-        """
+        """The border width in visual coordinates"""
         render_to_doc =  \
             self.transforms.get_transform('document', 'visual')
 
@@ -155,7 +158,7 @@ class _BorderVisual(Visual):
 
         self.shared_program['a_position'] = border_vertices
         self.shared_program['a_adjust_dir'] = adjust_dir
-        self.shared_program.vert['border_width'] = self._border_width
+        self.shared_program.vert['border_width'] = float(self._border_width)
         self.shared_program.frag['border_color'] = self._border_color.rgba
 
     def _prepare_draw(self, view=None):
@@ -165,8 +168,7 @@ class _BorderVisual(Visual):
 
     @property
     def border_width(self):
-        """ The width of the border
-        """
+        """The width of the border"""
         return self._border_width
 
     @border_width.setter
@@ -177,8 +179,7 @@ class _BorderVisual(Visual):
 
     @property
     def border_color(self):
-        """ The color of the border in pixels
-        """
+        """The color of the border in pixels"""
         return self._border_color
 
     @border_color.setter
@@ -188,8 +189,7 @@ class _BorderVisual(Visual):
 
     @property
     def pos(self):
-        """ The center of the BorderVisual
-        """
+        """The center of the BorderVisual"""
         return self._pos
 
     @pos.setter
@@ -199,9 +199,7 @@ class _BorderVisual(Visual):
 
     @property
     def halfdim(self):
-        """ The half-dimensions measured from the center of the BorderVisual
-        """
-
+        """The half-dimensions measured from the center of the BorderVisual"""
         return self._halfdim
 
     @halfdim.setter

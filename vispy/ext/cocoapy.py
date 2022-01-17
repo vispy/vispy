@@ -17,6 +17,27 @@ if sys.version_info[0] >= 3:
 else:
     string_types = basestring,  # noqa
 
+
+# handle dlopen cache changes in macOS 11 (Big Sur)
+# ref https://stackoverflow.com/questions/63475461/unable-to-import-opengl-gl-in-python-on-macos
+try:
+    import OpenGL.GL   # noqa
+except ImportError:
+    # print('Drat, patching for Big Sur')
+    orig_util_find_library = util.find_library
+
+    def new_util_find_library(name):
+        res = orig_util_find_library(name)
+        if res:
+            return res
+        lut = {
+            'objc': 'libobjc.dylib',
+            'quartz': 'Quartz.framework/Quartz'
+        }
+        return lut.get(name, name+'.framework/'+name)
+    util.find_library = new_util_find_library
+
+
 # Based on Pyglet code
 
 ##############################################################################
@@ -155,8 +176,9 @@ objc.class_getIvarLayout.argtypes = [c_void_p]
 objc.class_getMethodImplementation.restype = c_void_p
 objc.class_getMethodImplementation.argtypes = [c_void_p, c_void_p]
 
-objc.class_getMethodImplementation_stret.restype = c_void_p
-objc.class_getMethodImplementation_stret.argtypes = [c_void_p, c_void_p]
+if platform.machine() != "arm64":
+    objc.class_getMethodImplementation_stret.restype = c_void_p
+    objc.class_getMethodImplementation_stret.argtypes = [c_void_p, c_void_p]
 
 objc.class_getName.restype = c_char_p
 objc.class_getName.argtypes = [c_void_p]
@@ -254,9 +276,9 @@ objc.objc_getMetaClass.argtypes = [c_char_p]
 objc.objc_getProtocol.restype = c_void_p
 objc.objc_getProtocol.argtypes = [c_char_p]
 
-objc.objc_msgSendSuper_stret.restype = None
-
-objc.objc_msgSend_stret.restype = None
+if platform.machine() != "arm64":
+    objc.objc_msgSendSuper_stret.restype = None
+    objc.objc_msgSend_stret.restype = None
 
 objc.objc_registerClassPair.restype = None
 objc.objc_registerClassPair.argtypes = [c_void_p]
@@ -363,7 +385,7 @@ def get_superclass_of_object(obj):
 
 
 def x86_should_use_stret(restype):
-    if type(restype) != type(Structure):
+    if not isinstance(restype, type(Structure)):
         return False
     if not __LP64__ and sizeof(restype) <= 8:
         return False
@@ -552,6 +574,7 @@ def get_instance_variable(obj, varname, vartype):
 
 class ObjCMethod(object):
     """This represents an unbound Objective-C method (really an IMP)."""
+
     typecodes = {b'c': c_byte, b'i': c_int, b's': c_short, b'l': c_long,
                  b'q': c_longlong, b'C': c_ubyte, b'I': c_uint, b'S': c_ushort,
                  b'L': c_ulong, b'Q': c_ulonglong, b'f': c_float,
@@ -1063,7 +1086,8 @@ def cftype_to_value(cftype):
     """Convert a CFType into an equivalent python type.
     The convertible CFTypes are taken from the known_cftypes
     dictionary, which may be added to if another library implements
-    its own conversion methods."""
+    its own conversion methods.
+    """
     if not cftype:
         return None
     typeID = cf.CFGetTypeID(cftype)

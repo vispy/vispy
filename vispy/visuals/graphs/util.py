@@ -74,7 +74,6 @@ def _straight_line_vertices(adjacency_mat, node_coords, directed=False):
         Returns a tuple containing containing (`line_vertices`,
         `arrow_vertices`)
     """
-
     if not issparse(adjacency_mat):
         adjacency_mat = np.asarray(adjacency_mat, float)
 
@@ -90,7 +89,7 @@ def _straight_line_vertices(adjacency_mat, node_coords, directed=False):
     if directed:
         arrows = np.array(list(_get_directed_edges(adjacency_mat)))
         arrow_vertices = node_coords[arrows.ravel()]
-        arrow_vertices = arrow_vertices.reshape((len(arrow_vertices)/2, 4))
+        arrow_vertices = arrow_vertices.reshape((len(arrow_vertices)//2, 4))
 
     return line_vertices, arrow_vertices
 
@@ -115,7 +114,6 @@ def _rescale_layout(pos, scale=1):
     -----
     Changes `pos` in place.
     """
-
     pos -= pos.min(axis=0)
     pos *= scale / pos.max()
 
