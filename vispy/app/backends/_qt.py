@@ -5,7 +5,7 @@
 """
 Base code for the Qt backends. Note that this is *not* (anymore) a
 backend by itself! One has to explicitly use either PySide, PyQt4 or
-PySide2, PyQt5. Note that the automatic backend selection prefers
+PySide2, PyQt5 or PyQt6. Note that the automatic backend selection prefers
 a GUI toolkit that is already imported.
 
 The _pyside, _pyqt4, _pyside2, _pyqt5 and _pyside6 modules will
@@ -593,10 +593,16 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
                 )
         # General touch event.
         elif t == qt_event_types.TouchUpdate:
-            points = ev.touchPoints()
-            # These variables are lists of (x, y) coordinates.
-            pos = [_get_qpoint_pos(p.pos()) for p in points]
-            lpos = [_get_qpoint_pos(p.lastPos()) for p in points]
+            if qt_lib == 'pyqt6' or qt_lib == 'pyside6':
+                points = ev.points()
+                # These variables are lists of (x, y) coordinates.
+                pos = [_get_qpoint_pos(p.position()) for p in points]
+                lpos = [_get_qpoint_pos(p.lastPosition()) for p in points]
+            else:
+                points = ev.touchPoints()
+                # These variables are lists of (x, y) coordinates.
+                pos = [_get_qpoint_pos(p.pos()) for p in points]
+                lpos = [_get_qpoint_pos(p.lastPos()) for p in points]
             self._vispy_canvas.events.touch(type='touch',
                                             pos=pos,
                                             last_pos=lpos,
