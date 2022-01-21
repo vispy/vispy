@@ -676,11 +676,11 @@ class MarkersVisual(Visual):
 
         if edge_width is not None:
             edge_width = np.asarray(edge_width)
-            if np.all(edge_width < 0):
+            if np.any(edge_width < 0):
                 raise ValueError('edge_width cannot be negative')
         else:
             edge_width_rel = np.asarray(edge_width_rel)
-            if np.all(edge_width_rel < 0):
+            if np.any(edge_width_rel < 0):
                 raise ValueError('edge_width_rel cannot be negative')
 
         if scaling is not None:
