@@ -7,7 +7,6 @@ Main website: http://vispy.org
 
 ----
 
-
 VisPy is a **high-performance interactive 2D/3D data visualization
 library**. VisPy leverages the computational power of modern **Graphics
 Processing Units (GPUs)** through the **OpenGL** library to display very
