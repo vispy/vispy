@@ -10,6 +10,7 @@ from unittest import mock
 from vispy import scene, app
 import numpy as np
 
+
 @requires_application()
 def test_figure_creation():
     """Test creating a figure"""
@@ -42,6 +43,7 @@ def test_plot_widget_axes():
         expectation = [point[0] - buffer, point[1] + buffer]
         for call in domain_setter.call_args_list:
             assert [round(x, 2) for x in call[0][1]] == expectation
+
 
 @requires_application()
 def test_bar_creation():
@@ -76,15 +78,14 @@ def test_bar_creation():
 
     index = np.arange(length, dtype=int)
 
-    bar1 = scene.Bar(index=index, bottom=bottom,
-                     height=height, width=0.8, color=(0.25, 0.8, 0.),
-                     parent=vb1.scene)
+    scene.Bar(index=index, bottom=bottom,
+              height=height, width=0.8, color=(0.25, 0.8, 0.),
+              parent=vb1.scene)
 
     vb1.camera.set_range()
 
     # canvas.measure_fps()
     app.run()
-
 
 
 run_tests_if_main()
