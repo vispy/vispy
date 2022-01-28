@@ -77,13 +77,13 @@ def test_bar_creation():
     index = np.arange(length, dtype=int)
 
     bar1 = scene.Bar(index=index, bottom=bottom,
-                     height=height, width=0.8, color=(0.25, 0.8, 0.), orientation='v',
+                     height=height, width=0.8, color=(0.25, 0.8, 0.),
                      parent=vb1.scene)
 
     vb1.camera.set_range()
 
     # canvas.measure_fps()
-    # app.run()
+    app.run()
 
 
 
