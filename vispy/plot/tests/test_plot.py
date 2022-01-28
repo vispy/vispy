@@ -85,7 +85,7 @@ def test_bar_creation():
     vb1.camera.set_range()
 
     # canvas.measure_fps()
-    app.run()
+    # app.run()
 
 
 run_tests_if_main()
