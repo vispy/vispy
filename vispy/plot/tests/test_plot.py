@@ -7,7 +7,8 @@ from vispy.testing import (assert_raises, requires_application,
                            run_tests_if_main)
 from vispy.visuals.axis import AxisVisual
 from unittest import mock
-from vispy import scene, app
+from vispy import scene
+# from vispy import app
 import numpy as np
 
 
@@ -47,7 +48,7 @@ def test_plot_widget_axes():
 
 @requires_application()
 def test_bar_creation():
-    """Test creating a figure"""
+    """Test creating a bar chart"""
 
     canvas = scene.SceneCanvas(keys='interactive', vsync=False)
     canvas.size = 800, 600
@@ -68,19 +69,35 @@ def test_bar_creation():
     grid.add_widget(y_axis1, row=0, col=0)
     y_axis1.link_view(vb1)
 
-    length = 100
+    # length = 100
+    #
+    # h = 10
 
-    h = 10
+    j = np.array([[0, 20, 12],
+                  [1, 9, 0],
+                  [2, 8, 0],
+                  [3, 10, 0]])
 
-    bottom = np.random.randint(h, size=length)
+    # j1 = np.array([[0, 20],
+    #               [1, 9],
+    #               [2, 8],
+    #               [3, 10]])
 
-    height = bottom + np.random.randint(h, size=length)
-
-    index = np.arange(length, dtype=int)
-
-    scene.Bar(index=index, bottom=bottom,
-              height=height, width=0.8, color=(0.25, 0.8, 0.),
+    scene.Bar(data=j, width=0.8, color=(0.25, 0.8, 0.),
               parent=vb1.scene)
+
+    # scene.Bar(data=j1, width=0.8, color=(0.25, 0.8, 0.),
+    #           parent=vb1.scene)
+
+    # bottom = np.random.randint(h, size=length)
+    #
+    # height = bottom + np.random.randint(h, size=length)
+    #
+    # index = np.arange(length, dtype=int)
+
+    # scene.Bar(index=index,
+    #           height=height, width=0.8, color=(0.25, 0.8, 0.),
+    #           parent=vb1.scene)
 
     vb1.camera.set_range()
 
