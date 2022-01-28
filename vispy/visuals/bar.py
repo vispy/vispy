@@ -22,13 +22,13 @@ class BarVisual(MeshVisual):
         Bottom of the bars
     height : int | float | array-like
         Height of the bars
+    width : int | float
+        Width of all bars
     color : instance of Color
         Color of the histogram.
-    orientation : {'h', 'v'}
-        Orientation of the histogram.
     """
 
-    def __init__(self, color='w', orientation='h', index=None, bottom=None, height=None, width=0.8):
+    def __init__(self, color='w', index=None, bottom=None, height=None, width=0.8):
         X, Y = (0, 1)
 
         # construct our vertices
@@ -43,11 +43,6 @@ class BarVisual(MeshVisual):
         rr[:, Y] = np.repeat(bottom, 6)
         rr[::2, Y] += np.repeat(height, 3)
         index.astype(np.float32)
-
-        if not isinstance(orientation, str) or \
-                orientation not in ('h', 'v'):
-            raise ValueError('orientation must be "h" or "v", not %s'
-                             % (orientation,))
 
         MeshVisual.__init__(self, rr, color=color)
 
