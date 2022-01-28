@@ -4,10 +4,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
-import time
 import numpy as np
-from datetime import date
-
 from .mesh import MeshVisual
 
 
