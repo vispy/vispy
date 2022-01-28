@@ -47,4 +47,4 @@ from .border import _BorderVisual  # noqa
 from .colorbar import ColorBarVisual  # noqa
 from .graphs import GraphVisual  # noqa
 from .windbarb import WindbarbVisual  # noqa
-from .bar import BarVisual
+from .bar import BarVisual  # noqa
