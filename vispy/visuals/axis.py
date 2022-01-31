@@ -3,7 +3,7 @@
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
-
+import datetime
 import math
 
 import numpy as np
@@ -59,6 +59,9 @@ class AxisVisual(CompoundVisual):
         Text to use for the axis label
     axis_label_margin : float
         Margin between ticks and axis labels
+    axis_label_max_width : int
+        Max char length a axis label can have before string will be split in multiple
+        rows with max axis_label_max_width chars per row
     axis_font_size : float
         The font size to use for rendering axis labels.
     font_size : float
@@ -70,25 +73,47 @@ class AxisVisual(CompoundVisual):
         of 'left', 'center', or 'right', and the second element should be one
         of 'bottom', 'middle', or 'top'. If this is not specified, it is
         determined automatically.
+    axis_mapping : array-like
+        Axis mapping maps a arbitrary array-like object of type numpy array of numpy.datetime64 or
+        list of datetime dates
+        All other types will be converted to strings
+        In case of string mapping the array/list will only be applied to integers
+        (0, 1, 2, 3, 4, 5, etc) not (0.5, 0.666, 0.75, 1.5, etc.) floats won't be displayed,
+        this is not the case if you provide a array of datetime64 or list of datetime dates
+    date_format_string : string
+        This string allows you to control the format of the time labels i.e. %m/%d/%Y, %H:%M:%S
+        axis_mapping is have to be used, if not this does nothing
+        lookup datetime.date.strftime
+    date_verbose : bool
+        If True underneath the time labels it shows the mapped integer
+        axis_mapping is have to be used, if not this does nothing
+    rounding_seconds : bool
+        Controls if datetime seconds get rounded
+        axis_mapping is have to be used, if not this does nothing
     """
 
-    def __init__(self, pos=None, domain=(0., 1.), 
-                 tick_direction=(-1., 0.), 
-                 scale_type="linear", 
-                 axis_color=(1, 1, 1), 
-                 tick_color=(0.7, 0.7, 0.7), 
-                 text_color='w', 
-                 minor_tick_length=5, 
-                 major_tick_length=10, 
-                 tick_width=2, 
-                 tick_label_margin=12, 
-                 tick_font_size=8, 
-                 axis_width=3, 
-                 axis_label=None, 
-                 axis_label_margin=35, 
-                 axis_font_size=10, 
-                 font_size=None, 
-                 anchors=None):
+    def __init__(self, pos=None, domain=(0., 1.),
+                 tick_direction=(-1., 0.),
+                 scale_type="linear",
+                 axis_color=(1, 1, 1),
+                 tick_color=(0.7, 0.7, 0.7),
+                 text_color='w',
+                 minor_tick_length=5,
+                 major_tick_length=10,
+                 tick_width=2,
+                 tick_label_margin=12,
+                 tick_font_size=8,
+                 axis_width=3,
+                 axis_label=None,
+                 axis_label_margin=35,
+                 axis_label_max_width=20,
+                 axis_font_size=10,
+                 font_size=None,
+                 anchors=None,
+                 axis_mapping=None,
+                 date_format_string=None,
+                 date_verbose=False,
+                 rounding_seconds=True):
 
         if scale_type != 'linear':
             raise NotImplementedError('only linear scaling is currently '
@@ -100,6 +125,11 @@ class AxisVisual(CompoundVisual):
 
         self._pos = None
         self._domain = None
+
+        self.axis_mapping = axis_mapping
+        self.date_format_string = date_format_string
+        self.rounding_seconds = rounding_seconds
+        self.date_verbose = date_verbose
 
         # If True, then axis stops at the first / last major tick.
         # If False, then axis extends to edge of *pos*
@@ -114,6 +144,7 @@ class AxisVisual(CompoundVisual):
         self._major_tick_length = major_tick_length  # px
         self._tick_label_margin = tick_label_margin  # px
         self._axis_label_margin = axis_label_margin  # px
+        self.axis_label_max_width = axis_label_max_width
 
         self._axis_label = axis_label
 
@@ -236,6 +267,10 @@ class AxisVisual(CompoundVisual):
         """Vector in the direction of the axis line"""
         return self.pos[1] - self.pos[0]
 
+    def update_axis_mapping(self, new_mapping):
+        self.axis_mapping = new_mapping
+        self._update_subvisuals()
+
     def _update_subvisuals(self):
         tick_pos, labels, tick_label_pos, anchors, axis_label_pos = \
             self.ticker.get_update()
@@ -270,7 +305,7 @@ class AxisVisual(CompoundVisual):
         x1, y1, x2, y2 = trpos[:, :2].ravel()
         if x1 > x2:
             x1, y1, x2, y2 = x2, y2, x1, y1
-        return math.degrees(math.atan2(y2-y1, x2-x1))
+        return math.degrees(math.atan2(y2 - y1, x2 - x1))
 
     def _compute_bounds(self, axis, view):
         if axis == 2:
@@ -294,13 +329,31 @@ class Ticker(object):
 
     def get_update(self):
         major_tick_fractions, minor_tick_fractions, tick_labels = \
-            self._get_tick_frac_labels()
+            self._get_tick_frac_labels(1 if self.axis.axis_mapping is not None else 2)
+
+        tick_labels = np.char.replace(tick_labels, " ", "\n")
+
+        tick_labels = [" " if x == '' else x for x in tick_labels]
+
+        string_width = np.char.str_len([max(x, key=len) if x != '' else ' ' for x
+                                        in np.char.splitlines(tick_labels)])
+
+        b = np.where(string_width <= self.axis.axis_label_max_width, 0, string_width)
+
+        for i, j in enumerate(b):
+            if j != 0:
+                for k in range(int(j / self.axis.axis_label_max_width)):
+                    tick_labels[i] = tick_labels[i][:self.axis.axis_label_max_width * (k + 1)] \
+                                     + "\n" + tick_labels[i][self.axis.axis_label_max_width * (k + 1):]
+
+        string_line_count = np.char.count(tick_labels, '\n')
+
         tick_pos, tick_label_pos, axis_label_pos, anchors = \
             self._get_tick_positions(major_tick_fractions,
-                                     minor_tick_fractions)
+                                     minor_tick_fractions, string_line_count)
         return tick_pos, tick_labels, tick_label_pos, anchors, axis_label_pos
 
-    def _get_tick_positions(self, major_tick_fractions, minor_tick_fractions):
+    def _get_tick_positions(self, major_tick_fractions, minor_tick_fractions, string_line_count):
         # tick direction is defined in visual coords, but use document
         # coords to determine the tick length
         trs = self.axis.transforms
@@ -351,7 +404,19 @@ class Ticker(object):
         minor_origins, minor_endpoints = self._tile_ticks(
             minor_tick_fractions, minor_vector)
 
-        tick_label_pos = major_origins + label_vector
+        orientation = np.all(major_origins == major_origins[0, :], axis=0)
+
+        line_count = string_line_count.reshape((string_line_count.shape[0], 1)) + 1
+
+        vertical_offset = np.column_stack((line_count, line_count))
+
+        if orientation[1]:
+            vertical_offset[vertical_offset < 1] = 1
+            adj = vertical_offset * orientation * label_vector
+        else:
+            adj = orientation * label_vector
+
+        tick_label_pos = major_origins + adj
 
         axis_label_pos = 0.5 * (self.axis.pos[0] +
                                 self.axis.pos[1]) + axislabel_vector
@@ -361,24 +426,24 @@ class Ticker(object):
 
         c = np.empty([(num_major + num_minor) * 2, 2])
 
-        c[0:(num_major-1)*2+1:2] = major_origins
-        c[1:(num_major-1)*2+2:2] = major_endpoints
-        c[(num_major-1)*2+2::2] = minor_origins
-        c[(num_major-1)*2+3::2] = minor_endpoints
+        c[0:(num_major - 1) * 2 + 1:2] = major_origins
+        c[1:(num_major - 1) * 2 + 2:2] = major_endpoints
+        c[(num_major - 1) * 2 + 2::2] = minor_origins
+        c[(num_major - 1) * 2 + 3::2] = minor_endpoints
 
         return c, tick_label_pos, axis_label_pos, anchors
 
     def _tile_ticks(self, frac, tickvec):
         """Tiles tick marks along the axis."""
         origins = np.tile(self.axis._vec, (len(frac), 1))
-        origins = self.axis.pos[0].T + (origins.T*frac).T
+        origins = self.axis.pos[0].T + (origins.T * frac).T
         endpoints = tickvec + origins
         return origins, endpoints
 
-    def _get_tick_frac_labels(self):
+    def _get_tick_frac_labels(self, density=2):
         """Get the major ticks, minor ticks, and major labels"""
         minor_num = 4  # number of minor ticks per major division
-        if (self.axis.scale_type == 'linear'):
+        if self.axis.scale_type == 'linear':
             domain = self.axis.domain
             if domain[1] < domain[0]:
                 flip = True
@@ -392,9 +457,133 @@ class Ticker(object):
             length = self.axis.pos[1] - self.axis.pos[0]  # in logical coords
             n_inches = np.sqrt(np.sum(length ** 2)) / transforms.dpi
 
-            major = _get_ticks_talbot(domain[0], domain[1], n_inches, 2)
+            major = _get_ticks_talbot(domain[0], domain[1], n_inches, density)
 
-            labels = ['%g' % x for x in major]
+            labels = []
+
+            if self.axis.axis_mapping is not None:
+                for x in major:
+                    x = round(x, 10)
+                    if x >= 0:
+                        try:
+                            label = self.axis.axis_mapping[int(x)]
+                            label_plus_one = self.axis.axis_mapping[int(x) + 1]
+                        except IndexError:
+                            label = x
+                            label_plus_one = None
+                            print("Axis mapping ran out of data at index %s use update_axis_mapping() in AxisVisual "
+                                  "to extend the mapping range in Runtime or map a longer list/array in the first "
+                                  "place" % str(int(x)))
+                        if x.is_integer():
+                            if isinstance(label, np.ndarray):
+                                if np.issubdtype(label[0].dtype, np.datetime64):
+                                    if self.axis.date_format_string is not None:
+                                        date_string = str(label[0].astype(datetime.datetime).
+                                                          strftime(self.axis.date_format_string))
+                                        labels.append(
+                                            (date_string + " " + str(x)) if self.axis.date_verbose else date_string)
+                                    else:
+                                        date_string = str(label[0].astype(datetime.datetime))
+                                        labels.append(
+                                            (date_string + " " + str(x)) if self.axis.date_verbose else date_string)
+                                elif np.issubdtype(label[0].dtype, str):
+                                    labels.append((label[0] + " " + str(x)) if self.axis.date_verbose else label[0])
+                                else:
+                                    labels.append(
+                                        (str(label[0]) + " " + str(x)) if self.axis.date_verbose else str(label[0]))
+                            elif np.issubdtype(type(label), np.datetime64):
+                                if self.axis.date_format_string is not None:
+                                    date_string = str(label.astype(datetime.datetime).
+                                                      strftime(self.axis.date_format_string))
+                                    labels.append(
+                                        (date_string + " " + str(x)) if self.axis.date_verbose else date_string)
+                                else:
+                                    date_string = str(label.astype(datetime.datetime))
+                                    labels.append(
+                                        (date_string + " " + str(x)) if self.axis.date_verbose else date_string)
+                            else:
+                                if type(label) == datetime.datetime:
+                                    if self.axis.date_format_string is not None:
+                                        date_string = str(label.strftime(self.axis.date_format_string))
+                                        labels.append(
+                                            (date_string + " " + str(x)) if self.axis.date_verbose else date_string)
+                                    else:
+                                        labels.append(
+                                            (str(label) + " " + str(x)) if self.axis.date_verbose else str(label))
+                                else:
+                                    labels.append((str(label) + " " + str(x)) if self.axis.date_verbose else str(label))
+
+                        else:
+                            if isinstance(label, np.ndarray):
+                                if np.issubdtype(label[0].dtype, np.datetime64) and label_plus_one is not None:
+
+                                    a = label[0]
+                                    b = label_plus_one[0]
+
+                                    d1 = a.astype(datetime.datetime)
+                                    d2 = b.astype(datetime.datetime)
+
+                                    date = (d2 - (d2 - d1) / round((1 - (x - int(x))) ** -1, 3))
+
+                                    if self.axis.rounding_seconds:
+                                        date = _round_seconds(date)
+
+                                    if self.axis.date_format_string is not None:
+                                        date_string = str(date.strftime(self.axis.date_format_string))
+                                        labels.append(
+                                            (date_string + " " + str(x)) if self.axis.date_verbose else date_string)
+                                    else:
+                                        labels.append(
+                                            (str(date) + " " + str(x)) if self.axis.date_verbose else str(date))
+                                else:
+                                    labels.append(" " + str(x) if self.axis.date_verbose else "")
+
+                            elif np.issubdtype(type(label), np.datetime64):
+                                a = label
+                                b = label_plus_one
+
+                                d1 = a.astype(datetime.datetime)
+                                d2 = b.astype(datetime.datetime)
+
+                                date = (d2 - (d2 - d1) / round((1 - (x - int(x))) ** -1, 3))
+
+                                if self.axis.rounding_seconds:
+                                    date = _round_seconds(date)
+
+                                if self.axis.date_format_string is not None:
+                                    date_string = str(date.strftime(self.axis.date_format_string))
+                                    labels.append(
+                                        (date_string + " " + str(x)) if self.axis.date_verbose else date_string)
+                                else:
+                                    labels.append(
+                                        (str(date) + " " + str(x)) if self.axis.date_verbose else str(date))
+
+                            else:
+                                if type(label) == datetime.datetime and label_plus_one is not None:
+
+                                    a = label
+                                    b = label_plus_one
+
+                                    date = (b - (b - a) / round((1 - (x - int(x))) ** -1, 3))
+
+                                    if self.axis.rounding_seconds:
+                                        date = _round_seconds(date)
+
+                                    if self.axis.date_format_string is not None:
+                                        date_string = str(date.strftime(self.axis.date_format_string))
+                                        labels.append(
+                                            (date_string + " " + str(x)) if self.axis.date_verbose else date_string)
+                                    else:
+                                        labels.append(
+                                            (str(date) + " " + str(x)) if self.axis.date_verbose else str(date))
+
+                                else:
+                                    labels.append('')
+                    else:
+                        labels.append("")
+            else:
+                labels = ['%g' % x for x in major]
+
             majstep = major[1] - major[0]
             minor = []
             minstep = majstep / (minor_num + 1)
@@ -526,7 +715,7 @@ class MaxNLocator(object):
 
 def scale_range(vmin, vmax, n=1, threshold=100):
     dv = abs(vmax - vmin)
-    if dv == 0:     # maxabsv == 0 is a special case of this.
+    if dv == 0:  # maxabsv == 0 is a special case of this.
         return 1.0, 0.0
         # Note: this should never occur because
         # vmin, vmax should have been checked by nonsingular(),
@@ -567,13 +756,13 @@ def _coverage_max(dmin, dmax, span):
 
 
 def _density(k, m, dmin, dmax, lmin, lmax):
-    r = (k-1.0) / (lmax-lmin)
-    rt = (m-1.0) / (max(lmax, dmax) - min(lmin, dmin))
+    r = (k - 1.0) / (lmax - lmin)
+    rt = (m - 1.0) / (max(lmax, dmax) - min(lmin, dmin))
     return 2 - max(r / rt, rt / r)
 
 
 def _density_max(k, m):
-    return 2 - (k-1.0) / (m-1.0) if k >= m else 1.
+    return 2 - (k - 1.0) / (m - 1.0) if k >= m else 1.
 
 
 def _simplicity(q, Q, j, lmin, lmax, lstep):
@@ -581,7 +770,7 @@ def _simplicity(q, Q, j, lmin, lmax, lstep):
     n = len(Q)
     i = Q.index(q) + 1
     if ((lmin % lstep) < eps or
-            (lstep - lmin % lstep) < eps) and lmin <= 0 and lmax >= 0:
+        (lstep - lmin % lstep) < eps) and lmin <= 0 and lmax >= 0:
         v = 1
     else:
         v = 0
@@ -591,10 +780,10 @@ def _simplicity(q, Q, j, lmin, lmax, lstep):
 def _simplicity_max(q, Q, j):
     n = len(Q)
     i = Q.index(q) + 1
-    return (n - i)/(n - 1.0) + 1. - j
+    return (n - i) / (n - 1.0) + 1. - j
 
 
-def _get_ticks_talbot(dmin, dmax, n_inches, density=1.):
+def _get_ticks_talbot(dmin, dmax, n_inches, density=2.):
     # density * size gives target number of intervals,
     # density * size + 1 gives target number of tick marks,
     # the density function converts this back to a density in data units
@@ -628,12 +817,12 @@ def _get_ticks_talbot(dmin, dmax, n_inches, density=1.):
                 if w[0] * sm + w[1] + w[2] * dm + w[3] < best_score:
                     break
 
-                delta = (dmax-dmin)/(k+1.0)/j/q
+                delta = (dmax - dmin) / (k + 1.0) / j / q
                 z = np.ceil(np.log10(delta))
 
                 while z < float('infinity'):
                     step = j * q * 10 ** z
-                    cm = _coverage_max(dmin, dmax, step*(k-1.0))
+                    cm = _coverage_max(dmin, dmax, step * (k - 1.0))
 
                     if (w[0] * sm +
                             w[1] * cm +
@@ -641,16 +830,16 @@ def _get_ticks_talbot(dmin, dmax, n_inches, density=1.):
                             w[3] < best_score):
                         break
 
-                    min_start = np.floor(dmax/step)*j - (k-1.0)*j
-                    max_start = np.ceil(dmin/step)*j
+                    min_start = np.floor(dmax / step) * j - (k - 1.0) * j
+                    max_start = np.ceil(dmin / step) * j
 
                     if min_start > max_start:
-                        z = z+1
+                        z = z + 1
                         break
 
-                    for start in range(int(min_start), int(max_start)+1):
-                        lmin = start * (step/j)
-                        lmax = lmin + step*(k-1.0)
+                    for start in range(int(min_start), int(max_start) + 1):
+                        lmin = start * (step / j)
+                        lmax = lmin + step * (k - 1.0)
                         lstep = step
 
                         s = _simplicity(q, Q, j, lmin, lmax, lstep)
@@ -676,3 +865,9 @@ def _get_ticks_talbot(dmin, dmax, n_inches, density=1.):
     if best is None:
         raise RuntimeError('could not converge on ticks')
     return np.arange(best[4]) * best[2] + best[0]
+
+
+def _round_seconds(obj: datetime.datetime) -> datetime.datetime:
+    if obj.microsecond >= 500_000:
+        obj += datetime.timedelta(seconds=1)
+    return obj.replace(microsecond=0)
