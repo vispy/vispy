@@ -12,6 +12,7 @@ from .visual import CompoundVisual, updating_property
 from .line import LineVisual
 from .text import TextVisual
 
+
 # XXX TODO list (see code, plus):
 # 1. Automated tick direction?
 # 2. Expand to 3D (only 2D supported currently)
@@ -343,8 +344,8 @@ class Ticker(object):
         for i, j in enumerate(b):
             if j != 0:
                 for k in range(int(j / self.axis.axis_label_max_width)):
-                    tick_labels[i] = tick_labels[i][:self.axis.axis_label_max_width * (k + 1)] \
-                                     + "\n" + tick_labels[i][self.axis.axis_label_max_width * (k + 1):]
+                    tick_labels[i] = tick_labels[i][:self.axis.axis_label_max_width * (k + 1)] + "\n" + \
+                        tick_labels[i][self.axis.axis_label_max_width * (k + 1):]
 
         string_line_count = np.char.count(tick_labels, '\n')
 
@@ -769,8 +770,7 @@ def _simplicity(q, Q, j, lmin, lmax, lstep):
     eps = 1e-10
     n = len(Q)
     i = Q.index(q) + 1
-    if ((lmin % lstep) < eps or
-        (lstep - lmin % lstep) < eps) and lmin <= 0 and lmax >= 0:
+    if ((lmin % lstep) < eps or (lstep - lmin % lstep) < eps) and lmin <= 0 and lmax >= 0:
         v = 1
     else:
         v = 0
