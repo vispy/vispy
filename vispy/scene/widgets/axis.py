@@ -16,6 +16,20 @@ class AxisWidget(Widget):
     ----------
     orientation : str
         Orientation of the axis, 'left' or 'bottom'.
+    axis_mapping : array-like
+        Axis mapping maps a arbitrary array-like object of type numpy array of numpy.datetime64 or
+        list of datetime dates
+        All other types will be converted to strings
+        In case of string mapping the array/list will only be applied to integers
+        (0, 1, 2, 3, 4, 5, etc) not (0.5, 0.666, 0.75, 1.5, etc.) floats won't be displayed,
+        this is not the case if you provide a array of datetime64 or list of datetime dates
+    date_format_string : string
+        This string allows you to control the format of the time labels i.e. %m/%d/%Y, %H:%M:%S
+        axis_mapping is have to be used, if not this does nothing
+        lookup datetime.date.strftime
+    axis_label_max_width : int
+        Max char length a axis label can have before string will be split in multiple
+        rows with max axis_label_max_width chars per row
     **kwargs : dict
         Keyword arguments to pass to AxisVisual.
     """
