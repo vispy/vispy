@@ -292,6 +292,7 @@ def test_changing_cmap():
             with pytest.raises(AssertionError):
                 np.testing.assert_allclose(grays, current_cmap)
 
+
 @requires_pyopengl()
 @requires_application()
 def test_plane_depth():
@@ -304,7 +305,7 @@ def test_plane_depth():
 
         # two planes at 45 degrees relative to the camera. If depth is set correctly, we should see one half
         # of the screen red and the other half white
-        plane1 = scene.visuals.Volume(
+        scene.visuals.Volume(
             np.ones((40, 40, 40)),
             interpolation="nearest",
             clim=(0, 1),
@@ -314,7 +315,7 @@ def test_plane_depth():
             parent=v.scene,
         )
 
-        plane2 = scene.visuals.Volume(
+        scene.visuals.Volume(
             np.ones((40, 40, 40)),
             interpolation="nearest",
             clim=(0, 1),
@@ -330,7 +331,6 @@ def test_plane_depth():
         right = rendered[20, 30]
         assert np.array_equal(left, [0, 0, 0, 255])
         assert np.array_equal(right, [255, 0, 0, 255])
-
 
 
 run_tests_if_main()
