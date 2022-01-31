@@ -35,13 +35,13 @@ class AxisWidget(Widget):
     """
 
     def __init__(self, orientation='left', axis_mapping=None, date_format_string=None, axis_label_max_width=10,
-                 **kwargs):
+                 disable_warning=False, **kwargs):
         if 'tick_direction' not in kwargs:
             tickdir = {'left': (-1, 0), 'right': (1, 0), 'bottom': (0, 1),
                        'top': (0, -1)}[orientation]
             kwargs['tick_direction'] = tickdir
         self.axis = AxisVisual(axis_mapping=axis_mapping, date_format_string=date_format_string,
-                               axis_label_max_width=axis_label_max_width, **kwargs)
+                               axis_label_max_width=axis_label_max_width, disable_warning=disable_warning, **kwargs)
         self.orientation = orientation
         self._linked_view = None
         Widget.__init__(self)

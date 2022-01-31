@@ -5,6 +5,7 @@
 # -----------------------------------------------------------------------------
 import datetime
 import math
+import warnings
 
 import numpy as np
 
@@ -75,22 +76,24 @@ class AxisVisual(CompoundVisual):
         of 'bottom', 'middle', or 'top'. If this is not specified, it is
         determined automatically.
     axis_mapping : array-like
-        Axis mapping maps a arbitrary array-like object of type numpy array of numpy.datetime64 or
-        list of datetime dates
+        Axis mapping maps an arbitrary array-like object of type numpy array of numpy.datetime64 or
+        list of datetime dates, for better performance use list since numpy will be converted to list anyway
         All other types will be converted to strings
         In case of string mapping the array/list will only be applied to integers
         (0, 1, 2, 3, 4, 5, etc) not (0.5, 0.666, 0.75, 1.5, etc.) floats won't be displayed,
         this is not the case if you provide a array of datetime64 or list of datetime dates
     date_format_string : string
         This string allows you to control the format of the time labels i.e. %m/%d/%Y, %H:%M:%S
-        axis_mapping is have to be used, if not this does nothing
+        axis_mapping has to be used, if not this does nothing
         lookup datetime.date.strftime
     date_verbose : bool
         If True underneath the time labels it shows the mapped integer
-        axis_mapping is have to be used, if not this does nothing
+        axis_mapping has to be used, if not this does nothing
+    disable_warning : bool
+        If True disables warning that axis mapping ran out of entries
     rounding_seconds : bool
         Controls if datetime seconds get rounded
-        axis_mapping is have to be used, if not this does nothing
+        axis_mapping has to be used, if not this does nothing
     """
 
     def __init__(self, pos=None, domain=(0., 1.),
@@ -114,6 +117,7 @@ class AxisVisual(CompoundVisual):
                  axis_mapping=None,
                  date_format_string=None,
                  date_verbose=False,
+                 disable_warning=False,
                  rounding_seconds=True):
 
         if scale_type != 'linear':
@@ -127,10 +131,16 @@ class AxisVisual(CompoundVisual):
         self._pos = None
         self._domain = None
 
+        self.axis_mapping_is_date = False
+
         self.axis_mapping = axis_mapping
+        self._apply_axis_mapping()
+
         self.date_format_string = date_format_string
         self.rounding_seconds = rounding_seconds
         self.date_verbose = date_verbose
+
+        self.disable_warning = disable_warning
 
         # If True, then axis stops at the first / last major tick.
         # If False, then axis extends to edge of *pos*
@@ -270,7 +280,91 @@ class AxisVisual(CompoundVisual):
 
     def update_axis_mapping(self, new_mapping):
         self.axis_mapping = new_mapping
+        self._apply_axis_mapping()
         self._update_subvisuals()
+
+    def _apply_axis_mapping(self):
+        if self.axis_mapping is not None:
+            if isinstance(self.axis_mapping, np.ndarray):
+                self._axis_mapping_instance_checking(np.ndarray)
+            elif isinstance(self.axis_mapping, list):
+                self._axis_mapping_instance_checking(list)
+            elif isinstance(self.axis_mapping, tuple):
+                self._axis_mapping_instance_checking(tuple)
+
+    def _axis_mapping_instance_checking(self, checking_list_type):
+        if self.axis_mapping is not None:
+            if isinstance(self.axis_mapping, np.ndarray):
+                if len(self.axis_mapping.shape) == 1:
+                    self.axis_mapping = self.axis_mapping.reshape(self.axis_mapping.shape[0], 1)
+
+                elif len(self.axis_mapping.shape) == 2:
+                    if self.axis_mapping.shape[1] != 1:
+                        raise ValueError('axis_mapping should only have one column')
+
+                else:
+                    raise ValueError('3d is not expected, just 2d')
+
+                if np.issubdtype(self.axis_mapping[0][0].dtype, np.datetime64):
+                    self.axis_mapping = _date_to_datetime_converter(
+                        [list(x)[0].astype(datetime.datetime) for x in self.axis_mapping])
+                    self.axis_mapping_is_date = True
+
+                elif np.issubdtype(self.axis_mapping[0][0].dtype, datetime.datetime):
+                    self.axis_mapping = _date_to_datetime_converter(
+                        [list(x)[0].astype(datetime.datetime) for x in self.axis_mapping])
+                    self.axis_mapping_is_date = True
+
+                elif np.issubdtype(self.axis_mapping[0][0].dtype, datetime.date):
+                    self.axis_mapping = _date_to_datetime_converter(
+                        [datetime.datetime.combine(list(x)[0], datetime.time.min) for x in self.axis_mapping])
+                    self.axis_mapping_is_date = True
+
+                else:
+                    self.axis_mapping = [str(list(x)[0]) for x in self.axis_mapping]
+
+            else:
+                if isinstance(self.axis_mapping, checking_list_type):
+                    if isinstance(self.axis_mapping[0], np.datetime64):
+                        self.axis_mapping = _date_to_datetime_converter(
+                            [x.astype(datetime.datetime) for x in self.axis_mapping])
+                        self.axis_mapping_is_date = True
+
+                    elif isinstance(self.axis_mapping[0], datetime.datetime):
+                        self.axis_mapping = _date_to_datetime_converter(self.axis_mapping)
+                        self.axis_mapping_is_date = True
+
+                    elif isinstance(self.axis_mapping[0], datetime.date):
+                        self.axis_mapping = _date_to_datetime_converter(
+                            [datetime.datetime.combine(x, datetime.time.min) for x in self.axis_mapping])
+                        self.axis_mapping_is_date = True
+
+                    elif isinstance(self.axis_mapping[0], list):
+                        if isinstance(self.axis_mapping[0][0], datetime.datetime):
+                            self.axis_mapping = _date_to_datetime_converter([x[0] for x in self.axis_mapping])
+                            self.axis_mapping_is_date = True
+
+                        if isinstance(self.axis_mapping[0][0], datetime.date):
+                            self.axis_mapping = _date_to_datetime_converter(
+                                [datetime.datetime.combine(x[0], datetime.time.min) for x in
+                                 self.axis_mapping])
+                            self.axis_mapping_is_date = True
+
+                        elif isinstance(self.axis_mapping[0][0], np.datetime64):
+                            self.axis_mapping = _date_to_datetime_converter(
+                                [x[0].astype(datetime.datetime) for x in self.axis_mapping])
+                            self.axis_mapping_is_date = True
+
+                        else:
+                            self.axis_mapping = [x[0] for x in self.axis_mapping]
+
+                    else:
+                        if checking_list_type == tuple:
+                            ValueError('Tuple is only supported with date interpolation, so only a tuple of datetime ')
+                        else:
+                            self.axis_mapping = None
+                            self.axis_mapping_is_date = False
+                            ValueError('Could not parse axis mapping')
 
     def _update_subvisuals(self):
         tick_pos, labels, tick_label_pos, anchors, axis_label_pos = \
@@ -332,9 +426,9 @@ class Ticker(object):
         major_tick_fractions, minor_tick_fractions, tick_labels = \
             self._get_tick_frac_labels(1 if self.axis.axis_mapping is not None else 2)
 
-        tick_labels = np.char.replace(tick_labels, " ", "\n")
+        tick_labels = np.array([" " if x == '' else x for x in tick_labels], dtype=str)
 
-        tick_labels = [" " if x == '' else x for x in tick_labels]
+        tick_labels = np.char.replace(tick_labels, " ", "\n")
 
         string_width = np.char.str_len([max(x, key=len) if x != '' else ' ' for x
                                         in np.char.splitlines(tick_labels)])
@@ -461,9 +555,9 @@ class Ticker(object):
             major = _get_ticks_talbot(domain[0], domain[1], n_inches, density)
 
             labels = []
-
             if self.axis.axis_mapping is not None:
                 for x in major:
+                    label_string = ''
                     x = round(x, 10)
                     if x >= 0:
                         try:
@@ -472,116 +566,37 @@ class Ticker(object):
                         except IndexError:
                             label = x
                             label_plus_one = None
-                            print("Axis mapping ran out of data at index %s use update_axis_mapping() in AxisVisual "
-                                  "to extend the mapping range in Runtime or map a longer list/array in the first "
-                                  "place" % str(int(x)))
+                            disable_warming = False
+                            if self.axis.axis_mapping_is_date:
+                                last_date = self.axis.axis_mapping[len(self.axis.axis_mapping) - 1]
+                                second_to_last_date = self.axis.axis_mapping[len(self.axis.axis_mapping) - 2]
+                                date_integer_delta = last_date - second_to_last_date
+                                for j in range((int(x) + 1) - (len(self.axis.axis_mapping) - 1)):
+                                    self.axis.axis_mapping.append(last_date + ((j + 1) * date_integer_delta))
+                                disable_warming = True
+                                label = self.axis.axis_mapping[int(x)]
+                                label_plus_one = self.axis.axis_mapping[int(x) + 1]
+                            if not (disable_warming or self.axis.disable_warning):
+                                warnings.warn("Axis mapping ran out of data at index " + str(int(x)) +
+                                              " use update_axis_mapping() in AxisVisual to extend the mapping range in "
+                                              "Runtime or map a longer list/array in the first place - As last resort "
+                                              "you can disable this warning by setting disable_warning to True")
+                            if not self.axis.disable_warning:
+                                label = x
                         if x.is_integer():
-                            if isinstance(label, np.ndarray):
-                                if np.issubdtype(label[0].dtype, np.datetime64):
-                                    if self.axis.date_format_string is not None:
-                                        date_string = str(label[0].astype(datetime.datetime).
-                                                          strftime(self.axis.date_format_string))
-                                        labels.append(
-                                            (date_string + " " + str(x)) if self.axis.date_verbose else date_string)
-                                    else:
-                                        date_string = str(label[0].astype(datetime.datetime))
-                                        labels.append(
-                                            (date_string + " " + str(x)) if self.axis.date_verbose else date_string)
-                                elif np.issubdtype(label[0].dtype, str):
-                                    labels.append((label[0] + " " + str(x)) if self.axis.date_verbose else label[0])
-                                else:
-                                    labels.append(
-                                        (str(label[0]) + " " + str(x)) if self.axis.date_verbose else str(label[0]))
-                            elif np.issubdtype(type(label), np.datetime64):
-                                if self.axis.date_format_string is not None:
-                                    date_string = str(label.astype(datetime.datetime).
-                                                      strftime(self.axis.date_format_string))
-                                    labels.append(
-                                        (date_string + " " + str(x)) if self.axis.date_verbose else date_string)
-                                else:
-                                    date_string = str(label.astype(datetime.datetime))
-                                    labels.append(
-                                        (date_string + " " + str(x)) if self.axis.date_verbose else date_string)
-                            else:
-                                if type(label) == datetime.datetime:
-                                    if self.axis.date_format_string is not None:
-                                        date_string = str(label.strftime(self.axis.date_format_string))
-                                        labels.append(
-                                            (date_string + " " + str(x)) if self.axis.date_verbose else date_string)
-                                    else:
-                                        labels.append(
-                                            (str(label) + " " + str(x)) if self.axis.date_verbose else str(label))
-                                else:
-                                    labels.append((str(label) + " " + str(x)) if self.axis.date_verbose else str(label))
-
+                            label_string = _label_string_for_datetime(int(x), label, self.axis.date_format_string,
+                                                                      self.axis.date_verbose)
                         else:
-                            if isinstance(label, np.ndarray):
-                                if np.issubdtype(label[0].dtype, np.datetime64) and label_plus_one is not None:
-
-                                    a = label[0]
-                                    b = label_plus_one[0]
-
-                                    d1 = a.astype(datetime.datetime)
-                                    d2 = b.astype(datetime.datetime)
-
-                                    date = (d2 - (d2 - d1) / round((1 - (x - int(x))) ** -1, 3))
-
-                                    if self.axis.rounding_seconds:
-                                        date = _round_seconds(date)
-
-                                    if self.axis.date_format_string is not None:
-                                        date_string = str(date.strftime(self.axis.date_format_string))
-                                        labels.append(
-                                            (date_string + " " + str(x)) if self.axis.date_verbose else date_string)
-                                    else:
-                                        labels.append(
-                                            (str(date) + " " + str(x)) if self.axis.date_verbose else str(date))
-                                else:
-                                    labels.append(" " + str(x) if self.axis.date_verbose else "")
-
-                            elif np.issubdtype(type(label), np.datetime64):
+                            if isinstance(label, datetime.datetime) and label_plus_one is not None:
                                 a = label
                                 b = label_plus_one
-
-                                d1 = a.astype(datetime.datetime)
-                                d2 = b.astype(datetime.datetime)
-
-                                date = (d2 - (d2 - d1) / round((1 - (x - int(x))) ** -1, 3))
-
+                                date = (b - (b - a) / round((1 - (x - int(x))) ** -1, 3))
                                 if self.axis.rounding_seconds:
                                     date = _round_seconds(date)
 
-                                if self.axis.date_format_string is not None:
-                                    date_string = str(date.strftime(self.axis.date_format_string))
-                                    labels.append(
-                                        (date_string + " " + str(x)) if self.axis.date_verbose else date_string)
-                                else:
-                                    labels.append(
-                                        (str(date) + " " + str(x)) if self.axis.date_verbose else str(date))
-
-                            else:
-                                if type(label) == datetime.datetime and label_plus_one is not None:
-
-                                    a = label
-                                    b = label_plus_one
-
-                                    date = (b - (b - a) / round((1 - (x - int(x))) ** -1, 3))
-
-                                    if self.axis.rounding_seconds:
-                                        date = _round_seconds(date)
-
-                                    if self.axis.date_format_string is not None:
-                                        date_string = str(date.strftime(self.axis.date_format_string))
-                                        labels.append(
-                                            (date_string + " " + str(x)) if self.axis.date_verbose else date_string)
-                                    else:
-                                        labels.append(
-                                            (str(date) + " " + str(x)) if self.axis.date_verbose else str(date))
-
-                                else:
-                                    labels.append('')
-                    else:
-                        labels.append("")
+                                label_string = _label_string_for_datetime(int(x), date, self.axis.date_format_string,
+                                                                          self.axis.date_verbose)
+                    labels.append(label_string)
             else:
                 labels = ['%g' % x for x in major]
 
@@ -865,6 +880,23 @@ def _get_ticks_talbot(dmin, dmax, n_inches, density=2.):
     if best is None:
         raise RuntimeError('could not converge on ticks')
     return np.arange(best[4]) * best[2] + best[0]
+
+
+def _label_string_for_datetime(tick_integer, axis_label, strftime_string, verbose):
+    if strftime_string is not None and type(axis_label) == datetime.datetime:
+        axis_label = str(axis_label.strftime(strftime_string))
+        return (axis_label + " " + str(tick_integer)) if verbose else axis_label
+    else:
+        return (str(axis_label) + " " + str(tick_integer)) if verbose else axis_label
+
+
+def _date_to_datetime_converter(list_of_datetime):
+    if isinstance(list_of_datetime[0], datetime.date):
+        if not isinstance(list_of_datetime[0], datetime.datetime):
+            for i, j in enumerate(list_of_datetime):
+                print('convert')
+                list_of_datetime[i] = datetime.datetime.combine(j, datetime.time.min)
+    return list_of_datetime
 
 
 def _round_seconds(obj: datetime.datetime) -> datetime.datetime:
