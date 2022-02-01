@@ -228,6 +228,12 @@ void main() {
     // Calculate unit vector pointing in the view direction through this
     // fragment.
     view_ray = normalize(farpos.xyz - nearpos.xyz);
+
+    // Keep track of wheter a surface was found (used for depth)
+    // Need to do it before raycasting setup because the "plane" mode needs to set
+    // the depth during that phase.
+    vec3 surface_point;
+    bool surface_found = false;
     
     // Set up the ray casting
     // This snippet must define three variables:
@@ -251,10 +257,6 @@ void main() {
 
     // Keep track of whether texture has been sampled
     int texture_sampled = 0;
-
-    // Keep track of wheter a surface was found (used for depth)
-    vec3 surface_point;
-    bool surface_found = false;
 
     while (iter < nsteps) {
         for (iter=iter; iter<nsteps; iter++)
@@ -358,6 +360,10 @@ _RAYCASTING_SETUP_PLANE = """
     vec3 N = normalize(u_plane_normal);
     vec3 step = N / u_shape;
     vec3 start_loc = intersection_tex - ((step * f_nsteps) / 2);
+
+    // Set depth value
+    surface_point = intersection;
+    surface_found = true;
 """
 
 
