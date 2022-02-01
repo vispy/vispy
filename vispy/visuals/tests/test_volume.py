@@ -306,7 +306,7 @@ def test_plane_depth():
         # two planes at 45 degrees relative to the camera. If depth is set correctly, we should see one half
         # of the screen red and the other half white
         scene.visuals.Volume(
-            np.ones((40, 40, 40)),
+            np.ones((40, 40, 40), dtype=np.uint8),
             interpolation="nearest",
             clim=(0, 1),
             cmap="grays",
@@ -316,7 +316,7 @@ def test_plane_depth():
         )
 
         scene.visuals.Volume(
-            np.ones((40, 40, 40)),
+            np.ones((40, 40, 40), dtype=np.uint8),
             interpolation="nearest",
             clim=(0, 1),
             cmap="reds",
@@ -329,8 +329,8 @@ def test_plane_depth():
         rendered = c.render()
         left = rendered[20, 10]
         right = rendered[20, 30]
-        assert np.array_equal(left, [0, 0, 0, 255])
-        assert np.array_equal(right, [255, 0, 0, 255])
+        assert np.array_equal(left, [255, 0, 0, 255])
+        assert np.array_equal(right, [255, 255, 255, 255])
 
 
 run_tests_if_main()
