@@ -7,6 +7,9 @@ from vispy.testing import (assert_raises, requires_application,
                            run_tests_if_main)
 from vispy.visuals.axis import AxisVisual
 from unittest import mock
+from vispy import scene
+# from vispy import app
+import numpy as np
 
 
 @requires_application()
