@@ -1,5 +1,19 @@
 # Release Notes
 
+## [v0.9.5](https://github.com/vispy/vispy/tree/v0.9.5) (2022-02-04)
+
+**Fixed bugs:**
+
+- Set depth buffer in Volume plane rendering [\#2289](https://github.com/vispy/vispy/pull/2289) ([brisvag](https://github.com/brisvag))
+- Fix numpy error with array edge\_width in Markers [\#2285](https://github.com/vispy/vispy/pull/2285) ([brisvag](https://github.com/brisvag))
+- Fix touch event handling issue for Qt6-based backends [\#2284](https://github.com/vispy/vispy/pull/2284) ([mars0001](https://github.com/mars0001))
+- remove utf-8 encode in \_vispy\_set\_title [\#2269](https://github.com/vispy/vispy/pull/2269) ([Llewyllen](https://github.com/Llewyllen))
+
+**Merged pull requests:**
+
+- MNT: add documentation of usage of Triangle/triangle, see \#1029 [\#2268](https://github.com/vispy/vispy/pull/2268) ([kmuehlbauer](https://github.com/kmuehlbauer))
+- Add typing to `create_visual_node` [\#2264](https://github.com/vispy/vispy/pull/2264) ([tlambert03](https://github.com/tlambert03))
+
 ## [v0.9.4](https://github.com/vispy/vispy/tree/v0.9.4) (2021-11-24)
 
 **Fixed bugs:**
