@@ -9,20 +9,28 @@ on: [push, pull_request]
 
 jobs:
   build_wheels:
-    name: Build wheels on ${{ matrix.os }}
+    name: Build wheels on ${{ matrix.os }} for ${{ matrix.arch }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-20.04, windows-2019, macOS-10.15]
+        arch: [auto]
+        include:
+          - os: ubuntu-20.04
+            arch: aarch64
     steps:
     - uses: actions/checkout@v2
       with:
         fetch-depth: 0
+    - name: Set up QEMU
+      if: ${{ matrix.arch == 'aarch64' }}
+      uses: docker/setup-qemu-action@v1
     - name: Build wheels
       uses: pypa/cibuildwheel@v2.1.1
       env:
         CIBW_SKIP: "cp27-* cp34-* cp35-* cp36-* pp* *-win32 *-manylinux_i686"
+        CIBW_ARCHS_LINUX: ${{ matrix.arch }}
         CIBW_TEST_REQUIRES: "pytest pytest-sugar meshio pillow sphinx_gallery imageio"
         CIBW_TEST_COMMAND: "python -c \"import vispy; vispy.test()\""
         CIBW_BUILD_VERBOSITY: "2"
