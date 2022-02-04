@@ -97,7 +97,7 @@ elif qt_lib == 'pyqt5':
         else:
             from PyQt5.QtOpenGL import QGLWidget, QGLFormat
     from PyQt5 import QtGui, QtCore, QtWidgets, QtTest
-    QWidget, QApplication = QtWidgets.QWidget, QtWidgets.QApplication  # 
+    QWidget, QApplication = QtWidgets.QWidget, QtWidgets.QApplication  # Compat
 elif qt_lib == 'pyqt6':
     _check_imports('PyQt6')
     if not USE_EGL:
@@ -630,7 +630,7 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
                      [qt_keyboard_modifiers.ControlModifier, keys.CONTROL],
                      [qt_keyboard_modifiers.AltModifier, keys.ALT],
                      [qt_keyboard_modifiers.MetaModifier, keys.META]):
-            if q & qtmod:
+            if qtmod & q:
                 mod += (v,)
         return mod
 
