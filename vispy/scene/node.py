@@ -423,7 +423,7 @@ class Node(object):
             If true, add information about node transform types.
 
         Returns
-        ----------
+        -------
         tree : str
             The tree diagram.
         """
