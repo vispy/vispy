@@ -33,7 +33,7 @@ def load_stl(file_obj, file_type=None):
     file_type: not used
 
     Returns
-    ----------
+    -------
     loaded: kwargs for a Trimesh constructor with keys:
               vertices:     (n,3) float, vertices
               faces:        (m,3) int, indexes of vertices
@@ -65,7 +65,7 @@ def load_stl_binary(file_obj):
     file_obj: open file- like object
 
     Returns
-    ----------
+    -------
     loaded: kwargs for a Trimesh constructor with keys:
               vertices:     (n,3) float, vertices
               faces:        (m,3) int, indexes of vertices
@@ -124,7 +124,7 @@ def load_stl_ascii(file_obj):
     file_obj: open file- like object
 
     Returns
-    ----------
+    -------
     loaded: kwargs for a Trimesh constructor with keys:
               vertices:     (n,3) float, vertices
               faces:        (m,3) int, indexes of vertices
