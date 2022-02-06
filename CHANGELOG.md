@@ -1,5 +1,11 @@
 # Release Notes
 
+## [v0.9.6](https://github.com/vispy/vispy/tree/v0.9.6) (2022-02-04)
+
+**Fixed bugs:**
+
+- Fix TypeError for membership test of KeyboardModifiers [\#2293](https://github.com/vispy/vispy/pull/2293) ([rayg-ssec](https://github.com/rayg-ssec))
+
 ## [v0.9.5](https://github.com/vispy/vispy/tree/v0.9.5) (2022-02-04)
 
 **Fixed bugs:**
