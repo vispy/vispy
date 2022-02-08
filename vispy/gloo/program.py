@@ -38,6 +38,18 @@ from .util import check_enum
 from .context import get_current_canvas
 from .preprocessor import preprocess
 
+# ------------------------------------------------------------ Constants ---
+REGEX_VAR = {}
+for kind in ('uniform', 'attribute', 'varying', 'const', 'in', 'out'):
+    REGEX_VAR[kind] = re.compile(fr"\s*{kind}\s+"  # kind of variable
+                                 r"((highp|mediump|lowp)\s+)?"  # Precision (optional)
+                                 r"(?P<type>\w+)\s+"  # type
+                                 r"(?P<name>\w+)\s*"  # name
+                                 r"(\[(?P<size>\d+)\])?"  # size (optional)
+                                 r"(\s*\=\s*[0-9.]+)?"  # default value (optional)
+                                 r"\s*;",  # end
+                                 flags=re.MULTILINE)
+    
 
 # ------------------------------------------------------------ Shader class ---
 class Shader(GLObject):
@@ -235,21 +247,9 @@ class Program(GLObject):
         code = '\n\n'.join([sh.code for sh in self._shaders])
         code = re.sub(r'(.*)(//.*)', r'\1', code, re.M)
 
-        # Regexp to look for variable names
-        var_regexp = (r"\s*VARIABLE\s+"  # kind of variable
-                      r"((highp|mediump|lowp)\s+)?"  # Precision (optional)
-                      r"(?P<type>\w+)\s+"  # type
-                      r"(?P<name>\w+)\s*"  # name
-                      r"(\[(?P<size>\d+)\])?"  # size (optional)
-                      r"(\s*\=\s*[0-9.]+)?"  # default value (optional)
-                      r"\s*;"  # end
-                      )
-
         # Parse uniforms, attributes and varyings
         self._code_variables = {}
         for kind in ('uniform', 'attribute', 'varying', 'const', 'in', 'out'):
-            regex = re.compile(var_regexp.replace('VARIABLE', kind),
-                               flags=re.MULTILINE)
 
             # treat *in* like attribute, *out* like varying
             if kind == 'in':
@@ -257,7 +257,7 @@ class Program(GLObject):
             elif kind == 'out':
                 kind = 'varying'
 
-            for m in re.finditer(regex, code):
+            for m in re.finditer(REGEX_VAR[kind], code):
                 gtype = m.group('type')
                 size = int(m.group('size')) if m.group('size') else -1
                 this_kind = kind
