@@ -285,17 +285,11 @@ void main() {
     }
     
     $after_loop
-    
-    // set the depth buffer
-    if (rendering_as_plane == true) {
-        vec4 frag_depth_vector = vec4(intersection, 1);
-        vec4 iproj = $viewtransformf(frag_depth_vector);
-        iproj.z /= iproj.w;
-        gl_FragDepth = (iproj.z+1.0)/2.0;
-    }
-    elif (set_frag_depth == true) {
-        vec4 frag_depth_vector = vec4(frag_depth_point, 1);
-        vec4 iproj = $viewtransformf(frag_depth_vector);
+
+    if (set_frag_depth == true) {
+        // if a surface was found, use it to set the depth buffer
+        vec4 position2 = vec4(frag_depth_point, 1);
+        vec4 iproj = $viewtransformf(position2);
         iproj.z /= iproj.w;
         gl_FragDepth = (iproj.z+1.0)/2.0;
     }
@@ -369,8 +363,10 @@ _RAYCASTING_SETUP_PLANE = """
     vec3 step = N / u_shape;
     vec3 start_loc = intersection_tex - ((step * f_nsteps) / 2);
 
-    // Set depth value
+    // Ensure that frag depth value will be set to plane intersection
     rendering_as_plane = true;
+    set_frag_depth = true;
+    frag_depth_point = intersection;
 """
 
 
@@ -378,7 +374,6 @@ _MIP_SNIPPETS = dict(
     before_loop="""
         float maxval = -99999.0; // The maximum encountered value
         int maxi = -1;  // Where the maximum value was encountered
-        set_frag_depth = true;  // Explicit flag for setting frag depth
         """,
     in_loop="""
         if( val > maxval ) {
@@ -389,24 +384,11 @@ _MIP_SNIPPETS = dict(
     after_loop="""
         // Refine search for max value, but only if anything was found
         if ( maxi > -1 ) {
-            // Calculate starting location of ray for sampling
-            vec3 start_loc_refine = start_loc + step * (float(maxi) - 0.5);
-
-            // Set current sampling point
-            loc = start_loc_refine; 
-            
-            // Keep track of where max was encountered
-            vec3 max_loc_tex;
-
+            loc = start_loc + step * (float(maxi) - 0.5);
             for (int i=0; i<10; i++) {
-                val = $sample(u_volumetex, loc).r;
-                if( val > maxval ) {
-                    maxval = val;
-                    max_loc_tex = start_loc_refine + (step * 0.1 * i);
-                }
+                maxval = max(maxval, $sample(u_volumetex, loc).r);
                 loc += step * 0.1;
             }
-            frag_depth_point = max_loc_tex * u_shape;
             gl_FragColor = applyColormap(maxval);
         }
         """,
