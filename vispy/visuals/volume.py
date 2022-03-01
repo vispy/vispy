@@ -450,11 +450,22 @@ _MINIP_SNIPPETS = dict(
     after_loop="""
         // Refine search for min value, but only if anything was found
         if ( mini > -1 ) {
-            loc = start_loc + step * (float(mini) - 0.5);
+            // Calculate starting location of ray for sampling               
+            vec3 start_loc_refine = start_loc + step * (float(mini) - 0.5);  
+            loc = start_loc_refine;
+            
+            // Variables to keep track of current value and where max was encountered
+            vec3 min_loc_tex;  
+                           
             for (int i=0; i<10; i++) {
-                minval = min(minval, $sample(u_volumetex, loc).r);
+                float val = $sample(u_volumetex, loc).r;
+                if ( val < minval) {
+                    minval = val;
+                    min_loc_tex = start_loc_refine + (step * 0.1 * i);
+                }
                 loc += step * 0.1;
             }
+            frag_depth_point = min_loc_tex * u_shape;
             gl_FragColor = applyColormap(minval);
         }
         """,
