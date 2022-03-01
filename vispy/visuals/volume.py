@@ -229,11 +229,13 @@ void main() {
     // fragment.
     view_ray = normalize(farpos.xyz - nearpos.xyz);
 
-    // Keep track of wheter a surface was found (used for depth)
-    // Need to do it before raycasting setup because the "plane" mode needs to set
-    // the depth during that phase.
-    vec3 surface_point;
-    bool surface_found = false;
+    // Variables to keep track of where and whether to set the frag depth.
+    // frag_depth_point is in data coordinates.
+    vec3 frag_depth_point;
+    bool set_frag_depth = false;
+    
+    // Also keep track of whether plane rendering is enabled.
+    bool rendering_as_plane = false;
     
     // Set up the ray casting
     // This snippet must define three variables:
@@ -283,11 +285,17 @@ void main() {
     }
     
     $after_loop
-
-    if (surface_found == true) {
-        // if a surface was found, use it to set the depth buffer
-        vec4 position2 = vec4(surface_point, 1);
-        vec4 iproj = $viewtransformf(position2);
+    
+    // set the depth buffer
+    if (rendering_as_plane == true) {
+        vec4 frag_depth_vector = vec4(intersection, 1);
+        vec4 iproj = $viewtransformf(frag_depth_vector);
+        iproj.z /= iproj.w;
+        gl_FragDepth = (iproj.z+1.0)/2.0;
+    }
+    elif (set_frag_depth == true) {
+        vec4 frag_depth_vector = vec4(frag_depth_point, 1);
+        vec4 iproj = $viewtransformf(frag_depth_vector);
         iproj.z /= iproj.w;
         gl_FragDepth = (iproj.z+1.0)/2.0;
     }
@@ -362,8 +370,7 @@ _RAYCASTING_SETUP_PLANE = """
     vec3 start_loc = intersection_tex - ((step * f_nsteps) / 2);
 
     // Set depth value
-    surface_point = intersection;
-    surface_found = true;
+    rendering_as_plane = true;
 """
 
 
@@ -371,6 +378,7 @@ _MIP_SNIPPETS = dict(
     before_loop="""
         float maxval = -99999.0; // The maximum encountered value
         int maxi = -1;  // Where the maximum value was encountered
+        set_frag_depth = true;  // Explicit flag for setting frag depth
         """,
     in_loop="""
         if( val > maxval ) {
@@ -381,11 +389,24 @@ _MIP_SNIPPETS = dict(
     after_loop="""
         // Refine search for max value, but only if anything was found
         if ( maxi > -1 ) {
-            loc = start_loc + step * (float(maxi) - 0.5);
+            // Calculate starting location of ray for sampling
+            vec3 start_loc_refine = start_loc + step * (float(maxi) - 0.5);
+
+            // Set current sampling point
+            loc = start_loc_refine; 
+            
+            // Keep track of where max was encountered
+            vec3 max_loc_tex;
+
             for (int i=0; i<10; i++) {
-                maxval = max(maxval, $sample(u_volumetex, loc).r);
+                val = $sample(u_volumetex, loc).r;
+                if( val > maxval ) {
+                    maxval = val;
+                    max_loc_tex = start_loc_refine + (step * 0.1 * i);
+                }
                 loc += step * 0.1;
             }
+            frag_depth_point = max_loc_tex * u_shape;
             gl_FragColor = applyColormap(maxval);
         }
         """,
@@ -497,8 +518,8 @@ _ISO_SNIPPETS = dict(
                     gl_FragColor = applyColormap(color.r);
 
                     // set the variables for the depth buffer
-                    surface_point = iloc * u_shape;
-                    surface_found = true;
+                    frag_depth_point = iloc * u_shape;
+                    set_frag_depth = true;
 
                     iter = nsteps;
                     break;
@@ -509,7 +530,7 @@ _ISO_SNIPPETS = dict(
         """,
     after_loop="""
 
-        if (!surface_found) {
+        if (!set_frag_depth) {
             discard;
         }
 
