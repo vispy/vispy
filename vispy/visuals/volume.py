@@ -418,7 +418,8 @@ _ATTENUATED_MIP_SNIPPETS = dict(
         float sumval = 0.0; // The sum of the encountered values
         float scaled = 0.0; // The scaled value
         int maxi = 0;  // Where the maximum value was encountered
-        vec3 maxloc = vec3(0.0);  // Location where the maximum value was encountered
+        vec3 max_loc_tex = vec3(0.0);  // Location where the maximum value was encountered
+        set_frag_depth = true;
         """,
     in_loop="""
         sumval = sumval + val;
@@ -426,10 +427,11 @@ _ATTENUATED_MIP_SNIPPETS = dict(
         if( scaled > maxval ) {
             maxval = scaled;
             maxi = iter;
-            maxloc = loc;
+            max_loc_tex = loc;
         }
         """,
     after_loop="""
+        frag_depth_point = max_loc_tex * u_shape;
         gl_FragColor = applyColormap(maxval);
         """,
 )
