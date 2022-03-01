@@ -410,30 +410,6 @@ _MIP_SNIPPETS = dict(
             gl_FragColor = applyColormap(maxval);
         }
         """,
-    # after_loop="""
-    # // Refine search for max value, but only if anything was found
-    # if ( maxi > -1 ) {
-    #     // Calculate starting location of ray for sampling
-    #     vec3 start_loc_refine = start_loc + step * (float(maxi) - 0.5);
-    #
-    #     // Set current sampling point
-    #     loc = start_loc_refine;
-    #
-    #     // Keep track of where max was encountered
-    #     vec3 max_loc_tex;
-    #
-    #     for (int i=0; i<10; i++) {
-    #         val = $sample(u_volumetex, loc).r;
-    #         if( val > maxval ) {
-    #             maxval = val;
-    #             max_loc_tex = start_loc_refine + (step * 0.1 * i);
-    #         }
-    #         loc += step * 0.1;
-    #     }
-    #     frag_depth_point = max_loc_tex * u_shape;
-    #     gl_FragColor = applyColormap(maxval);
-    # }
-    # """,
 )
 
 _ATTENUATED_MIP_SNIPPETS = dict(
