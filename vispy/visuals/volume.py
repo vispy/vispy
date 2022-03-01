@@ -380,6 +380,7 @@ _MIP_SNIPPETS = dict(
     before_loop="""
         float maxval = -99999.0; // The maximum encountered value
         int maxi = -1;  // Where the maximum value was encountered
+        set_frag_depth = true;
         """,
     in_loop="""
         if( val > maxval ) {
@@ -390,14 +391,49 @@ _MIP_SNIPPETS = dict(
     after_loop="""
         // Refine search for max value, but only if anything was found
         if ( maxi > -1 ) {
-            loc = start_loc + step * (float(maxi) - 0.5);
+            // Calculate starting location of ray for sampling               
+            vec3 start_loc_refine = start_loc + step * (float(maxi) - 0.5);  
+            loc = start_loc_refine;
+            
+            // Variables to keep track of current value and where max was encountered
+            vec3 max_loc_tex;  
+                           
             for (int i=0; i<10; i++) {
-                maxval = max(maxval, $sample(u_volumetex, loc).r);
+                float val = $sample(u_volumetex, loc).r;
+                if ( val > maxval) {
+                    maxval = val;
+                    max_loc_tex = start_loc_refine + (step * 0.1 * i);
+                }
                 loc += step * 0.1;
             }
+            frag_depth_point = max_loc_tex * u_shape;
             gl_FragColor = applyColormap(maxval);
         }
         """,
+    # after_loop="""
+    # // Refine search for max value, but only if anything was found
+    # if ( maxi > -1 ) {
+    #     // Calculate starting location of ray for sampling
+    #     vec3 start_loc_refine = start_loc + step * (float(maxi) - 0.5);
+    #
+    #     // Set current sampling point
+    #     loc = start_loc_refine;
+    #
+    #     // Keep track of where max was encountered
+    #     vec3 max_loc_tex;
+    #
+    #     for (int i=0; i<10; i++) {
+    #         val = $sample(u_volumetex, loc).r;
+    #         if( val > maxval ) {
+    #             maxval = val;
+    #             max_loc_tex = start_loc_refine + (step * 0.1 * i);
+    #         }
+    #         loc += step * 0.1;
+    #     }
+    #     frag_depth_point = max_loc_tex * u_shape;
+    #     gl_FragColor = applyColormap(maxval);
+    # }
+    # """,
 )
 
 _ATTENUATED_MIP_SNIPPETS = dict(
