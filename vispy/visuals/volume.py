@@ -234,8 +234,10 @@ void main() {
     vec3 frag_depth_point;
     bool set_frag_depth = false;
     
-    // Also keep track of whether plane rendering is enabled.
+    // Variables to keep track of whether plane rendering is enabled and
+    // ray-plane intersection
     bool rendering_as_plane = false;
+    vec3 intersection = vec3(0, 0, 0);
     
     // Set up the ray casting
     // This snippet must define three variables:
@@ -286,10 +288,14 @@ void main() {
     
     $after_loop
 
+    // set the depth buffer
+    if (rendering_as_plane == true) {
+        frag_depth_point = intersection;
+    }
     if (set_frag_depth == true) {
         // if a surface was found, use it to set the depth buffer
-        vec4 position2 = vec4(frag_depth_point, 1);
-        vec4 iproj = $viewtransformf(position2);
+        vec4 frag_depth_vector = vec4(frag_depth_point, 1);
+        vec4 iproj = $viewtransformf(frag_depth_vector);
         iproj.z /= iproj.w;
         gl_FragDepth = (iproj.z+1.0)/2.0;
     }
@@ -330,7 +336,7 @@ _RAYCASTING_SETUP_VOLUME = """
 _RAYCASTING_SETUP_PLANE = """
     // find intersection of view ray with plane in data coordinates
     // 0.5 offset needed to get back to correct texture coordinates (vispy#2239)
-    vec3 intersection = intersectLinePlane(v_position.xyz, view_ray,
+    intersection = intersectLinePlane(v_position.xyz, view_ray,
                                            u_plane_position, u_plane_normal);
     // and texture coordinates
     vec3 intersection_tex = (intersection + 0.5) / u_shape;
