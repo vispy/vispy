@@ -358,7 +358,6 @@ def test_volume_depth():
         red_vol = np.zeros((40, 40, 40), dtype=np.uint8)
         red_vol[:, 35, :] = 1  # red plane in front of blue plane
 
-
         scene.visuals.Volume(
             blue_vol,
             interpolation="nearest",
