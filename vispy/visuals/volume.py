@@ -372,7 +372,6 @@ _RAYCASTING_SETUP_PLANE = """
     // Ensure that frag depth value will be set to plane intersection
     rendering_as_plane = true;
     set_frag_depth = true;
-    frag_depth_point = intersection;
 """
 
 
