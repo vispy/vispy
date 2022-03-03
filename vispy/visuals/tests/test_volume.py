@@ -374,7 +374,7 @@ def test_volume_depth():
             parent=v.scene,
         )
 
-        # render with grays colormap
+        # render
         rendered = c.render()
         reds = np.sum(rendered[:, :, 0])
         blues = np.sum(rendered[:, :, 2])
