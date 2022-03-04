@@ -87,6 +87,7 @@ uniform float u_threshold;
 uniform float u_attenuation;
 uniform float u_relative_step_size;
 uniform float u_mip_cutoff;
+uniform float u_minip_cutoff;
 
 //varyings
 varying vec3 v_position;
