@@ -232,12 +232,10 @@ void main() {
     // Variables to keep track of where and whether to set the frag depth.
     // frag_depth_point is in data coordinates.
     vec3 frag_depth_point;
-    bool set_frag_depth = false;
-    
+    bool found_something = false;
+
     // Variables to keep track of whether plane rendering is enabled and
-    // ray-plane intersection
     bool rendering_as_plane = false;
-    vec3 intersection = vec3(0, 0, 0);
     
     // Set up the ray casting
     // This snippet must define three variables:
@@ -288,11 +286,7 @@ void main() {
     
     $after_loop
 
-    // set the depth buffer
-    if (rendering_as_plane == true) {
-        frag_depth_point = intersection;
-    }
-    if (set_frag_depth == true) {
+    if (found_something == true) {
         // if a surface was found, use it to set the depth buffer
         vec4 frag_depth_vector = vec4(frag_depth_point, 1);
         vec4 iproj = $viewtransformf(frag_depth_vector);
@@ -300,12 +294,9 @@ void main() {
         gl_FragDepth = (iproj.z+1.0)/2.0;
     }
     else {
-        gl_FragDepth = gl_FragCoord.z;
+        discard;
     }
-
 }
-
-
 """  # noqa
 
 _RAYCASTING_SETUP_VOLUME = """
@@ -336,7 +327,7 @@ _RAYCASTING_SETUP_VOLUME = """
 _RAYCASTING_SETUP_PLANE = """
     // find intersection of view ray with plane in data coordinates
     // 0.5 offset needed to get back to correct texture coordinates (vispy#2239)
-    intersection = intersectLinePlane(v_position.xyz, view_ray,
+    vec3 intersection = intersectLinePlane(v_position.xyz, view_ray,
                                            u_plane_position, u_plane_normal);
     // and texture coordinates
     vec3 intersection_tex = (intersection + 0.5) / u_shape;
@@ -370,8 +361,7 @@ _RAYCASTING_SETUP_PLANE = """
     vec3 start_loc = intersection_tex - ((step * f_nsteps) / 2);
 
     // Ensure that frag depth value will be set to plane intersection
-    rendering_as_plane = true;
-    set_frag_depth = true;
+    frag_depth_point = intersection;
 """
 
 
@@ -379,7 +369,6 @@ _MIP_SNIPPETS = dict(
     before_loop="""
         float maxval = -99999.0; // The maximum encountered value
         int maxi = -1;  // Where the maximum value was encountered
-        set_frag_depth = true;
         """,
     in_loop="""
         if( val > maxval ) {
@@ -390,21 +379,23 @@ _MIP_SNIPPETS = dict(
     after_loop="""
         // Refine search for max value, but only if anything was found
         if ( maxi > -1 ) {
-            // Calculate starting location of ray for sampling               
-            vec3 start_loc_refine = start_loc + step * (float(maxi) - 0.5);  
+            // Calculate starting location of ray for sampling
+            vec3 start_loc_refine = start_loc + step * (float(maxi) - 0.5);
             loc = start_loc_refine;
-            
+
             // Variables to keep track of current value and where max was encountered
-            vec3 max_loc_tex;  
-                           
+            vec3 max_loc_tex = start_loc_refine;
+
+            vec3 small_step = step * 0.1;
             for (int i=0; i<10; i++) {
                 float val = $sample(u_volumetex, loc).r;
                 if ( val > maxval) {
                     maxval = val;
-                    max_loc_tex = start_loc_refine + (step * 0.1 * i);
+                    max_loc_tex = start_loc_refine + (small_step * i);
                 }
-                loc += step * 0.1;
+                loc += small_step;
             }
+            found_something = true;
             frag_depth_point = max_loc_tex * u_shape;
             gl_FragColor = applyColormap(maxval);
         }
@@ -416,9 +407,8 @@ _ATTENUATED_MIP_SNIPPETS = dict(
         float maxval = -99999.0; // The maximum encountered value
         float sumval = 0.0; // The sum of the encountered values
         float scaled = 0.0; // The scaled value
-        int maxi = 0;  // Where the maximum value was encountered
+        int maxi = -1;  // Where the maximum value was encountered
         vec3 max_loc_tex = vec3(0.0);  // Location where the maximum value was encountered
-        set_frag_depth = true;
         """,
     in_loop="""
         sumval = sumval + val;
@@ -430,8 +420,11 @@ _ATTENUATED_MIP_SNIPPETS = dict(
         }
         """,
     after_loop="""
-        frag_depth_point = max_loc_tex * u_shape;
-        gl_FragColor = applyColormap(maxval);
+        if ( maxi > -1 ) {
+            found_something = true;
+            frag_depth_point = max_loc_tex * u_shape;
+            gl_FragColor = applyColormap(maxval);
+        }
         """,
 )
 
@@ -449,21 +442,23 @@ _MINIP_SNIPPETS = dict(
     after_loop="""
         // Refine search for min value, but only if anything was found
         if ( mini > -1 ) {
-            // Calculate starting location of ray for sampling               
-            vec3 start_loc_refine = start_loc + step * (float(mini) - 0.5);  
+            // Calculate starting location of ray for sampling
+            vec3 start_loc_refine = start_loc + step * (float(mini) - 0.5);
             loc = start_loc_refine;
-            
+
             // Variables to keep track of current value and where max was encountered
-            vec3 min_loc_tex;  
-                           
+            vec3 min_loc_tex = start_loc_refine;
+
+            vec3 small_step = step * 0.1;
             for (int i=0; i<10; i++) {
                 float val = $sample(u_volumetex, loc).r;
                 if ( val < minval) {
                     minval = val;
-                    min_loc_tex = start_loc_refine + (step * 0.1 * i);
+                    min_loc_tex = start_loc_refine + (small_step * i);
                 }
-                loc += step * 0.1;
+                loc += small_step;
             }
+            found_something = true;
             frag_depth_point = min_loc_tex * u_shape;
             gl_FragColor = applyColormap(minval);
         }
@@ -475,26 +470,27 @@ _TRANSLUCENT_SNIPPETS = dict(
         vec4 integrated_color = vec4(0., 0., 0., 0.);
         """,
     in_loop="""
-            color = applyColormap(val);
-            float a1 = integrated_color.a;
-            float a2 = color.a * (1 - a1);
-            float alpha = max(a1 + a2, 0.001);
+        color = applyColormap(val);
+        float a1 = integrated_color.a;
+        float a2 = color.a * (1 - a1);
+        float alpha = max(a1 + a2, 0.001);
 
-            // Doesn't work.. GLSL optimizer bug?
-            //integrated_color = (integrated_color * a1 / alpha) +
-            //                   (color * a2 / alpha);
-            // This should be identical but does work correctly:
-            integrated_color *= a1 / alpha;
-            integrated_color += color * a2 / alpha;
+        // Doesn't work.. GLSL optimizer bug?
+        //integrated_color = (integrated_color * a1 / alpha) +
+        //                   (color * a2 / alpha);
+        // This should be identical but does work correctly:
+        integrated_color *= a1 / alpha;
+        integrated_color += color * a2 / alpha;
 
-            integrated_color.a = alpha;
+        integrated_color.a = alpha;
 
-            if( alpha > 0.99 ){
-                // stop integrating if the fragment becomes opaque
-                iter = nsteps;
-            }
+        if( alpha > 0.99 ){
+            // stop integrating if the fragment becomes opaque
+            iter = nsteps;
+        }
         """,
     after_loop="""
+        found_something = true;
         gl_FragColor = integrated_color;
         """,
 )
@@ -509,6 +505,7 @@ _ADDITIVE_SNIPPETS = dict(
         integrated_color = 1.0 - (1.0 - integrated_color) * (1.0 - color);
         """,
     after_loop="""
+        found_something = true;
         gl_FragColor = integrated_color;
         """,
 )
@@ -531,22 +528,16 @@ _ISO_SNIPPETS = dict(
 
                     // set the variables for the depth buffer
                     frag_depth_point = iloc * u_shape;
-                    set_frag_depth = true;
 
                     iter = nsteps;
                     break;
                 }
                 iloc += step * 0.1;
             }
+            found_something = true;
         }
         """,
-    after_loop="""
-
-        if (!set_frag_depth) {
-            discard;
-        }
-
-        """,
+    after_loop="""""",
 )
 
 
@@ -563,6 +554,7 @@ _AVG_SNIPPETS = dict(
         meanval = prev_mean + (val - prev_mean) / n; // Calculate the mean
         """,
     after_loop="""
+        found_something = true;
         // Apply colormap on mean value
         gl_FragColor = applyColormap(meanval);
         """,
