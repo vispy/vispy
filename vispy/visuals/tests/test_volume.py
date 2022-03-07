@@ -380,7 +380,7 @@ def test_volume_depth():
         greens = np.sum(rendered[:, :, 1])
         blues = np.sum(rendered[:, :, 2])
         assert reds > 0
-        assert np.allclose(greens, 0)
+        np.testing.assert_allclose(greens, 0)
         assert blues > 0
 
 
