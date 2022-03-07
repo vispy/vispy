@@ -229,14 +229,10 @@ void main() {
     // fragment.
     view_ray = normalize(farpos.xyz - nearpos.xyz);
 
-    // Variables to keep track of where and whether to set the frag depth.
+    // Variables to keep track of where to set the frag depth.
     // frag_depth_point is in data coordinates.
     vec3 frag_depth_point;
-    bool found_something = false;
 
-    // Variables to keep track of whether plane rendering is enabled and
-    bool rendering_as_plane = false;
-    
     // Set up the ray casting
     // This snippet must define three variables:
     // vec3 start_loc - the starting location of the ray in texture coordinates
@@ -257,8 +253,9 @@ void main() {
     vec3 loc = start_loc;
     int iter = 0;
 
-    // Keep track of whether texture has been sampled
-    int texture_sampled = 0;
+    // keep track if the texture is ever sampled; if not, fragment will be discarded
+    // this allows us to discard fragments that only traverse clipped parts of the texture
+    bool texture_sampled = false;
 
     while (iter < nsteps) {
         for (iter=iter; iter<nsteps; iter++)
@@ -270,7 +267,7 @@ void main() {
                 // Get sample color
                 vec4 color = $sample(u_volumetex, loc);
                 float val = color.r;
-                texture_sampled = 1;
+                texture_sampled = true;
 
                 $in_loop
             }
@@ -278,24 +275,18 @@ void main() {
             loc += step;
         }
     }
-    
-    // discard fragment if texture not sampled
-    if ( texture_sampled != 1 ) {
+
+    if ( texture_sampled == false ) {
         discard;
     }
-    
+
     $after_loop
 
-    if (found_something == true) {
-        // if a surface was found, use it to set the depth buffer
-        vec4 frag_depth_vector = vec4(frag_depth_point, 1);
-        vec4 iproj = $viewtransformf(frag_depth_vector);
-        iproj.z /= iproj.w;
-        gl_FragDepth = (iproj.z+1.0)/2.0;
-    }
-    else {
-        discard;
-    }
+    // set frag depth
+    vec4 frag_depth_vector = vec4(frag_depth_point, 1);
+    vec4 iproj = $viewtransformf(frag_depth_vector);
+    iproj.z /= iproj.w;
+    gl_FragDepth = (iproj.z+1.0)/2.0;
 }
 """  # noqa
 
@@ -322,6 +313,9 @@ _RAYCASTING_SETUP_VOLUME = """
     vec3 step = ((v_position - front) / u_shape) / f_nsteps;
     // 0.5 offset needed to get back to correct texture coordinates (vispy#2239)
     vec3 start_loc = (front + 0.5) / u_shape;
+
+    // set frag depth to the cube face; this can be overridden by projection snippets
+    frag_depth_point = front;
 """
 
 _RAYCASTING_SETUP_PLANE = """
@@ -395,9 +389,11 @@ _MIP_SNIPPETS = dict(
                 }
                 loc += small_step;
             }
-            found_something = true;
             frag_depth_point = max_loc_tex * u_shape;
             gl_FragColor = applyColormap(maxval);
+        }
+        else {
+            discard;
         }
         """,
 )
@@ -421,9 +417,11 @@ _ATTENUATED_MIP_SNIPPETS = dict(
         """,
     after_loop="""
         if ( maxi > -1 ) {
-            found_something = true;
             frag_depth_point = max_loc_tex * u_shape;
             gl_FragColor = applyColormap(maxval);
+        }
+        else {
+            discard;
         }
         """,
 )
@@ -458,9 +456,11 @@ _MINIP_SNIPPETS = dict(
                 }
                 loc += small_step;
             }
-            found_something = true;
             frag_depth_point = min_loc_tex * u_shape;
             gl_FragColor = applyColormap(minval);
+        }
+        else {
+            discard;
         }
         """,
 )
@@ -490,7 +490,6 @@ _TRANSLUCENT_SNIPPETS = dict(
         }
         """,
     after_loop="""
-        found_something = true;
         gl_FragColor = integrated_color;
         """,
 )
@@ -505,7 +504,6 @@ _ADDITIVE_SNIPPETS = dict(
         integrated_color = 1.0 - (1.0 - integrated_color) * (1.0 - color);
         """,
     after_loop="""
-        found_something = true;
         gl_FragColor = integrated_color;
         """,
 )
@@ -534,7 +532,9 @@ _ISO_SNIPPETS = dict(
                 }
                 iloc += step * 0.1;
             }
-            found_something = true;
+        }
+        else {
+            discard;
         }
         """,
     after_loop="""""",
@@ -554,7 +554,6 @@ _AVG_SNIPPETS = dict(
         meanval = prev_mean + (val - prev_mean) / n; // Calculate the mean
         """,
     after_loop="""
-        found_something = true;
         // Apply colormap on mean value
         gl_FragColor = applyColormap(meanval);
         """,
