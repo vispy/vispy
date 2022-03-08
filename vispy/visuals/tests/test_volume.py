@@ -341,6 +341,16 @@ def test_volume_depth():
     Render a volume with a blue ball in front of a red plane in front of a
     blue plane, checking that the output image contains both red and blue pixels.
     """
+    # A blue strip behind a red strip
+    # If depth is set correctly, we should see only red pixels
+    # the screen
+    blue_vol = np.zeros((40, 40, 40), dtype=np.uint8)
+    blue_vol[:, 39, :] = 1  # back plane blue
+    blue_vol[15:25, 15:25, 15:25] = 1  # blue in center
+
+    red_vol = np.zeros((40, 40, 40), dtype=np.uint8)
+    red_vol[:, 35, :] = 1  # red plane in front of blue plane
+
     with TestingCanvas(size=(40, 40)) as c:
         v = c.central_widget.add_view(border_width=0)
         v.camera = 'arcball'
@@ -348,29 +358,19 @@ def test_volume_depth():
         v.camera.center = (20, 20, 20)
         v.camera.scale_factor = 40.0
 
-        # A blue strip behind a red strip
-        # If depth is set correctly, we should see only red pixels
-        # the screen
-        blue_vol = np.zeros((40, 40, 40), dtype=np.uint8)
-        blue_vol[:, 39, :] = 1  # back plane blue
-        blue_vol[15:25, 15:25, 15:25] = 1  # blue in center
-
-        red_vol = np.zeros((40, 40, 40), dtype=np.uint8)
-        red_vol[:, 35, :] = 1  # red plane in front of blue plane
+        scene.visuals.Volume(
+            red_vol,
+            interpolation="nearest",
+            clim=(0, 1),
+            cmap="reds",
+            parent=v.scene,
+        )
 
         scene.visuals.Volume(
             blue_vol,
             interpolation="nearest",
             clim=(0, 1),
             cmap="blues",
-            parent=v.scene,
-        )
-
-        scene.visuals.Volume(
-            red_vol,
-            interpolation="nearest",
-            clim=(0, 1),
-            cmap="reds",
             parent=v.scene,
         )
 
