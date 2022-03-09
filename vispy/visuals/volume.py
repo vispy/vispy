@@ -1105,6 +1105,11 @@ class VolumeVisual(Visual):
 
     @property
     def mip_cutoff(self):
+        """The lower cutoff value for `mip` and `attenuated_mip`.
+
+        When using the `mip` or `attenuated_mip` rendering methods, fragments
+        with values below the cutoff will be discarded.
+        """
         return self._mip_cutoff
 
     @mip_cutoff.setter
@@ -1115,6 +1120,11 @@ class VolumeVisual(Visual):
 
     @property
     def minip_cutoff(self):
+        """The upper cutoff value for `minip`.
+
+        When using the `minip` rendering method, fragments
+        with values above the cutoff will be discarded.
+        """
         return self._minip_cutoff
 
     @minip_cutoff.setter
