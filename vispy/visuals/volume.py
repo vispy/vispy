@@ -1115,7 +1115,7 @@ class VolumeVisual(Visual):
     @mip_cutoff.setter
     def mip_cutoff(self, value):
         if value is None:
-            value = 1.175494351e-38
+            value = np.finfo('float32').min
         self._mip_cutoff = float(value)
         self.shared_program['u_mip_cutoff'] = self._mip_cutoff
         self.update()
@@ -1132,7 +1132,7 @@ class VolumeVisual(Visual):
     @minip_cutoff.setter
     def minip_cutoff(self, value):
         if value is None:
-            value = 3.402823466e+38
+            value = np.finfo('float32').max
         self._minip_cutoff = float(value)
         self.shared_program['u_minip_cutoff'] = self._minip_cutoff
         self.update()
