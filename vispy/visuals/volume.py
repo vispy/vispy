@@ -644,8 +644,8 @@ class VolumeVisual(Visual):
                  gamma=1.0, interpolation='linear', texture_format=None,
                  raycasting_mode='volume', plane_position=None,
                  plane_normal=None, plane_thickness=1.0, clipping_planes=None,
-                 clipping_planes_coord_system='scene', mip_cutoff=-99999,
-                 minip_cutoff=99999):
+                 clipping_planes_coord_system='scene', mip_cutoff=None,
+                 minip_cutoff=None):
 
         tr = ['visual', 'scene', 'document', 'canvas', 'framebuffer', 'render']
         if clipping_planes_coord_system not in tr:
@@ -1114,6 +1114,8 @@ class VolumeVisual(Visual):
 
     @mip_cutoff.setter
     def mip_cutoff(self, value):
+        if value is None:
+            value = 1.175494351e-38
         self._mip_cutoff = float(value)
         self.shared_program['u_mip_cutoff'] = self._mip_cutoff
         self.update()
@@ -1129,6 +1131,8 @@ class VolumeVisual(Visual):
 
     @minip_cutoff.setter
     def minip_cutoff(self, value):
+        if value is None:
+            value = 3.402823466e+38
         self._minip_cutoff = float(value)
         self.shared_program['u_minip_cutoff'] = self._minip_cutoff
         self.update()
