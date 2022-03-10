@@ -333,4 +333,74 @@ def test_plane_depth():
         assert np.array_equal(right, [255, 255, 255, 255])
 
 
+@requires_pyopengl()
+@requires_application()
+def test_mip_cutoff():
+    with TestingCanvas(size=(40, 40)) as c:
+        v = c.central_widget.add_view(border_width=0)
+        v.camera = 'arcball'
+        v.camera.fov = 0
+        v.camera.center = (20, 20, 20)
+        v.camera.scale_factor = 40.0
+
+        vol = scene.visuals.Volume(
+            np.ones((40, 40, 40), dtype=np.uint8),
+            interpolation="nearest",
+            clim=(0, 1),
+            cmap="grays",
+            parent=v.scene,
+        )
+
+        # we should see white
+        rendered = c.render()
+        assert np.array_equal(rendered[20, 20], [255, 255, 255, 255])
+
+        vol.mip_cutoff = 10
+        # we should see black
+        rendered = c.render()
+        assert np.array_equal(rendered[20, 20], [0, 0, 0, 255])
+
+        # repeat for attenuated_mip
+        vol.method = 'attenuated_mip'
+        vol.mip_cutoff = None
+
+        # we should see white
+        rendered = c.render()
+        assert np.array_equal(rendered[20, 20], [255, 255, 255, 255])
+
+        vol.mip_cutoff = 10
+        # we should see black
+        rendered = c.render()
+        assert np.array_equal(rendered[20, 20], [0, 0, 0, 255])
+
+
+@requires_pyopengl()
+@requires_application()
+def test_minip_cutoff():
+    with TestingCanvas(size=(40, 40)) as c:
+        v = c.central_widget.add_view(border_width=0)
+        v.camera = 'arcball'
+        v.camera.fov = 0
+        v.camera.center = (20, 20, 20)
+        v.camera.scale_factor = 40.0
+
+        vol = scene.visuals.Volume(
+            np.zeros((40, 40, 40), dtype=np.uint8),
+            interpolation="nearest",
+            clim=(0, 1),
+            cmap="grays",
+            parent=v.scene,
+        )
+
+        # we should see white
+        rendered = c.render()
+        assert np.array_equal(rendered[20, 20], [255, 255, 255, 255])
+
+        # discard fragments above -10 (everything)
+        vol.minip_cutoff = -10
+        # we should see black
+        rendered = c.render()
+        assert np.array_equal(rendered[20, 20], [0, 0, 0, 255])
+
+
 run_tests_if_main()
