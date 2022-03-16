@@ -336,15 +336,15 @@ def test_plane_depth():
 @requires_pyopengl()
 @requires_application()
 def test_mip_cutoff():
-    with TestingCanvas(size=(40, 40)) as c:
+    with TestingCanvas(size=(80, 80)) as c:
         v = c.central_widget.add_view(border_width=0)
         v.camera = 'arcball'
         v.camera.fov = 0
-        v.camera.center = (20, 20, 20)
-        v.camera.scale_factor = 40.0
+        v.camera.center = (40, 40, 40)
+        v.camera.scale_factor = 80.0
 
         vol = scene.visuals.Volume(
-            np.ones((40, 40, 40), dtype=np.uint8),
+            np.ones((80, 80, 80), dtype=np.uint8),
             interpolation="nearest",
             clim=(0, 1),
             cmap="grays",
@@ -353,12 +353,12 @@ def test_mip_cutoff():
 
         # we should see white
         rendered = c.render()
-        assert np.array_equal(rendered[20, 20], [255, 255, 255, 255])
+        assert np.array_equal(rendered[40, 40], [255, 255, 255, 255])
 
         vol.mip_cutoff = 10
         # we should see black
         rendered = c.render()
-        assert np.array_equal(rendered[20, 20], [0, 0, 0, 255])
+        assert np.array_equal(rendered[40, 40], [0, 0, 0, 255])
 
         # repeat for attenuated_mip
         vol.method = 'attenuated_mip'
@@ -366,41 +366,46 @@ def test_mip_cutoff():
 
         # we should see white
         rendered = c.render()
-        assert np.array_equal(rendered[20, 20], [255, 255, 255, 255])
+        assert np.array_equal(rendered[40, 40], [255, 255, 255, 255])
 
         vol.mip_cutoff = 10
         # we should see black
         rendered = c.render()
-        assert np.array_equal(rendered[20, 20], [0, 0, 0, 255])
+        assert np.array_equal(rendered[40, 40], [0, 0, 0, 255])
 
 
 @requires_pyopengl()
 @requires_application()
 def test_minip_cutoff():
-    with TestingCanvas(size=(40, 40)) as c:
+    with TestingCanvas(size=(80, 80)) as c:
         v = c.central_widget.add_view(border_width=0)
         v.camera = 'arcball'
         v.camera.fov = 0
-        v.camera.center = (20, 20, 20)
-        v.camera.scale_factor = 40.0
+        v.camera.center = (40, 40, 40)
+        v.camera.scale_factor = 120.0
+
+        # just surface of the cube is ones, but it should win over the twos inside
+        data = np.ones((80, 80, 80), dtype=np.uint8)
+        data[1:-1, 1:-1, 1:-1] = 2
 
         vol = scene.visuals.Volume(
-            np.zeros((40, 40, 40), dtype=np.uint8),
+            data,
             interpolation="nearest",
-            clim=(0, 1),
+            method='minip',
+            clim=(0, 2),
             cmap="grays",
             parent=v.scene,
         )
 
-        # we should see white
+        # we should see gray (half of cmap)
         rendered = c.render()
-        assert np.array_equal(rendered[20, 20], [255, 255, 255, 255])
+        assert np.array_equal(rendered[40, 40], [128, 128, 128, 255])
 
         # discard fragments above -10 (everything)
         vol.minip_cutoff = -10
         # we should see black
         rendered = c.render()
-        assert np.array_equal(rendered[20, 20], [0, 0, 0, 255])
+        assert np.array_equal(rendered[40, 40], [0, 0, 0, 255])
 
 
 run_tests_if_main()
