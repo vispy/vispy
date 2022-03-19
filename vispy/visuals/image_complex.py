@@ -11,10 +11,6 @@ COMPLEX_TRANSFORMS = {
     "magnitude": "float cplx2float(vec4 data) { return length(data); }",
     "phase": "float cplx2float(vec4 data) { return atan(data.g, data.r); }",
 }
-# aliases
-COMPLEX_TRANSFORMS["angle"] = COMPLEX_TRANSFORMS["phase"]
-COMPLEX_TRANSFORMS["abs"] = COMPLEX_TRANSFORMS["magnitude"]
-COMPLEX_TRANSFORMS["imag"] = COMPLEX_TRANSFORMS["imaginary"]
 
 
 class ComplexImageVisual(ImageVisual):
