@@ -14,6 +14,23 @@ COMPLEX_TRANSFORMS = {
 
 
 class ComplexImageVisual(ImageVisual):
+    """:class:`~vispy.visuals.ImageVisual` subclass displaying a complex-valued image.
+
+    This class handles complex values by using an rg32f float texture behind the scenes,
+    storing the real component in the "r"  value and the imaginary in the "g" value.
+
+    Parameters
+    ----------
+    data : ndarray
+        Complex valued ImageVisual data.  Should be a two dimensional array with a dtype
+        of np.complex64 or np.complex128.
+    complex_mode : str
+        The mode used to convert the complex value in each pixel into a scalar:
+            * 'real': show only the real component.
+            * 'imaginary': show only the imaginary component.
+            * 'magnitude': show the magnitude (`np.abs`) of the complex value.
+            * 'phase': show the phase (`np.angle`) of the complex value.
+    """
     COMPLEX_MODES = set(COMPLEX_TRANSFORMS)
 
     def __init__(self, data=None, complex_mode="magnitude", **kwargs):
@@ -37,7 +54,9 @@ class ComplexImageVisual(ImageVisual):
             #  Turn the texture into an rg32f texture
             # where r = 'real' and g = 'imag'
             self._texture._format = "rg"
-            data = np.stack([data.real, data.imag], axis=-1)
+            # turn complex128 into complex64 if needed
+            data = data.astype(np.complex64, copy=False)
+            data = data.view(dtype=np.float32).reshape((data.shape + (2, )))
         else:
             self._texture._format = None
         return super().set_data(data)
