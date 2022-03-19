@@ -1,4 +1,4 @@
-from .image import ImageVisual, _apply_clim_float, _apply_gamma_float
+from .image import ImageVisual, _APPLY_CLIM_FLOAT, _APPLY_GAMMA_FLOAT
 import numpy as np
 from .shaders import Function, FunctionChain
 
@@ -63,8 +63,8 @@ class ComplexImageVisual(ImageVisual):
 
     def _build_color_transform(self):
         if self.complex_mode:
-            fclim = Function(_apply_clim_float)
-            fgamma = Function(_apply_gamma_float)
+            fclim = Function(_APPLY_CLIM_FLOAT)
+            fgamma = Function(_APPLY_GAMMA_FLOAT)
             chain = [
                 Function(COMPLEX_TRANSFORMS[self.complex_mode]),
                 fclim,
