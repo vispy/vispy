@@ -412,6 +412,7 @@ _ATTENUATED_MIP_SNIPPETS = dict(
         if( scaled > maxval ) {
             maxval = scaled;
             maxi = iter;
+            max_loc_tex = loc;
         }
         """,
     after_loop="""
