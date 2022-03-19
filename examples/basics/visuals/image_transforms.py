@@ -12,7 +12,7 @@ import vispy.app
 from vispy import gloo
 from vispy import visuals
 from vispy.visuals.transforms import (MatrixTransform, STTransform,
-                                      arg_to_array, LogTransform, 
+                                      arg_to_array, LogTransform,
                                       PolarTransform, BaseTransform)
 from image_visual import get_image
 

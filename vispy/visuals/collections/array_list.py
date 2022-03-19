@@ -286,7 +286,7 @@ class ArrayList(object):
             whose __array__ method returns an array, or any (nested) sequence.
 
         itemsize:  int or 1-D array
-            If `itemsize is an integer, N, the array will be divided
+            If `itemsize` is an integer, N, the array will be divided
             into elements of size N. If such partition is not possible,
             an error is raised.
 
@@ -380,8 +380,7 @@ class ArrayList(object):
             self._count += _count
 
     def append(self, data, itemsize=None):
-        """
-        Append data to the end.
+        """Append data to the end.
 
         Parameters
         ----------
@@ -390,7 +389,7 @@ class ArrayList(object):
             whose __array__ method returns an array, or any (nested) sequence.
 
         itemsize:  int or 1-D array
-            If `itemsize is an integer, N, the array will be divided
+            If `itemsize` is an integer, N, the array will be divided
             into elements of size N. If such partition is not possible,
             an error is raised.
 

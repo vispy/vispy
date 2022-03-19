@@ -210,4 +210,9 @@ def test_mesh_normals_length_method(length_method):
         _ = c.render()
 
 
+def test_mesh_normals_empty():
+    mesh = scene.visuals.Mesh()
+    scene.visuals.MeshNormals(mesh.mesh_data)
+
+
 run_tests_if_main()

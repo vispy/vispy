@@ -13,3 +13,4 @@ requires = [
 
 [tools.setuptools_scm]
 write_to = "vispy/version.py"
+local_scheme = "dirty-tag"

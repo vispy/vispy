@@ -6,9 +6,6 @@ import numpy as np
 try:
     import networkx as nx
 except ModuleNotFoundError:
-    import warnings
-    warnings.warn(
-        "Networkx not found, please install network to use its layouts")
     nx = None
 
 
@@ -27,6 +24,8 @@ class NetworkxCoordinates:
         kwargs: dict, optional
         when layout is :str: :kwargs: will act as a setting dictionary for the layout function of networkx
         """
+        if nx is None:
+            raise ValueError("networkx not found, please install networkx to use its layouts")
         if isinstance(graph, type(None)):
             raise ValueError("Requires networkx input")
         self.graph = graph
@@ -37,17 +36,14 @@ class NetworkxCoordinates:
 
         # check for networkx
         elif isinstance(layout, str):
-            if nx:
-                if not layout.endswith("_layout"):
-                    layout += "_layout"  # append for nx
-                layout_function = getattr(nx, layout)
-                if layout_function:
-                    self.positions = np.asarray(
-                        [i for i in dict(layout_function(graph, **kwargs)).values()])
-                else:
-                    raise ValueError("Check networkx for layouts")
+            if not layout.endswith("_layout"):
+                layout += "_layout"  # append for nx
+            layout_function = getattr(nx, layout)
+            if layout_function:
+                self.positions = np.asarray(
+                    [i for i in dict(layout_function(graph, **kwargs)).values()])
             else:
-                raise ValueError("networkx not found")
+                raise ValueError("Check networkx for layouts")
         # assume dict from networkx; values are 2-array
         elif isinstance(layout, dict):
             self.positions = np.asarray([i for i in layout.values()])

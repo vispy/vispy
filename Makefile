@@ -74,6 +74,9 @@ pyqt4: clean-test
 pyqt5: clean-test
 	python make test pyqt5
 
+pyqt6: clean-test
+	python make test pyqt6
+	
 pyside: clean-test
 	python make test pyside
 

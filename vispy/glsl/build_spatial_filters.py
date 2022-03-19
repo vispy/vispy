@@ -489,12 +489,17 @@ class Bessel(SpatialFilter):
         SpatialFilter.__init__(self, radius=3.2383)
 
     def besj(self, x, n):
-        """
-        Function BESJ calculates Bessel function of first kind of order n
-        Arguments:
-            x - value at which the Bessel function is required
-            n - an integer (>=0), the order
-        --------------------
+        """Function BESJ calculates Bessel function of first kind of order n.
+
+        Parameters
+        ----------
+        x: int
+            value at which the Bessel function is required
+        n : int
+            an integer (>=0), the order
+
+        Notes
+        -----
         C++ Mathematical Library
         Converted from equivalent FORTRAN library
         Converted by Gareth Walker for use by course 392 computational project
@@ -508,12 +513,12 @@ class Bessel(SpatialFilter):
         http://www.ma.umist.ac.uk/mrm/Teaching/392/libs/392.html
         Version 1.0   8/98
         29 October, 1999
-        --------------------
+
         Adapted for use in AGG library by
                     Andy Wilk (castor.vulgaris@gmail.com)
         Adapted for use in vispy library by
                     Nicolas P. Rougier (Nicolas.Rougier@inria.fr)
-        -----------------------------------------------------------------------
+
         """
         if n < 0:
             return 0.0
@@ -574,13 +579,7 @@ class Bessel(SpatialFilter):
 
 
 class Sinc(SpatialFilter):
-    """
-    Sinc filter (radius = 4.0).
-
-    Weight function::
-
-
-    """
+    """Sinc filter (radius = 4.0)."""
 
     def __init__(self, size=256, radius=4.0):
         SpatialFilter.__init__(self, radius=max(radius, 2.0))
@@ -593,13 +592,7 @@ class Sinc(SpatialFilter):
 
 
 class Lanczos(SpatialFilter):
-    """
-    Lanczos filter (radius = 4.0).
-
-    Weight function::
-
-
-    """
+    """Lanczos filter (radius = 4.0)."""
 
     def __init__(self, size=256, radius=4.0):
         SpatialFilter.__init__(self, radius=max(radius, 2.0))

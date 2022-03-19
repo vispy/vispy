@@ -31,6 +31,7 @@ def use(app=None, gl=None):
         The app backend to use (case insensitive). Standard backends:
             * 'PyQt4': use Qt widget toolkit via PyQt4.
             * 'PyQt5': use Qt widget toolkit via PyQt5.
+            * 'PyQt6': use Qt widget toolkit via PyQt6.
             * 'PySide': use Qt widget toolkit via PySide.
             * 'PySide2': use Qt widget toolkit via PySide2.
             * 'PySide6': use Qt widget toolkit via PySide6.
@@ -40,10 +41,9 @@ def use(app=None, gl=None):
             * 'SDL2': use SDL v2 backend.
             * 'osmesa': Use OSMesa backend
         Additional backends:
-            * 'ipynb_webgl': run vispy from a Jupyter notebook (not fully
-               functional)
-            * 'ipynb_vnc': render in a Jupyter notebook via a VNC approach
-              (experimental)
+            * 'jupyter_rfb': show vispy canvases in Jupyter lab/notebook
+              (depends on the jupyter_rfb library).
+
     gl : str
         The gl backend to use (case insensitive). Options are:
             * 'gl2': use Vispy's desktop OpenGL API.
@@ -76,11 +76,6 @@ def use(app=None, gl=None):
     """
     if app is None and gl is None:
         raise TypeError('Must specify at least one of "app" or "gl".')
-
-    # Example for future. This wont work (yet).
-    if app == 'ipynb_webgl':
-        app = 'headless'
-        gl = 'webgl'
 
     if app == 'osmesa':
         from ..util.osmesa_gl import fix_osmesa_gl_lib

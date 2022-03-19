@@ -15,7 +15,7 @@ import vispy
 
 
 # minimum that will be imported when importing vispy
-_min_modules = ['vispy', 'vispy.util', 'vispy.ext', 'vispy.ipython', 'vispy.version']
+_min_modules = ['vispy', 'vispy.util', 'vispy.ext', 'vispy.version']
 
 
 def loaded_vispy_modules(import_module, depth=None, all_modules=False):
@@ -83,6 +83,7 @@ def test_import_vispy_app2():
     assert_not_in('PySide6', allmodnames)
     assert_not_in('PyQt4', allmodnames)
     assert_not_in('PyQt5', allmodnames)
+    assert_not_in('PyQt6', allmodnames)
     assert_not_in('pyglet', allmodnames)
 
 

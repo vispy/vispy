@@ -3,7 +3,7 @@ VisPy: interactive scientific visualization in Python
 
 Main website: http://vispy.org
 
-|Build Status| |Coverage Status| |Zenodo Link|
+|Build Status| |Coverage Status| |Zenodo Link| |Contributor Covenant|
 
 ----
 
@@ -20,32 +20,15 @@ large datasets. Applications of VisPy include:
 -  Scientific GUIs with fast, scalable visualization widgets (`Qt <http://www.qt.io>`__ or
    `IPython notebook <http://ipython.org/notebook.html>`__ with WebGL).
 
+Releases
+--------
+
+See [CHANGELOG.md](./CHANGELOG.md).
 
 Announcements
 -------------
 
-- **Release!** Version 0.6.5, September 24, 2020
-- **Release!** Version 0.6.4, December 13, 2019
-- **Release!** Version 0.6.3, November 27, 2019
-- **Release!** Version 0.6.2, November 4, 2019
-- **Release!** Version 0.6.1, July 28, 2019
-- **Release!** Version 0.6.0, July 11, 2019
-- **Release!** Version 0.5.3, March 28, 2018
-- **Release!** Version 0.5.2, December 11, 2017
-- **Release!** Version 0.5.1, November 4, 2017
-- **Release!** Version 0.5, October 24, 2017
-- **Release!** Version 0.4, May 22, 2015
-- `VisPy tutorial in the IPython Cookbook <https://github.com/ipython-books/cookbook-code/blob/master/featured/06_vispy.ipynb>`__
-- **Release!** Version 0.3, August 29, 2014
-- **EuroSciPy 2014**: talk at Saturday 30, and sprint at Sunday 31, August 2014
-- `Article in Linux Magazine, French Edition <https://github.com/vispy/linuxmag-article>`__, July 2014
-- **GSoC 2014**: `two GSoC students are currently working on VisPy under the PSF umbrella <https://github.com/vispy/vispy/wiki/Project.%20GSoC-2014>`__
-- **Release!**, Version 0.2.1 04-11-2013
-- **Presentation at BI forum**, Budapest, 6 November 2013
-- **Presentation at Euroscipy**, Belgium, August 2013
-- **EuroSciPy Sprint**, Belgium, August 2013
-- **Release!** Version 0.1.0 14-08-2013
-
+See the `VisPy Website <https://vispy.org/news.html>`_.
 
 Using VisPy
 -----------
@@ -83,8 +66,8 @@ Structure of VisPy
 Currently, the main subpackages are:
 
 -  **app**: integrates an event system and offers a unified interface on
-   top of many window backends (Qt4, wx, glfw, IPython notebook
-   with/without WebGL, and others). Relatively stable API.
+   top of many window backends (Qt4, wx, glfw, jupyter notebook,
+   and others). Relatively stable API.
 -  **gloo**: a Pythonic, object-oriented interface to OpenGL. Relatively
    stable API.
 -  **scene**: this is the system underlying our upcoming high level
@@ -104,6 +87,14 @@ Currently, the main subpackages are:
 The API of all public interfaces are subject to change in the future,
 although **app** and **gloo** are *relatively* stable at this point.
 
+Code of Conduct
+---------------
+
+The VisPy community requires its members to abide by the
+`Code of Conduct <./CODE_OF_CONDUCT.md>`_. In this CoC you will find the
+expectations of members, the penalties for violating these expectations, and
+how violations can be reported to the members of the community in charge of
+enforcing this Code of Conduct.
 
 Genesis
 -------
@@ -127,7 +118,8 @@ External links
    list <https://groups.google.com/forum/#!forum/vispy>`__
 -  `Dev mailing
    list <https://groups.google.com/forum/#!forum/vispy-dev>`__
--  `Dev chat room <https://gitter.im/vispy/vispy>`__
+-  `Chat room <https://gitter.im/vispy/vispy>`__
+-  `Developer chat room <https://gitter.im/vispy/vispy-dev>`__
 -  `Wiki <http://github.com/vispy/vispy/wiki>`__
 -  `Gallery <http://vispy.org/gallery.html>`__
 -  `Documentation <http://vispy.readthedocs.org>`__
@@ -138,3 +130,5 @@ External links
    :target: https://coveralls.io/r/vispy/vispy?branch=main
 .. |Zenodo Link| image:: https://zenodo.org/badge/5822/vispy/vispy.svg
    :target: http://dx.doi.org/10.5281/zenodo.17869
+.. |Contributor Covenant| image:: https://img.shields.io/badge/Contributor%20Covenant-2.0-4baaaa.svg
+   :target: CODE_OF_CONDUCT.md

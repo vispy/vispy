@@ -11,7 +11,7 @@ import numpy as np
 from . import Visual
 from ..color import Color
 
-VERT_SHADER_BORDER = """
+_VERTEX_SHADER = """
 attribute vec2 a_position;
 attribute vec2 a_adjust_dir;
 
@@ -55,7 +55,7 @@ void main() {
 }
 """
 
-FRAG_SHADER_BORDER = """
+_FRAGMENT_SHADER = """
 void main() {
     gl_FragColor = $border_color;
 }
@@ -84,6 +84,11 @@ class _BorderVisual(Visual):
         str as the color's name or an actual instace of a vipy.color.Color
     """
 
+    _shaders = {
+        'vertex': _VERTEX_SHADER,
+        'fragment': _FRAGMENT_SHADER,
+    }
+
     def __init__(self, pos, halfdim,
                  border_width=1.0,
                  border_color=None,
@@ -94,8 +99,7 @@ class _BorderVisual(Visual):
         self._border_width = border_width
         self._border_color = Color(border_color)
 
-        Visual.__init__(self, vcode=VERT_SHADER_BORDER,
-                        fcode=FRAG_SHADER_BORDER, **kwargs)
+        Visual.__init__(self, vcode=self._shaders['vertex'], fcode=self._shaders['fragment'])
 
     @staticmethod
     def _prepare_transforms(view):

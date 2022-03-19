@@ -9,7 +9,6 @@ from vispy.testing import (TestingCanvas, requires_application,
                            raises)
 from vispy.testing.image_tester import assert_image_approved, downsample
 from vispy.testing.rendered_array_tester import compare_render, max_for_dtype
-from vispy.visuals.volume import frag_dict as volume_render_methods
 
 
 @requires_pyopengl()
@@ -29,7 +28,7 @@ def test_volume():
 
     # Clim
     V.set_data(vol, (0.5, 0.8))
-    assert V.clim == (np.float32(0.5), np.float32(0.8))
+    assert V.clim == (0.5, 0.8)
     with raises(ValueError):
         V.set_data((0.5, 0.8, 1.0))
 
@@ -122,9 +121,7 @@ def test_volume_clims_and_gamma(texture_format, input_dtype, clim_on_init):
         v.camera = 'arcball'
         v.camera.fov = 0
         v.camera.scale_factor = 40.0
-        # for some reason the x dimension has to be a little bit off center
-        # or else the render doesn't match the data
-        v.camera.center = (19.6, 19.5, 19.5)
+        v.camera.center = (19.5, 19.5, 19.5)
 
         rendered = c.render()
         _dtype = rendered.dtype
@@ -149,7 +146,7 @@ def test_volume_clims_and_gamma(texture_format, input_dtype, clim_on_init):
 
 @requires_pyopengl()
 @requires_application()
-@pytest.mark.parametrize('method_name', volume_render_methods.keys())
+@pytest.mark.parametrize('method_name', scene.visuals.Volume._rendering_methods.keys())
 def test_all_render_methods(method_name):
     """Test that render methods don't produce any errors."""
     size = (40, 40)
@@ -173,9 +170,7 @@ def test_all_render_methods(method_name):
         v.camera = 'arcball'
         v.camera.fov = 0
         v.camera.scale_factor = 40.0
-        # for some reason the x dimension has to be a little bit off center
-        # or else the render doesn't match the data
-        v.camera.center = (19.6, 19.5, 19.5)
+        v.camera.center = (19.5, 19.5, 19.5)
 
         assert volume.method == method_name
         rendered = c.render()[..., :3]
@@ -207,9 +202,7 @@ def test_equal_clims(texture_format):
         v.camera = 'arcball'
         v.camera.fov = 0
         v.camera.scale_factor = 40.0
-        # for some reason the x dimension has to be a little bit off center
-        # or else the render doesn't match the data
-        v.camera.center = (19.6, 19.5, 19.5)
+        v.camera.center = (19.5, 19.5, 19.5)
 
         rendered = c.render()[..., :3]
         # not all black
@@ -262,6 +255,133 @@ def test_set_data_does_not_change_input():
     assert np.allclose(vol, vol2)
     V.set_data(vol2, clim=(0, 200), copy=False)
     assert not np.allclose(vol, vol2)
+
+
+@requires_pyopengl()
+@requires_application()
+def test_changing_cmap():
+    """Test that changing colormaps updates the display."""
+    size = (40, 40)
+    np.random.seed(0)  # make tests the same every time
+    data = _make_test_data(size[:1] * 3, np.float32)
+    cmap = 'grays'
+    test_cmaps = ('reds', 'greens', 'blues')
+    clim = (0, 1)
+    kwargs = {}
+    with TestingCanvas(size=size, bgcolor="k") as c:
+        v = c.central_widget.add_view(border_width=0)
+        volume = scene.visuals.Volume(
+            data,
+            interpolation='nearest',
+            clim=clim,
+            cmap=cmap,
+            parent=v.scene,
+            **kwargs
+        )
+        v.camera = 'arcball'
+        v.camera.fov = 0
+        v.camera.scale_factor = 40.0
+
+        # render with grays colormap
+        grays = c.render()
+
+        # update cmap, compare rendered array with the grays cmap render
+        for cmap in test_cmaps:
+            volume.cmap = cmap
+            current_cmap = c.render()
+            with pytest.raises(AssertionError):
+                np.testing.assert_allclose(grays, current_cmap)
+
+
+@requires_pyopengl()
+@requires_application()
+def test_plane_depth():
+    with TestingCanvas(size=(80, 80)) as c:
+        v = c.central_widget.add_view(border_width=0)
+        v.camera = 'arcball'
+        v.camera.fov = 0
+        v.camera.center = (40, 40, 40)
+        v.camera.scale_factor = 80.0
+
+        # two planes at 45 degrees relative to the camera. If depth is set correctly, we should see one half
+        # of the screen red and the other half white
+        scene.visuals.Volume(
+            np.ones((80, 80, 80), dtype=np.uint8),
+            interpolation="nearest",
+            clim=(0, 1),
+            cmap="grays",
+            raycasting_mode="plane",
+            plane_normal=(0, 1, 1),
+            parent=v.scene,
+        )
+
+        scene.visuals.Volume(
+            np.ones((80, 80, 80), dtype=np.uint8),
+            interpolation="nearest",
+            clim=(0, 1),
+            cmap="reds",
+            raycasting_mode="plane",
+            plane_normal=(0, 1, -1),
+            parent=v.scene,
+        )
+
+        # render with grays colormap
+        rendered = c.render()
+        left = rendered[40, 20]
+        right = rendered[40, 60]
+        assert np.array_equal(left, [255, 0, 0, 255])
+        assert np.array_equal(right, [255, 255, 255, 255])
+
+
+@requires_pyopengl()
+@requires_application()
+def test_volume_depth():
+    """Check that depth setting is properly performed for the volume visual
+
+    Render a volume with a blue ball in front of a red plane in front of a
+    blue plane, checking that the output image contains both red and blue pixels.
+    """
+    # A blue strip behind a red strip
+    # If depth is set correctly, we should see only red pixels
+    # the screen
+    blue_vol = np.zeros((80, 80, 80), dtype=np.uint8)
+    blue_vol[:, -1, :] = 1  # back plane blue
+    blue_vol[30:50, 30:50, 30:50] = 1  # blue in center
+
+    red_vol = np.zeros((80, 80, 80), dtype=np.uint8)
+    red_vol[:, -5, :] = 1  # red plane in front of blue plane
+
+    with TestingCanvas(size=(80, 80)) as c:
+        v = c.central_widget.add_view(border_width=0)
+        v.camera = 'arcball'
+        v.camera.fov = 0
+        v.camera.center = (40, 40, 40)
+        v.camera.scale_factor = 80.0
+
+        scene.visuals.Volume(
+            red_vol,
+            interpolation="nearest",
+            clim=(0, 1),
+            cmap="reds",
+            parent=v.scene,
+        )
+
+        scene.visuals.Volume(
+            blue_vol,
+            interpolation="nearest",
+            clim=(0, 1),
+            cmap="blues",
+            parent=v.scene,
+        )
+
+        # render
+        rendered = c.render()
+        reds = np.sum(rendered[:, :, 0])
+        greens = np.sum(rendered[:, :, 1])
+        blues = np.sum(rendered[:, :, 2])
+        assert reds > 0
+        np.testing.assert_allclose(greens, 0)
+        assert blues > 0
 
 
 run_tests_if_main()

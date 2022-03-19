@@ -1,12 +1,10 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
-
 # This module was taken from visvis
-"""
-This module produces functionality to read and write wavefront (.OBJ) files.
+"""This module produces functionality to read and write wavefront (.OBJ) files.
 
-http://en.wikipedia.org/wiki/Wavefront_.obj_file
+See `wikipedia <http://en.wikipedia.org/wiki/Wavefront_.obj_file>`_ for more details.
 
 The wavefront format is quite powerful and allows a wide variety of surfaces
 to be described.
@@ -53,16 +51,13 @@ class WavefrontReader(object):
 
     @classmethod
     def read(cls, fname):
-        """read(fname, fmt)
-
-        This classmethod is the entry point for reading OBJ files.
+        """Entry point for reading OBJ files.
 
         Parameters
         ----------
         fname : str
             The name of the file to read.
-        fmt : str
-            Can be "obj" or "gz" to specify the file format.
+
         """
         # Open file
         fmt = op.splitext(fname)[1].lower()

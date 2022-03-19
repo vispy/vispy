@@ -9,7 +9,7 @@ from ..color import Color
 from .shaders import Function
 
 
-grid_color = """
+_GRID_COLOR = """
 vec4 grid_color(vec2 pos) {
     vec4 px_pos = $map_to_doc(vec4(pos, 0, 1));
     px_pos /= px_pos.w;
@@ -78,7 +78,7 @@ class GridLinesVisual(ImageVisual):
     def __init__(self, scale=(1, 1), color='w'):
         # todo: PlaneVisual should support subdivide/impostor methods from
         # image and gridlines should inherit from plane instead.
-        self._grid_color_fn = Function(grid_color)
+        self._grid_color_fn = Function(_GRID_COLOR)
         self._grid_color_fn['color'] = Color(color).rgba
         self._grid_color_fn['scale'] = scale
         ImageVisual.__init__(self, method='impostor')

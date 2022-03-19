@@ -12,7 +12,7 @@ thick paths where quality is critical.
 """
 import numpy as np
 from ... import glsl
-from ...gloo import gl
+from ... import gloo
 from . collection import Collection
 from ..transforms import NullTransform
 
@@ -86,7 +86,7 @@ class AggPathCollection(Collection):
             vertex = glsl.get('collections/agg-path.vert')
         if transform is None:
             transform = NullTransform()
-        self.transform = transform        
+        self.transform = transform
         if fragment is None:
             fragment = glsl.get('collections/agg-path.frag')
 
@@ -192,6 +192,6 @@ class AggPathCollection(Collection):
 
     def draw(self, mode="triangles"):
         """Draw collection"""
-        gl.glDepthMask(0)
+        gloo.set_depth_mask(0)
         Collection.draw(self, mode)
-        gl.glDepthMask(1)
+        gloo.set_depth_mask(1)

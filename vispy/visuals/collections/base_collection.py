@@ -232,7 +232,7 @@ class BaseCollection(object):
             All index values must be between 0 and len(vertices)
 
         itemsize: int, tuple or 1-D array
-            If `itemsize is an integer, N, the array will be divided
+            If `itemsize` is an integer, N, the array will be divided
             into elements of size N. If such partition is not possible,
             an error is raised.
 

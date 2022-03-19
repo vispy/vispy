@@ -9,7 +9,7 @@
 
 The glir module holds the desktop implementation of the GL Intermediate
 Representation (GLIR). Parsing and handling of the GLIR for other platforms
-can be found in external libraries (ex. vispy.js for WebGL).
+can be found in external libraries.
 
 We propose the specification of a simple intermediate representation for
 OpenGL. It provides a means to serialize a visualization, so that the
@@ -22,7 +22,7 @@ another without having to wait for a reply. Only in the event of an
 error information needs to go in the other direction, but this can be
 done asynchronously.
 
-The purpose for Vispy is to allow the usage gloo (our high level object
+The purpose for GLIR has been to allow the usage gloo (our high level object
 oriented interface to OpenGL), while executing the visualization in the
 browser (via JS/WebGL). The fact that the stream of commands is
 one-directional is essential to realize reactive visualizations.
@@ -844,8 +844,10 @@ class GlirParser(BaseGlirParser):
             else:
                 this_version = this_version[0]
 
-            this_version = LooseVersion(this_version)
-            if this_version < '2.1':
+            if not this_version:
+                logger.warning("OpenGL version could not be determined, which "
+                               "might be a sign that OpenGL is not loaded correctly.")
+            elif LooseVersion(this_version) < '2.1':
                 if os.getenv('VISPY_IGNORE_OLD_VERSION', '').lower() != 'true':
                     logger.warning('OpenGL version 2.1 or higher recommended, '
                                    'got %s. Some functionality may fail.'

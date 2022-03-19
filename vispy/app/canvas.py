@@ -109,10 +109,7 @@ class Canvas(object):
     time or using a dedicated double-click button will not be respected.
 
     Backend-specific arguments can be given through the `backend_kwargs`
-    argument. Currently this can be used to control the webGL context
-    requested by the `ipynb_webgl` backend, for example::
-
-        canvas = Canvas(backend_kwargs={'webgl': dict(preserveDrawingBuffer=True)})
+    argument.
     """
 
     def __init__(self, title='VisPy canvas', size=(800, 600), position=None,
@@ -339,6 +336,8 @@ class Canvas(object):
     @property
     def size(self):
         """The size of canvas/window."""
+        # Note that _px_scale is an additional factor applied in addition to
+        # the scale factor imposed by the backend.
         size = self._backend._vispy_get_size()
         return (size[0] // self._px_scale, size[1] // self._px_scale)
 
@@ -364,7 +363,7 @@ class Canvas(object):
         by it). When writing Visuals or SceneGraph visualisations, this value
         is exposed as `TransformSystem.px_scale`.
         """
-        return self.physical_size[0] // self.size[0]
+        return self.physical_size[0] / self.size[0]
 
     @property
     def fullscreen(self):
@@ -512,6 +511,28 @@ class Canvas(object):
                 % (self.__class__.__name__,
                    self.app.backend_name, hex(id(self))))
 
+    def _repr_mimebundle_(self, *args, **kwargs):
+        """If the backend implements _repr_mimebundle_, we proxy it here.
+        """
+        # See https://ipython.readthedocs.io/en/stable/config/integrating.html
+        f = getattr(self._backend, "_repr_mimebundle_", None)
+        if f is not None:
+            return f(*args, **kwargs)
+        else:
+            # Let Jupyter know this failed - otherwise the standard repr is not shown
+            raise NotImplementedError()
+
+    def _ipython_display_(self):
+        """If the backend implements _ipython_display_, we proxy it here.
+        """
+        # See https://ipython.readthedocs.io/en/stable/config/integrating.html
+        f = getattr(self._backend, "_ipython_display_", None)
+        if f is not None:
+            return f()
+        else:
+            # Let Jupyter know this failed - otherwise the standard repr is not shown
+            raise NotImplementedError()
+
     def __enter__(self):
         logger.debug('Context manager enter starting for %s' % (self,))
         self.show()
@@ -528,15 +549,24 @@ class Canvas(object):
         sleep(0.1)  # ensure window is really closed/destroyed
         logger.debug('Context manager exit complete for %s' % (self,))
 
-    def render(self):
-        """Render the canvas to an offscreen buffer and return the image
-        array.
+    def render(self, alpha=True):
+        """Render the canvas to an offscreen buffer and return the image array.
+
+        Parameters
+        ----------
+        alpha : bool
+            If True (default) produce an RGBA array (M, N, 4). If False,
+            remove the Alpha channel and return the RGB array (M, N, 3).
+            This may be useful if blending of various elements requires a
+            solid background to produce the expected visualization.
 
         Returns
         -------
         image : array
             Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
-            upper-left corner of the rendered region.
+            upper-left corner of the rendered region. If ``alpha`` is ``False``,
+            then only 3 channels will be returned (RGB).
+
 
         """
         self.set_current()
@@ -547,9 +577,13 @@ class Canvas(object):
         try:
             fbo.activate()
             self.events.draw()
-            return fbo.read()
+            result = fbo.read()
         finally:
             fbo.deactivate()
+
+        if not alpha:
+            result = result[..., :3]
+        return result
 
 
 # Event subclasses specific to the Canvas

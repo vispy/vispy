@@ -13,7 +13,7 @@ on miter joins which may result in some glitches on screen.
 """
 import numpy as np
 from ... import glsl
-from ...gloo import gl
+from ... import gloo
 from . collection import Collection
 from ..transforms import NullTransform
 
@@ -76,7 +76,7 @@ class AggFastPathCollection(Collection):
             vertex = glsl.get('collections/agg-fast-path.vert')
         if transform is None:
             transform = NullTransform()
-        self.transform = transform        
+        self.transform = transform
         if fragment is None:
             fragment = glsl.get('collections/agg-fast-path.frag')
 
@@ -176,13 +176,14 @@ class AggFastPathCollection(Collection):
         Given a path P, return the baked vertices as they should be copied in
         the collection if the path has already been appended.
 
-        Example:
+        Examples
         --------
-        paths.append(P)
-        P *= 2
-        paths['prev'][0] = bake(P,'prev')
-        paths['curr'][0] = bake(P,'curr')
-        paths['next'][0] = bake(P,'next')
+        >>> paths.append(P)
+        >>> P *= 2
+        >>> paths['prev'][0] = bake(P,'prev')
+        >>> paths['curr'][0] = bake(P,'curr')
+        >>> paths['next'][0] = bake(P,'next')
+
         """
         itemsize = itemsize or len(P)
         itemcount = len(P) / itemsize  # noqa
@@ -213,6 +214,6 @@ class AggFastPathCollection(Collection):
 
     def draw(self, mode="triangle_strip"):
         """Draw collection"""
-        gl.glDepthMask(gl.GL_FALSE)
+        gloo.set_depth_mask(0)
         Collection.draw(self, mode)
-        gl.glDepthMask(gl.GL_TRUE)
+        gloo.set_depth_mask(1)

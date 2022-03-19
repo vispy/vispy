@@ -7,6 +7,7 @@
 """A MeshVisual Visual that uses the new shader Function."""
 
 from __future__ import division
+from functools import lru_cache
 
 import numpy as np
 
@@ -15,10 +16,11 @@ from .shaders import Function, FunctionChain
 from ..gloo import VertexBuffer
 from ..geometry import MeshData
 from ..color import Color, get_colormap
+from ..color.colormap import CubeHelixColormap
 from ..util.event import Event
 
 
-vertex_template = """
+_VERTEX_SHADER = """
 varying vec4 v_base_color;
 
 void main() {
@@ -27,45 +29,12 @@ void main() {
 }
 """
 
-fragment_template = """
+_FRAGMENT_SHADER = """
 varying vec4 v_base_color;
 void main() {
     gl_FragColor = v_base_color;
 }
 """
-
-
-# Functions that can be used as is (don't have template variables)
-# Consider these stored in a central location in vispy ...
-
-vec3to4 = Function("""
-vec4 vec3to4(vec3 xyz) {
-    return vec4(xyz, 1.0);
-}
-""")
-
-vec2to4 = Function("""
-vec4 vec2to4(vec2 xyz) {
-    return vec4(xyz, 0.0, 1.0);
-}
-""")
-
-
-_null_color_transform = 'vec4 pass(vec4 color) { return color; }'
-_clim = 'float cmap(float val) { return (val - $cmin) / ($cmax - $cmin); }'
-
-
-# Eventually this could be de-duplicated with visuals/image.py, which does
-# something similar (but takes a ``color`` instead of ``float``)
-def _build_color_transform(data, cmap, clim=(0., 1.)):
-    if data.ndim == 2 and data.shape[1] == 1:
-        fun = Function(_clim)
-        fun['cmin'] = clim[0]
-        fun['cmax'] = clim[1]
-        fun = FunctionChain(None, [fun, Function(cmap.glsl_map)])
-    else:
-        fun = Function(_null_color_transform)
-    return fun
 
 
 class MeshVisual(Visual):
@@ -122,10 +91,15 @@ class MeshVisual(Visual):
     >>> mesh = MeshVisual(vertices=vertices, faces=faces)
     """
 
+    _shaders = {
+        'vertex': _VERTEX_SHADER,
+        'fragment': _FRAGMENT_SHADER,
+    }
+
     def __init__(self, vertices=None, faces=None, vertex_colors=None,
                  face_colors=None, color=(0.5, 0.5, 1, 1), vertex_values=None,
                  meshdata=None, shading=None, mode='triangles', **kwargs):
-        Visual.__init__(self, vcode=vertex_template, fcode=fragment_template,
+        Visual.__init__(self, vcode=self._shaders['vertex'], fcode=self._shaders['fragment'],
                         **kwargs)
         self.set_gl_state('translucent', depth_test=True, cull_face=False)
 
@@ -135,7 +109,7 @@ class MeshVisual(Visual):
 
         # Define buffers
         self._vertices = VertexBuffer(np.zeros((0, 3), dtype=np.float32))
-        self._cmap = get_colormap('cubehelix')
+        self._cmap = CubeHelixColormap()
         self._clim = 'auto'
 
         # Uniform color
@@ -302,6 +276,39 @@ class MeshVisual(Visual):
         self._data_changed = True
         self.update()
 
+    def _build_color_transform(self, colors):
+        # Eventually this could be de-duplicated with visuals/image.py, which does
+        # something similar (but takes a ``color`` instead of ``float``)
+        null_color_transform = 'vec4 pass(vec4 color) { return color; }'
+        clim_func = 'float cmap(float val) { return (val - $cmin) / ($cmax - $cmin); }'
+        if colors.ndim == 2 and colors.shape[1] == 1:
+            fun = Function(clim_func)
+            fun['cmin'] = self.clim[0]
+            fun['cmax'] = self.clim[1]
+            fun = FunctionChain(None, [fun, Function(self.cmap.glsl_map)])
+        else:
+            fun = Function(null_color_transform)
+        return fun
+
+    @staticmethod
+    @lru_cache(maxsize=2)
+    def _ensure_vec4_func(dims):
+        if dims == 2:
+            func = Function("""
+                vec4 vec2to4(vec2 xyz) {
+                    return vec4(xyz, 0.0, 1.0);
+                }
+            """)
+        elif dims == 3:
+            func = Function("""
+                vec4 vec3to4(vec3 xyz) {
+                    return vec4(xyz, 1.0);
+                }
+            """)
+        else:
+            raise TypeError("Vertex data must have shape (...,2) or (...,3).")
+        return func
+
     def _update_data(self):
         md = self.mesh_data
 
@@ -326,23 +333,17 @@ class MeshVisual(Visual):
 
         self.shared_program.vert['position'] = self._vertices
 
-        self.shared_program['texture2D_LUT'] = self._cmap.texture_lut() \
-            if (hasattr(self._cmap, 'texture_lut')) else None
+        self.shared_program['texture2D_LUT'] = self._cmap.texture_lut()
 
         # Position input handling
-        if v.shape[-1] == 2:
-            self.shared_program.vert['to_vec4'] = vec2to4
-        elif v.shape[-1] == 3:
-            self.shared_program.vert['to_vec4'] = vec3to4
-        else:
-            raise TypeError("Vertex data must have shape (...,2) or (...,3).")
+        ensure_vec4 = self._ensure_vec4_func(v.shape[-1])
+        self.shared_program.vert['to_vec4'] = ensure_vec4
 
         # Set the base color.
         #
         # The base color is mixed further by the material filters for texture
         # or shading effects.
-        self.shared_program.vert['color_transform'] = \
-            _build_color_transform(colors, self._cmap, self._clim_values)
+        self.shared_program.vert['color_transform'] = self._build_color_transform(colors)
         if colors.ndim == 1:
             self.shared_program.vert['base_color'] = colors
         else:
@@ -357,9 +358,6 @@ class MeshVisual(Visual):
             if self._update_data() is False:
                 return False
             self._data_changed = False
-
-    def draw(self, *args, **kwds):
-        Visual.draw(self, *args, **kwds)
 
     @staticmethod
     def _prepare_transforms(view):

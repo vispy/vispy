@@ -284,12 +284,12 @@ class Node(object):
             p = self.parent
             while True:
                 if isinstance(p, SubScene) or p is None:
-                    self._scene_node = p
+                    self._scene_node = p and weakref.ref(p)
                     break
                 p = p.parent
             if self._scene_node is None:
-                self._scene_node = self
-        return self._scene_node
+                self._scene_node = weakref.ref(self)
+        return self._scene_node()
 
     @property
     def root_node(self):
@@ -423,7 +423,7 @@ class Node(object):
             If true, add information about node transform types.
 
         Returns
-        ----------
+        -------
         tree : str
             The tree diagram.
         """

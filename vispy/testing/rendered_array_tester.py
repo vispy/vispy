@@ -82,4 +82,4 @@ def make_rgba(data_in: ArrayLike) -> ArrayLike:
         out = np.concatenate((data_in, np.ones((*data_in.shape[:2], 1)) * max_val), axis=2)
     else:
         out = data_in
-    return np.round((out.astype(np.float) * 255 / max_val)).astype(np.uint8)
+    return np.round((out.astype(np.float32) * 255 / max_val)).astype(np.uint8)

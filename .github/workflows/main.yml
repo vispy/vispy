@@ -1,4 +1,9 @@
 name: CI
+# https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#concurrency
+# https://docs.github.com/en/developers/webhooks-and-events/events/github-event-types#pullrequestevent
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number }}-${{ github.event.type }}
+  cancel-in-progress: true
 
 # Controls when the action will run. 
 on:
@@ -40,8 +45,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-      with:
-        submodules: "recursive"
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
@@ -68,25 +71,73 @@ jobs:
   website:
     name: build website
     runs-on: ubuntu-latest
+    defaults:
+      # use login shell to make use of .bash_profile /.bashrc
+      run:
+        shell: bash -l {0}
     steps:
     - uses: actions/checkout@v2
       with:
         fetch-depth: 0
-        submodules: "recursive"
-    - name: Set up Python
-      uses: actions/setup-python@v2
+    - name: Cache VisPy Demo and Test Data
+      uses: actions/cache@v2
+      env:
+        cache-name: cache-vispy-data-website
+        test-version: 1
       with:
-        python-version: 3.9
-    - name: Install dependencies
+        path: |
+          ~/.vispy/data
+          ~/.vispy/test_data
+        key: ${{ runner.os }}-data-${{ env.cache-name }}-${{ env.test-version }}
+        restore-keys: |
+          ${{ runner.os }}-data-${{ env.cache-name }}-
+    - name: Prepare System Environment
+      id: vars
+      run: |
+        # opengl system libraries
+        sudo apt-get update;
+        cat ci/requirements/linux_full_deps_apt.txt | xargs sudo apt-get -y install
+        # Additional latex dependencies
+        sudo apt-get -y install texlive-latex-base texlive-latex-extra texlive-fonts-recommended texlive-fonts-extra texlive-latex-extra
+        sudo apt-get -y install dvipng
+        # Start xvfb daemon
+        export DISPLAY=:99.0
+        /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1400x900x24 -ac +extension GLX +render
+        sleep 5
+        # export python_version
+        echo ::set-output name=python_version::39
+    - uses: mamba-org/provision-with-micromamba@v7
+      with:
+        environment-file: ./ci/requirements/py${{ steps.vars.outputs.python_version }}.yml
+    - name: Install conda-dependencies
+      run: |
+        micromamba install -y python=3.9 -f ci/requirements/linux_full_deps_conda.txt -c conda-forge
+    - name: Install pip dependencies
       run: |
         python -m pip install --upgrade pip
+        pip install -r ci/requirements/linux_full_deps_pip.txt
         pip install -r ci/requirements/linux_website_deps_pip.txt
     - name: Install vispy
       run: |
         pip install -e .[doc]
+    - name: Version Info
+      run: |
+        export DISPLAY=:99.0
+        micromamba list
+        python -c "import vispy; print(vispy.version.version)"
+        python -c "import vispy; print(vispy.sys_info())"
     - name: build website
       run: |
+        export DISPLAY=:99.0
+        export XDG_RUNTIME_DIR=/tmp/runtime-runner
         source ./ci/build_website.sh
+    - name: Upload website HTML artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: Sphinx Website
+        path: |
+          doc/_build/html
+        retention-days: 1
     - name: deploy website
       if: github.event_name == 'push'
       uses: peaceiris/actions-gh-pages@v3
@@ -116,33 +167,54 @@ jobs:
             python_version: "3.7"
             deps: "min"
             test: "standard"
+            new_qt: false
           - test_number: 2
             python_version: "3.7"
             deps: "full"
             test: "standard"
+            new_qt: false
           - test_number: 3
             python_version: "3.7"
             deps: "full"
             test: "examples"
+            new_qt: false
           - test_number: 4
             python_version: "3.7"
             deps: "osmesa"
             test: "osmesa"
+            new_qt: false
+          - test_number: 5
+            python_version: "3.9"
+            deps: "full"
+            test: "standard"
+            new_qt: true
     steps:
-    - name: Cancel Previous Runs
-      uses: styfle/cancel-workflow-action@0.6.0
-      with:
-        access_token: ${{ github.token }}
     - uses: actions/checkout@v2
       with:
         fetch-depth: 0
-        submodules: "recursive"
+    - name: Cache VisPy Demo and Test Data
+      uses: actions/cache@v2
+      env:
+        cache-name: cache-vispy-data-${{ matrix.test }}
+        test-version: 2
+      with:
+        path: |
+          ~/.vispy/data
+          ~/.vispy/test_data
+        key: ${{ runner.os }}-data-${{ env.cache-name }}-${{ env.test-version }}
+        restore-keys: |
+          ${{ runner.os }}-data-${{ env.cache-name }}-
     - name: Prepare System Environment
       id: vars
       run: |
         # opengl system libraries
         if [ "${{ matrix.deps }}" == 'full' ]; then
-          cat ci/requirements/linux_full_deps_apt.txt | xargs sudo apt-get -y install
+          sudo apt-get update;
+          if [ "${{ matrix.new_qt }}" == 'true' ]; then
+            cat ci/requirements/linux_full_newqtdeps_apt.txt | xargs sudo apt-get -y install
+          else
+            cat ci/requirements/linux_full_deps_apt.txt | xargs sudo apt-get -y install
+          fi
         fi
         # Start xvfb daemon
         export DISPLAY=:99.0
@@ -156,11 +228,19 @@ jobs:
         environment-file: ./ci/requirements/py${{ steps.vars.outputs.python_version }}.yml
     - name: Install conda-dependencies
       run: |
-        micromamba install -y python=${{ matrix.python_version }} -f ci/requirements/linux_${{ matrix.deps }}_deps_conda.txt -c conda-forge
+        if [ "${{ matrix.new_qt }}" == 'true' ]; then
+          micromamba install -y python=${{ matrix.python_version }} -f ci/requirements/linux_${{ matrix.deps }}_newqtdeps_conda.txt -c conda-forge
+        else
+          micromamba install -y python=${{ matrix.python_version }} -f ci/requirements/linux_${{ matrix.deps }}_deps_conda.txt -c conda-forge
+        fi
     - name: Install pip-dependencies
       run: |
         if [ "${{ matrix.deps }}" == 'full' ]; then
-          pip install -r ci/requirements/linux_full_deps_pip.txt
+          if [ "${{ matrix.new_qt }}" == 'true' ]; then
+            pip install -r ci/requirements/linux_full_newqtdeps_pip.txt
+          else
+            pip install -r ci/requirements/linux_full_deps_pip.txt
+          fi
           rm -rf vispy/ext/_bundled
         fi
     - name: Install vispy

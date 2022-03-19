@@ -22,14 +22,19 @@ __all__ = ('set_viewport', 'set_depth_range', 'set_front_face',  # noqa
            'get_state_presets', 'set_state', 'finish', 'flush',  # noqa
            'read_pixels', 'set_hint',  # noqa
            'get_gl_configuration', '_check_valid',
+           'GL_PRESETS',
            'GlooFunctions', 'global_gloo_functions', )
 
 _setters = [s[4:] for s in __all__
             if s.startswith('set_') and s != 'set_state']
 
 # NOTE: If these are updated to have things beyond glEnable/glBlendFunc
-# calls, set_preset_state will need to be updated to deal with it.
-_gl_presets = {
+# calls, set_state will need to be updated to deal with it.
+#: Some OpenGL state presets for common use cases: 'opaque', 'translucent',
+#: 'additive'.
+#:
+#: To be used in :func:`.set_state`.
+GL_PRESETS = {
     'opaque': dict(
         depth_test=True,
         cull_face=False,
@@ -38,7 +43,7 @@ _gl_presets = {
         depth_test=True,
         cull_face=False,
         blend=True,
-        blend_func=('src_alpha', 'one_minus_src_alpha')),
+        blend_func=('src_alpha', 'one_minus_src_alpha', 'zero', 'one')),
     'additive': dict(
         depth_test=False,
         cull_face=False,
@@ -428,29 +433,29 @@ class BaseGlooFunctions(object):
     #
 
     def get_state_presets(self):
-        """The available GL state presets
+        """The available GL state :data:`presets <.GL_PRESETS>`.
 
         Returns
         -------
         presets : dict
-            The dictionary of presets usable with ``set_options``.
+            The dictionary of presets usable with :func:`.set_state`.
         """
-        return deepcopy(_gl_presets)
+        return deepcopy(GL_PRESETS)
 
     def set_state(self, preset=None, **kwargs):
-        """Set OpenGL rendering state, optionally using a preset
+        """Set the OpenGL rendering state, optionally using a preset.
 
         Parameters
         ----------
-        preset : str | None
-            Can be one of ('opaque', 'translucent', 'additive') to use
-            use reasonable defaults for these typical use cases.
+        preset : {'opaque', 'translucent', 'additive'}, optional
+            A named state :data:`preset <.GL_PRESETS>` for typical use cases.
+
         **kwargs : keyword arguments
             Other supplied keyword arguments will override any preset defaults.
             Options to be enabled or disabled should be supplied as booleans
             (e.g., ``'depth_test=True'``, ``cull_face=False``), non-boolean
             entries will be passed as arguments to ``set_*`` functions (e.g.,
-            ``blend_func=('src_alpha', 'one')`` will call ``set_blend_func``).
+            ``blend_func=('src_alpha', 'one')`` will call :func:`.set_blend_func`).
 
         Notes
         -----
@@ -493,8 +498,8 @@ class BaseGlooFunctions(object):
 
         # Load preset, if supplied
         if preset is not None:
-            _check_valid('preset', preset, tuple(list(_gl_presets.keys())))
-            for key, val in _gl_presets[preset].items():
+            _check_valid('preset', preset, tuple(list(GL_PRESETS.keys())))
+            for key, val in GL_PRESETS[preset].items():
                 # only overwrite user input with preset if user's input is None
                 if key not in kwargs:
                     kwargs[key] = val
@@ -508,6 +513,16 @@ class BaseGlooFunctions(object):
             else:
                 self.glir.command('FUNC', 'glEnable', 'cull_face')
                 self.set_cull_face(*_to_args(cull_face))
+
+        # Line width needs some special care ...
+        if 'line_width' in kwargs:
+            line_width = kwargs.pop('line_width')
+            self.glir.command('FUNC', 'glLineWidth', line_width)
+        if 'line_smooth' in kwargs:
+            line_smooth = kwargs.pop('line_smooth')
+            funcname = 'glEnable' if line_smooth else 'glDisable'
+            line_smooth_enum_value = 2848  # int(GL.GL_LINE_SMOOTH)
+            self.glir.command('FUNC', funcname, line_smooth_enum_value)
 
         # Iterate over kwargs
         for key, val in kwargs.items():

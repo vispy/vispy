@@ -15,6 +15,7 @@ imported. This stuff is mostly used in the Application.use method.
 CORE_BACKENDS = [
     ('PyQt4', '_pyqt4', 'PyQt4'),
     ('PyQt5', '_pyqt5', 'PyQt5'),
+    ('PyQt6', '_pyqt6', 'PyQt6'),
     ('PySide', '_pyside', 'PySide'),
     ('PySide2', '_pyside2', 'PySide2'),
     ('PySide6', '_pyside6', 'PySide6'),
@@ -30,9 +31,7 @@ CORE_BACKENDS = [
 # Whereas core backends really represents libraries that can create a
 # canvas, the pseudo backends act more like a proxy.
 PSEUDO_BACKENDS = [
-    # ('ipynb_vnc', '_ipynb_vnc', None),
-    # ('ipynb_static', '_ipynb_static', None),
-    ('ipynb_webgl', '_ipynb_webgl', None),
+    ('jupyter_rfb', '_jupyter_rfb', None),
     ('_test', '_test', 'vispy.app.backends._test'),  # add one that will fail
 ]
 

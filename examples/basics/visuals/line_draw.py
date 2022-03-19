@@ -93,7 +93,6 @@ class EditLineVisual(scene.visuals.Line):
                               size=size, face_color=self.marker_colors)
 
     def on_mouse_press(self, pos_scene):
-        # self.print_mouse_event(event, 'Mouse press')
         # pos_scene = event.pos[:3]
 
         # find closest point to mouse and select it
@@ -168,6 +167,8 @@ class Canvas(scene.SceneCanvas):
         self.freeze()
 
     def on_mouse_press(self, event):
+        # self.line.print_mouse_event(event, 'Mouse press')
+
         tr = self.scene.node_transform(self.line)
         pos = tr.map(event.pos)
         self.line.on_mouse_press(pos)

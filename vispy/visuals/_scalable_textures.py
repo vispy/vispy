@@ -9,6 +9,42 @@ from vispy.gloo import Texture2D, Texture3D
 from vispy.gloo.texture import should_cast_to_f32
 
 
+def get_default_clim_from_dtype(dtype):
+    """Get min and max color limits based on the range of the dtype."""
+    # assume floating point data is pre-normalized to 0 and 1
+    if np.issubdtype(dtype, np.floating):
+        return 0, 1
+    # assume integer RGBs fill the whole data space
+    dtype_info = np.iinfo(dtype)
+    dmin = dtype_info.min
+    dmax = dtype_info.max
+    return dmin, dmax
+
+
+def get_default_clim_from_data(data):
+    """Compute a reasonable clim from the min and max, taking nans into account.
+
+    If there are no non-finite values (nan, inf, -inf) this is as fast as it can be.
+    Otherwise, this functions is about 3x slower.
+    """
+    # Fast
+    min_value = data.min()
+    max_value = data.max()
+
+    # Need more work? The nan-functions are slower
+    min_finite = np.isfinite(min_value)
+    max_finite = np.isfinite(max_value)
+    if not (min_finite and max_finite):
+        finite_data = data[np.isfinite(data)]
+        if finite_data.size:
+            min_value = finite_data.min()
+            max_value = finite_data.max()
+        else:
+            min_value = max_value = 0  # no finite values in the data
+
+    return min_value, max_value
+
+
 class _ScaledTextureMixin:
     """Mixin class to make a texture aware of color limits.
 
@@ -79,13 +115,22 @@ class _ScaledTextureMixin:
     def clim_normalized(self):
         """Normalize current clims to match texture data inside the shader.
 
-        Scaling only happens on the GPU so we only normalize
-        the color limits when needed (for unsigned normalized integer
-        internal formats). Otherwise, for internal formats that are not
-        normalized such as floating point (ex. r32f) we can leave the ``clim``
-        as is.
+        If data is scaled on the CPU then the texture data will be in the range
+        0-1 in the _build_texture() method. Inside the fragment shader the
+        final contrast adjustment will be applied based on this normalized
+        ``clim``.
 
         """
+        if isinstance(self.clim, str) and self.clim == "auto":
+            raise RuntimeError("Can't return 'auto' normalized color limits "
+                               "until data has been set. Call "
+                               "'scale_and_set_data' first.")
+        if self._data_dtype is None:
+            raise RuntimeError("Can't return normalized color limits until "
+                               "data has been set. Call "
+                               "'scale_and_set_data' first.")
+        if self.clim[0] == self.clim[1]:
+            return self.clim[0], np.inf
         # if the internalformat of the texture is normalized we need to
         # also normalize the clims so they match in-shader
         clim_min = self.normalize_value(self.clim[0], self._data_dtype)
@@ -163,23 +208,12 @@ class _ScaledTextureMixin:
         # this texture type has no limitations
         return
 
-    def _get_default_clims(self, data):
-        """Get min and max color limits."""
-        # assume floating point data is pre-normalized to 0 and 1
-        if np.issubdtype(data.dtype, np.floating):
-            return 0, 1
-        # assume integer RGBs fill the whole data space
-        dtype_info = np.iinfo(data.dtype)
-        dmin = dtype_info.min
-        dmax = dtype_info.max
-        return dmin, dmax
-
     def scale_and_set_data(self, data, offset=None, copy=False):
         """Upload new data to the GPU."""
         return self.set_data(data, offset=offset, copy=copy)
 
 
-class CPUScaledTextureMixIn(_ScaledTextureMixin):
+class CPUScaledTextureMixin(_ScaledTextureMixin):
     """Texture mixin class for smarter scaling decisions.
 
     This class wraps the logic to normalize data on the CPU before sending
@@ -242,10 +276,19 @@ class CPUScaledTextureMixIn(_ScaledTextureMixin):
         ``clim``.
 
         """
+        if isinstance(self.clim, str) and self.clim == "auto":
+            raise RuntimeError("Can't return 'auto' normalized color limits "
+                               "until data has been set. Call "
+                               "'scale_and_set_data' first.")
+        if self._data_limits is None:
+            raise RuntimeError("Can't return normalized color limits until "
+                               "data has been set. Call "
+                               "'scale_and_set_data' first.")
+
         range_min, range_max = self._data_limits
         clim_min, clim_max = self.clim
         if clim_min == clim_max:
-            return 0.0, 0.0
+            return 0, np.inf
         clim_min = (clim_min - range_min) / (range_max - range_min)
         clim_max = (clim_max - range_min) / (range_max - range_min)
         return clim_min, clim_max
@@ -260,7 +303,7 @@ class CPUScaledTextureMixIn(_ScaledTextureMixin):
 
         if clim[0] != clim[1]:
             data -= clim[0]
-            data /= clim[1] - clim[0]
+            data *= 1.0 / (clim[1] - clim[0])
         if should_cast_to_f32(data.dtype):
             data = data.astype(np.float32)
         return data
@@ -273,16 +316,15 @@ class CPUScaledTextureMixIn(_ScaledTextureMixin):
         is_auto = isinstance(clim, str) and clim == 'auto'
         if data.ndim == self._ndim or data.shape[self._ndim] == 1:
             if is_auto:
-                clim = np.min(data), np.max(data)
-            clim = (np.float32(clim[0]), np.float32(clim[1]))
+                clim = get_default_clim_from_data(data)
             data = self._scale_data_on_cpu(data, clim, copy=copy)
             data_limits = clim
         else:
-            data_limits = self._get_default_clims(data)
+            data_limits = get_default_clim_from_dtype(data.dtype)
             if is_auto:
                 clim = data_limits
 
-        self._clim = clim
+        self._clim = float(clim[0]), float(clim[1])
         self._data_limits = data_limits
         return super().scale_and_set_data(data, offset=offset, copy=copy)
 
@@ -357,23 +399,23 @@ class GPUScaledTextureMixin(_ScaledTextureMixin):
         return texture_format
 
     def _get_texture_format_for_data(self, data, internalformat):
-        if internalformat is not None:
-            num_channels = self._data_num_channels(data)
-            texture_format = self._handle_auto_texture_format(internalformat, data)
-            texture_format = self._get_gl_tex_format(texture_format, num_channels)
+        if internalformat is None:
+            raise ValueError("'internalformat' must be provided for GPU scaled textures.")
+        num_channels = self._data_num_channels(data)
+        texture_format = self._handle_auto_texture_format(internalformat, data)
+        texture_format = self._get_gl_tex_format(texture_format, num_channels)
         return texture_format
 
     def _compute_clim(self, data):
         clim = self._clim
         is_auto = isinstance(clim, str) and clim == 'auto'
-        if data.ndim == 2 or data.shape[2] == 1:
+        if data.ndim == self._ndim or data.shape[2] == 1:
             if is_auto:
-                clim = np.min(data), np.max(data)
-            clim = (np.float32(clim[0]), np.float32(clim[1]))
+                clim = get_default_clim_from_data(data)
         elif is_auto:
             # assume that RGB data is already scaled (0, 1)
-            clim = self._get_default_clims(data)
-        return clim
+            clim = get_default_clim_from_dtype(data.dtype)
+        return float(clim[0]), float(clim[1])
 
     def _internalformat_will_change(self, data):
         shape_repr = self._create_rep_array(data)
@@ -406,7 +448,7 @@ class GPUScaledTextureMixin(_ScaledTextureMixin):
         return super().scale_and_set_data(data, offset=offset, copy=copy)
 
 
-class CPUScaledTexture2D(CPUScaledTextureMixIn, Texture2D):
+class CPUScaledTexture2D(CPUScaledTextureMixin, Texture2D):
     """Texture class with clim scaling handling builtin.
 
     See :class:`vispy.visuals._scalable_textures.CPUScaledTextureMixin` for
@@ -424,7 +466,7 @@ class GPUScaledTexture2D(GPUScaledTextureMixin, Texture2D):
     """
 
 
-class CPUScaledTexture3D(CPUScaledTextureMixIn, Texture3D):
+class CPUScaledTexture3D(CPUScaledTextureMixin, Texture3D):
     """Texture class with clim scaling handling builtin.
 
     See :class:`vispy.visuals._scalable_textures.CPUScaledTextureMixin` for

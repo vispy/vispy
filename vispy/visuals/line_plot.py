@@ -49,7 +49,7 @@ class LinePlotVisual(CompoundVisual):
 
     See also
     --------
-    LineVisual, MarkersVisual, marker_types
+    LineVisual, MarkersVisual
     """
 
     _line_kwargs = ('color', 'width', 'connect')

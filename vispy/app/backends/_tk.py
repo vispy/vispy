@@ -7,12 +7,13 @@
 from __future__ import division
 
 from time import sleep
+import warnings
 
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
                     BaseTimerBackend)
 from ...util import keys
 from ...util.ptime import time
-
+from ...gloo import gl
 
 # -------------------------------------------------------------------- init ---
 
@@ -25,9 +26,6 @@ try:
     _tk_pyopengltk_imported = False
 
     import tkinter as tk
-
-    # Explicitely use OpenGL here instead of gloo since pyopengltk will import it anyway.
-    from OpenGL import GL
     import pyopengltk
 except (ModuleNotFoundError, ImportError):
     available, testable, why_not, which = \
@@ -299,16 +297,15 @@ class ApplicationBackend(BaseApplicationBackend):
 # ------------------------------------------------------------------ canvas ---
 
 
-class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
+class CanvasBackend(BaseCanvasBackend, OpenGLFrame):
     """Tkinter backend for Canvas abstract class.
     Uses pyopengltk.OpenGLFrame as the internal tk.Frame instance that
     is able to receive OpenGL draw commands and display the results,
     while also being placeable in another Toplevel window.
     """
 
-    # args are for BaseCanvasBackend, kwargs are for us.
-    def __init__(self, *args, **kwargs):
-        BaseCanvasBackend.__init__(self, *args)
+    def __init__(self, vispy_canvas, **kwargs):
+        BaseCanvasBackend.__init__(self, vispy_canvas)
         p = self._process_backend_kwargs(kwargs)
 
         self._double_click_supported = True
@@ -367,6 +364,7 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
 
         self._init = False
         self.is_destroyed = False
+        self._dynamic_keymap = {}
 
         OpenGLFrame.__init__(self, parent, **kwargs)
 
@@ -406,8 +404,8 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
             self._native_context = vars(self).get("_CanvasBackend__context", None)
 
         self.update_idletasks()
-        GL.glClear(GL.GL_COLOR_BUFFER_BIT)
-        GL.glClearColor(0.0, 0.0, 0.0, 0.0)
+        gl.glClear(gl.GL_COLOR_BUFFER_BIT)
+        gl.glClearColor(0.0, 0.0, 0.0, 0.0)
 
     def redraw(self, *args):
         """Overridden from OpenGLFrame
@@ -501,13 +499,17 @@ class CanvasBackend(OpenGLFrame, BaseCanvasBackend):
         if e.keysym_num in KEYMAP:
             return KEYMAP[e.keysym_num], ""
         # e.char, e.keycode, e.keysym, e.keysym_num
-        key = e.keycode
-        if 97 <= key <= 122:
-            key -= 32
-        if key >= 32 and key <= 127:
-            return keys.Key(chr(key)), chr(key)
-        else:
-            return None, None
+        if e.char:
+            self._dynamic_keymap[e.keycode] = e.char
+            return keys.Key(e.char), e.char
+
+        if e.keycode in self._dynamic_keymap:
+            char = self._dynamic_keymap[e.keycode]
+            return keys.Key(char), char
+
+        warnings.warn("The key you typed is not supported by the tkinter backend."
+                      "Please map your functionality to a different key")
+        return None, None
 
     def _on_mouse_enter(self, e):
         """Event callback when the mouse enters the canvas.

@@ -17,7 +17,7 @@ from ..io import load_spatial_filters
 from ._scalable_textures import CPUScaledTexture2D, GPUScaledTexture2D
 
 
-VERT_SHADER = """
+_VERTEX_SHADER = """
 uniform int method;  // 0=subdivide, 1=impostor
 attribute vec2 a_position;
 attribute vec2 a_texcoord;
@@ -29,7 +29,7 @@ void main() {
 }
 """
 
-FRAG_SHADER = """
+_FRAGMENT_SHADER = """
 uniform vec2 image_size;
 uniform int method;  // 0=subdivide, 1=impostor
 uniform sampler2D u_texture;
@@ -68,7 +68,7 @@ void main()
 }
 """  # noqa
 
-_interpolation_template = """
+_INTERPOLATION_TEMPLATE = """
     #include "misc/spatial-filters.frag"
     vec4 texture_lookup_filtered(vec2 texcoord) {
         if(texcoord.x < 0.0 || texcoord.x > 1.0 ||
@@ -78,7 +78,7 @@ _interpolation_template = """
         return %s($texture, $shape, texcoord);
     }"""
 
-_texture_lookup = """
+_TEXTURE_LOOKUP = """
     vec4 texture_lookup(vec2 texcoord) {
         if(texcoord.x < 0.0 || texcoord.x > 1.0 ||
         texcoord.y < 0.0 || texcoord.y > 1.0) {
@@ -87,49 +87,47 @@ _texture_lookup = """
         return texture2D($texture, texcoord);
     }"""
 
-_apply_clim_float = """
+_APPLY_CLIM_FLOAT = """
     float apply_clim(float data) {
-        if ($clim.x < $clim.y) {{
-            data = clamp(data, $clim.x, $clim.y);
-        }} else if ($clim.x > $clim.y) {{
-            data = clamp(data, $clim.y, $clim.x);
-        }} else {{
-            // clims are the same, show minimum colormap value
-            return 0.0;
-        }}
-        data = data - $clim.x;
-        data = data / ($clim.y - $clim.x);
-        return max(data, 0);
+        // If data is NaN, don't draw it at all
+        // http://stackoverflow.com/questions/11810158/how-to-deal-with-nan-or-inf-in-opengl-es-2-0-shaders
+        if (!(data <= 0.0 || 0.0 <= data)) {
+            discard;
+        }
+        data = clamp(data, min($clim.x, $clim.y), max($clim.x, $clim.y));
+        data = (data - $clim.x) / ($clim.y - $clim.x);
+        return data;
     }"""
-_apply_clim = """
+
+_APPLY_CLIM = """
     vec4 apply_clim(vec4 color) {
-        if ($clim.x < $clim.y) {{
-            color.rgb = clamp(color.rgb, $clim.x, $clim.y);
-        }} else if ($clim.x > $clim.y) {{
-            color.rgb = clamp(color.rgb, $clim.y, $clim.x);
-        }} else {{
-            // clims are the same, show minimum colormap value
-            return vec4(0.0, 0.0, 0.0, 1.0);
-        }}
-        color.rgb = color.rgb - $clim.x;
-        color.rgb = color.rgb / ($clim.y - $clim.x);
-        return max(color, 0);
+        // Handle NaN values
+        // http://stackoverflow.com/questions/11810158/how-to-deal-with-nan-or-inf-in-opengl-es-2-0-shaders
+        color.r = !(color.r <= 0.0 || 0.0 <= color.r) ? min($clim.x, $clim.y) : color.r;
+        color.g = !(color.g <= 0.0 || 0.0 <= color.g) ? min($clim.x, $clim.y) : color.g;
+        color.b = !(color.b <= 0.0 || 0.0 <= color.b) ? min($clim.x, $clim.y) : color.b;
+        color.a = !(color.a <= 0.0 || 0.0 <= color.a) ? 0 : color.a;
+        color.rgb = clamp(color.rgb, min($clim.x, $clim.y), max($clim.x, $clim.y));
+        color.rgb = (color.rgb - $clim.x) / ($clim.y - $clim.x);
+        return max(color, 0.0);
     }
 """
 
-_apply_gamma_float = """
+_APPLY_GAMMA_FLOAT = """
     float apply_gamma(float data) {
         return pow(data, $gamma);
     }"""
-_apply_gamma = """
+
+_APPLY_GAMMA = """
     vec4 apply_gamma(vec4 color) {
         color.rgb = pow(color.rgb, vec3($gamma));
         return color;
     }
 """
 
-_null_color_transform = 'vec4 pass(vec4 color) { return color; }'
-_c2l_red = 'float cmap(vec4 color) { return color.r; }'
+_NULL_COLOR_TRANSFORM = 'vec4 pass(vec4 color) { return color; }'
+
+_C2L_RED = 'float cmap(vec4 color) { return color.r; }'
 
 
 class ImageVisual(Visual):
@@ -139,6 +137,15 @@ class ImageVisual(Visual):
     ----------
     data : ndarray
         ImageVisual data. Can be shape (M, N), (M, N, 3), or (M, N, 4).
+        If floating point data is provided and contains NaNs, they will
+        be made transparent (discarded) for the single band data case when
+        scaling is done on the GPU (see ``texture_format``). On the CPU,
+        single band NaNs are mapped to 0 as they are sent to the GPU which
+        result in them using the lowest ``clim`` value in the GPU.
+        For RGB data, NaNs will be mapped to the lowest ``clim`` value.
+        If the Alpha band is NaN it will be mapped to 0 (transparent).
+        Note that NaN handling is not required by some OpenGL implementations
+        and NaNs may be treated differently on some systems (ex. as 0s).
     method : str
         Selects method of rendering image in case of non-linear transforms.
         Each method produces similar results, but may trade efficiency
@@ -160,8 +167,9 @@ class ImageVisual(Visual):
     cmap : str | ColorMap
         Colormap to use for luminance images.
     clim : str | tuple
-        Limits to use for the colormap. Can be 'auto' to auto-set bounds to
-        the min and max of the data.
+        Limits to use for the colormap. I.e. the values that map to black and white
+        in a gray colormap. Can be 'auto' to auto-set bounds to
+        the min and max of the data. If not given or None, 'auto' is used.
     gamma : float
         Gamma to use during colormap lookup.  Final color will be cmap(val**gamma).
         by default: 1.
@@ -180,8 +188,7 @@ class ImageVisual(Visual):
         formats and schemes for the low-level texture data stored in the GPU.
         Most common is unsigned integers or floating point numbers.
         Unsigned integers are the most widely supported while other formats
-        may not be supported on older versions of OpenGL, WebGL
-        (without enabling some extensions), or with older GPUs.
+        may not be supported on older versions of OpenGL or with older GPUs.
         Default value is ``None`` which means data will be scaled on the
         CPU and the result stored in the GPU as an unsigned integer. If a
         numpy dtype object, an internal texture format will be chosen to
@@ -206,15 +213,27 @@ class ImageVisual(Visual):
     if the data are 2D.
     """
 
-    VERTEX_SHADER = VERT_SHADER
-    FRAGMENT_SHADER = FRAG_SHADER
+    _shaders = {
+        'vertex': _VERTEX_SHADER,
+        'fragment': _FRAGMENT_SHADER,
+    }
+
+    _func_templates = {
+        'texture_lookup_interpolated': _INTERPOLATION_TEMPLATE,
+        'texture_lookup': _TEXTURE_LOOKUP,
+        'clim_float': _APPLY_CLIM_FLOAT,
+        'clim': _APPLY_CLIM,
+        'gamma_float': _APPLY_GAMMA_FLOAT,
+        'gamma': _APPLY_GAMMA,
+        'null_color_transform': _NULL_COLOR_TRANSFORM,
+        'red_to_luminance': _C2L_RED,
+    }
 
     def __init__(self, data=None, method='auto', grid=(1, 1),
                  cmap='viridis', clim='auto', gamma=1.0,
                  interpolation='nearest', texture_format=None, **kwargs):
         """Initialize image properties, texture storage, and interpolation methods."""
         self._data = None
-        self._gamma = gamma
 
         # load 'float packed rgba8' interpolation kernel
         # to load float interpolation kernel use
@@ -238,25 +257,13 @@ class ImageVisual(Visual):
             raise ValueError("interpolation must be one of %s" %
                              ', '.join(self._interpolation_names))
 
-        # check texture interpolation
-        if self._interpolation == 'bilinear':
-            texture_interpolation = 'linear'
-        else:
-            texture_interpolation = 'nearest'
-
         self._method = method
         self._grid = grid
         self._need_texture_upload = True
         self._need_vertex_update = True
         self._need_colortransform_update = True
         self._need_interpolation_update = True
-        if texture_format is None:
-            self._texture = CPUScaledTexture2D(
-                data, interpolation=texture_interpolation)
-        else:
-            self._texture = GPUScaledTexture2D(
-                data, internalformat=texture_format,
-                interpolation=texture_interpolation)
+        self._texture = self._init_texture(data, texture_format)
         self._subdiv_position = VertexBuffer()
         self._subdiv_texcoord = VertexBuffer()
 
@@ -268,7 +275,8 @@ class ImageVisual(Visual):
         self._null_tr = NullTransform()
 
         self._init_view(self)
-        super(ImageVisual, self).__init__(vcode=self.VERTEX_SHADER, fcode=self.FRAGMENT_SHADER)
+
+        Visual.__init__(self, vcode=self._shaders['vertex'], fcode=self._shaders['fragment'])
         self.set_gl_state('translucent', cull_face=False)
         self._draw_mode = 'triangles'
 
@@ -276,17 +284,17 @@ class ImageVisual(Visual):
         # self._build_interpolation()
         self._data_lookup_fn = None
 
-        self.clim = clim
+        self.clim = clim or "auto"  # None -> "auto"
         self.cmap = cmap
+        self.gamma = gamma
         if data is not None:
             self.set_data(data)
         self.freeze()
 
-    @staticmethod
-    def _init_interpolation(interpolation_names):
+    def _init_interpolation(self, interpolation_names):
         # create interpolation shader functions for available
         # interpolations
-        fun = [Function(_interpolation_template % n)
+        fun = [Function(self._func_templates['texture_lookup_interpolated'] % n)
                for n in interpolation_names]
         interpolation_names = [n.lower() for n in interpolation_names]
 
@@ -295,9 +303,25 @@ class ImageVisual(Visual):
 
         # overwrite "nearest" and "bilinear" spatial-filters
         # with  "hardware" interpolation _data_lookup_fn
-        interpolation_fun['nearest'] = Function(_texture_lookup)
-        interpolation_fun['bilinear'] = Function(_texture_lookup)
+        hardware_lookup = Function(self._func_templates['texture_lookup'])
+        interpolation_fun['nearest'] = hardware_lookup
+        interpolation_fun['bilinear'] = hardware_lookup
         return interpolation_names, interpolation_fun
+
+    def _init_texture(self, data, texture_format):
+        if self._interpolation == 'bilinear':
+            texture_interpolation = 'linear'
+        else:
+            texture_interpolation = 'nearest'
+
+        if texture_format is None:
+            tex = CPUScaledTexture2D(
+                data, interpolation=texture_interpolation)
+        else:
+            tex = GPUScaledTexture2D(
+                data, internalformat=texture_format,
+                interpolation=texture_interpolation)
+        return tex
 
     def set_data(self, image):
         """Set the image data.
@@ -344,10 +368,20 @@ class ImageVisual(Visual):
     def clim(self, clim):
         if self._texture.set_clim(clim):
             self._need_texture_upload = True
-        # shortcut so we don't have to rebuild the whole color transform
-        if not self._need_colortransform_update:
-            self.shared_program.frag['color_transform'][1]['clim'] = self._texture.clim_normalized
+        self._update_colortransform_clim()
         self.update()
+
+    def _update_colortransform_clim(self):
+        if self._need_colortransform_update:
+            # we are going to rebuild anyway so just do it later
+            return
+        try:
+            norm_clims = self._texture.clim_normalized
+        except RuntimeError:
+            return
+        else:
+            # shortcut so we don't have to rebuild the whole color transform
+            self.shared_program.frag['color_transform'][1]['clim'] = norm_clims
 
     @property
     def cmap(self):
@@ -491,22 +525,24 @@ class ImageVisual(Visual):
         self._prepare_transforms(view)
 
     def _build_texture(self):
-        pre_clims = self._texture.clim
+        try:
+            pre_clims = self._texture.clim_normalized
+        except RuntimeError:
+            pre_clims = "auto"
         pre_internalformat = self._texture.internalformat
         self._texture.scale_and_set_data(self._data)
-        post_clims = self._texture.clim
+        post_clims = self._texture.clim_normalized
         post_internalformat = self._texture.internalformat
         # color transform needs rebuilding if the internalformat was changed
         # new color limits need to be assigned if the normalized clims changed
         # otherwise, the original color transform should be fine
-        # Note that this assumes that if clim changed, clim_normalized changed
         new_if = post_internalformat != pre_internalformat
         new_cl = post_clims != pre_clims
-        if not new_if and new_cl and not self._need_colortransform_update:
+        if new_if:
+            self._need_colortransform_update = True
+        elif new_cl and not self._need_colortransform_update:
             # shortcut so we don't have to rebuild the whole color transform
             self.shared_program.frag['color_transform'][1]['clim'] = self._texture.clim_normalized
-        elif new_if:
-            self._need_colortransform_update = True
         self._need_texture_upload = False
 
     def _compute_bounds(self, axis, view):
@@ -518,18 +554,18 @@ class ImageVisual(Visual):
     def _build_color_transform(self):
         if self._data.ndim == 2 or self._data.shape[2] == 1:
             # luminance data
-            fclim = Function(_apply_clim_float)
-            fgamma = Function(_apply_gamma_float)
-            # NOTE: _c2l_red only uses the red component, fancy internalformats
+            fclim = Function(self._func_templates['clim_float'])
+            fgamma = Function(self._func_templates['gamma_float'])
+            # NOTE: red_to_luminance only uses the red component, fancy internalformats
             #   may need to use the other components or a different function chain
             fun = FunctionChain(
-                None, [Function(_c2l_red), fclim, fgamma, Function(self.cmap.glsl_map)]
+                None, [Function(self._func_templates['red_to_luminance']), fclim, fgamma, Function(self.cmap.glsl_map)]
             )
         else:
             # RGB/A image data (no colormap)
-            fclim = Function(_apply_clim)
-            fgamma = Function(_apply_gamma)
-            fun = FunctionChain(None, [Function(_null_color_transform), fclim, fgamma])
+            fclim = Function(self._func_templates['clim'])
+            fgamma = Function(self._func_templates['gamma'])
+            fun = FunctionChain(None, [Function(self._func_templates['null_color_transform']), fclim, fgamma])
         fclim['clim'] = self._texture.clim_normalized
         fgamma['gamma'] = self.gamma
         return fun
@@ -559,8 +595,7 @@ class ImageVisual(Visual):
             prg = view.view_program
             self.shared_program.frag['color_transform'] = self._build_color_transform()
             self._need_colortransform_update = False
-            prg['texture2D_LUT'] = self.cmap.texture_lut() \
-                if (hasattr(self.cmap, 'texture_lut')) else None
+            prg['texture2D_LUT'] = self.cmap.texture_lut()
 
         if self._need_vertex_update:
             self._build_vertex_data()
