@@ -296,17 +296,17 @@ def test_changing_cmap():
 @requires_pyopengl()
 @requires_application()
 def test_plane_depth():
-    with TestingCanvas(size=(40, 40)) as c:
+    with TestingCanvas(size=(80, 80)) as c:
         v = c.central_widget.add_view(border_width=0)
         v.camera = 'arcball'
         v.camera.fov = 0
-        v.camera.center = (20, 20, 20)
-        v.camera.scale_factor = 40.0
+        v.camera.center = (40, 40, 40)
+        v.camera.scale_factor = 80.0
 
         # two planes at 45 degrees relative to the camera. If depth is set correctly, we should see one half
         # of the screen red and the other half white
         scene.visuals.Volume(
-            np.ones((40, 40, 40), dtype=np.uint8),
+            np.ones((80, 80, 80), dtype=np.uint8),
             interpolation="nearest",
             clim=(0, 1),
             cmap="grays",
@@ -316,7 +316,7 @@ def test_plane_depth():
         )
 
         scene.visuals.Volume(
-            np.ones((40, 40, 40), dtype=np.uint8),
+            np.ones((80, 80, 80), dtype=np.uint8),
             interpolation="nearest",
             clim=(0, 1),
             cmap="reds",
@@ -327,15 +327,70 @@ def test_plane_depth():
 
         # render with grays colormap
         rendered = c.render()
-        left = rendered[20, 10]
-        right = rendered[20, 30]
+        left = rendered[40, 20]
+        right = rendered[40, 60]
         assert np.array_equal(left, [255, 0, 0, 255])
         assert np.array_equal(right, [255, 255, 255, 255])
 
 
 @requires_pyopengl()
 @requires_application()
+def test_volume_depth():
+    """Check that depth setting is properly performed for the volume visual
+
+    Render a volume with a blue ball in front of a red plane in front of a
+    blue plane, checking that the output image contains both red and blue pixels.
+    """
+    # A blue strip behind a red strip
+    # If depth is set correctly, we should see only red pixels
+    # the screen
+    blue_vol = np.zeros((80, 80, 80), dtype=np.uint8)
+    blue_vol[:, -1, :] = 1  # back plane blue
+    blue_vol[30:50, 30:50, 30:50] = 1  # blue in center
+
+    red_vol = np.zeros((80, 80, 80), dtype=np.uint8)
+    red_vol[:, -5, :] = 1  # red plane in front of blue plane
+
+    with TestingCanvas(size=(80, 80)) as c:
+        v = c.central_widget.add_view(border_width=0)
+        v.camera = 'arcball'
+        v.camera.fov = 0
+        v.camera.center = (40, 40, 40)
+        v.camera.scale_factor = 80.0
+
+        scene.visuals.Volume(
+            red_vol,
+            interpolation="nearest",
+            clim=(0, 1),
+            cmap="reds",
+            parent=v.scene,
+        )
+
+        scene.visuals.Volume(
+            blue_vol,
+            interpolation="nearest",
+            clim=(0, 1),
+            cmap="blues",
+            parent=v.scene,
+        )
+
+        # render
+        rendered = c.render()
+        reds = np.sum(rendered[:, :, 0])
+        greens = np.sum(rendered[:, :, 1])
+        blues = np.sum(rendered[:, :, 2])
+        assert reds > 0
+        np.testing.assert_allclose(greens, 0)
+        assert blues > 0
+
+
+@requires_pyopengl()
+@requires_application()
 def test_mip_cutoff():
+    """
+    Ensure fragments are properly discarded based on the mip_cutoff
+    for the mip and attenuated_mip rendering methods
+    """
     with TestingCanvas(size=(80, 80)) as c:
         v = c.central_widget.add_view(border_width=0)
         v.camera = 'arcball'
@@ -377,6 +432,10 @@ def test_mip_cutoff():
 @requires_pyopengl()
 @requires_application()
 def test_minip_cutoff():
+    """
+    Ensure fragments are properly discarded based on the minip_cutoff
+    for the minip rendering method
+    """
     with TestingCanvas(size=(80, 80)) as c:
         v = c.central_widget.add_view(border_width=0)
         v.camera = 'arcball'
