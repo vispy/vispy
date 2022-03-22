@@ -8,8 +8,14 @@ from .shaders import Function, FunctionChain
 COMPLEX_TRANSFORMS = {
     "real": "float cplx2float(vec4 data) { return data.r; }",
     "imaginary": "float cplx2float(vec4 data) { return data.g; }",
-    "magnitude": "float cplx2float(vec4 data) { return length(data); }",
+    "magnitude": "float cplx2float(vec4 data) { return length(vec2(data)); }",
     "phase": "float cplx2float(vec4 data) { return atan(data.g, data.r); }",
+}
+CPU_COMPLEX_TRANSFORMS = {
+    "magnitude": np.abs,
+    "phase": np.angle,
+    "real": np.real,
+    "imaginary": np.imag,
 }
 
 
@@ -94,18 +100,13 @@ class ComplexImageVisual(ImageVisual):
 
     @ImageVisual.clim.setter
     def clim(self, clim):
-        if clim == "auto":
+        if clim == "auto" and self.complex_mode:
             clim = self._calc_complex_clim()
         super(ComplexImageVisual, type(self)).clim.fset(self, clim)
 
     def _calc_complex_clim(self, data=None):
         # it would be nice if this could be done in the scalable texture mixin,
         # but that would require the mixin knowing about the complex mode.
-        func = {
-            "magnitude": np.abs,
-            "phase": np.angle,
-            "real": np.real,
-            "imaginary": np.imag,
-        }[self.complex_mode]
+        func = CPU_COMPLEX_TRANSFORMS[self.complex_mode]
         _rendered = func(self._data if data is None else data)
         return (_rendered.min(), _rendered.max())
