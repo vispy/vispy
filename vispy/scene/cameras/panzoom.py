@@ -162,17 +162,7 @@ class PanZoomCamera(BaseCamera):
         if not (isinstance(center, (tuple, list)) and len(center) in (2, 3)):
             raise ValueError('center must be a 2 or 3 element tuple')
         rect = Rect(self.rect) or Rect(*DEFAULT_RECT_TUPLE)
-        # Get half-ranges
-        x2 = rect.center[0]
-        y2 = rect.center[1]
-        # Apply new ranges
-        x1 = center[0]
-        y1 = center[1]
-        rect.left = x1 - x2
-        rect.right = x1 + x2
-        rect.bottom = y1 - y2
-        rect.top = y1 + y2
-        #
+        rect.center = center[:2]
         self.rect = rect
 
     def _set_range(self, init):
