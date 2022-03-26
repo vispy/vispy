@@ -93,11 +93,31 @@ class ComplexVolumeVisual(VolumeVisual):
         else:
             return super()._color_to_scalar_snippet
 
-    @VolumeVisual.clim.setter
+
+    @property
+    def clim(self):
+        """The contrast limits that were applied to the volume data.
+
+        Volume display is mapped from black to white with these values.
+        Settable via set_data() as well as @clim.setter.
+        """
+        return self._texture.clim
+
+    @clim.setter
     def clim(self, value):
+        """Set contrast limits used when rendering the image.
+
+        ``value`` should be a 2-tuple of floats (min_clim, max_clim), where each value is
+        within the range set by self.clim. If the new value is outside of the (min, max)
+        range of the clims previously used to normalize the texture data, then data will
+        be renormalized using set_data.
+        """
         if value == "auto" and self.complex_mode:
             value = self._calc_complex_clim()
-        super(VolumeVisual, type(self)).clim.fset(self, value)
+        if self._texture.set_clim(value):
+            self.set_data(self._last_data, clim=value)
+        self.shared_program['clim'] = self._texture.clim_normalized
+        self.update()
 
     def _calc_complex_clim(self, data=None):
         # it would be nice if this could be done in the scalable texture mixin,
