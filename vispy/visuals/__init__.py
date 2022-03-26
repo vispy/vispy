@@ -42,6 +42,7 @@ from .text import TextVisual  # noqa
 from .tube import TubeVisual  # noqa
 from .visual import BaseVisual, Visual, CompoundVisual  # noqa
 from .volume import VolumeVisual  # noqa
+from .volume_complex import ComplexVolumeVisual  # noqa
 from .xyz_axis import XYZAxisVisual  # noqa
 from .border import _BorderVisual  # noqa
 from .colorbar import ColorBarVisual  # noqa
