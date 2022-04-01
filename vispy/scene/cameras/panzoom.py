@@ -133,7 +133,8 @@ class PanZoomCamera(BaseCamera):
     @property
     def rect(self):
         """The rectangular border of the ViewBox visible area, expressed in
-        the coordinate system of the scene.
+        the coordinate system of the scene. See `~vispy.geometry.rect.Rect`
+        for different ways this can be specified.
 
         Note that the rectangle can have negative width or height, in
         which case the corresponding dimension is flipped (this flipping
