@@ -129,6 +129,28 @@ _NULL_COLOR_TRANSFORM = 'vec4 pass(vec4 color) { return color; }'
 
 _C2L_RED = 'float cmap(vec4 color) { return color.r; }'
 
+_FILTER_FUNCS = {
+    'gaussian': """
+        vec4 texture_lookup(vec2 texcoord) {
+            vec4 color = vec4(0);
+            int size = 2;
+            float step = 0.005;
+            vec2 asd = $shape;
+            float weight = 1 / (float(size) * float(size));
+
+            // ugly fake placeholder blur
+            for (int i = 0; i < size; i++) {
+                for (int j = 0; j < size; j++) {
+                    float x = texcoord.x - step * size/2 + step * i;
+                    float y = texcoord.y - step * size/2 + step * j;
+                    color += texture2D($texture, vec2(x, y)) * weight;
+                }
+            }
+            return color;
+        }
+    """
+}
+
 
 class ImageVisual(Visual):
     """Visual subclass displaying an image.
@@ -298,6 +320,11 @@ class ImageVisual(Visual):
                for n in interpolation_names]
         interpolation_names = [n.lower() for n in interpolation_names]
 
+        # add filters
+        for name, func in _FILTER_FUNCS.items():
+            fun.append(Function(func))
+            interpolation_names.append(name)
+
         interpolation_fun = dict(zip(interpolation_names, fun))
         interpolation_names = tuple(sorted(interpolation_names))
 
@@ -306,6 +333,7 @@ class ImageVisual(Visual):
         hardware_lookup = Function(self._func_templates['texture_lookup'])
         interpolation_fun['nearest'] = hardware_lookup
         interpolation_fun['bilinear'] = hardware_lookup
+
         return interpolation_names, interpolation_fun
 
     def _init_texture(self, data, texture_format):

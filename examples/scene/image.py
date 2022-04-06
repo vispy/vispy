@@ -26,7 +26,7 @@ view = canvas.central_widget.add_view()
 
 # Create the image
 img_data = read_png(load_data_file('mona_lisa/mona_lisa_sm.png'))
-interpolation = 'nearest'
+interpolation = 'gaussian'
 
 image = scene.visuals.Image(img_data, interpolation=interpolation,
                             parent=view.scene, method='subdivide')
