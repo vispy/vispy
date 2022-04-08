@@ -28,10 +28,10 @@ view = canvas.central_widget.add_view()
 
 # Create the image
 img_data = read_png(load_data_file('mona_lisa/mona_lisa_sm.png'))
-interpolation = 'custom'
+interpolation = 'nearest'
+
 gaussian_window = gaussian(10, 5)
 gaussian_kernel = np.outer(gaussian_window, gaussian_window)
-
 
 image = scene.visuals.Image(
     img_data, interpolation=interpolation, parent=view.scene,
