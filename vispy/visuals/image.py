@@ -130,23 +130,32 @@ _NULL_COLOR_TRANSFORM = 'vec4 pass(vec4 color) { return color; }'
 _C2L_RED = 'float cmap(vec4 color) { return color.r; }'
 
 _FILTER_FUNCS = {
-    'gaussian': """
+    'custom': """
         vec4 texture_lookup(vec2 texcoord) {
-            vec4 color = vec4(0);
-            int size = 2;
-            float step = 0.005;
-            vec2 asd = $shape;
-            float weight = 1 / (float(size) * float(size));
+            // based on https://gist.github.com/kingbedjed/373c8811efcf1b3a155d29a13c1e5b61
+            vec2 tex_pixel = 1 / $shape;
+            vec2 texcoord_minus_half_kernel = texcoord - tex_pixel * $kernel_shape / 2;
 
-            // ugly fake placeholder blur
-            for (int i = 0; i < size; i++) {
-                for (int j = 0; j < size; j++) {
-                    float x = texcoord.x - step * size/2 + step * i;
-                    float y = texcoord.y - step * size/2 + step * j;
-                    color += texture2D($texture, vec2(x, y)) * weight;
+            // loop over kernel pixels
+            vec2 kernel_pos, tex_pos;
+            vec4 color = vec4(0);
+            float weight;
+            float weight_sum = 0;
+            for (int i = 0; i < $kernel_shape.x; i++) {
+                for (int j = 0; j < $kernel_shape.y; j++) {
+                    // kernel position in texture coordinates (+ 0.5 to center the texel)
+                    kernel_pos = (vec2(i, j) + 0.5) / $kernel_shape;
+                    // position on the texture where we sample this
+                    tex_pos = texcoord_minus_half_kernel + vec2(i, j) * tex_pixel;
+                    weight = texture2D($kernel, kernel_pos).g;
+                    weight_sum += weight;
+                    // make sure to clamp or we sample outside
+                    // TODO: allow other edge effects, like mirror or wrap
+                    color += texture2D($texture, clamp(tex_pos, 0, 1)) * weight;
                 }
             }
-            return color;
+
+            return color / weight_sum;
         }
     """
 }
@@ -253,7 +262,8 @@ class ImageVisual(Visual):
 
     def __init__(self, data=None, method='auto', grid=(1, 1),
                  cmap='viridis', clim='auto', gamma=1.0,
-                 interpolation='nearest', texture_format=None, **kwargs):
+                 interpolation='nearest', texture_format=None,
+                 custom_kernel=np.ones((1, 1)), **kwargs):
         """Initialize image properties, texture storage, and interpolation methods."""
         self._data = None
 
@@ -309,6 +319,8 @@ class ImageVisual(Visual):
         self.clim = clim or "auto"  # None -> "auto"
         self.cmap = cmap
         self.gamma = gamma
+        self.custom_kernel = custom_kernel
+
         if data is not None:
             self.set_data(data)
         self.freeze()
@@ -471,6 +483,22 @@ class ImageVisual(Visual):
         """Get names of possible interpolation methods."""
         return self._interpolation_names
 
+    @property
+    def custom_kernel(self):
+        return self._custom_kernel
+
+    @custom_kernel.setter
+    def custom_kernel(self, value):
+        value = np.asarray(value, dtype=np.float32)
+        if value.ndim != 2:
+            raise ValueError(f'kernel must have 2 dimensions; got {value.ndim}')
+        self._custom_kernel = value
+        self._custom_kerneltex = Texture2D(value, interpolation='nearest')
+        if self._data_lookup_fn is not None and self.interpolation == 'custom':
+            self._data_lookup_fn['kernel'] = self._custom_kerneltex
+            self._data_lookup_fn['kernel_shape'] = value.shape
+        self.update()
+
     # The interpolation code could be transferred to a dedicated filter
     # function in visuals/filters as discussed in #1051
     def _build_interpolation(self):
@@ -487,8 +515,12 @@ class ImageVisual(Visual):
             # so u_kernel and shape setting is skipped
             texture_interpolation = 'nearest'
             if interpolation != 'nearest':
-                self.shared_program['u_kernel'] = self._kerneltex
                 self._data_lookup_fn['shape'] = self._data.shape[:2][::-1]
+                if interpolation == 'custom':
+                    self._data_lookup_fn['kernel'] = self._custom_kerneltex
+                    self._data_lookup_fn['kernel_shape'] = self._custom_kernel.shape
+                else:
+                    self.shared_program['u_kernel'] = self._kerneltex
 
         if self._texture.interpolation != texture_interpolation:
             self._texture.interpolation = texture_interpolation

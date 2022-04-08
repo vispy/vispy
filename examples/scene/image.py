@@ -16,6 +16,8 @@ import sys
 from vispy import scene
 from vispy import app
 from vispy.io import load_data_file, read_png
+from scipy.signal.windows import gaussian
+import numpy as np
 
 canvas = scene.SceneCanvas(keys='interactive')
 canvas.size = 800, 600
@@ -26,10 +28,15 @@ view = canvas.central_widget.add_view()
 
 # Create the image
 img_data = read_png(load_data_file('mona_lisa/mona_lisa_sm.png'))
-interpolation = 'gaussian'
+interpolation = 'custom'
+gaussian_window = gaussian(10, 5)
+gaussian_kernel = np.outer(gaussian_window, gaussian_window)
 
-image = scene.visuals.Image(img_data, interpolation=interpolation,
-                            parent=view.scene, method='subdivide')
+
+image = scene.visuals.Image(
+    img_data, interpolation=interpolation, parent=view.scene,
+    method='subdivide', custom_kernel=gaussian_kernel
+)
 
 canvas.title = 'Spatial Filtering using %s Filter' % interpolation
 
