@@ -1,5 +1,10 @@
-"""THIS CODE IS AUTO-GENERATED. DO NOT EDIT.
-GL ES 2.0 API (via Angle/DirectX on Windows)"""
+"""
+
+THIS CODE IS AUTO-GENERATED. DO NOT EDIT.
+
+GL ES 2.0 API (via Angle/DirectX on Windows)
+
+"""
 
 import ctypes
 from .es2 import _lib
