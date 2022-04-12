@@ -60,47 +60,45 @@ THIS CODE IS AUTO-GENERATED. DO NOT EDIT.
 """
 '''
 
-## Create parsers
 
-# Create a parser for gl2 and es2
-parser1 = headerparser.Parser(os.path.join(THISDIR, "headers", "gl2.h"))
-headerparser.CONSTANTS = {}
-parser2 = headerparser.Parser(os.path.join(THISDIR, "headers", "webgl.idl"))
+def create_parsers():
+    # Create a parser for gl2 and es2
+    parser1 = headerparser.Parser(os.path.join(THISDIR, "headers", "gl2.h"))
+    headerparser.CONSTANTS = {}
+    parser2 = headerparser.Parser(os.path.join(THISDIR, "headers", "webgl.idl"))
 
-# Get annotations
-annotations = parse_anotations()
+    ## Check constants and generate API module
 
+    # Get names
+    names1 = set(parser1.constant_names)
+    names2 = set(parser2.constant_names)
 
-## Check constants and generate API module
+    # Check names correspondence
+    if names1 == names2:
+        print("Constants in gl2 and webgl are equal")
+    else:
+        print("===== Extra names in gl2 =====")
+        print(", ".join(names1.difference(names2)))
+        print("===== Extra names in webgl =====")
+        print(", ".join(names2.difference(names1)))
+        print("===========")
 
-# Get names
-names1 = set(parser1.constant_names)
-names2 = set(parser2.constant_names)
+    # Test value correspondence
+    superset = names1.intersection(names2)
+    #
+    constants = {}
+    for c1 in parser1.constants.values():
+        if c1.shortname in superset:
+            constants[c1.shortname] = c1.value
+    #
+    assert len(constants) == len(superset)
+    #
+    for c2 in parser2.constants.values():
+        if c2.shortname in constants:
+            assert c2.value == constants[c2.shortname]
+    print("Hooray! All constants that occur in both namespaces have equal values.")
 
-# Check names correspondence
-if names1 == names2:
-    print("Constants in gl2 and webgl are equal")
-else:
-    print("===== Extra names in gl2 =====")
-    print(", ".join(names1.difference(names2)))
-    print("===== Extra names in webgl =====")
-    print(", ".join(names2.difference(names1)))
-    print("===========")
-
-# Test value correspondence
-superset = names1.intersection(names2)
-#
-constants = {}
-for c1 in parser1.constants.values():
-    if c1.shortname in superset:
-        constants[c1.shortname] = c1.value
-#
-assert len(constants) == len(superset)
-#
-for c2 in parser2.constants.values():
-    if c2.shortname in constants:
-        assert c2.value == constants[c2.shortname]
-print("Hooray! All constants that occur in both namespaces have equal values.")
+    return parser1, parser2
 
 
 DEFINE_ENUM = """
@@ -663,7 +661,8 @@ class PyOpenGL2ApiGenrator(ApiGenerator):
 
 
 class FunctionCollector:
-    def __init__(self, parser1, parser2):
+    def __init__(self, annotations, parser1, parser2):
+        self.annotations = annotations
         self.parser1 = parser1
         self.parser2 = parser2
         # Keep track of what webGL names we "used"
@@ -709,7 +708,7 @@ class FunctionCollector:
                     name = "_" + es2func.shortname
 
             # Get annotated version
-            annfunc = annotations.get(name, None)
+            annfunc = self.annotations.get(name, None)
 
             # Create description instance
             des = FunctionDescription(name, es2func, wglfunc, annfunc)
@@ -771,10 +770,12 @@ class FunctionCollector:
 
 
 def main():
+    annotations = parse_anotations()
+    parser1, parser2 = create_parsers()
     create_constants_module(parser1)
 
     # Get full function definitions and report
-    func_collector = FunctionCollector(parser1, parser2)
+    func_collector = FunctionCollector(annotations, parser1, parser2)
     func_collector.collect_function_definitions()
 
     for Gen in [
