@@ -124,14 +124,7 @@ del ob
 
 
 def create_constants_module(parser, extension=False):
-
-    # Initialize
-    lines = []
-    lines.append(PREAMBLE % "Constants for OpenGL ES 2.0.")
-
-    # Define ENUM
-    lines.append(DEFINE_ENUM)
-    lines.append("")
+    lines = [PREAMBLE % "Constants for OpenGL ES 2.0.", DEFINE_ENUM, ""]
 
     # For extensions, we only take the OES ones, and remove the OES
     if extension:
@@ -160,11 +153,6 @@ def create_constants_module(parser, extension=False):
         f.write(("\n".join(lines)).encode("utf-8"))
     print("wrote %s" % fname)
 
-
-create_constants_module(parser1)
-
-
-## List functions
 
 IGNORE_FUNCTIONS = ["releaseShaderCompiler", "shaderBinary"]
 
@@ -249,119 +237,6 @@ class FunctionDescription:
         self.args = []
 
 
-# Keep track of what webGL names we "used"
-used_webgl_names = set()
-
-# Also keep track of what functions we could handle automatically,
-# and which not. Just for reporting.
-functions_auto = set()
-functions_anno = set()
-functions_todo = set()
-
-
-def combine_function_definitions():
-    """Process function definitions of ES 2.0, WebGL and annotations.
-    We try to combine information from these three sources to find the
-    arguments for the Python API. In this "merging" process we also
-    check for inconsistencies between the API definitions.
-    """
-    functions = []
-    have_getParameter = False
-
-    for name in parser1.function_names:
-        if name in IGNORE_FUNCTIONS:
-            continue
-
-        # Get es2 function
-        es2func = parser1.functions[name]
-
-        # Get webgl version
-        lookupname = WEBGL_EQUIVALENTS.get(es2func.shortname, es2func.shortname)
-        wglfunc = parser2.functions.get(lookupname, None)
-        if wglfunc:
-            used_webgl_names.add(lookupname)
-        else:
-            print("WARNING: %s not available in WebGL" % es2func.shortname)
-
-        # Convert name
-        name = WEBGL_EQUIVALENTS.get(name, name)
-
-        # Avoid duplicates for getParameter
-        if name == "getParameter":
-            if es2func.shortname != "getString":
-                name = "_" + es2func.shortname
-
-        # Get annotated version
-        annfunc = annotations.get(name, None)
-
-        # Create description instance
-        des = FunctionDescription(name, es2func, wglfunc, annfunc)
-        functions.append(des)
-
-        # Get information about arguments
-        if True:
-            argnames_es2 = [arg.name for arg in es2func.args[1:]]
-        if wglfunc:
-            argnames_wgl = [arg.name for arg in wglfunc.args[1:]]
-        if annfunc:
-            argnames_ann = annfunc.args  # Can contain 'argname=default'
-            argnames_ann = [arg.split("=")[0] for arg in argnames_ann]
-
-        # Set argumenets specification of our GL API
-        # Also check and report when we deviate from the WebGL API
-        if wglfunc and argnames_es2 == argnames_wgl:
-            if annfunc and argnames_ann != argnames_es2:
-                des.args = argnames_ann
-                print(
-                    "WARNING: %s: Annotation overload even though webgl and es2 match."
-                    % name
-                )
-            else:
-                des.args = argnames_es2
-        elif wglfunc:
-            if annfunc and argnames_ann != argnames_wgl:
-                des.args = argnames_ann
-                print("WARNING: %s: Annotation overload webgl args." % name)
-            else:
-                # print('WARNING: %s: assuming wgl args.'%name)
-                des.args = argnames_wgl
-        else:
-            print("WARNING: %s: Could not determine args!!" % name)
-
-        # Go over all functions to test if they are in OpenGL
-        for func in [es2func, wglfunc]:
-            if func is None:
-                continue
-            group = func.group or [func]
-            for f in group:
-                # Check opengl
-                if f.oname.startswith("gl") and not hasattr(GL, f.glname):
-                    print("WARNING: %s seems not available in PyOpenGL" % f.glname)
-
-    return functions
-
-
-## Get full function definitions and report
-# Get functions
-functions = combine_function_definitions()
-
-# Check which WebGL functions we did not find/use
-for name in set(parser2.function_names).difference(used_webgl_names):
-    print("WARNING: WebGL function %s not in Desktop" % name)
-
-# Report status
-print(
-    "Could generate %i functions automatically, and %i with annotations"
-    % (len(functions_auto), len(functions_anno))
-)
-print("Need more info for %i functions." % len(functions_todo))
-if not functions_todo:
-    print("Hooray! All %i functions are covered!" % len(functions))
-
-
-## Define generators
-
-
 class ApiGenerator:
     """Base API generator class. We derive several subclasses to implement
     the different backends.
@@ -374,6 +249,9 @@ class ApiGenerator:
 
     def __init__(self):
         self.lines = []
+        self.functions_auto = set()
+        self.functions_anno = set()
+        self.functions_todo = set()
 
     def save(self):
         # Remove too many whitespace
@@ -388,7 +266,11 @@ class ApiGenerator:
             f.write(b"\n")
             f.write(text.encode("utf-8"))
 
-    def add_function(self, des):
+    def add_functions(self, all_functions):
+        for func_description in all_functions:
+            self.add_function(func_description)
+
+    def add_function(self, des: FunctionDescription):
         if des.es2.group:
             if des.name.startswith("get"):
                 assert len(des.es2.group) == 2  # vi and fv
@@ -400,7 +282,7 @@ class ApiGenerator:
             self._add_function(des)
         self.lines.append("\n")  # two lines between each function
 
-    def _add_function_group(self, des):
+    def _add_function_group(self, des: FunctionDescription) -> tuple[set, set, set]:
         lines = self.lines
         handled = True
 
@@ -442,9 +324,9 @@ class ApiGenerator:
             handled = False
 
         if handled:
-            functions_auto.add(des.name)
+            self.functions_auto.add(des.name)
         else:
-            functions_todo.add(des.name)
+            self.functions_todo.add(des.name)
             lines.append("# todo: Dont know group %s" % des.name)
 
     def _add_function(self, des):
@@ -493,7 +375,6 @@ class ProxyApiGenerator(ApiGenerator):
         prefix = "return " if ret else ""
         funcname = apiname(sig.split("(")[0])
         args = sig.split("(", 1)[1].split(")")[0]
-        # self.lines.append('    def %s:' % sig)
         self.lines.append("    def %s(self, %s):" % (funcname, args))
         self.lines.append(
             '        %sself("%s", %r, %s)' % (prefix, funcname, ret, args)
@@ -515,7 +396,6 @@ class Gl2ApiGenerator(ApiGenerator):
     """
 
     def _get_argtype_str(self, es2func):
-        ce_arg_types = [arg.ctype for arg in es2func.args[1:]]
         ct_arg_types = [KNOWN_TYPES.get(arg.ctype, None) for arg in es2func.args]
         # Set argument types on ctypes function
         if None in ct_arg_types:
@@ -534,7 +414,6 @@ class Gl2ApiGenerator(ApiGenerator):
 
     def _write_argtypes(self, es2func):
         lines = self.lines
-        ce_arg_types = [arg.ctype for arg in es2func.args[1:]]
         ct_arg_types = [KNOWN_TYPES.get(arg.ctype, None) for arg in es2func.args]
         # Set argument types on ctypes function
         if None in ct_arg_types:
@@ -554,7 +433,6 @@ class Gl2ApiGenerator(ApiGenerator):
             )
 
     def _native_call_line(self, name, es2func, cargstr=None, prefix="", indent=4):
-        #'_lib.%s(%s)' % (des.es2.glname, cargstr)
         resstr, argstr = self._get_argtype_str(es2func)
         if cargstr is None:
             cargs = [arg.name for arg in es2func.args[1:]]
@@ -570,9 +448,6 @@ class Gl2ApiGenerator(ApiGenerator):
             argstr,
         )
         lines += "%snativefunc(%s)\n" % (prefix, cargstr)
-
-        # lines += 'check_error("%s")' % name
-
         lines = [" " * indent + line for line in lines.splitlines()]
         return "\n".join(lines)
 
@@ -607,30 +482,28 @@ class Gl2ApiGenerator(ApiGenerator):
 
         # Construct C function call
         cargs = [arg.name for arg in des.es2.args[1:]]
-        cargstr = ", ".join(cargs)
-        # callline = '_lib.%s(%s)' % (des.es2.glname, cargstr)
 
         # Now write the body of the function ...
         if des.ann:
             prefix = "res = "
             # Annotation available
-            functions_anno.add(des.name)
+            self.functions_anno.add(des.name)
             callline = self._native_call_line(des.name, es2func, prefix=prefix)
             lines.extend(des.ann.get_lines(callline, self.backend_name))
 
         elif es2func.group:
             # Group?
-            functions_todo.add(des.name)
+            self.functions_todo.add(des.name)
             lines.append("    pass  # todo: Oops. this is a group!")
         elif None in ct_arg_types_easy:
-            functions_todo.add(des.name)
+            self.functions_todo.add(des.name)
             lines.append("    pass  # todo: Not all easy types!")
         elif des.args != [arg.name for arg in des.wgl.args[1:]]:
-            functions_todo.add(des.name)
+            self.functions_todo.add(des.name)
             lines.append("    pass  # todo: ES 2.0 and WebGL args do not match!")
         else:
             # This one is easy!
-            functions_auto.add(des.name)
+            self.functions_auto.add(des.name)
             # Get prefix
             prefix = ""
             if ct_arg_types[0][0] != type(None):
@@ -657,7 +530,6 @@ class Gl2ApiGenerator(ApiGenerator):
 
     def _add_group_function(self, des, sig, es2func):
         lines = self.lines
-        handled = True
 
         call_line = self._native_call_line
 
@@ -666,7 +538,6 @@ class Gl2ApiGenerator(ApiGenerator):
 
         funcname = sig.split("(", 1)[0]
         args = sig.split("(", 1)[1].split(")")[0]
-        cfuncname = "gl" + funcname[0].upper() + funcname[1:]
 
         if des.name == "uniform":
             if funcname[-1] != "v":
@@ -791,7 +662,121 @@ class PyOpenGL2ApiGenrator(ApiGenerator):
         ApiGenerator.save(self)
 
 
+class FunctionCollector:
+    def __init__(self, parser1, parser2):
+        self.parser1 = parser1
+        self.parser2 = parser2
+        # Keep track of what webGL names we "used"
+        self.used_webgl_names = set()
+
+        # Also keep track of what functions we could handle automatically,
+        # and which not. Just for reporting.
+        self.functions_auto = set()
+        self.functions_anno = set()
+        self.functions_todo = set()
+
+        self.all_functions = []
+
+    def collect_function_definitions(self):
+        """Process function definitions of ES 2.0, WebGL and annotations.
+
+        We try to combine information from these three sources to find the
+        arguments for the Python API. In this "merging" process we also
+        check for inconsistencies between the API definitions.
+
+        """
+        for name in self.parser1.function_names:
+            if name in IGNORE_FUNCTIONS:
+                continue
+
+            # Get es2 function
+            es2func = self.parser1.functions[name]
+
+            # Get webgl version
+            lookupname = WEBGL_EQUIVALENTS.get(es2func.shortname, es2func.shortname)
+            wglfunc = self.parser2.functions.get(lookupname, None)
+            if wglfunc:
+                self.used_webgl_names.add(lookupname)
+            else:
+                print("WARNING: %s not available in WebGL" % es2func.shortname)
+
+            # Convert name
+            name = WEBGL_EQUIVALENTS.get(name, name)
+
+            # Avoid duplicates for getParameter
+            if name == "getParameter":
+                if es2func.shortname != "getString":
+                    name = "_" + es2func.shortname
+
+            # Get annotated version
+            annfunc = annotations.get(name, None)
+
+            # Create description instance
+            des = FunctionDescription(name, es2func, wglfunc, annfunc)
+            self.all_functions.append(des)
+
+            # Get information about arguments
+            if True:
+                argnames_es2 = [arg.name for arg in es2func.args[1:]]
+            if wglfunc:
+                argnames_wgl = [arg.name for arg in wglfunc.args[1:]]
+            if annfunc:
+                argnames_ann = annfunc.args  # Can contain 'argname=default'
+                argnames_ann = [arg.split("=")[0] for arg in argnames_ann]
+
+            # Set argumenets specification of our GL API
+            # Also check and report when we deviate from the WebGL API
+            if wglfunc and argnames_es2 == argnames_wgl:
+                if annfunc and argnames_ann != argnames_es2:
+                    des.args = argnames_ann
+                    print(
+                        "WARNING: %s: Annotation overload even though webgl and es2 match."
+                        % name
+                    )
+                else:
+                    des.args = argnames_es2
+            elif wglfunc:
+                if annfunc and argnames_ann != argnames_wgl:
+                    des.args = argnames_ann
+                    print("WARNING: %s: Annotation overload webgl args." % name)
+                else:
+                    # print('WARNING: %s: assuming wgl args.'%name)
+                    des.args = argnames_wgl
+            else:
+                print("WARNING: %s: Could not determine args!!" % name)
+
+            # Go over all functions to test if they are in OpenGL
+            for func in [es2func, wglfunc]:
+                if func is None:
+                    continue
+                group = func.group or [func]
+                for f in group:
+                    # Check opengl
+                    if f.oname.startswith("gl") and not hasattr(GL, f.glname):
+                        print("WARNING: %s seems not available in PyOpenGL" % f.glname)
+
+    def check_unused_webgl_funcs(self):
+        """Check which WebGL functions we did not find/use."""
+        for name in set(self.parser2.function_names).difference(self.used_webgl_names):
+            print("WARNING: WebGL function %s not in Desktop" % name)
+
+    def report_status(self):
+        print(
+            "Could generate %i functions automatically, and %i with annotations"
+            % (len(self.functions_auto), len(self.functions_anno))
+        )
+        print("Need more info for %i functions." % len(self.functions_todo))
+        if not self.functions_todo:
+            print("Hooray! All %i functions are covered!" % len(self.all_functions))
+
+
 def main():
+    create_constants_module(parser1)
+
+    # Get full function definitions and report
+    func_collector = FunctionCollector(parser1, parser2)
+    func_collector.collect_function_definitions()
+
     for Gen in [
         ProxyApiGenerator,
         Gl2ApiGenerator,
@@ -799,9 +784,14 @@ def main():
         PyOpenGL2ApiGenrator,
     ]:
         gen = Gen()
-        for des in functions:
-            gen.add_function(des)
+        gen.add_functions(func_collector.all_functions)
+        func_collector.functions_auto.update(gen.functions_auto)
+        func_collector.functions_anno.update(gen.functions_anno)
+        func_collector.functions_todo.update(gen.functions_todo)
         gen.save()
+
+    func_collector.check_unused_webgl_funcs()
+    func_collector.report_status()
 
 
 if __name__ == "__main__":
