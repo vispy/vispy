@@ -14,7 +14,8 @@ applies to all backends.
 import ctypes
 
 
-## bind / gen / delete stuff
+# bind / gen / delete stuff
+
 
 def deleteBuffer(buffer):
     # --- gl es
@@ -24,6 +25,7 @@ def deleteBuffer(buffer):
     # --- pyopengl
     GL.glDeleteBuffers(1, [buffer])
 
+
 def deleteFramebuffer(framebuffer):
     # --- gl es
     n = 1  
@@ -32,6 +34,7 @@ def deleteFramebuffer(framebuffer):
     # --- pyopengl
     FBO.glDeleteFramebuffers(1, [framebuffer])
 
+
 def deleteRenderbuffer(renderbuffer):
     # --- gl es
     n = 1  
@@ -39,6 +42,7 @@ def deleteRenderbuffer(renderbuffer):
     ()
     # --- pyopengl
     FBO.glDeleteRenderbuffers(1, [renderbuffer])
+
 
 def deleteTexture(texture):
     # --- gl es
@@ -60,6 +64,7 @@ def createBuffer():
     # --- mock
     return 1
 
+
 def createFramebuffer():
     # --- gl es
     n = 1
@@ -71,6 +76,7 @@ def createFramebuffer():
     # --- mock
     return 1
 
+
 def createRenderbuffer():
     # --- gl es
     n = 1
@@ -81,6 +87,7 @@ def createRenderbuffer():
     return FBO.glGenRenderbuffers(1)
     # --- mock
     return 1
+
 
 def createTexture():
     # --- gl es
@@ -94,8 +101,7 @@ def createTexture():
     return 1
 
 
-## Image stuff
-
+# Image stuff
 def texImage2D(target, level, internalformat, format, type, pixels):
     border = 0
     # --- gl es
@@ -118,7 +124,6 @@ def texImage2D(target, level, internalformat, format, type, pixels):
         height, width = pixels.shape[:2]
     GL.glTexImage2D(target, level, internalformat, width, height, border, format, type, pixels)
     
-
 
 def texSubImage2D(target, level, xoffset, yoffset, format, type, pixels):
     # --- gl es
@@ -179,12 +184,11 @@ def compressedTexSubImage2D(target, level, xoffset, yoffset, width, height, form
     GL.glCompressedTexSubImage2D(target, level, xoffset, yoffset, width, height, format, size, data)
 
 
-## Buffer data
+# Buffer data
 
 
 def bufferData(target, data, usage):
-    """ Data can be numpy array or the size of data to allocate.
-    """
+    """Data can be numpy array or the size of data to allocate."""
     # --- gl es
     if isinstance(data, int):
         size = data
@@ -277,7 +281,7 @@ def bindAttribLocation(program, index, name):
     ()
 
 
-## Setters
+# Setters
 
 
 def shaderSource(shader, source):
@@ -295,13 +299,14 @@ def shaderSource(shader, source):
     GL.glShaderSource(shader, strings)
 
 
-## Getters
+# Getters
 
 def _getBooleanv(pname):
     # --- gl es
     params = (ctypes.c_bool*1)()
     ()
     return params[0]
+
 
 def _getIntegerv(pname):
     # --- gl es
@@ -314,6 +319,7 @@ def _getIntegerv(pname):
         return params[0]
     else:
         return tuple(params)
+
 
 def _getFloatv(pname):
     # --- gl es
@@ -502,6 +508,7 @@ def getUniformLocation(program, name):
     name = name.encode('utf-8')
     ()
 
+
 def getProgramInfoLog(program):
     # --- gl es
     bufsize = 1024
@@ -512,6 +519,7 @@ def getProgramInfoLog(program):
     # --- pyopengl
     res = GL.glGetProgramInfoLog(program)
     return res.decode('utf-8') if isinstance(res, bytes) else res
+
 
 def getShaderInfoLog(shader):
     # --- gl es
@@ -524,11 +532,13 @@ def getShaderInfoLog(shader):
     res = GL.glGetShaderInfoLog(shader)
     return res.decode('utf-8') if isinstance(res, bytes) else res
 
+
 def getProgramParameter(program, pname):
     # --- gl es
     params = (ctypes.c_int*1)()
     ()
     return params[0]
+
 
 def getShaderParameter(shader, pname):
     # --- gl es
@@ -536,12 +546,14 @@ def getShaderParameter(shader, pname):
     ()
     return params[0]
 
+
 def getShaderPrecisionFormat(shadertype, precisiontype):
     # --- gl es
     range = (ctypes.c_int*1)()
     precision = (ctypes.c_int*1)()
     ()
     return range[0], precision[0]
+
 
 def getShaderSource(shader):
     # --- gl es
@@ -626,9 +638,11 @@ class FunctionAnnotation:
         return lines
     
     def is_arg_set(self, name):
-        """ Get whether a given variable name is set.
+        """Get whether a given variable name is set.
+
         This allows checking whether a variable that is an input to the C
         function is not an input for the Python function, and may be an output.
+
         """
         needle = '%s =' % name
         for line, comment in self.lines:
@@ -638,12 +652,8 @@ class FunctionAnnotation:
             return False
 
 
-
 def parse_anotations():
-    """ Parse this annotations file and produce a dictionary of
-    FunctionAnnotation objects.
-    """
-    
+    """Parse this annotations file and produce a dictionary of FunctionAnnotation objects."""
     functions = {}
     function = None
     
@@ -656,7 +666,7 @@ def parse_anotations():
             name = line.split(' ')[1].split('(')[0]
             args = line.split('(')[1].split(')')[0].split(', ')
             args = [arg for arg in args if arg]
-            out =  line.partition('->')[2].strip()
+            out = line.partition('->')[2].strip()
             function = FunctionAnnotation(name, args, out)
             functions[name] = function
             continue
@@ -666,7 +676,7 @@ def parse_anotations():
         # Add line
         line = line.rstrip()
         indent = len(line) - len(line.strip())
-        if line.strip() and indent >=4:
+        if line.strip() and indent >= 4:
             function.lines.append(line)
 
     return functions

@@ -1,4 +1,4 @@
-"""
+"""GL definitions converted to Python by codegen/createglapi.py.
 
 THIS CODE IS AUTO-GENERATED. DO NOT EDIT.
 

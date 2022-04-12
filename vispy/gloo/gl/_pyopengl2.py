@@ -1,4 +1,4 @@
-"""
+"""GL definitions converted to Python by codegen/createglapi.py.
 
 THIS CODE IS AUTO-GENERATED. DO NOT EDIT.
 
@@ -20,8 +20,7 @@ def glBindAttribLocation(program, index, name):
 
 
 def glBufferData(target, data, usage):
-    """ Data can be numpy array or the size of data to allocate.
-    """
+    """Data can be numpy array or the size of data to allocate."""
     if isinstance(data, int):
         size = data
         data = None

@@ -51,7 +51,7 @@ from OpenGL import GL  # For checking
 THISDIR = os.path.abspath(os.path.dirname(__file__))
 GLDIR = os.path.join(THISDIR, "..", "vispy", "gloo", "gl")
 
-PREAMBLE = '''"""
+PREAMBLE = '''"""GL definitions converted to Python by codegen/createglapi.py.
 
 THIS CODE IS AUTO-GENERATED. DO NOT EDIT.
 
