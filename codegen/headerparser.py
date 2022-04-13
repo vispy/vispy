@@ -115,9 +115,7 @@ class Parser:
     def _parse_constants_and_functions_from_file(self):
         line_gen = self._get_nonblank_lines()
         for line in line_gen:
-            if line.startswith("#define"):
-                self._append_definition(ConstantDefinition(line))
-            elif line.startswith("const GLenum"):
+            if line.startswith(("#define", "const GLenum")):
                 self._append_definition(ConstantDefinition(line))
             elif "(" in line:
                 while ")" not in line:
