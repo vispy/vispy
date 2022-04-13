@@ -201,9 +201,13 @@ class Definition:
 
 
 class ConstantDefinition(Definition):
+    def __init__(self, line, existing_constants):
+        self.value = None
+        super().__init__(line, existing_constants)
+
     def parse_line(self, line, existing_constants):
         """Set cname and value attributes."""
-        self.value = None
+        value = None
         line = line.split("/*", 1)[0]
         args = getwords(line)[1:]
         self.isvalid = False
@@ -214,38 +218,49 @@ class ConstantDefinition(Definition):
             name, val = args
             self.isvalid = bool(name)
             self._set_name(name)
-            self._set_value_from_string(val, existing_constants)
+            value = self._set_value_from_string(val, existing_constants)
         elif "=" in args:
             name, val = args[-3], args[-1]
             self.isvalid = bool(name)
             self._set_name(name)
-            self._set_value_from_string(val, existing_constants)
+            value = self._set_value_from_string(val, existing_constants)
         else:
             print('Dont know what to do with "%s"' % line)
 
         # For when this constant is reused to set another constant
-        if self.value is not None:
-            existing_constants[self.oname] = self.value
+        if value is not None:
+            existing_constants[self.oname] = value
+        self.value = value
 
     def _set_value_from_string(self, val, existing_constants):
         # Set value
         val = val.strip(";")
         if val.startswith("0x"):
-            self.value = int(val[2:].rstrip("ul"), 16)
+            value = int(val[2:].rstrip("ul"), 16)
         elif val[0] in "0123456789":
-            self.value = int(val)
+            value = int(val)
         elif val.startswith("'"):
-            self.value = val
+            value = val
         elif val in existing_constants:
-            self.value = existing_constants[val]
+            value = existing_constants[val]
         else:
-            print('Warning: Dont know what to do with "%s"' % line)
+            print('Warning: Dont know what to do with "%s"' % val)
+            value = None
+        return value
 
 
 class FunctionDefinition(Definition):
 
     SKIPTYPECHARS = "if"  # 'bsifd'
     ALLSKIPCHARS = SKIPTYPECHARS + "v1234"
+
+    def __init__(self, line, existing_constants):
+        self.keyname = None
+        self.extrachars = None
+        self.group = None
+        self.cargs = []
+        self.args = []
+        super().__init__(line, existing_constants)
 
     def parse_line(self, line, existing_constants):
         """Set cname, keyname, cargs attributes.
@@ -289,9 +304,9 @@ class FunctionDefinition(Definition):
 
 
 class FunctionGroup(FunctionDefinition):
-    def parse_line(self, line, existing_constants):
-        FunctionDefinition.parse_line(self, line, existing_constants)
-        self.group = []
+    def __init__(self, line, existing_constants):
+        super().__init__(line, existing_constants)
+        self.group = []  # must be set after line is parsed
 
 
 class Argument:
