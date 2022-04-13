@@ -717,8 +717,7 @@ class FunctionCollector:
             self.all_functions.append(des)
 
             # Get information about arguments
-            if True:
-                argnames_es2 = [arg.name for arg in es2func.args[1:]]
+            argnames_es2 = [arg.name for arg in es2func.args[1:]]
             if wglfunc:
                 argnames_wgl = [arg.name for arg in wglfunc.args[1:]]
             if annfunc:
