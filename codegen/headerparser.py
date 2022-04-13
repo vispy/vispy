@@ -54,17 +54,6 @@ class Parser:
         if parse_now:
             self.parse()
 
-    def __iadd__(self, definition):
-        """Add an output line. Can be multiple lines."""
-        # Create comment
-        definition.comment = "line %i of %s" % (self._linenr, self._c_fname)
-        # Add to lists
-        if isinstance(definition, FunctionDefinition):
-            self._functionDefs.append(definition)
-        elif isinstance(definition, ConstantDefinition):
-            self._constantDefs.append(definition)
-        return self
-
     def parse(self):
         """Parse the header file!"""
         self._parse_constants_and_functions_from_file()
@@ -124,26 +113,35 @@ class Parser:
         print("C-types found in args:", self.stat_types)
 
     def _parse_constants_and_functions_from_file(self):
-        with open(self._c_filename, "rt", encoding="utf-8") as header_file:
-            line_gen = self._get_nonblank_lines(header_file)
-            for line in line_gen:
-                if line.startswith("#define"):
-                    self += ConstantDefinition(line)
-                elif line.startswith("const GLenum"):
-                    self += ConstantDefinition(line)
-                elif "(" in line:
-                    while ")" not in line:
-                        line += next(line_gen)
-                        # line += self._get_next_nonblank_line(header_file)
-                    if line.endswith(");"):
-                        self += FunctionDefinition(line)
+        line_gen = self._get_nonblank_lines()
+        for line in line_gen:
+            if line.startswith("#define"):
+                self._append_definition(ConstantDefinition(line))
+            elif line.startswith("const GLenum"):
+                self._append_definition(ConstantDefinition(line))
+            elif "(" in line:
+                while ")" not in line:
+                    line += next(line_gen)
+                if line.endswith(");"):
+                    self._append_definition(FunctionDefinition(line))
 
-    def _get_nonblank_lines(self, header_file):
-        for line in header_file.readlines():
-            line = line.strip()
-            if line:
-                yield line
-            self._linenr += 1
+    def _get_nonblank_lines(self):
+        with open(self._c_filename, "rt", encoding="utf-8") as header_file:
+            for line in header_file.readlines():
+                line = line.strip()
+                if line:
+                    yield line
+                self._linenr += 1
+
+    def _append_definition(self, definition):
+        """Add an output line. Can be multiple lines."""
+        # Create comment
+        definition.comment = "line %i of %s" % (self._linenr, self._c_fname)
+        # Add to lists
+        if isinstance(definition, FunctionDefinition):
+            self._functionDefs.append(definition)
+        elif isinstance(definition, ConstantDefinition):
+            self._constantDefs.append(definition)
 
     @property
     def constant_names(self):
