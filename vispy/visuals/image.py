@@ -508,20 +508,21 @@ class ImageVisual(Visual):
         self._data_lookup_fn = self._interpolation_fun[interpolation]
         self.shared_program.frag['get_data'] = self._data_lookup_fn
 
-        # only 'bilinear' uses 'linear' texture interpolation
-        if interpolation == 'bilinear':
+        # only 'bilinear' and 'custom' use 'linear' texture interpolation
+        if interpolation in ('bilinear', 'custom'):
             texture_interpolation = 'linear'
         else:
-            # 'nearest' (and also 'bilinear') doesn't use spatial_filters.frag
-            # so u_kernel and shape setting is skipped
             texture_interpolation = 'nearest'
-            if interpolation != 'nearest':
-                self._data_lookup_fn['shape'] = self._data.shape[:2][::-1]
-                if interpolation == 'custom':
-                    self._data_lookup_fn['kernel'] = self._custom_kerneltex
-                    self._data_lookup_fn['kernel_shape'] = self._custom_kernel.shape
-                else:
-                    self.shared_program['u_kernel'] = self._kerneltex
+
+        # 'nearest' (and also 'bilinear') doesn't use spatial_filters.frag
+        # so u_kernel and shape setting is skipped
+        if interpolation not in ('nearest', 'bilinear'):
+            self._data_lookup_fn['shape'] = self._data.shape[:2][::-1]
+            if interpolation == 'custom':
+                self._data_lookup_fn['kernel'] = self._custom_kerneltex
+                self._data_lookup_fn['kernel_shape'] = self._custom_kernel.shape
+            else:
+                self.shared_program['u_kernel'] = self._kerneltex
 
         if self._texture.interpolation != texture_interpolation:
             self._texture.interpolation = texture_interpolation
