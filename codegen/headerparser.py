@@ -71,9 +71,7 @@ class Parser:
                 if keyDef and keyDef.glname == funcDef.keyname:
                     pass  # Keep same keydef
                 else:
-                    keyDef = FunctionGroup(funcDef.line)  # New keydef
-                    keyDef.parse_line()
-                    keyDef._set_name(funcDef.keyname)
+                    keyDef = FunctionGroup.from_function_def(funcDef)
                     keyDefs.append(keyDef)
                 # Add to group
                 keyDef.group.append(funcDef)
@@ -308,6 +306,13 @@ class FunctionDefinition(Definition):
 
 
 class FunctionGroup(FunctionDefinition):
+    @classmethod
+    def from_function_def(cls, func_def):
+        keyDef = cls(func_def.line)
+        keyDef.parse_line()
+        keyDef._set_name(func_def.keyname)
+        return keyDef
+
     def parse_line(self):
         super().parse_line()
         self.group = []  # must be set after line is parsed
