@@ -572,7 +572,7 @@ class Gl2ApiGenerator(ApiGenerator):
             raise ValueError("unknown group func")
 
 
-class Es2ApiGenrator(Gl2ApiGenerator):
+class Es2ApiGenerator(Gl2ApiGenerator):
     """Generator for the es2 backend (i.e. Angle on Windows). Very
     similar to the gl2 API, but we do not need that deferred loading
     of GL functions here.
@@ -597,7 +597,7 @@ class Es2ApiGenrator(Gl2ApiGenerator):
         return " " * indent + "%s_lib.%s(%s)" % (prefix, es2func.glname, cargstr)
 
 
-class PyOpenGL2ApiGenrator(ApiGenerator):
+class PyOpenGL2ApiGenerator(ApiGenerator):
     """Generator for a fallback pyopengl backend."""
 
     filename = os.path.join(GLDIR, "_pyopengl2.py")
@@ -783,8 +783,8 @@ def main():
     for Gen in [
         ProxyApiGenerator,
         Gl2ApiGenerator,
-        Es2ApiGenrator,
-        PyOpenGL2ApiGenrator,
+        Es2ApiGenerator,
+        PyOpenGL2ApiGenerator,
     ]:
         gen = Gen()
         gen.add_functions(func_collector.all_functions)
