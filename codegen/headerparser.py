@@ -8,7 +8,6 @@ autogenerate our OpenGL API.
 """
 
 import os
-import sys
 
 
 def getwords(line):
@@ -22,10 +21,13 @@ CONSTANTS = {}
 
 
 class Parser:
-    """Class to parse header files. It can deal with gl2.h and webgl.idl,
+    """Class to parse header files.
+
+    It can deal with gl2.h and webgl.idl,
     as well as some desktop OpenGL header files. It produces a list of
-    ConstantDefition objects and FunctionDefinition objects, which can
+    ConstantDefinition objects and FunctionDefinition objects, which can
     be accessed via a dict.
+
     """
 
     def __init__(self, header_file, parse_now=True):
@@ -63,42 +65,9 @@ class Parser:
             self._constantDefs.append(definition)
         return self
 
-    def _get_line(self):
-        # Get a stripped line, and keep track of line nr, skip empty lines
-        line = ""
-        while not line:
-            line = self._file.readline()
-            if not line:
-                raise StopIteration()
-            line = line.strip()
-            self._linenr += 1
-        return line
-
-    def _get_lines(self):
-        # Easy iterator
-        while True:
-            try:
-                yield self._get_line()
-            except StopIteration:
-                return
-
     def parse(self):
         """Parse the header file!"""
-
-        # Open file
-        self._file = open(self._c_filename, "rt", encoding="utf-8")
-
-        # Parse the file
-        for line in self._get_lines():
-            if line.startswith("#define"):
-                self += ConstantDefinition(line)
-            elif line.startswith("const GLenum"):
-                self += ConstantDefinition(line)
-            elif "(" in line:
-                while ")" not in line:
-                    line += self._get_line()
-                if line.endswith(");"):
-                    self += FunctionDefinition(line)
+        self._parse_constants_and_functions_from_file()
 
         # Remove invalid defs
         self._functionDefs = [d for d in self._functionDefs if d.isvalid]
@@ -153,6 +122,28 @@ class Parser:
         )
 
         print("C-types found in args:", self.stat_types)
+
+    def _parse_constants_and_functions_from_file(self):
+        with open(self._c_filename, "rt", encoding="utf-8") as header_file:
+            line_gen = self._get_nonblank_lines(header_file)
+            for line in line_gen:
+                if line.startswith("#define"):
+                    self += ConstantDefinition(line)
+                elif line.startswith("const GLenum"):
+                    self += ConstantDefinition(line)
+                elif "(" in line:
+                    while ")" not in line:
+                        line += next(line_gen)
+                        # line += self._get_next_nonblank_line(header_file)
+                    if line.endswith(");"):
+                        self += FunctionDefinition(line)
+
+    def _get_nonblank_lines(self, header_file):
+        for line in header_file.readlines():
+            line = line.strip()
+            if line:
+                yield line
+            self._linenr += 1
 
     @property
     def constant_names(self):
