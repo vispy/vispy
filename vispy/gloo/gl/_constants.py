@@ -8,11 +8,13 @@ Constants for OpenGL ES 2.0.
 
 
 class Enum(int):
-    ''' Enum (integer) with a meaningfull repr. '''
+    """Enum (integer) with a meaningfull repr."""
+    
     def __new__(cls, name, value):
         base = int.__new__(cls, value)
         base.name = name
         return base
+        
     def __repr__(self):
         return self.name
 

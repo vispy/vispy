@@ -101,24 +101,26 @@ def create_parsers():
     return parser1, parser2
 
 
-DEFINE_ENUM = """
+DEFINE_ENUM = '''
 class Enum(int):
-    ''' Enum (integer) with a meaningfull repr. '''
+    """Enum (integer) with a meaningfull repr."""
+    
     def __new__(cls, name, value):
         base = int.__new__(cls, value)
         base.name = name
         return base
+        
     def __repr__(self):
         return self.name
-"""
+'''
 
-DEFINE_CONST_MAP = """
+DEFINE_CONST_MAP = '''
 ENUM_MAP = {}
 for ob in list(globals().values()):
     if repr(ob).startswith('GL_'):
         ENUM_MAP[int(ob)] = ob
 del ob
-"""
+'''
 
 
 def create_constants_module(parser, extension=False):
