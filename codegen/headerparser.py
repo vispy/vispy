@@ -71,7 +71,8 @@ class Parser:
                 if keyDef and keyDef.glname == funcDef.keyname:
                     pass  # Keep same keydef
                 else:
-                    keyDef = FunctionGroup(funcDef.line, self._constant_values)  # New keydef
+                    keyDef = FunctionGroup(funcDef.line)  # New keydef
+                    keyDef.parse_line()
                     keyDef._set_name(funcDef.keyname)
                     keyDefs.append(keyDef)
                 # Add to group
@@ -115,12 +116,16 @@ class Parser:
         line_gen = self._get_nonblank_lines()
         for line in line_gen:
             if line.startswith(("#define", "const GLenum")):
-                self._append_definition(ConstantDefinition(line, self._constant_values))
+                const_def = ConstantDefinition(line)
+                const_def.parse_line(self._constant_values)
+                self._append_definition(const_def)
             elif "(" in line:
                 while ")" not in line:
                     line += next(line_gen)
                 if line.endswith(");"):
-                    self._append_definition(FunctionDefinition(line, self._constant_values))
+                    func_def = FunctionDefinition(line)
+                    func_def.parse_line()
+                    self._append_definition(func_def)
 
     def _get_nonblank_lines(self):
         with open(self._c_filename, "rt", encoding="utf-8") as header_file:
@@ -171,15 +176,14 @@ class Parser:
 class Definition:
     """Abstract class to represent a constant or function definition."""
 
-    def __init__(self, line, existing_constants):
+    def __init__(self, line):
         self.line = line
         self.isvalid = True
         self.comment = ""
         self.oname = ""  # original name
         self.shortname = self.glname = ""  # short and long name
-        self.parse_line(line, existing_constants)
 
-    def parse_line(self, line, existing_constants):
+    def parse_line(self):
         # Do initial parsing of the incoming line (which may be multiline, actually)
         raise NotImplementedError()
 
@@ -201,14 +205,14 @@ class Definition:
 
 
 class ConstantDefinition(Definition):
-    def __init__(self, line, existing_constants):
+    def __init__(self, line):
         self.value = None
-        super().__init__(line, existing_constants)
+        super().__init__(line)
 
-    def parse_line(self, line, existing_constants):
+    def parse_line(self, existing_constants):
         """Set cname and value attributes."""
         value = None
-        line = line.split("/*", 1)[0]
+        line = self.line.split("/*", 1)[0]
         args = getwords(line)[1:]
         self.isvalid = False
         if len(args) == 1:
@@ -254,21 +258,21 @@ class FunctionDefinition(Definition):
     SKIPTYPECHARS = "if"  # 'bsifd'
     ALLSKIPCHARS = SKIPTYPECHARS + "v1234"
 
-    def __init__(self, line, existing_constants):
+    def __init__(self, line):
         self.keyname = None
         self.extrachars = None
         self.group = None
         self.cargs = []
         self.args = []
-        super().__init__(line, existing_constants)
+        super().__init__(line)
 
-    def parse_line(self, line, existing_constants):
+    def parse_line(self):
         """Set cname, keyname, cargs attributes.
         The list of args always has one entry and the first entry is always
         the output (can be void).
         """
         # Parse components
-        beforeBrace, args = line.split("(", 1)
+        beforeBrace, args = self.line.split("(", 1)
         betweenBraces, _ = args.split(")", 1)
         outs = getwords(beforeBrace)
         prefix, name = outs[:-1], outs[-1]
@@ -304,8 +308,8 @@ class FunctionDefinition(Definition):
 
 
 class FunctionGroup(FunctionDefinition):
-    def __init__(self, line, existing_constants):
-        super().__init__(line, existing_constants)
+    def parse_line(self):
+        super().parse_line()
         self.group = []  # must be set after line is parsed
 
 
