@@ -16,10 +16,6 @@ def getwords(line):
     return [w for w in line.split(" ") if w]
 
 
-# Keep track of all constants in case they are "reused" (i.e. aliases)
-CONSTANTS = {}
-
-
 class Parser:
     """Class to parse header files.
 
@@ -32,7 +28,7 @@ class Parser:
 
     def __init__(self, header_file, parse_now=True):
         # Get filenames for C and Py
-        self._c_fname = c_fname = os.path.split(header_file)[1]
+        self._c_fname = os.path.split(header_file)[1]
 
         # Get absolute filenames
         self._c_filename = header_file
@@ -44,6 +40,8 @@ class Parser:
         # Init output
         self._functions = {}
         self._constants = {}
+        # cache of constant values for constant aliases
+        self._constant_values = {}
 
         # We are aware of the line number
         self._linenr = 0
@@ -73,7 +71,7 @@ class Parser:
                 if keyDef and keyDef.glname == funcDef.keyname:
                     pass  # Keep same keydef
                 else:
-                    keyDef = FunctionGroup(funcDef.line)  # New keydef
+                    keyDef = FunctionGroup(funcDef.line, self._constant_values)  # New keydef
                     keyDef._set_name(funcDef.keyname)
                     keyDefs.append(keyDef)
                 # Add to group
@@ -101,6 +99,7 @@ class Parser:
                 self.stat_types.add(arg.ctype)
 
         # Show stats
+        # TODO: Remove iteration
         n1 = len([d for d in self._constantDefs])
         n2 = len([d for d in self._functionDefs])
         n3 = len([d for d in self._functionDefs if d.group])
@@ -116,12 +115,12 @@ class Parser:
         line_gen = self._get_nonblank_lines()
         for line in line_gen:
             if line.startswith(("#define", "const GLenum")):
-                self._append_definition(ConstantDefinition(line))
+                self._append_definition(ConstantDefinition(line, self._constant_values))
             elif "(" in line:
                 while ")" not in line:
                     line += next(line_gen)
                 if line.endswith(");"):
-                    self._append_definition(FunctionDefinition(line))
+                    self._append_definition(FunctionDefinition(line, self._constant_values))
 
     def _get_nonblank_lines(self):
         with open(self._c_filename, "rt", encoding="utf-8") as header_file:
@@ -172,18 +171,17 @@ class Parser:
 class Definition:
     """Abstract class to represent a constant or function definition."""
 
-    def __init__(self, line):
+    def __init__(self, line, existing_constants):
         self.line = line
         self.isvalid = True
         self.comment = ""
         self.oname = ""  # original name
         self.shortname = self.glname = ""  # short and long name
-        self.parse_line(line)
+        self.parse_line(line, existing_constants)
 
-    def parse_line(self, line):
-        # Do initial parsing of the incoming line
-        # (which may be multiline, actually)
-        pass
+    def parse_line(self, line, existing_constants):
+        # Do initial parsing of the incoming line (which may be multiline, actually)
+        raise NotImplementedError()
 
     def _set_name(self, name):
         # Store original name
@@ -203,7 +201,7 @@ class Definition:
 
 
 class ConstantDefinition(Definition):
-    def parse_line(self, line):
+    def parse_line(self, line, existing_constants):
         """Set cname and value attributes."""
         self.value = None
         line = line.split("/*", 1)[0]
@@ -216,20 +214,20 @@ class ConstantDefinition(Definition):
             name, val = args
             self.isvalid = bool(name)
             self._set_name(name)
-            self._set_value_from_string(val)
+            self._set_value_from_string(val, existing_constants)
         elif "=" in args:
             name, val = args[-3], args[-1]
             self.isvalid = bool(name)
             self._set_name(name)
-            self._set_value_from_string(val)
+            self._set_value_from_string(val, existing_constants)
         else:
             print('Dont know what to do with "%s"' % line)
 
         # For when this constant is reused to set another constant
         if self.value is not None:
-            CONSTANTS[self.oname] = self.value
+            existing_constants[self.oname] = self.value
 
-    def _set_value_from_string(self, val):
+    def _set_value_from_string(self, val, existing_constants):
         # Set value
         val = val.strip(";")
         if val.startswith("0x"):
@@ -238,8 +236,8 @@ class ConstantDefinition(Definition):
             self.value = int(val)
         elif val.startswith("'"):
             self.value = val
-        elif val in CONSTANTS:
-            self.value = CONSTANTS[val]
+        elif val in existing_constants:
+            self.value = existing_constants[val]
         else:
             print('Warning: Dont know what to do with "%s"' % line)
 
@@ -249,7 +247,7 @@ class FunctionDefinition(Definition):
     SKIPTYPECHARS = "if"  # 'bsifd'
     ALLSKIPCHARS = SKIPTYPECHARS + "v1234"
 
-    def parse_line(self, line):
+    def parse_line(self, line, existing_constants):
         """Set cname, keyname, cargs attributes.
         The list of args always has one entry and the first entry is always
         the output (can be void).
@@ -291,8 +289,8 @@ class FunctionDefinition(Definition):
 
 
 class FunctionGroup(FunctionDefinition):
-    def parse_line(self, line):
-        FunctionDefinition.parse_line(self, line)
+    def parse_line(self, line, existing_constants):
+        FunctionDefinition.parse_line(self, line, existing_constants)
         self.group = []
 
 

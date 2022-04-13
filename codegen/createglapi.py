@@ -65,7 +65,6 @@ THIS CODE IS AUTO-GENERATED. DO NOT EDIT.
 def create_parsers():
     # Create a parser for gl2 and es2
     parser1 = headerparser.Parser(os.path.join(THISDIR, "headers", "gl2.h"))
-    headerparser.CONSTANTS = {}
     parser2 = headerparser.Parser(os.path.join(THISDIR, "headers", "webgl.idl"))
 
     ## Check constants and generate API module
