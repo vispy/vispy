@@ -9,6 +9,7 @@ Scipt to generate code for our gl API, including all its backends.
 The files involved in the code generation process are:
 
   * gl2.h - the C header file for the GL ES 2.0 API
+  * vispy_ext.h - C header file with a subset of GL3+ constants defined
   * webgl.idl - the interface definition language for WebGL
   * annotations.py - manual annotations for non-trivial functions
   * headerparser.py - parses .h and .idl files 
@@ -38,10 +39,10 @@ used to maintain the GL API itself.
 
 This function must be run using Python3.
 """
+from __future__ import annotations
 
 import os
 import sys
-import ctypes  # not actually used, but handy to have imported during dev
 
 import headerparser
 from annotations import parse_anotations
@@ -123,22 +124,22 @@ del ob
 '''
 
 
-def create_constants_module(parser, extension=False):
+def create_constants_module(constant_definitions: list[headerparser.ConstantDefinition],
+                            extension: bool = False) -> None:
     lines = [PREAMBLE % "Constants for OpenGL ES 2.0.", DEFINE_ENUM, ""]
 
     # For extensions, we only take the OES ones, and remove the OES
     if extension:
-        constantDefs = []
-        for c in parser.constants.values():
+        renamed_defs = []
+        for c in constant_definitions:
             if "OES" in c.oname:
                 c.oname = c.oname.replace("OES", "")
                 c.oname = c.oname.replace("__", "_").strip("_")
-                constantDefs.append(c)
-    else:
-        constantDefs = parser.constants.values()
+                renamed_defs.append(c)
+        constant_definitions = renamed_defs
 
     # Insert constants
-    for c in sorted(constantDefs, key=lambda x: x.oname):
+    for c in sorted(constant_definitions, key=lambda x: x.oname):
         if isinstance(c.value, int):
             lines.append("%s = Enum(%r, %r)" % (c.oname, c.oname, c.value))
         else:
@@ -772,11 +773,13 @@ class FunctionCollector:
 
 def main():
     annotations = parse_anotations()
-    parser1, parser2 = create_parsers()
-    create_constants_module(parser1)
+    gl2es2_parser, webgl_parser = create_parsers()
+    vispy_ext_parser = headerparser.Parser(os.path.join(THISDIR, "headers", "vispy_ext.h"))
+    constant_definitions = list(gl2es2_parser.constants.values()) + list(vispy_ext_parser.constants.values())
+    create_constants_module(constant_definitions)
 
     # Get full function definitions and report
-    func_collector = FunctionCollector(annotations, parser1, parser2)
+    func_collector = FunctionCollector(annotations, gl2es2_parser, webgl_parser)
     func_collector.collect_function_definitions()
 
     for Gen in [
