@@ -125,7 +125,7 @@ class Parser:
 
     def _get_nonblank_lines(self):
         with open(self._c_filename, "rt", encoding="utf-8") as header_file:
-            for line in header_file.readlines():
+            for line in header_file:
                 line = line.strip()
                 if line:
                     yield line
