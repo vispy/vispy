@@ -134,19 +134,20 @@ _FILTER_FUNCS = {
         vec4 texture_lookup(vec2 texcoord) {
             // based on https://gist.github.com/kingbedjed/373c8811efcf1b3a155d29a13c1e5b61
             vec2 tex_pixel = 1 / $shape;
-            vec2 texcoord_minus_half_kernel = texcoord - tex_pixel * $kernel_shape / 2;
+            vec2 kernel_pixel = 1 / $kernel_shape;
+            vec2 sampling_corner = texcoord - ($kernel_shape / 2 * tex_pixel);
 
             // loop over kernel pixels
             vec2 kernel_pos, tex_pos;
             vec4 color = vec4(0);
             float weight;
             float weight_sum = 0;
-            for (int i = 0; i < $kernel_shape.x; i++) {
-                for (int j = 0; j < $kernel_shape.y; j++) {
-                    // kernel position in texture coordinates (+ 0.5 to center the texel)
-                    kernel_pos = (vec2(i, j) + 0.5) / $kernel_shape;
-                    // position on the texture where we sample this
-                    tex_pos = texcoord_minus_half_kernel + vec2(i, j) * tex_pixel;
+
+            // offset 0.5 to sample center of pixels
+            for (float i = 0.5; i < $kernel_shape.x; i++) {
+                for (float j = 0.5; j < $kernel_shape.y; j++) {
+                    kernel_pos = vec2(i, j) * kernel_pixel;
+                    tex_pos = sampling_corner + vec2(i, j) * tex_pixel;
                     weight = texture2D($kernel, kernel_pos).g;
                     weight_sum += weight;
                     // make sure to clamp or we sample outside
