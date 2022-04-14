@@ -5,7 +5,7 @@
 # -----------------------------------------------------------------------------
 # vispy: gallery 2
 """
-Nexted Viewboxes
+Nested Viewboxes
 ================
 
 Simple test of nested viewboxes, demonstrating the three methods that
