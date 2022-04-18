@@ -5,7 +5,14 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 """
-Simple use of SceneCanvas to display an Image.
+Complex image data
+==================
+
+Simple use of SceneCanvas to display an image consisting of complex numbers.
+
+Key bindings can be used to switch the view between the real, imaginary, phase,
+or magnitude of the data.
+
 """
 import sys
 
