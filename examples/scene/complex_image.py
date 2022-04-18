@@ -30,7 +30,8 @@ def complex_ramp(size=512, phase_range=(-np.pi, np.pi), mag_range=(0, 10)):
     return (mag_ramp * np.exp(1j * phase_ramp)).astype(np.complex64)
 
 
-canvas = scene.SceneCanvas(keys="interactive")
+canvas = scene.SceneCanvas(keys="interactive",
+                           title="Complex number view: phase")
 canvas.size = 512, 512
 canvas.show()
 
@@ -47,6 +48,32 @@ image = scene.visuals.ComplexImage(img_data, parent=view.scene, complex_mode="ph
 view.camera = scene.PanZoomCamera(aspect=1)
 view.camera.set_range()
 view.camera.zoom(1)
+
+
+complex_modes = [
+    "real",
+    "imaginary",
+    "magnitude",
+    "phase",
+]
+mode_index = 3
+
+
+@canvas.connect
+def on_key_press(event):
+    global mode_index
+    if event.key not in ['Left', 'Right']:
+        return
+
+    if event.key == 'Right':
+        step = 1
+    else:
+        step = -1
+    mode_index = (mode_index + step) % len(complex_modes)
+    complex_mode = complex_modes[mode_index]
+    image.complex_mode = complex_mode
+    canvas.title = f'Complex number view: {complex_mode}'
+    canvas.update()
 
 
 if __name__ == "__main__" and sys.flags.interactive == 0:
