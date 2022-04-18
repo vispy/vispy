@@ -675,7 +675,8 @@ def _test_texture_internalformats(Texture, baseshape):
         (1, 'red', ['red', 'r8', 'r16', 'r16f', 'r32f']),
         (2, 'rg', ['rg', 'rg8', 'rg16', 'rg16f', 'rg32f']),
         (3, 'rgb', ['rgb', 'rgb8', 'rgb16', 'rgb16f', 'rgb32f']),
-        (4, 'rgba', ['rgba', 'rgba8', 'rgba16', 'rgba16f', 'rgba32f'])
+        (4, 'rgba', ['rgba', 'rgba8', 'rgba16', 'rgba16f', 'rgba32f']),
+        (1, 'depth_component', ['depth_component']),
     ]
 
     for channels in range(1, 5):
