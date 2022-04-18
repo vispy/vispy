@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 """
 The classes in scene.visuals are visuals that may be added to a scenegraph
@@ -17,7 +17,11 @@ import weakref
 
 from .. import visuals
 from .node import Node
-from ..visuals.filters import ColorFilter, PickingFilter
+from ..visuals.filters import Alpha, PickingFilter
+from typing import TypeVar
+
+
+_T = TypeVar("_T")
 
 
 class VisualNode(Node):
@@ -28,7 +32,7 @@ class VisualNode(Node):
         Node.__init__(self, parent=parent, name=name,
                       transforms=self.transforms)
         self.interactive = False
-        self._opacity_filter = ColorFilter()
+        self._opacity_filter = Alpha()
         self.attach(self._opacity_filter)
 
         self._id = VisualNode._next_id
@@ -38,7 +42,8 @@ class VisualNode(Node):
         self.attach(self._picking_filter)
 
     def _update_opacity(self):
-        self._opacity_filter.color = (1, 1, 1, self._opacity)
+        self._opacity_filter.alpha = self._opacity
+        self.update()
 
     def _set_clipper(self, node, clipper):
         """Assign a clipper that is inherited from a parent node.
@@ -98,7 +103,7 @@ class VisualNode(Node):
         self._visual_superclass.draw(self)
 
 
-def create_visual_node(subclass):
+def create_visual_node(subclass: _T) -> _T:
     # Create a new subclass of Node.
 
     # Decide on new class name
@@ -237,6 +242,7 @@ GridLines = create_visual_node(visuals.GridLinesVisual)
 GridMesh = create_visual_node(visuals.GridMeshVisual)
 Histogram = create_visual_node(visuals.HistogramVisual)
 Image = create_visual_node(visuals.ImageVisual)
+ComplexImage = create_visual_node(visuals.ComplexImageVisual)
 InfiniteLine = create_visual_node(visuals.InfiniteLineVisual)
 Isocurve = create_visual_node(visuals.IsocurveVisual)
 Isoline = create_visual_node(visuals.IsolineVisual)
@@ -246,6 +252,7 @@ LinearRegion = create_visual_node(visuals.LinearRegionVisual)
 LinePlot = create_visual_node(visuals.LinePlotVisual)
 Markers = create_visual_node(visuals.MarkersVisual)
 Mesh = create_visual_node(visuals.MeshVisual)
+MeshNormals = create_visual_node(visuals.MeshNormalsVisual)
 Plane = create_visual_node(visuals.PlaneVisual)
 Polygon = create_visual_node(visuals.PolygonVisual)
 Rectangle = create_visual_node(visuals.RectangleVisual)
@@ -258,6 +265,7 @@ Text = create_visual_node(visuals.TextVisual)
 Tube = create_visual_node(visuals.TubeVisual)
 # Visual = create_visual_node(visuals.Visual)  # Should not be created
 Volume = create_visual_node(visuals.VolumeVisual)
+Windbarb = create_visual_node(visuals.WindbarbVisual)
 XYZAxis = create_visual_node(visuals.XYZAxisVisual)
 
 __all__ = [name for (name, obj) in globals().items()

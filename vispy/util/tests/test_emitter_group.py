@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 import unittest
 import copy
@@ -23,7 +23,7 @@ class TypedEvent(Event):
 class TestGroups(unittest.TestCase):
 
     def test_group_construction(self):
-        """EmitterGroup basic construction"""
+        """The EmitterGroup basic construction"""
         grp = EmitterGroup(em1=Event,
                            em2=BasicEvent,
                            em3=TypedEvent)
@@ -43,7 +43,7 @@ class TestGroups(unittest.TestCase):
             event_class=TypedEvent)
 
     def test_group_add_emitter(self):
-        """EmitterGroup.add"""
+        """The EmitterGroup.add"""
         grp = EmitterGroup(em1=Event)
         grp.em1.connect(self.record_event)
         self.result = None
@@ -100,15 +100,17 @@ class TestGroups(unittest.TestCase):
         """EmitterGroup.block_all"""
         grp = EmitterGroup(em1=Event)
         grp.em1.connect(self.error_event)
-        with use_log_level('warning', record=True, print_msg=False) as l:
+        with use_log_level('warning',
+                           record=True, print_msg=False) as emit_list:
             grp.em1()
-        assert_true(len(l) >= 1)
+        assert_true(len(emit_list) >= 1)
         grp.ignore_callback_errors = False
         assert_raises(RuntimeError, grp.em1)
         grp.ignore_callback_errors = True
-        with use_log_level('warning', record=True, print_msg=False) as l:
+        with use_log_level('warning',
+                           record=True, print_msg=False) as emit_list:
             grp.em1()
-        assert_true(len(l) >= 1)
+        assert_true(len(emit_list) >= 1)
 
     def test_group_disconnect(self):
         """EmitterGroup.disconnect"""
@@ -124,7 +126,7 @@ class TestGroups(unittest.TestCase):
         assert len(grp.em2.callbacks) == 0
 
     def test_group_autoconnect(self):
-        """EmitterGroup auto-connect"""
+        """The EmitterGroup auto-connect"""
         class Source:
 
             def on_em1(self, ev):

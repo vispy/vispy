@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 import base64
@@ -12,8 +12,6 @@ import json
 from functools import partial
 
 import numpy as np
-
-from ..ext.six import string_types
 
 
 ###############################################################################
@@ -45,6 +43,7 @@ def _get_vispy_caller():
 
 class _VispyFormatter(logging.Formatter):
     """Formatter that optionally prepends caller"""
+
     def __init__(self):
         logging.Formatter.__init__(self, '%(levelname)s: %(message)s')
         self._vispy_prepend_caller = False
@@ -69,6 +68,7 @@ class _VispyStreamHandler(logging.StreamHandler):
 
     Prepending of traceback information is done in _VispyFormatter.
     """
+
     def __init__(self):
         logging.StreamHandler.__init__(self, sys.stderr)
         self._vispy_formatter = _lf
@@ -162,7 +162,7 @@ def set_log_level(verbose, match=None, return_old=False):
     # done by the context handler itself.
     if isinstance(verbose, bool):
         verbose = 'info' if verbose else 'warning'
-    if isinstance(verbose, string_types):
+    if isinstance(verbose, str):
         verbose = verbose.lower()
         if verbose not in logging_types:
             raise ValueError('Invalid argument "%s"' % verbose)
@@ -207,14 +207,16 @@ class use_log_level(object):
         As a context manager, an empty list or the list of logging messages
         will be returned (depending on the input ``record``).
     """
+
     # This method mostly wraps to set_log_level, but also takes
     # care of enabling/disabling message recording in the formatter.
+
     def __init__(self, level, match=None, record=False, print_msg=True):
         self._new_level = level
         self._new_match = match
         self._print_msg = print_msg
         self._record = record
-        if match is not None and not isinstance(match, string_types):
+        if match is not None and not isinstance(match, str):
             raise TypeError('match must be None or str')
 
     def __enter__(self):
@@ -249,11 +251,11 @@ class use_log_level(object):
 def log_exception(level='warning', tb_skip=2):
     """
     Send an exception and traceback to the logger.
-    
+
     This function is used in cases where an exception is handled safely but
     nevertheless should generate a descriptive error message. An extra line
     is inserted into the stack trace indicating where the exception was caught.
-    
+
     Parameters
     ----------
     level : str
@@ -337,9 +339,7 @@ def _handle_exception(ignore_callback_errors, print_callback_errors, obj,
 def _serialize_buffer(buffer, array_serialization=None):
     """Serialize a NumPy array."""
     if array_serialization == 'binary':
-        # WARNING: in NumPy 1.9, tostring() has been renamed to tobytes()
-        # but tostring() is still here for now for backward compatibility.
-        return buffer.ravel().tostring()
+        return buffer.ravel().tobytes()
     elif array_serialization == 'base64':
         return {'storage_type': 'base64',
                 'buffer': base64.b64encode(buffer).decode('ascii')

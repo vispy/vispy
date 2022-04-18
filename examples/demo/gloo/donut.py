@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # vispy: gallery 30
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 # Author: Nicolas P .Rougier
@@ -58,8 +58,8 @@ void main (void) {
     float y2 = y1*cos(phi) - x1*sin(phi);
     float z2 = z1;
 
-    gl_Position = u_projection * u_view * u_model * vec4(x2,y2,z2,1);
-    gl_PointSize = v_size + 2*(v_linewidth + 1.5*v_antialias);
+    gl_Position = u_projection * u_view * u_model * vec4(x2,y2,z2,1.);
+    gl_PointSize = v_size + 2.*(v_linewidth + 1.5*v_antialias);
 }
 """
 
@@ -75,7 +75,7 @@ void main()
 {
     float size = v_size +2*(v_linewidth + 1.5*v_antialias);
     float t = v_linewidth/2.0-v_antialias;
-    float r = length((gl_PointCoord.xy - vec2(0.5,0.5))*size) - v_size/2;
+    float r = length((gl_PointCoord.xy - vec2(0.5,0.5))*size) - v_size/2.;
     float d = abs(r) - t;
     if( r > (v_linewidth/2.0+v_antialias))
     {
@@ -112,7 +112,7 @@ class Canvas(app.Canvas):
         data = np.zeros(p * n, [('a_position', np.float32, 2),
                                 ('a_bg_color', np.float32, 4),
                                 ('a_fg_color', np.float32, 4),
-                                ('a_size',     np.float32, 1)])
+                                ('a_size', np.float32)])
         data['a_position'][:, 0] = np.resize(np.linspace(
                                              0, 2 * np.pi, n), p * n)
         data['a_position'][:, 1] = np.repeat(np.linspace(0, 2 * np.pi, p), n)

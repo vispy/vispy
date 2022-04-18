@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 # vispy: testskip
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 """
 Sandbox for experimenting with vispy.visuals.shaders
 """
-from PyQt4 import QtCore
-from PyQt4.QtGui import *  # noqa
+from PyQt5 import QtCore
+from PyQt5.QtWidgets import *  # noqa
 import sys
 import traceback
 
@@ -508,7 +508,7 @@ FRAGMENT = program.frag_code
 
 qsci_note = """
 #  [[ NOTE: Install PyQt.QsciScintilla for improved code editing ]]
-#  [[ (Debian packages: python-qscintilla2 or python3-pyqt4.qsci ]]
+#  [[ (Debian packages: python-qscintilla2 or python3-pyqt5.qsci ]]
 
 """
 if not HAVE_QSCI:
@@ -600,7 +600,7 @@ def update():
         frag = ""
         tb = sys.exc_info()[2]
         while tb is not None:
-            #print(tb.tb_lineno, tb.tb_frame.f_code.co_filename)
+            # print(tb.tb_lineno, tb.tb_frame.f_code.co_filename)
             try:
                 if tb.tb_frame.f_code.co_filename == '<string>':
                     editor.set_marker(tb.tb_lineno-1)

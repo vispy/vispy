@@ -1,19 +1,17 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division
 
 from ..util.event import Event, EmitterGroup
 from ..util.ptime import time as precision_time
-from ..ext.six import string_types
 from .base import BaseTimerBackend as TimerBackend  # noqa
 from . import use_app, Application
 
 
 class Timer(object):
-
-    """Timer used to schedule events in the future or on a repeating schedule
+    """Timer used to schedule events in the future or on a repeating schedule.
 
     Parameters
     ----------
@@ -33,19 +31,20 @@ class Timer(object):
 
     def __init__(self, interval='auto', connect=None, iterations=-1,
                  start=False, app=None):
+        """Initiallize timer method."""
         self.events = EmitterGroup(source=self,
                                    start=Event,
                                    stop=Event,
                                    timeout=Event)
-        #self.connect = self.events.timeout.connect
-        #self.disconnect = self.events.timeout.disconnect
+        # self.connect = self.events.timeout.connect
+        # self.disconnect = self.events.timeout.disconnect
 
         # Get app instance
         if app is None:
             self._app = use_app(call_reuse=False)
         elif isinstance(app, Application):
             self._app = app
-        elif isinstance(app, string_types):
+        elif isinstance(app, str):
             self._app = Application(app)
         else:
             raise ValueError('Invalid value for app %r' % app)
@@ -71,8 +70,7 @@ class Timer(object):
 
     @property
     def app(self):
-        """ The vispy Application instance on which this Timer is based.
-        """
+        """Timer is based on this vispy Application instance."""
         return self._app
 
     @property
@@ -131,19 +129,18 @@ class Timer(object):
 
     # use timer.app.run() and .quit() instead.
     # def run_event_loop(self):
-        #"""Execute the event loop for this Timer's backend.
-        #"""
+        # """Execute the event loop for this Timer's backend.
+        # """
         # return self._backend._vispy_run()
 
     # def quit_event_loop(self):
-        #"""Exit the event loop for this Timer's backend.
-        #"""
+        # """Exit the event loop for this Timer's backend.
+        # """
         # return self._backend._vispy_quit()
 
     @property
     def native(self):
-        """ The native timer on which this Timer is based.
-        """
+        """Timer is based on this native timer"""
         return self._backend._vispy_get_native_timer()
 
     def _timeout(self, *args):
@@ -169,9 +166,9 @@ class Timer(object):
         self.iter_count += 1
 
     def connect(self, callback):
-        """ Alias for self.events.timeout.connect() """
+        """Alias for self.events.timeout.connect()."""
         return self.events.timeout.connect(callback)
 
     def disconnect(self, callback=None):
-        """ Alias for self.events.timeout.disconnect() """
+        """Alias for self.events.timeout.disconnect()."""
         return self.events.timeout.disconnect(callback)

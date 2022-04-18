@@ -209,7 +209,8 @@ class Path(Transformable):
             content = content.get("d", "")
 
         commands = re.compile(
-            "(?P<command>[MLVHCSQTAZmlvhcsqtaz])(?P<points>[+\-0-9.e, \n\t]*)")
+            r"(?P<command>[MLVHCSQTAZmlvhcsqtaz])"
+            r"(?P<points>[+\-0-9.e, \n\t]*)")
 
         path = []
         for match in re.finditer(commands, content):
@@ -317,7 +318,7 @@ class Path(Transformable):
                 closed = True
                 if len(vertices) > 2:
                     d = geometry.calc_sq_distance(vertices[-1][0], vertices[-1][1],  # noqa
-                                                  vertices[0][0],  vertices[0][1])  # noqa
+                                                  vertices[0][0], vertices[0][1])  # noqa
                     if d < epsilon:
                         vertices = vertices[:-1]
 

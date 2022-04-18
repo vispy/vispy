@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 import logging
 
@@ -21,25 +21,25 @@ def test_logging():
 
 def test_debug_logging():
     """Test advanced debugging logging"""
-    with use_log_level('debug', 'Selected', True, False) as l:
+    with use_log_level('debug', 'Selected', True, False) as emit_list:
         logger.debug('Selected foo')
-    assert_equal(len(l), 1)
-    assert_in('test_logging', l[0])  # can't really parse this location
+    assert_equal(len(emit_list), 1)
+    assert_in('test_logging', emit_list[0])  # can't really parse this location
 
-    with use_log_level('debug', record=True, print_msg=False) as l:
+    with use_log_level('debug', record=True, print_msg=False) as emit_list:
         logger.debug('foo')
-    assert_equal(len(l), 1)
-    assert_in('test_logging', l[0])
+    assert_equal(len(emit_list), 1)
+    assert_in('test_logging', emit_list[0])
 
-    with use_log_level('debug', 'foo', True, False) as l:
+    with use_log_level('debug', 'foo', True, False) as emit_list:
         logger.debug('bar')
-    assert_equal(len(l), 0)
+    assert_equal(len(emit_list), 0)
 
-    with use_log_level('info', record=True, print_msg=False) as l:
+    with use_log_level('info', record=True, print_msg=False) as emit_list:
         logger.debug('foo')
         logger.info('bar')
-    assert_equal(len(l), 1)
-    assert_not_in('unknown', l[0])
+    assert_equal(len(emit_list), 1)
+    assert_not_in('unknown', emit_list[0])
 
 
 run_tests_if_main()

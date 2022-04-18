@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division
@@ -8,12 +8,12 @@ import math
 import numpy as np
 
 from .base_camera import BaseCamera
-from ...util import keys
+from ...util import keys, transforms
 from ...visuals.transforms import MatrixTransform
 
 
 class PerspectiveCamera(BaseCamera):
-    """ Base class for 3D cameras supporting orthographic and
+    """Base class for 3D cameras supporting orthographic and
     perspective projections.
 
     Parameters
@@ -46,7 +46,7 @@ class PerspectiveCamera(BaseCamera):
             self.center = center
 
     def viewbox_mouse_event(self, event):
-        """ The ViewBox received a mouse event; update transform
+        """The ViewBox received a mouse event; update transform
         accordingly.
         Default implementation adjusts scale factor when scolling.
 
@@ -65,7 +65,7 @@ class PerspectiveCamera(BaseCamera):
 
     @property
     def scale_factor(self):
-        """ The measure for the scale or range that the camera should cover
+        """The measure for the scale or range that the camera should cover
 
         For the PanZoomCamera and TurnTableCamera this translates to
         zooming: set to smaller values to zoom in.
@@ -79,20 +79,20 @@ class PerspectiveCamera(BaseCamera):
 
     @property
     def near_clip_distance(self):
-        """ The distance of the near clipping plane from the camera's position.
-        """
+        """The distance of the near clipping plane from the camera's position."""
         return self._near_clip_distance
 
     def _set_range(self, init):
-        """ Reset the camera view using the known limits.
-        """
-
+        """Reset the camera view using the known limits."""
         if init and (self._scale_factor is not None):
             return  # We don't have to set our scale factor
 
         # Get window size (and store factor now to sync with resizing)
         w, h = self._viewbox.size
         w, h = float(w), float(h)
+
+        if (w == 0) or (h == 0):
+            return
 
         # Get range and translation for x and y
         x1, y1, z1 = self._xlim[0], self._ylim[0], self._zlim[0]
@@ -137,6 +137,10 @@ class PerspectiveCamera(BaseCamera):
 
         # Correct for window size
         w, h = self._viewbox.size
+
+        if (w == 0) or (h == 0):
+            return
+
         if w / h > 1:
             fx *= w / h
         else:
@@ -159,13 +163,10 @@ class PerspectiveCamera(BaseCamera):
 
     def _update_projection_transform(self, fx, fy):
         d = self.depth_value
-        if self._fov == 0:
-            self._projection.set_ortho(-0.5*fx, 0.5*fx, -0.5*fy, 0.5*fy, 0, d)
-        else:
-            fov = max(0.01, self._fov)
-            dist = fy / (2 * math.tan(math.radians(fov)/2))
-            val = math.sqrt(d)
-            self._projection.set_perspective(fov, fx/fy, dist/val, dist*val)
+        fov = max(0.01, self._fov)
+        dist = fy / (2 * math.tan(math.radians(fov)/2))
+        val = math.sqrt(d)
+        self._projection.set_perspective(fov, fx/fy, dist/val, dist*val)
 
 
 class Base3DRotationCamera(PerspectiveCamera):
@@ -178,7 +179,7 @@ class Base3DRotationCamera(PerspectiveCamera):
 
     @property
     def distance(self):
-        """ The user-set distance. If None (default), the distance is
+        """The user-set distance. If None (default), the distance is
         internally calculated from the scale factor and fov.
         """
         return self._distance
@@ -213,6 +214,8 @@ class Base3DRotationCamera(PerspectiveCamera):
         elif event.type == 'mouse_move':
             if event.press_event is None:
                 return
+            if 1 in event.buttons and 2 in event.buttons:
+                return
 
             modifiers = event.mouse_event.modifiers
             p1 = event.mouse_event.press_event.pos
@@ -228,7 +231,7 @@ class Base3DRotationCamera(PerspectiveCamera):
                 if self._event_value is None:
                     self._event_value = (self._scale_factor, self._distance)
                 zoomy = (1 + self.zoom_factor) ** d[1]
-                
+
                 self.scale_factor = self._event_value[0] * zoomy
                 # Modify distance if its given
                 if self._distance is not None:
@@ -260,26 +263,26 @@ class Base3DRotationCamera(PerspectiveCamera):
                 self.fov = min(180.0, max(0.0, fov))
 
     def _update_camera_pos(self):
-        """ Set the camera position and orientation"""
-
+        """Set the camera position and orientation"""
         # transform will be updated several times; do not update camera
         # transform until we are done.
         ch_em = self.events.transform_change
         with ch_em.blocker(self._update_transform):
-            tr = self.transform
-            tr.reset()
-
             up, forward, right = self._get_dim_vectors()
 
             # Create mapping so correct dim is up
             pp1 = np.array([(0, 0, 0), (0, 0, -1), (1, 0, 0), (0, 1, 0)])
             pp2 = np.array([(0, 0, 0), forward, right, up])
-            tr.set_mapping(pp1, pp2)
+            pos = -self._actual_distance * forward
+            scale = [1.0/a for a in self._flip_factors]
 
-            tr.translate(-self._actual_distance * forward)
-            self._rotate_tr()
-            tr.scale([1.0/a for a in self._flip_factors])
-            tr.translate(np.array(self.center))
+            self.transform.matrix = np.linalg.multi_dot((
+                transforms.affine_map(pp1, pp2).T,
+                transforms.translate(pos),
+                self._get_rotation_tr(),
+                transforms.scale(scale),
+                transforms.translate(self.center)
+            ))
 
     def _get_dim_vectors(self):
         # Specify up and forward vector

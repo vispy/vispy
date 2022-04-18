@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division
@@ -11,8 +11,11 @@ from ...geometry import Rect
 from ...visuals.transforms import STTransform, MatrixTransform
 
 
+DEFAULT_RECT_TUPLE = (0, 0, 1, 1)
+
+
 class PanZoomCamera(BaseCamera):
-    """ Camera implementing 2D pan/zoom mouse interaction.
+    """Camera implementing 2D pan/zoom mouse interaction.
 
     For this camera, the ``scale_factor`` indicates the zoom level, and
     the ``center`` indicates the center position of the view.
@@ -45,10 +48,11 @@ class PanZoomCamera(BaseCamera):
 
     _state_props = BaseCamera._state_props + ('rect', )
 
-    def __init__(self, rect=(0, 0, 1, 1), aspect=None, **kwargs):
+    def __init__(self, rect=DEFAULT_RECT_TUPLE, aspect=None, **kwargs):
         super(PanZoomCamera, self).__init__(**kwargs)
 
         self.transform = STTransform()
+        self.tf_mat = MatrixTransform()
 
         # Set camera attributes
         self.aspect = aspect
@@ -57,7 +61,7 @@ class PanZoomCamera(BaseCamera):
 
     @property
     def aspect(self):
-        """ The ratio between the x and y dimension. E.g. to show a
+        """The ratio between the x and y dimension. E.g. to show a
         square image as square, the aspect should be 1. If None, the
         dimensions are scaled automatically, dependening on the
         available space. Otherwise the ratio between the dimensions
@@ -74,7 +78,7 @@ class PanZoomCamera(BaseCamera):
         self.view_changed()
 
     def zoom(self, factor, center=None):
-        """ Zoom in (or out) at the given center
+        """Zoom in (or out) at the given center
 
         Parameters
         ----------
@@ -85,6 +89,8 @@ class PanZoomCamera(BaseCamera):
             The center of the view. If not given or None, use the
             current center.
         """
+        # Init some variables
+        center = center if (center is not None) else self.center
         assert len(center) in (2, 3, 4)
         # Get scale factor, take scale ratio into account
         if np.isscalar(factor):
@@ -96,8 +102,6 @@ class PanZoomCamera(BaseCamera):
         if self.aspect is not None:
             scale[0] = scale[1]
 
-        # Init some variables
-        center = center if (center is not None) else self.center
         # Make a new object (copy), so that allocation will
         # trigger view_changed:
         rect = Rect(self.rect)
@@ -128,8 +132,11 @@ class PanZoomCamera(BaseCamera):
 
     @property
     def rect(self):
-        """ The rectangular border of the ViewBox visible area, expressed in
-        the coordinate system of the scene.
+        """The rectangular border of the ViewBox visible area.
+        
+        This is expressed in the coordinate system of the scene.
+        See :class:`~vispy.geometry.rect.Rect` for different ways this can
+        be specified.
 
         Note that the rectangle can have negative width or height, in
         which case the corresponding dimension is flipped (this flipping
@@ -151,22 +158,14 @@ class PanZoomCamera(BaseCamera):
     @property
     def center(self):
         rect = self._rect
-        return 0.5 * (rect.left+rect.right), 0.5 * (rect.top+rect.bottom), 0
+        return (*rect.center, 0)
 
     @center.setter
     def center(self, center):
         if not (isinstance(center, (tuple, list)) and len(center) in (2, 3)):
             raise ValueError('center must be a 2 or 3 element tuple')
-        rect = self.rect or Rect(0, 0, 1, 1)
-        # Get half-ranges
-        x2 = 0.5 * (rect.right - rect.left)
-        y2 = 0.5 * (rect.top - rect.bottom)
-        # Apply new ranges
-        rect.left = center[0] - x2
-        rect.right = center[0] + x2
-        rect.bottom = center[1] - y2
-        rect.top = center[1] + y2
-        #
+        rect = Rect(self.rect) or Rect(*DEFAULT_RECT_TUPLE)
+        rect.center = center[:2]
         self.rect = rect
 
     def _set_range(self, init):
@@ -178,7 +177,7 @@ class PanZoomCamera(BaseCamera):
         self.rect = self._xlim[0], self._ylim[0], w, h
 
     def viewbox_resize_event(self, event):
-        """ Modify the data aspect and scale factor, to adjust to
+        """Modify the data aspect and scale factor, to adjust to
         the new window size.
 
         Parameters
@@ -206,7 +205,7 @@ class PanZoomCamera(BaseCamera):
 
         if event.type == 'mouse_wheel':
             center = self._scene_transform.imap(event.pos)
-            self.zoom((1 + self.zoom_factor) ** (-event.delta[1] * 30), center)
+            self.zoom((1 + self.zoom_factor)**(-event.delta[1] * 30), center)
             event.handled = True
 
         elif event.type == 'mouse_move':
@@ -223,14 +222,14 @@ class PanZoomCamera(BaseCamera):
                 p2 = np.array(event.pos)[:2]
                 p1s = self._transform.imap(p1)
                 p2s = self._transform.imap(p2)
-                self.pan(p1s-p2s)
+                self.pan(p1s - p2s)
                 event.handled = True
             elif 2 in event.buttons and not modifiers:
                 # Zoom
                 p1c = np.array(event.last_event.pos)[:2]
                 p2c = np.array(event.pos)[:2]
-                scale = ((1 + self.zoom_factor) **
-                         ((p1c-p2c) * np.array([1, -1])))
+                scale = ((1 + self.zoom_factor)**((p1c - p2c) *
+                                                  np.array([1, -1])))
                 center = self._transform.imap(event.press_event.pos[:2])
                 self.zoom(scale, center)
                 event.handled = True
@@ -252,8 +251,8 @@ class PanZoomCamera(BaseCamera):
         # apply scale ratio constraint
         if self._aspect is not None:
             # Aspect ratio of the requested range
-            requested_aspect = (rect.width / rect.height
-                                if rect.height != 0 else 1)
+            requested_aspect = (rect.width /
+                                rect.height if rect.height != 0 else 1)
             # Aspect ratio of the viewbox
             view_aspect = vbr.width / vbr.height if vbr.height != 0 else 1
             # View aspect ratio needed to obey the scale constraint
@@ -273,7 +272,7 @@ class PanZoomCamera(BaseCamera):
         # Apply mapping between viewbox and cam view
         self.transform.set_mapping(self._real_rect, vbr, update=False)
         # Scale z, so that the clipping planes are between -alot and +alot
-        self.transform.zoom((1, 1, 1/d))
+        self.transform.zoom((1, 1, 1 / d))
 
         # We've now set self.transform, which represents our 2D
         # transform When up is +z this is all. In other cases,
@@ -281,12 +280,10 @@ class PanZoomCamera(BaseCamera):
         # for the scene we need a different (3D) mapping. When there
         # is a minus in up, we simply look at the scene from the other
         # side (as if z was flipped).
-
         if self.up == '+z':
-            thetransform = self.transform
+            self.tf_mat.matrix = self.transform.as_matrix().matrix
         else:
             rr = self._real_rect
-            tr = MatrixTransform()
             d = d if (self.up[0] == '+') else -d
             pp1 = [(vbr.left, vbr.bottom, 0), (vbr.left, vbr.top, 0),
                    (vbr.right, vbr.bottom, 0), (vbr.left, vbr.bottom, 1)]
@@ -300,9 +297,9 @@ class PanZoomCamera(BaseCamera):
             elif self.up[1] == 'x':
                 pp2 = [(0, rr.left, rr.bottom), (0, rr.left, rr.top),
                        (0, rr.right, rr.bottom), (d, rr.left, rr.bottom)]
+
             # Apply
-            tr.set_mapping(np.array(pp2), np.array(pp1))
-            thetransform = tr
+            self.tf_mat.set_mapping(np.array(pp2), np.array(pp1))
 
         # Set on viewbox
-        self._set_scene_transform(thetransform)
+        self._set_scene_transform(self.tf_mat)

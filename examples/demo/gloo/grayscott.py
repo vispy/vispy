@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 # vispy: gallery 2000
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 # Author:   Nicolas P .Rougier
 # Date:     06/03/2014
-# Abstract: GPU computing usingthe framebuffer
+# Abstract: GPU computing using the framebuffer
 # Keywords: framebuffer, GPU computing, reaction-diffusion
 # -----------------------------------------------------------------------------
 

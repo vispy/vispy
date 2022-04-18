@@ -18,7 +18,7 @@ class RawTriangleCollection(Collection):
                  vertex=None, fragment=None, **kwargs):
 
         base_dtype = [('position', (np.float32, 3), '!local', (0, 0, 0)),
-                      ('color',    (np.float32, 4), 'local', (0, 0, 0, 1))]
+                      ('color', (np.float32, 4), 'local', (0, 0, 0, 1))]
 
         dtype = base_dtype
         if user_dtype:
@@ -46,7 +46,6 @@ class RawTriangleCollection(Collection):
 
         Parameters
         ----------
-
         points : np.array
             Vertices composing the triangles
 
@@ -56,7 +55,6 @@ class RawTriangleCollection(Collection):
         color : list, array or 4-tuple
            Path color
         """
-
         itemsize = len(points)
         itemcount = 1
 
@@ -75,7 +73,6 @@ class RawTriangleCollection(Collection):
         else:
             U = None
 
-        I = np.array(indices).ravel()
-
-        Collection.append(self, vertices=V, uniforms=U, indices=I,
+        Collection.append(self, vertices=V, uniforms=U,
+                          indices=np.array(indices).ravel(),
                           itemsize=itemsize)

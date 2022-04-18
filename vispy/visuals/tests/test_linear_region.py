@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """
@@ -19,7 +19,6 @@ from vispy.testing import assert_raises
 @requires_application()
 def test_linear_region_vertical_horizontal():
     """Test vertical and horizontal LinearRegionVisual with a single color"""
-
     # Definition of the region
     pos = np.array([5, 15, 24, 36, 40, 42], dtype=np.float32)
     # Expected internal pos buffer for vertical region
@@ -82,8 +81,8 @@ def test_linear_region_vertical_horizontal():
 @requires_application()
 def test_linear_region_color():
     """Test the color argument of LinearRegionVisual.set_data() method
-    using a single color"""
-
+    using a single color
+    """
     # Definition of the region
     pos1 = [5, 42]
     # Definition of the color of the region
@@ -129,7 +128,6 @@ def test_linear_region_color():
 @requires_application()
 def test_linear_region_gradient():
     """Test LinearRegionVisual with a gradient as color"""
-
     # Definition of the region
     pos2 = [5, 42, 80]
     # Definition of the color of the region

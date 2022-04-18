@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division
@@ -38,13 +38,12 @@ def iso_mesh_line(vertices, tris, vertex_data, levels):
     -----
     Uses a marching squares algorithm to generate the isolines.
     """
-
     lines = None
     connects = None
     vertex_level = None
     level_index = None
     if not all([isinstance(x, np.ndarray) for x in (vertices, tris,
-                vertex_data, levels)]):
+                                                    vertex_data, levels)]):
         raise ValueError('all inputs must be numpy arrays')
     if vertices.shape[1] <= 3:
         verts = vertices
@@ -110,6 +109,7 @@ class IsolineVisual(LineVisual):
     **kwargs : dict
         Keyword arguments to pass to `LineVisual`.
     """
+
     def __init__(self, vertices=None, tris=None, data=None,
                  levels=None, color_lev=None, **kwargs):
         self._data = None
@@ -132,8 +132,7 @@ class IsolineVisual(LineVisual):
 
     @property
     def levels(self):
-        """ The threshold at which the isocurves are constructed from the data.
-        """
+        """The threshold at which the isocurves are constructed from the data."""
         return self._levels
 
     @levels.setter
@@ -193,7 +192,7 @@ class IsolineVisual(LineVisual):
         # try _color_lev as colormap, except as everything else
         try:
             f_color_levs = get_colormap(self._color_lev)
-        except:
+        except (KeyError, TypeError):
             colors = ColorArray(self._color_lev).rgba
         else:
             lev = _normalize(self._levels, self._levels.min(),
@@ -212,9 +211,7 @@ class IsolineVisual(LineVisual):
         self._lc = colors
 
     def _compute_iso_color(self):
-        """ compute LineVisual color from level index and corresponding level
-        color
-        """
+        """Compute LineVisual color from level index and corresponding level color"""
         level_color = []
         colors = self._lc
         for i, index in enumerate(self._li):
@@ -223,7 +220,7 @@ class IsolineVisual(LineVisual):
 
     def _prepare_draw(self, view):
         if (self._data is None or self._levels is None or self._tris is None or
-           self._vertices is None or self._color_lev is None):
+                self._vertices is None or self._color_lev is None):
             return False
 
         if self._need_recompute:

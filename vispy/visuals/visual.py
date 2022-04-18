@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 """
 
@@ -23,21 +23,21 @@ Class Structure
   This class lays out the basic API for all visuals: ``draw()``, ``bounds()``,
   ``view()``, and ``attach()`` methods, as well as a `TransformSystem` instance
   that determines where the visual will be drawn.
-    * `Visual` - defines a shader program to draw.
-      Subclasses are responsible for supplying the shader code and configuring
-      program variables, including transforms.
-        * `VisualView` - clones the shader program from a Visual instance.
-          Instances of `VisualView` contain their own shader program,
-          transforms and filter attachments, and generally behave like a normal
-          instance of `Visual`.
-    * `CompoundVisual` - wraps multiple Visual instances.
-      These visuals provide no program of their own, but instead rely on one or
-      more internally generated `Visual` instances to do their drawing. For
-      example, a PolygonVisual consists of an internal LineVisual and
-      MeshVisual.
-        * `CompoundVisualView` - wraps multiple VisualView instances.
-          This allows a `CompoundVisual` to be viewed with a different set of
-          transforms and filters.
+* `Visual` - defines a shader program to draw.
+  Subclasses are responsible for supplying the shader code and configuring
+  program variables, including transforms.
+* `VisualView` - clones the shader program from a Visual instance.
+  Instances of `VisualView` contain their own shader program,
+  transforms and filter attachments, and generally behave like a normal
+  instance of `Visual`.
+* `CompoundVisual` - wraps multiple Visual instances.
+  These visuals provide no program of their own, but instead rely on one or
+  more internally generated `Visual` instances to do their drawing. For
+  example, a PolygonVisual consists of an internal LineVisual and
+  MeshVisual.
+* `CompoundVisualView` - wraps multiple VisualView instances.
+  This allows a `CompoundVisual` to be viewed with a different set of
+  transforms and filters.
 
 
 Making Visual Subclasses
@@ -86,6 +86,7 @@ will appear to behave as a single visual.
 
 from __future__ import division
 import weakref
+import numpy as np
 
 from .. import gloo
 from ..util.event import EmitterGroup, Event
@@ -105,6 +106,7 @@ class VisualShare(object):
         * A cache for bounds.
 
     """
+
     def __init__(self):
         # Note: in some cases we will need to compute bounds independently for
         # each view. That will have to be worked out later..
@@ -140,6 +142,7 @@ class BaseVisual(Frozen):
     This subclasses Frozen so that subclasses can easily freeze their
     properties.
     """
+
     def __init__(self, vshare=None):
         self._view_class = getattr(self, '_view_class', VisualView)
 
@@ -202,8 +205,7 @@ class BaseVisual(Frozen):
             self.update()
 
     def view(self):
-        """Return a new view of this visual.
-        """
+        """Return a new view of this visual."""
         return self._view_class(self)
 
     def draw(self):
@@ -272,6 +274,7 @@ class BaseVisualView(object):
     works mainly by forwarding the calls to _prepare_draw, _prepare_transforms,
     and _compute_bounds to the viewed visual.
     """
+
     def __init__(self, visual):
         self._visual = visual
 
@@ -310,20 +313,24 @@ class Visual(BaseVisual):
         Vertex shader code.
     fcode : str
         Fragment shader code.
+    gcode : str or None
+        Optional geometry shader code.
     program : instance of Program | None
         The program to use. If None, a program will be constructed using
         ``vcode`` and ``fcode``.
     vshare : instance of VisualShare | None
         The visual share, if necessary.
     """
-    def __init__(self, vcode='', fcode='', program=None, vshare=None):
+
+    def __init__(self, vcode='', fcode='', gcode=None, program=None,
+                 vshare=None):
         self._view_class = VisualView
         BaseVisual.__init__(self, vshare)
         if vshare is None:
             self._vshare.draw_mode = None
             self._vshare.index_buffer = None
             if program is None:
-                self._vshare.program = MultiProgram(vcode, fcode)
+                self._vshare.program = MultiProgram(vcode, fcode, gcode)
             else:
                 self._vshare.program = program
                 if len(vcode) > 0 or len(fcode) > 0:
@@ -336,20 +343,24 @@ class Visual(BaseVisual):
         self._hooks = {}
 
     def set_gl_state(self, preset=None, **kwargs):
-        """Define the set of GL state parameters to use when drawing
+        """Define the set of GL state parameters to use when drawing.
+
+        The arguments are forwarded to :func:`vispy.gloo.wrappers.set_state`.
 
         Parameters
         ----------
         preset : str
             Preset to use.
         **kwargs : dict
-            Keyword arguments to `gloo.set_state`.
+            Keyword arguments.
         """
         self._vshare.gl_state = kwargs
         self._vshare.gl_state['preset'] = preset
 
     def update_gl_state(self, *args, **kwargs):
-        """Modify the set of GL state parameters to use when drawing
+        """Modify the set of GL state parameters to use when drawing.
+
+        The arguments are forwarded to :func:`vispy.gloo.wrappers.set_state`.
 
         Parameters
         ----------
@@ -428,18 +439,19 @@ class Visual(BaseVisual):
     def draw(self):
         if not self.visible:
             return
-        self._configure_gl_state()
         if self._prepare_draw(view=self) is False:
             return
 
         if self._vshare.draw_mode is None:
             raise ValueError("_draw_mode has not been set for visual %r" %
                              self)
+
+        self._configure_gl_state()
         try:
             self._program.draw(self._vshare.draw_mode,
                                self._vshare.index_buffer)
         except Exception:
-            logger.warn("Error drawing visual %r" % self)
+            logger.warning("Error drawing visual %r" % self)
             raise
 
     def _configure_gl_state(self):
@@ -448,7 +460,7 @@ class Visual(BaseVisual):
     def _get_hook(self, shader, name):
         """Return a FunctionChain that Filters may use to modify the program.
 
-        *shader* should be "frag" or "vert"
+        *shader* should be "vert", "geom", or "frag"
         *name* should be "pre" or "post"
         """
         assert name in ('pre', 'post')
@@ -460,6 +472,10 @@ class Visual(BaseVisual):
             self.view_program.vert[name] = hook
         elif shader == 'frag':
             self.view_program.frag[name] = hook
+        elif shader == 'geom':
+            self.view_program.geom[name] = hook
+        else:
+            raise ValueError("shader must be vert, geom, or frag")
         self._hooks[key] = hook
         return hook
 
@@ -511,6 +527,7 @@ class VisualView(BaseVisualView, Visual):
     define their own shader program (which is a clone of the viewed visual's
     program), transforms, and filter attachments.
     """
+
     def __init__(self, visual):
         BaseVisualView.__init__(self, visual)
         Visual.__init__(self, vshare=visual._vshare)
@@ -526,13 +543,14 @@ class CompoundVisual(BaseVisual):
     To the user, a compound visual behaves exactly like a normal visual--it
     has a transform system, draw() and bounds() methods, etc. Internally, the
     compound visual automatically manages proxying these transforms and methods
-    to its sub-visuals.
+    to its sub-visuals. 
 
     Parameters
     ----------
     subvisuals : list of BaseVisual instances
         The list of visuals to be combined in this compound visual.
     """
+
     def __init__(self, subvisuals):
         self._view_class = CompoundVisualView
         self._subvisuals = []
@@ -576,8 +594,7 @@ class CompoundVisual(BaseVisual):
         BaseVisual._transform_changed(self)
 
     def draw(self):
-        """Draw the visual
-        """
+        """Draw the visual"""
         if not self.visible:
             return
         if self._prepare_draw(view=self) is False:
@@ -595,20 +612,24 @@ class CompoundVisual(BaseVisual):
             v._prepare_transforms(v)
 
     def set_gl_state(self, preset=None, **kwargs):
-        """Define the set of GL state parameters to use when drawing
+        """Define the set of GL state parameters to use when drawing.
+
+        The arguments are forwarded to :func:`vispy.gloo.wrappers.set_state`.
 
         Parameters
         ----------
         preset : str
             Preset to use.
         **kwargs : dict
-            Keyword arguments to `gloo.set_state`.
+            Keyword arguments.
         """
         for v in self._subvisuals:
             v.set_gl_state(preset=preset, **kwargs)
 
     def update_gl_state(self, *args, **kwargs):
-        """Modify the set of GL state parameters to use when drawing
+        """Modify the set of GL state parameters to use when drawing.
+
+        The arguments are forwarded to :func:`vispy.gloo.wrappers.set_state`.
 
         Parameters
         ----------
@@ -671,3 +692,91 @@ class CompoundVisualView(BaseVisualView, CompoundVisual):
         for filt in self._vshare.filters:
             for v in self._subvisuals:
                 filt._attach(v)
+
+
+class updating_property:
+    """A property descriptor that autoupdates the Visual during attribute setting.
+
+    Use this as a decorator in place of the @property when you want the attribute to trigger
+    an immediate update to the visual upon change.  You may additionally declare an @setter,
+    and if you do, it will be called in addition to the standard logic:
+    `self._attr_name = value`.
+
+    For example, the following code examples are equivalent::
+
+        class SomeVisual1(Visual):
+            def __init__(self, someprop=None):
+                self._someprop = someprop
+
+            @property
+            def someprop(self):
+                return self._someprop
+
+            @someprop.setter
+            def someprop(self, value):
+                previous = self._someprop
+                if (previous is None) or np.any(value != previous):
+                    self._someprop = value
+                    self._need_update = True
+                    if hasattr(self, 'events'):
+                        self.update()
+
+        class SomeVisual2(Visual):
+            def __init__(self, someprop=None):
+                self._someprop = someprop
+
+            @updating_property
+            def someprop(self):
+                pass
+
+    NOTE: by default the __get__ method here will look for the conventional `_attr_name`
+    property on the object.  The result of this is that you don't actually have to put
+    anything in the body of a method decorated with @updating_property if you don't want to
+    do anything other than retrieve the property.  So you may see this slightly strange
+    pattern being used::
+
+        class SomeVisual2(Visual):
+            def __init__(self, someprop=None):
+                self._someprop = someprop
+
+            @updating_property
+            def someprop(self):
+                '''the docstring (or pass) is all that is needed'''
+
+    """
+
+    def __init__(self, fget=None, fset=None, doc=None):
+        self.fget = fget
+        self.fset = fset
+        if self.fget is not None:
+            self.attr_name = f'_{self.fget.__name__}'
+            self.__doc__ = doc or self.fget.__doc__
+
+    def __get__(self, obj, objtype=None):
+        if obj is None:
+            return self
+        # if the @updating_property getter returns a value, use that
+        val = self.fget(obj)
+        if val is not None:
+            return val
+        # otherwise get the private attribute by the same name
+        return getattr(obj, self.attr_name, None)
+
+    def __set__(self, obj, value):
+        previous = getattr(obj, self.attr_name, None)
+        if (previous is None) or np.any(value != previous):
+            setattr(obj, self.attr_name, value)
+            # if a @.setter method has been declared, run that as well
+            # (overriding the standard setter behavior)
+            if self.fset is not None:
+                self.fset(obj, value)
+            obj._need_update = True
+            # prevent update during obj.__init__
+            if hasattr(obj, 'events'):
+                obj.update()
+
+    def __delete__(self, obj):
+        raise AttributeError("can't delete attribute")
+
+    def setter(self, fset):
+        return type(self)(self.fget, fset, self.__doc__)

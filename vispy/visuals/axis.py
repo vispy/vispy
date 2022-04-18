@@ -1,15 +1,14 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2014, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
 import math
-import warnings
 
 import numpy as np
 
-from .visual import CompoundVisual
+from .visual import CompoundVisual, updating_property
 from .line import LineVisual
 from .text import TextVisual
 
@@ -72,14 +71,24 @@ class AxisVisual(CompoundVisual):
         of 'bottom', 'middle', or 'top'. If this is not specified, it is
         determined automatically.
     """
-    def __init__(self, pos=None, domain=(0., 1.), tick_direction=(-1., 0.),
-                 scale_type="linear", axis_color=(1, 1, 1),
-                 tick_color=(0.7, 0.7, 0.7), text_color='w',
-                 minor_tick_length=5, major_tick_length=10,
-                 tick_width=2, tick_label_margin=5, tick_font_size=8,
-                 axis_width=3,  axis_label=None,
-                 axis_label_margin=35, axis_font_size=10,
-                 font_size=None, anchors=None):
+
+    def __init__(self, pos=None, domain=(0., 1.), 
+                 tick_direction=(-1., 0.), 
+                 scale_type="linear", 
+                 axis_color=(1, 1, 1), 
+                 tick_color=(0.7, 0.7, 0.7), 
+                 text_color='w', 
+                 minor_tick_length=5, 
+                 major_tick_length=10, 
+                 tick_width=2, 
+                 tick_label_margin=12, 
+                 tick_font_size=8, 
+                 axis_width=3, 
+                 axis_label=None, 
+                 axis_label_margin=35, 
+                 axis_font_size=10, 
+                 font_size=None, 
+                 anchors=None):
 
         if scale_type != 'linear':
             raise NotImplementedError('only linear scaling is currently '
@@ -99,49 +108,128 @@ class AxisVisual(CompoundVisual):
 
         self.ticker = Ticker(self, anchors=anchors)
         self.tick_direction = np.array(tick_direction, float)
-        self.tick_direction = self.tick_direction
         self.scale_type = scale_type
-        self.axis_color = axis_color
-        self.tick_color = tick_color
 
-        self.minor_tick_length = minor_tick_length  # px
-        self.major_tick_length = major_tick_length  # px
-        self.tick_label_margin = tick_label_margin  # px
-        self.axis_label_margin = axis_label_margin  # px
+        self._minor_tick_length = minor_tick_length  # px
+        self._major_tick_length = major_tick_length  # px
+        self._tick_label_margin = tick_label_margin  # px
+        self._axis_label_margin = axis_label_margin  # px
 
-        self.axis_label = axis_label
+        self._axis_label = axis_label
 
         self._need_update = True
 
-        self._line = LineVisual(method='gl', width=axis_width)
-        self._ticks = LineVisual(method='gl', width=tick_width, connect='segments')
+        self._line = LineVisual(method='gl', width=axis_width, antialias=True,
+                                color=axis_color)
+        self._ticks = LineVisual(method='gl', width=tick_width,
+                                 connect='segments', antialias=True,
+                                 color=tick_color)
+
         self._text = TextVisual(font_size=tick_font_size, color=text_color)
-        self._axis_label = TextVisual(font_size=axis_font_size, color=text_color)
-        CompoundVisual.__init__(self, [self._line, self._text, self._ticks, self._axis_label])
+        self._axis_label_vis = TextVisual(font_size=axis_font_size,
+                                          color=text_color)
+        CompoundVisual.__init__(self, [self._line, self._text, self._ticks,
+                                       self._axis_label_vis])
         if pos is not None:
             self.pos = pos
         self.domain = domain
 
     @property
+    def text_color(self):
+        return self._text.color
+
+    @text_color.setter
+    def text_color(self, value):
+        self._text.color = value
+        self._axis_label_vis.color = value
+
+    @property
+    def axis_color(self):
+        return self._line.color
+
+    @axis_color.setter
+    def axis_color(self, value):
+        self._line.set_data(color=value)
+
+    @property
+    def axis_width(self):
+        return self._line.width
+
+    @axis_width.setter
+    def axis_width(self, value):
+        self._line.set_data(width=value)
+
+    @property
+    def tick_color(self):
+        return self._ticks.color
+
+    @tick_color.setter
+    def tick_color(self, value):
+        self._ticks.set_data(color=value)
+
+    @property
+    def tick_width(self):
+        return self._ticks.width
+
+    @tick_width.setter
+    def tick_width(self, value):
+        self._ticks.set_data(width=value)
+
+    @property
+    def tick_font_size(self):
+        return self._text.font_size
+
+    @tick_font_size.setter
+    def tick_font_size(self, value):
+        self._text.font_size = value
+
+    @updating_property
+    def tick_direction(self):
+        """The tick direction to use (in document coordinates)."""
+
+    @tick_direction.setter
+    def tick_direction(self, tick_direction):
+        self._tick_direction = np.array(tick_direction, float)
+
+    @property
+    def axis_font_size(self):
+        return self._axis_label_vis.font_size
+
+    @axis_font_size.setter
+    def axis_font_size(self, value):
+        self._axis_label_vis.font_size = value
+
+    @updating_property
+    def domain(self):
+        """The data values at the beginning and end of the axis, used for tick labels."""
+
+    @updating_property
+    def axis_label(self):
+        """Text to use for the axis label."""
+
+    @updating_property
     def pos(self):
-        return self._pos
+        """Co-ordinates of start and end of the axis."""
 
     @pos.setter
     def pos(self, pos):
         self._pos = np.array(pos, float)
-        self._need_update = True
-        self.update()
 
-    @property
-    def domain(self):
-        return self._domain
+    @updating_property
+    def minor_tick_length(self):
+        """The length of minor ticks, in pixels"""
 
-    @domain.setter
-    def domain(self, d):
-        if self._domain is None or d != self._domain:
-            self._domain = d
-            self._need_update = True
-            self.update()
+    @updating_property
+    def major_tick_length(self):
+        """The length of major ticks, in pixels"""
+
+    @updating_property
+    def tick_label_margin(self):
+        """Margin between ticks and tick labels"""
+
+    @updating_property
+    def axis_label_margin(self):
+        """Margin between ticks and axis labels"""
 
     @property
     def _vec(self):
@@ -149,7 +237,8 @@ class AxisVisual(CompoundVisual):
         return self.pos[1] - self.pos[0]
 
     def _update_subvisuals(self):
-        tick_pos, labels, tick_label_pos, anchors, axis_label_pos = self.ticker.get_update()
+        tick_pos, labels, tick_label_pos, anchors, axis_label_pos = \
+            self.ticker.get_update()
 
         self._line.set_data(pos=self.pos, color=self.axis_color)
         self._ticks.set_data(pos=tick_pos, color=self.tick_color)
@@ -157,23 +246,31 @@ class AxisVisual(CompoundVisual):
         self._text.pos = tick_label_pos
         self._text.anchors = anchors
         if self.axis_label is not None:
-            self._axis_label.text = self.axis_label
-            self._axis_label.pos = axis_label_pos
+            self._axis_label_vis.text = self.axis_label
+            self._axis_label_vis.pos = axis_label_pos
         self._need_update = False
 
     def _prepare_draw(self, view):
         if self._pos is None:
             return False
         if self.axis_label is not None:
-            # TODO: make sure we only call get_transform if the transform for
-            # the line is updated
-            tr = self._line.get_transform(map_from='visual', map_to='canvas')
-            x1, y1, x2, y2 = tr.map(self.pos)[:,:2].ravel()
-            if x1 > x2:
-                x1, y1, x2, y2 = x2, y2, x1, y1
-            self._axis_label.rotation = math.degrees(math.atan2(y2-y1, x2-x1))
+            self._axis_label_vis.rotation = self._rotation_angle
         if self._need_update:
             self._update_subvisuals()
+
+    @property
+    def _rotation_angle(self):
+        """Determine the rotation angle of the axis as projected onto the canvas."""
+        # TODO: make sure we only call get_transform if the transform for
+        # the line is updated
+        tr = self._line.get_transform(map_from='visual', map_to='canvas')
+        trpos = tr.map(self.pos)
+        # Normalize homogeneous coordinates
+        # trpos /= trpos[:, 3:]
+        x1, y1, x2, y2 = trpos[:, :2].ravel()
+        if x1 > x2:
+            x1, y1, x2, y2 = x2, y2, x1, y1
+        return math.degrees(math.atan2(y2-y1, x2-x1))
 
     def _compute_bounds(self, axis, view):
         if axis == 2:
@@ -198,8 +295,9 @@ class Ticker(object):
     def get_update(self):
         major_tick_fractions, minor_tick_fractions, tick_labels = \
             self._get_tick_frac_labels()
-        tick_pos, tick_label_pos, axis_label_pos, anchors = self._get_tick_positions(
-            major_tick_fractions, minor_tick_fractions)
+        tick_pos, tick_label_pos, axis_label_pos, anchors = \
+            self._get_tick_positions(major_tick_fractions,
+                                     minor_tick_fractions)
         return tick_pos, tick_labels, tick_label_pos, anchors, axis_label_pos
 
     def _get_tick_positions(self, major_tick_fractions, minor_tick_fractions):
@@ -237,7 +335,8 @@ class Ticker(object):
                             direction * self.axis.minor_tick_length / doc_len,
                             direction * self.axis.major_tick_length / doc_len,
                             direction * (self.axis.major_tick_length +
-                                         self.axis.tick_label_margin) / doc_len],
+                                         self.axis.tick_label_margin) / doc_len
+                            ],
                            dtype=float)
         minor_vector = vectors[1] - vectors[0]
         major_vector = vectors[2] - vectors[0]
@@ -254,7 +353,8 @@ class Ticker(object):
 
         tick_label_pos = major_origins + label_vector
 
-        axis_label_pos = 0.5 * (self.axis.pos[0] + self.axis.pos[1]) + axislabel_vector
+        axis_label_pos = 0.5 * (self.axis.pos[0] +
+                                self.axis.pos[1]) + axislabel_vector
 
         num_major = len(major_tick_fractions)
         num_minor = len(minor_tick_fractions)
@@ -292,8 +392,6 @@ class Ticker(object):
             length = self.axis.pos[1] - self.axis.pos[0]  # in logical coords
             n_inches = np.sqrt(np.sum(length ** 2)) / transforms.dpi
 
-            # major = np.linspace(domain[0], domain[1], num=11)
-            # major = MaxNLocator(10).tick_values(*domain)
             major = _get_ticks_talbot(domain[0], domain[1], n_inches, 2)
 
             labels = ['%g' % x for x in major]
@@ -307,14 +405,20 @@ class Ticker(object):
                 minor.extend(np.linspace(maj + minstep,
                                          maj + majstep - minstep,
                                          minor_num))
-            major_frac = (major - offset) / scale
-            minor_frac = (np.array(minor) - offset) / scale
-            major_frac = major_frac[::-1] if flip else major_frac
+            major_frac = major - offset
+            minor_frac = np.array(minor) - offset
+            if scale != 0:  # maybe something better to do here?
+                major_frac /= scale
+                minor_frac /= scale
             use_mask = (major_frac > -0.0001) & (major_frac < 1.0001)
             major_frac = major_frac[use_mask]
             labels = [l for li, l in enumerate(labels) if use_mask[li]]
             minor_frac = minor_frac[(minor_frac > -0.0001) &
                                     (minor_frac < 1.0001)]
+            # Flip ticks coordinates if necessary :
+            if flip:
+                major_frac = 1 - major_frac
+                minor_frac = 1 - minor_frac
         elif self.axis.scale_type == 'logarithmic':
             return NotImplementedError
         elif self.axis.scale_type == 'power':
@@ -326,52 +430,51 @@ class Ticker(object):
 # Translated from matplotlib
 
 class MaxNLocator(object):
-    """
-    Select no more than N intervals at nice locations.
-    """
+    """Select no more than N intervals at nice locations."""
+
     def __init__(self, nbins=10, steps=None, trim=True, integer=False,
                  symmetric=False, prune=None):
-            """
-            Keyword args:
-            *nbins*
-                Maximum number of intervals; one less than max number of ticks.
-            *steps*
-                Sequence of nice numbers starting with 1 and ending with 10;
-                e.g., [1, 2, 4, 5, 10]
-            *integer*
-                If True, ticks will take only integer values.
-            *symmetric*
-                If True, autoscaling will result in a range symmetric
-                about zero.
-            *prune*
-                ['lower' | 'upper' | 'both' | None]
-                Remove edge ticks -- useful for stacked or ganged plots
-                where the upper tick of one axes overlaps with the lower
-                tick of the axes above it.
-                If prune=='lower', the smallest tick will
-                be removed.  If prune=='upper', the largest tick will be
-                removed.  If prune=='both', the largest and smallest ticks
-                will be removed.  If prune==None, no ticks will be removed.
-            """
-            self._nbins = int(nbins)
-            self._trim = trim
-            self._integer = integer
-            self._symmetric = symmetric
-            if prune is not None and prune not in ['upper', 'lower', 'both']:
-                raise ValueError(
-                    "prune must be 'upper', 'lower', 'both', or None")
-            self._prune = prune
-            if steps is None:
-                steps = [1, 2, 2.5, 3, 4, 5, 6, 8, 10]
-            else:
-                if int(steps[-1]) != 10:
-                    steps = list(steps)
-                    steps.append(10)
-            self._steps = steps
-            self._integer = integer
-            if self._integer:
-                self._steps = [n for n in self._steps
-                               if divmod(n, 1)[1] < 0.001]
+        """
+        Keyword args:
+        *nbins*
+            Maximum number of intervals; one less than max number of ticks.
+        *steps*
+            Sequence of nice numbers starting with 1 and ending with 10;
+            e.g., [1, 2, 4, 5, 10]
+        *integer*
+            If True, ticks will take only integer values.
+        *symmetric*
+            If True, autoscaling will result in a range symmetric
+            about zero.
+        *prune*
+            ['lower' | 'upper' | 'both' | None]
+            Remove edge ticks -- useful for stacked or ganged plots
+            where the upper tick of one axes overlaps with the lower
+            tick of the axes above it.
+            If prune=='lower', the smallest tick will
+            be removed.  If prune=='upper', the largest tick will be
+            removed.  If prune=='both', the largest and smallest ticks
+            will be removed.  If prune==None, no ticks will be removed.
+        """
+        self._nbins = int(nbins)
+        self._trim = trim
+        self._integer = integer
+        self._symmetric = symmetric
+        if prune is not None and prune not in ['upper', 'lower', 'both']:
+            raise ValueError(
+                "prune must be 'upper', 'lower', 'both', or None")
+        self._prune = prune
+        if steps is None:
+            steps = [1, 2, 2.5, 3, 4, 5, 6, 8, 10]
+        else:
+            if int(steps[-1]) != 10:
+                steps = list(steps)
+                steps.append(10)
+        self._steps = steps
+        self._integer = integer
+        if self._integer:
+            self._steps = [n for n in self._steps
+                           if divmod(n, 1)[1] < 0.001]
 
     def bin_boundaries(self, vmin, vmax):
         nbins = self._nbins
@@ -497,6 +600,10 @@ def _get_ticks_talbot(dmin, dmax, n_inches, density=1.):
     # the density function converts this back to a density in data units
     # (not inches)
     n_inches = max(n_inches, 2.0)  # Set minimum otherwise code can crash :(
+
+    if dmin == dmax:
+        return np.array([dmin, dmax])
+
     m = density * n_inches + 1.0
     only_inside = False  # we cull values outside ourselves
     Q = [1, 5, 2, 2.5, 4, 3]
@@ -549,9 +656,9 @@ def _get_ticks_talbot(dmin, dmax, n_inches, density=1.):
                         s = _simplicity(q, Q, j, lmin, lmax, lstep)
                         c = _coverage(dmin, dmax, lmin, lmax)
                         d = _density(k, m, dmin, dmax, lmin, lmax)
-                        l = 1.  # _legibility(lmin, lmax, lstep)
+                        leg = 1.  # _legibility(lmin, lmax, lstep)
 
-                        score = w[0] * s + w[1] * c + w[2] * d + w[3] * l
+                        score = w[0] * s + w[1] * c + w[2] * d + w[3] * leg
 
                         if (score > best_score and
                                 (not only_inside or (lmin >= dmin and

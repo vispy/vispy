@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-# vispy: gallery 30, testskip
+# vispy: gallery 30
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
@@ -25,22 +25,22 @@ def generate_terrain(r_min, r_max, c_min, c_max, disp):
     """Recursively generates terrain using diamond-square algorithm
     and stores the vertices in points
     """
-    a = points[r_min][c_min][2]
-    b = points[r_min][c_max][2]
-    c = points[r_max][c_min][2]
-    d = points[r_max][c_max][2]
+    a = points[r_min, c_min, 2]
+    b = points[r_min, c_max, 2]
+    c = points[r_max, c_min, 2]
+    d = points[r_max, c_max, 2]
 
-    r_mid = (r_min + r_max)/2
-    c_mid = (c_min + c_max)/2
+    r_mid = (r_min + r_max) // 2
+    c_mid = (c_min + c_max) // 2
 
     e = (a+b+c+d)/4 + np.random.uniform(0, disp)
 
-    points[r_mid][c_mid][2] = e
+    points[r_mid, c_mid, 2] = e
 
-    points[r_min][c_mid][2] = (a + b + e)/3 + np.random.uniform(0, disp)
-    points[r_max][c_mid][2] = (c + d + e)/3 + np.random.uniform(0, disp)
-    points[r_mid][c_min][2] = (a + c + e)/3 + np.random.uniform(0, disp)
-    points[r_mid][c_max][2] = (b + d + e)/3 + np.random.uniform(0, disp)
+    points[r_min, c_mid, 2] = (a + b + e)/3 + np.random.uniform(0, disp)
+    points[r_max, c_mid, 2] = (c + d + e)/3 + np.random.uniform(0, disp)
+    points[r_mid, c_min, 2] = (a + c + e)/3 + np.random.uniform(0, disp)
+    points[r_mid, c_max, 2] = (b + d + e)/3 + np.random.uniform(0, disp)
 
     new_disp = disp * (2 ** (-0.5))
 
@@ -112,9 +112,9 @@ class Canvas(app.Canvas):
         self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
         # Sets the view to an appropriate position over the terrain
         self.default_view = np.array([[0.8, 0.2, -0.48, 0],
-                                     [-0.5, 0.3, -0.78, 0],
-                                     [-0.01, 0.9, -0.3, 0],
-                                     [-4.5, -21.5, -7.4, 1]],
+                                      [-0.5, 0.3, -0.78, 0],
+                                      [-0.01, 0.9, -0.3, 0],
+                                      [-4.5, -21.5, -7.4, 1]],
                                      dtype=np.float32)
         self.view = self.default_view
         self.model = np.eye(4, dtype=np.float32)

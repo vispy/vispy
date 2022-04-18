@@ -45,7 +45,7 @@ void main (void) {
     v_bg_color  = a_bg_color;
     gl_Position = u_projection * u_view * u_model *
         vec4(a_position*u_size,1.0);
-    gl_PointSize = v_size + 2*(v_linewidth + 1.5*v_antialias);
+    gl_PointSize = v_size + 2.*(v_linewidth + 1.5*v_antialias);
 }
 """
 
@@ -101,7 +101,7 @@ void main()
 float marker(vec2 P, float size)
 {
     float r = length((P.xy - vec2(0.5,0.5))*size);
-    r -= v_size/2;
+    r -= v_size/2.;
     return r;
 }
 """
@@ -139,13 +139,13 @@ class Canvas(app.Canvas):
         data = np.zeros(n, dtype=[('a_position', np.float32, 3),
                                   ('a_fg_color', np.float32, 4),
                                   ('a_bg_color', np.float32, 4),
-                                  ('a_size', np.float32, 1),
-                                  ('a_linewidth', np.float32, 1),
+                                  ('a_size', np.float32),
+                                  ('a_linewidth', np.float32),
                                   ])
         edges = np.random.randint(size=(ne, 2), low=0,
                                   high=n).astype(np.uint32)
         data['a_position'] = np.hstack((.25 * np.random.randn(n, 2),
-                                       np.zeros((n, 1))))
+                                        np.zeros((n, 1))))
         data['a_fg_color'] = 0, 0, 0, 1
         color = np.random.uniform(0.5, 1., (n, 3))
         data['a_bg_color'] = np.hstack((color, np.ones((n, 1))))

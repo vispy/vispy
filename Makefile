@@ -71,8 +71,20 @@ nobackend : clean-test
 pyqt4: clean-test
 	python make test pyqt4
 
+pyqt5: clean-test
+	python make test pyqt5
+
+pyqt6: clean-test
+	python make test pyqt6
+	
 pyside: clean-test
 	python make test pyside
+
+pyside2: clean-test
+	python make test pyside2
+
+pyside6: clean-test
+	python make test pyside6
 
 pyglet: clean-test
 	python make test pyglet
@@ -94,3 +106,6 @@ osmesa: clean-test
 
 ipynb_vnc: clean-test
 	python make test ipynb_vnc
+
+check-manifest:
+	check-manifest

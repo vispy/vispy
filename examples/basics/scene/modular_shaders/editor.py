@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # vispy: testskip
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 """
@@ -16,13 +16,13 @@
 
 import sys
 import re
-from PyQt4.QtCore import *  # noqa
-from PyQt4.QtGui import *  # noqa
+from PyQt5.QtCore import *  # noqa
+from PyQt5.QtWidgets import *  # noqa
 
 
 try:
-    from PyQt4 import Qsci
-    from PyQt4.Qsci import QsciScintilla
+    from PyQt5 import Qsci
+    from PyQt5.Qsci import QsciScintilla
     HAVE_QSCI = True
 except ImportError:
     HAVE_QSCI = False
@@ -69,8 +69,8 @@ else:
 
             self._marker = None
             # Clickable margin 1 for showing markers
-            #self.setMarginSensitivity(1, True)
-            #self.connect(self,
+            # self.setMarginSensitivity(1, True)
+            # self.connect(self,
             #    SIGNAL('marginClicked(int, int, Qt::KeyboardModifiers)'),
             #    self.on_margin_clicked)
             self.markerDefine(QsciScintilla.RightArrow, self.ARROW_MARKER_NUM)
@@ -104,7 +104,7 @@ else:
 
             self.setEolMode(QsciScintilla.EolUnix)
             # not too small
-            #self.setMinimumSize(600, 450)
+            # self.setMinimumSize(600, 450)
 
         def set_marker(self, line):
             self.clear_marker()
@@ -115,12 +115,12 @@ else:
             if self._marker is not None:
                 self.markerDelete(self._marker, self.ARROW_MARKER_NUM)
 
-        #def on_margin_clicked(self, nmargin, nline, modifiers):
-            ## Toggle marker for the line the margin was clicked on
-            #if self.markersAtLine(nline) != 0:
-                #self.markerDelete(nline, self.ARROW_MARKER_NUM)
-            #else:
-                #self.markerAdd(nline, self.ARROW_MARKER_NUM)
+        # def on_margin_clicked(self, nmargin, nline, modifiers):
+            # Toggle marker for the line the margin was clicked on
+            # if self.markersAtLine(nline) != 0:
+                # self.markerDelete(nline, self.ARROW_MARKER_NUM)
+            # else:
+                # self.markerAdd(nline, self.ARROW_MARKER_NUM)
 
         def wheelEvent(self, ev):
             # Use ctrl+wheel to zoom in/out
@@ -183,7 +183,7 @@ else:
                         new.append(line.replace('#', '', 1))
                 self.setSelection(sel[0], 0, sel[2], 0)
                 self.replaceSelectedText('\n'.join(new) + '\n')
-                #shift = 1 if comment else -1
+                # shift = 1 if comment else -1
                 self.setSelection(sel[0], max(0, sel[1]), sel[2], sel[3])
 
 

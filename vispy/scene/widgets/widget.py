@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division
@@ -16,7 +16,7 @@ from ...color import Color
 
 
 class Widget(Compound):
-    """ A widget takes up a rectangular space, intended for use in
+    """A widget takes up a rectangular space, intended for use in
     a 2D pixel coordinate frame.
 
     The widget is positioned using the transform attribute (as any
@@ -50,7 +50,7 @@ class Widget(Compound):
         self._mesh.set_gl_state('translucent', depth_test=False,
                                 cull_face=False)
         self._picking_mesh = MeshVisual(mode='triangle_fan')
-        self._picking_mesh.set_gl_state(cull_face=False)
+        self._picking_mesh.set_gl_state(cull_face=False, depth_test=False)
         self._picking_mesh.visible = False
 
         # reserved space inside border
@@ -77,6 +77,9 @@ class Widget(Compound):
         self._bgcolor = Color(bgcolor)
         self._face_colors = None
 
+        # Flag to allow rect setter to know if pos or size changed.
+        self._pos_or_size_changed = False
+
         Compound.__init__(self, [self._mesh, self._picking_mesh], **kwargs)
 
         self.transform = STTransform()
@@ -93,8 +96,11 @@ class Widget(Compound):
     def pos(self, p):
         assert isinstance(p, tuple)
         assert len(p) == 2
-        if p == self.pos:
+        # Handle floating point discrepancies
+        if abs(p[0] - self.pos[0]) < 1e-4 and \
+           abs(p[1] - self.pos[1]) < 1e-4:
             return
+        self._pos_or_size_changed = True
         self.transform.translate = p[0], p[1], 0, 0
         self._update_line()
 
@@ -111,8 +117,11 @@ class Widget(Compound):
     def size(self, s):
         assert isinstance(s, tuple)
         assert len(s) == 2
-        if self._size == s:
+        # Handle floating point discrepancies
+        if abs(s[0] - self._size[0]) < 1e-4 and \
+           abs(s[1] - self._size[1]) < 1e-4:
             return
+        self._pos_or_size_changed = True
         self._size = s
         self._update_line()
         self._update_child_widgets()
@@ -135,11 +144,9 @@ class Widget(Compound):
 
         Parameters
         ----------
-
         height_min: float
             the minimum height of the widget
         """
-
         if width_min is None:
             self._width_limits[0] = 0
             return
@@ -191,7 +198,6 @@ class Widget(Compound):
 
         Parameters
         ----------
-
         height_min: float
             the minimum height of the widget
         """
@@ -235,11 +241,13 @@ class Widget(Compound):
 
     @rect.setter
     def rect(self, r):
+        self._pos_or_size_changed = False
         with self.events.resize.blocker():
             self.pos = r.pos
             self.size = r.size
-        self.update()
-        self.events.resize()
+        if self._pos_or_size_changed:
+            self.update()
+            self.events.resize()
 
     @property
     def inner_rect(self):
@@ -281,8 +289,7 @@ class Widget(Compound):
             self.parent._update_child_widgets()
 
     def _update_clipper(self):
-        """Called whenever the clipper for this widget may need to be updated.
-        """
+        """Called whenever the clipper for this widget may need to be updated."""
         if self.clip_children and self._clipper is None:
             self._clipper = Clipper()
         elif not self.clip_children:
@@ -295,8 +302,7 @@ class Widget(Compound):
 
     @property
     def border_color(self):
-        """ The color of the border.
-        """
+        """The color of the border."""
         return self._border_color
 
     @border_color.setter
@@ -308,8 +314,7 @@ class Widget(Compound):
 
     @property
     def bgcolor(self):
-        """ The background color of the Widget.
-        """
+        """The background color of the Widget."""
         return self._bgcolor
 
     @bgcolor.setter
@@ -342,7 +347,7 @@ class Widget(Compound):
         self.update()
 
     def _update_line(self):
-        """ Update border line to match new shape """
+        """Update border line to match new shape"""
         w = self._border_width
         m = self.margin
         # border is drawn within the boundaries of the widget:
@@ -357,14 +362,14 @@ class Widget(Compound):
         #  ........
         #  ........
         #
-        l = b = m
-        r = self.size[0] - m
-        t = self.size[1] - m
+        left = bot = m
+        right = self.size[0] - m
+        top = self.size[1] - m
         pos = np.array([
-            [l, b], [l+w, b+w],
-            [r, b], [r-w, b+w],
-            [r, t], [r-w, t-w],
-            [l, t], [l+w, t-w],
+            [left, bot], [left+w, bot+w],
+            [right, bot], [right-w, bot+w],
+            [right, top], [right-w, top-w],
+            [left, top], [left+w, top-w],
         ], dtype=np.float32)
         faces = np.array([
             [0, 2, 1],

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2014, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
@@ -62,8 +62,7 @@ class BoxVisual(CompoundVisual):
 
     @property
     def mesh(self):
-        """The vispy.visuals.MeshVisual that used to fill in.
-        """
+        """The vispy.visuals.MeshVisual that used to fill in."""
         return self._mesh
 
     @mesh.setter
@@ -72,8 +71,7 @@ class BoxVisual(CompoundVisual):
 
     @property
     def border(self):
-        """The vispy.visuals.MeshVisual that used to draw the border.
-        """
+        """The vispy.visuals.MeshVisual that used to draw the border."""
         return self._border
 
     @border.setter

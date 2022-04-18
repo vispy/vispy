@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 # Author: Luke Campagnola
@@ -10,8 +10,6 @@
 import struct
 import zlib
 import numpy as np
-
-from ..ext.png import Reader
 
 
 def _make_png(data, level=6):
@@ -45,13 +43,13 @@ def _make_png(data, level=6):
         else:
             size = len(data)
         chunk = np.empty(size + 12, dtype=np.ubyte)
-        chunk.data[0:4] = np.array(size, '>u4').tostring()
+        chunk.data[0:4] = np.array(size, '>u4').tobytes()
         chunk.data[4:8] = name.encode('ASCII')
         chunk.data[8:8 + size] = data
         # and-ing may not be necessary, but is done for safety:
         # https://docs.python.org/3/library/zlib.html#zlib.crc32
         chunk.data[-4:] = np.array(zlib.crc32(chunk[4:-4]) & 0xffffffff,
-                                   '>u4').tostring()
+                                   '>u4').tobytes()
         return chunk
 
     if data.dtype != np.ubyte:
@@ -100,8 +98,7 @@ def _make_png(data, level=6):
 
 def read_png(filename):
     """Read a PNG file to RGB8 or RGBA8
-
-    Unlike imread, this requires no external dependencies.
+    Requires Pillow.
 
     Parameters
     ----------
@@ -117,20 +114,17 @@ def read_png(filename):
     --------
     write_png, imread, imsave
     """
-    x = Reader(filename)
     try:
-        alpha = x.asDirect()[3]['alpha']
-        if alpha:
-            y = x.asRGBA8()[2]
-            n = 4
-        else:
-            y = x.asRGB8()[2]
-            n = 3
-        y = np.array([yy for yy in y], np.uint8)
-    finally:
-        x.file.close()
-    y.shape = (y.shape[0], y.shape[1] // n, n)
-    return y
+        from PIL import Image
+        x = Image.open(filename)
+        try:
+            y = np.asarray(x)
+            y = np.array([yy for yy in y], np.uint8)
+        finally:
+            x.close()
+        return y
+    except ImportError:
+        raise RuntimeError("read_png requires the Pillow package.")
 
 
 def write_png(filename, data):

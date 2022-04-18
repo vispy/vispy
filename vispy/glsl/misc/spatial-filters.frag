@@ -19,25 +19,25 @@ float
 unpack_ieee(vec4 rgba)
 {
     // return rgba.r;  // uncomment this for r32f debugging
-    rgba.rgba = rgba.abgr * 255;
+    rgba.rgba = rgba.abgr * 255.;
     float sign = 1.0 - step(128.0,rgba[0])*2.0;
     float exponent = 2.0 * mod(rgba[0],128.0) + step(128.0,rgba[1]) - 127.0;
     float mantissa = mod(rgba[1],128.0)*65536.0 + rgba[2]*256.0 + rgba[3] + float(0x800000);
-    return sign * exp2(exponent) * (mantissa * exp2(-23));
+    return sign * exp2(exponent) * (mantissa * exp2(-23.));
 }
 
 float
 unpack_interpolate(sampler2D kernel, vec2 uv)
 {
     // return texture2D(kernel, uv).r; //uncomment this for r32f debug without interpolation
-    float kpixel = 1/kernel_size;
+    float kpixel = 1. / kernel_size;
     float u = uv.x / kpixel;
     float v = uv.y;
     float uf = fract(u);
     u = (u - uf) * kpixel;
 
     float d0 = unpack_unit(texture2D(kernel, vec2(u, v)));
-    float d1 = unpack_unit(texture2D(kernel, vec2(u + 1 * kpixel, v)));
+    float d1 = unpack_unit(texture2D(kernel, vec2(u + 1. * kpixel, v)));
     return mix(d0, d1, uf);
 }
 

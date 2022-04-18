@@ -9,7 +9,6 @@ interpreted as a numpy data type.
 
 Example
 -------
-
 >>> L = ArrayList( [[0], [1,2], [3,4,5], [6,7,8,9]] )
 >>> print L
 [ [0] [1 2] [3 4 5] [6 7 8 9] ]
@@ -22,7 +21,6 @@ to specify individual item sizes.
 
 Example
 -------
-
 >>> L = ArrayList( np.arange(10), [3,3,4])
 >>> print L
 [ [0 1 2] [3 4 5] [6 7 8 9] ]
@@ -33,7 +31,6 @@ import numpy as np
 
 
 class ArrayList(object):
-
     """
     An ArrayList is a strongly typed list whose type can be anything that can
     be interpreted as a numpy data type.
@@ -41,11 +38,10 @@ class ArrayList(object):
 
     def __init__(self, data=None, itemsize=None, dtype=float,
                  sizeable=True, writeable=True):
-        """ Create a new buffer using given data and sizes or dtype
+        """Create a new buffer using given data and sizes or dtype
 
         Parameters
         ----------
-
         data : array_like
             An array, any object exposing the array interface, an object
             whose __array__ method returns an array, or any (nested) sequence.
@@ -69,14 +65,13 @@ class ArrayList(object):
         writeable : boolean
             Indicate whether content can be changed
         """
-
         self._sizeable = sizeable
         self._writeable = writeable
 
         if data is not None:
             if isinstance(data, (list, tuple)):
                 if isinstance(data[0], (list, tuple)):
-                    itemsize = [len(l) for l in data]
+                    itemsize = [len(sublist) for sublist in data]
                     data = [item for sublist in data for item in sublist]
             self._data = np.array(data, copy=False)
             self._size = self._data.size
@@ -114,33 +109,32 @@ class ArrayList(object):
 
     @property
     def data(self):
-        """ The array's elements, in memory. """
+        """The array's elements, in memory."""
         return self._data[:self._size]
 
     @property
     def size(self):
-        """ Number of base elements, in memory. """
+        """Number of base elements, in memory."""
         return self._size
 
     @property
     def itemsize(self):
-        """ Individual item sizes """
+        """Individual item sizes"""
         return self._items[:self._count, 1] - self._items[:self._count, 0]
 
     @property
     def dtype(self):
-        """ Describes the format of the elements in the buffer. """
+        """Describes the format of the elements in the buffer."""
         return self._data.dtype
 
     def reserve(self, capacity):
-        """ Set current capacity of the underlying array"""
-
+        """Set current capacity of the underlying array"""
         if capacity >= self._data.size:
             capacity = int(2 ** np.ceil(np.log2(capacity)))
             self._data = np.resize(self._data, capacity)
 
     def __len__(self):
-        """ x.__len__() <==> len(x) """
+        """x.__len__() <==> len(x)"""
         return self._count
 
     def __str__(self):
@@ -151,8 +145,7 @@ class ArrayList(object):
         return s
 
     def __getitem__(self, key):
-        """ x.__getitem__(y) <==> x[y] """
-
+        """x.__getitem__(y) <==> x[y]"""
         if isinstance(key, int):
             if key < 0:
                 key += len(self)
@@ -183,8 +176,7 @@ class ArrayList(object):
             raise TypeError("List indices must be integers")
 
     def __setitem__(self, key, data):
-        """ x.__setitem__(i, y) <==> x[i]=y """
-
+        """x.__setitem__(i, y) <==> x[i]=y"""
         if not self._writeable:
             raise AttributeError("List is not writeable")
 
@@ -234,8 +226,7 @@ class ArrayList(object):
             raise TypeError("List assignment indices must be integers")
 
     def __delitem__(self, key):
-        """ x.__delitem__(y) <==> del x[y] """
-
+        """x.__delitem__(y) <==> del x[y]"""
         if not self._sizeable:
             raise AttributeError("List is not sizeable")
 
@@ -283,11 +274,10 @@ class ArrayList(object):
         self._count -= istop - istart
 
     def insert(self, index, data, itemsize=None):
-        """ Insert data before index
+        """Insert data before index
 
         Parameters
         ----------
-
         index : int
             Index before which data will be inserted.
 
@@ -296,7 +286,7 @@ class ArrayList(object):
             whose __array__ method returns an array, or any (nested) sequence.
 
         itemsize:  int or 1-D array
-            If `itemsize is an integer, N, the array will be divided
+            If `itemsize` is an integer, N, the array will be divided
             into elements of size N. If such partition is not possible,
             an error is raised.
 
@@ -305,12 +295,11 @@ class ArrayList(object):
             If the sum of itemsize values is different from array size,
             an error is raised.
         """
-
         if not self._sizeable:
             raise AttributeError("List is not sizeable")
 
         if isinstance(data, (list, tuple)) and isinstance(data[0], (list, tuple)):  # noqa
-            itemsize = [len(l) for l in data]
+            itemsize = [len(sublist) for sublist in data]
             data = [item for sublist in data for item in sublist]
 
         data = np.array(data, copy=False).ravel()
@@ -356,8 +345,8 @@ class ArrayList(object):
             Z = self._data[dstart:self._size]
             self._data[dstart + size:self._size + size] = Z
             # Update moved items
-            I = self._items[istart:self._count] + size
-            self._items[istart + _count:self._count + _count] = I
+            items = self._items[istart:self._count] + size
+            self._items[istart + _count:self._count + _count] = items
 
         # Appending
         else:
@@ -391,18 +380,16 @@ class ArrayList(object):
             self._count += _count
 
     def append(self, data, itemsize=None):
-        """
-        Append data to the end.
+        """Append data to the end.
 
         Parameters
         ----------
-
         data : array_like
             An array, any object exposing the array interface, an object
             whose __array__ method returns an array, or any (nested) sequence.
 
         itemsize:  int or 1-D array
-            If `itemsize is an integer, N, the array will be divided
+            If `itemsize` is an integer, N, the array will be divided
             into elements of size N. If such partition is not possible,
             an error is raised.
 
@@ -411,5 +398,4 @@ class ArrayList(object):
             If the sum of itemsize values is different from array size,
             an error is raised.
         """
-
         self.insert(len(self), data, itemsize)

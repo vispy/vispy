@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2013, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """ 
@@ -14,7 +14,8 @@ applies to all backends.
 import ctypes
 
 
-## bind / gen / delete stuff
+# bind / gen / delete stuff
+
 
 def deleteBuffer(buffer):
     # --- gl es
@@ -24,6 +25,7 @@ def deleteBuffer(buffer):
     # --- pyopengl
     GL.glDeleteBuffers(1, [buffer])
 
+
 def deleteFramebuffer(framebuffer):
     # --- gl es
     n = 1  
@@ -32,6 +34,7 @@ def deleteFramebuffer(framebuffer):
     # --- pyopengl
     FBO.glDeleteFramebuffers(1, [framebuffer])
 
+
 def deleteRenderbuffer(renderbuffer):
     # --- gl es
     n = 1  
@@ -39,6 +42,7 @@ def deleteRenderbuffer(renderbuffer):
     ()
     # --- pyopengl
     FBO.glDeleteRenderbuffers(1, [renderbuffer])
+
 
 def deleteTexture(texture):
     # --- gl es
@@ -60,6 +64,7 @@ def createBuffer():
     # --- mock
     return 1
 
+
 def createFramebuffer():
     # --- gl es
     n = 1
@@ -71,6 +76,7 @@ def createFramebuffer():
     # --- mock
     return 1
 
+
 def createRenderbuffer():
     # --- gl es
     n = 1
@@ -81,6 +87,7 @@ def createRenderbuffer():
     return FBO.glGenRenderbuffers(1)
     # --- mock
     return 1
+
 
 def createTexture():
     # --- gl es
@@ -94,8 +101,7 @@ def createTexture():
     return 1
 
 
-## Image stuff
-
+# Image stuff
 def texImage2D(target, level, internalformat, format, type, pixels):
     border = 0
     # --- gl es
@@ -119,7 +125,6 @@ def texImage2D(target, level, internalformat, format, type, pixels):
     GL.glTexImage2D(target, level, internalformat, width, height, border, format, type, pixels)
     
 
-
 def texSubImage2D(target, level, xoffset, yoffset, format, type, pixels):
     # --- gl es
     if not pixels.flags['C_CONTIGUOUS']:
@@ -134,9 +139,13 @@ def texSubImage2D(target, level, xoffset, yoffset, format, type, pixels):
 
 
 def readPixels(x, y, width, height, format, type):
-    # --- gl es mock
+    # --- es
     # GL_ALPHA, GL_RGB, GL_RGBA
     t = {6406:1, 6407:3, 6408:4}[format]
+    # --- gl mock
+    # GL_ALPHA, GL_RGB, GL_RGBA, GL_DEPTH_COMPONENT
+    t = {6406:1, 6407:3, 6408:4, 6402:1}[format]
+    # --- gl es mock
     # GL_UNSIGNED_BYTE, GL_FLOAT
     nb = {5121:1, 5126:4}[type]
     size = int(width*height*t*nb)
@@ -175,12 +184,11 @@ def compressedTexSubImage2D(target, level, xoffset, yoffset, width, height, form
     GL.glCompressedTexSubImage2D(target, level, xoffset, yoffset, width, height, format, size, data)
 
 
-## Buffer data
+# Buffer data
 
 
 def bufferData(target, data, usage):
-    """ Data can be numpy array or the size of data to allocate.
-    """
+    """Data can be numpy array or the size of data to allocate."""
     # --- gl es
     if isinstance(data, int):
         size = data
@@ -273,7 +281,7 @@ def bindAttribLocation(program, index, name):
     ()
 
 
-## Setters
+# Setters
 
 
 def shaderSource(shader, source):
@@ -291,13 +299,14 @@ def shaderSource(shader, source):
     GL.glShaderSource(shader, strings)
 
 
-## Getters
+# Getters
 
 def _getBooleanv(pname):
     # --- gl es
     params = (ctypes.c_bool*1)()
     ()
     return params[0]
+
 
 def _getIntegerv(pname):
     # --- gl es
@@ -310,6 +319,7 @@ def _getIntegerv(pname):
         return params[0]
     else:
         return tuple(params)
+
 
 def _getFloatv(pname):
     # --- gl es
@@ -338,15 +348,23 @@ def getParameter(pname):
         # GL_BLEND_COLOR GL_COLOR_CLEAR_VALUE GL_DEPTH_CLEAR_VALUE
         # GL_DEPTH_RANGE GL_LINE_WIDTH GL_POLYGON_OFFSET_FACTOR
         # GL_POLYGON_OFFSET_UNITS GL_SAMPLE_COVERAGE_VALUE
+        # --- gl es
         return _glGetFloatv(pname)
+        # --- pyopengl
+        return GL.glGetFloatv(pname)
+        # /---
     elif pname in [7936, 7937, 7938, 35724, 7939]:
         # GL_VENDOR, GL_RENDERER, GL_VERSION, GL_SHADING_LANGUAGE_VERSION, 
         # GL_EXTENSIONS are strings
         pass  # string handled below
     else:
+        # --- gl es
         return _glGetIntegerv(pname)
-    name = pname
+        # --- pyopengl
+        return GL.glGetIntegerv(pname)
+        # /---
     # --- gl es
+    name = pname
     ()
     return ctypes.string_at(res).decode('utf-8') if res else ''
     # --- pyopengl
@@ -415,6 +433,7 @@ def getTexParameter(target, pname):
 def getActiveAttrib(program, index):
     # --- gl es pyopengl
     bufsize = 256
+    # --- gl es
     length = (ctypes.c_int*1)()
     size = (ctypes.c_int*1)()
     type = (ctypes.c_uint*1)()
@@ -424,10 +443,8 @@ def getActiveAttrib(program, index):
     name = name[:length[0]].decode('utf-8')
     return name, size[0], type[0]
     # --- pyopengl
-    # pyopengl has a bug, this is a patch
-    GL.glGetActiveAttrib(program, index, bufsize, length, size, type, name)
-    name = name[:length[0]].decode('utf-8')
-    return name, size[0], type[0]
+    name, size, type = GL.glGetActiveAttrib(program, index, bufSize=bufsize)
+    return name.decode('utf-8'), size, type
     # --- mock
     return 'mock_val', 1, 5126
 
@@ -491,6 +508,7 @@ def getUniformLocation(program, name):
     name = name.encode('utf-8')
     ()
 
+
 def getProgramInfoLog(program):
     # --- gl es
     bufsize = 1024
@@ -501,6 +519,7 @@ def getProgramInfoLog(program):
     # --- pyopengl
     res = GL.glGetProgramInfoLog(program)
     return res.decode('utf-8') if isinstance(res, bytes) else res
+
 
 def getShaderInfoLog(shader):
     # --- gl es
@@ -513,11 +532,13 @@ def getShaderInfoLog(shader):
     res = GL.glGetShaderInfoLog(shader)
     return res.decode('utf-8') if isinstance(res, bytes) else res
 
+
 def getProgramParameter(program, pname):
     # --- gl es
     params = (ctypes.c_int*1)()
     ()
     return params[0]
+
 
 def getShaderParameter(shader, pname):
     # --- gl es
@@ -525,12 +546,14 @@ def getShaderParameter(shader, pname):
     ()
     return params[0]
 
+
 def getShaderPrecisionFormat(shadertype, precisiontype):
     # --- gl es
     range = (ctypes.c_int*1)()
     precision = (ctypes.c_int*1)()
     ()
     return range[0], precision[0]
+
 
 def getShaderSource(shader):
     # --- gl es
@@ -596,11 +619,16 @@ class FunctionAnnotation:
         """ Get the lines for this function based on the given backend. 
         The given API call is inserted at the correct location.
         """
+        if backend is None:
+            raise RuntimeError("Backend must be specified!")
         backend_selector = (backend, )  # first lines are for all backends
         lines = []
         for line in self.lines:
             if line.lstrip().startswith('# ---'):
                 backend_selector = line.strip().split(' ')
+                continue
+            if line.lstrip().startswith('# /---'):
+                backend_selector = backend
                 continue
             if backend in backend_selector:
                 if line.strip() == '()':
@@ -610,9 +638,11 @@ class FunctionAnnotation:
         return lines
     
     def is_arg_set(self, name):
-        """ Get whether a given variable name is set.
+        """Get whether a given variable name is set.
+
         This allows checking whether a variable that is an input to the C
         function is not an input for the Python function, and may be an output.
+
         """
         needle = '%s =' % name
         for line, comment in self.lines:
@@ -622,12 +652,8 @@ class FunctionAnnotation:
             return False
 
 
-
 def parse_anotations():
-    """ Parse this annotations file and produce a dictionary of
-    FunctionAnnotation objects.
-    """
-    
+    """Parse this annotations file and produce a dictionary of FunctionAnnotation objects."""
     functions = {}
     function = None
     
@@ -640,7 +666,7 @@ def parse_anotations():
             name = line.split(' ')[1].split('(')[0]
             args = line.split('(')[1].split(')')[0].split(', ')
             args = [arg for arg in args if arg]
-            out =  line.partition('->')[2].strip()
+            out = line.partition('->')[2].strip()
             function = FunctionAnnotation(name, args, out)
             functions[name] = function
             continue
@@ -650,7 +676,7 @@ def parse_anotations():
         # Add line
         line = line.rstrip()
         indent = len(line) - len(line.strip())
-        if line.strip() and indent >=4:
+        if line.strip() and indent >= 4:
             function.lines.append(line)
 
     return functions

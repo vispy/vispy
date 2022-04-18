@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from .application import Application
@@ -11,7 +11,7 @@ default_app = None
 
 
 def use_app(backend_name=None, call_reuse=True):
-    """ Get/create the default Application object
+    """Get/create the default Application object
 
     It is safe to call this function multiple times, as long as
     backend_name is None or matches the already selected backend.
@@ -49,22 +49,19 @@ def use_app(backend_name=None, call_reuse=True):
 
 
 def create():
-    """Create the native application.
-    """
+    """Create the native application."""
     use_app(call_reuse=False)
     return default_app.create()
 
 
 def run():
-    """Enter the native GUI event loop.
-    """
+    """Enter the native GUI event loop."""
     use_app(call_reuse=False)
     return default_app.run()
 
 
 def quit():
-    """Quit the native GUI event loop.
-    """
+    """Quit the native GUI event loop."""
     use_app(call_reuse=False)
     return default_app.quit()
 

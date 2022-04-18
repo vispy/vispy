@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # vispy: gallery 2
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """
@@ -22,7 +22,7 @@ y += np.arange(m).reshape((-1, 1))
 data = np.zeros(n*m, dtype=[
     ('a_position', np.float32, 2),
     ('a_color', np.float32, 3),
-    ('a_index', np.float32, 1),
+    ('a_index', np.float32),
 ])
 
 data['a_position'] = np.zeros((n*m, 2), dtype=np.float32)

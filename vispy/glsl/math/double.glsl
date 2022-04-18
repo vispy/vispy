@@ -5,7 +5,7 @@
 /*
   This shader program emulates double-precision variables using a vec2 instead
   of single-precision floats. Any function starting with double_* operates on
-  these variables. See http://www.thasler.org/blog/?p=93.
+  these variables. See https://blog.cyclemap.link/2011-06-09-glsl-part2-emu/.
 
   NOTE: Some NVIDIA cards optimize the double-precision code away. Results are
   therefore hardware dependent.
@@ -46,7 +46,7 @@ vec2 double_add(double value_a, double value_b)
     t2 = ((value_b.x - e) + (value_a.x - (t1 - e))) + value_a.y + value_b.y;
     result.x = t1 + t2;
     result.y = t2 - (result.x - t1);
-    return dsc;
+    return result;
 }
 
 

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-""" This module provides an template for creating backends for vispy.
+"""This module provides an template for creating backends for vispy.
 It clearly indicates what methods should be implemented and what events
 should be emitted.
 """
@@ -151,9 +151,8 @@ class CanvasBackend(BaseCanvasBackend):
     events can be triggered.
     """
 
-    # args are for BaseCanvasBackend, kwargs are for us.
-    def __init__(self, *args, **kwargs):
-        BaseCanvasBackend.__init__(self, *args)
+    def __init__(self, vispy_canvas, **kwargs):
+        BaseCanvasBackend.__init__(self, vispy_canvas)
         # We use _process_backend_kwargs() to "serialize" the kwargs
         # and to check whether they match this backend's capability
         p = self._process_backend_kwargs(kwargs)

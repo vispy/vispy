@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 """
 Plot clusters of data points and a graph of connections
@@ -76,7 +76,7 @@ i = 1
 
 def update(ev):
     global pos, edges, lines, markers, view, force, dist, i
-    
+
     dx = np.empty((npts, npts, 2), dtype='float32')
     dx[:] = pos[:, np.newaxis, :]
     dx -= pos[np.newaxis, :, :]
@@ -84,32 +84,32 @@ def update(ev):
     dist = (dx**2).sum(axis=2)**0.5
     dist[dist == 0] = 1.
     ndx = dx / dist[..., np.newaxis]
-    
+
     force = np.zeros((npts, npts, 2), dtype='float32')
-    
+
     # all points push away from each other
     force -= 0.1 * ndx / dist[..., np.newaxis]**2
-    
+
     # connected points pull toward each other
     # pulsed force helps to settle faster:    
     s = 0.1
-    #s = 0.05 * 5 ** (np.sin(i/20.) / (i/100.))
-    
-    #s = 0.05 + 1 * 0.99 ** i
+    # s = 0.05 * 5 ** (np.sin(i/20.) / (i/100.))
+
+    # s = 0.05 + 1 * 0.99 ** i
     mask = np.zeros((npts, npts, 1), dtype='float32')
     mask[edges[:, 0], edges[:, 1]] = s
     mask[edges[:, 1], edges[:, 0]] = s
     force += dx * dist[..., np.newaxis] * mask
-    
+
     # points do not exert force on themselves
     force[np.arange(npts), np.arange(npts)] = 0
-    
+
     force = force.sum(axis=0)
     pos += np.clip(force, -3, 3) * 0.09
-    
+
     lines.set_data(pos=pos)
     markers.set_data(pos=pos, face_color=colors)
-    
+
     i += 1
 
 

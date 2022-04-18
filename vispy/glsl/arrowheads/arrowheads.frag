@@ -31,7 +31,7 @@
  * v_linewidth
  *     Width for the stroke or outline of the shape.
  */
-
+#version 120
 #include "math/constants.glsl"
 #include "arrowheads/arrowheads.glsl"
 #include "antialias/antialias.glsl"
@@ -41,7 +41,7 @@
 varying float v_size;
 varying float v_point_size;
 varying vec4  v_color;
-varying vec2  v_orientation;
+varying vec3  v_orientation;
 varying float v_antialias;
 varying float v_linewidth;
 

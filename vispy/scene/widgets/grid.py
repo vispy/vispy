@@ -1,21 +1,23 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
+"""Grid widget for providing a gridded layout to child widgets."""
 
 from __future__ import division
 import numpy as np
 
+from vispy.geometry import Rect
 from .widget import Widget
+from .viewbox import ViewBox
 
-from ...ext.cassowary import (SimplexSolver, expression,
-                              Variable, WEAK, REQUIRED,
-                              STRONG, RequiredFailure)
+from kiwisolver import Solver, Variable, UnsatisfiableConstraint
 
 
 class Grid(Widget):
-    """
-    Widget that automatically sets the position and size of child Widgets to
-    proportionally divide its internal area into a grid.
+    """Widget for proportionally dividing its internal area into a grid.
+
+    This widget will automatically set the position and size of child widgets
+    according to provided constraints.
 
     Parameters
     ----------
@@ -24,15 +26,16 @@ class Grid(Widget):
     **kwargs : dict
         Keyword arguments to pass to `Widget`.
     """
+
     def __init__(self, spacing=6, **kwargs):
-        from .viewbox import ViewBox
+        """Create solver and basic grid parameters."""
         self._next_cell = [0, 0]  # row, col
         self._cells = {}
         self._grid_widgets = {}
         self.spacing = spacing
         self._n_added = 0
         self._default_class = ViewBox  # what to add when __getitem__ is used
-        self._solver = None
+        self._solver = Solver()
         self._need_solver_recreate = True
 
         # width and height of the Rect used to place child widgets
@@ -42,17 +45,17 @@ class Grid(Widget):
         self._width_grid = None
         self._height_grid = None
 
-        self._height_stay = None
-        self._width_stay = None
+        # self._height_stay = None
+        # self._width_stay = None
 
         Widget.__init__(self, **kwargs)
 
     def __getitem__(self, idxs):
-        """Return an item or create it if the location is available"""
+        """Return an item or create it if the location is available."""
         if not isinstance(idxs, tuple):
             idxs = (idxs,)
         if len(idxs) == 1:
-            idxs = idxs + (slice(None),)
+            idxs = idxs + (slice(0, 1, None),)
         elif len(idxs) != 2:
             raise ValueError('Incorrect index: %s' % (idxs,))
         lims = np.empty((2, 2), int)
@@ -84,10 +87,10 @@ class Grid(Widget):
 
     def add_widget(self, widget=None, row=None, col=None, row_span=1,
                    col_span=1, **kwargs):
-        """
-        Add a new widget to this grid. This will cause other widgets in the
-        grid to be resized to make room for the new widget. Can be used
-        to replace a widget as well
+        """Add a new widget to this grid.
+
+        This will cause other widgets in the grid to be resized to make room
+        for the new widget. Can be used to replace a widget as well.
 
         Parameters
         ----------
@@ -148,14 +151,13 @@ class Grid(Widget):
         return widget
 
     def remove_widget(self, widget):
-        """Remove a widget from this grid
+        """Remove a widget from this grid.
 
         Parameters
         ----------
         widget : Widget
             The Widget to remove
         """
-
         self._grid_widgets = dict((key, val)
                                   for (key, val) in self._grid_widgets.items()
                                   if val[-1] != widget)
@@ -174,11 +176,10 @@ class Grid(Widget):
         col_span : int
             The number of columns to be occupied by this widget.
         """
-
         row = None
         col = None
 
-        for (r, c, rspan, cspan, w) in self._grid_widgets.values():
+        for (r, c, _rspan, _cspan, w) in self._grid_widgets.values():
             if w == widget:
                 row = r
                 col = c
@@ -235,7 +236,6 @@ class Grid(Widget):
         **kwargs : dict
             Keyword arguments to pass to `ViewBox`.
         """
-        from .viewbox import ViewBox
         view = ViewBox(**kwargs)
         return self.add_widget(view, row, col, row_span, col_span)
 
@@ -263,32 +263,32 @@ class Grid(Widget):
     @staticmethod
     def _add_total_width_constraints(solver, width_grid, _var_w):
         for ws in width_grid:
-            width_expr = expression.Expression()
-            for w in ws:
-                width_expr = width_expr + w
-            solver.add_constraint(width_expr == _var_w, strength=REQUIRED)
+            width_expr = ws[0]
+            for w in ws[1:]:
+                width_expr += w
+            solver.addConstraint(width_expr == _var_w)
 
     @staticmethod
     def _add_total_height_constraints(solver, height_grid, _var_h):
         for hs in height_grid:
-            height_expr = expression.Expression()
-            for h in hs:
+            height_expr = hs[0]
+            for h in hs[1:]:
                 height_expr += h
-            solver.add_constraint(height_expr == _var_h, strength=REQUIRED)
+            solver.addConstraint(height_expr == _var_h)
 
     @staticmethod
     def _add_gridding_width_constraints(solver, width_grid):
         # access widths of one "y", different x
         for ws in width_grid.T:
             for w in ws[1:]:
-                solver.add_constraint(ws[0] == w, strength=REQUIRED)
+                solver.addConstraint(ws[0] == w)
 
     @staticmethod
     def _add_gridding_height_constraints(solver, height_grid):
         # access heights of one "y"
         for hs in height_grid.T:
             for h in hs[1:]:
-                solver.add_constraint(hs[0] == h, strength=REQUIRED)
+                solver.addConstraint(hs[0] == h)
 
     @staticmethod
     def _add_stretch_constraints(solver, width_grid, height_grid,
@@ -314,9 +314,9 @@ class Grid(Widget):
 
         for (x, xs) in enumerate(widget_grid):
             for(y, widget) in enumerate(xs):
-                    if widget is None:
-                        stretch_widths[y].append((width_grid[y][x], 1))
-                        stretch_heights[x].append((height_grid[x][y], 1))
+                if widget is None:
+                    stretch_widths[y].append((width_grid[y][x], 1))
+                    stretch_heights[x].append((height_grid[x][y], 1))
 
         for sws in stretch_widths:
             if len(sws) <= 1:
@@ -325,8 +325,8 @@ class Grid(Widget):
             comparator = sws[0][0] / sws[0][1]
 
             for (stretch_term, stretch_val) in sws[1:]:
-                solver.add_constraint(comparator == stretch_term / stretch_val,
-                                      strength=WEAK)
+                solver.addConstraint((comparator == stretch_term/stretch_val) |
+                                     'weak')
 
         for sws in stretch_heights:
             if len(sws) <= 1:
@@ -335,8 +335,8 @@ class Grid(Widget):
             comparator = sws[0][0] / sws[0][1]
 
             for (stretch_term, stretch_val) in sws[1:]:
-                solver.add_constraint(comparator == stretch_term / stretch_val,
-                                      strength=WEAK)
+                solver.addConstraint((comparator == stretch_term/stretch_val) |
+                                     'weak')
 
     @staticmethod
     def _add_widget_dim_constraints(solver, width_grid, height_grid,
@@ -346,11 +346,11 @@ class Grid(Widget):
 
         for ws in width_grid:
             for w in ws:
-                solver.add_constraint(w >= 0, strength=REQUIRED)
+                solver.addConstraint(w >= 0,)
 
         for hs in height_grid:
             for h in hs:
-                solver.add_constraint(h >= 0, strength=REQUIRED)
+                solver.addConstraint(h >= 0)
 
         for (_, val) in grid_widgets.items():
             (y, x, ys, xs, widget) = val
@@ -358,40 +358,40 @@ class Grid(Widget):
             for ws in width_grid[y:y+ys]:
                 total_w = np.sum(ws[x:x+xs])
                 # assert(total_w is not None)
-                solver.add_constraint(total_w >= widget.width_min,
-                                      strength=REQUIRED)
+                solver.addConstraint(total_w >= widget.width_min)
 
                 if widget.width_max is not None:
-                    solver.add_constraint(total_w <= widget.width_max,
-                                          strength=REQUIRED)
+                    solver.addConstraint(total_w <= widget.width_max)
                 else:
-                    solver.add_constraint(total_w <= total_var_w)
+                    solver.addConstraint(total_w <= total_var_w)
 
             for hs in height_grid[x:x+xs]:
                 total_h = np.sum(hs[y:y+ys])
-                solver.add_constraint(total_h >= widget.height_min,
-                                      strength=REQUIRED)
+                solver.addConstraint(total_h >= widget.height_min)
 
                 if widget.height_max is not None:
-                    solver.add_constraint(total_h <= widget.height_max,
-                                          strength=REQUIRED)
+                    solver.addConstraint(total_h <= widget.height_max)
                 else:
-                    solver.add_constraint(total_h <= total_var_h)
+                    solver.addConstraint(total_h <= total_var_h)
 
     def _recreate_solver(self):
-        self._solver = SimplexSolver()
+        self._solver.reset()
+        self._var_w = Variable("w_rect")
+        self._var_h = Variable("h_rect")
+        self._solver.addEditVariable(self._var_w, 'strong')
+        self._solver.addEditVariable(self._var_h, 'strong')
 
         rect = self.rect.padded(self.padding + self.margin)
         ymax, xmax = self.grid_size
 
-        self._var_w = Variable(rect.width)
-        self._var_h = Variable(rect.height)
+        self._solver.suggestValue(self._var_w, rect.width)
+        self._solver.suggestValue(self._var_h, rect.height)
 
-        self._solver.add_constraint(self._var_w >= 0)
-        self._solver.add_constraint(self._var_h >= 0)
+        self._solver.addConstraint(self._var_w >= 0)
+        self._solver.addConstraint(self._var_h >= 0)
 
-        self._height_stay = None
-        self._width_stay = None
+        # self._height_stay = None
+        # self._width_stay = None
 
         # add widths
         self._width_grid = np.array([[Variable("width(x: %s, y: %s)" % (x, y))
@@ -427,8 +427,8 @@ class Grid(Widget):
                                                  self._width_grid)
             Grid._add_gridding_height_constraints(self._solver,
                                                   self._height_grid)
-        except RequiredFailure:
-                self._need_solver_recreate = True
+        except UnsatisfiableConstraint:
+            self._need_solver_recreate = True
 
         # these are WEAK constraints, so these constraints will never fail
         # with a RequiredFailure.
@@ -445,6 +445,8 @@ class Grid(Widget):
                                          self._var_h,
                                          self._grid_widgets)
 
+        self._solver.updateVariables()
+
     def _update_child_widget_dim(self):
         # think in terms of (x, y). (row, col) makes code harder to read
         ymax, xmax = self.grid_size
@@ -460,23 +462,17 @@ class Grid(Widget):
 
         # we only need to remove and add the height and width constraints of
         # the solver if they are not the same as the current value
-        if rect.height != self._var_h.value:
-            if self._height_stay:
-                self._solver.remove_constraint(self._height_stay)
+        h_changed = abs(rect.height - self._var_h.value()) > 1e-4
+        w_changed = abs(rect.width - self._var_w.value()) > 1e-4
+        if h_changed:
+            self._solver.suggestValue(self._var_h, rect.height)
 
-            self._var_h.value = rect.height
-            self._height_stay = self._solver.add_stay(self._var_h,
-                                                      strength=STRONG)
+        if w_changed:
+            self._solver.suggestValue(self._var_w, rect.width)
+        if h_changed or w_changed:
+            self._solver.updateVariables()
 
-        if rect.width != self._var_w.value:
-            if self._width_stay:
-                self._solver.remove_constraint(self._width_stay)
-
-            self._var_w.value = rect.width
-            self._width_stay = self._solver.add_stay(self._var_w,
-                                                     strength=STRONG)
-
-        value_vectorized = np.vectorize(lambda x: x.value)
+        value_vectorized = np.vectorize(lambda x: x.value())
 
         for (_, val) in self._grid_widgets.items():
             (row, col, rspan, cspan, widget) = val
@@ -495,8 +491,11 @@ class Grid(Widget):
             else:
                 y = np.sum(value_vectorized(self._height_grid[col][0:row]))
 
-            widget.size = (width, height)
-            widget.pos = (x, y)
+            if isinstance(widget, ViewBox):
+                widget.rect = Rect(x, y, width, height)
+            else:
+                widget.size = (width, height)
+                widget.pos = (x, y)
 
     @property
     def _widget_grid(self):

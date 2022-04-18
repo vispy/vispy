@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
@@ -11,12 +11,11 @@ import weakref
 
 from . globject import GLObject
 from ..util import logger
-from ..ext.six import string_types
 
 
 # ------------------------------------------------------------ Buffer class ---
 class Buffer(GLObject):
-    """ Generic GPU buffer.
+    """Generic GPU buffer.
 
     A generic buffer is an interface used to upload data to a GPU array buffer
     (ARRAY_BUFFER or ELEMENT_ARRAY_BUFFER). It keeps track of
@@ -37,13 +36,13 @@ class Buffer(GLObject):
     nbytes : int | None
         Buffer byte size.
     """
-    
+
     def __init__(self, data=None, nbytes=None):
         GLObject.__init__(self)
-        self._views = []  # Views on this buffer (stored using weakrefs)
+        self._views = weakref.WeakSet()  # Views on this buffer
         self._valid = True  # To invalidate buffer views
         self._nbytes = 0  # Bytesize in bytes, set in resize_bytes()
-        
+
         # Set data
         if data is not None:
             if nbytes is not None:
@@ -51,19 +50,17 @@ class Buffer(GLObject):
             self.set_data(data, copy=False)
         elif nbytes is not None:
             self.resize_bytes(nbytes)
-        
+
     @property
     def nbytes(self):
-        """ Buffer size in bytes """
-
+        """Buffer size in bytes"""
         return self._nbytes
 
     def set_subdata(self, data, offset=0, copy=False):
-        """ Set a sub-region of the buffer (deferred operation).
+        """Set a sub-region of the buffer (deferred operation).
 
         Parameters
         ----------
-
         data : ndarray
             Data to be uploaded
         offset: int
@@ -88,7 +85,7 @@ class Buffer(GLObject):
         self._glir.command('DATA', self._id, offset, data)
 
     def set_data(self, data, copy=False):
-        """ Set data in the buffer (deferred operation).
+        """Set data in the buffer (deferred operation).
 
         This completely resets the size and contents of the buffer.
 
@@ -109,13 +106,13 @@ class Buffer(GLObject):
         else:
             # Use SIZE to discard any previous data setting
             self._glir.command('SIZE', self._id, nbytes)
-        
+
         if nbytes:  # Only set data if there *is* data
             self._glir.command('DATA', self._id, 0, data)
-    
+
     def resize_bytes(self, size):
-        """ Resize this buffer (deferred operation). 
-        
+        """Resize this buffer (deferred operation).
+
         Parameters
         ----------
         size : int
@@ -125,14 +122,13 @@ class Buffer(GLObject):
         self._glir.command('SIZE', self._id, size)
         # Invalidate any view on this buffer
         for view in self._views:
-            if view() is not None:
-                view()._valid = False
-        self._views = []
+            view._valid = False
+        self._views = weakref.WeakSet()
 
 
 # -------------------------------------------------------- DataBuffer class ---
 class DataBuffer(Buffer):
-    """ GPU data buffer that is aware of data type and elements size
+    """GPU data buffer that is aware of data type and elements size
 
     Parameters
     ----------
@@ -155,28 +151,29 @@ class DataBuffer(Buffer):
         return data
 
     def set_subdata(self, data, offset=0, copy=False, **kwargs):
-        """ Set a sub-region of the buffer (deferred operation).
+        """Set a sub-region of the buffer (deferred operation).
 
         Parameters
         ----------
-
         data : ndarray
             Data to be uploaded
         offset: int
-            Offset in buffer where to start copying data (in bytes)
+            Offset in buffer where to start copying data (i.e. index of
+            starting element).
         copy: bool
             Since the operation is deferred, data may change before
             data is actually uploaded to GPU memory.
             Asking explicitly for a copy will prevent this behavior.
         **kwargs : dict
             Additional keyword arguments.
+
         """
         data = self._prepare_data(data, **kwargs)
         offset = offset * self.itemsize
         Buffer.set_subdata(self, data=data, offset=offset, copy=copy)
 
     def set_data(self, data, copy=False, **kwargs):
-        """ Set data (deferred operation)
+        """Set data (deferred operation)
 
         Parameters
         ----------
@@ -191,43 +188,41 @@ class DataBuffer(Buffer):
         """
         data = self._prepare_data(data, **kwargs)
         self._dtype = data.dtype
+        # This works around some strange NumPy bug where a float32 array
+        # of shape (155407, 1) was said to have strides
+        # (4, 9223372036854775807), which is crazy
         self._stride = data.strides[-1]
         self._itemsize = self._dtype.itemsize
         Buffer.set_data(self, data=data, copy=copy)
 
     @property
     def dtype(self):
-        """ Buffer dtype """
-
+        """Buffer dtype"""
         return self._dtype
 
     @property
     def offset(self):
-        """ Buffer offset (in bytes) relative to base """
-
+        """Buffer offset (in bytes) relative to base"""
         return 0
 
     @property
     def stride(self):
-        """ Stride of data in memory """
-
+        """Stride of data in memory"""
         return self._stride
 
     @property
     def size(self):
-        """ Number of elements in the buffer """
+        """Number of elements in the buffer"""
         return self._size
 
     @property
     def itemsize(self):
-        """ The total number of bytes required to store the array data """
-
+        """The total number of bytes required to store the array data"""
         return self._itemsize
 
     @property
     def glsl_type(self):
-        """ GLSL declaration strings required for a variable to hold this data.
-        """
+        """GLSL declaration strings required for a variable to hold this data."""
         if self.dtype is None:
             return None
         dtshape = self.dtype[0].shape
@@ -239,7 +234,7 @@ class DataBuffer(Buffer):
         return 'attribute', dtype
 
     def resize_bytes(self, size):
-        """ Resize the buffer (in-place, deferred operation)
+        """Resize the buffer (in-place, deferred operation)
 
         Parameters
         ----------
@@ -254,20 +249,18 @@ class DataBuffer(Buffer):
         self._size = size // self.itemsize
 
     def __getitem__(self, key):
-        """ Create a view on this buffer. """
-
+        """Create a view on this buffer."""
         view = DataBufferView(self, key)
-        self._views.append(weakref.ref(view))
+        self._views.add(view)
         return view
 
     def __setitem__(self, key, data):
-        """ Set data (deferred operation) """
-
+        """Set data (deferred operation)"""
         # Setting a whole field of the buffer: only allowed if we have CPU
         # storage. Note this case (key is string) only happen with base buffer
-        if isinstance(key, string_types):
+        if isinstance(key, str):
             raise ValueError("Cannot set non-contiguous data on buffer")
-        
+
         # Setting one or several elements
         elif isinstance(key, int):
             if key < 0:
@@ -296,19 +289,20 @@ class DataBuffer(Buffer):
         if data.size < stop - start:
             data = np.resize(data, stop - start)
         elif data.size > stop - start:
-            raise ValueError('Data too big to fit GPU data.')
-        
+            raise ValueError('Data too big to fit GPU data '
+                             '(%d > %d-%d).' % (data.size, stop, start))
+
         # Set data
-        offset = start  # * self.itemsize
+        offset = start
         self.set_subdata(data=data, offset=offset, copy=True)
 
     def __repr__(self):
-        return ("<%s size=%s last_dim=%s>" % 
+        return ("<%s size=%s last_dim=%s>" %
                 (self.__class__.__name__, self.size, self._last_dim))
 
 
 class DataBufferView(DataBuffer):
-    """ View on a sub-region of a DataBuffer.
+    """View on a sub-region of a DataBuffer.
 
     Parameters
     ----------
@@ -316,35 +310,34 @@ class DataBufferView(DataBuffer):
         The buffer accessed by this view.
     key : str, int, slice, or Ellpsis
         The index into the base buffer that defines a sub-region of the buffer
-        to view. String arguments select a single field from multi-field 
-        dtypes, and other allowed types select a subset of rows. 
-        
+        to view. String arguments select a single field from multi-field
+        dtypes, and other allowed types select a subset of rows.
+
     Notes
     -----
-    
-    It is generally not necessary to instantiate this class manually; use 
+    It is generally not necessary to instantiate this class manually; use
     ``base_buffer[key]`` instead.
     """
-    
+
     # Note that this class is a bit evil: it is a subclass of GLObject,
     # Buffer and DataBuffer, but any of these __init__'s are not called ...
-    
+
     def __init__(self, base, key):
         # Note how this never runs the super's __init__,
         # all attributes must thus be set here ...
-        
+
         self._base = base
         self._key = key
         self._stride = base.stride
 
-        if isinstance(key, string_types):
+        if isinstance(key, str):
             self._dtype = base.dtype[key]
             self._offset = base.dtype.fields[key][1]
             self._nbytes = base.size * self._dtype.itemsize
             self._size = base.size
             self._itemsize = self._dtype.itemsize
             return
-        
+
         if isinstance(key, int):
             if key < 0:
                 key += base.size
@@ -368,11 +361,11 @@ class DataBufferView(DataBuffer):
         self._size = stop - start
         self._dtype = base.dtype
         self._nbytes = self.size * self.itemsize
-    
+
     @property
     def glir(self):
         return self._base.glir
-    
+
     @property
     def id(self):
         return self._base.id
@@ -380,24 +373,23 @@ class DataBufferView(DataBuffer):
     @property
     def _last_dim(self):
         return self._base._last_dim
-    
+
     def set_subdata(self, data, offset=0, copy=False, **kwargs):
         raise RuntimeError("Cannot set data on buffer view.")
-    
+
     def set_data(self, data, copy=False, **kwargs):
         raise RuntimeError("Cannot set data on buffer view.")
-    
+
     @property
     def offset(self):
-        """ Buffer offset (in bytes) relative to base """
-
+        """Buffer offset (in bytes) relative to base"""
         return self._offset
 
     @property
     def base(self):
-        """Buffer base if this buffer is a view on another buffer. """
+        """Buffer base if this buffer is a view on another buffer."""
         return self._base
-    
+
     def resize_bytes(self, size):
         raise RuntimeError("Cannot resize buffer view.")
 
@@ -408,13 +400,13 @@ class DataBufferView(DataBuffer):
         raise RuntimeError("Cannot set data on Buffer view")
 
     def __repr__(self):
-        return ("<DataBufferView on %r at offset=%d size=%d>" % 
+        return ("<DataBufferView on %r at offset=%d size=%d>" %
                 (self.base, self.offset, self.size))
 
-    
+
 # ------------------------------------------------------ VertexBuffer class ---
 class VertexBuffer(DataBuffer):
-    """ Buffer for vertex attribute data
+    """Buffer for vertex attribute data
 
     Parameters
     ----------
@@ -449,7 +441,11 @@ class VertexBuffer(DataBuffer):
             if self._last_dim and c != self._last_dim:
                 raise ValueError('Last dimension should be %s not %s'
                                  % (self._last_dim, c))
-            data = data.view(dtype=[('f0', data.dtype.base, c)])
+            dtype_def = ('f0', data.dtype.base)
+            if c != 1:
+                # numpy dtypes with size 1 are ambiguous, only add size if it is greater than 1
+                dtype_def += (c,)
+            data = data.view(dtype=[dtype_def])
             self._last_dim = c
         return data
 
@@ -465,15 +461,14 @@ def _last_stack_str():
 
 # ------------------------------------------------------- IndexBuffer class ---
 class IndexBuffer(DataBuffer):
-    """ Buffer for index data
+    """Buffer for index data
 
     Parameters
     ----------
-
     data : ndarray | None
         Buffer data.
     """
-    
+
     _GLIR_TYPE = 'IndexBuffer'
 
     def __init__(self, data=None):

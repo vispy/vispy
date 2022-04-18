@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 """
@@ -60,7 +60,7 @@ void main() {
 # generated correctly.)
 class MyRectVisual(visuals.Visual):
     """Visual that draws a red rectangle.
-    
+
     Parameters
     ----------
     x : float
@@ -71,18 +71,18 @@ class MyRectVisual(visuals.Visual):
         width of rectangle
     h : float
         height of rectangle
-        
+
     All parameters are specified in the local (arbitrary) coordinate system of
     the visual. How this coordinate system translates to the canvas will 
     depend on the transformation functions used during drawing.
     """
-    
+
     # There are no constraints on the signature of the __init__ method; use
     # whatever makes the most sense for your visual.
     def __init__(self, x, y, w, h):
         # Initialize the visual with a vertex shader and fragment shader
         visuals.Visual.__init__(self, vertex_shader, fragment_shader)
-        
+
         # vertices for two triangles forming a rectangle
         self.vbo = gloo.VertexBuffer(np.array([
             [x, y], [x+w, y], [x+w, y+h],
@@ -102,7 +102,7 @@ class MyRectVisual(visuals.Visual):
         # new transforms to this visual (ignore the *view* argument for now;
         # we'll get to that later). This method is thus responsible for
         # connecting the proper transform functions to the shader program.
-        
+
         # The most common approach here is to simply take the complete
         # transformation from visual coordinates to render coordinates. Later
         # tutorials detail more complex transform handling.

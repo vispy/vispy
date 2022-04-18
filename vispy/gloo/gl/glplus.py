@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-""" This module provides a namespace for additional desktop OpenGL functions.
+"""This module provides a namespace for additional desktop OpenGL functions.
 
 The functions in this module are copied from PyOpenGL, but any deprecated
 functions are omitted, as well as any functions that are in our ES 2.0 API.
@@ -15,14 +15,13 @@ from . import _constants
 
 
 def _inject():
-    """ Inject functions and constants from PyOpenGL but leave out the
+    """Inject functions and constants from PyOpenGL but leave out the
     names that are deprecated or that we provide in our API.
     """
-    
     # Get namespaces
     NS = globals()
     GLNS = _GL.__dict__
-    
+
     # Get names that we use in our API
     used_names = []
     used_names.extend([names[0] for names in _pyopengl2._functions_to_import])
@@ -33,15 +32,15 @@ def _inject():
     # Count
     injected_constants = 0
     injected_functions = 0
-    
+
     for name in dir(_GL):
-        
+
         if name.startswith('GL_'):
             # todo: find list of deprecated constants
             if name not in used_constants:
                 NS[name] = GLNS[name]
                 injected_constants += 1
-        
+
         elif name.startswith('gl'):
             # Functions
             if (name + ',') in _deprecated_functions:
@@ -51,8 +50,8 @@ def _inject():
             else:
                 NS[name] = GLNS[name]
                 injected_functions += 1
-    
-    #print('injected %i constants and %i functions in glplus' % 
+
+    # print('injected %i constants and %i functions in glplus' % 
     #      (injected_constants, injected_functions))
 
 

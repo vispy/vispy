@@ -72,18 +72,18 @@ def update_cursor(pos):
     else:
         # get data for the selected trace
         trace = data[selected.data_index]
-        
+
         # map the mouse position to data coordinates
         tr = fig.scene.node_transform(selected)
         pos = tr.map(pos)
-        
+
         # get interpolated y coordinate
         x = min(max(pos[0], t[0]), t[-2])
         ind = x / (dt * 1000)
-        i = np.floor(ind)
+        i = int(np.floor(ind))
         s = ind - i
         y = trace[i] * (1 - s) + trace[i + 1] * s 
-        
+
         # update cursor
         cursor_text.text = "x=%0.2f ms, y=%0.2f mV" % (x, y)
         offset = np.diff(tr.map([[0, 0], [10, 0]]), axis=0)[0, 0]

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # vispy: gallery 30
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 """
@@ -99,8 +99,8 @@ if __name__ == '__main__':
 
     def update(ev):
         pos[:, 1] = np.random.normal(size=N, scale=30, loc=0)
-        win.lines[0].set_data(pos)
-        win.lines[3].set_data(pos)
+        for line in win.lines:
+            line.set_data(pos)
 
     timer = app.Timer()
     timer.connect(update)

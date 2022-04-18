@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """
@@ -14,17 +14,15 @@ For more information see http://github.com/vispy/vispy/wiki/API_Events
 
 from __future__ import division
 
+from collections import OrderedDict
 import inspect
-import weakref
 import traceback
+import weakref
 
 from .logs import logger, _handle_exception
-from ..ext.ordereddict import OrderedDict
-from ..ext.six import string_types
 
 
 class Event(object):
-
     """Class describing events that occur and can be reacted to with callbacks.
     Each event instance contains information about a single event that has
     occurred such as a key press, mouse motion, timer activation, etc.
@@ -61,13 +59,12 @@ class Event(object):
 
     @property
     def source(self):
-        """The object that the event applies to (i.e. the source of the event).
-        """
+        """The object that the event applies to (i.e. the source of the event)."""
         return self._sources[-1] if self._sources else None
 
     @property
     def sources(self):
-        """ List of objects that the event applies to (i.e. are or have
+        """List of objects that the event applies to (i.e. are or have
         been a source of the event). Can contain multiple objects in case
         the event traverses a hierarchy of objects.
         """
@@ -194,7 +191,7 @@ class EventEmitter(object):
         self._blocked = {None: 0}
 
         # used to detect emitter loops
-        self._emitting = False
+        self._emitting = 0
         self.source = source
         self.default_args = {}
         if type is not None:
@@ -314,12 +311,12 @@ class EventEmitter(object):
         """
         callbacks = self.callbacks
         callback_refs = self.callback_refs
-        
+
         callback = self._normalize_cb(callback)
-        
+
         if callback in callbacks:
             return
-        
+
         # deal with the ref
         if isinstance(ref, bool):
             if ref:
@@ -331,7 +328,7 @@ class EventEmitter(object):
                     ref = callback.__class__.__name__
             else:
                 ref = None
-        elif not isinstance(ref, string_types):
+        elif not isinstance(ref, str):
             raise TypeError('ref must be a bool or string')
         if ref is not None and ref in self._callback_refs:
             raise ValueError('ref "%s" is not unique' % ref)
@@ -389,21 +386,21 @@ class EventEmitter(object):
                 self._callback_refs.pop(idx)
 
     def _normalize_cb(self, callback):
-        # dereference methods into a (self, method_name) pair so that we can 
-        # make the connection without making a strong reference to the 
+        # dereference methods into a (self, method_name) pair so that we can
+        # make the connection without making a strong reference to the
         # instance.
         if inspect.ismethod(callback):
             callback = (callback.__self__, callback.__name__)
-        
+
         # always use a weak ref
-        if (isinstance(callback, tuple) and not 
+        if (isinstance(callback, tuple) and not
                 isinstance(callback[0], weakref.ref)):
             callback = (weakref.ref(callback[0]),) + callback[1:]
-            
+
         return callback
 
     def __call__(self, *args, **kwargs):
-        """ __call__(**kwargs)
+        """__call__(**kwargs)
         Invoke all callbacks for this emitter.
 
         Emit a new event object, created with the given keyword
@@ -424,8 +421,6 @@ class EventEmitter(object):
         """
         # This is a VERY highly used method; must be fast!
         blocked = self._blocked
-        if self._emitting:
-            raise RuntimeError('EventEmitter loop detected!')
 
         # create / massage event as needed
         event = self._prepare_event(*args, **kwargs)
@@ -433,13 +428,13 @@ class EventEmitter(object):
         # Add our source to the event; remove it after all callbacks have been
         # invoked.
         event._push_source(self.source)
-        self._emitting = True
+        self._emitting += 1
         try:
             if blocked.get(None, 0) > 0:  # this is the same as self.blocked()
                 return event
 
             rem = []
-            for cb in self._callbacks:
+            for cb in self._callbacks[:]:
                 if isinstance(cb, tuple):
                     obj = cb[0]()
                     if obj is None:
@@ -448,19 +443,22 @@ class EventEmitter(object):
                     cb = getattr(obj, cb[1], None)
                     if cb is None:
                         continue
-                
+
                 if blocked.get(cb, 0) > 0:
                     continue
-                
+
+                if self._emitting > 1:
+                    raise RuntimeError('EventEmitter loop detected!')
+
                 self._invoke_callback(cb, event)
                 if event.blocked:
                     break
-                
+
             # remove callbacks to dead objects
             for cb in rem:
                 self.disconnect(cb)
         finally:
-            self._emitting = False
+            self._emitting -= 1
             if event._pop_source() != self.source:
                 raise RuntimeError("Event source-stack mismatch.")
 
@@ -508,15 +506,15 @@ class EventEmitter(object):
         self._blocked[callback] = self._blocked.get(callback, 0) + 1
 
     def unblock(self, callback=None):
-        """ Unblock this emitter. See :func:`event.EventEmitter.block`.
-        
-        Note: Use of ``unblock(None)`` only reverses the effect of 
-        ``block(None)``; it does not unblock callbacks that were explicitly 
-        blocked using ``block(callback)``. 
+        """Unblock this emitter. See :func:`event.EventEmitter.block`.
+
+        Note: Use of ``unblock(None)`` only reverses the effect of
+        ``block(None)``; it does not unblock callbacks that were explicitly
+        blocked using ``block(callback)``.
         """
         if callback not in self._blocked or self._blocked[callback] == 0:
             raise RuntimeError("Cannot unblock %s for callback %s; emitter "
-                               "was not previously blocked." % 
+                               "was not previously blocked." %
                                (self, callback))
         b = self._blocked[callback] - 1
         if b == 0 and callback is not None:
@@ -525,14 +523,15 @@ class EventEmitter(object):
             self._blocked[callback] = b
 
     def blocker(self, callback=None):
-        """Return an EventBlocker to be used in 'with' statements
+        """Return an EventBlocker to be used in 'with' statements.
 
-           Notes
-           -----
-           For example, one could do::
+        Examples
+        --------
+        For example, one could do::
 
-               with emitter.blocker():
-                   pass  # ..do stuff; no events will be emitted..
+            with emitter.blocker():
+                pass  # ..do stuff; no events will be emitted..
+
         """
         return EventBlocker(self, callback)
 
@@ -542,6 +541,7 @@ class WarningEmitter(EventEmitter):
     EventEmitter subclass used to allow deprecated events to be used with a
     warning message.
     """
+
     def __init__(self, message, *args, **kwargs):
         self._message = message
         self._warned = False
@@ -569,7 +569,6 @@ class WarningEmitter(EventEmitter):
 
 
 class EmitterGroup(EventEmitter):
-
     """EmitterGroup instances manage a set of related
     :class:`EventEmitters <vispy.event.EventEmitter>`.
     Its primary purpose is to provide organization for objects
@@ -625,13 +624,11 @@ class EmitterGroup(EventEmitter):
         return self._emitters[name]
 
     def __setitem__(self, name, emitter):
-        """
-        Alias for EmitterGroup.add(name=emitter)
-        """
+        """Alias for EmitterGroup.add(name=emitter)"""
         self.add(**{name: emitter})
 
     def add(self, auto_connect=None, **kwargs):
-        """ Add one or more EventEmitter instances to this emitter group.
+        """Add one or more EventEmitter instances to this emitter group.
         Each keyword argument may be specified as either an EventEmitter
         instance or an Event subclass, in which case an EventEmitter will be
         generated automatically::
@@ -691,34 +688,29 @@ class EmitterGroup(EventEmitter):
 
     @property
     def emitters(self):
-        """ List of current emitters in this group.
-        """
+        """List of current emitters in this group."""
         return self._emitters
 
     def __iter__(self):
-        """
-        Iterates over the names of emitters in this group.
-        """
+        """Iterates over the names of emitters in this group."""
         for k in self._emitters:
             yield k
 
     def block_all(self):
-        """ Block all emitters in this group.
-        """
+        """Block all emitters in this group."""
         self.block()
         for em in self._emitters.values():
             em.block()
 
     def unblock_all(self):
-        """ Unblock all emitters in this group.
-        """
+        """Unblock all emitters in this group."""
         self.unblock()
         for em in self._emitters.values():
             em.unblock()
 
     def connect(self, callback, ref=False, position='first',
                 before=None, after=None):
-        """ Connect the callback to the event group. The callback will receive
+        """Connect the callback to the event group. The callback will receive
         events from *all* of the emitters in the group.
 
         See :func:`EventEmitter.connect() <vispy.event.EventEmitter.connect>`
@@ -729,7 +721,7 @@ class EmitterGroup(EventEmitter):
                                     before, after)
 
     def disconnect(self, callback=None):
-        """ Disconnect the callback from this group. See
+        """Disconnect the callback from this group. See
         :func:`connect() <vispy.event.EmitterGroup.connect>` and
         :func:`EventEmitter.connect() <vispy.event.EventEmitter.connect>` for
         more information.
@@ -767,10 +759,10 @@ class EmitterGroup(EventEmitter):
 
 
 class EventBlocker(object):
-
-    """ Represents a block for an EventEmitter to be used in a context
+    """Represents a block for an EventEmitter to be used in a context
     manager (i.e. 'with' statement).
     """
+
     def __init__(self, target, callback=None):
         self.target = target
         self.callback = callback

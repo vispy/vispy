@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
@@ -10,11 +10,26 @@ import numpy as np
 import warnings
 
 from .globject import GLObject
-from ..ext.six import string_types
 from .util import check_enum
 
 
-# ----------------------------------------------------------- Texture class ---
+F64_PRECISION_WARNING = ("GPUs can't support floating point data with more "
+                         "than 32-bits, precision will be lost due to "
+                         "downcasting to 32-bit float.")
+
+
+def should_cast_to_f32(data_dtype):
+    """Check if data type is floating point with more than 32-bits."""
+    data_dtype = np.dtype(data_dtype)
+    is_floating = np.issubdtype(data_dtype, np.floating)
+    gt_float32 = data_dtype.itemsize > 4
+    if is_floating and gt_float32:
+        # OpenGL can't support floating point numbers greater than 32-bits
+        warnings.warn(F64_PRECISION_WARNING)
+        return True
+    return False
+
+
 class BaseTexture(GLObject):
     """
     A Texture is used to represent a topological set of scalar values.
@@ -46,6 +61,7 @@ class BaseTexture(GLObject):
     resizeable : None
         Deprecated version of `resizable`.
     """
+
     _ndim = 2
 
     _formats = {
@@ -66,10 +82,14 @@ class BaseTexture(GLObject):
         'depth_component': 1,
     }
 
+    # NOTE: non-normalized formats ending with 'i' and 'ui' are currently
+    #   disabled as they don't work with the current VisPy implementation.
+    #   Attempting to use them along with the additional enums defined in
+    #   vispy/gloo/glir.py produces an invalid operation from OpenGL.
     _inv_internalformats = dict([
         (base + suffix, channels)
         for base, channels in [('r', 1), ('rg', 2), ('rgb', 3), ('rgba', 4)]
-        for suffix in ['8', '16', '16f', '32f']
+        for suffix in ['8', '16', '16f', '32f']  # , '8i', '8ui', '32i', '32ui']
     ] + [
         ('luminance', 1),
         ('alpha', 1),
@@ -87,9 +107,12 @@ class BaseTexture(GLObject):
         GLObject.__init__(self)
         if resizeable is not None:
             resizable = resizeable
-            warnings.warn('resizeable has been deprecated in favor of '
-                          'resizable and will be removed next release',
-                          DeprecationWarning)
+            warnings.warn(
+                "resizeable has been deprecated in favor of "
+                "resizable and will be removed next release",
+                DeprecationWarning,
+                stacklevel=2,
+            )
 
         # Init shape and format
         self._resizable = True  # at least while we're in init
@@ -144,26 +167,29 @@ class BaseTexture(GLObject):
 
     @property
     def shape(self):
-        """ Data shape (last dimension indicates number of color channels)
-        """
+        """Data shape (last dimension indicates number of color channels)"""
         return self._shape
 
     @property
     def format(self):
-        """ The texture format (color channels).
-        """
+        """The texture format (color channels)."""
         return self._format
 
     @property
+    def internalformat(self):
+        """The texture internalformat."""
+        return self._internalformat
+
+    @property
     def wrapping(self):
-        """ Texture wrapping mode """
+        """Texture wrapping mode"""
         value = self._wrapping
         return value[0] if all([v == value[0] for v in value]) else value
 
     @wrapping.setter
     def wrapping(self, value):
         # Convert
-        if isinstance(value, int) or isinstance(value, string_types):
+        if isinstance(value, int) or isinstance(value, str):
             value = (value,) * self._ndim
         elif isinstance(value, (tuple, list)):
             if len(value) != self._ndim:
@@ -180,14 +206,14 @@ class BaseTexture(GLObject):
 
     @property
     def interpolation(self):
-        """ Texture interpolation for minification and magnification. """
+        """Texture interpolation for minification and magnification."""
         value = self._interpolation
         return value[0] if value[0] == value[1] else value
 
     @interpolation.setter
     def interpolation(self, value):
         # Convert
-        if isinstance(value, int) or isinstance(value, string_types):
+        if isinstance(value, int) or isinstance(value, str):
             value = (value,) * 2
         elif isinstance(value, (tuple, list)):
             if len(value) != 2:
@@ -225,57 +251,61 @@ class BaseTexture(GLObject):
         """
         return self._resize(shape, format, internalformat)
 
+    def _check_format_change(self, format, num_channels):
+        # Determine format
+        if format is None:
+            format = self._formats[num_channels]
+            # Keep current format if channels match
+            if self._format and \
+                    self._inv_formats[self._format] == self._inv_formats[format]:
+                format = self._format
+        else:
+            format = check_enum(format)
+
+        if format not in self._inv_formats:
+            raise ValueError('Invalid texture format: %r.' % format)
+        elif num_channels != self._inv_formats[format]:
+            raise ValueError('Format does not match with given shape. '
+                             '(format expects %d elements, data has %d)' %
+                             (self._inv_formats[format], num_channels))
+        return format
+
+    def _check_internalformat_change(self, internalformat, num_channels):
+        if internalformat is None:
+            # Keep current internalformat if channels match
+            if self._internalformat and \
+               self._inv_internalformats[self._internalformat] == num_channels:
+                internalformat = self._internalformat
+        else:
+            internalformat = check_enum(internalformat)
+
+        if internalformat is None:
+            pass
+        elif internalformat not in self._inv_internalformats:
+            raise ValueError(
+                'Invalid texture internalformat: %r. Allowed formats: %r'
+                % (internalformat, self._inv_internalformats)
+            )
+        elif num_channels != self._inv_internalformats[internalformat]:
+            raise ValueError('Internalformat does not match with given shape.')
+        return internalformat
+
     def _resize(self, shape, format=None, internalformat=None):
-        """Internal method for resize.
-        """
+        """Internal method for resize."""
         shape = self._normalize_shape(shape)
 
         # Check
         if not self._resizable:
             raise RuntimeError("Texture is not resizable")
 
-        # Determine format
-        if format is None:
-            format = self._formats[shape[-1]]
-            # Keep current format if channels match
-            if self._format and \
-               self._inv_formats[self._format] == self._inv_formats[format]:
-                format = self._format
-        else:
-            format = check_enum(format)
-
-        if internalformat is None:
-            # Keep current internalformat if channels match
-            if self._internalformat and \
-               self._inv_internalformats[self._internalformat] == shape[-1]:
-                internalformat = self._internalformat
-        else:
-
-            internalformat = check_enum(internalformat)
-
-        # Check
-        if format not in self._inv_formats:
-            raise ValueError('Invalid texture format: %r.' % format)
-        elif shape[-1] != self._inv_formats[format]:
-            raise ValueError('Format does not match with given shape. '
-                             '(format expects %d elements, data has %d)' %
-                             (self._inv_formats[format], shape[-1]))
-        
-        if internalformat is None:
-            pass
-        elif internalformat not in self._inv_internalformats:
-            raise ValueError(
-                'Invalid texture internalformat: %r. Allowed formats: %r' 
-                % (internalformat, self._inv_internalformats)
-            )
-        elif shape[-1] != self._inv_internalformats[internalformat]:
-            raise ValueError('Internalformat does not match with given shape.')
+        format = self._check_format_change(format, shape[-1])
+        internalformat = self._check_internalformat_change(internalformat, shape[-1])
 
         # Store and send GLIR command
         self._shape = shape
         self._format = format
         self._internalformat = internalformat
-        self._glir.command('SIZE', self._id, self._shape, self._format, 
+        self._glir.command('SIZE', self._id, self._shape, self._format,
                            self._internalformat)
 
     def set_data(self, data, offset=None, copy=False):
@@ -294,40 +324,37 @@ class BaseTexture(GLObject):
 
         Notes
         -----
-        This operation implicitely resizes the texture to the shape of
+        This operation implicitly resizes the texture to the shape of
         the data if given offset is None.
         """
         return self._set_data(data, offset, copy)
 
     def _set_data(self, data, offset=None, copy=False):
-        """Internal method for set_data.
-        """
-        
+        """Internal method for set_data."""
         # Copy if needed, check/normalize shape
         data = np.array(data, copy=copy)
         data = self._normalize_shape(data)
-        
+
         # Maybe resize to purge DATA commands?
         if offset is None:
             self._resize(data.shape)
         elif all([i == 0 for i in offset]) and data.shape == self._shape:
             self._resize(data.shape)
-        
+
         # Convert offset to something usable
         offset = offset or tuple([0 for i in range(self._ndim)])
         assert len(offset) == self._ndim
-        
+
         # Check if data fits
         for i in range(len(data.shape)-1):
             if offset[i] + data.shape[i] > self._shape[i]:
                 raise ValueError("Data is too large")
-        
+
         # Send GLIR command
         self._glir.command('DATA', self._id, offset, data)
-    
+
     def __setitem__(self, key, data):
-        """ x.__getitem__(y) <==> x[y] """
-        
+        """x.__getitem__(y) <==> x[y]"""
         # Make sure key is a tuple
         if isinstance(key, (int, slice)) or key == Ellipsis:
             key = (key,)
@@ -369,7 +396,7 @@ class BaseTexture(GLObject):
         offset = tuple([s.start for s in slices])[:self._ndim]
         shape = tuple([s.stop - s.start for s in slices])
         size = np.prod(shape) if len(shape) > 0 else 1
-        
+
         # Make sure data is an array
         if not isinstance(data, np.ndarray):
             data = np.array(data, copy=False)
@@ -379,7 +406,7 @@ class BaseTexture(GLObject):
 
         # Set data (deferred)
         self._set_data(data=data, offset=offset, copy=False)
-    
+
     def __repr__(self):
         return "<%s shape=%r format=%r at 0x%x>" % (
             self.__class__.__name__, self._shape, self._format, id(self))
@@ -387,7 +414,7 @@ class BaseTexture(GLObject):
 
 # --------------------------------------------------------- Texture1D class ---
 class Texture1D(BaseTexture):
-    """ One dimensional texture
+    """One dimensional texture
 
     Parameters
     ----------
@@ -416,6 +443,7 @@ class Texture1D(BaseTexture):
     resizeable : None
         Deprecated version of `resizable`.
     """
+
     _ndim = 1
     _GLIR_TYPE = 'Texture1D'
 
@@ -427,31 +455,28 @@ class Texture1D(BaseTexture):
 
     @property
     def width(self):
-        """ Texture width """
+        """Texture width"""
         return self._shape[0]
 
     @property
     def glsl_type(self):
-        """ GLSL declaration strings required for a variable to hold this data.
-        """
+        """GLSL declaration strings required for a variable to hold this data."""
         return 'uniform', 'sampler1D'
 
     @property
     def glsl_sampler_type(self):
-        """ GLSL type of the sampler.
-        """
+        """GLSL type of the sampler."""
         return 'sampler1D'
 
     @property
     def glsl_sample(self):
-        """ GLSL function that samples the texture.
-        """
+        """GLSL function that samples the texture."""
         return 'texture1D'
 
 
 # --------------------------------------------------------- Texture2D class ---
 class Texture2D(BaseTexture):
-    """ Two dimensional texture
+    """Two dimensional texture
 
     Parameters
     ----------
@@ -479,6 +504,7 @@ class Texture2D(BaseTexture):
     resizeable : None
         Deprecated version of `resizable`.
     """
+
     _ndim = 2
     _GLIR_TYPE = 'Texture2D'
 
@@ -490,36 +516,33 @@ class Texture2D(BaseTexture):
 
     @property
     def height(self):
-        """ Texture height """
+        """Texture height"""
         return self._shape[0]
 
     @property
     def width(self):
-        """ Texture width """
+        """Texture width"""
         return self._shape[1]
 
     @property
     def glsl_type(self):
-        """ GLSL declaration strings required for a variable to hold this data.
-        """
+        """GLSL declaration strings required for a variable to hold this data."""
         return 'uniform', 'sampler2D'
 
     @property
     def glsl_sampler_type(self):
-        """ GLSL type of the sampler.
-        """
+        """GLSL type of the sampler."""
         return 'sampler2D'
 
     @property
     def glsl_sample(self):
-        """ GLSL function that samples the texture.
-        """
+        """GLSL function that samples the texture."""
         return 'texture2D'
 
 
 # --------------------------------------------------------- Texture3D class ---
 class Texture3D(BaseTexture):
-    """ Three dimensional texture
+    """Three dimensional texture
 
     Parameters
     ----------
@@ -548,6 +571,7 @@ class Texture3D(BaseTexture):
     resizeable : None
         Deprecated version of `resizable`.
     """
+
     _ndim = 3
     _GLIR_TYPE = 'Texture3D'
 
@@ -559,41 +583,113 @@ class Texture3D(BaseTexture):
 
     @property
     def width(self):
-        """ Texture width """
+        """Texture width"""
         return self._shape[2]
 
     @property
     def height(self):
-        """ Texture height """
+        """Texture height"""
         return self._shape[1]
 
     @property
     def depth(self):
-        """ Texture depth """
+        """Texture depth"""
         return self._shape[0]
 
     @property
     def glsl_type(self):
-        """ GLSL declaration strings required for a variable to hold this data.
-        """
+        """GLSL declaration strings required for a variable to hold this data."""
         return 'uniform', 'sampler3D'
 
     @property
     def glsl_sampler_type(self):
-        """ GLSL type of the sampler.
-        """
+        """GLSL type of the sampler."""
         return 'sampler3D'
 
     @property
     def glsl_sample(self):
-        """ GLSL function that samples the texture.
-        """
+        """GLSL function that samples the texture."""
         return 'texture3D'
+
+
+# --------------------------------------------------------- TextureCube class ---
+class TextureCube(BaseTexture):
+    """Texture Cube
+
+    Parameters
+    ----------
+    data : ndarray | tuple | None
+        Texture data in the form of a numpy array (or something that
+        can be turned into one). A tuple with the shape of the texture
+        can also be given.
+    format : str | enum | None
+        The format of the texture: 'luminance', 'alpha',
+        'luminance_alpha', 'rgb', or 'rgba'. If not given the format
+        is chosen automatically based on the number of channels.
+        When the data has one channel, 'luminance' is assumed.
+    resizable : bool
+        Indicates whether texture can be resized. Default True.
+    interpolation : str | None
+        Interpolation mode, must be one of: 'nearest', 'linear'.
+        Default 'nearest'.
+    wrapping : str | None
+        Wrapping mode, must be one of: 'repeat', 'clamp_to_edge',
+        'mirrored_repeat'. Default 'clamp_to_edge'.
+    shape : tuple | None
+        Optional. A tuple with the shape of the texture. If ``data``
+        is also a tuple, it will override the value of ``shape``.
+    internalformat : str | None
+        Internal format to use.
+    resizeable : None
+        Deprecated version of `resizable`.
+    """
+
+    _ndim = 3
+    _GLIR_TYPE = 'TextureCube'
+
+    def __init__(self, data=None, format=None, resizable=True,
+                 interpolation=None, wrapping=None, shape=None,
+                 internalformat=None, resizeable=None):
+        BaseTexture.__init__(self, data, format, resizable, interpolation,
+                             wrapping, shape, internalformat, resizeable)
+        if self._shape[0] != 6:
+            raise ValueError("Texture cube require arrays first dimension to be 6 :"
+                             " {} was given.".format(self._shape[0]))
+
+    @property
+    def height(self):
+        """Texture height"""
+        return self._shape[1]
+
+    @property
+    def width(self):
+        """Texture width"""
+        return self._shape[2]
+
+    @property
+    def depth(self):
+        """Texture depth"""
+        return self._shape[0]
+
+    @property
+    def glsl_type(self):
+        """GLSL declaration strings required for a variable to hold this data."""
+        return 'uniform', 'samplerCube'
+
+    @property
+    def glsl_sampler_type(self):
+        """GLSL type of the sampler."""
+        return 'samplerCube'
+
+    @property
+    def glsl_sample(self):
+        """GLSL function that samples the texture."""
+        return 'textureCube'
 
 
 # ------------------------------------------------- TextureEmulated3D class ---
 class TextureEmulated3D(Texture2D):
-    """ Two dimensional texture that is emulating a three dimensional texture
+    """Two dimensional texture that is emulating a three dimensional texture
 
     Parameters
     ----------
@@ -717,8 +813,15 @@ class TextureEmulated3D(Texture2D):
 
     def _update_variables(self):
         self._glsl_sample['shape'] = self.shape[:3][::-1]
-        self._glsl_sample['c'] = self._c
-        self._glsl_sample['r'] = self._r
+        # On Windows with Python 2.7, self._c can end up being a long
+        # integer because Numpy array shapes return long integers. This
+        # causes issues when setting the gloo variables since these are
+        # expected to be native ints, so we cast the integers to ints
+        # to avoid this.
+        # Newer GLSL compilers do not implicitly cast types so these integers
+        # must be converted to floats lastly
+        self._glsl_sample['c'] = float(int(self._c))
+        self._glsl_sample['r'] = float(int(self._r))
 
     def set_data(self, data, offset=None, copy=False):
         """Set texture data
@@ -773,30 +876,27 @@ class TextureEmulated3D(Texture2D):
 
     @property
     def shape(self):
-        """ Data shape (last dimension indicates number of color channels)
-        """
+        """Data shape (last dimension indicates number of color channels)"""
         return self._emulated_shape
 
     @property
     def width(self):
-        """ Texture width """
+        """Texture width"""
         return self._emulated_shape[2]
 
     @property
     def height(self):
-        """ Texture height """
+        """Texture height"""
         return self._emulated_shape[1]
 
     @property
     def depth(self):
-        """ Texture depth """
+        """Texture depth"""
         return self._emulated_shape[0]
 
     @property
     def glsl_sample(self):
-        """ GLSL function that samples the texture.
-        """
-
+        """GLSL function that samples the texture."""
         return self._glsl_sample
 
 
@@ -814,6 +914,8 @@ class TextureAtlas(Texture2D):
     ----------
     shape : tuple of int
         Texture shape (optional).
+    dtype : numpy.dtype object
+        Texture starting data type (default: float32)
 
     Notes
     -----
@@ -824,12 +926,13 @@ class TextureAtlas(Texture2D):
         >>> bounds = atlas.get_free_region(20, 30)
         >>> atlas.set_region(bounds, np.random.rand(20, 30).T)
     """
-    def __init__(self, shape=(1024, 1024)):
+
+    def __init__(self, shape=(1024, 1024), dtype=np.float32):
         shape = np.array(shape, int)
         assert shape.ndim == 1 and shape.size == 2
         shape = tuple(2 ** (np.log2(shape) + 0.5).astype(int)) + (3,)
         self._atlas_nodes = [(0, 0, shape[1])]
-        data = np.zeros(shape, np.float32)
+        data = np.zeros(shape, dtype)
         super(TextureAtlas, self).__init__(data, interpolation='linear',
                                            wrapping='clamp_to_edge')
 

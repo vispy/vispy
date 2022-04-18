@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 """
@@ -83,7 +83,7 @@ void main() {
     // Also need to map the adjustment direction vector, but this is tricky!
     // We need to adjust separately for each component of the vector:
     vec4 adjusted;
-    if ( $adjust_dir.x == 0 ) {
+    if ( $adjust_dir.x == 0. ) {
         // If this is an outer vertex, no adjustment for line weight is needed.
         // (In fact, trying to make the adjustment would result in no
         // triangles being drawn, hence the if/else block)
@@ -125,7 +125,7 @@ void main() {
 
 class MyRectVisual(visuals.Visual):
     """Visual that draws a rectangular outline.
-    
+
     Parameters
     ----------
     x : float
@@ -139,10 +139,10 @@ class MyRectVisual(visuals.Visual):
     weight : float
         width of border (in px)
     """
-    
+
     def __init__(self, x, y, w, h, weight=4.0):
         visuals.Visual.__init__(self, vertex_shader, fragment_shader)
-        
+
         # 10 vertices for 8 triangles (using triangle_strip) forming a 
         # rectangular outline
         self.vert_buffer = gloo.VertexBuffer(np.array([
@@ -157,7 +157,7 @@ class MyRectVisual(visuals.Visual):
             [x, y], 
             [x, y], 
         ], dtype=np.float32))
-        
+
         # Direction each vertex should move to correct for line width
         # (the length of this vector will be corrected in the shader)
         self.adj_buffer = gloo.VertexBuffer(np.array([
@@ -172,7 +172,7 @@ class MyRectVisual(visuals.Visual):
             [0, 0],
             [1, 1],
         ], dtype=np.float32))
-        
+
         self.shared_program.vert['position'] = self.vert_buffer
         self.shared_program.vert['adjust_dir'] = self.adj_buffer
         self.shared_program.vert['line_width'] = weight

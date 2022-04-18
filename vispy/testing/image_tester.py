@@ -1,6 +1,10 @@
+# -*- coding: utf-8 -*-
+# -----------------------------------------------------------------------------
+# Copyright (c) Vispy Development Team. All Rights Reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+# -----------------------------------------------------------------------------
+"""Test utilities for comparing rendered results with expected image files.
 
-
-"""
 Procedure for unit-testing with images:
 
 1. Run unit tests at least once; this initializes a git clone of
@@ -29,7 +33,7 @@ Procedure for unit-testing with images:
    and create a new tag in the test-data repository:
 
         $ git tag test-data-NNN
-        $ git push --tags origin master
+        $ git push --tags origin main
 
     This tag is used to ensure that each vispy commit is linked to a specific
     commit in the test-data repository. This makes it possible to push new
@@ -49,12 +53,14 @@ import base64
 from subprocess import check_call, CalledProcessError
 import numpy as np
 
-from ..ext.six.moves import http_client as httplib
-from ..ext.six.moves import urllib_parse as urllib
+from http.client import HTTPConnection
+from urllib.parse import urlencode
+
 from .. import scene, config
 from ..io import read_png, write_png
 from ..gloo.util import _screenshot
 from ..util import run_subprocess
+from . import IS_CI
 
 
 tester = None
@@ -97,8 +103,7 @@ def assert_image_approved(image, standard_file, message=None, **kwargs):
     Extra keyword arguments are used to set the thresholds for automatic image
     comparison (see ``assert_image_match()``).
     """
-
-    if image == "screenshot":
+    if isinstance(image, str) and image == "screenshot":
         image = _screenshot(alpha=True)
     if message is None:
         code = inspect.currentframe().f_back.f_code
@@ -123,7 +128,7 @@ def assert_image_approved(image, standard_file, message=None, **kwargs):
             ims2 = np.array(std_image.shape).astype(float)
             sr = ims1 / ims2
             if (sr[0] != sr[1] or not np.allclose(sr, np.round(sr)) or
-               sr[0] < 1):
+                    sr[0] < 1):
                 raise TypeError("Test result shape %s is not an integer factor"
                                 " larger than standard image shape %s." %
                                 (ims1, ims2))
@@ -148,7 +153,7 @@ def assert_image_approved(image, standard_file, message=None, **kwargs):
             if std_image is None:
                 raise Exception("Test standard %s does not exist." % std_file)
             else:
-                if os.getenv('TRAVIS') is not None:
+                if IS_CI:
                     _save_failed_test(image, std_image, standard_file)
                 raise
 
@@ -209,7 +214,7 @@ def assert_image_match(im1, im2, min_corr=0.9, px_threshold=50.,
 
 def _save_failed_test(data, expect, filename):
     from ..io import _make_png
-    commit, error = run_subprocess(['git', 'rev-parse',  'HEAD'])
+    commit, error = run_subprocess(['git', 'rev-parse', 'HEAD'])
     name = filename.split('/')
     name.insert(-1, commit.strip())
     filename = '/'.join(name)
@@ -231,9 +236,9 @@ def _save_failed_test(data, expect, filename):
     img[2:2+diff.shape[0], -diff.shape[1]-2:-2] = diff
 
     png = _make_png(img)
-    conn = httplib.HTTPConnection(host)
-    req = urllib.urlencode({'name': filename,
-                            'data': base64.b64encode(png)})
+    conn = HTTPConnection(host)
+    req = urlencode({'name': filename,
+                     'data': base64.b64encode(png)})
     conn.request('POST', '/upload.py', req)
     response = conn.getresponse().read()
     conn.close()
@@ -289,8 +294,8 @@ def downsample(data, n, axis=0):
 
 
 class ImageTester(scene.SceneCanvas):
-    """Graphical interface for auditing image comparison tests.
-    """
+    """Graphical interface for auditing image comparison tests."""
+
     def __init__(self):
         self.grid = None
         self.views = None
@@ -370,11 +375,10 @@ def get_test_data_repo():
     https://github.com/vispy/test-data. If the repository already exists
     then the required commit is checked out.
     """
-
     # This tag marks the test-data commit that this version of vispy should
     # be tested against. When adding or changing test images, create
     # and push a new tag and update this variable.
-    test_data_tag = 'test-data-6'
+    test_data_tag = 'test-data-10'
 
     data_path = config['test_data_path']
     git_path = 'http://github.com/vispy/test-data'
@@ -416,7 +420,7 @@ def get_test_data_repo():
         if not os.path.isdir(parent_path):
             os.makedirs(parent_path)
 
-        if os.getenv('TRAVIS') is not None:
+        if IS_CI:
             # Create a shallow clone of the test-data repository (to avoid
             # downloading more data than is necessary)
             os.makedirs(data_path)
@@ -425,7 +429,7 @@ def get_test_data_repo():
                 gitbase + ['remote', 'add', 'origin', git_path],
                 gitbase + ['fetch', '--tags', 'origin', test_data_tag,
                            '--depth=1'],
-                gitbase + ['checkout', '-b', 'master', 'FETCH_HEAD'],
+                gitbase + ['checkout', '-b', 'main', 'FETCH_HEAD'],
             ]
         else:
             # Create a full clone
@@ -458,8 +462,7 @@ def git_status(path):
 
 
 def git_commit_id(path, ref):
-    """Return the commit id of *ref* in the git repository at *path*.
-    """
+    """Return the commit id of *ref* in the git repository at *path*."""
     cmd = git_cmd_base(path) + ['show', ref]
     try:
         output = run_subprocess(cmd, stderr=None, universal_newlines=True)[0]

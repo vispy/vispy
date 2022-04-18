@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 import inspect
@@ -7,13 +7,15 @@ import inspect
 from .random import random
 from .circular import circular
 from .force_directed import fruchterman_reingold
+from .networkx_layout import NetworkxCoordinates
 
 
 _layout_map = {
     'random': random,
     'circular': circular,
     'force_directed': fruchterman_reingold,
-    'spring_layout': fruchterman_reingold
+    'spring_layout': fruchterman_reingold,
+    "networkx_layout": NetworkxCoordinates,
 }
 
 AVAILABLE_LAYOUTS = tuple(_layout_map.keys())

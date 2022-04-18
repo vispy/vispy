@@ -1,0 +1,12 @@
+issues=false
+add_issues_wo_labels=false
+add_pr_wo_labels=false
+unreleased=true
+filter_issues_by_milestone=false
+compare_link=false
+enhancement_labels=type: enhancement,type: feature,type: performance
+bug_labels=type: bug
+exclude_labels=duplicate,question,invalid,wontfix,type: question,build
+enhancement_prefix=**Enhancements:**
+unreleased_only=true
+max_issues=1000

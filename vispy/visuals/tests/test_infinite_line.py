@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """
@@ -19,7 +19,6 @@ from vispy.testing import assert_raises
 @requires_application()
 def test_set_data():
     """Test InfiniteLineVisual"""
-
     pos = 5.0
     color = [1.0, 1.0, 0.5, 0.5]
     expected_color = np.array(color, dtype=np.float32)

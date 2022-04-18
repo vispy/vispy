@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """
@@ -17,12 +17,12 @@ class Canvas(vispy.app.Canvas):
     def __init__(self):
         vispy.app.Canvas.__init__(self, keys='interactive', size=(800, 800))
         self.image = visuals.ImageVisual(get_image(), method='subdivide')
-        
+
         # scale and center image in canvas
         s = 700. / max(self.image.size)
         t = 0.5 * (700. - (self.image.size[0] * s)) + 50
         self.image.transform = STTransform(scale=(s, s), translate=(t, 50))
-        
+
         self.show()
 
     def on_draw(self, ev):
@@ -41,7 +41,7 @@ def get_image():
     just return a randomly generated image.
     """
     from vispy.io import load_data_file, read_png
-    
+
     try:
         return read_png(load_data_file('mona_lisa/mona_lisa_sm.png'))
     except Exception as exc:
@@ -55,7 +55,7 @@ def get_image():
     image[:, 50] += 3.
     image = ((image - image.min()) *
              (253. / (image.max() - image.min()))).astype(np.ubyte)
-    
+
     return image
 
 

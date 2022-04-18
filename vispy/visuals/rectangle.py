@@ -3,9 +3,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 
-"""
-Simple ellipse visual based on PolygonVisual
-"""
+"""Simple ellipse visual based on PolygonVisual"""
 
 from __future__ import division
 
@@ -28,6 +26,8 @@ class RectangleVisual(PolygonVisual):
         The border color to use.
     border_width : int
         Border width in pixels.
+        Line widths > 1px are only
+        guaranteed to work when using `border_method='agg'` method.
     height : float
         Length of the rectangle along y-axis
         Defaults to 1.0
@@ -37,7 +37,10 @@ class RectangleVisual(PolygonVisual):
     radius : float | array
         Radii of curvatures of corners in clockwise order from top-left
         Defaults to 0.
+    **kwargs : dict
+        Keyword arguments to pass to `PolygonVisual`.
     """
+
     def __init__(self, center=None, color='black', border_color=None,
                  border_width=1, height=1.0, width=1.0,
                  radius=[0., 0., 0., 0.], **kwargs):
@@ -47,31 +50,41 @@ class RectangleVisual(PolygonVisual):
         self._color = Color(color)
         self._border_color = Color(border_color)
         self._border_width = border_width
+        self._radius = radius
+        self._center = center
 
-        # HACK, NOTE: this order is _intentional_
-        # the self._radius is set to none to block all
-        # calls to self._update(). This is because
-        # self._update() depends on having self.mesh and
-        # self.border which are instantiated by PolygonVisual's
-        # __init__
-        self._radius = None
-        self.center = None
-
+        # triangulation can be very slow
+        kwargs.setdefault('triangulate', False)
         PolygonVisual.__init__(self, pos=None, color=color,
                                border_color=border_color,
                                border_width=border_width, **kwargs)
 
-        self.radius = radius
-        self.center = center
-
         self._mesh.mode = 'triangle_fan'
+        self._regen_pos()
         self._update()
 
-    def _generate_vertices(self, center, radius, height, width):
-
-        half_height = self._height / 2.
-        half_width = self._width / 2.
+    @staticmethod
+    def _generate_vertices(center, radius, height, width):
+        half_height = height / 2.
+        half_width = width / 2.
         hw = min(half_height, half_width)
+
+        if isinstance(radius, (list, tuple)):
+            if len(radius) != 4:
+                raise ValueError("radius must be float or 4 value tuple/list"
+                                 " (got %s of length %d)" % (type(radius),
+                                                             len(radius)))
+
+            if (radius > np.ones(4) * hw).all():
+                raise ValueError('Radius of curvature cannot be greater than\
+                                  half of min(width, height)')
+            radius = np.array(radius, dtype=np.float32)
+
+        else:
+            if radius > hw:
+                raise ValueError('Radius of curvature cannot be greater than\
+                                  half of min(width, height)')
+            radius = np.ones(4) * radius
 
         num_segments = (radius / hw * 500.).astype(int)
 
@@ -126,21 +139,19 @@ class RectangleVisual(PolygonVisual):
 
     @property
     def center(self):
-        """ The center of the ellipse
-        """
+        """The center of the ellipse"""
         return self._center
 
     @center.setter
     def center(self, center):
-        """ The center of the ellipse
-        """
+        """The center of the ellipse"""
         self._center = center
+        self._regen_pos()
         self._update()
 
     @property
     def height(self):
-        """ The height of the rectangle.
-        """
+        """The height of the rectangle."""
         return self._height
 
     @height.setter
@@ -148,12 +159,12 @@ class RectangleVisual(PolygonVisual):
         if height <= 0.:
             raise ValueError('Height must be positive')
         self._height = height
+        self._regen_pos()
         self._update()
 
     @property
     def width(self):
-        """ The width of the rectangle.
-        """
+        """The width of the rectangle."""
         return self._width
 
     @width.setter
@@ -161,65 +172,25 @@ class RectangleVisual(PolygonVisual):
         if width <= 0.:
             raise ValueError('Width must be positive')
         self._width = width
+        self._regen_pos()
         self._update()
 
     @property
     def radius(self):
-        """ The radius of curvature of rounded corners.
-        """
+        """The radius of curvature of rounded corners."""
         return self._radius
 
     @radius.setter
     def radius(self, radius):
-        half_height = self._height / 2.
-        half_width = self._width / 2.
-        hw = min(half_height, half_width)
-
-        if isinstance(radius, (list, tuple)):
-            if len(radius) != 4:
-                raise ValueError("radius must be float or 4 value tuple/list"
-                                 " (got %s of length %d)" % (type(radius),
-                                                             len(radius)))
-
-            if (radius > np.ones(4) * hw).all():
-                raise ValueError('Radius of curvature cannot be greater than\
-                                  half of min(width, height)')
-            radius = np.array(radius, dtype=np.float32)
-
-        else:
-            if radius > hw:
-                raise ValueError('Radius of curvature cannot be greater than\
-                                  half of min(width, height)')
-            radius = np.ones(4) * radius
-
         self._radius = radius
+        self._regen_pos()
         self._update()
 
-    def _update(self):
-        if not self._center:
-            return
-
-        if self._radius is None:
-            return
-
+    def _regen_pos(self):
         vertices = self._generate_vertices(center=self._center,
                                            radius=self._radius,
                                            height=self._height,
                                            width=self._width)
-
+        # don't use the center point and only use X/Y coordinates
+        vertices = vertices[1:, ..., :2]
         self._pos = vertices
-
-        # NOTE: Do not call PolygonVisual's _update() here because it
-        # uses triangulation which is super slow
-        if not self._color.is_blank:
-            self.mesh.set_data(vertices=vertices,
-                               color=self._color.rgba)
-
-        # when passing vertices to the Border, delete the
-        # vertices that creates loops since PolygonVisual
-        # closes loops. However, closing the loop of a solid figure
-        # will create a solid line from the center of the solid figure
-        # to the edge
-        if not self._border_color.is_blank:
-            self.border.set_data(pos=vertices[1:, ..., :2],
-                                 color=self._border_color.rgba)

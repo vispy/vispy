@@ -3,7 +3,7 @@ VisPy: interactive scientific visualization in Python
 
 Main website: http://vispy.org
 
-|Build Status| |Appveyor Status| |Coverage Status| |Zenodo Link|
+|Build Status| |Coverage Status| |Zenodo Link| |Contributor Covenant|
 
 ----
 
@@ -20,22 +20,15 @@ large datasets. Applications of VisPy include:
 -  Scientific GUIs with fast, scalable visualization widgets (`Qt <http://www.qt.io>`__ or
    `IPython notebook <http://ipython.org/notebook.html>`__ with WebGL).
 
+Releases
+--------
+
+See [CHANGELOG.md](./CHANGELOG.md).
 
 Announcements
 -------------
 
-- **Release!** Version 0.4, May 22, 2015
-- `VisPy tutorial in the IPython Cookbook <http://ipython-books.github.io/featured-06/>`__
-- **Release!** Version 0.3, August 29, 2014
-- **EuroSciPy 2014**: talk at Saturday 30, and sprint at Sunday 31, August 2014
-- `Article in Linux Magazine, French Edition <https://github.com/vispy/linuxmag-article>`__, July 2014
-- **GSoC 2014**: `two GSoC students are currently working on VisPy under the PSF umbrella <https://github.com/vispy/vispy/wiki/Project.%20GSoC-2014>`__
-- **Release!**, Version 0.2.1 04-11-2013
-- **Presentation at BI forum**, Budapest, 6 November 2013
-- **Presentation at Euroscipy**, Belgium, August 2013
-- **EuroSciPy Sprint**, Belgium, August 2013
-- **Release!** Version 0.1.0 14-08-2013
-
+See the `VisPy Website <https://vispy.org/news.html>`_.
 
 Using VisPy
 -----------
@@ -63,26 +56,9 @@ and experimental OpenGL backend for matplotlib.
 Installation
 ------------
 
-VisPy runs on Python 2.6+ and Python 3.3+ and depends on NumPy. You also
-need a backend (PyQt4/PySide, glfw, pyglet, SDL, or wx).
-
-As VisPy is under heavy development at this time, we highly recommend
-you to use the development version on Github (master branch). You need
-to clone the repository and install VisPy with
-``python setup.py install``.
-
-As a one-liner, assuming `git` is installed ::
-
-
-    git clone https://github.com/vispy/vispy.git && cd vispy && python setup.py install --user
-
-
-This will automatically install the latest version of vispy.
-
-If you need to install Python for the first time, consider using the
-`Anaconda <http://continuum.io/downloads>`_ Python distribution. It
-provides a convenient package management system.
-
+Please follow the detailed
+`installation instructions <http://vispy.org/installation.html>`_
+on the VisPy website.
 
 Structure of VisPy
 ------------------
@@ -90,11 +66,10 @@ Structure of VisPy
 Currently, the main subpackages are:
 
 -  **app**: integrates an event system and offers a unified interface on
-   top of many window backends (Qt4, wx, glfw, IPython notebook
-   with/without WebGL, and others). Relatively stable API.
+   top of many window backends (Qt4, wx, glfw, jupyter notebook,
+   and others). Relatively stable API.
 -  **gloo**: a Pythonic, object-oriented interface to OpenGL. Relatively
    stable API.
--  **mpl\_plot**: an OpenGL backend for matplotlib. Experimental.
 -  **scene**: this is the system underlying our upcoming high level
    visualization interfaces. Under heavy development and still
    experimental, it contains several modules.
@@ -112,21 +87,24 @@ Currently, the main subpackages are:
 The API of all public interfaces are subject to change in the future,
 although **app** and **gloo** are *relatively* stable at this point.
 
+Code of Conduct
+---------------
+
+The VisPy community requires its members to abide by the
+`Code of Conduct <./CODE_OF_CONDUCT.md>`_. In this CoC you will find the
+expectations of members, the penalties for violating these expectations, and
+how violations can be reported to the members of the community in charge of
+enforcing this Code of Conduct.
 
 Genesis
 -------
 
 VisPy began when four developers with their own visualization libraries
 decided to team up:
-
--  `Luke Campagnola <http://luke.campagnola.me/>`__ with
-   `PyQtGraph <http://www.pyqtgraph.org/>`__
--  `Almar Klein <http://www.almarklein.org/>`__ with
-   `Visvis <https://code.google.com/p/visvis/>`__
--  `Cyrille Rossant <http://cyrille.rossant.net>`__ with
-   `Galry <https://github.com/rossant/galry>`__
--  `Nicolas Rougier <http://www.loria.fr/~rougier/index.html>`__ with
-   `Glumpy <https://github.com/rougier/Glumpy>`__
+`Luke Campagnola <http://luke.campagnola.me/>`__ with `PyQtGraph <http://www.pyqtgraph.org/>`__,
+`Almar Klein <http://www.almarklein.org/>`__ with `Visvis <https://github.com/almarklein/visvis>`__,
+`Cyrille Rossant <http://cyrille.rossant.net>`__ with `Galry <https://github.com/rossant/galry>`__,
+`Nicolas Rougier <http://www.loria.fr/~rougier/index.html>`__ with `Glumpy <https://github.com/rougier/Glumpy>`__.
 
 Now VisPy looks to build on the expertise of these developers and the
 broader open-source community to build a high-performance OpenGL library.
@@ -140,16 +118,17 @@ External links
    list <https://groups.google.com/forum/#!forum/vispy>`__
 -  `Dev mailing
    list <https://groups.google.com/forum/#!forum/vispy-dev>`__
--  `Dev chat room <https://gitter.im/vispy/vispy>`__
+-  `Chat room <https://gitter.im/vispy/vispy>`__
+-  `Developer chat room <https://gitter.im/vispy/vispy-dev>`__
 -  `Wiki <http://github.com/vispy/vispy/wiki>`__
 -  `Gallery <http://vispy.org/gallery.html>`__
 -  `Documentation <http://vispy.readthedocs.org>`__
 
-.. |Build Status| image:: https://travis-ci.org/vispy/vispy.svg?branch=master
-   :target: https://travis-ci.org/vispy/vispy
-.. |Appveyor Status| image:: https://ci.appveyor.com/api/projects/status/dsxgkrbfj29xf9ef/branch/master?svg=true
-   :target: https://ci.appveyor.com/project/Eric89GXL/vispy/branch/master
-.. |Coverage Status| image:: https://img.shields.io/coveralls/vispy/vispy/master.svg
-   :target: https://coveralls.io/r/vispy/vispy?branch=master
+.. |Build Status| image:: https://github.com/vispy/vispy/workflows/CI/badge.svg
+   :target: https://github.com/vispy/vispy/actions
+.. |Coverage Status| image:: https://img.shields.io/coveralls/vispy/vispy/main.svg
+   :target: https://coveralls.io/r/vispy/vispy?branch=main
 .. |Zenodo Link| image:: https://zenodo.org/badge/5822/vispy/vispy.svg
    :target: http://dx.doi.org/10.5281/zenodo.17869
+.. |Contributor Covenant| image:: https://img.shields.io/badge/Contributor%20Covenant-2.0-4baaaa.svg
+   :target: CODE_OF_CONDUCT.md

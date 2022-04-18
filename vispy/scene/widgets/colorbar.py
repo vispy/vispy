@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
@@ -65,6 +65,7 @@ class ColorBarWidget(Widget):
     axis_ratio : float
         ratio of minor axis to major axis
     """
+
     def __init__(self, cmap, orientation,
                  label="", label_color='black', clim=("", ""),
                  border_width=0.0, border_color="black",
@@ -77,7 +78,7 @@ class ColorBarWidget(Widget):
 
         self._colorbar = ColorBarVisual(size=dummy_size, cmap=cmap,
                                         orientation=orientation,
-                                        label_str=label, clim=clim,
+                                        label=label, clim=clim,
                                         label_color=label_color,
                                         border_width=border_width,
                                         border_color=border_color, **kwargs)
@@ -102,8 +103,7 @@ class ColorBarWidget(Widget):
         self._colorbar.size = self._calc_size()
 
     def _calc_size(self):
-        """Calculate a size
-        """
+        """Calculate a size"""
         (total_halfx, total_halfy) = (self.rect.right, self.rect.top)
         if self._colorbar.orientation in ["bottom", "top"]:
             (total_major_axis, total_minor_axis) = (total_halfx, total_halfy)
@@ -155,8 +155,7 @@ class ColorBarWidget(Widget):
 
     @property
     def border_color(self):
-        """ The color of the border around the ColorBar in pixels
-        """
+        """The color of the border around the ColorBar in pixels"""
         return self._colorbar.border_color
 
     @border_color.setter
@@ -165,8 +164,7 @@ class ColorBarWidget(Widget):
 
     @property
     def border_width(self):
-        """ The width of the border around the ColorBar in pixels
-        """
+        """The width of the border around the ColorBar in pixels"""
         return self._colorbar.border_width
 
     @border_width.setter

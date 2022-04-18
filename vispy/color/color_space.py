@@ -1,12 +1,10 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division  # just to be safe...
 
 import numpy as np
-
-from ..ext.six import string_types
 
 
 ###############################################################################
@@ -27,7 +25,7 @@ def _hex_to_rgba(hexs):
     hexs = np.atleast_1d(np.array(hexs, '|U9'))
     out = np.ones((len(hexs), 4), np.float32)
     for hi, h in enumerate(hexs):
-        assert isinstance(h, string_types)
+        assert isinstance(h, str)
         off = 1 if h[0] == '#' else 0
         assert len(h) in (6+off, 8+off)
         e = (len(h)-off) // 2
@@ -113,21 +111,21 @@ def _hsv_to_rgb(hsvs):
 # Lab<->RGB conversion. They provide an XYZ<->RGB conversion matrices,
 # w/D65 white point normalization built in.
 
-#_rgb2xyz = np.array([[0.412453, 0.357580, 0.180423],
+# _rgb2xyz = np.array([[0.412453, 0.357580, 0.180423],
 #                     [0.212671, 0.715160, 0.072169],
 #                     [0.019334, 0.119193, 0.950227]])
-#_white_norm = np.array([0.950456, 1.0, 1.088754])
-#_rgb2xyz /= _white_norm[:, np.newaxis]
-#_rgb2xyz_norm = _rgb2xyz.T
+# _white_norm = np.array([0.950456, 1.0, 1.088754])
+# _rgb2xyz /= _white_norm[:, np.newaxis]
+# _rgb2xyz_norm = _rgb2xyz.T
 _rgb2xyz_norm = np.array([[0.43395276, 0.212671, 0.01775791],
-                         [0.37621941, 0.71516, 0.10947652],
-                         [0.18982783, 0.072169, 0.87276557]])
+                          [0.37621941, 0.71516, 0.10947652],
+                          [0.18982783, 0.072169, 0.87276557]])
 
-#_xyz2rgb = np.array([[3.240479, -1.537150, -0.498535],
+# _xyz2rgb = np.array([[3.240479, -1.537150, -0.498535],
 #                     [-0.969256, 1.875992, 0.041556],
 #                     [0.055648, -0.204043, 1.057311]])
-#_white_norm = np.array([0.950456, 1., 1.088754])
-#_xyz2rgb *= _white_norm[np.newaxis, :]
+# _white_norm = np.array([0.950456, 1., 1.088754])
+# _xyz2rgb *= _white_norm[np.newaxis, :]
 _xyz2rgb_norm = np.array([[3.07993271, -1.53715, -0.54278198],
                           [-0.92123518, 1.875992, 0.04524426],
                           [0.05289098, -0.204043, 1.15115158]])

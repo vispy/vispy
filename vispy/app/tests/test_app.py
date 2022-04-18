@@ -1,21 +1,24 @@
-import numpy as np
 import sys
 from collections import namedtuple
+from io import StringIO
 from time import sleep
+import gc
 
+import numpy as np
 from numpy.testing import assert_array_equal
+import pytest
 
 from vispy.app import use_app, Canvas, Timer, MouseEvent, KeyEvent
 from vispy.app.base import BaseApplicationBackend
 from vispy.testing import (requires_application, SkipTest, assert_is,
                            assert_in, run_tests_if_main,
-                           assert_equal, assert_true, assert_raises)
+                           assert_equal, assert_true, assert_raises, IS_TRAVIS_CI)
 from vispy.util import keys, use_log_level
 
 from vispy.gloo.program import (Program, VertexBuffer, IndexBuffer)
 from vispy.gloo.util import _screenshot
 from vispy.gloo import gl
-from vispy.ext.six.moves import StringIO
+
 
 gl.use_gl('gl2 debug')
 
@@ -53,7 +56,7 @@ def _test_callbacks(canvas):
         _id = backend._id
         backend._on_draw(_id)
         backend._on_resize(_id, 100, 100)
-        
+
         backend._on_key_press(_id, 340, 340, 1, 0)  # Shift.
         backend._on_key_press(_id, 50, 50, 1, 0)    # 2
         backend._on_key_char(_id, 50)
@@ -114,6 +117,32 @@ def _test_callbacks(canvas):
     elif 'osmesa' in backend_name.lower():
         # No events for osmesa backend
         pass
+    elif 'tk' in backend_name.lower():
+        event = namedtuple("event", [
+            "serial", "time", "type", "widget", 
+            "width", "height", 
+            "char", "keycode", "keysym", "keysym_num", "state",
+            "x", "y", "x_root", "y_root", "num", "delta"
+        ])
+
+        event.width, event.height = 10, 20
+        backend._on_configure(event)        # RESIZE
+
+        event.x, event.y, event.state = 1, 1, 0x0
+        backend._on_mouse_enter(event)
+        backend._on_mouse_move(event)
+
+        event.x, event.y, event.num = 1, 1, 1
+        backend._on_mouse_button_press(event)
+        backend._on_mouse_button_release(event)
+        backend._on_mouse_double_button_press(event)
+
+        event.delta = 120
+        backend._on_mouse_wheel(event)
+
+        event.keysym_num, event.keycode, event.state = 65362, 0, 0x0001  # SHIFT+UP
+        backend._on_key_down(event)
+        backend._on_key_up(event)
     else:
         raise ValueError
 
@@ -147,6 +176,11 @@ def test_capability():
                     good_kwargs[key] = non_default_vals[key]
                 else:
                     bad_kwargs[key] = non_default_vals[key]
+    # bug on 3.3.1
+    # https://github.com/glfw/glfw/issues/1620
+    if c.app.backend_name == 'Glfw' and \
+            c.app.backend_module.glfw.__version__ == (3, 3, 1):
+        good_kwargs.pop('decorate')
     # ensure all settable values can be set
     with Canvas(**good_kwargs):
         # some of these are hard to test, and the ones that are easy are
@@ -163,7 +197,7 @@ def test_application():
     app = use_app()
     print(app)  # __repr__ without app
     app.create()
-    wrong = 'glfw' if app.backend_name.lower() != 'glfw' else 'pyqt4'
+    wrong = 'glfw' if app.backend_name.lower() != 'glfw' else 'pyqt5'
     assert_raises(RuntimeError, use_app, wrong)
     app.process_events()
     print(app)  # test __repr__
@@ -195,15 +229,11 @@ def test_application():
         print(canvas)  # __repr__
         assert_equal(canvas.title, title)
         canvas.title = 'you'
-        with use_log_level('warning', record=True, print_msg=False) as l:
+        with use_log_level('warning', record=True, print_msg=False):
             if app.backend_module.capability['position']:
                 # todo: disable more tests based on capability
                 canvas.position = pos
             canvas.size = size
-        if 'ipynb_vnc' in canvas.app.backend_name.lower():
-            assert_true(len(l) >= 1)
-        else:
-            assert_true(len(l) == 0)
         canvas.connect(on_mouse_move)
         assert_raises(ValueError, canvas.connect, _on_mouse_move)
         if sys.platform != 'darwin':  # XXX knownfail, prob. needs warmup
@@ -233,26 +263,26 @@ def test_application():
         assert_equal(len(canvas._backend._vispy_get_geometry()), 4)
         if sys.platform != 'win32':  # XXX knownfail for windows
             assert_array_equal(canvas.size, size)
-        assert_equal(len(canvas.position), 2)  # XXX knawnfail, doesn't "take"
+        assert_equal(len(canvas.position), 2)  # XXX knownfail, doesn't "take"
 
         # GLOO: should have an OpenGL context already, so these should work
         vert = "void main (void) {gl_Position = pos;}"
         frag = "void main (void) {gl_FragColor = pos;}"
         program = Program(vert, frag)
         assert_raises(RuntimeError, program.glir.flush, context.shared.parser)
-        
+
         vert = "uniform vec4 pos;\nvoid main (void) {gl_Position = pos;}"
         frag = "uniform vec4 pos;\nvoid main (void) {gl_FragColor = pos;}"
         program = Program(vert, frag)
         # uniform = program.uniforms[0]
         program['pos'] = [1, 2, 3, 4]
-        
+
         vert = "attribute vec4 pos;\nvoid main (void) {gl_Position = pos;}"
         frag = "void main (void) {}"
         program = Program(vert, frag)
         # attribute = program.attributes[0]
         program["pos"] = [1, 2, 3, 4]
-        
+
         # use a real program
         program._glir.clear()
         vert = ("uniform mat4 u_model;"
@@ -261,7 +291,7 @@ def test_application():
                 "void main (void) {v_color = a_color;"
                 "gl_Position = u_model * vec4(a_position, 0.0, 1.0);"
                 "v_color = a_color;}")
-        frag = "void main() {gl_FragColor = vec4(0, 0, 0, 1);}"
+        frag = "void main() {gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);}"
         n, p = 250, 50
         T = np.random.uniform(0, 2 * np.pi, n)
         position = np.zeros((n, 2), dtype=np.float32)
@@ -324,15 +354,15 @@ def test_fs():
     if (a.backend_name.lower() == 'glfw' or
             (a.backend_name.lower() == 'sdl2' and sys.platform == 'darwin')):
         raise SkipTest('Backend takes over screen')
-    with use_log_level('warning', record=True, print_msg=False) as l:
+    with use_log_level('warning', record=True, print_msg=False) as emit_list:
         with Canvas(fullscreen=False) as c:
             assert_equal(c.fullscreen, False)
             c.fullscreen = True
             assert_equal(c.fullscreen, True)
-    assert_equal(len(l), 0)
+    assert_equal(len(emit_list), 0)
     with use_log_level('warning', record=True, print_msg=False):
         # some backends print a warning b/c fullscreen can't be specified
-        with Canvas(fullscreen=0) as c:
+        with Canvas(fullscreen=True) as c:
             assert_equal(c.fullscreen, True)
 
 
@@ -350,6 +380,8 @@ def test_close_keys():
     c.app.process_events()
 
 
+@pytest.mark.skipif(IS_TRAVIS_CI and 'darwin' in sys.platform,
+                    reason='Travis OSX causes segmentation fault on this test for an unknown reason.')
 @requires_application()
 def test_event_order():
     """Test event order"""
@@ -380,6 +412,8 @@ def test_event_order():
         assert_in('draw size=True', x[1])
         assert_in('draw size=True', x[-2])
         assert_equal(x[-1], 'close')
+        del c
+        gc.collect()
 
 
 def test_abstract():

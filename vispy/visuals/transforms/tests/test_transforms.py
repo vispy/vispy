@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 import numpy as np
+from numpy.testing import assert_allclose
+import pytest
 
 import vispy.visuals.transforms as tr
 from vispy.geometry import Rect
@@ -25,12 +27,12 @@ def assert_chain_objects(chain1, chain2):
     assert chain1.transforms == chain2.transforms
 
 
-def tesst_multiplication():
+def test_multiplication():
     n = NT()
     s = ST()
     a = AT()
     p = PT()
-    l = LT()
+    log_trans = LT()
     c1 = CT([s, a, p])
     assert c1
     c2 = CT([s, a, s])
@@ -43,13 +45,19 @@ def tesst_multiplication():
     assert isinstance(s * a, AT)
     assert isinstance(n * p, PT)
     assert isinstance(s * p, CT)
-    assert_chain_types(s * p, [PT, ST])
+    assert isinstance(a * p, CT)
+    assert isinstance(p * a, CT)
+    assert isinstance(p * s, CT)
+    assert_chain_types(p * a, [PT, AT])
+    assert_chain_types(p * s, [PT, ST])
+    assert_chain_types(s * p, [ST, PT])
     assert_chain_types(s * p * a, [ST, PT, AT])
-    assert_chain_types(s * a * p, [PT, AT])
+    assert_chain_types(s * a * p, [AT, PT])
+    assert_chain_types(p * s * a, [PT, ST, AT])
     assert_chain_types(s * p * s, [ST, PT, ST])
-    assert_chain_types(s * a * p * s * a, [AT, PT, AT])
-    assert_chain_types(c2 * a, [AT])
-    assert_chain_types(p * l * s, [ST, LT, PT])
+    assert_chain_types(s * a * p * s * a, [AT, PT, ST, AT])
+    assert_chain_types(c2 * a, [ST, AT, ST, AT])
+    assert_chain_types(p * log_trans * s, [PT, LT, ST])
 
 
 def test_transform_chain():
@@ -126,7 +134,7 @@ def test_transform_chain():
     m12_ = chain1.map((1, 1)).tolist()
     m21_ = chain2.map((1, 1)).tolist()
     #
-    #print(m12, m21, m12_, m21_)
+    # print(m12, m21, m12_, m21_)
     assert m12 != m21
     assert m12 == m12_
     assert m21 == m21_
@@ -154,17 +162,17 @@ def test_map_rect():
 def test_st_transform():
     # Check that STTransform maps exactly like MatrixTransform
     pts = np.random.normal(size=(10, 4))
-    
+
     scale = (1, 7.5, -4e-8)
     translate = (1e6, 0.2, 0)
     st = tr.STTransform(scale=scale, translate=translate)
     at = tr.MatrixTransform()
     at.scale(scale)
     at.translate(translate)
-    
+
     assert np.allclose(st.map(pts), at.map(pts))
-    assert np.allclose(st.inverse.map(pts), at.inverse.map(pts))    
-    
+    assert np.allclose(st.inverse.map(pts), at.inverse.map(pts))
+
 
 def test_st_mapping():
     p1 = [[5., 7.], [23., 8.]]
@@ -207,28 +215,29 @@ def test_affine_mapping():
     assert np.allclose(t.map(p1)[:, :p2.shape[1]], p2)
 
 
-def test_inverse():
-    m = np.random.normal(size=(4, 4))
-    transforms = [
-        NT(),
-        ST(scale=(1e-4, 2e5), translate=(10, -6e9)),
-        AT(m),
-        RT(m),
-    ]
+m = np.random.RandomState(0).normal(size=(4, 4))
+transforms = [
+    NT(),
+    ST(scale=(1e-4, 2e5), translate=(10, -6e9)),
+    AT(m),
+    RT(m),
+]
 
-    np.random.seed(0)
+
+@pytest.mark.parametrize('trn', transforms)
+def test_inverse(trn):
+    rng = np.random.RandomState(0)
     N = 20
-    x = np.random.normal(size=(N, 3))
-    pw = np.random.normal(size=(N, 3), scale=3)
+    x = rng.normal(size=(N, 3))
+    pw = rng.normal(size=(N, 3), scale=3)
     pos = x * 10 ** pw
 
-    for trn in transforms:
-        assert np.allclose(pos, trn.inverse.map(trn.map(pos))[:, :3])
+    assert_allclose(pos, trn.inverse.map(trn.map(pos))[:, :3], atol=1e-7)
 
     # log transform only works on positive values
-    #abs_pos = np.abs(pos)
-    #tr = LT(base=(2, 4.5, 0))
-    #assert np.allclose(abs_pos, tr.inverse.map(tr.map(abs_pos))[:,:3])
+    # abs_pos = np.abs(pos)
+    # tr = LT(base=(2, 4.5, 0))
+    # assert np.allclose(abs_pos, tr.inverse.map(tr.map(abs_pos))[:,:3])
 
 
 run_tests_if_main()

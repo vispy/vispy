@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # vispy: gallery 30
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
@@ -37,7 +37,7 @@ def get_left_orientation_bar():
     size = 400, 10
 
     colorbar = ColorBarVisual(pos=pos, size=size,
-                              label_str="orientation left",
+                              label="orientation left",
                               cmap=colormap, orientation="left")
 
     return style_colorbar(colorbar)
@@ -48,7 +48,7 @@ def get_right_orientation_bar():
     size = 400, 10
 
     colorbar = ColorBarVisual(pos=pos, size=size,
-                              label_str="orientation right",
+                              label="orientation right",
                               cmap=colormap, orientation="right")
 
     return style_colorbar(colorbar)
@@ -59,7 +59,7 @@ def get_top_orientation_bar():
     size = 300, 10
 
     colorbar = ColorBarVisual(pos=pos, size=size,
-                              label_str="orientation top",
+                              label="orientation top",
                               cmap=colormap, orientation="top")
 
     return style_colorbar(colorbar)
@@ -70,7 +70,7 @@ def get_bottom_orientation_bar():
     size = 300, 10
 
     colorbar = ColorBarVisual(pos=pos, size=size,
-                              label_str="orientation bottom",
+                              label="orientation bottom",
                               cmap=colormap, orientation="bottom")
 
     return style_colorbar(colorbar)

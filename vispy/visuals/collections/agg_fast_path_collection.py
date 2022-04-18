@@ -13,13 +13,12 @@ on miter joins which may result in some glitches on screen.
 """
 import numpy as np
 from ... import glsl
-from ...gloo import gl
+from ... import gloo
 from . collection import Collection
 from ..transforms import NullTransform
 
 
 class AggFastPathCollection(Collection):
-
     """
     Antigrain Geometry Fast Path Collection
 
@@ -36,7 +35,6 @@ class AggFastPathCollection(Collection):
 
         Parameters
         ----------
-
         user_dtype: list
             The base dtype can be completed (appended) by the used_dtype. It
             only make sense if user also provide vertex and/or fragment shaders
@@ -62,15 +60,14 @@ class AggFastPathCollection(Collection):
         antialias : string
             'local', 'shared' or 'global'
         """
-
-        base_dtype = [('prev',       (np.float32, 3), '!local', (0, 0, 0)),
-                      ('curr',       (np.float32, 3), '!local', (0, 0, 0)),
-                      ('next',       (np.float32, 3), '!local', (0, 0, 0)),
-                      ('id',         (np.float32, 1), '!local', 0),
-                      ('color',      (np.float32, 4), 'global', (0, 0, 0, 1)),
-                      ('linewidth',  (np.float32, 1), 'global', 1),
-                      ('antialias',  (np.float32, 1), 'global', 1),
-                      ("viewport",   (np.float32, 4), 'global', (0, 0, 512, 512))]  # noqa
+        base_dtype = [('prev', (np.float32, 3), '!local', (0, 0, 0)),
+                      ('curr', (np.float32, 3), '!local', (0, 0, 0)),
+                      ('next', (np.float32, 3), '!local', (0, 0, 0)),
+                      ('id', (np.float32, 1), '!local', 0),
+                      ('color', (np.float32, 4), 'global', (0, 0, 0, 1)),
+                      ('linewidth', (np.float32, 1), 'global', 1),
+                      ('antialias', (np.float32, 1), 'global', 1),
+                      ("viewport", (np.float32, 4), 'global', (0, 0, 512, 512))]  # noqa
         dtype = base_dtype
         if user_dtype:
             dtype.extend(user_dtype)
@@ -79,7 +76,7 @@ class AggFastPathCollection(Collection):
             vertex = glsl.get('collections/agg-fast-path.vert')
         if transform is None:
             transform = NullTransform()
-        self.transform = transform        
+        self.transform = transform
         if fragment is None:
             fragment = glsl.get('collections/agg-fast-path.frag')
 
@@ -99,7 +96,6 @@ class AggFastPathCollection(Collection):
 
         Parameters
         ----------
-
         P : np.array
             Vertices positions of the path(s) to be added
 
@@ -121,9 +117,8 @@ class AggFastPathCollection(Collection):
         antialias : list, array or float
            Path antialias area
         """
-
-        itemsize = itemsize or len(P)
-        itemcount = len(P) / itemsize
+        itemsize = int(itemsize or len(P))
+        itemcount = len(P) // itemsize
 
         P = P.reshape(itemcount, itemsize, 3)
         if closed:
@@ -155,7 +150,7 @@ class AggFastPathCollection(Collection):
         V[:, -1] = V[:, -2]
         V = V.ravel()
         V = np.repeat(V, 2, axis=0)
-        V['id'] = np.tile([1, -1], len(V) / 2)
+        V['id'] = np.tile([1, -1], len(V) // 2)
         if closed:
             V = V.reshape(itemcount, 2 * (itemsize + 3))
         else:
@@ -181,46 +176,44 @@ class AggFastPathCollection(Collection):
         Given a path P, return the baked vertices as they should be copied in
         the collection if the path has already been appended.
 
-        Example:
+        Examples
         --------
+        >>> paths.append(P)
+        >>> P *= 2
+        >>> paths['prev'][0] = bake(P,'prev')
+        >>> paths['curr'][0] = bake(P,'curr')
+        >>> paths['next'][0] = bake(P,'next')
 
-        paths.append(P)
-        P *= 2
-        paths['prev'][0] = bake(P,'prev')
-        paths['curr'][0] = bake(P,'curr')
-        paths['next'][0] = bake(P,'next')
         """
-
         itemsize = itemsize or len(P)
         itemcount = len(P) / itemsize  # noqa
         n = itemsize
 
         if closed:
-            I = np.arange(n + 3)
+            idxs = np.arange(n + 3)
             if key == 'prev':
-                I -= 2
-                I[0], I[1], I[-1] = n - 1, n - 1, n - 1
+                idxs -= 2
+                idxs[0], idxs[1], idxs[-1] = n - 1, n - 1, n - 1
             elif key == 'next':
-                I[0], I[-3], I[-2], I[-1] = 1, 0, 1, 1
+                idxs[0], idxs[-3], idxs[-2], idxs[-1] = 1, 0, 1, 1
             else:
-                I -= 1
-                I[0], I[-1], I[n + 1] = 0, 0, 0
+                idxs -= 1
+                idxs[0], idxs[-1], idxs[n + 1] = 0, 0, 0
         else:
-            I = np.arange(n + 2)
+            idxs = np.arange(n + 2)
             if key == 'prev':
-                I -= 2
-                I[0], I[1], I[-1] = 0, 0, n - 2
+                idxs -= 2
+                idxs[0], idxs[1], idxs[-1] = 0, 0, n - 2
             elif key == 'next':
-                I[0], I[-1], I[-2] = 1, n - 1, n - 1
+                idxs[0], idxs[-1], idxs[-2] = 1, n - 1, n - 1
             else:
-                I -= 1
-                I[0], I[-1] = 0, n - 1
-        I = np.repeat(I, 2)
-        return P[I]
+                idxs -= 1
+                idxs[0], idxs[-1] = 0, n - 1
+        idxs = np.repeat(idxs, 2)
+        return P[idxs]
 
     def draw(self, mode="triangle_strip"):
-        """ Draw collection """
-
-        gl.glDepthMask(gl.GL_FALSE)
+        """Draw collection"""
+        gloo.set_depth_mask(0)
         Collection.draw(self, mode)
-        gl.glDepthMask(gl.GL_TRUE)
+        gloo.set_depth_mask(1)

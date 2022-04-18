@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # vispy: testskip
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 """
@@ -11,7 +11,7 @@ between two Qt widgets.
 
 # XXX THIS IS CURRENTLY BROKEN
 
-from PyQt4 import QtGui, QtCore  # can also use pyside
+from PyQt5 import QtWidgets, QtCore  # can also use pyside
 from functools import partial
 
 from vispy.app import Timer
@@ -25,10 +25,10 @@ def on_resize(canvas, vb, event):
     vb.size = (canvas.size[0] - 2, canvas.size[1] - 2)
 
 
-class Window(QtGui.QWidget):
+class Window(QtWidgets.QWidget):
     def __init__(self):
         super(Window, self).__init__()
-        box = QtGui.QBoxLayout(QtGui.QBoxLayout.LeftToRight, self)
+        box = QtWidgets.QBoxLayout(QtWidgets.QBoxLayout.LeftToRight, self)
         self.resize(500, 200)
         self.setLayout(box)
 
@@ -73,6 +73,6 @@ class Window(QtGui.QWidget):
             self.showNormal() if self.isFullScreen() else self.showFullScreen()
 
 if __name__ == '__main__':
-    qt_app = QtGui.QApplication([])
+    qt_app = QtWidgets.QApplication([])
     ex = Window()
     qt_app.exec_()

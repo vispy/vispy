@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 # Author: Nicolas P .Rougier
@@ -14,7 +14,7 @@ from .meshdata import MeshData
 
 
 def create_cube():
-    """ Generate vertices & indices for a filled and outlined cube
+    """Generate vertices & indices for a filled and outlined cube
 
     Returns
     -------
@@ -28,7 +28,7 @@ def create_cube():
     vtype = [('position', np.float32, 3),
              ('texcoord', np.float32, 2),
              ('normal', np.float32, 3),
-             ('color',    np.float32, 4)]
+             ('color', np.float32, 4)]
     itype = np.uint32
 
     # Vertices positions
@@ -37,7 +37,7 @@ def create_cube():
 
     # Face Normals
     n = np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0],
-                  [-1, 0, 1], [0, -1, 0], [0, 0, -1]])
+                  [-1, 0, 0], [0, -1, 0], [0, 0, -1]])
 
     # Vertice colors
     c = np.array([[1, 1, 1, 1], [0, 1, 1, 1], [0, 0, 1, 1], [1, 0, 1, 1],
@@ -91,7 +91,7 @@ def create_cube():
 
 def create_plane(width=1, height=1, width_segments=1, height_segments=1,
                  direction='+z'):
-    """ Generate vertices & indices for a filled and outlined plane.
+    """Generate vertices & indices for a filled and outlined plane.
 
     Parameters
     ----------
@@ -121,7 +121,6 @@ def create_plane(width=1, height=1, width_segments=1, height_segments=1,
     .. [1] Cabello, R. (n.d.). PlaneBufferGeometry.js. Retrieved May 12, 2015,
         from http://git.io/vU1Fh
     """
-
     x_grid = width_segments
     y_grid = height_segments
 
@@ -200,7 +199,7 @@ def create_plane(width=1, height=1, width_segments=1, height_segments=1,
 
 def create_box(width=1, height=1, depth=1, width_segments=1, height_segments=1,
                depth_segments=1, planes=None):
-    """ Generate vertices & indices for a filled and outlined box.
+    """Generate vertices & indices for a filled and outlined box.
 
     Parameters
     ----------
@@ -229,7 +228,6 @@ def create_box(width=1, height=1, depth=1, width_segments=1, height_segments=1,
     outline : array
         Indices to use to produce an outline of the box.
     """
-
     planes = (('+x', '-x', '+y', '-y', '+z', '-z')
               if planes is None else
               [d.lower() for d in planes])
@@ -392,8 +390,8 @@ def _ico(radius, subdivisions):
             faces.append([ij, j, jk])
             faces.append([ki, jk, k])
             faces[idx] = [jk, ki, ij]
-    verts = np.array(verts)
-    faces = np.array(faces)
+    verts = np.array(verts, dtype=np.float32)
+    faces = np.array(faces, dtype=np.uint32)
 
     # make each vertex to lie on the sphere
     lengths = np.sqrt((verts*verts).sum(axis=1))
@@ -403,7 +401,7 @@ def _ico(radius, subdivisions):
 
 def _cube(rows, cols, depth, radius):
     # vertices and faces of tessellated cube
-    verts, faces, _ = create_box(1, 1, 1, rows, cols, depth)
+    verts, faces, _ = create_box(1, 1, 1, cols, rows, depth)
     verts = verts['position']
 
     # make each vertex to lie on the sphere
@@ -596,7 +594,7 @@ def create_arrow(rows, cols, radius=0.1, length=1.0,
 
 
 def create_grid_mesh(xs, ys, zs):
-    '''Generate vertices and indices for an implicitly connected mesh.
+    """Generate vertices and indices for an implicitly connected mesh.
 
     The intention is that this makes it simple to generate a mesh
     from meshgrid data.
@@ -619,8 +617,7 @@ def create_grid_mesh(xs, ys, zs):
         The array of vertices in the mesh.
     indices : ndarray
         The array of indices for the mesh.
-    '''
-
+    """
     shape = xs.shape
     length = shape[0] * shape[1]
 

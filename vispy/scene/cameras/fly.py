@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division
@@ -14,7 +14,7 @@ from .perspective import PerspectiveCamera
 
 
 class FlyCamera(PerspectiveCamera):
-    """ The fly camera provides a way to explore 3D data using an
+    """The fly camera provides a way to explore 3D data using an
     interaction style that resembles a flight simulator.
 
     For this camera, the ``scale_factor`` indicates the speed of the
@@ -52,8 +52,8 @@ class FlyCamera(PerspectiveCamera):
 
     """
 
-    # Linking this camera likely not to work very well
-    _state_props = PerspectiveCamera._state_props + ('rotation', )
+    # Using _rotation1 and _rotation2 for camera states instead of _rotation
+    _state_props = PerspectiveCamera._state_props + ('rotation1', 'rotation2')
 
     def __init__(self, fov=60, rotation=None, **kwargs):
 
@@ -73,7 +73,7 @@ class FlyCamera(PerspectiveCamera):
         PerspectiveCamera.__init__(self, fov=fov, **kwargs)
 
         # Set camera attributes
-        self.rotation = rotation if (rotation is not None) else Quaternion()
+        self.rotation1 = rotation.normalize() if (rotation is not None) else Quaternion()
 
         # To store data at start of interaction
         self._event_value = None
@@ -95,7 +95,7 @@ class FlyCamera(PerspectiveCamera):
             'Q': (+1, 6), 'E': (-1, 6),
             #
             keys.SPACE: (0, 1, 2, 3),  # 0 means brake, apply to translation
-            #keys.ALT: (+5, 1),  # Turbo
+            # keys.ALT: (+5, 1),  # Turbo
         }
 
         # Timer. Each tick we calculate new speed and new position
@@ -103,7 +103,7 @@ class FlyCamera(PerspectiveCamera):
 
     @property
     def rotation(self):
-        """ Get the full rotation. This rotation is composed of the
+        """Get the full rotation. This rotation is composed of the
         normal rotation plus the extra rotation due to the current
         interaction of the user.
         """
@@ -112,12 +112,31 @@ class FlyCamera(PerspectiveCamera):
 
     @rotation.setter
     def rotation(self, value):
+        print("rotation.setter called, use rotation1.setter instead")
+
+    @property
+    def rotation1(self):
+        """rotation1 records confirmed camera rotation"""
+        return self._rotation1
+
+    @rotation1.setter
+    def rotation1(self, value):
         assert isinstance(value, Quaternion)
-        self._rotation1 = value
+        self._rotation1 = value.normalize()
+
+    @property
+    def rotation2(self):
+        """rotation2 records on going camera rotation."""
+        return self._rotation2
+
+    @rotation2.setter
+    def rotation2(self, value):
+        assert isinstance(value, Quaternion)
+        self._rotation2 = value.normalize()
 
     @property
     def auto_roll(self):
-        """ Whether to rotate the camera automaticall to try and attempt
+        """Whether to rotate the camera automaticall to try and attempt
         to keep Z up.
         """
         return self._auto_roll
@@ -128,7 +147,7 @@ class FlyCamera(PerspectiveCamera):
 
     @property
     def keymap(self):
-        """ A dictionary that maps keys to thruster directions
+        """A dictionary that maps keys to thruster directions
 
         The keys in this dictionary are vispy key descriptions (from
         vispy.keys) or characters that represent keys. These are matched
@@ -144,11 +163,8 @@ class FlyCamera(PerspectiveCamera):
         return self._keymap
 
     def _set_range(self, init):
-        """ Reset the view.
-        """
-
-        #PerspectiveCamera._set_range(self, init)
-
+        """Reset the view."""
+        # PerspectiveCamera._set_range(self, init)
         # Stop moving
         self._speed *= 0.0
 
@@ -202,7 +218,7 @@ class FlyCamera(PerspectiveCamera):
     def _get_directions(self):
 
         # Get reference points in reference coordinates
-        #p0 = Point(0,0,0)
+        # p0 = Point(0,0,0)
         pf = (0, 0, -1)  # front
         pr = (1, 0, 0)  # right
         pl = (-1, 0, 0)  # left
@@ -236,7 +252,6 @@ class FlyCamera(PerspectiveCamera):
         event : instance of Event
             The event.
         """
-
         # Set relative speed and acceleration
         rel_speed = event.dt
         rel_acc = 0.1
@@ -299,7 +314,7 @@ class FlyCamera(PerspectiveCamera):
 
             def angle(p1, p2):
                 return np.arccos(p1.dot(p2))
-            #au = angle(pu, (0, 0, 1))
+            # au = angle(pu, (0, 0, 1))
             ar = angle(pr, up)
             al = angle(pl, up)
             af = angle(pf, up)
@@ -324,7 +339,7 @@ class FlyCamera(PerspectiveCamera):
             self.view_changed()
 
     def viewbox_key_event(self, event):
-        """ViewBox key event handler
+        """The ViewBox key event handler
 
         Parameters
         ----------
@@ -355,9 +370,10 @@ class FlyCamera(PerspectiveCamera):
             for dim in val_dims[1:]:
                 factor = 1.0
                 vec[dim-1] = val * factor
+            event.handled = True
 
     def viewbox_mouse_event(self, event):
-        """ViewBox mouse event handler
+        """The ViewBox mouse event handler
 
         Parameters
         ----------
@@ -389,6 +405,7 @@ class FlyCamera(PerspectiveCamera):
             # Apply rotation
             self._rotation1 = (self._rotation2 * self._rotation1).normalize()
             self._rotation2 = Quaternion()
+            event.handled = True
         elif not self._timer.running:
             # Ensure the timer runs
             self._timer.start()
@@ -421,6 +438,7 @@ class FlyCamera(PerspectiveCamera):
 
                 # Apply to global quaternion
                 self._rotation2 = (q_el.normalize() * q_az).normalize()
+                event.handled = True
 
             elif 2 in event.buttons and keys.CONTROL in modifiers:
                 # zoom --> fov
@@ -433,6 +451,7 @@ class FlyCamera(PerspectiveCamera):
                 d = p2c - p1c
                 fov = self._event_value * math.exp(-0.01*d[1])
                 self._fov = min(90.0, max(10, fov))
+                event.handled = True
 
         # Make transform be updated on the next timer tick.
         # By doing it at timer tick, we avoid shaky behavior

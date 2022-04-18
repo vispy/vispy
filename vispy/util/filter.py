@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 import numpy as np
@@ -40,5 +40,5 @@ def gaussian_filter(data, sigma):
         # clip off extra data
         sl = [slice(None)] * data.ndim
         sl[ax] = slice(filtered.shape[ax]-data.shape[ax], None, None)
-        filtered = filtered[sl]
+        filtered = filtered[tuple(sl)]
     return filtered + baseline

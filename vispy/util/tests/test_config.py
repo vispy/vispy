@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 from os import path as op
 import os
@@ -7,7 +7,8 @@ import os
 from vispy.util import (config, sys_info, _TempDir, set_data_dir, save_config,
                         load_data_file)
 from vispy.testing import (assert_in, requires_application, run_tests_if_main,
-                           assert_raises, assert_equal, assert_true)
+                           assert_raises, assert_equal, assert_true,
+                           requires_ssl)
 temp_dir = _TempDir()
 
 
@@ -26,6 +27,7 @@ def test_sys_info():
     assert_true('Info-gathering error' not in out)
 
 
+@requires_ssl()
 def test_config():
     """Test vispy config methods and file downloading"""
     assert_raises(TypeError, config.update, data_path=dict())

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from ..util import SimpleBunch
@@ -48,7 +48,7 @@ class BaseCanvasBackend(object):
 
     Abstract class that provides an interface between backends and Canvas.
     Each backend must implement a subclass of CanvasBackend, and
-    implement all its _vispy_xxx methods. Also, also a backend must
+    implement all its _vispy_xxx methods. Also, a backend must
     make sure to generate the following events: 'initialize', 'resize',
     'draw', 'mouse_press', 'mouse_release', 'mouse_move',
     'mouse_wheel', 'key_press', 'key_release'. When a backend detects
@@ -58,6 +58,9 @@ class BaseCanvasBackend(object):
     """
 
     def __init__(self, vispy_canvas):
+        # Note: it is the responsibility of the subclass to call
+        # the __init__ of the mro - we don't call super().__init__() here.
+
         from .canvas import Canvas  # Avoid circular import
         assert isinstance(vispy_canvas, Canvas)
         self._vispy_canvas = vispy_canvas
@@ -78,7 +81,7 @@ class BaseCanvasBackend(object):
         }
 
     def _process_backend_kwargs(self, kwargs):
-        """ Simple utility to retrieve kwargs in predetermined order.
+        """Simple utility to retrieve kwargs in predetermined order.
         Also checks whether the values of the backend arguments do not
         violate the backend capabilities.
         """
@@ -170,6 +173,11 @@ class BaseCanvasBackend(object):
         # Most backends would not need to implement this
         return self
 
+    def _vispy_get_fb_bind_location(self):
+        # Should return the default FrameBuffer bind location
+        # Most backends would not need to implement this
+        return 0
+
     def _vispy_mouse_press(self, **kwargs):
         # default method for delivering mouse press events to the canvas
         kwargs.update(self._vispy_mouse_data)
@@ -253,9 +261,9 @@ class BaseCanvasBackend(object):
         # the position should be the same, and the two mouse-presses should
         # be within dt_max.
         if ((ev.time - lastev.time <= dt_max) &
-           (lastev.pos[0] - ev.pos[0] == 0) &
-           (lastev.pos[1] - ev.pos[1] == 0) &
-           (lastev.button == ev.button)):
+            (lastev.pos[0] - ev.pos[0] == 0) &
+            (lastev.pos[1] - ev.pos[1] == 0) &
+                (lastev.button == ev.button)):
             self._vispy_mouse_double_click(**kwargs)
 
         self._vispy_mouse_data['last_mouse_press'] = ev
@@ -270,6 +278,8 @@ class BaseTimerBackend(object):
     """
 
     def __init__(self, vispy_timer):
+        # Note: it is the responsibility of the subclass to call
+        # the __init__ of the mro - we don't call super().__init__() here.
         self._vispy_timer = vispy_timer
 
     def _vispy_start(self, interval):

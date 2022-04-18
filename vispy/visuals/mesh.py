@@ -1,139 +1,40 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
-""" A MeshVisual Visual that uses the new shader Function.
-"""
+"""A MeshVisual Visual that uses the new shader Function."""
 
 from __future__ import division
+from functools import lru_cache
 
 import numpy as np
 
 from .visual import Visual
-from .shaders import Function, Varying
-from ..gloo import VertexBuffer, IndexBuffer
+from .shaders import Function, FunctionChain
+from ..gloo import VertexBuffer
 from ..geometry import MeshData
-from ..color import Color
+from ..color import Color, get_colormap
+from ..color.colormap import CubeHelixColormap
+from ..util.event import Event
 
 
-# Shaders for lit rendering (using phong shading)
-shading_vertex_template = """
-varying vec3 v_normal_vec;
-varying vec3 v_light_vec;
-varying vec3 v_eye_vec;
-
-varying vec4 v_ambientk;
-varying vec4 v_light_color;
+_VERTEX_SHADER = """
 varying vec4 v_base_color;
 
-
 void main() {
-
-    v_ambientk = $ambientk;
-    v_light_color = $light_color;
-    v_base_color = $base_color;
-
-
-    vec4 pos_scene = $visual2scene($to_vec4($position));
-    vec4 normal_scene = $visual2scene(vec4($normal, 1.0));
-    vec4 origin_scene = $visual2scene(vec4(0.0, 0.0, 0.0, 1.0));
-
-    normal_scene /= normal_scene.w;
-    origin_scene /= origin_scene.w;
-
-    vec3 normal = normalize(normal_scene.xyz - origin_scene.xyz);
-    v_normal_vec = normal; //VARYING COPY
-
-    vec4 pos_front = $scene2doc(pos_scene);
-    pos_front.z += 0.01;
-    pos_front = $doc2scene(pos_front);
-    pos_front /= pos_front.w;
-
-    vec4 pos_back = $scene2doc(pos_scene);
-    pos_back.z -= 0.01;
-    pos_back = $doc2scene(pos_back);
-    pos_back /= pos_back.w;
-
-    vec3 eye = normalize(pos_front.xyz - pos_back.xyz);
-    v_eye_vec = eye; //VARYING COPY
-
-    vec3 light = normalize($light_dir.xyz);
-    v_light_vec = light; //VARYING COPY
-
+    v_base_color = $color_transform($base_color);
     gl_Position = $transform($to_vec4($position));
 }
 """
 
-shading_fragment_template = """
-varying vec3 v_normal_vec;
-varying vec3 v_light_vec;
-varying vec3 v_eye_vec;
-
-varying vec4 v_ambientk;
-varying vec4 v_light_color;
+_FRAGMENT_SHADER = """
 varying vec4 v_base_color;
-
 void main() {
-
-
-    //DIFFUSE
-    float diffusek = dot(v_light_vec, v_normal_vec);
-    //clamp, because 0 < theta < pi/2
-    diffusek  = clamp(diffusek, 0.0, 1.0);
-    vec4 diffuse_color = v_light_color * diffusek;
-    //diffuse_color.a = 1.0;
-
-    //SPECULAR
-    //reflect light wrt normal for the reflected ray, then
-    //find the angle made with the eye
-    float speculark = dot(reflect(v_light_vec, v_normal_vec), v_eye_vec);
-    speculark = clamp(speculark, 0.0, 1.0);
-    //raise to the material's shininess, multiply with a
-    //small factor for spread
-    speculark = 20.0 * pow(speculark, 200.0);
-
-    vec4 specular_color = v_light_color * speculark;
-
-
-    gl_FragColor =
-       v_base_color * (v_ambientk + diffuse_color) + specular_color;
-
-    //gl_FragColor = vec4(speculark, 0, 1, 1.0);
-
-
+    gl_FragColor = v_base_color;
 }
 """
-
-# Shader code for non lighted rendering
-vertex_template = """
-void main() {
-    gl_Position = $transform($to_vec4($position));
-}
-"""
-
-fragment_template = """
-void main() {
-    gl_FragColor = $color;
-}
-"""
-
-
-# Functions that can be used as is (don't have template variables)
-# Consider these stored in a central location in vispy ...
-
-vec3to4 = Function("""
-vec4 vec3to4(vec3 xyz) {
-    return vec4(xyz, 1.0);
-}
-""")
-
-vec2to4 = Function("""
-vec4 vec2to4(vec2 xyz) {
-    return vec4(xyz, 0.0, 1.0);
-}
-""")
 
 
 class MeshVisual(Visual):
@@ -151,66 +52,109 @@ class MeshVisual(Visual):
         Colors to use for each face.
     color : instance of Color
         The color to use.
+    vertex_values : array-like | None
+        The values to use for each vertex (for colormapping).
     meshdata : instance of MeshData | None
         The meshdata.
     shading : str | None
-        Shading to use.
+        Shading to use. This uses the
+        :class:`~vispy.visuals.filters.mesh.ShadingFilter`
+        filter introduced in VisPy 0.7. This class provides additional
+        features that are available when the filter is attached manually.
+        See 'examples/basics/scene/mesh_shading.py' for an example.
     mode : str
         The drawing mode.
     **kwargs : dict
         Keyword arguments to pass to `Visual`.
+
+    Notes
+    -----
+    Additional functionality is available through filters. Mesh-specific
+    filters can be found in the :mod:`vispy.visuals.filters.mesh` module.
+
+    This class emits a `data_updated` event when the mesh data is updated. This
+    is used for example by filters for synchronization.
+
+    Examples
+    --------
+    Create a primitive shape from a helper function:
+
+    >>> from vispy.geometry import create_sphere
+    >>> meshdata = create_sphere()
+    >>> mesh = MeshVisual(meshdata=meshdata)
+
+    Create a custom shape:
+
+    >>> # A rectangle made out of two triangles.
+    >>> vertices = [(0, 0, 0), (1, 0, 1), (1, 1, 1), (0, 1, 0)]
+    >>> faces = [(0, 1, 2), (0, 2, 3)]
+    >>> mesh = MeshVisual(vertices=vertices, faces=faces)
     """
+
+    _shaders = {
+        'vertex': _VERTEX_SHADER,
+        'fragment': _FRAGMENT_SHADER,
+    }
+
     def __init__(self, vertices=None, faces=None, vertex_colors=None,
-                 face_colors=None, color=(0.5, 0.5, 1, 1), meshdata=None,
-                 shading=None, mode='triangles', **kwargs):
+                 face_colors=None, color=(0.5, 0.5, 1, 1), vertex_values=None,
+                 meshdata=None, shading=None, mode='triangles', **kwargs):
+        Visual.__init__(self, vcode=self._shaders['vertex'], fcode=self._shaders['fragment'],
+                        **kwargs)
+        self.set_gl_state('translucent', depth_test=True, cull_face=False)
 
-        # Function for computing phong shading
-        # self._phong = Function(phong_template)
+        self.events.add(data_updated=Event)
 
-        # Visual.__init__ -> prepare_transforms() -> uses shading
-        self.shading = shading
-
-        if shading is not None:
-            Visual.__init__(self, vcode=shading_vertex_template,
-                            fcode=shading_fragment_template,
-                            **kwargs)
-
-        else:
-            Visual.__init__(self, vcode=vertex_template,
-                            fcode=fragment_template,
-                            **kwargs)
-
-        self.set_gl_state('translucent', depth_test=True,
-                          cull_face=False)
+        self._meshdata = None
 
         # Define buffers
         self._vertices = VertexBuffer(np.zeros((0, 3), dtype=np.float32))
-        self._normals = None
-        self._faces = IndexBuffer()
-        self._colors = VertexBuffer(np.zeros((0, 4), dtype=np.float32))
-        self._normals = VertexBuffer(np.zeros((0, 3), dtype=np.float32))
+        self._cmap = CubeHelixColormap()
+        self._clim = 'auto'
 
         # Uniform color
         self._color = Color(color)
 
-        # varyings
-        self._color_var = Varying('v_color', dtype='vec4')
+        # add filters for various modifiers
+        self.shading_filter = None
+        self.shading = shading
 
         # Init
         self._bounds = None
         # Note we do not call subclass set_data -- often the signatures
         # do no match.
-        MeshVisual.set_data(self, vertices=vertices, faces=faces,
-                            vertex_colors=vertex_colors,
-                            face_colors=face_colors, meshdata=meshdata,
-                            color=color)
+        MeshVisual.set_data(
+            self, vertices=vertices, faces=faces, vertex_colors=vertex_colors,
+            face_colors=face_colors, vertex_values=vertex_values,
+            meshdata=meshdata, color=color)
 
         # primitive mode
         self._draw_mode = mode
+
         self.freeze()
 
+    @property
+    def shading(self):
+        """The shading method."""
+        return self._shading
+
+    @shading.setter
+    def shading(self, shading):
+        assert shading in (None, 'flat', 'smooth')
+        self._shading = shading
+        if shading is None and self.shading_filter is None:
+            # Delay creation of filter until necessary.
+            return
+        if self.shading_filter is None:
+            from vispy.visuals.filters import ShadingFilter
+            self.shading_filter = ShadingFilter(shading=shading)
+            self.attach(self.shading_filter)
+        else:
+            self.shading_filter.shading = shading
+
     def set_data(self, vertices=None, faces=None, vertex_colors=None,
-                 face_colors=None, color=None, meshdata=None):
+                 face_colors=None, color=None, vertex_values=None,
+                 meshdata=None):
         """Set the mesh data
 
         Parameters
@@ -225,6 +169,8 @@ class MeshVisual(Visual):
             Colors to use for each face.
         color : instance of Color
             The color to use.
+        vertex_values : array-like | None
+            Values for each vertex.
         meshdata : instance of MeshData | None
             The meshdata.
         """
@@ -233,10 +179,49 @@ class MeshVisual(Visual):
         else:
             self._meshdata = MeshData(vertices=vertices, faces=faces,
                                       vertex_colors=vertex_colors,
-                                      face_colors=face_colors)
+                                      face_colors=face_colors,
+                                      vertex_values=vertex_values)
         self._bounds = self._meshdata.get_bounds()
         if color is not None:
             self._color = Color(color)
+        self.mesh_data_changed()
+
+    @property
+    def clim(self):
+        return (self._clim if isinstance(self._clim, str) else
+                tuple(self._clim))
+
+    @clim.setter
+    def clim(self, clim):
+        if isinstance(clim, str):
+            if clim != 'auto':
+                raise ValueError('clim must be "auto" if a string')
+        else:
+            clim = np.array(clim, float)
+            if clim.shape != (2,):
+                raise ValueError('clim must have two elements')
+        self._clim = clim
+        self.mesh_data_changed()
+
+    @property
+    def _clim_values(self):
+        if isinstance(self._clim, str):  # == 'auto'
+            if self._meshdata.has_vertex_value():
+                clim = self._meshdata.get_vertex_values()
+                clim = (np.min(clim), np.max(clim))
+            else:
+                clim = (0, 1)
+        else:
+            clim = self._clim
+        return clim
+
+    @property
+    def cmap(self):
+        return self._cmap
+
+    @cmap.setter
+    def cmap(self, cmap):
+        self._cmap = get_colormap(cmap)
         self.mesh_data_changed()
 
     @property
@@ -268,15 +253,21 @@ class MeshVisual(Visual):
 
     @property
     def color(self):
-        """The uniform color for this mesh.
-
-        This value is only used if per-vertex or per-face colors are not
-        specified.
-        """
+        """The uniform color for this mesh"""
         return self._color
 
     @color.setter
     def color(self, c):
+        """Set the uniform color of the mesh
+
+        This value is only used if per-vertex or per-face colors are not
+        specified.
+
+        Parameters
+        ----------
+        c : instance of Color
+            The color to use.
+        """
         if c is not None:
             self._color = Color(c)
         self.mesh_data_changed()
@@ -285,97 +276,82 @@ class MeshVisual(Visual):
         self._data_changed = True
         self.update()
 
-    def _update_data(self):
-        md = self.mesh_data
-        # Update vertex/index buffers
-        if self.shading == 'smooth' and not md.has_face_indexed_data():
-            v = md.get_vertices()
-            if v is None:
-                return False
-            if v.shape[-1] == 2:
-                v = np.concatenate((v, np.zeros((v.shape[:-1] + (1,)))), -1)
-            self._vertices.set_data(v, convert=True)
-            self._normals.set_data(md.get_vertex_normals(), convert=True)
-            self._faces.set_data(md.get_faces(), convert=True)
-            self._index_buffer = self._faces
-            if md.has_vertex_color():
-                self._colors.set_data(md.get_vertex_colors(), convert=True)
-            elif md.has_face_color():
-                self._colors.set_data(md.get_face_colors(), convert=True)
-            else:
-                self._colors.set_data(np.zeros((0, 4), dtype=np.float32))
+    def _build_color_transform(self, colors):
+        # Eventually this could be de-duplicated with visuals/image.py, which does
+        # something similar (but takes a ``color`` instead of ``float``)
+        null_color_transform = 'vec4 pass(vec4 color) { return color; }'
+        clim_func = 'float cmap(float val) { return (val - $cmin) / ($cmax - $cmin); }'
+        if colors.ndim == 2 and colors.shape[1] == 1:
+            fun = Function(clim_func)
+            fun['cmin'] = self.clim[0]
+            fun['cmax'] = self.clim[1]
+            fun = FunctionChain(None, [fun, Function(self.cmap.glsl_map)])
         else:
-            v = md.get_vertices(indexed='faces')
-            if v is None:
-                return False
-            if v.shape[-1] == 2:
-                v = np.concatenate((v, np.zeros((v.shape[:-1] + (1,)))), -1)
-            self._vertices.set_data(v, convert=True)
-            if self.shading == 'smooth':
-                normals = md.get_vertex_normals(indexed='faces')
-                self._normals.set_data(normals, convert=True)
-            elif self.shading == 'flat':
-                normals = md.get_face_normals(indexed='faces')
-                self._normals.set_data(normals, convert=True)
-            else:
-                self._normals.set_data(np.zeros((0, 3), dtype=np.float32))
-            self._index_buffer = None
-            if md.has_vertex_color():
-                self._colors.set_data(md.get_vertex_colors(indexed='faces'),
-                                      convert=True)
-            elif md.has_face_color():
-                self._colors.set_data(md.get_face_colors(indexed='faces'),
-                                      convert=True)
-            else:
-                self._colors.set_data(np.zeros((0, 4), dtype=np.float32))
-        self.shared_program.vert['position'] = self._vertices
+            fun = Function(null_color_transform)
+        return fun
 
-        # Position input handling
-        if v.shape[-1] == 2:
-            self.shared_program.vert['to_vec4'] = vec2to4
-        elif v.shape[-1] == 3:
-            self.shared_program.vert['to_vec4'] = vec3to4
+    @staticmethod
+    @lru_cache(maxsize=2)
+    def _ensure_vec4_func(dims):
+        if dims == 2:
+            func = Function("""
+                vec4 vec2to4(vec2 xyz) {
+                    return vec4(xyz, 0.0, 1.0);
+                }
+            """)
+        elif dims == 3:
+            func = Function("""
+                vec4 vec3to4(vec3 xyz) {
+                    return vec4(xyz, 1.0);
+                }
+            """)
         else:
             raise TypeError("Vertex data must have shape (...,2) or (...,3).")
+        return func
 
-        # Color input handling
-        # If non-lit shading is used, then just pass the colors
-        # Otherwise, the shader uses a base_color to represent the underlying
-        # color, which is then lit with the lighting model
-        colors = self._colors if self._colors.size > 0 else self._color.rgba
-        if self.shading is None:
-            self.shared_program.vert[self._color_var] = colors
+    def _update_data(self):
+        md = self.mesh_data
 
-        # Shading
-        if self.shading is None:
-            self.shared_program.frag['color'] = self._color_var
+        v = md.get_vertices(indexed='faces')
+        if v is None:
+            return False
+        if v.shape[-1] == 2:
+            v = np.concatenate((v, np.zeros((v.shape[:-1] + (1,)))), -1)
+        self._vertices.set_data(v, convert=True)
+        if md.has_vertex_color():
+            colors = md.get_vertex_colors(indexed='faces')
+            colors = colors.astype(np.float32)
+        elif md.has_face_color():
+            colors = md.get_face_colors(indexed='faces')
+            colors = colors.astype(np.float32)
+        elif md.has_vertex_value():
+            colors = md.get_vertex_values(indexed='faces')
+            colors = colors.ravel()[:, np.newaxis]
+            colors = colors.astype(np.float32)
         else:
-            # Normal data comes via vertex shader
-            if self._normals.size > 0:
-                normals = self._normals
-            else:
-                normals = (1., 0., 0.)
+            colors = self._color.rgba
 
-            self.shared_program.vert['normal'] = normals
+        self.shared_program.vert['position'] = self._vertices
+
+        self.shared_program['texture2D_LUT'] = self._cmap.texture_lut()
+
+        # Position input handling
+        ensure_vec4 = self._ensure_vec4_func(v.shape[-1])
+        self.shared_program.vert['to_vec4'] = ensure_vec4
+
+        # Set the base color.
+        #
+        # The base color is mixed further by the material filters for texture
+        # or shading effects.
+        self.shared_program.vert['color_transform'] = self._build_color_transform(colors)
+        if colors.ndim == 1:
             self.shared_program.vert['base_color'] = colors
-
-            # Additional phong properties
-            self.shared_program.vert['light_dir'] = (10, 5, -5)
-            self.shared_program.vert['light_color'] = (1.0, 1.0, 1.0, 1.0)
-            self.shared_program.vert['ambientk'] = (0.3, 0.3, 0.3, 1.0)
+        else:
+            self.shared_program.vert['base_color'] = VertexBuffer(colors)
 
         self._data_changed = False
 
-    @property
-    def shading(self):
-        """ The shading method used.
-        """
-        return self._shading
-
-    @shading.setter
-    def shading(self, value):
-        assert value in (None, 'flat', 'smooth')
-        self._shading = value
+        self.events.data_updated()
 
     def _prepare_draw(self, view):
         if self._data_changed:
@@ -383,23 +359,15 @@ class MeshVisual(Visual):
                 return False
             self._data_changed = False
 
-    def draw(self, *args, **kwds):
-        Visual.draw(self, *args, **kwds)
-
     @staticmethod
     def _prepare_transforms(view):
         tr = view.transforms.get_transform()
-        view.view_program.vert['transform'] = tr  # .simplified
-
-        if view.shading is not None:
-            visual2scene = view.transforms.get_transform('visual', 'scene')
-            scene2doc = view.transforms.get_transform('scene', 'document')
-            doc2scene = view.transforms.get_transform('document', 'scene')
-            view.shared_program.vert['visual2scene'] = visual2scene
-            view.shared_program.vert['scene2doc'] = scene2doc
-            view.shared_program.vert['doc2scene'] = doc2scene
+        view.view_program.vert['transform'] = tr
 
     def _compute_bounds(self, axis, view):
         if self._bounds is None:
             return None
-        return self._bounds[axis]
+        if axis >= len(self._bounds):
+            return (0, 0)
+        else:
+            return self._bounds[axis]

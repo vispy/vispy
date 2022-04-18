@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 """
 Some wrappers to avoid circular imports, or make certain calls easier.
@@ -17,11 +17,11 @@ them.
 """
 
 import subprocess
-import inspect
+from .config import _get_args
 
 
 def use(app=None, gl=None):
-    """ Set the usage options for vispy
+    """Set the usage options for vispy
 
     Specify what app backend and GL backend to use.
 
@@ -31,15 +31,19 @@ def use(app=None, gl=None):
         The app backend to use (case insensitive). Standard backends:
             * 'PyQt4': use Qt widget toolkit via PyQt4.
             * 'PyQt5': use Qt widget toolkit via PyQt5.
+            * 'PyQt6': use Qt widget toolkit via PyQt6.
             * 'PySide': use Qt widget toolkit via PySide.
+            * 'PySide2': use Qt widget toolkit via PySide2.
+            * 'PySide6': use Qt widget toolkit via PySide6.
             * 'PyGlet': use Pyglet backend.
             * 'Glfw': use Glfw backend (successor of Glut). Widely available
               on Linux.
             * 'SDL2': use SDL v2 backend.
             * 'osmesa': Use OSMesa backend
         Additional backends:
-            * 'ipynb_vnc': render in the IPython notebook via a VNC approach
-              (experimental)
+            * 'jupyter_rfb': show vispy canvases in Jupyter lab/notebook
+              (depends on the jupyter_rfb library).
+
     gl : str
         The gl backend to use (case insensitive). Options are:
             * 'gl2': use Vispy's desktop OpenGL API.
@@ -72,11 +76,6 @@ def use(app=None, gl=None):
     """
     if app is None and gl is None:
         raise TypeError('Must specify at least one of "app" or "gl".')
-
-    # Example for future. This wont work (yet).
-    if app == 'ipynb_webgl':
-        app = 'headless'
-        gl = 'webgl'
 
     if app == 'osmesa':
         from ..util.osmesa_gl import fix_osmesa_gl_lib
@@ -139,10 +138,18 @@ def run_subprocess(command, return_code=False, **kwargs):
         print(output[0])
         print(output[1])
         err_fun = subprocess.CalledProcessError.__init__
-        if 'output' in inspect.getargspec(err_fun).args:
+        if 'output' in _get_args(err_fun):
             raise subprocess.CalledProcessError(p.returncode, command, output)
         else:
             raise subprocess.CalledProcessError(p.returncode, command)
     if return_code:
         output = output + (p.returncode,)
     return output
+
+
+def test(*args, **kwargs):
+    """Proxy function to delay `.testing` import"""
+    from vispy.testing import test as _test  # noqa
+    return _test(*args, **kwargs)
+
+test.__test__ = False  # no discover test function as test

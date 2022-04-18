@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division
@@ -27,6 +27,7 @@ class IsosurfaceVisual(MeshVisual):
     **kwargs : dict
         Keyword arguments to pass to the mesh construction.
     """
+
     def __init__(self, data=None, level=None, vertex_colors=None,
                  face_colors=None, color=(0.5, 0.5, 1, 1), **kwargs):
         self._data = None
@@ -49,9 +50,7 @@ class IsosurfaceVisual(MeshVisual):
 
     @property
     def level(self):
-        """ The threshold at which the isosurface is constructed from the
-        3D data.
-        """
+        """The threshold at which the isosurface is constructed from the 3D data."""
         return self._level
 
     @level.setter
@@ -62,7 +61,7 @@ class IsosurfaceVisual(MeshVisual):
 
     def set_data(self, data=None, vertex_colors=None, face_colors=None,
                  color=None):
-        """ Set the scalar array data
+        """Set the scalar array data
 
         Parameters
         ----------

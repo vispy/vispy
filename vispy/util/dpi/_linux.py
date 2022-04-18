@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
@@ -24,6 +24,14 @@ def _get_dpi_from(cmd, pattern, func):
         match = re.search(pattern, out)
         if match:
             return func(*map(float, match.groups()))
+
+
+def _xrandr_calc(x_px, y_px, x_mm, y_mm):
+    if x_mm == 0 or y_mm == 0:
+        logger.warning("'xrandr' output has screen dimension of 0mm, " +
+                       "can't compute proper DPI")
+        return 96.
+    return 25.4 * (x_px / x_mm + y_px / y_mm) / 2
 
 
 def get_dpi(raise_error=True):
@@ -51,7 +59,7 @@ def get_dpi(raise_error=True):
 
     from_xrandr = _get_dpi_from(
         'xrandr', r'(\d+)x(\d+).*?(\d+)mm x (\d+)mm',
-        lambda x_px, y_px, x_mm, y_mm: 25.4 * (x_px / x_mm + y_px / y_mm) / 2)
+        _xrandr_calc)
     if from_xrandr is not None:
         return from_xrandr
     if raise_error:

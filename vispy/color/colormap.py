@@ -1,19 +1,23 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division  # just to be safe...
-import inspect
+import warnings
 
 import numpy as np
 
 from .color_array import ColorArray
-from ..ext.six import string_types
 from ..ext.cubehelix import cubehelix
-from ..ext.husl import husl_to_rgb
+from hsluv import hsluv_to_rgb
+from ..util.check_environment import has_matplotlib
+import vispy.gloo
 
 ###############################################################################
 # Color maps
+
+# Length of the texture map used for luminance to RGBA conversion
+LUT_len = 1024
 
 
 # Utility functions for interpolation in NumPy.
@@ -48,7 +52,8 @@ def _find_controls(x, controls=None, clip=None):
 # Normalization
 def _normalize(x, cmin=None, cmax=None, clip=True):
     """Normalize an array from the range [cmin, cmax] to [0,1],
-    with optional clipping."""
+    with optional clipping.
+    """
     if not isinstance(x, np.ndarray):
         x = np.array(x)
     if cmin is None:
@@ -96,8 +101,9 @@ def mix(colors, x, controls=None):
 
 
 def smoothstep(edge0, edge1, x):
-    """ performs smooth Hermite interpolation
-        between 0 and 1 when edge0 < x < edge1.  """
+    """Performs smooth Hermite interpolation
+    between 0 and 1 when edge0 < x < edge1.
+    """
     # Scale, bias and saturate x to 0..1 range
     x = np.clip((x - edge0)/(edge1 - edge0), 0.0, 1.0)
     # Evaluate polynomial
@@ -116,44 +122,81 @@ def step(colors, x, controls=None):
 
 
 # GLSL interpolation functions.
-def _glsl_mix(controls=None):
+def _glsl_mix(controls=None, colors=None, texture_map_data=None):
     """Generate a GLSL template function from a given interpolation patterns
-    and control points."""
+    and control points.
+
+    Parameters
+    ----------
+    colors : array-like, shape (n_colors, 4)
+        The control colors used by the colormap.
+        Elements of colors must be convertible to an instance of Color-class.
+
+    controls : list
+        The list of control points for the given colors. It should be
+        an increasing list of floating-point number between 0.0 and 1.0.
+        The first control point must be 0.0. The last control point must be
+        1.0. The number of control points depends on the interpolation scheme.
+
+    texture_map_data : ndarray, shape(texture_len, 4)
+        Numpy array of size of 1D texture lookup data
+        for luminance to RGBA conversion.
+    """
     assert (controls[0], controls[-1]) == (0., 1.)
     ncolors = len(controls)
     assert ncolors >= 2
-    if ncolors == 2:
-        s = "    return mix($color_0, $color_1, t);\n"
-    else:
-        s = ""
-        for i in range(ncolors-1):
-            if i == 0:
-                ifs = 'if (t < %.6f)' % (controls[i+1])
-            elif i == (ncolors-2):
-                ifs = 'else'
-            else:
-                ifs = 'else if (t < %.6f)' % (controls[i+1])
-            adj_t = '(t - %s) / %s' % (controls[i],
-                                       controls[i+1] - controls[i])
-            s += ("%s {\n    return mix($color_%d, $color_%d, %s);\n} " %
-                  (ifs, i, i+1, adj_t))
-    return "vec4 colormap(float t) {\n%s\n}" % s
+    assert (texture_map_data is not None)
+
+    LUT = texture_map_data
+    texture_len = texture_map_data.shape[0]
+
+    # Perform linear interpolation for each RGBA color component.
+    c_rgba = ColorArray(colors)._rgba
+    x = np.linspace(0.0, 1.0, texture_len)
+    LUT[:, 0, 0] = np.interp(x, controls, c_rgba[:, 0])
+    LUT[:, 0, 1] = np.interp(x, controls, c_rgba[:, 1])
+    LUT[:, 0, 2] = np.interp(x, controls, c_rgba[:, 2])
+    LUT[:, 0, 3] = np.interp(x, controls, c_rgba[:, 3])
+
+    s2 = "uniform sampler2D texture2D_LUT;"
+    s = "{\n return texture2D(texture2D_LUT, \
+          vec2(0.0, clamp(t, 0.0, 1.0)));\n} "
+
+    return "%s\nvec4 colormap(float t) {\n%s\n}" % (s2, s)
 
 
-def _glsl_step(controls=None):
+def _glsl_step(controls=None, colors=None, texture_map_data=None):
     assert (controls[0], controls[-1]) == (0., 1.)
     ncolors = len(controls) - 1
     assert ncolors >= 2
-    s = ""
-    for i in range(ncolors-1):
-        if i == 0:
-            ifs = 'if (t < %.6f)' % (controls[i+1])
-        elif i == (ncolors-2):
-            ifs = 'else'
-        else:
-            ifs = 'else if (t < %.6f)' % (controls[i+1])
-        s += """%s {\n    return $color_%d;\n} """ % (ifs, i)
-    return """vec4 colormap(float t) {\n%s\n}""" % s
+    assert (texture_map_data is not None)
+
+    LUT = texture_map_data
+    texture_len = texture_map_data.shape[0]
+    LUT_tex_idx = np.linspace(0.0, 1.0, texture_len)
+
+    # Replicate indices to colormap texture.
+    # The resulting matrix has size of (texture_len,len(controls)).
+    # It is used to perform piecewise constant interpolation
+    # for each RGBA color component.
+    t2 = np.repeat(LUT_tex_idx[:, np.newaxis], len(controls), 1)
+
+    # Perform element-wise comparison to find
+    # control points for all LUT colors.
+    bn = np.sum(controls.transpose() <= t2, axis=1)
+
+    j = np.clip(bn-1, 0, ncolors-1)
+
+    # Copying color data from ColorArray to array-like
+    # makes data assignment to LUT faster.
+    colors_rgba = ColorArray(colors[:])._rgba
+    LUT[:, 0, :] = colors_rgba[j]
+
+    s2 = "uniform sampler2D texture2D_LUT;"
+    s = "{\n return texture2D(texture2D_LUT, \
+           vec2(0.0, clamp(t, 0.0, 1.0)));\n} "
+
+    return "%s\nvec4 colormap(float t) {\n%s\n}" % (s2, s)
 
 
 # Mini GLSL template system for colors.
@@ -168,9 +211,9 @@ def _process_glsl_template(template, colors):
 
 
 class BaseColormap(object):
-    """Class representing a colormap:
+    u"""Class representing a colormap:
 
-        t \in [0, 1] --> rgba_color
+        t in [0, 1] --> rgba_color
 
     Parameters
     ----------
@@ -187,7 +230,6 @@ class BaseColormap(object):
     map(item) : function
         Takes a (N, 1) vector of values in [0, 1], and returns a rgba array
         of size (N, 4).
-
     """
 
     # Control colors used by the colormap.
@@ -195,6 +237,10 @@ class BaseColormap(object):
 
     # GLSL string with a function implementing the color map.
     glsl_map = None
+
+    # Texture map data used by the 'colormap' GLSL function
+    # for luminance to RGBA conversion.
+    texture_map_data = None
 
     def __init__(self, colors=None):
         # Ensure the colors are arrays.
@@ -234,6 +280,10 @@ class BaseColormap(object):
 
         """
         raise NotImplementedError()
+
+    def texture_lut(self):
+        """Return a texture2D object for LUT after its value is set. Can be None."""
+        return None
 
     def __getitem__(self, item):
         if isinstance(item, tuple):
@@ -288,7 +338,7 @@ def _default_controls(ncolors):
 _interpolation_info = {
     'linear': {
         'ncontrols': lambda ncolors: ncolors,  # take ncolors as argument
-        'glsl_map': _glsl_mix,  # take 'controls' as argument
+        'glsl_map': _glsl_mix,  # take 'controls' and 'colors' as arguments
         'map': mix,
     },
     'zero': {
@@ -328,6 +378,7 @@ class Colormap(BaseColormap):
         >>> cm[0.], cm[0.5], cm[np.linspace(0., 1., 100)]
 
     """
+
     def __init__(self, colors, controls=None, interpolation='linear'):
         self.interpolation = interpolation
         ncontrols = self._ncontrols(len(colors))
@@ -336,7 +387,10 @@ class Colormap(BaseColormap):
             controls = _default_controls(ncontrols)
         assert len(controls) == ncontrols
         self._controls = np.array(controls, dtype=np.float32)
-        self.glsl_map = self._glsl_map_generator(self._controls)
+        # use texture map for luminance to RGBA conversion
+        self.texture_map_data = np.zeros((LUT_len, 1, 4), dtype=np.float32)
+        self.glsl_map = self._glsl_map_generator(self._controls, colors,
+                                                 self.texture_map_data)
         super(Colormap, self).__init__(colors)
 
     @property
@@ -375,6 +429,32 @@ class Colormap(BaseColormap):
             List of rgba colors.
         """
         return self._map_function(self.colors.rgba, x, self._controls)
+
+    def texture_lut(self):
+        """Return a texture2D object for LUT after its value is set. Can be None."""
+        if self.texture_map_data is None:
+            return None
+        interp = 'linear' if self.interpolation == 'linear' else 'nearest'
+        texture_LUT = vispy.gloo.Texture2D(np.zeros(self.texture_map_data.shape),
+                                           interpolation=interp)
+        texture_LUT.set_data(self.texture_map_data, offset=None, copy=True)
+        return texture_LUT
+
+
+class MatplotlibColormap(Colormap):
+    """Use matplotlib colormaps if installed.
+
+    Parameters
+    ----------
+    name : string
+        Name of the colormap.
+    """
+
+    def __init__(self, name):
+        from matplotlib.cm import ScalarMappable
+
+        vec = ScalarMappable(cmap=name).to_rgba(np.arange(LUT_len))
+        Colormap.__init__(self, vec)
 
 
 class CubeHelixColormap(Colormap):
@@ -525,7 +605,7 @@ class _Winter(BaseColormap):
                            np.sqrt(t))
 
 
-class _SingleHue(Colormap):
+class SingleHue(Colormap):
     """A colormap which is solely defined by the given hue and value.
 
     Given the color hue and value, this color map increases the saturation
@@ -561,18 +641,17 @@ class _SingleHue(Colormap):
             (hue, saturation_range[0], value),
             (hue, saturation_range[1], value)
         ], color_space='hsv')
-        super(_SingleHue, self).__init__(colors)
+        super(SingleHue, self).__init__(colors)
 
 
-class _HSL(Colormap):
-    """A colormap which is defined by n evenly spaced points in
-    a circular color space.
+class HSL(Colormap):
+    """A colormap which is defined by n evenly spaced points in a circular color space.
 
     This means that we change the hue value while keeping the
     saturation and value constant.
 
     Parameters
-    ---------
+    ----------
     n_colors : int, optional
         The number of colors to generate.
     hue_start : int, optional
@@ -604,16 +683,15 @@ class _HSL(Colormap):
         colors = ColorArray([(hue, saturation, value) for hue in hues],
                             color_space='hsv')
 
-        super(_HSL, self).__init__(colors, controls=controls,
-                                   interpolation=interpolation)
+        super(HSL, self).__init__(colors, controls=controls,
+                                  interpolation=interpolation)
 
 
-class _HUSL(Colormap):
-    """A colormap which is defined by n evenly spaced points in
-    the HUSL hue space.
+class HSLuv(Colormap):
+    """A colormap which is defined by n evenly spaced points in the HSLuv space.
 
     Parameters
-    ---------
+    ----------
     n_colors : int, optional
         The number of colors to generate.
     hue_start : int, optional
@@ -637,7 +715,7 @@ class _HUSL(Colormap):
 
     Notes
     -----
-    For more information about HUSL colors see http://husl-colors.org
+    For more information about HSLuv colors see https://www.hsluv.org/
     """
 
     def __init__(self, ncolors=6, hue_start=0, saturation=1.0, value=0.7,
@@ -650,35 +728,72 @@ class _HUSL(Colormap):
         value *= 99
 
         colors = ColorArray(
-            [husl_to_rgb(hue, saturation, value) for hue in hues],
+            [hsluv_to_rgb([hue, saturation, value]) for hue in hues],
         )
 
-        super(_HUSL, self).__init__(colors, controls=controls,
+        super(HSLuv, self).__init__(colors, controls=controls,
                                     interpolation=interpolation)
 
 
-class _Diverging(Colormap):
+class _HUSL(HSLuv):
+    """Deprecated."""
+
+    def __init__(self, *args, **kwargs):
+        warnings.warn("_HUSL Colormap is deprecated. Please use 'HSLuv' instead.")
+        super().__init__(*args, **kwargs)
+
+
+class Diverging(Colormap):
 
     def __init__(self, h_pos=20, h_neg=250, saturation=1.0, value=0.7,
                  center="light"):
         saturation *= 99
         value *= 99
 
-        start = husl_to_rgb(h_neg, saturation, value)
+        start = hsluv_to_rgb([h_neg, saturation, value])
         mid = ((0.133, 0.133, 0.133) if center == "dark" else
                (0.92, 0.92, 0.92))
-        end = husl_to_rgb(h_pos, saturation, value)
+        end = hsluv_to_rgb([h_pos, saturation, value])
 
         colors = ColorArray([start, mid, end])
 
-        super(_Diverging, self).__init__(colors)
+        super(Diverging, self).__init__(colors)
 
-# https://github.com/matplotlib/matplotlib/pull/4707/files#diff-893cf0348279e9f4570488a7a297ab1eR774
+
+class RedYellowBlueCyan(Colormap):
+    """A colormap which goes red-yellow positive and blue-cyan negative
+
+    Parameters
+    ----------
+    limits : array-like, optional
+        The limits for the fully transparent, opaque red, and yellow points.
+    """
+
+    def __init__(self, limits=(0.33, 0.66, 1.0)):
+        limits = np.array(limits, float).ravel()
+        if len(limits) != 3:
+            raise ValueError('limits must have 3 values')
+        if (np.diff(limits) < 0).any() or (limits <= 0).any():
+            raise ValueError('limits must be strictly increasing and positive')
+        controls = np.array([-limits[2], -limits[1], -limits[0],
+                             limits[0], limits[1], limits[2]])
+        controls = ((controls / limits[2]) + 1) / 2.
+        colors = [(0., 1., 1., 1.), (0., 0., 1., 1.), (0., 0., 1., 0.),
+                  (1., 0., 0., 0.), (1., 0., 0., 1.), (1., 1., 0., 1.)]
+        colors = ColorArray(colors)
+        super(RedYellowBlueCyan, self).__init__(
+            colors, controls=controls, interpolation='linear')
+
+
+# https://github.com/matplotlib/matplotlib/pull/4707/files#diff-893cf0348279e9f4570488a7a297ab1eR774  # noqa
 # Taken from original Viridis colormap data in matplotlib implementation
-# Sampled 128 points from the raw data-set of 256 samples.
-# Sub sampled to 128 points since 256 points causes VisPy to freeze.
-# HACK: Ideally, all 256 points should be included, with VisPy generating
-# a 1D texture lookup for ColorMap, rather than branching code.
+#
+# Issue #1331 https://github.com/vispy/vispy/issues/1331 explains that the
+# 128 viridis sample size fails on some GPUs
+# but lowering to 64 samples allows more GPUs to use viridis.
+#
+# VisPy has beem updated to use a texture map lookup.
+# Thus, sampling of the Viridis colormap data is no longer necessary.
 _viridis_data = [[0.267004, 0.004874, 0.329415],
                  [0.268510, 0.009605, 0.335427],
                  [0.269944, 0.014625, 0.341379],
@@ -951,9 +1066,9 @@ _colormaps = dict(
     hot=_Hot(),
     ice=_Ice(),
     winter=_Winter(),
-    light_blues=_SingleHue(),
-    orange=_SingleHue(hue=35),
-    viridis=Colormap(ColorArray(_viridis_data[::2])),
+    light_blues=SingleHue(),
+    orange=SingleHue(hue=35),
+    viridis=Colormap(ColorArray(_viridis_data)),
     # Diverging presets
     coolwarm=Colormap(ColorArray(
         [
@@ -963,49 +1078,74 @@ _colormaps = dict(
         ],
         color_space="hsv"
     )),
-    PuGr=_Diverging(145, 280, 0.85, 0.30),
-    GrBu=_Diverging(255, 133, 0.75, 0.6),
-    GrBu_d=_Diverging(255, 133, 0.75, 0.6, "dark"),
-    RdBu=_Diverging(220, 20, 0.75, 0.5),
+    PuGr=Diverging(145, 280, 0.85, 0.30),
+    GrBu=Diverging(255, 133, 0.75, 0.6),
+    GrBu_d=Diverging(255, 133, 0.75, 0.6, "dark"),
+    RdBu=Diverging(220, 20, 0.75, 0.5),
 
-    # Configurable colormaps
-    cubehelix=CubeHelixColormap,
-    single_hue=_SingleHue,
-    hsl=_HSL,
-    husl=_HUSL,
-    diverging=_Diverging
+    cubehelix=CubeHelixColormap(),
+    single_hue=SingleHue(),
+    hsl=HSL(),
+    husl=HSLuv(),
+    diverging=Diverging(),
+    RdYeBuCy=RedYellowBlueCyan(),
 )
 
 
 def get_colormap(name, *args, **kwargs):
-    """Obtain a colormap
-
-    Some colormaps can have additional configuration parameters. Refer to
-    their corresponding documentation for more information.
+    """Obtain a colormap.
 
     Parameters
     ----------
     name : str | Colormap
         Colormap name. Can also be a Colormap for pass-through.
+    *args:
+        Deprecated.
+    **kwargs
+        Deprecated.
 
     Examples
     --------
+    >>> get_colormap('autumn')
+    >>> get_colormap('single_hue')
 
-        >>> get_colormap('autumn')
-        >>> get_colormap('single_hue', hue=10)
+    .. versionchanged: 0.7
+
+        Additional args/kwargs are no longer accepted. Colormap classes are
+        no longer created on the fly. To create a ``cubehelix``
+        (``CubeHelixColormap``), ``single_hue`` (``SingleHue``), ``hsl``
+        (``HSL``), ``husl`` (``HSLuv``), ``diverging`` (``Diverging``), or
+        ``RdYeBuCy`` (``RedYellowBlueCyan``) colormap you must import and
+        instantiate it directly from the ``vispy.color.colormap`` module.
+
     """
+    if args or kwargs:
+        warnings.warn("Creating a Colormap instance with 'get_colormap' is "
+                      "no longer supported. No additional arguments or "
+                      "keyword arguments should be passed.", DeprecationWarning)
     if isinstance(name, BaseColormap):
-        cmap = name
-    else:
-        if not isinstance(name, string_types):
-            raise TypeError('colormap must be a Colormap or string name')
-        if name not in _colormaps:
-            raise KeyError('colormap name %s not found' % name)
+        return name
+
+    if not isinstance(name, str):
+        raise TypeError('colormap must be a Colormap or string name')
+    if name in _colormaps:  # vispy cmap
         cmap = _colormaps[name]
+        if name in ("cubehelix", "single_hue", "hsl", "husl", "diverging", "RdYeBuCy"):
+            warnings.warn(
+                f"Colormap '{name}' has been deprecated since vispy 0.7. "
+                f"Please import and create 'vispy.color.colormap.{cmap.__class__.__name__}' "
+                "directly instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
 
-        if inspect.isclass(cmap):
-            cmap = cmap(*args, **kwargs)
-
+    elif has_matplotlib():  # matplotlib cmap
+        try:
+            cmap = MatplotlibColormap(name)
+        except ValueError:
+            raise KeyError('colormap name %s not found' % name)
+    else:
+        raise KeyError('colormap name %s not found' % name)
     return cmap
 
 

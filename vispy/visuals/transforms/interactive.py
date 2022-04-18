@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 from __future__ import division
 
@@ -19,12 +19,13 @@ class PanZoomTransform(STTransform):
     **kwargs : dict
         Keyword arguments to pass to the underlying `STTransform`.
     """
+
     def __init__(self, canvas=None, aspect=None, **kwargs):
         self._aspect = aspect
         self.attach(canvas)
         STTransform.__init__(self, **kwargs)
         self.on_resize(None)
-        
+
     def attach(self, canvas):
         """Attach this tranform to a canvas
 
@@ -37,13 +38,13 @@ class PanZoomTransform(STTransform):
         canvas.events.resize.connect(self.on_resize)
         canvas.events.mouse_wheel.connect(self.on_mouse_wheel)
         canvas.events.mouse_move.connect(self.on_mouse_move)
-        
+
     @property
     def canvas_tr(self):
         return STTransform.from_mapping(
             [(0, 0), self._canvas.size],
             [(-1, 1), (1, -1)])
-        
+
     def on_resize(self, event):
         """Resize handler
 
@@ -83,7 +84,7 @@ class PanZoomTransform(STTransform):
                 else:
                     s = dxy[1] * -0.01
                     self.zoom(np.exp(np.array([s, s])), center)
-                    
+
             self.shader_map()
 
     def on_mouse_wheel(self, event):

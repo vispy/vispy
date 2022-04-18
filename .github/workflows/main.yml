@@ -1,0 +1,294 @@
+name: CI
+# https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#concurrency
+# https://docs.github.com/en/developers/webhooks-and-events/events/github-event-types#pullrequestevent
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number }}-${{ github.event.type }}
+  cancel-in-progress: true
+
+# Controls when the action will run. 
+on:
+  # Triggers the workflow on push or pull request events but only for the main branch
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # Open GL Check
+  opengl:
+    name: OpenGL checks
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -l {0}
+    steps:
+    - name: Install OpenGL
+      run: |
+        sudo apt-get update
+        sudo apt-get -y install libglu1-mesa-dev libgl1-mesa-dev libxi-dev libglfw3-dev libgles2-mesa-dev libsdl2-2.0-0 mesa-utils
+    - name: Start xvfb daemon
+      run: |
+        export DISPLAY=:99.0
+        /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1400x900x24 -ac +extension GLX +render
+        sleep 5
+    - name: Check OpenGL
+      run: |
+        export DISPLAY=:99.0
+        glxinfo
+  # linter, style checks, etc
+  lint:
+    name: lint and style checks
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.9
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 numpy cython pytest numpydoc
+    - name: Install vispy
+      run: |
+        pip install -e .
+    - name: Check line endings
+      run: |
+        python make test lineendings
+    - name: Lint with flake8
+      run: |
+        python make test flake
+# FIXME: Re-enable this when all docstrings are fixed
+#    - name: Test docstring parameters
+#      run: |
+#        python make test docs
+
+  # build website
+  website:
+    name: build website
+    runs-on: ubuntu-latest
+    defaults:
+      # use login shell to make use of .bash_profile /.bashrc
+      run:
+        shell: bash -l {0}
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - name: Cache VisPy Demo and Test Data
+      uses: actions/cache@v2
+      env:
+        cache-name: cache-vispy-data-website
+        test-version: 1
+      with:
+        path: |
+          ~/.vispy/data
+          ~/.vispy/test_data
+        key: ${{ runner.os }}-data-${{ env.cache-name }}-${{ env.test-version }}
+        restore-keys: |
+          ${{ runner.os }}-data-${{ env.cache-name }}-
+    - name: Prepare System Environment
+      id: vars
+      run: |
+        # opengl system libraries
+        sudo apt-get update;
+        cat ci/requirements/linux_full_deps_apt.txt | xargs sudo apt-get -y install
+        # Additional latex dependencies
+        sudo apt-get -y install texlive-latex-base texlive-latex-extra texlive-fonts-recommended texlive-fonts-extra texlive-latex-extra
+        sudo apt-get -y install dvipng
+        # Start xvfb daemon
+        export DISPLAY=:99.0
+        /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1400x900x24 -ac +extension GLX +render
+        sleep 5
+        # export python_version
+        echo ::set-output name=python_version::39
+    - uses: mamba-org/provision-with-micromamba@v7
+      with:
+        environment-file: ./ci/requirements/py${{ steps.vars.outputs.python_version }}.yml
+    - name: Install conda-dependencies
+      run: |
+        micromamba install -y python=3.9 -f ci/requirements/linux_full_deps_conda.txt -c conda-forge
+    - name: Install pip dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r ci/requirements/linux_full_deps_pip.txt
+        pip install -r ci/requirements/linux_website_deps_pip.txt
+    - name: Install vispy
+      run: |
+        pip install -e .[doc]
+    - name: Version Info
+      run: |
+        export DISPLAY=:99.0
+        micromamba list
+        python -c "import vispy; print(vispy.version.version)"
+        python -c "import vispy; print(vispy.sys_info())"
+    - name: build website
+      run: |
+        export DISPLAY=:99.0
+        export XDG_RUNTIME_DIR=/tmp/runtime-runner
+        source ./ci/build_website.sh
+    - name: Upload website HTML artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: Sphinx Website
+        path: |
+          doc/_build/html
+        retention-days: 1
+    - name: deploy website
+      if: github.event_name == 'push'
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        personal_token: ${{ secrets.VISPY_WEBSITE_TOKEN }}
+        publish_dir: doc/_build/html
+        publish_branch: main
+        cname: vispy.org
+        allow_empty_commit: true
+        external_repository: vispy/vispy.github.com
+        full_commit_message: "Deploy vispy.org website for SHA:${{ github.sha }} (Ref: ${{ github.ref }})"
+
+  # linux runs
+  build_0:
+    name: vispy tests - linux
+    runs-on: ubuntu-latest
+    needs: [lint]
+    defaults:
+      # use login shell to make use of .bash_profile /.bashrc
+      run:
+        shell: bash -l {0}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - test_number: 1
+            python_version: "3.7"
+            deps: "min"
+            test: "standard"
+            new_qt: false
+          - test_number: 2
+            python_version: "3.7"
+            deps: "full"
+            test: "standard"
+            new_qt: false
+          - test_number: 3
+            python_version: "3.7"
+            deps: "full"
+            test: "examples"
+            new_qt: false
+          - test_number: 4
+            python_version: "3.7"
+            deps: "osmesa"
+            test: "osmesa"
+            new_qt: false
+          - test_number: 5
+            python_version: "3.9"
+            deps: "full"
+            test: "standard"
+            new_qt: true
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - name: Cache VisPy Demo and Test Data
+      uses: actions/cache@v2
+      env:
+        cache-name: cache-vispy-data-${{ matrix.test }}
+        test-version: 2
+      with:
+        path: |
+          ~/.vispy/data
+          ~/.vispy/test_data
+        key: ${{ runner.os }}-data-${{ env.cache-name }}-${{ env.test-version }}
+        restore-keys: |
+          ${{ runner.os }}-data-${{ env.cache-name }}-
+    - name: Prepare System Environment
+      id: vars
+      run: |
+        # opengl system libraries
+        if [ "${{ matrix.deps }}" == 'full' ]; then
+          sudo apt-get update;
+          if [ "${{ matrix.new_qt }}" == 'true' ]; then
+            cat ci/requirements/linux_full_newqtdeps_apt.txt | xargs sudo apt-get -y install
+          else
+            cat ci/requirements/linux_full_deps_apt.txt | xargs sudo apt-get -y install
+          fi
+        fi
+        # Start xvfb daemon
+        export DISPLAY=:99.0
+        /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1400x900x24 -ac +extension GLX +render
+        sleep 5
+        # export python_version
+        PY_VER=${{ matrix.python_version }}
+        echo ::set-output name=python_version::${PY_VER//.}
+    - uses: mamba-org/provision-with-micromamba@v7
+      with:
+        environment-file: ./ci/requirements/py${{ steps.vars.outputs.python_version }}.yml
+    - name: Install conda-dependencies
+      run: |
+        if [ "${{ matrix.new_qt }}" == 'true' ]; then
+          micromamba install -y python=${{ matrix.python_version }} -f ci/requirements/linux_${{ matrix.deps }}_newqtdeps_conda.txt -c conda-forge
+        else
+          micromamba install -y python=${{ matrix.python_version }} -f ci/requirements/linux_${{ matrix.deps }}_deps_conda.txt -c conda-forge
+        fi
+    - name: Install pip-dependencies
+      run: |
+        if [ "${{ matrix.deps }}" == 'full' ]; then
+          if [ "${{ matrix.new_qt }}" == 'true' ]; then
+            pip install -r ci/requirements/linux_full_newqtdeps_pip.txt
+          else
+            pip install -r ci/requirements/linux_full_deps_pip.txt
+          fi
+          rm -rf vispy/ext/_bundled
+        fi
+    - name: Install vispy
+      run: |
+        pip install -e .
+    - name: Version Info
+      run: |
+        if [ "${{ matrix.test }}" != 'osmesa' ]; then
+          export DISPLAY=:99.0
+        fi
+        if [ "${{ matrix.test }}" == 'osmesa' ]; then
+          export OSMESA_LIBRARY=~/micromamba/envs/vispy-tests/lib/libOSMesa32.so;
+          export VISPY_GL_LIB=$OSMESA_LIBRARY
+        fi
+        micromamba list
+        python -c "import vispy; print(vispy.version.version)"
+        python -c "import vispy; print(vispy.sys_info())"
+    - name: Run tests
+      run: |
+        if [ "${{ matrix.test }}" == 'standard' ]; then
+          export DISPLAY=:99.0
+          python make test unit --tb=short
+        fi
+        if [ "${{ matrix.test }}" == 'examples' ]; then
+          export DISPLAY=:99.0
+          export XDG_RUNTIME_DIR=/tmp/runtime-runner
+          make examples
+        fi
+        if [ "${{ matrix.test }}" == 'osmesa' ]; then
+          export OSMESA_LIBRARY=~/micromamba/envs/vispy-tests/lib/libOSMesa32.so
+          export VISPY_GL_LIB=$OSMESA_LIBRARY
+          make osmesa
+        fi
+        if [ "${{ matrix.test }}" != "examples" ]; then
+          COVERAGE_FILE=.vispy-coverage coverage combine
+          mv .vispy-coverage .coverage
+        fi
+    - name: Coveralls Parallel
+      uses: AndreMiras/coveralls-python-action@develop
+      with:
+        flag-name: run-${{ matrix.test_number }}
+        parallel: true
+
+  coveralls:
+    needs: [build_0]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Coveralls Finished
+        uses: AndreMiras/coveralls-python-action@develop
+        with:
+          parallel-finished: true

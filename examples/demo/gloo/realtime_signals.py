@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # vispy: gallery 2
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """
@@ -155,6 +155,7 @@ class Canvas(app.Canvas):
 
         self.program['a_position'].set_data(y.ravel().astype(np.float32))
         self.update()
+        self.context.flush()  # prevent memory leak when minimized
 
     def on_draw(self, event):
         gloo.clear()

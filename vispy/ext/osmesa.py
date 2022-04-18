@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 # vispy: testskip
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-"""A ctypes-based API to OSMesa
-"""
+"""A ctypes-based API to OSMesa"""
 from __future__ import print_function
 import os
 import ctypes
@@ -56,7 +55,8 @@ _lib.OSMesaGetCurrentContext.restype = c_void_p
 
 def allocate_pixels_buffer(width, height):
     """Helper function to allocate a buffer to contain an image of
-    width * height suitable for OSMesaMakeCurrent"""
+    width * height suitable for OSMesaMakeCurrent
+    """
     # Seems like OSMesa has some trouble with non-RGBA buffers, so enforce
     # RGBA
     return (_c_uint * width * height * 4)()

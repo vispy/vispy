@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division
@@ -10,12 +10,6 @@ from .line import LineVisual
 from ..color import ColorArray
 from ..color.colormap import _normalize, get_colormap
 from ..geometry.isocurve import isocurve
-from ..testing import has_matplotlib
-
-# checking for matplotlib
-_HAS_MPL = has_matplotlib()
-if _HAS_MPL:
-    from matplotlib import _cntr as cntr
 
 
 class IsocurveVisual(LineVisual):
@@ -36,10 +30,8 @@ class IsocurveVisual(LineVisual):
         colormap.
     **kwargs : dict
         Keyword arguments to pass to `LineVisual`.
-
-    Notes
-    -----
     """
+
     def __init__(self, data=None, levels=None, color_lev=None, clim=None,
                  **kwargs):
         self._data = None
@@ -49,9 +41,6 @@ class IsocurveVisual(LineVisual):
         self._need_color_update = True
         self._need_level_update = True
         self._need_recompute = True
-        self._X = None
-        self._Y = None
-        self._iso = None
         self._level_min = None
         self._data_is_uniform = False
         self._lc = None
@@ -67,7 +56,7 @@ class IsocurveVisual(LineVisual):
 
     @property
     def levels(self):
-        """ The threshold at which the isocurve is constructed from the
+        """The threshold at which the isocurve is constructed from the
         2D data.
         """
         return self._levels
@@ -91,7 +80,7 @@ class IsocurveVisual(LineVisual):
         self.update()
 
     def set_data(self, data):
-        """ Set the scalar array data
+        """Set the scalar array data
 
         Parameters
         ----------
@@ -100,14 +89,6 @@ class IsocurveVisual(LineVisual):
             all locations in the scalar field equal to ``self.levels``.
         """
         self._data = data
-
-        # if using matplotlib isoline algorithm we have to check for meshgrid
-        # and we can setup the tracer object here
-        if _HAS_MPL:
-            if self._X is None or self._X.T.shape != data.shape:
-                self._X, self._Y = np.meshgrid(np.arange(data.shape[0]),
-                                               np.arange(data.shape[1]))
-            self._iso = cntr.Cntr(self._X, self._Y, self._data.astype(float))
 
         if self._clim is None:
             self._clim = (data.min(), data.max())
@@ -124,8 +105,7 @@ class IsocurveVisual(LineVisual):
         self.update()
 
     def _get_verts_and_connect(self, paths):
-        """ retrieve vertices and connects from given paths-list
-        """
+        """Retrieve vertices and connects from given paths-list"""
         verts = np.vstack(paths)
         gaps = np.add.accumulate(np.array([len(x) for x in paths])) - 1
         connect = np.ones(gaps[-1], dtype=bool)
@@ -133,8 +113,7 @@ class IsocurveVisual(LineVisual):
         return verts, connect
 
     def _compute_iso_line(self):
-        """ compute LineVisual vertices, connects and color-index
-        """
+        """Compute LineVisual vertices, connects and color-index"""
         level_index = []
         connects = []
         verts = []
@@ -149,14 +128,21 @@ class IsocurveVisual(LineVisual):
         # save minimum level index
         self._level_min = choice[0][0]
 
+        try:
+            from skimage.measure import find_contours
+        except ImportError:
+            find_contours = None
+
         for level in levels_to_calc:
-            # if we use matplotlib isoline algorithm we need to add half a
+            # if we use skimage isoline algorithm we need to add half a
             # pixel in both (x,y) dimensions because isolines are aligned to
             # pixel centers
-            if _HAS_MPL:
-                nlist = self._iso.trace(level, level, 0)
-                paths = nlist[:len(nlist)//2]
-                v, c = self._get_verts_and_connect(paths)
+            if find_contours is not None:
+                contours = find_contours(self._data, level,
+                                         positive_orientation='high')
+                v, c = self._get_verts_and_connect(contours)
+                # swap row, column to column, row (x, y)
+                v[:, [0, 1]] = v[:, [1, 0]]
                 v += np.array([0.5, 0.5])
             else:
                 paths = isocurve(self._data.astype(float).T, level,
@@ -172,8 +158,7 @@ class IsocurveVisual(LineVisual):
         self._verts = np.vstack(verts)
 
     def _compute_iso_color(self):
-        """ compute LineVisual color from level index and corresponding color
-        """
+        """Compute LineVisual color from level index and corresponding color"""
         level_color = []
         colors = self._lc
         for i, index in enumerate(self._li):
@@ -186,7 +171,7 @@ class IsocurveVisual(LineVisual):
         # try _color_lev as colormap, except as everything else
         try:
             f_color_levs = get_colormap(self._color_lev)
-        except:
+        except (KeyError, TypeError):
             colors = ColorArray(self._color_lev).rgba
         else:
             lev = _normalize(self._levels, self._clim[0], self._clim[1])

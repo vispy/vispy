@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 
@@ -11,8 +11,7 @@ def get_color_names():
     names : list
         List of color names known by Vispy.
     """
-    names = list(_color_dict.keys())
-    names.sort()
+    names = sorted(_color_dict.keys())
     return names
 
 
@@ -190,4 +189,5 @@ _color_dict = {
     "tomato": "#ff6347",
     "white": "#ffffff",
     "yellow": "#ffff00",
+    "transparent": "#00000000",
 }

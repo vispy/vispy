@@ -1,0 +1,34 @@
+# Add documentation to the source tarball but not in the installation
+
+include doc/Makefile doc/.nojekyll doc/conf.py doc/CNAME
+include doc/*.rst
+recursive-include doc/_static *
+
+recursive-include vispy *.py
+recursive-include vispy *.pyx
+recursive-include vispy *.glsl
+recursive-include vispy *.frag
+recursive-include vispy *.vert
+
+include vispy/app/tests/qt-designer.ui
+include vispy/io/_data/spatial-filters.npy
+include vispy/util/fonts/data/*.ttf
+include vispy/version.py
+
+recursive-include examples *.py
+recursive-include examples *.ipynb
+recursive-include examples *.glsl
+
+include README.rst
+include LICENSE.txt
+include pyproject.toml
+include pytest.ini
+include .coveragerc
+
+recursive-exclude codegen *
+exclude Makefile
+exclude rtd_requirements.txt
+exclude stdeb.cfg
+exclude .spyderproject
+recursive-exclude vispy *.c
+recursive-exclude make *

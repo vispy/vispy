@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # vispy: testskip
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 # Abstract: show mesh primitive
@@ -19,7 +19,10 @@ try:
 except ImportError:
     pass
 
-from PyQt4 import QtGui, QtCore
+
+# To switch between PyQt5 and PySide2 bindings just change the from import
+from PyQt5 import QtCore, QtWidgets
+
 import sys
 
 import numpy as np
@@ -27,6 +30,10 @@ from vispy import app, gloo
 from vispy.util.transforms import perspective, translate, rotate
 from vispy.geometry import meshdata as md
 from vispy.geometry import generation as gen
+
+# Provide automatic signal function selection for PyQt5/PySide2
+pyqtsignal = QtCore.pyqtSignal if hasattr(QtCore, 'pyqtSignal') else QtCore.Signal
+
 
 OBJECT = {'sphere': [('rows', 3, 1000, 'int', 3),
                      ('cols', 3, 1000, 'int', 3),
@@ -89,6 +96,7 @@ DEFAULT_COLOR = (0, 1, 1, 1)
 
 class MyMeshData(md.MeshData):
     """ Add to Meshdata class the capability to export good data for gloo """
+
     def __init__(self, vertices=None, faces=None, edges=None,
                  vertex_colors=None, face_colors=None):
         md.MeshData.__init__(self, vertices=None, faces=None, edges=None,
@@ -125,6 +133,7 @@ class ObjectParam(object):
     """
     OBJECT parameter test
     """
+
     def __init__(self, name, list_param):
         self.name = name
         self.list_param = list_param
@@ -135,11 +144,11 @@ class ObjectParam(object):
 # -----------------------------------------------------------------------------
 
 
-class ObjectWidget(QtGui.QWidget):
+class ObjectWidget(QtWidgets.QWidget):
     """
     Widget for editing OBJECT parameters
     """
-    signal_objet_changed = QtCore.pyqtSignal(ObjectParam, name='objectChanged')
+    signal_objet_changed = pyqtsignal(ObjectParam, name='objectChanged')
 
     def __init__(self, parent=None, param=None):
         super(ObjectWidget, self).__init__(parent)
@@ -149,23 +158,23 @@ class ObjectWidget(QtGui.QWidget):
         else:
             self.param = param
 
-        self.gb_c = QtGui.QGroupBox(u"Hide/Show %s" % self.param.name)
+        self.gb_c = QtWidgets.QGroupBox(u"Hide/Show %s" % self.param.name)
         self.gb_c.setCheckable(True)
         self.gb_c.setChecked(self.param.props['visible'])
         self.gb_c.toggled.connect(self.update_param)
 
         lL = []
         self.sp = []
-        gb_c_lay = QtGui.QGridLayout()
+        gb_c_lay = QtWidgets.QGridLayout()
         for nameV, minV, maxV, typeV, iniV in self.param.list_param:
-            lL.append(QtGui.QLabel(nameV, self.gb_c))
+            lL.append(QtWidgets.QLabel(nameV, self.gb_c))
             if typeV == 'double':
-                self.sp.append(QtGui.QDoubleSpinBox(self.gb_c))
+                self.sp.append(QtWidgets.QDoubleSpinBox(self.gb_c))
                 self.sp[-1].setDecimals(2)
                 self.sp[-1].setSingleStep(0.1)
                 self.sp[-1].setLocale(QtCore.QLocale(QtCore.QLocale.English))
             elif typeV == 'int':
-                self.sp.append(QtGui.QSpinBox(self.gb_c))
+                self.sp.append(QtWidgets.QSpinBox(self.gb_c))
             self.sp[-1].setMinimum(minV)
             self.sp[-1].setMaximum(maxV)
             self.sp[-1].setValue(iniV)
@@ -179,12 +188,12 @@ class ObjectWidget(QtGui.QWidget):
 
         self.gb_c.setLayout(gb_c_lay)
 
-        vbox = QtGui.QVBoxLayout()
-        hbox = QtGui.QHBoxLayout()
+        vbox = QtWidgets.QVBoxLayout()
+        hbox = QtWidgets.QHBoxLayout()
         hbox.addWidget(self.gb_c)
-        hbox.addStretch(1.0)
+        hbox.addStretch(1)
         vbox.addLayout(hbox)
-        vbox.addStretch(1.0)
+        vbox.addStretch(1)
 
         self.setLayout(vbox)
 
@@ -281,15 +290,15 @@ class Canvas(app.Canvas):
 # -----------------------------------------------------------------------------
 
 
-class MainWindow(QtGui.QMainWindow):
+class MainWindow(QtWidgets.QMainWindow):
 
     def __init__(self):
-        QtGui.QMainWindow.__init__(self)
+        QtWidgets.QMainWindow.__init__(self)
 
         self.resize(700, 500)
         self.setWindowTitle('vispy example ...')
 
-        self.list_object = QtGui.QListWidget()
+        self.list_object = QtWidgets.QListWidget()
         self.list_object.setAlternatingRowColors(True)
         self.list_object.itemSelectionChanged.connect(self.list_objectChanged)
 
@@ -297,7 +306,7 @@ class MainWindow(QtGui.QMainWindow):
         self.props_widget = ObjectWidget(self)
         self.props_widget.signal_objet_changed.connect(self.update_view)
 
-        self.splitter_v = QtGui.QSplitter(QtCore.Qt.Vertical)
+        self.splitter_v = QtWidgets.QSplitter(QtCore.Qt.Vertical)
         self.splitter_v.addWidget(self.list_object)
         self.splitter_v.addWidget(self.props_widget)
 
@@ -307,7 +316,7 @@ class MainWindow(QtGui.QMainWindow):
         self.canvas.measure_fps(0.1, self.show_fps)
 
         # Central Widget
-        splitter1 = QtGui.QSplitter(QtCore.Qt.Horizontal)
+        splitter1 = QtWidgets.QSplitter(QtCore.Qt.Horizontal)
         splitter1.addWidget(self.splitter_v)
         splitter1.addWidget(self.canvas.native)
 
@@ -315,7 +324,8 @@ class MainWindow(QtGui.QMainWindow):
 
         # FPS message in statusbar:
         self.status = self.statusBar()
-        self.status.showMessage("...")
+        self.status_label = QtWidgets.QLabel('...')
+        self.status.addWidget(self.status_label)
 
         self.mesh = MyMeshData()
         self.update_view(self.props_widget.param)
@@ -326,14 +336,18 @@ class MainWindow(QtGui.QMainWindow):
         if row != -1:
             self.props_widget.deleteLater()
             self.props_widget = ObjectWidget(self, param=ObjectParam(name,
-                                             OBJECT[name]))
+                                                                     OBJECT[name]))
             self.splitter_v.addWidget(self.props_widget)
             self.props_widget.signal_objet_changed.connect(self.update_view)
             self.update_view(self.props_widget.param)
 
     def show_fps(self, fps):
         nbr_tri = self.mesh.n_faces
-        self.status.showMessage("FPS - %.2f and nbr Tri %s " % (fps, nbr_tri))
+        msg = "FPS - %0.2f and nbr Tri %s " % (float(fps), int(nbr_tri))
+        # NOTE: We can't use showMessage in PyQt5 because it causes
+        #       a draw event loop (show_fps for every drawing event,
+        #       showMessage causes a drawing event, and so on).
+        self.status_label.setText(msg)
 
     def update_view(self, param):
         cols = param.props['cols']
@@ -372,7 +386,7 @@ class MainWindow(QtGui.QMainWindow):
 # Start Qt event loop unless running in interactive mode.
 if __name__ == '__main__':
 
-    appQt = QtGui.QApplication(sys.argv)
+    appQt = QtWidgets.QApplication(sys.argv)
     win = MainWindow()
     win.show()
     appQt.exec_()

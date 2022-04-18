@@ -1,0 +1,40 @@
+/* Sticky footer styles
+-------------------------------------------------- */
+/*html {*/
+/*  position: relative;*/
+/*  min-height: 100%;*/
+/*}*/
+/*body {*/
+/*  !* Margin bottom by footer height *!*/
+/*  margin-bottom: 220px;*/
+/*}*/
+
+.carousel-caption h1 {
+  color: white;
+}
+
+/*.footer {*/
+/*  position: absolute;*/
+/*  bottom: 0;*/
+/*  padding-top: 60px;*/
+/*  margin-top:  80px;*/
+/*  width: 100%;*/
+/*  font-weight: 200;*/
+
+/*  !* Set the fixed height of the footer here *!*/
+/*  height: 190px;*/
+/*  border: 0;*/
+/*  border-top: 1px solid #e9e9e9;*/
+/*  background-color: #f9f9f9;*/
+
+/*  color: #fff;*/
+/*  background-color: #222222;*/
+/*}*/
+/*.footer a {*/
+/*  color: #fff;*/
+/*  font-weight: 700;*/
+/*}*/
+
+.jumbotron {
+    background-color: #fff;
+}

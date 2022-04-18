@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 # Author:   Almar Klein & Nicolas P .Rougier
@@ -83,9 +83,9 @@ class Canvas(app.Canvas):
 
         # Build vertex buffer
         n = 10000
-        self.data = np.zeros(n, dtype=[('lifetime', np.float32, 1),
-                                       ('start',    np.float32, 3),
-                                       ('end',      np.float32, 3)])
+        self.data = np.zeros(n, dtype=[('lifetime', np.float32),
+                                       ('start', np.float32, 3),
+                                       ('end', np.float32, 3)])
         vbuffer = gl.glCreateBuffer()
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, vbuffer)
         gl.glBufferData(gl.GL_ARRAY_BUFFER, self.data, gl.GL_DYNAMIC_DRAW)

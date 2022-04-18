@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # vispy: gallery 10
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 import sys
@@ -18,52 +18,53 @@ from vispy.scene.visuals import create_visual_node
 
 class LineVisual(visuals.Visual):
     """Example of a very simple GL-line visual.
-    
+
     This shows the minimal set of methods that need to be reimplemented to 
     make a new visual class.
-    
+
     """
+
     def __init__(self, pos=None, color=(1, 1, 1, 1)):
         vcode = """
         attribute vec2 a_pos;
         
         void main() {
-            gl_Position = $transform(vec4(a_pos, 0, 1)); 
-            gl_PointSize = 10;
+            gl_Position = $transform(vec4(a_pos, 0., 1.)); 
+            gl_PointSize = 10.;
         }
         """
-        
+
         fcode = """
         void main() {
             gl_FragColor = $color;
         }
         """
-        
+
         visuals.Visual.__init__(self, vcode=vcode, fcode=fcode)
-        
+
         self.pos_buf = gloo.VertexBuffer()
-        
+
         # The Visual superclass contains a MultiProgram, which is an object
         # that behaves like a normal shader program (you can assign shader
         # code, upload values, set template variables, etc.) but internally
         # manages multiple ModularProgram instances, one per view.
-        
+
         # The MultiProgram is accessed via the `shared_program` property, so
         # the following modifications to the program will be applied to all 
         # views:
         self.shared_program['a_pos'] = self.pos_buf
         self.shared_program.frag['color'] = color
-        
+
         self._need_upload = False
-        
+
         # Visual keeps track of draw mode, index buffer, and GL state. These
         # are shared between all views.
         self._draw_mode = 'line_strip'
         self.set_gl_state('translucent', depth_test=False)
-        
+
         if pos is not None:
             self.set_data(pos)
-            
+
     def set_data(self, pos):
         self._pos = pos
         self._need_upload = True
@@ -73,7 +74,7 @@ class LineVisual(visuals.Visual):
 
     def _prepare_draw(self, view=None):
         """This method is called immediately before each draw.
-        
+
         The *view* argument indicates which view is about to be drawn.
         """
         if self._need_upload:
@@ -86,24 +87,26 @@ class LineVisual(visuals.Visual):
 
 class PointVisual(LineVisual):
     """Another simple visual class. 
-    
+
     Due to the simplicity of these example classes, it was only necessary to
     subclass from LineVisual and set the draw mode to 'points'. A more
     fully-featured PointVisual class might not follow this approach.
     """
+
     def __init__(self, pos=None, color=(1, 1, 1, 1)):
         LineVisual.__init__(self, pos, color)
         self._draw_mode = 'points'
-    
+
 
 class PlotLineVisual(visuals.CompoundVisual):
     """An example compound visual that draws lines and points.
-    
+
     To the user, the compound visual behaves exactly like a normal visual--it
     has a transform system, draw() and bounds() methods, etc. Internally, the
     compound visual automatically manages proxying these transforms and methods
     to its sub-visuals.
     """
+
     def __init__(self, pos=None, line_color=(1, 1, 1, 1),
                  point_color=(1, 1, 1, 1)):
         self._line = LineVisual(pos, color=line_color)
@@ -116,17 +119,18 @@ class PointCollectionVisual(visuals.Visual):
 
     Note: This is currently broken!
     """
+
     def __init__(self):
         prog = MultiProgram(vcode='', fcode='')
         self.points = PointCollection("agg", color="shared", program=prog)
         visuals.Visual.__init__(self, program=prog)
-    
+
     def _prepare_draw(self, view):
         if self.points._need_update:
             self.points._update()
         self._draw_mode = self.points._mode
         self._index_buffer = self.points._indices_buffer
-        
+
     def append(self, *args, **kwargs):
         self.points.append(*args, **kwargs)
 
@@ -147,7 +151,7 @@ class PanZoomTransform(STTransform):
         self._aspect = aspect
         self.attach(canvas)
         STTransform.__init__(self, **kwargs)
-        
+
     def attach(self, canvas):
         """ Attach this tranform to a canvas """
         self._canvas = canvas
@@ -245,8 +249,8 @@ shadow3 = collection.view()
 shadow3.transforms.canvas = canvas
 shadow3.transform = STTransform(scale=(1, 1), translate=(752, 152))
 shadow3.attach(ColorFilter((0, 0, 0, 0.6)), view=shadow3)
-#tr = shadow3.transforms.get_transform('framebuffer', 'canvas')
-#shadow3.attach(Clipper((320, 320, 260, 260), transform=tr), view=shadow2)
+# tr = shadow3.transforms.get_transform('framebuffer', 'canvas')
+# shadow3.attach(Clipper((320, 320, 260, 260), transform=tr), view=shadow2)
 
 order = [shadow, line, view, plot, shadow2, view2, shadow3, collection]
 

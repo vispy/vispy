@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # vispy: gallery 30
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 """ Display markers at different sizes and line thicknessess.
@@ -33,7 +33,7 @@ class Canvas(app.Canvas):
         self.index = 0
         self.markers = visuals.MarkersVisual()
         self.markers.set_data(pos, face_color=colors)
-        self.markers.symbol = visuals.marker_types[self.index]
+        self.markers.symbol = self.markers.symbols[self.index]
         self.markers.transform = STTransform()
 
         self.show()
@@ -56,8 +56,8 @@ class Canvas(app.Canvas):
 
     def on_key_press(self, event):
         if event.text == ' ':
-            self.index = (self.index + 1) % (len(visuals.marker_types))
-            self.markers.symbol = visuals.marker_types[self.index]
+            self.index = (self.index + 1) % (len(self.markers.symbols))
+            self.markers.symbol = self.markers.symbols[self.index]
             self.update()
         elif event.text == 's':
             self.markers.scaling = not self.markers.scaling

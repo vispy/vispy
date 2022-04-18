@@ -37,10 +37,9 @@ def teardown_module():
 
 
 def test_wrappers_basic_glir():
-    """ Test that basic gloo wrapper functions emit right GLIR command """
-    
+    """Test that basic gloo wrapper functions emit right GLIR command"""
     glir = install_dummy_glir()
-    
+
     funcs = [('viewport', 0, 0, 10, 10),
              ('depth_range', 0, 1),
              ('front_face', 'ccw'),
@@ -64,12 +63,12 @@ def test_wrappers_basic_glir():
              ('hint', 'foo', 'bar'),
              # not finish and flush, because that would flush the glir queue
              ]
-    
+
     for func in funcs:
         name, args = func[0], func[1:]
         f = getattr(gloo, 'set_' + name)
         f(*args)
-    
+
     cmds = glir.clear()
     assert len(cmds) == len(funcs)
     for i, func in enumerate(funcs):
@@ -81,15 +80,14 @@ def test_wrappers_basic_glir():
             assert cmd[1][:-8] == name
         else:
             assert cmd[1] == name
-    
+
     reset_glir()
 
 
 def test_wrappers_glir():
-    """ Test that special wrapper functions do what they must do """
-
+    """Test that special wrapper functions do what they must do"""
     glir = install_dummy_glir()
-    
+
     # Test clear() function
     gloo.clear()
     cmds = glir.clear()
@@ -119,7 +117,7 @@ def test_wrappers_glir():
     assert cmds[1][1] == 'glClearDepth'
     assert cmds[2][1] == 'glClearStencil'
     assert cmds[3][1] == 'glClear'
-    
+
     # Test set_state() function
     gloo.set_state(foo=True, bar=False)
     cmds = set(glir.clear())
@@ -138,7 +136,7 @@ def test_wrappers_glir():
     gloo.set_state(a_preset)
     cmds = sorted(glir.clear())
     assert len(cmds) == len(presets[a_preset])
-    
+
     reset_glir()
 
 
@@ -211,13 +209,14 @@ def test_wrappers():
 def test_read_pixels():
     """Test read_pixels to ensure that the image is not flipped"""
     # Create vertices
-    vPosition = np.array([[-1, 1], [0, 1],  # For drawing a square to top left
-                          [-1, 0], [0, 0]], np.float32)
+    vPosition = np.array(
+        [[-1, 1, 0.0], [0, 1, 0.5],  # For drawing a square to top left
+         [-1, 0, 0.0], [0, 0, 0.5]], np.float32)
 
     VERT_SHADER = """ // simple vertex shader
-    attribute vec2 a_position;
+    attribute vec3 a_position;
     void main (void) {
-        gl_Position = vec4(a_position, 0., 1.0);
+        gl_Position = vec4(a_position, 1.0);
     }
     """
 
@@ -229,7 +228,9 @@ def test_read_pixels():
     """
 
     with Canvas() as c:
+        c.set_current()
         gloo.set_viewport(0, 0, *c.size)
+        gloo.set_state(depth_test=True)
         c._program = gloo.Program(VERT_SHADER, FRAG_SHADER)
         c._program['a_position'] = gloo.VertexBuffer(vPosition)
         gloo.clear(color='black')
@@ -245,6 +246,16 @@ def test_read_pixels():
         assert_true(corners == 0)  # Should be all 0
         gloo.flush()
         gloo.finish()
+
+        # Check that we can read the depth buffer
+        img = read_pixels(mode='depth')
+        assert_equal(img.shape[:2], c.size[::-1])
+        assert_equal(img.shape[2], 1)
+        unique_img = np.unique(img)
+        # we should have quite a few different depth values
+        assert unique_img.shape[0] > 50
+        assert unique_img.max() == 255
+        assert unique_img.min() > 0
 
 
 run_tests_if_main()

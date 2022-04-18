@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # vispy: testskip
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 """
 An oscilloscope, spectrum analyzer, and spectrogram.
@@ -19,7 +19,7 @@ from vispy.util.filter import gaussian_filter
 
 try:
     import pyaudio
-    
+
     class MicrophoneRecorder(object):
         def __init__(self, rate=44100, chunksize=1024):
             self.rate = rate
@@ -43,16 +43,16 @@ try:
                 if self.stop:
                     return None, pyaudio.paComplete
             return None, pyaudio.paContinue
-        
+
         def get_frames(self):
             with self.lock:
                 frames = self.frames
                 self.frames = []
                 return frames
-        
+
         def start(self):
             self.stream.start_stream()
-    
+
         def close(self):
             with self.lock:
                 self.stop = True
@@ -63,7 +63,7 @@ except ImportError:
     class MicrophoneRecorder(object):
         def __init__(self):
             self.chunksize = 1024
-            self.rate = rate = 44100.
+            self.rate = rate = 44100
             t = np.linspace(0, 10, rate*10)
             self.data = (np.sin(t * 10.) * 0.3).astype('float32')
             self.data += np.sin((t + 0.3) * 20.) * 0.15
@@ -74,7 +74,7 @@ except ImportError:
             self.data += np.sin(t * 1760 * np.pi)  # 880 Hz
             self.data = (self.data * 2**10 - 2**9).astype('int16')
             self.ptr = 0
-            
+
         def get_frames(self):
             if self.ptr + 1024 > len(self.data):
                 end = 1024 - (len(self.data) - self.ptr)
@@ -83,17 +83,17 @@ except ImportError:
                 frame = self.data[self.ptr:self.ptr+1024]
             self.ptr = (self.ptr + 1024) % (len(self.data) - 1024)
             return [frame]
-        
+
         def start(self):
             pass
 
 
 class Oscilloscope(scene.ScrollingLines):
     """A set of lines that are temporally aligned on a trigger.
-    
+
     Data is added in chunks to the oscilloscope, and each new chunk creates a
     new line to draw. Older lines are slowly faded out until they are removed.
-    
+
     Parameters
     ----------
     n_lines : int
@@ -111,46 +111,47 @@ class Oscilloscope(scene.ScrollingLines):
     parent : Node
         An optional parent scenegraph node.
     """
+
     def __init__(self, n_lines=100, line_size=1024, dx=1e-4,
                  color=(20, 255, 50), trigger=(0, 0.002, 1e-4), parent=None):
-        
+
         self._trigger = trigger  # trigger_level, trigger_height, trigger_width
-        
+
         # lateral positioning for trigger
         self.pos_offset = np.zeros((n_lines, 3), dtype=np.float32)
-        
+
         # color array to fade out older plots
         self.color = np.empty((n_lines, 4), dtype=np.ubyte)
         self.color[:, :3] = [list(color)]
         self.color[:, 3] = 0
         self._dim_speed = 0.01 ** (1 / n_lines)
-        
+
         self.frames = []  # running list of recently received frames
         self.plot_ptr = 0
-        
+
         scene.ScrollingLines.__init__(self, n_lines=n_lines,
                                       line_size=line_size, dx=dx,
                                       color=self.color,
                                       pos_offset=self.pos_offset,
                                       parent=parent)
         self.set_gl_state('additive', line_width=2)
-        
+
     def new_frame(self, data):
         self.frames.append(data)
-        
+
         # see if we can discard older frames
         while len(self.frames) > 10:
             self.frames.pop(0)
-        
+
         if self._trigger is None:
             dx = 0
         else:
             # search for next trigger
-            th = self._trigger[1]  # trigger window height
-            tw = self._trigger[2] / self._dx  # trigger window width
+            th = int(self._trigger[1])  # trigger window height
+            tw = int(self._trigger[2] / self._dx)  # trigger window width
             thresh = self._trigger[0]
 
-            trig = np.argwhere((data[tw:] > thresh + th) & 
+            trig = np.argwhere((data[tw:] > thresh + th) &
                                (data[:-tw] < thresh - th))
             if len(trig) > 0:
                 m = np.argmin(np.abs(trig - len(data) / 2))
@@ -162,22 +163,23 @@ class Oscilloscope(scene.ScrollingLines):
                 dx = i * self._dx
             else:
                 # default trigger at center of trace
-                # (optionally we could skip plotting instead, or place this 
+                # (optionally we could skip plotting instead, or place this
                 # after the most recent trace)
                 dx = self._dx * len(data) / 2.
-            
+
         # if a trigger was found, add new data to the plot
         self.plot(data, -dx)
-        
+
     def plot(self, data, dx=0):
         self.set_data(self.plot_ptr, data)
-        
-        self.color[..., 3] *= 0.98
+
+        np.multiply(self.color[..., 3], 0.98, out=self.color[..., 3],
+                    casting='unsafe')
         self.color[self.plot_ptr, 3] = 50
         self.set_color(self.color)
         self.pos_offset[self.plot_ptr] = (dx, 0, 0)
         self.set_pos_offset(self.pos_offset)
-        
+
         self.plot_ptr = (self.plot_ptr + 1) % self._data_shape[0]
 
 
@@ -194,7 +196,7 @@ float rolling_texture(vec2 pos) {
 cmap = """
 vec4 colormap(float x) {
     x = x - 1e4;
-    return vec4(x/5e6, x/2e5, x/1e4, 1); 
+    return vec4(x/5e6, x/2e5, x/1e4, 1);
 }
 """
 
@@ -209,18 +211,18 @@ class ScrollingImage(scene.Image):
         self._color_fn['shift'] = 0
         self.ptr = 0
         scene.Image.__init__(self, method='impostor', parent=parent)
-        #self.set_gl_state('additive', cull_face=False)
+        # self.set_gl_state('additive', cull_face=False)
         self.shared_program.frag['get_data'] = self._color_fn
         cfun = visuals.shaders.Function(cmap)
         self.shared_program.frag['color_transform'] = cfun
-        
+
     @property
     def size(self):
         return self._shape
 
     def roll(self, data):
         data = data.reshape(data.shape[0], 1, 1)
-        
+
         self._ctex[:, self.ptr] = data
         self._color_fn['shift'] = (self.ptr+1) / self._shape[1]
         self.ptr = (self.ptr + 1) % self._shape[1]
@@ -229,11 +231,11 @@ class ScrollingImage(scene.Image):
     def _prepare_draw(self, view):
         if self._need_vertex_update:
             self._build_vertex_data()
-            
+
         if view._need_method_update:
             self._update_method(view)
 
-       
+
 mic = MicrophoneRecorder()
 n_fft_frames = 8
 fft_samples = mic.chunksize * n_fft_frames
@@ -245,7 +247,7 @@ view3 = grid.add_view(row=0, col=0, col_span=2, camera='panzoom',
                       border_color='grey')
 image = ScrollingImage((1 + fft_samples // 2, 4000), parent=view3.scene)
 image.transform = scene.LogTransform((0, 10, 0))
-#view3.camera.rect = (0, 0, image.size[1], np.log10(image.size[0]))
+# view3.camera.rect = (0, 0, image.size[1], np.log10(image.size[0]))
 view3.camera.rect = (3493.32, 1.85943, 605.554, 1.41858)
 
 view1 = grid.add_view(row=1, col=0, camera='panzoom', border_color='grey')
@@ -276,18 +278,18 @@ def update(ev):
     global fft_frames, scope, spectrum, mic
     data = mic.get_frames()
     for frame in data:
-        #import scipy.ndimage as ndi
-        #frame -= ndi.gaussian_filter(frame, 50)
-        #frame -= frame.mean()
-        
+        # import scipy.ndimage as ndi
+        # frame -= ndi.gaussian_filter(frame, 50)
+        # frame -= frame.mean()
+
         scope.new_frame(frame)
-        
+
         fft_frames.append(frame)
         if len(fft_frames) >= n_fft_frames:
             cframes = np.concatenate(fft_frames) * window
             fft = np.abs(np.fft.rfft(cframes)).astype('float32')
             fft_frames.pop(0)
-            
+
             spectrum.new_frame(fft)
             image.roll(fft)
 

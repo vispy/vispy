@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division
@@ -13,8 +13,8 @@ from .base_transform import BaseTransform
 
 
 class NullTransform(BaseTransform):
-    """ Transform having no effect on coordinates (identity transform).
-    """
+    """Transform having no effect on coordinates (identity transform)."""
+
     glsl_map = "vec4 null_transform_map(vec4 pos) {return pos;}"
     glsl_imap = "vec4 null_transform_imap(vec4 pos) {return pos;}"
 
@@ -52,7 +52,7 @@ class NullTransform(BaseTransform):
 
 
 class STTransform(BaseTransform):
-    """ Transform performing only scale and translate, in that order.
+    """Transform performing only scale and translate, in that order.
 
     Parameters
     ----------
@@ -61,6 +61,7 @@ class STTransform(BaseTransform):
     translate : array-like
         Scale factors for X, Y, Z axes.
     """
+
     glsl_map = """
         vec4 st_transform_map(vec4 pos) {
             return vec4(pos.xyz * $scale.xyz + $translate.xyz * pos.w, pos.w);
@@ -86,9 +87,9 @@ class STTransform(BaseTransform):
         self._translate = np.zeros(4, dtype=np.float32)
 
         s = ((1.0, 1.0, 1.0, 1.0) if scale is None else
-             as_vec4(scale, default=(1, 1, 1, 1)))
+             as_vec4(scale, default=(1., 1., 1., 1.)))
         t = ((0.0, 0.0, 0.0, 0.0) if translate is None else
-             as_vec4(translate, default=(0, 0, 0, 0)))
+             as_vec4(translate, default=(0., 0., 0., 0.)))
         self._set_st(s, t)
         self._update_shaders()
 
@@ -177,7 +178,7 @@ class STTransform(BaseTransform):
         self._shader_map['translate'] = self.translate
         self._shader_imap['scale'] = self.scale
         self._shader_imap['translate'] = self.translate
-    
+
     def move(self, move):
         """Change the translation of this transform by the amount given.
 
@@ -221,7 +222,7 @@ class STTransform(BaseTransform):
 
     @classmethod
     def from_mapping(cls, x0, x1):
-        """ Create an STTransform from the given mapping
+        """Create an STTransform from the given mapping
 
         See `set_mapping` for details.
 
@@ -268,17 +269,16 @@ class STTransform(BaseTransform):
             >>> tr = STTransform()
             >>> tr.set_mapping(p1, p2)
             >>> assert tr.map(p1)[:,:2] == p2  # test
-
         """
         # if args are Rect, convert to array first
         if isinstance(x0, Rect):
             x0 = x0._transform_in()[:3]
         if isinstance(x1, Rect):
             x1 = x1._transform_in()[:3]
-        
+
         x0 = np.asarray(x0)
         x1 = np.asarray(x1)
-        if (x0.ndim != 2 or x0.shape[0] != 2 or x1.ndim != 2 or 
+        if (x0.ndim != 2 or x0.shape[0] != 2 or x1.ndim != 2 or
                 x1.shape[0] != 2):
             raise TypeError("set_mapping requires array inputs of shape "
                             "(2, N).")
@@ -321,6 +321,7 @@ class MatrixTransform(BaseTransform):
     matrix : array-like | None
         4x4 array to use for the transform.
     """
+
     glsl_map = """
         vec4 affine_transform_map(vec4 pos) {
             return $matrix * pos;
@@ -460,7 +461,7 @@ class MatrixTransform(BaseTransform):
         self.matrix = np.dot(self.matrix, transforms.rotate(angle, axis))
 
     def set_mapping(self, points1, points2):
-        """ Set to a 3D transformation matrix that maps points1 onto points2.
+        """Set to a 3D transformation matrix that maps points1 onto points2.
 
         Parameters
         ----------
@@ -473,7 +474,7 @@ class MatrixTransform(BaseTransform):
         # of standard linear algebra order.
         self.matrix = transforms.affine_map(points1, points2).T
 
-    def set_ortho(self, l, r, b, t, n, f):
+    def set_ortho(self, l, r, b, t, n, f):  # noqa
         """Set ortho transform
 
         Parameters
@@ -529,7 +530,7 @@ class MatrixTransform(BaseTransform):
         """
         self.matrix = transforms.perspective(fov, aspect, near, far)
 
-    def set_frustum(self, l, r, b, t, n, f):
+    def set_frustum(self, l, r, b, t, n, f):  # noqa
         """Set the frustum
 
         Parameters
@@ -549,8 +550,8 @@ class MatrixTransform(BaseTransform):
         """
         self.matrix = transforms.frustum(l, r, b, t, n, f)
 
-        
-#class SRTTransform(BaseTransform):
+
+# class SRTTransform(BaseTransform):
 #    """ Transform performing scale, rotate, and translate, in that order.
 #
 #    This transformation allows objects to be placed arbitrarily in a scene

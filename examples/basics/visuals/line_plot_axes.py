@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """
@@ -22,10 +22,10 @@ margin_x = (canvas_size[0]-graph_size[0]) / 2.
 margin_y = (canvas_size[1]-graph_size[1]) / 2.
 
 pos_xax = np.array([[margin_x, canvas_size[1]-margin_y],
-                   [canvas_size[0]-margin_x, canvas_size[1]-margin_y]])
+                    [canvas_size[0]-margin_x, canvas_size[1]-margin_y]])
 
 pos_yax = np.array([[margin_x, canvas_size[1]-margin_y],
-                   [margin_x, margin_y]])
+                    [margin_x, margin_y]])
 
 pos = np.zeros((N, 2), dtype=np.float32)
 pos[:, 0] = np.linspace(margin_x, canvas_size[0]-margin_x, N)

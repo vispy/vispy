@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 import numpy as np
 from numpy.testing import assert_allclose
@@ -9,8 +9,7 @@ from vispy.geometry import resize
 
 
 def test_resize():
-    """Test image resizing algorithms
-    """
+    """Test image resizing algorithms"""
     assert_raises(ValueError, resize, np.zeros(3), (3, 3))
     assert_raises(ValueError, resize, np.zeros((3, 3)), (3,))
     assert_raises(ValueError, resize, np.zeros((3, 3)), (4, 4), kind='foo')

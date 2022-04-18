@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 """
@@ -85,7 +85,7 @@ view.camera.distance = 2
 
 mesh = MyMesh(parent=view.scene)
 mesh.transform = visuals.transforms.MatrixTransform()
-#mesh.transform.translate([-25, -25, -25])
+# mesh.transform.translate([-25, -25, -25])
 mesh.transform.rotate(90, (1, 0, 0))
 
 axis = scene.visuals.XYZAxis(parent=view.scene)

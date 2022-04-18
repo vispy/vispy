@@ -1,4 +1,4 @@
-# !/usr/bin/env python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # vispy: gallery 30
 
@@ -54,12 +54,13 @@ class Canvas(app.Canvas):
 
         # Create boids
         n = 1000
+        size_type = ('size', 'f4', 1*ps) if ps > 1 else ('size', 'f4')
         self.particles = np.zeros(2 + n, [('position', 'f4', 3),
                                           ('position_1', 'f4', 3),
                                           ('position_2', 'f4', 3),
                                           ('velocity', 'f4', 3),
                                           ('color', 'f4', 4),
-                                          ('size', 'f4', 1*ps)])
+                                          size_type])
         self.boids = self.particles[2:]
         self.target = self.particles[0]
         self.predator = self.particles[1]
@@ -140,10 +141,10 @@ class Canvas(app.Canvas):
         t = self._t
 
         t += 0.5 * dt
-        #self.target[...] = np.array([np.sin(t),np.sin(2*t),np.cos(3*t)])*.1
+        # self.target[...] = np.array([np.sin(t),np.sin(2*t),np.cos(3*t)])*.1
 
         t += 0.5 * dt
-        #self.predator[...] = np.array([np.sin(t),np.sin(2*t),np.cos(3*t)])*.2
+        # self.predator[...] = np.array([np.sin(t),np.sin(2*t),np.cos(3*t)])*.2
 
         self.boids['position_2'] = self.boids['position_1']
         self.boids['position_1'] = self.boids['position']
@@ -159,10 +160,10 @@ class Canvas(app.Canvas):
         A = -(V - V.sum(axis=0) / n)
 
         # Repulsion: steer to avoid crowding local flockmates
-        D, I = cKDTree(P).query(P, 5)
+        D, idxs = cKDTree(P).query(P, 5)
         M = np.repeat(D < 0.05, 3, axis=1).reshape(n, 5, 3)
         Z = np.repeat(P, 5, axis=0).reshape(n, 5, 3)
-        R = -((P[I] - Z) * M).sum(axis=1)
+        R = -((P[idxs] - Z) * M).sum(axis=1)
 
         # Target : Follow target
         T = self.target['position'] - P
@@ -176,7 +177,7 @@ class Canvas(app.Canvas):
         D = np.repeat(D, 3, axis=0).reshape(n, 3)
         dP *= D
 
-        #self.boids['velocity'] += 0.0005*C + 0.01*A + 0.01*R +
+        # self.boids['velocity'] += 0.0005*C + 0.01*A + 0.01*R +
         #                           0.0005*T + 0.0025*dP
         self.boids['velocity'] += 0.0005 * C + 0.01 * \
             A + 0.01 * R + 0.0005 * T + 0.025 * dP

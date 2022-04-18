@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division
@@ -9,9 +9,11 @@ from .chain import ChainTransform
 from ._util import TransformCache
 from ...util.event import EventEmitter
 
+import numpy as np
+
 
 class TransformSystem(object):
-    """ TransformSystem encapsulates information about the coordinate
+    """TransformSystem encapsulates information about the coordinate
     systems needed to draw a Visual.
 
     Visual rendering operates in six coordinate systems:
@@ -57,7 +59,6 @@ class TransformSystem(object):
 
     Parameters
     ----------
-
     canvas : Canvas
         The canvas being drawn to.
     dpi : float
@@ -66,15 +67,11 @@ class TransformSystem(object):
 
     Notes
     -----
-
     By default, TransformSystems are configured such that the document
     coordinate system matches the logical pixels of the canvas,
 
     Examples
     --------
-    Use by Visuals
-    ~~~~~~~~~~~~~~
-
     1. To convert local vertex coordinates to normalized device coordinates in
     the vertex shader, we first need a vertex shader that supports configurable
     transformations::
@@ -145,6 +142,7 @@ class TransformSystem(object):
         self.canvas = canvas
         self._cache = TransformCache()
         self._dpi = dpi
+        self._mappings = {'ct0': None, 'ct1': None, 'ft0': None}
 
         # Assign a ChainTransform for each step. This allows us to always
         # return the same transform objects regardless of how the user
@@ -155,11 +153,24 @@ class TransformSystem(object):
         self._canvas_transform = ChainTransform([STTransform(),
                                                  STTransform()])
         self._framebuffer_transform = ChainTransform([STTransform()])
-        
+
         for tr in (self._visual_transform, self._scene_transform, 
                    self._document_transform, self._canvas_transform,
                    self._framebuffer_transform):
             tr.changed.connect(self.changed)
+
+    def _update_if_maps_changed(self, transform, map_key, new_maps):
+        """Helper to store and check current (from, to) maps against new
+        ones being provided. The new mappings are only applied if a change
+        has occurred (and also stored in the current mappings).
+        """
+        if self._mappings[map_key] is None:
+            self._mappings[map_key] = new_maps
+            transform.set_mapping(new_maps[0], new_maps[1])
+        else:
+            if np.any(self._mappings[map_key] != new_maps):
+                self._mappings[map_key] = new_maps
+                transform.set_mapping(new_maps[0], new_maps[1])
 
     def configure(self, viewport=None, fbo_size=None, fbo_rect=None,
                   canvas=None):
@@ -171,8 +182,8 @@ class TransformSystem(object):
           position, and y-axis inversion.
         * framebuffer_transform maps from the current GL viewport on the
           framebuffer coordinate system to clip coordinates (-1 to 1). 
-          
-          
+
+
         Parameters
         ==========
         viewport : tuple or None
@@ -197,13 +208,13 @@ class TransformSystem(object):
         canvas = self._canvas
         if canvas is None:
             raise RuntimeError("No canvas assigned to this TransformSystem.")
-       
+
         # By default, this should invert the y axis--canvas origin is in top
         # left, whereas framebuffer origin is in bottom left.
         map_from = [(0, 0), canvas.size]
         map_to = [(0, canvas.physical_size[1]), (canvas.physical_size[0], 0)]
-        self._canvas_transform.transforms[1].set_mapping(map_from, map_to)
-
+        self._update_if_maps_changed(self._canvas_transform.transforms[1],
+                                     'ct1', np.array((map_from, map_to)))
         if fbo_rect is None:
             self._canvas_transform.transforms[0].scale = (1, 1, 1)
             self._canvas_transform.transforms[0].translate = (0, 0, 0)
@@ -212,8 +223,8 @@ class TransformSystem(object):
             map_from = [(fbo_rect[0], fbo_rect[1]),
                         (fbo_rect[0] + fbo_rect[2], fbo_rect[1] + fbo_rect[3])]
             map_to = [(0, 0), fbo_size]
-            self._canvas_transform.transforms[0].set_mapping(map_from,  map_to)
-            
+            self._update_if_maps_changed(self._canvas_transform.transforms[0],
+                                         'ct0', np.array((map_from, map_to)))
         if viewport is None:
             if fbo_size is None:
                 # viewport covers entire canvas
@@ -225,23 +236,21 @@ class TransformSystem(object):
             map_from = [viewport[:2], 
                         (viewport[0] + viewport[2], viewport[1] + viewport[3])]
         map_to = [(-1, -1), (1, 1)]
-        self._framebuffer_transform.transforms[0].set_mapping(map_from, map_to)
+        self._update_if_maps_changed(self._framebuffer_transform.transforms[0],
+                                     'ft0', np.array((map_from, map_to)))
 
     @property
     def canvas(self):
-        """ The Canvas being drawn to.
-        """
+        """The Canvas being drawn to."""
         return self._canvas
-    
+
     @canvas.setter
     def canvas(self, canvas):
         self._canvas = canvas
 
     @property
     def dpi(self):
-        """ Physical resolution of the document coordinate system (dots per
-        inch).
-        """
+        """Physical resolution of the document coordinate system (dots per inch)."""
         if self._dpi is None:
             if self._canvas is None:
                 return None
@@ -257,9 +266,7 @@ class TransformSystem(object):
 
     @property
     def visual_transform(self):
-        """ Transform mapping from visual local coordinate frame to scene
-        coordinate frame.
-        """
+        """Transform mapping from visual local coordinate frame to scene coordinate frame."""
         return self._visual_transform
 
     @visual_transform.setter
@@ -268,9 +275,7 @@ class TransformSystem(object):
 
     @property
     def scene_transform(self):
-        """ Transform mapping from scene coordinate frame to document
-        coordinate frame.
-        """
+        """Transform mapping from scene coordinate frame to document coordinate frame."""
         return self._scene_transform
 
     @scene_transform.setter
@@ -279,9 +284,7 @@ class TransformSystem(object):
 
     @property
     def document_transform(self):
-        """ Transform mapping from document coordinate frame to the framebuffer
-        (physical pixel) coordinate frame.
-        """
+        """Transform mapping from document coordinate frame to the framebuffer (physical pixel) coordinate frame."""
         return self._document_transform
 
     @document_transform.setter
@@ -290,9 +293,7 @@ class TransformSystem(object):
 
     @property
     def canvas_transform(self):
-        """ Transform mapping from canvas coordinate frame to framebuffer
-        coordinate frame.
-        """
+        """Transform mapping from canvas coordinate frame to framebuffer coordinate frame."""
         return self._canvas_transform
 
     @canvas_transform.setter
@@ -301,9 +302,7 @@ class TransformSystem(object):
 
     @property
     def framebuffer_transform(self):
-        """ Transform mapping from pixel coordinate frame to rendering
-        coordinate frame.
-        """
+        """Transform mapping from pixel coordinate frame to rendering coordinate frame."""
         return self._framebuffer_transform
 
     @framebuffer_transform.setter
@@ -312,7 +311,7 @@ class TransformSystem(object):
 
     def get_transform(self, map_from='visual', map_to='render'):
         """Return a transform mapping between any two coordinate systems.
-        
+
         Parameters
         ----------
         map_from : str
@@ -325,7 +324,7 @@ class TransformSystem(object):
         tr = ['visual', 'scene', 'document', 'canvas', 'framebuffer', 'render']
         ifrom = tr.index(map_from)
         ito = tr.index(map_to)
-        
+
         if ifrom < ito:
             trs = [getattr(self, '_' + t + '_transform')
                    for t in tr[ifrom:ito]][::-1]
@@ -333,7 +332,7 @@ class TransformSystem(object):
             trs = [getattr(self, '_' + t + '_transform').inverse
                    for t in tr[ito:ifrom]]
         return self._cache.get(trs)
-    
+
     @property
     def pixel_scale(self):
         tr = self._canvas_transform

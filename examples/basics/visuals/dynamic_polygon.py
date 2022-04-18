@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """
@@ -14,10 +14,10 @@ from vispy.visuals import transforms
 
 # vertex positions of polygon data to draw
 pos = np.array([[0, 0, 0],
-               [0.25, 0.22, 0],
-               [0.25, 0.5, 0],
-               [0, 0.5, 0],
-               [-0.25, 0.25, 0]])
+                [0.25, 0.22, 0],
+                [0.25, 0.5, 0],
+                [0, 0.5, 0],
+                [-0.25, 0.25, 0]])
 
 pos = np.array([[0, 0],
                 [10, 0],

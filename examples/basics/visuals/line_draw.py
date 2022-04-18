@@ -26,9 +26,9 @@ class EditLineVisual(scene.visuals.Line):
 
     def __init__(self, *args, **kwargs):
         scene.visuals.Line.__init__(self, *args, **kwargs)
-
+        self.unfreeze()
         # initialize point markers
-        self.markers = scene.visuals.Markers()
+        self.markers = scene.visuals.Markers(parent=self)
         self.marker_colors = np.ones((len(self.pos), 4), dtype=np.float32)
         self.markers.set_data(pos=self.pos, symbol="s", edge_color="red",
                               size=6)
@@ -36,19 +36,19 @@ class EditLineVisual(scene.visuals.Line):
         self.selected_index = -1
         # snap grid size
         self.gridsize = 10
+        self.freeze()
 
-    def draw(self, transforms):
+    def on_draw(self, event):
         # draw line and markers
-        scene.visuals.Line.draw(self, transforms)
-        self.markers.draw(transforms)
+        scene.visuals.Line.draw(self)
+        self.markers.draw()
 
     def print_mouse_event(self, event, what):
         """ print mouse events for debugging purposes """
         print('%s - pos: %r, button: %s,  delta: %r' %
               (what, event.pos, event.button, event.delta))
 
-    def select_point(self, event, radius=5):
-
+    def select_point(self, pos_scene, radius=5):
         """
         Get line point close to mouse pointer and its index
 
@@ -61,19 +61,15 @@ class EditLineVisual(scene.visuals.Line):
             picked point and index of the point in the pos array
         """
 
-        # position in scene/document coordinates
-        pos_scene = event.pos[:3]
-
         # project mouse radius from screen coordinates to document coordinates
-        mouse_radius = \
-            (event.visual_to_canvas.imap(np.array([radius, radius, radius])) -
-             event.visual_to_canvas.imap(np.array([0, 0, 0])))[0]
+
+        mouse_radius = 6
         # print("Mouse radius in document units: ", mouse_radius)
 
         # find first point within mouse_radius
         index = 0
         for p in self.pos:
-            if np.linalg.norm(pos_scene - p) < mouse_radius:
+            if np.linalg.norm(pos_scene[:3] - p) < mouse_radius:
                 # print p, index
                 # point found, return point and its index
                 return p, index
@@ -96,17 +92,16 @@ class EditLineVisual(scene.visuals.Line):
         self.markers.set_data(pos=self.pos, symbol=shape, edge_color='red',
                               size=size, face_color=self.marker_colors)
 
-    def on_mouse_press(self, event):
-        self.print_mouse_event(event, 'Mouse press')
-        pos_scene = event.pos[:3]
+    def on_mouse_press(self, pos_scene):
+        # pos_scene = event.pos[:3]
 
         # find closest point to mouse and select it
-        self.selected_point, self.selected_index = self.select_point(event)
+        self.selected_point, self.selected_index = self.select_point(pos_scene)
 
         # if no point was clicked add a new one
         if self.selected_point is None:
             print("adding point", len(self.pos))
-            self._pos = np.append(self.pos, [pos_scene], axis=0)
+            self._pos = np.append(self.pos, [pos_scene[:3]], axis=0)
             self.set_data(pos=self.pos)
             self.marker_colors = np.ones((len(self.pos), 4), dtype=np.float32)
             self.selected_point = self.pos[-1]
@@ -120,26 +115,22 @@ class EditLineVisual(scene.visuals.Line):
         self.selected_point = None
         self.update_markers()
 
-    def on_mouse_move(self, event):
-        # left mouse button
-        if event.button == 1:
-            # self.print_mouse_event(event, 'Mouse drag')
-            if self.selected_point is not None:
-                pos_scene = event.pos
-                # update selected point to new position given by mouse
-                self.selected_point[0] = round(pos_scene[0] / self.gridsize) \
-                    * self.gridsize
-                self.selected_point[1] = round(pos_scene[1] / self.gridsize) \
-                    * self.gridsize
-                self.set_data(pos=self.pos)
-                self.update_markers(self.selected_index)
+    def on_mouse_move(self, pos_scene):
+        if self.selected_point is not None:
+            # update selected point to new position given by mouse
+            self.selected_point[0] = round(pos_scene[0] / self.gridsize) \
+                * self.gridsize
+            self.selected_point[1] = round(pos_scene[1] / self.gridsize) \
+                * self.gridsize
+            self.set_data(pos=self.pos)
+            self.update_markers(self.selected_index)
 
-        else:
-            #  if no button is pressed, just highlight the marker that would be
-            # selected on click
-            hl_point, hl_index = self.select_point(event)
-            self.update_markers(hl_index, highlight_color=(0.5, 0.5, 1.0, 1.0))
-            self.update()
+    def highlight_markers(self, pos_scene):
+        #  if no button is pressed, just highlight the marker that would be
+        # selected on click
+        hl_point, hl_index = self.select_point(pos_scene)
+        self.update_markers(hl_index, highlight_color=(0.5, 0.5, 1.0, 1.0))
+        self.update()
 
 
 class Canvas(scene.SceneCanvas):
@@ -151,6 +142,7 @@ class Canvas(scene.SceneCanvas):
 
         # Create some initial points
         n = 7
+        self.unfreeze()
         self.pos = np.zeros((n, 3), dtype=np.float32)
         self.pos[:, 0] = np.linspace(-50, 50, n)
         self.pos[:, 1] = np.random.normal(size=n, scale=10, loc=0)
@@ -172,6 +164,23 @@ class Canvas(scene.SceneCanvas):
         self.show()
         self.selected_point = None
         scene.visuals.GridLines(parent=self.view.scene)
+        self.freeze()
+
+    def on_mouse_press(self, event):
+        # self.line.print_mouse_event(event, 'Mouse press')
+
+        tr = self.scene.node_transform(self.line)
+        pos = tr.map(event.pos)
+        self.line.on_mouse_press(pos)
+
+    def on_mouse_move(self, event):
+        # left mouse button
+        tr = self.scene.node_transform(self.line)
+        pos = tr.map(event.pos)
+        if event.button == 1:
+            self.line.on_mouse_move(pos)
+        else:
+            self.line.highlight_markers(pos)
 
 
 if __name__ == '__main__':

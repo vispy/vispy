@@ -1,4 +1,4 @@
-""" Test to verify the functionality of the OpenGL backends. This test
+"""Test to verify the functionality of the OpenGL backends. This test
 sets up a real visualization with shaders and all. This tests setting
 source code, setting texture and buffer data, and we touch many other
 functions of the API too. The end result is an image with four colored
@@ -23,39 +23,48 @@ from vispy.testing import (requires_application, requires_pyopengl, SkipTest,
                            run_tests_if_main, assert_equal, assert_true)
 
 from vispy.gloo import gl
+import pytest
+
 
 # All these tests require a working backend.
 
-
-## High level tests
+#
+# High level tests
+#
 
 def teardown_module():
     gl.use_gl()  # Reset to default
 
 
+@pytest.mark.xfail(sys.platform == 'darwin',
+                   reason='functionality fails on OSX (see #1178)')
 @requires_application()
 def test_functionality_desktop():
-    """ Test desktop GL backend for full functionality. """
+    """Test desktop GL backend for full functionality."""
     _test_functionality('gl2')
 
 
+@pytest.mark.xfail(sys.platform == 'darwin',
+                   reason='functionality fails on OSX (see #1178)')
 @requires_application()
 def test_functionality_proxy():
-    """ Test GL proxy class for full functionality. """
+    """Test GL proxy class for full functionality."""
     # By using debug mode, we are using the proxy class
     _test_functionality('gl2 debug')
 
 
+@pytest.mark.xfail(sys.platform == 'darwin',
+                   reason='functionality fails on OSX (see #1178)')
 @requires_application()
 @requires_pyopengl()
 def test_functionality_pyopengl():
-    """ Test pyopengl GL backend for full functionality. """
+    """Test pyopengl GL backend for full functionality."""
     _test_functionality('pyopengl2')
 
 
 @requires_application()
 def test_functionality_es2():
-    """ Test es2 GL backend for full functionality. """
+    """Test es2 GL backend for full functionality."""
     if True:
         raise SkipTest('Skip es2 functionality test for now.')
     if not sys.platform.startswith('win'):
@@ -69,20 +78,19 @@ def _clear_screen():
 
 
 def _test_functionality(backend):
-    """ Create app and canvas so we have a context. Then run tests.
-    """
+    """Create app and canvas so we have a context. Then run tests."""
     # use the backend
     gl.use_gl(backend)
-    
+
     with Canvas() as canvas:
         _clear_screen()
-        
+
         # Prepare
         w, h = canvas.size
         gl.glViewport(0, 0, w, h)
         gl.glScissor(0, 0, w, h)  # touch
         gl.glClearColor(0.0, 0.0, 0.0, 1.0)
-        
+
         # Setup visualization, ensure to do it in a draw event
         objects = _prepare_vis()
         _clear_screen()
@@ -98,7 +106,9 @@ def _test_functionality(backend):
         gl.glFinish()
 
 
-## Create CPU data
+#
+# Create CPU data
+#
 
 # Create vertex and fragments shader. They are designed to that all
 # OpenGL func can be tested, i.e. all types of uniforms are present.
@@ -130,19 +140,19 @@ varying vec2 v_2;  // tex coords
 varying vec4 v_4;  // attr colors
 
 void main()
-{   
+{
     float zero = float(u_i1);
-    
+
     // Combine int with float uniforms (i.e. ints are "used")
     float u1 = u_f1 + float(u_i1);
     vec2 u2 = u_f2 + vec2(u_i2);
     vec3 u3 = u_f3 + vec3(u_i3);
     vec4 u4 = u_f4 + vec4(u_i4);
-    
+
     // Set varyings (use every 2D and 4D variable, and u1)
     v_2 = a_1 * a_2 + zero*u_m2 * a_2 * u2 * u1;
     v_4 = u_m4 * a_4 * u4;
-    
+
     // Set position (use 3D variables)
     gl_Position = vec4(u_m3* a_3* u3, 1.0);
 }
@@ -157,7 +167,7 @@ varying vec2 v_2;  // rex coords
 varying vec4 v_4;  // attr colors
 
 void main()
-{   
+{
     float zero = float(u_i1);
     gl_FragColor = (texture2D(s_1, v_2) + v_4);
 }
@@ -177,7 +187,7 @@ assert im2.flags['C_CONTIGUOUS'] is False
 # Vertex Buffers
 
 # Create coordinates for upper left quad
-quad = np.array([[0, 0, 0], [-1, 0, 0], [-1, -1, 0], 
+quad = np.array([[0, 0, 0], [-1, 0, 0], [-1, -1, 0],
                  [0, 0, 0], [-1, -1, 0], [0, -1, 0]], np.float32)
 N = quad.shape[0] * 4
 
@@ -203,14 +213,16 @@ elements = np.arange(0, N, 0.5).astype(np.uint8)[::2]  # not C-contiguous
 helements = None  # the OpenGL object ref
 
 
-## The GL calls
+#
+# The GL calls
+#
 
 def _prepare_vis():
-    
+
     objects = []
-    
+
     # --- program and shaders
-    
+
     # Create program and shaders
     hprog = gl.glCreateProgram()
     hvert = gl.glCreateShader(gl.GL_VERTEX_SHADER)
@@ -218,19 +230,19 @@ def _prepare_vis():
     objects.append((gl.glDeleteProgram, hprog))
     objects.append((gl.glDeleteShader, hvert))
     objects.append((gl.glDeleteShader, hfrag))
-    
+
     # Compile source code
     gl.glShaderSource(hvert, VERT)
     gl.glShaderSource(hfrag, FRAG)
     gl.glCompileShader(hvert)
     gl.glCompileShader(hfrag)
-    
+
     # Check
-    assert_equal(gl.glGetShaderInfoLog(hvert), '')
-    assert_equal(gl.glGetShaderInfoLog(hfrag), '')
-    assert_equal(gl.glGetShaderParameter(hvert, gl.GL_COMPILE_STATUS), 1)
-    assert_equal(gl.glGetShaderParameter(hfrag, gl.GL_COMPILE_STATUS), 1)
-    
+    assert gl.glGetShaderInfoLog(hvert) == ''
+    assert gl.glGetShaderInfoLog(hfrag) == ''
+    assert gl.glGetShaderParameter(hvert, gl.GL_COMPILE_STATUS) == 1
+    assert gl.glGetShaderParameter(hfrag, gl.GL_COMPILE_STATUS) == 1
+
     # Attach and link
     gl.glAttachShader(hprog, hvert)
     gl.glAttachShader(hprog, hfrag)
@@ -247,35 +259,35 @@ def _prepare_vis():
     gl.glBindAttribLocation(hprog, 4, 'a_4')
 
     gl.glLinkProgram(hprog)
-    
+
     # Test that indeed these shaders are attached
     attached_shaders = gl.glGetAttachedShaders(hprog)
     assert_equal(set(attached_shaders), set([hvert, hfrag]))
-    
+
     # Check
     assert_equal(gl.glGetProgramInfoLog(hprog), '')
     assert_equal(gl.glGetProgramParameter(hprog, gl.GL_LINK_STATUS), 1)
     gl.glValidateProgram(hprog)
     assert_equal(gl.glGetProgramParameter(hprog, gl.GL_VALIDATE_STATUS), 1)
-    
+
     # Use it!
     gl.glUseProgram(hprog)
-    
+
     # Check if all is ok
     assert_equal(gl.glGetError(), 0)
-    
+
     # Check source
     vert_source = gl.glGetShaderSource(hvert)
     assert_true('attribute vec2 a_2;' in vert_source)
-    
+
     # --- get information on attributes and uniforms
-    
+
     # Count attributes and uniforms
     natt = gl.glGetProgramParameter(hprog, gl.GL_ACTIVE_ATTRIBUTES)
     nuni = gl.glGetProgramParameter(hprog, gl.GL_ACTIVE_UNIFORMS)
     assert_equal(natt, 4)
     assert_equal(nuni, 4+4+3+1)
-    
+
     # Get names
     names = {}
     for i in range(natt):
@@ -286,7 +298,7 @@ def _prepare_vis():
         name, count, type = gl.glGetActiveUniform(hprog, i)
         names[name] = type
         assert_equal(count, 1)
-    
+
     # Check
     assert_equal(names['a_1'], gl.GL_FLOAT)
     assert_equal(names['a_2'], gl.GL_FLOAT_VEC2)
@@ -294,65 +306,65 @@ def _prepare_vis():
     assert_equal(names['a_4'], gl.GL_FLOAT_VEC4)
     assert_equal(names['s_1'], gl.GL_SAMPLER_2D)
     #
-    for i, type in enumerate([gl.GL_FLOAT, gl.GL_FLOAT_VEC2, 
+    for i, type in enumerate([gl.GL_FLOAT, gl.GL_FLOAT_VEC2,
                               gl.GL_FLOAT_VEC3, gl.GL_FLOAT_VEC4]):
         assert_equal(names['u_f%i' % (i+1)], type)
-    for i, type in enumerate([gl.GL_INT, gl.GL_INT_VEC2, 
+    for i, type in enumerate([gl.GL_INT, gl.GL_INT_VEC2,
                               gl.GL_INT_VEC3, gl.GL_INT_VEC4]):
         assert_equal(names['u_i%i' % (i+1)], type)
-    for i, type in enumerate([gl.GL_FLOAT_MAT2, gl.GL_FLOAT_MAT3, 
+    for i, type in enumerate([gl.GL_FLOAT_MAT2, gl.GL_FLOAT_MAT3,
                               gl.GL_FLOAT_MAT4]):
         assert_equal(names['u_m%i' % (i+2)], type)
-    
+
     # Check if all is ok
     assert_equal(gl.glGetError(), 0)
-    
+
     # --- texture
-    
+
     # Create, bind, activate
     htex = gl.glCreateTexture()
     objects.append((gl.glDeleteTexture, htex))
     gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 1)
     gl.glBindTexture(gl.GL_TEXTURE_2D, htex)
-    
+
     # Allocate data and upload
     # This data is luminance and not C-contiguous
-    gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_LUMINANCE, gl.GL_LUMINANCE, 
+    gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_LUMINANCE, gl.GL_LUMINANCE,
                     gl.GL_UNSIGNED_BYTE, im2)  # touch
-    gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_LUMINANCE, gl.GL_LUMINANCE, 
+    gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_LUMINANCE, gl.GL_LUMINANCE,
                     gl.GL_UNSIGNED_BYTE, im2.shape[:2])
     gl.glTexSubImage2D(gl.GL_TEXTURE_2D, 0, 0, 0, gl.GL_LUMINANCE,
                        gl.GL_UNSIGNED_BYTE, im2)
-    
+
     # Set texture parameters (use f and i to touch both)
     T = gl.GL_TEXTURE_2D
     gl.glTexParameterf(T, gl.GL_TEXTURE_MIN_FILTER, gl.GL_LINEAR)
     gl.glTexParameteri(T, gl.GL_TEXTURE_MAG_FILTER, gl.GL_LINEAR)
-    
-    # Re-allocate data and upload 
-    gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_RGB, gl.GL_RGB, 
+
+    # Re-allocate data and upload
+    gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_RGB, gl.GL_RGB,
                     gl.GL_UNSIGNED_BYTE, im1.shape[:2])
     gl.glTexSubImage2D(gl.GL_TEXTURE_2D, 0, 0, 0, gl.GL_RGB,
                        gl.GL_UNSIGNED_BYTE, im1)
-    
+
     # Attach!
     loc = gl.glGetUniformLocation(hprog, 's_1')
     unit = 0
     gl.glActiveTexture(gl.GL_TEXTURE0+unit)
-    gl.glUniform1i(loc, unit) 
-    
+    gl.glUniform1i(loc, unit)
+
     # Mipmaps (just to touch this function)
     gl.glGenerateMipmap(gl.GL_TEXTURE_2D)
-    
+
     # Check min filter (touch getTextParameter)
     minfilt = gl.glGetTexParameter(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER)
     assert_equal(minfilt, gl.GL_LINEAR)
-    
+
     # Check if all is ok
     assert_equal(gl.glGetError(), 0)
-    
+
     # --- buffer vec2 (contiguous VBO)
-    
+
     # Create buffer
     hbuf2 = gl.glCreateBuffer()
     objects.append((gl.glDeleteBuffer, hbuf2))
@@ -361,13 +373,13 @@ def _prepare_vis():
     # Allocate and set data
     gl.glBufferData(gl.GL_ARRAY_BUFFER, buf2.nbytes, gl.GL_DYNAMIC_DRAW)
     gl.glBufferSubData(gl.GL_ARRAY_BUFFER, 0, buf2)
-    
+
     # Attach!
     loc = gl.glGetAttribLocation(hprog, 'a_2')
     gl.glDisableVertexAttribArray(loc)  # touch
     gl.glEnableVertexAttribArray(loc)
     gl.glVertexAttribPointer(loc, 2, gl.GL_FLOAT, False, 2*4, 0)
-    
+
     # Check (touch glGetBufferParameter, glGetVertexAttrib and
     # glGetVertexAttribOffset)
     size = gl.glGetBufferParameter(gl.GL_ARRAY_BUFFER, gl.GL_BUFFER_SIZE)
@@ -376,12 +388,12 @@ def _prepare_vis():
     assert_equal(stride, 2*4)
     offset = gl.glGetVertexAttribOffset(loc, gl.GL_VERTEX_ATTRIB_ARRAY_POINTER)
     assert_equal(offset, 0)
-    
+
     # Check if all is ok
     assert_equal(gl.glGetError(), 0)
-    
+
     # --- buffer vec3 (non-contiguous VBO)
-    
+
     # Create buffer
     hbuf3 = gl.glCreateBuffer()
     objects.append((gl.glDeleteBuffer, hbuf3))
@@ -390,30 +402,30 @@ def _prepare_vis():
     # Allocate and set data
     gl.glBufferData(gl.GL_ARRAY_BUFFER, buf3.nbytes, gl.GL_DYNAMIC_DRAW)
     gl.glBufferSubData(gl.GL_ARRAY_BUFFER, 0, buf3)
-    
+
     # Attach!
     loc = gl.glGetAttribLocation(hprog, 'a_3')
     gl.glEnableVertexAttribArray(loc)
     gl.glVertexAttribPointer(loc, 3, gl.GL_FLOAT, False, 3*4, 0)
-    
+
     # Check if all is ok
     assert_equal(gl.glGetError(), 0)
-    
+
     # --- buffer vec4 (client vertex data)
-    
+
     # Select no FBO
     gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
-    
+
     # Attach!
     loc = gl.glGetAttribLocation(hprog, 'a_4')
     gl.glEnableVertexAttribArray(loc)
     gl.glVertexAttribPointer(loc, 4, gl.GL_FLOAT, False, 4*4, buf4)
-    
+
     # Check if all is ok
     assert_equal(gl.glGetError(), 0)
-    
+
     # --- element buffer
-    
+
     # Create buffer
     global helements
     helements = gl.glCreateBuffer()
@@ -423,15 +435,15 @@ def _prepare_vis():
     # Allocate and set data
     gl.glBufferData(gl.GL_ELEMENT_ARRAY_BUFFER, elements, gl.GL_DYNAMIC_DRAW)
     gl.glBufferSubData(gl.GL_ELEMENT_ARRAY_BUFFER, 0, elements)
-    
+
     # Turn off
     gl.glBindBuffer(gl.GL_ELEMENT_ARRAY_BUFFER, 0)
-    
+
     # Check if all is ok
     assert_equal(gl.glGetError(), 0)
-    
+
     # --- uniforms
-    
+
     # Set integer uniforms to 0
     # We set them twice just to touch both i and iv functions
     for i, fun1, fun2 in [(1, gl.glUniform1i, gl.glUniform1iv),
@@ -455,7 +467,7 @@ def _prepare_vis():
         loc = gl.glGetUniformLocation(hprog, name)
         fun1(loc, *value)  # e.g. glUniform4f
         fun2(loc, 1, value)  # e.g. glUniform4fv
-    
+
     # Set matrix uniforms
     m = np.eye(5, dtype='float32')
     loc = gl.glGetUniformLocation(hprog, 'u_m2')
@@ -468,7 +480,7 @@ def _prepare_vis():
     loc = gl.glGetUniformLocation(hprog, 'u_m4')
     m = np.eye(4, dtype='float32')
     gl.glUniformMatrix4fv(loc, 1, False, m[:4, :4])
-    
+
     # Check some uniforms
     loc = gl.glGetUniformLocation(hprog, 'u_i1')
     assert_equal(gl.glGetUniform(hprog, loc), 0)
@@ -476,12 +488,12 @@ def _prepare_vis():
     assert_equal(gl.glGetUniform(hprog, loc), (0, 0))
     loc = gl.glGetUniformLocation(hprog, 'u_f2')
     assert_equal(gl.glGetUniform(hprog, loc), (1.0, 1.0))
-    
+
     # Check if all is ok
     assert_equal(gl.glGetError(), 0)
-    
-    # --- attributes 
-    
+
+    # --- attributes
+
     # Constant values for attributes. We do not even use this ...
     loc = gl.glGetAttribLocation(hprog, 'a_1')
     gl.glVertexAttrib1f(loc, 1.0)
@@ -491,14 +503,14 @@ def _prepare_vis():
     gl.glVertexAttrib3f(loc, 1.0, 1.0, 1.0)
     loc = gl.glGetAttribLocation(hprog, 'a_4')
     gl.glVertexAttrib4f(loc, 1.0, 1.0, 1.0, 1.0)
-    
+
     # --- flush and finish
-    
+
     # Not really necessary, but we want to touch the functions
     gl.glFlush()
     gl.glFinish()
-    
-    #print([i[1] for i in objects])
+
+    # print([i[1] for i in objects])
     return objects
 
 
@@ -520,30 +532,29 @@ def _draw2():
 
 def _draw3():
     # Draw using elements via numpy array
-    gl.glDrawElements(gl.GL_TRIANGLES, 
+    gl.glDrawElements(gl.GL_TRIANGLES,
                       elements.size, gl.GL_UNSIGNED_BYTE, elements)
     gl.glFinish()
     _check_result()
 
 
 def _check_result(assert_result=True):
-    """ Test the color of each quadrant by picking the center pixel 
+    """Test the color of each quadrant by picking the center pixel
     of each quadrant and comparing it with the reference color.
     """
-    
     # Take screenshot
     x, y, w, h = gl.glGetParameter(gl.GL_VIEWPORT)
     data = gl.glReadPixels(x, y, w, h, gl.GL_RGB, gl.GL_UNSIGNED_BYTE)
     im = np.frombuffer(data, np.uint8)
     im.shape = h, w, 3
-    
+
     # Get center pixel from each quadrant
     pix1 = tuple(im[int(1*h/4), int(1*w/4)])
     pix2 = tuple(im[int(3*h/4), int(1*w/4)])
     pix3 = tuple(im[int(3*h/4), int(3*w/4)])
     pix4 = tuple(im[int(1*h/4), int(3*w/4)])
-    #print(pix1, pix2, pix3, pix4)
-   
+    # print(pix1, pix2, pix3, pix4)
+
     if assert_result:
         # Test their value
         assert_equal(pix1, (0, 0, 0))

@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
-"""
-Utilities related to data reading, writing, fetching, and generation.
-"""
+"""Utilities related to data reading, writing, fetching, and generation."""
 
 
 from os import path as _op

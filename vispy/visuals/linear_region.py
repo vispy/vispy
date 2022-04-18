@@ -4,7 +4,7 @@ from .. import gloo
 from .visual import Visual
 
 
-VERT_SHADER = """
+_VERTEX_SHADER = """
     attribute vec2 a_pos;
     varying vec4 v_color;
 
@@ -21,12 +21,12 @@ VERT_SHADER = """
         }
 
         gl_Position = $transform(pos);
-        gl_PointSize = 10;
+        gl_PointSize = 10.;
         v_color = $color;
     }
     """
 
-FRAG_SHADER = """
+_FRAGMENT_SHADER = """
     varying vec4 v_color;
 
     void main() {
@@ -50,12 +50,17 @@ class LinearRegionVisual(Visual):
         True for drawing a vertical region, False for an horizontal region
     """
 
+    _shaders = {
+        'vertex': _VERTEX_SHADER,
+        'fragment': _FRAGMENT_SHADER,
+    }
+
     def __init__(self, pos=None, color=[1.0, 1.0, 1.0, 1.0],
                  vertical=True, **kwargs):
         """
 
         """
-        Visual.__init__(self, vcode=VERT_SHADER, fcode=FRAG_SHADER, **kwargs)
+        Visual.__init__(self, vcode=self._shaders['vertex'], fcode=self._shaders['fragment'])
 
         self._changed = {'pos': False, 'color': False}
 
@@ -182,7 +187,6 @@ class LinearRegionVisual(Visual):
 
         The *view* argument indicates which view is about to be drawn.
         """
-
         if self._changed['pos']:
             self.pos_buf.set_data(self._pos)
             self._changed['pos'] = False

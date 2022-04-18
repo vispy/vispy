@@ -1,0 +1,24 @@
+cmake
+cython
+coveralls
+decorator
+freetype<2.10.0
+freetype-py
+imageio
+# Do NOT include jupyter as it depends on qtconsole which pulls in PyQt5
+# Do NOT depend on 'matplotlib' as it currently depends on PyQt5
+matplotlib-base
+meshio
+networkx
+numpy
+pillow
+pytest
+pytest-cov
+pytest-sugar
+pyopengl
+scikit-image
+scipy
+networkx
+hsluv
+kiwisolver
+sphinx-gallery

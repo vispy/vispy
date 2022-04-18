@@ -1,0 +1,99 @@
+name: cibuildwheel
+# https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#concurrency
+# https://docs.github.com/en/developers/webhooks-and-events/events/github-event-types#pullrequestevent
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number }}-${{ github.event.type }}
+  cancel-in-progress: true
+
+on: [push, pull_request]
+
+jobs:
+  build_wheels:
+    name: Build wheels on ${{ matrix.os }} for ${{ matrix.arch }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-20.04, windows-2019, macOS-10.15]
+        arch: [auto]
+        include:
+          - os: ubuntu-20.04
+            arch: aarch64
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - name: Set up QEMU
+      if: ${{ matrix.arch == 'aarch64' }}
+      uses: docker/setup-qemu-action@v1
+    - name: Build wheels
+      uses: pypa/cibuildwheel@v2.1.1
+      env:
+        CIBW_SKIP: "cp27-* cp34-* cp35-* cp36-* pp* *-win32 *-manylinux_i686"
+        CIBW_ARCHS_LINUX: ${{ matrix.arch }}
+        CIBW_TEST_REQUIRES: "pytest pytest-sugar meshio pillow sphinx_gallery imageio"
+        CIBW_TEST_COMMAND: "python -c \"import vispy; vispy.test()\""
+        CIBW_BUILD_VERBOSITY: "2"
+        CIBW_BEFORE_BUILD: "pip install -U numpy Cython"
+        CIBW_BEFORE_BUILD_MACOS: "pip install -U pip setuptools"
+        CIBW_BEFORE_BUILD_LINUX: "yum install -y fontconfig; pip install -U pip setuptools; pip install freetype-py"
+        # If freetype-py is installed from source (no wheel found), include bundled freetype library
+        CIBW_ENVIRONMENT_WINDOWS: "FREETYPEPY_BUNDLE_FT=1"
+        CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
+        CIBW_MANYLINUX_I686_IMAGE: manylinux2014
+    - uses: actions/upload-artifact@v2
+      with:
+        path: ./wheelhouse/*.whl
+
+  build_sdist:
+    name: Build source distribution
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - uses: actions/setup-python@v2
+      name: Install Python
+      with:
+        python-version: '3.7'
+    - name: Build sdist
+      run: |
+        python -m pip install --upgrade pip setuptools build wheel
+        python -m pip install numpy Cython
+        python -m build -s -o dist/
+    - uses: actions/upload-artifact@v2
+      with:
+        path: dist/*.tar.gz
+
+  upload_test_pypi:
+    needs: [build_wheels, build_sdist]
+    runs-on: ubuntu-latest
+    # upload to Test PyPI for every commit on main branch
+    if: github.event_name == 'push' && github.event.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/download-artifact@v2
+        with:
+          name: artifact
+          path: dist
+      - uses: pypa/gh-action-pypi-publish@master
+        with:
+          user: __token__
+          password: ${{ secrets.VISPY_TEST_PYPI_TOKEN }}
+          repository_url: https://test.pypi.org/legacy/
+
+  upload_pypi:
+    needs: [build_wheels, build_sdist]
+    runs-on: ubuntu-latest
+    # upload to PyPI on every tag starting with 'v'
+    if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/v')
+    # alternatively, to publish when a GitHub Release is created, use the following rule:
+    # if: github.event_name == 'release' && github.event.action == 'published'
+    steps:
+    - uses: actions/download-artifact@v2
+      with:
+        name: artifact
+        path: dist
+    - uses: pypa/gh-action-pypi-publish@master
+      with:
+        user: __token__
+        password: ${{ secrets.VISPY_PYPI_TOKEN }}

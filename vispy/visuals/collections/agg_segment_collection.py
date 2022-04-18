@@ -17,7 +17,6 @@ from ..transforms import NullTransform
 
 
 class AggSegmentCollection(Collection):
-
     """
     Antigrain Geometry Segment Collection
 
@@ -33,7 +32,6 @@ class AggSegmentCollection(Collection):
 
         Parameters
         ----------
-
         user_dtype: list
             The base dtype can be completed (appended) by the used_dtype. It
             only make sense if user also provide vertex and/or fragment shaders
@@ -59,14 +57,13 @@ class AggSegmentCollection(Collection):
         antialias : string
             'local', 'shared' or 'global'
         """
-
-        base_dtype = [('P0',        (np.float32, 3), '!local', (0, 0, 0)),
-                      ('P1',        (np.float32, 3), '!local', (0, 0, 0)),
-                      ('index',     (np.float32, 1), '!local', 0),
-                      ('color',     (np.float32, 4), 'shared', (0, 0, 0, 1)),
+        base_dtype = [('P0', (np.float32, 3), '!local', (0, 0, 0)),
+                      ('P1', (np.float32, 3), '!local', (0, 0, 0)),
+                      ('index', (np.float32, 1), '!local', 0),
+                      ('color', (np.float32, 4), 'shared', (0, 0, 0, 1)),
                       ('linewidth', (np.float32, 1), 'shared', 1),
                       ('antialias', (np.float32, 1), 'shared', 1),
-                      ('viewport',  (np.float32, 4), 'global', (0, 0, 512, 512))]  # noqa
+                      ('viewport', (np.float32, 4), 'global', (0, 0, 512, 512))]  # noqa
 
         dtype = base_dtype
         if user_dtype:
@@ -94,7 +91,6 @@ class AggSegmentCollection(Collection):
 
         Parameters
         ----------
-
         P : np.array
             Vertices positions of the path(s) to be added
 
@@ -113,7 +109,6 @@ class AggSegmentCollection(Collection):
         antialias : list, array or float
            Path antialias area
         """
-
         itemsize = itemsize or 1
         itemcount = len(P0) // itemsize
 
@@ -129,10 +124,10 @@ class AggSegmentCollection(Collection):
         V = V.repeat(4, axis=0)
         V['index'] = np.resize([0, 1, 2, 3], 4 * itemcount * itemsize)
 
-        I = np.ones((itemcount, 6), dtype=int)
-        I[:] = 0, 1, 2, 0, 2, 3
-        I[:] += 4 * np.arange(itemcount)[:, np.newaxis]
-        I = I.ravel()
+        idxs = np.ones((itemcount, 6), dtype=int)
+        idxs[:] = 0, 1, 2, 0, 2, 3
+        idxs[:] += 4 * np.arange(itemcount)[:, np.newaxis]
+        idxs = idxs.ravel()
 
         # Uniforms
         if self.utype:
@@ -144,4 +139,4 @@ class AggSegmentCollection(Collection):
             U = None
 
         Collection.append(
-            self, vertices=V, uniforms=U, indices=I, itemsize=4 * itemcount)
+            self, vertices=V, uniforms=U, indices=idxs, itemsize=4 * itemcount)

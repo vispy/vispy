@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # vispy: gallery 30
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 # Author: Nicolas P .Rougier
@@ -18,7 +18,7 @@ from vispy.util.transforms import perspective, translate, rotate
 # Create vertices
 n, p = 100, 150
 data = np.zeros(p * n, [('a_position', np.float32, 2),
-                        ('a_color',    np.float32, 4),
+                        ('a_color', np.float32, 4),
                         ('a_rotation', np.float32, 4)])
 trail = .5 * np.pi
 data['a_position'][:, 0] = np.resize(np.linspace(0, trail, n), p * n)

@@ -43,26 +43,30 @@ import numpy as np
 import string
 import logging
 import traceback
-from PyQt4 import QtGui, QtCore
+
+# To switch between PyQt5 and PySide2 bindings just change the from import
+from PyQt5 import QtCore, QtGui, QtWidgets
+# Provide automatic signal function selection for PyQt5/PySide2
+pyqtsignal = QtCore.pyqtSignal if hasattr(QtCore, 'pyqtSignal') else QtCore.Signal
 
 logger = logging.getLogger(__name__)
 
 VALID_METHODS = ['euler', 'runge-kutta']
 
-PARAMETERS = [('d1',        0.0,      10.0,    'double', 0.97),
-              ('d2',        0.0,      10.0,    'double', 0.55),
-              ('m',         0.01,     100.0,   'double', 2.0),
-              ('M',         0.01,     100.0,   'double', 12.5),
-              ('k1',        0.01,     75.0,   'double', 1.35),
-              ('k2',        0.01,     75.0,   'double', 0.50),
-              ('b',         1.0,      1000.0,  'double', 25.75),
-              ('time step', 0.001,    1.0,     'double', 1/60),
-              ('x',         -0.25,    0.25,    'double', -0.01),
-              ('x dot',     -10.0,    10.0,    'double', -0.12),
-              ('theta',     -np.pi/5, np.pi/5, 'double', 0.005),
+PARAMETERS = [('d1', 0.0, 10.0, 'double', 0.97),
+              ('d2', 0.0, 10.0, 'double', 0.55),
+              ('m', 0.01, 100.0, 'double', 2.0),
+              ('M', 0.01, 100.0, 'double', 12.5),
+              ('k1', 0.01, 75.0, 'double', 1.35),
+              ('k2', 0.01, 75.0, 'double', 0.50),
+              ('b', 1.0, 1000.0, 'double', 25.75),
+              ('time step', 0.001, 1.0, 'double', 1/60),
+              ('x', -0.25, 0.25, 'double', -0.01),
+              ('x dot', -10.0, 10.0, 'double', -0.12),
+              ('theta', -np.pi/5, np.pi/5, 'double', 0.005),
               ('theta dot', -np.pi/2, np.pi/2, 'double', 0.0),
-              ('scale',     5,        500,     'int',    50),
-              ('font size', 6.0,      128.0,   'double', 24.0)]
+              ('scale', 5, 500, 'int', 50),
+              ('font size', 6.0, 128.0, 'double', 24.0)]
 
 CONVERSION_DICT = {'d1': 'd1', 'd2': 'd2', 'm': 'little_m', 'M': 'big_m',
                    'k1': 'spring_k1', 'k2': 'spring_k2', 'b': 'b',
@@ -75,7 +79,7 @@ def make_spiral(num_points=100, num_turns=4, height=12, radius=2.0,
                 xnot=None, ynot=None, znot=None):
     """
     Generate a list of points corresponding to a spiral.
-    
+
     Parameters
     ----------
     num_points : int
@@ -94,17 +98,17 @@ def make_spiral(num_points=100, num_turns=4, height=12, radius=2.0,
         Initial y-coordinate for the spiral coordinates to start at.
     znot : float
         Initial z-coordinate for the spiral coordinates to start at.
-    
+
     Returns
     -------
     coord_list: list of tuples
         Coordinate list of (x, y, z) positions for the spiral
-        
+
     Notes
     -----
     Right now, this assumes the center is at x=0, y=0. Later, it might be 
     good to add in stuff to change that.
-    
+
     """
 
     coords_list = []
@@ -129,7 +133,7 @@ def make_spring(num_points=300, num_turns=4, height=12, radius=2.0,
                 xnot=None, ynot=None, znot=None):
     """
         Generate a list of points corresponding to a spring.
-        
+
         Parameters
         ----------
         num_points : int
@@ -149,12 +153,12 @@ def make_spring(num_points=300, num_turns=4, height=12, radius=2.0,
             Initial y-coordinate for the spring coordinates to start at.
         znot : float
             Initial z-coordinate for the spring coordinates to start at.
-        
+
         Returns
         -------
         coord_list: list of tuples
             Coordinate list of (x, y, z) positions for the spring
-            
+
         Notes
         -----
         Right now, this assumes the center is at x=0, y=0. Later, it might be 
@@ -164,7 +168,7 @@ def make_spring(num_points=300, num_turns=4, height=12, radius=2.0,
         well as a small "turn" that is length radius / 2. In the future, maybe 
         there could be a kwarg to set the length of the sides of the spring. 
         For now, 10% looks good.
-        
+
         """
     coords_list = []
     init_pts = num_points // 10
@@ -263,7 +267,8 @@ class WigglyBar(app.Canvas):
 
         """
 
-        app.Canvas.__init__(self, title='Wiggly Bar', size=(800, 800))
+        app.Canvas.__init__(self, title='Wiggly Bar', size=(800, 800),
+                            create_native=False)
 
         # Some initialization constants that won't change
         self.standard_length = 0.97 + 0.55
@@ -288,10 +293,10 @@ class WigglyBar(app.Canvas):
 
         # Put up a text visual to display time info
         self.font_size = 24. if font_size is None else font_size
-        self.text = visuals.TextVisual('0:00.00', 
-                                       color='white', 
+        self.text = visuals.TextVisual('0:00.00',
+                                       color='white',
                                        pos=[50, 250, 0],
-                                       anchor_x='left', 
+                                       anchor_x='left',
                                        anchor_y='bottom')
         self.text.font_size = self.font_size
 
@@ -299,17 +304,17 @@ class WigglyBar(app.Canvas):
         # update this
         self.method_text = visuals.TextVisual(
             'Method: {}'.format(self.method),
-            color='white', 
-            pos=[50, 250 + 2/3*font_size, 0],
-            anchor_x='left', 
+            color='white',
+            pos=[50, 250, 0],
+            anchor_x='left',
             anchor_y='top'
         )
         self.method_text.font_size = 2/3 * self.font_size
 
         # Get the pivoting bar ready
-        self.rod = visuals.BoxVisual(width=self.px_len/40, 
-                                     height=self.px_len/40, 
-                                     depth=self.px_len, 
+        self.rod = visuals.BoxVisual(width=self.px_len/40,
+                                     height=self.px_len/40,
+                                     depth=self.px_len,
                                      color='white')
         self.rod.transform = transforms.MatrixTransform()
         self.rod.transform.scale(
@@ -371,7 +376,6 @@ class WigglyBar(app.Canvas):
 
         # Set up a timer to update the image and give a real-time rendering
         self._timer = app.Timer('auto', connect=self.on_timer, start=True)
-        self.show()
 
     def on_draw(self, ev):
         # Stolen from previous - just clears the screen and redraws stuff
@@ -379,7 +383,7 @@ class WigglyBar(app.Canvas):
         self.context.set_viewport(0, 0, *self.physical_size)
         self.context.clear()
         for vis in self.visuals:
-            if vis == self.center_point and not self.show_pivot:
+            if vis is self.center_point and not self.show_pivot:
                 continue
             else:
                 vis.draw()
@@ -453,7 +457,7 @@ class WigglyBar(app.Canvas):
                                           self.s2_loc +
                                           np.asarray([delta_x, 0]))
 
-        # Redraw and rescale the lower spring 
+        # Redraw and rescale the lower spring
         # (the hardest part to get, mathematically)
         self.spring_1.transform.reset()
         self.spring_1.transform.rotate(90, (0, 1, 0))
@@ -469,8 +473,8 @@ class WigglyBar(app.Canvas):
         self.mass.transform.translate(self.center + self.mass_loc)
 
         # Update the timer with how long it's been
-        self.text.text = '{:0>2d}:{:0>2d}.{:0>2d}'.format(min_passed, 
-                                                          sec_passed, 
+        self.text.text = '{:0>2d}:{:0>2d}.{:0>2d}'.format(min_passed,
+                                                          sec_passed,
                                                           millis_passed)
 
         # Trigger all of the drawing and updating
@@ -515,15 +519,15 @@ class WigglyBar(app.Canvas):
         info_vector = np.asarray(
             [self.x_dot, self.theta_dot, self.x, self.theta]
         ).copy()
-        
+
         t1a = -self.b * info_vector[0] * np.abs(info_vector[0])
         t1b = -self.spring_k1*(info_vector[2] + self.d2*info_vector[3])
-        
+
         t2a = -self.spring_k1*self.d2*info_vector[2]
         t2b = -info_vector[3] * (
             self.spring_k1*(self.d2 ** 2) + self.spring_k2*(self.d1 ** 2)
         )
-        
+
         k1 = [
             (t1a + t1b)/self.little_m,
             (t2a + t2b)/self.j_term,
@@ -729,9 +733,9 @@ class Paramlist(object):
             self.props[nameV] = iniV
 
 
-class SetupWidget(QtGui.QWidget):
+class SetupWidget(QtWidgets.QWidget):
 
-    changed_parameter_sig = QtCore.pyqtSignal(Paramlist)
+    changed_parameter_sig = pyqtsignal(Paramlist)
 
     def __init__(self, parent=None):
         """Widget for holding all the parameter options in neat lists.
@@ -743,13 +747,13 @@ class SetupWidget(QtGui.QWidget):
         self.param = Paramlist(PARAMETERS)
 
         # Checkbox for whether or not the pivot point is visible
-        self.pivot_chk = QtGui.QCheckBox(u"Show pivot point")
+        self.pivot_chk = QtWidgets.QCheckBox(u"Show pivot point")
         self.pivot_chk.setChecked(self.param.props['pivot'])
         self.pivot_chk.toggled.connect(self.update_parameters)
 
         # A drop-down menu for selecting which method to use for updating
         self.method_list = ['Euler', 'Runge-Kutta']
-        self.method_options = QtGui.QComboBox()
+        self.method_options = QtWidgets.QComboBox()
         self.method_options.addItems(self.method_list)
         self.method_options.setCurrentIndex(
             self.method_list.index((self.param.props['method']))
@@ -760,15 +764,15 @@ class SetupWidget(QtGui.QWidget):
 
         # Separate the different parameters into groupboxes,
         # so there's a clean visual appearance
-        self.parameter_groupbox = QtGui.QGroupBox(u"System Parameters")
-        self.conditions_groupbox = QtGui.QGroupBox(u"Initial Conditions")
-        self.display_groupbox = QtGui.QGroupBox(u"Display Parameters")
+        self.parameter_groupbox = QtWidgets.QGroupBox(u"System Parameters")
+        self.conditions_groupbox = QtWidgets.QGroupBox(u"Initial Conditions")
+        self.display_groupbox = QtWidgets.QGroupBox(u"Display Parameters")
 
         self.groupbox_list = [self.parameter_groupbox,
                               self.conditions_groupbox,
                               self.display_groupbox]
 
-        self.splitter = QtGui.QSplitter(QtCore.Qt.Vertical)
+        self.splitter = QtWidgets.QSplitter(QtCore.Qt.Vertical)
 
         # Get ready to create all the spinboxes with appropriate labels
         plist = []
@@ -776,12 +780,12 @@ class SetupWidget(QtGui.QWidget):
         # important_positions is used to separate the
         # parameters into their appropriate groupboxes
         important_positions = [0, ]
-        param_boxes_layout = [QtGui.QGridLayout(),
-                              QtGui.QGridLayout(),
-                              QtGui.QGridLayout()]
+        param_boxes_layout = [QtWidgets.QGridLayout(),
+                              QtWidgets.QGridLayout(),
+                              QtWidgets.QGridLayout()]
         for nameV, minV, maxV, typeV, iniV in self.param.parameters:
             # Create Labels for each element
-            plist.append(QtGui.QLabel(nameV))
+            plist.append(QtWidgets.QLabel(nameV))
 
             if nameV == 'x' or nameV == 'scale':
                 # 'x' is the start of the 'Initial Conditions' groupbox,
@@ -792,14 +796,14 @@ class SetupWidget(QtGui.QWidget):
             # ints get regular SpinBox.
             # Step sizes are the same for every parameter except font size.
             if typeV == 'double':
-                self.psets.append(QtGui.QDoubleSpinBox())
+                self.psets.append(QtWidgets.QDoubleSpinBox())
                 self.psets[-1].setDecimals(3)
                 if nameV == 'font size':
                     self.psets[-1].setSingleStep(1.0)
                 else:
                     self.psets[-1].setSingleStep(0.01)
             elif typeV == 'int':
-                self.psets.append(QtGui.QSpinBox())
+                self.psets.append(QtWidgets.QSpinBox())
 
             # Set min, max, and initial values
             self.psets[-1].setMaximum(maxV)
@@ -814,7 +818,7 @@ class SetupWidget(QtGui.QWidget):
             param_boxes_layout[pidx].addWidget(self.psets[pos], pos + pidx, 1)
             self.psets[pos].valueChanged.connect(self.update_parameters)
 
-        param_boxes_layout[0].addWidget(QtGui.QLabel('Method: '), 8, 0)
+        param_boxes_layout[0].addWidget(QtWidgets.QLabel('Method: '), 8, 0)
         param_boxes_layout[0].addWidget(self.method_options, 8, 1)
         param_boxes_layout[-1].addWidget(self.pivot_chk, 2, 0, 3, 0)
 
@@ -824,12 +828,12 @@ class SetupWidget(QtGui.QWidget):
         for groupbox in self.groupbox_list:
             self.splitter.addWidget(groupbox)
 
-        vbox = QtGui.QVBoxLayout()
-        hbox = QtGui.QHBoxLayout()
+        vbox = QtWidgets.QVBoxLayout()
+        hbox = QtWidgets.QHBoxLayout()
         hbox.addWidget(self.splitter)
-        hbox.addStretch(5.0)
+        hbox.addStretch(5)
         vbox.addLayout(hbox)
-        vbox.addStretch(1.0)
+        vbox.addStretch(1)
 
         self.setLayout(vbox)
 
@@ -845,13 +849,13 @@ class SetupWidget(QtGui.QWidget):
         self.changed_parameter_sig.emit(self.param)
 
 
-class MainWindow(QtGui.QMainWindow):
+class MainWindow(QtWidgets.QMainWindow):
 
     def __init__(self, param=None):
         """Main Window for holding the Vispy Canvas and the parameter
         control menu.
         """
-        QtGui.QMainWindow.__init__(self)
+        QtWidgets.QMainWindow.__init__(self)
 
         self.resize(1067, 800)
         icon = load_data_file('wiggly_bar/spring.ico')
@@ -869,7 +873,7 @@ class MainWindow(QtGui.QMainWindow):
         self.view_box.create_native()
         self.view_box.native.setParent(self)
 
-        splitter = QtGui.QSplitter(QtCore.Qt.Horizontal)
+        splitter = QtWidgets.QSplitter(QtCore.Qt.Horizontal)
         splitter.addWidget(self.parameter_object)
         splitter.addWidget(self.view_box.native)
 
@@ -891,7 +895,7 @@ def main():
     sys.excepthook = uncaught_exceptions
     logging.basicConfig(level=logging.INFO)
     logging.getLogger().setLevel(logging.INFO)
-    appQt = QtGui.QApplication(sys.argv)
+    appQt = QtWidgets.QApplication(sys.argv)
     win = MainWindow()
     win.show()
     appQt.exec_()

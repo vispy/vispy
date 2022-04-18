@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
-Very simple transformation library that is needed for some examples.
-"""
+"""Very simple transformation library that is needed for some examples."""
 
 from __future__ import division
 
@@ -30,9 +28,9 @@ def translate(offset, dtype=None):
     assert len(offset) == 3
     x, y, z = offset
     M = np.array([[1., 0., 0., 0.],
-                 [0., 1., 0., 0.],
-                 [0., 0., 1., 0.],
-                 [x, y, z, 1.0]], dtype)
+                  [0., 1., 0., 0.],
+                  [0., 0., 1., 0.],
+                  [x, y, z, 1.0]], dtype)
     return M
 
 
@@ -64,6 +62,11 @@ def rotate(angle, axis, dtype=None):
         The angle of rotation, in degrees.
     axis : ndarray
         The x, y, z coordinates of the axis direction vector.
+
+    Returns
+    -------
+    M : ndarray
+        Transformation matrix describing the rotation.
     """
     angle = np.radians(angle)
     assert len(axis) == 3
@@ -179,7 +182,7 @@ def perspective(fovy, aspect, znear, zfar):
 
 
 def affine_map(points1, points2):
-    """ Find a 3D transformation matrix that maps points1 onto points2.
+    """Find a 3D transformation matrix that maps points1 onto points2.
 
     Arguments are specified as arrays of four 3D coordinates, shape (4, 3).
     """

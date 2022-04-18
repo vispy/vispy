@@ -6,6 +6,8 @@ from numpy.linalg import norm
 from ..util.transforms import rotate
 from ..color import ColorArray
 
+import collections
+
 
 class TubeVisual(MeshVisual):
     """Displays a tube around a piecewise-linear path.
@@ -19,8 +21,9 @@ class TubeVisual(MeshVisual):
     points : ndarray
         An array of (x, y, z) points describing the path along which the
         tube will be extruded.
-    radius : float
-        The radius of the tube. Defaults to 1.0.
+    radius : float | ndarray
+        The radius of the tube. Use array of floats as input to set radii of
+        points individually. Defaults to 1.0.
     closed : bool
         Whether the tube should be closed, joining the last point to the
         first. Defaults to False.
@@ -44,6 +47,7 @@ class TubeVisual(MeshVisual):
         Same as for the `MeshVisual` class. Defaults to 'triangles'.
 
     """
+
     def __init__(self, points, radius=1.0,
                  closed=False,
                  color='purple',
@@ -53,11 +57,18 @@ class TubeVisual(MeshVisual):
                  face_colors=None,
                  mode='triangles'):
 
-        points = np.array(points)
+        # make sure we are working with floats
+        points = np.array(points).astype(float)
 
         tangents, normals, binormals = _frenet_frames(points, closed)
 
         segments = len(points) - 1
+
+        # if single radius, convert to list of radii
+        if not isinstance(radius, collections.Iterable):
+            radius = [radius] * len(points)
+        elif len(radius) != len(points):
+            raise ValueError('Length of radii list must match points.')
 
         # get the positions of each vertex
         grid = np.zeros((len(points), tube_points, 3))
@@ -65,12 +76,13 @@ class TubeVisual(MeshVisual):
             pos = points[i]
             normal = normals[i]
             binormal = binormals[i]
+            r = radius[i]
 
             # Add a vertex for each point on the circle
             v = np.arange(tube_points,
                           dtype=np.float) / tube_points * 2 * np.pi
-            cx = -1. * radius * np.cos(v)
-            cy = radius * np.sin(v)
+            cx = -1. * r * np.cos(v)
+            cy = r * np.sin(v)
             grid[i] = (pos + cx[:, np.newaxis]*normal +
                        cy[:, np.newaxis]*binormal)
 
@@ -107,8 +119,9 @@ class TubeVisual(MeshVisual):
 
 
 def _frenet_frames(points, closed):
-    '''Calculates and returns the tangents, normals and binormals for
-    the tube.'''
+    """Calculates and returns the tangents, normals and binormals for
+    the tube.
+    """
     tangents = np.zeros((len(points), 3))
     normals = np.zeros((len(points), 3))
 

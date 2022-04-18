@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 """
 This example shows how to retrieve event information from a callback.
 You should see information displayed for any event you triggered.
 """
 
-from vispy import gloo, app, use
-use('pyqt4')  # can be another app backend name
+from vispy import gloo, app
 
 
 class Canvas(app.Canvas):

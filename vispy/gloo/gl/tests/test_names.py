@@ -1,4 +1,4 @@
-""" Tests to verify that all ES 2.0 function names are defined in all
+"""Tests to verify that all ES 2.0 function names are defined in all
 backends, and no more than that.
 """
 
@@ -13,9 +13,10 @@ def teardown_module():
 
 
 class _DummyObject:
-    """ To be able to import es2 even in Linux, so that we can test the
+    """To be able to import es2 even in Linux, so that we can test the
     names defined inside.
     """
+
     def LoadLibrary(self, fname):
         return _DummyObject()
 
@@ -38,14 +39,14 @@ def _test_constant_names(mod):
 
 
 def test_destop():
-    """ Desktop backend should have all ES 2.0 names. No more, no less. """
+    """Desktop backend should have all ES 2.0 names. No more, no less."""
     from vispy.gloo.gl import gl2
     _test_function_names(gl2)
     _test_constant_names(gl2)
 
 
 def test_es2():
-    """ es2 backend should have all ES 2.0 names. No more, no less. """
+    """es2 backend should have all ES 2.0 names. No more, no less."""
     # Import. Install a dummy lib so that at least we can import es2.
     try:
         from vispy.gloo.gl import es2  # noqa
@@ -61,7 +62,7 @@ def test_es2():
 
 @requires_pyopengl()
 def test_pyopengl():
-    """ Pyopengl backend should have all ES 2.0 names. No more, no less. """
+    """Pyopengl backend should have all ES 2.0 names. No more, no less."""
     from vispy.gloo.gl import pyopengl2
     _test_function_names(pyopengl2)
     _test_constant_names(pyopengl2)
@@ -69,8 +70,7 @@ def test_pyopengl():
 
 @requires_pyopengl()
 def test_glplus():
-    """ Run glplus, check that mo names, set back, check exact set of names.
-    """
+    """Run glplus, check that mo names, set back, check exact set of names."""
     gl.use_gl('gl+')
     # Check that there are more names
     fnames = set([name for name in dir(gl) if name.startswith('gl')])
@@ -83,20 +83,19 @@ def test_glplus():
 
 
 def test_proxy():
-    """ GLProxy class should have all ES 2.0 names. No more, no less. """
+    """Glproxy class should have all ES 2.0 names. No more, no less."""
     _test_function_names(gl.proxy)
     _test_constant_names(gl._constants)
 
 
 def test_main():
-    """ Main gl namespace should have all ES 2.0 names. No more, no less. """
+    """Main gl namespace should have all ES 2.0 names. No more, no less."""
     _test_function_names(gl)
     _test_constant_names(gl)
 
 
 def _main():
-    """ For testing this test suite :)
-    """
+    """For testing this test suite :)"""
     test_main()
     test_proxy()
     test_destop()
@@ -234,6 +233,9 @@ GL_VERTEX_ATTRIB_ARRAY_NORMALIZED GL_VERTEX_ATTRIB_ARRAY_POINTER
 GL_VERTEX_ATTRIB_ARRAY_SIZE GL_VERTEX_ATTRIB_ARRAY_STRIDE
 GL_VERTEX_ATTRIB_ARRAY_TYPE GL_VERTEX_SHADER GL_VIEWPORT GL_ZERO
 """.replace('\n', ' ')
+
+# vispy_ext.h
+constant_names += "GL_MIN GL_MAX"
 
 function_names = [n.strip() for n in function_names.split(' ')]
 function_names = set([n for n in function_names if n])

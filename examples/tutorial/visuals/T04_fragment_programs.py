@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 """
@@ -40,7 +40,7 @@ void main() {
 class MyRectVisual(visuals.Visual):
     """
     """
-    
+
     def __init__(self):
         visuals.Visual.__init__(self, vertex_shader, fragment_shader)
         self.vbo = gloo.VertexBuffer(np.array([

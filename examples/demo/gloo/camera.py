@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # vispy: testskip
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 """Display a live webcam feed. Require OpenCV (Python 2 only).
@@ -69,10 +69,10 @@ class Canvas(app.Canvas):
         _, im = self.cap.read()
         self.program['texture'][...] = im
         self.program.draw('triangle_strip')
-        
+
     def on_timer(self, event):
         self.update()
-        
+
 c = Canvas()
 app.run()
 c.cap.release()

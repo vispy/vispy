@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division
@@ -9,7 +9,7 @@ from ..color import Color
 from .shaders import Function
 
 
-grid_color = """
+_GRID_COLOR = """
 vec4 grid_color(vec2 pos) {
     vec4 px_pos = $map_to_doc(vec4(pos, 0, 1));
     px_pos /= px_pos.w;
@@ -26,35 +26,35 @@ vec4 grid_color(vec2 pos) {
     // Pixel length along each axis, rounded to the nearest power of 10
     vec2 px = s * vec2(abs(dx.x) + abs(dy.x), abs(dx.y) + abs(dy.y));
     float log10 = log(10.0);
-    float sx = pow(10.0, floor(log(px.x) / log10)+1) * $scale.x;
-    float sy = pow(10.0, floor(log(px.y) / log10)+1) * $scale.y;
+    float sx = pow(10.0, floor(log(px.x) / log10) + 1.) * $scale.x;
+    float sy = pow(10.0, floor(log(px.y) / log10) + 1.) * $scale.y;
 
     float max_alpha = 0.6;
     float x_alpha = 0.0;
 
-    if (mod(local_pos.x, 1000 * sx) < px.x) {
-        x_alpha = clamp(1 * sx/px.x, 0, max_alpha);
+    if (mod(local_pos.x, 1000. * sx) < px.x) {
+        x_alpha = clamp(1. * sx/px.x, 0., max_alpha);
     }
-    else if (mod(local_pos.x, 100 * sx) < px.x) {
-        x_alpha = clamp(.1 * sx/px.x, 0, max_alpha);
+    else if (mod(local_pos.x, 100. * sx) < px.x) {
+        x_alpha = clamp(.1 * sx/px.x, 0., max_alpha);
     }
-    else if (mod(local_pos.x, 10 * sx) < px.x) {
-        x_alpha = clamp(0.01 * sx/px.x, 0, max_alpha);
+    else if (mod(local_pos.x, 10. * sx) < px.x) {
+        x_alpha = clamp(0.01 * sx/px.x, 0., max_alpha);
     }
 
     float y_alpha = 0.0;
-    if (mod(local_pos.y, 1000 * sy) < px.y) {
-        y_alpha = clamp(1 * sy/px.y, 0, max_alpha);
+    if (mod(local_pos.y, 1000. * sy) < px.y) {
+        y_alpha = clamp(1. * sy/px.y, 0., max_alpha);
     }
-    else if (mod(local_pos.y, 100 * sy) < px.y) {
-        y_alpha = clamp(.1 * sy/px.y, 0, max_alpha);
+    else if (mod(local_pos.y, 100. * sy) < px.y) {
+        y_alpha = clamp(.1 * sy/px.y, 0., max_alpha);
     }
-    else if (mod(local_pos.y, 10 * sy) < px.y) {
-        y_alpha = clamp(0.01 * sy/px.y, 0, max_alpha);
+    else if (mod(local_pos.y, 10. * sy) < px.y) {
+        y_alpha = clamp(0.01 * sy/px.y, 0., max_alpha);
     }
 
-    float alpha = (((log(max(x_alpha, y_alpha))/log(10.))+2) / 3);
-    if (alpha == 0) {
+    float alpha = (((log(max(x_alpha, y_alpha))/log(10.)) + 2.) / 3.);
+    if (alpha == 0.) {
         discard;
     }
     return vec4($color.rgb, $color.a * alpha);
@@ -63,7 +63,7 @@ vec4 grid_color(vec2 pos) {
 
 
 class GridLinesVisual(ImageVisual):
-    """ Displays regularly spaced grid lines in any coordinate system and at
+    """Displays regularly spaced grid lines in any coordinate system and at
     any scale.
 
     Parameters
@@ -74,10 +74,11 @@ class GridLinesVisual(ImageVisual):
         The base color for grid lines. The final color may have its alpha
         channel modified.
     """
+
     def __init__(self, scale=(1, 1), color='w'):
         # todo: PlaneVisual should support subdivide/impostor methods from
         # image and gridlines should inherit from plane instead.
-        self._grid_color_fn = Function(grid_color)
+        self._grid_color_fn = Function(_GRID_COLOR)
         self._grid_color_fn['color'] = Color(color).rgba
         self._grid_color_fn['scale'] = scale
         ImageVisual.__init__(self, method='impostor')
@@ -99,6 +100,6 @@ class GridLinesVisual(ImageVisual):
     def _prepare_draw(self, view):
         if self._need_vertex_update:
             self._build_vertex_data()
-            
+
         if view._need_method_update:
             self._update_method(view)

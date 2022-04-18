@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # vispy: testskip
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 # Author:   Per Rosengren
@@ -104,8 +104,8 @@ class Canvas(app.Canvas):
                 x.astype('f4'),
                 y.astype('f4')
             ] + uv
-        ).view(dtype=[('position', 'f4', 2),
-                      ('texcoord', 'f4', 2 if v is not None else 1),
+        ).view(dtype=[('position', 'f4', (2,)),
+                      ('texcoord', 'f4', (2 if v is not None else 1,)),
                       ])
         self.vbo = gloo.VertexBuffer(data)
         self.index = gloo.IndexBuffer(edges)
@@ -161,7 +161,7 @@ def create_colormap2d_hsv(size=512):
 
 def create_colormap2d_4dirs(size=512):
     rgb = np.ones((size, size, 3), dtype=np.float32)
-    hs = size / 2
+    hs = size // 2
     u, v = np.meshgrid(np.linspace(1, 0, hs), np.linspace(1, 0, hs))
     rgb[:hs, :hs, 0] = 1.
     rgb[:hs, :hs, 1] = 1. - v + u / 2.
@@ -184,7 +184,7 @@ def create_colormap2d_4dirs(size=512):
 
 def create_colormap1d_hot(size=512):
     rgb = np.ones((size, 3), dtype=np.float32)
-    hs = size / 2
+    hs = size // 2
     u = np.linspace(1, 0, hs)
     rgb[:hs, 0] = 1 - u
     rgb[:hs, 1] = 1 - u

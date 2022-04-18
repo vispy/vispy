@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-""" PyQt4 proxy backend for the qt backend. 
-"""
+"""PyQt4 proxy backend for the qt backend."""
 
 import sys
 from .. import backends
@@ -13,12 +12,6 @@ from ... import config
 USE_EGL = config['gl_backend'].lower().startswith('es')
 
 try:
-    # Make sure no conflicting libraries have been imported.
-    for lib in ['PySide', 'PyQt5']:
-        lib += '.QtCore'
-        if lib in sys.modules:
-            raise RuntimeError("Refusing to import PyQt4 because %s is "
-                               "already imported." % lib)
     # Try importing (QtOpenGL first to fail without import QtCore)
     if not USE_EGL:
         from PyQt4 import QtOpenGL  # noqa
@@ -39,5 +32,5 @@ else:
         from . import _qt  # noqa
         from ._qt import *  # noqa
     else:
-        logger.info('%s already imported, cannot switch to %s'
-                    % (backends.qt_lib, 'pyqt4'))
+        logger.warning('%s already imported, cannot switch to %s'
+                       % (backends.qt_lib, 'pyqt4'))

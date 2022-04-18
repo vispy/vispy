@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-"""Data downloading and reading functions
-"""
+"""Data downloading and reading functions"""
 
 from math import log
 import os
@@ -12,8 +11,8 @@ import sys
 import shutil
 import time
 
-from ..ext.six.moves import urllib
-from ..ext.six import string_types
+import urllib.request
+
 from ..util.config import config
 
 
@@ -43,7 +42,7 @@ def load_data_file(fname, directory=None, force_download=False):
     fname : str
         The path to the file on the local system.
     """
-    _url_root = 'http://github.com/vispy/demo-data/raw/master/'
+    _url_root = 'https://raw.githubusercontent.com/vispy/demo-data/main/'
     url = _url_root + fname
     if directory is None:
         directory = config['data_path']
@@ -55,7 +54,7 @@ def load_data_file(fname, directory=None, force_download=False):
     if op.isfile(fname):
         if not force_download:  # we're done
             return fname
-        if isinstance(force_download, string_types):
+        if isinstance(force_download, str):
             ntime = time.strptime(force_download, '%Y-%m-%d')
             ftime = time.gmtime(op.getctime(fname))
             if ftime >= ntime:
@@ -96,6 +95,7 @@ class ProgressBar(object):
         increment the progress bar very often.  This provides the user with
         feedback that the progress has not stalled.
     """
+
     spinner_symbols = ['|', '/', '-', '\\']
     template = '\r[{0}{1}] {2:.05f} {3} {4}   '
 

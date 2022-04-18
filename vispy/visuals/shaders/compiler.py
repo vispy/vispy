@@ -1,11 +1,8 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division
-
-import re
-
 from ... import gloo
 
 
@@ -33,6 +30,7 @@ class Compiler(object):
         name = compiler[obj]
 
     """
+
     def __init__(self, namespace=None, **shaders):
         # cache of compilation results for each function and variable
         if namespace is None:
@@ -41,13 +39,11 @@ class Compiler(object):
         self.shaders = shaders
 
     def __getitem__(self, item):
-        """
-        Return the name of the specified object, if it has been assigned one.
-        """
+        """Return the name of the specified object, if it has been assigned one."""
         return self._object_names[item]
 
     def compile(self, pretty=True):
-        """ Compile all code and return a dict {name: code} where the keys
+        """Compile all code and return a dict {name: code} where the keys
         are determined by the keyword arguments passed to __init__().
 
         Parameters
@@ -57,7 +53,6 @@ class Compiler(object):
             GLSL that is more readable.
             If False, then the output is mostly unreadable GLSL, but is about
             10x faster to compile.
-
         """
         # Authoritative mapping of {obj: name}
         self._object_names = {}
@@ -98,19 +93,14 @@ class Compiler(object):
 
         for shader_name, shader in self.shaders.items():
             code = []
+            version = shader.version_pragma
             for dep in self._shader_deps[shader_name]:
-                dep_code = dep.definition(obj_names)
+                dep_code = dep.definition(obj_names, version, shader)
                 if dep_code is not None:
-                    # strip out version pragma if present;
-                    regex = r'#version (\d+)'
-                    m = re.search(regex, dep_code)
-                    if m is not None:
-                        # check requested version
-                        if m.group(1) != '120':
-                            raise RuntimeError("Currently only GLSL #version "
-                                               "120 is supported.")
-                        dep_code = re.sub(regex, '', dep_code)
                     code.append(dep_code)
+
+            if version is not None:
+                code.insert(0, '#version %s %s' % version)
 
             compiled[shader_name] = '\n'.join(code)
 
@@ -118,7 +108,7 @@ class Compiler(object):
         return compiled
 
     def _rename_objects_fast(self):
-        """ Rename all objects quickly to guaranteed-unique names using the
+        """Rename all objects quickly to guaranteed-unique names using the
         id() of each object.
 
         This produces mostly unreadable GLSL, but is about 10x faster to
@@ -133,7 +123,7 @@ class Compiler(object):
                 self._object_names[dep] = name
 
     def _rename_objects_pretty(self):
-        """ Rename all objects like "name_1" to avoid conflicts. Objects are
+        """Rename all objects like "name_1" to avoid conflicts. Objects are
         only renamed if necessary.
 
         This method produces more readable GLSL, but is rather slow.
@@ -181,7 +171,7 @@ class Compiler(object):
                         break
 
     def _is_global(self, obj):
-        """ Return True if *obj* should be declared in the global namespace.
+        """Return True if *obj* should be declared in the global namespace.
 
         Some objects need to be declared only in per-shader namespaces:
         functions, static variables, and const variables may all be given
@@ -194,8 +184,7 @@ class Compiler(object):
         return isinstance(obj, Variable)
 
     def _name_available(self, obj, name, shaders):
-        """ Return True if *name* is available for *obj* in *shaders*.
-        """
+        """Return True if *name* is available for *obj* in *shaders*."""
         if name in self._global_ns:
             return False
         shaders = self.shaders if self._is_global(obj) else shaders
@@ -205,8 +194,7 @@ class Compiler(object):
         return True
 
     def _assign_name(self, obj, name, shaders):
-        """ Assign *name* to *obj* in *shaders*.
-        """
+        """Assign *name* to *obj* in *shaders*."""
         if self._is_global(obj):
             assert name not in self._global_ns
             self._global_ns[name] = obj

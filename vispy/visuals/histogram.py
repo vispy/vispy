@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2015, Vispy Development Team. All Rights Reserved.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
 import numpy as np
 
 from .mesh import MeshVisual
-from ..ext.six import string_types
 
 
 class HistogramVisual(MeshVisual):
@@ -24,6 +23,7 @@ class HistogramVisual(MeshVisual):
     orientation : {'h', 'v'}
         Orientation of the histogram.
     """
+
     def __init__(self, data, bins=10, color='w', orientation='h'):
         #   4-5
         #   | |
@@ -33,7 +33,7 @@ class HistogramVisual(MeshVisual):
         data = np.asarray(data)
         if data.ndim != 1:
             raise ValueError('Only 1D data currently supported')
-        if not isinstance(orientation, string_types) or \
+        if not isinstance(orientation, str) or \
                 orientation not in ('h', 'v'):
             raise ValueError('orientation must be "h" or "v", not %s'
                              % (orientation,))

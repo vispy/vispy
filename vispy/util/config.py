@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015, Vispy Development Team.
+# Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-"""Vispy configuration functions
-"""
+"""Vispy configuration functions."""
 
+import io
 import os
 from os import path as op
+import inspect
 import json
 import sys
 import platform
@@ -16,11 +17,12 @@ import tempfile
 import atexit
 from shutil import rmtree
 
+import numpy as np
+
 from .event import EmitterGroup, EventEmitter, Event
 from .logs import logger, set_log_level, use_log_level
-from ..ext.six import string_types, file_types
 
-file_types = list(file_types)
+file_types = [io.TextIOWrapper, io.BufferedRandom]
 try:
     file_types += [tempfile._TemporaryFileWrapper]  # Py3k Windows this happens
 except Exception:
@@ -33,8 +35,7 @@ _allowed_config_keys = None
 
 
 def _init():
-    """ Create global Config object, parse command flags
-    """
+    """Create global Config object, parse command flags."""
     global config, _data_path, _allowed_config_keys
 
     app_dir = _get_vispy_app_dir()
@@ -46,18 +47,18 @@ def _init():
 
     # All allowed config keys and the types they may have
     _allowed_config_keys = {
-        'data_path': string_types,
-        'default_backend': string_types,
-        'gl_backend': string_types,
+        'data_path': (str,),
+        'default_backend': (str,),
+        'gl_backend': (str,),
         'gl_debug': (bool,),
-        'glir_file': string_types+file_types,
+        'glir_file': (str,) + file_types,
         'include_path': list,
-        'logging_level': string_types,
-        'qt_lib': string_types,
+        'logging_level': (str,),
+        'qt_lib': (str,),
         'dpi': (int, type(None)),
-        'profile': string_types + (type(None),),
+        'profile': (str, type(None),),
         'audit_tests': (bool,),
-        'test_data_path': string_types + (type(None),),
+        'test_data_path': (str, type(None),),
     }
 
     # Default values for all config options
@@ -68,7 +69,7 @@ def _init():
         'gl_debug': False,
         'glir_file': '',
         'include_path': [],
-        'logging_level': 'info',
+        'logging_level': 'warning',
         'qt_lib': 'any',
         'dpi': None,
         'profile': None,
@@ -82,7 +83,7 @@ def _init():
         config.update(**_load_config())
     except Exception as err:
         raise Exception('Error while reading vispy config file "%s":\n  %s' %
-                        (_get_config_fname(), err.message))
+                        (_get_config_fname(), str(err)))
     set_log_level(config['logging_level'])
 
     _parse_command_line_arguments()
@@ -94,7 +95,7 @@ def _init():
 VISPY_HELP = """
 VisPy command line arguments:
 
-  --vispy-backend=(qt|pyqt4|pyqt5|pyside|glfw|pyglet|sdl2|wx)
+  --vispy-backend=(qt|pyqt4|pyqt5|pyqt6|pyside|pyside2|pyside6|glfw|pyglet|sdl2|wx)
     Selects the backend system for VisPy to use. This will override the default
     backend selection in your configuration file.
 
@@ -118,7 +119,7 @@ VisPy command line arguments:
     Export glir commands to specified file.
 
   --vispy-profile=locations
-    Measure performance at specific code locations and display results. 
+    Measure performance at specific code locations and display results.
     *locations* may be "all" or a comma-separated list of method names like
     "SceneCanvas.draw_visual".
 
@@ -136,7 +137,7 @@ VisPy command line arguments:
 
 
 def _parse_command_line_arguments():
-    """ Transform vispy specific command line args to vispy config.
+    """Transform vispy specific command line args to vispy config.
     Put into a function so that any variables dont leak in the vispy namespace.
     """
     global config
@@ -225,8 +226,7 @@ def _get_vispy_app_dir():
 
 
 class ConfigEvent(Event):
-
-    """ Event indicating a configuration change.
+    """Event indicating a configuration change.
 
     This class has a 'changes' attribute which is a dict of all name:value
     pairs that have changed in the configuration.
@@ -238,14 +238,14 @@ class ConfigEvent(Event):
 
 
 class Config(object):
-
-    """ Container for global settings used application-wide in vispy.
+    """Container for global settings used application-wide in vispy.
 
     Events:
-    -------
-    Config.events.changed - Emits ConfigEvent whenever the configuration
-    changes.
+
+    - Config.events.changed - Emits ConfigEvent whenever the configuration changes.
+
     """
+
     def __init__(self, **kwargs):
         self.events = EmitterGroup(source=self)
         self.events['changed'] = EventEmitter(
@@ -368,7 +368,7 @@ def set_data_dir(directory=None, create=False, save=False):
 
 
 def _enable_profiling():
-    """ Start profiling and register callback to print stats when the program
+    """Start profiling and register callback to print stats when the program
     exits.
     """
     import cProfile
@@ -405,18 +405,18 @@ def sys_info(fname=None, overwrite=False):
     if fname is not None and op.isfile(fname) and not overwrite:
         raise IOError('file exists, use overwrite=True to overwrite')
 
-    out = ''
+    out = 'Platform: %s\n' % platform.platform()
+    out += 'Python:   %s\n' % str(sys.version).replace('\n', ' ')
+    out += 'NumPy:    %s\n' % (np.__version__,)
     try:
         # Nest all imports here to avoid any circular imports
         from ..app import use_app, Canvas
         from ..app.backends import BACKEND_NAMES
         from ..gloo import gl
-        from ..testing import has_backend
+        from .check_environment import has_backend
         # get default app
         with use_log_level('warning'):
             app = use_app(call_reuse=False)  # suppress messages
-        out += 'Platform: %s\n' % platform.platform()
-        out += 'Python:   %s\n' % str(sys.version).replace('\n', ' ')
         out += 'Backend:  %s\n' % app.backend_name
         for backend in BACKEND_NAMES:
             if backend.startswith('ipynb_'):
@@ -434,7 +434,7 @@ def sys_info(fname=None, overwrite=False):
         out += 'Extensions: %r\n' % (gl.glGetParameter(gl.GL_EXTENSIONS),)
         canvas.close()
     except Exception:  # don't stop printing info
-        out += '\nInfo-gathering error:\n%s' % traceback.format_exc()
+        out += 'App info-gathering error:\n%s' % traceback.format_exc()
         pass
     if fname is not None:
         with open(fname, 'w') as fid:
@@ -451,6 +451,7 @@ class _TempDir(str):
     function may be cleaned up before this object, so we use the atexit module
     instead.
     """
+
     def __new__(self):
         new = str.__new__(self, tempfile.mkdtemp())
         return new
@@ -465,3 +466,25 @@ class _TempDir(str):
 
 # initialize config options
 _init()
+
+
+if hasattr(inspect, 'signature'):  # py35
+    def _get_args(function, varargs=False):
+        params = inspect.signature(function).parameters
+        args = [key for key, param in params.items()
+                if param.kind not in (param.VAR_POSITIONAL, param.VAR_KEYWORD)]
+        if varargs:
+            varargs = [param.name for param in params.values()
+                       if param.kind == param.VAR_POSITIONAL]
+            if len(varargs) == 0:
+                varargs = None
+            return args, varargs
+        else:
+            return args
+else:
+    def _get_args(function, varargs=False):
+        out = inspect.getargspec(function)  # args, varargs, keywords, defaults
+        if varargs:
+            return out[:2]
+        else:
+            return out[0]
