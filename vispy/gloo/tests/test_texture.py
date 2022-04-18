@@ -642,7 +642,8 @@ def _test_texture_opengl_formats(Texture, baseshape):
             (1, 'red'),
             (2, 'rg'),
             (3, 'rgb'),
-            (4, 'rgba')
+            (4, 'rgba'),
+            (1, 'depth_component'),
         ]
     )
 
