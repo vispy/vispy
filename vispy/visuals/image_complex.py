@@ -50,22 +50,40 @@ class ComplexImageVisual(ImageVisual):
         if kwargs.get("clim", "auto") == "auto" and self._data_is_complex:
             kwargs["clim"] = self._calc_complex_clim(data)
 
-        kwargs["texture_format"] = "auto"
+        kwargs["texture_format"] = "r32f" if self._data_is_complex else "r32f"
+        if self._data_is_complex:
+            data = self._convert_complex_to_float_view(data)
         super().__init__(data=data, **kwargs)
+
+    def _init_texture(self, data, texture_format, **texture_kwargs):
+        texture_kwargs = {}
+        if self._data_is_complex:
+            texture_kwargs["format"] = "rg"
+        return super()._init_texture(data, texture_format, **texture_kwargs)
 
     def set_data(self, image):
         data = np.asarray(image)
-        self._data_is_complex = np.iscomplexobj(data)
-        if self._data_is_complex:
+        if np.iscomplexobj(data):
             #  Turn the texture into an rg32f texture
             # where r = 'real' and g = 'imag'
+            self._data_is_complex = True
+            # FUTURE: Add formal way of defining texture format from set_data
             self._texture._format = "rg"
-            # turn complex128 into complex64 if needed
-            data = data.astype(np.complex64, copy=False)
-            data = data.view(dtype=np.float32).reshape((data.shape + (2, )))
+            data = self._convert_complex_to_float_view(data)
+        elif data.ndim == 3 and data.shape[-1] == 2:
+            # data was complex but was already converted to 32-bit float
+            # should really only occur from __init__
+            self._data_is_complex = True
         else:
             self._texture._format = None
         return super().set_data(data)
+
+    @staticmethod
+    def _convert_complex_to_float_view(complex_arr):
+        # turn complex128 into complex64 if needed
+        complex64_arr = complex_arr.astype(np.complex64, copy=False)
+        float_view_arr = complex64_arr.view(dtype=np.float32).reshape((complex64_arr.shape + (2, )))
+        return float_view_arr
 
     @property
     def complex_mode(self):

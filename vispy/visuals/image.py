@@ -308,7 +308,7 @@ class ImageVisual(Visual):
         interpolation_fun['bilinear'] = hardware_lookup
         return interpolation_names, interpolation_fun
 
-    def _init_texture(self, data, texture_format):
+    def _init_texture(self, data, texture_format, **texture_kwargs):
         if self._interpolation == 'bilinear':
             texture_interpolation = 'linear'
         else:
@@ -316,11 +316,15 @@ class ImageVisual(Visual):
 
         if texture_format is None:
             tex = CPUScaledTexture2D(
-                data, interpolation=texture_interpolation)
+                data, interpolation=texture_interpolation,
+                **texture_kwargs
+            )
         else:
             tex = GPUScaledTexture2D(
                 data, internalformat=texture_format,
-                interpolation=texture_interpolation)
+                interpolation=texture_interpolation,
+                **texture_kwargs
+            )
         return tex
 
     def set_data(self, image):
