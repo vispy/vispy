@@ -10,8 +10,8 @@ Complex image data
 
 Simple use of SceneCanvas to display an image consisting of complex numbers.
 
-Key bindings can be used to switch the view between the real, imaginary, phase,
-or magnitude of the data.
+The left and right arrow keys can be used to cycle the view between the real,
+imaginary, phase, or magnitude of the data.
 
 """
 import sys
