@@ -129,37 +129,35 @@ _NULL_COLOR_TRANSFORM = 'vec4 pass(vec4 color) { return color; }'
 
 _C2L_RED = 'float cmap(vec4 color) { return color.r; }'
 
-_FILTER_FUNCS = {
-    'custom': """
-        vec4 texture_lookup(vec2 texcoord) {
-            // based on https://gist.github.com/kingbedjed/373c8811efcf1b3a155d29a13c1e5b61
-            vec2 tex_pixel = 1 / $shape;
-            vec2 kernel_pixel = 1 / $kernel_shape;
-            vec2 sampling_corner = texcoord - ($kernel_shape / 2 * tex_pixel);
+_CUSTOM_FILTER = """
+vec4 texture_lookup(vec2 texcoord) {
+    // based on https://gist.github.com/kingbedjed/373c8811efcf1b3a155d29a13c1e5b61
+    vec2 tex_pixel = 1 / $shape;
+    vec2 kernel_pixel = 1 / $kernel_shape;
+    vec2 sampling_corner = texcoord - ($kernel_shape / 2 * tex_pixel);
 
-            // loop over kernel pixels
-            vec2 kernel_pos, tex_pos;
-            vec4 color = vec4(0);
-            float weight;
-            float weight_sum = 0;
+    // loop over kernel pixels
+    vec2 kernel_pos, tex_pos;
+    vec4 color = vec4(0);
+    float weight;
+    float weight_sum = 0;
 
-            // offset 0.5 to sample center of pixels
-            for (float i = 0.5; i < $kernel_shape.x; i++) {
-                for (float j = 0.5; j < $kernel_shape.y; j++) {
-                    kernel_pos = vec2(i, j) * kernel_pixel;
-                    tex_pos = sampling_corner + vec2(i, j) * tex_pixel;
-                    weight = texture2D($kernel, kernel_pos).g;
-                    weight_sum += weight;
-                    // make sure to clamp or we sample outside
-                    // TODO: allow other edge effects, like mirror or wrap
-                    color += texture2D($texture, clamp(tex_pos, 0, 1)) * weight;
-                }
-            }
-
-            return color / weight_sum;
+    // offset 0.5 to sample center of pixels
+    for (float i = 0.5; i < $kernel_shape.x; i++) {
+        for (float j = 0.5; j < $kernel_shape.y; j++) {
+            kernel_pos = vec2(i, j) * kernel_pixel;
+            tex_pos = sampling_corner + vec2(i, j) * tex_pixel;
+            weight = texture2D($kernel, kernel_pos).g;
+            weight_sum += weight;
+            // make sure to clamp or we sample outside
+            // TODO: allow other edge effects, like mirror or wrap
+            color += texture2D($texture, clamp(tex_pos, 0, 1)) * weight;
         }
-    """
+    }
+
+    return color / weight_sum;
 }
+"""
 
 
 class ImageVisual(Visual):
@@ -252,6 +250,7 @@ class ImageVisual(Visual):
 
     _func_templates = {
         'texture_lookup_interpolated': _INTERPOLATION_TEMPLATE,
+        'texture_lookup_custom': _CUSTOM_FILTER,
         'texture_lookup': _TEXTURE_LOOKUP,
         'clim_float': _APPLY_CLIM_FLOAT,
         'clim': _APPLY_CLIM,
@@ -333,10 +332,9 @@ class ImageVisual(Visual):
                for n in interpolation_names]
         interpolation_names = [n.lower() for n in interpolation_names]
 
-        # add filters
-        for name, func in _FILTER_FUNCS.items():
-            fun.append(Function(func))
-            interpolation_names.append(name)
+        # add custom filter
+        fun.append(Function(self._func_templates['texture_lookup_custom']))
+        interpolation_names.append('custom')
 
         interpolation_fun = dict(zip(interpolation_names, fun))
         interpolation_names = tuple(sorted(interpolation_names))
