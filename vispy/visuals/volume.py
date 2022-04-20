@@ -51,30 +51,6 @@ import numpy as np
 # todo: what to do about lighting? ambi/diffuse/spec/shinynes on each visual?
 
 
-INTERP = """
-#include "misc/spatial-filters.frag"
-
-vec4 filter3D_radius1(sampler3D texture, sampler3D kernel, float index, vec3 uv, vec3 pixel) {
-    vec3 texel = uv/pixel - vec3(0.5, 0.5, 0.5) ;
-    vec3 f = fract(texel);
-    texel = (texel-fract(texel) + vec3(0.001, 0.001, 0.001)) * pixel;
-    vec4 t0 = filter1D_radius1(kernel, index, f.x,
-        texture3D( texture, texel + vec3(0, 0, 0) * pixel),
-        texture3D( texture, texel + vec3(1, 0, 0) * pixel));
-    vec4 t1 = filter1D_radius1(kernel, index, f.x,
-        texture3D( texture, texel + vec3(0, 1, 0) * pixel),
-        texture3D( texture, texel + vec3(1, 1, 0) * pixel));
-    vec4 t2 = filter1D_radius1(kernel, index, f.x,
-        texture3D( texture, texel + vec3(0, 1, 1) * pixel),
-        texture3D( texture, texel + vec3(1, 1, 1) * pixel));
-    return filter1D_radius1(kernel, index, f.y, t0, t1, t2);
-}
-
-vec4 texture_lookup(sampler3D tex, vec3 texcoord) {
-    return filter3D_radius1(tex, u_kernel, 0.281250, texcoord, 1);
-}
-"""
-
 _VERTEX_SHADER = """
 attribute vec3 a_position;
 uniform vec3 u_shape;
@@ -166,16 +142,16 @@ vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
 
     // calculate normal vector from gradient
     vec3 N; // normal
-    color1 = $sample( u_volumetex, loc+vec3(-step[0],0.0,0.0) );
-    color2 = $sample( u_volumetex, loc+vec3(step[0],0.0,0.0) );
+    color1 = $get_data(loc+vec3(-step[0],0.0,0.0) );
+    color2 = $get_data(loc+vec3(step[0],0.0,0.0) );
     N[0] = colorToVal(color1) - colorToVal(color2);
     betterColor = max(max(color1, color2),betterColor);
-    color1 = $sample( u_volumetex, loc+vec3(0.0,-step[1],0.0) );
-    color2 = $sample( u_volumetex, loc+vec3(0.0,step[1],0.0) );
+    color1 = $get_data(loc+vec3(0.0,-step[1],0.0) );
+    color2 = $get_data(loc+vec3(0.0,step[1],0.0) );
     N[1] = colorToVal(color1) - colorToVal(color2);
     betterColor = max(max(color1, color2),betterColor);
-    color1 = $sample( u_volumetex, loc+vec3(0.0,0.0,-step[2]) );
-    color2 = $sample( u_volumetex, loc+vec3(0.0,0.0,step[2]) );
+    color1 = $get_data(loc+vec3(0.0,0.0,-step[2]) );
+    color2 = $get_data(loc+vec3(0.0,0.0,step[2]) );
     N[2] = colorToVal(color1) - colorToVal(color2);
     betterColor = max(max(color1, color2),betterColor);
     float gm = length(N); // gradient magnitude
@@ -292,7 +268,7 @@ void main() {
             if (distance_from_clip >= 0)
             {
                 // Get sample color
-                vec4 color = $sample(u_volumetex, loc);
+                vec4 color = $get_data(loc);
                 float val = color.r;
                 texture_sampled = true;
 
@@ -407,7 +383,7 @@ _MIP_SNIPPETS = dict(
 
             vec3 small_step = step * 0.1;
             for (int i=0; i<10; i++) {
-                float val = $sample(u_volumetex, loc).r;
+                float val = $get_data(loc).r;
                 if ( val > maxval) {
                     maxval = val;
                     max_loc_tex = start_loc_refine + (small_step * i);
@@ -474,7 +450,7 @@ _MINIP_SNIPPETS = dict(
 
             vec3 small_step = step * 0.1;
             for (int i=0; i<10; i++) {
-                float val = $sample(u_volumetex, loc).r;
+                float val = $get_data(loc).r;
                 if ( val < minval) {
                     minval = val;
                     min_loc_tex = start_loc_refine + (small_step * i);
@@ -545,7 +521,7 @@ _ISO_SNIPPETS = dict(
             // Take the last interval in smaller steps
             vec3 iloc = loc - step;
             for (int i=0; i<10; i++) {
-                color = $sample(u_volumetex, iloc);
+                color = $get_data(iloc);
                 if (color.r > u_threshold) {
                     color = calculateColor(color, iloc, dstep);
                     gl_FragColor = applyColormap(color.r);
@@ -585,6 +561,19 @@ _AVG_SNIPPETS = dict(
         gl_FragColor = applyColormap(meanval);
         """,
 )
+
+_INTERPOLATION_TEMPLATE = """
+    #include "misc/spatial-filters.frag"
+    vec4 texture_lookup_filtered(vec3 texcoord) {
+        // no need to discard out of bounds, already checked during raycasting
+        return %s($texture, $shape, texcoord);
+    }"""
+
+_TEXTURE_LOOKUP = """
+    vec4 texture_lookup(vec3 texcoord) {
+        // no need to discard out of bounds, already checked during raycasting
+        return texture3D($texture, texcoord);
+    }"""
 
 
 class VolumeVisual(Visual):
@@ -666,8 +655,6 @@ class VolumeVisual(Visual):
 
     """
 
-    _interpolation_methods = ['linear', 'nearest']
-
     _rendering_methods = {
         'mip': _MIP_SNIPPETS,
         'minip': _MINIP_SNIPPETS,
@@ -688,9 +675,14 @@ class VolumeVisual(Visual):
         'fragment': _FRAGMENT_SHADER,
     }
 
+    _func_templates = {
+        'texture_lookup_interpolated': _INTERPOLATION_TEMPLATE,
+        'texture_lookup': _TEXTURE_LOOKUP,
+    }
+
     def __init__(self, vol, clim="auto", method='mip', threshold=None,
                  attenuation=1.0, relative_step_size=0.8, cmap='grays',
-                 gamma=1.0, interpolation='linear', texture_format=None,
+                 gamma=1.0, interpolation='bilinear', texture_format=None,
                  raycasting_mode='volume', plane_position=None,
                  plane_normal=None, plane_thickness=1.0, clipping_planes=None,
                  clipping_planes_coord_system='scene', mip_cutoff=None,
@@ -713,7 +705,19 @@ class VolumeVisual(Visual):
         # Create gloo objects
         self._vertices = VertexBuffer()
 
+        kernel, interpolation_methods = load_spatial_filters()
+        self._kerneltex = Texture2D(kernel, interpolation='nearest')
+        interpolation_methods, interpolation_fun = self._init_interpolation(
+            interpolation_methods)
+        self._interpolation_methods = interpolation_methods
+        self._interpolation_fun = interpolation_fun
         self._interpolation = interpolation
+        if self._interpolation not in self._interpolation_methods:
+            raise ValueError("interpolation must be one of %s" %
+                             ', '.join(self._interpolation_methods))
+        self._data_lookup_fn = None
+        self._need_interpolation_update = True
+
         self._texture = self._create_texture(texture_format, vol)
         # used to store current data for later CPU-side scaling if
         # texture_format is None
@@ -759,17 +763,39 @@ class VolumeVisual(Visual):
 
         self.freeze()
 
+    def _init_interpolation(self, interpolation_methods):
+        # create interpolation shader functions for available
+        # interpolations
+        fun = [Function(self._func_templates['texture_lookup_interpolated'] % (n + '3D'))
+               for n in interpolation_methods]
+        interpolation_methods = [n.lower() for n in interpolation_methods]
+
+        interpolation_fun = dict(zip(interpolation_methods, fun))
+        interpolation_methods = tuple(sorted(interpolation_methods))
+
+        # overwrite "nearest" and "bilinear" spatial-filters
+        # with  "hardware" interpolation _data_lookup_fn
+        hardware_lookup = Function(self._func_templates['texture_lookup'])
+        interpolation_fun['nearest'] = hardware_lookup
+        interpolation_fun['bilinear'] = hardware_lookup
+        return interpolation_methods, interpolation_fun
+
     def _create_texture(self, texture_format, data):
         if texture_format is not None:
             tex_cls = GPUScaledTextured3D
         else:
             tex_cls = CPUScaledTexture3D
 
+        if self._interpolation == 'bilinear':
+            texture_interpolation = 'linear'
+        else:
+            texture_interpolation = 'nearest'
+
         # clamp_to_edge means any texture coordinates outside of 0-1 should be
         # clamped to 0 and 1.
         # NOTE: This doesn't actually set the data in the texture. Only
         # creates a placeholder texture that will be resized later on.
-        return tex_cls(data, interpolation=self._interpolation,
+        return tex_cls(data, interpolation=texture_interpolation,
                        internalformat=texture_format,
                        format='luminance',
                        wrapping='clamp_to_edge')
@@ -820,10 +846,6 @@ class VolumeVisual(Visual):
             self._vol_shape = shape
             self._need_vertex_update = True
         self._vol_shape = shape
-
-    @property
-    def interpolation_methods(self):
-        return self._interpolation_methods
 
     @property
     def rendering_methods(self):
@@ -882,29 +904,52 @@ class VolumeVisual(Visual):
         self.update()
 
     @property
+    def interpolation_methods(self):
+        return self._interpolation_methods
+
+    @property
     def interpolation(self):
-        """The interpolation method to use
-
-        Current options are:
-
-            * linear: this method is appropriate for most volumes as it creates
-              nice looking visuals.
-            * nearest: this method is appropriate for volumes with discrete
-              data where additional interpolation does not make sense.
-        """
+        """Get interpolation algorithm name."""
         return self._interpolation
 
     @interpolation.setter
-    def interpolation(self, interp):
-        if interp not in self._interpolation_methods:
-            raise ValueError(
-                "interpolation must be one of %s"
-                % ', '.join(self._interpolation_methods)
-            )
-        if self._interpolation != interp:
-            self._interpolation = interp
-            self._texture.interpolation = self._interpolation
+    def interpolation(self, i):
+        if i not in self._interpolation_methods:
+            raise ValueError("interpolation must be one of %s" %
+                             ', '.join(self._interpolation_methods))
+        if self._interpolation != i:
+            self._interpolation = i
+            self._need_interpolation_update = True
             self.update()
+
+    # The interpolation code could be transferred to a dedicated filter
+    # function in visuals/filters as discussed in #1051
+    def _build_interpolation(self):
+        """Rebuild the _data_lookup_fn for different interpolations."""
+        interpolation = self._interpolation
+        self._data_lookup_fn = self._interpolation_fun[interpolation]
+        try:
+            self.shared_program.frag['get_data'] = self._data_lookup_fn
+        except Exception as e:
+            print(e)
+
+        # only 'bilinear' uses 'linear' texture interpolation
+        if interpolation == 'bilinear':
+            texture_interpolation = 'linear'
+        else:
+            # 'nearest' (and also 'bilinear') doesn't use spatial_filters.frag
+            # so u_kernel and shape setting is skipped
+            texture_interpolation = 'nearest'
+            if interpolation != 'nearest':
+                self.shared_program['u_kernel'] = self._kerneltex
+                self._data_lookup_fn['shape'] = self._last_data.shape[:3][::-1]
+
+        if self._texture.interpolation != texture_interpolation:
+            self._texture.interpolation = texture_interpolation
+
+        self._data_lookup_fn['texture'] = self._texture
+
+        self._need_interpolation_update = False
 
     @staticmethod
     @lru_cache(maxsize=10)
@@ -1016,22 +1061,19 @@ class VolumeVisual(Visual):
                              (known_methods, method))
         self._method = method
 
-        # $sample needs to be unset and re-set, since it's present inside the snippets.
+        # $get_data needs to be unset and re-set, since it's present inside the snippets.
         #       Program should probably be able to do this automatically
-        self.shared_program.frag['sample'] = None
+        self.shared_program.frag['get_data'] = None
         self.shared_program.frag['raycasting_setup'] = self._raycasting_setup_snippet
         self.shared_program.frag['before_loop'] = self._before_loop_snippet
         self.shared_program.frag['in_loop'] = self._in_loop_snippet
         self.shared_program.frag['after_loop'] = self._after_loop_snippet
         self.shared_program.frag['sampler_type'] = self._texture.glsl_sampler_type
-        sample = Function(INTERP)
-        kernel, _ = load_spatial_filters()
-        self.shared_program.frag['sample'] = sample
-        self.shared_program['u_kernel'] = Texture2D(kernel, interpolation='nearest')
         self.shared_program.frag['cmap'] = Function(self._cmap.glsl_map)
         self.shared_program['texture2D_LUT'] = self.cmap.texture_lut()
         self.shared_program['u_mip_cutoff'] = self._mip_cutoff
         self.shared_program['u_minip_cutoff'] = self._minip_cutoff
+        self._need_interpolation_update = True
         self.update()
 
     @property
@@ -1257,3 +1299,6 @@ class VolumeVisual(Visual):
     def _prepare_draw(self, view):
         if self._need_vertex_update:
             self._create_vertex_data()
+
+        if self._need_interpolation_update:
+            self._build_interpolation()
