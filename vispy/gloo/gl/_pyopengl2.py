@@ -1,5 +1,10 @@
-"""THIS CODE IS AUTO-GENERATED. DO NOT EDIT.
-Proxy API for GL ES 2.0 subset, via the PyOpenGL library."""
+"""GL definitions converted to Python by codegen/createglapi.py.
+
+THIS CODE IS AUTO-GENERATED. DO NOT EDIT.
+
+Proxy API for GL ES 2.0 subset, via the PyOpenGL library.
+
+"""
 
 import ctypes
 from OpenGL import GL
@@ -34,24 +39,24 @@ def glCompressedTexImage2D(target, level, internalformat, width, height, border,
     size = data.size
     GL.glCompressedTexImage2D(target, level, internalformat, width, height, border, size, data)
 
-    
+
 def glCompressedTexSubImage2D(target, level, xoffset, yoffset, width, height, format, data):
     size = data.size
     GL.glCompressedTexSubImage2D(target, level, xoffset, yoffset, width, height, format, size, data)
 
-    
+
 def glDeleteBuffer(buffer):
     GL.glDeleteBuffers(1, [buffer])
 
-    
+
 def glDeleteFramebuffer(framebuffer):
     FBO.glDeleteFramebuffers(1, [framebuffer])
 
-    
+
 def glDeleteRenderbuffer(renderbuffer):
     FBO.glDeleteRenderbuffers(1, [renderbuffer])
 
-    
+
 def glDeleteTexture(texture):
     GL.glDeleteTextures([texture])
 

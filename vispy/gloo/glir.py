@@ -371,6 +371,9 @@ from ..util import logger
 
 # TODO: expose these via an extension space in .gl?
 _internalformats = [
+    gl.Enum('GL_DEPTH_COMPONENT', 6402),
+    gl.Enum('GL_DEPTH_COMPONENT16', 33189),
+    gl.Enum('GL_DEPTH_COMPONENT32_OES', 33191),
     gl.Enum('GL_RED', 6403),
     gl.Enum('GL_R', 8194),
     gl.Enum('GL_R8', 33321),

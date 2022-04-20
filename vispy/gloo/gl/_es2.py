@@ -1,5 +1,10 @@
-"""THIS CODE IS AUTO-GENERATED. DO NOT EDIT.
-GL ES 2.0 API (via Angle/DirectX on Windows)"""
+"""GL definitions converted to Python by codegen/createglapi.py.
+
+THIS CODE IS AUTO-GENERATED. DO NOT EDIT.
+
+GL ES 2.0 API (via Angle/DirectX on Windows)
+
+"""
 
 import ctypes
 from .es2 import _lib
@@ -81,8 +86,7 @@ def glBlendFuncSeparate(srcRGB, dstRGB, srcAlpha, dstAlpha):
 _lib.glBufferData.argtypes = ctypes.c_uint, ctypes.c_ssize_t, ctypes.c_void_p, ctypes.c_uint,
 # void = glBufferData(GLenum target, GLsizeiptr size, GLvoid* data, GLenum usage)
 def glBufferData(target, data, usage):
-    """ Data can be numpy array or the size of data to allocate.
-    """
+    """Data can be numpy array or the size of data to allocate."""
     if isinstance(data, int):
         size = data
         data = ctypes.c_voidp(0)

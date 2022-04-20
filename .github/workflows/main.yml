@@ -98,7 +98,7 @@ jobs:
         sudo apt-get update;
         cat ci/requirements/linux_full_deps_apt.txt | xargs sudo apt-get -y install
         # Additional latex dependencies
-        sudo apt-get -y install texlive-latex-base texlive-fonts-recommended texlive-fonts-extra texlive-latex-extra
+        sudo apt-get -y install texlive-latex-base texlive-latex-extra texlive-fonts-recommended texlive-fonts-extra texlive-latex-extra
         sudo apt-get -y install dvipng
         # Start xvfb daemon
         export DISPLAY=:99.0

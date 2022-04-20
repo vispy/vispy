@@ -111,6 +111,8 @@ uniform float gamma;
 uniform float u_threshold;
 uniform float u_attenuation;
 uniform float u_relative_step_size;
+uniform float u_mip_cutoff;
+uniform float u_minip_cutoff;
 
 //varyings
 varying vec3 v_position;
@@ -253,7 +255,11 @@ void main() {
     // Calculate unit vector pointing in the view direction through this
     // fragment.
     view_ray = normalize(farpos.xyz - nearpos.xyz);
-    
+
+    // Variables to keep track of where to set the frag depth.
+    // frag_depth_point is in data coordinates.
+    vec3 frag_depth_point;
+
     // Set up the ray casting
     // This snippet must define three variables:
     // vec3 start_loc - the starting location of the ray in texture coordinates
@@ -274,12 +280,9 @@ void main() {
     vec3 loc = start_loc;
     int iter = 0;
 
-    // Keep track of whether texture has been sampled
-    int texture_sampled = 0;
-
-    // Keep track of wheter a surface was found (used for depth)
-    vec3 surface_point;
-    bool surface_found = false;
+    // keep track if the texture is ever sampled; if not, fragment will be discarded
+    // this allows us to discard fragments that only traverse clipped parts of the texture
+    bool texture_sampled = false;
 
     while (iter < nsteps) {
         for (iter=iter; iter<nsteps; iter++)
@@ -291,7 +294,7 @@ void main() {
                 // Get sample color
                 vec4 color = $sample(u_volumetex, loc);
                 float val = color.r;
-                texture_sampled = 1;
+                texture_sampled = true;
 
                 $in_loop
             }
@@ -299,28 +302,18 @@ void main() {
             loc += step;
         }
     }
-    
-    // discard fragment if texture not sampled
-    if ( texture_sampled != 1 ) {
+
+    if (!texture_sampled)
         discard;
-    }
-    
+
     $after_loop
 
-    if (surface_found == true) {
-        // if a surface was found, use it to set the depth buffer
-        vec4 position2 = vec4(surface_point, 1);
-        vec4 iproj = $viewtransformf(position2);
-        iproj.z /= iproj.w;
-        gl_FragDepth = (iproj.z+1.0)/2.0;
-    }
-    else {
-        gl_FragDepth = gl_FragCoord.z;
-    }
-
+    // set frag depth
+    vec4 frag_depth_vector = vec4(frag_depth_point, 1);
+    vec4 iproj = $viewtransformf(frag_depth_vector);
+    iproj.z /= iproj.w;
+    gl_FragDepth = (iproj.z+1.0)/2.0;
 }
-
-
 """  # noqa
 
 _RAYCASTING_SETUP_VOLUME = """
@@ -346,6 +339,9 @@ _RAYCASTING_SETUP_VOLUME = """
     vec3 step = ((v_position - front) / u_shape) / f_nsteps;
     // 0.5 offset needed to get back to correct texture coordinates (vispy#2239)
     vec3 start_loc = (front + 0.5) / u_shape;
+
+    // set frag depth to the cube face; this can be overridden by projection snippets
+    frag_depth_point = front;
 """
 
 _RAYCASTING_SETUP_PLANE = """
@@ -367,9 +363,8 @@ _RAYCASTING_SETUP_PLANE = """
     out_of_bounds += float(intersection_tex.z > 1);
     out_of_bounds += float(intersection_tex.z < 0);
 
-    if (out_of_bounds > 0) {
+    if (out_of_bounds > 0)
         discard;
-    }
 
 
     // Decide how many steps to take
@@ -383,12 +378,15 @@ _RAYCASTING_SETUP_PLANE = """
     vec3 N = normalize(u_plane_normal);
     vec3 step = N / u_shape;
     vec3 start_loc = intersection_tex - ((step * f_nsteps) / 2);
+
+    // Ensure that frag depth value will be set to plane intersection
+    frag_depth_point = intersection;
 """
 
 
 _MIP_SNIPPETS = dict(
     before_loop="""
-        float maxval = -99999.0; // The maximum encountered value
+        float maxval = u_mip_cutoff; // The maximum encountered value
         int maxi = -1;  // Where the maximum value was encountered
         """,
     in_loop="""
@@ -400,23 +398,38 @@ _MIP_SNIPPETS = dict(
     after_loop="""
         // Refine search for max value, but only if anything was found
         if ( maxi > -1 ) {
-            loc = start_loc + step * (float(maxi) - 0.5);
+            // Calculate starting location of ray for sampling
+            vec3 start_loc_refine = start_loc + step * (float(maxi) - 0.5);
+            loc = start_loc_refine;
+
+            // Variables to keep track of current value and where max was encountered
+            vec3 max_loc_tex = start_loc_refine;
+
+            vec3 small_step = step * 0.1;
             for (int i=0; i<10; i++) {
-                maxval = max(maxval, $sample(u_volumetex, loc).r);
-                loc += step * 0.1;
+                float val = $sample(u_volumetex, loc).r;
+                if ( val > maxval) {
+                    maxval = val;
+                    max_loc_tex = start_loc_refine + (small_step * i);
+                }
+                loc += small_step;
             }
+            frag_depth_point = max_loc_tex * u_shape;
             gl_FragColor = applyColormap(maxval);
+        }
+        else {
+            discard;
         }
         """,
 )
 
 _ATTENUATED_MIP_SNIPPETS = dict(
     before_loop="""
-        float maxval = -99999.0; // The maximum encountered value
+        float maxval = u_mip_cutoff; // The maximum encountered value
         float sumval = 0.0; // The sum of the encountered values
         float scaled = 0.0; // The scaled value
-        int maxi = 0;  // Where the maximum value was encountered
-        vec3 maxloc = vec3(0.0);  // Location where the maximum value was encountered
+        int maxi = -1;  // Where the maximum value was encountered
+        vec3 max_loc_tex = vec3(0.0);  // Location where the maximum value was encountered
         """,
     in_loop="""
         sumval = sumval + val;
@@ -424,17 +437,23 @@ _ATTENUATED_MIP_SNIPPETS = dict(
         if( scaled > maxval ) {
             maxval = scaled;
             maxi = iter;
-            maxloc = loc;
+            max_loc_tex = loc;
         }
         """,
     after_loop="""
-        gl_FragColor = applyColormap(maxval);
+        if ( maxi > -1 ) {
+            frag_depth_point = max_loc_tex * u_shape;
+            gl_FragColor = applyColormap(maxval);
+        }
+        else {
+            discard;
+        }
         """,
 )
 
 _MINIP_SNIPPETS = dict(
     before_loop="""
-        float minval = 99999.0; // The minimum encountered value
+        float minval = u_minip_cutoff; // The minimum encountered value
         int mini = -1;  // Where the minimum value was encountered
         """,
     in_loop="""
@@ -446,12 +465,27 @@ _MINIP_SNIPPETS = dict(
     after_loop="""
         // Refine search for min value, but only if anything was found
         if ( mini > -1 ) {
-            loc = start_loc + step * (float(mini) - 0.5);
+            // Calculate starting location of ray for sampling
+            vec3 start_loc_refine = start_loc + step * (float(mini) - 0.5);
+            loc = start_loc_refine;
+
+            // Variables to keep track of current value and where max was encountered
+            vec3 min_loc_tex = start_loc_refine;
+
+            vec3 small_step = step * 0.1;
             for (int i=0; i<10; i++) {
-                minval = min(minval, $sample(u_volumetex, loc).r);
-                loc += step * 0.1;
+                float val = $sample(u_volumetex, loc).r;
+                if ( val < minval) {
+                    minval = val;
+                    min_loc_tex = start_loc_refine + (small_step * i);
+                }
+                loc += small_step;
             }
+            frag_depth_point = min_loc_tex * u_shape;
             gl_FragColor = applyColormap(minval);
+        }
+        else {
+            discard;
         }
         """,
 )
@@ -461,24 +495,24 @@ _TRANSLUCENT_SNIPPETS = dict(
         vec4 integrated_color = vec4(0., 0., 0., 0.);
         """,
     in_loop="""
-            color = applyColormap(val);
-            float a1 = integrated_color.a;
-            float a2 = color.a * (1 - a1);
-            float alpha = max(a1 + a2, 0.001);
+        color = applyColormap(val);
+        float a1 = integrated_color.a;
+        float a2 = color.a * (1 - a1);
+        float alpha = max(a1 + a2, 0.001);
 
-            // Doesn't work.. GLSL optimizer bug?
-            //integrated_color = (integrated_color * a1 / alpha) +
-            //                   (color * a2 / alpha);
-            // This should be identical but does work correctly:
-            integrated_color *= a1 / alpha;
-            integrated_color += color * a2 / alpha;
+        // Doesn't work.. GLSL optimizer bug?
+        //integrated_color = (integrated_color * a1 / alpha) +
+        //                   (color * a2 / alpha);
+        // This should be identical but does work correctly:
+        integrated_color *= a1 / alpha;
+        integrated_color += color * a2 / alpha;
 
-            integrated_color.a = alpha;
+        integrated_color.a = alpha;
 
-            if( alpha > 0.99 ){
-                // stop integrating if the fragment becomes opaque
-                iter = nsteps;
-            }
+        if( alpha > 0.99 ){
+            // stop integrating if the fragment becomes opaque
+            iter = nsteps;
+        }
         """,
     after_loop="""
         gl_FragColor = integrated_color;
@@ -504,6 +538,7 @@ _ISO_SNIPPETS = dict(
         vec4 color3 = vec4(0.0);  // final color
         vec3 dstep = 1.5 / u_shape;  // step to sample derivative
         gl_FragColor = vec4(0.0);
+        bool discard_fragment = true;
     """,
     in_loop="""
         if (val > u_threshold-0.2) {
@@ -516,8 +551,8 @@ _ISO_SNIPPETS = dict(
                     gl_FragColor = applyColormap(color.r);
 
                     // set the variables for the depth buffer
-                    surface_point = iloc * u_shape;
-                    surface_found = true;
+                    frag_depth_point = iloc * u_shape;
+                    discard_fragment = false;
 
                     iter = nsteps;
                     break;
@@ -527,12 +562,9 @@ _ISO_SNIPPETS = dict(
         }
         """,
     after_loop="""
-
-        if (!surface_found) {
+        if (discard_fragment)
             discard;
-        }
-
-        """,
+    """,
 )
 
 
@@ -661,7 +693,8 @@ class VolumeVisual(Visual):
                  gamma=1.0, interpolation='linear', texture_format=None,
                  raycasting_mode='volume', plane_position=None,
                  plane_normal=None, plane_thickness=1.0, clipping_planes=None,
-                 clipping_planes_coord_system='scene'):
+                 clipping_planes_coord_system='scene', mip_cutoff=None,
+                 minip_cutoff=None):
 
         tr = ['visual', 'scene', 'document', 'canvas', 'framebuffer', 'render']
         if clipping_planes_coord_system not in tr:
@@ -704,6 +737,8 @@ class VolumeVisual(Visual):
 
         # Set params
         self.raycasting_mode = raycasting_mode
+        self.mip_cutoff = mip_cutoff
+        self.minip_cutoff = minip_cutoff
         self.method = method
         self.relative_step_size = relative_step_size
         self.threshold = threshold if threshold is not None else vol.mean()
@@ -995,6 +1030,8 @@ class VolumeVisual(Visual):
         self.shared_program['u_kernel'] = Texture2D(kernel, interpolation='nearest')
         self.shared_program.frag['cmap'] = Function(self._cmap.glsl_map)
         self.shared_program['texture2D_LUT'] = self.cmap.texture_lut()
+        self.shared_program['u_mip_cutoff'] = self._mip_cutoff
+        self.shared_program['u_minip_cutoff'] = self._minip_cutoff
         self.update()
 
     @property
@@ -1116,6 +1153,40 @@ class VolumeVisual(Visual):
             raise ValueError('plane_thickness should be at least 1.0')
         self._plane_thickness = value
         self.shared_program['u_plane_thickness'] = value
+        self.update()
+
+    @property
+    def mip_cutoff(self):
+        """The lower cutoff value for `mip` and `attenuated_mip`.
+
+        When using the `mip` or `attenuated_mip` rendering methods, fragments
+        with values below the cutoff will be discarded.
+        """
+        return self._mip_cutoff
+
+    @mip_cutoff.setter
+    def mip_cutoff(self, value):
+        if value is None:
+            value = np.finfo('float32').min
+        self._mip_cutoff = float(value)
+        self.shared_program['u_mip_cutoff'] = self._mip_cutoff
+        self.update()
+
+    @property
+    def minip_cutoff(self):
+        """The upper cutoff value for `minip`.
+
+        When using the `minip` rendering method, fragments
+        with values above the cutoff will be discarded.
+        """
+        return self._minip_cutoff
+
+    @minip_cutoff.setter
+    def minip_cutoff(self, value):
+        if value is None:
+            value = np.finfo('float32').max
+        self._minip_cutoff = float(value)
+        self.shared_program['u_minip_cutoff'] = self._minip_cutoff
         self.update()
 
     def _create_vertex_data(self):

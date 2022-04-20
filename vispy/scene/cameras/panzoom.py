@@ -132,8 +132,11 @@ class PanZoomCamera(BaseCamera):
 
     @property
     def rect(self):
-        """The rectangular border of the ViewBox visible area, expressed in
-        the coordinate system of the scene.
+        """The rectangular border of the ViewBox visible area.
+        
+        This is expressed in the coordinate system of the scene.
+        See :class:`~vispy.geometry.rect.Rect` for different ways this can
+        be specified.
 
         Note that the rectangle can have negative width or height, in
         which case the corresponding dimension is flipped (this flipping
@@ -162,17 +165,7 @@ class PanZoomCamera(BaseCamera):
         if not (isinstance(center, (tuple, list)) and len(center) in (2, 3)):
             raise ValueError('center must be a 2 or 3 element tuple')
         rect = Rect(self.rect) or Rect(*DEFAULT_RECT_TUPLE)
-        # Get half-ranges
-        x2 = rect.center[0]
-        y2 = rect.center[1]
-        # Apply new ranges
-        x1 = center[0]
-        y1 = center[1]
-        rect.left = x1 - x2
-        rect.right = x1 + x2
-        rect.bottom = y1 - y2
-        rect.top = y1 + y2
-        #
+        rect.center = center[:2]
         self.rect = rect
 
     def _set_range(self, init):
