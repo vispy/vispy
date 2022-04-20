@@ -531,12 +531,14 @@ def generate_filter_code(radius):
     vec4 filter1D_radius{n}(sampler2D kernel, float index, float x{''.join(f', vec4 c{i}' for i in range(n * 2))}) {{
         float w, w_sum = 0;
         vec4 r = vec4(0);
-        {''.join(f"""w = unpack_interpolate(kernel, vec2({1 - (i + 1) / n} + (x / {n}), index));
+        {''.join(f"""
+        w = unpack_interpolate(kernel, vec2({1 - (i + 1) / n} + (x / {n}), index));
         w = w * kernel_scale + kernel_bias;
         r += c{i} * w;
         w = unpack_interpolate(kernel, vec2({(i + 1) / n} - (x / {n}), index));
-        w = w*kernel_scale + kernel_bias;
-        r += c{i + n} * w;""" for i in range(n))}
+        w = w * kernel_scale + kernel_bias;
+        r += c{i + n} * w;"""
+        for i in range(n))}
         return r;
     }}
 
@@ -548,8 +550,7 @@ def generate_filter_code(radius):
         vec4 t{i} = filter1D_radius{n}(kernel, index, f.x{f''.join(
             f',{nl}            texture2D(texture, texel + vec2({-n + 1 + j}, {-n + 1 + i}) * pixel)'
             for j in range(n * 2))});"""
-        for i in range(n * 2))
-        }
+        for i in range(n * 2))}
         return filter1D_radius{n}(kernel, index, f.y{''.join(f', t{i}' for i in range(2*n))});
     }}
 
