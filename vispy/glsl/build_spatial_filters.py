@@ -77,6 +77,7 @@ Note::
 import math
 import numpy as np
 from inspect import cleandoc
+from itertools import product
 
 
 class SpatialFilter:
@@ -540,20 +541,32 @@ def generate_filter_code(radius):
         }}
 
         vec4 filter2D_radius{n}(sampler2D texture, sampler2D kernel, float index, vec2 uv, vec2 pixel) {{
-            vec2 texel = uv / pixel - vec2(0.5, 0.5);
+            vec2 texel = uv / pixel - vec2(0.5);
             vec2 f = fract(texel);
-            texel = (texel - fract(texel) + vec2(0.001, 0.001)) * pixel;
+            texel = (texel - fract(texel) + vec2(0.001)) * pixel;
             {''.join(f"""
-            vec4 t{i} = filter_1D_radius{n}(kernel, index, f.x{f''.join(
+            vec4 t{i} = filter1D_radius{n}(kernel, index, f.x{f''.join(
                 f',{nl}                texture2D(texture, texel + vec2({-n + 1 + j}, {-n + 1 + i}) * pixel)'
                 for j in range(n * 2))});"""
             for i in range(n * 2))
             }
-            return filter_1D_radius{n}(kernel, index, f.y{''.join(f', t{i}' for i in range(2*n))});
+            return filter1D_radius{n}(kernel, index, f.y{''.join(f', t{i}' for i in range(2*n))});
         }}
 
         vec4 filter3D_radius{n}(sampler3D texture, sampler2D kernel, float index, vec3 uv, vec3 pixel) {{
-            return;
+            vec3 texel = uv / pixel - vec3(0.5);
+            vec3 f = fract(texel);
+            texel = (texel - fract(texel) + vec3(0.001)) * pixel;
+            {''.join(f"""
+            vec4 t{i}{j} = filter1D_radius{n}(kernel, index, f.x{f''.join(
+                f',{nl}                texture3D(texture, texel + vec3({-n + 1 + k}, {-n + 1 + j}, {-n + 1 + i}) * pixel)'
+                for k in range(n * 2))});"""
+            for i, j in product(range(n * 2), range(n * 2)))}
+            {f''.join(f"""
+            vec4 t{i} = filter1D_radius{n}(kernel, index, f.y{"".join(
+                f", t{i}{j}" for j in range(n * 2))});"""
+            for i in range(n * 2))}
+            return filter1D_radius{n}(kernel, index, f.z{''.join(f', t{i}' for i in range(2*n))});
         }}
     ''')
 
