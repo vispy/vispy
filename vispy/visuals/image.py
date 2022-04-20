@@ -294,7 +294,7 @@ class ImageVisual(Visual):
     def _init_interpolation(self, interpolation_names):
         # create interpolation shader functions for available
         # interpolations
-        fun = [Function(self._func_templates['texture_lookup_interpolated'] % n)
+        fun = [Function(self._func_templates['texture_lookup_interpolated'] % (n + '2D'))
                for n in interpolation_names]
         interpolation_names = [n.lower() for n in interpolation_names]
 
