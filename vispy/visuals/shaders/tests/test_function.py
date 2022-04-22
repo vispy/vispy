@@ -244,8 +244,8 @@ def test_function_basics():
 
     # Test that `var in fun` syntax works as well
     assert 'foo' in fun
-    assert_in('foo', fun)
-    assert_in('bar', fun)
+    assert 'bar' in fun
+    assert 'baz' not in fun
 
     assert_in('bar', fun.template_vars)
 
