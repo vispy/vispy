@@ -497,7 +497,7 @@ class ImageVisual(Visual):
         self._custom_kerneltex = Texture2D(value, interpolation='nearest')
         if self._data_lookup_fn is not None and 'kernel' in self._data_lookup_fn:
             self._data_lookup_fn['kernel'] = self._custom_kerneltex
-            self._data_lookup_fn['kernel_shape'] = value.shape
+            self._data_lookup_fn['kernel_shape'] = value.shape[::-1]
         self.update()
 
     # The interpolation code could be transferred to a dedicated filter
@@ -520,7 +520,7 @@ class ImageVisual(Visual):
             self._data_lookup_fn['shape'] = self._data.shape[:2][::-1]
             if interpolation == 'custom':
                 self._data_lookup_fn['kernel'] = self._custom_kerneltex
-                self._data_lookup_fn['kernel_shape'] = self._custom_kernel.shape
+                self._data_lookup_fn['kernel_shape'] = self._custom_kernel.shape[::-1]
             else:
                 self.shared_program['u_kernel'] = self._kerneltex
 
