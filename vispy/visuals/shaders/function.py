@@ -309,6 +309,13 @@ class Function(ShaderObject):
         """
         return FunctionCall(self, args)
 
+    def __contains__(self, key):
+        try:
+            self[key]
+        except KeyError:
+            return False
+        return True
+
     # Public API methods
 
     @property

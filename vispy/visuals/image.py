@@ -493,7 +493,7 @@ class ImageVisual(Visual):
             raise ValueError(f'kernel must have 2 dimensions; got {value.ndim}')
         self._custom_kernel = value
         self._custom_kerneltex = Texture2D(value, interpolation='nearest')
-        if self._data_lookup_fn is not None and self.interpolation == 'custom':
+        if self._data_lookup_fn is not None and 'kernel' in self._data_lookup_fn:
             self._data_lookup_fn['kernel'] = self._custom_kerneltex
             self._data_lookup_fn['kernel_shape'] = value.shape
         self.update()

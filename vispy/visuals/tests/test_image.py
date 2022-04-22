@@ -342,10 +342,5 @@ def test_image_interpolation():
         assert np.allclose(render[right], black)
         assert np.allclose(render[center_left], gray)
 
-        image.custom_kernel = np.array([[10, 1]])  # sample more on the left
-        render = c.render()
-        # assert np.allclose(render[left], white)
-        # assert np.allclose(render[right], black)
-        # assert np.allclose(render[center_left], gray)
 
 run_tests_if_main()
