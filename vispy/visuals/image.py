@@ -147,11 +147,13 @@ vec4 texture_lookup(vec2 texcoord) {
         for (float j = 0.5; j < $kernel_shape.y; j++) {
             kernel_pos = vec2(i, j) * kernel_pixel;
             tex_pos = sampling_corner + vec2(i, j) * tex_pixel;
-            weight = texture2D($kernel, kernel_pos).g;
-            weight_sum += weight;
-            // make sure to clamp or we sample outside
             // TODO: allow other edge effects, like mirror or wrap
-            color += texture2D($texture, clamp(tex_pos, 0, 1)) * weight;
+            if (tex_pos.x >= 0 && tex_pos.y >= 0 && tex_pos.x <= 1 && tex_pos.y <= 1) {
+                weight = texture2D($kernel, kernel_pos).g;
+                weight_sum += weight;
+                // make sure to clamp or we sample outside
+                color += texture2D($texture, clamp(tex_pos, 0, 1)) * weight;
+            }
         }
     }
 
