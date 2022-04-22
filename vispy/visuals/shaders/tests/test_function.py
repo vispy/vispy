@@ -241,6 +241,12 @@ def test_function_basics():
     assert_equal(fun.name, 'main')
     assert len(fun.template_vars) == 2
     assert_in('foo', fun.template_vars)
+
+    # Test that `var in fun` syntax works as well
+    assert 'foo' in fun
+    assert_in('foo', fun)
+    assert_in('bar', fun)
+
     assert_in('bar', fun.template_vars)
 
     # Test setting verbatim expressions
