@@ -376,6 +376,11 @@ class CanvasBackend(GLCanvas, BaseCanvasBackend):
         w, h = self.GetClientSize()
         return w, h
 
+    def _vispy_get_physical_size(self):
+        lsize = self.GetClientSize()
+        ratio = self.GetContentScaleFactor()
+        return round(lsize[0] * ratio + 0.01), round(lsize[1] * ratio + 0.01)
+
     def _vispy_get_position(self):
         if self._vispy_canvas is None:
             return
