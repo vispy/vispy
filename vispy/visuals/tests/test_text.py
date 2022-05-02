@@ -82,7 +82,6 @@ def test_face_bold_italic():
 
 
 def test_text_depth_test():
-
     t = Text(depth_test=False)
     assert not t._vshare.gl_state["depth_test"]
 
