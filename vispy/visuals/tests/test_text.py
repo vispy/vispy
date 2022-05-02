@@ -81,4 +81,16 @@ def test_face_bold_italic():
         assert font1 is font4
 
 
+def test_text_depth_test():
+
+    t = Text(depth_test=False)
+    assert t._vshare.gl_state["depth_test"] == False
+
+    t = Text(depth_test=True)
+    assert t._vshare.gl_state["depth_test"] == True
+
+    t = Text()  # Default is false
+    assert t._vshare.gl_state["depth_test"] == False
+
+
 run_tests_if_main()
