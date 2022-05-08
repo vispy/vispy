@@ -175,7 +175,7 @@ class Hermite(SpatialFilter):
     """
 
     def weight(self, x):
-        return (2 * x - 3) * x * x + 1
+        return (2 * x - 3) * x**2 + 1
 
 
 class Quadric(SpatialFilter):
@@ -195,10 +195,10 @@ class Quadric(SpatialFilter):
 
     def weight(self, x):
         if x < 0.75:
-            return 0.75 - x * x
+            return 0.75 - x**2
         elif x < 1.5:
             t = x - 1.5
-            return 0.5 * t * t
+            return 0.5 * t**2
         return 0
 
 
@@ -215,10 +215,12 @@ class Bicubic(SpatialFilter):
         super().__init__(radius=2)
 
     def weight(self, x):
-        return (1/6) * (x + 2)**3 \
-            - 4 * (x + 1)**3 \
-            + 6 * x**3 \
+        return (1 / 6) * (
+            (x + 2)**3
+            - 4 * (x + 1)**3
+            + 6 * x**3
             - 4 * (x - 1)**3
+        )
 
 
 class Kaiser(SpatialFilter):
@@ -240,19 +242,19 @@ class Kaiser(SpatialFilter):
 
     def bessel_i0(self, x):
         s = 1
-        y = x * x / 4
+        y = x**2 / 4
         t = y
         i = 2
         while t > self.epsilon:
             s += t
-            t *= float(y) / (i * i)
+            t *= float(y) / i**2
             i += 1
         return s
 
     def weight(self, x):
         if x > 1:
             return 0
-        return self.bessel_i0(self.a * math.sqrt(1 - x * x)) * self.i0a
+        return self.bessel_i0(self.a * math.sqrt(1 - x**2)) * self.i0a
 
 
 class CatRom(SpatialFilter):
@@ -379,7 +381,7 @@ class Gaussian(SpatialFilter):
         super().__init__(radius=2)
 
     def weight(self, x):
-        return math.exp(-2 * x * x) * math.sqrt(2 / math.pi)
+        return math.exp(-2 * x**2) * math.sqrt(2 / math.pi)
 
 
 class Bessel(SpatialFilter):
