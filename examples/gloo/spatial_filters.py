@@ -32,6 +32,7 @@ img_array[2, 2] = 1.0
 
 # loading interpolation kernel
 kernel, names = load_spatial_filters()
+names = [name + '2D' for name in names]
 
 # A simple texture quad
 data = np.zeros(4, dtype=[('a_position', np.float32, 2),
@@ -74,7 +75,7 @@ class Canvas(app.Canvas):
     def __init__(self):
         app.Canvas.__init__(self, keys='interactive', size=((512), (512)))
 
-        self.program = gloo.Program(VERT_SHADER, FRAG_SHADER % 'Nearest')
+        self.program = gloo.Program(VERT_SHADER, FRAG_SHADER % 'Nearest2D')
         self.texture = gloo.Texture2D(img_array, interpolation='nearest')
 
         # using packed data as discussed in pr #1069
