@@ -68,7 +68,7 @@ class PlanesClipper(Filter):
 
     @staticmethod
     @lru_cache(maxsize=10)
-    def _build_clipping_planes_func(n_planes):
+    def _build_clipping_planes_glsl(n_planes):
         """Build the code snippet used to clip the volume based on self.clipping_planes."""
         func_template = '''
             float clip_planes(vec3 loc) {{
@@ -87,7 +87,7 @@ class PlanesClipper(Filter):
         for idx in range(n_planes):
             all_clips.append(clip_template.format(idx=idx))
         formatted_code = func_template.format(clips=''.join(all_clips))
-        return Function(formatted_code)
+        return formatted_code
 
     @property
     def clipping_planes(self):
@@ -102,7 +102,7 @@ class PlanesClipper(Filter):
             value = np.empty([0, 2, 3])
         self._clipping_planes = value
 
-        clip_func = self._build_clipping_planes_func(len(value))
+        clip_func = Function(self._build_clipping_planes_glsl(len(value)))
         self.fshader['clip_with_planes'] = clip_func
 
         for idx, plane in enumerate(value):

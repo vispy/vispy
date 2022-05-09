@@ -883,7 +883,7 @@ class VolumeVisual(Visual):
 
     @staticmethod
     @lru_cache(maxsize=10)
-    def _build_clipping_planes_func(n_planes):
+    def _build_clipping_planes_glsl(n_planes):
         """Build the code snippet used to clip the volume based on self.clipping_planes."""
         func_template = '''
             float clip_planes(vec3 loc, vec3 vol_shape) {{
@@ -929,7 +929,7 @@ class VolumeVisual(Visual):
             value = np.empty([0, 2, 3])
         self._clipping_planes = value
 
-        self._clip_func = Function(self._build_clipping_planes_func(len(value)))
+        self._clip_func = Function(self._build_clipping_planes_glsl(len(value)))
         self.shared_program.frag['clip_with_planes'] = self._clip_func
 
         self._clip_func['clip_transform'] = self._clip_transform
