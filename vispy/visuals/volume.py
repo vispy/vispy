@@ -34,6 +34,9 @@ The ray is expressed in coordinates local to the volume (i.e. texture
 coordinates).
 
 """
+from __future__ import annotations
+
+from typing import Optional
 from functools import lru_cache
 
 from ._scalable_textures import CPUScaledTexture3D, GPUScaledTextured3D
@@ -883,7 +886,7 @@ class VolumeVisual(Visual):
 
     @staticmethod
     @lru_cache(maxsize=10)
-    def _build_clipping_planes_glsl(n_planes):
+    def _build_clipping_planes_glsl(n_planes: int) -> str:
         """Build the code snippet used to clip the volume based on self.clipping_planes."""
         func_template = '''
             float clip_planes(vec3 loc, vec3 vol_shape) {{
@@ -906,7 +909,7 @@ class VolumeVisual(Visual):
         return formatted_code
 
     @property
-    def clipping_planes(self):
+    def clipping_planes(self) -> np.ndarray:
         """The set of planes used to clip the volume. Values on the negative side of the normal are discarded.
 
         Each plane is defined by a position and a normal vector (magnitude is irrelevant). Shape: (n_planes, 2, 3).
@@ -924,7 +927,7 @@ class VolumeVisual(Visual):
         return self._clipping_planes
 
     @clipping_planes.setter
-    def clipping_planes(self, value):
+    def clipping_planes(self, value: Optional[np.ndarray]):
         if value is None:
             value = np.empty([0, 2, 3])
         self._clipping_planes = value
@@ -939,7 +942,7 @@ class VolumeVisual(Visual):
         self.update()
 
     @property
-    def clipping_planes_coord_system(self):
+    def clipping_planes_coord_system(self) -> str:
         """
         Coordinate system used by the clipping planes (see visuals.transforms.transform_system.py)
         """
