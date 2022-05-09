@@ -129,6 +129,38 @@ _NULL_COLOR_TRANSFORM = 'vec4 pass(vec4 color) { return color; }'
 
 _C2L_RED = 'float cmap(vec4 color) { return color.r; }'
 
+_CUSTOM_FILTER = """
+vec4 texture_lookup(vec2 texcoord) {
+    // based on https://gist.github.com/kingbedjed/373c8811efcf1b3a155d29a13c1e5b61
+    vec2 tex_pixel = 1 / $shape;
+    vec2 kernel_pixel = 1 / $kernel_shape;
+    vec2 sampling_corner = texcoord - ($kernel_shape / 2 * tex_pixel);
+
+    // loop over kernel pixels
+    vec2 kernel_pos, tex_pos;
+    vec4 color = vec4(0);
+    float weight;
+    float weight_sum = 0;
+
+    // offset 0.5 to sample center of pixels
+    for (float i = 0.5; i < $kernel_shape.x; i++) {
+        for (float j = 0.5; j < $kernel_shape.y; j++) {
+            kernel_pos = vec2(i, j) * kernel_pixel;
+            tex_pos = sampling_corner + vec2(i, j) * tex_pixel;
+            // TODO: allow other edge effects, like mirror or wrap
+            if (tex_pos.x >= 0 && tex_pos.y >= 0 && tex_pos.x <= 1 && tex_pos.y <= 1) {
+                weight = texture2D($kernel, kernel_pos).g;
+                weight_sum += weight;
+                // make sure to clamp or we sample outside
+                color += texture2D($texture, clamp(tex_pos, 0, 1)) * weight;
+            }
+        }
+    }
+
+    return color / weight_sum;
+}
+"""
+
 
 class ImageVisual(Visual):
     """Visual subclass displaying an image.
@@ -184,6 +216,7 @@ class ImageVisual(Visual):
             * 'hanning', 'hamming', 'hermite', 'kaiser', 'quadric', 'bicubic',
                 'catrom', 'mitchell', 'spline16', 'spline36', 'gaussian',
                 'bessel', 'sinc', 'lanczos', 'blackman'
+            * 'custom': uses the sampling kernel provided through 'custom_kernel'.
     texture_format: numpy.dtype | str | None
         How to store data on the GPU. OpenGL allows for many different storage
         formats and schemes for the low-level texture data stored in the GPU.
@@ -205,6 +238,8 @@ class ImageVisual(Visual):
         GPU which allows for faster color limit changes. Additionally, when
         32-bit float data is provided it won't be copied before being
         transferred to the GPU.
+    custom_kernel: numpy.ndarray
+        Kernel used for texture sampling when interpolation is set to 'custom'.
     **kwargs : dict
         Keyword arguments to pass to `Visual`.
 
@@ -221,6 +256,7 @@ class ImageVisual(Visual):
 
     _func_templates = {
         'texture_lookup_interpolated': _INTERPOLATION_TEMPLATE,
+        'texture_lookup_custom': _CUSTOM_FILTER,
         'texture_lookup': _TEXTURE_LOOKUP,
         'clim_float': _APPLY_CLIM_FLOAT,
         'clim': _APPLY_CLIM,
@@ -232,7 +268,8 @@ class ImageVisual(Visual):
 
     def __init__(self, data=None, method='auto', grid=(1, 1),
                  cmap='viridis', clim='auto', gamma=1.0,
-                 interpolation='nearest', texture_format=None, **kwargs):
+                 interpolation='nearest', texture_format=None,
+                 custom_kernel=np.ones((1, 1)), **kwargs):
         """Initialize image properties, texture storage, and interpolation methods."""
         self._data = None
 
@@ -288,6 +325,8 @@ class ImageVisual(Visual):
         self.clim = clim or "auto"  # None -> "auto"
         self.cmap = cmap
         self.gamma = gamma
+        self.custom_kernel = custom_kernel
+
         if data is not None:
             self.set_data(data)
         self.freeze()
@@ -297,6 +336,10 @@ class ImageVisual(Visual):
         fun = [Function(self._func_templates['texture_lookup_interpolated'] % (n + '2D'))
                for n in interpolation_names]
         interpolation_names = [n.lower() for n in interpolation_names]
+
+        # add custom filter
+        fun.append(Function(self._func_templates['texture_lookup_custom']))
+        interpolation_names.append('custom')
 
         interpolation_fun = dict(zip(interpolation_names, fun))
         interpolation_names = tuple(sorted(interpolation_names))
@@ -454,6 +497,23 @@ class ImageVisual(Visual):
         """Get names of possible interpolation methods."""
         return self._interpolation_names
 
+    @property
+    def custom_kernel(self):
+        """Kernel used by 'custom' interpolation for texture sampling"""
+        return self._custom_kernel
+
+    @custom_kernel.setter
+    def custom_kernel(self, value):
+        value = np.asarray(value, dtype=np.float32)
+        if value.ndim != 2:
+            raise ValueError(f'kernel must have 2 dimensions; got {value.ndim}')
+        self._custom_kernel = value
+        self._custom_kerneltex = Texture2D(value, interpolation='nearest')
+        if self._data_lookup_fn is not None and 'kernel' in self._data_lookup_fn:
+            self._data_lookup_fn['kernel'] = self._custom_kerneltex
+            self._data_lookup_fn['kernel_shape'] = value.shape[::-1]
+        self.update()
+
     # The interpolation code could be transferred to a dedicated filter
     # function in visuals/filters as discussed in #1051
     def _build_interpolation(self):
@@ -465,16 +525,21 @@ class ImageVisual(Visual):
         self._data_lookup_fn = self._interpolation_fun[interpolation]
         self.shared_program.frag['get_data'] = self._data_lookup_fn
 
-        # only 'linear' uses 'linear' texture interpolation
-        if interpolation == 'linear':
+        # only 'linear' and 'custom' use 'linear' texture interpolation
+        if interpolation in ('linear', 'custom'):
             texture_interpolation = 'linear'
         else:
-            # 'nearest' (and also 'linear') doesn't use spatial_filters.frag
-            # so u_kernel and shape setting is skipped
             texture_interpolation = 'nearest'
-            if interpolation != 'nearest':
+
+        # 'nearest' (and also 'linear') doesn't use spatial_filters.frag
+        # so u_kernel and shape setting is skipped
+        if interpolation not in ('nearest', 'linear'):
+            self._data_lookup_fn['shape'] = self._data.shape[:2][::-1]
+            if interpolation == 'custom':
+                self._data_lookup_fn['kernel'] = self._custom_kerneltex
+                self._data_lookup_fn['kernel_shape'] = self._custom_kernel.shape[::-1]
+            else:
                 self.shared_program['u_kernel'] = self._kerneltex
-                self._data_lookup_fn['shape'] = self._data.shape[:2][::-1]
 
         if self._texture.interpolation != texture_interpolation:
             self._texture.interpolation = texture_interpolation

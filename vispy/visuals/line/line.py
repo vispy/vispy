@@ -327,8 +327,7 @@ class _GLLineVisual(Visual):
         if self._parent._changed['pos']:
             if self._parent._pos is None:
                 return False
-            # todo: does this result in unnecessary copies?
-            pos = np.ascontiguousarray(self._parent._pos.astype(np.float32))
+            pos = np.ascontiguousarray(self._parent._pos, dtype=np.float32)
             self._pos_vbo.set_data(pos)
             self._program.vert['position'] = self._pos_vbo
             self._program.vert['to_vec4'] = self._ensure_vec4_func(pos.shape[-1])
@@ -437,9 +436,7 @@ class _AggLineVisual(Visual):
         if self._parent._changed['pos']:
             if self._parent._pos is None:
                 return False
-            # todo: does this result in unnecessary copies?
-            self._pos = np.ascontiguousarray(
-                self._parent._pos.astype(np.float32))
+            self._pos = np.ascontiguousarray(self._parent._pos, dtype=np.float32)
             bake = True
 
         if self._parent._changed['color']:

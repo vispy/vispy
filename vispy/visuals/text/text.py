@@ -227,6 +227,8 @@ _FRAGMENT_SHADER = """
             alpha = (alpha + 0.5 * asum) / 3.0;
         }
 
+        if (alpha <= 0) discard;
+
         gl_FragColor = vec4(v_color.rgb, v_color.a * alpha);
     }
     """
@@ -395,6 +397,10 @@ class TextVisual(Visual):
         The 'gpu' method should produce higher quality results.
     font_manager : object | None
         Font manager to use (can be shared if the GLContext is shared).
+    depth_test : bool
+        Whether to apply depth testing. Default False. If False, the text
+        behaves like an overlay that does not get hidden behind other
+        visuals in the scene.
     """
 
     _shaders = {
@@ -405,7 +411,7 @@ class TextVisual(Visual):
     def __init__(self, text=None, color='black', bold=False,
                  italic=False, face='OpenSans', font_size=12, pos=[0, 0, 0],
                  rotation=0., anchor_x='center', anchor_y='center',
-                 method='cpu', font_manager=None):
+                 method='cpu', font_manager=None, depth_test=False):
         Visual.__init__(self, vcode=self._shaders['vertex'], fcode=self._shaders['fragment'])
         # Check input
         valid_keys = ('top', 'center', 'middle', 'baseline', 'bottom')
@@ -430,7 +436,7 @@ class TextVisual(Visual):
         self.rotation = rotation
         self._text_scale = STTransform()
         self._draw_mode = 'triangles'
-        self.set_gl_state(blend=True, depth_test=False, cull_face=False,
+        self.set_gl_state(blend=True, depth_test=depth_test, cull_face=False,
                           blend_func=('src_alpha', 'one_minus_src_alpha'))
         self.freeze()
 
