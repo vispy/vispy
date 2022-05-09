@@ -34,6 +34,9 @@ The ray is expressed in coordinates local to the volume (i.e. texture
 coordinates).
 
 """
+from __future__ import annotations
+
+from typing import Optional
 from functools import lru_cache
 
 from ._scalable_textures import CPUScaledTexture3D, GPUScaledTextured3D
@@ -883,30 +886,30 @@ class VolumeVisual(Visual):
 
     @staticmethod
     @lru_cache(maxsize=10)
-    def _build_clipping_planes_func(n_planes):
+    def _build_clipping_planes_glsl(n_planes: int) -> str:
         """Build the code snippet used to clip the volume based on self.clipping_planes."""
         func_template = '''
             float clip_planes(vec3 loc, vec3 vol_shape) {{
-                vec3 loc_transf = $clip_transform(vec4(loc, 1)).xyz;
-                float distance_from_clip = 1.0;
+                vec3 loc_transf = $clip_transform(vec4(loc * vol_shape, 1)).xyz;
+                float distance_from_clip = 3.4e38; // max float
                 {clips};
                 return distance_from_clip;
             }}
         '''
         # the vertex is considered clipped if on the "negative" side of the plane
         clip_template = '''
-            vec3 relative_vec{idx} = loc_transf - ( $clipping_plane_pos{idx} / vol_shape );
-            float distance_from_clip{idx} = dot(relative_vec{idx}, ($clipping_plane_norm{idx} * vol_shape));
+            vec3 relative_vec{idx} = loc_transf - $clipping_plane_pos{idx};
+            float distance_from_clip{idx} = dot(relative_vec{idx}, $clipping_plane_norm{idx});
             distance_from_clip = min(distance_from_clip{idx}, distance_from_clip);
             '''
         all_clips = []
         for idx in range(n_planes):
             all_clips.append(clip_template.format(idx=idx))
         formatted_code = func_template.format(clips=''.join(all_clips))
-        return Function(formatted_code)
+        return formatted_code
 
     @property
-    def clipping_planes(self):
+    def clipping_planes(self) -> np.ndarray:
         """The set of planes used to clip the volume. Values on the negative side of the normal are discarded.
 
         Each plane is defined by a position and a normal vector (magnitude is irrelevant). Shape: (n_planes, 2, 3).
@@ -924,12 +927,12 @@ class VolumeVisual(Visual):
         return self._clipping_planes
 
     @clipping_planes.setter
-    def clipping_planes(self, value):
+    def clipping_planes(self, value: Optional[np.ndarray]):
         if value is None:
             value = np.empty([0, 2, 3])
         self._clipping_planes = value
 
-        self._clip_func = self._build_clipping_planes_func(len(value))
+        self._clip_func = Function(self._build_clipping_planes_glsl(len(value)))
         self.shared_program.frag['clip_with_planes'] = self._clip_func
 
         self._clip_func['clip_transform'] = self._clip_transform
@@ -939,7 +942,7 @@ class VolumeVisual(Visual):
         self.update()
 
     @property
-    def clipping_planes_coord_system(self):
+    def clipping_planes_coord_system(self) -> str:
         """
         Coordinate system used by the clipping planes (see visuals.transforms.transform_system.py)
         """
