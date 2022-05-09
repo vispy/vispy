@@ -215,6 +215,7 @@ class ImageVisual(Visual):
             * 'hanning', 'hamming', 'hermite', 'kaiser', 'quadric', 'bicubic',
                 'catrom', 'mitchell', 'spline16', 'spline36', 'gaussian',
                 'bessel', 'sinc', 'lanczos', 'blackman'
+            * 'custom': uses the sampling kernel provided through 'custom_kernel'.
     texture_format: numpy.dtype | str | None
         How to store data on the GPU. OpenGL allows for many different storage
         formats and schemes for the low-level texture data stored in the GPU.
@@ -236,6 +237,8 @@ class ImageVisual(Visual):
         GPU which allows for faster color limit changes. Additionally, when
         32-bit float data is provided it won't be copied before being
         transferred to the GPU.
+    custom_kernel: numpy.ndarray
+        Kernel used for texture sampling when interpolation is set to 'custom'.
     **kwargs : dict
         Keyword arguments to pass to `Visual`.
 
@@ -494,6 +497,7 @@ class ImageVisual(Visual):
 
     @property
     def custom_kernel(self):
+        """Kernel used by 'custom' interpolation for texture sampling"""
         return self._custom_kernel
 
     @custom_kernel.setter
