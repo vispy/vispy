@@ -49,7 +49,7 @@ using 2 1D-convolution with same 1d-kernel (= the lookup table values).
 Available filters:
 
   - Nearest  (radius 0.5)
-  - Bilinear (radius 1)
+  - Linear (radius 1)
   - Hanning (radius 1)
   - Hamming (radius 1)
   - Hermite (radius 1)
@@ -123,9 +123,9 @@ class SpatialFilter:
         return code
 
 
-class Bilinear(SpatialFilter):
+class Linear(SpatialFilter):
     """
-    Bilinear filter (radius = 1).
+    Linear filter (radius = 1).
 
     Weight function::
 
@@ -578,7 +578,7 @@ def generate_filter_code(radius):
 
 def main():
     # Generate kernels texture (16 x 1024)
-    filters = [Bilinear(), Hanning(), Hamming(), Hermite(), Kaiser(), Quadric(),
+    filters = [Linear(), Hanning(), Hamming(), Hermite(), Kaiser(), Quadric(),
                Bicubic(), CatRom(), Mitchell(), Spline16(), Spline36(), Gaussian(),
                Bessel(), Sinc(), Lanczos(), Blackman()]
 

@@ -607,8 +607,16 @@ class VolumeVisual(Visual):
     gamma : float
         Gamma to use during colormap lookup.  Final color will be cmap(val**gamma).
         by default: 1.
-    interpolation : {'linear', 'nearest'}
-        Selects method of image interpolation.
+    interpolation : str
+        Selects method of texture interpolation. Makes use of the two hardware
+        interpolation methods and the available interpolation methods defined
+        in vispy/gloo/glsl/misc/spatial_filters.frag
+
+            * 'nearest': Default, uses 'nearest' with Texture interpolation.
+            * 'linear': uses 'linear' with Texture interpolation.
+            * 'hanning', 'hamming', 'hermite', 'kaiser', 'quadric', 'bicubic',
+                'catrom', 'mitchell', 'spline16', 'spline36', 'gaussian',
+                'bessel', 'sinc', 'lanczos', 'blackman'
     texture_format : numpy.dtype | str | None
         How to store data on the GPU. OpenGL allows for many different storage
         formats and schemes for the low-level texture data stored in the GPU.
@@ -682,7 +690,7 @@ class VolumeVisual(Visual):
 
     def __init__(self, vol, clim="auto", method='mip', threshold=None,
                  attenuation=1.0, relative_step_size=0.8, cmap='grays',
-                 gamma=1.0, interpolation='bilinear', texture_format=None,
+                 gamma=1.0, interpolation='linear', texture_format=None,
                  raycasting_mode='volume', plane_position=None,
                  plane_normal=None, plane_thickness=1.0, clipping_planes=None,
                  clipping_planes_coord_system='scene', mip_cutoff=None,
@@ -773,11 +781,11 @@ class VolumeVisual(Visual):
         interpolation_fun = dict(zip(interpolation_methods, fun))
         interpolation_methods = tuple(sorted(interpolation_methods))
 
-        # overwrite "nearest" and "bilinear" spatial-filters
+        # overwrite "nearest" and "linear" spatial-filters
         # with  "hardware" interpolation _data_lookup_fn
         hardware_lookup = Function(self._func_templates['texture_lookup'])
         interpolation_fun['nearest'] = hardware_lookup
-        interpolation_fun['bilinear'] = hardware_lookup
+        interpolation_fun['linear'] = hardware_lookup
         return interpolation_methods, interpolation_fun
 
     def _create_texture(self, texture_format, data):
@@ -786,7 +794,7 @@ class VolumeVisual(Visual):
         else:
             tex_cls = CPUScaledTexture3D
 
-        if self._interpolation == 'bilinear':
+        if self._interpolation == 'linear':
             texture_interpolation = 'linear'
         else:
             texture_interpolation = 'nearest'
@@ -933,11 +941,11 @@ class VolumeVisual(Visual):
         except Exception as e:
             print(e)
 
-        # only 'bilinear' uses 'linear' texture interpolation
-        if interpolation == 'bilinear':
+        # only 'linear' uses 'linear' texture interpolation
+        if interpolation == 'linear':
             texture_interpolation = 'linear'
         else:
-            # 'nearest' (and also 'bilinear') doesn't use spatial_filters.frag
+            # 'nearest' (and also 'linear') doesn't use spatial_filters.frag
             # so u_kernel and shape setting is skipped
             texture_interpolation = 'nearest'
             if interpolation != 'nearest':

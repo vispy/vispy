@@ -1278,11 +1278,11 @@ vec4 Nearest3D(sampler3D texture, vec3 shape, vec3 uv) {
     return texture3D(texture, uv);
 }
 
-vec4 Bilinear2D(sampler2D texture, vec2 shape, vec2 uv) {
+vec4 Linear2D(sampler2D texture, vec2 shape, vec2 uv) {
     return filter2D_radius1(texture, u_kernel, 0.03125, uv, 1 / shape);
 }
 
-vec4 Bilinear3D(sampler3D texture, vec3 shape, vec3 uv) {
+vec4 Linear3D(sampler3D texture, vec3 shape, vec3 uv) {
     return filter3D_radius1(texture, u_kernel, 0.03125, uv, 1 / shape);
 }
 
