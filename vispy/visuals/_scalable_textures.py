@@ -346,7 +346,6 @@ class GPUScaledTextureMixin(_ScaledTextureMixin):
     also give the texture permission to change formats in the future if
     new data is provided with a different data type.
 
-
     This class should only be used internally. For similar features where
     scaling occurs on the CPU see
     :class:`vispy.visuals._scalable_textures.CPUScaledTextureMixin`.

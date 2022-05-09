@@ -1,5 +1,25 @@
 # Release Notes
 
+## [v0.10.0](https://github.com/vispy/vispy/tree/v0.10.0) (2022-04-18)
+
+**Enhancements:**
+
+- Add GL\_MIN/GL\_MAX constants for glBlendEquation [\#2320](https://github.com/vispy/vispy/pull/2320) ([djhoese](https://github.com/djhoese))
+- Add cutoff to mip and minip volume projection for fragment discard [\#2308](https://github.com/vispy/vispy/pull/2308) ([brisvag](https://github.com/brisvag))
+- Optimize shader regular expression compilation [\#2297](https://github.com/vispy/vispy/pull/2297) ([PydPiper](https://github.com/PydPiper))
+- Add ComplexImageVisual for viewing complex image data [\#1999](https://github.com/vispy/vispy/pull/1999) ([tlambert03](https://github.com/tlambert03))
+- Allow depth in Texture2D. [\#1310](https://github.com/vispy/vispy/pull/1310) ([keunhong](https://github.com/keunhong))
+
+**Fixed bugs:**
+
+- Set depth in `VolumeVisual` for `mip`/`minip`/`attenuated_mip` rendering modes [\#2305](https://github.com/vispy/vispy/pull/2305) ([alisterburt](https://github.com/alisterburt))
+
+**Merged pull requests:**
+
+- Fix typo in Nested Viewbox name in example [\#2321](https://github.com/vispy/vispy/pull/2321) ([jawjay](https://github.com/jawjay))
+- Expand docs on panzoom rect setter [\#2317](https://github.com/vispy/vispy/pull/2317) ([dstansby](https://github.com/dstansby))
+- Cleanup debug logic in line draw example [\#2306](https://github.com/vispy/vispy/pull/2306) ([olinickalls](https://github.com/olinickalls))
+
 ## [v0.9.6](https://github.com/vispy/vispy/tree/v0.9.6) (2022-02-04)
 
 **Fixed bugs:**

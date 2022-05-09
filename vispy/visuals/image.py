@@ -349,7 +349,7 @@ class ImageVisual(Visual):
 
         return interpolation_names, interpolation_fun
 
-    def _init_texture(self, data, texture_format):
+    def _init_texture(self, data, texture_format, **texture_kwargs):
         if self._interpolation == 'bilinear':
             texture_interpolation = 'linear'
         else:
@@ -357,11 +357,15 @@ class ImageVisual(Visual):
 
         if texture_format is None:
             tex = CPUScaledTexture2D(
-                data, interpolation=texture_interpolation)
+                data, interpolation=texture_interpolation,
+                **texture_kwargs
+            )
         else:
             tex = GPUScaledTexture2D(
                 data, internalformat=texture_format,
-                interpolation=texture_interpolation)
+                interpolation=texture_interpolation,
+                **texture_kwargs
+            )
         return tex
 
     def set_data(self, image):
@@ -375,6 +379,10 @@ class ImageVisual(Visual):
 
         """
         data = np.asarray(image)
+        if np.iscomplexobj(data):
+            raise TypeError(
+                "Complex data types not supported. Please use 'ComplexImage' instead"
+            )
         if should_cast_to_f32(data.dtype):
             data = data.astype(np.float32)
         # can the texture handle this data?

@@ -78,7 +78,8 @@ class BaseTexture(GLObject):
         'luminance_alpha': 2,
         'rg': 2,
         'rgb': 3,
-        'rgba': 4
+        'rgba': 4,
+        'depth_component': 1,
     }
 
     # NOTE: non-normalized formats ending with 'i' and 'ui' are currently
@@ -96,7 +97,8 @@ class BaseTexture(GLObject):
         ('luminance_alpha', 2),
         ('rg', 2),
         ('rgb', 3),
-        ('rgba', 4)
+        ('rgba', 4),
+        ('depth_component', 1),
     ])
 
     def __init__(self, data=None, format=None, resizable=True,
