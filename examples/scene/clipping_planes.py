@@ -26,8 +26,6 @@ view = canvas.central_widget.add_view()
 # Create the visuals
 vol = np.load(io.load_data_file('volume/stent.npz'))['arr_0']
 volume = scene.visuals.Volume(vol, parent=view.scene, threshold=0.225)
-volume2 = scene.visuals.Volume(vol, parent=view.scene, threshold=0.225)
-volume2.transform = scene.STTransform(translate=(32, 32, 32))
 
 np.random.seed(1)
 points = np.random.rand(100, 3) * (128, 128, 128)
@@ -68,14 +66,12 @@ def add_clip(mode):
         return
     clipping_planes = np.concatenate([volume.clipping_planes, clip_modes[mode]])
     volume.clipping_planes = clipping_planes
-    volume2.clipping_planes = clipping_planes
     clipper.clipping_planes = clipping_planes
 
 
 def remove_clip():
     if volume.clipping_planes.shape[0] > 0:
         volume.clipping_planes = volume.clipping_planes[:-1]
-        volume2.clipping_planes = volume.clipping_planes[:-1]
         clipper.clipping_planes = clipper.clipping_planes[:-1]
 
 
