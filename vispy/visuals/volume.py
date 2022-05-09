@@ -887,23 +887,23 @@ class VolumeVisual(Visual):
         """Build the code snippet used to clip the volume based on self.clipping_planes."""
         func_template = '''
             float clip_planes(vec3 loc, vec3 vol_shape) {{
-                vec3 loc_transf = $clip_transform(vec4(loc, 1)).xyz;
-                float distance_from_clip = 1.0;
+                vec3 loc_transf = $clip_transform(vec4(loc * vol_shape, 1)).xyz;
+                float distance_from_clip = 3.4e38; // max float
                 {clips};
                 return distance_from_clip;
             }}
         '''
         # the vertex is considered clipped if on the "negative" side of the plane
         clip_template = '''
-            vec3 relative_vec{idx} = loc_transf - ( $clipping_plane_pos{idx} / vol_shape );
-            float distance_from_clip{idx} = dot(relative_vec{idx}, ($clipping_plane_norm{idx} * vol_shape));
+            vec3 relative_vec{idx} = loc_transf - $clipping_plane_pos{idx};
+            float distance_from_clip{idx} = dot(relative_vec{idx}, $clipping_plane_norm{idx});
             distance_from_clip = min(distance_from_clip{idx}, distance_from_clip);
             '''
         all_clips = []
         for idx in range(n_planes):
             all_clips.append(clip_template.format(idx=idx))
         formatted_code = func_template.format(clips=''.join(all_clips))
-        return Function(formatted_code)
+        return formatted_code
 
     @property
     def clipping_planes(self):
@@ -929,7 +929,7 @@ class VolumeVisual(Visual):
             value = np.empty([0, 2, 3])
         self._clipping_planes = value
 
-        self._clip_func = self._build_clipping_planes_func(len(value))
+        self._clip_func = Function(self._build_clipping_planes_func(len(value)))
         self.shared_program.frag['clip_with_planes'] = self._clip_func
 
         self._clip_func['clip_transform'] = self._clip_transform
