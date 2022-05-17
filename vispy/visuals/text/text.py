@@ -201,7 +201,7 @@ _FRAGMENT_SHADER = """
 
         // Use interpolation at high font sizes
         if(u_npix >= 50.0)
-            rgb = CatRom(u_font_atlas, u_font_atlas_shape, uv);
+            rgb = CatRom2D(u_font_atlas, u_font_atlas_shape, uv);
         else
             rgb = texture2D(u_font_atlas, uv);
         float distance = rgb.r;

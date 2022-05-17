@@ -81,7 +81,7 @@ def load_spatial_filters(packed=True):
         Respective interpolation names, plus "Nearest" which does
         not require a filter but can still be used
     """
-    names = ("Bilinear", "Hanning", "Hamming", "Hermite",
+    names = ("Linear", "Hanning", "Hamming", "Hermite",
              "Kaiser", "Quadric", "Bicubic", "CatRom",
              "Mitchell", "Spline16", "Spline36", "Gaussian",
              "Bessel", "Sinc", "Lanczos", "Blackman", "Nearest")

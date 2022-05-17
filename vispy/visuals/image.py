@@ -206,12 +206,13 @@ class ImageVisual(Visual):
         Gamma to use during colormap lookup.  Final color will be cmap(val**gamma).
         by default: 1.
     interpolation : str
-        Selects method of image interpolation. Makes use of the two Texture2D
+        Selects method of texture interpolation. Makes use of the two hardware
         interpolation methods and the available interpolation methods defined
         in vispy/gloo/glsl/misc/spatial_filters.frag
 
-            * 'nearest': Default, uses 'nearest' with Texture2D interpolation.
-            * 'bilinear': uses 'linear' with Texture2D interpolation.
+            * 'nearest': Default, uses 'nearest' with Texture interpolation.
+            * 'bilinear': uses 'linear' with Texture interpolation.
+            * 'linear': alias for 'bilinear'
             * 'hanning', 'hamming', 'hermite', 'kaiser', 'quadric', 'bicubic',
                 'catrom', 'mitchell', 'spline16', 'spline36', 'gaussian',
                 'bessel', 'sinc', 'lanczos', 'blackman'
@@ -331,9 +332,8 @@ class ImageVisual(Visual):
         self.freeze()
 
     def _init_interpolation(self, interpolation_names):
-        # create interpolation shader functions for available
-        # interpolations
-        fun = [Function(self._func_templates['texture_lookup_interpolated'] % n)
+        # create interpolation shader functions for available interpolations
+        fun = [Function(self._func_templates['texture_lookup_interpolated'] % (n + '2D'))
                for n in interpolation_names]
         interpolation_names = [n.lower() for n in interpolation_names]
 
@@ -348,12 +348,14 @@ class ImageVisual(Visual):
         # with  "hardware" interpolation _data_lookup_fn
         hardware_lookup = Function(self._func_templates['texture_lookup'])
         interpolation_fun['nearest'] = hardware_lookup
-        interpolation_fun['bilinear'] = hardware_lookup
-
+        interpolation_fun['linear'] = hardware_lookup
+        # alias bilinear to linear for compatibility with Volume visual
+        # without breaking backward compatibility
+        interpolation_names = interpolation_names + ('bilinear',)
         return interpolation_names, interpolation_fun
 
     def _init_texture(self, data, texture_format, **texture_kwargs):
-        if self._interpolation == 'bilinear':
+        if self._interpolation == 'linear':
             texture_interpolation = 'linear'
         else:
             texture_interpolation = 'nearest'
@@ -517,18 +519,21 @@ class ImageVisual(Visual):
     def _build_interpolation(self):
         """Rebuild the _data_lookup_fn for different interpolations."""
         interpolation = self._interpolation
+        # alias bilinear to linear
+        if interpolation == 'bilinear':
+            interpolation = 'linear'
         self._data_lookup_fn = self._interpolation_fun[interpolation]
         self.shared_program.frag['get_data'] = self._data_lookup_fn
 
-        # only 'bilinear' and 'custom' use 'linear' texture interpolation
-        if interpolation in ('bilinear', 'custom'):
+        # only 'linear' and 'custom' use 'linear' texture interpolation
+        if interpolation in ('linear', 'custom'):
             texture_interpolation = 'linear'
         else:
             texture_interpolation = 'nearest'
 
-        # 'nearest' (and also 'bilinear') doesn't use spatial_filters.frag
+        # 'nearest' (and also 'linear') doesn't use spatial_filters.frag
         # so u_kernel and shape setting is skipped
-        if interpolation not in ('nearest', 'bilinear'):
+        if interpolation not in ('nearest', 'linear'):
             self._data_lookup_fn['shape'] = self._data.shape[:2][::-1]
             if interpolation == 'custom':
                 self._data_lookup_fn['kernel'] = self._custom_kerneltex
