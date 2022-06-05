@@ -23,7 +23,7 @@ large datasets. Applications of VisPy include:
 Releases
 --------
 
-See [CHANGELOG.md](./CHANGELOG.md).
+See `CHANGELOG.md <./CHANGELOG.md>`_.
 
 Announcements
 -------------
