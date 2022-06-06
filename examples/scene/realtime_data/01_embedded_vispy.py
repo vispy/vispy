@@ -9,13 +9,14 @@ Display VisPy visualizations in a PySide2 application.
 import sys
 
 import numpy as np
-from PySide2 import QtWidgets, QtGui
+from PyQt5 import QtWidgets
 
 from vispy.scene import SceneCanvas, visuals
 from vispy.app import use_app
 
 IMAGE_SHAPE = (600, 800)
 CANVAS_SIZE = (800, 600)
+NUM_LINE_POINTS = 200
 
 
 class MyMainWindow(QtWidgets.QMainWindow):
@@ -56,15 +57,25 @@ class Controls(QtWidgets.QWidget):
 
 class CanvasWrapper:
     def __init__(self):
-        self.canvas = SceneCanvas(size=CANVAS_SIZE, bgcolor="cyan")
-        self.view = self.canvas.central_widget.add_view()
+        self.canvas = SceneCanvas(size=CANVAS_SIZE)
+        self.grid = self.canvas.central_widget.add_grid()
+
+        self.view_top = self.grid.add_view(0, 0, bgcolor='cyan')
         image_data = _generate_random_image_data(IMAGE_SHAPE)
         self.image = visuals.Image(
             image_data,
             texture_format="auto",
             cmap="viridis",
-            parent=self.view.scene,
+            parent=self.view_top.scene,
         )
+        self.view_top.camera = "panzoom"
+        self.view_top.camera.set_range(x=(0, IMAGE_SHAPE[1]), y=(0, IMAGE_SHAPE[0]))
+
+        self.view_bot = self.grid.add_view(1, 0, bgcolor='#c0c0c0')
+        line_data = _generate_random_line_positions(NUM_LINE_POINTS)
+        self.line = visuals.Line(line_data, parent=self.view_bot.scene, color='black')
+        self.view_bot.camera = "panzoom"
+        self.view_bot.camera.set_range(x=(0, NUM_LINE_POINTS), y=(0, 1))
 
 
 def _generate_random_image_data(shape, dtype=np.float32):
@@ -73,8 +84,16 @@ def _generate_random_image_data(shape, dtype=np.float32):
     return data
 
 
+def _generate_random_line_positions(num_points, dtype=np.float32):
+    rng = np.random.default_rng()
+    pos = np.empty((num_points, 2), dtype=np.float32)
+    pos[:, 0] = np.arange(num_points)
+    pos[:, 1] = rng.random((num_points,), dtype=dtype)
+    return pos
+
+
 def main():
-    app = use_app("pyside2")
+    app = use_app("pyqt5")
     app.create()
     win = MyMainWindow()
     win.show()
