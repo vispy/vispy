@@ -219,24 +219,18 @@ try:
     faulthandler.enable()
 except Exception:
     pass
+from vispy.util.gallery_scraper import get_canvaslike_from_globals, FrameGrabber
 os.environ['VISPY_IGNORE_OLD_VERSION'] = 'true'
+os.environ['_VISPY_RUNNING_GALLERY_EXAMPLES'] = 'true'
 import {0}
 
-if hasattr({0}, 'canvas'):
-    canvas = {0}.canvas
-elif hasattr({0}, 'Canvas'):
-    canvas = {0}.Canvas()
-elif hasattr({0}, 'fig'):
-    canvas = {0}.fig
-else:
+canvas_or_widget = get_canvaslike_from_globals({0}.__dict__)
+if canvas_or_widget is None:
     raise RuntimeError('Bad example formatting: fix or add `# vispy: testskip`'
                        ' to the top of the file.')
 
-with canvas as c:
-    for _ in range(5):
-        c.update()
-        c.app.process_events()
-        time.sleep(1./60.)
+frame_grabber = FrameGrabber(canvas_or_widget, [1, 2, 3, 4, 5])
+frame_grabber.collect_frames()
 """
 
 bad_examples = []

@@ -12,8 +12,6 @@ Display VisPy visualizations in a PySide2 application.
 
 """
 
-import sys
-
 import numpy as np
 from PyQt5 import QtWidgets
 
@@ -98,13 +96,9 @@ def _generate_random_line_positions(num_points, dtype=np.float32):
     return pos
 
 
-def main():
+if __name__ == "__main__":
     app = use_app("pyqt5")
     app.create()
     win = MyMainWindow()
     win.show()
     app.run()
-
-
-if __name__ == "__main__":
-    sys.exit(main())

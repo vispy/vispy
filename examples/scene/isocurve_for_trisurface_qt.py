@@ -141,8 +141,8 @@ class Canvas(scene.SceneCanvas):
         self.iso.levels = cl
 
 
-# -----------------------------------------------------------------------------
 if __name__ == '__main__':
+    app.create()
     win = MainWindow()
     win.show()
     app.run()
