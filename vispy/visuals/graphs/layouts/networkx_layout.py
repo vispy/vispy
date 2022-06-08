@@ -2,13 +2,12 @@
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.#!/usr/bin/env python3
 from ..util import _straight_line_vertices, issparse
-import numpy as np
+import numpy as np, warnings
+
 try:
     import networkx as nx
 except ModuleNotFoundError:
-    import warnings
-    warnings.warn(
-        "Networkx not found, please install network to use its layouts")
+    warnings.warn("Networkx not found, please install network to use its layouts")
     nx = None
 
 
@@ -44,7 +43,8 @@ class NetworkxCoordinates:
                 layout_function = getattr(nx, layout)
                 if layout_function:
                     self.positions = np.asarray(
-                        [i for i in dict(layout_function(graph, **kwargs)).values()])
+                        [i for i in dict(layout_function(graph, **kwargs)).values()]
+                    )
                 else:
                     raise ValueError("Check networkx for layouts")
             else:
@@ -62,8 +62,9 @@ class NetworkxCoordinates:
             raise ValueError("Input not understood")
 
         # normalize coordinates
-        self.positions = (self.positions - self.positions.min()) / \
-            (self.positions.max() - self.positions.min())
+        self.positions = (self.positions - self.positions.min()) / (
+            self.positions.max() - self.positions.min()
+        )
         self.positions = self.positions.astype(np.float32)
 
     def __call__(self, adjacency_mat, directed=False):
@@ -80,9 +81,12 @@ class NetworkxCoordinates:
         single time, and has no builtin animation
         """
         if issparse(adjacency_mat):
-            adjacency_mat = adjacency_mat.tocoo()
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=FutureWarning)
+                adjacency_mat = adjacency_mat.tocoo()
         line_vertices, arrows = _straight_line_vertices(
-            adjacency_mat, self.positions, directed)
+            adjacency_mat, self.positions, directed
+        )
 
         yield self.positions, line_vertices, arrows
 
@@ -91,4 +95,7 @@ class NetworkxCoordinates:
         """
         Convenient storage and holder of the adjacency matrix for the :scene.visuals.Graph: function.
         """
-        return nx.adjacency_matrix(self.graph)
+
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=FutureWarning)
+            return nx.adjacency_matrix(self.graph)
