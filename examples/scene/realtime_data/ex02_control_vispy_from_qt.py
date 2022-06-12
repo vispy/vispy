@@ -18,8 +18,8 @@ from PyQt5 import QtWidgets
 from vispy.scene import SceneCanvas, visuals
 from vispy.app import use_app
 
-IMAGE_SHAPE = (600, 800)
-CANVAS_SIZE = (800, 600)
+IMAGE_SHAPE = (600, 800)  # (height, width)
+CANVAS_SIZE = (800, 600)  # (width, height)
 NUM_LINE_POINTS = 200
 
 COLORMAP_CHOICES = ["viridis", "reds", "blues"]
