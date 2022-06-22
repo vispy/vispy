@@ -68,6 +68,8 @@ def test_canvas_render(blend_func):
             np.testing.assert_allclose(rgba_result[..., 3], 255)
         else:
             # the alpha should have some transparency
+            # this part of this test fails on macOS 12 at the moment
+            # see https://github.com/vispy/vispy/pull/2324#issuecomment-1163350672
             assert (rgba_result[..., 3] != 255).any()
 
 
