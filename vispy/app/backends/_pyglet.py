@@ -271,6 +271,12 @@ class CanvasBackend(BaseCanvasBackend, _Window):
         w, h = self.get_size()
         return w, h
 
+    def _vispy_get_physical_size(self):
+        if self._vispy_canvas is None:
+            return
+        w, h = self.get_framebuffer_size()
+        return w, h
+
     def _vispy_get_position(self):
         x, y = self.get_location()
         return x, y
