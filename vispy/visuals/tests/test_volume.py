@@ -253,6 +253,7 @@ def test_set_data_does_not_change_input():
     # using set_data() with `copy=False` should be expected to alter the data.
     vol2 = np.array(vol, dtype='float32', copy=True)
     assert np.allclose(vol, vol2)
+    print(1, vol.data)
     V.set_data(vol2, clim=(0, 200), copy=False)
     assert not np.allclose(vol, vol2)
 

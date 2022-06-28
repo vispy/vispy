@@ -41,7 +41,7 @@ from functools import lru_cache
 
 from ._scalable_textures import CPUScaledTexture3D, GPUScaledTextured3D, Texture2D
 from ..gloo import VertexBuffer, IndexBuffer
-from ..gloo.texture import should_cast_to_f32
+from ..gloo.texture import downcast_to_32
 from . import Visual
 from .shaders import Function
 from ..color import get_colormap
@@ -816,8 +816,8 @@ class VolumeVisual(Visual):
 
         Parameters
         ----------
-        vol : ndarray
-            The 3D volume.
+        vol : ndarray or Texture
+            The 3D volume,
         clim : tuple
             Colormap limits to use (min, max). None will use the min and max
             values. Defaults to ``None``.
@@ -843,8 +843,7 @@ class VolumeVisual(Visual):
             self._texture.set_clim(clim)
 
         # Apply to texture
-        if should_cast_to_f32(vol.dtype):
-            vol = vol.astype(np.float32)
+        vol = downcast_to_32(vol, copy=copy)
         self._texture.check_data_format(vol)
         self._last_data = vol
         self._texture.scale_and_set_data(vol, copy=copy)  # will be efficient if vol is same shape
@@ -857,6 +856,9 @@ class VolumeVisual(Visual):
             self._vol_shape = shape
             self._need_vertex_update = True
         self._vol_shape = shape
+
+    def __setitem__(self, key, value):
+        self._texture.__setitem__(key, value)
 
     @property
     def rendering_methods(self):

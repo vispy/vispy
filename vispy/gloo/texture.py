@@ -13,21 +13,19 @@ from .globject import GLObject
 from .util import check_enum
 
 
-F64_PRECISION_WARNING = ("GPUs can't support floating point data with more "
-                         "than 32-bits, precision will be lost due to "
-                         "downcasting to 32-bit float.")
+def downcast_to_32(data, copy=False):
+    """Downcast to 32bit dtype if necessary."""
+    dtype = np.dtype(data.dtype)
+    if dtype.itemsize > 4:
+        warnings.warn(
+            f"GPUs can't support dtypes bigger than 32-bit, but got '{dtype}'. "
+            "Precision will be lost due to downcasting to 32-bit."
+        )
 
+    size = min(dtype.itemsize, 4)
+    kind = dtype.kind
 
-def should_cast_to_f32(data_dtype):
-    """Check if data type is floating point with more than 32-bits."""
-    data_dtype = np.dtype(data_dtype)
-    is_floating = np.issubdtype(data_dtype, np.floating)
-    gt_float32 = data_dtype.itemsize > 4
-    if is_floating and gt_float32:
-        # OpenGL can't support floating point numbers greater than 32-bits
-        warnings.warn(F64_PRECISION_WARNING)
-        return True
-    return False
+    return np.array(data, dtype=f'{kind}{size}', copy=copy)
 
 
 class BaseTexture(GLObject):
@@ -332,7 +330,7 @@ class BaseTexture(GLObject):
     def _set_data(self, data, offset=None, copy=False):
         """Internal method for set_data."""
         # Copy if needed, check/normalize shape
-        data = np.array(data, copy=copy)
+        data = downcast_to_32(data, copy=copy)
         data = self._normalize_shape(data)
 
         # Maybe resize to purge DATA commands?
@@ -403,6 +401,8 @@ class BaseTexture(GLObject):
         # Make sure data is big enough
         if data.shape != shape:
             data = np.resize(data, shape)
+        # Ensure dtype is the same as the current (eventual downcasting will happen later)
+        data = np.array(data, dtype=getattr(self, '_data_dtype', None), copy=False)
 
         # Set data (deferred)
         self._set_data(data=data, offset=offset, copy=False)

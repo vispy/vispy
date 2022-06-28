@@ -5,6 +5,9 @@
 # -----------------------------------------------------------------------------
 import unittest
 import numpy as np
+import pytest
+
+import numpy as np
 
 from vispy.gloo import Texture1D, Texture2D, Texture3D, TextureAtlas
 from vispy.testing import requires_pyopengl, run_tests_if_main, assert_raises
@@ -713,5 +716,19 @@ def test_texture_2D_internalformats():
 def test_texture_3D_internalformats():
     _test_texture_internalformats(Texture3D, (10, 10, 10))
 
+
+@requires_pyopengl()
+@pytest.mark.parametrize('input_dtype', [np.uint8, np.uint16, np.float32, np.float64])
+@pytest.mark.parametrize('output_dtype', [np.uint8, np.uint16, np.float32, np.float64])
+def test_texture_set_data_different_dtype(input_dtype, output_dtype):
+    data2D = np.random.rand(20, 20).astype(input_dtype)
+    tex2D = Texture2D(data2D)
+    tex2D[:10] = np.array(1, dtype=output_dtype)
+    tex2D.set_data(data2D.astype(output_dtype))
+
+    data3D = np.random.rand(20, 20, 20).astype(input_dtype)
+    tex3D = Texture3D(data3D)
+    tex2D[:10] = np.array(1, dtype=output_dtype)
+    tex3D.set_data(data3D.astype(output_dtype))
 
 run_tests_if_main()

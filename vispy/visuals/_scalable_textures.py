@@ -6,7 +6,7 @@ import warnings
 import numpy as np
 
 from vispy.gloo import Texture2D, Texture3D
-from vispy.gloo.texture import should_cast_to_f32
+from vispy.gloo.texture import downcast_to_32
 
 
 def get_default_clim_from_dtype(dtype):
@@ -210,7 +210,7 @@ class _ScaledTextureMixin:
 
     def scale_and_set_data(self, data, offset=None, copy=False):
         """Upload new data to the GPU."""
-        return self.set_data(data, offset=offset, copy=copy)
+        return self._set_data(data, offset=offset, copy=copy)
 
 
 class CPUScaledTextureMixin(_ScaledTextureMixin):
@@ -295,21 +295,17 @@ class CPUScaledTextureMixin(_ScaledTextureMixin):
 
     @staticmethod
     def _scale_data_on_cpu(data, clim, copy=True):
-        if copy:
-            should_cast_to_f32(data.dtype)
-            data = np.array(data, dtype=np.float32, copy=copy)
-        elif not copy and not np.issubdtype(data.dtype, np.floating):
-            raise ValueError("Data must be of floating type for no copying to occur.")
-
+        data = np.array(data, dtype=np.float32, copy=copy)
         if clim[0] != clim[1]:
             data -= clim[0]
-            data *= 1.0 / (clim[1] - clim[0])
-        if should_cast_to_f32(data.dtype):
-            data = data.astype(np.float32)
+            data *= 1 / (clim[1] - clim[0])
         return data
 
     def scale_and_set_data(self, data, offset=None, copy=True):
         """Upload new data to the GPU, scaling if necessary."""
+        # ensure dtype is the same as it was before, or funny things happen
+        # we use the `copy` value only here, to avoid copyign multiple times when True
+        data = np.array(data, dtype=self._data_dtype, copy=copy)
         self._data_dtype = data.dtype
 
         clim = self._clim
@@ -317,7 +313,7 @@ class CPUScaledTextureMixin(_ScaledTextureMixin):
         if data.ndim == self._ndim or data.shape[self._ndim] == 1:
             if is_auto:
                 clim = get_default_clim_from_data(data)
-            data = self._scale_data_on_cpu(data, clim, copy=copy)
+            data = self._scale_data_on_cpu(data, clim, copy=False)
             data_limits = clim
         else:
             data_limits = get_default_clim_from_dtype(data.dtype)
@@ -326,7 +322,10 @@ class CPUScaledTextureMixin(_ScaledTextureMixin):
 
         self._clim = float(clim[0]), float(clim[1])
         self._data_limits = data_limits
-        return super().scale_and_set_data(data, offset=offset, copy=copy)
+        return super().scale_and_set_data(data, offset=offset, copy=False)
+
+    def set_data(self, data, offset=None, copy=False):
+        self.scale_and_set_data(data, offset=offset, copy=copy)
 
 
 class GPUScaledTextureMixin(_ScaledTextureMixin):
@@ -389,7 +388,6 @@ class GPUScaledTextureMixin(_ScaledTextureMixin):
             texture_format = np.dtype(texture_format).type
             if texture_format not in self._texture_dtype_format:
                 raise ValueError("Can't determine internal texture format for '{}'".format(texture_format))
-            should_cast_to_f32(texture_format)
             texture_format = self._texture_dtype_format[texture_format]
         # adjust internalformat for format of data (RGBA vs L)
         texture_format = texture_format.replace('r', 'rgba'[:num_channels])

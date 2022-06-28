@@ -8,7 +8,7 @@ from __future__ import division
 import numpy as np
 
 from ..gloo import Texture2D, VertexBuffer
-from ..gloo.texture import should_cast_to_f32
+from ..gloo.texture import downcast_to_32
 from ..color import get_colormap
 from .shaders import Function, FunctionChain
 from .transforms import NullTransform
@@ -373,7 +373,7 @@ class ImageVisual(Visual):
             )
         return tex
 
-    def set_data(self, image):
+    def set_data(self, image, copy=False):
         """Set the image data.
 
         Parameters
@@ -388,8 +388,7 @@ class ImageVisual(Visual):
             raise TypeError(
                 "Complex data types not supported. Please use 'ComplexImage' instead"
             )
-        if should_cast_to_f32(data.dtype):
-            data = data.astype(np.float32)
+        data = downcast_to_32(data, copy=copy)
         # can the texture handle this data?
         self._texture.check_data_format(data)
         if self._data is None or self._data.shape[:2] != data.shape[:2]:
