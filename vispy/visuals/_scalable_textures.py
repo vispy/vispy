@@ -210,7 +210,8 @@ class _ScaledTextureMixin:
 
     def scale_and_set_data(self, data, offset=None, copy=False):
         """Upload new data to the GPU."""
-        return self._set_data(data, offset=offset, copy=copy)
+        # we need to call super here or we get infinite recursion
+        return super().set_data(data, offset=offset, copy=copy)
 
 
 class CPUScaledTextureMixin(_ScaledTextureMixin):
