@@ -1326,11 +1326,11 @@ vec4 Quadric3D(sampler3D texture, vec3 shape, vec3 uv) {
     return filter3D_radius2(texture, u_kernel, 0.34375, uv, 1 / shape);
 }
 
-vec4 Bicubic2D(sampler2D texture, vec2 shape, vec2 uv) {
+vec4 Cubic2D(sampler2D texture, vec2 shape, vec2 uv) {
     return filter2D_radius2(texture, u_kernel, 0.40625, uv, 1 / shape);
 }
 
-vec4 Bicubic3D(sampler3D texture, vec3 shape, vec3 uv) {
+vec4 Cubic3D(sampler3D texture, vec3 shape, vec3 uv) {
     return filter3D_radius2(texture, u_kernel, 0.40625, uv, 1 / shape);
 }
 

@@ -617,7 +617,7 @@ class VolumeVisual(Visual):
 
             * 'nearest': Default, uses 'nearest' with Texture interpolation.
             * 'linear': uses 'linear' with Texture interpolation.
-            * 'hanning', 'hamming', 'hermite', 'kaiser', 'quadric', 'bicubic',
+            * 'hanning', 'hamming', 'hermite', 'kaiser', 'quadric', 'cubic',
                 'catrom', 'mitchell', 'spline16', 'spline36', 'gaussian',
                 'bessel', 'sinc', 'lanczos', 'blackman'
     texture_format : numpy.dtype | str | None

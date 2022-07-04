@@ -211,11 +211,12 @@ class ImageVisual(Visual):
         in vispy/gloo/glsl/misc/spatial_filters.frag
 
             * 'nearest': Default, uses 'nearest' with Texture interpolation.
-            * 'bilinear': uses 'linear' with Texture interpolation.
-            * 'linear': alias for 'bilinear'
-            * 'hanning', 'hamming', 'hermite', 'kaiser', 'quadric', 'bicubic',
+            * 'linear': uses 'linear' with Texture interpolation.
+            * 'hanning', 'hamming', 'hermite', 'kaiser', 'quadric', 'cubic',
                 'catrom', 'mitchell', 'spline16', 'spline36', 'gaussian',
                 'bessel', 'sinc', 'lanczos', 'blackman'
+            * 'bilinear': alias for 'linear'
+            * 'bicubic': alias for cubic
             * 'custom': uses the sampling kernel provided through 'custom_kernel'.
     texture_format: numpy.dtype | str | None
         How to store data on the GPU. OpenGL allows for many different storage
@@ -349,9 +350,9 @@ class ImageVisual(Visual):
         hardware_lookup = Function(self._func_templates['texture_lookup'])
         interpolation_fun['nearest'] = hardware_lookup
         interpolation_fun['linear'] = hardware_lookup
-        # alias bilinear to linear for compatibility with Volume visual
+        # alias bilinear to linear and bicubic to cubic for compatibility with Volume visual
         # without breaking backward compatibility
-        interpolation_names = interpolation_names + ('bilinear',)
+        interpolation_names = interpolation_names + ('bilinear', 'bicubic')
         return interpolation_names, interpolation_fun
 
     def _init_texture(self, data, texture_format, **texture_kwargs):
@@ -522,6 +523,9 @@ class ImageVisual(Visual):
         # alias bilinear to linear
         if interpolation == 'bilinear':
             interpolation = 'linear'
+        # alias bicubic to cubic
+        if interpolation == 'bicubic':
+            interpolation = 'cubic'
         self._data_lookup_fn = self._interpolation_fun[interpolation]
         self.shared_program.frag['get_data'] = self._data_lookup_fn
 
