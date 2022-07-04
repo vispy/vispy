@@ -308,7 +308,6 @@ def test_image_interpolation():
     center_right = (41, 40)
     white = (255, 255, 255, 255)
     black = (255, 255, 255, 255)
-    # TODO: somethign went wrong here, with black being white :/
     gray = (130, 130, 130, 255)
 
     with TestingCanvas(size=size[::-1], bgcolor="w") as c:
@@ -346,33 +345,41 @@ def test_image_interpolation():
 
 def test_image_set_data_different_dtype():
     size = (80, 80)
-    data = np.array([[0, 255]], dtype=np.int8)
-    right = (40, 20)
-    left = (40, 60)
+    data = np.array([[0, 127]], dtype=np.int8)
+    left = (40, 10)
+    right = (40, 70)
     white = (255, 255, 255, 255)
     black = (0, 0, 0, 255)
 
-
-    # TODO: ALL WRONG!
     with TestingCanvas(size=size[::-1], bgcolor="w") as c:
         view = c.central_widget.add_view()
         view.camera = PanZoomCamera((0, 0, 2, 1))
-        image = Image(data=data, cmap='grays',
+        image = Image(data=data, cmap='grays', clim=[0, 127],
                       parent=view.scene)
 
         render = c.render()
         assert np.allclose(render[left], black)
         assert np.allclose(render[right], white)
 
+        # same data as float should change nothing
         image.set_data(data.astype(np.float32))
         render = c.render()
         assert np.allclose(render[left], black)
         assert np.allclose(render[right], white)
 
-        # something very different and out of bounds
-        new_data = np.array([[100000, 0]], dtype=np.float32)
+        # something inverted, different dtype
+        new_data = np.array([[127, 0]], dtype=np.float16)
         image.set_data(new_data)
+        render = c.render()
+        assert np.allclose(render[left], white)
+        assert np.allclose(render[right], black)
+
+        # out of bounds should wrap around cleanly
+        new_data = np.array([[0, 128]], dtype=np.float64)
+        image.set_data(new_data)
+        render = c.render()
         assert np.allclose(render[left], black)
-        assert np.allclose(render[right], white)
+        assert np.allclose(render[right], black)
+
 
 run_tests_if_main()
