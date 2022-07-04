@@ -13,6 +13,7 @@
 - Fix clipping planes logic for `Volume` and `PlanesClipper` [\#2329](https://github.com/vispy/vispy/pull/2329) ([brisvag](https://github.com/brisvag))
 - Enable text depth testing [\#2328](https://github.com/vispy/vispy/pull/2328) ([almarklein](https://github.com/almarklein))
 - Fix HIDPI on pyglet [\#2326](https://github.com/vispy/vispy/pull/2326) ([almarklein](https://github.com/almarklein))
+- Add `blend_equation` \(add\) to GL\_PRESETS [\#2324](https://github.com/vispy/vispy/pull/2324) ([psobolewskiPhD](https://github.com/psobolewskiPhD))
 
 **Merged pull requests:**
 
