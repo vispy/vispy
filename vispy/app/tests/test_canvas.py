@@ -68,4 +68,41 @@ def test_canvas_render(blend_func):
             np.testing.assert_allclose(rgba_result[..., 3], 255)
         else:
             # the alpha should have some transparency
+            # this part of this test fails on macOS 12 at the moment
+            # see https://github.com/vispy/vispy/pull/2324#issuecomment-1163350672
             assert (rgba_result[..., 3] != 255).any()
+
+
+@requires_application()
+@pytest.mark.parametrize(
+    'preset',
+    [
+        'opaque', 'additive', 'translucent',
+    ])
+def test_blend_presets(preset):
+    """Test blending presets a canvas to an array.
+
+    Different blending presets are used to test that they properly set
+    blend equations.
+
+    """
+    with Canvas(size=(125, 125), show=True, title='run') as c:
+        im1 = np.zeros((100, 100, 4)).astype(np.float32)
+        im1[:, :, 1] = 1
+        im1[:, :, 3] = .4
+        # Create the image
+        image1 = ImageVisual(im1)
+        image1.transform = STTransform(translate=(20, 20, -1))
+        image1.transforms.configure(canvas=c, viewport=(0, 0, 125, 125))
+        
+        gloo.set_state(blend_equation='min')
+        image1.set_gl_state(preset)
+
+        @c.events.draw.connect
+        def on_draw(ev):
+            gloo.clear('black')
+            gloo.set_viewport(0, 0, *c.physical_size)
+            image1.draw()
+            
+        rgba_result = c.render()
+        assert not np.allclose(rgba_result[..., :3], 0)
