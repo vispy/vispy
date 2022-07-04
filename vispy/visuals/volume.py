@@ -816,8 +816,8 @@ class VolumeVisual(Visual):
 
         Parameters
         ----------
-        vol : ndarray or Texture
-            The 3D volume,
+        vol : ndarray
+            The 3D volume.
         clim : tuple
             Colormap limits to use (min, max). None will use the min and max
             values. Defaults to ``None``.
@@ -856,9 +856,6 @@ class VolumeVisual(Visual):
             self._vol_shape = shape
             self._need_vertex_update = True
         self._vol_shape = shape
-
-    def __setitem__(self, key, value):
-        self._texture.__setitem__(key, value)
 
     @property
     def rendering_methods(self):
