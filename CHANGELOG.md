@@ -1,5 +1,24 @@
 # Release Notes
 
+## [v0.11.0](https://github.com/vispy/vispy/tree/v0.11.0) (2022-07-04)
+
+**Enhancements:**
+
+- Reduce memory copies in LineVisual [\#2327](https://github.com/vispy/vispy/pull/2327) ([christiansandberg](https://github.com/christiansandberg))
+- Add shader interpolation methods for VolumeVisual [\#2322](https://github.com/vispy/vispy/pull/2322) ([brisvag](https://github.com/brisvag))
+- Add 'custom' ImageVisual interpolation with custom kernel on GPU [\#2319](https://github.com/vispy/vispy/pull/2319) ([brisvag](https://github.com/brisvag))
+
+**Fixed bugs:**
+
+- Fix clipping planes logic for `Volume` and `PlanesClipper` [\#2329](https://github.com/vispy/vispy/pull/2329) ([brisvag](https://github.com/brisvag))
+- Enable text depth testing [\#2328](https://github.com/vispy/vispy/pull/2328) ([almarklein](https://github.com/almarklein))
+- Fix HIDPI on pyglet [\#2326](https://github.com/vispy/vispy/pull/2326) ([almarklein](https://github.com/almarklein))
+
+**Merged pull requests:**
+
+- Fix link to CHANGELOG.md in README.rst [\#2338](https://github.com/vispy/vispy/pull/2338) ([psobolewskiPhD](https://github.com/psobolewskiPhD))
+- Typo fix in docstring [\#2332](https://github.com/vispy/vispy/pull/2332) ([ksohan](https://github.com/ksohan))
+
 ## [v0.10.0](https://github.com/vispy/vispy/tree/v0.10.0) (2022-04-18)
 
 **Enhancements:**
