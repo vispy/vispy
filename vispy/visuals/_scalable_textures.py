@@ -66,18 +66,17 @@ class _ScaledTextureMixin:
 
     def __init__(self, data=None, **texture_kwargs):
         self._clim = None
-        self._data_dtype = None
         data, texture_kwargs = self.init_scaling_texture(data, **texture_kwargs)
         # Call the __init__ of the TextureXD class
         super().__init__(data, **texture_kwargs)
 
     def init_scaling_texture(self, data=None, internalformat=None, **texture_kwargs):
         """Initialize scaling properties and create a representative array."""
-        self._data_dtype = getattr(data, 'dtype', None)
         data = self._create_rep_array(data)
         internalformat = self._get_texture_format_for_data(
             data,
-            internalformat)
+            internalformat
+        )
         texture_kwargs['internalformat'] = internalformat
         return data, texture_kwargs
 
@@ -124,7 +123,7 @@ class _ScaledTextureMixin:
             raise RuntimeError("Can't return 'auto' normalized color limits "
                                "until data has been set. Call "
                                "'scale_and_set_data' first.")
-        if self._data_dtype is None:
+        if self._data is None:
             raise RuntimeError("Can't return normalized color limits until "
                                "data has been set. Call "
                                "'scale_and_set_data' first.")
@@ -132,8 +131,8 @@ class _ScaledTextureMixin:
             return self.clim[0], np.inf
         # if the internalformat of the texture is normalized we need to
         # also normalize the clims so they match in-shader
-        clim_min = self.normalize_value(self.clim[0], self._data_dtype)
-        clim_max = self.normalize_value(self.clim[1], self._data_dtype)
+        clim_min = self.normalize_value(self.clim[0], self._data.dtype)
+        clim_max = self.normalize_value(self.clim[1], self._data.dtype)
         return clim_min, clim_max
 
     @property
@@ -211,6 +210,9 @@ class _ScaledTextureMixin:
         """Upload new data to the GPU."""
         # we need to call super here or we get infinite recursion
         return super().set_data(data, offset=offset, copy=copy)
+
+    def set_data(self, data, offset=None, copy=False):
+        self.scale_and_set_data(data, offset=offset, copy=copy)
 
 
 class CPUScaledTextureMixin(_ScaledTextureMixin):
@@ -301,12 +303,11 @@ class CPUScaledTextureMixin(_ScaledTextureMixin):
             data *= 1 / (clim[1] - clim[0])
         return data
 
-    def scale_and_set_data(self, data, offset=None, copy=True):
+    def _scale_data_and_clim(self, data, copy=True):
         """Upload new data to the GPU, scaling if necessary."""
         # ensure dtype is the same as it was before, or funny things happen
         # we use the `copy` value only here, to avoid copyign multiple times when True
-        data = np.array(data, dtype=self._data_dtype, copy=copy)
-        self._data_dtype = data.dtype
+        data = np.array(data, dtype=self._data.dtype, copy=copy)
 
         clim = self._clim
         is_auto = isinstance(clim, str) and clim == 'auto'
@@ -320,13 +321,17 @@ class CPUScaledTextureMixin(_ScaledTextureMixin):
             if is_auto:
                 clim = data_limits
 
-        self._clim = float(clim[0]), float(clim[1])
+        clim = float(clim[0]), float(clim[1])
+        return data, clim, data_limits
+
+    def scale_and_set_data(self, data, offset=None, copy=True):
+        data, clim, data_limits = self._scale_data_and_clim(data, copy)
+        self._clim = clim
         self._data_limits = data_limits
         return super().scale_and_set_data(data, offset=offset, copy=False)
 
-    def set_data(self, data, offset=None, copy=False):
-        self.scale_and_set_data(data, offset=offset, copy=copy)
-
+    def _update_data(self, offset=None):
+        data, clim, data_limits = self._scale_data_and_clim(self._data, copy)
 
 class GPUScaledTextureMixin(_ScaledTextureMixin):
     """Texture class for smarter scaling and internalformat decisions.
@@ -438,7 +443,6 @@ class GPUScaledTextureMixin(_ScaledTextureMixin):
     def scale_and_set_data(self, data, offset=None, copy=False):
         """Upload new data to the GPU, scaling if necessary."""
         self._reformat_if_necessary(data)
-        self._data_dtype = np.dtype(data.dtype)
         self._clim = self._compute_clim(data)
         return super().scale_and_set_data(data, offset=offset, copy=copy)
 

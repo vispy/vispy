@@ -271,8 +271,6 @@ class ImageVisual(Visual):
                  interpolation='nearest', texture_format=None,
                  custom_kernel=np.ones((1, 1)), **kwargs):
         """Initialize image properties, texture storage, and interpolation methods."""
-        self._data = None
-
         # load 'float packed rgba8' interpolation kernel
         # to load float interpolation kernel use
         # `load_spatial_filters(packed=False)`
@@ -297,7 +295,7 @@ class ImageVisual(Visual):
 
         self._method = method
         self._grid = grid
-        self._need_texture_upload = True
+        self._need_texture_upload = None
         self._need_vertex_update = True
         self._need_colortransform_update = True
         self._need_interpolation_update = True
@@ -383,19 +381,23 @@ class ImageVisual(Visual):
         texture_format : str or None
 
         """
-        data = np.asarray(image)
+        data = downcast_to_32(image, copy=copy)
         if np.iscomplexobj(data):
             raise TypeError(
                 "Complex data types not supported. Please use 'ComplexImage' instead"
             )
-        data = downcast_to_32(data, copy=copy)
-        # can the texture handle this data?
-        self._texture.check_data_format(data)
-        if self._data is None or self._data.shape[:2] != data.shape[:2]:
-            # Only rebuild if the size of the image changed
+        self._texture.set_data(data)
+        # Only rebuild vertices if the size of the image changed
+        if self._texture._data is None or self._texture._data.shape[:2] != data.shape[:2]:
             self._need_vertex_update = True
-        self._data = data
-        self._need_texture_upload = True
+
+    def set_texture(self, texture):
+        """Set the texture."""
+        if not isinstance(texture, Texture2D):
+            raise ValueError(f'texture must be a Texture2D, got {texture.__class__}.')
+        self._texture = texture
+        self._data_lookup_fn['texture'] = self._texture
+        self._need_colortransform_update = True
 
     def view(self):
         """Get the :class:`vispy.visuals.visual.VisualView` for this visual."""
@@ -415,8 +417,7 @@ class ImageVisual(Visual):
 
     @clim.setter
     def clim(self, clim):
-        if self._texture.set_clim(clim):
-            self._need_texture_upload = True
+        self._texture.set_clim(clim)
         self._update_colortransform_clim()
         self.update()
 
@@ -474,7 +475,7 @@ class ImageVisual(Visual):
     @property
     def size(self):
         """Get size of the image (width, height)."""
-        return self._data.shape[:2][::-1]
+        return self._texture.shape[:2][::-1]
 
     @property
     def interpolation(self):
@@ -533,7 +534,7 @@ class ImageVisual(Visual):
         # 'nearest' (and also 'linear') doesn't use spatial_filters.frag
         # so u_kernel and shape setting is skipped
         if interpolation not in ('nearest', 'linear'):
-            self._data_lookup_fn['shape'] = self._data.shape[:2][::-1]
+            self._data_lookup_fn['shape'] = self.size
             if interpolation == 'custom':
                 self._data_lookup_fn['kernel'] = self._custom_kerneltex
                 self._data_lookup_fn['kernel_shape'] = self._custom_kernel.shape[::-1]
@@ -604,7 +605,7 @@ class ImageVisual(Visual):
         except RuntimeError:
             pre_clims = "auto"
         pre_internalformat = self._texture.internalformat
-        self._texture.scale_and_set_data(self._data)
+        self._texture.set_data(self._need_texture_upload)
         post_clims = self._texture.clim_normalized
         post_internalformat = self._texture.internalformat
         # color transform needs rebuilding if the internalformat was changed
@@ -617,7 +618,7 @@ class ImageVisual(Visual):
         elif new_cl and not self._need_colortransform_update:
             # shortcut so we don't have to rebuild the whole color transform
             self.shared_program.frag['color_transform'][1]['clim'] = self._texture.clim_normalized
-        self._need_texture_upload = False
+        self._need_texture_upload = None
 
     def _compute_bounds(self, axis, view):
         if axis > 1:
@@ -626,7 +627,7 @@ class ImageVisual(Visual):
             return 0, self.size[axis]
 
     def _build_color_transform(self):
-        if self._data.ndim == 2 or self._data.shape[2] == 1:
+        if self._texture._data.ndim == 2 or self._texture._data.shape[2] == 1:
             # luminance data
             fclim = Function(self._func_templates['clim_float'])
             fgamma = Function(self._func_templates['gamma_float'])
@@ -656,13 +657,13 @@ class ImageVisual(Visual):
             prg.frag['transform'] = trs.get_transform().inverse
 
     def _prepare_draw(self, view):
-        if self._data is None:
+        if self._texture._data is None:
             return False
 
         if self._need_interpolation_update:
             self._build_interpolation()
 
-        if self._need_texture_upload:
+        if self._need_texture_upload is not None:
             self._build_texture()
 
         if self._need_colortransform_update:
