@@ -330,8 +330,6 @@ class CPUScaledTextureMixin(_ScaledTextureMixin):
         self._data_limits = data_limits
         return super().scale_and_set_data(data, offset=offset, copy=False)
 
-    def _update_data(self, offset=None):
-        data, clim, data_limits = self._scale_data_and_clim(self._data, copy)
 
 class GPUScaledTextureMixin(_ScaledTextureMixin):
     """Texture class for smarter scaling and internalformat decisions.
