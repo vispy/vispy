@@ -267,6 +267,8 @@ jobs:
         if [ "${{ matrix.test }}" == 'examples' ]; then
           export DISPLAY=:99.0
           export XDG_RUNTIME_DIR=/tmp/runtime-runner
+          mkdir -p $XDG_RUNTIME_DIR
+          chmod 0700 $XDG_RUNTIME_DIR
           make examples
         fi
         if [ "${{ matrix.test }}" == 'osmesa' ]; then
