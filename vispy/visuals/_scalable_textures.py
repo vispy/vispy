@@ -6,7 +6,6 @@ import warnings
 import numpy as np
 
 from vispy.gloo import Texture2D, Texture3D
-from vispy.gloo.texture import downcast_to_32
 
 
 def get_default_clim_from_dtype(dtype):
