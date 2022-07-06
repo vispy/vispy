@@ -332,7 +332,7 @@ def test_image_interpolation():
         render = c.render()
         assert np.allclose(render[left], black)
         assert np.allclose(render[right], white)
-        assert np.allclose(render[center], gray)
+        assert np.allclose(render[center], gray, atol=5)  # we just want gray, this is not quantitative
 
         image.interpolation = 'custom'
         image.custom_kernel = np.array([[0]])  # no sampling
@@ -345,7 +345,7 @@ def test_image_interpolation():
         render = c.render()
         assert np.allclose(render[left], black)
         assert np.allclose(render[right], white)
-        assert np.allclose(render[center], gray)
+        assert np.allclose(render[center], gray, atol=5)  # we just want gray, this is not quantitative
 
 
 run_tests_if_main()
