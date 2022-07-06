@@ -846,7 +846,7 @@ class VolumeVisual(Visual):
         vol = downcast_to_32(vol, copy=copy)
         self._texture.check_data_format(vol)
         self._last_data = vol
-        self._texture.scale_and_set_data(vol, copy=copy)  # will be efficient if vol is same shape
+        self._texture.scale_and_set_data(vol, copy=False)
         self.shared_program['clim'] = self._texture.clim_normalized
         self.shared_program['u_shape'] = (vol.shape[2], vol.shape[1],
                                           vol.shape[0])
