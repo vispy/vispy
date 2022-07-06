@@ -5,6 +5,8 @@
 
 from __future__ import division
 
+import warnings
+
 import numpy as np
 
 from ..gloo import Texture2D, VertexBuffer
@@ -215,8 +217,6 @@ class ImageVisual(Visual):
             * 'hanning', 'hamming', 'hermite', 'kaiser', 'quadric', 'cubic',
                 'catrom', 'mitchell', 'spline16', 'spline36', 'gaussian',
                 'bessel', 'sinc', 'lanczos', 'blackman'
-            * 'bilinear': alias for 'linear'
-            * 'bicubic': alias for cubic
             * 'custom': uses the sampling kernel provided through 'custom_kernel'.
     texture_format: numpy.dtype | str | None
         How to store data on the GPU. OpenGL allows for many different storage
@@ -345,13 +345,12 @@ class ImageVisual(Visual):
         interpolation_fun = dict(zip(interpolation_names, fun))
         interpolation_names = tuple(sorted(interpolation_names))
 
-        # overwrite "nearest" and "bilinear" spatial-filters
+        # overwrite "nearest" and "linear" spatial-filters
         # with  "hardware" interpolation _data_lookup_fn
         hardware_lookup = Function(self._func_templates['texture_lookup'])
         interpolation_fun['nearest'] = hardware_lookup
         interpolation_fun['linear'] = hardware_lookup
-        # alias bilinear to linear and bicubic to cubic for compatibility with Volume visual
-        # without breaking backward compatibility
+        # alias bilinear to linear and bicubic to cubic (but deprecate)
         interpolation_names = interpolation_names + ('bilinear', 'bicubic')
         return interpolation_names, interpolation_fun
 
@@ -522,9 +521,19 @@ class ImageVisual(Visual):
         interpolation = self._interpolation
         # alias bilinear to linear
         if interpolation == 'bilinear':
+            warnings.warn(
+                "'bilinear' interpolation is Deprecated. Use 'linear' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
             interpolation = 'linear'
         # alias bicubic to cubic
         if interpolation == 'bicubic':
+            warnings.warn(
+                "'bicubic' interpolation is Deprecated. Use 'cubic' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
             interpolation = 'cubic'
         self._data_lookup_fn = self._interpolation_fun[interpolation]
         self.shared_program.frag['get_data'] = self._data_lookup_fn

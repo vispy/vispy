@@ -38,6 +38,7 @@ from __future__ import annotations
 
 from typing import Optional
 from functools import lru_cache
+import warnings
 
 from ._scalable_textures import CPUScaledTexture3D, GPUScaledTextured3D, Texture2D
 from ..gloo import VertexBuffer, IndexBuffer
@@ -789,6 +790,8 @@ class VolumeVisual(Visual):
         hardware_lookup = Function(self._func_templates['texture_lookup'])
         interpolation_fun['nearest'] = hardware_lookup
         interpolation_fun['linear'] = hardware_lookup
+        # alias bicubic to cubic (but deprecate)
+        interpolation_methods = interpolation_methods + ('bicubic',)
         return interpolation_methods, interpolation_fun
 
     def _create_texture(self, texture_format, data):
@@ -938,6 +941,14 @@ class VolumeVisual(Visual):
     def _build_interpolation(self):
         """Rebuild the _data_lookup_fn for different interpolations."""
         interpolation = self._interpolation
+        # alias bicubic to cubic
+        if interpolation == 'bicubic':
+            warnings.warn(
+                "'bicubic' interpolation is Deprecated. Use 'cubic' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            interpolation = 'cubic'
         self._data_lookup_fn = self._interpolation_fun[interpolation]
         try:
             self.shared_program.frag['get_data'] = self._data_lookup_fn
