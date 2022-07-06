@@ -212,6 +212,9 @@ class _ScaledTextureMixin:
         # we need to call super here or we get infinite recursion
         return super().set_data(data, offset=offset, copy=copy)
 
+    def set_data(self, data, offset=None, copy=False):
+        self.scale_and_set_data(data, offset=offset, copy=copy)
+
 
 class CPUScaledTextureMixin(_ScaledTextureMixin):
     """Texture mixin class for smarter scaling decisions.
@@ -323,9 +326,6 @@ class CPUScaledTextureMixin(_ScaledTextureMixin):
         self._clim = float(clim[0]), float(clim[1])
         self._data_limits = data_limits
         return super().scale_and_set_data(data, offset=offset, copy=False)
-
-    def set_data(self, data, offset=None, copy=False):
-        self.scale_and_set_data(data, offset=offset, copy=copy)
 
 
 class GPUScaledTextureMixin(_ScaledTextureMixin):
