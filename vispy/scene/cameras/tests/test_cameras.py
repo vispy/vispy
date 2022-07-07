@@ -21,7 +21,7 @@ from vispy.testing import run_tests_if_main
 def test_turntable_camera_transform(elevation, azimuth, roll, expected):
     camera = TurntableCamera(elevation=elevation, azimuth=azimuth, roll=roll)
     matrix = camera._get_rotation_tr()
-    np.testing.assert_allclose(matrix, expected)
+    np.testing.assert_allclose(matrix, expected, atol=1e-8)
 
 
 run_tests_if_main()
