@@ -163,5 +163,5 @@ class TurntableCamera(Base3DRotationCamera):
               + d1 * (sro * caz - cro * sel * saz)) * self.translate_speed
         dy = (+ d0 * (cro * saz - sro * sel * caz)
               + d1 * (sro * saz + cro * sel * caz)) * self.translate_speed
-        dz = (-d0 * sro * cel + d1 * cro * cel) * self.translate_speed
+        dz = (- d0 * sro * cel + d1 * cro * cel) * self.translate_speed
         return dx, dy, dz
