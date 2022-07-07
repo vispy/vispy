@@ -57,16 +57,8 @@ class TurntableCamera(Base3DRotationCamera):
 
     _state_props = Base3DRotationCamera._state_props + ("elevation", "azimuth", "roll")
 
-    def __init__(
-        self,
-        fov=45.0,
-        elevation=30.0,
-        azimuth=30.0,
-        roll=0.0,
-        distance=None,
-        translate_speed=1.0,
-        **kwargs
-    ):
+    def __init__(self, fov=45.0, elevation=30.0, azimuth=30.0, roll=0.0,
+                distance=None, translate_speed=1.0, **kwargs):
         super(TurntableCamera, self).__init__(fov=fov, **kwargs)
 
         # Set camera attributes
@@ -167,11 +159,9 @@ class TurntableCamera(Base3DRotationCamera):
         sro, saz, sel = np.sin(rae)
         cro, caz, cel = np.cos(rae)
         d0, d1 = dist[0], dist[1]
-        dx = (
-            +d0 * (cro * caz + sro * sel * saz) + d1 * (sro * caz - cro * sel * saz)
-        ) * self.translate_speed
-        dy = (
-            +d0 * (cro * saz - sro * sel * caz) + d1 * (sro * saz + cro * sel * caz)
-        ) * self.translate_speed
+        dx = (+ d0 * (cro * caz + sro * sel * saz)
+              + d1 * (sro * caz - cro * sel * saz)) * self.translate_speed
+        dy = (+ d0 * (cro * saz - sro * sel * caz)
+              + d1 * (sro * saz + cro * sel * caz)) * self.translate_speed
         dz = (-d0 * sro * cel + d1 * cro * cel) * self.translate_speed
         return dx, dy, dz
