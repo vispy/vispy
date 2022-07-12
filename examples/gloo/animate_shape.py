@@ -23,7 +23,7 @@ im1[:50, :, 0] = 1.0
 im1[:, :50, 1] = 1.0
 im1[50:, 50:, 2] = 1.0
 
-# Create vetices and texture coords, combined in one array for high performance
+# Create vertices and texture coords, combined in one array for high performance
 vertex_data = np.zeros(4, dtype=[('a_position', np.float32, 3),
                                  ('a_texcoord', np.float32, 2)])
 vertex_data['a_position'] = np.array([[-0.8, -0.8, 0.0], [+0.7, -0.7, 0.0],

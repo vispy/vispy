@@ -367,7 +367,7 @@ class Visual(BaseVisual):
         *args : tuple
             Arguments.
         **kwargs : dict
-            Keyword argments.
+            Keyword arguments.
         """
         if len(args) == 1:
             self._vshare.gl_state['preset'] = args[0]
@@ -636,7 +636,7 @@ class CompoundVisual(BaseVisual):
         *args : tuple
             Arguments.
         **kwargs : dict
-            Keyword argments.
+            Keyword arguments.
         """
         for v in self._subvisuals:
             v.update_gl_state(*args, **kwargs)
