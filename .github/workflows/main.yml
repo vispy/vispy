@@ -36,4 +36,5 @@ jobs:
         glxinfo
     - name: Check DPI
       run: |
-        xdpyinfo
+        export DISPLAY=:99.0
+        xrandr
