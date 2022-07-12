@@ -39,6 +39,11 @@ jobs:
       run: |
         export DISPLAY=:99.0
         glxinfo
+    - name: Check Display Information
+      run: |
+        export DISPLAY=:99.0
+        xdpyinfo
+
   # linter, style checks, etc
   lint:
     name: lint and style checks
