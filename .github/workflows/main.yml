@@ -220,6 +220,8 @@ jobs:
           else
             cat ci/requirements/linux_full_deps_apt.txt | xargs sudo apt-get -y install
           fi
+        else
+          sudo apt-get -y install x11-utils
         fi
         # Start xvfb daemon
         export DISPLAY=:99.0
