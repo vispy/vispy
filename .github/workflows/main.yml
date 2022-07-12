@@ -29,7 +29,7 @@ jobs:
     - name: Install OpenGL
       run: |
         sudo apt-get update
-        sudo apt-get -y install libglu1-mesa-dev libgl1-mesa-dev libxi-dev libglfw3-dev libgles2-mesa-dev libsdl2-2.0-0 mesa-utils
+        sudo apt-get -y install libglu1-mesa-dev libgl1-mesa-dev libxi-dev libglfw3-dev libgles2-mesa-dev libsdl2-2.0-0 mesa-utils x11-utils
     - name: Start xvfb daemon
       run: |
         export DISPLAY=:99.0
