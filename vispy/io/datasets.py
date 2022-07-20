@@ -82,7 +82,7 @@ def load_spatial_filters(packed=True):
         not require a filter but can still be used
     """
     names = ("Linear", "Hanning", "Hamming", "Hermite",
-             "Kaiser", "Quadric", "Bicubic", "CatRom",
+             "Kaiser", "Quadric", "Cubic", "CatRom",
              "Mitchell", "Spline16", "Spline36", "Gaussian",
              "Bessel", "Sinc", "Lanczos", "Blackman", "Nearest")
 
