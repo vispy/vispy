@@ -300,15 +300,17 @@ def test_change_clim_float(dtype, init_clim):
 @requires_application()
 def test_image_interpolation():
     """Test different interpolations"""
-    size = (80, 80)
+    size = (81, 81)
     data = np.array([[0, 1]], dtype=int)
-    left = (0, 40)
-    right = (79, 40)
-    center_left = (40, 40)
-    center_right = (41, 40)
+    # we need to avoid the edges because the canvas adds a white border of 1 px
+    left = (40, 10)
+    right = (40, 71)
+    center_left = (40, 39)
+    center = (40, 40)
+    center_right = (40, 41)
     white = (255, 255, 255, 255)
-    black = (255, 255, 255, 255)
-    gray = (130, 130, 130, 255)
+    black = (0, 0, 0, 255)
+    gray = (128, 128, 128, 255)
 
     with TestingCanvas(size=size[::-1], bgcolor="w") as c:
         view = c.central_widget.add_view()
@@ -316,31 +318,34 @@ def test_image_interpolation():
         image = Image(data=data, cmap='grays',
                       parent=view.scene)
 
+        # needed to properly initialize the canvas
+        render = c.render()
+
         image.interpolation = 'nearest'
         render = c.render()
-        assert np.allclose(render[left], white)
-        assert np.allclose(render[right], black)
-        assert np.allclose(render[center_left], white)
-        assert np.allclose(render[center_right], black)
+        assert np.allclose(render[left], black)
+        assert np.allclose(render[right], white)
+        assert np.allclose(render[center_left], black)
+        assert np.allclose(render[center_right], white)
 
         image.interpolation = 'bilinear'
         render = c.render()
-        assert np.allclose(render[left], white)
-        assert np.allclose(render[right], black)
-        assert np.allclose(render[center_left], gray)
+        assert np.allclose(render[left], black)
+        assert np.allclose(render[right], white)
+        assert np.allclose(render[center], gray, atol=5)  # we just want gray, this is not quantitative
 
         image.interpolation = 'custom'
         image.custom_kernel = np.array([[0]])  # no sampling
         render = c.render()
         assert np.allclose(render[left], white)
         assert np.allclose(render[right], white)
-        assert np.allclose(render[center_left], white)
+        assert np.allclose(render[center], white)
 
         image.custom_kernel = np.array([[1]])  # same as linear
         render = c.render()
-        assert np.allclose(render[left], white)
-        assert np.allclose(render[right], black)
-        assert np.allclose(render[center_left], gray)
+        assert np.allclose(render[left], black)
+        assert np.allclose(render[right], white)
+        assert np.allclose(render[center], gray, atol=5)  # we just want gray, this is not quantitative
 
 
 run_tests_if_main()
