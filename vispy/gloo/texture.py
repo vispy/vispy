@@ -401,8 +401,6 @@ class BaseTexture(GLObject):
         # Make sure data is big enough
         if data.shape != shape:
             data = np.resize(data, shape)
-        # Ensure dtype is the same as the current (eventual downcasting will happen later)
-        data = np.array(data, dtype=getattr(self, '_data_dtype', None), copy=False)
 
         # Set data (deferred)
         self._set_data(data=data, offset=offset, copy=False)
