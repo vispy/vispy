@@ -76,7 +76,7 @@ def _get_orig_and_new_clims(input_dtype):
 def test_image_clims_and_gamma(input_dtype, texture_format, num_channels,
                                clim_on_init, data_on_init):
     """Test image visual with clims and gamma on shader."""
-    size = (40, 40)
+    size = (80, 80)
     if texture_format == '__dtype__':
         texture_format = input_dtype
     shape = size + (num_channels,) if num_channels > 0 else size
