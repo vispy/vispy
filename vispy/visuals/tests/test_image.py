@@ -343,6 +343,7 @@ def test_image_interpolation():
         assert np.allclose(render[center_left], gray)
 
 
+@requires_application()
 def test_image_set_data_different_dtype():
     size = (80, 80)
     data = np.array([[0, 127]], dtype=np.int8)
