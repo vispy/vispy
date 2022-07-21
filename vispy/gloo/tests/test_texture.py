@@ -7,8 +7,6 @@ import unittest
 import numpy as np
 import pytest
 
-import numpy as np
-
 from vispy.gloo import Texture1D, Texture2D, Texture3D, TextureAtlas
 from vispy.testing import requires_pyopengl, run_tests_if_main, assert_raises
 
