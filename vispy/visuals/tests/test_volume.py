@@ -238,7 +238,7 @@ def _make_test_data(shape, input_dtype):
 @requires_pyopengl()
 def test_set_data_does_not_change_input():
     # Create volume
-    V = scene.visuals.Volume(np.zeros((20, 20, 20)))
+    V = scene.visuals.Volume(np.zeros((20, 20, 20), dtype=np.float32))
 
     # calling Volume.set_data() should NOT alter the values of the input array
     # regardless of data type
@@ -251,7 +251,9 @@ def test_set_data_does_not_change_input():
 
     # for those using float32 who want to avoid the copy operation,
     # using set_data() with `copy=False` should be expected to alter the data.
-    vol2 = np.array(vol, dtype='float32', copy=True)
+    # dtype has to be the same as the one used to init the texture, or it will
+    # be first coerced to the same dtype as the init
+    vol2 = np.array(vol, dtype=np.float32, copy=True)
     assert np.allclose(vol, vol2)
     V.set_data(vol2, clim=(0, 200), copy=False)
     assert not np.allclose(vol, vol2)
