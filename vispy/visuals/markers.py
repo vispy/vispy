@@ -6,6 +6,7 @@
 """Marker Visual and shader definitions."""
 
 import warnings
+from enum import Enum, auto
 
 import numpy as np
 
@@ -76,7 +77,7 @@ void main (void) {
 """
 
 
-_FRAGMENT_SHADER = """#version 120
+_FRAGMENT_SHADER = """
 uniform vec3 u_light_position;
 uniform vec3 u_light_color;
 uniform float u_light_ambient;
@@ -197,351 +198,323 @@ void main()
 }
 """
 
-disc = """
-float disc(vec2 pointcoord, float size)
-{
-    float r = length((pointcoord.xy - vec2(0.5,0.5))*size);
-    r -= $v_size/2.;
-    return r;
-}
-"""
+
+symbols = {
+    'disc': """
+        float r = length((pointcoord.xy - vec2(0.5,0.5))*size);
+        r -= $v_size/2.;
+        return r;
+    """,
+
+    'arrow': """
+        const float sqrt2 = sqrt(2.);
+        float half_size = $v_size/2.;
+        float ady = abs(pointcoord.y -.5)*size;
+        float dx = (pointcoord.x -.5)*size;
+        float r1 = abs(dx) + ady - half_size;
+        float r2 = dx + 0.25*$v_size + ady - half_size;
+        float r = max(r1,-r2);
+        return r/sqrt2;//account for slanted edge and correct for width
+    """,
+
+    'ring': """
+        float r1 = length((pointcoord.xy - vec2(0.5,0.5))*size) - $v_size/2.;
+        float r2 = length((pointcoord.xy - vec2(0.5,0.5))*size) - $v_size/4.;
+        float r = max(r1,-r2);
+        return r;
+    """,
+
+    'clobber': """
+        const float sqrt3 = sqrt(3.);
+        const float PI = 3.14159265358979323846264;
+        const float t1 = -PI/2;
+        float circle_radius = 0.32 * $v_size;
+        float center_shift = 0.36/sqrt3 * $v_size;
+        //total size (horizontal) = 2*circle_radius + sqrt3*center_shirt = $v_size
+        vec2  c1 = vec2(cos(t1),sin(t1))*center_shift;
+        const float t2 = t1+2*PI/3;
+        vec2  c2 = vec2(cos(t2),sin(t2))*center_shift;
+        const float t3 = t2+2*PI/3;
+        vec2  c3 = vec2(cos(t3),sin(t3))*center_shift;
+        //xy is shift to center marker vertically
+        vec2 xy = (pointcoord.xy-vec2(0.5,0.5))*size + vec2(0.,-0.25*center_shift);
+        float r1 = length(xy - c1) - circle_radius;
+        float r2 = length(xy - c2) - circle_radius;
+        float r3 = length(xy - c3) - circle_radius;
+        float r = min(min(r1,r2),r3);
+        return r;
+    """,
 
 
-arrow = """
-const float sqrt2 = sqrt(2.);
-float rect(vec2 pointcoord, float size)
-{
-    float half_size = $v_size/2.;
-    float ady = abs(pointcoord.y -.5)*size;
-    float dx = (pointcoord.x -.5)*size;
-    float r1 = abs(dx) + ady - half_size;
-    float r2 = dx + 0.25*$v_size + ady - half_size;
-    float r = max(r1,-r2);
-    return r/sqrt2;//account for slanted edge and correct for width
-}
-"""
+    'square': """
+        float r = max(abs(pointcoord.x -.5)*size, abs(pointcoord.y -.5)*size);
+        r -= $v_size/2.;
+        return r;
+    """,
+
+    'x': """
+        vec2 rotcoord = vec2((pointcoord.x + pointcoord.y - 1.) / sqrt(2.),
+                             (pointcoord.y - pointcoord.x) / sqrt(2.));
+        //vbar
+        float r1 = abs(rotcoord.x)*size - $v_size/6.;
+        float r2 = abs(rotcoord.y)*size - $v_size/2.;
+        float vbar = max(r1,r2);
+        //hbar
+        float r3 = abs(rotcoord.y)*size - $v_size/6.;
+        float r4 = abs(rotcoord.x)*size - $v_size/2.;
+        float hbar = max(r3,r4);
+        return min(vbar, hbar);
+    """,
 
 
-ring = """
-float ring(vec2 pointcoord, float size)
-{
-    float r1 = length((pointcoord.xy - vec2(0.5,0.5))*size) - $v_size/2.;
-    float r2 = length((pointcoord.xy - vec2(0.5,0.5))*size) - $v_size/4.;
-    float r = max(r1,-r2);
-    return r;
-}
-"""
-
-clobber = """
-const float sqrt3 = sqrt(3.);
-float clobber(vec2 pointcoord, float size)
-{
-    const float PI = 3.14159265358979323846264;
-    const float t1 = -PI/2;
-    float circle_radius = 0.32 * $v_size;
-    float center_shift = 0.36/sqrt3 * $v_size;
-    //total size (horizontal) = 2*circle_radius + sqrt3*center_shirt = $v_size
-    vec2  c1 = vec2(cos(t1),sin(t1))*center_shift;
-    const float t2 = t1+2*PI/3;
-    vec2  c2 = vec2(cos(t2),sin(t2))*center_shift;
-    const float t3 = t2+2*PI/3;
-    vec2  c3 = vec2(cos(t3),sin(t3))*center_shift;
-    //xy is shift to center marker vertically
-    vec2 xy = (pointcoord.xy-vec2(0.5,0.5))*size + vec2(0.,-0.25*center_shift);
-    float r1 = length(xy - c1) - circle_radius;
-    float r2 = length(xy - c2) - circle_radius;
-    float r3 = length(xy - c3) - circle_radius;
-    float r = min(min(r1,r2),r3);
-    return r;
-}
-"""
+    'diamond': """
+        float r = abs(pointcoord.x -.5)*size + abs(pointcoord.y -.5)*size;
+        r -= $v_size/2.;
+        return r / sqrt(2.);//account for slanted edge and correct for width
+    """,
 
 
-square = """
-float square(vec2 pointcoord, float size)
-{
-    float r = max(abs(pointcoord.x -.5)*size, abs(pointcoord.y -.5)*size);
-    r -= $v_size/2.;
-    return r;
-}
-"""
+    'vbar': """
+        float r1 = abs(pointcoord.x - 0.5)*size - $v_size/6.;
+        float r3 = abs(pointcoord.y - 0.5)*size - $v_size/2.;
+        float r = max(r1,r3);
+        return r;
+    """,
 
-x_ = """
-float x_(vec2 pointcoord, float size)
-{
-    vec2 rotcoord = vec2((pointcoord.x + pointcoord.y - 1.) / sqrt(2.),
-                         (pointcoord.y - pointcoord.x) / sqrt(2.));
-    //vbar
-    float r1 = abs(rotcoord.x)*size - $v_size/6.;
-    float r2 = abs(rotcoord.y)*size - $v_size/2.;
-    float vbar = max(r1,r2);
-    //hbar
-    float r3 = abs(rotcoord.y)*size - $v_size/6.;
-    float r4 = abs(rotcoord.x)*size - $v_size/2.;
-    float hbar = max(r3,r4);
-    return min(vbar, hbar);
-}
-"""
+    'hbar': """
+        float r2 = abs(pointcoord.y - 0.5)*size - $v_size/6.;
+        float r3 = abs(pointcoord.x - 0.5)*size - $v_size/2.;
+        float r = max(r2,r3);
+        return r;
+    """,
 
+    'cross': """
+        //vbar
+        float r1 = abs(pointcoord.x - 0.5)*size - $v_size/6.;
+        float r2 = abs(pointcoord.y - 0.5)*size - $v_size/2.;
+        float vbar = max(r1,r2);
+        //hbar
+        float r3 = abs(pointcoord.y - 0.5)*size - $v_size/6.;
+        float r4 = abs(pointcoord.x - 0.5)*size - $v_size/2.;
+        float hbar = max(r3,r4);
+        return min(vbar, hbar);
+    """,
 
-diamond = """
-float diamond(vec2 pointcoord, float size)
-{
-    float r = abs(pointcoord.x -.5)*size + abs(pointcoord.y -.5)*size;
-    r -= $v_size/2.;
-    return r / sqrt(2.);//account for slanted edge and correct for width
-}
-"""
+    'tailed_arrow': """
+        float half_size = $v_size/2.;
+        float ady = abs(pointcoord.y -.5)*size;
+        float dx = (pointcoord.x -.5)*size;
+        float r1 = abs(dx) + ady - half_size;
+        float r2 = dx + 0.25*$v_size + ady - half_size;
+        float arrow = max(r1,-r2);
+        //hbar
+        float upper_bottom_edges = ady - $v_size/8./sqrt2;
+        float left_edge = -dx - half_size;
+        float right_edge = dx + ady - half_size;
+        float hbar = max(upper_bottom_edges, left_edge);
+        float scale = 1.; //rescaling for slanted edge
+        if (right_edge >= hbar)
+        {
+            hbar = right_edge;
+            scale = sqrt2;
+        }
+        if (arrow <= hbar)
+        {
+            return arrow / sqrt2;//account for slanted edge and correct for width
+        }
+        else
+        {
+            return hbar / scale;
+        }
+    """,
 
+    'triangle_up': """
+        float height = $v_size*sqrt(3.)/2.;
+        float bottom = ((pointcoord.y - 0.5)*size - height/2.);
+        float rotated_y = sqrt(3.)/2. * (pointcoord.x - 0.5) * size
+                  - 0.5 * ((pointcoord.y - 0.5)*size - height/6.) + height/6.;
+        float right_edge = (rotated_y - height/2.);
+        float cc_rotated_y = -sqrt(3.)/2. * (pointcoord.x - 0.5)*size
+                  - 0.5 * ((pointcoord.y - 0.5)*size - height/6.) + height/6.;
+        float left_edge = (cc_rotated_y - height/2.);
+        float slanted_edges = max(right_edge, left_edge);
+        return max(slanted_edges, bottom);
+    """,
 
-vbar = """
-float vbar(vec2 pointcoord, float size)
-{
-    float r1 = abs(pointcoord.x - 0.5)*size - $v_size/6.;
-    float r3 = abs(pointcoord.y - 0.5)*size - $v_size/2.;
-    float r = max(r1,r3);
-    return r;
-}
-"""
+    'triangle_down': """
+        float height = -$v_size*sqrt(3.)/2.;
+        float bottom = -((pointcoord.y - 0.5)*size - height/2.);
+        float rotated_y = sqrt(3.)/2. * (pointcoord.x - 0.5) * size
+                    - 0.5 * ((pointcoord.y - 0.5)*size - height/6.) + height/6.;
+        float right_edge = -(rotated_y - height/2.);
+        float cc_rotated_y = -sqrt(3.)/2. * (pointcoord.x - 0.5)*size
+                    - 0.5 * ((pointcoord.y - 0.5)*size - height/6.) + height/6.;
+        float left_edge = -(cc_rotated_y - height/2.);
+        float slanted_edges = max(right_edge, left_edge);
+        return max(slanted_edges, bottom);
+    """,
 
-hbar = """
-float rect(vec2 pointcoord, float size)
-{
-    float r2 = abs(pointcoord.y - 0.5)*size - $v_size/6.;
-    float r3 = abs(pointcoord.x - 0.5)*size - $v_size/2.;
-    float r = max(r2,r3);
-    return r;
-}
-"""
+    'star': """
+        float star = -10000.;
+        const float PI2_5 = 3.141592653589*2./5.;
+        const float PI2_20 = 3.141592653589/10.;  //PI*2/20
+        // downwards shift to that the marker center is halfway vertically
+        // between the top of the upward spike (y = -v_size/2.)
+        // and the bottom of one of two downward spikes
+        // (y = +v_size/2.*cos(2.*pi/10.) approx +v_size/2.*0.8)
+        // center is at -v_size/2.*0.1
+        float shift_y = -0.05*$v_size;
+        // first spike upwards,
+        // rotate spike by 72 deg four times to complete the star
+        for (int i = 0; i <= 4; i++)
+        {
+            //if not the first spike, rotate it upwards
+            float x = (pointcoord.x - 0.5)*size;
+            float y = (pointcoord.y - 0.5)*size;
+            float spike_rot_angle = float(i) * PI2_5;
+            float cosangle = cos(spike_rot_angle);
+            float sinangle = sin(spike_rot_angle);
+            float spike_x = x;
+            float spike_y = y + shift_y;
+            if (i > 0)
+            {
+                spike_x = cosangle * x - sinangle * (y + shift_y);
+                spike_y = sinangle * x + cosangle * (y + shift_y);
+            }
+            // in the frame where the spike is upwards:
+            // rotate 18 deg the zone x < 0 around the top of the star
+            // (point whose coords are -s/2, 0 where s is the size of the marker)
+            // compute y coordonates as well because
+            // we do a second rotation to put the spike at its final position
+            float rot_center_y = -$v_size/2.;
+            float rot18x = cos(PI2_20) * spike_x
+                                - sin(PI2_20) * (spike_y - rot_center_y);
+            //rotate -18 deg the zone x > 0 arount the top of the star
+            float rot_18x = cos(PI2_20) * spike_x
+                                + sin(PI2_20) * (spike_y - rot_center_y);
+            float bottom = spike_y - $v_size/10.;
+            //                     max(left edge, right edge)
+            float spike = max(bottom, max(rot18x, -rot_18x));
+            if (i == 0)
+            {// first spike, skip the rotation
+                star = spike;
+            }
+            else // i > 0
+            {
+                star = min(star, spike);
+            }
+        }
+        return star;
+    """,
 
-cross = """
-float cross(vec2 pointcoord, float size)
-{
-    //vbar
-    float r1 = abs(pointcoord.x - 0.5)*size - $v_size/6.;
-    float r2 = abs(pointcoord.y - 0.5)*size - $v_size/2.;
-    float vbar = max(r1,r2);
-    //hbar
-    float r3 = abs(pointcoord.y - 0.5)*size - $v_size/6.;
-    float r4 = abs(pointcoord.x - 0.5)*size - $v_size/2.;
-    float hbar = max(r3,r4);
-    return min(vbar, hbar);
-}
-"""
+    # the following two markers needs x and y sizes
+    'rect': """
+        float x_boundaries = abs(pointcoord.x - 0.5)*size - $v_size.x/2.;
+        float y_boundaries = abs(pointcoord.y - 0.5)*size - $v_size.y/2.;
+        return max(x_boundaries, y_boundaries);
+    """,
 
-
-tailed_arrow = """
-const float sqrt2 = sqrt(2.);
-float rect(vec2 pointcoord, float size)
-{
-    float half_size = $v_size/2.;
-    float ady = abs(pointcoord.y -.5)*size;
-    float dx = (pointcoord.x -.5)*size;
-    float r1 = abs(dx) + ady - half_size;
-    float r2 = dx + 0.25*$v_size + ady - half_size;
-    float arrow = max(r1,-r2);
-    //hbar
-    float upper_bottom_edges = ady - $v_size/8./sqrt2;
-    float left_edge = -dx - half_size;
-    float right_edge = dx + ady - half_size;
-    float hbar = max(upper_bottom_edges, left_edge);
-    float scale = 1.; //rescaling for slanted edge
-    if (right_edge >= hbar)
-    {
-        hbar = right_edge;
-        scale = sqrt2;
-    }
-    if (arrow <= hbar)
-    {
-        return arrow / sqrt2;//account for slanted edge and correct for width
-    }
-    else
-    {
-        return hbar / scale;
-    }
-}
-"""
-
-
-triangle_up = """
-float rect(vec2 pointcoord, float size)
-{
-    float height = $v_size*sqrt(3.)/2.;
-    float bottom = ((pointcoord.y - 0.5)*size - height/2.);
-    float rotated_y = sqrt(3.)/2. * (pointcoord.x - 0.5) * size
-              - 0.5 * ((pointcoord.y - 0.5)*size - height/6.) + height/6.;
-    float right_edge = (rotated_y - height/2.);
-    float cc_rotated_y = -sqrt(3.)/2. * (pointcoord.x - 0.5)*size
-              - 0.5 * ((pointcoord.y - 0.5)*size - height/6.) + height/6.;
-    float left_edge = (cc_rotated_y - height/2.);
-    float slanted_edges = max(right_edge, left_edge);
-    return max(slanted_edges, bottom);
-}
-"""
-
-triangle_down = """
-float rect(vec2 pointcoord, float size)
-{
-    float height = -$v_size*sqrt(3.)/2.;
-    float bottom = -((pointcoord.y - 0.5)*size - height/2.);
-    float rotated_y = sqrt(3.)/2. * (pointcoord.x - 0.5) * size
-                - 0.5 * ((pointcoord.y - 0.5)*size - height/6.) + height/6.;
-    float right_edge = -(rotated_y - height/2.);
-    float cc_rotated_y = -sqrt(3.)/2. * (pointcoord.x - 0.5)*size
-                - 0.5 * ((pointcoord.y - 0.5)*size - height/6.) + height/6.;
-    float left_edge = -(cc_rotated_y - height/2.);
-    float slanted_edges = max(right_edge, left_edge);
-    return max(slanted_edges, bottom);
-}
-"""
-
-
-star = """
-float rect(vec2 pointcoord, float size)
-{
-    float star = -10000.;
-    const float PI2_5 = 3.141592653589*2./5.;
-    const float PI2_20 = 3.141592653589/10.;  //PI*2/20
-    // downwards shift to that the marker center is halfway vertically
-    // between the top of the upward spike (y = -v_size/2.)
-    // and the bottom of one of two downward spikes
-    // (y = +v_size/2.*cos(2.*pi/10.) approx +v_size/2.*0.8)
-    // center is at -v_size/2.*0.1
-    float shift_y = -0.05*$v_size;
-    // first spike upwards,
-    // rotate spike by 72 deg four times to complete the star
-    for (int i = 0; i <= 4; i++)
-    {
-        //if not the first spike, rotate it upwards
+    'ellipse': """
         float x = (pointcoord.x - 0.5)*size;
         float y = (pointcoord.y - 0.5)*size;
-        float spike_rot_angle = float(i) * PI2_5;
-        float cosangle = cos(spike_rot_angle);
-        float sinangle = sin(spike_rot_angle);
-        float spike_x = x;
-        float spike_y = y + shift_y;
-        if (i > 0)
+        // normalise radial distance (for edge and antialising to remain isotropic)
+        // Scaling factor is the norm of the gradient of the function defining
+        // the surface taken at a well chosen point on the edge of the ellipse
+        // f(x, y) = (sqrt(x^2/a^2 + y^2/b^2) = 0.5 in this case
+        // where a = v_size.x and b = v_size.y)
+        // The well chosen point on the edge of the ellipse should be the point
+        // whose normal points towards the current point.
+        // Below we choose a different point whose computation
+        // is simple enough to fit here.
+        float f = length(vec2(x / $v_size.x, y / $v_size.y));
+        // We set the default value of the norm so that
+        // - near the axes (x=0 or y=0 +/- 1 pixel), the norm is correct
+        //   (the computation below is unstable near the axes)
+        // - if the ellipse is a circle, the norm is correct
+        // - if we are deep in the interior of the ellipse the norm
+        //   is set to an arbitrary value (but is not used)
+        float norm = abs(x) < 1. ? 1./$v_size.y : 1./$v_size.x;
+        if (f > 1e-3 && abs($v_size.x - $v_size.y) > 1e-3
+            && abs(x) > 1. && abs(y) > 1.)
         {
-            spike_x = cosangle * x - sinangle * (y + shift_y);
-            spike_y = sinangle * x + cosangle * (y + shift_y);
+            // Find the point x0, y0 on the ellipse which has the same hyperbola
+            // coordinate in the elliptic coordinate system linked to the ellipse
+            // (finding the right 'well chosen' point is too complicated)
+            // Visually it's nice, even at high eccentricities, where
+            // the approximation is visible but not ugly.
+            float a = $v_size.x/2.;
+            float b = $v_size.y/2.;
+            float C = max(a, b);
+            float c = min(a, b);
+            float focal_length = sqrt(C*C - c*c);
+            float fl2 = focal_length*focal_length;
+            float x2 = x*x;
+            float y2 = y*y;
+            float tmp = fl2 + x2 + y2;
+            float x0 = 0;
+            float y0 = 0;
+            if ($v_size.x > $v_size.y)
+            {
+                float cos2v = 0.5 * (tmp - sqrt(tmp*tmp - 4.*fl2*x2)) / fl2;
+                cos2v = fract(cos2v);
+                x0 = a * sqrt(cos2v);
+                // v_size.x = focal_length*cosh m where m is the ellipse coordinate
+                y0 = b * sqrt(1-cos2v);
+                // v_size.y = focal_length*sinh m
+            }
+            else // $v_size.x < $v_size.y
+            {//exchange x and y axis for elliptic coordinate
+                float cos2v = 0.5 * (tmp - sqrt(tmp*tmp - 4.*fl2*y2)) / fl2;
+                cos2v = fract(cos2v);
+                x0 = a * sqrt(1-cos2v);
+                // v_size.x = focal_length*sinh m where m is the ellipse coordinate
+                y0 = b * sqrt(cos2v);
+                // v_size.y = focal_length*cosh m
+            }
+            vec2 normal = vec2(2.*x0/v_size.x/v_size.x, 2.*y0/v_size.y/v_size.y);
+            norm = length(normal);
         }
-        // in the frame where the spike is upwards:
-        // rotate 18 deg the zone x < 0 around the top of the star
-        // (point whose coords are -s/2, 0 where s is the size of the marker)
-        // compute y coordonates as well because
-        // we do a second rotation to put the spike at its final position
-        float rot_center_y = -$v_size/2.;
-        float rot18x = cos(PI2_20) * spike_x
-                            - sin(PI2_20) * (spike_y - rot_center_y);
-        //rotate -18 deg the zone x > 0 arount the top of the star
-        float rot_18x = cos(PI2_20) * spike_x
-                            + sin(PI2_20) * (spike_y - rot_center_y);
-        float bottom = spike_y - $v_size/10.;
-        //                     max(left edge, right edge)
-        float spike = max(bottom, max(rot18x, -rot_18x));
-        if (i == 0)
-        {// first spike, skip the rotation
-            star = spike;
-        }
-        else // i > 0
-        {
-            star = min(star, spike);
-        }
-    }
-    return star;
-}
-"""
+        return (f - 0.5) / norm;
+    """,
 
-# the following two markers needs x and y sizes
-rect = """
-float rect(vec2 pointcoord, float size)
-{
-    float x_boundaries = abs(pointcoord.x - 0.5)*size - $v_size.x/2.;
-    float y_boundaries = abs(pointcoord.y - 0.5)*size - $v_size.y/2.;
-    return max(x_boundaries, y_boundaries);
+    'cross_lines': """
+        //vbar
+        float r1 = abs(pointcoord.x - 0.5)*size;
+        float r2 = abs(pointcoord.y - 0.5)*size - $v_size/2;
+        float vbar = max(r1,r2);
+        //hbar
+        float r3 = abs(pointcoord.y - 0.5)*size;
+        float r4 = abs(pointcoord.x - 0.5)*size - $v_size/2;
+        float hbar = max(r3,r4);
+        return min(vbar, hbar);
+    """,
 }
-"""
 
-ellipse = """
-float rect(vec2 pointcoord, float size)
-{
-    float x = (pointcoord.x - 0.5)*size;
-    float y = (pointcoord.y - 0.5)*size;
-    // normalise radial distance (for edge and antialising to remain isotropic)
-    // Scaling factor is the norm of the gradient of the function defining
-    // the surface taken at a well chosen point on the edge of the ellipse
-    // f(x, y) = (sqrt(x^2/a^2 + y^2/b^2) = 0.5 in this case
-    // where a = v_size.x and b = v_size.y)
-    // The well chosen point on the edge of the ellipse should be the point
-    // whose normal points towards the current point.
-    // Below we choose a different point whose computation
-    // is simple enough to fit here.
-    float f = length(vec2(x / $v_size.x, y / $v_size.y));
-    // We set the default value of the norm so that
-    // - near the axes (x=0 or y=0 +/- 1 pixel), the norm is correct
-    //   (the computation below is unstable near the axes)
-    // - if the ellipse is a circle, the norm is correct
-    // - if we are deep in the interior of the ellipse the norm
-    //   is set to an arbitrary value (but is not used)
-    float norm = abs(x) < 1. ? 1./$v_size.y : 1./$v_size.x;
-    if (f > 1e-3 && abs($v_size.x - $v_size.y) > 1e-3
-        && abs(x) > 1. && abs(y) > 1.)
-    {
-        // Find the point x0, y0 on the ellipse which has the same hyperbola
-        // coordinate in the elliptic coordinate system linked to the ellipse
-        // (finding the right 'well chosen' point is too complicated)
-        // Visually it's nice, even at high eccentricities, where
-        // the approximation is visible but not ugly.
-        float a = $v_size.x/2.;
-        float b = $v_size.y/2.;
-        float C = max(a, b);
-        float c = min(a, b);
-        float focal_length = sqrt(C*C - c*c);
-        float fl2 = focal_length*focal_length;
-        float x2 = x*x;
-        float y2 = y*y;
-        float tmp = fl2 + x2 + y2;
-        float x0 = 0;
-        float y0 = 0;
-        if ($v_size.x > $v_size.y)
-        {
-            float cos2v = 0.5 * (tmp - sqrt(tmp*tmp - 4.*fl2*x2)) / fl2;
-            cos2v = fract(cos2v);
-            x0 = a * sqrt(cos2v);
-            // v_size.x = focal_length*cosh m where m is the ellipse coordinate
-            y0 = b * sqrt(1-cos2v);
-            // v_size.y = focal_length*sinh m
-        }
-        else // $v_size.x < $v_size.y
-        {//exchange x and y axis for elliptic coordinate
-            float cos2v = 0.5 * (tmp - sqrt(tmp*tmp - 4.*fl2*y2)) / fl2;
-            cos2v = fract(cos2v);
-            x0 = a * sqrt(1-cos2v);
-            // v_size.x = focal_length*sinh m where m is the ellipse coordinate
-            y0 = b * sqrt(cos2v);
-            // v_size.y = focal_length*cosh m
-        }
-        vec2 normal = vec2(2.*x0/v_size.x/v_size.x, 2.*y0/v_size.y/v_size.y);
-        norm = length(normal);
-    }
-    return (f - 0.5) / norm;
-}
-"""
+symbol = f"""
+float symbol(vec2 pointcoord, float size, int symbol) {{
+   {' else'.join(
+    f''' if (symbol == {i}) {{
+        # {name}
+        {shader}
+    }}'''
+    for i, (name, shader) in enumerate(symbols.items())
+)}
+}}"""
 
-cross_lines = """
-float cross(vec2 pointcoord, float size)
-{
-    //vbar
-    float r1 = abs(pointcoord.x - 0.5)*size;
-    float r2 = abs(pointcoord.y - 0.5)*size - $v_size/2;
-    float vbar = max(r1,r2);
-    //hbar
-    float r3 = abs(pointcoord.y - 0.5)*size;
-    float r4 = abs(pointcoord.x - 0.5)*size - $v_size/2;
-    float hbar = max(r3,r4);
-    return min(vbar, hbar);
+# aliases
+symbol_aliases = {
+    'o': 'disc',
+    '+': 'cross',
+    '++': 'cross_lines',
+    's': 'square',
+    '-': 'hbar',
+    '|': 'vbar',
+    '->': 'tailed_arrow',
+    '>': 'arrow',
+    '^': 'triangle_up',
+    'v': 'triangle_down',
+    '*': 'star',
 }
-"""
 
 
 class MarkersVisual(Visual):
@@ -585,39 +558,12 @@ class MarkersVisual(Visual):
     vbar, hbar, cross, tailed_arrow, x, triangle_up, triangle_down,
     and star.
     """
-    _marker_funcs = {
-        'disc': disc,
-        'arrow': arrow,
-        'ring': ring,
-        'clobber': clobber,
-        'square': square,
-        'diamond': diamond,
-        'vbar': vbar,
-        'hbar': hbar,
-        'cross': cross,
-        'tailed_arrow': tailed_arrow,
-        'x': x_,
-        'triangle_up': triangle_up,
-        'triangle_down': triangle_down,
-        'star': star,
-        # aliases
-        'o': disc,
-        '+': cross,
-        '++': cross_lines,
-        's': square,
-        '-': hbar,
-        '|': vbar,
-        '->': tailed_arrow,
-        '>': arrow,
-        '^': triangle_up,
-        'v': triangle_down,
-        '*': star,
-    }
 
     _shaders = {
         'vertex': _VERTEX_SHADER,
         'fragment': _FRAGMENT_SHADER,
     }
+    _symbols = symbols
 
     def __init__(self, symbol='o', scaling=False, alpha=1, antialias=1, spherical=False,
                  light_color='white', light_position=(1, -1, 1), light_ambient=0.3, **kwargs):
